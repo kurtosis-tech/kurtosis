@@ -61,7 +61,7 @@ Gets the [ModuleContext][modulecontext] associated with an already-running modul
 
 * `moduleContext`: The [ModuleContext][modulecontext] representation of the running module container, which allows execution of the module's execute function (if it exists).
 
-### executeStartosisScript(String serializedStartosisScript) -\> ([ExecuteStartosisScriptResult][executestartosisscriptresult] executionResult, Error error)
+### executeStartosisScript(String serializedStartosisScript) -\> ([ExecuteStartosisResponse][executestartosisresponse] executionResult, Error error)
 
 Execute a provide Startosis script inside the enclave.
 
@@ -71,7 +71,19 @@ Execute a provide Startosis script inside the enclave.
 
 **Returns**
 
-* `executionResult`: The result of the execution, as a [ExecuteStartosisScriptResult][executestartosisscriptresult] object
+* `executionResult`: The result of the execution, as a [ExecuteStartosisResponse][executestartosisresponse] object
+
+### executeStartosisModule(String moduleRootPath) -\> ([ExecuteStartosisResponse][executestartosisresponse] executionResult, Error error)
+
+Execute a provide Startosis script inside the enclave.
+
+**Args**
+
+* `moduleRootPath`: The path to the root of the module
+
+**Returns**
+
+* `executionResult`: The result of the execution, as a [ExecuteStartosisResponse][executestartosisresponse] object
 
 <!-- TODO DELETE THIS!!! -->
 ### registerFilesArtifacts(Map\<FilesArtifactID, String\> filesArtifactUrls)
@@ -301,7 +313,7 @@ ContainerConfigBuilder
 The builder that should be used to create [ContainerConfig][containerconfig] instances. The functions on this builder will correspond to the properties on the [ContainerConfig][containerconfig] object, in the form `withPropertyName` (e.g. `withUsedPorts` sets the ports used by the container).
 
 
-ExecuteStartosisScriptResult
+ExecuteStartosisResponse
 ----------------------------
 
 This is an object representing the result of the execution of a Startosis script. It has 4 fields:
@@ -382,7 +394,11 @@ It has two properties.
 ### String template
 The template that needs to be rendered. We support Golang [templates](https://pkg.go.dev/text/template). The casing of the keys inside the template and data doesn't matter.
 ### Any templateData
-The data that needs to be rendered in the template. This will be converted into a JSON string before it gets sent over the wire. The elements inside the object should exactly match the keys in the template. 
+The data that needs to be rendered in the template. This will be converted into a JSON string before it gets sent over the wire. The elements inside the object should exactly match the keys in the template.
+
+Note, because of how we handle floating point numbers & large integers, if you pass a floating point number it will get
+printed in the decimal notation by default. If you want to use modifiers like `{{printf .%2f | .MyFloat}}`, you'll have to use
+the `Float64` method on the `json.Number` first, so above would look like `{{printf .2%f | .MyFloat.Float64}}`.
 
 ---
 
@@ -414,7 +430,7 @@ _Found a bug? File it on [the repo][issues]!_
 
 [partitionconnection]: #partitionconnection
 
-[executestartosisscriptresult]: #executestartosisscriptresult
+[executestartosisresponse]: #executestartosisresponse
 
 [servicecontext]: #servicecontext
 [servicecontext_getpublicports]: #getpublicports---mapportid-portspec

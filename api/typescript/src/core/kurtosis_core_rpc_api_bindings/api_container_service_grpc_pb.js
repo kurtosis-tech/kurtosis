@@ -4,6 +4,7 @@
 var grpc = require('@grpc/grpc-js');
 var api_container_service_pb = require('./api_container_service_pb.js');
 var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb.js');
+var google_protobuf_duration_pb = require('google-protobuf/google/protobuf/duration_pb.js');
 
 function serialize_api_container_api_DownloadFilesArtifactArgs(arg) {
   if (!(arg instanceof api_container_service_pb.DownloadFilesArtifactArgs)) {
@@ -71,6 +72,28 @@ function deserialize_api_container_api_ExecuteModuleResponse(buffer_arg) {
   return api_container_service_pb.ExecuteModuleResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_api_container_api_ExecuteStartosisModuleArgs(arg) {
+  if (!(arg instanceof api_container_service_pb.ExecuteStartosisModuleArgs)) {
+    throw new Error('Expected argument of type api_container_api.ExecuteStartosisModuleArgs');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_ExecuteStartosisModuleArgs(buffer_arg) {
+  return api_container_service_pb.ExecuteStartosisModuleArgs.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_api_container_api_ExecuteStartosisResponse(arg) {
+  if (!(arg instanceof api_container_service_pb.ExecuteStartosisResponse)) {
+    throw new Error('Expected argument of type api_container_api.ExecuteStartosisResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_ExecuteStartosisResponse(buffer_arg) {
+  return api_container_service_pb.ExecuteStartosisResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_api_container_api_ExecuteStartosisScriptArgs(arg) {
   if (!(arg instanceof api_container_service_pb.ExecuteStartosisScriptArgs)) {
     throw new Error('Expected argument of type api_container_api.ExecuteStartosisScriptArgs');
@@ -80,17 +103,6 @@ function serialize_api_container_api_ExecuteStartosisScriptArgs(arg) {
 
 function deserialize_api_container_api_ExecuteStartosisScriptArgs(buffer_arg) {
   return api_container_service_pb.ExecuteStartosisScriptArgs.deserializeBinary(new Uint8Array(buffer_arg));
-}
-
-function serialize_api_container_api_ExecuteStartosisScriptResponse(arg) {
-  if (!(arg instanceof api_container_service_pb.ExecuteStartosisScriptResponse)) {
-    throw new Error('Expected argument of type api_container_api.ExecuteStartosisScriptResponse');
-  }
-  return Buffer.from(arg.serializeBinary());
-}
-
-function deserialize_api_container_api_ExecuteStartosisScriptResponse(buffer_arg) {
-  return api_container_service_pb.ExecuteStartosisScriptResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
 function serialize_api_container_api_GetModulesArgs(arg) {
@@ -435,11 +447,23 @@ executeStartosisScript: {
     requestStream: false,
     responseStream: false,
     requestType: api_container_service_pb.ExecuteStartosisScriptArgs,
-    responseType: api_container_service_pb.ExecuteStartosisScriptResponse,
+    responseType: api_container_service_pb.ExecuteStartosisResponse,
     requestSerialize: serialize_api_container_api_ExecuteStartosisScriptArgs,
     requestDeserialize: deserialize_api_container_api_ExecuteStartosisScriptArgs,
-    responseSerialize: serialize_api_container_api_ExecuteStartosisScriptResponse,
-    responseDeserialize: deserialize_api_container_api_ExecuteStartosisScriptResponse,
+    responseSerialize: serialize_api_container_api_ExecuteStartosisResponse,
+    responseDeserialize: deserialize_api_container_api_ExecuteStartosisResponse,
+  },
+  // Executes a startosis module on the user's behalf
+executeStartosisModule: {
+    path: '/api_container_api.ApiContainerService/ExecuteStartosisModule',
+    requestStream: false,
+    responseStream: false,
+    requestType: api_container_service_pb.ExecuteStartosisModuleArgs,
+    responseType: api_container_service_pb.ExecuteStartosisResponse,
+    requestSerialize: serialize_api_container_api_ExecuteStartosisModuleArgs,
+    requestDeserialize: deserialize_api_container_api_ExecuteStartosisModuleArgs,
+    responseSerialize: serialize_api_container_api_ExecuteStartosisResponse,
+    responseDeserialize: deserialize_api_container_api_ExecuteStartosisResponse,
   },
   // Start services by creating containers for them
 startServices: {

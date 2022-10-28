@@ -6,6 +6,7 @@ package api_container_api;
 option go_package = "github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings";
 
 import "google/protobuf/empty.proto";
+import "google/protobuf/duration.proto";
 
 service ApiContainerService {
   // Starts a module container in the enclave
@@ -21,7 +22,10 @@ service ApiContainerService {
   rpc ExecuteModule(ExecuteModuleArgs) returns (ExecuteModuleResponse) {};
 
   // Executes a startosis script on the user's behalf
-  rpc ExecuteStartosisScript(ExecuteStartosisScriptArgs) returns (ExecuteStartosisScriptResponse) {};
+  rpc ExecuteStartosisScript(ExecuteStartosisScriptArgs) returns (ExecuteStartosisResponse) {};
+
+  // Executes a startosis module on the user's behalf
+  rpc ExecuteStartosisModule(ExecuteStartosisModuleArgs) returns (ExecuteStartosisResponse) {};
 
   // Start services by creating containers for them
   rpc StartServices(StartServicesArgs) returns (StartServicesResponse) {};
@@ -234,7 +238,7 @@ message ExecuteStartosisScriptArgs {
   string serialized_script = 1;
 }
 
-message ExecuteStartosisScriptResponse {
+message ExecuteStartosisResponse {
   string serialized_script_output = 1;
 
   string interpretation_error = 2;
@@ -478,3 +482,36 @@ message RenderTemplatesToFilesArtifactResponse {
 message StartosisValidationError {
   string error = 1;
 }
+
+// ==============================================================================================
+//                                 Facts Engine
+// ==============================================================================================
+
+message FactValue {
+  oneof fact_value {
+    string string_value = 1;
+  }
+}
+
+message ConstantFactRecipe {
+    FactValue fact_value = 1;
+}
+
+message FactRecipe {
+  string service_id = 1;
+  string fact_name = 2;
+  oneof fact_recipe_definition {
+    ConstantFactRecipe constant_fact = 3;
+  }
+  google.protobuf.Duration refresh_interval = 10;
+}
+
+// ==============================================================================================
+//                                 Execute Startosis Module
+// ==============================================================================================
+
+message ExecuteStartosisModuleArgs {
+  string module_id = 1;
+  bytes data = 2;
+}
+

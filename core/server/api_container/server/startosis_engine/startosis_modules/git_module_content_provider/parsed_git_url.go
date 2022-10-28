@@ -9,10 +9,12 @@ import (
 )
 
 const (
-	githubDomain           = "github.com"
-	httpsSchema            = "https"
-	startosisFileExtension = ".star"
-	urlPathSeparator       = "/"
+	githubDomain     = "github.com"
+	httpsSchema      = "https"
+	urlPathSeparator = "/"
+	// for a valid GitURl we need it to look like github.com/author/moduleName
+	// the last two are the minimum requirements for a valid Startosis URL
+	minimumSubPathsForValidGitURL = 2
 )
 
 // ParsedGitURL an object representing a parsed moduleURL
@@ -26,6 +28,7 @@ type ParsedGitURL struct {
 	// relativeRepoPath the relative path to the repo this would be moduleAuthor/moduleName/
 	relativeRepoPath string
 	// relativeFilePath the full path of the file relative to the module store relativeRepoPath/path/to/file.star
+	// empty if there is no file
 	relativeFilePath string
 }
 
@@ -64,20 +67,19 @@ func parseGitURL(packageURL string) (*ParsedGitURL, error) {
 
 	splitURLPath := cleanPathAndSplit(parsedURL.Path)
 
-	if len(splitURLPath) < 3 {
-		return nil, stacktrace.NewError("URL '%v' path should contain at least 3 subpaths got '%v'", packageURL, splitURLPath)
-	}
-
-	lastItem := splitURLPath[len(splitURLPath)-1]
-	if !strings.HasSuffix(lastItem, startosisFileExtension) {
-		return nil, stacktrace.NewError("Expected last subpath to be a '%v' file but it wasn't", startosisFileExtension)
+	if len(splitURLPath) < minimumSubPathsForValidGitURL {
+		return nil, stacktrace.NewError("URL '%v' path should contain at least %d subpaths got '%v'", packageURL, minimumSubPathsForValidGitURL, splitURLPath)
 	}
 
 	moduleAuthor := splitURLPath[0]
 	moduleName := splitURLPath[1]
 	gitURL := fmt.Sprintf("%v://%v/%v/%v.git", httpsSchema, githubDomain, moduleAuthor, moduleName)
 	relativeModulePath := path.Join(moduleAuthor, moduleName)
-	relativeFilePath := path.Join(splitURLPath...)
+
+	relativeFilePath := ""
+	if len(splitURLPath) > minimumSubPathsForValidGitURL {
+		relativeFilePath = path.Join(splitURLPath...)
+	}
 
 	parsedGitURL := newParsedGitURL(
 		moduleAuthor,

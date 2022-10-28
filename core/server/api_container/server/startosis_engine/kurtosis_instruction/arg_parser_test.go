@@ -1,7 +1,9 @@
 package kurtosis_instruction
 
 import (
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
@@ -487,4 +489,62 @@ func TestParseFilesArtifactMountDirpaths_FailureOnNonStringValue(t *testing.T) {
 	require.NotNil(t, err)
 	require.Equal(t, "'files_artifact_mount_dirpaths[\"key\"]' is expected to be a string. Got starlark.Int", err.Error())
 	require.Equal(t, map[string]string(nil), output)
+}
+
+func TestParseTemplatesAndData_SimpleCase(t *testing.T) {
+	dataAsJson := `{"LargeFloat":1231231243.43,"Name":"John","UnixTs":1257894000}`
+	subDict := starlark.NewDict(2)
+	template := "Hello {{.Name}}. {{.LargeFloat}} {{.UnixTs}}"
+	err := subDict.SetKey(starlark.String("template"), starlark.String(template))
+	require.Nil(t, err)
+	err = subDict.SetKey(starlark.String("template_data_json"), starlark.String(dataAsJson))
+	require.Nil(t, err)
+	input := starlark.NewDict(1)
+	err = input.SetKey(starlark.String("/foo/bar"), subDict)
+	require.Nil(t, err)
+
+	expectedTemplateAndData := binding_constructors.NewTemplateAndData(template, `{"LargeFloat":1231231243.43,"Name":"John","UnixTs":1257894000}`)
+	expectedOutput := map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData{
+		"/foo/bar": expectedTemplateAndData,
+	}
+
+	output, err := ParseTemplatesAndData(input)
+	require.Nil(t, err)
+	require.Equal(t, expectedOutput, output)
+}
+
+func TestParseTemplatesAndData_FailsForInvalidJSONWithIntegerKey(t *testing.T) {
+	dataAsJson := `{12344:"John"}`
+	subDict := starlark.NewDict(2)
+	template := "Hello {{.Name}}"
+	err := subDict.SetKey(starlark.String("template"), starlark.String(template))
+	require.Nil(t, err)
+	err = subDict.SetKey(starlark.String("template_data_json"), starlark.String(dataAsJson))
+	require.Nil(t, err)
+	input := starlark.NewDict(1)
+	templateRelativePath := "/foo/bar"
+	err = input.SetKey(starlark.String("/foo/bar"), subDict)
+	require.Nil(t, err)
+
+	_, err = ParseTemplatesAndData(input)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), fmt.Sprintf("Template data for file '%v', '%v' isn't valid JSON", templateRelativePath, dataAsJson))
+}
+
+func TestParseTemplatesAndData_FailsForMalformedJSONWithoutClosingBraces(t *testing.T) {
+	dataAsJson := `{"Name": "World"`
+	subDict := starlark.NewDict(2)
+	template := "Hello {{.Name}}"
+	err := subDict.SetKey(starlark.String("template"), starlark.String(template))
+	require.Nil(t, err)
+	err = subDict.SetKey(starlark.String("template_data_json"), starlark.String(dataAsJson))
+	require.Nil(t, err)
+	input := starlark.NewDict(1)
+	templateRelativePath := "/foo/bar"
+	err = input.SetKey(starlark.String("/foo/bar"), subDict)
+	require.Nil(t, err)
+
+	_, err = ParseTemplatesAndData(input)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), fmt.Sprintf("Template data for file '%v', '%v' isn't valid JSON", templateRelativePath, dataAsJson))
 }

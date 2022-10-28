@@ -8,12 +8,15 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/exec"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/read_file"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/render_templates"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/store_files_from_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_modules"
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/resolve"
 	"go.starlark.net/starlark"
+	"go.starlark.net/starlarkjson"
 	"go.starlark.net/starlarkstruct"
 	"go.starlark.net/syntax"
 	"sync"
@@ -82,6 +85,9 @@ func (interpreter *StartosisInterpreter) buildBindings(threadName string, instru
 		add_service.AddServiceBuiltinName:                        starlark.NewBuiltin(add_service.AddServiceBuiltinName, add_service.GenerateAddServiceBuiltin(instructionsQueue, interpreter.serviceNetwork)),
 		exec.ExecBuiltinName:                                     starlark.NewBuiltin(exec.ExecBuiltinName, exec.GenerateExecBuiltin(instructionsQueue, interpreter.serviceNetwork)),
 		store_files_from_service.StoreFileFromServiceBuiltinName: starlark.NewBuiltin(store_files_from_service.StoreFileFromServiceBuiltinName, store_files_from_service.GenerateStoreFilesFromServiceBuiltin(instructionsQueue, interpreter.serviceNetwork)),
+		read_file.ReadFileBuiltinName:                            starlark.NewBuiltin(read_file.ReadFileBuiltinName, read_file.GenerateReadFileBuiltin(instructionsQueue, interpreter.moduleContentProvider)),
+		render_templates.RenderTemplatesBuiltinName:              starlark.NewBuiltin(render_templates.RenderTemplatesBuiltinName, render_templates.GenerateRenderTemplatesBuiltin(instructionsQueue, interpreter.serviceNetwork)),
+		starlarkjson.Module.Name:                                 starlarkjson.Module,
 	}
 
 	return thread, builtins

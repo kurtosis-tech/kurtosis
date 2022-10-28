@@ -17,6 +17,8 @@ grpc.web = require('grpc-web');
 
 
 var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb.js')
+
+var google_protobuf_duration_pb = require('google-protobuf/google/protobuf/duration_pb.js')
 const proto = {};
 proto.api_container_api = require('./api_container_service_pb.js');
 
@@ -320,13 +322,13 @@ proto.api_container_api.ApiContainerServicePromiseClient.prototype.executeModule
  * @const
  * @type {!grpc.web.MethodDescriptor<
  *   !proto.api_container_api.ExecuteStartosisScriptArgs,
- *   !proto.api_container_api.ExecuteStartosisScriptResponse>}
+ *   !proto.api_container_api.ExecuteStartosisResponse>}
  */
 const methodDescriptor_ApiContainerService_ExecuteStartosisScript = new grpc.web.MethodDescriptor(
   '/api_container_api.ApiContainerService/ExecuteStartosisScript',
   grpc.web.MethodType.UNARY,
   proto.api_container_api.ExecuteStartosisScriptArgs,
-  proto.api_container_api.ExecuteStartosisScriptResponse,
+  proto.api_container_api.ExecuteStartosisResponse,
   /**
    * @param {!proto.api_container_api.ExecuteStartosisScriptArgs} request
    * @return {!Uint8Array}
@@ -334,7 +336,7 @@ const methodDescriptor_ApiContainerService_ExecuteStartosisScript = new grpc.web
   function(request) {
     return request.serializeBinary();
   },
-  proto.api_container_api.ExecuteStartosisScriptResponse.deserializeBinary
+  proto.api_container_api.ExecuteStartosisResponse.deserializeBinary
 );
 
 
@@ -343,9 +345,9 @@ const methodDescriptor_ApiContainerService_ExecuteStartosisScript = new grpc.web
  *     request proto
  * @param {?Object<string, string>} metadata User defined
  *     call metadata
- * @param {function(?grpc.web.RpcError, ?proto.api_container_api.ExecuteStartosisScriptResponse)}
+ * @param {function(?grpc.web.RpcError, ?proto.api_container_api.ExecuteStartosisResponse)}
  *     callback The callback function(error, response)
- * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.ExecuteStartosisScriptResponse>|undefined}
+ * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.ExecuteStartosisResponse>|undefined}
  *     The XHR Node Readable Stream
  */
 proto.api_container_api.ApiContainerServiceClient.prototype.executeStartosisScript =
@@ -364,7 +366,7 @@ proto.api_container_api.ApiContainerServiceClient.prototype.executeStartosisScri
  *     request proto
  * @param {?Object<string, string>=} metadata User defined
  *     call metadata
- * @return {!Promise<!proto.api_container_api.ExecuteStartosisScriptResponse>}
+ * @return {!Promise<!proto.api_container_api.ExecuteStartosisResponse>}
  *     Promise that resolves to the response
  */
 proto.api_container_api.ApiContainerServicePromiseClient.prototype.executeStartosisScript =
@@ -374,6 +376,67 @@ proto.api_container_api.ApiContainerServicePromiseClient.prototype.executeStarto
       request,
       metadata || {},
       methodDescriptor_ApiContainerService_ExecuteStartosisScript);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.api_container_api.ExecuteStartosisModuleArgs,
+ *   !proto.api_container_api.ExecuteStartosisResponse>}
+ */
+const methodDescriptor_ApiContainerService_ExecuteStartosisModule = new grpc.web.MethodDescriptor(
+  '/api_container_api.ApiContainerService/ExecuteStartosisModule',
+  grpc.web.MethodType.UNARY,
+  proto.api_container_api.ExecuteStartosisModuleArgs,
+  proto.api_container_api.ExecuteStartosisResponse,
+  /**
+   * @param {!proto.api_container_api.ExecuteStartosisModuleArgs} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.api_container_api.ExecuteStartosisResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.api_container_api.ExecuteStartosisModuleArgs} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.api_container_api.ExecuteStartosisResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.ExecuteStartosisResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.api_container_api.ApiContainerServiceClient.prototype.executeStartosisModule =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/api_container_api.ApiContainerService/ExecuteStartosisModule',
+      request,
+      metadata || {},
+      methodDescriptor_ApiContainerService_ExecuteStartosisModule,
+      callback);
+};
+
+
+/**
+ * @param {!proto.api_container_api.ExecuteStartosisModuleArgs} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.api_container_api.ExecuteStartosisResponse>}
+ *     Promise that resolves to the response
+ */
+proto.api_container_api.ApiContainerServicePromiseClient.prototype.executeStartosisModule =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/api_container_api.ApiContainerService/ExecuteStartosisModule',
+      request,
+      metadata || {},
+      methodDescriptor_ApiContainerService_ExecuteStartosisModule);
 };
 
 
