@@ -93,34 +93,51 @@ func GetEnclaveNetworkByEnclaveId(ctx context.Context, enclaveId enclave.Enclave
 	return enclaveNetworksFound[0], nil
 }
 
-func GetPublicPortBindingFromPrivatePortSpec(privatePortSpec *port_spec.PortSpec, allHostMachinePortBindings map[nat.Port]*nat.PortBinding) (
-	resultPublicIpAddr net.IP,
-	resultPublicPortSpec *port_spec.PortSpec,
-	resultErr error,
-) {
-	portNum := privatePortSpec.GetNumber()
+func GetDockerPortFromPortSpec(portSpec *port_spec.PortSpec) (nat.Port, error) {
+	var (
+		dockerPort nat.Port
+		err        error
+	)
+	portNum := portSpec.GetNumber()
 
 	// Convert port spec protocol -> Docker protocol string
-	portSpecProto := privatePortSpec.GetProtocol()
-	privatePortDockerProto, found := portSpecProtosToDockerPortProtos[portSpecProto]
+	portSpecProto := portSpec.GetProtocol()
+	portDockerProto, found := portSpecProtosToDockerPortProtos[portSpecProto]
 	if !found {
-		return nil, nil, stacktrace.NewError(
+		return dockerPort, stacktrace.NewError(
 			"No Docker protocol was defined for port spec proto '%v'; this is a bug in Kurtosis",
 			portSpecProto.String(),
 		)
 	}
 
-	privatePortNumStr := fmt.Sprintf("%v", portNum)
-	dockerPrivatePort, err := nat.NewPort(
-		privatePortDockerProto,
-		privatePortNumStr,
+	portNumStr := fmt.Sprintf("%v", portNum)
+	dockerPort, err = nat.NewPort(
+		portDockerProto,
+		portNumStr,
 	)
+	if err != nil {
+		return dockerPort, stacktrace.Propagate(
+			err,
+			"An error occurred creating the Docker port object from port number '%v' and protocol '%v'",
+			portNumStr,
+			portDockerProto,
+		)
+	}
+	return dockerPort, nil
+}
+
+func GetPublicPortBindingFromPrivatePortSpec(privatePortSpec *port_spec.PortSpec, allHostMachinePortBindings map[nat.Port]*nat.PortBinding) (
+	resultPublicIpAddr net.IP,
+	resultPublicPortSpec *port_spec.PortSpec,
+	resultErr error,
+) {
+
+	dockerPrivatePort, err := GetDockerPortFromPortSpec(privatePortSpec)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(
 			err,
-			"An error occurred creating the Docker private port object from port number '%v' and protocol '%v', which is necessary for getting the corresponding host machine port bindings",
-			privatePortNumStr,
-			privatePortDockerProto,
+			"An error occurred creating the Docker private port object from private port spec '%+v', which is necessary for getting the corresponding host machine port bindings",
+			privatePortSpec,
 		)
 	}
 
@@ -129,8 +146,8 @@ func GetPublicPortBindingFromPrivatePortSpec(privatePortSpec *port_spec.PortSpec
 		return nil, nil, stacktrace.NewError(
 			"No host machine port binding was specified for Docker port '%v' which corresponds to port spec with num '%v' and protocol '%v'",
 			dockerPrivatePort,
-			portNum,
-			portSpecProto.String(),
+			privatePortSpec.GetNumber(),
+			privatePortSpec.GetProtocol().String(),
 		)
 	}
 
@@ -140,8 +157,8 @@ func GetPublicPortBindingFromPrivatePortSpec(privatePortSpec *port_spec.PortSpec
 		return nil, nil, stacktrace.NewError(
 			"Found host machine IP string '%v' for port spec with number '%v' and protocol '%v', but it wasn't a valid IP",
 			hostMachineIpAddrStr,
-			portNum,
-			portSpecProto.String(),
+			privatePortSpec.GetNumber(),
+			privatePortSpec.GetProtocol().String(),
 		)
 	}
 
@@ -157,9 +174,9 @@ func GetPublicPortBindingFromPrivatePortSpec(privatePortSpec *port_spec.PortSpec
 		)
 	}
 	hostMachinePortNumUint16 := uint16(hostMachinePortNumUint64) // Okay to do due to specifying the number of bits above
-	publicPortSpec, err := port_spec.NewPortSpec(hostMachinePortNumUint16, portSpecProto)
+	publicPortSpec, err := port_spec.NewPortSpec(hostMachinePortNumUint16, privatePortSpec.GetProtocol())
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred creating public port spec with host machine port num '%v' and protocol '%v'", hostMachinePortNumUint16, portSpecProto.String())
+		return nil, nil, stacktrace.Propagate(err, "An error occurred creating public port spec with host machine port num '%v' and protocol '%v'", hostMachinePortNumUint16, privatePortSpec.GetProtocol().String())
 	}
 
 	return hostMachineIp, publicPortSpec, nil
