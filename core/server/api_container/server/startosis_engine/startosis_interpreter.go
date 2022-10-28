@@ -138,7 +138,8 @@ func (interpreter *StartosisInterpreter) addInputArgsToPredeclared(moduleId stri
 		return nil
 	}
 	if err != nil {
-		return startosis_errors.NewInterpretationError("File '%s' not found at the root of module '%s' but a non empty parameter was passed. This is allowed to define a module with no '%s', but it should be always be called with an empty parameter", TypesFileName, moduleId, TypesFileName)
+		// TODO(gb): rework the error piping here to include the compiler error message (see https://github.com/kurtosis-tech/kurtosis/issues/270)
+		return startosis_errors.NewInterpretationError("File '%s' is either absent or invalid at the root of module '%s' but a non empty parameter was passed. This is allowed to define a module with no '%s', but it should be always be called with an empty parameter", TypesFileName, moduleId, TypesFileName)
 	}
 	reflectMessageDescriptor, err := fileStore.FindDescriptorByName(ModuleInputTypeName)
 	if err != nil && serializedJsonParams == EmptyInputArgs {
@@ -147,7 +148,7 @@ func (interpreter *StartosisInterpreter) addInputArgsToPredeclared(moduleId stri
 		return nil
 	}
 	if err != nil {
-		return startosis_errors.NewInterpretationError("Type '%s' cannot be found in type file '%s' for module '%s' but a non empty parameter was passed. When some parameters are passed to a module, there must be a `%s` type defined in the module's '%s' file", ModuleInputTypeName, TypesFileName, moduleId, MainInputArgName, ModuleInputTypeName)
+		return startosis_errors.NewInterpretationError("Type '%s' cannot be found in type file '%s' for module '%s' but a non empty parameter was passed. When some parameters are passed to a module, there must be a `%s` type defined in the module's '%s' file", ModuleInputTypeName, TypesFileName, moduleId, ModuleInputTypeName, TypesFileName)
 	}
 	messageDescriptor, ok := reflectMessageDescriptor.(protoreflect.MessageDescriptor)
 	if !ok {
