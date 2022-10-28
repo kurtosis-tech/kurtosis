@@ -142,10 +142,10 @@ func (service *EngineServerService) GetUserServiceLogs(
 	args *kurtosis_engine_rpc_api_bindings.GetUserServiceLogsArgs,
 ) (*kurtosis_engine_rpc_api_bindings.GetUserServiceLogsResponse, error) {
 	enclaveId := enclave.EnclaveID(args.GetEnclaveId())
-	userServiceGuidsStr := args.GetServiceGuidSet()
-	requestedUserServiceGuids := make(map[user_service.ServiceGUID]bool, len(userServiceGuidsStr))
+	userServiceGuidStrSet := args.GetServiceGuidSet()
+	requestedUserServiceGuids := make(map[user_service.ServiceGUID]bool, len(userServiceGuidStrSet))
 
-	for userServiceGuidStr := range userServiceGuidsStr {
+	for userServiceGuidStr := range userServiceGuidStrSet {
 		userServiceGuid := user_service.ServiceGUID(userServiceGuidStr)
 		requestedUserServiceGuids[userServiceGuid] = true
 	}
@@ -167,10 +167,10 @@ func (service *EngineServerService) StreamUserServiceLogs(
 ) error {
 
 	enclaveId := enclave.EnclaveID(args.GetEnclaveId())
-	userServiceGuidsStr := args.GetServiceGuidSet()
-	requestedUserServiceGuids := make(map[user_service.ServiceGUID]bool, len(userServiceGuidsStr))
+	userServiceGuidStrSet := args.GetServiceGuidSet()
+	requestedUserServiceGuids := make(map[user_service.ServiceGUID]bool, len(userServiceGuidStrSet))
 
-	for userServiceGuidStr := range userServiceGuidsStr {
+	for userServiceGuidStr := range userServiceGuidStrSet {
 		userServiceGuid := user_service.ServiceGUID(userServiceGuidStr)
 		requestedUserServiceGuids[userServiceGuid] = true
 	}

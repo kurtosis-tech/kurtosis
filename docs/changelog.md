@@ -13,8 +13,11 @@
 - Adding/removing methods from `.proto` files will now be compile errors in Go code, rather than failing at runtime
 - Consolidated the core & engine Protobuf regeneration scripts into a single one
 
-# 0.51.3
+### Fixes
+- Fixed a bug in `GetLogsCollector` that was failing when there is an old logs collector container running that doesn't publish the TCP port
+- Add missing bindings to Kubernetes gateway
 
+# 0.51.3
 ### Fixes
 - Added `protoc` install step to the `publish_api_container_server_image` CircleCI task
 

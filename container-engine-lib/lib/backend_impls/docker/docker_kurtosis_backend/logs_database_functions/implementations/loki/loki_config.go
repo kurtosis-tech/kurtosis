@@ -14,7 +14,7 @@ type LokiConfig struct {
 	Analytics     Analytics     `yaml:"analytics"`
 	RuntimeConfig RuntimeConfig `yaml:"runtime_config"`
 	Ingester      Ingester      `yaml:"ingester"`
-	Querier       Querier		`yaml:"querier"`
+	Querier       Querier       `yaml:"querier"`
 }
 
 type Server struct {
