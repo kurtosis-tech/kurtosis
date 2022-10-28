@@ -99,16 +99,22 @@ async function TestStreamLogs() {
                                 return err( new Error(`Expected to match the ${loglineIndex}º log line with this value ${expectedLogLines[loglineIndex]} but this one was received instead ${logline}`))
                             }
                         })
-                        userServiceReadable.destroy()
+                        if(!userServiceReadable.destroyed) {
+                            userServiceReadable.destroy()
+                        }
                     }
                 })
                 userServiceReadable.on('error', function(readableErr) {
-                    userServiceReadable.destroy()
+                    if(!userServiceReadable.destroyed) {
+                        userServiceReadable.destroy()
+                    }
                     throw new Error(`Expected read all user service logs but an error was received from the user service readable object.\n Error: "${readableErr.message}"`)
                 })
                 userServiceReadable.on('end', function() {
-                    userServiceReadable.destroy()
-                    throw new Error(`Expected read all user service logs but the user service readable logs object has finished before reading all the logs.`)
+                    if(!userServiceReadable.destroyed) {
+                        userServiceReadable.destroy()
+                        throw new Error(`Expected read all user service logs but the user service readable logs object has finished before reading all the logs.`)
+                    }
                 })
             }
         })
