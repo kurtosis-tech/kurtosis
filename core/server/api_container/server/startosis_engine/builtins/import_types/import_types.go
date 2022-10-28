@@ -10,6 +10,7 @@ import (
 	"go.starlark.net/starlarkstruct"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
+	"strings"
 )
 
 const (
@@ -33,8 +34,12 @@ func GenerateImportTypesBuiltin(protoFileStore *proto_compiler.ProtoFileStore) f
 
 		typesStringDict, errorsMap := loadTypesFromProtoRegistry(protoRegistryFile)
 		if len(errorsMap) != 0 {
+			var failedTypes []string
+			for failingTypeName := range errorsMap {
+				failedTypes = append(failedTypes, failingTypeName)
+			}
 			logrus.Errorf("Error loading types for module '%s' from the proto registry. Errors were: '%v'", fileInModuleId, errorsMap)
-			return nil, startosis_errors.NewInterpretationError("Unable to load types file " + fileInModuleId + ". Some errors occurred loading types from the types registry.")
+			return nil, startosis_errors.NewInterpretationError("Unable to load types file " + fileInModuleId + ". The following types could not be loaded from the types registry: " + strings.Join(failedTypes, ", "))
 		}
 		return starlarkstruct.FromStringDict(starlarkstruct.Default, *typesStringDict), nil
 	}
@@ -49,11 +54,11 @@ func loadTypesFromProtoRegistry(protoTypesFiles *protoregistry.Files) (*starlark
 		}
 		for _, typeName := range starlarkFileDescriptor.AttrNames() {
 			typeValue, err := starlarkFileDescriptor.Attr(typeName)
-			if typeValue == nil {
-				errors[typeName] = stacktrace.NewError("Unable to load type '%s' from the proto registry", typeName)
-			}
 			if err != nil {
 				errors[typeName] = stacktrace.Propagate(err, "Unable to load type '%s' from the proto registry", typeName)
+			}
+			if typeValue == nil {
+				errors[typeName] = stacktrace.NewError("Unable to load type '%s' from the proto registry", typeName)
 			}
 			typesStringDict[typeName] = typeValue
 		}
