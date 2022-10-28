@@ -107,8 +107,8 @@ async function TestStreamLogs() {
                 userServiceReadable.on('error', function(readableErr) {
                     if(!userServiceReadable.destroyed) {
                         userServiceReadable.destroy()
+                        throw new Error(`Expected read all user service logs but an error was received from the user service readable object.\n Error: "${readableErr.message}"`)
                     }
-                    throw new Error(`Expected read all user service logs but an error was received from the user service readable object.\n Error: "${readableErr.message}"`)
                 })
                 userServiceReadable.on('end', function() {
                     if(!userServiceReadable.destroyed) {
