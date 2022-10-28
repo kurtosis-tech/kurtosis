@@ -17,7 +17,7 @@ const (
 	streamUserServiceLogsShouldFollowLogsOption = true
 
 	logsByKurtosisUserServiceGuidChanBufferSize = 2
-	errorChanBufferSize = 2
+	errorChanBufferSize                         = 2
 )
 
 type kurtosisBackendLogClient struct {
@@ -131,8 +131,16 @@ func (client *kurtosisBackendLogClient) StreamUserServiceLogs(
 
 	return logsByKurtosisUserServiceGuidChan, errChan, nil
 }
+
+func (client *kurtosisBackendLogClient) GetUserServiceGuids(ctx context.Context) (map[service.ServiceGUID]bool, error) {
+	logrus.Warnf("Unable to get the exhaustive list of service GUIDs for this backend. Empty list will be returned.")
+	return map[service.ServiceGUID]bool{}, nil
+}
+
 // ====================================================================================================
-//                                      Private Helper Functions
+//
+//	Private Helper Functions
+//
 // ====================================================================================================
 func scanUserServiceLogsAndAddLogLinesToTheUserServiceLogsChan(
 	ctx context.Context,
@@ -153,7 +161,7 @@ func scanUserServiceLogsAndAddLogLinesToTheUserServiceLogsChan(
 
 	for {
 		select {
-		case <- ctx.Done():
+		case <-ctx.Done():
 			errChan <- stacktrace.Propagate(ctx.Err(), "An error occurred streaming user service logs from Kurtosis backend logs client, the request context has done")
 			return
 		default:

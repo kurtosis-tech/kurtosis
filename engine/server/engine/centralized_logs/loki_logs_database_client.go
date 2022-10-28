@@ -33,7 +33,6 @@ const (
 	//the global retention period store logs for 30 days = 720h.
 	maxRetentionPeriodHours = loki.LimitsRetentionPeriodHours * time.Hour
 
-
 	//We use this header because we are using the Loki multi-tenancy feature to split logs by the EnclaveID
 	//Read more about it here: https://grafana.com/docs/loki/latest/operations/multi-tenancy/
 	//tenantID = enclaveID
@@ -72,7 +71,7 @@ const (
 	oneHourLess = -time.Hour
 
 	logsByKurtosisUserServiceGuidChanBuffSize = 2
-	errorChanBuffSize = 2
+	errorChanBuffSize                         = 2
 )
 
 // A backoff schedule for when and how often to retry failed HTTP
@@ -86,7 +85,7 @@ var httpRetriesBackoffSchedule = []time.Duration{
 	1 * time.Second,
 }
 
-//fields are public because it's needed for JSON decoding
+// fields are public because it's needed for JSON decoding
 type lokiQueryRangeResponse struct {
 	Status string `json:"status"`
 	Data   *struct {
@@ -243,8 +242,15 @@ func (client *lokiLogsDatabaseClient) StreamUserServiceLogs(
 	return logsByKurtosisUserServiceGuidChan, errChan, nil
 }
 
+func (client *lokiLogsDatabaseClient) GetUserServiceGuids(ctx context.Context) (map[service.ServiceGUID]bool, error) {
+	// TODO(gb): implement
+	return map[service.ServiceGUID]bool{}, nil
+}
+
 // ====================================================================================================
-//                                       Private helper functions
+//
+//	Private helper functions
+//
 // ====================================================================================================
 func readStreamResponseAndAddUserServiceLogLinesToUserServiceLogsChannel(
 	websocketCallCtxWithDeadline context.Context,
@@ -286,7 +292,7 @@ func readStreamResponseAndAddUserServiceLogLinesToUserServiceLogsChannel(
 
 			resultLogsByKurtosisUserServiceGuid, err := newUserServiceLogLinesByUserServiceGuidFromLokiStreams(streamResponse.Streams)
 			if err != nil {
-				errChan <-  stacktrace.Propagate(err, "An error occurred getting user service log lines from loki streams '%+v'", streamResponse.Streams)
+				errChan <- stacktrace.Propagate(err, "An error occurred getting user service log lines from loki streams '%+v'", streamResponse.Streams)
 				return
 			}
 

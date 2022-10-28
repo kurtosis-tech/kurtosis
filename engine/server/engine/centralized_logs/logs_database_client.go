@@ -24,4 +24,10 @@ type LogsDatabaseClient interface {
 		errChan chan error,
 		err error,
 	)
+	GetUserServiceGuids(
+		ctx context.Context,
+	) (
+		map[service.ServiceGUID]bool,
+		error,
+	)
 }

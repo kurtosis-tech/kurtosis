@@ -170,9 +170,20 @@ func (service *EngineServerService) StreamUserServiceLogs(
 	userServiceGuidStrSet := args.GetServiceGuidSet()
 	requestedUserServiceGuids := make(map[user_service.ServiceGUID]bool, len(userServiceGuidStrSet))
 
+	existingServiceIds, err := service.logsDatabaseClient.GetUserServiceGuids(stream.Context())
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred retrieving the exhaustive list of service GUIDs from the log client")
+	}
+
 	for userServiceGuidStr := range userServiceGuidStrSet {
 		userServiceGuid := user_service.ServiceGUID(userServiceGuidStr)
-		requestedUserServiceGuids[userServiceGuid] = true
+		// if the list of service ID is empty, allow everything for now to not break backcompat.
+		// TODO(gb): update this when implementation in the client side is done
+		if _, found := existingServiceIds[userServiceGuid]; len(existingServiceIds) == 0 || found {
+			requestedUserServiceGuids[userServiceGuid] = true
+		} else {
+			logrus.Warnf("Requesting logs for service GUID '%s' but it does not exist in the logs database", userServiceGuid)
+		}
 	}
 
 	userServiceLogsByServiceGuidChan, errChan, err := service.logsDatabaseClient.StreamUserServiceLogs(stream.Context(), enclaveId, requestedUserServiceGuids)
@@ -180,7 +191,7 @@ func (service *EngineServerService) StreamUserServiceLogs(
 		return stacktrace.Propagate(err, "An error occurred streaming user service logs for GUIDs '%+v' in enclave with ID '%v'", requestedUserServiceGuids, enclaveId)
 	}
 
-	for  {
+	for {
 		select {
 		case userServiceLogsByServiceGuid := <-userServiceLogsByServiceGuidChan:
 			getUserServiceLogsResponse := newUserLogsResponseFromUserServiceLogsByGuid(requestedUserServiceGuids, userServiceLogsByServiceGuid)
@@ -189,7 +200,7 @@ func (service *EngineServerService) StreamUserServiceLogs(
 			}
 		case <-stream.Context().Done():
 			return stacktrace.Propagate(stream.Context().Err(), "An error occurred streaming user service logs, the stream context has done")
-		case errFromChan := <- errChan:
+		case errFromChan := <-errChan:
 			return stacktrace.Propagate(errFromChan, "An error occurred streaming user service logs")
 		}
 	}
