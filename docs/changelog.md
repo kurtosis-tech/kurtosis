@@ -1,4 +1,6 @@
 # TBD
+
+# 0.51.4
 ### Fixes
 - Fixed a bug in `GetLogsCollector` that was failing when there is an old logs collector container running that doesn't publish the TCP port
 
