@@ -216,7 +216,6 @@ func (apicService ApiContainerService) ExecuteStartosisScript(ctx context.Contex
 		generatedInstructionsList)
 
 	// TODO: Abstract this into a ValidationError
-
 	validationErrors := apicService.startosisValidator.Validate(ctx, apicService.serviceNetwork, generatedInstructionsList)
 	if validationErrors != nil {
 		return binding_constructors.NewExecuteStartosisResponse(
