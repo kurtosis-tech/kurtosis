@@ -24,8 +24,10 @@ type LogsDatabaseClient interface {
 		errChan chan error,
 		err error,
 	)
-	GetUserServiceGuids(
+	FilterExistingServiceGuids(
 		ctx context.Context,
+		enclaveId enclave.EnclaveID,
+		userServiceGuids map[service.ServiceGUID]bool,
 	) (
 		map[service.ServiceGUID]bool,
 		error,

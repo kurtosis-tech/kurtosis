@@ -165,28 +165,23 @@ func (service *EngineServerService) StreamUserServiceLogs(
 	args *kurtosis_engine_rpc_api_bindings.GetUserServiceLogsArgs,
 	stream kurtosis_engine_rpc_api_bindings.EngineService_StreamUserServiceLogsServer,
 ) error {
-
 	enclaveId := enclave.EnclaveID(args.GetEnclaveId())
 	userServiceGuidStrSet := args.GetServiceGuidSet()
-	requestedUserServiceGuids := make(map[user_service.ServiceGUID]bool, len(userServiceGuidStrSet))
 
-	existingServiceIds, err := service.logsDatabaseClient.GetUserServiceGuids(stream.Context())
+	requestedUserServiceGuids := make(map[user_service.ServiceGUID]bool, len(userServiceGuidStrSet))
+	for serviceGuid := range userServiceGuidStrSet {
+		requestedUserServiceGuids[user_service.ServiceGUID(serviceGuid)] = true
+	}
+
+	existingServiceGuids, err := service.logsDatabaseClient.FilterExistingServiceGuids(stream.Context(), enclaveId, requestedUserServiceGuids)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred retrieving the exhaustive list of service GUIDs from the log client")
 	}
-
-	for userServiceGuidStr := range userServiceGuidStrSet {
-		userServiceGuid := user_service.ServiceGUID(userServiceGuidStr)
-		// if the list of service ID is empty, allow everything for now to not break backcompat.
-		// TODO(gb): update this when implementation in the client side is done
-		if _, found := existingServiceIds[userServiceGuid]; len(existingServiceIds) == 0 || found {
-			requestedUserServiceGuids[userServiceGuid] = true
-		} else {
-			logrus.Warnf("Requesting logs for service GUID '%s' but it does not exist in the logs database", userServiceGuid)
-		}
+	if len(existingServiceGuids) == 0 {
+		return stacktrace.NewError("Requesting logs for service GUIDs '%v' but none currently exists in the logs database", userServiceGuidStrSet)
 	}
 
-	userServiceLogsByServiceGuidChan, errChan, err := service.logsDatabaseClient.StreamUserServiceLogs(stream.Context(), enclaveId, requestedUserServiceGuids)
+	userServiceLogsByServiceGuidChan, errChan, err := service.logsDatabaseClient.StreamUserServiceLogs(stream.Context(), enclaveId, existingServiceGuids)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred streaming user service logs for GUIDs '%+v' in enclave with ID '%v'", requestedUserServiceGuids, enclaveId)
 	}

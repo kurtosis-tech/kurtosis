@@ -132,9 +132,9 @@ func (client *kurtosisBackendLogClient) StreamUserServiceLogs(
 	return logsByKurtosisUserServiceGuidChan, errChan, nil
 }
 
-func (client *kurtosisBackendLogClient) GetUserServiceGuids(ctx context.Context) (map[service.ServiceGUID]bool, error) {
-	logrus.Warnf("Unable to get the exhaustive list of service GUIDs for this backend. Empty list will be returned.")
-	return map[service.ServiceGUID]bool{}, nil
+func (client *kurtosisBackendLogClient) FilterExistingServiceGuids(ctx context.Context, enclaveId enclave.EnclaveID, userServiceGuids map[service.ServiceGUID]bool) (map[service.ServiceGUID]bool, error) {
+	logrus.Warnf("Unable to get the exhaustive list of service GUIDs for this backend. Original list of service GUIDs will be returned.")
+	return userServiceGuids, nil
 }
 
 // ====================================================================================================
