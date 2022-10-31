@@ -131,7 +131,7 @@ func (enclaveCtx *EnclaveContext) DefineFact(recipe *kurtosis_core_rpc_api_bindi
 	defineFactArgs := binding_constructors.NewDefineFactArgs(recipe)
 	defineFactResponse, err := enclaveCtx.client.DefineFact(context.Background(), defineFactArgs)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Unexpected error happened defining fact\n")
+		return nil, stacktrace.Propagate(err, "Unexpected error happened defining fact")
 	}
 	return defineFactResponse, nil
 }
@@ -140,7 +140,7 @@ func (enclaveCtx *EnclaveContext) GetFactValues(serviceId string, factName strin
 	factValuesArgs := binding_constructors.GetFactValuesArgs(serviceId, factName)
 	factValuesResponse, err := enclaveCtx.client.GetFactValues(context.Background(), factValuesArgs)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Unexpected error happened getting fact values '%v' '%v'\n", serviceId, factName)
+		return nil, stacktrace.Propagate(err, "Unexpected error happened getting fact values '%v' '%v'", serviceId, factName)
 	}
 	return factValuesResponse, nil
 }
