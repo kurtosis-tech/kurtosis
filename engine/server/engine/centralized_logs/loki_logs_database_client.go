@@ -235,6 +235,8 @@ func (client *lokiLogsDatabaseClient) StreamUserServiceLogs(
 		readLokiStreamHasFinishedSignaller,
 	)
 
+	websocketTimeOutReachedTicker := time.NewTicker(maxAllowedWebsocketConnectionDurationOnServerSide)
+
 	go runStreamCancellationRoutine(
 		ctx,
 		callerHasCanceledStreamingLogsSignaller,
@@ -242,6 +244,7 @@ func (client *lokiLogsDatabaseClient) StreamUserServiceLogs(
 		tailLogsWebsocketConn,
 		logsByKurtosisUserServiceGuidChan,
 		streamTreadErrChan,
+		websocketTimeOutReachedTicker,
 	)
 
 	cancelStreamUserServiceLogsFunc := func () { callerHasCanceledStreamingLogsSignaller <- struct {}{} }
@@ -299,6 +302,7 @@ func runStreamCancellationRoutine(
 	tailLogsWebsocketConn *websocket.Conn,
 	logsByKurtosisUserServiceGuidChan chan map[service.ServiceGUID][]LogLine,
 	errChan chan error,
+	websocketTimeOutReachedTicker *time.Ticker,
 ) {
 	defer func() {
 		if err := tailLogsWebsocketConn.Close(); err != nil {
@@ -324,7 +328,7 @@ func runStreamCancellationRoutine(
 			logrus.Debug("Reading user service logs from Loki has finished")
 			return
 		//the time-out is reached
-		case <-time.Tick(maxAllowedWebsocketConnectionDurationOnServerSide):
+		case <-websocketTimeOutReachedTicker.C:
 			logrus.Debugf("The max allowed websocket connection duration '%v hours' has been reached", maxAllowedWebsocketConnectionDurationOnServerSide.Hours())
 			return
 		}
