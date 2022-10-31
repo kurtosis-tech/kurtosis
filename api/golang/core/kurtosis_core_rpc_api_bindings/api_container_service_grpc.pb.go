@@ -325,7 +325,6 @@ type ApiContainerServiceServer interface {
 	StoreFilesArtifactFromService(context.Context, *StoreFilesArtifactFromServiceArgs) (*StoreFilesArtifactFromServiceResponse, error)
 	// Renders the templates and their data to a files artifact in the Kurtosis File System
 	RenderTemplatesToFilesArtifact(context.Context, *RenderTemplatesToFilesArtifactArgs) (*RenderTemplatesToFilesArtifactResponse, error)
-	mustEmbedUnimplementedApiContainerServiceServer()
 }
 
 // UnimplementedApiContainerServiceServer must be embedded to have forward compatible implementations.
