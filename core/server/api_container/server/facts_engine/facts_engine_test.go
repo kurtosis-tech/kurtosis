@@ -115,6 +115,6 @@ func TestFactRecipeFetchValueAfter(t *testing.T) {
 	require.Nil(t, err)
 	require.NotEmpty(t, fetchedFactValues)
 	require.Greater(t, fetchedFactValues[len(fetchedFactValues)-1].GetUpdatedAt().AsTime().UnixNano(), fetchedFactValues[0].GetUpdatedAt().AsTime().UnixNano())
-	require.Equal(t, fetchedFactValues[0].GetStringValue(), fetchedFactValues[0].GetStringValue())
+	require.Equal(t, fetchedFactValues[0].GetStringValue(), factValue.GetStringValue())
 
 }
