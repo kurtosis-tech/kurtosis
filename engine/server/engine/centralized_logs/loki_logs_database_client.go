@@ -71,7 +71,7 @@ const (
 
 	oneHourLess = -time.Hour
 
-	logsByKurtosisUserServiceGuidChanBuffSize = 2
+	logsByKurtosisUserServiceGuidChanBuffSize = 5
 	errorChanBuffSize = 2
 )
 
