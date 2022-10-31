@@ -183,39 +183,100 @@ func (service *EngineServerService) StreamUserServiceLogs(
 		return stacktrace.NewError("It's not possible to return user service logs because there is not logs database client; this is bug in Kurtosis")
 	}
 
-	userServiceLogsByServiceGuidChan, errChan, err := service.logsDatabaseClient.StreamUserServiceLogs(stream.Context(), enclaveId, requestedUserServiceGuids)
+	userServiceLogsByServiceGuidChan, errChan, cancelLogsDatabaseStreamFunc, err := service.logsDatabaseClient.StreamUserServiceLogs(stream.Context(), enclaveId, requestedUserServiceGuids)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred streaming user service logs for GUIDs '%+v' in enclave with ID '%v'", requestedUserServiceGuids, enclaveId)
 	}
 
+	//this channel will produce a signal when the logs database read stream thread has finished
+	readLogsDatabaseHasFinishedSignaller := make(chan struct{})
+
+	go runStreamUserServiceLogsRoutine(
+		requestedUserServiceGuids,
+		userServiceLogsByServiceGuidChan,
+		errChan,
+		stream,
+		readLogsDatabaseHasFinishedSignaller,
+	)
+
+	go runStreamCancellationRoutine(
+		stream,
+		errChan,
+		readLogsDatabaseHasFinishedSignaller,
+		cancelLogsDatabaseStreamFunc,
+	)
+
+	return nil
+}
+
+func runStreamUserServiceLogsRoutine(
+	requestedUserServiceGuids map[user_service.ServiceGUID]bool,
+	userServiceLogsByServiceGuidChan chan map[user_service.ServiceGUID][]centralized_logs.LogLine,
+	errChan chan error,
+	stream kurtosis_engine_rpc_api_bindings.EngineService_StreamUserServiceLogsServer,
+	readLogsDatabaseHasFinishedSignaller chan struct{},
+) {
+	for {
+		userServiceLogsByServiceGuid := <-userServiceLogsByServiceGuidChan
+		getUserServiceLogsResponse := newUserLogsResponseFromUserServiceLogsByGuid(requestedUserServiceGuids, userServiceLogsByServiceGuid)
+		if err := stream.Send(getUserServiceLogsResponse); err != nil {
+			errChan <- stacktrace.Propagate(err, "An error occurred sending the stream logs for user service logs response '%+v'", getUserServiceLogsResponse)
+			break
+		}
+	}
+
+	readLogsDatabaseHasFinishedSignaller <- struct{}{}
+}
+
+func runStreamCancellationRoutine(
+	stream kurtosis_engine_rpc_api_bindings.EngineService_StreamUserServiceLogsServer,
+	errChan chan error,
+	readLogsDatabaseHasFinishedSignaller chan struct{},
+	cancelLogsDatabaseStreamFunc func(),
+) {
+	defer cancelLogsDatabaseStreamFunc()
+
 	for  {
 		select {
-		case userServiceLogsByServiceGuid := <-userServiceLogsByServiceGuidChan:
-			getUserServiceLogsResponse := newUserLogsResponseFromUserServiceLogsByGuid(requestedUserServiceGuids, userServiceLogsByServiceGuid)
-			if err = stream.Send(getUserServiceLogsResponse); err != nil {
-				return stacktrace.Propagate(err, "An error occurred sending the stream logs for user service logs response '%+v'", getUserServiceLogsResponse)
-			}
 		case <-stream.Context().Done():
-			return stacktrace.Propagate(stream.Context().Err(), "An error occurred streaming user service logs, the stream context has done")
-		case errFromChan := <- errChan:
-			return stacktrace.Propagate(errFromChan, "An error occurred streaming user service logs")
+			logrus.Debug("The user service logs stream has done")
+			return
+		case err := <- errChan:
+			logrus.Errorf("An error occurred streaming user service logs. Err:\n%v", err)
+			return
+		case <-readLogsDatabaseHasFinishedSignaller:
+			logrus.Debug("Received the read logs database has finished signal")
+			return
 		}
 	}
 }
 
-func newUserLogsResponseFromUserServiceLogsByGuid(requestedUserServiceGuids map[user_service.ServiceGUID]bool, userServiceLogsByUserServiceGuid map[user_service.ServiceGUID][]string) *kurtosis_engine_rpc_api_bindings.GetUserServiceLogsResponse {
+func newUserLogsResponseFromUserServiceLogsByGuid(requestedUserServiceGuids map[user_service.ServiceGUID]bool, userServiceLogsByUserServiceGuid map[user_service.ServiceGUID][]centralized_logs.LogLine) *kurtosis_engine_rpc_api_bindings.GetUserServiceLogsResponse {
 	userServiceLogLinesByGuid := make(map[string]*kurtosis_engine_rpc_api_bindings.LogLine, len(userServiceLogsByUserServiceGuid))
 
 	for userServiceGuid := range requestedUserServiceGuids {
 		userServiceGuidStr := string(userServiceGuid)
-		userServiceLogLinesStr, found := userServiceLogsByUserServiceGuid[userServiceGuid]
+		userServiceLogLines, found := userServiceLogsByUserServiceGuid[userServiceGuid]
 		if !found {
 			userServiceLogLinesByGuid[userServiceGuidStr] = &kurtosis_engine_rpc_api_bindings.LogLine{}
 		}
-		logLines := &kurtosis_engine_rpc_api_bindings.LogLine{Line: userServiceLogLinesStr}
+		logLines := newRPCBindingsLogLineFromLogLines(userServiceLogLines)
 		userServiceLogLinesByGuid[userServiceGuidStr] = logLines
 	}
 
 	getUserServiceLogsResponse := &kurtosis_engine_rpc_api_bindings.GetUserServiceLogsResponse{UserServiceLogsByUserServiceGuid: userServiceLogLinesByGuid}
 	return getUserServiceLogsResponse
+}
+
+func newRPCBindingsLogLineFromLogLines(logLines []centralized_logs.LogLine) *kurtosis_engine_rpc_api_bindings.LogLine {
+
+	logLinesStr := make([]string, len(logLines))
+
+	for _, logLine := range logLines {
+		logLinesStr = append(logLinesStr, logLine.GetContent())
+	}
+
+	rpcBindingsLogLines := &kurtosis_engine_rpc_api_bindings.LogLine{Line: logLinesStr}
+
+	return rpcBindingsLogLines
 }

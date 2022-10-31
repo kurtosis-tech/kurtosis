@@ -3,6 +3,7 @@ package centralized_logs
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/gorilla/websocket"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_database_functions/implementations/loki"
@@ -99,7 +100,7 @@ type lokiStreamLogsResponse struct {
 	Streams []lokiStreamValue `json:"streams"`
 }
 
-type logLine struct {
+type LokiLogLine struct {
 	Log string `json:"log"`
 }
 
@@ -129,7 +130,7 @@ func (client *lokiLogsDatabaseClient) GetUserServiceLogs(
 	enclaveID enclave.EnclaveID,
 	userServiceGUIDs map[service.ServiceGUID]bool,
 ) (
-	map[service.ServiceGUID][]string,
+	map[service.ServiceGUID][]LogLine,
 	error,
 ) {
 
@@ -196,67 +197,110 @@ func (client *lokiLogsDatabaseClient) StreamUserServiceLogs(
 	enclaveID enclave.EnclaveID,
 	userServiceGUIDs map[service.ServiceGUID]bool,
 ) (
-	chan map[service.ServiceGUID][]string,
+	chan map[service.ServiceGUID][]LogLine,
 	chan error,
+	func(),
 	error,
 ) {
 
 	tailLogsEndpointURL, httpHeaderWithTenantID := client.getTailLogEndpointURLAndHeader(enclaveID, userServiceGUIDs)
 
-	websocketDeadlineTime := getWebsocketDeadlineTime()
+	//this channel will return the user service log lines by service GUI
+	logsByKurtosisUserServiceGuidChan := make(chan map[service.ServiceGUID][]LogLine, logsByKurtosisUserServiceGuidChanBuffSize)
 
-	websocketCallCtxWithDeadline, websocketCallCtxCancelFunc := context.WithDeadline(ctx, websocketDeadlineTime)
-	//We need to cancel the websocket connection only if something fails because we need the connection open after returning
-	shouldCancelWebsocketCall := false
-	defer func() {
-		if shouldCancelWebsocketCall {
-			websocketCallCtxCancelFunc()
-		}
-	}()
+	//this channel return an error if the stream tread fails
+	streamTreadErrChan := make(chan error, errorChanBuffSize)
 
-	logsByKurtosisUserServiceGuidChan := make(chan map[service.ServiceGUID][]string, logsByKurtosisUserServiceGuidChanBuffSize)
-	errChan := make(chan error, errorChanBuffSize)
+	//this channel will produce a signal when the method caller says "I no longer want data"
+	callerHasCanceledStreamingLogsSignaller := make(chan struct{})
 
-	tailLogsWebsocketConn, tailLogsHttpResponse, err := websocket.DefaultDialer.DialContext(websocketCallCtxWithDeadline, tailLogsEndpointURL.String(), httpHeaderWithTenantID)
+	//this channel will produce a signal when the loki's read stream thread has finished
+	readLokiStreamHasFinishedSignaller := make(chan struct{})
+
+
+	tailLogsWebsocketConn, tailLogsHttpResponse, err := websocket.DefaultDialer.DialContext(ctx, tailLogsEndpointURL.String(), httpHeaderWithTenantID)
 	if err != nil {
-		shouldCancelWebsocketCall = true
 		errMsg := fmt.Sprintf("An error occurred calling the logs-database-tail-logs-endpoint with URL '%v' using headers '%+v'", tailLogsEndpointURL.String(), httpHeaderWithTenantID)
 		if tailLogsHttpResponse != nil {
 			errMsg = fmt.Sprintf("%v; the '%v' status code was received from the server", errMsg, tailLogsHttpResponse.StatusCode)
 		}
-		return nil, nil, stacktrace.Propagate(err, errMsg)
+		return nil, nil, nil, stacktrace.Propagate(err, errMsg)
 	}
 
-	if err = tailLogsWebsocketConn.SetReadDeadline(websocketDeadlineTime); err != nil {
-		shouldCancelWebsocketCall = true
-		return nil, nil, stacktrace.Propagate(err, "An error occurred setting the websocket read deadline time '%v'", websocketDeadlineTime.String())
-	}
-
-	go readStreamResponseAndAddUserServiceLogLinesToUserServiceLogsChannel(
-		websocketCallCtxWithDeadline,
-		websocketCallCtxCancelFunc,
+	go runReadStreamResponseAndAddUserServiceLogLinesToUserServiceLogsChannel(
+		ctx,
 		tailLogsWebsocketConn,
 		logsByKurtosisUserServiceGuidChan,
-		errChan,
+		streamTreadErrChan,
+		readLokiStreamHasFinishedSignaller,
 	)
 
-	return logsByKurtosisUserServiceGuidChan, errChan, nil
+	go runStreamCancellationRoutine(
+		ctx,
+		callerHasCanceledStreamingLogsSignaller,
+		readLokiStreamHasFinishedSignaller,
+		tailLogsWebsocketConn,
+		logsByKurtosisUserServiceGuidChan,
+		streamTreadErrChan,
+	)
+
+	cancelStreamUserServiceLogsFunc := func () { callerHasCanceledStreamingLogsSignaller <- struct {}{} }
+
+	return logsByKurtosisUserServiceGuidChan, streamTreadErrChan, cancelStreamUserServiceLogsFunc, nil
 }
 
 // ====================================================================================================
 //                                       Private helper functions
 // ====================================================================================================
-func readStreamResponseAndAddUserServiceLogLinesToUserServiceLogsChannel(
-	websocketCallCtxWithDeadline context.Context,
-	websocketCallCtxCancelFunc context.CancelFunc,
+func runReadStreamResponseAndAddUserServiceLogLinesToUserServiceLogsChannel(
+	ctx context.Context,
 	tailLogsWebsocketConn *websocket.Conn,
-	logsByKurtosisUserServiceGuidChan chan map[service.ServiceGUID][]string,
+	logsByKurtosisUserServiceGuidChan chan map[service.ServiceGUID][]LogLine,
 	errChan chan error,
+	readLokiStreamHasFinishedSignaller chan struct{},
 ) {
 
+	for {
+
+		streamResponse := &lokiStreamLogsResponse{}
+
+		if err := tailLogsWebsocketConn.ReadJSON(streamResponse); err != nil {
+			logrus.Debugf("Reading the tail logs streams response has retunerd the following error:\n'%v'", err)
+
+			if errors.Is(ctx.Err(), context.Canceled){
+				logrus.Debugf("Reading the tail logs streams context has been canceled")
+				break
+			}
+
+			readTailLogsStreamsJsonErr := stacktrace.Propagate(err, "An error occurred reading the websocket endpoint")
+			if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
+				logrus.Debugf("Reading the tail logs streams has reached the time out, error description:\n'%v'", err)
+			}
+			errChan <- readTailLogsStreamsJsonErr
+			break
+		}
+
+		resultLogsByKurtosisUserServiceGuid, err := newUserServiceLogLinesByUserServiceGuidFromLokiStreams(streamResponse.Streams)
+		if err != nil {
+			errChan <-  stacktrace.Propagate(err, "An error occurred getting user service log lines from loki streams '%+v'", streamResponse.Streams)
+			break
+		}
+
+		logsByKurtosisUserServiceGuidChan <- resultLogsByKurtosisUserServiceGuid
+	}
+
+	readLokiStreamHasFinishedSignaller <- struct{}{}
+}
+
+func runStreamCancellationRoutine(
+	ctx context.Context,
+	callerHasCanceledStreamingLogsSignaller chan struct{},
+	readLokiStreamHasFinishedSignaller chan struct{},
+	tailLogsWebsocketConn *websocket.Conn,
+	logsByKurtosisUserServiceGuidChan chan map[service.ServiceGUID][]LogLine,
+	errChan chan error,
+) {
 	defer func() {
-		//Closing open resources at the end
-		websocketCallCtxCancelFunc()
 		if err := tailLogsWebsocketConn.Close(); err != nil {
 			logrus.Warnf("We tried to close the tail logs websocket connection, but doing so threw an error:\n%v", err)
 		}
@@ -264,33 +308,25 @@ func readStreamResponseAndAddUserServiceLogLinesToUserServiceLogsChannel(
 		close(errChan)
 	}()
 
+	//Handle all the possible cancellation alternatives
 	for {
 		select {
-
-		case <-websocketCallCtxWithDeadline.Done():
-			errChan <- stacktrace.Propagate(websocketCallCtxWithDeadline.Err(), "An error occurred streaming user service logs from the Loki logs database client, the stream context has done")
+		//requested by the user
+		case <-callerHasCanceledStreamingLogsSignaller:
+			logrus.Debug("Loki logs database client caller has canceled the user service logs stream")
 			return
-
-		default:
-			streamResponse := &lokiStreamLogsResponse{}
-
-			if err := tailLogsWebsocketConn.ReadJSON(streamResponse); err != nil {
-				logrus.Debugf("Reading the tail logs streams response has retunerd the following error:\n'%v'", err)
-				readTailLogsStreamsJsonErr := stacktrace.Propagate(err, "An error occurred reading the websocket endpoint")
-				if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
-					logrus.Debugf("Reading the tail logs streams has reached the time out, error description:\n'%v'", err)
-				}
-				errChan <- readTailLogsStreamsJsonErr
-				return
-			}
-
-			resultLogsByKurtosisUserServiceGuid, err := newUserServiceLogLinesByUserServiceGuidFromLokiStreams(streamResponse.Streams)
-			if err != nil {
-				errChan <-  stacktrace.Propagate(err, "An error occurred getting user service log lines from loki streams '%+v'", streamResponse.Streams)
-				return
-			}
-
-			logsByKurtosisUserServiceGuidChan <- resultLogsByKurtosisUserServiceGuid
+		//stream logs has reach out the end
+		case <-readLokiStreamHasFinishedSignaller:
+			logrus.Debug("Reading user service logs from Loki has finished")
+			return
+		//the context is done
+		case <-ctx.Done():
+			logrus.Debug("Reading user service logs from Loki has finished")
+			return
+		//the time-out is reached
+		case <-time.Tick(maxAllowedWebsocketConnectionDurationOnServerSide):
+			logrus.Debugf("The max allowed websocket connection duration '%v hours' has been reached", maxAllowedWebsocketConnectionDurationOnServerSide.Hours())
+			return
 		}
 	}
 }
@@ -445,45 +481,41 @@ func getStartTimeForStreamingLogsParaValue() string {
 	return startTimeNanoStr
 }
 
-func newUserServiceLogLinesByUserServiceGuidFromLokiStreams(lokiStreams []lokiStreamValue) (map[service.ServiceGUID][]string, error) {
+func newUserServiceLogLinesByUserServiceGuidFromLokiStreams(lokiStreams []lokiStreamValue) (map[service.ServiceGUID][]LogLine, error) {
 
-	resultLogsByKurtosisUserServiceGuid := map[service.ServiceGUID][]string{}
+	resultLogsByKurtosisUserServiceGuid := map[service.ServiceGUID][]LogLine{}
 
 	for _, queryRangeResult := range lokiStreams {
 		resultKurtosisGuidStr := queryRangeResult.Stream.KurtosisGUID
 		resultKurtosisGuid := service.ServiceGUID(resultKurtosisGuidStr)
-		resultKurtosisGuidLogLinesStr := make([]string, len(queryRangeResult.Values))
+		resultKurtosisGuidLogLines := make([]LogLine, len(queryRangeResult.Values))
 		for queryRangeIndex, queryRangeValue := range queryRangeResult.Values {
-			logLineStr, err := newLogLineStrFromStreamValue(queryRangeValue)
+			logLineObj, err := newLogLineFromStreamValue(queryRangeValue)
 			if err != nil {
 				return nil, stacktrace.Propagate(err, "An error occurred getting log line string from stream value '%+v'", queryRangeValue)
 			}
-			resultKurtosisGuidLogLinesStr[queryRangeIndex] = logLineStr
+			resultKurtosisGuidLogLines[queryRangeIndex] = *logLineObj
 		}
-		resultLogsByKurtosisUserServiceGuid[resultKurtosisGuid] = resultKurtosisGuidLogLinesStr
+		resultLogsByKurtosisUserServiceGuid[resultKurtosisGuid] = resultKurtosisGuidLogLines
 	}
 
 	return resultLogsByKurtosisUserServiceGuid, nil
 }
 
-func newLogLineStrFromStreamValue(streamValue []string) (string, error) {
+func newLogLineFromStreamValue(streamValue []string) (*LogLine, error) {
 	if len(streamValue) > streamValueNumOfItems {
-		return "", stacktrace.NewError("The stream value '%+v' should contains only 2 items but '%v' items were found, this should never happen; this is a bug in Kurtosis", streamValue, len(streamValue))
+		return nil, stacktrace.NewError("The stream value '%+v' should contains only 2 items but '%v' items were found, this should never happen; this is a bug in Kurtosis", streamValue, len(streamValue))
 	}
 
-	logLineStr := streamValue[streamValueLogLineIndex]
-	logLineBytes := []byte(logLineStr)
-	logLineObj := &logLine{}
+	lokiLogLineStr := streamValue[streamValueLogLineIndex]
+	lokiLogLineBytes := []byte(lokiLogLineStr)
+	lokiLogLine := &LokiLogLine{}
 
-	if err := json.Unmarshal(logLineBytes, logLineObj); err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred unmarshalling logline '%+v'", logLineObj)
+	if err := json.Unmarshal(lokiLogLineBytes, lokiLogLine); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred unmarshalling Loki log line '%+v'", lokiLogLine)
 	}
 
-	return logLineObj.Log, nil
-}
+	newLogLineObj := newLogLine(lokiLogLine.Log)
 
-func getWebsocketDeadlineTime() time.Time {
-	now := time.Now()
-	deadlineTime := now.Add(maxAllowedWebsocketConnectionDurationOnServerSide)
-	return deadlineTime
+	return newLogLineObj, nil
 }

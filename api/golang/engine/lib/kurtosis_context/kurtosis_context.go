@@ -211,6 +211,9 @@ func (kurtosisCtx *KurtosisContext) StreamUserServiceLogs(
 	error,
 ) {
 
+	//TODO we shouldn't use the request context, is prefered to create a new one
+	//TODO because the request context will die after calling this method ???
+	//TODO or is just ok to use this because if the context finished, it means that the stream should finish
 	ctxWithCancel, cancelCtxFunc := context.WithTimeout(ctx, maxAllowedWebsocketConnectionDurationOnClientSide)
 	shouldCancelCtx := false
 	defer func() {
