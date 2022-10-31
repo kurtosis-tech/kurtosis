@@ -95,7 +95,7 @@ func (engine *FactsEngine) FetchFactValuesAfter(factId FactId, afterTimestamp ti
 	timestampKey := []byte(getKeyFromTimestamp(afterTimestamp))
 	factValues, err := engine.getFactValues(factId, createSeekCursorInitializer(timestampKey), maxResultCount, cursorForwardStep)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occured when fetching lastest fact values for fact '%v'", factId)
+		return nil, stacktrace.Propagate(err, "An error occurred when fetching latest fact values for fact '%v' after timestamp '%v'", factId, afterTimestamp)
 	}
 	return factValues, nil
 }
