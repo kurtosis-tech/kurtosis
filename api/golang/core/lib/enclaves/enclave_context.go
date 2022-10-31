@@ -131,7 +131,7 @@ func (enclaveCtx *EnclaveContext) DefineFact(recipe *kurtosis_core_rpc_api_bindi
 	defineFactArgs := binding_constructors.NewDefineFactArgs(recipe)
 	defineFactResponse, err := enclaveCtx.client.DefineFact(context.Background(), defineFactArgs)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Unexpected error happened defining fact")
+		return nil, stacktrace.Propagate(err, "Unexpected error happened defining fact '%v'", recipe.GetFactName())
 	}
 	return defineFactResponse, nil
 }
