@@ -134,7 +134,6 @@ type EngineServiceServer interface {
 	Clean(context.Context, *CleanArgs) (*CleanResponse, error)
 	// Get user service logs
 	GetUserServiceLogs(context.Context, *GetUserServiceLogsArgs) (*GetUserServiceLogsResponse, error)
-	mustEmbedUnimplementedEngineServiceServer()
 }
 
 // UnimplementedEngineServiceServer must be embedded to have forward compatible implementations.
