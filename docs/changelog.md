@@ -1,5 +1,8 @@
 # TBD
 
+### Features
+- Added an `import_types` Starlark instruction to read types from a .proto file inside a module
+
 # 0.51.5
 ### Fixes
 - Testsuite CircleCI jobs also short-circuit if the only changes are to docs, to prevent them failing due to no CLI artifact
@@ -23,7 +26,7 @@
 ### Features
 - Added a `render_templates` command to Startosis
 - Implemented backend for facts engine
-- Added a `proto_file_store` in charge of compiling Startosis module's .proto file on the fly and storing their FileDescriptorSet in memory 
+- Added a `proto_file_store` in charge of compiling Startosis module's .proto file on the fly and storing their FileDescriptorSet in memory
 
 ### Changes
 - Simplified own-version constant generation by checking in `kurtosis_version` directory
