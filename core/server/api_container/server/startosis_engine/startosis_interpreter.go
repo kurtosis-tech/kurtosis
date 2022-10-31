@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/import_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/exec"
@@ -13,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/store_files_from_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_modules"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_modules/proto_compiler"
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/resolve"
 	"go.starlark.net/starlark"
@@ -37,6 +39,7 @@ type StartosisInterpreter struct {
 	moduleGlobalsCache map[string]*startosis_modules.ModuleCacheEntry
 	// TODO AUTH there will be a leak here in case people with different repo visibility access a module
 	moduleContentProvider startosis_modules.ModuleContentProvider
+	protoFileStore        *proto_compiler.ProtoFileStore
 }
 
 type SerializedInterpretationOutput string
@@ -47,6 +50,7 @@ func NewStartosisInterpreter(serviceNetwork service_network.ServiceNetwork, modu
 		serviceNetwork:        serviceNetwork,
 		moduleContentProvider: moduleContentProvider,
 		moduleGlobalsCache:    make(map[string]*startosis_modules.ModuleCacheEntry),
+		protoFileStore:        proto_compiler.NewProtoFileStore(moduleContentProvider),
 	}
 }
 
@@ -88,6 +92,7 @@ func (interpreter *StartosisInterpreter) buildBindings(threadName string, instru
 		read_file.ReadFileBuiltinName:                            starlark.NewBuiltin(read_file.ReadFileBuiltinName, read_file.GenerateReadFileBuiltin(instructionsQueue, interpreter.moduleContentProvider)),
 		render_templates.RenderTemplatesBuiltinName:              starlark.NewBuiltin(render_templates.RenderTemplatesBuiltinName, render_templates.GenerateRenderTemplatesBuiltin(instructionsQueue, interpreter.serviceNetwork)),
 		starlarkjson.Module.Name:                                 starlarkjson.Module,
+		import_types.ImportTypesBuiltinName:                      starlark.NewBuiltin(import_types.ImportTypesBuiltinName, import_types.GenerateImportTypesBuiltin(interpreter.protoFileStore)),
 	}
 
 	return thread, builtins

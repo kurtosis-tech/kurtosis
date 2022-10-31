@@ -4,7 +4,7 @@ import "io"
 
 const (
 	lineBreakStr = "\n"
-	userServiceLogLineChanBufferSize = 2
+	userServiceLogLineChanBufferSize = 5
 )
 
 type UserServiceLogsReadCloser struct {

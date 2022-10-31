@@ -16,7 +16,7 @@ const (
 	getUserServiceLogsShouldFollowLogsOption    = false
 	streamUserServiceLogsShouldFollowLogsOption = true
 
-	logsByKurtosisUserServiceGuidChanBufferSize = 2
+	logsByKurtosisUserServiceGuidChanBufferSize = 5
 	errorChanBufferSize = 2
 )
 
