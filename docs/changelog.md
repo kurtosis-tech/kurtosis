@@ -10,13 +10,14 @@
 # 0.51.4
 ### Fixes
 - Fixed a bug in `GetLogsCollector` that was failing when there is an old logs collector container running that doesn't publish the TCP port
+- Add missing bindings to Kubernetes gateway
 
 ### Changes
 - Adding/removing methods from `.proto` files will now be compile errors in Go code, rather than failing at runtime
 - Consolidated the core & engine Protobuf regeneration scripts into a single one
 
-### Fixes
-- Add missing bindings to Kubernetes gateway
+### Features
+- Validate service IDs on Startosis commands
 
 # 0.51.3
 ### Fixes
