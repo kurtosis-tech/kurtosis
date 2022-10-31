@@ -249,7 +249,12 @@ func (engine *FactsEngine) runRecipe(recipe *kurtosis_core_rpc_api_bindings.Fact
 			recipe.GetHttpRequestFact().GetEndpoint(),
 			recipe.GetHttpRequestFact().GetBody(),
 		)
-		defer response.Body.Close()
+		defer func() {
+			err := response.Body.Close()
+			if err != nil {
+				logrus.Errorf("An error occurred when closing response body: %v", err)
+			}
+		}()
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred when running HTTP request recipe")
 		}
