@@ -8747,7 +8747,7 @@ proto.api_container_api.GetFactValuesArgs.deserializeBinaryFromReader = function
       var value = /** @type {string} */ (reader.readString());
       msg.setFactName(value);
       break;
-    case 9:
+    case 3:
       var value = new google_protobuf_timestamp_pb.Timestamp;
       reader.readMessage(value,google_protobuf_timestamp_pb.Timestamp.deserializeBinaryFromReader);
       msg.setStartingFrom(value);
@@ -8798,7 +8798,7 @@ proto.api_container_api.GetFactValuesArgs.serializeBinaryToWriter = function(mes
   f = message.getStartingFrom();
   if (f != null) {
     writer.writeMessage(
-      9,
+      3,
       f,
       google_protobuf_timestamp_pb.Timestamp.serializeBinaryToWriter
     );
@@ -8843,12 +8843,12 @@ proto.api_container_api.GetFactValuesArgs.prototype.setFactName = function(value
 
 
 /**
- * optional google.protobuf.Timestamp starting_from = 9;
+ * optional google.protobuf.Timestamp starting_from = 3;
  * @return {?proto.google.protobuf.Timestamp}
  */
 proto.api_container_api.GetFactValuesArgs.prototype.getStartingFrom = function() {
   return /** @type{?proto.google.protobuf.Timestamp} */ (
-    jspb.Message.getWrapperField(this, google_protobuf_timestamp_pb.Timestamp, 9));
+    jspb.Message.getWrapperField(this, google_protobuf_timestamp_pb.Timestamp, 3));
 };
 
 
@@ -8857,7 +8857,7 @@ proto.api_container_api.GetFactValuesArgs.prototype.getStartingFrom = function()
  * @return {!proto.api_container_api.GetFactValuesArgs} returns this
 */
 proto.api_container_api.GetFactValuesArgs.prototype.setStartingFrom = function(value) {
-  return jspb.Message.setWrapperField(this, 9, value);
+  return jspb.Message.setWrapperField(this, 3, value);
 };
 
 
@@ -8875,7 +8875,7 @@ proto.api_container_api.GetFactValuesArgs.prototype.clearStartingFrom = function
  * @return {boolean}
  */
 proto.api_container_api.GetFactValuesArgs.prototype.hasStartingFrom = function() {
-  return jspb.Message.getField(this, 9) != null;
+  return jspb.Message.getField(this, 3) != null;
 };
 
 
@@ -8962,7 +8962,7 @@ proto.api_container_api.GetFactValuesResponse.deserializeBinaryFromReader = func
       reader.readMessage(value,proto.api_container_api.FactValue.deserializeBinaryFromReader);
       msg.addFactValues(value);
       break;
-    case 10:
+    case 2:
       var value = new google_protobuf_timestamp_pb.Timestamp;
       reader.readMessage(value,google_protobuf_timestamp_pb.Timestamp.deserializeBinaryFromReader);
       msg.setLastTimestampFromPage(value);
@@ -9007,7 +9007,7 @@ proto.api_container_api.GetFactValuesResponse.serializeBinaryToWriter = function
   f = message.getLastTimestampFromPage();
   if (f != null) {
     writer.writeMessage(
-      10,
+      2,
       f,
       google_protobuf_timestamp_pb.Timestamp.serializeBinaryToWriter
     );
@@ -9054,12 +9054,12 @@ proto.api_container_api.GetFactValuesResponse.prototype.clearFactValuesList = fu
 
 
 /**
- * optional google.protobuf.Timestamp last_timestamp_from_page = 10;
+ * optional google.protobuf.Timestamp last_timestamp_from_page = 2;
  * @return {?proto.google.protobuf.Timestamp}
  */
 proto.api_container_api.GetFactValuesResponse.prototype.getLastTimestampFromPage = function() {
   return /** @type{?proto.google.protobuf.Timestamp} */ (
-    jspb.Message.getWrapperField(this, google_protobuf_timestamp_pb.Timestamp, 10));
+    jspb.Message.getWrapperField(this, google_protobuf_timestamp_pb.Timestamp, 2));
 };
 
 
@@ -9068,7 +9068,7 @@ proto.api_container_api.GetFactValuesResponse.prototype.getLastTimestampFromPage
  * @return {!proto.api_container_api.GetFactValuesResponse} returns this
 */
 proto.api_container_api.GetFactValuesResponse.prototype.setLastTimestampFromPage = function(value) {
-  return jspb.Message.setWrapperField(this, 10, value);
+  return jspb.Message.setWrapperField(this, 2, value);
 };
 
 
@@ -9086,7 +9086,7 @@ proto.api_container_api.GetFactValuesResponse.prototype.clearLastTimestampFromPa
  * @return {boolean}
  */
 proto.api_container_api.GetFactValuesResponse.prototype.hasLastTimestampFromPage = function() {
-  return jspb.Message.getField(this, 10) != null;
+  return jspb.Message.getField(this, 2) != null;
 };
 
 
@@ -9189,7 +9189,7 @@ proto.api_container_api.FactValue.deserializeBinaryFromReader = function(msg, re
       var value = /** @type {string} */ (reader.readString());
       msg.setStringValue(value);
       break;
-    case 10:
+    case 2:
       var value = new google_protobuf_timestamp_pb.Timestamp;
       reader.readMessage(value,google_protobuf_timestamp_pb.Timestamp.deserializeBinaryFromReader);
       msg.setUpdatedAt(value);
@@ -9233,7 +9233,7 @@ proto.api_container_api.FactValue.serializeBinaryToWriter = function(message, wr
   f = message.getUpdatedAt();
   if (f != null) {
     writer.writeMessage(
-      10,
+      2,
       f,
       google_protobuf_timestamp_pb.Timestamp.serializeBinaryToWriter
     );
@@ -9278,12 +9278,12 @@ proto.api_container_api.FactValue.prototype.hasStringValue = function() {
 
 
 /**
- * optional google.protobuf.Timestamp updated_at = 10;
+ * optional google.protobuf.Timestamp updated_at = 2;
  * @return {?proto.google.protobuf.Timestamp}
  */
 proto.api_container_api.FactValue.prototype.getUpdatedAt = function() {
   return /** @type{?proto.google.protobuf.Timestamp} */ (
-    jspb.Message.getWrapperField(this, google_protobuf_timestamp_pb.Timestamp, 10));
+    jspb.Message.getWrapperField(this, google_protobuf_timestamp_pb.Timestamp, 2));
 };
 
 
@@ -9292,7 +9292,7 @@ proto.api_container_api.FactValue.prototype.getUpdatedAt = function() {
  * @return {!proto.api_container_api.FactValue} returns this
 */
 proto.api_container_api.FactValue.prototype.setUpdatedAt = function(value) {
-  return jspb.Message.setWrapperField(this, 10, value);
+  return jspb.Message.setWrapperField(this, 2, value);
 };
 
 
@@ -9310,7 +9310,7 @@ proto.api_container_api.FactValue.prototype.clearUpdatedAt = function() {
  * @return {boolean}
  */
 proto.api_container_api.FactValue.prototype.hasUpdatedAt = function() {
-  return jspb.Message.getField(this, 10) != null;
+  return jspb.Message.getField(this, 2) != null;
 };
 
 
@@ -9657,8 +9657,7 @@ proto.api_container_api.HttpRequestFactRecipe.toObject = function(includeInstanc
     endpoint: jspb.Message.getFieldWithDefault(msg, 2, ""),
     method: jspb.Message.getFieldWithDefault(msg, 3, 0),
     contentType: jspb.Message.getFieldWithDefault(msg, 4, ""),
-    body: jspb.Message.getFieldWithDefault(msg, 5, ""),
-    postProcessingStep: jspb.Message.getFieldWithDefault(msg, 6, "")
+    body: jspb.Message.getFieldWithDefault(msg, 5, "")
   };
 
   if (includeInstance) {
@@ -9714,10 +9713,6 @@ proto.api_container_api.HttpRequestFactRecipe.deserializeBinaryFromReader = func
     case 5:
       var value = /** @type {string} */ (reader.readString());
       msg.setBody(value);
-      break;
-    case 6:
-      var value = /** @type {string} */ (reader.readString());
-      msg.setPostProcessingStep(value);
       break;
     default:
       reader.skipField();
@@ -9780,13 +9775,6 @@ proto.api_container_api.HttpRequestFactRecipe.serializeBinaryToWriter = function
   if (f.length > 0) {
     writer.writeString(
       5,
-      f
-    );
-  }
-  f = message.getPostProcessingStep();
-  if (f.length > 0) {
-    writer.writeString(
-      6,
       f
     );
   }
@@ -9880,24 +9868,6 @@ proto.api_container_api.HttpRequestFactRecipe.prototype.getBody = function() {
  */
 proto.api_container_api.HttpRequestFactRecipe.prototype.setBody = function(value) {
   return jspb.Message.setProto3StringField(this, 5, value);
-};
-
-
-/**
- * optional string post_processing_step = 6;
- * @return {string}
- */
-proto.api_container_api.HttpRequestFactRecipe.prototype.getPostProcessingStep = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 6, ""));
-};
-
-
-/**
- * @param {string} value
- * @return {!proto.api_container_api.HttpRequestFactRecipe} returns this
- */
-proto.api_container_api.HttpRequestFactRecipe.prototype.setPostProcessingStep = function(value) {
-  return jspb.Message.setProto3StringField(this, 6, value);
 };
 
 
@@ -10025,7 +9995,7 @@ proto.api_container_api.FactRecipe.deserializeBinaryFromReader = function(msg, r
       reader.readMessage(value,proto.api_container_api.HttpRequestFactRecipe.deserializeBinaryFromReader);
       msg.setHttpRequestFact(value);
       break;
-    case 10:
+    case 6:
       var value = new google_protobuf_duration_pb.Duration;
       reader.readMessage(value,google_protobuf_duration_pb.Duration.deserializeBinaryFromReader);
       msg.setRefreshInterval(value);
@@ -10100,7 +10070,7 @@ proto.api_container_api.FactRecipe.serializeBinaryToWriter = function(message, w
   f = message.getRefreshInterval();
   if (f != null) {
     writer.writeMessage(
-      10,
+      6,
       f,
       google_protobuf_duration_pb.Duration.serializeBinaryToWriter
     );
@@ -10256,12 +10226,12 @@ proto.api_container_api.FactRecipe.prototype.hasHttpRequestFact = function() {
 
 
 /**
- * optional google.protobuf.Duration refresh_interval = 10;
+ * optional google.protobuf.Duration refresh_interval = 6;
  * @return {?proto.google.protobuf.Duration}
  */
 proto.api_container_api.FactRecipe.prototype.getRefreshInterval = function() {
   return /** @type{?proto.google.protobuf.Duration} */ (
-    jspb.Message.getWrapperField(this, google_protobuf_duration_pb.Duration, 10));
+    jspb.Message.getWrapperField(this, google_protobuf_duration_pb.Duration, 6));
 };
 
 
@@ -10270,7 +10240,7 @@ proto.api_container_api.FactRecipe.prototype.getRefreshInterval = function() {
  * @return {!proto.api_container_api.FactRecipe} returns this
 */
 proto.api_container_api.FactRecipe.prototype.setRefreshInterval = function(value) {
-  return jspb.Message.setWrapperField(this, 10, value);
+  return jspb.Message.setWrapperField(this, 6, value);
 };
 
 
@@ -10288,7 +10258,7 @@ proto.api_container_api.FactRecipe.prototype.clearRefreshInterval = function() {
  * @return {boolean}
  */
 proto.api_container_api.FactRecipe.prototype.hasRefreshInterval = function() {
-  return jspb.Message.getField(this, 10) != null;
+  return jspb.Message.getField(this, 6) != null;
 };
 
 

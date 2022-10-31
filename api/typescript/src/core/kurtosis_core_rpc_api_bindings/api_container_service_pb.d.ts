@@ -1049,7 +1049,7 @@ export namespace GetFactValuesArgs {
 
   export enum StartingFromCase { 
     _STARTING_FROM_NOT_SET = 0,
-    STARTING_FROM = 9,
+    STARTING_FROM = 3,
   }
 }
 
@@ -1166,9 +1166,6 @@ export class HttpRequestFactRecipe extends jspb.Message {
   getBody(): string;
   setBody(value: string): HttpRequestFactRecipe;
 
-  getPostProcessingStep(): string;
-  setPostProcessingStep(value: string): HttpRequestFactRecipe;
-
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): HttpRequestFactRecipe.AsObject;
   static toObject(includeInstance: boolean, msg: HttpRequestFactRecipe): HttpRequestFactRecipe.AsObject;
@@ -1184,7 +1181,6 @@ export namespace HttpRequestFactRecipe {
     method: HttpRequestMethod,
     contentType: string,
     body: string,
-    postProcessingStep: string,
   }
 }
 
@@ -1244,7 +1240,7 @@ export namespace FactRecipe {
 
   export enum RefreshIntervalCase { 
     _REFRESH_INTERVAL_NOT_SET = 0,
-    REFRESH_INTERVAL = 10,
+    REFRESH_INTERVAL = 6,
   }
 }
 

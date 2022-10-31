@@ -503,19 +503,19 @@ message DefineFactResponse {}
 message GetFactValuesArgs {
   string service_id = 1;
   string fact_name = 2;
-  optional google.protobuf.Timestamp starting_from = 9; // Defaults to returning the latest results
+  optional google.protobuf.Timestamp starting_from = 3; // Defaults to returning the latest results
 }
 
 message GetFactValuesResponse {
   repeated FactValue fact_values = 1;
-  google.protobuf.Timestamp last_timestamp_from_page = 10; // Defaults to returning the latest results
+  google.protobuf.Timestamp last_timestamp_from_page = 2; // Defaults to returning the latest results
 }
 
 message FactValue {
   oneof fact_value {
     string string_value = 1;
   }
-  google.protobuf.Timestamp updated_at = 10;
+  google.protobuf.Timestamp updated_at = 2;
 }
 
 message ConstantFactRecipe {
@@ -537,7 +537,6 @@ message HttpRequestFactRecipe {
   HttpRequestMethod method = 3;
   string content_type = 4;
   string body = 5;
-  string post_processing_step = 6;
 }
 
 message FactRecipe {
@@ -548,7 +547,7 @@ message FactRecipe {
     ExecFactRecipe exec_fact = 4;
     HttpRequestFactRecipe http_request_fact = 5;
   }
-  optional google.protobuf.Duration refresh_interval = 10; // Defaults to 2 seconds
+  optional google.protobuf.Duration refresh_interval = 6; // Defaults to 2 seconds
 }
 
 // ==============================================================================================
