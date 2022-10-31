@@ -22,12 +22,12 @@ func TestFactEngineLoop(t *testing.T) {
 	require.Nil(t, err)
 	db, err := bolt.Open(file.Name(), 0666, nil)
 	require.Nil(t, err)
-	defer func(db *bolt.DB) {
+	defer func() {
 		err := db.Close()
 		if err != nil {
 			require.Nil(t, err)
 		}
-	}(db)
+	}()
 	factsEngine := NewFactsEngine(db, service_network.NewEmptyMockServiceNetwork())
 	factsEngine.Start()
 	factValue := &kurtosis_core_rpc_api_bindings.FactValue{
@@ -42,7 +42,7 @@ func TestFactEngineLoop(t *testing.T) {
 	fetchedFactValues, err := factsEngine.FetchLatestFactValues("service_id.fact_name")
 	require.Nil(t, err)
 	require.NotEmpty(t, fetchedFactValues)
-	require.Equal(t, fetchedFactValues[len(fetchedFactValues)-1].GetStringValue(), factValue.GetStringValue())
+	require.Equal(t, factValue.GetStringValue(), fetchedFactValues[len(fetchedFactValues)-1].GetStringValue())
 }
 
 func TestFactRecipePersistence(t *testing.T) {
@@ -51,12 +51,12 @@ func TestFactRecipePersistence(t *testing.T) {
 	require.Nil(t, err)
 	db, err := bolt.Open(file.Name(), 0666, nil)
 	require.Nil(t, err)
-	defer func(db *bolt.DB) {
+	defer func() {
 		err := db.Close()
 		if err != nil {
 			require.Nil(t, err)
 		}
-	}(db)
+	}()
 	factsEngine := NewFactsEngine(db, service_network.NewEmptyMockServiceNetwork())
 	factsEngine.Start()
 	factValue := &kurtosis_core_rpc_api_bindings.FactValue{
@@ -84,22 +84,22 @@ func TestFactRecipePersistence(t *testing.T) {
 	fetchedFactValues, err := otherFactsEngine.FetchLatestFactValues("service_id.fact_name")
 	require.Nil(t, err)
 	require.NotEmpty(t, fetchedFactValues)
-	require.Greater(t, fetchedFactValues[len(fetchedFactValues)-1].GetUpdatedAt().AsTime().UnixNano(), secondEngineTimestamp)
+	require.Less(t, secondEngineTimestamp, fetchedFactValues[len(fetchedFactValues)-1].GetUpdatedAt().AsTime().UnixNano())
 }
 
 func TestFactRecipeFetchValueAfter(t *testing.T) {
 	startTestTimestamp := time.Now()
 	file, err := os.CreateTemp("/tmp", "*.db")
-	defer os.Remove(file.Name())
 	require.Nil(t, err)
+	defer os.Remove(file.Name())
 	db, err := bolt.Open(file.Name(), 0666, nil)
 	require.Nil(t, err)
-	defer func(db *bolt.DB) {
+	defer func() {
 		err := db.Close()
 		if err != nil {
 			require.Nil(t, err)
 		}
-	}(db)
+	}()
 	factsEngine := NewFactsEngine(db, service_network.NewEmptyMockServiceNetwork())
 	factsEngine.Start()
 	factValue := &kurtosis_core_rpc_api_bindings.FactValue{
