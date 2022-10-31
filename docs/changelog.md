@@ -3,6 +3,11 @@
 ### Features
 - Added an `import_types` Starlark instruction to read types from a .proto file inside a module
 
+# 0.51.5
+### Fixes
+- Testsuite CircleCI jobs also short-circuit if the only changes are to docs, to prevent them failing due to no CLI artifact
+
+# 0.51.4
 ### Fixes
 - Fixed a bug in `GetLogsCollector` that was failing when there is an old logs collector container running that doesn't publish the TCP port
 
