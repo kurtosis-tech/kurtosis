@@ -217,11 +217,15 @@ func runStreamUserServiceLogsRoutine(
 	readLogsDatabaseHasFinishedSignaller chan struct{},
 ) {
 	for {
-		userServiceLogsByServiceGuid := <-userServiceLogsByServiceGuidChan
+		userServiceLogsByServiceGuid, isChanOpen := <-userServiceLogsByServiceGuidChan
+		//If the channel is closed means that the logs database client won't continue sending streams
+		if !isChanOpen {
+			break
+		}
+
 		getUserServiceLogsResponse := newUserLogsResponseFromUserServiceLogsByGuid(requestedUserServiceGuids, userServiceLogsByServiceGuid)
 		if err := stream.Send(getUserServiceLogsResponse); err != nil {
 			errChan <- stacktrace.Propagate(err, "An error occurred sending the stream logs for user service logs response '%+v'", getUserServiceLogsResponse)
-			break
 		}
 	}
 
