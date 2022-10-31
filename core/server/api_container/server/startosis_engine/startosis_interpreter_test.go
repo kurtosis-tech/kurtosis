@@ -1026,3 +1026,81 @@ print(artifact_uuid)
 `
 	require.Equal(t, expectedOutput, string(scriptOutput))
 }
+
+func TestStartosisInterpreter_ReadTypesFromProtoFile(t *testing.T) {
+	typesFilePath := "github.com/kurtosis/module/types.proto"
+	typesFileContent := `
+syntax = "proto3";
+message TestType {
+  string greetings = 1;
+}
+`
+
+	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
+	defer moduleContentProvider.RemoveAll()
+	require.Nil(t, moduleContentProvider.AddFileContent(typesFilePath, typesFileContent))
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
+	script := `
+types = import_types(types_file = "github.com/kurtosis/module/types.proto")
+test_type = types.TestType({
+    "greetings": "Hello World!"
+})
+print(test_type)
+print(test_type.greetings)
+`
+
+	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
+	require.Nil(t, interpretationError)
+	require.Empty(t, instructions)
+
+	expectedOutput := `TestType(greetings="Hello World!")
+Hello World!
+`
+	require.Equal(t, expectedOutput, string(scriptOutput))
+}
+
+func TestStartosisInterpreter_ReadTypesFromProtoFile_FailuresWrongArgument(t *testing.T) {
+	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
+	defer moduleContentProvider.RemoveAll()
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
+	script := `
+types = import_types(proto_types_file_bad_argument = "github.com/kurtosis/module/types.proto")
+print("Hello world!")
+`
+
+	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
+	require.Empty(t, scriptOutput)
+	require.Empty(t, instructions)
+
+	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
+		"Evaluation error: Unable to parse arguments of command import_types. It should be a single string argument pointing to the fully qualified .proto types file (i.e. \"github.com/kurtosis/module/types.proto\")",
+		[]startosis_errors.CallFrame{
+			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(2, 21)),
+			*startosis_errors.NewCallFrame("import_types", startosis_errors.NewScriptPosition(0, 0)),
+		},
+	)
+	require.Equal(t, expectedError, interpretationError)
+}
+
+func TestStartosisInterpreter_ReadTypesFromProtoFile_FailuresNoTypesFile(t *testing.T) {
+	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
+	defer moduleContentProvider.RemoveAll()
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
+	script := `
+types = import_types("github.com/kurtosis/module/types.proto")
+print("Hello world!")
+`
+
+	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
+	require.Empty(t, scriptOutput)
+	require.Empty(t, instructions)
+
+	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
+		"Evaluation error: Unable to load types file github.com/kurtosis/module/types.proto. Is the corresponding type file present in the module?",
+		[]startosis_errors.CallFrame{
+			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(2, 21)),
+			*startosis_errors.NewCallFrame("import_types", startosis_errors.NewScriptPosition(0, 0)),
+		},
+	)
+	require.Equal(t, expectedError, interpretationError)
+}
