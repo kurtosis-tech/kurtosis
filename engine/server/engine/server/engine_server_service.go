@@ -150,6 +150,10 @@ func (service *EngineServerService) GetUserServiceLogs(
 		requestedUserServiceGuids[userServiceGuid] = true
 	}
 
+	if service.logsDatabaseClient == nil {
+		return nil, stacktrace.NewError("It's not possible to return user service logs because there is not logs database client; this is bug in Kurtosis")
+	}
+
 	userServiceLogsByUserServiceGuid, err := service.logsDatabaseClient.GetUserServiceLogs(ctx, enclaveId, requestedUserServiceGuids)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting user service logs for GUIDs '%+v' in enclave with ID '%v'", requestedUserServiceGuids, enclaveId)
@@ -173,6 +177,10 @@ func (service *EngineServerService) StreamUserServiceLogs(
 	for userServiceGuidStr := range userServiceGuidStrSet {
 		userServiceGuid := user_service.ServiceGUID(userServiceGuidStr)
 		requestedUserServiceGuids[userServiceGuid] = true
+	}
+
+	if service.logsDatabaseClient == nil {
+		return stacktrace.NewError("It's not possible to return user service logs because there is not logs database client; this is bug in Kurtosis")
 	}
 
 	userServiceLogsByServiceGuidChan, errChan, err := service.logsDatabaseClient.StreamUserServiceLogs(stream.Context(), enclaveId, requestedUserServiceGuids)
