@@ -136,7 +136,7 @@ func (engine *FactsEngine) getFactValues(factId FactId, initializer cursorInitia
 		return nil
 	})
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred when fetching latest fact value '%v'", factId)
+		return nil, stacktrace.Propagate(err, "An error occurred when fetching latest fact values '%v'", factId)
 	}
 	return returnFactValues, nil
 }
@@ -224,30 +224,32 @@ func (engine *FactsEngine) runRecipeLoop(factId FactId, exit <-chan bool, recipe
 }
 
 func (engine *FactsEngine) runRecipe(recipe *kurtosis_core_rpc_api_bindings.FactRecipe) (*kurtosis_core_rpc_api_bindings.FactValue, error) {
+	serviceId := service.ServiceID(recipe.GetServiceId())
 	if recipe.GetConstantFact() != nil {
 		return recipe.GetConstantFact().GetFactValue(), nil
 	}
 	if recipe.GetExecFact() != nil {
-		_, result, err := engine.serviceNetwork.ExecCommand(context.Background(), service.ServiceID(recipe.GetServiceId()), recipe.GetExecFact().GetCmdArgs())
+		_, execOutput, err := engine.serviceNetwork.ExecCommand(context.Background(), serviceId, recipe.GetExecFact().GetCmdArgs())
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred when running exec recipe")
 		}
 		return &kurtosis_core_rpc_api_bindings.FactValue{
 			FactValue: &kurtosis_core_rpc_api_bindings.FactValue_StringValue{
-				StringValue: result,
+				StringValue: execOutput,
 			},
 		}, nil
 	}
 	if recipe.GetHttpRequestFact() != nil {
 		response, err := engine.serviceNetwork.HttpRequestService(
 			context.Background(),
-			service.ServiceID(recipe.GetServiceId()),
+			serviceId,
 			recipe.GetHttpRequestFact().GetPortId(),
 			recipe.GetHttpRequestFact().GetMethod().String(),
 			recipe.GetHttpRequestFact().GetContentType(),
 			recipe.GetHttpRequestFact().GetEndpoint(),
 			recipe.GetHttpRequestFact().GetBody(),
 		)
+		defer response.Body.Close()
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred when running HTTP request recipe")
 		}
@@ -261,7 +263,7 @@ func (engine *FactsEngine) runRecipe(recipe *kurtosis_core_rpc_api_bindings.Fact
 			},
 		}, nil
 	}
-	panic("Recipe type not implemented!!!")
+	return nil, stacktrace.NewError("Recipe type not implemented '%v'", recipe.GetFactRecipeDefinition())
 }
 
 func (engine *FactsEngine) updateFactValue(factId FactId, timestampKey string, factValue []byte) error {

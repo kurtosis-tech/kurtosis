@@ -463,22 +463,26 @@ func (apicService ApiContainerService) DefineFact(_ context.Context, args *kurto
 }
 
 func (apicService ApiContainerService) GetFactValues(_ context.Context, args *kurtosis_core_rpc_api_bindings.GetFactValuesArgs) (*kurtosis_core_rpc_api_bindings.GetFactValuesResponse, error) {
-	var factValues []*kurtosis_core_rpc_api_bindings.FactValue
-	var err error
+	var returnedFactValues []*kurtosis_core_rpc_api_bindings.FactValue
 	if args.GetStartingFrom() != nil {
-		factValues, err = apicService.factsEngine.FetchFactValuesAfter(facts_engine.GetFactId(args.GetServiceId(), args.GetFactName()), args.GetStartingFrom().AsTime())
+		factValues, err := apicService.factsEngine.FetchFactValuesAfter(facts_engine.GetFactId(args.GetServiceId(), args.GetFactName()), args.GetStartingFrom().AsTime())
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred when getting values after '%v' from fact '%v' '%v'", args.GetStartingFrom(), args.GetServiceId(), args.GetFactName())
+		}
+		returnedFactValues = factValues
 	} else {
-		factValues, err = apicService.factsEngine.FetchLatestFactValues(facts_engine.GetFactId(args.GetServiceId(), args.GetFactName()))
-	}
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred when getting values from fact")
+		factValues, err := apicService.factsEngine.FetchLatestFactValues(facts_engine.GetFactId(args.GetServiceId(), args.GetFactName()))
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred when getting latest values from fact '%v' '%v'", args.GetServiceId(), args.GetFactName())
+		}
+		returnedFactValues = factValues
 	}
 	var lastTimestampFromPage *timestamppb.Timestamp
-	if len(factValues) > 0 {
-		lastTimestampFromPage = factValues[len(factValues)-1].GetUpdatedAt()
+	if len(returnedFactValues) > 0 {
+		lastTimestampFromPage = returnedFactValues[len(returnedFactValues)-1].GetUpdatedAt()
 	}
 	return &kurtosis_core_rpc_api_bindings.GetFactValuesResponse{
-		FactValues:            factValues,
+		FactValues:            returnedFactValues,
 		LastTimestampFromPage: lastTimestampFromPage,
 	}, nil
 }
