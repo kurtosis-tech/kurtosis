@@ -222,7 +222,15 @@ export class KurtosisContext {
         return ok(result)
     }
 
-    public async streamUserServiceLogs(enclaveID: EnclaveID, userServiceGUIDs: Set<ServiceGUID>): Promise<Result<Map<ServiceGUID,Readable>, Error>> {
+    //The Readable object returned will be constantly streaming the user service logs an sending on this form Map<ServiceGuid, Array<string>>
+    //The map value contains the user service logs lines
+    //Example of how to read the stream:
+    //
+    //serviceLogsReadable.on('data', (userServiceLogsByGuid: Map<ServiceGUID, Array<string>>) => {
+    //      //insert your code here
+    //})
+    //You can cancel receiving the stream from the service calling serviceLogsReadable.destroy()
+    public async streamUserServiceLogs(enclaveID: EnclaveID, userServiceGUIDs: Set<ServiceGUID>): Promise<Result<Readable, Error>> {
         const getUserServiceLogsArgs: GetUserServiceLogsArgs = newGetUserServiceLogsArgs(enclaveID, userServiceGUIDs);
 
         const streamUserServiceLogsResult = await this.client.streamUserServiceLogs(getUserServiceLogsArgs);
@@ -230,9 +238,9 @@ export class KurtosisContext {
             return err(streamUserServiceLogsResult.error)
         }
 
-        const userServiceLogsReadableStreamsByUserServiceGuidStr: Map<string, Readable> = streamUserServiceLogsResult.value;
+        const serviceLogsReadable: Readable = streamUserServiceLogsResult.value;
 
-        return ok(userServiceLogsReadableStreamsByUserServiceGuidStr)
+        return ok(serviceLogsReadable)
     }
 
     // ====================================================================================================

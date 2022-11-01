@@ -258,34 +258,6 @@ func (kurtosisCtx *KurtosisContext) StreamUserServiceLogs(
 	return userServiceLogsByServiceGuidChan, cancelStreamUserServiceLogsFunc, nil
 }
 
-func runStreamCancellationRoutine(
-	ctx context.Context,
-	cancelCtxFunc context.CancelFunc,
-	userServiceLogsByServiceGuidChan chan map[services.ServiceGUID][]*ServiceLog,
-	receiveStreamLogsHasFinishedSignaller chan struct{},
-	callerHasCanceledStreamingLogsSignaller chan struct{},
-) {
-	//Closing all the open resources at the end
-	defer func() {
-		cancelCtxFunc()
-		close(userServiceLogsByServiceGuidChan)
-	}()
-
-	for {
-		select {
-		case <- receiveStreamLogsHasFinishedSignaller:
-			logrus.Debug("Stopped receiving user service logs from Kurtosis engine's server")
-			return
-		case <- callerHasCanceledStreamingLogsSignaller:
-			logrus.Debug("KurtosisContext.StreamLogs caller has canceled the user service logs stream")
-			return
-		case <- ctx.Done():
-			logrus.Debug("The stream user service logs context has done")
-			return
-		}
-	}
-}
-
 // ====================================================================================================
 //
 //	Private helper methods
@@ -319,6 +291,34 @@ func runReceiveStreamLogsFromTheServerRoutine(
 	}
 
 	receiveStreamLogsHasFinishedSignaller <- struct{}{}
+}
+
+func runStreamCancellationRoutine(
+	ctx context.Context,
+	cancelCtxFunc context.CancelFunc,
+	userServiceLogsByServiceGuidChan chan map[services.ServiceGUID][]*ServiceLog,
+	receiveStreamLogsHasFinishedSignaller chan struct{},
+	callerHasCanceledStreamingLogsSignaller chan struct{},
+) {
+	//Closing all the open resources at the end
+	defer func() {
+		cancelCtxFunc()
+		close(userServiceLogsByServiceGuidChan)
+	}()
+
+	for {
+		select {
+		case <- receiveStreamLogsHasFinishedSignaller:
+			logrus.Debug("Stopped receiving user service logs from Kurtosis engine's server")
+			return
+		case <- callerHasCanceledStreamingLogsSignaller:
+			logrus.Debug("KurtosisContext.StreamLogs caller has canceled the user service logs stream")
+			return
+		case <- ctx.Done():
+			logrus.Debug("The stream user service logs context has done")
+			return
+		}
+	}
 }
 
 func newEnclaveContextFromEnclaveInfo(
