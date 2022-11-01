@@ -1,5 +1,7 @@
 # TBD
 
+# 0.51.6
+
 ### Features
 - Added an `import_types` Starlark instruction to read types from a .proto file inside a module
 - Added the `time` module for Starlark to the interpreter
