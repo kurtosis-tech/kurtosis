@@ -145,7 +145,7 @@ print("The datastore service ip address is " + datastore_service.ip_address)
 
 	addServiceInstruction := add_service.NewAddServiceInstruction(
 		testServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(13, 32),
+		*kurtosis_instruction.NewInstructionPosition(13, 32, starlarkFilenamePlaceholderAsNotUsed),
 		"example-datastore-server",
 		services.NewServiceConfigBuilder(
 			testContainerImageName,
@@ -302,7 +302,7 @@ print("Done!")
 
 	addServiceInstruction0 := add_service.NewAddServiceInstruction(
 		testServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(22, 26),
+		*kurtosis_instruction.NewInstructionPosition(20, 20, starlarkFilenamePlaceholderAsNotUsed),
 		"example-datastore-server-0",
 		services.NewServiceConfigBuilder(
 			testContainerImageName,
@@ -317,7 +317,7 @@ print("Done!")
 	)
 	addServiceInstruction1 := add_service.NewAddServiceInstruction(
 		testServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(22, 26),
+		*kurtosis_instruction.NewInstructionPosition(20, 20, starlarkFilenamePlaceholderAsNotUsed),
 		"example-datastore-server-1",
 		services.NewServiceConfigBuilder(
 			testContainerImageName,
@@ -332,7 +332,7 @@ print("Done!")
 	)
 	addServiceInstruction2 := add_service.NewAddServiceInstruction(
 		testServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(22, 26),
+		*kurtosis_instruction.NewInstructionPosition(20, 20, starlarkFilenamePlaceholderAsNotUsed),
 		"example-datastore-server-2",
 		services.NewServiceConfigBuilder(
 			testContainerImageName,
@@ -514,7 +514,7 @@ add_service(service_id = service_id, service_config = service_config)
 
 	addServiceInstruction := add_service.NewAddServiceInstruction(
 		testServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(6, 12),
+		*kurtosis_instruction.NewInstructionPosition(6, 12, starlarkFilenamePlaceholderAsNotUsed),
 		"example-datastore-server",
 		services.NewServiceConfigBuilder(
 			testContainerImageName,
@@ -577,7 +577,7 @@ print("Done!")
 
 	addServiceInstruction0 := add_service.NewAddServiceInstruction(
 		testServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(5, 26),
+		*kurtosis_instruction.NewInstructionPosition(18, 20, moduleBar),
 		"example-datastore-server-0",
 		services.NewServiceConfigBuilder(
 			testContainerImageName,
@@ -592,7 +592,7 @@ print("Done!")
 	)
 	addServiceInstruction1 := add_service.NewAddServiceInstruction(
 		testServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(5, 26),
+		*kurtosis_instruction.NewInstructionPosition(18, 20, moduleBar),
 		"example-datastore-server-1",
 		services.NewServiceConfigBuilder(
 			testContainerImageName,
@@ -607,7 +607,7 @@ print("Done!")
 	)
 	addServiceInstruction2 := add_service.NewAddServiceInstruction(
 		testServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(5, 26),
+		*kurtosis_instruction.NewInstructionPosition(18, 20, moduleBar),
 		"example-datastore-server-2",
 		services.NewServiceConfigBuilder(
 			testContainerImageName,
@@ -664,7 +664,7 @@ print("Starting Startosis script!")
 
 	addServiceInstruction := add_service.NewAddServiceInstruction(
 		testServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(11, 12),
+		*kurtosis_instruction.NewInstructionPosition(11, 12, moduleBar),
 		"example-datastore-server",
 		services.NewServiceConfigBuilder(
 			testContainerImageName,
@@ -712,7 +712,7 @@ print("Starting Startosis script!")
 `
 	addServiceInstructionFromScriptA := add_service.NewAddServiceInstruction(
 		testServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(11, 12),
+		*kurtosis_instruction.NewInstructionPosition(11, 12, moduleBar),
 		"example-datastore-server",
 		services.NewServiceConfigBuilder(
 			testContainerImageName,
@@ -753,7 +753,7 @@ add_service(service_id = service_id, service_config = service_config)
 `
 	addServiceInstructionFromScriptB := add_service.NewAddServiceInstruction(
 		testServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(13, 12),
+		*kurtosis_instruction.NewInstructionPosition(13, 12, starlarkFilenamePlaceholderAsNotUsed),
 		"example-datastore-server",
 		services.NewServiceConfigBuilder(
 			testContainerImageName,
@@ -812,7 +812,7 @@ add_service(service_id = client_service_id, service_config = client_service_conf
 
 	dataSourceAddServiceInstruction := add_service.NewAddServiceInstruction(
 		testServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(11, 32),
+		*kurtosis_instruction.NewInstructionPosition(11, 32, starlarkFilenamePlaceholderAsNotUsed),
 		"example-datastore-server",
 		services.NewServiceConfigBuilder(
 			testContainerImageName,
@@ -828,7 +828,7 @@ add_service(service_id = client_service_id, service_config = client_service_conf
 
 	clientAddServiceInstruction := add_service.NewAddServiceInstruction(
 		testServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(23, 12),
+		*kurtosis_instruction.NewInstructionPosition(23, 12, starlarkFilenamePlaceholderAsNotUsed),
 		"example-datastore-client",
 		services.NewServiceConfigBuilder(
 			"kurtosistech/example-datastore-client",
@@ -873,7 +873,7 @@ exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"])
 
 	execInstruction := exec.NewExecInstruction(
 		testServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(3, 5),
+		*kurtosis_instruction.NewInstructionPosition(3, 5, starlarkFilenamePlaceholderAsNotUsed),
 		"example-datastore-server",
 		[]string{"mkdir", "/tmp/foo"},
 		0,
@@ -901,7 +901,7 @@ exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"], e
 
 	execInstruction := exec.NewExecInstruction(
 		testServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(3, 5),
+		*kurtosis_instruction.NewInstructionPosition(3, 5, starlarkFilenamePlaceholderAsNotUsed),
 		"example-datastore-server",
 		[]string{"mkdir", "/tmp/foo"},
 		-7,
@@ -930,16 +930,16 @@ print(artifact_uuid)
 
 	storeInstruction := store_files_from_service.NewStoreFilesFromServiceInstruction(
 		testServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(3, 38),
+		*kurtosis_instruction.NewInstructionPosition(3, 38, starlarkFilenamePlaceholderAsNotUsed),
 		"example-datastore-server",
 		"/foo/bar",
 	)
 
 	require.Equal(t, instructions[0], storeInstruction)
 
-	expectedOutput := `Storing file from service!
-{{kurtosis:3:38.artifact_uuid}}
-`
+	expectedOutput := fmt.Sprintf(`Storing file from service!
+{{kurtosis:%v-3:38.artifact_uuid}}
+`, starlarkFilenamePlaceholderAsNotUsed)
 	require.Equal(t, expectedOutput, string(scriptOutput))
 }
 
@@ -963,7 +963,7 @@ print(file_contents)
 	require.Equal(t, 1, len(instructions))
 
 	readInstruction := read_file.NewReadFileInstruction(
-		*kurtosis_instruction.NewInstructionPosition(3, 24),
+		*kurtosis_instruction.NewInstructionPosition(3, 24, starlarkFilenamePlaceholderAsNotUsed),
 		srcPath,
 	)
 
@@ -1015,15 +1015,15 @@ print(artifact_uuid)
 
 	renderInstruction := render_templates.NewRenderTemplatesInstruction(
 		testServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(18, 33),
+		*kurtosis_instruction.NewInstructionPosition(18, 33, starlarkFilenamePlaceholderAsNotUsed),
 		templateAndDataByDestFilepath,
 	)
 
 	require.Equal(t, renderInstruction, instructions[0])
 
-	expectedOutput := `Rendering template to disk!
-{{kurtosis:18:33.artifact_uuid}}
-`
+	expectedOutput := fmt.Sprintf(`Rendering template to disk!
+{{kurtosis:%v-18:33.artifact_uuid}}
+`, starlarkFilenamePlaceholderAsNotUsed)
 	require.Equal(t, expectedOutput, string(scriptOutput))
 }
 
@@ -1103,4 +1103,42 @@ print("Hello world!")
 		},
 	)
 	require.Equal(t, expectedError, interpretationError)
+}
+
+func TestStartosisInterpreter_NestedInstructionPositionTest(t *testing.T) {
+	storeFileDefinitionPath := "github.com/kurtosis/store.star"
+	storeFileContent := `
+def store_for_me():
+	print("In the store files instruction")
+	artifact_uuid=store_file_from_service(service_id="example-datastore-server", src_path="/foo/bar")
+	return artifact_uuid
+`
+	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
+	defer moduleContentProvider.RemoveAll()
+	moduleContentProvider.AddFileContent(storeFileDefinitionPath, storeFileContent)
+
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
+	script := `
+load("github.com/kurtosis/store.star", "store_for_me")
+uuid = store_for_me()
+print(uuid)
+`
+
+	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
+	require.Nil(t, interpretationError)
+	require.Equal(t, 1, len(instructions))
+
+	storeInstruction := store_files_from_service.NewStoreFilesFromServiceInstruction(
+		testServiceNetwork,
+		*kurtosis_instruction.NewInstructionPosition(4, 39, storeFileDefinitionPath),
+		"example-datastore-server",
+		"/foo/bar",
+	)
+
+	require.Equal(t, instructions[0], storeInstruction)
+
+	expectedOutput := fmt.Sprintf(`In the store files instruction
+{{kurtosis:%v-4:39.artifact_uuid}}
+`, storeFileDefinitionPath)
+	require.Equal(t, expectedOutput, string(scriptOutput))
 }

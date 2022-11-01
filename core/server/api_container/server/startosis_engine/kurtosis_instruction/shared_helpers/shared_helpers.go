@@ -14,16 +14,19 @@ const (
 
 	unlimitedMatches = -1
 	singleMatch      = 1
+
+	callerPosition = 1
 )
 
 func GetPositionFromThread(thread *starlark.Thread) *kurtosis_instruction.InstructionPosition {
 	// TODO(gb): can do better by returning the entire callstack positions, but it's a good start
-	if len(thread.CallStack()) == 0 {
+	if thread.CallStackDepth() < 2 {
 		panic("empty call stack is unexpected, this should not happen")
 	}
-	// position of current instruction is  store at the bottom of the call stack
-	callFrame := thread.CallStack().At(len(thread.CallStack()) - 1)
-	return kurtosis_instruction.NewInstructionPosition(callFrame.Pos.Line, callFrame.Pos.Col)
+	// bottom of the stack is <built_in>
+	// position 1 is the position of the caller
+	callFrame := thread.CallStack().At(callerPosition)
+	return kurtosis_instruction.NewInstructionPosition(callFrame.Pos.Line, callFrame.Pos.Col, callFrame.Pos.Filename())
 }
 
 // ReplaceArtifactUuidMagicStringWithValue This function gets used to replace artifact uuid magic strings generated during interpretation time with actual values during execution time
