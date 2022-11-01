@@ -10,7 +10,7 @@ const (
 	// the regex gets used during execution to find magic strings to replace with
 	// actual values
 	magicStringFormat = "{{kurtosis:%v-%v:%v.%v}}"
-	// this allows for alphanumeric, casing and underscores
+	// this allows for alphanumeric, casing and underscores and dots
 	regexFormat = "{{kurtosis:[a-zA-Z0-9_.]+-[0-9]+:[0-9]+.%v}}"
 )
 
