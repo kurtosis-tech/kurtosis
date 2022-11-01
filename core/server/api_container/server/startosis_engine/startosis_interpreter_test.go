@@ -1115,7 +1115,8 @@ def store_for_me():
 `
 	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
-	moduleContentProvider.AddFileContent(storeFileDefinitionPath, storeFileContent)
+	err := moduleContentProvider.AddFileContent(storeFileDefinitionPath, storeFileContent)
+	require.Nil(t, err)
 
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
