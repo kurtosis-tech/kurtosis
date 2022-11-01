@@ -50,7 +50,7 @@ func GenerateAddServiceBuiltin(instructionsQueue *[]kurtosis_instruction.Kurtosi
 		if interpretationError != nil {
 			return nil, interpretationError
 		}
-		addServiceInstruction := NewAddServiceInstruction(serviceNetwork, *shared_helpers.GetPositionFromThread(thread), serviceId, serviceConfig)
+		addServiceInstruction := NewAddServiceInstruction(serviceNetwork, *shared_helpers.GetCallerPositionFromThread(thread), serviceId, serviceConfig)
 		*instructionsQueue = append(*instructionsQueue, addServiceInstruction)
 		returnValue, interpretationError := makeAddServiceInterpretationReturnValue(serviceId, serviceConfig)
 		if interpretationError != nil {

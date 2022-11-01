@@ -18,10 +18,10 @@ const (
 	callerPosition = 1
 )
 
-func GetPositionFromThread(thread *starlark.Thread) *kurtosis_instruction.InstructionPosition {
+func GetCallerPositionFromThread(thread *starlark.Thread) *kurtosis_instruction.InstructionPosition {
 	// TODO(gb): can do better by returning the entire callstack positions, but it's a good start
 	if thread.CallStackDepth() < 2 {
-		panic("empty call stack is unexpected, this should not happen")
+		panic("Call stack needs to contain at least 2 items for us to get the callers position.")
 	}
 	// bottom of the stack is <built_in>
 	// position 1 is the position of the caller
