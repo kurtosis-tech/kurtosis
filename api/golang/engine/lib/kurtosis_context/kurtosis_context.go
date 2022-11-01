@@ -8,7 +8,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/user_service_logs_read_closer"
 	"github.com/kurtosis-tech/kurtosis/api/golang/kurtosis_version"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -33,6 +32,8 @@ const (
 
 	//Left the connection open from the client-side for 4 days
 	maxAllowedWebsocketConnectionDurationOnClientSide = 96 * time.Hour
+
+	userServiceLogsByServiceGuidChanBufferSize = 5
 )
 
 var apiContainerLogLevel = logrus.DebugLevel
@@ -207,7 +208,8 @@ func (kurtosisCtx *KurtosisContext) StreamUserServiceLogs(
 	enclaveID enclaves.EnclaveID,
 	userServiceGuids map[services.ServiceGUID]bool,
 ) (
-	map[services.ServiceGUID]io.ReadCloser,
+	chan map[services.ServiceGUID][]*ServiceLog,
+	func(),
 	error,
 ) {
 
@@ -219,19 +221,69 @@ func (kurtosisCtx *KurtosisContext) StreamUserServiceLogs(
 		}
 	}()
 
-	userServiceReadCloserLogsByServiceGuid := newUserServiceReadCloserLogsByServiceGuid(userServiceGuids)
+	userServiceLogsByServiceGuidChan := make(chan map[services.ServiceGUID][]*ServiceLog, userServiceLogsByServiceGuidChanBufferSize)
 
 	getUserServiceLogsArgs := newGetUserServiceLogsArgs(enclaveID, userServiceGuids)
 
 	stream, err := kurtosisCtx.client.StreamUserServiceLogs(ctxWithCancel, getUserServiceLogsArgs)
 	if err != nil {
 		shouldCancelCtx = true
-		return nil, stacktrace.Propagate(err, "An error occurred streaming user service logs using args '%+v'", getUserServiceLogsArgs)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred streaming user service logs using args '%+v'", getUserServiceLogsArgs)
 	}
 
-	go receiveStreamLogsFromTheServer(enclaveID, userServiceGuids, userServiceReadCloserLogsByServiceGuid, stream, cancelCtxFunc)
+	//this channel will produce a signal when the method caller says "I no longer want data"
+	callerHasCanceledStreamingLogsSignaller := make(chan struct{})
 
-	return userServiceReadCloserLogsByServiceGuid, nil
+	//this channel will produce a signal when the reception of user service logs thread has finished
+	receiveStreamLogsHasFinishedSignaller := make(chan struct{})
+
+	go runReceiveStreamLogsFromTheServerRoutine(
+		enclaveID,
+		userServiceGuids,
+		userServiceLogsByServiceGuidChan,
+		stream,
+		receiveStreamLogsHasFinishedSignaller,
+	)
+
+	go runStreamCancellationRoutine(
+		ctxWithCancel,
+		cancelCtxFunc,
+		userServiceLogsByServiceGuidChan,
+		receiveStreamLogsHasFinishedSignaller,
+		callerHasCanceledStreamingLogsSignaller,
+	)
+
+	cancelStreamUserServiceLogsFunc := func () { callerHasCanceledStreamingLogsSignaller <- struct {}{} }
+
+	return userServiceLogsByServiceGuidChan, cancelStreamUserServiceLogsFunc, nil
+}
+
+func runStreamCancellationRoutine(
+	ctx context.Context,
+	cancelCtxFunc context.CancelFunc,
+	userServiceLogsByServiceGuidChan chan map[services.ServiceGUID][]*ServiceLog,
+	receiveStreamLogsHasFinishedSignaller chan struct{},
+	callerHasCanceledStreamingLogsSignaller chan struct{},
+) {
+	//Closing all the open resources at the end
+	defer func() {
+		cancelCtxFunc()
+		close(userServiceLogsByServiceGuidChan)
+	}()
+
+	for {
+		select {
+		case <- receiveStreamLogsHasFinishedSignaller:
+			logrus.Debug("Stopped receiving user service logs from Kurtosis engine's server")
+			return
+		case <- callerHasCanceledStreamingLogsSignaller:
+			logrus.Debug("KurtosisContext.StreamLogs caller has canceled the user service logs stream")
+			return
+		case <- ctx.Done():
+			logrus.Debug("The stream user service logs context has done")
+			return
+		}
+	}
 }
 
 // ====================================================================================================
@@ -239,19 +291,13 @@ func (kurtosisCtx *KurtosisContext) StreamUserServiceLogs(
 //	Private helper methods
 //
 // ====================================================================================================
-func receiveStreamLogsFromTheServer(
+func runReceiveStreamLogsFromTheServerRoutine(
 	enclaveID enclaves.EnclaveID,
-	userServiceGuids map[services.ServiceGUID]bool,
-	userServiceReadCloserLogsByServiceGuid map[services.ServiceGUID]io.ReadCloser,
+	requestedUserServiceGuids map[services.ServiceGUID]bool,
+	userServiceLogsByServiceGuidChan chan map[services.ServiceGUID][]*ServiceLog,
 	stream kurtosis_engine_rpc_api_bindings.EngineService_StreamUserServiceLogsClient,
-	cancelCtxFunc context.CancelFunc,
+	receiveStreamLogsHasFinishedSignaller chan struct{},
 ) {
-
-	//Closing all the open resources at the end
-	defer func() {
-		cancelCtxFunc()
-		closeAllUserServiceReadCloserLogs(userServiceReadCloserLogsByServiceGuid)
-	}()
 
 	for {
 		getUserServiceLogResponse, errReceivingStream := stream.Recv()
@@ -259,20 +305,20 @@ func receiveStreamLogsFromTheServer(
 			break
 		}
 		if errReceivingStream != nil {
-			logrus.Errorf("An error occurred receveing user service logs stream for user services '%+v' in enclave '%v'. Error:\n%v", userServiceGuids, enclaveID, errReceivingStream)
+			logrus.Errorf("An error occurred receveing user service logs stream for user services '%+v' in enclave '%v'. Error:\n%v", requestedUserServiceGuids, enclaveID, errReceivingStream)
 			if errCloseSend := stream.CloseSend(); errCloseSend != nil {
 				logrus.Errorf("Streaming user service logs has thrown an error, so we tried to close the send direction of the stream, but an error was thrown:\n%v", errCloseSend)
 			}
 			break
 		}
-		for userServiceGuidStr, userServiceLogLine := range getUserServiceLogResponse.UserServiceLogsByUserServiceGuid {
-			userServiceGuid := services.ServiceGUID(userServiceGuidStr)
-			if err := streamNewUserServiceLogLines(userServiceGuid, userServiceReadCloserLogsByServiceGuid, userServiceLogLine); err != nil {
-				logrus.Errorf("An error occurred streaming new user service log lines '%+v' for user service with GUID '%v'. Error:\n%v", userServiceLogLine, userServiceGuid, err)
-				return
-			}
-		}
+
+		userServiceLogsByServiceGuidMap := newUserServiceLogsByServiceGuidMapFromGetUserServiceLogsResponse(requestedUserServiceGuids, getUserServiceLogResponse)
+
+		userServiceLogsByServiceGuidChan <- userServiceLogsByServiceGuidMap
+
 	}
+
+	receiveStreamLogsHasFinishedSignaller <- struct{}{}
 }
 
 func newEnclaveContextFromEnclaveInfo(
@@ -391,42 +437,27 @@ func newGetUserServiceLogsArgs(
 	return getUserServiceLogsArgs
 }
 
-func newUserServiceReadCloserLogsByServiceGuid(
-	userServiceGUIDs map[services.ServiceGUID]bool,
-) map[services.ServiceGUID]io.ReadCloser {
-	userServiceLogsByUserServiceGUID := map[services.ServiceGUID]io.ReadCloser{}
 
-	for userServiceGUID := range userServiceGUIDs {
-		userServiceReadCloser := user_service_logs_read_closer.NewUserServiceLogsReadCloser()
-		userServiceLogsByUserServiceGUID[userServiceGUID] = userServiceReadCloser
-	}
-	return userServiceLogsByUserServiceGUID
-}
+func newUserServiceLogsByServiceGuidMapFromGetUserServiceLogsResponse(
+	requestedUserServiceGuids map[services.ServiceGUID]bool,
+	getUserServiceLogResponse *kurtosis_engine_rpc_api_bindings.GetUserServiceLogsResponse,
+) map[services.ServiceGUID][]*ServiceLog {
+	userServiceLogsByServiceGuidMap := map[services.ServiceGUID][]*ServiceLog{}
 
-func streamNewUserServiceLogLines(
-	userServiceGuid services.ServiceGUID,
-	userServiceReadCloserLogsByServiceGuid map[services.ServiceGUID]io.ReadCloser,
-	userServiceLogLines *kurtosis_engine_rpc_api_bindings.LogLine,
-) error {
+	receivedUserServiceLogsByUserServiceGuid := getUserServiceLogResponse.UserServiceLogsByUserServiceGuid
 
-	readCloser, found := userServiceReadCloserLogsByServiceGuid[userServiceGuid]
-	if !found {
-		return stacktrace.NewError("Expected to find a read closer logs for user service with GUID '%v' on user service logs map '%+v' but was not found; this should never happen, and is a bug in Kurtosis", userServiceGuid, userServiceReadCloserLogsByServiceGuid)
-	}
-	userServiceReadCloser, ok := readCloser.(*user_service_logs_read_closer.UserServiceLogsReadCloser)
-	if !ok {
-		return stacktrace.NewError("An error occurred downcasting user-service-logs-read-closer '%+v'; this should never happen, and is a bug with Kurtosis!", readCloser)
-	}
-	for _, userServiceLogLineStr := range userServiceLogLines.Line {
-		userServiceReadCloser.AddLine(userServiceLogLineStr)
-	}
-	return nil
-}
-
-func closeAllUserServiceReadCloserLogs(userServiceReadCloserLogsByServiceGuid map[services.ServiceGUID]io.ReadCloser) {
-	for userServiceGuid, userServiceReadCloser := range userServiceReadCloserLogsByServiceGuid {
-		if err := userServiceReadCloser.Close(); err != nil {
-			logrus.Errorf("Streaming user service logs has finished, so we tried to close user service logs read closer for service with GUID '%v', but an error was thrown:\n%v", userServiceGuid, err)
+	for userServiceGuid := range requestedUserServiceGuids {
+		userServiceGuidStr := string(userServiceGuid)
+		serviceLogs := []*ServiceLog{}
+		userServiceLogLine, found := receivedUserServiceLogsByUserServiceGuid[userServiceGuidStr]
+		if found {
+			for _, logLineContent := range userServiceLogLine.Line {
+				serviceLog := newServiceLog(logLineContent)
+				serviceLogs = append(serviceLogs, serviceLog)
+			}
 		}
+		userServiceLogsByServiceGuidMap[userServiceGuid] = serviceLogs
 	}
+
+	return userServiceLogsByServiceGuidMap
 }

@@ -12,7 +12,7 @@ type LogsDatabaseClient interface {
 		enclaveID enclave.EnclaveID,
 		userServiceGuids map[service.ServiceGUID]bool,
 	) (
-		userServiceLogsByServiceGuid map[service.ServiceGUID][]string,
+		userServiceLogsByServiceGuid map[service.ServiceGUID][]LogLine,
 		err error,
 	)
 	StreamUserServiceLogs(
@@ -20,8 +20,9 @@ type LogsDatabaseClient interface {
 		enclaveID enclave.EnclaveID,
 		userServiceGuids map[service.ServiceGUID]bool,
 	) (
-		userServiceLogsByServiceGuidChan chan map[service.ServiceGUID][]string,
+		userServiceLogsByServiceGuidChan chan map[service.ServiceGUID][]LogLine,
 		errChan chan error,
+		cancelStreamFunc func(),
 		err error,
 	)
 }

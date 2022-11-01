@@ -148,7 +148,7 @@ func TestDoRequestWithLokiLogsDatabaseClientReturnsValidResponse(t *testing.T) {
 
 		require.Equal(t, expectedAmountLogLines, len(logLines))
 
-		require.Equal(t, expectedFirstLogLineOnEachService, logLines[0])
+		require.Equal(t, expectedFirstLogLineOnEachService, logLines[0].GetContent())
 	}
 }
 
@@ -217,5 +217,9 @@ func TestNewUserServiceLogLinesByUserServiceGuidFromLokiStreamsReturnSuccessfull
 	require.NoError(t, err)
 	require.NotNil(t, resultLogsByKurtosisUserServiceGuid)
 	require.Equal(t, len(lokiStreams), len(resultLogsByKurtosisUserServiceGuid[userServiceGuid]))
-	require.Equal(t, expectedLogLines, resultLogsByKurtosisUserServiceGuid[userServiceGuid])
+	for expectedLogLineIndex, expectedLogLine := range expectedLogLines {
+		actualLogLine := resultLogsByKurtosisUserServiceGuid[userServiceGuid][expectedLogLineIndex].GetContent()
+		require.Equal(t, expectedLogLine, actualLogLine)
+	}
+
 }

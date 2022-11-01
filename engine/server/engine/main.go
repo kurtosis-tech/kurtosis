@@ -135,7 +135,8 @@ func runMain() error {
 		logsDatabaseClient = centralized_logs.NewLokiLogsDatabaseClientWithDefaultHttpClient(privateLogsDatabaseAddress)
 
 	} else {
-		logsDatabaseClient = centralized_logs.NewKurtosisBackendLogClient(kurtosisBackend)
+		//The centralized-logs component is not implemented for Kubernetes yet
+		logsDatabaseClient = nil
 	}
 
 	engineServerService := server.NewEngineServerService(serverArgs.ImageVersionTag, enclaveManager, metricsClient, serverArgs.MetricsUserID, serverArgs.DidUserAcceptSendingMetrics, logsDatabaseClient)
