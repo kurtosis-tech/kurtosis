@@ -13,7 +13,7 @@ const (
 )
 
 func TestReplaceMagicStringWithValue_SimpleCase(t *testing.T) {
-	instruction := kurtosis_instruction.NewInstructionPosition(5, 3)
+	instruction := kurtosis_instruction.NewInstructionPosition(5, 3, "dummy")
 	inputStr := instruction.MagicString(ArtifactUUIDSuffix)
 	environment := startosis_executor.NewExecutionEnvironment()
 	testUuid := "test-uuid"
@@ -27,8 +27,8 @@ func TestReplaceMagicStringWithValue_SimpleCase(t *testing.T) {
 }
 
 func TestReplaceMagicStringWithValue_ValidMultipleReplaces(t *testing.T) {
-	instructionA := kurtosis_instruction.NewInstructionPosition(5, 3)
-	instructionB := kurtosis_instruction.NewInstructionPosition(56, 33)
+	instructionA := kurtosis_instruction.NewInstructionPosition(5, 3, "dummy")
+	instructionB := kurtosis_instruction.NewInstructionPosition(56, 33, "dummy")
 	magicStringA := instructionA.MagicString(ArtifactUUIDSuffix)
 	magicStringB := instructionB.MagicString(ArtifactUUIDSuffix)
 	inputStr := fmt.Sprintf("%v %v %v", magicStringB, magicStringA, magicStringB)
@@ -47,7 +47,7 @@ func TestReplaceMagicStringWithValue_ValidMultipleReplaces(t *testing.T) {
 }
 
 func TestReplaceMagicStringWithValue_MagicStringNotInEnvironment(t *testing.T) {
-	instruction := kurtosis_instruction.NewInstructionPosition(5, 3)
+	instruction := kurtosis_instruction.NewInstructionPosition(5, 3, "dummy")
 	magicString := instruction.MagicString(ArtifactUUIDSuffix)
 	emptyEnvironment := startosis_executor.NewExecutionEnvironment()
 	_, err := ReplaceArtifactUuidMagicStringWithValue(magicString, testServiceId, emptyEnvironment)

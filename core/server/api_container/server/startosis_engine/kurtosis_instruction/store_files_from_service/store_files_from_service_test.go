@@ -12,7 +12,7 @@ var emptyServiceNetwork = service_network.NewEmptyMockServiceNetwork()
 func TestStoreFilesFromService_StringRepresentationWorks(t *testing.T) {
 	storeFileFromServiceInstruction := NewStoreFilesFromServiceInstruction(
 		emptyServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(1, 1),
+		*kurtosis_instruction.NewInstructionPosition(1, 1, "dummy"),
 		"example-service-id",
 		"/tmp/foo",
 	)

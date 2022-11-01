@@ -12,7 +12,7 @@ var emptyServiceNetwork = service_network.NewEmptyMockServiceNetwork()
 func TestExecInstruction_StringRepresentationWorks(t *testing.T) {
 	execInstruction := NewExecInstruction(
 		emptyServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(1, 1),
+		*kurtosis_instruction.NewInstructionPosition(1, 1, "dummy"),
 		"example-service-id",
 		[]string{"mkdir", "-p", "/tmp/store"},
 		0,

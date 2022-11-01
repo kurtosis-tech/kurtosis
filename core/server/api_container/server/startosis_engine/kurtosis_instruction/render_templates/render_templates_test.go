@@ -21,7 +21,7 @@ func TestRenderTemplate_TestStringRepresentation(t *testing.T) {
 
 	renderInstruction := NewRenderTemplatesInstruction(
 		nil,
-		*kurtosis_instruction.NewInstructionPosition(16, 33),
+		*kurtosis_instruction.NewInstructionPosition(16, 33, "dummy"),
 		templateAndDataByDestFilepath,
 	)
 
@@ -40,7 +40,7 @@ func TestRenderTemplate_TestMultipleTemplates(t *testing.T) {
 
 	renderInstruction := NewRenderTemplatesInstruction(
 		nil,
-		*kurtosis_instruction.NewInstructionPosition(16, 33),
+		*kurtosis_instruction.NewInstructionPosition(16, 33, "dummy"),
 		templateAndDataByDestFilepath,
 	)
 	stringRep := renderInstruction.String()
