@@ -20,7 +20,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"io"
 	"strconv"
 )
 
@@ -123,18 +122,27 @@ func run(
 		return nil
 	}
 
-	successfulUserServiceLogs, err := kurtosisCtx.StreamUserServiceLogs(ctx, enclaveId, userServiceGuids)
+	userServiceLogsByGuidChan, cancelStreamUserServiceLogsFunc, err := kurtosisCtx.StreamUserServiceLogs(ctx, enclaveId, userServiceGuids)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting user service logs from user services with GUIDs '%+v' in enclave '%v'", userServiceGuids, enclaveId)
+		return stacktrace.Propagate(err, "An error occurred streaming user service logs from user services with GUIDs '%+v' in enclave '%v'", userServiceGuids, enclaveId)
 	}
+	defer cancelStreamUserServiceLogsFunc()
 
-	userServiceReadCloserLog, found := successfulUserServiceLogs[serviceGuid]
-	if !found {
-		return stacktrace.NewError("Expected to find logs for user service with GUID '%v' on user service logs map '%+v' but was not found; this should never happen, and is a bug in Kurtosis", serviceGuid, userServiceReadCloserLog)
-	}
+	for {
+		userServiceLogsByGuid, isChanOpen := <-userServiceLogsByGuidChan
+		if !isChanOpen {
+			break
+		}
 
-	if _, err := io.Copy(logrus.StandardLogger().Out, userServiceReadCloserLog); err != nil {
-		return stacktrace.Propagate(err, "An error occurred copying the service logs to STDOUT")
+		userServiceLogs, found := userServiceLogsByGuid[serviceGuid]
+		if !found {
+			return stacktrace.NewError("Expected to find logs for user service with GUID '%v' on user service logs map '%+v' but was not found; this should never happen, and is a bug in Kurtosis", serviceGuid, userServiceLogsByGuid)
+		}
+
+		for _, serviceLog := range userServiceLogs {
+			fmt.Println(serviceLog.GetContent())
+		}
+
 	}
 
 	return nil
