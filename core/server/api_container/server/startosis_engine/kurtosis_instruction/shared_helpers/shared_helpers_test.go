@@ -27,8 +27,8 @@ func TestReplaceMagicStringWithValue_SimpleCase(t *testing.T) {
 }
 
 func TestReplaceMagicStringWithValue_ValidMultipleReplaces(t *testing.T) {
-	instructionA := kurtosis_instruction.NewInstructionPosition(5, 3, "dummy")
-	instructionB := kurtosis_instruction.NewInstructionPosition(56, 33, "dummy")
+	instructionA := kurtosis_instruction.NewInstructionPosition(45, 60, "github.com/kurtosis-tech/eth2-module/src/participant_network/prelaunch_data_generator/el_genesis/el_genesis_data_generator.star")
+	instructionB := kurtosis_instruction.NewInstructionPosition(56, 33, "github.com/kurtosis-tech/eth2-module/src/participant_network/prelaunch_data_generator/cl_genesis/cl_genesis_data_generator.star")
 	magicStringA := instructionA.MagicString(ArtifactUUIDSuffix)
 	magicStringB := instructionB.MagicString(ArtifactUUIDSuffix)
 	inputStr := fmt.Sprintf("%v %v %v", magicStringB, magicStringA, magicStringB)

@@ -10,8 +10,9 @@ const (
 	// the regex gets used during execution to find magic strings to replace with
 	// actual values
 	magicStringFormat = "{{kurtosis:%v-%v:%v.%v}}"
-	// this allows for alphanumeric, casing and underscores and dots
-	regexFormat = "{{kurtosis:[a-zA-Z0-9_.]+-[0-9]+:[0-9]+.%v}}"
+	// this allows for alphanumeric, casing and underscores, dashes and dots
+	// real world example in the test
+	regexFormat = "{{kurtosis:[a-zA-Z0-9_./-]+-[0-9]+:[0-9]+.%v}}"
 )
 
 type InstructionPosition struct {
