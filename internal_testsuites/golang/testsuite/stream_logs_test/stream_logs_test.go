@@ -5,13 +5,11 @@
 package stream_logs_test
 
 import (
-	"bufio"
 	"context"
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/stretchr/testify/require"
-	"strings"
 	"testing"
 	"time"
 )
@@ -25,9 +23,6 @@ const (
 
 	exampleServicePortId                            = "http"
 	exampleServicePrivatePortNum                    = 80
-
-	lineBreakRune = '\n'
-	lineBreakStr = "\n"
 
 	waitForAllLogsBeingCollectedInSeconds = 2
 )
@@ -72,21 +67,25 @@ func TestStreamLogs(t *testing.T) {
 
 	time.Sleep(waitForAllLogsBeingCollectedInSeconds * time.Second)
 
-	userServiceReadCloserLogs, err := kurtosisCtx.StreamUserServiceLogs(ctx, enclaveID, userServiceGUIDs)
+	userServiceLogsByGuidChan, cancelStreamUserServiceLogsFunc, err := kurtosisCtx.StreamUserServiceLogs(ctx, enclaveID, userServiceGUIDs)
 	require.NoError(t, err)
-
-	userServiceReadCloserLog, found := userServiceReadCloserLogs[userServiceGuid]
-	require.True(t, found)
-
-	buffReader := bufio.NewReader(userServiceReadCloserLog)
+	require.NotNil(t, cancelStreamUserServiceLogsFunc)
+	require.NotNil(t, userServiceLogsByGuidChan)
+	defer cancelStreamUserServiceLogsFunc()
 
 	receivedLogLines := []string{}
 
 	for  {
-		logLine, err := buffReader.ReadString(lineBreakRune)
-		longLineWithoutLineBreak := strings.ReplaceAll(logLine, lineBreakStr, "")
-		require.NoError(t, err)
-		receivedLogLines = append(receivedLogLines, longLineWithoutLineBreak)
+		userServiceLogsByGuid, isChanOpen := <-userServiceLogsByGuidChan
+		require.True(t, isChanOpen)
+
+		userServiceLogs, found := userServiceLogsByGuid[userServiceGuid]
+		require.True(t, found)
+
+		for _, serviceLog := range userServiceLogs {
+			receivedLogLines = append(receivedLogLines, serviceLog.GetContent())
+		}
+
 		if len(receivedLogLines) == expectedAmountOfLogLines {
 			break
 		}
