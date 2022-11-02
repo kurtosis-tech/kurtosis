@@ -3,7 +3,7 @@ package read_file
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
@@ -69,7 +69,7 @@ func (instruction *UploadFilesInstruction) Execute(_ context.Context, environmen
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the path on disk of the file to upload")
 	}
-	compressedData, err := enclaves.CompressPath(pathOnDisk)
+	compressedData, err := shared_utils.CompressPath(pathOnDisk)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while compressing the files")
 	}
