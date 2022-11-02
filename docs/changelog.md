@@ -5,6 +5,7 @@
 
 ### Features
 - Instruction position now contains the filename too
+- Prints out the instruction line, col & filename in the execution error
 
 # 0.51.6
 
