@@ -1,11 +1,16 @@
 # TBD
 
+### Features
+- Added exec and HTTP request facts
+- Prints out the instruction line, col & filename in the execution error
+
+# 0.51.7
+
 ### Fixes
 - Fixed instruction position to work with nested functions
 
 ### Features
 - Instruction position now contains the filename too
-- Prints out the instruction line, col & filename in the execution error
 
 # 0.51.6
 
