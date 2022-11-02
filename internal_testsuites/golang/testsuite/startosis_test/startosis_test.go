@@ -177,8 +177,8 @@ scrape_configs:
 	require.Equal(t, expectedConfigFile, configFileContent, "Rendered file contents don't match expected contents")
 
 	executionResult, err = enclaveCtx.ExecuteStartosisScript(removeScript)
-	require.NoError(t, err, "Unexpected error executing startosis script")
-	require.Empty(t, executionResult.InterpretationError, "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
+	require.NoError(t, err, "Unexpected error executing remove script")
+	require.Empty(t, executionResult.InterpretationError, "Unexpected interpretation error")
 	require.Lenf(t, executionResult.ValidationErrors, 0, "Unexpected validation error")
 	require.Empty(t, executionResult.ExecutionError, "Unexpected execution error")
 
