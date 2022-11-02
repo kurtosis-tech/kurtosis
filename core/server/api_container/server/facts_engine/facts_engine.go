@@ -85,9 +85,7 @@ func (engine *FactsEngine) FetchLatestFactValues(factId FactId) ([]*kurtosis_cor
 		return nil, stacktrace.Propagate(err, "An error occurred when fetching latest fact values for fact '%v'", factId)
 	}
 	// factValues is returned in database iteration order, but we want to keep it consistent returning in chronological order
-	for i, j := 0, len(factValues)-1; i < j; i, j = i+1, j-1 {
-		factValues[i], factValues[j] = factValues[j], factValues[i]
-	}
+	reverseSlice(factValues)
 	return factValues, nil
 }
 
@@ -321,4 +319,10 @@ func cursorForwardStep(cursor *bolt.Cursor) (key []byte, value []byte) {
 
 func cursorBackwardsStep(cursor *bolt.Cursor) (key []byte, value []byte) {
 	return cursor.Prev()
+}
+
+func reverseSlice(slice []*kurtosis_core_rpc_api_bindings.FactValue) {
+	for i, j := 0, len(slice)-1; i < j; i, j = i+1, j-1 {
+		slice[i], slice[j] = slice[j], slice[i]
+	}
 }
