@@ -9,19 +9,23 @@ const (
 	// the placeholder is the magic string that gets assigned during interpretation
 	// the regex gets used during execution to find magic strings to replace with
 	// actual values
-	magicStringFormat = "{{kurtosis:%v:%v.%v}}"
-	regexFormat       = "{{kurtosis:[0-9]+:[0-9]+.%v}}"
+	magicStringFormat = "{{kurtosis:%v-%v:%v.%v}}"
+	// this allows for alphanumeric, casing and underscores, dashes and dots
+	// real world example in the test
+	regexFormat = "{{kurtosis:[a-zA-Z0-9_./-]+-[0-9]+:[0-9]+.%v}}"
 )
 
 type InstructionPosition struct {
-	line int32
-	col  int32
+	line     int32
+	col      int32
+	filename string
 }
 
-func NewInstructionPosition(line int32, col int32) *InstructionPosition {
+func NewInstructionPosition(line int32, col int32, filename string) *InstructionPosition {
 	return &InstructionPosition{
-		line: line,
-		col:  col,
+		line:     line,
+		col:      col,
+		filename: filename,
 	}
 }
 
@@ -32,7 +36,7 @@ func NewInstructionPosition(line int32, col int32) *InstructionPosition {
 // This string gets assigned to the object during interpretation time and replaced during
 // execution time
 func (position *InstructionPosition) MagicString(suffix string) string {
-	return fmt.Sprintf(magicStringFormat, position.line, position.col, suffix)
+	return fmt.Sprintf(magicStringFormat, position.filename, position.line, position.col, suffix)
 }
 
 // GetRegularExpressionForInstruction this function allows you to get a regular expression

@@ -1,8 +1,19 @@
 # TBD
 
+# 0.51.7
+
+### Fixes
+- Fixed instruction position to work with nested functions
+
+### Features
+- Instruction position now contains the filename too
+- Added exec and HTTP request facts
+
+# 0.51.6
+
 ### Features
 - Added an `import_types` Starlark instruction to read types from a .proto file inside a module
-- Added exec and HTTP request facts
+- Added the `time` module for Starlark to the interpreter
 
 # 0.51.5
 ### Fixes

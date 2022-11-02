@@ -28,7 +28,7 @@ const (
 func TestAddServiceInstruction_GetCanonicalizedInstruction(t *testing.T) {
 	addServiceInstruction := NewAddServiceInstruction(
 		nil,
-		*kurtosis_instruction.NewInstructionPosition(22, 26),
+		*kurtosis_instruction.NewInstructionPosition(22, 26, "dummyFile"),
 		"example-datastore-server-2",
 		services.NewServiceConfigBuilder(
 			testContainerImageName,
@@ -54,7 +54,7 @@ func TestAddServiceInstruction_EntryPointArgsAreReplaced(t *testing.T) {
 	serviceNetwork := service_network.NewMockServiceNetwork(ipAddresses)
 	addServiceInstruction := NewAddServiceInstruction(
 		serviceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(22, 26),
+		*kurtosis_instruction.NewInstructionPosition(22, 26, "dummyFile"),
 		"example-datastore-server-2",
 		services.NewServiceConfigBuilder(
 			testContainerImageName,
