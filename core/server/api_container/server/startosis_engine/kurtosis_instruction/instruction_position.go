@@ -16,16 +16,16 @@ const (
 )
 
 type InstructionPosition struct {
-	line int32
-	col  int32
-	name string
+	line     int32
+	col      int32
+	filename string
 }
 
-func NewInstructionPosition(line int32, col int32, name string) *InstructionPosition {
+func NewInstructionPosition(line int32, col int32, filename string) *InstructionPosition {
 	return &InstructionPosition{
-		line: line,
-		col:  col,
-		name: name,
+		line:     line,
+		col:      col,
+		filename: filename,
 	}
 }
 
@@ -36,7 +36,7 @@ func NewInstructionPosition(line int32, col int32, name string) *InstructionPosi
 // This string gets assigned to the object during interpretation time and replaced during
 // execution time
 func (position *InstructionPosition) MagicString(suffix string) string {
-	return fmt.Sprintf(magicStringFormat, position.name, position.line, position.col, suffix)
+	return fmt.Sprintf(magicStringFormat, position.filename, position.line, position.col, suffix)
 }
 
 // GetRegularExpressionForInstruction this function allows you to get a regular expression
