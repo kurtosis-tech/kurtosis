@@ -1,7 +1,10 @@
 # TBD
 
+# 0.51.6
+
 ### Features
 - Added an `import_types` Starlark instruction to read types from a .proto file inside a module
+- Added the `time` module for Starlark to the interpreter
 - Added the ability for a Starlark module to take input args when a `ModuleInput` in the module `types.proto` file
 
 # 0.51.5
@@ -11,13 +14,14 @@
 # 0.51.4
 ### Fixes
 - Fixed a bug in `GetLogsCollector` that was failing when there is an old logs collector container running that doesn't publish the TCP port
+- Add missing bindings to Kubernetes gateway
 
 ### Changes
 - Adding/removing methods from `.proto` files will now be compile errors in Go code, rather than failing at runtime
 - Consolidated the core & engine Protobuf regeneration scripts into a single one
 
-### Fixes
-- Add missing bindings to Kubernetes gateway
+### Features
+- Validate service IDs on Startosis commands
 
 # 0.51.3
 ### Fixes

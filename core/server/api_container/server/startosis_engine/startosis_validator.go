@@ -5,6 +5,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
@@ -21,8 +22,8 @@ func NewStartosisValidator(kurtosisBackend *backend_interface.KurtosisBackend) *
 	}
 }
 
-func (validator *StartosisValidator) Validate(ctx context.Context, instructions []kurtosis_instruction.KurtosisInstruction) []*kurtosis_core_rpc_api_bindings.StartosisValidationError {
-	environment := startosis_validator.NewValidatorEnvironment()
+func (validator *StartosisValidator) Validate(ctx context.Context, serviceNetwork service_network.ServiceNetwork, instructions []kurtosis_instruction.KurtosisInstruction) []*kurtosis_core_rpc_api_bindings.StartosisValidationError {
+	environment := startosis_validator.NewValidatorEnvironment(map[string]bool{}, serviceNetwork.GetServiceIDs())
 	for _, instruction := range instructions {
 		err := instruction.ValidateAndUpdateEnvironment(environment)
 		if err != nil {

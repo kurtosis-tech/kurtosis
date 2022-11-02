@@ -18,6 +18,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	starlarkproto "go.starlark.net/lib/proto"
+	"go.starlark.net/lib/time"
 	"go.starlark.net/resolve"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkjson"
@@ -108,6 +109,7 @@ func (interpreter *StartosisInterpreter) buildBindings(threadName string, instru
 		render_templates.RenderTemplatesBuiltinName:              starlark.NewBuiltin(render_templates.RenderTemplatesBuiltinName, render_templates.GenerateRenderTemplatesBuiltin(instructionsQueue, interpreter.serviceNetwork)),
 		starlarkjson.Module.Name:                                 starlarkjson.Module,
 		import_types.ImportTypesBuiltinName:                      starlark.NewBuiltin(import_types.ImportTypesBuiltinName, import_types.GenerateImportTypesBuiltin(interpreter.protoFileStore)),
+		time.Module.Name:                                         time.Module,
 	}
 
 	return thread, predeclared

@@ -777,6 +777,8 @@ func (apicService ApiContainerService) getModuleInfo(ctx context.Context, module
 }
 
 func (apicService ApiContainerService) executeStartosis(ctx context.Context, moduleId string, serializedStartosis string, serializedParams string) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse, error) {
+	// TODO(gb): add metric tracking maybe?
+
 	interpretationOutput, potentialInterpretationError, generatedInstructionsList :=
 		apicService.startosisInterpreter.Interpret(ctx, moduleId, serializedStartosis, serializedParams)
 	if potentialInterpretationError != nil {
@@ -791,7 +793,7 @@ func (apicService ApiContainerService) executeStartosis(ctx context.Context, mod
 		generatedInstructionsList)
 
 	// TODO: Abstract this into a ValidationError
-	validationErrors := apicService.startosisValidator.Validate(ctx, generatedInstructionsList)
+	validationErrors := apicService.startosisValidator.Validate(ctx, apicService.serviceNetwork, generatedInstructionsList)
 	if validationErrors != nil {
 		return binding_constructors.NewExecuteStartosisResponse(
 			string(interpretationOutput),
