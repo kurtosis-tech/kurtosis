@@ -100,6 +100,19 @@ func (engine *FactsEngine) FetchFactValuesAfter(factId FactId, afterTimestamp ti
 	return factValues, nil
 }
 
+func (engine *FactsEngine) WaitForValue(factId FactId) (*kurtosis_core_rpc_api_bindings.FactValue, error) {
+	for tries := 0; tries < 3; tries += 1 {
+		factValues, err := engine.FetchLatestFactValues(factId)
+		if len(factValues) == 0 || err != nil {
+			logrus.Infof("Fact '%v' not found, sleeping", factId)
+			time.Sleep(3 * time.Second)
+		} else {
+			return factValues[len(factValues)-1], nil
+		}
+	}
+	return nil, stacktrace.NewError("Fact '%v' not found, after %d tries, aborting", factId, 3)
+}
+
 func (engine *FactsEngine) setupRunRecipeLoop(factId FactId, recipe *kurtosis_core_rpc_api_bindings.FactRecipe) {
 	exitChan, isRunning := engine.exitChanMap[factId]
 	if isRunning {

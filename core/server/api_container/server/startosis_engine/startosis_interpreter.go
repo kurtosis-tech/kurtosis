@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/facts_engine"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/import_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
@@ -12,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/read_file"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/render_templates"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/store_files_from_service"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/wait"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_modules"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_modules/proto_compiler"
@@ -36,6 +38,7 @@ type StartosisInterpreter struct {
 	// problems with the moduleGlobalsCache & moduleContentProvider. Fixing this is quite complicated, which we decided not to do.
 	mutex              *sync.Mutex
 	serviceNetwork     service_network.ServiceNetwork
+	factsEngine        *facts_engine.FactsEngine
 	moduleGlobalsCache map[string]*startosis_modules.ModuleCacheEntry
 	// TODO AUTH there will be a leak here in case people with different repo visibility access a module
 	moduleContentProvider startosis_modules.ModuleContentProvider
@@ -50,6 +53,17 @@ func NewStartosisInterpreter(serviceNetwork service_network.ServiceNetwork, modu
 		serviceNetwork:        serviceNetwork,
 		moduleContentProvider: moduleContentProvider,
 		moduleGlobalsCache:    make(map[string]*startosis_modules.ModuleCacheEntry),
+		protoFileStore:        proto_compiler.NewProtoFileStore(moduleContentProvider),
+	}
+}
+
+func NewStartosisInterpreterWithFacts(serviceNetwork service_network.ServiceNetwork, factsEngine *facts_engine.FactsEngine, moduleContentProvider startosis_modules.ModuleContentProvider) *StartosisInterpreter {
+	return &StartosisInterpreter{
+		mutex:                 &sync.Mutex{},
+		serviceNetwork:        serviceNetwork,
+		moduleContentProvider: moduleContentProvider,
+		moduleGlobalsCache:    make(map[string]*startosis_modules.ModuleCacheEntry),
+		factsEngine:           factsEngine,
 		protoFileStore:        proto_compiler.NewProtoFileStore(moduleContentProvider),
 	}
 }
@@ -93,6 +107,7 @@ func (interpreter *StartosisInterpreter) buildBindings(threadName string, instru
 		render_templates.RenderTemplatesBuiltinName:              starlark.NewBuiltin(render_templates.RenderTemplatesBuiltinName, render_templates.GenerateRenderTemplatesBuiltin(instructionsQueue, interpreter.serviceNetwork)),
 		starlarkjson.Module.Name:                                 starlarkjson.Module,
 		import_types.ImportTypesBuiltinName:                      starlark.NewBuiltin(import_types.ImportTypesBuiltinName, import_types.GenerateImportTypesBuiltin(interpreter.protoFileStore)),
+		wait.WaitBuiltinName:                                     starlark.NewBuiltin(wait.WaitBuiltinName, wait.GenerateWaitBuiltin(instructionsQueue, interpreter.factsEngine)),
 	}
 
 	return thread, builtins

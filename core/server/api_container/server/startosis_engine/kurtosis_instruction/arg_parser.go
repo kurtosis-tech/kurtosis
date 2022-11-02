@@ -21,6 +21,7 @@ const (
 	serviceConfigArgName = "service_config"
 
 	containerImageNameKey         = "container_image_name"
+	factNameArgName               = "fact_name"
 	usedPortsKey                  = "used_ports"
 	entryPointArgsKey             = "entry_point_args"
 	cmdArgsKey                    = "cmd_args"
@@ -52,6 +53,17 @@ func ParseServiceId(serviceIdRaw starlark.String) (service.ServiceID, *startosis
 		return "", startosis_errors.NewInterpretationError("Service ID cannot be empty")
 	}
 	return service.ServiceID(serviceId), nil
+}
+
+func ParseFactName(factNameRaw starlark.String) (string, *startosis_errors.InterpretationError) {
+	factName, interpretationErr := safeCastToString(factNameRaw, factNameArgName)
+	if interpretationErr != nil {
+		return "", interpretationErr
+	}
+	if len(factName) == 0 {
+		return "", startosis_errors.NewInterpretationError("Fact name cannot be empty")
+	}
+	return factName, nil
 }
 
 func ParseServiceConfigArg(serviceConfig *starlarkstruct.Struct) (*kurtosis_core_rpc_api_bindings.ServiceConfig, *startosis_errors.InterpretationError) {
