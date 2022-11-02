@@ -73,7 +73,7 @@ template_data_by_path = {
 }
 
 rendered_artifact = render_templates(template_data_by_path)
-uploaded_artifact_uuid = upload_file(DIR_TO_UPLOAD)
+uploaded_artifact_uuid = upload_files(DIR_TO_UPLOAD)
 print("Uploaded " + uploaded_artifact_uuid)
 
 dependent_service_config = struct(
@@ -175,6 +175,6 @@ scrape_configs:
 	serviceCtx, err = enclaveCtx.GetServiceContext(serviceIdForDependentService)
 	require.Nil(t, err, "Unexpected Error Creating Service Context")
 	exitCode, _, err = serviceCtx.ExecCommand([]string{"ls", pathToCheckForUploadedFile})
-	require.Nil(t, err, "Unexpected err running verification on uploade file on "+serviceIdForDependentService)
+	require.Nil(t, err, "Unexpected err running verification on upload file on "+serviceIdForDependentService)
 	require.Equal(t, int32(0), exitCode)
 }
