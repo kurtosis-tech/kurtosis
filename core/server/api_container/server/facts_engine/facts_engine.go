@@ -2,7 +2,9 @@ package facts_engine
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"github.com/itchyny/gojq"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
@@ -12,6 +14,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"io"
+	"log"
 	"strconv"
 	"sync"
 	"time"
@@ -275,11 +278,39 @@ func (engine *FactsEngine) runRecipe(recipe *kurtosis_core_rpc_api_bindings.Fact
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred when reading HTTP response body")
 		}
-		return &kurtosis_core_rpc_api_bindings.FactValue{
-			FactValue: &kurtosis_core_rpc_api_bindings.FactValue_StringValue{
-				StringValue: string(body),
-			},
-		}, nil
+		if recipe.GetHttpRequestFact().GetFieldExtractor() != "" {
+			var jsonBody interface{}
+			err := json.Unmarshal(body, &jsonBody)
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "An error occurred when parsing JSON response body")
+			}
+			query, err := gojq.Parse(recipe.GetHttpRequestFact().GetFieldExtractor())
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "An error occurred when parsing field extractor '%v'", recipe.GetHttpRequestFact().GetFieldExtractor())
+			}
+			iter := query.Run(jsonBody)
+			for {
+				v, ok := iter.Next()
+				if !ok {
+					break
+				}
+				if err, ok := v.(error); ok {
+					log.Fatalln(err)
+				} else {
+					return &kurtosis_core_rpc_api_bindings.FactValue{
+						FactValue: &kurtosis_core_rpc_api_bindings.FactValue_StringValue{
+							StringValue: fmt.Sprintf("%#v", v),
+						},
+					}, nil
+				}
+			}
+		} else {
+			return &kurtosis_core_rpc_api_bindings.FactValue{
+				FactValue: &kurtosis_core_rpc_api_bindings.FactValue_StringValue{
+					StringValue: string(body),
+				},
+			}, nil
+		}
 	}
 	return nil, stacktrace.NewError("Recipe type not implemented '%v'", recipe.GetFactRecipeDefinition())
 }

@@ -9657,7 +9657,8 @@ proto.api_container_api.HttpRequestFactRecipe.toObject = function(includeInstanc
     endpoint: jspb.Message.getFieldWithDefault(msg, 2, ""),
     method: jspb.Message.getFieldWithDefault(msg, 3, 0),
     contentType: jspb.Message.getFieldWithDefault(msg, 4, ""),
-    body: jspb.Message.getFieldWithDefault(msg, 5, "")
+    body: jspb.Message.getFieldWithDefault(msg, 5, ""),
+    fieldExtractor: jspb.Message.getFieldWithDefault(msg, 6, "")
   };
 
   if (includeInstance) {
@@ -9713,6 +9714,10 @@ proto.api_container_api.HttpRequestFactRecipe.deserializeBinaryFromReader = func
     case 5:
       var value = /** @type {string} */ (reader.readString());
       msg.setBody(value);
+      break;
+    case 6:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setFieldExtractor(value);
       break;
     default:
       reader.skipField();
@@ -9775,6 +9780,13 @@ proto.api_container_api.HttpRequestFactRecipe.serializeBinaryToWriter = function
   if (f.length > 0) {
     writer.writeString(
       5,
+      f
+    );
+  }
+  f = message.getFieldExtractor();
+  if (f.length > 0) {
+    writer.writeString(
+      6,
       f
     );
   }
@@ -9868,6 +9880,24 @@ proto.api_container_api.HttpRequestFactRecipe.prototype.getBody = function() {
  */
 proto.api_container_api.HttpRequestFactRecipe.prototype.setBody = function(value) {
   return jspb.Message.setProto3StringField(this, 5, value);
+};
+
+
+/**
+ * optional string field_extractor = 6;
+ * @return {string}
+ */
+proto.api_container_api.HttpRequestFactRecipe.prototype.getFieldExtractor = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 6, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.api_container_api.HttpRequestFactRecipe} returns this
+ */
+proto.api_container_api.HttpRequestFactRecipe.prototype.setFieldExtractor = function(value) {
+  return jspb.Message.setProto3StringField(this, 6, value);
 };
 
 

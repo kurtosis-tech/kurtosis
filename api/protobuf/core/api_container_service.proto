@@ -537,6 +537,7 @@ message HttpRequestFactRecipe {
   HttpRequestMethod method = 3;
   string content_type = 4;
   string body = 5;
+  string field_extractor = 6;
 }
 
 message FactRecipe {
