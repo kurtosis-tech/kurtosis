@@ -28,7 +28,7 @@ func (validator *StartosisValidator) Validate(ctx context.Context, serviceNetwor
 		err := instruction.ValidateAndUpdateEnvironment(environment)
 		if err != nil {
 			return []*kurtosis_core_rpc_api_bindings.StartosisValidationError{
-				binding_constructors.NewStartosisValidationError(stacktrace.Propagate(err, "Error while validating instruction %v", instruction.String()).Error()),
+				binding_constructors.NewStartosisValidationError(stacktrace.Propagate(err, "Error while validating instruction %v. The instruction can be found at %v", instruction.String(), instruction.GetPositionInOriginalScript().String()).Error()),
 			}
 		}
 	}
