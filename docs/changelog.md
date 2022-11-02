@@ -4,7 +4,21 @@
 - Added the new `StreamUserServiceLogs` in the Kurtosis engine golang library
 - Added the `StreamUserServiceLogs` method in Loki logs database client
 - Added the `StreamUserServiceLogs` method in Kurtosis backend logs client
+
+### Changes
+- Updated the CLI `service logs` command in order to use the new `KurtosisContext.StreamUserServiceLogs` when user requested to follow logs
+
+# 0.51.7
+### Fixes
+- Fixed instruction position to work with nested functions
+
+### Features
+- Instruction position now contains the filename too
+
+# 0.51.6
+### Features
 - Added an `import_types` Starlark instruction to read types from a .proto file inside a module
+- Added the `time` module for Starlark to the interpreter
 
 # 0.51.5
 ### Fixes
@@ -13,14 +27,14 @@
 # 0.51.4
 ### Fixes
 - Fixed a bug in `GetLogsCollector` that was failing when there is an old logs collector container running that doesn't publish the TCP port
+- Add missing bindings to Kubernetes gateway
 
 ### Changes
-- Updated the CLI `service logs` command in order to use the new `KurtosisContext.StreamUserServiceLogs` when user requested to follow logs
 - Adding/removing methods from `.proto` files will now be compile errors in Go code, rather than failing at runtime
 - Consolidated the core & engine Protobuf regeneration scripts into a single one
 
-### Fixes
-- Add missing bindings to Kubernetes gateway
+### Features
+- Validate service IDs on Startosis commands
 
 # 0.51.3
 ### Fixes

@@ -50,7 +50,7 @@ func GenerateAddServiceBuiltin(instructionsQueue *[]kurtosis_instruction.Kurtosi
 		if interpretationError != nil {
 			return nil, interpretationError
 		}
-		addServiceInstruction := NewAddServiceInstruction(serviceNetwork, *shared_helpers.GetPositionFromThread(thread), serviceId, serviceConfig)
+		addServiceInstruction := NewAddServiceInstruction(serviceNetwork, *shared_helpers.GetCallerPositionFromThread(thread), serviceId, serviceConfig)
 		*instructionsQueue = append(*instructionsQueue, addServiceInstruction)
 		returnValue, interpretationError := makeAddServiceInterpretationReturnValue(serviceId, serviceConfig)
 		if interpretationError != nil {
@@ -197,6 +197,10 @@ func makeAddServiceInterpretationReturnValue(serviceId service.ServiceID, servic
 }
 
 func (instruction *AddServiceInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
+	if environment.DoesServiceIdExist(instruction.serviceId) {
+		return stacktrace.NewError("There was an error validating add service as service ID '%v' already exists", instruction.serviceId)
+	}
+	environment.AddServiceId(instruction.serviceId)
 	environment.AppendRequiredDockerImage(instruction.serviceConfig.ContainerImageName)
 	return nil
 }

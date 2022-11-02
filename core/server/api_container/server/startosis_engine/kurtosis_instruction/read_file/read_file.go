@@ -31,7 +31,7 @@ func GenerateReadFileBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisI
 		if interpretationError != nil {
 			return nil, interpretationError
 		}
-		execInstruction := NewReadFileInstruction(*shared_helpers.GetPositionFromThread(thread), srcPath)
+		execInstruction := NewReadFileInstruction(*shared_helpers.GetCallerPositionFromThread(thread), srcPath)
 		*instructionsQueue = append(*instructionsQueue, execInstruction)
 		fileContents, err := provider.GetModuleContents(srcPath)
 		if err != nil {

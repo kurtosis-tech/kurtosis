@@ -35,7 +35,7 @@ func GenerateRenderTemplatesBuiltin(instructionsQueue *[]kurtosis_instruction.Ku
 		if interpretationError != nil {
 			return nil, interpretationError
 		}
-		renderTemplatesInstruction := NewRenderTemplatesInstruction(serviceNetwork, *shared_helpers.GetPositionFromThread(thread), templatesAndData)
+		renderTemplatesInstruction := NewRenderTemplatesInstruction(serviceNetwork, *shared_helpers.GetCallerPositionFromThread(thread), templatesAndData)
 		*instructionsQueue = append(*instructionsQueue, renderTemplatesInstruction)
 		return starlark.String(renderTemplatesInstruction.position.MagicString(shared_helpers.ArtifactUUIDSuffix)), nil
 	}
