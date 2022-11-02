@@ -77,8 +77,8 @@ func (instruction *RemoveServiceInstruction) String() string {
 }
 
 func (instruction *RemoveServiceInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
-	if environment.DoesServiceIdExist(instruction.serviceId) {
-		return stacktrace.NewError("There was an error validating remove service as service ID '%v' already exists", instruction.serviceId)
+	if !environment.DoesServiceIdExist(instruction.serviceId) {
+		return stacktrace.NewError("There was an error validating remove service as service ID '%v' doesn't exist", instruction.serviceId)
 	}
 	environment.RemoveServiceId(instruction.serviceId)
 	return nil
