@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
+	"github.com/kurtosis-tech/stacktrace"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
@@ -25,6 +26,8 @@ const (
 	exampleServicePrivatePortNum                    = 80
 
 	waitForAllLogsBeingCollectedInSeconds = 2
+
+	testTimeOut = 2 * time.Minute
 )
 
 var exampleServicePrivatePortSpec = services.NewPortSpec(
@@ -75,27 +78,38 @@ func TestStreamLogs(t *testing.T) {
 
 	receivedLogLines := []string{}
 
+	var testEvaluationErr error
+	defer func() {
+		require.NoError(t, testEvaluationErr)
+		require.Equal(t, expectedLogLines, receivedLogLines)
+	} ()
+
 	for  {
-		userServiceLogsByGuid, isChanOpen := <-userServiceLogsByGuidChan
-		if !isChanOpen {
-			break
+		select {
+		case <-time.Tick(testTimeOut):
+			testEvaluationErr = stacktrace.NewError("Receiving stream logs in the test has reached the '%v' time out", testTimeOut)
+			return
+		case userServiceLogsByGuid, isChanOpen := <-userServiceLogsByGuidChan:
+
+			if !isChanOpen {
+				return
+			}
+
+			userServiceLogs, found := userServiceLogsByGuid[userServiceGuid]
+			if !found {
+				return
+			}
+
+			for _, serviceLog := range userServiceLogs {
+				receivedLogLines = append(receivedLogLines, serviceLog.GetContent())
+			}
+
+			if len(receivedLogLines) == expectedAmountOfLogLines {
+				return
+			}
 		}
 
-		userServiceLogs, found := userServiceLogsByGuid[userServiceGuid]
-		if !found {
-			break
-		}
-
-		for _, serviceLog := range userServiceLogs {
-			receivedLogLines = append(receivedLogLines, serviceLog.GetContent())
-		}
-
-		if len(receivedLogLines) == expectedAmountOfLogLines {
-			break
-		}
 	}
-	require.Equal(t, expectedLogLines, receivedLogLines)
-
 }
 
 // ====================================================================================================
