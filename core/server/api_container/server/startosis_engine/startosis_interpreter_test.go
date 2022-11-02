@@ -1105,7 +1105,7 @@ print("Hello world!")
 	require.Equal(t, expectedError, interpretationError)
 }
 
-func TestStartosisInterpreter_NestedInstructionPositionTest(t *testing.T) {
+func TestStartosisInterpreter_ThreeLevelNestedInstructionPositionTest(t *testing.T) {
 	storeFileDefinitionPath := "github.com/kurtosis/store.star"
 	storeFileContent := `
 def store_for_me():
@@ -1113,15 +1113,27 @@ def store_for_me():
 	artifact_uuid=store_file_from_service(service_id="example-datastore-server", src_path="/foo/bar")
 	return artifact_uuid
 `
+
+	moduleThatCallsStoreFile := "github.com/kurtosis/foo.star"
+	moduleThatCallsStoreFileContent := `
+load("github.com/kurtosis/store.star", "store_for_me")
+def call_store_for_me():
+	print("In the module that calls store.star")
+	return store_for_me()
+	`
+
 	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
 	err := moduleContentProvider.AddFileContent(storeFileDefinitionPath, storeFileContent)
 	require.Nil(t, err)
 
+	err = moduleContentProvider.AddFileContent(moduleThatCallsStoreFile, moduleThatCallsStoreFileContent)
+	require.Nil(t, err)
+
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
-load("github.com/kurtosis/store.star", "store_for_me")
-uuid = store_for_me()
+load("github.com/kurtosis/foo.star", "call_store_for_me")
+uuid = call_store_for_me()
 print(uuid)
 `
 
@@ -1138,7 +1150,8 @@ print(uuid)
 
 	require.Equal(t, instructions[0], storeInstruction)
 
-	expectedOutput := fmt.Sprintf(`In the store files instruction
+	expectedOutput := fmt.Sprintf(`In the module that calls store.star
+In the store files instruction
 {{kurtosis:%v-4:39.artifact_uuid}}
 `, storeFileDefinitionPath)
 	require.Equal(t, expectedOutput, string(scriptOutput))
