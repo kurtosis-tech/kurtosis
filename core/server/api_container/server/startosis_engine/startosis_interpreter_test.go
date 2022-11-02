@@ -12,6 +12,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/exec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/read_file"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/remove_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/render_templates"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/store_files_from_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
@@ -1154,5 +1155,35 @@ print(uuid)
 In the store files instruction
 {{kurtosis:%v-4:39.artifact_uuid}}
 `, storeFileDefinitionPath)
+	require.Equal(t, expectedOutput, string(scriptOutput))
+}
+
+func TestStartosisInterpreter_ValidSimpleRemoveService(t *testing.T) {
+	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
+	defer moduleContentProvider.RemoveAll()
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
+	script := `
+print("Starting Startosis script!")
+
+service_id = "example-datastore-server"
+remove_service(service_id=service_id)
+print("The service example-datastore-server has been removed")
+`
+
+	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
+	require.Equal(t, 1, len(instructions))
+	require.Nil(t, interpretationError)
+
+	removeInstruction := remove_service.NewRemoveServiceInstruction(
+		testServiceNetwork,
+		*kurtosis_instruction.NewInstructionPosition(5, 15, starlarkFilenamePlaceholderAsNotUsed),
+		"example-datastore-server",
+	)
+
+	require.Equal(t, instructions[0], removeInstruction)
+
+	expectedOutput := `Starting Startosis script!
+The service example-datastore-server has been removed
+`
 	require.Equal(t, expectedOutput, string(scriptOutput))
 }
