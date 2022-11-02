@@ -12,15 +12,16 @@ const (
 	testName              = "module"
 	isPartitioningEnabled = false
 
-	serviceId                     = "example-datastore-server-1"
-	serviceIdForDependentService  = "example-datastore-server-2"
-	portId                        = "grpc"
-	fileToBeCreated               = "/tmp/foo"
-	mountPathOnDependentService   = "/tmp/doo"
-	pathToCheckOnDependentService = mountPathOnDependentService + "/foo"
-	renderedConfigMountPath       = "/config"
-	renderedConfigRelativePath    = "foo/bar.yml"
-	renderedConfigFile            = renderedConfigMountPath + "/" + renderedConfigRelativePath
+	serviceId                      = "example-datastore-server-1"
+	serviceIdForDependentService   = "example-datastore-server-2"
+	serviceIdForServiceToBeRemoved = "example-datastore-server-3"
+	portId                         = "grpc"
+	fileToBeCreated                = "/tmp/foo"
+	mountPathOnDependentService    = "/tmp/doo"
+	pathToCheckOnDependentService  = mountPathOnDependentService + "/foo"
+	renderedConfigMountPath        = "/config"
+	renderedConfigRelativePath     = "foo/bar.yml"
+	renderedConfigFile             = renderedConfigMountPath + "/" + renderedConfigRelativePath
 
 	startosisScript = `
 DATASTORE_IMAGE = "kurtosistech/example-datastore-server"
@@ -36,6 +37,8 @@ PATH_TO_MOUNT_ON_DEPENDENT_SERVICE =  "` + pathToCheckOnDependentService + `"
 TEMPLATE_FILE_TO_RENDER="github.com/kurtosis-tech/eth2-merge-kurtosis-module/kurtosis-module/static_files/prometheus-config/prometheus.yml.tmpl"
 PATH_TO_MOUNT_RENDERED_CONFIG="` + renderedConfigMountPath + `"
 RENDER_RELATIVE_PATH = "` + renderedConfigRelativePath + `"
+
+SERVICE_CREATED_JUST_TO_BE_REMOVED = "` + serviceIdForServiceToBeRemoved + `"
 
 print("Adding service " + DATASTORE_SERVICE_ID + ".")
 
@@ -80,7 +83,12 @@ dependent_service_config = struct(
 add_service(service_id = SERVICE_DEPENDENT_ON_DATASTORE_SERVICE, service_config = dependent_service_config)
 print("Deployed " + SERVICE_DEPENDENT_ON_DATASTORE_SERVICE + " successfully")
 
-remove_service(SERVICE_DEPENDENT_ON_DATASTORE_SERVICE)
+add_service(SERVICE_CREATED_JUST_TO_BE_REMOVED, service_config = service_config)
+`
+	// We remove the file we created above through the script above with a different script
+	removeScript = `
+SERVICE_CREATED_JUST_TO_BE_REMOVED = "` + serviceIdForServiceToBeRemoved + `"
+remove_service(SERVICE_CREATED_JUST_TO_BE_REMOVED)
 `
 )
 
@@ -123,6 +131,12 @@ Deployed example-datastore-server-2 successfully
 		"Error validating datastore server '%s' is healthy",
 		serviceIdForDependentService,
 	)
+	require.NoError(
+		t,
+		test_helpers.ValidateDatastoreServiceHealthy(context.Background(), enclaveCtx, serviceIdForServiceToBeRemoved, portId),
+		"Error validating datastore server '%s' is healthy",
+		serviceIdForServiceToBeRemoved,
+	)
 	logrus.Infof("All services added via the module work as expected")
 
 	// Check that the file got created on the first service
@@ -161,4 +175,17 @@ scrape_configs:
 	require.Nil(t, err, "Unexpected err running verification on rendered file on "+serviceIdForDependentService)
 	require.Equal(t, int32(0), exitCode)
 	require.Equal(t, expectedConfigFile, configFileContent, "Rendered file contents don't match expected contents")
+
+	executionResult, err = enclaveCtx.ExecuteStartosisScript(removeScript)
+	require.NoError(t, err, "Unexpected error executing startosis script")
+	require.Empty(t, executionResult.InterpretationError, "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
+	require.Lenf(t, executionResult.ValidationErrors, 0, "Unexpected validation error")
+	require.Empty(t, executionResult.ExecutionError, "Unexpected execution error")
+
+	require.Error(
+		t,
+		test_helpers.ValidateDatastoreServiceHealthy(context.Background(), enclaveCtx, serviceIdForServiceToBeRemoved, portId),
+		"Error validating datastore server '%s' is not healthy",
+		serviceIdForServiceToBeRemoved,
+	)
 }
