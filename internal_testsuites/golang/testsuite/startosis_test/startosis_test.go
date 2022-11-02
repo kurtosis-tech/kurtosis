@@ -79,6 +79,8 @@ dependent_service_config = struct(
 )
 add_service(service_id = SERVICE_DEPENDENT_ON_DATASTORE_SERVICE, service_config = dependent_service_config)
 print("Deployed " + SERVICE_DEPENDENT_ON_DATASTORE_SERVICE + " successfully")
+
+remove_service(SERVICE_DEPENDENT_ON_DATASTORE_SERVICE)
 `
 )
 
