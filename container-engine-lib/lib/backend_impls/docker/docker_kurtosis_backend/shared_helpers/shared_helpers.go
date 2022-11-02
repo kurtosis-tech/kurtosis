@@ -34,6 +34,7 @@ const (
 
 	netstatSuccessExitCode = 0
 
+	// TODO(vcolombo): Find a better place to place this to make it accessible everywhere we need the DB
 	databaseFilePath              = "kurtosis.db"
 	readWritePermissionToDatabase = 0666
 )

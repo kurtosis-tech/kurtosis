@@ -1,8 +1,23 @@
 # TBD
 
 ### Features
-- Added an `import_types` Starlark instruction to read types from a .proto file inside a module
 - Added exec and HTTP request facts
+- Prints out the instruction line, col & filename in the execution error
+- Prints out the instruction line, col & filename in the validation error
+
+# 0.51.7
+
+### Fixes
+- Fixed instruction position to work with nested functions
+
+### Features
+- Instruction position now contains the filename too
+
+# 0.51.6
+
+### Features
+- Added an `import_types` Starlark instruction to read types from a .proto file inside a module
+- Added the `time` module for Starlark to the interpreter
 
 # 0.51.5
 ### Fixes
