@@ -7,6 +7,7 @@
 
 ### Features
 - Instruction position now contains the filename too
+- Added exec and HTTP request facts
 
 # 0.51.6
 

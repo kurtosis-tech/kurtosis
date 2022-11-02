@@ -28,6 +28,7 @@ import (
 	"io"
 	"math"
 	"net"
+	"net/http"
 	"os"
 	"path"
 	"strings"
@@ -516,6 +517,33 @@ func (network *DefaultServiceNetwork) ExecCommand(
 	}
 
 	return execResult.GetExitCode(), execResult.GetOutput(), nil
+}
+
+func (network *DefaultServiceNetwork) HttpRequestService(ctx context.Context, serviceId service.ServiceID, portId string, method string, contentType string, endpoint string, body string) (*http.Response, error) {
+	service, getServiceErr := network.GetService(ctx, serviceId)
+	if getServiceErr != nil {
+		return nil, stacktrace.Propagate(getServiceErr, "An error occurred when getting service '%v' for HTTP request", serviceId)
+	}
+	port, found := service.GetPrivatePorts()[portId]
+	if !found {
+		return nil, stacktrace.NewError("An error occurred when getting port '%v' from service '%v' for HTTP request", serviceId, portId)
+	}
+	url := fmt.Sprintf("http://%v:%v/%v", service.GetRegistration().GetPrivateIP(), port.GetNumber(), endpoint)
+	if method == http.MethodPost {
+		response, err := http.Post(url, contentType, strings.NewReader(body))
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred on POST HTTP request on '%v'", url)
+		}
+		return response, err
+	} else if method == http.MethodGet {
+		response, err := http.Get(url)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred on GET HTTP request on '%v'", url)
+		}
+		return response, err
+	} else {
+		return nil, stacktrace.NewError("An error occurred because %v is unsupported for HTTP request", method)
+	}
 }
 
 func (network *DefaultServiceNetwork) GetService(ctx context.Context, serviceId service.ServiceID) (

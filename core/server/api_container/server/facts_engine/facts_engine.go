@@ -1,23 +1,31 @@
 package facts_engine
 
 import (
+	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	bolt "go.etcd.io/bbolt"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
+	"io"
 	"strconv"
 	"sync"
 	"time"
 )
 
 type FactId string
+type cursorMovement func(*bolt.Cursor) ([]byte, []byte)
+type cursorInitializer func(*bolt.Bucket) (*bolt.Cursor, []byte, []byte)
 
 type FactsEngine struct {
-	db          *bolt.DB
-	exitChanMap map[FactId]chan bool
-	lock        *sync.Mutex
+	db             *bolt.DB
+	exitChanMap    map[FactId]chan bool
+	serviceNetwork service_network.ServiceNetwork
+	lock           *sync.Mutex
 }
 
 var (
@@ -30,12 +38,15 @@ const (
 	factRecipesBucketNameStr   = "fact_recipes"
 	defaultWaitTimeBetweenRuns = 2 * time.Second
 	factIdFormatStr            = "%v.%v"
+	keyStringFormat            = "%020s"
+	maxResultCount             = 100
 )
 
-func NewFactsEngine(db *bolt.DB) *FactsEngine {
+func NewFactsEngine(db *bolt.DB, serviceNetwork service_network.ServiceNetwork) *FactsEngine {
 	return &FactsEngine{
 		db,
 		make(map[FactId]chan bool),
+		serviceNetwork,
 		&sync.Mutex{},
 	}
 }
@@ -45,6 +56,7 @@ func (engine *FactsEngine) Start() {
 	if err != nil {
 		logrus.Info("No fact recipes were found on the database")
 	}
+	logrus.Info("Facts engine has started")
 }
 
 func (engine *FactsEngine) Stop() {
@@ -52,18 +64,38 @@ func (engine *FactsEngine) Stop() {
 		exitChan <- true
 		close(exitChan)
 	}
+	logrus.Info("Facts engine has stopped")
 }
 
 func (engine *FactsEngine) PushRecipe(recipe *kurtosis_core_rpc_api_bindings.FactRecipe) error {
 	// Locking avoid the condition where two recipes of the same fact are pushed at the same time
 	engine.lock.Lock()
 	defer engine.lock.Unlock()
-	factId := GetFactIdFromRecipe(recipe)
+	factId := GetFactId(recipe.GetServiceId(), recipe.GetFactName())
 	if err := engine.persistRecipe(recipe); err != nil {
 		return stacktrace.Propagate(err, "An error occurred when persisting recipe for fact '%v'", factId)
 	}
 	engine.setupRunRecipeLoop(factId, recipe)
 	return nil
+}
+
+func (engine *FactsEngine) FetchLatestFactValues(factId FactId) ([]*kurtosis_core_rpc_api_bindings.FactValue, error) {
+	factValues, err := engine.getFactValues(factId, lastCursorInitializer, maxResultCount, cursorBackwardsStep)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred when fetching latest fact values for fact '%v'", factId)
+	}
+	// factValues is returned in database iteration order, but we want to keep it consistent returning in chronological order
+	reverseSlice(factValues)
+	return factValues, nil
+}
+
+func (engine *FactsEngine) FetchFactValuesAfter(factId FactId, afterTimestamp time.Time) ([]*kurtosis_core_rpc_api_bindings.FactValue, error) {
+	timestampKey := []byte(getKeyFromTimestamp(afterTimestamp))
+	factValues, err := engine.getFactValues(factId, createSeekCursorInitializer(timestampKey), maxResultCount, cursorForwardStep)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred when fetching latest fact values for fact '%v' after timestamp '%v'", factId, afterTimestamp)
+	}
+	return factValues, nil
 }
 
 func (engine *FactsEngine) setupRunRecipeLoop(factId FactId, recipe *kurtosis_core_rpc_api_bindings.FactRecipe) {
@@ -78,9 +110,8 @@ func (engine *FactsEngine) setupRunRecipeLoop(factId FactId, recipe *kurtosis_co
 	go engine.runRecipeLoop(factId, engine.exitChanMap[factId], recipe)
 }
 
-func (engine *FactsEngine) FetchLatestFactValue(factId FactId) (string, *kurtosis_core_rpc_api_bindings.FactValue, error) {
-	returnFactValue := &kurtosis_core_rpc_api_bindings.FactValue{}
-	var returnTimestamp string
+func (engine *FactsEngine) getFactValues(factId FactId, initializer cursorInitializer, resultCount int, movement cursorMovement) ([]*kurtosis_core_rpc_api_bindings.FactValue, error) {
+	returnFactValues := []*kurtosis_core_rpc_api_bindings.FactValue{}
 	err := engine.db.View(func(tx *bolt.Tx) error {
 		factValuesBucket := tx.Bucket(factValuesBucketName)
 		if factValuesBucket == nil {
@@ -90,21 +121,22 @@ func (engine *FactsEngine) FetchLatestFactValue(factId FactId) (string, *kurtosi
 		if factBucket == nil {
 			return stacktrace.NewError("An error occurred because the fact bucket '%v' wasn't found on the database", factId)
 		}
-		timestamp, factValue := factBucket.Cursor().Last()
-		// If the bucket is empty then a nil key and value are returned.
-		if timestamp == nil {
-			return stacktrace.NewError("An error occurred because no fact value was found for fact '%v'", factId)
+		factValues := []*kurtosis_core_rpc_api_bindings.FactValue{}
+		for cursor, timestampKey, factValue := initializer(factBucket); timestampKey != nil && resultCount > 0; timestampKey, factValue = movement(cursor) {
+			unmarshalledFactValue := &kurtosis_core_rpc_api_bindings.FactValue{}
+			if err := proto.Unmarshal(factValue, unmarshalledFactValue); err != nil {
+				return stacktrace.Propagate(err, "An error occurred when unmarshalling fact value on key '%v'", string(timestampKey))
+			}
+			factValues = append(factValues, unmarshalledFactValue)
+			resultCount--
 		}
-		returnTimestamp = string(timestamp)
-		if err := proto.Unmarshal(factValue, returnFactValue); err != nil {
-			return stacktrace.Propagate(err, "An error occurred when unmarshalling fact value from '%v'", factId)
-		}
+		returnFactValues = factValues
 		return nil
 	})
 	if err != nil {
-		return "", nil, stacktrace.Propagate(err, "An error occurred when fetching latest fact value '%v'", factId)
+		return nil, stacktrace.Propagate(err, "An error occurred when fetching latest fact values '%v'", factId)
 	}
-	return returnTimestamp, returnFactValue, nil
+	return returnFactValues, nil
 }
 
 func (engine *FactsEngine) restoreStoredRecipes() error {
@@ -121,7 +153,7 @@ func (engine *FactsEngine) restoreStoredRecipes() error {
 			if err != nil {
 				return stacktrace.Propagate(err, "An error occurred when unmarshalling recipe")
 			}
-			factId := GetFactIdFromRecipe(unmarshalledFactRecipe)
+			factId := GetFactId(unmarshalledFactRecipe.GetServiceId(), unmarshalledFactRecipe.GetFactName())
 			engine.setupRunRecipeLoop(factId, unmarshalledFactRecipe)
 			restoredRecipes += 1
 			return nil
@@ -165,8 +197,9 @@ func (engine *FactsEngine) runRecipeLoop(factId FactId, exit <-chan bool, recipe
 			return
 		case <-ticker.C:
 			now := time.Now()
-			timestamp := strconv.FormatInt(now.UnixNano(), 10)
+			timestampKey := getKeyFromTimestamp(now)
 			factValue, err := engine.runRecipe(recipe)
+			factValue.UpdatedAt = timestamppb.New(now)
 			if err != nil {
 				logrus.Errorf(stacktrace.Propagate(err, "An error occurred when running recipe").Error())
 				// TODO(victor.colombo): Run exponential backoff
@@ -178,7 +211,7 @@ func (engine *FactsEngine) runRecipeLoop(factId FactId, exit <-chan bool, recipe
 				// TODO(victor.colombo): Define what to do in case, and when this happens
 				continue
 			}
-			err = engine.updateFactValue(factId, timestamp, marshaledFactValue)
+			err = engine.updateFactValue(factId, timestampKey, marshaledFactValue)
 			if err != nil {
 				logrus.Errorf(stacktrace.Propagate(err, "An error occurred when updating fact value").Error())
 				// TODO(victor.colombo): Define what to do in case, and when this happens
@@ -188,18 +221,55 @@ func (engine *FactsEngine) runRecipeLoop(factId FactId, exit <-chan bool, recipe
 	}
 }
 
-func GetFactIdFromRecipe(recipe *kurtosis_core_rpc_api_bindings.FactRecipe) FactId {
-	return FactId(fmt.Sprintf(factIdFormatStr, recipe.GetServiceId(), recipe.GetFactName()))
-}
-
 func (engine *FactsEngine) runRecipe(recipe *kurtosis_core_rpc_api_bindings.FactRecipe) (*kurtosis_core_rpc_api_bindings.FactValue, error) {
+	serviceId := service.ServiceID(recipe.GetServiceId())
 	if recipe.GetConstantFact() != nil {
 		return recipe.GetConstantFact().GetFactValue(), nil
 	}
-	return nil, stacktrace.NewError("An error occurred when running recipe")
+	if recipe.GetExecFact() != nil {
+		_, execOutput, err := engine.serviceNetwork.ExecCommand(context.Background(), serviceId, recipe.GetExecFact().GetCmdArgs())
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred when running exec recipe")
+		}
+		return &kurtosis_core_rpc_api_bindings.FactValue{
+			FactValue: &kurtosis_core_rpc_api_bindings.FactValue_StringValue{
+				StringValue: execOutput,
+			},
+		}, nil
+	}
+	if recipe.GetHttpRequestFact() != nil {
+		response, err := engine.serviceNetwork.HttpRequestService(
+			context.Background(),
+			serviceId,
+			recipe.GetHttpRequestFact().GetPortId(),
+			recipe.GetHttpRequestFact().GetMethod().String(),
+			recipe.GetHttpRequestFact().GetContentType(),
+			recipe.GetHttpRequestFact().GetEndpoint(),
+			recipe.GetHttpRequestFact().GetBody(),
+		)
+		defer func() {
+			err := response.Body.Close()
+			if err != nil {
+				logrus.Errorf("An error occurred when closing response body: %v", err)
+			}
+		}()
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred when running HTTP request recipe")
+		}
+		body, err := io.ReadAll(response.Body)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred when reading HTTP response body")
+		}
+		return &kurtosis_core_rpc_api_bindings.FactValue{
+			FactValue: &kurtosis_core_rpc_api_bindings.FactValue_StringValue{
+				StringValue: string(body),
+			},
+		}, nil
+	}
+	return nil, stacktrace.NewError("Recipe type not implemented '%v'", recipe.GetFactRecipeDefinition())
 }
 
-func (engine *FactsEngine) updateFactValue(factId FactId, timestamp string, value []byte) error {
+func (engine *FactsEngine) updateFactValue(factId FactId, timestampKey string, factValue []byte) error {
 	err := engine.db.Update(func(tx *bolt.Tx) error {
 		bucket, err := tx.CreateBucketIfNotExists(factValuesBucketName)
 		if err != nil {
@@ -209,13 +279,50 @@ func (engine *FactsEngine) updateFactValue(factId FactId, timestamp string, valu
 		if err != nil {
 			return stacktrace.Propagate(err, "Failure creating or retrieving bucket '%v'", factId)
 		}
-		if err := factBucket.Put([]byte(timestamp), value); err != nil {
-			return stacktrace.Propagate(err, "Failure saving timestamp and value '%v' '%v'", timestamp, value)
+		if err := factBucket.Put([]byte(timestampKey), factValue); err != nil {
+			return stacktrace.Propagate(err, "Failure saving timestamp and value '%v' '%v'", timestampKey, factValue)
 		}
 		return nil
 	})
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred when updating fact value '%v' '%v' '%v'", factId, timestamp, value)
+		return stacktrace.Propagate(err, "An error occurred when updating fact value '%v' '%v' '%v'", factId, timestampKey, factValue)
 	}
 	return err
+}
+
+func GetFactId(serviceId string, factName string) FactId {
+	return FactId(fmt.Sprintf(factIdFormatStr, serviceId, factName))
+}
+
+func getKeyFromTimestamp(timestamp time.Time) string {
+	timestampStr := strconv.FormatInt(timestamp.UnixNano(), 10)
+	return fmt.Sprintf(keyStringFormat, timestampStr)
+}
+
+func lastCursorInitializer(bucket *bolt.Bucket) (*bolt.Cursor, []byte, []byte) {
+	cursor := bucket.Cursor()
+	key, value := cursor.Last()
+	return cursor, key, value
+}
+
+func createSeekCursorInitializer(seekKey []byte) cursorInitializer {
+	return func(bucket *bolt.Bucket) (*bolt.Cursor, []byte, []byte) {
+		cursor := bucket.Cursor()
+		key, value := cursor.Seek(seekKey)
+		return cursor, key, value
+	}
+}
+
+func cursorForwardStep(cursor *bolt.Cursor) (key []byte, value []byte) {
+	return cursor.Next()
+}
+
+func cursorBackwardsStep(cursor *bolt.Cursor) (key []byte, value []byte) {
+	return cursor.Prev()
+}
+
+func reverseSlice(slice []*kurtosis_core_rpc_api_bindings.FactValue) {
+	for i, j := 0, len(slice)-1; i < j; i, j = i+1, j-1 {
+		slice[i], slice[j] = slice[j], slice[i]
+	}
 }

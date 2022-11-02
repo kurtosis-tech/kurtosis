@@ -2,6 +2,7 @@ import * as jspb from 'google-protobuf'
 
 import * as google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb';
 import * as google_protobuf_duration_pb from 'google-protobuf/google/protobuf/duration_pb';
+import * as google_protobuf_timestamp_pb from 'google-protobuf/google/protobuf/timestamp_pb';
 
 
 export class Port extends jspb.Message {
@@ -985,9 +986,107 @@ export namespace StartosisValidationError {
   }
 }
 
+export class DefineFactArgs extends jspb.Message {
+  getFactRecipe(): FactRecipe | undefined;
+  setFactRecipe(value?: FactRecipe): DefineFactArgs;
+  hasFactRecipe(): boolean;
+  clearFactRecipe(): DefineFactArgs;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): DefineFactArgs.AsObject;
+  static toObject(includeInstance: boolean, msg: DefineFactArgs): DefineFactArgs.AsObject;
+  static serializeBinaryToWriter(message: DefineFactArgs, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): DefineFactArgs;
+  static deserializeBinaryFromReader(message: DefineFactArgs, reader: jspb.BinaryReader): DefineFactArgs;
+}
+
+export namespace DefineFactArgs {
+  export type AsObject = {
+    factRecipe?: FactRecipe.AsObject,
+  }
+}
+
+export class DefineFactResponse extends jspb.Message {
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): DefineFactResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: DefineFactResponse): DefineFactResponse.AsObject;
+  static serializeBinaryToWriter(message: DefineFactResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): DefineFactResponse;
+  static deserializeBinaryFromReader(message: DefineFactResponse, reader: jspb.BinaryReader): DefineFactResponse;
+}
+
+export namespace DefineFactResponse {
+  export type AsObject = {
+  }
+}
+
+export class GetFactValuesArgs extends jspb.Message {
+  getServiceId(): string;
+  setServiceId(value: string): GetFactValuesArgs;
+
+  getFactName(): string;
+  setFactName(value: string): GetFactValuesArgs;
+
+  getStartingFrom(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setStartingFrom(value?: google_protobuf_timestamp_pb.Timestamp): GetFactValuesArgs;
+  hasStartingFrom(): boolean;
+  clearStartingFrom(): GetFactValuesArgs;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): GetFactValuesArgs.AsObject;
+  static toObject(includeInstance: boolean, msg: GetFactValuesArgs): GetFactValuesArgs.AsObject;
+  static serializeBinaryToWriter(message: GetFactValuesArgs, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): GetFactValuesArgs;
+  static deserializeBinaryFromReader(message: GetFactValuesArgs, reader: jspb.BinaryReader): GetFactValuesArgs;
+}
+
+export namespace GetFactValuesArgs {
+  export type AsObject = {
+    serviceId: string,
+    factName: string,
+    startingFrom?: google_protobuf_timestamp_pb.Timestamp.AsObject,
+  }
+
+  export enum StartingFromCase { 
+    _STARTING_FROM_NOT_SET = 0,
+    STARTING_FROM = 3,
+  }
+}
+
+export class GetFactValuesResponse extends jspb.Message {
+  getFactValuesList(): Array<FactValue>;
+  setFactValuesList(value: Array<FactValue>): GetFactValuesResponse;
+  clearFactValuesList(): GetFactValuesResponse;
+  addFactValues(value?: FactValue, index?: number): FactValue;
+
+  getLastTimestampFromPage(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setLastTimestampFromPage(value?: google_protobuf_timestamp_pb.Timestamp): GetFactValuesResponse;
+  hasLastTimestampFromPage(): boolean;
+  clearLastTimestampFromPage(): GetFactValuesResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): GetFactValuesResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: GetFactValuesResponse): GetFactValuesResponse.AsObject;
+  static serializeBinaryToWriter(message: GetFactValuesResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): GetFactValuesResponse;
+  static deserializeBinaryFromReader(message: GetFactValuesResponse, reader: jspb.BinaryReader): GetFactValuesResponse;
+}
+
+export namespace GetFactValuesResponse {
+  export type AsObject = {
+    factValuesList: Array<FactValue.AsObject>,
+    lastTimestampFromPage?: google_protobuf_timestamp_pb.Timestamp.AsObject,
+  }
+}
+
 export class FactValue extends jspb.Message {
   getStringValue(): string;
   setStringValue(value: string): FactValue;
+
+  getUpdatedAt(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setUpdatedAt(value?: google_protobuf_timestamp_pb.Timestamp): FactValue;
+  hasUpdatedAt(): boolean;
+  clearUpdatedAt(): FactValue;
 
   getFactValueCase(): FactValue.FactValueCase;
 
@@ -1002,6 +1101,7 @@ export class FactValue extends jspb.Message {
 export namespace FactValue {
   export type AsObject = {
     stringValue: string,
+    updatedAt?: google_protobuf_timestamp_pb.Timestamp.AsObject,
   }
 
   export enum FactValueCase { 
@@ -1030,6 +1130,60 @@ export namespace ConstantFactRecipe {
   }
 }
 
+export class ExecFactRecipe extends jspb.Message {
+  getCmdArgsList(): Array<string>;
+  setCmdArgsList(value: Array<string>): ExecFactRecipe;
+  clearCmdArgsList(): ExecFactRecipe;
+  addCmdArgs(value: string, index?: number): ExecFactRecipe;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ExecFactRecipe.AsObject;
+  static toObject(includeInstance: boolean, msg: ExecFactRecipe): ExecFactRecipe.AsObject;
+  static serializeBinaryToWriter(message: ExecFactRecipe, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ExecFactRecipe;
+  static deserializeBinaryFromReader(message: ExecFactRecipe, reader: jspb.BinaryReader): ExecFactRecipe;
+}
+
+export namespace ExecFactRecipe {
+  export type AsObject = {
+    cmdArgsList: Array<string>,
+  }
+}
+
+export class HttpRequestFactRecipe extends jspb.Message {
+  getPortId(): string;
+  setPortId(value: string): HttpRequestFactRecipe;
+
+  getEndpoint(): string;
+  setEndpoint(value: string): HttpRequestFactRecipe;
+
+  getMethod(): HttpRequestMethod;
+  setMethod(value: HttpRequestMethod): HttpRequestFactRecipe;
+
+  getContentType(): string;
+  setContentType(value: string): HttpRequestFactRecipe;
+
+  getBody(): string;
+  setBody(value: string): HttpRequestFactRecipe;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): HttpRequestFactRecipe.AsObject;
+  static toObject(includeInstance: boolean, msg: HttpRequestFactRecipe): HttpRequestFactRecipe.AsObject;
+  static serializeBinaryToWriter(message: HttpRequestFactRecipe, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): HttpRequestFactRecipe;
+  static deserializeBinaryFromReader(message: HttpRequestFactRecipe, reader: jspb.BinaryReader): HttpRequestFactRecipe;
+}
+
+export namespace HttpRequestFactRecipe {
+  export type AsObject = {
+    portId: string,
+    endpoint: string,
+    method: HttpRequestMethod,
+    contentType: string,
+    body: string,
+  }
+}
+
 export class FactRecipe extends jspb.Message {
   getServiceId(): string;
   setServiceId(value: string): FactRecipe;
@@ -1041,6 +1195,16 @@ export class FactRecipe extends jspb.Message {
   setConstantFact(value?: ConstantFactRecipe): FactRecipe;
   hasConstantFact(): boolean;
   clearConstantFact(): FactRecipe;
+
+  getExecFact(): ExecFactRecipe | undefined;
+  setExecFact(value?: ExecFactRecipe): FactRecipe;
+  hasExecFact(): boolean;
+  clearExecFact(): FactRecipe;
+
+  getHttpRequestFact(): HttpRequestFactRecipe | undefined;
+  setHttpRequestFact(value?: HttpRequestFactRecipe): FactRecipe;
+  hasHttpRequestFact(): boolean;
+  clearHttpRequestFact(): FactRecipe;
 
   getRefreshInterval(): google_protobuf_duration_pb.Duration | undefined;
   setRefreshInterval(value?: google_protobuf_duration_pb.Duration): FactRecipe;
@@ -1062,12 +1226,21 @@ export namespace FactRecipe {
     serviceId: string,
     factName: string,
     constantFact?: ConstantFactRecipe.AsObject,
+    execFact?: ExecFactRecipe.AsObject,
+    httpRequestFact?: HttpRequestFactRecipe.AsObject,
     refreshInterval?: google_protobuf_duration_pb.Duration.AsObject,
   }
 
   export enum FactRecipeDefinitionCase { 
     FACT_RECIPE_DEFINITION_NOT_SET = 0,
     CONSTANT_FACT = 3,
+    EXEC_FACT = 4,
+    HTTP_REQUEST_FACT = 5,
+  }
+
+  export enum RefreshIntervalCase { 
+    _REFRESH_INTERVAL_NOT_SET = 0,
+    REFRESH_INTERVAL = 6,
   }
 }
 
@@ -1095,3 +1268,7 @@ export namespace ExecuteStartosisModuleArgs {
   }
 }
 
+export enum HttpRequestMethod { 
+  GET = 0,
+  POST = 1,
+}
