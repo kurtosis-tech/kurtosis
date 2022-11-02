@@ -235,8 +235,8 @@ func newRPCBindingsLogLineFromLogLines(logLines []centralized_logs.LogLine) *kur
 
 	logLinesStr := make([]string, len(logLines))
 
-	for _, logLine := range logLines {
-		logLinesStr = append(logLinesStr, logLine.GetContent())
+	for logLineIndex, logLine := range logLines {
+		logLinesStr[logLineIndex] = logLine.GetContent()
 	}
 
 	rpcBindingsLogLines := &kurtosis_engine_rpc_api_bindings.LogLine{Line: logLinesStr}
