@@ -1,5 +1,7 @@
 # TBD
 
+# 0.51.7
+
 ### Fixes
 - Fixed instruction position to work with nested functions
 
