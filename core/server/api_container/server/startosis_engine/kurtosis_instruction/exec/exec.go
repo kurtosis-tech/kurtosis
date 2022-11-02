@@ -36,7 +36,7 @@ func GenerateExecBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstr
 		if interpretationError != nil {
 			return nil, interpretationError
 		}
-		execInstruction := NewExecInstruction(serviceNetwork, *shared_helpers.GetPositionFromThread(thread), serviceId, commandArgs, expectedExitCode)
+		execInstruction := NewExecInstruction(serviceNetwork, *shared_helpers.GetCallerPositionFromThread(thread), serviceId, commandArgs, expectedExitCode)
 		*instructionsQueue = append(*instructionsQueue, execInstruction)
 		return starlark.None, nil
 	}
@@ -92,9 +92,10 @@ func (instruction *ExecInstruction) String() string {
 	return instruction.GetCanonicalInstruction()
 }
 
-func (instruction *ExecInstruction) ValidateAndUpdateEnvironment(_ *startosis_validator.ValidatorEnvironment) error {
-	// this doesn't do anything but can't return an error as the validator runs this regardless
-	// this is a no-op
+func (instruction *ExecInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
+	if !environment.DoesServiceIdExist(instruction.serviceId) {
+		return stacktrace.NewError("There was an error validating exec with service ID '%v' that does not exist", instruction.serviceId)
+	}
 	return nil
 }
 
