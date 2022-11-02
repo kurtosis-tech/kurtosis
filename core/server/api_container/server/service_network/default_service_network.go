@@ -721,6 +721,22 @@ func (network *DefaultServiceNetwork) RenderTemplates(templatesAndDataByDestinat
 	return filesArtifactUuid, nil
 }
 
+func (network *DefaultServiceNetwork) UploadFilesArtifact(data []byte) (enclave_data_directory.FilesArtifactUUID, error) {
+	reader := bytes.NewReader(data)
+
+	filesArtifactStore, err := network.enclaveDataDir.GetFilesArtifactStore()
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred while getting files artifact store")
+	}
+
+	filesArtifactUuid, err := filesArtifactStore.StoreFile(reader)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred while trying to store files.")
+	}
+
+	return filesArtifactUuid, nil
+}
+
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================

@@ -582,9 +582,8 @@ func (apicService ApiContainerService) GetModules(ctx context.Context, args *kur
 }
 
 func (apicService ApiContainerService) UploadFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.UploadFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse, error) {
-	reader := bytes.NewReader(args.Data)
 
-	filesArtifactUuid, err := apicService.filesArtifactStore.StoreFile(reader)
+	filesArtifactUuid, err := apicService.serviceNetwork.UploadFilesArtifact(args.Data)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while trying to store files.")
 	}
