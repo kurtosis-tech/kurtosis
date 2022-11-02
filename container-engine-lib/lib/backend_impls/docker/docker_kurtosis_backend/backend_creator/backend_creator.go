@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
@@ -12,7 +13,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/free_ip_addr_tracker"
 	"github.com/kurtosis-tech/stacktrace"
-	bolt "go.etcd.io/bbolt"
 	"net"
 )
 
@@ -24,11 +24,6 @@ type APIContainerModeArgs struct {
 	EnclaveID      enclave.EnclaveID
 	APIContainerIP net.IP
 }
-
-const (
-	databaseFilePath              = "kurtosis.db"
-	readWritePermissionToDatabase = 0666
-)
 
 // GetLocalDockerKurtosisBackend is the entrypoint method we expect users of container-engine-lib to call
 // ONLY the API container should pass in the extra API container args, which will unlock extra API container functionality
@@ -46,7 +41,7 @@ func GetLocalDockerKurtosisBackend(
 	// so we can create the free IP address trackers
 	enclaveFreeIpAddrTrackers := map[enclave.EnclaveID]*free_ip_addr_tracker.FreeIpAddrTracker{}
 	if optionalApiContainerModeArgs != nil {
-		db, err := bolt.Open(databaseFilePath, readWritePermissionToDatabase, &bolt.Options{})
+		db, err := shared_helpers.GetLocalDatabase()
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred opening local database")
 		}

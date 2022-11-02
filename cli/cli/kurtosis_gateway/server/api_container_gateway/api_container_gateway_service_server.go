@@ -13,7 +13,8 @@ import (
 )
 
 const (
-	localHostIpStr = "127.0.0.1"
+	localHostIpStr                            = "127.0.0.1"
+	errorCallingRemoteApiContainerFromGateway = "Expected to be able to call the remote api container from the gateway, instead a non nil err was returned"
 )
 
 type ApiContainerGatewayServiceServer struct {
@@ -59,7 +60,7 @@ func NewEnclaveApiContainerGatewayServer(connectionProvider *connection.GatewayC
 func (service *ApiContainerGatewayServiceServer) LoadModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.LoadModuleArgs) (*kurtosis_core_rpc_api_bindings.LoadModuleResponse, error) {
 	remoteApiContainerResponse, err := service.remoteApiContainerClient.LoadModule(ctx, args)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to call the remote api container from the gateway, instead a non nil err was returned")
+		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
 	}
 
 	return remoteApiContainerResponse, nil
@@ -67,7 +68,7 @@ func (service *ApiContainerGatewayServiceServer) LoadModule(ctx context.Context,
 func (service *ApiContainerGatewayServiceServer) UnloadModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.UnloadModuleArgs) (*kurtosis_core_rpc_api_bindings.UnloadModuleResponse, error) {
 	remoteApiContainerResponse, err := service.remoteApiContainerClient.UnloadModule(ctx, args)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to call the remote api container from the gateway, instead a non nil err was returned")
+		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
 	}
 
 	return remoteApiContainerResponse, nil
@@ -75,7 +76,7 @@ func (service *ApiContainerGatewayServiceServer) UnloadModule(ctx context.Contex
 func (service *ApiContainerGatewayServiceServer) ExecuteModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecuteModuleArgs) (*kurtosis_core_rpc_api_bindings.ExecuteModuleResponse, error) {
 	remoteApiContainerResponse, err := service.remoteApiContainerClient.ExecuteModule(ctx, args)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to call the remote api container from the gateway, instead a non nil err was returned")
+		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
 	}
 
 	return remoteApiContainerResponse, nil
@@ -84,7 +85,7 @@ func (service *ApiContainerGatewayServiceServer) ExecuteModule(ctx context.Conte
 func (service *ApiContainerGatewayServiceServer) ExecuteStartosisScript(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptArgs) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse, error) {
 	remoteApiContainerResponse, err := service.remoteApiContainerClient.ExecuteStartosisScript(ctx, args)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to call the remote api container from the gateway, instead a non nil err was returned")
+		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
 	}
 
 	return remoteApiContainerResponse, nil
@@ -93,7 +94,7 @@ func (service *ApiContainerGatewayServiceServer) ExecuteStartosisScript(ctx cont
 func (service *ApiContainerGatewayServiceServer) ExecuteStartosisModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleArgs) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse, error) {
 	remoteApiContainerResponse, err := service.remoteApiContainerClient.ExecuteStartosisModule(ctx, args)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to call the remote api container from the gateway, instead a non nil err was returned")
+		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
 	}
 
 	return remoteApiContainerResponse, nil
@@ -105,7 +106,7 @@ func (service *ApiContainerGatewayServiceServer) StartServices(ctx context.Conte
 	failedServicesPool := map[string]string{}
 	remoteApiContainerResponse, err := service.remoteApiContainerClient.StartServices(ctx, args)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to call the remote api container from the gateway, instead a non nil err was returned")
+		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
 	}
 	shouldRemoveServices := map[string]bool{}
 	for serviceID := range remoteApiContainerResponse.GetSuccessfulServiceIdsToServiceInfo() {
@@ -150,7 +151,7 @@ func (service *ApiContainerGatewayServiceServer) GetServices(ctx context.Context
 	defer service.mutex.Unlock()
 	remoteApiContainerResponse, err := service.remoteApiContainerClient.GetServices(ctx, args)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to call the remote api container from the gateway, instead a non nil err was returned")
+		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
 	}
 	for serviceId, serviceInfo := range remoteApiContainerResponse.ServiceInfo {
 		if err := service.writeOverServiceInfoFieldsWithLocalConnectionInformation(serviceInfo); err != nil {
@@ -166,7 +167,7 @@ func (service *ApiContainerGatewayServiceServer) RemoveService(ctx context.Conte
 	defer service.mutex.Unlock()
 	remoteApiContainerResponse, err := service.remoteApiContainerClient.RemoveService(ctx, args)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to call the remote api container from the gateway, instead a non nil err was returned")
+		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
 	}
 
 	removedServiceGuid := remoteApiContainerResponse.GetServiceGuid()
@@ -178,7 +179,7 @@ func (service *ApiContainerGatewayServiceServer) RemoveService(ctx context.Conte
 func (service *ApiContainerGatewayServiceServer) Repartition(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RepartitionArgs) (*emptypb.Empty, error) {
 	remoteApiContainerResponse, err := service.remoteApiContainerClient.Repartition(ctx, args)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to call the remote api container from the gateway, instead a non nil err was returned")
+		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
 	}
 
 	return remoteApiContainerResponse, nil
@@ -186,15 +187,33 @@ func (service *ApiContainerGatewayServiceServer) Repartition(ctx context.Context
 func (service *ApiContainerGatewayServiceServer) ExecCommand(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecCommandArgs) (*kurtosis_core_rpc_api_bindings.ExecCommandResponse, error) {
 	remoteApiContainerResponse, err := service.remoteApiContainerClient.ExecCommand(ctx, args)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to call the remote api container from the gateway, instead a non nil err was returned")
+		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
 	}
 
 	return remoteApiContainerResponse, nil
 }
+
+func (service *ApiContainerGatewayServiceServer) DefineFact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.DefineFactArgs) (*kurtosis_core_rpc_api_bindings.DefineFactResponse, error) {
+	remoteApiContainerResponse, err := service.remoteApiContainerClient.DefineFact(ctx, args)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
+	}
+
+	return remoteApiContainerResponse, nil
+}
+
+func (service *ApiContainerGatewayServiceServer) GetFactValues(ctx context.Context, args *kurtosis_core_rpc_api_bindings.GetFactValuesArgs) (*kurtosis_core_rpc_api_bindings.GetFactValuesResponse, error) {
+	remoteApiContainerResponse, err := service.remoteApiContainerClient.GetFactValues(ctx, args)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
+	}
+	return remoteApiContainerResponse, nil
+}
+
 func (service *ApiContainerGatewayServiceServer) WaitForHttpGetEndpointAvailability(ctx context.Context, args *kurtosis_core_rpc_api_bindings.WaitForHttpGetEndpointAvailabilityArgs) (*emptypb.Empty, error) {
 	remoteApiContainerResponse, err := service.remoteApiContainerClient.WaitForHttpGetEndpointAvailability(ctx, args)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to call the remote api container from the gateway, instead a non nil err was returned")
+		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
 	}
 
 	return remoteApiContainerResponse, nil
@@ -202,7 +221,7 @@ func (service *ApiContainerGatewayServiceServer) WaitForHttpGetEndpointAvailabil
 func (service *ApiContainerGatewayServiceServer) WaitForHttpPostEndpointAvailability(ctx context.Context, args *kurtosis_core_rpc_api_bindings.WaitForHttpPostEndpointAvailabilityArgs) (*emptypb.Empty, error) {
 	remoteApiContainerResponse, err := service.remoteApiContainerClient.WaitForHttpPostEndpointAvailability(ctx, args)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to call the remote api container from the gateway, instead a non nil err was returned")
+		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
 	}
 
 	return remoteApiContainerResponse, nil
@@ -211,7 +230,7 @@ func (service *ApiContainerGatewayServiceServer) WaitForHttpPostEndpointAvailabi
 func (service *ApiContainerGatewayServiceServer) GetModules(ctx context.Context, args *kurtosis_core_rpc_api_bindings.GetModulesArgs) (*kurtosis_core_rpc_api_bindings.GetModulesResponse, error) {
 	remoteApiContainerResponse, err := service.remoteApiContainerClient.GetModules(ctx, args)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to call the remote api container from the gateway, instead a non nil err was returned")
+		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
 	}
 
 	return remoteApiContainerResponse, nil
@@ -219,7 +238,7 @@ func (service *ApiContainerGatewayServiceServer) GetModules(ctx context.Context,
 func (service *ApiContainerGatewayServiceServer) UploadFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.UploadFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse, error) {
 	remoteApiContainerResponse, err := service.remoteApiContainerClient.UploadFilesArtifact(ctx, args)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to call the remote api container from the gateway, instead a non nil err was returned")
+		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
 	}
 
 	return remoteApiContainerResponse, nil
@@ -227,7 +246,7 @@ func (service *ApiContainerGatewayServiceServer) UploadFilesArtifact(ctx context
 func (service *ApiContainerGatewayServiceServer) StoreWebFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StoreWebFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.StoreWebFilesArtifactResponse, error) {
 	remoteApiContainerResponse, err := service.remoteApiContainerClient.StoreWebFilesArtifact(ctx, args)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to call the remote api container from the gateway, instead a non nil err was returned")
+		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
 	}
 
 	return remoteApiContainerResponse, nil
@@ -235,7 +254,7 @@ func (service *ApiContainerGatewayServiceServer) StoreWebFilesArtifact(ctx conte
 func (service *ApiContainerGatewayServiceServer) StoreFilesArtifactFromService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceArgs) (*kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceResponse, error) {
 	remoteApiContainerResponse, err := service.remoteApiContainerClient.StoreFilesArtifactFromService(ctx, args)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to call the remote api container from the gateway, instead a non nil err was returned")
+		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
 	}
 
 	return remoteApiContainerResponse, nil
@@ -244,7 +263,7 @@ func (service *ApiContainerGatewayServiceServer) StoreFilesArtifactFromService(c
 func (service *ApiContainerGatewayServiceServer) DownloadFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.DownloadFilesArtifactResponse, error) {
 	remoteApiContainerResponse, err := service.remoteApiContainerClient.DownloadFilesArtifact(ctx, args)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to call the remote api container from the gateway, instead a non nil err was returned")
+		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
 	}
 
 	return remoteApiContainerResponse, nil
@@ -253,7 +272,7 @@ func (service *ApiContainerGatewayServiceServer) DownloadFilesArtifact(ctx conte
 func (service *ApiContainerGatewayServiceServer) PauseService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.PauseServiceArgs) (*emptypb.Empty, error) {
 	remoteApiContainerResponse, err := service.remoteApiContainerClient.PauseService(ctx, args)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to call the remote api container method from the gateway, instead a non nil err was returned")
+		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
 	}
 
 	return remoteApiContainerResponse, nil
@@ -261,7 +280,7 @@ func (service *ApiContainerGatewayServiceServer) PauseService(ctx context.Contex
 func (service *ApiContainerGatewayServiceServer) UnpauseService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.UnpauseServiceArgs) (*emptypb.Empty, error) {
 	remoteApiContainerResponse, err := service.remoteApiContainerClient.UnpauseService(ctx, args)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to call the remote api container from the gateway, instead a non nil err was returned")
+		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
 	}
 
 	return remoteApiContainerResponse, nil
@@ -270,7 +289,7 @@ func (service *ApiContainerGatewayServiceServer) UnpauseService(ctx context.Cont
 func (service *ApiContainerGatewayServiceServer) RenderTemplatesToFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactResponse, error) {
 	remoteApiContainerResponse, err := service.remoteApiContainerClient.RenderTemplatesToFilesArtifact(ctx, args)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to call the remote api container from the gateway, instead a non nil err was returned")
+		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
 	}
 
 	return remoteApiContainerResponse, nil
