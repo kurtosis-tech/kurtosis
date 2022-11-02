@@ -16,6 +16,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	kurtosis_backend_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/facts_engine"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/module_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
@@ -27,6 +28,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -80,6 +82,8 @@ type ApiContainerService struct {
 
 	moduleStore *module_store.ModuleStore
 
+	factsEngine *facts_engine.FactsEngine
+
 	startosisInterpreter *startosis_engine.StartosisInterpreter
 
 	startosisValidator *startosis_engine.StartosisValidator
@@ -95,6 +99,7 @@ func NewApiContainerService(
 	filesArtifactStore *enclave_data_directory.FilesArtifactStore,
 	serviceNetwork service_network.ServiceNetwork,
 	moduleStore *module_store.ModuleStore,
+	factsEngine *facts_engine.FactsEngine,
 	startosisInterpreter *startosis_engine.StartosisInterpreter,
 	startosisValidator *startosis_engine.StartosisValidator,
 	startosisExecutor *startosis_engine.StartosisExecutor,
@@ -105,6 +110,7 @@ func NewApiContainerService(
 		filesArtifactStore:             filesArtifactStore,
 		serviceNetwork:                 serviceNetwork,
 		moduleStore:                    moduleStore,
+		factsEngine:                    factsEngine,
 		startosisInterpreter:           startosisInterpreter,
 		startosisValidator:             startosisValidator,
 		startosisExecutor:              startosisExecutor,
@@ -446,6 +452,39 @@ func (apicService ApiContainerService) ExecCommand(ctx context.Context, args *ku
 		LogOutput: logOutput,
 	}
 	return resp, nil
+}
+
+func (apicService ApiContainerService) DefineFact(_ context.Context, args *kurtosis_core_rpc_api_bindings.DefineFactArgs) (*kurtosis_core_rpc_api_bindings.DefineFactResponse, error) {
+	err := apicService.factsEngine.PushRecipe(args.GetFactRecipe())
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred when defining fact")
+	}
+	return &kurtosis_core_rpc_api_bindings.DefineFactResponse{}, nil
+}
+
+func (apicService ApiContainerService) GetFactValues(_ context.Context, args *kurtosis_core_rpc_api_bindings.GetFactValuesArgs) (*kurtosis_core_rpc_api_bindings.GetFactValuesResponse, error) {
+	var returnedFactValues []*kurtosis_core_rpc_api_bindings.FactValue
+	if args.GetStartingFrom() != nil {
+		factValues, err := apicService.factsEngine.FetchFactValuesAfter(facts_engine.GetFactId(args.GetServiceId(), args.GetFactName()), args.GetStartingFrom().AsTime())
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred when getting values after '%v' from fact '%v' '%v'", args.GetStartingFrom(), args.GetServiceId(), args.GetFactName())
+		}
+		returnedFactValues = factValues
+	} else {
+		factValues, err := apicService.factsEngine.FetchLatestFactValues(facts_engine.GetFactId(args.GetServiceId(), args.GetFactName()))
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred when getting latest values from fact '%v' '%v'", args.GetServiceId(), args.GetFactName())
+		}
+		returnedFactValues = factValues
+	}
+	var lastTimestampFromPage *timestamppb.Timestamp
+	if len(returnedFactValues) > 0 {
+		lastTimestampFromPage = returnedFactValues[len(returnedFactValues)-1].GetUpdatedAt()
+	}
+	return &kurtosis_core_rpc_api_bindings.GetFactValuesResponse{
+		FactValues:            returnedFactValues,
+		LastTimestampFromPage: lastTimestampFromPage,
+	}, nil
 }
 
 func (apicService ApiContainerService) WaitForHttpGetEndpointAvailability(ctx context.Context, args *kurtosis_core_rpc_api_bindings.WaitForHttpGetEndpointAvailabilityArgs) (*emptypb.Empty, error) {
