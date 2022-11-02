@@ -77,10 +77,14 @@ func TestStreamLogs(t *testing.T) {
 
 	for  {
 		userServiceLogsByGuid, isChanOpen := <-userServiceLogsByGuidChan
-		require.True(t, isChanOpen)
+		if !isChanOpen {
+			break
+		}
 
 		userServiceLogs, found := userServiceLogsByGuid[userServiceGuid]
-		require.True(t, found)
+		if !found {
+			break
+		}
 
 		for _, serviceLog := range userServiceLogs {
 			receivedLogLines = append(receivedLogLines, serviceLog.GetContent())

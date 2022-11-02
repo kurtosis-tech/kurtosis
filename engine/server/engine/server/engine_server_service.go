@@ -187,72 +187,31 @@ func (service *EngineServerService) StreamUserServiceLogs(
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred streaming user service logs for GUIDs '%+v' in enclave with ID '%v'", requestedUserServiceGuids, enclaveId)
 	}
-
-	//this channel will produce a signal when the logs database read stream thread has finished
-	readLogsDatabaseHasFinishedSignaller := make(chan struct{})
-
-	go runStreamUserServiceLogsRoutine(
-		requestedUserServiceGuids,
-		userServiceLogsByServiceGuidChan,
-		errChan,
-		stream,
-		readLogsDatabaseHasFinishedSignaller,
-	)
-
-	go runStreamCancellationRoutine(
-		stream,
-		errChan,
-		readLogsDatabaseHasFinishedSignaller,
-		cancelLogsDatabaseStreamFunc,
-	)
-
-	return nil
-}
-
-func runStreamUserServiceLogsRoutine(
-	requestedUserServiceGuids map[user_service.ServiceGUID]bool,
-	userServiceLogsByServiceGuidChan chan map[user_service.ServiceGUID][]centralized_logs.LogLine,
-	errChan chan error,
-	stream kurtosis_engine_rpc_api_bindings.EngineService_StreamUserServiceLogsServer,
-	readLogsDatabaseHasFinishedSignaller chan struct{},
-) {
-	for {
-		userServiceLogsByServiceGuid, isChanOpen := <-userServiceLogsByServiceGuidChan
-		//If the channel is closed means that the logs database client won't continue sending streams
-		if !isChanOpen {
-			break
-		}
-
-		getUserServiceLogsResponse := newUserLogsResponseFromUserServiceLogsByGuid(requestedUserServiceGuids, userServiceLogsByServiceGuid)
-		if err := stream.Send(getUserServiceLogsResponse); err != nil {
-			errChan <- stacktrace.Propagate(err, "An error occurred sending the stream logs for user service logs response '%+v'", getUserServiceLogsResponse)
-		}
-	}
-
-	readLogsDatabaseHasFinishedSignaller <- struct{}{}
-}
-
-func runStreamCancellationRoutine(
-	stream kurtosis_engine_rpc_api_bindings.EngineService_StreamUserServiceLogsServer,
-	errChan chan error,
-	readLogsDatabaseHasFinishedSignaller chan struct{},
-	cancelLogsDatabaseStreamFunc func(),
-) {
 	defer cancelLogsDatabaseStreamFunc()
 
-	for  {
+	for {
 		select {
+		//stream case
+		case userServiceLogsByServiceGuid, isChanOpen := <-userServiceLogsByServiceGuidChan:
+			//If the channel is closed means that the logs database client won't continue sending streams
+			if !isChanOpen {
+				break
+			}
+			getUserServiceLogsResponse := newUserLogsResponseFromUserServiceLogsByGuid(requestedUserServiceGuids, userServiceLogsByServiceGuid)
+			if err := stream.Send(getUserServiceLogsResponse); err != nil {
+				return stacktrace.Propagate(err, "An error occurred sending the stream logs for user service logs response '%+v'", getUserServiceLogsResponse)
+			}
+		//client cancel ctx case
 		case <-stream.Context().Done():
 			logrus.Debug("The user service logs stream has done")
-			return
-		case err := <- errChan:
-			logrus.Errorf("An error occurred streaming user service logs. Err:\n%v", err)
-			return
-		case <-readLogsDatabaseHasFinishedSignaller:
-			logrus.Debug("Received the read logs database has finished signal")
-			return
+			return nil
+		//error from logs database case
+		case err := <-errChan:
+			return stacktrace.Propagate(err,"An error occurred streaming user service logs")
+
 		}
 	}
+
 }
 
 func newUserLogsResponseFromUserServiceLogsByGuid(requestedUserServiceGuids map[user_service.ServiceGUID]bool, userServiceLogsByUserServiceGuid map[user_service.ServiceGUID][]centralized_logs.LogLine) *kurtosis_engine_rpc_api_bindings.GetUserServiceLogsResponse {
