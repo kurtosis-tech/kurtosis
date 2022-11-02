@@ -23,6 +23,10 @@ func (environment *ValidatorEnvironment) AddServiceId(serviceId service.ServiceI
 	environment.serviceIDs[serviceId] = true
 }
 
+func (environment *ValidatorEnvironment) RemoveServiceId(serviceId service.ServiceID) {
+	delete(environment.serviceIDs, serviceId)
+}
+
 func (environment *ValidatorEnvironment) DoesServiceIdExist(serviceId service.ServiceID) bool {
 	_, ok := environment.serviceIDs[serviceId]
 	return ok

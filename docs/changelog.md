@@ -1,5 +1,8 @@
 # TBD
 
+### Features
+- Added `remove_service` to Startosis
+
 # 0.51.7
 
 ### Fixes
