@@ -1,5 +1,11 @@
 # TBD
 
+### Fixes
+- Fixed instruction position to work with nested functions
+
+### Features
+- Instruction position now contains the filename too
+
 # 0.51.6
 
 ### Features
