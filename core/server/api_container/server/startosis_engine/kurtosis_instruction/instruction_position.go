@@ -29,6 +29,10 @@ func NewInstructionPosition(line int32, col int32, filename string) *Instruction
 	}
 }
 
+func (position *InstructionPosition) String() string {
+	return fmt.Sprintf("%v-%v:%v", position.filename, position.line, position.col)
+}
+
 // MagicString the magic string allows us to identify an instruction that doesn't
 // have any other obvious identifiers, we take the line & column number of the instruction
 // and add a suffix to it to track what is returned by that instruction

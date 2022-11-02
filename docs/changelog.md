@@ -1,5 +1,10 @@
 # TBD
 
+### Features
+- Added exec and HTTP request facts
+- Prints out the instruction line, col & filename in the execution error
+- Prints out the instruction line, col & filename in the validation error
+
 # 0.51.7
 
 ### Fixes
@@ -7,7 +12,6 @@
 
 ### Features
 - Instruction position now contains the filename too
-- Added exec and HTTP request facts
 
 # 0.51.6
 
