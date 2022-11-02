@@ -69,6 +69,8 @@ func (instruction *UploadFilesInstruction) Execute(_ context.Context, environmen
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the path on disk of the file to upload")
 	}
+	// TODO use the stuff in service_network that is used by render templates
+	// If not then use this compression everywhere
 	compressedData, err := shared_utils.CompressPath(pathOnDisk)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while compressing the files")
