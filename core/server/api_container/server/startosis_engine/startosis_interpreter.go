@@ -99,7 +99,7 @@ func (interpreter *StartosisInterpreter) buildBindings(threadName string, instru
 		Print: makePrintFunction(scriptOutputBuffer),
 	}
 
-	builtins := &starlark.StringDict{
+	predeclared := &starlark.StringDict{
 		starlarkstruct.Default.GoString():                        starlark.NewBuiltin(starlarkstruct.Default.GoString(), starlarkstruct.Make), // extension to build struct in starlark
 		add_service.AddServiceBuiltinName:                        starlark.NewBuiltin(add_service.AddServiceBuiltinName, add_service.GenerateAddServiceBuiltin(instructionsQueue, interpreter.serviceNetwork)),
 		exec.ExecBuiltinName:                                     starlark.NewBuiltin(exec.ExecBuiltinName, exec.GenerateExecBuiltin(instructionsQueue, interpreter.serviceNetwork)),
@@ -110,16 +110,21 @@ func (interpreter *StartosisInterpreter) buildBindings(threadName string, instru
 		import_types.ImportTypesBuiltinName:                      starlark.NewBuiltin(import_types.ImportTypesBuiltinName, import_types.GenerateImportTypesBuiltin(interpreter.protoFileStore)),
 	}
 
-	return thread, builtins
+	return thread, predeclared
 }
 
+// This method handles the different cases a Startosis module can be executed. Here are the different cases handled:
+// - If there's no `types.proto` in the module, then the CLI should be called with no execute params (or default empty `{}`). The main function will not receive any arg. It should implement a simple `def main()`.
+// - If there's a `types.proto` in the module and this `types.proto` does not define a `ModuleInput` type, then the CLI should be called with no execute params (or default empty `{}`). The main function must have an `input_args` param and this `input_args` will be an empty object.
+// - If there's a `types.proto` in the module and this `types.proto` defines a `ModuleInput` type, then the CLI should be called with execute params (otherwise default values will be used). The main function must have an `input_args` param and `input_args` will be built from the execute params passed to the CLI
 func (interpreter *StartosisInterpreter) addInputArgsToPredeclared(moduleId string, serializedJsonParams string, predeclared *starlark.StringDict) *startosis_errors.InterpretationError {
 	if moduleId == ModuleIdPlaceholderForStandaloneScripts && serializedJsonParams == EmptyInputArgs {
 		(*predeclared)[MainInputArgName] = starlark.None
 		return nil
-	} else if moduleId == ModuleIdPlaceholderForStandaloneScripts && serializedJsonParams != EmptyInputArgs {
+	}
+	if moduleId == ModuleIdPlaceholderForStandaloneScripts && serializedJsonParams != EmptyInputArgs {
 		// This _cannot_ be reached right now. Just being nice in the logs in case it can be hit in the future
-		return startosis_errors.NewInterpretationError("Passing parameter to a standalone script if not yet supported in Kurtosis.")
+		return startosis_errors.NewInterpretationError("Passing parameter to a standalone script is not yet supported in Kurtosis.")
 	}
 
 	// Get descriptor for type "ModuleInput" in the module types.proto file
@@ -129,7 +134,8 @@ func (interpreter *StartosisInterpreter) addInputArgsToPredeclared(moduleId stri
 		// If am empty param was passed to the script, then it's valid to not have a types.proto inside the module
 		(*predeclared)[MainInputArgName] = starlark.None
 		return nil
-	} else if err != nil {
+	}
+	if err != nil {
 		return startosis_errors.NewInterpretationError("File '%s' not found at the root of module '%s' but a non empty parameter was passed. This is allowed to define a module with no '%s', but it should be always be called with an empty parameter", TypesFileName, moduleId, TypesFileName)
 	}
 	reflectMessageDescriptor, err := fileStore.FindDescriptorByName(ModuleInputTypeName)
@@ -137,8 +143,9 @@ func (interpreter *StartosisInterpreter) addInputArgsToPredeclared(moduleId stri
 		// If am empty param was passed to the script, then it's valid to not have a ModuleInput type defined in the module's types.proto
 		(*predeclared)[MainInputArgName] = starlark.None
 		return nil
-	} else if err != nil {
-		return startosis_errors.NewInterpretationError("Type '%s' cannot be found in type file '%s' for module '%s' but a non empty parameter was passed. When some parameters are passed to a module, there must be a `%s` type defined in the mofule's '%s' file", ModuleInputTypeName, TypesFileName, moduleId, MainInputArgName, ModuleInputTypeName)
+	}
+	if err != nil {
+		return startosis_errors.NewInterpretationError("Type '%s' cannot be found in type file '%s' for module '%s' but a non empty parameter was passed. When some parameters are passed to a module, there must be a `%s` type defined in the module's '%s' file", ModuleInputTypeName, TypesFileName, moduleId, MainInputArgName, ModuleInputTypeName)
 	}
 	messageDescriptor, ok := reflectMessageDescriptor.(protoreflect.MessageDescriptor)
 	if !ok {
@@ -157,12 +164,12 @@ func (interpreter *StartosisInterpreter) addInputArgsToPredeclared(moduleId stri
 	protobufMarshalledMessage, err := proto.Marshal(message)
 	if err != nil {
 		logrus.Error(stacktrace.Propagate(err, "Unable to marshal proto message '%s' from module ID '%s'", ModuleInputTypeName, moduleId).Error())
-		return startosis_errors.NewInterpretationError("Unable to serialize the '%s' type of module '%s'. This is unexpected. More info will be logged to Kurtosis", ModuleInputTypeName, moduleId)
+		return startosis_errors.NewInterpretationError("Unable to serialize the '%s' type of module '%s'. This is unexpected. More info will be logged to Kurtosis core", ModuleInputTypeName, moduleId)
 	}
 	starlarkMessage, err := starlarkproto.Unmarshal(message.Descriptor(), protobufMarshalledMessage)
 	if err != nil {
 		logrus.Error(stacktrace.Propagate(err, "Unable to convert proto message '%s' to a starlark proto message from module ID '%s'", ModuleInputTypeName, moduleId).Error())
-		return startosis_errors.NewInterpretationError("Unable to serialize the '%s' type of module '%s'. This is unexpected. More info will be logged to Kurtosis", moduleId, serializedJsonParams)
+		return startosis_errors.NewInterpretationError("Unable to serialize the '%s' type of module '%s'. This is unexpected. More info will be logged to Kurtosis core", moduleId, serializedJsonParams)
 	}
 	(*predeclared)[MainInputArgName] = starlarkMessage
 	return nil

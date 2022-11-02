@@ -1073,7 +1073,7 @@ types = import_types(proto_types_file_bad_argument = "github.com/kurtosis/module
 print("Hello world!")
 `
 
-	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), moduleId, script, "{}")
+	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), moduleId, script, EmptyInputArgs)
 	require.Empty(t, scriptOutput)
 	require.Empty(t, instructions)
 
@@ -1097,7 +1097,7 @@ types = import_types("github.com/kurtosis/module/types.proto")
 print("Hello world!")
 `
 
-	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), moduleId, script, "{}")
+	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), moduleId, script, EmptyInputArgs)
 	require.Empty(t, scriptOutput)
 	require.Empty(t, instructions)
 
@@ -1160,7 +1160,7 @@ print(input_args.greetings)
 	require.Equal(t, 0, len(instructions))
 	require.Empty(t, scriptOutput)
 
-	expectedError := startosis_errors.NewInterpretationError("Passing parameter to a standalone script if not yet supported in Kurtosis.")
+	expectedError := startosis_errors.NewInterpretationError("Passing parameter to a standalone script is not yet supported in Kurtosis.")
 	require.Equal(t, expectedError, interpretationError)
 }
 
