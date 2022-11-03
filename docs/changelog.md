@@ -5,6 +5,7 @@
 - Prints out the instruction line, col & filename in the execution error
 - Prints out the instruction line, col & filename in the validation error
 - Added `remove_service` to Startosis
+- Added `upload_service` to Startosis
 
 # 0.51.7
 
