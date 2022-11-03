@@ -305,7 +305,7 @@ func runReceiveStreamLogsFromTheServerRoutine(
 			break
 		}
 		if errReceivingStream != nil {
-			logrus.Errorf("An error occurred receveing user service logs stream for user services '%+v' in enclave '%v'. Error:\n%v", requestedUserServiceGuids, enclaveID, errReceivingStream)
+			logrus.Errorf("An error occurred receiving user service logs stream for user services '%+v' in enclave '%v'. Error:\n%v", requestedUserServiceGuids, enclaveID, errReceivingStream)
 			if errCloseSend := stream.CloseSend(); errCloseSend != nil {
 				logrus.Errorf("Streaming user service logs has thrown an error, so we tried to close the send direction of the stream, but an error was thrown:\n%v", errCloseSend)
 			}
