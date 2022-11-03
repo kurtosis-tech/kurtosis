@@ -1294,7 +1294,7 @@ print("The service example-datastore-server has been removed")
 
 	removeInstruction := remove_service.NewRemoveServiceInstruction(
 		testServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(5, 15, starlarkFilenamePlaceholderAsNotUsed),
+		*kurtosis_instruction.NewInstructionPosition(4, 15, starlarkFilenamePlaceholderAsNotUsed),
 		"example-datastore-server",
 	)
 
