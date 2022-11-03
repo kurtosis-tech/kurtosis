@@ -131,7 +131,7 @@ func run(
 		}
 		defer func() {
 			for _, userServiceLogsReadCloser := range successfulUserServiceLogs {
-				if err := userServiceLogsReadCloser.Close(); err != nil{
+				if err := userServiceLogsReadCloser.Close(); err != nil {
 					logrus.Warnf("We tried to close the user service logs read-closer-objects after we're done using it, but doing so threw an error:\n%v", err)
 				}
 			}
@@ -177,7 +177,7 @@ func run(
 
 		for _, logLine := range serviceLogs {
 			if _, err := fmt.Fprintln(logrus.StandardLogger().Out, logLine); err != nil {
-				logrus.Errorf("We tried to print the user service log line '%v', but doing so threw an error:\n%v",logLine, err)
+				logrus.Errorf("We tried to print the user service log line '%v', but doing so threw an error:\n%v", logLine, err)
 			}
 		}
 
@@ -209,7 +209,7 @@ func run(
 			for _, serviceLog := range userServiceLogs {
 				logrus.Println(serviceLog.GetContent())
 			}
-		case <- interruptChan:
+		case <-interruptChan:
 			logrus.Debugf("Received signal interruption in service logs Kurtosis CLI command")
 			return nil
 		}
