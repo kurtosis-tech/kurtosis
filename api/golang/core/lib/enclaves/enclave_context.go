@@ -42,6 +42,8 @@ const (
 	defaultPartitionId PartitionID = ""
 
 	modFilename = "kurtosis.mod"
+
+	ensureCompressedFileIsLesserThanGRPCLimit = true
 )
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
@@ -153,7 +155,7 @@ func (enclaveCtx *EnclaveContext) ExecuteStartosisModule(moduleRootPath string, 
 		return nil, stacktrace.Propagate(err, "There was an error parsing the '%v' at '%v'", modFilename, moduleRootPath)
 	}
 
-	compressedModule, err := shared_utils.CompressPath(moduleRootPath)
+	compressedModule, err := shared_utils.CompressPath(moduleRootPath, ensureCompressedFileIsLesserThanGRPCLimit)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "There was an error compressing module '%v' before upload", moduleRootPath)
 	}
@@ -558,7 +560,7 @@ func (enclaveCtx *EnclaveContext) GetModules() (map[modules.ModuleID]bool, error
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (services.FilesArtifactUUID, error) {
-	content, err := shared_utils.CompressPath(pathToUpload)
+	content, err := shared_utils.CompressPath(pathToUpload, ensureCompressedFileIsLesserThanGRPCLimit)
 	if err != nil {
 		return "", stacktrace.Propagate(err,
 			"There was an error compressing the file '%v' before upload",

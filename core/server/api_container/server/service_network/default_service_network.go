@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/files_artifacts_expansion"
@@ -23,7 +24,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/mholt/archiver"
 	"github.com/sirupsen/logrus"
 	"io"
 	"math"
@@ -48,9 +48,10 @@ const (
 	minMemoryLimit              uint64 = 6 // Docker doesn't allow memory limits less than 6 megabytes
 	defaultMemoryAllocMegabytes uint64 = 0
 
-	folderPermissionForRenderedTemplates       = 0755
-	tempDirForRenderedTemplatesPrefix          = "temp-dir-for-rendered-templates-"
-	compressedRenderedTemplatesFilenamePattern = "compressed-rendered-templates-*.tgz"
+	folderPermissionForRenderedTemplates = 0755
+	tempDirForRenderedTemplatesPrefix    = "temp-dir-for-rendered-templates-"
+
+	ensureCompressedFileIsLesserThanGRPCLimit = false
 )
 
 // Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and port spec protos
@@ -688,23 +689,16 @@ func (network *DefaultServiceNetwork) RenderTemplates(templatesAndDataByDestinat
 		}
 	}
 
-	compressedFilepath, err := compressDirToTemporaryTarGzFile(tempDirForRenderedTemplates)
+	compressedFile, err := shared_utils.CompressPath(tempDirForRenderedTemplates, ensureCompressedFileIsLesserThanGRPCLimit)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "There was an error archiving rendered templates to a temporary file")
+		return "", stacktrace.Propagate(err, "There was an error compressing dir '%v'", tempDirForRenderedTemplates)
 	}
-	defer os.Remove(compressedFilepath)
-
-	compressedFile, err := os.Open(compressedFilepath)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred while opening the compressed file '%v'", compressedFilepath)
-	}
-	defer compressedFile.Close()
 
 	store, err := network.enclaveDataDir.GetFilesArtifactStore()
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while getting files artifact store")
 	}
-	filesArtifactUuid, err := store.StoreFile(compressedFile)
+	filesArtifactUuid, err := store.StoreFile(bytes.NewReader(compressedFile))
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while storing the file '%v' in the files artifact store", compressedFile)
 	}
@@ -1080,42 +1074,4 @@ func renderTemplateToFile(templateAsAString string, templateData interface{}, de
 		return stacktrace.Propagate(err, "An error occurred while writing the rendered template to destination '%v'", destinationFilepath)
 	}
 	return nil
-}
-
-func compressDirToTemporaryTarGzFile(tempDirForRenderedTemplates string) (string, error) {
-
-	// the list of path will contain absolute paths to all files & dirs in the root of the temp dir
-	// this allows us to preserve the intended nesting
-	var pathsToArchive []string
-	filesInTempDirForRenderedTemplates, err := os.ReadDir(tempDirForRenderedTemplates)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "There was an error in reading the contents of the temp dir for rendered templates '%v'", tempDirForRenderedTemplates)
-	}
-	for _, fileInTempDirForRenderedTemplates := range filesInTempDirForRenderedTemplates {
-		pathToArchive := path.Join(tempDirForRenderedTemplates, fileInTempDirForRenderedTemplates.Name())
-		pathsToArchive = append(pathsToArchive, pathToArchive)
-	}
-
-	compressedFilepath, err := getPathForTemporaryCompressedFile()
-	if err != nil {
-		return "", stacktrace.Propagate(err, "Error getting temporary compressed file")
-	}
-
-	tarArchiver := archiver.NewTarGz()
-	tarArchiver.OverwriteExisting = true
-	if err = tarArchiver.Archive(pathsToArchive, compressedFilepath); err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred while archiving the rendered template files to '%v'", compressedFilepath)
-	}
-	return compressedFilepath, nil
-}
-
-func getPathForTemporaryCompressedFile() (string, error) {
-	compressedFile, err := os.CreateTemp("", compressedRenderedTemplatesFilenamePattern)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred while creating temporary file to archive rendered templates")
-	}
-	defer compressedFile.Close()
-
-	compressedFilepath := compressedFile.Name()
-	return compressedFilepath, nil
 }

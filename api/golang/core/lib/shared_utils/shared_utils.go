@@ -16,7 +16,7 @@ const (
 	defaultTmpDir             = ""
 )
 
-func CompressPath(pathToCompress string) ([]byte, error) {
+func CompressPath(pathToCompress string, accountForGRPCLimit bool) ([]byte, error) {
 	pathToCompress = strings.TrimRight(pathToCompress, string(filepath.Separator))
 	uploadFileInfo, err := os.Stat(pathToCompress)
 	if err != nil {
@@ -59,7 +59,7 @@ func CompressPath(pathToCompress string) ([]byte, error) {
 			tempDir, pathToCompress)
 	}
 
-	if compressedFileInfo.Size() >= grpcDataTransferLimit {
+	if accountForGRPCLimit && compressedFileInfo.Size() >= grpcDataTransferLimit {
 		return nil, stacktrace.Propagate(err,
 			"The files you are trying to upload, which are now compressed, exceed or reach 4mb, a limit imposed by gRPC. "+
 				"Please reduce the total file size and ensure it can compress to a size below 4mb.")
