@@ -537,7 +537,7 @@ func (apicService ApiContainerService) UploadFilesArtifact(ctx context.Context, 
 
 	filesArtifactUuid, err := apicService.serviceNetwork.UploadFilesArtifact(args.Data)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while trying to store files.")
+		return nil, stacktrace.Propagate(err, "An error occurred while trying to upload the file")
 	}
 
 	response := &kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse{Uuid: string(filesArtifactUuid)}
