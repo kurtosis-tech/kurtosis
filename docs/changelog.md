@@ -7,6 +7,9 @@
 - Added `remove_service` to Startosis
 - Added `upload_service` to Startosis
 
+### Fixes
+- Fixed nil accesses on Fact Engine
+
 # 0.51.7
 
 ### Fixes
