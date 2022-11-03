@@ -49,6 +49,7 @@ func NewUploadFilesInstruction(position kurtosis_instruction.InstructionPosition
 		position:       position,
 		serviceNetwork: serviceNetwork,
 		srcPath:        srcPath,
+		provider:       provider,
 	}
 }
 
