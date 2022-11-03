@@ -5,6 +5,9 @@
 - Prints out the instruction line, col & filename in the execution error
 - Prints out the instruction line, col & filename in the validation error
 
+### Fixes
+- Fixed nil accesses on Fact Engine
+
 # 0.51.7
 
 ### Fixes
