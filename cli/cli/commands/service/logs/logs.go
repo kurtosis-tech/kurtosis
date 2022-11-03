@@ -25,6 +25,8 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
+	"os"
+	"os/signal"
 	"strconv"
 )
 
@@ -188,22 +190,28 @@ func run(
 	}
 	defer cancelStreamUserServiceLogsFunc()
 
+	// This channel will receive a signal when the user presses an interrupt
+	interruptChan := make(chan os.Signal)
+	signal.Notify(interruptChan, os.Interrupt)
+
 	for {
-		userServiceLogsByGuid, isChanOpen := <-userServiceLogsByGuidChan
-		if !isChanOpen {
-			break
-		}
+		select {
+		case userServiceLogsByGuid, isChanOpen := <-userServiceLogsByGuidChan:
+			if !isChanOpen {
+				return nil
+			}
 
-		userServiceLogs, found := userServiceLogsByGuid[serviceGuid]
-		if !found {
-			return stacktrace.NewError("Expected to find logs for user service with GUID '%v' on user service logs map '%+v' but was not found; this should never happen, and is a bug in Kurtosis", serviceGuid, userServiceLogsByGuid)
-		}
+			userServiceLogs, found := userServiceLogsByGuid[serviceGuid]
+			if !found {
+				return stacktrace.NewError("Expected to find logs for user service with GUID '%v' on user service logs map '%+v' but was not found; this should never happen, and is a bug in Kurtosis", serviceGuid, userServiceLogsByGuid)
+			}
 
-		for _, serviceLog := range userServiceLogs {
-			fmt.Println(serviceLog.GetContent())
+			for _, serviceLog := range userServiceLogs {
+				logrus.Println(serviceLog.GetContent())
+			}
+		case <- interruptChan:
+			logrus.Debugf("Received signal interruption in service logs Kurtosis CLI command")
+			return nil
 		}
-
 	}
-
-	return nil
 }

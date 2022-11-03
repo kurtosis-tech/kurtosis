@@ -263,6 +263,10 @@ func runReadStreamResponseAndAddUserServiceLogLinesToUserServiceLogsChannel(
 	readLokiStreamHasFinishedSignaller chan struct{},
 ) {
 
+	//TODO defer websocket close
+	//todo close any other resource
+	//TODO cancel the context
+
 	for {
 
 		streamResponse := &lokiStreamLogsResponse{}

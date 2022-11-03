@@ -16,7 +16,6 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"io"
-	"time"
 )
 
 const (
@@ -29,9 +28,6 @@ const (
 
 	// Blank tells the engine server to use the default
 	defaultApiContainerVersionTag = ""
-
-	//Left the connection open from the client-side for 4 days
-	maxAllowedWebsocketConnectionDurationOnClientSide = 96 * time.Hour
 
 	userServiceLogsByServiceGuidChanBufferSize = 5
 )
@@ -213,7 +209,7 @@ func (kurtosisCtx *KurtosisContext) StreamUserServiceLogs(
 	error,
 ) {
 
-	ctxWithCancel, cancelCtxFunc := context.WithTimeout(ctx, maxAllowedWebsocketConnectionDurationOnClientSide)
+	ctxWithCancel, cancelCtxFunc := context.WithCancel(ctx)
 	shouldCancelCtx := false
 	defer func() {
 		if shouldCancelCtx {
@@ -231,59 +227,15 @@ func (kurtosisCtx *KurtosisContext) StreamUserServiceLogs(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred streaming user service logs using args '%+v'", getUserServiceLogsArgs)
 	}
 
-	//this channel will produce a signal when the method caller says "I no longer want data"
-	callerHasCanceledStreamingLogsSignaller := make(chan struct{})
-
-	//this channel will produce a signal when the reception of user service logs thread has finished
-	receiveStreamLogsHasFinishedSignaller := make(chan struct{})
-
 	go runReceiveStreamLogsFromTheServerRoutine(
+		cancelCtxFunc,
 		enclaveID,
 		userServiceGuids,
 		userServiceLogsByServiceGuidChan,
 		stream,
-		receiveStreamLogsHasFinishedSignaller,
 	)
 
-	go runStreamCancellationRoutine(
-		ctxWithCancel,
-		cancelCtxFunc,
-		userServiceLogsByServiceGuidChan,
-		receiveStreamLogsHasFinishedSignaller,
-		callerHasCanceledStreamingLogsSignaller,
-	)
-
-	cancelStreamUserServiceLogsFunc := func () { callerHasCanceledStreamingLogsSignaller <- struct {}{} }
-
-	return userServiceLogsByServiceGuidChan, cancelStreamUserServiceLogsFunc, nil
-}
-
-func runStreamCancellationRoutine(
-	ctx context.Context,
-	cancelCtxFunc context.CancelFunc,
-	userServiceLogsByServiceGuidChan chan map[services.ServiceGUID][]*ServiceLog,
-	receiveStreamLogsHasFinishedSignaller chan struct{},
-	callerHasCanceledStreamingLogsSignaller chan struct{},
-) {
-	//Closing all the open resources at the end
-	defer func() {
-		cancelCtxFunc()
-		close(userServiceLogsByServiceGuidChan)
-	}()
-
-	for {
-		select {
-		case <- receiveStreamLogsHasFinishedSignaller:
-			logrus.Debug("Stopped receiving user service logs from Kurtosis engine's server")
-			return
-		case <- callerHasCanceledStreamingLogsSignaller:
-			logrus.Debug("KurtosisContext.StreamLogs caller has canceled the user service logs stream")
-			return
-		case <- ctx.Done():
-			logrus.Debug("The stream user service logs context has done")
-			return
-		}
-	}
+	return userServiceLogsByServiceGuidChan, cancelCtxFunc, nil
 }
 
 // ====================================================================================================
@@ -292,33 +244,38 @@ func runStreamCancellationRoutine(
 //
 // ====================================================================================================
 func runReceiveStreamLogsFromTheServerRoutine(
+	cancelCtxFunc context.CancelFunc,
 	enclaveID enclaves.EnclaveID,
 	requestedUserServiceGuids map[services.ServiceGUID]bool,
 	userServiceLogsByServiceGuidChan chan map[services.ServiceGUID][]*ServiceLog,
 	stream kurtosis_engine_rpc_api_bindings.EngineService_StreamUserServiceLogsClient,
-	receiveStreamLogsHasFinishedSignaller chan struct{},
 ) {
 
+	//Closing all the open resources at the end
+	defer func() {
+		cancelCtxFunc()
+		close(userServiceLogsByServiceGuidChan)
+	}()
+
 	for {
-		getUserServiceLogResponse, errReceivingStream := stream.Recv()
-		if errReceivingStream == io.EOF {
-			break
-		}
-		if errReceivingStream != nil {
-			logrus.Errorf("An error occurred receiving user service logs stream for user services '%+v' in enclave '%v'. Error:\n%v", requestedUserServiceGuids, enclaveID, errReceivingStream)
-			if errCloseSend := stream.CloseSend(); errCloseSend != nil {
-				logrus.Errorf("Streaming user service logs has thrown an error, so we tried to close the send direction of the stream, but an error was thrown:\n%v", errCloseSend)
+		switch getUserServiceLogsResponse, errReceivingStream := stream.Recv(); errReceivingStream {
+		case io.EOF:
+			logrus.Debug("Received an 'EOF' error from the user service logs GRPC stream")
+			return
+		case context.Canceled:
+			logrus.Debug("Received a 'context canceled' error from the user service logs GRPC stream")
+			return
+		default:
+			if errReceivingStream != nil {
+				logrus.Errorf("An error occurred receiving user service logs stream for user services '%+v' in enclave '%v'. Error:\n%v", requestedUserServiceGuids, enclaveID, errReceivingStream)
+				return
 			}
-			break
+
+			userServiceLogsByServiceGuidMap := newUserServiceLogsByServiceGuidMapFromGetUserServiceLogsResponse(requestedUserServiceGuids, getUserServiceLogsResponse)
+
+			userServiceLogsByServiceGuidChan <- userServiceLogsByServiceGuidMap
 		}
-
-		userServiceLogsByServiceGuidMap := newUserServiceLogsByServiceGuidMapFromGetUserServiceLogsResponse(requestedUserServiceGuids, getUserServiceLogResponse)
-
-		userServiceLogsByServiceGuidChan <- userServiceLogsByServiceGuidMap
-
 	}
-
-	receiveStreamLogsHasFinishedSignaller <- struct{}{}
 }
 
 func newEnclaveContextFromEnclaveInfo(
@@ -436,7 +393,6 @@ func newGetUserServiceLogsArgs(
 
 	return getUserServiceLogsArgs
 }
-
 
 func newUserServiceLogsByServiceGuidMapFromGetUserServiceLogsResponse(
 	requestedUserServiceGuids map[services.ServiceGUID]bool,
