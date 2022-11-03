@@ -19,6 +19,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_modules/mock_module_content_provider"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"path/filepath"
 	"testing"
 )
 
@@ -1164,6 +1165,38 @@ print(input_args.greetings)
 
 	expectedError := startosis_errors.NewInterpretationError("Passing parameter to a standalone script is not yet supported in Kurtosis.")
 	require.Equal(t, expectedError, interpretationError)
+}
+
+func TestStartosisInterpreter_InvalidProtoFile(t *testing.T) {
+	moduleId := "github.com/kurtosis/module"
+	typesFilePath := moduleId + "/types.proto"
+	typesFileContent := `
+syntax "proto3"; // Missing '=' between 'syntax' and '"proto3"''
+message ModuleInput {
+  string greetings = 1
+}
+`
+
+	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
+	defer moduleContentProvider.RemoveAll()
+	require.Nil(t, moduleContentProvider.AddFileContent(typesFilePath, typesFileContent))
+	absFilePath, err := moduleContentProvider.GetOnDiskAbsoluteFilePath(typesFilePath)
+	require.Nil(t, err)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
+	script := `
+def main(input_args):
+	print(input_args.greetings)
+`
+	serializedArgs := `{"greetings": "Hello World!"}`
+	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), moduleId, script, serializedArgs)
+	require.Equal(t, 0, len(instructions))
+	require.Empty(t, scriptOutput)
+
+	expectedErrorMsg := fmt.Sprintf(`File 'types.proto' either absent of invalid at the root of module 'github.com/kurtosis/module' but a non empty parameter was passed. This is allowed to define a module with no 'types.proto', but it should be always be called with an empty parameter
+	Caused by: Unable to compile .proto file 'github.com/kurtosis/module/types.proto' (checked out at '%s'). Proto compiler output was: 
+%s:2:8: Expected "=".
+`, absFilePath, filepath.Base(absFilePath))
+	require.Equal(t, expectedErrorMsg, interpretationError.Error())
 }
 
 func TestStartosisInterpreter_InjectValidInvalidInputArgsToModule_InvalidJson(t *testing.T) {

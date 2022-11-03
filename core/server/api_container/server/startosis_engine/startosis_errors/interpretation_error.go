@@ -8,6 +8,7 @@ import (
 const (
 	errorDefaultMsg  = "/!\\ Errors interpreting Startosis script"
 	stacktracePrefix = "\tat "
+	causedByPrefix   = "\tCaused by: "
 )
 
 // InterpretationError is an error thrown by the Startosis interpreter.
@@ -19,6 +20,9 @@ type InterpretationError struct {
 	// The error message
 	msg string
 
+	// Optional cause
+	cause error
+
 	// Optional stacktrace
 	stacktrace []CallFrame
 }
@@ -26,6 +30,13 @@ type InterpretationError struct {
 func NewInterpretationError(msg string, args ...interface{}) *InterpretationError {
 	return &InterpretationError{
 		msg: fmt.Sprintf(msg, args...),
+	}
+}
+
+func WrapError(err error, msg string, args ...interface{}) *InterpretationError {
+	return &InterpretationError{
+		msg:   fmt.Sprintf(msg, args...),
+		cause: err,
 	}
 }
 
@@ -49,6 +60,9 @@ func (err *InterpretationError) Error() string {
 		serializedError.WriteString(errorDefaultMsg)
 	} else {
 		serializedError.WriteString(err.msg)
+	}
+	if err.cause != nil {
+		serializedError.WriteString(fmt.Sprintf("\n%s%s", causedByPrefix, err.cause.Error()))
 	}
 	for _, stacktraceElement := range err.stacktrace {
 		serializedError.WriteString(fmt.Sprintf("\n%s%s", stacktracePrefix, stacktraceElement.String()))
