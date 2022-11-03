@@ -5,6 +5,9 @@
 - Prints out the instruction line, col & filename in the execution error
 - Prints out the instruction line, col & filename in the validation error
 
+### Changes
+- Add more integration tests for Kurtosis modules with input and output types
+
 # 0.51.7
 
 ### Fixes
