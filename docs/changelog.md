@@ -1,5 +1,7 @@
 # TBD
 
+# 0.51.8
+
 ### Features
 - Added exec and HTTP request facts
 - Prints out the instruction line, col & filename in the execution error
