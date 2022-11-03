@@ -1,4 +1,4 @@
-package startosis_test
+package startosis_upload_files_test
 
 import (
 	"context"
@@ -22,6 +22,9 @@ const (
 	renderedConfigRelativePath    = "foo/bar.yml"
 	renderedConfigFile            = renderedConfigMountPath + "/" + renderedConfigRelativePath
 
+	pathToMountUploadedDir     = "/uploads"
+	pathToCheckForUploadedFile = "/uploads/lib.star"
+
 	startosisScript = `
 DATASTORE_IMAGE = "kurtosistech/example-datastore-server"
 DATASTORE_SERVICE_ID = "` + serviceId + `"
@@ -37,7 +40,11 @@ TEMPLATE_FILE_TO_RENDER="github.com/kurtosis-tech/eth2-merge-kurtosis-module/kur
 PATH_TO_MOUNT_RENDERED_CONFIG="` + renderedConfigMountPath + `"
 RENDER_RELATIVE_PATH = "` + renderedConfigRelativePath + `"
 
+DIR_TO_UPLOAD = "github.com/kurtosis-tech/datastore-army-module-demo/lib"
+PATH_TO_MOUNT_UPLOADED_DIR = "` + pathToMountUploadedDir + `"
+
 print("Adding service " + DATASTORE_SERVICE_ID + ".")
+
 
 service_config = struct(
     container_image_name = DATASTORE_IMAGE,
@@ -66,6 +73,8 @@ template_data_by_path = {
 }
 
 rendered_artifact = render_templates(template_data_by_path)
+uploaded_artifact_uuid = upload_files(DIR_TO_UPLOAD)
+print("Uploaded " + uploaded_artifact_uuid)
 
 dependent_service_config = struct(
     container_image_name = DATASTORE_IMAGE,
@@ -74,7 +83,8 @@ dependent_service_config = struct(
     },
 	files_artifact_mount_dirpaths = {
 		artifact_uuid : PATH_TO_MOUNT_ON_DEPENDENT_SERVICE,
-		rendered_artifact : PATH_TO_MOUNT_RENDERED_CONFIG
+		rendered_artifact : PATH_TO_MOUNT_RENDERED_CONFIG,
+		uploaded_artifact_uuid: PATH_TO_MOUNT_UPLOADED_DIR
 	}
 )
 add_service(service_id = SERVICE_DEPENDENT_ON_DATASTORE_SERVICE, service_config = dependent_service_config)
@@ -159,4 +169,12 @@ scrape_configs:
 	require.Nil(t, err, "Unexpected err running verification on rendered file on "+serviceIdForDependentService)
 	require.Equal(t, int32(0), exitCode)
 	require.Equal(t, expectedConfigFile, configFileContent, "Rendered file contents don't match expected contents")
+
+	// Check that the file got uploaded on the second service
+	logrus.Infof("Checking that the file got uploaded on " + serviceIdForDependentService)
+	serviceCtx, err = enclaveCtx.GetServiceContext(serviceIdForDependentService)
+	require.Nil(t, err, "Unexpected Error Creating Service Context")
+	exitCode, _, err = serviceCtx.ExecCommand([]string{"ls", pathToCheckForUploadedFile})
+	require.Nil(t, err, "Unexpected err running verification on upload file on "+serviceIdForDependentService)
+	require.Equal(t, int32(0), exitCode)
 }
