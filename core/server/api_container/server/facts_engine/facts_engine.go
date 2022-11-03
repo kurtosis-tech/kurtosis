@@ -215,12 +215,12 @@ func (engine *FactsEngine) runRecipeLoop(factId FactId, exit <-chan bool, recipe
 			now := time.Now()
 			timestampKey := getKeyFromTimestamp(now)
 			factValue, err := engine.runRecipe(recipe)
-			factValue.UpdatedAt = timestamppb.New(now)
 			if err != nil {
 				logrus.Errorf(stacktrace.Propagate(err, "An error occurred when running recipe").Error())
 				// TODO(victor.colombo): Run exponential backoff
 				continue
 			}
+			factValue.UpdatedAt = timestamppb.New(now)
 			marshaledFactValue, err := proto.Marshal(factValue)
 			if err != nil {
 				logrus.Errorf(stacktrace.Propagate(err, "An error occurred when marshaling fact value").Error())
@@ -263,15 +263,15 @@ func (engine *FactsEngine) runRecipe(recipe *kurtosis_core_rpc_api_bindings.Fact
 			recipe.GetHttpRequestFact().GetEndpoint(),
 			recipe.GetHttpRequestFact().GetBody(),
 		)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred when running HTTP request recipe")
+		}
 		defer func() {
 			err := response.Body.Close()
 			if err != nil {
 				logrus.Errorf("An error occurred when closing response body: %v", err)
 			}
 		}()
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred when running HTTP request recipe")
-		}
 		body, err := io.ReadAll(response.Body)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred when reading HTTP response body")
@@ -297,7 +297,7 @@ func (engine *FactsEngine) runRecipe(recipe *kurtosis_core_rpc_api_bindings.Fact
 				} else {
 					return &kurtosis_core_rpc_api_bindings.FactValue{
 						FactValue: &kurtosis_core_rpc_api_bindings.FactValue_StringValue{
-							StringValue: fmt.Sprintf("%#v", v),
+							StringValue: fmt.Sprintf("%v", v),
 						},
 					}, nil
 				}

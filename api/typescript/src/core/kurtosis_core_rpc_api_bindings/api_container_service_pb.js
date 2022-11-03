@@ -9783,8 +9783,8 @@ proto.api_container_api.HttpRequestFactRecipe.serializeBinaryToWriter = function
       f
     );
   }
-  f = message.getFieldExtractor();
-  if (f.length > 0) {
+  f = /** @type {string} */ (jspb.Message.getField(message, 6));
+  if (f != null) {
     writer.writeString(
       6,
       f
@@ -9897,7 +9897,25 @@ proto.api_container_api.HttpRequestFactRecipe.prototype.getFieldExtractor = func
  * @return {!proto.api_container_api.HttpRequestFactRecipe} returns this
  */
 proto.api_container_api.HttpRequestFactRecipe.prototype.setFieldExtractor = function(value) {
-  return jspb.Message.setProto3StringField(this, 6, value);
+  return jspb.Message.setField(this, 6, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.api_container_api.HttpRequestFactRecipe} returns this
+ */
+proto.api_container_api.HttpRequestFactRecipe.prototype.clearFieldExtractor = function() {
+  return jspb.Message.setField(this, 6, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.HttpRequestFactRecipe.prototype.hasFieldExtractor = function() {
+  return jspb.Message.getField(this, 6) != null;
 };
 
 
