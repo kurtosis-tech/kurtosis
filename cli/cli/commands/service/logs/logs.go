@@ -41,6 +41,8 @@ const (
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
+
+	interruptChanBufferSize = 5
 )
 
 var defaultShouldFollowLogs = strconv.FormatBool(false)
@@ -191,7 +193,7 @@ func run(
 	defer cancelStreamUserServiceLogsFunc()
 
 	// This channel will receive a signal when the user presses an interrupt
-	interruptChan := make(chan os.Signal)
+	interruptChan := make(chan os.Signal, interruptChanBufferSize)
 	signal.Notify(interruptChan, os.Interrupt)
 
 	for {
