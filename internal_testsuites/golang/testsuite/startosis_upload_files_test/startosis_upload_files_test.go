@@ -66,7 +66,7 @@ func TestStartosis(t *testing.T) {
 Uploaded {{kurtosis:FILENAME_NOT_USED-13:38.artifact_uuid}}
 `
 
-	require.Empty(t, executionResult.InterpretationError, "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
+	require.Empty(t, executionResult.InterpretationError, "Unexpected interpretation error. This test requires you to be online for the upload_file command to run")
 	require.Lenf(t, executionResult.ValidationErrors, 0, "Unexpected validation error")
 	require.Empty(t, executionResult.ExecutionError, "Unexpected execution error")
 	require.Equal(t, expectedScriptOutput, executionResult.SerializedScriptOutput)
