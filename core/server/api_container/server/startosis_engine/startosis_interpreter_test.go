@@ -1288,7 +1288,7 @@ remove_service(service_id=service_id)
 print("The service example-datastore-server has been removed")
 `
 
-	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
+	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
 	require.Equal(t, 1, len(instructions))
 	require.Nil(t, interpretationError)
 
