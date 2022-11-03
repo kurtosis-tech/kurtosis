@@ -14,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/read_file"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/render_templates"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/store_files_from_service"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/upload_files"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_modules/mock_module_content_provider"
 	"github.com/stretchr/testify/assert"
@@ -1273,4 +1274,24 @@ In the store files instruction
 {{kurtosis:%v-4:39.artifact_uuid}}
 `, storeFileDefinitionPath)
 	require.Equal(t, expectedOutput, string(scriptOutput))
+}
+
+func TestStartosisInterpreter_UploadGetsInterpretedCorrectly(t *testing.T) {
+	filePath := "github.com/kurtosis/module/lib/lib.star"
+	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
+	defer moduleContentProvider.RemoveAll()
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
+	script := `upload_files("` + filePath + `")
+`
+	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	require.Nil(t, interpretationError)
+	require.Equal(t, 1, len(instructions))
+	require.Empty(t, scriptOutput)
+
+	expectedUploadInstruction := upload_files.NewUploadFilesInstruction(
+		*kurtosis_instruction.NewInstructionPosition(1, 13, starlarkFilenamePlaceholderAsNotUsed),
+		testServiceNetwork, moduleContentProvider, filePath,
+	)
+
+	require.Equal(t, expectedUploadInstruction, instructions[0])
 }
