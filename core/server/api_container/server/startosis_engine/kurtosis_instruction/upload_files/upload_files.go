@@ -84,7 +84,6 @@ func (instruction *UploadFilesInstruction) Execute(_ context.Context, environmen
 	return nil
 }
 
-// TODO add tests for this
 func (instruction *UploadFilesInstruction) String() string {
 	return instruction.GetCanonicalInstruction()
 }
