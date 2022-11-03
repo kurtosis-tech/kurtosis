@@ -185,7 +185,8 @@ func executeScript(enclaveCtx *enclaves.EnclaveContext, scriptPath string) error
 }
 
 func executeModule(enclaveCtx *enclaves.EnclaveContext, modulePath string) error {
-	executionResponse, err := enclaveCtx.ExecuteStartosisModule(modulePath)
+	// TODO(gb): Add param to CLI for receiving serialized params
+	executionResponse, err := enclaveCtx.ExecuteStartosisModule(modulePath, "{}")
 	if err != nil {
 		return stacktrace.Propagate(err, "An unexpected error occurred executing the Startosis module '%s'", modulePath)
 	}

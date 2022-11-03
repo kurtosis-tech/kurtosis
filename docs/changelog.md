@@ -10,6 +10,11 @@
 ### Changes
 - Updated the CLI `service logs` command in order to use the new `KurtosisContext.StreamUserServiceLogs` when user requested to follow logs
 
+### Features
+- Added exec and HTTP request facts
+- Prints out the instruction line, col & filename in the execution error
+- Prints out the instruction line, col & filename in the validation error
+
 # 0.51.7
 ### Fixes
 - Fixed instruction position to work with nested functions
@@ -21,6 +26,7 @@
 ### Features
 - Added an `import_types` Starlark instruction to read types from a .proto file inside a module
 - Added the `time` module for Starlark to the interpreter
+- Added the ability for a Starlark module to take input args when a `ModuleInput` in the module `types.proto` file
 
 # 0.51.5
 ### Fixes

@@ -16,6 +16,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	kurtosis_backend_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/facts_engine"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/module_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
@@ -27,6 +28,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -48,14 +50,12 @@ const (
 	noExecutionError      = ""
 	noInterpretationError = ""
 
-	mainStartosisFile = "main.star"
-
 	// We do it this way as if we were to interpret the main file,
 	// we'd only read the symbols, and maybe there's nothing that calls in `main()`
 	// This way, we're guaranteed that the `main()` function gets called within main.star
 	bootScript = `
-load("%v/` + mainStartosisFile + `", "main")
-main()
+load("%v/` + startosis_engine.MainFileName + `", "main")
+main(%v)
 	`
 	// Overwrite existing module with new module, this allows user to iterate on an enclave with a
 	// given module
@@ -80,6 +80,8 @@ type ApiContainerService struct {
 
 	moduleStore *module_store.ModuleStore
 
+	factsEngine *facts_engine.FactsEngine
+
 	startosisInterpreter *startosis_engine.StartosisInterpreter
 
 	startosisValidator *startosis_engine.StartosisValidator
@@ -95,6 +97,7 @@ func NewApiContainerService(
 	filesArtifactStore *enclave_data_directory.FilesArtifactStore,
 	serviceNetwork service_network.ServiceNetwork,
 	moduleStore *module_store.ModuleStore,
+	factsEngine *facts_engine.FactsEngine,
 	startosisInterpreter *startosis_engine.StartosisInterpreter,
 	startosisValidator *startosis_engine.StartosisValidator,
 	startosisExecutor *startosis_engine.StartosisExecutor,
@@ -105,6 +108,7 @@ func NewApiContainerService(
 		filesArtifactStore:             filesArtifactStore,
 		serviceNetwork:                 serviceNetwork,
 		moduleStore:                    moduleStore,
+		factsEngine:                    factsEngine,
 		startosisInterpreter:           startosisInterpreter,
 		startosisValidator:             startosisValidator,
 		startosisExecutor:              startosisExecutor,
@@ -199,80 +203,34 @@ func (apicService ApiContainerService) ExecuteModule(ctx context.Context, args *
 
 func (apicService ApiContainerService) ExecuteStartosisScript(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptArgs) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse, error) {
 	serializedStartosisScript := args.GetSerializedScript()
-
-	// TODO(gb): add metric tracking maybe?
-
-	interpretationOutput, potentialInterpretationError, generatedInstructionsList :=
-		apicService.startosisInterpreter.Interpret(ctx, serializedStartosisScript)
-	if potentialInterpretationError != nil {
-		return binding_constructors.NewExecuteStartosisResponse(
-			string(interpretationOutput),
-			potentialInterpretationError.Error(),
-			noValidationErrors,
-			noExecutionError,
-		), nil
-	}
-	logrus.Debugf("Successfully interpreted Startosis script into a series of Kurtosis instructions: \n%v",
-		generatedInstructionsList)
-
-	// TODO: Abstract this into a ValidationError
-	validationErrors := apicService.startosisValidator.Validate(ctx, apicService.serviceNetwork, generatedInstructionsList)
-	if validationErrors != nil {
-		return binding_constructors.NewExecuteStartosisResponse(
-			string(interpretationOutput),
-			noInterpretationError,
-			validationErrors,
-			noExecutionError,
-		), nil
-	}
-	logrus.Debugf("Successfully validated Startosis script")
-
-	err := apicService.startosisExecutor.Execute(ctx, generatedInstructionsList)
-	if err != nil {
-		return binding_constructors.NewExecuteStartosisResponse(
-			string(interpretationOutput),
-			noInterpretationError,
-			noValidationErrors,
-			err.Error(),
-		), nil
-	}
-	logrus.Debugf("Successfully executed the list of Kurtosis instructions")
-
-	return binding_constructors.NewExecuteStartosisResponse(
-		string(interpretationOutput),
-		noInterpretationError,
-		noValidationErrors,
-		noExecutionError,
-	), nil
+	return apicService.executeStartosis(ctx, startosis_engine.ModuleIdPlaceholderForStandaloneScripts, serializedStartosisScript, startosis_engine.EmptyInputArgs)
 }
 
 func (apicService ApiContainerService) ExecuteStartosisModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleArgs) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse, error) {
-
 	moduleId := args.ModuleId
 	moduleData := args.Data
+	serializedParams := args.SerializedParams
 
 	moduleRootPathOnDisk, err := apicService.startosisModuleContentProvider.StoreModuleContents(moduleId, moduleData, doOverwriteExistingModule)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while writing module to disk '%v'", err)
 	}
 
-	pathToMainFile := path.Join(moduleRootPathOnDisk, mainStartosisFile)
-	_, err = os.Stat(pathToMainFile)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while verifying that '%v' exists on root of module '%v' at '%v'", mainStartosisFile, moduleId, pathToMainFile)
+	pathToMainFile := path.Join(moduleRootPathOnDisk, startosis_engine.MainFileName)
+	if _, err = os.Stat(pathToMainFile); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while verifying that '%v' exists on root of module '%v' at '%v'", startosis_engine.MainFileName, moduleId, pathToMainFile)
 	}
 
-	scriptWithMainToExecute := fmt.Sprintf(bootScript, moduleId)
-
-	executeStartosisScriptArgs := binding_constructors.NewExecuteStartosisScriptArgs(scriptWithMainToExecute)
-
-	scriptExecutionResponse, err := apicService.ExecuteStartosisScript(ctx, executeStartosisScriptArgs)
-
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while executing the main function in the file '%v' in module '%v'", pathToMainFile, moduleRootPathOnDisk)
+	var scriptWithMainToExecute string
+	pathToTypesFile := path.Join(moduleRootPathOnDisk, startosis_engine.TypesFileName)
+	if _, err = os.Stat(pathToTypesFile); err != nil {
+		// no types file provided for the module, no input_args expected
+		scriptWithMainToExecute = fmt.Sprintf(bootScript, moduleId, "")
+	} else {
+		// types file exists in module, input_args will be provided by the boot script
+		scriptWithMainToExecute = fmt.Sprintf(bootScript, moduleId, startosis_engine.MainInputArgName)
 	}
-
-	return scriptExecutionResponse, nil
+	return apicService.executeStartosis(ctx, moduleId, scriptWithMainToExecute, serializedParams)
 }
 
 func (apicService ApiContainerService) StartServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServicesArgs) (*kurtosis_core_rpc_api_bindings.StartServicesResponse, error) {
@@ -446,6 +404,39 @@ func (apicService ApiContainerService) ExecCommand(ctx context.Context, args *ku
 		LogOutput: logOutput,
 	}
 	return resp, nil
+}
+
+func (apicService ApiContainerService) DefineFact(_ context.Context, args *kurtosis_core_rpc_api_bindings.DefineFactArgs) (*kurtosis_core_rpc_api_bindings.DefineFactResponse, error) {
+	err := apicService.factsEngine.PushRecipe(args.GetFactRecipe())
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred when defining fact")
+	}
+	return &kurtosis_core_rpc_api_bindings.DefineFactResponse{}, nil
+}
+
+func (apicService ApiContainerService) GetFactValues(_ context.Context, args *kurtosis_core_rpc_api_bindings.GetFactValuesArgs) (*kurtosis_core_rpc_api_bindings.GetFactValuesResponse, error) {
+	var returnedFactValues []*kurtosis_core_rpc_api_bindings.FactValue
+	if args.GetStartingFrom() != nil {
+		factValues, err := apicService.factsEngine.FetchFactValuesAfter(facts_engine.GetFactId(args.GetServiceId(), args.GetFactName()), args.GetStartingFrom().AsTime())
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred when getting values after '%v' from fact '%v' '%v'", args.GetStartingFrom(), args.GetServiceId(), args.GetFactName())
+		}
+		returnedFactValues = factValues
+	} else {
+		factValues, err := apicService.factsEngine.FetchLatestFactValues(facts_engine.GetFactId(args.GetServiceId(), args.GetFactName()))
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred when getting latest values from fact '%v' '%v'", args.GetServiceId(), args.GetFactName())
+		}
+		returnedFactValues = factValues
+	}
+	var lastTimestampFromPage *timestamppb.Timestamp
+	if len(returnedFactValues) > 0 {
+		lastTimestampFromPage = returnedFactValues[len(returnedFactValues)-1].GetUpdatedAt()
+	}
+	return &kurtosis_core_rpc_api_bindings.GetFactValuesResponse{
+		FactValues:            returnedFactValues,
+		LastTimestampFromPage: lastTimestampFromPage,
+	}, nil
 }
 
 func (apicService ApiContainerService) WaitForHttpGetEndpointAvailability(ctx context.Context, args *kurtosis_core_rpc_api_bindings.WaitForHttpGetEndpointAvailabilityArgs) (*emptypb.Empty, error) {
@@ -822,4 +813,51 @@ func (apicService ApiContainerService) getModuleInfo(ctx context.Context, module
 		publicApiPort,
 	)
 	return response, nil
+}
+
+func (apicService ApiContainerService) executeStartosis(ctx context.Context, moduleId string, serializedStartosis string, serializedParams string) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse, error) {
+	// TODO(gb): add metric tracking maybe?
+
+	interpretationOutput, potentialInterpretationError, generatedInstructionsList :=
+		apicService.startosisInterpreter.Interpret(ctx, moduleId, serializedStartosis, serializedParams)
+	if potentialInterpretationError != nil {
+		return binding_constructors.NewExecuteStartosisResponse(
+			string(interpretationOutput),
+			potentialInterpretationError.Error(),
+			noValidationErrors,
+			noExecutionError,
+		), nil
+	}
+	logrus.Debugf("Successfully interpreted Startosis script into a series of Kurtosis instructions: \n%v",
+		generatedInstructionsList)
+
+	// TODO: Abstract this into a ValidationError
+	validationErrors := apicService.startosisValidator.Validate(ctx, apicService.serviceNetwork, generatedInstructionsList)
+	if validationErrors != nil {
+		return binding_constructors.NewExecuteStartosisResponse(
+			string(interpretationOutput),
+			noInterpretationError,
+			validationErrors,
+			noExecutionError,
+		), nil
+	}
+	logrus.Debugf("Successfully validated Startosis script")
+
+	err := apicService.startosisExecutor.Execute(ctx, generatedInstructionsList)
+	if err != nil {
+		return binding_constructors.NewExecuteStartosisResponse(
+			string(interpretationOutput),
+			noInterpretationError,
+			noValidationErrors,
+			err.Error(),
+		), nil
+	}
+	logrus.Debugf("Successfully executed the list of Kurtosis instructions")
+
+	return binding_constructors.NewExecuteStartosisResponse(
+		string(interpretationOutput),
+		noInterpretationError,
+		noValidationErrors,
+		noExecutionError,
+	), nil
 }

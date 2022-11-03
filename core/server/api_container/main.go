@@ -11,11 +11,13 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/core/launcher/args"
 	"github.com/kurtosis-tech/kurtosis/core/launcher/args/kurtosis_backend_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/facts_engine"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/module_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/module_store/module_launcher"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
@@ -149,6 +151,11 @@ func runMain() error {
 		}
 	}()
 
+	db, err := shared_helpers.GetLocalDatabase()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred opening local database")
+	}
+	factsEngine := facts_engine.NewFactsEngine(db, serviceNetwork)
 	// TODO: Consolidate Interpreter, Validator and Executor into a single interface
 	startosisValidator := startosis_engine.NewStartosisValidator(&kurtosisBackend)
 	startosisInterpreter := startosis_engine.NewStartosisInterpreter(serviceNetwork, gitModuleContentProvider)
@@ -159,6 +166,7 @@ func runMain() error {
 		filesArtifactStore,
 		serviceNetwork,
 		moduleStore,
+		factsEngine,
 		startosisInterpreter,
 		startosisValidator,
 		startosisExecutor,

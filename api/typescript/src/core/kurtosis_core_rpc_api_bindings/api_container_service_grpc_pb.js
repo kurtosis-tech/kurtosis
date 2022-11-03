@@ -5,6 +5,29 @@ var grpc = require('@grpc/grpc-js');
 var api_container_service_pb = require('./api_container_service_pb.js');
 var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb.js');
 var google_protobuf_duration_pb = require('google-protobuf/google/protobuf/duration_pb.js');
+var google_protobuf_timestamp_pb = require('google-protobuf/google/protobuf/timestamp_pb.js');
+
+function serialize_api_container_api_DefineFactArgs(arg) {
+  if (!(arg instanceof api_container_service_pb.DefineFactArgs)) {
+    throw new Error('Expected argument of type api_container_api.DefineFactArgs');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_DefineFactArgs(buffer_arg) {
+  return api_container_service_pb.DefineFactArgs.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_api_container_api_DefineFactResponse(arg) {
+  if (!(arg instanceof api_container_service_pb.DefineFactResponse)) {
+    throw new Error('Expected argument of type api_container_api.DefineFactResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_DefineFactResponse(buffer_arg) {
+  return api_container_service_pb.DefineFactResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
 
 function serialize_api_container_api_DownloadFilesArtifactArgs(arg) {
   if (!(arg instanceof api_container_service_pb.DownloadFilesArtifactArgs)) {
@@ -103,6 +126,28 @@ function serialize_api_container_api_ExecuteStartosisScriptArgs(arg) {
 
 function deserialize_api_container_api_ExecuteStartosisScriptArgs(buffer_arg) {
   return api_container_service_pb.ExecuteStartosisScriptArgs.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_api_container_api_GetFactValuesArgs(arg) {
+  if (!(arg instanceof api_container_service_pb.GetFactValuesArgs)) {
+    throw new Error('Expected argument of type api_container_api.GetFactValuesArgs');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_GetFactValuesArgs(buffer_arg) {
+  return api_container_service_pb.GetFactValuesArgs.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_api_container_api_GetFactValuesResponse(arg) {
+  if (!(arg instanceof api_container_service_pb.GetFactValuesResponse)) {
+    throw new Error('Expected argument of type api_container_api.GetFactValuesResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_GetFactValuesResponse(buffer_arg) {
+  return api_container_service_pb.GetFactValuesResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
 function serialize_api_container_api_GetModulesArgs(arg) {
@@ -524,6 +569,30 @@ execCommand: {
     requestDeserialize: deserialize_api_container_api_ExecCommandArgs,
     responseSerialize: serialize_api_container_api_ExecCommandResponse,
     responseDeserialize: deserialize_api_container_api_ExecCommandResponse,
+  },
+  // Define fact
+defineFact: {
+    path: '/api_container_api.ApiContainerService/DefineFact',
+    requestStream: false,
+    responseStream: false,
+    requestType: api_container_service_pb.DefineFactArgs,
+    responseType: api_container_service_pb.DefineFactResponse,
+    requestSerialize: serialize_api_container_api_DefineFactArgs,
+    requestDeserialize: deserialize_api_container_api_DefineFactArgs,
+    responseSerialize: serialize_api_container_api_DefineFactResponse,
+    responseDeserialize: deserialize_api_container_api_DefineFactResponse,
+  },
+  // Get a list of values of a fact
+getFactValues: {
+    path: '/api_container_api.ApiContainerService/GetFactValues',
+    requestStream: false,
+    responseStream: false,
+    requestType: api_container_service_pb.GetFactValuesArgs,
+    responseType: api_container_service_pb.GetFactValuesResponse,
+    requestSerialize: serialize_api_container_api_GetFactValuesArgs,
+    requestDeserialize: deserialize_api_container_api_GetFactValuesArgs,
+    responseSerialize: serialize_api_container_api_GetFactValuesResponse,
+    responseDeserialize: deserialize_api_container_api_GetFactValuesResponse,
   },
   // Pauses all processes running in the service container
 pauseService: {
