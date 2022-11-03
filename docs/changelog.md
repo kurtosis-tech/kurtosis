@@ -1,6 +1,9 @@
 # TBD
 
 ### Features
+- Added exec and HTTP request facts
+- Prints out the instruction line, col & filename in the execution error
+- Prints out the instruction line, col & filename in the validation error
 - Added `remove_service` to Startosis
 
 # 0.51.7
@@ -10,13 +13,13 @@
 
 ### Features
 - Instruction position now contains the filename too
-- Added exec and HTTP request facts
 
 # 0.51.6
 
 ### Features
 - Added an `import_types` Starlark instruction to read types from a .proto file inside a module
 - Added the `time` module for Starlark to the interpreter
+- Added the ability for a Starlark module to take input args when a `ModuleInput` in the module `types.proto` file
 
 # 0.51.5
 ### Fixes

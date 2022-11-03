@@ -222,6 +222,7 @@ export class EnclaveContext {
 
     public async executeStartosisModule(
         moduleRootPath: string,
+        serializedParams: string,
     ): Promise<Result<ExecuteStartosisResponse, Error>> {
         const kurtosisModFilepath = path.join(moduleRootPath, KURTOSIS_MOD_FILENAME)
 
@@ -239,6 +240,7 @@ export class EnclaveContext {
         const args = new ExecuteStartosisModuleArgs;
         args.setData(archiverResponse.value)
         args.setModuleId(kurtosisMod.module.name)
+        args.setSerializedParams(serializedParams)
         const resultModuleExecution : Result<ExecuteStartosisResponse, Error> = await this.backend.executeStartosisModule(args)
         if (resultModuleExecution.isErr()) {
             return err(new Error(`Unexpected error happened executing Startosis module \n${resultModuleExecution.error}`))
