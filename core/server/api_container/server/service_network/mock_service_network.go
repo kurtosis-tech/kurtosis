@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"net"
+	"net/http"
 )
 
 const (
@@ -52,6 +53,11 @@ func (m *MockServiceNetwork) UnpauseService(ctx context.Context, serviceId servi
 }
 
 func (m *MockServiceNetwork) ExecCommand(ctx context.Context, serviceId service.ServiceID, command []string) (int32, string, error) {
+	//TODO implement me
+	panic(unimplementedMsg)
+}
+
+func (m *MockServiceNetwork) HttpRequestService(ctx context.Context, serviceId service.ServiceID, portId string, method string, contentType string, endpoint string, body string) (*http.Response, error) {
 	//TODO implement me
 	panic(unimplementedMsg)
 }

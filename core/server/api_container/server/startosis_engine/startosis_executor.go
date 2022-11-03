@@ -33,7 +33,7 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, instructions []k
 	for index, instruction := range instructions {
 		err := instruction.Execute(ctx, executor.environment)
 		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred executing instruction number '%v'", index)
+			return stacktrace.Propagate(err, "An error occurred executing instruction number '%v'. The instruction can be found at %v", index, instruction.GetPositionInOriginalScript().String())
 		}
 	}
 	return nil
