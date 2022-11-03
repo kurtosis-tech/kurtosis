@@ -1,7 +1,9 @@
 syntax = "proto3";
 
-// TODO(gb): no ModuleInput for now because not yet added. Will update that in my next PR
+message ModuleInput {
+  string greetings = 1;
+}
 
 message ModuleOutput {
-  string greetings = 1;
+  string message = 1;
 }

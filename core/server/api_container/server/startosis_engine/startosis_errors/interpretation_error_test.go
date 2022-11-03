@@ -14,11 +14,11 @@ func TestInterpretationError_serializationSimpleError(t *testing.T) {
 
 func TestInterpretationError_serializationWithCustomMsg(t *testing.T) {
 	errorToSerialize := NewInterpretationErrorWithCustomMsg(
-		"Evaluation error: Missing `container_image_name` as part of the struct object",
 		[]CallFrame{
 			*NewCallFrame("<toplevel>", NewScriptPosition(13, 12)),
 			*NewCallFrame("add_service", NewScriptPosition(0, 0)),
 		},
+		"Evaluation error: Missing `container_image_name` as part of the struct object",
 	)
 
 	expectedOutput := `Evaluation error: Missing ` + "`container_image_name`" + ` as part of the struct object
