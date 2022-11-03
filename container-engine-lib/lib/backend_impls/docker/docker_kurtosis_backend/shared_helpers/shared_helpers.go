@@ -17,9 +17,11 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	bolt "go.etcd.io/bbolt"
 	"net"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -31,6 +33,16 @@ const (
 	hostMachinePortNumStrParsingBits = 16
 
 	netstatSuccessExitCode = 0
+
+	// TODO(vcolombo): Find a better place to place this to make it accessible everywhere we need the DB
+	databaseFilePath              = "kurtosis.db"
+	readWritePermissionToDatabase = 0666
+)
+
+var (
+	openDatabaseOnce  sync.Once
+	databaseInstance  *bolt.DB
+	databaseOpenError error
 )
 
 // !!!WARNING!!!
@@ -275,7 +287,6 @@ func GetIpAndPortInfoFromContainer(
 	return privateIp, privatePortSpecs, containerPublicIp, publicPortSpecs, nil
 }
 
-
 // Gets the service objects & Docker resources for services matching the given filters
 func GetMatchingUserServiceObjsAndDockerResourcesNoMutex(
 	ctx context.Context,
@@ -431,7 +442,7 @@ func WaitForPortAvailabilityUsingNetstat(
 func GetEngineAndLogsComponentsNetwork(
 	ctx context.Context,
 	dockerManager *docker_manager.DockerManager,
-) (*types.Network, error){
+) (*types.Network, error) {
 	matchingNetworks, err := dockerManager.GetNetworksByName(ctx, consts.NameOfNetworkToStartEngineAndLogServiceContainersIn)
 	if err != nil {
 		return nil, stacktrace.Propagate(
@@ -453,7 +464,9 @@ func GetEngineAndLogsComponentsNetwork(
 }
 
 // ====================================================================================================
-//                                      Private Helper Functions
+//
+//	Private Helper Functions
+//
 // ====================================================================================================
 func getMatchingUserServiceDockerResources(
 	ctx context.Context,
@@ -593,4 +606,11 @@ func getUserServiceObjsFromDockerResources(
 		)
 	}
 	return result, nil
+}
+
+func GetLocalDatabase() (*bolt.DB, error) {
+	openDatabaseOnce.Do(func() {
+		databaseInstance, databaseOpenError = bolt.Open(databaseFilePath, readWritePermissionToDatabase, &bolt.Options{})
+	})
+	return databaseInstance, databaseOpenError
 }

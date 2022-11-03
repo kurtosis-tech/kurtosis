@@ -162,6 +162,55 @@ func NewConstantFactRecipe(serviceId string, factName string, constantFactRecipe
 	}
 }
 
+func NewConstantFactRecipeWithDefaultRefresh(serviceId string, factName string, constantFactRecipeDefinition *kurtosis_core_rpc_api_bindings.ConstantFactRecipe) *kurtosis_core_rpc_api_bindings.FactRecipe {
+	return &kurtosis_core_rpc_api_bindings.FactRecipe{
+		ServiceId: serviceId,
+		FactName:  factName,
+		FactRecipeDefinition: &kurtosis_core_rpc_api_bindings.FactRecipe_ConstantFact{
+			ConstantFact: constantFactRecipeDefinition,
+		},
+	}
+}
+
+func NewGetHttpRequestFactRecipeWithDefaultRefresh(serviceId string, factName string, portId string, endpoint string) *kurtosis_core_rpc_api_bindings.FactRecipe {
+	return &kurtosis_core_rpc_api_bindings.FactRecipe{
+		ServiceId: serviceId,
+		FactName:  factName,
+		FactRecipeDefinition: &kurtosis_core_rpc_api_bindings.FactRecipe_HttpRequestFact{
+			HttpRequestFact: &kurtosis_core_rpc_api_bindings.HttpRequestFactRecipe{
+				PortId:   portId,
+				Method:   kurtosis_core_rpc_api_bindings.HttpRequestMethod_GET,
+				Endpoint: endpoint,
+			},
+		},
+	}
+}
+
+func NewExecFactRecipeWithDefaultRefresh(serviceId string, factName string, cmdArgs []string) *kurtosis_core_rpc_api_bindings.FactRecipe {
+	return &kurtosis_core_rpc_api_bindings.FactRecipe{
+		ServiceId: serviceId,
+		FactName:  factName,
+		FactRecipeDefinition: &kurtosis_core_rpc_api_bindings.FactRecipe_ExecFact{
+			ExecFact: &kurtosis_core_rpc_api_bindings.ExecFactRecipe{
+				CmdArgs: cmdArgs,
+			},
+		},
+	}
+}
+
+func NewDefineFactArgs(factRecipe *kurtosis_core_rpc_api_bindings.FactRecipe) *kurtosis_core_rpc_api_bindings.DefineFactArgs {
+	return &kurtosis_core_rpc_api_bindings.DefineFactArgs{
+		FactRecipe: factRecipe,
+	}
+}
+
+func GetFactValuesArgs(serviceId string, factName string) *kurtosis_core_rpc_api_bindings.GetFactValuesArgs {
+	return &kurtosis_core_rpc_api_bindings.GetFactValuesArgs{
+		ServiceId: serviceId,
+		FactName:  factName,
+	}
+}
+
 // ==============================================================================================
 //
 //	Execute Startosis Script

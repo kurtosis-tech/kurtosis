@@ -7,6 +7,7 @@ option go_package = "github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_
 
 import "google/protobuf/empty.proto";
 import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
 
 service ApiContainerService {
   // Starts a module container in the enclave
@@ -41,6 +42,12 @@ service ApiContainerService {
 
   // Executes the given command inside a running container
   rpc ExecCommand(ExecCommandArgs) returns (ExecCommandResponse) {};
+
+  // Define fact
+  rpc DefineFact(DefineFactArgs) returns (DefineFactResponse) {};
+
+  // Get a list of values of a fact
+  rpc GetFactValues(GetFactValuesArgs) returns (GetFactValuesResponse) {};
 
   // Pauses all processes running in the service container
   rpc PauseService(PauseServiceArgs) returns (google.protobuf.Empty) {};
@@ -487,14 +494,49 @@ message StartosisValidationError {
 //                                 Facts Engine
 // ==============================================================================================
 
+message DefineFactArgs {
+  FactRecipe fact_recipe = 1;
+}
+
+message DefineFactResponse {}
+
+message GetFactValuesArgs {
+  string service_id = 1;
+  string fact_name = 2;
+  optional google.protobuf.Timestamp starting_from = 3; // Defaults to returning the latest results
+}
+
+message GetFactValuesResponse {
+  repeated FactValue fact_values = 1;
+  google.protobuf.Timestamp last_timestamp_from_page = 2; // Defaults to returning the latest results
+}
+
 message FactValue {
   oneof fact_value {
     string string_value = 1;
   }
+  google.protobuf.Timestamp updated_at = 2;
 }
 
 message ConstantFactRecipe {
     FactValue fact_value = 1;
+}
+
+message ExecFactRecipe {
+  repeated string cmd_args = 1;
+}
+
+enum HttpRequestMethod {
+  GET = 0;
+  POST = 1;
+}
+
+message HttpRequestFactRecipe {
+  string port_id = 1;
+  string endpoint = 2;
+  HttpRequestMethod method = 3;
+  string content_type = 4;
+  string body = 5;
 }
 
 message FactRecipe {
@@ -502,8 +544,10 @@ message FactRecipe {
   string fact_name = 2;
   oneof fact_recipe_definition {
     ConstantFactRecipe constant_fact = 3;
+    ExecFactRecipe exec_fact = 4;
+    HttpRequestFactRecipe http_request_fact = 5;
   }
-  google.protobuf.Duration refresh_interval = 10;
+  optional google.protobuf.Duration refresh_interval = 6; // Defaults to 2 seconds
 }
 
 // ==============================================================================================

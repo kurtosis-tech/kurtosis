@@ -86,6 +86,20 @@ export class ApiContainerServiceClient {
                response: api_container_service_pb.ExecCommandResponse) => void
   ): grpcWeb.ClientReadableStream<api_container_service_pb.ExecCommandResponse>;
 
+  defineFact(
+    request: api_container_service_pb.DefineFactArgs,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: api_container_service_pb.DefineFactResponse) => void
+  ): grpcWeb.ClientReadableStream<api_container_service_pb.DefineFactResponse>;
+
+  getFactValues(
+    request: api_container_service_pb.GetFactValuesArgs,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: api_container_service_pb.GetFactValuesResponse) => void
+  ): grpcWeb.ClientReadableStream<api_container_service_pb.GetFactValuesResponse>;
+
   pauseService(
     request: api_container_service_pb.PauseServiceArgs,
     metadata: grpcWeb.Metadata | undefined,
@@ -210,6 +224,16 @@ export class ApiContainerServicePromiseClient {
     request: api_container_service_pb.ExecCommandArgs,
     metadata?: grpcWeb.Metadata
   ): Promise<api_container_service_pb.ExecCommandResponse>;
+
+  defineFact(
+    request: api_container_service_pb.DefineFactArgs,
+    metadata?: grpcWeb.Metadata
+  ): Promise<api_container_service_pb.DefineFactResponse>;
+
+  getFactValues(
+    request: api_container_service_pb.GetFactValuesArgs,
+    metadata?: grpcWeb.Metadata
+  ): Promise<api_container_service_pb.GetFactValuesResponse>;
 
   pauseService(
     request: api_container_service_pb.PauseServiceArgs,
