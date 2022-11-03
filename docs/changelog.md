@@ -10,10 +10,16 @@
 ### Changes
 - Updated the CLI `service logs` command in order to use the new `KurtosisContext.StreamUserServiceLogs` when user requested to follow logs
 
+# 0.51.8
+
 ### Features
 - Added exec and HTTP request facts
 - Prints out the instruction line, col & filename in the execution error
 - Prints out the instruction line, col & filename in the validation error
+- Added `remove_service` to Startosis
+
+### Fixes
+- Fixed nil accesses on Fact Engine
 
 # 0.51.7
 ### Fixes

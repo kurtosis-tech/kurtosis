@@ -275,7 +275,7 @@ func runReadStreamResponseAndAddUserServiceLogLinesToUserServiceLogsChannel(
 			}
 
 			if netErr, ok := readingStreamResponseErr.(net.Error); ok && netErr.Timeout() {
-				logrus.Debug("Reading the tail logs streams has reached the network time out")
+				errChan <- stacktrace.Propagate(readingStreamResponseErr,"Reading the tail logs streams has reached the network time out" )
 				return
 			}
 
@@ -285,7 +285,11 @@ func runReadStreamResponseAndAddUserServiceLogLinesToUserServiceLogsChannel(
 					logrus.Debug("Reading the tail logs streams context has been canceled")
 					return
 				case context.DeadlineExceeded:
-					logrus.Debug("Reading the tail logs streams has exceeded the deadline")
+					ctxDeadlineTime, ok := ctx.Deadline()
+					if !ok {
+						errChan <- stacktrace.NewError("An error occurred getting the context deadline value for '%+v'; this is a bug", ctx)
+					}
+					errChan <- stacktrace.NewError("Reading the tail logs streams has exceeded the '%v' deadline time", ctxDeadlineTime)
 					return
 				default:
 					logrus.Debugf("Reading the tail logs streams context contains this error '%v' ", ctxErr)
