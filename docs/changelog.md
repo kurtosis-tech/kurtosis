@@ -6,6 +6,9 @@
 - Prints out the instruction line, col & filename in the validation error
 - Added `remove_service` to Startosis
 
+### Fixes
+- Fixed nil accesses on Fact Engine
+
 # 0.51.7
 
 ### Fixes
