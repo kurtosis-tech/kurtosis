@@ -172,6 +172,9 @@ message GetUserServiceLogsArgs {
   string enclave_id = 1;
   // "Set" of service GUIDs in the enclave
   map<string, bool> service_guid_set = 2;
+  // If true, It will follow the container logs
+  bool follow_logs = 3;
+
 }
 
 message GetUserServiceLogsResponse {

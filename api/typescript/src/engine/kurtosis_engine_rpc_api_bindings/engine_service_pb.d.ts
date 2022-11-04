@@ -262,6 +262,9 @@ export class GetUserServiceLogsArgs extends jspb.Message {
   getServiceGuidSetMap(): jspb.Map<string, boolean>;
   clearServiceGuidSetMap(): GetUserServiceLogsArgs;
 
+  getFollowLogs(): boolean;
+  setFollowLogs(value: boolean): GetUserServiceLogsArgs;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): GetUserServiceLogsArgs.AsObject;
   static toObject(includeInstance: boolean, msg: GetUserServiceLogsArgs): GetUserServiceLogsArgs.AsObject;
@@ -274,6 +277,7 @@ export namespace GetUserServiceLogsArgs {
   export type AsObject = {
     enclaveId: string,
     serviceGuidSetMap: Array<[string, boolean]>,
+    followLogs: boolean,
   }
 }
 

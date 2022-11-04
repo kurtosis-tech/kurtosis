@@ -2219,7 +2219,8 @@ proto.engine_api.GetUserServiceLogsArgs.prototype.toObject = function(opt_includ
 proto.engine_api.GetUserServiceLogsArgs.toObject = function(includeInstance, msg) {
   var f, obj = {
     enclaveId: jspb.Message.getFieldWithDefault(msg, 1, ""),
-    serviceGuidSetMap: (f = msg.getServiceGuidSetMap()) ? f.toObject(includeInstance, undefined) : []
+    serviceGuidSetMap: (f = msg.getServiceGuidSetMap()) ? f.toObject(includeInstance, undefined) : [],
+    followLogs: jspb.Message.getBooleanFieldWithDefault(msg, 3, false)
   };
 
   if (includeInstance) {
@@ -2266,6 +2267,10 @@ proto.engine_api.GetUserServiceLogsArgs.deserializeBinaryFromReader = function(m
         jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readBool, null, "", false);
          });
       break;
+    case 3:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setFollowLogs(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -2305,6 +2310,13 @@ proto.engine_api.GetUserServiceLogsArgs.serializeBinaryToWriter = function(messa
   f = message.getServiceGuidSetMap(true);
   if (f && f.getLength() > 0) {
     f.serializeBinary(2, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeBool);
+  }
+  f = message.getFollowLogs();
+  if (f) {
+    writer.writeBool(
+      3,
+      f
+    );
   }
 };
 
@@ -2347,6 +2359,24 @@ proto.engine_api.GetUserServiceLogsArgs.prototype.getServiceGuidSetMap = functio
 proto.engine_api.GetUserServiceLogsArgs.prototype.clearServiceGuidSetMap = function() {
   this.getServiceGuidSetMap().clear();
   return this;};
+
+
+/**
+ * optional bool follow_logs = 3;
+ * @return {boolean}
+ */
+proto.engine_api.GetUserServiceLogsArgs.prototype.getFollowLogs = function() {
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 3, false));
+};
+
+
+/**
+ * @param {boolean} value
+ * @return {!proto.engine_api.GetUserServiceLogsArgs} returns this
+ */
+proto.engine_api.GetUserServiceLogsArgs.prototype.setFollowLogs = function(value) {
+  return jspb.Message.setProto3BooleanField(this, 3, value);
+};
 
 
 
