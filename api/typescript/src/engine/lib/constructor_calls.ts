@@ -47,7 +47,9 @@ export function newCleanArgs(shouldCleanAll:boolean): CleanArgs {
 
 export function newGetUserServiceLogsArgs(
         enclaveID: string,
-        userServiceGUIDs: Set<ServiceGUID>): GetUserServiceLogsArgs {
+        userServiceGUIDs: Set<ServiceGUID>,
+        shouldFollowLogs: boolean,
+): GetUserServiceLogsArgs {
 
     const result: GetUserServiceLogsArgs = new GetUserServiceLogsArgs();
     result.setEnclaveId(enclaveID);
@@ -56,5 +58,6 @@ export function newGetUserServiceLogsArgs(
     for (const serviceGUID of userServiceGUIDs) {
         serviceGUIDSetMap.set(serviceGUID, isServiceGUIDInSet);
     }
+    result.setFollowLogs(shouldFollowLogs)
     return result;
 }

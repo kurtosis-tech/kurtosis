@@ -20,6 +20,5 @@ export interface GenericEngineClient {
     stopEnclave(stopEnclaveArgs: StopEnclaveArgs): Promise<Result<null, Error>>
     destroyEnclave(destroyEnclaveArgs: DestroyEnclaveArgs): Promise<Result<null, Error>>
     clean(cleanArgs: CleanArgs): Promise<Result<CleanResponse, Error>>
-    getUserServiceLogs(getUserServiceLogsArgs: GetUserServiceLogsArgs): Promise<Result<GetUserServiceLogsResponse, Error>>
-    streamUserServiceLogs(getUserServiceLogsArgs: GetUserServiceLogsArgs): Promise<Result<Readable, Error>>
+    getUserServiceLogs(getUserServiceLogsArgs: GetUserServiceLogsArgs): Promise<Result<Readable, Error>>
 }

@@ -181,30 +181,8 @@ func (kurtosisCtx *KurtosisContext) Clean(ctx context.Context, shouldCleanAll bo
 func (kurtosisCtx *KurtosisContext) GetUserServiceLogs(
 	ctx context.Context,
 	enclaveID enclaves.EnclaveID,
-	userServiceGUIDs map[services.ServiceGUID]bool,
-) (map[services.ServiceGUID][]string, error) {
-
-	userServiceLogsByUserServiceGUID := map[services.ServiceGUID][]string{}
-
-	getUserServiceLogsArgs := newGetUserServiceLogsArgs(enclaveID, userServiceGUIDs)
-
-	gutUserServiceLogsResponse, err := kurtosisCtx.client.GetUserServiceLogs(ctx, getUserServiceLogsArgs)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting user service logs using args '%+v'", getUserServiceLogsArgs)
-	}
-
-	for userServiceGUIDStr, userServiceLogLine := range gutUserServiceLogsResponse.UserServiceLogsByUserServiceGuid {
-		userServiceGUID := services.ServiceGUID(userServiceGUIDStr)
-		userServiceLogsByUserServiceGUID[userServiceGUID] = userServiceLogLine.Line
-	}
-
-	return userServiceLogsByUserServiceGUID, nil
-}
-
-func (kurtosisCtx *KurtosisContext) StreamUserServiceLogs(
-	ctx context.Context,
-	enclaveID enclaves.EnclaveID,
 	userServiceGuids map[services.ServiceGUID]bool,
+	shouldFollowLogs bool,
 ) (
 	chan map[services.ServiceGUID][]*ServiceLog,
 	func(),
@@ -221,9 +199,9 @@ func (kurtosisCtx *KurtosisContext) StreamUserServiceLogs(
 
 	userServiceLogsByServiceGuidChan := make(chan map[services.ServiceGUID][]*ServiceLog, userServiceLogsByServiceGuidChanBufferSize)
 
-	getUserServiceLogsArgs := newGetUserServiceLogsArgs(enclaveID, userServiceGuids)
+	getUserServiceLogsArgs := newGetUserServiceLogsArgs(enclaveID, userServiceGuids, shouldFollowLogs)
 
-	stream, err := kurtosisCtx.client.StreamUserServiceLogs(ctxWithCancel, getUserServiceLogsArgs)
+	stream, err := kurtosisCtx.client.GetUserServiceLogs(ctxWithCancel, getUserServiceLogsArgs)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred streaming user service logs using args '%+v'", getUserServiceLogsArgs)
 	}
@@ -251,7 +229,7 @@ func runReceiveStreamLogsFromTheServerRoutine(
 	enclaveID enclaves.EnclaveID,
 	requestedUserServiceGuids map[services.ServiceGUID]bool,
 	userServiceLogsByServiceGuidChan chan map[services.ServiceGUID][]*ServiceLog,
-	stream kurtosis_engine_rpc_api_bindings.EngineService_StreamUserServiceLogsClient,
+	stream kurtosis_engine_rpc_api_bindings.EngineService_GetUserServiceLogsClient,
 ) {
 
 	//Closing all the open resources at the end
@@ -268,6 +246,7 @@ func runReceiveStreamLogsFromTheServerRoutine(
 			return
 		}
 		if errReceivingStream != nil {
+
 			//context canceled case
 			if errReceivingStream.Error() == grpcStreamCancelContextErrorMessage {
 				logrus.Debug("Received a 'context canceled' error from the user service logs GRPC stream")
@@ -385,6 +364,7 @@ func validateEngineApiVersion(ctx context.Context, engineServiceClient kurtosis_
 func newGetUserServiceLogsArgs(
 	enclaveID enclaves.EnclaveID,
 	userServiceGUIDs map[services.ServiceGUID]bool,
+	shouldFollowLogs bool,
 ) *kurtosis_engine_rpc_api_bindings.GetUserServiceLogsArgs {
 	userServiceGUIDStrSet := make(map[string]bool, len(userServiceGUIDs))
 
@@ -396,6 +376,7 @@ func newGetUserServiceLogsArgs(
 	getUserServiceLogsArgs := &kurtosis_engine_rpc_api_bindings.GetUserServiceLogsArgs{
 		EnclaveId:      string(enclaveID),
 		ServiceGuidSet: userServiceGUIDStrSet,
+		FollowLogs: shouldFollowLogs,
 	}
 
 	return getUserServiceLogsArgs

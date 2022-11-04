@@ -9,8 +9,15 @@
 
 ### Changes
 - Updated the CLI `service logs` command in order to use the new `KurtosisContext.StreamUserServiceLogs` when user requested to follow logs
+
+### Breaking Changes
 - Unified `GetUserServiceLogs` and `StreamUserServiceLogs` engine's endpoints, now `GetUserServiceLogs` will handle both use cases
+  - Users will have to re-adapt `GetUserServiceLogs` calls and replace the `StreamUserServiceLogs` call with this
 - Added the `follow_logs` parameter in `GetUserServiceLogsArgs` engine's proto file
+  - Users should have to add this param in all the `GetUserServiceLogs` calls
+- Unified `GetUserServiceLogs` and `StreamUserServiceLogs` methods in `KurtosisContext`, now `GetUserServiceLogs` will handle both use cases
+  - Users will have to re-adapt `GetUserServiceLogs` calls and replace the `StreamUserServiceLogs` call with this
+- Added the `follow_logs` parameter in `KurtosisContext.GetUserServiceLogs`
 
 # 0.51.8
 ### Features

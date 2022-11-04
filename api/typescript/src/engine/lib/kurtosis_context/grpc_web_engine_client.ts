@@ -169,33 +169,10 @@ export class GrpcWebEngineClient implements GenericEngineClient {
         return ok(getEnclavesResponseResult.value);
     }
 
-    public async getUserServiceLogs(getUserServiceLogsArgs: GetUserServiceLogsArgs): Promise<Result<GetUserServiceLogsResponse, Error>> {
-        const getUserServiceLogsPromise: Promise<Result<GetUserServiceLogsResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.getUserServiceLogs(getUserServiceLogsArgs, {},(error: grpc_web.RpcError  | null, response?: GetUserServiceLogsResponse) => {
-                if (error === null) {
-                    if (!response) {
-                        resolve(err(new Error(NO_ERROR_ENCOUNTERED_BUT_RESPONSE_FALSY_MSG)))
-                    } else {
-                        resolve(ok(response));
-                    }
-                } else {
-                    resolve(err(error))
-                }
-            })
-        })
-
-        const getUserServiceLogsResponseResult: Result<GetUserServiceLogsResponse, Error> = await getUserServiceLogsPromise;
-        if (getUserServiceLogsResponseResult.isErr()) {
-            return err(getUserServiceLogsResponseResult.error);
-        }
-
-        return ok(getUserServiceLogsResponseResult.value);
-    }
-
-    public async streamUserServiceLogs(getUserServiceLogsArgs: GetUserServiceLogsArgs): Promise<Result<Readable, Error>> {
+    public async getUserServiceLogs(getUserServiceLogsArgs: GetUserServiceLogsArgs): Promise<Result<Readable, Error>> {
 
         const streamUserServiceLogsPromise: Promise<Result<ClientReadableStream<GetUserServiceLogsResponse>, Error>> = new Promise((resolve, _unusedReject) => {
-            const getUserServiceLogsStreamResponse: ClientReadableStream<GetUserServiceLogsResponse> = this.client.streamUserServiceLogs(getUserServiceLogsArgs);
+            const getUserServiceLogsStreamResponse: ClientReadableStream<GetUserServiceLogsResponse> = this.client.getUserServiceLogs(getUserServiceLogsArgs);
             resolve(ok(getUserServiceLogsStreamResponse));
         })
 
