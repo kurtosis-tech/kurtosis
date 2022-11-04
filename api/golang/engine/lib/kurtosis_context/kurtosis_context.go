@@ -261,6 +261,7 @@ func runReceiveStreamLogsFromTheServerRoutine(
 	}()
 
 	for {
+		//this is a blocking call, and the only way to unblock it from our side is to cancel the context that it was created with
 		getUserServiceLogsResponse, errReceivingStream := stream.Recv()
 		//stream ends case
 		if errReceivingStream == io.EOF {
