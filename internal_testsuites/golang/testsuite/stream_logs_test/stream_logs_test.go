@@ -90,15 +90,12 @@ func TestStreamLogs(t *testing.T) {
 			testEvaluationErr = stacktrace.NewError("Receiving stream logs in the test has reached the '%v' time out", testTimeOut)
 			return
 		case userServiceLogsByGuid, isChanOpen := <-userServiceLogsByGuidChan:
-
 			if !isChanOpen {
 				return
 			}
 
 			userServiceLogs, found := userServiceLogsByGuid[userServiceGuid]
-			if !found {
-				return
-			}
+			require.True(t, found)
 
 			for _, serviceLog := range userServiceLogs {
 				receivedLogLines = append(receivedLogLines, serviceLog.GetContent())
