@@ -70,15 +70,15 @@ func (instruction *UploadFilesInstruction) GetCanonicalInstruction() string {
 func (instruction *UploadFilesInstruction) Execute(_ context.Context, environment *startosis_executor.ExecutionEnvironment) error {
 	pathOnDisk, err := instruction.provider.GetOnDiskAbsoluteFilePath(instruction.srcPath)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the path on disk of the file to upload")
+		return stacktrace.Propagate(err, "An error occurred getting the path on disk of the file to upload '%v'", instruction.srcPath)
 	}
 	compressedData, err := shared_utils.CompressPath(pathOnDisk, ensureCompressedFileIsLesserThanGRPCLimit)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while compressing the files")
+		return stacktrace.Propagate(err, "An error occurred while compressing the files '%v'", pathOnDisk)
 	}
 	filesArtifactUuid, err := instruction.serviceNetwork.UploadFilesArtifact(compressedData)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while uploading the compressed contents")
+		return stacktrace.Propagate(err, "An error occurred while uploading the compressed contents\n'%v'", compressedData)
 	}
 	environment.SetArtifactUuid(instruction.position.MagicString(shared_helpers.ArtifactUUIDSuffix), string(filesArtifactUuid))
 	logrus.Infof("Succesfully uploaded files from instruction '%v' to '%v'", instruction.position.String(), filesArtifactUuid)
