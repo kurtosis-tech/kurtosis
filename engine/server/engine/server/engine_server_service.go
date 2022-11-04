@@ -138,36 +138,8 @@ func (service *EngineServerService) Clean(ctx context.Context, args *kurtosis_en
 }
 
 func (service *EngineServerService) GetUserServiceLogs(
-	ctx context.Context,
 	args *kurtosis_engine_rpc_api_bindings.GetUserServiceLogsArgs,
-) (*kurtosis_engine_rpc_api_bindings.GetUserServiceLogsResponse, error) {
-	enclaveId := enclave.EnclaveID(args.GetEnclaveId())
-	userServiceGuidStrSet := args.GetServiceGuidSet()
-	requestedUserServiceGuids := make(map[user_service.ServiceGUID]bool, len(userServiceGuidStrSet))
-
-	for userServiceGuidStr := range userServiceGuidStrSet {
-		userServiceGuid := user_service.ServiceGUID(userServiceGuidStr)
-		requestedUserServiceGuids[userServiceGuid] = true
-	}
-
-	if service.logsDatabaseClient == nil {
-		return nil, stacktrace.NewError("It's not possible to return user service logs because there is no logs database client; this is bug in Kurtosis")
-	}
-
-	userServiceLogsByUserServiceGuid, err := service.logsDatabaseClient.GetUserServiceLogs(ctx, enclaveId, requestedUserServiceGuids)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting user service logs for GUIDs '%+v' in enclave with ID '%v'", requestedUserServiceGuids, enclaveId)
-	}
-
-	getUserServiceLogsResponse := newUserLogsResponseFromUserServiceLogsByGuid(requestedUserServiceGuids, userServiceLogsByUserServiceGuid)
-
-	return getUserServiceLogsResponse, nil
-
-}
-
-func (service *EngineServerService) StreamUserServiceLogs(
-	args *kurtosis_engine_rpc_api_bindings.GetUserServiceLogsArgs,
-	stream kurtosis_engine_rpc_api_bindings.EngineService_StreamUserServiceLogsServer,
+	stream kurtosis_engine_rpc_api_bindings.EngineService_GetUserServiceLogsServer,
 ) error {
 
 	enclaveId := enclave.EnclaveID(args.GetEnclaveId())
@@ -183,11 +155,25 @@ func (service *EngineServerService) StreamUserServiceLogs(
 		return stacktrace.NewError("It's not possible to return user service logs because there is no logs database client; this is bug in Kurtosis")
 	}
 
-	userServiceLogsByServiceGuidChan, errChan, cancelLogsDatabaseStreamFunc, err := service.logsDatabaseClient.StreamUserServiceLogs(stream.Context(), enclaveId, requestedUserServiceGuids)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred streaming user service logs for GUIDs '%+v' in enclave with ID '%v'", requestedUserServiceGuids, enclaveId)
+	var (
+		userServiceLogsByServiceGuidChan chan map[user_service.ServiceGUID][]centralized_logs.LogLine
+		errChan          chan error
+		cancelStreamFunc func()
+		err              error
+	)
+
+	if args.FollowLogs {
+		userServiceLogsByServiceGuidChan, errChan, cancelStreamFunc, err = service.logsDatabaseClient.StreamUserServiceLogs(stream.Context(), enclaveId, requestedUserServiceGuids)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred streaming user service logs for GUIDs '%+v' in enclave with ID '%v'", requestedUserServiceGuids, enclaveId)
+		}
+	} else {
+		userServiceLogsByServiceGuidChan, errChan, cancelStreamFunc, err = service.logsDatabaseClient.GetUserServiceLogs(stream.Context(), enclaveId, requestedUserServiceGuids)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred streaming user service logs for GUIDs '%+v' in enclave with ID '%v'", requestedUserServiceGuids, enclaveId)
+		}
 	}
-	defer cancelLogsDatabaseStreamFunc()
+	defer cancelStreamFunc()
 
 	for {
 		select {
