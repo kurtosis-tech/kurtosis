@@ -2,6 +2,7 @@ package exec
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
@@ -25,6 +26,9 @@ const (
 	scriptOrModulePathKey = "script-or-module-path"
 	startosisExtension    = ".star"
 
+	moduleArgsFlagKey = "args"
+	defaultModuleArgs = "{}"
+
 	enclaveIdFlagKey                   = "enclave-id"
 	defaultEnclaveId                   = ""
 	disallowedCharInEnclaveIdRegexp    = "[^-A-Za-z0-9.]+"
@@ -45,6 +49,13 @@ var StartosisExecCmd = &lowlevel.LowlevelKurtosisCommand{
 		"will exec the script inside this enclave, or create it if it doesn't exist. If no enclave-id param is " +
 		"provided, Kurtosis will create a new enclave with a default name derived from the script or module name.",
 	Flags: []*flags.FlagConfig{
+		{
+			Key: moduleArgsFlagKey,
+			// TODO(gb): Link to a proper doc page explaining what a proto file is, etc. when we have it
+			Usage:   "The parameters that should be passed to the Kurtosis module when executing it. It is expected to be a serialized JSON string. Note that if a standalone Kurtosis script is being executed, no parameter should be passed.",
+			Type:    flags.FlagType_String,
+			Default: defaultModuleArgs,
+		},
 		{
 			Key: enclaveIdFlagKey,
 			Usage: fmt.Sprintf(
@@ -85,6 +96,14 @@ func run(
 	args *args.ParsedArgs,
 ) error {
 	// Args parsing and validation
+	serializedJsonArgs, err := flags.GetString(moduleArgsFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the module parameters using flag key '%v'", moduleArgsFlagKey)
+	}
+	if err = validateModuleArgs(serializedJsonArgs); err != nil {
+		return stacktrace.Propagate(err, "An error occurred parsing the module parameters '%v'", serializedJsonArgs)
+	}
+
 	userRequestedEnclaveId, err := flags.GetString(enclaveIdFlagKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the enclave ID using flag key '%s'", enclaveIdFlagKey)
@@ -136,7 +155,7 @@ func run(
 		return nil
 	}
 
-	err = executeModule(enclaveCtx, startosisScriptOrModulePath)
+	err = executeModule(enclaveCtx, startosisScriptOrModulePath, serializedJsonArgs)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while running the module '%v'", startosisScriptOrModulePath)
 	}
@@ -184,9 +203,8 @@ func executeScript(enclaveCtx *enclaves.EnclaveContext, scriptPath string) error
 	return nil
 }
 
-func executeModule(enclaveCtx *enclaves.EnclaveContext, modulePath string) error {
-	// TODO(gb): Add param to CLI for receiving serialized params
-	executionResponse, err := enclaveCtx.ExecuteStartosisModule(modulePath, "{}")
+func executeModule(enclaveCtx *enclaves.EnclaveContext, modulePath string, serializedParams string) error {
+	executionResponse, err := enclaveCtx.ExecuteStartosisModule(modulePath, serializedParams)
 	if err != nil {
 		return stacktrace.Propagate(err, "An unexpected error occurred executing the Startosis module '%s'", modulePath)
 	}
@@ -244,4 +262,13 @@ func getOrCreateEnclaveContext(ctx context.Context, enclaveId enclaves.EnclaveID
 		return nil, stacktrace.Propagate(err, fmt.Sprintf("Unable to create new enclave with ID '%s'", enclaveId))
 	}
 	return enclaveContext, nil
+}
+
+// validateModuleArgs just validates the args is a valid JSON string
+func validateModuleArgs(serializedJson string) error {
+	var result interface{}
+	if err := json.Unmarshal([]byte(serializedJson), &result); err != nil {
+		return stacktrace.Propagate(err, "Error validating args, likely because it is not a valid JSON.")
+	}
+	return nil
 }

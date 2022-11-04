@@ -15,9 +15,13 @@
 - Prints out the instruction line, col & filename in the execution error
 - Prints out the instruction line, col & filename in the validation error
 - Added `remove_service` to Startosis
+- Add `--args` to `kurtosis startosis exec` CLI command to pass in a serialized JSON 
 
 ### Fixes
 - Fixed nil accesses on Fact Engine
+
+### Changes
+- Add more integration tests for Kurtosis modules with input and output types
 
 # 0.51.7
 ### Fixes
