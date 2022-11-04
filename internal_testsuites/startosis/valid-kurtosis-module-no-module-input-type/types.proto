@@ -1,0 +1,5 @@
+syntax = "proto3";
+
+message ModuleOutput {
+  string message = 1;
+}

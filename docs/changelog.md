@@ -12,6 +12,9 @@
 ### Fixes
 - Fixed nil accesses on Fact Engine
 
+### Changes
+- Add more integration tests for Kurtosis modules with input and output types
+
 # 0.51.7
 
 ### Fixes
