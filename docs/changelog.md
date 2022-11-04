@@ -1,9 +1,15 @@
 # TBD
 
+# 0.51.8
+
 ### Features
 - Added exec and HTTP request facts
 - Prints out the instruction line, col & filename in the execution error
 - Prints out the instruction line, col & filename in the validation error
+- Added `remove_service` to Startosis
+
+### Fixes
+- Fixed nil accesses on Fact Engine
 
 ### Changes
 - Add more integration tests for Kurtosis modules with input and output types
