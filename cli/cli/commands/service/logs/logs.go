@@ -209,7 +209,9 @@ func run(
 			}
 
 			for _, serviceLog := range userServiceLogs {
-				logrus.Println(serviceLog.GetContent())
+				if _, err := fmt.Fprintln(logrus.StandardLogger().Out, serviceLog.GetContent()); err != nil {
+					logrus.Errorf("An error occurred pringing log line '%v' in the standar logger output", serviceLog.GetContent())
+				}
 			}
 		case <-interruptChan:
 			logrus.Debugf("Received signal interruption in service logs Kurtosis CLI command")
