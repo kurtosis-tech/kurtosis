@@ -52,7 +52,7 @@ func TestStartosisModule_ValidModuleWithType(t *testing.T) {
 	moduleDirpath := path.Join(currentWorkingDirectory, validModuleWithTypesRelPath)
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
-	logrus.Infof("Executing Startosis Module...")
+	logrus.Info("Executing Startosis Module...")
 
 	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
 
@@ -67,7 +67,7 @@ Hello World!
 	require.Lenf(t, executionResult.ValidationErrors, 0, "Unexpected validation error")
 	require.Empty(t, executionResult.ExecutionError, "Unexpected execution error")
 	require.Equal(t, expectedScriptOutput, executionResult.SerializedScriptOutput)
-	logrus.Infof("Successfully ran Startosis module")
+	logrus.Info("Successfully ran Startosis module")
 }
 
 func TestStartosisModule_ValidModuleWithNoType(t *testing.T) {
@@ -83,7 +83,7 @@ func TestStartosisModule_ValidModuleWithNoType(t *testing.T) {
 	moduleDirpath := path.Join(currentWorkingDirectory, validModuleNoTypeRelPath)
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
-	logrus.Infof("Executing Startosis Module...")
+	logrus.Info("Executing Startosis Module...")
 
 	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
 
@@ -96,7 +96,7 @@ func TestStartosisModule_ValidModuleWithNoType(t *testing.T) {
 	require.Lenf(t, executionResult.ValidationErrors, 0, "Unexpected validation error")
 	require.Empty(t, executionResult.ExecutionError, "Unexpected execution error")
 	require.Equal(t, expectedScriptOutput, executionResult.SerializedScriptOutput)
-	logrus.Infof("Successfully ran Startosis module")
+	logrus.Info("Successfully ran Startosis module")
 }
 
 func TestStartosisModule_ValidModuleWithNoTypesFile_FailureCalledWithParams(t *testing.T) {
@@ -112,14 +112,14 @@ func TestStartosisModule_ValidModuleWithNoTypesFile_FailureCalledWithParams(t *t
 	moduleDirpath := path.Join(currentWorkingDirectory, validModuleNoTypeRelPath)
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
-	logrus.Infof("Executing Startosis Module...")
+	logrus.Info("Executing Startosis Module...")
 
 	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
 	serializedParams := `{"greetings": "Bonjour!"}`
 	executionResult, err := enclaveCtx.ExecuteStartosisModule(moduleDirpath, serializedParams)
 	require.Nil(t, err, "Unexpected error executing startosis module")
 	require.NotNil(t, executionResult.InterpretationError)
-	expectedInterpretationErr := "File 'types.proto' is either absent or invalid at the root of module 'github.com/sample/sample-kurtosis-module' but a non empty parameter was passed. This is allowed to define a module with no 'types.proto', but it should be always be called with an empty parameter"
+	expectedInterpretationErr := "A non empty parameter was passed to the module 'github.com/sample/sample-kurtosis-module' but the module doesn't contain a valid 'types.proto' file (it is either absent of invalid)."
 	require.Contains(t, executionResult.InterpretationError, expectedInterpretationErr)
 	require.Nil(t, executionResult.ValidationErrors)
 	require.Empty(t, executionResult.ExecutionError)
@@ -139,7 +139,7 @@ func TestStartosisModule_ValidModuleNoModulInputTypeTestName(t *testing.T) {
 	moduleDirpath := path.Join(currentWorkingDirectory, validModuleNoModuleInputTypeRelPath)
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
-	logrus.Infof("Executing Startosis Module...")
+	logrus.Info("Executing Startosis Module...")
 
 	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
 
@@ -152,7 +152,7 @@ func TestStartosisModule_ValidModuleNoModulInputTypeTestName(t *testing.T) {
 	require.Lenf(t, executionResult.ValidationErrors, 0, "Unexpected validation error")
 	require.Empty(t, executionResult.ExecutionError, "Unexpected execution error")
 	require.Equal(t, expectedScriptOutput, executionResult.SerializedScriptOutput)
-	logrus.Infof("Successfully ran Startosis module")
+	logrus.Info("Successfully ran Startosis module")
 }
 
 func TestStartosisModule_ValidModuleNoModulInputTypeTestName_FailureCalledWithParams(t *testing.T) {
@@ -168,7 +168,7 @@ func TestStartosisModule_ValidModuleNoModulInputTypeTestName_FailureCalledWithPa
 	moduleDirpath := path.Join(currentWorkingDirectory, validModuleNoModuleInputTypeRelPath)
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
-	logrus.Infof("Executing Startosis Module...")
+	logrus.Info("Executing Startosis Module...")
 
 	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
 
@@ -176,7 +176,7 @@ func TestStartosisModule_ValidModuleNoModulInputTypeTestName_FailureCalledWithPa
 	executionResult, err := enclaveCtx.ExecuteStartosisModule(moduleDirpath, serializedParams)
 	require.Nil(t, err, "Unexpected error executing startosis module")
 	require.NotNil(t, executionResult.InterpretationError)
-	expectedInterpretationErr := "Type 'ModuleInput' cannot be found in type file 'types.proto' for module 'github.com/sample/sample-kurtosis-module' but a non empty parameter was passed. When some parameters are passed to a module, there must be a `ModuleInput` type defined in the module's 'types.proto' file"
+	expectedInterpretationErr := "A non empty parameter was passed to the module 'github.com/sample/sample-kurtosis-module' but 'ModuleInput' type is not defined in the module's 'types.proto' file."
 	require.Contains(t, executionResult.InterpretationError, expectedInterpretationErr)
 	require.Nil(t, executionResult.ValidationErrors)
 	require.Empty(t, executionResult.ExecutionError)
@@ -196,7 +196,7 @@ func TestStartosisModule_InvalidTypesFileTestName(t *testing.T) {
 	moduleDirpath := path.Join(currentWorkingDirectory, invalidTypesFileRelPath)
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
-	logrus.Infof("Executing Startosis Module...")
+	logrus.Info("Executing Startosis Module...")
 
 	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
 
@@ -204,7 +204,7 @@ func TestStartosisModule_InvalidTypesFileTestName(t *testing.T) {
 	executionResult, err := enclaveCtx.ExecuteStartosisModule(moduleDirpath, serializedParams)
 	require.Nil(t, err, "Unexpected error executing startosis module")
 	require.NotNil(t, executionResult.InterpretationError)
-	expectedInterpretationErr := "File 'types.proto' is either absent or invalid at the root of module 'github.com/sample/sample-kurtosis-module' but a non empty parameter was passed."
+	expectedInterpretationErr := "A non empty parameter was passed to the module 'github.com/sample/sample-kurtosis-module' but the module doesn't contain a valid 'types.proto' file (it is either absent of invalid)."
 	require.Contains(t, executionResult.InterpretationError, expectedInterpretationErr)
 	require.Nil(t, executionResult.ValidationErrors)
 	require.Empty(t, executionResult.ExecutionError)
@@ -224,7 +224,7 @@ func TestStartosisModule_InvalidModuleNoTypesButInputArgsTestName(t *testing.T) 
 	moduleDirpath := path.Join(currentWorkingDirectory, invalidModuleNoTypeButInputArgsRelPath)
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
-	logrus.Infof("Executing Startosis Module...")
+	logrus.Info("Executing Startosis Module...")
 
 	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
 
@@ -251,7 +251,7 @@ func TestStartosisModule_InvalidModFile(t *testing.T) {
 	moduleDirpath := path.Join(currentWorkingDirectory, moduleWithInvalidKurtosisModRelPath)
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
-	logrus.Infof("Executing Startosis Module...")
+	logrus.Info("Executing Startosis Module...")
 
 	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
 
@@ -274,7 +274,7 @@ func TestStartosisModule_NoMainFile(t *testing.T) {
 	moduleDirpath := path.Join(currentWorkingDirectory, moduleWithNoMainStarRelPath)
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
-	logrus.Infof("Executing Startosis Module...")
+	logrus.Info("Executing Startosis Module...")
 
 	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
 
@@ -297,7 +297,7 @@ func TestStartosisModule_NoMainInMainStar(t *testing.T) {
 	moduleDirpath := path.Join(currentWorkingDirectory, moduleWithNoMainInMainStarRelPath)
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
-	logrus.Infof("Executing Startosis Module...")
+	logrus.Info("Executing Startosis Module...")
 
 	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
 

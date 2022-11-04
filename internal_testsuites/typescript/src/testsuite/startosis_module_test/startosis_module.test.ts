@@ -9,18 +9,25 @@ const EMPTY_EXECUTE_PARAMS = "{}"
 
 const VALID_MODULE_WITH_TYPES_TEST_NAME = "valid-module-with-types";
 const VALID_MODULE_WITH_TYPES_REL_PATH = "../../../../startosis/valid-kurtosis-module-with-types"
+
 const VALID_MODULE_NO_TYPE_TEST_NAME = "valid-module-no-type";
 const VALID_MODULE_NO_TYPE_REL_PATH = "../../../../startosis/valid-kurtosis-module-no-type"
+
 const VALID_MODULE_NO_MODULE_INPUT_TYPE_TEST_NAME = "valid-module-no-input-type";
 const VALID_MODULE_NO_MODULE_INPUT_TYPE_REL_PATH = "../../../../startosis/valid-kurtosis-module-no-module-input-type";
+
 const INVALID_TYPES_FILE_TEST_NAME = "invalid-types-file"
 const INVALID_TYPES_FILE_REL_PATH = "../../../../startosis/invalid-types-file"
+
 const INVALID_MODULE_NO_TYPE_BUT_INPUT_ARGS_TEST_NAME = "invalid-module-no-type-input-args";
 const INVALID_MODULE_NO_TYPE_BUT_INPUT_ARGS_REL_PATH = "../../../../startosis/invalid-no-type-but-input-args";
+
 const INVALID_KURTOSIS_MOD_TEST_NAME = "invalid-module-invalid-mod-file"
 const INVALID_KURTOSIS_MOD_IN_MODULE_REL_PATH = "../../../../startosis/invalid-mod-file"
+
 const MISSING_MAIN_STAR_TEST_NAME = "invalid-module-no-main-file"
 const MODULE_WITH_NO_MAIN_STAR_REL_PATH = "../../../../startosis/no-main-star"
+
 const MISSING_MAIN_FUNCTION_TEST_NAME = "invalid-module-missing-main"
 const MODULE_WITH_NO_MAIN_IN_MAIN_STAR_REL_PATH = "../../../../startosis/no-main-in-main-star"
 
@@ -144,7 +151,7 @@ test("Test valid startosis module with no type - failure called with params", as
             throw err(new Error("Expected interpretation errors but got empty interpretation errors"))
         }
 
-        if (!executeStartosisModuleValue.getInterpretationError().includes("File 'types.proto' is either absent or invalid at the root of module 'github.com/sample/sample-kurtosis-module' but a non empty parameter was passed. This is allowed to define a module with no 'types.proto', but it should be always be called with an empty parameter")) {
+        if (!executeStartosisModuleValue.getInterpretationError().includes("A non empty parameter was passed to the module 'github.com/sample/sample-kurtosis-module' but the module doesn't contain a valid 'types.proto' file (it is either absent of invalid).")) {
             throw err(new Error("Got interpretation error but got invalid contents"))
         }
 
@@ -235,7 +242,7 @@ test("Test valid startosis module with no module input type in types file - fail
             throw err(new Error("Expected interpretation errors but got empty interpretation errors"))
         }
 
-        if (!executeStartosisModuleValue.getInterpretationError().includes("Type 'ModuleInput' cannot be found in type file 'types.proto' for module 'github.com/sample/sample-kurtosis-module' but a non empty parameter was passed. When some parameters are passed to a module, there must be a `ModuleInput` type defined in the module's 'types.proto' file")) {
+        if (!executeStartosisModuleValue.getInterpretationError().includes("A non empty parameter was passed to the module 'github.com/sample/sample-kurtosis-module' but 'ModuleInput' type is not defined in the module's 'types.proto' file.")) {
             throw err(new Error("Got interpretation error but got invalid contents"))
         }
 
@@ -281,7 +288,7 @@ test("Test invalid startosis module invalid types file", async () => {
             throw err(new Error("Expected interpretation errors but got empty interpretation errors"))
         }
 
-        if (!executeStartosisModuleValue.getInterpretationError().includes("File 'types.proto' is either absent or invalid at the root of module 'github.com/sample/sample-kurtosis-module' but a non empty parameter was passed.")) {
+        if (!executeStartosisModuleValue.getInterpretationError().includes("A non empty parameter was passed to the module 'github.com/sample/sample-kurtosis-module' but the module doesn't contain a valid 'types.proto' file (it is either absent of invalid).")) {
             throw err(new Error("Got interpretation error but got invalid contents"))
         }
 
