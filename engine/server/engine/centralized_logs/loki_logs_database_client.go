@@ -203,8 +203,7 @@ func (client *lokiLogsDatabaseClient) StreamUserServiceLogs(
 	websocketDeadlineTime := getWebsocketDeadlineTime()
 
 	ctxWithDeadline, cancelCtxFunc := context.WithDeadline(ctx, websocketDeadlineTime)
-	//We need to cancel the websocket connection only if something fails because we need the connection open after returning
-	shouldCancelCtx := false
+	shouldCancelCtx := true
 	defer func() {
 		if shouldCancelCtx {
 			cancelCtxFunc()
@@ -236,6 +235,8 @@ func (client *lokiLogsDatabaseClient) StreamUserServiceLogs(
 		streamErrChan,
 	)
 
+	//We need to cancel the websocket connection only if something fails because we need the connection open after returning
+	shouldCancelCtx = false
 	return logsByKurtosisUserServiceGuidChan, streamErrChan, cancelCtxFunc, nil
 }
 
