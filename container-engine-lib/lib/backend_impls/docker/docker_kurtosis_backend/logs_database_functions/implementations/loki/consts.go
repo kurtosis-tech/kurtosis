@@ -63,7 +63,6 @@ const (
 	//It's the global retention period (the retention period by TenantID overrides this value)
 	//the global retention period store logs for 30 days = 720h.
 	LimitsRetentionPeriodHours         = 720
-	limitsRetentionPeriodHourIndicator = "h"
 	//This value enables the deletion API
 	allowDeletes = true
 
@@ -83,6 +82,5 @@ const (
 	//Maximum duration for which the live tailing requests should be served. More here: https://grafana.com/docs/loki/latest/configuration/#querier
 	//Left the connection open from the server-side for 4 days
 	TailMaxDurationHours = 96
-	tailMaxDurationHoursIndicator = "h"
 	////////////////////////--FINISH--LOKI CONFIGURATION SECTION--/////////////////////////////
 )

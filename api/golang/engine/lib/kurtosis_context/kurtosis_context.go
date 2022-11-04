@@ -212,7 +212,7 @@ func (kurtosisCtx *KurtosisContext) StreamUserServiceLogs(
 ) {
 
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(ctx)
-	shouldCancelCtx := false
+	shouldCancelCtx := true
 	defer func() {
 		if shouldCancelCtx {
 			cancelCtxFunc()
@@ -225,7 +225,6 @@ func (kurtosisCtx *KurtosisContext) StreamUserServiceLogs(
 
 	stream, err := kurtosisCtx.client.StreamUserServiceLogs(ctxWithCancel, getUserServiceLogsArgs)
 	if err != nil {
-		shouldCancelCtx = true
 		return nil, nil, stacktrace.Propagate(err, "An error occurred streaming user service logs using args '%+v'", getUserServiceLogsArgs)
 	}
 
@@ -237,6 +236,8 @@ func (kurtosisCtx *KurtosisContext) StreamUserServiceLogs(
 		stream,
 	)
 
+	//This is an async operation, so we don't want to cancel the context if the connection is established and data is flowing
+	shouldCancelCtx = false
 	return userServiceLogsByServiceGuidChan, cancelCtxFunc, nil
 }
 
