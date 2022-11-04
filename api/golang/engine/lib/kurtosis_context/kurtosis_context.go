@@ -30,6 +30,8 @@ const (
 	defaultApiContainerVersionTag = ""
 
 	userServiceLogsByServiceGuidChanBufferSize = 5
+
+	grpcStreamCancelContextErrorMessage = "rpc error: code = Canceled desc = context canceled"
 )
 
 var apiContainerLogLevel = logrus.DebugLevel
@@ -258,25 +260,29 @@ func runReceiveStreamLogsFromTheServerRoutine(
 	}()
 
 	for {
-		switch getUserServiceLogsResponse, errReceivingStream := stream.Recv(); errReceivingStream {
-		case io.EOF:
+		getUserServiceLogsResponse, errReceivingStream := stream.Recv()
+		//stream ends case
+		if errReceivingStream == io.EOF {
 			logrus.Debug("Received an 'EOF' error from the user service logs GRPC stream")
 			return
-		case context.Canceled:
-			logrus.Debug("Received a 'context canceled' error from the user service logs GRPC stream")
-			return
-		default:
-			if errReceivingStream != nil {
-				logrus.Errorf("An error occurred receiving user service logs stream for user services '%+v' in enclave '%v'. Error:\n%v", requestedUserServiceGuids, enclaveID, errReceivingStream)
+		}
+		if errReceivingStream != nil {
+			//context canceled case
+			if errReceivingStream.Error() == grpcStreamCancelContextErrorMessage {
+				logrus.Debug("Received a 'context canceled' error from the user service logs GRPC stream")
 				return
 			}
-
-			userServiceLogsByServiceGuidMap := newUserServiceLogsByServiceGuidMapFromGetUserServiceLogsResponse(requestedUserServiceGuids, getUserServiceLogsResponse)
-
-			userServiceLogsByServiceGuidChan <- userServiceLogsByServiceGuidMap
+			//error during stream case
+			logrus.Errorf("An error occurred receiving user service logs stream for user services '%+v' in enclave '%v'. Error:\n%v", requestedUserServiceGuids, enclaveID, errReceivingStream)
+			return
 		}
+
+		userServiceLogsByServiceGuidMap := newUserServiceLogsByServiceGuidMapFromGetUserServiceLogsResponse(requestedUserServiceGuids, getUserServiceLogsResponse)
+
+		userServiceLogsByServiceGuidChan <- userServiceLogsByServiceGuidMap
 	}
 }
+
 
 func newEnclaveContextFromEnclaveInfo(
 	enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo,

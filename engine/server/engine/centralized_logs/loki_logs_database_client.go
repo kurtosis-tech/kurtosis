@@ -14,7 +14,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
-	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -274,29 +273,26 @@ func runReadStreamResponseAndAddUserServiceLogLinesToUserServiceLogsChannel(
 				return
 			}
 
-			if netErr, ok := readingStreamResponseErr.(net.Error); ok && netErr.Timeout() {
-				errChan <- stacktrace.Propagate(readingStreamResponseErr,"Reading the tail logs streams has reached the network time out" )
-				return
-			}
-
 			if ctxErr := ctx.Err(); ctxErr != nil {
 				switch ctx.Err() {
 				case context.Canceled:
-					logrus.Debug("Reading the tail logs streams context has been canceled")
+					logrus.Debug("The tail logs streams context has been canceled")
 					return
 				case context.DeadlineExceeded:
+					logrus.Debug("The tail logs streams context deadline has been exceeded")
+					deadlineErrMsg := "Reading the tail logs streams has exceeded the deadline time"
 					ctxDeadlineTime, ok := ctx.Deadline()
-					if !ok {
-						errChan <- stacktrace.NewError("An error occurred getting the context deadline value for '%+v'; this is a bug", ctx)
+					if ok {
+						deadlineErrMsg = fmt.Sprintf("%v with value '%v'", deadlineErrMsg, ctxDeadlineTime)
 					}
-					errChan <- stacktrace.NewError("Reading the tail logs streams has exceeded the '%v' deadline time", ctxDeadlineTime)
+					errChan <- stacktrace.NewError(deadlineErrMsg)
 					return
 				default:
-					logrus.Debugf("Reading the tail logs streams context contains this error '%v' ", ctxErr)
+					logrus.Debugf("The tail logs streams context contains this error '%v' ", ctxErr)
 				}
 			}
 
-			errChan <- stacktrace.Propagate(readingStreamResponseErr, "An error occurred reading the websocket endpoint")
+			errChan <- stacktrace.Propagate(readingStreamResponseErr, "An error occurred reading the Loki's tail log endpoint")
 			return
 		}
 

@@ -183,7 +183,7 @@ func (service *EngineServerService) StreamUserServiceLogs(
 		return stacktrace.NewError("It's not possible to return user service logs because there is not logs database client; this is bug in Kurtosis")
 	}
 
-	userServiceLogsByServiceGuidChan, errChan, cancelLogsDatabaseStreamFunc, err := service.logsDatabaseClient.StreamUserServiceLogs(stream.Context(), enclaveId, requestedUserServiceGuids)
+	userServiceLogsByServiceGuidChan, errChan, cancelLogsDatabaseStreamFunc, err := service.logsDatabaseClient.git StreamUserServiceLogs(stream.Context(), enclaveId, requestedUserServiceGuids)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred streaming user service logs for GUIDs '%+v' in enclave with ID '%v'", requestedUserServiceGuids, enclaveId)
 	}
@@ -208,7 +208,6 @@ func (service *EngineServerService) StreamUserServiceLogs(
 		//error from logs database case
 		case err := <-errChan:
 			return stacktrace.Propagate(err,"An error occurred streaming user service logs")
-
 		}
 	}
 
