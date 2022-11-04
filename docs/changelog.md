@@ -1,5 +1,8 @@
 # TBD
 
+### Features
+- Improve how kurtosis instructions are canonicalized with a universal canonicalized. Each instruction is now printed on multiple lines with a comment pointing the to position in the source code.
+
 # 0.51.8
 
 ### Features
@@ -7,7 +10,7 @@
 - Prints out the instruction line, col & filename in the execution error
 - Prints out the instruction line, col & filename in the validation error
 - Added `remove_service` to Startosis
-- Add `--args` to `kurtosis startosis exec` CLI command to pass in a serialized JSON 
+- Add `--args` to `kurtosis startosis exec` CLI command to pass in a serialized JSON
 
 ### Fixes
 - Fixed nil accesses on Fact Engine

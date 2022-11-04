@@ -2,7 +2,6 @@ package store_files_from_service
 
 import (
 	"context"
-	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	kurtosis_backend_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
@@ -13,7 +12,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
-	"strings"
 )
 
 const (
@@ -58,13 +56,10 @@ func (instruction *StoreFilesFromServiceInstruction) GetPositionInOriginalScript
 }
 
 func (instruction *StoreFilesFromServiceInstruction) GetCanonicalInstruction() string {
-	buffer := new(strings.Builder)
-	buffer.WriteString(StoreFileFromServiceBuiltinName + "(")
-	buffer.WriteString(serviceIdArgName + "=\"")
-	buffer.WriteString(fmt.Sprintf("%v\", ", instruction.serviceId))
-	buffer.WriteString(srcPathArgName + "=\"")
-	buffer.WriteString(fmt.Sprintf("%v\")", instruction.srcPath))
-	return buffer.String()
+	return shared_helpers.CanonicalizeInstruction(StoreFileFromServiceBuiltinName, starlark.StringDict{
+		serviceIdArgName: starlark.String(instruction.serviceId),
+		srcPathArgName:   starlark.String(instruction.srcPath),
+	}, &instruction.position)
 }
 
 func (instruction *StoreFilesFromServiceInstruction) Execute(ctx context.Context, environment *startosis_executor.ExecutionEnvironment) error {
