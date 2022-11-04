@@ -1,14 +1,23 @@
 # TBD
 
+### Changes
+- InterpretationError is now able to store a `cause`. It simplifies being more explicit on want the root issue was
+- Added `upload_service` to Startosis
+- Add `--args` to `kurtosis startosis exec` CLI command to pass in a serialized JSON
+
+# 0.51.8
+
 ### Features
 - Added exec and HTTP request facts
 - Prints out the instruction line, col & filename in the execution error
 - Prints out the instruction line, col & filename in the validation error
 - Added `remove_service` to Startosis
-- Added `upload_service` to Startosis
 
 ### Fixes
 - Fixed nil accesses on Fact Engine
+
+### Changes
+- Add more integration tests for Kurtosis modules with input and output types
 
 # 0.51.7
 

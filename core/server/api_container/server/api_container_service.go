@@ -211,19 +211,19 @@ func (apicService ApiContainerService) ExecuteStartosisModule(ctx context.Contex
 	moduleData := args.Data
 	serializedParams := args.SerializedParams
 
-	moduleRootPathOnDisk, err := apicService.startosisModuleContentProvider.StoreModuleContents(moduleId, moduleData, doOverwriteExistingModule)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while writing module to disk '%v'", err)
+	moduleRootPathOnDisk, interpretationError := apicService.startosisModuleContentProvider.StoreModuleContents(moduleId, moduleData, doOverwriteExistingModule)
+	if interpretationError != nil {
+		return nil, stacktrace.Propagate(interpretationError, "An error occurred while writing module '%s' to disk", moduleId)
 	}
 
 	pathToMainFile := path.Join(moduleRootPathOnDisk, startosis_engine.MainFileName)
-	if _, err = os.Stat(pathToMainFile); err != nil {
+	if _, err := os.Stat(pathToMainFile); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while verifying that '%v' exists on root of module '%v' at '%v'", startosis_engine.MainFileName, moduleId, pathToMainFile)
 	}
 
 	var scriptWithMainToExecute string
 	pathToTypesFile := path.Join(moduleRootPathOnDisk, startosis_engine.TypesFileName)
-	if _, err = os.Stat(pathToTypesFile); err != nil {
+	if _, err := os.Stat(pathToTypesFile); err != nil {
 		// no types file provided for the module, no input_args expected
 		scriptWithMainToExecute = fmt.Sprintf(bootScript, moduleId, "")
 	} else {

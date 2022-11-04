@@ -83,6 +83,6 @@ func TestParsedGitURL_ParsingGetsRidOfAnyPathEscapes(t *testing.T) {
 	escapedURLWithStartosisFile = "github.com/foo/../etc/../passwd"
 	_, err = parseGitURL(escapedURLWithStartosisFile)
 	require.NotNil(t, err)
-	expectedErrorMsg := fmt.Sprintf("URL '%v' path should contain at least 2 subpaths got '[passwd]'", escapedURLWithStartosisFile)
+	expectedErrorMsg := fmt.Sprintf("Error parsing the URL of module: '%s'. The path should contain at least 2 subpaths got '[passwd]'", escapedURLWithStartosisFile)
 	require.Contains(t, err.Error(), expectedErrorMsg)
 }
