@@ -24,9 +24,7 @@ service EngineService {
   // Gets rid of old enclaves
   rpc Clean(CleanArgs) returns (CleanResponse) {};
   // Get user service logs
-  rpc GetUserServiceLogs(GetUserServiceLogsArgs) returns (GetUserServiceLogsResponse) {};
-  // Stream user service stream logs
-  rpc StreamUserServiceLogs(GetUserServiceLogsArgs) returns (stream GetUserServiceLogsResponse) {};
+  rpc GetUserServiceLogs(GetUserServiceLogsArgs) returns (stream GetUserServiceLogsResponse) {};
 }
 
 // ==============================================================================================

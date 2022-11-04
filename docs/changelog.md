@@ -6,13 +6,13 @@
 - Added the `StreamUserServiceLogs` method in Loki logs database client
 - Added `stream-logs` test in Golang and Typescript `internal-testsuites`
 - Added `service.GUID` field in `Service.Ctx` in the Kurtosis SDK
-- Added the `follow_logs` parameter in `GetUserServiceLogsArgs` engine's proto file
 
 ### Changes
 - Updated the CLI `service logs` command in order to use the new `KurtosisContext.StreamUserServiceLogs` when user requested to follow logs
+- Unified `GetUserServiceLogs` and `StreamUserServiceLogs` engine's endpoints, now `GetUserServiceLogs` will handle both use cases
+- Added the `follow_logs` parameter in `GetUserServiceLogsArgs` engine's proto file
 
 # 0.51.8
-
 ### Features
 - Added exec and HTTP request facts
 - Prints out the instruction line, col & filename in the execution error
@@ -109,7 +109,6 @@
 - Fixes how the push cli artifacts & publish engine runs by generating kurtosis_version before hand
 
 # 0.50.1
-
 ### Fixes
 - Fix generate scripts to take passed version on release
 
@@ -153,7 +152,6 @@ it is set to `KURTOSIS_IP_ADDR_PLACEHOLDER`
 - Removes remote-docker-setup from the `build_cli` job in Circle
 
 # 0.49.9
-
 ### Features
 - Implement Startosis add_service method
 - Enable linter on Startosis codebase
