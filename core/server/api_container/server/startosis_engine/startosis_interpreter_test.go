@@ -15,6 +15,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/remove_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/render_templates"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/store_files_from_service"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/upload_files"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_modules/mock_module_content_provider"
 	"github.com/stretchr/testify/assert"
@@ -1315,7 +1316,6 @@ func TestStartosisInterpreter_ValidSimpleRemoveService(t *testing.T) {
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
 print("Starting Startosis script!")
-
 service_id = "example-datastore-server"
 remove_service(service_id=service_id)
 print("The service example-datastore-server has been removed")
@@ -1327,7 +1327,7 @@ print("The service example-datastore-server has been removed")
 
 	removeInstruction := remove_service.NewRemoveServiceInstruction(
 		testServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(5, 15, starlarkFilenamePlaceholderAsNotUsed),
+		*kurtosis_instruction.NewInstructionPosition(4, 15, starlarkFilenamePlaceholderAsNotUsed),
 		"example-datastore-server",
 	)
 
@@ -1337,4 +1337,28 @@ print("The service example-datastore-server has been removed")
 The service example-datastore-server has been removed
 `
 	require.Equal(t, expectedOutput, string(scriptOutput))
+}
+
+func TestStartosisInterpreter_UploadGetsInterpretedCorrectly(t *testing.T) {
+	filePath := "github.com/kurtosis/module/lib/lib.star"
+	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
+	defer moduleContentProvider.RemoveAll()
+	err := moduleContentProvider.AddFileContent(filePath, "fooBar")
+	require.Nil(t, err)
+	filePathOnDisk, err := moduleContentProvider.GetOnDiskAbsoluteFilePath(filePath)
+	require.Nil(t, err)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
+	script := `upload_files("` + filePath + `")
+`
+	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	require.Nil(t, interpretationError)
+	require.Equal(t, 1, len(instructions))
+	require.Empty(t, scriptOutput)
+
+	expectedUploadInstruction := upload_files.NewUploadFilesInstruction(
+		*kurtosis_instruction.NewInstructionPosition(1, 13, starlarkFilenamePlaceholderAsNotUsed),
+		testServiceNetwork, moduleContentProvider, filePath, filePathOnDisk,
+	)
+
+	require.Equal(t, expectedUploadInstruction, instructions[0])
 }

@@ -3,6 +3,7 @@ package git_module_content_provider
 import (
 	"github.com/stretchr/testify/require"
 	"os"
+	"path"
 	"testing"
 )
 
@@ -56,4 +57,21 @@ func TestGitModuleProvider_FailsForNonExistentModule(t *testing.T) {
 
 	_, err = provider.GetModuleContents(nonExistentModulePath)
 	require.NotNil(t, err)
+}
+
+func TestGetAbsolutePathOnDisk_WorksForPureDirectories(t *testing.T) {
+	moduleDir, err := os.MkdirTemp("", modulesDirRelPath)
+	require.Nil(t, err)
+	defer os.RemoveAll(moduleDir)
+	moduleTmpDir, err := os.MkdirTemp("", modulesTmpDirRelPath)
+	require.Nil(t, err)
+	defer os.RemoveAll(moduleTmpDir)
+
+	provider := NewGitModuleContentProvider(moduleDir, moduleTmpDir)
+
+	modulePath := "github.com/kurtosis-tech/datastore-army-module-demo/lib"
+	pathOnDisk, err := provider.GetOnDiskAbsoluteFilePath(modulePath)
+
+	require.Nil(t, err, "This test depends on your internet working and the kurtosis-tech/datastore-army-module-demo existing")
+	require.Equal(t, path.Join(moduleDir, "kurtosis-tech", "datastore-army-module-demo", "lib"), pathOnDisk)
 }
