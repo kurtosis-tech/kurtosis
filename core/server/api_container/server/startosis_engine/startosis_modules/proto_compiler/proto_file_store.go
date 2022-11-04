@@ -4,8 +4,8 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_modules"
-	"github.com/kurtosis-tech/stacktrace"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoregistry"
@@ -51,34 +51,34 @@ func NewProtoFileStore(moduleProvider startosis_modules.ModuleContentProvider) *
 	}
 }
 
-func (protoStore *ProtoFileStore) LoadProtoFile(protoModuleFile string) (*protoregistry.Files, error) {
+func (protoStore *ProtoFileStore) LoadProtoFile(protoModuleFile string) (*protoregistry.Files, *startosis_errors.InterpretationError) {
 	protoStore.mutex.Lock()
 	defer protoStore.mutex.Unlock()
 
 	// Get the path of the corresponding file on disk from the module provider
-	absProtoFileOnDiskPath, err := protoStore.moduleProvider.GetOnDiskAbsoluteFilePath(protoModuleFile)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed loading the proto file '%v' from the module provider", protoModuleFile)
+	absProtoFileOnDiskPath, interpretationError := protoStore.moduleProvider.GetOnDiskAbsoluteFilePath(protoModuleFile)
+	if interpretationError != nil {
+		return nil, interpretationError
 	}
 
 	// Check in the store in case we already compiled it
-	protoFileUniqueIdentifier, err := getFileUniqueIdentifier(absProtoFileOnDiskPath)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error computing unique file identifier for .proto file '%v' (checked out at '%v')", protoModuleFile, absProtoFileOnDiskPath)
+	protoFileUniqueIdentifier, interpretationError := getFileUniqueIdentifier(absProtoFileOnDiskPath, protoModuleFile)
+	if interpretationError != nil {
+		return nil, interpretationError
 	}
 	if protoTypesRegistry, found := protoStore.store[protoFileUniqueIdentifier]; found {
 		return protoTypesRegistry, nil
 	}
 
 	// Compile and load the protobuf types
-	compiledProtoFileContent, err := compileProtoFile(absProtoFileOnDiskPath, protoModuleFile)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Unable to compile the .proto file '%v' (checked out at '%v') using protobuf compiler", protoModuleFile, absProtoFileOnDiskPath)
+	compiledProtoFileContent, interpretationError := compileProtoFile(absProtoFileOnDiskPath, protoModuleFile)
+	if interpretationError != nil {
+		return nil, interpretationError
 	}
 
-	protoTypesRegistry, err := loadTypesFromCompiledProtoIntoRegistry(compiledProtoFileContent, protoModuleFile)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Unable to load types from the protobuf types registry generated from file '%v' (checked out at '%v')", protoModuleFile, absProtoFileOnDiskPath)
+	protoTypesRegistry, interpretationError := loadTypesFromCompiledProtoIntoRegistry(compiledProtoFileContent, protoModuleFile)
+	if interpretationError != nil {
+		return nil, interpretationError
 	}
 
 	// Store for potential future calls and return
@@ -86,43 +86,43 @@ func (protoStore *ProtoFileStore) LoadProtoFile(protoModuleFile string) (*protor
 	return protoTypesRegistry, nil
 }
 
-func compileProtoFile(absProtoFileOnDiskPath string, protoModuleFileForLogging string) ([]byte, error) {
+func compileProtoFile(absProtoFileOnDiskPath string, protoModuleFileForLogging string) ([]byte, *startosis_errors.InterpretationError) {
 	tmpCompiledProtobufFile, err := os.CreateTemp(defaultTempDir, protocTempOutputDirPattern)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Unable to create a temporary folder on disk to store the protoc output files")
+		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to create a temporary folder on disk to store the protoc output files")
 	}
 	defer os.RemoveAll(tmpCompiledProtobufFile.Name())
 	absProtoFileDirPath := path.Dir(absProtoFileOnDiskPath)
 	compileProtoCommand := exec.Command("protoc", "-I="+absProtoFileDirPath, "--descriptor_set_out="+tmpCompiledProtobufFile.Name(), absProtoFileOnDiskPath)
 
 	if cmdOutput, err := compileProtoCommand.CombinedOutput(); err != nil {
-		return nil, stacktrace.Propagate(err, "Unable to compile .proto file '%s' (checked out at '%v'). Proto compiler output was: \n%v", protoModuleFileForLogging, absProtoFileOnDiskPath, string(cmdOutput))
+		return nil, startosis_errors.NewInterpretationError("Unable to compile .proto file '%s' (checked out at '%v'). Proto compiler output was: \n%v", protoModuleFileForLogging, absProtoFileOnDiskPath, string(cmdOutput))
 	}
 
 	compiledProtobufFileContent, err := os.ReadFile(tmpCompiledProtobufFile.Name())
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Unable to read content of compiled .proto file '%v' (checked out at '%v' and compiled at '%v')", protoModuleFileForLogging, absProtoFileOnDiskPath, tmpCompiledProtobufFile.Name())
+		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to read content of compiled .proto file '%v' (checked out at '%v' and compiled at '%v')", protoModuleFileForLogging, absProtoFileOnDiskPath, tmpCompiledProtobufFile.Name())
 	}
 	return compiledProtobufFileContent, nil
 }
 
-func loadTypesFromCompiledProtoIntoRegistry(compiledProtoFileContent []byte, protoModuleFileForLogging string) (*protoregistry.Files, error) {
+func loadTypesFromCompiledProtoIntoRegistry(compiledProtoFileContent []byte, protoModuleFileForLogging string) (*protoregistry.Files, *startosis_errors.InterpretationError) {
 	var protoFileDescriptorSet descriptorpb.FileDescriptorSet
 	if err := protoUnmarshalerOptions.Unmarshal(compiledProtoFileContent, &protoFileDescriptorSet); err != nil {
-		return nil, stacktrace.Propagate(err, "Unable read content of compiled .proto file '%v' and convert it to a file descriptor set", protoModuleFileForLogging)
+		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable read content of compiled .proto file '%v' and convert it to a file descriptor set", protoModuleFileForLogging)
 	}
 
 	protoRegistryFiles, err := protodesc.NewFiles(&protoFileDescriptorSet)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Unable to convert proto file '%v' to a proto registry file set", protoModuleFileForLogging)
+		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to convert proto file '%v' to a proto registry file set", protoModuleFileForLogging)
 	}
 	return protoRegistryFiles, nil
 }
 
-func getFileUniqueIdentifier(absProtoFileOnDiskPath string) (StoreKey, error) {
+func getFileUniqueIdentifier(absProtoFileOnDiskPath string, protoModuleFileForLogging string) (StoreKey, *startosis_errors.InterpretationError) {
 	fileContent, err := os.ReadFile(absProtoFileOnDiskPath)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "Unable to read file content '%v'", absProtoFileOnDiskPath)
+		return "", startosis_errors.WrapWithInterpretationError(err, "Error loading module file '%s'. Unable to read file content '%v'", protoModuleFileForLogging, absProtoFileOnDiskPath)
 	}
 
 	fileHash := sha256.Sum256(fileContent)

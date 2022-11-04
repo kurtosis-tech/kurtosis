@@ -1,5 +1,8 @@
 # TBD
 
+### Changes
+- InterpretationError is now able to store a `cause`. It simplifies being more explicit on want the root issue was
+
 # 0.51.8
 
 ### Features

@@ -16,7 +16,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_modules"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_modules/proto_compiler"
-	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	starlarkproto "go.starlark.net/lib/proto"
 	"go.starlark.net/lib/time"
@@ -133,15 +132,15 @@ func (interpreter *StartosisInterpreter) addInputArgsToPredeclared(moduleId stri
 
 	// Get descriptor for type "ModuleInput" in the module types.proto file
 	protoTypesFile := strings.Join([]string{moduleId, TypesFileName}, string(filepath.Separator))
-	fileStore, err := interpreter.protoFileStore.LoadProtoFile(protoTypesFile)
-	if err != nil && serializedJsonParams == EmptyInputArgs {
+	fileStore, interpretationError := interpreter.protoFileStore.LoadProtoFile(protoTypesFile)
+	if interpretationError != nil && serializedJsonParams == EmptyInputArgs {
 		// If am empty param was passed to the script, then it's valid to not have a types.proto inside the module
 		(*predeclared)[MainInputArgName] = starlark.None
 		return nil
 	}
-	if err != nil {
+	if interpretationError != nil {
 		// TODO(gb): rework the error piping here to include the compiler error message (see https://github.com/kurtosis-tech/kurtosis/issues/270)
-		return startosis_errors.NewInterpretationError("A non empty parameter was passed to the module '%s' but the module doesn't contain a valid '%s' file (it is either absent of invalid). To be able to pass a parameter to a Kurtosis module, please define a '%s' type in the module's '%s' file", moduleId, TypesFileName, ModuleInputTypeName, TypesFileName)
+		return startosis_errors.WrapWithInterpretationError(interpretationError, "A non empty parameter was passed to the module '%s' but the module doesn't contain a valid '%s' file (it is either absent of invalid). To be able to pass a parameter to a Kurtosis module, please define a '%s' type in the module's '%s' file", moduleId, TypesFileName, ModuleInputTypeName, TypesFileName)
 	}
 	reflectMessageDescriptor, err := fileStore.FindDescriptorByName(ModuleInputTypeName)
 	if err != nil && serializedJsonParams == EmptyInputArgs {
@@ -150,7 +149,7 @@ func (interpreter *StartosisInterpreter) addInputArgsToPredeclared(moduleId stri
 		return nil
 	}
 	if err != nil {
-		return startosis_errors.NewInterpretationError("A non empty parameter was passed to the module '%s' but '%s' type is not defined in the module's '%s' file. To be able to pass a parameter to a Kurtosis module, please define a '%s' type in the module's '%s' file", moduleId, ModuleInputTypeName, TypesFileName, ModuleInputTypeName, TypesFileName)
+		return startosis_errors.WrapWithInterpretationError(err, "A non empty parameter was passed to the module '%s' but '%s' type is not defined in the module's '%s' file. To be able to pass a parameter to a Kurtosis module, please define a '%s' type in the module's '%s' file", moduleId, ModuleInputTypeName, TypesFileName, ModuleInputTypeName, TypesFileName)
 	}
 	messageDescriptor, ok := reflectMessageDescriptor.(protoreflect.MessageDescriptor)
 	if !ok {
@@ -168,13 +167,11 @@ func (interpreter *StartosisInterpreter) addInputArgsToPredeclared(moduleId stri
 	// Convert the proto.Message into a starlarkproto.Message
 	protobufMarshalledMessage, err := proto.Marshal(message)
 	if err != nil {
-		logrus.Error(stacktrace.Propagate(err, "Unable to marshal proto message '%s' from module ID '%s'", ModuleInputTypeName, moduleId).Error())
-		return startosis_errors.NewInterpretationError("Unable to serialize the '%s' type of module '%s'. This is unexpected. More info will be logged to Kurtosis core", ModuleInputTypeName, moduleId)
+		return startosis_errors.WrapWithInterpretationError(err, "Unable to serialize the '%s' type of module '%s'. This is unexpected.", ModuleInputTypeName, moduleId)
 	}
 	starlarkMessage, err := starlarkproto.Unmarshal(message.Descriptor(), protobufMarshalledMessage)
 	if err != nil {
-		logrus.Error(stacktrace.Propagate(err, "Unable to convert proto message '%s' to a starlark proto message from module ID '%s'", ModuleInputTypeName, moduleId).Error())
-		return startosis_errors.NewInterpretationError("Unable to serialize the '%s' type of module '%s'. This is unexpected. More info will be logged to Kurtosis core", moduleId, serializedJsonParams)
+		return startosis_errors.WrapWithInterpretationError(err, "Unable to serialize the '%s' type of module '%s'. This is unexpected.", moduleId, serializedJsonParams)
 	}
 	(*predeclared)[MainInputArgName] = starlarkMessage
 	return nil
@@ -220,8 +217,8 @@ func (interpreter *StartosisInterpreter) makeLoadFunction(instructionsQueue *[]k
 		}()
 
 		// Load it.
-		contents, err := interpreter.moduleContentProvider.GetModuleContents(moduleID)
-		if err != nil {
+		contents, interpretationError := interpreter.moduleContentProvider.GetModuleContents(moduleID)
+		if interpretationError != nil {
 			return nil, startosis_errors.NewInterpretationError("An error occurred while loading the module '%v'", moduleID)
 		}
 
