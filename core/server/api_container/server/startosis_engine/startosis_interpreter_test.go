@@ -1192,7 +1192,7 @@ def main(input_args):
 	require.Equal(t, 0, len(instructions))
 	require.Empty(t, scriptOutput)
 
-	expectedErrorMsg := fmt.Sprintf(`File 'types.proto' either absent of invalid at the root of module 'github.com/kurtosis/module' but a non empty parameter was passed. This is allowed to define a module with no 'types.proto', but it should be always be called with an empty parameter
+	expectedErrorMsg := fmt.Sprintf(`A non empty parameter was passed to the module 'github.com/kurtosis/module' but the module doesn't contain a valid 'types.proto' file (it is either absent of invalid). To be able to pass a parameter to a Kurtosis module, please define a 'ModuleInput' type in the module's 'types.proto' file
 	Caused by: Unable to compile .proto file 'github.com/kurtosis/module/types.proto' (checked out at '%s'). Proto compiler output was: 
 %s:2:8: Expected "=".
 `, absFilePath, filepath.Base(absFilePath))

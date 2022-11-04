@@ -44,8 +44,8 @@ func TestInterpretationError_serializationFromStacktrace(t *testing.T) {
 
 func TestInterpretationError_WithCausedBy(t *testing.T) {
 	rootCause := errors.New("root cause error")
-	level1InterpretationError := WrapError(rootCause, "This is the root interpretation error")
-	userVisibleInterpretationError := WrapError(level1InterpretationError, "An error happened!")
+	levelOneInterpretationError := WrapWithInterpretationError(rootCause, "This is the root interpretation error")
+	userVisibleInterpretationError := WrapWithInterpretationError(levelOneInterpretationError, "An error happened!")
 
 	expectedErrorMessage := `An error happened!
 	Caused by: This is the root interpretation error

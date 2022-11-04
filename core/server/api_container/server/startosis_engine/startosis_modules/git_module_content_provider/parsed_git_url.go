@@ -49,7 +49,7 @@ func parseGitURL(packageURL string) (*ParsedGitURL, *startosis_errors.Interpreta
 	// we don't want schemas
 	parsedURL, err := url.Parse(packageURL)
 	if err != nil {
-		return nil, startosis_errors.WrapError(err, "Error parsing the URL of module '%v'", packageURL)
+		return nil, startosis_errors.WrapWithInterpretationError(err, "Error parsing the URL of module '%v'", packageURL)
 	}
 	if parsedURL.Scheme != "" {
 		return nil, startosis_errors.NewInterpretationError("Error parsing the URL of module '%v'. Expected schema to be empty got '%v'", packageURL, parsedURL.Scheme)
@@ -59,7 +59,7 @@ func parseGitURL(packageURL string) (*ParsedGitURL, *startosis_errors.Interpreta
 	packageURLPrefixedWithHttps := httpsSchema + "://" + packageURL
 	parsedURL, err = url.Parse(packageURLPrefixedWithHttps)
 	if err != nil {
-		return nil, startosis_errors.WrapError(err, "Error parsing the URL with scheme for module '%v'", packageURLPrefixedWithHttps)
+		return nil, startosis_errors.WrapWithInterpretationError(err, "Error parsing the URL with scheme for module '%v'", packageURLPrefixedWithHttps)
 	}
 	if parsedURL.Host != githubDomain {
 		return nil, startosis_errors.NewInterpretationError("Error parsing the URL of module. We only support modules on Github for now but got '%v'", packageURL)

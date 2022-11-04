@@ -60,7 +60,7 @@ func (provider *GitModuleContentProvider) GetModuleContents(fileInsideModuleUrl 
 	// Load the file content from its absolute path
 	contents, err := os.ReadFile(pathToFile)
 	if err != nil {
-		return "", startosis_errors.WrapError(err, "Loading module content for module '%s' failed. An error occurred in reading contents of the file '%v'", fileInsideModuleUrl, pathToFile)
+		return "", startosis_errors.WrapWithInterpretationError(err, "Loading module content for module '%s' failed. An error occurred in reading contents of the file '%v'", fileInsideModuleUrl, pathToFile)
 	}
 
 	return string(contents), nil
@@ -76,7 +76,7 @@ func (provider *GitModuleContentProvider) StoreModuleContents(moduleId string, m
 	if overwriteExisting {
 		err := os.RemoveAll(modulePathOnDisk)
 		if err != nil {
-			return "", startosis_errors.WrapError(err, "An error occurred while removing the existing module '%v' from disk at '%v'", moduleId, modulePathOnDisk)
+			return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred while removing the existing module '%v' from disk at '%v'", moduleId, modulePathOnDisk)
 		}
 	}
 
@@ -93,14 +93,14 @@ func (provider *GitModuleContentProvider) StoreModuleContents(moduleId string, m
 
 	bytesWritten, err := tempFile.Write(moduleTar)
 	if err != nil {
-		return "", startosis_errors.WrapError(err, "An error occurred while writing contents of '%v' to '%v'", moduleId, tempFile.Name())
+		return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred while writing contents of '%v' to '%v'", moduleId, tempFile.Name())
 	}
 	if bytesWritten != len(moduleTar) {
 		return "", startosis_errors.NewInterpretationError("Expected to write '%v' bytes but wrote '%v'", len(moduleTar), bytesWritten)
 	}
 	err = archiver.Unarchive(tempFile.Name(), modulePathOnDisk)
 	if err != nil {
-		return "", startosis_errors.WrapError(err, "An error occurred while unarchiving '%v' to '%v'", tempFile.Name(), modulePathOnDisk)
+		return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred while unarchiving '%v' to '%v'", tempFile.Name(), modulePathOnDisk)
 	}
 
 	return modulePathOnDisk, nil
@@ -112,13 +112,13 @@ func (provider *GitModuleContentProvider) atomicClone(parsedURL *ParsedGitURL) *
 	// First we clone into a temporary directory
 	tempRepoDirPath, err := os.MkdirTemp(provider.modulesTmpDir, temporaryRepoDirPattern)
 	if err != nil {
-		return startosis_errors.WrapError(err, "Cloning the module '%s' failed. Error creating temporary directory for the repository to be cloned into", parsedURL.gitURL)
+		return startosis_errors.WrapWithInterpretationError(err, "Cloning the module '%s' failed. Error creating temporary directory for the repository to be cloned into", parsedURL.gitURL)
 	}
 	defer os.RemoveAll(tempRepoDirPath)
 	gitClonePath := path.Join(tempRepoDirPath, parsedURL.relativeRepoPath)
 	_, err = git.PlainClone(gitClonePath, false, &git.CloneOptions{URL: parsedURL.gitURL, Progress: io.Discard})
 	if err != nil {
-		return startosis_errors.WrapError(err, "Error in cloning git repository '%s' to '%s'", parsedURL.gitURL, gitClonePath)
+		return startosis_errors.WrapWithInterpretationError(err, "Error in cloning git repository '%s' to '%s'", parsedURL.gitURL, gitClonePath)
 	}
 
 	// Then we move it into the target directory
@@ -126,11 +126,11 @@ func (provider *GitModuleContentProvider) atomicClone(parsedURL *ParsedGitURL) *
 	modulePath := path.Join(provider.modulesDir, parsedURL.relativeRepoPath)
 	fileMode, err := os.Stat(moduleAuthorPath)
 	if err == nil && !fileMode.IsDir() {
-		return startosis_errors.WrapError(err, "Expected '%s' to be a directory but it is something else", moduleAuthorPath)
+		return startosis_errors.WrapWithInterpretationError(err, "Expected '%s' to be a directory but it is something else", moduleAuthorPath)
 	}
 	if err != nil {
 		if err = os.Mkdir(moduleAuthorPath, moduleDirPermission); err != nil {
-			return startosis_errors.WrapError(err, "Cloning the module '%s' failed. An error occurred while creating the directory '%s'.", parsedURL.gitURL, moduleAuthorPath)
+			return startosis_errors.WrapWithInterpretationError(err, "Cloning the module '%s' failed. An error occurred while creating the directory '%s'.", parsedURL.gitURL, moduleAuthorPath)
 		}
 	}
 	if err = os.Rename(gitClonePath, modulePath); err != nil {
