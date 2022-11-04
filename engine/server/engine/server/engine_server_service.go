@@ -151,7 +151,7 @@ func (service *EngineServerService) GetUserServiceLogs(
 	}
 
 	if service.logsDatabaseClient == nil {
-		return nil, stacktrace.NewError("It's not possible to return user service logs because there is not logs database client; this is bug in Kurtosis")
+		return nil, stacktrace.NewError("It's not possible to return user service logs because there is no logs database client; this is bug in Kurtosis")
 	}
 
 	userServiceLogsByUserServiceGuid, err := service.logsDatabaseClient.GetUserServiceLogs(ctx, enclaveId, requestedUserServiceGuids)
@@ -180,7 +180,7 @@ func (service *EngineServerService) StreamUserServiceLogs(
 	}
 
 	if service.logsDatabaseClient == nil {
-		return stacktrace.NewError("It's not possible to return user service logs because there is not logs database client; this is bug in Kurtosis")
+		return stacktrace.NewError("It's not possible to return user service logs because there is no logs database client; this is bug in Kurtosis")
 	}
 
 	userServiceLogsByServiceGuidChan, errChan, cancelLogsDatabaseStreamFunc, err := service.logsDatabaseClient.StreamUserServiceLogs(stream.Context(), enclaveId, requestedUserServiceGuids)
@@ -208,7 +208,6 @@ func (service *EngineServerService) StreamUserServiceLogs(
 		//error from logs database case
 		case err := <-errChan:
 			return stacktrace.Propagate(err,"An error occurred streaming user service logs")
-
 		}
 	}
 

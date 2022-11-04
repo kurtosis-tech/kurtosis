@@ -2,6 +2,11 @@ package loki
 
 import "fmt"
 
+const (
+	limitsRetentionPeriodHourIndicator = "h"
+	tailMaxDurationHoursIndicator = "h"
+)
+
 type LokiConfig struct {
 	AuthEnabled   bool          `yaml:"auth_enabled"`
 	Server        Server        `yaml:"server"`
