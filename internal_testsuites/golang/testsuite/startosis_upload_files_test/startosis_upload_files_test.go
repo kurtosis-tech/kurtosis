@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	testName              = "module"
+	testName              = "upload-files-test"
 	isPartitioningEnabled = false
 
 	serviceId = "example-datastore-server-1"
