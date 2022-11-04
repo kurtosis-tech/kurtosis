@@ -31,6 +31,8 @@ type UploadFilesInstruction struct {
 
 	position kurtosis_instruction.InstructionPosition
 	srcPath  string
+
+	pathOnDisk string
 }
 
 func GenerateUploadFilesBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, provider startosis_modules.ModuleContentProvider, serviceNetwork service_network.ServiceNetwork) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
@@ -40,18 +42,23 @@ func GenerateUploadFilesBuiltin(instructionsQueue *[]kurtosis_instruction.Kurtos
 		if interpretationError != nil {
 			return nil, interpretationError
 		}
-		uploadInstruction := NewUploadFilesInstruction(*shared_helpers.GetCallerPositionFromThread(thread), serviceNetwork, provider, srcPath)
+		pathOnDisk, err := provider.GetOnDiskAbsoluteFilePath(srcPath)
+		if err != nil {
+			return nil, interpretationError
+		}
+		uploadInstruction := NewUploadFilesInstruction(*shared_helpers.GetCallerPositionFromThread(thread), serviceNetwork, provider, srcPath, pathOnDisk)
 		*instructionsQueue = append(*instructionsQueue, uploadInstruction)
 		return starlark.String(uploadInstruction.GetPositionInOriginalScript().MagicString(shared_helpers.ArtifactUUIDSuffix)), nil
 	}
 }
 
-func NewUploadFilesInstruction(position kurtosis_instruction.InstructionPosition, serviceNetwork service_network.ServiceNetwork, provider startosis_modules.ModuleContentProvider, srcPath string) *UploadFilesInstruction {
+func NewUploadFilesInstruction(position kurtosis_instruction.InstructionPosition, serviceNetwork service_network.ServiceNetwork, provider startosis_modules.ModuleContentProvider, srcPath string, pathOnDisk string) *UploadFilesInstruction {
 	return &UploadFilesInstruction{
 		position:       position,
 		serviceNetwork: serviceNetwork,
 		srcPath:        srcPath,
 		provider:       provider,
+		pathOnDisk:     pathOnDisk,
 	}
 }
 
@@ -68,13 +75,9 @@ func (instruction *UploadFilesInstruction) GetCanonicalInstruction() string {
 }
 
 func (instruction *UploadFilesInstruction) Execute(_ context.Context, environment *startosis_executor.ExecutionEnvironment) error {
-	pathOnDisk, err := instruction.provider.GetOnDiskAbsoluteFilePath(instruction.srcPath)
+	compressedData, err := shared_utils.CompressPath(instruction.pathOnDisk, ensureCompressedFileIsLesserThanGRPCLimit)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the path on disk of the file to upload '%v'", instruction.srcPath)
-	}
-	compressedData, err := shared_utils.CompressPath(pathOnDisk, ensureCompressedFileIsLesserThanGRPCLimit)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while compressing the files '%v'", pathOnDisk)
+		return stacktrace.Propagate(err, "An error occurred while compressing the files '%v'", instruction.pathOnDisk)
 	}
 	filesArtifactUuid, err := instruction.serviceNetwork.UploadFilesArtifact(compressedData)
 	if err != nil {

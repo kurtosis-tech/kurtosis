@@ -1343,6 +1343,10 @@ func TestStartosisInterpreter_UploadGetsInterpretedCorrectly(t *testing.T) {
 	filePath := "github.com/kurtosis/module/lib/lib.star"
 	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
+	err := moduleContentProvider.AddFileContent(filePath, "fooBar")
+	require.Nil(t, err)
+	filePathOnDisk, err := moduleContentProvider.GetOnDiskAbsoluteFilePath(filePath)
+	require.Nil(t, err)
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `upload_files("` + filePath + `")
 `
@@ -1353,7 +1357,7 @@ func TestStartosisInterpreter_UploadGetsInterpretedCorrectly(t *testing.T) {
 
 	expectedUploadInstruction := upload_files.NewUploadFilesInstruction(
 		*kurtosis_instruction.NewInstructionPosition(1, 13, starlarkFilenamePlaceholderAsNotUsed),
-		testServiceNetwork, moduleContentProvider, filePath,
+		testServiceNetwork, moduleContentProvider, filePath, filePathOnDisk,
 	)
 
 	require.Equal(t, expectedUploadInstruction, instructions[0])
