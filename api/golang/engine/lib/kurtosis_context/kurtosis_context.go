@@ -219,6 +219,8 @@ func (kurtosisCtx *KurtosisContext) StreamUserServiceLogs(
 		}
 	}()
 
+	//this is a buffer channel for the case that users could be consuming this channel in a process and
+	//this process could take much time until the next channel pull, so we could be filling the buffer during that time to not let the servers thread idled
 	userServiceLogsByServiceGuidChan := make(chan map[services.ServiceGUID][]*ServiceLog, userServiceLogsByServiceGuidChanBufferSize)
 
 	getUserServiceLogsArgs := newGetUserServiceLogsArgs(enclaveID, userServiceGuids)

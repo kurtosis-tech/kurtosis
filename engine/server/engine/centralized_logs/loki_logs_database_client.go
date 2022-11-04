@@ -267,7 +267,7 @@ func runReadStreamResponseAndAddUserServiceLogLinesToUserServiceLogsChannel(
 
 		if readingStreamResponseErr := tailLogsWebsocketConn.ReadJSON(streamResponse); readingStreamResponseErr != nil {
 
-			logrus.Debugf("Reading the tail logs streams response has retunerd the following error:\n'%v'", readingStreamResponseErr)
+			logrus.Debugf("Reading the tail logs streams response has returned the following error:\n'%v'", readingStreamResponseErr)
 
 			if websocket.IsCloseError(readingStreamResponseErr) {
 				logrus.Debug("Reading the tail logs streams has been closed")
@@ -424,7 +424,7 @@ func (client *lokiLogsDatabaseClient) getTailLogEndpointURLAndHeader(
 		kurtosisGuids = append(kurtosisGuids, string(userServiceGuid))
 	}
 
-	maxRetentionLogsTimeForTailingLogsParamValue := getStartTimeForStreamingLogsParaValue()
+	maxRetentionLogsTimeForTailingLogsParamValue := getStartTimeForStreamingLogsParamValue()
 
 	userServiceContainerTypeDockerValue := label_value_consts.UserServiceContainerTypeDockerLabelValue.GetString()
 
@@ -449,7 +449,7 @@ func (client *lokiLogsDatabaseClient) getTailLogEndpointURLAndHeader(
 	return tailLogsEndpointUrl, httpHeaderWithTenantID
 }
 
-func getStartTimeForStreamingLogsParaValue() string {
+func getStartTimeForStreamingLogsParamValue() string {
 	now := time.Now()
 	startTime := now.Add(oneHourLess)
 	startTimeNano := startTime.UnixNano()

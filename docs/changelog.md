@@ -10,6 +10,11 @@
 ### Changes
 - Updated the CLI `service logs` command in order to use the new `KurtosisContext.StreamUserServiceLogs` when user requested to follow logs
 
+### Changes
+- InterpretationError is now able to store a `cause`. It simplifies being more explicit on want the root issue was
+- Added `upload_service` to Startosis
+- Add `--args` to `kurtosis startosis exec` CLI command to pass in a serialized JSON
+
 # 0.51.8
 
 ### Features
@@ -17,7 +22,6 @@
 - Prints out the instruction line, col & filename in the execution error
 - Prints out the instruction line, col & filename in the validation error
 - Added `remove_service` to Startosis
-- Add `--args` to `kurtosis startosis exec` CLI command to pass in a serialized JSON 
 
 ### Fixes
 - Fixed nil accesses on Fact Engine
