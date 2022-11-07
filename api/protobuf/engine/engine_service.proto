@@ -178,6 +178,9 @@ message GetUserServiceLogsArgs {
 message GetUserServiceLogsResponse {
   // The user service log lines grouped by user service GUIDs and ordered in forward direction (oldest log line is the first element)
   map<string, LogLine> user_service_logs_by_user_service_guid = 1;
+  // A set of user service GUIDs requested by the user that were not found in the logs database, could be related that users send
+  // a wrong GUID or a right GUID for a service that has not sent any logs so far
+  map<string, bool> not_found_user_service_guid = 2;
 }
 
 // TODO add timestamp as well, for when we do timestamp-handling on the client side

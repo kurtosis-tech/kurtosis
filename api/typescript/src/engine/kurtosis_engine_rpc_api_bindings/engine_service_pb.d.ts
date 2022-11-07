@@ -285,6 +285,9 @@ export class GetUserServiceLogsResponse extends jspb.Message {
   getUserServiceLogsByUserServiceGuidMap(): jspb.Map<string, LogLine>;
   clearUserServiceLogsByUserServiceGuidMap(): GetUserServiceLogsResponse;
 
+  getNotFoundUserServiceGuidMap(): jspb.Map<string, boolean>;
+  clearNotFoundUserServiceGuidMap(): GetUserServiceLogsResponse;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): GetUserServiceLogsResponse.AsObject;
   static toObject(includeInstance: boolean, msg: GetUserServiceLogsResponse): GetUserServiceLogsResponse.AsObject;
@@ -296,6 +299,7 @@ export class GetUserServiceLogsResponse extends jspb.Message {
 export namespace GetUserServiceLogsResponse {
   export type AsObject = {
     userServiceLogsByUserServiceGuidMap: Array<[string, LogLine.AsObject]>,
+    notFoundUserServiceGuidMap: Array<[string, boolean]>,
   }
 }
 

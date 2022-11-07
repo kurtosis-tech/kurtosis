@@ -2411,7 +2411,8 @@ proto.engine_api.GetUserServiceLogsResponse.prototype.toObject = function(opt_in
  */
 proto.engine_api.GetUserServiceLogsResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-    userServiceLogsByUserServiceGuidMap: (f = msg.getUserServiceLogsByUserServiceGuidMap()) ? f.toObject(includeInstance, proto.engine_api.LogLine.toObject) : []
+    userServiceLogsByUserServiceGuidMap: (f = msg.getUserServiceLogsByUserServiceGuidMap()) ? f.toObject(includeInstance, proto.engine_api.LogLine.toObject) : [],
+    notFoundUserServiceGuidMap: (f = msg.getNotFoundUserServiceGuidMap()) ? f.toObject(includeInstance, undefined) : []
   };
 
   if (includeInstance) {
@@ -2454,6 +2455,12 @@ proto.engine_api.GetUserServiceLogsResponse.deserializeBinaryFromReader = functi
         jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.engine_api.LogLine.deserializeBinaryFromReader, "", new proto.engine_api.LogLine());
          });
       break;
+    case 2:
+      var value = msg.getNotFoundUserServiceGuidMap();
+      reader.readMessage(value, function(message, reader) {
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readBool, null, "", false);
+         });
+      break;
     default:
       reader.skipField();
       break;
@@ -2487,6 +2494,10 @@ proto.engine_api.GetUserServiceLogsResponse.serializeBinaryToWriter = function(m
   if (f && f.getLength() > 0) {
     f.serializeBinary(1, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.engine_api.LogLine.serializeBinaryToWriter);
   }
+  f = message.getNotFoundUserServiceGuidMap(true);
+  if (f && f.getLength() > 0) {
+    f.serializeBinary(2, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeBool);
+  }
 };
 
 
@@ -2509,6 +2520,28 @@ proto.engine_api.GetUserServiceLogsResponse.prototype.getUserServiceLogsByUserSe
  */
 proto.engine_api.GetUserServiceLogsResponse.prototype.clearUserServiceLogsByUserServiceGuidMap = function() {
   this.getUserServiceLogsByUserServiceGuidMap().clear();
+  return this;};
+
+
+/**
+ * map<string, bool> not_found_user_service_guid = 2;
+ * @param {boolean=} opt_noLazyCreate Do not create the map if
+ * empty, instead returning `undefined`
+ * @return {!jspb.Map<string,boolean>}
+ */
+proto.engine_api.GetUserServiceLogsResponse.prototype.getNotFoundUserServiceGuidMap = function(opt_noLazyCreate) {
+  return /** @type {!jspb.Map<string,boolean>} */ (
+      jspb.Message.getMapField(this, 2, opt_noLazyCreate,
+      null));
+};
+
+
+/**
+ * Clears values from the map. The map will be non-null.
+ * @return {!proto.engine_api.GetUserServiceLogsResponse} returns this
+ */
+proto.engine_api.GetUserServiceLogsResponse.prototype.clearNotFoundUserServiceGuidMap = function() {
+  this.getNotFoundUserServiceGuidMap().clear();
   return this;};
 
 

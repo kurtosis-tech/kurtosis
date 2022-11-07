@@ -185,6 +185,7 @@ func (kurtosisCtx *KurtosisContext) GetUserServiceLogs(
 	shouldFollowLogs bool,
 ) (
 	chan map[services.ServiceGUID][]*ServiceLog,
+	map[services.ServiceGUID]bool, //TODO add this not_founded_user_service_guids return type
 	func(),
 	error,
 ) {
