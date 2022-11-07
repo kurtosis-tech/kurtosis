@@ -19,6 +19,7 @@ import (
 const (
 	serviceIdArgName     = "service_id"
 	serviceConfigArgName = "service_config"
+	defineFactArgName    = "define_fact"
 
 	containerImageNameKey         = "container_image_name"
 	factNameArgName               = "fact_name"
@@ -27,6 +28,10 @@ const (
 	cmdArgsKey                    = "cmd_args"
 	envVarArgsKey                 = "env_vars"
 	filesArtifactMountDirpathsKey = "files_artifact_mount_dirpaths"
+	portIdKey                     = "port_id"
+	requestEndpointKey            = "endpoint"
+	requestMethodEndpointKey      = "method"
+	fieldExtractorKey             = "field_extractor"
 
 	portNumberKey   = "number"
 	portProtocolKey = "protocol"
@@ -67,31 +72,25 @@ func ParseFactName(factNameRaw starlark.String) (string, *startosis_errors.Inter
 }
 
 func ParseHttpRequestFactRecipe(serviceConfig *starlarkstruct.Struct) (*kurtosis_core_rpc_api_bindings.FactRecipe_HttpRequestFact, *startosis_errors.InterpretationError) {
-	portId, interpretationErr := extractStringValue(serviceConfig, "port_id", "port_id")
+	portId, interpretationErr := extractStringValue(serviceConfig, portIdKey, defineFactArgName)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
 
-	endpoint, interpretationErr := extractStringValue(serviceConfig, "endpoint", "endpoint")
+	endpoint, interpretationErr := extractStringValue(serviceConfig, requestEndpointKey, defineFactArgName)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
 
-	method, interpretationErr := extractStringValue(serviceConfig, "method", "method")
+	method, interpretationErr := extractStringValue(serviceConfig, requestMethodEndpointKey, defineFactArgName)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
 
-	fieldExtractor, interpretationErr := extractStringValue(serviceConfig, "field_extractor", "field_extractor")
-	var fieldExtractorPtr *string
-	if interpretationErr != nil {
-		fieldExtractorPtr = nil
-	} else {
-		fieldExtractorPtr = &fieldExtractor
-	}
+	maybeFieldExtractor, interpretationErr := maybeExtractStringValue(serviceConfig, fieldExtractorKey)
 
 	if method == "GET" {
-		builtConfig := binding_constructors.NewGetHttpRequestFactRecipeDefinition(portId, endpoint, fieldExtractorPtr)
+		builtConfig := binding_constructors.NewGetHttpRequestFactRecipeDefinition(portId, endpoint, maybeFieldExtractor)
 		return builtConfig, nil
 	} else {
 		return nil, startosis_errors.NewInterpretationError("Define fact HTTP method not recognized")
@@ -373,6 +372,18 @@ func extractStringValue(structField *starlarkstruct.Struct, key string, argNameF
 		return "", interpretationErr
 	}
 	return stringValue, nil
+}
+
+func maybeExtractStringValue(structField *starlarkstruct.Struct, key string) (*string, *startosis_errors.InterpretationError) {
+	value, err := structField.Attr(key)
+	if err != nil {
+		return nil, nil
+	}
+	stringValue, interpretationErr := safeCastToString(value, key)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	return &stringValue, nil
 }
 
 func extractUint32Value(structField *starlarkstruct.Struct, key string, argNameForLogging string) (uint32, *startosis_errors.InterpretationError) {
