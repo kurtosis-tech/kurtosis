@@ -11,6 +11,7 @@ import (
 const (
 	testName              = "upload-files-test"
 	isPartitioningEnabled = false
+	defaultDryRun         = false
 
 	serviceId = "example-datastore-server-1"
 	portId    = "grpc"
@@ -59,7 +60,7 @@ func TestStartosis(t *testing.T) {
 	logrus.Infof("Executing Startosis script...")
 	logrus.Debugf("Startosis script content: \n%v", startosisScript)
 
-	executionResult, err := enclaveCtx.ExecuteStartosisScript(startosisScript)
+	executionResult, err := enclaveCtx.ExecuteStartosisScript(startosisScript, defaultDryRun)
 	require.NoError(t, err, "Unexpected error executing startosis script")
 
 	expectedScriptOutput := `Adding service example-datastore-server-1.

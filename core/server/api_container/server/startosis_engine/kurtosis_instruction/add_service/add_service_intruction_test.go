@@ -59,7 +59,7 @@ func TestAddServiceInstruction_GetCanonicalizedInstruction(t *testing.T) {
 	addServiceInstruction.starlarkKwargs[serviceIdArgName] = starlark.String("example-datastore-server-2")
 	addServiceInstruction.starlarkKwargs[serviceConfigArgName] = starlarkstruct.FromStringDict(starlarkstruct.Default, serviceConfigDict)
 
-	expectedOutput := `// from: dummyFile-22:26
+	expectedOutput := `# from: dummyFile[22:26]
 add_service(
 	service_config=struct(
 		cmd_args=[

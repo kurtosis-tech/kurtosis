@@ -26,7 +26,7 @@ func TestCanonicalizeInstruction(t *testing.T) {
 		"arg1": arg1,
 		"arg2": arg2,
 	}, position)
-	expectedResult := `// from: github.com/kurtosis-tech/module/main.star-12:23
+	expectedResult := `# from: github.com/kurtosis-tech/module/main.star[12:23]
 my_instruction(
 	arg1="serviceA",
 	arg2=struct(

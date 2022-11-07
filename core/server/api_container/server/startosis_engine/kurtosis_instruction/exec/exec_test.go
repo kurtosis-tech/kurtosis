@@ -17,7 +17,7 @@ func TestExecInstruction_StringRepresentationWorks(t *testing.T) {
 		[]string{"mkdir", "-p", "/tmp/store"},
 		0,
 	)
-	expectedStr := `// from: dummyFile-1:1
+	expectedStr := `# from: dummyFile[1:1]
 exec(
 	command=[
 		"mkdir",
