@@ -1,5 +1,7 @@
 # TBD
 
+# 0.51.10
+
 ### Changes
 - Added Starlark `proto` module, such that you can now do `proto.has(msg, "field_name")` in Startosis to differentiate between when a field is set to its default value and when it is unset (the field has to be marked as optional) in the proto file though.
 
