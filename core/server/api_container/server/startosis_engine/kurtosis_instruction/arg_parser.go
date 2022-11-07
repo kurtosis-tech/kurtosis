@@ -66,6 +66,38 @@ func ParseFactName(factNameRaw starlark.String) (string, *startosis_errors.Inter
 	return factName, nil
 }
 
+func ParseHttpRequestFactRecipe(serviceConfig *starlarkstruct.Struct) (*kurtosis_core_rpc_api_bindings.FactRecipe_HttpRequestFact, *startosis_errors.InterpretationError) {
+	portId, interpretationErr := extractStringValue(serviceConfig, "port_id", "port_id")
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
+	endpoint, interpretationErr := extractStringValue(serviceConfig, "endpoint", "endpoint")
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
+	method, interpretationErr := extractStringValue(serviceConfig, "method", "method")
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
+	fieldExtractor, interpretationErr := extractStringValue(serviceConfig, "field_extractor", "field_extractor")
+	var fieldExtractorPtr *string
+	if interpretationErr != nil {
+		fieldExtractorPtr = nil
+	} else {
+		fieldExtractorPtr = &fieldExtractor
+	}
+
+	if method == "GET" {
+		builtConfig := binding_constructors.NewGetHttpRequestFactRecipeDefinition(portId, endpoint, fieldExtractorPtr)
+		return builtConfig, nil
+	} else {
+		return nil, startosis_errors.NewInterpretationError("Define fact HTTP method not recognized")
+	}
+}
+
 func ParseServiceConfigArg(serviceConfig *starlarkstruct.Struct) (*kurtosis_core_rpc_api_bindings.ServiceConfig, *startosis_errors.InterpretationError) {
 	containerImageName, interpretationErr := parseServiceConfigContainerImageName(serviceConfig)
 	if interpretationErr != nil {
