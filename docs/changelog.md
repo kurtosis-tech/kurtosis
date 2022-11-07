@@ -1,5 +1,8 @@
 # TBD
 
+### Features
+- Add `wait` and `define` command in Startosis
+
 # 0.51.10
 
 ### Changes
