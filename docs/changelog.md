@@ -1,4 +1,6 @@
 # TBD
+
+# 0.51.9
 ### Features
 - Implemented the new `StreamUserServiceLogs` endpoint in the Kurtosis engine server
 - Added the new `StreamUserServiceLogs` in the Kurtosis engine golang library
