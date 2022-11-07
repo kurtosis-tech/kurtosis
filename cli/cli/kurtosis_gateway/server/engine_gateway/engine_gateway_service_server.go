@@ -219,6 +219,14 @@ func (service *EngineGatewayServiceServer) GetUserServiceLogs(
 	return remoteEngineResponse, nil
 }
 
+func (service *EngineGatewayServiceServer) StreamUserServiceLogs(
+	args *kurtosis_engine_rpc_api_bindings.GetUserServiceLogsArgs,
+	stream kurtosis_engine_rpc_api_bindings.EngineService_StreamUserServiceLogsServer,
+) error {
+	return stacktrace.NewError("Cannot stream user service logs because it is not supported by the Kurtosis engine's gateway")
+
+}
+
 // Private functions for managing our running enclave api container gateways
 func (service *EngineGatewayServiceServer) startRunningGatewayForEnclave(enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo) (*runningApiContainerGateway, error) {
 	service.mutex.Lock()

@@ -148,6 +148,6 @@ func TestDoRequestWithLokiLogsDatabaseClientReturnsValidResponse(t *testing.T) {
 
 		require.Equal(t, expectedAmountLogLines, len(logLines))
 
-		require.Equal(t, expectedFirstLogLineOnEachService, logLines[0])
+		require.Equal(t, expectedFirstLogLineOnEachService, logLines[0].GetContent())
 	}
 }

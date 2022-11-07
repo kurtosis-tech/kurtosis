@@ -29,6 +29,7 @@ require (
 require (
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/mholt/archiver v3.1.1+incompatible
+	go.etcd.io/bbolt v1.3.6
 	go.starlark.net v0.0.0-20220928063852-5fccb4daaf6d
 )
 
@@ -86,7 +87,6 @@ require (
 	github.com/xanzy/ssh-agent v0.3.0 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/xtgo/uuid v0.0.0-20140804021211-a0b114877d4c // indirect
-	go.etcd.io/bbolt v1.3.6 // indirect
 	golang.org/x/crypto v0.0.0-20220214200702-86341886e292 // indirect
 	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd // indirect
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8 // indirect

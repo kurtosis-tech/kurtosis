@@ -3,14 +3,29 @@
 ### Features
 - Improve how kurtosis instructions are canonicalized with a universal canonicalizer. Each instruction is now printed on multiple lines with a comment pointing the to position in the source code.
 
-# 0.51.8
+# 0.51.10
+### Changes
+- Added Starlark `proto` module, such that you can now do `proto.has(msg, "field_name")` in Startosis to differentiate between when a field is set to its default value and when it is unset (the field has to be marked as optional) in the proto file though.
 
+# 0.51.9
+### Features
+- Implemented the new `StreamUserServiceLogs` endpoint in the Kurtosis engine server
+- Added the new `StreamUserServiceLogs` in the Kurtosis engine golang library
+- Added the `StreamUserServiceLogs` method in Loki logs database client
+- Added the `StreamUserServiceLogs` method in Kurtosis backend logs client
+
+### Changes
+- Updated the CLI `service logs` command in order to use the new `KurtosisContext.StreamUserServiceLogs` when user requested to follow logs
+- InterpretationError is now able to store a `cause`. It simplifies being more explicit on want the root issue was
+- Added `upload_service` to Startosis
+- Add `--args` to `kurtosis startosis exec` CLI command to pass in a serialized JSON
+
+# 0.51.8
 ### Features
 - Added exec and HTTP request facts
 - Prints out the instruction line, col & filename in the execution error
 - Prints out the instruction line, col & filename in the validation error
 - Added `remove_service` to Startosis
-- Add `--args` to `kurtosis startosis exec` CLI command to pass in a serialized JSON
 
 ### Fixes
 - Fixed nil accesses on Fact Engine
@@ -19,7 +34,6 @@
 - Add more integration tests for Kurtosis modules with input and output types
 
 # 0.51.7
-
 ### Fixes
 - Fixed instruction position to work with nested functions
 
@@ -27,7 +41,6 @@
 - Instruction position now contains the filename too
 
 # 0.51.6
-
 ### Features
 - Added an `import_types` Starlark instruction to read types from a .proto file inside a module
 - Added the `time` module for Starlark to the interpreter

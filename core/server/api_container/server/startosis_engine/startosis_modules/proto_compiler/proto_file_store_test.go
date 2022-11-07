@@ -28,17 +28,17 @@ message InputArgs {
 	require.Nil(t, err)
 
 	// check that InputArgs file descriptor is loaded
-	inputArgsDescriptor, err := protoRegistryFile.FindDescriptorByName("InputArgs")
-	require.Nil(t, err)
+	inputArgsDescriptor, interpretationError := protoRegistryFile.FindDescriptorByName("InputArgs")
+	require.Nil(t, interpretationError)
 	require.NotNil(t, inputArgsDescriptor)
 
 	// check that the result has been stored
-	fileUniqueIdentifier, err := getFileUniqueIdentifier(protoFileAbsPath)
+	fileUniqueIdentifier, err := getFileUniqueIdentifier(protoFileAbsPath, protoFileInModule)
 	require.Nil(t, err)
 	storedProtoRegistryFile, found := store.store[fileUniqueIdentifier]
 	require.True(t, found)
-	storedInputArgsDescriptor, err := storedProtoRegistryFile.FindDescriptorByName("InputArgs")
-	require.Nil(t, err)
+	storedInputArgsDescriptor, interpretationError := storedProtoRegistryFile.FindDescriptorByName("InputArgs")
+	require.Nil(t, interpretationError)
 	require.NotNil(t, storedInputArgsDescriptor)
 }
 
@@ -62,15 +62,14 @@ message InputArgs {
 	require.Nil(t, protoRegistryFile)
 	require.NotNil(t, err)
 
-	expectedErrorMessageTemplate := `
-Caused by: Unable to compile .proto file '%s' (checked out at '%s'). Proto compiler output was: 
+	expectedErrorMessageTemplate := `Unable to compile .proto file '%s' (checked out at '%s'). Proto compiler output was: 
 %s:5:1: Expected ";".
 `
 	partOfExpectedErrorMessage := fmt.Sprintf(expectedErrorMessageTemplate, protoFileInModule, protoFileAbsPath, path.Base(protoFileAbsPath))
 	require.Contains(t, err.Error(), partOfExpectedErrorMessage)
 
 	// check that nothing was stored
-	fileUniqueIdentifier, err := getFileUniqueIdentifier(protoFileAbsPath)
+	fileUniqueIdentifier, err := getFileUniqueIdentifier(protoFileAbsPath, protoFileInModule)
 	require.Nil(t, err)
 	storedProtoRegistryFile, found := store.store[fileUniqueIdentifier]
 	require.False(t, found)
@@ -95,8 +94,8 @@ message InputAgrs { // With a Typo!
 	require.Nil(t, err)
 
 	// check that InputArgs file descriptor is loaded
-	inputArgsDescriptor, err := protoRegistryFile.FindDescriptorByName("InputAgrs")
-	require.Nil(t, err)
+	inputArgsDescriptor, interpretationError := protoRegistryFile.FindDescriptorByName("InputAgrs")
+	require.Nil(t, interpretationError)
 	require.NotNil(t, inputArgsDescriptor)
 
 	// Update the content of the proto file and reload it
@@ -111,10 +110,10 @@ message InputArgs {
 	require.Nil(t, err)
 
 	// check that InputAgrs has disappeared and been replaced with the correct InputArgs
-	inputArgsDescriptorWithTypo, err := newProtoRegistryFile.FindDescriptorByName("InputAgrs")
-	require.NotNil(t, err)
+	inputArgsDescriptorWithTypo, interpretationError := newProtoRegistryFile.FindDescriptorByName("InputAgrs")
+	require.NotNil(t, interpretationError)
 	require.Nil(t, inputArgsDescriptorWithTypo)
-	correctedArgsDescriptor, err := newProtoRegistryFile.FindDescriptorByName("InputArgs")
-	require.Nil(t, err)
+	correctedArgsDescriptor, interpretationError := newProtoRegistryFile.FindDescriptorByName("InputArgs")
+	require.Nil(t, interpretationError)
 	require.NotNil(t, correctedArgsDescriptor)
 }

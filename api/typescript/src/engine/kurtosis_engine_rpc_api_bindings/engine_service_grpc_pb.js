@@ -215,6 +215,18 @@ getUserServiceLogs: {
     responseSerialize: serialize_engine_api_GetUserServiceLogsResponse,
     responseDeserialize: deserialize_engine_api_GetUserServiceLogsResponse,
   },
+  // Stream user service stream logs
+streamUserServiceLogs: {
+    path: '/engine_api.EngineService/StreamUserServiceLogs',
+    requestStream: false,
+    responseStream: true,
+    requestType: engine_service_pb.GetUserServiceLogsArgs,
+    responseType: engine_service_pb.GetUserServiceLogsResponse,
+    requestSerialize: serialize_engine_api_GetUserServiceLogsArgs,
+    requestDeserialize: deserialize_engine_api_GetUserServiceLogsArgs,
+    responseSerialize: serialize_engine_api_GetUserServiceLogsResponse,
+    responseDeserialize: deserialize_engine_api_GetUserServiceLogsResponse,
+  },
 };
 
 exports.EngineServiceClient = grpc.makeGenericClientConstructor(EngineServiceService);
