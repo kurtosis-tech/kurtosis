@@ -85,3 +85,7 @@ func (m *MockServiceNetwork) GetIPAddressForService(serviceID service.ServiceID)
 func (m *MockServiceNetwork) RenderTemplates(_ map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData) (enclave_data_directory.FilesArtifactUUID, error) {
 	panic(unimplementedMsg)
 }
+
+func (m *MockServiceNetwork) UploadFilesArtifact(_ []byte) (enclave_data_directory.FilesArtifactUUID, error) {
+	panic(unimplementedMsg)
+}

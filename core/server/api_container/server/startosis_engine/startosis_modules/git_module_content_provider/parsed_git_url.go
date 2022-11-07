@@ -2,7 +2,7 @@ package git_module_content_provider
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/stacktrace"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"net/url"
 	"path"
 	"strings"
@@ -44,31 +44,31 @@ func newParsedGitURL(moduleAuthor, moduleName, gitURL, relativeRepoPath, relativ
 
 // parseGitURL this takes a Git url (GitHub) for now and converts it into the struct ParsedGitURL
 // This can in the future be extended to GitLab or BitBucket or any other Git Host
-func parseGitURL(packageURL string) (*ParsedGitURL, error) {
+func parseGitURL(packageURL string) (*ParsedGitURL, *startosis_errors.InterpretationError) {
 	// we expect something like github.com/author/module/path.star
 	// we don't want schemas
 	parsedURL, err := url.Parse(packageURL)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error parsing the url '%v'", packageURL)
+		return nil, startosis_errors.WrapWithInterpretationError(err, "Error parsing the URL of module '%v'", packageURL)
 	}
 	if parsedURL.Scheme != "" {
-		return nil, stacktrace.NewError("Expected schema to be empty got '%v'", parsedURL.Scheme)
+		return nil, startosis_errors.NewInterpretationError("Error parsing the URL of module '%v'. Expected schema to be empty got '%v'", packageURL, parsedURL.Scheme)
 	}
 
 	// we prefix schema and make sure that the URL still parses
 	packageURLPrefixedWithHttps := httpsSchema + "://" + packageURL
 	parsedURL, err = url.Parse(packageURLPrefixedWithHttps)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error parsing the url '%v'", packageURL)
+		return nil, startosis_errors.WrapWithInterpretationError(err, "Error parsing the URL with scheme for module '%v'", packageURLPrefixedWithHttps)
 	}
 	if parsedURL.Host != githubDomain {
-		return nil, stacktrace.NewError("We only support modules on Github for now but got '%v'", packageURL)
+		return nil, startosis_errors.NewInterpretationError("Error parsing the URL of module. We only support modules on Github for now but got '%v'", packageURL)
 	}
 
 	splitURLPath := cleanPathAndSplit(parsedURL.Path)
 
 	if len(splitURLPath) < minimumSubPathsForValidGitURL {
-		return nil, stacktrace.NewError("URL '%v' path should contain at least %d subpaths got '%v'", packageURL, minimumSubPathsForValidGitURL, splitURLPath)
+		return nil, startosis_errors.NewInterpretationError("Error parsing the URL of module: '%v'. The path should contain at least %d subpaths got '%v'", packageURL, minimumSubPathsForValidGitURL, splitURLPath)
 	}
 
 	moduleAuthor := splitURLPath[0]

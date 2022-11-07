@@ -197,6 +197,8 @@ func (kurtosisCtx *KurtosisContext) GetUserServiceLogs(
 		}
 	}()
 
+	//this is a buffer channel for the case that users could be consuming this channel in a process and
+	//this process could take much time until the next channel pull, so we could be filling the buffer during that time to not let the servers thread idled
 	userServiceLogsByServiceGuidChan := make(chan map[services.ServiceGUID][]*ServiceLog, userServiceLogsByServiceGuidChanBufferSize)
 
 	getUserServiceLogsArgs := newGetUserServiceLogsArgs(enclaveID, userServiceGuids, shouldFollowLogs)
@@ -239,6 +241,7 @@ func runReceiveStreamLogsFromTheServerRoutine(
 	}()
 
 	for {
+		//this is a blocking call, and the only way to unblock it from our side is to cancel the context that it was created with
 		getUserServiceLogsResponse, errReceivingStream := stream.Recv()
 		//stream ends case
 		if errReceivingStream == io.EOF {

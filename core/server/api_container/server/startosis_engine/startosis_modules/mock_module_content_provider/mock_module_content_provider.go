@@ -1,6 +1,7 @@
 package mock_module_content_provider
 
 import (
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/stacktrace"
 	"os"
 )
@@ -22,29 +23,29 @@ func NewMockModuleContentProvider() *MockModuleContentProvider {
 	}
 }
 
-func (provider *MockModuleContentProvider) GetOnDiskAbsoluteFilePath(moduleID string) (string, error) {
+func (provider *MockModuleContentProvider) GetOnDiskAbsoluteFilePath(moduleID string) (string, *startosis_errors.InterpretationError) {
 	absFilePath, found := provider.modules[moduleID]
 	if !found {
-		return "", stacktrace.NewError("Module '%v' not found", moduleID)
+		return "", startosis_errors.NewInterpretationError("Module '%v' not found", moduleID)
 	}
 	if _, err := os.Stat(absFilePath); err != nil {
-		return "", stacktrace.NewError("Unable to read content of module '%v'", moduleID)
+		return "", startosis_errors.NewInterpretationError("Unable to read content of module '%v'", moduleID)
 	}
 	return absFilePath, nil
 }
 
-func (provider *MockModuleContentProvider) StoreModuleContents(string, []byte, bool) (string, error) {
+func (provider *MockModuleContentProvider) StoreModuleContents(string, []byte, bool) (string, *startosis_errors.InterpretationError) {
 	panic(unimplementedMessage)
 }
 
-func (provider *MockModuleContentProvider) GetModuleContents(moduleID string) (string, error) {
+func (provider *MockModuleContentProvider) GetModuleContents(moduleID string) (string, *startosis_errors.InterpretationError) {
 	absFilePath, found := provider.modules[moduleID]
 	if !found {
-		return "", stacktrace.NewError("Module '%v' not found", moduleID)
+		return "", startosis_errors.NewInterpretationError("Module '%v' not found", moduleID)
 	}
 	fileContent, err := os.ReadFile(absFilePath)
 	if err != nil {
-		return "", stacktrace.NewError("Unable to read content of module '%v'", moduleID)
+		return "", startosis_errors.NewInterpretationError("Unable to read content of module '%v'", moduleID)
 	}
 	return string(fileContent), nil
 }

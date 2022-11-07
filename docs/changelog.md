@@ -1,4 +1,23 @@
 # TBD
+### Breaking Changes
+- Unified `GetUserServiceLogs` and `StreamUserServiceLogs` engine's endpoints, now `GetUserServiceLogs` will handle both use cases
+  - Users will have to re-adapt `GetUserServiceLogs` calls and replace the `StreamUserServiceLogs` call with this
+- Added the `follow_logs` parameter in `GetUserServiceLogsArgs` engine's proto file
+  - Users should have to add this param in all the `GetUserServiceLogs` calls
+- Unified `GetUserServiceLogs` and `StreamUserServiceLogs` methods in `KurtosisContext`, now `GetUserServiceLogs` will handle both use cases
+  - Users will have to re-adapt `GetUserServiceLogs` calls and replace the `StreamUserServiceLogs` call with this
+- Added the `follow_logs` parameter in `KurtosisContext.GetUserServiceLogs`
+
+### Changes
+- InterpretationError is now able to store a `cause`. It simplifies being more explicit on want the root issue was
+- Added `upload_service` to Startosis
+- Add `--args` to `kurtosis startosis exec` CLI command to pass in a serialized JSON
+
+# 0.51.10
+### Changes
+- Added Starlark `proto` module, such that you can now do `proto.has(msg, "field_name")` in Startosis to differentiate between when a field is set to its default value and when it is unset (the field has to be marked as optional) in the proto file though.
+
+# 0.51.9
 ### Features
 - Implemented the new `StreamUserServiceLogs` endpoint in the Kurtosis engine server
 - Added the new `StreamUserServiceLogs` in the Kurtosis engine Golang library
@@ -10,22 +29,12 @@
 ### Changes
 - Updated the CLI `service logs` command in order to use the new `KurtosisContext.StreamUserServiceLogs` when user requested to follow logs
 
-### Breaking Changes
-- Unified `GetUserServiceLogs` and `StreamUserServiceLogs` engine's endpoints, now `GetUserServiceLogs` will handle both use cases
-  - Users will have to re-adapt `GetUserServiceLogs` calls and replace the `StreamUserServiceLogs` call with this
-- Added the `follow_logs` parameter in `GetUserServiceLogsArgs` engine's proto file
-  - Users should have to add this param in all the `GetUserServiceLogs` calls
-- Unified `GetUserServiceLogs` and `StreamUserServiceLogs` methods in `KurtosisContext`, now `GetUserServiceLogs` will handle both use cases
-  - Users will have to re-adapt `GetUserServiceLogs` calls and replace the `StreamUserServiceLogs` call with this
-- Added the `follow_logs` parameter in `KurtosisContext.GetUserServiceLogs`
-
 # 0.51.8
 ### Features
 - Added exec and HTTP request facts
 - Prints out the instruction line, col & filename in the execution error
 - Prints out the instruction line, col & filename in the validation error
 - Added `remove_service` to Startosis
-- Add `--args` to `kurtosis startosis exec` CLI command to pass in a serialized JSON 
 
 ### Fixes
 - Fixed nil accesses on Fact Engine

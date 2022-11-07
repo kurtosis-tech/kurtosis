@@ -33,9 +33,9 @@ func GenerateReadFileBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisI
 		}
 		execInstruction := NewReadFileInstruction(*shared_helpers.GetCallerPositionFromThread(thread), srcPath)
 		*instructionsQueue = append(*instructionsQueue, execInstruction)
-		fileContents, err := provider.GetModuleContents(srcPath)
-		if err != nil {
-			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("There was an error reading the contents of the file '%v'", srcPath))
+		fileContents, interpretationError := provider.GetModuleContents(srcPath)
+		if interpretationError != nil {
+			return nil, interpretationError
 		}
 		return starlark.String(fileContents), nil
 	}
