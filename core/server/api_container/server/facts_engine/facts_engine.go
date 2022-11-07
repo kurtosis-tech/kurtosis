@@ -43,6 +43,8 @@ const (
 	factIdFormatStr            = "%v.%v"
 	keyStringFormat            = "%020s"
 	maxResultCount             = 100
+	defaultRetryCount          = 3
+	defaultRetryWaitDuration   = 3 * time.Second
 )
 
 func NewFactsEngine(db *bolt.DB, serviceNetwork service_network.ServiceNetwork) *FactsEngine {
@@ -102,16 +104,16 @@ func (engine *FactsEngine) FetchFactValuesAfter(factId FactId, afterTimestamp ti
 }
 
 func (engine *FactsEngine) WaitForValue(factId FactId) (*kurtosis_core_rpc_api_bindings.FactValue, error) {
-	for tries := 0; tries < 3; tries += 1 {
+	for tries := 0; tries < defaultRetryCount; tries += 1 {
 		factValues, err := engine.FetchLatestFactValues(factId)
 		if len(factValues) == 0 || err != nil {
 			logrus.Infof("Fact '%v' not found, sleeping", factId)
-			time.Sleep(3 * time.Second)
+			time.Sleep(defaultRetryWaitDuration)
 		} else {
 			return factValues[len(factValues)-1], nil
 		}
 	}
-	return nil, stacktrace.NewError("Fact '%v' not found, after %d tries, aborting", factId, 3)
+	return nil, stacktrace.NewError("Fact '%v' not found, after %d tries, aborting", factId, defaultRetryCount)
 }
 
 func (engine *FactsEngine) setupRunRecipeLoop(factId FactId, recipe *kurtosis_core_rpc_api_bindings.FactRecipe) {
@@ -277,31 +279,7 @@ func (engine *FactsEngine) runRecipe(recipe *kurtosis_core_rpc_api_bindings.Fact
 			return nil, stacktrace.Propagate(err, "An error occurred when reading HTTP response body")
 		}
 		if recipe.GetHttpRequestFact().GetFieldExtractor() != "" {
-			var jsonBody interface{}
-			err := json.Unmarshal(body, &jsonBody)
-			if err != nil {
-				return nil, stacktrace.Propagate(err, "An error occurred when parsing JSON response body")
-			}
-			query, err := gojq.Parse(recipe.GetHttpRequestFact().GetFieldExtractor())
-			if err != nil {
-				return nil, stacktrace.Propagate(err, "An error occurred when parsing field extractor '%v'", recipe.GetHttpRequestFact().GetFieldExtractor())
-			}
-			iter := query.Run(jsonBody)
-			for {
-				v, ok := iter.Next()
-				if !ok {
-					break
-				}
-				if err, ok := v.(error); ok {
-					log.Fatalln(err)
-				} else {
-					return &kurtosis_core_rpc_api_bindings.FactValue{
-						FactValue: &kurtosis_core_rpc_api_bindings.FactValue_StringValue{
-							StringValue: fmt.Sprintf("%v", v),
-						},
-					}, nil
-				}
-			}
+			return extractFactFromJson(recipe.GetHttpRequestFact().GetFieldExtractor(), body)
 		} else {
 			return &kurtosis_core_rpc_api_bindings.FactValue{
 				FactValue: &kurtosis_core_rpc_api_bindings.FactValue_StringValue{
@@ -311,6 +289,36 @@ func (engine *FactsEngine) runRecipe(recipe *kurtosis_core_rpc_api_bindings.Fact
 		}
 	}
 	return nil, stacktrace.NewError("Recipe type not implemented '%v'", recipe.GetFactRecipeDefinition())
+}
+
+func extractFactFromJson(fieldExtractor string, body []byte) (*kurtosis_core_rpc_api_bindings.FactValue, error) {
+	var jsonBody interface{}
+	err := json.Unmarshal(body, &jsonBody)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred when parsing JSON response body")
+	}
+	query, err := gojq.Parse(fieldExtractor)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred when parsing field extractor '%v'", fieldExtractor)
+	}
+	iter := query.Run(jsonBody)
+	for {
+		v, ok := iter.Next()
+		if !ok {
+			break
+		}
+		if err, ok := v.(error); ok {
+			log.Fatalln(err)
+		}
+		if v != nil {
+			return &kurtosis_core_rpc_api_bindings.FactValue{
+				FactValue: &kurtosis_core_rpc_api_bindings.FactValue_StringValue{
+					StringValue: fmt.Sprintf("%v", v),
+				},
+			}, nil
+		}
+	}
+	return nil, stacktrace.NewError("No field '%v' was found on body '%v'", fieldExtractor, string(body))
 }
 
 func (engine *FactsEngine) updateFactValue(factId FactId, timestampKey string, factValue []byte) error {
