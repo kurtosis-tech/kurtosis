@@ -23,11 +23,15 @@ import (
 const (
 	defaultHttpClientTimeOut = 1 * time.Minute
 
-	httpScheme                = "http"
-	websocketScheme           = "ws"
-	baseLokiApiPath           = "/loki/api/v1"
-	queryRangeEndpointSubpath = "/query_range"
-	tailEndpointSubpath       = "/tail"
+	httpScheme                              = "http"
+	websocketScheme                         = "ws"
+	baseLokiApiPath                         = "/loki/api/v1"
+	queryRangeEndpointSubpath               = "/query_range"
+	queryListLabelValuesWithinRangeEndpoint = "/label/%s/values"
+	tailEndpointSubpath                     = "/tail"
+
+	lokiSuccessStatusInResponse = "success"
+	kurtosisGuidLokiTagKey      = "comKurtosistechGuid"
 
 	//the global retention period store logs for 30 days = 720h.
 	maxRetentionPeriodHours = loki.LimitsRetentionPeriodHours * time.Hour
@@ -84,7 +88,7 @@ var httpRetriesBackoffSchedule = []time.Duration{
 	1 * time.Second,
 }
 
-//fields are public because it's needed for JSON decoding
+// fields are public because it's needed for JSON decoding
 type lokiQueryRangeResponse struct {
 	Status string `json:"status"`
 	Data   *struct {
@@ -95,6 +99,11 @@ type lokiQueryRangeResponse struct {
 
 type lokiStreamLogsResponse struct {
 	Streams []lokiStreamValue `json:"streams"`
+}
+
+type lokiLabelValuesResponse struct {
+	Status string   `json:"status"`
+	Data   []string `json:"data"`
 }
 
 type LokiLogLine struct {
@@ -181,6 +190,10 @@ func (client *lokiLogsDatabaseClient) GetUserServiceLogs(
 		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred unmarshalling the Loki query range response")
 	}
 
+	if lokiQueryRangeResponseObj.Status != lokiSuccessStatusInResponse {
+		return nil, nil, nil, stacktrace.NewError("The logs database returns an error status when getting user service logs for service GUIDs. Response was: \n%v", kurtosisGuids, lokiQueryRangeResponseObj)
+	}
+
 	if lokiQueryRangeResponseObj == nil || lokiQueryRangeResponseObj.Data == nil {
 		return nil, nil, nil, stacktrace.Propagate(err, "The response body's schema payload received '%+v' by calling the Loki's query range endpoint is not what was expected; this is a bug in Kurtosis", lokiQueryRangeResponseObj)
 	}
@@ -253,6 +266,56 @@ func (client *lokiLogsDatabaseClient) StreamUserServiceLogs(
 	//We need to cancel the websocket connection only if something fails because we need the connection open after returning
 	shouldCancelCtx = false
 	return logsByKurtosisUserServiceGuidChan, streamErrChan, cancelCtxFunc, nil
+}
+
+func (client *lokiLogsDatabaseClient) FilterExistingServiceGuids(ctx context.Context, enclaveId enclave.EnclaveID, userServiceGuids map[service.ServiceGUID]bool) (map[service.ServiceGUID]bool, error) {
+	httpHeaderWithTenantID := http.Header{}
+	httpHeaderWithTenantID.Add(organizationIdHttpHeaderKey, string(enclaveId))
+
+	getLogsPath := fmt.Sprintf(baseLokiApiPath+queryListLabelValuesWithinRangeEndpoint, kurtosisGuidLokiTagKey)
+
+	queryRangeEndpointUrl := &url.URL{Scheme: httpScheme, Host: client.logsDatabaseAddress, Path: getLogsPath}
+
+	queryRangeEndpointQuery := queryRangeEndpointUrl.Query()
+
+	startTimeForStreamingLogsParamValue := getStartTimeForStreamingLogsParamValue()
+
+	queryRangeEndpointQuery.Set(startTimeQueryParamKey, startTimeForStreamingLogsParamValue)
+
+	queryRangeEndpointUrl.RawQuery = queryRangeEndpointQuery.Encode()
+
+	httpRequest := &http.Request{
+		Method: http.MethodGet,
+		URL:    queryRangeEndpointUrl,
+		Header: httpHeaderWithTenantID,
+	}
+	httpRequestWithContext := httpRequest.WithContext(ctx)
+
+	httpResponseBodyBytes, err := client.doHttpRequestWithRetries(httpRequestWithContext)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred doing HTTP request '%+v'", httpRequestWithContext)
+	}
+
+	lokiLabelValuesResponseObj := &lokiLabelValuesResponse{}
+	err = json.Unmarshal(httpResponseBodyBytes, lokiLabelValuesResponseObj)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred reading the existing service GUIDs from the logs database")
+	}
+	if lokiLabelValuesResponseObj.Status != lokiSuccessStatusInResponse {
+		return nil, stacktrace.NewError("The logs database returns an error status when fetching the existing service GUIDs. Response was: \n%v", lokiLabelValuesResponseObj)
+	}
+
+	existingServiceGuidsSet := make(map[service.ServiceGUID]bool, len(lokiLabelValuesResponseObj.Data))
+	for _, serviceGuid := range lokiLabelValuesResponseObj.Data {
+		existingServiceGuidsSet[service.ServiceGUID(serviceGuid)] = true
+	}
+	filteredServiceGuidsSet := make(map[service.ServiceGUID]bool, len(lokiLabelValuesResponseObj.Data))
+	for serviceGuid := range userServiceGuids {
+		if _, found := existingServiceGuidsSet[serviceGuid]; found {
+			filteredServiceGuidsSet[serviceGuid] = true
+		}
+	}
+	return filteredServiceGuidsSet, nil
 }
 
 // ====================================================================================================
