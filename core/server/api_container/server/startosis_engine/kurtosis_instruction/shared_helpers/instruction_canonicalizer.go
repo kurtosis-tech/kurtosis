@@ -9,6 +9,10 @@ import (
 	"strings"
 )
 
+const (
+	initialIndentationLevel = 1
+)
+
 func CanonicalizeInstruction(instructionName string, serializedKwargs starlark.StringDict, position *kurtosis_instruction.InstructionPosition) string {
 	buffer := new(strings.Builder)
 	buffer.WriteString(fmt.Sprintf("// from: %s\n", position.String()))
@@ -26,9 +30,9 @@ func CanonicalizeInstruction(instructionName string, serializedKwargs starlark.S
 	for _, argName := range sortedArgName {
 		genericArgValue, found := serializedKwargs[argName]
 		if !found {
-			panic("We're iterating on the key of the map. Not find a value is very unexpected")
+			panic(fmt.Sprintf("Couldn't find a value for the key '%s' in the canonical instruction argument map ('%v'). This is unexpected and a bug in Kurtosis", argName, serializedKwargs))
 		}
-		buffer.WriteString(fmt.Sprintf("\n%s%s=%s,", indentPrefixString(1), argName, canonicalizeArgValue(genericArgValue, false, 1)))
+		buffer.WriteString(fmt.Sprintf("\n%s%s=%s,", indentPrefixString(initialIndentationLevel), argName, canonicalizeArgValue(genericArgValue, false, 1)))
 	}
 	buffer.WriteString("\n)")
 	return buffer.String()
@@ -48,7 +52,7 @@ func canonicalizeArgValue(genericArgValue starlark.Value, newline bool, indent i
 		for _, key := range allKeys {
 			value, found, err := argValue.Get(key)
 			if err != nil || !found {
-				panic("Iterating over all keys from the struct. This is very weird")
+				panic(fmt.Sprintf("Iterating over all keys from the struct, the key '%s' could not be found ('%v'). This is unexpected and a bug in Kurtosis", key, argValue))
 			}
 			stringifiedElement[idx] = fmt.Sprintf("%s: %s", canonicalizeArgValue(key, true, indent+1), canonicalizeArgValue(value, false, indent+1))
 			idx++
@@ -70,7 +74,7 @@ func canonicalizeArgValue(genericArgValue starlark.Value, newline bool, indent i
 		for _, attributeName := range allAttributes {
 			attributeValue, err := argValue.Attr(attributeName)
 			if err != nil {
-				panic("Iterating over all keys from the struct. This is very weird")
+				panic(fmt.Sprintf("Iterating over all keys from the struct, the key '%s' could not be found ('%v'). This is unexpected and a bug in Kurtosis", attributeName, argValue))
 			}
 			stringifiedElement[idx] = fmt.Sprintf("\n%s%s=%s", indentPrefixString(indent+1), attributeName, canonicalizeArgValue(attributeValue, false, indent+1))
 			idx++

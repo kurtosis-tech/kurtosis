@@ -8,6 +8,11 @@ import (
 	"testing"
 )
 
+const (
+	defaultNewline       = false
+	defaultInitialIndent = 0
+)
+
 func TestCanonicalizeInstruction(t *testing.T) {
 	filename := "github.com/kurtosis-tech/module/main.star"
 	position := kurtosis_instruction.NewInstructionPosition(12, 23, filename)
@@ -34,19 +39,19 @@ my_instruction(
 
 func TestCanonicalizeArgValue_String(t *testing.T) {
 	input := starlark.String("Hello")
-	result := canonicalizeArgValue(input, false, 0)
+	result := canonicalizeArgValue(input, defaultNewline, defaultInitialIndent)
 	require.Equal(t, `"Hello"`, result) // notice the quotes here
 }
 
 func TestCanonicalizeArgValue_Int64(t *testing.T) {
 	input := starlark.MakeInt64(1234)
-	result := canonicalizeArgValue(input, false, 0)
+	result := canonicalizeArgValue(input, defaultNewline, defaultInitialIndent)
 	require.Equal(t, `1234`, result)
 }
 
 func TestCanonicalizeArgValue_Int(t *testing.T) {
 	input := starlark.MakeInt(1234)
-	result := canonicalizeArgValue(input, false, 0)
+	result := canonicalizeArgValue(input, defaultNewline, defaultInitialIndent)
 	require.Equal(t, `1234`, result)
 }
 
@@ -56,7 +61,7 @@ func TestCanonicalizeArgValue_Slice(t *testing.T) {
 		starlark.String("World"),
 		starlark.MakeInt(42),
 	})
-	result := canonicalizeArgValue(input, false, 0)
+	result := canonicalizeArgValue(input, defaultNewline, defaultInitialIndent)
 	expectedResult := `[
 	"Hello",
 	"World",
@@ -70,7 +75,7 @@ func TestCanonicalizeArgValue_SimpleMap(t *testing.T) {
 	require.Nil(t, input.SetKey(starlark.String("hello"), starlark.String("world")))
 	require.Nil(t, input.SetKey(starlark.String("bonjour"), starlark.MakeInt(1)))
 	require.Nil(t, input.SetKey(starlark.MakeInt(42), starlark.String("bonjour")))
-	result := canonicalizeArgValue(input, false, 0)
+	result := canonicalizeArgValue(input, defaultNewline, defaultInitialIndent)
 	expectedResult := `{
 	"bonjour": 1,
 	"hello": "world",
@@ -86,7 +91,7 @@ func TestCanonicalizeArgValue_ComplexMap(t *testing.T) {
 	nestedList := starlark.NewList([]starlark.Value{starlark.String("Hello"), starlark.MakeInt(42)})
 	require.Nil(t, input.SetKey(starlark.String("nested_map"), nestedMap))
 	require.Nil(t, input.SetKey(starlark.String("nested_list"), nestedList))
-	result := canonicalizeArgValue(input, false, 0)
+	result := canonicalizeArgValue(input, defaultNewline, defaultInitialIndent)
 	expectedResult := `{
 	"nested_list": [
 		"Hello",
@@ -104,7 +109,7 @@ func TestCanonicalizeArgValue_SimpleStruct(t *testing.T) {
 	inputDict["hello"] = starlark.String("world")
 	inputDict["bonjour"] = starlark.MakeInt(42)
 	input := starlarkstruct.FromStringDict(starlarkstruct.Default, inputDict)
-	result := canonicalizeArgValue(input, false, 0)
+	result := canonicalizeArgValue(input, defaultNewline, defaultInitialIndent)
 	expectedResult := `struct(
 	bonjour=42,
 	hello="world"
@@ -125,7 +130,7 @@ func TestCanonicalizeArgValue_ComplexStruct(t *testing.T) {
 	inputDict["nested_list"] = nestedList
 	inputDict["nested_struct"] = starlarkstruct.FromStringDict(starlarkstruct.Default, nestedStruct)
 	input := starlarkstruct.FromStringDict(starlarkstruct.Default, inputDict)
-	result := canonicalizeArgValue(input, false, 0)
+	result := canonicalizeArgValue(input, defaultNewline, defaultInitialIndent)
 	expectedResult := `struct(
 	nested_list=[
 		"Hello",

@@ -1,7 +1,7 @@
 # TBD
 
 ### Features
-- Improve how kurtosis instructions are canonicalized with a universal canonicalized. Each instruction is now printed on multiple lines with a comment pointing the to position in the source code.
+- Improve how kurtosis instructions are canonicalized with a universal canonicalizer. Each instruction is now printed on multiple lines with a comment pointing the to position in the source code.
 
 # 0.51.8
 
