@@ -1,4 +1,11 @@
 # TBD
+
+# 0.51.10
+
+### Changes
+- Added Starlark `proto` module, such that you can now do `proto.has(msg, "field_name")` in Startosis to differentiate between when a field is set to its default value and when it is unset (the field has to be marked as optional) in the proto file though.
+
+# 0.51.9
 ### Features
 - Implemented the new `StreamUserServiceLogs` endpoint in the Kurtosis engine server
 - Added the new `StreamUserServiceLogs` in the Kurtosis engine Golang library
