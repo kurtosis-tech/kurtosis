@@ -2,6 +2,11 @@ package loki
 
 import "fmt"
 
+const (
+	limitsRetentionPeriodHourIndicator = "h"
+	tailMaxDurationHoursIndicator = "h"
+)
+
 type LokiConfig struct {
 	AuthEnabled   bool          `yaml:"auth_enabled"`
 	Server        Server        `yaml:"server"`
@@ -14,6 +19,7 @@ type LokiConfig struct {
 	Analytics     Analytics     `yaml:"analytics"`
 	RuntimeConfig RuntimeConfig `yaml:"runtime_config"`
 	Ingester      Ingester      `yaml:"ingester"`
+	Querier       Querier       `yaml:"querier"`
 }
 
 type Server struct {
@@ -103,6 +109,10 @@ type RuntimeConfig struct {
 	Period string `yaml:"period"`
 }
 
+type Querier struct {
+	TailMaxDuration string `yaml:"tail_max_duration"`
+}
+
 // The following Loki configuration values are specific for the Kurtosis centralized logs Loki implementation
 // some values were suggested by the Loki's documentation and this video: https://grafana.com/go/webinar/logging-with-loki-essential-configuration-settings/?pg=docs-loki&plcmt=footer-resources-2
 func newDefaultLokiConfigForKurtosisCentralizedLogs() *LokiConfig {
@@ -169,6 +179,9 @@ func newDefaultLokiConfigForKurtosisCentralizedLogs() *LokiConfig {
 				FlushOnShutdown:    flushIngesterWalOnShutdown,
 				CheckpointDuration: checkpointDuration,
 			},
+		},
+		Querier: Querier{
+			TailMaxDuration: fmt.Sprintf("%v%v", TailMaxDurationHours, tailMaxDurationHoursIndicator),
 		},
 	}
 	return newConfig

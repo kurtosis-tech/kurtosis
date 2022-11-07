@@ -17,12 +17,16 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/kurtosis_config_getter"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
+	"os"
+	"os/signal"
 	"strconv"
 )
 
@@ -37,6 +41,8 @@ const (
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
+
+	interruptChanBufferSize = 5
 )
 
 var defaultShouldFollowLogs = strconv.FormatBool(false)
@@ -95,16 +101,71 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the should-follow-logs flag using key '%v'", shouldFollowLogsFlagKey)
 	}
 
-	//TODO This is a huge temporary hack until we implement stream logs from the centralized logs database
-	if !shouldFollowLogs {
-		userServiceGuids := map[services.ServiceGUID]bool{
-			serviceGuid: true,
+	userServiceGuids := map[services.ServiceGUID]bool{
+		serviceGuid: true,
+	}
+
+	clusterConfig, err := kurtosis_config_getter.GetKurtosisClusterConfig()
+	if err != nil {
+		return stacktrace.Propagate(err, "And error occurred getting the Kurtosis cluster config")
+	}
+
+	clusterType := clusterConfig.GetClusterType()
+
+	//Print logs for Kubernetes cluster
+	//TODO HUGE HACK!
+	//TODO this is momentarily used here until we implement centralized logs for Kubernetes
+	if clusterType == resolved_config.KurtosisClusterType_Kubernetes {
+		//These Kurtosis primitives came from the backend (container-engine-lib) and this is the reason
+		//why are different from the same defined earlier (which came from the Kurtosis SDK)
+		kurtosisBackendEnclaveId := enclave.EnclaveID(enclaveIdStr)
+		kurtosisBackendServiceGUID := service.ServiceGUID(serviceGuidStr)
+
+		userServiceFilters := &service.ServiceFilters{
+			GUIDs: map[service.ServiceGUID]bool{
+				kurtosisBackendServiceGUID: true,
+			},
 		}
 
-		kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
+		successfulUserServiceLogs, erroredUserServiceGuids, err := kurtosisBackend.GetUserServiceLogs(ctx, kurtosisBackendEnclaveId, userServiceFilters, shouldFollowLogs)
 		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred connecting to the local Kurtosis engine")
+			return stacktrace.Propagate(err, "An error occurred getting user service logs using filters '%+v'", userServiceFilters)
 		}
+		defer func() {
+			for _, userServiceLogsReadCloser := range successfulUserServiceLogs {
+				if err := userServiceLogsReadCloser.Close(); err != nil {
+					logrus.Warnf("We tried to close the user service logs read-closer-objects after we're done using it, but doing so threw an error:\n%v", err)
+				}
+			}
+		}()
+
+		if len(erroredUserServiceGuids) > 0 {
+			err, found := erroredUserServiceGuids[kurtosisBackendServiceGUID]
+			if !found {
+				return stacktrace.NewError("Expected to find an error for user service with GUID '%v' on user service error map '%+v' but was not found; this should never happen, and is a bug in Kurtosis", kurtosisBackendServiceGUID, erroredUserServiceGuids)
+			}
+			return stacktrace.Propagate(err, "An error occurred getting user service logs for user service with GUID '%v'", kurtosisBackendServiceGUID)
+		}
+
+		userServiceReadCloserLog, found := successfulUserServiceLogs[kurtosisBackendServiceGUID]
+		if !found {
+			return stacktrace.NewError("Expected to find logs for user service with GUID '%v' on user service logs map '%+v' but was not found; this should never happen, and is a bug in Kurtosis", kurtosisBackendServiceGUID, userServiceReadCloserLog)
+		}
+
+		if _, err := io.Copy(logrus.StandardLogger().Out, userServiceReadCloserLog); err != nil {
+			return stacktrace.Propagate(err, "An error occurred copying the service logs to STDOUT")
+		}
+
+		return nil
+	}
+
+	//Print logs for Docker cluster which uses the Kurtosis centralized logs feature
+	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred connecting to the local Kurtosis engine")
+	}
+
+	if !shouldFollowLogs {
 
 		userServiceLogs, err := kurtosisCtx.GetUserServiceLogs(ctx, enclaveId, userServiceGuids)
 		if err != nil {
@@ -118,53 +179,43 @@ func run(
 
 		for _, logLine := range serviceLogs {
 			if _, err := fmt.Fprintln(logrus.StandardLogger().Out, logLine); err != nil {
-				logrus.Errorf("We tried to print the user service log line '%v', but doing so threw an error:\n%v",logLine, err)
+				logrus.Errorf("We tried to print the user service log line '%v', but doing so threw an error:\n%v", logLine, err)
 			}
 		}
 
 		return nil
 	}
 
-	//These Kurtosis primitives came from the backend (container-engine-lib) and this is the reason
-	//why are different from the same defined on top (which came from the Kurtosis SDK)
-	//TODO these are momentarily used here until we implement stream logs from the centralized logs database
-	kurtosisBackendEnclaveId := enclave.EnclaveID(enclaveIdStr)
-	kurtosisBackendServiceGUID := service.ServiceGUID(serviceGuidStr)
-
-	userServiceFilters := &service.ServiceFilters{
-		GUIDs: map[service.ServiceGUID]bool{
-			kurtosisBackendServiceGUID: true,
-		},
-	}
-
-	successfulUserServiceLogs, erroredUserServiceGuids, err := kurtosisBackend.GetUserServiceLogs(ctx, kurtosisBackendEnclaveId, userServiceFilters, shouldFollowLogs)
+	userServiceLogsByGuidChan, cancelStreamUserServiceLogsFunc, err := kurtosisCtx.StreamUserServiceLogs(ctx, enclaveId, userServiceGuids)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting user service logs using filters '%+v'", userServiceFilters)
+		return stacktrace.Propagate(err, "An error occurred streaming user service logs from user services with GUIDs '%+v' in enclave '%v'", userServiceGuids, enclaveId)
 	}
-	defer func() {
-		for _, userServiceLogsReadCloser := range successfulUserServiceLogs {
-			if err := userServiceLogsReadCloser.Close(); err != nil{
-				logrus.Warnf("We tried to close the user service logs read-closer-objects after we're done using it, but doing so threw an error:\n%v", err)
+	defer cancelStreamUserServiceLogsFunc()
+
+	// This channel will receive a signal when the user presses an interrupt
+	interruptChan := make(chan os.Signal, interruptChanBufferSize)
+	signal.Notify(interruptChan, os.Interrupt)
+
+	for {
+		select {
+		case userServiceLogsByGuid, isChanOpen := <-userServiceLogsByGuidChan:
+			if !isChanOpen {
+				return nil
 			}
+
+			userServiceLogs, found := userServiceLogsByGuid[serviceGuid]
+			if !found {
+				return stacktrace.NewError("Expected to find logs for user service with GUID '%v' on user service logs map '%+v' but was not found; this should never happen, and is a bug in Kurtosis", serviceGuid, userServiceLogsByGuid)
+			}
+
+			for _, serviceLog := range userServiceLogs {
+				if _, err := fmt.Fprintln(logrus.StandardLogger().Out, serviceLog.GetContent()); err != nil {
+					logrus.Errorf("An error occurred pringing log line '%v' in the standar logger output", serviceLog.GetContent())
+				}
+			}
+		case <-interruptChan:
+			logrus.Debugf("Received signal interruption in service logs Kurtosis CLI command")
+			return nil
 		}
-	}()
-
-	if len(erroredUserServiceGuids) > 0 {
-		err, found := erroredUserServiceGuids[kurtosisBackendServiceGUID]
-		if !found {
-			return stacktrace.NewError("Expected to find an error for user service with GUID '%v' on user service error map '%+v' but was not found; this should never happen, and is a bug in Kurtosis", kurtosisBackendServiceGUID, erroredUserServiceGuids)
-		}
-		return stacktrace.Propagate(err, "An error occurred getting user service logs for user service with GUID '%v'", kurtosisBackendServiceGUID)
 	}
-
-	userServiceReadCloserLog, found := successfulUserServiceLogs[kurtosisBackendServiceGUID]
-	if !found {
-		return stacktrace.NewError("Expected to find logs for user service with GUID '%v' on user service logs map '%+v' but was not found; this should never happen, and is a bug in Kurtosis", kurtosisBackendServiceGUID, userServiceReadCloserLog)
-	}
-
-	if _, err := io.Copy(logrus.StandardLogger().Out, userServiceReadCloserLog); err != nil {
-		return stacktrace.Propagate(err, "An error occurred copying the service logs to STDOUT")
-	}
-
-	return nil
 }

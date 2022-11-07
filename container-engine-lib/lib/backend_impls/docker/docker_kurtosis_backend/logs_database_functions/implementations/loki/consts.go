@@ -63,7 +63,6 @@ const (
 	//It's the global retention period (the retention period by TenantID overrides this value)
 	//the global retention period store logs for 30 days = 720h.
 	LimitsRetentionPeriodHours         = 720
-	limitsRetentionPeriodHourIndicator = "h"
 	//This value enables the deletion API
 	allowDeletes = true
 
@@ -79,5 +78,9 @@ const (
 	ingesterWalDirpath         = dirpath + "/wal"
 	flushIngesterWalOnShutdown = true //It's useful for graceful shutdowns
 	checkpointDuration         = "1s" //It's useful for ungraceful shutdowns, whe the server is restarted the WAL loads the last checkpoint saved
+
+	//Maximum duration for which the live tailing requests should be served. More here: https://grafana.com/docs/loki/latest/configuration/#querier
+	//Left the connection open from the server-side for 4 days
+	TailMaxDurationHours = 96
 	////////////////////////--FINISH--LOKI CONFIGURATION SECTION--/////////////////////////////
 )

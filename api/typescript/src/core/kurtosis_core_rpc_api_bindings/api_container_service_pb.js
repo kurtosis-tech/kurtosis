@@ -10343,7 +10343,8 @@ proto.api_container_api.ExecuteStartosisModuleArgs.prototype.toObject = function
 proto.api_container_api.ExecuteStartosisModuleArgs.toObject = function(includeInstance, msg) {
   var f, obj = {
     moduleId: jspb.Message.getFieldWithDefault(msg, 1, ""),
-    data: msg.getData_asB64()
+    data: msg.getData_asB64(),
+    serializedParams: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
 
   if (includeInstance) {
@@ -10388,6 +10389,10 @@ proto.api_container_api.ExecuteStartosisModuleArgs.deserializeBinaryFromReader =
       var value = /** @type {!Uint8Array} */ (reader.readBytes());
       msg.setData(value);
       break;
+    case 3:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setSerializedParams(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -10428,6 +10433,13 @@ proto.api_container_api.ExecuteStartosisModuleArgs.serializeBinaryToWriter = fun
   if (f.length > 0) {
     writer.writeBytes(
       2,
+      f
+    );
+  }
+  f = message.getSerializedParams();
+  if (f.length > 0) {
+    writer.writeString(
+      3,
       f
     );
   }
@@ -10491,6 +10503,24 @@ proto.api_container_api.ExecuteStartosisModuleArgs.prototype.getData_asU8 = func
  */
 proto.api_container_api.ExecuteStartosisModuleArgs.prototype.setData = function(value) {
   return jspb.Message.setProto3BytesField(this, 2, value);
+};
+
+
+/**
+ * optional string serialized_params = 3;
+ * @return {string}
+ */
+proto.api_container_api.ExecuteStartosisModuleArgs.prototype.getSerializedParams = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 3, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.api_container_api.ExecuteStartosisModuleArgs} returns this
+ */
+proto.api_container_api.ExecuteStartosisModuleArgs.prototype.setSerializedParams = function(value) {
+  return jspb.Message.setProto3StringField(this, 3, value);
 };
 
 
