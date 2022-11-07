@@ -183,7 +183,14 @@ func (service *EngineServerService) GetUserServiceLogs(
 			if !isChanOpen {
 				break
 			}
-			getUserServiceLogsResponse := newUserLogsResponseFromUserServiceLogsByGuid(requestedUserServiceGuids, userServiceLogsByServiceGuid)
+
+			// We have to do this check on every send because the GUIDs could be added in the logs DB at some point
+			existingServiceGuids, err := service.logsDatabaseClient.FilterExistingServiceGuids(stream.Context(), enclaveId, requestedUserServiceGuids)
+			if err != nil {
+				return stacktrace.Propagate(err, "An error occurred retrieving the exhaustive list of service GUIDs from the log client")
+			}
+
+			getUserServiceLogsResponse := newUserLogsResponse(requestedUserServiceGuids, userServiceLogsByServiceGuid, existingServiceGuids)
 			if err := stream.Send(getUserServiceLogsResponse); err != nil {
 				return stacktrace.Propagate(err, "An error occurred sending the stream logs for user service logs response '%+v'", getUserServiceLogsResponse)
 			}
@@ -199,7 +206,16 @@ func (service *EngineServerService) GetUserServiceLogs(
 
 }
 
-func newUserLogsResponseFromUserServiceLogsByGuid(requestedUserServiceGuids map[user_service.ServiceGUID]bool, userServiceLogsByUserServiceGuid map[user_service.ServiceGUID][]centralized_logs.LogLine) *kurtosis_engine_rpc_api_bindings.GetUserServiceLogsResponse {
+// ====================================================================================================
+//
+//	Private Helper Functions
+//
+// ====================================================================================================
+func newUserLogsResponse(
+	requestedUserServiceGuids map[user_service.ServiceGUID]bool,
+	userServiceLogsByUserServiceGuid map[user_service.ServiceGUID][]centralized_logs.LogLine,
+	existingServiceGuids map[user_service.ServiceGUID]bool,
+) *kurtosis_engine_rpc_api_bindings.GetUserServiceLogsResponse {
 	userServiceLogLinesByGuid := make(map[string]*kurtosis_engine_rpc_api_bindings.LogLine, len(userServiceLogsByUserServiceGuid))
 
 	for userServiceGuid := range requestedUserServiceGuids {
@@ -212,7 +228,20 @@ func newUserLogsResponseFromUserServiceLogsByGuid(requestedUserServiceGuids map[
 		userServiceLogLinesByGuid[userServiceGuidStr] = logLines
 	}
 
-	getUserServiceLogsResponse := &kurtosis_engine_rpc_api_bindings.GetUserServiceLogsResponse{UserServiceLogsByUserServiceGuid: userServiceLogLinesByGuid}
+	notFoundUserServiceGuids := map[string]bool{}
+
+	for requestedUserServiceGuid := range requestedUserServiceGuids {
+		if _, found := existingServiceGuids[requestedUserServiceGuid]; !found {
+			requestedUserServiceGuidStr := string(requestedUserServiceGuid)
+			notFoundUserServiceGuids[requestedUserServiceGuidStr] = true
+		}
+	}
+
+
+	getUserServiceLogsResponse := &kurtosis_engine_rpc_api_bindings.GetUserServiceLogsResponse{
+		UserServiceLogsByUserServiceGuid: userServiceLogLinesByGuid,
+		NotFoundUserServiceGuidSet: notFoundUserServiceGuids,
+	}
 	return getUserServiceLogsResponse
 }
 

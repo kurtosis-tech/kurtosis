@@ -31,6 +31,8 @@ const (
 
 	userServiceLogsByServiceGuidChanBufferSize = 5
 
+	notFoundUserServiceGuidsChanBufferSize = 5
+
 	grpcStreamCancelContextErrorMessage = "rpc error: code = Canceled desc = context canceled"
 )
 
@@ -185,7 +187,7 @@ func (kurtosisCtx *KurtosisContext) GetUserServiceLogs(
 	shouldFollowLogs bool,
 ) (
 	chan map[services.ServiceGUID][]*ServiceLog,
-	map[services.ServiceGUID]bool, //TODO add this not_founded_user_service_guids return type
+	chan map[services.ServiceGUID]bool,
 	func(),
 	error,
 ) {
@@ -202,11 +204,14 @@ func (kurtosisCtx *KurtosisContext) GetUserServiceLogs(
 	//this process could take much time until the next channel pull, so we could be filling the buffer during that time to not let the servers thread idled
 	userServiceLogsByServiceGuidChan := make(chan map[services.ServiceGUID][]*ServiceLog, userServiceLogsByServiceGuidChanBufferSize)
 
+	//this is a channel used to communicate which GUIDs were not found ih the logs db on each stream response
+	notFoundUserServiceGuidsChan := make(chan map[services.ServiceGUID]bool, notFoundUserServiceGuidsChanBufferSize)
+
 	getUserServiceLogsArgs := newGetUserServiceLogsArgs(enclaveID, userServiceGuids, shouldFollowLogs)
 
 	stream, err := kurtosisCtx.client.GetUserServiceLogs(ctxWithCancel, getUserServiceLogsArgs)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred streaming user service logs using args '%+v'", getUserServiceLogsArgs)
+		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred streaming user service logs using args '%+v'", getUserServiceLogsArgs)
 	}
 
 	go runReceiveStreamLogsFromTheServerRoutine(
@@ -214,12 +219,13 @@ func (kurtosisCtx *KurtosisContext) GetUserServiceLogs(
 		enclaveID,
 		userServiceGuids,
 		userServiceLogsByServiceGuidChan,
+		notFoundUserServiceGuidsChan,
 		stream,
 	)
 
 	//This is an async operation, so we don't want to cancel the context if the connection is established and data is flowing
 	shouldCancelCtx = false
-	return userServiceLogsByServiceGuidChan, cancelCtxFunc, nil
+	return userServiceLogsByServiceGuidChan, notFoundUserServiceGuidsChan, cancelCtxFunc, nil
 }
 
 // ====================================================================================================
@@ -231,7 +237,8 @@ func runReceiveStreamLogsFromTheServerRoutine(
 	cancelCtxFunc context.CancelFunc,
 	enclaveID enclaves.EnclaveID,
 	requestedUserServiceGuids map[services.ServiceGUID]bool,
-	userServiceLogsByServiceGuidChan chan map[services.ServiceGUID][]*ServiceLog,
+	userServiceLogsByServiceGuidChan chan map[services.ServiceGUID][]*ServiceLog, //TODO We could merge this two
+	notFoundUserServiceGuidsChan chan map[services.ServiceGUID]bool, //TODO We could merge this two
 	stream kurtosis_engine_rpc_api_bindings.EngineService_GetUserServiceLogsClient,
 ) {
 
@@ -261,9 +268,11 @@ func runReceiveStreamLogsFromTheServerRoutine(
 			return
 		}
 
-		userServiceLogsByServiceGuidMap := newUserServiceLogsByServiceGuidMapFromGetUserServiceLogsResponse(requestedUserServiceGuids, getUserServiceLogsResponse)
+		userServiceLogsByServiceGuidMap, notFoundUserServiceGuids := newUserServiceLogsByServiceGuidMapAndNotFoundUserServiceGuidsFromGetUserServiceLogsResponse(requestedUserServiceGuids, getUserServiceLogsResponse)
 
 		userServiceLogsByServiceGuidChan <- userServiceLogsByServiceGuidMap
+
+		notFoundUserServiceGuidsChan <- notFoundUserServiceGuids
 	}
 }
 
@@ -386,10 +395,10 @@ func newGetUserServiceLogsArgs(
 	return getUserServiceLogsArgs
 }
 
-func newUserServiceLogsByServiceGuidMapFromGetUserServiceLogsResponse(
+func newUserServiceLogsByServiceGuidMapAndNotFoundUserServiceGuidsFromGetUserServiceLogsResponse(
 	requestedUserServiceGuids map[services.ServiceGUID]bool,
 	getUserServiceLogResponse *kurtosis_engine_rpc_api_bindings.GetUserServiceLogsResponse,
-) map[services.ServiceGUID][]*ServiceLog {
+) (map[services.ServiceGUID][]*ServiceLog, map[services.ServiceGUID]bool) {
 	userServiceLogsByServiceGuidMap := map[services.ServiceGUID][]*ServiceLog{}
 
 	receivedUserServiceLogsByUserServiceGuid := getUserServiceLogResponse.UserServiceLogsByUserServiceGuid
@@ -407,5 +416,14 @@ func newUserServiceLogsByServiceGuidMapFromGetUserServiceLogsResponse(
 		userServiceLogsByServiceGuidMap[userServiceGuid] = serviceLogs
 	}
 
-	return userServiceLogsByServiceGuidMap
+	notFoundUserServiceGuidSet := getUserServiceLogResponse.NotFoundUserServiceGuidSet
+
+	notFoundUserServiceGuids := make(map[services.ServiceGUID]bool, len(notFoundUserServiceGuidSet))
+
+	for notFoundUserServiceGuidStr := range notFoundUserServiceGuidSet {
+		notFoundUserServiceGuid := services.ServiceGUID(notFoundUserServiceGuidStr)
+		notFoundUserServiceGuids[notFoundUserServiceGuid] = true
+	}
+
+	return userServiceLogsByServiceGuidMap, notFoundUserServiceGuids
 }
