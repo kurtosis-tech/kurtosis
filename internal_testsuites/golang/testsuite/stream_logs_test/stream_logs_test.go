@@ -1,4 +1,5 @@
-//+build !minikube
+//go:build !minikube
+// +build !minikube
 
 // We don't run this test in Kubernetes because, as of 2022-10-28, the centralized logs feature is not implemented in Kubernetes yet
 
@@ -19,21 +20,29 @@ const (
 	testName              = "stream-logs"
 	isPartitioningEnabled = false
 
-	dockerGettingStartedImage                       = "docker/getting-started"
-	exampleServiceId             services.ServiceID = "stream-logs"
+	dockerGettingStartedImage                    = "docker/getting-started"
+	exampleServiceId          services.ServiceID = "stream-logs"
 
-	exampleServicePortId                            = "http"
-	exampleServicePrivatePortNum                    = 80
+	exampleServicePortId         = "http"
+	exampleServicePrivatePortNum = 80
 
 	waitForAllLogsBeingCollectedInSeconds = 2
 
 	testTimeOut = 2 * time.Minute
+
+	shouldFollowLogsFirstRequest  = false
+	shouldFollowLogsSecondRequest = true
 )
 
-var exampleServicePrivatePortSpec = services.NewPortSpec(
-	exampleServicePrivatePortNum,
-	services.PortProtocol_TCP,
+var (
+	shouldFollowLogsRequestOptions = []bool{shouldFollowLogsFirstRequest, shouldFollowLogsSecondRequest}
+
+	exampleServicePrivatePortSpec = services.NewPortSpec(
+		exampleServicePrivatePortNum,
+		services.PortProtocol_TCP,
+	)
 )
+
 func TestStreamLogs(t *testing.T) {
 	ctx := context.Background()
 
@@ -70,42 +79,46 @@ func TestStreamLogs(t *testing.T) {
 
 	time.Sleep(waitForAllLogsBeingCollectedInSeconds * time.Second)
 
-	userServiceLogsByGuidChan, cancelStreamUserServiceLogsFunc, err := kurtosisCtx.StreamUserServiceLogs(ctx, enclaveID, userServiceGUIDs)
-	require.NoError(t, err)
-	require.NotNil(t, cancelStreamUserServiceLogsFunc)
-	require.NotNil(t, userServiceLogsByGuidChan)
-	defer cancelStreamUserServiceLogsFunc()
+	// will test executing getUserServiceLogs with shouldFollowLogs = false in the first iteration,
+	// and with shouldFollowLogs = true (which is used to tail logs) in the second iteration
+	for _, shouldFollowLogs := range shouldFollowLogsRequestOptions {
+		userServiceLogsByGuidChan, cancelStreamUserServiceLogsFunc, err := kurtosisCtx.GetUserServiceLogs(ctx, enclaveID, userServiceGUIDs, shouldFollowLogs)
+		require.NoError(t, err)
+		require.NotNil(t, cancelStreamUserServiceLogsFunc)
+		require.NotNil(t, userServiceLogsByGuidChan)
+		defer cancelStreamUserServiceLogsFunc()
 
-	receivedLogLines := []string{}
+		receivedLogLines := []string{}
 
-	var testEvaluationErr error
-	defer func() {
-		require.NoError(t, testEvaluationErr)
-		require.Equal(t, expectedLogLines, receivedLogLines)
-	} ()
+		var testEvaluationErr error
+		defer func() {
+			require.NoError(t, testEvaluationErr)
+			require.Equal(t, expectedLogLines, receivedLogLines)
+		}()
 
-	for  {
-		select {
-		case <-time.Tick(testTimeOut):
-			testEvaluationErr = stacktrace.NewError("Receiving stream logs in the test has reached the '%v' time out", testTimeOut)
-			return
-		case userServiceLogsByGuid, isChanOpen := <-userServiceLogsByGuidChan:
-			if !isChanOpen {
+		for {
+			select {
+			case <-time.Tick(testTimeOut):
+				testEvaluationErr = stacktrace.NewError("Receiving stream logs in the test has reached the '%v' time out", testTimeOut)
 				return
+			case userServiceLogsByGuid, isChanOpen := <-userServiceLogsByGuidChan:
+				if !isChanOpen {
+					return
+				}
+
+				userServiceLogs, found := userServiceLogsByGuid[userServiceGuid]
+				require.True(t, found)
+
+				for _, serviceLog := range userServiceLogs {
+					receivedLogLines = append(receivedLogLines, serviceLog.GetContent())
+				}
+
+				if len(receivedLogLines) == expectedAmountOfLogLines {
+					return
+				}
 			}
 
-			userServiceLogs, found := userServiceLogsByGuid[userServiceGuid]
-			require.True(t, found)
-
-			for _, serviceLog := range userServiceLogs {
-				receivedLogLines = append(receivedLogLines, serviceLog.GetContent())
-			}
-
-			if len(receivedLogLines) == expectedAmountOfLogLines {
-				return
-			}
 		}
-
 	}
 }
 

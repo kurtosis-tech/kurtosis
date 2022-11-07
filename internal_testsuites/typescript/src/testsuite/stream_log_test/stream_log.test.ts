@@ -23,7 +23,13 @@ const EXAMPLE_SERVICE_PRIVATE_PORT_NUM = 80
 
 const WAIT_FOR_ALL_LOGS_BEING_COLLECTED_IN_SECONDS = 2
 
+const SHOULD_FOLLOW_LOGS_FIRST_REQUEST = false;
+const SHOULD_FOLLOW_LOGS_SECOND_REQUEST = true;
+
+const shouldFollowLogsRequestOptions = [SHOULD_FOLLOW_LOGS_FIRST_REQUEST, SHOULD_FOLLOW_LOGS_SECOND_REQUEST];
+
 const exampleServicePrivatePortSpec = new PortSpec(EXAMPLE_SERVICE_PRIVATE_PORT_NUM, PortProtocol.TCP)
+
 
 jest.setTimeout(180000)
 
@@ -76,63 +82,68 @@ async function TestStreamLogs() {
 
         await delay(WAIT_FOR_ALL_LOGS_BEING_COLLECTED_IN_SECONDS * 1000);
 
-        const streamUserServiceLogsPromise = await kurtosisContext.streamUserServiceLogs(enclaveID, userServiceGUIDs);
+        // will test executing getUserServiceLogs with shouldFollowLogs = false in the first iteration,
+        // and with shouldFollowLogs = true (which is used to tail logs) in the second iteration
+        for (let shouldFollowLogs of shouldFollowLogsRequestOptions) {
 
-        if (streamUserServiceLogsPromise.isErr()) {
-            throw streamUserServiceLogsPromise.error;
+            const streamUserServiceLogsPromise = await kurtosisContext.getUserServiceLogs(enclaveID, userServiceGUIDs, shouldFollowLogs);
+
+            if (streamUserServiceLogsPromise.isErr()) {
+                throw streamUserServiceLogsPromise.error;
+            }
+
+            const serviceLogsReadable = streamUserServiceLogsPromise.value;
+
+            const expectedLogLines = ["kurtosis", "test", "running", "successfully"];
+
+            const receivedLogLinesPromise: Promise<Array<string>> = new Promise<Array<string>>((resolve, _unusedReject) => {
+
+                let receivedLogLines: Array<string> = new Array<string>();
+
+                serviceLogsReadable.on('data', (userServiceLogsByGuid: Map<ServiceGUID, Array<string>>) => {
+                    const userServiceLogLines: Array<string> | undefined = userServiceLogsByGuid.get(userServiceGuid);
+
+                    if (userServiceLogLines !== undefined) {
+                        userServiceLogLines.forEach(logLine => {
+                            receivedLogLines.push(logLine)
+                        })
+                    }
+
+                    if (receivedLogLines.length === expectedLogLines.length) {
+                        serviceLogsReadable.destroy()
+                        resolve(receivedLogLines)
+                    }
+                })
+
+
+                serviceLogsReadable.on('error', function (readableErr) {
+                    if (!serviceLogsReadable.destroyed) {
+                        serviceLogsReadable.destroy()
+                        throw new Error(`Expected read all user service logs but an error was received from the user service readable object.\n Error: "${readableErr.message}"`)
+                    }
+                })
+
+                serviceLogsReadable.on('end', function () {
+                    if (!serviceLogsReadable.destroyed) {
+                        serviceLogsReadable.destroy()
+                        throw new Error("Expected read all user service logs but the user service readable logs object has finished before reading all the logs.")
+                    }
+                })
+            })
+
+            const receivedLogLines = await receivedLogLinesPromise
+
+            if (receivedLogLines.length === expectedLogLines.length) {
+                receivedLogLines.forEach((logline, loglineIndex) => {
+                    if (expectedLogLines[loglineIndex] != logline) {
+                        return err(new Error(`Expected to match the ${loglineIndex}º log line with this value ${expectedLogLines[loglineIndex]} but this one was received instead ${logline}`))
+                    }
+                })
+            } else {
+                throw new Error(`Expected to receive ${expectedLogLines.length} of log lines but ${receivedLogLines.length} log lines were received instead`)
+            }
+
         }
-
-        const serviceLogsReadable = streamUserServiceLogsPromise.value;
-
-        const expectedLogLines = ["kurtosis", "test", "running", "successfully"];
-
-        const receivedLogLinesPromise: Promise<Array<string>> = new Promise<Array<string>>((resolve, _unusedReject) => {
-
-            let receivedLogLines: Array<string> = new Array<string>();
-
-            serviceLogsReadable.on('data', (userServiceLogsByGuid: Map<ServiceGUID, Array<string>>) => {
-                const userServiceLogLines: Array<string> | undefined = userServiceLogsByGuid.get(userServiceGuid);
-
-                if (userServiceLogLines !== undefined) {
-                    userServiceLogLines.forEach(logLine => {
-                        receivedLogLines.push(logLine)
-                    })
-                }
-
-                if (receivedLogLines.length === expectedLogLines.length) {
-                    serviceLogsReadable.destroy()
-                    resolve(receivedLogLines)
-                }
-            })
-
-
-            serviceLogsReadable.on('error', function (readableErr) {
-                if (!serviceLogsReadable.destroyed) {
-                    serviceLogsReadable.destroy()
-                    throw new Error(`Expected read all user service logs but an error was received from the user service readable object.\n Error: "${readableErr.message}"`)
-                }
-            })
-
-            serviceLogsReadable.on('end', function () {
-                if (!serviceLogsReadable.destroyed) {
-                    serviceLogsReadable.destroy()
-                    throw new Error("Expected read all user service logs but the user service readable logs object has finished before reading all the logs.")
-                }
-            })
-        })
-
-        const receivedLogLines = await receivedLogLinesPromise
-
-        if (receivedLogLines.length === expectedLogLines.length) {
-            receivedLogLines.forEach((logline, loglineIndex) => {
-                if (expectedLogLines[loglineIndex] != logline) {
-                    return err(new Error(`Expected to match the ${loglineIndex}º log line with this value ${expectedLogLines[loglineIndex]} but this one was received instead ${logline}`))
-                }
-            })
-        } else {
-            throw new Error(`Expected to receive ${expectedLogLines.length} of log lines but ${receivedLogLines.length} log lines were received instead`)
-        }
-
     } finally {
         stopEnclaveFunction()
     }
