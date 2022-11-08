@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	kurtosis_backend_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/facts_engine"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
@@ -27,12 +28,17 @@ const (
 	serviceIdArgName     = "service_id"
 	serviceConfigArgName = "service_config"
 
+	factNameArgName      = "service_id"
+	factNameSubgroupName = "service_id"
+
 	serviceIdSubgroupName = "service_id"
 	allSubgroupName       = "all"
 	kurtosisNamespace     = "kurtosis"
 	// The placeholder format & regex should align
 	ipAddressReplacementRegex             = "(?P<" + allSubgroupName + ">\\{\\{" + kurtosisNamespace + ":(?P<" + serviceIdArgName + ">" + service.ServiceIdRegexp + ")\\.ip_address\\}\\})"
 	ipAddressReplacementPlaceholderFormat = "{{" + kurtosisNamespace + ":%v.ip_address}}"
+
+	factReplacementRegex = "(?P<" + allSubgroupName + ">\\{\\{" + kurtosisNamespace + ":(?P<" + serviceIdArgName + ">" + service.ServiceIdRegexp + ")" + ":(?P<" + factNameArgName + ">" + service.ServiceIdRegexp + ")\\.fact\\}\\})"
 
 	unlimitedMatches = -1
 	singleMatch      = 1
@@ -41,16 +47,19 @@ const (
 
 // The compiled regular expression to do IP address replacements
 // Treat this as a constant
-var compiledRegex = regexp.MustCompile(ipAddressReplacementRegex)
+var (
+	compiledIpAddressReplacementRegex = regexp.MustCompile(ipAddressReplacementRegex)
+	compiledFactReplacementRegex      = regexp.MustCompile(factReplacementRegex)
+)
 
-func GenerateAddServiceBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, serviceNetwork service_network.ServiceNetwork) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+func GenerateAddServiceBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, serviceNetwork service_network.ServiceNetwork, factsEngine *facts_engine.FactsEngine) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 	// TODO: Force returning an InterpretationError rather than a normal error
 	return func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 		serviceId, serviceConfig, interpretationError := parseStartosisArgs(b, args, kwargs)
 		if interpretationError != nil {
 			return nil, interpretationError
 		}
-		addServiceInstruction := NewAddServiceInstruction(serviceNetwork, *shared_helpers.GetCallerPositionFromThread(thread), serviceId, serviceConfig)
+		addServiceInstruction := NewAddServiceInstructionWithFacts(serviceNetwork, factsEngine, *shared_helpers.GetCallerPositionFromThread(thread), serviceId, serviceConfig)
 		*instructionsQueue = append(*instructionsQueue, addServiceInstruction)
 		returnValue, interpretationError := makeAddServiceInterpretationReturnValue(serviceId, serviceConfig)
 		if interpretationError != nil {
@@ -62,6 +71,7 @@ func GenerateAddServiceBuiltin(instructionsQueue *[]kurtosis_instruction.Kurtosi
 
 type AddServiceInstruction struct {
 	serviceNetwork service_network.ServiceNetwork
+	factsEngine    *facts_engine.FactsEngine
 
 	position      kurtosis_instruction.InstructionPosition
 	serviceId     kurtosis_backend_service.ServiceID
@@ -71,6 +81,17 @@ type AddServiceInstruction struct {
 func NewAddServiceInstruction(serviceNetwork service_network.ServiceNetwork, position kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceID, serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig) *AddServiceInstruction {
 	return &AddServiceInstruction{
 		serviceNetwork: serviceNetwork,
+		factsEngine:    nil,
+		position:       position,
+		serviceId:      serviceId,
+		serviceConfig:  serviceConfig,
+	}
+}
+
+func NewAddServiceInstructionWithFacts(serviceNetwork service_network.ServiceNetwork, factsEngine *facts_engine.FactsEngine, position kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceID, serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig) *AddServiceInstruction {
+	return &AddServiceInstruction{
+		serviceNetwork: serviceNetwork,
+		factsEngine:    factsEngine,
 		position:       position,
 		serviceId:      serviceId,
 		serviceConfig:  serviceConfig,
@@ -132,7 +153,11 @@ func (instruction *AddServiceInstruction) replaceIPAddress() error {
 		if err != nil {
 			return stacktrace.Propagate(err, "Error occurred while replacing IP address in entry point args for '%v'", entryPointArg)
 		}
-		entryPointArgs[index] = entryPointArgWithIPAddressReplaced
+		entryPointArgWithIPAddressAndFactsReplaced, err := replaceFactsInString(entryPointArgWithIPAddressReplaced, instruction.factsEngine)
+		if err != nil {
+			return stacktrace.Propagate(err, "Error occurred while replacing facts in entry point args for '%v'", entryPointArg)
+		}
+		entryPointArgs[index] = entryPointArgWithIPAddressAndFactsReplaced
 	}
 
 	cmdArgs := instruction.serviceConfig.CmdArgs
@@ -141,7 +166,11 @@ func (instruction *AddServiceInstruction) replaceIPAddress() error {
 		if err != nil {
 			return stacktrace.Propagate(err, "Error occurred while replacing IP address in command args for '%v'", cmdArg)
 		}
-		cmdArgs[index] = cmdArgWithIPAddressReplaced
+		cmdArgWithIPAddressAndFactsReplaced, err := replaceFactsInString(cmdArgWithIPAddressReplaced, instruction.factsEngine)
+		if err != nil {
+			return stacktrace.Propagate(err, "Error occurred while replacing facts in command args for '%v'", cmdArg)
+		}
+		cmdArgs[index] = cmdArgWithIPAddressAndFactsReplaced
 	}
 
 	envVars := instruction.serviceConfig.EnvVars
@@ -150,19 +179,23 @@ func (instruction *AddServiceInstruction) replaceIPAddress() error {
 		if err != nil {
 			return stacktrace.Propagate(err, "Error occurred while replacing IP address in env vars for '%v'", envVarValue)
 		}
-		envVars[envVarName] = envVarValueWithIPAddressReplaced
+		envVarValueWithIPAddressAndFactsReplaced, err := replaceFactsInString(envVarValueWithIPAddressReplaced, instruction.factsEngine)
+		if err != nil {
+			return stacktrace.Propagate(err, "Error occurred while replacing facts in command args for '%v'", envVars)
+		}
+		envVars[envVarName] = envVarValueWithIPAddressAndFactsReplaced
 	}
 
 	return nil
 }
 
 func replaceIPAddressInString(originalString string, network service_network.ServiceNetwork, serviceIdForLogging string) (string, error) {
-	matches := compiledRegex.FindAllStringSubmatch(originalString, unlimitedMatches)
+	matches := compiledIpAddressReplacementRegex.FindAllStringSubmatch(originalString, unlimitedMatches)
 	replacedString := originalString
 	for _, match := range matches {
-		serviceIdMatchIndex := compiledRegex.SubexpIndex(serviceIdSubgroupName)
+		serviceIdMatchIndex := compiledIpAddressReplacementRegex.SubexpIndex(serviceIdSubgroupName)
 		if serviceIdMatchIndex == subExpNotFound {
-			return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", serviceIdSubgroupName, compiledRegex.String())
+			return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", serviceIdSubgroupName, compiledIpAddressReplacementRegex.String())
 		}
 		serviceId := service.ServiceID(match[serviceIdMatchIndex])
 		ipAddress, found := network.GetIPAddressForService(serviceId)
@@ -170,12 +203,38 @@ func replaceIPAddressInString(originalString string, network service_network.Ser
 			return "", stacktrace.NewError("'%v' depends on the IP address of '%v' but we don't have any registrations for it", serviceIdForLogging, serviceId)
 		}
 		ipAddressStr := ipAddress.String()
-		allMatchIndex := compiledRegex.SubexpIndex(allSubgroupName)
+		allMatchIndex := compiledIpAddressReplacementRegex.SubexpIndex(allSubgroupName)
 		if allMatchIndex == subExpNotFound {
-			return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", serviceIdSubgroupName, compiledRegex.String())
+			return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", serviceIdSubgroupName, compiledIpAddressReplacementRegex.String())
 		}
 		allMatch := match[allMatchIndex]
 		replacedString = strings.Replace(replacedString, allMatch, ipAddressStr, singleMatch)
+	}
+	return replacedString, nil
+}
+
+func replaceFactsInString(originalString string, factsEngine *facts_engine.FactsEngine) (string, error) {
+	matches := compiledFactReplacementRegex.FindAllStringSubmatch(originalString, unlimitedMatches)
+	replacedString := originalString
+	for _, match := range matches {
+		serviceIdMatchIndex := compiledFactReplacementRegex.SubexpIndex(serviceIdSubgroupName)
+		if serviceIdMatchIndex == subExpNotFound {
+			return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", serviceIdSubgroupName, compiledIpAddressReplacementRegex.String())
+		}
+		factNameMatchIndex := compiledFactReplacementRegex.SubexpIndex(factNameSubgroupName)
+		if factNameMatchIndex == subExpNotFound {
+			return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", serviceIdSubgroupName, compiledIpAddressReplacementRegex.String())
+		}
+		factValues, err := factsEngine.FetchLatestFactValues(facts_engine.GetFactId(match[serviceIdMatchIndex], match[factNameMatchIndex]))
+		if err != nil {
+			return "", stacktrace.Propagate(err, "There was an error fetching fact value while replacing string '%v' '' ", match[serviceIdMatchIndex], match[factNameMatchIndex])
+		}
+		allMatchIndex := compiledFactReplacementRegex.SubexpIndex(allSubgroupName)
+		if allMatchIndex == subExpNotFound {
+			return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", serviceIdSubgroupName, compiledIpAddressReplacementRegex.String())
+		}
+		allMatch := match[allMatchIndex]
+		replacedString = strings.Replace(replacedString, allMatch, factValues[len(factValues)-1].GetStringValue(), singleMatch)
 	}
 	return replacedString, nil
 }

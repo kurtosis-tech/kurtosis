@@ -24,6 +24,10 @@ func NewService(ipAddress starlark.String, ports *starlark.Dict) *Service {
 	}
 }
 
+type Fact struct {
+	starlark.String
+}
+
 // String the starlark.Value interface
 func (rv *Service) String() string {
 	buffer := new(strings.Builder)

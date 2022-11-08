@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/facts_engine"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_executor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
@@ -21,18 +22,25 @@ const (
 
 	serviceIdArgName = "service_id"
 	factNameArgName  = "fact_name"
+
+	kurtosisNamespace                = "kurtosis"
+	factReplacementPlaceholderFormat = "{{" + kurtosisNamespace + ":%v:%v.fact}}"
 )
 
 func GenerateWaitBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, factsEngine *facts_engine.FactsEngine) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 	// TODO: Force returning an InterpretationError rather than a normal error
 	return func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
-		serviceId, commandArgs, interpretationError := parseStartosisArgs(b, args, kwargs)
+		serviceId, factName, interpretationError := parseStartosisArgs(b, args, kwargs)
 		if interpretationError != nil {
 			return nil, interpretationError
 		}
-		waitInstruction := NewWaitInstruction(factsEngine, *shared_helpers.GetCallerPositionFromThread(thread), serviceId, commandArgs)
+		waitInstruction := NewWaitInstruction(factsEngine, *shared_helpers.GetCallerPositionFromThread(thread), serviceId, factName)
 		*instructionsQueue = append(*instructionsQueue, waitInstruction)
-		return starlark.None, nil
+		returnValue, interpretationError := makeWaitInterpretationReturnValue(serviceId, factName)
+		if interpretationError != nil {
+			return nil, interpretationError
+		}
+		return returnValue, nil
 	}
 }
 
@@ -105,4 +113,10 @@ func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starl
 	}
 
 	return serviceId, factName, nil
+}
+
+func makeWaitInterpretationReturnValue(serviceId service.ServiceID, factName string) (kurtosis_types.Fact, *startosis_errors.InterpretationError) {
+	fact := starlark.String(fmt.Sprintf(factReplacementPlaceholderFormat, serviceId, factName))
+	returnValue := kurtosis_types.Fact{String: fact}
+	return returnValue, nil
 }
