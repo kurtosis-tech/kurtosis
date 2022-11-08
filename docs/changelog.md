@@ -1,5 +1,8 @@
 # TBD
 
+### Features
+- Added an optionl `--dry-run` flag to the `startosis exec` (defaulting to false) command which prints the list of Kurtosis instruction without executing any. When `--dry-run` is set to false, the list of Kurtosis instructions is printed to the output of CLI after being executed.
+
 # 0.51.11
 
 ### Features
