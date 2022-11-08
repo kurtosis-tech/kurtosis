@@ -39,20 +39,6 @@ const (
 
 )
 
-func NewLokiStreamValueForTest(userServiceGuid service.ServiceGUID, expectedValues [][]string) lokiStreamValue {
-	newLokiStreamValue := lokiStreamValue{
-		Stream: struct {
-			KurtosisContainerType string `json:"comKurtosistechContainerType"`
-			KurtosisGUID          string `json:"comKurtosistechGuid"`
-		}(struct {
-			KurtosisContainerType string
-			KurtosisGUID          string
-		}{KurtosisContainerType: userServiceContainerType, KurtosisGUID: string(userServiceGuid)}),
-		Values: expectedValues,
-	}
-	return newLokiStreamValue
-}
-
 func TestIfHttpRequestIsValidWhenCallingGetUserServiceLogs(t *testing.T) {
 	enclaveId := enclave.EnclaveID(testEnclaveId)
 	userServiceGuids := map[service.ServiceGUID]bool{
@@ -191,10 +177,10 @@ func TestNewUserServiceLogLinesByUserServiceGuidFromLokiStreamsReturnSuccessfull
 		{"1666785473000000000", "{\"container_name\":\"/ts-testsuite.stream-logs-test.1666785464--user-service--stream-logs-test-service-1666785469\",\"source\":\"stdout\",\"log\":\"successfully\",\"comKurtosistechGuid\":\"stream-logs-test-service-1666785469\",\"comKurtosistechContainerType\":\"user-service\",\"com.kurtosistech.enclave-id\":\"ts-testsuite.stream-logs-test.1666785464\",\"container_id\":\"b0735bc50a76a0476928607aca13a4c73c814036bdbf8b989c2f3b458cc21eab\"}"},
 	}
 
-	lokiStreams1 := NewLokiStreamValueForTest(userServiceGuid, expectedValuesInStream1)
-	lokiStreams2 := NewLokiStreamValueForTest(userServiceGuid, expectedValuesInStream2)
-	lokiStreams3 := NewLokiStreamValueForTest(userServiceGuid, expectedValuesInStream3)
-	lokiStreams4 := NewLokiStreamValueForTest(userServiceGuid, expectedValuesInStream4)
+	lokiStreams1 := newLokiStreamValueForTest(userServiceGuid, expectedValuesInStream1)
+	lokiStreams2 := newLokiStreamValueForTest(userServiceGuid, expectedValuesInStream2)
+	lokiStreams3 := newLokiStreamValueForTest(userServiceGuid, expectedValuesInStream3)
+	lokiStreams4 := newLokiStreamValueForTest(userServiceGuid, expectedValuesInStream4)
 
 	lokiStreams := []lokiStreamValue{
 		lokiStreams1,
@@ -212,4 +198,23 @@ func TestNewUserServiceLogLinesByUserServiceGuidFromLokiStreamsReturnSuccessfull
 		require.Equal(t, expectedLogLine, actualLogLine)
 	}
 
+}
+
+// ====================================================================================================
+//
+//	Private Helper Functions
+//
+// ====================================================================================================
+func newLokiStreamValueForTest(userServiceGuid service.ServiceGUID, expectedValues [][]string) lokiStreamValue {
+	newLokiStreamValue := lokiStreamValue{
+		Stream: struct {
+			KurtosisContainerType string `json:"comKurtosistechContainerType"`
+			KurtosisGUID          string `json:"comKurtosistechGuid"`
+		}(struct {
+			KurtosisContainerType string
+			KurtosisGUID          string
+		}{KurtosisContainerType: userServiceContainerType, KurtosisGUID: string(userServiceGuid)}),
+		Values: expectedValues,
+	}
+	return newLokiStreamValue
 }
