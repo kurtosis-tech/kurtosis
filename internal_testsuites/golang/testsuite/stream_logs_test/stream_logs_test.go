@@ -70,19 +70,19 @@ func TestStreamLogs(t *testing.T) {
 	receivedLogLines := []string{}
 
 	var testEvaluationErr error
-	defer func() {
-		require.NoError(t, testEvaluationErr)
-		require.Equal(t, expectedLogLines, receivedLogLines)
-	} ()
 
-	for  {
+	shouldReceiveStream := true
+
+	for shouldReceiveStream {
 		select {
 		case <-time.Tick(testTimeOut):
 			testEvaluationErr = stacktrace.NewError("Receiving stream logs in the test has reached the '%v' time out", testTimeOut)
-			return
+			shouldReceiveStream = false
+			break
 		case userServiceLogsByGuid, isChanOpen := <-userServiceLogsByGuidChan:
 			if !isChanOpen {
-				return
+				shouldReceiveStream = false
+				break
 			}
 
 			userServiceLogs, found := userServiceLogsByGuid[userServiceGuid]
@@ -93,11 +93,15 @@ func TestStreamLogs(t *testing.T) {
 			}
 
 			if len(receivedLogLines) == expectedAmountOfLogLines {
-				return
+				shouldReceiveStream = false
+				break
 			}
 		}
 
 	}
+
+	require.NoError(t, testEvaluationErr)
+	require.Equal(t, expectedLogLines, receivedLogLines)
 }
 
 // ====================================================================================================
