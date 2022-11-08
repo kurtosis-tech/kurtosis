@@ -1,7 +1,9 @@
 # TBD
 
-# 0.51.10
+### Features
+- Improve how kurtosis instructions are canonicalized with a universal canonicalizer. Each instruction is now printed on multiple lines with a comment pointing the to position in the source code.
 
+# 0.51.10
 ### Changes
 - Added Starlark `proto` module, such that you can now do `proto.has(msg, "field_name")` in Startosis to differentiate between when a field is set to its default value and when it is unset (the field has to be marked as optional) in the proto file though.
 
@@ -14,14 +16,11 @@
 
 ### Changes
 - Updated the CLI `service logs` command in order to use the new `KurtosisContext.StreamUserServiceLogs` when user requested to follow logs
-
-### Changes
 - InterpretationError is now able to store a `cause`. It simplifies being more explicit on want the root issue was
 - Added `upload_service` to Startosis
 - Add `--args` to `kurtosis startosis exec` CLI command to pass in a serialized JSON
 
 # 0.51.8
-
 ### Features
 - Added exec and HTTP request facts
 - Prints out the instruction line, col & filename in the execution error

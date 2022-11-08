@@ -17,7 +17,16 @@ func TestExecInstruction_StringRepresentationWorks(t *testing.T) {
 		[]string{"mkdir", "-p", "/tmp/store"},
 		0,
 	)
-	expectedStr := `exec(service_id="example-service-id", command=["mkdir", "-p", "/tmp/store"], expected_exit_code=0)`
+	expectedStr := `// from: dummyFile-1:1
+exec(
+	command=[
+		"mkdir",
+		"-p",
+		"/tmp/store"
+	],
+	expected_exit_code=0,
+	service_id="example-service-id",
+)`
 	require.Equal(t, expectedStr, execInstruction.GetCanonicalInstruction())
 	require.Equal(t, expectedStr, execInstruction.String())
 }

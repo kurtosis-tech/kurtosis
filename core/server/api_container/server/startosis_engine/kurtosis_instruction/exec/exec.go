@@ -2,7 +2,6 @@ package exec
 
 import (
 	"context"
-	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	kurtosis_backend_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
@@ -13,7 +12,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
-	"strings"
 )
 
 const (
@@ -23,8 +21,6 @@ const (
 	commandArgName             = "command"
 	expectedExitCodeArgName    = "expected_exit_code?"
 	nonOptionalExitCodeArgName = "expected_exit_code"
-
-	commandSeparator = `", "`
 
 	successfulExitCode = 0
 )
@@ -66,15 +62,15 @@ func (instruction *ExecInstruction) GetPositionInOriginalScript() *kurtosis_inst
 }
 
 func (instruction *ExecInstruction) GetCanonicalInstruction() string {
-	buffer := new(strings.Builder)
-	buffer.WriteString(ExecBuiltinName + "(")
-	buffer.WriteString(serviceIdArgName + "=\"")
-	buffer.WriteString(fmt.Sprintf("%v\", ", instruction.serviceId))
-	buffer.WriteString(commandArgName + "=[\"")
-	buffer.WriteString(fmt.Sprintf("%v\"], ", strings.Join(instruction.command, commandSeparator)))
-	buffer.WriteString(nonOptionalExitCodeArgName + "=")
-	buffer.WriteString(fmt.Sprintf("%v)", instruction.expectedExitCode))
-	return buffer.String()
+	command := make([]starlark.Value, len(instruction.command))
+	for idx := 0; idx < len(instruction.command); idx++ {
+		command[idx] = starlark.String(instruction.command[idx])
+	}
+	return shared_helpers.CanonicalizeInstruction(ExecBuiltinName, starlark.StringDict{
+		serviceIdArgName:           starlark.String(instruction.serviceId),
+		commandArgName:             starlark.NewList(command),
+		nonOptionalExitCodeArgName: starlark.MakeInt(int(instruction.expectedExitCode)),
+	}, &instruction.position)
 }
 
 func (instruction *ExecInstruction) Execute(ctx context.Context, _ *startosis_executor.ExecutionEnvironment) error {
