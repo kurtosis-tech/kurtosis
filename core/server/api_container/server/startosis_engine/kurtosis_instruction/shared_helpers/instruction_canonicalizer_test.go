@@ -1,11 +1,14 @@
 package shared_helpers
 
 import (
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/stretchr/testify/require"
+	starlarktime "go.starlark.net/lib/time"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
 	"testing"
+	"time"
 )
 
 const (
@@ -37,10 +40,28 @@ my_instruction(
 	require.Equal(t, expectedResult, result)
 }
 
+func TestCanonicalizeArgValue_None(t *testing.T) {
+	input := starlark.None
+	result := canonicalizeArgValue(input, defaultNewline, defaultInitialIndent)
+	require.Equal(t, `None`, result)
+}
+
+func TestCanonicalizeArgValue_Bool(t *testing.T) {
+	input := starlark.Bool(true)
+	result := canonicalizeArgValue(input, defaultNewline, defaultInitialIndent)
+	require.Equal(t, `True`, result)
+}
+
 func TestCanonicalizeArgValue_String(t *testing.T) {
 	input := starlark.String("Hello")
 	result := canonicalizeArgValue(input, defaultNewline, defaultInitialIndent)
 	require.Equal(t, `"Hello"`, result) // notice the quotes here
+}
+
+func TestCanonicalizeArgValue_Bytes(t *testing.T) {
+	input := starlark.Bytes("Hello")
+	result := canonicalizeArgValue(input, defaultNewline, defaultInitialIndent)
+	require.Equal(t, `b"Hello"`, result)
 }
 
 func TestCanonicalizeArgValue_Int64(t *testing.T) {
@@ -55,7 +76,32 @@ func TestCanonicalizeArgValue_Int(t *testing.T) {
 	require.Equal(t, `1234`, result)
 }
 
-func TestCanonicalizeArgValue_Slice(t *testing.T) {
+func TestCanonicalizeArgValue_Float(t *testing.T) {
+	input := starlark.Float(3.14159)
+	result := canonicalizeArgValue(input, defaultNewline, defaultInitialIndent)
+	require.Equal(t, `3.14159`, result)
+}
+
+func TestCanonicalizeArgValue_Time(t *testing.T) {
+	paris, err := time.LoadLocation("Europe/Paris")
+	require.Nil(t, err)
+	goTime := time.Date(2022, 11, 8, 15, 14, 33, 999, paris)
+	starlarkTime := starlarktime.Time(goTime)
+	result := canonicalizeArgValue(starlarkTime, defaultNewline, defaultInitialIndent)
+	expectedResult := fmt.Sprintf("time.from_timestamp(%d)", goTime.Unix())
+	require.Equal(t, expectedResult, result)
+}
+
+func TestCanonicalizeArgValue_Duration(t *testing.T) {
+	goDuration, err := time.ParseDuration("2h34m09s999ns")
+	require.Nil(t, err)
+	starlarkDuration := starlarktime.Duration(goDuration)
+	result := canonicalizeArgValue(starlarkDuration, defaultNewline, defaultInitialIndent)
+	expectedResult := fmt.Sprintf("time.parse_duration(%s)", goDuration.String())
+	require.Equal(t, expectedResult, result)
+}
+
+func TestCanonicalizeArgValue_List(t *testing.T) {
 	input := starlark.NewList([]starlark.Value{
 		starlark.String("Hello"),
 		starlark.String("World"),
@@ -67,6 +113,35 @@ func TestCanonicalizeArgValue_Slice(t *testing.T) {
 	"World",
 	42
 ]`
+	require.Equal(t, expectedResult, result)
+}
+
+func TestCanonicalizeArgValue_Set(t *testing.T) {
+	input := starlark.NewSet(3)
+	require.Nil(t, input.Insert(starlark.String("Hello")))
+	require.Nil(t, input.Insert(starlark.String("World")))
+	require.Nil(t, input.Insert(starlark.MakeInt(42)))
+	result := canonicalizeArgValue(input, defaultNewline, defaultInitialIndent)
+	expectedResult := `{
+	"Hello",
+	"World",
+	42
+}`
+	require.Equal(t, expectedResult, result)
+}
+
+func TestCanonicalizeArgValue_Tuple(t *testing.T) {
+	input := starlark.Tuple{
+		starlark.String("Hello"),
+		starlark.String("World"),
+		starlark.MakeInt(42),
+	}
+	result := canonicalizeArgValue(input, defaultNewline, defaultInitialIndent)
+	expectedResult := `(
+	"Hello",
+	"World",
+	42
+)`
 	require.Equal(t, expectedResult, result)
 }
 
