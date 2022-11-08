@@ -25,7 +25,7 @@ func TestRenderTemplate_TestStringRepresentation(t *testing.T) {
 	)
 	renderInstruction.starlarkKwargs[templateAndDataByDestinationRelFilepathArg] = templateAndDataDict
 
-	expectedStr := `// from: dummyFile-16:33
+	expectedStr := `# from: dummyFile[16:33]
 render_templates(
 	template_and_data_by_dest_rel_filepath={
 		"/foo/bar/test.txt": {
@@ -57,7 +57,7 @@ func TestRenderTemplate_TestMultipleTemplates(t *testing.T) {
 	renderInstruction.starlarkKwargs[templateAndDataByDestinationRelFilepathArg] = templateAndDataByDestFilepath
 
 	// keys of the map are sorted alphabetically by the canonicalizer
-	expectedStr := `// from: dummyFile-16:33
+	expectedStr := `# from: dummyFile[16:33]
 render_templates(
 	template_and_data_by_dest_rel_filepath={
 		"/fizz/buzz/test.txt": {

@@ -17,7 +17,7 @@ const (
 
 func CanonicalizeInstruction(instructionName string, serializedKwargs starlark.StringDict, position *kurtosis_instruction.InstructionPosition) string {
 	buffer := new(strings.Builder)
-	buffer.WriteString(fmt.Sprintf("// from: %s\n", position.String()))
+	buffer.WriteString(fmt.Sprintf("# from: %s\n", position.String()))
 	buffer.WriteString(instructionName)
 	buffer.WriteString("(")
 

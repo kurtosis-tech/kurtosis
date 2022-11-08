@@ -1,7 +1,13 @@
 # TBD
 
 ### Features
+- Added an optionl `--dry-run` flag to the `startosis exec` (defaulting to false) command which prints the list of Kurtosis instruction without executing any. When `--dry-run` is set to false, the list of Kurtosis instructions is printed to the output of CLI after being executed.
+
+# 0.51.11
+
+### Features
 - Improve how kurtosis instructions are canonicalized with a universal canonicalizer. Each instruction is now printed on multiple lines with a comment pointing the to position in the source code.
+- Support `private_ip_address_placeholder` to be passed in `service_config` for `add_service` in Starlark
 
 ### Changes
 - Updated how we generate the canonical string for Kurtosis `upload_files` instruction
