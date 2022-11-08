@@ -34,9 +34,10 @@ const (
 )
 
 var (
-	defaultEntryPointArgs []string          = nil
-	defaultCmdArgs        []string          = nil
-	defaultEnvVars        map[string]string = nil
+	defaultEntryPointArgs              []string          = nil
+	defaultCmdArgs                     []string          = nil
+	defaultEnvVars                     map[string]string = nil
+	defaultPrivateIPAddressPlaceholder                   = ""
 )
 
 func TestStartosisInterpreter_SimplePrintScript(t *testing.T) {
@@ -135,6 +136,7 @@ func TestStartosisInterpreter_ValidSimpleScriptWithInstruction(t *testing.T) {
 	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
+	privateIPAddressPlaceholder := "MAGICAL_PLACEHOLDER_TO_REPLACE"
 	script := `
 print("Starting Startosis script!")
 
@@ -145,7 +147,8 @@ service_config = struct(
 	container_image_name = "` + testContainerImageName + `",
 	used_ports = {
 		"grpc": struct(number = 1323, protocol = "TCP")
-	}
+	},
+	private_ip_address_placeholder = "` + privateIPAddressPlaceholder + `"
 )
 datastore_service = add_service(service_id = service_id, service_config = service_config)
 print("The grpc port is " + str(datastore_service.ports["grpc"].number))
@@ -157,7 +160,7 @@ print("The datastore service ip address is " + datastore_service.ip_address)
 	require.Equal(t, 1, len(instructions))
 	require.Nil(t, interpretationError)
 
-	addServiceInstruction := createSimpleAddServiceInstruction(t, "example-datastore-server", testContainerImageName, 1323, 13, 32, starlarkFilenamePlaceholderAsNotUsed, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars)
+	addServiceInstruction := createSimpleAddServiceInstruction(t, "example-datastore-server", testContainerImageName, 1323, 14, 32, starlarkFilenamePlaceholderAsNotUsed, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, privateIPAddressPlaceholder)
 	require.Equal(t, instructions[0], addServiceInstruction)
 
 	expectedOutput := `Starting Startosis script!
@@ -299,9 +302,9 @@ print("Done!")
 	require.Equal(t, 3, len(instructions))
 	require.Nil(t, interpretationError)
 
-	addServiceInstruction0 := createSimpleAddServiceInstruction(t, "example-datastore-server-0", testContainerImageName, 1323, 20, 20, starlarkFilenamePlaceholderAsNotUsed, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars)
-	addServiceInstruction1 := createSimpleAddServiceInstruction(t, "example-datastore-server-1", testContainerImageName, 1324, 20, 20, starlarkFilenamePlaceholderAsNotUsed, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars)
-	addServiceInstruction2 := createSimpleAddServiceInstruction(t, "example-datastore-server-2", testContainerImageName, 1325, 20, 20, starlarkFilenamePlaceholderAsNotUsed, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars)
+	addServiceInstruction0 := createSimpleAddServiceInstruction(t, "example-datastore-server-0", testContainerImageName, 1323, 20, 20, starlarkFilenamePlaceholderAsNotUsed, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder)
+	addServiceInstruction1 := createSimpleAddServiceInstruction(t, "example-datastore-server-1", testContainerImageName, 1324, 20, 20, starlarkFilenamePlaceholderAsNotUsed, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder)
+	addServiceInstruction2 := createSimpleAddServiceInstruction(t, "example-datastore-server-2", testContainerImageName, 1325, 20, 20, starlarkFilenamePlaceholderAsNotUsed, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder)
 
 	require.Equal(t, instructions[0], addServiceInstruction0)
 	require.Equal(t, instructions[1], addServiceInstruction1)
@@ -474,7 +477,7 @@ add_service(service_id = service_id, service_config = service_config)
 	require.Equal(t, 1, len(instructions))
 	require.Nil(t, interpretationError)
 
-	addServiceInstruction := createSimpleAddServiceInstruction(t, "example-datastore-server", testContainerImageName, 1323, 6, 12, starlarkFilenamePlaceholderAsNotUsed, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars)
+	addServiceInstruction := createSimpleAddServiceInstruction(t, "example-datastore-server", testContainerImageName, 1323, 6, 12, starlarkFilenamePlaceholderAsNotUsed, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder)
 
 	require.Equal(t, instructions[0], addServiceInstruction)
 
@@ -523,9 +526,9 @@ print("Done!")
 	require.Equal(t, 3, len(instructions))
 	require.Nil(t, interpretationError)
 
-	addServiceInstruction0 := createSimpleAddServiceInstruction(t, "example-datastore-server-0", testContainerImageName, 1323, 18, 20, moduleBar, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars)
-	addServiceInstruction1 := createSimpleAddServiceInstruction(t, "example-datastore-server-1", testContainerImageName, 1324, 18, 20, moduleBar, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars)
-	addServiceInstruction2 := createSimpleAddServiceInstruction(t, "example-datastore-server-2", testContainerImageName, 1325, 18, 20, moduleBar, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars)
+	addServiceInstruction0 := createSimpleAddServiceInstruction(t, "example-datastore-server-0", testContainerImageName, 1323, 18, 20, moduleBar, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder)
+	addServiceInstruction1 := createSimpleAddServiceInstruction(t, "example-datastore-server-1", testContainerImageName, 1324, 18, 20, moduleBar, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder)
+	addServiceInstruction2 := createSimpleAddServiceInstruction(t, "example-datastore-server-2", testContainerImageName, 1325, 18, 20, moduleBar, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder)
 
 	require.Equal(t, instructions[0], addServiceInstruction0)
 	require.Equal(t, instructions[1], addServiceInstruction1)
@@ -568,7 +571,7 @@ print("Starting Startosis script!")
 	require.Equal(t, 1, len(instructions))
 	require.Nil(t, interpretationError)
 
-	addServiceInstruction := createSimpleAddServiceInstruction(t, "example-datastore-server", testContainerImageName, 1323, 11, 12, moduleBar, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars)
+	addServiceInstruction := createSimpleAddServiceInstruction(t, "example-datastore-server", testContainerImageName, 1323, 11, 12, moduleBar, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder)
 
 	require.Equal(t, instructions[0], addServiceInstruction)
 
@@ -602,7 +605,7 @@ add_service(service_id = service_id, service_config = service_config)
 load("` + moduleBar + `", "service_id", "service_config")
 print("Starting Startosis script!")
 `
-	addServiceInstructionFromScriptA := createSimpleAddServiceInstruction(t, "example-datastore-server", testContainerImageName, 1323, 11, 12, moduleBar, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars)
+	addServiceInstructionFromScriptA := createSimpleAddServiceInstruction(t, "example-datastore-server", testContainerImageName, 1323, 11, 12, moduleBar, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder)
 
 	expectedOutputFromScriptA := `Constructing service_config
 Adding service example-datastore-server
@@ -629,7 +632,7 @@ service_config = struct(
 )
 add_service(service_id = service_id, service_config = service_config)
 `
-	addServiceInstructionFromScriptB := createSimpleAddServiceInstruction(t, "example-datastore-server", testContainerImageName, 1323, 13, 12, starlarkFilenamePlaceholderAsNotUsed, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars)
+	addServiceInstructionFromScriptB := createSimpleAddServiceInstruction(t, "example-datastore-server", testContainerImageName, 1323, 13, 12, starlarkFilenamePlaceholderAsNotUsed, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder)
 	expectedOutputFromScriptB := `Starting Startosis script!
 Adding service example-datastore-server
 `
@@ -674,12 +677,12 @@ add_service(service_id = client_service_id, service_config = client_service_conf
 	require.Nil(t, interpretationError)
 	require.Equal(t, 2, len(instructions))
 
-	dataSourceAddServiceInstruction := createSimpleAddServiceInstruction(t, "example-datastore-server", testContainerImageName, 1323, 11, 32, starlarkFilenamePlaceholderAsNotUsed, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars)
+	dataSourceAddServiceInstruction := createSimpleAddServiceInstruction(t, "example-datastore-server", testContainerImageName, 1323, 11, 32, starlarkFilenamePlaceholderAsNotUsed, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder)
 
 	entryPointArgs := []string{"--store-port 1323", "--store-ip {{kurtosis:example-datastore-server.ip_address}}"}
 	cmdArgs := []string{"ping", "{{kurtosis:example-datastore-server.ip_address}}"}
 	envVars := map[string]string{"STORE_IP": "{{kurtosis:example-datastore-server.ip_address}}"}
-	clientAddServiceInstruction := createSimpleAddServiceInstruction(t, "example-datastore-client", "kurtosistech/example-datastore-client", 1337, 23, 12, starlarkFilenamePlaceholderAsNotUsed, entryPointArgs, cmdArgs, envVars)
+	clientAddServiceInstruction := createSimpleAddServiceInstruction(t, "example-datastore-client", "kurtosistech/example-datastore-client", 1337, 23, 12, starlarkFilenamePlaceholderAsNotUsed, entryPointArgs, cmdArgs, envVars, defaultPrivateIPAddressPlaceholder)
 
 	require.Equal(t, instructions[0], dataSourceAddServiceInstruction)
 	require.Equal(t, instructions[1], clientAddServiceInstruction)
@@ -1200,7 +1203,7 @@ func TestStartosisInterpreter_UploadGetsInterpretedCorrectly(t *testing.T) {
 	require.Equal(t, expectedUploadInstruction, instructions[0])
 }
 
-func createSimpleAddServiceInstruction(t *testing.T, serviceId service.ServiceID, imageName string, portNumber uint32, lineNumber int32, colNumber int32, fileName string, entryPointArgs []string, cmdArgs []string, envVars map[string]string) *add_service.AddServiceInstruction {
+func createSimpleAddServiceInstruction(t *testing.T, serviceId service.ServiceID, imageName string, portNumber uint32, lineNumber int32, colNumber int32, fileName string, entryPointArgs []string, cmdArgs []string, envVars map[string]string, privateIPAddressPlaceholder string) *add_service.AddServiceInstruction {
 	serviceConfigStringDict := starlark.StringDict{}
 	serviceConfigStringDict["container_image_name"] = starlark.String(imageName)
 
@@ -1236,6 +1239,12 @@ func createSimpleAddServiceInstruction(t *testing.T, serviceId service.ServiceID
 		}
 		serviceConfigStringDict["env_vars"] = envVarsValues
 	}
+
+	if privateIPAddressPlaceholder != "" {
+		privateIPAddressPlaceholderStarlarkValue := starlark.String(privateIPAddressPlaceholder)
+		serviceConfigStringDict["private_ip_address_placeholder"] = privateIPAddressPlaceholderStarlarkValue
+	}
+
 	serviceConfigStruct := starlarkstruct.FromStringDict(starlarkstruct.Default, serviceConfigStringDict)
 	serviceConfigStruct.Freeze()
 
@@ -1258,6 +1267,11 @@ func createSimpleAddServiceInstruction(t *testing.T, serviceId service.ServiceID
 	if envVars != nil {
 		serviceConfigBuilder.WithEnvVars(envVars)
 	}
+
+	if privateIPAddressPlaceholder != "" {
+		serviceConfigBuilder.WithPrivateIPAddressPlaceholder(privateIPAddressPlaceholder)
+	}
+
 	return add_service.NewAddServiceInstruction(
 		testServiceNetwork,
 		*kurtosis_instruction.NewInstructionPosition(lineNumber, colNumber, fileName),
