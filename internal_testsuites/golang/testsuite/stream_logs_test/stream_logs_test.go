@@ -38,7 +38,7 @@ func TestStreamLogs(t *testing.T) {
 	ctx := context.Background()
 
 	expectedLogLines := []string{"kurtosis", "test", "running", "successfully"}
-	expectedAmountOfLogLines := 4
+	expectedAmountOfLogLines := len(expectedLogLines)
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
 	enclaveCtx, stopEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
