@@ -9,6 +9,9 @@
 - Improve how kurtosis instructions are canonicalized with a universal canonicalizer. Each instruction is now printed on multiple lines with a comment pointing the to position in the source code.
 - Support `private_ip_address_placeholder` to be passed in `service_config` for `add_service` in Starlark
 
+### Changes
+- Updated how we generate the canonical string for Kurtosis `upload_files` instruction
+
 # 0.51.10
 ### Changes
 - Added Starlark `proto` module, such that you can now do `proto.has(msg, "field_name")` in Startosis to differentiate between when a field is set to its default value and when it is unset (the field has to be marked as optional) in the proto file though.
