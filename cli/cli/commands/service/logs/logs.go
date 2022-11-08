@@ -107,7 +107,7 @@ func run(
 
 	clusterConfig, err := kurtosis_config_getter.GetKurtosisClusterConfig()
 	if err != nil {
-		return stacktrace.Propagate(err, "And error occurred getting the Kurtosis cluster config")
+		return stacktrace.Propagate(err, "An error occurred getting the Kurtosis cluster config")
 	}
 
 	clusterType := clusterConfig.GetClusterType()

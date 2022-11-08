@@ -23,25 +23,16 @@ const (
 	dockerGettingStartedImage                    = "docker/getting-started"
 	exampleServiceId          services.ServiceID = "stream-logs"
 
-	exampleServicePortId         = "http"
-	exampleServicePrivatePortNum = 80
 
 	waitForAllLogsBeingCollectedInSeconds = 2
 
-	testTimeOut = 2 * time.Minute
+	testTimeOut = 90 * time.Second
 
 	shouldFollowLogsFirstRequest  = false
 	shouldFollowLogsSecondRequest = true
 )
 
-var (
-	shouldFollowLogsRequestOptions = []bool{shouldFollowLogsFirstRequest, shouldFollowLogsSecondRequest}
-
-	exampleServicePrivatePortSpec = services.NewPortSpec(
-		exampleServicePrivatePortNum,
-		services.PortProtocol_TCP,
-	)
-)
+var	shouldFollowLogsRequestOptions = []bool{shouldFollowLogsFirstRequest, shouldFollowLogsSecondRequest}
 
 func TestStreamLogs(t *testing.T) {
 	ctx := context.Background()
@@ -66,14 +57,12 @@ func TestStreamLogs(t *testing.T) {
 
 	enclaveID := enclaveCtx.GetEnclaveID()
 
-	time.Sleep(waitForAllLogsBeingCollectedInSeconds * time.Second)
-
 	serviceCtx, err := enclaveCtx.GetServiceContext(exampleServiceId)
 	require.NoError(t, err)
 
 	userServiceGuid := serviceCtx.GetServiceGUID()
 
-	userServiceGUIDs := map[services.ServiceGUID]bool{
+	userServiceGuids := map[services.ServiceGUID]bool{
 		userServiceGuid: true,
 	}
 
@@ -83,7 +72,7 @@ func TestStreamLogs(t *testing.T) {
 	// and with shouldFollowLogs = true (which is used to tail logs) in the second iteration
 	for _, shouldFollowLogs := range shouldFollowLogsRequestOptions {
 		//TODO handle notFOundChannel
-		userServiceLogsByGuidChan, cancelStreamUserServiceLogsFunc, err := kurtosisCtx.GetUserServiceLogs(ctx, enclaveID, userServiceGUIDs, shouldFollowLogs)
+		userServiceLogsByGuidChan, cancelStreamUserServiceLogsFunc, err := kurtosisCtx.GetUserServiceLogs(ctx, enclaveID, userServiceGuids, shouldFollowLogs)
 		require.NoError(t, err)
 		require.NotNil(t, cancelStreamUserServiceLogsFunc)
 		require.NotNil(t, userServiceLogsByGuidChan)
@@ -132,7 +121,7 @@ func TestStreamLogs(t *testing.T) {
 func getExampleServiceConfig() *services.ContainerConfig {
 
 	entrypointArgs := []string{"/bin/sh", "-c"}
-	cmdArgs := []string{"for i in kurtosis test running successfully; do echo \"$i\"; if [ \"$i\" == \"successfully\" ]; then sleep 300; fi; done;"}
+	cmdArgs := []string{"for i in kurtosis test running successfully; do echo \"$i\"; done;"}
 
 	containerConfig := services.NewContainerConfigBuilder(
 		dockerGettingStartedImage,
@@ -140,8 +129,6 @@ func getExampleServiceConfig() *services.ContainerConfig {
 		entrypointArgs,
 	).WithCmdOverride(
 		cmdArgs,
-	).WithUsedPorts(map[string]*services.PortSpec{
-		exampleServicePortId: exampleServicePrivatePortSpec,
-	}).Build()
+	).Build()
 	return containerConfig
 }

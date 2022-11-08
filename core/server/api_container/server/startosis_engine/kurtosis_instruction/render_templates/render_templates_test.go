@@ -2,10 +2,9 @@ package render_templates
 
 import (
 	"encoding/json"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/stretchr/testify/require"
+	"go.starlark.net/starlark"
 	"testing"
 )
 
@@ -14,40 +13,62 @@ func TestRenderTemplate_TestStringRepresentation(t *testing.T) {
 	templateData := map[string]interface{}{"Name": "Stranger", "Answer": 6, "Numbers": []int{1, 2, 3}, "UnixTimeStamp": 1257894000, "LargeFloat": 1231231243.43}
 	templateDataAsJson, err := json.Marshal(templateData)
 	require.Nil(t, err)
-	templateAndData := binding_constructors.NewTemplateAndData(template, string(templateDataAsJson))
-	templateAndDataByDestFilepath := map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData{
-		"/foo/bar/test.txt": templateAndData,
-	}
+	templateAndDataDict := &starlark.Dict{}
+	templateDict := &starlark.Dict{}
+	require.Nil(t, templateDict.SetKey(starlark.String("template"), starlark.String(template)))
+	require.Nil(t, templateDict.SetKey(starlark.String("template_data_json"), starlark.String(templateDataAsJson)))
+	require.Nil(t, templateAndDataDict.SetKey(starlark.String("/foo/bar/test.txt"), templateDict))
 
-	renderInstruction := NewRenderTemplatesInstruction(
+	renderInstruction := newEmptyRenderTemplatesInstruction(
 		nil,
 		*kurtosis_instruction.NewInstructionPosition(16, 33, "dummyFile"),
-		templateAndDataByDestFilepath,
 	)
+	renderInstruction.starlarkKwargs[templateAndDataByDestinationRelFilepathArg] = templateAndDataDict
 
-	expectedStr := `render_templates(template_and_data_by_dest_rel_filepath="/foo/bar/test.txt":{"template":"Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}.", "template_data_json":"{"Answer":6,"LargeFloat":1231231243.43,"Name":"Stranger","Numbers":[1,2,3],"UnixTimeStamp":1257894000}"})`
+	expectedStr := `# from: dummyFile[16:33]
+render_templates(
+	template_and_data_by_dest_rel_filepath={
+		"/foo/bar/test.txt": {
+			"template": "Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}.",
+			"template_data_json": "{\"Answer\":6,\"LargeFloat\":1231231243.43,\"Name\":\"Stranger\",\"Numbers\":[1,2,3],\"UnixTimeStamp\":1257894000}"
+		}
+	},
+)`
 
 	require.Equal(t, expectedStr, renderInstruction.String())
 }
 
 func TestRenderTemplate_TestMultipleTemplates(t *testing.T) {
-	templateDataOne := binding_constructors.NewTemplateAndData("Hello {{.Name}}", "{\"Name\": \"John\"}")
-	templateDataTwo := binding_constructors.NewTemplateAndData("Hello {{.LastName}}", "{\"LastName\": \"Doe\"}")
-	templateAndDataByDestFilepath := map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData{
-		"/foo/bar/test.txt":   templateDataOne,
-		"/fizz/buzz/test.txt": templateDataTwo,
-	}
+	templateDataOne := &starlark.Dict{}
+	require.Nil(t, templateDataOne.SetKey(starlark.String("template"), starlark.String("Hello {{.Name}}")))
+	require.Nil(t, templateDataOne.SetKey(starlark.String("template_data_json"), starlark.String(`{"Name": "John"}`)))
+	templateDataTwo := &starlark.Dict{}
+	require.Nil(t, templateDataTwo.SetKey(starlark.String("template"), starlark.String("Hello {{.LastName}}")))
+	require.Nil(t, templateDataTwo.SetKey(starlark.String("template_data_json"), starlark.String(`{"LastName": "Doe"}`)))
 
-	renderInstruction := NewRenderTemplatesInstruction(
+	templateAndDataByDestFilepath := &starlark.Dict{}
+	require.Nil(t, templateAndDataByDestFilepath.SetKey(starlark.String("/foo/bar/test.txt"), templateDataOne))
+	require.Nil(t, templateAndDataByDestFilepath.SetKey(starlark.String("/fizz/buzz/test.txt"), templateDataTwo))
+
+	renderInstruction := newEmptyRenderTemplatesInstruction(
 		nil,
 		*kurtosis_instruction.NewInstructionPosition(16, 33, "dummyFile"),
-		templateAndDataByDestFilepath,
 	)
-	stringRep := renderInstruction.String()
+	renderInstruction.starlarkKwargs[templateAndDataByDestinationRelFilepathArg] = templateAndDataByDestFilepath
 
-	// as template_data_by_dest_rel_filepath is a map, the output can be either of the two
-	expectedStrOne := `render_templates(template_and_data_by_dest_rel_filepath="/foo/bar/test.txt":{"template":"Hello {{.Name}}", "template_data_json":"{"Name": "John"}"}, "/fizz/buzz/test.txt":{"template":"Hello {{.LastName}}", "template_data_json":"{"LastName": "Doe"}"})`
-	expectedStrTwo := `render_templates(template_and_data_by_dest_rel_filepath="/fizz/buzz/test.txt":{"template":"Hello {{.LastName}}", "template_data_json":"{"LastName": "Doe"}"}, "/foo/bar/test.txt":{"template":"Hello {{.Name}}", "template_data_json":"{"Name": "John"}"})`
-	comparison := func() bool { return stringRep == expectedStrTwo || stringRep == expectedStrOne }
-	require.Condition(t, comparison)
+	// keys of the map are sorted alphabetically by the canonicalizer
+	expectedStr := `# from: dummyFile[16:33]
+render_templates(
+	template_and_data_by_dest_rel_filepath={
+		"/fizz/buzz/test.txt": {
+			"template": "Hello {{.LastName}}",
+			"template_data_json": "{\"LastName\": \"Doe\"}"
+		},
+		"/foo/bar/test.txt": {
+			"template": "Hello {{.Name}}",
+			"template_data_json": "{\"Name\": \"John\"}"
+		}
+	},
+)`
+	require.Equal(t, expectedStr, renderInstruction.String())
 }

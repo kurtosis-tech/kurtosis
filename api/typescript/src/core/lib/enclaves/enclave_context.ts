@@ -223,6 +223,7 @@ export class EnclaveContext {
     public async executeStartosisModule(
         moduleRootPath: string,
         serializedParams: string,
+        dryRun: boolean,
     ): Promise<Result<ExecuteStartosisResponse, Error>> {
         const kurtosisModFilepath = path.join(moduleRootPath, KURTOSIS_MOD_FILENAME)
 
@@ -241,6 +242,7 @@ export class EnclaveContext {
         args.setData(archiverResponse.value)
         args.setModuleId(kurtosisMod.module.name)
         args.setSerializedParams(serializedParams)
+        args.setDryRun(dryRun)
         const resultModuleExecution : Result<ExecuteStartosisResponse, Error> = await this.backend.executeStartosisModule(args)
         if (resultModuleExecution.isErr()) {
             return err(new Error(`Unexpected error happened executing Startosis module \n${resultModuleExecution.error}`))
@@ -250,9 +252,11 @@ export class EnclaveContext {
 
     public async executeStartosisScript(
             serializedStartosisScript: string,
+            dryRun: boolean,
         ): Promise<Result<ExecuteStartosisResponse, Error>> {
         const args = new ExecuteStartosisScriptArgs();
         args.setSerializedScript(serializedStartosisScript)
+        args.setDryRun(dryRun)
         const resultScriptExecution : Result<ExecuteStartosisResponse, Error> = await this.backend.executeStartosisScript(args)
         if (resultScriptExecution.isErr()) {
             return err(new Error(`Unexpected error happened executing Startosis script \n${resultScriptExecution.error}`))
@@ -469,12 +473,6 @@ export class EnclaveContext {
         if (serviceInfo.getPrivateIpAddr() === "") {
             return err(new Error(
                     "Kurtosis API reported an empty private IP address for service " + serviceId +  " - this should never happen, and is a bug with Kurtosis!",
-                )
-            );
-        }
-        if (serviceInfo.getMaybePublicIpAddr() === "") {
-            return err(new Error(
-                    "Kurtosis API reported an empty public IP address for service " + serviceId +  " - this should never happen, and is a bug with Kurtosis!",
                 )
             );
         }

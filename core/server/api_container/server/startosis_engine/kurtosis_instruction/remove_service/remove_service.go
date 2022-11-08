@@ -2,7 +2,6 @@ package remove_service
 
 import (
 	"context"
-	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	kurtosis_backend_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
@@ -14,7 +13,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
-	"strings"
 )
 
 const (
@@ -56,11 +54,9 @@ func (instruction *RemoveServiceInstruction) GetPositionInOriginalScript() *kurt
 }
 
 func (instruction *RemoveServiceInstruction) GetCanonicalInstruction() string {
-	buffer := new(strings.Builder)
-	buffer.WriteString(RemoveServiceBuiltinName + "(")
-	buffer.WriteString("service_id=\"")
-	buffer.WriteString(fmt.Sprintf("%v\")", instruction.serviceId))
-	return buffer.String()
+	return shared_helpers.CanonicalizeInstruction(RemoveServiceBuiltinName, starlark.StringDict{
+		serviceIdArgName: starlark.String(instruction.serviceId),
+	}, &instruction.position)
 }
 
 func (instruction *RemoveServiceInstruction) Execute(ctx context.Context, environment *startosis_executor.ExecutionEnvironment) error {

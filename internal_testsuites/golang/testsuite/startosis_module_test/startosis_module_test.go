@@ -13,6 +13,7 @@ import (
 const (
 	isPartitioningEnabled = false
 	emptyExecuteParams    = "{}"
+	defaultDryRun         = false
 
 	validModuleWithTypesTestName = "valid-module-with-types"
 	validModuleWithTypesRelPath  = "../../../startosis/valid-kurtosis-module-with-types"
@@ -57,7 +58,7 @@ func TestStartosisModule_ValidModuleWithType(t *testing.T) {
 	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
 
 	serializedParams := `{"greetings": "Bonjour!"}`
-	executionResult, err := enclaveCtx.ExecuteStartosisModule(moduleDirpath, serializedParams)
+	executionResult, err := enclaveCtx.ExecuteStartosisModule(moduleDirpath, serializedParams, defaultDryRun)
 	require.NoError(t, err, "Unexpected error executing startosis module")
 
 	expectedScriptOutput := `Bonjour!
@@ -87,7 +88,7 @@ func TestStartosisModule_ValidModuleWithNoType(t *testing.T) {
 
 	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
 
-	executionResult, err := enclaveCtx.ExecuteStartosisModule(moduleDirpath, emptyExecuteParams)
+	executionResult, err := enclaveCtx.ExecuteStartosisModule(moduleDirpath, emptyExecuteParams, defaultDryRun)
 	require.NoError(t, err, "Unexpected error executing startosis module")
 
 	expectedScriptOutput := `Hello World!
@@ -116,7 +117,7 @@ func TestStartosisModule_ValidModuleWithNoTypesFile_FailureCalledWithParams(t *t
 
 	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
 	serializedParams := `{"greetings": "Bonjour!"}`
-	executionResult, err := enclaveCtx.ExecuteStartosisModule(moduleDirpath, serializedParams)
+	executionResult, err := enclaveCtx.ExecuteStartosisModule(moduleDirpath, serializedParams, defaultDryRun)
 	require.Nil(t, err, "Unexpected error executing startosis module")
 	require.NotNil(t, executionResult.InterpretationError)
 	expectedInterpretationErr := "A non empty parameter was passed to the module 'github.com/sample/sample-kurtosis-module' but the module doesn't contain a valid 'types.proto' file (it is either absent of invalid)."
@@ -143,7 +144,7 @@ func TestStartosisModule_ValidModuleNoModulInputTypeTestName(t *testing.T) {
 
 	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
 
-	executionResult, err := enclaveCtx.ExecuteStartosisModule(moduleDirpath, emptyExecuteParams)
+	executionResult, err := enclaveCtx.ExecuteStartosisModule(moduleDirpath, emptyExecuteParams, defaultDryRun)
 	require.NoError(t, err, "Unexpected error executing startosis module")
 
 	expectedScriptOutput := `Hello world!
@@ -173,7 +174,7 @@ func TestStartosisModule_ValidModuleNoModulInputTypeTestName_FailureCalledWithPa
 	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
 
 	serializedParams := `{"greetings": "Bonjour!"}`
-	executionResult, err := enclaveCtx.ExecuteStartosisModule(moduleDirpath, serializedParams)
+	executionResult, err := enclaveCtx.ExecuteStartosisModule(moduleDirpath, serializedParams, defaultDryRun)
 	require.Nil(t, err, "Unexpected error executing startosis module")
 	require.NotNil(t, executionResult.InterpretationError)
 	expectedInterpretationErr := "A non empty parameter was passed to the module 'github.com/sample/sample-kurtosis-module' but 'ModuleInput' type is not defined in the module's 'types.proto' file."
@@ -201,7 +202,7 @@ func TestStartosisModule_InvalidTypesFileTestName(t *testing.T) {
 	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
 
 	serializedParams := `{"greetings": "Bonjour!"}`
-	executionResult, err := enclaveCtx.ExecuteStartosisModule(moduleDirpath, serializedParams)
+	executionResult, err := enclaveCtx.ExecuteStartosisModule(moduleDirpath, serializedParams, defaultDryRun)
 	require.Nil(t, err, "Unexpected error executing startosis module")
 	require.NotNil(t, executionResult.InterpretationError)
 	expectedInterpretationErr := "A non empty parameter was passed to the module 'github.com/sample/sample-kurtosis-module' but the module doesn't contain a valid 'types.proto' file (it is either absent of invalid)."
@@ -228,7 +229,7 @@ func TestStartosisModule_InvalidModuleNoTypesButInputArgsTestName(t *testing.T) 
 
 	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
 
-	executionResult, err := enclaveCtx.ExecuteStartosisModule(moduleDirpath, emptyExecuteParams)
+	executionResult, err := enclaveCtx.ExecuteStartosisModule(moduleDirpath, emptyExecuteParams, defaultDryRun)
 	require.Nil(t, err, "Unexpected error executing startosis module")
 	require.NotNil(t, executionResult.InterpretationError)
 	expectedInterpretationErr := "Evaluation error: function main missing 1 argument (input_args)"
@@ -256,7 +257,7 @@ func TestStartosisModule_InvalidModFile(t *testing.T) {
 	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
 
 	expectedErrorContents := "Field module.name in kurtosis.mod needs to be set and cannot be empty"
-	_, err = enclaveCtx.ExecuteStartosisModule(moduleDirpath, emptyExecuteParams)
+	_, err = enclaveCtx.ExecuteStartosisModule(moduleDirpath, emptyExecuteParams, defaultDryRun)
 	require.NotNil(t, err, "Unexpected error executing startosis module")
 	require.Contains(t, err.Error(), expectedErrorContents)
 }
@@ -279,7 +280,7 @@ func TestStartosisModule_NoMainFile(t *testing.T) {
 	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
 
 	expectedErrorContents := "An error occurred while verifying that 'main.star' exists on root of module"
-	_, err = enclaveCtx.ExecuteStartosisModule(moduleDirpath, emptyExecuteParams)
+	_, err = enclaveCtx.ExecuteStartosisModule(moduleDirpath, emptyExecuteParams, defaultDryRun)
 	require.NotNil(t, err, "Unexpected error executing startosis module")
 	require.Contains(t, err.Error(), expectedErrorContents)
 }
@@ -302,7 +303,7 @@ func TestStartosisModule_NoMainInMainStar(t *testing.T) {
 	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
 
 	expectedInterpretationErr := "Evaluation error: load: name main not found in module github.com/sample/sample-kurtosis-module/main.star"
-	executionResult, err := enclaveCtx.ExecuteStartosisModule(moduleDirpath, emptyExecuteParams)
+	executionResult, err := enclaveCtx.ExecuteStartosisModule(moduleDirpath, emptyExecuteParams, defaultDryRun)
 	require.Nil(t, err, "Unexpected error executing startosis module")
 	require.NotNil(t, executionResult.InterpretationError)
 	require.Contains(t, executionResult.InterpretationError, expectedInterpretationErr)

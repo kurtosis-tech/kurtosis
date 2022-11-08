@@ -39,8 +39,24 @@ type ServiceContext struct {
 	publicPorts  map[string]*PortSpec
 }
 
-func NewServiceContext(client kurtosis_core_rpc_api_bindings.ApiContainerServiceClient, serviceId ServiceID, serviceGuid ServiceGUID, privateIpAddr string, privatePorts map[string]*PortSpec, publicIpAddr string, publicPorts map[string]*PortSpec) *ServiceContext {
-	return &ServiceContext{client: client, serviceId: serviceId, serviceGuid: serviceGuid, privateIpAddr: privateIpAddr, privatePorts: privatePorts, publicIpAddr: publicIpAddr, publicPorts: publicPorts}
+func NewServiceContext(
+	client kurtosis_core_rpc_api_bindings.ApiContainerServiceClient,
+	serviceId ServiceID,
+	serviceGuid ServiceGUID,
+	privateIpAddr string,
+	privatePorts map[string]*PortSpec,
+	publicIpAddr string,
+	publicPorts map[string]*PortSpec,
+) *ServiceContext {
+	return &ServiceContext{
+		client: client,
+		serviceId: serviceId,
+		serviceGuid: serviceGuid,
+		privateIpAddr: privateIpAddr,
+		privatePorts: privatePorts,
+		publicIpAddr: publicIpAddr,
+		publicPorts: publicPorts,
+	}
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation

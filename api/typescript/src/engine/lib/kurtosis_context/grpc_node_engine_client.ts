@@ -1,5 +1,12 @@
-import {err, ok, Result} from "neverthrow";
-import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
+import * as jspb from 'google-protobuf';
+import * as google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb';
+import { err, ok, Result } from 'neverthrow';
+import { Readable } from 'stream';
+
+import { ServiceGUID } from '../../../core/lib/services/service';
+import { LogLine } from '../../kurtosis_engine_rpc_api_bindings/engine_service_pb';
+import { NO_ERROR_ENCOUNTERED_BUT_RESPONSE_FALSY_MSG } from '../consts';
+
 import type {EngineServiceClient as EngineServiceClientNode} from "../../kurtosis_engine_rpc_api_bindings/engine_service_grpc_pb";
 import type {GenericEngineClient} from "./generic_engine_client";
 import type {
@@ -14,12 +21,15 @@ import type {
     GetUserServiceLogsResponse,
     StopEnclaveArgs
 } from "../../kurtosis_engine_rpc_api_bindings/engine_service_pb";
-import {LogLine} from "../../kurtosis_engine_rpc_api_bindings/engine_service_pb";
-import {NO_ERROR_ENCOUNTERED_BUT_RESPONSE_FALSY_MSG} from "../consts";
 import type {ClientReadableStream, ServiceError} from "@grpc/grpc-js";
-import * as jspb from "google-protobuf";
-import {ServiceGUID} from "../../../core/lib/services/service";
-import {Readable} from "stream";
+
+const GRPC_STREAM_RESPONSE_DATA_EVENT_NAME = 'data'
+const GRPC_STREAM_RESPONSE_ERROR_EVENT_NAME = 'error'
+const GRPC_STREAM_RESPONSE_END_EVENT_NAME = 'end'
+
+const USER_SERVICE_LOGS_READABLE_ERROR_EVENT_NAME = 'error'
+const USER_SERVICE_LOGS_READABLE_END_EVENT_NAME = 'end'
+const USER_SERVICE_LOGS_READABLE_CLOSE_EVENT_NAME = 'close'
 
 export class GrpcNodeEngineClient implements GenericEngineClient {
     private readonly client: EngineServiceClientNode
@@ -189,7 +199,7 @@ export class GrpcNodeEngineClient implements GenericEngineClient {
 
         const userServiceLogsReadable: Readable = this.createNewUserServiceLogsReadable(streamUserServiceLogsResponse);
 
-        streamUserServiceLogsResponse.on('data', function (getUserServiceLogsResponse: GetUserServiceLogsResponse) {
+        streamUserServiceLogsResponse.on(GRPC_STREAM_RESPONSE_DATA_EVENT_NAME, function (getUserServiceLogsResponse: GetUserServiceLogsResponse) {
 
             const userServiceLogsByUserServiceGuidMap: jspb.Map<string, LogLine> | undefined = getUserServiceLogsResponse.getUserServiceLogsByUserServiceGuidMap();
 
@@ -204,18 +214,18 @@ export class GrpcNodeEngineClient implements GenericEngineClient {
             userServiceLogsReadable.push(userServiceLogsByGuid);
         })
 
-        streamUserServiceLogsResponse.on('error', (streamLogsErr) => {
+        streamUserServiceLogsResponse.on(GRPC_STREAM_RESPONSE_ERROR_EVENT_NAME, (streamLogsErr) => {
             if (!userServiceLogsReadable.destroyed) {
                 //Propagate the GRPC error to the user service logs readable
                 const grpcStreamErr = new Error(`An error has been returned from the user service logs GRPC stream. Error:\n ${streamLogsErr}`)
-                userServiceLogsReadable.emit('error', grpcStreamErr);
+                userServiceLogsReadable.emit(USER_SERVICE_LOGS_READABLE_ERROR_EVENT_NAME, grpcStreamErr);
             }
         })
 
-        streamUserServiceLogsResponse.on('end', function () {
+        streamUserServiceLogsResponse.on(GRPC_STREAM_RESPONSE_END_EVENT_NAME, function () {
             //Emit streams 'end' event when the GRPC stream has end
             if (!userServiceLogsReadable.destroyed) {
-                userServiceLogsReadable.emit('end');
+                userServiceLogsReadable.emit(USER_SERVICE_LOGS_READABLE_END_EVENT_NAME);
             }
         })
 
@@ -225,12 +235,14 @@ export class GrpcNodeEngineClient implements GenericEngineClient {
     private createNewUserServiceLogsReadable(streamUserServiceLogsResponse: ClientReadableStream<GetUserServiceLogsResponse>): Readable {
         const userServiceLogsReadable: Readable = new Readable({
             objectMode: true, //setting object mode is to allow pass objects in the readable.push() method
-            read() {} //this is mandatory to implement, we implement empty as it's describe in the implementation examples here: https://nodesource.com/blog/understanding-streams-in-nodejs/
+            read() {
+            } //this is mandatory to implement, we implement empty as it's describe in the implementation examples here: https://nodesource.com/blog/understanding-streams-in-nodejs/
         })
-        userServiceLogsReadable.on('close', function(){
+        userServiceLogsReadable.on(USER_SERVICE_LOGS_READABLE_CLOSE_EVENT_NAME, function () {
             //Cancel the GRPC stream when when users close the ServiceLogsReadable
             streamUserServiceLogsResponse.cancel();
         })
         return userServiceLogsReadable;
     }
 }
+
