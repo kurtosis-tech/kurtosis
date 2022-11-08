@@ -3,6 +3,7 @@ package shared_helpers
 import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
+	"go.starlark.net/lib/time"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
 	"sort"
@@ -10,7 +11,8 @@ import (
 )
 
 const (
-	initialIndentationLevel = 1
+	initialIndentationLevel  = 1
+	starlarkTimeKeyComponent = "unix"
 )
 
 func CanonicalizeInstruction(instructionName string, serializedKwargs starlark.StringDict, position *kurtosis_instruction.InstructionPosition) string {
@@ -41,10 +43,27 @@ func CanonicalizeInstruction(instructionName string, serializedKwargs starlark.S
 func canonicalizeArgValue(genericArgValue starlark.Value, newline bool, indent int) string {
 	var stringifiedArg string
 	switch argValue := genericArgValue.(type) {
-	case starlark.String:
+	case starlark.NoneType, starlark.Bool, starlark.String, starlark.Bytes, starlark.Int, starlark.Float:
 		stringifiedArg = argValue.String()
-	case starlark.Int:
-		stringifiedArg = argValue.String()
+	case time.Time:
+		timestamp, err := argValue.Attr(starlarkTimeKeyComponent)
+		if err != nil {
+			panic(fmt.Sprintf("Unable to retrieve '%s' component from Starlark time object '%s'. This is unexpected", starlarkTimeKeyComponent, argValue.String()))
+		}
+		// This can be made more readable by doing the full time.time(year, month, day, ....)
+		// For now it works just fine
+		stringifiedArg = fmt.Sprintf("time.from_timestamp(%d)", timestamp)
+	case time.Duration:
+		stringifiedArg = "time.parse_duration(" + argValue.String() + ")"
+	case *starlark.List:
+		stringifiedList := stringifyIterable(argValue, argValue.Len(), indent)
+		stringifiedArg = fmt.Sprintf("[%s\n%s]", strings.Join(stringifiedList, ","), indentPrefixString(indent))
+	case *starlark.Set:
+		stringifiedSet := stringifyIterable(argValue, argValue.Len(), indent)
+		stringifiedArg = fmt.Sprintf("{%s\n%s}", strings.Join(stringifiedSet, ","), indentPrefixString(indent))
+	case starlark.Tuple:
+		stringifiedTuple := stringifyIterable(argValue, argValue.Len(), indent)
+		stringifiedArg = fmt.Sprintf("(%s\n%s)", strings.Join(stringifiedTuple, ","), indentPrefixString(indent))
 	case *starlark.Dict:
 		allKeys := argValue.Keys()
 		stringifiedElement := make([]string, len(allKeys))
@@ -59,13 +78,6 @@ func canonicalizeArgValue(genericArgValue starlark.Value, newline bool, indent i
 		}
 		sort.Strings(stringifiedElement)
 		stringifiedArg = fmt.Sprintf("{%s\n%s}", strings.Join(stringifiedElement, ","), indentPrefixString(indent))
-	case *starlark.List:
-		stringifiedElement := make([]string, argValue.Len())
-		for idx := 0; idx < argValue.Len(); idx++ {
-			attributeValue := argValue.Index(idx)
-			stringifiedElement[idx] = canonicalizeArgValue(attributeValue, true, indent+1)
-		}
-		stringifiedArg = fmt.Sprintf("[%s\n%s]", strings.Join(stringifiedElement, ","), indentPrefixString(indent))
 	case *starlarkstruct.Struct:
 		allAttributes := argValue.AttrNames()
 		sort.Strings(allAttributes)
@@ -91,6 +103,17 @@ func canonicalizeArgValue(genericArgValue starlark.Value, newline bool, indent i
 	}
 	resultBuffer.WriteString(stringifiedArg)
 	return resultBuffer.String()
+}
+
+func stringifyIterable(iterable starlark.Iterable, length int, currentIndentationLevel int) []string {
+	stringifiedIterable := make([]string, length)
+	iterator := iterable.Iterate()
+	defer iterator.Done()
+	var item starlark.Value
+	for idx := 0; iterator.Next(&item); idx++ {
+		stringifiedIterable[idx] = canonicalizeArgValue(item, true, currentIndentationLevel+1)
+	}
+	return stringifiedIterable
 }
 
 func indentPrefixString(indent int) string {

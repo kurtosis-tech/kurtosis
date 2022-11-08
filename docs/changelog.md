@@ -1,7 +1,10 @@
 # TBD
 
+# 0.51.11
+
 ### Features
 - Improve how kurtosis instructions are canonicalized with a universal canonicalizer. Each instruction is now printed on multiple lines with a comment pointing the to position in the source code.
+- Support `private_ip_address_placeholder` to be passed in `service_config` for `add_service` in Starlark
 
 # 0.51.10
 ### Changes
