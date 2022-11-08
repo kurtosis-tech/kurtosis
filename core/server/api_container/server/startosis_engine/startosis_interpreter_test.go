@@ -124,6 +124,7 @@ func TestStartosisInterpreter_ValidSimpleScriptWithInstruction(t *testing.T) {
 	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
+	privateIPAddressPlaceholder := "MAGICAL_PLACEHOLDER_TO_REPLACE"
 	script := `
 print("Starting Startosis script!")
 
@@ -134,7 +135,8 @@ service_config = struct(
 	container_image_name = "` + testContainerImageName + `",
 	used_ports = {
 		"grpc": struct(number = 1323, protocol = "TCP")
-	}
+	},
+	private_ip_address_placeholder = "` + privateIPAddressPlaceholder + `"
 )
 datastore_service = add_service(service_id = service_id, service_config = service_config)
 print("The grpc port is " + str(datastore_service.ports["grpc"].number))
@@ -148,7 +150,7 @@ print("The datastore service ip address is " + datastore_service.ip_address)
 
 	addServiceInstruction := add_service.NewAddServiceInstruction(
 		testServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(13, 32, starlarkFilenamePlaceholderAsNotUsed),
+		*kurtosis_instruction.NewInstructionPosition(14, 32, starlarkFilenamePlaceholderAsNotUsed),
 		"example-datastore-server",
 		services.NewServiceConfigBuilder(
 			testContainerImageName,
@@ -159,7 +161,7 @@ print("The datastore service ip address is " + datastore_service.ip_address)
 					Protocol: kurtosis_core_rpc_api_bindings.Port_TCP,
 				},
 			},
-		).Build(),
+		).WithPrivateIPAddressPlaceholder(privateIPAddressPlaceholder).Build(),
 	)
 
 	require.Equal(t, instructions[0], addServiceInstruction)

@@ -1,5 +1,8 @@
 # TBD
 
+### Features
+- Support `private_ip_address_placeholder` to be passed in `service_config` for `add_service` in Starlark
+
 # 0.51.10
 
 ### Changes

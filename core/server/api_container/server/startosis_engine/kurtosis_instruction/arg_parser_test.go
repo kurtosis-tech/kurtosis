@@ -548,3 +548,20 @@ func TestParseTemplatesAndData_FailsForMalformedJSONWithoutClosingBraces(t *test
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), fmt.Sprintf("Template data for file '%v', '%v' isn't valid JSON", templateRelativePath, dataAsJson))
 }
+
+func TestParsePrivateIPAddressPlaceholder_Success(t *testing.T) {
+	dict := starlark.StringDict{}
+	dict["private_ip_address_placeholder"] = starlark.String("KURTOSIS_IP_ADDRESS")
+	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
+	output, err := parsePrivateIPAddressPlaceholder(input)
+	require.Nil(t, err)
+	require.Equal(t, "KURTOSIS_IP_ADDRESS", output)
+}
+
+func TestParsePrivateIPAddressPlaceholder_FailureNonsString(t *testing.T) {
+	dict := starlark.StringDict{}
+	dict["private_ip_address_placeholder"] = starlark.MakeInt(42)
+	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
+	_, err := parsePrivateIPAddressPlaceholder(input)
+	require.NotNil(t, err)
+}
