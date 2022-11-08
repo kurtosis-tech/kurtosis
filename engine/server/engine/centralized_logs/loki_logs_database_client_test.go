@@ -34,7 +34,24 @@ const (
 	expectedEntriesLimitQueryParamValue     = "4000"
 	expectedDirectionQueryParamValue        = "forward"
 	expectedAmountQueryParams               = 4
+
+	userServiceContainerType = "user-service"
+
 )
+
+func NewLokiStreamValueForTest(userServiceGuid service.ServiceGUID, expectedValues [][]string) lokiStreamValue {
+	newLokiStreamValue := lokiStreamValue{
+		Stream: struct {
+			KurtosisContainerType string `json:"comKurtosistechContainerType"`
+			KurtosisGUID          string `json:"comKurtosistechGuid"`
+		}(struct {
+			KurtosisContainerType string
+			KurtosisGUID          string
+		}{KurtosisContainerType: userServiceContainerType, KurtosisGUID: string(userServiceGuid)}),
+		Values: expectedValues,
+	}
+	return newLokiStreamValue
+}
 
 func TestIfHttpRequestIsValidWhenCallingGetUserServiceLogs(t *testing.T) {
 	enclaveId := enclave.EnclaveID(testEnclaveId)
@@ -158,59 +175,32 @@ func TestNewUserServiceLogLinesByUserServiceGuidFromLokiStreamsReturnSuccessfull
 	userServiceGuidStr := "stream-logs-test-service-1666785469"
 	userServiceGuid := service.ServiceGUID(userServiceGuidStr)
 
+	expectedValuesInStream1 := [][]string{
+		{"1666785473000000000", "{\"container_id\":\"b0735bc50a76a0476928607aca13a4c73c814036bdbf8b989c2f3b458cc21eab\",\"container_name\":\"/ts-testsuite.stream-logs-test.1666785464--user-service--stream-logs-test-service-1666785469\",\"source\":\"stdout\",\"log\":\"kurtosis\",\"comKurtosistechGuid\":\"stream-logs-test-service-1666785469\",\"comKurtosistechContainerType\":\"user-service\",\"com.kurtosistech.enclave-id\":\"ts-testsuite.stream-logs-test.1666785464\"}"},
+	}
+
+	expectedValuesInStream2 := [][]string{
+		{"1666785473000000000", "{\"comKurtosistechGuid\":\"stream-logs-test-service-1666785469\",\"container_id\":\"b0735bc50a76a0476928607aca13a4c73c814036bdbf8b989c2f3b458cc21eab\",\"container_name\":\"/ts-testsuite.stream-logs-test.1666785464--user-service--stream-logs-test-service-1666785469\",\"source\":\"stdout\",\"log\":\"test\",\"comKurtosistechContainerType\":\"user-service\",\"com.kurtosistech.enclave-id\":\"ts-testsuite.stream-logs-test.1666785464\"}"},
+	}
+
+	expectedValuesInStream3 := [][]string{
+		{"1666785473000000000", "{\"comKurtosistechContainerType\":\"user-service\",\"com.kurtosistech.enclave-id\":\"ts-testsuite.stream-logs-test.1666785464\",\"comKurtosistechGuid\":\"stream-logs-test-service-1666785469\",\"container_id\":\"b0735bc50a76a0476928607aca13a4c73c814036bdbf8b989c2f3b458cc21eab\",\"container_name\":\"/ts-testsuite.stream-logs-test.1666785464--user-service--stream-logs-test-service-1666785469\",\"source\":\"stdout\",\"log\":\"running\"}"},
+	}
+
+	expectedValuesInStream4 := [][]string{
+		{"1666785473000000000", "{\"container_name\":\"/ts-testsuite.stream-logs-test.1666785464--user-service--stream-logs-test-service-1666785469\",\"source\":\"stdout\",\"log\":\"successfully\",\"comKurtosistechGuid\":\"stream-logs-test-service-1666785469\",\"comKurtosistechContainerType\":\"user-service\",\"com.kurtosistech.enclave-id\":\"ts-testsuite.stream-logs-test.1666785464\",\"container_id\":\"b0735bc50a76a0476928607aca13a4c73c814036bdbf8b989c2f3b458cc21eab\"}"},
+	}
+
+	lokiStreams1 := NewLokiStreamValueForTest(userServiceGuid, expectedValuesInStream1)
+	lokiStreams2 := NewLokiStreamValueForTest(userServiceGuid, expectedValuesInStream2)
+	lokiStreams3 := NewLokiStreamValueForTest(userServiceGuid, expectedValuesInStream3)
+	lokiStreams4 := NewLokiStreamValueForTest(userServiceGuid, expectedValuesInStream4)
+
 	lokiStreams := []lokiStreamValue{
-		 {
-			 Stream: struct {
-				 KurtosisContainerType string `json:"comKurtosistechContainerType"`
-				 KurtosisGUID          string `json:"comKurtosistechGuid"`
-			 }(struct {
-				 KurtosisContainerType string
-				 KurtosisGUID          string
-			 }{KurtosisContainerType: "user-service", KurtosisGUID: userServiceGuidStr}),
-			 Values: [][]string{
-				 {"1666785473000000000", "{\"container_id\":\"b0735bc50a76a0476928607aca13a4c73c814036bdbf8b989c2f3b458cc21eab\",\"container_name\":\"/ts-testsuite.stream-logs-test.1666785464--user-service--stream-logs-test-service-1666785469\",\"source\":\"stdout\",\"log\":\"kurtosis\",\"comKurtosistechGuid\":\"stream-logs-test-service-1666785469\",\"comKurtosistechContainerType\":\"user-service\",\"com.kurtosistech.enclave-id\":\"ts-testsuite.stream-logs-test.1666785464\"}"},
-			 },
-
-		},
-		{
-			Stream: struct {
-				KurtosisContainerType string `json:"comKurtosistechContainerType"`
-				KurtosisGUID          string `json:"comKurtosistechGuid"`
-			}(struct {
-				KurtosisContainerType string
-				KurtosisGUID          string
-			}{KurtosisContainerType: "user-service", KurtosisGUID: userServiceGuidStr}),
-			Values: [][]string{
-				{"1666785473000000000", "{\"comKurtosistechGuid\":\"stream-logs-test-service-1666785469\",\"container_id\":\"b0735bc50a76a0476928607aca13a4c73c814036bdbf8b989c2f3b458cc21eab\",\"container_name\":\"/ts-testsuite.stream-logs-test.1666785464--user-service--stream-logs-test-service-1666785469\",\"source\":\"stdout\",\"log\":\"test\",\"comKurtosistechContainerType\":\"user-service\",\"com.kurtosistech.enclave-id\":\"ts-testsuite.stream-logs-test.1666785464\"}"},
-			},
-
-		},
-		{
-			Stream: struct {
-				KurtosisContainerType string `json:"comKurtosistechContainerType"`
-				KurtosisGUID          string `json:"comKurtosistechGuid"`
-			}(struct {
-				KurtosisContainerType string
-				KurtosisGUID          string
-			}{KurtosisContainerType: "user-service", KurtosisGUID: userServiceGuidStr}),
-			Values: [][]string{
-				{"1666785473000000000", "{\"comKurtosistechContainerType\":\"user-service\",\"com.kurtosistech.enclave-id\":\"ts-testsuite.stream-logs-test.1666785464\",\"comKurtosistechGuid\":\"stream-logs-test-service-1666785469\",\"container_id\":\"b0735bc50a76a0476928607aca13a4c73c814036bdbf8b989c2f3b458cc21eab\",\"container_name\":\"/ts-testsuite.stream-logs-test.1666785464--user-service--stream-logs-test-service-1666785469\",\"source\":\"stdout\",\"log\":\"running\"}"},
-			},
-
-		},
-		{
-			Stream: struct {
-				KurtosisContainerType string `json:"comKurtosistechContainerType"`
-				KurtosisGUID          string `json:"comKurtosistechGuid"`
-			}(struct {
-				KurtosisContainerType string
-				KurtosisGUID          string
-			}{KurtosisContainerType: "user-service", KurtosisGUID: userServiceGuidStr}),
-			Values: [][]string{
-				{"1666785473000000000", "{\"container_name\":\"/ts-testsuite.stream-logs-test.1666785464--user-service--stream-logs-test-service-1666785469\",\"source\":\"stdout\",\"log\":\"successfully\",\"comKurtosistechGuid\":\"stream-logs-test-service-1666785469\",\"comKurtosistechContainerType\":\"user-service\",\"com.kurtosistech.enclave-id\":\"ts-testsuite.stream-logs-test.1666785464\",\"container_id\":\"b0735bc50a76a0476928607aca13a4c73c814036bdbf8b989c2f3b458cc21eab\"}"},
-			},
-
-		},
+		lokiStreams1,
+		lokiStreams2,
+		lokiStreams3,
+		lokiStreams4,
 	}
 
 	resultLogsByKurtosisUserServiceGuid, err := newUserServiceLogLinesByUserServiceGuidFromLokiStreams(lokiStreams)

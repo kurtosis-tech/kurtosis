@@ -22,18 +22,11 @@ const (
 	dockerGettingStartedImage                       = "docker/getting-started"
 	exampleServiceId             services.ServiceID = "stream-logs"
 
-	exampleServicePortId                            = "http"
-	exampleServicePrivatePortNum                    = 80
-
 	waitForAllLogsBeingCollectedInSeconds = 2
 
-	testTimeOut = 2 * time.Minute
+	testTimeOut = 90 * time.Second
 )
 
-var exampleServicePrivatePortSpec = services.NewPortSpec(
-	exampleServicePrivatePortNum,
-	services.PortProtocol_TCP,
-)
 func TestStreamLogs(t *testing.T) {
 	ctx := context.Background()
 
@@ -57,20 +50,18 @@ func TestStreamLogs(t *testing.T) {
 
 	enclaveID := enclaveCtx.GetEnclaveID()
 
-	time.Sleep(waitForAllLogsBeingCollectedInSeconds * time.Second)
-
 	serviceCtx, err := enclaveCtx.GetServiceContext(exampleServiceId)
 	require.NoError(t, err)
 
 	userServiceGuid := serviceCtx.GetServiceGUID()
 
-	userServiceGUIDs := map[services.ServiceGUID]bool{
+	userServiceGuids := map[services.ServiceGUID]bool{
 		userServiceGuid: true,
 	}
 
 	time.Sleep(waitForAllLogsBeingCollectedInSeconds * time.Second)
 
-	userServiceLogsByGuidChan, cancelStreamUserServiceLogsFunc, err := kurtosisCtx.StreamUserServiceLogs(ctx, enclaveID, userServiceGUIDs)
+	userServiceLogsByGuidChan, cancelStreamUserServiceLogsFunc, err := kurtosisCtx.StreamUserServiceLogs(ctx, enclaveID, userServiceGuids)
 	require.NoError(t, err)
 	require.NotNil(t, cancelStreamUserServiceLogsFunc)
 	require.NotNil(t, userServiceLogsByGuidChan)
@@ -115,7 +106,7 @@ func TestStreamLogs(t *testing.T) {
 func getExampleServiceConfig() *services.ContainerConfig {
 
 	entrypointArgs := []string{"/bin/sh", "-c"}
-	cmdArgs := []string{"for i in kurtosis test running successfully; do echo \"$i\"; if [ \"$i\" == \"successfully\" ]; then sleep 300; fi; done;"}
+	cmdArgs := []string{"for i in kurtosis test running successfully; do echo \"$i\"; done;"}
 
 	containerConfig := services.NewContainerConfigBuilder(
 		dockerGettingStartedImage,
@@ -123,8 +114,6 @@ func getExampleServiceConfig() *services.ContainerConfig {
 		entrypointArgs,
 	).WithCmdOverride(
 		cmdArgs,
-	).WithUsedPorts(map[string]*services.PortSpec{
-		exampleServicePortId: exampleServicePrivatePortSpec,
-	}).Build()
+	).Build()
 	return containerConfig
 }

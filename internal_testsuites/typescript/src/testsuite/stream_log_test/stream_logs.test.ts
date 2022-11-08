@@ -2,14 +2,13 @@ import {
     ContainerConfig,
     ContainerConfigBuilder,
     KurtosisContext,
-    PortProtocol,
-    PortSpec,
     ServiceGUID,
     ServiceID
 } from "kurtosis-sdk";
 import log from "loglevel";
 import {err} from "neverthrow";
 import {createEnclave} from "../../test_helpers/enclave_setup";
+import {Readable} from "stream";
 
 
 const TEST_NAME = "stream-logs"
@@ -18,12 +17,7 @@ const IS_PARTITIONING_ENABLED = false
 const DOCKER_GETTING_STARTED_IMAGE = "docker/getting-started"
 const EXAMPLE_SERVICE_ID: ServiceID = "stream-logs"
 
-const EXAMPLE_SERVICE_PORT_ID = "http"
-const EXAMPLE_SERVICE_PRIVATE_PORT_NUM = 80
-
 const WAIT_FOR_ALL_LOGS_BEING_COLLECTED_IN_SECONDS = 2
-
-const exampleServicePrivatePortSpec = new PortSpec(EXAMPLE_SERVICE_PRIVATE_PORT_NUM, PortProtocol.TCP)
 
 jest.setTimeout(180000)
 
@@ -86,47 +80,14 @@ async function TestStreamLogs() {
 
         const expectedLogLines = ["kurtosis", "test", "running", "successfully"];
 
-        const receivedLogLinesPromise: Promise<Array<string>> = new Promise<Array<string>>((resolve, _unusedReject) => {
-
-            let receivedLogLines: Array<string> = new Array<string>();
-
-            serviceLogsReadable.on('data', (userServiceLogsByGuid: Map<ServiceGUID, Array<string>>) => {
-                const userServiceLogLines: Array<string> | undefined = userServiceLogsByGuid.get(userServiceGuid);
-
-                if (userServiceLogLines !== undefined) {
-                    userServiceLogLines.forEach(logLine => {
-                        receivedLogLines.push(logLine)
-                    })
-                }
-
-                if (receivedLogLines.length === expectedLogLines.length) {
-                    serviceLogsReadable.destroy()
-                    resolve(receivedLogLines)
-                }
-            })
-
-
-            serviceLogsReadable.on('error', function (readableErr) {
-                if (!serviceLogsReadable.destroyed) {
-                    serviceLogsReadable.destroy()
-                    throw new Error(`Expected read all user service logs but an error was received from the user service readable object.\n Error: "${readableErr.message}"`)
-                }
-            })
-
-            serviceLogsReadable.on('end', function () {
-                if (!serviceLogsReadable.destroyed) {
-                    serviceLogsReadable.destroy()
-                    throw new Error("Expected read all user service logs but the user service readable logs object has finished before reading all the logs.")
-                }
-            })
-        })
+        const receivedLogLinesPromise: Promise<Array<string>> = newReceivedLogLinesPromise(serviceLogsReadable, userServiceGuid, expectedLogLines)
 
         const receivedLogLines = await receivedLogLinesPromise
 
         if (receivedLogLines.length === expectedLogLines.length) {
             receivedLogLines.forEach((logline, loglineIndex) => {
                 if (expectedLogLines[loglineIndex] != logline) {
-                    return err(new Error(`Expected to match the ${loglineIndex}º log line with this value ${expectedLogLines[loglineIndex]} but this one was received instead ${logline}`))
+                    return err(new Error(`Expected to match the number ${loglineIndex} log line with this value ${expectedLogLines[loglineIndex]} but this one was received instead ${logline}`))
                 }
             })
         } else {
@@ -141,21 +102,60 @@ async function TestStreamLogs() {
 
 }
 
+function newReceivedLogLinesPromise(
+    serviceLogsReadable: Readable,
+    userServiceGuid: string,
+    expectedLogLines: string[],
+): Promise<Array<string>> {
+    const receivedLogLinesPromise: Promise<Array<string>> = new Promise<Array<string>>((resolve, _unusedReject) => {
+
+        let receivedLogLines: Array<string> = new Array<string>();
+
+        serviceLogsReadable.on('data', (userServiceLogsByGuid: Map<ServiceGUID, Array<string>>) => {
+            const userServiceLogLines: Array<string> | undefined = userServiceLogsByGuid.get(userServiceGuid);
+
+            if (userServiceLogLines !== undefined) {
+                userServiceLogLines.forEach(logLine => {
+                    receivedLogLines.push(logLine)
+                })
+            }
+
+            if (receivedLogLines.length === expectedLogLines.length) {
+                serviceLogsReadable.destroy()
+                resolve(receivedLogLines)
+            }
+        })
+
+
+        serviceLogsReadable.on('error', function (readableErr: { message: any; }) {
+            if (!serviceLogsReadable.destroyed) {
+                serviceLogsReadable.destroy()
+                throw new Error(`Expected read all user service logs but an error was received from the user service readable object.\n Error: "${readableErr.message}"`)
+            }
+        })
+
+        serviceLogsReadable.on('end', function () {
+            if (!serviceLogsReadable.destroyed) {
+                serviceLogsReadable.destroy()
+                throw new Error("Expected read all user service logs but the user service readable logs object has finished before reading all the logs.")
+            }
+        })
+    })
+
+    return receivedLogLinesPromise;
+}
+
 // ====================================================================================================
 //                                       Private helper functions
 // ====================================================================================================
 function containerConfig(): ContainerConfig {
 
     const entrypointArgs = ["/bin/sh", "-c"]
-    const cmdArgs = ["for i in kurtosis test running successfully; do echo \"$i\"; if [ \"$i\" == \"successfully\" ]; then sleep 300; fi; done;"]
-
-    const exampleServicePort = new Map<string, PortSpec>()
-    exampleServicePort.set(EXAMPLE_SERVICE_PORT_ID, exampleServicePrivatePortSpec)
+    const cmdArgs = ["for i in kurtosis test running successfully; do echo \"$i\"; done;"]
 
     const containerConfig = new ContainerConfigBuilder(DOCKER_GETTING_STARTED_IMAGE)
         .withEntrypointOverride(entrypointArgs)
         .withCmdOverride(cmdArgs)
-        .withUsedPorts(exampleServicePort)
         .build()
 
     return containerConfig

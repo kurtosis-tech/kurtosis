@@ -370,12 +370,6 @@ func (enclaveCtx *EnclaveContext) GetServiceContext(serviceId services.ServiceID
 			serviceId)
 	}
 
-	if serviceInfo.GetMaybePublicIpAddr() == "" {
-		return nil, stacktrace.NewError(
-			"Kurtosis API reported an empty public IP address for service '%v' - this should never happen, and is a bug with Kurtosis!",
-			serviceId)
-	}
-
 	serviceCtxPrivatePorts, err := convertApiPortsToServiceContextPorts(serviceInfo.GetPrivatePorts())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred converting the private ports returned by the API to ports usable by the service context")

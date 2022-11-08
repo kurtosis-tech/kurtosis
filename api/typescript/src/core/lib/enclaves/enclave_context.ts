@@ -472,12 +472,6 @@ export class EnclaveContext {
                 )
             );
         }
-        if (serviceInfo.getMaybePublicIpAddr() === "") {
-            return err(new Error(
-                    "Kurtosis API reported an empty public IP address for service " + serviceId +  " - this should never happen, and is a bug with Kurtosis!",
-                )
-            );
-        }
 
         const serviceCtxPrivatePorts: Map<string, PortSpec> = EnclaveContext.convertApiPortsToServiceContextPorts(
             serviceInfo.getPrivatePortsMap(),
