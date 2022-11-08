@@ -227,7 +227,7 @@ func replaceFactsInString(originalString string, factsEngine *facts_engine.Facts
 		}
 		factValues, err := factsEngine.FetchLatestFactValues(facts_engine.GetFactId(match[serviceIdMatchIndex], match[factNameMatchIndex]))
 		if err != nil {
-			return "", stacktrace.Propagate(err, "There was an error fetching fact value while replacing string '%v' '' ", match[serviceIdMatchIndex], match[factNameMatchIndex])
+			return "", stacktrace.Propagate(err, "There was an error fetching fact value while replacing string '%v' '%v' ", match[serviceIdMatchIndex], match[factNameMatchIndex])
 		}
 		allMatchIndex := compiledFactReplacementRegex.SubexpIndex(allSubgroupName)
 		if allMatchIndex == subExpNotFound {
