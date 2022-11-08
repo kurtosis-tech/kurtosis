@@ -15,7 +15,10 @@ func TestReadFile_StringRepresentation(t *testing.T) {
 		*kurtosis_instruction.NewInstructionPosition(3, 33, "dummyFile"),
 		filePath,
 	)
-	expectedStr := `read_file(src_path="` + filePath + `")`
+	expectedStr := `// from: dummyFile-3:33
+read_file(
+	src_path="` + filePath + `",
+)`
 	require.Equal(t, expectedStr, testInstruction.String())
 	require.Equal(t, expectedStr, testInstruction.GetCanonicalInstruction())
 }
