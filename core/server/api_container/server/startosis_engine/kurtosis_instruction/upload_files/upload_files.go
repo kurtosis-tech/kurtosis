@@ -2,7 +2,6 @@ package upload_files
 
 import (
 	"context"
-	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
@@ -14,7 +13,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
-	"strings"
 )
 
 const (
@@ -67,11 +65,9 @@ func (instruction *UploadFilesInstruction) GetPositionInOriginalScript() *kurtos
 }
 
 func (instruction *UploadFilesInstruction) GetCanonicalInstruction() string {
-	buffer := new(strings.Builder)
-	buffer.WriteString(UploadFilesBuiltinName + "(")
-	buffer.WriteString(srcPathArgName + "=\"")
-	buffer.WriteString(fmt.Sprintf("%v\")", instruction.srcPath))
-	return buffer.String()
+	return shared_helpers.CanonicalizeInstruction(UploadFilesBuiltinName, starlark.StringDict{
+		srcPathArgName: starlark.String(instruction.srcPath),
+	}, &instruction.position)
 }
 
 func (instruction *UploadFilesInstruction) Execute(_ context.Context, environment *startosis_executor.ExecutionEnvironment) error {
