@@ -329,9 +329,11 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 			continue
 		}
 
+
 		serviceContext := services.NewServiceContext(
 			enclaveCtx.client,
 			serviceID,
+			services.ServiceGUID(serviceInfo.GetServiceGuid()),
 			serviceInfo.GetPrivateIpAddr(),
 			serviceCtxPrivatePorts,
 			serviceInfo.GetMaybePublicIpAddr(),
@@ -367,11 +369,6 @@ func (enclaveCtx *EnclaveContext) GetServiceContext(serviceId services.ServiceID
 			"Kurtosis API reported an empty private IP address for service '%v' - this should never happen, and is a bug with Kurtosis!",
 			serviceId)
 	}
-	if serviceInfo.GetMaybePublicIpAddr() == "" {
-		return nil, stacktrace.NewError(
-			"Kurtosis API reported an empty public IP address for service '%v' - this should never happen, and is a bug with Kurtosis!",
-			serviceId)
-	}
 
 	serviceCtxPrivatePorts, err := convertApiPortsToServiceContextPorts(serviceInfo.GetPrivatePorts())
 	if err != nil {
@@ -385,6 +382,7 @@ func (enclaveCtx *EnclaveContext) GetServiceContext(serviceId services.ServiceID
 	serviceContext := services.NewServiceContext(
 		enclaveCtx.client,
 		serviceId,
+		services.ServiceGUID(serviceInfo.ServiceGuid),
 		serviceInfo.GetPrivateIpAddr(),
 		serviceCtxPrivatePorts,
 		serviceInfo.GetMaybePublicIpAddr(),

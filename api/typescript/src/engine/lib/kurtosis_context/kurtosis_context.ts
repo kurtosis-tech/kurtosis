@@ -32,6 +32,7 @@ import {
     newGetUserServiceLogsArgs,
     newStopEnclaveArgs
 } from "../constructor_calls";
+import {Readable} from "stream";
 
 const LOCAL_HOSTNAME: string = "localhost";
 
@@ -203,10 +204,7 @@ export class KurtosisContext {
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis/engine-lib-documentation
-    public async getUserServiceLogs(
-        enclaveID: EnclaveID,
-        userServiceGUIDs: Set<ServiceGUID>
-    ): Promise<Result<Map<ServiceGUID, Array<string>>, Error>> {
+    public async getUserServiceLogs(enclaveID: EnclaveID, userServiceGUIDs: Set<ServiceGUID>): Promise<Result<Map<string, Array<string>>, Error>> {
         const getUserServiceLogsArgs: GetUserServiceLogsArgs = newGetUserServiceLogsArgs(enclaveID, userServiceGUIDs);
         const getUserServiceLogsResult = await this.client.getUserServiceLogs(getUserServiceLogsArgs)
         if(getUserServiceLogsResult.isErr()){
@@ -224,6 +222,26 @@ export class KurtosisContext {
         return ok(result)
     }
 
+    //The Readable object returned will be constantly streaming the user service logs an sending on this form Map<ServiceGuid, Array<string>>
+    //The map value contains the user service logs lines
+    //Example of how to read the stream:
+    //
+    //serviceLogsReadable.on('data', (userServiceLogsByGuid: Map<ServiceGUID, Array<string>>) => {
+    //      //insert your code here
+    //})
+    //You can cancel receiving the stream from the service calling serviceLogsReadable.destroy()
+    public async streamUserServiceLogs(enclaveID: EnclaveID, userServiceGUIDs: Set<ServiceGUID>): Promise<Result<Readable, Error>> {
+        const getUserServiceLogsArgs: GetUserServiceLogsArgs = newGetUserServiceLogsArgs(enclaveID, userServiceGUIDs);
+
+        const streamUserServiceLogsResult = await this.client.streamUserServiceLogs(getUserServiceLogsArgs);
+        if(streamUserServiceLogsResult.isErr()){
+            return err(streamUserServiceLogsResult.error)
+        }
+
+        const serviceLogsReadable: Readable = streamUserServiceLogsResult.value;
+
+        return ok(serviceLogsReadable)
+    }
 
     // ====================================================================================================
     //                                       Private helper functions

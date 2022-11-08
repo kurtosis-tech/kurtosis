@@ -347,6 +347,14 @@ Gets the ID that Kurtosis uses to identify the service.
 
 The service's ID.
 
+### getServiceGuid() -\> ServiceGUID
+Gets the GUID (Globally Unique Identifier) that Kurtosis creates and uses to identify the service.
+The differences with the ID is that this one is created by Kurtosis, users can't specify it, and this never can be repeated, every new execution of the same service will have a new GUID
+
+**Returns**
+
+The service's GUID.
+
 ### getPrivateIpAddress() -\> String
 Gets the IP address where the service is reachable at from _inside_ the enclave that the container is running inside. This IP address is how other containers inside the enclave can connect to the service.
 
