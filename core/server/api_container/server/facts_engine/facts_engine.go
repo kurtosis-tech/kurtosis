@@ -303,17 +303,17 @@ func extractFactFromJson(fieldExtractor string, body []byte) (*kurtosis_core_rpc
 	}
 	iter := query.Run(jsonBody)
 	for {
-		v, ok := iter.Next()
+		matchValue, ok := iter.Next()
 		if !ok {
 			break
 		}
-		if err, ok := v.(error); ok {
+		if err, ok := matchValue.(error); ok {
 			log.Fatalln(err)
 		}
-		if v != nil {
+		if matchValue != nil {
 			return &kurtosis_core_rpc_api_bindings.FactValue{
 				FactValue: &kurtosis_core_rpc_api_bindings.FactValue_StringValue{
-					StringValue: fmt.Sprintf("%v", v),
+					StringValue: fmt.Sprintf("%v", matchValue),
 				},
 			}, nil
 		}

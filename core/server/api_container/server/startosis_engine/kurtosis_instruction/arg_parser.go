@@ -46,6 +46,8 @@ const (
 	templateDataJSONFieldKey = starlark.String("template_data_json")
 
 	maxPortNumber = 65535
+
+	getRequestMethod = "GET"
 )
 
 func ParseServiceId(serviceIdRaw starlark.String) (service.ServiceID, *startosis_errors.InterpretationError) {
@@ -92,7 +94,7 @@ func ParseHttpRequestFactRecipe(serviceConfig *starlarkstruct.Struct) (*kurtosis
 		return nil, interpretationErr
 	}
 
-	if method == "GET" {
+	if method == getRequestMethod {
 		builtConfig := binding_constructors.NewGetHttpRequestFactRecipeDefinition(portId, endpoint, maybeFieldExtractor)
 		return builtConfig, nil
 	} else {

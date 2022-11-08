@@ -30,8 +30,8 @@ func GenerateWaitBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstr
 		if interpretationError != nil {
 			return nil, interpretationError
 		}
-		execInstruction := NewWaitInstruction(factsEngine, *shared_helpers.GetCallerPositionFromThread(thread), serviceId, commandArgs)
-		*instructionsQueue = append(*instructionsQueue, execInstruction)
+		waitInstruction := NewWaitInstruction(factsEngine, *shared_helpers.GetCallerPositionFromThread(thread), serviceId, commandArgs)
+		*instructionsQueue = append(*instructionsQueue, waitInstruction)
 		return starlark.None, nil
 	}
 }
@@ -82,6 +82,7 @@ func (instruction *WaitInstruction) ValidateAndUpdateEnvironment(environment *st
 	if !environment.DoesServiceIdExist(instruction.serviceId) {
 		return stacktrace.NewError("There was an error validating exec with service ID '%v' that does not exist", instruction.serviceId)
 	}
+	// TODO(victor.colombo): Add fact validation
 	return nil
 }
 

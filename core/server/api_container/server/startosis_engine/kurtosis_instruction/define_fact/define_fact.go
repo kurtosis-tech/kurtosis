@@ -88,6 +88,7 @@ func (instruction *DefineFactInstruction) ValidateAndUpdateEnvironment(environme
 	if !environment.DoesServiceIdExist(instruction.serviceId) {
 		return stacktrace.NewError("There was an error validating exec with service ID '%v' that does not exist", instruction.serviceId)
 	}
+	// TODO(victor.colombo): Add fact validation
 	return nil
 }
 
