@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
@@ -49,6 +50,8 @@ const (
 
 	noExecutionError      = ""
 	noInterpretationError = ""
+
+	defaultStartosisDryRun = false
 
 	// We do it this way as if we were to interpret the main file,
 	// we'd only read the symbols, and maybe there's nothing that calls in `main()`
@@ -204,7 +207,7 @@ func (apicService ApiContainerService) ExecuteModule(ctx context.Context, args *
 
 func (apicService ApiContainerService) ExecuteStartosisScript(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptArgs) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse, error) {
 	serializedStartosisScript := args.GetSerializedScript()
-	return apicService.executeStartosis(ctx, args.DryRun, startosis_engine.ModuleIdPlaceholderForStandaloneScripts, serializedStartosisScript, startosis_engine.EmptyInputArgs)
+	return apicService.executeStartosis(ctx, shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun), startosis_engine.ModuleIdPlaceholderForStandaloneScripts, serializedStartosisScript, startosis_engine.EmptyInputArgs)
 }
 
 func (apicService ApiContainerService) ExecuteStartosisModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleArgs) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse, error) {
@@ -231,7 +234,7 @@ func (apicService ApiContainerService) ExecuteStartosisModule(ctx context.Contex
 		// types file exists in module, input_args will be provided by the boot script
 		scriptWithMainToExecute = fmt.Sprintf(bootScript, moduleId, startosis_engine.MainInputArgName)
 	}
-	return apicService.executeStartosis(ctx, args.DryRun, moduleId, scriptWithMainToExecute, serializedParams)
+	return apicService.executeStartosis(ctx, shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun), moduleId, scriptWithMainToExecute, serializedParams)
 }
 
 func (apicService ApiContainerService) StartServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServicesArgs) (*kurtosis_core_rpc_api_bindings.StartServicesResponse, error) {

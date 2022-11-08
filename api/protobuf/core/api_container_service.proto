@@ -244,7 +244,8 @@ message ExecuteModuleResponse {
 message ExecuteStartosisScriptArgs {
   string serialized_script = 1;
 
-  bool dry_run = 2;
+  // Defaults to false
+  optional bool dry_run = 2;
 }
 
 // ==============================================================================================
@@ -258,7 +259,8 @@ message ExecuteStartosisModuleArgs {
   // This should be a valid JSON string
   string serialized_params = 3;
 
-  bool dry_run = 4;
+  // Defaults to false
+  optional bool dry_run = 4;
 }
 
 // ==============================================================================================

@@ -345,6 +345,8 @@ export class ExecuteStartosisScriptArgs extends jspb.Message {
 
   getDryRun(): boolean;
   setDryRun(value: boolean): ExecuteStartosisScriptArgs;
+  hasDryRun(): boolean;
+  clearDryRun(): ExecuteStartosisScriptArgs;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ExecuteStartosisScriptArgs.AsObject;
@@ -357,7 +359,12 @@ export class ExecuteStartosisScriptArgs extends jspb.Message {
 export namespace ExecuteStartosisScriptArgs {
   export type AsObject = {
     serializedScript: string,
-    dryRun: boolean,
+    dryRun?: boolean,
+  }
+
+  export enum DryRunCase { 
+    _DRY_RUN_NOT_SET = 0,
+    DRY_RUN = 2,
   }
 }
 
@@ -375,6 +382,8 @@ export class ExecuteStartosisModuleArgs extends jspb.Message {
 
   getDryRun(): boolean;
   setDryRun(value: boolean): ExecuteStartosisModuleArgs;
+  hasDryRun(): boolean;
+  clearDryRun(): ExecuteStartosisModuleArgs;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ExecuteStartosisModuleArgs.AsObject;
@@ -389,7 +398,12 @@ export namespace ExecuteStartosisModuleArgs {
     moduleId: string,
     data: Uint8Array | string,
     serializedParams: string,
-    dryRun: boolean,
+    dryRun?: boolean,
+  }
+
+  export enum DryRunCase { 
+    _DRY_RUN_NOT_SET = 0,
+    DRY_RUN = 4,
   }
 }
 

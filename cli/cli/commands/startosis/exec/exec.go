@@ -53,8 +53,9 @@ var StartosisExecCmd = &lowlevel.LowlevelKurtosisCommand{
 		"provided, Kurtosis will create a new enclave with a default name derived from the script or module name.",
 	Flags: []*flags.FlagConfig{
 		{
-			Key:     dryRunFlagKey,
-			Usage:   "If set, the Kurtosis instructions will not be submitted to Kurtosis engine, only printed to the output of the CLI",
+			Key: dryRunFlagKey,
+			// TODO(gb): link to a doc page mentioning what a "Kurtosis instruction" is
+			Usage:   "If true, the Kurtosis instructions will not be executed, they will just be printed to the output of the CLI",
 			Type:    flags.FlagType_Bool,
 			Default: defaultDryRun,
 		},
@@ -225,7 +226,7 @@ func executeModule(enclaveCtx *enclaves.EnclaveContext, modulePath string, seria
 
 	err = validateExecutionResponse(executionResponse, modulePath, moduleArgForLogging, dryRun)
 	if err != nil {
-		return stacktrace.Propagate(err, "Ran into a few errors while interpreting, validating or executing the module '%v'", modulePath)
+		return stacktrace.Propagate(err, "Ran into a few errors while interpreting, validating or executing the module '%v' with dry-run set to '%v'", modulePath, dryRun)
 	}
 
 	return nil

@@ -12,17 +12,25 @@ import (
 	"testing"
 )
 
-func TestExecuteKurtosisInstructions_ForReal_Success(t *testing.T) {
+const (
+	executeSuccessfully = true
+	throwOnExecute      = false
+
+	doDryRun       = true
+	executeForReal = false
+)
+
+func TestExecuteKurtosisInstructions_ExecuteForReal_Success(t *testing.T) {
 	executor := NewStartosisExecutor()
 
-	instruction1 := createMockInstruction(t, "instruction1()", false)
-	instruction2 := createMockInstruction(t, "instruction2()", false)
+	instruction1 := createMockInstruction(t, "instruction1()", executeSuccessfully)
+	instruction2 := createMockInstruction(t, "instruction2()", executeSuccessfully)
 	instructions := []kurtosis_instruction.KurtosisInstruction{
 		instruction1,
 		instruction2,
 	}
 
-	serializedInstruction, err := executor.Execute(context.Background(), false, instructions)
+	serializedInstruction, err := executor.Execute(context.Background(), executeForReal, instructions)
 	instruction1.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
 	instruction1.AssertNumberOfCalls(t, "Execute", 1)
 	instruction2.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
@@ -37,19 +45,19 @@ func TestExecuteKurtosisInstructions_ForReal_Success(t *testing.T) {
 	require.Equal(t, serializedInstruction, expectedSerializedInstructions)
 }
 
-func TestExecuteKurtosisInstructions_ForReal_FailureHalfWay(t *testing.T) {
+func TestExecuteKurtosisInstructions_ExecuteForReal_FailureHalfWay(t *testing.T) {
 	executor := NewStartosisExecutor()
 
-	instruction1 := createMockInstruction(t, "instruction1()", false)
-	instruction2 := createMockInstruction(t, "instruction2()", true)
-	instruction3 := createMockInstruction(t, "instruction3()", false)
+	instruction1 := createMockInstruction(t, "instruction1()", executeSuccessfully)
+	instruction2 := createMockInstruction(t, "instruction2()", throwOnExecute)
+	instruction3 := createMockInstruction(t, "instruction3()", executeSuccessfully)
 	instructions := []kurtosis_instruction.KurtosisInstruction{
 		instruction1,
 		instruction2,
 		instruction3,
 	}
 
-	serializedInstruction, err := executor.Execute(context.Background(), false, instructions)
+	serializedInstruction, err := executor.Execute(context.Background(), executeForReal, instructions)
 	instruction1.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
 	instruction1.AssertNumberOfCalls(t, "Execute", 1)
 	instruction2.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
@@ -73,17 +81,17 @@ instruction2()
 	require.Equal(t, serializedInstruction, expectedSerializedInstructions)
 }
 
-func TestExecuteKurtosisInstructions_DryRun(t *testing.T) {
+func TestExecuteKurtosisInstructions_DoDryRun(t *testing.T) {
 	executor := NewStartosisExecutor()
 
-	instruction1 := createMockInstruction(t, "instruction1()", false)
-	instruction2 := createMockInstruction(t, "instruction2()", false)
+	instruction1 := createMockInstruction(t, "instruction1()", executeSuccessfully)
+	instruction2 := createMockInstruction(t, "instruction2()", executeSuccessfully)
 	instructions := []kurtosis_instruction.KurtosisInstruction{
 		instruction1,
 		instruction2,
 	}
 
-	serializedInstruction, err := executor.Execute(context.Background(), true, instructions)
+	serializedInstruction, err := executor.Execute(context.Background(), doDryRun, instructions)
 	instruction1.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
 	instruction2.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
 	// both execute never called because dry run = true
@@ -99,15 +107,15 @@ func TestExecuteKurtosisInstructions_DryRun(t *testing.T) {
 	require.Equal(t, serializedInstruction, expectedSerializedInstructions)
 }
 
-func createMockInstruction(t *testing.T, canonicalizedInstruction string, doError bool) *mock_instruction.MockKurtosisInstruction {
+func createMockInstruction(t *testing.T, canonicalizedInstruction string, executeSuccessfully bool) *mock_instruction.MockKurtosisInstruction {
 	instruction := mock_instruction.NewMockKurtosisInstruction(t)
 
 	instruction.EXPECT().GetCanonicalInstruction().Maybe().Return(canonicalizedInstruction)
 
-	if doError {
-		instruction.EXPECT().Execute(mock.Anything, mock.Anything).Maybe().Return(errors.New("expected error for test"))
-	} else {
+	if executeSuccessfully {
 		instruction.EXPECT().Execute(mock.Anything, mock.Anything).Maybe().Return(nil)
+	} else {
+		instruction.EXPECT().Execute(mock.Anything, mock.Anything).Maybe().Return(errors.New("expected error for test"))
 	}
 
 	return instruction

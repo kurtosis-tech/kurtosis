@@ -223,7 +223,7 @@ func GetFactValuesArgs(serviceId string, factName string) *kurtosis_core_rpc_api
 func NewExecuteStartosisScriptArgs(serializedString string, dryRun bool) *kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptArgs {
 	return &kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptArgs{
 		SerializedScript: serializedString,
-		DryRun:           dryRun,
+		DryRun:           &dryRun,
 	}
 }
 
@@ -236,7 +236,7 @@ func NewExecuteStartosisModuleArgs(moduleId string, compressedModule []byte, ser
 		ModuleId:         moduleId,
 		Data:             compressedModule,
 		SerializedParams: serializedParams,
-		DryRun:           dryRun,
+		DryRun:           &dryRun,
 	}
 }
 

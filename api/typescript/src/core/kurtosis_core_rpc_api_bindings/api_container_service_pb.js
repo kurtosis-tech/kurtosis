@@ -3777,8 +3777,8 @@ proto.api_container_api.ExecuteStartosisScriptArgs.serializeBinaryToWriter = fun
       f
     );
   }
-  f = message.getDryRun();
-  if (f) {
+  f = /** @type {boolean} */ (jspb.Message.getField(message, 2));
+  if (f != null) {
     writer.writeBool(
       2,
       f
@@ -3819,7 +3819,25 @@ proto.api_container_api.ExecuteStartosisScriptArgs.prototype.getDryRun = functio
  * @return {!proto.api_container_api.ExecuteStartosisScriptArgs} returns this
  */
 proto.api_container_api.ExecuteStartosisScriptArgs.prototype.setDryRun = function(value) {
-  return jspb.Message.setProto3BooleanField(this, 2, value);
+  return jspb.Message.setField(this, 2, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.api_container_api.ExecuteStartosisScriptArgs} returns this
+ */
+proto.api_container_api.ExecuteStartosisScriptArgs.prototype.clearDryRun = function() {
+  return jspb.Message.setField(this, 2, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.ExecuteStartosisScriptArgs.prototype.hasDryRun = function() {
+  return jspb.Message.getField(this, 2) != null;
 };
 
 
@@ -3961,8 +3979,8 @@ proto.api_container_api.ExecuteStartosisModuleArgs.serializeBinaryToWriter = fun
       f
     );
   }
-  f = message.getDryRun();
-  if (f) {
+  f = /** @type {boolean} */ (jspb.Message.getField(message, 4));
+  if (f != null) {
     writer.writeBool(
       4,
       f
@@ -4063,7 +4081,25 @@ proto.api_container_api.ExecuteStartosisModuleArgs.prototype.getDryRun = functio
  * @return {!proto.api_container_api.ExecuteStartosisModuleArgs} returns this
  */
 proto.api_container_api.ExecuteStartosisModuleArgs.prototype.setDryRun = function(value) {
-  return jspb.Message.setProto3BooleanField(this, 4, value);
+  return jspb.Message.setField(this, 4, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.api_container_api.ExecuteStartosisModuleArgs} returns this
+ */
+proto.api_container_api.ExecuteStartosisModuleArgs.prototype.clearDryRun = function() {
+  return jspb.Message.setField(this, 4, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.ExecuteStartosisModuleArgs.prototype.hasDryRun = function() {
+  return jspb.Message.getField(this, 4) != null;
 };
 
 
