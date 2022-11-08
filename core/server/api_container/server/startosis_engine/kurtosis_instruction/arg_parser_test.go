@@ -558,7 +558,7 @@ func TestParsePrivateIPAddressPlaceholder_Success(t *testing.T) {
 	require.Equal(t, "KURTOSIS_IP_ADDRESS", output)
 }
 
-func TestParsePrivateIPAddressPlaceholder_FailureNonsString(t *testing.T) {
+func TestParsePrivateIPAddressPlaceholder_FailureNonString(t *testing.T) {
 	dict := starlark.StringDict{}
 	dict["private_ip_address_placeholder"] = starlark.MakeInt(42)
 	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
