@@ -30,7 +30,7 @@ func NewInstructionPosition(line int32, col int32, filename string) *Instruction
 }
 
 func (position *InstructionPosition) String() string {
-	return fmt.Sprintf("%v-%v:%v", position.filename, position.line, position.col)
+	return fmt.Sprintf("%s[%d:%d]", position.filename, position.line, position.col)
 }
 
 // MagicString the magic string allows us to identify an instruction that doesn't
