@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
@@ -50,6 +51,8 @@ const (
 	noExecutionError      = ""
 	noInterpretationError = ""
 
+	defaultStartosisDryRun = false
+
 	// We do it this way as if we were to interpret the main file,
 	// we'd only read the symbols, and maybe there's nothing that calls in `main()`
 	// This way, we're guaranteed that the `main()` function gets called within main.star
@@ -63,7 +66,8 @@ main(%v)
 )
 
 var (
-	noValidationErrors = []*kurtosis_core_rpc_api_bindings.StartosisValidationError{}
+	noValidationErrors       []*kurtosis_core_rpc_api_bindings.StartosisValidationError
+	noSerializedInstructions []*kurtosis_core_rpc_api_bindings.SerializedKurtosisInstruction
 )
 
 // Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and port spec protos
@@ -203,7 +207,7 @@ func (apicService ApiContainerService) ExecuteModule(ctx context.Context, args *
 
 func (apicService ApiContainerService) ExecuteStartosisScript(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptArgs) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse, error) {
 	serializedStartosisScript := args.GetSerializedScript()
-	return apicService.executeStartosis(ctx, startosis_engine.ModuleIdPlaceholderForStandaloneScripts, serializedStartosisScript, startosis_engine.EmptyInputArgs)
+	return apicService.executeStartosis(ctx, shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun), startosis_engine.ModuleIdPlaceholderForStandaloneScripts, serializedStartosisScript, startosis_engine.EmptyInputArgs)
 }
 
 func (apicService ApiContainerService) ExecuteStartosisModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleArgs) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse, error) {
@@ -230,7 +234,7 @@ func (apicService ApiContainerService) ExecuteStartosisModule(ctx context.Contex
 		// types file exists in module, input_args will be provided by the boot script
 		scriptWithMainToExecute = fmt.Sprintf(bootScript, moduleId, startosis_engine.MainInputArgName)
 	}
-	return apicService.executeStartosis(ctx, moduleId, scriptWithMainToExecute, serializedParams)
+	return apicService.executeStartosis(ctx, shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun), moduleId, scriptWithMainToExecute, serializedParams)
 }
 
 func (apicService ApiContainerService) StartServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServicesArgs) (*kurtosis_core_rpc_api_bindings.StartServicesResponse, error) {
@@ -814,7 +818,7 @@ func (apicService ApiContainerService) getModuleInfo(ctx context.Context, module
 	return response, nil
 }
 
-func (apicService ApiContainerService) executeStartosis(ctx context.Context, moduleId string, serializedStartosis string, serializedParams string) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse, error) {
+func (apicService ApiContainerService) executeStartosis(ctx context.Context, dryRun bool, moduleId string, serializedStartosis string, serializedParams string) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse, error) {
 	// TODO(gb): add metric tracking maybe?
 
 	interpretationOutput, potentialInterpretationError, generatedInstructionsList :=
@@ -825,6 +829,7 @@ func (apicService ApiContainerService) executeStartosis(ctx context.Context, mod
 			potentialInterpretationError.Error(),
 			noValidationErrors,
 			noExecutionError,
+			noSerializedInstructions,
 		), nil
 	}
 	logrus.Debugf("Successfully interpreted Startosis script into a series of Kurtosis instructions: \n%v",
@@ -838,17 +843,19 @@ func (apicService ApiContainerService) executeStartosis(ctx context.Context, mod
 			noInterpretationError,
 			validationErrors,
 			noExecutionError,
+			noSerializedInstructions,
 		), nil
 	}
 	logrus.Debugf("Successfully validated Startosis script")
 
-	err := apicService.startosisExecutor.Execute(ctx, generatedInstructionsList)
+	serializedSuccessfullyExecutedInstructions, err := apicService.startosisExecutor.Execute(ctx, dryRun, generatedInstructionsList)
 	if err != nil {
 		return binding_constructors.NewExecuteStartosisResponse(
 			string(interpretationOutput),
 			noInterpretationError,
 			noValidationErrors,
 			err.Error(),
+			serializedSuccessfullyExecutedInstructions,
 		), nil
 	}
 	logrus.Debugf("Successfully executed the list of Kurtosis instructions")
@@ -858,5 +865,6 @@ func (apicService ApiContainerService) executeStartosis(ctx context.Context, mod
 		noInterpretationError,
 		noValidationErrors,
 		noExecutionError,
+		serializedSuccessfullyExecutedInstructions,
 	), nil
 }

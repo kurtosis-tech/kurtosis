@@ -1,4 +1,7 @@
 # TBD
+### Features
+- Added an optional `--dry-run` flag to the `startosis exec` (defaulting to false) command which prints the list of Kurtosis instruction without executing any. When `--dry-run` is set to false, the list of Kurtosis instructions is printed to the output of CLI after being executed.
+
 ### Breaking Changes
 - Unified `GetUserServiceLogs` and `StreamUserServiceLogs` engine's endpoints, now `GetUserServiceLogs` will handle both use cases
   - Users will have to re-adapt `GetUserServiceLogs` calls and replace the `StreamUserServiceLogs` call with this
@@ -12,6 +15,14 @@
 - InterpretationError is now able to store a `cause`. It simplifies being more explicit on want the root issue was
 - Added `upload_service` to Startosis
 - Add `--args` to `kurtosis startosis exec` CLI command to pass in a serialized JSON
+
+# 0.51.11
+### Features
+- Improve how kurtosis instructions are canonicalized with a universal canonicalizer. Each instruction is now printed on multiple lines with a comment pointing the to position in the source code.
+- Support `private_ip_address_placeholder` to be passed in `service_config` for `add_service` in Starlark
+
+### Changes
+- Updated how we generate the canonical string for Kurtosis `upload_files` instruction
 
 # 0.51.10
 ### Changes
@@ -28,6 +39,9 @@
 
 ### Changes
 - Updated the CLI `service logs` command in order to use the new `KurtosisContext.StreamUserServiceLogs` when user requested to follow logs
+- InterpretationError is now able to store a `cause`. It simplifies being more explicit on want the root issue was
+- Added `upload_service` to Startosis
+- Add `--args` to `kurtosis startosis exec` CLI command to pass in a serialized JSON
 
 # 0.51.8
 ### Features

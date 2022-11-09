@@ -7,6 +7,7 @@ import {validateDataStoreServiceIsHealthy} from "../../test_helpers/test_helpers
 
 const TEST_NAME = "upload-files-test"
 const IS_PARTITIONING_ENABLED = false
+const DEFAULT_DRY_RUN = false
 
 const SERVICE_ID = "example-datastore-server-1"
 const PORT_ID = "grpc"
@@ -55,7 +56,7 @@ test("Test upload files startosis", async () => {
     try {
         // ------------------------------------- TEST SETUP ----------------------------------------------
         log.info("Loading module...")
-        const executeStartosisScriptResult = await enclaveContext.executeStartosisScript(STARTOSIS_SCRIPT)
+        const executeStartosisScriptResult = await enclaveContext.executeStartosisScript(STARTOSIS_SCRIPT, DEFAULT_DRY_RUN)
 
         if (executeStartosisScriptResult.isErr()) {
             log.error("An error occurred executing the Startosis SCript")

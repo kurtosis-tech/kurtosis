@@ -11,6 +11,7 @@ import (
 const (
 	testName              = "startosis_remove_service_test"
 	isPartitioningEnabled = false
+	defaultDryRun         = false
 
 	serviceId = "example-datastore-server-1"
 	portId    = "grpc"
@@ -53,7 +54,7 @@ func TestStartosis(t *testing.T) {
 	logrus.Infof("Executing Startosis script...")
 	logrus.Debugf("Startosis script content: \n%v", startosisScript)
 
-	executionResult, err := enclaveCtx.ExecuteStartosisScript(startosisScript)
+	executionResult, err := enclaveCtx.ExecuteStartosisScript(startosisScript, defaultDryRun)
 	require.NoError(t, err, "Unexpected error executing startosis script")
 
 	expectedScriptOutput := `Adding service example-datastore-server-1.
@@ -77,7 +78,7 @@ Service example-datastore-server-1 deployed successfully.
 	logrus.Infof("All services added via the module work as expected")
 
 	// we run the remove script and see if things still work
-	executionResult, err = enclaveCtx.ExecuteStartosisScript(removeScript)
+	executionResult, err = enclaveCtx.ExecuteStartosisScript(removeScript, defaultDryRun)
 	require.NoError(t, err, "Unexpected error executing remove script")
 	require.Empty(t, executionResult.InterpretationError, "Unexpected interpretation error")
 	require.Lenf(t, executionResult.ValidationErrors, 0, "Unexpected validation error")

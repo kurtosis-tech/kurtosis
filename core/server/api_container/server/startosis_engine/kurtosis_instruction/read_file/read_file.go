@@ -2,7 +2,6 @@ package read_file
 
 import (
 	"context"
-	"fmt"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
@@ -10,7 +9,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_modules"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"go.starlark.net/starlark"
-	"strings"
 )
 
 const (
@@ -53,11 +51,9 @@ func (instruction *ReadFileInstruction) GetPositionInOriginalScript() *kurtosis_
 }
 
 func (instruction *ReadFileInstruction) GetCanonicalInstruction() string {
-	buffer := new(strings.Builder)
-	buffer.WriteString(ReadFileBuiltinName + "(")
-	buffer.WriteString(srcPathArgName + "=\"")
-	buffer.WriteString(fmt.Sprintf("%v\")", instruction.srcPath))
-	return buffer.String()
+	return shared_helpers.CanonicalizeInstruction(ReadFileBuiltinName, starlark.StringDict{
+		srcPathArgName: starlark.String(instruction.srcPath),
+	}, &instruction.position)
 }
 
 func (instruction *ReadFileInstruction) Execute(_ context.Context, _ *startosis_executor.ExecutionEnvironment) error {

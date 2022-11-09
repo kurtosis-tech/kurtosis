@@ -6,6 +6,7 @@ import * as path from "path";
 
 const IS_PARTITIONING_ENABLED = false;
 const EMPTY_EXECUTE_PARAMS = "{}"
+const DEFAULT_DRY_RUN = false;
 
 const VALID_MODULE_WITH_TYPES_TEST_NAME = "valid-module-with-types";
 const VALID_MODULE_WITH_TYPES_REL_PATH = "../../../../startosis/valid-kurtosis-module-with-types"
@@ -49,7 +50,7 @@ test("Test valid startosis module with types", async () => {
         log.info(`Loading module at path '${moduleRootPath}'`)
 
         const serializedParams = "{\"greetings\": \"Bonjour!\"}"
-        const executeStartosisModuleResult = await enclaveContext.executeStartosisModule(moduleRootPath, serializedParams)
+        const executeStartosisModuleResult = await enclaveContext.executeStartosisModule(moduleRootPath, serializedParams, DEFAULT_DRY_RUN)
 
         if(executeStartosisModuleResult.isErr()) {
             log.error(`An error occurred execute startosis module '${moduleRootPath}'`);
@@ -94,7 +95,7 @@ test("Test valid startosis module with no type", async () => {
 
         log.info(`Loading module at path '${moduleRootPath}'`)
 
-        const executeStartosisModuleResult = await enclaveContext.executeStartosisModule(moduleRootPath, EMPTY_EXECUTE_PARAMS)
+        const executeStartosisModuleResult = await enclaveContext.executeStartosisModule(moduleRootPath, EMPTY_EXECUTE_PARAMS, DEFAULT_DRY_RUN)
 
         if(executeStartosisModuleResult.isErr()) {
             log.error(`An error occurred execute startosis module '${moduleRootPath}'`);
@@ -140,7 +141,7 @@ test("Test valid startosis module with no type - failure called with params", as
         log.info(`Loading module at path '${moduleRootPath}'`)
 
         const serializedParams = "{\"greetings\": \"Bonjour!\"}"
-        const executeStartosisModuleResult = await enclaveContext.executeStartosisModule(moduleRootPath, serializedParams)
+        const executeStartosisModuleResult = await enclaveContext.executeStartosisModule(moduleRootPath, serializedParams, DEFAULT_DRY_RUN)
 
         if(executeStartosisModuleResult.isErr()) {
             log.error(`An error occurred execute startosis module '${moduleRootPath}'`);
@@ -185,7 +186,7 @@ test("Test valid startosis module with no module input type in types file", asyn
 
         log.info(`Loading module at path '${moduleRootPath}'`)
 
-        const executeStartosisModuleResult = await enclaveContext.executeStartosisModule(moduleRootPath, EMPTY_EXECUTE_PARAMS)
+        const executeStartosisModuleResult = await enclaveContext.executeStartosisModule(moduleRootPath, EMPTY_EXECUTE_PARAMS, DEFAULT_DRY_RUN)
 
         if(executeStartosisModuleResult.isErr()) {
             log.error(`An error occurred execute startosis module '${moduleRootPath}'`);
@@ -231,7 +232,7 @@ test("Test valid startosis module with no module input type in types file - fail
         log.info(`Loading module at path '${moduleRootPath}'`)
 
         const serializedParams = "{\"greetings\": \"Bonjour!\"}"
-        const executeStartosisModuleResult = await enclaveContext.executeStartosisModule(moduleRootPath, serializedParams)
+        const executeStartosisModuleResult = await enclaveContext.executeStartosisModule(moduleRootPath, serializedParams, DEFAULT_DRY_RUN)
 
         if(executeStartosisModuleResult.isErr()) {
             log.error(`An error occurred execute startosis module '${moduleRootPath}'`);
@@ -277,7 +278,7 @@ test("Test invalid startosis module invalid types file", async () => {
         log.info(`Loading module at path '${moduleRootPath}'`)
 
         const serializedParams = "{\"greetings\": \"Bonjour!\"}"
-        const executeStartosisModuleResult = await enclaveContext.executeStartosisModule(moduleRootPath, serializedParams)
+        const executeStartosisModuleResult = await enclaveContext.executeStartosisModule(moduleRootPath, serializedParams, DEFAULT_DRY_RUN)
 
         if(executeStartosisModuleResult.isErr()) {
             log.error(`An error occurred execute startosis module '${moduleRootPath}'`);
@@ -322,7 +323,7 @@ test("Test invalid startosis module no types file but input_args in main", async
 
         log.info(`Loading module at path '${moduleRootPath}'`)
 
-        const executeStartosisModuleResult = await enclaveContext.executeStartosisModule(moduleRootPath, EMPTY_EXECUTE_PARAMS)
+        const executeStartosisModuleResult = await enclaveContext.executeStartosisModule(moduleRootPath, EMPTY_EXECUTE_PARAMS, DEFAULT_DRY_RUN)
 
         if(executeStartosisModuleResult.isErr()) {
             log.error(`An error occurred execute startosis module '${moduleRootPath}'`);
@@ -367,7 +368,7 @@ test("Test invalid module with invalid mod file", async () => {
 
         log.info(`Loading module at path '${moduleRootPath}'`)
 
-        const executeStartosisModuleResult = await enclaveContext.executeStartosisModule(moduleRootPath, EMPTY_EXECUTE_PARAMS)
+        const executeStartosisModuleResult = await enclaveContext.executeStartosisModule(moduleRootPath, EMPTY_EXECUTE_PARAMS, DEFAULT_DRY_RUN)
 
         if(!executeStartosisModuleResult.isErr()) {
             throw err(new Error("Module with invalid module was expected to error but didn't"))
@@ -395,7 +396,7 @@ test("Test invalid module with no main.star", async () => {
 
         log.info(`Loading module at path '${moduleRootPath}'`)
 
-        const executeStartosisModuleResult = await enclaveContext.executeStartosisModule(moduleRootPath, EMPTY_EXECUTE_PARAMS)
+        const executeStartosisModuleResult = await enclaveContext.executeStartosisModule(moduleRootPath, EMPTY_EXECUTE_PARAMS, DEFAULT_DRY_RUN)
 
         if(!executeStartosisModuleResult.isErr()) {
             throw err(new Error("Module with invalid module was expected to error but didn't"))
@@ -423,7 +424,7 @@ test("Test invalid module with no main in main.star", async () => {
 
         log.info(`Loading module at path '${moduleRootPath}'`)
 
-        const executeStartosisModuleResult = await enclaveContext.executeStartosisModule(moduleRootPath, EMPTY_EXECUTE_PARAMS)
+        const executeStartosisModuleResult = await enclaveContext.executeStartosisModule(moduleRootPath, EMPTY_EXECUTE_PARAMS, DEFAULT_DRY_RUN)
 
         if(executeStartosisModuleResult.isErr()) {
             throw err(new Error("Unexpected execution error"))

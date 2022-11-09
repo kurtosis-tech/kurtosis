@@ -58,6 +58,14 @@ func (builder *ServiceConfigBuilder) WithFilesArtifactMountDirpaths(filesArtifac
 	return builder
 }
 
+func (builder *ServiceConfigBuilder) WithPrivateIPAddressPlaceholder(privateIPAddrPlaceholder string) *ServiceConfigBuilder {
+	if privateIPAddrPlaceholder == "" {
+		privateIPAddrPlaceholder = defaultPrivateIPAddrPlaceholder
+	}
+	builder.privateIPAddrPlaceholder = privateIPAddrPlaceholder
+	return builder
+}
+
 func (builder *ServiceConfigBuilder) Build() *kurtosis_core_rpc_api_bindings.ServiceConfig {
 	return binding_constructors.NewServiceConfig(
 		builder.containerImageName,

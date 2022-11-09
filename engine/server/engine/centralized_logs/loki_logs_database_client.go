@@ -191,7 +191,7 @@ func (client *lokiLogsDatabaseClient) GetUserServiceLogs(
 	}
 
 	if lokiQueryRangeResponseObj.Status != lokiSuccessStatusInResponse {
-		return nil, nil, nil, stacktrace.NewError("The logs database returns an error status when getting user service logs for service GUIDs. Response was: \n%v", kurtosisGuids, lokiQueryRangeResponseObj)
+		return nil, nil, nil, stacktrace.NewError("The logs database return an error status when getting user service logs for service GUIDs '%+v'. Response was: \n%v", kurtosisGuids, lokiQueryRangeResponseObj)
 	}
 
 	if lokiQueryRangeResponseObj == nil || lokiQueryRangeResponseObj.Data == nil {
