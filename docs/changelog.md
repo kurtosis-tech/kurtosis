@@ -1,5 +1,7 @@
 # TBD
 
+# 0.51.13
+
 ### Fixes
 - Set `entry_point_args` and `cmd_args` to `nil` if not specified instead of empty array 
 
