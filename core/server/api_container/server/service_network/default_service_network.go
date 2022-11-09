@@ -521,6 +521,7 @@ func (network *DefaultServiceNetwork) ExecCommand(
 }
 
 func (network *DefaultServiceNetwork) HttpRequestService(ctx context.Context, serviceId service.ServiceID, portId string, method string, contentType string, endpoint string, body string) (*http.Response, error) {
+	logrus.Debugf("Making a request '%v' '%v' '%v' '%v' '%v' '%v'", serviceId, portId, method, contentType, endpoint, body)
 	service, getServiceErr := network.GetService(ctx, serviceId)
 	if getServiceErr != nil {
 		return nil, stacktrace.Propagate(getServiceErr, "An error occurred when getting service '%v' for HTTP request", serviceId)

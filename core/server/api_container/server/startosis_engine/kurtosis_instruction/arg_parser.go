@@ -99,7 +99,6 @@ func ParseHttpRequestFactRecipe(serviceConfig *starlarkstruct.Struct) (*kurtosis
 		builtConfig := binding_constructors.NewGetHttpRequestFactRecipeDefinition(portId, endpoint, maybeFieldExtractor)
 		return builtConfig, nil
 	} else if method == postRequestMethod {
-
 		contentType, interpretationErr := extractStringValue(serviceConfig, "content_type", defineFactArgName)
 		if interpretationErr != nil {
 			return nil, interpretationErr
