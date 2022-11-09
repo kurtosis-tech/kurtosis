@@ -117,5 +117,5 @@ func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starl
 		return "", "", nil, interpretationErr
 	}
 
-	return serviceId, factName, binding_constructors.NewGetHttpRequestFactRecipeWithDefaultRefresh(string(serviceId), factName, factRecipe.HttpRequestFact.PortId, factRecipe.HttpRequestFact.Endpoint), nil
+	return serviceId, factName, binding_constructors.NewHttpRequestFactRecipeWithDefaultRefresh(string(serviceId), factName, factRecipe), nil
 }
