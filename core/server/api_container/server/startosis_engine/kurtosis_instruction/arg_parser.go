@@ -47,7 +47,8 @@ const (
 
 	maxPortNumber = 65535
 
-	getRequestMethod = "GET"
+	getRequestMethod  = "GET"
+	postRequestMethod = "POST"
 )
 
 func ParseServiceId(serviceIdRaw starlark.String) (service.ServiceID, *startosis_errors.InterpretationError) {
@@ -96,6 +97,20 @@ func ParseHttpRequestFactRecipe(serviceConfig *starlarkstruct.Struct) (*kurtosis
 
 	if method == getRequestMethod {
 		builtConfig := binding_constructors.NewGetHttpRequestFactRecipeDefinition(portId, endpoint, maybeFieldExtractor)
+		return builtConfig, nil
+	} else if method == postRequestMethod {
+
+		contentType, interpretationErr := extractStringValue(serviceConfig, "content_type", defineFactArgName)
+		if interpretationErr != nil {
+			return nil, interpretationErr
+		}
+
+		body, interpretationErr := extractStringValue(serviceConfig, "body", defineFactArgName)
+		if interpretationErr != nil {
+			return nil, interpretationErr
+		}
+
+		builtConfig := binding_constructors.NewPostHttpRequestFactRecipeDefinition(portId, endpoint, contentType, body, maybeFieldExtractor)
 		return builtConfig, nil
 	} else {
 		return nil, startosis_errors.NewInterpretationError("Define fact HTTP method not recognized")
