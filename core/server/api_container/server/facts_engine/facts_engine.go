@@ -275,6 +275,7 @@ func (engine *FactsEngine) runRecipe(recipe *kurtosis_core_rpc_api_bindings.Fact
 			}
 		}()
 		body, err := io.ReadAll(response.Body)
+		logrus.Debugf("Got response '%v'", string(body))
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred when reading HTTP response body")
 		}
