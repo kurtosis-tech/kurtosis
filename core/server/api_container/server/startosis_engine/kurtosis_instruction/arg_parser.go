@@ -279,7 +279,7 @@ func parseEntryPointArgs(serviceConfig *starlarkstruct.Struct) ([]string, *start
 	_, err := serviceConfig.Attr(entryPointArgsKey)
 	//an error here means that no argument was found which is alright as this is an optional
 	if err != nil {
-		return []string{}, nil
+		return nil, nil
 	}
 	entryPointArgs, interpretationErr := extractStringSliceValue(serviceConfig, entryPointArgsKey, serviceConfigArgName)
 	if interpretationErr != nil {
@@ -292,7 +292,7 @@ func parseCmdArgs(serviceConfig *starlarkstruct.Struct) ([]string, *startosis_er
 	_, err := serviceConfig.Attr(cmdArgsKey)
 	//an error here means that no argument was found which is alright as this is an optional
 	if err != nil {
-		return []string{}, nil
+		return nil, nil
 	}
 	entryPointArgs, interpretationErr := extractStringSliceValue(serviceConfig, cmdArgsKey, serviceConfigArgName)
 	if interpretationErr != nil {

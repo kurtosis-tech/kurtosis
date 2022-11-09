@@ -320,7 +320,7 @@ func TestParseEntryPointArgs_SuccessOnMissingValue(t *testing.T) {
 	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
 	output, err := parseEntryPointArgs(input)
 	require.Nil(t, err)
-	require.Equal(t, []string{}, output)
+	require.Equal(t, []string(nil), output)
 }
 
 func TestParseEntryPointArgs_FailureOnListContainingNonStringValues(t *testing.T) {
@@ -347,7 +347,7 @@ func TestParseCommandArgs_SuccessOnMissingValue(t *testing.T) {
 	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
 	output, err := parseCmdArgs(input)
 	require.Nil(t, err)
-	require.Equal(t, []string{}, output)
+	require.Equal(t, []string(nil), output)
 }
 
 func TestParseCommandArgs_FailureOnListContainingNonStringValues(t *testing.T) {
