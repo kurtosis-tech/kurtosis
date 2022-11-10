@@ -471,7 +471,7 @@ const methodDescriptor_EngineService_GetUserServiceLogs = new grpc.web.MethodDes
  * @return {!grpc.web.ClientReadableStream<!proto.engine_api.GetUserServiceLogsResponse>}
  *     The XHR Node Readable Stream
  */
-proto.engine_api.EngineServiceClient.prototype.getUserServiceLogs =
+proto.engine_api.EngineServiceClient.prototype.getServiceLogs =
     function(request, metadata) {
   return this.client_.serverStreaming(this.hostname_ +
       '/engine_api.EngineService/GetUserServiceLogs',
@@ -488,7 +488,7 @@ proto.engine_api.EngineServiceClient.prototype.getUserServiceLogs =
  * @return {!grpc.web.ClientReadableStream<!proto.engine_api.GetUserServiceLogsResponse>}
  *     The XHR Node Readable Stream
  */
-proto.engine_api.EngineServicePromiseClient.prototype.getUserServiceLogs =
+proto.engine_api.EngineServicePromiseClient.prototype.getServiceLogs =
     function(request, metadata) {
   return this.client_.serverStreaming(this.hostname_ +
       '/engine_api.EngineService/GetUserServiceLogs',

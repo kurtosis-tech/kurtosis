@@ -20,6 +20,8 @@ import * as jspb from "google-protobuf";
 import {LogLine} from "../../kurtosis_engine_rpc_api_bindings/engine_service_pb";
 import {ServiceGUID} from "../../../core/lib/services/service";
 import {Readable} from "stream";
+import {ServiceLog} from "./service_log";
+import {ServiceLogsStreamContent} from "./service_logs_stream_content";
 
 const GRPC_WEB_STREAM_RESPONSE_DATA_EVENT_NAME = 'data'
 const GRPC_WEB_STREAM_RESPONSE_ERROR_EVENT_NAME = 'error'
@@ -176,7 +178,7 @@ export class GrpcWebEngineClient implements GenericEngineClient {
         return ok(getEnclavesResponseResult.value);
     }
 
-    public async getUserServiceLogs(getUserServiceLogsArgs: GetUserServiceLogsArgs): Promise<Result<Readable, Error>> {
+    public async getServiceLogs(getUserServiceLogsArgs: GetUserServiceLogsArgs): Promise<Result<Readable, Error>> {
 
         const streamUserServiceLogsPromise: Promise<Result<grpc_web.ClientReadableStream<GetUserServiceLogsResponse>, Error>> = new Promise((resolve, _unusedReject) => {
             const getUserServiceLogsStreamResponse: grpc_web.ClientReadableStream<GetUserServiceLogsResponse> = this.client.getUserServiceLogs(getUserServiceLogsArgs);
@@ -190,7 +192,7 @@ export class GrpcWebEngineClient implements GenericEngineClient {
 
         const streamUserServiceLogsResponse: grpc_web.ClientReadableStream<GetUserServiceLogsResponse> = streamUserServiceLogsResponseResult.value;
 
-        const userServiceLogsByGuid: Map<ServiceGUID, Array<string>> = new Map<ServiceGUID, Array<string>>();
+        const userServiceLogsByGuid: Map<ServiceGUID, Array<ServiceLog>> = new Map<ServiceGUID, Array<ServiceLog>>();
 
         const userServiceLogsReadable: Readable = this.createNewUserServiceLogsReadable(streamUserServiceLogsResponse);
 
@@ -201,12 +203,29 @@ export class GrpcWebEngineClient implements GenericEngineClient {
             if (userServiceLogsByUserServiceGuidMap !== undefined) {
                 userServiceLogsByUserServiceGuidMap.forEach(
                     (userServiceLogLine, userServiceGuidStr) => {
-                        userServiceLogsByGuid.set(userServiceGuidStr, userServiceLogLine.getLineList());
+                        const serviceLogs: Array<ServiceLog> = Array<ServiceLog>();
+
+                        userServiceLogLine.getLineList().forEach((logLine:string) => {
+                            const serviceLog: ServiceLog = new ServiceLog(logLine)
+                            serviceLogs.push(serviceLog)
+                        })
+
+                        userServiceLogsByGuid.set(userServiceGuidStr, serviceLogs);
                     }
                 )
             }
 
-            userServiceLogsReadable.push(userServiceLogsByGuid);
+            const notFoundServiceGuidsMap: jspb.Map<string, boolean> = getUserServiceLogsResponse.getNotFoundUserServiceGuidSetMap()
+
+            const notFoundServiceGuids: Set<ServiceGUID> = new Set<ServiceGUID>()
+
+            notFoundServiceGuidsMap.forEach((isGuidInMap: boolean, serviceGuidStr: string) => {
+                notFoundServiceGuids.add(serviceGuidStr)
+            })
+
+            const serviceLogsStreamContent: ServiceLogsStreamContent = new ServiceLogsStreamContent(userServiceLogsByGuid, notFoundServiceGuids)
+
+            userServiceLogsReadable.push(serviceLogsStreamContent);
         })
 
         streamUserServiceLogsResponse.on(GRPC_WEB_STREAM_RESPONSE_ERROR_EVENT_NAME, (streamLogsErr: any) => {

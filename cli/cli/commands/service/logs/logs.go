@@ -182,11 +182,10 @@ func run(
 				return nil
 			}
 
-			notFoundServiceGuid := serviceLogsStreamContent.GetNotFoundServiceGuids()
+			notFoundServiceGuids := serviceLogsStreamContent.GetNotFoundServiceGuids()
 
-			if _, isNotFoundFromLogsSystemGuid := notFoundServiceGuid[serviceGuid]; isNotFoundFromLogsSystemGuid {
-				logrus.Warnf("The Kurtosis centralized logs system does not contains any logs for the requested service GUID '%v'. This means that a service with that GUID either doesn't exist, or hasn't sent any logs. You can wait for further responses, or cancel the stream with Ctrl + C.", serviceGuid)
-				continue
+			for notFoundServiceGuid := range notFoundServiceGuids {
+				logrus.Warnf("The Kurtosis centralized logs system does not contains any logs for the requested service GUID '%v'. This means that a service with that GUID either doesn't exist, or hasn't sent any logs. You can wait for further responses, or cancel the stream with Ctrl + C.", notFoundServiceGuid)
 			}
 
 			userServiceLogsByGuid := serviceLogsStreamContent.GetServiceLogsByServiceGuids()

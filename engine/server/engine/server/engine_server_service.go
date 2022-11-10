@@ -162,8 +162,8 @@ func (service *EngineServerService) GetUserServiceLogs(
 		err              error
 	)
 
-	if err := service.checkIfThereAreAnyNotFoundGuidAndReportItBeforeStartTheLogsStream(enclaveId, requestedUserServiceGuids, stream); err != nil {
-		return stacktrace.Propagate(err, "An error occurred checking for not found GUIDs and reporting it for enclave '%v' and requested user service GUIDs '%+v'", enclaveId, requestedUserServiceGuids)
+	if err := service.reportAnyMissingGuids(enclaveId, requestedUserServiceGuids, stream); err != nil {
+		return stacktrace.Propagate(err, "An error occurred reporting missing user service GUIDs for enclave '%v' and requested user service GUIDs '%+v'", enclaveId, requestedUserServiceGuids)
 	}
 
 	if args.FollowLogs {
@@ -217,7 +217,7 @@ func (service *EngineServerService) GetUserServiceLogs(
 //	Private Helper Functions
 //
 // ====================================================================================================
-func (service *EngineServerService) checkIfThereAreAnyNotFoundGuidAndReportItBeforeStartTheLogsStream(
+func (service *EngineServerService) reportAnyMissingGuids(
 	enclaveId enclave.EnclaveID,
 	requestedUserServiceGuids map[user_service.ServiceGUID]bool,
 	stream kurtosis_engine_rpc_api_bindings.EngineService_GetUserServiceLogsServer,

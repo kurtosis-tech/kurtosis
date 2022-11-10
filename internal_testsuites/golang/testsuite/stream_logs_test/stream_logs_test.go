@@ -32,22 +32,19 @@ const (
 	shouldFollowLogs  = true
 	shouldNotFollowLogs = false
 
-	nonExistentUserServiceGuid = "stream-logs-1667939326"
+	nonExistentServiceGuid = "stream-logs-1667939326-non-existent"
 )
 
-type getUserServiceLogsRequestInfoAndExpectedResults struct {
-	requestedEnclaveID enclaves.EnclaveID
-	requestedUserServiceGuids map[services.ServiceGUID]bool
-	requestedFollowLogs bool
+type serviceLogsRequestInfoAndExpectedResults struct {
+	requestedEnclaveID    enclaves.EnclaveID
+	requestedServiceGuids map[services.ServiceGUID]bool
+	requestedFollowLogs   bool
 	expectedLogLines []string
 	expectedNotFoundServiceGuids map[services.ServiceGUID]bool
 }
 
 func TestStreamLogs(t *testing.T) {
 	ctx := context.Background()
-
-	expectedLogLineValues := []string{"kurtosis", "test", "running", "successfully"}
-	expectedEmptyLogLineValues := []string{}
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
 	enclaveCtx, stopEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
@@ -69,66 +66,34 @@ func TestStreamLogs(t *testing.T) {
 	serviceCtx, err := enclaveCtx.GetServiceContext(exampleServiceId)
 	require.NoError(t, err)
 
-	userServiceGuid := serviceCtx.GetServiceGUID()
+	serviceGuid := serviceCtx.GetServiceGUID()
 
-	userServiceGuids := map[services.ServiceGUID]bool{
-		userServiceGuid: true,
-	}
-
-	emptyUserServiceGuids := map[services.ServiceGUID]bool{}
-
-	nonExistentUserServiceGuids := map[services.ServiceGUID]bool{
-		nonExistentUserServiceGuid: true,
+	serviceGuids := map[services.ServiceGUID]bool{
+		serviceGuid: true,
 	}
 
 	time.Sleep(waitForAllLogsBeingCollectedInSeconds * time.Second)
 
-	firstCallRequestInfoAndExpectedResults := &getUserServiceLogsRequestInfoAndExpectedResults{
-		requestedEnclaveID:           enclaveID,
-		requestedUserServiceGuids:    userServiceGuids,
-		requestedFollowLogs:          shouldNotFollowLogs,
-		expectedLogLines:             expectedLogLineValues,
-		expectedNotFoundServiceGuids: emptyUserServiceGuids,
+	serviceLogsRequestInfoAndExpectedResultsList := getServiceLogsRequestInfoAndExpectedResultsList(
+		enclaveID,
+		serviceGuids,
+	)
 
-	}
+	for _, serviceLogsRequestInfoAndExpectedResultsObj := range serviceLogsRequestInfoAndExpectedResultsList {
 
-	secondCallRequestInfoAndExpectedResults := &getUserServiceLogsRequestInfoAndExpectedResults{
-		requestedEnclaveID:           enclaveID,
-		requestedUserServiceGuids:    userServiceGuids,
-		requestedFollowLogs:          shouldFollowLogs,
-		expectedLogLines:             expectedLogLineValues,
-		expectedNotFoundServiceGuids: emptyUserServiceGuids,
-	}
+		requestedEnclaveId := serviceLogsRequestInfoAndExpectedResultsObj.requestedEnclaveID
+		requestedServiceGuids := serviceLogsRequestInfoAndExpectedResultsObj.requestedServiceGuids
+		requestedShouldFollowLogs := serviceLogsRequestInfoAndExpectedResultsObj.requestedFollowLogs
+		expectedLogLines := serviceLogsRequestInfoAndExpectedResultsObj.expectedLogLines
+		expectedNonExistenceServiceGuids := serviceLogsRequestInfoAndExpectedResultsObj.expectedNotFoundServiceGuids
 
-	thirdCallRequestInfoAndExpectedResults := &getUserServiceLogsRequestInfoAndExpectedResults{
-		requestedEnclaveID: enclaveID,
-		requestedUserServiceGuids: nonExistentUserServiceGuids,
-		requestedFollowLogs: shouldFollowLogs,
-		expectedLogLines: expectedEmptyLogLineValues,
-		expectedNotFoundServiceGuids: nonExistentUserServiceGuids,
-	}
-
-	getUserServiceLogsRequestInfoAndExpectedResultsList := []*getUserServiceLogsRequestInfoAndExpectedResults{
-		firstCallRequestInfoAndExpectedResults,
-		secondCallRequestInfoAndExpectedResults,
-		thirdCallRequestInfoAndExpectedResults,
-	}
-
-	for _, userServiceLogsRequestInfoAndExpectedResults := range getUserServiceLogsRequestInfoAndExpectedResultsList {
-
-		requestedEnclaveId := userServiceLogsRequestInfoAndExpectedResults.requestedEnclaveID
-		requestedUserServiceGuids := userServiceLogsRequestInfoAndExpectedResults.requestedUserServiceGuids
-		requestedShouldFollowLogs := userServiceLogsRequestInfoAndExpectedResults.requestedFollowLogs
-		expectedLogLines := userServiceLogsRequestInfoAndExpectedResults.expectedLogLines
-		expectedNonExistenceUserServiceGuids := userServiceLogsRequestInfoAndExpectedResults.expectedNotFoundServiceGuids
-
-		serviceLogsStreamContentChan, cancelStreamUserServiceLogsFunc, err := kurtosisCtx.GetServiceLogs(ctx, requestedEnclaveId, requestedUserServiceGuids, requestedShouldFollowLogs)
+		serviceLogsStreamContentChan, cancelStreamServiceLogsFunc, err := kurtosisCtx.GetServiceLogs(ctx, requestedEnclaveId, requestedServiceGuids, requestedShouldFollowLogs)
 		require.NoError(t, err)
-		require.NotNil(t, cancelStreamUserServiceLogsFunc)
+		require.NotNil(t, cancelStreamServiceLogsFunc)
 		require.NotNil(t, serviceLogsStreamContentChan)
 
 		receivedLogLines := []string{}
-		receivedNotFoundUserServiceGuids := map[services.ServiceGUID]bool{}
+		receivedNotFoundServiceGuids := map[services.ServiceGUID]bool{}
 
 		var testEvaluationErr error
 
@@ -146,19 +111,19 @@ func TestStreamLogs(t *testing.T) {
 					break
 				}
 
-				userServiceLogsByGuid := serviceLogsStreamContent.GetServiceLogsByServiceGuids()
+				serviceLogsByGuid := serviceLogsStreamContent.GetServiceLogsByServiceGuids()
 				notFoundGuids := serviceLogsStreamContent.GetNotFoundServiceGuids()
 
-				userServiceLogs, found := userServiceLogsByGuid[userServiceGuid]
-				if len(expectedNonExistenceUserServiceGuids) > 0 {
+				serviceLogLines, found := serviceLogsByGuid[serviceGuid]
+				if len(expectedNonExistenceServiceGuids) > 0 {
 					require.False(t, found)
 				} else {
 					require.True(t, found)
 				}
 
-				receivedNotFoundUserServiceGuids = notFoundGuids
+				receivedNotFoundServiceGuids = notFoundGuids
 
-				for _, serviceLog := range userServiceLogs {
+				for _, serviceLog := range serviceLogLines {
 					receivedLogLines = append(receivedLogLines, serviceLog.GetContent())
 				}
 
@@ -171,8 +136,8 @@ func TestStreamLogs(t *testing.T) {
 
 		require.NoError(t, testEvaluationErr)
 		require.Equal(t, expectedLogLines, receivedLogLines)
-		require.Equal(t, expectedNonExistenceUserServiceGuids, receivedNotFoundUserServiceGuids)
-		cancelStreamUserServiceLogsFunc()
+		require.Equal(t, expectedNonExistenceServiceGuids, receivedNotFoundServiceGuids)
+		cancelStreamServiceLogsFunc()
 	}
 }
 
@@ -193,4 +158,52 @@ func getExampleServiceConfig() *services.ContainerConfig {
 		cmdArgs,
 	).Build()
 	return containerConfig
+}
+
+func getServiceLogsRequestInfoAndExpectedResultsList(
+	enclaveId enclaves.EnclaveID,
+	serviceGuids map[services.ServiceGUID]bool,
+) []*serviceLogsRequestInfoAndExpectedResults {
+
+	expectedLogLineValues := []string{"kurtosis", "test", "running", "successfully"}
+	expectedEmptyLogLineValues := []string{}
+
+	emptyServiceGuids := map[services.ServiceGUID]bool{}
+
+	nonExistentServiceGuids := map[services.ServiceGUID]bool{
+		nonExistentServiceGuid: true,
+	}
+
+	firstCallRequestInfoAndExpectedResults := &serviceLogsRequestInfoAndExpectedResults{
+		requestedEnclaveID:           enclaveId,
+		requestedServiceGuids:        serviceGuids,
+		requestedFollowLogs:          shouldNotFollowLogs,
+		expectedLogLines:             expectedLogLineValues,
+		expectedNotFoundServiceGuids: emptyServiceGuids,
+
+	}
+
+	secondCallRequestInfoAndExpectedResults := &serviceLogsRequestInfoAndExpectedResults{
+		requestedEnclaveID:           enclaveId,
+		requestedServiceGuids:        serviceGuids,
+		requestedFollowLogs:          shouldFollowLogs,
+		expectedLogLines:             expectedLogLineValues,
+		expectedNotFoundServiceGuids: emptyServiceGuids,
+	}
+
+	thirdCallRequestInfoAndExpectedResults := &serviceLogsRequestInfoAndExpectedResults{
+		requestedEnclaveID:           enclaveId,
+		requestedServiceGuids:        nonExistentServiceGuids,
+		requestedFollowLogs:          shouldFollowLogs,
+		expectedLogLines:             expectedEmptyLogLineValues,
+		expectedNotFoundServiceGuids: nonExistentServiceGuids,
+	}
+
+	serviceLogsRequestInfoAndExpectedResultsList := []*serviceLogsRequestInfoAndExpectedResults{
+		firstCallRequestInfoAndExpectedResults,
+		secondCallRequestInfoAndExpectedResults,
+		thirdCallRequestInfoAndExpectedResults,
+	}
+
+	return serviceLogsRequestInfoAndExpectedResultsList
 }

@@ -1,6 +1,7 @@
 import {
     ContainerConfig,
     ContainerConfigBuilder,
+    EnclaveID,
     KurtosisContext,
     ServiceGUID,
     ServiceID
@@ -9,6 +10,8 @@ import log from "loglevel";
 import {err} from "neverthrow";
 import {createEnclave} from "../../test_helpers/enclave_setup";
 import {Readable} from "stream";
+import {ServiceLog} from "../../../../../api/typescript/src";
+import {ServiceLogsStreamContent} from "../../../../../api/typescript/src";
 
 
 const TEST_NAME = "stream-logs"
@@ -19,11 +22,44 @@ const EXAMPLE_SERVICE_ID: ServiceID = "stream-logs"
 
 const WAIT_FOR_ALL_LOGS_BEING_COLLECTED_IN_SECONDS = 2
 
-const SHOULD_FOLLOW_LOGS_FIRST_REQUEST = false;
-const SHOULD_FOLLOW_LOGS_SECOND_REQUEST = true;
+const SHOULD_FOLLOW_LOGS = true;
+const SHOULD_NOT_FOLLOW_LOGS = false;
 
-const shouldFollowLogsRequestOptions = [SHOULD_FOLLOW_LOGS_FIRST_REQUEST, SHOULD_FOLLOW_LOGS_SECOND_REQUEST];
+const NON_EXISTENT_SERVICE_GUID = "stream-logs-1667939326-non-existent"
 
+class ServiceLogsRequestInfoAndExpectedResults {
+    readonly requestedEnclaveID: EnclaveID;
+    readonly requestedServiceGuids: Set<ServiceGUID>;
+    readonly requestedFollowLogs: boolean;
+    readonly expectedLogLines: Array<string>;
+    readonly expectedNotFoundServiceGuids: Set<ServiceGUID>
+
+    constructor(
+        requestedEnclaveID: EnclaveID,
+        requestedServiceGuids: Set<ServiceGUID>,
+        requestedFollowLogs: boolean,
+        expectedLogLines: Array<string>,
+        expectedNotFoundServiceGuids: Set<ServiceGUID>
+    ) {
+        this.requestedEnclaveID = requestedEnclaveID;
+        this.requestedServiceGuids = requestedServiceGuids;
+        this.requestedFollowLogs = requestedFollowLogs;
+        this.expectedLogLines = expectedLogLines
+        this.expectedNotFoundServiceGuids = expectedNotFoundServiceGuids;
+    }
+}
+class ReceivedStreamContent {
+    readonly receivedLogLines: Array<ServiceLog>;
+    readonly receivedNotFoundServiceGuids: Set<ServiceGUID>;
+
+    constructor(
+        receivedLogLines: Array<ServiceLog>,
+        receivedNotFoundServiceGuids: Set<ServiceGUID>,
+    ) {
+        this.receivedLogLines = receivedLogLines;
+        this.receivedNotFoundServiceGuids = receivedNotFoundServiceGuids;
+    }
+}
 
 jest.setTimeout(180000)
 
@@ -58,7 +94,7 @@ async function TestStreamLogs() {
         }
         const kurtosisContext = newKurtosisContextResult.value;
 
-        const enclaveID: string = enclaveContext.getEnclaveId();
+        const enclaveID: EnclaveID = enclaveContext.getEnclaveId();
 
         const getServiceContextResult = await enclaveContext.getServiceContext(EXAMPLE_SERVICE_ID);
 
@@ -69,41 +105,58 @@ async function TestStreamLogs() {
 
         const serviceContext = getServiceContextResult.value;
 
-        const userServiceGuid = serviceContext.getServiceGUID();
+        const serviceGuid = serviceContext.getServiceGUID();
 
-        const userServiceGUIDs: Set<ServiceGUID> = new Set<ServiceGUID>();
-        userServiceGUIDs.add(userServiceGuid);
+        const serviceGuids: Set<ServiceGUID> = new Set<ServiceGUID>();
+        serviceGuids.add(serviceGuid);
 
         await delay(WAIT_FOR_ALL_LOGS_BEING_COLLECTED_IN_SECONDS * 1000);
 
-        // will test executing getUserServiceLogs with shouldFollowLogs = false in the first iteration,
-        // and with shouldFollowLogs = true (which is used to tail logs) in the second iteration
-        for (let shouldFollowLogs of shouldFollowLogsRequestOptions) {
+        const serviceLogsRequestInfoAndExpectedResultsList = getServiceLogsRequestInfoAndExpectedResultsList(
+            enclaveID,
+            serviceGuids,
+        )
 
-            const streamUserServiceLogsPromise = await kurtosisContext.getUserServiceLogs(enclaveID, userServiceGUIDs, shouldFollowLogs);
+        for (let serviceLogsRequestInfoAndExpectedResults of serviceLogsRequestInfoAndExpectedResultsList) {
+
+            const requestedEnclaveId = serviceLogsRequestInfoAndExpectedResults.requestedEnclaveID
+            const requestedServiceGuids = serviceLogsRequestInfoAndExpectedResults.requestedServiceGuids
+            const requestedShouldFollowLogs = serviceLogsRequestInfoAndExpectedResults.requestedFollowLogs
+            const expectedLogLines = serviceLogsRequestInfoAndExpectedResults.expectedLogLines
+            const expectedNonExistenceServiceGuids = serviceLogsRequestInfoAndExpectedResults.expectedNotFoundServiceGuids
+
+            const streamUserServiceLogsPromise = await kurtosisContext.getServiceLogs(requestedEnclaveId, requestedServiceGuids, requestedShouldFollowLogs);
 
             if (streamUserServiceLogsPromise.isErr()) {
                 throw streamUserServiceLogsPromise.error;
             }
 
-            const serviceLogsReadable = streamUserServiceLogsPromise.value;
+            const serviceLogsReadable: Readable = streamUserServiceLogsPromise.value;
 
-            const expectedLogLines = ["kurtosis", "test", "running", "successfully"];
+            const receivedStreamContentPromise: Promise<ReceivedStreamContent> = newReceivedStreamContentPromise(
+                serviceLogsReadable,
+                serviceGuid,
+                expectedLogLines,
+                expectedNonExistenceServiceGuids,
+            )
 
-            const receivedLogLinesPromise: Promise<Array<string>> = newReceivedLogLinesPromise(serviceLogsReadable, userServiceGuid, expectedLogLines)
+            const receivedStreamContent: ReceivedStreamContent = await receivedStreamContentPromise
+            const receivedLogLines: Array<ServiceLog> = receivedStreamContent.receivedLogLines
+            const receivedNotFoundServiceGuids: Set<ServiceGUID> = receivedStreamContent.receivedNotFoundServiceGuids
 
-            const receivedLogLines = await receivedLogLinesPromise
-
-            if (receivedLogLines.length === expectedLogLines.length) {
-                receivedLogLines.forEach((logline, loglineIndex) => {
-                    if (expectedLogLines[loglineIndex] != logline) {
-                        return err(new Error(`Expected to match the number ${loglineIndex} log line with this value ${expectedLogLines[loglineIndex]} but this one was received instead ${logline}`))
+            if ( expectedLogLines.length === receivedLogLines.length) {
+                receivedLogLines.forEach((logLine: ServiceLog, logLineIndex: number) => {
+                    if (expectedLogLines[logLineIndex] !== logLine.getContent()) {
+                        return err(new Error(`Expected to match the number ${logLineIndex} log line with this value ${expectedLogLines[logLineIndex]} but this one was received instead ${logLine.getContent()}`))
                     }
                 })
             } else {
                 throw new Error(`Expected to receive ${expectedLogLines.length} of log lines but ${receivedLogLines.length} log lines were received instead`)
             }
 
+            if(!areEqualServiceGuidsSet(expectedNonExistenceServiceGuids, receivedNotFoundServiceGuids)) {
+                throw new Error(`Expected to receive a not found service GUIDs set equal to ${expectedNonExistenceServiceGuids} but a different set ${receivedNotFoundServiceGuids} was received instead`)
+            }
         }
     } finally {
         stopEnclaveFunction()
@@ -116,30 +169,43 @@ async function TestStreamLogs() {
 // ====================================================================================================
 //                                       Private helper functions
 // ====================================================================================================
-function newReceivedLogLinesPromise(
+function newReceivedStreamContentPromise(
     serviceLogsReadable: Readable,
-    userServiceGuid: string,
+    serviceGuid: string,
     expectedLogLines: string[],
-): Promise<Array<string>> {
-    const receivedLogLinesPromise: Promise<Array<string>> = new Promise<Array<string>>((resolve, _unusedReject) => {
+    expectedNonExistenceServiceGuids: Set<ServiceGUID>,
+): Promise<ReceivedStreamContent> {
+    const receivedStreamContentPromise: Promise<ReceivedStreamContent> = new Promise<ReceivedStreamContent>((resolve, _unusedReject) => {
 
-        let receivedLogLines: Array<string> = new Array<string>();
+        serviceLogsReadable.on('data', (serviceLogsStreamContent: ServiceLogsStreamContent) => {
+            const serviceLogsByServiceGuids: Map<ServiceGUID, Array<ServiceLog>> = serviceLogsStreamContent.getServiceLogsByServiceGuids()
+            const notFoundServiceGuids: Set<ServiceGUID> = serviceLogsStreamContent.getNotFoundServiceGuids()
 
-        serviceLogsReadable.on('data', (userServiceLogsByGuid: Map<ServiceGUID, Array<string>>) => {
-            const userServiceLogLines: Array<string> | undefined = userServiceLogsByGuid.get(userServiceGuid);
+            let receivedLogLines: Array<ServiceLog> | undefined = serviceLogsByServiceGuids.get(serviceGuid);
 
-            if (userServiceLogLines !== undefined) {
-                userServiceLogLines.forEach(logLine => {
-                    receivedLogLines.push(logLine)
-                })
+            if (expectedNonExistenceServiceGuids.size > 0) {
+                if(receivedLogLines !== undefined){
+                    throw new Error(`Expected to receive undefined log lines but these log lines content ${receivedLogLines} was received instead`)
+                }
+            } else {
+                if(receivedLogLines === undefined){
+                    throw new Error("Expected to receive log lines content but and undefined value was received instead")
+                }
+            }
+
+            if(receivedLogLines === undefined) {
+                receivedLogLines = new Array<ServiceLog>()
             }
 
             if (receivedLogLines.length === expectedLogLines.length) {
+                const receivedStreamContent: ReceivedStreamContent = new ReceivedStreamContent(
+                    receivedLogLines,
+                    notFoundServiceGuids,
+                )
                 serviceLogsReadable.destroy()
-                resolve(receivedLogLines)
+                resolve(receivedStreamContent)
             }
         })
-
 
         serviceLogsReadable.on('error', function (readableErr: { message: any; }) {
             if (!serviceLogsReadable.destroyed) {
@@ -156,7 +222,7 @@ function newReceivedLogLinesPromise(
         })
     })
 
-    return receivedLogLinesPromise;
+    return receivedStreamContentPromise;
 }
 
 function containerConfig(): ContainerConfig {
@@ -174,4 +240,57 @@ function containerConfig(): ContainerConfig {
 
 function delay(ms: number) {
     return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function getServiceLogsRequestInfoAndExpectedResultsList(
+    enclaveID: EnclaveID,
+    serviceGuids: Set<ServiceGUID>,
+): Array<ServiceLogsRequestInfoAndExpectedResults> {
+    const expectedEmptyLogLineValues: Array<string> = [];
+    const emptyServiceGuids: Set<ServiceGUID> = new Set<ServiceGUID>();
+
+    const nonExistentServiceGuids: Set<ServiceGUID> = new Set<ServiceGUID>();
+    nonExistentServiceGuids.add(NON_EXISTENT_SERVICE_GUID);
+
+    const expectedLogLineValues = ["kurtosis", "test", "running", "successfully"];
+
+    const firstCallRequestInfoAndExpectedResults: ServiceLogsRequestInfoAndExpectedResults = new ServiceLogsRequestInfoAndExpectedResults(
+        enclaveID,
+        serviceGuids,
+        SHOULD_NOT_FOLLOW_LOGS,
+        expectedLogLineValues,
+        emptyServiceGuids,
+    )
+
+    const secondCallRequestInfoAndExpectedResults: ServiceLogsRequestInfoAndExpectedResults = new ServiceLogsRequestInfoAndExpectedResults(
+        enclaveID,
+        serviceGuids,
+        SHOULD_FOLLOW_LOGS,
+        expectedLogLineValues,
+        emptyServiceGuids,
+    )
+
+    const thirdCallRequestInfoAndExpectedResults: ServiceLogsRequestInfoAndExpectedResults = new ServiceLogsRequestInfoAndExpectedResults(
+        enclaveID,
+        nonExistentServiceGuids,
+        SHOULD_FOLLOW_LOGS,
+        expectedEmptyLogLineValues,
+        nonExistentServiceGuids,
+    )
+
+    const serviceLogsRequestInfoAndExpectedResultsList: Array<ServiceLogsRequestInfoAndExpectedResults> = new Array<ServiceLogsRequestInfoAndExpectedResults>();
+    serviceLogsRequestInfoAndExpectedResultsList.push(firstCallRequestInfoAndExpectedResults)
+    serviceLogsRequestInfoAndExpectedResultsList.push(secondCallRequestInfoAndExpectedResults)
+    serviceLogsRequestInfoAndExpectedResultsList.push(thirdCallRequestInfoAndExpectedResults)
+
+    return serviceLogsRequestInfoAndExpectedResultsList
+}
+
+function areEqualServiceGuidsSet(firstSet: Set<ServiceGUID>, secondSet: Set<ServiceGUID>): boolean {
+    const haveEqualSize: boolean = firstSet.size === secondSet.size;
+    const haveEqualContent: boolean = [...firstSet].every((x) => secondSet.has(x));
+
+    const areEqual: boolean = haveEqualSize && haveEqualContent;
+
+    return areEqual
 }

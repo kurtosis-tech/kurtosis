@@ -60,6 +60,7 @@ Destroys enclaves in the Kurtosis engine.
 
 ---
 
+[comment]: <> (TODO upgrade this method docs)
 ### getUserServiceLogs(EnclaveID enclaveId, Set\<ServiceGUID> userServiceGuids) -\> Map\<ServiceGUID, Array\<String\>\> userServiceLogsByUserServiceGuid
 Get the user service container log lines (ordered in ascending direction, with the oldest line first) from user services identified by their GUID.
 The result will contain the last 4000 log lines max for each user service container.
