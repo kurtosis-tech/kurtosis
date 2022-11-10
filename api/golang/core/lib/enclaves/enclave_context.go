@@ -138,8 +138,8 @@ func (enclaveCtx *EnclaveContext) GetFactValues(serviceId string, factName strin
 	return factValuesResponse, nil
 }
 
-func (enclaveCtx *EnclaveContext) ExecuteStartosisScript(serializedScript string) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse, error) {
-	executeStartosisScriptArgs := binding_constructors.NewExecuteStartosisScriptArgs(serializedScript)
+func (enclaveCtx *EnclaveContext) ExecuteStartosisScript(serializedScript string, dryRun bool) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse, error) {
+	executeStartosisScriptArgs := binding_constructors.NewExecuteStartosisScriptArgs(serializedScript, dryRun)
 	executeStartosisResponse, err := enclaveCtx.client.ExecuteStartosisScript(context.Background(), executeStartosisScriptArgs)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Unexpected error happened executing Startosis script \n%v", serializedScript)
@@ -147,7 +147,7 @@ func (enclaveCtx *EnclaveContext) ExecuteStartosisScript(serializedScript string
 	return executeStartosisResponse, nil
 }
 
-func (enclaveCtx *EnclaveContext) ExecuteStartosisModule(moduleRootPath string, serializedParams string) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse, error) {
+func (enclaveCtx *EnclaveContext) ExecuteStartosisModule(moduleRootPath string, serializedParams string, dryRun bool) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse, error) {
 	kurtosisModFilepath := path.Join(moduleRootPath, modFilename)
 
 	kurtosisMod, err := parseKurtosisMod(kurtosisModFilepath)
@@ -159,7 +159,7 @@ func (enclaveCtx *EnclaveContext) ExecuteStartosisModule(moduleRootPath string, 
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "There was an error compressing module '%v' before upload", moduleRootPath)
 	}
-	executeStartosisModuleArgs := binding_constructors.NewExecuteStartosisModuleArgs(kurtosisMod.Module.ModuleName, compressedModule, serializedParams)
+	executeStartosisModuleArgs := binding_constructors.NewExecuteStartosisModuleArgs(kurtosisMod.Module.ModuleName, compressedModule, serializedParams, dryRun)
 	executeStartosisResponse, err := enclaveCtx.client.ExecuteStartosisModule(context.Background(), executeStartosisModuleArgs)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Unexpected error happened executing Startosis module \n%v", moduleRootPath)
@@ -329,9 +329,11 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 			continue
 		}
 
+
 		serviceContext := services.NewServiceContext(
 			enclaveCtx.client,
 			serviceID,
+			services.ServiceGUID(serviceInfo.GetServiceGuid()),
 			serviceInfo.GetPrivateIpAddr(),
 			serviceCtxPrivatePorts,
 			serviceInfo.GetMaybePublicIpAddr(),
@@ -367,11 +369,6 @@ func (enclaveCtx *EnclaveContext) GetServiceContext(serviceId services.ServiceID
 			"Kurtosis API reported an empty private IP address for service '%v' - this should never happen, and is a bug with Kurtosis!",
 			serviceId)
 	}
-	if serviceInfo.GetMaybePublicIpAddr() == "" {
-		return nil, stacktrace.NewError(
-			"Kurtosis API reported an empty public IP address for service '%v' - this should never happen, and is a bug with Kurtosis!",
-			serviceId)
-	}
 
 	serviceCtxPrivatePorts, err := convertApiPortsToServiceContextPorts(serviceInfo.GetPrivatePorts())
 	if err != nil {
@@ -385,6 +382,7 @@ func (enclaveCtx *EnclaveContext) GetServiceContext(serviceId services.ServiceID
 	serviceContext := services.NewServiceContext(
 		enclaveCtx.client,
 		serviceId,
+		services.ServiceGUID(serviceInfo.ServiceGuid),
 		serviceInfo.GetPrivateIpAddr(),
 		serviceCtxPrivatePorts,
 		serviceInfo.GetMaybePublicIpAddr(),

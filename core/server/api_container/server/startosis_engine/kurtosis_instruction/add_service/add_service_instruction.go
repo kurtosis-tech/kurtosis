@@ -55,13 +55,12 @@ var (
 func GenerateAddServiceBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, serviceNetwork service_network.ServiceNetwork, factsEngine *facts_engine.FactsEngine) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 	// TODO: Force returning an InterpretationError rather than a normal error
 	return func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
-		serviceId, serviceConfig, interpretationError := parseStartosisArgs(b, args, kwargs)
-		if interpretationError != nil {
+		addServiceInstruction := newEmptyAddServiceInstruction(serviceNetwork, factsEngine, *shared_helpers.GetCallerPositionFromThread(thread))
+		if interpretationError := addServiceInstruction.parseStartosisArgs(b, args, kwargs); interpretationError != nil {
 			return nil, interpretationError
 		}
-		addServiceInstruction := NewAddServiceInstructionWithFacts(serviceNetwork, factsEngine, *shared_helpers.GetCallerPositionFromThread(thread), serviceId, serviceConfig)
 		*instructionsQueue = append(*instructionsQueue, addServiceInstruction)
-		returnValue, interpretationError := makeAddServiceInterpretationReturnValue(serviceId, serviceConfig)
+		returnValue, interpretationError := addServiceInstruction.makeAddServiceInterpretationReturnValue()
 		if interpretationError != nil {
 			return nil, interpretationError
 		}
@@ -73,28 +72,30 @@ type AddServiceInstruction struct {
 	serviceNetwork service_network.ServiceNetwork
 	factsEngine    *facts_engine.FactsEngine
 
-	position      kurtosis_instruction.InstructionPosition
+	position       kurtosis_instruction.InstructionPosition
+	starlarkKwargs starlark.StringDict
+
 	serviceId     kurtosis_backend_service.ServiceID
 	serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig
 }
 
-func NewAddServiceInstruction(serviceNetwork service_network.ServiceNetwork, position kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceID, serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig) *AddServiceInstruction {
+func newEmptyAddServiceInstruction(serviceNetwork service_network.ServiceNetwork, factsEngine *facts_engine.FactsEngine, position kurtosis_instruction.InstructionPosition) *AddServiceInstruction {
+	return &AddServiceInstruction{
+		serviceNetwork: serviceNetwork,
+		factsEngine:    factsEngine,
+		position:       position,
+		starlarkKwargs: starlark.StringDict{},
+	}
+}
+
+func NewAddServiceInstruction(serviceNetwork service_network.ServiceNetwork, position kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceID, serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig, starlarkKwargs starlark.StringDict) *AddServiceInstruction {
 	return &AddServiceInstruction{
 		serviceNetwork: serviceNetwork,
 		factsEngine:    nil,
 		position:       position,
 		serviceId:      serviceId,
 		serviceConfig:  serviceConfig,
-	}
-}
-
-func NewAddServiceInstructionWithFacts(serviceNetwork service_network.ServiceNetwork, factsEngine *facts_engine.FactsEngine, position kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceID, serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig) *AddServiceInstruction {
-	return &AddServiceInstruction{
-		serviceNetwork: serviceNetwork,
-		factsEngine:    factsEngine,
-		position:       position,
-		serviceId:      serviceId,
-		serviceConfig:  serviceConfig,
+		starlarkKwargs: starlarkKwargs,
 	}
 }
 
@@ -103,9 +104,7 @@ func (instruction *AddServiceInstruction) GetPositionInOriginalScript() *kurtosi
 }
 
 func (instruction *AddServiceInstruction) GetCanonicalInstruction() string {
-	// TODO(gb): implement when we need to return the canonicalized version of the script.
-	//  Maybe there's a way to retrieve the serialized instruction from starlark-go
-	return "add_service(...)"
+	return shared_helpers.CanonicalizeInstruction(AddServiceBuiltinName, instruction.starlarkKwargs, &instruction.position)
 }
 
 func (instruction *AddServiceInstruction) Execute(ctx context.Context, environment *startosis_executor.ExecutionEnvironment) error {
@@ -239,8 +238,8 @@ func replaceFactsInString(originalString string, factsEngine *facts_engine.Facts
 	return replacedString, nil
 }
 
-func makeAddServiceInterpretationReturnValue(serviceId service.ServiceID, serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig) (*kurtosis_types.Service, *startosis_errors.InterpretationError) {
-	ports := serviceConfig.GetPrivatePorts()
+func (instruction *AddServiceInstruction) makeAddServiceInterpretationReturnValue() (*kurtosis_types.Service, *startosis_errors.InterpretationError) {
+	ports := instruction.serviceConfig.GetPrivatePorts()
 	portSpecsDict := starlark.NewDict(len(ports))
 	for portId, port := range ports {
 		portNumber := starlark.MakeUint(uint(port.GetNumber()))
@@ -250,7 +249,7 @@ func makeAddServiceInterpretationReturnValue(serviceId service.ServiceID, servic
 			return nil, startosis_errors.NewInterpretationError("An error occurred while creating a port spec for values (number: '%v', port: '%v') the add instruction return value", portNumber, portProtocol)
 		}
 	}
-	ipAddress := starlark.String(fmt.Sprintf(ipAddressReplacementPlaceholderFormat, serviceId))
+	ipAddress := starlark.String(fmt.Sprintf(ipAddressReplacementPlaceholderFormat, instruction.serviceId))
 	returnValue := kurtosis_types.NewService(ipAddress, portSpecsDict)
 	return returnValue, nil
 }
@@ -264,7 +263,7 @@ func (instruction *AddServiceInstruction) ValidateAndUpdateEnvironment(environme
 	return nil
 }
 
-func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (service.ServiceID, *kurtosis_core_rpc_api_bindings.ServiceConfig, *startosis_errors.InterpretationError) {
+func (instruction *AddServiceInstruction) parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) *startosis_errors.InterpretationError {
 	// TODO(gb): Right now, we expect the Startosis script to be very "untyped" like:
 	//  ```startosis
 	//  my_service_port = struct(port = 1234, protocol = "TCP")
@@ -280,17 +279,22 @@ func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starl
 	var serviceIdArg starlark.String
 	var serviceConfigArg *starlarkstruct.Struct
 	if err := starlark.UnpackArgs(b.Name(), args, kwargs, serviceIdArgName, &serviceIdArg, serviceConfigArgName, &serviceConfigArg); err != nil {
-		return "", nil, startosis_errors.NewInterpretationError(err.Error())
+		return startosis_errors.NewInterpretationError(err.Error())
 	}
+	instruction.starlarkKwargs[serviceIdArgName] = serviceIdArg
+	instruction.starlarkKwargs[serviceConfigArgName] = serviceConfigArg
+	instruction.starlarkKwargs.Freeze()
 
 	serviceId, interpretationErr := kurtosis_instruction.ParseServiceId(serviceIdArg)
 	if interpretationErr != nil {
-		return "", nil, interpretationErr
+		return interpretationErr
 	}
 
 	serviceConfig, interpretationErr := kurtosis_instruction.ParseServiceConfigArg(serviceConfigArg)
 	if interpretationErr != nil {
-		return "", nil, interpretationErr
+		return interpretationErr
 	}
-	return serviceId, serviceConfig, nil
+	instruction.serviceId = serviceId
+	instruction.serviceConfig = serviceConfig
+	return nil
 }

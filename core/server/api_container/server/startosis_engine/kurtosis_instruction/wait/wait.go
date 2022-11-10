@@ -13,7 +13,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
-	"strings"
 )
 
 const (
@@ -65,12 +64,10 @@ func (instruction *WaitInstruction) GetPositionInOriginalScript() *kurtosis_inst
 }
 
 func (instruction *WaitInstruction) GetCanonicalInstruction() string {
-	buffer := new(strings.Builder)
-	buffer.WriteString(WaitBuiltinName + "(")
-	buffer.WriteString(serviceIdArgName + "=\"")
-	buffer.WriteString(fmt.Sprintf("%v\", ", instruction.serviceId))
-	buffer.WriteString(factNameArgName + ")")
-	return buffer.String()
+	return shared_helpers.CanonicalizeInstruction(WaitBuiltinName, starlark.StringDict{
+		serviceIdArgName: starlark.String(instruction.serviceId),
+		factNameArgName:  starlark.String(instruction.factName),
+	}, &instruction.position)
 }
 
 func (instruction *WaitInstruction) Execute(ctx context.Context, _ *startosis_executor.ExecutionEnvironment) error {

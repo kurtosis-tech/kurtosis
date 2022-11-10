@@ -243,8 +243,29 @@ message ExecuteModuleResponse {
 // ==============================================================================================
 message ExecuteStartosisScriptArgs {
   string serialized_script = 1;
+
+  // Defaults to false
+  optional bool dry_run = 2;
 }
 
+// ==============================================================================================
+//                                 Execute Startosis Module
+// ==============================================================================================
+message ExecuteStartosisModuleArgs {
+  string module_id = 1;
+  bytes data = 2;
+
+  // Serialized parameters data for the Startosis module main function
+  // This should be a valid JSON string
+  string serialized_params = 3;
+
+  // Defaults to false
+  optional bool dry_run = 4;
+}
+
+// ==============================================================================================
+//                                 Startosis Execution Response
+// ==============================================================================================
 message ExecuteStartosisResponse {
   string serialized_script_output = 1;
 
@@ -253,6 +274,16 @@ message ExecuteStartosisResponse {
   repeated StartosisValidationError validation_errors = 3;
 
   string execution_error = 4;
+
+  repeated SerializedKurtosisInstruction serialized_instructions = 5;
+}
+
+message StartosisValidationError {
+  string error = 1;
+}
+
+message SerializedKurtosisInstruction {
+  string serialized_instruction = 1;
 }
 
 // ==============================================================================================
@@ -483,14 +514,6 @@ message RenderTemplatesToFilesArtifactResponse {
 }
 
 // ==============================================================================================
-//                                 Startosis errors
-// ==============================================================================================
-
-message StartosisValidationError {
-  string error = 1;
-}
-
-// ==============================================================================================
 //                                 Facts Engine
 // ==============================================================================================
 
@@ -550,17 +573,3 @@ message FactRecipe {
   }
   optional google.protobuf.Duration refresh_interval = 6; // Defaults to 2 seconds
 }
-
-// ==============================================================================================
-//                                 Execute Startosis Module
-// ==============================================================================================
-
-message ExecuteStartosisModuleArgs {
-  string module_id = 1;
-  bytes data = 2;
-  
-  // Serialized parameters data for the Startosis module main function
-  // This should be a valid JSON string
-  string serialized_params = 3;
-}
-

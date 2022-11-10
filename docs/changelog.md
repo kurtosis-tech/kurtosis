@@ -3,28 +3,59 @@
 ### Features
 - Add `wait` and `define` command in Startosis
 
-# 0.51.10
+# 0.52.0
+### Breaking Changes
+- Unified `GetUserServiceLogs` and `StreamUserServiceLogs` engine's endpoints, now `GetUserServiceLogs` will handle both use cases
+  - Users will have to re-adapt `GetUserServiceLogs` calls and replace the `StreamUserServiceLogs` call with this
+- Added the `follow_logs` parameter in `GetUserServiceLogsArgs` engine's proto file
+  - Users should have to add this param in all the `GetUserServiceLogs` calls
+- Unified `GetUserServiceLogs` and `StreamUserServiceLogs` methods in `KurtosisContext`, now `GetUserServiceLogs` will handle both use cases
+  - Users will have to re-adapt `GetUserServiceLogs` calls and replace the `StreamUserServiceLogs` call with this
+- Added the `follow_logs` parameter in `KurtosisContext.GetUserServiceLogs`
+  - Users will have to addition this new parameter on every call
 
+### Changes
+- InterpretationError is now able to store a `cause`. It simplifies being more explicit on want the root issue was
+- Added `upload_service` to Startosis
+- Add `--args` to `kurtosis startosis exec` CLI command to pass in a serialized JSON
+- Moved `read_file` to be a simple Startosis builtin in place of a Kurtosis instruction
+
+# 0.51.13
+### Fixes
+- Set `entry_point_args` and `cmd_args` to `nil` if not specified instead of empty array 
+
+# 0.51.12
+### Features
+- Added an optional `--dry-run` flag to the `startosis exec` (defaulting to false) command which prints the list of Kurtosis instruction without executing any. When `--dry-run` is set to false, the list of Kurtosis instructions is printed to the output of CLI after being executed.
+
+# 0.51.11
+### Features
+- Improve how kurtosis instructions are canonicalized with a universal canonicalizer. Each instruction is now printed on multiple lines with a comment pointing the to position in the source code.
+- Support `private_ip_address_placeholder` to be passed in `service_config` for `add_service` in Starlark
+
+### Changes
+- Updated how we generate the canonical string for Kurtosis `upload_files` instruction
+
+# 0.51.10
 ### Changes
 - Added Starlark `proto` module, such that you can now do `proto.has(msg, "field_name")` in Startosis to differentiate between when a field is set to its default value and when it is unset (the field has to be marked as optional) in the proto file though.
 
 # 0.51.9
 ### Features
 - Implemented the new `StreamUserServiceLogs` endpoint in the Kurtosis engine server
-- Added the new `StreamUserServiceLogs` in the Kurtosis engine golang library
+- Added the new `StreamUserServiceLogs` in the Kurtosis engine Golang library
+- Added the new `StreamUserServiceLogs` in the Kurtosis engine Typescript library
 - Added the `StreamUserServiceLogs` method in Loki logs database client
-- Added the `StreamUserServiceLogs` method in Kurtosis backend logs client
+- Added `stream-logs` test in Golang and Typescript `internal-testsuites`
+- Added `service.GUID` field in `Service.Ctx` in the Kurtosis SDK
 
 ### Changes
 - Updated the CLI `service logs` command in order to use the new `KurtosisContext.StreamUserServiceLogs` when user requested to follow logs
-
-### Changes
 - InterpretationError is now able to store a `cause`. It simplifies being more explicit on want the root issue was
 - Added `upload_service` to Startosis
 - Add `--args` to `kurtosis startosis exec` CLI command to pass in a serialized JSON
 
 # 0.51.8
-
 ### Features
 - Added exec and HTTP request facts
 - Prints out the instruction line, col & filename in the execution error
@@ -120,7 +151,6 @@
 - Fixes how the push cli artifacts & publish engine runs by generating kurtosis_version before hand
 
 # 0.50.1
-
 ### Fixes
 - Fix generate scripts to take passed version on release
 
@@ -164,7 +194,6 @@ it is set to `KURTOSIS_IP_ADDR_PLACEHOLDER`
 - Removes remote-docker-setup from the `build_cli` job in Circle
 
 # 0.49.9
-
 ### Features
 - Implement Startosis add_service method
 - Enable linter on Startosis codebase

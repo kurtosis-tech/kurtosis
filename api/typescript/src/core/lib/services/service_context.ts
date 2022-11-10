@@ -2,7 +2,7 @@ import { err, ok, Result } from 'neverthrow';
 import { newExecCommandArgs, newPauseServiceArgs, newUnpauseServiceArgs } from '../constructor_calls';
 import type { ExecCommandArgs } from '../../kurtosis_core_rpc_api_bindings/api_container_service_pb';
 import type { PortSpec } from './port_spec';
-import type { ServiceID } from './service';
+import type { ServiceID, ServiceGUID } from './service';
 import { GenericApiContainerClient } from '../enclaves/generic_api_container_client';
 import {PauseServiceArgs, UnpauseServiceArgs} from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 
@@ -11,6 +11,7 @@ export class ServiceContext {
     constructor(
         private readonly client: GenericApiContainerClient,
         private readonly serviceId: ServiceID,
+        private readonly serviceGuid: ServiceGUID,
         private readonly privateIpAddress: string,
         private readonly privatePorts: Map<string, PortSpec>,
         private readonly publicIpAddress: string,
@@ -20,6 +21,11 @@ export class ServiceContext {
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public getServiceID(): ServiceID { 
         return this.serviceId;
+    }
+
+    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+    public getServiceGUID(): ServiceGUID {
+        return this.serviceGuid;
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation

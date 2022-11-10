@@ -530,7 +530,7 @@ func (network *DefaultServiceNetwork) HttpRequestService(ctx context.Context, se
 	if !found {
 		return nil, stacktrace.NewError("An error occurred when getting port '%v' from service '%v' for HTTP request", serviceId, portId)
 	}
-	url := fmt.Sprintf("http://%v:%v/%v", service.GetRegistration().GetPrivateIP(), port.GetNumber(), endpoint)
+	url := fmt.Sprintf("http://%v:%v%v", service.GetRegistration().GetPrivateIP(), port.GetNumber(), endpoint)
 	if method == http.MethodPost {
 		response, err := http.Post(url, contentType, strings.NewReader(body))
 		if err != nil {

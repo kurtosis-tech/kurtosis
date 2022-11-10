@@ -107,7 +107,7 @@ func run(
 
 	clusterConfig, err := kurtosis_config_getter.GetKurtosisClusterConfig()
 	if err != nil {
-		return stacktrace.Propagate(err, "And error occurred getting the Kurtosis cluster config")
+		return stacktrace.Propagate(err, "An error occurred getting the Kurtosis cluster config")
 	}
 
 	clusterType := clusterConfig.GetClusterType()
@@ -165,30 +165,9 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred connecting to the local Kurtosis engine")
 	}
 
-	if !shouldFollowLogs {
-
-		userServiceLogs, err := kurtosisCtx.GetUserServiceLogs(ctx, enclaveId, userServiceGuids)
-		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred getting user service logs from user services with GUIDs '%+v' in enclave '%v'", userServiceGuids, enclaveId)
-		}
-
-		serviceLogs, found := userServiceLogs[serviceGuid]
-		if !found {
-			return stacktrace.NewError("Expected to find logs for user service with GUID '%v' on user service logs map '%+v' but was not found; this should never happen, and is a bug in Kurtosis", serviceGuid, userServiceLogs)
-		}
-
-		for _, logLine := range serviceLogs {
-			if _, err := fmt.Fprintln(logrus.StandardLogger().Out, logLine); err != nil {
-				logrus.Errorf("We tried to print the user service log line '%v', but doing so threw an error:\n%v", logLine, err)
-			}
-		}
-
-		return nil
-	}
-
-	userServiceLogsByGuidChan, cancelStreamUserServiceLogsFunc, err := kurtosisCtx.StreamUserServiceLogs(ctx, enclaveId, userServiceGuids)
+	userServiceLogsByGuidChan, cancelStreamUserServiceLogsFunc, err := kurtosisCtx.GetUserServiceLogs(ctx, enclaveId, userServiceGuids, shouldFollowLogs)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred streaming user service logs from user services with GUIDs '%+v' in enclave '%v'", userServiceGuids, enclaveId)
+		return stacktrace.Propagate(err, "An error occurred getting user service logs from user services with GUIDs '%+v' in enclave '%v' and with follow logs value '%v'", userServiceGuids, enclaveId, shouldFollowLogs)
 	}
 	defer cancelStreamUserServiceLogsFunc()
 

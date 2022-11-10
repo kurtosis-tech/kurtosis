@@ -320,7 +320,7 @@ func TestParseEntryPointArgs_SuccessOnMissingValue(t *testing.T) {
 	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
 	output, err := parseEntryPointArgs(input)
 	require.Nil(t, err)
-	require.Equal(t, []string{}, output)
+	require.Equal(t, []string(nil), output)
 }
 
 func TestParseEntryPointArgs_FailureOnListContainingNonStringValues(t *testing.T) {
@@ -347,7 +347,7 @@ func TestParseCommandArgs_SuccessOnMissingValue(t *testing.T) {
 	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
 	output, err := parseCmdArgs(input)
 	require.Nil(t, err)
-	require.Equal(t, []string{}, output)
+	require.Equal(t, []string(nil), output)
 }
 
 func TestParseCommandArgs_FailureOnListContainingNonStringValues(t *testing.T) {
@@ -432,16 +432,16 @@ func TestParseCommand_InvalidCommandsWithIntegers(t *testing.T) {
 	require.NotNil(t, err)
 }
 
-func TestParseSrcPath_ValidValue(t *testing.T) {
+func TestParseFilePathPath_ValidValue(t *testing.T) {
 	input := starlark.String("/foo/bar")
-	output, err := ParseSrcPath(input)
+	output, err := ParseFilePath("file_path", input)
 	require.Nil(t, err)
 	require.Equal(t, "/foo/bar", output)
 }
 
-func TestParseSrcPath_EmptyStringFails(t *testing.T) {
+func TestParseFilePath_EmptyStringFails(t *testing.T) {
 	input := starlark.String("")
-	_, err := ParseSrcPath(input)
+	_, err := ParseFilePath("file_path", input)
 	require.NotNil(t, err)
 }
 
@@ -547,4 +547,56 @@ func TestParseTemplatesAndData_FailsForMalformedJSONWithoutClosingBraces(t *test
 	_, err = ParseTemplatesAndData(input)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), fmt.Sprintf("Template data for file '%v', '%v' isn't valid JSON", templateRelativePath, dataAsJson))
+}
+
+func TestParsePrivateIPAddressPlaceholder_Success(t *testing.T) {
+	dict := starlark.StringDict{}
+	dict["private_ip_address_placeholder"] = starlark.String("KURTOSIS_IP_ADDRESS")
+	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
+	output, err := parsePrivateIPAddressPlaceholder(input)
+	require.Nil(t, err)
+	require.Equal(t, "KURTOSIS_IP_ADDRESS", output)
+}
+
+func TestParsePrivateIPAddressPlaceholder_FailureNonString(t *testing.T) {
+	dict := starlark.StringDict{}
+	dict["private_ip_address_placeholder"] = starlark.MakeInt(42)
+	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
+	_, err := parsePrivateIPAddressPlaceholder(input)
+	require.NotNil(t, err)
+}
+
+func TestParseHttpRequestFactRecipe_GetRequestWithoutOptionalFields(t *testing.T) {
+	dict := starlark.StringDict{}
+	expectedRecipe := &kurtosis_core_rpc_api_bindings.HttpRequestFactRecipe{
+		PortId:   "port",
+		Method:   kurtosis_core_rpc_api_bindings.HttpRequestMethod_GET,
+		Endpoint: "/",
+	}
+	dict["port_id"] = starlark.String("port")
+	dict["method"] = starlark.String("GET")
+	dict["endpoint"] = starlark.String("/")
+	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
+	recipe, err := ParseHttpRequestFactRecipe(input)
+	require.Nil(t, err)
+	require.Equal(t, expectedRecipe, recipe.HttpRequestFact)
+}
+
+func TestParseHttpRequestFactRecipe_GetRequestWithOptionalFields(t *testing.T) {
+	dict := starlark.StringDict{}
+	var fieldExtractor = ".body"
+	expectedRecipe := &kurtosis_core_rpc_api_bindings.HttpRequestFactRecipe{
+		PortId:         "port",
+		Method:         kurtosis_core_rpc_api_bindings.HttpRequestMethod_GET,
+		Endpoint:       "/",
+		FieldExtractor: &fieldExtractor,
+	}
+	dict["port_id"] = starlark.String("port")
+	dict["method"] = starlark.String("GET")
+	dict["endpoint"] = starlark.String("/")
+	dict["field_extractor"] = starlark.String(fieldExtractor)
+	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
+	recipe, err := ParseHttpRequestFactRecipe(input)
+	require.Nil(t, err)
+	require.Equal(t, expectedRecipe, recipe.HttpRequestFact)
 }
