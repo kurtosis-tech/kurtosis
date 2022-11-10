@@ -127,7 +127,9 @@ func (client *lokiLogsDatabaseClient) GetUserServiceLogs(
 	enclaveID enclave.EnclaveID,
 	userServiceGUIDs map[service.ServiceGUID]bool,
 ) (
-	map[service.ServiceGUID][]LogLine,
+	chan map[service.ServiceGUID][]LogLine,
+	chan error,
+	func(),
 	error,
 ) {
 
@@ -163,30 +165,43 @@ func (client *lokiLogsDatabaseClient) GetUserServiceLogs(
 		URL:    queryRangeEndpointUrl,
 		Header: httpHeaderWithTenantID,
 	}
-	httpRequestWithContext := httpRequest.WithContext(ctx)
+
+	ctxWithCancel, cancelCtxFunc := context.WithCancel(ctx)
+	defer cancelCtxFunc()
+
+	httpRequestWithContext := httpRequest.WithContext(ctxWithCancel)
 
 	httpResponseBodyBytes, err := client.doHttpRequestWithRetries(httpRequestWithContext)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred doing HTTP request '%+v'", httpRequestWithContext)
+		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred doing HTTP request '%+v'", httpRequestWithContext)
 	}
 
 	lokiQueryRangeResponseObj := &lokiQueryRangeResponse{}
 	if err = json.Unmarshal(httpResponseBodyBytes, lokiQueryRangeResponseObj); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred unmarshalling the Loki query range response")
+		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred unmarshalling the Loki query range response")
 	}
 
 	if lokiQueryRangeResponseObj == nil || lokiQueryRangeResponseObj.Data == nil {
-		return nil, stacktrace.Propagate(err, "The response body's schema payload received '%+v' by calling the Loki's query range endpoint is not what was expected; this is a bug in Kurtosis", lokiQueryRangeResponseObj)
+		return nil, nil, nil, stacktrace.Propagate(err, "The response body's schema payload received '%+v' by calling the Loki's query range endpoint is not what was expected; this is a bug in Kurtosis", lokiQueryRangeResponseObj)
 	}
 
 	lokiStreams := lokiQueryRangeResponseObj.Data.Result
 
+	//this channel will return the user service log lines by service GUI
+	logsByKurtosisUserServiceGuidChan := make(chan map[service.ServiceGUID][]LogLine, logsByKurtosisUserServiceGuidChanBuffSize)
+	defer close(logsByKurtosisUserServiceGuidChan)
+
 	resultLogsByKurtosisUserServiceGuid, err := newUserServiceLogLinesByUserServiceGuidFromLokiStreams(lokiStreams)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting user service log lines from loki streams '%+v'", lokiStreams)
+		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred getting user service log lines from loki streams '%+v'", lokiStreams)
 	}
 
-	return resultLogsByKurtosisUserServiceGuid, nil
+	logsByKurtosisUserServiceGuidChan <- resultLogsByKurtosisUserServiceGuid
+
+	//this channel is not used in the sync loki request, but it's returned just to implement the contract
+	var streamErrChan chan error
+
+	return logsByKurtosisUserServiceGuidChan, streamErrChan, cancelCtxFunc, nil
 }
 
 func (client *lokiLogsDatabaseClient) StreamUserServiceLogs(
