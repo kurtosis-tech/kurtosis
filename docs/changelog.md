@@ -3,6 +3,9 @@
 ### Features
 - Add `wait` and `define` command in Startosis
 
+### Fixes
+- Fixes a bug where we'd propagate a nil error
+
 # 0.52.0
 ### Breaking Changes
 - Unified `GetUserServiceLogs` and `StreamUserServiceLogs` engine's endpoints, now `GetUserServiceLogs` will handle both use cases
