@@ -60,17 +60,22 @@ Destroys enclaves in the Kurtosis engine.
 
 ---
 
-[comment]: <> (TODO upgrade this method docs)
-### getUserServiceLogs(EnclaveID enclaveId, Set\<ServiceGUID> userServiceGuids) -\> Map\<ServiceGUID, Array\<String\>\> userServiceLogsByUserServiceGuid
+[comment]: <> (//TODO Complete the getServiceLogs public documentation)
+### getServiceLogs(EnclaveID enclaveId, Set\<ServiceGUID> serviceGuids) -\> [ServiceLogsStreamContent][servicelogsstreamcontent] serviceLogsStreamContent
 Get the user service container log lines (ordered in ascending direction, with the oldest line first) from user services identified by their GUID.
 The result will contain the last 4000 log lines max for each user service container.
 
 **Args**
-* `enclaveId`: ID of the user services' enclave.
-* `userServiceGuids`: A set of user service GUIDs identifying the services from which logs should be retrieved
+* `enclaveId`: ID of the services' enclave.
+* `serviceGuids`: A set of service GUIDs identifying the services from which logs should be retrieved
 
 **Returns**
-* `userServiceLogsByUserServiceGuid`: A map containing the user service container logs grouped by user service GUID
+* `serviceLogsByServiceGuid`: A map containing the service container logs grouped by service GUID
+
+ServiceLogsStreamContent
+------------------------
+This class is the representation of the content sends during a service logs stream communication
+[comment]: <> (//TODO Complete the getServiceLogs public documentation)
 
 _Found a bug? File it on [the repo][issues]!_
 
@@ -81,3 +86,5 @@ _Found a bug? File it on [the repo][issues]!_
 
 [enclavecontext]: ../kurtosis/core-lib-documentation#enclavecontext
 [enclavecontext_repartitionnetwork]: ../kurtosis/core-lib-documentation#repartitionnetworkmappartitionid-setserviceid-partitionservices-mappartitionid-mappartitionid-partitionconnection-partitionconnections-partitionconnection-defaultconnection
+
+[servicelogsstreamcontent]: #servicelogsstreamcontent
