@@ -158,7 +158,7 @@ func runMain() error {
 	factsEngine := facts_engine.NewFactsEngine(db, serviceNetwork)
 	// TODO: Consolidate Interpreter, Validator and Executor into a single interface
 	startosisValidator := startosis_engine.NewStartosisValidator(&kurtosisBackend)
-	startosisInterpreter := startosis_engine.NewStartosisInterpreter(serviceNetwork, gitModuleContentProvider)
+	startosisInterpreter := startosis_engine.NewStartosisInterpreterWithFacts(serviceNetwork, factsEngine, gitModuleContentProvider)
 	startosisExecutor := startosis_engine.NewStartosisExecutor()
 
 	//Creation of ApiContainerService

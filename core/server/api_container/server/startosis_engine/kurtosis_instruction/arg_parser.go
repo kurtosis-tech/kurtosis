@@ -19,13 +19,19 @@ import (
 const (
 	serviceIdArgName     = "service_id"
 	serviceConfigArgName = "service_config"
+	defineFactArgName    = "define_fact"
 
 	containerImageNameKey          = "container_image_name"
+	factNameArgName                = "fact_name"
 	usedPortsKey                   = "used_ports"
 	entryPointArgsKey              = "entry_point_args"
 	cmdArgsKey                     = "cmd_args"
 	envVarArgsKey                  = "env_vars"
 	filesArtifactMountDirpathsKey  = "files_artifact_mount_dirpaths"
+	portIdKey                      = "port_id"
+	requestEndpointKey             = "endpoint"
+	requestMethodEndpointKey       = "method"
+	fieldExtractorKey              = "field_extractor"
 	privateIPAddressPlaceholderKey = "private_ip_address_placeholder"
 
 	portNumberKey   = "number"
@@ -39,6 +45,8 @@ const (
 	templateDataJSONFieldKey = starlark.String("template_data_json")
 
 	maxPortNumber = 65535
+
+	getRequestMethod = "GET"
 )
 
 func ParseServiceId(serviceIdRaw starlark.String) (service.ServiceID, *startosis_errors.InterpretationError) {
@@ -51,6 +59,46 @@ func ParseServiceId(serviceIdRaw starlark.String) (service.ServiceID, *startosis
 		return "", startosis_errors.NewInterpretationError("Service ID cannot be empty")
 	}
 	return service.ServiceID(serviceId), nil
+}
+
+func ParseFactName(factNameRaw starlark.String) (string, *startosis_errors.InterpretationError) {
+	factName, interpretationErr := safeCastToString(factNameRaw, factNameArgName)
+	if interpretationErr != nil {
+		return "", interpretationErr
+	}
+	if len(factName) == 0 {
+		return "", startosis_errors.NewInterpretationError("Fact name cannot be empty")
+	}
+	return factName, nil
+}
+
+func ParseHttpRequestFactRecipe(serviceConfig *starlarkstruct.Struct) (*kurtosis_core_rpc_api_bindings.FactRecipe_HttpRequestFact, *startosis_errors.InterpretationError) {
+	portId, interpretationErr := extractStringValue(serviceConfig, portIdKey, defineFactArgName)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
+	endpoint, interpretationErr := extractStringValue(serviceConfig, requestEndpointKey, defineFactArgName)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
+	method, interpretationErr := extractStringValue(serviceConfig, requestMethodEndpointKey, defineFactArgName)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
+	maybeFieldExtractor, interpretationErr := maybeExtractStringValue(serviceConfig, fieldExtractorKey)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
+	if method == getRequestMethod {
+		builtConfig := binding_constructors.NewGetHttpRequestFactRecipeDefinition(portId, endpoint, maybeFieldExtractor)
+		return builtConfig, nil
+	} else {
+		return nil, startosis_errors.NewInterpretationError("Define fact HTTP method not recognized")
+	}
 }
 
 func ParseServiceConfigArg(serviceConfig *starlarkstruct.Struct) (*kurtosis_core_rpc_api_bindings.ServiceConfig, *startosis_errors.InterpretationError) {
@@ -348,6 +396,18 @@ func extractStringValue(structField *starlarkstruct.Struct, key string, argNameF
 		return "", interpretationErr
 	}
 	return stringValue, nil
+}
+
+func maybeExtractStringValue(structField *starlarkstruct.Struct, key string) (*string, *startosis_errors.InterpretationError) {
+	value, err := structField.Attr(key)
+	if err != nil {
+		return nil, nil
+	}
+	stringValue, interpretationErr := safeCastToString(value, key)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	return &stringValue, nil
 }
 
 func extractUint32Value(structField *starlarkstruct.Struct, key string, argNameForLogging string) (uint32, *startosis_errors.InterpretationError) {

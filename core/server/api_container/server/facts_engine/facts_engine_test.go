@@ -16,6 +16,8 @@ const (
 	waitUntilFactsAreUpdated = 2000 * refreshInterval
 )
 
+var jsonResponseBody = []byte("{\"color\": \"blue\"}")
+
 func TestFactEngineLoop(t *testing.T) {
 	file, err := os.CreateTemp("/tmp", "*.db")
 	defer os.Remove(file.Name())
@@ -117,4 +119,14 @@ func TestFactRecipeFetchValueAfter(t *testing.T) {
 	require.Greater(t, fetchedFactValues[len(fetchedFactValues)-1].GetUpdatedAt().AsTime().UnixNano(), fetchedFactValues[0].GetUpdatedAt().AsTime().UnixNano())
 	require.Equal(t, fetchedFactValues[0].GetStringValue(), factValue.GetStringValue())
 
+}
+
+func TestFieldExtraction(t *testing.T) {
+	factValue, err := extractFactFromJson(".size", jsonResponseBody)
+	require.Nil(t, factValue)
+	require.NotNil(t, err)
+	factValue, err = extractFactFromJson(".color", jsonResponseBody)
+	require.NotNil(t, factValue)
+	require.Equal(t, factValue.GetStringValue(), "blue")
+	require.Nil(t, err)
 }

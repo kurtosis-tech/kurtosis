@@ -1,5 +1,8 @@
 # TBD
 
+### Features
+- Add `wait` and `define` command in Startosis
+
 # 0.52.0
 ### Breaking Changes
 - Unified `GetUserServiceLogs` and `StreamUserServiceLogs` engine's endpoints, now `GetUserServiceLogs` will handle both use cases

@@ -1240,6 +1240,11 @@ export class HttpRequestFactRecipe extends jspb.Message {
   getBody(): string;
   setBody(value: string): HttpRequestFactRecipe;
 
+  getFieldExtractor(): string;
+  setFieldExtractor(value: string): HttpRequestFactRecipe;
+  hasFieldExtractor(): boolean;
+  clearFieldExtractor(): HttpRequestFactRecipe;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): HttpRequestFactRecipe.AsObject;
   static toObject(includeInstance: boolean, msg: HttpRequestFactRecipe): HttpRequestFactRecipe.AsObject;
@@ -1255,6 +1260,12 @@ export namespace HttpRequestFactRecipe {
     method: HttpRequestMethod,
     contentType: string,
     body: string,
+    fieldExtractor?: string,
+  }
+
+  export enum FieldExtractorCase { 
+    _FIELD_EXTRACTOR_NOT_SET = 0,
+    FIELD_EXTRACTOR = 6,
   }
 }
 
