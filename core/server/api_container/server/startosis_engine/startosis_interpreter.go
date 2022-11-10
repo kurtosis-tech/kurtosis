@@ -108,17 +108,17 @@ func (interpreter *StartosisInterpreter) buildBindings(threadName string, instru
 		starlarkproto.Module.Name:         starlarkproto.Module,
 		time.Module.Name:                  time.Module,
 
-		// Kurtosis custom builtins
-		import_types.ImportTypesBuiltinName: starlark.NewBuiltin(import_types.ImportTypesBuiltinName, import_types.GenerateImportTypesBuiltin(interpreter.protoFileStore)),
-		read_file.ReadFileBuiltinName:       starlark.NewBuiltin(read_file.ReadFileBuiltinName, read_file.GenerateReadFileBuiltin(interpreter.moduleContentProvider)),
-
-		// Kurtosis instructions
+		// Kurtosis instructions - will push instructions to the queue that will affect the enclave state at execution
 		add_service.AddServiceBuiltinName:                        starlark.NewBuiltin(add_service.AddServiceBuiltinName, add_service.GenerateAddServiceBuiltin(instructionsQueue, interpreter.serviceNetwork)),
 		exec.ExecBuiltinName:                                     starlark.NewBuiltin(exec.ExecBuiltinName, exec.GenerateExecBuiltin(instructionsQueue, interpreter.serviceNetwork)),
 		store_files_from_service.StoreFileFromServiceBuiltinName: starlark.NewBuiltin(store_files_from_service.StoreFileFromServiceBuiltinName, store_files_from_service.GenerateStoreFilesFromServiceBuiltin(instructionsQueue, interpreter.serviceNetwork)),
 		render_templates.RenderTemplatesBuiltinName:              starlark.NewBuiltin(render_templates.RenderTemplatesBuiltinName, render_templates.GenerateRenderTemplatesBuiltin(instructionsQueue, interpreter.serviceNetwork)),
 		remove_service.RemoveServiceBuiltinName:                  starlark.NewBuiltin(remove_service.RemoveServiceBuiltinName, remove_service.GenerateRemoveServiceBuiltin(instructionsQueue, interpreter.serviceNetwork)),
 		upload_files.UploadFilesBuiltinName:                      starlark.NewBuiltin(upload_files.UploadFilesBuiltinName, upload_files.GenerateUploadFilesBuiltin(instructionsQueue, interpreter.moduleContentProvider, interpreter.serviceNetwork)),
+
+		// Kurtosis custom builtins - pure interpretation-time helpers. Do not add any instructions to the queue
+		import_types.ImportTypesBuiltinName: starlark.NewBuiltin(import_types.ImportTypesBuiltinName, import_types.GenerateImportTypesBuiltin(interpreter.protoFileStore)),
+		read_file.ReadFileBuiltinName:       starlark.NewBuiltin(read_file.ReadFileBuiltinName, read_file.GenerateReadFileBuiltin(interpreter.moduleContentProvider)),
 	}
 	return thread, predeclared
 }
