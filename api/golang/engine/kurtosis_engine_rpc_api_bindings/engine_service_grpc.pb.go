@@ -39,9 +39,7 @@ type EngineServiceClient interface {
 	// Gets rid of old enclaves
 	Clean(ctx context.Context, in *CleanArgs, opts ...grpc.CallOption) (*CleanResponse, error)
 	// Get user service logs
-	GetUserServiceLogs(ctx context.Context, in *GetUserServiceLogsArgs, opts ...grpc.CallOption) (*GetUserServiceLogsResponse, error)
-	// Stream user service stream logs
-	StreamUserServiceLogs(ctx context.Context, in *GetUserServiceLogsArgs, opts ...grpc.CallOption) (EngineService_StreamUserServiceLogsClient, error)
+	GetUserServiceLogs(ctx context.Context, in *GetUserServiceLogsArgs, opts ...grpc.CallOption) (EngineService_GetUserServiceLogsClient, error)
 }
 
 type engineServiceClient struct {
@@ -106,21 +104,12 @@ func (c *engineServiceClient) Clean(ctx context.Context, in *CleanArgs, opts ...
 	return out, nil
 }
 
-func (c *engineServiceClient) GetUserServiceLogs(ctx context.Context, in *GetUserServiceLogsArgs, opts ...grpc.CallOption) (*GetUserServiceLogsResponse, error) {
-	out := new(GetUserServiceLogsResponse)
-	err := c.cc.Invoke(ctx, "/engine_api.EngineService/GetUserServiceLogs", in, out, opts...)
+func (c *engineServiceClient) GetUserServiceLogs(ctx context.Context, in *GetUserServiceLogsArgs, opts ...grpc.CallOption) (EngineService_GetUserServiceLogsClient, error) {
+	stream, err := c.cc.NewStream(ctx, &EngineService_ServiceDesc.Streams[0], "/engine_api.EngineService/GetUserServiceLogs", opts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
-}
-
-func (c *engineServiceClient) StreamUserServiceLogs(ctx context.Context, in *GetUserServiceLogsArgs, opts ...grpc.CallOption) (EngineService_StreamUserServiceLogsClient, error) {
-	stream, err := c.cc.NewStream(ctx, &EngineService_ServiceDesc.Streams[0], "/engine_api.EngineService/StreamUserServiceLogs", opts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &engineServiceStreamUserServiceLogsClient{stream}
+	x := &engineServiceGetUserServiceLogsClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -130,16 +119,16 @@ func (c *engineServiceClient) StreamUserServiceLogs(ctx context.Context, in *Get
 	return x, nil
 }
 
-type EngineService_StreamUserServiceLogsClient interface {
+type EngineService_GetUserServiceLogsClient interface {
 	Recv() (*GetUserServiceLogsResponse, error)
 	grpc.ClientStream
 }
 
-type engineServiceStreamUserServiceLogsClient struct {
+type engineServiceGetUserServiceLogsClient struct {
 	grpc.ClientStream
 }
 
-func (x *engineServiceStreamUserServiceLogsClient) Recv() (*GetUserServiceLogsResponse, error) {
+func (x *engineServiceGetUserServiceLogsClient) Recv() (*GetUserServiceLogsResponse, error) {
 	m := new(GetUserServiceLogsResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -167,9 +156,7 @@ type EngineServiceServer interface {
 	// Gets rid of old enclaves
 	Clean(context.Context, *CleanArgs) (*CleanResponse, error)
 	// Get user service logs
-	GetUserServiceLogs(context.Context, *GetUserServiceLogsArgs) (*GetUserServiceLogsResponse, error)
-	// Stream user service stream logs
-	StreamUserServiceLogs(*GetUserServiceLogsArgs, EngineService_StreamUserServiceLogsServer) error
+	GetUserServiceLogs(*GetUserServiceLogsArgs, EngineService_GetUserServiceLogsServer) error
 }
 
 // UnimplementedEngineServiceServer should be embedded to have forward compatible implementations.
@@ -194,11 +181,8 @@ func (UnimplementedEngineServiceServer) DestroyEnclave(context.Context, *Destroy
 func (UnimplementedEngineServiceServer) Clean(context.Context, *CleanArgs) (*CleanResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Clean not implemented")
 }
-func (UnimplementedEngineServiceServer) GetUserServiceLogs(context.Context, *GetUserServiceLogsArgs) (*GetUserServiceLogsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetUserServiceLogs not implemented")
-}
-func (UnimplementedEngineServiceServer) StreamUserServiceLogs(*GetUserServiceLogsArgs, EngineService_StreamUserServiceLogsServer) error {
-	return status.Errorf(codes.Unimplemented, "method StreamUserServiceLogs not implemented")
+func (UnimplementedEngineServiceServer) GetUserServiceLogs(*GetUserServiceLogsArgs, EngineService_GetUserServiceLogsServer) error {
+	return status.Errorf(codes.Unimplemented, "method GetUserServiceLogs not implemented")
 }
 
 // UnsafeEngineServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -320,42 +304,24 @@ func _EngineService_Clean_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
-func _EngineService_GetUserServiceLogs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetUserServiceLogsArgs)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(EngineServiceServer).GetUserServiceLogs(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/engine_api.EngineService/GetUserServiceLogs",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EngineServiceServer).GetUserServiceLogs(ctx, req.(*GetUserServiceLogsArgs))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _EngineService_StreamUserServiceLogs_Handler(srv interface{}, stream grpc.ServerStream) error {
+func _EngineService_GetUserServiceLogs_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(GetUserServiceLogsArgs)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(EngineServiceServer).StreamUserServiceLogs(m, &engineServiceStreamUserServiceLogsServer{stream})
+	return srv.(EngineServiceServer).GetUserServiceLogs(m, &engineServiceGetUserServiceLogsServer{stream})
 }
 
-type EngineService_StreamUserServiceLogsServer interface {
+type EngineService_GetUserServiceLogsServer interface {
 	Send(*GetUserServiceLogsResponse) error
 	grpc.ServerStream
 }
 
-type engineServiceStreamUserServiceLogsServer struct {
+type engineServiceGetUserServiceLogsServer struct {
 	grpc.ServerStream
 }
 
-func (x *engineServiceStreamUserServiceLogsServer) Send(m *GetUserServiceLogsResponse) error {
+func (x *engineServiceGetUserServiceLogsServer) Send(m *GetUserServiceLogsResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -390,15 +356,11 @@ var EngineService_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "Clean",
 			Handler:    _EngineService_Clean_Handler,
 		},
-		{
-			MethodName: "GetUserServiceLogs",
-			Handler:    _EngineService_GetUserServiceLogs_Handler,
-		},
 	},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "StreamUserServiceLogs",
-			Handler:       _EngineService_StreamUserServiceLogs_Handler,
+			StreamName:    "GetUserServiceLogs",
+			Handler:       _EngineService_GetUserServiceLogs_Handler,
 			ServerStreams: true,
 		},
 	},

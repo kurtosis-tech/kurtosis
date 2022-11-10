@@ -4,11 +4,13 @@ import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/stacktrace"
 	"github.com/stretchr/testify/require"
 	"net/http"
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 )
 
 const (
@@ -37,6 +39,8 @@ const (
 
 	userServiceContainerType = "user-service"
 
+	testTimeOut = 30 * time.Second
+
 )
 
 func TestIfHttpRequestIsValidWhenCallingGetUserServiceLogs(t *testing.T) {
@@ -51,9 +55,12 @@ func TestIfHttpRequestIsValidWhenCallingGetUserServiceLogs(t *testing.T) {
 
 	ctx := context.Background()
 
-	userServiceLogsByUserServiceGuids, err := logsDatabaseClient.GetUserServiceLogs(ctx, enclaveId, userServiceGuids)
+	userServiceLogsByGuidChan, errChan, closeStreamFunc, err := logsDatabaseClient.GetUserServiceLogs(ctx, enclaveId, userServiceGuids)
+	defer closeStreamFunc()
+
 	require.NoError(t, err, "An error occurred getting user service logs for GUIDs '%+v' in enclave '%v'", userServiceGuids, enclaveId)
-	require.NotNil(t, userServiceLogsByUserServiceGuids, "Received a nil user service logs, but a non-nil value was expected")
+	require.NotNil(t, userServiceLogsByGuidChan, "Received a nil user service logs channel, but a non-nil value was expected")
+	require.Nil(t, errChan, "Received a not nil error channel, but a nil value was expected")
 
 	mockedHttpClientObj, ok := logsDatabaseClient.httpClient.(*mockedHttpClient)
 	require.True(t, ok)
@@ -136,23 +143,49 @@ func TestDoRequestWithLokiLogsDatabaseClientReturnsValidResponse(t *testing.T) {
 		testUserService3Guid: 2,
 	}
 
-	userServiceLogsByUserServiceGuids, err := logsDatabaseClient.GetUserServiceLogs(ctx, enclaveId, userServiceGuids)
+	userServiceLogsByGuidChan, errChan, closeStreamFunc, err := logsDatabaseClient.GetUserServiceLogs(ctx, enclaveId, userServiceGuids)
+	defer closeStreamFunc()
+
 	require.NoError(t, err, "An error occurred getting user service logs for GUIDs '%+v' in enclave '%v'", userServiceGuids, enclaveId)
-	require.NotNil(t, userServiceLogsByUserServiceGuids, "Received a nil user service logs, but a non-nil value was expected")
+	require.NotNil(t, userServiceLogsByGuidChan, "Received a nil user service logs channel, but a non-nil value was expected")
+	require.Nil(t, errChan, "Received a not nil error channel, but a nil value was expected")
 
-	require.Equal(t, len(userServiceGuids), len(userServiceLogsByUserServiceGuids))
+	var testEvaluationErr error
 
-	for userServiceGuid := range userServiceGuids {
-		logLines, found := userServiceLogsByUserServiceGuids[userServiceGuid]
-		require.True(t, found)
+	shouldReceiveStream := true
+	for shouldReceiveStream {
+		select {
+		case <-time.Tick(testTimeOut):
+			testEvaluationErr = stacktrace.NewError("Receiving stream logs in the test has reached the '%v' time out", testTimeOut)
+			shouldReceiveStream = false
+			break
+		case userServiceLogsByGuid, isChanOpen := <-userServiceLogsByGuidChan:
+			if !isChanOpen {
+				shouldReceiveStream = false
+				break
+			}
 
-		expectedAmountLogLines, found := expectedUserServiceAmountLogLinesByUserServiceGuid[userServiceGuid]
-		require.True(t, found)
+			require.Equal(t, len(userServiceGuids), len(userServiceLogsByGuid))
 
-		require.Equal(t, expectedAmountLogLines, len(logLines))
+			for userServiceGuid := range userServiceGuids {
+				logLines, found := userServiceLogsByGuid[userServiceGuid]
+				require.True(t, found)
 
-		require.Equal(t, expectedFirstLogLineOnEachService, logLines[0].GetContent())
+				expectedAmountLogLines, found := expectedUserServiceAmountLogLinesByUserServiceGuid[userServiceGuid]
+				require.True(t, found)
+
+				require.Equal(t, expectedAmountLogLines, len(logLines))
+
+				require.Equal(t, expectedFirstLogLineOnEachService, logLines[0].GetContent())
+			}
+
+			shouldReceiveStream = false
+			break
+		}
 	}
+
+	require.NoError(t, testEvaluationErr)
+
 }
 
 func TestNewUserServiceLogLinesByUserServiceGuidFromLokiStreamsReturnSuccessfullyForLogTailJsonResponseBody(t *testing.T) {

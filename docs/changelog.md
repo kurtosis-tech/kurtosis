@@ -1,20 +1,29 @@
 # TBD
+### Breaking Changes
+- Unified `GetUserServiceLogs` and `StreamUserServiceLogs` engine's endpoints, now `GetUserServiceLogs` will handle both use cases
+  - Users will have to re-adapt `GetUserServiceLogs` calls and replace the `StreamUserServiceLogs` call with this
+- Added the `follow_logs` parameter in `GetUserServiceLogsArgs` engine's proto file
+  - Users should have to add this param in all the `GetUserServiceLogs` calls
+- Unified `GetUserServiceLogs` and `StreamUserServiceLogs` methods in `KurtosisContext`, now `GetUserServiceLogs` will handle both use cases
+  - Users will have to re-adapt `GetUserServiceLogs` calls and replace the `StreamUserServiceLogs` call with this
+- Added the `follow_logs` parameter in `KurtosisContext.GetUserServiceLogs`
+  - Users will have to addition this new parameter on every call
 
 ### Changes
+- InterpretationError is now able to store a `cause`. It simplifies being more explicit on want the root issue was
+- Added `upload_service` to Startosis
+- Add `--args` to `kurtosis startosis exec` CLI command to pass in a serialized JSON
 - Moved `read_file` to be a simple Startosis builtin in place of a Kurtosis instruction
 
 # 0.51.13
-
 ### Fixes
 - Set `entry_point_args` and `cmd_args` to `nil` if not specified instead of empty array 
 
 # 0.51.12
-
 ### Features
-- Added an optionl `--dry-run` flag to the `startosis exec` (defaulting to false) command which prints the list of Kurtosis instruction without executing any. When `--dry-run` is set to false, the list of Kurtosis instructions is printed to the output of CLI after being executed.
+- Added an optional `--dry-run` flag to the `startosis exec` (defaulting to false) command which prints the list of Kurtosis instruction without executing any. When `--dry-run` is set to false, the list of Kurtosis instructions is printed to the output of CLI after being executed.
 
 # 0.51.11
-
 ### Features
 - Improve how kurtosis instructions are canonicalized with a universal canonicalizer. Each instruction is now printed on multiple lines with a comment pointing the to position in the source code.
 - Support `private_ip_address_placeholder` to be passed in `service_config` for `add_service` in Starlark
@@ -137,7 +146,6 @@
 - Fixes how the push cli artifacts & publish engine runs by generating kurtosis_version before hand
 
 # 0.50.1
-
 ### Fixes
 - Fix generate scripts to take passed version on release
 
@@ -181,7 +189,6 @@ it is set to `KURTOSIS_IP_ADDR_PLACEHOLDER`
 - Removes remote-docker-setup from the `build_cli` job in Circle
 
 # 0.49.9
-
 ### Features
 - Implement Startosis add_service method
 - Enable linter on Startosis codebase

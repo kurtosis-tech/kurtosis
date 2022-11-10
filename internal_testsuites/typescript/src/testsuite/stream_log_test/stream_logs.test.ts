@@ -19,6 +19,12 @@ const EXAMPLE_SERVICE_ID: ServiceID = "stream-logs"
 
 const WAIT_FOR_ALL_LOGS_BEING_COLLECTED_IN_SECONDS = 2
 
+const SHOULD_FOLLOW_LOGS_FIRST_REQUEST = false;
+const SHOULD_FOLLOW_LOGS_SECOND_REQUEST = true;
+
+const shouldFollowLogsRequestOptions = [SHOULD_FOLLOW_LOGS_FIRST_REQUEST, SHOULD_FOLLOW_LOGS_SECOND_REQUEST];
+
+
 jest.setTimeout(180000)
 
 test("Test Stream Logs", TestStreamLogs)
@@ -70,30 +76,35 @@ async function TestStreamLogs() {
 
         await delay(WAIT_FOR_ALL_LOGS_BEING_COLLECTED_IN_SECONDS * 1000);
 
-        const streamUserServiceLogsPromise = await kurtosisContext.streamUserServiceLogs(enclaveID, userServiceGUIDs);
+        // will test executing getUserServiceLogs with shouldFollowLogs = false in the first iteration,
+        // and with shouldFollowLogs = true (which is used to tail logs) in the second iteration
+        for (let shouldFollowLogs of shouldFollowLogsRequestOptions) {
 
-        if (streamUserServiceLogsPromise.isErr()) {
-            throw streamUserServiceLogsPromise.error;
+            const streamUserServiceLogsPromise = await kurtosisContext.getUserServiceLogs(enclaveID, userServiceGUIDs, shouldFollowLogs);
+
+            if (streamUserServiceLogsPromise.isErr()) {
+                throw streamUserServiceLogsPromise.error;
+            }
+
+            const serviceLogsReadable = streamUserServiceLogsPromise.value;
+
+            const expectedLogLines = ["kurtosis", "test", "running", "successfully"];
+
+            const receivedLogLinesPromise: Promise<Array<string>> = newReceivedLogLinesPromise(serviceLogsReadable, userServiceGuid, expectedLogLines)
+
+            const receivedLogLines = await receivedLogLinesPromise
+
+            if (receivedLogLines.length === expectedLogLines.length) {
+                receivedLogLines.forEach((logline, loglineIndex) => {
+                    if (expectedLogLines[loglineIndex] != logline) {
+                        return err(new Error(`Expected to match the number ${loglineIndex} log line with this value ${expectedLogLines[loglineIndex]} but this one was received instead ${logline}`))
+                    }
+                })
+            } else {
+                throw new Error(`Expected to receive ${expectedLogLines.length} of log lines but ${receivedLogLines.length} log lines were received instead`)
+            }
+
         }
-
-        const serviceLogsReadable = streamUserServiceLogsPromise.value;
-
-        const expectedLogLines = ["kurtosis", "test", "running", "successfully"];
-
-        const receivedLogLinesPromise: Promise<Array<string>> = newReceivedLogLinesPromise(serviceLogsReadable, userServiceGuid, expectedLogLines)
-
-        const receivedLogLines = await receivedLogLinesPromise
-
-        if (receivedLogLines.length === expectedLogLines.length) {
-            receivedLogLines.forEach((logline, loglineIndex) => {
-                if (expectedLogLines[loglineIndex] != logline) {
-                    return err(new Error(`Expected to match the number ${loglineIndex} log line with this value ${expectedLogLines[loglineIndex]} but this one was received instead ${logline}`))
-                }
-            })
-        } else {
-            throw new Error(`Expected to receive ${expectedLogLines.length} of log lines but ${receivedLogLines.length} log lines were received instead`)
-        }
-
     } finally {
         stopEnclaveFunction()
     }
@@ -102,6 +113,9 @@ async function TestStreamLogs() {
 
 }
 
+// ====================================================================================================
+//                                       Private helper functions
+// ====================================================================================================
 function newReceivedLogLinesPromise(
     serviceLogsReadable: Readable,
     userServiceGuid: string,
@@ -145,9 +159,6 @@ function newReceivedLogLinesPromise(
     return receivedLogLinesPromise;
 }
 
-// ====================================================================================================
-//                                       Private helper functions
-// ====================================================================================================
 function containerConfig(): ContainerConfig {
 
     const entrypointArgs = ["/bin/sh", "-c"]
