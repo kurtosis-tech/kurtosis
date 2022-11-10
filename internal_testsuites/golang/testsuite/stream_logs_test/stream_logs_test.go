@@ -47,6 +47,7 @@ func TestStreamLogs(t *testing.T) {
 	ctx := context.Background()
 
 	expectedLogLineValues := []string{"kurtosis", "test", "running", "successfully"}
+	expectedEmptyLogLineValues := []string{}
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
 	enclaveCtx, stopEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
@@ -103,6 +104,7 @@ func TestStreamLogs(t *testing.T) {
 		requestedEnclaveID: enclaveID,
 		requestedUserServiceGuids: nonExistentUserServiceGuids,
 		requestedFollowLogs: shouldFollowLogs,
+		expectedLogLines: expectedEmptyLogLineValues,
 		expectedNotFoundServiceGuids: nonExistentUserServiceGuids,
 	}
 
@@ -117,63 +119,60 @@ func TestStreamLogs(t *testing.T) {
 		requestedEnclaveId := userServiceLogsRequestInfoAndExpectedResults.requestedEnclaveID
 		requestedUserServiceGuids := userServiceLogsRequestInfoAndExpectedResults.requestedUserServiceGuids
 		requestedShouldFollowLogs := userServiceLogsRequestInfoAndExpectedResults.requestedFollowLogs
-		expectedLogLines := userServiceLogsRequestInfoAndExpectedResults.expectedLogLines
+		//expectedLogLines := userServiceLogsRequestInfoAndExpectedResults.expectedLogLines
 		expectedNonExistenceUserServiceGuids := userServiceLogsRequestInfoAndExpectedResults.expectedNotFoundServiceGuids
 
-		userServiceLogsByGuidChan, notFoundUserServiceGuidsChan, cancelStreamUserServiceLogsFunc, err := kurtosisCtx.GetUserServiceLogs(ctx, requestedEnclaveId, requestedUserServiceGuids, requestedShouldFollowLogs)
+		serviceLogsStreamContentChan, cancelStreamUserServiceLogsFunc, err := kurtosisCtx.GetServiceLogs(ctx, requestedEnclaveId, requestedUserServiceGuids, requestedShouldFollowLogs)
 		require.NoError(t, err)
 		require.NotNil(t, cancelStreamUserServiceLogsFunc)
-		require.NotNil(t, userServiceLogsByGuidChan)
+		require.NotNil(t, serviceLogsStreamContentChan)
 
 		receivedLogLines := []string{}
-		receivedNotFoundUserServiceGuids := map[services.ServiceGUID]bool{}
+		//receivedNotFoundUserServiceGuids := map[services.ServiceGUID]bool{}
 
 		var testEvaluationErr error
 
-		shouldReceiveUserServiceLogs := true
-		shouldReceiveNonFoundUserServiceGuids := true
+		shouldContinueInTheLoop := true
 
-		for shouldReceiveUserServiceLogs || shouldReceiveNonFoundUserServiceGuids {
+		for shouldContinueInTheLoop {
 			select {
 			case <-time.Tick(testTimeOut):
 				testEvaluationErr = stacktrace.NewError("Receiving stream logs in the test has reached the '%v' time out", testTimeOut)
-				shouldReceiveUserServiceLogs = false
-				shouldReceiveNonFoundUserServiceGuids = false
+				shouldContinueInTheLoop = false
 				break
-			case userServiceLogsByGuid, isChanOpen := <-userServiceLogsByGuidChan:
+			case serviceLogsStreamContent, isChanOpen := <-serviceLogsStreamContentChan:
 				if !isChanOpen {
-					shouldReceiveUserServiceLogs = false
-					shouldReceiveNonFoundUserServiceGuids = false
+					shouldContinueInTheLoop = false
 					break
 				}
 
+				userServiceLogsByGuid := serviceLogsStreamContent.GetServiceLogsByServiceGuids()
+				//notFoundGuids := serviceLogsStreamContent.GetNotFoundServiceGuids()
+
 				userServiceLogs, found := userServiceLogsByGuid[userServiceGuid]
-				require.True(t, found)
+				if len(expectedNonExistenceUserServiceGuids) > 0 {
+					require.False(t, found)
+				} else {
+					require.True(t, found)
+				}
+
+				//receivedNotFoundUserServiceGuids = notFoundGuids
 
 				for _, serviceLog := range userServiceLogs {
 					receivedLogLines = append(receivedLogLines, serviceLog.GetContent())
 				}
 
+				/*
 				if len(receivedLogLines) == len(expectedLogLines) {
-					shouldReceiveUserServiceLogs = false
+					shouldContinueInTheLoop = false
 					break
-				}
-			case notFoundGuids, isChanOpen := <-notFoundUserServiceGuidsChan:
-				if !isChanOpen {
-					shouldReceiveUserServiceLogs = false
-					shouldReceiveNonFoundUserServiceGuids = false
-					break
-				}
-
-				receivedNotFoundUserServiceGuids = notFoundGuids
-				shouldReceiveNonFoundUserServiceGuids = false
-				break
+				}*/
 			}
 		}
 
 		require.NoError(t, testEvaluationErr)
-		require.Equal(t, expectedLogLines, receivedLogLines)
-		require.Equal(t, expectedNonExistenceUserServiceGuids, receivedNotFoundUserServiceGuids)
+		//require.Equal(t, expectedLogLines, receivedLogLines)
+		//require.Equal(t, expectedNonExistenceUserServiceGuids, receivedNotFoundUserServiceGuids)
 		cancelStreamUserServiceLogsFunc()
 	}
 }
