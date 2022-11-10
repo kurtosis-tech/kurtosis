@@ -2,7 +2,6 @@ package define_fact
 
 import (
 	"context"
-	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
@@ -16,7 +15,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
-	"strings"
 )
 
 const (
@@ -64,12 +62,10 @@ func (instruction *DefineFactInstruction) GetPositionInOriginalScript() *kurtosi
 }
 
 func (instruction *DefineFactInstruction) GetCanonicalInstruction() string {
-	buffer := new(strings.Builder)
-	buffer.WriteString(DefineFactBuiltinName + "(")
-	buffer.WriteString(serviceIdArgName + "=\"")
-	buffer.WriteString(fmt.Sprintf("%v\", ", instruction.serviceId))
-	buffer.WriteString(factNameArgName + ")")
-	return buffer.String()
+	return shared_helpers.CanonicalizeInstruction(DefineFactBuiltinName, starlark.StringDict{
+		serviceIdArgName: starlark.String(instruction.serviceId),
+		factNameArgName:  starlark.String(instruction.factName),
+	}, &instruction.position)
 }
 
 func (instruction *DefineFactInstruction) Execute(ctx context.Context, _ *startosis_executor.ExecutionEnvironment) error {
