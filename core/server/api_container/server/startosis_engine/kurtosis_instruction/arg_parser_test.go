@@ -568,7 +568,7 @@ func TestParsePrivateIPAddressPlaceholder_FailureNonString(t *testing.T) {
 
 func TestParseHttpRequestFactRecipe_GetRequestWithoutOptionalFields(t *testing.T) {
 	dict := starlark.StringDict{}
-	expectedRecipe := kurtosis_core_rpc_api_bindings.HttpRequestFactRecipe{
+	expectedRecipe := &kurtosis_core_rpc_api_bindings.HttpRequestFactRecipe{
 		PortId:   "port",
 		Method:   kurtosis_core_rpc_api_bindings.HttpRequestMethod_GET,
 		Endpoint: "/",
@@ -579,13 +579,13 @@ func TestParseHttpRequestFactRecipe_GetRequestWithoutOptionalFields(t *testing.T
 	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
 	recipe, err := ParseHttpRequestFactRecipe(input)
 	require.Nil(t, err)
-	require.Equal(t, expectedRecipe, *recipe.HttpRequestFact)
+	require.Equal(t, expectedRecipe, recipe.HttpRequestFact)
 }
 
 func TestParseHttpRequestFactRecipe_GetRequestWithOptionalFields(t *testing.T) {
 	dict := starlark.StringDict{}
 	var fieldExtractor = ".body"
-	expectedRecipe := kurtosis_core_rpc_api_bindings.HttpRequestFactRecipe{
+	expectedRecipe := &kurtosis_core_rpc_api_bindings.HttpRequestFactRecipe{
 		PortId:         "port",
 		Method:         kurtosis_core_rpc_api_bindings.HttpRequestMethod_GET,
 		Endpoint:       "/",
@@ -598,5 +598,5 @@ func TestParseHttpRequestFactRecipe_GetRequestWithOptionalFields(t *testing.T) {
 	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
 	recipe, err := ParseHttpRequestFactRecipe(input)
 	require.Nil(t, err)
-	require.Equal(t, expectedRecipe, *recipe.HttpRequestFact)
+	require.Equal(t, expectedRecipe, recipe.HttpRequestFact)
 }
