@@ -12,7 +12,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/exec"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/read_file"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/remove_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/render_templates"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/store_files_from_service"
@@ -796,14 +795,7 @@ print(file_contents)
 
 	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
 	require.Nil(t, interpretationError)
-	require.Equal(t, 1, len(instructions))
-
-	readInstruction := read_file.NewReadFileInstruction(
-		*kurtosis_instruction.NewInstructionPosition(3, 24, starlarkFilenamePlaceholderAsNotUsed),
-		srcPath,
-	)
-
-	require.Equal(t, instructions[0], readInstruction)
+	require.Empty(t, instructions)
 
 	expectedOutput := `Reading file from GitHub!
 this is a test string
@@ -921,14 +913,8 @@ print("Hello world!")
 	require.Empty(t, scriptOutput)
 	require.Empty(t, instructions)
 
-	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
-		[]startosis_errors.CallFrame{
-			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(2, 21)),
-			*startosis_errors.NewCallFrame("import_types", startosis_errors.NewScriptPosition(0, 0)),
-		},
-		"Evaluation error: Unable to parse arguments of command import_types. It should be a single string argument pointing to the fully qualified .proto types file (i.e. \"github.com/kurtosis/module/types.proto\")",
-	)
-	require.Equal(t, expectedError, interpretationError)
+	expectedErrorString := "Evaluation error: Unable to parse arguments of command 'import_types'. It should be a non empty string argument pointing to the fully qualified .proto types file (i.e. \"github.com/kurtosis/module/types.proto\")"
+	require.Contains(t, interpretationError.Error(), expectedErrorString)
 }
 
 func TestStartosisInterpreter_ReadTypesFromProtoFile_FailuresNoTypesFile(t *testing.T) {
