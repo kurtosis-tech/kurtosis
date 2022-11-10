@@ -34,8 +34,6 @@ const (
 	commandArgName          = "command"
 	expectedExitCodeArgName = "expected_exit_code"
 
-	srcPathArgName = "src_path"
-
 	templatesAndDataArgName  = "template_and_data_by_dest_rel_filepath"
 	templateFieldKey         = starlark.String("template")
 	templateDataJSONFieldKey = starlark.String("template_data_json")
@@ -127,13 +125,13 @@ func ParseExpectedExitCode(expectedExitCodeRaw starlark.Int) (int32, *startosis_
 	return expectedExitCode, nil
 }
 
-func ParseSrcPath(serviceIdRaw starlark.String) (string, *startosis_errors.InterpretationError) {
-	srcPath, interpretationErr := safeCastToString(serviceIdRaw, srcPathArgName)
+func ParseFilePath(filePathArgName string, filePathStr starlark.String) (string, *startosis_errors.InterpretationError) {
+	srcPath, interpretationErr := safeCastToString(filePathStr, filePathArgName)
 	if interpretationErr != nil {
 		return "", interpretationErr
 	}
 	if len(srcPath) == 0 {
-		return "", startosis_errors.NewInterpretationError("Source path cannot be empty")
+		return "", startosis_errors.NewInterpretationError("File path cannot be empty for argument '%s'", filePathArgName)
 	}
 	return srcPath, nil
 }
@@ -279,7 +277,7 @@ func parseEntryPointArgs(serviceConfig *starlarkstruct.Struct) ([]string, *start
 	_, err := serviceConfig.Attr(entryPointArgsKey)
 	//an error here means that no argument was found which is alright as this is an optional
 	if err != nil {
-		return []string{}, nil
+		return nil, nil
 	}
 	entryPointArgs, interpretationErr := extractStringSliceValue(serviceConfig, entryPointArgsKey, serviceConfigArgName)
 	if interpretationErr != nil {
@@ -292,7 +290,7 @@ func parseCmdArgs(serviceConfig *starlarkstruct.Struct) ([]string, *startosis_er
 	_, err := serviceConfig.Attr(cmdArgsKey)
 	//an error here means that no argument was found which is alright as this is an optional
 	if err != nil {
-		return []string{}, nil
+		return nil, nil
 	}
 	entryPointArgs, interpretationErr := extractStringSliceValue(serviceConfig, cmdArgsKey, serviceConfigArgName)
 	if interpretationErr != nil {

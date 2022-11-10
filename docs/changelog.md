@@ -1,7 +1,4 @@
 # TBD
-### Features
-- Added an optional `--dry-run` flag to the `startosis exec` (defaulting to false) command which prints the list of Kurtosis instruction without executing any. When `--dry-run` is set to false, the list of Kurtosis instructions is printed to the output of CLI after being executed.
-
 ### Breaking Changes
 - Unified `GetUserServiceLogs` and `StreamUserServiceLogs` engine's endpoints, now `GetUserServiceLogs` will handle both use cases
   - Users will have to re-adapt `GetUserServiceLogs` calls and replace the `StreamUserServiceLogs` call with this
@@ -10,11 +7,21 @@
 - Unified `GetUserServiceLogs` and `StreamUserServiceLogs` methods in `KurtosisContext`, now `GetUserServiceLogs` will handle both use cases
   - Users will have to re-adapt `GetUserServiceLogs` calls and replace the `StreamUserServiceLogs` call with this
 - Added the `follow_logs` parameter in `KurtosisContext.GetUserServiceLogs`
+  - Users will have to addition this new parameter on every call
 
 ### Changes
 - InterpretationError is now able to store a `cause`. It simplifies being more explicit on want the root issue was
 - Added `upload_service` to Startosis
 - Add `--args` to `kurtosis startosis exec` CLI command to pass in a serialized JSON
+- Moved `read_file` to be a simple Startosis builtin in place of a Kurtosis instruction
+
+# 0.51.13
+### Fixes
+- Set `entry_point_args` and `cmd_args` to `nil` if not specified instead of empty array 
+
+# 0.51.12
+### Features
+- Added an optional `--dry-run` flag to the `startosis exec` (defaulting to false) command which prints the list of Kurtosis instruction without executing any. When `--dry-run` is set to false, the list of Kurtosis instructions is printed to the output of CLI after being executed.
 
 # 0.51.11
 ### Features
