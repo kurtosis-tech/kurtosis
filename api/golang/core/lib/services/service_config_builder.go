@@ -23,8 +23,8 @@ func NewServiceConfigBuilder(containerImageName string) *ServiceConfigBuilder {
 		containerImageName:         containerImageName,
 		privatePorts:               map[string]*kurtosis_core_rpc_api_bindings.Port{},
 		publicPorts:                map[string]*kurtosis_core_rpc_api_bindings.Port{},
-		entrypointArgs:             []string{},
-		cmdArgs:                    []string{},
+		entrypointArgs:             nil,
+		cmdArgs:                    nil,
 		envVars:                    map[string]string{},
 		filesArtifactMountDirpaths: map[string]string{},
 		cpuAllocationMillicpus:     0,
@@ -55,6 +55,14 @@ func (builder *ServiceConfigBuilder) WithEnvVars(envVars map[string]string) *Ser
 
 func (builder *ServiceConfigBuilder) WithFilesArtifactMountDirpaths(filesArtifactMountDirpaths map[string]string) *ServiceConfigBuilder {
 	builder.filesArtifactMountDirpaths = filesArtifactMountDirpaths
+	return builder
+}
+
+func (builder *ServiceConfigBuilder) WithPrivateIPAddressPlaceholder(privateIPAddrPlaceholder string) *ServiceConfigBuilder {
+	if privateIPAddrPlaceholder == "" {
+		privateIPAddrPlaceholder = defaultPrivateIPAddrPlaceholder
+	}
+	builder.privateIPAddrPlaceholder = privateIPAddrPlaceholder
 	return builder
 }
 

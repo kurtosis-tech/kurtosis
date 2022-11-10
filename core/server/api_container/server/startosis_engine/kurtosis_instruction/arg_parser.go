@@ -21,25 +21,24 @@ const (
 	serviceConfigArgName = "service_config"
 	defineFactArgName    = "define_fact"
 
-	containerImageNameKey         = "container_image_name"
-	factNameArgName               = "fact_name"
-	usedPortsKey                  = "used_ports"
-	entryPointArgsKey             = "entry_point_args"
-	cmdArgsKey                    = "cmd_args"
-	envVarArgsKey                 = "env_vars"
-	filesArtifactMountDirpathsKey = "files_artifact_mount_dirpaths"
-	portIdKey                     = "port_id"
-	requestEndpointKey            = "endpoint"
-	requestMethodEndpointKey      = "method"
-	fieldExtractorKey             = "field_extractor"
+	containerImageNameKey          = "container_image_name"
+	factNameArgName                = "fact_name"
+	usedPortsKey                   = "used_ports"
+	entryPointArgsKey              = "entry_point_args"
+	cmdArgsKey                     = "cmd_args"
+	envVarArgsKey                  = "env_vars"
+	filesArtifactMountDirpathsKey  = "files_artifact_mount_dirpaths"
+	portIdKey                      = "port_id"
+	requestEndpointKey             = "endpoint"
+	requestMethodEndpointKey       = "method"
+	fieldExtractorKey              = "field_extractor"
+	privateIPAddressPlaceholderKey = "private_ip_address_placeholder"
 
 	portNumberKey   = "number"
 	portProtocolKey = "protocol"
 
 	commandArgName          = "command"
 	expectedExitCodeArgName = "expected_exit_code"
-
-	srcPathArgName = "src_path"
 
 	templatesAndDataArgName  = "template_and_data_by_dest_rel_filepath"
 	templateFieldKey         = starlark.String("template")
@@ -133,6 +132,11 @@ func ParseServiceConfigArg(serviceConfig *starlarkstruct.Struct) (*kurtosis_core
 		return nil, interpretationErr
 	}
 
+	privateIPAddressPlaceholder, interpretationErr := parsePrivateIPAddressPlaceholder(serviceConfig)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
 	builtConfig := services.NewServiceConfigBuilder(containerImageName).WithPrivatePorts(
 		privatePorts,
 	).WithEntryPointArgs(
@@ -143,6 +147,8 @@ func ParseServiceConfigArg(serviceConfig *starlarkstruct.Struct) (*kurtosis_core
 		envVars,
 	).WithFilesArtifactMountDirpaths(
 		filesArtifactMountDirpaths,
+	).WithPrivateIPAddressPlaceholder(
+		privateIPAddressPlaceholder,
 	).Build()
 
 	return builtConfig, nil
@@ -167,13 +173,13 @@ func ParseExpectedExitCode(expectedExitCodeRaw starlark.Int) (int32, *startosis_
 	return expectedExitCode, nil
 }
 
-func ParseSrcPath(serviceIdRaw starlark.String) (string, *startosis_errors.InterpretationError) {
-	srcPath, interpretationErr := safeCastToString(serviceIdRaw, srcPathArgName)
+func ParseFilePath(filePathArgName string, filePathStr starlark.String) (string, *startosis_errors.InterpretationError) {
+	srcPath, interpretationErr := safeCastToString(filePathStr, filePathArgName)
 	if interpretationErr != nil {
 		return "", interpretationErr
 	}
 	if len(srcPath) == 0 {
-		return "", startosis_errors.NewInterpretationError("Source path cannot be empty")
+		return "", startosis_errors.NewInterpretationError("File path cannot be empty for argument '%s'", filePathArgName)
 	}
 	return srcPath, nil
 }
@@ -319,7 +325,7 @@ func parseEntryPointArgs(serviceConfig *starlarkstruct.Struct) ([]string, *start
 	_, err := serviceConfig.Attr(entryPointArgsKey)
 	//an error here means that no argument was found which is alright as this is an optional
 	if err != nil {
-		return []string{}, nil
+		return nil, nil
 	}
 	entryPointArgs, interpretationErr := extractStringSliceValue(serviceConfig, entryPointArgsKey, serviceConfigArgName)
 	if interpretationErr != nil {
@@ -332,7 +338,7 @@ func parseCmdArgs(serviceConfig *starlarkstruct.Struct) ([]string, *startosis_er
 	_, err := serviceConfig.Attr(cmdArgsKey)
 	//an error here means that no argument was found which is alright as this is an optional
 	if err != nil {
-		return []string{}, nil
+		return nil, nil
 	}
 	entryPointArgs, interpretationErr := extractStringSliceValue(serviceConfig, cmdArgsKey, serviceConfigArgName)
 	if interpretationErr != nil {
@@ -360,11 +366,24 @@ func parseFilesArtifactMountDirpaths(serviceConfig *starlarkstruct.Struct) (map[
 	if err != nil {
 		return map[string]string{}, nil
 	}
-	entryPointArgs, interpretationErr := extractMapStringStringValue(serviceConfig, filesArtifactMountDirpathsKey, serviceConfigArgName)
+	filesArtifactMountDirpathsArg, interpretationErr := extractMapStringStringValue(serviceConfig, filesArtifactMountDirpathsKey, serviceConfigArgName)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
-	return entryPointArgs, nil
+	return filesArtifactMountDirpathsArg, nil
+}
+
+func parsePrivateIPAddressPlaceholder(serviceConfig *starlarkstruct.Struct) (string, *startosis_errors.InterpretationError) {
+	_, err := serviceConfig.Attr(privateIPAddressPlaceholderKey)
+	//an error here means that no argument was found which is alright as this is an optional
+	if err != nil {
+		return "", nil
+	}
+	privateIpAddressPlaceholder, interpretationErr := extractStringValue(serviceConfig, privateIPAddressPlaceholderKey, serviceConfigArgName)
+	if interpretationErr != nil {
+		return "", interpretationErr
+	}
+	return privateIpAddressPlaceholder, nil
 }
 
 func extractStringValue(structField *starlarkstruct.Struct, key string, argNameForLogging string) (string, *startosis_errors.InterpretationError) {

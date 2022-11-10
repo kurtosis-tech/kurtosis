@@ -34,6 +34,9 @@ const (
 	expectedEntriesLimitQueryParamValue     = "4000"
 	expectedDirectionQueryParamValue        = "forward"
 	expectedAmountQueryParams               = 4
+
+	userServiceContainerType = "user-service"
+
 )
 
 func TestIfHttpRequestIsValidWhenCallingGetUserServiceLogs(t *testing.T) {
@@ -150,4 +153,68 @@ func TestDoRequestWithLokiLogsDatabaseClientReturnsValidResponse(t *testing.T) {
 
 		require.Equal(t, expectedFirstLogLineOnEachService, logLines[0].GetContent())
 	}
+}
+
+func TestNewUserServiceLogLinesByUserServiceGuidFromLokiStreamsReturnSuccessfullyForLogTailJsonResponseBody(t *testing.T) {
+
+	expectedLogLines := []string{"kurtosis", "test", "running", "successfully"}
+	userServiceGuidStr := "stream-logs-test-service-1666785469"
+	userServiceGuid := service.ServiceGUID(userServiceGuidStr)
+
+	expectedValuesInStream1 := [][]string{
+		{"1666785473000000000", "{\"container_id\":\"b0735bc50a76a0476928607aca13a4c73c814036bdbf8b989c2f3b458cc21eab\",\"container_name\":\"/ts-testsuite.stream-logs-test.1666785464--user-service--stream-logs-test-service-1666785469\",\"source\":\"stdout\",\"log\":\"kurtosis\",\"comKurtosistechGuid\":\"stream-logs-test-service-1666785469\",\"comKurtosistechContainerType\":\"user-service\",\"com.kurtosistech.enclave-id\":\"ts-testsuite.stream-logs-test.1666785464\"}"},
+	}
+
+	expectedValuesInStream2 := [][]string{
+		{"1666785473000000000", "{\"comKurtosistechGuid\":\"stream-logs-test-service-1666785469\",\"container_id\":\"b0735bc50a76a0476928607aca13a4c73c814036bdbf8b989c2f3b458cc21eab\",\"container_name\":\"/ts-testsuite.stream-logs-test.1666785464--user-service--stream-logs-test-service-1666785469\",\"source\":\"stdout\",\"log\":\"test\",\"comKurtosistechContainerType\":\"user-service\",\"com.kurtosistech.enclave-id\":\"ts-testsuite.stream-logs-test.1666785464\"}"},
+	}
+
+	expectedValuesInStream3 := [][]string{
+		{"1666785473000000000", "{\"comKurtosistechContainerType\":\"user-service\",\"com.kurtosistech.enclave-id\":\"ts-testsuite.stream-logs-test.1666785464\",\"comKurtosistechGuid\":\"stream-logs-test-service-1666785469\",\"container_id\":\"b0735bc50a76a0476928607aca13a4c73c814036bdbf8b989c2f3b458cc21eab\",\"container_name\":\"/ts-testsuite.stream-logs-test.1666785464--user-service--stream-logs-test-service-1666785469\",\"source\":\"stdout\",\"log\":\"running\"}"},
+	}
+
+	expectedValuesInStream4 := [][]string{
+		{"1666785473000000000", "{\"container_name\":\"/ts-testsuite.stream-logs-test.1666785464--user-service--stream-logs-test-service-1666785469\",\"source\":\"stdout\",\"log\":\"successfully\",\"comKurtosistechGuid\":\"stream-logs-test-service-1666785469\",\"comKurtosistechContainerType\":\"user-service\",\"com.kurtosistech.enclave-id\":\"ts-testsuite.stream-logs-test.1666785464\",\"container_id\":\"b0735bc50a76a0476928607aca13a4c73c814036bdbf8b989c2f3b458cc21eab\"}"},
+	}
+
+	lokiStreams1 := newLokiStreamValueForTest(userServiceGuid, expectedValuesInStream1)
+	lokiStreams2 := newLokiStreamValueForTest(userServiceGuid, expectedValuesInStream2)
+	lokiStreams3 := newLokiStreamValueForTest(userServiceGuid, expectedValuesInStream3)
+	lokiStreams4 := newLokiStreamValueForTest(userServiceGuid, expectedValuesInStream4)
+
+	lokiStreams := []lokiStreamValue{
+		lokiStreams1,
+		lokiStreams2,
+		lokiStreams3,
+		lokiStreams4,
+	}
+
+	resultLogsByKurtosisUserServiceGuid, err := newUserServiceLogLinesByUserServiceGuidFromLokiStreams(lokiStreams)
+	require.NoError(t, err)
+	require.NotNil(t, resultLogsByKurtosisUserServiceGuid)
+	require.Equal(t, len(lokiStreams), len(resultLogsByKurtosisUserServiceGuid[userServiceGuid]))
+	for expectedLogLineIndex, expectedLogLine := range expectedLogLines {
+		actualLogLine := resultLogsByKurtosisUserServiceGuid[userServiceGuid][expectedLogLineIndex].GetContent()
+		require.Equal(t, expectedLogLine, actualLogLine)
+	}
+
+}
+
+// ====================================================================================================
+//
+//	Private Helper Functions
+//
+// ====================================================================================================
+func newLokiStreamValueForTest(userServiceGuid service.ServiceGUID, expectedValues [][]string) lokiStreamValue {
+	newLokiStreamValue := lokiStreamValue{
+		Stream: struct {
+			KurtosisContainerType string `json:"comKurtosistechContainerType"`
+			KurtosisGUID          string `json:"comKurtosistechGuid"`
+		}(struct {
+			KurtosisContainerType string
+			KurtosisGUID          string
+		}{KurtosisContainerType: userServiceContainerType, KurtosisGUID: string(userServiceGuid)}),
+		Values: expectedValues,
+	}
+	return newLokiStreamValue
 }
