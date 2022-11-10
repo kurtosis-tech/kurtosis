@@ -2,6 +2,8 @@
 
 ### Features
 - Add `wait` and `define` command in Startosis
+- Added `not found service GUIDs information` in `KurtosisContext.GetServiceLogs` method
+- Added a warning message in `service logs` CLI command when the request service GUID is not found in the logs database
 
 ### Fixes
 - Fixes a bug where we'd propagate a nil error
