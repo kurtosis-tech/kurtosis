@@ -1,6 +1,7 @@
 package import_types
 
 import (
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_modules/proto_compiler"
 	"github.com/kurtosis-tech/stacktrace"
@@ -21,9 +22,9 @@ const (
 
 func GenerateImportTypesBuiltin(protoFileStore *proto_compiler.ProtoFileStore) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 	return func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
-		var fileInModuleId string
-		if err := starlark.UnpackArgs(ImportTypesBuiltinName, args, kwargs, typesFileArgName, &fileInModuleId); err != nil {
-			return nil, startosis_errors.NewInterpretationError("Unable to parse arguments of command " + ImportTypesBuiltinName + ". It should be a single string argument pointing to the fully qualified .proto types file (i.e. \"github.com/kurtosis/module/types.proto\")")
+		fileInModuleId, interpretationError := parseStartosisArgs(b, args, kwargs)
+		if interpretationError != nil {
+			return nil, interpretationError
 		}
 
 		protoRegistryFile, err := protoFileStore.LoadProtoFile(fileInModuleId)
@@ -68,4 +69,25 @@ func loadTypesFromProtoRegistry(protoTypesFiles *protoregistry.Files) (*starlark
 		return nil, errors
 	}
 	return &typesStringDict, nil
+}
+
+func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (string, *startosis_errors.InterpretationError) {
+	var typesFileArg starlark.String
+	if err := starlark.UnpackArgs(b.Name(), args, kwargs, typesFileArgName, &typesFileArg); err != nil {
+		return "", explicitInterpretationError(err)
+	}
+
+	typesFilePath, interpretationErr := kurtosis_instruction.ParseFilePath(typesFileArgName, typesFileArg)
+	if interpretationErr != nil {
+		return "", explicitInterpretationError(interpretationErr)
+	}
+
+	return typesFilePath, nil
+}
+
+func explicitInterpretationError(err error) *startosis_errors.InterpretationError {
+	return startosis_errors.WrapWithInterpretationError(
+		err,
+		"Unable to parse arguments of command '%s'. It should be a non empty string argument pointing to the fully qualified .proto types file (i.e. \"github.com/kurtosis/module/types.proto\")",
+		ImportTypesBuiltinName)
 }

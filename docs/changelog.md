@@ -1,5 +1,8 @@
 # TBD
 
+### Changes
+- Moved `read_file` to be a simple Startosis builtin in place of a Kurtosis instruction
+
 # 0.51.13
 
 ### Fixes

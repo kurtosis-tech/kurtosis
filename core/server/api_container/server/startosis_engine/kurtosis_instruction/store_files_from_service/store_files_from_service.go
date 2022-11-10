@@ -94,7 +94,7 @@ func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starl
 		return "", "", interpretationErr
 	}
 
-	srcPath, interpretationErr := kurtosis_instruction.ParseSrcPath(srcPathArg)
+	srcPath, interpretationErr := kurtosis_instruction.ParseFilePath(srcPathArgName, srcPathArg)
 	if interpretationErr != nil {
 		return "", "", interpretationErr
 	}
