@@ -803,6 +803,23 @@ this is a test string
 	require.Equal(t, expectedOutput, string(scriptOutput))
 }
 
+func TestStartosisInterpreter_DefineFactAndWait(t *testing.T) {
+	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
+	defer moduleContentProvider.RemoveAll()
+	interpreter := NewStartosisInterpreterWithFacts(testServiceNetwork, nil, moduleContentProvider)
+	scriptFormatStr := `
+define_fact(service_id="%v", fact_name="%v", fact_recipe=struct(method="GET", endpoint="/", port_id="http"))
+wait(service_id="%v", fact_name="%v")
+`
+	serviceId := "service"
+	factName := "fact"
+	script := fmt.Sprintf(scriptFormatStr, serviceId, factName, serviceId, factName)
+	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	require.Nil(t, interpretationError)
+	require.NotEmpty(t, instructions)
+	require.Empty(t, scriptOutput)
+}
+
 func TestStartosisInterpreter_RenderTemplates(t *testing.T) {
 	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
