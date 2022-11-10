@@ -83,7 +83,7 @@ func TestFactsEngine(t *testing.T) {
 	require.Equal(t, expectedOutputForExecFactOutput, getFactValuesResponse.GetFactValues()[0].GetStringValue())
 
 	logrus.Infof("Defining HTTP request fact...")
-	_, err = enclaveCtx.DefineFact(binding_constructors.NewGetHttpRequestFactRecipeWithDefaultRefresh(testServiceId, httpRequestFactName, containerPortId, "/"))
+	_, err = enclaveCtx.DefineFact(&kurtosis_core_rpc_api_bindings.FactRecipe{FactRecipeDefinition: binding_constructors.NewGetHttpRequestFactRecipeDefinition(testServiceId, httpRequestFactName, containerPortId, "/")})
 	require.Nil(t, err)
 	time.Sleep(5 * time.Second)
 
