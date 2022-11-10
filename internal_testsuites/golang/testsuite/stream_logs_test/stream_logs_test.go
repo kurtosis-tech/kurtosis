@@ -119,7 +119,7 @@ func TestStreamLogs(t *testing.T) {
 		requestedEnclaveId := userServiceLogsRequestInfoAndExpectedResults.requestedEnclaveID
 		requestedUserServiceGuids := userServiceLogsRequestInfoAndExpectedResults.requestedUserServiceGuids
 		requestedShouldFollowLogs := userServiceLogsRequestInfoAndExpectedResults.requestedFollowLogs
-		//expectedLogLines := userServiceLogsRequestInfoAndExpectedResults.expectedLogLines
+		expectedLogLines := userServiceLogsRequestInfoAndExpectedResults.expectedLogLines
 		expectedNonExistenceUserServiceGuids := userServiceLogsRequestInfoAndExpectedResults.expectedNotFoundServiceGuids
 
 		serviceLogsStreamContentChan, cancelStreamUserServiceLogsFunc, err := kurtosisCtx.GetServiceLogs(ctx, requestedEnclaveId, requestedUserServiceGuids, requestedShouldFollowLogs)
@@ -128,7 +128,7 @@ func TestStreamLogs(t *testing.T) {
 		require.NotNil(t, serviceLogsStreamContentChan)
 
 		receivedLogLines := []string{}
-		//receivedNotFoundUserServiceGuids := map[services.ServiceGUID]bool{}
+		receivedNotFoundUserServiceGuids := map[services.ServiceGUID]bool{}
 
 		var testEvaluationErr error
 
@@ -147,7 +147,7 @@ func TestStreamLogs(t *testing.T) {
 				}
 
 				userServiceLogsByGuid := serviceLogsStreamContent.GetServiceLogsByServiceGuids()
-				//notFoundGuids := serviceLogsStreamContent.GetNotFoundServiceGuids()
+				notFoundGuids := serviceLogsStreamContent.GetNotFoundServiceGuids()
 
 				userServiceLogs, found := userServiceLogsByGuid[userServiceGuid]
 				if len(expectedNonExistenceUserServiceGuids) > 0 {
@@ -156,23 +156,22 @@ func TestStreamLogs(t *testing.T) {
 					require.True(t, found)
 				}
 
-				//receivedNotFoundUserServiceGuids = notFoundGuids
+				receivedNotFoundUserServiceGuids = notFoundGuids
 
 				for _, serviceLog := range userServiceLogs {
 					receivedLogLines = append(receivedLogLines, serviceLog.GetContent())
 				}
 
-				/*
 				if len(receivedLogLines) == len(expectedLogLines) {
 					shouldContinueInTheLoop = false
 					break
-				}*/
+				}
 			}
 		}
 
 		require.NoError(t, testEvaluationErr)
-		//require.Equal(t, expectedLogLines, receivedLogLines)
-		//require.Equal(t, expectedNonExistenceUserServiceGuids, receivedNotFoundUserServiceGuids)
+		require.Equal(t, expectedLogLines, receivedLogLines)
+		require.Equal(t, expectedNonExistenceUserServiceGuids, receivedNotFoundUserServiceGuids)
 		cancelStreamUserServiceLogsFunc()
 	}
 }
