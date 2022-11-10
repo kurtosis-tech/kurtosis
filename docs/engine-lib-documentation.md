@@ -60,7 +60,6 @@ Destroys enclaves in the Kurtosis engine.
 
 ---
 
-[comment]: <> (//TODO Complete the getServiceLogs public documentation)
 ### getServiceLogs(EnclaveID enclaveId, Set\<ServiceGUID> serviceGuids) -\> [ServiceLogsStreamContent][servicelogsstreamcontent] serviceLogsStreamContent
 Get the user service container log lines (ordered in ascending direction, with the oldest line first) from user services identified by their GUID.
 The result will contain the last 4000 log lines max for each user service container.
@@ -75,7 +74,6 @@ The result will contain the last 4000 log lines max for each user service contai
 ServiceLogsStreamContent
 ------------------------
 This class is the representation of the content sends during a service logs stream communication
-[comment]: <> (//TODO Complete the getServiceLogs public documentation)
 
 _Found a bug? File it on [the repo][issues]!_
 
