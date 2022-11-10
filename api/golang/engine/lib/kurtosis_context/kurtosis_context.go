@@ -31,8 +31,6 @@ const (
 
 	serviceLogsStreamContentChanBufferSize = 5
 
-	notFoundUserServiceGuidsChanBufferSize = 5
-
 	grpcStreamCancelContextErrorMessage = "rpc error: code = Canceled desc = context canceled"
 )
 
