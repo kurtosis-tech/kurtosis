@@ -1,6 +1,7 @@
 import * as jspb from 'google-protobuf'
 
 import * as google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb';
+import * as google_protobuf_timestamp_pb from 'google-protobuf/google/protobuf/timestamp_pb';
 
 
 export class GetEngineInfoResponse extends jspb.Message {
@@ -147,6 +148,11 @@ export class EnclaveInfo extends jspb.Message {
   hasApiContainerHostMachineInfo(): boolean;
   clearApiContainerHostMachineInfo(): EnclaveInfo;
 
+  getCreationtime(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setCreationtime(value?: google_protobuf_timestamp_pb.Timestamp): EnclaveInfo;
+  hasCreationtime(): boolean;
+  clearCreationtime(): EnclaveInfo;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): EnclaveInfo.AsObject;
   static toObject(includeInstance: boolean, msg: EnclaveInfo): EnclaveInfo.AsObject;
@@ -162,6 +168,7 @@ export namespace EnclaveInfo {
     apiContainerStatus: EnclaveAPIContainerStatus,
     apiContainerInfo?: EnclaveAPIContainerInfo.AsObject,
     apiContainerHostMachineInfo?: EnclaveAPIContainerHostMachineInfo.AsObject,
+    creationtime?: google_protobuf_timestamp_pb.Timestamp.AsObject,
   }
 }
 

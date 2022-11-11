@@ -5,6 +5,7 @@ package engine_api;
 option go_package = "github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings";
 
 import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
 
 service EngineService {
   // Endpoint for getting information about the engine, which is also what we use to verify that the engine has become available
@@ -124,6 +125,9 @@ message EnclaveInfo {
 
   // NOTE: Will not be present if the API container status is not "RUNNING"!!
   EnclaveAPIContainerHostMachineInfo api_container_host_machine_info = 5;
+
+  //The enclave's creation time
+  google.protobuf.Timestamp CreationTime = 6;
 }
 
 message GetEnclavesResponse {

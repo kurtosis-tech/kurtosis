@@ -3,20 +3,21 @@ package enclave_manager
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/api_container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
-	"sort"
-	"strings"
-	"sync"
-
-	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis/core/launcher/api_container_launcher"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/protobuf/types/known/timestamppb"
+	"sort"
+	"strings"
+	"sync"
+	"time"
 )
 
 const (
@@ -94,9 +95,12 @@ func (manager *EnclaveManager) CreateEnclave(
 		return nil, stacktrace.NewError("Cannot create enclave '%v' because an enclave with that name already exists", enclaveId)
 	}
 
+	creationTime := time.Now() //TODO open to discuss if we should moved inside kurtosisBackend
+
 	// Create Enclave with kurtosisBackend
-	if _, err := manager.kurtosisBackend.CreateEnclave(setupCtx, enclaveId, isPartitioningEnabled); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occured creating enclave with id `%v`", enclaveId)
+	newEnclave, err := manager.kurtosisBackend.CreateEnclave(setupCtx, enclaveId, creationTime, isPartitioningEnabled)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating enclave with id `%v` and creation time '%v'", enclaveId, creationTime)
 	}
 	shouldDestroyEnclave := true
 	defer func() {
@@ -168,6 +172,7 @@ func (manager *EnclaveManager) CreateEnclave(
 			GrpcProxyPortInsideEnclave: uint32(apiContainerListenGrpcProxyPortNumInsideNetwork),
 		},
 		ApiContainerHostMachineInfo: apiContainerHostMachineInfo,
+		CreationTime: timestamppb.New(newEnclave.GetCreationTime()),
 	}
 
 	// Everything started successfully, so the responsibility of deleting the enclave is now transferred to the caller
@@ -520,6 +525,7 @@ func (manager *EnclaveManager) getEnclaveInfoForEnclave(ctx context.Context, enc
 		ApiContainerStatus:          apiContainerStatus,
 		ApiContainerInfo:            apiContainerInfo,
 		ApiContainerHostMachineInfo: apiContainerHostMachineInfo,
+		CreationTime: timestamppb.New(enclave.GetCreationTime()),
 	}, nil
 }
 

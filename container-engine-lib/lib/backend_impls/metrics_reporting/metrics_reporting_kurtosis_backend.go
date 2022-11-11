@@ -15,6 +15,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"io"
 	"net"
+	"time"
 )
 
 // TODO CALL THE METRICS LIBRARY EVENT-REGISTRATION FUNCTIONS HERE!!!!
@@ -91,9 +92,10 @@ func (backend *MetricsReportingKurtosisBackend) DestroyEngines(ctx context.Conte
 func (backend *MetricsReportingKurtosisBackend) CreateEnclave(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
+	creationTime time.Time,
 	isPartitioningEnabled bool,
 ) (*enclave.Enclave, error) {
-	result, err := backend.underlying.CreateEnclave(ctx, enclaveId, isPartitioningEnabled)
+	result, err := backend.underlying.CreateEnclave(ctx, enclaveId, creationTime, isPartitioningEnabled)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating enclave with ID '%v' and is-partitioning-enabled value '%v'", enclaveId, isPartitioningEnabled)
 	}

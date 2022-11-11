@@ -17,6 +17,8 @@ var global = Function('return this')();
 
 var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb.js');
 goog.object.extend(proto, google_protobuf_empty_pb);
+var google_protobuf_timestamp_pb = require('google-protobuf/google/protobuf/timestamp_pb.js');
+goog.object.extend(proto, google_protobuf_timestamp_pb);
 goog.exportSymbol('proto.engine_api.CleanArgs', null, global);
 goog.exportSymbol('proto.engine_api.CleanResponse', null, global);
 goog.exportSymbol('proto.engine_api.CreateEnclaveArgs', null, global);
@@ -1274,7 +1276,8 @@ proto.engine_api.EnclaveInfo.toObject = function(includeInstance, msg) {
     containersStatus: jspb.Message.getFieldWithDefault(msg, 2, 0),
     apiContainerStatus: jspb.Message.getFieldWithDefault(msg, 3, 0),
     apiContainerInfo: (f = msg.getApiContainerInfo()) && proto.engine_api.EnclaveAPIContainerInfo.toObject(includeInstance, f),
-    apiContainerHostMachineInfo: (f = msg.getApiContainerHostMachineInfo()) && proto.engine_api.EnclaveAPIContainerHostMachineInfo.toObject(includeInstance, f)
+    apiContainerHostMachineInfo: (f = msg.getApiContainerHostMachineInfo()) && proto.engine_api.EnclaveAPIContainerHostMachineInfo.toObject(includeInstance, f),
+    creationtime: (f = msg.getCreationtime()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -1332,6 +1335,11 @@ proto.engine_api.EnclaveInfo.deserializeBinaryFromReader = function(msg, reader)
       var value = new proto.engine_api.EnclaveAPIContainerHostMachineInfo;
       reader.readMessage(value,proto.engine_api.EnclaveAPIContainerHostMachineInfo.deserializeBinaryFromReader);
       msg.setApiContainerHostMachineInfo(value);
+      break;
+    case 6:
+      var value = new google_protobuf_timestamp_pb.Timestamp;
+      reader.readMessage(value,google_protobuf_timestamp_pb.Timestamp.deserializeBinaryFromReader);
+      msg.setCreationtime(value);
       break;
     default:
       reader.skipField();
@@ -1397,6 +1405,14 @@ proto.engine_api.EnclaveInfo.serializeBinaryToWriter = function(message, writer)
       5,
       f,
       proto.engine_api.EnclaveAPIContainerHostMachineInfo.serializeBinaryToWriter
+    );
+  }
+  f = message.getCreationtime();
+  if (f != null) {
+    writer.writeMessage(
+      6,
+      f,
+      google_protobuf_timestamp_pb.Timestamp.serializeBinaryToWriter
     );
   }
 };
@@ -1527,6 +1543,43 @@ proto.engine_api.EnclaveInfo.prototype.clearApiContainerHostMachineInfo = functi
  */
 proto.engine_api.EnclaveInfo.prototype.hasApiContainerHostMachineInfo = function() {
   return jspb.Message.getField(this, 5) != null;
+};
+
+
+/**
+ * optional google.protobuf.Timestamp CreationTime = 6;
+ * @return {?proto.google.protobuf.Timestamp}
+ */
+proto.engine_api.EnclaveInfo.prototype.getCreationtime = function() {
+  return /** @type{?proto.google.protobuf.Timestamp} */ (
+    jspb.Message.getWrapperField(this, google_protobuf_timestamp_pb.Timestamp, 6));
+};
+
+
+/**
+ * @param {?proto.google.protobuf.Timestamp|undefined} value
+ * @return {!proto.engine_api.EnclaveInfo} returns this
+*/
+proto.engine_api.EnclaveInfo.prototype.setCreationtime = function(value) {
+  return jspb.Message.setWrapperField(this, 6, value);
+};
+
+
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.engine_api.EnclaveInfo} returns this
+ */
+proto.engine_api.EnclaveInfo.prototype.clearCreationtime = function() {
+  return this.setCreationtime(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.engine_api.EnclaveInfo.prototype.hasCreationtime = function() {
+  return jspb.Message.getField(this, 6) != null;
 };
 
 

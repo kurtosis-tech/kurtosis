@@ -20,6 +20,7 @@ import (
 	applyconfigurationsv1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"os"
 	"path"
+	"time"
 )
 
 const (
@@ -66,10 +67,10 @@ type dumpPodResult struct {
 // ====================================================================================================
 //                                     		Enclave CRUD Methods
 // ====================================================================================================
-
 func (backend KubernetesKurtosisBackend) CreateEnclave(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
+	creationTime time.Time,
 	isPartitioningEnabled bool,
 ) (
 	*enclave.Enclave,
@@ -509,9 +510,14 @@ func getEnclaveObjectsFromKubernetesResources(
 			return nil, stacktrace.Propagate(err, "An error occurred getting enclave status from enclave pods '%+v'", resourcesForEnclaveId.pods)
 		}
 
+		//TODO fix this, it's just an fake implementation for testing purpose
+		//TODO should be provided by the method caller
+		fakeCreationTime := time.Now()
+
 		enclaveObj := enclave.NewEnclave(
 			enclaveId,
 			enclaveStatus,
+			fakeCreationTime,
 		)
 
 		result[enclaveId] = enclaveObj

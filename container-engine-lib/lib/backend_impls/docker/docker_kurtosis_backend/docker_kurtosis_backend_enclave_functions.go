@@ -21,6 +21,7 @@ import (
 	"os"
 	"path"
 	"strings"
+	"time"
 )
 
 const (
@@ -54,6 +55,7 @@ type matchingNetworkInformation struct {
 func (backend *DockerKurtosisBackend) CreateEnclave(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
+	creationTime time.Time,
 	isPartitioningEnabled bool,
 ) (
 	*enclave.Enclave,
@@ -92,7 +94,7 @@ func (backend *DockerKurtosisBackend) CreateEnclave(
 		return nil, stacktrace.Propagate(err, "An error occurred while trying to generate an object attributes provider for the enclave with ID '%v'", enclaveId)
 	}
 
-	enclaveNetworkAttrs, err := enclaveObjAttrsProvider.ForEnclaveNetwork(isPartitioningEnabled)
+	enclaveNetworkAttrs, err := enclaveObjAttrsProvider.ForEnclaveNetwork(isPartitioningEnabled, creationTime)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while trying to get the enclave network attributes for the enclave with ID '%v'", enclaveId)
 	}
@@ -164,7 +166,7 @@ func (backend *DockerKurtosisBackend) CreateEnclave(
 		}
 	}()
 
-	newEnclave := enclave.NewEnclave(enclaveId, enclave.EnclaveStatus_Empty)
+	newEnclave := enclave.NewEnclave(enclaveId, enclave.EnclaveStatus_Empty, creationTime)
 
 	shouldDeleteNetwork = false
 	shouldDeleteVolume = false
@@ -187,9 +189,16 @@ func (backend *DockerKurtosisBackend) GetEnclaves(
 
 	result := map[enclave.EnclaveID]*enclave.Enclave{}
 	for enclaveId, matchingNetworkInfo := range allMatchingNetworkInfo {
+
+		creationTime, err := getEnclaveCreationTimeFromNetwork(matchingNetworkInfo.dockerNetwork)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting the enclave's creation time value from enclave's Docker network '%+v'", matchingNetworkInfo.dockerNetwork)
+		}
+
 		result[enclaveId] = enclave.NewEnclave(
 			enclaveId,
 			matchingNetworkInfo.enclaveStatus,
+			creationTime,
 		)
 	}
 
@@ -874,4 +883,23 @@ func getEnclaveIdFromNetwork(network *types.Network) (enclave.EnclaveID, error) 
 	}
 	enclaveId := enclave.EnclaveID(enclaveIdLabelValue)
 	return enclaveId, nil
+}
+
+func getEnclaveCreationTimeFromNetwork(network *types.Network) (time.Time, error) {
+	labels := network.GetLabels()
+	enclaveCreationTimeStr, found := labels[label_key_consts.EnclaveCreationTimeLabelKey.GetString()]
+	//TODO add not found handler and what we are going to do with the retro compatibility
+
+	zeroTimeObj := time.Time{}
+
+	if !found {
+		return zeroTimeObj, stacktrace.NewError("Expected to find network's label with key '%v' but none was found", label_key_consts.EnclaveCreationTimeLabelKey.GetString())
+	}
+
+	enclaveCreationTime, err := time.Parse(time.RFC3339, enclaveCreationTimeStr)
+	if err != nil {
+		return zeroTimeObj, stacktrace.Propagate(err, "An error occurred parsing enclave creation time '%v' using this format '%v'", enclaveCreationTimeStr, time.RFC3339)
+	}
+
+	return enclaveCreationTime, nil
 }

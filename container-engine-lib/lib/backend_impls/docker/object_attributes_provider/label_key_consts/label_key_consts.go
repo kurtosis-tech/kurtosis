@@ -30,6 +30,8 @@ const (
 
 	enclaveIdLabelKeyStr = labelNamespaceStr + "enclave-id"
 
+	enclaveCreationTime = labelNamespaceStr + "enclave-creation-time"
+
 	isNetworkPartitioningEnabledKeyStr = labelNamespaceStr + "is-network-partitioning-enabled"
 
 	privateIpAddrLabelKeyStr = labelNamespaceStr + "private-ip"
@@ -51,6 +53,7 @@ var IDDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(idLabelKeySt
 var GUIDDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(guidLabelKeyStr)
 var PortSpecsDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(portSpecsLabelKeyStr)
 var EnclaveIDDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(enclaveIdLabelKeyStr)
+var EnclaveCreationTimeLabelKey = docker_label_key.MustCreateNewDockerLabelKey(enclaveCreationTime)
 var IsNetworkPartitioningEnabledDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(isNetworkPartitioningEnabledKeyStr)
 var PrivateIPDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(privateIpAddrLabelKeyStr)
 var UserServiceGUIDDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(userServiceGuidDockerLabelKeyStr)
