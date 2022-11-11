@@ -145,6 +145,7 @@ func (service *EngineServerService) GetUserServiceLogs(
 	enclaveId := enclave.EnclaveID(args.GetEnclaveId())
 	userServiceGuidStrSet := args.GetServiceGuidSet()
 	requestedUserServiceGuids := make(map[user_service.ServiceGUID]bool, len(userServiceGuidStrSet))
+	shouldFollowLogs := args.FollowLogs
 
 	for userServiceGuidStr := range userServiceGuidStrSet {
 		userServiceGuid := user_service.ServiceGUID(userServiceGuidStr)
@@ -166,7 +167,7 @@ func (service *EngineServerService) GetUserServiceLogs(
 		return stacktrace.Propagate(err, "An error occurred reporting missing user service GUIDs for enclave '%v' and requested user service GUIDs '%+v'", enclaveId, requestedUserServiceGuids)
 	}
 
-	if args.FollowLogs {
+	if shouldFollowLogs {
 		userServiceLogsByServiceGuidChan, errChan, cancelStreamFunc, err = service.logsDatabaseClient.StreamUserServiceLogs(stream.Context(), enclaveId, requestedUserServiceGuids)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred streaming user service logs for GUIDs '%+v' in enclave with ID '%v'", requestedUserServiceGuids, enclaveId)
@@ -199,6 +200,10 @@ func (service *EngineServerService) GetUserServiceLogs(
 			getUserServiceLogsResponse := newUserLogsResponse(requestedUserServiceGuids, userServiceLogsByServiceGuid, notFoundUserServiceGuids)
 			if err := stream.Send(getUserServiceLogsResponse); err != nil {
 				return stacktrace.Propagate(err, "An error occurred sending the stream logs for user service logs response '%+v'", getUserServiceLogsResponse)
+			}
+			if !shouldFollowLogs {
+				logrus.Debug("User requested to not follow the logs, so the logs stream is closed after sending all the logs created at this point")
+				return nil
 			}
 		//client cancel ctx case
 		case <-stream.Context().Done():
