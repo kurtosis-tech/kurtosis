@@ -28,8 +28,8 @@ const (
 	serviceIdArgName     = "service_id"
 	serviceConfigArgName = "service_config"
 
-	factNameArgName      = "service_id"
-	factNameSubgroupName = "service_id"
+	factNameArgName      = "fact_name"
+	factNameSubgroupName = "fact_name"
 
 	serviceIdSubgroupName = "service_id"
 	allSubgroupName       = "all"
