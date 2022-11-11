@@ -4,14 +4,14 @@ import {
     EnclaveID,
     KurtosisContext,
     ServiceGUID,
-    ServiceID
+    ServiceID,
+    ServiceLog,
+    ServiceLogsStreamContent,
 } from "kurtosis-sdk";
 import log from "loglevel";
 import {err} from "neverthrow";
 import {createEnclave} from "../../test_helpers/enclave_setup";
 import {Readable} from "stream";
-import {ServiceLog} from "../../../../../api/typescript/src";
-import {ServiceLogsStreamContent} from "../../../../../api/typescript/src";
 
 
 const TEST_NAME = "stream-logs"
