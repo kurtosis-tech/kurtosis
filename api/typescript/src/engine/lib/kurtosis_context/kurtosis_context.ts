@@ -32,7 +32,6 @@ import {
     newStopEnclaveArgs
 } from "../constructor_calls";
 import {Readable} from "stream";
-import {ServiceLog} from "./service_log";
 
 const LOCAL_HOSTNAME: string = "localhost";
 
