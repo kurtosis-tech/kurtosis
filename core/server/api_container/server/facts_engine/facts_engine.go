@@ -43,7 +43,7 @@ const (
 	factIdFormatStr            = "%v.%v"
 	keyStringFormat            = "%020s"
 	maxResultCount             = 100
-	defaultRetryCount          = 3
+	defaultRetryCount          = 10
 	defaultRetryWaitDuration   = 3 * time.Second
 )
 
