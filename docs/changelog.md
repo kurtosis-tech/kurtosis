@@ -2,6 +2,7 @@
 
 ### Features
 - Add `wait` and `define` command in Startosis
+- Added ip address replacement in the JSON for `render_template` instruction
 
 ### Fixes
 - Fixes a bug where we'd propagate a nil error
