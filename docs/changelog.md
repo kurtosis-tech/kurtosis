@@ -7,6 +7,7 @@
 ### Fixes
 - Fixes a bug where we'd propagate a nil error
 - Adds validation for `service_id` in `store_files_from_service`
+- Fixed a panic that would happen cause of a `nil` error being returned
 
 # 0.52.0
 ### Breaking Changes

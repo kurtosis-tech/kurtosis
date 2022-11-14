@@ -1286,3 +1286,14 @@ func createSimpleAddServiceInstruction(t *testing.T, serviceId service.ServiceID
 		},
 	)
 }
+
+func TestStartosisInterpreter_NoPanicIfUploadFindAPath(t *testing.T) {
+	filePath := "github.com/kurtosis/module/lib/lib.star"
+	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
+	defer moduleContentProvider.RemoveAll()
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
+	script := `upload_files("` + filePath + `")
+`
+	_, interpretationError, _ := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	require.NotNil(t, interpretationError)
+}
