@@ -1287,7 +1287,7 @@ func createSimpleAddServiceInstruction(t *testing.T, serviceId service.ServiceID
 	)
 }
 
-func TestStartosisInterpreter_NoPanicIfUploadFindAPath(t *testing.T) {
+func TestStartosisInterpreter_NoPanicIfUploadIsPassedAPathNotOnDisk(t *testing.T) {
 	filePath := "github.com/kurtosis/module/lib/lib.star"
 	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
