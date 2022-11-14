@@ -40,8 +40,8 @@ func GenerateUploadFilesBuiltin(instructionsQueue *[]kurtosis_instruction.Kurtos
 		if interpretationError != nil {
 			return nil, interpretationError
 		}
-		pathOnDisk, err := provider.GetOnDiskAbsoluteFilePath(srcPath)
-		if err != nil {
+		pathOnDisk, interpretationError := provider.GetOnDiskAbsoluteFilePath(srcPath)
+		if interpretationError != nil {
 			return nil, interpretationError
 		}
 		uploadInstruction := NewUploadFilesInstruction(*shared_helpers.GetCallerPositionFromThread(thread), serviceNetwork, provider, srcPath, pathOnDisk)
