@@ -184,6 +184,18 @@ func ParseFilePath(filePathArgName string, filePathStr starlark.String) (string,
 	return srcPath, nil
 }
 
+// TODO test this
+func ParseArtifactUuid(artifactUuidArgName string, artifactUuidStr starlark.String) (string, *startosis_errors.InterpretationError) {
+	artifactUuid, interpretationErr := safeCastToString(artifactUuidStr, artifactUuidArgName)
+	if interpretationErr != nil {
+		return "", interpretationErr
+	}
+	if len(artifactUuid) == 0 {
+		return "", startosis_errors.NewInterpretationError("Artifact Uuid can't be empty for argument '%s'", artifactUuidArgName)
+	}
+	return artifactUuid, interpretationErr
+}
+
 func ParseTemplatesAndData(templatesAndData *starlark.Dict) (map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, *startosis_errors.InterpretationError) {
 	templateAndDataByDestRelFilepath := make(map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData)
 	for _, relPathInFilesArtifactKey := range templatesAndData.Keys() {

@@ -18,6 +18,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/upload_files"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_modules/mock_module_content_provider"
+	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
@@ -1184,14 +1185,16 @@ The service example-datastore-server has been removed
 
 func TestStartosisInterpreter_UploadGetsInterpretedCorrectly(t *testing.T) {
 	filePath := "github.com/kurtosis/module/lib/lib.star"
+	artifactUuid, err := enclave_data_directory.NewFilesArtifactUUID()
+	require.Nil(t, err)
 	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
-	err := moduleContentProvider.AddFileContent(filePath, "fooBar")
+	err = moduleContentProvider.AddFileContent(filePath, "fooBar")
 	require.Nil(t, err)
 	filePathOnDisk, err := moduleContentProvider.GetOnDiskAbsoluteFilePath(filePath)
 	require.Nil(t, err)
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
-	script := `upload_files("` + filePath + `")
+	script := `upload_files("` + filePath + `","` + string(artifactUuid) + `")
 `
 	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
 	require.Nil(t, interpretationError)
@@ -1200,7 +1203,7 @@ func TestStartosisInterpreter_UploadGetsInterpretedCorrectly(t *testing.T) {
 
 	expectedUploadInstruction := upload_files.NewUploadFilesInstruction(
 		*kurtosis_instruction.NewInstructionPosition(1, 13, starlarkFilenamePlaceholderAsNotUsed),
-		testServiceNetwork, moduleContentProvider, filePath, filePathOnDisk,
+		testServiceNetwork, moduleContentProvider, filePath, filePathOnDisk, string(artifactUuid),
 	)
 
 	require.Equal(t, expectedUploadInstruction, instructions[0])
