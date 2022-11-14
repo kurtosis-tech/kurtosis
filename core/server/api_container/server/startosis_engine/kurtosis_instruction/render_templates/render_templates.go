@@ -3,6 +3,7 @@ package render_templates
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
@@ -67,6 +68,16 @@ func (instruction *RenderTemplatesInstruction) GetCanonicalInstruction() string 
 }
 
 func (instruction *RenderTemplatesInstruction) Execute(ctx context.Context, environment *startosis_executor.ExecutionEnvironment) error {
+	for relFilePath := range instruction.templatesAndDataByDestRelFilepath {
+		templateStr := instruction.templatesAndDataByDestRelFilepath[relFilePath].Template
+		dataAsJson := instruction.templatesAndDataByDestRelFilepath[relFilePath].DataAsJson
+		dataAsJsonMaybeIPAddressReplaced, err := shared_helpers.ReplaceIPAddressInString(dataAsJson, instruction.serviceNetwork, instruction.GetPositionInOriginalScript().String())
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred while replacing IP address with place holder in the render_template instruction for target '%v'", relFilePath)
+		}
+		instruction.templatesAndDataByDestRelFilepath[relFilePath] = binding_constructors.NewTemplateAndData(templateStr, dataAsJsonMaybeIPAddressReplaced)
+	}
+
 	artifactUuid, err := instruction.serviceNetwork.RenderTemplates(instruction.templatesAndDataByDestRelFilepath)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to render templates '%v'", instruction.templatesAndDataByDestRelFilepath)
