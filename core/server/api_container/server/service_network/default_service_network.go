@@ -731,6 +731,22 @@ func (network *DefaultServiceNetwork) UploadFilesArtifact(data []byte) (enclave_
 	return filesArtifactUuid, nil
 }
 
+func (network *DefaultServiceNetwork) UploadFilesArtifactToTargetArtifactUUID(data []byte, targetFilesArtifactUuid enclave_data_directory.FilesArtifactUUID) (enclave_data_directory.FilesArtifactUUID, error) {
+	reader := bytes.NewReader(data)
+
+	filesArtifactStore, err := network.enclaveDataDir.GetFilesArtifactStore()
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred while getting files artifact store")
+	}
+
+	filesArtifactUuid, err := filesArtifactStore.StoreFileToArtifactUUID(reader, targetFilesArtifactUuid)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred while trying to store files.")
+	}
+
+	return filesArtifactUuid, nil
+}
+
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================
