@@ -13,7 +13,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"io"
 	"net"
-	"time"
 )
 
 // TODO This mega-backend should really have its individual functionalities split up into
@@ -69,7 +68,6 @@ type KurtosisBackend interface {
 	CreateEnclave(
 		ctx context.Context,
 		enclaveId enclave.EnclaveID,
-		creationTime time.Time,
 		isPartitioningEnabled bool,
 	) (
 		*enclave.Enclave,

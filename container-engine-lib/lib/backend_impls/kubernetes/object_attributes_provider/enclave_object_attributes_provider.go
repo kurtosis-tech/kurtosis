@@ -15,6 +15,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
+	"time"
 )
 
 const (
@@ -24,7 +25,10 @@ const (
 )
 
 type KubernetesEnclaveObjectAttributesProvider interface {
-	ForEnclaveNamespace(isPartitioningEnabled bool) (KubernetesObjectAttributes, error)
+	ForEnclaveNamespace(
+		isPartitioningEnabled bool,
+		creationTime time.Time,
+	) (KubernetesObjectAttributes, error)
 	ForApiContainer() KubernetesApiContainerObjectAttributesProvider
 	ForUserServiceService(
 		guid service.ServiceGUID,
@@ -65,7 +69,10 @@ func GetKubernetesEnclaveObjectAttributesProvider(enclaveId enclave.EnclaveID) K
 	return newKubernetesEnclaveObjectAttributesProviderImpl(enclaveId)
 }
 
-func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveNamespace(isPartitioningEnabled bool) (KubernetesObjectAttributes, error) {
+func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveNamespace(
+	isPartitioningEnabled bool,
+	creationTime time.Time,
+) (KubernetesObjectAttributes, error) {
 	namespaceUuid, err := uuid_generator.GenerateUUIDString()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to generate UUID string for namespace name for enclave '%v'", provider.enclaveId)

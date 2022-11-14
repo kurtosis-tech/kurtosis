@@ -55,7 +55,6 @@ type matchingNetworkInformation struct {
 func (backend *DockerKurtosisBackend) CreateEnclave(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
-	creationTime time.Time,
 	isPartitioningEnabled bool,
 ) (
 	*enclave.Enclave,
@@ -93,6 +92,8 @@ func (backend *DockerKurtosisBackend) CreateEnclave(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while trying to generate an object attributes provider for the enclave with ID '%v'", enclaveId)
 	}
+
+	creationTime := time.Now()
 
 	enclaveNetworkAttrs, err := enclaveObjAttrsProvider.ForEnclaveNetwork(isPartitioningEnabled, creationTime)
 	if err != nil {

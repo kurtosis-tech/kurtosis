@@ -17,7 +17,6 @@ import (
 	"sort"
 	"strings"
 	"sync"
-	"time"
 )
 
 const (
@@ -95,12 +94,10 @@ func (manager *EnclaveManager) CreateEnclave(
 		return nil, stacktrace.NewError("Cannot create enclave '%v' because an enclave with that name already exists", enclaveId)
 	}
 
-	creationTime := time.Now() //TODO open to discuss if we should moved inside kurtosisBackend
-
 	// Create Enclave with kurtosisBackend
-	newEnclave, err := manager.kurtosisBackend.CreateEnclave(setupCtx, enclaveId, creationTime, isPartitioningEnabled)
+	newEnclave, err := manager.kurtosisBackend.CreateEnclave(setupCtx, enclaveId, isPartitioningEnabled)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating enclave with id `%v` and creation time '%v'", enclaveId, creationTime)
+		return nil, stacktrace.Propagate(err, "An error occurred creating enclave with id `%v`", enclaveId)
 	}
 	shouldDestroyEnclave := true
 	defer func() {

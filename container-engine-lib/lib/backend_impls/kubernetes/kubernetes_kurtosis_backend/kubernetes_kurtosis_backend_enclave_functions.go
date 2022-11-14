@@ -70,7 +70,6 @@ type dumpPodResult struct {
 func (backend KubernetesKurtosisBackend) CreateEnclave(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
-	creationTime time.Time,
 	isPartitioningEnabled bool,
 ) (
 	*enclave.Enclave,
@@ -93,9 +92,11 @@ func (backend KubernetesKurtosisBackend) CreateEnclave(
 		return nil, stacktrace.NewError("Cannot create enclave with ID '%v' because an enclave with ID '%v' already exists", enclaveId, enclaveId)
 	}
 
+	creationTime := time.Now()
+
 	// Make Enclave attributes provider
 	enclaveObjAttrsProvider := backend.objAttrsProvider.ForEnclave(enclaveId)
-	enclaveNamespaceAttrs, err := enclaveObjAttrsProvider.ForEnclaveNamespace(isPartitioningEnabled)
+	enclaveNamespaceAttrs, err := enclaveObjAttrsProvider.ForEnclaveNamespace(isPartitioningEnabled, creationTime)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while trying to get the enclave network attributes for the enclave with ID '%v'", enclaveId)
 	}
