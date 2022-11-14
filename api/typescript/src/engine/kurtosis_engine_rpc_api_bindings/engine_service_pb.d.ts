@@ -255,25 +255,25 @@ export namespace CleanResponse {
   }
 }
 
-export class GetUserServiceLogsArgs extends jspb.Message {
+export class GetServiceLogsArgs extends jspb.Message {
   getEnclaveId(): string;
-  setEnclaveId(value: string): GetUserServiceLogsArgs;
+  setEnclaveId(value: string): GetServiceLogsArgs;
 
   getServiceGuidSetMap(): jspb.Map<string, boolean>;
-  clearServiceGuidSetMap(): GetUserServiceLogsArgs;
+  clearServiceGuidSetMap(): GetServiceLogsArgs;
 
   getFollowLogs(): boolean;
-  setFollowLogs(value: boolean): GetUserServiceLogsArgs;
+  setFollowLogs(value: boolean): GetServiceLogsArgs;
 
   serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): GetUserServiceLogsArgs.AsObject;
-  static toObject(includeInstance: boolean, msg: GetUserServiceLogsArgs): GetUserServiceLogsArgs.AsObject;
-  static serializeBinaryToWriter(message: GetUserServiceLogsArgs, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): GetUserServiceLogsArgs;
-  static deserializeBinaryFromReader(message: GetUserServiceLogsArgs, reader: jspb.BinaryReader): GetUserServiceLogsArgs;
+  toObject(includeInstance?: boolean): GetServiceLogsArgs.AsObject;
+  static toObject(includeInstance: boolean, msg: GetServiceLogsArgs): GetServiceLogsArgs.AsObject;
+  static serializeBinaryToWriter(message: GetServiceLogsArgs, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): GetServiceLogsArgs;
+  static deserializeBinaryFromReader(message: GetServiceLogsArgs, reader: jspb.BinaryReader): GetServiceLogsArgs;
 }
 
-export namespace GetUserServiceLogsArgs {
+export namespace GetServiceLogsArgs {
   export type AsObject = {
     enclaveId: string,
     serviceGuidSetMap: Array<[string, boolean]>,
@@ -281,22 +281,22 @@ export namespace GetUserServiceLogsArgs {
   }
 }
 
-export class GetUserServiceLogsResponse extends jspb.Message {
+export class GetServiceLogsResponse extends jspb.Message {
   getUserServiceLogsByUserServiceGuidMap(): jspb.Map<string, LogLine>;
-  clearUserServiceLogsByUserServiceGuidMap(): GetUserServiceLogsResponse;
+  clearUserServiceLogsByUserServiceGuidMap(): GetServiceLogsResponse;
 
   getNotFoundUserServiceGuidSetMap(): jspb.Map<string, boolean>;
-  clearNotFoundUserServiceGuidSetMap(): GetUserServiceLogsResponse;
+  clearNotFoundUserServiceGuidSetMap(): GetServiceLogsResponse;
 
   serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): GetUserServiceLogsResponse.AsObject;
-  static toObject(includeInstance: boolean, msg: GetUserServiceLogsResponse): GetUserServiceLogsResponse.AsObject;
-  static serializeBinaryToWriter(message: GetUserServiceLogsResponse, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): GetUserServiceLogsResponse;
-  static deserializeBinaryFromReader(message: GetUserServiceLogsResponse, reader: jspb.BinaryReader): GetUserServiceLogsResponse;
+  toObject(includeInstance?: boolean): GetServiceLogsResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: GetServiceLogsResponse): GetServiceLogsResponse.AsObject;
+  static serializeBinaryToWriter(message: GetServiceLogsResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): GetServiceLogsResponse;
+  static deserializeBinaryFromReader(message: GetServiceLogsResponse, reader: jspb.BinaryReader): GetServiceLogsResponse;
 }
 
-export namespace GetUserServiceLogsResponse {
+export namespace GetServiceLogsResponse {
   export type AsObject = {
     userServiceLogsByUserServiceGuidMap: Array<[string, LogLine.AsObject]>,
     notFoundUserServiceGuidSetMap: Array<[string, boolean]>,

@@ -445,56 +445,56 @@ proto.engine_api.EngineServicePromiseClient.prototype.clean =
 /**
  * @const
  * @type {!grpc.web.MethodDescriptor<
- *   !proto.engine_api.GetUserServiceLogsArgs,
- *   !proto.engine_api.GetUserServiceLogsResponse>}
+ *   !proto.engine_api.GetServiceLogsArgs,
+ *   !proto.engine_api.GetServiceLogsResponse>}
  */
-const methodDescriptor_EngineService_GetUserServiceLogs = new grpc.web.MethodDescriptor(
-  '/engine_api.EngineService/GetUserServiceLogs',
+const methodDescriptor_EngineService_GetServiceLogs = new grpc.web.MethodDescriptor(
+  '/engine_api.EngineService/GetServiceLogs',
   grpc.web.MethodType.SERVER_STREAMING,
-  proto.engine_api.GetUserServiceLogsArgs,
-  proto.engine_api.GetUserServiceLogsResponse,
+  proto.engine_api.GetServiceLogsArgs,
+  proto.engine_api.GetServiceLogsResponse,
   /**
-   * @param {!proto.engine_api.GetUserServiceLogsArgs} request
+   * @param {!proto.engine_api.GetServiceLogsArgs} request
    * @return {!Uint8Array}
    */
   function(request) {
     return request.serializeBinary();
   },
-  proto.engine_api.GetUserServiceLogsResponse.deserializeBinary
+  proto.engine_api.GetServiceLogsResponse.deserializeBinary
 );
 
 
 /**
- * @param {!proto.engine_api.GetUserServiceLogsArgs} request The request proto
+ * @param {!proto.engine_api.GetServiceLogsArgs} request The request proto
  * @param {?Object<string, string>=} metadata User defined
  *     call metadata
- * @return {!grpc.web.ClientReadableStream<!proto.engine_api.GetUserServiceLogsResponse>}
+ * @return {!grpc.web.ClientReadableStream<!proto.engine_api.GetServiceLogsResponse>}
  *     The XHR Node Readable Stream
  */
-proto.engine_api.EngineServiceClient.prototype.getUserServiceLogs =
+proto.engine_api.EngineServiceClient.prototype.getServiceLogs =
     function(request, metadata) {
   return this.client_.serverStreaming(this.hostname_ +
-      '/engine_api.EngineService/GetUserServiceLogs',
+      '/engine_api.EngineService/GetServiceLogs',
       request,
       metadata || {},
-      methodDescriptor_EngineService_GetUserServiceLogs);
+      methodDescriptor_EngineService_GetServiceLogs);
 };
 
 
 /**
- * @param {!proto.engine_api.GetUserServiceLogsArgs} request The request proto
+ * @param {!proto.engine_api.GetServiceLogsArgs} request The request proto
  * @param {?Object<string, string>=} metadata User defined
  *     call metadata
- * @return {!grpc.web.ClientReadableStream<!proto.engine_api.GetUserServiceLogsResponse>}
+ * @return {!grpc.web.ClientReadableStream<!proto.engine_api.GetServiceLogsResponse>}
  *     The XHR Node Readable Stream
  */
-proto.engine_api.EngineServicePromiseClient.prototype.getUserServiceLogs =
+proto.engine_api.EngineServicePromiseClient.prototype.getServiceLogs =
     function(request, metadata) {
   return this.client_.serverStreaming(this.hostname_ +
-      '/engine_api.EngineService/GetUserServiceLogs',
+      '/engine_api.EngineService/GetServiceLogs',
       request,
       metadata || {},
-      methodDescriptor_EngineService_GetUserServiceLogs);
+      methodDescriptor_EngineService_GetServiceLogs);
 };
 
 
