@@ -203,7 +203,7 @@ func (kurtosisCtx *KurtosisContext) GetServiceLogs(
 
 	getUserServiceLogsArgs := newGetUserServiceLogsArgs(enclaveID, userServiceGuids, shouldFollowLogs)
 
-	stream, err := kurtosisCtx.client.GetUserServiceLogs(ctxWithCancel, getUserServiceLogsArgs)
+	stream, err := kurtosisCtx.client.GetServiceLogs(ctxWithCancel, getUserServiceLogsArgs)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred streaming user service logs using args '%+v'", getUserServiceLogsArgs)
 	}
@@ -231,7 +231,7 @@ func runReceiveStreamLogsFromTheServerRoutine(
 	enclaveID enclaves.EnclaveID,
 	requestedUserServiceGuids map[services.ServiceGUID]bool,
 	serviceLogsStreamContentChan chan *serviceLogsStreamContent,
-	stream kurtosis_engine_rpc_api_bindings.EngineService_GetUserServiceLogsClient,
+	stream kurtosis_engine_rpc_api_bindings.EngineService_GetServiceLogsClient,
 ) {
 
 	//Closing all the open resources at the end
@@ -368,7 +368,7 @@ func newGetUserServiceLogsArgs(
 	enclaveID enclaves.EnclaveID,
 	userServiceGUIDs map[services.ServiceGUID]bool,
 	shouldFollowLogs bool,
-) *kurtosis_engine_rpc_api_bindings.GetUserServiceLogsArgs {
+) *kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs {
 	userServiceGUIDStrSet := make(map[string]bool, len(userServiceGUIDs))
 
 	for userServiceGUID, isUserServiceInSet := range userServiceGUIDs {
@@ -376,7 +376,7 @@ func newGetUserServiceLogsArgs(
 		userServiceGUIDStrSet[userServiceGUIDStr] = isUserServiceInSet
 	}
 
-	getUserServiceLogsArgs := &kurtosis_engine_rpc_api_bindings.GetUserServiceLogsArgs{
+	getUserServiceLogsArgs := &kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs{
 		EnclaveId:      string(enclaveID),
 		ServiceGuidSet: userServiceGUIDStrSet,
 		FollowLogs: shouldFollowLogs,
@@ -387,7 +387,7 @@ func newGetUserServiceLogsArgs(
 
 func newServiceLogsStreamContentFromGrpcStreamResponse(
 	requestedUserServiceGuids map[services.ServiceGUID]bool,
-	getUserServiceLogResponse *kurtosis_engine_rpc_api_bindings.GetUserServiceLogsResponse,
+	getUserServiceLogResponse *kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse,
 ) *serviceLogsStreamContent {
 	userServiceLogsByServiceGuidMap := map[services.ServiceGUID][]*ServiceLog{}
 
