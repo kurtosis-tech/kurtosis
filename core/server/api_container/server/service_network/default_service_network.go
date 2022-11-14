@@ -668,16 +668,14 @@ func (network *DefaultServiceNetwork) UploadFilesArtifact(data []byte) (enclave_
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 
-	reader := bytes.NewReader(data)
-
-	filesArtifactStore, err := network.enclaveDataDir.GetFilesArtifactStore()
+	filesArtifactUuid, err := enclave_data_directory.NewFilesArtifactUUID()
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred while getting files artifact store")
+		return "", stacktrace.Propagate(err, "There was an error in creating a files artifact uuid to upload the files to")
 	}
 
-	filesArtifactUuid, err := filesArtifactStore.StoreFile(reader)
+	err = network.uploadFilesArtifactToTargetArtifactUuiDUnlocked(data, filesArtifactUuid)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred while trying to store files.")
+		return "", stacktrace.Propagate(err, "There was an error in uploading the files")
 	}
 
 	return filesArtifactUuid, nil
@@ -688,16 +686,9 @@ func (network *DefaultServiceNetwork) UploadFilesArtifactToTargetArtifactUUID(da
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 
-	reader := bytes.NewReader(data)
-
-	filesArtifactStore, err := network.enclaveDataDir.GetFilesArtifactStore()
+	err := network.uploadFilesArtifactToTargetArtifactUuiDUnlocked(data, targetFilesArtifactUuid)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while getting files artifact store")
-	}
-
-	err = filesArtifactStore.StoreFileToArtifactUUID(reader, targetFilesArtifactUuid)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while trying to store files.")
+		return stacktrace.Propagate(err, "There was an error in uploading the files")
 	}
 
 	return nil
@@ -1043,6 +1034,23 @@ func (network *DefaultServiceNetwork) renderTemplatesToTargetArtifactUuidUnlocke
 	}()
 
 	shouldDeleteFilesArtifact = false
+	return nil
+}
+
+// This method is not thread safe. Only call this from a method where there is a mutex lock on the network.
+func (network *DefaultServiceNetwork) uploadFilesArtifactToTargetArtifactUuiDUnlocked(data []byte, targetFilesArtifactUuid enclave_data_directory.FilesArtifactUUID) error {
+	reader := bytes.NewReader(data)
+
+	filesArtifactStore, err := network.enclaveDataDir.GetFilesArtifactStore()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while getting files artifact store")
+	}
+
+	err = filesArtifactStore.StoreFileToArtifactUUID(reader, targetFilesArtifactUuid)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while trying to store files.")
+	}
+
 	return nil
 }
 
