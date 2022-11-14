@@ -42,9 +42,20 @@ func TestFileStore_StoreFileToArtifactUUIDSimpleCase(t *testing.T) {
 	targetArtifactUuid, err := NewFilesArtifactUUID()
 	require.Equal(t, 36, len(targetArtifactUuid)) //UUID is 128 bits but in string it is hex represented chars so 32 chars
 	require.Nil(t, err)
-	filesArtifactUuid, err := fileStore.StoreFileToArtifactUUID(reader, targetArtifactUuid)
+	err = fileStore.StoreFileToArtifactUUID(reader, targetArtifactUuid)
 	require.Nil(t, err)
-	require.Equal(t, targetArtifactUuid, filesArtifactUuid)
+
+	//Test that it saved where it said it would.
+	expectedFilename := strings.Join(
+		[]string{string(targetArtifactUuid), artifactExtension},
+		".",
+	)
+	expectedFilepath := filepath.Join(fileStore.fileCache.absoluteDirpath, expectedFilename)
+	_, dirErr := os.Stat(expectedFilepath)
+	require.Nil(t, dirErr)
+	file, readErr := ioutil.ReadFile(expectedFilepath)
+	require.Nil(t, readErr)
+	require.Equal(t, []byte(testContent), file)
 }
 
 func TestFileStore_StoringToExistingUUIDFails(t *testing.T) {
@@ -57,7 +68,7 @@ func TestFileStore_StoringToExistingUUIDFails(t *testing.T) {
 
 	anotherTestContent := "This one should fail"
 	anotherReader := strings.NewReader(anotherTestContent)
-	_, err = fileStore.StoreFileToArtifactUUID(anotherReader, filesArtifactUuid)
+	err = fileStore.StoreFileToArtifactUUID(anotherReader, filesArtifactUuid)
 	require.NotNil(t, err)
 }
 

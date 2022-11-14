@@ -31,24 +31,28 @@ func (store FilesArtifactStore) StoreFile(reader io.Reader) (FilesArtifactUUID, 
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred creating new files artifact UUID")
 	}
-	return store.StoreFileToArtifactUUID(reader, newFilesArtifactUuid)
+	err = store.StoreFileToArtifactUUID(reader, newFilesArtifactUuid)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "There was an error in storing data to files artifact with uuid '%v'", newFilesArtifactUuid)
+	}
+	return newFilesArtifactUuid, nil
 }
 
 // StoreFile: Saves file to disk.
-func (store FilesArtifactStore) StoreFileToArtifactUUID(reader io.Reader, targetArtifactUUID FilesArtifactUUID) (FilesArtifactUUID, error) {
+func (store FilesArtifactStore) StoreFileToArtifactUUID(reader io.Reader, targetArtifactUUID FilesArtifactUUID) error {
 	filename := strings.Join(
 		[]string{string(targetArtifactUUID), artifactExtension},
 		".",
 	)
 	_, err := store.fileCache.AddFile(filename, reader)
 	if err != nil {
-		return "", stacktrace.Propagate(
+		return stacktrace.Propagate(
 			err,
 			"Could not store file '%s' to the file cache",
 			filename,
 		)
 	}
-	return targetArtifactUUID, nil
+	return nil
 }
 
 // Get the file by uuid
