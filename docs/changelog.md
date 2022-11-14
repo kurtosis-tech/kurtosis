@@ -7,6 +7,7 @@
 ### Fixes
 - Fixes a bug where we'd propagate a nil error
 - Adds validation for `service_id` in `store_files_from_service`
+- Fixes a bug where typescript (jest) unit tests do not correctly wait for grpc services to become available
 
 # 0.52.0
 ### Breaking Changes
