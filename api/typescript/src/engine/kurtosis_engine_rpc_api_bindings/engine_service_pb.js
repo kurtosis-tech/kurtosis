@@ -1277,7 +1277,7 @@ proto.engine_api.EnclaveInfo.toObject = function(includeInstance, msg) {
     apiContainerStatus: jspb.Message.getFieldWithDefault(msg, 3, 0),
     apiContainerInfo: (f = msg.getApiContainerInfo()) && proto.engine_api.EnclaveAPIContainerInfo.toObject(includeInstance, f),
     apiContainerHostMachineInfo: (f = msg.getApiContainerHostMachineInfo()) && proto.engine_api.EnclaveAPIContainerHostMachineInfo.toObject(includeInstance, f),
-    creationtime: (f = msg.getCreationtime()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f)
+    creationTime: (f = msg.getCreationTime()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -1339,7 +1339,7 @@ proto.engine_api.EnclaveInfo.deserializeBinaryFromReader = function(msg, reader)
     case 6:
       var value = new google_protobuf_timestamp_pb.Timestamp;
       reader.readMessage(value,google_protobuf_timestamp_pb.Timestamp.deserializeBinaryFromReader);
-      msg.setCreationtime(value);
+      msg.setCreationTime(value);
       break;
     default:
       reader.skipField();
@@ -1407,7 +1407,7 @@ proto.engine_api.EnclaveInfo.serializeBinaryToWriter = function(message, writer)
       proto.engine_api.EnclaveAPIContainerHostMachineInfo.serializeBinaryToWriter
     );
   }
-  f = message.getCreationtime();
+  f = message.getCreationTime();
   if (f != null) {
     writer.writeMessage(
       6,
@@ -1547,10 +1547,10 @@ proto.engine_api.EnclaveInfo.prototype.hasApiContainerHostMachineInfo = function
 
 
 /**
- * optional google.protobuf.Timestamp CreationTime = 6;
+ * optional google.protobuf.Timestamp creation_time = 6;
  * @return {?proto.google.protobuf.Timestamp}
  */
-proto.engine_api.EnclaveInfo.prototype.getCreationtime = function() {
+proto.engine_api.EnclaveInfo.prototype.getCreationTime = function() {
   return /** @type{?proto.google.protobuf.Timestamp} */ (
     jspb.Message.getWrapperField(this, google_protobuf_timestamp_pb.Timestamp, 6));
 };
@@ -1560,7 +1560,7 @@ proto.engine_api.EnclaveInfo.prototype.getCreationtime = function() {
  * @param {?proto.google.protobuf.Timestamp|undefined} value
  * @return {!proto.engine_api.EnclaveInfo} returns this
 */
-proto.engine_api.EnclaveInfo.prototype.setCreationtime = function(value) {
+proto.engine_api.EnclaveInfo.prototype.setCreationTime = function(value) {
   return jspb.Message.setWrapperField(this, 6, value);
 };
 
@@ -1569,8 +1569,8 @@ proto.engine_api.EnclaveInfo.prototype.setCreationtime = function(value) {
  * Clears the message field making it undefined.
  * @return {!proto.engine_api.EnclaveInfo} returns this
  */
-proto.engine_api.EnclaveInfo.prototype.clearCreationtime = function() {
-  return this.setCreationtime(undefined);
+proto.engine_api.EnclaveInfo.prototype.clearCreationTime = function() {
+  return this.setCreationTime(undefined);
 };
 
 
@@ -1578,7 +1578,7 @@ proto.engine_api.EnclaveInfo.prototype.clearCreationtime = function() {
  * Returns whether this field is set.
  * @return {boolean}
  */
-proto.engine_api.EnclaveInfo.prototype.hasCreationtime = function() {
+proto.engine_api.EnclaveInfo.prototype.hasCreationTime = function() {
   return jspb.Message.getField(this, 6) != null;
 };
 

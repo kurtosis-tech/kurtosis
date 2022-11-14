@@ -148,10 +148,10 @@ export class EnclaveInfo extends jspb.Message {
   hasApiContainerHostMachineInfo(): boolean;
   clearApiContainerHostMachineInfo(): EnclaveInfo;
 
-  getCreationtime(): google_protobuf_timestamp_pb.Timestamp | undefined;
-  setCreationtime(value?: google_protobuf_timestamp_pb.Timestamp): EnclaveInfo;
-  hasCreationtime(): boolean;
-  clearCreationtime(): EnclaveInfo;
+  getCreationTime(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setCreationTime(value?: google_protobuf_timestamp_pb.Timestamp): EnclaveInfo;
+  hasCreationTime(): boolean;
+  clearCreationTime(): EnclaveInfo;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): EnclaveInfo.AsObject;
@@ -168,7 +168,7 @@ export namespace EnclaveInfo {
     apiContainerStatus: EnclaveAPIContainerStatus,
     apiContainerInfo?: EnclaveAPIContainerInfo.AsObject,
     apiContainerHostMachineInfo?: EnclaveAPIContainerHostMachineInfo.AsObject,
-    creationtime?: google_protobuf_timestamp_pb.Timestamp.AsObject,
+    creationTime?: google_protobuf_timestamp_pb.Timestamp.AsObject,
   }
 }
 

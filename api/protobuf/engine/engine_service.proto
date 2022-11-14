@@ -127,7 +127,7 @@ message EnclaveInfo {
   EnclaveAPIContainerHostMachineInfo api_container_host_machine_info = 5;
 
   //The enclave's creation time
-  google.protobuf.Timestamp CreationTime = 6;
+  google.protobuf.Timestamp creation_time = 6;
 }
 
 message GetEnclavesResponse {
