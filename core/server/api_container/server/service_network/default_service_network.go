@@ -62,8 +62,7 @@ var apiContainerPortProtoToPortSpecPortProto = map[kurtosis_core_rpc_api_binding
 }
 
 type storeFilesArtifactResult struct {
-	filesArtifactUuid enclave_data_directory.FilesArtifactUUID
-	err               error
+	err error
 }
 
 /*
@@ -600,48 +599,30 @@ func (network *DefaultServiceNetwork) GetServiceIDs() map[service.ServiceID]bool
 }
 
 func (network *DefaultServiceNetwork) CopyFilesFromService(ctx context.Context, serviceId service.ServiceID, srcPath string) (enclave_data_directory.FilesArtifactUUID, error) {
-	serviceObj, found := network.registeredServiceInfo[serviceId]
-	if !found {
-		return "", stacktrace.NewError("Cannot copy files from service '%v' because it does not exist in the network", serviceId)
-	}
-	serviceGuid := serviceObj.GetGUID()
+	network.mutex.Lock()
+	defer network.mutex.Unlock()
 
-	store, err := network.enclaveDataDir.GetFilesArtifactStore()
+	filesArtifactUuid, err := enclave_data_directory.NewFilesArtifactUUID()
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred getting the files artifact store")
+		return "", stacktrace.Propagate(err, "There was an error in creating a files artifact uuid to copy the files to")
 	}
 
-	pipeReader, pipeWriter := io.Pipe()
-	defer pipeReader.Close()
-	defer pipeWriter.Close()
-
-	storeFilesArtifactResultChan := make(chan storeFilesArtifactResult)
-	go func() {
-		defer pipeReader.Close()
-
-		//And finally pass it the .tgz file to the artifact file store
-		filesArtifactUuId, storeFileErr := store.StoreFile(pipeReader)
-		storeFilesArtifactResultChan <- storeFilesArtifactResult{
-			filesArtifactUuid: filesArtifactUuId,
-			err:               storeFileErr,
-		}
-	}()
-
-	if err := network.gzipAndPushTarredFileBytesToOutput(ctx, pipeWriter, serviceGuid, srcPath); err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred gzip'ing and pushing tar'd file bytes to the pipe")
+	err = network.copyFilesFromServiceToTargetArtifactUuidUnlocked(ctx, serviceId, srcPath, filesArtifactUuid)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "There was an error in copying files over to disk")
 	}
+	return filesArtifactUuid, nil
+}
 
-	storeFileResult := <-storeFilesArtifactResultChan
-	if storeFileResult.err != nil {
-		return "", stacktrace.Propagate(
-			err,
-			"An error occurred storing files from path '%v' on service '%v' in in the files artifact store",
-			srcPath,
-			serviceGuid,
-		)
+func (network *DefaultServiceNetwork) CopyFilesFromServiceToTargetArtifactUUID(ctx context.Context, serviceId service.ServiceID, srcPath string, filesArtifactUuid enclave_data_directory.FilesArtifactUUID) (enclave_data_directory.FilesArtifactUUID, error) {
+	network.mutex.Lock()
+	defer network.mutex.Unlock()
+
+	err := network.copyFilesFromServiceToTargetArtifactUuidUnlocked(ctx, serviceId, srcPath, filesArtifactUuid)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "There was an error in copying files over to disk")
 	}
-
-	return storeFileResult.filesArtifactUuid, nil
+	return filesArtifactUuid, nil
 }
 
 func (network *DefaultServiceNetwork) GetIPAddressForService(serviceID service.ServiceID) (net.IP, bool) {
@@ -883,6 +864,51 @@ func (network *DefaultServiceNetwork) startServices(
 	}
 
 	return successfulServices, failedServicesPool, nil
+}
+
+func (network *DefaultServiceNetwork) copyFilesFromServiceToTargetArtifactUuidUnlocked(ctx context.Context, serviceId service.ServiceID, srcPath string, filesArtifactUuId enclave_data_directory.FilesArtifactUUID) error {
+	serviceObj, found := network.registeredServiceInfo[serviceId]
+	if !found {
+		return stacktrace.NewError("Cannot copy files from service '%v' because it does not exist in the network", serviceId)
+	}
+	serviceGuid := serviceObj.GetGUID()
+
+	store, err := network.enclaveDataDir.GetFilesArtifactStore()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the files artifact store")
+	}
+
+	pipeReader, pipeWriter := io.Pipe()
+	defer pipeReader.Close()
+	defer pipeWriter.Close()
+
+	storeFilesArtifactResultChan := make(chan storeFilesArtifactResult)
+	go func() {
+		defer pipeReader.Close()
+
+		//And finally pass it the .tgz file to the artifact file store
+		storeFileErr := store.StoreFileToArtifactUUID(pipeReader, filesArtifactUuId)
+		storeFilesArtifactResultChan <- storeFilesArtifactResult{
+			err: storeFileErr,
+		}
+	}()
+
+	if err := network.gzipAndPushTarredFileBytesToOutput(ctx, pipeWriter, serviceGuid, srcPath); err != nil {
+		return stacktrace.Propagate(err, "An error occurred gzip'ing and pushing tar'd file bytes to the pipe")
+	}
+
+	storeFileResult := <-storeFilesArtifactResultChan
+	if storeFileResult.err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred storing files from path '%v' on service '%v' in in the files artifact store",
+			srcPath,
+			serviceGuid,
+		)
+	}
+
+	return nil
+
 }
 
 func (network *DefaultServiceNetwork) gzipAndPushTarredFileBytesToOutput(
