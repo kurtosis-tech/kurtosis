@@ -825,6 +825,8 @@ wait(service_id="%v", fact_name="%v")
 }
 
 func TestStartosisInterpreter_RenderTemplates(t *testing.T) {
+	testArtifactUuid, err := enclave_data_directory.NewFilesArtifactUUID()
+	require.Nil(t, err)
 	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
@@ -845,7 +847,7 @@ data = {
 		"template_data_json": encoded_json
     }
 }
-artifact_uuid = render_templates(template_and_data_by_dest_rel_filepath = data)
+artifact_uuid = render_templates(template_and_data_by_dest_rel_filepath = data, artifact_uuid = "` + string(testArtifactUuid) + `")
 print(artifact_uuid)
 `
 
@@ -877,14 +879,16 @@ print(artifact_uuid)
 		templateAndDataByDestFilepath,
 		starlark.StringDict{
 			"template_and_data_by_dest_rel_filepath": templateAndDataValues,
+			"artifact_uuid":                          starlark.String(testArtifactUuid),
 		},
+		testArtifactUuid,
 	)
 
 	require.Equal(t, renderInstruction, instructions[0])
 
 	expectedOutput := fmt.Sprintf(`Rendering template to disk!
-{{kurtosis:%v-18:33.artifact_uuid}}
-`, starlarkFilenamePlaceholderAsNotUsed)
+%v
+`, testArtifactUuid)
 	require.Equal(t, expectedOutput, string(scriptOutput))
 }
 
