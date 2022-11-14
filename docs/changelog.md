@@ -8,6 +8,8 @@
 - Add `wait` and `define` command in Startosis
 - Added ip address replacement in the JSON for `render_template` instruction
 - Implemented a `ToTargetArtifactUuid` version of a few service_network functions
+- Made `render_templates`, `upload_files`, `store_Files_from_service` accept `artifact_uuid` and
+return `artifact_uuid` during interpretation time
 
 ### Changes
 - `kurtosis_instruction.String()` now returns a single line version of the instruction for more concise logging
