@@ -229,7 +229,7 @@ func (kurtosisCtx *KurtosisContext) GetServiceLogs(
 func runReceiveStreamLogsFromTheServerRoutine(
 	cancelCtxFunc context.CancelFunc,
 	enclaveID enclaves.EnclaveID,
-	requestedUserServiceGuids map[services.ServiceGUID]bool,
+	requestedServiceGuids map[services.ServiceGUID]bool,
 	serviceLogsStreamContentChan chan *serviceLogsStreamContent,
 	stream kurtosis_engine_rpc_api_bindings.EngineService_GetServiceLogsClient,
 ) {
@@ -242,7 +242,7 @@ func runReceiveStreamLogsFromTheServerRoutine(
 
 	for {
 		//this is a blocking call, and the only way to unblock it from our side is to cancel the context that it was created with
-		getUserServiceLogsResponse, errReceivingStream := stream.Recv()
+		getServiceLogsResponse, errReceivingStream := stream.Recv()
 		//stream ends case
 		if errReceivingStream == io.EOF {
 			logrus.Debug("Received an 'EOF' error from the user service logs GRPC stream")
@@ -256,11 +256,11 @@ func runReceiveStreamLogsFromTheServerRoutine(
 				return
 			}
 			//error during stream case
-			logrus.Errorf("An error occurred receiving user service logs stream for user services '%+v' in enclave '%v'. Error:\n%v", requestedUserServiceGuids, enclaveID, errReceivingStream)
+			logrus.Errorf("An error occurred receiving user service logs stream for user services '%+v' in enclave '%v'. Error:\n%v", requestedServiceGuids, enclaveID, errReceivingStream)
 			return
 		}
 
-		serviceLogsStreamContentObj := newServiceLogsStreamContentFromGrpcStreamResponse(requestedUserServiceGuids, getUserServiceLogsResponse)
+		serviceLogsStreamContentObj := newServiceLogsStreamContentFromGrpcStreamResponse(requestedServiceGuids, getServiceLogsResponse)
 
 		serviceLogsStreamContentChan <- serviceLogsStreamContentObj
 	}
@@ -386,36 +386,36 @@ func newGetUserServiceLogsArgs(
 }
 
 func newServiceLogsStreamContentFromGrpcStreamResponse(
-	requestedUserServiceGuids map[services.ServiceGUID]bool,
-	getUserServiceLogResponse *kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse,
+	requestedServiceGuids map[services.ServiceGUID]bool,
+	getServiceLogResponse *kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse,
 ) *serviceLogsStreamContent {
-	userServiceLogsByServiceGuidMap := map[services.ServiceGUID][]*ServiceLog{}
+	serviceLogsByServiceGuidMap := map[services.ServiceGUID][]*ServiceLog{}
 
-	receivedUserServiceLogsByUserServiceGuid := getUserServiceLogResponse.UserServiceLogsByUserServiceGuid
+	receivedServiceLogsByServiceGuid := getServiceLogResponse.ServiceLogsByServiceGuid
 
-	for userServiceGuid := range requestedUserServiceGuids {
-		userServiceGuidStr := string(userServiceGuid)
+	for serviceGuid := range requestedServiceGuids {
+		serviceGuidStr := string(serviceGuid)
 		serviceLogs := []*ServiceLog{}
-		userServiceLogLine, found := receivedUserServiceLogsByUserServiceGuid[userServiceGuidStr]
+		serviceLogLine, found := receivedServiceLogsByServiceGuid[serviceGuidStr]
 		if found {
-			for _, logLineContent := range userServiceLogLine.Line {
+			for _, logLineContent := range serviceLogLine.Line {
 				serviceLog := newServiceLog(logLineContent)
 				serviceLogs = append(serviceLogs, serviceLog)
 			}
 		}
-		userServiceLogsByServiceGuidMap[userServiceGuid] = serviceLogs
+		serviceLogsByServiceGuidMap[serviceGuid] = serviceLogs
 	}
 
-	notFoundUserServiceGuidSet := getUserServiceLogResponse.NotFoundUserServiceGuidSet
+	notFoundServiceGuidSet := getServiceLogResponse.NotFoundServiceGuidSet
 
-	notFoundUserServiceGuids := make(map[services.ServiceGUID]bool, len(notFoundUserServiceGuidSet))
+	notFoundServiceGuids := make(map[services.ServiceGUID]bool, len(notFoundServiceGuidSet))
 
-	for notFoundUserServiceGuidStr := range notFoundUserServiceGuidSet {
-		notFoundUserServiceGuid := services.ServiceGUID(notFoundUserServiceGuidStr)
-		notFoundUserServiceGuids[notFoundUserServiceGuid] = true
+	for notFoundServiceGuidStr := range notFoundServiceGuidSet {
+		notFoundServiceGuid := services.ServiceGUID(notFoundServiceGuidStr)
+		notFoundServiceGuids[notFoundServiceGuid] = true
 	}
 
-	newServiceLogsStreamContentObj := newServiceLogsStreamContent(userServiceLogsByServiceGuidMap, notFoundUserServiceGuids)
+	newServiceLogsStreamContentObj := newServiceLogsStreamContent(serviceLogsByServiceGuidMap, notFoundServiceGuids)
 
 	return newServiceLogsStreamContentObj
 }
