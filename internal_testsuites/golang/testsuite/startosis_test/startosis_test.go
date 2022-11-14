@@ -52,6 +52,7 @@ print("Service " + DATASTORE_SERVICE_ID + " deployed successfully.")
 exec(service_id = DATASTORE_SERVICE_ID, command = ["touch", FILE_TO_BE_CREATED])
 
 artifact_uuid = store_file_from_service(service_id = DATASTORE_SERVICE_ID, src_path = FILE_TO_BE_CREATED)
+print("Stored file at " + artifact_uuid)
 
 template_str = read_file(TEMPLATE_FILE_TO_RENDER)
 
@@ -67,6 +68,7 @@ template_data_by_path = {
 }
 
 rendered_artifact = render_templates(template_data_by_path)
+print("Rendered file to " + rendered_artifact)
 
 dependent_service_config = struct(
     container_image_name = DATASTORE_IMAGE,
@@ -100,12 +102,14 @@ func TestStartosis(t *testing.T) {
 
 	expectedScriptOutput := `Adding service example-datastore-server-1.
 Service example-datastore-server-1 deployed successfully.
+Stored file at [a-f0-9-]{36}
+Rendered file to [a-f0-9-]{36}
 Deployed example-datastore-server-2 successfully
 `
 	require.Empty(t, executionResult.InterpretationError, "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
 	require.Lenf(t, executionResult.ValidationErrors, 0, "Unexpected validation error")
 	require.Empty(t, executionResult.ExecutionError, "Unexpected execution error")
-	require.Equal(t, expectedScriptOutput, executionResult.SerializedScriptOutput)
+	require.Regexp(t, expectedScriptOutput, executionResult.SerializedScriptOutput)
 	logrus.Infof("Successfully ran Startosis script")
 
 	// Check that the service added by the script is functional
