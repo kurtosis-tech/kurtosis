@@ -1,5 +1,7 @@
 # TBD
 
+# 0.52.1
+
 ### Features
 - Add `wait` and `define` command in Startosis
 - Added ip address replacement in the JSON for `render_template` instruction
