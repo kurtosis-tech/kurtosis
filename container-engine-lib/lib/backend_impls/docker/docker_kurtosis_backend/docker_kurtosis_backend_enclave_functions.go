@@ -897,7 +897,7 @@ func getEnclaveCreationTimeFromNetwork(network *types.Network) (*time.Time, erro
 	labels := network.GetLabels()
 	enclaveCreationTimeStr, found := labels[label_key_consts.EnclaveCreationTimeLabelKey.GetString()]
 	if !found {
-		//TODO remove this condition after 2023-01-01 when we are sure that there is not any old enclave created with the creation time label
+		//TODO remove this condition after 2023-01-01 when we are sure that there is not any old enclave created without the creation time label
 		//Handling retro-compatibility, enclaves that did not track enclave's creation time
 		if time.Now().Before(enclaveCreationTimeRetroCompatibilityCheckDeadline){
 			return nil, nil

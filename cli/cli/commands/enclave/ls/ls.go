@@ -54,7 +54,7 @@ func run(
 	orderedEnclaveCreationTimes, enclaveInfoByCreationTime, enclaveWithoutCreationTimeInfoMap := getOrderedEnclaveCreationTimesAndEnclaveInfoMap(response.GetEnclaveInfo())
 	tablePrinter := output_printers.NewTablePrinter(enclaveIdColumnHeader, enclaveStatusColumnHeader, enclaveCreationTimeColumnHeader)
 
-	//TODO remove this iteration after 2023-01-01 when we are sure that there is not any old enclave created with the creation time label
+	//TODO remove this iteration after 2023-01-01 when we are sure that there is not any old enclave created without the creation time label
 	//This is for retro-compatibility, for those old enclave did not track enclave's creation time
 	for _, enclaveInfo := range enclaveWithoutCreationTimeInfoMap {
 		enclaveId := enclaveInfo.GetEnclaveId()
@@ -107,7 +107,7 @@ func getOrderedEnclaveCreationTimesAndEnclaveInfoMap(
 	enclaveWithoutCreationTimeInfoMap := map[string]*kurtosis_engine_rpc_api_bindings.EnclaveInfo{}
 
 	for enclaveIdStr, enclaveInfo := range enclaveInfoMap {
-		//TODO remove this condition after 2023-01-01 when we are sure that there is not any old enclave created with the creation time label
+		//TODO remove this condition after 2023-01-01 when we are sure that there is not any old enclave created without the creation time label
 		//This is for retro-compatibility, for those old enclave did not track enclave's creation time
 		if enclaveInfo.GetCreationTime() == nil {
 			enclaveWithoutCreationTimeInfoMap[enclaveIdStr] = enclaveInfo
