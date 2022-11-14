@@ -857,6 +857,7 @@ func (network *DefaultServiceNetwork) startServices(
 	return successfulServices, failedServicesPool, nil
 }
 
+// This method is not thread safe. Only call this from a method where there is a mutex lock on the network.
 func (network *DefaultServiceNetwork) copyFilesFromServiceToTargetArtifactUuidUnlocked(ctx context.Context, serviceId service.ServiceID, srcPath string, filesArtifactUuId enclave_data_directory.FilesArtifactUUID) error {
 	serviceObj, found := network.registeredServiceInfo[serviceId]
 	if !found {
