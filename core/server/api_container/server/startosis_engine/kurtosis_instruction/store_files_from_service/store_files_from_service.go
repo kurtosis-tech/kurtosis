@@ -8,7 +8,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_executor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
@@ -59,12 +58,11 @@ func (instruction *StoreFilesFromServiceInstruction) GetCanonicalInstruction() s
 	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(StoreFileFromServiceBuiltinName, instruction.getKwargs(), &instruction.position)
 }
 
-func (instruction *StoreFilesFromServiceInstruction) Execute(ctx context.Context, environment *startosis_executor.ExecutionEnvironment) error {
-	artifactUuid, err := instruction.serviceNetwork.CopyFilesFromService(ctx, instruction.serviceId, instruction.srcPath)
+func (instruction *StoreFilesFromServiceInstruction) Execute(ctx context.Context) error {
+	_, err := instruction.serviceNetwork.CopyFilesFromService(ctx, instruction.serviceId, instruction.srcPath)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to copy file '%v' from service '%v", instruction.srcPath, instruction.serviceId)
 	}
-	environment.SetArtifactUuid(instruction.position.MagicString(shared_helpers.ArtifactUUIDSuffix), string(artifactUuid))
 	return nil
 }
 

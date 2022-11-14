@@ -5,14 +5,12 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_executor"
 	"github.com/kurtosis-tech/stacktrace"
 	"sync"
 )
 
 type StartosisExecutor struct {
-	mutex       *sync.Mutex
-	environment *startosis_executor.ExecutionEnvironment
+	mutex *sync.Mutex
 }
 
 type ExecutionError struct {
@@ -21,8 +19,7 @@ type ExecutionError struct {
 
 func NewStartosisExecutor() *StartosisExecutor {
 	return &StartosisExecutor{
-		mutex:       &sync.Mutex{},
-		environment: startosis_executor.NewExecutionEnvironment(),
+		mutex: &sync.Mutex{},
 	}
 }
 
@@ -36,7 +33,7 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, ins
 	var serializedSuccessfullyExecutedInstructions []*kurtosis_core_rpc_api_bindings.SerializedKurtosisInstruction
 	for index, instruction := range instructions {
 		if !dryRun {
-			if err := instruction.Execute(ctx, executor.environment); err != nil {
+			if err := instruction.Execute(ctx); err != nil {
 				return serializedSuccessfullyExecutedInstructions, stacktrace.Propagate(err, "An error occurred executing instruction (number %d): \n%v", index+1, instruction.GetCanonicalInstruction())
 			}
 		}

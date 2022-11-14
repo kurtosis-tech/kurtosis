@@ -8,7 +8,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_executor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
@@ -67,7 +66,7 @@ func (instruction *RenderTemplatesInstruction) GetCanonicalInstruction() string 
 	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(RenderTemplatesBuiltinName, instruction.starlarkKwargs, &instruction.position)
 }
 
-func (instruction *RenderTemplatesInstruction) Execute(ctx context.Context, environment *startosis_executor.ExecutionEnvironment) error {
+func (instruction *RenderTemplatesInstruction) Execute(ctx context.Context) error {
 	for relFilePath := range instruction.templatesAndDataByDestRelFilepath {
 		templateStr := instruction.templatesAndDataByDestRelFilepath[relFilePath].Template
 		dataAsJson := instruction.templatesAndDataByDestRelFilepath[relFilePath].DataAsJson
@@ -78,11 +77,10 @@ func (instruction *RenderTemplatesInstruction) Execute(ctx context.Context, envi
 		instruction.templatesAndDataByDestRelFilepath[relFilePath] = binding_constructors.NewTemplateAndData(templateStr, dataAsJsonMaybeIPAddressReplaced)
 	}
 
-	artifactUuid, err := instruction.serviceNetwork.RenderTemplates(instruction.templatesAndDataByDestRelFilepath)
+	_, err := instruction.serviceNetwork.RenderTemplates(instruction.templatesAndDataByDestRelFilepath)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to render templates '%v'", instruction.templatesAndDataByDestRelFilepath)
 	}
-	environment.SetArtifactUuid(instruction.position.MagicString(shared_helpers.ArtifactUUIDSuffix), string(artifactUuid))
 	return nil
 }
 

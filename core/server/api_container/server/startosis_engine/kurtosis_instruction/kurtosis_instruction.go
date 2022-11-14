@@ -2,7 +2,6 @@ package kurtosis_instruction
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_executor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 )
 
@@ -11,7 +10,7 @@ type KurtosisInstruction interface {
 
 	GetCanonicalInstruction() string
 
-	Execute(ctx context.Context, execution *startosis_executor.ExecutionEnvironment) error
+	Execute(ctx context.Context) error
 
 	// String is only for easy printing in logs and error messages.
 	// Most of the time it will just call GetCanonicalInstruction()
