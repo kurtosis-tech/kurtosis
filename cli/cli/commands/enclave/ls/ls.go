@@ -16,7 +16,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"sort"
 	"time"
@@ -52,31 +51,25 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting enclaves")
 	}
 
-/*
-	orderedEnclaveIds := []string{}
-	enclaveStatuses := map[string]string{}
-	for enclaveId, enclaveInfo := range enclaveInfoMap {
-		enclaveInfo.GetCreationTime()
-		orderedEnclaveIds = append(orderedEnclaveIds, enclaveId)
-		enclaveStatuses[enclaveId], err = enclave_status_stringifier.EnclaveContainersStatusStringifier(enclaveInfo.GetContainersStatus())
+	orderedEnclaveCreationTimes, enclaveInfoByCreationTime, enclaveWithoutCreationTimeInfoMap := getOrderedEnclaveCreationTimesAndEnclaveInfoMap(response.GetEnclaveInfo())
+	tablePrinter := output_printers.NewTablePrinter(enclaveIdColumnHeader, enclaveStatusColumnHeader, enclaveCreationTimeColumnHeader)
+
+	//TODO remove this iteration after 2023-01-01 when we are sure that there is not any old enclave created with the creation time label
+	//This is for retro-compatibility, for those old enclave did not track enclave's creation time
+	for _, enclaveInfo := range enclaveWithoutCreationTimeInfoMap {
+		enclaveId := enclaveInfo.GetEnclaveId()
+
+		enclaveStatus, err := enclave_status_stringifier.EnclaveContainersStatusStringifier(enclaveInfo.GetContainersStatus())
 		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred when stringify enclave containers status")
+			return stacktrace.Propagate(err, "An error occurred when stringify enclave containers status '%v'", enclaveInfo.GetContainersStatus())
+		}
+
+		if err := tablePrinter.AddRow(enclaveId, enclaveStatus, ""); err != nil {
+			return stacktrace.NewError("An error occurred adding row for enclave '%v' to the table printer", enclaveId)
 		}
 	}
-	sort.Strings(orderedEnclaveIds)*/
+	//Retro-compatibility ends
 
-	//TODO remove this, printing the received times
-	for _, v := range  response.GetEnclaveInfo() {
-		logrus.Infof("Creation times...")
-		logrus.Infof("%v", v.GetCreationTime())
-		logrus.Infof("%v", v.GetCreationTime().String())
-		logrus.Infof("%v", v.GetCreationTime().AsTime())
-		logrus.Infof("%v", v.GetCreationTime().AsTime().String())
-	}
-
-	orderedEnclaveCreationTimes, enclaveInfoByCreationTime := getOrderedEnclaveCreationTimesAndEnclaveInfoMap(response.GetEnclaveInfo())
-
-	tablePrinter := output_printers.NewTablePrinter(enclaveIdColumnHeader, enclaveStatusColumnHeader, enclaveCreationTimeColumnHeader)
 	for _, enclaveCreationTime := range orderedEnclaveCreationTimes {
 		enclaveInfo, found := enclaveInfoByCreationTime[enclaveCreationTime]
 		if !found {
@@ -89,10 +82,11 @@ func run(
 			return stacktrace.Propagate(err, "An error occurred when stringify enclave containers status '%v'", enclaveInfo.GetContainersStatus())
 		}
 
-		if err := tablePrinter.AddRow(enclaveId, enclaveStatus, enclaveCreationTime.String()); err != nil {
+		if err := tablePrinter.AddRow(enclaveId, enclaveStatus, enclaveCreationTime.Format(time.RFC822)); err != nil {
 			return stacktrace.NewError("An error occurred adding row for enclave '%v' to the table printer", enclaveId)
 		}
 	}
+
 	tablePrinter.Print()
 
 	return nil
@@ -103,14 +97,23 @@ func getOrderedEnclaveCreationTimesAndEnclaveInfoMap(
 ) (
 	[]time.Time,
 	map[time.Time]*kurtosis_engine_rpc_api_bindings.EnclaveInfo,
+	map[string]*kurtosis_engine_rpc_api_bindings.EnclaveInfo,
 ) {
 
 	orderedEnclaveCreationTimes := []time.Time{}
 
 	enclaveInfoByCreationTime := map[time.Time]*kurtosis_engine_rpc_api_bindings.EnclaveInfo{}
 
-	for _, enclaveInfo := range enclaveInfoMap {
-		enclaveCreationTime := enclaveInfo.GetCreationTime().AsTime()
+	enclaveWithoutCreationTimeInfoMap := map[string]*kurtosis_engine_rpc_api_bindings.EnclaveInfo{}
+
+	for enclaveIdStr, enclaveInfo := range enclaveInfoMap {
+		//TODO remove this condition after 2023-01-01 when we are sure that there is not any old enclave created with the creation time label
+		//This is for retro-compatibility, for those old enclave did not track enclave's creation time
+		if enclaveInfo.GetCreationTime() == nil {
+			enclaveWithoutCreationTimeInfoMap[enclaveIdStr] = enclaveInfo
+			continue
+		}
+		enclaveCreationTime := enclaveInfo.GetCreationTime().AsTime().Local()
 		orderedEnclaveCreationTimes = append(orderedEnclaveCreationTimes, enclaveCreationTime)
 		enclaveInfoByCreationTime[enclaveCreationTime] = enclaveInfo
 	}
@@ -120,5 +123,5 @@ func getOrderedEnclaveCreationTimesAndEnclaveInfoMap(
 	})
 
 
-	return orderedEnclaveCreationTimes, enclaveInfoByCreationTime
+	return orderedEnclaveCreationTimes, enclaveInfoByCreationTime, enclaveWithoutCreationTimeInfoMap
 }
