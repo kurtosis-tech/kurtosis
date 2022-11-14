@@ -100,8 +100,17 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveNamespa
 
 	labels[label_key_consts.IsNetworkPartitioningEnabledKubernetesLabelKey] = isPartitioningEnabledLabelValue
 
-	// No custom annotations for enclave namespace
-	customAnnotations := map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue{}
+	creationTimeStr := creationTime.Format(time.RFC3339)
+
+	creationTimeAnnotationValue, err := kubernetes_annotation_value.CreateNewKubernetesAnnotationValue(creationTimeStr)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating Kubernetes annotation value from string '%v'", creationTimeStr)
+	}
+
+	// Store enclave's creation time info in annotation
+	customAnnotations := map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue{
+		kubernetes_annotation_key_consts.EnclaveCreationTimeAnnotationKey: creationTimeAnnotationValue,
+	}
 
 	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, customAnnotations)
 	if err != nil {
