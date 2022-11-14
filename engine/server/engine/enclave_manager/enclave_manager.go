@@ -159,6 +159,8 @@ func (manager *EnclaveManager) CreateEnclave(
 		}
 	}
 
+	creationTimestamp := getEnclaveCreationTimestamp(newEnclave)
+
 	result := &kurtosis_engine_rpc_api_bindings.EnclaveInfo{
 		EnclaveId:          enclaveIdStr,
 		ContainersStatus:   kurtosis_engine_rpc_api_bindings.EnclaveContainersStatus_EnclaveContainersStatus_RUNNING,
@@ -169,7 +171,7 @@ func (manager *EnclaveManager) CreateEnclave(
 			GrpcProxyPortInsideEnclave: uint32(apiContainerListenGrpcProxyPortNumInsideNetwork),
 		},
 		ApiContainerHostMachineInfo: apiContainerHostMachineInfo,
-		CreationTime: timestamppb.New(newEnclave.GetCreationTime()),
+		CreationTime: creationTimestamp,
 	}
 
 	// Everything started successfully, so the responsibility of deleting the enclave is now transferred to the caller
@@ -516,13 +518,16 @@ func (manager *EnclaveManager) getEnclaveInfoForEnclave(ctx context.Context, enc
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to get EnclaveContainersStatus from the enclave status of enclave '%v', but an error occurred", enclaveId)
 	}
+
+	creationTimestamp := getEnclaveCreationTimestamp(enclave)
+
 	return &kurtosis_engine_rpc_api_bindings.EnclaveInfo{
 		EnclaveId:                   enclaveIdStr,
 		ContainersStatus:            enclaveContainersStatus,
 		ApiContainerStatus:          apiContainerStatus,
 		ApiContainerInfo:            apiContainerInfo,
 		ApiContainerHostMachineInfo: apiContainerHostMachineInfo,
-		CreationTime: timestamppb.New(enclave.GetCreationTime()),
+		CreationTime: creationTimestamp,
 	}, nil
 }
 
@@ -560,4 +565,16 @@ func getApiContainerStatusFromContainerStatus(status container_status.ContainerS
 		// EnclaveAPIContainerStatus is of type int32, cannot convert nil to int32 returning -1
 		return -1, stacktrace.NewError("Unrecognized container status '%v'; this is a bug in Kurtosis", status.String())
 	}
+}
+
+func getEnclaveCreationTimestamp(enclave *enclave.Enclave) *timestamppb.Timestamp {
+	enclaveCreationTime := enclave.GetCreationTime()
+
+	//If an enclave has a nil creation time we are going to return nil also in order to check
+	//in the CLI if it is an old enclave case, handling retro-compatibility
+	var creationTime *timestamppb.Timestamp
+	if enclaveCreationTime != nil {
+		creationTime = timestamppb.New(*enclaveCreationTime)
+	}
+	return creationTime
 }

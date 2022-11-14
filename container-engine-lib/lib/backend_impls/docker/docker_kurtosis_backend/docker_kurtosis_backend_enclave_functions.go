@@ -41,7 +41,13 @@ const (
 
 	containerSpecJsonSerializationIndent = "  "
 	containerSpecJsonSerializationPrefix = ""
+
+
 )
+var (
+	enclaveCreationTimeRetroCompatibilityCheckDeadline = time.Date(2023, 1,1,0,0,0,0,time.Local)
+)
+
 
 // TODO: MIGRATE THIS FOLDER TO USE STRUCTURE OF USER_SERVICE_FUNCTIONS MODULE
 
@@ -167,7 +173,7 @@ func (backend *DockerKurtosisBackend) CreateEnclave(
 		}
 	}()
 
-	newEnclave := enclave.NewEnclave(enclaveId, enclave.EnclaveStatus_Empty, creationTime)
+	newEnclave := enclave.NewEnclave(enclaveId, enclave.EnclaveStatus_Empty, &creationTime)
 
 	shouldDeleteNetwork = false
 	shouldDeleteVolume = false
@@ -886,21 +892,23 @@ func getEnclaveIdFromNetwork(network *types.Network) (enclave.EnclaveID, error) 
 	return enclaveId, nil
 }
 
-func getEnclaveCreationTimeFromNetwork(network *types.Network) (time.Time, error) {
+func getEnclaveCreationTimeFromNetwork(network *types.Network) (*time.Time, error) {
+
 	labels := network.GetLabels()
 	enclaveCreationTimeStr, found := labels[label_key_consts.EnclaveCreationTimeLabelKey.GetString()]
-	//TODO add not found handler and what we are going to do with the retro compatibility
-
-	zeroTimeObj := time.Time{}
-
 	if !found {
-		return zeroTimeObj, stacktrace.NewError("Expected to find network's label with key '%v' but none was found", label_key_consts.EnclaveCreationTimeLabelKey.GetString())
+		//TODO remove this condition after 2023-01-01 when we are sure that there is not any old enclave created with the creation time label
+		//Handling retro-compatibility, enclaves that did not track enclave's creation time
+		if time.Now().Before(enclaveCreationTimeRetroCompatibilityCheckDeadline){
+			return nil, nil
+		}
+		return nil, stacktrace.NewError("Expected to find network's label with key '%v' but none was found", label_key_consts.EnclaveCreationTimeLabelKey.GetString())
 	}
 
 	enclaveCreationTime, err := time.Parse(time.RFC3339, enclaveCreationTimeStr)
 	if err != nil {
-		return zeroTimeObj, stacktrace.Propagate(err, "An error occurred parsing enclave creation time '%v' using this format '%v'", enclaveCreationTimeStr, time.RFC3339)
+		return nil, stacktrace.Propagate(err, "An error occurred parsing enclave creation time '%v' using this format '%v'", enclaveCreationTimeStr, time.RFC3339)
 	}
 
-	return enclaveCreationTime, nil
+	return &enclaveCreationTime, nil
 }

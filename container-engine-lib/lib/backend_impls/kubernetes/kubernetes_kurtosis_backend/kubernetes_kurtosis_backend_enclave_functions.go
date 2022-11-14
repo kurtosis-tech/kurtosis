@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_resource_collectors"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
@@ -42,6 +43,10 @@ const (
 
 	dumpPodErrorTitle = "Pod"
 )
+var (
+	enclaveCreationTimeRetroCompatibilityCheckDeadline = time.Date(2023, 1,1,0,0,0,0,time.Local)
+)
+
 
 // TODO: MIGRATE THIS FOLDER TO USE STRUCTURE OF USER_SERVICE_FUNCTIONS MODULE
 
@@ -511,14 +516,15 @@ func getEnclaveObjectsFromKubernetesResources(
 			return nil, stacktrace.Propagate(err, "An error occurred getting enclave status from enclave pods '%+v'", resourcesForEnclaveId.pods)
 		}
 
-		//TODO fix this, it's just an fake implementation for testing purpose
-		//TODO should be provided by the method caller
-		fakeCreationTime := time.Now()
+		enclaveCreationTime, err := getEnclaveCreationTimeFromEnclaveNamespace(resourcesForEnclaveId.namespace)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting the enclave's creation time from the enclave's namespace '%+v'", resourcesForEnclaveId.namespace)
+		}
 
 		enclaveObj := enclave.NewEnclave(
 			enclaveId,
 			enclaveStatus,
-			fakeCreationTime,
+			enclaveCreationTime,
 		)
 
 		result[enclaveId] = enclaveObj
@@ -647,4 +653,25 @@ func dumpPodInfo(
 	}
 
 	return nil
+}
+
+func getEnclaveCreationTimeFromEnclaveNamespace(namespace *apiv1.Namespace) (*time.Time, error) {
+	namespaceAnnotations := namespace.Annotations
+
+	enclaveCreationTimeStr, found := namespaceAnnotations[kubernetes_annotation_key_consts.EnclaveCreationTimeAnnotationKey.GetString()]
+	if !found {
+		//TODO remove this condition after 2023-01-01 when we are sure that there is not any old enclave created with the creation time annotation
+		//Handling retro-compatibility, enclaves that did not track enclave's creation time
+		if time.Now().Before(enclaveCreationTimeRetroCompatibilityCheckDeadline){
+			return nil, nil
+		}
+		return nil, stacktrace.NewError("Expected to find namespace's annotation with key '%v' but none was found", kubernetes_annotation_key_consts.EnclaveCreationTimeAnnotationKey.GetString())
+	}
+
+	enclaveCreationTime, err := time.Parse(time.RFC3339, enclaveCreationTimeStr)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred parsing enclave creation time '%v' using this format '%v'", enclaveCreationTimeStr, time.RFC3339)
+	}
+
+	return &enclaveCreationTime, nil
 }

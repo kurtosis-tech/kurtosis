@@ -66,7 +66,6 @@ func run(
 	sort.Strings(orderedEnclaveIds)*/
 
 	//TODO remove this, printing the received times
-
 	for _, v := range  response.GetEnclaveInfo() {
 		logrus.Infof("Creation times...")
 		logrus.Infof("%v", v.GetCreationTime())
