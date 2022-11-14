@@ -234,11 +234,11 @@ export async function waitForHealthy(
     });
 
     for (let i = 0; i < retries; i++) {
-        const serviceAvailabilityResult = await clientAvailability();
-        if (serviceAvailabilityResult.isOk()) {
+        const availabilityResult = await clientAvailability();
+        if (availabilityResult.isOk()) {
             return ok(null)
         } else {
-            log.debug(serviceAvailabilityResult.error)
+            log.debug(availabilityResult.error)
             await sleep(retriesDelayMilliseconds);
         }
     }
