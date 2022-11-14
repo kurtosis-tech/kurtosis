@@ -16,34 +16,39 @@ const (
 )
 
 type FilesArtifactStore struct {
-	fileCache 	*FileCache
+	fileCache *FileCache
 }
 
 func newFilesArtifactStore(absoluteDirpath string, dirpathRelativeToDataDirRoot string) *FilesArtifactStore {
-	return &FilesArtifactStore {
-		fileCache: 	newFileCache(absoluteDirpath, dirpathRelativeToDataDirRoot),
+	return &FilesArtifactStore{
+		fileCache: newFileCache(absoluteDirpath, dirpathRelativeToDataDirRoot),
 	}
 }
 
 // StoreFile: Saves file to disk.
 func (store FilesArtifactStore) StoreFile(reader io.Reader) (FilesArtifactUUID, error) {
-	newFilesArtifactUuid, err := newFilesArtifactUUID()
-	if err != nil{
+	newFilesArtifactUuid, err := NewFilesArtifactUUID()
+	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred creating new files artifact UUID")
 	}
+	return store.StoreFileToArtifactUUID(reader, newFilesArtifactUuid)
+}
+
+// StoreFile: Saves file to disk.
+func (store FilesArtifactStore) StoreFileToArtifactUUID(reader io.Reader, targetArtifactUUID FilesArtifactUUID) (FilesArtifactUUID, error) {
 	filename := strings.Join(
-		[]string{string(newFilesArtifactUuid),artifactExtension},
+		[]string{string(targetArtifactUUID), artifactExtension},
 		".",
 	)
-	_, err = store.fileCache.AddFile(filename, reader)
-	if err != nil{
+	_, err := store.fileCache.AddFile(filename, reader)
+	if err != nil {
 		return "", stacktrace.Propagate(
 			err,
 			"Could not store file '%s' to the file cache",
 			filename,
 		)
 	}
-	return newFilesArtifactUuid, nil
+	return targetArtifactUUID, nil
 }
 
 // Get the file by uuid
