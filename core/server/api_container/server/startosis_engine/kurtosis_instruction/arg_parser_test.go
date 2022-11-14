@@ -432,16 +432,16 @@ func TestParseCommand_InvalidCommandsWithIntegers(t *testing.T) {
 	require.NotNil(t, err)
 }
 
-func TestParseFilePathPath_ValidValue(t *testing.T) {
-	input := starlark.String("/foo/bar")
-	output, err := ParseFilePath("file_path", input)
+func TestArtifactUuidPathPath_ValidValue(t *testing.T) {
+	input := starlark.String("abde-f23dd-1")
+	output, err := ParseArtifactUuid("artifact_uuid", input)
 	require.Nil(t, err)
-	require.Equal(t, "/foo/bar", output)
+	require.Equal(t, "abde-f23dd-1", output)
 }
 
-func TestParseFilePath_EmptyStringFails(t *testing.T) {
+func TestArtifactUuidPathPath_EmptyStringFails(t *testing.T) {
 	input := starlark.String("")
-	_, err := ParseFilePath("file_path", input)
+	_, err := ParseArtifactUuid("artifact_uuid", input)
 	require.NotNil(t, err)
 }
 

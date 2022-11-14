@@ -184,7 +184,6 @@ func ParseFilePath(filePathArgName string, filePathStr starlark.String) (string,
 	return srcPath, nil
 }
 
-// TODO test this
 func ParseArtifactUuid(artifactUuidArgName string, artifactUuidStr starlark.String) (string, *startosis_errors.InterpretationError) {
 	artifactUuid, interpretationErr := safeCastToString(artifactUuidStr, artifactUuidArgName)
 	if interpretationErr != nil {
