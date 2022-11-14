@@ -8,10 +8,11 @@ import (
 
 func TestRemoveService_StringRepresentation(t *testing.T) {
 	removeInstruction := NewRemoveServiceInstruction(nil, *kurtosis_instruction.NewInstructionPosition(4, 4, "dummyFile"), "dummy-service-id")
-	expectedStrRep := `# from: dummyFile[4:4]
+	expectedSingleLineStrRep := `remove_service(service_id="dummy-service-id")`
+	require.Equal(t, expectedSingleLineStrRep, removeInstruction.String())
+	expectedMultiLineStrRep := `# from: dummyFile[4:4]
 remove_service(
-	service_id="dummy-service-id",
+	service_id="dummy-service-id"
 )`
-	require.Equal(t, expectedStrRep, removeInstruction.String())
-	require.Equal(t, expectedStrRep, removeInstruction.GetCanonicalInstruction())
+	require.Equal(t, expectedMultiLineStrRep, removeInstruction.GetCanonicalInstruction())
 }

@@ -17,7 +17,7 @@ func TestExecInstruction_StringRepresentationWorks(t *testing.T) {
 		[]string{"mkdir", "-p", "/tmp/store"},
 		0,
 	)
-	expectedStr := `# from: dummyFile[1:1]
+	expectedMultiLineStr := `# from: dummyFile[1:1]
 exec(
 	command=[
 		"mkdir",
@@ -25,8 +25,9 @@ exec(
 		"/tmp/store"
 	],
 	expected_exit_code=0,
-	service_id="example-service-id",
+	service_id="example-service-id"
 )`
-	require.Equal(t, expectedStr, execInstruction.GetCanonicalInstruction())
-	require.Equal(t, expectedStr, execInstruction.String())
+	require.Equal(t, expectedMultiLineStr, execInstruction.GetCanonicalInstruction())
+	expectedSingleLineStr := `exec(command=["mkdir", "-p", "/tmp/store"], expected_exit_code=0, service_id="example-service-id")`
+	require.Equal(t, expectedSingleLineStr, execInstruction.String())
 }

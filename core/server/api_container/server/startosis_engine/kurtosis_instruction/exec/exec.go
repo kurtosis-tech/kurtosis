@@ -62,15 +62,7 @@ func (instruction *ExecInstruction) GetPositionInOriginalScript() *kurtosis_inst
 }
 
 func (instruction *ExecInstruction) GetCanonicalInstruction() string {
-	command := make([]starlark.Value, len(instruction.command))
-	for idx := 0; idx < len(instruction.command); idx++ {
-		command[idx] = starlark.String(instruction.command[idx])
-	}
-	return shared_helpers.CanonicalizeInstruction(ExecBuiltinName, starlark.StringDict{
-		serviceIdArgName:           starlark.String(instruction.serviceId),
-		commandArgName:             starlark.NewList(command),
-		nonOptionalExitCodeArgName: starlark.MakeInt(int(instruction.expectedExitCode)),
-	}, &instruction.position)
+	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(ExecBuiltinName, instruction.getKwargs(), &instruction.position)
 }
 
 func (instruction *ExecInstruction) Execute(ctx context.Context, _ *startosis_executor.ExecutionEnvironment) error {
@@ -85,7 +77,7 @@ func (instruction *ExecInstruction) Execute(ctx context.Context, _ *startosis_ex
 }
 
 func (instruction *ExecInstruction) String() string {
-	return instruction.GetCanonicalInstruction()
+	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(ExecBuiltinName, instruction.getKwargs(), &instruction.position)
 }
 
 func (instruction *ExecInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
@@ -119,4 +111,16 @@ func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starl
 		return "", nil, 0, interpretationErr
 	}
 	return serviceId, command, expectedExitCode, nil
+}
+
+func (instruction *ExecInstruction) getKwargs() starlark.StringDict {
+	command := make([]starlark.Value, len(instruction.command))
+	for idx := 0; idx < len(instruction.command); idx++ {
+		command[idx] = starlark.String(instruction.command[idx])
+	}
+	return starlark.StringDict{
+		serviceIdArgName:           starlark.String(instruction.serviceId),
+		commandArgName:             starlark.NewList(command),
+		nonOptionalExitCodeArgName: starlark.MakeInt(int(instruction.expectedExitCode)),
+	}
 }
