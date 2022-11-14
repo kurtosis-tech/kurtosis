@@ -3,6 +3,7 @@
 ### Features
 - Add `wait` and `define` command in Startosis
 - Added ip address replacement in the JSON for `render_template` instruction
+- Implemented a `ToTargetArtifactUuid` version of a few service_network functions
 
 ### Fixes
 - Fixes a bug where we'd propagate a nil error
