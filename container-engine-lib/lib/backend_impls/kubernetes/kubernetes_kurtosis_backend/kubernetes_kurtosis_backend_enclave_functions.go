@@ -108,8 +108,9 @@ func (backend KubernetesKurtosisBackend) CreateEnclave(
 
 	enclaveNamespaceName := enclaveNamespaceAttrs.GetName().GetString()
 	enclaveNamespaceLabels := shared_helpers.GetStringMapFromLabelMap(enclaveNamespaceAttrs.GetLabels())
+	enclaveAnnotationsStrs := shared_helpers.GetStringMapFromAnnotationMap(enclaveNamespaceAttrs.GetAnnotations())
 
-	enclaveNamespace, err := backend.kubernetesManager.CreateNamespace(ctx, enclaveNamespaceName, enclaveNamespaceLabels)
+	enclaveNamespace, err := backend.kubernetesManager.CreateNamespace(ctx, enclaveNamespaceName, enclaveNamespaceLabels, enclaveAnnotationsStrs)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create namespace with name '%v' for enclave '%v'", enclaveNamespaceName, enclaveId)
 	}

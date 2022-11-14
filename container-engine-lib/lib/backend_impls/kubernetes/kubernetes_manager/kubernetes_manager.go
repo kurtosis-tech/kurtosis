@@ -292,13 +292,19 @@ func (manager *KubernetesManager) GetPersistentVolumeClaimsByLabels(ctx context.
 
 // ---------------------------namespaces------------------------------------------------------------------------------
 
-func (manager *KubernetesManager) CreateNamespace(ctx context.Context, name string, namespaceLabels map[string]string) (*apiv1.Namespace, error) {
+func (manager *KubernetesManager) CreateNamespace(
+	ctx context.Context,
+	name string,
+	namespaceLabels map[string]string,
+	namespaceAnnotations map[string]string,
+) (*apiv1.Namespace, error) {
 	namespaceClient := manager.kubernetesClientSet.CoreV1().Namespaces()
 
 	namespace := &apiv1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   name,
 			Labels: namespaceLabels,
+			Annotations: namespaceAnnotations,
 		},
 	}
 
