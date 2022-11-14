@@ -1,9 +1,10 @@
 # TBD
+### Features
+- Added the enclave's creation time info which can be obtained through the `enclave ls` and the `enclave inspect` commands
 
 # 0.52.2
 
 # 0.52.1
-
 ### Features
 - Add `wait` and `define` command in Startosis
 - Added ip address replacement in the JSON for `render_template` instruction
