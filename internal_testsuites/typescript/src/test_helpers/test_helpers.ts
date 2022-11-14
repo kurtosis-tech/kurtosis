@@ -219,7 +219,7 @@ export async function waitForHealthy(
 
     const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-    const checkClientAvailabilityResultPromise: () => Promise<Result<google_protobuf_empty_pb.Empty, Error>> = () => new Promise(async (resolve, _unusedReject) => {
+    const clientAvailability: () => Promise<Result<google_protobuf_empty_pb.Empty, Error>> = () => new Promise(async (resolve, _unusedReject) => {
         client.isAvailable(emptyArgs, (error: grpc.ServiceError | null, response?: google_protobuf_empty_pb.Empty) => {
         if (error === null) {
             if (!response) {
@@ -234,11 +234,11 @@ export async function waitForHealthy(
     });
 
     for (let i = 0; i < retries; i++) {
-        const checkClientAvailabilityResult = await checkClientAvailabilityResultPromise();
-        if (checkClientAvailabilityResult.isOk()) {
+        const serviceAvailabilityResult = await clientAvailability();
+        if (serviceAvailabilityResult.isOk()) {
             return ok(null)
         } else {
-            log.debug(checkClientAvailabilityResult.error)
+            log.debug(serviceAvailabilityResult.error)
             await sleep(retriesDelayMilliseconds);
         }
     }
