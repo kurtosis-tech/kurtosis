@@ -72,6 +72,11 @@ func (m *MockServiceNetwork) CopyFilesFromService(ctx context.Context, serviceId
 	panic(unimplementedMsg)
 }
 
+func (m *MockServiceNetwork) CopyFilesFromServiceToTargetArtifactUUID(ctx context.Context, serviceId service.ServiceID, srcPath string, filesArtifactUuid enclave_data_directory.FilesArtifactUUID) (enclave_data_directory.FilesArtifactUUID, error) {
+	// TODO implement me
+	panic(unimplementedMsg)
+}
+
 func (m *MockServiceNetwork) GetServiceIDs() map[service.ServiceID]bool {
 	//TODO implement me
 	panic(unimplementedMsg)
@@ -86,6 +91,14 @@ func (m *MockServiceNetwork) RenderTemplates(_ map[string]*kurtosis_core_rpc_api
 	panic(unimplementedMsg)
 }
 
+func (m *MockServiceNetwork) RenderTemplatesToTargetFilesArtifactUUID(_ map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, _ enclave_data_directory.FilesArtifactUUID) (enclave_data_directory.FilesArtifactUUID, error) {
+	panic(unimplementedMsg)
+}
+
 func (m *MockServiceNetwork) UploadFilesArtifact(_ []byte) (enclave_data_directory.FilesArtifactUUID, error) {
+	panic(unimplementedMsg)
+}
+
+func (m *MockServiceNetwork) UploadFilesArtifactToTargetArtifactUUID(data []byte, targetFilesArtifactUuid enclave_data_directory.FilesArtifactUUID) error {
 	panic(unimplementedMsg)
 }
