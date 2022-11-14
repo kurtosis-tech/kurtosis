@@ -203,7 +203,7 @@ export class KurtosisContext {
     }
 
     //The Readable object returned will be constantly streaming the service logs information using the ServiceLogsStreamContent
-    //which container two methods, the `getServiceLogsByServiceGuids` will return a map containing the service logs lines grouped by the service's GUID
+    //which contains two methods, the `getServiceLogsByServiceGuids` will return a map containing the service logs lines grouped by the service's GUID
     //and the `getNotFoundServiceGuids` will return set of not found (in the logs database) service GUIDs
     //Example of how to read the stream:
     //
