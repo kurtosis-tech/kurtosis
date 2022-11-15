@@ -32,6 +32,9 @@ import (
 	"google.golang.org/grpc"
 	"net"
 	"os"
+	"path"
+	"runtime"
+	"strings"
 	"time"
 )
 
@@ -52,13 +55,18 @@ func (d doNothingMetricsClientCallback) Success()          {}
 func (d doNothingMetricsClientCallback) Failure(err error) {}
 
 func main() {
+	logrus.SetReportCaller(logMethodAlongWithLogLine)
 	// NOTE: we'll want to change the ForceColors to false if we ever want structured logging
 	logrus.SetFormatter(&logrus.TextFormatter{
 		ForceColors:   true,
 		FullTimestamp: true,
+		CallerPrettyfier: func(f *runtime.Frame) (string, string) {
+			s := strings.Split(f.Function, ".")
+			functionName := s[len(s)-1]
+			_, filename := path.Split(f.File)
+			return functionName, filename
+		},
 	})
-
-	logrus.SetReportCaller(logMethodAlongWithLogLine)
 
 	err := runMain()
 	if err != nil {
