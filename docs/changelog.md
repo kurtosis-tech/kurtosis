@@ -2,12 +2,23 @@
 ### Features
 - Added the enclave's creation time info which can be obtained through the `enclave ls` and the `enclave inspect` commands (post 2023-01-01, your CLI will stop working for old enclaves.)
 
+# 0.52.3
+
+### Changes
+- Cleanup Startosis interpreter predeclared
+
 # 0.52.2
 
 # 0.52.1
 ### Features
 - Add `wait` and `define` command in Startosis
+- Added `not found service GUIDs information` in `KurtosisContext.GetServiceLogs` method
+- Added a warning message in `service logs` CLI command when the request service GUID is not found in the logs database
 - Added ip address replacement in the JSON for `render_template` instruction
+- Implemented a `ToTargetArtifactUuid` version of a few service_network functions
+
+### Changes
+- `kurtosis_instruction.String()` now returns a single line version of the instruction for more concise logging
 
 ### Fixes
 - Fixes a bug where we'd propagate a nil error

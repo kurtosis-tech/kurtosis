@@ -78,7 +78,7 @@ add_service(
 			)
 		}
 	),
-	service_id="example-datastore-server-2",
+	service_id="example-datastore-server-2"
 )`
 	require.Equal(t, expectedOutput, addServiceInstruction.GetCanonicalInstruction())
 }
