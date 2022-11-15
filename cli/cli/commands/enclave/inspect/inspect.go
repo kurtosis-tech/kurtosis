@@ -102,6 +102,8 @@ func run(
 	keyValuePrinter.AddPair(enclaveStatusTitleName, enclaveContainersStatusStr)
 
 	enclaveCreationTime := enclaveInfo.GetCreationTime()
+	//TODO remove this condition after 2023-01-01 when we are sure that there is not any old enclave created without the creation time label
+	//TODO and add a fail loudly check
 	if enclaveCreationTime != nil {
 		enclaveCreationTimeStr := enclaveCreationTime.AsTime().Local().Format(time.RFC822)
 

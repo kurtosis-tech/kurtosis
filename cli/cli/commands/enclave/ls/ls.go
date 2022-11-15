@@ -18,6 +18,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -28,6 +29,8 @@ const (
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
+
+	emptyTimeForOldEnclaves = ""
 )
 
 var EnclaveLsCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -51,7 +54,7 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting enclaves")
 	}
 
-	orderedEnclaveCreationTimes, enclaveInfoByCreationTime, enclaveWithoutCreationTimeInfoMap := getOrderedEnclaveCreationTimesAndEnclaveInfoMap(response.GetEnclaveInfo())
+	orderedEnclaveInfoMaps, enclaveWithoutCreationTimeInfoMap := getOrderedEnclaveInfoMapAndEnclaveWithoutCreationTimeMap(response.GetEnclaveInfo())
 	tablePrinter := output_printers.NewTablePrinter(enclaveIdColumnHeader, enclaveStatusColumnHeader, enclaveCreationTimeColumnHeader)
 
 	//TODO remove this iteration after 2023-01-01 when we are sure that there is not any old enclave created without the creation time label
@@ -64,23 +67,22 @@ func run(
 			return stacktrace.Propagate(err, "An error occurred when stringify enclave containers status '%v'", enclaveInfo.GetContainersStatus())
 		}
 
-		if err := tablePrinter.AddRow(enclaveId, enclaveStatus, ""); err != nil {
+		if err := tablePrinter.AddRow(enclaveId, enclaveStatus, emptyTimeForOldEnclaves); err != nil {
 			return stacktrace.NewError("An error occurred adding row for enclave '%v' to the table printer", enclaveId)
 		}
 	}
 	//Retro-compatibility ends
 
-	for _, enclaveCreationTime := range orderedEnclaveCreationTimes {
-		enclaveInfo, found := enclaveInfoByCreationTime[enclaveCreationTime]
-		if !found {
-			return stacktrace.NewError("Not found error")//TODO fix this message
-		}
+	for _, enclaveInfo := range orderedEnclaveInfoMaps {
+
 		enclaveId := enclaveInfo.GetEnclaveId()
 
 		enclaveStatus, err := enclave_status_stringifier.EnclaveContainersStatusStringifier(enclaveInfo.GetContainersStatus())
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred when stringify enclave containers status '%v'", enclaveInfo.GetContainersStatus())
 		}
+
+		enclaveCreationTime := enclaveInfo.CreationTime.AsTime()
 
 		if err := tablePrinter.AddRow(enclaveId, enclaveStatus, enclaveCreationTime.Format(time.RFC822)); err != nil {
 			return stacktrace.NewError("An error occurred adding row for enclave '%v' to the table printer", enclaveId)
@@ -92,17 +94,14 @@ func run(
 	return nil
 }
 
-func getOrderedEnclaveCreationTimesAndEnclaveInfoMap(
+func getOrderedEnclaveInfoMapAndEnclaveWithoutCreationTimeMap(
 	enclaveInfoMap map[string]*kurtosis_engine_rpc_api_bindings.EnclaveInfo,
 ) (
-	[]time.Time,
-	map[time.Time]*kurtosis_engine_rpc_api_bindings.EnclaveInfo,
+	[]*kurtosis_engine_rpc_api_bindings.EnclaveInfo,
 	map[string]*kurtosis_engine_rpc_api_bindings.EnclaveInfo,
 ) {
 
-	orderedEnclaveCreationTimes := []time.Time{}
-
-	enclaveInfoByCreationTime := map[time.Time]*kurtosis_engine_rpc_api_bindings.EnclaveInfo{}
+	orderedEnclaveInfoMaps :=  []*kurtosis_engine_rpc_api_bindings.EnclaveInfo{}
 
 	enclaveWithoutCreationTimeInfoMap := map[string]*kurtosis_engine_rpc_api_bindings.EnclaveInfo{}
 
@@ -113,15 +112,31 @@ func getOrderedEnclaveCreationTimesAndEnclaveInfoMap(
 			enclaveWithoutCreationTimeInfoMap[enclaveIdStr] = enclaveInfo
 			continue
 		}
-		enclaveCreationTime := enclaveInfo.GetCreationTime().AsTime().Local()
-		orderedEnclaveCreationTimes = append(orderedEnclaveCreationTimes, enclaveCreationTime)
-		enclaveInfoByCreationTime[enclaveCreationTime] = enclaveInfo
+		orderedEnclaveInfoMaps = append(orderedEnclaveInfoMaps, enclaveInfo)
 	}
 
-	sort.Slice(orderedEnclaveCreationTimes, func(i, j int) bool {
-		return orderedEnclaveCreationTimes[i].Before(orderedEnclaveCreationTimes[j])
+	sort.Slice(orderedEnclaveInfoMaps, func(firstItemIndex, secondItemIndex int) bool {
+
+		firstItemEnclaveCreationTime := orderedEnclaveInfoMaps[firstItemIndex].CreationTime.AsTime()
+		secondItemEnclaveCreationTime := orderedEnclaveInfoMaps[secondItemIndex].CreationTime.AsTime()
+
+		//First order by creation time
+		if firstItemEnclaveCreationTime.Before(secondItemEnclaveCreationTime) {
+			return true
+		} else if firstItemEnclaveCreationTime.After(secondItemEnclaveCreationTime) {
+			return false
+		}
+
+		//If creation time is equal order by enclave Id
+		firstItemEnclaveIdStr := orderedEnclaveInfoMaps[firstItemIndex].EnclaveId
+		secondItemEnclaveIdStr := orderedEnclaveInfoMaps[secondItemIndex].EnclaveId
+
+		if strings.Compare(firstItemEnclaveIdStr, secondItemEnclaveIdStr) > 0 {
+			return false
+		}
+
+		return true
 	})
 
-
-	return orderedEnclaveCreationTimes, enclaveInfoByCreationTime, enclaveWithoutCreationTimeInfoMap
+	return orderedEnclaveInfoMaps, enclaveWithoutCreationTimeInfoMap
 }
