@@ -47,6 +47,7 @@ const (
 	shouldFlushMetricsClientQueueOnEachEvent = false
 
 	logMethodAlongWithLogLine = true
+	functionPathSeparator     = "."
 )
 
 type doNothingMetricsClientCallback struct{}
@@ -55,14 +56,16 @@ func (d doNothingMetricsClientCallback) Success()          {}
 func (d doNothingMetricsClientCallback) Failure(err error) {}
 
 func main() {
+	// This allows the filename & function to be reported
 	logrus.SetReportCaller(logMethodAlongWithLogLine)
 	// NOTE: we'll want to change the ForceColors to false if we ever want structured logging
 	logrus.SetFormatter(&logrus.TextFormatter{
 		ForceColors:   true,
 		FullTimestamp: true,
+		// This allows us to truncate the full path to file, and function
 		CallerPrettyfier: func(f *runtime.Frame) (string, string) {
-			s := strings.Split(f.Function, ".")
-			functionName := s[len(s)-1]
+			fullFunctionPath := strings.Split(f.Function, functionPathSeparator)
+			functionName := fullFunctionPath[len(fullFunctionPath)-1]
 			_, filename := path.Split(f.File)
 			return functionName, filename
 		},

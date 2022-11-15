@@ -1,11 +1,19 @@
 # TBD
 
+### Features
+- Log file name and function while logging in `core`
+
 # 0.52.3
 
 ### Changes
 - Cleanup Startosis interpreter predeclared
 
 # 0.52.2
+
+- Fixes a bug where typescript (jest) unit tests do not correctly wait for grpc services to become available
+- Fixed a panic that would happen cause of a `nil` error being returned
+- Fixed TestValidUrls so that it checks for the correct http return code
+
 
 # 0.52.1
 
@@ -22,10 +30,6 @@
 ### Fixes
 - Fixes a bug where we'd propagate a nil error
 - Adds validation for `service_id` in `store_files_from_service`
-- Fixes a bug where typescript (jest) unit tests do not correctly wait for grpc services to become available
-- Fixed a panic that would happen cause of a `nil` error being returned
-- Fixed TestValidUrls so that it checks for the correct http return code
-
 # 0.52.0
 ### Breaking Changes
 - Unified `GetUserServiceLogs` and `StreamUserServiceLogs` engine's endpoints, now `GetUserServiceLogs` will handle both use cases
