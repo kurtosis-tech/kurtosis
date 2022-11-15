@@ -6,10 +6,8 @@
 package enclave_ids
 
 import (
-	"fmt"
 	"github.com/kurtosis-tech/stacktrace"
 	"regexp"
-	"time"
 )
 
 const (
@@ -20,14 +18,6 @@ const (
 	// YYYY-MM-DDTHH-MM-SS-sss
 	executionTimestampFormat = "2006-01-02T15-04-05-000"
 )
-
-func GenerateNewEnclaveID() string {
-	return fmt.Sprintf(
-		"%v%v",
-		kurtosisPrefix,
-		time.Now().Format(executionTimestampFormat),
-	)
-}
 
 func ValidateEnclaveId(enclaveIdStr string) error {
 	// TODO Push down into MetricsReportingKurtosisBackend

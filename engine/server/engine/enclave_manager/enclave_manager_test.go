@@ -48,3 +48,13 @@ func TestGetApiContainerStatusFromContainerStatusCompleteness(t *testing.T) {
 		require.NoError(t, err, "No ApiContainerStatus provided for container status '%v'", containerStatus.String())
 	}
 }
+
+func TestGetRandomEnclaveIdSuccess(t *testing.T){
+	retries := uint16(5)
+
+	noCurrentEnclave := map[enclave.EnclaveID]*enclave.Enclave{}
+
+	randomEnclaveId, err := getRandomEnclaveId(noCurrentEnclave, retries)
+	require.NoError(t, err)
+	require.NotEmpty(t, randomEnclaveId)
+}

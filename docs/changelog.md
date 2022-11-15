@@ -1,9 +1,9 @@
 # TBD
 ### Features
 - Added the enclave's creation time info which can be obtained through the `enclave ls` and the `enclave inspect` commands
+- Added random enclave ID generation in `EnclaveManager.CreateEnclave()` when an empty enclave ID is provided
 
 # 0.52.3
-
 ### Changes
 - Cleanup Startosis interpreter predeclared
 

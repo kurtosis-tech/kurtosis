@@ -3,6 +3,7 @@ package enclave_manager
 import (
 	"context"
 	"fmt"
+	"github.com/goombaio/namegenerator"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
@@ -17,6 +18,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 )
 
 const (
@@ -25,6 +27,10 @@ const (
 	apiContainerListenGrpcProxyPortNumInsideNetwork = uint16(7444)
 
 	enclavesCleaningPhaseTitle = "enclaves"
+
+	emptyEnclaveId = enclave.EnclaveID("")
+
+	getRandomEnclaveIdRetries = uint16(5)
 )
 
 // TODO Move this to the KurtosisBackend to calculate!!
@@ -75,6 +81,7 @@ func (manager *EnclaveManager) CreateEnclave(
 	// If blank, will use the default
 	apiContainerImageVersionTag string,
 	apiContainerLogLevel logrus.Level,
+	//If blank, will use a random one
 	enclaveIdStr string,
 	isPartitioningEnabled bool,
 	metricsUserID string,
@@ -84,16 +91,24 @@ func (manager *EnclaveManager) CreateEnclave(
 	defer manager.mutex.Unlock()
 
 	enclaveId := enclave.EnclaveID(enclaveIdStr)
-	teardownCtx := context.Background() // Separate context for tearing stuff down in case the input context is cancelled
+
 	// Check for existing enclave with Id
-	foundEnclaves, err := manager.kurtosisBackend.GetEnclaves(setupCtx, getEnclaveByEnclaveIdFilter(enclaveId))
+	allCurrentEnclaves, err := manager.kurtosisBackend.GetEnclaves(setupCtx, getAllEnclavesFilter())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred checking for enclaves with ID '%v'", enclaveId)
 	}
-	if len(foundEnclaves) > 0 {
-		return nil, stacktrace.NewError("Cannot create enclave '%v' because an enclave with that name already exists", enclaveId)
+	if isEnclaveIdInUse(enclaveId, allCurrentEnclaves) {
+		return nil, stacktrace.NewError("Cannot create enclave '%v' because an enclave with that ID already exists", enclaveId)
 	}
 
+	if enclaveId == emptyEnclaveId {
+		enclaveId, err = getRandomEnclaveId(allCurrentEnclaves, getRandomEnclaveIdRetries)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting a new random enclave ID using all current enclaves '%+v' and '%v' retries", allCurrentEnclaves, getRandomEnclaveIdRetries)
+		}
+	}
+
+	teardownCtx := context.Background() // Separate context for tearing stuff down in case the input context is cancelled
 	// Create Enclave with kurtosisBackend
 	newEnclave, err := manager.kurtosisBackend.CreateEnclave(setupCtx, enclaveId, isPartitioningEnabled)
 	if err != nil {
@@ -581,4 +596,55 @@ func getEnclaveCreationTimestamp(enclave *enclave.Enclave) *timestamppb.Timestam
 	}
 
 	return creationTime
+}
+
+func isEnclaveIdInUse(newEnclaveId enclave.EnclaveID, allEnclaves map[enclave.EnclaveID]*enclave.Enclave) bool {
+
+	isInUse := false
+
+	for enclaveId := range allEnclaves {
+		if newEnclaveId == enclaveId {
+			isInUse = true
+		}
+	}
+
+	return isInUse
+}
+
+func getRandomEnclaveId(
+	allCurrentEnclaves map[enclave.EnclaveID]*enclave.Enclave,
+	retries uint16,
+) (enclave.EnclaveID, error) {
+
+	var err error
+
+	seed := time.Now().UTC().UnixNano()
+	nameGenerator := namegenerator.NewNameGenerator(seed)
+
+	randomName := nameGenerator.Generate()
+
+	randomEnclaveId := enclave.EnclaveID(randomName)
+	logrus.Debugf("Genetared new random enclave ID '%v'", randomEnclaveId)
+
+	if isEnclaveIdInUse(randomEnclaveId, allCurrentEnclaves) {
+		if retries > 0 {
+			newRetriesValue := retries - 1
+			randomEnclaveId, err = getRandomEnclaveId(allCurrentEnclaves, newRetriesValue)
+			if err != nil {
+				return emptyEnclaveId,
+				stacktrace.Propagate(err,
+					"An error occurred getting a random enclave ID with all current enclaves value '%+v' and retries '%v'",
+					allCurrentEnclaves,
+					retries,
+				)
+			}
+		}
+		return emptyEnclaveId,
+		stacktrace.NewError(
+			"Generating a new random enclave ID has reached the max allowed retries '%v' without success",
+			getRandomEnclaveIdRetries,
+		)
+	}
+
+	return randomEnclaveId, nil
 }

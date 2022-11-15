@@ -6,7 +6,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/defaults"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/enclave_ids"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/logrus_log_levels"
 	"github.com/kurtosis-tech/stacktrace"
@@ -93,23 +92,18 @@ func run(cmd *cobra.Command, args []string) error {
 	}()
 
 	logrus.Info("Creating new enclave...")
-	var enclaveId string
-	if enclaveIdStr == autogenerateEnclaveIdKeyword {
-		enclaveId = enclave_ids.GenerateNewEnclaveID()
-	} else {
-		enclaveId = enclaveIdStr
-	}
+
 	createEnclaveArgs := &kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs{
-		EnclaveId:              enclaveId,
+		EnclaveId:              enclaveIdStr,
 		ApiContainerVersionTag: apiContainerVersion,
 		ApiContainerLogLevel:   kurtosisLogLevelStr,
 		IsPartitioningEnabled:  isPartitioningEnabled,
 	}
 	_, err = engineClient.CreateEnclave(ctx, createEnclaveArgs)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating an enclave with ID '%v'", enclaveId)
+		return stacktrace.Propagate(err, "An error occurred creating an enclave with ID '%v'", enclaveIdStr)
 	}
-	logrus.Infof("Successfully created new enclave '%v'", enclaveId)
+	logrus.Infof("Successfully created new enclave '%v'", enclaveIdStr)
 
 	return nil
 }
