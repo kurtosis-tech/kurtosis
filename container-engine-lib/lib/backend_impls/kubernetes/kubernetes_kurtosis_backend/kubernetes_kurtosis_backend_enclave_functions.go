@@ -43,10 +43,6 @@ const (
 
 	dumpPodErrorTitle = "Pod"
 )
-var (
-	enclaveCreationTimeRetroCompatibilityCheckDeadline = time.Date(2023, 1,1,0,0,0,0,time.Local)
-)
-
 
 // TODO: MIGRATE THIS FOLDER TO USE STRUCTURE OF USER_SERVICE_FUNCTIONS MODULE
 
@@ -661,12 +657,10 @@ func getEnclaveCreationTimeFromEnclaveNamespace(namespace *apiv1.Namespace) (*ti
 
 	enclaveCreationTimeStr, found := namespaceAnnotations[kubernetes_annotation_key_consts.EnclaveCreationTimeAnnotationKey.GetString()]
 	if !found {
-		//TODO remove this condition after 2023-01-01 when we are sure that there is not any old enclave created with the creation time annotation
 		//Handling retro-compatibility, enclaves that did not track enclave's creation time
-		if time.Now().Before(enclaveCreationTimeRetroCompatibilityCheckDeadline){
-			return nil, nil
-		}
-		return nil, stacktrace.NewError("Expected to find namespace's annotation with key '%v' but none was found", kubernetes_annotation_key_consts.EnclaveCreationTimeAnnotationKey.GetString())
+		return nil, nil //TODO remove this return after 2023-01-01
+		//TODO uncomment this after 2023-01-01 when we are sure that there is not any old enclave created with the creation time annotation
+		//return nil, stacktrace.NewError("Expected to find namespace's annotation with key '%v' but none was found", kubernetes_annotation_key_consts.EnclaveCreationTimeAnnotationKey.GetString())
 	}
 
 	enclaveCreationTime, err := time.Parse(time.RFC3339, enclaveCreationTimeStr)

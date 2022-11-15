@@ -1,6 +1,6 @@
 # TBD
 ### Features
-- Added the enclave's creation time info which can be obtained through the `enclave ls` and the `enclave inspect` commands (post 2023-01-01, your CLI will stop working for old enclaves.)
+- Added the enclave's creation time info which can be obtained through the `enclave ls` and the `enclave inspect` commands
 
 # 0.52.3
 
