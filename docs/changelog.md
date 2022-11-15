@@ -10,6 +10,7 @@
 ### Features
 - Add `wait` and `define` command in Startosis
 - Added ip address replacement in the JSON for `render_template` instruction
+- Implemented a `ToTargetArtifactUuid` version of a few service_network functions
 
 ### Changes
 - `kurtosis_instruction.String()` now returns a single line version of the instruction for more concise logging
