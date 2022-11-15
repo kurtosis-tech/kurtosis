@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestRemoveService_StringRepresentation(t *testing.T) {
+func TestRemoveService_GetCanonicalInstruction(t *testing.T) {
 	removeInstruction := NewRemoveServiceInstruction(nil, *kurtosis_instruction.NewInstructionPosition(4, 4, "dummyFile"), "dummy-service-id")
 	expectedSingleLineStrRep := `remove_service(service_id="dummy-service-id")`
 	require.Equal(t, expectedSingleLineStrRep, removeInstruction.String())
