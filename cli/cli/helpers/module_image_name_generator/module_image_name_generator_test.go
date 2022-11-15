@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package enclave_ids
+package module_image_name_generator
 
 import (
 	"github.com/stretchr/testify/require"
@@ -11,16 +11,16 @@ import (
 )
 
 func TestValidateEnclaveId_success(t *testing.T) {
-	err := ValidateEnclaveId("valid.enclave.id-1234567")
+	err := ValidateImageName("valid.enclave.id-1234567")
 	require.Nil(t, err)
 }
 
 func TestValidateEnclaveId_failureInvalidChar(t *testing.T) {
-	err := ValidateEnclaveId("valid.enclave.id-1234567&")
+	err := ValidateImageName("valid.enclave.id-1234567&")
 	require.NotNil(t, err)
 }
 
 func TestValidateEnclaveId_failureTooLong(t *testing.T) {
-	err := ValidateEnclaveId("IAmWayTooLongToBeAnEnclaveIdBecauseIShouldBeLessThan64CharAndIAmNo")
+	err := ValidateImageName("IAmWayTooLongToBeAnEnclaveIdBecauseIShouldBeLessThan64CharAndIAmNo")
 	require.NotNil(t, err)
 }

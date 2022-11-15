@@ -3,7 +3,6 @@ package enclave_manager
 import (
 	"context"
 	"fmt"
-	"github.com/goombaio/namegenerator"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
@@ -18,7 +17,6 @@ import (
 	"sort"
 	"strings"
 	"sync"
-	"time"
 )
 
 const (
@@ -30,7 +28,6 @@ const (
 
 	emptyEnclaveId = enclave.EnclaveID("")
 
-	getRandomEnclaveIdRetries = uint16(5)
 )
 
 // TODO Move this to the KurtosisBackend to calculate!!
@@ -102,10 +99,14 @@ func (manager *EnclaveManager) CreateEnclave(
 	}
 
 	if enclaveId == emptyEnclaveId {
-		enclaveId, err = getRandomEnclaveId(allCurrentEnclaves, getRandomEnclaveIdRetries)
+		enclaveId, err = getRandomEnclaveIdWithRetries(allCurrentEnclaves, getRandomEnclaveIdRetries)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting a new random enclave ID using all current enclaves '%+v' and '%v' retries", allCurrentEnclaves, getRandomEnclaveIdRetries)
 		}
+	}
+
+	if err := validateEnclaveId(enclaveId); err !=nil {
+		return nil, stacktrace.Propagate(err, "An error occurred validation enclave ID '%v'", enclaveId)
 	}
 
 	teardownCtx := context.Background() // Separate context for tearing stuff down in case the input context is cancelled
@@ -611,40 +612,4 @@ func isEnclaveIdInUse(newEnclaveId enclave.EnclaveID, allEnclaves map[enclave.En
 	return isInUse
 }
 
-func getRandomEnclaveId(
-	allCurrentEnclaves map[enclave.EnclaveID]*enclave.Enclave,
-	retries uint16,
-) (enclave.EnclaveID, error) {
 
-	var err error
-
-	seed := time.Now().UTC().UnixNano()
-	nameGenerator := namegenerator.NewNameGenerator(seed)
-
-	randomName := nameGenerator.Generate()
-
-	randomEnclaveId := enclave.EnclaveID(randomName)
-	logrus.Debugf("Genetared new random enclave ID '%v'", randomEnclaveId)
-
-	if isEnclaveIdInUse(randomEnclaveId, allCurrentEnclaves) {
-		if retries > 0 {
-			newRetriesValue := retries - 1
-			randomEnclaveId, err = getRandomEnclaveId(allCurrentEnclaves, newRetriesValue)
-			if err != nil {
-				return emptyEnclaveId,
-				stacktrace.Propagate(err,
-					"An error occurred getting a random enclave ID with all current enclaves value '%+v' and retries '%v'",
-					allCurrentEnclaves,
-					retries,
-				)
-			}
-		}
-		return emptyEnclaveId,
-		stacktrace.NewError(
-			"Generating a new random enclave ID has reached the max allowed retries '%v' without success",
-			getRandomEnclaveIdRetries,
-		)
-	}
-
-	return randomEnclaveId, nil
-}
