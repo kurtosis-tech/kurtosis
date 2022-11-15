@@ -570,11 +570,15 @@ func getApiContainerStatusFromContainerStatus(status container_status.ContainerS
 func getEnclaveCreationTimestamp(enclave *enclave.Enclave) *timestamppb.Timestamp {
 	enclaveCreationTime := enclave.GetCreationTime()
 
-	//If an enclave has a nil creation time we are going to return nil also in order to check
-	//in the CLI if it is an old enclave case, handling retro-compatibility
 	var creationTime *timestamppb.Timestamp
+
+	//If an enclave has a nil creation time we are going to return nil also in order to check
+	//TODO remove this condition after 2023-01-01 when we are sure that there is not any old enclave created without the creation time label
+	//TODO after the retro-compatibility period we shouln't support the nil value and fail loudly instead
+	//Handling retro-compatibility, enclaves that did not track enclave's creation time
 	if enclaveCreationTime != nil {
 		creationTime = timestamppb.New(*enclaveCreationTime)
 	}
+
 	return creationTime
 }
