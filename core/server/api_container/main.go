@@ -48,6 +48,7 @@ const (
 
 	logMethodAlongWithLogLine = true
 	functionPathSeparator     = "."
+	emptyFunctionName         = ""
 )
 
 type doNothingMetricsClientCallback struct{}
@@ -67,7 +68,7 @@ func main() {
 			fullFunctionPath := strings.Split(f.Function, functionPathSeparator)
 			functionName := fullFunctionPath[len(fullFunctionPath)-1]
 			_, filename := path.Split(f.File)
-			return functionName, filename
+			return emptyFunctionName, wrapStringInSquareBrackets(filename) + wrapStringInSquareBrackets(functionName)
 		},
 	})
 
@@ -268,4 +269,8 @@ func createServiceNetworkAndModuleStore(
 	moduleStore := module_store.NewModuleStore(enclaveId, kurtosisBackend, moduleLauncher)
 
 	return serviceNetwork, moduleStore, nil
+}
+
+func wrapStringInSquareBrackets(stringTobeWrapped string) string {
+	return "[" + stringTobeWrapped + "]"
 }
