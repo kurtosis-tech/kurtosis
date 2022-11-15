@@ -131,11 +131,7 @@ func getOrderedEnclaveInfoMapAndEnclaveWithoutCreationTimeMap(
 		firstItemEnclaveIdStr := orderedEnclaveInfoMaps[firstItemIndex].EnclaveId
 		secondItemEnclaveIdStr := orderedEnclaveInfoMaps[secondItemIndex].EnclaveId
 
-		if strings.Compare(firstItemEnclaveIdStr, secondItemEnclaveIdStr) > 0 {
-			return false
-		}
-
-		return true
+		return strings.Compare(firstItemEnclaveIdStr, secondItemEnclaveIdStr) <= 0
 	})
 
 	return orderedEnclaveInfoMaps, enclaveWithoutCreationTimeInfoMap
