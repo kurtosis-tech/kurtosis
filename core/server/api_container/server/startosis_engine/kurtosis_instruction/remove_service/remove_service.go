@@ -54,9 +54,7 @@ func (instruction *RemoveServiceInstruction) GetPositionInOriginalScript() *kurt
 }
 
 func (instruction *RemoveServiceInstruction) GetCanonicalInstruction() string {
-	return shared_helpers.CanonicalizeInstruction(RemoveServiceBuiltinName, starlark.StringDict{
-		serviceIdArgName: starlark.String(instruction.serviceId),
-	}, &instruction.position)
+	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(RemoveServiceBuiltinName, instruction.getKwargs(), &instruction.position)
 }
 
 func (instruction *RemoveServiceInstruction) Execute(ctx context.Context, environment *startosis_executor.ExecutionEnvironment) error {
@@ -69,7 +67,7 @@ func (instruction *RemoveServiceInstruction) Execute(ctx context.Context, enviro
 }
 
 func (instruction *RemoveServiceInstruction) String() string {
-	return instruction.GetCanonicalInstruction()
+	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(RemoveServiceBuiltinName, instruction.getKwargs(), &instruction.position)
 }
 
 func (instruction *RemoveServiceInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
@@ -92,4 +90,10 @@ func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starl
 	}
 
 	return serviceId, nil
+}
+
+func (instruction *RemoveServiceInstruction) getKwargs() starlark.StringDict {
+	return starlark.StringDict{
+		serviceIdArgName: starlark.String(instruction.serviceId),
+	}
 }

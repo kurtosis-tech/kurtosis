@@ -73,12 +73,23 @@ type ServiceNetwork interface {
 		enclave_data_directory.FilesArtifactUUID,
 		error,
 	)
+	CopyFilesFromServiceToTargetArtifactUUID(
+		ctx context.Context,
+		serviceId service.ServiceID,
+		srcPath string,
+		filesArtifactUuid enclave_data_directory.FilesArtifactUUID,
+	) (
+		enclave_data_directory.FilesArtifactUUID,
+		error,
+	)
 
 	GetServiceIDs() map[service.ServiceID]bool
 
 	GetIPAddressForService(serviceID service.ServiceID) (net.IP, bool)
 
 	RenderTemplates(templatesAndDataByDestinationRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData) (enclave_data_directory.FilesArtifactUUID, error)
+	RenderTemplatesToTargetFilesArtifactUUID(templatesAndDataByDestinationRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, filesArtifactUuid enclave_data_directory.FilesArtifactUUID) (enclave_data_directory.FilesArtifactUUID, error)
 
 	UploadFilesArtifact(data []byte) (enclave_data_directory.FilesArtifactUUID, error)
+	UploadFilesArtifactToTargetArtifactUUID(data []byte, targetFilesArtifactUuid enclave_data_directory.FilesArtifactUUID) error
 }

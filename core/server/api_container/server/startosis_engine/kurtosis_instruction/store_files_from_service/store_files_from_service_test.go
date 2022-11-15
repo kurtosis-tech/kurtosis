@@ -16,11 +16,12 @@ func TestStoreFilesFromService_StringRepresentationWorks(t *testing.T) {
 		"example-service-id",
 		"/tmp/foo",
 	)
-	expectedStr := `# from: dummyFile[1:1]
+	expectedMultiLineStr := `# from: dummyFile[1:1]
 store_file_from_service(
 	service_id="example-service-id",
-	src_path="/tmp/foo",
+	src_path="/tmp/foo"
 )`
-	require.Equal(t, expectedStr, storeFileFromServiceInstruction.GetCanonicalInstruction())
-	require.Equal(t, expectedStr, storeFileFromServiceInstruction.String())
+	require.Equal(t, expectedMultiLineStr, storeFileFromServiceInstruction.GetCanonicalInstruction())
+	expectedSingleLineStr := `store_file_from_service(service_id="example-service-id", src_path="/tmp/foo")`
+	require.Equal(t, expectedSingleLineStr, storeFileFromServiceInstruction.String())
 }

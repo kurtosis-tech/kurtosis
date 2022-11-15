@@ -32,10 +32,9 @@ render_templates(
 			"template": "Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}.",
 			"template_data_json": "{\"Answer\":6,\"LargeFloat\":1231231243.43,\"Name\":\"Stranger\",\"Numbers\":[1,2,3],\"UnixTimeStamp\":1257894000}"
 		}
-	},
+	}
 )`
-
-	require.Equal(t, expectedStr, renderInstruction.String())
+	require.Equal(t, expectedStr, renderInstruction.GetCanonicalInstruction())
 }
 
 func TestRenderTemplate_TestMultipleTemplates(t *testing.T) {
@@ -68,7 +67,7 @@ render_templates(
 			"template": "Hello {{.Name}}",
 			"template_data_json": "{\"Name\": \"John\"}"
 		}
-	},
+	}
 )`
-	require.Equal(t, expectedStr, renderInstruction.String())
+	require.Equal(t, expectedStr, renderInstruction.GetCanonicalInstruction())
 }

@@ -12,7 +12,7 @@ import (
 
 type FilesArtifactUUID string
 
-func newFilesArtifactUUID() (FilesArtifactUUID, error) {
+func NewFilesArtifactUUID() (FilesArtifactUUID, error) {
 	newUUIDStr, err := getUniversallyUniqueID()
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Could not generate Universally Unique ID.")
@@ -21,9 +21,9 @@ func newFilesArtifactUUID() (FilesArtifactUUID, error) {
 	return newFilesArtifactUuid, nil
 }
 
-//There are some suggestions that go's implementation of uuid is not RFC compliant.
-//If we can verify it is compliant, it would be better to use ipv6 as nodeID and interface name where the data came in.
-//Just generating a random one for now.
+// There are some suggestions that go's implementation of uuid is not RFC compliant.
+// If we can verify it is compliant, it would be better to use ipv6 as nodeID and interface name where the data came in.
+// Just generating a random one for now.
 func getUniversallyUniqueID() (string, error) {
 	generatedUUID, err := uuid.NewRandom()
 	if err != nil {

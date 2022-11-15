@@ -64,7 +64,7 @@ func (instruction *RenderTemplatesInstruction) GetPositionInOriginalScript() *ku
 }
 
 func (instruction *RenderTemplatesInstruction) GetCanonicalInstruction() string {
-	return shared_helpers.CanonicalizeInstruction(RenderTemplatesBuiltinName, instruction.starlarkKwargs, &instruction.position)
+	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(RenderTemplatesBuiltinName, instruction.starlarkKwargs, &instruction.position)
 }
 
 func (instruction *RenderTemplatesInstruction) Execute(ctx context.Context, environment *startosis_executor.ExecutionEnvironment) error {
@@ -87,7 +87,7 @@ func (instruction *RenderTemplatesInstruction) Execute(ctx context.Context, envi
 }
 
 func (instruction *RenderTemplatesInstruction) String() string {
-	return instruction.GetCanonicalInstruction()
+	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(RenderTemplatesBuiltinName, instruction.starlarkKwargs, &instruction.position)
 }
 
 func (instruction *RenderTemplatesInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {

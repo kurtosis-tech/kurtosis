@@ -11,15 +11,44 @@ import (
 )
 
 const (
-	initialIndentationLevel  = 1
+	initialIndentationLevel  = 0
 	starlarkTimeKeyComponent = "unix"
 )
 
-func CanonicalizeInstruction(instructionName string, serializedKwargs starlark.StringDict, position *kurtosis_instruction.InstructionPosition) string {
+var (
+	SingleLineCanonicalizer = newSingleLineInstructionCanonicalizer()
+	MultiLineCanonicalizer  = newMultiLineInstructionCanonicalizer()
+)
+
+type kurtosisInstructionCanonicalizer struct {
+	singleLineMode bool
+}
+
+func newSingleLineInstructionCanonicalizer() *kurtosisInstructionCanonicalizer {
+	return &kurtosisInstructionCanonicalizer{
+		singleLineMode: true,
+	}
+}
+
+func newMultiLineInstructionCanonicalizer() *kurtosisInstructionCanonicalizer {
+	return &kurtosisInstructionCanonicalizer{
+		singleLineMode: false,
+	}
+}
+
+func (canonicalizer *kurtosisInstructionCanonicalizer) CanonicalizeInstruction(instructionName string, serializedKwargs starlark.StringDict, position *kurtosis_instruction.InstructionPosition) string {
 	buffer := new(strings.Builder)
-	buffer.WriteString(fmt.Sprintf("# from: %s\n", position.String()))
+	if !canonicalizer.singleLineMode {
+		buffer.WriteString(fmt.Sprintf("# from: %s\n", position.String()))
+	}
+	buffer.WriteString(canonicalizer.canonicalizeInstruction(instructionName, serializedKwargs, initialIndentationLevel))
+	return buffer.String()
+}
+
+func (canonicalizer *kurtosisInstructionCanonicalizer) canonicalizeInstruction(instructionName string, serializedKwargs starlark.StringDict, indentLevel int) string {
+	buffer := new(strings.Builder)
 	buffer.WriteString(instructionName)
-	buffer.WriteString("(")
+	buffer.WriteString(fmt.Sprintf("(%s", canonicalizer.newlineIndent(indentLevel+1)))
 
 	//sort the key of the map for determinism
 	var sortedArgName []string
@@ -29,18 +58,23 @@ func CanonicalizeInstruction(instructionName string, serializedKwargs starlark.S
 	sort.Strings(sortedArgName)
 
 	// print each arg depending on its type
+	canonicalizedArgs := make([]string, len(sortedArgName))
+	idx := 0
 	for _, argName := range sortedArgName {
 		genericArgValue, found := serializedKwargs[argName]
 		if !found {
 			panic(fmt.Sprintf("Couldn't find a value for the key '%s' in the canonical instruction argument map ('%v'). This is unexpected and a bug in Kurtosis", argName, serializedKwargs))
 		}
-		buffer.WriteString(fmt.Sprintf("\n%s%s=%s,", indentPrefixString(initialIndentationLevel), argName, canonicalizeArgValue(genericArgValue, false, 1)))
+		canonicalizedArgs[idx] = fmt.Sprintf("%s=%s", argName, canonicalizer.canonicalizeArgValue(genericArgValue, indentLevel+1))
+		idx++
 	}
-	buffer.WriteString("\n)")
+
+	buffer.WriteString(strings.Join(canonicalizedArgs, canonicalizer.separator(indentLevel+1)))
+	buffer.WriteString(fmt.Sprintf("%s)", canonicalizer.newlineIndent(indentLevel)))
 	return buffer.String()
 }
 
-func canonicalizeArgValue(genericArgValue starlark.Value, newline bool, indent int) string {
+func (canonicalizer *kurtosisInstructionCanonicalizer) canonicalizeArgValue(genericArgValue starlark.Value, indent int) string {
 	var stringifiedArg string
 	switch argValue := genericArgValue.(type) {
 	case starlark.NoneType, starlark.Bool, starlark.String, starlark.Bytes, starlark.Int, starlark.Float:
@@ -56,14 +90,14 @@ func canonicalizeArgValue(genericArgValue starlark.Value, newline bool, indent i
 	case time.Duration:
 		stringifiedArg = "time.parse_duration(" + argValue.String() + ")"
 	case *starlark.List:
-		stringifiedList := stringifyIterable(argValue, argValue.Len(), indent)
-		stringifiedArg = fmt.Sprintf("[%s\n%s]", strings.Join(stringifiedList, ","), indentPrefixString(indent))
+		stringifiedList := canonicalizer.stringifyIterable(argValue, argValue.Len(), indent)
+		stringifiedArg = fmt.Sprintf("[%s%s%s]", canonicalizer.newlineIndent(indent+1), strings.Join(stringifiedList, canonicalizer.separator(indent+1)), canonicalizer.newlineIndent(indent))
 	case *starlark.Set:
-		stringifiedSet := stringifyIterable(argValue, argValue.Len(), indent)
-		stringifiedArg = fmt.Sprintf("{%s\n%s}", strings.Join(stringifiedSet, ","), indentPrefixString(indent))
+		stringifiedSet := canonicalizer.stringifyIterable(argValue, argValue.Len(), indent)
+		stringifiedArg = fmt.Sprintf("{%s%s%s}", canonicalizer.newlineIndent(indent+1), strings.Join(stringifiedSet, canonicalizer.separator(indent+1)), canonicalizer.newlineIndent(indent))
 	case starlark.Tuple:
-		stringifiedTuple := stringifyIterable(argValue, argValue.Len(), indent)
-		stringifiedArg = fmt.Sprintf("(%s\n%s)", strings.Join(stringifiedTuple, ","), indentPrefixString(indent))
+		stringifiedTuple := canonicalizer.stringifyIterable(argValue, argValue.Len(), indent)
+		stringifiedArg = fmt.Sprintf("(%s%s%s)", canonicalizer.newlineIndent(indent+1), strings.Join(stringifiedTuple, canonicalizer.separator(indent+1)), canonicalizer.newlineIndent(indent))
 	case *starlark.Dict:
 		allKeys := argValue.Keys()
 		stringifiedElement := make([]string, len(allKeys))
@@ -73,53 +107,57 @@ func canonicalizeArgValue(genericArgValue starlark.Value, newline bool, indent i
 			if err != nil || !found {
 				panic(fmt.Sprintf("Iterating over all keys from the struct, the key '%s' could not be found ('%v'). This is unexpected and a bug in Kurtosis", key, argValue))
 			}
-			stringifiedElement[idx] = fmt.Sprintf("%s: %s", canonicalizeArgValue(key, true, indent+1), canonicalizeArgValue(value, false, indent+1))
+			stringifiedElement[idx] = fmt.Sprintf("%s: %s", canonicalizer.canonicalizeArgValue(key, indent+1), canonicalizer.canonicalizeArgValue(value, indent+1))
 			idx++
 		}
 		sort.Strings(stringifiedElement)
-		stringifiedArg = fmt.Sprintf("{%s\n%s}", strings.Join(stringifiedElement, ","), indentPrefixString(indent))
+		stringifiedArg = fmt.Sprintf("{%s%s%s}", canonicalizer.newlineIndent(indent+1), strings.Join(stringifiedElement, canonicalizer.separator(indent+1)), canonicalizer.newlineIndent(indent))
 	case *starlarkstruct.Struct:
-		allAttributes := argValue.AttrNames()
-		sort.Strings(allAttributes)
-		stringifiedElement := make([]string, len(allAttributes))
-		idx := 0
-		for _, attributeName := range allAttributes {
+		// building struct is just calling the function with the argument matching the struct attributes
+		structKwargs := starlark.StringDict{}
+		for _, attributeName := range argValue.AttrNames() {
 			attributeValue, err := argValue.Attr(attributeName)
 			if err != nil {
 				panic(fmt.Sprintf("Iterating over all keys from the struct, the key '%s' could not be found ('%v'). This is unexpected and a bug in Kurtosis", attributeName, argValue))
 			}
-			stringifiedElement[idx] = fmt.Sprintf("\n%s%s=%s", indentPrefixString(indent+1), attributeName, canonicalizeArgValue(attributeValue, false, indent+1))
-			idx++
+			structKwargs[attributeName] = attributeValue
 		}
-		stringifiedArg = fmt.Sprintf("struct(%s\n%s)", strings.Join(stringifiedElement, ","), indentPrefixString(indent))
+		return canonicalizer.canonicalizeInstruction(argValue.Type(), structKwargs, indent)
 	default:
 		stringifiedArg = fmt.Sprintf("UNSUPPORTED_TYPE['%v']", argValue)
 	}
 
 	var resultBuffer strings.Builder
-	if newline {
-		resultBuffer.WriteString("\n")
-		resultBuffer.WriteString(indentPrefixString(indent))
-	}
 	resultBuffer.WriteString(stringifiedArg)
 	return resultBuffer.String()
 }
 
-func stringifyIterable(iterable starlark.Iterable, length int, currentIndentationLevel int) []string {
+func (canonicalizer *kurtosisInstructionCanonicalizer) stringifyIterable(iterable starlark.Iterable, length int, currentIndentationLevel int) []string {
 	stringifiedIterable := make([]string, length)
 	iterator := iterable.Iterate()
 	defer iterator.Done()
 	var item starlark.Value
 	for idx := 0; iterator.Next(&item); idx++ {
-		stringifiedIterable[idx] = canonicalizeArgValue(item, true, currentIndentationLevel+1)
+		stringifiedIterable[idx] = canonicalizer.canonicalizeArgValue(item, currentIndentationLevel+1)
 	}
 	return stringifiedIterable
 }
 
-func indentPrefixString(indent int) string {
+func (canonicalizer *kurtosisInstructionCanonicalizer) newlineIndent(indent int) string {
+	if canonicalizer.singleLineMode {
+		return ""
+	}
 	var resultBuffer strings.Builder
+	resultBuffer.WriteString("\n")
 	for idx := 0; idx < indent; idx++ {
 		resultBuffer.WriteString("\t")
 	}
 	return resultBuffer.String()
+}
+
+func (canonicalizer *kurtosisInstructionCanonicalizer) separator(indent int) string {
+	if canonicalizer.singleLineMode {
+		return ", "
+	}
+	return fmt.Sprintf(",%s", canonicalizer.newlineIndent(indent))
 }
