@@ -22,6 +22,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"sort"
 	"strings"
+	"time"
 	"unicode/utf8"
 )
 
@@ -32,6 +33,7 @@ const (
 
 	enclaveIdTitleName                 = "Enclave ID"
 	enclaveStatusTitleName             = "Enclave Status"
+	enclaveCreationTimeTitleName       = "Creation Time"
 	apiContainerStatusTitleName        = "API Container Status"
 	apiContainerHostGrpcPortTitle      = "API Container Host GRPC Port"
 	apiContainerHostGrpcProxyPortTitle = "API Container Host GRPC Proxy Port"
@@ -92,16 +94,28 @@ func run(
 
 	keyValuePrinter := output_printers.NewKeyValuePrinter()
 	keyValuePrinter.AddPair(enclaveIdTitleName, enclaveIdStr)
+
 	enclaveContainersStatusStr, err := enclave_status_stringifier.EnclaveContainersStatusStringifier(enclaveContainersStatus)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred when stringify enclave containers status")
 	}
 	keyValuePrinter.AddPair(enclaveStatusTitleName, enclaveContainersStatusStr)
+
+	enclaveCreationTime := enclaveInfo.GetCreationTime()
+	//TODO remove this condition after 2023-01-01 when we are sure that there is not any old enclave created without the creation time label
+	//TODO and add a fail loudly check
+	if enclaveCreationTime != nil {
+		enclaveCreationTimeStr := enclaveCreationTime.AsTime().Local().Format(time.RFC822)
+
+		keyValuePrinter.AddPair(enclaveCreationTimeTitleName, enclaveCreationTimeStr)
+	}
+
 	enclaveApiContainerStatusStr, err := enclave_status_stringifier.EnclaveAPIContainersStatusStringifier(enclaveApiContainerStatus)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred when stringify enclave API containers status")
 	}
 	keyValuePrinter.AddPair(apiContainerStatusTitleName, enclaveApiContainerStatusStr)
+
 	isApiContainerRunning := enclaveApiContainerStatus == kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING
 	if isApiContainerRunning {
 		apiContainerHostInfo := enclaveInfo.GetApiContainerHostMachineInfo()

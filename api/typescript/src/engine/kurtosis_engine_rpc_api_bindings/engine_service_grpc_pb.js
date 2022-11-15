@@ -4,6 +4,7 @@
 var grpc = require('@grpc/grpc-js');
 var engine_service_pb = require('./engine_service_pb.js');
 var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb.js');
+var google_protobuf_timestamp_pb = require('google-protobuf/google/protobuf/timestamp_pb.js');
 
 function serialize_engine_api_CleanArgs(arg) {
   if (!(arg instanceof engine_service_pb.CleanArgs)) {
@@ -203,7 +204,7 @@ clean: {
     responseSerialize: serialize_engine_api_CleanResponse,
     responseDeserialize: deserialize_engine_api_CleanResponse,
   },
-  // Get  service logs
+  // Get service logs
 getServiceLogs: {
     path: '/engine_api.EngineService/GetServiceLogs',
     requestStream: false,
