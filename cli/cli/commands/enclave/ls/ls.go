@@ -84,7 +84,7 @@ func run(
 
 		enclaveCreationTime := enclaveInfo.CreationTime.AsTime()
 
-		if err := tablePrinter.AddRow(enclaveId, enclaveStatus, enclaveCreationTime.Format(time.RFC822)); err != nil {
+		if err := tablePrinter.AddRow(enclaveId, enclaveStatus, enclaveCreationTime.Format(time.RFC1123)); err != nil {
 			return stacktrace.NewError("An error occurred adding row for enclave '%v' to the table printer", enclaveId)
 		}
 	}
