@@ -32,5 +32,7 @@ export { ExecuteArgs, ExecuteResponse } from "./core/kurtosis_core_rpc_api_bindi
 
 // TODO Remove this - shouldn't be necessary to be exported due to the newKurtosisContextFromLocalEngine() method
 export { KurtosisContext, DEFAULT_GRPC_PROXY_ENGINE_SERVER_PORT_NUM, DEFAULT_GRPC_ENGINE_SERVER_PORT_NUM } from "./engine/lib/kurtosis_context/kurtosis_context";
+export {ServiceLogsStreamContent} from "./engine/lib/kurtosis_context/service_logs_stream_content";
+export {ServiceLog} from "./engine/lib/kurtosis_context/service_log";
 
 export { EnclaveAPIContainerHostMachineInfo } from "./engine/kurtosis_engine_rpc_api_bindings/engine_service_pb"

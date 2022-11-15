@@ -23,8 +23,8 @@ service EngineService {
   rpc DestroyEnclave(DestroyEnclaveArgs) returns (google.protobuf.Empty) {};
   // Gets rid of old enclaves
   rpc Clean(CleanArgs) returns (CleanResponse) {};
-  // Get user service logs
-  rpc GetUserServiceLogs(GetUserServiceLogsArgs) returns (stream GetUserServiceLogsResponse) {};
+  // Get service logs
+  rpc GetServiceLogs(GetServiceLogsArgs) returns (stream GetServiceLogsResponse) {};
 }
 
 // ==============================================================================================
@@ -165,7 +165,7 @@ message CleanResponse {
 // ==============================================================================================
 //                                   Get User Service Logs
 // ==============================================================================================
-message GetUserServiceLogsArgs {
+message GetServiceLogsArgs {
   // The ID of the user service's Kurtosis Enclave
   string enclave_id = 1;
   // "Set" of service GUIDs in the enclave
@@ -175,9 +175,12 @@ message GetUserServiceLogsArgs {
 
 }
 
-message GetUserServiceLogsResponse {
-  // The user service log lines grouped by user service GUIDs and ordered in forward direction (oldest log line is the first element)
-  map<string, LogLine> user_service_logs_by_user_service_guid = 1;
+message GetServiceLogsResponse {
+  // The service log lines grouped by service GUIDs and ordered in forward direction (oldest log line is the first element)
+  map<string, LogLine> service_logs_by_service_guid = 1;
+  // A set of service GUIDs requested by the user that were not found in the logs database, could be related that users send
+  // a wrong GUID or a right GUID for a service that has not sent any logs so far
+  map<string, bool> not_found_service_guid_set = 2;
 }
 
 // TODO add timestamp as well, for when we do timestamp-handling on the client side

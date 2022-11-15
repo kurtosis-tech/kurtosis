@@ -1,5 +1,6 @@
 package kurtosis_context
 
+//This is an object to represent a simple log line information
 type ServiceLog struct {
 	//lineTime time.Time //TODO add the time from loki logs result
 	content string

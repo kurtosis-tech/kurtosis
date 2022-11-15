@@ -9,6 +9,8 @@
 
 ### Features
 - Add `wait` and `define` command in Startosis
+- Added `not found service GUIDs information` in `KurtosisContext.GetServiceLogs` method
+- Added a warning message in `service logs` CLI command when the request service GUID is not found in the logs database
 - Added ip address replacement in the JSON for `render_template` instruction
 - Implemented a `ToTargetArtifactUuid` version of a few service_network functions
 

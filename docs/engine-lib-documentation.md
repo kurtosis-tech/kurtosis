@@ -60,16 +60,41 @@ Destroys enclaves in the Kurtosis engine.
 
 ---
 
-### getUserServiceLogs(EnclaveID enclaveId, Set\<ServiceGUID> userServiceGuids) -\> Map\<ServiceGUID, Array\<String\>\> userServiceLogsByUserServiceGuid
-Get the user service container log lines (ordered in ascending direction, with the oldest line first) from user services identified by their GUID.
-The result will contain the last 4000 log lines max for each user service container.
+### getServiceLogs(EnclaveID enclaveId, Set\<ServiceGUID> serviceGuids, Boolean shouldFollowLogs) -\> [ServiceLogsStreamContent][servicelogsstreamcontent] serviceLogsStreamContent
+Get and start a service container logs stream (showed in ascending order, with the oldest line first) from services identified by their GUID.
 
 **Args**
-* `enclaveId`: ID of the user services' enclave.
-* `userServiceGuids`: A set of user service GUIDs identifying the services from which logs should be retrieved
+* `enclaveId`: ID of the services' enclave.
+* `serviceGuids`: A set of service GUIDs identifying the services from which logs should be retrieved.
+* `shouldFollowLogs`: If it's true, the stream will constantly send the new log lines. if it's false, the stream will be closed after the last created log line is sent.
 
 **Returns**
-* `userServiceLogsByUserServiceGuid`: A map containing the user service container logs grouped by user service GUID
+* `serviceLogsStreamContent`: The object which wrap all the information coming from the logs stream.
+
+ServiceLogsStreamContent
+------------------------
+This class is the representation of the content sent during a service logs stream communication. This wrapper includes the service's logs content and the not found service GUIDs.
+
+### getServiceLogsByServiceGuids() -\>  Map\<ServiceGUID, Array\<[ServiceLog][servicelog]\>\> serviceLogsByServiceGuids
+Returns the user service logs content grouped by the service's GUID.
+
+**Returns**
+* `serviceLogsByServiceGuids`: A map containing a list of the [service log][servicelog] objects grouped by service GUID.
+
+###getNotFoundServiceGuids() -\> Set\<ServiceGUID\> notFoundServiceGuids
+Returns the not found service GUIDs. The GUIDs may not be found either because they don't exist, or because the services haven't sent any logs.
+
+**Returns**
+* `notFoundServiceGuids`: A set of not found service GUIDs
+
+ServiceLog
+----------
+This class represent single service's log line information
+
+###getContent() -\> String content
+
+**Returns**
+* `content`: The log line string content
 
 _Found a bug? File it on [the repo][issues]!_
 
@@ -80,3 +105,7 @@ _Found a bug? File it on [the repo][issues]!_
 
 [enclavecontext]: ../kurtosis/core-lib-documentation#enclavecontext
 [enclavecontext_repartitionnetwork]: ../kurtosis/core-lib-documentation#repartitionnetworkmappartitionid-setserviceid-partitionservices-mappartitionid-mappartitionid-partitionconnection-partitionconnections-partitionconnection-defaultconnection
+
+[servicelogsstreamcontent]: #servicelogsstreamcontent
+
+[servicelog]: #servicelog

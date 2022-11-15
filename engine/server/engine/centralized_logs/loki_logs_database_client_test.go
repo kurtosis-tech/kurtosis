@@ -2,10 +2,14 @@ package centralized_logs
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/mocks"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"io"
 	"net/http"
 	"regexp"
 	"strings"
@@ -43,97 +47,77 @@ const (
 
 )
 
-func TestIfHttpRequestIsValidWhenCallingGetUserServiceLogs(t *testing.T) {
+func TestGetUserServiceLogs_ValidResponse(t *testing.T) {
 	enclaveId := enclave.EnclaveID(testEnclaveId)
 	userServiceGuids := map[service.ServiceGUID]bool{
 		testUserService1Guid: true,
 		testUserService2Guid: true,
 		testUserService3Guid: true,
 	}
-	httpClientObj := NewMockedHttpClient()
-	logsDatabaseClient := NewLokiLogsDatabaseClient(fakeLogsDatabaseAddress, httpClientObj)
+	mockHttpClient := mocks.NewMockHttpClient(t)
+	mockHttpClient.EXPECT().Do(mock.Anything).Run(func(request *http.Request) {
+		// Here we validate the shape of the query matches our expectations and return true only if it's the case
+		require.Equal(t, expectedURLScheme, request.URL.Scheme)
+		require.Equal(t, fakeLogsDatabaseAddress, request.URL.Host)
+		require.Equal(t, expectedQueryRangeURLPath, request.URL.Path)
+		require.Equal(t, http.MethodGet, request.Method)
 
-	ctx := context.Background()
+		organizationIds, found := request.Header[expectedOrganizationIdHttpHeaderKey]
+		require.True(t, found, "Expected to find header key '%v' in request header '%+v', but it was not found", expectedOrganizationIdHttpHeaderKey, request.Header)
 
-	userServiceLogsByGuidChan, errChan, closeStreamFunc, err := logsDatabaseClient.GetUserServiceLogs(ctx, enclaveId, userServiceGuids)
-	defer closeStreamFunc()
-
-	require.NoError(t, err, "An error occurred getting user service logs for GUIDs '%+v' in enclave '%v'", userServiceGuids, enclaveId)
-	require.NotNil(t, userServiceLogsByGuidChan, "Received a nil user service logs channel, but a non-nil value was expected")
-	require.Nil(t, errChan, "Received a not nil error channel, but a nil value was expected")
-
-	mockedHttpClientObj, ok := logsDatabaseClient.httpClient.(*mockedHttpClient)
-	require.True(t, ok)
-
-	request := mockedHttpClientObj.GetRequest()
-
-	require.Equal(t, expectedURLScheme, request.URL.Scheme)
-	require.Equal(t, fakeLogsDatabaseAddress, request.URL.Host)
-	require.Equal(t, expectedQueryRangeURLPath, request.URL.Path)
-	require.Equal(t, http.MethodGet, request.Method)
-
-	organizationIds, found := request.Header[expectedOrganizationIdHttpHeaderKey]
-	require.True(t, found, "Expected to find header key '%v' in request header '%+v', but it was not found", expectedOrganizationIdHttpHeaderKey, request.Header)
-
-	expectedEnclaveId := enclaveId
-	var foundExpectedEnclaveId bool
-	for _, organizationId := range organizationIds {
-		enclaveIdObj := enclave.EnclaveID(organizationId)
-		if enclaveIdObj == expectedEnclaveId {
-			foundExpectedEnclaveId = true
+		expectedEnclaveId := enclaveId
+		var foundExpectedEnclaveId bool
+		for _, organizationId := range organizationIds {
+			enclaveIdObj := enclave.EnclaveID(organizationId)
+			if enclaveIdObj == expectedEnclaveId {
+				foundExpectedEnclaveId = true
+			}
 		}
-	}
-	require.True(t, foundExpectedEnclaveId, "Expected to find enclave ID '%v' in request header values '%+v' for header with key '%v', but it was not found", expectedEnclaveId, organizationIds, expectedOrganizationIdHttpHeaderKey)
+		require.True(t, foundExpectedEnclaveId, "Expected to find enclave ID '%v' in request header values '%+v' for header with key '%v', but it was not found", expectedEnclaveId, organizationIds, expectedOrganizationIdHttpHeaderKey)
 
-	require.Equal(t, expectedAmountQueryParams, len(request.URL.Query()), "Expected to request contains '%v' query params, but '%v' query params were found", expectedAmountQueryParams, len(request.URL.Query()))
+		require.Equal(t, expectedAmountQueryParams, len(request.URL.Query()), "Expected to request contains '%v' query params, but '%v' query params were found", expectedAmountQueryParams, len(request.URL.Query()))
 
-	found = request.URL.Query().Has(expectedStartTimeQueryParamKey)
-	require.True(t, found, "Expected to find query param with key '%v' in request form values '%+v', but it was not found", expectedStartTimeQueryParamKey, request.Form)
+		found = request.URL.Query().Has(expectedStartTimeQueryParamKey)
+		require.True(t, found, "Expected to find query param with key '%v' in request form values '%+v', but it was not found", expectedStartTimeQueryParamKey, request.Form)
 
-	found = request.URL.Query().Has(expectedQueryLogsQueryParamKey)
-	require.True(t, found, "Expected to find query param with key '%v' in request form values '%+v', but it was not found", expectedStartTimeQueryParamKey, request.Form)
+		found = request.URL.Query().Has(expectedQueryLogsQueryParamKey)
+		require.True(t, found, "Expected to find query param with key '%v' in request form values '%+v', but it was not found", expectedStartTimeQueryParamKey, request.Form)
 
-	queryLogsQueryParams := request.URL.Query().Get(expectedQueryLogsQueryParamKey)
-	require.Regexp(t, regexp.MustCompile(expectedQueryLogsQueryParamValueRegex), queryLogsQueryParams)
+		queryLogsQueryParams := request.URL.Query().Get(expectedQueryLogsQueryParamKey)
+		require.Regexp(t, regexp.MustCompile(expectedQueryLogsQueryParamValueRegex), queryLogsQueryParams)
 
-	var (
-		foundExpectedKurtosisContainerTypeLokiTagKey bool
-		foundExpectedKurtosisGuidLokiTagKey          bool
-	)
+		var (
+			foundExpectedKurtosisContainerTypeLokiTagKey bool
+			foundExpectedKurtosisGuidLokiTagKey          bool
+		)
 
-	foundKurtosisContainerTypeLokiTagKey := strings.Contains(queryLogsQueryParams, expectedKurtosisContainerTypeLokiTagKey)
-	if foundKurtosisContainerTypeLokiTagKey {
-		foundExpectedKurtosisContainerTypeLokiTagKey = true
-	}
-	foundKurtosisGuidLokiTagKey := strings.Contains(queryLogsQueryParams, expectedKurtosisGuidLokiTagKey)
-	if foundKurtosisGuidLokiTagKey {
-		foundExpectedKurtosisGuidLokiTagKey = true
-	}
+		foundKurtosisContainerTypeLokiTagKey := strings.Contains(queryLogsQueryParams, expectedKurtosisContainerTypeLokiTagKey)
+		if foundKurtosisContainerTypeLokiTagKey {
+			foundExpectedKurtosisContainerTypeLokiTagKey = true
+		}
+		foundKurtosisGuidLokiTagKey := strings.Contains(queryLogsQueryParams, expectedKurtosisGuidLokiTagKey)
+		if foundKurtosisGuidLokiTagKey {
+			foundExpectedKurtosisGuidLokiTagKey = true
+		}
 
-	require.True(t, foundExpectedKurtosisContainerTypeLokiTagKey, "Expected to find Loki's tag key key '%v' in request query params '%+v', but it was not found", expectedKurtosisContainerTypeLokiTagKey, queryLogsQueryParams)
-	require.True(t, foundExpectedKurtosisGuidLokiTagKey, "Expected to find Loki's tag key key '%v' in request query params '%+v', but it was not found", expectedKurtosisGuidLokiTagKey, queryLogsQueryParams)
+		require.True(t, foundExpectedKurtosisContainerTypeLokiTagKey, "Expected to find Loki's tag key key '%v' in request query params '%+v', but it was not found", expectedKurtosisContainerTypeLokiTagKey, queryLogsQueryParams)
+		require.True(t, foundExpectedKurtosisGuidLokiTagKey, "Expected to find Loki's tag key key '%v' in request query params '%+v', but it was not found", expectedKurtosisGuidLokiTagKey, queryLogsQueryParams)
 
-	found = request.URL.Query().Has(expectedEntriesLimitQueryParamKey)
-	require.True(t, found, "Expected to find query param with key '%v' in request form values '%+v', but it was not found", expectedEntriesLimitQueryParamKey, request.Form)
-	limitQueryParam := request.URL.Query().Get(expectedEntriesLimitQueryParamKey)
-	require.Equal(t, expectedEntriesLimitQueryParamValue, limitQueryParam)
+		found = request.URL.Query().Has(expectedEntriesLimitQueryParamKey)
+		require.True(t, found, "Expected to find query param with key '%v' in request form values '%+v', but it was not found", expectedEntriesLimitQueryParamKey, request.Form)
+		limitQueryParam := request.URL.Query().Get(expectedEntriesLimitQueryParamKey)
+		require.Equal(t, expectedEntriesLimitQueryParamValue, limitQueryParam)
 
-	found = request.URL.Query().Has(expectedDirectionQueryParamKey)
-	require.True(t, found, "Expected to find query param with key '%v' in request form values '%+v', but it was not found", expectedDirectionQueryParamKey, request.Form)
-	directionQueryParam := request.URL.Query().Get(expectedDirectionQueryParamKey)
-	require.Equal(t, expectedDirectionQueryParamValue, directionQueryParam)
+		found = request.URL.Query().Has(expectedDirectionQueryParamKey)
+		require.True(t, found, "Expected to find query param with key '%v' in request form values '%+v', but it was not found", expectedDirectionQueryParamKey, request.Form)
+		directionQueryParam := request.URL.Query().Get(expectedDirectionQueryParamKey)
+		require.Equal(t, expectedDirectionQueryParamValue, directionQueryParam)
+	}).Return(&http.Response{
+		StatusCode: http.StatusOK,
+		Body:       io.NopCloser(strings.NewReader(mockedResponseBodyStr)),
+	}, nil)
 
-}
-
-func TestDoRequestWithLokiLogsDatabaseClientReturnsValidResponse(t *testing.T) {
-	enclaveId := enclave.EnclaveID(testEnclaveId)
-	userServiceGuids := map[service.ServiceGUID]bool{
-		testUserService1Guid: true,
-		testUserService2Guid: true,
-		testUserService3Guid: true,
-	}
-	httpClientObj := NewMockedHttpClient()
-	logsDatabaseClient := NewLokiLogsDatabaseClient(fakeLogsDatabaseAddress, httpClientObj)
+	logsDatabaseClient := NewLokiLogsDatabaseClient(fakeLogsDatabaseAddress, mockHttpClient)
 
 	ctx := context.Background()
 
@@ -232,6 +216,98 @@ func TestNewUserServiceLogLinesByUserServiceGuidFromLokiStreamsReturnSuccessfull
 	}
 
 }
+
+func TestFilterExistingServiceGuids_FilteringWorksAsExpected(t *testing.T) {
+	mockHttpClient := mocks.NewMockHttpClient(t)
+
+	jsonResponse := `{"status": "` + lokiSuccessStatusInResponse + `", "data": ["` + testUserService1Guid + `", "` + testUserService2Guid + `"]}`
+	mockHttpClient.EXPECT().Do(mock.MatchedBy(func(req *http.Request) bool {
+		expectedQueryPrefix := startTimeQueryParamKey + "="
+		expectedPath := fmt.Sprintf(baseLokiApiPath+queryListLabelValuesWithinRangeEndpoint, kurtosisGuidLokiTagKey)
+		return req.Method == http.MethodGet &&
+			req.URL.Scheme == httpScheme &&
+			req.URL.Host == fakeLogsDatabaseAddress &&
+			req.URL.Path == expectedPath &&
+			strings.HasPrefix(req.URL.RawQuery, expectedQueryPrefix)
+	})).Return(&http.Response{
+		StatusCode: http.StatusOK,
+		Body:       io.NopCloser(strings.NewReader(jsonResponse)),
+	}, nil)
+
+	lokiDbClient := NewLokiLogsDatabaseClient(fakeLogsDatabaseAddress, mockHttpClient)
+
+	ctx := context.Background()
+	requestedServiceGuids := map[service.ServiceGUID]bool{
+		service.ServiceGUID(testUserService1Guid): true,
+		service.ServiceGUID(testUserService2Guid): true,
+		service.ServiceGUID(testUserService3Guid): true,
+	}
+	result, err := lokiDbClient.FilterExistingServiceGuids(ctx, testEnclaveId, requestedServiceGuids)
+	require.Nil(t, err)
+	require.Contains(t, result, service.ServiceGUID(testUserService1Guid))
+	require.Contains(t, result, service.ServiceGUID(testUserService2Guid))
+	require.NotContains(t, result, service.ServiceGUID(testUserService3Guid))
+}
+
+func TestFilterExistingServiceGuids_LokiServerNotFound(t *testing.T) {
+	mockHttpClient := mocks.NewMockHttpClient(t)
+
+	mockHttpClient.EXPECT().Do(mock.Anything).Return(&http.Response{
+		StatusCode: http.StatusNotFound,
+		Body:       io.NopCloser(strings.NewReader("{}")),
+	}, nil)
+
+	lokiDbClient := NewLokiLogsDatabaseClient(fakeLogsDatabaseAddress, mockHttpClient)
+
+	ctx := context.Background()
+	requestedServiceGuids := map[service.ServiceGUID]bool{
+		service.ServiceGUID(testUserService1Guid): true,
+	}
+	result, err := lokiDbClient.FilterExistingServiceGuids(ctx, testEnclaveId, requestedServiceGuids)
+	require.Nil(t, result)
+	require.Contains(t, err.Error(), "An error occurred doing HTTP request ")
+}
+
+func TestFilterExistingServiceGuids_LokiServerReturnsErrorStatus(t *testing.T) {
+	mockHttpClient := mocks.NewMockHttpClient(t)
+
+	jsonResponse := `{"status": "ERROR_STATUS", "data": []}`
+	mockHttpClient.EXPECT().Do(mock.Anything).Return(&http.Response{
+		StatusCode: http.StatusOK,
+		Body:       io.NopCloser(strings.NewReader(jsonResponse)),
+	}, nil)
+
+	lokiDbClient := NewLokiLogsDatabaseClient(fakeLogsDatabaseAddress, mockHttpClient)
+
+	ctx := context.Background()
+	requestedServiceGuids := map[service.ServiceGUID]bool{
+		service.ServiceGUID(testUserService1Guid): true,
+	}
+	result, err := lokiDbClient.FilterExistingServiceGuids(ctx, testEnclaveId, requestedServiceGuids)
+	require.Nil(t, result)
+	require.Contains(t, err.Error(), "The logs database returns an error status when fetching the existing service GUIDs. Response was: ")
+}
+
+func TestFilterExistingServiceGuids_UnexpectedResponseObjectShape(t *testing.T) {
+	mockHttpClient := mocks.NewMockHttpClient(t)
+
+	jsonResponse := `{"UNEXPECTED_JSONS": ""}`
+	mockHttpClient.EXPECT().Do(mock.Anything).Return(&http.Response{
+		StatusCode: http.StatusOK,
+		Body:       io.NopCloser(strings.NewReader(jsonResponse)),
+	}, nil)
+
+	lokiDbClient := NewLokiLogsDatabaseClient(fakeLogsDatabaseAddress, mockHttpClient)
+
+	ctx := context.Background()
+	requestedServiceGuids := map[service.ServiceGUID]bool{
+		service.ServiceGUID(testUserService1Guid): true,
+	}
+	result, err := lokiDbClient.FilterExistingServiceGuids(ctx, testEnclaveId, requestedServiceGuids)
+	require.Nil(t, result)
+	require.Contains(t, err.Error(), "The logs database returns an error status when fetching the existing service GUIDs. Response was: ")
+}
+
 
 // ====================================================================================================
 //

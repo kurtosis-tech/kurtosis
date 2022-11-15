@@ -14,7 +14,7 @@ interface IEngineServiceService extends grpc.ServiceDefinition<grpc.UntypedServi
   stopEnclave: grpc.MethodDefinition<engine_service_pb.StopEnclaveArgs, google_protobuf_empty_pb.Empty>;
   destroyEnclave: grpc.MethodDefinition<engine_service_pb.DestroyEnclaveArgs, google_protobuf_empty_pb.Empty>;
   clean: grpc.MethodDefinition<engine_service_pb.CleanArgs, engine_service_pb.CleanResponse>;
-  getUserServiceLogs: grpc.MethodDefinition<engine_service_pb.GetUserServiceLogsArgs, engine_service_pb.GetUserServiceLogsResponse>;
+  getServiceLogs: grpc.MethodDefinition<engine_service_pb.GetServiceLogsArgs, engine_service_pb.GetServiceLogsResponse>;
 }
 
 export const EngineServiceService: IEngineServiceService;
@@ -26,7 +26,7 @@ export interface IEngineServiceServer extends grpc.UntypedServiceImplementation 
   stopEnclave: grpc.handleUnaryCall<engine_service_pb.StopEnclaveArgs, google_protobuf_empty_pb.Empty>;
   destroyEnclave: grpc.handleUnaryCall<engine_service_pb.DestroyEnclaveArgs, google_protobuf_empty_pb.Empty>;
   clean: grpc.handleUnaryCall<engine_service_pb.CleanArgs, engine_service_pb.CleanResponse>;
-  getUserServiceLogs: grpc.handleServerStreamingCall<engine_service_pb.GetUserServiceLogsArgs, engine_service_pb.GetUserServiceLogsResponse>;
+  getServiceLogs: grpc.handleServerStreamingCall<engine_service_pb.GetServiceLogsArgs, engine_service_pb.GetServiceLogsResponse>;
 }
 
 export class EngineServiceClient extends grpc.Client {
@@ -49,6 +49,6 @@ export class EngineServiceClient extends grpc.Client {
   clean(argument: engine_service_pb.CleanArgs, callback: grpc.requestCallback<engine_service_pb.CleanResponse>): grpc.ClientUnaryCall;
   clean(argument: engine_service_pb.CleanArgs, metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<engine_service_pb.CleanResponse>): grpc.ClientUnaryCall;
   clean(argument: engine_service_pb.CleanArgs, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<engine_service_pb.CleanResponse>): grpc.ClientUnaryCall;
-  getUserServiceLogs(argument: engine_service_pb.GetUserServiceLogsArgs, metadataOrOptions?: grpc.Metadata | grpc.CallOptions | null): grpc.ClientReadableStream<engine_service_pb.GetUserServiceLogsResponse>;
-  getUserServiceLogs(argument: engine_service_pb.GetUserServiceLogsArgs, metadata?: grpc.Metadata | null, options?: grpc.CallOptions | null): grpc.ClientReadableStream<engine_service_pb.GetUserServiceLogsResponse>;
+  getServiceLogs(argument: engine_service_pb.GetServiceLogsArgs, metadataOrOptions?: grpc.Metadata | grpc.CallOptions | null): grpc.ClientReadableStream<engine_service_pb.GetServiceLogsResponse>;
+  getServiceLogs(argument: engine_service_pb.GetServiceLogsArgs, metadata?: grpc.Metadata | null, options?: grpc.CallOptions | null): grpc.ClientReadableStream<engine_service_pb.GetServiceLogsResponse>;
 }
