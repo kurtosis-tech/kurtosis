@@ -56,10 +56,7 @@ func (instruction *WaitInstruction) GetPositionInOriginalScript() *kurtosis_inst
 }
 
 func (instruction *WaitInstruction) GetCanonicalInstruction() string {
-	return shared_helpers.CanonicalizeInstruction(WaitBuiltinName, starlark.StringDict{
-		serviceIdArgName: starlark.String(instruction.serviceId),
-		factNameArgName:  starlark.String(instruction.factName),
-	}, &instruction.position)
+	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(WaitBuiltinName, instruction.getKwargs(), &instruction.position)
 }
 
 func (instruction *WaitInstruction) Execute(ctx context.Context, _ *startosis_executor.ExecutionEnvironment) error {
@@ -71,7 +68,7 @@ func (instruction *WaitInstruction) Execute(ctx context.Context, _ *startosis_ex
 }
 
 func (instruction *WaitInstruction) String() string {
-	return instruction.GetCanonicalInstruction()
+	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(WaitBuiltinName, instruction.getKwargs(), &instruction.position)
 }
 
 func (instruction *WaitInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
@@ -101,4 +98,11 @@ func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starl
 	}
 
 	return serviceId, factName, nil
+}
+
+func (instruction *WaitInstruction) getKwargs() starlark.StringDict {
+	return starlark.StringDict{
+		serviceIdArgName: starlark.String(instruction.serviceId),
+		factNameArgName:  starlark.String(instruction.factName),
+	}
 }

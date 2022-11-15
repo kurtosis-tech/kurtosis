@@ -75,7 +75,7 @@ func (instruction *AddServiceInstruction) GetPositionInOriginalScript() *kurtosi
 }
 
 func (instruction *AddServiceInstruction) GetCanonicalInstruction() string {
-	return shared_helpers.CanonicalizeInstruction(AddServiceBuiltinName, instruction.starlarkKwargs, &instruction.position)
+	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(AddServiceBuiltinName, instruction.starlarkKwargs, &instruction.position)
 }
 
 func (instruction *AddServiceInstruction) Execute(ctx context.Context, environment *startosis_executor.ExecutionEnvironment) error {
@@ -112,7 +112,7 @@ func (instruction *AddServiceInstruction) Execute(ctx context.Context, environme
 }
 
 func (instruction *AddServiceInstruction) String() string {
-	return instruction.GetCanonicalInstruction()
+	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(AddServiceBuiltinName, instruction.starlarkKwargs, &instruction.position)
 }
 
 func (instruction *AddServiceInstruction) replaceIPAddress() error {

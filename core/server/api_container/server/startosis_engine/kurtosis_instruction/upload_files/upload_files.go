@@ -65,9 +65,7 @@ func (instruction *UploadFilesInstruction) GetPositionInOriginalScript() *kurtos
 }
 
 func (instruction *UploadFilesInstruction) GetCanonicalInstruction() string {
-	return shared_helpers.CanonicalizeInstruction(UploadFilesBuiltinName, starlark.StringDict{
-		srcPathArgName: starlark.String(instruction.srcPath),
-	}, &instruction.position)
+	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(UploadFilesBuiltinName, instruction.getKwargs(), &instruction.position)
 }
 
 func (instruction *UploadFilesInstruction) Execute(_ context.Context, environment *startosis_executor.ExecutionEnvironment) error {
@@ -85,7 +83,7 @@ func (instruction *UploadFilesInstruction) Execute(_ context.Context, environmen
 }
 
 func (instruction *UploadFilesInstruction) String() string {
-	return instruction.GetCanonicalInstruction()
+	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(UploadFilesBuiltinName, instruction.getKwargs(), &instruction.position)
 }
 
 func (instruction *UploadFilesInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
@@ -107,4 +105,10 @@ func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starl
 	}
 
 	return srcPath, nil
+}
+
+func (instruction *UploadFilesInstruction) getKwargs() starlark.StringDict {
+	return starlark.StringDict{
+		srcPathArgName: starlark.String(instruction.srcPath),
+	}
 }
