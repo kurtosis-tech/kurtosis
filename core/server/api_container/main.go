@@ -42,6 +42,8 @@ const (
 	grpcServerStopGracePeriod = 5 * time.Second
 
 	shouldFlushMetricsClientQueueOnEachEvent = false
+
+	logMethodAlongWithLogLine = true
 )
 
 type doNothingMetricsClientCallback struct{}
@@ -55,6 +57,8 @@ func main() {
 		ForceColors:   true,
 		FullTimestamp: true,
 	})
+
+	logrus.SetReportCaller(logMethodAlongWithLogLine)
 
 	err := runMain()
 	if err != nil {
