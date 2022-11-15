@@ -599,9 +599,6 @@ func (network *DefaultServiceNetwork) GetServiceIDs() map[service.ServiceID]bool
 }
 
 func (network *DefaultServiceNetwork) CopyFilesFromService(ctx context.Context, serviceId service.ServiceID, srcPath string) (enclave_data_directory.FilesArtifactUUID, error) {
-	network.mutex.Lock()
-	defer network.mutex.Unlock()
-
 	filesArtifactUuid, err := enclave_data_directory.NewFilesArtifactUUID()
 	if err != nil {
 		return "", stacktrace.Propagate(err, "There was an error in creating a files artifact uuid to copy the files to")
@@ -615,9 +612,6 @@ func (network *DefaultServiceNetwork) CopyFilesFromService(ctx context.Context, 
 }
 
 func (network *DefaultServiceNetwork) CopyFilesFromServiceToTargetArtifactUUID(ctx context.Context, serviceId service.ServiceID, srcPath string, filesArtifactUuid enclave_data_directory.FilesArtifactUUID) (enclave_data_directory.FilesArtifactUUID, error) {
-	network.mutex.Lock()
-	defer network.mutex.Unlock()
-
 	err := network.copyFilesFromServiceToTargetArtifactUUIDUnlocked(ctx, serviceId, srcPath, filesArtifactUuid)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "There was an error in copying files over to disk")
@@ -664,10 +658,6 @@ func (network *DefaultServiceNetwork) RenderTemplatesToTargetFilesArtifactUUID(t
 }
 
 func (network *DefaultServiceNetwork) UploadFilesArtifact(data []byte) (enclave_data_directory.FilesArtifactUUID, error) {
-	// calling mutex just in case, even though we don't change or read from the network, just get the file store
-	network.mutex.Lock()
-	defer network.mutex.Unlock()
-
 	filesArtifactUuid, err := enclave_data_directory.NewFilesArtifactUUID()
 	if err != nil {
 		return "", stacktrace.Propagate(err, "There was an error in creating a files artifact uuid to upload the files to")
@@ -682,10 +672,6 @@ func (network *DefaultServiceNetwork) UploadFilesArtifact(data []byte) (enclave_
 }
 
 func (network *DefaultServiceNetwork) UploadFilesArtifactToTargetArtifactUUID(data []byte, targetFilesArtifactUuid enclave_data_directory.FilesArtifactUUID) error {
-	// calling mutex just in case, even though we don't change or read from the network, just get the file store
-	network.mutex.Lock()
-	defer network.mutex.Unlock()
-
 	err := network.uploadFilesArtifactToTargetArtifactUUIDUnlocked(data, targetFilesArtifactUuid)
 	if err != nil {
 		return stacktrace.Propagate(err, "There was an error in uploading the files")
