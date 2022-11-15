@@ -64,7 +64,7 @@ func TestStartosis(t *testing.T) {
 	require.NoError(t, err, "Unexpected error executing startosis script")
 
 	expectedScriptOutput := `Adding service example-datastore-server-1.
-Uploaded [a-z0-9-]{36}
+Uploaded [a-f0-9-]{36}
 `
 
 	require.Empty(t, executionResult.InterpretationError, "Unexpected interpretation error. This test requires you to be online for the upload_file command to run")

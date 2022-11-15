@@ -751,12 +751,14 @@ exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"], e
 }
 
 func TestStartosisInterpreter_StoreFileFromService(t *testing.T) {
+	testArtifactUuid, err := enclave_data_directory.NewFilesArtifactUUID()
+	require.Nil(t, err)
 	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
 print("Storing file from service!")
-artifact_uuid=store_file_from_service(service_id="example-datastore-server", src_path="/foo/bar")
+artifact_uuid=store_file_from_service(service_id="example-datastore-server", src_path="/foo/bar", artifact_uuid="` + string(testArtifactUuid) + `")
 print(artifact_uuid)
 `
 
@@ -769,14 +771,15 @@ print(artifact_uuid)
 		*kurtosis_instruction.NewInstructionPosition(3, 38, starlarkFilenamePlaceholderAsNotUsed),
 		"example-datastore-server",
 		"/foo/bar",
+		testArtifactUuid,
 	)
 
 	require.Equal(t, instructions[0], storeInstruction)
 
 	expectedOutput := fmt.Sprintf(`Storing file from service!
-{{kurtosis:%v-3:38.artifact_uuid}}
-`, starlarkFilenamePlaceholderAsNotUsed)
-	require.Equal(t, expectedOutput, string(scriptOutput))
+%v
+`, testArtifactUuid)
+	require.Regexp(t, expectedOutput, string(scriptOutput))
 }
 
 func TestStartosisInterpreter_ReadFileFromGithub(t *testing.T) {
@@ -1103,11 +1106,13 @@ proto: (line 1:15): invalid value for string type: 3`)
 }
 
 func TestStartosisInterpreter_ThreeLevelNestedInstructionPositionTest(t *testing.T) {
+	testArtifactUuid, err := enclave_data_directory.NewFilesArtifactUUID()
+	require.Nil(t, err)
 	storeFileDefinitionPath := "github.com/kurtosis/store.star"
 	storeFileContent := `
 def store_for_me():
 	print("In the store files instruction")
-	artifact_uuid=store_file_from_service(service_id="example-datastore-server", src_path="/foo/bar")
+	artifact_uuid=store_file_from_service(service_id="example-datastore-server", src_path="/foo/bar", artifact_uuid = "` + string(testArtifactUuid) + `")
 	return artifact_uuid
 `
 
@@ -1121,7 +1126,7 @@ def call_store_for_me():
 
 	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
-	err := moduleContentProvider.AddFileContent(storeFileDefinitionPath, storeFileContent)
+	err = moduleContentProvider.AddFileContent(storeFileDefinitionPath, storeFileContent)
 	require.Nil(t, err)
 
 	err = moduleContentProvider.AddFileContent(moduleThatCallsStoreFile, moduleThatCallsStoreFileContent)
@@ -1143,14 +1148,15 @@ print(uuid)
 		*kurtosis_instruction.NewInstructionPosition(4, 39, storeFileDefinitionPath),
 		"example-datastore-server",
 		"/foo/bar",
+		testArtifactUuid,
 	)
 
 	require.Equal(t, instructions[0], storeInstruction)
 
 	expectedOutput := fmt.Sprintf(`In the module that calls store.star
 In the store files instruction
-{{kurtosis:%v-4:39.artifact_uuid}}
-`, storeFileDefinitionPath)
+%v
+`, testArtifactUuid)
 	require.Equal(t, expectedOutput, string(scriptOutput))
 }
 
@@ -1203,7 +1209,7 @@ func TestStartosisInterpreter_UploadGetsInterpretedCorrectly(t *testing.T) {
 
 	expectedUploadInstruction := upload_files.NewUploadFilesInstruction(
 		*kurtosis_instruction.NewInstructionPosition(1, 13, starlarkFilenamePlaceholderAsNotUsed),
-		testServiceNetwork, moduleContentProvider, filePath, filePathOnDisk, string(artifactUuid),
+		testServiceNetwork, moduleContentProvider, filePath, filePathOnDisk, artifactUuid,
 	)
 
 	require.Equal(t, expectedUploadInstruction, instructions[0])

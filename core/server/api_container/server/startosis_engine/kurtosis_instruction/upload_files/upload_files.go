@@ -54,14 +54,14 @@ func GenerateUploadFilesBuiltin(instructionsQueue *[]kurtosis_instruction.Kurtos
 	}
 }
 
-func NewUploadFilesInstruction(position kurtosis_instruction.InstructionPosition, serviceNetwork service_network.ServiceNetwork, provider startosis_modules.ModuleContentProvider, srcPath string, pathOnDisk string, artifactUuid string) *UploadFilesInstruction {
+func NewUploadFilesInstruction(position kurtosis_instruction.InstructionPosition, serviceNetwork service_network.ServiceNetwork, provider startosis_modules.ModuleContentProvider, srcPath string, pathOnDisk string, artifactUuid enclave_data_directory.FilesArtifactUUID) *UploadFilesInstruction {
 	return &UploadFilesInstruction{
 		position:       position,
 		serviceNetwork: serviceNetwork,
 		srcPath:        srcPath,
 		provider:       provider,
 		pathOnDisk:     pathOnDisk,
-		artifactUuid:   enclave_data_directory.FilesArtifactUUID(artifactUuid),
+		artifactUuid:   artifactUuid,
 	}
 }
 
@@ -96,14 +96,13 @@ func (instruction *UploadFilesInstruction) ValidateAndUpdateEnvironment(environm
 	return nil
 }
 
-func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (string, string, *startosis_errors.InterpretationError) {
+func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (string, enclave_data_directory.FilesArtifactUUID, *startosis_errors.InterpretationError) {
 
 	var srcPathArg starlark.String
 	placeHolderArtifactUuid, err := enclave_data_directory.NewFilesArtifactUUID()
 	if err != nil {
 		return "", "", startosis_errors.NewInterpretationError(err.Error())
 	}
-
 	var artifactUuidArg = starlark.String(placeHolderArtifactUuid)
 	if err := starlark.UnpackArgs(b.Name(), args, kwargs, srcPathArgName, &srcPathArg, artifactUuidArgName, &artifactUuidArg); err != nil {
 		return "", "", startosis_errors.NewInterpretationError(err.Error())

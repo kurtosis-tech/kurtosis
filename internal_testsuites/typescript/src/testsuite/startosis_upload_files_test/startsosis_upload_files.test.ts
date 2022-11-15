@@ -64,7 +64,7 @@ test("Test upload files startosis", async () => {
         }
         const executeStartosisScriptValue = executeStartosisScriptResult.value
         const expectedScriptRegexPattern = `Adding service example-datastore-server-1.
-Uploaded [a-z0-9-]{36}
+Uploaded [a-f0-9-]{36}
 `
         const expectedScriptRegex = new RegExp(expectedScriptRegexPattern)
 
