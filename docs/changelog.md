@@ -8,6 +8,9 @@
 - Add `wait` and `define` command in Startosis
 - Added ip address replacement in the JSON for `render_template` instruction
 
+### Changes
+- `kurtosis_instruction.String()` now returns a single line version of the instruction for more concise logging
+
 ### Fixes
 - Fixes a bug where we'd propagate a nil error
 - Adds validation for `service_id` in `store_files_from_service`
