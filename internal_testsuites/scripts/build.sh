@@ -5,10 +5,10 @@ set -euo pipefail   # Bash "strict mode"
 script_dirpath="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 internal_testsuites_root_dirpath="$(dirname "${script_dirpath}")"
 
-
 # ==================================================================================================
 #                                             Constants
 # ==================================================================================================
+STARTOSIS="startosis"
 
 # ==================================================================================================
 #                                       Arg Parsing & Validation
@@ -20,7 +20,7 @@ script_dirname="$(basename "${script_dirpath}")"
 
 for maybe_testsuite_rel_dirpath in $(find "${internal_testsuites_root_dirpath}" -type d -mindepth 1 -maxdepth 1 ); do
     maybe_testsuite_dirname="$(basename "${maybe_testsuite_rel_dirpath}")"
-    if [ "${maybe_testsuite_dirname}" == "${script_dirname}" ]; then
+    if [ "${maybe_testsuite_dirname}" == "${script_dirname}" ] || [ "${maybe_testsuite_dirname}" == "$STARTOSIS" ]; then
         continue
     fi
 
