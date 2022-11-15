@@ -1,5 +1,7 @@
 # TBD
 
+# 0.52.3
+
 ### Changes
 - Cleanup Startosis interpreter predeclared
 
