@@ -36,7 +36,7 @@ config = struct(
     ports = {
         DATASTORE_PORT_ID: struct(number = DATASTORE_PORT_NUMBER, protocol = DATASTORE_PORT_PROTOCOL)
     },
-	files_artifact_mount_dirpaths = {
+	files = {
 		uploaded_artifact_uuid: PATH_TO_MOUNT_UPLOADED_DIR
 	}
 )
@@ -63,12 +63,13 @@ test("Test upload files startosis", async () => {
             throw executeStartosisScriptResult.error
         }
         const executeStartosisScriptValue = executeStartosisScriptResult.value
-        const expectedScriptOutput = `Adding service example-datastore-server-1.
-Uploaded {{kurtosis:FILENAME_NOT_USED-13:38.artifact_uuid}}
+        const expectedScriptRegexPattern = `Adding service example-datastore-server-1.
+Uploaded [a-f0-9-]{36}
 `
+        const expectedScriptRegex = new RegExp(expectedScriptRegexPattern)
 
-        if (expectedScriptOutput !== executeStartosisScriptValue.getSerializedScriptOutput()) {
-            throw err(new Error(`Expected output to be '${expectedScriptOutput} got '${executeStartosisScriptValue.getSerializedScriptOutput()}'`))
+        if (!expectedScriptRegex.test(executeStartosisScriptValue.getSerializedScriptOutput())) {
+            throw err(new Error(`Expected output to be match '${expectedScriptRegexPattern} got '${executeStartosisScriptValue.getSerializedScriptOutput()}'`))
         }
 
         if (executeStartosisScriptValue.getInterpretationError() !== "") {

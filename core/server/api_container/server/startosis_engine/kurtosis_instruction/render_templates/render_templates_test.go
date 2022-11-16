@@ -3,6 +3,7 @@ package render_templates
 import (
 	"encoding/json"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
 	"testing"
@@ -24,9 +25,13 @@ func TestRenderTemplate_TestStringRepresentation(t *testing.T) {
 		*kurtosis_instruction.NewInstructionPosition(16, 33, "dummyFile"),
 	)
 	renderInstruction.starlarkKwargs[templateAndDataByDestinationRelFilepathArg] = templateAndDataDict
+	testArtifactUuid, err := enclave_data_directory.NewFilesArtifactUUID()
+	require.Nil(t, err)
+	renderInstruction.starlarkKwargs[nonOptionalArtifactUuidArgName] = starlark.String(testArtifactUuid)
 
 	expectedStr := `# from: dummyFile[16:33]
 render_templates(
+	artifact_uuid="` + string(testArtifactUuid) + `",
 	template_and_data_by_dest_rel_filepath={
 		"/foo/bar/test.txt": {
 			"template": "Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}.",
@@ -54,10 +59,14 @@ func TestRenderTemplate_TestMultipleTemplates(t *testing.T) {
 		*kurtosis_instruction.NewInstructionPosition(16, 33, "dummyFile"),
 	)
 	renderInstruction.starlarkKwargs[templateAndDataByDestinationRelFilepathArg] = templateAndDataByDestFilepath
+	testArtifactUuid, err := enclave_data_directory.NewFilesArtifactUUID()
+	require.Nil(t, err)
+	renderInstruction.starlarkKwargs[nonOptionalArtifactUuidArgName] = starlark.String(testArtifactUuid)
 
 	// keys of the map are sorted alphabetically by the canonicalizer
 	expectedStr := `# from: dummyFile[16:33]
 render_templates(
+	artifact_uuid="` + string(testArtifactUuid) + `",
 	template_and_data_by_dest_rel_filepath={
 		"/fizz/buzz/test.txt": {
 			"template": "Hello {{.LastName}}",

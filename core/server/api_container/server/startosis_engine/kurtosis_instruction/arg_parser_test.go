@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
+	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
@@ -432,16 +433,16 @@ func TestParseCommand_InvalidCommandsWithIntegers(t *testing.T) {
 	require.NotNil(t, err)
 }
 
-func TestParseFilePathPath_ValidValue(t *testing.T) {
-	input := starlark.String("/foo/bar")
-	output, err := ParseFilePath("file_path", input)
+func TestArtifactUuidPathPath_ValidValue(t *testing.T) {
+	input := starlark.String("abde-f23dd-1")
+	output, err := ParseArtifactUuid("artifact_uuid", input)
 	require.Nil(t, err)
-	require.Equal(t, "/foo/bar", output)
+	require.Equal(t, enclave_data_directory.FilesArtifactUUID("abde-f23dd-1"), output)
 }
 
-func TestParseFilePath_EmptyStringFails(t *testing.T) {
+func TestArtifactUuidPathPath_EmptyStringFails(t *testing.T) {
 	input := starlark.String("")
-	_, err := ParseFilePath("file_path", input)
+	_, err := ParseArtifactUuid("artifact_uuid", input)
 	require.NotNil(t, err)
 }
 
@@ -450,7 +451,7 @@ func TestParseFilesArtifactMountDirpaths_Success(t *testing.T) {
 	err := subDict.SetKey(starlark.String("key"), starlark.String("value"))
 	require.Nil(t, err)
 	dict := starlark.StringDict{}
-	dict["files_artifact_mount_dirpaths"] = subDict
+	dict["files"] = subDict
 	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
 	output, err := parseFilesArtifactMountDirpaths(input)
 	require.Nil(t, err)
@@ -470,11 +471,11 @@ func TestParseFilesArtifactMountDirpaths_FailureOnNonStringKey(t *testing.T) {
 	err := subDict.SetKey(starlark.MakeInt(42), starlark.String("value"))
 	require.Nil(t, err)
 	dict := starlark.StringDict{}
-	dict["files_artifact_mount_dirpaths"] = subDict
+	dict["files"] = subDict
 	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
 	output, err := parseFilesArtifactMountDirpaths(input)
 	require.NotNil(t, err)
-	require.Equal(t, "'files_artifact_mount_dirpaths.key:42' is expected to be a string. Got starlark.Int", err.Error())
+	require.Equal(t, "'files.key:42' is expected to be a string. Got starlark.Int", err.Error())
 	require.Equal(t, map[string]string(nil), output)
 }
 
@@ -483,11 +484,11 @@ func TestParseFilesArtifactMountDirpaths_FailureOnNonStringValue(t *testing.T) {
 	err := subDict.SetKey(starlark.String("key"), starlark.MakeInt(42))
 	require.Nil(t, err)
 	dict := starlark.StringDict{}
-	dict["files_artifact_mount_dirpaths"] = subDict
+	dict["files"] = subDict
 	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
 	output, err := parseFilesArtifactMountDirpaths(input)
 	require.NotNil(t, err)
-	require.Equal(t, "'files_artifact_mount_dirpaths[\"key\"]' is expected to be a string. Got starlark.Int", err.Error())
+	require.Equal(t, "'files[\"key\"]' is expected to be a string. Got starlark.Int", err.Error())
 	require.Equal(t, map[string]string(nil), output)
 }
 

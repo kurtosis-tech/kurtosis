@@ -8,7 +8,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_executor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -57,7 +56,7 @@ func (instruction *RemoveServiceInstruction) GetCanonicalInstruction() string {
 	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(RemoveServiceBuiltinName, instruction.getKwargs(), &instruction.position)
 }
 
-func (instruction *RemoveServiceInstruction) Execute(ctx context.Context, environment *startosis_executor.ExecutionEnvironment) error {
+func (instruction *RemoveServiceInstruction) Execute(ctx context.Context) error {
 	serviceGUID, err := instruction.serviceNetwork.RemoveService(ctx, instruction.serviceId)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed removing service with unexpected error")

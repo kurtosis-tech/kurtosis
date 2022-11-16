@@ -3,7 +3,27 @@
 - Added random enclave ID generation in `EnclaveManager.CreateEnclave()` when an empty enclave ID is provided
 - Added the `created enclave` spotlight message when a new enclave is created from the CLI (currently with the `enclave add`, `module exec` and `exec` commands)
 
+# 0.53.0
+
+### Features
+- Made `render_templates`, `upload_files`, `store_Files_from_service` accept `artifact_uuid` and
+return `artifact_uuid` during interpretation time
+- Moved `kurtosis startosis exec` to `kurtosis exec`
+
+### Breaking Features
+- Moved `kurtosis startosis exec` to `kurtosis exec`
+  - Users now need to use the new command to launch Starlark programs
+
+### Fixes
+- Fixed building kurtosis by adding a conditional to build.sh to ignore startosis folder under internal_testsuites
+
+# 0.52.5
+
+### Fixes
+- Renamed `files_artifact_mount_dirpaths` to just `files`
+
 # 0.52.4
+
 ### Features
 - Added the enclave's creation time info which can be obtained through the `enclave ls` and the `enclave inspect` commands
 
@@ -25,7 +45,6 @@
 - Added `not found service GUIDs information` in `KurtosisContext.GetServiceLogs` method
 - Added a warning message in `service logs` CLI command when the request service GUID is not found in the logs database
 - Added ip address replacement in the JSON for `render_template` instruction
-- Implemented a `ToTargetArtifactUuid` version of a few service_network functions
 
 ### Changes
 - `kurtosis_instruction.String()` now returns a single line version of the instruction for more concise logging
@@ -147,7 +166,7 @@
 # 0.51.1
 - Added an `exec` command to Startosis
 - Added a `store_files_from_service` command to Startosis
-- Added the ability to pass `files_artifact_mount_dirpaths` to the service config
+- Added the ability to pass `files` to the service config
 - Added a `read_file` command to Startosis
 - Added the ability to execute local modules in Startosis
 
