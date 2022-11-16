@@ -36,7 +36,7 @@ config = struct(
     ports = {
         DATASTORE_PORT_ID: struct(number = DATASTORE_PORT_NUMBER, protocol = DATASTORE_PORT_PROTOCOL)
     },
-	files_artifact_mount_dirpaths = {
+	files = {
 		uploaded_artifact_uuid: PATH_TO_MOUNT_UPLOADED_DIR
 	}
 )
