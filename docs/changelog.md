@@ -3,6 +3,11 @@
 ### Fixes
 - Fixed building kurtosis by adding a conditional to build.sh to ignore startosis folder under internal_testsuites
 
+# 0.52.5
+
+### Fixes
+- Renamed `files_artifact_mount_dirpaths` to just `files`
+
 # 0.52.4
 ### Features
 - Added the enclave's creation time info which can be obtained through the `enclave ls` and the `enclave inspect` commands
@@ -145,7 +150,7 @@
 # 0.51.1
 - Added an `exec` command to Startosis
 - Added a `store_files_from_service` command to Startosis
-- Added the ability to pass `files_artifact_mount_dirpaths` to the service config
+- Added the ability to pass `files` to the service config
 - Added a `read_file` command to Startosis
 - Added the ability to execute local modules in Startosis
 
