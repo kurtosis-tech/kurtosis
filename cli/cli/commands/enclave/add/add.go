@@ -8,6 +8,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/logrus_log_levels"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/user_support_constants"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -69,7 +71,11 @@ func init() {
 		enclaveIdArg,
 		"i",
 		autogenerateEnclaveIdKeyword,
-		"The enclave ID to give the new enclave (emptystring will autogenerate an enclave ID)",
+		fmt.Sprintf(
+			"The enclave ID to give the new enclave, which must match regex '%v' " +
+				"(emptystring will autogenerate an enclave ID)",
+			user_support_constants.AllowedEnclaveIdCharsRegexStr,
+		),
 	)
 }
 
@@ -99,11 +105,14 @@ func run(cmd *cobra.Command, args []string) error {
 		ApiContainerLogLevel:   kurtosisLogLevelStr,
 		IsPartitioningEnabled:  isPartitioningEnabled,
 	}
-	_, err = engineClient.CreateEnclave(ctx, createEnclaveArgs)
+	createdEnclaveResponse, err := engineClient.CreateEnclave(ctx, createEnclaveArgs)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating an enclave with ID '%v'", enclaveIdStr)
 	}
-	logrus.Infof("Successfully created new enclave '%v'", enclaveIdStr)
+
+	createdEnclaveMsg := fmt.Sprintf("Created enclave: %v", createdEnclaveResponse.EnclaveInfo.EnclaveId)
+	featuredMessagePrinter := output_printers.GetFeaturedMessagePrinter()
+	featuredMessagePrinter.Print(createdEnclaveMsg)
 
 	return nil
 }

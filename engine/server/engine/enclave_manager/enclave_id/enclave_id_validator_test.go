@@ -1,4 +1,4 @@
-package enclave_manager
+package enclave_id
 
 import (
 	"github.com/stretchr/testify/require"
@@ -6,17 +6,17 @@ import (
 )
 
 func TestValidateEnclaveId_success(t *testing.T) {
-	err := validateEnclaveId("valid.enclave.id-1234567")
+	err := ValidateEnclaveId("valid.enclave.id-1234567")
 	require.Nil(t, err)
 }
 
 func TestValidateEnclaveId_failureInvalidChar(t *testing.T) {
-	err := validateEnclaveId("valid.enclave.id-1234567&")
+	err := ValidateEnclaveId("valid.enclave.id-1234567&")
 	require.NotNil(t, err)
 }
 
 func TestValidateEnclaveId_failureTooLong(t *testing.T) {
-	err := validateEnclaveId("IAmWayTooLongToBeAnEnclaveIdBecauseIShouldBeLessThan64CharAndIAmNo")
+	err := ValidateEnclaveId("IAmWayTooLongToBeAnEnclaveIdBecauseIShouldBeLessThan64CharAndIAmNo")
 	require.NotNil(t, err)
 }
 

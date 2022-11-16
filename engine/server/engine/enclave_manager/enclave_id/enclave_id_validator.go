@@ -1,4 +1,4 @@
-package enclave_manager
+package enclave_id
 
 import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
@@ -6,12 +6,11 @@ import (
 	"regexp"
 )
 
-const (
-	enclaveIdMaxLength            = uint16(63) // If changing this, change also the regexp allowedEnclaveIdCharsRegexStr below
-	allowedEnclaveIdCharsRegexStr = `^[-A-Za-z0-9.]{1,63}$`
-)
+//WARNING!! if we modify this constant 'allowedEnclaveIdCharsRegexStr' we should upgrade the same one in
+//Kurtosis CLI which is inside this file 'cli/cli/user_support_constants/user_support_constants.go'
+const allowedEnclaveIdCharsRegexStr = `^[-A-Za-z0-9.]{1,63}$`
 
-func validateEnclaveId(enclaveId enclave.EnclaveID) error {
+func ValidateEnclaveId(enclaveId enclave.EnclaveID) error {
 	validEnclaveId, err := regexp.Match(allowedEnclaveIdCharsRegexStr, []byte(enclaveId))
 	if err != nil {
 		return stacktrace.Propagate(
@@ -29,4 +28,17 @@ func validateEnclaveId(enclaveId enclave.EnclaveID) error {
 		)
 	}
 	return nil
+}
+
+func IsEnclaveIdInUse(newEnclaveId enclave.EnclaveID, allEnclaves map[enclave.EnclaveID]*enclave.Enclave) bool {
+
+	isInUse := false
+
+	for enclaveId := range allEnclaves {
+		if newEnclaveId == enclaveId {
+			isInUse = true
+		}
+	}
+
+	return isInUse
 }
