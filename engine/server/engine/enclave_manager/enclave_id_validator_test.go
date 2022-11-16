@@ -8,6 +8,9 @@ import (
 func TestValidateEnclaveId_success(t *testing.T) {
 	err := validateEnclaveId("valid.enclave.id-1234567")
 	require.Nil(t, err)
+
+	err = validateEnclaveId("go-testsuite.startosis_remove_service_test.1668628850670949")
+	require.Nil(t, err)
 }
 
 func TestValidateEnclaveId_failureInvalidChar(t *testing.T) {

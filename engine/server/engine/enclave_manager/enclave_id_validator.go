@@ -8,7 +8,7 @@ import (
 
 //WARNING!! if we modify this constant 'allowedEnclaveIdCharsRegexStr' we should upgrade the same one in
 //Kurtosis CLI which is inside this file 'cli/cli/user_support_constants/user_support_constants.go'
-const allowedEnclaveIdCharsRegexStr = `^[-A-Za-z0-9.]{1,63}$`
+const allowedEnclaveIdCharsRegexStr = `^[-A-Za-z0-9._]{1,63}$`
 
 func validateEnclaveId(enclaveId enclave.EnclaveID) error {
 	validEnclaveId, err := regexp.Match(allowedEnclaveIdCharsRegexStr, []byte(enclaveId))
