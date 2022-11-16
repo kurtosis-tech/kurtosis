@@ -1,10 +1,15 @@
 # TBD
+
+# 0.52.4
 ### Features
 - Added the enclave's creation time info which can be obtained through the `enclave ls` and the `enclave inspect` commands
 - Added random enclave ID generation in `EnclaveManager.CreateEnclave()` when an empty enclave ID is provided
 
 ### Changes
 - Moved the enclave ID auto generation and validation from the CLI to the engine's server which will catch all the presents and future use cases
+
+### Fixes
+- Smoothened the experience `used_ports` -> `ports`, `container_image_name` -> `name`, `service_config` -> `config`
 
 # 0.52.3
 ### Changes
@@ -58,7 +63,7 @@
 # 0.51.11
 ### Features
 - Improve how kurtosis instructions are canonicalized with a universal canonicalizer. Each instruction is now printed on multiple lines with a comment pointing the to position in the source code.
-- Support `private_ip_address_placeholder` to be passed in `service_config` for `add_service` in Starlark
+- Support `private_ip_address_placeholder` to be passed in `config` for `add_service` in Starlark
 
 ### Changes
 - Updated how we generate the canonical string for Kurtosis `upload_files` instruction
