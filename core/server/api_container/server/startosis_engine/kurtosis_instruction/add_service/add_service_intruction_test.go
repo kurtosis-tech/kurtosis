@@ -58,7 +58,6 @@ add_service(
 			"/apps/main.py",
 			1234
 		],
-		image="kurtosistech/example-datastore-server",
 		entry_point_args=[
 			"127.0.0.0",
 			1234
@@ -71,6 +70,7 @@ add_service(
 			"file_1": "path/to/file/1",
 			"file_2": "path/to/file/2"
 		},
+		image="kurtosistech/example-datastore-server",
 		ports={
 			"grpc": struct(
 				number=1234,
