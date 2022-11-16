@@ -151,14 +151,18 @@ Returns:
 */
 func (manager DockerManager) CreateNetwork(context context.Context, name string, subnetMask string, gatewayIP net.IP, labels map[string]string) (id string, err error) {
 	ipamConfig := []network.IPAMConfig{{
-		Subnet:  subnetMask,
-		Gateway: gatewayIP.String(),
+		Subnet:     subnetMask,
+		IPRange:    "",
+		Gateway:    gatewayIP.String(),
+		AuxAddress: nil,
 	}}
 
 	resp, err := manager.dockerClient.NetworkCreate(context, name, types.NetworkCreate{
 		Driver: dockerNetworkDriver,
 		IPAM: &network.IPAM{
-			Config: ipamConfig,
+			Driver:  "",
+			Options: nil,
+			Config:  ipamConfig,
 		},
 		Labels: labels,
 	})

@@ -33,11 +33,47 @@ var kurtosisLogLevelStr string
 var enclaveIdStr string
 
 var EnclaveAddCmd = &cobra.Command{
-	Use:     command_str_consts.EnclaveAddCmdStr,
-	Short:   "Creates an enclave",
-	Long:    "Creates a new, empty Kurtosis enclave",
-	RunE:    run,
-	Aliases: []string{"new"}, // TODO remove this after 2022-08-16 when everyone should be using "add"
+	Use:                    command_str_consts.EnclaveAddCmdStr,
+	Aliases:                []string{"new"}, // TODO remove this after 2022-08-16 when everyone should be using "add"
+	SuggestFor:             nil,
+	Short:                  "Creates an enclave",
+	Long:                   "Creates a new, empty Kurtosis enclave",
+	Example:                "",
+	ValidArgs:              nil,
+	ValidArgsFunction:      nil,
+	Args:                   nil,
+	ArgAliases:             nil,
+	BashCompletionFunction: "",
+	Deprecated:             "",
+	Annotations:            nil,
+	Version:                "",
+	PersistentPreRun:       nil,
+	PersistentPreRunE:      nil,
+	PreRun:                 nil,
+	PreRunE:                nil,
+	Run:                    nil,
+	RunE:                   run,
+	PostRun:                nil,
+	PostRunE:               nil,
+	PersistentPostRun:      nil,
+	PersistentPostRunE:     nil,
+	FParseErrWhitelist: cobra.FParseErrWhitelist{
+		UnknownFlags: false,
+	},
+	CompletionOptions: cobra.CompletionOptions{
+		DisableDefaultCmd:   false,
+		DisableNoDescFlag:   false,
+		DisableDescriptions: false,
+	},
+	TraverseChildren:           false,
+	Hidden:                     false,
+	SilenceErrors:              false,
+	SilenceUsage:               false,
+	DisableFlagParsing:         false,
+	DisableAutoGenTag:          false,
+	DisableFlagsInUseLine:      false,
+	DisableSuggestions:         false,
+	SuggestionsMinimumDistance: 0,
 }
 
 func init() {

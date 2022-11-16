@@ -9,9 +9,47 @@ import (
 )
 
 var ClusterCmd = &cobra.Command{
-	Use:   command_str_consts.ClusterCmdStr,
-	Short: "Manage Kurtosis cluster setting",
-	RunE:  nil,
+	Use:                    command_str_consts.ClusterCmdStr,
+	Aliases:                nil,
+	SuggestFor:             nil,
+	Short:                  "Manage Kurtosis cluster setting",
+	Long:                   "",
+	Example:                "",
+	ValidArgs:              nil,
+	ValidArgsFunction:      nil,
+	Args:                   nil,
+	ArgAliases:             nil,
+	BashCompletionFunction: "",
+	Deprecated:             "",
+	Annotations:            nil,
+	Version:                "",
+	PersistentPreRun:       nil,
+	PersistentPreRunE:      nil,
+	PreRun:                 nil,
+	PreRunE:                nil,
+	Run:                    nil,
+	RunE:                   nil,
+	PostRun:                nil,
+	PostRunE:               nil,
+	PersistentPostRun:      nil,
+	PersistentPostRunE:     nil,
+	FParseErrWhitelist: cobra.FParseErrWhitelist{
+		UnknownFlags: false,
+	},
+	CompletionOptions: cobra.CompletionOptions{
+		DisableDefaultCmd:   false,
+		DisableNoDescFlag:   false,
+		DisableDescriptions: false,
+	},
+	TraverseChildren:           false,
+	Hidden:                     false,
+	SilenceErrors:              false,
+	SilenceUsage:               false,
+	DisableFlagParsing:         false,
+	DisableAutoGenTag:          false,
+	DisableFlagsInUseLine:      false,
+	DisableSuggestions:         false,
+	SuggestionsMinimumDistance: 0,
 }
 
 func init() {
@@ -19,4 +57,3 @@ func init() {
 	ClusterCmd.AddCommand(ls_cluster.LsCmd.MustGetCobraCommand())
 	ClusterCmd.AddCommand(get_cluster.GetCmd.MustGetCobraCommand())
 }
-
