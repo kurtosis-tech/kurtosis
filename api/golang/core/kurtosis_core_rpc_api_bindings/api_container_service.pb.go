@@ -270,7 +270,7 @@ type ServiceConfig struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	ContainerImageName string `protobuf:"bytes,1,opt,name=container_image_name,json=containerImageName,proto3" json:"container_image_name,omitempty"`
+	ContainerImageName string `protobuf:"bytes,1,opt,name=image,json=containerImageName,proto3" json:"image,omitempty"`
 	// Definition of the ports *inside* the enclave that the container should have exposed, specified as user_friendly_port_id -> port_definition
 	PrivatePorts map[string]*Port `protobuf:"bytes,2,rep,name=private_ports,json=privatePorts,proto3" json:"private_ports,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution

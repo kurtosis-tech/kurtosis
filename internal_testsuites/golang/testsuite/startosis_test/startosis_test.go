@@ -40,14 +40,14 @@ RENDER_RELATIVE_PATH = "` + renderedConfigRelativePath + `"
 
 print("Adding service " + DATASTORE_SERVICE_ID + ".")
 
-service_config = struct(
-    container_image_name = DATASTORE_IMAGE,
-    used_ports = {
+config = struct(
+    image = DATASTORE_IMAGE,
+    ports = {
         DATASTORE_PORT_ID: struct(number = DATASTORE_PORT_NUMBER, protocol = DATASTORE_PORT_PROTOCOL)
     }
 )
 
-add_service(service_id = DATASTORE_SERVICE_ID, service_config = service_config)
+add_service(service_id = DATASTORE_SERVICE_ID, config = config)
 print("Service " + DATASTORE_SERVICE_ID + " deployed successfully.")
 exec(service_id = DATASTORE_SERVICE_ID, command = ["touch", FILE_TO_BE_CREATED])
 
@@ -68,9 +68,9 @@ template_data_by_path = {
 
 rendered_artifact = render_templates(template_data_by_path)
 
-dependent_service_config = struct(
-    container_image_name = DATASTORE_IMAGE,
-    used_ports = {
+dependent_config = struct(
+    image = DATASTORE_IMAGE,
+    ports = {
         DATASTORE_PORT_ID: struct(number = DATASTORE_PORT_NUMBER, protocol = DATASTORE_PORT_PROTOCOL)
     },
 	files_artifact_mount_dirpaths = {
@@ -78,7 +78,7 @@ dependent_service_config = struct(
 		rendered_artifact : PATH_TO_MOUNT_RENDERED_CONFIG
 	}
 )
-add_service(service_id = SERVICE_DEPENDENT_ON_DATASTORE_SERVICE, service_config = dependent_service_config)
+add_service(service_id = SERVICE_DEPENDENT_ON_DATASTORE_SERVICE, config = dependent_config)
 print("Deployed " + SERVICE_DEPENDENT_ON_DATASTORE_SERVICE + " successfully")
 `
 )
