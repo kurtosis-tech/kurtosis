@@ -22,14 +22,13 @@ import {
     GetEnclavesResponse,
     GetEngineInfoResponse,
     StopEnclaveArgs,
-    GetUserServiceLogsArgs,
-    GetUserServiceLogsResponse,
+    GetServiceLogsArgs,
 } from "../../kurtosis_engine_rpc_api_bindings/engine_service_pb";
 import {
     newCleanArgs,
     newCreateEnclaveArgs,
     newDestroyEnclaveArgs,
-    newGetUserServiceLogsArgs,
+    newGetServiceLogsArgs,
     newStopEnclaveArgs
 } from "../constructor_calls";
 import {Readable} from "stream";
@@ -203,23 +202,28 @@ export class KurtosisContext {
         return ok(result)
     }
 
-    //The Readable object returned will be constantly streaming the user service logs an sending on this form Map<ServiceGuid, Array<string>>
-    //The map value contains the user service logs lines
+    //The Readable object returned will be constantly streaming the service logs information using the ServiceLogsStreamContent
+    //which contains two methods, the `getServiceLogsByServiceGuids` will return a map containing the service logs lines grouped by the service's GUID
+    //and the `getNotFoundServiceGuids` will return set of not found (in the logs database) service GUIDs
     //Example of how to read the stream:
     //
-    //serviceLogsReadable.on('data', (userServiceLogsByGuid: Map<ServiceGUID, Array<string>>) => {
+    //serviceLogsReadable.on('data', (serviceLogsStreamContent: serviceLogsStreamContent) => {
+    //      const serviceLogsByServiceGuids: Map<ServiceGUID, Array<ServiceLog>> = serviceLogsStreamContent.getServiceLogsByServiceGuids()
+    //
+    //      const notFoundServiceGuids: Set<ServiceGUID> = serviceLogsStreamContent.getNotFoundServiceGuids()
+    //
     //      //insert your code here
     //})
     //You can cancel receiving the stream from the service calling serviceLogsReadable.destroy()
-    public async getUserServiceLogs(enclaveID: EnclaveID, userServiceGUIDs: Set<ServiceGUID>, shouldFollowLogs: boolean): Promise<Result<Readable, Error>> {
-        const getUserServiceLogsArgs: GetUserServiceLogsArgs = newGetUserServiceLogsArgs(enclaveID, userServiceGUIDs, shouldFollowLogs);
+    public async getServiceLogs(enclaveID: EnclaveID, serviceGUIDs: Set<ServiceGUID>, shouldFollowLogs: boolean): Promise<Result<Readable, Error>> {
+        const getServiceLogsArgs: GetServiceLogsArgs = newGetServiceLogsArgs(enclaveID, serviceGUIDs, shouldFollowLogs);
 
-        const streamUserServiceLogsResult = await this.client.getUserServiceLogs(getUserServiceLogsArgs);
-        if(streamUserServiceLogsResult.isErr()){
-            return err(streamUserServiceLogsResult.error)
+        const streamServiceLogsResult = await this.client.getServiceLogs(getServiceLogsArgs);
+        if(streamServiceLogsResult.isErr()){
+            return err(streamServiceLogsResult.error)
         }
 
-        const serviceLogsReadable: Readable = streamUserServiceLogsResult.value;
+        const serviceLogsReadable: Readable = streamServiceLogsResult.value;
 
         return ok(serviceLogsReadable)
     }

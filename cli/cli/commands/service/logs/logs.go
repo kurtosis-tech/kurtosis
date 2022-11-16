@@ -165,7 +165,7 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred connecting to the local Kurtosis engine")
 	}
 
-	userServiceLogsByGuidChan, cancelStreamUserServiceLogsFunc, err := kurtosisCtx.GetUserServiceLogs(ctx, enclaveId, userServiceGuids, shouldFollowLogs)
+	serviceLogsStreamContentChan, cancelStreamUserServiceLogsFunc, err := kurtosisCtx.GetServiceLogs(ctx, enclaveId, userServiceGuids, shouldFollowLogs)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting user service logs from user services with GUIDs '%+v' in enclave '%v' and with follow logs value '%v'", userServiceGuids, enclaveId, shouldFollowLogs)
 	}
@@ -177,10 +177,18 @@ func run(
 
 	for {
 		select {
-		case userServiceLogsByGuid, isChanOpen := <-userServiceLogsByGuidChan:
+		case serviceLogsStreamContent, isChanOpen := <-serviceLogsStreamContentChan:
 			if !isChanOpen {
 				return nil
 			}
+
+			notFoundServiceGuids := serviceLogsStreamContent.GetNotFoundServiceGuids()
+
+			for notFoundServiceGuid := range notFoundServiceGuids {
+				logrus.Warnf("The Kurtosis centralized logs system does not contains any logs for the requested service GUID '%v'. This means that a service with that GUID either doesn't exist, or hasn't sent any logs. You can wait for further responses, or cancel the stream with Ctrl + C.", notFoundServiceGuid)
+			}
+
+			userServiceLogsByGuid := serviceLogsStreamContent.GetServiceLogsByServiceGuids()
 
 			userServiceLogs, found := userServiceLogsByGuid[serviceGuid]
 			if !found {

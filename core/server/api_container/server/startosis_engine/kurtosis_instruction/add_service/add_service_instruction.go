@@ -22,7 +22,7 @@ const (
 	AddServiceBuiltinName = "add_service"
 
 	serviceIdArgName     = "service_id"
-	serviceConfigArgName = "service_config"
+	serviceConfigArgName = "config"
 )
 
 func GenerateAddServiceBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, serviceNetwork service_network.ServiceNetwork) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
@@ -166,12 +166,12 @@ func (instruction *AddServiceInstruction) parseStartosisArgs(b *starlark.Builtin
 	// TODO(gb): Right now, we expect the Startosis script to be very "untyped" like:
 	//  ```startosis
 	//  my_service_port = struct(port = 1234, protocol = "TCP")
-	//  my_service_config = struct(private_port = port, other_arg = "blah")
+	//  my_config = struct(private_port = port, other_arg = "blah")
 	//  ```
 	//  But we can do better than this defining our own structures:
 	//  ```
 	//  my_service_port = port_spec(port = 1234, protocol = "TCP") # port() is a Startosis defined struct
-	//  my_service_config = service_config(port = port, other_arg = "blah")
+	//  my_config = config(port = port, other_arg = "blah")
 	//  ```
 	//  With custom types, we can parse the args directly to our own Go types and potentially isolate the checks
 

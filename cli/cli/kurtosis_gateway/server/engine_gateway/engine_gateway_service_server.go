@@ -204,11 +204,11 @@ func (service *EngineGatewayServiceServer) GetEngineInfo(ctx context.Context, em
 	return remoteEngineResponse, nil
 }
 
-func (service *EngineGatewayServiceServer) GetUserServiceLogs(
-	args *kurtosis_engine_rpc_api_bindings.GetUserServiceLogsArgs,
-	stream kurtosis_engine_rpc_api_bindings.EngineService_GetUserServiceLogsServer,
+func (service *EngineGatewayServiceServer) GetServiceLogs(
+	args *kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs,
+	stream kurtosis_engine_rpc_api_bindings.EngineService_GetServiceLogsServer,
 ) error {
-	return stacktrace.NewError("Cannot return user service logs because it is not supported by the Kurtosis engine's gateway")
+	return stacktrace.NewError("Cannot return service logs because it is not supported by the Kurtosis engine's gateway")
 }
 
 // Private functions for managing our running enclave api container gateways

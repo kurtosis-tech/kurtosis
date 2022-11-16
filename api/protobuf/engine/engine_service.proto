@@ -5,6 +5,7 @@ package engine_api;
 option go_package = "github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings";
 
 import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
 
 service EngineService {
   // Endpoint for getting information about the engine, which is also what we use to verify that the engine has become available
@@ -23,8 +24,8 @@ service EngineService {
   rpc DestroyEnclave(DestroyEnclaveArgs) returns (google.protobuf.Empty) {};
   // Gets rid of old enclaves
   rpc Clean(CleanArgs) returns (CleanResponse) {};
-  // Get user service logs
-  rpc GetUserServiceLogs(GetUserServiceLogsArgs) returns (stream GetUserServiceLogsResponse) {};
+  // Get service logs
+  rpc GetServiceLogs(GetServiceLogsArgs) returns (stream GetServiceLogsResponse) {};
 }
 
 // ==============================================================================================
@@ -124,6 +125,9 @@ message EnclaveInfo {
 
   // NOTE: Will not be present if the API container status is not "RUNNING"!!
   EnclaveAPIContainerHostMachineInfo api_container_host_machine_info = 5;
+
+  //The enclave's creation time
+  google.protobuf.Timestamp creation_time = 6;
 }
 
 message GetEnclavesResponse {
@@ -165,7 +169,7 @@ message CleanResponse {
 // ==============================================================================================
 //                                   Get User Service Logs
 // ==============================================================================================
-message GetUserServiceLogsArgs {
+message GetServiceLogsArgs {
   // The ID of the user service's Kurtosis Enclave
   string enclave_id = 1;
   // "Set" of service GUIDs in the enclave
@@ -175,9 +179,12 @@ message GetUserServiceLogsArgs {
 
 }
 
-message GetUserServiceLogsResponse {
-  // The user service log lines grouped by user service GUIDs and ordered in forward direction (oldest log line is the first element)
-  map<string, LogLine> user_service_logs_by_user_service_guid = 1;
+message GetServiceLogsResponse {
+  // The service log lines grouped by service GUIDs and ordered in forward direction (oldest log line is the first element)
+  map<string, LogLine> service_logs_by_service_guid = 1;
+  // A set of service GUIDs requested by the user that were not found in the logs database, could be related that users send
+  // a wrong GUID or a right GUID for a service that has not sent any logs so far
+  map<string, bool> not_found_service_guid_set = 2;
 }
 
 // TODO add timestamp as well, for when we do timestamp-handling on the client side

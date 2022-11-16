@@ -85,7 +85,7 @@ func getModulePortBindingString(module *module.Module) string {
 	)
 
 	// If the container is running, add host machine port binding information
-	publicIpAddr := module.GetMaybePublicPort()
+	publicIpAddr := module.GetMaybePublicIP()
 	publicPort := module.GetMaybePublicPort()
 	if publicIpAddr != nil && publicPort != nil {
 		line = line + fmt.Sprintf(" -> %v:%v", publicIpAddr, publicPort.GetNumber())

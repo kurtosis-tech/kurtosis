@@ -27,4 +27,12 @@ type LogsDatabaseClient interface {
 		cancelStreamFunc func(),
 		err error,
 	)
+	FilterExistingServiceGuids(
+		ctx context.Context,
+		enclaveId enclave.EnclaveID,
+		userServiceGuids map[service.ServiceGUID]bool,
+	) (
+		map[service.ServiceGUID]bool,
+		error,
+	)
 }
