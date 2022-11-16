@@ -17,19 +17,21 @@ import type {
     DestroyEnclaveArgs,
     GetEnclavesResponse,
     GetEngineInfoResponse,
-    GetUserServiceLogsArgs,
-    GetUserServiceLogsResponse,
+    GetServiceLogsArgs,
+    GetServiceLogsResponse,
     StopEnclaveArgs
 } from "../../kurtosis_engine_rpc_api_bindings/engine_service_pb";
 import type {ClientReadableStream, ServiceError} from "@grpc/grpc-js";
+import {ServiceLogsStreamContent} from "./service_logs_stream_content";
+import {ServiceLog} from "./service_log";
 
 const GRPC_STREAM_RESPONSE_DATA_EVENT_NAME = 'data'
 const GRPC_STREAM_RESPONSE_ERROR_EVENT_NAME = 'error'
 const GRPC_STREAM_RESPONSE_END_EVENT_NAME = 'end'
 
-const USER_SERVICE_LOGS_READABLE_ERROR_EVENT_NAME = 'error'
-const USER_SERVICE_LOGS_READABLE_END_EVENT_NAME = 'end'
-const USER_SERVICE_LOGS_READABLE_CLOSE_EVENT_NAME = 'close'
+const SERVICE_LOGS_READABLE_ERROR_EVENT_NAME = 'error'
+const SERVICE_LOGS_READABLE_END_EVENT_NAME = 'end'
+const SERVICE_LOGS_READABLE_CLOSE_EVENT_NAME = 'close'
 
 export class GrpcNodeEngineClient implements GenericEngineClient {
     private readonly client: EngineServiceClientNode
@@ -181,68 +183,85 @@ export class GrpcNodeEngineClient implements GenericEngineClient {
         return ok(getEnclavesResponseResult.value);
     }
 
-    public async getUserServiceLogs(getUserServiceLogsArgs: GetUserServiceLogsArgs): Promise<Result<Readable, Error>> {
+    public async getServiceLogs(getServiceLogsArgs: GetServiceLogsArgs): Promise<Result<Readable, Error>> {
 
-        const streamUserServiceLogsPromise: Promise<Result<ClientReadableStream<GetUserServiceLogsResponse>, Error>> = new Promise((resolve, _unusedReject) => {
-            const getUserServiceLogsStreamResponse: ClientReadableStream<GetUserServiceLogsResponse> = this.client.getUserServiceLogs(getUserServiceLogsArgs);
-            resolve(ok(getUserServiceLogsStreamResponse));
+        const streamServiceLogsPromise: Promise<Result<ClientReadableStream<GetServiceLogsResponse>, Error>> = new Promise((resolve, _unusedReject) => {
+            const getServiceLogsStreamResponse: ClientReadableStream<GetServiceLogsResponse> = this.client.getServiceLogs(getServiceLogsArgs);
+            resolve(ok(getServiceLogsStreamResponse));
         })
 
-        const streamUserServiceLogsResponseResult: Result<ClientReadableStream<GetUserServiceLogsResponse>, Error> = await streamUserServiceLogsPromise;
-        if (streamUserServiceLogsResponseResult.isErr()) {
-            return err(streamUserServiceLogsResponseResult.error);
+        const streamServiceLogsResponseResult: Result<ClientReadableStream<GetServiceLogsResponse>, Error> = await streamServiceLogsPromise;
+        if (streamServiceLogsResponseResult.isErr()) {
+            return err(streamServiceLogsResponseResult.error);
         }
 
-        const streamUserServiceLogsResponse: ClientReadableStream<GetUserServiceLogsResponse> = streamUserServiceLogsResponseResult.value;
+        const streamServiceLogsResponse: ClientReadableStream<GetServiceLogsResponse> = streamServiceLogsResponseResult.value;
 
-        const userServiceLogsByGuid: Map<ServiceGUID, Array<string>> = new Map<ServiceGUID, Array<string>>();
+        const serviceLogsByGuid: Map<ServiceGUID, Array<ServiceLog>> = new Map<ServiceGUID, Array<ServiceLog>>();
 
-        const userServiceLogsReadable: Readable = this.createNewUserServiceLogsReadable(streamUserServiceLogsResponse);
+        const serviceLogsReadable: Readable = this.createNewServiceLogsReadable(streamServiceLogsResponse);
 
-        streamUserServiceLogsResponse.on(GRPC_STREAM_RESPONSE_DATA_EVENT_NAME, function (getUserServiceLogsResponse: GetUserServiceLogsResponse) {
+        streamServiceLogsResponse.on(GRPC_STREAM_RESPONSE_DATA_EVENT_NAME, function (getServiceLogsResponse: GetServiceLogsResponse) {
 
-            const userServiceLogsByUserServiceGuidMap: jspb.Map<string, LogLine> | undefined = getUserServiceLogsResponse.getUserServiceLogsByUserServiceGuidMap();
+            const serviceLogsByServiceGuidMap: jspb.Map<string, LogLine> | undefined = getServiceLogsResponse.getServiceLogsByServiceGuidMap();
 
-            if (userServiceLogsByUserServiceGuidMap !== undefined) {
-                userServiceLogsByUserServiceGuidMap.forEach(
-                    (userServiceLogLine, userServiceGuidStr) => {
-                        userServiceLogsByGuid.set(userServiceGuidStr, userServiceLogLine.getLineList());
+            if (serviceLogsByServiceGuidMap !== undefined) {
+                serviceLogsByServiceGuidMap.forEach(
+                    (ServiceLogLine, serviceGuidStr) => {
+                        const serviceLogs: Array<ServiceLog> = Array<ServiceLog>();
+
+                        ServiceLogLine.getLineList().forEach((logLine:string) => {
+                            const serviceLog: ServiceLog = new ServiceLog(logLine)
+                            serviceLogs.push(serviceLog)
+                        })
+
+                        serviceLogsByGuid.set(serviceGuidStr, serviceLogs);
                     }
                 )
             }
 
-            userServiceLogsReadable.push(userServiceLogsByGuid);
+            const notFoundServiceGuidsMap: jspb.Map<string, boolean> = getServiceLogsResponse.getNotFoundServiceGuidSetMap()
+
+            const notFoundServiceGuids: Set<ServiceGUID> = new Set<ServiceGUID>()
+
+            notFoundServiceGuidsMap.forEach((isGuidInMap: boolean, serviceGuidStr: string) => {
+                notFoundServiceGuids.add(serviceGuidStr)
+            })
+
+            const serviceLogsStreamContent: ServiceLogsStreamContent = new ServiceLogsStreamContent(serviceLogsByGuid, notFoundServiceGuids)
+
+            serviceLogsReadable.push(serviceLogsStreamContent);
         })
 
-        streamUserServiceLogsResponse.on(GRPC_STREAM_RESPONSE_ERROR_EVENT_NAME, (streamLogsErr) => {
-            if (!userServiceLogsReadable.destroyed) {
-                //Propagate the GRPC error to the user service logs readable
-                const grpcStreamErr = new Error(`An error has been returned from the user service logs GRPC stream. Error:\n ${streamLogsErr}`)
-                userServiceLogsReadable.emit(USER_SERVICE_LOGS_READABLE_ERROR_EVENT_NAME, grpcStreamErr);
+        streamServiceLogsResponse.on(GRPC_STREAM_RESPONSE_ERROR_EVENT_NAME, (streamLogsErr) => {
+            if (!serviceLogsReadable.destroyed) {
+                //Propagate the GRPC error to the service logs readable
+                const grpcStreamErr = new Error(`An error has been returned from the service logs GRPC stream. Error:\n ${streamLogsErr}`)
+                serviceLogsReadable.emit(SERVICE_LOGS_READABLE_ERROR_EVENT_NAME, grpcStreamErr);
             }
         })
 
-        streamUserServiceLogsResponse.on(GRPC_STREAM_RESPONSE_END_EVENT_NAME, function () {
+        streamServiceLogsResponse.on(GRPC_STREAM_RESPONSE_END_EVENT_NAME, function () {
             //Emit streams 'end' event when the GRPC stream has end
-            if (!userServiceLogsReadable.destroyed) {
-                userServiceLogsReadable.emit(USER_SERVICE_LOGS_READABLE_END_EVENT_NAME);
+            if (!serviceLogsReadable.destroyed) {
+                serviceLogsReadable.emit(SERVICE_LOGS_READABLE_END_EVENT_NAME);
             }
         })
 
-        return ok(userServiceLogsReadable);
+        return ok(serviceLogsReadable);
     }
 
-    private createNewUserServiceLogsReadable(streamUserServiceLogsResponse: ClientReadableStream<GetUserServiceLogsResponse>): Readable {
-        const userServiceLogsReadable: Readable = new Readable({
+    private createNewServiceLogsReadable(streamServiceLogsResponse: ClientReadableStream<GetServiceLogsResponse>): Readable {
+        const serviceLogsReadable: Readable = new Readable({
             objectMode: true, //setting object mode is to allow pass objects in the readable.push() method
             read() {
             } //this is mandatory to implement, we implement empty as it's describe in the implementation examples here: https://nodesource.com/blog/understanding-streams-in-nodejs/
         })
-        userServiceLogsReadable.on(USER_SERVICE_LOGS_READABLE_CLOSE_EVENT_NAME, function () {
+        serviceLogsReadable.on(SERVICE_LOGS_READABLE_CLOSE_EVENT_NAME, function () {
             //Cancel the GRPC stream when when users close the ServiceLogsReadable
-            streamUserServiceLogsResponse.cancel();
+            streamServiceLogsResponse.cancel();
         })
-        return userServiceLogsReadable;
+        return serviceLogsReadable;
     }
 }
 

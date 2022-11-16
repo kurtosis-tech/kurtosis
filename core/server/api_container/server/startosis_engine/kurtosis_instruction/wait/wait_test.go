@@ -24,12 +24,15 @@ func TestWaitInstruction_GetCanonicalizedInstruction(t *testing.T) {
 		testServiceId,
 		testFactName,
 	)
-	expectedFormatStr := `# from: dummyFile[1:1]
+	expectedMultiLineFormatStr := `# from: dummyFile[1:1]
 wait(
 	fact_name="%v",
-	service_id="%v",
+	service_id="%v"
 )`
-	expectedStr := fmt.Sprintf(expectedFormatStr, testFactName, testServiceId)
-	require.Equal(t, expectedStr, execInstruction.GetCanonicalInstruction())
-	require.Equal(t, expectedStr, execInstruction.String())
+	expectedMultiLineStr := fmt.Sprintf(expectedMultiLineFormatStr, testFactName, testServiceId)
+	require.Equal(t, expectedMultiLineStr, execInstruction.GetCanonicalInstruction())
+
+	expectedSingleLineFormatStr := `wait(fact_name="%v", service_id="%v")`
+	expectedSingleLineStr := fmt.Sprintf(expectedSingleLineFormatStr, testFactName, testServiceId)
+	require.Equal(t, expectedSingleLineStr, execInstruction.String())
 }

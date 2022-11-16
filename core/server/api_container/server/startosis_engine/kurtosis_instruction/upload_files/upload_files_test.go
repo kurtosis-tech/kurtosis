@@ -12,10 +12,11 @@ func TestUploadFiles_StringRepresentation(t *testing.T) {
 		*kurtosis_instruction.NewInstructionPosition(1, 13, "dummyFile"),
 		nil, nil, filePath, "dummyPathOnDisk",
 	)
-	expectedStrRep := `# from: dummyFile[1:13]
+	expectedMultiLineStrRep := `# from: dummyFile[1:13]
 upload_files(
-	src_path="` + filePath + `",
+	src_path="` + filePath + `"
 )`
-	require.Equal(t, expectedStrRep, uploadInstruction.String())
-	require.Equal(t, expectedStrRep, uploadInstruction.GetCanonicalInstruction())
+	require.Equal(t, expectedMultiLineStrRep, uploadInstruction.GetCanonicalInstruction())
+	expectedSingleLineStrRep := `upload_files(src_path="` + filePath + `")`
+	require.Equal(t, expectedSingleLineStrRep, uploadInstruction.String())
 }

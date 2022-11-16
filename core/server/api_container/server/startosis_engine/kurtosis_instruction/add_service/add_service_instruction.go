@@ -25,8 +25,9 @@ import (
 const (
 	AddServiceBuiltinName = "add_service"
 
-	serviceIdArgName     = "service_id"
-	serviceConfigArgName = "service_config"
+	serviceIdArgName = "service_id"
+
+	serviceConfigArgName = "config"
 
 	factNameArgName      = "fact_name"
 	factNameSubgroupName = "fact_name"
@@ -53,6 +54,7 @@ var (
 )
 
 func GenerateAddServiceBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, serviceNetwork service_network.ServiceNetwork, factsEngine *facts_engine.FactsEngine) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+
 	// TODO: Force returning an InterpretationError rather than a normal error
 	return func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 		addServiceInstruction := newEmptyAddServiceInstruction(serviceNetwork, factsEngine, *shared_helpers.GetCallerPositionFromThread(thread))
@@ -104,7 +106,7 @@ func (instruction *AddServiceInstruction) GetPositionInOriginalScript() *kurtosi
 }
 
 func (instruction *AddServiceInstruction) GetCanonicalInstruction() string {
-	return shared_helpers.CanonicalizeInstruction(AddServiceBuiltinName, instruction.starlarkKwargs, &instruction.position)
+	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(AddServiceBuiltinName, instruction.starlarkKwargs, &instruction.position)
 }
 
 func (instruction *AddServiceInstruction) Execute(ctx context.Context, environment *startosis_executor.ExecutionEnvironment) error {
@@ -141,14 +143,14 @@ func (instruction *AddServiceInstruction) Execute(ctx context.Context, environme
 }
 
 func (instruction *AddServiceInstruction) String() string {
-	return instruction.GetCanonicalInstruction()
+	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(AddServiceBuiltinName, instruction.starlarkKwargs, &instruction.position)
 }
 
 func (instruction *AddServiceInstruction) replaceIPAddress() error {
 	serviceIdStr := string(instruction.serviceId)
 	entryPointArgs := instruction.serviceConfig.EntrypointArgs
 	for index, entryPointArg := range entryPointArgs {
-		entryPointArgWithIPAddressReplaced, err := replaceIPAddressInString(entryPointArg, instruction.serviceNetwork, serviceIdStr)
+		entryPointArgWithIPAddressReplaced, err := shared_helpers.ReplaceIPAddressInString(entryPointArg, instruction.serviceNetwork, serviceIdStr)
 		if err != nil {
 			return stacktrace.Propagate(err, "Error occurred while replacing IP address in entry point args for '%v'", entryPointArg)
 		}
@@ -161,7 +163,7 @@ func (instruction *AddServiceInstruction) replaceIPAddress() error {
 
 	cmdArgs := instruction.serviceConfig.CmdArgs
 	for index, cmdArg := range cmdArgs {
-		cmdArgWithIPAddressReplaced, err := replaceIPAddressInString(cmdArg, instruction.serviceNetwork, serviceIdStr)
+		cmdArgWithIPAddressReplaced, err := shared_helpers.ReplaceIPAddressInString(cmdArg, instruction.serviceNetwork, serviceIdStr)
 		if err != nil {
 			return stacktrace.Propagate(err, "Error occurred while replacing IP address in command args for '%v'", cmdArg)
 		}
@@ -174,7 +176,7 @@ func (instruction *AddServiceInstruction) replaceIPAddress() error {
 
 	envVars := instruction.serviceConfig.EnvVars
 	for envVarName, envVarValue := range envVars {
-		envVarValueWithIPAddressReplaced, err := replaceIPAddressInString(envVarValue, instruction.serviceNetwork, serviceIdStr)
+		envVarValueWithIPAddressReplaced, err := shared_helpers.ReplaceIPAddressInString(envVarValue, instruction.serviceNetwork, serviceIdStr)
 		if err != nil {
 			return stacktrace.Propagate(err, "Error occurred while replacing IP address in env vars for '%v'", envVarValue)
 		}
@@ -249,7 +251,7 @@ func (instruction *AddServiceInstruction) makeAddServiceInterpretationReturnValu
 			return nil, startosis_errors.NewInterpretationError("An error occurred while creating a port spec for values (number: '%v', port: '%v') the add instruction return value", portNumber, portProtocol)
 		}
 	}
-	ipAddress := starlark.String(fmt.Sprintf(ipAddressReplacementPlaceholderFormat, instruction.serviceId))
+	ipAddress := starlark.String(fmt.Sprintf(shared_helpers.IpAddressReplacementPlaceholderFormat, instruction.serviceId))
 	returnValue := kurtosis_types.NewService(ipAddress, portSpecsDict)
 	return returnValue, nil
 }
@@ -267,12 +269,12 @@ func (instruction *AddServiceInstruction) parseStartosisArgs(b *starlark.Builtin
 	// TODO(gb): Right now, we expect the Startosis script to be very "untyped" like:
 	//  ```startosis
 	//  my_service_port = struct(port = 1234, protocol = "TCP")
-	//  my_service_config = struct(private_port = port, other_arg = "blah")
+	//  my_config = struct(private_port = port, other_arg = "blah")
 	//  ```
 	//  But we can do better than this defining our own structures:
 	//  ```
 	//  my_service_port = port_spec(port = 1234, protocol = "TCP") # port() is a Startosis defined struct
-	//  my_service_config = service_config(port = port, other_arg = "blah")
+	//  my_config = config(port = port, other_arg = "blah")
 	//  ```
 	//  With custom types, we can parse the args directly to our own Go types and potentially isolate the checks
 

@@ -29,7 +29,7 @@ const (
 	// Blank tells the engine server to use the default
 	defaultApiContainerVersionTag = ""
 
-	userServiceLogsByServiceGuidChanBufferSize = 5
+	serviceLogsStreamContentChanBufferSize = 5
 
 	grpcStreamCancelContextErrorMessage = "rpc error: code = Canceled desc = context canceled"
 )
@@ -178,13 +178,13 @@ func (kurtosisCtx *KurtosisContext) Clean(ctx context.Context, shouldCleanAll bo
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis/engine-lib-documentation
-func (kurtosisCtx *KurtosisContext) GetUserServiceLogs(
+func (kurtosisCtx *KurtosisContext) GetServiceLogs(
 	ctx context.Context,
 	enclaveID enclaves.EnclaveID,
 	userServiceGuids map[services.ServiceGUID]bool,
 	shouldFollowLogs bool,
 ) (
-	chan map[services.ServiceGUID][]*ServiceLog,
+	chan *serviceLogsStreamContent,
 	func(),
 	error,
 ) {
@@ -199,11 +199,11 @@ func (kurtosisCtx *KurtosisContext) GetUserServiceLogs(
 
 	//this is a buffer channel for the case that users could be consuming this channel in a process and
 	//this process could take much time until the next channel pull, so we could be filling the buffer during that time to not let the servers thread idled
-	userServiceLogsByServiceGuidChan := make(chan map[services.ServiceGUID][]*ServiceLog, userServiceLogsByServiceGuidChanBufferSize)
+	serviceLogsStreamContentChan := make(chan *serviceLogsStreamContent, serviceLogsStreamContentChanBufferSize)
 
 	getUserServiceLogsArgs := newGetUserServiceLogsArgs(enclaveID, userServiceGuids, shouldFollowLogs)
 
-	stream, err := kurtosisCtx.client.GetUserServiceLogs(ctxWithCancel, getUserServiceLogsArgs)
+	stream, err := kurtosisCtx.client.GetServiceLogs(ctxWithCancel, getUserServiceLogsArgs)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred streaming user service logs using args '%+v'", getUserServiceLogsArgs)
 	}
@@ -212,13 +212,13 @@ func (kurtosisCtx *KurtosisContext) GetUserServiceLogs(
 		cancelCtxFunc,
 		enclaveID,
 		userServiceGuids,
-		userServiceLogsByServiceGuidChan,
+		serviceLogsStreamContentChan,
 		stream,
 	)
 
 	//This is an async operation, so we don't want to cancel the context if the connection is established and data is flowing
 	shouldCancelCtx = false
-	return userServiceLogsByServiceGuidChan, cancelCtxFunc, nil
+	return serviceLogsStreamContentChan, cancelCtxFunc, nil
 }
 
 // ====================================================================================================
@@ -229,20 +229,20 @@ func (kurtosisCtx *KurtosisContext) GetUserServiceLogs(
 func runReceiveStreamLogsFromTheServerRoutine(
 	cancelCtxFunc context.CancelFunc,
 	enclaveID enclaves.EnclaveID,
-	requestedUserServiceGuids map[services.ServiceGUID]bool,
-	userServiceLogsByServiceGuidChan chan map[services.ServiceGUID][]*ServiceLog,
-	stream kurtosis_engine_rpc_api_bindings.EngineService_GetUserServiceLogsClient,
+	requestedServiceGuids map[services.ServiceGUID]bool,
+	serviceLogsStreamContentChan chan *serviceLogsStreamContent,
+	stream kurtosis_engine_rpc_api_bindings.EngineService_GetServiceLogsClient,
 ) {
 
 	//Closing all the open resources at the end
 	defer func() {
 		cancelCtxFunc()
-		close(userServiceLogsByServiceGuidChan)
+		close(serviceLogsStreamContentChan)
 	}()
 
 	for {
 		//this is a blocking call, and the only way to unblock it from our side is to cancel the context that it was created with
-		getUserServiceLogsResponse, errReceivingStream := stream.Recv()
+		getServiceLogsResponse, errReceivingStream := stream.Recv()
 		//stream ends case
 		if errReceivingStream == io.EOF {
 			logrus.Debug("Received an 'EOF' error from the user service logs GRPC stream")
@@ -256,13 +256,13 @@ func runReceiveStreamLogsFromTheServerRoutine(
 				return
 			}
 			//error during stream case
-			logrus.Errorf("An error occurred receiving user service logs stream for user services '%+v' in enclave '%v'. Error:\n%v", requestedUserServiceGuids, enclaveID, errReceivingStream)
+			logrus.Errorf("An error occurred receiving user service logs stream for user services '%+v' in enclave '%v'. Error:\n%v", requestedServiceGuids, enclaveID, errReceivingStream)
 			return
 		}
 
-		userServiceLogsByServiceGuidMap := newUserServiceLogsByServiceGuidMapFromGetUserServiceLogsResponse(requestedUserServiceGuids, getUserServiceLogsResponse)
+		serviceLogsStreamContentObj := newServiceLogsStreamContentFromGrpcStreamResponse(requestedServiceGuids, getServiceLogsResponse)
 
-		userServiceLogsByServiceGuidChan <- userServiceLogsByServiceGuidMap
+		serviceLogsStreamContentChan <- serviceLogsStreamContentObj
 	}
 }
 
@@ -368,7 +368,7 @@ func newGetUserServiceLogsArgs(
 	enclaveID enclaves.EnclaveID,
 	userServiceGUIDs map[services.ServiceGUID]bool,
 	shouldFollowLogs bool,
-) *kurtosis_engine_rpc_api_bindings.GetUserServiceLogsArgs {
+) *kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs {
 	userServiceGUIDStrSet := make(map[string]bool, len(userServiceGUIDs))
 
 	for userServiceGUID, isUserServiceInSet := range userServiceGUIDs {
@@ -376,7 +376,7 @@ func newGetUserServiceLogsArgs(
 		userServiceGUIDStrSet[userServiceGUIDStr] = isUserServiceInSet
 	}
 
-	getUserServiceLogsArgs := &kurtosis_engine_rpc_api_bindings.GetUserServiceLogsArgs{
+	getUserServiceLogsArgs := &kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs{
 		EnclaveId:      string(enclaveID),
 		ServiceGuidSet: userServiceGUIDStrSet,
 		FollowLogs: shouldFollowLogs,
@@ -385,26 +385,37 @@ func newGetUserServiceLogsArgs(
 	return getUserServiceLogsArgs
 }
 
-func newUserServiceLogsByServiceGuidMapFromGetUserServiceLogsResponse(
-	requestedUserServiceGuids map[services.ServiceGUID]bool,
-	getUserServiceLogResponse *kurtosis_engine_rpc_api_bindings.GetUserServiceLogsResponse,
-) map[services.ServiceGUID][]*ServiceLog {
-	userServiceLogsByServiceGuidMap := map[services.ServiceGUID][]*ServiceLog{}
+func newServiceLogsStreamContentFromGrpcStreamResponse(
+	requestedServiceGuids map[services.ServiceGUID]bool,
+	getServiceLogResponse *kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse,
+) *serviceLogsStreamContent {
+	serviceLogsByServiceGuidMap := map[services.ServiceGUID][]*ServiceLog{}
 
-	receivedUserServiceLogsByUserServiceGuid := getUserServiceLogResponse.UserServiceLogsByUserServiceGuid
+	receivedServiceLogsByServiceGuid := getServiceLogResponse.ServiceLogsByServiceGuid
 
-	for userServiceGuid := range requestedUserServiceGuids {
-		userServiceGuidStr := string(userServiceGuid)
+	for serviceGuid := range requestedServiceGuids {
+		serviceGuidStr := string(serviceGuid)
 		serviceLogs := []*ServiceLog{}
-		userServiceLogLine, found := receivedUserServiceLogsByUserServiceGuid[userServiceGuidStr]
+		serviceLogLine, found := receivedServiceLogsByServiceGuid[serviceGuidStr]
 		if found {
-			for _, logLineContent := range userServiceLogLine.Line {
+			for _, logLineContent := range serviceLogLine.Line {
 				serviceLog := newServiceLog(logLineContent)
 				serviceLogs = append(serviceLogs, serviceLog)
 			}
 		}
-		userServiceLogsByServiceGuidMap[userServiceGuid] = serviceLogs
+		serviceLogsByServiceGuidMap[serviceGuid] = serviceLogs
 	}
 
-	return userServiceLogsByServiceGuidMap
+	notFoundServiceGuidSet := getServiceLogResponse.NotFoundServiceGuidSet
+
+	notFoundServiceGuids := make(map[services.ServiceGUID]bool, len(notFoundServiceGuidSet))
+
+	for notFoundServiceGuidStr := range notFoundServiceGuidSet {
+		notFoundServiceGuid := services.ServiceGUID(notFoundServiceGuidStr)
+		notFoundServiceGuids[notFoundServiceGuid] = true
+	}
+
+	newServiceLogsStreamContentObj := newServiceLogsStreamContent(serviceLogsByServiceGuidMap, notFoundServiceGuids)
+
+	return newServiceLogsStreamContentObj
 }

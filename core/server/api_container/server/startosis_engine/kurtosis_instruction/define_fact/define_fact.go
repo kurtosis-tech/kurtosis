@@ -62,10 +62,7 @@ func (instruction *DefineFactInstruction) GetPositionInOriginalScript() *kurtosi
 }
 
 func (instruction *DefineFactInstruction) GetCanonicalInstruction() string {
-	return shared_helpers.CanonicalizeInstruction(DefineFactBuiltinName, starlark.StringDict{
-		serviceIdArgName: starlark.String(instruction.serviceId),
-		factNameArgName:  starlark.String(instruction.factName),
-	}, &instruction.position)
+	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(DefineFactBuiltinName, instruction.getKwargs(), &instruction.position)
 }
 
 func (instruction *DefineFactInstruction) Execute(ctx context.Context, _ *startosis_executor.ExecutionEnvironment) error {
@@ -77,7 +74,7 @@ func (instruction *DefineFactInstruction) Execute(ctx context.Context, _ *starto
 }
 
 func (instruction *DefineFactInstruction) String() string {
-	return instruction.GetCanonicalInstruction()
+	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(DefineFactBuiltinName, instruction.getKwargs(), &instruction.position)
 }
 
 func (instruction *DefineFactInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
@@ -114,4 +111,11 @@ func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starl
 	}
 
 	return serviceId, factName, binding_constructors.NewHttpRequestFactRecipeWithDefaultRefresh(string(serviceId), factName, factRecipe), nil
+}
+
+func (instruction *DefineFactInstruction) getKwargs() starlark.StringDict {
+	return starlark.StringDict{
+		serviceIdArgName: starlark.String(instruction.serviceId),
+		factNameArgName:  starlark.String(instruction.factName),
+	}
 }

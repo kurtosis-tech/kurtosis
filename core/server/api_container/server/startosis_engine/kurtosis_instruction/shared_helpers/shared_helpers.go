@@ -1,6 +1,8 @@
 package shared_helpers
 
 import (
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_executor"
 	"github.com/kurtosis-tech/stacktrace"
@@ -16,7 +18,20 @@ const (
 	singleMatch      = 1
 
 	callerPosition = 1
+
+	serviceIdSubgroupName = "service_id"
+	allSubgroupName       = "all"
+	kurtosisNamespace     = "kurtosis"
+	// The placeholder format & regex should align
+	ipAddressReplacementRegex             = "(?P<" + allSubgroupName + ">\\{\\{" + kurtosisNamespace + ":(?P<" + serviceIdSubgroupName + ">" + service.ServiceIdRegexp + ")\\.ip_address\\}\\})"
+	IpAddressReplacementPlaceholderFormat = "{{" + kurtosisNamespace + ":%v.ip_address}}"
+
+	subExpNotFound = -1
 )
+
+// The compiled regular expression to do IP address replacements
+// Treat this as a constant
+var compiledRegex = regexp.MustCompile(ipAddressReplacementRegex)
 
 // GetCallerPositionFromThread gets you the position (line, col, filename) from where this function is called
 // We pick the first position on the stack based on this https://github.com/google/starlark-go/blob/eaacdf22efa54ae03ea2ec60e248be80d0cadda0/starlark/eval.go#L136
@@ -49,6 +64,30 @@ func ReplaceArtifactUuidMagicStringWithValue(originalString string, serviceIdFor
 			return "", stacktrace.NewError("Couldn't find '%v' in the execution environment which is required by service '%v'", originalString, serviceIdForLogging)
 		}
 		replacedString = strings.Replace(replacedString, match, artifactUuid, singleMatch)
+	}
+	return replacedString, nil
+}
+
+func ReplaceIPAddressInString(originalString string, network service_network.ServiceNetwork, argNameForLogigng string) (string, error) {
+	matches := compiledRegex.FindAllStringSubmatch(originalString, unlimitedMatches)
+	replacedString := originalString
+	for _, match := range matches {
+		serviceIdMatchIndex := compiledRegex.SubexpIndex(serviceIdSubgroupName)
+		if serviceIdMatchIndex == subExpNotFound {
+			return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", serviceIdSubgroupName, compiledRegex.String())
+		}
+		serviceId := service.ServiceID(match[serviceIdMatchIndex])
+		ipAddress, found := network.GetIPAddressForService(serviceId)
+		if !found {
+			return "", stacktrace.NewError("'%v' depends on the IP address of '%v' but we don't have any registrations for it", argNameForLogigng, serviceId)
+		}
+		ipAddressStr := ipAddress.String()
+		allMatchIndex := compiledRegex.SubexpIndex(allSubgroupName)
+		if allMatchIndex == subExpNotFound {
+			return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", serviceIdSubgroupName, compiledRegex.String())
+		}
+		allMatch := match[allMatchIndex]
+		replacedString = strings.Replace(replacedString, allMatch, ipAddressStr, singleMatch)
 	}
 	return replacedString, nil
 }

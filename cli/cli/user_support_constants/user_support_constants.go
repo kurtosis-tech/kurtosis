@@ -13,8 +13,7 @@ const (
 	SupportEmail     = "support@" + Domain
 	DiscordUrl       = "https://discord.gg/6Jjp9c89z9"
 	GithubIssuesUrl  = "https://github.com/kurtosis-tech/kurtosis-testsuite-api-lib/issues"
-	NewUserSignupUrl = "https://" + Domain + "/sign-up"
-	CLISetupDocsUrl = DocumentationUrl + "/running-in-ci.html"
+	CLISetupDocsUrl  = DocumentationUrl + "/running-in-ci.html"
 )
 
 // List of URLs whose validity will be verified in a test
@@ -22,6 +21,5 @@ var urlsToValidateInTest = []string{
 	DocumentationUrl,
 	DiscordUrl,
 	GithubIssuesUrl,
-	NewUserSignupUrl,
 	CLISetupDocsUrl,
 }

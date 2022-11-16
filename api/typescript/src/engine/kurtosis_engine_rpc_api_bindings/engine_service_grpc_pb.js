@@ -4,6 +4,7 @@
 var grpc = require('@grpc/grpc-js');
 var engine_service_pb = require('./engine_service_pb.js');
 var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb.js');
+var google_protobuf_timestamp_pb = require('google-protobuf/google/protobuf/timestamp_pb.js');
 
 function serialize_engine_api_CleanArgs(arg) {
   if (!(arg instanceof engine_service_pb.CleanArgs)) {
@@ -82,26 +83,26 @@ function deserialize_engine_api_GetEngineInfoResponse(buffer_arg) {
   return engine_service_pb.GetEngineInfoResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
-function serialize_engine_api_GetUserServiceLogsArgs(arg) {
-  if (!(arg instanceof engine_service_pb.GetUserServiceLogsArgs)) {
-    throw new Error('Expected argument of type engine_api.GetUserServiceLogsArgs');
+function serialize_engine_api_GetServiceLogsArgs(arg) {
+  if (!(arg instanceof engine_service_pb.GetServiceLogsArgs)) {
+    throw new Error('Expected argument of type engine_api.GetServiceLogsArgs');
   }
   return Buffer.from(arg.serializeBinary());
 }
 
-function deserialize_engine_api_GetUserServiceLogsArgs(buffer_arg) {
-  return engine_service_pb.GetUserServiceLogsArgs.deserializeBinary(new Uint8Array(buffer_arg));
+function deserialize_engine_api_GetServiceLogsArgs(buffer_arg) {
+  return engine_service_pb.GetServiceLogsArgs.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
-function serialize_engine_api_GetUserServiceLogsResponse(arg) {
-  if (!(arg instanceof engine_service_pb.GetUserServiceLogsResponse)) {
-    throw new Error('Expected argument of type engine_api.GetUserServiceLogsResponse');
+function serialize_engine_api_GetServiceLogsResponse(arg) {
+  if (!(arg instanceof engine_service_pb.GetServiceLogsResponse)) {
+    throw new Error('Expected argument of type engine_api.GetServiceLogsResponse');
   }
   return Buffer.from(arg.serializeBinary());
 }
 
-function deserialize_engine_api_GetUserServiceLogsResponse(buffer_arg) {
-  return engine_service_pb.GetUserServiceLogsResponse.deserializeBinary(new Uint8Array(buffer_arg));
+function deserialize_engine_api_GetServiceLogsResponse(buffer_arg) {
+  return engine_service_pb.GetServiceLogsResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
 function serialize_engine_api_StopEnclaveArgs(arg) {
@@ -203,17 +204,17 @@ clean: {
     responseSerialize: serialize_engine_api_CleanResponse,
     responseDeserialize: deserialize_engine_api_CleanResponse,
   },
-  // Get user service logs
-getUserServiceLogs: {
-    path: '/engine_api.EngineService/GetUserServiceLogs',
+  // Get service logs
+getServiceLogs: {
+    path: '/engine_api.EngineService/GetServiceLogs',
     requestStream: false,
     responseStream: true,
-    requestType: engine_service_pb.GetUserServiceLogsArgs,
-    responseType: engine_service_pb.GetUserServiceLogsResponse,
-    requestSerialize: serialize_engine_api_GetUserServiceLogsArgs,
-    requestDeserialize: deserialize_engine_api_GetUserServiceLogsArgs,
-    responseSerialize: serialize_engine_api_GetUserServiceLogsResponse,
-    responseDeserialize: deserialize_engine_api_GetUserServiceLogsResponse,
+    requestType: engine_service_pb.GetServiceLogsArgs,
+    responseType: engine_service_pb.GetServiceLogsResponse,
+    requestSerialize: serialize_engine_api_GetServiceLogsArgs,
+    requestDeserialize: deserialize_engine_api_GetServiceLogsArgs,
+    responseSerialize: serialize_engine_api_GetServiceLogsResponse,
+    responseDeserialize: deserialize_engine_api_GetServiceLogsResponse,
   },
 };
 

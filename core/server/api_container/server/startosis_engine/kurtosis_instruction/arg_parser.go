@@ -18,12 +18,12 @@ import (
 
 const (
 	serviceIdArgName     = "service_id"
-	serviceConfigArgName = "service_config"
+	serviceConfigArgName = "config"
 	defineFactArgName    = "define_fact"
 
-	containerImageNameKey          = "container_image_name"
+	containerImageNameKey          = "image"
 	factNameArgName                = "fact_name"
-	usedPortsKey                   = "used_ports"
+	usedPortsKey                   = "ports"
 	entryPointArgsKey              = "entry_point_args"
 	cmdArgsKey                     = "cmd_args"
 	envVarArgsKey                  = "env_vars"
@@ -263,7 +263,8 @@ func parseServiceConfigContainerImageName(serviceConfig *starlarkstruct.Struct) 
 func parseServiceConfigPrivatePorts(serviceConfig *starlarkstruct.Struct) (map[string]*kurtosis_core_rpc_api_bindings.Port, *startosis_errors.InterpretationError) {
 	privatePortsRawArg, err := serviceConfig.Attr(usedPortsKey)
 	if err != nil {
-		return nil, startosis_errors.NewInterpretationError("Missing `%s` as part of the service config", usedPortsKey)
+		// not all services need to create ports, this being empty is okay
+		return map[string]*kurtosis_core_rpc_api_bindings.Port{}, nil
 	}
 	privatePortsArg, ok := privatePortsRawArg.(*starlark.Dict)
 	if !ok {

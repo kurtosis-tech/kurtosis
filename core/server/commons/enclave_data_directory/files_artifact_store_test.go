@@ -35,6 +35,43 @@ func TestFileStore_StoreFileSavesFile(t *testing.T) {
 	require.Equal(t, []byte(testContent), file)
 }
 
+func TestFileStore_StoreFileToArtifactUUIDSimpleCase(t *testing.T) {
+	fileStore := getTestFileStore(t)
+	testContent := "Long Live Kurtosis!"
+	reader := strings.NewReader(testContent)
+	targetArtifactUuid, err := NewFilesArtifactUUID()
+	require.Equal(t, 36, len(targetArtifactUuid)) //UUID is 128 bits but in string it is hex represented chars so 32 chars
+	require.Nil(t, err)
+	err = fileStore.StoreFileToArtifactUUID(reader, targetArtifactUuid)
+	require.Nil(t, err)
+
+	//Test that it saved where it said it would.
+	expectedFilename := strings.Join(
+		[]string{string(targetArtifactUuid), artifactExtension},
+		".",
+	)
+	expectedFilepath := filepath.Join(fileStore.fileCache.absoluteDirpath, expectedFilename)
+	_, dirErr := os.Stat(expectedFilepath)
+	require.Nil(t, dirErr)
+	file, readErr := ioutil.ReadFile(expectedFilepath)
+	require.Nil(t, readErr)
+	require.Equal(t, []byte(testContent), file)
+}
+
+func TestFileStore_StoringToExistingUUIDFails(t *testing.T) {
+	fileStore := getTestFileStore(t)
+	testContent := "Long Live Kurtosis!"
+	reader := strings.NewReader(testContent)
+	filesArtifactUuid, err := fileStore.StoreFile(reader)
+	require.Nil(t, err)
+	require.Equal(t, 36, len(filesArtifactUuid)) //UUID is 128 bits but in string it is hex represented chars so 32 chars
+
+	anotherTestContent := "This one should fail"
+	anotherReader := strings.NewReader(anotherTestContent)
+	err = fileStore.StoreFileToArtifactUUID(anotherReader, filesArtifactUuid)
+	require.NotNil(t, err)
+}
+
 func TestFileStore_GetFilepathByUUIDProperFilepath(t *testing.T) {
 	fileStore := getTestFileStore(t)
 	testContent := "Long Live Kurtosis!"
@@ -52,7 +89,7 @@ func TestFileStore_GetFilepathByUUIDProperFilepath(t *testing.T) {
 	require.Equal(t, []byte(testContent), file)
 }
 
-func TestFileStore_StoreFilesUniquely(t *testing.T){
+func TestFileStore_StoreFilesUniquely(t *testing.T) {
 	fileStore := getTestFileStore(t)
 	testContent := "Long Live Kurtosis!"
 	otherTestContent := "Long Live Kurtosis, But Different!"
@@ -102,7 +139,7 @@ func TestFileStore_RemoveFileRemovesFileFromDisk(t *testing.T) {
 
 func TestFileStore_RemoveFileFailsForNonExistentUuid(t *testing.T) {
 	fileStore := getTestFileStore(t)
-	nonExistentUuid, err := newFilesArtifactUUID()
+	nonExistentUuid, err := NewFilesArtifactUUID()
 	require.Nil(t, err)
 
 	err = fileStore.RemoveFile(nonExistentUuid)

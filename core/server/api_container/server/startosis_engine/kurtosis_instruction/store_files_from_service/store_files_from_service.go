@@ -56,10 +56,7 @@ func (instruction *StoreFilesFromServiceInstruction) GetPositionInOriginalScript
 }
 
 func (instruction *StoreFilesFromServiceInstruction) GetCanonicalInstruction() string {
-	return shared_helpers.CanonicalizeInstruction(StoreFileFromServiceBuiltinName, starlark.StringDict{
-		serviceIdArgName: starlark.String(instruction.serviceId),
-		srcPathArgName:   starlark.String(instruction.srcPath),
-	}, &instruction.position)
+	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(StoreFileFromServiceBuiltinName, instruction.getKwargs(), &instruction.position)
 }
 
 func (instruction *StoreFilesFromServiceInstruction) Execute(ctx context.Context, environment *startosis_executor.ExecutionEnvironment) error {
@@ -72,12 +69,13 @@ func (instruction *StoreFilesFromServiceInstruction) Execute(ctx context.Context
 }
 
 func (instruction *StoreFilesFromServiceInstruction) String() string {
-	return instruction.GetCanonicalInstruction()
+	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(StoreFileFromServiceBuiltinName, instruction.getKwargs(), &instruction.position)
 }
 
 func (instruction *StoreFilesFromServiceInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
-	// this doesn't do anything but can't return an error as the validator runs this regardless
-	// this is a no-op
+	if !environment.DoesServiceIdExist(instruction.serviceId) {
+		return stacktrace.NewError("There was an error validating exec with service ID '%v' that does not exist for instruction '%v'", instruction.serviceId, instruction.position.String())
+	}
 	return nil
 }
 
@@ -100,4 +98,11 @@ func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starl
 	}
 
 	return serviceId, srcPath, nil
+}
+
+func (instruction *StoreFilesFromServiceInstruction) getKwargs() starlark.StringDict {
+	return starlark.StringDict{
+		serviceIdArgName: starlark.String(instruction.serviceId),
+		srcPathArgName:   starlark.String(instruction.srcPath),
+	}
 }

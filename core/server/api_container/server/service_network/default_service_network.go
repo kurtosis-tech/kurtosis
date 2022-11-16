@@ -62,8 +62,7 @@ var apiContainerPortProtoToPortSpecPortProto = map[kurtosis_core_rpc_api_binding
 }
 
 type storeFilesArtifactResult struct {
-	filesArtifactUuid enclave_data_directory.FilesArtifactUUID
-	err               error
+	err error
 }
 
 /*
@@ -601,48 +600,24 @@ func (network *DefaultServiceNetwork) GetServiceIDs() map[service.ServiceID]bool
 }
 
 func (network *DefaultServiceNetwork) CopyFilesFromService(ctx context.Context, serviceId service.ServiceID, srcPath string) (enclave_data_directory.FilesArtifactUUID, error) {
-	serviceObj, found := network.registeredServiceInfo[serviceId]
-	if !found {
-		return "", stacktrace.NewError("Cannot copy files from service '%v' because it does not exist in the network", serviceId)
-	}
-	serviceGuid := serviceObj.GetGUID()
-
-	store, err := network.enclaveDataDir.GetFilesArtifactStore()
+	filesArtifactUuid, err := enclave_data_directory.NewFilesArtifactUUID()
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred getting the files artifact store")
+		return "", stacktrace.Propagate(err, "There was an error in creating a files artifact uuid to copy the files to")
 	}
 
-	pipeReader, pipeWriter := io.Pipe()
-	defer pipeReader.Close()
-	defer pipeWriter.Close()
-
-	storeFilesArtifactResultChan := make(chan storeFilesArtifactResult)
-	go func() {
-		defer pipeReader.Close()
-
-		//And finally pass it the .tgz file to the artifact file store
-		filesArtifactUuId, storeFileErr := store.StoreFile(pipeReader)
-		storeFilesArtifactResultChan <- storeFilesArtifactResult{
-			filesArtifactUuid: filesArtifactUuId,
-			err:               storeFileErr,
-		}
-	}()
-
-	if err := network.gzipAndPushTarredFileBytesToOutput(ctx, pipeWriter, serviceGuid, srcPath); err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred gzip'ing and pushing tar'd file bytes to the pipe")
+	err = network.copyFilesFromServiceToTargetArtifactUUIDUnlocked(ctx, serviceId, srcPath, filesArtifactUuid)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "There was an error in copying files over to disk")
 	}
+	return filesArtifactUuid, nil
+}
 
-	storeFileResult := <-storeFilesArtifactResultChan
-	if storeFileResult.err != nil {
-		return "", stacktrace.Propagate(
-			err,
-			"An error occurred storing files from path '%v' on service '%v' in in the files artifact store",
-			srcPath,
-			serviceGuid,
-		)
+func (network *DefaultServiceNetwork) CopyFilesFromServiceToTargetArtifactUUID(ctx context.Context, serviceId service.ServiceID, srcPath string, filesArtifactUuid enclave_data_directory.FilesArtifactUUID) (enclave_data_directory.FilesArtifactUUID, error) {
+	err := network.copyFilesFromServiceToTargetArtifactUUIDUnlocked(ctx, serviceId, srcPath, filesArtifactUuid)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "There was an error in copying files over to disk")
 	}
-
-	return storeFileResult.filesArtifactUuid, nil
+	return filesArtifactUuid, nil
 }
 
 func (network *DefaultServiceNetwork) GetIPAddressForService(serviceID service.ServiceID) (net.IP, bool) {
@@ -660,76 +635,50 @@ func (network *DefaultServiceNetwork) RenderTemplates(templatesAndDataByDestinat
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 
-	tempDirForRenderedTemplates, err := os.MkdirTemp("", tempDirForRenderedTemplatesPrefix)
+	filesArtifactUuid, err := enclave_data_directory.NewFilesArtifactUUID()
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred while creating a temp dir for rendered templates '%v'", tempDirForRenderedTemplates)
+		return "", stacktrace.Propagate(err, "There was an error in creating a files artifact uuid to render the templates to")
 	}
-	defer os.RemoveAll(tempDirForRenderedTemplates)
-
-	for destinationRelFilepath, templateAndData := range templatesAndDataByDestinationRelFilepath {
-		templateAsAString := templateAndData.Template
-		templateDataAsJson := templateAndData.DataAsJson
-
-		templateDataJsonAsBytes := []byte(templateDataAsJson)
-		templateDataJsonReader := bytes.NewReader(templateDataJsonAsBytes)
-
-		// We don't use standard json.Unmarshal as that converts large integers to floats
-		// Using this custom decoder we get the json.Number representation which is closer to other json implementations
-		// This talks about the issue further https://github.com/square/go-jose/issues/351#issuecomment-847193900
-		decoder := json.NewDecoder(templateDataJsonReader)
-		decoder.UseNumber()
-
-		var templateData interface{}
-		if err = decoder.Decode(&templateData); err != nil {
-			return "", stacktrace.Propagate(err, "An error occurred while decoding the template data json '%v' for file '%v'", templateDataAsJson, destinationRelFilepath)
-		}
-
-		destinationFilepath := path.Join(tempDirForRenderedTemplates, destinationRelFilepath)
-		if err = renderTemplateToFile(templateAsAString, templateData, destinationFilepath); err != nil {
-			return "", stacktrace.Propagate(err, "There was an error in rendering template for file '%v'", destinationRelFilepath)
-		}
-	}
-
-	compressedFile, err := shared_utils.CompressPath(tempDirForRenderedTemplates, ensureCompressedFileIsLesserThanGRPCLimit)
+	err = network.renderTemplatesToTargetArtifactUUIDUnlocked(templatesAndDataByDestinationRelFilepath, filesArtifactUuid)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "There was an error compressing dir '%v'", tempDirForRenderedTemplates)
+		return "", stacktrace.Propagate(err, "There was an error in rendering templates to disk")
 	}
+	return filesArtifactUuid, nil
+}
 
-	store, err := network.enclaveDataDir.GetFilesArtifactStore()
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred while getting files artifact store")
-	}
-	filesArtifactUuid, err := store.StoreFile(bytes.NewReader(compressedFile))
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred while storing the file '%v' in the files artifact store", compressedFile)
-	}
-	shouldDeleteFilesArtifact := true
-	defer func() {
-		if shouldDeleteFilesArtifact {
-			if err = store.RemoveFile(filesArtifactUuid); err != nil {
-				logrus.Errorf("We tried to clean up the files artifact '%v' we had stored but failed:\n%v", filesArtifactUuid, err)
-			}
-		}
-	}()
+func (network *DefaultServiceNetwork) RenderTemplatesToTargetFilesArtifactUUID(templatesAndDataByDestinationRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, filesArtifactUuid enclave_data_directory.FilesArtifactUUID) (enclave_data_directory.FilesArtifactUUID, error) {
+	// calling mutex just in case, even though we don't change or read from the network, just get the file store
+	network.mutex.Lock()
+	defer network.mutex.Unlock()
 
-	shouldDeleteFilesArtifact = false
+	err := network.renderTemplatesToTargetArtifactUUIDUnlocked(templatesAndDataByDestinationRelFilepath, filesArtifactUuid)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "There was an error in rendering templates to disk")
+	}
 	return filesArtifactUuid, nil
 }
 
 func (network *DefaultServiceNetwork) UploadFilesArtifact(data []byte) (enclave_data_directory.FilesArtifactUUID, error) {
-	reader := bytes.NewReader(data)
-
-	filesArtifactStore, err := network.enclaveDataDir.GetFilesArtifactStore()
+	filesArtifactUuid, err := enclave_data_directory.NewFilesArtifactUUID()
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred while getting files artifact store")
+		return "", stacktrace.Propagate(err, "There was an error in creating a files artifact uuid to upload the files to")
 	}
 
-	filesArtifactUuid, err := filesArtifactStore.StoreFile(reader)
+	err = network.uploadFilesArtifactToTargetArtifactUUIDUnlocked(data, filesArtifactUuid)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred while trying to store files.")
+		return "", stacktrace.Propagate(err, "There was an error in uploading the files")
 	}
 
 	return filesArtifactUuid, nil
+}
+
+func (network *DefaultServiceNetwork) UploadFilesArtifactToTargetArtifactUUID(data []byte, targetFilesArtifactUuid enclave_data_directory.FilesArtifactUUID) error {
+	err := network.uploadFilesArtifactToTargetArtifactUUIDUnlocked(data, targetFilesArtifactUuid)
+	if err != nil {
+		return stacktrace.Propagate(err, "There was an error in uploading the files")
+	}
+
+	return nil
 }
 
 // ====================================================================================================
@@ -895,6 +844,52 @@ func (network *DefaultServiceNetwork) startServices(
 	return successfulServices, failedServicesPool, nil
 }
 
+// This method is not thread safe. Only call this from a method where there is a mutex lock on the network.
+func (network *DefaultServiceNetwork) copyFilesFromServiceToTargetArtifactUUIDUnlocked(ctx context.Context, serviceId service.ServiceID, srcPath string, filesArtifactUuId enclave_data_directory.FilesArtifactUUID) error {
+	serviceObj, found := network.registeredServiceInfo[serviceId]
+	if !found {
+		return stacktrace.NewError("Cannot copy files from service '%v' because it does not exist in the network", serviceId)
+	}
+	serviceGuid := serviceObj.GetGUID()
+
+	store, err := network.enclaveDataDir.GetFilesArtifactStore()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the files artifact store")
+	}
+
+	pipeReader, pipeWriter := io.Pipe()
+	defer pipeReader.Close()
+	defer pipeWriter.Close()
+
+	storeFilesArtifactResultChan := make(chan storeFilesArtifactResult)
+	go func() {
+		defer pipeReader.Close()
+
+		//And finally pass it the .tgz file to the artifact file store
+		storeFileErr := store.StoreFileToArtifactUUID(pipeReader, filesArtifactUuId)
+		storeFilesArtifactResultChan <- storeFilesArtifactResult{
+			err: storeFileErr,
+		}
+	}()
+
+	if err := network.gzipAndPushTarredFileBytesToOutput(ctx, pipeWriter, serviceGuid, srcPath); err != nil {
+		return stacktrace.Propagate(err, "An error occurred gzip'ing and pushing tar'd file bytes to the pipe")
+	}
+
+	storeFileResult := <-storeFilesArtifactResultChan
+	if storeFileResult.err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred storing files from path '%v' on service '%v' in in the files artifact store",
+			srcPath,
+			serviceGuid,
+		)
+	}
+
+	return nil
+
+}
+
 func (network *DefaultServiceNetwork) gzipAndPushTarredFileBytesToOutput(
 	ctx context.Context,
 	output io.WriteCloser,
@@ -969,6 +964,81 @@ func (network *DefaultServiceNetwork) createSidecarAndAddToMap(ctx context.Conte
 
 	shouldRemoveSidecarFromMap = false
 	shouldRemoveSidecarFromManager = false
+	return nil
+}
+
+// This method is not thread safe. Only call this from a method where there is a mutex lock on the network.
+func (network *DefaultServiceNetwork) renderTemplatesToTargetArtifactUUIDUnlocked(templatesAndDataByDestinationRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, filesArtifactUuid enclave_data_directory.FilesArtifactUUID) error {
+	tempDirForRenderedTemplates, err := os.MkdirTemp("", tempDirForRenderedTemplatesPrefix)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while creating a temp dir for rendered templates '%v'", tempDirForRenderedTemplates)
+	}
+	defer os.RemoveAll(tempDirForRenderedTemplates)
+
+	for destinationRelFilepath, templateAndData := range templatesAndDataByDestinationRelFilepath {
+		templateAsAString := templateAndData.Template
+		templateDataAsJson := templateAndData.DataAsJson
+
+		templateDataJsonAsBytes := []byte(templateDataAsJson)
+		templateDataJsonReader := bytes.NewReader(templateDataJsonAsBytes)
+
+		// We don't use standard json.Unmarshal as that converts large integers to floats
+		// Using this custom decoder we get the json.Number representation which is closer to other json implementations
+		// This talks about the issue further https://github.com/square/go-jose/issues/351#issuecomment-847193900
+		decoder := json.NewDecoder(templateDataJsonReader)
+		decoder.UseNumber()
+
+		var templateData interface{}
+		if err = decoder.Decode(&templateData); err != nil {
+			return stacktrace.Propagate(err, "An error occurred while decoding the template data json '%v' for file '%v'", templateDataAsJson, destinationRelFilepath)
+		}
+
+		destinationFilepath := path.Join(tempDirForRenderedTemplates, destinationRelFilepath)
+		if err = renderTemplateToFile(templateAsAString, templateData, destinationFilepath); err != nil {
+			return stacktrace.Propagate(err, "There was an error in rendering template for file '%v'", destinationRelFilepath)
+		}
+	}
+
+	compressedFile, err := shared_utils.CompressPath(tempDirForRenderedTemplates, ensureCompressedFileIsLesserThanGRPCLimit)
+	if err != nil {
+		return stacktrace.Propagate(err, "There was an error compressing dir '%v'", tempDirForRenderedTemplates)
+	}
+
+	store, err := network.enclaveDataDir.GetFilesArtifactStore()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while getting files artifact store")
+	}
+	err = store.StoreFileToArtifactUUID(bytes.NewReader(compressedFile), filesArtifactUuid)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while storing the file '%v' in the files artifact store", compressedFile)
+	}
+	shouldDeleteFilesArtifact := true
+	defer func() {
+		if shouldDeleteFilesArtifact {
+			if err = store.RemoveFile(filesArtifactUuid); err != nil {
+				logrus.Errorf("We tried to clean up the files artifact '%v' we had stored but failed:\n%v", filesArtifactUuid, err)
+			}
+		}
+	}()
+
+	shouldDeleteFilesArtifact = false
+	return nil
+}
+
+// This method is not thread safe. Only call this from a method where there is a mutex lock on the network.
+func (network *DefaultServiceNetwork) uploadFilesArtifactToTargetArtifactUUIDUnlocked(data []byte, targetFilesArtifactUuid enclave_data_directory.FilesArtifactUUID) error {
+	reader := bytes.NewReader(data)
+
+	filesArtifactStore, err := network.enclaveDataDir.GetFilesArtifactStore()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while getting files artifact store")
+	}
+
+	err = filesArtifactStore.StoreFileToArtifactUUID(reader, targetFilesArtifactUuid)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while trying to store files.")
+	}
+
 	return nil
 }
 

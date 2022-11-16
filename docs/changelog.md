@@ -1,7 +1,34 @@
 # TBD
+### Features
+- Added the enclave's creation time info which can be obtained through the `enclave ls` and the `enclave inspect` commands
 
+### Fixes
+- Smoothened the experience `used_ports` -> `ports`, `container_image_name` -> `name`, `service_config` -> `config`
+
+# 0.52.3
+
+### Changes
+- Cleanup Startosis interpreter predeclared
+
+# 0.52.2
+
+# 0.52.1
 ### Features
 - Add `wait` and `define` command in Startosis
+- Added `not found service GUIDs information` in `KurtosisContext.GetServiceLogs` method
+- Added a warning message in `service logs` CLI command when the request service GUID is not found in the logs database
+- Added ip address replacement in the JSON for `render_template` instruction
+- Implemented a `ToTargetArtifactUuid` version of a few service_network functions
+
+### Changes
+- `kurtosis_instruction.String()` now returns a single line version of the instruction for more concise logging
+
+### Fixes
+- Fixes a bug where we'd propagate a nil error
+- Adds validation for `service_id` in `store_files_from_service`
+- Fixes a bug where typescript (jest) unit tests do not correctly wait for grpc services to become available
+- Fixed a panic that would happen cause of a `nil` error being returned
+- Fixed TestValidUrls so that it checks for the correct http return code
 
 # 0.52.0
 ### Breaking Changes
@@ -31,7 +58,7 @@
 # 0.51.11
 ### Features
 - Improve how kurtosis instructions are canonicalized with a universal canonicalizer. Each instruction is now printed on multiple lines with a comment pointing the to position in the source code.
-- Support `private_ip_address_placeholder` to be passed in `service_config` for `add_service` in Starlark
+- Support `private_ip_address_placeholder` to be passed in `config` for `add_service` in Starlark
 
 ### Changes
 - Updated how we generate the canonical string for Kurtosis `upload_files` instruction
