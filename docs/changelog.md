@@ -1,5 +1,7 @@
 # TBD
 
+# 0.53.0
+
 ### Features
 - Made `render_templates`, `upload_files`, `store_Files_from_service` accept `artifact_uuid` and
 return `artifact_uuid` during interpretation time
