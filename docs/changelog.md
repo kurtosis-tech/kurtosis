@@ -1,12 +1,24 @@
 # TBD
 
 ### Features
-- Added the enclave's creation time info which can be obtained through the `enclave ls` and the `enclave inspect` commands
 - Moved `kurtosis startosis exec` to `kurtosis exec`
+
+# 0.52.5
+
+### Fixes
+- Renamed `files_artifact_mount_dirpaths` to just `files`
+
+# 0.52.4
+
+### Features
+- Added the enclave's creation time info which can be obtained through the `enclave ls` and the `enclave inspect` commands
 
 ### Breaking Features
 - Moved `kurtosis startosis exec` to `kurtosis exec`
   - Users now need to use the new command to launch Starlark programs
+
+### Fixes
+- Smoothened the experience `used_ports` -> `ports`, `container_image_name` -> `name`, `service_config` -> `config`
 
 # 0.52.3
 
@@ -61,7 +73,7 @@
 # 0.51.11
 ### Features
 - Improve how kurtosis instructions are canonicalized with a universal canonicalizer. Each instruction is now printed on multiple lines with a comment pointing the to position in the source code.
-- Support `private_ip_address_placeholder` to be passed in `service_config` for `add_service` in Starlark
+- Support `private_ip_address_placeholder` to be passed in `config` for `add_service` in Starlark
 
 ### Changes
 - Updated how we generate the canonical string for Kurtosis `upload_files` instruction
@@ -143,7 +155,7 @@
 # 0.51.1
 - Added an `exec` command to Startosis
 - Added a `store_files_from_service` command to Startosis
-- Added the ability to pass `files_artifact_mount_dirpaths` to the service config
+- Added the ability to pass `files` to the service config
 - Added a `read_file` command to Startosis
 - Added the ability to execute local modules in Startosis
 

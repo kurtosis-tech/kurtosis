@@ -19,10 +19,10 @@ func TestInterpretationError_serializationWithCustomMsg(t *testing.T) {
 			*NewCallFrame("<toplevel>", NewScriptPosition(13, 12)),
 			*NewCallFrame("add_service", NewScriptPosition(0, 0)),
 		},
-		"Evaluation error: Missing `container_image_name` as part of the struct object",
+		"Evaluation error: Missing `image` as part of the struct object",
 	)
 
-	expectedOutput := `Evaluation error: Missing ` + "`container_image_name`" + ` as part of the struct object
+	expectedOutput := `Evaluation error: Missing ` + "`image`" + ` as part of the struct object
 	at [13:12]: <toplevel>
 	at [0:0]: add_service`
 	require.Equal(t, expectedOutput, errorToSerialize.Error())
