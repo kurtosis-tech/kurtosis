@@ -35,9 +35,6 @@ const (
 	serviceIdSubgroupName = "service_id"
 	allSubgroupName       = "all"
 	kurtosisNamespace     = "kurtosis"
-	// The placeholder format & regex should align
-	ipAddressReplacementRegex             = "(?P<" + allSubgroupName + ">\\{\\{" + kurtosisNamespace + ":(?P<" + serviceIdArgName + ">" + service.ServiceIdRegexp + ")\\.ip_address\\}\\})"
-	ipAddressReplacementPlaceholderFormat = "{{" + kurtosisNamespace + ":%v.ip_address}}"
 
 	factReplacementRegex = "(?P<" + allSubgroupName + ">\\{\\{" + kurtosisNamespace + ":(?P<" + serviceIdArgName + ">" + service.ServiceIdRegexp + ")" + ":(?P<" + factNameArgName + ">" + service.ServiceIdRegexp + ")\\.fact\\}\\})"
 
@@ -46,11 +43,10 @@ const (
 	subExpNotFound   = -1
 )
 
-// The compiled regular expression to do IP address replacements
+// The compiled regular expression to do fact replacements
 // Treat this as a constant
 var (
-	compiledIpAddressReplacementRegex = regexp.MustCompile(ipAddressReplacementRegex)
-	compiledFactReplacementRegex      = regexp.MustCompile(factReplacementRegex)
+	compiledFactReplacementRegex = regexp.MustCompile(factReplacementRegex)
 )
 
 func GenerateAddServiceBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, serviceNetwork service_network.ServiceNetwork, factsEngine *facts_engine.FactsEngine) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
@@ -196,11 +192,11 @@ func replaceFactsInString(originalString string, factsEngine *facts_engine.Facts
 	for _, match := range matches {
 		serviceIdMatchIndex := compiledFactReplacementRegex.SubexpIndex(serviceIdSubgroupName)
 		if serviceIdMatchIndex == subExpNotFound {
-			return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", serviceIdSubgroupName, compiledIpAddressReplacementRegex.String())
+			return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", serviceIdSubgroupName, compiledFactReplacementRegex.String())
 		}
 		factNameMatchIndex := compiledFactReplacementRegex.SubexpIndex(factNameSubgroupName)
 		if factNameMatchIndex == subExpNotFound {
-			return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", serviceIdSubgroupName, compiledIpAddressReplacementRegex.String())
+			return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", serviceIdSubgroupName, compiledFactReplacementRegex.String())
 		}
 		factValues, err := factsEngine.FetchLatestFactValues(facts_engine.GetFactId(match[serviceIdMatchIndex], match[factNameMatchIndex]))
 		if err != nil {
@@ -208,7 +204,7 @@ func replaceFactsInString(originalString string, factsEngine *facts_engine.Facts
 		}
 		allMatchIndex := compiledFactReplacementRegex.SubexpIndex(allSubgroupName)
 		if allMatchIndex == subExpNotFound {
-			return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", serviceIdSubgroupName, compiledIpAddressReplacementRegex.String())
+			return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", serviceIdSubgroupName, compiledFactReplacementRegex.String())
 		}
 		allMatch := match[allMatchIndex]
 		replacedString = strings.Replace(replacedString, allMatch, factValues[len(factValues)-1].GetStringValue(), singleMatch)
