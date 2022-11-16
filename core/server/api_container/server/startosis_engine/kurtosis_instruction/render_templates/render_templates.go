@@ -21,6 +21,8 @@ const (
 
 	artifactUuidArgName            = "artifact_uuid?"
 	nonOptionalArtifactUuidArgName = "artifact_uuid"
+
+	emptyStarlarkString = starlark.String("")
 )
 
 type RenderTemplatesInstruction struct {
@@ -103,15 +105,20 @@ func (instruction *RenderTemplatesInstruction) ValidateAndUpdateEnvironment(envi
 
 func (instruction *RenderTemplatesInstruction) parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) *startosis_errors.InterpretationError {
 	var templatesAndDataArg *starlark.Dict
-	placeHolderArtifactUuid, err := enclave_data_directory.NewFilesArtifactUUID()
-	if err != nil {
-		return startosis_errors.NewInterpretationError(err.Error())
-	}
-	var artifactUuidArg = starlark.String(placeHolderArtifactUuid)
+	var artifactUuidArg = emptyStarlarkString
 
 	if err := starlark.UnpackArgs(b.Name(), args, kwargs, templateAndDataByDestinationRelFilepathArg, &templatesAndDataArg, artifactUuidArgName, &artifactUuidArg); err != nil {
 		return startosis_errors.NewInterpretationError(err.Error())
 	}
+
+	if artifactUuidArg == emptyStarlarkString {
+		placeHolderArtifactUuid, err := enclave_data_directory.NewFilesArtifactUUID()
+		if err != nil {
+			return startosis_errors.NewInterpretationError("An empty or no artifact_uuid was passed, we tried creating one but failed")
+		}
+		artifactUuidArg = starlark.String(placeHolderArtifactUuid)
+	}
+
 	instruction.starlarkKwargs[templateAndDataByDestinationRelFilepathArg] = templatesAndDataArg
 
 	templatesAndDataByDestRelFilepath, interpretationErr := kurtosis_instruction.ParseTemplatesAndData(templatesAndDataArg)

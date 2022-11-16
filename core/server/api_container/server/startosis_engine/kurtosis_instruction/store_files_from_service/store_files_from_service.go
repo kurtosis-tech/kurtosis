@@ -22,6 +22,8 @@ const (
 
 	artifactUuidArgName            = "artifact_uuid?"
 	nonOptionalArtifactUuidArgName = "artifact_uuid"
+
+	emptyStarlarkString = starlark.String("")
 )
 
 type StoreFilesFromServiceInstruction struct {
@@ -87,13 +89,17 @@ func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starl
 
 	var serviceIdArg starlark.String
 	var srcPathArg starlark.String
-	placeHolderArtifactUuid, err := enclave_data_directory.NewFilesArtifactUUID()
-	if err != nil {
-		return "", "", "", startosis_errors.NewInterpretationError(err.Error())
-	}
-	var artifactUuidArg = starlark.String(placeHolderArtifactUuid)
+	var artifactUuidArg = emptyStarlarkString
 	if err := starlark.UnpackArgs(b.Name(), args, kwargs, serviceIdArgName, &serviceIdArg, srcPathArgName, &srcPathArg, artifactUuidArgName, &artifactUuidArg); err != nil {
 		return "", "", "", startosis_errors.NewInterpretationError(err.Error())
+	}
+
+	if artifactUuidArg == emptyStarlarkString {
+		placeHolderArtifactUuid, err := enclave_data_directory.NewFilesArtifactUUID()
+		if err != nil {
+			return "", "", "", startosis_errors.NewInterpretationError("An empty or no artifact_uuid was passed, we tried creating one but failed")
+		}
+		artifactUuidArg = starlark.String(placeHolderArtifactUuid)
 	}
 
 	serviceId, interpretationErr := kurtosis_instruction.ParseServiceId(serviceIdArg)

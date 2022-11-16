@@ -24,6 +24,8 @@ const (
 	nonOptionalArtifactUuidArgName = "artifact_uuid"
 
 	ensureCompressedFileIsLesserThanGRPCLimit = false
+
+	emptyStarlarkString = starlark.String("")
 )
 
 type UploadFilesInstruction struct {
@@ -99,13 +101,17 @@ func (instruction *UploadFilesInstruction) ValidateAndUpdateEnvironment(environm
 func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (string, enclave_data_directory.FilesArtifactUUID, *startosis_errors.InterpretationError) {
 
 	var srcPathArg starlark.String
-	placeHolderArtifactUuid, err := enclave_data_directory.NewFilesArtifactUUID()
-	if err != nil {
-		return "", "", startosis_errors.NewInterpretationError(err.Error())
-	}
-	var artifactUuidArg = starlark.String(placeHolderArtifactUuid)
+	var artifactUuidArg = emptyStarlarkString
 	if err := starlark.UnpackArgs(b.Name(), args, kwargs, srcPathArgName, &srcPathArg, artifactUuidArgName, &artifactUuidArg); err != nil {
 		return "", "", startosis_errors.NewInterpretationError(err.Error())
+	}
+
+	if artifactUuidArg == emptyStarlarkString {
+		placeHolderArtifactUuid, err := enclave_data_directory.NewFilesArtifactUUID()
+		if err != nil {
+			return "", "", startosis_errors.NewInterpretationError("An empty or no artifact_uuid was passed, we tried creating one but failed")
+		}
+		artifactUuidArg = starlark.String(placeHolderArtifactUuid)
 	}
 
 	srcPath, interpretationErr := kurtosis_instruction.ParseFilePath(srcPathArgName, srcPathArg)
