@@ -1,9 +1,10 @@
 # TBD
+### Features
+- Make facts referencable on `add_service`
 
 # 0.52.4
 ### Features
 - Added the enclave's creation time info which can be obtained through the `enclave ls` and the `enclave inspect` commands
-- Make facts referencable on `add_service`
 
 ### Fixes
 - Smoothened the experience `used_ports` -> `ports`, `container_image_name` -> `name`, `service_config` -> `config`
