@@ -1,4 +1,4 @@
-package enclave_id
+package enclave_manager
 
 import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
@@ -10,7 +10,7 @@ import (
 //Kurtosis CLI which is inside this file 'cli/cli/user_support_constants/user_support_constants.go'
 const allowedEnclaveIdCharsRegexStr = `^[-A-Za-z0-9.]{1,63}$`
 
-func ValidateEnclaveId(enclaveId enclave.EnclaveID) error {
+func validateEnclaveId(enclaveId enclave.EnclaveID) error {
 	validEnclaveId, err := regexp.Match(allowedEnclaveIdCharsRegexStr, []byte(enclaveId))
 	if err != nil {
 		return stacktrace.Propagate(

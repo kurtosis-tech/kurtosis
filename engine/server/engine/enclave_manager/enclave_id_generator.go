@@ -1,4 +1,4 @@
-package enclave_id
+package enclave_manager
 
 import (
 	"github.com/goombaio/namegenerator"
@@ -10,10 +10,10 @@ import (
 
 const (
 	// Signifies that an enclave ID should be auto-generated
-	AutogenerateEnclaveIdKeyword = enclave.EnclaveID("")
+	autogenerateEnclaveIdKeyword = enclave.EnclaveID("")
 )
 
-func GetRandomEnclaveIdWithRetries(
+func getRandomEnclaveIdWithRetries(
 	allCurrentEnclaves map[enclave.EnclaveID]*enclave.Enclave,
 	retries uint16,
 ) (enclave.EnclaveID, error) {
@@ -28,16 +28,16 @@ func GetRandomEnclaveIdWithRetries(
 	randomEnclaveId := enclave.EnclaveID(randomName)
 	logrus.Debugf("Genetared new random enclave ID '%v'", randomEnclaveId)
 
-	validationError := ValidateEnclaveId(randomEnclaveId)
+	validationError := validateEnclaveId(randomEnclaveId)
 
 	isIdInUse := IsEnclaveIdInUse(randomEnclaveId, allCurrentEnclaves)
 
 	if validationError != nil || isIdInUse {
 		if retries > 0 {
 			newRetriesValue := retries - 1
-			randomEnclaveId, err = GetRandomEnclaveIdWithRetries(allCurrentEnclaves, newRetriesValue)
+			randomEnclaveId, err = getRandomEnclaveIdWithRetries(allCurrentEnclaves, newRetriesValue)
 			if err != nil {
-				return AutogenerateEnclaveIdKeyword,
+				return autogenerateEnclaveIdKeyword,
 					stacktrace.Propagate(err,
 						"An error occurred getting a random enclave ID with all current enclaves value '%+v' and retries '%v'",
 						allCurrentEnclaves,
@@ -55,7 +55,7 @@ func GetRandomEnclaveIdWithRetries(
 			returnErr = stacktrace.Propagate(validationError, errMsg)
 		}
 
-		return AutogenerateEnclaveIdKeyword, returnErr
+		return autogenerateEnclaveIdKeyword, returnErr
 	}
 
 	return randomEnclaveId, nil

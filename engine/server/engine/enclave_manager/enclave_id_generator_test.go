@@ -1,4 +1,4 @@
-package enclave_id
+package enclave_manager
 
 import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
@@ -11,7 +11,7 @@ func TestGetRandomEnclaveIdWithRetriesSuccess(t *testing.T){
 
 	noCurrentEnclave := map[enclave.EnclaveID]*enclave.Enclave{}
 
-	randomEnclaveId, err := GetRandomEnclaveIdWithRetries(noCurrentEnclave, retries)
+	randomEnclaveId, err := getRandomEnclaveIdWithRetries(noCurrentEnclave, retries)
 	require.NoError(t, err)
 	require.NotEmpty(t, randomEnclaveId)
 }

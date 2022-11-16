@@ -10,7 +10,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/core/launcher/api_container_launcher"
-	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager/enclave_id"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -94,18 +93,18 @@ func (manager *EnclaveManager) CreateEnclave(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred checking for enclaves with ID '%v'", enclaveId)
 	}
-	if enclave_id.IsEnclaveIdInUse(enclaveId, allCurrentEnclaves) {
+	if IsEnclaveIdInUse(enclaveId, allCurrentEnclaves) {
 		return nil, stacktrace.NewError("Cannot create enclave '%v' because an enclave with that ID already exists", enclaveId)
 	}
 
-	if enclaveId == enclave_id.AutogenerateEnclaveIdKeyword {
-		enclaveId, err = enclave_id.GetRandomEnclaveIdWithRetries(allCurrentEnclaves, getRandomEnclaveIdRetries)
+	if enclaveId == autogenerateEnclaveIdKeyword {
+		enclaveId, err = getRandomEnclaveIdWithRetries(allCurrentEnclaves, getRandomEnclaveIdRetries)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting a new random enclave ID using all current enclaves '%+v' and '%v' retries", allCurrentEnclaves, getRandomEnclaveIdRetries)
 		}
 	}
 
-	if err := enclave_id.ValidateEnclaveId(enclaveId); err !=nil {
+	if err := validateEnclaveId(enclaveId); err !=nil {
 		return nil, stacktrace.Propagate(err, "An error occurred validation enclave ID '%v'", enclaveId)
 	}
 
