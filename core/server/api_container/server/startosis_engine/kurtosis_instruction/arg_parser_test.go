@@ -450,7 +450,7 @@ func TestParseFilesArtifactMountDirpaths_Success(t *testing.T) {
 	err := subDict.SetKey(starlark.String("key"), starlark.String("value"))
 	require.Nil(t, err)
 	dict := starlark.StringDict{}
-	dict["files_artifact_mount_dirpaths"] = subDict
+	dict["files_artifacts"] = subDict
 	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
 	output, err := parseFilesArtifactMountDirpaths(input)
 	require.Nil(t, err)
@@ -470,11 +470,11 @@ func TestParseFilesArtifactMountDirpaths_FailureOnNonStringKey(t *testing.T) {
 	err := subDict.SetKey(starlark.MakeInt(42), starlark.String("value"))
 	require.Nil(t, err)
 	dict := starlark.StringDict{}
-	dict["files_artifact_mount_dirpaths"] = subDict
+	dict["files_artifacts"] = subDict
 	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
 	output, err := parseFilesArtifactMountDirpaths(input)
 	require.NotNil(t, err)
-	require.Equal(t, "'files_artifact_mount_dirpaths.key:42' is expected to be a string. Got starlark.Int", err.Error())
+	require.Equal(t, "'files_artifacts.key:42' is expected to be a string. Got starlark.Int", err.Error())
 	require.Equal(t, map[string]string(nil), output)
 }
 
@@ -483,11 +483,11 @@ func TestParseFilesArtifactMountDirpaths_FailureOnNonStringValue(t *testing.T) {
 	err := subDict.SetKey(starlark.String("key"), starlark.MakeInt(42))
 	require.Nil(t, err)
 	dict := starlark.StringDict{}
-	dict["files_artifact_mount_dirpaths"] = subDict
+	dict["files_artifacts"] = subDict
 	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
 	output, err := parseFilesArtifactMountDirpaths(input)
 	require.NotNil(t, err)
-	require.Equal(t, "'files_artifact_mount_dirpaths[\"key\"]' is expected to be a string. Got starlark.Int", err.Error())
+	require.Equal(t, "'files_artifacts[\"key\"]' is expected to be a string. Got starlark.Int", err.Error())
 	require.Equal(t, map[string]string(nil), output)
 }
 
