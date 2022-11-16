@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+- Fixed building kurtosis by adding a conditional to build.sh to ignore startosis folder under internal_testsuites
 
 # 0.52.4
 ### Features
