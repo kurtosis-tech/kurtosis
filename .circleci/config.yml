@@ -665,7 +665,7 @@ jobs:
       - run: "${KURTOSIS_BINPATH} enclave inspect test-enclave"
 
       # Execute simple startosis script in new enclave
-      - run: "${KURTOSIS_BINPATH} startosis exec --enclave-id test-enclave << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.startosis-test-script-file-relative-path >>"
+      - run: "${KURTOSIS_BINPATH} exec --enclave-id test-enclave << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.startosis-test-script-file-relative-path >>"
 
       - run: "${KURTOSIS_BINPATH} enclave stop test-enclave"
       - run: "${KURTOSIS_BINPATH} enclave inspect test-enclave"   # Ensure we can still inspect stopped enclaves
