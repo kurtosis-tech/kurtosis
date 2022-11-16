@@ -27,7 +27,7 @@ const (
 	entryPointArgsKey              = "entry_point_args"
 	cmdArgsKey                     = "cmd_args"
 	envVarArgsKey                  = "env_vars"
-	filesArtifactMountDirpathsKey  = "files_artifacts"
+	filesArtifactMountDirpathsKey  = "files"
 	portIdKey                      = "port_id"
 	requestEndpointKey             = "endpoint"
 	requestMethodEndpointKey       = "method"

@@ -1,7 +1,7 @@
 # TBD
 
 ### Fixes
-- Renamed `files_artifact_mount_dirpaths` to just `files_artifacts`
+- Renamed `files_artifact_mount_dirpaths` to just `files`
 
 # 0.52.4
 ### Features
@@ -145,7 +145,7 @@
 # 0.51.1
 - Added an `exec` command to Startosis
 - Added a `store_files_from_service` command to Startosis
-- Added the ability to pass `files_artifacts` to the service config
+- Added the ability to pass `files` to the service config
 - Added a `read_file` command to Startosis
 - Added the ability to execute local modules in Startosis
 

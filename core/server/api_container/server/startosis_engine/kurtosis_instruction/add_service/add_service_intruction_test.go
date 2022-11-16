@@ -40,7 +40,7 @@ func TestAddServiceInstruction_GetCanonicalizedInstruction(t *testing.T) {
 	fileArtifactMountDirPath := starlark.NewDict(2)
 	require.Nil(t, fileArtifactMountDirPath.SetKey(starlark.String("file_1"), starlark.String("path/to/file/1")))
 	require.Nil(t, fileArtifactMountDirPath.SetKey(starlark.String("file_2"), starlark.String("path/to/file/2")))
-	serviceConfigDict["files_artifacts"] = fileArtifactMountDirPath
+	serviceConfigDict["files"] = fileArtifactMountDirPath
 
 	addServiceInstruction := newEmptyAddServiceInstruction(
 		nil,
@@ -66,7 +66,7 @@ add_service(
 			"VAR_1": "VALUE_1",
 			"VAR_2": "VALUE_2"
 		},
-		files_artifacts={
+		files={
 			"file_1": "path/to/file/1",
 			"file_2": "path/to/file/2"
 		},
