@@ -8,7 +8,7 @@ internal_testsuites_root_dirpath="$(dirname "${script_dirpath}")"
 # ==================================================================================================
 #                                             Constants
 # ==================================================================================================
-STARTOSIS="startosis"
+STARTOSIS_DIR_PATH="startosis"
 
 # ==================================================================================================
 #                                       Arg Parsing & Validation
@@ -20,7 +20,7 @@ script_dirname="$(basename "${script_dirpath}")"
 
 for maybe_testsuite_rel_dirpath in $(find "${internal_testsuites_root_dirpath}" -type d -mindepth 1 -maxdepth 1 ); do
     maybe_testsuite_dirname="$(basename "${maybe_testsuite_rel_dirpath}")"
-    if [ "${maybe_testsuite_dirname}" == "${script_dirname}" ] || [ "${maybe_testsuite_dirname}" == "$STARTOSIS" ]; then
+    if [ "${maybe_testsuite_dirname}" == "${script_dirname}" ] || [ "${maybe_testsuite_dirname}" == "$STARTOSIS_DIR_PATH" ]; then
         continue
     fi
 
