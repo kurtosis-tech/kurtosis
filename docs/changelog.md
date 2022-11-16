@@ -1,5 +1,7 @@
 # TBD
 
+# 0.52.5
+
 ### Fixes
 - Renamed `files_artifact_mount_dirpaths` to just `files`
 
