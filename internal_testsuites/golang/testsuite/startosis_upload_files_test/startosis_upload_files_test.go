@@ -35,9 +35,9 @@ uploaded_artifact_uuid = upload_files(DIR_TO_UPLOAD)
 print("Uploaded " + uploaded_artifact_uuid)
 
 
-service_config = struct(
-    container_image_name = DATASTORE_IMAGE,
-    used_ports = {
+config = struct(
+    image = DATASTORE_IMAGE,
+    ports = {
         DATASTORE_PORT_ID: struct(number = DATASTORE_PORT_NUMBER, protocol = DATASTORE_PORT_PROTOCOL)
     },
 	files_artifact_mount_dirpaths = {
@@ -45,7 +45,7 @@ service_config = struct(
 	}
 )
 
-add_service(service_id = DATASTORE_SERVICE_ID, service_config = service_config)`
+add_service(service_id = DATASTORE_SERVICE_ID, config = config)`
 )
 
 func TestStartosis(t *testing.T) {
