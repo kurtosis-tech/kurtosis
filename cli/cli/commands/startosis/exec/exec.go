@@ -142,6 +142,7 @@ func run(
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the enclave context for enclave '%v'", enclaveId)
 	}
+	defer output_printers.PrintEnclaveId(enclaveCtx.GetEnclaveID())
 
 	fileOrDir, err := os.Stat(startosisScriptOrModulePath)
 	if err != nil {
@@ -163,10 +164,6 @@ func run(
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while running the module '%v'", startosisScriptOrModulePath)
 	}
-
-	createdEnclaveMsg := fmt.Sprintf("Created enclave: %v", enclaveCtx.GetEnclaveID())
-	featuredMessagePrinter := output_printers.GetFeaturedMessagePrinter()
-	featuredMessagePrinter.Print(createdEnclaveMsg)
 
 	return nil
 }

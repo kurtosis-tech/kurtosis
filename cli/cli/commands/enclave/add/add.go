@@ -3,6 +3,7 @@ package add
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/defaults"
@@ -110,9 +111,8 @@ func run(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred creating an enclave with ID '%v'", enclaveIdStr)
 	}
 
-	createdEnclaveMsg := fmt.Sprintf("Created enclave: %v", createdEnclaveResponse.EnclaveInfo.EnclaveId)
-	featuredMessagePrinter := output_printers.GetFeaturedMessagePrinter()
-	featuredMessagePrinter.Print(createdEnclaveMsg)
+	createdEnclaveId := enclaves.EnclaveID(createdEnclaveResponse.GetEnclaveInfo().EnclaveId)
+	defer output_printers.PrintEnclaveId(createdEnclaveId)
 
 	return nil
 }

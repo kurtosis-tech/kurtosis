@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
@@ -197,6 +198,8 @@ func run(
 		enclaveIdStr = enclaveInfo.GetEnclaveId()
 		logrus.Infof("Enclave '%v' created successfully", enclaveIdStr)
 	}
+	createdEnclaveId := enclaves.EnclaveID(enclaveIdStr)
+	defer output_printers.PrintEnclaveId(createdEnclaveId)
 
 	apicHostMachineIp, apicHostMachineGrpcPort, err := enclave_liveness_validator.ValidateEnclaveLiveness(enclaveInfo)
 	if err != nil {
@@ -308,10 +311,6 @@ func run(
 		"Module executed successfully and returned the following result:\n%v",
 		executeModuleResult.SerializedResult,
 	)
-
-	createdEnclaveMsg := fmt.Sprintf("Created enclave: %v", enclaveIdStr)
-	featuredMessagePrinter := output_printers.GetFeaturedMessagePrinter()
-	featuredMessagePrinter.Print(createdEnclaveMsg)
 
 	didModuleExecutionCompleteSuccessfully = true
 	return nil
