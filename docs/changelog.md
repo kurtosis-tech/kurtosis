@@ -7,6 +7,9 @@
 - Moved `kurtosis startosis exec` to `kurtosis exec`
   - Users now need to use the new command to launch Starlark programs
 
+### Fixes
+- Fixed building kurtosis by adding a conditional to build.sh to ignore startosis folder under internal_testsuites
+
 # 0.52.5
 
 ### Fixes
