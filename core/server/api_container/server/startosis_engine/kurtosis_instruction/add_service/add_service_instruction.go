@@ -190,30 +190,6 @@ func (instruction *AddServiceInstruction) replaceIPAddress() error {
 	return nil
 }
 
-func replaceIPAddressInString(originalString string, network service_network.ServiceNetwork, serviceIdForLogging string) (string, error) {
-	matches := compiledIpAddressReplacementRegex.FindAllStringSubmatch(originalString, unlimitedMatches)
-	replacedString := originalString
-	for _, match := range matches {
-		serviceIdMatchIndex := compiledIpAddressReplacementRegex.SubexpIndex(serviceIdSubgroupName)
-		if serviceIdMatchIndex == subExpNotFound {
-			return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", serviceIdSubgroupName, compiledIpAddressReplacementRegex.String())
-		}
-		serviceId := service.ServiceID(match[serviceIdMatchIndex])
-		ipAddress, found := network.GetIPAddressForService(serviceId)
-		if !found {
-			return "", stacktrace.NewError("'%v' depends on the IP address of '%v' but we don't have any registrations for it", serviceIdForLogging, serviceId)
-		}
-		ipAddressStr := ipAddress.String()
-		allMatchIndex := compiledIpAddressReplacementRegex.SubexpIndex(allSubgroupName)
-		if allMatchIndex == subExpNotFound {
-			return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", serviceIdSubgroupName, compiledIpAddressReplacementRegex.String())
-		}
-		allMatch := match[allMatchIndex]
-		replacedString = strings.Replace(replacedString, allMatch, ipAddressStr, singleMatch)
-	}
-	return replacedString, nil
-}
-
 func replaceFactsInString(originalString string, factsEngine *facts_engine.FactsEngine) (string, error) {
 	matches := compiledFactReplacementRegex.FindAllStringSubmatch(originalString, unlimitedMatches)
 	replacedString := originalString
