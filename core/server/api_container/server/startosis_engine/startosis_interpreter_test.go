@@ -160,8 +160,8 @@ print("The datastore service ip address is " + datastore_service.ip_address)
 	require.Equal(t, 1, len(instructions))
 	require.Nil(t, interpretationError)
 
-	addServiceInstruction := createSimpleAddServiceInstruction(t, "example-datastore-server", testContainerImageName, 1323, 14, 32, starlarkFilenamePlaceholderAsNotUsed, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, privateIPAddressPlaceholder)
-	require.Equal(t, instructions[0], addServiceInstruction)
+	addServiceInstruction := createSimpleAddServiceInstruction(t, "example-datastore-server", testContainerImageName, 1323, 14, 32, ModuleIdPlaceholderForStandaloneScripts, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, privateIPAddressPlaceholder)
+	require.Equal(t, addServiceInstruction, instructions[0])
 
 	expectedOutput := `Starting Startosis script!
 Adding service example-datastore-server
@@ -302,13 +302,13 @@ print("Done!")
 	require.Equal(t, 3, len(instructions))
 	require.Nil(t, interpretationError)
 
-	addServiceInstruction0 := createSimpleAddServiceInstruction(t, "example-datastore-server-0", testContainerImageName, 1323, 20, 20, starlarkFilenamePlaceholderAsNotUsed, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder)
-	addServiceInstruction1 := createSimpleAddServiceInstruction(t, "example-datastore-server-1", testContainerImageName, 1324, 20, 20, starlarkFilenamePlaceholderAsNotUsed, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder)
-	addServiceInstruction2 := createSimpleAddServiceInstruction(t, "example-datastore-server-2", testContainerImageName, 1325, 20, 20, starlarkFilenamePlaceholderAsNotUsed, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder)
+	addServiceInstruction0 := createSimpleAddServiceInstruction(t, "example-datastore-server-0", testContainerImageName, 1323, 20, 20, ModuleIdPlaceholderForStandaloneScripts, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder)
+	addServiceInstruction1 := createSimpleAddServiceInstruction(t, "example-datastore-server-1", testContainerImageName, 1324, 20, 20, ModuleIdPlaceholderForStandaloneScripts, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder)
+	addServiceInstruction2 := createSimpleAddServiceInstruction(t, "example-datastore-server-2", testContainerImageName, 1325, 20, 20, ModuleIdPlaceholderForStandaloneScripts, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder)
 
-	require.Equal(t, instructions[0], addServiceInstruction0)
-	require.Equal(t, instructions[1], addServiceInstruction1)
-	require.Equal(t, instructions[2], addServiceInstruction2)
+	require.Equal(t, addServiceInstruction0, instructions[0])
+	require.Equal(t, addServiceInstruction1, instructions[1])
+	require.Equal(t, addServiceInstruction2, instructions[2])
 
 	expectedOutput := `Starting Startosis script!
 Adding service example-datastore-server-0
@@ -319,7 +319,7 @@ Done!
 	require.Equal(t, expectedOutput, string(scriptOutput))
 }
 
-func TestStartosisInterpreter_SimpleLoading(t *testing.T) {
+func TestStartosisInterpreter_SimpleLoading_DeprecatedForBackwardCompatibility(t *testing.T) {
 	barModulePath := "github.com/foo/bar/lib.star"
 	seedModules := map[string]string{
 		barModulePath: "a=\"World!\"",
@@ -341,24 +341,19 @@ print("Hello " + a)
 	assert.Equal(t, expectedOutput, string(scriptOutput))
 }
 
-func TestStartosisInterpreter_TransitiveLoading(t *testing.T) {
-	seedModules := make(map[string]string)
-	moduleBar := "github.com/foo/bar/lib.star"
-	seedModules[moduleBar] = `a="World!"`
-	moduleDooWhichLoadsModuleBar := "github.com/foo/doo/lib.star"
-	seedModules[moduleDooWhichLoadsModuleBar] = `load("` + moduleBar + `", "a")
-b = "Hello " + a
-`
+func TestStartosisInterpreter_SimpleLoading(t *testing.T) {
+	barModulePath := "github.com/foo/bar/lib.star"
+	seedModules := map[string]string{
+		barModulePath: "a=\"World!\"",
+	}
 	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
 	require.Nil(t, moduleContentProvider.BulkAddFileContent(seedModules))
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
-load("` + moduleDooWhichLoadsModuleBar + `", "b")
-print(b)
-
+my_module = import_module("` + barModulePath + `")
+print("Hello " + my_module.a)
 `
-
 	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
 	assert.Equal(t, 0, len(instructions)) // No kurtosis instruction
 	assert.Nil(t, interpretationError)
@@ -368,34 +363,59 @@ print(b)
 	assert.Equal(t, expectedOutput, string(scriptOutput))
 }
 
-func TestStartosisInterpreter_FailsOnCycle(t *testing.T) {
+func TestStartosisInterpreter_TransitiveLoading(t *testing.T) {
 	seedModules := make(map[string]string)
-	moduleBarLoadsModuleDoo := "github.com/foo/bar/lib.star"
-	moduleDooLoadsModuleBar := "github.com/foo/doo/lib.star"
-	seedModules[moduleBarLoadsModuleDoo] = `load("` + moduleDooLoadsModuleBar + `", "b")
-a = "Hello" + b`
-	seedModules[moduleDooLoadsModuleBar] = `load("` + moduleBarLoadsModuleDoo + `", "a")
-b = "Hello " + a
+	moduleBar := "github.com/foo/bar/lib.star"
+	seedModules[moduleBar] = `a="World!"`
+	moduleDooWhichLoadsModuleBar := "github.com/foo/doo/lib.star"
+	seedModules[moduleDooWhichLoadsModuleBar] = `module_bar = import_module("` + moduleBar + `")
+b = "Hello " + module_bar.a
 `
 	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
 	require.Nil(t, moduleContentProvider.BulkAddFileContent(seedModules))
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
-load("` + moduleDooLoadsModuleBar + `", "b")
-print(b)
+module_doo = import_module("` + moduleDooWhichLoadsModuleBar + `")
+print(module_doo.b)
+
+`
+
+	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	require.Equal(t, 0, len(instructions)) // No kurtosis instruction
+	require.Nil(t, interpretationError)
+
+	expectedOutput := `Hello World!
+`
+	require.Equal(t, expectedOutput, string(scriptOutput))
+}
+
+func TestStartosisInterpreter_FailsOnCycle(t *testing.T) {
+	seedModules := make(map[string]string)
+	moduleBarLoadsModuleDoo := "github.com/foo/bar/lib.star"
+	moduleDooLoadsModuleBar := "github.com/foo/doo/lib.star"
+	seedModules[moduleBarLoadsModuleDoo] = `module_doo = import_module("` + moduleDooLoadsModuleBar + `")
+a = "Hello" + module_doo.b`
+	seedModules[moduleDooLoadsModuleBar] = `module_bar = import_module("` + moduleBarLoadsModuleDoo + `")
+b = "Hello " + module_bar.a
+`
+	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
+	defer moduleContentProvider.RemoveAll()
+	require.Nil(t, moduleContentProvider.BulkAddFileContent(seedModules))
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
+	script := `
+module_doo = import_module("` + moduleDooLoadsModuleBar + `")
+print(module_doo.b)
 `
 
 	_, interpretationError, instructions := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
 	assert.Equal(t, 0, len(instructions)) // No kurtosis instruction
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
 		[]startosis_errors.CallFrame{
-			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(2, 1)),
+			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(1, 27)),
+			*startosis_errors.NewCallFrame("import_module", startosis_errors.NewScriptPosition(0, 0)),
 		},
-		"Evaluation error: cannot load %v: cannot load %v: cannot load %v: There is a cycle in the load graph",
-		moduleDooLoadsModuleBar,
-		moduleBarLoadsModuleDoo,
-		moduleDooLoadsModuleBar,
+		"Evaluation error: There's a cycle in the import_module calls",
 	)
 	assert.Equal(t, expectedError, interpretationError)
 }
@@ -406,19 +426,20 @@ func TestStartosisInterpreter_FailsOnNonExistentModule(t *testing.T) {
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	nonExistentModule := "github.com/non/existent/module.star"
 	script := `
-load("` + nonExistentModule + `", "b")
-print(b)
+my_module = import_module("` + nonExistentModule + `")
+print(my_module.b)
 `
 	_, interpretationError, instructions := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
 	assert.Equal(t, 0, len(instructions)) // No kurtosis instruction
 
+	errorMsg := `Evaluation error: An error occurred while loading the module '` + nonExistentModule + `'
+	Caused by: Module '` + nonExistentModule + `' not found`
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
 		[]startosis_errors.CallFrame{
-			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(2, 1)),
+			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(2, 26)),
+			*startosis_errors.NewCallFrame("import_module", startosis_errors.NewScriptPosition(0, 0)),
 		},
-		"Evaluation error: cannot load %v: An error occurred while loading the module '%v'",
-		nonExistentModule,
-		nonExistentModule,
+		errorMsg,
 	)
 	assert.Equal(t, expectedError, interpretationError)
 }
@@ -429,8 +450,8 @@ func TestStartosisInterpreter_LoadingAValidModuleThatPreviouslyFailedToLoadSucce
 	barModulePath := "github.com/foo/bar/lib.star"
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
-load("` + barModulePath + `", "a")
-print("Hello " + a)
+my_module = import_module("` + barModulePath + `")
+print("Hello " + my_module.a)
 `
 
 	// assert that first load fails
@@ -466,20 +487,20 @@ config = struct(
 	require.Nil(t, moduleContentProvider.BulkAddFileContent(seedModules))
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
-load("` + moduleBar + `", "service_id", "config")
+module_bar = import_module("` + moduleBar + `")
 print("Starting Startosis script!")
 
-print("Adding service " + service_id)
-add_service(service_id = service_id, config = config)
+print("Adding service " + module_bar.service_id)
+add_service(service_id = module_bar.service_id, config = module_bar.config)
 `
 
 	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
 	require.Equal(t, 1, len(instructions))
 	require.Nil(t, interpretationError)
 
-	addServiceInstruction := createSimpleAddServiceInstruction(t, "example-datastore-server", testContainerImageName, 1323, 6, 12, starlarkFilenamePlaceholderAsNotUsed, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder)
+	addServiceInstruction := createSimpleAddServiceInstruction(t, "example-datastore-server", testContainerImageName, 1323, 6, 12, ModuleIdPlaceholderForStandaloneScripts, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder)
 
-	require.Equal(t, instructions[0], addServiceInstruction)
+	require.Equal(t, addServiceInstruction, instructions[0])
 
 	expectedOutput := `Constructing config
 Starting Startosis script!
@@ -515,10 +536,10 @@ def deploy_datastore_services():
 	require.Nil(t, moduleContentProvider.BulkAddFileContent(seedModules))
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
-load("` + moduleBar + `", "deploy_datastore_services")
+datastore_module = import_module("` + moduleBar + `")
 print("Starting Startosis script!")
 
-deploy_datastore_services()
+datastore_module.deploy_datastore_services()
 print("Done!")
 `
 
@@ -530,9 +551,9 @@ print("Done!")
 	addServiceInstruction1 := createSimpleAddServiceInstruction(t, "example-datastore-server-1", testContainerImageName, 1324, 18, 20, moduleBar, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder)
 	addServiceInstruction2 := createSimpleAddServiceInstruction(t, "example-datastore-server-2", testContainerImageName, 1325, 18, 20, moduleBar, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder)
 
-	require.Equal(t, instructions[0], addServiceInstruction0)
-	require.Equal(t, instructions[1], addServiceInstruction1)
-	require.Equal(t, instructions[2], addServiceInstruction2)
+	require.Equal(t, addServiceInstruction0, instructions[0])
+	require.Equal(t, addServiceInstruction1, instructions[1])
+	require.Equal(t, addServiceInstruction2, instructions[2])
 
 	expectedOutput := `Starting Startosis script!
 Adding service example-datastore-server-0
@@ -563,7 +584,7 @@ add_service(service_id = service_id, config = config)
 	require.Nil(t, moduleContentProvider.BulkAddFileContent(seedModules))
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
-load("` + moduleBar + `", "service_id", "config")
+import_module("` + moduleBar + `")
 print("Starting Startosis script!")
 `
 
@@ -602,7 +623,7 @@ add_service(service_id = service_id, config = config)
 	require.Nil(t, moduleContentProvider.BulkAddFileContent(seedModules))
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	scriptA := `
-load("` + moduleBar + `", "service_id", "config")
+import_module("` + moduleBar + `")
 print("Starting Startosis script!")
 `
 	addServiceInstructionFromScriptA := createSimpleAddServiceInstruction(t, "example-datastore-server", testContainerImageName, 1323, 11, 12, moduleBar, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder)
@@ -632,7 +653,7 @@ config = struct(
 )
 add_service(service_id = service_id, config = config)
 `
-	addServiceInstructionFromScriptB := createSimpleAddServiceInstruction(t, "example-datastore-server", testContainerImageName, 1323, 13, 12, starlarkFilenamePlaceholderAsNotUsed, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder)
+	addServiceInstructionFromScriptB := createSimpleAddServiceInstruction(t, "example-datastore-server", testContainerImageName, 1323, 13, 12, ModuleIdPlaceholderForStandaloneScripts, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder)
 	expectedOutputFromScriptB := `Starting Startosis script!
 Adding service example-datastore-server
 `
@@ -640,7 +661,7 @@ Adding service example-datastore-server
 	scriptOutput, interpretationError, instructions = interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, scriptB, EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Equal(t, 1, len(instructions))
-	require.Equal(t, instructions[0], addServiceInstructionFromScriptB)
+	require.Equal(t, addServiceInstructionFromScriptB, instructions[0])
 	require.Equal(t, expectedOutputFromScriptB, string(scriptOutput))
 }
 
@@ -677,15 +698,15 @@ add_service(service_id = client_service_id, config = client_config)
 	require.Nil(t, interpretationError)
 	require.Equal(t, 2, len(instructions))
 
-	dataSourceAddServiceInstruction := createSimpleAddServiceInstruction(t, "example-datastore-server", testContainerImageName, 1323, 11, 32, starlarkFilenamePlaceholderAsNotUsed, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder)
+	dataSourceAddServiceInstruction := createSimpleAddServiceInstruction(t, "example-datastore-server", testContainerImageName, 1323, 11, 32, ModuleIdPlaceholderForStandaloneScripts, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder)
 
 	entryPointArgs := []string{"--store-port 1323", "--store-ip {{kurtosis:example-datastore-server.ip_address}}"}
 	cmdArgs := []string{"ping", "{{kurtosis:example-datastore-server.ip_address}}"}
 	envVars := map[string]string{"STORE_IP": "{{kurtosis:example-datastore-server.ip_address}}"}
-	clientAddServiceInstruction := createSimpleAddServiceInstruction(t, "example-datastore-client", "kurtosistech/example-datastore-client", 1337, 23, 12, starlarkFilenamePlaceholderAsNotUsed, entryPointArgs, cmdArgs, envVars, defaultPrivateIPAddressPlaceholder)
+	clientAddServiceInstruction := createSimpleAddServiceInstruction(t, "example-datastore-client", "kurtosistech/example-datastore-client", 1337, 23, 12, ModuleIdPlaceholderForStandaloneScripts, entryPointArgs, cmdArgs, envVars, defaultPrivateIPAddressPlaceholder)
 
-	require.Equal(t, instructions[0], dataSourceAddServiceInstruction)
-	require.Equal(t, instructions[1], clientAddServiceInstruction)
+	require.Equal(t, dataSourceAddServiceInstruction, instructions[0])
+	require.Equal(t, clientAddServiceInstruction, instructions[1])
 
 	expectedOutput := `Starting Startosis script!
 Adding service example-datastore-server
@@ -709,13 +730,13 @@ exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"])
 
 	execInstruction := exec.NewExecInstruction(
 		testServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(3, 5, starlarkFilenamePlaceholderAsNotUsed),
+		*kurtosis_instruction.NewInstructionPosition(3, 5, ModuleIdPlaceholderForStandaloneScripts),
 		"example-datastore-server",
 		[]string{"mkdir", "/tmp/foo"},
 		0,
 	)
 
-	require.Equal(t, instructions[0], execInstruction)
+	require.Equal(t, execInstruction, instructions[0])
 
 	expectedOutput := `Executing mkdir!
 `
@@ -737,13 +758,13 @@ exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"], e
 
 	execInstruction := exec.NewExecInstruction(
 		testServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(3, 5, starlarkFilenamePlaceholderAsNotUsed),
+		*kurtosis_instruction.NewInstructionPosition(3, 5, ModuleIdPlaceholderForStandaloneScripts),
 		"example-datastore-server",
 		[]string{"mkdir", "/tmp/foo"},
 		-7,
 	)
 
-	require.Equal(t, instructions[0], execInstruction)
+	require.Equal(t, execInstruction, instructions[0])
 
 	expectedOutput := `Executing mkdir!
 `
@@ -768,13 +789,13 @@ print(artifact_uuid)
 
 	storeInstruction := store_files_from_service.NewStoreFilesFromServiceInstruction(
 		testServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(3, 38, starlarkFilenamePlaceholderAsNotUsed),
+		*kurtosis_instruction.NewInstructionPosition(3, 38, ModuleIdPlaceholderForStandaloneScripts),
 		"example-datastore-server",
 		"/foo/bar",
 		testArtifactUuid,
 	)
 
-	require.Equal(t, instructions[0], storeInstruction)
+	require.Equal(t, storeInstruction, instructions[0])
 
 	expectedOutput := fmt.Sprintf(`Storing file from service!
 %v
@@ -875,7 +896,7 @@ print(artifact_uuid)
 
 	renderInstruction := render_templates.NewRenderTemplatesInstruction(
 		testServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(18, 33, starlarkFilenamePlaceholderAsNotUsed),
+		*kurtosis_instruction.NewInstructionPosition(18, 33, ModuleIdPlaceholderForStandaloneScripts),
 		templateAndDataByDestFilepath,
 		starlark.StringDict{
 			"template_and_data_by_dest_rel_filepath": templateAndDataValues,
@@ -1122,10 +1143,10 @@ def store_for_me():
 
 	moduleThatCallsStoreFile := "github.com/kurtosis/foo.star"
 	moduleThatCallsStoreFileContent := `
-load("github.com/kurtosis/store.star", "store_for_me")
+store_for_me_module = import_module("github.com/kurtosis/store.star")
 def call_store_for_me():
 	print("In the module that calls store.star")
-	return store_for_me()
+	return store_for_me_module.store_for_me()
 	`
 
 	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
@@ -1138,8 +1159,8 @@ def call_store_for_me():
 
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
-load("github.com/kurtosis/foo.star", "call_store_for_me")
-uuid = call_store_for_me()
+call_store_for_me_module = import_module("github.com/kurtosis/foo.star")
+uuid = call_store_for_me_module.call_store_for_me()
 print(uuid)
 `
 
@@ -1181,11 +1202,11 @@ print("The service example-datastore-server has been removed")
 
 	removeInstruction := remove_service.NewRemoveServiceInstruction(
 		testServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(4, 15, starlarkFilenamePlaceholderAsNotUsed),
+		*kurtosis_instruction.NewInstructionPosition(4, 15, ModuleIdPlaceholderForStandaloneScripts),
 		"example-datastore-server",
 	)
 
-	require.Equal(t, instructions[0], removeInstruction)
+	require.Equal(t, removeInstruction, instructions[0])
 
 	expectedOutput := `Starting Startosis script!
 The service example-datastore-server has been removed
@@ -1212,7 +1233,7 @@ func TestStartosisInterpreter_UploadGetsInterpretedCorrectly(t *testing.T) {
 	require.Empty(t, scriptOutput)
 
 	expectedUploadInstruction := upload_files.NewUploadFilesInstruction(
-		*kurtosis_instruction.NewInstructionPosition(1, 13, starlarkFilenamePlaceholderAsNotUsed),
+		*kurtosis_instruction.NewInstructionPosition(1, 13, ModuleIdPlaceholderForStandaloneScripts),
 		testServiceNetwork, moduleContentProvider, filePath, filePathOnDisk, artifactUuid,
 	)
 
@@ -1339,7 +1360,7 @@ print("The datastore service ip address is " + datastore_service.ip_address)
 	require.Nil(t, interpretationError)
 	require.Equal(t, 1, len(instructions))
 
-	addServiceInstruction := createSimpleAddServiceInstruction(t, "example-datastore-server", testContainerImageName, 0, 10, 32, starlarkFilenamePlaceholderAsNotUsed, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder)
+	addServiceInstruction := createSimpleAddServiceInstruction(t, "example-datastore-server", testContainerImageName, 0, 10, 32, ModuleIdPlaceholderForStandaloneScripts, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder)
 	require.Equal(t, instructions[0], addServiceInstruction)
 
 	expectedOutput := `Starting Startosis script!
