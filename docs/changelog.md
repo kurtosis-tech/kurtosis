@@ -3,6 +3,10 @@
 ### Features
 - Moved `kurtosis startosis exec` to `kurtosis exec`
 
+### Breaking Features
+- Moved `kurtosis startosis exec` to `kurtosis exec`
+  - Users now need to use the new command to launch Starlark programs
+
 # 0.52.5
 
 ### Fixes
@@ -12,10 +16,6 @@
 
 ### Features
 - Added the enclave's creation time info which can be obtained through the `enclave ls` and the `enclave inspect` commands
-
-### Breaking Features
-- Moved `kurtosis startosis exec` to `kurtosis exec`
-  - Users now need to use the new command to launch Starlark programs
 
 ### Fixes
 - Smoothened the experience `used_ports` -> `ports`, `container_image_name` -> `name`, `service_config` -> `config`
