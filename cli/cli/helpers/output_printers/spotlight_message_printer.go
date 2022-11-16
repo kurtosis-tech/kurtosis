@@ -22,23 +22,23 @@ const (
 
 var (
 	// NOTE: This will be initialized exactly once (singleton pattern)
-	currentFeaturedMessagePrinter *featuredMessagePrinter
-	once sync.Once
+	currentSpotlightMessagePrinter *spotlightMessagePrinter
+	once                           sync.Once
 )
 
-type featuredMessagePrinter struct {}
+type spotlightMessagePrinter struct {}
 
-// Prints a centered featured message
-func GetFeaturedMessagePrinter() *featuredMessagePrinter {
-	// NOTE: We use a 'once' to initialize the featuredMessagePrinter because we don't
-	// want multiple featuredMessagePrinter instances in existence
+// Prints a centered spotlight message
+func GetSpotlightMessagePrinter() *spotlightMessagePrinter {
+	// NOTE: We use a 'once' to initialize the spotlightMessagePrinter because we don't
+	// want multiple spotlightMessagePrinter instances in existence
 	once.Do(func() {
-		currentFeaturedMessagePrinter = &featuredMessagePrinter{}
+		currentSpotlightMessagePrinter = &spotlightMessagePrinter{}
 	})
-	return currentFeaturedMessagePrinter
+	return currentSpotlightMessagePrinter
 }
 
-func (printer *featuredMessagePrinter) Print(message string)  {
+func (printer *spotlightMessagePrinter) Print(message string)  {
 	columnWith := printer.calculateColumnWith(message)
 
 	marginStr := strings.Repeat(spaceUnicodeChar, marginWith)
@@ -52,7 +52,7 @@ func (printer *featuredMessagePrinter) Print(message string)  {
 	return
 }
 
-func (printer *featuredMessagePrinter) calculateColumnWith(message string) int {
+func (printer *spotlightMessagePrinter) calculateColumnWith(message string) int {
 
 	bordersAndMarginWith := borderWith * amountOfBorders + marginWith * amountOfMargins
 

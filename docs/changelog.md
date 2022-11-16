@@ -1,9 +1,11 @@
 # TBD
+### Features
+- Added random enclave ID generation in `EnclaveManager.CreateEnclave()` when an empty enclave ID is provided
+- Added the `created enclave` spotlight message when a new enclave is created from the CLI (currently with the `enclave add`, `module exec` and `exec` commands)
 
 # 0.52.4
 ### Features
 - Added the enclave's creation time info which can be obtained through the `enclave ls` and the `enclave inspect` commands
-- Added random enclave ID generation in `EnclaveManager.CreateEnclave()` when an empty enclave ID is provided
 
 ### Changes
 - Moved the enclave ID auto generation and validation from the CLI to the engine's server which will catch all the presents and future use cases
