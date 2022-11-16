@@ -48,8 +48,6 @@ func (printer *spotlightMessagePrinter) Print(message string)  {
 	logrus.Infof(frameStr)
 	logrus.Infof(messageLineStr)
 	logrus.Infof(frameStr)
-
-	return
 }
 
 func (printer *spotlightMessagePrinter) calculateColumnWith(message string) int {
