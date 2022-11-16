@@ -165,6 +165,24 @@ func (kurtosisCtx *KurtosisContext) DestroyEnclave(ctx context.Context, enclaveI
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis/engine-lib-documentation
+func (kurtosisCtx *KurtosisContext) GetServices(ctx context.Context) (map[services.ServiceGUID]bool, error) {
+	//response, err := kurtosisCtx.client.GetEnclaves(ctx, &emptypb.Empty{})
+	//if err != nil {
+	//	return nil, stacktrace.Propagate(
+	//		err,
+	//		"An error occurred getting services",
+	//	)
+	//}
+
+	result := map[services.ServiceGUID]bool{}
+	//for enclaveId := range response.EnclaveInfo {
+	//	result[enclaves.EnclaveID(enclaveId)] = true
+	//}
+
+	return result, nil
+}
+
+// Docs available at https://docs.kurtosistech.com/kurtosis/engine-lib-documentation
 func (kurtosisCtx *KurtosisContext) Clean(ctx context.Context, shouldCleanAll bool) (map[string]bool, error) {
 	cleanArgs := &kurtosis_engine_rpc_api_bindings.CleanArgs{
 		ShouldCleanAll: shouldCleanAll,
@@ -265,7 +283,6 @@ func runReceiveStreamLogsFromTheServerRoutine(
 		serviceLogsStreamContentChan <- serviceLogsStreamContentObj
 	}
 }
-
 
 func newEnclaveContextFromEnclaveInfo(
 	enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo,
@@ -379,7 +396,7 @@ func newGetUserServiceLogsArgs(
 	getUserServiceLogsArgs := &kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs{
 		EnclaveId:      string(enclaveID),
 		ServiceGuidSet: userServiceGUIDStrSet,
-		FollowLogs: shouldFollowLogs,
+		FollowLogs:     shouldFollowLogs,
 	}
 
 	return getUserServiceLogsArgs

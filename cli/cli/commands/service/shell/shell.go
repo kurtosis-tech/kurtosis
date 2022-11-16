@@ -8,15 +8,16 @@ package shell
 import (
 	"bufio"
 	"context"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/enclave_id_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/service_guid_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
-	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
 	"golang.org/x/crypto/ssh/terminal"
 	"io"
@@ -47,10 +48,12 @@ var ServiceShellCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosis
 			isEnclaveIdArgOptional,
 			isEnclaveIdArgGreedy,
 		),
-		// TODO Create a NewServiceIDArg that adds autocomplete
-		{
-			Key: serviceGuidArgKey,
-		},
+		service_guid_arg.NewServiceGUIDArg(
+			serviceGuidArgKey,
+			engineClientCtxKey,
+			isEnclaveIdArgOptional,
+			isEnclaveIdArgGreedy,
+		),
 	},
 	RunFunc: run,
 }
