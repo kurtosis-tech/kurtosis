@@ -14,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"net"
 	"strings"
+	"time"
 )
 
 const (
@@ -26,7 +27,10 @@ const (
 )
 
 type DockerEnclaveObjectAttributesProvider interface {
-	ForEnclaveNetwork(isPartitioningEnabled bool) (DockerObjectAttributes, error)
+	ForEnclaveNetwork(
+		isPartitioningEnabled bool,
+		creationTime time.Time,
+	) (DockerObjectAttributes, error)
 	ForEnclaveDataVolume() (DockerObjectAttributes, error)
 
 	ForApiContainer(
@@ -73,11 +77,25 @@ func newDockerEnclaveObjectAttributesProviderImpl(
 	}
 }
 
-func (provider *dockerEnclaveObjectAttributesProviderImpl) ForEnclaveNetwork(isPartitioningEnabled bool) (DockerObjectAttributes, error) {
+func (provider *dockerEnclaveObjectAttributesProviderImpl) ForEnclaveNetwork(
+	isPartitioningEnabled bool,
+	creationTime time.Time,
+) (DockerObjectAttributes, error) {
 	enclaveIdStr := provider.enclaveId.GetString()
 	name, err := docker_object_name.CreateNewDockerObjectName(enclaveIdStr)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a name object from string '%v'", enclaveIdStr)
+	}
+
+	creationTimeStr := creationTime.Format(time.RFC3339)
+
+	creationTimeLabelValue, err := docker_label_value.CreateNewDockerLabelValue(creationTimeStr)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating a Docker label value object from enclave creation time string '%v'",
+			creationTimeStr,
+		)
 	}
 
 	// Enclave ID and GUID are the same for an enclave network
@@ -93,8 +111,9 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForEnclaveNetwork(isP
 	if isPartitioningEnabled {
 		isPartitioningEnabledLabelValue = label_value_consts.NetworkPartitioningEnabledDockerLabelValue
 	}
-
 	labels[label_key_consts.IsNetworkPartitioningEnabledDockerLabelKey] = isPartitioningEnabledLabelValue
+
+	labels[label_key_consts.EnclaveCreationTimeLabelKey] = creationTimeLabelValue
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
 	if err != nil {

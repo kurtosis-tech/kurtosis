@@ -38,7 +38,7 @@ type EngineServiceClient interface {
 	DestroyEnclave(ctx context.Context, in *DestroyEnclaveArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Gets rid of old enclaves
 	Clean(ctx context.Context, in *CleanArgs, opts ...grpc.CallOption) (*CleanResponse, error)
-	// Get  service logs
+	// Get service logs
 	GetServiceLogs(ctx context.Context, in *GetServiceLogsArgs, opts ...grpc.CallOption) (EngineService_GetServiceLogsClient, error)
 }
 
@@ -155,7 +155,7 @@ type EngineServiceServer interface {
 	DestroyEnclave(context.Context, *DestroyEnclaveArgs) (*emptypb.Empty, error)
 	// Gets rid of old enclaves
 	Clean(context.Context, *CleanArgs) (*CleanResponse, error)
-	// Get  service logs
+	// Get service logs
 	GetServiceLogs(*GetServiceLogsArgs, EngineService_GetServiceLogsServer) error
 }
 

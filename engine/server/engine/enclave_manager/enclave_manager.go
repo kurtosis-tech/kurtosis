@@ -3,20 +3,20 @@ package enclave_manager
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/api_container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
-	"sort"
-	"strings"
-	"sync"
-
-	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis/core/launcher/api_container_launcher"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/protobuf/types/known/timestamppb"
+	"sort"
+	"strings"
+	"sync"
 )
 
 const (
@@ -95,8 +95,9 @@ func (manager *EnclaveManager) CreateEnclave(
 	}
 
 	// Create Enclave with kurtosisBackend
-	if _, err := manager.kurtosisBackend.CreateEnclave(setupCtx, enclaveId, isPartitioningEnabled); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occured creating enclave with id `%v`", enclaveId)
+	newEnclave, err := manager.kurtosisBackend.CreateEnclave(setupCtx, enclaveId, isPartitioningEnabled)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating enclave with id `%v`", enclaveId)
 	}
 	shouldDestroyEnclave := true
 	defer func() {
@@ -158,6 +159,8 @@ func (manager *EnclaveManager) CreateEnclave(
 		}
 	}
 
+	creationTimestamp := getEnclaveCreationTimestamp(newEnclave)
+
 	result := &kurtosis_engine_rpc_api_bindings.EnclaveInfo{
 		EnclaveId:          enclaveIdStr,
 		ContainersStatus:   kurtosis_engine_rpc_api_bindings.EnclaveContainersStatus_EnclaveContainersStatus_RUNNING,
@@ -168,6 +171,7 @@ func (manager *EnclaveManager) CreateEnclave(
 			GrpcProxyPortInsideEnclave: uint32(apiContainerListenGrpcProxyPortNumInsideNetwork),
 		},
 		ApiContainerHostMachineInfo: apiContainerHostMachineInfo,
+		CreationTime: creationTimestamp,
 	}
 
 	// Everything started successfully, so the responsibility of deleting the enclave is now transferred to the caller
@@ -514,12 +518,16 @@ func (manager *EnclaveManager) getEnclaveInfoForEnclave(ctx context.Context, enc
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to get EnclaveContainersStatus from the enclave status of enclave '%v', but an error occurred", enclaveId)
 	}
+
+	creationTimestamp := getEnclaveCreationTimestamp(enclave)
+
 	return &kurtosis_engine_rpc_api_bindings.EnclaveInfo{
 		EnclaveId:                   enclaveIdStr,
 		ContainersStatus:            enclaveContainersStatus,
 		ApiContainerStatus:          apiContainerStatus,
 		ApiContainerInfo:            apiContainerInfo,
 		ApiContainerHostMachineInfo: apiContainerHostMachineInfo,
+		CreationTime: creationTimestamp,
 	}, nil
 }
 
@@ -557,4 +565,20 @@ func getApiContainerStatusFromContainerStatus(status container_status.ContainerS
 		// EnclaveAPIContainerStatus is of type int32, cannot convert nil to int32 returning -1
 		return -1, stacktrace.NewError("Unrecognized container status '%v'; this is a bug in Kurtosis", status.String())
 	}
+}
+
+func getEnclaveCreationTimestamp(enclave *enclave.Enclave) *timestamppb.Timestamp {
+	enclaveCreationTime := enclave.GetCreationTime()
+
+	var creationTime *timestamppb.Timestamp
+
+	//If an enclave has a nil creation time we are going to return nil also in order to check
+	//TODO remove this condition after 2023-01-01 when we are sure that there is not any old enclave created without the creation time label
+	//TODO after the retro-compatibility period we shouln't support the nil value and fail loudly instead
+	//Handling retro-compatibility, enclaves that did not track enclave's creation time
+	if enclaveCreationTime != nil {
+		creationTime = timestamppb.New(*enclaveCreationTime)
+	}
+
+	return creationTime
 }

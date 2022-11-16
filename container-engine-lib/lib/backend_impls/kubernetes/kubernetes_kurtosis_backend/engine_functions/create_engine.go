@@ -233,9 +233,10 @@ func createEngineNamespace(
 	}
 	engineNamespaceName := engineNamespaceAttributes.GetName().GetString()
 	engineNamespaceLabels := shared_helpers.GetStringMapFromLabelMap(engineNamespaceAttributes.GetLabels())
+	emptyAnnotations := map[string]string{}
 
 	//Create engine's namespace
-	engineNamespace, err := kubernetesManager.CreateNamespace(ctx, engineNamespaceName, engineNamespaceLabels)
+	engineNamespace, err := kubernetesManager.CreateNamespace(ctx, engineNamespaceName, engineNamespaceLabels, emptyAnnotations)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while creating the namespace '%v' using labels '%+v'", engineNamespace, engineNamespaceLabels)
 	}

@@ -9,7 +9,7 @@ unique set of Kurtosis bindings to interact with an enclave.
 Startosis Reference
 -------------------
 
-#### `add_service(service_id: ServiceID, service_config: ServiceConfig)`
+#### `add_service(service_id: ServiceID, config: ServiceConfig)`
 Adds a service to the enclave with the specified ID and config.
 
 Startosis Execution layer

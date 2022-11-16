@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_resource_collectors"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
@@ -20,6 +21,7 @@ import (
 	applyconfigurationsv1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"os"
 	"path"
+	"time"
 )
 
 const (
@@ -66,7 +68,6 @@ type dumpPodResult struct {
 // ====================================================================================================
 //                                     		Enclave CRUD Methods
 // ====================================================================================================
-
 func (backend KubernetesKurtosisBackend) CreateEnclave(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
@@ -92,17 +93,20 @@ func (backend KubernetesKurtosisBackend) CreateEnclave(
 		return nil, stacktrace.NewError("Cannot create enclave with ID '%v' because an enclave with ID '%v' already exists", enclaveId, enclaveId)
 	}
 
+	creationTime := time.Now()
+
 	// Make Enclave attributes provider
 	enclaveObjAttrsProvider := backend.objAttrsProvider.ForEnclave(enclaveId)
-	enclaveNamespaceAttrs, err := enclaveObjAttrsProvider.ForEnclaveNamespace(isPartitioningEnabled)
+	enclaveNamespaceAttrs, err := enclaveObjAttrsProvider.ForEnclaveNamespace(isPartitioningEnabled, creationTime)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while trying to get the enclave network attributes for the enclave with ID '%v'", enclaveId)
 	}
 
 	enclaveNamespaceName := enclaveNamespaceAttrs.GetName().GetString()
 	enclaveNamespaceLabels := shared_helpers.GetStringMapFromLabelMap(enclaveNamespaceAttrs.GetLabels())
+	enclaveAnnotationsStrs := shared_helpers.GetStringMapFromAnnotationMap(enclaveNamespaceAttrs.GetAnnotations())
 
-	enclaveNamespace, err := backend.kubernetesManager.CreateNamespace(ctx, enclaveNamespaceName, enclaveNamespaceLabels)
+	enclaveNamespace, err := backend.kubernetesManager.CreateNamespace(ctx, enclaveNamespaceName, enclaveNamespaceLabels, enclaveAnnotationsStrs)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create namespace with name '%v' for enclave '%v'", enclaveNamespaceName, enclaveId)
 	}
@@ -509,9 +513,15 @@ func getEnclaveObjectsFromKubernetesResources(
 			return nil, stacktrace.Propagate(err, "An error occurred getting enclave status from enclave pods '%+v'", resourcesForEnclaveId.pods)
 		}
 
+		enclaveCreationTime, err := getEnclaveCreationTimeFromEnclaveNamespace(resourcesForEnclaveId.namespace)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting the enclave's creation time from the enclave's namespace '%+v'", resourcesForEnclaveId.namespace)
+		}
+
 		enclaveObj := enclave.NewEnclave(
 			enclaveId,
 			enclaveStatus,
+			enclaveCreationTime,
 		)
 
 		result[enclaveId] = enclaveObj
@@ -640,4 +650,23 @@ func dumpPodInfo(
 	}
 
 	return nil
+}
+
+func getEnclaveCreationTimeFromEnclaveNamespace(namespace *apiv1.Namespace) (*time.Time, error) {
+	namespaceAnnotations := namespace.Annotations
+
+	enclaveCreationTimeStr, found := namespaceAnnotations[kubernetes_annotation_key_consts.EnclaveCreationTimeAnnotationKey.GetString()]
+	if !found {
+		//Handling retro-compatibility, enclaves that did not track enclave's creation time
+		return nil, nil //TODO remove this return after 2023-01-01
+		//TODO uncomment this after 2023-01-01 when we are sure that there is not any old enclave created with the creation time annotation
+		//return nil, stacktrace.NewError("Expected to find namespace's annotation with key '%v' but none was found", kubernetes_annotation_key_consts.EnclaveCreationTimeAnnotationKey.GetString())
+	}
+
+	enclaveCreationTime, err := time.Parse(time.RFC3339, enclaveCreationTimeStr)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred parsing enclave creation time '%v' using this format '%v'", enclaveCreationTimeStr, time.RFC3339)
+	}
+
+	return &enclaveCreationTime, nil
 }
