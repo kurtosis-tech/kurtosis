@@ -113,9 +113,9 @@ func createMockInstruction(t *testing.T, canonicalizedInstruction string, execut
 	instruction.EXPECT().GetCanonicalInstruction().Maybe().Return(canonicalizedInstruction)
 
 	if executeSuccessfully {
-		instruction.EXPECT().Execute(mock.Anything, mock.Anything).Maybe().Return(nil)
+		instruction.EXPECT().Execute(mock.Anything).Maybe().Return(nil)
 	} else {
-		instruction.EXPECT().Execute(mock.Anything, mock.Anything).Maybe().Return(errors.New("expected error for test"))
+		instruction.EXPECT().Execute(mock.Anything).Maybe().Return(errors.New("expected error for test"))
 	}
 
 	return instruction

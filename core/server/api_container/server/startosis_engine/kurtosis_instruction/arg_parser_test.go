@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
+	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
@@ -432,16 +433,16 @@ func TestParseCommand_InvalidCommandsWithIntegers(t *testing.T) {
 	require.NotNil(t, err)
 }
 
-func TestParseFilePathPath_ValidValue(t *testing.T) {
-	input := starlark.String("/foo/bar")
-	output, err := ParseFilePath("file_path", input)
+func TestArtifactUuidPathPath_ValidValue(t *testing.T) {
+	input := starlark.String("abde-f23dd-1")
+	output, err := ParseArtifactUuid("artifact_uuid", input)
 	require.Nil(t, err)
-	require.Equal(t, "/foo/bar", output)
+	require.Equal(t, enclave_data_directory.FilesArtifactUUID("abde-f23dd-1"), output)
 }
 
-func TestParseFilePath_EmptyStringFails(t *testing.T) {
+func TestArtifactUuidPathPath_EmptyStringFails(t *testing.T) {
 	input := starlark.String("")
-	_, err := ParseFilePath("file_path", input)
+	_, err := ParseArtifactUuid("artifact_uuid", input)
 	require.NotNil(t, err)
 }
 

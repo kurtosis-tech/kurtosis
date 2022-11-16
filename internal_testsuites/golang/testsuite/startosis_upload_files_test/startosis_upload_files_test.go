@@ -64,13 +64,13 @@ func TestStartosis(t *testing.T) {
 	require.NoError(t, err, "Unexpected error executing startosis script")
 
 	expectedScriptOutput := `Adding service example-datastore-server-1.
-Uploaded {{kurtosis:FILENAME_NOT_USED-13:38.artifact_uuid}}
+Uploaded [a-f0-9-]{36}
 `
 
 	require.Empty(t, executionResult.InterpretationError, "Unexpected interpretation error. This test requires you to be online for the upload_file command to run")
 	require.Lenf(t, executionResult.ValidationErrors, 0, "Unexpected validation error")
 	require.Empty(t, executionResult.ExecutionError, "Unexpected execution error")
-	require.Equal(t, expectedScriptOutput, executionResult.SerializedScriptOutput)
+	require.Regexp(t, expectedScriptOutput, executionResult.SerializedScriptOutput)
 	logrus.Infof("Successfully ran Startosis script")
 
 	// Check that the service added by the script is functional
