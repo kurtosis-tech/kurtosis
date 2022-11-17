@@ -67,22 +67,6 @@ func MakeWaitInterpretationReturnValue(serviceId service.ServiceID, factName str
 	return fact
 }
 
-// ReplaceArtifactUuidMagicStringWithValue This function gets used to replace artifact uuid magic strings generated during interpretation time with actual values during execution time
-// TODO extend this in the future to be generic, instead of environment one could pass in a func(string) -> string maybe
-func ReplaceArtifactUuidMagicStringWithValue(originalString string, serviceIdForLogging string, environment *startosis_executor.ExecutionEnvironment) (string, error) {
-	compiledArtifactUuidRegex := regexp.MustCompile(kurtosis_instruction.GetRegularExpressionForInstruction(ArtifactUUIDSuffix))
-	matches := compiledArtifactUuidRegex.FindAllString(originalString, unlimitedMatches)
-	replacedString := originalString
-	for _, match := range matches {
-		artifactUuid, found := environment.GetArtifactUuid(match)
-		if !found {
-			return "", stacktrace.NewError("Couldn't find '%v' in the execution environment which is required by service '%v'", originalString, serviceIdForLogging)
-		}
-		replacedString = strings.Replace(replacedString, match, artifactUuid, singleMatch)
-	}
-	return replacedString, nil
-}
-
 func ReplaceIPAddressInString(originalString string, network service_network.ServiceNetwork, argNameForLogigng string) (string, error) {
 	matches := compiledRegex.FindAllStringSubmatch(originalString, unlimitedMatches)
 	replacedString := originalString
