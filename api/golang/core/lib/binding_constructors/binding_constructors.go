@@ -3,7 +3,6 @@ package binding_constructors
 import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"google.golang.org/protobuf/types/known/durationpb"
-	"google.golang.org/protobuf/types/known/timestamppb"
 	"time"
 )
 
@@ -175,10 +174,6 @@ func NewConstantFactRecipeWithDefaultRefresh(serviceId string, factName string, 
 		FactRecipeDefinition: &kurtosis_core_rpc_api_bindings.FactRecipe_ConstantFact{
 			ConstantFact: constantFactRecipeDefinition,
 		},
-		RefreshInterval: &durationpb.Duration{
-			Seconds: 0,
-			Nanos:   0,
-		},
 	}
 }
 
@@ -188,17 +183,9 @@ func NewGetHttpRequestFactRecipeWithDefaultRefresh(serviceId string, factName st
 		FactName:  factName,
 		FactRecipeDefinition: &kurtosis_core_rpc_api_bindings.FactRecipe_HttpRequestFact{
 			HttpRequestFact: &kurtosis_core_rpc_api_bindings.HttpRequestFactRecipe{
-				PortId:         portId,
-				Endpoint:       endpoint,
-				Method:         kurtosis_core_rpc_api_bindings.HttpRequestMethod_GET,
-				ContentType:    "",
-				Body:           "",
-				FieldExtractor: nil,
+				PortId:   portId,
+				Endpoint: endpoint,
 			},
-		},
-		RefreshInterval: &durationpb.Duration{
-			Seconds: 0,
-			Nanos:   0,
 		},
 	}
 }
@@ -208,9 +195,6 @@ func NewGetHttpRequestFactRecipeDefinition(portId string, endpoint string, field
 		HttpRequestFact: &kurtosis_core_rpc_api_bindings.HttpRequestFactRecipe{
 			PortId:         portId,
 			Endpoint:       endpoint,
-			Method:         kurtosis_core_rpc_api_bindings.HttpRequestMethod_GET,
-			ContentType:    "",
-			Body:           "",
 			FieldExtractor: fieldExtractor,
 		},
 	}
@@ -225,10 +209,6 @@ func NewExecFactRecipeWithDefaultRefresh(serviceId string, factName string, cmdA
 				CmdArgs: cmdArgs,
 			},
 		},
-		RefreshInterval: &durationpb.Duration{
-			Seconds: 0,
-			Nanos:   0,
-		},
 	}
 }
 
@@ -242,10 +222,6 @@ func GetFactValuesArgs(serviceId string, factName string) *kurtosis_core_rpc_api
 	return &kurtosis_core_rpc_api_bindings.GetFactValuesArgs{
 		ServiceId: serviceId,
 		FactName:  factName,
-		StartingFrom: &timestamppb.Timestamp{
-			Seconds: 0,
-			Nanos:   0,
-		},
 	}
 }
 
