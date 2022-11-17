@@ -194,6 +194,11 @@ func validateScriptOrModulePath(_ context.Context, _ *flags.ParsedFlags, args *a
 		return stacktrace.NewError("Received an empty '%v'. It should be a non empty string.", scriptOrModulePathKey)
 	}
 
+	if strings.HasPrefix(scriptOrModulePath, githubDomainPrefix) {
+		// if it's a Github path we don't validate further, the APIC will do it for us
+		return nil
+	}
+
 	fileInfo, err := os.Stat(scriptOrModulePath)
 	if err != nil {
 		return stacktrace.Propagate(err, "Error reading script file or module dir '%s'", scriptOrModulePath)
