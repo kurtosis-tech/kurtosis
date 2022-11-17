@@ -166,12 +166,13 @@ func (manager *EnclaveManager) CreateEnclave(
 		ContainersStatus:   kurtosis_engine_rpc_api_bindings.EnclaveContainersStatus_EnclaveContainersStatus_RUNNING,
 		ApiContainerStatus: kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING,
 		ApiContainerInfo: &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerInfo{
+			ContainerId:                "",
 			IpInsideEnclave:            apiContainer.GetPrivateIPAddress().String(),
 			GrpcPortInsideEnclave:      uint32(apiContainerListenGrpcPortNumInsideNetwork),
 			GrpcProxyPortInsideEnclave: uint32(apiContainerListenGrpcProxyPortNumInsideNetwork),
 		},
 		ApiContainerHostMachineInfo: apiContainerHostMachineInfo,
-		CreationTime: creationTimestamp,
+		CreationTime:                creationTimestamp,
 	}
 
 	// Everything started successfully, so the responsibility of deleting the enclave is now transferred to the caller
@@ -223,6 +224,7 @@ func (manager *EnclaveManager) DestroyEnclave(ctx context.Context, enclaveIdStr 
 		IDs: map[enclave.EnclaveID]bool{
 			enclaveId: true,
 		},
+		Statuses: nil,
 	}
 	successfullyDestroyedEnclaves, erroredEnclaves, err := manager.kurtosisBackend.DestroyEnclaves(ctx, enclaveDestroyFilter)
 	if err != nil {
@@ -327,6 +329,7 @@ func (manager *EnclaveManager) getEnclaveApiContainerInformation(
 		return 0, nil, nil, stacktrace.Propagate(err, "An error occurred getting the API container status for enclave '%v'", enclaveId)
 	}
 	resultApiContainerInfo := &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerInfo{
+		ContainerId:                "",
 		IpInsideEnclave:            apiContainer.GetPrivateIPAddress().String(),
 		GrpcPortInsideEnclave:      uint32(apiContainer.GetPrivateGRPCPort().GetNumber()),
 		GrpcProxyPortInsideEnclave: uint32(apiContainer.GetPrivateGRPCProxyPort().GetNumber()),
@@ -393,6 +396,7 @@ func (manager *EnclaveManager) cleanEnclaves(ctx context.Context, shouldCleanAll
 	}
 
 	destroyEnclaveFilters := &enclave.EnclaveFilters{
+		IDs:      nil,
 		Statuses: enclaveStatusFilters,
 	}
 	successfullyDestroyedEnclaves, erroredEnclaves, err := manager.kurtosisBackend.DestroyEnclaves(ctx, destroyEnclaveFilters)
@@ -438,12 +442,14 @@ func getEnclaveByEnclaveIdFilter(enclaveId enclave.EnclaveID) *enclave.EnclaveFi
 		IDs: map[enclave.EnclaveID]bool{
 			enclaveId: true,
 		},
+		Statuses: nil,
 	}
 }
 
 func getAllEnclavesFilter() *enclave.EnclaveFilters {
 	return &enclave.EnclaveFilters{
-		IDs: map[enclave.EnclaveID]bool{},
+		IDs:      map[enclave.EnclaveID]bool{},
+		Statuses: nil,
 	}
 }
 
@@ -452,6 +458,7 @@ func getApiContainerByEnclaveIdFilter(enclaveId enclave.EnclaveID) *api_containe
 		EnclaveIDs: map[enclave.EnclaveID]bool{
 			enclaveId: true,
 		},
+		Statuses: nil,
 	}
 }
 
@@ -527,7 +534,7 @@ func (manager *EnclaveManager) getEnclaveInfoForEnclave(ctx context.Context, enc
 		ApiContainerStatus:          apiContainerStatus,
 		ApiContainerInfo:            apiContainerInfo,
 		ApiContainerHostMachineInfo: apiContainerHostMachineInfo,
-		CreationTime: creationTimestamp,
+		CreationTime:                creationTimestamp,
 	}, nil
 }
 

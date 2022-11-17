@@ -44,7 +44,6 @@ const (
 	userServiceContainerType = "user-service"
 
 	testTimeOut = 30 * time.Second
-
 )
 
 func TestGetUserServiceLogs_ValidResponse(t *testing.T) {
@@ -113,8 +112,20 @@ func TestGetUserServiceLogs_ValidResponse(t *testing.T) {
 		directionQueryParam := request.URL.Query().Get(expectedDirectionQueryParamKey)
 		require.Equal(t, expectedDirectionQueryParamValue, directionQueryParam)
 	}).Return(&http.Response{
-		StatusCode: http.StatusOK,
-		Body:       io.NopCloser(strings.NewReader(mockedResponseBodyStr)),
+		Status:           "",
+		StatusCode:       http.StatusOK,
+		Proto:            "",
+		ProtoMajor:       0,
+		ProtoMinor:       0,
+		Header:           nil,
+		Body:             io.NopCloser(strings.NewReader(mockedResponseBodyStr)),
+		ContentLength:    0,
+		TransferEncoding: nil,
+		Close:            false,
+		Uncompressed:     false,
+		Trailer:          nil,
+		Request:          nil,
+		TLS:              nil,
 	}, nil)
 
 	logsDatabaseClient := NewLokiLogsDatabaseClient(fakeLogsDatabaseAddress, mockHttpClient)
@@ -230,8 +241,20 @@ func TestFilterExistingServiceGuids_FilteringWorksAsExpected(t *testing.T) {
 			req.URL.Path == expectedPath &&
 			strings.HasPrefix(req.URL.RawQuery, expectedQueryPrefix)
 	})).Return(&http.Response{
-		StatusCode: http.StatusOK,
-		Body:       io.NopCloser(strings.NewReader(jsonResponse)),
+		Status:           "",
+		StatusCode:       http.StatusOK,
+		Proto:            "",
+		ProtoMajor:       0,
+		ProtoMinor:       0,
+		Header:           nil,
+		Body:             io.NopCloser(strings.NewReader(jsonResponse)),
+		ContentLength:    0,
+		TransferEncoding: nil,
+		Close:            false,
+		Uncompressed:     false,
+		Trailer:          nil,
+		Request:          nil,
+		TLS:              nil,
 	}, nil)
 
 	lokiDbClient := NewLokiLogsDatabaseClient(fakeLogsDatabaseAddress, mockHttpClient)
@@ -253,8 +276,20 @@ func TestFilterExistingServiceGuids_LokiServerNotFound(t *testing.T) {
 	mockHttpClient := mocks.NewMockHttpClient(t)
 
 	mockHttpClient.EXPECT().Do(mock.Anything).Return(&http.Response{
-		StatusCode: http.StatusNotFound,
-		Body:       io.NopCloser(strings.NewReader("{}")),
+		Status:           "",
+		StatusCode:       http.StatusNotFound,
+		Proto:            "",
+		ProtoMajor:       0,
+		ProtoMinor:       0,
+		Header:           nil,
+		Body:             io.NopCloser(strings.NewReader("{}")),
+		ContentLength:    0,
+		TransferEncoding: nil,
+		Close:            false,
+		Uncompressed:     false,
+		Trailer:          nil,
+		Request:          nil,
+		TLS:              nil,
 	}, nil)
 
 	lokiDbClient := NewLokiLogsDatabaseClient(fakeLogsDatabaseAddress, mockHttpClient)
@@ -273,8 +308,20 @@ func TestFilterExistingServiceGuids_LokiServerReturnsErrorStatus(t *testing.T) {
 
 	jsonResponse := `{"status": "ERROR_STATUS", "data": []}`
 	mockHttpClient.EXPECT().Do(mock.Anything).Return(&http.Response{
-		StatusCode: http.StatusOK,
-		Body:       io.NopCloser(strings.NewReader(jsonResponse)),
+		Status:           "",
+		StatusCode:       http.StatusOK,
+		Proto:            "",
+		ProtoMajor:       0,
+		ProtoMinor:       0,
+		Header:           nil,
+		Body:             io.NopCloser(strings.NewReader(jsonResponse)),
+		ContentLength:    0,
+		TransferEncoding: nil,
+		Close:            false,
+		Uncompressed:     false,
+		Trailer:          nil,
+		Request:          nil,
+		TLS:              nil,
 	}, nil)
 
 	lokiDbClient := NewLokiLogsDatabaseClient(fakeLogsDatabaseAddress, mockHttpClient)
@@ -293,8 +340,20 @@ func TestFilterExistingServiceGuids_UnexpectedResponseObjectShape(t *testing.T) 
 
 	jsonResponse := `{"UNEXPECTED_JSONS": ""}`
 	mockHttpClient.EXPECT().Do(mock.Anything).Return(&http.Response{
-		StatusCode: http.StatusOK,
-		Body:       io.NopCloser(strings.NewReader(jsonResponse)),
+		Status:           "",
+		StatusCode:       http.StatusOK,
+		Proto:            "",
+		ProtoMajor:       0,
+		ProtoMinor:       0,
+		Header:           nil,
+		Body:             io.NopCloser(strings.NewReader(jsonResponse)),
+		ContentLength:    0,
+		TransferEncoding: nil,
+		Close:            false,
+		Uncompressed:     false,
+		Trailer:          nil,
+		Request:          nil,
+		TLS:              nil,
 	}, nil)
 
 	lokiDbClient := NewLokiLogsDatabaseClient(fakeLogsDatabaseAddress, mockHttpClient)
@@ -307,7 +366,6 @@ func TestFilterExistingServiceGuids_UnexpectedResponseObjectShape(t *testing.T) 
 	require.Nil(t, result)
 	require.Contains(t, err.Error(), "The logs database returns an error status when fetching the existing service GUIDs. Response was: ")
 }
-
 
 // ====================================================================================================
 //
