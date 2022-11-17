@@ -106,7 +106,12 @@ func (instruction *AddServiceInstruction) GetCanonicalInstruction() string {
 }
 
 func (instruction *AddServiceInstruction) Execute(ctx context.Context, environment *startosis_executor.ExecutionEnvironment) error {
-	err := instruction.replaceIPAddress()
+	serviceIdStr, err := replaceFactsInString(string(instruction.serviceId), instruction.factsEngine)
+	if err != nil {
+		return stacktrace.Propagate(err, "Error occurred while replacing facts in service id for '%v'", instruction.serviceId)
+	}
+	instruction.serviceId = kurtosis_backend_service.ServiceID(serviceIdStr)
+	err = instruction.replaceMagicStrings()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred replacing IP Address with actual values in add service instruction for service '%v'", instruction.serviceId)
 	}
@@ -142,7 +147,7 @@ func (instruction *AddServiceInstruction) String() string {
 	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(AddServiceBuiltinName, instruction.starlarkKwargs, &instruction.position)
 }
 
-func (instruction *AddServiceInstruction) replaceIPAddress() error {
+func (instruction *AddServiceInstruction) replaceMagicStrings() error {
 	serviceIdStr := string(instruction.serviceId)
 	entryPointArgs := instruction.serviceConfig.EntrypointArgs
 	for index, entryPointArg := range entryPointArgs {

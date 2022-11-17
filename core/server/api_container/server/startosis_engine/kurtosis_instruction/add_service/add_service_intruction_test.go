@@ -108,7 +108,7 @@ func TestAddServiceInstruction_EntryPointArgsAreReplaced(t *testing.T) {
 		starlark.StringDict{}, // Unused
 	)
 
-	err := addServiceInstruction.replaceIPAddress()
+	err := addServiceInstruction.replaceMagicStrings()
 	require.Nil(t, err)
 	require.Equal(t, "-- 172.17.3.13", addServiceInstruction.serviceConfig.EntrypointArgs[0])
 }
