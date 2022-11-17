@@ -54,6 +54,7 @@ func newEmptyRenderTemplatesInstruction(serviceNetwork service_network.ServiceNe
 		serviceNetwork:                    serviceNetwork,
 		position:                          position,
 		starlarkKwargs:                    starlark.StringDict{},
+		artifactUuid:                      "",
 		templatesAndDataByDestRelFilepath: nil,
 	}
 }

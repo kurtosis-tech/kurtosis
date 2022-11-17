@@ -24,6 +24,8 @@ const (
 )
 
 var (
+	// UnmarshalOptions contains a pragma field (which we cannot specify) so we exclude it from exhaustruct linting
+	// nolint:exhaustruct
 	protoUnmarshalerOptions = proto.UnmarshalOptions{
 		Merge:          true,
 		AllowPartial:   false,
