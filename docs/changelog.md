@@ -5,6 +5,9 @@
 
 # 0.53.4
 
+### Changes
+- Slightly update the way script output information are passed from the Startosis engine back the API container main class. This is a step to prepare for streaming this output all the way back the CLI.
+
 # 0.53.3
 ### Fixes
 - Fixed a bug with dumping enclave logs during the CI run

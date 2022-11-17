@@ -30,7 +30,10 @@ func NewStartosisExecutor() *StartosisExecutor {
 // Execute executes the list of Kurtosis instructions against the Kurtosis backend
 // It serializes each instruction that is executed and returned the list of serialized instruction as a result
 // It returns an error if something unexpected happens outside the execution of the script
-func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, instructions []kurtosis_instruction.KurtosisInstruction) ([]*kurtosis_core_rpc_api_bindings.KurtosisInstruction, *kurtosis_core_rpc_api_bindings.KurtosisExecutionError) {
+//
+// The outputStream is a channel for collecting the output of the startosis script.
+func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, instructions []kurtosis_instruction.KurtosisInstruction, outputStream chan<- string) ([]*kurtosis_core_rpc_api_bindings.KurtosisInstruction, *kurtosis_core_rpc_api_bindings.KurtosisExecutionError) {
+	// Make sure the channel is closed when the execution finishes
 	executor.mutex.Lock()
 	defer executor.mutex.Unlock()
 
@@ -42,6 +45,9 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, ins
 			if err != nil {
 				executionError := binding_constructors.NewKurtosisExecutionError(stacktrace.Propagate(err, "An error occurred executing instruction (number %d): \n%v", index+1, instruction.GetCanonicalInstruction()).Error())
 				return successfullyExecutedInstructions, executionError
+			}
+			if instructionOutput != nil {
+				outputStream <- *instructionOutput
 			}
 			successfullyExecutedInstruction = binding_constructors.NewKurtosisInstruction(instruction.GetPositionInOriginalScript().ToAPIType(), instruction.GetCanonicalInstruction(), instructionOutput)
 		} else {

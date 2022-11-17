@@ -34,7 +34,8 @@ func TestExecuteKurtosisInstructions_ExecuteForReal_Success(t *testing.T) {
 		instruction2,
 	}
 
-	serializedInstruction, err := executor.Execute(context.Background(), executeForReal, instructions)
+	intoTheVoid := make(chan string)
+	serializedInstruction, err := executor.Execute(context.Background(), executeForReal, instructions, intoTheVoid)
 	instruction1.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
 	instruction1.AssertNumberOfCalls(t, "Execute", 1)
 	instruction2.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
@@ -61,7 +62,8 @@ func TestExecuteKurtosisInstructions_ExecuteForReal_FailureHalfWay(t *testing.T)
 		instruction3,
 	}
 
-	serializedInstruction, err := executor.Execute(context.Background(), executeForReal, instructions)
+	intoTheVoid := make(chan string)
+	serializedInstruction, err := executor.Execute(context.Background(), executeForReal, instructions, intoTheVoid)
 	instruction1.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
 	instruction1.AssertNumberOfCalls(t, "Execute", 1)
 	instruction2.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
@@ -95,7 +97,8 @@ func TestExecuteKurtosisInstructions_DoDryRun(t *testing.T) {
 		instruction2,
 	}
 
-	serializedInstruction, err := executor.Execute(context.Background(), doDryRun, instructions)
+	intoTheVoid := make(chan string)
+	serializedInstruction, err := executor.Execute(context.Background(), doDryRun, instructions, intoTheVoid)
 	instruction1.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
 	instruction2.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
 	// both execute never called because dry run = true

@@ -830,7 +830,27 @@ func (apicService ApiContainerService) executeStartosis(ctx context.Context, dry
 	}
 	logrus.Debugf("Successfully validated Startosis script")
 
-	successfullyExecutedInstructions, executionError := apicService.startosisExecutor.Execute(ctx, dryRun, generatedInstructionsList)
+	scriptOutput := strings.Builder{}
+	streamingChannel := make(chan string) // the streaming channel will be closed right after calling Execute()
+	streamingChannelFlushedBlocking := make(chan bool)
+	defer close(streamingChannelFlushedBlocking)
+	go func() {
+		// Go background routine to collect the element of the streaming channel as they are written
+		// TODO(gb): for now we copy them to a simple str buffer but next step will be to forward them to a gRPC stream
+		for outputLine := range streamingChannel {
+			logrus.Debugf("Kurtosis script output line received: \n%v", outputLine)
+			if _, err := scriptOutput.WriteString(outputLine); err != nil {
+				logrus.Errorf("Unnable to process Kurtosis script output line. Startosis output line was: \n%v\n. Error was: \n%v", outputLine, err.Error())
+			}
+		}
+		// Channel closed means that the executor finished going through the list of instructions. We can return safely
+		logrus.Debug("Kurtosis script execution finished. Output stream will be closed shortly")
+		streamingChannelFlushedBlocking <- true
+	}()
+
+	successfullyExecutedInstructions, executionError := apicService.startosisExecutor.Execute(ctx, dryRun, generatedInstructionsList, streamingChannel)
+	close(streamingChannel)           // close the channel to stop the execution of the Go routine started above
+	<-streamingChannelFlushedBlocking // Block on the flush channel to make sure we capture all values in the buffer
 	if executionError != nil {
 		return binding_constructors.NewExecuteStartosisResponseFromExecutionError(
 			successfullyExecutedInstructions,
