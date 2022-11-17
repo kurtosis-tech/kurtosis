@@ -93,7 +93,7 @@ func (manager *EnclaveManager) CreateEnclave(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred checking for enclaves with ID '%v'", enclaveId)
 	}
-	if IsEnclaveIdInUse(enclaveId, allCurrentEnclaves) {
+	if isEnclaveIdInUse(enclaveId, allCurrentEnclaves) {
 		return nil, stacktrace.NewError("Cannot create enclave '%v' because an enclave with that ID already exists", enclaveId)
 	}
 
@@ -105,7 +105,7 @@ func (manager *EnclaveManager) CreateEnclave(
 	}
 
 	if err := validateEnclaveId(enclaveId); err !=nil {
-		return nil, stacktrace.Propagate(err, "An error occurred validation enclave ID '%v'", enclaveId)
+		return nil, stacktrace.Propagate(err, "An error occurred validating enclave ID '%v'", enclaveId)
 	}
 
 	teardownCtx := context.Background() // Separate context for tearing stuff down in case the input context is cancelled

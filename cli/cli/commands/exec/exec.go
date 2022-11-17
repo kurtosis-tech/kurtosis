@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
+	enclave_consts "github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/enclave"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/user_support_constants"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"os"
@@ -68,7 +68,7 @@ var StartosisExecCmd = &lowlevel.LowlevelKurtosisCommand{
 			Usage: fmt.Sprintf(
 				"The enclave ID in which the script or module will be executed, which must match regex '%v' " +
 					"(emptystring will autogenerate an enclave ID). An enclave with this ID will be created if it doesn't exist.",
-				user_support_constants.AllowedEnclaveIdCharsRegexStr,
+				enclave_consts.AllowedEnclaveIdCharsRegexStr,
 			),
 			Type:    flags.FlagType_String,
 			Default: autogenerateEnclaveIdKeyword,

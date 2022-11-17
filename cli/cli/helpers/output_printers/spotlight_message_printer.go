@@ -12,8 +12,8 @@ const (
 	frameChar   = "="
 	borderChars = "||"
 
-	borderWith = 2
-	marginWith = 10
+	borderWidth     = 2
+	marginWidth     = 10
 	amountOfBorders = 2
 	amountOfMargins = 2
 
@@ -39,10 +39,10 @@ func GetSpotlightMessagePrinter() *spotlightMessagePrinter {
 }
 
 func (printer *spotlightMessagePrinter) Print(message string)  {
-	columnWith := printer.calculateColumnWith(message)
+	columnWidth := printer.calculateColumnWidth(message)
 
-	marginStr := strings.Repeat(spaceUnicodeChar, marginWith)
-	frameStr := strings.Repeat(frameChar, columnWith)
+	marginStr := strings.Repeat(spaceUnicodeChar, marginWidth)
+	frameStr := strings.Repeat(frameChar, columnWidth)
 	messageLineStr := fmt.Sprintf("%s%s%s%s%s", borderChars, marginStr, message, marginStr, borderChars)
 
 	logrus.Infof(frameStr)
@@ -50,13 +50,13 @@ func (printer *spotlightMessagePrinter) Print(message string)  {
 	logrus.Infof(frameStr)
 }
 
-func (printer *spotlightMessagePrinter) calculateColumnWith(message string) int {
+func (printer *spotlightMessagePrinter) calculateColumnWidth(message string) int {
 
-	bordersAndMarginWith := borderWith * amountOfBorders + marginWith * amountOfMargins
+	bordersAndMarginWidth := borderWidth* amountOfBorders + marginWidth* amountOfMargins
 
-	messageWith := utf8.RuneCountInString(message)
+	messageWidth := utf8.RuneCountInString(message)
 
-	columnWith := bordersAndMarginWith + messageWith
+	columnWidth := bordersAndMarginWidth + messageWidth
 
-	return columnWith
+	return columnWidth
 }

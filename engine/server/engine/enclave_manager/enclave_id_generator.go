@@ -16,6 +16,7 @@ func getRandomEnclaveIdWithRetries(
 	allCurrentEnclaves map[enclave.EnclaveID]*enclave.Enclave,
 	retries uint16,
 ) (enclave.EnclaveID, error) {
+	retriesLeft := retries - 1
 
 	seed := time.Now().UTC().UnixNano()
 	nameGenerator := namegenerator.NewNameGenerator(seed)
@@ -25,25 +26,26 @@ func getRandomEnclaveIdWithRetries(
 	randomEnclaveId := enclave.EnclaveID(randomName)
 
 	validationError := validateEnclaveId(randomEnclaveId)
-
-	isIdInUse := IsEnclaveIdInUse(randomEnclaveId, allCurrentEnclaves)
-
-	if validationError != nil || isIdInUse {
+	if validationError != nil  {
 		if retries > 0 {
-			newRetriesValue := retries - 1
-			return getRandomEnclaveIdWithRetries(allCurrentEnclaves, newRetriesValue)
+			return getRandomEnclaveIdWithRetries(allCurrentEnclaves, retriesLeft)
 		}
-
-		var (
-			errMsg = "Generating a new random enclave ID has executed all the retries set without success"
-			returnErr = stacktrace.NewError(errMsg)
+		return autogenerateEnclaveIdKeyword, stacktrace.Propagate(
+			validationError,
+			"Generating a new random enclave ID has executed all the retries set without success, the last random enclave ID generated '%v' is not valid",
+			randomEnclaveId,
 		)
+	}
 
-		if validationError != nil {
-			returnErr = stacktrace.Propagate(validationError, errMsg)
+	isIdInUse := isEnclaveIdInUse(randomEnclaveId, allCurrentEnclaves)
+	if isIdInUse {
+		if retries > 0 {
+			return getRandomEnclaveIdWithRetries(allCurrentEnclaves, retriesLeft)
 		}
-
-		return autogenerateEnclaveIdKeyword, returnErr
+		return autogenerateEnclaveIdKeyword, stacktrace.NewError(
+			"Generating a new random enclave ID has executed all the retries set without success, the last random enclave ID generated '%v' in in use",
+			randomEnclaveId,
+		)
 	}
 
 	return randomEnclaveId, nil

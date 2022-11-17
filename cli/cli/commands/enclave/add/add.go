@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	enclave_consts "github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/enclave"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/user_support_constants"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -75,7 +75,7 @@ func init() {
 		fmt.Sprintf(
 			"The enclave ID to give the new enclave, which must match regex '%v' " +
 				"(emptystring will autogenerate an enclave ID)",
-			user_support_constants.AllowedEnclaveIdCharsRegexStr,
+			enclave_consts.AllowedEnclaveIdCharsRegexStr,
 		),
 	)
 }

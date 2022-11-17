@@ -12,6 +12,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	enclave_consts "github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/enclave"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
@@ -21,7 +22,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/image_name_generator"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/user_support_constants"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/module"
@@ -96,7 +96,7 @@ var ModuleExecCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 			Key: enclaveIdFlagKey,
 			Usage: fmt.Sprintf(
 				"The ID to give the enclave that will be created to execute the module inside, which must match regex '%v' (emptystring will autogenerate an enclave ID)",
-				user_support_constants.AllowedEnclaveIdCharsRegexStr,
+				enclave_consts.AllowedEnclaveIdCharsRegexStr,
 			),
 			Type:    flags.FlagType_String,
 			Default: autogenerateEnclaveIdKeyword,
