@@ -3,6 +3,7 @@ package startosis_define_fact_wait_test
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -13,33 +14,44 @@ const (
 	isPartitioningEnabled = false
 	defaultDryRun         = false
 
-	serviceId = "httpecho"
-	portId    = "http"
+	serviceId          = "http-echo"
+	portId             = "http"
+	expectedGetOutput  = "get-result"
+	expectedPostOutput = "post-result"
 
 	startosisScript = `
-DATASTORE_IMAGE = "mendhak/http-https-echo:26"
-DATASTORE_SERVICE_ID = "` + serviceId + `"
-DATASTORE_PORT_ID = "` + portId + `"
-DATASTORE_PORT_NUMBER = 8080
-DATASTORE_PORT_PROTOCOL = "TCP"
+IMAGE = "mendhak/http-https-echo:26"
+SERVICE_ID = "` + serviceId + `"
+PORT_ID = "` + portId + `"
+PORT_NUMBER = 8080
+PORT_PROTOCOL = "TCP"
+GET_ENDPOINT = "?service=` + expectedGetOutput + `"
+GET_FACT_NAME = "get-fact"
+POST_ENDPOINT = "/"
+POST_BODY = "` + expectedPostOutput + `"
+POST_FACT_NAME = "post-fact"
 
 config = struct(
-    image = DATASTORE_IMAGE,
+    image = IMAGE,
     ports = {
-        DATASTORE_PORT_ID: struct(number = DATASTORE_PORT_NUMBER, protocol = DATASTORE_PORT_PROTOCOL)
+        PORT_ID: struct(number = PORT_NUMBER, protocol = PORT_PROTOCOL)
     }
 )
 
-add_service(service_id = DATASTORE_SERVICE_ID, config = config)
-print("Service " + DATASTORE_SERVICE_ID + " deployed successfully.")
+add_service(service_id = SERVICE_ID, config = config)
+print("Service deployed successfully.")
 
-define_fact(service_id = DATASTORE_SERVICE_ID, fact_name = "stuff", fact_recipe=struct(method="GET", endpoint="/test", port_id=DATASTORE_PORT_ID, field_extractor=".protocol"))
-fact = wait(service_id=DATASTORE_SERVICE_ID, fact_name="stuff")
+define_fact(service_id = SERVICE_ID, fact_name = GET_FACT_NAME, fact_recipe=struct(method="GET", endpoint=GET_ENDPOINT, port_id=PORT_ID, field_extractor=".query.service"))
+get_fact = wait(service_id=SERVICE_ID, fact_name=GET_FACT_NAME)
 
-add_service(service_id = fact, config = config)
+add_service(service_id = get_fact, config = config)
+print("Service dependency 1 deployed successfully.")
 
-print("Service dependency deployed successfully.")
+define_fact(service_id = SERVICE_ID, fact_name = POST_FACT_NAME, fact_recipe=struct(method="POST", endpoint=POST_ENDPOINT, port_id=PORT_ID, field_extractor=".body", content_type="text/plain", body=POST_BODY))
+post_fact = wait(service_id=SERVICE_ID, fact_name=POST_FACT_NAME)
 
+add_service(service_id = post_fact, config = config)
+print("Service dependency 2 deployed successfully.")
 `
 )
 
@@ -58,8 +70,9 @@ func TestStartosis(t *testing.T) {
 	executionResult, err := enclaveCtx.ExecuteStartosisScript(startosisScript, defaultDryRun)
 	require.NoError(t, err, "Unexpected error executing startosis script")
 
-	expectedScriptOutput := `Service http-echo deployed successfully.
-Service dependency deployed successfully.
+	expectedScriptOutput := `Service deployed successfully.
+Service dependency 1 deployed successfully.
+Service dependency 2 deployed successfully.
 `
 	require.Empty(t, executionResult.InterpretationError, "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
 	require.Lenf(t, executionResult.ValidationErrors, 0, "Unexpected validation error")
@@ -67,18 +80,9 @@ Service dependency deployed successfully.
 	require.Equal(t, expectedScriptOutput, executionResult.SerializedScriptOutput)
 	logrus.Infof("Successfully ran Startosis script")
 
-	// Check that the service added by the script is functional
-	logrus.Infof("Checking that services are all healthy")
-	require.NoError(
-		t,
-		test_helpers.ValidateDatastoreServiceHealthy(context.Background(), enclaveCtx, serviceId, portId),
-		"Error validating datastore server '%s' is healthy",
-		serviceId,
-	)
-	require.NoError(
-		t,
-		test_helpers.ValidateDatastoreServiceHealthy(context.Background(), enclaveCtx, "http", portId),
-		"Error validating datastore server '%s' is healthy",
-		serviceId,
-	)
+	servicesSet, err := enclaveCtx.GetServices()
+	require.Equal(t, 3, len(servicesSet))
+	require.Contains(t, servicesSet, services.ServiceID(expectedGetOutput))
+	require.Contains(t, servicesSet, services.ServiceID(expectedPostOutput))
+	require.Nil(t, err)
 }
