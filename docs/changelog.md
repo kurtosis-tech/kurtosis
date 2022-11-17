@@ -1,5 +1,8 @@
 # TBD
 
+### Features
+- Log that the module is being compressed & uploaded during `kurtosis exec`
+
 # 0.53.1
 ### Features
 - Added random enclave ID generation in `EnclaveManager.CreateEnclave()` when an empty enclave ID is provided
