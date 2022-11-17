@@ -2,7 +2,6 @@ package docker_network_allocator
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/stretchr/testify/assert"
 	"net"
 	"testing"
@@ -11,7 +10,7 @@ import (
 func TestErrorOnInstantiationWithoutConstructor(t *testing.T) {
 	allocator := DockerNetworkAllocator{
 		isConstructedViaConstructor: false,
-		dockerManager:               &docker_manager.DockerManager{},
+		dockerManager:               nil,
 	}
 	_, err := allocator.CreateNewNetwork(context.Background(), "", map[string]string{})
 	assert.Error(t, err)
