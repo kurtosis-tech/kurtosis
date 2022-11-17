@@ -116,7 +116,7 @@ message ServiceInfo {
 }
 
 message ServiceConfig {
-  string image = 1;
+  string container_image_name = 1;
 
   // Definition of the ports *inside* the enclave that the container should have exposed, specified as user_friendly_port_id -> port_definition
   map<string, Port> private_ports = 2;

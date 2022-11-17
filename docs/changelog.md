@@ -1,5 +1,8 @@
 # TBD
 
+### Fixes
+- Fixed a bug where we had renamed `container_image_name` inside the proto definition to `image`
+
 # 0.53.0
 
 ### Features
