@@ -667,7 +667,7 @@ jobs:
       # Execute simple startosis script in new enclave
       - run: "${KURTOSIS_BINPATH} exec --enclave-id test-enclave << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.startosis-test-script-file-relative-path >>"
       # Execute github starlark module
-      - run: "${KURTOSIS_BINPATH} exec --enclave-id test-datastore github.com/kurtosis-tech/datastore-army-module --args '{\"num_datastores\": 0}'"
+      - run: "${KURTOSIS_BINPATH} exec --enclave-id test-datastore github.com/kurtosis-tech/datastore-army-module --args '{\"num_datastores\": 2}'"
         
 
       - run: "${KURTOSIS_BINPATH} enclave stop test-enclave"
