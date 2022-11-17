@@ -6,7 +6,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/stretchr/testify/require"
 	bolt "go.etcd.io/bbolt"
-	"google.golang.org/protobuf/types/known/timestamppb"
 	"os"
 	"testing"
 	"time"
@@ -37,10 +36,7 @@ func TestFactEngineLoop(t *testing.T) {
 		FactValue: &kurtosis_core_rpc_api_bindings.FactValue_StringValue{
 			StringValue: "value",
 		},
-		UpdatedAt: &timestamppb.Timestamp{
-			Seconds: 0,
-			Nanos:   0,
-		},
+		UpdatedAt: nil,
 	}
 	factRecipe := binding_constructors.NewConstantFactRecipe("service_id", "fact_name", &kurtosis_core_rpc_api_bindings.ConstantFactRecipe{FactValue: factValue}, refreshInterval)
 	err = factsEngine.PushRecipe(factRecipe)
@@ -70,10 +66,7 @@ func TestFactRecipePersistence(t *testing.T) {
 		FactValue: &kurtosis_core_rpc_api_bindings.FactValue_StringValue{
 			StringValue: "value",
 		},
-		UpdatedAt: &timestamppb.Timestamp{
-			Seconds: 0,
-			Nanos:   0,
-		},
+		UpdatedAt: nil,
 	}
 	factRecipe := binding_constructors.NewConstantFactRecipe("service_id", "fact_name", &kurtosis_core_rpc_api_bindings.ConstantFactRecipe{FactValue: factValue}, refreshInterval)
 	err = factsEngine.PushRecipe(factRecipe)
@@ -117,10 +110,7 @@ func TestFactRecipeFetchValueAfter(t *testing.T) {
 		FactValue: &kurtosis_core_rpc_api_bindings.FactValue_StringValue{
 			StringValue: "value",
 		},
-		UpdatedAt: &timestamppb.Timestamp{
-			Seconds: 0,
-			Nanos:   0,
-		},
+		UpdatedAt: nil,
 	}
 	factRecipe := binding_constructors.NewConstantFactRecipe("service_id", "fact_name", &kurtosis_core_rpc_api_bindings.ConstantFactRecipe{FactValue: factValue}, refreshInterval)
 	err = factsEngine.PushRecipe(factRecipe)

@@ -144,10 +144,7 @@ func (engine *FactsEngine) getFactValues(factId FactId, initializer cursorInitia
 		for cursor, timestampKey, factValue := initializer(factBucket); timestampKey != nil && resultCount > 0; timestampKey, factValue = movement(cursor) {
 			unmarshalledFactValue := &kurtosis_core_rpc_api_bindings.FactValue{
 				FactValue: nil,
-				UpdatedAt: &timestamppb.Timestamp{
-					Seconds: 0,
-					Nanos:   0,
-				},
+				UpdatedAt: nil,
 			}
 			if err := proto.Unmarshal(factValue, unmarshalledFactValue); err != nil {
 				return stacktrace.Propagate(err, "An error occurred when unmarshalling fact value on key '%v'", string(timestampKey))
@@ -268,10 +265,7 @@ func (engine *FactsEngine) runRecipe(recipe *kurtosis_core_rpc_api_bindings.Fact
 			FactValue: &kurtosis_core_rpc_api_bindings.FactValue_StringValue{
 				StringValue: execOutput,
 			},
-			UpdatedAt: &timestamppb.Timestamp{
-				Seconds: 0,
-				Nanos:   0,
-			},
+			UpdatedAt: nil,
 		}, nil
 	}
 	if recipe.GetHttpRequestFact() != nil {
@@ -304,10 +298,7 @@ func (engine *FactsEngine) runRecipe(recipe *kurtosis_core_rpc_api_bindings.Fact
 				FactValue: &kurtosis_core_rpc_api_bindings.FactValue_StringValue{
 					StringValue: string(body),
 				},
-				UpdatedAt: &timestamppb.Timestamp{
-					Seconds: 0,
-					Nanos:   0,
-				},
+				UpdatedAt: nil,
 			}, nil
 		}
 	}
@@ -338,10 +329,7 @@ func extractFactFromJson(fieldExtractor string, body []byte) (*kurtosis_core_rpc
 				FactValue: &kurtosis_core_rpc_api_bindings.FactValue_StringValue{
 					StringValue: fmt.Sprintf("%v", matchValue),
 				},
-				UpdatedAt: &timestamppb.Timestamp{
-					Seconds: 0,
-					Nanos:   0,
-				},
+				UpdatedAt: nil,
 			}, nil
 		}
 	}
