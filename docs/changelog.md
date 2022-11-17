@@ -12,6 +12,7 @@
 
 ### Fixes
 - Fixed a bug where we had renamed `container_image_name` inside the proto definition to `image`
+- Fix a test that dependent on an old on existent Starlark module
 
 # 0.53.0
 ### Features
