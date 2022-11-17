@@ -50,7 +50,7 @@ var (
 // Generally, we want to prevent long utils folders with functionality that is difficult to find, so be careful
 // when adding functionality in this folder.
 // Things to think about: Could this function be a private helper function that's scope is smaller than you think?
-// Eg. only used by start user services functions thus could go in start_user_services.go
+// E.g. only used by start user services functions thus could go in start_user_services.go
 
 // Unfortunately, Docker doesn't have an enum for the protocols it supports, so we have to create this translation map
 var portSpecProtosToDockerPortProtos = map[port_spec.PortProtocol]string{
@@ -358,9 +358,11 @@ func GetSingleUserServiceObjAndResourcesNoMutex(
 	error,
 ) {
 	filters := &service.ServiceFilters{
+		IDs: nil,
 		GUIDs: map[service.ServiceGUID]bool{
 			userServiceGuid: true,
 		},
+		Statuses: nil,
 	}
 	userServices, dockerResources, err := GetMatchingUserServiceObjsAndDockerResourcesNoMutex(ctx, enclaveId, filters, dockerManager)
 	if err != nil {
@@ -502,13 +504,16 @@ func getMatchingUserServiceDockerResources(
 
 		resourceObj, found := result[serviceGuid]
 		if !found {
-			resourceObj = &UserServiceDockerResources{}
+			resourceObj = &UserServiceDockerResources{
+				ServiceContainer:    &types.Container{},
+				ExpanderVolumeNames: nil,
+			}
 		}
 		resourceObj.ServiceContainer = container
 		result[serviceGuid] = resourceObj
 	}
 
-	// Grab volumes, INDEPENDENT OF whether there any containers
+	// Grab volumes, INDEPENDENT OF whether there are any containers
 	filesArtifactExpansionVolumeSearchLabels := map[string]string{
 		label_key_consts.AppIDDockerLabelKey.GetString():      label_value_consts.AppIDDockerLabelValue.GetString(),
 		label_key_consts.EnclaveIDDockerLabelKey.GetString():  string(enclaveId),
@@ -534,7 +539,10 @@ func getMatchingUserServiceDockerResources(
 
 		resourceObj, found := result[serviceGuid]
 		if !found {
-			resourceObj = &UserServiceDockerResources{}
+			resourceObj = &UserServiceDockerResources{
+				ServiceContainer:    nil,
+				ExpanderVolumeNames: nil,
+			}
 		}
 		resourceObj.ExpanderVolumeNames = append(resourceObj.ExpanderVolumeNames, volume.Name)
 		result[serviceGuid] = resourceObj
@@ -610,7 +618,19 @@ func getUserServiceObjsFromDockerResources(
 
 func GetLocalDatabase() (*bolt.DB, error) {
 	openDatabaseOnce.Do(func() {
-		databaseInstance, databaseOpenError = bolt.Open(databaseFilePath, readWritePermissionToDatabase, &bolt.Options{})
+		databaseInstance, databaseOpenError = bolt.Open(databaseFilePath, readWritePermissionToDatabase, &bolt.Options{
+			Timeout:         0,
+			NoGrowSync:      false,
+			NoFreelistSync:  false,
+			FreelistType:    "",
+			ReadOnly:        false,
+			MmapFlags:       0,
+			InitialMmapSize: 0,
+			PageSize:        0,
+			NoSync:          false,
+			OpenFile:        nil,
+			Mlock:           false,
+		})
 	})
 	return databaseInstance, databaseOpenError
 }

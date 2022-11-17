@@ -23,6 +23,8 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	apiv1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"net"
 	"strings"
 	"time"
@@ -68,10 +70,12 @@ type ApiContainerModeArgs struct {
 
 func NewApiContainerModeArgs(
 	ownEnclaveId enclave.EnclaveID,
-	ownNamespaceName string, ) *ApiContainerModeArgs {
+	ownNamespaceName string) *ApiContainerModeArgs {
 	return &ApiContainerModeArgs{
 		ownEnclaveId:     ownEnclaveId,
 		ownNamespaceName: ownNamespaceName,
+		storageClassName: "",
+		filesArtifactExpansionVolumeSizeInMegabytes: 0,
 	}
 }
 
@@ -297,7 +301,195 @@ func GetUserServiceKubernetesResourcesMatchingGuids(
 
 		resultObj, found := results[serviceGuid]
 		if !found {
-			resultObj = &UserServiceKubernetesResources{}
+			resultObj = &UserServiceKubernetesResources{
+				Service: &apiv1.Service{
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "",
+						APIVersion: "",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "",
+						GenerateName:    "",
+						Namespace:       "",
+						SelfLink:        "",
+						UID:             "",
+						ResourceVersion: "",
+						Generation:      0,
+						CreationTimestamp: metav1.Time{
+							Time: time.Time{},
+						},
+						DeletionTimestamp: &metav1.Time{
+							Time: time.Time{},
+						},
+						DeletionGracePeriodSeconds: nil,
+						Labels:                     nil,
+						Annotations:                nil,
+						OwnerReferences:            nil,
+						Finalizers:                 nil,
+						ZZZ_DeprecatedClusterName:  "",
+						ManagedFields:              nil,
+					},
+					Spec: apiv1.ServiceSpec{
+						Ports:                    nil,
+						Selector:                 nil,
+						ClusterIP:                "",
+						ClusterIPs:               nil,
+						Type:                     "",
+						ExternalIPs:              nil,
+						SessionAffinity:          "",
+						LoadBalancerIP:           "",
+						LoadBalancerSourceRanges: nil,
+						ExternalName:             "",
+						ExternalTrafficPolicy:    "",
+						HealthCheckNodePort:      0,
+						PublishNotReadyAddresses: false,
+						SessionAffinityConfig: &apiv1.SessionAffinityConfig{
+							ClientIP: &apiv1.ClientIPConfig{
+								TimeoutSeconds: nil,
+							},
+						},
+						IPFamilies:                    nil,
+						IPFamilyPolicy:                nil,
+						AllocateLoadBalancerNodePorts: nil,
+						LoadBalancerClass:             nil,
+						InternalTrafficPolicy:         nil,
+					},
+					Status: apiv1.ServiceStatus{
+						LoadBalancer: apiv1.LoadBalancerStatus{
+							Ingress: nil,
+						},
+						Conditions: nil,
+					},
+				},
+				Pod: &apiv1.Pod{
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "",
+						APIVersion: "",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "",
+						GenerateName:    "",
+						Namespace:       "",
+						SelfLink:        "",
+						UID:             "",
+						ResourceVersion: "",
+						Generation:      0,
+						CreationTimestamp: metav1.Time{
+							Time: time.Time{},
+						},
+						DeletionTimestamp: &metav1.Time{
+							Time: time.Time{},
+						},
+						DeletionGracePeriodSeconds: nil,
+						Labels:                     nil,
+						Annotations:                nil,
+						OwnerReferences:            nil,
+						Finalizers:                 nil,
+						ZZZ_DeprecatedClusterName:  "",
+						ManagedFields:              nil,
+					},
+					Spec: apiv1.PodSpec{
+						Volumes:                       nil,
+						InitContainers:                nil,
+						Containers:                    nil,
+						EphemeralContainers:           nil,
+						RestartPolicy:                 "",
+						TerminationGracePeriodSeconds: nil,
+						ActiveDeadlineSeconds:         nil,
+						DNSPolicy:                     "",
+						NodeSelector:                  nil,
+						ServiceAccountName:            "",
+						DeprecatedServiceAccount:      "",
+						AutomountServiceAccountToken:  nil,
+						NodeName:                      "",
+						HostNetwork:                   false,
+						HostPID:                       false,
+						HostIPC:                       false,
+						ShareProcessNamespace:         nil,
+						SecurityContext: &apiv1.PodSecurityContext{
+							SELinuxOptions: &apiv1.SELinuxOptions{
+								User:  "",
+								Role:  "",
+								Type:  "",
+								Level: "",
+							},
+							WindowsOptions: &apiv1.WindowsSecurityContextOptions{
+								GMSACredentialSpecName: nil,
+								GMSACredentialSpec:     nil,
+								RunAsUserName:          nil,
+								HostProcess:            nil,
+							},
+							RunAsUser:           nil,
+							RunAsGroup:          nil,
+							RunAsNonRoot:        nil,
+							SupplementalGroups:  nil,
+							FSGroup:             nil,
+							Sysctls:             nil,
+							FSGroupChangePolicy: nil,
+							SeccompProfile: &apiv1.SeccompProfile{
+								Type:             "",
+								LocalhostProfile: nil,
+							},
+						},
+						ImagePullSecrets: nil,
+						Hostname:         "",
+						Subdomain:        "",
+						Affinity: &apiv1.Affinity{
+							NodeAffinity: &apiv1.NodeAffinity{
+								RequiredDuringSchedulingIgnoredDuringExecution: &apiv1.NodeSelector{
+									NodeSelectorTerms: nil,
+								},
+								PreferredDuringSchedulingIgnoredDuringExecution: nil,
+							},
+							PodAffinity: &apiv1.PodAffinity{
+								RequiredDuringSchedulingIgnoredDuringExecution:  nil,
+								PreferredDuringSchedulingIgnoredDuringExecution: nil,
+							},
+							PodAntiAffinity: &apiv1.PodAntiAffinity{
+								RequiredDuringSchedulingIgnoredDuringExecution:  nil,
+								PreferredDuringSchedulingIgnoredDuringExecution: nil,
+							},
+						},
+						SchedulerName:     "",
+						Tolerations:       nil,
+						HostAliases:       nil,
+						PriorityClassName: "",
+						Priority:          nil,
+						DNSConfig: &apiv1.PodDNSConfig{
+							Nameservers: nil,
+							Searches:    nil,
+							Options:     nil,
+						},
+						ReadinessGates:            nil,
+						RuntimeClassName:          nil,
+						EnableServiceLinks:        nil,
+						PreemptionPolicy:          nil,
+						Overhead:                  nil,
+						TopologySpreadConstraints: nil,
+						SetHostnameAsFQDN:         nil,
+						OS: &apiv1.PodOS{
+							Name: "",
+						},
+					},
+					Status: apiv1.PodStatus{
+						Phase:             "",
+						Conditions:        nil,
+						Message:           "",
+						Reason:            "",
+						NominatedNodeName: "",
+						HostIP:            "",
+						PodIP:             "",
+						PodIPs:            nil,
+						StartTime: &metav1.Time{
+							Time: time.Time{},
+						},
+						InitContainerStatuses:      nil,
+						ContainerStatuses:          nil,
+						QOSClass:                   "",
+						EphemeralContainerStatuses: nil,
+					},
+				},
+			}
 		}
 		resultObj.Service = kubernetesService
 		results[serviceGuid] = resultObj
@@ -331,7 +523,195 @@ func GetUserServiceKubernetesResourcesMatchingGuids(
 
 		resultObj, found := results[serviceGuid]
 		if !found {
-			resultObj = &UserServiceKubernetesResources{}
+			resultObj = &UserServiceKubernetesResources{
+				Service: &apiv1.Service{
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "",
+						APIVersion: "",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "",
+						GenerateName:    "",
+						Namespace:       "",
+						SelfLink:        "",
+						UID:             "",
+						ResourceVersion: "",
+						Generation:      0,
+						CreationTimestamp: metav1.Time{
+							Time: time.Time{},
+						},
+						DeletionTimestamp: &metav1.Time{
+							Time: time.Time{},
+						},
+						DeletionGracePeriodSeconds: nil,
+						Labels:                     nil,
+						Annotations:                nil,
+						OwnerReferences:            nil,
+						Finalizers:                 nil,
+						ZZZ_DeprecatedClusterName:  "",
+						ManagedFields:              nil,
+					},
+					Spec: apiv1.ServiceSpec{
+						Ports:                    nil,
+						Selector:                 nil,
+						ClusterIP:                "",
+						ClusterIPs:               nil,
+						Type:                     "",
+						ExternalIPs:              nil,
+						SessionAffinity:          "",
+						LoadBalancerIP:           "",
+						LoadBalancerSourceRanges: nil,
+						ExternalName:             "",
+						ExternalTrafficPolicy:    "",
+						HealthCheckNodePort:      0,
+						PublishNotReadyAddresses: false,
+						SessionAffinityConfig: &apiv1.SessionAffinityConfig{
+							ClientIP: &apiv1.ClientIPConfig{
+								TimeoutSeconds: nil,
+							},
+						},
+						IPFamilies:                    nil,
+						IPFamilyPolicy:                nil,
+						AllocateLoadBalancerNodePorts: nil,
+						LoadBalancerClass:             nil,
+						InternalTrafficPolicy:         nil,
+					},
+					Status: apiv1.ServiceStatus{
+						LoadBalancer: apiv1.LoadBalancerStatus{
+							Ingress: nil,
+						},
+						Conditions: nil,
+					},
+				},
+				Pod: &apiv1.Pod{
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "",
+						APIVersion: "",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "",
+						GenerateName:    "",
+						Namespace:       "",
+						SelfLink:        "",
+						UID:             "",
+						ResourceVersion: "",
+						Generation:      0,
+						CreationTimestamp: metav1.Time{
+							Time: time.Time{},
+						},
+						DeletionTimestamp: &metav1.Time{
+							Time: time.Time{},
+						},
+						DeletionGracePeriodSeconds: nil,
+						Labels:                     nil,
+						Annotations:                nil,
+						OwnerReferences:            nil,
+						Finalizers:                 nil,
+						ZZZ_DeprecatedClusterName:  "",
+						ManagedFields:              nil,
+					},
+					Spec: apiv1.PodSpec{
+						Volumes:                       nil,
+						InitContainers:                nil,
+						Containers:                    nil,
+						EphemeralContainers:           nil,
+						RestartPolicy:                 "",
+						TerminationGracePeriodSeconds: nil,
+						ActiveDeadlineSeconds:         nil,
+						DNSPolicy:                     "",
+						NodeSelector:                  nil,
+						ServiceAccountName:            "",
+						DeprecatedServiceAccount:      "",
+						AutomountServiceAccountToken:  nil,
+						NodeName:                      "",
+						HostNetwork:                   false,
+						HostPID:                       false,
+						HostIPC:                       false,
+						ShareProcessNamespace:         nil,
+						SecurityContext: &apiv1.PodSecurityContext{
+							SELinuxOptions: &apiv1.SELinuxOptions{
+								User:  "",
+								Role:  "",
+								Type:  "",
+								Level: "",
+							},
+							WindowsOptions: &apiv1.WindowsSecurityContextOptions{
+								GMSACredentialSpecName: nil,
+								GMSACredentialSpec:     nil,
+								RunAsUserName:          nil,
+								HostProcess:            nil,
+							},
+							RunAsUser:           nil,
+							RunAsGroup:          nil,
+							RunAsNonRoot:        nil,
+							SupplementalGroups:  nil,
+							FSGroup:             nil,
+							Sysctls:             nil,
+							FSGroupChangePolicy: nil,
+							SeccompProfile: &apiv1.SeccompProfile{
+								Type:             "",
+								LocalhostProfile: nil,
+							},
+						},
+						ImagePullSecrets: nil,
+						Hostname:         "",
+						Subdomain:        "",
+						Affinity: &apiv1.Affinity{
+							NodeAffinity: &apiv1.NodeAffinity{
+								RequiredDuringSchedulingIgnoredDuringExecution: &apiv1.NodeSelector{
+									NodeSelectorTerms: nil,
+								},
+								PreferredDuringSchedulingIgnoredDuringExecution: nil,
+							},
+							PodAffinity: &apiv1.PodAffinity{
+								RequiredDuringSchedulingIgnoredDuringExecution:  nil,
+								PreferredDuringSchedulingIgnoredDuringExecution: nil,
+							},
+							PodAntiAffinity: &apiv1.PodAntiAffinity{
+								RequiredDuringSchedulingIgnoredDuringExecution:  nil,
+								PreferredDuringSchedulingIgnoredDuringExecution: nil,
+							},
+						},
+						SchedulerName:     "",
+						Tolerations:       nil,
+						HostAliases:       nil,
+						PriorityClassName: "",
+						Priority:          nil,
+						DNSConfig: &apiv1.PodDNSConfig{
+							Nameservers: nil,
+							Searches:    nil,
+							Options:     nil,
+						},
+						ReadinessGates:            nil,
+						RuntimeClassName:          nil,
+						EnableServiceLinks:        nil,
+						PreemptionPolicy:          nil,
+						Overhead:                  nil,
+						TopologySpreadConstraints: nil,
+						SetHostnameAsFQDN:         nil,
+						OS: &apiv1.PodOS{
+							Name: "",
+						},
+					},
+					Status: apiv1.PodStatus{
+						Phase:             "",
+						Conditions:        nil,
+						Message:           "",
+						Reason:            "",
+						NominatedNodeName: "",
+						HostIP:            "",
+						PodIP:             "",
+						PodIPs:            nil,
+						StartTime: &metav1.Time{
+							Time: time.Time{},
+						},
+						InitContainerStatuses:      nil,
+						ContainerStatuses:          nil,
+						QOSClass:                   "",
+						EphemeralContainerStatuses: nil,
+					},
+				},
+			}
 		}
 		resultObj.Pod = kubernetesPod
 		results[serviceGuid] = resultObj
@@ -347,8 +727,9 @@ func GetUserServiceObjectsFromKubernetesResources(
 	results := map[service.ServiceGUID]*UserServiceObjectsAndKubernetesResources{}
 	for serviceGuid, resources := range allKubernetesResources {
 		results[serviceGuid] = &UserServiceObjectsAndKubernetesResources{
+			ServiceRegistration: &service.ServiceRegistration{},
+			Service:             &service.Service{},
 			KubernetesResources: resources,
-			// The other fields will get filled in below
 		}
 	}
 
@@ -437,9 +818,11 @@ func GetSingleUserServiceObjectsAndResources(
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 ) (*UserServiceObjectsAndKubernetesResources, error) {
 	searchFilters := &service.ServiceFilters{
+		IDs: nil,
 		GUIDs: map[service.ServiceGUID]bool{
 			serviceGuid: true,
 		},
+		Statuses: nil,
 	}
 	searchResults, err := GetMatchingUserServiceObjectsAndKubernetesResources(ctx, enclaveId, searchFilters, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
 	if err != nil {
@@ -533,6 +916,12 @@ func GetKubernetesServicePortsFromPrivatePortSpecs(privatePorts map[string]*port
 			AppProtocol: nil,
 			// Safe to cast because max uint16 < int32
 			Port: int32(portSpec.GetNumber()),
+			TargetPort: intstr.IntOrString{
+				Type:   0,
+				IntVal: 0,
+				StrVal: "",
+			},
+			NodePort: 0,
 		}
 		result = append(result, kubernetesPortObj)
 	}
@@ -550,10 +939,12 @@ func GetKubernetesContainerPortsFromPrivatePortSpecs(privatePorts map[string]*po
 		}
 
 		kubernetesPortObj := apiv1.ContainerPort{
-			Name: portId,
+			Name:     portId,
+			HostPort: 0,
 			// Safe to do because max uint16 < int32
 			ContainerPort: int32(portSpec.GetNumber()),
 			Protocol:      kubernetesProtocol,
+			HostIP:        "",
 		}
 		result = append(result, kubernetesPortObj)
 	}

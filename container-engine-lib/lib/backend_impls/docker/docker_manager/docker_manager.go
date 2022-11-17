@@ -158,13 +158,22 @@ func (manager DockerManager) CreateNetwork(context context.Context, name string,
 	}}
 
 	resp, err := manager.dockerClient.NetworkCreate(context, name, types.NetworkCreate{
-		Driver: dockerNetworkDriver,
+		CheckDuplicate: false,
+		Driver:         dockerNetworkDriver,
+		Scope:          "",
+		EnableIPv6:     false,
 		IPAM: &network.IPAM{
 			Driver:  "",
 			Options: nil,
 			Config:  ipamConfig,
 		},
-		Labels: labels,
+		Internal:   false,
+		Attachable: false,
+		Ingress:    false,
+		ConfigOnly: false,
+		ConfigFrom: nil,
+		Options:    nil,
+		Labels:     labels,
 	})
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Failed to create network %s with subnet %s", name, subnetMask)
@@ -173,7 +182,9 @@ func (manager DockerManager) CreateNetwork(context context.Context, name string,
 }
 
 func (manager DockerManager) ListNetworks(ctx context.Context) ([]types.NetworkResource, error) {
-	networks, err := manager.dockerClient.NetworkList(ctx, types.NetworkListOptions{})
+	networks, err := manager.dockerClient.NetworkList(ctx, types.NetworkListOptions{
+		Filters: filters.Args{},
+	})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred listing the Docker networks")
 	}
@@ -226,7 +237,10 @@ func (manager DockerManager) GetNetworksByLabels(ctx context.Context, labels map
 }
 
 func (manager DockerManager) GetContainerIdsConnectedToNetwork(context context.Context, networkId string) ([]string, error) {
-	inspectResponse, err := manager.dockerClient.NetworkInspect(context, networkId, types.NetworkInspectOptions{})
+	inspectResponse, err := manager.dockerClient.NetworkInspect(context, networkId, types.NetworkInspectOptions{
+		Scope:   "",
+		Verbose: false,
+	})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to get network information for network with ID '%v'", networkId)
 	}
@@ -270,8 +284,10 @@ Args:
 */
 func (manager DockerManager) CreateVolume(context context.Context, volumeName string, labels map[string]string) error {
 	volumeConfig := volume.VolumeCreateBody{
-		Name:   volumeName,
-		Labels: labels,
+		Driver:     "",
+		DriverOpts: nil,
+		Labels:     labels,
+		Name:       volumeName,
 	}
 
 	/*
@@ -460,7 +476,10 @@ func (manager DockerManager) CreateAndStartContainer(
 	}
 	// TODO defer a disconnct-from-network if this function doesn't succeed??
 
-	if err = manager.dockerClient.ContainerStart(ctx, containerId, types.ContainerStartOptions{}); err != nil {
+	if err = manager.dockerClient.ContainerStart(ctx, containerId, types.ContainerStartOptions{
+		CheckpointID:  "",
+		CheckpointDir: "",
+	}); err != nil {
 		containerLogs := manager.getFailedContainerLogsOrErrorString(ctx, containerId)
 		containerLogsHeader := "\n--------------------- CONTAINER LOGS -----------------------\n"
 		containerLogsFooter := "\n------------------- END CONTAINER LOGS --------------------"
@@ -606,10 +625,12 @@ func (manager DockerManager) GetContainerIP(ctx context.Context, networkName str
 
 func (manager DockerManager) AttachToContainer(ctx context.Context, containerId string) (types.HijackedResponse, error) {
 	attachOpts := types.ContainerAttachOptions{
-		Stream: true,
-		Stdin:  true,
-		Stdout: true,
-		Stderr: true,
+		Stream:     true,
+		Stdin:      true,
+		Stdout:     true,
+		Stderr:     true,
+		DetachKeys: "",
+		Logs:       false,
 	}
 	hijackedResponse, err := manager.dockerClient.ContainerAttach(ctx, containerId, attachOpts)
 	if err != nil {
@@ -723,7 +744,12 @@ func (manager DockerManager) GetContainerLogs(
 	containerLogOpts := types.ContainerLogsOptions{
 		ShowStdout: true,
 		ShowStderr: true,
+		Since:      "",
+		Until:      "",
+		Timestamps: false,
 		Follow:     shouldFollowLogs,
+		Tail:       "",
+		Details:    false,
 	}
 	readCloser, err := manager.dockerClient.ContainerLogs(ctx, containerId, containerLogOpts)
 	if err != nil {
@@ -763,10 +789,17 @@ Executes the given command inside the container with the given ID, blocking unti
 func (manager DockerManager) RunExecCommand(context context.Context, containerId string, command []string, logOutput io.Writer) (int32, error) {
 	dockerClient := manager.dockerClient
 	execConfig := types.ExecConfig{
-		Cmd:          command,
+		User:         "",
+		Privileged:   false,
+		Tty:          false,
+		AttachStdin:  false,
 		AttachStderr: true,
 		AttachStdout: true,
 		Detach:       false,
+		DetachKeys:   "",
+		Env:          nil,
+		WorkingDir:   "",
+		Cmd:          command,
 	}
 
 	createResp, err := dockerClient.ContainerExecCreate(context, containerId, execConfig)
@@ -784,6 +817,7 @@ func (manager DockerManager) RunExecCommand(context context.Context, containerId
 	execStartConfig := types.ExecStartCheck{
 		// Because detach is false, we'll block until the command comes back
 		Detach: false,
+		Tty:    false,
 	}
 
 	// IMPORTANT NOTE:
@@ -837,11 +871,25 @@ func (manager DockerManager) ConnectContainerToNetwork(ctx context.Context, netw
 		staticIpAddr.String())
 
 	ipamConfig := &network.EndpointIPAMConfig{
-		IPv4Address: staticIpAddr.String(),
+		IPv4Address:  staticIpAddr.String(),
+		IPv6Address:  "",
+		LinkLocalIPs: nil,
 	}
 
 	config := &network.EndpointSettings{
-		IPAMConfig: ipamConfig,
+		IPAMConfig:          ipamConfig,
+		Links:               nil,
+		Aliases:             nil,
+		NetworkID:           "",
+		EndpointID:          "",
+		Gateway:             "",
+		IPAddress:           "",
+		IPPrefixLen:         0,
+		IPv6Gateway:         "",
+		GlobalIPv6Address:   "",
+		GlobalIPv6PrefixLen: 0,
+		MacAddress:          "",
+		DriverOpts:          nil,
 	}
 
 	if alias != "" {
@@ -915,7 +963,12 @@ func (manager DockerManager) FetchImage(ctx context.Context, dockerImage string)
 
 func (manager DockerManager) PullImage(context context.Context, imageName string) (err error) {
 	logrus.Infof("Pulling image '%s'...", imageName)
-	out, err := manager.dockerClient.ImagePull(context, imageName, types.ImagePullOptions{})
+	out, err := manager.dockerClient.ImagePull(context, imageName, types.ImagePullOptions{
+		All:           false,
+		RegistryAuth:  "",
+		PrivilegeFunc: nil,
+		Platform:      "",
+	})
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to pull image %s", imageName)
 	}
@@ -929,11 +982,16 @@ func (manager DockerManager) PullImage(context context.Context, imageName string
 
 func (manager DockerManager) CreateContainerExec(context context.Context, containerId string, cmd []string) (*types.HijackedResponse, error) {
 	config := types.ExecConfig{
-		AttachStdin:  shouldAttachStdinWhenCreatingContainerExec,
+		User:         "",
+		Privileged:   false,
 		Tty:          shouldAttachStandardStreamsToTtyWhenCreatingContainerExec,
+		AttachStdin:  shouldAttachStdinWhenCreatingContainerExec,
 		AttachStderr: shouldAttachStderrWhenCreatingContainerExec,
 		AttachStdout: shouldAttachStdoutWhenCreatingContainerExec,
 		Detach:       shouldExecuteInDetachModeWhenCreatingContainerExec,
+		DetachKeys:   "",
+		Env:          nil,
+		WorkingDir:   "",
 		Cmd:          cmd,
 	}
 
@@ -1107,7 +1165,39 @@ func (manager *DockerManager) getContainerHostConfig(
 		)
 	}
 
-	resources := container.Resources{}
+	resources := container.Resources{
+		CPUShares:            0,
+		Memory:               0,
+		NanoCPUs:             0,
+		CgroupParent:         "",
+		BlkioWeight:          0,
+		BlkioWeightDevice:    nil,
+		BlkioDeviceReadBps:   nil,
+		BlkioDeviceWriteBps:  nil,
+		BlkioDeviceReadIOps:  nil,
+		BlkioDeviceWriteIOps: nil,
+		CPUPeriod:            0,
+		CPUQuota:             0,
+		CPURealtimePeriod:    0,
+		CPURealtimeRuntime:   0,
+		CpusetCpus:           "",
+		CpusetMems:           "",
+		Devices:              nil,
+		DeviceCgroupRules:    nil,
+		DeviceRequests:       nil,
+		KernelMemory:         0,
+		KernelMemoryTCP:      0,
+		MemoryReservation:    0,
+		MemorySwap:           0,
+		MemorySwappiness:     nil,
+		OomKillDisable:       nil,
+		PidsLimit:            nil,
+		Ulimits:              nil,
+		CPUCount:             0,
+		CPUPercent:           0,
+		IOMaximumIOps:        0,
+		IOMaximumBandwidth:   0,
+	}
 	if cpuAllocationMillicpus != 0 {
 		nanoCPUs := convertMillicpusToNanoCPUs(cpuAllocationMillicpus)
 		resources.NanoCPUs = int64(nanoCPUs)
@@ -1124,7 +1214,10 @@ func (manager *DockerManager) getContainerHostConfig(
 		resources.MemorySwap = int64(memoryAllocationBytes)
 	}
 
-	logConfig := container.LogConfig{}
+	logConfig := container.LogConfig{
+		Type:   "",
+		Config: nil,
+	}
 	if loggingDriverConfig != nil {
 		logConfig = loggingDriverConfig.GetLogConfig()
 	}
@@ -1133,13 +1226,49 @@ func (manager *DockerManager) getContainerHostConfig(
 	//  if the Dockerfile *does* have an EXPOSE directive then _only_ the ports with EXPOSE will be published
 	// See also: https://www.ctl.io/developers/blog/post/docker-networking-rules/
 	containerHostConfigPtr := &container.HostConfig{
-		Binds:        bindsList,
-		CapAdd:       addedCapabilitiesSlice,
-		NetworkMode:  container.NetworkMode(networkMode),
-		PortBindings: portMap,
-		ExtraHosts:   extraHosts,
-		Resources:    resources,
-		LogConfig:    logConfig,
+		Binds:           bindsList,
+		ContainerIDFile: "",
+		LogConfig:       logConfig,
+		NetworkMode:     container.NetworkMode(networkMode),
+		PortBindings:    portMap,
+		RestartPolicy: container.RestartPolicy{
+			Name:              "",
+			MaximumRetryCount: 0,
+		},
+		AutoRemove:      false,
+		VolumeDriver:    "",
+		VolumesFrom:     nil,
+		CapAdd:          addedCapabilitiesSlice,
+		CapDrop:         nil,
+		CgroupnsMode:    "",
+		DNS:             nil,
+		DNSOptions:      nil,
+		DNSSearch:       nil,
+		ExtraHosts:      extraHosts,
+		GroupAdd:        nil,
+		IpcMode:         "",
+		Cgroup:          "",
+		Links:           nil,
+		OomScoreAdj:     0,
+		PidMode:         "",
+		Privileged:      false,
+		PublishAllPorts: false,
+		ReadonlyRootfs:  false,
+		SecurityOpt:     nil,
+		StorageOpt:      nil,
+		Tmpfs:           nil,
+		UTSMode:         "",
+		UsernsMode:      "",
+		ShmSize:         0,
+		Sysctls:         nil,
+		Runtime:         "",
+		ConsoleSize:     [2]uint{},
+		Isolation:       "",
+		Resources:       resources,
+		Mounts:          nil,
+		MaskedPaths:     nil,
+		ReadonlyPaths:   nil,
+		Init:            nil,
 	}
 	return containerHostConfigPtr, nil
 }
@@ -1160,17 +1289,31 @@ func (manager *DockerManager) getContainerCfg(
 	}
 
 	nodeConfigPtr := &container.Config{
-		AttachStderr: isInteractiveMode, // Analogous to `-a STDERR` option to `docker run`
-		AttachStdin:  isInteractiveMode, // Analogous to `-a STDIN` option to `docker run`
-		AttachStdout: isInteractiveMode, // Analogous to `-a STDOUT` option to `docker run`
-		Tty:          isInteractiveMode, // Analogous to the `-t` option to `docker run`
-		OpenStdin:    true,              // Analogous to the `-i` option to `docker run`
-		Image:        dockerImage,
-		ExposedPorts: usedPorts,
-		Cmd:          cmdArgs,
-		Entrypoint:   entrypointArgs,
-		Env:          envVariablesSlice,
-		Labels:       labels,
+		Hostname:        "",
+		Domainname:      "",
+		User:            "",
+		AttachStdin:     isInteractiveMode, // Analogous to `-a STDIN` option to `docker run`
+		AttachStdout:    isInteractiveMode, // Analogous to `-a STDOUT` option to `docker run`
+		AttachStderr:    isInteractiveMode, // Analogous to `-a STDERR` option to `docker run`
+		ExposedPorts:    usedPorts,
+		Tty:             isInteractiveMode, // Analogous to the `-t` option to `docker run`
+		OpenStdin:       true,              // Analogous to the `-i` option to `docker run`
+		StdinOnce:       false,
+		Env:             envVariablesSlice,
+		Cmd:             cmdArgs,
+		Healthcheck:     nil,
+		ArgsEscaped:     false,
+		Image:           dockerImage,
+		Volumes:         nil,
+		WorkingDir:      "",
+		Entrypoint:      entrypointArgs,
+		NetworkDisabled: false,
+		MacAddress:      "",
+		OnBuild:         nil,
+		Labels:          labels,
+		StopSignal:      "",
+		StopTimeout:     nil,
+		Shell:           nil,
 	}
 	return nodeConfigPtr, nil
 }
@@ -1203,8 +1346,14 @@ func getHostPortBindingsOnExpectedInterface(hostPortBindingsOnAllInterfaces nat.
 
 func (manager DockerManager) getContainersByFilterArgs(ctx context.Context, filterArgs filters.Args, shouldShowStoppedContainers bool) ([]*docker_manager_types.Container, error) {
 	opts := types.ContainerListOptions{
-		Filters: filterArgs,
+		Quiet:   false,
+		Size:    false,
 		All:     shouldShowStoppedContainers,
+		Latest:  false,
+		Since:   "",
+		Before:  "",
+		Limit:   0,
+		Filters: filterArgs,
 	}
 	dockerContainers, err := manager.dockerClient.ContainerList(ctx, opts)
 	if err != nil {

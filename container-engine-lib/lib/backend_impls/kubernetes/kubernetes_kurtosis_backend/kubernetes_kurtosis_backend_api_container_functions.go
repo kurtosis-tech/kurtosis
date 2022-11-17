@@ -15,6 +15,8 @@ import (
 	"github.com/sirupsen/logrus"
 	apiv1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	applyconfigurationsv1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"net"
 	"time"
@@ -81,6 +83,7 @@ func (backend KubernetesKurtosisBackend) CreateAPIContainer(
 		EnclaveIDs: map[enclave.EnclaveID]bool{
 			enclaveId: true,
 		},
+		Statuses: nil,
 	}
 	preexistingApiContainersInEnclave, err := backend.GetAPIContainers(ctx, apiContainersInEnclaveFilters)
 	if err != nil {
@@ -918,18 +921,42 @@ func getApiContainerContainersAndVolumes(
 	var containerEnvVars []apiv1.EnvVar
 	for varName, varValue := range envVars {
 		envVar := apiv1.EnvVar{
-			Name:  varName,
-			Value: varValue,
+			Name:      varName,
+			Value:     varValue,
+			ValueFrom: nil,
 		}
 		containerEnvVars = append(containerEnvVars, envVar)
 	}
 
 	// Using the Kubernetes downward API to tell the API container about its own namespace name
 	ownNamespaceEnvVar := apiv1.EnvVar{
-		Name: ApiContainerOwnNamespaceNameEnvVar,
+		Name:  ApiContainerOwnNamespaceNameEnvVar,
+		Value: "",
 		ValueFrom: &apiv1.EnvVarSource{
 			FieldRef: &apiv1.ObjectFieldSelector{
-				FieldPath: kubernetesResourceOwnNamespaceFieldPath,
+				APIVersion: "",
+				FieldPath:  kubernetesResourceOwnNamespaceFieldPath,
+			},
+			ResourceFieldRef: &apiv1.ResourceFieldSelector{
+				ContainerName: "",
+				Resource:      "",
+				Divisor: resource.Quantity{
+					Format: "",
+				},
+			},
+			ConfigMapKeyRef: &apiv1.ConfigMapKeySelector{
+				LocalObjectReference: apiv1.LocalObjectReference{
+					Name: "",
+				},
+				Key:      "",
+				Optional: nil,
+			},
+			SecretKeyRef: &apiv1.SecretKeySelector{
+				LocalObjectReference: apiv1.LocalObjectReference{
+					Name: "",
+				},
+				Key:      "",
+				Optional: nil,
 			},
 		},
 	}
@@ -954,7 +981,252 @@ func getApiContainerContainersAndVolumes(
 		{
 			Name: enclaveDataDirVolumeName,
 			VolumeSource: apiv1.VolumeSource{
-				EmptyDir: &apiv1.EmptyDirVolumeSource{},
+				HostPath: &apiv1.HostPathVolumeSource{
+					Path: "",
+					Type: nil,
+				},
+				EmptyDir: &apiv1.EmptyDirVolumeSource{
+					Medium: "",
+					SizeLimit: &resource.Quantity{
+						Format: "",
+					},
+				},
+				GCEPersistentDisk: &apiv1.GCEPersistentDiskVolumeSource{
+					PDName:    "",
+					FSType:    "",
+					Partition: 0,
+					ReadOnly:  false,
+				},
+				AWSElasticBlockStore: &apiv1.AWSElasticBlockStoreVolumeSource{
+					VolumeID:  "",
+					FSType:    "",
+					Partition: 0,
+					ReadOnly:  false,
+				},
+				GitRepo: &apiv1.GitRepoVolumeSource{
+					Repository: "",
+					Revision:   "",
+					Directory:  "",
+				},
+				Secret: &apiv1.SecretVolumeSource{
+					SecretName:  "",
+					Items:       nil,
+					DefaultMode: nil,
+					Optional:    nil,
+				},
+				NFS: &apiv1.NFSVolumeSource{
+					Server:   "",
+					Path:     "",
+					ReadOnly: false,
+				},
+				ISCSI: &apiv1.ISCSIVolumeSource{
+					TargetPortal:      "",
+					IQN:               "",
+					Lun:               0,
+					ISCSIInterface:    "",
+					FSType:            "",
+					ReadOnly:          false,
+					Portals:           nil,
+					DiscoveryCHAPAuth: false,
+					SessionCHAPAuth:   false,
+					SecretRef: &apiv1.LocalObjectReference{
+						Name: "",
+					},
+					InitiatorName: nil,
+				},
+				Glusterfs: &apiv1.GlusterfsVolumeSource{
+					EndpointsName: "",
+					Path:          "",
+					ReadOnly:      false,
+				},
+				PersistentVolumeClaim: &apiv1.PersistentVolumeClaimVolumeSource{
+					ClaimName: "",
+					ReadOnly:  false,
+				},
+				RBD: &apiv1.RBDVolumeSource{
+					CephMonitors: nil,
+					RBDImage:     "",
+					FSType:       "",
+					RBDPool:      "",
+					RadosUser:    "",
+					Keyring:      "",
+					SecretRef: &apiv1.LocalObjectReference{
+						Name: "",
+					},
+					ReadOnly: false,
+				},
+				FlexVolume: &apiv1.FlexVolumeSource{
+					Driver: "",
+					FSType: "",
+					SecretRef: &apiv1.LocalObjectReference{
+						Name: "",
+					},
+					ReadOnly: false,
+					Options:  nil,
+				},
+				Cinder: &apiv1.CinderVolumeSource{
+					VolumeID: "",
+					FSType:   "",
+					ReadOnly: false,
+					SecretRef: &apiv1.LocalObjectReference{
+						Name: "",
+					},
+				},
+				CephFS: &apiv1.CephFSVolumeSource{
+					Monitors:   nil,
+					Path:       "",
+					User:       "",
+					SecretFile: "",
+					SecretRef: &apiv1.LocalObjectReference{
+						Name: "",
+					},
+					ReadOnly: false,
+				},
+				Flocker: &apiv1.FlockerVolumeSource{
+					DatasetName: "",
+					DatasetUUID: "",
+				},
+				DownwardAPI: &apiv1.DownwardAPIVolumeSource{
+					Items:       nil,
+					DefaultMode: nil,
+				},
+				FC: &apiv1.FCVolumeSource{
+					TargetWWNs: nil,
+					Lun:        nil,
+					FSType:     "",
+					ReadOnly:   false,
+					WWIDs:      nil,
+				},
+				AzureFile: &apiv1.AzureFileVolumeSource{
+					SecretName: "",
+					ShareName:  "",
+					ReadOnly:   false,
+				},
+				ConfigMap: &apiv1.ConfigMapVolumeSource{
+					LocalObjectReference: apiv1.LocalObjectReference{
+						Name: "",
+					},
+					Items:       nil,
+					DefaultMode: nil,
+					Optional:    nil,
+				},
+				VsphereVolume: &apiv1.VsphereVirtualDiskVolumeSource{
+					VolumePath:        "",
+					FSType:            "",
+					StoragePolicyName: "",
+					StoragePolicyID:   "",
+				},
+				Quobyte: &apiv1.QuobyteVolumeSource{
+					Registry: "",
+					Volume:   "",
+					ReadOnly: false,
+					User:     "",
+					Group:    "",
+					Tenant:   "",
+				},
+				AzureDisk: &apiv1.AzureDiskVolumeSource{
+					DiskName:    "",
+					DataDiskURI: "",
+					CachingMode: nil,
+					FSType:      nil,
+					ReadOnly:    nil,
+					Kind:        nil,
+				},
+				PhotonPersistentDisk: &apiv1.PhotonPersistentDiskVolumeSource{
+					PdID:   "",
+					FSType: "",
+				},
+				Projected: &apiv1.ProjectedVolumeSource{
+					Sources:     nil,
+					DefaultMode: nil,
+				},
+				PortworxVolume: &apiv1.PortworxVolumeSource{
+					VolumeID: "",
+					FSType:   "",
+					ReadOnly: false,
+				},
+				ScaleIO: &apiv1.ScaleIOVolumeSource{
+					Gateway: "",
+					System:  "",
+					SecretRef: &apiv1.LocalObjectReference{
+						Name: "",
+					},
+					SSLEnabled:       false,
+					ProtectionDomain: "",
+					StoragePool:      "",
+					StorageMode:      "",
+					VolumeName:       "",
+					FSType:           "",
+					ReadOnly:         false,
+				},
+				StorageOS: &apiv1.StorageOSVolumeSource{
+					VolumeName:      "",
+					VolumeNamespace: "",
+					FSType:          "",
+					ReadOnly:        false,
+					SecretRef: &apiv1.LocalObjectReference{
+						Name: "",
+					},
+				},
+				CSI: &apiv1.CSIVolumeSource{
+					Driver:           "",
+					ReadOnly:         nil,
+					FSType:           nil,
+					VolumeAttributes: nil,
+					NodePublishSecretRef: &apiv1.LocalObjectReference{
+						Name: "",
+					},
+				},
+				Ephemeral: &apiv1.EphemeralVolumeSource{
+					VolumeClaimTemplate: &apiv1.PersistentVolumeClaimTemplate{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:            "",
+							GenerateName:    "",
+							Namespace:       "",
+							SelfLink:        "",
+							UID:             "",
+							ResourceVersion: "",
+							Generation:      0,
+							CreationTimestamp: metav1.Time{
+								Time: time.Time{},
+							},
+							DeletionTimestamp: &metav1.Time{
+								Time: time.Time{},
+							},
+							DeletionGracePeriodSeconds: nil,
+							Labels:                     nil,
+							Annotations:                nil,
+							OwnerReferences:            nil,
+							Finalizers:                 nil,
+							ZZZ_DeprecatedClusterName:  "",
+							ManagedFields:              nil,
+						},
+						Spec: apiv1.PersistentVolumeClaimSpec{
+							AccessModes: nil,
+							Selector: &metav1.LabelSelector{
+								MatchLabels:      nil,
+								MatchExpressions: nil,
+							},
+							Resources: apiv1.ResourceRequirements{
+								Limits:   nil,
+								Requests: nil,
+							},
+							VolumeName:       "",
+							StorageClassName: nil,
+							VolumeMode:       nil,
+							DataSource: &apiv1.TypedLocalObjectReference{
+								APIGroup: nil,
+								Kind:     "",
+								Name:     "",
+							},
+							DataSourceRef: &apiv1.TypedLocalObjectReference{
+								APIGroup: nil,
+								Kind:     "",
+								Name:     "",
+							},
+						},
+					},
+				},
 			},
 		},
 	}

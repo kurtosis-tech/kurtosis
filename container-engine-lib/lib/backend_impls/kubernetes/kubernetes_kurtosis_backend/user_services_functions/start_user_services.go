@@ -20,6 +20,7 @@ import (
 	"github.com/sirupsen/logrus"
 	apiv1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	applyconfigurationsv1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"strings"
 )
@@ -95,7 +96,9 @@ func StartUserServices(
 			return
 		}
 		userServiceFilters := &service.ServiceFilters{
-			GUIDs: serviceGUIDsToRemove,
+			IDs:      nil,
+			GUIDs:    serviceGUIDsToRemove,
+			Statuses: nil,
 		}
 		_, failedToDestroyGUIDs, err := DestroyUserServices(ctx, enclaveID, userServiceFilters, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
 		if err != nil {
@@ -150,7 +153,9 @@ func StartUserServices(
 		serviceGUIDsToFilter[guid] = true
 	}
 	existingObjectsAndResourcesFilters := &service.ServiceFilters{
-		GUIDs: serviceGUIDsToFilter,
+		IDs:      nil,
+		GUIDs:    serviceGUIDsToFilter,
+		Statuses: nil,
 	}
 	// This is safe, as there's an N -> 1 mapping between GUID and ID and the GUIDs that we filter on don't have any matching IDs
 	existingObjectsAndResources, err := shared_helpers.GetMatchingUserServiceObjectsAndKubernetesResourcesByServiceID(
@@ -449,6 +454,8 @@ func updateServiceWhenContainerStarted(
 				// TODO fill this out for an app port!
 				AppProtocol: nil,
 				Port:        &newServicePortCopy.Port,
+				TargetPort:  nil,
+				NodePort:    nil,
 			}
 			specUpdateToApply.WithPorts(portUpdateToApply)
 		}
@@ -467,6 +474,8 @@ func updateServiceWhenContainerStarted(
 					// TODO fill this out for an app port!
 					AppProtocol: nil,
 					Port:        &oldServicePort.Port,
+					TargetPort:  nil,
+					NodePort:    nil,
 				}
 				specReversionToApply.WithPorts(portUpdateToApply)
 			}
@@ -525,8 +534,9 @@ func getUserServicePodContainerSpecs(
 	var containerEnvVars []apiv1.EnvVar
 	for varName, varValue := range envVarStrs {
 		envVar := apiv1.EnvVar{
-			Name:  varName,
-			Value: varValue,
+			Name:      varName,
+			Value:     varValue,
+			ValueFrom: nil,
 		}
 		containerEnvVars = append(containerEnvVars, envVar)
 	}
@@ -591,6 +601,12 @@ func getKubernetesServicePortsFromPrivatePortSpecs(privatePorts map[string]*port
 			AppProtocol: nil,
 			// Safe to cast because max uint16 < int32
 			Port: int32(portSpec.GetNumber()),
+			TargetPort: intstr.IntOrString{
+				Type:   0,
+				IntVal: 0,
+				StrVal: "",
+			},
+			NodePort: 0,
 		}
 		result = append(result, kubernetesPortObj)
 	}
@@ -608,10 +624,12 @@ func getKubernetesContainerPortsFromPrivatePortSpecs(privatePorts map[string]*po
 		}
 
 		kubernetesPortObj := apiv1.ContainerPort{
-			Name: portId,
+			Name:     portId,
+			HostPort: 0,
 			// Safe to do because max uint16 < int32
 			ContainerPort: int32(portSpec.GetNumber()),
 			Protocol:      kubernetesProtocol,
+			HostIP:        "",
 		}
 		result = append(result, kubernetesPortObj)
 	}
