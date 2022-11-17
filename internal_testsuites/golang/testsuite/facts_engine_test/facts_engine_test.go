@@ -61,6 +61,7 @@ func TestFactsEngine(t *testing.T) {
 				FactValue: &kurtosis_core_rpc_api_bindings.FactValue_StringValue{
 					StringValue: expectedOutputForConstantFactOutput,
 				},
+				UpdatedAt: nil,
 			},
 		})
 	_, err = enclaveCtx.DefineFact(constantFactRecipe)
