@@ -1,5 +1,9 @@
 # TBD
 ### Features
+- Added a new log line for printing the `createed enclave ID` just when this is created in `kurtosis exec` and `kurtosis module exec` commands
+
+# 0.53.1
+### Features
 - Added random enclave ID generation in `EnclaveManager.CreateEnclave()` when an empty enclave ID is provided
 - Added the `created enclave` spotlight message when a new enclave is created from the CLI (currently with the `enclave add`, `module exec` and `exec` commands)
 
@@ -8,6 +12,7 @@
 
 ### Fixes
 - Fixed a bug where we had renamed `container_image_name` inside the proto definition to `image`
+- Fix a test that dependent on an old on existent Starlark module
 
 # 0.53.0
 ### Features
