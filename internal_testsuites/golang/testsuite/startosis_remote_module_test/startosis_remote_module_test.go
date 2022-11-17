@@ -12,8 +12,8 @@ const (
 	testName              = "module"
 	isPartitioningEnabled = false
 	defaultDryRun         = false
-	remoteModule          = "github.com/kurtosis-tech/datastore-army-module-demo"
-	emptyExecuteParams    = "{}"
+	remoteModule          = "github.com/kurtosis-tech/datastore-army-module"
+	executeParams         = `{"num_datastores": "2"}`
 	dataStoreService0     = "datastore-0"
 	dataStoreService1     = "datastore-1"
 	datastorePortId       = "grpc"
@@ -30,7 +30,7 @@ func TestStartosisRemoteModule(t *testing.T) {
 	// ------------------------------------- TEST RUN ----------------------------------------------
 	logrus.Debugf("Executing Startosis module: \n%v", remoteModule)
 
-	executionResult, err := enclaveCtx.ExecuteStartosisRemoteModule(remoteModule, emptyExecuteParams, defaultDryRun)
+	executionResult, err := enclaveCtx.ExecuteStartosisRemoteModule(remoteModule, executeParams, defaultDryRun)
 	require.NoError(t, err, "Unexpected error executing startosis module")
 
 	expectedScriptOutput := `Deploying module datastore_army_module with args:
@@ -43,7 +43,7 @@ ModuleOutput(created_service_ids_to_port_ids=[ServiceIdPortId(service_id="datast
 	require.Empty(t, executionResult.InterpretationError, "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
 	require.Lenf(t, executionResult.ValidationErrors, 0, "Unexpected validation error")
 	require.Empty(t, executionResult.ExecutionError, "Unexpected execution error")
-	require.Regexp(t, expectedScriptOutput, executionResult.SerializedScriptOutput)
+	require.Equal(t, expectedScriptOutput, executionResult.SerializedScriptOutput)
 	logrus.Infof("Successfully ran Startosis script")
 
 	// Check that the service added by the script is functional
