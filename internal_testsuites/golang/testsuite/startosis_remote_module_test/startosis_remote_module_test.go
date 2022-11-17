@@ -14,8 +14,8 @@ const (
 	defaultDryRun         = false
 	remoteModule          = "github.com/kurtosis-tech/datastore-army-module"
 	executeParams         = `{"num_datastores": "2"}`
-	dataStoreService0     = "datastore-0"
-	dataStoreService1     = "datastore-1"
+	dataStoreService0Id   = "datastore-0"
+	dataStoreService1Id   = "datastore-1"
 	datastorePortId       = "grpc"
 )
 
@@ -28,7 +28,7 @@ func TestStartosisRemoteModule(t *testing.T) {
 	defer destroyEnclaveFunc()
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
-	logrus.Debugf("Executing Startosis module: \n%v", remoteModule)
+	logrus.Debugf("Executing Startosis module: '%v'", remoteModule)
 
 	executionResult, err := enclaveCtx.ExecuteStartosisRemoteModule(remoteModule, executeParams, defaultDryRun)
 	require.NoError(t, err, "Unexpected error executing startosis module")
@@ -44,21 +44,21 @@ ModuleOutput(created_service_ids_to_port_ids=[ServiceIdPortId(service_id="datast
 	require.Lenf(t, executionResult.ValidationErrors, 0, "Unexpected validation error")
 	require.Empty(t, executionResult.ExecutionError, "Unexpected execution error")
 	require.Equal(t, expectedScriptOutput, executionResult.SerializedScriptOutput)
-	logrus.Infof("Successfully ran Startosis script")
+	logrus.Infof("Successfully ran Startosis Module")
 
 	// Check that the service added by the script is functional
 	logrus.Infof("Checking that services are all healthy")
 	require.NoError(
 		t,
-		test_helpers.ValidateDatastoreServiceHealthy(context.Background(), enclaveCtx, dataStoreService0, datastorePortId),
+		test_helpers.ValidateDatastoreServiceHealthy(context.Background(), enclaveCtx, dataStoreService0Id, datastorePortId),
 		"Error validating datastore server '%s' is healthy",
-		dataStoreService0,
+		dataStoreService0Id,
 	)
 	require.NoError(
 		t,
-		test_helpers.ValidateDatastoreServiceHealthy(context.Background(), enclaveCtx, dataStoreService1, datastorePortId),
+		test_helpers.ValidateDatastoreServiceHealthy(context.Background(), enclaveCtx, dataStoreService1Id, datastorePortId),
 		"Error validating datastore server '%s' is healthy",
-		dataStoreService1,
+		dataStoreService1Id,
 	)
 	logrus.Infof("All services added via the module work as expected")
 }
