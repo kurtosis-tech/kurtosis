@@ -43,8 +43,9 @@ const (
 	factIdFormatStr            = "%v.%v"
 	keyStringFormat            = "%020s"
 	maxResultCount             = 100
-	defaultRetryCount          = 10
-	defaultRetryWaitDuration   = 3 * time.Second
+	// Aggressive retry to support ETH module, should be configurable in the future
+	defaultRetryCount        = 10
+	defaultRetryWaitDuration = 3 * time.Second
 )
 
 func NewFactsEngine(db *bolt.DB, serviceNetwork service_network.ServiceNetwork) *FactsEngine {
