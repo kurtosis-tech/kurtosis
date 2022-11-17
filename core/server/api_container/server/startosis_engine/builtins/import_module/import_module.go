@@ -85,7 +85,7 @@ func parseStartosisArgs(args starlark.Tuple, kwargs []starlark.Tuple) (string, *
 		return "", explicitInterpretationError(err)
 	}
 
-	moduleFilePath, interpretationErr := kurtosis_instruction.ParseFilePath(moduleFileArgName, moduleFileArg)
+	moduleFilePath, interpretationErr := kurtosis_instruction.ParseNonEmptyString(moduleFileArgName, moduleFileArg)
 	if interpretationErr != nil {
 		return "", explicitInterpretationError(interpretationErr)
 	}

@@ -56,19 +56,19 @@ func (instruction *WaitInstruction) GetPositionInOriginalScript() *kurtosis_inst
 }
 
 func (instruction *WaitInstruction) GetCanonicalInstruction() string {
-	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(WaitBuiltinName, instruction.getKwargs(), &instruction.position)
+	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(WaitBuiltinName, []starlark.Value{}, instruction.getKwargs(), &instruction.position)
 }
 
-func (instruction *WaitInstruction) Execute(ctx context.Context) error {
+func (instruction *WaitInstruction) Execute(ctx context.Context) (*string, error) {
 	_, err := instruction.factsEngine.WaitForValue(facts_engine.GetFactId(string(instruction.serviceId), instruction.factName))
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed to wait for fact '%v' on service '%v'", instruction.factName, instruction.serviceId)
+		return nil, stacktrace.Propagate(err, "Failed to wait for fact '%v' on service '%v'", instruction.factName, instruction.serviceId)
 	}
-	return nil
+	return nil, nil
 }
 
 func (instruction *WaitInstruction) String() string {
-	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(WaitBuiltinName, instruction.getKwargs(), &instruction.position)
+	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(WaitBuiltinName, []starlark.Value{}, instruction.getKwargs(), &instruction.position)
 }
 
 func (instruction *WaitInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {

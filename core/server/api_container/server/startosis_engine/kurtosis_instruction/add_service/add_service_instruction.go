@@ -80,18 +80,18 @@ func (instruction *AddServiceInstruction) GetPositionInOriginalScript() *kurtosi
 }
 
 func (instruction *AddServiceInstruction) GetCanonicalInstruction() string {
-	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(AddServiceBuiltinName, instruction.starlarkKwargs, &instruction.position)
+	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(AddServiceBuiltinName, kurtosis_instruction.NoArgs, instruction.starlarkKwargs, &instruction.position)
 }
 
-func (instruction *AddServiceInstruction) Execute(ctx context.Context) error {
+func (instruction *AddServiceInstruction) Execute(ctx context.Context) (*string, error) {
 	serviceIdStr, err := shared_helpers.ReplaceFactsInString(string(instruction.serviceId), instruction.factsEngine)
 	if err != nil {
-		return stacktrace.Propagate(err, "Error occurred while replacing facts in service id for '%v'", instruction.serviceId)
+		return nil, stacktrace.Propagate(err, "Error occurred while replacing facts in service id for '%v'", instruction.serviceId)
 	}
 	instruction.serviceId = kurtosis_backend_service.ServiceID(serviceIdStr)
 	err = instruction.replaceMagicStrings()
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred replacing IP Address with actual values in add service instruction for service '%v'", instruction.serviceId)
+		return nil, stacktrace.Propagate(err, "An error occurred replacing IP Address with actual values in add service instruction for service '%v'", instruction.serviceId)
 	}
 
 	serviceConfigMap := map[service.ServiceID]*kurtosis_core_rpc_api_bindings.ServiceConfig{
@@ -101,19 +101,19 @@ func (instruction *AddServiceInstruction) Execute(ctx context.Context) error {
 	// TODO Pull partition from user in Starlark
 	serviceSuccessful, serviceFailed, err := instruction.serviceNetwork.StartServices(ctx, serviceConfigMap, service_network_types.PartitionID(""))
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed adding service to enclave with an unexpected error")
+		return nil, stacktrace.Propagate(err, "Failed adding service to enclave with an unexpected error")
 	}
 	if failure, found := serviceFailed[instruction.serviceId]; found {
-		return stacktrace.Propagate(failure, "Failed adding service to enclave")
+		return nil, stacktrace.Propagate(failure, "Failed adding service to enclave")
 	}
 	if _, found := serviceSuccessful[instruction.serviceId]; !found {
-		return stacktrace.NewError("Service wasn't accounted as failed nor successfully added. This is a product bug")
+		return nil, stacktrace.NewError("Service wasn't accounted as failed nor successfully added. This is a product bug")
 	}
-	return nil
+	return nil, nil
 }
 
 func (instruction *AddServiceInstruction) String() string {
-	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(AddServiceBuiltinName, instruction.starlarkKwargs, &instruction.position)
+	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(AddServiceBuiltinName, kurtosis_instruction.NoArgs, instruction.starlarkKwargs, &instruction.position)
 }
 
 func (instruction *AddServiceInstruction) replaceMagicStrings() error {

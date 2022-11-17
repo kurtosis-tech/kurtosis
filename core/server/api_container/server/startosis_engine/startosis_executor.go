@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/stacktrace"
+	"strings"
 	"sync"
 )
 
@@ -26,15 +27,19 @@ func NewStartosisExecutor() *StartosisExecutor {
 // Execute executes the list of Kurtosis instructions against the Kurtosis backend
 // It returns a potential execution error if something went wrong.
 // It returns an error if something unexpected happens outside the execution of the script
-func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, instructions []kurtosis_instruction.KurtosisInstruction) ([]*kurtosis_core_rpc_api_bindings.SerializedKurtosisInstruction, error) {
+func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, instructions []kurtosis_instruction.KurtosisInstruction, outputBuffer *strings.Builder) ([]*kurtosis_core_rpc_api_bindings.SerializedKurtosisInstruction, error) {
 	executor.mutex.Lock()
 	defer executor.mutex.Unlock()
 
 	var serializedSuccessfullyExecutedInstructions []*kurtosis_core_rpc_api_bindings.SerializedKurtosisInstruction
 	for index, instruction := range instructions {
 		if !dryRun {
-			if err := instruction.Execute(ctx); err != nil {
+			instructionOutput, err := instruction.Execute(ctx)
+			if err != nil {
 				return serializedSuccessfullyExecutedInstructions, stacktrace.Propagate(err, "An error occurred executing instruction (number %d): \n%v", index+1, instruction.GetCanonicalInstruction())
+			}
+			if instructionOutput != nil {
+				outputBuffer.WriteString(*instructionOutput)
 			}
 		}
 		serializedSuccessfullyExecutedInstructions = append(serializedSuccessfullyExecutedInstructions,

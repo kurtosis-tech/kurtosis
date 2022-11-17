@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/mock_instruction"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"strings"
 	"testing"
 )
 
@@ -18,6 +19,10 @@ const (
 
 	doDryRun       = true
 	executeForReal = false
+)
+
+var (
+	intoTheVoid = &strings.Builder{}
 )
 
 func TestExecuteKurtosisInstructions_ExecuteForReal_Success(t *testing.T) {
@@ -30,7 +35,7 @@ func TestExecuteKurtosisInstructions_ExecuteForReal_Success(t *testing.T) {
 		instruction2,
 	}
 
-	serializedInstruction, err := executor.Execute(context.Background(), executeForReal, instructions)
+	serializedInstruction, err := executor.Execute(context.Background(), executeForReal, instructions, intoTheVoid)
 	instruction1.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
 	instruction1.AssertNumberOfCalls(t, "Execute", 1)
 	instruction2.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
@@ -57,7 +62,7 @@ func TestExecuteKurtosisInstructions_ExecuteForReal_FailureHalfWay(t *testing.T)
 		instruction3,
 	}
 
-	serializedInstruction, err := executor.Execute(context.Background(), executeForReal, instructions)
+	serializedInstruction, err := executor.Execute(context.Background(), executeForReal, instructions, intoTheVoid)
 	instruction1.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
 	instruction1.AssertNumberOfCalls(t, "Execute", 1)
 	instruction2.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
@@ -91,7 +96,7 @@ func TestExecuteKurtosisInstructions_DoDryRun(t *testing.T) {
 		instruction2,
 	}
 
-	serializedInstruction, err := executor.Execute(context.Background(), doDryRun, instructions)
+	serializedInstruction, err := executor.Execute(context.Background(), doDryRun, instructions, intoTheVoid)
 	instruction1.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
 	instruction2.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
 	// both execute never called because dry run = true
@@ -113,9 +118,9 @@ func createMockInstruction(t *testing.T, canonicalizedInstruction string, execut
 	instruction.EXPECT().GetCanonicalInstruction().Maybe().Return(canonicalizedInstruction)
 
 	if executeSuccessfully {
-		instruction.EXPECT().Execute(mock.Anything).Maybe().Return(nil)
+		instruction.EXPECT().Execute(mock.Anything).Maybe().Return(nil, nil)
 	} else {
-		instruction.EXPECT().Execute(mock.Anything).Maybe().Return(errors.New("expected error for test"))
+		instruction.EXPECT().Execute(mock.Anything).Maybe().Return(nil, errors.New("expected error for test"))
 	}
 
 	return instruction

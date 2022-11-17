@@ -72,24 +72,24 @@ func (instruction *UploadFilesInstruction) GetPositionInOriginalScript() *kurtos
 }
 
 func (instruction *UploadFilesInstruction) GetCanonicalInstruction() string {
-	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(UploadFilesBuiltinName, instruction.getKwargs(), &instruction.position)
+	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(UploadFilesBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs(), &instruction.position)
 }
 
-func (instruction *UploadFilesInstruction) Execute(_ context.Context) error {
+func (instruction *UploadFilesInstruction) Execute(_ context.Context) (*string, error) {
 	compressedData, err := shared_utils.CompressPath(instruction.pathOnDisk, ensureCompressedFileIsLesserThanGRPCLimit)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while compressing the files '%v'", instruction.pathOnDisk)
+		return nil, stacktrace.Propagate(err, "An error occurred while compressing the files '%v'", instruction.pathOnDisk)
 	}
 	err = instruction.serviceNetwork.UploadFilesArtifactToTargetArtifactUUID(compressedData, instruction.artifactUuid)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while uploading the compressed contents\n'%v'", compressedData)
+		return nil, stacktrace.Propagate(err, "An error occurred while uploading the compressed contents\n'%v'", compressedData)
 	}
 	logrus.Infof("Succesfully uploaded files from instruction '%v' to '%v'", instruction.position.String(), instruction.artifactUuid)
-	return nil
+	return nil, nil
 }
 
 func (instruction *UploadFilesInstruction) String() string {
-	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(UploadFilesBuiltinName, instruction.getKwargs(), &instruction.position)
+	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(UploadFilesBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs(), &instruction.position)
 }
 
 func (instruction *UploadFilesInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
@@ -114,7 +114,7 @@ func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starl
 		artifactUuidArg = starlark.String(placeHolderArtifactUuid)
 	}
 
-	srcPath, interpretationErr := kurtosis_instruction.ParseFilePath(srcPathArgName, srcPathArg)
+	srcPath, interpretationErr := kurtosis_instruction.ParseNonEmptyString(srcPathArgName, srcPathArg)
 	if interpretationErr != nil {
 		return "", "", interpretationErr
 	}
