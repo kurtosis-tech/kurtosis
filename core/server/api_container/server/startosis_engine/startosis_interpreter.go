@@ -65,8 +65,9 @@ func NewStartosisInterpreter(serviceNetwork service_network.ServiceNetwork, modu
 	return &StartosisInterpreter{
 		mutex:                 &sync.Mutex{},
 		serviceNetwork:        serviceNetwork,
-		moduleContentProvider: moduleContentProvider,
+		factsEngine:           &facts_engine.FactsEngine{},
 		moduleGlobalsCache:    make(map[string]*startosis_modules.ModuleCacheEntry),
+		moduleContentProvider: moduleContentProvider,
 		protoFileStore:        proto_compiler.NewProtoFileStore(moduleContentProvider),
 	}
 }
@@ -111,9 +112,10 @@ func (interpreter *StartosisInterpreter) Interpret(ctx context.Context, moduleId
 
 func (interpreter *StartosisInterpreter) buildBindings(threadName string, instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, scriptOutputBuffer *bytes.Buffer) (*starlark.Thread, *starlark.StringDict) {
 	thread := &starlark.Thread{
-		Name:  threadName,
-		Load:  interpreter.makeLoadFunction(instructionsQueue, scriptOutputBuffer),
-		Print: makePrintFunction(scriptOutputBuffer),
+		Name:       threadName,
+		Print:      makePrintFunction(scriptOutputBuffer),
+		Load:       interpreter.makeLoadFunction(instructionsQueue, scriptOutputBuffer),
+		OnMaxSteps: nil,
 	}
 
 	predeclared := &starlark.StringDict{

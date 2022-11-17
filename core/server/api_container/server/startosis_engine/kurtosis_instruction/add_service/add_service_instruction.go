@@ -57,6 +57,19 @@ func newEmptyAddServiceInstruction(serviceNetwork service_network.ServiceNetwork
 		serviceNetwork: serviceNetwork,
 		position:       position,
 		starlarkKwargs: starlark.StringDict{},
+		serviceId:      "",
+		serviceConfig: &kurtosis_core_rpc_api_bindings.ServiceConfig{
+			ContainerImageName:        "",
+			PrivatePorts:              nil,
+			PublicPorts:               nil,
+			EntrypointArgs:            nil,
+			CmdArgs:                   nil,
+			EnvVars:                   nil,
+			FilesArtifactMountpoints:  nil,
+			CpuAllocationMillicpus:    0,
+			MemoryAllocationMegabytes: 0,
+			PrivateIpAddrPlaceholder:  "",
+		},
 	}
 }
 

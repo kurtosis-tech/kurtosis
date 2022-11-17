@@ -44,9 +44,10 @@ func GenerateRenderTemplatesBuiltin(instructionsQueue *[]kurtosis_instruction.Ku
 
 func newEmptyRenderTemplatesInstruction(serviceNetwork service_network.ServiceNetwork, position kurtosis_instruction.InstructionPosition) *RenderTemplatesInstruction {
 	return &RenderTemplatesInstruction{
-		serviceNetwork: serviceNetwork,
-		position:       position,
-		starlarkKwargs: starlark.StringDict{},
+		serviceNetwork:                    serviceNetwork,
+		position:                          position,
+		starlarkKwargs:                    starlark.StringDict{},
+		templatesAndDataByDestRelFilepath: nil,
 	}
 }
 

@@ -24,7 +24,9 @@ func NewMockServiceNetwork(ipAddresses map[service.ServiceID]net.IP) *MockServic
 }
 
 func NewEmptyMockServiceNetwork() *MockServiceNetwork {
-	return &MockServiceNetwork{}
+	return &MockServiceNetwork{
+		ipAddresses: nil,
+	}
 }
 
 func (m *MockServiceNetwork) Repartition(ctx context.Context, newPartitionServices map[service_network_types.PartitionID]map[service.ServiceID]bool, newPartitionConnections map[service_network_types.PartitionConnectionID]partition_topology.PartitionConnection, newDefaultConnection partition_topology.PartitionConnection) error {

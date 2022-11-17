@@ -223,7 +223,9 @@ func (network *DefaultServiceNetwork) StartServices(
 			return
 		}
 		userServiceFilters := &service.ServiceFilters{
-			GUIDs: serviceGUIDsToRemove,
+			IDs:      nil,
+			GUIDs:    serviceGUIDsToRemove,
+			Statuses: nil,
 		}
 		_, failedToDestroyGUIDs, err := network.kurtosisBackend.DestroyUserServices(context.Background(), network.enclaveId, userServiceFilters)
 		if err != nil {
@@ -385,9 +387,11 @@ func (network *DefaultServiceNetwork) RemoveService(
 
 	// We stop the service, rather than destroying it, so that we can keep logs around
 	stopServiceFilters := &service.ServiceFilters{
+		IDs: nil,
 		GUIDs: map[service.ServiceGUID]bool{
 			serviceGuid: true,
 		},
+		Statuses: nil,
 	}
 	_, erroredGuids, err := network.kurtosisBackend.StopUserServices(ctx, network.enclaveId, stopServiceFilters)
 	if err != nil {
@@ -560,9 +564,11 @@ func (network *DefaultServiceNetwork) GetService(ctx context.Context, serviceId 
 	serviceGuid := registration.GetGUID()
 
 	getServiceFilters := &service.ServiceFilters{
+		IDs: nil,
 		GUIDs: map[service.ServiceGUID]bool{
 			registration.GetGUID(): true,
 		},
+		Statuses: nil,
 	}
 	matchingServices, err := network.kurtosisBackend.GetUserServices(ctx, network.enclaveId, getServiceFilters)
 	if err != nil {

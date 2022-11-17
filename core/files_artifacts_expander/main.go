@@ -7,7 +7,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/gammazero/workerpool"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
@@ -33,8 +32,21 @@ const (
 func main() {
 	// NOTE: we'll want to change the ForceColors to false if we ever want structured logging
 	logrus.SetFormatter(&logrus.TextFormatter{
-		ForceColors:   true,
-		FullTimestamp: true,
+		ForceColors:               true,
+		DisableColors:             false,
+		ForceQuote:                false,
+		DisableQuote:              false,
+		EnvironmentOverrideColors: false,
+		DisableTimestamp:          false,
+		FullTimestamp:             true,
+		TimestampFormat:           "",
+		DisableSorting:            false,
+		SortingFunc:               nil,
+		DisableLevelTruncation:    false,
+		PadLevelText:              false,
+		QuoteEmptyFields:          false,
+		FieldMap:                  nil,
+		CallerPrettyfier:          nil,
 	})
 
 	err := runMain()
@@ -93,10 +105,10 @@ func runMain() error {
 		}
 
 		// NOTE: We don't use stacktrace here because the actual stacktraces we care about are the ones from the threads!
-		return errors.New(fmt.Sprintf(
+		return fmt.Errorf(
 			"The following errors occurred when trying to expand files artifacts:\n%v",
 			strings.Join(allIndexedResultErrStrs, "\n\n"),
-		))
+		)
 	}
 	return nil
 }

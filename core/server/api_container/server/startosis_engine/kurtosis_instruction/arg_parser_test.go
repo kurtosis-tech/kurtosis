@@ -569,9 +569,12 @@ func TestParsePrivateIPAddressPlaceholder_FailureNonString(t *testing.T) {
 func TestParseHttpRequestFactRecipe_GetRequestWithoutOptionalFields(t *testing.T) {
 	dict := starlark.StringDict{}
 	expectedRecipe := &kurtosis_core_rpc_api_bindings.HttpRequestFactRecipe{
-		PortId:   "port",
-		Method:   kurtosis_core_rpc_api_bindings.HttpRequestMethod_GET,
-		Endpoint: "/",
+		PortId:         "port",
+		Endpoint:       "/",
+		Method:         kurtosis_core_rpc_api_bindings.HttpRequestMethod_GET,
+		ContentType:    "",
+		Body:           "",
+		FieldExtractor: nil,
 	}
 	dict["port_id"] = starlark.String("port")
 	dict["method"] = starlark.String("GET")
@@ -587,8 +590,10 @@ func TestParseHttpRequestFactRecipe_GetRequestWithOptionalFields(t *testing.T) {
 	var fieldExtractor = ".body"
 	expectedRecipe := &kurtosis_core_rpc_api_bindings.HttpRequestFactRecipe{
 		PortId:         "port",
-		Method:         kurtosis_core_rpc_api_bindings.HttpRequestMethod_GET,
 		Endpoint:       "/",
+		Method:         kurtosis_core_rpc_api_bindings.HttpRequestMethod_GET,
+		ContentType:    "",
+		Body:           "",
 		FieldExtractor: &fieldExtractor,
 	}
 	dict["port_id"] = starlark.String("port")

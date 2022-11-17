@@ -24,7 +24,12 @@ const (
 )
 
 var (
-	protoUnmarshalerOptions = proto.UnmarshalOptions{Merge: true}
+	protoUnmarshalerOptions = proto.UnmarshalOptions{
+		Merge:          true,
+		AllowPartial:   false,
+		DiscardUnknown: false,
+		Resolver:       nil,
+	}
 )
 
 type StoreKey string

@@ -42,20 +42,24 @@ type InterpretationError struct {
 
 func NewInterpretationError(msg string, args ...interface{}) *InterpretationError {
 	return &InterpretationError{
-		msg: fmt.Sprintf(msg, args...),
+		msg:        fmt.Sprintf(msg, args...),
+		cause:      nil,
+		stacktrace: nil,
 	}
 }
 
 func WrapWithInterpretationError(err error, msg string, args ...interface{}) *InterpretationError {
 	return &InterpretationError{
-		msg:   fmt.Sprintf(msg, args...),
-		cause: err,
+		msg:        fmt.Sprintf(msg, args...),
+		cause:      err,
+		stacktrace: nil,
 	}
 }
 
 func NewInterpretationErrorFromStacktrace(stacktrace []CallFrame) *InterpretationError {
 	return &InterpretationError{
 		msg:        "",
+		cause:      nil,
 		stacktrace: stacktrace,
 	}
 }
@@ -63,6 +67,7 @@ func NewInterpretationErrorFromStacktrace(stacktrace []CallFrame) *Interpretatio
 func NewInterpretationErrorWithCustomMsg(stacktrace []CallFrame, msg string, args ...interface{}) *InterpretationError {
 	return &InterpretationError{
 		msg:        fmt.Sprintf(msg, args...),
+		cause:      nil,
 		stacktrace: stacktrace,
 	}
 }
