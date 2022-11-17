@@ -14,6 +14,7 @@ interface IApiContainerServiceService extends grpc.ServiceDefinition<grpc.Untype
   executeModule: grpc.MethodDefinition<api_container_service_pb.ExecuteModuleArgs, api_container_service_pb.ExecuteModuleResponse>;
   executeStartosisScript: grpc.MethodDefinition<api_container_service_pb.ExecuteStartosisScriptArgs, api_container_service_pb.ExecuteStartosisResponse>;
   executeStartosisModule: grpc.MethodDefinition<api_container_service_pb.ExecuteStartosisModuleArgs, api_container_service_pb.ExecuteStartosisResponse>;
+  executeStartosisRemoteModule: grpc.MethodDefinition<api_container_service_pb.ExecuteStartosisRemoteModuleArgs, api_container_service_pb.ExecuteStartosisResponse>;
   startServices: grpc.MethodDefinition<api_container_service_pb.StartServicesArgs, api_container_service_pb.StartServicesResponse>;
   getServices: grpc.MethodDefinition<api_container_service_pb.GetServicesArgs, api_container_service_pb.GetServicesResponse>;
   removeService: grpc.MethodDefinition<api_container_service_pb.RemoveServiceArgs, api_container_service_pb.RemoveServiceResponse>;
@@ -41,6 +42,7 @@ export interface IApiContainerServiceServer extends grpc.UntypedServiceImplement
   executeModule: grpc.handleUnaryCall<api_container_service_pb.ExecuteModuleArgs, api_container_service_pb.ExecuteModuleResponse>;
   executeStartosisScript: grpc.handleUnaryCall<api_container_service_pb.ExecuteStartosisScriptArgs, api_container_service_pb.ExecuteStartosisResponse>;
   executeStartosisModule: grpc.handleUnaryCall<api_container_service_pb.ExecuteStartosisModuleArgs, api_container_service_pb.ExecuteStartosisResponse>;
+  executeStartosisRemoteModule: grpc.handleUnaryCall<api_container_service_pb.ExecuteStartosisRemoteModuleArgs, api_container_service_pb.ExecuteStartosisResponse>;
   startServices: grpc.handleUnaryCall<api_container_service_pb.StartServicesArgs, api_container_service_pb.StartServicesResponse>;
   getServices: grpc.handleUnaryCall<api_container_service_pb.GetServicesArgs, api_container_service_pb.GetServicesResponse>;
   removeService: grpc.handleUnaryCall<api_container_service_pb.RemoveServiceArgs, api_container_service_pb.RemoveServiceResponse>;
@@ -79,6 +81,9 @@ export class ApiContainerServiceClient extends grpc.Client {
   executeStartosisModule(argument: api_container_service_pb.ExecuteStartosisModuleArgs, callback: grpc.requestCallback<api_container_service_pb.ExecuteStartosisResponse>): grpc.ClientUnaryCall;
   executeStartosisModule(argument: api_container_service_pb.ExecuteStartosisModuleArgs, metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.ExecuteStartosisResponse>): grpc.ClientUnaryCall;
   executeStartosisModule(argument: api_container_service_pb.ExecuteStartosisModuleArgs, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.ExecuteStartosisResponse>): grpc.ClientUnaryCall;
+  executeStartosisRemoteModule(argument: api_container_service_pb.ExecuteStartosisRemoteModuleArgs, callback: grpc.requestCallback<api_container_service_pb.ExecuteStartosisResponse>): grpc.ClientUnaryCall;
+  executeStartosisRemoteModule(argument: api_container_service_pb.ExecuteStartosisRemoteModuleArgs, metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.ExecuteStartosisResponse>): grpc.ClientUnaryCall;
+  executeStartosisRemoteModule(argument: api_container_service_pb.ExecuteStartosisRemoteModuleArgs, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.ExecuteStartosisResponse>): grpc.ClientUnaryCall;
   startServices(argument: api_container_service_pb.StartServicesArgs, callback: grpc.requestCallback<api_container_service_pb.StartServicesResponse>): grpc.ClientUnaryCall;
   startServices(argument: api_container_service_pb.StartServicesArgs, metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.StartServicesResponse>): grpc.ClientUnaryCall;
   startServices(argument: api_container_service_pb.StartServicesArgs, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.StartServicesResponse>): grpc.ClientUnaryCall;

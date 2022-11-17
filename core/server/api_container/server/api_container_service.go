@@ -237,6 +237,33 @@ func (apicService ApiContainerService) ExecuteStartosisModule(ctx context.Contex
 	return apicService.executeStartosis(ctx, shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun), moduleId, scriptWithMainToExecute, serializedParams)
 }
 
+func (apicService ApiContainerService) ExecuteStartosisRemoteModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecuteStartosisRemoteModuleArgs) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse, error) {
+	moduleId := args.ModuleId
+	serializedParams := args.SerializedParams
+
+	moduleRootPathOnDisk, interpretationError := apicService.startosisModuleContentProvider.GetOnDiskAbsoluteFilePath(moduleId)
+	if interpretationError != nil {
+		return nil, stacktrace.Propagate(interpretationError, "An error occurred while cloning the module '%s' to disk", moduleId)
+	}
+
+	pathToMainFile := path.Join(moduleRootPathOnDisk, startosis_engine.MainFileName)
+	if _, err := os.Stat(pathToMainFile); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while verifying that '%v' exists on root of module '%v' at '%v'", startosis_engine.MainFileName, moduleId, pathToMainFile)
+	}
+
+	var scriptWithMainToExecute string
+	pathToTypesFile := path.Join(moduleRootPathOnDisk, startosis_engine.TypesFileName)
+	if _, err := os.Stat(pathToTypesFile); err != nil {
+		// no types file provided for the module, no input_args expected
+		scriptWithMainToExecute = fmt.Sprintf(bootScript, moduleId, "")
+	} else {
+		// types file exists in module, input_args will be provided by the boot script
+		scriptWithMainToExecute = fmt.Sprintf(bootScript, moduleId, startosis_engine.MainInputArgName)
+	}
+	return apicService.executeStartosis(ctx, shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun), moduleId, scriptWithMainToExecute, serializedParams)
+
+}
+
 func (apicService ApiContainerService) StartServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServicesArgs) (*kurtosis_core_rpc_api_bindings.StartServicesResponse, error) {
 	failedServicesPool := map[kurtosis_backend_service.ServiceID]error{}
 	serviceIDsToAPIConfigs := map[kurtosis_backend_service.ServiceID]*kurtosis_core_rpc_api_bindings.ServiceConfig{}

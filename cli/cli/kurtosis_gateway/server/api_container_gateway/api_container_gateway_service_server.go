@@ -100,6 +100,15 @@ func (service *ApiContainerGatewayServiceServer) ExecuteStartosisModule(ctx cont
 	return remoteApiContainerResponse, nil
 }
 
+func (service *ApiContainerGatewayServiceServer) ExecuteStartosisRemoteModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecuteStartosisRemoteModuleArgs) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse, error) {
+	remoteApiContainerResponse, err := service.remoteApiContainerClient.ExecuteStartosisRemoteModule(ctx, args)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
+	}
+
+	return remoteApiContainerResponse, nil
+}
+
 func (service *ApiContainerGatewayServiceServer) StartServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServicesArgs) (*kurtosis_core_rpc_api_bindings.StartServicesResponse, error) {
 	service.mutex.Lock()
 	defer service.mutex.Unlock()

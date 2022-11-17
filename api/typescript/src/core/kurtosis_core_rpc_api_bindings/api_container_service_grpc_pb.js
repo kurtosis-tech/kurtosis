@@ -106,6 +106,17 @@ function deserialize_api_container_api_ExecuteStartosisModuleArgs(buffer_arg) {
   return api_container_service_pb.ExecuteStartosisModuleArgs.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_api_container_api_ExecuteStartosisRemoteModuleArgs(arg) {
+  if (!(arg instanceof api_container_service_pb.ExecuteStartosisRemoteModuleArgs)) {
+    throw new Error('Expected argument of type api_container_api.ExecuteStartosisRemoteModuleArgs');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_ExecuteStartosisRemoteModuleArgs(buffer_arg) {
+  return api_container_service_pb.ExecuteStartosisRemoteModuleArgs.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_api_container_api_ExecuteStartosisResponse(arg) {
   if (!(arg instanceof api_container_service_pb.ExecuteStartosisResponse)) {
     throw new Error('Expected argument of type api_container_api.ExecuteStartosisResponse');
@@ -507,6 +518,17 @@ executeStartosisModule: {
     responseType: api_container_service_pb.ExecuteStartosisResponse,
     requestSerialize: serialize_api_container_api_ExecuteStartosisModuleArgs,
     requestDeserialize: deserialize_api_container_api_ExecuteStartosisModuleArgs,
+    responseSerialize: serialize_api_container_api_ExecuteStartosisResponse,
+    responseDeserialize: deserialize_api_container_api_ExecuteStartosisResponse,
+  },
+  executeStartosisRemoteModule: {
+    path: '/api_container_api.ApiContainerService/ExecuteStartosisRemoteModule',
+    requestStream: false,
+    responseStream: false,
+    requestType: api_container_service_pb.ExecuteStartosisRemoteModuleArgs,
+    responseType: api_container_service_pb.ExecuteStartosisResponse,
+    requestSerialize: serialize_api_container_api_ExecuteStartosisRemoteModuleArgs,
+    requestDeserialize: deserialize_api_container_api_ExecuteStartosisRemoteModuleArgs,
     responseSerialize: serialize_api_container_api_ExecuteStartosisResponse,
     responseDeserialize: deserialize_api_container_api_ExecuteStartosisResponse,
   },

@@ -368,6 +368,39 @@ export namespace ExecuteStartosisScriptArgs {
   }
 }
 
+export class ExecuteStartosisRemoteModuleArgs extends jspb.Message {
+  getModuleId(): string;
+  setModuleId(value: string): ExecuteStartosisRemoteModuleArgs;
+
+  getSerializedParams(): string;
+  setSerializedParams(value: string): ExecuteStartosisRemoteModuleArgs;
+
+  getDryRun(): boolean;
+  setDryRun(value: boolean): ExecuteStartosisRemoteModuleArgs;
+  hasDryRun(): boolean;
+  clearDryRun(): ExecuteStartosisRemoteModuleArgs;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ExecuteStartosisRemoteModuleArgs.AsObject;
+  static toObject(includeInstance: boolean, msg: ExecuteStartosisRemoteModuleArgs): ExecuteStartosisRemoteModuleArgs.AsObject;
+  static serializeBinaryToWriter(message: ExecuteStartosisRemoteModuleArgs, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ExecuteStartosisRemoteModuleArgs;
+  static deserializeBinaryFromReader(message: ExecuteStartosisRemoteModuleArgs, reader: jspb.BinaryReader): ExecuteStartosisRemoteModuleArgs;
+}
+
+export namespace ExecuteStartosisRemoteModuleArgs {
+  export type AsObject = {
+    moduleId: string,
+    serializedParams: string,
+    dryRun?: boolean,
+  }
+
+  export enum DryRunCase { 
+    _DRY_RUN_NOT_SET = 0,
+    DRY_RUN = 3,
+  }
+}
+
 export class ExecuteStartosisModuleArgs extends jspb.Message {
   getModuleId(): string;
   setModuleId(value: string): ExecuteStartosisModuleArgs;

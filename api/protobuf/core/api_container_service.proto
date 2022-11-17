@@ -28,6 +28,8 @@ service ApiContainerService {
   // Executes a startosis module on the user's behalf
   rpc ExecuteStartosisModule(ExecuteStartosisModuleArgs) returns (ExecuteStartosisResponse) {};
 
+  rpc ExecuteStartosisRemoteModule(ExecuteStartosisRemoteModuleArgs) returns (ExecuteStartosisResponse) {};
+
   // Start services by creating containers for them
   rpc StartServices(StartServicesArgs) returns (StartServicesResponse) {};
 
@@ -246,6 +248,20 @@ message ExecuteStartosisScriptArgs {
 
   // Defaults to false
   optional bool dry_run = 2;
+}
+
+// ==============================================================================================
+//                                 Execute Startosis Module
+// ==============================================================================================
+message ExecuteStartosisRemoteModuleArgs {
+  string module_id = 1;
+
+  // Serialized parameters data for the Startosis module main function
+  // This should be a valid JSON string
+  string serialized_params = 2;
+
+  // Defaults to false
+  optional bool dry_run = 3;
 }
 
 // ==============================================================================================
