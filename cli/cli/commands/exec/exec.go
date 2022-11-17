@@ -39,6 +39,8 @@ const (
 
 	scriptArgForLogging = "script"
 	moduleArgForLogging = "module"
+
+	isNewEnclave = true
 )
 
 var StartosisExecCmd = &lowlevel.LowlevelKurtosisCommand{
@@ -138,7 +140,7 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred connecting to the local Kurtosis engine")
 	}
 
-	enclaveCtx,isNewEnclave, err := getOrCreateEnclaveContext(ctx, enclaveId, kurtosisCtx, isPartitioningEnabled)
+	enclaveCtx, isNewEnclave, err := getOrCreateEnclaveContext(ctx, enclaveId, kurtosisCtx, isPartitioningEnabled)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the enclave context for enclave '%v'", enclaveId)
 	}
@@ -260,25 +262,23 @@ func getOrCreateEnclaveContext(
 	kurtosisContext *kurtosis_context.KurtosisContext,
 	isPartitioningEnabled bool,
 ) (*enclaves.EnclaveContext, bool, error) {
-	isNewEnclave := false
 
 	enclavesMap, err := kurtosisContext.GetEnclaves(ctx)
 	if err != nil {
-		return nil, isNewEnclave, stacktrace.Propagate(err, "Unable to get existing enclaves from Kurtosis backend")
+		return nil, false, stacktrace.Propagate(err, "Unable to get existing enclaves from Kurtosis backend")
 	}
 	if _, found := enclavesMap[enclaveId]; found {
 		enclaveContext, err := kurtosisContext.GetEnclaveContext(ctx, enclaveId)
 		if err != nil {
-			return nil, isNewEnclave, stacktrace.Propagate(err, "Unable to get enclave context from the existing enclave '%s'", enclaveId)
+			return nil, false, stacktrace.Propagate(err, "Unable to get enclave context from the existing enclave '%s'", enclaveId)
 		}
-		return enclaveContext, isNewEnclave, nil
+		return enclaveContext, false, nil
 	}
 	logrus.Infof("Creating a new enclave for the startosis script to execute inside...")
 	enclaveContext, err := kurtosisContext.CreateEnclave(ctx, enclaveId, isPartitioningEnabled)
 	if err != nil {
-		return nil, isNewEnclave, stacktrace.Propagate(err, fmt.Sprintf("Unable to create new enclave with ID '%s'", enclaveId))
+		return nil, false, stacktrace.Propagate(err, fmt.Sprintf("Unable to create new enclave with ID '%s'", enclaveId))
 	}
-	isNewEnclave = true
 	logrus.Infof("Enclave '%v' created successfully", enclaveContext.GetEnclaveID())
 	return enclaveContext, isNewEnclave, nil
 }

@@ -1,6 +1,6 @@
 # TBD
 ### Features
-- Added a new log line for printing the `createed enclave ID` just when this is created in `kurtosis exec` and `kurtosis module exec` commands
+- Added a new log line for printing the `created enclave ID` just when this is created in `kurtosis exec` and `kurtosis module exec` commands
 
 # 0.53.1
 ### Features
