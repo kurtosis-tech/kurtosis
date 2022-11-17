@@ -155,6 +155,7 @@ func (enclaveCtx *EnclaveContext) ExecuteStartosisModule(moduleRootPath string, 
 		return nil, stacktrace.Propagate(err, "There was an error parsing the '%v' at '%v'", modFilename, moduleRootPath)
 	}
 
+	logrus.Infof("Compressing module '%v'  at '%v' for upload", kurtosisMod.Module.ModuleName, moduleRootPath)
 	compressedModule, err := shared_utils.CompressPath(moduleRootPath, ensureCompressedFileIsLesserThanGRPCLimit)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "There was an error compressing module '%v' before upload", moduleRootPath)
@@ -328,7 +329,6 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 			failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred converting the public ports returned by the API to ports usable by the service context.")
 			continue
 		}
-
 
 		serviceContext := services.NewServiceContext(
 			enclaveCtx.client,
