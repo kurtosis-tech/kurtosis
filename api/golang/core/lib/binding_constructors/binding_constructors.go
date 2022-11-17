@@ -174,6 +174,7 @@ func NewConstantFactRecipeWithDefaultRefresh(serviceId string, factName string, 
 		FactRecipeDefinition: &kurtosis_core_rpc_api_bindings.FactRecipe_ConstantFact{
 			ConstantFact: constantFactRecipeDefinition,
 		},
+		RefreshInterval: nil,
 	}
 }
 
@@ -183,10 +184,15 @@ func NewGetHttpRequestFactRecipeWithDefaultRefresh(serviceId string, factName st
 		FactName:  factName,
 		FactRecipeDefinition: &kurtosis_core_rpc_api_bindings.FactRecipe_HttpRequestFact{
 			HttpRequestFact: &kurtosis_core_rpc_api_bindings.HttpRequestFactRecipe{
-				PortId:   portId,
-				Endpoint: endpoint,
+				PortId:         portId,
+				Endpoint:       endpoint,
+				Method:         0,
+				ContentType:    "",
+				Body:           "",
+				FieldExtractor: nil,
 			},
 		},
+		RefreshInterval: nil,
 	}
 }
 
@@ -195,6 +201,9 @@ func NewGetHttpRequestFactRecipeDefinition(portId string, endpoint string, field
 		HttpRequestFact: &kurtosis_core_rpc_api_bindings.HttpRequestFactRecipe{
 			PortId:         portId,
 			Endpoint:       endpoint,
+			Method:         0,
+			ContentType:    "",
+			Body:           "",
 			FieldExtractor: fieldExtractor,
 		},
 	}
@@ -209,6 +218,7 @@ func NewExecFactRecipeWithDefaultRefresh(serviceId string, factName string, cmdA
 				CmdArgs: cmdArgs,
 			},
 		},
+		RefreshInterval: nil,
 	}
 }
 
@@ -220,8 +230,9 @@ func NewDefineFactArgs(factRecipe *kurtosis_core_rpc_api_bindings.FactRecipe) *k
 
 func GetFactValuesArgs(serviceId string, factName string) *kurtosis_core_rpc_api_bindings.GetFactValuesArgs {
 	return &kurtosis_core_rpc_api_bindings.GetFactValuesArgs{
-		ServiceId: serviceId,
-		FactName:  factName,
+		ServiceId:    serviceId,
+		FactName:     factName,
+		StartingFrom: nil,
 	}
 }
 
