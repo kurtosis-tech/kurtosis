@@ -31,7 +31,7 @@ import {
     RenderTemplatesToFilesArtifactArgs,
     RenderTemplatesToFilesArtifactResponse,
     ExecuteStartosisScriptArgs,
-    ExecuteStartosisModuleArgs, ExecuteStartosisResponse
+    ExecuteStartosisModuleArgs, ExecuteStartosisResponse, ExecuteStartosisRemoteModuleArgs
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import { ApiContainerServiceClient as ApiContainerServiceClientWeb } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb";
 import { GenericApiContainerClient } from "./generic_api_container_client";
@@ -137,6 +137,27 @@ export class GrpcWebApiContainerClient implements GenericApiContainerClient {
             return err(resultExecuteStartosisModule.error)
         }
         return ok(resultExecuteStartosisModule.value)
+    }
+
+    public async executeStartosisRemoteModule(startosisRemoteModuleArgs:ExecuteStartosisRemoteModuleArgs): Promise<Result<ExecuteStartosisResponse, Error>> {
+        const promiseExecuteStartosisRemoteModule: Promise<Result<ExecuteStartosisResponse, Error>> = new Promise((resolve, _unusedReject) => {
+            this.client.executeStartosisRemoteModule(startosisRemoteModuleArgs, {}, (error: grpc_web.RpcError | null, response?: ExecuteStartosisResponse) => {
+                if (error === null) {
+                    if (!response) {
+                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
+                    } else {
+                        resolve(ok(response!));
+                    }
+                } else {
+                    resolve(err(error));
+                }
+            })
+        })
+        const resultExecuteStartosisRemoteModule: Result<ExecuteStartosisResponse, Error> = await promiseExecuteStartosisRemoteModule;
+        if (resultExecuteStartosisRemoteModule.isErr()) {
+            return err(resultExecuteStartosisRemoteModule.error)
+        }
+        return ok(resultExecuteStartosisRemoteModule.value)
     }
 
     public async startServices(startServicesArgs: StartServicesArgs): Promise<Result<StartServicesResponse, Error>>{
