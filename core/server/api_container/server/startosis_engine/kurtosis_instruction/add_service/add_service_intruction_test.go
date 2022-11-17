@@ -19,14 +19,14 @@ const (
 
 func TestAddServiceInstruction_GetCanonicalizedInstruction(t *testing.T) {
 	serviceConfigDict := starlark.StringDict{}
-	serviceConfigDict["container_image_name"] = starlark.String(testContainerImageName)
+	serviceConfigDict["image"] = starlark.String(testContainerImageName)
 
 	usedPortsDict := starlark.NewDict(1)
 	port1Dict := starlark.StringDict{}
 	port1Dict["number"] = starlark.MakeInt(1234)
 	port1Dict["protocol"] = starlark.String("TCP")
 	require.Nil(t, usedPortsDict.SetKey(starlark.String("grpc"), starlarkstruct.FromStringDict(starlarkstruct.Default, port1Dict)))
-	serviceConfigDict["used_ports"] = usedPortsDict
+	serviceConfigDict["ports"] = usedPortsDict
 
 	serviceConfigDict["entry_point_args"] = starlark.NewList([]starlark.Value{starlark.String("127.0.0.0"), starlark.MakeInt(1234)})
 
@@ -40,7 +40,7 @@ func TestAddServiceInstruction_GetCanonicalizedInstruction(t *testing.T) {
 	fileArtifactMountDirPath := starlark.NewDict(2)
 	require.Nil(t, fileArtifactMountDirPath.SetKey(starlark.String("file_1"), starlark.String("path/to/file/1")))
 	require.Nil(t, fileArtifactMountDirPath.SetKey(starlark.String("file_2"), starlark.String("path/to/file/2")))
-	serviceConfigDict["files_artifact_mount_dirpaths"] = fileArtifactMountDirPath
+	serviceConfigDict["files"] = fileArtifactMountDirPath
 
 	addServiceInstruction := newEmptyAddServiceInstruction(
 		nil,
@@ -51,14 +51,13 @@ func TestAddServiceInstruction_GetCanonicalizedInstruction(t *testing.T) {
 
 	expectedOutput := `# from: dummyFile[22:26]
 add_service(
-	service_config=struct(
+	config=struct(
 		cmd_args=[
 			"bash",
 			"-c",
 			"/apps/main.py",
 			1234
 		],
-		container_image_name="kurtosistech/example-datastore-server",
 		entry_point_args=[
 			"127.0.0.0",
 			1234
@@ -67,11 +66,12 @@ add_service(
 			"VAR_1": "VALUE_1",
 			"VAR_2": "VALUE_2"
 		},
-		files_artifact_mount_dirpaths={
+		files={
 			"file_1": "path/to/file/1",
 			"file_2": "path/to/file/2"
 		},
-		used_ports={
+		image="kurtosistech/example-datastore-server",
+		ports={
 			"grpc": struct(
 				number=1234,
 				protocol="TCP"

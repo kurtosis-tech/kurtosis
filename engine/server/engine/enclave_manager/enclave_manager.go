@@ -25,6 +25,8 @@ const (
 	apiContainerListenGrpcProxyPortNumInsideNetwork = uint16(7444)
 
 	enclavesCleaningPhaseTitle = "enclaves"
+
+	getRandomEnclaveIdRetries = uint16(5)
 )
 
 // TODO Move this to the KurtosisBackend to calculate!!
@@ -75,6 +77,7 @@ func (manager *EnclaveManager) CreateEnclave(
 	// If blank, will use the default
 	apiContainerImageVersionTag string,
 	apiContainerLogLevel logrus.Level,
+	//If blank, will use a random one
 	enclaveIdStr string,
 	isPartitioningEnabled bool,
 	metricsUserID string,
@@ -84,16 +87,28 @@ func (manager *EnclaveManager) CreateEnclave(
 	defer manager.mutex.Unlock()
 
 	enclaveId := enclave.EnclaveID(enclaveIdStr)
-	teardownCtx := context.Background() // Separate context for tearing stuff down in case the input context is cancelled
+
 	// Check for existing enclave with Id
-	foundEnclaves, err := manager.kurtosisBackend.GetEnclaves(setupCtx, getEnclaveByEnclaveIdFilter(enclaveId))
+	allCurrentEnclaves, err := manager.kurtosisBackend.GetEnclaves(setupCtx, getAllEnclavesFilter())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred checking for enclaves with ID '%v'", enclaveId)
 	}
-	if len(foundEnclaves) > 0 {
-		return nil, stacktrace.NewError("Cannot create enclave '%v' because an enclave with that name already exists", enclaveId)
+	if isEnclaveIdInUse(enclaveId, allCurrentEnclaves) {
+		return nil, stacktrace.NewError("Cannot create enclave '%v' because an enclave with that ID already exists", enclaveId)
 	}
 
+	if enclaveId == autogenerateEnclaveIdKeyword {
+		enclaveId, err = getRandomEnclaveIdWithRetries(allCurrentEnclaves, getRandomEnclaveIdRetries)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting a new random enclave ID using all current enclaves '%+v' and '%v' retries", allCurrentEnclaves, getRandomEnclaveIdRetries)
+		}
+	}
+
+	if err := validateEnclaveId(enclaveId); err !=nil {
+		return nil, stacktrace.Propagate(err, "An error occurred validating enclave ID '%v'", enclaveId)
+	}
+
+	teardownCtx := context.Background() // Separate context for tearing stuff down in case the input context is cancelled
 	// Create Enclave with kurtosisBackend
 	newEnclave, err := manager.kurtosisBackend.CreateEnclave(setupCtx, enclaveId, isPartitioningEnabled)
 	if err != nil {
@@ -160,9 +175,10 @@ func (manager *EnclaveManager) CreateEnclave(
 	}
 
 	creationTimestamp := getEnclaveCreationTimestamp(newEnclave)
+	newEnclaveIdStr := string(newEnclave.GetID())
 
 	result := &kurtosis_engine_rpc_api_bindings.EnclaveInfo{
-		EnclaveId:          enclaveIdStr,
+		EnclaveId:          newEnclaveIdStr,
 		ContainersStatus:   kurtosis_engine_rpc_api_bindings.EnclaveContainersStatus_EnclaveContainersStatus_RUNNING,
 		ApiContainerStatus: kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING,
 		ApiContainerInfo: &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerInfo{
@@ -589,3 +605,7 @@ func getEnclaveCreationTimestamp(enclave *enclave.Enclave) *timestamppb.Timestam
 
 	return creationTime
 }
+
+
+
+

@@ -12,7 +12,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_executor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
@@ -23,7 +22,7 @@ const (
 	AddServiceBuiltinName = "add_service"
 
 	serviceIdArgName     = "service_id"
-	serviceConfigArgName = "service_config"
+	serviceConfigArgName = "config"
 )
 
 func GenerateAddServiceBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, serviceNetwork service_network.ServiceNetwork) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
@@ -91,19 +90,10 @@ func (instruction *AddServiceInstruction) GetCanonicalInstruction() string {
 	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(AddServiceBuiltinName, instruction.starlarkKwargs, &instruction.position)
 }
 
-func (instruction *AddServiceInstruction) Execute(ctx context.Context, environment *startosis_executor.ExecutionEnvironment) error {
+func (instruction *AddServiceInstruction) Execute(ctx context.Context) error {
 	err := instruction.replaceIPAddress()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred replacing IP Address with actual values in add service instruction for service '%v'", instruction.serviceId)
-	}
-
-	for maybeArtifactUuidMagicStringValue, pathOnContainer := range instruction.serviceConfig.FilesArtifactMountpoints {
-		artifactUuidActualValue, err := shared_helpers.ReplaceArtifactUuidMagicStringWithValue(maybeArtifactUuidMagicStringValue, string(instruction.serviceId), environment)
-		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred while replacing the placeholder '%v' artifact uuid with actual value", maybeArtifactUuidMagicStringValue)
-		}
-		delete(instruction.serviceConfig.FilesArtifactMountpoints, maybeArtifactUuidMagicStringValue)
-		instruction.serviceConfig.FilesArtifactMountpoints[artifactUuidActualValue] = pathOnContainer
 	}
 
 	serviceConfigMap := map[service.ServiceID]*kurtosis_core_rpc_api_bindings.ServiceConfig{
@@ -189,12 +179,12 @@ func (instruction *AddServiceInstruction) parseStartosisArgs(b *starlark.Builtin
 	// TODO(gb): Right now, we expect the Startosis script to be very "untyped" like:
 	//  ```startosis
 	//  my_service_port = struct(port = 1234, protocol = "TCP")
-	//  my_service_config = struct(private_port = port, other_arg = "blah")
+	//  my_config = struct(private_port = port, other_arg = "blah")
 	//  ```
 	//  But we can do better than this defining our own structures:
 	//  ```
 	//  my_service_port = port_spec(port = 1234, protocol = "TCP") # port() is a Startosis defined struct
-	//  my_service_config = service_config(port = port, other_arg = "blah")
+	//  my_config = config(port = port, other_arg = "blah")
 	//  ```
 	//  With custom types, we can parse the args directly to our own Go types and potentially isolate the checks
 

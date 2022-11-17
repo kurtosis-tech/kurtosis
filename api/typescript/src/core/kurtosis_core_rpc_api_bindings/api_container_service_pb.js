@@ -1840,7 +1840,7 @@ proto.api_container_api.ServiceConfig.serializeBinaryToWriter = function(message
 
 
 /**
- * optional string container_image_name = 1;
+ * optional string image = 1;
  * @return {string}
  */
 proto.api_container_api.ServiceConfig.prototype.getContainerImageName = function() {

@@ -25,14 +25,14 @@ DATASTORE_PORT_PROTOCOL = "TCP"
 
 print("Adding service " + DATASTORE_SERVICE_ID + ".")
 
-service_config = struct(
-    container_image_name = DATASTORE_IMAGE,
-    used_ports = {
+config = struct(
+    image = DATASTORE_IMAGE,
+    ports = {
         DATASTORE_PORT_ID: struct(number = DATASTORE_PORT_NUMBER, protocol = DATASTORE_PORT_PROTOCOL)
     }
 )
 
-add_service(service_id = DATASTORE_SERVICE_ID, service_config = service_config)
+add_service(service_id = DATASTORE_SERVICE_ID, config = config)
 print("Service " + DATASTORE_SERVICE_ID + " deployed successfully.")
 `
 	// We remove the service we created through the script above with a different script
