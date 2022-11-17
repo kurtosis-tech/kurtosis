@@ -87,7 +87,9 @@ func TestFactsEngine(t *testing.T) {
 	_, err = enclaveCtx.DefineFact(&kurtosis_core_rpc_api_bindings.FactRecipe{
 		ServiceId:            testServiceId,
 		FactName:             httpRequestFactName,
-		FactRecipeDefinition: binding_constructors.NewGetHttpRequestFactRecipeDefinition(containerPortId, "/", nil)})
+		FactRecipeDefinition: binding_constructors.NewGetHttpRequestFactRecipeDefinition(containerPortId, "/", nil),
+		RefreshInterval:      nil,
+	})
 	require.Nil(t, err)
 	time.Sleep(5 * time.Second)
 
