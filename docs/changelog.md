@@ -1,4 +1,6 @@
 # TBD
+### Changes
+- Added exhaustive struct linting and brought code base into exhaustive struct compliance 
 
 # 0.53.1
 ### Features
