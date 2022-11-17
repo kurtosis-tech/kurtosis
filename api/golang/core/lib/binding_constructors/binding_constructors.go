@@ -174,25 +174,14 @@ func NewConstantFactRecipeWithDefaultRefresh(serviceId string, factName string, 
 		FactRecipeDefinition: &kurtosis_core_rpc_api_bindings.FactRecipe_ConstantFact{
 			ConstantFact: constantFactRecipeDefinition,
 		},
-		RefreshInterval: nil,
 	}
 }
 
-func NewGetHttpRequestFactRecipeWithDefaultRefresh(serviceId string, factName string, portId string, endpoint string) *kurtosis_core_rpc_api_bindings.FactRecipe {
+func NewHttpRequestFactRecipeWithDefaultRefresh(serviceId string, factName string, factRecipeDefinition *kurtosis_core_rpc_api_bindings.FactRecipe_HttpRequestFact) *kurtosis_core_rpc_api_bindings.FactRecipe {
 	return &kurtosis_core_rpc_api_bindings.FactRecipe{
-		ServiceId: serviceId,
-		FactName:  factName,
-		FactRecipeDefinition: &kurtosis_core_rpc_api_bindings.FactRecipe_HttpRequestFact{
-			HttpRequestFact: &kurtosis_core_rpc_api_bindings.HttpRequestFactRecipe{
-				PortId:         portId,
-				Endpoint:       endpoint,
-				Method:         0,
-				ContentType:    "",
-				Body:           "",
-				FieldExtractor: nil,
-			},
-		},
-		RefreshInterval: nil,
+		ServiceId:            serviceId,
+		FactName:             factName,
+		FactRecipeDefinition: factRecipeDefinition,
 	}
 }
 
@@ -200,10 +189,21 @@ func NewGetHttpRequestFactRecipeDefinition(portId string, endpoint string, field
 	return &kurtosis_core_rpc_api_bindings.FactRecipe_HttpRequestFact{
 		HttpRequestFact: &kurtosis_core_rpc_api_bindings.HttpRequestFactRecipe{
 			PortId:         portId,
+			Method:         kurtosis_core_rpc_api_bindings.HttpRequestMethod_GET,
 			Endpoint:       endpoint,
-			Method:         0,
-			ContentType:    "",
-			Body:           "",
+			FieldExtractor: fieldExtractor,
+		},
+	}
+}
+
+func NewPostHttpRequestFactRecipeDefinition(portId string, endpoint string, contentType string, body string, fieldExtractor *string) *kurtosis_core_rpc_api_bindings.FactRecipe_HttpRequestFact {
+	return &kurtosis_core_rpc_api_bindings.FactRecipe_HttpRequestFact{
+		HttpRequestFact: &kurtosis_core_rpc_api_bindings.HttpRequestFactRecipe{
+			PortId:         portId,
+			Method:         kurtosis_core_rpc_api_bindings.HttpRequestMethod_POST,
+			ContentType:    contentType,
+			Body:           body,
+			Endpoint:       endpoint,
 			FieldExtractor: fieldExtractor,
 		},
 	}
@@ -218,7 +218,6 @@ func NewExecFactRecipeWithDefaultRefresh(serviceId string, factName string, cmdA
 				CmdArgs: cmdArgs,
 			},
 		},
-		RefreshInterval: nil,
 	}
 }
 
@@ -230,9 +229,8 @@ func NewDefineFactArgs(factRecipe *kurtosis_core_rpc_api_bindings.FactRecipe) *k
 
 func GetFactValuesArgs(serviceId string, factName string) *kurtosis_core_rpc_api_bindings.GetFactValuesArgs {
 	return &kurtosis_core_rpc_api_bindings.GetFactValuesArgs{
-		ServiceId:    serviceId,
-		FactName:     factName,
-		StartingFrom: nil,
+		ServiceId: serviceId,
+		FactName:  factName,
 	}
 }
 

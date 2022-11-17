@@ -2,6 +2,11 @@
 ### Changes
 - Added exhaustive struct linting and brought code base into exhaustive struct compliance 
 
+# 0.53.2
+### Features
+- Make facts referencable on `add_service`
+- Added a new log line for printing the `created enclave ID` just when this is created in `kurtosis exec` and `kurtosis module exec` commands
+
 # 0.53.1
 ### Features
 - Added random enclave ID generation in `EnclaveManager.CreateEnclave()` when an empty enclave ID is provided
