@@ -17,7 +17,7 @@ const (
 	portId    = "grpc"
 
 	pathToMountUploadedDir     = "/uploads"
-	pathToCheckForUploadedFile = "/uploads/lib.star"
+	pathToCheckForUploadedFile = "/uploads/helpers.star"
 
 	startosisScript = `
 DATASTORE_IMAGE = "kurtosistech/example-datastore-server"
@@ -26,7 +26,7 @@ DATASTORE_PORT_ID = "` + portId + `"
 DATASTORE_PORT_NUMBER = 1323
 DATASTORE_PORT_PROTOCOL = "TCP"
 
-DIR_TO_UPLOAD = "github.com/kurtosis-tech/datastore-army-module-demo/lib"
+DIR_TO_UPLOAD = "github.com/kurtosis-tech/datastore-army-module/src"
 PATH_TO_MOUNT_UPLOADED_DIR = "` + pathToMountUploadedDir + `"
 
 print("Adding service " + DATASTORE_SERVICE_ID + ".")
