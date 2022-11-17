@@ -1,5 +1,6 @@
 # TBD
 ### Features
+- Make facts referencable on `add_service`
 - Added a new log line for printing the `created enclave ID` just when this is created in `kurtosis exec` and `kurtosis module exec` commands
 
 # 0.53.1
