@@ -65,7 +65,7 @@ func NewStartosisInterpreter(serviceNetwork service_network.ServiceNetwork, modu
 	return &StartosisInterpreter{
 		mutex:                 &sync.Mutex{},
 		serviceNetwork:        serviceNetwork,
-		factsEngine:           &facts_engine.FactsEngine{},
+		factsEngine:           nil,
 		moduleGlobalsCache:    make(map[string]*startosis_modules.ModuleCacheEntry),
 		moduleContentProvider: moduleContentProvider,
 		protoFileStore:        proto_compiler.NewProtoFileStore(moduleContentProvider),

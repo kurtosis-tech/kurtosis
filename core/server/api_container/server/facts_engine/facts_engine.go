@@ -12,7 +12,6 @@ import (
 	"github.com/sirupsen/logrus"
 	bolt "go.etcd.io/bbolt"
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"io"
 	"log"
@@ -174,10 +173,7 @@ func (engine *FactsEngine) restoreStoredRecipes() error {
 				ServiceId:            "",
 				FactName:             "",
 				FactRecipeDefinition: nil,
-				RefreshInterval: &durationpb.Duration{
-					Seconds: 0,
-					Nanos:   0,
-				},
+				RefreshInterval:      nil,
 			}
 			err := proto.Unmarshal(storedRecipe, unmarshalledFactRecipe)
 			if err != nil {

@@ -65,13 +65,10 @@ var (
 			APIVersion: "",
 		},
 		GracePeriodSeconds: nil,
-		Preconditions: &metav1.Preconditions{
-			UID:             nil,
-			ResourceVersion: nil,
-		},
-		OrphanDependents:  nil,
-		PropagationPolicy: &globalDeletePolicy,
-		DryRun:            nil,
+		Preconditions:      nil,
+		OrphanDependents:   nil,
+		PropagationPolicy:  &globalDeletePolicy,
+		DryRun:             nil,
 	}
 	globalCreateOptions = metav1.CreateOptions{
 		TypeMeta: metav1.TypeMeta{
@@ -116,9 +113,7 @@ func (manager *KubernetesManager) CreateService(ctx context.Context, namespace s
 		CreationTimestamp: metav1.Time{
 			Time: time.Time{},
 		},
-		DeletionTimestamp: &metav1.Time{
-			Time: time.Time{},
-		},
+		DeletionTimestamp:          nil,
 		DeletionGracePeriodSeconds: nil,
 		Labels:                     serviceLabels,
 		Annotations:                serviceAnnotations,
@@ -132,24 +127,20 @@ func (manager *KubernetesManager) CreateService(ctx context.Context, namespace s
 
 	// There must be a better way
 	serviceSpec := apiv1.ServiceSpec{
-		Ports:                    ports,
-		Selector:                 matchPodLabels, // these labels are used to match with the Pod
-		ClusterIP:                "",
-		ClusterIPs:               nil,
-		Type:                     serviceType,
-		ExternalIPs:              nil,
-		SessionAffinity:          "",
-		LoadBalancerIP:           "",
-		LoadBalancerSourceRanges: nil,
-		ExternalName:             "",
-		ExternalTrafficPolicy:    "",
-		HealthCheckNodePort:      0,
-		PublishNotReadyAddresses: false,
-		SessionAffinityConfig: &apiv1.SessionAffinityConfig{
-			ClientIP: &apiv1.ClientIPConfig{
-				TimeoutSeconds: nil,
-			},
-		},
+		Ports:                         ports,
+		Selector:                      matchPodLabels, // these labels are used to match with the Pod
+		ClusterIP:                     "",
+		ClusterIPs:                    nil,
+		Type:                          serviceType,
+		ExternalIPs:                   nil,
+		SessionAffinity:               "",
+		LoadBalancerIP:                "",
+		LoadBalancerSourceRanges:      nil,
+		ExternalName:                  "",
+		ExternalTrafficPolicy:         "",
+		HealthCheckNodePort:           0,
+		PublishNotReadyAddresses:      false,
+		SessionAffinityConfig:         nil,
 		IPFamilies:                    nil,
 		IPFamilyPolicy:                nil,
 		AllocateLoadBalancerNodePorts: nil,
@@ -398,9 +389,7 @@ func (manager *KubernetesManager) CreateNamespace(
 			CreationTimestamp: metav1.Time{
 				Time: time.Time{},
 			},
-			DeletionTimestamp: &metav1.Time{
-				Time: time.Time{},
-			},
+			DeletionTimestamp:          nil,
 			DeletionGracePeriodSeconds: nil,
 			Labels:                     namespaceLabels,
 			Annotations:                namespaceAnnotations,
@@ -725,9 +714,7 @@ func (manager *KubernetesManager) CreateRoleBindings(ctx context.Context, name s
 			CreationTimestamp: metav1.Time{
 				Time: time.Time{},
 			},
-			DeletionTimestamp: &metav1.Time{
-				Time: time.Time{},
-			},
+			DeletionTimestamp:          nil,
 			DeletionGracePeriodSeconds: nil,
 			Labels:                     labels,
 			Annotations:                nil,
@@ -831,9 +818,7 @@ func (manager *KubernetesManager) CreateClusterRoles(ctx context.Context, name s
 			CreationTimestamp: metav1.Time{
 				Time: time.Time{},
 			},
-			DeletionTimestamp: &metav1.Time{
-				Time: time.Time{},
-			},
+			DeletionTimestamp:          nil,
 			DeletionGracePeriodSeconds: nil,
 			Labels:                     labels,
 			Annotations:                nil,
@@ -842,10 +827,8 @@ func (manager *KubernetesManager) CreateClusterRoles(ctx context.Context, name s
 			ZZZ_DeprecatedClusterName:  "",
 			ManagedFields:              nil,
 		},
-		Rules: rules,
-		AggregationRule: &rbacv1.AggregationRule{
-			ClusterRoleSelectors: nil,
-		},
+		Rules:           rules,
+		AggregationRule: nil,
 	}
 
 	clusterRoleResult, err := client.Create(ctx, clusterRole, globalCreateOptions)
@@ -938,9 +921,7 @@ func (manager *KubernetesManager) CreateClusterRoleBindings(ctx context.Context,
 			CreationTimestamp: metav1.Time{
 				Time: time.Time{},
 			},
-			DeletionTimestamp: &metav1.Time{
-				Time: time.Time{},
-			},
+			DeletionTimestamp:          nil,
 			DeletionGracePeriodSeconds: nil,
 			Labels:                     labels,
 			Annotations:                nil,
@@ -1011,13 +992,10 @@ func (manager *KubernetesManager) RemoveClusterRoleBindings(ctx context.Context,
 			APIVersion: "",
 		},
 		GracePeriodSeconds: nil,
-		Preconditions: &metav1.Preconditions{
-			UID:             nil,
-			ResourceVersion: nil,
-		},
-		OrphanDependents:  nil,
-		PropagationPolicy: nil,
-		DryRun:            nil,
+		Preconditions:      nil,
+		OrphanDependents:   nil,
+		PropagationPolicy:  nil,
+		DryRun:             nil,
 	}); err != nil {
 		return stacktrace.Propagate(err, "Failed to delete cluster role binding with name '%s'", name)
 	}
@@ -1108,17 +1086,15 @@ func (manager *KubernetesManager) CreatePod(
 		ObjectMeta: podMeta,
 		Spec:       podSpec,
 		Status: apiv1.PodStatus{
-			Phase:             "",
-			Conditions:        nil,
-			Message:           "",
-			Reason:            "",
-			NominatedNodeName: "",
-			HostIP:            "",
-			PodIP:             "",
-			PodIPs:            nil,
-			StartTime: &metav1.Time{
-				Time: time.Time{},
-			},
+			Phase:                      "",
+			Conditions:                 nil,
+			Message:                    "",
+			Reason:                     "",
+			NominatedNodeName:          "",
+			HostIP:                     "",
+			PodIP:                      "",
+			PodIPs:                     nil,
+			StartTime:                  nil,
 			InitContainerStatuses:      nil,
 			ContainerStatuses:          nil,
 			QOSClass:                   "",
@@ -1194,13 +1170,11 @@ func (manager *KubernetesManager) GetContainerLogs(
 			Kind:       "",
 			APIVersion: "",
 		},
-		Container:    containerName,
-		Follow:       shouldFollowLogs,
-		Previous:     false,
-		SinceSeconds: nil,
-		SinceTime: &metav1.Time{
-			Time: time.Time{},
-		},
+		Container:                    containerName,
+		Follow:                       shouldFollowLogs,
+		Previous:                     false,
+		SinceSeconds:                 nil,
+		SinceTime:                    nil,
 		Timestamps:                   shouldAddTimestamps,
 		TailLines:                    nil,
 		LimitBytes:                   nil,
