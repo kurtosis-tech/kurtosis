@@ -28,6 +28,22 @@ func NewGitModuleContentProvider(moduleDir string, tmpDir string) *GitModuleCont
 	}
 }
 
+func (provider *GitModuleContentProvider) CloneModule(moduleId string) (string, error) {
+	parsedURL, interpretationError := parseGitURL(moduleId)
+	if interpretationError != nil {
+		return "", interpretationError
+	}
+
+	moduleAbsolutePathOnDisk := path.Join(provider.modulesDir, parsedURL.relativeRepoPath)
+
+	// Otherwise clone the repo and return the absolute path of the requested file
+	interpretationError = provider.atomicClone(parsedURL)
+	if interpretationError != nil {
+		return "", interpretationError
+	}
+	return moduleAbsolutePathOnDisk, nil
+}
+
 func (provider *GitModuleContentProvider) GetOnDiskAbsoluteFilePath(fileInsideModuleUrl string) (string, *startosis_errors.InterpretationError) {
 	parsedURL, interpretationError := parseGitURL(fileInsideModuleUrl)
 	if interpretationError != nil {

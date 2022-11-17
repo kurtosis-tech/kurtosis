@@ -28,7 +28,6 @@ func TestStartosisRemoteModule(t *testing.T) {
 	defer destroyEnclaveFunc()
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
-	logrus.Infof("Executing Startosis script...")
 	logrus.Debugf("Executing Startosis module: \n%v", remoteModule)
 
 	executionResult, err := enclaveCtx.ExecuteStartosisRemoteModule(remoteModule, emptyExecuteParams, defaultDryRun)

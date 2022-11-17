@@ -241,7 +241,7 @@ func (apicService ApiContainerService) ExecuteStartosisRemoteModule(ctx context.
 	moduleId := args.ModuleId
 	serializedParams := args.SerializedParams
 
-	moduleRootPathOnDisk, interpretationError := apicService.startosisModuleContentProvider.GetOnDiskAbsoluteFilePath(moduleId)
+	moduleRootPathOnDisk, interpretationError := apicService.startosisModuleContentProvider.CloneModule(moduleId)
 	if interpretationError != nil {
 		return nil, stacktrace.Propagate(interpretationError, "An error occurred while cloning the module '%s' to disk", moduleId)
 	}
