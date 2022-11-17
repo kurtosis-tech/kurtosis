@@ -10,7 +10,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_executor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
@@ -65,7 +64,7 @@ func (instruction *DefineFactInstruction) GetCanonicalInstruction() string {
 	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(DefineFactBuiltinName, instruction.getKwargs(), &instruction.position)
 }
 
-func (instruction *DefineFactInstruction) Execute(ctx context.Context, _ *startosis_executor.ExecutionEnvironment) error {
+func (instruction *DefineFactInstruction) Execute(ctx context.Context) error {
 	err := instruction.factsEngine.PushRecipe(instruction.factRecipe)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to wait for fact '%v' on service '%v'", instruction.factName, instruction.serviceId)

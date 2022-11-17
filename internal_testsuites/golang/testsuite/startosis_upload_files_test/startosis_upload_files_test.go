@@ -17,7 +17,7 @@ const (
 	portId    = "grpc"
 
 	pathToMountUploadedDir     = "/uploads"
-	pathToCheckForUploadedFile = "/uploads/lib.star"
+	pathToCheckForUploadedFile = "/uploads/helpers.star"
 
 	startosisScript = `
 DATASTORE_IMAGE = "kurtosistech/example-datastore-server"
@@ -26,7 +26,7 @@ DATASTORE_PORT_ID = "` + portId + `"
 DATASTORE_PORT_NUMBER = 1323
 DATASTORE_PORT_PROTOCOL = "TCP"
 
-DIR_TO_UPLOAD = "github.com/kurtosis-tech/datastore-army-module-demo/lib"
+DIR_TO_UPLOAD = "github.com/kurtosis-tech/datastore-army-module/src"
 PATH_TO_MOUNT_UPLOADED_DIR = "` + pathToMountUploadedDir + `"
 
 print("Adding service " + DATASTORE_SERVICE_ID + ".")
@@ -40,7 +40,7 @@ config = struct(
     ports = {
         DATASTORE_PORT_ID: struct(number = DATASTORE_PORT_NUMBER, protocol = DATASTORE_PORT_PROTOCOL)
     },
-	files_artifact_mount_dirpaths = {
+	files = {
 		uploaded_artifact_uuid: PATH_TO_MOUNT_UPLOADED_DIR
 	}
 )
@@ -64,13 +64,13 @@ func TestStartosis(t *testing.T) {
 	require.NoError(t, err, "Unexpected error executing startosis script")
 
 	expectedScriptOutput := `Adding service example-datastore-server-1.
-Uploaded {{kurtosis:FILENAME_NOT_USED-13:38.artifact_uuid}}
+Uploaded [a-f0-9-]{36}
 `
 
 	require.Empty(t, executionResult.InterpretationError, "Unexpected interpretation error. This test requires you to be online for the upload_file command to run")
 	require.Lenf(t, executionResult.ValidationErrors, 0, "Unexpected validation error")
 	require.Empty(t, executionResult.ExecutionError, "Unexpected execution error")
-	require.Equal(t, expectedScriptOutput, executionResult.SerializedScriptOutput)
+	require.Regexp(t, expectedScriptOutput, executionResult.SerializedScriptOutput)
 	logrus.Infof("Successfully ran Startosis script")
 
 	// Check that the service added by the script is functional

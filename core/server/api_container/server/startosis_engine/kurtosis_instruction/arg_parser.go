@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
 	"math"
@@ -27,7 +28,7 @@ const (
 	entryPointArgsKey              = "entry_point_args"
 	cmdArgsKey                     = "cmd_args"
 	envVarArgsKey                  = "env_vars"
-	filesArtifactMountDirpathsKey  = "files_artifact_mount_dirpaths"
+	filesArtifactMountDirpathsKey  = "files"
 	portIdKey                      = "port_id"
 	requestEndpointKey             = "endpoint"
 	requestMethodEndpointKey       = "method"
@@ -196,6 +197,17 @@ func ParseFilePath(filePathArgName string, filePathStr starlark.String) (string,
 		return "", startosis_errors.NewInterpretationError("File path cannot be empty for argument '%s'", filePathArgName)
 	}
 	return srcPath, nil
+}
+
+func ParseArtifactUuid(artifactUuidArgName string, artifactUuidStr starlark.String) (enclave_data_directory.FilesArtifactUUID, *startosis_errors.InterpretationError) {
+	artifactUuid, interpretationErr := safeCastToString(artifactUuidStr, artifactUuidArgName)
+	if interpretationErr != nil {
+		return "", interpretationErr
+	}
+	if len(artifactUuid) == 0 {
+		return "", startosis_errors.NewInterpretationError("Artifact Uuid can't be empty for argument '%s'", artifactUuidArgName)
+	}
+	return enclave_data_directory.FilesArtifactUUID(artifactUuid), interpretationErr
 }
 
 func ParseTemplatesAndData(templatesAndData *starlark.Dict) (map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, *startosis_errors.InterpretationError) {

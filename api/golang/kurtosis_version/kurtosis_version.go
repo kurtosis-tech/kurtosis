@@ -9,6 +9,6 @@ const (
 	// !!!!!!!!!!! DO NOT UPDATE! WILL BE MANUALLY UPDATED DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!!!!!!!!
 	// This is necessary so that Kurt Core consumers (e.g. modules) will know if they're compatible with the currently-running
 	//  API container
-	KurtosisVersion = "0.52.4"
+	KurtosisVersion = "0.53.1"
 	// !!!!!!!!!!! DO NOT UPDATE! WILL BE MANUALLY UPDATED DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!!!!!!!!
 )

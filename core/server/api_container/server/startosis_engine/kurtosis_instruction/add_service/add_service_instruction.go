@@ -13,7 +13,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_executor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
@@ -84,7 +83,7 @@ func (instruction *AddServiceInstruction) GetCanonicalInstruction() string {
 	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(AddServiceBuiltinName, instruction.starlarkKwargs, &instruction.position)
 }
 
-func (instruction *AddServiceInstruction) Execute(ctx context.Context, environment *startosis_executor.ExecutionEnvironment) error {
+func (instruction *AddServiceInstruction) Execute(ctx context.Context) error {
 	serviceIdStr, err := shared_helpers.ReplaceFactsInString(string(instruction.serviceId), instruction.factsEngine)
 	if err != nil {
 		return stacktrace.Propagate(err, "Error occurred while replacing facts in service id for '%v'", instruction.serviceId)
@@ -93,15 +92,6 @@ func (instruction *AddServiceInstruction) Execute(ctx context.Context, environme
 	err = instruction.replaceMagicStrings()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred replacing IP Address with actual values in add service instruction for service '%v'", instruction.serviceId)
-	}
-
-	for maybeArtifactUuidMagicStringValue, pathOnContainer := range instruction.serviceConfig.FilesArtifactMountpoints {
-		artifactUuidActualValue, err := shared_helpers.ReplaceArtifactUuidMagicStringWithValue(maybeArtifactUuidMagicStringValue, string(instruction.serviceId), environment)
-		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred while replacing the placeholder '%v' artifact uuid with actual value", maybeArtifactUuidMagicStringValue)
-		}
-		delete(instruction.serviceConfig.FilesArtifactMountpoints, maybeArtifactUuidMagicStringValue)
-		instruction.serviceConfig.FilesArtifactMountpoints[artifactUuidActualValue] = pathOnContainer
 	}
 
 	serviceConfigMap := map[service.ServiceID]*kurtosis_core_rpc_api_bindings.ServiceConfig{
