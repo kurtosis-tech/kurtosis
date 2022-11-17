@@ -6,6 +6,9 @@
 ### Changes
 - Moved the enclave ID auto generation and validation from the CLI to the engine's server which will catch all the presents and future use cases
 
+### Fixes
+- Fixed a bug where we had renamed `container_image_name` inside the proto definition to `image`
+
 # 0.53.0
 ### Features
 - Made `render_templates`, `upload_files`, `store_Files_from_service` accept `artifact_uuid` and
