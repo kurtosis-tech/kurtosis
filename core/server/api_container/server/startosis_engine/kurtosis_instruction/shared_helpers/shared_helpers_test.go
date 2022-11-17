@@ -19,6 +19,8 @@ const (
 	testServiceDependence2ServiceId = "test-service-id-2"
 	testServiceDependence2IPAddress = "172.17.13.45"
 
+	testFactName = "test-fact-name"
+
 	unknownServiceId = "unknown_service"
 )
 
@@ -75,6 +77,11 @@ func TestReplaceIPAddressInString_MultipleOccurrencesOfSameStringReplaced(t *tes
 	replacedString, err := ReplaceIPAddressInString(originalString, serviceNetwork, testServiceId)
 	require.Nil(t, err)
 	require.Equal(t, expectedString, replacedString)
+}
+
+func TestReplaceFactInString(t *testing.T) {
+	returnValue := MakeWaitInterpretationReturnValue(testServiceId, testFactName)
+	require.Equal(t, returnValue.String(), "\"{{kurtosis:tesT-SerVice-id:test-fact-name.fact}}\"")
 }
 
 func TestReplaceIPAddressInString_MultipleReplacesOfDifferentStrings(t *testing.T) {

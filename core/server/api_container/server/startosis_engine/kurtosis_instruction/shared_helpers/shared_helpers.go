@@ -1,7 +1,9 @@
 package shared_helpers
 
 import (
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/facts_engine"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_executor"
@@ -26,12 +28,21 @@ const (
 	ipAddressReplacementRegex             = "(?P<" + allSubgroupName + ">\\{\\{" + kurtosisNamespace + ":(?P<" + serviceIdSubgroupName + ">" + service.ServiceIdRegexp + ")\\.ip_address\\}\\})"
 	IpAddressReplacementPlaceholderFormat = "{{" + kurtosisNamespace + ":%v.ip_address}}"
 
+	factNameArgName      = "fact_name"
+	factNameSubgroupName = "fact_name"
+
+	factReplacementRegex             = "(?P<" + allSubgroupName + ">\\{\\{" + kurtosisNamespace + ":(?P<" + serviceIdSubgroupName + ">" + service.ServiceIdRegexp + ")" + ":(?P<" + factNameArgName + ">" + service.ServiceIdRegexp + ")\\.fact\\}\\})"
+	FactReplacementPlaceholderFormat = "{{" + kurtosisNamespace + ":%v:%v.fact}}"
+
 	subExpNotFound = -1
 )
 
 // The compiled regular expression to do IP address replacements
 // Treat this as a constant
-var compiledRegex = regexp.MustCompile(ipAddressReplacementRegex)
+var (
+	compiledRegex                = regexp.MustCompile(ipAddressReplacementRegex)
+	compiledFactReplacementRegex = regexp.MustCompile(factReplacementRegex)
+)
 
 // GetCallerPositionFromThread gets you the position (line, col, filename) from where this function is called
 // We pick the first position on the stack based on this https://github.com/google/starlark-go/blob/eaacdf22efa54ae03ea2ec60e248be80d0cadda0/starlark/eval.go#L136
@@ -50,6 +61,11 @@ func GetCallerPositionFromThread(thread *starlark.Thread) *kurtosis_instruction.
 	}
 	callFrame := thread.CallStack().At(callerPosition)
 	return kurtosis_instruction.NewInstructionPosition(callFrame.Pos.Line, callFrame.Pos.Col, callFrame.Pos.Filename())
+}
+
+func MakeWaitInterpretationReturnValue(serviceId service.ServiceID, factName string) starlark.String {
+	fact := starlark.String(fmt.Sprintf(FactReplacementPlaceholderFormat, serviceId, factName))
+	return fact
 }
 
 // ReplaceArtifactUuidMagicStringWithValue This function gets used to replace artifact uuid magic strings generated during interpretation time with actual values during execution time
@@ -88,6 +104,32 @@ func ReplaceIPAddressInString(originalString string, network service_network.Ser
 		}
 		allMatch := match[allMatchIndex]
 		replacedString = strings.Replace(replacedString, allMatch, ipAddressStr, singleMatch)
+	}
+	return replacedString, nil
+}
+
+func ReplaceFactsInString(originalString string, factsEngine *facts_engine.FactsEngine) (string, error) {
+	matches := compiledFactReplacementRegex.FindAllStringSubmatch(originalString, unlimitedMatches)
+	replacedString := originalString
+	for _, match := range matches {
+		serviceIdMatchIndex := compiledFactReplacementRegex.SubexpIndex(serviceIdSubgroupName)
+		if serviceIdMatchIndex == subExpNotFound {
+			return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", serviceIdSubgroupName, compiledFactReplacementRegex.String())
+		}
+		factNameMatchIndex := compiledFactReplacementRegex.SubexpIndex(factNameSubgroupName)
+		if factNameMatchIndex == subExpNotFound {
+			return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", serviceIdSubgroupName, compiledFactReplacementRegex.String())
+		}
+		factValues, err := factsEngine.FetchLatestFactValues(facts_engine.GetFactId(match[serviceIdMatchIndex], match[factNameMatchIndex]))
+		if err != nil {
+			return "", stacktrace.Propagate(err, "There was an error fetching fact value while replacing string '%v' '%v' ", match[serviceIdMatchIndex], match[factNameMatchIndex])
+		}
+		allMatchIndex := compiledFactReplacementRegex.SubexpIndex(allSubgroupName)
+		if allMatchIndex == subExpNotFound {
+			return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", serviceIdSubgroupName, compiledFactReplacementRegex.String())
+		}
+		allMatch := match[allMatchIndex]
+		replacedString = strings.Replace(replacedString, allMatch, factValues[len(factValues)-1].GetStringValue(), singleMatch)
 	}
 	return replacedString, nil
 }

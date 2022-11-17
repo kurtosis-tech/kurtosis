@@ -18,8 +18,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
-	"regexp"
-	"strings"
 )
 
 const (
@@ -28,25 +26,6 @@ const (
 	serviceIdArgName = "service_id"
 
 	serviceConfigArgName = "config"
-
-	factNameArgName      = "fact_name"
-	factNameSubgroupName = "fact_name"
-
-	serviceIdSubgroupName = "service_id"
-	allSubgroupName       = "all"
-	kurtosisNamespace     = "kurtosis"
-
-	factReplacementRegex = "(?P<" + allSubgroupName + ">\\{\\{" + kurtosisNamespace + ":(?P<" + serviceIdArgName + ">" + service.ServiceIdRegexp + ")" + ":(?P<" + factNameArgName + ">" + service.ServiceIdRegexp + ")\\.fact\\}\\})"
-
-	unlimitedMatches = -1
-	singleMatch      = 1
-	subExpNotFound   = -1
-)
-
-// The compiled regular expression to do fact replacements
-// Treat this as a constant
-var (
-	compiledFactReplacementRegex = regexp.MustCompile(factReplacementRegex)
 )
 
 func GenerateAddServiceBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, serviceNetwork service_network.ServiceNetwork, factsEngine *facts_engine.FactsEngine) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
@@ -106,7 +85,7 @@ func (instruction *AddServiceInstruction) GetCanonicalInstruction() string {
 }
 
 func (instruction *AddServiceInstruction) Execute(ctx context.Context, environment *startosis_executor.ExecutionEnvironment) error {
-	serviceIdStr, err := replaceFactsInString(string(instruction.serviceId), instruction.factsEngine)
+	serviceIdStr, err := shared_helpers.ReplaceFactsInString(string(instruction.serviceId), instruction.factsEngine)
 	if err != nil {
 		return stacktrace.Propagate(err, "Error occurred while replacing facts in service id for '%v'", instruction.serviceId)
 	}
@@ -155,7 +134,7 @@ func (instruction *AddServiceInstruction) replaceMagicStrings() error {
 		if err != nil {
 			return stacktrace.Propagate(err, "Error occurred while replacing IP address in entry point args for '%v'", entryPointArg)
 		}
-		entryPointArgWithIPAddressAndFactsReplaced, err := replaceFactsInString(entryPointArgWithIPAddressReplaced, instruction.factsEngine)
+		entryPointArgWithIPAddressAndFactsReplaced, err := shared_helpers.ReplaceFactsInString(entryPointArgWithIPAddressReplaced, instruction.factsEngine)
 		if err != nil {
 			return stacktrace.Propagate(err, "Error occurred while replacing facts in entry point args for '%v'", entryPointArg)
 		}
@@ -168,7 +147,7 @@ func (instruction *AddServiceInstruction) replaceMagicStrings() error {
 		if err != nil {
 			return stacktrace.Propagate(err, "Error occurred while replacing IP address in command args for '%v'", cmdArg)
 		}
-		cmdArgWithIPAddressAndFactsReplaced, err := replaceFactsInString(cmdArgWithIPAddressReplaced, instruction.factsEngine)
+		cmdArgWithIPAddressAndFactsReplaced, err := shared_helpers.ReplaceFactsInString(cmdArgWithIPAddressReplaced, instruction.factsEngine)
 		if err != nil {
 			return stacktrace.Propagate(err, "Error occurred while replacing facts in command args for '%v'", cmdArg)
 		}
@@ -181,7 +160,7 @@ func (instruction *AddServiceInstruction) replaceMagicStrings() error {
 		if err != nil {
 			return stacktrace.Propagate(err, "Error occurred while replacing IP address in env vars for '%v'", envVarValue)
 		}
-		envVarValueWithIPAddressAndFactsReplaced, err := replaceFactsInString(envVarValueWithIPAddressReplaced, instruction.factsEngine)
+		envVarValueWithIPAddressAndFactsReplaced, err := shared_helpers.ReplaceFactsInString(envVarValueWithIPAddressReplaced, instruction.factsEngine)
 		if err != nil {
 			return stacktrace.Propagate(err, "Error occurred while replacing facts in command args for '%v'", envVars)
 		}
@@ -189,32 +168,6 @@ func (instruction *AddServiceInstruction) replaceMagicStrings() error {
 	}
 
 	return nil
-}
-
-func replaceFactsInString(originalString string, factsEngine *facts_engine.FactsEngine) (string, error) {
-	matches := compiledFactReplacementRegex.FindAllStringSubmatch(originalString, unlimitedMatches)
-	replacedString := originalString
-	for _, match := range matches {
-		serviceIdMatchIndex := compiledFactReplacementRegex.SubexpIndex(serviceIdSubgroupName)
-		if serviceIdMatchIndex == subExpNotFound {
-			return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", serviceIdSubgroupName, compiledFactReplacementRegex.String())
-		}
-		factNameMatchIndex := compiledFactReplacementRegex.SubexpIndex(factNameSubgroupName)
-		if factNameMatchIndex == subExpNotFound {
-			return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", serviceIdSubgroupName, compiledFactReplacementRegex.String())
-		}
-		factValues, err := factsEngine.FetchLatestFactValues(facts_engine.GetFactId(match[serviceIdMatchIndex], match[factNameMatchIndex]))
-		if err != nil {
-			return "", stacktrace.Propagate(err, "There was an error fetching fact value while replacing string '%v' '%v' ", match[serviceIdMatchIndex], match[factNameMatchIndex])
-		}
-		allMatchIndex := compiledFactReplacementRegex.SubexpIndex(allSubgroupName)
-		if allMatchIndex == subExpNotFound {
-			return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", serviceIdSubgroupName, compiledFactReplacementRegex.String())
-		}
-		allMatch := match[allMatchIndex]
-		replacedString = strings.Replace(replacedString, allMatch, factValues[len(factValues)-1].GetStringValue(), singleMatch)
-	}
-	return replacedString, nil
 }
 
 func (instruction *AddServiceInstruction) makeAddServiceInterpretationReturnValue() (*kurtosis_types.Service, *startosis_errors.InterpretationError) {

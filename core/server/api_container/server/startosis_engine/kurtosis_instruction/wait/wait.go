@@ -2,7 +2,6 @@ package wait
 
 import (
 	"context"
-	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	kurtosis_backend_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/facts_engine"
@@ -20,9 +19,6 @@ const (
 
 	serviceIdArgName = "service_id"
 	factNameArgName  = "fact_name"
-
-	kurtosisNamespace                = "kurtosis"
-	factReplacementPlaceholderFormat = "{{" + kurtosisNamespace + ":%v:%v.fact}}"
 )
 
 func GenerateWaitBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, factsEngine *facts_engine.FactsEngine) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
@@ -34,10 +30,7 @@ func GenerateWaitBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstr
 		}
 		waitInstruction := NewWaitInstruction(factsEngine, *shared_helpers.GetCallerPositionFromThread(thread), serviceId, factName)
 		*instructionsQueue = append(*instructionsQueue, waitInstruction)
-		returnValue, interpretationError := makeWaitInterpretationReturnValue(serviceId, factName)
-		if interpretationError != nil {
-			return nil, interpretationError
-		}
+		returnValue := shared_helpers.MakeWaitInterpretationReturnValue(serviceId, factName)
 		return returnValue, nil
 	}
 }
@@ -106,11 +99,6 @@ func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starl
 	}
 
 	return serviceId, factName, nil
-}
-
-func makeWaitInterpretationReturnValue(serviceId service.ServiceID, factName string) (starlark.String, *startosis_errors.InterpretationError) {
-	fact := starlark.String(fmt.Sprintf(factReplacementPlaceholderFormat, serviceId, factName))
-	return fact, nil
 }
 
 func (instruction *WaitInstruction) getKwargs() starlark.StringDict {
