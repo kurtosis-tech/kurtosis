@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+- Fixed a bug with dumping enclave logs during the CI run
 
 ### Features
 - Log that the module is being compressed & uploaded during `kurtosis exec`
