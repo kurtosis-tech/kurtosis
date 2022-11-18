@@ -630,6 +630,7 @@ func getModuleObjectsFromKubernetesResources(
 		results[moduleGuid] = &moduleObjectsAndKubernetesResources{
 			module:              nil,
 			kubernetesResources: resources,
+			// The other fields will get filled in below
 		}
 	}
 

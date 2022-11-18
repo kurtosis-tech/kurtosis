@@ -37,10 +37,11 @@ var enclaveIdStr string
 // EnclaveAddCmd Suppressing exhaustruct requirement because this struct has ~40 properties
 // nolint: exhaustruct
 var EnclaveAddCmd = &cobra.Command{
-	Use:   command_str_consts.EnclaveAddCmdStr,
-	Short: "Creates an enclave",
-	Long:  "Creates a new, empty Kurtosis enclave",
-	RunE:  run,
+	Use:     command_str_consts.EnclaveAddCmdStr,
+	Short:   "Creates an enclave",
+	Long:    "Creates a new, empty Kurtosis enclave",
+	RunE:    run,
+	Aliases: []string{"new"}, // TODO remove this after 2022-08-16 when everyone should be using "add"
 }
 
 func init() {

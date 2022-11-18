@@ -311,11 +311,12 @@ func (kurtosisCmd *LowlevelKurtosisCommand) MustGetCobraCommand() *cobra.Command
 	// Suppressing exhaustruct requirement because this struct has ~40 properties
 	// nolint: exhaustruct
 	result := &cobra.Command{
-		Use:               usageStr,
-		Short:             kurtosisCmd.ShortDescription,
-		Long:              kurtosisCmd.LongDescription,
-		ValidArgsFunction: getCompletionsFunc,
-		RunE:              cobraRunFunc,
+		Use:                   usageStr,
+		DisableFlagsInUseLine: true, // Not needed since we manually add the string in the usage string
+		Short:                 kurtosisCmd.ShortDescription,
+		Long:                  kurtosisCmd.LongDescription,
+		ValidArgsFunction:     getCompletionsFunc,
+		RunE:                  cobraRunFunc,
 	}
 
 	// Validates that the default values for the declared flags match the declard types, and add them to the Cobra command
