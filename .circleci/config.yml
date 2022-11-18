@@ -54,7 +54,9 @@ run_dump_kurtosis_enclaves: &run_dump_kurtosis_enclaves
     cd /tmp
     output_dirname="enclave-dumps"
     mkdir "${output_dirname}"
-    for enclave_id in $("${KURTOSIS_BINPATH}" enclave ls | grep -v "EnclaveContainersStatus" | awk '{print $1}'); do
+
+    # We exclude "WARN" messages because otherwise they'll pollute the STDOUT grab
+    for enclave_id in $("${KURTOSIS_BINPATH}" enclave ls | grep -v "WARN" | grep -v "EnclaveContainersStatus" | awk '{print $1}'); do
       "${KURTOSIS_BINPATH}" enclave dump "${enclave_id}" "${output_dirname}/${enclave_id}"
     done
 
