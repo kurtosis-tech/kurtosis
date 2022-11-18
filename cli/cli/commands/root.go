@@ -76,7 +76,8 @@ var RootCmd = &cobra.Command{
 	Short: "A CLI for interacting with the Kurtosis engine",
 	// Cobra will print usage whenever _any_ error occurs, including ones we throw in Kurtosis
 	// This doesn't make sense in 99% of the cases, so just turn them off entirely
-	SilenceUsage: true,
+	SilenceUsage:      true,
+	PersistentPreRunE: globalSetup,
 }
 
 func init() {
