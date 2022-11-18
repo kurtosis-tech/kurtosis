@@ -1,6 +1,10 @@
 # TBD
+### Features
+- Log that the module is being compressed & uploaded during `kurtosis exec`
+
 ### Changes
-- Added exhaustive struct linting and brought code base into exhaustive struct compliance 
+- `print()` is now a regular instructions like others, and it takes effect at execution time (used to be during interpretation)
+- Added exhaustive struct linting and brought code base into exhaustive struct compliance
 
 # 0.53.2
 ### Features
@@ -24,6 +28,7 @@
 - Made `render_templates`, `upload_files`, `store_Files_from_service` accept `artifact_uuid` and
 return `artifact_uuid` during interpretation time
 - Moved `kurtosis startosis exec` to `kurtosis exec`
+- Added `import_module` startosis builtin to replace `load`. Load is now deprecated. It can still be used but it will log a warning. It will be entirely removed in a future PR
 
 ### Breaking Features
 - Moved `kurtosis startosis exec` to `kurtosis exec`

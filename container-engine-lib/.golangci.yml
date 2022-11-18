@@ -45,3 +45,4 @@ linters:
     - exhaustruct
   max-issues-per-linter: 0
   sort-results: true
+

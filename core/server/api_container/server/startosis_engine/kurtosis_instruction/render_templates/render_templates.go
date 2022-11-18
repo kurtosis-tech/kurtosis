@@ -74,29 +74,29 @@ func (instruction *RenderTemplatesInstruction) GetPositionInOriginalScript() *ku
 }
 
 func (instruction *RenderTemplatesInstruction) GetCanonicalInstruction() string {
-	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(RenderTemplatesBuiltinName, instruction.starlarkKwargs, &instruction.position)
+	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(RenderTemplatesBuiltinName, kurtosis_instruction.NoArgs, instruction.starlarkKwargs, &instruction.position)
 }
 
-func (instruction *RenderTemplatesInstruction) Execute(ctx context.Context) error {
+func (instruction *RenderTemplatesInstruction) Execute(_ context.Context) (*string, error) {
 	for relFilePath := range instruction.templatesAndDataByDestRelFilepath {
 		templateStr := instruction.templatesAndDataByDestRelFilepath[relFilePath].Template
 		dataAsJson := instruction.templatesAndDataByDestRelFilepath[relFilePath].DataAsJson
 		dataAsJsonMaybeIPAddressReplaced, err := shared_helpers.ReplaceIPAddressInString(dataAsJson, instruction.serviceNetwork, instruction.GetPositionInOriginalScript().String())
 		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred while replacing IP address with place holder in the render_template instruction for target '%v'", relFilePath)
+			return nil, stacktrace.Propagate(err, "An error occurred while replacing IP address with place holder in the render_template instruction for target '%v'", relFilePath)
 		}
 		instruction.templatesAndDataByDestRelFilepath[relFilePath] = binding_constructors.NewTemplateAndData(templateStr, dataAsJsonMaybeIPAddressReplaced)
 	}
 
 	_, err := instruction.serviceNetwork.RenderTemplatesToTargetFilesArtifactUUID(instruction.templatesAndDataByDestRelFilepath, instruction.artifactUuid)
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed to render templates '%v'", instruction.templatesAndDataByDestRelFilepath)
+		return nil, stacktrace.Propagate(err, "Failed to render templates '%v'", instruction.templatesAndDataByDestRelFilepath)
 	}
-	return nil
+	return nil, nil
 }
 
 func (instruction *RenderTemplatesInstruction) String() string {
-	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(RenderTemplatesBuiltinName, instruction.starlarkKwargs, &instruction.position)
+	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(RenderTemplatesBuiltinName, kurtosis_instruction.NoArgs, instruction.starlarkKwargs, &instruction.position)
 }
 
 func (instruction *RenderTemplatesInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {

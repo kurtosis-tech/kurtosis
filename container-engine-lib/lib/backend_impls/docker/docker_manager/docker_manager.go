@@ -476,10 +476,11 @@ func (manager DockerManager) CreateAndStartContainer(
 	}
 	// TODO defer a disconnct-from-network if this function doesn't succeed??
 
-	if err = manager.dockerClient.ContainerStart(ctx, containerId, types.ContainerStartOptions{
+	options := types.ContainerStartOptions{
 		CheckpointID:  "",
 		CheckpointDir: "",
-	}); err != nil {
+	}
+	if err = manager.dockerClient.ContainerStart(ctx, containerId, options); err != nil {
 		containerLogs := manager.getFailedContainerLogsOrErrorString(ctx, containerId)
 		containerLogsHeader := "\n--------------------- CONTAINER LOGS -----------------------\n"
 		containerLogsFooter := "\n------------------- END CONTAINER LOGS --------------------"

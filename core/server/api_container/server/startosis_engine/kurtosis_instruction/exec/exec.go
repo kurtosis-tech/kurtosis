@@ -61,22 +61,22 @@ func (instruction *ExecInstruction) GetPositionInOriginalScript() *kurtosis_inst
 }
 
 func (instruction *ExecInstruction) GetCanonicalInstruction() string {
-	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(ExecBuiltinName, instruction.getKwargs(), &instruction.position)
+	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(ExecBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs(), &instruction.position)
 }
 
-func (instruction *ExecInstruction) Execute(ctx context.Context) error {
+func (instruction *ExecInstruction) Execute(ctx context.Context) (*string, error) {
 	exitCode, _, err := instruction.serviceNetwork.ExecCommand(ctx, instruction.serviceId, instruction.command)
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed to execute command '%v' on service '%v'", instruction.command, instruction.serviceId)
+		return nil, stacktrace.Propagate(err, "Failed to execute command '%v' on service '%v'", instruction.command, instruction.serviceId)
 	}
 	if instruction.expectedExitCode != exitCode {
-		return stacktrace.NewError("The exit code expected '%v' wasn't the exit code received '%v' while running the command", instruction.expectedExitCode, exitCode)
+		return nil, stacktrace.NewError("The exit code expected '%v' wasn't the exit code received '%v' while running the command", instruction.expectedExitCode, exitCode)
 	}
-	return nil
+	return nil, nil
 }
 
 func (instruction *ExecInstruction) String() string {
-	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(ExecBuiltinName, instruction.getKwargs(), &instruction.position)
+	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(ExecBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs(), &instruction.position)
 }
 
 func (instruction *ExecInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {

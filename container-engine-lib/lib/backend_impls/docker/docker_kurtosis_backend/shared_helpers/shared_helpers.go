@@ -505,7 +505,7 @@ func getMatchingUserServiceDockerResources(
 		resourceObj, found := result[serviceGuid]
 		if !found {
 			resourceObj = &UserServiceDockerResources{
-				ServiceContainer:    &types.Container{},
+				ServiceContainer:    nil,
 				ExpanderVolumeNames: nil,
 			}
 		}
