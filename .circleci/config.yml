@@ -55,14 +55,15 @@ run_dump_kurtosis_enclaves: &run_dump_kurtosis_enclaves
     output_dirname="enclave-dumps"
     mkdir "${output_dirname}"
 
-    # We exclude "WARN" messages because otherwise they'll pollute the STDOUT grab
-    for enclave_id in $("${KURTOSIS_BINPATH}" enclave ls | grep -v "WARN" | grep -v "EnclaveID" | awk '{print $1}'); do
+    # We exclude "WARN" and "INFO" messages because otherwise they'll pollute the STDOUT grab
+    # We can remove this tedious exclusion when https://github.com/kurtosis-tech/kurtosis/issues/399 is implemented
+    for enclave_id in $("${KURTOSIS_BINPATH}" enclave ls | grep -v "WARN" | grep -v "INFO" | grep -v "EnclaveID" | awk '{print $1}'); do
       "${KURTOSIS_BINPATH}" enclave dump "${enclave_id}" "${output_dirname}/${enclave_id}"
     done
 
-    # Verify that we actually dumped enclaves (if not, it's a bug in this dumping logic)
+    # Verify that we actually dumped enclaves by ensuring the number of dumped enclaves is greater than 0 (if not, it's a bug in this dumping logic)
     num_dumped_enclaves="$(find "${output_dirname}" -type d -mindepth 1 -maxdepth 1 | wc -l)"
-    [ -n "${num_dumped_enclaves}" ]
+    [ "${num_dumped_enclaves}" -gt 0 ]
 
     zip -r "${output_dirname}.zip" "${output_dirname}"
 
