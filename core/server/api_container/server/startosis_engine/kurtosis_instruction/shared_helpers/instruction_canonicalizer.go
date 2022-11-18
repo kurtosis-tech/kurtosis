@@ -36,40 +36,45 @@ func newMultiLineInstructionCanonicalizer() *kurtosisInstructionCanonicalizer {
 	}
 }
 
-func (canonicalizer *kurtosisInstructionCanonicalizer) CanonicalizeInstruction(instructionName string, serializedKwargs starlark.StringDict, position *kurtosis_instruction.InstructionPosition) string {
+func (canonicalizer *kurtosisInstructionCanonicalizer) CanonicalizeInstruction(instructionName string, serializedArgs []starlark.Value, serializedKwargs starlark.StringDict, position *kurtosis_instruction.InstructionPosition) string {
 	buffer := new(strings.Builder)
 	if !canonicalizer.singleLineMode {
 		buffer.WriteString(fmt.Sprintf("# from: %s\n", position.String()))
 	}
-	buffer.WriteString(canonicalizer.canonicalizeInstruction(instructionName, serializedKwargs, initialIndentationLevel))
+	buffer.WriteString(canonicalizer.canonicalizeInstruction(instructionName, serializedArgs, serializedKwargs, initialIndentationLevel))
 	return buffer.String()
 }
 
-func (canonicalizer *kurtosisInstructionCanonicalizer) canonicalizeInstruction(instructionName string, serializedKwargs starlark.StringDict, indentLevel int) string {
+func (canonicalizer *kurtosisInstructionCanonicalizer) canonicalizeInstruction(instructionName string, serializedArgs []starlark.Value, serializedKwargs starlark.StringDict, indentLevel int) string {
 	buffer := new(strings.Builder)
 	buffer.WriteString(instructionName)
 	buffer.WriteString(fmt.Sprintf("(%s", canonicalizer.newlineIndent(indentLevel+1)))
 
-	//sort the key of the map for determinism
-	var sortedArgName []string
-	for argName := range serializedKwargs {
-		sortedArgName = append(sortedArgName, argName)
+	// print each positional arg
+	canonicalizedArgs := make([]string, len(serializedArgs)+len(serializedKwargs))
+	for idx, genericArgValue := range serializedArgs {
+		canonicalizedArgs[idx] = canonicalizer.canonicalizeArgValue(genericArgValue, indentLevel+1)
 	}
-	sort.Strings(sortedArgName)
 
-	// print each arg depending on its type
-	canonicalizedArgs := make([]string, len(sortedArgName))
-	idx := 0
-	for _, argName := range sortedArgName {
-		genericArgValue, found := serializedKwargs[argName]
+	// print each named arg, sorting them first for determinism
+	var sortedKwargName []string
+	for kwargName := range serializedKwargs {
+		sortedKwargName = append(sortedKwargName, kwargName)
+	}
+	sort.Strings(sortedKwargName)
+
+	idx := len(serializedArgs)
+	for _, kwargName := range sortedKwargName {
+		genericKwargValue, found := serializedKwargs[kwargName]
 		if !found {
-			panic(fmt.Sprintf("Couldn't find a value for the key '%s' in the canonical instruction argument map ('%v'). This is unexpected and a bug in Kurtosis", argName, serializedKwargs))
+			panic(fmt.Sprintf("Couldn't find a value for the key '%s' in the canonical instruction argument map ('%v'). This is unexpected and a bug in Kurtosis", kwargName, serializedKwargs))
 		}
-		canonicalizedArgs[idx] = fmt.Sprintf("%s=%s", argName, canonicalizer.canonicalizeArgValue(genericArgValue, indentLevel+1))
+		canonicalizedArgs[idx] = fmt.Sprintf("%s=%s", kwargName, canonicalizer.canonicalizeArgValue(genericKwargValue, indentLevel+1))
 		idx++
 	}
-
 	buffer.WriteString(strings.Join(canonicalizedArgs, canonicalizer.separator(indentLevel+1)))
+
+	// finalize function closing the parenthesis
 	buffer.WriteString(fmt.Sprintf("%s)", canonicalizer.newlineIndent(indentLevel)))
 	return buffer.String()
 }
@@ -122,7 +127,7 @@ func (canonicalizer *kurtosisInstructionCanonicalizer) canonicalizeArgValue(gene
 			}
 			structKwargs[attributeName] = attributeValue
 		}
-		return canonicalizer.canonicalizeInstruction(argValue.Type(), structKwargs, indent)
+		return canonicalizer.canonicalizeInstruction(argValue.Type(), kurtosis_instruction.NoArgs, structKwargs, indent)
 	default:
 		stringifiedArg = fmt.Sprintf("UNSUPPORTED_TYPE['%v']", argValue)
 	}

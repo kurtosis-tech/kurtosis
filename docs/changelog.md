@@ -1,5 +1,8 @@
 # TBD
 
+### Changes
+- `print()` is now a regular instructions like others, and it takes effect at execution time (used to be during interpretation)
+
 # 0.53.2
 ### Features
 - Make facts referencable on `add_service`

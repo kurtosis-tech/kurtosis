@@ -188,15 +188,15 @@ func ParseExpectedExitCode(expectedExitCodeRaw starlark.Int) (int32, *startosis_
 	return expectedExitCode, nil
 }
 
-func ParseFilePath(filePathArgName string, filePathStr starlark.String) (string, *startosis_errors.InterpretationError) {
-	srcPath, interpretationErr := safeCastToString(filePathStr, filePathArgName)
+func ParseNonEmptyString(argName string, argValue starlark.Value) (string, *startosis_errors.InterpretationError) {
+	strArgValue, interpretationErr := safeCastToString(argValue, argName)
 	if interpretationErr != nil {
 		return "", interpretationErr
 	}
-	if len(srcPath) == 0 {
-		return "", startosis_errors.NewInterpretationError("File path cannot be empty for argument '%s'", filePathArgName)
+	if len(strArgValue) == 0 {
+		return "", startosis_errors.NewInterpretationError("Expected non empty string for argument '%s'", argName)
 	}
-	return srcPath, nil
+	return strArgValue, nil
 }
 
 func ParseArtifactUuid(artifactUuidArgName string, artifactUuidStr starlark.String) (enclave_data_directory.FilesArtifactUUID, *startosis_errors.InterpretationError) {

@@ -1,7 +1,6 @@
 package startosis_engine
 
 import (
-	"bytes"
 	"context"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/facts_engine"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
@@ -12,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/define_fact"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/exec"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/kurtosis_print"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/remove_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/render_templates"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/store_files_from_service"
@@ -83,30 +83,26 @@ func NewStartosisInterpreterWithFacts(serviceNetwork service_network.ServiceNetw
 }
 
 // Interpret interprets the Startosis script and produce different outputs:
-//   - The serialized output of the interpretation (what the Startosis script printed)
 //   - A potential interpretation error that the writer of the script should be aware of (syntax error in the Startosis
 //     code, inconsistent). Can be nil if the script was successfully interpreted
 //   - The list of Kurtosis instructions that was generated based on the interpretation of the script. It can be empty
 //     if the interpretation of the script failed
-//   - An error if something unexpected happens (crash independent of the Startosis script). This should be as rare as
-//     possible
-func (interpreter *StartosisInterpreter) Interpret(ctx context.Context, moduleId string, serializedStartosis string, serializedJsonParams string) (SerializedInterpretationOutput, *startosis_errors.InterpretationError, []kurtosis_instruction.KurtosisInstruction) {
+func (interpreter *StartosisInterpreter) Interpret(ctx context.Context, moduleId string, serializedStartosis string, serializedJsonParams string) (*startosis_errors.InterpretationError, []kurtosis_instruction.KurtosisInstruction) {
 	interpreter.mutex.Lock()
 	defer interpreter.mutex.Unlock()
-	var scriptOutputBuffer bytes.Buffer
 	var instructionsQueue []kurtosis_instruction.KurtosisInstruction
 
-	_, err := interpreter.interpretInternal(moduleId, serializedStartosis, serializedJsonParams, &instructionsQueue, &scriptOutputBuffer)
+	_, err := interpreter.interpretInternal(moduleId, serializedStartosis, serializedJsonParams, &instructionsQueue)
 	if err != nil {
-		return "", generateInterpretationError(err), nil
+		return generateInterpretationError(err), nil
 	}
 
 	logrus.Debugf("Successfully interpreted Startosis code into instruction queue: \n%s", instructionsQueue)
-	return SerializedInterpretationOutput(scriptOutputBuffer.String()), nil, instructionsQueue
+	return nil, instructionsQueue
 }
 
-func (interpreter *StartosisInterpreter) interpretInternal(moduleId string, serializedStartosis string, serializedJsonParams string, instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, scriptOutputBuffer *bytes.Buffer) (starlark.StringDict, error) {
-	thread, predeclared := interpreter.buildBindings(starlarkGoThreadName, instructionsQueue, scriptOutputBuffer)
+func (interpreter *StartosisInterpreter) interpretInternal(moduleId string, serializedStartosis string, serializedJsonParams string, instructionsQueue *[]kurtosis_instruction.KurtosisInstruction) (starlark.StringDict, error) {
+	thread, predeclared := interpreter.buildBindings(starlarkGoThreadName, instructionsQueue)
 
 	if interpretationError := interpreter.addInputArgsToPredeclared(moduleId, serializedJsonParams, predeclared); interpretationError != nil {
 		return nil, interpretationError
@@ -119,15 +115,15 @@ func (interpreter *StartosisInterpreter) interpretInternal(moduleId string, seri
 	return globalVariables, nil
 }
 
-func (interpreter *StartosisInterpreter) buildBindings(threadName string, instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, scriptOutputBuffer *bytes.Buffer) (*starlark.Thread, *starlark.StringDict) {
+func (interpreter *StartosisInterpreter) buildBindings(threadName string, instructionsQueue *[]kurtosis_instruction.KurtosisInstruction) (*starlark.Thread, *starlark.StringDict) {
 	thread := &starlark.Thread{
 		Name:  threadName,
-		Load:  interpreter.makeLoadFunction(instructionsQueue, scriptOutputBuffer),
-		Print: makePrintFunction(scriptOutputBuffer),
+		Load:  interpreter.makeLoadFunction(instructionsQueue),
+		Print: makePrintFunction(),
 	}
 
 	recursiveInterpretForModuleLoading := func(moduleId string, serializedStartosis string) (starlark.StringDict, error) {
-		return interpreter.interpretInternal(moduleId, serializedStartosis, EmptyInputArgs, instructionsQueue, scriptOutputBuffer)
+		return interpreter.interpretInternal(moduleId, serializedStartosis, EmptyInputArgs, instructionsQueue)
 	}
 
 	predeclared := &starlark.StringDict{
@@ -140,11 +136,11 @@ func (interpreter *StartosisInterpreter) buildBindings(threadName string, instru
 		// Kurtosis instructions - will push instructions to the queue that will affect the enclave state at execution
 		add_service.AddServiceBuiltinName:                        starlark.NewBuiltin(add_service.AddServiceBuiltinName, add_service.GenerateAddServiceBuiltin(instructionsQueue, interpreter.serviceNetwork, interpreter.factsEngine)),
 		exec.ExecBuiltinName:                                     starlark.NewBuiltin(exec.ExecBuiltinName, exec.GenerateExecBuiltin(instructionsQueue, interpreter.serviceNetwork)),
-		store_files_from_service.StoreFileFromServiceBuiltinName: starlark.NewBuiltin(store_files_from_service.StoreFileFromServiceBuiltinName, store_files_from_service.GenerateStoreFilesFromServiceBuiltin(instructionsQueue, interpreter.serviceNetwork)),
-		render_templates.RenderTemplatesBuiltinName:              starlark.NewBuiltin(render_templates.RenderTemplatesBuiltinName, render_templates.GenerateRenderTemplatesBuiltin(instructionsQueue, interpreter.serviceNetwork)),
-		starlarkjson.Module.Name:                                 starlarkjson.Module,
-		define_fact.DefineFactBuiltinName:                        starlark.NewBuiltin(define_fact.DefineFactBuiltinName, define_fact.GenerateDefineFactBuiltin(instructionsQueue, interpreter.factsEngine)),
+		kurtosis_print.PrintBuiltinName:                          starlark.NewBuiltin(kurtosis_print.PrintBuiltinName, kurtosis_print.GeneratePrintBuiltin(instructionsQueue)),
 		remove_service.RemoveServiceBuiltinName:                  starlark.NewBuiltin(remove_service.RemoveServiceBuiltinName, remove_service.GenerateRemoveServiceBuiltin(instructionsQueue, interpreter.serviceNetwork)),
+		render_templates.RenderTemplatesBuiltinName:              starlark.NewBuiltin(render_templates.RenderTemplatesBuiltinName, render_templates.GenerateRenderTemplatesBuiltin(instructionsQueue, interpreter.serviceNetwork)),
+		store_files_from_service.StoreFileFromServiceBuiltinName: starlark.NewBuiltin(store_files_from_service.StoreFileFromServiceBuiltinName, store_files_from_service.GenerateStoreFilesFromServiceBuiltin(instructionsQueue, interpreter.serviceNetwork)),
+		define_fact.DefineFactBuiltinName:                        starlark.NewBuiltin(define_fact.DefineFactBuiltinName, define_fact.GenerateDefineFactBuiltin(instructionsQueue, interpreter.factsEngine)),
 		upload_files.UploadFilesBuiltinName:                      starlark.NewBuiltin(upload_files.UploadFilesBuiltinName, upload_files.GenerateUploadFilesBuiltin(instructionsQueue, interpreter.moduleContentProvider, interpreter.serviceNetwork)),
 		wait.WaitBuiltinName:                                     starlark.NewBuiltin(wait.WaitBuiltinName, wait.GenerateWaitBuiltin(instructionsQueue, interpreter.factsEngine)),
 
@@ -223,12 +219,12 @@ func (interpreter *StartosisInterpreter) addInputArgsToPredeclared(moduleId stri
 //		func makeLoadFunction(_ *starlark.Thread, _ string) (starlark.StringDict, error) {
 //	 		return nil, startosis_errors.NewInterpretationError("'load(\"path/to/file.star\", module=\"module\")' statement is not available in Kurtosis. Please use instead `module = import_module(\"path/to/file.star\")`")
 //		}
-func (interpreter *StartosisInterpreter) makeLoadFunction(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, scriptOutputBuffer *bytes.Buffer) func(_ *starlark.Thread, moduleID string) (starlark.StringDict, error) {
+func (interpreter *StartosisInterpreter) makeLoadFunction(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction) func(_ *starlark.Thread, moduleID string) (starlark.StringDict, error) {
 	logrus.Warnf("`load()` statement is deprecated and will be removed soon. Please migrate to `import_module()`")
 	return func(thread *starlark.Thread, moduleID string) (starlark.StringDict, error) {
 		module, err := import_module.GenerateImportBuiltin(
 			func(moduleId string, serializedStartosis string) (starlark.StringDict, error) {
-				return interpreter.interpretInternal(moduleId, serializedStartosis, EmptyInputArgs, instructionsQueue, scriptOutputBuffer)
+				return interpreter.interpretInternal(moduleId, serializedStartosis, EmptyInputArgs, instructionsQueue)
 			},
 			interpreter.moduleContentProvider,
 			interpreter.moduleGlobalsCache,
@@ -244,10 +240,10 @@ func (interpreter *StartosisInterpreter) makeLoadFunction(instructionsQueue *[]k
 	}
 }
 
-func makePrintFunction(scriptOutputBuffer *bytes.Buffer) func(*starlark.Thread, string) {
+func makePrintFunction() func(*starlark.Thread, string) {
 	return func(_ *starlark.Thread, msg string) {
-		// From the Starlark spec, a print statement in Starlark is automatically followed by a newline
-		scriptOutputBuffer.WriteString(msg + "\n")
+		// the `print` function must be overriden with the custom kurtosis_print instruction in the predeclared map
+		panic("The print function does not function correctly. This is a Kurtosis bug")
 	}
 }
 
