@@ -573,7 +573,7 @@ func (manager *KubernetesManager) RemoveServiceAccount(ctx context.Context, serv
 	namespace := serviceAccount.Namespace
 	client := manager.kubernetesClientSet.CoreV1().ServiceAccounts(namespace)
 
-	if err := client.Delete(ctx, name, metav1.DeleteOptions{
+	deleteOptions := metav1.DeleteOptions{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "",
 			APIVersion: "",
@@ -583,7 +583,8 @@ func (manager *KubernetesManager) RemoveServiceAccount(ctx context.Context, serv
 		OrphanDependents:   nil,
 		PropagationPolicy:  nil,
 		DryRun:             nil,
-	}); err != nil {
+	}
+	if err := client.Delete(ctx, name, deleteOptions); err != nil {
 		return stacktrace.Propagate(err, "Failed to delete service account with name '%s' in namespace '%v'", name, namespace)
 	}
 
@@ -676,7 +677,7 @@ func (manager *KubernetesManager) RemoveRole(ctx context.Context, role *rbacv1.R
 	namespace := role.Namespace
 	client := manager.kubernetesClientSet.RbacV1().Roles(namespace)
 
-	if err := client.Delete(ctx, name, metav1.DeleteOptions{
+	deleteOptions := metav1.DeleteOptions{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "",
 			APIVersion: "",
@@ -686,7 +687,8 @@ func (manager *KubernetesManager) RemoveRole(ctx context.Context, role *rbacv1.R
 		OrphanDependents:   nil,
 		PropagationPolicy:  nil,
 		DryRun:             nil,
-	}); err != nil {
+	}
+	if err := client.Delete(ctx, name, deleteOptions); err != nil {
 		return stacktrace.Propagate(err, "Failed to delete role with name '%s' in namespace '%v'", name, namespace)
 	}
 
@@ -780,7 +782,7 @@ func (manager *KubernetesManager) RemoveRoleBindings(ctx context.Context, roleBi
 	namespace := roleBinding.Namespace
 	client := manager.kubernetesClientSet.RbacV1().RoleBindings(namespace)
 
-	if err := client.Delete(ctx, name, metav1.DeleteOptions{
+	deleteOptions := metav1.DeleteOptions{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "",
 			APIVersion: "",
@@ -790,7 +792,8 @@ func (manager *KubernetesManager) RemoveRoleBindings(ctx context.Context, roleBi
 		OrphanDependents:   nil,
 		PropagationPolicy:  nil,
 		DryRun:             nil,
-	}); err != nil {
+	}
+	if err := client.Delete(ctx, name, deleteOptions); err != nil {
 		return stacktrace.Propagate(err, "Failed to delete role bindings with name '%s' in namespace '%v'", name, namespace)
 	}
 
@@ -883,7 +886,7 @@ func (manager *KubernetesManager) RemoveClusterRole(ctx context.Context, cluster
 	name := clusterRole.Name
 	client := manager.kubernetesClientSet.RbacV1().ClusterRoles()
 
-	if err := client.Delete(ctx, name, metav1.DeleteOptions{
+	deleteOptions := metav1.DeleteOptions{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "",
 			APIVersion: "",
@@ -893,7 +896,8 @@ func (manager *KubernetesManager) RemoveClusterRole(ctx context.Context, cluster
 		OrphanDependents:   nil,
 		PropagationPolicy:  nil,
 		DryRun:             nil,
-	}); err != nil {
+	}
+	if err := client.Delete(ctx, name, deleteOptions); err != nil {
 		return stacktrace.Propagate(err, "Failed to delete cluster role with name '%s'", name)
 	}
 
@@ -986,7 +990,7 @@ func (manager *KubernetesManager) RemoveClusterRoleBindings(ctx context.Context,
 	name := clusterRoleBinding.Name
 	client := manager.kubernetesClientSet.RbacV1().ClusterRoleBindings()
 
-	if err := client.Delete(ctx, name, metav1.DeleteOptions{
+	deleteOptions := metav1.DeleteOptions{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "",
 			APIVersion: "",
@@ -996,7 +1000,8 @@ func (manager *KubernetesManager) RemoveClusterRoleBindings(ctx context.Context,
 		OrphanDependents:   nil,
 		PropagationPolicy:  nil,
 		DryRun:             nil,
-	}); err != nil {
+	}
+	if err := client.Delete(ctx, name, deleteOptions); err != nil {
 		return stacktrace.Propagate(err, "Failed to delete cluster role binding with name '%s'", name)
 	}
 

@@ -118,9 +118,10 @@ func (interpreter *StartosisInterpreter) interpretInternal(moduleId string, seri
 
 func (interpreter *StartosisInterpreter) buildBindings(threadName string, instructionsQueue *[]kurtosis_instruction.KurtosisInstruction) (*starlark.Thread, *starlark.StringDict) {
 	thread := &starlark.Thread{
-		Name:  threadName,
-		Load:  interpreter.makeLoadFunction(instructionsQueue),
-		Print: makePrintFunction(),
+		Name:       threadName,
+		Print:      makePrintFunction(),
+		Load:       interpreter.makeLoadFunction(instructionsQueue),
+		OnMaxSteps: nil,
 	}
 
 	recursiveInterpretForModuleLoading := func(moduleId string, serializedStartosis string) (starlark.StringDict, error) {
