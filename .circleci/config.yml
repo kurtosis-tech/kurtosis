@@ -54,9 +54,14 @@ run_dump_kurtosis_enclaves: &run_dump_kurtosis_enclaves
     cd /tmp
     output_dirname="enclave-dumps"
     mkdir "${output_dirname}"
-    for enclave_id in $("${KURTOSIS_BINPATH}" enclave ls | grep "EnclaveContainersStatus" | awk '{print $1}'); do
+    for enclave_id in $("${KURTOSIS_BINPATH}" enclave ls | grep -v "EnclaveContainersStatus" | awk '{print $1}'); do
       "${KURTOSIS_BINPATH}" enclave dump "${enclave_id}" "${output_dirname}/${enclave_id}"
     done
+
+    # Verify that we actually dumped enclaves (if not, it's a bug in this dumping logic)
+    num_dumped_enclaves="$(find "${output_dirname}" -type d -mindepth 1 -maxdepth 1 | wc -l)"
+    [ -n "${num_dumped_enclaves}" ]
+
     zip -r "${output_dirname}.zip" "${output_dirname}"
 
 # If the only changes are to the docs, we can optimize and skip any code-building/code-testing
