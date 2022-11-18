@@ -177,17 +177,11 @@ func NewConstantFactRecipeWithDefaultRefresh(serviceId string, factName string, 
 	}
 }
 
-func NewGetHttpRequestFactRecipeWithDefaultRefresh(serviceId string, factName string, portId string, endpoint string) *kurtosis_core_rpc_api_bindings.FactRecipe {
+func NewHttpRequestFactRecipeWithDefaultRefresh(serviceId string, factName string, factRecipeDefinition *kurtosis_core_rpc_api_bindings.FactRecipe_HttpRequestFact) *kurtosis_core_rpc_api_bindings.FactRecipe {
 	return &kurtosis_core_rpc_api_bindings.FactRecipe{
-		ServiceId: serviceId,
-		FactName:  factName,
-		FactRecipeDefinition: &kurtosis_core_rpc_api_bindings.FactRecipe_HttpRequestFact{
-			HttpRequestFact: &kurtosis_core_rpc_api_bindings.HttpRequestFactRecipe{
-				PortId:   portId,
-				Method:   kurtosis_core_rpc_api_bindings.HttpRequestMethod_GET,
-				Endpoint: endpoint,
-			},
-		},
+		ServiceId:            serviceId,
+		FactName:             factName,
+		FactRecipeDefinition: factRecipeDefinition,
 	}
 }
 
@@ -196,6 +190,19 @@ func NewGetHttpRequestFactRecipeDefinition(portId string, endpoint string, field
 		HttpRequestFact: &kurtosis_core_rpc_api_bindings.HttpRequestFactRecipe{
 			PortId:         portId,
 			Method:         kurtosis_core_rpc_api_bindings.HttpRequestMethod_GET,
+			Endpoint:       endpoint,
+			FieldExtractor: fieldExtractor,
+		},
+	}
+}
+
+func NewPostHttpRequestFactRecipeDefinition(portId string, endpoint string, contentType string, body string, fieldExtractor *string) *kurtosis_core_rpc_api_bindings.FactRecipe_HttpRequestFact {
+	return &kurtosis_core_rpc_api_bindings.FactRecipe_HttpRequestFact{
+		HttpRequestFact: &kurtosis_core_rpc_api_bindings.HttpRequestFactRecipe{
+			PortId:         portId,
+			Method:         kurtosis_core_rpc_api_bindings.HttpRequestMethod_POST,
+			ContentType:    contentType,
+			Body:           body,
 			Endpoint:       endpoint,
 			FieldExtractor: fieldExtractor,
 		},

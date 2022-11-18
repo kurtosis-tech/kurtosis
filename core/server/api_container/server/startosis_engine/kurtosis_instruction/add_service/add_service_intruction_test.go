@@ -44,6 +44,7 @@ func TestAddServiceInstruction_GetCanonicalizedInstruction(t *testing.T) {
 
 	addServiceInstruction := newEmptyAddServiceInstruction(
 		nil,
+		nil,
 		*kurtosis_instruction.NewInstructionPosition(22, 26, "dummyFile"),
 	)
 	addServiceInstruction.starlarkKwargs[serviceIdArgName] = starlark.String("example-datastore-server-2")
@@ -107,7 +108,7 @@ func TestAddServiceInstruction_EntryPointArgsAreReplaced(t *testing.T) {
 		starlark.StringDict{}, // Unused
 	)
 
-	err := addServiceInstruction.replaceIPAddress()
+	err := addServiceInstruction.replaceMagicStrings()
 	require.Nil(t, err)
 	require.Equal(t, "-- 172.17.3.13", addServiceInstruction.serviceConfig.EntrypointArgs[0])
 }

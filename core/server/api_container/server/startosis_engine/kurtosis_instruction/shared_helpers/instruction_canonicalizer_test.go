@@ -19,32 +19,39 @@ func TestCanonicalizeInstruction(t *testing.T) {
 	filename := "github.com/kurtosis-tech/module/main.star"
 	position := kurtosis_instruction.NewInstructionPosition(12, 23, filename)
 
-	arg1 := starlark.String("serviceA")
-	arg2Dict := starlark.StringDict{}
-	arg2Dict["hello"] = starlark.String("world")
-	arg2Dict["bonjour"] = starlark.MakeInt(42)
-	arg2 := starlarkstruct.FromStringDict(starlarkstruct.Default, arg2Dict)
-	multiLineResult := MultiLineCanonicalizer.CanonicalizeInstruction("my_instruction", map[string]starlark.Value{
-		"arg1": arg1,
-		"arg2": arg2,
-	}, position)
+	args := []starlark.Value{
+		starlark.String("foo"),
+		starlark.NewList([]starlark.Value{starlark.String("bar")}),
+	}
+
+	kwarg1 := starlark.String("serviceA")
+	kwarg2Dict := starlark.StringDict{}
+	kwarg2Dict["hello"] = starlark.String("world")
+	kwarg2Dict["bonjour"] = starlark.MakeInt(42)
+	kwarg2 := starlarkstruct.FromStringDict(starlarkstruct.Default, kwarg2Dict)
+	kwargs := map[string]starlark.Value{
+		"kwarg1": kwarg1,
+		"kwarg2": kwarg2,
+	}
+
+	multiLineResult := MultiLineCanonicalizer.CanonicalizeInstruction("my_instruction", args, kwargs, position)
 	expectedMultiLineResult := `# from: github.com/kurtosis-tech/module/main.star[12:23]
 my_instruction(
-	arg1="serviceA",
-	arg2=struct(
+	"foo",
+	[
+		"bar"
+	],
+	kwarg1="serviceA",
+	kwarg2=struct(
 		bonjour=42,
 		hello="world"
 	)
 )`
 	require.Equal(t, expectedMultiLineResult, multiLineResult)
 
-	singleLineResult := SingleLineCanonicalizer.CanonicalizeInstruction("my_instruction", map[string]starlark.Value{
-		"arg1": arg1,
-		"arg2": arg2,
-	}, position)
-	expectedSingleLineResult := `my_instruction(arg1="serviceA", arg2=struct(bonjour=42, hello="world"))`
+	singleLineResult := SingleLineCanonicalizer.CanonicalizeInstruction("my_instruction", args, kwargs, position)
+	expectedSingleLineResult := `my_instruction("foo", ["bar"], kwarg1="serviceA", kwarg2=struct(bonjour=42, hello="world"))`
 	require.Equal(t, expectedSingleLineResult, singleLineResult)
-
 }
 
 func TestCanonicalizeArgValue_None(t *testing.T) {

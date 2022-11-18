@@ -53,20 +53,20 @@ func (instruction *RemoveServiceInstruction) GetPositionInOriginalScript() *kurt
 }
 
 func (instruction *RemoveServiceInstruction) GetCanonicalInstruction() string {
-	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(RemoveServiceBuiltinName, instruction.getKwargs(), &instruction.position)
+	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(RemoveServiceBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs(), &instruction.position)
 }
 
-func (instruction *RemoveServiceInstruction) Execute(ctx context.Context) error {
+func (instruction *RemoveServiceInstruction) Execute(ctx context.Context) (*string, error) {
 	serviceGUID, err := instruction.serviceNetwork.RemoveService(ctx, instruction.serviceId)
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed removing service with unexpected error")
+		return nil, stacktrace.Propagate(err, "Failed removing service with unexpected error")
 	}
 	logrus.Infof("Successfully removed service '%v' with guid '%v'", instruction.serviceId, serviceGUID)
-	return nil
+	return nil, nil
 }
 
 func (instruction *RemoveServiceInstruction) String() string {
-	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(RemoveServiceBuiltinName, instruction.getKwargs(), &instruction.position)
+	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(RemoveServiceBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs(), &instruction.position)
 }
 
 func (instruction *RemoveServiceInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {

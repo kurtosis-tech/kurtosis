@@ -43,8 +43,9 @@ const (
 	factIdFormatStr            = "%v.%v"
 	keyStringFormat            = "%020s"
 	maxResultCount             = 100
-	defaultRetryCount          = 3
-	defaultRetryWaitDuration   = 3 * time.Second
+	// Aggressive retry to support ETH module, should be configurable in the future
+	defaultRetryCount        = 10
+	defaultRetryWaitDuration = 3 * time.Second
 )
 
 func NewFactsEngine(db *bolt.DB, serviceNetwork service_network.ServiceNetwork) *FactsEngine {
@@ -275,6 +276,7 @@ func (engine *FactsEngine) runRecipe(recipe *kurtosis_core_rpc_api_bindings.Fact
 			}
 		}()
 		body, err := io.ReadAll(response.Body)
+		logrus.Debugf("Got response '%v'", string(body))
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred when reading HTTP response body")
 		}
