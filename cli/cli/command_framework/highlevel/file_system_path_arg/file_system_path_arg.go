@@ -12,11 +12,53 @@ import (
 const (
 	isNotGreedyArg = false
 	defaultValue = ""
+	enableShellDefaultFileCompletion = true
 )
 
-// Prebuilt file system path arg which has tab-completion and validation ready out-of-the-box
-// Filepath, dirpath or both types are supported for now
-func NewFileSystemPathArg(
+var (
+	noCustomCompletionFunc func(ctx context.Context, flags *flags.ParsedFlags, previousArgs *args.ParsedArgs) ([]string, error) = nil
+)
+
+// Prebuilt file path arg which has tab-completion and validation ready out-of-the-box
+func NewFilepathArg(
+// The arg key where this file system path argument will be stored
+	argKey string,
+	isOptional bool,
+) *args.ArgConfig {
+	return newFileSystemPathArg(
+		argKey,
+		isOptional,
+		FileSystemPathType_Filepath,
+	)
+}
+
+// Prebuilt dir path arg which has tab-completion and validation ready out-of-the-box
+func NewDirpathArg(
+// The arg key where this file system path argument will be stored
+	argKey string,
+	isOptional bool,
+) *args.ArgConfig {
+	return newFileSystemPathArg(
+		argKey,
+		isOptional,
+		FileSystemPathType_Dirpath,
+	)
+}
+
+// Prebuilt file path or dir path arg which has tab-completion and validation ready out-of-the-box
+func NewFilepathOrDirpathArg(
+// The arg key where this file system path argument will be stored
+	argKey string,
+	isOptional bool,
+) *args.ArgConfig {
+	return newFileSystemPathArg(
+		argKey,
+		isOptional,
+		FileSystemPathType_FilepathOrDirpath,
+	)
+}
+
+func newFileSystemPathArg(
 // The arg key where this file system path argument will be stored
 	argKey string,
 	isOptional bool,
@@ -25,12 +67,13 @@ func NewFileSystemPathArg(
 	validate := getValidationFunc(argKey, pathType)
 
 	return &args.ArgConfig{
-		Key:             argKey,
-		IsOptional:      isOptional,
-		DefaultValue:    defaultValue,
-		IsGreedy:        isNotGreedyArg,
-		CompletionsFunc: nil,//TODO add it
-		ValidationFunc:  validate,
+		Key:                                     argKey,
+		IsOptional:                              isOptional,
+		DefaultValue:                            defaultValue,
+		IsGreedy:                                isNotGreedyArg,
+		CompletionsFunc:                         noCustomCompletionFunc,
+		ValidationFunc:                          validate,
+		ShouldShellProvideDefaultFileCompletion: enableShellDefaultFileCompletion,
 	}
 }
 

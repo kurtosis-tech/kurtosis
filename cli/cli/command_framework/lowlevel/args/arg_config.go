@@ -29,5 +29,7 @@ type ArgConfig struct {
 
 	// Will be run after the user presses ENTER and before we start actually running the command
 	ValidationFunc func(ctx context.Context, flags *flags.ParsedFlags, args *ParsedArgs) error
-}
 
+	// Will be enabling the default shell file completion which is disabled by default
+	ShouldShellProvideDefaultFileCompletion bool
+}

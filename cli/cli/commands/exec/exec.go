@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
 	enclave_consts "github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/enclave"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/file_system_path_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
@@ -22,6 +23,8 @@ import (
 
 const (
 	scriptOrModulePathKey = "script-or-module-path"
+	isScriptOrModulePathArgumentOptional = false
+
 	startosisExtension    = ".star"
 
 	moduleArgsFlagKey = "args"
@@ -84,16 +87,10 @@ var StartosisExecCmd = &lowlevel.LowlevelKurtosisCommand{
 		},
 	},
 	Args: []*args.ArgConfig{
-		&args.ArgConfig{
-			// for a module we expect a path to a directory
-			// for a script we expect a script with a `.star` extension
-			// TODO add a `Usage` description here when ArgConfig supports it
-			Key:            scriptOrModulePathKey,
-			IsOptional:     false,
-			DefaultValue:   "",
-			IsGreedy:       false,
-			ValidationFunc: validateScriptOrModulePath,
-		},
+		file_system_path_arg.NewFilepathOrDirpathArg(
+			scriptOrModulePathKey,
+			isScriptOrModulePathArgumentOptional,
+		),
 	},
 	RunFunc: run,
 }
@@ -175,27 +172,6 @@ func run(
 // ====================================================================================================
 //                                       Private Helper Functions
 // ====================================================================================================
-func validateScriptOrModulePath(_ context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error {
-	scriptOrModulePath, err := args.GetNonGreedyArg(scriptOrModulePathKey)
-	if err != nil {
-		return stacktrace.Propagate(err, "Unable to get argument '%s'", scriptOrModulePathKey)
-	}
-
-	scriptOrModulePath = strings.TrimSpace(scriptOrModulePath)
-	if scriptOrModulePath == "" {
-		return stacktrace.NewError("Received an empty '%v'. It should be a non empty string.", scriptOrModulePathKey)
-	}
-
-	fileInfo, err := os.Stat(scriptOrModulePath)
-	if err != nil {
-		return stacktrace.Propagate(err, "Error reading script file or module dir '%s'", scriptOrModulePath)
-	}
-	if !fileInfo.Mode().IsRegular() && !fileInfo.Mode().IsDir() {
-		return stacktrace.Propagate(err, "Script or module path should point to a file on disk or to a directory '%s'", scriptOrModulePath)
-	}
-	return nil
-}
-
 func executeScript(enclaveCtx *enclaves.EnclaveContext, scriptPath string, dryRun bool) error {
 	fileContentBytes, err := os.ReadFile(scriptPath)
 	if err != nil {

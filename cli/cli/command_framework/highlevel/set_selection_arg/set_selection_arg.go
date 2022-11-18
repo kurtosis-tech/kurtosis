@@ -18,7 +18,7 @@ func NewSetSelectionArg(argKey string, validValues map[string]bool) *args.ArgCon
 	}
 	sort.Strings(sortedValidValues)
 
-	completionsFunc := func(ctx context.Context, flags *flags.ParsedFlags, previousArgs *args.ParsedArgs) ([]string, error) {
+	completionsFunc := func(ctx context.Context, flags *flags.ParsedFlags, previousArgs *args.ParsedArgs, ) ([]string, error) {
 		return sortedValidValues, nil
 	}
 
