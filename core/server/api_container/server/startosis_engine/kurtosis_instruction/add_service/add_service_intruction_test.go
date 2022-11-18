@@ -45,7 +45,7 @@ func TestAddServiceInstruction_GetCanonicalizedInstruction(t *testing.T) {
 	addServiceInstruction := newEmptyAddServiceInstruction(
 		nil,
 		nil,
-		*kurtosis_instruction.NewInstructionPosition(22, 26, "dummyFile"),
+		kurtosis_instruction.NewInstructionPosition(22, 26, "dummyFile"),
 	)
 	addServiceInstruction.starlarkKwargs[serviceIdArgName] = starlark.String("example-datastore-server-2")
 	addServiceInstruction.starlarkKwargs[serviceConfigArgName] = starlarkstruct.FromStringDict(starlarkstruct.Default, serviceConfigDict)
@@ -91,7 +91,7 @@ func TestAddServiceInstruction_EntryPointArgsAreReplaced(t *testing.T) {
 	serviceNetwork := service_network.NewMockServiceNetwork(ipAddresses)
 	addServiceInstruction := NewAddServiceInstruction(
 		serviceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(22, 26, "dummyFile"),
+		kurtosis_instruction.NewInstructionPosition(22, 26, "dummyFile"),
 		"example-datastore-server-2",
 		services.NewServiceConfigBuilder(
 			testContainerImageName,

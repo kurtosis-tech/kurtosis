@@ -31,7 +31,7 @@ func GeneratePrintBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInst
 		if interpretationError != nil {
 			return nil, interpretationError
 		}
-		instructionPosition := *shared_helpers.GetCallerPositionFromThread(thread)
+		instructionPosition := shared_helpers.GetCallerPositionFromThread(thread)
 		defineFactInstruction := NewPrintInstruction(instructionPosition, args, separatorStr, endStr)
 		*instructionsQueue = append(*instructionsQueue, defineFactInstruction)
 		return starlark.None, nil
@@ -39,13 +39,13 @@ func GeneratePrintBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInst
 }
 
 type PrintInstruction struct {
-	position  kurtosis_instruction.InstructionPosition
+	position  *kurtosis_instruction.InstructionPosition
 	args      []starlark.Value
 	separator separator
 	end       end
 }
 
-func NewPrintInstruction(position kurtosis_instruction.InstructionPosition, args []starlark.Value, separatorStr separator, endStr end) *PrintInstruction {
+func NewPrintInstruction(position *kurtosis_instruction.InstructionPosition, args []starlark.Value, separatorStr separator, endStr end) *PrintInstruction {
 	return &PrintInstruction{
 		position:  position,
 		args:      args,
@@ -55,11 +55,11 @@ func NewPrintInstruction(position kurtosis_instruction.InstructionPosition, args
 }
 
 func (instruction *PrintInstruction) GetPositionInOriginalScript() *kurtosis_instruction.InstructionPosition {
-	return &instruction.position
+	return instruction.position
 }
 
 func (instruction *PrintInstruction) GetCanonicalInstruction() string {
-	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(PrintBuiltinName, instruction.args, instruction.getKwargs(), &instruction.position)
+	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(PrintBuiltinName, instruction.args, instruction.getKwargs(), instruction.position)
 }
 
 func (instruction *PrintInstruction) Execute(_ context.Context) (*string, error) {
@@ -80,7 +80,7 @@ func (instruction *PrintInstruction) Execute(_ context.Context) (*string, error)
 }
 
 func (instruction *PrintInstruction) String() string {
-	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(PrintBuiltinName, instruction.args, instruction.getKwargs(), &instruction.position)
+	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(PrintBuiltinName, instruction.args, instruction.getKwargs(), instruction.position)
 
 }
 

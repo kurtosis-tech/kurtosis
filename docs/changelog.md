@@ -9,6 +9,7 @@
 - `print()` is now a regular instructions like others, and it takes effect at execution time (used to be during interpretation)
 - Added exhaustive struct linting and brought code base into exhaustive struct compliance
 - Temporarily disable enclave dump for k8s in CircleCI until we fix issue #407
+- Small cleanup to kurtosis instruction classes. It now uses a pointer to the position object.
 
 # 0.53.2
 ### Features

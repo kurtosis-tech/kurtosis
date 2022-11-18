@@ -29,7 +29,7 @@ const (
 type StoreFilesFromServiceInstruction struct {
 	serviceNetwork service_network.ServiceNetwork
 
-	position     kurtosis_instruction.InstructionPosition
+	position     *kurtosis_instruction.InstructionPosition
 	serviceId    kurtosis_backend_service.ServiceID
 	srcPath      string
 	artifactUuid enclave_data_directory.FilesArtifactUUID
@@ -42,13 +42,14 @@ func GenerateStoreFilesFromServiceBuiltin(instructionsQueue *[]kurtosis_instruct
 		if interpretationError != nil {
 			return nil, interpretationError
 		}
-		storeFilesFromServiceInstruction := NewStoreFilesFromServiceInstruction(serviceNetwork, *shared_helpers.GetCallerPositionFromThread(thread), serviceId, srcPath, artifactUuid)
+		instructionPosition := shared_helpers.GetCallerPositionFromThread(thread)
+		storeFilesFromServiceInstruction := NewStoreFilesFromServiceInstruction(serviceNetwork, instructionPosition, serviceId, srcPath, artifactUuid)
 		*instructionsQueue = append(*instructionsQueue, storeFilesFromServiceInstruction)
 		return starlark.String(artifactUuid), nil
 	}
 }
 
-func NewStoreFilesFromServiceInstruction(serviceNetwork service_network.ServiceNetwork, position kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceID, srcPath string, artifactUuid enclave_data_directory.FilesArtifactUUID) *StoreFilesFromServiceInstruction {
+func NewStoreFilesFromServiceInstruction(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceID, srcPath string, artifactUuid enclave_data_directory.FilesArtifactUUID) *StoreFilesFromServiceInstruction {
 	return &StoreFilesFromServiceInstruction{
 		serviceNetwork: serviceNetwork,
 		position:       position,
@@ -59,11 +60,11 @@ func NewStoreFilesFromServiceInstruction(serviceNetwork service_network.ServiceN
 }
 
 func (instruction *StoreFilesFromServiceInstruction) GetPositionInOriginalScript() *kurtosis_instruction.InstructionPosition {
-	return &instruction.position
+	return instruction.position
 }
 
 func (instruction *StoreFilesFromServiceInstruction) GetCanonicalInstruction() string {
-	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(StoreFileFromServiceBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs(), &instruction.position)
+	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(StoreFileFromServiceBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs(), instruction.position)
 }
 
 func (instruction *StoreFilesFromServiceInstruction) Execute(ctx context.Context) (*string, error) {
@@ -75,7 +76,7 @@ func (instruction *StoreFilesFromServiceInstruction) Execute(ctx context.Context
 }
 
 func (instruction *StoreFilesFromServiceInstruction) String() string {
-	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(StoreFileFromServiceBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs(), &instruction.position)
+	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(StoreFileFromServiceBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs(), instruction.position)
 }
 
 func (instruction *StoreFilesFromServiceInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {

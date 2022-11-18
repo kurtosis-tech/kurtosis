@@ -12,7 +12,7 @@ func TestUploadFiles_StringRepresentation(t *testing.T) {
 	artifactUuid, err := enclave_data_directory.NewFilesArtifactUUID()
 	require.Nil(t, err)
 	uploadInstruction := NewUploadFilesInstruction(
-		*kurtosis_instruction.NewInstructionPosition(1, 13, "dummyFile"),
+		kurtosis_instruction.NewInstructionPosition(1, 13, "dummyFile"),
 		nil, nil, filePath, "dummyPathOnDisk", artifactUuid,
 	)
 	expectedMultiLineStrRep := `# from: dummyFile[1:13]
