@@ -1,7 +1,23 @@
 # TBD
 
-# 0.53.0
+# 0.53.2
+### Features
+- Make facts referencable on `add_service`
+- Added a new log line for printing the `created enclave ID` just when this is created in `kurtosis exec` and `kurtosis module exec` commands
 
+# 0.53.1
+### Features
+- Added random enclave ID generation in `EnclaveManager.CreateEnclave()` when an empty enclave ID is provided
+- Added the `created enclave` spotlight message when a new enclave is created from the CLI (currently with the `enclave add`, `module exec` and `exec` commands)
+
+### Changes
+- Moved the enclave ID auto generation and validation from the CLI to the engine's server which will catch all the presents and future use cases
+
+### Fixes
+- Fixed a bug where we had renamed `container_image_name` inside the proto definition to `image`
+- Fix a test that dependent on an old on existent Starlark module
+
+# 0.53.0
 ### Features
 - Made `render_templates`, `upload_files`, `store_Files_from_service` accept `artifact_uuid` and
 return `artifact_uuid` during interpretation time
@@ -16,12 +32,10 @@ return `artifact_uuid` during interpretation time
 - Fixed building kurtosis by adding a conditional to build.sh to ignore startosis folder under internal_testsuites
 
 # 0.52.5
-
 ### Fixes
 - Renamed `files_artifact_mount_dirpaths` to just `files`
 
 # 0.52.4
-
 ### Features
 - Added the enclave's creation time info which can be obtained through the `enclave ls` and the `enclave inspect` commands
 
@@ -29,7 +43,6 @@ return `artifact_uuid` during interpretation time
 - Smoothened the experience `used_ports` -> `ports`, `container_image_name` -> `name`, `service_config` -> `config`
 
 # 0.52.3
-
 ### Changes
 - Cleanup Startosis interpreter predeclared
 

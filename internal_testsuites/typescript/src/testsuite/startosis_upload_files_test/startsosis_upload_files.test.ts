@@ -13,7 +13,7 @@ const SERVICE_ID = "example-datastore-server-1"
 const PORT_ID = "grpc"
 
 const PATH_TO_MOUNT_UPLOADED_DIR = "/uploads"
-const PATH_TO_CHECK_FOR_UPLOADED_FILE = "/uploads/lib.star"
+const PATH_TO_CHECK_FOR_UPLOADED_FILE = "/uploads/helpers.star"
 
 const STARTOSIS_SCRIPT = `
 DATASTORE_IMAGE = "kurtosistech/example-datastore-server"
@@ -22,7 +22,7 @@ DATASTORE_PORT_ID = "` + PORT_ID + `"
 DATASTORE_PORT_NUMBER = 1323
 DATASTORE_PORT_PROTOCOL = "TCP"
 
-DIR_TO_UPLOAD = "github.com/kurtosis-tech/datastore-army-module-demo/lib"
+DIR_TO_UPLOAD = "github.com/kurtosis-tech/datastore-army-module/src"
 PATH_TO_MOUNT_UPLOADED_DIR = "` + PATH_TO_MOUNT_UPLOADED_DIR + `"
 
 print("Adding service " + DATASTORE_SERVICE_ID + ".")
