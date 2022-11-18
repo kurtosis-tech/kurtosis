@@ -71,6 +71,7 @@ func newFileSystemPathArg(
 		IsOptional:                              isOptional,
 		DefaultValue:                            defaultValue,
 		IsGreedy:                                isNotGreedyArg,
+		//No custom completion because we are enabling default shell's file completion with ShouldShellProvideDefaultFileCompletion
 		CompletionsFunc:                         noCustomCompletionFunc,
 		ValidationFunc:                          validate,
 		ShouldShellProvideDefaultFileCompletion: enableShellDefaultFileCompletion,
