@@ -15,7 +15,7 @@ const (
 )
 
 /*
-	GenerateImportScriptBuiltin returns a sequential (not parallel) implementation of an equivalent or `load` in Starlark
+	GenerateImportBuiltin returns a sequential (not parallel) implementation of an equivalent or `load` in Starlark
 	This function returns a starlarkstruct.Module object that can then me used to get variables and call functions from the loaded module.
 
 How does the returned function work?
@@ -29,7 +29,7 @@ How does the returned function work?
 9. We now return the contents of the module and any interpretation errors
 This function is recursive in the sense, to load a module that loads modules we call the same function
 */
-func GenerateImportScriptBuiltin(recursiveInterpret func(moduleId string, scriptContent string) (starlark.StringDict, error), moduleContentProvider startosis_modules.ModuleContentProvider, moduleGlobalCache map[string]*startosis_modules.ModuleCacheEntry) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+func GenerateImportBuiltin(recursiveInterpret func(moduleId string, scriptContent string) (starlark.StringDict, error), moduleContentProvider startosis_modules.ModuleContentProvider, moduleGlobalCache map[string]*startosis_modules.ModuleCacheEntry) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 	return func(_ *starlark.Thread, _ *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 		fileInModule, interpretationError := parseStartosisArgs(args, kwargs)
 		if interpretationError != nil {
@@ -40,7 +40,8 @@ func GenerateImportScriptBuiltin(recursiveInterpret func(moduleId string, script
 		cacheEntry, found := moduleGlobalCache[fileInModule]
 		if found && cacheEntry == loadInProgress {
 			return nil, startosis_errors.NewInterpretationError("There's a cycle in the import_module calls")
-		} else if found {
+		}
+		if found {
 			return cacheEntry.GetModule(), cacheEntry.GetError()
 		}
 
@@ -63,9 +64,7 @@ func GenerateImportScriptBuiltin(recursiveInterpret func(moduleId string, script
 
 		// Update the cache.
 		var newModule *starlarkstruct.Module
-		if globalVariables == nil {
-			newModule = nil
-		} else {
+		if err == nil {
 			newModule = &starlarkstruct.Module{
 				Name:    fileInModule,
 				Members: globalVariables,

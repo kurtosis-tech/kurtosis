@@ -148,7 +148,7 @@ func (interpreter *StartosisInterpreter) buildBindings(threadName string, instru
 		wait.WaitBuiltinName:                                     starlark.NewBuiltin(wait.WaitBuiltinName, wait.GenerateWaitBuiltin(instructionsQueue, interpreter.factsEngine)),
 
 		// Kurtosis custom builtins - pure interpretation-time helpers. Do not add any instructions to the queue
-		import_module.ImportModuleBuiltinName: starlark.NewBuiltin(import_module.ImportModuleBuiltinName, import_module.GenerateImportScriptBuiltin(recursiveInterpretForModuleLoading, interpreter.moduleContentProvider, interpreter.moduleGlobalsCache)),
+		import_module.ImportModuleBuiltinName: starlark.NewBuiltin(import_module.ImportModuleBuiltinName, import_module.GenerateImportBuiltin(recursiveInterpretForModuleLoading, interpreter.moduleContentProvider, interpreter.moduleGlobalsCache)),
 		import_types.ImportTypesBuiltinName:   starlark.NewBuiltin(import_types.ImportTypesBuiltinName, import_types.GenerateImportTypesBuiltin(interpreter.protoFileStore)),
 		read_file.ReadFileBuiltinName:         starlark.NewBuiltin(read_file.ReadFileBuiltinName, read_file.GenerateReadFileBuiltin(interpreter.moduleContentProvider)),
 	}
@@ -225,7 +225,7 @@ func (interpreter *StartosisInterpreter) addInputArgsToPredeclared(moduleId stri
 func (interpreter *StartosisInterpreter) makeLoadFunction(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, scriptOutputBuffer *bytes.Buffer) func(_ *starlark.Thread, moduleID string) (starlark.StringDict, error) {
 	logrus.Warnf("`load()` statement is deprecated and will be removed soon. Please migrate to `import_module()`")
 	return func(thread *starlark.Thread, moduleID string) (starlark.StringDict, error) {
-		module, err := import_module.GenerateImportScriptBuiltin(
+		module, err := import_module.GenerateImportBuiltin(
 			func(moduleId string, serializedStartosis string) (starlark.StringDict, error) {
 				return interpreter.interpretInternal(moduleId, serializedStartosis, EmptyInputArgs, instructionsQueue, scriptOutputBuffer)
 			},

@@ -341,7 +341,7 @@ print("Hello " + a)
 	assert.Equal(t, expectedOutput, string(scriptOutput))
 }
 
-func TestStartosisInterpreter_SimpleLoading(t *testing.T) {
+func TestStartosisInterpreter_SimpleImport(t *testing.T) {
 	barModulePath := "github.com/foo/bar/lib.star"
 	seedModules := map[string]string{
 		barModulePath: "a=\"World!\"",
@@ -444,7 +444,7 @@ print(my_module.b)
 	assert.Equal(t, expectedError, interpretationError)
 }
 
-func TestStartosisInterpreter_LoadingAValidModuleThatPreviouslyFailedToLoadSucceeds(t *testing.T) {
+func TestStartosisInterpreter_ImportingAValidModuleThatPreviouslyFailedToLoadSucceeds(t *testing.T) {
 	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
 	barModulePath := "github.com/foo/bar/lib.star"
@@ -562,6 +562,29 @@ Adding service example-datastore-server-2
 Done!
 `
 	require.Equal(t, expectedOutput, string(scriptOutput))
+}
+
+func TestStartosisInterpreter_ImportModuleWithNoGlobalVariables(t *testing.T) {
+	barModulePath := "github.com/foo/bar/lib.star"
+	seedModules := map[string]string{
+		barModulePath: "print(\"Hello\")",
+	}
+	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
+	defer moduleContentProvider.RemoveAll()
+	require.Nil(t, moduleContentProvider.BulkAddFileContent(seedModules))
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
+	script := `
+my_module = import_module("` + barModulePath + `")
+print("World!")
+`
+	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	assert.Equal(t, 0, len(instructions)) // No kurtosis instruction
+	assert.Nil(t, interpretationError)
+
+	expectedOutput := `Hello
+World!
+`
+	assert.Equal(t, expectedOutput, string(scriptOutput))
 }
 
 func TestStartosisInterpreter_AddServiceInOtherModulePopulatesQueue(t *testing.T) {
