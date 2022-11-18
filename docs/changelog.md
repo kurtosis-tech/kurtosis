@@ -1,5 +1,8 @@
 # TBD
 
+### Features
+- Log that the module is being compressed & uploaded during `kurtosis exec`
+
 ### Changes
 - `print()` is now a regular instructions like others, and it takes effect at execution time (used to be during interpretation)
 
