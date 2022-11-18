@@ -27,18 +27,21 @@ const (
 
 	//Files permissions for temporary file storing files artifact data: readable by all the user groups, but writable by user only
 	filesArtifactTemporaryFilePermissions = 0644
+
+	forceColors   = true
+	fullTimestamp = true
 )
 
 func main() {
 	// NOTE: we'll want to change the ForceColors to false if we ever want structured logging
 	logrus.SetFormatter(&logrus.TextFormatter{
-		ForceColors:               true,
+		ForceColors:               forceColors,
 		DisableColors:             false,
 		ForceQuote:                false,
 		DisableQuote:              false,
 		EnvironmentOverrideColors: false,
 		DisableTimestamp:          false,
-		FullTimestamp:             true,
+		FullTimestamp:             fullTimestamp,
 		TimestampFormat:           "",
 		DisableSorting:            false,
 		SortingFunc:               nil,

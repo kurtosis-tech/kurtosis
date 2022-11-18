@@ -308,48 +308,14 @@ func (kurtosisCmd *LowlevelKurtosisCommand) MustGetCobraCommand() *cobra.Command
 		strings.Join(allArgUsageStrs, " "),
 	)
 
+	// Suppressing exhaustruct requirement because this struct has ~40 properties
+	// nolint: exhaustruct
 	result := &cobra.Command{
-		Use:                    usageStr,
-		Aliases:                nil,
-		SuggestFor:             nil,
-		Short:                  kurtosisCmd.ShortDescription,
-		Long:                   kurtosisCmd.LongDescription,
-		Example:                "",
-		ValidArgs:              nil,
-		ValidArgsFunction:      getCompletionsFunc,
-		Args:                   nil,
-		ArgAliases:             nil,
-		BashCompletionFunction: "",
-		Deprecated:             "",
-		Annotations:            nil,
-		Version:                "",
-		PersistentPreRun:       nil,
-		PersistentPreRunE:      nil,
-		PreRun:                 nil,
-		PreRunE:                nil,
-		Run:                    nil,
-		RunE:                   cobraRunFunc,
-		PostRun:                nil,
-		PostRunE:               nil,
-		PersistentPostRun:      nil,
-		PersistentPostRunE:     nil,
-		FParseErrWhitelist: cobra.FParseErrWhitelist{
-			UnknownFlags: false,
-		},
-		CompletionOptions: cobra.CompletionOptions{
-			DisableDefaultCmd:   false,
-			DisableNoDescFlag:   false,
-			DisableDescriptions: false,
-		},
-		TraverseChildren:           false,
-		Hidden:                     false,
-		SilenceErrors:              false,
-		SilenceUsage:               false,
-		DisableFlagParsing:         false,
-		DisableAutoGenTag:          false,
-		DisableFlagsInUseLine:      true, // Not needed since we manually add the string in the usage string
-		DisableSuggestions:         false,
-		SuggestionsMinimumDistance: 0,
+		Use:               usageStr,
+		Short:             kurtosisCmd.ShortDescription,
+		Long:              kurtosisCmd.LongDescription,
+		ValidArgsFunction: getCompletionsFunc,
+		RunE:              cobraRunFunc,
 	}
 
 	// Validates that the default values for the declared flags match the declard types, and add them to the Cobra command

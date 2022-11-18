@@ -138,7 +138,7 @@ func newLocalPortToPodPortConnection(kubernetesRestConfig *k8s_rest.Config, podP
 		portforwarderStdErr:             portforwardStdErr,
 		portforwarderStopChannel:        portforwardStopChannel,
 		portforwarderReadyChannel:       portforwardReadyChannel,
-		remotePortNumberToPortSpecIdMap: nil,
+		remotePortNumberToPortSpecIdMap: remotePortNumberToPortSpecIdMapping,
 		urlString:                       podProxyEndpointUrl.String(),
 	}
 

@@ -12,48 +12,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// ConfigCmd Suppressing exhaustruct requirement because this struct has ~40 properties
+// nolint: exhaustruct
 var ConfigCmd = &cobra.Command{
-	Use:                    command_str_consts.ConfigCmdStr,
-	Aliases:                nil,
-	SuggestFor:             nil,
-	Short:                  "Manage configurations",
-	Long:                   "",
-	Example:                "",
-	ValidArgs:              nil,
-	ValidArgsFunction:      nil,
-	Args:                   nil,
-	ArgAliases:             nil,
-	BashCompletionFunction: "",
-	Deprecated:             "",
-	Annotations:            nil,
-	Version:                "",
-	PersistentPreRun:       nil,
-	PersistentPreRunE:      nil,
-	PreRun:                 nil,
-	PreRunE:                nil,
-	Run:                    nil,
-	RunE:                   nil,
-	PostRun:                nil,
-	PostRunE:               nil,
-	PersistentPostRun:      nil,
-	PersistentPostRunE:     nil,
-	FParseErrWhitelist: cobra.FParseErrWhitelist{
-		UnknownFlags: false,
-	},
-	CompletionOptions: cobra.CompletionOptions{
-		DisableDefaultCmd:   false,
-		DisableNoDescFlag:   false,
-		DisableDescriptions: false,
-	},
-	TraverseChildren:           false,
-	Hidden:                     false,
-	SilenceErrors:              false,
-	SilenceUsage:               false,
-	DisableFlagParsing:         false,
-	DisableAutoGenTag:          false,
-	DisableFlagsInUseLine:      false,
-	DisableSuggestions:         false,
-	SuggestionsMinimumDistance: 0,
+	Use:   command_str_consts.ConfigCmdStr,
+	Short: "Manage configurations",
+	RunE:  nil,
 }
 
 func init() {

@@ -34,48 +34,13 @@ var isPartitioningEnabled bool
 var kurtosisLogLevelStr string
 var enclaveIdStr string
 
+// EnclaveAddCmd Suppressing exhaustruct requirement because this struct has ~40 properties
+// nolint: exhaustruct
 var EnclaveAddCmd = &cobra.Command{
-	Use:                    command_str_consts.EnclaveAddCmdStr,
-	Aliases:                []string{"new"}, // TODO remove this after 2022-08-16 when everyone should be using "add"
-	SuggestFor:             nil,
-	Short:                  "Creates an enclave",
-	Long:                   "Creates a new, empty Kurtosis enclave",
-	Example:                "",
-	ValidArgs:              nil,
-	ValidArgsFunction:      nil,
-	Args:                   nil,
-	ArgAliases:             nil,
-	BashCompletionFunction: "",
-	Deprecated:             "",
-	Annotations:            nil,
-	Version:                "",
-	PersistentPreRun:       nil,
-	PersistentPreRunE:      nil,
-	PreRun:                 nil,
-	PreRunE:                nil,
-	Run:                    nil,
-	RunE:                   run,
-	PostRun:                nil,
-	PostRunE:               nil,
-	PersistentPostRun:      nil,
-	PersistentPostRunE:     nil,
-	FParseErrWhitelist: cobra.FParseErrWhitelist{
-		UnknownFlags: false,
-	},
-	CompletionOptions: cobra.CompletionOptions{
-		DisableDefaultCmd:   false,
-		DisableNoDescFlag:   false,
-		DisableDescriptions: false,
-	},
-	TraverseChildren:           false,
-	Hidden:                     false,
-	SilenceErrors:              false,
-	SilenceUsage:               false,
-	DisableFlagParsing:         false,
-	DisableAutoGenTag:          false,
-	DisableFlagsInUseLine:      false,
-	DisableSuggestions:         false,
-	SuggestionsMinimumDistance: 0,
+	Use:   command_str_consts.EnclaveAddCmdStr,
+	Short: "Creates an enclave",
+	Long:  "Creates a new, empty Kurtosis enclave",
+	RunE:  run,
 }
 
 func init() {
@@ -109,7 +74,7 @@ func init() {
 		"i",
 		autogenerateEnclaveIdKeyword,
 		fmt.Sprintf(
-			"The enclave ID to give the new enclave, which must match regex '%v' " +
+			"The enclave ID to give the new enclave, which must match regex '%v' "+
 				"(emptystring will autogenerate an enclave ID)",
 			enclave_consts.AllowedEnclaveIdCharsRegexStr,
 		),

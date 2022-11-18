@@ -42,6 +42,9 @@ const (
 	grpcServerStopGracePeriod = 5 * time.Second
 
 	shouldFlushMetricsClientQueueOnEachEvent = false
+
+	forceColors   = true
+	fullTimestamp = true
 )
 
 type doNothingMetricsClientCallback struct{}
@@ -52,13 +55,13 @@ func (d doNothingMetricsClientCallback) Failure(err error) {}
 func main() {
 	// NOTE: we'll want to change the ForceColors to false if we ever want structured logging
 	logrus.SetFormatter(&logrus.TextFormatter{
-		ForceColors:               true,
+		ForceColors:               forceColors,
 		DisableColors:             false,
 		ForceQuote:                false,
 		DisableQuote:              false,
 		EnvironmentOverrideColors: false,
 		DisableTimestamp:          false,
-		FullTimestamp:             true,
+		FullTimestamp:             fullTimestamp,
 		TimestampFormat:           "",
 		DisableSorting:            false,
 		SortingFunc:               nil,

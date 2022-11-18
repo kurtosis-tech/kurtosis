@@ -163,18 +163,7 @@ func (client *lokiLogsDatabaseClient) GetUserServiceLogs(
 
 	getLogsPath := baseLokiApiPath + queryRangeEndpointSubpath
 
-	queryRangeEndpointUrl := &url.URL{
-		Scheme:      httpScheme,
-		Opaque:      "",
-		User:        nil,
-		Host:        client.logsDatabaseAddress,
-		Path:        getLogsPath,
-		RawPath:     "",
-		ForceQuery:  false,
-		RawQuery:    "",
-		Fragment:    "",
-		RawFragment: "",
-	}
+	queryRangeEndpointUrl := createUrl(httpScheme, client.logsDatabaseAddress, getLogsPath)
 
 	queryRangeEndpointQuery := queryRangeEndpointUrl.Query()
 
@@ -311,18 +300,7 @@ func (client *lokiLogsDatabaseClient) FilterExistingServiceGuids(ctx context.Con
 
 	getLogsPath := fmt.Sprintf(baseLokiApiPath+queryListLabelValuesWithinRangeEndpoint, kurtosisGuidLokiTagKey)
 
-	queryRangeEndpointUrl := &url.URL{
-		Scheme:      httpScheme,
-		Opaque:      "",
-		User:        nil,
-		Host:        client.logsDatabaseAddress,
-		Path:        getLogsPath,
-		RawPath:     "",
-		ForceQuery:  false,
-		RawQuery:    "",
-		Fragment:    "",
-		RawFragment: "",
-	}
+	queryRangeEndpointUrl := createUrl(httpScheme, client.logsDatabaseAddress, getLogsPath)
 
 	queryRangeEndpointQuery := queryRangeEndpointUrl.Query()
 
@@ -581,18 +559,7 @@ func (client *lokiLogsDatabaseClient) getTailLogEndpointURLAndHeader(
 
 	tailLogsPath := baseLokiApiPath + tailEndpointSubpath
 
-	tailLogsEndpointUrl := url.URL{
-		Scheme:      websocketScheme,
-		Opaque:      "",
-		User:        nil,
-		Host:        client.logsDatabaseAddress,
-		Path:        tailLogsPath,
-		RawPath:     "",
-		ForceQuery:  false,
-		RawQuery:    "",
-		Fragment:    "",
-		RawFragment: "",
-	}
+	tailLogsEndpointUrl := *createUrl(websocketScheme, client.logsDatabaseAddress, tailLogsPath)
 
 	tailLogsEndpointQuery := tailLogsEndpointUrl.Query()
 
@@ -607,6 +574,21 @@ func (client *lokiLogsDatabaseClient) getTailLogEndpointURLAndHeader(
 	httpHeaderWithTenantID.Add(organizationIdHttpHeaderKey, string(enclaveID))
 
 	return tailLogsEndpointUrl, httpHeaderWithTenantID
+}
+
+func createUrl(scheme string, host string, path string) *url.URL {
+	return &url.URL{
+		Scheme:      scheme,
+		Opaque:      "",
+		User:        nil,
+		Host:        host,
+		Path:        path,
+		RawPath:     "",
+		ForceQuery:  false,
+		RawQuery:    "",
+		Fragment:    "",
+		RawFragment: "",
+	}
 }
 
 func getStartTimeForStreamingLogsParamValue() string {

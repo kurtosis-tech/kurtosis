@@ -69,50 +69,14 @@ type GitHubReleaseReponse struct {
 var logLevelStr string
 var defaultLogLevelStr = logrus.InfoLevel.String()
 
+// RootCmd Suppressing exhaustruct requirement because this struct has ~40 properties
+// nolint: exhaustruct
 var RootCmd = &cobra.Command{
-	Use:                    command_str_consts.KurtosisCmdStr,
-	Aliases:                nil,
-	SuggestFor:             nil,
-	Short:                  "A CLI for interacting with the Kurtosis engine",
-	Long:                   "",
-	Example:                "",
-	ValidArgs:              nil,
-	ValidArgsFunction:      nil,
-	Args:                   nil,
-	ArgAliases:             nil,
-	BashCompletionFunction: "",
-	Deprecated:             "",
-	Annotations:            nil,
-	Version:                "",
-	PersistentPreRun:       nil,
-	PersistentPreRunE:      globalSetup,
-	PreRun:                 nil,
-	PreRunE:                nil,
-	Run:                    nil,
-	RunE:                   nil,
-	PostRun:                nil,
-	PostRunE:               nil,
-	PersistentPostRun:      nil,
-	PersistentPostRunE:     nil,
-	FParseErrWhitelist: cobra.FParseErrWhitelist{
-		UnknownFlags: false,
-	},
-	CompletionOptions: cobra.CompletionOptions{
-		DisableDefaultCmd:   false,
-		DisableNoDescFlag:   false,
-		DisableDescriptions: false,
-	},
-	TraverseChildren: false,
-	Hidden:           false,
-	SilenceErrors:    false,
+	Use:   command_str_consts.KurtosisCmdStr,
+	Short: "A CLI for interacting with the Kurtosis engine",
 	// Cobra will print usage whenever _any_ error occurs, including ones we throw in Kurtosis
 	// This doesn't make sense in 99% of the cases, so just turn them off entirely
-	SilenceUsage:               true,
-	DisableFlagParsing:         false,
-	DisableAutoGenTag:          false,
-	DisableFlagsInUseLine:      false,
-	DisableSuggestions:         false,
-	SuggestionsMinimumDistance: 0,
+	SilenceUsage: true,
 }
 
 func init() {

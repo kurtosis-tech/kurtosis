@@ -9,48 +9,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// FilesCmd Suppressing exhaustruct requirement because this struct has ~40 properties
+// nolint: exhaustruct
 var FilesCmd = &cobra.Command{
-	Use:                    command_str_consts.FilesCmdStr,
-	Aliases:                nil,
-	SuggestFor:             nil,
-	Short:                  "Manage files for an enclave",
-	Long:                   "Contains actions for managing the Kurtosis enclave filestore, used for sending around, in, and out of the enclave",
-	Example:                "",
-	ValidArgs:              nil,
-	ValidArgsFunction:      nil,
-	Args:                   nil,
-	ArgAliases:             nil,
-	BashCompletionFunction: "",
-	Deprecated:             "",
-	Annotations:            nil,
-	Version:                "",
-	PersistentPreRun:       nil,
-	PersistentPreRunE:      nil,
-	PreRun:                 nil,
-	PreRunE:                nil,
-	Run:                    nil,
-	RunE:                   nil,
-	PostRun:                nil,
-	PostRunE:               nil,
-	PersistentPostRun:      nil,
-	PersistentPostRunE:     nil,
-	FParseErrWhitelist: cobra.FParseErrWhitelist{
-		UnknownFlags: false,
-	},
-	CompletionOptions: cobra.CompletionOptions{
-		DisableDefaultCmd:   false,
-		DisableNoDescFlag:   false,
-		DisableDescriptions: false,
-	},
-	TraverseChildren:           false,
-	Hidden:                     false,
-	SilenceErrors:              false,
-	SilenceUsage:               false,
-	DisableFlagParsing:         false,
-	DisableAutoGenTag:          false,
-	DisableFlagsInUseLine:      false,
-	DisableSuggestions:         false,
-	SuggestionsMinimumDistance: 0,
+	Use:   command_str_consts.FilesCmdStr,
+	Short: "Manage files for an enclave",
+	Long:  "Contains actions for managing the Kurtosis enclave filestore, used for sending around, in, and out of the enclave",
+	RunE:  nil,
 }
 
 func init() {

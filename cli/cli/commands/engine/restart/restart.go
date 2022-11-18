@@ -23,48 +23,13 @@ const (
 var engineVersion string
 var logLevelStr string
 
+// RestartCmd Suppressing exhaustruct requirement because this struct has ~40 properties
+// nolint: exhaustruct
 var RestartCmd = &cobra.Command{
-	Use:                    command_str_consts.EngineRestartCmdStr,
-	Aliases:                nil,
-	SuggestFor:             nil,
-	Short:                  "Restart the Kurtosis engine",
-	Long:                   "Stops any existing Kurtosis engine, then starts a new one",
-	Example:                "",
-	ValidArgs:              nil,
-	ValidArgsFunction:      nil,
-	Args:                   nil,
-	ArgAliases:             nil,
-	BashCompletionFunction: "",
-	Deprecated:             "",
-	Annotations:            nil,
-	Version:                "",
-	PersistentPreRun:       nil,
-	PersistentPreRunE:      nil,
-	PreRun:                 nil,
-	PreRunE:                nil,
-	Run:                    nil,
-	RunE:                   run,
-	PostRun:                nil,
-	PostRunE:               nil,
-	PersistentPostRun:      nil,
-	PersistentPostRunE:     nil,
-	FParseErrWhitelist: cobra.FParseErrWhitelist{
-		UnknownFlags: false,
-	},
-	CompletionOptions: cobra.CompletionOptions{
-		DisableDefaultCmd:   false,
-		DisableNoDescFlag:   false,
-		DisableDescriptions: false,
-	},
-	TraverseChildren:           false,
-	Hidden:                     false,
-	SilenceErrors:              false,
-	SilenceUsage:               false,
-	DisableFlagParsing:         false,
-	DisableAutoGenTag:          false,
-	DisableFlagsInUseLine:      false,
-	DisableSuggestions:         false,
-	SuggestionsMinimumDistance: 0,
+	Use:   command_str_consts.EngineRestartCmdStr,
+	Short: "Restart the Kurtosis engine",
+	Long:  "Stops any existing Kurtosis engine, then starts a new one",
+	RunE:  run,
 }
 
 func init() {

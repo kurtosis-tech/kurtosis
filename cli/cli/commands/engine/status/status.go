@@ -8,48 +8,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// StatusCmd Suppressing exhaustruct requirement because this struct has ~40 properties
+// nolint: exhaustruct
 var StatusCmd = &cobra.Command{
-	Use:                    command_str_consts.EngineStatusCmdStr,
-	Aliases:                nil,
-	SuggestFor:             nil,
-	Short:                  "Reports the status of the Kurtosis engine",
-	Long:                   "",
-	Example:                "",
-	ValidArgs:              nil,
-	ValidArgsFunction:      nil,
-	Args:                   nil,
-	ArgAliases:             nil,
-	BashCompletionFunction: "",
-	Deprecated:             "",
-	Annotations:            nil,
-	Version:                "",
-	PersistentPreRun:       nil,
-	PersistentPreRunE:      nil,
-	PreRun:                 nil,
-	PreRunE:                nil,
-	Run:                    nil,
-	RunE:                   run,
-	PostRun:                nil,
-	PostRunE:               nil,
-	PersistentPostRun:      nil,
-	PersistentPostRunE:     nil,
-	FParseErrWhitelist: cobra.FParseErrWhitelist{
-		UnknownFlags: false,
-	},
-	CompletionOptions: cobra.CompletionOptions{
-		DisableDefaultCmd:   false,
-		DisableNoDescFlag:   false,
-		DisableDescriptions: false,
-	},
-	TraverseChildren:           false,
-	Hidden:                     false,
-	SilenceErrors:              false,
-	SilenceUsage:               false,
-	DisableFlagParsing:         false,
-	DisableAutoGenTag:          false,
-	DisableFlagsInUseLine:      false,
-	DisableSuggestions:         false,
-	SuggestionsMinimumDistance: 0,
+	Use:   command_str_consts.EngineStatusCmdStr,
+	Short: "Reports the status of the Kurtosis engine",
+	RunE:  run,
 }
 
 func run(cmd *cobra.Command, args []string) error {
