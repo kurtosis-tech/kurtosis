@@ -57,8 +57,8 @@ const (
 	// we'd only read the symbols, and maybe there's nothing that calls in `main()`
 	// This way, we're guaranteed that the `main()` function gets called within main.star
 	bootScript = `
-load("%v/` + startosis_engine.MainFileName + `", "main")
-main(%v)
+main_module = import_module("%v/` + startosis_engine.MainFileName + `")
+main_module.main(%v)
 	`
 	// Overwrite existing module with new module, this allows user to iterate on an enclave with a
 	// given module
