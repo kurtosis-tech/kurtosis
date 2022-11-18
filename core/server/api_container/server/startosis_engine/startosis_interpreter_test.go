@@ -706,8 +706,8 @@ client_config = struct(
 	ports = {
 		"grpc": struct(number = 1337, protocol = "TCP")
 	},
-	entry_point_args = ["--store-port " + str(datastore_service.ports["grpc"].number), "--store-ip " + datastore_service.ip_address],
-	cmd_args = ["ping", datastore_service.ip_address],
+	entrypoint = ["--store-port " + str(datastore_service.ports["grpc"].number), "--store-ip " + datastore_service.ip_address],
+	cmd = ["ping", datastore_service.ip_address],
 	env_vars = {"STORE_IP": datastore_service.ip_address}
 )
 add_service(service_id = client_service_id, config = client_config)
@@ -1319,7 +1319,7 @@ func createSimpleAddServiceInstruction(t *testing.T, serviceId service.ServiceID
 		for _, entryPointArg := range entryPointArgs {
 			entryPointArgsValues = append(entryPointArgsValues, starlark.String(entryPointArg))
 		}
-		serviceConfigStringDict["entry_point_args"] = starlark.NewList(entryPointArgsValues)
+		serviceConfigStringDict["entrypoint"] = starlark.NewList(entryPointArgsValues)
 	}
 
 	if cmdArgs != nil {
@@ -1327,7 +1327,7 @@ func createSimpleAddServiceInstruction(t *testing.T, serviceId service.ServiceID
 		for _, cmdArg := range cmdArgs {
 			cmdArgsValues = append(cmdArgsValues, starlark.String(cmdArg))
 		}
-		serviceConfigStringDict["cmd_args"] = starlark.NewList(cmdArgsValues)
+		serviceConfigStringDict["cmd"] = starlark.NewList(cmdArgsValues)
 	}
 
 	if envVars != nil {

@@ -6,6 +6,13 @@
 ### Changes
 - `print()` is now a regular instructions like others, and it takes effect at execution time (used to be during interpretation)
 
+### Fixes
+- Renamed `cmd_args` and `entrypoint_args` inside `config` inside `add_service` to `cmd` and `entrypoint`
+
+### Breaking Changes
+- Renamed `cmd_args` and `entrypoint_args` inside `config` inside `add_service` to `cmd` and `entrypoint`
+  - Users will have to replace their use of `cmd_args` and `entry_point_args` to the above inside their Starlark modules 
+
 # 0.53.2
 ### Features
 - Make facts referencable on `add_service`
@@ -90,7 +97,7 @@ return `artifact_uuid` during interpretation time
 
 # 0.51.13
 ### Fixes
-- Set `entry_point_args` and `cmd_args` to `nil` if not specified instead of empty array 
+- Set `entrypoint` and `cmd_args` to `nil` if not specified instead of empty array 
 
 # 0.51.12
 ### Features
