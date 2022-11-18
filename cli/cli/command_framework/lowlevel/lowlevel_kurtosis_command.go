@@ -219,11 +219,6 @@ func (kurtosisCmd *LowlevelKurtosisCommand) MustGetCobraCommand() *cobra.Command
 			return nil, cobra.ShellCompDirectiveNoFileComp
 		}
 
-		sellCompDirective := cobra.ShellCompDirectiveNoFileComp
-		if argToComplete.ShouldShellProvideDefaultFileCompletion {
-			sellCompDirective =cobra.ShellCompDirectiveDefault
-		}
-
 		completionFunc := argToComplete.CompletionsFunc
 		if completionFunc == nil {
 			// NOTE: We can't just use logrus because anything printed to STDOUT will be interpreted as a completion
@@ -236,10 +231,10 @@ func (kurtosisCmd *LowlevelKurtosisCommand) MustGetCobraCommand() *cobra.Command
 				),
 				shouldLogCompletionDebugMessagesToStderr,
 			)
-			return nil, sellCompDirective
+			return nil, cobra.ShellCompDirectiveNoFileComp
 		}
 
-		completions, err := argToComplete.CompletionsFunc(ctx, parsedFlags, parsedArgs)
+		completions, sellCompDirective, err := argToComplete.CompletionsFunc(ctx, parsedFlags, parsedArgs)
 		if err != nil {
 			// NOTE: We can't just use logrus because anything printed to STDOUT will be interpreted as a completion
 			// See:
@@ -253,7 +248,7 @@ func (kurtosisCmd *LowlevelKurtosisCommand) MustGetCobraCommand() *cobra.Command
 				),
 				shouldLogCompletionDebugMessagesToStderr,
 			)
-			return nil, sellCompDirective
+			return nil, cobra.ShellCompDirectiveNoFileComp
 		}
 
 		return completions, sellCompDirective

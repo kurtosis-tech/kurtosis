@@ -21,7 +21,6 @@ var (
 
 // Prebuilt file path arg which has tab-completion and validation ready out-of-the-box
 func NewFilepathArg(
-// The arg key where this file system path argument will be stored
 	argKey string,
 	isOptional bool,
 ) *args.ArgConfig {
@@ -34,7 +33,6 @@ func NewFilepathArg(
 
 // Prebuilt dir path arg which has tab-completion and validation ready out-of-the-box
 func NewDirpathArg(
-// The arg key where this file system path argument will be stored
 	argKey string,
 	isOptional bool,
 ) *args.ArgConfig {
@@ -47,7 +45,6 @@ func NewDirpathArg(
 
 // Prebuilt file path or dir path arg which has tab-completion and validation ready out-of-the-box
 func NewFilepathOrDirpathArg(
-// The arg key where this file system path argument will be stored
 	argKey string,
 	isOptional bool,
 ) *args.ArgConfig {
@@ -59,7 +56,7 @@ func NewFilepathOrDirpathArg(
 }
 
 func newFileSystemPathArg(
-// The arg key where this file system path argument will be stored
+	// The arg key where this file system path argument will be stored
 	argKey string,
 	isOptional bool,
 	pathType FileSystemPathType,
