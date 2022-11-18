@@ -83,13 +83,10 @@ func NewStartosisInterpreterWithFacts(serviceNetwork service_network.ServiceNetw
 }
 
 // Interpret interprets the Startosis script and produce different outputs:
-//   - The serialized output of the interpretation (what the Startosis script printed)
 //   - A potential interpretation error that the writer of the script should be aware of (syntax error in the Startosis
 //     code, inconsistent). Can be nil if the script was successfully interpreted
 //   - The list of Kurtosis instructions that was generated based on the interpretation of the script. It can be empty
 //     if the interpretation of the script failed
-//   - An error if something unexpected happens (crash independent of the Startosis script). This should be as rare as
-//     possible
 func (interpreter *StartosisInterpreter) Interpret(ctx context.Context, moduleId string, serializedStartosis string, serializedJsonParams string) (*startosis_errors.InterpretationError, []kurtosis_instruction.KurtosisInstruction) {
 	interpreter.mutex.Lock()
 	defer interpreter.mutex.Unlock()

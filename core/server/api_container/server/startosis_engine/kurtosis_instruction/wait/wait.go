@@ -22,12 +22,13 @@ const (
 
 func GenerateWaitBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, factsEngine *facts_engine.FactsEngine) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 	// TODO: Force returning an InterpretationError rather than a normal error
-	return func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
-		serviceId, factName, interpretationError := parseStartosisArgs(b, args, kwargs)
+	return func(thread *starlark.Thread, builtin *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+		serviceId, factName, interpretationError := parseStartosisArgs(builtin, args, kwargs)
 		if interpretationError != nil {
 			return nil, interpretationError
 		}
-		waitInstruction := NewWaitInstruction(factsEngine, *shared_helpers.GetCallerPositionFromThread(thread), serviceId, factName)
+		instructionPosition := *shared_helpers.GetCallerPositionFromThread(thread)
+		waitInstruction := NewWaitInstruction(factsEngine, instructionPosition, serviceId, factName)
 		*instructionsQueue = append(*instructionsQueue, waitInstruction)
 		returnValue := shared_helpers.MakeWaitInterpretationReturnValue(serviceId, factName)
 		return returnValue, nil
@@ -56,7 +57,7 @@ func (instruction *WaitInstruction) GetPositionInOriginalScript() *kurtosis_inst
 }
 
 func (instruction *WaitInstruction) GetCanonicalInstruction() string {
-	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(WaitBuiltinName, []starlark.Value{}, instruction.getKwargs(), &instruction.position)
+	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(WaitBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs(), &instruction.position)
 }
 
 func (instruction *WaitInstruction) Execute(ctx context.Context) (*string, error) {
@@ -68,7 +69,7 @@ func (instruction *WaitInstruction) Execute(ctx context.Context) (*string, error
 }
 
 func (instruction *WaitInstruction) String() string {
-	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(WaitBuiltinName, []starlark.Value{}, instruction.getKwargs(), &instruction.position)
+	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(WaitBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs(), &instruction.position)
 }
 
 func (instruction *WaitInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {

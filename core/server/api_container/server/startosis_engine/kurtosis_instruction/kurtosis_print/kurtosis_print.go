@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
+	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
 	"strings"
 )
@@ -24,13 +25,14 @@ const (
 	defaultEnd = end("\n")
 )
 
-func GeneratePrintBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+func GeneratePrintBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction) func(thread *starlark.Thread, builtin *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 	return func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 		args, separatorStr, endStr, interpretationError := parseStartosisArg(b, args, kwargs)
 		if interpretationError != nil {
 			return nil, interpretationError
 		}
-		defineFactInstruction := NewPrintInstruction(*shared_helpers.GetCallerPositionFromThread(thread), args, separatorStr, endStr)
+		instructionPosition := *shared_helpers.GetCallerPositionFromThread(thread)
+		defineFactInstruction := NewPrintInstruction(instructionPosition, args, separatorStr, endStr)
 		*instructionsQueue = append(*instructionsQueue, defineFactInstruction)
 		return starlark.None, nil
 	}
@@ -63,6 +65,9 @@ func (instruction *PrintInstruction) GetCanonicalInstruction() string {
 func (instruction *PrintInstruction) Execute(_ context.Context) (*string, error) {
 	serializedArgs := make([]string, len(instruction.args))
 	for idx, genericArg := range instruction.args {
+		if genericArg == nil {
+			return nil, stacktrace.NewError("'%s' statement with nil argument. This is unexpected: '%v'", PrintBuiltinName, instruction.args)
+		}
 		switch arg := genericArg.(type) {
 		case starlark.String:
 			serializedArgs[idx] = arg.GoString()

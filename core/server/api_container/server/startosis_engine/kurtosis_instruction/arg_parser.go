@@ -188,15 +188,15 @@ func ParseExpectedExitCode(expectedExitCodeRaw starlark.Int) (int32, *startosis_
 	return expectedExitCode, nil
 }
 
-func ParseNonEmptyString(argName string, arg starlark.Value) (string, *startosis_errors.InterpretationError) {
-	value, interpretationErr := safeCastToString(arg, argName)
+func ParseNonEmptyString(argName string, argValue starlark.Value) (string, *startosis_errors.InterpretationError) {
+	strArgValue, interpretationErr := safeCastToString(argValue, argName)
 	if interpretationErr != nil {
 		return "", interpretationErr
 	}
-	if len(value) == 0 {
+	if len(strArgValue) == 0 {
 		return "", startosis_errors.NewInterpretationError("Expected non empty string for argument '%s'", argName)
 	}
-	return value, nil
+	return strArgValue, nil
 }
 
 func ParseArtifactUuid(artifactUuidArgName string, artifactUuidStr starlark.String) (enclave_data_directory.FilesArtifactUUID, *startosis_errors.InterpretationError) {

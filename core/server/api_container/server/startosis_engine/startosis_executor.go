@@ -25,7 +25,7 @@ func NewStartosisExecutor() *StartosisExecutor {
 }
 
 // Execute executes the list of Kurtosis instructions against the Kurtosis backend
-// It returns a potential execution error if something went wrong.
+// It serializes each instruction that is executed and returned the list of serialized instruction as a result
 // It returns an error if something unexpected happens outside the execution of the script
 func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, instructions []kurtosis_instruction.KurtosisInstruction, outputBuffer *strings.Builder) ([]*kurtosis_core_rpc_api_bindings.SerializedKurtosisInstruction, error) {
 	executor.mutex.Lock()

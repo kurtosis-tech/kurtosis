@@ -1,5 +1,8 @@
 # TBD
 
+### Changes
+- `print()` is now a regular instructions like others, and it takes effect at execution time (used to be during interpretation)
+
 # 0.53.2
 ### Features
 - Make facts referencable on `add_service`
@@ -13,14 +16,9 @@
 ### Changes
 - Moved the enclave ID auto generation and validation from the CLI to the engine's server which will catch all the presents and future use cases
 
-<<<<<<< HEAD
 ### Fixes
 - Fixed a bug where we had renamed `container_image_name` inside the proto definition to `image`
 - Fix a test that dependent on an old on existent Starlark module
-=======
-### Changes
-- `print()` is now a regular instructions like others, and it takes effect at execution time (used to be during interpretation)
->>>>>>> ed33b756c (Print during execution)
 
 # 0.53.0
 ### Features
