@@ -494,10 +494,22 @@ jobs:
           steps:
             - run: |
                 if ! ./internal_testsuites/golang/scripts/build.sh; then
-                   touch /tmp/testsuite-failed
-                 fi
+                  touch /tmp/testsuite-failed
+                fi
+
+      # TODO TODO TODO DELETE THIS HACK!!!!! 
+      # As of 2022-11-18, 'enclave dump' in Kubernetes in CircleCI (but not locally) takes 30s to run per enclave, and "suceeds"
+      # but without dumping anything! To avoid our CI runs getting an extra 15 minutes added on, we're only dumping enclaves in Docker
+      - when:
+          condition:
+            equal: [ "docker", << parameters.cli-cluster-backend >> ]
+          steps:
+            <<: *run_dump_kurtosis_enclaves
+
+      # TODO UNCOMMENT THIS WHEN WE FIX THE BUG ABOVE!!!
       # Dump enclave data so we can debug any issues that arise
-      - <<: *run_dump_kurtosis_enclaves
+      # - <<: *run_dump_kurtosis_enclaves
+      
       - store_artifacts:
           path: /tmp/enclave-dumps.zip
           destination: enclave-dumps.zip
@@ -551,8 +563,23 @@ jobs:
                 if ! ./internal_testsuites/typescript/scripts/build.sh; then
                    touch /tmp/testsuite-failed
                  fi
+
+      # TODO TODO TODO DELETE THIS HACK!!!!! 
+      # As of 2022-11-18, 'enclave dump' in Kubernetes in CircleCI (but not locally) takes 30s to run per enclave, and "suceeds"
+      # but without dumping anything! To avoid our CI runs getting an extra 15 minutes added on, we're only dumping enclaves in Docker
+      - when:
+          condition:
+            equal: [ "docker", << parameters.cli-cluster-backend >> ]
+          steps:
+            <<: *run_dump_kurtosis_enclaves
+
+      # TODO UNCOMMENT THIS WHEN WE FIX THE BUG ABOVE!!!
       # Dump enclave data so we can debug any issues that arise
-      - <<: *run_dump_kurtosis_enclaves
+      # - <<: *run_dump_kurtosis_enclaves
+      
+      - store_artifacts:
+          path: /tmp/enclave-dumps.zip
+          destination: enclave-dumps.zip
       - store_artifacts:
           path: /tmp/enclave-dumps.zip
           destination: enclave-dumps.zip
