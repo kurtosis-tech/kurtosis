@@ -49,6 +49,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		EnclaveIDs: map[enclave.EnclaveID]bool{
 			enclaveId: true,
 		},
+		Statuses: nil,
 	}
 	preexistingApiContainersInEnclave, err := backend.GetAPIContainers(ctx, apiContainersInEnclaveFilters)
 	if err != nil {

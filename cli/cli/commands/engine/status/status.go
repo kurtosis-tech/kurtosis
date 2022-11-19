@@ -8,6 +8,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// StatusCmd Suppressing exhaustruct requirement because this struct has ~40 properties
+// nolint: exhaustruct
 var StatusCmd = &cobra.Command{
 	Use:   command_str_consts.EngineStatusCmdStr,
 	Short: "Reports the status of the Kurtosis engine",

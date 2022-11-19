@@ -448,8 +448,9 @@ func getModuleContainers(
 	var containerEnvVars []apiv1.EnvVar
 	for varName, varValue := range envVars {
 		envVar := apiv1.EnvVar{
-			Name:  varName,
-			Value: varValue,
+			Name:      varName,
+			Value:     varValue,
+			ValueFrom: nil,
 		}
 		containerEnvVars = append(containerEnvVars, envVar)
 	}
@@ -568,7 +569,10 @@ func (backend KubernetesKurtosisBackend) getModuleKubernetesResourcesMatchingGui
 
 		resultObj, found := results[moduleGuid]
 		if !found {
-			resultObj = &moduleKubernetesResources{}
+			resultObj = &moduleKubernetesResources{
+				service: nil,
+				pod:     nil,
+			}
 		}
 		resultObj.service = kubernetesService
 		results[moduleGuid] = resultObj
@@ -601,7 +605,10 @@ func (backend KubernetesKurtosisBackend) getModuleKubernetesResourcesMatchingGui
 
 		resultObj, found := results[moduleGuid]
 		if !found {
-			resultObj = &moduleKubernetesResources{}
+			resultObj = &moduleKubernetesResources{
+				service: nil,
+				pod:     nil,
+			}
 		}
 		resultObj.pod = kubernetesPod
 		results[moduleGuid] = resultObj
@@ -621,6 +628,7 @@ func getModuleObjectsFromKubernetesResources(
 
 	for moduleGuid, resources := range allResources {
 		results[moduleGuid] = &moduleObjectsAndKubernetesResources{
+			module:              nil,
 			kubernetesResources: resources,
 			// The other fields will get filled in below
 		}

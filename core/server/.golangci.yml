@@ -13,3 +13,9 @@ linters-settings:
     checks:
       - all
       - '-S1009' # disable S1009 - should omit nil check; len() for map[interface]interface{}
+
+linters:
+  enable:
+    - exhaustruct
+  max-issues-per-linter: 0
+  sort-results: true

@@ -39,7 +39,10 @@ func TestService_TruthValidService(t *testing.T) {
 }
 
 func TestService_TruthFalsyService(t *testing.T) {
-	service := Service{}
+	service := Service{
+		ipAddress: "",
+		ports:     nil,
+	}
 	require.Equal(t, starlark.Bool(false), service.Truth())
 }
 

@@ -254,12 +254,14 @@ func newLogsResponse(
 		_, isInNotFoundGuidList := notFoundServiceGuids[serviceGuidStr]
 		serviceLogLines, found := serviceLogsByServiceGuid[serviceGuid]
 		// should continue in the not-found-GUID list
-		if !found && isInNotFoundGuidList{
+		if !found && isInNotFoundGuidList {
 			continue
 		}
 		// there is no new log lines but is a found GUID, so it has to be included in the service logs map
-		if !found && !isInNotFoundGuidList{
-			serviceLogLinesByGuid[serviceGuidStr] = &kurtosis_engine_rpc_api_bindings.LogLine{}
+		if !found && !isInNotFoundGuidList {
+			serviceLogLinesByGuid[serviceGuidStr] = &kurtosis_engine_rpc_api_bindings.LogLine{
+				Line: nil,
+			}
 		}
 		//Remove the service's GUID from the initial not found list, if it was returned from the logs database
 		//This could happen because some services could send the first log line several minutes after the bootstrap

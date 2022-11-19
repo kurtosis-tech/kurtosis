@@ -104,13 +104,14 @@ func NewContainerConfigBuilder(image string) *ContainerConfigBuilder {
 	return &ContainerConfigBuilder{
 		image:                        image,
 		usedPorts:                    map[string]*PortSpec{},
+		publicPorts:                  nil,
 		filesArtifactMountpoints:     map[FilesArtifactUUID]string{},
 		entrypointOverrideArgs:       nil,
 		cmdOverrideArgs:              nil,
 		environmentVariableOverrides: map[string]string{},
 		cpuAllocationMillicpus:       0,
 		memoryAllocationMegabytes:    0,
-		privateIPAddrPlaceholder: defaultPrivateIPAddrPlaceholder,
+		privateIPAddrPlaceholder:     defaultPrivateIPAddrPlaceholder,
 	}
 }
 
@@ -155,7 +156,7 @@ func (builder *ContainerConfigBuilder) WithMemoryAllocationMegabytes(memoryAlloc
 	return builder
 }
 
-func (builder *ContainerConfigBuilder) WithPrivateIPAddrPlaceholder(privateIPAddrPlaceholder string) *ContainerConfigBuilder{
+func (builder *ContainerConfigBuilder) WithPrivateIPAddrPlaceholder(privateIPAddrPlaceholder string) *ContainerConfigBuilder {
 	builder.privateIPAddrPlaceholder = privateIPAddrPlaceholder
 	return builder
 }
@@ -169,9 +170,9 @@ func (builder *ContainerConfigBuilder) Build() *ContainerConfig {
 		cmdOverrideArgs:              builder.cmdOverrideArgs,
 		environmentVariableOverrides: builder.environmentVariableOverrides,
 		//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-		publicPorts:      builder.publicPorts,
+		publicPorts:               builder.publicPorts,
 		cpuAllocationMillicpus:    builder.cpuAllocationMillicpus,
 		memoryAllocationMegabytes: builder.memoryAllocationMegabytes,
-		privateIPAddrPlaceholder: builder.privateIPAddrPlaceholder,
+		privateIPAddrPlaceholder:  builder.privateIPAddrPlaceholder,
 	}
 }

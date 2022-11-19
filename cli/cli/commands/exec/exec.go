@@ -88,14 +88,17 @@ var StartosisExecCmd = &lowlevel.LowlevelKurtosisCommand{
 			// for a module we expect a path to a directory
 			// for a script we expect a script with a `.star` extension
 			// TODO add a `Usage` description here when ArgConfig supports it
-			Key:            scriptOrModulePathKey,
-			IsOptional:     false,
-			DefaultValue:   "",
-			IsGreedy:       false,
-			ValidationFunc: validateScriptOrModulePath,
+			Key:             scriptOrModulePathKey,
+			IsOptional:      false,
+			DefaultValue:    "",
+			IsGreedy:        false,
+			CompletionsFunc: nil,
+			ValidationFunc:  validateScriptOrModulePath,
 		},
 	},
-	RunFunc: run,
+	PreValidationAndRunFunc:  nil,
+	RunFunc:                  run,
+	PostValidationAndRunFunc: nil,
 }
 
 func run(

@@ -60,11 +60,25 @@ const (
 var (
 	globalDeletePolicy  = metav1.DeletePropagationForeground
 	globalDeleteOptions = metav1.DeleteOptions{
-		PropagationPolicy: &globalDeletePolicy,
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		GracePeriodSeconds: nil,
+		Preconditions:      nil,
+		OrphanDependents:   nil,
+		PropagationPolicy:  &globalDeletePolicy,
+		DryRun:             nil,
 	}
 	globalCreateOptions = metav1.CreateOptions{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		DryRun: nil,
 		// We need every object to have this field manager so that the Kurtosis objects can all seamlessly modify Kubernetes resources
-		FieldManager: fieldManager,
+		FieldManager:    fieldManager,
+		FieldValidation: "",
 	}
 )
 
@@ -89,23 +103,64 @@ func (manager *KubernetesManager) CreateService(ctx context.Context, namespace s
 	servicesClient := manager.kubernetesClientSet.CoreV1().Services(namespace)
 
 	objectMeta := metav1.ObjectMeta{
-		Name:        name,
-		Labels:      serviceLabels,
-		Annotations: serviceAnnotations,
+		Name:            name,
+		GenerateName:    "",
+		Namespace:       "",
+		SelfLink:        "",
+		UID:             "",
+		ResourceVersion: "",
+		Generation:      0,
+		CreationTimestamp: metav1.Time{
+			Time: time.Time{},
+		},
+		DeletionTimestamp:          nil,
+		DeletionGracePeriodSeconds: nil,
+		Labels:                     serviceLabels,
+		Annotations:                serviceAnnotations,
+		OwnerReferences:            nil,
+		Finalizers:                 nil,
+		ZZZ_DeprecatedClusterName:  "",
+		ManagedFields:              nil,
 	}
 
 	// Figure out selector api
 
 	// There must be a better way
 	serviceSpec := apiv1.ServiceSpec{
-		Ports:    ports,
-		Selector: matchPodLabels, // these labels are used to match with the Pod
-		Type:     serviceType,
+		Ports:                         ports,
+		Selector:                      matchPodLabels, // these labels are used to match with the Pod
+		ClusterIP:                     "",
+		ClusterIPs:                    nil,
+		Type:                          serviceType,
+		ExternalIPs:                   nil,
+		SessionAffinity:               "",
+		LoadBalancerIP:                "",
+		LoadBalancerSourceRanges:      nil,
+		ExternalName:                  "",
+		ExternalTrafficPolicy:         "",
+		HealthCheckNodePort:           0,
+		PublishNotReadyAddresses:      false,
+		SessionAffinityConfig:         nil,
+		IPFamilies:                    nil,
+		IPFamilyPolicy:                nil,
+		AllocateLoadBalancerNodePorts: nil,
+		LoadBalancerClass:             nil,
+		InternalTrafficPolicy:         nil,
 	}
 
 	service := &apiv1.Service{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
 		ObjectMeta: objectMeta,
 		Spec:       serviceSpec,
+		Status: apiv1.ServiceStatus{
+			LoadBalancer: apiv1.LoadBalancerStatus{
+				Ingress: nil,
+			},
+			Conditions: nil,
+		},
 	}
 
 	serviceResult, err := servicesClient.Create(ctx, service, globalCreateOptions)
@@ -132,9 +187,9 @@ func (manager *KubernetesManager) UpdateService(
 	ctx context.Context,
 	namespaceName string,
 	serviceName string,
-// We use a configurator, rather than letting the user pass in their own ServiceApplyConfiguration, so that we ensure
-// they use the constructor (and don't do struct instantiation and forget to add the namespace, object name, etc. which
-// would result in removing the object name)
+	// We use a configurator, rather than letting the user pass in their own ServiceApplyConfiguration, so that we ensure
+	// they use the constructor (and don't do struct instantiation and forget to add the namespace, object name, etc. which
+	// would result in removing the object name)
 	updateConfigurator func(configuration *applyconfigurationsv1.ServiceApplyConfiguration),
 ) (*apiv1.Service, error) {
 	updatesToApply := applyconfigurationsv1.Service(serviceName, namespaceName)
@@ -143,6 +198,12 @@ func (manager *KubernetesManager) UpdateService(
 	servicesClient := manager.kubernetesClientSet.CoreV1().Services(namespaceName)
 
 	applyOpts := metav1.ApplyOptions{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		DryRun:       nil,
+		Force:        false,
 		FieldManager: fieldManager,
 	}
 	result, err := servicesClient.Apply(ctx, updatesToApply, applyOpts)
@@ -156,7 +217,19 @@ func (manager *KubernetesManager) GetServicesByLabels(ctx context.Context, names
 	servicesClient := manager.kubernetesClientSet.CoreV1().Services(namespace)
 
 	listOptions := metav1.ListOptions{
-		LabelSelector: labels.SelectorFromSet(serviceLabels).String(),
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		LabelSelector:        labels.SelectorFromSet(serviceLabels).String(),
+		FieldSelector:        "",
+		Watch:                false,
+		AllowWatchBookmarks:  false,
+		ResourceVersion:      "",
+		ResourceVersionMatch: "",
+		TimeoutSeconds:       nil,
+		Limit:                0,
+		Continue:             "",
 	}
 
 	serviceResult, err := servicesClient.List(ctx, listOptions)
@@ -301,10 +374,36 @@ func (manager *KubernetesManager) CreateNamespace(
 	namespaceClient := manager.kubernetesClientSet.CoreV1().Namespaces()
 
 	namespace := &apiv1.Namespace{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   name,
-			Labels: namespaceLabels,
-			Annotations: namespaceAnnotations,
+			Name:            name,
+			GenerateName:    "",
+			Namespace:       "",
+			SelfLink:        "",
+			UID:             "",
+			ResourceVersion: "",
+			Generation:      0,
+			CreationTimestamp: metav1.Time{
+				Time: time.Time{},
+			},
+			DeletionTimestamp:          nil,
+			DeletionGracePeriodSeconds: nil,
+			Labels:                     namespaceLabels,
+			Annotations:                namespaceAnnotations,
+			OwnerReferences:            nil,
+			Finalizers:                 nil,
+			ZZZ_DeprecatedClusterName:  "",
+			ManagedFields:              nil,
+		},
+		Spec: apiv1.NamespaceSpec{
+			Finalizers: nil,
+		},
+		Status: apiv1.NamespaceStatus{
+			Phase:      "",
+			Conditions: nil,
 		},
 	}
 
@@ -330,7 +429,13 @@ func (manager *KubernetesManager) RemoveNamespace(ctx context.Context, namespace
 func (manager *KubernetesManager) GetNamespace(ctx context.Context, name string) (*apiv1.Namespace, error) {
 	namespaceClient := manager.kubernetesClientSet.CoreV1().Namespaces()
 
-	namespace, err := namespaceClient.Get(ctx, name, metav1.GetOptions{})
+	namespace, err := namespaceClient.Get(ctx, name, metav1.GetOptions{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		ResourceVersion: "",
+	})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to get namespace with name '%s'", name)
 	}
@@ -345,7 +450,19 @@ func (manager *KubernetesManager) GetNamespacesByLabels(ctx context.Context, nam
 	namespaceClient := manager.kubernetesClientSet.CoreV1().Namespaces()
 
 	listOptions := metav1.ListOptions{
-		LabelSelector: labels.SelectorFromSet(namespaceLabels).String(),
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		LabelSelector:        labels.SelectorFromSet(namespaceLabels).String(),
+		FieldSelector:        "",
+		Watch:                false,
+		AllowWatchBookmarks:  false,
+		ResourceVersion:      "",
+		ResourceVersionMatch: "",
+		TimeoutSeconds:       nil,
+		Limit:                0,
+		Continue:             "",
 	}
 
 	namespaces, err := namespaceClient.List(ctx, listOptions)
@@ -375,10 +492,33 @@ func (manager *KubernetesManager) CreateServiceAccount(ctx context.Context, name
 	client := manager.kubernetesClientSet.CoreV1().ServiceAccounts(namespace)
 
 	serviceAccount := &apiv1.ServiceAccount{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:   name,
-			Labels: labels,
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
 		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            name,
+			GenerateName:    "",
+			Namespace:       "",
+			SelfLink:        "",
+			UID:             "",
+			ResourceVersion: "",
+			Generation:      0,
+			CreationTimestamp: metav1.Time{
+				Time: time.Time{},
+			},
+			DeletionTimestamp:          nil,
+			DeletionGracePeriodSeconds: nil,
+			Labels:                     labels,
+			Annotations:                nil,
+			OwnerReferences:            nil,
+			Finalizers:                 nil,
+			ZZZ_DeprecatedClusterName:  "",
+			ManagedFields:              nil,
+		},
+		Secrets:                      nil,
+		ImagePullSecrets:             nil,
+		AutomountServiceAccountToken: nil,
 	}
 
 	serviceAccountResult, err := client.Create(ctx, serviceAccount, globalCreateOptions)
@@ -392,7 +532,19 @@ func (manager *KubernetesManager) GetServiceAccountsByLabels(ctx context.Context
 	client := manager.kubernetesClientSet.CoreV1().ServiceAccounts(namespace)
 
 	opts := metav1.ListOptions{
-		LabelSelector: labels.SelectorFromSet(serviceAccountsLabels).String(),
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		LabelSelector:        labels.SelectorFromSet(serviceAccountsLabels).String(),
+		FieldSelector:        "",
+		Watch:                false,
+		AllowWatchBookmarks:  false,
+		ResourceVersion:      "",
+		ResourceVersionMatch: "",
+		TimeoutSeconds:       nil,
+		Limit:                0,
+		Continue:             "",
 	}
 
 	serviceAccounts, err := client.List(ctx, opts)
@@ -421,7 +573,18 @@ func (manager *KubernetesManager) RemoveServiceAccount(ctx context.Context, serv
 	namespace := serviceAccount.Namespace
 	client := manager.kubernetesClientSet.CoreV1().ServiceAccounts(namespace)
 
-	if err := client.Delete(ctx, name, metav1.DeleteOptions{}); err != nil {
+	deleteOptions := metav1.DeleteOptions{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		GracePeriodSeconds: nil,
+		Preconditions:      nil,
+		OrphanDependents:   nil,
+		PropagationPolicy:  nil,
+		DryRun:             nil,
+	}
+	if err := client.Delete(ctx, name, deleteOptions); err != nil {
 		return stacktrace.Propagate(err, "Failed to delete service account with name '%s' in namespace '%v'", name, namespace)
 	}
 
@@ -434,9 +597,29 @@ func (manager *KubernetesManager) CreateRole(ctx context.Context, name string, n
 	client := manager.kubernetesClientSet.RbacV1().Roles(namespace)
 
 	role := &rbacv1.Role{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   name,
-			Labels: labels,
+			Name:            name,
+			GenerateName:    "",
+			Namespace:       "",
+			SelfLink:        "",
+			UID:             "",
+			ResourceVersion: "",
+			Generation:      0,
+			CreationTimestamp: metav1.Time{
+				Time: time.Time{},
+			},
+			DeletionTimestamp:          nil,
+			DeletionGracePeriodSeconds: nil,
+			Labels:                     labels,
+			Annotations:                nil,
+			OwnerReferences:            nil,
+			Finalizers:                 nil,
+			ZZZ_DeprecatedClusterName:  "",
+			ManagedFields:              nil,
 		},
 		Rules: rules,
 	}
@@ -453,7 +636,19 @@ func (manager *KubernetesManager) GetRolesByLabels(ctx context.Context, namespac
 	client := manager.kubernetesClientSet.RbacV1().Roles(namespace)
 
 	opts := metav1.ListOptions{
-		LabelSelector: labels.SelectorFromSet(rolesLabels).String(),
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		LabelSelector:        labels.SelectorFromSet(rolesLabels).String(),
+		FieldSelector:        "",
+		Watch:                false,
+		AllowWatchBookmarks:  false,
+		ResourceVersion:      "",
+		ResourceVersionMatch: "",
+		TimeoutSeconds:       nil,
+		Limit:                0,
+		Continue:             "",
 	}
 
 	roles, err := client.List(ctx, opts)
@@ -482,7 +677,18 @@ func (manager *KubernetesManager) RemoveRole(ctx context.Context, role *rbacv1.R
 	namespace := role.Namespace
 	client := manager.kubernetesClientSet.RbacV1().Roles(namespace)
 
-	if err := client.Delete(ctx, name, metav1.DeleteOptions{}); err != nil {
+	deleteOptions := metav1.DeleteOptions{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		GracePeriodSeconds: nil,
+		Preconditions:      nil,
+		OrphanDependents:   nil,
+		PropagationPolicy:  nil,
+		DryRun:             nil,
+	}
+	if err := client.Delete(ctx, name, deleteOptions); err != nil {
 		return stacktrace.Propagate(err, "Failed to delete role with name '%s' in namespace '%v'", name, namespace)
 	}
 
@@ -495,9 +701,29 @@ func (manager *KubernetesManager) CreateRoleBindings(ctx context.Context, name s
 	client := manager.kubernetesClientSet.RbacV1().RoleBindings(namespace)
 
 	roleBinding := &rbacv1.RoleBinding{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   name,
-			Labels: labels,
+			Name:            name,
+			GenerateName:    "",
+			Namespace:       "",
+			SelfLink:        "",
+			UID:             "",
+			ResourceVersion: "",
+			Generation:      0,
+			CreationTimestamp: metav1.Time{
+				Time: time.Time{},
+			},
+			DeletionTimestamp:          nil,
+			DeletionGracePeriodSeconds: nil,
+			Labels:                     labels,
+			Annotations:                nil,
+			OwnerReferences:            nil,
+			Finalizers:                 nil,
+			ZZZ_DeprecatedClusterName:  "",
+			ManagedFields:              nil,
 		},
 		Subjects: subjects,
 		RoleRef:  roleRef,
@@ -515,7 +741,19 @@ func (manager *KubernetesManager) GetRoleBindingsByLabels(ctx context.Context, n
 	client := manager.kubernetesClientSet.RbacV1().RoleBindings(namespace)
 
 	opts := metav1.ListOptions{
-		LabelSelector: labels.SelectorFromSet(roleBindingsLabels).String(),
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		LabelSelector:        labels.SelectorFromSet(roleBindingsLabels).String(),
+		FieldSelector:        "",
+		Watch:                false,
+		AllowWatchBookmarks:  false,
+		ResourceVersion:      "",
+		ResourceVersionMatch: "",
+		TimeoutSeconds:       nil,
+		Limit:                0,
+		Continue:             "",
 	}
 
 	roleBindings, err := client.List(ctx, opts)
@@ -544,7 +782,18 @@ func (manager *KubernetesManager) RemoveRoleBindings(ctx context.Context, roleBi
 	namespace := roleBinding.Namespace
 	client := manager.kubernetesClientSet.RbacV1().RoleBindings(namespace)
 
-	if err := client.Delete(ctx, name, metav1.DeleteOptions{}); err != nil {
+	deleteOptions := metav1.DeleteOptions{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		GracePeriodSeconds: nil,
+		Preconditions:      nil,
+		OrphanDependents:   nil,
+		PropagationPolicy:  nil,
+		DryRun:             nil,
+	}
+	if err := client.Delete(ctx, name, deleteOptions); err != nil {
 		return stacktrace.Propagate(err, "Failed to delete role bindings with name '%s' in namespace '%v'", name, namespace)
 	}
 
@@ -557,11 +806,32 @@ func (manager *KubernetesManager) CreateClusterRoles(ctx context.Context, name s
 	client := manager.kubernetesClientSet.RbacV1().ClusterRoles()
 
 	clusterRole := &rbacv1.ClusterRole{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:   name,
-			Labels: labels,
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
 		},
-		Rules: rules,
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            name,
+			GenerateName:    "",
+			Namespace:       "",
+			SelfLink:        "",
+			UID:             "",
+			ResourceVersion: "",
+			Generation:      0,
+			CreationTimestamp: metav1.Time{
+				Time: time.Time{},
+			},
+			DeletionTimestamp:          nil,
+			DeletionGracePeriodSeconds: nil,
+			Labels:                     labels,
+			Annotations:                nil,
+			OwnerReferences:            nil,
+			Finalizers:                 nil,
+			ZZZ_DeprecatedClusterName:  "",
+			ManagedFields:              nil,
+		},
+		Rules:           rules,
+		AggregationRule: nil,
 	}
 
 	clusterRoleResult, err := client.Create(ctx, clusterRole, globalCreateOptions)
@@ -576,7 +846,19 @@ func (manager *KubernetesManager) GetClusterRolesByLabels(ctx context.Context, c
 	client := manager.kubernetesClientSet.RbacV1().ClusterRoles()
 
 	opts := metav1.ListOptions{
-		LabelSelector: labels.SelectorFromSet(clusterRoleLabels).String(),
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		LabelSelector:        labels.SelectorFromSet(clusterRoleLabels).String(),
+		FieldSelector:        "",
+		Watch:                false,
+		AllowWatchBookmarks:  false,
+		ResourceVersion:      "",
+		ResourceVersionMatch: "",
+		TimeoutSeconds:       nil,
+		Limit:                0,
+		Continue:             "",
 	}
 
 	clusterRoles, err := client.List(ctx, opts)
@@ -604,7 +886,18 @@ func (manager *KubernetesManager) RemoveClusterRole(ctx context.Context, cluster
 	name := clusterRole.Name
 	client := manager.kubernetesClientSet.RbacV1().ClusterRoles()
 
-	if err := client.Delete(ctx, name, metav1.DeleteOptions{}); err != nil {
+	deleteOptions := metav1.DeleteOptions{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		GracePeriodSeconds: nil,
+		Preconditions:      nil,
+		OrphanDependents:   nil,
+		PropagationPolicy:  nil,
+		DryRun:             nil,
+	}
+	if err := client.Delete(ctx, name, deleteOptions); err != nil {
 		return stacktrace.Propagate(err, "Failed to delete cluster role with name '%s'", name)
 	}
 
@@ -617,9 +910,29 @@ func (manager *KubernetesManager) CreateClusterRoleBindings(ctx context.Context,
 	client := manager.kubernetesClientSet.RbacV1().ClusterRoleBindings()
 
 	clusterRoleBinding := &rbacv1.ClusterRoleBinding{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   name,
-			Labels: labels,
+			Name:            name,
+			GenerateName:    "",
+			Namespace:       "",
+			SelfLink:        "",
+			UID:             "",
+			ResourceVersion: "",
+			Generation:      0,
+			CreationTimestamp: metav1.Time{
+				Time: time.Time{},
+			},
+			DeletionTimestamp:          nil,
+			DeletionGracePeriodSeconds: nil,
+			Labels:                     labels,
+			Annotations:                nil,
+			OwnerReferences:            nil,
+			Finalizers:                 nil,
+			ZZZ_DeprecatedClusterName:  "",
+			ManagedFields:              nil,
 		},
 		Subjects: subjects,
 		RoleRef:  roleRef,
@@ -637,7 +950,19 @@ func (manager *KubernetesManager) GetClusterRoleBindingsByLabels(ctx context.Con
 	client := manager.kubernetesClientSet.RbacV1().ClusterRoleBindings()
 
 	opts := metav1.ListOptions{
-		LabelSelector: labels.SelectorFromSet(clusterRoleBindingsLabels).String(),
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		LabelSelector:        labels.SelectorFromSet(clusterRoleBindingsLabels).String(),
+		FieldSelector:        "",
+		Watch:                false,
+		AllowWatchBookmarks:  false,
+		ResourceVersion:      "",
+		ResourceVersionMatch: "",
+		TimeoutSeconds:       nil,
+		Limit:                0,
+		Continue:             "",
 	}
 
 	clusterRoleBindings, err := client.List(ctx, opts)
@@ -665,7 +990,18 @@ func (manager *KubernetesManager) RemoveClusterRoleBindings(ctx context.Context,
 	name := clusterRoleBinding.Name
 	client := manager.kubernetesClientSet.RbacV1().ClusterRoleBindings()
 
-	if err := client.Delete(ctx, name, metav1.DeleteOptions{}); err != nil {
+	deleteOptions := metav1.DeleteOptions{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		GracePeriodSeconds: nil,
+		Preconditions:      nil,
+		OrphanDependents:   nil,
+		PropagationPolicy:  nil,
+		DryRun:             nil,
+	}
+	if err := client.Delete(ctx, name, deleteOptions); err != nil {
 		return stacktrace.Propagate(err, "Failed to delete cluster role binding with name '%s'", name)
 	}
 
@@ -688,22 +1024,87 @@ func (manager *KubernetesManager) CreatePod(
 	podClient := manager.kubernetesClientSet.CoreV1().Pods(namespaceName)
 
 	podMeta := metav1.ObjectMeta{
-		Name:        podName,
-		Labels:      podLabels,
-		Annotations: podAnnotations,
+		Name:            podName,
+		GenerateName:    "",
+		Namespace:       "",
+		SelfLink:        "",
+		UID:             "",
+		ResourceVersion: "",
+		Generation:      0,
+		CreationTimestamp: metav1.Time{
+			Time: time.Time{},
+		},
+		DeletionTimestamp:          nil,
+		DeletionGracePeriodSeconds: nil,
+		Labels:                     podLabels,
+		Annotations:                podAnnotations,
+		OwnerReferences:            nil,
+		Finalizers:                 nil,
+		ZZZ_DeprecatedClusterName:  "",
+		ManagedFields:              nil,
 	}
 	podSpec := apiv1.PodSpec{
-		Volumes:            podVolumes,
-		InitContainers:     initContainers,
-		Containers:         podContainers,
-		ServiceAccountName: podServiceAccountName,
+		Volumes:             podVolumes,
+		InitContainers:      initContainers,
+		Containers:          podContainers,
+		EphemeralContainers: nil,
 		// We don't want Kubernetes auto-magically restarting our containers if they fail
-		RestartPolicy: apiv1.RestartPolicyNever,
+		RestartPolicy:                 apiv1.RestartPolicyNever,
+		TerminationGracePeriodSeconds: nil,
+		ActiveDeadlineSeconds:         nil,
+		DNSPolicy:                     "",
+		NodeSelector:                  nil,
+		ServiceAccountName:            podServiceAccountName,
+		DeprecatedServiceAccount:      "",
+		AutomountServiceAccountToken:  nil,
+		NodeName:                      "",
+		HostNetwork:                   false,
+		HostPID:                       false,
+		HostIPC:                       false,
+		ShareProcessNamespace:         nil,
+		SecurityContext:               nil,
+		ImagePullSecrets:              nil,
+		Hostname:                      "",
+		Subdomain:                     "",
+		Affinity:                      nil,
+		SchedulerName:                 "",
+		Tolerations:                   nil,
+		HostAliases:                   nil,
+		PriorityClassName:             "",
+		Priority:                      nil,
+		DNSConfig:                     nil,
+		ReadinessGates:                nil,
+		RuntimeClassName:              nil,
+		EnableServiceLinks:            nil,
+		PreemptionPolicy:              nil,
+		Overhead:                      nil,
+		TopologySpreadConstraints:     nil,
+		SetHostnameAsFQDN:             nil,
+		OS:                            nil,
 	}
 
 	podToCreate := &apiv1.Pod{
-		Spec:       podSpec,
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
 		ObjectMeta: podMeta,
+		Spec:       podSpec,
+		Status: apiv1.PodStatus{
+			Phase:                      "",
+			Conditions:                 nil,
+			Message:                    "",
+			Reason:                     "",
+			NominatedNodeName:          "",
+			HostIP:                     "",
+			PodIP:                      "",
+			PodIPs:                     nil,
+			StartTime:                  nil,
+			InitContainerStatuses:      nil,
+			ContainerStatuses:          nil,
+			QOSClass:                   "",
+			EphemeralContainerStatuses: nil,
+		},
 	}
 
 	if podDefinitionBytes, err := json.Marshal(podToCreate); err == nil {
@@ -737,7 +1138,13 @@ func (manager *KubernetesManager) RemovePod(ctx context.Context, pod *apiv1.Pod)
 func (manager *KubernetesManager) GetPod(ctx context.Context, namespace string, name string) (*apiv1.Pod, error) {
 	podClient := manager.kubernetesClientSet.CoreV1().Pods(namespace)
 
-	pod, err := podClient.Get(ctx, name, metav1.GetOptions{})
+	pod, err := podClient.Get(ctx, name, metav1.GetOptions{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		ResourceVersion: "",
+	})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to get pod with name '%s'", name)
 	}
@@ -764,9 +1171,19 @@ func (manager *KubernetesManager) GetContainerLogs(
 	error,
 ) {
 	options := &apiv1.PodLogOptions{
-		Container:  containerName,
-		Follow:     shouldFollowLogs,
-		Timestamps: shouldAddTimestamps,
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		Container:                    containerName,
+		Follow:                       shouldFollowLogs,
+		Previous:                     false,
+		SinceSeconds:                 nil,
+		SinceTime:                    nil,
+		Timestamps:                   shouldAddTimestamps,
+		TailLines:                    nil,
+		LimitBytes:                   nil,
+		InsecureSkipTLSVerifyBackend: false,
 	}
 
 	getLogsRequest := manager.kubernetesClientSet.CoreV1().Pods(namespaceName).GetLogs(podName, options)
@@ -795,12 +1212,16 @@ func (manager *KubernetesManager) RunExecCommand(
 	resultErr error,
 ) {
 	execOptions := &apiv1.PodExecOptions{
-		Container: containerName,
-		Command:   command,
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
 		Stdin:     shouldAllocateStdinOnPodExec,
 		Stdout:    shouldAllocatedStdoutOnPodExec,
 		Stderr:    shouldAllocatedStderrOnPodExec,
 		TTY:       shouldAllocateTtyOnPodExec,
+		Container: containerName,
+		Command:   command,
 	}
 
 	//Create a RESTful command request.
@@ -829,8 +1250,11 @@ func (manager *KubernetesManager) RunExecCommand(
 	}
 
 	if err = exec.Stream(remotecommand.StreamOptions{
-		Stdout: stdOutOutput,
-		Stderr: stdErrOutput,
+		Stdin:             nil,
+		Stdout:            stdOutOutput,
+		Stderr:            stdErrOutput,
+		Tty:               false,
+		TerminalSizeQueue: nil,
 	}); err != nil {
 		// Kubernetes returns the exit code of the command via a string in the error message, so we have to extract it
 		statusError := err.Error()
@@ -853,7 +1277,19 @@ func (manager *KubernetesManager) GetPodsByLabels(ctx context.Context, namespace
 	namespacePodClient := manager.kubernetesClientSet.CoreV1().Pods(namespace)
 
 	opts := metav1.ListOptions{
-		LabelSelector: labels.SelectorFromSet(podLabels).String(),
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		LabelSelector:        labels.SelectorFromSet(podLabels).String(),
+		FieldSelector:        "",
+		Watch:                false,
+		AllowWatchBookmarks:  false,
+		ResourceVersion:      "",
+		ResourceVersionMatch: "",
+		TimeoutSeconds:       nil,
+		Limit:                0,
+		Continue:             "",
 	}
 
 	pods, err := namespacePodClient.List(ctx, opts)
@@ -1262,4 +1698,3 @@ func getExitCodeFromStatusMessage(statusMessage string) (int32, error) {
 	codeAsInt32 := int32(codeAsInt64)
 	return codeAsInt32, nil
 }
-

@@ -55,9 +55,10 @@ func NewEngineGatewayServiceServer(connectionProvider *connection.GatewayConnect
 
 	service := &EngineGatewayServiceServer{
 		engineClientSupplier:         engineClientSupplier,
+		kubernetesConfig:             nil,
 		connectionProvider:           connectionProvider,
-		enclaveIdToRunningGatewayMap: runningApiContainers,
 		mutex:                        &sync.Mutex{},
+		enclaveIdToRunningGatewayMap: runningApiContainers,
 	}
 	closeFunc := func() {
 		// Kill the running enclave gateways

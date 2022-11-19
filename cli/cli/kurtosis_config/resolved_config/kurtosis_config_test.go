@@ -19,7 +19,7 @@ so is:
 
 If it can cast it, KurtosisConfig is using the latest version; if it can't
 then KurtosisConfig is using an old version.
- */
+*/
 func TestKurtosisConfigIsUsingLatestConfigStruct(t *testing.T) {
 	// Dynamically get latest config version
 	var latestConfigVersion config_version.ConfigVersion
@@ -36,11 +36,10 @@ func TestKurtosisConfigIsUsingLatestConfigStruct(t *testing.T) {
 	require.NoError(
 		t,
 		err,
-		"An error occurred casting an emptystruct of the latest config version, indicating that KurtosisConfig is not " +
+		"An error occurred casting an emptystruct of the latest config version, indicating that KurtosisConfig is not "+
 			"using the latest config struct; update KurtosisConfig to use the latest config struct version!",
 	)
 }
-
 
 func TestNewKurtosisConfigFromRequiredFields_MetricsElectionIsSent(t *testing.T) {
 	config, err := NewKurtosisConfigFromRequiredFields(false)
@@ -51,7 +50,11 @@ func TestNewKurtosisConfigFromRequiredFields_MetricsElectionIsSent(t *testing.T)
 }
 
 func TestNewKurtosisConfigEmptyOverrides(t *testing.T) {
-	_, err := NewKurtosisConfigFromOverrides(&v2.KurtosisConfigV2{})
+	_, err := NewKurtosisConfigFromOverrides(&v2.KurtosisConfigV2{
+		ConfigVersion:     0,
+		ShouldSendMetrics: nil,
+		KurtosisClusters:  nil,
+	})
 	// You can not initialize a Kurtosis config with empty overrides - it needs at least `ShouldSendMetrics`
 	require.Error(t, err)
 }
@@ -60,8 +63,9 @@ func TestNewKurtosisConfigJustMetrics(t *testing.T) {
 	version := config_version.ConfigVersion_v0
 	shouldSendMetrics := true
 	originalOverrides := v2.KurtosisConfigV2{
-		ConfigVersion: version,
+		ConfigVersion:     version,
 		ShouldSendMetrics: &shouldSendMetrics,
+		KurtosisClusters:  nil,
 	}
 	config, err := NewKurtosisConfigFromOverrides(&originalOverrides)
 	// You can not initialize a Kurtosis config with empty originalOverrides - it needs at least `ShouldSendMetrics`
