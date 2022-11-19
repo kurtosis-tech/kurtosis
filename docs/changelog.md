@@ -7,6 +7,7 @@
 
 ### Changes
 - `print()` is now a regular instructions like others, and it takes effect at execution time (used to be during interpretation)
+- Temporarily disable enclave dump for k8s in CircleCI until we fix https://github.com/kurtosis-tech/kurtosis/issues/407
 
 # 0.53.2
 ### Features
