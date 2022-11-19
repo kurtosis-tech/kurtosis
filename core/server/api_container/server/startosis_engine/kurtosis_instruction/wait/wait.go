@@ -27,7 +27,7 @@ func GenerateWaitBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstr
 		if interpretationError != nil {
 			return nil, interpretationError
 		}
-		instructionPosition := *shared_helpers.GetCallerPositionFromThread(thread)
+		instructionPosition := shared_helpers.GetCallerPositionFromThread(thread)
 		waitInstruction := NewWaitInstruction(factsEngine, instructionPosition, serviceId, factName)
 		*instructionsQueue = append(*instructionsQueue, waitInstruction)
 		returnValue := shared_helpers.MakeWaitInterpretationReturnValue(serviceId, factName)
@@ -38,12 +38,12 @@ func GenerateWaitBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstr
 type WaitInstruction struct {
 	factsEngine *facts_engine.FactsEngine
 
-	position  kurtosis_instruction.InstructionPosition
+	position  *kurtosis_instruction.InstructionPosition
 	serviceId kurtosis_backend_service.ServiceID
 	factName  string
 }
 
-func NewWaitInstruction(factsEngine *facts_engine.FactsEngine, position kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceID, factName string) *WaitInstruction {
+func NewWaitInstruction(factsEngine *facts_engine.FactsEngine, position *kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceID, factName string) *WaitInstruction {
 	return &WaitInstruction{
 		factsEngine: factsEngine,
 		position:    position,
@@ -53,14 +53,14 @@ func NewWaitInstruction(factsEngine *facts_engine.FactsEngine, position kurtosis
 }
 
 func (instruction *WaitInstruction) GetPositionInOriginalScript() *kurtosis_instruction.InstructionPosition {
-	return &instruction.position
+	return instruction.position
 }
 
 func (instruction *WaitInstruction) GetCanonicalInstruction() string {
-	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(WaitBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs(), &instruction.position)
+	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(WaitBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs(), instruction.position)
 }
 
-func (instruction *WaitInstruction) Execute(ctx context.Context) (*string, error) {
+func (instruction *WaitInstruction) Execute(_ context.Context) (*string, error) {
 	_, err := instruction.factsEngine.WaitForValue(facts_engine.GetFactId(string(instruction.serviceId), instruction.factName))
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to wait for fact '%v' on service '%v'", instruction.factName, instruction.serviceId)
@@ -69,7 +69,7 @@ func (instruction *WaitInstruction) Execute(ctx context.Context) (*string, error
 }
 
 func (instruction *WaitInstruction) String() string {
-	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(WaitBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs(), &instruction.position)
+	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(WaitBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs(), instruction.position)
 }
 
 func (instruction *WaitInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {

@@ -31,7 +31,8 @@ func GenerateAddServiceBuiltin(instructionsQueue *[]kurtosis_instruction.Kurtosi
 
 	// TODO: Force returning an InterpretationError rather than a normal error
 	return func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
-		addServiceInstruction := newEmptyAddServiceInstruction(serviceNetwork, factsEngine, *shared_helpers.GetCallerPositionFromThread(thread))
+		instructionPosition := shared_helpers.GetCallerPositionFromThread(thread)
+		addServiceInstruction := newEmptyAddServiceInstruction(serviceNetwork, factsEngine, instructionPosition)
 		if interpretationError := addServiceInstruction.parseStartosisArgs(b, args, kwargs); interpretationError != nil {
 			return nil, interpretationError
 		}
@@ -48,14 +49,14 @@ type AddServiceInstruction struct {
 	serviceNetwork service_network.ServiceNetwork
 	factsEngine    *facts_engine.FactsEngine
 
-	position       kurtosis_instruction.InstructionPosition
+	position       *kurtosis_instruction.InstructionPosition
 	starlarkKwargs starlark.StringDict
 
 	serviceId     kurtosis_backend_service.ServiceID
 	serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig
 }
 
-func newEmptyAddServiceInstruction(serviceNetwork service_network.ServiceNetwork, factsEngine *facts_engine.FactsEngine, position kurtosis_instruction.InstructionPosition) *AddServiceInstruction {
+func newEmptyAddServiceInstruction(serviceNetwork service_network.ServiceNetwork, factsEngine *facts_engine.FactsEngine, position *kurtosis_instruction.InstructionPosition) *AddServiceInstruction {
 	return &AddServiceInstruction{
 		serviceNetwork: serviceNetwork,
 		factsEngine:    factsEngine,
@@ -66,7 +67,7 @@ func newEmptyAddServiceInstruction(serviceNetwork service_network.ServiceNetwork
 	}
 }
 
-func NewAddServiceInstruction(serviceNetwork service_network.ServiceNetwork, position kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceID, serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig, starlarkKwargs starlark.StringDict) *AddServiceInstruction {
+func NewAddServiceInstruction(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceID, serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig, starlarkKwargs starlark.StringDict) *AddServiceInstruction {
 	return &AddServiceInstruction{
 		serviceNetwork: serviceNetwork,
 		factsEngine:    nil,
@@ -78,11 +79,11 @@ func NewAddServiceInstruction(serviceNetwork service_network.ServiceNetwork, pos
 }
 
 func (instruction *AddServiceInstruction) GetPositionInOriginalScript() *kurtosis_instruction.InstructionPosition {
-	return &instruction.position
+	return instruction.position
 }
 
 func (instruction *AddServiceInstruction) GetCanonicalInstruction() string {
-	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(AddServiceBuiltinName, kurtosis_instruction.NoArgs, instruction.starlarkKwargs, &instruction.position)
+	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(AddServiceBuiltinName, kurtosis_instruction.NoArgs, instruction.starlarkKwargs, instruction.position)
 }
 
 func (instruction *AddServiceInstruction) Execute(ctx context.Context) (*string, error) {
@@ -115,7 +116,7 @@ func (instruction *AddServiceInstruction) Execute(ctx context.Context) (*string,
 }
 
 func (instruction *AddServiceInstruction) String() string {
-	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(AddServiceBuiltinName, kurtosis_instruction.NoArgs, instruction.starlarkKwargs, &instruction.position)
+	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(AddServiceBuiltinName, kurtosis_instruction.NoArgs, instruction.starlarkKwargs, instruction.position)
 }
 
 func (instruction *AddServiceInstruction) replaceMagicStrings() error {

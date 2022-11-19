@@ -749,7 +749,7 @@ exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"])
 
 	execInstruction := exec.NewExecInstruction(
 		testServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(3, 5, ModuleIdPlaceholderForStandaloneScripts),
+		kurtosis_instruction.NewInstructionPosition(3, 5, ModuleIdPlaceholderForStandaloneScripts),
 		"example-datastore-server",
 		[]string{"mkdir", "/tmp/foo"},
 		0,
@@ -777,7 +777,7 @@ exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"], e
 
 	execInstruction := exec.NewExecInstruction(
 		testServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(3, 5, ModuleIdPlaceholderForStandaloneScripts),
+		kurtosis_instruction.NewInstructionPosition(3, 5, ModuleIdPlaceholderForStandaloneScripts),
 		"example-datastore-server",
 		[]string{"mkdir", "/tmp/foo"},
 		-7,
@@ -808,7 +808,7 @@ print(artifact_uuid)
 
 	storeInstruction := store_files_from_service.NewStoreFilesFromServiceInstruction(
 		testServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(3, 38, ModuleIdPlaceholderForStandaloneScripts),
+		kurtosis_instruction.NewInstructionPosition(3, 38, ModuleIdPlaceholderForStandaloneScripts),
 		"example-datastore-server",
 		"/foo/bar",
 		testArtifactUuid,
@@ -915,7 +915,7 @@ print(artifact_uuid)
 
 	renderInstruction := render_templates.NewRenderTemplatesInstruction(
 		testServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(18, 33, ModuleIdPlaceholderForStandaloneScripts),
+		kurtosis_instruction.NewInstructionPosition(18, 33, ModuleIdPlaceholderForStandaloneScripts),
 		templateAndDataByDestFilepath,
 		starlark.StringDict{
 			"template_and_data_by_dest_rel_filepath": templateAndDataValues,
@@ -1183,7 +1183,7 @@ print(uuid)
 
 	storeInstruction := store_files_from_service.NewStoreFilesFromServiceInstruction(
 		testServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(4, 39, storeFileDefinitionPath),
+		kurtosis_instruction.NewInstructionPosition(4, 39, storeFileDefinitionPath),
 		"example-datastore-server",
 		"/foo/bar",
 		testArtifactUuid,
@@ -1215,7 +1215,7 @@ print("The service example-datastore-server has been removed")
 
 	removeInstruction := remove_service.NewRemoveServiceInstruction(
 		testServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(4, 15, ModuleIdPlaceholderForStandaloneScripts),
+		kurtosis_instruction.NewInstructionPosition(4, 15, ModuleIdPlaceholderForStandaloneScripts),
 		"example-datastore-server",
 	)
 
@@ -1246,7 +1246,7 @@ func TestStartosisInterpreter_UploadGetsInterpretedCorrectly(t *testing.T) {
 	validateScriptOutputFromPrintInstructions(t, instructions, "")
 
 	expectedUploadInstruction := upload_files.NewUploadFilesInstruction(
-		*kurtosis_instruction.NewInstructionPosition(1, 13, ModuleIdPlaceholderForStandaloneScripts),
+		kurtosis_instruction.NewInstructionPosition(1, 13, ModuleIdPlaceholderForStandaloneScripts),
 		testServiceNetwork, moduleContentProvider, filePath, filePathOnDisk, artifactUuid,
 	)
 
@@ -1377,7 +1377,7 @@ func createSimpleAddServiceInstruction(t *testing.T, serviceId service.ServiceID
 
 	return add_service.NewAddServiceInstruction(
 		testServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(lineNumber, colNumber, fileName),
+		kurtosis_instruction.NewInstructionPosition(lineNumber, colNumber, fileName),
 		serviceId,
 		serviceConfigBuilder.Build(),
 		starlark.StringDict{
