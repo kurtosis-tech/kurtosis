@@ -14,10 +14,20 @@ of the config version struct.
 
 For an explanation, see the docs on TestKurtosisConfigIsUsingLatestConfigStruct.
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> INSTRUCTIONS <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
- */
+*/
 
 var AllConfigVersionEmptyStructs = map[config_version.ConfigVersion]interface{}{
-	config_version.ConfigVersion_v2: &v2.KurtosisConfigV2{},
-	config_version.ConfigVersion_v1: &v1.KurtosisConfigV1{},
-	config_version.ConfigVersion_v0: &v0.KurtosisConfigV0{},
+	config_version.ConfigVersion_v2: &v2.KurtosisConfigV2{
+		ConfigVersion:     0,
+		ShouldSendMetrics: nil,
+		KurtosisClusters:  nil,
+	},
+	config_version.ConfigVersion_v1: &v1.KurtosisConfigV1{
+		ConfigVersion:     0,
+		ShouldSendMetrics: nil,
+		KurtosisClusters:  nil,
+	},
+	config_version.ConfigVersion_v0: &v0.KurtosisConfigV0{
+		ShouldSendMetrics: nil,
+	},
 }

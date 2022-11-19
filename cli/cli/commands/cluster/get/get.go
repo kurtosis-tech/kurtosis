@@ -18,7 +18,11 @@ var GetCmd = &lowlevel.LowlevelKurtosisCommand{
 	CommandStr:               command_str_consts.ClusterGetCmdStr,
 	ShortDescription:         "Get current cluster",
 	LongDescription:          "Get current Kurtosis cluster setting",
+	Flags:                    nil,
+	Args:                     nil,
+	PreValidationAndRunFunc:  nil,
 	RunFunc:                  run,
+	PostValidationAndRunFunc: nil,
 }
 
 func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error {
@@ -27,7 +31,6 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to get cluster setting.")
 	}
-	fmt.Fprint(logrus.StandardLogger().Out, clusterName + newLineChar)
+	fmt.Fprint(logrus.StandardLogger().Out, clusterName+newLineChar)
 	return nil
 }
-

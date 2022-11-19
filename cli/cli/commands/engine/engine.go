@@ -9,6 +9,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// EngineCmd Suppressing exhaustruct requirement because this struct has ~40 properties
+// nolint: exhaustruct
 var EngineCmd = &cobra.Command{
 	Use:   command_str_consts.EngineCmdStr,
 	Short: "Manage the Kurtosis engine server",

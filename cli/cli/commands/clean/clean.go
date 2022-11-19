@@ -49,6 +49,7 @@ var CleanCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand
 			Default:   defaultShouldCleanRunningEnclaves,
 		},
 	},
+	Args:    nil,
 	RunFunc: run,
 }
 
@@ -119,6 +120,7 @@ func run(
 func cleanStoppedEngineContainers(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend) ([]string, []error, error) {
 
 	engineFilters := &engine.EngineFilters{
+		GUIDs: nil,
 		Statuses: map[container_status.ContainerStatus]bool{
 			container_status.ContainerStatus_Stopped: true,
 		},

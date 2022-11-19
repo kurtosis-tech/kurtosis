@@ -61,6 +61,8 @@ func newEmptyAddServiceInstruction(serviceNetwork service_network.ServiceNetwork
 		factsEngine:    factsEngine,
 		position:       position,
 		starlarkKwargs: starlark.StringDict{},
+		serviceId:      "",
+		serviceConfig:  nil,
 	}
 }
 

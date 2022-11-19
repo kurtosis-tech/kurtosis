@@ -7,6 +7,7 @@
 
 ### Changes
 - `print()` is now a regular instructions like others, and it takes effect at execution time (used to be during interpretation)
+- Added exhaustive struct linting and brought code base into exhaustive struct compliance
 
 # 0.53.2
 ### Features

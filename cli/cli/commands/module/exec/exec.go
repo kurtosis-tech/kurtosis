@@ -257,6 +257,7 @@ func run(
 		GUIDs: map[module.ModuleGUID]bool{
 			moduleGUID: true,
 		},
+		Statuses: nil,
 	}
 
 	//TODO replace with API Container call

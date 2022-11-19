@@ -82,6 +82,7 @@ func NewEngineServerArgs(
 	result := &EngineServerArgs{
 		GrpcListenPortNum:           grpcListenPortNum,
 		GrpcProxyListenPortNum:      grpcProxyListenPortNum,
+		LogsCollectorHttpPortNum:    0,
 		LogLevelStr:                 logLevelStr,
 		ImageVersionTag:             imageVersionTag,
 		MetricsUserID:               metricsUserID,
