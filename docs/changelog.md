@@ -1,5 +1,8 @@
 # TBD
 
+### Changes
+- Refactored startosis tests to enable parallel execution of tests
+
 # 0.53.3
 ### Fixes
 - Fixed a bug with dumping enclave logs during the CI run
