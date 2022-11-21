@@ -1,5 +1,7 @@
 # TBD
 
+# 0.53.4
+
 # 0.53.3
 ### Fixes
 - Fixed a bug with dumping enclave logs during the CI run
