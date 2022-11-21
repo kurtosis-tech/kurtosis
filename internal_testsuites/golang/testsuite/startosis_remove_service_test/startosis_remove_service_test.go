@@ -60,9 +60,9 @@ func TestStartosis(t *testing.T) {
 	expectedScriptOutput := `Adding service example-datastore-server-1.
 Service example-datastore-server-1 deployed successfully.
 `
-	require.Empty(t, executionResult.InterpretationError, "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
-	require.Lenf(t, executionResult.ValidationErrors, 0, "Unexpected validation error")
-	require.Empty(t, executionResult.ExecutionError, "Unexpected execution error")
+	require.Nil(t, executionResult.GetInterpretationError(), "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
+	require.Nil(t, executionResult.GetValidationErrors(), 0, "Unexpected validation error")
+	require.Nil(t, executionResult.GetExecutionError(), "Unexpected execution error")
 	require.Equal(t, expectedScriptOutput, executionResult.SerializedScriptOutput)
 	logrus.Infof("Successfully ran Startosis script")
 
@@ -80,9 +80,9 @@ Service example-datastore-server-1 deployed successfully.
 	// we run the remove script and see if things still work
 	executionResult, err = enclaveCtx.ExecuteStartosisScript(removeScript, defaultDryRun)
 	require.NoError(t, err, "Unexpected error executing remove script")
-	require.Empty(t, executionResult.InterpretationError, "Unexpected interpretation error")
-	require.Lenf(t, executionResult.ValidationErrors, 0, "Unexpected validation error")
-	require.Empty(t, executionResult.ExecutionError, "Unexpected execution error")
+	require.Nil(t, executionResult.GetInterpretationError(), "Unexpected interpretation error")
+	require.Nil(t, executionResult.GetValidationErrors(), 0, "Unexpected validation error")
+	require.Nil(t, executionResult.GetExecutionError(), "Unexpected execution error")
 
 	require.Error(
 		t,

@@ -30,7 +30,7 @@ const (
 	dryRunFlagKey = "dry-run"
 	defaultDryRun = "false"
 
-	enclaveIdFlagKey                   = "enclave-id"
+	enclaveIdFlagKey = "enclave-id"
 	// Signifies that an enclave ID should be auto-generated
 	autogenerateEnclaveIdKeyword = ""
 
@@ -68,7 +68,7 @@ var StartosisExecCmd = &lowlevel.LowlevelKurtosisCommand{
 		{
 			Key: enclaveIdFlagKey,
 			Usage: fmt.Sprintf(
-				"The enclave ID in which the script or module will be executed, which must match regex '%v' " +
+				"The enclave ID in which the script or module will be executed, which must match regex '%v' "+
 					"(emptystring will autogenerate an enclave ID). An enclave with this ID will be created if it doesn't exist.",
 				enclave_consts.AllowedEnclaveIdCharsRegexStr,
 			),
@@ -176,7 +176,9 @@ func run(
 }
 
 // ====================================================================================================
-//                                       Private Helper Functions
+//
+//	Private Helper Functions
+//
 // ====================================================================================================
 func validateScriptOrModulePath(_ context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error {
 	scriptOrModulePath, err := args.GetNonGreedyArg(scriptOrModulePathKey)
@@ -233,11 +235,11 @@ func executeModule(enclaveCtx *enclaves.EnclaveContext, modulePath string, seria
 }
 
 func validateExecutionResponse(executionResponse *kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse, scriptOrModulePath string, scriptOrModuleArg string, dryRun bool) error {
-	if executionResponse.InterpretationError != "" {
-		return stacktrace.NewError("There was an error interpreting the Startosis %s '%s': \n%v", scriptOrModuleArg, scriptOrModulePath, executionResponse.InterpretationError)
+	if executionResponse.GetInterpretationError() != nil {
+		return stacktrace.NewError("There was an error interpreting the Startosis %s '%s': \n%v", scriptOrModuleArg, scriptOrModulePath, executionResponse.GetInterpretationError().GetErrorMessage())
 	}
-	if len(executionResponse.ValidationErrors) > 0 {
-		return stacktrace.NewError("There was an error validating the Startosis %s '%s': \n%v", scriptOrModuleArg, scriptOrModulePath, executionResponse.ValidationErrors)
+	if executionResponse.GetValidationErrors() != nil {
+		return stacktrace.NewError("There was an error validating the Startosis %s '%s': \n%v", scriptOrModuleArg, scriptOrModulePath, executionResponse.GetValidationErrors().GetErrors())
 	}
 
 	concatenatedKurtosisInstructions := make([]string, len(executionResponse.SerializedInstructions))
@@ -246,8 +248,8 @@ func validateExecutionResponse(executionResponse *kurtosis_core_rpc_api_bindings
 	}
 	logrus.Infof("Kurtosis script successfully interpreted and validated. List of Kurtosis instructions generated:\n%v", strings.Join(concatenatedKurtosisInstructions, "\n"))
 
-	if executionResponse.ExecutionError != "" {
-		return stacktrace.NewError("There was an error executing the Startosis %s '%s': \n%v", scriptOrModuleArg, scriptOrModulePath, executionResponse.ExecutionError)
+	if executionResponse.GetExecutionError() != nil {
+		return stacktrace.NewError("There was an error executing the Startosis %s '%s': \n%v", scriptOrModuleArg, scriptOrModulePath, executionResponse.GetExecutionError().GetErrorMessage())
 	}
 
 	if dryRun {

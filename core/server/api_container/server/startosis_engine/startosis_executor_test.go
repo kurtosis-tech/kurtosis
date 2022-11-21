@@ -76,8 +76,8 @@ instruction2()
  --- at`
 	expectedLowLevelErrorMessage := "expected error for test"
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), expectedErrorMsgPrefix)
-	require.Contains(t, err.Error(), expectedLowLevelErrorMessage)
+	require.Contains(t, err.GetErrorMessage(), expectedErrorMsgPrefix)
+	require.Contains(t, err.GetErrorMessage(), expectedLowLevelErrorMessage)
 
 	expectedSerializedInstructions := []*kurtosis_core_rpc_api_bindings.SerializedKurtosisInstruction{
 		// only instruction 1 because it failed at instruction 2
