@@ -242,9 +242,13 @@ func validateExecutionResponse(executionResponse *kurtosis_core_rpc_api_bindings
 		return stacktrace.NewError("There was an error validating the Startosis %s '%s': \n%v", scriptOrModuleArg, scriptOrModulePath, executionResponse.GetValidationErrors().GetErrors())
 	}
 
-	concatenatedKurtosisInstructions := make([]string, len(executionResponse.SerializedInstructions))
-	for idx := 0; idx < len(executionResponse.SerializedInstructions); idx++ {
-		concatenatedKurtosisInstructions[idx] = executionResponse.SerializedInstructions[idx].SerializedInstruction
+	var scriptOutputLines []string
+	concatenatedKurtosisInstructions := make([]string, len(executionResponse.GetKurtosisInstructions()))
+	for idx, instruction := range executionResponse.GetKurtosisInstructions() {
+		concatenatedKurtosisInstructions[idx] = instruction.GetExecutableInstruction()
+		if instruction.InstructionResult != nil {
+			scriptOutputLines = append(scriptOutputLines, instruction.GetInstructionResult())
+		}
 	}
 	logrus.Infof("Kurtosis script successfully interpreted and validated. List of Kurtosis instructions generated:\n%v", strings.Join(concatenatedKurtosisInstructions, "\n"))
 
@@ -257,7 +261,7 @@ func validateExecutionResponse(executionResponse *kurtosis_core_rpc_api_bindings
 	} else {
 		logrus.Infof("Kurtosis script '%s' executed successfully. All instructions listed above were submitted to Kurtosis engine.", scriptOrModuleArg)
 	}
-	logrus.Infof("Output of the module was: \n%v", executionResponse.SerializedScriptOutput)
+	logrus.Infof("Output of the module was: \n%v", strings.Join(scriptOutputLines, ""))
 	return nil
 }
 

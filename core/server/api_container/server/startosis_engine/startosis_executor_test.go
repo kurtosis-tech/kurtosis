@@ -9,7 +9,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/mock_instruction"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"strings"
 	"testing"
 )
 
@@ -22,7 +21,7 @@ const (
 )
 
 var (
-	intoTheVoid = &strings.Builder{}
+	dummyPosition = kurtosis_instruction.NewInstructionPosition(12, 1, "dummyFile")
 )
 
 func TestExecuteKurtosisInstructions_ExecuteForReal_Success(t *testing.T) {
@@ -35,7 +34,7 @@ func TestExecuteKurtosisInstructions_ExecuteForReal_Success(t *testing.T) {
 		instruction2,
 	}
 
-	serializedInstruction, err := executor.Execute(context.Background(), executeForReal, instructions, intoTheVoid)
+	serializedInstruction, err := executor.Execute(context.Background(), executeForReal, instructions)
 	instruction1.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
 	instruction1.AssertNumberOfCalls(t, "Execute", 1)
 	instruction2.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
@@ -43,9 +42,9 @@ func TestExecuteKurtosisInstructions_ExecuteForReal_Success(t *testing.T) {
 
 	require.Nil(t, err)
 
-	expectedSerializedInstructions := []*kurtosis_core_rpc_api_bindings.SerializedKurtosisInstruction{
-		binding_constructors.NewSerializedKurtosisInstruction("instruction1()"),
-		binding_constructors.NewSerializedKurtosisInstruction("instruction2()"),
+	expectedSerializedInstructions := []*kurtosis_core_rpc_api_bindings.KurtosisInstruction{
+		binding_constructors.NewKurtosisInstruction(dummyPosition.ToAPIType(), "instruction1()", noInstructionOutput),
+		binding_constructors.NewKurtosisInstruction(dummyPosition.ToAPIType(), "instruction2()", noInstructionOutput),
 	}
 	require.Equal(t, serializedInstruction, expectedSerializedInstructions)
 }
@@ -62,7 +61,7 @@ func TestExecuteKurtosisInstructions_ExecuteForReal_FailureHalfWay(t *testing.T)
 		instruction3,
 	}
 
-	serializedInstruction, err := executor.Execute(context.Background(), executeForReal, instructions, intoTheVoid)
+	serializedInstruction, err := executor.Execute(context.Background(), executeForReal, instructions)
 	instruction1.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
 	instruction1.AssertNumberOfCalls(t, "Execute", 1)
 	instruction2.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
@@ -79,9 +78,9 @@ instruction2()
 	require.Contains(t, err.GetErrorMessage(), expectedErrorMsgPrefix)
 	require.Contains(t, err.GetErrorMessage(), expectedLowLevelErrorMessage)
 
-	expectedSerializedInstructions := []*kurtosis_core_rpc_api_bindings.SerializedKurtosisInstruction{
+	expectedSerializedInstructions := []*kurtosis_core_rpc_api_bindings.KurtosisInstruction{
 		// only instruction 1 because it failed at instruction 2
-		binding_constructors.NewSerializedKurtosisInstruction("instruction1()"),
+		binding_constructors.NewKurtosisInstruction(dummyPosition.ToAPIType(), "instruction1()", noInstructionOutput),
 	}
 	require.Equal(t, serializedInstruction, expectedSerializedInstructions)
 }
@@ -96,7 +95,7 @@ func TestExecuteKurtosisInstructions_DoDryRun(t *testing.T) {
 		instruction2,
 	}
 
-	serializedInstruction, err := executor.Execute(context.Background(), doDryRun, instructions, intoTheVoid)
+	serializedInstruction, err := executor.Execute(context.Background(), doDryRun, instructions)
 	instruction1.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
 	instruction2.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
 	// both execute never called because dry run = true
@@ -105,9 +104,9 @@ func TestExecuteKurtosisInstructions_DoDryRun(t *testing.T) {
 
 	require.Nil(t, err)
 
-	expectedSerializedInstructions := []*kurtosis_core_rpc_api_bindings.SerializedKurtosisInstruction{
-		binding_constructors.NewSerializedKurtosisInstruction("instruction1()"),
-		binding_constructors.NewSerializedKurtosisInstruction("instruction2()"),
+	expectedSerializedInstructions := []*kurtosis_core_rpc_api_bindings.KurtosisInstruction{
+		binding_constructors.NewKurtosisInstruction(dummyPosition.ToAPIType(), "instruction1()", noInstructionOutput),
+		binding_constructors.NewKurtosisInstruction(dummyPosition.ToAPIType(), "instruction2()", noInstructionOutput),
 	}
 	require.Equal(t, serializedInstruction, expectedSerializedInstructions)
 }
@@ -116,6 +115,7 @@ func createMockInstruction(t *testing.T, canonicalizedInstruction string, execut
 	instruction := mock_instruction.NewMockKurtosisInstruction(t)
 
 	instruction.EXPECT().GetCanonicalInstruction().Maybe().Return(canonicalizedInstruction)
+	instruction.EXPECT().GetPositionInOriginalScript().Maybe().Return(dummyPosition)
 
 	if executeSuccessfully {
 		instruction.EXPECT().Execute(mock.Anything).Maybe().Return(nil, nil)
