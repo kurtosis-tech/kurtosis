@@ -1,4 +1,6 @@
 # TBD
+### Changes
+- Refactored startosis tests to enable parallel execution of tests
 
 # 0.53.4
 
