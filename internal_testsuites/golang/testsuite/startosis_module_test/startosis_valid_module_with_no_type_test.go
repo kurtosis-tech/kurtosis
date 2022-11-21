@@ -11,6 +11,7 @@ import (
 )
 
 func TestStartosisModule_ValidModuleWithNoType(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------

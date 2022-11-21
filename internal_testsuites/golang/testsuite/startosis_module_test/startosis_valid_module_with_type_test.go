@@ -16,6 +16,7 @@ const (
 )
 
 func TestStartosisModule_ValidModuleWithType(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------

@@ -16,6 +16,7 @@ const (
 )
 
 func TestStartosisModule_InvalidModFile(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
