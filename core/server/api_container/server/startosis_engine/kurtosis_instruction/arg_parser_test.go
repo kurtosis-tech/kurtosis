@@ -309,7 +309,7 @@ func TestParsePort_FailurePortNumberInvalid(t *testing.T) {
 
 func TestParseEntryPointArgs_Success(t *testing.T) {
 	dict := starlark.StringDict{}
-	dict["entry_point_args"] = starlark.NewList([]starlark.Value{starlark.String("hello"), starlark.String("world")})
+	dict["entrypoint"] = starlark.NewList([]starlark.Value{starlark.String("hello"), starlark.String("world")})
 	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
 	output, err := parseEntryPointArgs(input)
 	require.Nil(t, err)
@@ -326,17 +326,17 @@ func TestParseEntryPointArgs_SuccessOnMissingValue(t *testing.T) {
 
 func TestParseEntryPointArgs_FailureOnListContainingNonStringValues(t *testing.T) {
 	dict := starlark.StringDict{}
-	dict["entry_point_args"] = starlark.NewList([]starlark.Value{starlark.MakeInt(42)})
+	dict["entrypoint"] = starlark.NewList([]starlark.Value{starlark.MakeInt(42)})
 	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
 	output, err := parseEntryPointArgs(input)
 	require.NotNil(t, err)
-	require.Equal(t, "'entry_point_args[0]' is expected to be a string. Got starlark.Int", err.Error())
+	require.Equal(t, "'entrypoint[0]' is expected to be a string. Got starlark.Int", err.Error())
 	require.Equal(t, []string(nil), output)
 }
 
 func TestParseCommandArgs_Success(t *testing.T) {
 	dict := starlark.StringDict{}
-	dict["cmd_args"] = starlark.NewList([]starlark.Value{starlark.String("hello"), starlark.String("world")})
+	dict["cmd"] = starlark.NewList([]starlark.Value{starlark.String("hello"), starlark.String("world")})
 	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
 	output, err := parseCmdArgs(input)
 	require.Nil(t, err)
@@ -353,11 +353,11 @@ func TestParseCommandArgs_SuccessOnMissingValue(t *testing.T) {
 
 func TestParseCommandArgs_FailureOnListContainingNonStringValues(t *testing.T) {
 	dict := starlark.StringDict{}
-	dict["cmd_args"] = starlark.NewList([]starlark.Value{starlark.MakeInt(42)})
+	dict["cmd"] = starlark.NewList([]starlark.Value{starlark.MakeInt(42)})
 	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
 	output, err := parseCmdArgs(input)
 	require.NotNil(t, err)
-	require.Equal(t, "'cmd_args[0]' is expected to be a string. Got starlark.Int", err.Error())
+	require.Equal(t, "'cmd[0]' is expected to be a string. Got starlark.Int", err.Error())
 	require.Equal(t, []string(nil), output)
 }
 

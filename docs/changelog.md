@@ -1,7 +1,6 @@
 # TBD
 
-### Changes
-- Refactored startosis tests to enable parallel execution of tests
+# 0.53.4
 
 # 0.53.3
 ### Fixes
@@ -15,6 +14,13 @@
 - Added exhaustive struct linting and brought code base into exhaustive struct compliance
 - Temporarily disable enclave dump for k8s in CircleCI until we fix issue #407
 - Small cleanup to kurtosis instruction classes. It now uses a pointer to the position object.
+
+### Fixes
+- Renamed `cmd_args` and `entrypoint_args` inside `config` inside `add_service` to `cmd` and `entrypoint`
+
+### Breaking Changes
+- Renamed `cmd_args` and `entrypoint_args` inside `config` inside `add_service` to `cmd` and `entrypoint`
+  - Users will have to replace their use of `cmd_args` and `entry_point_args` to the above inside their Starlark modules 
 
 # 0.53.2
 ### Features
@@ -100,7 +106,7 @@ return `artifact_uuid` during interpretation time
 
 # 0.51.13
 ### Fixes
-- Set `entry_point_args` and `cmd_args` to `nil` if not specified instead of empty array 
+- Set `entrypoint` and `cmd_args` to `nil` if not specified instead of empty array 
 
 # 0.51.12
 ### Features

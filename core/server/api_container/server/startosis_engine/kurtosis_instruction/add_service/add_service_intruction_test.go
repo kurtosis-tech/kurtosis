@@ -28,9 +28,9 @@ func TestAddServiceInstruction_GetCanonicalizedInstruction(t *testing.T) {
 	require.Nil(t, usedPortsDict.SetKey(starlark.String("grpc"), starlarkstruct.FromStringDict(starlarkstruct.Default, port1Dict)))
 	serviceConfigDict["ports"] = usedPortsDict
 
-	serviceConfigDict["entry_point_args"] = starlark.NewList([]starlark.Value{starlark.String("127.0.0.0"), starlark.MakeInt(1234)})
+	serviceConfigDict["entrypoint"] = starlark.NewList([]starlark.Value{starlark.String("127.0.0.0"), starlark.MakeInt(1234)})
 
-	serviceConfigDict["cmd_args"] = starlark.NewList([]starlark.Value{starlark.String("bash"), starlark.String("-c"), starlark.String("/apps/main.py"), starlark.MakeInt(1234)})
+	serviceConfigDict["cmd"] = starlark.NewList([]starlark.Value{starlark.String("bash"), starlark.String("-c"), starlark.String("/apps/main.py"), starlark.MakeInt(1234)})
 
 	envVar := starlark.NewDict(2)
 	require.Nil(t, envVar.SetKey(starlark.String("VAR_1"), starlark.String("VALUE_1")))
@@ -53,13 +53,13 @@ func TestAddServiceInstruction_GetCanonicalizedInstruction(t *testing.T) {
 	expectedOutput := `# from: dummyFile[22:26]
 add_service(
 	config=struct(
-		cmd_args=[
+		cmd=[
 			"bash",
 			"-c",
 			"/apps/main.py",
 			1234
 		],
-		entry_point_args=[
+		entrypoint=[
 			"127.0.0.0",
 			1234
 		],
