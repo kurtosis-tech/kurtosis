@@ -830,33 +830,31 @@ func (apicService ApiContainerService) executeStartosis(ctx context.Context, dry
 	}
 	logrus.Debugf("Successfully validated Startosis script")
 
-	scriptOutput := strings.Builder{}
-	streamingChannel := make(chan string) // the streaming channel will be closed right after calling Execute()
-	streamingChannelFlushedBlocking := make(chan bool)
-	defer close(streamingChannelFlushedBlocking)
-	go func() {
-		// Go background routine to collect the element of the streaming channel as they are written
-		// TODO(gb): for now we copy them to a simple str buffer but next step will be to forward them to a gRPC stream
-		for outputLine := range streamingChannel {
-			logrus.Debugf("Kurtosis script output line received: \n%v", outputLine)
-			if _, err := scriptOutput.WriteString(outputLine); err != nil {
-				logrus.Errorf("Unnable to process Kurtosis script output line. Startosis output line was: \n%v\n. Error was: \n%v", outputLine, err.Error())
-			}
-		}
-		// Channel closed means that the executor finished going through the list of instructions. We can return safely
-		logrus.Debug("Kurtosis script execution finished. Output stream will be closed shortly")
-		streamingChannelFlushedBlocking <- true
-	}()
+	var serializedSuccessfullyExecutedInstructions []*kurtosis_core_rpc_api_bindings.KurtosisInstruction
+	kurtosisInstructionsStream, errChan := apicService.startosisExecutor.Execute(ctx, dryRun, generatedInstructionsList)
 
-	successfullyExecutedInstructions, executionError := apicService.startosisExecutor.Execute(ctx, dryRun, generatedInstructionsList, streamingChannel)
-	close(streamingChannel)           // close the channel to stop the execution of the Go routine started above
-	<-streamingChannelFlushedBlocking // Block on the flush channel to make sure we capture all values in the buffer
-	if executionError != nil {
-		return binding_constructors.NewExecuteStartosisResponseFromExecutionError(
-			successfullyExecutedInstructions,
-			executionError,
-		), nil
+ReadChannelsLoop:
+	for {
+		select {
+		case executedKurtosisInstruction, isChanOpen := <-kurtosisInstructionsStream:
+			if !isChanOpen {
+				logrus.Debug("Kurtosis instructions stream was closed. Exiting execution loop")
+				break ReadChannelsLoop
+			}
+			logrus.Debugf("Received serialized Kurtosis instruction:\n%v", executedKurtosisInstruction.GetExecutableInstruction())
+			serializedSuccessfullyExecutedInstructions = append(serializedSuccessfullyExecutedInstructions, executedKurtosisInstruction)
+		case executionError, isChanOpen := <-errChan:
+			if !isChanOpen {
+				logrus.Debug("Kurtosis execution error channel was closed. Exiting execution loop")
+				break ReadChannelsLoop
+			}
+			return binding_constructors.NewExecuteStartosisResponseFromExecutionError(
+				serializedSuccessfullyExecutedInstructions,
+				executionError,
+			), nil
+		}
 	}
-	logrus.Debugf("Successfully executed the list of Kurtosis instructions")
-	return binding_constructors.NewExecuteStartosisResponse(successfullyExecutedInstructions), nil
+
+	logrus.Debugf("Successfully executed the list of %d Kurtosis instructions", len(generatedInstructionsList))
+	return binding_constructors.NewExecuteStartosisResponse(serializedSuccessfullyExecutedInstructions), nil
 }
