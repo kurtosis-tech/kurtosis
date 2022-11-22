@@ -274,7 +274,7 @@ export class EnclaveContext {
         args.setDryRun(dryRun)
         args.setSerializedParams(serializedParams)
         args.setRemote(true)
-        const resultRemoteModuleExecution : Result<ExecuteStartosisResponse, Error> = await this.backend.executeStartosisRemoteModule(args)
+        const resultRemoteModuleExecution : Result<ExecuteStartosisResponse, Error> = await this.backend.executeStartosisModule(args)
         if (resultRemoteModuleExecution.isErr()) {
             return err(new Error(`Unexpected error happened executing Startosis module \n${resultRemoteModuleExecution.error}`))
         }
