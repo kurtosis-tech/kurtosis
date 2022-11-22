@@ -5,6 +5,7 @@
 - Renamed `store_files_from_service` to `store_service_files`
 - Slightly update the way script output information are passed from the Startosis engine back the API container main class. This is a step to prepare for streaming this output all the way back the CLI.
 - Removed `load` statement in favour of `import_module`. Calling load will now throw an InterpretationError
+- Refactored startosis tests to enable parallel execution of tests
 
 # 0.53.4
 
