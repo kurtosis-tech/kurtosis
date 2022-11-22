@@ -9,6 +9,11 @@ import (
 // The generated bindings don't come with constructors (leaving it up to the user to initialize all the fields), so we
 // add them so that our code is safer
 
+var (
+	startosisScriptNoOutput                = ""
+	startosisScriptNoSerializedInstruction []*kurtosis_core_rpc_api_bindings.SerializedKurtosisInstruction
+)
+
 // ==============================================================================================
 //
 //	Shared Objects (Used By Multiple Endpoints)
@@ -280,25 +285,73 @@ func NewExecuteStartosisRemoteModuleArgs(moduleId string, serializedParams strin
 //                                 Startosis Execution Response
 // ==============================================================================================
 
-func NewExecuteStartosisResponse(
-	serializedScriptOutput string,
-	interpretationError string,
-	validationErrors []*kurtosis_core_rpc_api_bindings.StartosisValidationError,
-	executionError string,
-	serializedInstructions []*kurtosis_core_rpc_api_bindings.SerializedKurtosisInstruction,
-) *kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse {
+func NewExecuteStartosisResponse(serializedScriptOutput string, serializedInstructions []*kurtosis_core_rpc_api_bindings.SerializedKurtosisInstruction) *kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse {
 	return &kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse{
 		SerializedScriptOutput: serializedScriptOutput,
-		InterpretationError:    interpretationError,
-		ValidationErrors:       validationErrors,
-		ExecutionError:         executionError,
+		KurtosisError:          nil,
 		SerializedInstructions: serializedInstructions,
 	}
 }
 
-func NewStartosisValidationError(error string) *kurtosis_core_rpc_api_bindings.StartosisValidationError {
-	return &kurtosis_core_rpc_api_bindings.StartosisValidationError{
-		Error: error,
+func NewExecuteStartosisResponseFromInterpretationError(
+	interpretationError *kurtosis_core_rpc_api_bindings.KurtosisInterpretationError,
+) *kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse {
+	return &kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse{
+		SerializedScriptOutput: startosisScriptNoOutput,
+		KurtosisError: &kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse_InterpretationError{
+			InterpretationError: interpretationError,
+		},
+		SerializedInstructions: startosisScriptNoSerializedInstruction,
+	}
+}
+
+func NewExecuteStartosisResponseFromValidationErrors(
+	validationError *kurtosis_core_rpc_api_bindings.KurtosisValidationErrors,
+) *kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse {
+	return &kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse{
+		SerializedScriptOutput: startosisScriptNoOutput,
+		KurtosisError: &kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse_ValidationErrors{
+			ValidationErrors: validationError,
+		},
+		SerializedInstructions: startosisScriptNoSerializedInstruction,
+	}
+}
+
+func NewExecuteStartosisResponseFromExecutionError(
+	serializedScriptOutput string,
+	executionError *kurtosis_core_rpc_api_bindings.KurtosisExecutionError,
+	serializedInstructions []*kurtosis_core_rpc_api_bindings.SerializedKurtosisInstruction,
+) *kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse {
+	return &kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse{
+		SerializedScriptOutput: serializedScriptOutput,
+		KurtosisError: &kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse_ExecutionError{
+			ExecutionError: executionError,
+		},
+		SerializedInstructions: serializedInstructions,
+	}
+}
+
+func NewKurtosisInterpretationError(errorMessage string) *kurtosis_core_rpc_api_bindings.KurtosisInterpretationError {
+	return &kurtosis_core_rpc_api_bindings.KurtosisInterpretationError{
+		ErrorMessage: errorMessage,
+	}
+}
+
+func NewKurtosisValidationErrors(errors []*kurtosis_core_rpc_api_bindings.KurtosisValidationError) *kurtosis_core_rpc_api_bindings.KurtosisValidationErrors {
+	return &kurtosis_core_rpc_api_bindings.KurtosisValidationErrors{
+		Errors: errors,
+	}
+}
+
+func NewKurtosisValidationError(errorMessage string) *kurtosis_core_rpc_api_bindings.KurtosisValidationError {
+	return &kurtosis_core_rpc_api_bindings.KurtosisValidationError{
+		ErrorMessage: errorMessage,
+	}
+}
+
+func NewKurtosisExecutionError(errorMessage string) *kurtosis_core_rpc_api_bindings.KurtosisExecutionError {
+	return &kurtosis_core_rpc_api_bindings.KurtosisExecutionError{
+		ErrorMessage: errorMessage,
 	}
 }
 

@@ -263,11 +263,11 @@ func executeRemoteModule(enclaveCtx *enclaves.EnclaveContext, moduleId string, s
 }
 
 func validateExecutionResponse(executionResponse *kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse, scriptOrModulePath string, scriptOrModuleArg string, dryRun bool) error {
-	if executionResponse.InterpretationError != "" {
-		return stacktrace.NewError("There was an error interpreting the Startosis %s '%s': \n%v", scriptOrModuleArg, scriptOrModulePath, executionResponse.InterpretationError)
+	if executionResponse.GetInterpretationError() != nil {
+		return stacktrace.NewError("There was an error interpreting the Startosis %s '%s': \n%v", scriptOrModuleArg, scriptOrModulePath, executionResponse.GetInterpretationError().GetErrorMessage())
 	}
-	if len(executionResponse.ValidationErrors) > 0 {
-		return stacktrace.NewError("There was an error validating the Startosis %s '%s': \n%v", scriptOrModuleArg, scriptOrModulePath, executionResponse.ValidationErrors)
+	if executionResponse.GetValidationErrors() != nil {
+		return stacktrace.NewError("There was an error validating the Startosis %s '%s': \n%v", scriptOrModuleArg, scriptOrModulePath, executionResponse.GetValidationErrors().GetErrors())
 	}
 
 	concatenatedKurtosisInstructions := make([]string, len(executionResponse.SerializedInstructions))
@@ -276,8 +276,8 @@ func validateExecutionResponse(executionResponse *kurtosis_core_rpc_api_bindings
 	}
 	logrus.Infof("Kurtosis script successfully interpreted and validated. List of Kurtosis instructions generated:\n%v", strings.Join(concatenatedKurtosisInstructions, "\n"))
 
-	if executionResponse.ExecutionError != "" {
-		return stacktrace.NewError("There was an error executing the Startosis %s '%s': \n%v", scriptOrModuleArg, scriptOrModulePath, executionResponse.ExecutionError)
+	if executionResponse.GetExecutionError() != nil {
+		return stacktrace.NewError("There was an error executing the Startosis %s '%s': \n%v", scriptOrModuleArg, scriptOrModulePath, executionResponse.GetExecutionError().GetErrorMessage())
 	}
 
 	if dryRun {
