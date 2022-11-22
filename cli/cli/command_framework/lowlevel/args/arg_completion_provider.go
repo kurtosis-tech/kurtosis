@@ -15,7 +15,7 @@ const (
 )
 
 type argCompletionProvider interface {
-	// Returns an argument completion func
+	// Runs the argument completion func
 	RunCompletionFunction(ctx context.Context, flags *flags.ParsedFlags, previousArgs *ParsedArgs) ([]string, cobra.ShellCompDirective, error)
 }
 
@@ -44,7 +44,7 @@ func (impl *argCompletionProviderImpl) RunCompletionFunction(
 	return nil, defaultShellDirective, stacktrace.NewError("The custom completion func and the shell completion directive are not defined, this should never happens; this is a bug in Kurtosis")
 }
 
-//Receive a custom completion function which wi
+//Receive a custom completion function which should generate the completions list for the argument and return it
 func NewManualCompletionsProvider(
 	customCompletionFunc func(ctx context.Context, flags *flags.ParsedFlags, previousArgs *ParsedArgs) ([]string, error),
 ) argCompletionProvider {
@@ -55,10 +55,11 @@ func NewManualCompletionsProvider(
 	return newManualCompletionProvider
 }
 
-func NewDefaultFileCompletionProvider() argCompletionProvider {
-	newDefaultFileCompletionProvider := &argCompletionProviderImpl{
+//This argument completion provider enables the default shell file completion functionality for the argument
+func NewDefaultShellFileCompletionProvider() argCompletionProvider {
+	newDefaultShellFileCompletionProvider := &argCompletionProviderImpl{
 		customCompletionFunc: nil,
 		shellCompletionDirective: shellDirectiveForShellProvideDefaultFileCompletion,
 	}
-	return newDefaultFileCompletionProvider
+	return newDefaultShellFileCompletionProvider
 }

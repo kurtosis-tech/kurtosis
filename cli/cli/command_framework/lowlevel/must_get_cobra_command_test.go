@@ -25,10 +25,14 @@ var doNothingFunc = func(ctx context.Context, flags *flags.ParsedFlags, args *ar
 
 func TestMustGetCobraCommand_EmptyCommandStrCausesPanic(t *testing.T) {
 	kurtosisCmd := &LowlevelKurtosisCommand{
-		CommandStr:       "   ",
-		ShortDescription: "Short description",
-		LongDescription:  "This is a very long description",
-		RunFunc: doNothingFunc,
+		CommandStr:               "   ",
+		ShortDescription:         "Short description",
+		LongDescription:          "This is a very long description",
+		Flags:                    nil,
+		Args:                     nil,
+		PreValidationAndRunFunc:  nil,
+		RunFunc:                  doNothingFunc,
+		PostValidationAndRunFunc: nil,
 	}
 
 	requirePanicWithSubstring(
@@ -41,10 +45,14 @@ func TestMustGetCobraCommand_EmptyCommandStrCausesPanic(t *testing.T) {
 
 func TestMustGetCobraCommand_EmptyShortDescriptionCausesPanic(t *testing.T) {
 	kurtosisCmd := &LowlevelKurtosisCommand{
-		CommandStr:       "test",
-		ShortDescription: "     ",
-		LongDescription:  "Long description",
-		RunFunc: doNothingFunc,
+		CommandStr:               "test",
+		ShortDescription:         "     ",
+		LongDescription:          "Long description",
+		Flags:                    nil,
+		Args:                     nil,
+		PreValidationAndRunFunc:  nil,
+		RunFunc:                  doNothingFunc,
+		PostValidationAndRunFunc: nil,
 	}
 
 	requirePanicWithSubstring(
@@ -57,10 +65,14 @@ func TestMustGetCobraCommand_EmptyShortDescriptionCausesPanic(t *testing.T) {
 
 func TestMustGetCobraCommand_EmptyLongDescriptionCausesPanic(t *testing.T) {
 	kurtosisCmd := &LowlevelKurtosisCommand{
-		CommandStr:       "test",
-		ShortDescription: "Short description",
-		LongDescription:  "     ",
-		RunFunc: doNothingFunc,
+		CommandStr:               "test",
+		ShortDescription:         "Short description",
+		LongDescription:          "     ",
+		Flags:                    nil,
+		Args:                     nil,
+		PreValidationAndRunFunc:  nil,
+		RunFunc:                  doNothingFunc,
+		PostValidationAndRunFunc: nil,
 	}
 
 	requirePanicWithSubstring(
@@ -73,10 +85,14 @@ func TestMustGetCobraCommand_EmptyLongDescriptionCausesPanic(t *testing.T) {
 
 func TestMustGetCobraCommand_NilRunFunctionCausesPanic(t *testing.T) {
 	kurtosisCmd := &LowlevelKurtosisCommand{
-		CommandStr:       "test",
-		ShortDescription: "Short description",
-		LongDescription:  "This is a very long description",
-		RunFunc: nil,
+		CommandStr:               "test",
+		ShortDescription:         "Short description",
+		LongDescription:          "This is a very long description",
+		Flags:                    nil,
+		Args:                     nil,
+		PreValidationAndRunFunc:  nil,
+		RunFunc:                  nil,
+		PostValidationAndRunFunc: nil,
 	}
 
 	requirePanicWithSubstring(
@@ -92,7 +108,8 @@ func TestMustGetCobraCommand_DuplicateArgsCausePanic(t *testing.T) {
 		CommandStr:       "test",
 		ShortDescription: "Short description",
 		LongDescription:  "This is a very long description",
-		Args:             []*args.ArgConfig{
+		Flags:            nil,
+		Args: []*args.ArgConfig{
 			{
 				Key: arg1Key,
 			},
@@ -100,7 +117,9 @@ func TestMustGetCobraCommand_DuplicateArgsCausePanic(t *testing.T) {
 				Key: arg1Key,
 			},
 		},
-		RunFunc: doNothingFunc,
+		PreValidationAndRunFunc:  nil,
+		RunFunc:                  doNothingFunc,
+		PostValidationAndRunFunc: nil,
 	}
 
 	requirePanicWithSubstring(
@@ -124,7 +143,10 @@ func TestMustGetCobraCommand_DuplicateFlagsCausePanic(t *testing.T) {
 				Key: flag1Key,
 			},
 		},
-		RunFunc: doNothingFunc,
+		Args:                     nil,
+		PreValidationAndRunFunc:  nil,
+		RunFunc:                  doNothingFunc,
+		PostValidationAndRunFunc: nil,
 	}
 
 	requirePanicWithSubstring(
@@ -156,7 +178,10 @@ func TestMustGetCobraCommand_FlagsWithMismatchedDefaulValuesCausePanic(t *testin
 			Flags: []*flags.FlagConfig{
 				illegalFlag,
 			},
-			RunFunc: doNothingFunc,
+			Args:                     nil,
+			PreValidationAndRunFunc:  nil,
+			RunFunc:                  doNothingFunc,
+			PostValidationAndRunFunc: nil,
 		}
 
 		requirePanicWithSubstring(
@@ -181,7 +206,10 @@ func TestMustGetCobraCommand_FlagWithTypeDoesntPanic(t *testing.T) {
 				Type: flags.FlagType_String,
 			},
 		},
-		RunFunc: doNothingFunc,
+		Args:                     nil,
+		PreValidationAndRunFunc:  nil,
+		RunFunc:                  doNothingFunc,
+		PostValidationAndRunFunc: nil,
 	}
 
 	require.NotPanics(
@@ -207,7 +235,10 @@ func TestMustGetCobraCommand_DuplicateFlagShorthandsPanic(t *testing.T) {
 				Shorthand: dupedShorthandValue,
 			},
 		},
-		RunFunc: doNothingFunc,
+		Args:                     nil,
+		PreValidationAndRunFunc:  nil,
+		RunFunc:                  doNothingFunc,
+		PostValidationAndRunFunc: nil,
 	}
 
 	requirePanicWithSubstring(
@@ -229,7 +260,10 @@ func TestMustGetCobraCommand_ShorthandsGreaterThanOneLetterPanic(t *testing.T) {
 				Shorthand: "this is way too long",
 			},
 		},
-		RunFunc: doNothingFunc,
+		Args:                     nil,
+		PreValidationAndRunFunc:  nil,
+		RunFunc:                  doNothingFunc,
+		PostValidationAndRunFunc: nil,
 	}
 
 	requirePanicWithSubstring(
@@ -255,7 +289,10 @@ func TestMustGetCobraCommand_TestEmptyShorthandsDontTriggerShorthandValidation(t
 				Shorthand: "",
 			},
 		},
-		RunFunc: doNothingFunc,
+		Args:                     nil,
+		PreValidationAndRunFunc:  nil,
+		RunFunc:                  doNothingFunc,
+		PostValidationAndRunFunc: nil,
 	}
 
 	require.NotPanics(
@@ -270,12 +307,15 @@ func TestMustGetCobraCommand_EmptyArgKeyCausesPanic(t *testing.T) {
 		CommandStr:       "test",
 		ShortDescription: "Short description",
 		LongDescription:  "This is a very long description",
+		Flags:            nil,
 		Args: []*args.ArgConfig{
 			{
 				Key: "  ",
 			},
 		},
-		RunFunc: doNothingFunc,
+		PreValidationAndRunFunc:  nil,
+		RunFunc:                  doNothingFunc,
+		PostValidationAndRunFunc: nil,
 	}
 
 	requirePanicWithSubstring(
@@ -296,7 +336,10 @@ func TestMustGetCobraCommand_EmptyFlagKeyCausesPanic(t *testing.T) {
 				Key: "  ",
 			},
 		},
-		RunFunc: doNothingFunc,
+		Args:                     nil,
+		PreValidationAndRunFunc:  nil,
+		RunFunc:                  doNothingFunc,
+		PostValidationAndRunFunc: nil,
 	}
 
 	requirePanicWithSubstring(
@@ -312,7 +355,8 @@ func TestMustGetCobraCommand_TwoOptionalArgumentsCausePanic(t *testing.T) {
 		CommandStr:       "test",
 		ShortDescription: "Short description",
 		LongDescription:  "This is a very long description",
-		Args:             []*args.ArgConfig{
+		Flags:            nil,
+		Args: []*args.ArgConfig{
 			{
 				Key: arg1Key,
 			},
@@ -325,7 +369,9 @@ func TestMustGetCobraCommand_TwoOptionalArgumentsCausePanic(t *testing.T) {
 				IsOptional: true,
 			},
 		},
-		RunFunc: doNothingFunc,
+		PreValidationAndRunFunc:  nil,
+		RunFunc:                  doNothingFunc,
+		PostValidationAndRunFunc: nil,
 	}
 
 	requirePanicWithSubstring(
@@ -341,7 +387,8 @@ func TestMustGetCobraCommand_MiddleGreedyArgCausesPanic(t *testing.T) {
 		CommandStr:       "test",
 		ShortDescription: "Short description",
 		LongDescription:  "This is a very long description",
-		Args:             []*args.ArgConfig{
+		Flags:            nil,
+		Args: []*args.ArgConfig{
 			{
 				Key: arg1Key,
 			},
@@ -353,7 +400,9 @@ func TestMustGetCobraCommand_MiddleGreedyArgCausesPanic(t *testing.T) {
 				Key: arg3Key,
 			},
 		},
-		RunFunc: doNothingFunc,
+		PreValidationAndRunFunc:  nil,
+		RunFunc:                  doNothingFunc,
+		PostValidationAndRunFunc: nil,
 	}
 
 	requirePanicWithSubstring(
@@ -381,7 +430,10 @@ func TestMustGetCobraCommand_WorkingFlagDefaultValueChecking(t *testing.T) {
 				Default: "false",
 			},
 		},
-		RunFunc: doNothingFunc,
+		Args:                     nil,
+		PreValidationAndRunFunc:  nil,
+		RunFunc:                  doNothingFunc,
+		PostValidationAndRunFunc: nil,
 	}
 
 	require.NotPanics(
@@ -396,6 +448,7 @@ func TestMustGetCobraCommand_OptionalArgsWithNilDefaultPanic(t *testing.T) {
 		CommandStr:       "test",
 		ShortDescription: "Short description",
 		LongDescription:  "This is a very long description",
+		Flags:            nil,
 		Args: []*args.ArgConfig{
 			{
 				Key:          arg1Key,
@@ -403,7 +456,9 @@ func TestMustGetCobraCommand_OptionalArgsWithNilDefaultPanic(t *testing.T) {
 				IsOptional:   true,
 			},
 		},
-		RunFunc: doNothingFunc,
+		PreValidationAndRunFunc:  nil,
+		RunFunc:                  doNothingFunc,
+		PostValidationAndRunFunc: nil,
 	}
 
 	requirePanicWithSubstring(
@@ -419,6 +474,7 @@ func TestMustGetCobraCommand_RequiredArgWithNilDefaultDoesntPanic(t *testing.T) 
 		CommandStr:       "test",
 		ShortDescription: "Short description",
 		LongDescription:  "This is a very long description",
+		Flags:            nil,
 		Args: []*args.ArgConfig{
 			{
 				Key:          arg1Key,
@@ -426,7 +482,9 @@ func TestMustGetCobraCommand_RequiredArgWithNilDefaultDoesntPanic(t *testing.T) 
 				IsOptional:   false,
 			},
 		},
-		RunFunc: doNothingFunc,
+		PreValidationAndRunFunc:  nil,
+		RunFunc:                  doNothingFunc,
+		PostValidationAndRunFunc: nil,
 	}
 
 	require.NotPanics(
@@ -441,6 +499,7 @@ func TestMustGetCobraCommand_OptionalNonGreedyArgWithWrongDefaultTypePanics(t *t
 		CommandStr:       "test",
 		ShortDescription: "Short description",
 		LongDescription:  "This is a very long description",
+		Flags:            nil,
 		Args: []*args.ArgConfig{
 			{
 				Key:          arg1Key,
@@ -449,7 +508,9 @@ func TestMustGetCobraCommand_OptionalNonGreedyArgWithWrongDefaultTypePanics(t *t
 				IsOptional:   true,
 			},
 		},
-		RunFunc: doNothingFunc,
+		PreValidationAndRunFunc:  nil,
+		RunFunc:                  doNothingFunc,
+		PostValidationAndRunFunc: nil,
 	}
 
 	requirePanicWithSubstring(
@@ -465,6 +526,7 @@ func TestMustGetCobraCommand_OptionalGreedyArgWithWrongDefaultTypePanics(t *test
 		CommandStr:       "test",
 		ShortDescription: "Short description",
 		LongDescription:  "This is a very long description",
+		Flags:            nil,
 		Args: []*args.ArgConfig{
 			{
 				Key:          arg1Key,
@@ -473,7 +535,9 @@ func TestMustGetCobraCommand_OptionalGreedyArgWithWrongDefaultTypePanics(t *test
 				IsOptional:   true,
 			},
 		},
-		RunFunc: doNothingFunc,
+		PreValidationAndRunFunc:  nil,
+		RunFunc:                  doNothingFunc,
+		PostValidationAndRunFunc: nil,
 	}
 
 	requirePanicWithSubstring(
@@ -483,7 +547,6 @@ func TestMustGetCobraCommand_OptionalGreedyArgWithWrongDefaultTypePanics(t *test
 		"Expected an optional greedy arg with a string default type to cause a panic",
 	)
 }
-
 
 // ====================================================================================================
 //                                   Private Helper Functions

@@ -36,7 +36,10 @@ func TestPort_TruthValidService(t *testing.T) {
 }
 
 func TestPort_TruthFalsyService(t *testing.T) {
-	portSpec := PortSpec{}
+	portSpec := PortSpec{
+		number:   starlark.Int{},
+		protocol: "",
+	}
 	require.Equal(t, starlark.Bool(false), portSpec.Truth())
 }
 

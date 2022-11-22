@@ -42,19 +42,19 @@ func TestGetLabelsFilterList(t *testing.T) {
 	}))
 
 	assert.True(t, labelsFilterList.MatchKVList(labelSearchFilterKey, map[string]string{
-		enclaveKey: enclaveID,
+		enclaveKey:       enclaveID,
 		containerTypeKey: containerTypeValue,
 	}))
 }
 
-func TestConvertCPUAllocationToNanoCPUsReturnsCorrectValue(t *testing.T){
+func TestConvertCPUAllocationToNanoCPUsReturnsCorrectValue(t *testing.T) {
 	cpuAllocation := uint64(1500)
 
 	nanoCPUs := convertMillicpusToNanoCPUs(cpuAllocation)
 	assert.Equal(t, uint64(1500000000), nanoCPUs)
 }
 
-func TestConvertMemoryAllocationToBytesReturnsCorrectValue(t *testing.T){
+func TestConvertMemoryAllocationToBytesReturnsCorrectValue(t *testing.T) {
 	memoryAllocationMegabytes := uint64(400) // 400 megabytes
 
 	memoryAllocationBytes := convertMegabytesToBytes(memoryAllocationMegabytes)
@@ -64,10 +64,13 @@ func TestConvertMemoryAllocationToBytesReturnsCorrectValue(t *testing.T){
 // We had a bug on 2022-09-19 where having IPv4 and IPv6 ports was incorrectly selecting the IPv6 one
 func TestCorrectPortIsSelectedWhenIPv6IsPresent(t *testing.T) {
 	dockerContainer := types.Container{
-		ID:         "abc123",
-		Names:      []string{"noname"},
-		Image:      "nginx",
-		Ports:      []types.Port{
+		ID:      "abc123",
+		Names:   []string{"noname"},
+		Image:   "nginx",
+		ImageID: "",
+		Command: "",
+		Created: 0,
+		Ports: []types.Port{
 			{
 				IP:          "::",
 				PrivatePort: 7443,
@@ -81,8 +84,16 @@ func TestCorrectPortIsSelectedWhenIPv6IsPresent(t *testing.T) {
 				Type:        "tcp",
 			},
 		},
+		SizeRw:     0,
+		SizeRootFs: 0,
 		Labels:     map[string]string{},
-		State:     "running",
+		State:      "running",
+		Status:     "",
+		HostConfig: struct {
+			NetworkMode string `json:",omitempty"`
+		}{},
+		NetworkSettings: nil,
+		Mounts:          nil,
 	}
 	kurtosisContainer, err := newContainerFromDockerContainer(dockerContainer)
 	require.NoError(t, err)

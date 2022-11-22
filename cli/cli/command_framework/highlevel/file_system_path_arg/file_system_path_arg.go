@@ -71,7 +71,7 @@ func newFileSystemPathArg(
 		//CompletionsFunc:                         noCustomCompletionFunc,
 		ValidationFunc:                          validate,
 		//No custom completion because we are enabling default shell's file completion with ShouldShellProvideDefaultFileCompletion
-		ArgCompletionProvider: args.NewDefaultFileCompletionProvider(),
+		ArgCompletionProvider: args.NewDefaultShellFileCompletionProvider(),
 	}
 }
 

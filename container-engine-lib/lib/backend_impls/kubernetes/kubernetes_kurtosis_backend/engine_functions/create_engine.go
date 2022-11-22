@@ -386,8 +386,9 @@ func createEnginePod(
 	var engineContainerEnvVars []apiv1.EnvVar
 	for varName, varValue := range envVars {
 		envVar := apiv1.EnvVar{
-			Name:  varName,
-			Value: varValue,
+			Name:      varName,
+			Value:     varValue,
+			ValueFrom: nil,
 		}
 		engineContainerEnvVars = append(engineContainerEnvVars, envVar)
 	}

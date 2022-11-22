@@ -37,7 +37,9 @@ func RunUserServiceExecCommands(
 		requestedGuids[guid] = true
 	}
 	matchingServicesFilters := &service.ServiceFilters{
-		GUIDs: requestedGuids,
+		IDs:      nil,
+		GUIDs:    requestedGuids,
+		Statuses: nil,
 	}
 	matchingObjectsAndResources, err := shared_helpers.GetMatchingUserServiceObjectsAndKubernetesResources(ctx, enclaveId, matchingServicesFilters, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
 	if err != nil {

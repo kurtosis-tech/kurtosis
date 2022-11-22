@@ -77,7 +77,6 @@ func (kurtosisCmd *LowlevelKurtosisCommand) MustGetCobraCommand() *cobra.Command
 		))
 	}
 
-
 	// Verify no duplicate flag keys
 	usedFlagKeys := map[string]bool{}
 	for _, flagConfig := range kurtosisCmd.Flags {
@@ -311,13 +310,15 @@ func (kurtosisCmd *LowlevelKurtosisCommand) MustGetCobraCommand() *cobra.Command
 		strings.Join(allArgUsageStrs, " "),
 	)
 
+	// Suppressing exhaustruct requirement because this struct has ~40 properties
+	// nolint: exhaustruct
 	result := &cobra.Command{
 		Use:                   usageStr,
 		DisableFlagsInUseLine: true, // Not needed since we manually add the string in the usage string
 		Short:                 kurtosisCmd.ShortDescription,
 		Long:                  kurtosisCmd.LongDescription,
 		ValidArgsFunction:     getCompletionsFunc,
-		RunE: cobraRunFunc,
+		RunE:                  cobraRunFunc,
 	}
 
 	// Validates that the default values for the declared flags match the declard types, and add them to the Cobra command
@@ -334,7 +335,7 @@ func (kurtosisCmd *LowlevelKurtosisCommand) MustGetCobraCommand() *cobra.Command
 		if !found {
 			// Should never happen because we enforce completeness via unit test
 			panic(stacktrace.NewError(
-				"Flag '%v' on command '%v' has type '%v' which doesn't have a flag type processor defined; this means " +
+				"Flag '%v' on command '%v' has type '%v' which doesn't have a flag type processor defined; this means "+
 					"that the flag type is invalid or a processor needs to be defined",
 				key,
 				kurtosisCmd.CommandStr,
@@ -354,7 +355,6 @@ func (kurtosisCmd *LowlevelKurtosisCommand) MustGetCobraCommand() *cobra.Command
 
 	return result
 }
-
 
 // ====================================================================================================
 //                                   Private Helper Functions

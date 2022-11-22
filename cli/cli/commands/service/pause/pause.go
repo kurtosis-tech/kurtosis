@@ -33,6 +33,7 @@ var PauseCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand
 	LongDescription:           "Pauses all processes running in a service. Only available in Docker-backed Kurtosis.",
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
 	EngineClientContextKey:    engineClientCtxKey,
+	Flags:                     nil,
 	Args: []*args.ArgConfig{
 		enclave_id_arg.NewEnclaveIDArg(
 			enclaveIdArgKey,

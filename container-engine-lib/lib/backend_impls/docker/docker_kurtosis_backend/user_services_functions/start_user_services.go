@@ -88,7 +88,9 @@ func StartUserServices(
 			return
 		}
 		userServiceFilters := &service.ServiceFilters{
-			GUIDs: serviceGUIDsToRemove,
+			IDs:      nil,
+			GUIDs:    serviceGUIDsToRemove,
+			Statuses: nil,
 		}
 		_, failedToDestroyGUIDs, err := destroyUserServicesUnlocked(ctx, enclaveID, userServiceFilters, serviceRegistrations, enclaveFreeIpProviders, dockerManager)
 		if err != nil {
@@ -158,7 +160,7 @@ func StartUserServices(
 	// The least we can do is check if the collector server is healthy before starting the user service, if in case it gets shut down later we can't do much about it anyway.
 	if err = logsCollectorAvailabilityChecker.WaitForAvailability(); err != nil {
 		return nil, nil,
-			stacktrace.Propagate(err,"An error occurred while waiting for the log container to become available")
+			stacktrace.Propagate(err, "An error occurred while waiting for the log container to become available")
 	}
 
 	//We use the public TCP address because the logging driver connection link is from the Docker demon to the logs collector container
@@ -184,7 +186,7 @@ func StartUserServices(
 		dockerManager,
 		logsCollectorServiceAddress,
 		logsCollectorLabels,
-		)
+	)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred while trying to start services in parallel.")
 	}
@@ -418,7 +420,6 @@ func createStartServiceOperation(
 		if volumeMounts != nil {
 			createAndStartArgsBuilder.WithVolumeMounts(volumeMounts)
 		}
-
 
 		createAndStartArgs := createAndStartArgsBuilder.Build()
 

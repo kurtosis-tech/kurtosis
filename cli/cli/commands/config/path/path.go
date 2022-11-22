@@ -16,7 +16,11 @@ var PathCmd = &lowlevel.LowlevelKurtosisCommand{
 	CommandStr:               command_str_consts.PathCmdStr,
 	ShortDescription:         "Shows Kurtosis config file path",
 	LongDescription:          "Displays the path to the Kurtosis config file",
+	Flags:                    nil,
+	Args:                     nil,
+	PreValidationAndRunFunc:  nil,
 	RunFunc:                  run,
+	PostValidationAndRunFunc: nil,
 }
 
 func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error {

@@ -4,6 +4,7 @@ import * as grpc from "@grpc/grpc-js"
 
 import { createEnclave } from "../../test_helpers/enclave_setup";
 import {validateDataStoreServiceIsHealthy} from "../../test_helpers/test_helpers";
+import {generateScriptOutput} from "../../test_helpers/startosis_helpers";
 
 const TEST_NAME = "upload-files-test"
 const IS_PARTITIONING_ENABLED = false
@@ -68,21 +69,11 @@ Uploaded [a-f0-9-]{36}
 `
         const expectedScriptRegex = new RegExp(expectedScriptRegexPattern)
 
-        if (!expectedScriptRegex.test(executeStartosisScriptValue.getSerializedScriptOutput())) {
-            throw err(new Error(`Expected output to be match '${expectedScriptRegexPattern} got '${executeStartosisScriptValue.getSerializedScriptOutput()}'`))
-        }
+        expect(generateScriptOutput(executeStartosisScriptValue.getKurtosisInstructionsList())).toMatch(expectedScriptRegex)
 
-        if (executeStartosisScriptValue.getInterpretationError() !== "") {
-            throw err(new Error(`Expected Empty Interpretation Error got '${executeStartosisScriptValue.getInterpretationError()}'`))
-        }
-
-        if (executeStartosisScriptValue.getExecutionError() !== "") {
-            throw err(new Error(`Expected Empty Execution Error got '${executeStartosisScriptValue.getExecutionError()}'`))
-        }
-
-        if (executeStartosisScriptValue.getValidationErrorsList().length != 0) {
-            throw err(new Error(`Expected Empty Validation Error got '${executeStartosisScriptValue.getValidationErrorsList()}'`))
-        }
+        expect(executeStartosisScriptValue.getInterpretationError()).toBeUndefined()
+        expect(executeStartosisScriptValue.getExecutionError()).toBeUndefined()
+        expect(executeStartosisScriptValue.getValidationErrors()).toBeUndefined()
         log.info("Script Executed Successfully")
 
         // ------------------------------------- TEST RUN ----------------------------------------------

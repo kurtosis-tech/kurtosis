@@ -64,10 +64,10 @@ func TestStartosisModule_ValidModuleWithType(t *testing.T) {
 	expectedScriptOutput := `Bonjour!
 Hello World!
 `
-	require.Empty(t, executionResult.InterpretationError, "Unexpected interpretation error")
-	require.Lenf(t, executionResult.ValidationErrors, 0, "Unexpected validation error")
-	require.Empty(t, executionResult.ExecutionError, "Unexpected execution error")
-	require.Equal(t, expectedScriptOutput, executionResult.SerializedScriptOutput)
+	require.Nil(t, executionResult.GetInterpretationError(), "Unexpected interpretation error")
+	require.Nil(t, executionResult.GetValidationErrors(), "Unexpected validation error")
+	require.Nil(t, executionResult.GetExecutionError(), "Unexpected execution error")
+	require.Equal(t, expectedScriptOutput, test_helpers.GenerateScriptOutput(executionResult.GetKurtosisInstructions()))
 	logrus.Info("Successfully ran Startosis module")
 }
 
@@ -93,10 +93,10 @@ func TestStartosisModule_ValidModuleWithNoType(t *testing.T) {
 
 	expectedScriptOutput := `Hello World!
 `
-	require.Empty(t, executionResult.InterpretationError, "Unexpected interpretation error")
-	require.Lenf(t, executionResult.ValidationErrors, 0, "Unexpected validation error")
-	require.Empty(t, executionResult.ExecutionError, "Unexpected execution error")
-	require.Equal(t, expectedScriptOutput, executionResult.SerializedScriptOutput)
+	require.Nil(t, executionResult.GetInterpretationError(), "Unexpected interpretation error")
+	require.Nil(t, executionResult.GetValidationErrors(), "Unexpected validation error")
+	require.Nil(t, executionResult.GetExecutionError(), "Unexpected execution error")
+	require.Equal(t, expectedScriptOutput, test_helpers.GenerateScriptOutput(executionResult.GetKurtosisInstructions()))
 	logrus.Info("Successfully ran Startosis module")
 }
 
@@ -119,12 +119,12 @@ func TestStartosisModule_ValidModuleWithNoTypesFile_FailureCalledWithParams(t *t
 	serializedParams := `{"greetings": "Bonjour!"}`
 	executionResult, err := enclaveCtx.ExecuteStartosisModule(moduleDirpath, serializedParams, defaultDryRun)
 	require.Nil(t, err, "Unexpected error executing startosis module")
-	require.NotNil(t, executionResult.InterpretationError)
+	require.NotNil(t, executionResult.GetInterpretationError())
 	expectedInterpretationErr := "A non empty parameter was passed to the module 'github.com/sample/sample-kurtosis-module' but the module doesn't contain a valid 'types.proto' file (it is either absent of invalid)."
-	require.Contains(t, executionResult.InterpretationError, expectedInterpretationErr)
-	require.Nil(t, executionResult.ValidationErrors)
-	require.Empty(t, executionResult.ExecutionError)
-	require.Empty(t, executionResult.SerializedScriptOutput)
+	require.Contains(t, executionResult.GetInterpretationError().GetErrorMessage(), expectedInterpretationErr)
+	require.Nil(t, executionResult.GetValidationErrors())
+	require.Nil(t, executionResult.GetExecutionError())
+	require.Empty(t, test_helpers.GenerateScriptOutput(executionResult.GetKurtosisInstructions()))
 }
 
 func TestStartosisModule_ValidModuleNoModulInputTypeTestName(t *testing.T) {
@@ -149,10 +149,10 @@ func TestStartosisModule_ValidModuleNoModulInputTypeTestName(t *testing.T) {
 
 	expectedScriptOutput := `Hello world!
 `
-	require.Empty(t, executionResult.InterpretationError, "Unexpected interpretation error")
-	require.Lenf(t, executionResult.ValidationErrors, 0, "Unexpected validation error")
-	require.Empty(t, executionResult.ExecutionError, "Unexpected execution error")
-	require.Equal(t, expectedScriptOutput, executionResult.SerializedScriptOutput)
+	require.Nil(t, executionResult.GetInterpretationError(), "Unexpected interpretation error")
+	require.Nil(t, executionResult.GetValidationErrors(), "Unexpected validation error")
+	require.Nil(t, executionResult.GetExecutionError(), "Unexpected execution error")
+	require.Equal(t, expectedScriptOutput, test_helpers.GenerateScriptOutput(executionResult.GetKurtosisInstructions()))
 	logrus.Info("Successfully ran Startosis module")
 }
 
@@ -176,12 +176,12 @@ func TestStartosisModule_ValidModuleNoModulInputTypeTestName_FailureCalledWithPa
 	serializedParams := `{"greetings": "Bonjour!"}`
 	executionResult, err := enclaveCtx.ExecuteStartosisModule(moduleDirpath, serializedParams, defaultDryRun)
 	require.Nil(t, err, "Unexpected error executing startosis module")
-	require.NotNil(t, executionResult.InterpretationError)
+	require.NotNil(t, executionResult.GetInterpretationError())
 	expectedInterpretationErr := "A non empty parameter was passed to the module 'github.com/sample/sample-kurtosis-module' but 'ModuleInput' type is not defined in the module's 'types.proto' file."
-	require.Contains(t, executionResult.InterpretationError, expectedInterpretationErr)
-	require.Nil(t, executionResult.ValidationErrors)
-	require.Empty(t, executionResult.ExecutionError)
-	require.Empty(t, executionResult.SerializedScriptOutput)
+	require.Contains(t, executionResult.GetInterpretationError().GetErrorMessage(), expectedInterpretationErr)
+	require.Nil(t, executionResult.GetValidationErrors())
+	require.Nil(t, executionResult.GetExecutionError())
+	require.Empty(t, test_helpers.GenerateScriptOutput(executionResult.GetKurtosisInstructions()))
 }
 
 func TestStartosisModule_InvalidTypesFileTestName(t *testing.T) {
@@ -204,12 +204,12 @@ func TestStartosisModule_InvalidTypesFileTestName(t *testing.T) {
 	serializedParams := `{"greetings": "Bonjour!"}`
 	executionResult, err := enclaveCtx.ExecuteStartosisModule(moduleDirpath, serializedParams, defaultDryRun)
 	require.Nil(t, err, "Unexpected error executing startosis module")
-	require.NotNil(t, executionResult.InterpretationError)
+	require.NotNil(t, executionResult.GetInterpretationError())
 	expectedInterpretationErr := "A non empty parameter was passed to the module 'github.com/sample/sample-kurtosis-module' but the module doesn't contain a valid 'types.proto' file (it is either absent of invalid)."
-	require.Contains(t, executionResult.InterpretationError, expectedInterpretationErr)
-	require.Nil(t, executionResult.ValidationErrors)
-	require.Empty(t, executionResult.ExecutionError)
-	require.Empty(t, executionResult.SerializedScriptOutput)
+	require.Contains(t, executionResult.GetInterpretationError().GetErrorMessage(), expectedInterpretationErr)
+	require.Nil(t, executionResult.GetValidationErrors())
+	require.Nil(t, executionResult.GetExecutionError())
+	require.Empty(t, test_helpers.GenerateScriptOutput(executionResult.GetKurtosisInstructions()))
 }
 
 func TestStartosisModule_InvalidModuleNoTypesButInputArgsTestName(t *testing.T) {
@@ -231,12 +231,12 @@ func TestStartosisModule_InvalidModuleNoTypesButInputArgsTestName(t *testing.T) 
 
 	executionResult, err := enclaveCtx.ExecuteStartosisModule(moduleDirpath, emptyExecuteParams, defaultDryRun)
 	require.Nil(t, err, "Unexpected error executing startosis module")
-	require.NotNil(t, executionResult.InterpretationError)
+	require.NotNil(t, executionResult.GetInterpretationError())
 	expectedInterpretationErr := "Evaluation error: function main missing 1 argument (input_args)"
-	require.Contains(t, executionResult.InterpretationError, expectedInterpretationErr)
-	require.Nil(t, executionResult.ValidationErrors)
-	require.Empty(t, executionResult.ExecutionError)
-	require.Empty(t, executionResult.SerializedScriptOutput)
+	require.Contains(t, executionResult.GetInterpretationError().GetErrorMessage(), expectedInterpretationErr)
+	require.Nil(t, executionResult.GetValidationErrors())
+	require.Nil(t, executionResult.GetExecutionError())
+	require.Empty(t, test_helpers.GenerateScriptOutput(executionResult.GetKurtosisInstructions()))
 }
 
 func TestStartosisModule_InvalidModFile(t *testing.T) {
@@ -305,9 +305,9 @@ func TestStartosisModule_NoMainInMainStar(t *testing.T) {
 	expectedInterpretationErr := "Evaluation error: module has no .main field or method\n\tat [3:12]: <toplevel>"
 	executionResult, err := enclaveCtx.ExecuteStartosisModule(moduleDirpath, emptyExecuteParams, defaultDryRun)
 	require.Nil(t, err, "Unexpected error executing startosis module")
-	require.NotNil(t, executionResult.InterpretationError)
-	require.Contains(t, executionResult.InterpretationError, expectedInterpretationErr)
-	require.Nil(t, executionResult.ValidationErrors)
-	require.Empty(t, executionResult.ExecutionError)
-	require.Empty(t, executionResult.SerializedScriptOutput)
+	require.NotNil(t, executionResult.GetInterpretationError())
+	require.Contains(t, executionResult.GetInterpretationError().GetErrorMessage(), expectedInterpretationErr)
+	require.Nil(t, executionResult.GetValidationErrors())
+	require.Nil(t, executionResult.GetExecutionError())
+	require.Empty(t, test_helpers.GenerateScriptOutput(executionResult.GetKurtosisInstructions()))
 }

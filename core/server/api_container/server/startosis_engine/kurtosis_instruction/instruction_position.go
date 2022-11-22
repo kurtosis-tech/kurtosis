@@ -2,6 +2,8 @@ package kurtosis_instruction
 
 import (
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 )
 
 type InstructionPosition struct {
@@ -20,4 +22,8 @@ func NewInstructionPosition(line int32, col int32, filename string) *Instruction
 
 func (position *InstructionPosition) String() string {
 	return fmt.Sprintf("%s[%d:%d]", position.filename, position.line, position.col)
+}
+
+func (position *InstructionPosition) ToAPIType() *kurtosis_core_rpc_api_bindings.KurtosisInstructionPosition {
+	return binding_constructors.NewKurtosisInstructionPosition(position.filename, position.line, position.col)
 }

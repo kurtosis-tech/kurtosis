@@ -8,6 +8,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// VersionCmd Suppressing exhaustruct requirement because this struct has ~40 properties
+// nolint: exhaustruct
 var VersionCmd = &cobra.Command{
 	Use:   command_str_consts.VersionCmdStr,
 	Short: "Prints the CLI version",

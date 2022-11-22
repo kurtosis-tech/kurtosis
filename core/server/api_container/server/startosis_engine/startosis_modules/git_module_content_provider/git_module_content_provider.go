@@ -116,7 +116,20 @@ func (provider *GitModuleContentProvider) atomicClone(parsedURL *ParsedGitURL) *
 	}
 	defer os.RemoveAll(tempRepoDirPath)
 	gitClonePath := path.Join(tempRepoDirPath, parsedURL.relativeRepoPath)
-	_, err = git.PlainClone(gitClonePath, false, &git.CloneOptions{URL: parsedURL.gitURL, Progress: io.Discard})
+	_, err = git.PlainClone(gitClonePath, false, &git.CloneOptions{
+		URL:               parsedURL.gitURL,
+		Auth:              nil,
+		RemoteName:        "",
+		ReferenceName:     "",
+		SingleBranch:      false,
+		NoCheckout:        false,
+		Depth:             0,
+		RecurseSubmodules: 0,
+		Progress:          io.Discard,
+		Tags:              0,
+		InsecureSkipTLS:   false,
+		CABundle:          nil,
+	})
 	if err != nil {
 		return startosis_errors.WrapWithInterpretationError(err, "Error in cloning git repository '%s' to '%s'", parsedURL.gitURL, gitClonePath)
 	}
