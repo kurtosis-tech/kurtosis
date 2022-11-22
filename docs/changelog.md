@@ -1,13 +1,20 @@
 # TBD
 ### Changes
-- Error types in ExecuteStartosisResponse type is now a union type, to better represent they are exclusive and prepare for transition to streaming
-- Update the KurtosisInstruction API type returned to the CLI. It now contains a combination of instruction position, the canonicalized instruction, and an optional instruction result
-- Slightly update the way script output information are passed from the Startosis engine back the API container main class. This is a step to prepare for streaming this output all the way back the CLI.
-- Removed `load` statement in favour of `import_module`. Calling load will now throw an InterpretationError
 - Modified the `EnclaveIdGenerator` now is a user defined type and can be initialized once because it contains a time-seed inside
 
 ### Fixes
 - Fixed the `isEnclaveIdInUse` for the enclave validator, now uses on runtime for `is-key-in-map`
+
+# 0.53.6
+
+# 0.53.5
+### Changes
+- Error types in ExecuteStartosisResponse type is now a union type, to better represent they are exclusive and prepare for transition to streaming
+- Update the KurtosisInstruction API type returned to the CLI. It now contains a combination of instruction position, the canonicalized instruction, and an optional instruction result 
+- Renamed `store_files_from_service` to `store_service_files`
+- Slightly update the way script output information are passed from the Startosis engine back the API container main class. This is a step to prepare for streaming this output all the way back the CLI.
+- Removed `load` statement in favour of `import_module`. Calling load will now throw an InterpretationError
+- Refactored startosis tests to enable parallel execution of tests
 
 # 0.53.4
 
