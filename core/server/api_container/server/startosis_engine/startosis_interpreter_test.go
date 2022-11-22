@@ -799,7 +799,7 @@ func TestStartosisInterpreter_StoreFileFromService(t *testing.T) {
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
 print("Storing file from service!")
-artifact_uuid=store_service_files(service_id="example-datastore-server", src_path="/foo/bar", artifact_uuid="` + string(testArtifactUuid) + `")
+artifact_uuid=store_service_files(service_id="example-datastore-server", src="/foo/bar", artifact_id="` + string(testArtifactUuid) + `")
 print(artifact_uuid)
 `
 
@@ -809,7 +809,7 @@ print(artifact_uuid)
 
 	storeInstruction := store_service_files.NewStoreServiceFilesInstruction(
 		testServiceNetwork,
-		kurtosis_instruction.NewInstructionPosition(3, 38, ModuleIdPlaceholderForStandaloneScripts),
+		kurtosis_instruction.NewInstructionPosition(3, 34, ModuleIdPlaceholderForStandaloneScripts),
 		"example-datastore-server",
 		"/foo/bar",
 		testArtifactUuid,
@@ -1151,7 +1151,7 @@ func TestStartosisInterpreter_ThreeLevelNestedInstructionPositionTest(t *testing
 	storeFileContent := `
 def store_for_me():
 	print("In the store files instruction")
-	artifact_uuid=store_service_files(service_id="example-datastore-server", src_path="/foo/bar", artifact_uuid = "` + string(testArtifactUuid) + `")
+	artifact_uuid=store_service_files(service_id="example-datastore-server", src="/foo/bar", artifact_id = "` + string(testArtifactUuid) + `")
 	return artifact_uuid
 `
 
@@ -1184,7 +1184,7 @@ print(uuid)
 
 	storeInstruction := store_service_files.NewStoreServiceFilesInstruction(
 		testServiceNetwork,
-		kurtosis_instruction.NewInstructionPosition(4, 39, storeFileDefinitionPath),
+		kurtosis_instruction.NewInstructionPosition(4, 35, storeFileDefinitionPath),
 		"example-datastore-server",
 		"/foo/bar",
 		testArtifactUuid,

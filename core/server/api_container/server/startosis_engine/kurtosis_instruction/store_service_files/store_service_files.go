@@ -29,10 +29,10 @@ const (
 type StoreServiceFilesInstruction struct {
 	serviceNetwork service_network.ServiceNetwork
 
-	position     *kurtosis_instruction.InstructionPosition
-	serviceId    kurtosis_backend_service.ServiceID
-	srcPath      string
-	artifactUuid enclave_data_directory.FilesArtifactUUID
+	position   *kurtosis_instruction.InstructionPosition
+	serviceId  kurtosis_backend_service.ServiceID
+	src        string
+	artifactId enclave_data_directory.FilesArtifactUUID
 }
 
 func GenerateStoreServiceFilesBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, serviceNetwork service_network.ServiceNetwork) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
@@ -54,8 +54,8 @@ func NewStoreServiceFilesInstruction(serviceNetwork service_network.ServiceNetwo
 		serviceNetwork: serviceNetwork,
 		position:       position,
 		serviceId:      serviceId,
-		srcPath:        srcPath,
-		artifactUuid:   artifactUuid,
+		src:            srcPath,
+		artifactId:     artifactUuid,
 	}
 }
 
@@ -68,9 +68,9 @@ func (instruction *StoreServiceFilesInstruction) GetCanonicalInstruction() strin
 }
 
 func (instruction *StoreServiceFilesInstruction) Execute(ctx context.Context) (*string, error) {
-	_, err := instruction.serviceNetwork.CopyFilesFromServiceToTargetArtifactUUID(ctx, instruction.serviceId, instruction.srcPath, instruction.artifactUuid)
+	_, err := instruction.serviceNetwork.CopyFilesFromServiceToTargetArtifactUUID(ctx, instruction.serviceId, instruction.src, instruction.artifactId)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to copy file '%v' from service '%v", instruction.srcPath, instruction.serviceId)
+		return nil, stacktrace.Propagate(err, "Failed to copy file '%v' from service '%v", instruction.src, instruction.serviceId)
 	}
 	return nil, nil
 }
@@ -124,7 +124,7 @@ func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starl
 func (instruction *StoreServiceFilesInstruction) getKwargs() starlark.StringDict {
 	return starlark.StringDict{
 		serviceIdArgName:             starlark.String(instruction.serviceId),
-		srcArgName:                   starlark.String(instruction.srcPath),
-		nonOptionalArtifactIdArgName: starlark.String(instruction.artifactUuid),
+		srcArgName:                   starlark.String(instruction.src),
+		nonOptionalArtifactIdArgName: starlark.String(instruction.artifactId),
 	}
 }
