@@ -38,7 +38,6 @@ ModuleInput(num_datastores=2)
 Adding service datastore-0
 Adding service datastore-1
 Module datastore_army_module deployed successfully.
-ModuleOutput(created_service_ids_to_port_ids=[ServiceIdPortId(service_id="datastore-0", port_id="grpc"), ServiceIdPortId(service_id="datastore-1", port_id="grpc")])
 `
 	require.Empty(t, executionResult.InterpretationError, "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
 	require.Lenf(t, executionResult.ValidationErrors, 0, "Unexpected validation error")

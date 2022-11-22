@@ -44,7 +44,6 @@ ModuleInput(num_datastores=2)
 Adding service datastore-0
 Adding service datastore-1
 Module datastore_army_module deployed successfully.
-ModuleOutput(created_service_ids_to_port_ids=[ServiceIdPortId(service_id="datastore-0", port_id="grpc"), ServiceIdPortId(service_id="datastore-1", port_id="grpc")])
 `
         if (expectedOutput !== executeStartosisRemoteModuleValue.getSerializedScriptOutput()) {
             throw err(new Error(`Expected output to be match '${expectedOutput} got '${executeStartosisRemoteModuleValue.getSerializedScriptOutput()}'`))
