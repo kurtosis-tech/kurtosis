@@ -1,6 +1,7 @@
 # TBD
 ### Changes
 - Error types in ExecuteStartosisResponse type is now a union type, to better represent they are exclusive and prepare for transition to streaming
+- Renamed `store_files_from_service` to `store_service_files`
 
 # 0.53.4
 
