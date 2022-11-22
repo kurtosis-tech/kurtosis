@@ -33,9 +33,9 @@ func TestStartosisModule_ValidModuleWithNoType(t *testing.T) {
 
 	expectedScriptOutput := `Hello World!
 `
-	require.Empty(t, executionResult.InterpretationError, "Unexpected interpretation error")
-	require.Lenf(t, executionResult.ValidationErrors, 0, "Unexpected validation error")
-	require.Empty(t, executionResult.ExecutionError, "Unexpected execution error")
+	require.Nil(t, executionResult.GetInterpretationError(), "Unexpected interpretation error")
+	require.Nil(t, executionResult.GetValidationErrors(), 0, "Unexpected validation error")
+	require.Nil(t, executionResult.GetExecutionError(), "Unexpected execution error")
 	require.Equal(t, expectedScriptOutput, executionResult.SerializedScriptOutput)
 	logrus.Info("Successfully ran Startosis module")
 }

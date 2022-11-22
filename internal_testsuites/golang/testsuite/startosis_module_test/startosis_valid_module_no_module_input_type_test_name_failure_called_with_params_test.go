@@ -31,10 +31,10 @@ func TestStartosisModule_ValidModuleNoModuleInputTypeTestName_FailureCalledWithP
 	serializedParams := `{"greetings": "Bonjour!"}`
 	executionResult, err := enclaveCtx.ExecuteStartosisModule(moduleDirpath, serializedParams, defaultDryRun)
 	require.Nil(t, err, "Unexpected error executing startosis module")
-	require.NotNil(t, executionResult.InterpretationError)
+	require.NotNil(t, executionResult.GetInterpretationError())
 	expectedInterpretationErr := "A non empty parameter was passed to the module 'github.com/sample/sample-kurtosis-module' but 'ModuleInput' type is not defined in the module's 'types.proto' file."
-	require.Contains(t, executionResult.InterpretationError, expectedInterpretationErr)
-	require.Nil(t, executionResult.ValidationErrors)
-	require.Empty(t, executionResult.ExecutionError)
+	require.Contains(t, executionResult.GetInterpretationError().GetErrorMessage(), expectedInterpretationErr)
+	require.Nil(t, executionResult.GetValidationErrors())
+	require.Nil(t, executionResult.GetExecutionError())
 	require.Empty(t, executionResult.SerializedScriptOutput)
 }

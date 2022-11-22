@@ -35,10 +35,10 @@ func TestStartosisModule_InvalidModuleNoTypesButInputArgsTestName(t *testing.T) 
 
 	executionResult, err := enclaveCtx.ExecuteStartosisModule(moduleDirpath, emptyExecuteParams, defaultDryRun)
 	require.Nil(t, err, "Unexpected error executing startosis module")
-	require.NotNil(t, executionResult.InterpretationError)
+	require.NotNil(t, executionResult.GetInterpretationError())
 	expectedInterpretationErr := "Evaluation error: function main missing 1 argument (input_args)"
-	require.Contains(t, executionResult.InterpretationError, expectedInterpretationErr)
-	require.Nil(t, executionResult.ValidationErrors)
-	require.Empty(t, executionResult.ExecutionError)
+	require.Contains(t, executionResult.GetInterpretationError().GetErrorMessage(), expectedInterpretationErr)
+	require.Nil(t, executionResult.GetValidationErrors())
+	require.Nil(t, executionResult.GetExecutionError())
 	require.Empty(t, executionResult.SerializedScriptOutput)
 }

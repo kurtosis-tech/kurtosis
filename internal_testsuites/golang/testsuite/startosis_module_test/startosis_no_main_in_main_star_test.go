@@ -36,9 +36,9 @@ func TestStartosisModule_NoMainInMainStar(t *testing.T) {
 	expectedInterpretationErr := "Evaluation error: module has no .main field or method\n\tat [3:12]: <toplevel>"
 	executionResult, err := enclaveCtx.ExecuteStartosisModule(moduleDirpath, emptyExecuteParams, defaultDryRun)
 	require.Nil(t, err, "Unexpected error executing startosis module")
-	require.NotNil(t, executionResult.InterpretationError)
-	require.Contains(t, executionResult.InterpretationError, expectedInterpretationErr)
-	require.Nil(t, executionResult.ValidationErrors)
-	require.Empty(t, executionResult.ExecutionError)
+	require.NotNil(t, executionResult.GetInterpretationError())
+	require.Contains(t, executionResult.GetInterpretationError().GetErrorMessage(), expectedInterpretationErr)
+	require.Nil(t, executionResult.GetValidationErrors())
+	require.Nil(t, executionResult.GetExecutionError())
 	require.Empty(t, executionResult.SerializedScriptOutput)
 }
