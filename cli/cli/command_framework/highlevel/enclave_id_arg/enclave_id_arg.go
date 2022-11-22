@@ -29,8 +29,9 @@ func NewEnclaveIDArg(
 		IsOptional:      isOptional,
 		DefaultValue:    "",
 		IsGreedy:        isGreedy,
-		CompletionsFunc: getCompletions,
+		//CompletionsFunc: getCompletions,
 		ValidationFunc:  validate,
+		ArgCompletionProvider: args.NewManualCompletionsProvider(getCompletions),
 	}
 }
 

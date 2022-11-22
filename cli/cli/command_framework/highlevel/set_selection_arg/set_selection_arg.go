@@ -40,7 +40,8 @@ func NewSetSelectionArg(argKey string, validValues map[string]bool) *args.ArgCon
 
 	return &args.ArgConfig{
 		Key:             argKey,
-		CompletionsFunc: completionsFunc,
+		//CompletionsFunc: completionsFunc,
 		ValidationFunc: validationFunc,
+		ArgCompletionProvider: args.NewManualCompletionsProvider(completionsFunc),
 	}
 }
