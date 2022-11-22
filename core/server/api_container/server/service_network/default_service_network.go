@@ -357,7 +357,7 @@ func (network *DefaultServiceNetwork) StartServices(
 	for serviceID, serviceInfo := range servicesToProcessFurther {
 		successfulServicePool[serviceID] = serviceInfo
 	}
-	logrus.Infof("Sueccesfully started services '%v' and failed '%v' in the service network", successfulServicePool, failedServicesPool)
+	logrus.Infof("Succesfully started services '%v' and failed '%v' in the service network", successfulServicePool, failedServicesPool)
 	for serviceID, serviceInfo := range successfulServicePool {
 		guid := serviceInfo.GetRegistration().GetGUID()
 		delete(serviceGUIDsToRemove, guid)
