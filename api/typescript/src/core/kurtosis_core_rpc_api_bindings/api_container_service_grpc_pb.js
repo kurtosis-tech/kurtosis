@@ -194,6 +194,17 @@ function deserialize_api_container_api_GetServicesResponse(buffer_arg) {
   return api_container_service_pb.GetServicesResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_api_container_api_KurtosisResponseLine(arg) {
+  if (!(arg instanceof api_container_service_pb.KurtosisResponseLine)) {
+    throw new Error('Expected argument of type api_container_api.KurtosisResponseLine');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_KurtosisResponseLine(buffer_arg) {
+  return api_container_service_pb.KurtosisResponseLine.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_api_container_api_LoadModuleArgs(arg) {
   if (!(arg instanceof api_container_service_pb.LoadModuleArgs)) {
     throw new Error('Expected argument of type api_container_api.LoadModuleArgs');
@@ -487,6 +498,7 @@ executeModule: {
     responseDeserialize: deserialize_api_container_api_ExecuteModuleResponse,
   },
   // Executes a startosis script on the user's behalf
+// Will soon be deprecated in favour of its streamed version ExecuteKurtosisScript
 executeStartosisScript: {
     path: '/api_container_api.ApiContainerService/ExecuteStartosisScript',
     requestStream: false,
@@ -498,7 +510,20 @@ executeStartosisScript: {
     responseSerialize: serialize_api_container_api_ExecuteStartosisResponse,
     responseDeserialize: deserialize_api_container_api_ExecuteStartosisResponse,
   },
+  // Executes a startosis script on the user's behalf
+executeKurtosisScript: {
+    path: '/api_container_api.ApiContainerService/ExecuteKurtosisScript',
+    requestStream: false,
+    responseStream: true,
+    requestType: api_container_service_pb.ExecuteStartosisScriptArgs,
+    responseType: api_container_service_pb.KurtosisResponseLine,
+    requestSerialize: serialize_api_container_api_ExecuteStartosisScriptArgs,
+    requestDeserialize: deserialize_api_container_api_ExecuteStartosisScriptArgs,
+    responseSerialize: serialize_api_container_api_KurtosisResponseLine,
+    responseDeserialize: deserialize_api_container_api_KurtosisResponseLine,
+  },
   // Executes a startosis module on the user's behalf
+// Will soon be deprecated in favour of its streamed version ExecuteKurtosisModule
 executeStartosisModule: {
     path: '/api_container_api.ApiContainerService/ExecuteStartosisModule',
     requestStream: false,
@@ -509,6 +534,18 @@ executeStartosisModule: {
     requestDeserialize: deserialize_api_container_api_ExecuteStartosisModuleArgs,
     responseSerialize: serialize_api_container_api_ExecuteStartosisResponse,
     responseDeserialize: deserialize_api_container_api_ExecuteStartosisResponse,
+  },
+  // Executes a startosis script on the user's behalf
+executeKurtosisModule: {
+    path: '/api_container_api.ApiContainerService/ExecuteKurtosisModule',
+    requestStream: false,
+    responseStream: true,
+    requestType: api_container_service_pb.ExecuteStartosisModuleArgs,
+    responseType: api_container_service_pb.KurtosisResponseLine,
+    requestSerialize: serialize_api_container_api_ExecuteStartosisModuleArgs,
+    requestDeserialize: deserialize_api_container_api_ExecuteStartosisModuleArgs,
+    responseSerialize: serialize_api_container_api_KurtosisResponseLine,
+    responseDeserialize: deserialize_api_container_api_KurtosisResponseLine,
   },
   // Start services by creating containers for them
 startServices: {

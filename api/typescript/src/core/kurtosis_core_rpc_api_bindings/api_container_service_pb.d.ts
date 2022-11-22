@@ -601,6 +601,81 @@ export namespace KurtosisInstructionPosition {
   }
 }
 
+export class KurtosisError extends jspb.Message {
+  getInterpretationError(): KurtosisInterpretationError | undefined;
+  setInterpretationError(value?: KurtosisInterpretationError): KurtosisError;
+  hasInterpretationError(): boolean;
+  clearInterpretationError(): KurtosisError;
+
+  getValidationError(): KurtosisValidationError | undefined;
+  setValidationError(value?: KurtosisValidationError): KurtosisError;
+  hasValidationError(): boolean;
+  clearValidationError(): KurtosisError;
+
+  getExecutionError(): KurtosisExecutionError | undefined;
+  setExecutionError(value?: KurtosisExecutionError): KurtosisError;
+  hasExecutionError(): boolean;
+  clearExecutionError(): KurtosisError;
+
+  getErrorCase(): KurtosisError.ErrorCase;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): KurtosisError.AsObject;
+  static toObject(includeInstance: boolean, msg: KurtosisError): KurtosisError.AsObject;
+  static serializeBinaryToWriter(message: KurtosisError, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): KurtosisError;
+  static deserializeBinaryFromReader(message: KurtosisError, reader: jspb.BinaryReader): KurtosisError;
+}
+
+export namespace KurtosisError {
+  export type AsObject = {
+    interpretationError?: KurtosisInterpretationError.AsObject,
+    validationError?: KurtosisValidationError.AsObject,
+    executionError?: KurtosisExecutionError.AsObject,
+  }
+
+  export enum ErrorCase { 
+    ERROR_NOT_SET = 0,
+    INTERPRETATION_ERROR = 1,
+    VALIDATION_ERROR = 2,
+    EXECUTION_ERROR = 3,
+  }
+}
+
+export class KurtosisResponseLine extends jspb.Message {
+  getInstruction(): KurtosisInstruction | undefined;
+  setInstruction(value?: KurtosisInstruction): KurtosisResponseLine;
+  hasInstruction(): boolean;
+  clearInstruction(): KurtosisResponseLine;
+
+  getError(): KurtosisError | undefined;
+  setError(value?: KurtosisError): KurtosisResponseLine;
+  hasError(): boolean;
+  clearError(): KurtosisResponseLine;
+
+  getKurtosisResponseLineCase(): KurtosisResponseLine.KurtosisResponseLineCase;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): KurtosisResponseLine.AsObject;
+  static toObject(includeInstance: boolean, msg: KurtosisResponseLine): KurtosisResponseLine.AsObject;
+  static serializeBinaryToWriter(message: KurtosisResponseLine, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): KurtosisResponseLine;
+  static deserializeBinaryFromReader(message: KurtosisResponseLine, reader: jspb.BinaryReader): KurtosisResponseLine;
+}
+
+export namespace KurtosisResponseLine {
+  export type AsObject = {
+    instruction?: KurtosisInstruction.AsObject,
+    error?: KurtosisError.AsObject,
+  }
+
+  export enum KurtosisResponseLineCase { 
+    KURTOSIS_RESPONSE_LINE_NOT_SET = 0,
+    INSTRUCTION = 1,
+    ERROR = 2,
+  }
+}
+
 export class StartServicesArgs extends jspb.Message {
   getServiceIdsToConfigsMap(): jspb.Map<string, ServiceConfig>;
   clearServiceIdsToConfigsMap(): StartServicesArgs;

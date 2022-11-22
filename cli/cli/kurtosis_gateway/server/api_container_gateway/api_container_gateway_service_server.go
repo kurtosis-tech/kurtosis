@@ -91,6 +91,10 @@ func (service *ApiContainerGatewayServiceServer) ExecuteStartosisScript(ctx cont
 	return remoteApiContainerResponse, nil
 }
 
+func (service *ApiContainerGatewayServiceServer) ExecuteKurtosisScript(args *kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptArgs, server kurtosis_core_rpc_api_bindings.ApiContainerService_ExecuteKurtosisScriptServer) error {
+	return stacktrace.NewError("Cannot run Kurtosis script on this endpoint because streaming is not supported by the API service's gateway")
+}
+
 func (service *ApiContainerGatewayServiceServer) ExecuteStartosisModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleArgs) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse, error) {
 	remoteApiContainerResponse, err := service.remoteApiContainerClient.ExecuteStartosisModule(ctx, args)
 	if err != nil {
@@ -98,6 +102,10 @@ func (service *ApiContainerGatewayServiceServer) ExecuteStartosisModule(ctx cont
 	}
 
 	return remoteApiContainerResponse, nil
+}
+
+func (service *ApiContainerGatewayServiceServer) ExecuteKurtosisModule(args *kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleArgs, server kurtosis_core_rpc_api_bindings.ApiContainerService_ExecuteKurtosisModuleServer) error {
+	return stacktrace.NewError("Cannot run Kurtosis script on this endpoint because streaming is not supported by the API service's gateway")
 }
 
 func (service *ApiContainerGatewayServiceServer) StartServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServicesArgs) (*kurtosis_core_rpc_api_bindings.StartServicesResponse, error) {

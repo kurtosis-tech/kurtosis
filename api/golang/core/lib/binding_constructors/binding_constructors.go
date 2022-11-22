@@ -366,6 +366,50 @@ func NewKurtosisInstructionPosition(filename string, line int32, column int32) *
 	}
 }
 
+func NewKurtosisResponseLineFromInstruction(instruction *kurtosis_core_rpc_api_bindings.KurtosisInstruction) *kurtosis_core_rpc_api_bindings.KurtosisResponseLine {
+	return &kurtosis_core_rpc_api_bindings.KurtosisResponseLine{
+		KurtosisResponseLine: &kurtosis_core_rpc_api_bindings.KurtosisResponseLine_Instruction{
+			Instruction: instruction,
+		},
+	}
+}
+
+func NewKurtosisResponseLineFromInterpretationError(interpretationError *kurtosis_core_rpc_api_bindings.KurtosisInterpretationError) *kurtosis_core_rpc_api_bindings.KurtosisResponseLine {
+	return &kurtosis_core_rpc_api_bindings.KurtosisResponseLine{
+		KurtosisResponseLine: &kurtosis_core_rpc_api_bindings.KurtosisResponseLine_Error{
+			Error: &kurtosis_core_rpc_api_bindings.KurtosisError{
+				Error: &kurtosis_core_rpc_api_bindings.KurtosisError_InterpretationError{
+					InterpretationError: interpretationError,
+				},
+			},
+		},
+	}
+}
+
+func NewKurtosisResponseLineFromValidationError(validationError *kurtosis_core_rpc_api_bindings.KurtosisValidationError) *kurtosis_core_rpc_api_bindings.KurtosisResponseLine {
+	return &kurtosis_core_rpc_api_bindings.KurtosisResponseLine{
+		KurtosisResponseLine: &kurtosis_core_rpc_api_bindings.KurtosisResponseLine_Error{
+			Error: &kurtosis_core_rpc_api_bindings.KurtosisError{
+				Error: &kurtosis_core_rpc_api_bindings.KurtosisError_ValidationError{
+					ValidationError: validationError,
+				},
+			},
+		},
+	}
+}
+
+func NewKurtosisResponseLineFromExecutionError(executionError *kurtosis_core_rpc_api_bindings.KurtosisExecutionError) *kurtosis_core_rpc_api_bindings.KurtosisResponseLine {
+	return &kurtosis_core_rpc_api_bindings.KurtosisResponseLine{
+		KurtosisResponseLine: &kurtosis_core_rpc_api_bindings.KurtosisResponseLine_Error{
+			Error: &kurtosis_core_rpc_api_bindings.KurtosisError{
+				Error: &kurtosis_core_rpc_api_bindings.KurtosisError_ExecutionError{
+					ExecutionError: executionError,
+				},
+			},
+		},
+	}
+}
+
 // ==============================================================================================
 //
 //	Start Service

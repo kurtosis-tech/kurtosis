@@ -13,7 +13,9 @@ interface IApiContainerServiceService extends grpc.ServiceDefinition<grpc.Untype
   unloadModule: grpc.MethodDefinition<api_container_service_pb.UnloadModuleArgs, api_container_service_pb.UnloadModuleResponse>;
   executeModule: grpc.MethodDefinition<api_container_service_pb.ExecuteModuleArgs, api_container_service_pb.ExecuteModuleResponse>;
   executeStartosisScript: grpc.MethodDefinition<api_container_service_pb.ExecuteStartosisScriptArgs, api_container_service_pb.ExecuteStartosisResponse>;
+  executeKurtosisScript: grpc.MethodDefinition<api_container_service_pb.ExecuteStartosisScriptArgs, api_container_service_pb.KurtosisResponseLine>;
   executeStartosisModule: grpc.MethodDefinition<api_container_service_pb.ExecuteStartosisModuleArgs, api_container_service_pb.ExecuteStartosisResponse>;
+  executeKurtosisModule: grpc.MethodDefinition<api_container_service_pb.ExecuteStartosisModuleArgs, api_container_service_pb.KurtosisResponseLine>;
   startServices: grpc.MethodDefinition<api_container_service_pb.StartServicesArgs, api_container_service_pb.StartServicesResponse>;
   getServices: grpc.MethodDefinition<api_container_service_pb.GetServicesArgs, api_container_service_pb.GetServicesResponse>;
   removeService: grpc.MethodDefinition<api_container_service_pb.RemoveServiceArgs, api_container_service_pb.RemoveServiceResponse>;
@@ -40,7 +42,9 @@ export interface IApiContainerServiceServer extends grpc.UntypedServiceImplement
   unloadModule: grpc.handleUnaryCall<api_container_service_pb.UnloadModuleArgs, api_container_service_pb.UnloadModuleResponse>;
   executeModule: grpc.handleUnaryCall<api_container_service_pb.ExecuteModuleArgs, api_container_service_pb.ExecuteModuleResponse>;
   executeStartosisScript: grpc.handleUnaryCall<api_container_service_pb.ExecuteStartosisScriptArgs, api_container_service_pb.ExecuteStartosisResponse>;
+  executeKurtosisScript: grpc.handleServerStreamingCall<api_container_service_pb.ExecuteStartosisScriptArgs, api_container_service_pb.KurtosisResponseLine>;
   executeStartosisModule: grpc.handleUnaryCall<api_container_service_pb.ExecuteStartosisModuleArgs, api_container_service_pb.ExecuteStartosisResponse>;
+  executeKurtosisModule: grpc.handleServerStreamingCall<api_container_service_pb.ExecuteStartosisModuleArgs, api_container_service_pb.KurtosisResponseLine>;
   startServices: grpc.handleUnaryCall<api_container_service_pb.StartServicesArgs, api_container_service_pb.StartServicesResponse>;
   getServices: grpc.handleUnaryCall<api_container_service_pb.GetServicesArgs, api_container_service_pb.GetServicesResponse>;
   removeService: grpc.handleUnaryCall<api_container_service_pb.RemoveServiceArgs, api_container_service_pb.RemoveServiceResponse>;
@@ -76,9 +80,13 @@ export class ApiContainerServiceClient extends grpc.Client {
   executeStartosisScript(argument: api_container_service_pb.ExecuteStartosisScriptArgs, callback: grpc.requestCallback<api_container_service_pb.ExecuteStartosisResponse>): grpc.ClientUnaryCall;
   executeStartosisScript(argument: api_container_service_pb.ExecuteStartosisScriptArgs, metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.ExecuteStartosisResponse>): grpc.ClientUnaryCall;
   executeStartosisScript(argument: api_container_service_pb.ExecuteStartosisScriptArgs, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.ExecuteStartosisResponse>): grpc.ClientUnaryCall;
+  executeKurtosisScript(argument: api_container_service_pb.ExecuteStartosisScriptArgs, metadataOrOptions?: grpc.Metadata | grpc.CallOptions | null): grpc.ClientReadableStream<api_container_service_pb.KurtosisResponseLine>;
+  executeKurtosisScript(argument: api_container_service_pb.ExecuteStartosisScriptArgs, metadata?: grpc.Metadata | null, options?: grpc.CallOptions | null): grpc.ClientReadableStream<api_container_service_pb.KurtosisResponseLine>;
   executeStartosisModule(argument: api_container_service_pb.ExecuteStartosisModuleArgs, callback: grpc.requestCallback<api_container_service_pb.ExecuteStartosisResponse>): grpc.ClientUnaryCall;
   executeStartosisModule(argument: api_container_service_pb.ExecuteStartosisModuleArgs, metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.ExecuteStartosisResponse>): grpc.ClientUnaryCall;
   executeStartosisModule(argument: api_container_service_pb.ExecuteStartosisModuleArgs, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.ExecuteStartosisResponse>): grpc.ClientUnaryCall;
+  executeKurtosisModule(argument: api_container_service_pb.ExecuteStartosisModuleArgs, metadataOrOptions?: grpc.Metadata | grpc.CallOptions | null): grpc.ClientReadableStream<api_container_service_pb.KurtosisResponseLine>;
+  executeKurtosisModule(argument: api_container_service_pb.ExecuteStartosisModuleArgs, metadata?: grpc.Metadata | null, options?: grpc.CallOptions | null): grpc.ClientReadableStream<api_container_service_pb.KurtosisResponseLine>;
   startServices(argument: api_container_service_pb.StartServicesArgs, callback: grpc.requestCallback<api_container_service_pb.StartServicesResponse>): grpc.ClientUnaryCall;
   startServices(argument: api_container_service_pb.StartServicesArgs, metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.StartServicesResponse>): grpc.ClientUnaryCall;
   startServices(argument: api_container_service_pb.StartServicesArgs, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.StartServicesResponse>): grpc.ClientUnaryCall;

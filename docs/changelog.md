@@ -23,6 +23,9 @@
 - Removed `load` statement in favour of `import_module`. Calling load will now throw an InterpretationError
 - Refactored startosis tests to enable parallel execution of tests
 
+### Features
+- Add 2 endpoints to the APIC that streams the output of a Startosis script execution
+
 # 0.53.4
 
 # 0.53.3
