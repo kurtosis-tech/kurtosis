@@ -1,7 +1,11 @@
 # TBD
 ### Changes
 - Error types in ExecuteStartosisResponse type is now a union type, to better represent they are exclusive and prepare for transition to streaming
-- Update the KurtosisInstruction API type returned to the CLI. It now contains a combination of instruction position, the canonicalized instruction, and an optional instruction result 
+- Update the KurtosisInstruction API type returned to the CLI. It now contains a combination of instruction position, the canonicalized instruction, and an optional instruction result
+
+### Features
+- Add the ability to execute remote modules using `EnclaveContext.ExecuteStartoisRemoteModule`
+- Add the ability to execute remote module using cli `kurtosis exec github.com/author/module`
 
 # 0.53.4
 
@@ -34,8 +38,6 @@
 ### Features
 - Added random enclave ID generation in `EnclaveManager.CreateEnclave()` when an empty enclave ID is provided
 - Added the `created enclave` spotlight message when a new enclave is created from the CLI (currently with the `enclave add`, `module exec` and `exec` commands)
-- Add the ability to execute remote modules using `EnclaveContext.ExecuteStartoisRemoteModule`
-- Add the ability to execute remote module using cli `kurtosis exec github.com/author/module`
 
 ### Changes
 - Moved the enclave ID auto generation and validation from the CLI to the engine's server which will catch all the presents and future use cases
