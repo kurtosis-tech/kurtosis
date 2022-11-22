@@ -64,7 +64,7 @@ import {
     StartServicesArgs,
     ExecuteStartosisScriptArgs,
     ExecuteStartosisModuleArgs,
-    ExecuteStartosisResponse, ExecuteStartosisRemoteModuleArgs,
+    ExecuteStartosisResponse,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import {TemplateAndData} from "./template_and_data";
 import * as path from "path";
@@ -239,7 +239,7 @@ export class EnclaveContext {
         }
 
         const args = new ExecuteStartosisModuleArgs;
-        args.setData(archiverResponse.value)
+        args.setLocal(archiverResponse.value)
         args.setModuleId(kurtosisMod.module.name)
         args.setSerializedParams(serializedParams)
         args.setDryRun(dryRun)
@@ -269,10 +269,11 @@ export class EnclaveContext {
         serializedParams: string,
         dryRun: boolean,
     ): Promise<Result<ExecuteStartosisResponse, Error>> {
-        const args = new ExecuteStartosisRemoteModuleArgs();
+        const args = new ExecuteStartosisModuleArgs();
         args.setModuleId(moduleId)
         args.setDryRun(dryRun)
         args.setSerializedParams(serializedParams)
+        args.setRemote(true)
         const resultRemoteModuleExecution : Result<ExecuteStartosisResponse, Error> = await this.backend.executeStartosisRemoteModule(args)
         if (resultRemoteModuleExecution.isErr()) {
             return err(new Error(`Unexpected error happened executing Startosis module \n${resultRemoteModuleExecution.error}`))
