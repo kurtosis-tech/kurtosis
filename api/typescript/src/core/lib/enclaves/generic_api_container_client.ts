@@ -8,7 +8,7 @@ import {
     ExecCommandArgs,
     ExecCommandResponse,
     ExecuteModuleArgs,
-    ExecuteModuleResponse, ExecuteStartosisModuleArgs, ExecuteStartosisRemoteModuleArgs, ExecuteStartosisResponse,
+    ExecuteModuleResponse, ExecuteStartosisModuleArgs, ExecuteStartosisResponse,
     ExecuteStartosisScriptArgs,
     GetModulesArgs,
     GetModulesResponse,
@@ -42,7 +42,6 @@ export interface GenericApiContainerClient {
     unloadModule(unloadModuleArgs: UnloadModuleArgs): Promise<Result<UnloadModuleResponse,Error>>
     executeStartosisScript(serializedStartosisScript: ExecuteStartosisScriptArgs): Promise<Result<ExecuteStartosisResponse, Error>>
     executeStartosisModule(startosisModuleArgs: ExecuteStartosisModuleArgs): Promise<Result<ExecuteStartosisResponse, Error>>
-    executeStartosisRemoteModule(startosisRemoteModuleArgs: ExecuteStartosisRemoteModuleArgs): Promise<Result<ExecuteStartosisResponse, Error>>;
     startServices(startServicesArgs: StartServicesArgs): Promise<Result<StartServicesResponse, Error>>
     removeService(args: RemoveServiceArgs): Promise<Result<RemoveServiceResponse, Error>>
     repartitionNetwork(repartitionArgs: RepartitionArgs): Promise<Result<null, Error>>
