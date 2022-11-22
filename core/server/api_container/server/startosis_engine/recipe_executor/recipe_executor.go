@@ -8,13 +8,13 @@ import (
 
 type RecipeExecutor struct {
 	recipeMap       map[string]*HttpRequestRecipe
-	recipeResultMap map[string]*HttpRequestRuntimeValue
+	recipeResultMap map[string]map[string]string
 }
 
 func NewRecipeExecutor() *RecipeExecutor {
 	return &RecipeExecutor{
 		recipeMap:       make(map[string]*HttpRequestRecipe),
-		recipeResultMap: make(map[string]*HttpRequestRuntimeValue),
+		recipeResultMap: make(map[string]map[string]string),
 	}
 }
 
@@ -38,6 +38,6 @@ func (re *RecipeExecutor) ExecuteValue(ctx context.Context, serviceNetwork servi
 	return nil
 }
 
-func (re *RecipeExecutor) GetValue(uuid string) *HttpRequestRuntimeValue {
+func (re *RecipeExecutor) GetValue(uuid string) map[string]string {
 	return re.recipeResultMap[uuid]
 }

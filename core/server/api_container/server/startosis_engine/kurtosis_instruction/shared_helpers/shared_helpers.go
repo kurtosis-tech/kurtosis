@@ -135,13 +135,13 @@ func ReplaceRuntimeValueInString(originalString string, recipeEngine *recipe_exe
 		if runtimeValueFieldMatchIndex == subExpNotFound {
 			return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", runtimeValueFieldSubgroupName, compiledRuntimeValueReplacementRegex.String())
 		}
-		factValues := recipeEngine.GetValue(match[runtimeValueMatchIndex])
+		runtimeValue := recipeEngine.GetValue(match[runtimeValueMatchIndex])
 		allMatchIndex := compiledRuntimeValueReplacementRegex.SubexpIndex(allSubgroupName)
 		if allMatchIndex == subExpNotFound {
 			return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", serviceIdSubgroupName, compiledFactReplacementRegex.String())
 		}
 		allMatch := match[allMatchIndex]
-		replacedString = strings.Replace(replacedString, allMatch, factValues.Body, singleMatch)
+		replacedString = strings.Replace(replacedString, allMatch, runtimeValue[match[runtimeValueFieldMatchIndex]], singleMatch)
 	}
 	return replacedString, nil
 }

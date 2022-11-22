@@ -6,7 +6,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/recipe_executor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
@@ -32,7 +31,7 @@ func GenerateGetValueBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisI
 			return nil, interpretationErr
 		}
 		resultUuid := recipeExecutor.CreateValue(httpRequestRecipe)
-		returnValue := kurtosis_types.NewRuntimeValue(starlark.String(fmt.Sprintf(shared_helpers.RuntimeValueReplacementPlaceholderFormat, resultUuid, "body")), starlark.String(fmt.Sprintf(shared_helpers.RuntimeValueReplacementPlaceholderFormat, resultUuid, "code")))
+		returnValue := recipe_executor.CreateStarlarkDictFromHttpRequestRuntimeValue(starlark.String(fmt.Sprintf(shared_helpers.RuntimeValueReplacementPlaceholderFormat, resultUuid, "body")), starlark.String(fmt.Sprintf(shared_helpers.RuntimeValueReplacementPlaceholderFormat, resultUuid, "code")))
 		getValueInstruction := NewGetValueInstruction(serviceNetwork, *shared_helpers.GetCallerPositionFromThread(thread), recipeExecutor, resultUuid)
 		*instructionsQueue = append(*instructionsQueue, getValueInstruction)
 		return returnValue, nil

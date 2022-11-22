@@ -2,10 +2,12 @@ package recipe_executor
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"go.starlark.net/starlark"
 	"io"
 )
 
@@ -19,7 +21,7 @@ type HttpRequestRecipe struct {
 }
 
 type HttpRequestRuntimeValue struct {
-	Body string
+	body string
 	code int
 }
 
@@ -45,7 +47,7 @@ func NewGetHttpRequestRecipe(serviceId service.ServiceID, portId string, endpoin
 	}
 }
 
-func (recipe *HttpRequestRecipe) Execute(ctx context.Context, serviceNetwork service_network.ServiceNetwork) (*HttpRequestRuntimeValue, error) {
+func (recipe *HttpRequestRecipe) Execute(ctx context.Context, serviceNetwork service_network.ServiceNetwork) (map[string]string, error) {
 	response, err := serviceNetwork.HttpRequestService(
 		ctx,
 		recipe.serviceId,
@@ -69,8 +71,15 @@ func (recipe *HttpRequestRecipe) Execute(ctx context.Context, serviceNetwork ser
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred when reading HTTP response body")
 	}
-	return &HttpRequestRuntimeValue{
-		Body: string(body),
-		code: response.StatusCode,
+	return map[string]string{
+		"body": string(body),
+		"code": fmt.Sprint(response.StatusCode),
 	}, nil
+}
+
+func CreateStarlarkDictFromHttpRequestRuntimeValue(bodyMagicString starlark.String, codeMagicString starlark.String) *starlark.Dict {
+	dict := &starlark.Dict{}
+	dict.SetKey(starlark.String("body"), bodyMagicString)
+	dict.SetKey(starlark.String("code"), codeMagicString)
+	return dict
 }
