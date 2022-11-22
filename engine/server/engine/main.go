@@ -186,7 +186,9 @@ func getEnclaveManager(kurtosisBackend backend_interface.KurtosisBackend, kurtos
 		return nil, stacktrace.NewError("Backend type '%v' was not recognized by engine server.", kurtosisBackendType.String())
 	}
 
-	enclaveManager := enclave_manager.NewEnclaveManager(kurtosisBackend, apiContainerKurtosisBackendConfigSupplier)
+	enclaveIdGenerator := enclave_manager.GetEnclaveIdGenerator()
+
+	enclaveManager := enclave_manager.NewEnclaveManager(kurtosisBackend, apiContainerKurtosisBackendConfigSupplier, enclaveIdGenerator)
 
 	return enclaveManager, nil
 }

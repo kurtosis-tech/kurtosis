@@ -2,6 +2,10 @@
 ### Changes
 - Error types in ExecuteStartosisResponse type is now a union type, to better represent they are exclusive and prepare for transition to streaming
 - Update the KurtosisInstruction API type returned to the CLI. It now contains a combination of instruction position, the canonicalized instruction, and an optional instruction result 
+- Modified the `EnclaveIdGenerator` now is a user defined type and can be initialized once because it contains a time-seed inside
+
+### Fixes
+- Fixed the `isEnclaveIdInUse` for the enclave validator, now uses on runtime for `is-key-in-map`
 
 # 0.53.4
 
