@@ -36,7 +36,6 @@ func (provider *GitModuleContentProvider) CloneModule(moduleId string) (string, 
 
 	moduleAbsolutePathOnDisk := path.Join(provider.modulesDir, parsedURL.relativeRepoPath)
 
-	// Otherwise clone the repo and return the absolute path of the requested file
 	interpretationError = provider.atomicClone(parsedURL)
 	if interpretationError != nil {
 		return "", interpretationError
