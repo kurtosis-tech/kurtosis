@@ -46,9 +46,6 @@ Adding service datastore-0
 Adding service datastore-1
 Module datastore_army_module deployed successfully.
 `
-        if (expectedOutput !== executeStartosisRemoteModuleValue.getSerializedScriptOutput()) {
-            throw err(new Error(`Expected output to be match '${expectedOutput} got '${executeStartosisRemoteModuleValue.getSerializedScriptOutput()}'`))
-        }
         expect(generateScriptOutput(executeStartosisRemoteModuleValue.getKurtosisInstructionsList())).toEqual(expectedOutput)
 
         expect(executeStartosisRemoteModuleValue.getInterpretationError()).toBeUndefined()
