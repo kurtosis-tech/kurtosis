@@ -13,7 +13,7 @@ var emptyServiceNetwork = service_network.NewEmptyMockServiceNetwork()
 func TestStoreFilesFromService_StringRepresentationWorks(t *testing.T) {
 	testFilesArtifactUuid, err := enclave_data_directory.NewFilesArtifactUUID()
 	require.Nil(t, err)
-	storeFileFromServiceInstruction := NewStoreFilesFromServiceInstruction(
+	storeFileFromServiceInstruction := NewStoreServiceFilesInstruction(
 		emptyServiceNetwork,
 		kurtosis_instruction.NewInstructionPosition(1, 1, "dummyFile"),
 		"example-service-id",

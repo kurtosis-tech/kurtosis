@@ -43,13 +43,13 @@ func GenerateStoreServiceFilesBuiltin(instructionsQueue *[]kurtosis_instruction.
 			return nil, interpretationError
 		}
 		instructionPosition := shared_helpers.GetCallerPositionFromThread(thread)
-		storeFilesFromServiceInstruction := NewStoreFilesFromServiceInstruction(serviceNetwork, instructionPosition, serviceId, srcPath, artifactUuid)
+		storeFilesFromServiceInstruction := NewStoreServiceFilesInstruction(serviceNetwork, instructionPosition, serviceId, srcPath, artifactUuid)
 		*instructionsQueue = append(*instructionsQueue, storeFilesFromServiceInstruction)
 		return starlark.String(artifactUuid), nil
 	}
 }
 
-func NewStoreFilesFromServiceInstruction(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceID, srcPath string, artifactUuid enclave_data_directory.FilesArtifactUUID) *StoreServiceFilesInstruction {
+func NewStoreServiceFilesInstruction(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceID, srcPath string, artifactUuid enclave_data_directory.FilesArtifactUUID) *StoreServiceFilesInstruction {
 	return &StoreServiceFilesInstruction{
 		serviceNetwork: serviceNetwork,
 		position:       position,

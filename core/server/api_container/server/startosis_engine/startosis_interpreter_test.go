@@ -807,7 +807,7 @@ print(artifact_uuid)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 3)
 
-	storeInstruction := store_service_files.NewStoreFilesFromServiceInstruction(
+	storeInstruction := store_service_files.NewStoreServiceFilesInstruction(
 		testServiceNetwork,
 		kurtosis_instruction.NewInstructionPosition(3, 38, ModuleIdPlaceholderForStandaloneScripts),
 		"example-datastore-server",
@@ -1182,7 +1182,7 @@ print(uuid)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 4)
 
-	storeInstruction := store_service_files.NewStoreFilesFromServiceInstruction(
+	storeInstruction := store_service_files.NewStoreServiceFilesInstruction(
 		testServiceNetwork,
 		kurtosis_instruction.NewInstructionPosition(4, 39, storeFileDefinitionPath),
 		"example-datastore-server",
