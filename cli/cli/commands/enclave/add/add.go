@@ -34,6 +34,8 @@ var isPartitioningEnabled bool
 var kurtosisLogLevelStr string
 var enclaveIdStr string
 
+// EnclaveAddCmd Suppressing exhaustruct requirement because this struct has ~40 properties
+// nolint: exhaustruct
 var EnclaveAddCmd = &cobra.Command{
 	Use:     command_str_consts.EnclaveAddCmdStr,
 	Short:   "Creates an enclave",
@@ -73,7 +75,7 @@ func init() {
 		"i",
 		autogenerateEnclaveIdKeyword,
 		fmt.Sprintf(
-			"The enclave ID to give the new enclave, which must match regex '%v' " +
+			"The enclave ID to give the new enclave, which must match regex '%v' "+
 				"(emptystring will autogenerate an enclave ID)",
 			enclave_consts.AllowedEnclaveIdCharsRegexStr,
 		),

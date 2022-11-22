@@ -170,7 +170,7 @@ func run(
 	// If no enclave with the requested ID exists, create it
 	didModuleExecutionCompleteSuccessfully := false
 	if !foundExistingEnclave {
-		logrus.Infof("Creating enclave '%v' for the module to execute inside...", enclaveIdStr)
+		logrus.Infof("Creating a new enclave for the module to execute inside...")
 		createEnclaveArgs := &kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs{
 			EnclaveId:              enclaveIdStr,
 			ApiContainerVersionTag: apiContainerVersion,
@@ -197,9 +197,10 @@ func run(
 		enclaveInfo = response.GetEnclaveInfo()
 		enclaveIdStr = enclaveInfo.GetEnclaveId()
 		logrus.Infof("Enclave '%v' created successfully", enclaveIdStr)
+
+		createdEnclaveId := enclaves.EnclaveID(enclaveIdStr)
+		defer output_printers.PrintEnclaveId(createdEnclaveId)
 	}
-	createdEnclaveId := enclaves.EnclaveID(enclaveIdStr)
-	defer output_printers.PrintEnclaveId(createdEnclaveId)
 
 	apicHostMachineIp, apicHostMachineGrpcPort, err := enclave_liveness_validator.ValidateEnclaveLiveness(enclaveInfo)
 	if err != nil {
@@ -256,6 +257,7 @@ func run(
 		GUIDs: map[module.ModuleGUID]bool{
 			moduleGUID: true,
 		},
+		Statuses: nil,
 	}
 
 	//TODO replace with API Container call

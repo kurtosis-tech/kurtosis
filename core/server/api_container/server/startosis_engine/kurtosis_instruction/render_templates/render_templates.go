@@ -28,7 +28,7 @@ const (
 type RenderTemplatesInstruction struct {
 	serviceNetwork service_network.ServiceNetwork
 
-	position       kurtosis_instruction.InstructionPosition
+	position       *kurtosis_instruction.InstructionPosition
 	starlarkKwargs starlark.StringDict
 
 	artifactUuid enclave_data_directory.FilesArtifactUUID
@@ -39,7 +39,8 @@ type RenderTemplatesInstruction struct {
 func GenerateRenderTemplatesBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, serviceNetwork service_network.ServiceNetwork) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 	// TODO: Force returning an InterpretationError rather than a normal error
 	return func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
-		renderTemplatesInstruction := newEmptyRenderTemplatesInstruction(serviceNetwork, *shared_helpers.GetCallerPositionFromThread(thread))
+		instructionPosition := shared_helpers.GetCallerPositionFromThread(thread)
+		renderTemplatesInstruction := newEmptyRenderTemplatesInstruction(serviceNetwork, instructionPosition)
 
 		if interpretationError := renderTemplatesInstruction.parseStartosisArgs(b, args, kwargs); interpretationError != nil {
 			return nil, interpretationError
@@ -49,15 +50,17 @@ func GenerateRenderTemplatesBuiltin(instructionsQueue *[]kurtosis_instruction.Ku
 	}
 }
 
-func newEmptyRenderTemplatesInstruction(serviceNetwork service_network.ServiceNetwork, position kurtosis_instruction.InstructionPosition) *RenderTemplatesInstruction {
+func newEmptyRenderTemplatesInstruction(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition) *RenderTemplatesInstruction {
 	return &RenderTemplatesInstruction{
-		serviceNetwork: serviceNetwork,
-		position:       position,
-		starlarkKwargs: starlark.StringDict{},
+		serviceNetwork:                    serviceNetwork,
+		position:                          position,
+		starlarkKwargs:                    starlark.StringDict{},
+		artifactUuid:                      "",
+		templatesAndDataByDestRelFilepath: nil,
 	}
 }
 
-func NewRenderTemplatesInstruction(serviceNetwork service_network.ServiceNetwork, position kurtosis_instruction.InstructionPosition, templatesAndDataByDestRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, starlarkKwargs starlark.StringDict, artifactUuid enclave_data_directory.FilesArtifactUUID) *RenderTemplatesInstruction {
+func NewRenderTemplatesInstruction(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition, templatesAndDataByDestRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, starlarkKwargs starlark.StringDict, artifactUuid enclave_data_directory.FilesArtifactUUID) *RenderTemplatesInstruction {
 	return &RenderTemplatesInstruction{
 		serviceNetwork:                    serviceNetwork,
 		position:                          position,
@@ -68,33 +71,33 @@ func NewRenderTemplatesInstruction(serviceNetwork service_network.ServiceNetwork
 }
 
 func (instruction *RenderTemplatesInstruction) GetPositionInOriginalScript() *kurtosis_instruction.InstructionPosition {
-	return &instruction.position
+	return instruction.position
 }
 
 func (instruction *RenderTemplatesInstruction) GetCanonicalInstruction() string {
-	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(RenderTemplatesBuiltinName, instruction.starlarkKwargs, &instruction.position)
+	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(RenderTemplatesBuiltinName, kurtosis_instruction.NoArgs, instruction.starlarkKwargs, instruction.position)
 }
 
-func (instruction *RenderTemplatesInstruction) Execute(ctx context.Context) error {
+func (instruction *RenderTemplatesInstruction) Execute(_ context.Context) (*string, error) {
 	for relFilePath := range instruction.templatesAndDataByDestRelFilepath {
 		templateStr := instruction.templatesAndDataByDestRelFilepath[relFilePath].Template
 		dataAsJson := instruction.templatesAndDataByDestRelFilepath[relFilePath].DataAsJson
 		dataAsJsonMaybeIPAddressReplaced, err := shared_helpers.ReplaceIPAddressInString(dataAsJson, instruction.serviceNetwork, instruction.GetPositionInOriginalScript().String())
 		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred while replacing IP address with place holder in the render_template instruction for target '%v'", relFilePath)
+			return nil, stacktrace.Propagate(err, "An error occurred while replacing IP address with place holder in the render_template instruction for target '%v'", relFilePath)
 		}
 		instruction.templatesAndDataByDestRelFilepath[relFilePath] = binding_constructors.NewTemplateAndData(templateStr, dataAsJsonMaybeIPAddressReplaced)
 	}
 
 	_, err := instruction.serviceNetwork.RenderTemplatesToTargetFilesArtifactUUID(instruction.templatesAndDataByDestRelFilepath, instruction.artifactUuid)
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed to render templates '%v'", instruction.templatesAndDataByDestRelFilepath)
+		return nil, stacktrace.Propagate(err, "Failed to render templates '%v'", instruction.templatesAndDataByDestRelFilepath)
 	}
-	return nil
+	return nil, nil
 }
 
 func (instruction *RenderTemplatesInstruction) String() string {
-	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(RenderTemplatesBuiltinName, instruction.starlarkKwargs, &instruction.position)
+	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(RenderTemplatesBuiltinName, kurtosis_instruction.NoArgs, instruction.starlarkKwargs, instruction.position)
 }
 
 func (instruction *RenderTemplatesInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {

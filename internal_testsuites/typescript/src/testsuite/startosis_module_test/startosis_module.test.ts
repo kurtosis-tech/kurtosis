@@ -435,7 +435,7 @@ test("Test invalid module with no main in main.star", async () => {
             throw err(new Error("Expected interpretation errors but got empty interpretation errors"))
         }
 
-        if (!executeStartosisModuleValue.getInterpretationError().includes("Evaluation error: load: name main not found in module github.com/sample/sample-kurtosis-module/main.star")) {
+        if (!executeStartosisModuleValue.getInterpretationError().includes("Evaluation error: module has no .main field or method\n\tat [3:12]: <toplevel>")) {
             throw err(new Error("Got interpretation error but got invalid contents"))
         }
 

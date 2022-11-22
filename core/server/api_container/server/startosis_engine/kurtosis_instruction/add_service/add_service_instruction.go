@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	kurtosis_backend_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/facts_engine"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
@@ -21,14 +22,17 @@ import (
 const (
 	AddServiceBuiltinName = "add_service"
 
-	serviceIdArgName     = "service_id"
+	serviceIdArgName = "service_id"
+
 	serviceConfigArgName = "config"
 )
 
-func GenerateAddServiceBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, serviceNetwork service_network.ServiceNetwork) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+func GenerateAddServiceBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, serviceNetwork service_network.ServiceNetwork, factsEngine *facts_engine.FactsEngine) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+
 	// TODO: Force returning an InterpretationError rather than a normal error
 	return func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
-		addServiceInstruction := newEmptyAddServiceInstruction(serviceNetwork, *shared_helpers.GetCallerPositionFromThread(thread))
+		instructionPosition := shared_helpers.GetCallerPositionFromThread(thread)
+		addServiceInstruction := newEmptyAddServiceInstruction(serviceNetwork, factsEngine, instructionPosition)
 		if interpretationError := addServiceInstruction.parseStartosisArgs(b, args, kwargs); interpretationError != nil {
 			return nil, interpretationError
 		}
@@ -43,25 +47,30 @@ func GenerateAddServiceBuiltin(instructionsQueue *[]kurtosis_instruction.Kurtosi
 
 type AddServiceInstruction struct {
 	serviceNetwork service_network.ServiceNetwork
+	factsEngine    *facts_engine.FactsEngine
 
-	position       kurtosis_instruction.InstructionPosition
+	position       *kurtosis_instruction.InstructionPosition
 	starlarkKwargs starlark.StringDict
 
 	serviceId     kurtosis_backend_service.ServiceID
 	serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig
 }
 
-func newEmptyAddServiceInstruction(serviceNetwork service_network.ServiceNetwork, position kurtosis_instruction.InstructionPosition) *AddServiceInstruction {
+func newEmptyAddServiceInstruction(serviceNetwork service_network.ServiceNetwork, factsEngine *facts_engine.FactsEngine, position *kurtosis_instruction.InstructionPosition) *AddServiceInstruction {
 	return &AddServiceInstruction{
 		serviceNetwork: serviceNetwork,
+		factsEngine:    factsEngine,
 		position:       position,
 		starlarkKwargs: starlark.StringDict{},
+		serviceId:      "",
+		serviceConfig:  nil,
 	}
 }
 
-func NewAddServiceInstruction(serviceNetwork service_network.ServiceNetwork, position kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceID, serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig, starlarkKwargs starlark.StringDict) *AddServiceInstruction {
+func NewAddServiceInstruction(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceID, serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig, starlarkKwargs starlark.StringDict) *AddServiceInstruction {
 	return &AddServiceInstruction{
 		serviceNetwork: serviceNetwork,
+		factsEngine:    nil,
 		position:       position,
 		serviceId:      serviceId,
 		serviceConfig:  serviceConfig,
@@ -70,17 +79,22 @@ func NewAddServiceInstruction(serviceNetwork service_network.ServiceNetwork, pos
 }
 
 func (instruction *AddServiceInstruction) GetPositionInOriginalScript() *kurtosis_instruction.InstructionPosition {
-	return &instruction.position
+	return instruction.position
 }
 
 func (instruction *AddServiceInstruction) GetCanonicalInstruction() string {
-	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(AddServiceBuiltinName, instruction.starlarkKwargs, &instruction.position)
+	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(AddServiceBuiltinName, kurtosis_instruction.NoArgs, instruction.starlarkKwargs, instruction.position)
 }
 
-func (instruction *AddServiceInstruction) Execute(ctx context.Context) error {
-	err := instruction.replaceIPAddress()
+func (instruction *AddServiceInstruction) Execute(ctx context.Context) (*string, error) {
+	serviceIdStr, err := shared_helpers.ReplaceFactsInString(string(instruction.serviceId), instruction.factsEngine)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred replacing IP Address with actual values in add service instruction for service '%v'", instruction.serviceId)
+		return nil, stacktrace.Propagate(err, "Error occurred while replacing facts in service id for '%v'", instruction.serviceId)
+	}
+	instruction.serviceId = kurtosis_backend_service.ServiceID(serviceIdStr)
+	err = instruction.replaceMagicStrings()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred replacing IP Address with actual values in add service instruction for service '%v'", instruction.serviceId)
 	}
 
 	serviceConfigMap := map[service.ServiceID]*kurtosis_core_rpc_api_bindings.ServiceConfig{
@@ -90,22 +104,22 @@ func (instruction *AddServiceInstruction) Execute(ctx context.Context) error {
 	// TODO Pull partition from user in Starlark
 	serviceSuccessful, serviceFailed, err := instruction.serviceNetwork.StartServices(ctx, serviceConfigMap, service_network_types.PartitionID(""))
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed adding service to enclave with an unexpected error")
+		return nil, stacktrace.Propagate(err, "Failed adding service to enclave with an unexpected error")
 	}
 	if failure, found := serviceFailed[instruction.serviceId]; found {
-		return stacktrace.Propagate(failure, "Failed adding service to enclave")
+		return nil, stacktrace.Propagate(failure, "Failed adding service to enclave")
 	}
 	if _, found := serviceSuccessful[instruction.serviceId]; !found {
-		return stacktrace.NewError("Service wasn't accounted as failed nor successfully added. This is a product bug")
+		return nil, stacktrace.NewError("Service wasn't accounted as failed nor successfully added. This is a product bug")
 	}
-	return nil
+	return nil, nil
 }
 
 func (instruction *AddServiceInstruction) String() string {
-	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(AddServiceBuiltinName, instruction.starlarkKwargs, &instruction.position)
+	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(AddServiceBuiltinName, kurtosis_instruction.NoArgs, instruction.starlarkKwargs, instruction.position)
 }
 
-func (instruction *AddServiceInstruction) replaceIPAddress() error {
+func (instruction *AddServiceInstruction) replaceMagicStrings() error {
 	serviceIdStr := string(instruction.serviceId)
 	entryPointArgs := instruction.serviceConfig.EntrypointArgs
 	for index, entryPointArg := range entryPointArgs {
@@ -113,7 +127,11 @@ func (instruction *AddServiceInstruction) replaceIPAddress() error {
 		if err != nil {
 			return stacktrace.Propagate(err, "Error occurred while replacing IP address in entry point args for '%v'", entryPointArg)
 		}
-		entryPointArgs[index] = entryPointArgWithIPAddressReplaced
+		entryPointArgWithIPAddressAndFactsReplaced, err := shared_helpers.ReplaceFactsInString(entryPointArgWithIPAddressReplaced, instruction.factsEngine)
+		if err != nil {
+			return stacktrace.Propagate(err, "Error occurred while replacing facts in entry point args for '%v'", entryPointArg)
+		}
+		entryPointArgs[index] = entryPointArgWithIPAddressAndFactsReplaced
 	}
 
 	cmdArgs := instruction.serviceConfig.CmdArgs
@@ -122,7 +140,11 @@ func (instruction *AddServiceInstruction) replaceIPAddress() error {
 		if err != nil {
 			return stacktrace.Propagate(err, "Error occurred while replacing IP address in command args for '%v'", cmdArg)
 		}
-		cmdArgs[index] = cmdArgWithIPAddressReplaced
+		cmdArgWithIPAddressAndFactsReplaced, err := shared_helpers.ReplaceFactsInString(cmdArgWithIPAddressReplaced, instruction.factsEngine)
+		if err != nil {
+			return stacktrace.Propagate(err, "Error occurred while replacing facts in command args for '%v'", cmdArg)
+		}
+		cmdArgs[index] = cmdArgWithIPAddressAndFactsReplaced
 	}
 
 	envVars := instruction.serviceConfig.EnvVars
@@ -131,7 +153,11 @@ func (instruction *AddServiceInstruction) replaceIPAddress() error {
 		if err != nil {
 			return stacktrace.Propagate(err, "Error occurred while replacing IP address in env vars for '%v'", envVarValue)
 		}
-		envVars[envVarName] = envVarValueWithIPAddressReplaced
+		envVarValueWithIPAddressAndFactsReplaced, err := shared_helpers.ReplaceFactsInString(envVarValueWithIPAddressReplaced, instruction.factsEngine)
+		if err != nil {
+			return stacktrace.Propagate(err, "Error occurred while replacing facts in command args for '%v'", envVars)
+		}
+		envVars[envVarName] = envVarValueWithIPAddressAndFactsReplaced
 	}
 
 	return nil

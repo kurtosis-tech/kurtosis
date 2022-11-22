@@ -11,7 +11,7 @@ lang_root_dirpath="$(dirname "${script_dirpath}")"
 #                                             Constants
 # ==================================================================================================
 PARALLELISM=2
-TIMEOUT="3m"   # This must be Go-parseable timeout
+TIMEOUT="4m"   # This must be Go-parseable timeout
 
 TESTSUITE_CLUSTER_BACKEND_DOCKER="docker"
 TESTSUITE_CLUSTER_BACKEND_MINIKUBE="minikube"

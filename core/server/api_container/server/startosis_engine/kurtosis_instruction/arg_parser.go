@@ -25,8 +25,8 @@ const (
 	containerImageNameKey          = "image"
 	factNameArgName                = "fact_name"
 	usedPortsKey                   = "ports"
-	entryPointArgsKey              = "entry_point_args"
-	cmdArgsKey                     = "cmd_args"
+	entryPointArgsKey              = "entrypoint"
+	cmdArgsKey                     = "cmd"
 	envVarArgsKey                  = "env_vars"
 	filesArtifactMountDirpathsKey  = "files"
 	portIdKey                      = "port_id"
@@ -47,7 +47,8 @@ const (
 
 	maxPortNumber = 65535
 
-	getRequestMethod = "GET"
+	getRequestMethod  = "GET"
+	postRequestMethod = "POST"
 )
 
 func ParseServiceId(serviceIdRaw starlark.String) (service.ServiceID, *startosis_errors.InterpretationError) {
@@ -96,6 +97,19 @@ func ParseHttpRequestFactRecipe(serviceConfig *starlarkstruct.Struct) (*kurtosis
 
 	if method == getRequestMethod {
 		builtConfig := binding_constructors.NewGetHttpRequestFactRecipeDefinition(portId, endpoint, maybeFieldExtractor)
+		return builtConfig, nil
+	} else if method == postRequestMethod {
+		contentType, interpretationErr := extractStringValue(serviceConfig, "content_type", defineFactArgName)
+		if interpretationErr != nil {
+			return nil, interpretationErr
+		}
+
+		body, interpretationErr := extractStringValue(serviceConfig, "body", defineFactArgName)
+		if interpretationErr != nil {
+			return nil, interpretationErr
+		}
+
+		builtConfig := binding_constructors.NewPostHttpRequestFactRecipeDefinition(portId, endpoint, contentType, body, maybeFieldExtractor)
 		return builtConfig, nil
 	} else {
 		return nil, startosis_errors.NewInterpretationError("Define fact HTTP method not recognized")
@@ -174,15 +188,15 @@ func ParseExpectedExitCode(expectedExitCodeRaw starlark.Int) (int32, *startosis_
 	return expectedExitCode, nil
 }
 
-func ParseFilePath(filePathArgName string, filePathStr starlark.String) (string, *startosis_errors.InterpretationError) {
-	srcPath, interpretationErr := safeCastToString(filePathStr, filePathArgName)
+func ParseNonEmptyString(argName string, argValue starlark.Value) (string, *startosis_errors.InterpretationError) {
+	strArgValue, interpretationErr := safeCastToString(argValue, argName)
 	if interpretationErr != nil {
 		return "", interpretationErr
 	}
-	if len(srcPath) == 0 {
-		return "", startosis_errors.NewInterpretationError("File path cannot be empty for argument '%s'", filePathArgName)
+	if len(strArgValue) == 0 {
+		return "", startosis_errors.NewInterpretationError("Expected non empty string for argument '%s'", argName)
 	}
-	return srcPath, nil
+	return strArgValue, nil
 }
 
 func ParseArtifactUuid(artifactUuidArgName string, artifactUuidStr starlark.String) (enclave_data_directory.FilesArtifactUUID, *startosis_errors.InterpretationError) {

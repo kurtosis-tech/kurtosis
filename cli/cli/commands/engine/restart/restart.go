@@ -23,6 +23,8 @@ const (
 var engineVersion string
 var logLevelStr string
 
+// RestartCmd Suppressing exhaustruct requirement because this struct has ~40 properties
+// nolint: exhaustruct
 var RestartCmd = &cobra.Command{
 	Use:   command_str_consts.EngineRestartCmdStr,
 	Short: "Restart the Kurtosis engine",

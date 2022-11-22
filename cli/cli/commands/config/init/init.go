@@ -24,8 +24,8 @@ const (
 	overrideConfigPromptLabel = "The Kurtosis Config is already created; do you want to override it?"
 
 	//Valid accept sending metrics inputs
-	acceptSendingMetricsInput  = "send-metrics"
-	rejectSendingMetricsInput  = "dont-send-metrics"
+	acceptSendingMetricsInput = "send-metrics"
+	rejectSendingMetricsInput = "dont-send-metrics"
 )
 
 var validAcceptSendingMetricsArgValues = map[string]bool{
@@ -34,15 +34,9 @@ var validAcceptSendingMetricsArgValues = map[string]bool{
 }
 
 var InitCmd = &lowlevel.LowlevelKurtosisCommand{
-	CommandStr:               command_str_consts.InitCmdStr,
-	ShortDescription:         "Initialize the Kurtosis CLI configuration",
-	LongDescription:          "Initializes the configuration file that the CLI uses with the given values",
-	Args:                     []*args.ArgConfig{
-		set_selection_arg.NewSetSelectionArg(
-			acceptSendingMetricsArgKey,
-			validAcceptSendingMetricsArgValues,
-		),
-	},
+	CommandStr:       command_str_consts.InitCmdStr,
+	ShortDescription: "Initialize the Kurtosis CLI configuration",
+	LongDescription:  "Initializes the configuration file that the CLI uses with the given values",
 	Flags: []*flags.FlagConfig{
 		{
 			Key:       shouldForceInitFlagKey,
@@ -52,7 +46,15 @@ var InitCmd = &lowlevel.LowlevelKurtosisCommand{
 			Default:   defaultShouldForceInitFlagValue,
 		},
 	},
+	Args: []*args.ArgConfig{
+		set_selection_arg.NewSetSelectionArg(
+			acceptSendingMetricsArgKey,
+			validAcceptSendingMetricsArgValues,
+		),
+	},
+	PreValidationAndRunFunc:  nil,
 	RunFunc:                  run,
+	PostValidationAndRunFunc: nil,
 }
 
 func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error {
@@ -90,9 +92,9 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 		//  the interactive prompt
 		if !interactive_terminal_decider.IsInteractiveTerminal() {
 			return stacktrace.NewError(
-				"The Kurtosis config already exists and the '%v' flags wasn't specified so this is where we'd normally ask for " +
-					"a confirmation to overwrite the config, except STDOUT isn't a terminal (indicating that this is probably " +
-					"running in CI so interactive confirmation isn't possible). If an already-initialized config is expected and " +
+				"The Kurtosis config already exists and the '%v' flags wasn't specified so this is where we'd normally ask for "+
+					"a confirmation to overwrite the config, except STDOUT isn't a terminal (indicating that this is probably "+
+					"running in CI so interactive confirmation isn't possible). If an already-initialized config is expected and "+
 					"you want to force-overwrite it non-interactively, you can add the '%v' flag to this command.",
 				shouldForceInitFlagKey,
 				shouldForceInitFlagKey,

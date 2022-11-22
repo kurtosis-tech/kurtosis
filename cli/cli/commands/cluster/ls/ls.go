@@ -19,7 +19,11 @@ var LsCmd = &lowlevel.LowlevelKurtosisCommand{
 	CommandStr:               command_str_consts.ClusterLsCmdStr,
 	ShortDescription:         "List valid clusters",
 	LongDescription:          "List valid clusters based on defaults and the user's configuration file",
+	Flags:                    nil,
+	Args:                     nil,
+	PreValidationAndRunFunc:  nil,
 	RunFunc:                  run,
+	PostValidationAndRunFunc: nil,
 }
 
 func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error {
@@ -35,7 +39,7 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 	}
 	sort.Strings(clusterList)
 	for _, clusterName := range clusterList {
-		fmt.Fprint(logrus.StandardLogger().Out, clusterName + newLineChar)
+		fmt.Fprint(logrus.StandardLogger().Out, clusterName+newLineChar)
 	}
 	return nil
 }

@@ -41,6 +41,7 @@ const (
 	moduleArgForLogging = "module"
 
 	githubDomainPrefix = "github.com/"
+	isNewEnclave = true
 )
 
 var StartosisExecCmd = &lowlevel.LowlevelKurtosisCommand{
@@ -88,14 +89,17 @@ var StartosisExecCmd = &lowlevel.LowlevelKurtosisCommand{
 			// for a module we expect a path to a directory
 			// for a script we expect a script with a `.star` extension
 			// TODO add a `Usage` description here when ArgConfig supports it
-			Key:            scriptOrModulePathKey,
-			IsOptional:     false,
-			DefaultValue:   "",
-			IsGreedy:       false,
-			ValidationFunc: validateScriptOrModulePath,
+			Key:             scriptOrModulePathKey,
+			IsOptional:      false,
+			DefaultValue:    "",
+			IsGreedy:        false,
+			CompletionsFunc: nil,
+			ValidationFunc:  validateScriptOrModulePath,
 		},
 	},
-	RunFunc: run,
+	PreValidationAndRunFunc:  nil,
+	RunFunc:                  run,
+	PostValidationAndRunFunc: nil,
 }
 
 func run(
@@ -140,11 +144,13 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred connecting to the local Kurtosis engine")
 	}
 
-	enclaveCtx, err := getOrCreateEnclaveContext(ctx, enclaveId, kurtosisCtx, isPartitioningEnabled)
+	enclaveCtx, isNewEnclave, err := getOrCreateEnclaveContext(ctx, enclaveId, kurtosisCtx, isPartitioningEnabled)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the enclave context for enclave '%v'", enclaveId)
 	}
-	defer output_printers.PrintEnclaveId(enclaveCtx.GetEnclaveID())
+	if isNewEnclave {
+		defer output_printers.PrintEnclaveId(enclaveCtx.GetEnclaveID())
+	}
 
 	if strings.HasPrefix(startosisScriptOrModulePath, githubDomainPrefix) {
 		err = executeRemoteModule(enclaveCtx, startosisScriptOrModulePath, serializedJsonArgs, dryRun)
@@ -283,23 +289,31 @@ func validateExecutionResponse(executionResponse *kurtosis_core_rpc_api_bindings
 	return nil
 }
 
-func getOrCreateEnclaveContext(ctx context.Context, enclaveId enclaves.EnclaveID, kurtosisContext *kurtosis_context.KurtosisContext, isPartitioningEnabled bool) (*enclaves.EnclaveContext, error) {
+func getOrCreateEnclaveContext(
+	ctx context.Context,
+	enclaveId enclaves.EnclaveID,
+	kurtosisContext *kurtosis_context.KurtosisContext,
+	isPartitioningEnabled bool,
+) (*enclaves.EnclaveContext, bool, error) {
+
 	enclavesMap, err := kurtosisContext.GetEnclaves(ctx)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Unable to get existing enclaves from Kurtosis backend")
+		return nil, false, stacktrace.Propagate(err, "Unable to get existing enclaves from Kurtosis backend")
 	}
 	if _, found := enclavesMap[enclaveId]; found {
 		enclaveContext, err := kurtosisContext.GetEnclaveContext(ctx, enclaveId)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "Unable to get enclave context from the existing enclave '%s'", enclaveId)
+			return nil, false, stacktrace.Propagate(err, "Unable to get enclave context from the existing enclave '%s'", enclaveId)
 		}
-		return enclaveContext, nil
+		return enclaveContext, false, nil
 	}
+	logrus.Infof("Creating a new enclave for the startosis script to execute inside...")
 	enclaveContext, err := kurtosisContext.CreateEnclave(ctx, enclaveId, isPartitioningEnabled)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, fmt.Sprintf("Unable to create new enclave with ID '%s'", enclaveId))
+		return nil, false, stacktrace.Propagate(err, fmt.Sprintf("Unable to create new enclave with ID '%s'", enclaveId))
 	}
-	return enclaveContext, nil
+	logrus.Infof("Enclave '%v' created successfully", enclaveContext.GetEnclaveID())
+	return enclaveContext, isNewEnclave, nil
 }
 
 // validateModuleArgs just validates the args is a valid JSON string

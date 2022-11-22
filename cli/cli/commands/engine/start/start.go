@@ -23,6 +23,8 @@ const (
 var engineVersion string
 var logLevelStr string
 
+// StartCmd Suppressing exhaustruct requirement because this struct has ~40 properties
+// nolint: exhaustruct
 var StartCmd = &cobra.Command{
 	Use:   command_str_consts.EngineStartCmdStr,
 	Short: "Starts the Kurtosis engine",

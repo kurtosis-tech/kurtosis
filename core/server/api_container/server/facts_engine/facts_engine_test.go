@@ -36,6 +36,7 @@ func TestFactEngineLoop(t *testing.T) {
 		FactValue: &kurtosis_core_rpc_api_bindings.FactValue_StringValue{
 			StringValue: "value",
 		},
+		UpdatedAt: nil,
 	}
 	factRecipe := binding_constructors.NewConstantFactRecipe("service_id", "fact_name", &kurtosis_core_rpc_api_bindings.ConstantFactRecipe{FactValue: factValue}, refreshInterval)
 	err = factsEngine.PushRecipe(factRecipe)
@@ -65,6 +66,7 @@ func TestFactRecipePersistence(t *testing.T) {
 		FactValue: &kurtosis_core_rpc_api_bindings.FactValue_StringValue{
 			StringValue: "value",
 		},
+		UpdatedAt: nil,
 	}
 	factRecipe := binding_constructors.NewConstantFactRecipe("service_id", "fact_name", &kurtosis_core_rpc_api_bindings.ConstantFactRecipe{FactValue: factValue}, refreshInterval)
 	err = factsEngine.PushRecipe(factRecipe)
@@ -108,6 +110,7 @@ func TestFactRecipeFetchValueAfter(t *testing.T) {
 		FactValue: &kurtosis_core_rpc_api_bindings.FactValue_StringValue{
 			StringValue: "value",
 		},
+		UpdatedAt: nil,
 	}
 	factRecipe := binding_constructors.NewConstantFactRecipe("service_id", "fact_name", &kurtosis_core_rpc_api_bindings.ConstantFactRecipe{FactValue: factValue}, refreshInterval)
 	err = factsEngine.PushRecipe(factRecipe)

@@ -127,7 +127,12 @@ func NewLokiLogsDatabaseClient(logsDatabaseAddress string, httpClient httpClient
 }
 
 func NewLokiLogsDatabaseClientWithDefaultHttpClient(logsDatabaseAddress string) *lokiLogsDatabaseClient {
-	httpClientObj := &http.Client{Timeout: defaultHttpClientTimeOut}
+	httpClientObj := &http.Client{
+		Transport:     nil,
+		CheckRedirect: nil,
+		Jar:           nil,
+		Timeout:       defaultHttpClientTimeOut,
+	}
 	return &lokiLogsDatabaseClient{logsDatabaseAddress: logsDatabaseAddress, httpClient: httpClientObj}
 }
 
@@ -158,7 +163,7 @@ func (client *lokiLogsDatabaseClient) GetUserServiceLogs(
 
 	getLogsPath := baseLokiApiPath + queryRangeEndpointSubpath
 
-	queryRangeEndpointUrl := &url.URL{Scheme: httpScheme, Host: client.logsDatabaseAddress, Path: getLogsPath}
+	queryRangeEndpointUrl := createUrl(httpScheme, client.logsDatabaseAddress, getLogsPath)
 
 	queryRangeEndpointQuery := queryRangeEndpointUrl.Query()
 
@@ -170,9 +175,27 @@ func (client *lokiLogsDatabaseClient) GetUserServiceLogs(
 	queryRangeEndpointUrl.RawQuery = queryRangeEndpointQuery.Encode()
 
 	httpRequest := &http.Request{
-		Method: http.MethodGet,
-		URL:    queryRangeEndpointUrl,
-		Header: httpHeaderWithTenantID,
+		Method:           http.MethodGet,
+		URL:              queryRangeEndpointUrl,
+		Proto:            "",
+		ProtoMajor:       0,
+		ProtoMinor:       0,
+		Header:           httpHeaderWithTenantID,
+		Body:             nil,
+		GetBody:          nil,
+		ContentLength:    0,
+		TransferEncoding: nil,
+		Close:            false,
+		Host:             "",
+		Form:             nil,
+		PostForm:         nil,
+		MultipartForm:    nil,
+		Trailer:          nil,
+		RemoteAddr:       "",
+		RequestURI:       "",
+		TLS:              nil,
+		Cancel:           nil,
+		Response:         nil,
 	}
 
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(ctx)
@@ -185,7 +208,10 @@ func (client *lokiLogsDatabaseClient) GetUserServiceLogs(
 		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred doing HTTP request '%+v'", httpRequestWithContext)
 	}
 
-	lokiQueryRangeResponseObj := &lokiQueryRangeResponse{}
+	lokiQueryRangeResponseObj := &lokiQueryRangeResponse{
+		Status: "",
+		Data:   nil,
+	}
 	if err = json.Unmarshal(httpResponseBodyBytes, lokiQueryRangeResponseObj); err != nil {
 		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred unmarshalling the Loki query range response")
 	}
@@ -274,7 +300,7 @@ func (client *lokiLogsDatabaseClient) FilterExistingServiceGuids(ctx context.Con
 
 	getLogsPath := fmt.Sprintf(baseLokiApiPath+queryListLabelValuesWithinRangeEndpoint, kurtosisGuidLokiTagKey)
 
-	queryRangeEndpointUrl := &url.URL{Scheme: httpScheme, Host: client.logsDatabaseAddress, Path: getLogsPath}
+	queryRangeEndpointUrl := createUrl(httpScheme, client.logsDatabaseAddress, getLogsPath)
 
 	queryRangeEndpointQuery := queryRangeEndpointUrl.Query()
 
@@ -285,9 +311,27 @@ func (client *lokiLogsDatabaseClient) FilterExistingServiceGuids(ctx context.Con
 	queryRangeEndpointUrl.RawQuery = queryRangeEndpointQuery.Encode()
 
 	httpRequest := &http.Request{
-		Method: http.MethodGet,
-		URL:    queryRangeEndpointUrl,
-		Header: httpHeaderWithTenantID,
+		Method:           http.MethodGet,
+		URL:              queryRangeEndpointUrl,
+		Proto:            "",
+		ProtoMajor:       0,
+		ProtoMinor:       0,
+		Header:           httpHeaderWithTenantID,
+		Body:             nil,
+		GetBody:          nil,
+		ContentLength:    0,
+		TransferEncoding: nil,
+		Close:            false,
+		Host:             "",
+		Form:             nil,
+		PostForm:         nil,
+		MultipartForm:    nil,
+		Trailer:          nil,
+		RemoteAddr:       "",
+		RequestURI:       "",
+		TLS:              nil,
+		Cancel:           nil,
+		Response:         nil,
 	}
 	httpRequestWithContext := httpRequest.WithContext(ctx)
 
@@ -296,7 +340,10 @@ func (client *lokiLogsDatabaseClient) FilterExistingServiceGuids(ctx context.Con
 		return nil, stacktrace.Propagate(err, "An error occurred doing HTTP request '%+v'", httpRequestWithContext)
 	}
 
-	lokiLabelValuesResponseObj := &lokiLabelValuesResponse{}
+	lokiLabelValuesResponseObj := &lokiLabelValuesResponse{
+		Status: "",
+		Data:   nil,
+	}
 	err = json.Unmarshal(httpResponseBodyBytes, lokiLabelValuesResponseObj)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred reading the existing service GUIDs from the logs database")
@@ -341,7 +388,9 @@ func runReadStreamResponseAndAddUserServiceLogLinesToUserServiceLogsChannel(
 
 	for {
 
-		streamResponse := &lokiStreamLogsResponse{}
+		streamResponse := &lokiStreamLogsResponse{
+			Streams: nil,
+		}
 
 		if readingStreamResponseErr := tailLogsWebsocketConn.ReadJSON(streamResponse); readingStreamResponseErr != nil {
 
@@ -510,7 +559,7 @@ func (client *lokiLogsDatabaseClient) getTailLogEndpointURLAndHeader(
 
 	tailLogsPath := baseLokiApiPath + tailEndpointSubpath
 
-	tailLogsEndpointUrl := url.URL{Scheme: websocketScheme, Host: client.logsDatabaseAddress, Path: tailLogsPath}
+	tailLogsEndpointUrl := *createUrl(websocketScheme, client.logsDatabaseAddress, tailLogsPath)
 
 	tailLogsEndpointQuery := tailLogsEndpointUrl.Query()
 
@@ -525,6 +574,21 @@ func (client *lokiLogsDatabaseClient) getTailLogEndpointURLAndHeader(
 	httpHeaderWithTenantID.Add(organizationIdHttpHeaderKey, string(enclaveID))
 
 	return tailLogsEndpointUrl, httpHeaderWithTenantID
+}
+
+func createUrl(scheme string, host string, path string) *url.URL {
+	return &url.URL{
+		Scheme:      scheme,
+		Opaque:      "",
+		User:        nil,
+		Host:        host,
+		Path:        path,
+		RawPath:     "",
+		ForceQuery:  false,
+		RawQuery:    "",
+		Fragment:    "",
+		RawFragment: "",
+	}
 }
 
 func getStartTimeForStreamingLogsParamValue() string {
@@ -571,7 +635,9 @@ func newLogLineFromStreamValue(streamValue []string) (*LogLine, error) {
 
 	lokiLogLineStr := streamValue[streamValueLogLineIndex]
 	lokiLogLineBytes := []byte(lokiLogLineStr)
-	lokiLogLine := &LokiLogLine{}
+	lokiLogLine := &LokiLogLine{
+		Log: "",
+	}
 
 	if err := json.Unmarshal(lokiLogLineBytes, lokiLogLine); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred unmarshalling Loki log line '%+v'", lokiLogLine)

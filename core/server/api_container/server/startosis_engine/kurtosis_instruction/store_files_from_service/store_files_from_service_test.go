@@ -15,7 +15,7 @@ func TestStoreFilesFromService_StringRepresentationWorks(t *testing.T) {
 	require.Nil(t, err)
 	storeFileFromServiceInstruction := NewStoreFilesFromServiceInstruction(
 		emptyServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(1, 1, "dummyFile"),
+		kurtosis_instruction.NewInstructionPosition(1, 1, "dummyFile"),
 		"example-service-id",
 		"/tmp/foo",
 		testFilesArtifactUuid,

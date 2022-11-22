@@ -9,10 +9,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// FilesCmd Suppressing exhaustruct requirement because this struct has ~40 properties
+// nolint: exhaustruct
 var FilesCmd = &cobra.Command{
 	Use:   command_str_consts.FilesCmdStr,
 	Short: "Manage files for an enclave",
-	Long: "Contains actions for managing the Kurtosis enclave filestore, used for sending around, in, and out of the enclave",
+	Long:  "Contains actions for managing the Kurtosis enclave filestore, used for sending around, in, and out of the enclave",
 	RunE:  nil,
 }
 
