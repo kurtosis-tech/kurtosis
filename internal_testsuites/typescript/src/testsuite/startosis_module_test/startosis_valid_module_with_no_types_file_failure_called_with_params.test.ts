@@ -33,20 +33,20 @@ test("Test valid startosis module with no type - failure called with params", as
             throw executeStartosisModuleResult.error
         }
         const executeStartosisModuleValue = executeStartosisModuleResult.value;
-        if (executeStartosisModuleValue.getInterpretationError() === "") {
+        if (executeStartosisModuleValue.getInterpretationError() === undefined) {
             throw err(new Error("Expected interpretation errors but got empty interpretation errors"))
         }
 
-        if (!executeStartosisModuleValue.getInterpretationError().includes("A non empty parameter was passed to the module 'github.com/sample/sample-kurtosis-module' but the module doesn't contain a valid 'types.proto' file (it is either absent of invalid).")) {
+        if (!executeStartosisModuleValue.getInterpretationError()?.getErrorMessage().includes("A non empty parameter was passed to the module 'github.com/sample/sample-kurtosis-module' but the module doesn't contain a valid 'types.proto' file (it is either absent of invalid).")) {
             throw err(new Error("Got interpretation error but got invalid contents"))
         }
 
-        if (executeStartosisModuleValue.getExecutionError() !== "") {
+        if (executeStartosisModuleValue.getExecutionError() !== undefined) {
             throw err(new Error(`Expected Empty Execution Error got '${executeStartosisModuleValue.getExecutionError()}'`))
         }
 
-        if (executeStartosisModuleValue.getValidationErrorsList().length != 0) {
-            throw err(new Error(`Expected Empty Validation Error got '${executeStartosisModuleValue.getValidationErrorsList()}'`))
+        if (executeStartosisModuleValue.getValidationErrors() !== undefined) {
+            throw err(new Error(`Expected Empty Validation Error got '${executeStartosisModuleValue.getValidationErrors()}'`))
         }
 
         if (executeStartosisModuleValue.getSerializedScriptOutput() != "") {

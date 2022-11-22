@@ -40,16 +40,16 @@ test("Test valid startosis module with types", async () => {
             throw err(new Error(`Expected output to be '${expectedScriptOutput} got '${executeStartosisModuleValue.getSerializedScriptOutput()}'`))
         }
 
-        if (executeStartosisModuleValue.getInterpretationError() !== "") {
+        if (executeStartosisModuleValue.getInterpretationError() !== undefined) {
             throw err(new Error(`Expected Empty Interpretation Error got '${executeStartosisModuleValue.getInterpretationError()}'`))
         }
 
-        if (executeStartosisModuleValue.getExecutionError() !== "") {
+        if (executeStartosisModuleValue.getExecutionError() !== undefined) {
             throw err(new Error(`Expected Empty Execution Error got '${executeStartosisModuleValue.getExecutionError()}'`))
         }
 
-        if (executeStartosisModuleValue.getValidationErrorsList().length != 0) {
-            throw err(new Error(`Expected Empty Validation Error got '${executeStartosisModuleValue.getValidationErrorsList()}'`))
+        if (executeStartosisModuleValue.getValidationErrors() !== undefined) {
+            throw err(new Error(`Expected Empty Validation Error got '${executeStartosisModuleValue.getValidationErrors()}'`))
         }
 
     } finally {

@@ -32,20 +32,20 @@ test("Test invalid module with no main in main.star", async () => {
         }
 
         const executeStartosisModuleValue = executeStartosisModuleResult.value;
-        if (executeStartosisModuleValue.getInterpretationError() === "") {
+        if (executeStartosisModuleValue.getInterpretationError() === undefined) {
             throw err(new Error("Expected interpretation errors but got empty interpretation errors"))
         }
 
-        if (!executeStartosisModuleValue.getInterpretationError().includes("Evaluation error: module has no .main field or method\n\tat [3:12]: <toplevel>")) {
+        if (!executeStartosisModuleValue.getInterpretationError()?.getErrorMessage().includes("Evaluation error: module has no .main field or method\n\tat [3:12]: <toplevel>")) {
             throw err(new Error("Got interpretation error but got invalid contents"))
         }
 
-        if (executeStartosisModuleValue.getExecutionError() !== "") {
+        if (executeStartosisModuleValue.getExecutionError() !== undefined) {
             throw err(new Error(`Expected Empty Execution Error got '${executeStartosisModuleValue.getExecutionError()}'`))
         }
 
-        if (executeStartosisModuleValue.getValidationErrorsList().length != 0) {
-            throw err(new Error(`Expected Empty Validation Error got '${executeStartosisModuleValue.getValidationErrorsList()}'`))
+        if (executeStartosisModuleValue.getValidationErrors() !== undefined) {
+            throw err(new Error(`Expected Empty Validation Error got '${executeStartosisModuleValue.getValidationErrors()}'`))
         }
 
         if (executeStartosisModuleValue.getSerializedScriptOutput() != "") {

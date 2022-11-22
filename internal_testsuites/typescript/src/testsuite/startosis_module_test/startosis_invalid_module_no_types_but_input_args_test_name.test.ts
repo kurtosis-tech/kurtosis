@@ -2,7 +2,6 @@ import {createEnclave} from "../../test_helpers/enclave_setup";
 import {DEFAULT_DRY_RUN, EMPTY_EXECUTE_PARAMS, IS_PARTITIONING_ENABLED, JEST_TIMEOUT_MS} from "./shared_constants";
 import * as path from "path";
 import log from "loglevel";
-import {err} from "neverthrow";
 
 const INVALID_MODULE_NO_TYPE_BUT_INPUT_ARGS_TEST_NAME = "invalid-module-no-type-input-args";
 const INVALID_MODULE_NO_TYPE_BUT_INPUT_ARGS_REL_PATH = "../../../../startosis/invalid-no-type-but-input-args";
@@ -32,25 +31,14 @@ test("Test invalid startosis module no types file but input_args in main", async
             throw executeStartosisModuleResult.error
         }
         const executeStartosisModuleValue = executeStartosisModuleResult.value;
-        if (executeStartosisModuleValue.getInterpretationError() === "") {
-            throw err(new Error("Expected interpretation errors but got empty interpretation errors"))
-        }
 
-        if (!executeStartosisModuleValue.getInterpretationError().includes("Evaluation error: function main missing 1 argument (input_args)")) {
-            throw err(new Error("Got interpretation error but got invalid contents"))
-        }
+        expect(executeStartosisModuleValue.getInterpretationError()).not.toBeUndefined()
+        expect(executeStartosisModuleValue.getInterpretationError()?.getErrorMessage())
+            .toContain("Evaluation error: function main missing 1 argument (input_args)")
 
-        if (executeStartosisModuleValue.getExecutionError() !== "") {
-            throw err(new Error(`Expected Empty Execution Error got '${executeStartosisModuleValue.getExecutionError()}'`))
-        }
-
-        if (executeStartosisModuleValue.getValidationErrorsList().length != 0) {
-            throw err(new Error(`Expected Empty Validation Error got '${executeStartosisModuleValue.getValidationErrorsList()}'`))
-        }
-
-        if (executeStartosisModuleValue.getSerializedScriptOutput() != "") {
-            throw err(new Error(`Expected output to be empty got '${executeStartosisModuleValue.getSerializedScriptOutput()}'`))
-        }
+        expect(executeStartosisModuleValue.getExecutionError()).toBeUndefined()
+        expect(executeStartosisModuleValue.getValidationErrors()).toBeUndefined()
+        expect(executeStartosisModuleValue.getSerializedScriptOutput()).toBe("")
     } finally {
         stopEnclaveFunction()
     }
