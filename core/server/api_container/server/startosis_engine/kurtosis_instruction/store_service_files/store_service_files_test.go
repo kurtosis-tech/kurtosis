@@ -1,4 +1,4 @@
-package store_files_from_service
+package store_service_files
 
 import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
@@ -13,7 +13,7 @@ var emptyServiceNetwork = service_network.NewEmptyMockServiceNetwork()
 func TestStoreFilesFromService_StringRepresentationWorks(t *testing.T) {
 	testFilesArtifactUuid, err := enclave_data_directory.NewFilesArtifactUUID()
 	require.Nil(t, err)
-	storeFileFromServiceInstruction := NewStoreFilesFromServiceInstruction(
+	storeFileFromServiceInstruction := NewStoreServiceFilesInstruction(
 		emptyServiceNetwork,
 		kurtosis_instruction.NewInstructionPosition(1, 1, "dummyFile"),
 		"example-service-id",
@@ -21,12 +21,12 @@ func TestStoreFilesFromService_StringRepresentationWorks(t *testing.T) {
 		testFilesArtifactUuid,
 	)
 	expectedMultiLineStr := `# from: dummyFile[1:1]
-store_file_from_service(
-	artifact_uuid="` + string(testFilesArtifactUuid) + `",
+store_service_files(
+	artifact_id="` + string(testFilesArtifactUuid) + `",
 	service_id="example-service-id",
-	src_path="/tmp/foo"
+	src="/tmp/foo"
 )`
 	require.Equal(t, expectedMultiLineStr, storeFileFromServiceInstruction.GetCanonicalInstruction())
-	expectedSingleLineStr := `store_file_from_service(artifact_uuid="` + string(testFilesArtifactUuid) + `", service_id="example-service-id", src_path="/tmp/foo")`
+	expectedSingleLineStr := `store_service_files(artifact_id="` + string(testFilesArtifactUuid) + `", service_id="example-service-id", src="/tmp/foo")`
 	require.Equal(t, expectedSingleLineStr, storeFileFromServiceInstruction.String())
 }
