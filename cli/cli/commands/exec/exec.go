@@ -252,7 +252,7 @@ func validateExecutionResponse(executionResponse *kurtosis_core_rpc_api_bindings
 	var scriptOutputLines []string
 	concatenatedKurtosisInstructions := make([]string, len(executionResponse.GetKurtosisInstructions()))
 	for idx, instruction := range executionResponse.GetKurtosisInstructions() {
-		concatenatedKurtosisInstructions[idx] = instruction.GetExecutableInstruction()
+		concatenatedKurtosisInstructions[idx] = output_printers.FormatInstruction(instruction)
 		if instruction.InstructionResult != kurtosisInstructionNoResult {
 			scriptOutputLines = append(scriptOutputLines, instruction.GetInstructionResult())
 		}
