@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/recipe_executor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
@@ -25,32 +26,34 @@ const (
 	defaultEnd = end("\n")
 )
 
-func GeneratePrintBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction) func(thread *starlark.Thread, builtin *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+func GeneratePrintBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, recipeExecutor *recipe_executor.RecipeExecutor) func(thread *starlark.Thread, builtin *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 	return func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 		args, separatorStr, endStr, interpretationError := parseStartosisArg(b, args, kwargs)
 		if interpretationError != nil {
 			return nil, interpretationError
 		}
 		instructionPosition := *shared_helpers.GetCallerPositionFromThread(thread)
-		defineFactInstruction := NewPrintInstruction(instructionPosition, args, separatorStr, endStr)
+		defineFactInstruction := NewPrintInstruction(instructionPosition, args, separatorStr, endStr, recipeExecutor)
 		*instructionsQueue = append(*instructionsQueue, defineFactInstruction)
 		return starlark.None, nil
 	}
 }
 
 type PrintInstruction struct {
-	position  kurtosis_instruction.InstructionPosition
-	args      []starlark.Value
-	separator separator
-	end       end
+	position       kurtosis_instruction.InstructionPosition
+	args           []starlark.Value
+	separator      separator
+	end            end
+	recipeExecutor *recipe_executor.RecipeExecutor
 }
 
-func NewPrintInstruction(position kurtosis_instruction.InstructionPosition, args []starlark.Value, separatorStr separator, endStr end) *PrintInstruction {
+func NewPrintInstruction(position kurtosis_instruction.InstructionPosition, args []starlark.Value, separatorStr separator, endStr end, recipeExecutor *recipe_executor.RecipeExecutor) *PrintInstruction {
 	return &PrintInstruction{
-		position:  position,
-		args:      args,
-		separator: separatorStr,
-		end:       endStr,
+		position:       position,
+		args:           args,
+		separator:      separatorStr,
+		end:            endStr,
+		recipeExecutor: recipeExecutor,
 	}
 }
 
@@ -74,8 +77,14 @@ func (instruction *PrintInstruction) Execute(_ context.Context) (*string, error)
 		default:
 			serializedArgs[idx] = arg.String()
 		}
+		newValue, err := shared_helpers.ReplaceRuntimeValueInString(serializedArgs[idx], instruction.recipeExecutor)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Error replacing")
+		}
+		serializedArgs[idx] = newValue
 	}
 	instructionOutput := fmt.Sprintf("%s%s", strings.Join(serializedArgs, string(instruction.separator)), instruction.end)
+
 	return &instructionOutput, nil
 }
 

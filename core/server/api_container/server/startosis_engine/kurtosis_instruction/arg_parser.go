@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/recipe_executor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"go.starlark.net/starlark"
@@ -110,6 +111,48 @@ func ParseHttpRequestFactRecipe(serviceConfig *starlarkstruct.Struct) (*kurtosis
 		}
 
 		builtConfig := binding_constructors.NewPostHttpRequestFactRecipeDefinition(portId, endpoint, contentType, body, maybeFieldExtractor)
+		return builtConfig, nil
+	} else {
+		return nil, startosis_errors.NewInterpretationError("Define fact HTTP method not recognized")
+	}
+}
+
+func ParseHttpRequestRecipe(serviceConfig *starlarkstruct.Struct) (*recipe_executor.HttpRequestRecipe, *startosis_errors.InterpretationError) {
+	serviceId, interpretationErr := extractStringValue(serviceConfig, "service_id", defineFactArgName)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
+	portId, interpretationErr := extractStringValue(serviceConfig, portIdKey, defineFactArgName)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
+	endpoint, interpretationErr := extractStringValue(serviceConfig, requestEndpointKey, defineFactArgName)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
+	method, interpretationErr := extractStringValue(serviceConfig, requestMethodEndpointKey, defineFactArgName)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
+	if method == getRequestMethod {
+		builtConfig := recipe_executor.NewGetHttpRequestRecipe(service.ServiceID(serviceId), portId, endpoint)
+		return builtConfig, nil
+	} else if method == postRequestMethod {
+		contentType, interpretationErr := extractStringValue(serviceConfig, "content_type", defineFactArgName)
+		if interpretationErr != nil {
+			return nil, interpretationErr
+		}
+
+		body, interpretationErr := extractStringValue(serviceConfig, "body", defineFactArgName)
+		if interpretationErr != nil {
+			return nil, interpretationErr
+		}
+
+		builtConfig := recipe_executor.NewPostHttpRequestRecipe(service.ServiceID(serviceId), portId, endpoint, contentType, body)
 		return builtConfig, nil
 	} else {
 		return nil, startosis_errors.NewInterpretationError("Define fact HTTP method not recognized")

@@ -10,13 +10,16 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/define_fact"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/define_recipe"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/exec"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/get_value"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/kurtosis_print"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/remove_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/render_templates"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/store_files_from_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/upload_files"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/wait"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/recipe_executor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_modules"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_modules/proto_compiler"
@@ -53,6 +56,7 @@ type StartosisInterpreter struct {
 	mutex              *sync.Mutex
 	serviceNetwork     service_network.ServiceNetwork
 	factsEngine        *facts_engine.FactsEngine
+	recipeExecutor     *recipe_executor.RecipeExecutor
 	moduleGlobalsCache map[string]*startosis_modules.ModuleCacheEntry
 	// TODO AUTH there will be a leak here in case people with different repo visibility access a module
 	moduleContentProvider startosis_modules.ModuleContentProvider
@@ -71,11 +75,12 @@ func NewStartosisInterpreter(serviceNetwork service_network.ServiceNetwork, modu
 	}
 }
 
-func NewStartosisInterpreterWithFacts(serviceNetwork service_network.ServiceNetwork, factsEngine *facts_engine.FactsEngine, moduleContentProvider startosis_modules.ModuleContentProvider) *StartosisInterpreter {
+func NewStartosisInterpreterWithFacts(serviceNetwork service_network.ServiceNetwork, factsEngine *facts_engine.FactsEngine, moduleContentProvider startosis_modules.ModuleContentProvider, recipeExecutor *recipe_executor.RecipeExecutor) *StartosisInterpreter {
 	return &StartosisInterpreter{
 		mutex:                 &sync.Mutex{},
 		serviceNetwork:        serviceNetwork,
 		moduleContentProvider: moduleContentProvider,
+		recipeExecutor:        recipeExecutor,
 		moduleGlobalsCache:    make(map[string]*startosis_modules.ModuleCacheEntry),
 		factsEngine:           factsEngine,
 		protoFileStore:        proto_compiler.NewProtoFileStore(moduleContentProvider),
@@ -135,11 +140,13 @@ func (interpreter *StartosisInterpreter) buildBindings(threadName string, instru
 
 		// Kurtosis instructions - will push instructions to the queue that will affect the enclave state at execution
 		add_service.AddServiceBuiltinName:                        starlark.NewBuiltin(add_service.AddServiceBuiltinName, add_service.GenerateAddServiceBuiltin(instructionsQueue, interpreter.serviceNetwork, interpreter.factsEngine)),
+		define_recipe.DefineFactBuiltinName:                      starlark.NewBuiltin(define_recipe.DefineFactBuiltinName, define_recipe.GenerateDefineRecipeBuiltin(instructionsQueue, interpreter.recipeExecutor)),
 		exec.ExecBuiltinName:                                     starlark.NewBuiltin(exec.ExecBuiltinName, exec.GenerateExecBuiltin(instructionsQueue, interpreter.serviceNetwork)),
-		kurtosis_print.PrintBuiltinName:                          starlark.NewBuiltin(kurtosis_print.PrintBuiltinName, kurtosis_print.GeneratePrintBuiltin(instructionsQueue)),
+		kurtosis_print.PrintBuiltinName:                          starlark.NewBuiltin(kurtosis_print.PrintBuiltinName, kurtosis_print.GeneratePrintBuiltin(instructionsQueue, interpreter.recipeExecutor)),
 		remove_service.RemoveServiceBuiltinName:                  starlark.NewBuiltin(remove_service.RemoveServiceBuiltinName, remove_service.GenerateRemoveServiceBuiltin(instructionsQueue, interpreter.serviceNetwork)),
 		render_templates.RenderTemplatesBuiltinName:              starlark.NewBuiltin(render_templates.RenderTemplatesBuiltinName, render_templates.GenerateRenderTemplatesBuiltin(instructionsQueue, interpreter.serviceNetwork)),
 		store_files_from_service.StoreFileFromServiceBuiltinName: starlark.NewBuiltin(store_files_from_service.StoreFileFromServiceBuiltinName, store_files_from_service.GenerateStoreFilesFromServiceBuiltin(instructionsQueue, interpreter.serviceNetwork)),
+		get_value.DefineFactBuiltinName:                          starlark.NewBuiltin(get_value.DefineFactBuiltinName, get_value.GenerateGetValueBuiltin(instructionsQueue, interpreter.recipeExecutor, interpreter.serviceNetwork)),
 		define_fact.DefineFactBuiltinName:                        starlark.NewBuiltin(define_fact.DefineFactBuiltinName, define_fact.GenerateDefineFactBuiltin(instructionsQueue, interpreter.factsEngine)),
 		upload_files.UploadFilesBuiltinName:                      starlark.NewBuiltin(upload_files.UploadFilesBuiltinName, upload_files.GenerateUploadFilesBuiltin(instructionsQueue, interpreter.moduleContentProvider, interpreter.serviceNetwork)),
 		wait.WaitBuiltinName:                                     starlark.NewBuiltin(wait.WaitBuiltinName, wait.GenerateWaitBuiltin(instructionsQueue, interpreter.factsEngine)),

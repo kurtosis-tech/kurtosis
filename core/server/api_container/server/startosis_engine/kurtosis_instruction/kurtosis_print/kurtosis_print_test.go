@@ -18,6 +18,7 @@ func TestPrintInstruction_StringRepresentation(t *testing.T) {
 		},
 		"; ",
 		"EOL",
+		nil,
 	)
 	expectedMultiLineStr := `# from: dummyFile[1:1]
 print(

@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/facts_engine"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/recipe_executor"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
 	"regexp"
@@ -13,8 +14,6 @@ import (
 )
 
 const (
-	ArtifactUUIDSuffix = "artifact_uuid"
-
 	unlimitedMatches = -1
 	singleMatch      = 1
 
@@ -33,14 +32,26 @@ const (
 	factReplacementRegex             = "(?P<" + allSubgroupName + ">\\{\\{" + kurtosisNamespace + ":(?P<" + serviceIdSubgroupName + ">" + service.ServiceIdRegexp + ")" + ":(?P<" + factNameArgName + ">" + service.ServiceIdRegexp + ")\\.fact\\}\\})"
 	FactReplacementPlaceholderFormat = "{{" + kurtosisNamespace + ":%v:%v.fact}}"
 
+	recipeSubgroupName = "recipe_uuid"
+
+	recipeReplacementRegex                  = "(?P<" + allSubgroupName + ">\\{\\{" + kurtosisNamespace + ":(?P<" + recipeSubgroupName + ">" + service.ServiceIdRegexp + ")\\.recipe\\}\\})"
+	RecipeValueReplacementPlaceholderFormat = "{{" + kurtosisNamespace + ":%v.recipe}}"
+
+	runtimeValueSubgroupName      = "runtime_value"
+	runtimeValueFieldSubgroupName = "runtime_value_field"
+
+	runtimeValueReplacementRegex             = "(?P<" + allSubgroupName + ">\\{\\{" + kurtosisNamespace + ":(?P<" + runtimeValueSubgroupName + ">" + service.ServiceIdRegexp + ")" + ":(?P<" + runtimeValueFieldSubgroupName + ">" + service.ServiceIdRegexp + ")\\.runtime_value\\}\\})"
+	RuntimeValueReplacementPlaceholderFormat = "{{" + kurtosisNamespace + ":%v:%v.runtime_value}}"
+
 	subExpNotFound = -1
 )
 
 // The compiled regular expression to do IP address replacements
 // Treat this as a constant
 var (
-	compiledRegex                = regexp.MustCompile(ipAddressReplacementRegex)
-	compiledFactReplacementRegex = regexp.MustCompile(factReplacementRegex)
+	compiledRegex                        = regexp.MustCompile(ipAddressReplacementRegex)
+	compiledFactReplacementRegex         = regexp.MustCompile(factReplacementRegex)
+	compiledRuntimeValueReplacementRegex = regexp.MustCompile(runtimeValueReplacementRegex)
 )
 
 // GetCallerPositionFromThread gets you the position (line, col, filename) from where this function is called
@@ -115,4 +126,39 @@ func ReplaceFactsInString(originalString string, factsEngine *facts_engine.Facts
 		replacedString = strings.Replace(replacedString, allMatch, factValues[len(factValues)-1].GetStringValue(), singleMatch)
 	}
 	return replacedString, nil
+}
+
+func ReplaceRuntimeValueInString(originalString string, recipeEngine *recipe_executor.RecipeExecutor) (string, error) {
+	matches := compiledFactReplacementRegex.FindAllStringSubmatch(originalString, unlimitedMatches)
+	replacedString := originalString
+	for _, match := range matches {
+		runtimeValueMatchIndex := compiledRuntimeValueReplacementRegex.SubexpIndex(runtimeValueSubgroupName)
+		if runtimeValueMatchIndex == subExpNotFound {
+			return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", runtimeValueSubgroupName, compiledRuntimeValueReplacementRegex.String())
+		}
+		runtimeValueFieldMatchIndex := compiledRuntimeValueReplacementRegex.SubexpIndex(runtimeValueFieldSubgroupName)
+		if runtimeValueFieldMatchIndex == subExpNotFound {
+			return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", runtimeValueFieldSubgroupName, compiledRuntimeValueReplacementRegex.String())
+		}
+		factValues := recipeEngine.GetValue(match[runtimeValueMatchIndex])
+		allMatchIndex := compiledRuntimeValueReplacementRegex.SubexpIndex(allSubgroupName)
+		if allMatchIndex == subExpNotFound {
+			return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", serviceIdSubgroupName, compiledFactReplacementRegex.String())
+		}
+		allMatch := match[allMatchIndex]
+		replacedString = strings.Replace(replacedString, allMatch, factValues.Body, singleMatch)
+	}
+	return replacedString, nil
+}
+
+func GetRecipeValueInString(originalString string) (string, error) {
+	matches := compiledFactReplacementRegex.FindAllStringSubmatch(originalString, unlimitedMatches)
+	for _, match := range matches {
+		runtimeValueMatchIndex := compiledRuntimeValueReplacementRegex.SubexpIndex(recipeReplacementRegex)
+		if runtimeValueMatchIndex == subExpNotFound {
+			return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", runtimeValueSubgroupName, compiledRuntimeValueReplacementRegex.String())
+		}
+		return match[runtimeValueMatchIndex], nil
+	}
+	return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", runtimeValueSubgroupName, compiledRuntimeValueReplacementRegex.String())
 }

@@ -850,7 +850,7 @@ this is a test string
 func TestStartosisInterpreter_DefineFactAndWait(t *testing.T) {
 	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
-	interpreter := NewStartosisInterpreterWithFacts(testServiceNetwork, nil, moduleContentProvider)
+	interpreter := NewStartosisInterpreterWithFacts(testServiceNetwork, nil, moduleContentProvider, nil)
 	scriptFormatStr := `
 define_fact(service_id="%v", fact_name="%v", fact_recipe=struct(method="GET", endpoint="/", port_id="http"))
 wait(service_id="%v", fact_name="%v")
