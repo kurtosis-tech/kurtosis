@@ -31,9 +31,7 @@ test("Test invalid module with no main.star", async () => {
             throw err(new Error("Module with invalid module was expected to error but didn't"))
         }
 
-        if (!executeStartosisModuleResult.error.message.includes(`An error occurred while verifying that 'main.star' exists on root of module`)) {
-            throw err(new Error("Unexpected error message"))
-        }
+        expect(executeStartosisModuleResult.error.message).toContain("An error occurred while verifying that 'main.star' exists on root of module")
     } finally {
         stopEnclaveFunction()
     }

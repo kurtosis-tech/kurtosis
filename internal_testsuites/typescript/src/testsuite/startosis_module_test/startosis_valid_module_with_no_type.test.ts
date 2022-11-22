@@ -1,9 +1,9 @@
 import log from "loglevel";
-import {err} from "neverthrow";
 
 import {createEnclave} from "../../test_helpers/enclave_setup";
 import * as path from "path";
 import {DEFAULT_DRY_RUN, EMPTY_EXECUTE_PARAMS, IS_PARTITIONING_ENABLED, JEST_TIMEOUT_MS} from "./shared_constants";
+import {generateScriptOutput} from "../../test_helpers/startosis_helpers";
 
 const VALID_MODULE_NO_TYPE_TEST_NAME = "valid-module-no-type";
 const VALID_MODULE_NO_TYPE_REL_PATH = "../../../../startosis/valid-kurtosis-module-no-type"
@@ -36,22 +36,11 @@ test("Test valid startosis module with no type", async () => {
 
         const expectedScriptOutput = "Hello World!\n"
 
-        if (expectedScriptOutput !== executeStartosisModuleValue.getSerializedScriptOutput()) {
-            throw err(new Error(`Expected output to be '${expectedScriptOutput} got '${executeStartosisModuleValue.getSerializedScriptOutput()}'`))
-        }
+        expect(generateScriptOutput(executeStartosisModuleValue.getKurtosisInstructionsList())).toEqual(expectedScriptOutput)
 
-        if (executeStartosisModuleValue.getInterpretationError() !== undefined) {
-            throw err(new Error(`Expected Empty Interpretation Error got '${executeStartosisModuleValue.getInterpretationError()}'`))
-        }
-
-        if (executeStartosisModuleValue.getExecutionError() !== undefined) {
-            throw err(new Error(`Expected Empty Execution Error got '${executeStartosisModuleValue.getExecutionError()}'`))
-        }
-
-        if (executeStartosisModuleValue.getValidationErrors() !== undefined) {
-            throw err(new Error(`Expected Empty Validation Error got '${executeStartosisModuleValue.getValidationErrors()}'`))
-        }
-
+        expect(executeStartosisModuleValue.getInterpretationError()).toBeUndefined()
+        expect(executeStartosisModuleValue.getExecutionError()).toBeUndefined()
+        expect(executeStartosisModuleValue.getValidationErrors()).toBeUndefined()
     } finally {
         stopEnclaveFunction()
     }

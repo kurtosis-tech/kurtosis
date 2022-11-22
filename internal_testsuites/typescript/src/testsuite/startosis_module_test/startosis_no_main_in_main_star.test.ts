@@ -3,6 +3,7 @@ import {DEFAULT_DRY_RUN, EMPTY_EXECUTE_PARAMS, IS_PARTITIONING_ENABLED, JEST_TIM
 import * as path from "path";
 import log from "loglevel";
 import {err} from "neverthrow";
+import {generateScriptOutput} from "../../test_helpers/startosis_helpers";
 
 const MISSING_MAIN_FUNCTION_TEST_NAME = "invalid-module-missing-main"
 const MODULE_WITH_NO_MAIN_IN_MAIN_STAR_REL_PATH = "../../../../startosis/no-main-in-main-star"
@@ -32,25 +33,15 @@ test("Test invalid module with no main in main.star", async () => {
         }
 
         const executeStartosisModuleValue = executeStartosisModuleResult.value;
-        if (executeStartosisModuleValue.getInterpretationError() === undefined) {
-            throw err(new Error("Expected interpretation errors but got empty interpretation errors"))
-        }
 
-        if (!executeStartosisModuleValue.getInterpretationError()?.getErrorMessage().includes("Evaluation error: module has no .main field or method\n\tat [3:12]: <toplevel>")) {
-            throw err(new Error("Got interpretation error but got invalid contents"))
-        }
+        expect(executeStartosisModuleValue.getInterpretationError()).not.toBeUndefined()
+        expect(executeStartosisModuleValue.getInterpretationError()?.getErrorMessage())
+            .toContain("Evaluation error: module has no .main field or method\n\tat [3:12]: <toplevel>")
 
-        if (executeStartosisModuleValue.getExecutionError() !== undefined) {
-            throw err(new Error(`Expected Empty Execution Error got '${executeStartosisModuleValue.getExecutionError()}'`))
-        }
+        expect(executeStartosisModuleValue.getExecutionError()).toBeUndefined()
+        expect(executeStartosisModuleValue.getValidationErrors()).toBeUndefined()
 
-        if (executeStartosisModuleValue.getValidationErrors() !== undefined) {
-            throw err(new Error(`Expected Empty Validation Error got '${executeStartosisModuleValue.getValidationErrors()}'`))
-        }
-
-        if (executeStartosisModuleValue.getSerializedScriptOutput() != "") {
-            throw err(new Error(`Expected output to be empty got '${executeStartosisModuleValue.getSerializedScriptOutput()}'`))
-        }
+        expect(generateScriptOutput(executeStartosisModuleValue.getKurtosisInstructionsList())).toEqual("")
     } finally {
         stopEnclaveFunction()
     }

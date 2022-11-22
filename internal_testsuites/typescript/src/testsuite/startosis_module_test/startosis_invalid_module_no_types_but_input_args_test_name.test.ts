@@ -2,6 +2,7 @@ import {createEnclave} from "../../test_helpers/enclave_setup";
 import {DEFAULT_DRY_RUN, EMPTY_EXECUTE_PARAMS, IS_PARTITIONING_ENABLED, JEST_TIMEOUT_MS} from "./shared_constants";
 import * as path from "path";
 import log from "loglevel";
+import {generateScriptOutput} from "../../test_helpers/startosis_helpers";
 
 const INVALID_MODULE_NO_TYPE_BUT_INPUT_ARGS_TEST_NAME = "invalid-module-no-type-input-args";
 const INVALID_MODULE_NO_TYPE_BUT_INPUT_ARGS_REL_PATH = "../../../../startosis/invalid-no-type-but-input-args";
@@ -38,7 +39,8 @@ test("Test invalid startosis module no types file but input_args in main", async
 
         expect(executeStartosisModuleValue.getExecutionError()).toBeUndefined()
         expect(executeStartosisModuleValue.getValidationErrors()).toBeUndefined()
-        expect(executeStartosisModuleValue.getSerializedScriptOutput()).toBe("")
+
+        expect(generateScriptOutput(executeStartosisModuleValue.getKurtosisInstructionsList())).toEqual("")
     } finally {
         stopEnclaveFunction()
     }
