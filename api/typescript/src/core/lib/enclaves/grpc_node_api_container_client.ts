@@ -30,7 +30,7 @@ import {
     RenderTemplatesToFilesArtifactArgs,
     RenderTemplatesToFilesArtifactResponse,
     ExecuteStartosisScriptArgs,
-    ExecuteStartosisModuleArgs, ExecuteStartosisResponse, ExecuteStartosisRemoteModuleArgs,
+    ExecuteStartosisModuleArgs, ExecuteStartosisResponse,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import type { ApiContainerServiceClient as ApiContainerServiceClientNode } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
 import { GenericApiContainerClient } from "./generic_api_container_client";
@@ -137,9 +137,9 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
         return ok(resultExecuteStartosisModule.value)
     }
 
-    public async executeStartosisRemoteModule(startosisRemoteModuleArgs:ExecuteStartosisRemoteModuleArgs): Promise<Result<ExecuteStartosisResponse, Error>> {
+    public async executeStartosisRemoteModule(startosisRemoteModuleArgs:ExecuteStartosisModuleArgs): Promise<Result<ExecuteStartosisResponse, Error>> {
         const promiseExecuteStartosisRemoteModule: Promise<Result<ExecuteStartosisResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.executeStartosisRemoteModule(startosisRemoteModuleArgs, (error: ServiceError | null, response?: ExecuteStartosisResponse) => {
+            this.client.executeStartosisModule(startosisRemoteModuleArgs, (error: ServiceError | null, response?: ExecuteStartosisResponse) => {
                 if (error === null) {
                     if (!response) {
                         resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
