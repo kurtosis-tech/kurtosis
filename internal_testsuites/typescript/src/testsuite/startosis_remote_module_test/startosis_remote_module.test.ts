@@ -40,13 +40,6 @@ test("Test remote starlark module execution", async () => {
         }
 
         const executeStartosisRemoteModuleValue = executeStartosisRemoteModuleResult.value
-        const expectedOutput = `Deploying module datastore_army_module with args:
-ModuleInput(num_datastores=2)
-Adding service datastore-0
-Adding service datastore-1
-Module datastore_army_module deployed successfully.
-`
-        expect(generateScriptOutput(executeStartosisRemoteModuleValue.getKurtosisInstructionsList())).toEqual(expectedOutput)
 
         expect(executeStartosisRemoteModuleValue.getInterpretationError()).toBeUndefined()
         expect(executeStartosisRemoteModuleValue.getExecutionError()).toBeUndefined()

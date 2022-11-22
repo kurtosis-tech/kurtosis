@@ -23,6 +23,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_modules"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"github.com/kurtosis-tech/metrics-library/golang/lib/client"
@@ -204,12 +205,22 @@ func (apicService ApiContainerService) ExecuteStartosisScript(ctx context.Contex
 
 func (apicService ApiContainerService) ExecuteStartosisModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleArgs) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse, error) {
 	moduleId := args.ModuleId
-	moduleData := args.Data
+	isRemote := args.GetRemote()
+	moduleData := args.GetLocal()
 	serializedParams := args.SerializedParams
 
-	moduleRootPathOnDisk, interpretationError := apicService.startosisModuleContentProvider.StoreModuleContents(moduleId, moduleData, doOverwriteExistingModule)
-	if interpretationError != nil {
-		return nil, stacktrace.Propagate(interpretationError, "An error occurred while writing module '%s' to disk", moduleId)
+	var moduleRootPathOnDisk string
+	var interpretationError *startosis_errors.InterpretationError
+	if isRemote {
+		moduleRootPathOnDisk, interpretationError = apicService.startosisModuleContentProvider.StoreModuleContents(moduleId, moduleData, doOverwriteExistingModule)
+		if interpretationError != nil {
+			return nil, stacktrace.Propagate(interpretationError, "An error occurred while writing module '%s' to disk", moduleId)
+		}
+	} else {
+		moduleRootPathOnDisk, interpretationError = apicService.startosisModuleContentProvider.CloneModule(moduleId)
+		if interpretationError != nil {
+			return nil, stacktrace.Propagate(interpretationError, "An error occurred while writing module '%s' to disk", moduleId)
+		}
 	}
 
 	pathToMainFile := path.Join(moduleRootPathOnDisk, startosis_engine.MainFileName)
@@ -227,33 +238,6 @@ func (apicService ApiContainerService) ExecuteStartosisModule(ctx context.Contex
 		scriptWithMainToExecute = fmt.Sprintf(bootScript, moduleId, startosis_engine.MainInputArgName)
 	}
 	return apicService.executeStartosis(ctx, shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun), moduleId, scriptWithMainToExecute, serializedParams)
-}
-
-func (apicService ApiContainerService) ExecuteStartosisRemoteModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecuteStartosisRemoteModuleArgs) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse, error) {
-	moduleId := args.ModuleId
-	serializedParams := args.SerializedParams
-
-	moduleRootPathOnDisk, interpretationError := apicService.startosisModuleContentProvider.CloneModule(moduleId)
-	if interpretationError != nil {
-		return nil, stacktrace.Propagate(interpretationError, "An error occurred while cloning the module '%s' to disk", moduleId)
-	}
-
-	pathToMainFile := path.Join(moduleRootPathOnDisk, startosis_engine.MainFileName)
-	if _, err := os.Stat(pathToMainFile); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while verifying that '%v' exists on root of module '%v' at '%v'", startosis_engine.MainFileName, moduleId, pathToMainFile)
-	}
-
-	var scriptWithMainToExecute string
-	pathToTypesFile := path.Join(moduleRootPathOnDisk, startosis_engine.TypesFileName)
-	if _, err := os.Stat(pathToTypesFile); err != nil {
-		// no types file provided for the module, no input_args expected
-		scriptWithMainToExecute = fmt.Sprintf(bootScript, moduleId, "")
-	} else {
-		// types file exists in module, input_args will be provided by the boot script
-		scriptWithMainToExecute = fmt.Sprintf(bootScript, moduleId, startosis_engine.MainInputArgName)
-	}
-	return apicService.executeStartosis(ctx, shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun), moduleId, scriptWithMainToExecute, serializedParams)
-
 }
 
 func (apicService ApiContainerService) StartServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServicesArgs) (*kurtosis_core_rpc_api_bindings.StartServicesResponse, error) {

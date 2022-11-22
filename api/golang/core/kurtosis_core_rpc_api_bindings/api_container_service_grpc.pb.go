@@ -35,7 +35,6 @@ type ApiContainerServiceClient interface {
 	ExecuteStartosisScript(ctx context.Context, in *ExecuteStartosisScriptArgs, opts ...grpc.CallOption) (*ExecuteStartosisResponse, error)
 	// Executes a startosis module on the user's behalf
 	ExecuteStartosisModule(ctx context.Context, in *ExecuteStartosisModuleArgs, opts ...grpc.CallOption) (*ExecuteStartosisResponse, error)
-	ExecuteStartosisRemoteModule(ctx context.Context, in *ExecuteStartosisRemoteModuleArgs, opts ...grpc.CallOption) (*ExecuteStartosisResponse, error)
 	// Start services by creating containers for them
 	StartServices(ctx context.Context, in *StartServicesArgs, opts ...grpc.CallOption) (*StartServicesResponse, error)
 	// Returns the IDs of the current services in the enclave
@@ -127,15 +126,6 @@ func (c *apiContainerServiceClient) ExecuteStartosisScript(ctx context.Context, 
 func (c *apiContainerServiceClient) ExecuteStartosisModule(ctx context.Context, in *ExecuteStartosisModuleArgs, opts ...grpc.CallOption) (*ExecuteStartosisResponse, error) {
 	out := new(ExecuteStartosisResponse)
 	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/ExecuteStartosisModule", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *apiContainerServiceClient) ExecuteStartosisRemoteModule(ctx context.Context, in *ExecuteStartosisRemoteModuleArgs, opts ...grpc.CallOption) (*ExecuteStartosisResponse, error) {
-	out := new(ExecuteStartosisResponse)
-	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/ExecuteStartosisRemoteModule", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -302,7 +292,6 @@ type ApiContainerServiceServer interface {
 	ExecuteStartosisScript(context.Context, *ExecuteStartosisScriptArgs) (*ExecuteStartosisResponse, error)
 	// Executes a startosis module on the user's behalf
 	ExecuteStartosisModule(context.Context, *ExecuteStartosisModuleArgs) (*ExecuteStartosisResponse, error)
-	ExecuteStartosisRemoteModule(context.Context, *ExecuteStartosisRemoteModuleArgs) (*ExecuteStartosisResponse, error)
 	// Start services by creating containers for them
 	StartServices(context.Context, *StartServicesArgs) (*StartServicesResponse, error)
 	// Returns the IDs of the current services in the enclave
@@ -359,9 +348,6 @@ func (UnimplementedApiContainerServiceServer) ExecuteStartosisScript(context.Con
 }
 func (UnimplementedApiContainerServiceServer) ExecuteStartosisModule(context.Context, *ExecuteStartosisModuleArgs) (*ExecuteStartosisResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ExecuteStartosisModule not implemented")
-}
-func (UnimplementedApiContainerServiceServer) ExecuteStartosisRemoteModule(context.Context, *ExecuteStartosisRemoteModuleArgs) (*ExecuteStartosisResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ExecuteStartosisRemoteModule not implemented")
 }
 func (UnimplementedApiContainerServiceServer) StartServices(context.Context, *StartServicesArgs) (*StartServicesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StartServices not implemented")
@@ -527,24 +513,6 @@ func _ApiContainerService_ExecuteStartosisModule_Handler(srv interface{}, ctx co
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ApiContainerServiceServer).ExecuteStartosisModule(ctx, req.(*ExecuteStartosisModuleArgs))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ApiContainerService_ExecuteStartosisRemoteModule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ExecuteStartosisRemoteModuleArgs)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ApiContainerServiceServer).ExecuteStartosisRemoteModule(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api_container_api.ApiContainerService/ExecuteStartosisRemoteModule",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApiContainerServiceServer).ExecuteStartosisRemoteModule(ctx, req.(*ExecuteStartosisRemoteModuleArgs))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -867,10 +835,6 @@ var ApiContainerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ExecuteStartosisModule",
 			Handler:    _ApiContainerService_ExecuteStartosisModule_Handler,
-		},
-		{
-			MethodName: "ExecuteStartosisRemoteModule",
-			Handler:    _ApiContainerService_ExecuteStartosisRemoteModule_Handler,
 		},
 		{
 			MethodName: "StartServices",

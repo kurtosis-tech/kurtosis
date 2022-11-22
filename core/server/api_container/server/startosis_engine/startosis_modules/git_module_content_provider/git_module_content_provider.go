@@ -28,7 +28,7 @@ func NewGitModuleContentProvider(moduleDir string, tmpDir string) *GitModuleCont
 	}
 }
 
-func (provider *GitModuleContentProvider) CloneModule(moduleId string) (string, error) {
+func (provider *GitModuleContentProvider) CloneModule(moduleId string) (string, *startosis_errors.InterpretationError) {
 	parsedURL, interpretationError := parseGitURL(moduleId)
 	if interpretationError != nil {
 		return "", interpretationError

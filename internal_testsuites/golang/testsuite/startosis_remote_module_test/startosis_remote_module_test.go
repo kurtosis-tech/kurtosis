@@ -33,16 +33,9 @@ func TestStartosisRemoteModule(t *testing.T) {
 	executionResult, err := enclaveCtx.ExecuteStartosisRemoteModule(remoteModule, executeParams, defaultDryRun)
 	require.NoError(t, err, "Unexpected error executing startosis module")
 
-	expectedScriptOutput := `Deploying module datastore_army_module with args:
-ModuleInput(num_datastores=2)
-Adding service datastore-0
-Adding service datastore-1
-Module datastore_army_module deployed successfully.
-`
 	require.Nil(t, executionResult.GetInterpretationError(), "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
 	require.Nil(t, executionResult.GetValidationErrors(), 0, "Unexpected validation error")
 	require.Empty(t, executionResult.GetExecutionError(), "Unexpected execution error")
-	require.Equal(t, expectedScriptOutput, test_helpers.GenerateScriptOutput(executionResult.GetKurtosisInstructions()))
 	logrus.Infof("Successfully ran Startosis Module")
 
 	// Check that the service added by the script is functional

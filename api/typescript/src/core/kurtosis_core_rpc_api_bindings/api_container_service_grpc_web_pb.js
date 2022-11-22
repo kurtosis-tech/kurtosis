@@ -445,67 +445,6 @@ proto.api_container_api.ApiContainerServicePromiseClient.prototype.executeStarto
 /**
  * @const
  * @type {!grpc.web.MethodDescriptor<
- *   !proto.api_container_api.ExecuteStartosisRemoteModuleArgs,
- *   !proto.api_container_api.ExecuteStartosisResponse>}
- */
-const methodDescriptor_ApiContainerService_ExecuteStartosisRemoteModule = new grpc.web.MethodDescriptor(
-  '/api_container_api.ApiContainerService/ExecuteStartosisRemoteModule',
-  grpc.web.MethodType.UNARY,
-  proto.api_container_api.ExecuteStartosisRemoteModuleArgs,
-  proto.api_container_api.ExecuteStartosisResponse,
-  /**
-   * @param {!proto.api_container_api.ExecuteStartosisRemoteModuleArgs} request
-   * @return {!Uint8Array}
-   */
-  function(request) {
-    return request.serializeBinary();
-  },
-  proto.api_container_api.ExecuteStartosisResponse.deserializeBinary
-);
-
-
-/**
- * @param {!proto.api_container_api.ExecuteStartosisRemoteModuleArgs} request The
- *     request proto
- * @param {?Object<string, string>} metadata User defined
- *     call metadata
- * @param {function(?grpc.web.RpcError, ?proto.api_container_api.ExecuteStartosisResponse)}
- *     callback The callback function(error, response)
- * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.ExecuteStartosisResponse>|undefined}
- *     The XHR Node Readable Stream
- */
-proto.api_container_api.ApiContainerServiceClient.prototype.executeStartosisRemoteModule =
-    function(request, metadata, callback) {
-  return this.client_.rpcCall(this.hostname_ +
-      '/api_container_api.ApiContainerService/ExecuteStartosisRemoteModule',
-      request,
-      metadata || {},
-      methodDescriptor_ApiContainerService_ExecuteStartosisRemoteModule,
-      callback);
-};
-
-
-/**
- * @param {!proto.api_container_api.ExecuteStartosisRemoteModuleArgs} request The
- *     request proto
- * @param {?Object<string, string>=} metadata User defined
- *     call metadata
- * @return {!Promise<!proto.api_container_api.ExecuteStartosisResponse>}
- *     Promise that resolves to the response
- */
-proto.api_container_api.ApiContainerServicePromiseClient.prototype.executeStartosisRemoteModule =
-    function(request, metadata) {
-  return this.client_.unaryCall(this.hostname_ +
-      '/api_container_api.ApiContainerService/ExecuteStartosisRemoteModule',
-      request,
-      metadata || {},
-      methodDescriptor_ApiContainerService_ExecuteStartosisRemoteModule);
-};
-
-
-/**
- * @const
- * @type {!grpc.web.MethodDescriptor<
  *   !proto.api_container_api.StartServicesArgs,
  *   !proto.api_container_api.StartServicesResponse>}
  */

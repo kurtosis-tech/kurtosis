@@ -16,5 +16,5 @@ type ModuleContentProvider interface {
 	StoreModuleContents(string, []byte, bool) (string, *startosis_errors.InterpretationError)
 
 	// CloneModule clones the module with the given id and returns the absolute path on disk
-	CloneModule(moduleId string) (string, error)
+	CloneModule(moduleId string) (string, *startosis_errors.InterpretationError)
 }
