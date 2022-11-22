@@ -2,6 +2,7 @@
 ### Changes
 - Error types in ExecuteStartosisResponse type is now a union type, to better represent they are exclusive and prepare for transition to streaming
 - Update the KurtosisInstruction API type returned to the CLI. It now contains a combination of instruction position, the canonicalized instruction, and an optional instruction result 
+- Slightly update the way script output information are passed from the Startosis engine back the API container main class. This is a step to prepare for streaming this output all the way back the CLI.
 
 # 0.53.4
 
