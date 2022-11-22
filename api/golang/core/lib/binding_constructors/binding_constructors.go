@@ -10,8 +10,7 @@ import (
 // add them so that our code is safer
 
 var (
-	startosisScriptNoOutput                = ""
-	startosisScriptNoSerializedInstruction []*kurtosis_core_rpc_api_bindings.SerializedKurtosisInstruction
+	startosisScriptNoInstruction []*kurtosis_core_rpc_api_bindings.KurtosisInstruction
 )
 
 // ==============================================================================================
@@ -273,11 +272,10 @@ func NewExecuteStartosisModuleArgs(moduleId string, compressedModule []byte, ser
 //                                 Startosis Execution Response
 // ==============================================================================================
 
-func NewExecuteStartosisResponse(serializedScriptOutput string, serializedInstructions []*kurtosis_core_rpc_api_bindings.SerializedKurtosisInstruction) *kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse {
+func NewExecuteStartosisResponse(kurtosisInstructions []*kurtosis_core_rpc_api_bindings.KurtosisInstruction) *kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse {
 	return &kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse{
-		SerializedScriptOutput: serializedScriptOutput,
-		KurtosisError:          nil,
-		SerializedInstructions: serializedInstructions,
+		KurtosisInstructions: kurtosisInstructions,
+		KurtosisError:        nil,
 	}
 }
 
@@ -285,11 +283,10 @@ func NewExecuteStartosisResponseFromInterpretationError(
 	interpretationError *kurtosis_core_rpc_api_bindings.KurtosisInterpretationError,
 ) *kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse {
 	return &kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse{
-		SerializedScriptOutput: startosisScriptNoOutput,
+		KurtosisInstructions: startosisScriptNoInstruction,
 		KurtosisError: &kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse_InterpretationError{
 			InterpretationError: interpretationError,
 		},
-		SerializedInstructions: startosisScriptNoSerializedInstruction,
 	}
 }
 
@@ -297,25 +294,22 @@ func NewExecuteStartosisResponseFromValidationErrors(
 	validationError *kurtosis_core_rpc_api_bindings.KurtosisValidationErrors,
 ) *kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse {
 	return &kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse{
-		SerializedScriptOutput: startosisScriptNoOutput,
+		KurtosisInstructions: startosisScriptNoInstruction,
 		KurtosisError: &kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse_ValidationErrors{
 			ValidationErrors: validationError,
 		},
-		SerializedInstructions: startosisScriptNoSerializedInstruction,
 	}
 }
 
 func NewExecuteStartosisResponseFromExecutionError(
-	serializedScriptOutput string,
+	kurtosisInstructions []*kurtosis_core_rpc_api_bindings.KurtosisInstruction,
 	executionError *kurtosis_core_rpc_api_bindings.KurtosisExecutionError,
-	serializedInstructions []*kurtosis_core_rpc_api_bindings.SerializedKurtosisInstruction,
 ) *kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse {
 	return &kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse{
-		SerializedScriptOutput: serializedScriptOutput,
+		KurtosisInstructions: kurtosisInstructions,
 		KurtosisError: &kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse_ExecutionError{
 			ExecutionError: executionError,
 		},
-		SerializedInstructions: serializedInstructions,
 	}
 }
 
@@ -343,9 +337,19 @@ func NewKurtosisExecutionError(errorMessage string) *kurtosis_core_rpc_api_bindi
 	}
 }
 
-func NewSerializedKurtosisInstruction(serializedInstruction string) *kurtosis_core_rpc_api_bindings.SerializedKurtosisInstruction {
-	return &kurtosis_core_rpc_api_bindings.SerializedKurtosisInstruction{
-		SerializedInstruction: serializedInstruction,
+func NewKurtosisInstruction(position *kurtosis_core_rpc_api_bindings.KurtosisInstructionPosition, executableInstruction string, maybeInstructionResult *string) *kurtosis_core_rpc_api_bindings.KurtosisInstruction {
+	return &kurtosis_core_rpc_api_bindings.KurtosisInstruction{
+		Position:              position,
+		ExecutableInstruction: executableInstruction,
+		InstructionResult:     maybeInstructionResult,
+	}
+}
+
+func NewKurtosisInstructionPosition(filename string, line int32, column int32) *kurtosis_core_rpc_api_bindings.KurtosisInstructionPosition {
+	return &kurtosis_core_rpc_api_bindings.KurtosisInstructionPosition{
+		Filename: filename,
+		Line:     line,
+		Column:   column,
 	}
 }
 
