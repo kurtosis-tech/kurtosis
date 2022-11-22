@@ -29,13 +29,7 @@ func validateEnclaveId(enclaveId enclave.EnclaveID) error {
 
 func isEnclaveIdInUse(newEnclaveId enclave.EnclaveID, allEnclaves map[enclave.EnclaveID]*enclave.Enclave) bool {
 
-	isInUse := false
-
-	for enclaveId := range allEnclaves {
-		if newEnclaveId == enclaveId {
-			isInUse = true
-		}
-	}
+	_, isInUse := allEnclaves[newEnclaveId]
 
 	return isInUse
 }
