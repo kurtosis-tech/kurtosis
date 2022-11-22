@@ -34,7 +34,7 @@ func (provider *MockModuleContentProvider) GetOnDiskAbsoluteFilePath(moduleID st
 	return absFilePath, nil
 }
 
-func (provider *MockModuleContentProvider) CloneModule(_ string) (string, error) {
+func (provider *MockModuleContentProvider) CloneModule(_ string) (string, *startosis_errors.InterpretationError) {
 	panic(unimplementedMessage)
 }
 
