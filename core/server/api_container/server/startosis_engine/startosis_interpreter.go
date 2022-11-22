@@ -2,6 +2,7 @@ package startosis_engine
 
 import (
 	"context"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/facts_engine"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/import_module"
@@ -88,18 +89,18 @@ func NewStartosisInterpreterWithFacts(serviceNetwork service_network.ServiceNetw
 //     code, inconsistent). Can be nil if the script was successfully interpreted
 //   - The list of Kurtosis instructions that was generated based on the interpretation of the script. It can be empty
 //     if the interpretation of the script failed
-func (interpreter *StartosisInterpreter) Interpret(ctx context.Context, moduleId string, serializedStartosis string, serializedJsonParams string) (*startosis_errors.InterpretationError, []kurtosis_instruction.KurtosisInstruction) {
+func (interpreter *StartosisInterpreter) Interpret(ctx context.Context, moduleId string, serializedStartosis string, serializedJsonParams string) ([]kurtosis_instruction.KurtosisInstruction, *kurtosis_core_rpc_api_bindings.KurtosisInterpretationError) {
 	interpreter.mutex.Lock()
 	defer interpreter.mutex.Unlock()
 	var instructionsQueue []kurtosis_instruction.KurtosisInstruction
 
 	_, err := interpreter.interpretInternal(moduleId, serializedStartosis, serializedJsonParams, &instructionsQueue)
 	if err != nil {
-		return generateInterpretationError(err), nil
+		return nil, generateInterpretationError(err).ToAPIType()
 	}
 
 	logrus.Debugf("Successfully interpreted Startosis code into instruction queue: \n%s", instructionsQueue)
-	return nil, instructionsQueue
+	return instructionsQueue, nil
 }
 
 func (interpreter *StartosisInterpreter) interpretInternal(moduleId string, serializedStartosis string, serializedJsonParams string, instructionsQueue *[]kurtosis_instruction.KurtosisInstruction) (starlark.StringDict, error) {

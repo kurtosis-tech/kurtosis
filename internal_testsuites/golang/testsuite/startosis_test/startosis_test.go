@@ -106,9 +106,9 @@ Stored file at [a-f0-9-]{36}
 Rendered file to [a-f0-9-]{36}
 Deployed example-datastore-server-2 successfully
 `
-	require.Empty(t, executionResult.InterpretationError, "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
-	require.Lenf(t, executionResult.ValidationErrors, 0, "Unexpected validation error")
-	require.Empty(t, executionResult.ExecutionError, "Unexpected execution error")
+	require.Nil(t, executionResult.GetInterpretationError(), "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
+	require.Nil(t, executionResult.GetValidationErrors(), 0, "Unexpected validation error")
+	require.Nil(t, executionResult.GetExecutionError(), "Unexpected execution error")
 	require.Regexp(t, expectedScriptOutput, executionResult.SerializedScriptOutput)
 	logrus.Infof("Successfully ran Startosis script")
 

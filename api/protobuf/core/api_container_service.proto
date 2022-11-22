@@ -269,17 +269,29 @@ message ExecuteStartosisModuleArgs {
 message ExecuteStartosisResponse {
   string serialized_script_output = 1;
 
-  string interpretation_error = 2;
-
-  repeated StartosisValidationError validation_errors = 3;
-
-  string execution_error = 4;
+  oneof kurtosis_error {
+    KurtosisInterpretationError interpretation_error = 2;
+    KurtosisValidationErrors validation_errors = 3;
+    KurtosisExecutionError execution_error = 4;
+  }
 
   repeated SerializedKurtosisInstruction serialized_instructions = 5;
 }
 
-message StartosisValidationError {
-  string error = 1;
+message KurtosisInterpretationError {
+  string error_message = 1;
+}
+
+message KurtosisValidationErrors {
+  repeated KurtosisValidationError errors = 1;
+}
+
+message KurtosisValidationError {
+  string error_message = 1;
+}
+
+message KurtosisExecutionError {
+  string error_message = 1;
 }
 
 message SerializedKurtosisInstruction {
