@@ -857,19 +857,13 @@ func (apicService ApiContainerService) executeStartosis(ctx context.Context, dry
 	}
 	logrus.Debugf("Successfully validated Startosis script")
 
-	scriptOutput := &strings.Builder{}
-	serializedSuccessfullyExecutedInstructions, executionError := apicService.startosisExecutor.Execute(ctx, dryRun, generatedInstructionsList, scriptOutput)
+	successfullyExecutedInstructions, executionError := apicService.startosisExecutor.Execute(ctx, dryRun, generatedInstructionsList)
 	if executionError != nil {
 		return binding_constructors.NewExecuteStartosisResponseFromExecutionError(
-			scriptOutput.String(),
+			successfullyExecutedInstructions,
 			executionError,
-			serializedSuccessfullyExecutedInstructions,
 		), nil
 	}
 	logrus.Debugf("Successfully executed the list of Kurtosis instructions")
-
-	return binding_constructors.NewExecuteStartosisResponse(
-		scriptOutput.String(),
-		serializedSuccessfullyExecutedInstructions,
-	), nil
+	return binding_constructors.NewExecuteStartosisResponse(successfullyExecutedInstructions), nil
 }

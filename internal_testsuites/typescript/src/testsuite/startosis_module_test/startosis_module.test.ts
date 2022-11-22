@@ -3,6 +3,7 @@ import { err, ok, Result } from "neverthrow";
 
 import { createEnclave } from "../../test_helpers/enclave_setup";
 import * as path from "path";
+import {generateScriptOutput} from "../../test_helpers/startosis_helpers";
 
 const IS_PARTITIONING_ENABLED = false;
 const EMPTY_EXECUTE_PARAMS = "{}"
@@ -60,22 +61,11 @@ test("Test valid startosis module with types", async () => {
 
         const expectedScriptOutput = "Bonjour!\nHello World!\n"
 
-        if (expectedScriptOutput !== executeStartosisModuleValue.getSerializedScriptOutput()) {
-            throw err(new Error(`Expected output to be '${expectedScriptOutput} got '${executeStartosisModuleValue.getSerializedScriptOutput()}'`))
-        }
+        expect(generateScriptOutput(executeStartosisModuleValue.getKurtosisInstructionsList())).toEqual(expectedScriptOutput)
 
-        if (executeStartosisModuleValue.getInterpretationError() !== undefined) {
-            throw err(new Error(`Expected Empty Interpretation Error got '${executeStartosisModuleValue.getInterpretationError()}'`))
-        }
-
-        if (executeStartosisModuleValue.getExecutionError() !== undefined) {
-            throw err(new Error(`Expected Empty Execution Error got '${executeStartosisModuleValue.getExecutionError()}'`))
-        }
-
-        if (executeStartosisModuleValue.getValidationErrors() !== undefined) {
-            throw err(new Error(`Expected Empty Validation Error got '${executeStartosisModuleValue.getValidationErrors()}'`))
-        }
-
+        expect(executeStartosisModuleValue.getInterpretationError()).toBeUndefined()
+        expect(executeStartosisModuleValue.getExecutionError()).toBeUndefined()
+        expect(executeStartosisModuleValue.getValidationErrors()).toBeUndefined()
     }finally{
         stopEnclaveFunction()
     }
@@ -105,22 +95,11 @@ test("Test valid startosis module with no type", async () => {
 
         const expectedScriptOutput = "Hello World!\n"
 
-        if (expectedScriptOutput !== executeStartosisModuleValue.getSerializedScriptOutput()) {
-            throw err(new Error(`Expected output to be '${expectedScriptOutput} got '${executeStartosisModuleValue.getSerializedScriptOutput()}'`))
-        }
+        expect(generateScriptOutput(executeStartosisModuleValue.getKurtosisInstructionsList())).toEqual(expectedScriptOutput)
 
-        if (executeStartosisModuleValue.getInterpretationError() !== undefined) {
-            throw err(new Error(`Expected Empty Interpretation Error got '${executeStartosisModuleValue.getInterpretationError()}'`))
-        }
-
-        if (executeStartosisModuleValue.getExecutionError() !== undefined) {
-            throw err(new Error(`Expected Empty Execution Error got '${executeStartosisModuleValue.getExecutionError()}'`))
-        }
-
-        if (executeStartosisModuleValue.getValidationErrors() !== undefined) {
-            throw err(new Error(`Expected Empty Validation Error got '${executeStartosisModuleValue.getValidationErrors()}'`))
-        }
-
+        expect(executeStartosisModuleValue.getInterpretationError()).toBeUndefined()
+        expect(executeStartosisModuleValue.getExecutionError()).toBeUndefined()
+        expect(executeStartosisModuleValue.getValidationErrors()).toBeUndefined()
     }finally{
         stopEnclaveFunction()
     }
@@ -148,25 +127,15 @@ test("Test valid startosis module with no type - failure called with params", as
             throw executeStartosisModuleResult.error
         }
         const executeStartosisModuleValue = executeStartosisModuleResult.value;
-        if (executeStartosisModuleValue.getInterpretationError() === undefined) {
-            throw err(new Error("Expected interpretation errors but got empty interpretation errors"))
-        }
 
-        if (!executeStartosisModuleValue.getInterpretationError()?.getErrorMessage().includes("A non empty parameter was passed to the module 'github.com/sample/sample-kurtosis-module' but the module doesn't contain a valid 'types.proto' file (it is either absent of invalid).")) {
-            throw err(new Error("Got interpretation error but got invalid contents"))
-        }
+        expect(executeStartosisModuleValue.getInterpretationError()).not.toBeUndefined()
+        expect(executeStartosisModuleValue.getInterpretationError()?.getErrorMessage())
+            .toContain("A non empty parameter was passed to the module 'github.com/sample/sample-kurtosis-module' but the module doesn't contain a valid 'types.proto' file (it is either absent of invalid).")
 
-        if (executeStartosisModuleValue.getExecutionError() !== undefined) {
-            throw err(new Error(`Expected Empty Execution Error got '${executeStartosisModuleValue.getExecutionError()}'`))
-        }
+        expect(executeStartosisModuleValue.getExecutionError()).toBeUndefined()
+        expect(executeStartosisModuleValue.getValidationErrors()).toBeUndefined()
 
-        if (executeStartosisModuleValue.getValidationErrors() !== undefined) {
-            throw err(new Error(`Expected Empty Validation Error got '${executeStartosisModuleValue.getValidationErrors()}'`))
-        }
-
-        if (executeStartosisModuleValue.getSerializedScriptOutput() != "") {
-            throw err(new Error(`Expected output to be empty got '${executeStartosisModuleValue.getSerializedScriptOutput()}'`))
-        }
+        expect(generateScriptOutput(executeStartosisModuleValue.getKurtosisInstructionsList())).toEqual("")
     }finally{
         stopEnclaveFunction()
     }
@@ -196,22 +165,11 @@ test("Test valid startosis module with no module input type in types file", asyn
 
         const expectedScriptOutput = "Hello world!\n"
 
-        if (expectedScriptOutput !== executeStartosisModuleValue.getSerializedScriptOutput()) {
-            throw err(new Error(`Expected output to be '${expectedScriptOutput} got '${executeStartosisModuleValue.getSerializedScriptOutput()}'`))
-        }
+        expect(generateScriptOutput(executeStartosisModuleValue.getKurtosisInstructionsList())).toEqual(expectedScriptOutput)
 
-        if (executeStartosisModuleValue.getInterpretationError() !== undefined) {
-            throw err(new Error(`Expected Empty Interpretation Error got '${executeStartosisModuleValue.getInterpretationError()}'`))
-        }
-
-        if (executeStartosisModuleValue.getExecutionError() !== undefined) {
-            throw err(new Error(`Expected Empty Execution Error got '${executeStartosisModuleValue.getExecutionError()}'`))
-        }
-
-        if (executeStartosisModuleValue.getValidationErrors() !== undefined) {
-            throw err(new Error(`Expected Empty Validation Error got '${executeStartosisModuleValue.getValidationErrors()}'`))
-        }
-
+        expect(executeStartosisModuleValue.getInterpretationError()).toBeUndefined()
+        expect(executeStartosisModuleValue.getExecutionError()).toBeUndefined()
+        expect(executeStartosisModuleValue.getValidationErrors()).toBeUndefined()
     }finally{
         stopEnclaveFunction()
     }
@@ -239,25 +197,15 @@ test("Test valid startosis module with no module input type in types file - fail
             throw executeStartosisModuleResult.error
         }
         const executeStartosisModuleValue = executeStartosisModuleResult.value;
-        if (executeStartosisModuleValue.getInterpretationError() === undefined) {
-            throw err(new Error("Expected interpretation errors but got empty interpretation errors"))
-        }
 
-        if (!executeStartosisModuleValue.getInterpretationError()?.getErrorMessage().includes("A non empty parameter was passed to the module 'github.com/sample/sample-kurtosis-module' but 'ModuleInput' type is not defined in the module's 'types.proto' file.")) {
-            throw err(new Error("Got interpretation error but got invalid contents"))
-        }
+        expect(executeStartosisModuleValue.getInterpretationError()).not.toBeUndefined()
+        expect(executeStartosisModuleValue.getInterpretationError()?.getErrorMessage())
+            .toContain("A non empty parameter was passed to the module 'github.com/sample/sample-kurtosis-module' but 'ModuleInput' type is not defined in the module's 'types.proto' file.")
 
-        if (executeStartosisModuleValue.getExecutionError() !== undefined) {
-            throw err(new Error(`Expected Empty Execution Error got '${executeStartosisModuleValue.getExecutionError()}'`))
-        }
+        expect(executeStartosisModuleValue.getExecutionError()).toBeUndefined()
+        expect(executeStartosisModuleValue.getValidationErrors()).toBeUndefined()
 
-        if (executeStartosisModuleValue.getValidationErrors() !== undefined) {
-            throw err(new Error(`Expected Empty Validation Error got '${executeStartosisModuleValue.getValidationErrors()}'`))
-        }
-
-        if (executeStartosisModuleValue.getSerializedScriptOutput() != "") {
-            throw err(new Error(`Expected output to be empty got '${executeStartosisModuleValue.getSerializedScriptOutput()}'`))
-        }
+        expect(generateScriptOutput(executeStartosisModuleValue.getKurtosisInstructionsList())).toEqual("")
     }finally{
         stopEnclaveFunction()
     }
@@ -285,25 +233,15 @@ test("Test invalid startosis module invalid types file", async () => {
             throw executeStartosisModuleResult.error
         }
         const executeStartosisModuleValue = executeStartosisModuleResult.value;
-        if (executeStartosisModuleValue.getInterpretationError() === undefined) {
-            throw err(new Error("Expected interpretation errors but got empty interpretation errors"))
-        }
 
-        if (!executeStartosisModuleValue.getInterpretationError()?.getErrorMessage().includes("A non empty parameter was passed to the module 'github.com/sample/sample-kurtosis-module' but the module doesn't contain a valid 'types.proto' file (it is either absent of invalid).")) {
-            throw err(new Error("Got interpretation error but got invalid contents"))
-        }
+        expect(executeStartosisModuleValue.getInterpretationError()).not.toBeUndefined()
+        expect(executeStartosisModuleValue.getInterpretationError()?.getErrorMessage())
+            .toContain("A non empty parameter was passed to the module 'github.com/sample/sample-kurtosis-module' but the module doesn't contain a valid 'types.proto' file (it is either absent of invalid).")
 
-        if (executeStartosisModuleValue.getExecutionError() !== undefined) {
-            throw err(new Error(`Expected Empty Execution Error got '${executeStartosisModuleValue.getExecutionError()}'`))
-        }
+        expect(executeStartosisModuleValue.getExecutionError()).toBeUndefined()
+        expect(executeStartosisModuleValue.getValidationErrors()).toBeUndefined()
 
-        if (executeStartosisModuleValue.getValidationErrors() !== undefined) {
-            throw err(new Error(`Expected Empty Validation Error got '${executeStartosisModuleValue.getValidationErrors()}'`))
-        }
-
-        if (executeStartosisModuleValue.getSerializedScriptOutput() != "") {
-            throw err(new Error(`Expected output to be empty got '${executeStartosisModuleValue.getSerializedScriptOutput()}'`))
-        }
+        expect(generateScriptOutput(executeStartosisModuleValue.getKurtosisInstructionsList())).toEqual("")
     }finally{
         stopEnclaveFunction()
     }
@@ -337,7 +275,8 @@ test("Test invalid startosis module no types file but input_args in main", async
 
         expect(executeStartosisModuleValue.getExecutionError()).toBeUndefined()
         expect(executeStartosisModuleValue.getValidationErrors()).toBeUndefined()
-        expect(executeStartosisModuleValue.getSerializedScriptOutput()).toBe("")
+
+        expect(generateScriptOutput(executeStartosisModuleValue.getKurtosisInstructionsList())).toEqual("")
     }finally{
         stopEnclaveFunction()
     }
@@ -391,9 +330,7 @@ test("Test invalid module with no main.star", async () => {
             throw err(new Error("Module with invalid module was expected to error but didn't"))
         }
 
-        if (!executeStartosisModuleResult.error.message.includes(`An error occurred while verifying that 'main.star' exists on root of module`)) {
-            throw err(new Error("Unexpected error message"))
-        }
+        expect(executeStartosisModuleResult.error.message).toContain("An error occurred while verifying that 'main.star' exists on root of module")
     }finally{
         stopEnclaveFunction()
     }
@@ -420,25 +357,15 @@ test("Test invalid module with no main in main.star", async () => {
         }
 
         const executeStartosisModuleValue = executeStartosisModuleResult.value;
-        if (executeStartosisModuleValue.getInterpretationError() === undefined) {
-            throw err(new Error("Expected interpretation errors but got empty interpretation errors"))
-        }
 
-        if (!executeStartosisModuleValue.getInterpretationError()?.getErrorMessage().includes("Evaluation error: module has no .main field or method\n\tat [3:12]: <toplevel>")) {
-            throw err(new Error("Got interpretation error but got invalid contents"))
-        }
+        expect(executeStartosisModuleValue.getInterpretationError()).not.toBeUndefined()
+        expect(executeStartosisModuleValue.getInterpretationError()?.getErrorMessage())
+            .toContain("Evaluation error: module has no .main field or method\n\tat [3:12]: <toplevel>")
 
-        if (executeStartosisModuleValue.getExecutionError() !== undefined) {
-            throw err(new Error(`Expected Empty Execution Error got '${executeStartosisModuleValue.getExecutionError()}'`))
-        }
+        expect(executeStartosisModuleValue.getExecutionError()).toBeUndefined()
+        expect(executeStartosisModuleValue.getValidationErrors()).toBeUndefined()
 
-        if (executeStartosisModuleValue.getValidationErrors() !== undefined) {
-            throw err(new Error(`Expected Empty Validation Error got '${executeStartosisModuleValue.getValidationErrors()}'`))
-        }
-
-        if (executeStartosisModuleValue.getSerializedScriptOutput() != "") {
-            throw err(new Error(`Expected output to be empty got '${executeStartosisModuleValue.getSerializedScriptOutput()}'`))
-        }
+        expect(generateScriptOutput(executeStartosisModuleValue.getKurtosisInstructionsList())).toEqual("")
     }finally{
         stopEnclaveFunction()
     }

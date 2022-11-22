@@ -441,8 +441,10 @@ export namespace ExecuteStartosisModuleArgs {
 }
 
 export class ExecuteStartosisResponse extends jspb.Message {
-  getSerializedScriptOutput(): string;
-  setSerializedScriptOutput(value: string): ExecuteStartosisResponse;
+  getKurtosisInstructionsList(): Array<KurtosisInstruction>;
+  setKurtosisInstructionsList(value: Array<KurtosisInstruction>): ExecuteStartosisResponse;
+  clearKurtosisInstructionsList(): ExecuteStartosisResponse;
+  addKurtosisInstructions(value?: KurtosisInstruction, index?: number): KurtosisInstruction;
 
   getInterpretationError(): KurtosisInterpretationError | undefined;
   setInterpretationError(value?: KurtosisInterpretationError): ExecuteStartosisResponse;
@@ -459,11 +461,6 @@ export class ExecuteStartosisResponse extends jspb.Message {
   hasExecutionError(): boolean;
   clearExecutionError(): ExecuteStartosisResponse;
 
-  getSerializedInstructionsList(): Array<SerializedKurtosisInstruction>;
-  setSerializedInstructionsList(value: Array<SerializedKurtosisInstruction>): ExecuteStartosisResponse;
-  clearSerializedInstructionsList(): ExecuteStartosisResponse;
-  addSerializedInstructions(value?: SerializedKurtosisInstruction, index?: number): SerializedKurtosisInstruction;
-
   getKurtosisErrorCase(): ExecuteStartosisResponse.KurtosisErrorCase;
 
   serializeBinary(): Uint8Array;
@@ -476,11 +473,10 @@ export class ExecuteStartosisResponse extends jspb.Message {
 
 export namespace ExecuteStartosisResponse {
   export type AsObject = {
-    serializedScriptOutput: string,
+    kurtosisInstructionsList: Array<KurtosisInstruction.AsObject>,
     interpretationError?: KurtosisInterpretationError.AsObject,
     validationErrors?: KurtosisValidationErrors.AsObject,
     executionError?: KurtosisExecutionError.AsObject,
-    serializedInstructionsList: Array<SerializedKurtosisInstruction.AsObject>,
   }
 
   export enum KurtosisErrorCase { 
@@ -565,21 +561,64 @@ export namespace KurtosisExecutionError {
   }
 }
 
-export class SerializedKurtosisInstruction extends jspb.Message {
-  getSerializedInstruction(): string;
-  setSerializedInstruction(value: string): SerializedKurtosisInstruction;
+export class KurtosisInstruction extends jspb.Message {
+  getPosition(): KurtosisInstructionPosition | undefined;
+  setPosition(value?: KurtosisInstructionPosition): KurtosisInstruction;
+  hasPosition(): boolean;
+  clearPosition(): KurtosisInstruction;
+
+  getExecutableInstruction(): string;
+  setExecutableInstruction(value: string): KurtosisInstruction;
+
+  getInstructionResult(): string;
+  setInstructionResult(value: string): KurtosisInstruction;
+  hasInstructionResult(): boolean;
+  clearInstructionResult(): KurtosisInstruction;
 
   serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): SerializedKurtosisInstruction.AsObject;
-  static toObject(includeInstance: boolean, msg: SerializedKurtosisInstruction): SerializedKurtosisInstruction.AsObject;
-  static serializeBinaryToWriter(message: SerializedKurtosisInstruction, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): SerializedKurtosisInstruction;
-  static deserializeBinaryFromReader(message: SerializedKurtosisInstruction, reader: jspb.BinaryReader): SerializedKurtosisInstruction;
+  toObject(includeInstance?: boolean): KurtosisInstruction.AsObject;
+  static toObject(includeInstance: boolean, msg: KurtosisInstruction): KurtosisInstruction.AsObject;
+  static serializeBinaryToWriter(message: KurtosisInstruction, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): KurtosisInstruction;
+  static deserializeBinaryFromReader(message: KurtosisInstruction, reader: jspb.BinaryReader): KurtosisInstruction;
 }
 
-export namespace SerializedKurtosisInstruction {
+export namespace KurtosisInstruction {
   export type AsObject = {
-    serializedInstruction: string,
+    position?: KurtosisInstructionPosition.AsObject,
+    executableInstruction: string,
+    instructionResult?: string,
+  }
+
+  export enum InstructionResultCase { 
+    _INSTRUCTION_RESULT_NOT_SET = 0,
+    INSTRUCTION_RESULT = 3,
+  }
+}
+
+export class KurtosisInstructionPosition extends jspb.Message {
+  getFilename(): string;
+  setFilename(value: string): KurtosisInstructionPosition;
+
+  getLine(): number;
+  setLine(value: number): KurtosisInstructionPosition;
+
+  getColumn(): number;
+  setColumn(value: number): KurtosisInstructionPosition;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): KurtosisInstructionPosition.AsObject;
+  static toObject(includeInstance: boolean, msg: KurtosisInstructionPosition): KurtosisInstructionPosition.AsObject;
+  static serializeBinaryToWriter(message: KurtosisInstructionPosition, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): KurtosisInstructionPosition;
+  static deserializeBinaryFromReader(message: KurtosisInstructionPosition, reader: jspb.BinaryReader): KurtosisInstructionPosition;
+}
+
+export namespace KurtosisInstructionPosition {
+  export type AsObject = {
+    filename: string,
+    line: number,
+    column: number,
   }
 }
 
