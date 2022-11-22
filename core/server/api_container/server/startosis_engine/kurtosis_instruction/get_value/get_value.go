@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"go.starlark.net/starlark"
+	"go.starlark.net/starlarkstruct"
 )
 
 const (
@@ -22,12 +23,15 @@ const (
 func GenerateGetValueBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, recipeExecutor *recipe_executor.RecipeExecutor, serviceNetwork service_network.ServiceNetwork) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 	// TODO: Force returning an InterpretationError rather than a normal error
 	return func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
-		factRecipe, interpretationError := parseStartosisArgs(b, args, kwargs)
+		recipeConfig, interpretationError := parseStartosisArgs(b, args, kwargs)
 		if interpretationError != nil {
 			return nil, interpretationError
 		}
-		recipeUuid, _ := shared_helpers.GetRecipeValueInString(factRecipe.String())
-		resultUuid := recipeExecutor.CreateValue(recipeUuid)
+		httpRequestRecipe, interpretationErr := kurtosis_instruction.ParseHttpRequestRecipe(recipeConfig)
+		if interpretationErr != nil {
+			return nil, interpretationErr
+		}
+		resultUuid := recipeExecutor.CreateValue(httpRequestRecipe)
 		returnValue := kurtosis_types.NewRuntimeValue(starlark.String(fmt.Sprintf(shared_helpers.RuntimeValueReplacementPlaceholderFormat, resultUuid, "body")), starlark.String(fmt.Sprintf(shared_helpers.RuntimeValueReplacementPlaceholderFormat, resultUuid, "code")))
 		getValueInstruction := NewGetValueInstruction(serviceNetwork, *shared_helpers.GetCallerPositionFromThread(thread), recipeExecutor, resultUuid)
 		*instructionsQueue = append(*instructionsQueue, getValueInstruction)
@@ -61,7 +65,7 @@ func (instruction *GetValueInstruction) GetCanonicalInstruction() string {
 }
 
 func (instruction *GetValueInstruction) Execute(ctx context.Context) (*string, error) {
-	err := instruction.recipeExecutor.ExecuteAndSaveValue(ctx, instruction.serviceNetwork, instruction.resultUuid)
+	err := instruction.recipeExecutor.ExecuteValue(ctx, instruction.serviceNetwork, instruction.resultUuid)
 	return nil, err
 }
 
@@ -77,12 +81,12 @@ func (instruction *GetValueInstruction) getKwargs() starlark.StringDict {
 	return starlark.StringDict{}
 }
 
-func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.String, *startosis_errors.InterpretationError) {
+func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (*starlarkstruct.Struct, *startosis_errors.InterpretationError) {
 
-	var recipeConfigArg starlark.String
+	var recipeConfigArg *starlarkstruct.Struct
 
-	if err := starlark.UnpackArgs(b.Name(), args, kwargs, "recipe", &recipeConfigArg); err != nil {
-		return "", startosis_errors.NewInterpretationError(err.Error())
+	if err := starlark.UnpackArgs(b.Name(), args, kwargs, recipeArgName, &recipeConfigArg); err != nil {
+		return nil, startosis_errors.NewInterpretationError(err.Error())
 	}
 
 	return recipeConfigArg, nil

@@ -7,41 +7,35 @@ import (
 )
 
 type RecipeExecutor struct {
-	recipeMap         map[string]*HttpRequestRecipe
-	recipeToResultMap map[string]string
-	recipeResultMap   map[string]*HttpRequestRuntimeValue
+	recipeMap       map[string]*HttpRequestRecipe
+	recipeResultMap map[string]*HttpRequestRuntimeValue
 }
 
 func NewRecipeExecutor() *RecipeExecutor {
 	return &RecipeExecutor{
-		recipeMap:         make(map[string]*HttpRequestRecipe),
-		recipeResultMap:   make(map[string]*HttpRequestRuntimeValue),
-		recipeToResultMap: make(map[string]string),
+		recipeMap:       make(map[string]*HttpRequestRecipe),
+		recipeResultMap: make(map[string]*HttpRequestRuntimeValue),
 	}
 }
 
-func (re *RecipeExecutor) SaveRecipe(recipe *HttpRequestRecipe) string {
+func (re *RecipeExecutor) CreateValue(recipe *HttpRequestRecipe) string {
 	uuid, _ := uuid_generator.GenerateUUIDString()
 	re.recipeMap[uuid] = recipe
+	re.recipeResultMap[uuid] = nil
 	return uuid
-}
-
-func (re *RecipeExecutor) CreateValue(uuid string) string {
-	resultUuid, _ := uuid_generator.GenerateUUIDString()
-	re.recipeToResultMap[resultUuid] = uuid
-	return resultUuid
 }
 
 func (re *RecipeExecutor) GetRecipe(uuid string) *HttpRequestRecipe {
 	return re.recipeMap[uuid]
 }
 
-func (re *RecipeExecutor) ExecuteAndSaveValue(ctx context.Context, serviceNetwork service_network.ServiceNetwork, uuid string) error {
+func (re *RecipeExecutor) ExecuteValue(ctx context.Context, serviceNetwork service_network.ServiceNetwork, uuid string) error {
 	value, err := re.recipeMap[uuid].Execute(ctx, serviceNetwork)
-	if err == nil {
-		re.recipeResultMap[uuid] = value
+	if err != nil {
+		return err
 	}
-	return err
+	re.recipeResultMap[uuid] = value
+	return nil
 }
 
 func (re *RecipeExecutor) GetValue(uuid string) *HttpRequestRuntimeValue {
