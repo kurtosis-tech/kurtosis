@@ -74,7 +74,7 @@ func NewInterpretationErrorWithCustomMsg(stacktrace []CallFrame, msg string, arg
 	}
 }
 
-func (err *InterpretationError) ToApiType() *kurtosis_core_rpc_api_bindings.KurtosisInterpretationError {
+func (err *InterpretationError) ToAPIType() *kurtosis_core_rpc_api_bindings.KurtosisInterpretationError {
 	return binding_constructors.NewKurtosisInterpretationError(err.Error())
 }
 

@@ -330,25 +330,14 @@ test("Test invalid startosis module no types file but input_args in main", async
             throw executeStartosisModuleResult.error
         }
         const executeStartosisModuleValue = executeStartosisModuleResult.value;
-        if (executeStartosisModuleValue.getInterpretationError() === undefined) {
-            throw err(new Error("Expected interpretation errors but got empty interpretation errors"))
-        }
 
-        if (!executeStartosisModuleValue.getInterpretationError()?.getErrorMessage().includes("Evaluation error: function main missing 1 argument (input_args)")) {
-            throw err(new Error("Got interpretation error but got invalid contents"))
-        }
+        expect(executeStartosisModuleValue.getInterpretationError()).not.toBeUndefined()
+        expect(executeStartosisModuleValue.getInterpretationError()?.getErrorMessage())
+            .toContain("Evaluation error: function main missing 1 argument (input_args)")
 
-        if (executeStartosisModuleValue.getExecutionError() !== undefined) {
-            throw err(new Error(`Expected Empty Execution Error got '${executeStartosisModuleValue.getExecutionError()}'`))
-        }
-
-        if (executeStartosisModuleValue.getValidationErrors() !== undefined) {
-            throw err(new Error(`Expected Empty Validation Error got '${executeStartosisModuleValue.getValidationErrors()}'`))
-        }
-
-        if (executeStartosisModuleValue.getSerializedScriptOutput() != "") {
-            throw err(new Error(`Expected output to be empty got '${executeStartosisModuleValue.getSerializedScriptOutput()}'`))
-        }
+        expect(executeStartosisModuleValue.getExecutionError()).toBeUndefined()
+        expect(executeStartosisModuleValue.getValidationErrors()).toBeUndefined()
+        expect(executeStartosisModuleValue.getSerializedScriptOutput()).toBe("")
     }finally{
         stopEnclaveFunction()
     }

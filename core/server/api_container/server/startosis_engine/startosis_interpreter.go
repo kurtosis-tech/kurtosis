@@ -96,7 +96,7 @@ func (interpreter *StartosisInterpreter) Interpret(ctx context.Context, moduleId
 
 	_, err := interpreter.interpretInternal(moduleId, serializedStartosis, serializedJsonParams, &instructionsQueue)
 	if err != nil {
-		return nil, generateInterpretationError(err).ToApiType()
+		return nil, generateInterpretationError(err).ToAPIType()
 	}
 
 	logrus.Debugf("Successfully interpreted Startosis code into instruction queue: \n%s", instructionsQueue)

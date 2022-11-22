@@ -79,7 +79,7 @@ unknownInstruction()
 			*startosis_errors.NewCallFrame("undefined: unknownInstruction", startosis_errors.NewScriptPosition(4, 1)),
 		},
 		"Multiple errors caught interpreting the Startosis script. Listing each of them below.",
-	).ToApiType()
+	).ToAPIType()
 	require.Equal(t, expectedError, interpretationError)
 }
 
@@ -106,7 +106,7 @@ unknownInstruction2()
 			*startosis_errors.NewCallFrame("undefined: unknownInstruction2", startosis_errors.NewScriptPosition(7, 1)),
 		},
 		multipleInterpretationErrorMsg,
-	).ToApiType()
+	).ToAPIType()
 	require.Equal(t, expectedError, interpretationError)
 }
 
@@ -127,7 +127,7 @@ load("otherScript.start") # fails b/c load takes in at least 2 args
 		[]startosis_errors.CallFrame{
 			*startosis_errors.NewCallFrame("load statement must import at least 1 symbol", startosis_errors.NewScriptPosition(4, 5)),
 		},
-	).ToApiType()
+	).ToAPIType()
 	require.Equal(t, expectedError, interpretationError)
 }
 
@@ -199,7 +199,7 @@ add_service(service_id = service_id, config = config)
 			*startosis_errors.NewCallFrame("add_service", startosis_errors.NewScriptPosition(0, 0)),
 		},
 		"Evaluation error: Missing value 'image' as element of the struct object 'config'",
-	).ToApiType()
+	).ToAPIType()
 	require.Equal(t, expectedError, interpretationError)
 }
 
@@ -230,7 +230,7 @@ add_service(service_id = service_id, config = config)
 			*startosis_errors.NewCallFrame("add_service", startosis_errors.NewScriptPosition(0, 0)),
 		},
 		"Evaluation error: Port protocol should be one of TCP, SCTP, UDP",
-	).ToApiType()
+	).ToAPIType()
 	require.Equal(t, expectedError, interpretationError)
 }
 
@@ -261,7 +261,7 @@ add_service(service_id = service_id, config = config)
 			*startosis_errors.NewCallFrame("add_service", startosis_errors.NewScriptPosition(0, 0)),
 		},
 		"Evaluation error: Argument 'number' is expected to be an integer. Got starlark.String",
-	).ToApiType()
+	).ToAPIType()
 	require.Equal(t, expectedError, interpretationError)
 }
 
@@ -412,7 +412,7 @@ print(module_doo.b)
 			*startosis_errors.NewCallFrame("import_module", startosis_errors.NewScriptPosition(0, 0)),
 		},
 		"Evaluation error: There's a cycle in the import_module calls",
-	).ToApiType()
+	).ToAPIType()
 	assert.Equal(t, expectedError, interpretationError)
 }
 
@@ -436,7 +436,7 @@ print(my_module.b)
 			*startosis_errors.NewCallFrame("import_module", startosis_errors.NewScriptPosition(0, 0)),
 		},
 		errorMsg,
-	).ToApiType()
+	).ToAPIType()
 	assert.Equal(t, expectedError, interpretationError)
 }
 
@@ -1001,7 +1001,7 @@ print("Hello world!")
 			*startosis_errors.NewCallFrame("import_types", startosis_errors.NewScriptPosition(0, 0)),
 		},
 		"Evaluation error: Unable to load types file github.com/kurtosis/module/types.proto. Is the corresponding type file present in the module?",
-	).ToApiType()
+	).ToAPIType()
 	require.Equal(t, expectedError, interpretationError)
 }
 

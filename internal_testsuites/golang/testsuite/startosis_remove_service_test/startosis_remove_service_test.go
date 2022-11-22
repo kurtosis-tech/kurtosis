@@ -61,7 +61,7 @@ func TestStartosis(t *testing.T) {
 Service example-datastore-server-1 deployed successfully.
 `
 	require.Nil(t, executionResult.GetInterpretationError(), "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
-	require.Nil(t, executionResult.GetValidationErrors(), 0, "Unexpected validation error")
+	require.Nil(t, executionResult.GetValidationErrors(), "Unexpected validation error")
 	require.Nil(t, executionResult.GetExecutionError(), "Unexpected execution error")
 	require.Equal(t, expectedScriptOutput, executionResult.SerializedScriptOutput)
 	logrus.Infof("Successfully ran Startosis script")
@@ -81,7 +81,7 @@ Service example-datastore-server-1 deployed successfully.
 	executionResult, err = enclaveCtx.ExecuteStartosisScript(removeScript, defaultDryRun)
 	require.NoError(t, err, "Unexpected error executing remove script")
 	require.Nil(t, executionResult.GetInterpretationError(), "Unexpected interpretation error")
-	require.Nil(t, executionResult.GetValidationErrors(), 0, "Unexpected validation error")
+	require.Nil(t, executionResult.GetValidationErrors(), "Unexpected validation error")
 	require.Nil(t, executionResult.GetExecutionError(), "Unexpected execution error")
 
 	require.Error(
