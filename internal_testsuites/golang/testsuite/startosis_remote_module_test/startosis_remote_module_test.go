@@ -39,10 +39,10 @@ Adding service datastore-0
 Adding service datastore-1
 Module datastore_army_module deployed successfully.
 `
-	require.Empty(t, executionResult.InterpretationError, "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
-	require.Lenf(t, executionResult.ValidationErrors, 0, "Unexpected validation error")
-	require.Empty(t, executionResult.ExecutionError, "Unexpected execution error")
-	require.Equal(t, expectedScriptOutput, executionResult.SerializedScriptOutput)
+	require.Nil(t, executionResult.GetInterpretationError(), "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
+	require.Nil(t, executionResult.GetValidationErrors(), 0, "Unexpected validation error")
+	require.Empty(t, executionResult.GetExecutionError(), "Unexpected execution error")
+	require.Equal(t, expectedScriptOutput, test_helpers.GenerateScriptOutput(executionResult.GetKurtosisInstructions()))
 	logrus.Infof("Successfully ran Startosis Module")
 
 	// Check that the service added by the script is functional
