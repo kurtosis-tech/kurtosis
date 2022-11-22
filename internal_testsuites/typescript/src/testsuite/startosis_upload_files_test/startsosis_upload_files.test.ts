@@ -72,16 +72,16 @@ Uploaded [a-f0-9-]{36}
             throw err(new Error(`Expected output to be match '${expectedScriptRegexPattern} got '${executeStartosisScriptValue.getSerializedScriptOutput()}'`))
         }
 
-        if (executeStartosisScriptValue.getInterpretationError() !== "") {
+        if (executeStartosisScriptValue.getInterpretationError() !== undefined) {
             throw err(new Error(`Expected Empty Interpretation Error got '${executeStartosisScriptValue.getInterpretationError()}'`))
         }
 
-        if (executeStartosisScriptValue.getExecutionError() !== "") {
+        if (executeStartosisScriptValue.getExecutionError() !== undefined) {
             throw err(new Error(`Expected Empty Execution Error got '${executeStartosisScriptValue.getExecutionError()}'`))
         }
 
-        if (executeStartosisScriptValue.getValidationErrorsList().length != 0) {
-            throw err(new Error(`Expected Empty Validation Error got '${executeStartosisScriptValue.getValidationErrorsList()}'`))
+        if (executeStartosisScriptValue.getValidationErrors() !== undefined) {
+            throw err(new Error(`Expected Empty Validation Error got '${executeStartosisScriptValue.getValidationErrors()}'`))
         }
         log.info("Script Executed Successfully")
 

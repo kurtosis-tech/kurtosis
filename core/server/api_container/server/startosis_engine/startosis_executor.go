@@ -27,7 +27,7 @@ func NewStartosisExecutor() *StartosisExecutor {
 // Execute executes the list of Kurtosis instructions against the Kurtosis backend
 // It serializes each instruction that is executed and returned the list of serialized instruction as a result
 // It returns an error if something unexpected happens outside the execution of the script
-func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, instructions []kurtosis_instruction.KurtosisInstruction, outputBuffer *strings.Builder) ([]*kurtosis_core_rpc_api_bindings.SerializedKurtosisInstruction, error) {
+func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, instructions []kurtosis_instruction.KurtosisInstruction, outputBuffer *strings.Builder) ([]*kurtosis_core_rpc_api_bindings.SerializedKurtosisInstruction, *kurtosis_core_rpc_api_bindings.KurtosisExecutionError) {
 	executor.mutex.Lock()
 	defer executor.mutex.Unlock()
 
@@ -36,7 +36,8 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, ins
 		if !dryRun {
 			instructionOutput, err := instruction.Execute(ctx)
 			if err != nil {
-				return serializedSuccessfullyExecutedInstructions, stacktrace.Propagate(err, "An error occurred executing instruction (number %d): \n%v", index+1, instruction.GetCanonicalInstruction())
+				executionError := binding_constructors.NewKurtosisExecutionError(stacktrace.Propagate(err, "An error occurred executing instruction (number %d): \n%v", index+1, instruction.GetCanonicalInstruction()).Error())
+				return serializedSuccessfullyExecutedInstructions, executionError
 			}
 			if instructionOutput != nil {
 				outputBuffer.WriteString(*instructionOutput)
