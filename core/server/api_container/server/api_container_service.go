@@ -841,13 +841,31 @@ func (apicService ApiContainerService) executeStartosis(ctx context.Context, dry
 	}
 	logrus.Debugf("Successfully validated Startosis script")
 
-	successfullyExecutedInstructions, executionError := apicService.startosisExecutor.Execute(ctx, dryRun, generatedInstructionsList)
-	if executionError != nil {
-		return binding_constructors.NewExecuteStartosisResponseFromExecutionError(
-			successfullyExecutedInstructions,
-			executionError,
-		), nil
+	var serializedSuccessfullyExecutedInstructions []*kurtosis_core_rpc_api_bindings.KurtosisInstruction
+	kurtosisInstructionsStream, errChan := apicService.startosisExecutor.Execute(ctx, dryRun, generatedInstructionsList)
+
+ReadChannelsLoop:
+	for {
+		select {
+		case executedKurtosisInstruction, isChanOpen := <-kurtosisInstructionsStream:
+			if !isChanOpen {
+				logrus.Debug("Kurtosis instructions stream was closed. Exiting execution loop")
+				break ReadChannelsLoop
+			}
+			logrus.Debugf("Received serialized Kurtosis instruction:\n%v", executedKurtosisInstruction.GetExecutableInstruction())
+			serializedSuccessfullyExecutedInstructions = append(serializedSuccessfullyExecutedInstructions, executedKurtosisInstruction)
+		case executionError, isChanOpen := <-errChan:
+			if !isChanOpen {
+				logrus.Debug("Kurtosis execution error channel was closed. Exiting execution loop")
+				break ReadChannelsLoop
+			}
+			return binding_constructors.NewExecuteStartosisResponseFromExecutionError(
+				serializedSuccessfullyExecutedInstructions,
+				executionError,
+			), nil
+		}
 	}
-	logrus.Debugf("Successfully executed the list of Kurtosis instructions")
-	return binding_constructors.NewExecuteStartosisResponse(successfullyExecutedInstructions), nil
+
+	logrus.Debugf("Successfully executed the list of %d Kurtosis instructions", len(generatedInstructionsList))
+	return binding_constructors.NewExecuteStartosisResponse(serializedSuccessfullyExecutedInstructions), nil
 }
