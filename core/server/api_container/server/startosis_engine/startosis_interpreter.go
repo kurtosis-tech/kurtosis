@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/read_file"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_service"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/assert"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/define_fact"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/exec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/get_value"
@@ -138,6 +139,7 @@ func (interpreter *StartosisInterpreter) buildBindings(threadName string, instru
 		time.Module.Name:                  time.Module,
 
 		// Kurtosis instructions - will push instructions to the queue that will affect the enclave state at execution
+		assert.DefineFactBuiltinName:                             starlark.NewBuiltin(assert.DefineFactBuiltinName, assert.GenerateAssertBuiltin(instructionsQueue, interpreter.recipeExecutor, interpreter.serviceNetwork)),
 		add_service.AddServiceBuiltinName:                        starlark.NewBuiltin(add_service.AddServiceBuiltinName, add_service.GenerateAddServiceBuiltin(instructionsQueue, interpreter.serviceNetwork, interpreter.factsEngine)),
 		exec.ExecBuiltinName:                                     starlark.NewBuiltin(exec.ExecBuiltinName, exec.GenerateExecBuiltin(instructionsQueue, interpreter.serviceNetwork)),
 		kurtosis_print.PrintBuiltinName:                          starlark.NewBuiltin(kurtosis_print.PrintBuiltinName, kurtosis_print.GeneratePrintBuiltin(instructionsQueue, interpreter.recipeExecutor)),
