@@ -34,8 +34,8 @@ func TestStartosisModule_ValidModuleWithNoType(t *testing.T) {
 	expectedScriptOutput := `Hello World!
 `
 	require.Nil(t, executionResult.GetInterpretationError(), "Unexpected interpretation error")
-	require.Nil(t, executionResult.GetValidationErrors(), 0, "Unexpected validation error")
+	require.Nil(t, executionResult.GetValidationErrors(), "Unexpected validation error")
 	require.Nil(t, executionResult.GetExecutionError(), "Unexpected execution error")
-	require.Equal(t, expectedScriptOutput, executionResult.SerializedScriptOutput)
+	require.Equal(t, expectedScriptOutput, test_helpers.GenerateScriptOutput(executionResult.GetKurtosisInstructions()))
 	logrus.Info("Successfully ran Startosis module")
 }

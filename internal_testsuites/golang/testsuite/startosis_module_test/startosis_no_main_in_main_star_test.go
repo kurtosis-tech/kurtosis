@@ -40,5 +40,5 @@ func TestStartosisModule_NoMainInMainStar(t *testing.T) {
 	require.Contains(t, executionResult.GetInterpretationError().GetErrorMessage(), expectedInterpretationErr)
 	require.Nil(t, executionResult.GetValidationErrors())
 	require.Nil(t, executionResult.GetExecutionError())
-	require.Empty(t, executionResult.SerializedScriptOutput)
+	require.Empty(t, test_helpers.GenerateScriptOutput(executionResult.GetKurtosisInstructions()))
 }
