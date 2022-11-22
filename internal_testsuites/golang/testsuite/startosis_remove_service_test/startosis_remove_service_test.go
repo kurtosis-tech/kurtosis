@@ -63,7 +63,7 @@ Service example-datastore-server-1 deployed successfully.
 	require.Nil(t, executionResult.GetInterpretationError(), "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
 	require.Nil(t, executionResult.GetValidationErrors(), "Unexpected validation error")
 	require.Nil(t, executionResult.GetExecutionError(), "Unexpected execution error")
-	require.Equal(t, expectedScriptOutput, executionResult.SerializedScriptOutput)
+	require.Equal(t, expectedScriptOutput, test_helpers.GenerateScriptOutput(executionResult.GetKurtosisInstructions()))
 	logrus.Infof("Successfully ran Startosis script")
 
 	// Check that the service added by the script is functional

@@ -67,7 +67,7 @@ Hello World!
 	require.Nil(t, executionResult.GetInterpretationError(), "Unexpected interpretation error")
 	require.Nil(t, executionResult.GetValidationErrors(), "Unexpected validation error")
 	require.Nil(t, executionResult.GetExecutionError(), "Unexpected execution error")
-	require.Equal(t, expectedScriptOutput, executionResult.SerializedScriptOutput)
+	require.Equal(t, expectedScriptOutput, test_helpers.GenerateScriptOutput(executionResult.GetKurtosisInstructions()))
 	logrus.Info("Successfully ran Startosis module")
 }
 
@@ -96,7 +96,7 @@ func TestStartosisModule_ValidModuleWithNoType(t *testing.T) {
 	require.Nil(t, executionResult.GetInterpretationError(), "Unexpected interpretation error")
 	require.Nil(t, executionResult.GetValidationErrors(), "Unexpected validation error")
 	require.Nil(t, executionResult.GetExecutionError(), "Unexpected execution error")
-	require.Equal(t, expectedScriptOutput, executionResult.SerializedScriptOutput)
+	require.Equal(t, expectedScriptOutput, test_helpers.GenerateScriptOutput(executionResult.GetKurtosisInstructions()))
 	logrus.Info("Successfully ran Startosis module")
 }
 
@@ -124,7 +124,7 @@ func TestStartosisModule_ValidModuleWithNoTypesFile_FailureCalledWithParams(t *t
 	require.Contains(t, executionResult.GetInterpretationError().GetErrorMessage(), expectedInterpretationErr)
 	require.Nil(t, executionResult.GetValidationErrors())
 	require.Nil(t, executionResult.GetExecutionError())
-	require.Empty(t, executionResult.SerializedScriptOutput)
+	require.Empty(t, test_helpers.GenerateScriptOutput(executionResult.GetKurtosisInstructions()))
 }
 
 func TestStartosisModule_ValidModuleNoModulInputTypeTestName(t *testing.T) {
@@ -152,7 +152,7 @@ func TestStartosisModule_ValidModuleNoModulInputTypeTestName(t *testing.T) {
 	require.Nil(t, executionResult.GetInterpretationError(), "Unexpected interpretation error")
 	require.Nil(t, executionResult.GetValidationErrors(), "Unexpected validation error")
 	require.Nil(t, executionResult.GetExecutionError(), "Unexpected execution error")
-	require.Equal(t, expectedScriptOutput, executionResult.SerializedScriptOutput)
+	require.Equal(t, expectedScriptOutput, test_helpers.GenerateScriptOutput(executionResult.GetKurtosisInstructions()))
 	logrus.Info("Successfully ran Startosis module")
 }
 
@@ -181,7 +181,7 @@ func TestStartosisModule_ValidModuleNoModulInputTypeTestName_FailureCalledWithPa
 	require.Contains(t, executionResult.GetInterpretationError().GetErrorMessage(), expectedInterpretationErr)
 	require.Nil(t, executionResult.GetValidationErrors())
 	require.Nil(t, executionResult.GetExecutionError())
-	require.Empty(t, executionResult.SerializedScriptOutput)
+	require.Empty(t, test_helpers.GenerateScriptOutput(executionResult.GetKurtosisInstructions()))
 }
 
 func TestStartosisModule_InvalidTypesFileTestName(t *testing.T) {
@@ -209,7 +209,7 @@ func TestStartosisModule_InvalidTypesFileTestName(t *testing.T) {
 	require.Contains(t, executionResult.GetInterpretationError().GetErrorMessage(), expectedInterpretationErr)
 	require.Nil(t, executionResult.GetValidationErrors())
 	require.Nil(t, executionResult.GetExecutionError())
-	require.Empty(t, executionResult.SerializedScriptOutput)
+	require.Empty(t, test_helpers.GenerateScriptOutput(executionResult.GetKurtosisInstructions()))
 }
 
 func TestStartosisModule_InvalidModuleNoTypesButInputArgsTestName(t *testing.T) {
@@ -236,7 +236,7 @@ func TestStartosisModule_InvalidModuleNoTypesButInputArgsTestName(t *testing.T) 
 	require.Contains(t, executionResult.GetInterpretationError().GetErrorMessage(), expectedInterpretationErr)
 	require.Nil(t, executionResult.GetValidationErrors())
 	require.Nil(t, executionResult.GetExecutionError())
-	require.Empty(t, executionResult.SerializedScriptOutput)
+	require.Empty(t, test_helpers.GenerateScriptOutput(executionResult.GetKurtosisInstructions()))
 }
 
 func TestStartosisModule_InvalidModFile(t *testing.T) {
@@ -309,5 +309,5 @@ func TestStartosisModule_NoMainInMainStar(t *testing.T) {
 	require.Contains(t, executionResult.GetInterpretationError().GetErrorMessage(), expectedInterpretationErr)
 	require.Nil(t, executionResult.GetValidationErrors())
 	require.Nil(t, executionResult.GetExecutionError())
-	require.Empty(t, executionResult.SerializedScriptOutput)
+	require.Empty(t, test_helpers.GenerateScriptOutput(executionResult.GetKurtosisInstructions()))
 }
