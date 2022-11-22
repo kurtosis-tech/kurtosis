@@ -41,6 +41,7 @@ var ServiceShellCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosis
 	LongDescription:           "Starts a shell on the specified service",
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
 	EngineClientContextKey:    engineClientCtxKey,
+	Flags:                     nil,
 	Args: []*args.ArgConfig{
 		enclave_id_arg.NewEnclaveIDArg(
 			enclaveIdArgKey,

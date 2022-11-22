@@ -28,6 +28,7 @@ func printModules(ctx context.Context, kurtosisBackend backend_interface.Kurtosi
 	enclaveIdStr := enclaveInfo.GetEnclaveId()
 	enclaveId := enclave.EnclaveID(enclaveIdStr)
 	moduleFilters := &module.ModuleFilters{
+		GUIDs: nil,
 		Statuses: map[container_status.ContainerStatus]bool{
 			container_status.ContainerStatus_Stopped: true,
 			container_status.ContainerStatus_Running: true,

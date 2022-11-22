@@ -4,6 +4,7 @@ import * as grpc from "@grpc/grpc-js"
 
 import { createEnclave } from "../../test_helpers/enclave_setup";
 import {validateDataStoreServiceIsHealthy} from "../../test_helpers/test_helpers";
+import {generateScriptOutput} from "../../test_helpers/startosis_helpers";
 
 const TEST_NAME = "upload-files-test"
 const IS_PARTITIONING_ENABLED = false
@@ -13,7 +14,7 @@ const SERVICE_ID = "example-datastore-server-1"
 const PORT_ID = "grpc"
 
 const PATH_TO_MOUNT_UPLOADED_DIR = "/uploads"
-const PATH_TO_CHECK_FOR_UPLOADED_FILE = "/uploads/lib.star"
+const PATH_TO_CHECK_FOR_UPLOADED_FILE = "/uploads/helpers.star"
 
 const STARTOSIS_SCRIPT = `
 DATASTORE_IMAGE = "kurtosistech/example-datastore-server"
@@ -22,7 +23,7 @@ DATASTORE_PORT_ID = "` + PORT_ID + `"
 DATASTORE_PORT_NUMBER = 1323
 DATASTORE_PORT_PROTOCOL = "TCP"
 
-DIR_TO_UPLOAD = "github.com/kurtosis-tech/datastore-army-module-demo/lib"
+DIR_TO_UPLOAD = "github.com/kurtosis-tech/datastore-army-module/src"
 PATH_TO_MOUNT_UPLOADED_DIR = "` + PATH_TO_MOUNT_UPLOADED_DIR + `"
 
 print("Adding service " + DATASTORE_SERVICE_ID + ".")
@@ -31,17 +32,17 @@ uploaded_artifact_uuid = upload_files(DIR_TO_UPLOAD)
 print("Uploaded " + uploaded_artifact_uuid)
 
 
-service_config = struct(
-    container_image_name = DATASTORE_IMAGE,
-    used_ports = {
+config = struct(
+    image = DATASTORE_IMAGE,
+    ports = {
         DATASTORE_PORT_ID: struct(number = DATASTORE_PORT_NUMBER, protocol = DATASTORE_PORT_PROTOCOL)
     },
-	files_artifact_mount_dirpaths = {
+	files = {
 		uploaded_artifact_uuid: PATH_TO_MOUNT_UPLOADED_DIR
 	}
 )
 
-add_service(service_id = DATASTORE_SERVICE_ID, service_config = service_config)`
+add_service(service_id = DATASTORE_SERVICE_ID, config = config)`
 
 jest.setTimeout(180000)
 
@@ -63,25 +64,16 @@ test("Test upload files startosis", async () => {
             throw executeStartosisScriptResult.error
         }
         const executeStartosisScriptValue = executeStartosisScriptResult.value
-        const expectedScriptOutput = `Adding service example-datastore-server-1.
-Uploaded {{kurtosis:FILENAME_NOT_USED-13:38.artifact_uuid}}
+        const expectedScriptRegexPattern = `Adding service example-datastore-server-1.
+Uploaded [a-f0-9-]{36}
 `
+        const expectedScriptRegex = new RegExp(expectedScriptRegexPattern)
 
-        if (expectedScriptOutput !== executeStartosisScriptValue.getSerializedScriptOutput()) {
-            throw err(new Error(`Expected output to be '${expectedScriptOutput} got '${executeStartosisScriptValue.getSerializedScriptOutput()}'`))
-        }
+        expect(generateScriptOutput(executeStartosisScriptValue.getKurtosisInstructionsList())).toMatch(expectedScriptRegex)
 
-        if (executeStartosisScriptValue.getInterpretationError() !== "") {
-            throw err(new Error(`Expected Empty Interpretation Error got '${executeStartosisScriptValue.getInterpretationError()}'`))
-        }
-
-        if (executeStartosisScriptValue.getExecutionError() !== "") {
-            throw err(new Error(`Expected Empty Execution Error got '${executeStartosisScriptValue.getExecutionError()}'`))
-        }
-
-        if (executeStartosisScriptValue.getValidationErrorsList().length != 0) {
-            throw err(new Error(`Expected Empty Validation Error got '${executeStartosisScriptValue.getValidationErrorsList()}'`))
-        }
+        expect(executeStartosisScriptValue.getInterpretationError()).toBeUndefined()
+        expect(executeStartosisScriptValue.getExecutionError()).toBeUndefined()
+        expect(executeStartosisScriptValue.getValidationErrors()).toBeUndefined()
         log.info("Script Executed Successfully")
 
         // ------------------------------------- TEST RUN ----------------------------------------------

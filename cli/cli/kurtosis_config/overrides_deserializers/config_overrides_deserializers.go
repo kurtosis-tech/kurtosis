@@ -21,21 +21,31 @@ type configOverridesDeserializer func(configFileBytes []byte) (interface{}, erro
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>> INSTRUCTIONS <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 var AllConfigOverridesDeserializers = map[config_version.ConfigVersion]configOverridesDeserializer{
 	config_version.ConfigVersion_v2: func(configFileBytes []byte) (interface{}, error) {
-		overrides := &v2.KurtosisConfigV2{}
+		overrides := &v2.KurtosisConfigV2{
+			ConfigVersion:     0,
+			ShouldSendMetrics: nil,
+			KurtosisClusters:  nil,
+		}
 		if err := yaml.Unmarshal(configFileBytes, overrides); err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred unmarshalling Kurtosis config YAML file content '%v'", string(configFileBytes))
 		}
 		return overrides, nil
 	},
 	config_version.ConfigVersion_v1: func(configFileBytes []byte) (interface{}, error) {
-		overrides := &v1.KurtosisConfigV1{}
+		overrides := &v1.KurtosisConfigV1{
+			ConfigVersion:     0,
+			ShouldSendMetrics: nil,
+			KurtosisClusters:  nil,
+		}
 		if err := yaml.Unmarshal(configFileBytes, overrides); err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred unmarshalling Kurtosis config YAML file content '%v'", string(configFileBytes))
 		}
 		return overrides, nil
 	},
 	config_version.ConfigVersion_v0: func(configFileBytes []byte) (interface{}, error) {
-		overrides := &v0.KurtosisConfigV0{}
+		overrides := &v0.KurtosisConfigV0{
+			ShouldSendMetrics: nil,
+		}
 		if err := yaml.Unmarshal(configFileBytes, overrides); err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred unmarshalling Kurtosis config YAML file content '%v'", string(configFileBytes))
 		}

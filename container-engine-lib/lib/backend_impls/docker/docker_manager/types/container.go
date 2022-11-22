@@ -5,11 +5,11 @@ import (
 )
 
 type Container struct {
-	id     string
-	name   string
+	id               string
+	name             string
 	labels           map[string]string
 	status           ContainerStatus
-	hostPortBindings   map[nat.Port]*nat.PortBinding
+	hostPortBindings map[nat.Port]*nat.PortBinding
 }
 
 func NewContainer(
@@ -20,11 +20,11 @@ func NewContainer(
 	hostPortBindings map[nat.Port]*nat.PortBinding,
 ) *Container {
 	return &Container{
-		id:                 id,
-		name:               name,
-		labels:             labels,
-		status:             status,
-		hostPortBindings:   hostPortBindings,
+		id:               id,
+		name:             name,
+		labels:           labels,
+		status:           status,
+		hostPortBindings: hostPortBindings,
 	}
 }
 

@@ -15,11 +15,11 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/discord"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/enclave"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/engine"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/exec"
 	files "github.com/kurtosis-tech/kurtosis/cli/cli/commands/files"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/gateway"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/module"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/startosis"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/version"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/host_machine_directories"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/logrus_log_levels"
@@ -69,10 +69,11 @@ type GitHubReleaseReponse struct {
 var logLevelStr string
 var defaultLogLevelStr = logrus.InfoLevel.String()
 
+// RootCmd Suppressing exhaustruct requirement because this struct has ~40 properties
+// nolint: exhaustruct
 var RootCmd = &cobra.Command{
 	Use:   command_str_consts.KurtosisCmdStr,
 	Short: "A CLI for interacting with the Kurtosis engine",
-
 	// Cobra will print usage whenever _any_ error occurs, including ones we throw in Kurtosis
 	// This doesn't make sense in 99% of the cases, so just turn them off entirely
 	SilenceUsage:      true,
@@ -90,7 +91,7 @@ func init() {
 	RootCmd.AddCommand(enclave.EnclaveCmd)
 	RootCmd.AddCommand(service.ServiceCmd)
 	RootCmd.AddCommand(module.ModuleCmd)
-	RootCmd.AddCommand(startosis.StartosisCmd)
+	RootCmd.AddCommand(exec.StartosisExecCmd.MustGetCobraCommand())
 	RootCmd.AddCommand(engine.EngineCmd)
 	RootCmd.AddCommand(version.VersionCmd)
 	RootCmd.AddCommand(gateway.GatewayCmd)
@@ -221,7 +222,12 @@ func getLatestCLIReleaseVersion() (string, error) {
 
 func getLatestCLIReleaseVersionFromGitHub() (string, error) {
 	var (
-		client         = &http.Client{}
+		client = &http.Client{
+			Transport:     nil,
+			CheckRedirect: nil,
+			Jar:           nil,
+			Timeout:       0,
+		}
 		requestMethod  = "GET"
 		requestBody    io.Reader
 		responseObject GitHubReleaseReponse

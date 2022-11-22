@@ -8,7 +8,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_executor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
@@ -32,7 +31,8 @@ func GenerateExecBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstr
 		if interpretationError != nil {
 			return nil, interpretationError
 		}
-		execInstruction := NewExecInstruction(serviceNetwork, *shared_helpers.GetCallerPositionFromThread(thread), serviceId, commandArgs, expectedExitCode)
+		instructionPosition := shared_helpers.GetCallerPositionFromThread(thread)
+		execInstruction := NewExecInstruction(serviceNetwork, instructionPosition, serviceId, commandArgs, expectedExitCode)
 		*instructionsQueue = append(*instructionsQueue, execInstruction)
 		return starlark.None, nil
 	}
@@ -41,13 +41,13 @@ func GenerateExecBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstr
 type ExecInstruction struct {
 	serviceNetwork service_network.ServiceNetwork
 
-	position         kurtosis_instruction.InstructionPosition
+	position         *kurtosis_instruction.InstructionPosition
 	serviceId        kurtosis_backend_service.ServiceID
 	command          []string
 	expectedExitCode int32
 }
 
-func NewExecInstruction(serviceNetwork service_network.ServiceNetwork, position kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceID, command []string, expectedExitCode int32) *ExecInstruction {
+func NewExecInstruction(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceID, command []string, expectedExitCode int32) *ExecInstruction {
 	return &ExecInstruction{
 		serviceNetwork:   serviceNetwork,
 		position:         position,
@@ -58,26 +58,26 @@ func NewExecInstruction(serviceNetwork service_network.ServiceNetwork, position 
 }
 
 func (instruction *ExecInstruction) GetPositionInOriginalScript() *kurtosis_instruction.InstructionPosition {
-	return &instruction.position
+	return instruction.position
 }
 
 func (instruction *ExecInstruction) GetCanonicalInstruction() string {
-	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(ExecBuiltinName, instruction.getKwargs(), &instruction.position)
+	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(ExecBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs(), instruction.position)
 }
 
-func (instruction *ExecInstruction) Execute(ctx context.Context, _ *startosis_executor.ExecutionEnvironment) error {
+func (instruction *ExecInstruction) Execute(ctx context.Context) (*string, error) {
 	exitCode, _, err := instruction.serviceNetwork.ExecCommand(ctx, instruction.serviceId, instruction.command)
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed to execute command '%v' on service '%v'", instruction.command, instruction.serviceId)
+		return nil, stacktrace.Propagate(err, "Failed to execute command '%v' on service '%v'", instruction.command, instruction.serviceId)
 	}
 	if instruction.expectedExitCode != exitCode {
-		return stacktrace.NewError("The exit code expected '%v' wasn't the exit code received '%v' while running the command", instruction.expectedExitCode, exitCode)
+		return nil, stacktrace.NewError("The exit code expected '%v' wasn't the exit code received '%v' while running the command", instruction.expectedExitCode, exitCode)
 	}
-	return nil
+	return nil, nil
 }
 
 func (instruction *ExecInstruction) String() string {
-	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(ExecBuiltinName, instruction.getKwargs(), &instruction.position)
+	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(ExecBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs(), instruction.position)
 }
 
 func (instruction *ExecInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {

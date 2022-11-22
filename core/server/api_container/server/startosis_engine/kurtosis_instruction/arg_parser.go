@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
 	"math"
@@ -18,16 +19,16 @@ import (
 
 const (
 	serviceIdArgName     = "service_id"
-	serviceConfigArgName = "service_config"
+	serviceConfigArgName = "config"
 	defineFactArgName    = "define_fact"
 
-	containerImageNameKey          = "container_image_name"
+	containerImageNameKey          = "image"
 	factNameArgName                = "fact_name"
-	usedPortsKey                   = "used_ports"
-	entryPointArgsKey              = "entry_point_args"
-	cmdArgsKey                     = "cmd_args"
+	usedPortsKey                   = "ports"
+	entryPointArgsKey              = "entrypoint"
+	cmdArgsKey                     = "cmd"
 	envVarArgsKey                  = "env_vars"
-	filesArtifactMountDirpathsKey  = "files_artifact_mount_dirpaths"
+	filesArtifactMountDirpathsKey  = "files"
 	portIdKey                      = "port_id"
 	requestEndpointKey             = "endpoint"
 	requestMethodEndpointKey       = "method"
@@ -46,7 +47,8 @@ const (
 
 	maxPortNumber = 65535
 
-	getRequestMethod = "GET"
+	getRequestMethod  = "GET"
+	postRequestMethod = "POST"
 )
 
 func ParseServiceId(serviceIdRaw starlark.String) (service.ServiceID, *startosis_errors.InterpretationError) {
@@ -95,6 +97,19 @@ func ParseHttpRequestFactRecipe(serviceConfig *starlarkstruct.Struct) (*kurtosis
 
 	if method == getRequestMethod {
 		builtConfig := binding_constructors.NewGetHttpRequestFactRecipeDefinition(portId, endpoint, maybeFieldExtractor)
+		return builtConfig, nil
+	} else if method == postRequestMethod {
+		contentType, interpretationErr := extractStringValue(serviceConfig, "content_type", defineFactArgName)
+		if interpretationErr != nil {
+			return nil, interpretationErr
+		}
+
+		body, interpretationErr := extractStringValue(serviceConfig, "body", defineFactArgName)
+		if interpretationErr != nil {
+			return nil, interpretationErr
+		}
+
+		builtConfig := binding_constructors.NewPostHttpRequestFactRecipeDefinition(portId, endpoint, contentType, body, maybeFieldExtractor)
 		return builtConfig, nil
 	} else {
 		return nil, startosis_errors.NewInterpretationError("Define fact HTTP method not recognized")
@@ -173,15 +188,26 @@ func ParseExpectedExitCode(expectedExitCodeRaw starlark.Int) (int32, *startosis_
 	return expectedExitCode, nil
 }
 
-func ParseFilePath(filePathArgName string, filePathStr starlark.String) (string, *startosis_errors.InterpretationError) {
-	srcPath, interpretationErr := safeCastToString(filePathStr, filePathArgName)
+func ParseNonEmptyString(argName string, argValue starlark.Value) (string, *startosis_errors.InterpretationError) {
+	strArgValue, interpretationErr := safeCastToString(argValue, argName)
 	if interpretationErr != nil {
 		return "", interpretationErr
 	}
-	if len(srcPath) == 0 {
-		return "", startosis_errors.NewInterpretationError("File path cannot be empty for argument '%s'", filePathArgName)
+	if len(strArgValue) == 0 {
+		return "", startosis_errors.NewInterpretationError("Expected non empty string for argument '%s'", argName)
 	}
-	return srcPath, nil
+	return strArgValue, nil
+}
+
+func ParseArtifactUuid(artifactUuidArgName string, artifactUuidStr starlark.String) (enclave_data_directory.FilesArtifactUUID, *startosis_errors.InterpretationError) {
+	artifactUuid, interpretationErr := safeCastToString(artifactUuidStr, artifactUuidArgName)
+	if interpretationErr != nil {
+		return "", interpretationErr
+	}
+	if len(artifactUuid) == 0 {
+		return "", startosis_errors.NewInterpretationError("Artifact Uuid can't be empty for argument '%s'", artifactUuidArgName)
+	}
+	return enclave_data_directory.FilesArtifactUUID(artifactUuid), interpretationErr
 }
 
 func ParseTemplatesAndData(templatesAndData *starlark.Dict) (map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, *startosis_errors.InterpretationError) {
@@ -249,7 +275,8 @@ func parseServiceConfigContainerImageName(serviceConfig *starlarkstruct.Struct) 
 func parseServiceConfigPrivatePorts(serviceConfig *starlarkstruct.Struct) (map[string]*kurtosis_core_rpc_api_bindings.Port, *startosis_errors.InterpretationError) {
 	privatePortsRawArg, err := serviceConfig.Attr(usedPortsKey)
 	if err != nil {
-		return nil, startosis_errors.NewInterpretationError("Missing `%s` as part of the service config", usedPortsKey)
+		// not all services need to create ports, this being empty is okay
+		return map[string]*kurtosis_core_rpc_api_bindings.Port{}, nil
 	}
 	privatePortsArg, ok := privatePortsRawArg.(*starlark.Dict)
 	if !ok {

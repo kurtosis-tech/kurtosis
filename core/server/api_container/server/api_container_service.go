@@ -48,26 +48,18 @@ const (
 	// The string returned by the API if a service's public IP address doesn't exist
 	missingPublicIpAddrStr = ""
 
-	noExecutionError      = ""
-	noInterpretationError = ""
-
 	defaultStartosisDryRun = false
 
 	// We do it this way as if we were to interpret the main file,
 	// we'd only read the symbols, and maybe there's nothing that calls in `main()`
 	// This way, we're guaranteed that the `main()` function gets called within main.star
 	bootScript = `
-load("%v/` + startosis_engine.MainFileName + `", "main")
-main(%v)
+main_module = import_module("%v/` + startosis_engine.MainFileName + `")
+main_module.main(%v)
 	`
 	// Overwrite existing module with new module, this allows user to iterate on an enclave with a
 	// given module
 	doOverwriteExistingModule = true
-)
-
-var (
-	noValidationErrors       []*kurtosis_core_rpc_api_bindings.StartosisValidationError
-	noSerializedInstructions []*kurtosis_core_rpc_api_bindings.SerializedKurtosisInstruction
 )
 
 // Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and port spec protos
@@ -821,50 +813,48 @@ func (apicService ApiContainerService) getModuleInfo(ctx context.Context, module
 func (apicService ApiContainerService) executeStartosis(ctx context.Context, dryRun bool, moduleId string, serializedStartosis string, serializedParams string) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse, error) {
 	// TODO(gb): add metric tracking maybe?
 
-	interpretationOutput, potentialInterpretationError, generatedInstructionsList :=
-		apicService.startosisInterpreter.Interpret(ctx, moduleId, serializedStartosis, serializedParams)
-	if potentialInterpretationError != nil {
-		return binding_constructors.NewExecuteStartosisResponse(
-			string(interpretationOutput),
-			potentialInterpretationError.Error(),
-			noValidationErrors,
-			noExecutionError,
-			noSerializedInstructions,
+	generatedInstructionsList, interpretationError := apicService.startosisInterpreter.Interpret(ctx, moduleId, serializedStartosis, serializedParams)
+	if interpretationError != nil {
+		return binding_constructors.NewExecuteStartosisResponseFromInterpretationError(
+			interpretationError,
 		), nil
 	}
 	logrus.Debugf("Successfully interpreted Startosis script into a series of Kurtosis instructions: \n%v",
 		generatedInstructionsList)
 
-	// TODO: Abstract this into a ValidationError
 	validationErrors := apicService.startosisValidator.Validate(ctx, apicService.serviceNetwork, generatedInstructionsList)
 	if validationErrors != nil {
-		return binding_constructors.NewExecuteStartosisResponse(
-			string(interpretationOutput),
-			noInterpretationError,
+		return binding_constructors.NewExecuteStartosisResponseFromValidationErrors(
 			validationErrors,
-			noExecutionError,
-			noSerializedInstructions,
 		), nil
 	}
 	logrus.Debugf("Successfully validated Startosis script")
 
-	serializedSuccessfullyExecutedInstructions, err := apicService.startosisExecutor.Execute(ctx, dryRun, generatedInstructionsList)
-	if err != nil {
-		return binding_constructors.NewExecuteStartosisResponse(
-			string(interpretationOutput),
-			noInterpretationError,
-			noValidationErrors,
-			err.Error(),
-			serializedSuccessfullyExecutedInstructions,
-		), nil
-	}
-	logrus.Debugf("Successfully executed the list of Kurtosis instructions")
+	var serializedSuccessfullyExecutedInstructions []*kurtosis_core_rpc_api_bindings.KurtosisInstruction
+	kurtosisInstructionsStream, errChan := apicService.startosisExecutor.Execute(ctx, dryRun, generatedInstructionsList)
 
-	return binding_constructors.NewExecuteStartosisResponse(
-		string(interpretationOutput),
-		noInterpretationError,
-		noValidationErrors,
-		noExecutionError,
-		serializedSuccessfullyExecutedInstructions,
-	), nil
+ReadChannelsLoop:
+	for {
+		select {
+		case executedKurtosisInstruction, isChanOpen := <-kurtosisInstructionsStream:
+			if !isChanOpen {
+				logrus.Debug("Kurtosis instructions stream was closed. Exiting execution loop")
+				break ReadChannelsLoop
+			}
+			logrus.Debugf("Received serialized Kurtosis instruction:\n%v", executedKurtosisInstruction.GetExecutableInstruction())
+			serializedSuccessfullyExecutedInstructions = append(serializedSuccessfullyExecutedInstructions, executedKurtosisInstruction)
+		case executionError, isChanOpen := <-errChan:
+			if !isChanOpen {
+				logrus.Debug("Kurtosis execution error channel was closed. Exiting execution loop")
+				break ReadChannelsLoop
+			}
+			return binding_constructors.NewExecuteStartosisResponseFromExecutionError(
+				serializedSuccessfullyExecutedInstructions,
+				executionError,
+			), nil
+		}
+	}
+
+	logrus.Debugf("Successfully executed the list of %d Kurtosis instructions", len(generatedInstructionsList))
+	return binding_constructors.NewExecuteStartosisResponse(serializedSuccessfullyExecutedInstructions), nil
 }

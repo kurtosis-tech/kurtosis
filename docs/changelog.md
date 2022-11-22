@@ -1,9 +1,81 @@
 # TBD
+
+# 0.53.6
+
+# 0.53.5
+### Changes
+- Error types in ExecuteStartosisResponse type is now a union type, to better represent they are exclusive and prepare for transition to streaming
+- Update the KurtosisInstruction API type returned to the CLI. It now contains a combination of instruction position, the canonicalized instruction, and an optional instruction result 
+- Renamed `store_files_from_service` to `store_service_files`
+- Slightly update the way script output information are passed from the Startosis engine back the API container main class. This is a step to prepare for streaming this output all the way back the CLI.
+- Removed `load` statement in favour of `import_module`. Calling load will now throw an InterpretationError
+- Refactored startosis tests to enable parallel execution of tests
+
+# 0.53.4
+
+# 0.53.3
+### Fixes
+- Fixed a bug with dumping enclave logs during the CI run
+
+### Features
+- Log that the module is being compressed & uploaded during `kurtosis exec`
+
+### Changes
+- `print()` is now a regular instructions like others, and it takes effect at execution time (used to be during interpretation)
+- Added `import_module` startosis builtin to replace `load`. Load is now deprecated. It can still be used but it will log a warning. It will be entirely removed in a future PR
+- Added exhaustive struct linting and brought code base into exhaustive struct compliance
+- Temporarily disable enclave dump for k8s in CircleCI until we fix issue #407
+- Small cleanup to kurtosis instruction classes. It now uses a pointer to the position object.
+
+### Fixes
+- Renamed `cmd_args` and `entrypoint_args` inside `config` inside `add_service` to `cmd` and `entrypoint`
+
+### Breaking Changes
+- Renamed `cmd_args` and `entrypoint_args` inside `config` inside `add_service` to `cmd` and `entrypoint`
+  - Users will have to replace their use of `cmd_args` and `entry_point_args` to the above inside their Starlark modules 
+
+# 0.53.2
+### Features
+- Make facts referencable on `add_service`
+- Added a new log line for printing the `created enclave ID` just when this is created in `kurtosis exec` and `kurtosis module exec` commands
+
+# 0.53.1
+### Features
+- Added random enclave ID generation in `EnclaveManager.CreateEnclave()` when an empty enclave ID is provided
+- Added the `created enclave` spotlight message when a new enclave is created from the CLI (currently with the `enclave add`, `module exec` and `exec` commands)
+
+### Changes
+- Moved the enclave ID auto generation and validation from the CLI to the engine's server which will catch all the presents and future use cases
+
+### Fixes
+- Fixed a bug where we had renamed `container_image_name` inside the proto definition to `image`
+- Fix a test that dependent on an old on existent Starlark module
+
+# 0.53.0
+### Features
+- Made `render_templates`, `upload_files`, `store_Files_from_service` accept `artifact_uuid` and
+return `artifact_uuid` during interpretation time
+- Moved `kurtosis startosis exec` to `kurtosis exec`
+
+### Breaking Features
+- Moved `kurtosis startosis exec` to `kurtosis exec`
+  - Users now need to use the new command to launch Starlark programs
+
+### Fixes
+- Fixed building kurtosis by adding a conditional to build.sh to ignore startosis folder under internal_testsuites
+
+# 0.52.5
+### Fixes
+- Renamed `files_artifact_mount_dirpaths` to just `files`
+
+# 0.52.4
 ### Features
 - Added the enclave's creation time info which can be obtained through the `enclave ls` and the `enclave inspect` commands
 
-# 0.52.3
+### Fixes
+- Smoothened the experience `used_ports` -> `ports`, `container_image_name` -> `name`, `service_config` -> `config`
 
+# 0.52.3
 ### Changes
 - Cleanup Startosis interpreter predeclared
 
@@ -15,7 +87,6 @@
 - Added `not found service GUIDs information` in `KurtosisContext.GetServiceLogs` method
 - Added a warning message in `service logs` CLI command when the request service GUID is not found in the logs database
 - Added ip address replacement in the JSON for `render_template` instruction
-- Implemented a `ToTargetArtifactUuid` version of a few service_network functions
 
 ### Changes
 - `kurtosis_instruction.String()` now returns a single line version of the instruction for more concise logging
@@ -46,7 +117,7 @@
 
 # 0.51.13
 ### Fixes
-- Set `entry_point_args` and `cmd_args` to `nil` if not specified instead of empty array 
+- Set `entrypoint` and `cmd_args` to `nil` if not specified instead of empty array 
 
 # 0.51.12
 ### Features
@@ -55,7 +126,7 @@
 # 0.51.11
 ### Features
 - Improve how kurtosis instructions are canonicalized with a universal canonicalizer. Each instruction is now printed on multiple lines with a comment pointing the to position in the source code.
-- Support `private_ip_address_placeholder` to be passed in `service_config` for `add_service` in Starlark
+- Support `private_ip_address_placeholder` to be passed in `config` for `add_service` in Starlark
 
 ### Changes
 - Updated how we generate the canonical string for Kurtosis `upload_files` instruction
@@ -137,7 +208,7 @@
 # 0.51.1
 - Added an `exec` command to Startosis
 - Added a `store_files_from_service` command to Startosis
-- Added the ability to pass `files_artifact_mount_dirpaths` to the service config
+- Added the ability to pass `files` to the service config
 - Added a `read_file` command to Startosis
 - Added the ability to execute local modules in Startosis
 

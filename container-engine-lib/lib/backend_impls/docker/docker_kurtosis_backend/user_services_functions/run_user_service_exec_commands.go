@@ -29,7 +29,9 @@ func RunUserServiceExecCommands(
 	}
 
 	filters := &service.ServiceFilters{
-		GUIDs: userServiceGuids,
+		IDs:      nil,
+		GUIDs:    userServiceGuids,
+		Statuses: nil,
 	}
 	_, allDockerResources, err := shared_helpers.GetMatchingUserServiceObjsAndDockerResourcesNoMutex(ctx, enclaveId, filters, dockerManager)
 	if err != nil {

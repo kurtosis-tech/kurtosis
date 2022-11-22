@@ -6,7 +6,6 @@ import (
 	context "context"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 
-	startosis_executor "github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_executor"
 	startosis_validator "github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -24,18 +23,27 @@ func (_m *MockKurtosisInstruction) EXPECT() *MockKurtosisInstruction_Expecter {
 	return &MockKurtosisInstruction_Expecter{mock: &_m.Mock}
 }
 
-// Execute provides a mock function with given fields: ctx, execution
-func (_m *MockKurtosisInstruction) Execute(ctx context.Context, execution *startosis_executor.ExecutionEnvironment) error {
-	ret := _m.Called(ctx, execution)
+// Execute provides a mock function with given fields: ctx
+func (_m *MockKurtosisInstruction) Execute(ctx context.Context) (*string, error) {
+	ret := _m.Called(ctx)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *startosis_executor.ExecutionEnvironment) error); ok {
-		r0 = rf(ctx, execution)
+	var r0 *string
+	if rf, ok := ret.Get(0).(func(context.Context) *string); ok {
+		r0 = rf(ctx)
 	} else {
-		r0 = ret.Error(0)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*string)
+		}
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // MockKurtosisInstruction_Execute_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Execute'
@@ -45,20 +53,19 @@ type MockKurtosisInstruction_Execute_Call struct {
 
 // Execute is a helper method to define mock.On call
 //   - ctx context.Context
-//   - execution *startosis_executor.ExecutionEnvironment
-func (_e *MockKurtosisInstruction_Expecter) Execute(ctx interface{}, execution interface{}) *MockKurtosisInstruction_Execute_Call {
-	return &MockKurtosisInstruction_Execute_Call{Call: _e.mock.On("Execute", ctx, execution)}
+func (_e *MockKurtosisInstruction_Expecter) Execute(ctx interface{}) *MockKurtosisInstruction_Execute_Call {
+	return &MockKurtosisInstruction_Execute_Call{Call: _e.mock.On("Execute", ctx)}
 }
 
-func (_c *MockKurtosisInstruction_Execute_Call) Run(run func(ctx context.Context, execution *startosis_executor.ExecutionEnvironment)) *MockKurtosisInstruction_Execute_Call {
+func (_c *MockKurtosisInstruction_Execute_Call) Run(run func(ctx context.Context)) *MockKurtosisInstruction_Execute_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*startosis_executor.ExecutionEnvironment))
+		run(args[0].(context.Context))
 	})
 	return _c
 }
 
-func (_c *MockKurtosisInstruction_Execute_Call) Return(_a0 error) *MockKurtosisInstruction_Execute_Call {
-	_c.Call.Return(_a0)
+func (_c *MockKurtosisInstruction_Execute_Call) Return(_a0 *string, _a1 error) *MockKurtosisInstruction_Execute_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }
 

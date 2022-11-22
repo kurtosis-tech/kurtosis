@@ -11,6 +11,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// ModuleCmd Suppressing exhaustruct requirement because this struct has ~40 properties
+// nolint: exhaustruct
 var ModuleCmd = &cobra.Command{
 	Use:   command_str_consts.ModuleCmdStr,
 	Short: "Manage Kurtosis modules",

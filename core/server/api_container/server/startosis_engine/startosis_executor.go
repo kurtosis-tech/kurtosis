@@ -5,14 +5,16 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_executor"
 	"github.com/kurtosis-tech/stacktrace"
 	"sync"
 )
 
+var (
+	noInstructionOutput *string
+)
+
 type StartosisExecutor struct {
-	mutex       *sync.Mutex
-	environment *startosis_executor.ExecutionEnvironment
+	mutex *sync.Mutex
 }
 
 type ExecutionError struct {
@@ -21,27 +23,42 @@ type ExecutionError struct {
 
 func NewStartosisExecutor() *StartosisExecutor {
 	return &StartosisExecutor{
-		mutex:       &sync.Mutex{},
-		environment: startosis_executor.NewExecutionEnvironment(),
+		mutex: &sync.Mutex{},
 	}
 }
 
-// Execute executes the list of Kurtosis instructions against the Kurtosis backend
-// It returns a potential execution error if something went wrong.
-// It returns an error if something unexpected happens outside the execution of the script
-func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, instructions []kurtosis_instruction.KurtosisInstruction) ([]*kurtosis_core_rpc_api_bindings.SerializedKurtosisInstruction, error) {
+// Execute executes the list of Kurtosis instructions _asynchronously_ against the Kurtosis backend
+// Consumers of this method should read the 3 channels in a select/case loop and return as soon as one is closed (they are all closed at the same time)
+//
+// The channels are the following:
+// - One channel of instruction output. Everytime an instruction is executed and returns a non-nil output, it is written to this channel
+// - One channel of serialized kurtosis instructions. Every successfully executed instruction will be serialized and sent to this channel
+// - One channel for potential error. As soon as an instruction fails to be executed, an error will be sent to this channel and the execution will stop
+func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, instructions []kurtosis_instruction.KurtosisInstruction) (<-chan *kurtosis_core_rpc_api_bindings.KurtosisInstruction, <-chan *kurtosis_core_rpc_api_bindings.KurtosisExecutionError) {
 	executor.mutex.Lock()
-	defer executor.mutex.Unlock()
+	kurtosisInstructionsStream := make(chan *kurtosis_core_rpc_api_bindings.KurtosisInstruction)
+	errorChan := make(chan *kurtosis_core_rpc_api_bindings.KurtosisExecutionError)
 
-	var serializedSuccessfullyExecutedInstructions []*kurtosis_core_rpc_api_bindings.SerializedKurtosisInstruction
-	for index, instruction := range instructions {
-		if !dryRun {
-			if err := instruction.Execute(ctx, executor.environment); err != nil {
-				return serializedSuccessfullyExecutedInstructions, stacktrace.Propagate(err, "An error occurred executing instruction (number %d): \n%v", index+1, instruction.GetCanonicalInstruction())
+	go func() {
+		defer func() {
+			executor.mutex.Unlock()
+			close(kurtosisInstructionsStream)
+			close(errorChan)
+		}()
+
+		for index, instruction := range instructions {
+			if !dryRun {
+				instructionOutput, err := instruction.Execute(ctx)
+				if err != nil {
+					errorChan <- binding_constructors.NewKurtosisExecutionError(stacktrace.Propagate(err, "An error occurred executing instruction (number %d): \n%v", index+1, instruction.GetCanonicalInstruction()).Error())
+					return
+				}
+				kurtosisInstructionsStream <- binding_constructors.NewKurtosisInstruction(instruction.GetPositionInOriginalScript().ToAPIType(), instruction.GetCanonicalInstruction(), instructionOutput)
+			} else {
+				kurtosisInstructionsStream <- binding_constructors.NewKurtosisInstruction(instruction.GetPositionInOriginalScript().ToAPIType(), instruction.GetCanonicalInstruction(), noInstructionOutput)
 			}
 		}
-		serializedSuccessfullyExecutedInstructions = append(serializedSuccessfullyExecutedInstructions,
-			binding_constructors.NewSerializedKurtosisInstruction(instruction.GetCanonicalInstruction()))
-	}
-	return serializedSuccessfullyExecutedInstructions, nil
+	}()
+
+	return kurtosisInstructionsStream, errorChan
 }

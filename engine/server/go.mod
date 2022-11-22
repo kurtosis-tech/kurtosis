@@ -91,4 +91,7 @@ require (
 
 require github.com/gorilla/websocket v1.4.2
 
-require github.com/stretchr/objx v0.1.1 // indirect
+require (
+	github.com/goombaio/namegenerator v0.0.0-20181006234301-989e774b106e // indirect
+	github.com/stretchr/objx v0.1.1 // indirect
+)

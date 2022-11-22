@@ -81,6 +81,7 @@ func (backend KubernetesKurtosisBackend) CreateAPIContainer(
 		EnclaveIDs: map[enclave.EnclaveID]bool{
 			enclaveId: true,
 		},
+		Statuses: nil,
 	}
 	preexistingApiContainersInEnclave, err := backend.GetAPIContainers(ctx, apiContainersInEnclaveFilters)
 	if err != nil {
@@ -918,19 +919,25 @@ func getApiContainerContainersAndVolumes(
 	var containerEnvVars []apiv1.EnvVar
 	for varName, varValue := range envVars {
 		envVar := apiv1.EnvVar{
-			Name:  varName,
-			Value: varValue,
+			Name:      varName,
+			Value:     varValue,
+			ValueFrom: nil,
 		}
 		containerEnvVars = append(containerEnvVars, envVar)
 	}
 
 	// Using the Kubernetes downward API to tell the API container about its own namespace name
 	ownNamespaceEnvVar := apiv1.EnvVar{
-		Name: ApiContainerOwnNamespaceNameEnvVar,
+		Name:  ApiContainerOwnNamespaceNameEnvVar,
+		Value: "",
 		ValueFrom: &apiv1.EnvVarSource{
 			FieldRef: &apiv1.ObjectFieldSelector{
-				FieldPath: kubernetesResourceOwnNamespaceFieldPath,
+				APIVersion: "",
+				FieldPath:  kubernetesResourceOwnNamespaceFieldPath,
 			},
+			ResourceFieldRef: nil,
+			ConfigMapKeyRef:  nil,
+			SecretKeyRef:     nil,
 		},
 	}
 	containerEnvVars = append(containerEnvVars, ownNamespaceEnvVar)
@@ -954,7 +961,38 @@ func getApiContainerContainersAndVolumes(
 		{
 			Name: enclaveDataDirVolumeName,
 			VolumeSource: apiv1.VolumeSource{
-				EmptyDir: &apiv1.EmptyDirVolumeSource{},
+				HostPath: nil,
+				EmptyDir: &apiv1.EmptyDirVolumeSource{
+					Medium:    "",
+					SizeLimit: nil,
+				},
+				GCEPersistentDisk:     nil,
+				AWSElasticBlockStore:  nil,
+				GitRepo:               nil,
+				Secret:                nil,
+				NFS:                   nil,
+				ISCSI:                 nil,
+				Glusterfs:             nil,
+				PersistentVolumeClaim: nil,
+				RBD:                   nil,
+				FlexVolume:            nil,
+				Cinder:                nil,
+				CephFS:                nil,
+				Flocker:               nil,
+				DownwardAPI:           nil,
+				FC:                    nil,
+				AzureFile:             nil,
+				ConfigMap:             nil,
+				VsphereVolume:         nil,
+				Quobyte:               nil,
+				AzureDisk:             nil,
+				PhotonPersistentDisk:  nil,
+				Projected:             nil,
+				PortworxVolume:        nil,
+				ScaleIO:               nil,
+				StorageOS:             nil,
+				CSI:                   nil,
+				Ephemeral:             nil,
 			},
 		},
 	}

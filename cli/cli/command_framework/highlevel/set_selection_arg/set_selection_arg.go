@@ -40,7 +40,10 @@ func NewSetSelectionArg(argKey string, validValues map[string]bool) *args.ArgCon
 
 	return &args.ArgConfig{
 		Key:             argKey,
+		IsOptional:      false,
+		DefaultValue:    nil,
+		IsGreedy:        false,
 		CompletionsFunc: completionsFunc,
-		ValidationFunc: validationFunc,
+		ValidationFunc:  validationFunc,
 	}
 }

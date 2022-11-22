@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
+	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
@@ -308,7 +309,7 @@ func TestParsePort_FailurePortNumberInvalid(t *testing.T) {
 
 func TestParseEntryPointArgs_Success(t *testing.T) {
 	dict := starlark.StringDict{}
-	dict["entry_point_args"] = starlark.NewList([]starlark.Value{starlark.String("hello"), starlark.String("world")})
+	dict["entrypoint"] = starlark.NewList([]starlark.Value{starlark.String("hello"), starlark.String("world")})
 	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
 	output, err := parseEntryPointArgs(input)
 	require.Nil(t, err)
@@ -325,17 +326,17 @@ func TestParseEntryPointArgs_SuccessOnMissingValue(t *testing.T) {
 
 func TestParseEntryPointArgs_FailureOnListContainingNonStringValues(t *testing.T) {
 	dict := starlark.StringDict{}
-	dict["entry_point_args"] = starlark.NewList([]starlark.Value{starlark.MakeInt(42)})
+	dict["entrypoint"] = starlark.NewList([]starlark.Value{starlark.MakeInt(42)})
 	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
 	output, err := parseEntryPointArgs(input)
 	require.NotNil(t, err)
-	require.Equal(t, "'entry_point_args[0]' is expected to be a string. Got starlark.Int", err.Error())
+	require.Equal(t, "'entrypoint[0]' is expected to be a string. Got starlark.Int", err.Error())
 	require.Equal(t, []string(nil), output)
 }
 
 func TestParseCommandArgs_Success(t *testing.T) {
 	dict := starlark.StringDict{}
-	dict["cmd_args"] = starlark.NewList([]starlark.Value{starlark.String("hello"), starlark.String("world")})
+	dict["cmd"] = starlark.NewList([]starlark.Value{starlark.String("hello"), starlark.String("world")})
 	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
 	output, err := parseCmdArgs(input)
 	require.Nil(t, err)
@@ -352,11 +353,11 @@ func TestParseCommandArgs_SuccessOnMissingValue(t *testing.T) {
 
 func TestParseCommandArgs_FailureOnListContainingNonStringValues(t *testing.T) {
 	dict := starlark.StringDict{}
-	dict["cmd_args"] = starlark.NewList([]starlark.Value{starlark.MakeInt(42)})
+	dict["cmd"] = starlark.NewList([]starlark.Value{starlark.MakeInt(42)})
 	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
 	output, err := parseCmdArgs(input)
 	require.NotNil(t, err)
-	require.Equal(t, "'cmd_args[0]' is expected to be a string. Got starlark.Int", err.Error())
+	require.Equal(t, "'cmd[0]' is expected to be a string. Got starlark.Int", err.Error())
 	require.Equal(t, []string(nil), output)
 }
 
@@ -432,16 +433,16 @@ func TestParseCommand_InvalidCommandsWithIntegers(t *testing.T) {
 	require.NotNil(t, err)
 }
 
-func TestParseFilePathPath_ValidValue(t *testing.T) {
-	input := starlark.String("/foo/bar")
-	output, err := ParseFilePath("file_path", input)
+func TestArtifactUuidPathPath_ValidValue(t *testing.T) {
+	input := starlark.String("abde-f23dd-1")
+	output, err := ParseArtifactUuid("artifact_uuid", input)
 	require.Nil(t, err)
-	require.Equal(t, "/foo/bar", output)
+	require.Equal(t, enclave_data_directory.FilesArtifactUUID("abde-f23dd-1"), output)
 }
 
-func TestParseFilePath_EmptyStringFails(t *testing.T) {
+func TestArtifactUuidPathPath_EmptyStringFails(t *testing.T) {
 	input := starlark.String("")
-	_, err := ParseFilePath("file_path", input)
+	_, err := ParseArtifactUuid("artifact_uuid", input)
 	require.NotNil(t, err)
 }
 
@@ -450,7 +451,7 @@ func TestParseFilesArtifactMountDirpaths_Success(t *testing.T) {
 	err := subDict.SetKey(starlark.String("key"), starlark.String("value"))
 	require.Nil(t, err)
 	dict := starlark.StringDict{}
-	dict["files_artifact_mount_dirpaths"] = subDict
+	dict["files"] = subDict
 	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
 	output, err := parseFilesArtifactMountDirpaths(input)
 	require.Nil(t, err)
@@ -470,11 +471,11 @@ func TestParseFilesArtifactMountDirpaths_FailureOnNonStringKey(t *testing.T) {
 	err := subDict.SetKey(starlark.MakeInt(42), starlark.String("value"))
 	require.Nil(t, err)
 	dict := starlark.StringDict{}
-	dict["files_artifact_mount_dirpaths"] = subDict
+	dict["files"] = subDict
 	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
 	output, err := parseFilesArtifactMountDirpaths(input)
 	require.NotNil(t, err)
-	require.Equal(t, "'files_artifact_mount_dirpaths.key:42' is expected to be a string. Got starlark.Int", err.Error())
+	require.Equal(t, "'files.key:42' is expected to be a string. Got starlark.Int", err.Error())
 	require.Equal(t, map[string]string(nil), output)
 }
 
@@ -483,11 +484,11 @@ func TestParseFilesArtifactMountDirpaths_FailureOnNonStringValue(t *testing.T) {
 	err := subDict.SetKey(starlark.String("key"), starlark.MakeInt(42))
 	require.Nil(t, err)
 	dict := starlark.StringDict{}
-	dict["files_artifact_mount_dirpaths"] = subDict
+	dict["files"] = subDict
 	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
 	output, err := parseFilesArtifactMountDirpaths(input)
 	require.NotNil(t, err)
-	require.Equal(t, "'files_artifact_mount_dirpaths[\"key\"]' is expected to be a string. Got starlark.Int", err.Error())
+	require.Equal(t, "'files[\"key\"]' is expected to be a string. Got starlark.Int", err.Error())
 	require.Equal(t, map[string]string(nil), output)
 }
 
@@ -569,9 +570,12 @@ func TestParsePrivateIPAddressPlaceholder_FailureNonString(t *testing.T) {
 func TestParseHttpRequestFactRecipe_GetRequestWithoutOptionalFields(t *testing.T) {
 	dict := starlark.StringDict{}
 	expectedRecipe := &kurtosis_core_rpc_api_bindings.HttpRequestFactRecipe{
-		PortId:   "port",
-		Method:   kurtosis_core_rpc_api_bindings.HttpRequestMethod_GET,
-		Endpoint: "/",
+		PortId:         "port",
+		Endpoint:       "/",
+		Method:         kurtosis_core_rpc_api_bindings.HttpRequestMethod_GET,
+		ContentType:    "",
+		Body:           "",
+		FieldExtractor: nil,
 	}
 	dict["port_id"] = starlark.String("port")
 	dict["method"] = starlark.String("GET")
@@ -587,8 +591,10 @@ func TestParseHttpRequestFactRecipe_GetRequestWithOptionalFields(t *testing.T) {
 	var fieldExtractor = ".body"
 	expectedRecipe := &kurtosis_core_rpc_api_bindings.HttpRequestFactRecipe{
 		PortId:         "port",
-		Method:         kurtosis_core_rpc_api_bindings.HttpRequestMethod_GET,
 		Endpoint:       "/",
+		Method:         kurtosis_core_rpc_api_bindings.HttpRequestMethod_GET,
+		ContentType:    "",
+		Body:           "",
 		FieldExtractor: &fieldExtractor,
 	}
 	dict["port_id"] = starlark.String("port")

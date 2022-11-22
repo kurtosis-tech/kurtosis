@@ -125,9 +125,11 @@ func run(
 		kurtosisBackendServiceGUID := service.ServiceGUID(serviceGuidStr)
 
 		userServiceFilters := &service.ServiceFilters{
+			IDs: nil,
 			GUIDs: map[service.ServiceGUID]bool{
 				kurtosisBackendServiceGUID: true,
 			},
+			Statuses: nil,
 		}
 
 		successfulUserServiceLogs, erroredUserServiceGuids, err := kurtosisBackend.GetUserServiceLogs(ctx, kurtosisBackendEnclaveId, userServiceFilters, shouldFollowLogs)

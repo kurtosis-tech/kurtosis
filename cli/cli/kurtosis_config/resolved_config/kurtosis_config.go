@@ -13,8 +13,8 @@ const (
 	defaultMinikubeClusterName = "minikube"
 
 	defaultMinikubeClusterKubernetesClusterNameStr = "minikube"
-	defaultMinikubeStorageClass = "standard"
-	defaultMinikubeEnclaveDataVolumeMB = uint(10)
+	defaultMinikubeStorageClass                    = "standard"
+	defaultMinikubeEnclaveDataVolumeMB             = uint(10)
 )
 
 /*
@@ -28,13 +28,13 @@ const (
 	Under the hood, the KurtosisConfig is responsible for reconciling the user's overrides
 	with the default values for the configuration. It can be thought of as a "resolver" for
 	the overrides on top of the default config.
- */
+*/
 type KurtosisConfig struct {
 	// Only necessary to store for when we serialize overrides
-	overrides      *v2.KurtosisConfigV2
+	overrides *v2.KurtosisConfigV2
 
 	shouldSendMetrics bool
-	clusters map[string]*KurtosisClusterConfig
+	clusters          map[string]*KurtosisClusterConfig
 }
 
 // NewKurtosisConfigFromOverrides constructs a new KurtosisConfig that uses the given overrides
@@ -47,7 +47,9 @@ func NewKurtosisConfigFromOverrides(uncastedOverrides interface{}) (*KurtosisCon
 	}
 
 	config := &KurtosisConfig{
-		overrides: overrides,
+		overrides:         overrides,
+		shouldSendMetrics: false,
+		clusters:          nil,
 	}
 
 	// Get latest config version
@@ -96,7 +98,9 @@ func NewKurtosisConfigFromOverrides(uncastedOverrides interface{}) (*KurtosisCon
 // NOTE: We probably want to remove this function entirely
 func NewKurtosisConfigFromRequiredFields(didUserAcceptSendingMetrics bool) (*KurtosisConfig, error) {
 	overrides := &v2.KurtosisConfigV2{
+		ConfigVersion:     0,
 		ShouldSendMetrics: &didUserAcceptSendingMetrics,
+		KurtosisClusters:  nil,
 	}
 	result, err := NewKurtosisConfigFromOverrides(overrides)
 	if err != nil {
@@ -142,7 +146,7 @@ func getDefaultKurtosisClusterConfigOverrides() map[string]*v2.KurtosisClusterCo
 			Config: nil, // Must be nil for Docker
 		},
 		defaultMinikubeClusterName: {
-			Type:   &minikubeClusterType,
+			Type: &minikubeClusterType,
 			Config: &v2.KubernetesClusterConfigV2{
 				KubernetesClusterName:  &minikubeKubernetesClusterName,
 				StorageClass:           &minikubeStorageClass,

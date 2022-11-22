@@ -40,18 +40,19 @@ RENDER_RELATIVE_PATH = "` + renderedConfigRelativePath + `"
 
 print("Adding service " + DATASTORE_SERVICE_ID + ".")
 
-service_config = struct(
-    container_image_name = DATASTORE_IMAGE,
-    used_ports = {
+config = struct(
+    image = DATASTORE_IMAGE,
+    ports = {
         DATASTORE_PORT_ID: struct(number = DATASTORE_PORT_NUMBER, protocol = DATASTORE_PORT_PROTOCOL)
     }
 )
 
-add_service(service_id = DATASTORE_SERVICE_ID, service_config = service_config)
+add_service(service_id = DATASTORE_SERVICE_ID, config = config)
 print("Service " + DATASTORE_SERVICE_ID + " deployed successfully.")
 exec(service_id = DATASTORE_SERVICE_ID, command = ["touch", FILE_TO_BE_CREATED])
 
-artifact_uuid = store_file_from_service(service_id = DATASTORE_SERVICE_ID, src_path = FILE_TO_BE_CREATED)
+artifact_id = store_service_files(service_id = DATASTORE_SERVICE_ID, src = FILE_TO_BE_CREATED)
+print("Stored file at " + artifact_id)
 
 template_str = read_file(TEMPLATE_FILE_TO_RENDER)
 
@@ -67,18 +68,19 @@ template_data_by_path = {
 }
 
 rendered_artifact = render_templates(template_data_by_path)
+print("Rendered file to " + rendered_artifact)
 
-dependent_service_config = struct(
-    container_image_name = DATASTORE_IMAGE,
-    used_ports = {
+dependent_config = struct(
+    image = DATASTORE_IMAGE,
+    ports = {
         DATASTORE_PORT_ID: struct(number = DATASTORE_PORT_NUMBER, protocol = DATASTORE_PORT_PROTOCOL)
     },
-	files_artifact_mount_dirpaths = {
-		artifact_uuid : PATH_TO_MOUNT_ON_DEPENDENT_SERVICE,
+	files = {
+		artifact_id : PATH_TO_MOUNT_ON_DEPENDENT_SERVICE,
 		rendered_artifact : PATH_TO_MOUNT_RENDERED_CONFIG
 	}
 )
-add_service(service_id = SERVICE_DEPENDENT_ON_DATASTORE_SERVICE, service_config = dependent_service_config)
+add_service(service_id = SERVICE_DEPENDENT_ON_DATASTORE_SERVICE, config = dependent_config)
 print("Deployed " + SERVICE_DEPENDENT_ON_DATASTORE_SERVICE + " successfully")
 `
 )
@@ -100,12 +102,14 @@ func TestStartosis(t *testing.T) {
 
 	expectedScriptOutput := `Adding service example-datastore-server-1.
 Service example-datastore-server-1 deployed successfully.
+Stored file at [a-f0-9-]{36}
+Rendered file to [a-f0-9-]{36}
 Deployed example-datastore-server-2 successfully
 `
-	require.Empty(t, executionResult.InterpretationError, "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
-	require.Lenf(t, executionResult.ValidationErrors, 0, "Unexpected validation error")
-	require.Empty(t, executionResult.ExecutionError, "Unexpected execution error")
-	require.Equal(t, expectedScriptOutput, executionResult.SerializedScriptOutput)
+	require.Nil(t, executionResult.GetInterpretationError(), "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
+	require.Nil(t, executionResult.GetValidationErrors(), 0, "Unexpected validation error")
+	require.Nil(t, executionResult.GetExecutionError(), "Unexpected execution error")
+	require.Regexp(t, expectedScriptOutput, test_helpers.GenerateScriptOutput(executionResult.GetKurtosisInstructions()))
 	logrus.Infof("Successfully ran Startosis script")
 
 	// Check that the service added by the script is functional

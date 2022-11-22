@@ -25,14 +25,14 @@ DATASTORE_PORT_PROTOCOL = "TCP"
 
 print("Adding service " + DATASTORE_SERVICE_ID + ".")
 
-service_config = struct(
-    container_image_name = DATASTORE_IMAGE,
-    used_ports = {
+config = struct(
+    image = DATASTORE_IMAGE,
+    ports = {
         DATASTORE_PORT_ID: struct(number = DATASTORE_PORT_NUMBER, protocol = DATASTORE_PORT_PROTOCOL)
     }
 )
 
-add_service(service_id = DATASTORE_SERVICE_ID, service_config = service_config)
+add_service(service_id = DATASTORE_SERVICE_ID, config = config)
 print("Service " + DATASTORE_SERVICE_ID + " deployed successfully.")
 `
 	// We remove the service we created through the script above with a different script
@@ -60,10 +60,10 @@ func TestStartosis(t *testing.T) {
 	expectedScriptOutput := `Adding service example-datastore-server-1.
 Service example-datastore-server-1 deployed successfully.
 `
-	require.Empty(t, executionResult.InterpretationError, "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
-	require.Lenf(t, executionResult.ValidationErrors, 0, "Unexpected validation error")
-	require.Empty(t, executionResult.ExecutionError, "Unexpected execution error")
-	require.Equal(t, expectedScriptOutput, executionResult.SerializedScriptOutput)
+	require.Nil(t, executionResult.GetInterpretationError(), "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
+	require.Nil(t, executionResult.GetValidationErrors(), "Unexpected validation error")
+	require.Nil(t, executionResult.GetExecutionError(), "Unexpected execution error")
+	require.Equal(t, expectedScriptOutput, test_helpers.GenerateScriptOutput(executionResult.GetKurtosisInstructions()))
 	logrus.Infof("Successfully ran Startosis script")
 
 	// Check that the service added by the script is functional
@@ -80,9 +80,9 @@ Service example-datastore-server-1 deployed successfully.
 	// we run the remove script and see if things still work
 	executionResult, err = enclaveCtx.ExecuteStartosisScript(removeScript, defaultDryRun)
 	require.NoError(t, err, "Unexpected error executing remove script")
-	require.Empty(t, executionResult.InterpretationError, "Unexpected interpretation error")
-	require.Lenf(t, executionResult.ValidationErrors, 0, "Unexpected validation error")
-	require.Empty(t, executionResult.ExecutionError, "Unexpected execution error")
+	require.Nil(t, executionResult.GetInterpretationError(), "Unexpected interpretation error")
+	require.Nil(t, executionResult.GetValidationErrors(), "Unexpected validation error")
+	require.Nil(t, executionResult.GetExecutionError(), "Unexpected execution error")
 
 	require.Error(
 		t,
