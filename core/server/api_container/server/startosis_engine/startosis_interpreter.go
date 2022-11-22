@@ -21,7 +21,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_modules"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_modules/proto_compiler"
-	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	starlarkproto "go.starlark.net/lib/proto"
 	"go.starlark.net/lib/time"
@@ -121,7 +120,7 @@ func (interpreter *StartosisInterpreter) buildBindings(threadName string, instru
 	thread := &starlark.Thread{
 		Name:       threadName,
 		Print:      makePrintFunction(),
-		Load:       interpreter.makeLoadFunction(instructionsQueue),
+		Load:       makeLoadFunction(),
 		OnMaxSteps: nil,
 	}
 
@@ -216,30 +215,9 @@ func (interpreter *StartosisInterpreter) addInputArgsToPredeclared(moduleId stri
 	return nil
 }
 
-// this will be removed soon in favor of import_module()
-// When it is, replace it with a nice InterpretationError throwing method like:
-//
-//		func makeLoadFunction(_ *starlark.Thread, _ string) (starlark.StringDict, error) {
-//	 		return nil, startosis_errors.NewInterpretationError("'load(\"path/to/file.star\", module=\"module\")' statement is not available in Kurtosis. Please use instead `module = import_module(\"path/to/file.star\")`")
-//		}
-func (interpreter *StartosisInterpreter) makeLoadFunction(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction) func(_ *starlark.Thread, moduleID string) (starlark.StringDict, error) {
-	logrus.Warnf("`load()` statement is deprecated and will be removed soon. Please migrate to `import_module()`")
-	return func(thread *starlark.Thread, moduleID string) (starlark.StringDict, error) {
-		module, err := import_module.GenerateImportBuiltin(
-			func(moduleId string, serializedStartosis string) (starlark.StringDict, error) {
-				return interpreter.interpretInternal(moduleId, serializedStartosis, EmptyInputArgs, instructionsQueue)
-			},
-			interpreter.moduleContentProvider,
-			interpreter.moduleGlobalsCache,
-		)(thread, nil, starlark.Tuple{starlark.String(moduleID)}, []starlark.Tuple{})
-		if err != nil {
-			return nil, err
-		}
-		starlarkModule, ok := module.(*starlarkstruct.Module)
-		if !ok {
-			return nil, stacktrace.NewError("Unable to cast output of import_module builtin to a Starlark Module object. This is unexpected")
-		}
-		return starlarkModule.Members, nil
+func makeLoadFunction() func(_ *starlark.Thread, moduleID string) (starlark.StringDict, error) {
+	return func(_ *starlark.Thread, _ string) (starlark.StringDict, error) {
+		return nil, startosis_errors.NewInterpretationError("'load(\"path/to/file.star\", var_in_file=\"var_in_file\")' statement is not available in Kurtosis. Please use instead `module = import(\"path/to/file.star\")` and then `module.var_in_file`")
 	}
 }
 

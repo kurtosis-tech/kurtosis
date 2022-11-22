@@ -20,7 +20,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_modules/mock_module_content_provider"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
@@ -315,7 +314,7 @@ Done!
 	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutput)
 }
 
-func TestStartosisInterpreter_SimpleLoading_DeprecatedForBackwardCompatibility(t *testing.T) {
+func TestStartosisInterpreter_LoadStatementIsDisallowedInKurtosis(t *testing.T) {
 	barModulePath := "github.com/foo/bar/lib.star"
 	seedModules := map[string]string{
 		barModulePath: "a=\"World!\"",
@@ -329,12 +328,15 @@ load("` + barModulePath + `", "a")
 print("Hello " + a)
 `
 	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
-	assert.Len(t, instructions, 1) // Only the print statement
-	assert.Nil(t, interpretationError)
+	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
+		[]startosis_errors.CallFrame{
+			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(2, 1)),
+		},
+		"Evaluation error: cannot load github.com/foo/bar/lib.star: 'load(\"path/to/file.star\", var_in_file=\"var_in_file\")' statement is not available in Kurtosis. Please use instead `module = import(\"path/to/file.star\")` and then `module.var_in_file`",
+	).ToAPIType()
 
-	expectedOutput := `Hello World!
-`
-	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutput)
+	require.Equal(t, expectedError, interpretationError)
+	require.Empty(t, instructions)
 }
 
 func TestStartosisInterpreter_SimpleImport(t *testing.T) {
@@ -351,8 +353,8 @@ my_module = import_module("` + barModulePath + `")
 print("Hello " + my_module.a)
 `
 	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
-	assert.Len(t, instructions, 1) // Only the print statement
-	assert.Nil(t, interpretationError)
+	require.Len(t, instructions, 1) // Only the print statement
+	require.Nil(t, interpretationError)
 
 	expectedOutput := `Hello World!
 `
@@ -405,7 +407,7 @@ print(module_doo.b)
 `
 
 	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
-	assert.Empty(t, instructions) // No kurtosis instruction
+	require.Empty(t, instructions) // No kurtosis instruction
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
 		[]startosis_errors.CallFrame{
 			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(1, 27)),
@@ -413,7 +415,7 @@ print(module_doo.b)
 		},
 		"Evaluation error: There's a cycle in the import_module calls",
 	).ToAPIType()
-	assert.Equal(t, expectedError, interpretationError)
+	require.Equal(t, expectedError, interpretationError)
 }
 
 func TestStartosisInterpreter_FailsOnNonExistentModule(t *testing.T) {
@@ -425,8 +427,9 @@ func TestStartosisInterpreter_FailsOnNonExistentModule(t *testing.T) {
 my_module = import_module("` + nonExistentModule + `")
 print(my_module.b)
 `
+
 	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
-	assert.Empty(t, instructions) // No kurtosis instruction
+	require.Empty(t, instructions) // No kurtosis instruction
 
 	errorMsg := `Evaluation error: An error occurred while loading the module '` + nonExistentModule + `'
 	Caused by: Module '` + nonExistentModule + `' not found`
@@ -437,7 +440,7 @@ print(my_module.b)
 		},
 		errorMsg,
 	).ToAPIType()
-	assert.Equal(t, expectedError, interpretationError)
+	require.Equal(t, expectedError, interpretationError)
 }
 
 func TestStartosisInterpreter_ImportingAValidModuleThatPreviouslyFailedToLoadSucceeds(t *testing.T) {
@@ -452,8 +455,8 @@ print("Hello " + my_module.a)
 
 	// assert that first load fails
 	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
-	assert.Nil(t, instructions)
-	assert.NotNil(t, interpretationError)
+	require.Nil(t, instructions)
+	require.NotNil(t, interpretationError)
 
 	barModuleContents := "a=\"World!\""
 	require.Nil(t, moduleContentProvider.AddFileContent(barModulePath, barModuleContents))
@@ -461,8 +464,8 @@ print("Hello " + my_module.a)
 `
 	// assert that second load succeeds
 	instructions, interpretationError = interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
-	assert.Nil(t, interpretationError)
-	assert.Len(t, instructions, 1) // The print statement
+	require.Nil(t, interpretationError)
+	require.Len(t, instructions, 1) // The print statement
 	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutput)
 }
 
@@ -574,9 +577,10 @@ func TestStartosisInterpreter_ImportModuleWithNoGlobalVariables(t *testing.T) {
 my_module = import_module("` + barModulePath + `")
 print("World!")
 `
+
 	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
-	assert.Len(t, instructions, 2)
-	assert.Nil(t, interpretationError)
+	require.Len(t, instructions, 2)
+	require.Nil(t, interpretationError)
 
 	expectedOutput := `Hello
 World!
