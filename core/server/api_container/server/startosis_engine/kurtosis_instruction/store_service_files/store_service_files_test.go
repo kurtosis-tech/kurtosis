@@ -27,6 +27,6 @@ store_service_files(
 	src="/tmp/foo"
 )`
 	require.Equal(t, expectedMultiLineStr, storeFileFromServiceInstruction.GetCanonicalInstruction())
-	expectedSingleLineStr := `store_service_files(artifact_uuid="` + string(testFilesArtifactUuid) + `", service_id="example-service-id", src_path="/tmp/foo")`
+	expectedSingleLineStr := `store_service_files(artifact_id="` + string(testFilesArtifactUuid) + `", service_id="example-service-id", src_path="/tmp/foo")`
 	require.Equal(t, expectedSingleLineStr, storeFileFromServiceInstruction.String())
 }
