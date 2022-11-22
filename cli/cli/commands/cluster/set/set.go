@@ -24,7 +24,7 @@ var SetCmd = &lowlevel.LowlevelKurtosisCommand{
 			IsOptional:      false,
 			DefaultValue:    nil,
 			IsGreedy:        false,
-			CompletionsFunc: nil,
+			ArgCompletionProvider: nil,
 			ValidationFunc:  nil,
 		},
 	},

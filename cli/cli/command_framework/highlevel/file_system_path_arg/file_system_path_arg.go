@@ -12,11 +12,6 @@ import (
 const (
 	isNotGreedyArg = false
 	defaultValue = ""
-	enableShellDefaultFileCompletion = true
-)
-
-var (
-	noCustomCompletionFunc func(ctx context.Context, flags *flags.ParsedFlags, previousArgs *args.ParsedArgs) ([]string, error) = nil
 )
 
 // Prebuilt file path arg which has tab-completion and validation ready out-of-the-box
@@ -68,7 +63,6 @@ func newFileSystemPathArg(
 		IsOptional:                              isOptional,
 		DefaultValue:                            defaultValue,
 		IsGreedy:                                isNotGreedyArg,
-		//CompletionsFunc:                         noCustomCompletionFunc,
 		ValidationFunc:                          validate,
 		//No custom completion because we are enabling default shell's file completion with ShouldShellProvideDefaultFileCompletion
 		ArgCompletionProvider: args.NewDefaultShellFileCompletionProvider(),
