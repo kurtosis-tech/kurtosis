@@ -1,4 +1,6 @@
 # TBD
+
+# 0.53.5
 ### Changes
 - Error types in ExecuteStartosisResponse type is now a union type, to better represent they are exclusive and prepare for transition to streaming
 - Update the KurtosisInstruction API type returned to the CLI. It now contains a combination of instruction position, the canonicalized instruction, and an optional instruction result 
