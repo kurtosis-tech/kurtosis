@@ -45,4 +45,3 @@ test("Test valid startosis module with no type", async () => {
         stopEnclaveFunction()
     }
 })
-
