@@ -9,7 +9,7 @@ import (
 
 func TestPrintInstruction_StringRepresentation(t *testing.T) {
 	instruction := NewPrintInstruction(
-		*kurtosis_instruction.NewInstructionPosition(1, 1, "dummyFile"),
+		kurtosis_instruction.NewInstructionPosition(1, 1, "dummyFile"),
 		[]starlark.Value{
 			starlark.String("foo"),
 			starlark.NewList([]starlark.Value{

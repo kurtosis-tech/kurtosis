@@ -191,6 +191,7 @@ func (backend *DockerKurtosisBackend) RunNetworkingSidecarExecCommands(
 			enclaveId: true,
 		},
 		UserServiceGUIDs: userServiceGuids,
+		Statuses:         nil,
 	}
 
 	networkingSidecars, err := backend.getMatchingNetworkingSidecars(ctx, filters)

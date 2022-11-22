@@ -4,7 +4,7 @@ import "fmt"
 
 const (
 	limitsRetentionPeriodHourIndicator = "h"
-	tailMaxDurationHoursIndicator = "h"
+	tailMaxDurationHoursIndicator      = "h"
 )
 
 type LokiConfig struct {
@@ -153,6 +153,9 @@ func newDefaultLokiConfigForKurtosisCentralizedLogs() *LokiConfig {
 					},
 				},
 			},
+		},
+		Ruler: Ruler{
+			AlertmanagerURL: "",
 		},
 		Compactor: Compactor{
 			WorkingDirectory:           compactorWorkingDirectory,

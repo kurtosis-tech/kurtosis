@@ -1,9 +1,32 @@
 # TBD
+### Changes
+- Error types in ExecuteStartosisResponse type is now a union type, to better represent they are exclusive and prepare for transition to streaming
+- Update the KurtosisInstruction API type returned to the CLI. It now contains a combination of instruction position, the canonicalized instruction, and an optional instruction result 
+- Slightly update the way script output information are passed from the Startosis engine back the API container main class. This is a step to prepare for streaming this output all the way back the CLI.
+- Removed `load` statement in favour of `import_module`. Calling load will now throw an InterpretationError
+
+# 0.53.4
+
+# 0.53.3
+### Fixes
+- Fixed a bug with dumping enclave logs during the CI run
+
+### Features
+- Log that the module is being compressed & uploaded during `kurtosis exec`
 
 ### Changes
 - `print()` is now a regular instructions like others, and it takes effect at execution time (used to be during interpretation)
 - Added `import_module` startosis builtin to replace `load`. Load is now deprecated. It can still be used but it will log a warning. It will be entirely removed in a future PR
-- Removed `load` statement in favour of `import_module`. Calling load will now throw an InterpretationError
+- Added exhaustive struct linting and brought code base into exhaustive struct compliance
+- Temporarily disable enclave dump for k8s in CircleCI until we fix issue #407
+- Small cleanup to kurtosis instruction classes. It now uses a pointer to the position object.
+
+### Fixes
+- Renamed `cmd_args` and `entrypoint_args` inside `config` inside `add_service` to `cmd` and `entrypoint`
+
+### Breaking Changes
+- Renamed `cmd_args` and `entrypoint_args` inside `config` inside `add_service` to `cmd` and `entrypoint`
+  - Users will have to replace their use of `cmd_args` and `entry_point_args` to the above inside their Starlark modules 
 
 # 0.53.2
 ### Features
@@ -88,7 +111,7 @@ return `artifact_uuid` during interpretation time
 
 # 0.51.13
 ### Fixes
-- Set `entry_point_args` and `cmd_args` to `nil` if not specified instead of empty array 
+- Set `entrypoint` and `cmd_args` to `nil` if not specified instead of empty array 
 
 # 0.51.12
 ### Features

@@ -30,6 +30,7 @@ var EnclaveStopCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 	LongDescription:           "Stops the enclaves with the given IDs",
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
 	EngineClientContextKey:    engineClientCtxKey,
+	Flags:                     nil,
 	Args: []*args.ArgConfig{
 		enclave_id_arg.NewEnclaveIDArg(
 			enclaveIdArg,

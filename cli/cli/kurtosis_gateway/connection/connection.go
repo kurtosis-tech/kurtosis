@@ -81,7 +81,12 @@ func newLocalPortToPodPortConnection(kubernetesRestConfig *k8s_rest.Config, podP
 		return nil, stacktrace.Propagate(err, "An error occurred creating a SPDY round-tripper for the Kubernetes REST config")
 	}
 	dialerMethod := "POST"
-	dialer := spdy.NewDialer(upgrader, &http.Client{Transport: transport}, dialerMethod, podProxyEndpointUrl)
+	dialer := spdy.NewDialer(upgrader, &http.Client{
+		Transport:     transport,
+		CheckRedirect: nil,
+		Jar:           nil,
+		Timeout:       0,
+	}, dialerMethod, podProxyEndpointUrl)
 
 	// Create our k8s port forwarder
 	portForwarder, err := portforward.NewOnAddresses(dialer, portForwardAddresses, portStrings, portforwardStopChannel, portforwardReadyChannel, &portforwardStdOut, &portforwardStdErr)
@@ -126,14 +131,15 @@ func newLocalPortToPodPortConnection(kubernetesRestConfig *k8s_rest.Config, podP
 	}
 
 	connection := &gatewayConnectionToKurtosisImpl{
-		localAddresses:            portForwardAddresses,
-		localPorts:                localPortSpecs,
-		portforwarder:             portForwarder,
-		portforwarderStdOut:       portforwardStdOut,
-		portforwarderStdErr:       portforwardStdErr,
-		portforwarderStopChannel:  portforwardStopChannel,
-		portforwarderReadyChannel: portforwardReadyChannel,
-		urlString:                 podProxyEndpointUrl.String(),
+		localAddresses:                  portForwardAddresses,
+		localPorts:                      localPortSpecs,
+		portforwarder:                   portForwarder,
+		portforwarderStdOut:             portforwardStdOut,
+		portforwarderStdErr:             portforwardStdErr,
+		portforwarderStopChannel:        portforwardStopChannel,
+		portforwarderReadyChannel:       portforwardReadyChannel,
+		remotePortNumberToPortSpecIdMap: remotePortNumberToPortSpecIdMapping,
+		urlString:                       podProxyEndpointUrl.String(),
 	}
 
 	return connection, nil

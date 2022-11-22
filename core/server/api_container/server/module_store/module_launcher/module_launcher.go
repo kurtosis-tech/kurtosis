@@ -128,5 +128,8 @@ func waitUntilModuleContainerIsAvailable(ctx context.Context, client kurtosis_co
 }
 
 func getModuleByModuleGUIDFilter(guid module.ModuleGUID) *module.ModuleFilters {
-	return &module.ModuleFilters{GUIDs: map[module.ModuleGUID]bool{guid: true}}
+	return &module.ModuleFilters{
+		GUIDs:    map[module.ModuleGUID]bool{guid: true},
+		Statuses: nil,
+	}
 }

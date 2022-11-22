@@ -22,7 +22,7 @@ var (
 func TestDefineFactInstruction_GetCanonicalizedInstruction(t *testing.T) {
 	execInstruction := NewDefineFactInstruction(
 		emptyFactsEngine,
-		*kurtosis_instruction.NewInstructionPosition(1, 1, "dummyFile"),
+		kurtosis_instruction.NewInstructionPosition(1, 1, "dummyFile"),
 		testServiceId,
 		testFactName,
 		emptyFactsRecipe,

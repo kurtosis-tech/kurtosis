@@ -70,9 +70,11 @@ func (manager *StandardNetworkingSidecarManager) Remove(
 	networkingSidecarServiceGUID := networkingSidecarWrapper.GetServiceGUID()
 
 	filters := &networking_sidecar.NetworkingSidecarFilters{
+		EnclaveIDs: nil,
 		UserServiceGUIDs: map[service.ServiceGUID]bool{
 			networkingSidecarServiceGUID: true,
 		},
+		Statuses: nil,
 	}
 
 	_, erroredNetworkingSidecars, err := manager.kurtosisBackend.StopNetworkingSidecars(ctx, filters)

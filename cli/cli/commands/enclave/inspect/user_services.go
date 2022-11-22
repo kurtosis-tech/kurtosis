@@ -30,7 +30,11 @@ const (
 func printUserServices(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo, isAPIContainerRunning bool) error {
 	enclaveIdStr := enclaveInfo.GetEnclaveId()
 	enclaveId := enclave.EnclaveID(enclaveIdStr)
-	userServiceFilters := &service.ServiceFilters{}
+	userServiceFilters := &service.ServiceFilters{
+		IDs:      nil,
+		GUIDs:    nil,
+		Statuses: nil,
+	}
 
 	userServices, err := kurtosisBackend.GetUserServices(ctx, enclaveId, userServiceFilters)
 	if err != nil {

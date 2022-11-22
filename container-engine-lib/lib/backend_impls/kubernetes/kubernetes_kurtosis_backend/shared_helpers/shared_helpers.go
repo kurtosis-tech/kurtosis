@@ -23,6 +23,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	apiv1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"net"
 	"strings"
 	"time"
@@ -68,10 +69,12 @@ type ApiContainerModeArgs struct {
 
 func NewApiContainerModeArgs(
 	ownEnclaveId enclave.EnclaveID,
-	ownNamespaceName string, ) *ApiContainerModeArgs {
+	ownNamespaceName string) *ApiContainerModeArgs {
 	return &ApiContainerModeArgs{
 		ownEnclaveId:     ownEnclaveId,
 		ownNamespaceName: ownNamespaceName,
+		storageClassName: "",
+		filesArtifactExpansionVolumeSizeInMegabytes: 0,
 	}
 }
 
@@ -297,7 +300,10 @@ func GetUserServiceKubernetesResourcesMatchingGuids(
 
 		resultObj, found := results[serviceGuid]
 		if !found {
-			resultObj = &UserServiceKubernetesResources{}
+			resultObj = &UserServiceKubernetesResources{
+				Service: nil,
+				Pod:     nil,
+			}
 		}
 		resultObj.Service = kubernetesService
 		results[serviceGuid] = resultObj
@@ -331,7 +337,10 @@ func GetUserServiceKubernetesResourcesMatchingGuids(
 
 		resultObj, found := results[serviceGuid]
 		if !found {
-			resultObj = &UserServiceKubernetesResources{}
+			resultObj = &UserServiceKubernetesResources{
+				Service: nil,
+				Pod:     nil,
+			}
 		}
 		resultObj.Pod = kubernetesPod
 		results[serviceGuid] = resultObj
@@ -347,8 +356,9 @@ func GetUserServiceObjectsFromKubernetesResources(
 	results := map[service.ServiceGUID]*UserServiceObjectsAndKubernetesResources{}
 	for serviceGuid, resources := range allKubernetesResources {
 		results[serviceGuid] = &UserServiceObjectsAndKubernetesResources{
+			ServiceRegistration: nil,
+			Service:             nil,
 			KubernetesResources: resources,
-			// The other fields will get filled in below
 		}
 	}
 
@@ -437,9 +447,11 @@ func GetSingleUserServiceObjectsAndResources(
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 ) (*UserServiceObjectsAndKubernetesResources, error) {
 	searchFilters := &service.ServiceFilters{
+		IDs: nil,
 		GUIDs: map[service.ServiceGUID]bool{
 			serviceGuid: true,
 		},
+		Statuses: nil,
 	}
 	searchResults, err := GetMatchingUserServiceObjectsAndKubernetesResources(ctx, enclaveId, searchFilters, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
 	if err != nil {
@@ -533,6 +545,12 @@ func GetKubernetesServicePortsFromPrivatePortSpecs(privatePorts map[string]*port
 			AppProtocol: nil,
 			// Safe to cast because max uint16 < int32
 			Port: int32(portSpec.GetNumber()),
+			TargetPort: intstr.IntOrString{
+				Type:   0,
+				IntVal: 0,
+				StrVal: "",
+			},
+			NodePort: 0,
 		}
 		result = append(result, kubernetesPortObj)
 	}
@@ -550,10 +568,12 @@ func GetKubernetesContainerPortsFromPrivatePortSpecs(privatePorts map[string]*po
 		}
 
 		kubernetesPortObj := apiv1.ContainerPort{
-			Name: portId,
+			Name:     portId,
+			HostPort: 0,
 			// Safe to do because max uint16 < int32
 			ContainerPort: int32(portSpec.GetNumber()),
 			Protocol:      kubernetesProtocol,
+			HostIP:        "",
 		}
 		result = append(result, kubernetesPortObj)
 	}

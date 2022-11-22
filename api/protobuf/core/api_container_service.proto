@@ -267,23 +267,45 @@ message ExecuteStartosisModuleArgs {
 //                                 Startosis Execution Response
 // ==============================================================================================
 message ExecuteStartosisResponse {
-  string serialized_script_output = 1;
+  repeated KurtosisInstruction kurtosis_instructions = 1;
 
-  string interpretation_error = 2;
-
-  repeated StartosisValidationError validation_errors = 3;
-
-  string execution_error = 4;
-
-  repeated SerializedKurtosisInstruction serialized_instructions = 5;
+  oneof kurtosis_error {
+    KurtosisInterpretationError interpretation_error = 2;
+    KurtosisValidationErrors validation_errors = 3;
+    KurtosisExecutionError execution_error = 4;
+  }
 }
 
-message StartosisValidationError {
-  string error = 1;
+message KurtosisInterpretationError {
+  string error_message = 1;
 }
 
-message SerializedKurtosisInstruction {
-  string serialized_instruction = 1;
+message KurtosisValidationErrors {
+  repeated KurtosisValidationError errors = 1;
+}
+
+message KurtosisValidationError {
+  string error_message = 1;
+}
+
+message KurtosisExecutionError {
+  string error_message = 1;
+}
+
+message KurtosisInstruction {
+  KurtosisInstructionPosition position = 1;
+
+  string executable_instruction = 2;
+
+  optional string instruction_result = 3;
+}
+
+message KurtosisInstructionPosition {
+  string filename = 1;
+
+  int32 line = 2;
+
+  int32 column = 3;
 }
 
 // ==============================================================================================

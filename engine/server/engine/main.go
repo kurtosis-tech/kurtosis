@@ -36,6 +36,9 @@ const (
 	grpcServerStopGracePeriod = 5 * time.Second
 
 	shouldFlushMetricsClientQueueOnEachEvent = false
+
+	forceColors   = true
+	fullTimestamp = true
 )
 
 // Nil indicates that the KurtosisBackend should not operate in API container mode, which is appropriate here
@@ -51,8 +54,21 @@ func (d doNothingMetricsClientCallback) Failure(err error) {}
 func main() {
 	// NOTE: we'll want to change the ForceColors to false if we ever want structured logging
 	logrus.SetFormatter(&logrus.TextFormatter{
-		ForceColors:   true,
-		FullTimestamp: true,
+		ForceColors:               forceColors,
+		DisableColors:             false,
+		ForceQuote:                false,
+		DisableQuote:              false,
+		EnvironmentOverrideColors: false,
+		DisableTimestamp:          false,
+		FullTimestamp:             fullTimestamp,
+		TimestampFormat:           "",
+		DisableSorting:            false,
+		SortingFunc:               nil,
+		DisableLevelTruncation:    false,
+		PadLevelText:              false,
+		QuoteEmptyFields:          false,
+		FieldMap:                  nil,
+		CallerPrettyfier:          nil,
 	})
 
 	err := runMain()
@@ -174,7 +190,6 @@ func getEnclaveManager(kurtosisBackend backend_interface.KurtosisBackend, kurtos
 
 	return enclaveManager, nil
 }
-
 
 func getKurtosisBackend(ctx context.Context, kurtosisBackendType args.KurtosisBackendType, backendConfig interface{}) (backend_interface.KurtosisBackend, error) {
 	var kurtosisBackend backend_interface.KurtosisBackend

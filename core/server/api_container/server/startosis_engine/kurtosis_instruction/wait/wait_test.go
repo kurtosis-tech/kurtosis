@@ -20,7 +20,7 @@ var (
 func TestWaitInstruction_GetCanonicalizedInstruction(t *testing.T) {
 	execInstruction := NewWaitInstruction(
 		emptyFactsEngine,
-		*kurtosis_instruction.NewInstructionPosition(1, 1, "dummyFile"),
+		kurtosis_instruction.NewInstructionPosition(1, 1, "dummyFile"),
 		testServiceId,
 		testFactName,
 	)

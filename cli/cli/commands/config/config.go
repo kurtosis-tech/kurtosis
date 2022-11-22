@@ -12,6 +12,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// ConfigCmd Suppressing exhaustruct requirement because this struct has ~40 properties
+// nolint: exhaustruct
 var ConfigCmd = &cobra.Command{
 	Use:   command_str_consts.ConfigCmdStr,
 	Short: "Manage configurations",
@@ -22,4 +24,3 @@ func init() {
 	ConfigCmd.AddCommand(init_config.InitCmd.MustGetCobraCommand())
 	ConfigCmd.AddCommand(config_path.PathCmd.MustGetCobraCommand())
 }
-

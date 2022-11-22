@@ -2,6 +2,7 @@ package startosis_engine
 
 import (
 	"context"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/facts_engine"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/import_module"
@@ -64,8 +65,9 @@ func NewStartosisInterpreter(serviceNetwork service_network.ServiceNetwork, modu
 	return &StartosisInterpreter{
 		mutex:                 &sync.Mutex{},
 		serviceNetwork:        serviceNetwork,
-		moduleContentProvider: moduleContentProvider,
+		factsEngine:           nil,
 		moduleGlobalsCache:    make(map[string]*startosis_modules.ModuleCacheEntry),
+		moduleContentProvider: moduleContentProvider,
 		protoFileStore:        proto_compiler.NewProtoFileStore(moduleContentProvider),
 	}
 }
@@ -86,18 +88,18 @@ func NewStartosisInterpreterWithFacts(serviceNetwork service_network.ServiceNetw
 //     code, inconsistent). Can be nil if the script was successfully interpreted
 //   - The list of Kurtosis instructions that was generated based on the interpretation of the script. It can be empty
 //     if the interpretation of the script failed
-func (interpreter *StartosisInterpreter) Interpret(ctx context.Context, moduleId string, serializedStartosis string, serializedJsonParams string) (*startosis_errors.InterpretationError, []kurtosis_instruction.KurtosisInstruction) {
+func (interpreter *StartosisInterpreter) Interpret(ctx context.Context, moduleId string, serializedStartosis string, serializedJsonParams string) ([]kurtosis_instruction.KurtosisInstruction, *kurtosis_core_rpc_api_bindings.KurtosisInterpretationError) {
 	interpreter.mutex.Lock()
 	defer interpreter.mutex.Unlock()
 	var instructionsQueue []kurtosis_instruction.KurtosisInstruction
 
 	_, err := interpreter.interpretInternal(moduleId, serializedStartosis, serializedJsonParams, &instructionsQueue)
 	if err != nil {
-		return generateInterpretationError(err), nil
+		return nil, generateInterpretationError(err).ToAPIType()
 	}
 
 	logrus.Debugf("Successfully interpreted Startosis code into instruction queue: \n%s", instructionsQueue)
-	return nil, instructionsQueue
+	return instructionsQueue, nil
 }
 
 func (interpreter *StartosisInterpreter) interpretInternal(moduleId string, serializedStartosis string, serializedJsonParams string, instructionsQueue *[]kurtosis_instruction.KurtosisInstruction) (starlark.StringDict, error) {
@@ -116,9 +118,10 @@ func (interpreter *StartosisInterpreter) interpretInternal(moduleId string, seri
 
 func (interpreter *StartosisInterpreter) buildBindings(threadName string, instructionsQueue *[]kurtosis_instruction.KurtosisInstruction) (*starlark.Thread, *starlark.StringDict) {
 	thread := &starlark.Thread{
-		Name:  threadName,
-		Load:  makeLoadFunction(),
-		Print: makePrintFunction(),
+		Name:       threadName,
+		Print:      makePrintFunction(),
+		Load:       makeLoadFunction(),
+		OnMaxSteps: nil,
 	}
 
 	recursiveInterpretForModuleLoading := func(moduleId string, serializedStartosis string) (starlark.StringDict, error) {

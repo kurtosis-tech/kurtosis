@@ -17,30 +17,30 @@ import (
 )
 
 const (
-	tcCommand                   = "tc"
-	tcAddCommand                = "add"
-	tcReplaceCommand            = "replace"
-	tcDeleteCommand             = "del"
-	tcQdiscCommand              = "qdisc"
-	tcQdiscTypeHtb              = "htb"
-	tcQdiscTypeNetem            = "netem"
-	tcQdiscTypeNetemOptionLoss  = "loss"
-	tcClassCommand              = "class"
-	tcFilterCommand             = "filter"
-	tcFilterProtocolCommand     = "protocol"
-	tcFilterIPCommand           = "ip"
-	tcFilterPrioCommand         = "prio"
-	tcFilterFlowIDCommand       = "flowid"
-	tcFilterMatchCommand        = "match"
-	tcFilterBasicTypeCommand    = "basic"
-	tcFilterIPMatchTypeCommand  = "ip"
-	tcFilterIPDestCommand       = "dst"
-	tcU32FilterTypeCommand      = "u32"
-	tcDeviceCommand             = "dev"
-	tcHandleCommand             = "handle"
-	tcParentCommand             = "parent"
-	tcClassIDCommand            = "classid"
-	tcRateCommand               = "rate"
+	tcCommand                  = "tc"
+	tcAddCommand               = "add"
+	tcReplaceCommand           = "replace"
+	tcDeleteCommand            = "del"
+	tcQdiscCommand             = "qdisc"
+	tcQdiscTypeHtb             = "htb"
+	tcQdiscTypeNetem           = "netem"
+	tcQdiscTypeNetemOptionLoss = "loss"
+	tcClassCommand             = "class"
+	tcFilterCommand            = "filter"
+	tcFilterProtocolCommand    = "protocol"
+	tcFilterIPCommand          = "ip"
+	tcFilterPrioCommand        = "prio"
+	tcFilterFlowIDCommand      = "flowid"
+	tcFilterMatchCommand       = "match"
+	tcFilterBasicTypeCommand   = "basic"
+	tcFilterIPMatchTypeCommand = "ip"
+	tcFilterIPDestCommand      = "dst"
+	tcU32FilterTypeCommand     = "u32"
+	tcDeviceCommand            = "dev"
+	tcHandleCommand            = "handle"
+	tcParentCommand            = "parent"
+	tcClassIDCommand           = "classid"
+	tcRateCommand              = "rate"
 
 	rootQdiscName                 = "root"
 	defaultDockerNetworkInterface = "eth1"
@@ -114,6 +114,7 @@ func NewStandardNetworkingSidecarWrapper(
 	return &StandardNetworkingSidecarWrapper{
 		mutex:             &sync.Mutex{},
 		networkingSidecar: networkingSidecar,
+		sidecarIpAddr:     nil,
 		qdiscInUse:        undefinedQdiscId,
 		execCmdExecutor:   execCmdExecutor,
 	}, nil

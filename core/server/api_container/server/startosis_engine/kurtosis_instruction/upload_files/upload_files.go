@@ -32,7 +32,7 @@ type UploadFilesInstruction struct {
 	serviceNetwork service_network.ServiceNetwork
 	provider       startosis_modules.ModuleContentProvider
 
-	position     kurtosis_instruction.InstructionPosition
+	position     *kurtosis_instruction.InstructionPosition
 	srcPath      string
 	artifactUuid enclave_data_directory.FilesArtifactUUID
 
@@ -50,13 +50,14 @@ func GenerateUploadFilesBuiltin(instructionsQueue *[]kurtosis_instruction.Kurtos
 		if interpretationError != nil {
 			return nil, interpretationError
 		}
-		uploadInstruction := NewUploadFilesInstruction(*shared_helpers.GetCallerPositionFromThread(thread), serviceNetwork, provider, srcPath, pathOnDisk, artifactUuid)
+		instructionPosition := shared_helpers.GetCallerPositionFromThread(thread)
+		uploadInstruction := NewUploadFilesInstruction(instructionPosition, serviceNetwork, provider, srcPath, pathOnDisk, artifactUuid)
 		*instructionsQueue = append(*instructionsQueue, uploadInstruction)
 		return starlark.String(artifactUuid), nil
 	}
 }
 
-func NewUploadFilesInstruction(position kurtosis_instruction.InstructionPosition, serviceNetwork service_network.ServiceNetwork, provider startosis_modules.ModuleContentProvider, srcPath string, pathOnDisk string, artifactUuid enclave_data_directory.FilesArtifactUUID) *UploadFilesInstruction {
+func NewUploadFilesInstruction(position *kurtosis_instruction.InstructionPosition, serviceNetwork service_network.ServiceNetwork, provider startosis_modules.ModuleContentProvider, srcPath string, pathOnDisk string, artifactUuid enclave_data_directory.FilesArtifactUUID) *UploadFilesInstruction {
 	return &UploadFilesInstruction{
 		position:       position,
 		serviceNetwork: serviceNetwork,
@@ -68,11 +69,11 @@ func NewUploadFilesInstruction(position kurtosis_instruction.InstructionPosition
 }
 
 func (instruction *UploadFilesInstruction) GetPositionInOriginalScript() *kurtosis_instruction.InstructionPosition {
-	return &instruction.position
+	return instruction.position
 }
 
 func (instruction *UploadFilesInstruction) GetCanonicalInstruction() string {
-	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(UploadFilesBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs(), &instruction.position)
+	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(UploadFilesBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs(), instruction.position)
 }
 
 func (instruction *UploadFilesInstruction) Execute(_ context.Context) (*string, error) {
@@ -89,7 +90,7 @@ func (instruction *UploadFilesInstruction) Execute(_ context.Context) (*string, 
 }
 
 func (instruction *UploadFilesInstruction) String() string {
-	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(UploadFilesBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs(), &instruction.position)
+	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(UploadFilesBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs(), instruction.position)
 }
 
 func (instruction *UploadFilesInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {

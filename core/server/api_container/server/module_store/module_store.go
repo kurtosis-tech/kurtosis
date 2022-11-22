@@ -190,5 +190,8 @@ func (store *ModuleStore) GetModules() map[module.ModuleID]bool {
 }
 
 func getModuleByModuleGUIDFilter(guid module.ModuleGUID) *module.ModuleFilters {
-	return &module.ModuleFilters{GUIDs: map[module.ModuleGUID]bool{guid: true}}
+	return &module.ModuleFilters{
+		GUIDs:    map[module.ModuleGUID]bool{guid: true},
+		Statuses: nil,
+	}
 }

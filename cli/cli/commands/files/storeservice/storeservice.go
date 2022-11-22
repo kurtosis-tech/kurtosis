@@ -40,6 +40,7 @@ var FilesStoreServiceCmd = &engine_consuming_kurtosis_command.EngineConsumingKur
 	),
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
 	EngineClientContextKey:    engineClientCtxKey,
+	Flags:                     nil,
 	Args: []*args.ArgConfig{
 		enclave_id_arg.NewEnclaveIDArg(
 			enclaveIdArgKey,

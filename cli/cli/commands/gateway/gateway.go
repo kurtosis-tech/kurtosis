@@ -17,6 +17,8 @@ const (
 	emptyConfigMasterUrl = ""
 )
 
+// GatewayCmd Suppressing exhaustruct requirement because this struct has ~40 properties
+// nolint: exhaustruct
 var GatewayCmd = &cobra.Command{
 	Use:   command_str_consts.GatewayCmdStr,
 	Short: "Starts a local gateway to a Kurtosis cluster running in Kubernetes",
