@@ -15,7 +15,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/kurtosis_print"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/remove_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/render_templates"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/store_files_from_service"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/store_service_files"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/upload_files"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_modules/mock_module_content_provider"
@@ -803,7 +803,7 @@ func TestStartosisInterpreter_StoreFileFromService(t *testing.T) {
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
 print("Storing file from service!")
-artifact_uuid=store_file_from_service(service_id="example-datastore-server", src_path="/foo/bar", artifact_uuid="` + string(testArtifactUuid) + `")
+artifact_uuid=store_service_files(service_id="example-datastore-server", src="/foo/bar", artifact_id="` + string(testArtifactUuid) + `")
 print(artifact_uuid)
 `
 
@@ -811,9 +811,9 @@ print(artifact_uuid)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 3)
 
-	storeInstruction := store_files_from_service.NewStoreFilesFromServiceInstruction(
+	storeInstruction := store_service_files.NewStoreServiceFilesInstruction(
 		testServiceNetwork,
-		kurtosis_instruction.NewInstructionPosition(3, 38, ModuleIdPlaceholderForStandaloneScripts),
+		kurtosis_instruction.NewInstructionPosition(3, 34, ModuleIdPlaceholderForStandaloneScripts),
 		"example-datastore-server",
 		"/foo/bar",
 		testArtifactUuid,
@@ -1155,7 +1155,7 @@ func TestStartosisInterpreter_ThreeLevelNestedInstructionPositionTest(t *testing
 	storeFileContent := `
 def store_for_me():
 	print("In the store files instruction")
-	artifact_uuid=store_file_from_service(service_id="example-datastore-server", src_path="/foo/bar", artifact_uuid = "` + string(testArtifactUuid) + `")
+	artifact_uuid=store_service_files(service_id="example-datastore-server", src="/foo/bar", artifact_id = "` + string(testArtifactUuid) + `")
 	return artifact_uuid
 `
 
@@ -1186,9 +1186,9 @@ print(uuid)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 4)
 
-	storeInstruction := store_files_from_service.NewStoreFilesFromServiceInstruction(
+	storeInstruction := store_service_files.NewStoreServiceFilesInstruction(
 		testServiceNetwork,
-		kurtosis_instruction.NewInstructionPosition(4, 39, storeFileDefinitionPath),
+		kurtosis_instruction.NewInstructionPosition(4, 35, storeFileDefinitionPath),
 		"example-datastore-server",
 		"/foo/bar",
 		testArtifactUuid,

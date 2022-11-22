@@ -51,8 +51,8 @@ add_service(service_id = DATASTORE_SERVICE_ID, config = config)
 print("Service " + DATASTORE_SERVICE_ID + " deployed successfully.")
 exec(service_id = DATASTORE_SERVICE_ID, command = ["touch", FILE_TO_BE_CREATED])
 
-artifact_uuid = store_file_from_service(service_id = DATASTORE_SERVICE_ID, src_path = FILE_TO_BE_CREATED)
-print("Stored file at " + artifact_uuid)
+artifact_id = store_service_files(service_id = DATASTORE_SERVICE_ID, src = FILE_TO_BE_CREATED)
+print("Stored file at " + artifact_id)
 
 template_str = read_file(TEMPLATE_FILE_TO_RENDER)
 
@@ -76,7 +76,7 @@ dependent_config = struct(
         DATASTORE_PORT_ID: struct(number = DATASTORE_PORT_NUMBER, protocol = DATASTORE_PORT_PROTOCOL)
     },
 	files = {
-		artifact_uuid : PATH_TO_MOUNT_ON_DEPENDENT_SERVICE,
+		artifact_id : PATH_TO_MOUNT_ON_DEPENDENT_SERVICE,
 		rendered_artifact : PATH_TO_MOUNT_RENDERED_CONFIG
 	}
 )

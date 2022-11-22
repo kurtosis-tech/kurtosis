@@ -15,7 +15,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/kurtosis_print"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/remove_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/render_templates"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/store_files_from_service"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/store_service_files"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/upload_files"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/wait"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
@@ -136,15 +136,15 @@ func (interpreter *StartosisInterpreter) buildBindings(threadName string, instru
 		time.Module.Name:                  time.Module,
 
 		// Kurtosis instructions - will push instructions to the queue that will affect the enclave state at execution
-		add_service.AddServiceBuiltinName:                        starlark.NewBuiltin(add_service.AddServiceBuiltinName, add_service.GenerateAddServiceBuiltin(instructionsQueue, interpreter.serviceNetwork, interpreter.factsEngine)),
-		exec.ExecBuiltinName:                                     starlark.NewBuiltin(exec.ExecBuiltinName, exec.GenerateExecBuiltin(instructionsQueue, interpreter.serviceNetwork)),
-		kurtosis_print.PrintBuiltinName:                          starlark.NewBuiltin(kurtosis_print.PrintBuiltinName, kurtosis_print.GeneratePrintBuiltin(instructionsQueue)),
-		remove_service.RemoveServiceBuiltinName:                  starlark.NewBuiltin(remove_service.RemoveServiceBuiltinName, remove_service.GenerateRemoveServiceBuiltin(instructionsQueue, interpreter.serviceNetwork)),
-		render_templates.RenderTemplatesBuiltinName:              starlark.NewBuiltin(render_templates.RenderTemplatesBuiltinName, render_templates.GenerateRenderTemplatesBuiltin(instructionsQueue, interpreter.serviceNetwork)),
-		store_files_from_service.StoreFileFromServiceBuiltinName: starlark.NewBuiltin(store_files_from_service.StoreFileFromServiceBuiltinName, store_files_from_service.GenerateStoreFilesFromServiceBuiltin(instructionsQueue, interpreter.serviceNetwork)),
-		define_fact.DefineFactBuiltinName:                        starlark.NewBuiltin(define_fact.DefineFactBuiltinName, define_fact.GenerateDefineFactBuiltin(instructionsQueue, interpreter.factsEngine)),
-		upload_files.UploadFilesBuiltinName:                      starlark.NewBuiltin(upload_files.UploadFilesBuiltinName, upload_files.GenerateUploadFilesBuiltin(instructionsQueue, interpreter.moduleContentProvider, interpreter.serviceNetwork)),
-		wait.WaitBuiltinName:                                     starlark.NewBuiltin(wait.WaitBuiltinName, wait.GenerateWaitBuiltin(instructionsQueue, interpreter.factsEngine)),
+		add_service.AddServiceBuiltinName:                starlark.NewBuiltin(add_service.AddServiceBuiltinName, add_service.GenerateAddServiceBuiltin(instructionsQueue, interpreter.serviceNetwork, interpreter.factsEngine)),
+		exec.ExecBuiltinName:                             starlark.NewBuiltin(exec.ExecBuiltinName, exec.GenerateExecBuiltin(instructionsQueue, interpreter.serviceNetwork)),
+		kurtosis_print.PrintBuiltinName:                  starlark.NewBuiltin(kurtosis_print.PrintBuiltinName, kurtosis_print.GeneratePrintBuiltin(instructionsQueue)),
+		remove_service.RemoveServiceBuiltinName:          starlark.NewBuiltin(remove_service.RemoveServiceBuiltinName, remove_service.GenerateRemoveServiceBuiltin(instructionsQueue, interpreter.serviceNetwork)),
+		render_templates.RenderTemplatesBuiltinName:      starlark.NewBuiltin(render_templates.RenderTemplatesBuiltinName, render_templates.GenerateRenderTemplatesBuiltin(instructionsQueue, interpreter.serviceNetwork)),
+		store_service_files.StoreServiceFilesBuiltinName: starlark.NewBuiltin(store_service_files.StoreServiceFilesBuiltinName, store_service_files.GenerateStoreServiceFilesBuiltin(instructionsQueue, interpreter.serviceNetwork)),
+		define_fact.DefineFactBuiltinName:                starlark.NewBuiltin(define_fact.DefineFactBuiltinName, define_fact.GenerateDefineFactBuiltin(instructionsQueue, interpreter.factsEngine)),
+		upload_files.UploadFilesBuiltinName:              starlark.NewBuiltin(upload_files.UploadFilesBuiltinName, upload_files.GenerateUploadFilesBuiltin(instructionsQueue, interpreter.moduleContentProvider, interpreter.serviceNetwork)),
+		wait.WaitBuiltinName:                             starlark.NewBuiltin(wait.WaitBuiltinName, wait.GenerateWaitBuiltin(instructionsQueue, interpreter.factsEngine)),
 
 		// Kurtosis custom builtins - pure interpretation-time helpers. Do not add any instructions to the queue
 		import_module.ImportModuleBuiltinName: starlark.NewBuiltin(import_module.ImportModuleBuiltinName, import_module.GenerateImportBuiltin(recursiveInterpretForModuleLoading, interpreter.moduleContentProvider, interpreter.moduleGlobalsCache)),
