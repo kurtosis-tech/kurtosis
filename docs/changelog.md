@@ -1,5 +1,7 @@
 # TBD
 
+# 0.53.6
+
 # 0.53.5
 ### Changes
 - Error types in ExecuteStartosisResponse type is now a union type, to better represent they are exclusive and prepare for transition to streaming
