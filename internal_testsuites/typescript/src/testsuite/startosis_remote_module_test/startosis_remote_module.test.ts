@@ -6,6 +6,7 @@ import { createEnclave } from "../../test_helpers/enclave_setup";
 import {
     validateDataStoreServiceIsHealthy,
 } from "../../test_helpers/test_helpers";
+import {generateScriptOutput} from "../../test_helpers/startosis_helpers";
 
 const TEST_NAME = "module"
 
@@ -48,18 +49,11 @@ Module datastore_army_module deployed successfully.
         if (expectedOutput !== executeStartosisRemoteModuleValue.getSerializedScriptOutput()) {
             throw err(new Error(`Expected output to be match '${expectedOutput} got '${executeStartosisRemoteModuleValue.getSerializedScriptOutput()}'`))
         }
+        expect(generateScriptOutput(executeStartosisRemoteModuleValue.getKurtosisInstructionsList())).toEqual(expectedOutput)
 
-        if (executeStartosisRemoteModuleValue.getInterpretationError() !== "") {
-            throw err(new Error(`Expected Empty Interpretation Error got '${executeStartosisRemoteModuleValue.getInterpretationError()}'`))
-        }
-
-        if (executeStartosisRemoteModuleValue.getExecutionError() !== "") {
-            throw err(new Error(`Expected Empty Execution Error got '${executeStartosisRemoteModuleValue.getExecutionError()}'`))
-        }
-
-        if (executeStartosisRemoteModuleValue.getValidationErrorsList().length != 0) {
-            throw err(new Error(`Expected Empty Validation Error got '${executeStartosisRemoteModuleValue.getValidationErrorsList()}'`))
-        }
+        expect(executeStartosisRemoteModuleValue.getInterpretationError()).toBeUndefined()
+        expect(executeStartosisRemoteModuleValue.getExecutionError()).toBeUndefined()
+        expect(executeStartosisRemoteModuleValue.getValidationErrors()).toBeUndefined()
         log.info("Successfully ran Startosis Module")
 
         log.info("Checking that services are all healthy")
