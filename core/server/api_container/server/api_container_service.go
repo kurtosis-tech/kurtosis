@@ -861,7 +861,7 @@ func (apicService ApiContainerService) runStartosis(dryRun bool, moduleId string
 			// in addition to send the msg to the RPC stream, we also print the lines to the APIC logs at debug level
 			logrus.Debugf("Received response line from Startosis runner: '%v'", responseLine)
 			if err := stream.SendMsg(responseLine); err != nil {
-				logrus.Errorf("Kurtosis response line sent through the channel but could not be forwarded to API Container client. Some log lines will not be printed in the CLI the triggered this execution.\nResponse line was: \n%v. Error was: \n%v", responseLine, err.Error())
+				logrus.Errorf("Kurtosis response line sent through the channel but could not be forwarded to API Container client. Some log lines will not be returned to the user.\nResponse line was: \n%v. Error was: \n%v", responseLine, err.Error())
 			}
 		}
 	}

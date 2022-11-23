@@ -24,7 +24,7 @@ service ApiContainerService {
 
   // Executes a startosis script on the user's behalf
   // Will soon be deprecated in favour of its streamed version ExecuteKurtosisScript
-  rpc ExecuteStartosisScript(ExecuteStartosisScriptArgs) returns (ExecuteStartosisResponse) {}
+  rpc ExecuteStartosisScript(ExecuteStartosisScriptArgs) returns (ExecuteStartosisResponse) {};
 
   // Executes a startosis script on the user's behalf
   rpc ExecuteKurtosisScript(ExecuteStartosisScriptArgs) returns (stream KurtosisResponseLine) {};
