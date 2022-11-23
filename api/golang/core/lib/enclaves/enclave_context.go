@@ -41,7 +41,7 @@ const (
 	//  or it was repartitioned away)
 	defaultPartitionId PartitionID = ""
 
-	modFilename = "kurtosis.mod"
+	kurtosisYmlFilename = "kurtosis.yml"
 
 	ensureCompressedFileIsLesserThanGRPCLimit = true
 )
@@ -148,20 +148,20 @@ func (enclaveCtx *EnclaveContext) ExecuteStartosisScript(serializedScript string
 }
 
 func (enclaveCtx *EnclaveContext) ExecuteStartosisModule(moduleRootPath string, serializedParams string, dryRun bool) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse, error) {
-	kurtosisModFilepath := path.Join(moduleRootPath, modFilename)
+	kurtosisYmlFilepath := path.Join(moduleRootPath, kurtosisYmlFilename)
 
-	kurtosisMod, err := parseKurtosisMod(kurtosisModFilepath)
+	kurtosisYml, err := parseKurtosisYml(kurtosisYmlFilepath)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "There was an error parsing the '%v' at '%v'", modFilename, moduleRootPath)
+		return nil, stacktrace.Propagate(err, "There was an error parsing the '%v' at '%v'", kurtosisYmlFilename, moduleRootPath)
 	}
 
-	logrus.Infof("Compressing module '%v'  at '%v' for upload", kurtosisMod.Module.ModuleName, moduleRootPath)
+	logrus.Infof("Compressing module '%v'  at '%v' for upload", kurtosisYml.Module.ModuleName, moduleRootPath)
 	compressedModule, err := shared_utils.CompressPath(moduleRootPath, ensureCompressedFileIsLesserThanGRPCLimit)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "There was an error compressing module '%v' before upload", moduleRootPath)
 	}
-	executeStartosisModuleArgs := binding_constructors.NewExecuteStartosisModuleArgs(kurtosisMod.Module.ModuleName, compressedModule, serializedParams, dryRun)
-	logrus.Infof("Uploading and executing module '%v'", kurtosisMod.Module.ModuleName)
+	executeStartosisModuleArgs := binding_constructors.NewExecuteStartosisModuleArgs(kurtosisYml.Module.ModuleName, compressedModule, serializedParams, dryRun)
+	logrus.Infof("Uploading and executing module '%v'", kurtosisYml.Module.ModuleName)
 	executeStartosisResponse, err := enclaveCtx.client.ExecuteStartosisModule(context.Background(), executeStartosisModuleArgs)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Unexpected error happened executing Startosis module \n%v", moduleRootPath)

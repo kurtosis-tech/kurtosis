@@ -68,7 +68,7 @@ import {
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import {TemplateAndData} from "./template_and_data";
 import * as path from "path";
-import {parseKurtosisMod} from "./kurtosis_mod";
+import {parseKurtosisYml} from "./kurtosis_yml";
 
 export type EnclaveID = string;
 export type PartitionID = string;
@@ -77,7 +77,7 @@ export type PartitionID = string;
 //  or it was repartitioned away)
 const DEFAULT_PARTITION_ID: PartitionID = "";
 
-const KURTOSIS_MOD_FILENAME = "kurtosis.mod";
+const KURTOSIS_YML_FILENAME = "kurtosis.yml";
 
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
@@ -225,13 +225,13 @@ export class EnclaveContext {
         serializedParams: string,
         dryRun: boolean,
     ): Promise<Result<ExecuteStartosisResponse, Error>> {
-        const kurtosisModFilepath = path.join(moduleRootPath, KURTOSIS_MOD_FILENAME)
+        const kurtosisYmlFilepath = path.join(moduleRootPath, KURTOSIS_YML_FILENAME)
 
-        const  resultParseKurtosisMod = await parseKurtosisMod(kurtosisModFilepath)
-        if (resultParseKurtosisMod.isErr()) {
-            return err(resultParseKurtosisMod.error)
+        const  resultParseKurtosisYml = await parseKurtosisYml(kurtosisYmlFilepath)
+        if (resultParseKurtosisYml.isErr()) {
+            return err(resultParseKurtosisYml.error)
         }
-        const kurtosisMod = resultParseKurtosisMod.value
+        const kurtosisYml = resultParseKurtosisYml.value
 
         const archiverResponse = await this.genericTgzArchiver.createTgzByteArray(moduleRootPath)
         if (archiverResponse.isErr()){
@@ -240,7 +240,7 @@ export class EnclaveContext {
 
         const args = new ExecuteStartosisModuleArgs;
         args.setLocal(archiverResponse.value)
-        args.setModuleId(kurtosisMod.module.name)
+        args.setModuleId(kurtosisYml.module.name)
         args.setSerializedParams(serializedParams)
         args.setDryRun(dryRun)
         const resultModuleExecution : Result<ExecuteStartosisResponse, Error> = await this.backend.executeStartosisModule(args)
