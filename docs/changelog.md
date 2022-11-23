@@ -4,6 +4,7 @@
 
 ### Fixes
 - Fixed the `isEnclaveIdInUse` for the enclave validator, now uses on runtime for `is-key-in-map`
+- Fixed the error that would happen if there was a missing `kurtosis.mod` file at the root of the module
 
 # 0.53.6
 
