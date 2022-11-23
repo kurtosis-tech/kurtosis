@@ -31,7 +31,7 @@ func GenerateGetValueBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisI
 			return nil, interpretationErr
 		}
 		resultUuid := recipeExecutor.CreateValue(httpRequestRecipe)
-		returnValue := recipe_executor.CreateStarlarkDictFromHttpRequestRuntimeValue(starlark.String(fmt.Sprintf(shared_helpers.RuntimeValueReplacementPlaceholderFormat, resultUuid, "body")), starlark.String(fmt.Sprintf(shared_helpers.RuntimeValueReplacementPlaceholderFormat, resultUuid, "code")))
+		returnValue := recipe_executor.CreateStarlarkStructFromHttpRequestRuntimeValue(starlark.String(fmt.Sprintf(shared_helpers.RuntimeValueReplacementPlaceholderFormat, resultUuid, "body")), starlark.String(fmt.Sprintf(shared_helpers.RuntimeValueReplacementPlaceholderFormat, resultUuid, "code")))
 		getValueInstruction := NewGetValueInstruction(serviceNetwork, *shared_helpers.GetCallerPositionFromThread(thread), recipeExecutor, resultUuid)
 		*instructionsQueue = append(*instructionsQueue, getValueInstruction)
 		return returnValue, nil

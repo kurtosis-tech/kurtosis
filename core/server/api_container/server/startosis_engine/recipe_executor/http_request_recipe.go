@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
+	"go.starlark.net/starlarkstruct"
 	"io"
 )
 
@@ -78,9 +79,12 @@ func (recipe *HttpRequestRecipe) Execute(ctx context.Context, serviceNetwork ser
 	}, nil
 }
 
-func CreateStarlarkDictFromHttpRequestRuntimeValue(bodyMagicString starlark.String, codeMagicString starlark.String) *starlark.Dict {
-	dict := &starlark.Dict{}
-	_ = dict.SetKey(starlark.String("body"), bodyMagicString)
-	_ = dict.SetKey(starlark.String("code"), codeMagicString)
-	return dict
+func CreateStarlarkStructFromHttpRequestRuntimeValue(bodyMagicString starlark.String, codeMagicString starlark.String) *starlarkstruct.Struct {
+	return starlarkstruct.FromKeywords(
+		starlarkstruct.Default,
+		[]starlark.Tuple{
+			{starlark.String("body"), bodyMagicString},
+			{starlark.String("code"), codeMagicString},
+		},
+	)
 }
