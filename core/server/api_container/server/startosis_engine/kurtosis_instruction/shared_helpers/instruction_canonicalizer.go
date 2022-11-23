@@ -100,12 +100,10 @@ func canonicalizeArgValue(genericArgValue starlark.Value) string {
 		}
 		return CanonicalizeInstruction(argValue.Type(), kurtosis_instruction.NoArgs, structKwargs)
 	default:
-		stringifiedArg = fmt.Sprintf("\"UNSUPPORTED_TYPE['%v']\"", argValue)
+		argValueStr := fmt.Sprintf("UNSUPPORTED_TYPE[%s]", argValue)
+		stringifiedArg = fmt.Sprintf("%q", argValueStr)
 	}
-
-	var resultBuffer strings.Builder
-	resultBuffer.WriteString(stringifiedArg)
-	return resultBuffer.String()
+	return stringifiedArg
 }
 
 func stringifyIterable(iterable starlark.Iterable, length int) []string {
