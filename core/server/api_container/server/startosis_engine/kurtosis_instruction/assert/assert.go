@@ -101,7 +101,7 @@ func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starl
 	var (
 		runtimeValueArg starlark.String
 		assertionArg    starlark.String
-		target          starlark.String
+		target          starlark.Comparable
 	)
 
 	if err := starlark.UnpackArgs(b.Name(), args, kwargs, runtimeValueArgName, &runtimeValueArg, assertionArgName, &assertionArg, targetArgName, &target); err != nil {

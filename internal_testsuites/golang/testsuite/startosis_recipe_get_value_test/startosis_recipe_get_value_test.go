@@ -31,8 +31,7 @@ response = get_value(recipe)
 print(response["body"])
 print(response["code"])
 assert(response["code"], "==", 200)
-assert(response["body"], "==", "<html><body><h1>It works!</h1></body></html>
-")
+assert(response["body"], "==", "<html><body><h1>It works!</h1></body></html>")
 `
 )
 
