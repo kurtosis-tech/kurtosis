@@ -150,6 +150,7 @@ func GetRuntimeValueFromString(originalString string, recipeEngine *recipe_execu
 	matches := compiledRuntimeValueReplacementRegex.FindAllStringSubmatch(originalString, unlimitedMatches)
 	if len(matches) != 1 {
 		return nil, stacktrace.NewError("More than one match was found on regexp '%v'. Match count '%v'", compiledRuntimeValueReplacementRegex.String(), len(matches))
+
 	}
 	match := matches[0]
 	runtimeValueMatchIndex := compiledRuntimeValueReplacementRegex.SubexpIndex(runtimeValueSubgroupName)

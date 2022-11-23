@@ -21,8 +21,8 @@ const (
 	targetArgName       = "value"
 )
 
-var stringTokenToStarlarkToken = map[string]syntax.Token{
-	"==": syntax.EQ,
+var stringTokenToComparisonStarlarkToken = map[string]syntax.Token{
+	"==": syntax.EQL,
 	"!=": syntax.NEQ,
 	">=": syntax.GE,
 	">":  syntax.GT,
@@ -46,12 +46,12 @@ func GenerateAssertBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisIns
 type AssertInstruction struct {
 	position       kurtosis_instruction.InstructionPosition
 	recipeExecutor *recipe_executor.RecipeExecutor
-	runtimeValue   starlark.String
-	assertion      starlark.String
+	runtimeValue   string
+	assertion      string
 	target         starlark.Comparable
 }
 
-func NewAssertInstruction(position kurtosis_instruction.InstructionPosition, recipeExecutor *recipe_executor.RecipeExecutor, runtimeValue starlark.String, assertion starlark.String, target starlark.Comparable) *AssertInstruction {
+func NewAssertInstruction(position kurtosis_instruction.InstructionPosition, recipeExecutor *recipe_executor.RecipeExecutor, runtimeValue string, assertion string, target starlark.Comparable) *AssertInstruction {
 	return &AssertInstruction{
 		position:       position,
 		recipeExecutor: recipeExecutor,
@@ -70,16 +70,37 @@ func (instruction *AssertInstruction) GetCanonicalInstruction() string {
 }
 
 func (instruction *AssertInstruction) Execute(ctx context.Context) (*string, error) {
-	currentValue, err := shared_helpers.GetRuntimeValueFromString(instruction.runtimeValue.String(), instruction.recipeExecutor)
+	currentValue, err := shared_helpers.GetRuntimeValueFromString(instruction.runtimeValue, instruction.recipeExecutor)
 	if err != nil {
 		return nil, err
 	}
-	result, err := currentValue.CompareSameType(stringTokenToStarlarkToken[string(instruction.assertion)], instruction.target, 1)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Assert comparison failed '%v' '%v' '%v'", currentValue, instruction.assertion, instruction.target)
-	}
-	if !result {
-		return nil, stacktrace.Propagate(err, "Assertion failed '%v' '%v' '%v'", currentValue, instruction.assertion, instruction.target)
+	if comparisonToken, found := stringTokenToComparisonStarlarkToken[instruction.assertion]; found {
+		result, err := currentValue.CompareSameType(comparisonToken, instruction.target, 1)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Assert comparison failed '%v' '%v' '%v'", currentValue, instruction.assertion, instruction.target)
+		}
+		if !result {
+			return nil, stacktrace.Propagate(err, "Assertion failed '%v' '%v' '%v'", currentValue, instruction.assertion, instruction.target)
+		}
+	} else {
+		listTarget := instruction.target.(*starlark.List)
+		inList := false
+		for i := 0; i < listTarget.Len(); i++ {
+			if listTarget.Index(i) == currentValue {
+				inList = true
+				break
+			}
+		}
+		switch instruction.assertion {
+		case "IN":
+			if !inList {
+				return nil, stacktrace.NewError("Assertion failed '%v' '%v' '%v'", currentValue, instruction.assertion, instruction.target)
+			}
+		case "NOT_IN":
+			if !inList {
+				return nil, stacktrace.NewError("Assertion failed '%v' '%v' '%v'", currentValue, instruction.assertion, instruction.target)
+			}
+		}
 	}
 	return nil, nil
 }
@@ -96,17 +117,26 @@ func (instruction *AssertInstruction) getKwargs() starlark.StringDict {
 	return starlark.StringDict{}
 }
 
-func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.String, starlark.String, starlark.Comparable, *startosis_errors.InterpretationError) {
+func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (string, string, starlark.Comparable, *startosis_errors.InterpretationError) {
 
 	var (
 		runtimeValueArg starlark.String
 		assertionArg    starlark.String
-		target          starlark.Comparable
+		targetArg       starlark.Comparable
 	)
 
-	if err := starlark.UnpackArgs(b.Name(), args, kwargs, runtimeValueArgName, &runtimeValueArg, assertionArgName, &assertionArg, targetArgName, &target); err != nil {
+	if err := starlark.UnpackArgs(b.Name(), args, kwargs, runtimeValueArgName, &runtimeValueArg, assertionArgName, &assertionArg, targetArgName, &targetArg); err != nil {
 		return "", "", nil, startosis_errors.NewInterpretationError(err.Error())
 	}
+	assertion := string(assertionArg)
+	runtimeValue := string(runtimeValueArg)
 
-	return runtimeValueArg, assertionArg, target, nil
+	if _, found := stringTokenToComparisonStarlarkToken[assertion]; !found && assertionArg != "IN" && assertion != "NOT_IN" {
+		return "", "", nil, startosis_errors.NewInterpretationError("'%v' is not a valid assertion", assertionArg)
+	}
+	if _, ok := targetArg.(*starlark.List); (assertionArg == "IN" || assertionArg == "NOT_IN") && !ok {
+		return "", "", nil, startosis_errors.NewInterpretationError("'%v' assertion requires list, got '%v'", assertionArg, targetArg.Type())
+	}
+
+	return runtimeValue, assertion, targetArg, nil
 }
