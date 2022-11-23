@@ -4,17 +4,18 @@ import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"go.starlark.net/starlark"
 )
 
 type RecipeExecutor struct {
 	recipeMap       map[string]*HttpRequestRecipe
-	recipeResultMap map[string]map[string]string
+	recipeResultMap map[string]map[string]starlark.Comparable
 }
 
 func NewRecipeExecutor() *RecipeExecutor {
 	return &RecipeExecutor{
 		recipeMap:       make(map[string]*HttpRequestRecipe),
-		recipeResultMap: make(map[string]map[string]string),
+		recipeResultMap: make(map[string]map[string]starlark.Comparable),
 	}
 }
 
@@ -38,6 +39,6 @@ func (re *RecipeExecutor) ExecuteValue(ctx context.Context, serviceNetwork servi
 	return nil
 }
 
-func (re *RecipeExecutor) GetValue(uuid string) map[string]string {
+func (re *RecipeExecutor) GetValue(uuid string) map[string]starlark.Comparable {
 	return re.recipeResultMap[uuid]
 }

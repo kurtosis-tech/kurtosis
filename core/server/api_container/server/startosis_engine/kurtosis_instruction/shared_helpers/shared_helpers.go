@@ -141,7 +141,25 @@ func ReplaceRuntimeValueInString(originalString string, recipeEngine *recipe_exe
 			return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", serviceIdSubgroupName, compiledFactReplacementRegex.String())
 		}
 		allMatch := match[allMatchIndex]
-		replacedString = strings.Replace(replacedString, allMatch, runtimeValue[match[runtimeValueFieldMatchIndex]], singleMatch)
+		replacedString = strings.Replace(replacedString, allMatch, runtimeValue[match[runtimeValueFieldMatchIndex]].String(), singleMatch)
 	}
 	return replacedString, nil
+}
+
+func GetRuntimeValueFromString(originalString string, recipeEngine *recipe_executor.RecipeExecutor) (starlark.Comparable, error) {
+	matches := compiledRuntimeValueReplacementRegex.FindAllStringSubmatch(originalString, unlimitedMatches)
+	for _, match := range matches {
+		runtimeValueMatchIndex := compiledRuntimeValueReplacementRegex.SubexpIndex(runtimeValueSubgroupName)
+		if runtimeValueMatchIndex == subExpNotFound {
+			return nil, stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", runtimeValueSubgroupName, compiledRuntimeValueReplacementRegex.String())
+		}
+		runtimeValueFieldMatchIndex := compiledRuntimeValueReplacementRegex.SubexpIndex(runtimeValueFieldSubgroupName)
+		if runtimeValueFieldMatchIndex == subExpNotFound {
+			return nil, stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", runtimeValueFieldSubgroupName, compiledRuntimeValueReplacementRegex.String())
+		}
+		runtimeValue := recipeEngine.GetValue(match[runtimeValueMatchIndex])
+		selectedRuntimeValue := runtimeValue[match[runtimeValueFieldMatchIndex]]
+		return selectedRuntimeValue, nil
+	}
+	return nil, stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", runtimeValueSubgroupName, compiledRuntimeValueReplacementRegex.String())
 }

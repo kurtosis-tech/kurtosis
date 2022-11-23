@@ -2,7 +2,6 @@ package recipe_executor
 
 import (
 	"context"
-	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/stacktrace"
@@ -49,7 +48,7 @@ func NewGetHttpRequestRecipe(serviceId service.ServiceID, portId string, endpoin
 	}
 }
 
-func (recipe *HttpRequestRecipe) Execute(ctx context.Context, serviceNetwork service_network.ServiceNetwork) (map[string]string, error) {
+func (recipe *HttpRequestRecipe) Execute(ctx context.Context, serviceNetwork service_network.ServiceNetwork) (map[string]starlark.Comparable, error) {
 	response, err := serviceNetwork.HttpRequestService(
 		ctx,
 		recipe.serviceId,
@@ -73,9 +72,9 @@ func (recipe *HttpRequestRecipe) Execute(ctx context.Context, serviceNetwork ser
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred when reading HTTP response body")
 	}
-	return map[string]string{
-		"body": string(body),
-		"code": fmt.Sprint(response.StatusCode),
+	return map[string]starlark.Comparable{
+		"body": starlark.String(body),
+		"code": starlark.MakeInt(response.StatusCode),
 	}, nil
 }
 

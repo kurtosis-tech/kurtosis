@@ -30,7 +30,7 @@ recipe = struct(
 response = get_value(recipe)
 print(response["body"])
 print(response["code"])
-assert(response["code"], "==", "200")
+assert(response["code"], "==", 200)
 assert(response["body"], "==", "<html><body><h1>It works!</h1></body></html>
 ")
 `
@@ -51,13 +51,9 @@ func TestStartosis(t *testing.T) {
 	executionResult, err := enclaveCtx.ExecuteStartosisScript(startosisScript, defaultDryRun)
 	require.NoError(t, err, "Unexpected error executing startosis script")
 
-	expectedScriptOutput := `<html><body><h1>It works!</h1></body></html>
-200
-`
-	require.Empty(t, executionResult.InterpretationError, "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
-	require.Lenf(t, executionResult.ValidationErrors, 0, "Unexpected validation error")
-	require.Empty(t, executionResult.ExecutionError, "Unexpected execution error")
-	require.Equal(t, expectedScriptOutput, executionResult.SerializedScriptOutput)
+	require.Empty(t, executionResult.GetInterpretationError(), "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
+	require.Lenf(t, executionResult.GetValidationErrors(), 0, "Unexpected validation error")
+	require.Empty(t, executionResult.GetExecutionError(), "Unexpected execution error")
 	logrus.Infof("Successfully ran Startosis script")
 
 }
