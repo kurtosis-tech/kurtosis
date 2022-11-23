@@ -14,6 +14,10 @@ const (
 	noShellDirectiveDefined = 999999
 )
 
+var (
+	noCustomCompletionFuncDefined *func(ctx context.Context, flags *flags.ParsedFlags, previousArgs *ParsedArgs) ([]string, error) = nil
+)
+
 type argCompletionProvider interface {
 	// Runs the argument completion func
 	RunCompletionFunction(ctx context.Context, flags *flags.ParsedFlags, previousArgs *ParsedArgs) ([]string, cobra.ShellCompDirective, error)
@@ -21,7 +25,7 @@ type argCompletionProvider interface {
 
 // Only ONE of these fields will be set at a time!
 type argCompletionProviderImpl struct {
-	customCompletionFunc func(ctx context.Context, flags *flags.ParsedFlags, previousArgs *ParsedArgs) ([]string, error)
+	customCompletionFunc *func(ctx context.Context, flags *flags.ParsedFlags, previousArgs *ParsedArgs) ([]string, error)
 
 	shellCompletionDirective cobra.ShellCompDirective
 }
@@ -32,8 +36,9 @@ func (impl *argCompletionProviderImpl) RunCompletionFunction(
 	previousArgs *ParsedArgs,
 )([]string, cobra.ShellCompDirective, error) {
 
-	if impl.customCompletionFunc != nil {
-		completions, err := impl.customCompletionFunc(ctx, flags, previousArgs)
+	if impl.customCompletionFunc != noCustomCompletionFuncDefined {
+		completionFunc := *impl.customCompletionFunc
+		completions, err := completionFunc(ctx, flags, previousArgs)
 		return completions, shellDirectiveForManualCompletionProvider, err
 	}
 
@@ -49,7 +54,7 @@ func NewManualCompletionsProvider(
 	customCompletionFunc func(ctx context.Context, flags *flags.ParsedFlags, previousArgs *ParsedArgs) ([]string, error),
 ) argCompletionProvider {
 	newManualCompletionProvider := &argCompletionProviderImpl{
-		customCompletionFunc: customCompletionFunc,
+		customCompletionFunc: &customCompletionFunc,
 		shellCompletionDirective: noShellDirectiveDefined,
 	}
 	return newManualCompletionProvider
@@ -58,7 +63,7 @@ func NewManualCompletionsProvider(
 //This argument completion provider enables the default shell file completion functionality for the argument
 func NewDefaultShellFileCompletionProvider() argCompletionProvider {
 	newDefaultShellFileCompletionProvider := &argCompletionProviderImpl{
-		customCompletionFunc: nil,
+		customCompletionFunc: noCustomCompletionFuncDefined,
 		shellCompletionDirective: shellDirectiveForShellProvideDefaultFileCompletion,
 	}
 	return newDefaultShellFileCompletionProvider
