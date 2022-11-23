@@ -17,10 +17,10 @@ func TestUploadFiles_StringRepresentation(t *testing.T) {
 	)
 	expectedMultiLineStrRep := `# from: dummyFile[1:13]
 upload_files(
-	artifact_uuid="` + string(artifactUuid) + `",
-	src_path="` + filePath + `"
+	artifact_id="` + string(artifactUuid) + `",
+	src="` + filePath + `"
 )`
 	require.Equal(t, expectedMultiLineStrRep, uploadInstruction.GetCanonicalInstruction())
-	expectedSingleLineStrRep := `upload_files(artifact_uuid="` + string(artifactUuid) + `", src_path="` + filePath + `")`
+	expectedSingleLineStrRep := `upload_files(artifact_id="` + string(artifactUuid) + `", src="` + filePath + `")`
 	require.Equal(t, expectedSingleLineStrRep, uploadInstruction.String())
 }
