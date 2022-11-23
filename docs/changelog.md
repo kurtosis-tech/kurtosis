@@ -1,5 +1,8 @@
 # TBD
 
+### Fixes
+- Added one-off HTTP request and asserts
+
 # 0.53.8
 
 ### Fixes
@@ -36,7 +39,6 @@
 
 ### Features
 - Log that the module is being compressed & uploaded during `kurtosis exec`
-- Added one-off HTTP request and asserts
 
 ### Changes
 - `print()` is now a regular instructions like others, and it takes effect at execution time (used to be during interpretation)
