@@ -34,7 +34,7 @@ func TestStartosisRemoteModule(t *testing.T) {
 	require.NoError(t, err, "Unexpected error executing startosis module")
 
 	require.Nil(t, executionResult.GetInterpretationError(), "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
-	require.Nil(t, executionResult.GetValidationErrors(), 0, "Unexpected validation error")
+	require.Nil(t, executionResult.GetValidationErrors(), "Unexpected validation error")
 	require.Empty(t, executionResult.GetExecutionError(), "Unexpected execution error")
 	logrus.Infof("Successfully ran Startosis Module")
 

@@ -213,14 +213,11 @@ func (apicService ApiContainerService) ExecuteStartosisModule(ctx context.Contex
 	var interpretationError *startosis_errors.InterpretationError
 	if isRemote {
 		moduleRootPathOnDisk, interpretationError = apicService.startosisModuleContentProvider.CloneModule(moduleId)
-		if interpretationError != nil {
-			return nil, stacktrace.Propagate(interpretationError, "An error occurred while writing module '%s' to disk", moduleId)
-		}
 	} else {
 		moduleRootPathOnDisk, interpretationError = apicService.startosisModuleContentProvider.StoreModuleContents(moduleId, moduleData, doOverwriteExistingModule)
-		if interpretationError != nil {
-			return nil, stacktrace.Propagate(interpretationError, "An error occurred while writing module '%s' to disk", moduleId)
-		}
+	}
+	if interpretationError != nil {
+		return nil, stacktrace.Propagate(interpretationError, "An error occurred while writing module '%s' to disk", moduleId)
 	}
 
 	pathToMainFile := path.Join(moduleRootPathOnDisk, startosis_engine.MainFileName)
