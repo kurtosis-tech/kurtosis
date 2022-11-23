@@ -297,7 +297,7 @@ func getOrCreateEnclaveContext(
 		}
 		return enclaveContext, false, nil
 	}
-	logrus.Infof("Creating a new enclave for the Starlark execute inside...")
+	logrus.Infof("Creating a new enclave for Starlark execute inside...")
 	enclaveContext, err := kurtosisContext.CreateEnclave(ctx, enclaveId, isPartitioningEnabled)
 	if err != nil {
 		return nil, false, stacktrace.Propagate(err, fmt.Sprintf("Unable to create new enclave with ID '%s'", enclaveId))
