@@ -1284,12 +1284,11 @@ config = struct(
 	image = "` + testContainerImageName + `",
 )
 datastore_service = add_service(service_id = service_id, config = config)
-print("The datastore service ip address is " + datastore_service.ip_address)
-`
+print("The datastore service ip address is " + datastore_service.ip_address)`
 
 	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
 	require.Nil(t, interpretationError)
-	require.Equal(t, 4, len(instructions))
+	require.Equal(t, 5, len(instructions))
 
 	addServiceInstruction := createSimpleAddServiceInstruction(t, "example-datastore-server", testContainerImageName, 0, 10, 32, ModuleIdPlaceholderForStandaloneScripts, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder)
 	require.Equal(t, instructions[2], addServiceInstruction)

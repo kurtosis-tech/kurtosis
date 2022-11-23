@@ -601,3 +601,15 @@ func TestParseHttpRequestFactRecipe_GetRequestWithOptionalFields(t *testing.T) {
 	require.Nil(t, err)
 	require.Equal(t, expectedRecipe, recipe.HttpRequestFact)
 }
+
+func TestEncodeStarlarkObjectAsJSON_EncodesStructsCorrectly(t *testing.T){
+	structToJsonifyStrDict := starlark.StringDict{}
+	structToJsonifyStrDict["foo"] = starlark.String("bar")
+	structToJsonifyStrDict["buzz"] = starlark.MakeInt(42)
+	structToJsonify := starlarkstruct.FromStringDict(starlarkstruct.Default, structToJsonifyStrDict)
+	require.NotNil(t, structToJsonify)
+	structJsonStr, err := encodeStarlarkObjectAsJSON(structToJsonify)
+	require.Nil(t, err)
+	expectedStr := `{"foo": "bar", "buzz": 42}`
+	require.Equal(t, expectedStr, structJsonStr)
+}

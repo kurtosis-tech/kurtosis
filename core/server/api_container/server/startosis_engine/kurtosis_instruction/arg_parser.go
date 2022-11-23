@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"go.starlark.net/starlark"
+	"go.starlark.net/starlarkjson"
 	"go.starlark.net/starlarkstruct"
 	"math"
 	"reflect"
@@ -49,6 +50,9 @@ const (
 
 	getRequestMethod  = "GET"
 	postRequestMethod = "POST"
+
+	jsonParsingThreadName = "Unused thread name"
+	jsonParsingModuleId = "Unused module id"
 )
 
 func ParseServiceId(serviceIdRaw starlark.String) (service.ServiceID, *startosis_errors.InterpretationError) {
@@ -553,4 +557,27 @@ func safeCastToInt32(expectedValueString starlark.Value, argNameForLogging strin
 	}
 	return int32(int64Value), nil
 
+}
+
+func encodeStarlarkObjectAsJSON(object starlark.Value) (string,*startosis_errors.InterpretationError) {
+	thread := &starlark.Thread{
+		Name:       jsonParsingThreadName,
+		OnMaxSteps: nil,
+	}
+
+	predeclared := &starlark.StringDict{
+		// go-starlark add-ons
+		starlarkjson.Module.Name: starlarkjson.Module,
+		starlarkstruct.Default.GoString(): starlark.NewBuiltin(starlarkstruct.Default.GoString(), starlarkstruct.Make), // extension to build struct in starlark
+	}
+
+	scriptToRun := fmt.Sprintf(`encoded_json = json.encode(%v)`, object.String())
+
+	response, err := starlark.ExecFile(thread, jsonParsingModuleId, scriptToRun, *predeclared)
+
+	if err != nil {
+		return "" ,startosis_errors.NewInterpretationError("Error converting '%v' to JSON", object.String())
+	}
+
+	return response["encoded_json"].String(), nil
 }
