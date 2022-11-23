@@ -1,13 +1,20 @@
 # TBD
-
-# 0.53.5
 ### Changes
-- Error types in ExecuteStartosisResponse type is now a union type, to better represent they are exclusive and prepare for transition to streaming
-- Update the KurtosisInstruction API type returned to the CLI. It now contains a combination of instruction position, the canonicalized instruction, and an optional instruction result
+- Modified the `EnclaveIdGenerator` now is a user defined type and can be initialized once because it contains a time-seed inside
+- Simplify how the kurtosis instruction canonicalizer works. It now generates a single line canonicalized instruction, and indentation is performed at the CLI level using Bazel buildtools library.
+
+### Fixes
+- Fixed the `isEnclaveIdInUse` for the enclave validator, now uses on runtime for `is-key-in-map`
 
 ### Features
 - Add the ability to execute remote modules using `EnclaveContext.ExecuteStartoisRemoteModule`
 - Add the ability to execute remote module using cli `kurtosis exec github.com/author/module`
+
+# 0.53.6
+
+# 0.53.5
+### Changes
+- Error types in ExecuteStartosisResponse type is now a union type, to better represent they are exclusive and prepare for transition to streaming
 - Update the KurtosisInstruction API type returned to the CLI. It now contains a combination of instruction position, the canonicalized instruction, and an optional instruction result 
 - Renamed `store_files_from_service` to `store_service_files`
 - Slightly update the way script output information are passed from the Startosis engine back the API container main class. This is a step to prepare for streaming this output all the way back the CLI.
