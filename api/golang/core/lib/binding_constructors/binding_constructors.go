@@ -261,10 +261,23 @@ func NewExecuteStartosisScriptArgs(serializedString string, dryRun bool) *kurtos
 
 func NewExecuteStartosisModuleArgs(moduleId string, compressedModule []byte, serializedParams string, dryRun bool) *kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleArgs {
 	return &kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleArgs{
-		ModuleId:         moduleId,
-		Data:             compressedModule,
-		SerializedParams: serializedParams,
-		DryRun:           &dryRun,
+		ModuleId:               moduleId,
+		StartosisModuleContent: &kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleArgs_Local{Local: compressedModule},
+		SerializedParams:       serializedParams,
+		DryRun:                 &dryRun,
+	}
+}
+
+// ==============================================================================================
+//                                 Execute Startosis Remote Module
+// ==============================================================================================
+
+func NewExecuteStartosisRemoteModuleArgs(moduleId string, serializedParams string, dryRun bool) *kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleArgs {
+	return &kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleArgs{
+		ModuleId:               moduleId,
+		SerializedParams:       serializedParams,
+		DryRun:                 &dryRun,
+		StartosisModuleContent: &kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleArgs_Remote{Remote: true},
 	}
 }
 

@@ -32,6 +32,7 @@ goog.exportSymbol('proto.api_container_api.ExecFactRecipe', null, global);
 goog.exportSymbol('proto.api_container_api.ExecuteModuleArgs', null, global);
 goog.exportSymbol('proto.api_container_api.ExecuteModuleResponse', null, global);
 goog.exportSymbol('proto.api_container_api.ExecuteStartosisModuleArgs', null, global);
+goog.exportSymbol('proto.api_container_api.ExecuteStartosisModuleArgs.StartosisModuleContentCase', null, global);
 goog.exportSymbol('proto.api_container_api.ExecuteStartosisResponse', null, global);
 goog.exportSymbol('proto.api_container_api.ExecuteStartosisResponse.KurtosisErrorCase', null, global);
 goog.exportSymbol('proto.api_container_api.ExecuteStartosisScriptArgs', null, global);
@@ -367,7 +368,7 @@ if (goog.DEBUG && !COMPILED) {
  * @constructor
  */
 proto.api_container_api.ExecuteStartosisModuleArgs = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+  jspb.Message.initialize(this, opt_data, 0, -1, null, proto.api_container_api.ExecuteStartosisModuleArgs.oneofGroups_);
 };
 goog.inherits(proto.api_container_api.ExecuteStartosisModuleArgs, jspb.Message);
 if (goog.DEBUG && !COMPILED) {
@@ -3931,6 +3932,32 @@ proto.api_container_api.ExecuteStartosisScriptArgs.prototype.hasDryRun = functio
 
 
 
+/**
+ * Oneof group definitions for this message. Each group defines the field
+ * numbers belonging to that group. When of these fields' value is set, all
+ * other fields in the group are cleared. During deserialization, if multiple
+ * fields are encountered for a group, only the last value seen will be kept.
+ * @private {!Array<!Array<number>>}
+ * @const
+ */
+proto.api_container_api.ExecuteStartosisModuleArgs.oneofGroups_ = [[3,4]];
+
+/**
+ * @enum {number}
+ */
+proto.api_container_api.ExecuteStartosisModuleArgs.StartosisModuleContentCase = {
+  STARTOSIS_MODULE_CONTENT_NOT_SET: 0,
+  LOCAL: 3,
+  REMOTE: 4
+};
+
+/**
+ * @return {proto.api_container_api.ExecuteStartosisModuleArgs.StartosisModuleContentCase}
+ */
+proto.api_container_api.ExecuteStartosisModuleArgs.prototype.getStartosisModuleContentCase = function() {
+  return /** @type {proto.api_container_api.ExecuteStartosisModuleArgs.StartosisModuleContentCase} */(jspb.Message.computeOneofCase(this, proto.api_container_api.ExecuteStartosisModuleArgs.oneofGroups_[0]));
+};
+
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
@@ -3963,9 +3990,10 @@ proto.api_container_api.ExecuteStartosisModuleArgs.prototype.toObject = function
 proto.api_container_api.ExecuteStartosisModuleArgs.toObject = function(includeInstance, msg) {
   var f, obj = {
     moduleId: jspb.Message.getFieldWithDefault(msg, 1, ""),
-    data: msg.getData_asB64(),
-    serializedParams: jspb.Message.getFieldWithDefault(msg, 3, ""),
-    dryRun: jspb.Message.getBooleanFieldWithDefault(msg, 4, false)
+    local: msg.getLocal_asB64(),
+    remote: jspb.Message.getBooleanFieldWithDefault(msg, 4, false),
+    serializedParams: jspb.Message.getFieldWithDefault(msg, 5, ""),
+    dryRun: jspb.Message.getBooleanFieldWithDefault(msg, 6, false)
   };
 
   if (includeInstance) {
@@ -4006,15 +4034,19 @@ proto.api_container_api.ExecuteStartosisModuleArgs.deserializeBinaryFromReader =
       var value = /** @type {string} */ (reader.readString());
       msg.setModuleId(value);
       break;
-    case 2:
-      var value = /** @type {!Uint8Array} */ (reader.readBytes());
-      msg.setData(value);
-      break;
     case 3:
+      var value = /** @type {!Uint8Array} */ (reader.readBytes());
+      msg.setLocal(value);
+      break;
+    case 4:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setRemote(value);
+      break;
+    case 5:
       var value = /** @type {string} */ (reader.readString());
       msg.setSerializedParams(value);
       break;
-    case 4:
+    case 6:
       var value = /** @type {boolean} */ (reader.readBool());
       msg.setDryRun(value);
       break;
@@ -4054,16 +4086,9 @@ proto.api_container_api.ExecuteStartosisModuleArgs.serializeBinaryToWriter = fun
       f
     );
   }
-  f = message.getData_asU8();
-  if (f.length > 0) {
+  f = /** @type {!(string|Uint8Array)} */ (jspb.Message.getField(message, 3));
+  if (f != null) {
     writer.writeBytes(
-      2,
-      f
-    );
-  }
-  f = message.getSerializedParams();
-  if (f.length > 0) {
-    writer.writeString(
       3,
       f
     );
@@ -4072,6 +4097,20 @@ proto.api_container_api.ExecuteStartosisModuleArgs.serializeBinaryToWriter = fun
   if (f != null) {
     writer.writeBool(
       4,
+      f
+    );
+  }
+  f = message.getSerializedParams();
+  if (f.length > 0) {
+    writer.writeString(
+      5,
+      f
+    );
+  }
+  f = /** @type {boolean} */ (jspb.Message.getField(message, 6));
+  if (f != null) {
+    writer.writeBool(
+      6,
       f
     );
   }
@@ -4097,35 +4136,35 @@ proto.api_container_api.ExecuteStartosisModuleArgs.prototype.setModuleId = funct
 
 
 /**
- * optional bytes data = 2;
+ * optional bytes local = 3;
  * @return {string}
  */
-proto.api_container_api.ExecuteStartosisModuleArgs.prototype.getData = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, ""));
+proto.api_container_api.ExecuteStartosisModuleArgs.prototype.getLocal = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 3, ""));
 };
 
 
 /**
- * optional bytes data = 2;
- * This is a type-conversion wrapper around `getData()`
+ * optional bytes local = 3;
+ * This is a type-conversion wrapper around `getLocal()`
  * @return {string}
  */
-proto.api_container_api.ExecuteStartosisModuleArgs.prototype.getData_asB64 = function() {
+proto.api_container_api.ExecuteStartosisModuleArgs.prototype.getLocal_asB64 = function() {
   return /** @type {string} */ (jspb.Message.bytesAsB64(
-      this.getData()));
+      this.getLocal()));
 };
 
 
 /**
- * optional bytes data = 2;
+ * optional bytes local = 3;
  * Note that Uint8Array is not supported on all browsers.
  * @see http://caniuse.com/Uint8Array
- * This is a type-conversion wrapper around `getData()`
+ * This is a type-conversion wrapper around `getLocal()`
  * @return {!Uint8Array}
  */
-proto.api_container_api.ExecuteStartosisModuleArgs.prototype.getData_asU8 = function() {
+proto.api_container_api.ExecuteStartosisModuleArgs.prototype.getLocal_asU8 = function() {
   return /** @type {!Uint8Array} */ (jspb.Message.bytesAsU8(
-      this.getData()));
+      this.getLocal()));
 };
 
 
@@ -4133,34 +4172,34 @@ proto.api_container_api.ExecuteStartosisModuleArgs.prototype.getData_asU8 = func
  * @param {!(string|Uint8Array)} value
  * @return {!proto.api_container_api.ExecuteStartosisModuleArgs} returns this
  */
-proto.api_container_api.ExecuteStartosisModuleArgs.prototype.setData = function(value) {
-  return jspb.Message.setProto3BytesField(this, 2, value);
+proto.api_container_api.ExecuteStartosisModuleArgs.prototype.setLocal = function(value) {
+  return jspb.Message.setOneofField(this, 3, proto.api_container_api.ExecuteStartosisModuleArgs.oneofGroups_[0], value);
 };
 
 
 /**
- * optional string serialized_params = 3;
- * @return {string}
- */
-proto.api_container_api.ExecuteStartosisModuleArgs.prototype.getSerializedParams = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 3, ""));
-};
-
-
-/**
- * @param {string} value
+ * Clears the field making it undefined.
  * @return {!proto.api_container_api.ExecuteStartosisModuleArgs} returns this
  */
-proto.api_container_api.ExecuteStartosisModuleArgs.prototype.setSerializedParams = function(value) {
-  return jspb.Message.setProto3StringField(this, 3, value);
+proto.api_container_api.ExecuteStartosisModuleArgs.prototype.clearLocal = function() {
+  return jspb.Message.setOneofField(this, 3, proto.api_container_api.ExecuteStartosisModuleArgs.oneofGroups_[0], undefined);
 };
 
 
 /**
- * optional bool dry_run = 4;
+ * Returns whether this field is set.
  * @return {boolean}
  */
-proto.api_container_api.ExecuteStartosisModuleArgs.prototype.getDryRun = function() {
+proto.api_container_api.ExecuteStartosisModuleArgs.prototype.hasLocal = function() {
+  return jspb.Message.getField(this, 3) != null;
+};
+
+
+/**
+ * optional bool remote = 4;
+ * @return {boolean}
+ */
+proto.api_container_api.ExecuteStartosisModuleArgs.prototype.getRemote = function() {
   return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 4, false));
 };
 
@@ -4169,8 +4208,62 @@ proto.api_container_api.ExecuteStartosisModuleArgs.prototype.getDryRun = functio
  * @param {boolean} value
  * @return {!proto.api_container_api.ExecuteStartosisModuleArgs} returns this
  */
+proto.api_container_api.ExecuteStartosisModuleArgs.prototype.setRemote = function(value) {
+  return jspb.Message.setOneofField(this, 4, proto.api_container_api.ExecuteStartosisModuleArgs.oneofGroups_[0], value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.api_container_api.ExecuteStartosisModuleArgs} returns this
+ */
+proto.api_container_api.ExecuteStartosisModuleArgs.prototype.clearRemote = function() {
+  return jspb.Message.setOneofField(this, 4, proto.api_container_api.ExecuteStartosisModuleArgs.oneofGroups_[0], undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.ExecuteStartosisModuleArgs.prototype.hasRemote = function() {
+  return jspb.Message.getField(this, 4) != null;
+};
+
+
+/**
+ * optional string serialized_params = 5;
+ * @return {string}
+ */
+proto.api_container_api.ExecuteStartosisModuleArgs.prototype.getSerializedParams = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 5, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.api_container_api.ExecuteStartosisModuleArgs} returns this
+ */
+proto.api_container_api.ExecuteStartosisModuleArgs.prototype.setSerializedParams = function(value) {
+  return jspb.Message.setProto3StringField(this, 5, value);
+};
+
+
+/**
+ * optional bool dry_run = 6;
+ * @return {boolean}
+ */
+proto.api_container_api.ExecuteStartosisModuleArgs.prototype.getDryRun = function() {
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 6, false));
+};
+
+
+/**
+ * @param {boolean} value
+ * @return {!proto.api_container_api.ExecuteStartosisModuleArgs} returns this
+ */
 proto.api_container_api.ExecuteStartosisModuleArgs.prototype.setDryRun = function(value) {
-  return jspb.Message.setField(this, 4, value);
+  return jspb.Message.setField(this, 6, value);
 };
 
 
@@ -4179,7 +4272,7 @@ proto.api_container_api.ExecuteStartosisModuleArgs.prototype.setDryRun = functio
  * @return {!proto.api_container_api.ExecuteStartosisModuleArgs} returns this
  */
 proto.api_container_api.ExecuteStartosisModuleArgs.prototype.clearDryRun = function() {
-  return jspb.Message.setField(this, 4, undefined);
+  return jspb.Message.setField(this, 6, undefined);
 };
 
 
@@ -4188,7 +4281,7 @@ proto.api_container_api.ExecuteStartosisModuleArgs.prototype.clearDryRun = funct
  * @return {boolean}
  */
 proto.api_container_api.ExecuteStartosisModuleArgs.prototype.hasDryRun = function() {
-  return jspb.Message.getField(this, 4) != null;
+  return jspb.Message.getField(this, 6) != null;
 };
 
 

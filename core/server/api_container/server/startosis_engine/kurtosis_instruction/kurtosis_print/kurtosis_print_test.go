@@ -19,16 +19,7 @@ func TestPrintInstruction_StringRepresentation(t *testing.T) {
 		"; ",
 		"EOL",
 	)
-	expectedMultiLineStr := `# from: dummyFile[1:1]
-print(
-	"foo",
-	[
-		"bar"
-	],
-	end="EOL",
-	sep="; "
-)`
-	require.Equal(t, expectedMultiLineStr, instruction.GetCanonicalInstruction())
-	expectedSingleLineStr := `print("foo", ["bar"], end="EOL", sep="; ")`
-	require.Equal(t, expectedSingleLineStr, instruction.String())
+	expectedStr := `print("foo", ["bar"], end="EOL", sep="; ")`
+	require.Equal(t, expectedStr, instruction.GetCanonicalInstruction())
+	require.Equal(t, expectedStr, instruction.String())
 }
