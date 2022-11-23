@@ -51,8 +51,8 @@ add_service(service_id = DATASTORE_SERVICE_ID, config = config)
 print("Service " + DATASTORE_SERVICE_ID + " deployed successfully.")
 exec(service_id = DATASTORE_SERVICE_ID, command = ["touch", FILE_TO_BE_CREATED])
 
-artifact_uuid = store_file_from_service(service_id = DATASTORE_SERVICE_ID, src_path = FILE_TO_BE_CREATED)
-print("Stored file at " + artifact_uuid)
+artifact_id = store_service_files(service_id = DATASTORE_SERVICE_ID, src = FILE_TO_BE_CREATED)
+print("Stored file at " + artifact_id)
 
 template_str = read_file(TEMPLATE_FILE_TO_RENDER)
 
@@ -76,7 +76,7 @@ dependent_config = struct(
         DATASTORE_PORT_ID: struct(number = DATASTORE_PORT_NUMBER, protocol = DATASTORE_PORT_PROTOCOL)
     },
 	files = {
-		artifact_uuid : PATH_TO_MOUNT_ON_DEPENDENT_SERVICE,
+		artifact_id : PATH_TO_MOUNT_ON_DEPENDENT_SERVICE,
 		rendered_artifact : PATH_TO_MOUNT_RENDERED_CONFIG
 	}
 )
@@ -106,10 +106,10 @@ Stored file at [a-f0-9-]{36}
 Rendered file to [a-f0-9-]{36}
 Deployed example-datastore-server-2 successfully
 `
-	require.Empty(t, executionResult.InterpretationError, "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
-	require.Lenf(t, executionResult.ValidationErrors, 0, "Unexpected validation error")
-	require.Empty(t, executionResult.ExecutionError, "Unexpected execution error")
-	require.Regexp(t, expectedScriptOutput, executionResult.SerializedScriptOutput)
+	require.Nil(t, executionResult.GetInterpretationError(), "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
+	require.Nil(t, executionResult.GetValidationErrors(), 0, "Unexpected validation error")
+	require.Nil(t, executionResult.GetExecutionError(), "Unexpected execution error")
+	require.Regexp(t, expectedScriptOutput, test_helpers.GenerateScriptOutput(executionResult.GetKurtosisInstructions()))
 	logrus.Infof("Successfully ran Startosis script")
 
 	// Check that the service added by the script is functional

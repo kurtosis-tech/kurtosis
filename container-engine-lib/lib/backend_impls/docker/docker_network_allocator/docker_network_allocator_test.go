@@ -8,7 +8,10 @@ import (
 )
 
 func TestErrorOnInstantiationWithoutConstructor(t *testing.T) {
-	allocator := DockerNetworkAllocator{}
+	allocator := DockerNetworkAllocator{
+		isConstructedViaConstructor: false,
+		dockerManager:               nil,
+	}
 	_, err := allocator.CreateNewNetwork(context.Background(), "", map[string]string{})
 	assert.Error(t, err)
 }
@@ -99,7 +102,7 @@ func assertExpectedResultGivenCidrs(t *testing.T, cidrs []string, expectedIp net
 	assert.Equal(t, expectedIp, result.IP)
 
 	maskNumOnes, maskTotalBits := result.Mask.Size()
-	assert.Equal(t, networkWidthBits, uint32(maskTotalBits - maskNumOnes))
+	assert.Equal(t, networkWidthBits, uint32(maskTotalBits-maskNumOnes))
 }
 
 func parseNetworks(t *testing.T, cidrs []string) []*net.IPNet {

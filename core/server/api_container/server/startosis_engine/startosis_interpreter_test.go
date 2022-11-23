@@ -15,12 +15,11 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/kurtosis_print"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/remove_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/render_templates"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/store_files_from_service"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/store_service_files"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/upload_files"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_modules/mock_module_content_provider"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
@@ -52,7 +51,7 @@ func TestStartosisInterpreter_SimplePrintScript(t *testing.T) {
 print("` + testString + `")
 `
 
-	interpretationError, instructions := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
 	require.Len(t, instructions, 1) // Only the print statement
 	require.Nil(t, interpretationError)
 
@@ -71,7 +70,7 @@ print("Starting Startosis script!")
 unknownInstruction()
 `
 
-	interpretationError, instructions := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
 	require.Empty(t, instructions)
 
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
@@ -79,7 +78,7 @@ unknownInstruction()
 			*startosis_errors.NewCallFrame("undefined: unknownInstruction", startosis_errors.NewScriptPosition(4, 1)),
 		},
 		"Multiple errors caught interpreting the Startosis script. Listing each of them below.",
-	)
+	).ToAPIType()
 	require.Equal(t, expectedError, interpretationError)
 }
 
@@ -96,7 +95,7 @@ print(unknownVariable)
 unknownInstruction2()
 `
 
-	interpretationError, instructions := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
 	require.Empty(t, instructions)
 
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
@@ -106,7 +105,7 @@ unknownInstruction2()
 			*startosis_errors.NewCallFrame("undefined: unknownInstruction2", startosis_errors.NewScriptPosition(7, 1)),
 		},
 		multipleInterpretationErrorMsg,
-	)
+	).ToAPIType()
 	require.Equal(t, expectedError, interpretationError)
 }
 
@@ -120,14 +119,14 @@ print("Starting Startosis script!")
 load("otherScript.start") # fails b/c load takes in at least 2 args
 `
 
-	interpretationError, instructions := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
 	require.Empty(t, instructions)
 
 	expectedError := startosis_errors.NewInterpretationErrorFromStacktrace(
 		[]startosis_errors.CallFrame{
 			*startosis_errors.NewCallFrame("load statement must import at least 1 symbol", startosis_errors.NewScriptPosition(4, 5)),
 		},
-	)
+	).ToAPIType()
 	require.Equal(t, expectedError, interpretationError)
 }
 
@@ -155,7 +154,7 @@ print("The grpc port protocol is " + datastore_service.ports["grpc"].protocol)
 print("The datastore service ip address is " + datastore_service.ip_address)
 `
 
-	interpretationError, instructions := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
 	require.Len(t, instructions, 6)
 	require.Nil(t, interpretationError)
 
@@ -190,7 +189,7 @@ config = struct(
 add_service(service_id = service_id, config = config)
 `
 
-	interpretationError, instructions := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
 	require.Empty(t, instructions)
 
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
@@ -199,7 +198,7 @@ add_service(service_id = service_id, config = config)
 			*startosis_errors.NewCallFrame("add_service", startosis_errors.NewScriptPosition(0, 0)),
 		},
 		"Evaluation error: Missing value 'image' as element of the struct object 'config'",
-	)
+	).ToAPIType()
 	require.Equal(t, expectedError, interpretationError)
 }
 
@@ -222,7 +221,7 @@ config = struct(
 add_service(service_id = service_id, config = config)
 `
 
-	interpretationError, instructions := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
 	require.Empty(t, instructions)
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
 		[]startosis_errors.CallFrame{
@@ -230,7 +229,7 @@ add_service(service_id = service_id, config = config)
 			*startosis_errors.NewCallFrame("add_service", startosis_errors.NewScriptPosition(0, 0)),
 		},
 		"Evaluation error: Port protocol should be one of TCP, SCTP, UDP",
-	)
+	).ToAPIType()
 	require.Equal(t, expectedError, interpretationError)
 }
 
@@ -253,7 +252,7 @@ config = struct(
 add_service(service_id = service_id, config = config)
 `
 
-	interpretationError, instructions := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
 	require.Empty(t, instructions)
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
 		[]startosis_errors.CallFrame{
@@ -261,7 +260,7 @@ add_service(service_id = service_id, config = config)
 			*startosis_errors.NewCallFrame("add_service", startosis_errors.NewScriptPosition(0, 0)),
 		},
 		"Evaluation error: Argument 'number' is expected to be an integer. Got starlark.String",
-	)
+	).ToAPIType()
 	require.Equal(t, expectedError, interpretationError)
 }
 
@@ -294,7 +293,7 @@ deploy_datastore_services()
 print("Done!")
 `
 
-	interpretationError, instructions := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
 	require.Len(t, instructions, 8)
 	require.Nil(t, interpretationError)
 
@@ -315,7 +314,7 @@ Done!
 	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutput)
 }
 
-func TestStartosisInterpreter_SimpleLoading_DeprecatedForBackwardCompatibility(t *testing.T) {
+func TestStartosisInterpreter_LoadStatementIsDisallowedInKurtosis(t *testing.T) {
 	barModulePath := "github.com/foo/bar/lib.star"
 	seedModules := map[string]string{
 		barModulePath: "a=\"World!\"",
@@ -328,13 +327,16 @@ func TestStartosisInterpreter_SimpleLoading_DeprecatedForBackwardCompatibility(t
 load("` + barModulePath + `", "a")
 print("Hello " + a)
 `
-	interpretationError, instructions := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
-	assert.Len(t, instructions, 1) // Only the print statement
-	assert.Nil(t, interpretationError)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
+		[]startosis_errors.CallFrame{
+			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(2, 1)),
+		},
+		"Evaluation error: cannot load github.com/foo/bar/lib.star: 'load(\"path/to/file.star\", var_in_file=\"var_in_file\")' statement is not available in Kurtosis. Please use instead `module = import(\"path/to/file.star\")` and then `module.var_in_file`",
+	).ToAPIType()
 
-	expectedOutput := `Hello World!
-`
-	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutput)
+	require.Equal(t, expectedError, interpretationError)
+	require.Empty(t, instructions)
 }
 
 func TestStartosisInterpreter_SimpleImport(t *testing.T) {
@@ -350,9 +352,9 @@ func TestStartosisInterpreter_SimpleImport(t *testing.T) {
 my_module = import_module("` + barModulePath + `")
 print("Hello " + my_module.a)
 `
-	interpretationError, instructions := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
-	assert.Len(t, instructions, 1) // Only the print statement
-	assert.Nil(t, interpretationError)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	require.Len(t, instructions, 1) // Only the print statement
+	require.Nil(t, interpretationError)
 
 	expectedOutput := `Hello World!
 `
@@ -377,7 +379,7 @@ print(module_doo.b)
 
 `
 
-	interpretationError, instructions := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
 	require.Len(t, instructions, 1) // Only the print statement
 	require.Nil(t, interpretationError)
 
@@ -404,16 +406,16 @@ module_doo = import_module("` + moduleDooLoadsModuleBar + `")
 print(module_doo.b)
 `
 
-	interpretationError, instructions := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
-	assert.Empty(t, instructions) // No kurtosis instruction
+	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	require.Empty(t, instructions) // No kurtosis instruction
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
 		[]startosis_errors.CallFrame{
 			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(1, 27)),
 			*startosis_errors.NewCallFrame("import_module", startosis_errors.NewScriptPosition(0, 0)),
 		},
 		"Evaluation error: There's a cycle in the import_module calls",
-	)
-	assert.Equal(t, expectedError, interpretationError)
+	).ToAPIType()
+	require.Equal(t, expectedError, interpretationError)
 }
 
 func TestStartosisInterpreter_FailsOnNonExistentModule(t *testing.T) {
@@ -425,8 +427,9 @@ func TestStartosisInterpreter_FailsOnNonExistentModule(t *testing.T) {
 my_module = import_module("` + nonExistentModule + `")
 print(my_module.b)
 `
-	interpretationError, instructions := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
-	assert.Empty(t, instructions) // No kurtosis instruction
+
+	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	require.Empty(t, instructions) // No kurtosis instruction
 
 	errorMsg := `Evaluation error: An error occurred while loading the module '` + nonExistentModule + `'
 	Caused by: Module '` + nonExistentModule + `' not found`
@@ -436,8 +439,8 @@ print(my_module.b)
 			*startosis_errors.NewCallFrame("import_module", startosis_errors.NewScriptPosition(0, 0)),
 		},
 		errorMsg,
-	)
-	assert.Equal(t, expectedError, interpretationError)
+	).ToAPIType()
+	require.Equal(t, expectedError, interpretationError)
 }
 
 func TestStartosisInterpreter_ImportingAValidModuleThatPreviouslyFailedToLoadSucceeds(t *testing.T) {
@@ -451,17 +454,18 @@ print("Hello " + my_module.a)
 `
 
 	// assert that first load fails
-	interpretationError, _ := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
-	assert.NotNil(t, interpretationError)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	require.Nil(t, instructions)
+	require.NotNil(t, interpretationError)
 
 	barModuleContents := "a=\"World!\""
 	require.Nil(t, moduleContentProvider.AddFileContent(barModulePath, barModuleContents))
 	expectedOutput := `Hello World!
 `
 	// assert that second load succeeds
-	interpretationError, instructions := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
-	assert.Nil(t, interpretationError)
-	assert.Len(t, instructions, 1) // The print statement
+	instructions, interpretationError = interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	require.Nil(t, interpretationError)
+	require.Len(t, instructions, 1) // The print statement
 	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutput)
 }
 
@@ -490,7 +494,7 @@ print("Adding service " + module_bar.service_id)
 add_service(service_id = module_bar.service_id, config = module_bar.config)
 `
 
-	interpretationError, instructions := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
 	require.Len(t, instructions, 4)
 	require.Nil(t, interpretationError)
 
@@ -539,7 +543,7 @@ datastore_module.deploy_datastore_services()
 print("Done!")
 `
 
-	interpretationError, instructions := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
 	require.Len(t, instructions, 8)
 	require.Nil(t, interpretationError)
 
@@ -573,9 +577,10 @@ func TestStartosisInterpreter_ImportModuleWithNoGlobalVariables(t *testing.T) {
 my_module = import_module("` + barModulePath + `")
 print("World!")
 `
-	interpretationError, instructions := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
-	assert.Len(t, instructions, 2)
-	assert.Nil(t, interpretationError)
+
+	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	require.Len(t, instructions, 2)
+	require.Nil(t, interpretationError)
 
 	expectedOutput := `Hello
 World!
@@ -607,7 +612,7 @@ import_module("` + moduleBar + `")
 print("Starting Startosis script!")
 `
 
-	interpretationError, instructions := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
 	require.Len(t, instructions, 4)
 	require.Nil(t, interpretationError)
 
@@ -652,7 +657,7 @@ Adding service example-datastore-server
 Starting Startosis script!
 `
 
-	interpretationError, instructions := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, scriptA, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, scriptA, EmptyInputArgs)
 	require.Len(t, instructions, 4)
 	require.Nil(t, interpretationError)
 	require.Equal(t, addServiceInstructionFromScriptA, instructions[2])
@@ -677,7 +682,7 @@ add_service(service_id = service_id, config = config)
 Adding service example-datastore-server
 `
 
-	interpretationError, instructions = interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, scriptB, EmptyInputArgs)
+	instructions, interpretationError = interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, scriptB, EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 3)
 	require.Equal(t, addServiceInstructionFromScriptB, instructions[2])
@@ -706,14 +711,14 @@ client_config = struct(
 	ports = {
 		"grpc": struct(number = 1337, protocol = "TCP")
 	},
-	entry_point_args = ["--store-port " + str(datastore_service.ports["grpc"].number), "--store-ip " + datastore_service.ip_address],
-	cmd_args = ["ping", datastore_service.ip_address],
+	entrypoint = ["--store-port " + str(datastore_service.ports["grpc"].number), "--store-ip " + datastore_service.ip_address],
+	cmd = ["ping", datastore_service.ip_address],
 	env_vars = {"STORE_IP": datastore_service.ip_address}
 )
 add_service(service_id = client_service_id, config = client_config)
 `
 
-	interpretationError, instructions := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 5)
 
@@ -743,13 +748,13 @@ print("Executing mkdir!")
 exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"])
 `
 
-	interpretationError, instructions := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
 	require.Len(t, instructions, 2)
 	require.Nil(t, interpretationError)
 
 	execInstruction := exec.NewExecInstruction(
 		testServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(3, 5, ModuleIdPlaceholderForStandaloneScripts),
+		kurtosis_instruction.NewInstructionPosition(3, 5, ModuleIdPlaceholderForStandaloneScripts),
 		"example-datastore-server",
 		[]string{"mkdir", "/tmp/foo"},
 		0,
@@ -771,13 +776,13 @@ print("Executing mkdir!")
 exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"], expected_exit_code = -7)
 `
 
-	interpretationError, instructions := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
 	require.Len(t, instructions, 2)
 	require.Nil(t, interpretationError)
 
 	execInstruction := exec.NewExecInstruction(
 		testServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(3, 5, ModuleIdPlaceholderForStandaloneScripts),
+		kurtosis_instruction.NewInstructionPosition(3, 5, ModuleIdPlaceholderForStandaloneScripts),
 		"example-datastore-server",
 		[]string{"mkdir", "/tmp/foo"},
 		-7,
@@ -798,17 +803,17 @@ func TestStartosisInterpreter_StoreFileFromService(t *testing.T) {
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
 print("Storing file from service!")
-artifact_uuid=store_file_from_service(service_id="example-datastore-server", src_path="/foo/bar", artifact_uuid="` + string(testArtifactUuid) + `")
+artifact_uuid=store_service_files(service_id="example-datastore-server", src="/foo/bar", artifact_id="` + string(testArtifactUuid) + `")
 print(artifact_uuid)
 `
 
-	interpretationError, instructions := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 3)
 
-	storeInstruction := store_files_from_service.NewStoreFilesFromServiceInstruction(
+	storeInstruction := store_service_files.NewStoreServiceFilesInstruction(
 		testServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(3, 38, ModuleIdPlaceholderForStandaloneScripts),
+		kurtosis_instruction.NewInstructionPosition(3, 34, ModuleIdPlaceholderForStandaloneScripts),
 		"example-datastore-server",
 		"/foo/bar",
 		testArtifactUuid,
@@ -837,7 +842,7 @@ file_contents=read_file("` + srcPath + `")
 print(file_contents)
 `
 
-	interpretationError, instructions := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 2)
 
@@ -858,7 +863,7 @@ wait(service_id="%v", fact_name="%v")
 	serviceId := "service"
 	factName := "fact"
 	script := fmt.Sprintf(scriptFormatStr, serviceId, factName, serviceId, factName)
-	interpretationError, instructions := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.NotEmpty(t, instructions)
 	validateScriptOutputFromPrintInstructions(t, instructions, "")
@@ -891,7 +896,7 @@ artifact_uuid = render_templates(template_and_data_by_dest_rel_filepath = data, 
 print(artifact_uuid)
 `
 
-	interpretationError, instructions := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 3)
 
@@ -915,7 +920,7 @@ print(artifact_uuid)
 
 	renderInstruction := render_templates.NewRenderTemplatesInstruction(
 		testServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(18, 33, ModuleIdPlaceholderForStandaloneScripts),
+		kurtosis_instruction.NewInstructionPosition(18, 33, ModuleIdPlaceholderForStandaloneScripts),
 		templateAndDataByDestFilepath,
 		starlark.StringDict{
 			"template_and_data_by_dest_rel_filepath": templateAndDataValues,
@@ -954,7 +959,7 @@ print(test_type)
 print(test_type.greetings)
 `
 
-	interpretationError, instructions := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 2) // the print statement
 
@@ -974,11 +979,11 @@ types = import_types(proto_types_file_bad_argument = "github.com/kurtosis/module
 print("Hello world!")
 `
 
-	interpretationError, instructions := interpreter.Interpret(context.Background(), moduleId, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), moduleId, script, EmptyInputArgs)
 	require.Empty(t, instructions)
 
 	expectedErrorString := "Evaluation error: Unable to parse arguments of command 'import_types'. It should be a non empty string argument pointing to the fully qualified .proto types file (i.e. \"github.com/kurtosis/module/types.proto\")"
-	require.Contains(t, interpretationError.Error(), expectedErrorString)
+	require.Contains(t, interpretationError.GetErrorMessage(), expectedErrorString)
 }
 
 func TestStartosisInterpreter_ReadTypesFromProtoFile_FailuresNoTypesFile(t *testing.T) {
@@ -991,7 +996,7 @@ types = import_types("github.com/kurtosis/module/types.proto")
 print("Hello world!")
 `
 
-	interpretationError, instructions := interpreter.Interpret(context.Background(), moduleId, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), moduleId, script, EmptyInputArgs)
 	require.Empty(t, instructions)
 
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
@@ -1000,7 +1005,7 @@ print("Hello world!")
 			*startosis_errors.NewCallFrame("import_types", startosis_errors.NewScriptPosition(0, 0)),
 		},
 		"Evaluation error: Unable to load types file github.com/kurtosis/module/types.proto. Is the corresponding type file present in the module?",
-	)
+	).ToAPIType()
 	require.Equal(t, expectedError, interpretationError)
 }
 
@@ -1022,7 +1027,7 @@ message ModuleInput {
 print(input_args.greetings)
 `
 	serializedArgs := `{"greetings": "Hello World!"}`
-	interpretationError, instructions := interpreter.Interpret(context.Background(), moduleId, script, serializedArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), moduleId, script, serializedArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 1) // the print statement
 
@@ -1049,10 +1054,10 @@ message ModuleInput {
 print(input_args.greetings)
 `
 	serializedArgs := `{"greetings": "Hello World!"}`
-	interpretationError, instructions := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, serializedArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, serializedArgs)
 	require.Empty(t, instructions)
 
-	expectedError := startosis_errors.NewInterpretationError("Passing parameter to a standalone script is not yet supported in Kurtosis.")
+	expectedError := binding_constructors.NewKurtosisInterpretationError("Passing parameter to a standalone script is not yet supported in Kurtosis.")
 	require.Equal(t, expectedError, interpretationError)
 }
 
@@ -1077,14 +1082,14 @@ def main(input_args):
 	print(input_args.greetings)
 `
 	serializedArgs := `{"greetings": "Hello World!"}`
-	interpretationError, instructions := interpreter.Interpret(context.Background(), moduleId, script, serializedArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), moduleId, script, serializedArgs)
 	require.Empty(t, instructions)
 
 	expectedErrorMsg := fmt.Sprintf(`A non empty parameter was passed to the module 'github.com/kurtosis/module' but the module doesn't contain a valid 'types.proto' file (it is either absent of invalid). To be able to pass a parameter to a Kurtosis module, please define a 'ModuleInput' type in the module's 'types.proto' file
 	Caused by: Unable to compile .proto file 'github.com/kurtosis/module/types.proto' (checked out at '%s'). Proto compiler output was: 
 %s:2:8: Expected "=".
 `, absFilePath, filepath.Base(absFilePath))
-	require.Equal(t, expectedErrorMsg, interpretationError.Error())
+	require.Equal(t, expectedErrorMsg, interpretationError.GetErrorMessage())
 }
 
 func TestStartosisInterpreter_InjectValidInvalidInputArgsToModule_InvalidJson(t *testing.T) {
@@ -1105,10 +1110,10 @@ message ModuleInput {
 print(input_args.greetings)
 `
 	serializedArgs := `"greetings": "Hello World!"` // Invalid JSON
-	interpretationError, instructions := interpreter.Interpret(context.Background(), moduleId, script, serializedArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), moduleId, script, serializedArgs)
 	require.Empty(t, instructions)
 
-	expectedError := startosis_errors.NewInterpretationError(`Module parameter shape does not fit the module expected input type (module: 'github.com/kurtosis/module'). Parameter was: 
+	expectedError := binding_constructors.NewKurtosisInterpretationError(`Module parameter shape does not fit the module expected input type (module: 'github.com/kurtosis/module'). Parameter was: 
 "greetings": "Hello World!"
 Error was: 
 proto: syntax error (line 1:1): unexpected token "greetings"`)
@@ -1133,10 +1138,10 @@ message ModuleInput {
 print(input_args.greetings)
 `
 	serializedArgs := `{"greetings": 3}` // greeting should be a string here
-	interpretationError, instructions := interpreter.Interpret(context.Background(), moduleId, script, serializedArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), moduleId, script, serializedArgs)
 	require.Empty(t, instructions)
 
-	expectedError := startosis_errors.NewInterpretationError(`Module parameter shape does not fit the module expected input type (module: 'github.com/kurtosis/module'). Parameter was: 
+	expectedError := binding_constructors.NewKurtosisInterpretationError(`Module parameter shape does not fit the module expected input type (module: 'github.com/kurtosis/module'). Parameter was: 
 {"greetings": 3}
 Error was: 
 proto: (line 1:15): invalid value for string type: 3`)
@@ -1150,7 +1155,7 @@ func TestStartosisInterpreter_ThreeLevelNestedInstructionPositionTest(t *testing
 	storeFileContent := `
 def store_for_me():
 	print("In the store files instruction")
-	artifact_uuid=store_file_from_service(service_id="example-datastore-server", src_path="/foo/bar", artifact_uuid = "` + string(testArtifactUuid) + `")
+	artifact_uuid=store_service_files(service_id="example-datastore-server", src="/foo/bar", artifact_id = "` + string(testArtifactUuid) + `")
 	return artifact_uuid
 `
 
@@ -1177,13 +1182,13 @@ uuid = call_store_for_me_module.call_store_for_me()
 print(uuid)
 `
 
-	interpretationError, instructions := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 4)
 
-	storeInstruction := store_files_from_service.NewStoreFilesFromServiceInstruction(
+	storeInstruction := store_service_files.NewStoreServiceFilesInstruction(
 		testServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(4, 39, storeFileDefinitionPath),
+		kurtosis_instruction.NewInstructionPosition(4, 35, storeFileDefinitionPath),
 		"example-datastore-server",
 		"/foo/bar",
 		testArtifactUuid,
@@ -1209,13 +1214,13 @@ remove_service(service_id=service_id)
 print("The service example-datastore-server has been removed")
 `
 
-	interpretationError, instructions := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
 	require.Len(t, instructions, 3)
 	require.Nil(t, interpretationError)
 
 	removeInstruction := remove_service.NewRemoveServiceInstruction(
 		testServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(4, 15, ModuleIdPlaceholderForStandaloneScripts),
+		kurtosis_instruction.NewInstructionPosition(4, 15, ModuleIdPlaceholderForStandaloneScripts),
 		"example-datastore-server",
 	)
 
@@ -1240,13 +1245,13 @@ func TestStartosisInterpreter_UploadGetsInterpretedCorrectly(t *testing.T) {
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `upload_files("` + filePath + `","` + string(artifactUuid) + `")
 `
-	interpretationError, instructions := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 1)
 	validateScriptOutputFromPrintInstructions(t, instructions, "")
 
 	expectedUploadInstruction := upload_files.NewUploadFilesInstruction(
-		*kurtosis_instruction.NewInstructionPosition(1, 13, ModuleIdPlaceholderForStandaloneScripts),
+		kurtosis_instruction.NewInstructionPosition(1, 13, ModuleIdPlaceholderForStandaloneScripts),
 		testServiceNetwork, moduleContentProvider, filePath, filePathOnDisk, artifactUuid,
 	)
 
@@ -1260,7 +1265,8 @@ func TestStartosisInterpreter_NoPanicIfUploadIsPassedAPathNotOnDisk(t *testing.T
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `upload_files("` + filePath + `")
 `
-	interpretationError, _ := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	require.Nil(t, instructions)
 	require.NotNil(t, interpretationError)
 }
 
@@ -1281,7 +1287,7 @@ datastore_service = add_service(service_id = service_id, config = config)
 print("The datastore service ip address is " + datastore_service.ip_address)
 `
 
-	interpretationError, instructions := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Equal(t, 4, len(instructions))
 
@@ -1319,7 +1325,7 @@ func createSimpleAddServiceInstruction(t *testing.T, serviceId service.ServiceID
 		for _, entryPointArg := range entryPointArgs {
 			entryPointArgsValues = append(entryPointArgsValues, starlark.String(entryPointArg))
 		}
-		serviceConfigStringDict["entry_point_args"] = starlark.NewList(entryPointArgsValues)
+		serviceConfigStringDict["entrypoint"] = starlark.NewList(entryPointArgsValues)
 	}
 
 	if cmdArgs != nil {
@@ -1327,7 +1333,7 @@ func createSimpleAddServiceInstruction(t *testing.T, serviceId service.ServiceID
 		for _, cmdArg := range cmdArgs {
 			cmdArgsValues = append(cmdArgsValues, starlark.String(cmdArg))
 		}
-		serviceConfigStringDict["cmd_args"] = starlark.NewList(cmdArgsValues)
+		serviceConfigStringDict["cmd"] = starlark.NewList(cmdArgsValues)
 	}
 
 	if envVars != nil {
@@ -1377,7 +1383,7 @@ func createSimpleAddServiceInstruction(t *testing.T, serviceId service.ServiceID
 
 	return add_service.NewAddServiceInstruction(
 		testServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(lineNumber, colNumber, fileName),
+		kurtosis_instruction.NewInstructionPosition(lineNumber, colNumber, fileName),
 		serviceId,
 		serviceConfigBuilder.Build(),
 		starlark.StringDict{

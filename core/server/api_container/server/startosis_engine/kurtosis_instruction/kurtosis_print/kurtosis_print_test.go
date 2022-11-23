@@ -9,7 +9,7 @@ import (
 
 func TestPrintInstruction_StringRepresentation(t *testing.T) {
 	instruction := NewPrintInstruction(
-		*kurtosis_instruction.NewInstructionPosition(1, 1, "dummyFile"),
+		kurtosis_instruction.NewInstructionPosition(1, 1, "dummyFile"),
 		[]starlark.Value{
 			starlark.String("foo"),
 			starlark.NewList([]starlark.Value{
@@ -20,16 +20,7 @@ func TestPrintInstruction_StringRepresentation(t *testing.T) {
 		"EOL",
 		nil,
 	)
-	expectedMultiLineStr := `# from: dummyFile[1:1]
-print(
-	"foo",
-	[
-		"bar"
-	],
-	end="EOL",
-	sep="; "
-)`
-	require.Equal(t, expectedMultiLineStr, instruction.GetCanonicalInstruction())
-	expectedSingleLineStr := `print("foo", ["bar"], end="EOL", sep="; ")`
-	require.Equal(t, expectedSingleLineStr, instruction.String())
+	expectedStr := `print("foo", ["bar"], end="EOL", sep="; ")`
+	require.Equal(t, expectedStr, instruction.GetCanonicalInstruction())
+	require.Equal(t, expectedStr, instruction.String())
 }

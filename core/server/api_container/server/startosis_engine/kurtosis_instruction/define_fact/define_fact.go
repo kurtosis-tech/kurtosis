@@ -31,7 +31,8 @@ func GenerateDefineFactBuiltin(instructionsQueue *[]kurtosis_instruction.Kurtosi
 		if interpretationError != nil {
 			return nil, interpretationError
 		}
-		defineFactInstruction := NewDefineFactInstruction(factsEngine, *shared_helpers.GetCallerPositionFromThread(thread), serviceId, commandArgs, factRecipe)
+		instructionPosition := shared_helpers.GetCallerPositionFromThread(thread)
+		defineFactInstruction := NewDefineFactInstruction(factsEngine, instructionPosition, serviceId, commandArgs, factRecipe)
 		*instructionsQueue = append(*instructionsQueue, defineFactInstruction)
 		return starlark.None, nil
 	}
@@ -40,13 +41,13 @@ func GenerateDefineFactBuiltin(instructionsQueue *[]kurtosis_instruction.Kurtosi
 type DefineFactInstruction struct {
 	factsEngine *facts_engine.FactsEngine
 
-	position   kurtosis_instruction.InstructionPosition
+	position   *kurtosis_instruction.InstructionPosition
 	serviceId  kurtosis_backend_service.ServiceID
 	factName   string
 	factRecipe *kurtosis_core_rpc_api_bindings.FactRecipe
 }
 
-func NewDefineFactInstruction(factsEngine *facts_engine.FactsEngine, position kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceID, factName string, factRecipe *kurtosis_core_rpc_api_bindings.FactRecipe) *DefineFactInstruction {
+func NewDefineFactInstruction(factsEngine *facts_engine.FactsEngine, position *kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceID, factName string, factRecipe *kurtosis_core_rpc_api_bindings.FactRecipe) *DefineFactInstruction {
 	return &DefineFactInstruction{
 		factsEngine: factsEngine,
 		position:    position,
@@ -57,14 +58,14 @@ func NewDefineFactInstruction(factsEngine *facts_engine.FactsEngine, position ku
 }
 
 func (instruction *DefineFactInstruction) GetPositionInOriginalScript() *kurtosis_instruction.InstructionPosition {
-	return &instruction.position
+	return instruction.position
 }
 
 func (instruction *DefineFactInstruction) GetCanonicalInstruction() string {
-	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(DefineFactBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs(), &instruction.position)
+	return shared_helpers.CanonicalizeInstruction(DefineFactBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs())
 }
 
-func (instruction *DefineFactInstruction) Execute(ctx context.Context) (*string, error) {
+func (instruction *DefineFactInstruction) Execute(_ context.Context) (*string, error) {
 	err := instruction.factsEngine.PushRecipe(instruction.factRecipe)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to wait for fact '%v' on service '%v'", instruction.factName, instruction.serviceId)
@@ -73,7 +74,7 @@ func (instruction *DefineFactInstruction) Execute(ctx context.Context) (*string,
 }
 
 func (instruction *DefineFactInstruction) String() string {
-	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(DefineFactBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs(), &instruction.position)
+	return instruction.GetCanonicalInstruction()
 }
 
 func (instruction *DefineFactInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {

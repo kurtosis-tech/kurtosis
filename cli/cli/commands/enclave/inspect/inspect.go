@@ -56,6 +56,7 @@ var EnclaveInspectCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtos
 	LongDescription:           "List information about the enclave's status and contents",
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
 	EngineClientContextKey:    engineClientCtxKey,
+	Flags:                     nil,
 	Args: []*args.ArgConfig{
 		enclave_id_arg.NewEnclaveIDArg(
 			enclaveIdArgKey,

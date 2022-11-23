@@ -22,23 +22,23 @@ func NewStartosisValidator(kurtosisBackend *backend_interface.KurtosisBackend) *
 	}
 }
 
-func (validator *StartosisValidator) Validate(ctx context.Context, serviceNetwork service_network.ServiceNetwork, instructions []kurtosis_instruction.KurtosisInstruction) []*kurtosis_core_rpc_api_bindings.StartosisValidationError {
+func (validator *StartosisValidator) Validate(ctx context.Context, serviceNetwork service_network.ServiceNetwork, instructions []kurtosis_instruction.KurtosisInstruction) *kurtosis_core_rpc_api_bindings.KurtosisValidationErrors {
 	environment := startosis_validator.NewValidatorEnvironment(map[string]bool{}, serviceNetwork.GetServiceIDs())
 	for _, instruction := range instructions {
 		err := instruction.ValidateAndUpdateEnvironment(environment)
 		if err != nil {
-			return []*kurtosis_core_rpc_api_bindings.StartosisValidationError{
-				binding_constructors.NewStartosisValidationError(stacktrace.Propagate(err, "Error while validating instruction %v. The instruction can be found at %v", instruction.String(), instruction.GetPositionInOriginalScript().String()).Error()),
-			}
+			return binding_constructors.NewKurtosisValidationErrors([]*kurtosis_core_rpc_api_bindings.KurtosisValidationError{
+				binding_constructors.NewKurtosisValidationError(stacktrace.Propagate(err, "Error while validating instruction %v. The instruction can be found at %v", instruction.String(), instruction.GetPositionInOriginalScript().String()).Error()),
+			})
 		}
 	}
 	errors := validator.dockerImagesValidator.Validate(ctx, environment)
 	if errors != nil {
-		propagatedErrors := []*kurtosis_core_rpc_api_bindings.StartosisValidationError{}
+		propagatedErrors := make([]*kurtosis_core_rpc_api_bindings.KurtosisValidationError, len(errors))
 		for _, err := range errors {
-			propagatedErrors = append(propagatedErrors, binding_constructors.NewStartosisValidationError(stacktrace.Propagate(err, "Error while validating final environment of script").Error()))
+			propagatedErrors = append(propagatedErrors, binding_constructors.NewKurtosisValidationError(stacktrace.Propagate(err, "Error while validating final environment of script").Error()))
 		}
-		return propagatedErrors
+		return binding_constructors.NewKurtosisValidationErrors(propagatedErrors)
 	}
 	return nil
 }

@@ -5,7 +5,6 @@ import (
 	"testing"
 )
 
-
 func TestValidateArgs_valid(t *testing.T) {
 	input := `{"hello": "world!"}`
 	err := validateModuleArgs(input)

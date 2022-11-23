@@ -1,11 +1,56 @@
 # TBD
 
+# 0.53.8
+
+### Fixes
+- Better at handling errors when trying to format Kurtosis instructions at the CLI level
+
+# 0.53.7
+### Changes
+- Modified the `EnclaveIdGenerator` now is a user defined type and can be initialized once because it contains a time-seed inside
+- Simplify how the kurtosis instruction canonicalizer works. It now generates a single line canonicalized instruction, and indentation is performed at the CLI level using Bazel buildtools library.
+
+### Fixes
+- Fixed the `isEnclaveIdInUse` for the enclave validator, now uses on runtime for `is-key-in-map`
+
+### Features
+- Add the ability to execute remote modules using `EnclaveContext.ExecuteStartoisRemoteModule`
+- Add the ability to execute remote module using cli `kurtosis exec github.com/author/module`
+
+# 0.53.6
+
+# 0.53.5
+### Changes
+- Error types in ExecuteStartosisResponse type is now a union type, to better represent they are exclusive and prepare for transition to streaming
+- Update the KurtosisInstruction API type returned to the CLI. It now contains a combination of instruction position, the canonicalized instruction, and an optional instruction result 
+- Renamed `store_files_from_service` to `store_service_files`
+- Slightly update the way script output information are passed from the Startosis engine back the API container main class. This is a step to prepare for streaming this output all the way back the CLI.
+- Removed `load` statement in favour of `import_module`. Calling load will now throw an InterpretationError
+- Refactored startosis tests to enable parallel execution of tests
+
+# 0.53.4
+
+# 0.53.3
+### Fixes
+- Fixed a bug with dumping enclave logs during the CI run
+
 ### Features
 - Log that the module is being compressed & uploaded during `kurtosis exec`
 - Added one-off HTTP request and asserts
 
 ### Changes
 - `print()` is now a regular instructions like others, and it takes effect at execution time (used to be during interpretation)
+- Added `import_module` startosis builtin to replace `load`. Load is now deprecated. It can still be used but it will log a warning. It will be entirely removed in a future PR
+- Added exhaustive struct linting and brought code base into exhaustive struct compliance
+- Temporarily disable enclave dump for k8s in CircleCI until we fix issue #407
+- Small cleanup to kurtosis instruction classes. It now uses a pointer to the position object.
+
+### Fixes
+- Renamed `cmd_args` and `entrypoint_args` inside `config` inside `add_service` to `cmd` and `entrypoint`
+
+### Breaking Changes
+- Renamed `cmd_args` and `entrypoint_args` inside `config` inside `add_service` to `cmd` and `entrypoint`
+  - Users will have to replace their use of `cmd_args` and `entry_point_args` to the above inside their Starlark modules 
 
 # 0.53.2
 ### Features
@@ -29,7 +74,6 @@
 - Made `render_templates`, `upload_files`, `store_Files_from_service` accept `artifact_uuid` and
 return `artifact_uuid` during interpretation time
 - Moved `kurtosis startosis exec` to `kurtosis exec`
-- Added `import_module` startosis builtin to replace `load`. Load is now deprecated. It can still be used but it will log a warning. It will be entirely removed in a future PR
 
 ### Breaking Features
 - Moved `kurtosis startosis exec` to `kurtosis exec`
@@ -91,7 +135,7 @@ return `artifact_uuid` during interpretation time
 
 # 0.51.13
 ### Fixes
-- Set `entry_point_args` and `cmd_args` to `nil` if not specified instead of empty array 
+- Set `entrypoint` and `cmd_args` to `nil` if not specified instead of empty array 
 
 # 0.51.12
 ### Features

@@ -31,7 +31,8 @@ func GenerateExecBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstr
 		if interpretationError != nil {
 			return nil, interpretationError
 		}
-		execInstruction := NewExecInstruction(serviceNetwork, *shared_helpers.GetCallerPositionFromThread(thread), serviceId, commandArgs, expectedExitCode)
+		instructionPosition := shared_helpers.GetCallerPositionFromThread(thread)
+		execInstruction := NewExecInstruction(serviceNetwork, instructionPosition, serviceId, commandArgs, expectedExitCode)
 		*instructionsQueue = append(*instructionsQueue, execInstruction)
 		return starlark.None, nil
 	}
@@ -40,13 +41,13 @@ func GenerateExecBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstr
 type ExecInstruction struct {
 	serviceNetwork service_network.ServiceNetwork
 
-	position         kurtosis_instruction.InstructionPosition
+	position         *kurtosis_instruction.InstructionPosition
 	serviceId        kurtosis_backend_service.ServiceID
 	command          []string
 	expectedExitCode int32
 }
 
-func NewExecInstruction(serviceNetwork service_network.ServiceNetwork, position kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceID, command []string, expectedExitCode int32) *ExecInstruction {
+func NewExecInstruction(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceID, command []string, expectedExitCode int32) *ExecInstruction {
 	return &ExecInstruction{
 		serviceNetwork:   serviceNetwork,
 		position:         position,
@@ -57,11 +58,11 @@ func NewExecInstruction(serviceNetwork service_network.ServiceNetwork, position 
 }
 
 func (instruction *ExecInstruction) GetPositionInOriginalScript() *kurtosis_instruction.InstructionPosition {
-	return &instruction.position
+	return instruction.position
 }
 
 func (instruction *ExecInstruction) GetCanonicalInstruction() string {
-	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(ExecBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs(), &instruction.position)
+	return shared_helpers.CanonicalizeInstruction(ExecBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs())
 }
 
 func (instruction *ExecInstruction) Execute(ctx context.Context) (*string, error) {
@@ -76,7 +77,7 @@ func (instruction *ExecInstruction) Execute(ctx context.Context) (*string, error
 }
 
 func (instruction *ExecInstruction) String() string {
-	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(ExecBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs(), &instruction.position)
+	return instruction.GetCanonicalInstruction()
 }
 
 func (instruction *ExecInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {

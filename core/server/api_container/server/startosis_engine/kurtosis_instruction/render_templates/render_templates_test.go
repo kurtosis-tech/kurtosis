@@ -22,24 +22,16 @@ func TestRenderTemplate_TestStringRepresentation(t *testing.T) {
 
 	renderInstruction := newEmptyRenderTemplatesInstruction(
 		nil,
-		*kurtosis_instruction.NewInstructionPosition(16, 33, "dummyFile"),
+		kurtosis_instruction.NewInstructionPosition(16, 33, "dummyFile"),
 	)
 	renderInstruction.starlarkKwargs[templateAndDataByDestinationRelFilepathArg] = templateAndDataDict
 	testArtifactUuid, err := enclave_data_directory.NewFilesArtifactUUID()
 	require.Nil(t, err)
 	renderInstruction.starlarkKwargs[nonOptionalArtifactUuidArgName] = starlark.String(testArtifactUuid)
 
-	expectedStr := `# from: dummyFile[16:33]
-render_templates(
-	artifact_uuid="` + string(testArtifactUuid) + `",
-	template_and_data_by_dest_rel_filepath={
-		"/foo/bar/test.txt": {
-			"template": "Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}.",
-			"template_data_json": "{\"Answer\":6,\"LargeFloat\":1231231243.43,\"Name\":\"Stranger\",\"Numbers\":[1,2,3],\"UnixTimeStamp\":1257894000}"
-		}
-	}
-)`
+	expectedStr := `render_templates(artifact_uuid="` + string(testArtifactUuid) + `", template_and_data_by_dest_rel_filepath={"/foo/bar/test.txt": {"template": "Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}.", "template_data_json": "{\"Answer\":6,\"LargeFloat\":1231231243.43,\"Name\":\"Stranger\",\"Numbers\":[1,2,3],\"UnixTimeStamp\":1257894000}"}})`
 	require.Equal(t, expectedStr, renderInstruction.GetCanonicalInstruction())
+	require.Equal(t, expectedStr, renderInstruction.String())
 }
 
 func TestRenderTemplate_TestMultipleTemplates(t *testing.T) {
@@ -56,7 +48,7 @@ func TestRenderTemplate_TestMultipleTemplates(t *testing.T) {
 
 	renderInstruction := newEmptyRenderTemplatesInstruction(
 		nil,
-		*kurtosis_instruction.NewInstructionPosition(16, 33, "dummyFile"),
+		kurtosis_instruction.NewInstructionPosition(16, 33, "dummyFile"),
 	)
 	renderInstruction.starlarkKwargs[templateAndDataByDestinationRelFilepathArg] = templateAndDataByDestFilepath
 	testArtifactUuid, err := enclave_data_directory.NewFilesArtifactUUID()
@@ -64,19 +56,7 @@ func TestRenderTemplate_TestMultipleTemplates(t *testing.T) {
 	renderInstruction.starlarkKwargs[nonOptionalArtifactUuidArgName] = starlark.String(testArtifactUuid)
 
 	// keys of the map are sorted alphabetically by the canonicalizer
-	expectedStr := `# from: dummyFile[16:33]
-render_templates(
-	artifact_uuid="` + string(testArtifactUuid) + `",
-	template_and_data_by_dest_rel_filepath={
-		"/fizz/buzz/test.txt": {
-			"template": "Hello {{.LastName}}",
-			"template_data_json": "{\"LastName\": \"Doe\"}"
-		},
-		"/foo/bar/test.txt": {
-			"template": "Hello {{.Name}}",
-			"template_data_json": "{\"Name\": \"John\"}"
-		}
-	}
-)`
+	expectedStr := `render_templates(artifact_uuid="` + string(testArtifactUuid) + `", template_and_data_by_dest_rel_filepath={"/fizz/buzz/test.txt": {"template": "Hello {{.LastName}}", "template_data_json": "{\"LastName\": \"Doe\"}"}, "/foo/bar/test.txt": {"template": "Hello {{.Name}}", "template_data_json": "{\"Name\": \"John\"}"}})`
 	require.Equal(t, expectedStr, renderInstruction.GetCanonicalInstruction())
+	require.Equal(t, expectedStr, renderInstruction.String())
 }
