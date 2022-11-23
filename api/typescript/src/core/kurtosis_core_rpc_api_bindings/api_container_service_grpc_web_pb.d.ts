@@ -44,12 +44,22 @@ export class ApiContainerServiceClient {
                response: api_container_service_pb.ExecuteStartosisResponse) => void
   ): grpcWeb.ClientReadableStream<api_container_service_pb.ExecuteStartosisResponse>;
 
+  executeKurtosisScript(
+    request: api_container_service_pb.ExecuteStartosisScriptArgs,
+    metadata?: grpcWeb.Metadata
+  ): grpcWeb.ClientReadableStream<api_container_service_pb.KurtosisExecutionResponseLine>;
+
   executeStartosisModule(
     request: api_container_service_pb.ExecuteStartosisModuleArgs,
     metadata: grpcWeb.Metadata | undefined,
     callback: (err: grpcWeb.RpcError,
                response: api_container_service_pb.ExecuteStartosisResponse) => void
   ): grpcWeb.ClientReadableStream<api_container_service_pb.ExecuteStartosisResponse>;
+
+  executeKurtosisModule(
+    request: api_container_service_pb.ExecuteStartosisModuleArgs,
+    metadata?: grpcWeb.Metadata
+  ): grpcWeb.ClientReadableStream<api_container_service_pb.KurtosisExecutionResponseLine>;
 
   startServices(
     request: api_container_service_pb.StartServicesArgs,
@@ -195,10 +205,20 @@ export class ApiContainerServicePromiseClient {
     metadata?: grpcWeb.Metadata
   ): Promise<api_container_service_pb.ExecuteStartosisResponse>;
 
+  executeKurtosisScript(
+    request: api_container_service_pb.ExecuteStartosisScriptArgs,
+    metadata?: grpcWeb.Metadata
+  ): grpcWeb.ClientReadableStream<api_container_service_pb.KurtosisExecutionResponseLine>;
+
   executeStartosisModule(
     request: api_container_service_pb.ExecuteStartosisModuleArgs,
     metadata?: grpcWeb.Metadata
   ): Promise<api_container_service_pb.ExecuteStartosisResponse>;
+
+  executeKurtosisModule(
+    request: api_container_service_pb.ExecuteStartosisModuleArgs,
+    metadata?: grpcWeb.Metadata
+  ): grpcWeb.ClientReadableStream<api_container_service_pb.KurtosisExecutionResponseLine>;
 
   startServices(
     request: api_container_service_pb.StartServicesArgs,
