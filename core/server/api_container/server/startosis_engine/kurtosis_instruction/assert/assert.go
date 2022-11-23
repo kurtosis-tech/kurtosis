@@ -80,7 +80,7 @@ func (instruction *AssertInstruction) Execute(ctx context.Context) (*string, err
 			return nil, stacktrace.Propagate(err, "Assert comparison failed '%v' '%v' '%v'", currentValue, instruction.assertion, instruction.target)
 		}
 		if !result {
-			return nil, stacktrace.Propagate(err, "Assertion failed '%v' '%v' '%v'", currentValue, instruction.assertion, instruction.target)
+			return nil, stacktrace.NewError("Assertion failed '%v' '%v' '%v'", currentValue, instruction.assertion, instruction.target)
 		}
 	} else {
 		listTarget := instruction.target.(*starlark.List)

@@ -38,7 +38,7 @@ assert(response["code"], "<", 300)
 assert(response["code"], ">", 100)
 assert(response["code"], "IN", [100, 200])
 assert(response["code"], "NOT_IN", [100, 300])
-assert(response["body"], "==", "<html><body><h1>It works!</h1></body></html>")
+assert(response["body"], "==", "<html><body><h1>It works!</h1></body></html>\n")
 `
 )
 
