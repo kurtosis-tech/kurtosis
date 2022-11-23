@@ -575,6 +575,8 @@ func encodeStarlarkObjectAsJSON(object starlark.Value) (string,*startosis_errors
 		starlarkstruct.Default.GoString(): starlark.NewBuiltin(starlarkstruct.Default.GoString(), starlarkstruct.Make), // extension to build struct in starlark
 	}
 
+	// We do a print here as if we return the encoded variable we get extra quotes and slashes
+	// {"fizz": "buzz"} becomes "{\"fizz": \"buzz"\}"
 	scriptToRun := fmt.Sprintf(`encoded_json = json.encode(%v)
 print(encoded_json)`, object.String())
 
