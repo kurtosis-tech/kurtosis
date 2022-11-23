@@ -23,7 +23,7 @@ func parseKurtosisMod(kurtosisModFilepath string) (*KurtosisMod, error) {
 	kurtosisModContents, err := ioutil.ReadFile(kurtosisModFilepath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, stacktrace.NewError("Couldn't find a '%v' in the root of the module at '%v'. Modules are expected to have a '%v' at root, have a look at '%v' for more", modFilename, kurtosisModFilepath, modFilename, dependenciesUrl)
+			return nil, stacktrace.NewError("Couldn't find a '%v' in the root of the module at '%v'. Packages are expected to have a '%v' at root, have a look at '%v' for more", modFilename, kurtosisModFilepath, modFilename, dependenciesUrl)
 		}
 		return nil, stacktrace.Propagate(err, "An error occurred while reading the '%v' file at '%v'", modFilename, kurtosisModFilepath)
 	}

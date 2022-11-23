@@ -231,6 +231,8 @@ func executeScript(enclaveCtx *enclaves.EnclaveContext, scriptPath string, dryRu
 func executeModule(enclaveCtx *enclaves.EnclaveContext, modulePath string, serializedParams string, dryRun bool) error {
 	// we get the absolute path so that the logs make more sense
 	absoluteModulePath, err := filepath.Abs(modulePath)
+	logrus.Info("Executing Starlark package at '%v' as the passed argument '%v' looks like a directory", absoluteModulePath, modulePath)
+
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while getting the absolute path for '%v'", modulePath)
 	}
