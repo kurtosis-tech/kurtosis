@@ -560,9 +560,13 @@ func safeCastToInt32(expectedValueString starlark.Value, argNameForLogging strin
 }
 
 func encodeStarlarkObjectAsJSON(object starlark.Value) (string,*startosis_errors.InterpretationError) {
+	jsonifiedVersion := ""
 	thread := &starlark.Thread{
 		Name:       jsonParsingThreadName,
 		OnMaxSteps: nil,
+		Print: 	func(_ *starlark.Thread, msg string) {
+			jsonifiedVersion = msg
+		},
 	}
 
 	predeclared := &starlark.StringDict{
@@ -571,13 +575,14 @@ func encodeStarlarkObjectAsJSON(object starlark.Value) (string,*startosis_errors
 		starlarkstruct.Default.GoString(): starlark.NewBuiltin(starlarkstruct.Default.GoString(), starlarkstruct.Make), // extension to build struct in starlark
 	}
 
-	scriptToRun := fmt.Sprintf(`encoded_json = json.encode(%v)`, object.String())
+	scriptToRun := fmt.Sprintf(`encoded_json = json.encode(%v)
+print(encoded_json)`, object.String())
 
-	response, err := starlark.ExecFile(thread, jsonParsingModuleId, scriptToRun, *predeclared)
+	_, err := starlark.ExecFile(thread, jsonParsingModuleId, scriptToRun, *predeclared)
 
 	if err != nil {
 		return "" ,startosis_errors.NewInterpretationError("Error converting '%v' to JSON", object.String())
 	}
 
-	return response["encoded_json"].String(), nil
+	return jsonifiedVersion, nil
 }

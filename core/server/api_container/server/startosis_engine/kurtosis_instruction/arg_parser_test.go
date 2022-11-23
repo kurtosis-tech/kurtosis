@@ -606,10 +606,11 @@ func TestEncodeStarlarkObjectAsJSON_EncodesStructsCorrectly(t *testing.T){
 	structToJsonifyStrDict := starlark.StringDict{}
 	structToJsonifyStrDict["foo"] = starlark.String("bar")
 	structToJsonifyStrDict["buzz"] = starlark.MakeInt(42)
+	structToJsonifyStrDict["fizz"] = starlark.Bool(false)
 	structToJsonify := starlarkstruct.FromStringDict(starlarkstruct.Default, structToJsonifyStrDict)
 	require.NotNil(t, structToJsonify)
 	structJsonStr, err := encodeStarlarkObjectAsJSON(structToJsonify)
 	require.Nil(t, err)
-	expectedStr := `{"foo": "bar", "buzz": 42}`
+	expectedStr := `{"buzz":42,"fizz":false,"foo":"bar"}`
 	require.Equal(t, expectedStr, structJsonStr)
 }
