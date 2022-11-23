@@ -54,7 +54,7 @@ func (instruction *RemoveServiceInstruction) GetPositionInOriginalScript() *kurt
 }
 
 func (instruction *RemoveServiceInstruction) GetCanonicalInstruction() string {
-	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(RemoveServiceBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs(), instruction.position)
+	return shared_helpers.CanonicalizeInstruction(RemoveServiceBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs())
 }
 
 func (instruction *RemoveServiceInstruction) Execute(ctx context.Context) (*string, error) {
@@ -67,7 +67,7 @@ func (instruction *RemoveServiceInstruction) Execute(ctx context.Context) (*stri
 }
 
 func (instruction *RemoveServiceInstruction) String() string {
-	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(RemoveServiceBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs(), instruction.position)
+	return instruction.GetCanonicalInstruction()
 }
 
 func (instruction *RemoveServiceInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {

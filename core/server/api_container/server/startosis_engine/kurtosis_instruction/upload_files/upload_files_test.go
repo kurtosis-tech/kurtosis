@@ -9,18 +9,13 @@ import (
 
 func TestUploadFiles_StringRepresentation(t *testing.T) {
 	filePath := "github.com/kurtosis/module/lib/lib.star"
-	artifactUuid, err := enclave_data_directory.NewFilesArtifactUUID()
+	artifactId, err := enclave_data_directory.NewFilesArtifactUUID()
 	require.Nil(t, err)
 	uploadInstruction := NewUploadFilesInstruction(
 		kurtosis_instruction.NewInstructionPosition(1, 13, "dummyFile"),
-		nil, nil, filePath, "dummyPathOnDisk", artifactUuid,
+		nil, nil, filePath, "dummyPathOnDisk", artifactId,
 	)
-	expectedMultiLineStrRep := `# from: dummyFile[1:13]
-upload_files(
-	artifact_uuid="` + string(artifactUuid) + `",
-	src_path="` + filePath + `"
-)`
-	require.Equal(t, expectedMultiLineStrRep, uploadInstruction.GetCanonicalInstruction())
-	expectedSingleLineStrRep := `upload_files(artifact_uuid="` + string(artifactUuid) + `", src_path="` + filePath + `")`
-	require.Equal(t, expectedSingleLineStrRep, uploadInstruction.String())
+	expectedStrRep := `upload_files(artifact_id="` + string(artifactId) + `", src="` + filePath + `")`
+	require.Equal(t, expectedStrRep, uploadInstruction.GetCanonicalInstruction())
+	require.Equal(t, expectedStrRep, uploadInstruction.String())
 }

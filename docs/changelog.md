@@ -1,10 +1,30 @@
 # TBD
+
+### Changes
+- Add 2 endpoints to the APIC that streams the output of a Startosis script execution
+
+# 0.53.9
+
+### Fixes
+- Renamed `artifact_uuid` to `artifact_id` and `src` to `src_path` in `upload_files` in Starlark
+
+# 0.53.8
+
+### Fixes
+- Better at handling errors when trying to format Kurtosis instructions at the CLI level
+
+# 0.53.7
 ### Changes
 - Modified the `EnclaveIdGenerator` now is a user defined type and can be initialized once because it contains a time-seed inside
+- Simplify how the kurtosis instruction canonicalizer works. It now generates a single line canonicalized instruction, and indentation is performed at the CLI level using Bazel buildtools library.
 
 ### Fixes
 - Fixed the `isEnclaveIdInUse` for the enclave validator, now uses on runtime for `is-key-in-map`
 - Fixed the error that would happen if there was a missing `kurtosis.mod` file at the root of the module
+
+### Features
+- Add the ability to execute remote modules using `EnclaveContext.ExecuteStartoisRemoteModule`
+- Add the ability to execute remote module using cli `kurtosis exec github.com/author/module`
 
 # 0.53.6
 
