@@ -1,8 +1,10 @@
 package enclaves
 
 import (
+	"errors"
 	"github.com/go-yaml/yaml"
 	"github.com/kurtosis-tech/stacktrace"
+	"io/fs"
 	"os"
 )
 
@@ -21,7 +23,7 @@ type Module struct {
 func parseKurtosisMod(kurtosisModFilepath string) (*KurtosisMod, error) {
 	kurtosisModContents, err := os.ReadFile(kurtosisModFilepath)
 	if err != nil {
-		if os.IsExist(err) {
+		if errors.Is(err, fs.ErrNotExist) {
 			return nil, stacktrace.NewError("Couldn't find a '%v' in the root of the module at '%v'. Modules are expected to have a '%v' at root, have a look at '%v' for more", modFilename, kurtosisModFilepath, modFilename, dependenciesUrl)
 		}
 		return nil, stacktrace.Propagate(err, "An error occurred while reading the '%v' file at '%v'", modFilename, kurtosisModFilepath)
