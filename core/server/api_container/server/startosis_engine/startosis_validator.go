@@ -13,17 +13,20 @@ import (
 
 type StartosisValidator struct {
 	dockerImagesValidator *startosis_validator.DockerImagesValidator
+
+	serviceNetwork service_network.ServiceNetwork
 }
 
-func NewStartosisValidator(kurtosisBackend *backend_interface.KurtosisBackend) *StartosisValidator {
+func NewStartosisValidator(kurtosisBackend *backend_interface.KurtosisBackend, serviceNetwork service_network.ServiceNetwork) *StartosisValidator {
 	dockerImagesValidator := startosis_validator.NewDockerImagesValidator(kurtosisBackend)
 	return &StartosisValidator{
 		dockerImagesValidator,
+		serviceNetwork,
 	}
 }
 
-func (validator *StartosisValidator) Validate(ctx context.Context, serviceNetwork service_network.ServiceNetwork, instructions []kurtosis_instruction.KurtosisInstruction) *kurtosis_core_rpc_api_bindings.KurtosisValidationErrors {
-	environment := startosis_validator.NewValidatorEnvironment(map[string]bool{}, serviceNetwork.GetServiceIDs())
+func (validator *StartosisValidator) Validate(ctx context.Context, instructions []kurtosis_instruction.KurtosisInstruction) *kurtosis_core_rpc_api_bindings.KurtosisValidationErrors {
+	environment := startosis_validator.NewValidatorEnvironment(map[string]bool{}, validator.serviceNetwork.GetServiceIDs())
 	for _, instruction := range instructions {
 		err := instruction.ValidateAndUpdateEnvironment(environment)
 		if err != nil {

@@ -8,7 +8,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"io"
 	"sync"
 )
 
@@ -91,6 +93,17 @@ func (service *ApiContainerGatewayServiceServer) ExecuteStartosisScript(ctx cont
 	return remoteApiContainerResponse, nil
 }
 
+func (service *ApiContainerGatewayServiceServer) ExecuteKurtosisScript(args *kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptArgs, stream kurtosis_core_rpc_api_bindings.ApiContainerService_ExecuteKurtosisScriptServer) error {
+	kurtosisResponseLineStream, err := service.remoteApiContainerClient.ExecuteKurtosisScript(stream.Context(), args)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred starting the execution of Kurtosis code")
+	}
+	if err := service.forwardKurtosisExecutionStream(kurtosisResponseLineStream, stream); err != nil {
+		return stacktrace.Propagate(err, "An error occurred running Kurtosis code")
+	}
+	return nil
+}
+
 func (service *ApiContainerGatewayServiceServer) ExecuteStartosisModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleArgs) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse, error) {
 	remoteApiContainerResponse, err := service.remoteApiContainerClient.ExecuteStartosisModule(ctx, args)
 	if err != nil {
@@ -98,6 +111,17 @@ func (service *ApiContainerGatewayServiceServer) ExecuteStartosisModule(ctx cont
 	}
 
 	return remoteApiContainerResponse, nil
+}
+
+func (service *ApiContainerGatewayServiceServer) ExecuteKurtosisModule(args *kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleArgs, stream kurtosis_core_rpc_api_bindings.ApiContainerService_ExecuteKurtosisModuleServer) error {
+	kurtosisResponseLineStream, err := service.remoteApiContainerClient.ExecuteKurtosisModule(stream.Context(), args)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred starting the execution of Kurtosis code")
+	}
+	if err := service.forwardKurtosisExecutionStream(kurtosisResponseLineStream, stream); err != nil {
+		return stacktrace.Propagate(err, "An error occurred running Kurtosis code")
+	}
+	return nil
 }
 
 func (service *ApiContainerGatewayServiceServer) StartServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServicesArgs) (*kurtosis_core_rpc_api_bindings.StartServicesResponse, error) {
@@ -295,6 +319,12 @@ func (service *ApiContainerGatewayServiceServer) RenderTemplatesToFilesArtifact(
 	return remoteApiContainerResponse, nil
 }
 
+// ====================================================================================================
+//
+//	Private helper methods
+//
+// ====================================================================================================
+
 // writeOverServiceInfoFieldsWithLocalConnectionInformation overwites the `MaybePublicPorts` and `MaybePublicIpAdrr` fields to connect to local ports forwarding requests to private ports in Kubernetes
 // Only TCP Private Ports are forwarded
 func (service *ApiContainerGatewayServiceServer) writeOverServiceInfoFieldsWithLocalConnectionInformation(serviceInfo *kurtosis_core_rpc_api_bindings.ServiceInfo) error {
@@ -410,4 +440,23 @@ func (service *ApiContainerGatewayServiceServer) idempotentKillRunningConnection
 	runningLocalConnection.kurtosisConnection.Stop()
 	// delete the entry for the serve
 	delete(service.userServiceGuidToLocalConnectionMap, serviceGuid)
+}
+
+func (service *ApiContainerGatewayServiceServer) forwardKurtosisExecutionStream(streamFromRemoteApic grpc.ClientStream, streamToWriteTo grpc.ServerStream) error {
+	for {
+		kurtosisExecutionResponseLine := new(kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine)
+		if err := streamFromRemoteApic.RecvMsg(kurtosisExecutionResponseLine); err != nil {
+			if err == io.EOF {
+				logrus.Debug("Finished reading from the Kurtosis response line stream.")
+				return nil
+			}
+			if err != nil {
+				return stacktrace.Propagate(err, "An error occurred reading from the Kurtosis response line stream. Execution in Kurtosis won't be interrupted but the output won't be returned to the user anymore")
+			}
+
+			if err := streamToWriteTo.SendMsg(kurtosisExecutionResponseLine); err != nil {
+				return stacktrace.Propagate(err, "Received a message from the Kurtosis response line stream, but an error occurred forwarding it back to the user. The execution of the Kurtosis code won't be affected, but no output will be returned to the use anymore.")
+			}
+		}
+	}
 }
