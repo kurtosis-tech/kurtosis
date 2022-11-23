@@ -1,11 +1,10 @@
-package shared_helpers
+package magic_string_helper
 
 import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/facts_engine"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/recipe_executor"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
@@ -16,8 +15,6 @@ import (
 const (
 	unlimitedMatches = -1
 	singleMatch      = 1
-
-	callerPosition = 1
 
 	serviceIdSubgroupName = "service_id"
 	allSubgroupName       = "all"
@@ -48,25 +45,6 @@ var (
 	compiledFactReplacementRegex         = regexp.MustCompile(factReplacementRegex)
 	compiledRuntimeValueReplacementRegex = regexp.MustCompile(runtimeValueReplacementRegex)
 )
-
-// GetCallerPositionFromThread gets you the position (line, col, filename) from where this function is called
-// We pick the first position on the stack based on this https://github.com/google/starlark-go/blob/eaacdf22efa54ae03ea2ec60e248be80d0cadda0/starlark/eval.go#L136
-// As far as I understand, when we call this function from any of the `GenerateXXXBuiltIn` the following occurs
-// 1. the 0th position is the builtin, the pos/col on it are 0,0
-// 2. the 1st position is the function itself, line is the line of the function, col is the position of the opening parenthesis
-// 3. the 2nd position is whatever calls the function, so if its nested in another function its that
-// I reckon the stack is built on top of a queue or something, otherwise I'd expect the last item to contain the calling function too
-func GetCallerPositionFromThread(thread *starlark.Thread) *kurtosis_instruction.InstructionPosition {
-	// TODO(gb): can do better by returning the entire callstack positions, but it's a good start
-	// As the bottom of the stack is guaranteed to be a built in based on above,
-	// The 2nd item is the caller, this should always work when called from a GenerateXXXBuiltIn context
-	// We panic to eject early in case a bug occurs.
-	if thread.CallStackDepth() < 2 {
-		panic("Call stack needs to contain at least 2 items for us to get the callers position. This is a Kurtosis Bug.")
-	}
-	callFrame := thread.CallStack().At(callerPosition)
-	return kurtosis_instruction.NewInstructionPosition(callFrame.Pos.Line, callFrame.Pos.Col, callFrame.Pos.Filename())
-}
 
 func MakeWaitInterpretationReturnValue(serviceId service.ServiceID, factName string) starlark.String {
 	fact := starlark.String(fmt.Sprintf(FactReplacementPlaceholderFormat, serviceId, factName))
@@ -123,7 +101,7 @@ func ReplaceFactsInString(originalString string, factsEngine *facts_engine.Facts
 	return replacedString, nil
 }
 
-func ReplaceRuntimeValueInString(originalString string, recipeEngine *recipe_executor.RecipeExecutor) (string, error) {
+func ReplaceRuntimeValueInString(originalString string, recipeEngine *recipe_executor.RuntimeValueStore) (string, error) {
 	matches := compiledRuntimeValueReplacementRegex.FindAllStringSubmatch(originalString, unlimitedMatches)
 	replacedString := originalString
 	for _, match := range matches {
@@ -135,7 +113,10 @@ func ReplaceRuntimeValueInString(originalString string, recipeEngine *recipe_exe
 		if runtimeValueFieldMatchIndex == subExpNotFound {
 			return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", runtimeValueFieldSubgroupName, compiledRuntimeValueReplacementRegex.String())
 		}
-		runtimeValue := recipeEngine.GetValue(match[runtimeValueMatchIndex])
+		runtimeValue, err := recipeEngine.GetValue(match[runtimeValueMatchIndex])
+		if err != nil {
+			return "", stacktrace.Propagate(err, "An error happened getting runtime value '%v'", match[runtimeValueMatchIndex])
+		}
 		allMatchIndex := compiledRuntimeValueReplacementRegex.SubexpIndex(allSubgroupName)
 		if allMatchIndex == subExpNotFound {
 			return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", serviceIdSubgroupName, compiledFactReplacementRegex.String())
@@ -146,7 +127,7 @@ func ReplaceRuntimeValueInString(originalString string, recipeEngine *recipe_exe
 	return replacedString, nil
 }
 
-func GetRuntimeValueFromString(originalString string, recipeEngine *recipe_executor.RecipeExecutor) (starlark.Comparable, error) {
+func GetRuntimeValueFromString(originalString string, runtimeValueStore *recipe_executor.RuntimeValueStore) (starlark.Comparable, error) {
 	matches := compiledRuntimeValueReplacementRegex.FindAllStringSubmatch(originalString, unlimitedMatches)
 	if len(matches) != 1 {
 		return nil, stacktrace.NewError("More than one match was found on regexp '%v'. Match count '%v'", compiledRuntimeValueReplacementRegex.String(), len(matches))
@@ -161,7 +142,13 @@ func GetRuntimeValueFromString(originalString string, recipeEngine *recipe_execu
 	if runtimeValueFieldMatchIndex == subExpNotFound {
 		return nil, stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", runtimeValueFieldSubgroupName, compiledRuntimeValueReplacementRegex.String())
 	}
-	runtimeValue := recipeEngine.GetValue(match[runtimeValueMatchIndex])
-	selectedRuntimeValue := runtimeValue[match[runtimeValueFieldMatchIndex]]
+	runtimeValue, err := runtimeValueStore.GetValue(match[runtimeValueMatchIndex])
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error happened getting runtime value '%v'", match[runtimeValueMatchIndex])
+	}
+	selectedRuntimeValue, found := runtimeValue[match[runtimeValueFieldMatchIndex]]
+	if !found {
+		return nil, stacktrace.NewError("An error happened getting runtime value field '%v' '%v'", match[runtimeValueMatchIndex], match[runtimeValueFieldMatchIndex])
+	}
 	return selectedRuntimeValue, nil
 }

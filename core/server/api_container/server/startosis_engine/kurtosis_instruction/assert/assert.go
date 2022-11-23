@@ -5,6 +5,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/recipe_executor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
@@ -30,7 +31,7 @@ var stringTokenToComparisonStarlarkToken = map[string]syntax.Token{
 	"<":  syntax.LT,
 }
 
-func GenerateAssertBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, recipeExecutor *recipe_executor.RecipeExecutor, serviceNetwork service_network.ServiceNetwork) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+func GenerateAssertBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, recipeExecutor *recipe_executor.RuntimeValueStore, serviceNetwork service_network.ServiceNetwork) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 	// TODO: Force returning an InterpretationError rather than a normal error
 	return func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 		runtimeValue, assertion, target, interpretationError := parseStartosisArgs(b, args, kwargs)
@@ -45,13 +46,13 @@ func GenerateAssertBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisIns
 
 type AssertInstruction struct {
 	position       kurtosis_instruction.InstructionPosition
-	recipeExecutor *recipe_executor.RecipeExecutor
+	recipeExecutor *recipe_executor.RuntimeValueStore
 	runtimeValue   string
 	assertion      string
 	target         starlark.Comparable
 }
 
-func NewAssertInstruction(position kurtosis_instruction.InstructionPosition, recipeExecutor *recipe_executor.RecipeExecutor, runtimeValue string, assertion string, target starlark.Comparable) *AssertInstruction {
+func NewAssertInstruction(position kurtosis_instruction.InstructionPosition, recipeExecutor *recipe_executor.RuntimeValueStore, runtimeValue string, assertion string, target starlark.Comparable) *AssertInstruction {
 	return &AssertInstruction{
 		position:       position,
 		recipeExecutor: recipeExecutor,
@@ -70,7 +71,7 @@ func (instruction *AssertInstruction) GetCanonicalInstruction() string {
 }
 
 func (instruction *AssertInstruction) Execute(ctx context.Context) (*string, error) {
-	currentValue, err := shared_helpers.GetRuntimeValueFromString(instruction.runtimeValue, instruction.recipeExecutor)
+	currentValue, err := magic_string_helper.GetRuntimeValueFromString(instruction.runtimeValue, instruction.recipeExecutor)
 	if err != nil {
 		return nil, err
 	}

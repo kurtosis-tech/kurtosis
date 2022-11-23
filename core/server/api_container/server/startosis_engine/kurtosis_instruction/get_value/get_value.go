@@ -2,13 +2,14 @@ package get_value
 
 import (
 	"context"
-	"fmt"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/recipe"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/recipe_executor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
+	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
 )
@@ -19,7 +20,7 @@ const (
 	recipeArgName = "recipe"
 )
 
-func GenerateGetValueBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, recipeExecutor *recipe_executor.RecipeExecutor, serviceNetwork service_network.ServiceNetwork) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+func GenerateGetValueBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, recipeExecutor *recipe_executor.RuntimeValueStore, serviceNetwork service_network.ServiceNetwork) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 	// TODO: Force returning an InterpretationError rather than a normal error
 	return func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 		recipeConfig, interpretationError := parseStartosisArgs(b, args, kwargs)
@@ -30,9 +31,9 @@ func GenerateGetValueBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisI
 		if interpretationErr != nil {
 			return nil, interpretationErr
 		}
-		resultUuid := recipeExecutor.CreateValue(httpRequestRecipe)
-		returnValue := recipe_executor.CreateStarlarkStructFromHttpRequestRuntimeValue(starlark.String(fmt.Sprintf(shared_helpers.RuntimeValueReplacementPlaceholderFormat, resultUuid, "body")), starlark.String(fmt.Sprintf(shared_helpers.RuntimeValueReplacementPlaceholderFormat, resultUuid, "code")))
-		getValueInstruction := NewGetValueInstruction(serviceNetwork, *shared_helpers.GetCallerPositionFromThread(thread), recipeExecutor, resultUuid)
+		resultUuid := recipeExecutor.CreateValue()
+		returnValue := recipe.CreateStarlarkReturnValueFromHttpRequestRecipe(resultUuid)
+		getValueInstruction := NewGetValueInstruction(serviceNetwork, *shared_helpers.GetCallerPositionFromThread(thread), recipeExecutor, httpRequestRecipe, resultUuid)
 		*instructionsQueue = append(*instructionsQueue, getValueInstruction)
 		return returnValue, nil
 	}
@@ -41,17 +42,19 @@ func GenerateGetValueBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisI
 type GetValueInstruction struct {
 	serviceNetwork service_network.ServiceNetwork
 
-	position       kurtosis_instruction.InstructionPosition
-	recipeExecutor *recipe_executor.RecipeExecutor
-	resultUuid     string
+	position          kurtosis_instruction.InstructionPosition
+	recipeExecutor    *recipe_executor.RuntimeValueStore
+	httpRequestRecipe *recipe.HttpRequestRecipe
+	resultUuid        string
 }
 
-func NewGetValueInstruction(serviceNetwork service_network.ServiceNetwork, position kurtosis_instruction.InstructionPosition, recipeExecutor *recipe_executor.RecipeExecutor, resultUuid string) *GetValueInstruction {
+func NewGetValueInstruction(serviceNetwork service_network.ServiceNetwork, position kurtosis_instruction.InstructionPosition, recipeExecutor *recipe_executor.RuntimeValueStore, httpRequestRecipe *recipe.HttpRequestRecipe, resultUuid string) *GetValueInstruction {
 	return &GetValueInstruction{
-		serviceNetwork: serviceNetwork,
-		position:       position,
-		recipeExecutor: recipeExecutor,
-		resultUuid:     resultUuid,
+		serviceNetwork:    serviceNetwork,
+		position:          position,
+		recipeExecutor:    recipeExecutor,
+		httpRequestRecipe: httpRequestRecipe,
+		resultUuid:        resultUuid,
 	}
 }
 
@@ -64,7 +67,11 @@ func (instruction *GetValueInstruction) GetCanonicalInstruction() string {
 }
 
 func (instruction *GetValueInstruction) Execute(ctx context.Context) (*string, error) {
-	err := instruction.recipeExecutor.ExecuteValue(ctx, instruction.serviceNetwork, instruction.resultUuid)
+	result, err := instruction.httpRequestRecipe.Execute(ctx, instruction.serviceNetwork)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error executing get_value")
+	}
+	instruction.recipeExecutor.SetValue(instruction.resultUuid, result)
 	return nil, err
 }
 

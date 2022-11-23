@@ -13,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/assert"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/define_fact"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/exec"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/extract"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/get_value"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/kurtosis_print"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/remove_service"
@@ -56,7 +57,7 @@ type StartosisInterpreter struct {
 	mutex              *sync.Mutex
 	serviceNetwork     service_network.ServiceNetwork
 	factsEngine        *facts_engine.FactsEngine
-	recipeExecutor     *recipe_executor.RecipeExecutor
+	recipeExecutor     *recipe_executor.RuntimeValueStore
 	moduleGlobalsCache map[string]*startosis_modules.ModuleCacheEntry
 	// TODO AUTH there will be a leak here in case people with different repo visibility access a module
 	moduleContentProvider startosis_modules.ModuleContentProvider
@@ -77,7 +78,7 @@ func NewStartosisInterpreter(serviceNetwork service_network.ServiceNetwork, modu
 	}
 }
 
-func NewStartosisInterpreterWithFacts(serviceNetwork service_network.ServiceNetwork, factsEngine *facts_engine.FactsEngine, moduleContentProvider startosis_modules.ModuleContentProvider, recipeExecutor *recipe_executor.RecipeExecutor) *StartosisInterpreter {
+func NewStartosisInterpreterWithFacts(serviceNetwork service_network.ServiceNetwork, factsEngine *facts_engine.FactsEngine, moduleContentProvider startosis_modules.ModuleContentProvider, recipeExecutor *recipe_executor.RuntimeValueStore) *StartosisInterpreter {
 	return &StartosisInterpreter{
 		mutex:                 &sync.Mutex{},
 		serviceNetwork:        serviceNetwork,
@@ -145,6 +146,7 @@ func (interpreter *StartosisInterpreter) buildBindings(threadName string, instru
 		add_service.AddServiceBuiltinName:                starlark.NewBuiltin(add_service.AddServiceBuiltinName, add_service.GenerateAddServiceBuiltin(instructionsQueue, interpreter.serviceNetwork, interpreter.factsEngine)),
 		assert.AssertBuiltinName:                         starlark.NewBuiltin(assert.AssertBuiltinName, assert.GenerateAssertBuiltin(instructionsQueue, interpreter.recipeExecutor, interpreter.serviceNetwork)),
 		exec.ExecBuiltinName:                             starlark.NewBuiltin(exec.ExecBuiltinName, exec.GenerateExecBuiltin(instructionsQueue, interpreter.serviceNetwork)),
+		extract.DefineGetValueBuiltinName:                starlark.NewBuiltin(extract.DefineGetValueBuiltinName, extract.GenerateExtractInstructionBuiltin(instructionsQueue, interpreter.recipeExecutor, interpreter.serviceNetwork)),
 		get_value.DefineGetValueBuiltinName:              starlark.NewBuiltin(get_value.DefineGetValueBuiltinName, get_value.GenerateGetValueBuiltin(instructionsQueue, interpreter.recipeExecutor, interpreter.serviceNetwork)),
 		kurtosis_print.PrintBuiltinName:                  starlark.NewBuiltin(kurtosis_print.PrintBuiltinName, kurtosis_print.GeneratePrintBuiltin(instructionsQueue, interpreter.recipeExecutor)),
 		remove_service.RemoveServiceBuiltinName:          starlark.NewBuiltin(remove_service.RemoveServiceBuiltinName, remove_service.GenerateRemoveServiceBuiltin(instructionsQueue, interpreter.serviceNetwork)),

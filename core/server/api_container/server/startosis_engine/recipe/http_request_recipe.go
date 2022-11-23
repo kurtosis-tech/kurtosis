@@ -1,9 +1,11 @@
-package recipe_executor
+package recipe
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
@@ -79,12 +81,12 @@ func (recipe *HttpRequestRecipe) Execute(ctx context.Context, serviceNetwork ser
 	}, nil
 }
 
-func CreateStarlarkStructFromHttpRequestRuntimeValue(bodyMagicString starlark.String, codeMagicString starlark.String) *starlarkstruct.Struct {
+func CreateStarlarkReturnValueFromHttpRequestRecipe(resultUuid string) *starlarkstruct.Struct {
 	return starlarkstruct.FromKeywords(
 		starlarkstruct.Default,
 		[]starlark.Tuple{
-			{starlark.String("body"), bodyMagicString},
-			{starlark.String("code"), codeMagicString},
+			{starlark.String("body"), starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, "body"))},
+			{starlark.String("code"), starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, "code"))},
 		},
 	)
 }

@@ -15,16 +15,20 @@ const (
 
 	startosisScript = `
 service_config = struct(
-    image = "httpd:latest",
+    image = "mendhak/http-https-echo:26",
     ports = {
-        "http_port": struct(number = 80, protocol = "TCP")
+        "http-port": struct(number = 8080, protocol = "TCP")
     }
 )
 add_service(service_id = "web-server", config = service_config)
+# Drop this when wait is migrated to new framework
+define_fact(service_id = "web-server", fact_name = "placeholder", fact_recipe=struct(method="GET", endpoint="?input=output", port_id="http-port", field_extractor=".query.input"))
+get_fact = wait(service_id="web-server", fact_name= "placeholder")
+# Drop this when wait is migrated to new framework
 recipe = struct(
     service_id = "web-server",
-    port_id = "http_port",
-    endpoint = "/",
+    port_id = "http-port",
+    endpoint = "?input=output",
     method = "GET",
 )
 response = get_value(recipe)
@@ -36,7 +40,8 @@ assert(response.code, "<", 300)
 assert(response.code, ">", 100)
 assert(response.code, "IN", [100, 200])
 assert(response.code, "NOT_IN", [100, 300])
-assert(response.body, "==", "<html><body><h1>It works!</h1></body></html>\n")
+test_output = extract(response.body, ".query.input")
+assert(test_output, "==", "output")
 `
 )
 

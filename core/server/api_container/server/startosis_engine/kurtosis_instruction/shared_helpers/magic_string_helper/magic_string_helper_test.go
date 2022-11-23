@@ -1,4 +1,4 @@
-package shared_helpers
+package magic_string_helper
 
 import (
 	"fmt"

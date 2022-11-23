@@ -8,7 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/recipe_executor"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/recipe"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"go.starlark.net/starlark"
@@ -117,7 +117,7 @@ func ParseHttpRequestFactRecipe(serviceConfig *starlarkstruct.Struct) (*kurtosis
 	}
 }
 
-func ParseHttpRequestRecipe(serviceConfig *starlarkstruct.Struct) (*recipe_executor.HttpRequestRecipe, *startosis_errors.InterpretationError) {
+func ParseHttpRequestRecipe(serviceConfig *starlarkstruct.Struct) (*recipe.HttpRequestRecipe, *startosis_errors.InterpretationError) {
 	serviceId, interpretationErr := extractStringValue(serviceConfig, "service_id", defineFactArgName)
 	if interpretationErr != nil {
 		return nil, interpretationErr
@@ -139,7 +139,7 @@ func ParseHttpRequestRecipe(serviceConfig *starlarkstruct.Struct) (*recipe_execu
 	}
 
 	if method == getRequestMethod {
-		builtConfig := recipe_executor.NewGetHttpRequestRecipe(service.ServiceID(serviceId), portId, endpoint)
+		builtConfig := recipe.NewGetHttpRequestRecipe(service.ServiceID(serviceId), portId, endpoint)
 		return builtConfig, nil
 	} else if method == postRequestMethod {
 		contentType, interpretationErr := extractStringValue(serviceConfig, "content_type", defineFactArgName)
@@ -152,7 +152,7 @@ func ParseHttpRequestRecipe(serviceConfig *starlarkstruct.Struct) (*recipe_execu
 			return nil, interpretationErr
 		}
 
-		builtConfig := recipe_executor.NewPostHttpRequestRecipe(service.ServiceID(serviceId), portId, endpoint, contentType, body)
+		builtConfig := recipe.NewPostHttpRequestRecipe(service.ServiceID(serviceId), portId, endpoint, contentType, body)
 		return builtConfig, nil
 	} else {
 		return nil, startosis_errors.NewInterpretationError("Define fact HTTP method not recognized")
