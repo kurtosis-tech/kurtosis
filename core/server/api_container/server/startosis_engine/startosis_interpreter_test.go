@@ -870,7 +870,7 @@ wait(service_id="%v", fact_name="%v")
 }
 
 func TestStartosisInterpreter_RenderTemplates(t *testing.T) {
-	testArtifactUuid, err := enclave_data_directory.NewFilesArtifactUUID()
+	testArtifactId, err := enclave_data_directory.NewFilesArtifactUUID()
 	require.Nil(t, err)
 	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
@@ -892,7 +892,7 @@ data = {
 		"template_data_json": encoded_json
     }
 }
-artifact_uuid = render_templates(config = data, artifact_uuid = "` + string(testArtifactUuid) + `")
+artifact_uuid = render_templates(config = data, artifact_id = "` + string(testArtifactId) + `")
 print(artifact_uuid)
 `
 
@@ -924,16 +924,16 @@ print(artifact_uuid)
 		templateAndDataByDestFilepath,
 		starlark.StringDict{
 			"config": templateAndDataValues,
-			"artifact_uuid":                          starlark.String(testArtifactUuid),
+			"artifact_id":                          starlark.String(testArtifactId),
 		},
-		testArtifactUuid,
+		testArtifactId,
 	)
 
 	require.Equal(t, renderInstruction, instructions[1])
 
 	expectedOutput := fmt.Sprintf(`Rendering template to disk!
 %v
-`, testArtifactUuid)
+`, testArtifactId)
 	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutput)
 }
 

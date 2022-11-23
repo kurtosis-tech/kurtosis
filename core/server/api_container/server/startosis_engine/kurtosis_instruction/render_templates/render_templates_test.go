@@ -25,13 +25,13 @@ func TestRenderTemplate_TestStringRepresentation(t *testing.T) {
 		kurtosis_instruction.NewInstructionPosition(16, 33, "dummyFile"),
 	)
 	renderInstruction.starlarkKwargs[templateAndDataByDestinationRelFilepathArg] = templateAndDataDict
-	testArtifactUuid, err := enclave_data_directory.NewFilesArtifactUUID()
+	testArtifactId, err := enclave_data_directory.NewFilesArtifactUUID()
 	require.Nil(t, err)
-	renderInstruction.starlarkKwargs[nonOptionalArtifactUuidArgName] = starlark.String(testArtifactUuid)
+	renderInstruction.starlarkKwargs[nonOptionalArtifactIdArgName] = starlark.String(testArtifactId)
 
 	expectedStr := `# from: dummyFile[16:33]
 render_templates(
-	artifact_uuid="` + string(testArtifactUuid) + `",
+	artifact_id="` + string(testArtifactId) + `",
 	config={
 		"/foo/bar/test.txt": {
 			"template": "Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}.",
@@ -61,12 +61,12 @@ func TestRenderTemplate_TestMultipleTemplates(t *testing.T) {
 	renderInstruction.starlarkKwargs[templateAndDataByDestinationRelFilepathArg] = templateAndDataByDestFilepath
 	testArtifactUuid, err := enclave_data_directory.NewFilesArtifactUUID()
 	require.Nil(t, err)
-	renderInstruction.starlarkKwargs[nonOptionalArtifactUuidArgName] = starlark.String(testArtifactUuid)
+	renderInstruction.starlarkKwargs[nonOptionalArtifactIdArgName] = starlark.String(testArtifactUuid)
 
 	// keys of the map are sorted alphabetically by the canonicalizer
 	expectedStr := `# from: dummyFile[16:33]
 render_templates(
-	artifact_uuid="` + string(testArtifactUuid) + `",
+	artifact_id="` + string(testArtifactUuid) + `",
 	config={
 		"/fizz/buzz/test.txt": {
 			"template": "Hello {{.LastName}}",
