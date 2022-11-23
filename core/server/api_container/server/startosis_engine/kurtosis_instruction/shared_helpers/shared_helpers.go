@@ -148,18 +148,19 @@ func ReplaceRuntimeValueInString(originalString string, recipeEngine *recipe_exe
 
 func GetRuntimeValueFromString(originalString string, recipeEngine *recipe_executor.RecipeExecutor) (starlark.Comparable, error) {
 	matches := compiledRuntimeValueReplacementRegex.FindAllStringSubmatch(originalString, unlimitedMatches)
-	for _, match := range matches {
-		runtimeValueMatchIndex := compiledRuntimeValueReplacementRegex.SubexpIndex(runtimeValueSubgroupName)
-		if runtimeValueMatchIndex == subExpNotFound {
-			return nil, stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", runtimeValueSubgroupName, compiledRuntimeValueReplacementRegex.String())
-		}
-		runtimeValueFieldMatchIndex := compiledRuntimeValueReplacementRegex.SubexpIndex(runtimeValueFieldSubgroupName)
-		if runtimeValueFieldMatchIndex == subExpNotFound {
-			return nil, stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", runtimeValueFieldSubgroupName, compiledRuntimeValueReplacementRegex.String())
-		}
-		runtimeValue := recipeEngine.GetValue(match[runtimeValueMatchIndex])
-		selectedRuntimeValue := runtimeValue[match[runtimeValueFieldMatchIndex]]
-		return selectedRuntimeValue, nil
+	if len(matches) != 1 {
+		return nil, stacktrace.NewError("More than one match was found on regexp '%v'. Match count '%v'", compiledRuntimeValueReplacementRegex.String(), len(matches))
 	}
-	return nil, stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", runtimeValueSubgroupName, compiledRuntimeValueReplacementRegex.String())
+	match := matches[0]
+	runtimeValueMatchIndex := compiledRuntimeValueReplacementRegex.SubexpIndex(runtimeValueSubgroupName)
+	if runtimeValueMatchIndex == subExpNotFound {
+		return nil, stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", runtimeValueSubgroupName, compiledRuntimeValueReplacementRegex.String())
+	}
+	runtimeValueFieldMatchIndex := compiledRuntimeValueReplacementRegex.SubexpIndex(runtimeValueFieldSubgroupName)
+	if runtimeValueFieldMatchIndex == subExpNotFound {
+		return nil, stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", runtimeValueFieldSubgroupName, compiledRuntimeValueReplacementRegex.String())
+	}
+	runtimeValue := recipeEngine.GetValue(match[runtimeValueMatchIndex])
+	selectedRuntimeValue := runtimeValue[match[runtimeValueFieldMatchIndex]]
+	return selectedRuntimeValue, nil
 }

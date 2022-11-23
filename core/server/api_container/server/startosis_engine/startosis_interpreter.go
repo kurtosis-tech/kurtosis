@@ -70,6 +70,7 @@ func NewStartosisInterpreter(serviceNetwork service_network.ServiceNetwork, modu
 		mutex:                 &sync.Mutex{},
 		serviceNetwork:        serviceNetwork,
 		factsEngine:           nil,
+		recipeExecutor:        nil,
 		moduleGlobalsCache:    make(map[string]*startosis_modules.ModuleCacheEntry),
 		moduleContentProvider: moduleContentProvider,
 		protoFileStore:        proto_compiler.NewProtoFileStore(moduleContentProvider),
