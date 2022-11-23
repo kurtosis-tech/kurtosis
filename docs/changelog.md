@@ -1,5 +1,7 @@
 # TBD
 
+# 0.53.8
+
 ### Fixes
 - Better at handling errors when trying to format Kurtosis instructions at the CLI level
 
