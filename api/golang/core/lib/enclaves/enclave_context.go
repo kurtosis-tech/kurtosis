@@ -164,7 +164,7 @@ func (enclaveCtx *EnclaveContext) ExecuteStartosisModule(moduleRootPath string, 
 	logrus.Infof("Uploading and executing module '%v'", kurtosisMod.Module.ModuleName)
 	executeStartosisResponse, err := enclaveCtx.client.ExecuteStartosisModule(context.Background(), executeStartosisModuleArgs)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Unexpected error happened executing Startosis module \n%v", moduleRootPath)
+		return nil, stacktrace.Propagate(err, "Unexpected error happened executing Starlark module \n%v", moduleRootPath)
 	}
 	return executeStartosisResponse, nil
 }
