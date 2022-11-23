@@ -28,3 +28,16 @@ my_instruction(
 )`
 	require.Equal(t, expectedResult, formattedInstruction)
 }
+
+func TestFormatInstruction_FormattingFail(t *testing.T) {
+	instruction := binding_constructors.NewKurtosisInstruction(
+		binding_constructors.NewKurtosisInstructionPosition("dummyFile", 12, 4),
+		// This has issues with the quotes not being escaped
+		`print("UNSUPPORTED_TYPE['ModuleOutput(grafana_info=GrafanaInfo(dashboard_path="/d/QdTOwy-nz/eth2-merge-kurtosis-module-dashboard?orgId=1", user="admin", password="admin"))']")`,
+		nil)
+	formattedInstruction := FormatInstruction(instruction)
+	// failure to format -> the instruction is returned with no formatting applied
+	expectedResult := `# from dummyFile[12:4]
+print("UNSUPPORTED_TYPE['ModuleOutput(grafana_info=GrafanaInfo(dashboard_path="/d/QdTOwy-nz/eth2-merge-kurtosis-module-dashboard?orgId=1", user="admin", password="admin"))']")`
+	require.Equal(t, expectedResult, formattedInstruction)
+}

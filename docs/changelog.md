@@ -1,5 +1,10 @@
 # TBD
 
+# 0.53.8
+
+### Fixes
+- Better at handling errors when trying to format Kurtosis instructions at the CLI level
+
 # 0.53.7
 ### Changes
 - Modified the `EnclaveIdGenerator` now is a user defined type and can be initialized once because it contains a time-seed inside
