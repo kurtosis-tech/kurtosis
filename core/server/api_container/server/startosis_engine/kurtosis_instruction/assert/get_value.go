@@ -56,7 +56,7 @@ func (instruction *AssertInstruction) GetPositionInOriginalScript() *kurtosis_in
 }
 
 func (instruction *AssertInstruction) GetCanonicalInstruction() string {
-	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(AssertBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs(), &instruction.position)
+	return shared_helpers.CanonicalizeInstruction(AssertBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs())
 }
 
 func (instruction *AssertInstruction) Execute(ctx context.Context) (*string, error) {
@@ -78,7 +78,7 @@ func (instruction *AssertInstruction) Execute(ctx context.Context) (*string, err
 }
 
 func (instruction *AssertInstruction) String() string {
-	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(AssertBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs(), &instruction.position)
+	return instruction.GetCanonicalInstruction()
 }
 
 func (instruction *AssertInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {

@@ -81,7 +81,7 @@ func (recipe *HttpRequestRecipe) Execute(ctx context.Context, serviceNetwork ser
 
 func CreateStarlarkDictFromHttpRequestRuntimeValue(bodyMagicString starlark.String, codeMagicString starlark.String) *starlark.Dict {
 	dict := &starlark.Dict{}
-	dict.SetKey(starlark.String("body"), bodyMagicString)
-	dict.SetKey(starlark.String("code"), codeMagicString)
+	_ = dict.SetKey(starlark.String("body"), bodyMagicString)
+	_ = dict.SetKey(starlark.String("code"), codeMagicString)
 	return dict
 }

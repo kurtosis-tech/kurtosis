@@ -32,7 +32,7 @@ func GeneratePrintBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInst
 		if interpretationError != nil {
 			return nil, interpretationError
 		}
-		instructionPosition := *shared_helpers.GetCallerPositionFromThread(thread)
+		instructionPosition := shared_helpers.GetCallerPositionFromThread(thread)
 		defineFactInstruction := NewPrintInstruction(instructionPosition, args, separatorStr, endStr, recipeExecutor)
 		*instructionsQueue = append(*instructionsQueue, defineFactInstruction)
 		return starlark.None, nil
@@ -40,14 +40,14 @@ func GeneratePrintBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInst
 }
 
 type PrintInstruction struct {
-	position       kurtosis_instruction.InstructionPosition
+	position       *kurtosis_instruction.InstructionPosition
 	args           []starlark.Value
 	separator      separator
 	end            end
 	recipeExecutor *recipe_executor.RecipeExecutor
 }
 
-func NewPrintInstruction(position kurtosis_instruction.InstructionPosition, args []starlark.Value, separatorStr separator, endStr end, recipeExecutor *recipe_executor.RecipeExecutor) *PrintInstruction {
+func NewPrintInstruction(position *kurtosis_instruction.InstructionPosition, args []starlark.Value, separatorStr separator, endStr end, recipeExecutor *recipe_executor.RecipeExecutor) *PrintInstruction {
 	return &PrintInstruction{
 		position:       position,
 		args:           args,
