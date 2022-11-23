@@ -6,6 +6,7 @@
 
 ### Changes
 - Add 2 endpoints to the APIC that streams the output of a Startosis script execution
+- Changed the syntax of render_templates in Starlark
 
 ### Fixes
 - Fixed the error that would happen if there was a missing `kurtosis.mod` file at the root of the module

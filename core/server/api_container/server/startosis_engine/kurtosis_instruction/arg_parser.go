@@ -41,9 +41,9 @@ const (
 	commandArgName          = "command"
 	expectedExitCodeArgName = "expected_exit_code"
 
-	templatesAndDataArgName  = "template_and_data_by_dest_rel_filepath"
-	templateFieldKey         = starlark.String("template")
-	templateDataJSONFieldKey = starlark.String("template_data_json")
+	templatesAndDataArgName  = "config"
+	templateFieldKey         = "template"
+	templateDataJSONFieldKey = "data"
 
 	maxPortNumber = 65535
 
@@ -221,20 +221,20 @@ func ParseTemplatesAndData(templatesAndData *starlark.Dict) (map[string]*kurtosi
 		if !found || dictErr != nil {
 			return nil, startosis_errors.NewInterpretationError("'%s' key in dict '%s' doesn't have a value we could retrieve. This is a Kurtosis bug.", relPathInFilesArtifactKey.String(), templatesAndDataArgName)
 		}
-		dictValue, ok := value.(*starlark.Dict)
+		structValue, ok := value.(*starlarkstruct.Struct)
 		if !ok {
 			return nil, startosis_errors.NewInterpretationError("Expected %v[\"%v\"] to be a dict. Got '%s'", templatesAndData, relPathInFilesArtifactStr, reflect.TypeOf(value))
 		}
-		template, found, dictErr := dictValue.Get(templateFieldKey)
-		if !found || dictErr != nil {
+		template, err := structValue.Attr(templateFieldKey)
+		if err != nil {
 			return nil, startosis_errors.NewInterpretationError("Expected values in '%v' to have a '%v' field", templatesAndDataArgName, templateFieldKey)
 		}
 		templateStr, castErr := safeCastToString(template, fmt.Sprintf("%v[\"%v\"][\"%v\"]", templatesAndDataArgName, relPathInFilesArtifactStr, templateFieldKey))
 		if castErr != nil {
 			return nil, castErr
 		}
-		templateDataJSONStarlarkValue, found, dictErr := dictValue.Get(templateDataJSONFieldKey)
-		if !found || dictErr != nil {
+		templateDataJSONStarlarkValue, err := structValue.Attr(templateDataJSONFieldKey)
+		if err != nil {
 			return nil, startosis_errors.NewInterpretationError("Expected values in '%v' to have a '%v' field", templatesAndDataArgName, templateDataJSONFieldKey)
 		}
 		templateDataJSONStrValue, castErr := safeCastToString(templateDataJSONStarlarkValue, fmt.Sprintf("%v[\"%v\"][\"%v\"]", templatesAndDataArgName, relPathInFilesArtifactStr, templateDataJSONFieldKey))
@@ -248,7 +248,7 @@ func ParseTemplatesAndData(templatesAndData *starlark.Dict) (map[string]*kurtosi
 		// 3. This behaves as close to marshalling primitives in Golang as possible
 		// 4. Allows us to validate that string input is valid JSON
 		var temporaryUnmarshalledValue interface{}
-		err := json.Unmarshal([]byte(templateDataJSONStrValue), &temporaryUnmarshalledValue)
+		err = json.Unmarshal([]byte(templateDataJSONStrValue), &temporaryUnmarshalledValue)
 		if err != nil {
 			return nil, startosis_errors.NewInterpretationError("Template data for file '%v', '%v' isn't valid JSON", relPathInFilesArtifactStr, templateDataJSONStrValue)
 		}
