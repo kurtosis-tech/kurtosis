@@ -77,7 +77,7 @@ unknownInstruction()
 		[]startosis_errors.CallFrame{
 			*startosis_errors.NewCallFrame("undefined: unknownInstruction", startosis_errors.NewScriptPosition(4, 1)),
 		},
-		"Multiple errors caught interpreting the Startosis script. Listing each of them below.",
+		multipleInterpretationErrorMsg,
 	).ToAPIType()
 	require.Equal(t, expectedError, interpretationError)
 }

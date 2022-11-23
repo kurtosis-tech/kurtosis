@@ -819,7 +819,7 @@ func (apicService ApiContainerService) executeStartosis(ctx context.Context, dry
 			interpretationError,
 		), nil
 	}
-	logrus.Debugf("Successfully interpreted Startosis script into a series of Kurtosis instructions: \n%v",
+	logrus.Debugf("Successfully interpreted Starlark script into a series of Kurtosis instructions: \n%v",
 		generatedInstructionsList)
 
 	validationErrors := apicService.startosisValidator.Validate(ctx, apicService.serviceNetwork, generatedInstructionsList)
@@ -828,7 +828,7 @@ func (apicService ApiContainerService) executeStartosis(ctx context.Context, dry
 			validationErrors,
 		), nil
 	}
-	logrus.Debugf("Successfully validated Startosis script")
+	logrus.Debugf("Successfully validated Starlark script")
 
 	var serializedSuccessfullyExecutedInstructions []*kurtosis_core_rpc_api_bindings.KurtosisInstruction
 	kurtosisInstructionsStream, errChan := apicService.startosisExecutor.Execute(ctx, dryRun, generatedInstructionsList)
