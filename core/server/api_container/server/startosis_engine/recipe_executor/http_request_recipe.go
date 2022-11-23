@@ -11,6 +11,13 @@ import (
 	"io"
 )
 
+const (
+	postMethod        = "POST"
+	getMethod         = "GET"
+	emptyBody         = ""
+	unusedContentType = ""
+)
+
 type HttpRequestRecipe struct {
 	serviceId   service.ServiceID
 	portId      string
@@ -20,16 +27,11 @@ type HttpRequestRecipe struct {
 	body        string
 }
 
-type HttpRequestRuntimeValue struct {
-	body string
-	code int
-}
-
 func NewPostHttpRequestRecipe(serviceId service.ServiceID, portId string, contentType string, endpoint string, body string) *HttpRequestRecipe {
 	return &HttpRequestRecipe{
 		serviceId:   serviceId,
 		portId:      portId,
-		method:      "POST",
+		method:      postMethod,
 		contentType: contentType,
 		endpoint:    endpoint,
 		body:        body,
@@ -40,10 +42,10 @@ func NewGetHttpRequestRecipe(serviceId service.ServiceID, portId string, endpoin
 	return &HttpRequestRecipe{
 		serviceId:   serviceId,
 		portId:      portId,
-		method:      "GET",
-		contentType: "",
+		method:      getMethod,
+		contentType: unusedContentType,
 		endpoint:    endpoint,
-		body:        "",
+		body:        emptyBody,
 	}
 }
 

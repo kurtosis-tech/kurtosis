@@ -13,9 +13,6 @@ const (
 	isPartitioningEnabled = false
 	defaultDryRun         = false
 
-	serviceId = "example-datastore-server-1"
-	portId    = "grpc"
-
 	startosisScript = `
 service_config = struct(
     image = "httpd:latest",

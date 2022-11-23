@@ -13,7 +13,11 @@ import (
 )
 
 const (
-	DefineFactBuiltinName = "assert"
+	AssertBuiltinName = "assert"
+
+	runtimeValueArgName = "value"
+	assertionArgName    = "assertion"
+	stringTargetArgName = "value"
 )
 
 func GenerateAssertBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, recipeExecutor *recipe_executor.RecipeExecutor, serviceNetwork service_network.ServiceNetwork) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
@@ -23,8 +27,8 @@ func GenerateAssertBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisIns
 		if interpretationError != nil {
 			return nil, interpretationError
 		}
-		getValueInstruction := NewAssertInstruction(*shared_helpers.GetCallerPositionFromThread(thread), recipeExecutor, runtimeValue, assertion, stringTarget)
-		*instructionsQueue = append(*instructionsQueue, getValueInstruction)
+		assertInstruction := NewAssertInstruction(*shared_helpers.GetCallerPositionFromThread(thread), recipeExecutor, runtimeValue, assertion, stringTarget)
+		*instructionsQueue = append(*instructionsQueue, assertInstruction)
 		return starlark.None, nil
 	}
 }
@@ -52,7 +56,7 @@ func (instruction *AssertInstruction) GetPositionInOriginalScript() *kurtosis_in
 }
 
 func (instruction *AssertInstruction) GetCanonicalInstruction() string {
-	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(DefineFactBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs(), &instruction.position)
+	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(AssertBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs(), &instruction.position)
 }
 
 func (instruction *AssertInstruction) Execute(ctx context.Context) (*string, error) {
@@ -74,7 +78,7 @@ func (instruction *AssertInstruction) Execute(ctx context.Context) (*string, err
 }
 
 func (instruction *AssertInstruction) String() string {
-	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(DefineFactBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs(), &instruction.position)
+	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(AssertBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs(), &instruction.position)
 }
 
 func (instruction *AssertInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
@@ -88,14 +92,14 @@ func (instruction *AssertInstruction) getKwargs() starlark.StringDict {
 func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.String, starlark.String, starlark.String, *startosis_errors.InterpretationError) {
 
 	var (
-		runtimeValue starlark.String
-		assertion    starlark.String
-		stringTarget starlark.String
+		runtimeValueArg starlark.String
+		assertionArg    starlark.String
+		stringTarget    starlark.String
 	)
 
-	if err := starlark.UnpackArgs(b.Name(), args, kwargs, "value", &runtimeValue, "assertion", &assertion, "string_target", &stringTarget); err != nil {
+	if err := starlark.UnpackArgs(b.Name(), args, kwargs, runtimeValueArgName, &runtimeValueArg, assertionArgName, &assertionArg, stringTargetArgName, &stringTarget); err != nil {
 		return "", "", "", startosis_errors.NewInterpretationError(err.Error())
 	}
 
-	return runtimeValue, assertion, stringTarget, nil
+	return runtimeValueArg, assertionArg, stringTarget, nil
 }

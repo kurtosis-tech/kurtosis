@@ -79,7 +79,7 @@ func (instruction *PrintInstruction) Execute(_ context.Context) (*string, error)
 		}
 		newValue, err := shared_helpers.ReplaceRuntimeValueInString(serializedArgs[idx], instruction.recipeExecutor)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "Error replacing")
+			return nil, stacktrace.Propagate(err, "Error replacing runtime value '%v'", serializedArgs[idx])
 		}
 		serializedArgs[idx] = newValue
 	}

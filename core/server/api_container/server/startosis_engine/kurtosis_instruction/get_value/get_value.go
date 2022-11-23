@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	DefineFactBuiltinName = "get_value"
+	DefineGetValueBuiltinName = "get_value"
 
 	recipeArgName = "recipe"
 )
@@ -60,7 +60,7 @@ func (instruction *GetValueInstruction) GetPositionInOriginalScript() *kurtosis_
 }
 
 func (instruction *GetValueInstruction) GetCanonicalInstruction() string {
-	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(DefineFactBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs(), &instruction.position)
+	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(DefineGetValueBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs(), &instruction.position)
 }
 
 func (instruction *GetValueInstruction) Execute(ctx context.Context) (*string, error) {
@@ -69,7 +69,7 @@ func (instruction *GetValueInstruction) Execute(ctx context.Context) (*string, e
 }
 
 func (instruction *GetValueInstruction) String() string {
-	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(DefineFactBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs(), &instruction.position)
+	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(DefineGetValueBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs(), &instruction.position)
 }
 
 func (instruction *GetValueInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
