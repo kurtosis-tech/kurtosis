@@ -16,6 +16,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -228,7 +229,13 @@ func executeScript(enclaveCtx *enclaves.EnclaveContext, scriptPath string, dryRu
 }
 
 func executeModule(enclaveCtx *enclaves.EnclaveContext, modulePath string, serializedParams string, dryRun bool) error {
-	executionResponse, err := enclaveCtx.ExecuteStartosisModule(modulePath, serializedParams, dryRun)
+	// we get the absolute path so that the logs make more sense
+	absoluteModulePath, err := filepath.Abs(modulePath)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while getting the absolute path for '%v'", modulePath)
+	}
+
+	executionResponse, err := enclaveCtx.ExecuteStartosisModule(absoluteModulePath, serializedParams, dryRun)
 	if err != nil {
 		return stacktrace.Propagate(err, "An unexpected error occurred executing the Startosis module '%s'", modulePath)
 	}
