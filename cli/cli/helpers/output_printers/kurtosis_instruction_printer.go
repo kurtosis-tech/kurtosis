@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/bazelbuild/buildtools/build"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/sirupsen/logrus"
 	"strings"
 )
 
@@ -20,7 +21,11 @@ func FormatInstruction(instruction *kurtosis_core_rpc_api_bindings.KurtosisInstr
 		instruction.GetExecutableInstruction(),
 	)
 
-	parsedInstruction, _ := build.ParseDefault(bazelBuildDefaultFilename, []byte(canonicalizedInstructionWithComment))
+	parsedInstruction, err := build.ParseDefault(bazelBuildDefaultFilename, []byte(canonicalizedInstructionWithComment))
+	if err != nil {
+		logrus.Warnf("Unable to format instruction. Will print it with no indentation. Problematic instruction was: \n%v", canonicalizedInstructionWithComment)
+		return canonicalizedInstructionWithComment
+	}
 
 	multiLineInstruction := strings.Builder{}
 	for _, statement := range parsedInstruction.Stmt {
