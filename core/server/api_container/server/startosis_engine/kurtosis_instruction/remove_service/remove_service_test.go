@@ -10,12 +10,8 @@ func TestRemoveService_GetCanonicalInstruction(t *testing.T) {
 	removeInstruction := NewRemoveServiceInstruction(
 		nil,
 		kurtosis_instruction.NewInstructionPosition(4, 4, "dummyFile"),
-		"dummy-service-id", )
-	expectedSingleLineStrRep := `remove_service(service_id="dummy-service-id")`
-	require.Equal(t, expectedSingleLineStrRep, removeInstruction.String())
-	expectedMultiLineStrRep := `# from: dummyFile[4:4]
-remove_service(
-	service_id="dummy-service-id"
-)`
-	require.Equal(t, expectedMultiLineStrRep, removeInstruction.GetCanonicalInstruction())
+		"dummy-service-id")
+	expectedStrRep := `remove_service(service_id="dummy-service-id")`
+	require.Equal(t, expectedStrRep, removeInstruction.GetCanonicalInstruction())
+	require.Equal(t, expectedStrRep, removeInstruction.String())
 }
