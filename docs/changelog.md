@@ -1,4 +1,6 @@
 # TBD
+### Changes
+- Published the log-database HTTP port to the host machine
 
 # 0.53.10
 

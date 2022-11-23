@@ -26,6 +26,7 @@ const (
 	defaultClusterName              = resolved_config.DefaultDockerClusterName
 	defaultHttpLogsCollectorPortNum = uint16(9712)
 	defaultTcpLogsCollectorPortNum  = uint16(9713)
+	defaultHttpLogsDatabasePortNum  = uint16(9714)
 )
 
 // Unfortunately, Docker doesn't have constants for the protocols it supports declared
