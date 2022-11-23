@@ -23,6 +23,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_modules"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"github.com/kurtosis-tech/metrics-library/golang/lib/client"
@@ -204,10 +205,17 @@ func (apicService ApiContainerService) ExecuteStartosisScript(ctx context.Contex
 
 func (apicService ApiContainerService) ExecuteStartosisModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleArgs) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse, error) {
 	moduleId := args.ModuleId
-	moduleData := args.Data
+	isRemote := args.GetRemote()
+	moduleData := args.GetLocal()
 	serializedParams := args.SerializedParams
 
-	moduleRootPathOnDisk, interpretationError := apicService.startosisModuleContentProvider.StoreModuleContents(moduleId, moduleData, doOverwriteExistingModule)
+	var moduleRootPathOnDisk string
+	var interpretationError *startosis_errors.InterpretationError
+	if isRemote {
+		moduleRootPathOnDisk, interpretationError = apicService.startosisModuleContentProvider.CloneModule(moduleId)
+	} else {
+		moduleRootPathOnDisk, interpretationError = apicService.startosisModuleContentProvider.StoreModuleContents(moduleId, moduleData, doOverwriteExistingModule)
+	}
 	if interpretationError != nil {
 		return nil, stacktrace.Propagate(interpretationError, "An error occurred while writing module '%s' to disk", moduleId)
 	}

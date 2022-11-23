@@ -40,6 +40,7 @@ const (
 	scriptArgForLogging = "script"
 	moduleArgForLogging = "module"
 
+	githubDomainPrefix = "github.com/"
 	isNewEnclave = true
 )
 
@@ -54,7 +55,7 @@ var StartosisExecCmd = &lowlevel.LowlevelKurtosisCommand{
 	CommandStr:       command_str_consts.StartosisExecCmdStr,
 	ShortDescription: "Execute a Startosis script or module",
 	LongDescription: "Execute a Startosis module or script in an enclave. For a script we expect a path to a " + startosisExtension +
-		" file. For a module we expect path to a directory containing kurtosis.mod. If the enclave-id param is provided, Kurtosis " +
+		" file. For a module we expect path to a directory containing kurtosis.mod or a fully qualified Github repository path containing a module. If the enclave-id param is provided, Kurtosis " +
 		"will exec the script inside this enclave, or create it if it doesn't exist. If no enclave-id param is " +
 		"provided, Kurtosis will create a new enclave with a default name derived from the script or module name.",
 	Flags: []*flags.FlagConfig{
@@ -158,6 +159,14 @@ func run(
 		defer output_printers.PrintEnclaveId(enclaveCtx.GetEnclaveID())
 	}
 
+	if strings.HasPrefix(startosisScriptOrModulePath, githubDomainPrefix) {
+		err = executeRemoteModule(enclaveCtx, startosisScriptOrModulePath, serializedJsonArgs, dryRun)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred while running the module '%v'", startosisScriptOrModulePath)
+		}
+		return nil
+	}
+
 	fileOrDir, err := os.Stat(startosisScriptOrModulePath)
 	if err != nil {
 		return stacktrace.Propagate(err, "There was an error reading file or module from disk at '%v'", startosisScriptOrModulePath)
@@ -198,6 +207,11 @@ func validateScriptOrModulePath(_ context.Context, _ *flags.ParsedFlags, args *a
 		return stacktrace.NewError("Received an empty '%v'. It should be a non empty string.", scriptOrModulePathKey)
 	}
 
+	if strings.HasPrefix(scriptOrModulePath, githubDomainPrefix) {
+		// if it's a Github path we don't validate further, the APIC will do it for us
+		return nil
+	}
+
 	fileInfo, err := os.Stat(scriptOrModulePath)
 	if err != nil {
 		return stacktrace.Propagate(err, "Error reading script file or module dir '%s'", scriptOrModulePath)
@@ -236,6 +250,20 @@ func executeModule(enclaveCtx *enclaves.EnclaveContext, modulePath string, seria
 	err = validateExecutionResponse(executionResponse, modulePath, moduleArgForLogging, dryRun)
 	if err != nil {
 		return stacktrace.Propagate(err, "Ran into a few errors while interpreting, validating or executing the module '%v' with dry-run set to '%v'", modulePath, dryRun)
+	}
+
+	return nil
+}
+
+func executeRemoteModule(enclaveCtx *enclaves.EnclaveContext, moduleId string, serializedParams string, dryRun bool) error {
+	executionResponse, err := enclaveCtx.ExecuteStartosisRemoteModule(moduleId, serializedParams, dryRun)
+	if err != nil {
+		return stacktrace.Propagate(err, "An unexpected error occurred executing the Startosis module '%s'", moduleId)
+	}
+
+	err = validateExecutionResponse(executionResponse, moduleId, moduleArgForLogging, dryRun)
+	if err != nil {
+		return stacktrace.Propagate(err, "Ran into a few errors while interpreting, validating or executing the module '%v' with dry-run set to '%v'", moduleId, dryRun)
 	}
 
 	return nil
