@@ -1234,7 +1234,7 @@ The service example-datastore-server has been removed
 
 func TestStartosisInterpreter_UploadGetsInterpretedCorrectly(t *testing.T) {
 	filePath := "github.com/kurtosis/module/lib/lib.star"
-	artifactUuid, err := enclave_data_directory.NewFilesArtifactUUID()
+	artifactId, err := enclave_data_directory.NewFilesArtifactUUID()
 	require.Nil(t, err)
 	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
@@ -1243,7 +1243,7 @@ func TestStartosisInterpreter_UploadGetsInterpretedCorrectly(t *testing.T) {
 	filePathOnDisk, err := moduleContentProvider.GetOnDiskAbsoluteFilePath(filePath)
 	require.Nil(t, err)
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
-	script := `upload_files("` + filePath + `","` + string(artifactUuid) + `")
+	script := `upload_files("` + filePath + `","` + string(artifactId) + `")
 `
 	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
 	require.Nil(t, interpretationError)
@@ -1252,7 +1252,7 @@ func TestStartosisInterpreter_UploadGetsInterpretedCorrectly(t *testing.T) {
 
 	expectedUploadInstruction := upload_files.NewUploadFilesInstruction(
 		kurtosis_instruction.NewInstructionPosition(1, 13, ModuleIdPlaceholderForStandaloneScripts),
-		testServiceNetwork, moduleContentProvider, filePath, filePathOnDisk, artifactUuid,
+		testServiceNetwork, moduleContentProvider, filePath, filePathOnDisk, artifactId,
 	)
 
 	require.Equal(t, expectedUploadInstruction, instructions[0])

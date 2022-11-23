@@ -1,5 +1,8 @@
 # TBD
 
+### Fixes
+- Renamed `artifact_uuid` to `artifact_id` and `src` to `src_path` in `upload_files` in Starlark
+
 # 0.53.8
 
 ### Fixes
