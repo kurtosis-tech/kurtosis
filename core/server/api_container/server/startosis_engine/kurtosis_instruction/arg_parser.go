@@ -234,7 +234,7 @@ func ParseTemplatesAndData(templatesAndData *starlark.Dict) (map[string]*kurtosi
 			return nil, castErr
 		}
 		templateDataJSONStarlarkValue, err := structValue.Attr(templateDataJSONFieldKey)
-		if !found || dictErr != nil {
+		if err != nil {
 			return nil, startosis_errors.NewInterpretationError("Expected values in '%v' to have a '%v' field", templatesAndDataArgName, templateDataJSONFieldKey)
 		}
 		templateDataJSONStrValue, castErr := safeCastToString(templateDataJSONStarlarkValue, fmt.Sprintf("%v[\"%v\"][\"%v\"]", templatesAndDataArgName, relPathInFilesArtifactStr, templateDataJSONFieldKey))
