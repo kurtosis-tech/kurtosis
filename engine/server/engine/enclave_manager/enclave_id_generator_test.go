@@ -11,7 +11,9 @@ func TestGetRandomEnclaveIdWithRetriesSuccess(t *testing.T){
 
 	noCurrentEnclave := map[enclave.EnclaveID]*enclave.Enclave{}
 
-	randomEnclaveId, err := getRandomEnclaveIdWithRetries(noCurrentEnclave, retries)
+	enclaveIdGeneratorObj := GetEnclaveIdGenerator()
+
+	randomEnclaveId, err := enclaveIdGeneratorObj.GetRandomEnclaveIdWithRetries(noCurrentEnclave, retries)
 	require.NoError(t, err)
 	require.NotEmpty(t, randomEnclaveId)
 }

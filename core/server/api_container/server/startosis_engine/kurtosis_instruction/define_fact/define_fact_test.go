@@ -27,15 +27,8 @@ func TestDefineFactInstruction_GetCanonicalizedInstruction(t *testing.T) {
 		testFactName,
 		emptyFactsRecipe,
 	)
-	expectedMultiLineFormatStr := `# from: dummyFile[1:1]
-define_fact(
-	fact_name="%v",
-	service_id="%v"
-)`
-	expectedMultiLineStr := fmt.Sprintf(expectedMultiLineFormatStr, testFactName, testServiceId)
-	require.Equal(t, expectedMultiLineStr, execInstruction.GetCanonicalInstruction())
-
-	expectedSingleLineFormatStr := `define_fact(fact_name="%v", service_id="%v")`
-	expectedSingleLineStr := fmt.Sprintf(expectedSingleLineFormatStr, testFactName, testServiceId)
-	require.Equal(t, expectedSingleLineStr, execInstruction.String())
+	expectedFormatStr := `define_fact(fact_name="%v", service_id="%v")`
+	expectedStr := fmt.Sprintf(expectedFormatStr, testFactName, testServiceId)
+	require.Equal(t, expectedStr, execInstruction.GetCanonicalInstruction())
+	require.Equal(t, expectedStr, execInstruction.String())
 }

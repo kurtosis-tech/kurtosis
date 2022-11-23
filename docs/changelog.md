@@ -6,7 +6,6 @@
 ### Fixes
 - Fixed the `isEnclaveIdInUse` for the enclave validator, now uses on runtime for `is-key-in-map`
 
-### Features
 - Add the ability to execute remote modules using `EnclaveContext.ExecuteStartoisRemoteModule`
 - Add the ability to execute remote module using cli `kurtosis exec github.com/author/module`
 

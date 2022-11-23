@@ -73,7 +73,7 @@ func (instruction *UploadFilesInstruction) GetPositionInOriginalScript() *kurtos
 }
 
 func (instruction *UploadFilesInstruction) GetCanonicalInstruction() string {
-	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(UploadFilesBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs(), instruction.position)
+	return shared_helpers.CanonicalizeInstruction(UploadFilesBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs())
 }
 
 func (instruction *UploadFilesInstruction) Execute(_ context.Context) (*string, error) {
@@ -90,7 +90,7 @@ func (instruction *UploadFilesInstruction) Execute(_ context.Context) (*string, 
 }
 
 func (instruction *UploadFilesInstruction) String() string {
-	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(UploadFilesBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs(), instruction.position)
+	return instruction.GetCanonicalInstruction()
 }
 
 func (instruction *UploadFilesInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
