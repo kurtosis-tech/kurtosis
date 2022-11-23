@@ -83,7 +83,7 @@ func (instruction *AddServiceInstruction) GetPositionInOriginalScript() *kurtosi
 }
 
 func (instruction *AddServiceInstruction) GetCanonicalInstruction() string {
-	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(AddServiceBuiltinName, kurtosis_instruction.NoArgs, instruction.starlarkKwargs, instruction.position)
+	return shared_helpers.CanonicalizeInstruction(AddServiceBuiltinName, kurtosis_instruction.NoArgs, instruction.starlarkKwargs)
 }
 
 func (instruction *AddServiceInstruction) Execute(ctx context.Context) (*string, error) {
@@ -116,7 +116,7 @@ func (instruction *AddServiceInstruction) Execute(ctx context.Context) (*string,
 }
 
 func (instruction *AddServiceInstruction) String() string {
-	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(AddServiceBuiltinName, kurtosis_instruction.NoArgs, instruction.starlarkKwargs, instruction.position)
+	return instruction.GetCanonicalInstruction()
 }
 
 func (instruction *AddServiceInstruction) replaceMagicStrings() error {
