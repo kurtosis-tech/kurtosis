@@ -2,6 +2,7 @@
 
 ### Changes
 - Add 2 endpoints to the APIC that streams the output of a Startosis script execution
+- Renamed `artifact_uuid` to `artifact_id` and `src` to `src_path` in `upload_files` in Starlark
 
 # 0.53.8
 
