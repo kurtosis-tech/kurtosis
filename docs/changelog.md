@@ -3,15 +3,15 @@
 ### Changes
 - Add 2 endpoints to the APIC that streams the output of a Startosis script execution
 
+### Fixes
+- Fixed the error that would happen if there was a missing `kurtosis.mod` file at the root of the module
+
 # 0.53.9
 
 ### Fixes
 - Renamed `artifact_uuid` to `artifact_id` and `src` to `src_path` in `upload_files` in Starlark
 
 # 0.53.8
-
-### Fixes
-- Better at handling errors when trying to format Kurtosis instructions at the CLI level
 
 # 0.53.7
 ### Changes
