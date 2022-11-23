@@ -887,10 +887,10 @@ template_data = {
 }
 encoded_json = json.encode(template_data)
 data = {
-	"/foo/bar/test.txt" : {
-		"template": "Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}. Am I Alive? {{.Alive}}",
-		"template_data_json": encoded_json
-    }
+	"/foo/bar/test.txt" : struct(
+		template="Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}. Am I Alive? {{.Alive}}",
+		data=encoded_json
+    )
 }
 artifact_uuid = render_templates(config = data, artifact_id = "` + string(testArtifactId) + `")
 print(artifact_uuid)
@@ -911,11 +911,11 @@ print(artifact_uuid)
 	}
 
 	templateAndDataValues := starlark.NewDict(1)
-	fooBarTestValuesValues := starlark.NewDict(2)
-	require.Nil(t, fooBarTestValuesValues.SetKey(starlark.String("template"), starlark.String("Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}. Am I Alive? {{.Alive}}")))
-	require.Nil(t, fooBarTestValuesValues.SetKey(starlark.String("template_data_json"), starlark.String(serializedTemplateData)))
+	fooBarTestValuesValues := starlark.StringDict{}
+	fooBarTestValuesValues["template"] = starlark.String("Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}. Am I Alive? {{.Alive}}")
+	fooBarTestValuesValues["data"] = starlark.String(serializedTemplateData)
 	fooBarTestValuesValues.Freeze()
-	require.Nil(t, templateAndDataValues.SetKey(starlark.String("/foo/bar/test.txt"), fooBarTestValuesValues))
+	require.Nil(t, templateAndDataValues.SetKey(starlark.String("/foo/bar/test.txt"), starlarkstruct.FromStringDict(starlarkstruct.Default, fooBarTestValuesValues)))
 	templateAndDataValues.Freeze()
 
 	renderInstruction := render_templates.NewRenderTemplatesInstruction(

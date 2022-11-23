@@ -494,14 +494,12 @@ func TestParseFilesArtifactMountDirpaths_FailureOnNonStringValue(t *testing.T) {
 
 func TestParseTemplatesAndData_SimpleCase(t *testing.T) {
 	dataAsJson := `{"LargeFloat":1231231243.43,"Name":"John","UnixTs":1257894000}`
-	subDict := starlark.NewDict(2)
+	templateDataStrDict := starlark.StringDict{}
 	template := "Hello {{.Name}}. {{.LargeFloat}} {{.UnixTs}}"
-	err := subDict.SetKey(starlark.String("template"), starlark.String(template))
-	require.Nil(t, err)
-	err = subDict.SetKey(starlark.String("template_data_json"), starlark.String(dataAsJson))
-	require.Nil(t, err)
+	templateDataStrDict["template"] = starlark.String(template)
+	templateDataStrDict["data"] = starlark.String(dataAsJson)
 	input := starlark.NewDict(1)
-	err = input.SetKey(starlark.String("/foo/bar"), subDict)
+	err := input.SetKey(starlark.String("/foo/bar"), starlarkstruct.FromStringDict(starlarkstruct.Default, templateDataStrDict))
 	require.Nil(t, err)
 
 	expectedTemplateAndData := binding_constructors.NewTemplateAndData(template, `{"LargeFloat":1231231243.43,"Name":"John","UnixTs":1257894000}`)
@@ -516,15 +514,13 @@ func TestParseTemplatesAndData_SimpleCase(t *testing.T) {
 
 func TestParseTemplatesAndData_FailsForInvalidJSONWithIntegerKey(t *testing.T) {
 	dataAsJson := `{12344:"John"}`
-	subDict := starlark.NewDict(2)
+	templateDataStrDict := starlark.StringDict{}
 	template := "Hello {{.Name}}"
-	err := subDict.SetKey(starlark.String("template"), starlark.String(template))
-	require.Nil(t, err)
-	err = subDict.SetKey(starlark.String("template_data_json"), starlark.String(dataAsJson))
-	require.Nil(t, err)
+	templateDataStrDict["template"] = starlark.String(template)
+	templateDataStrDict["data"] =  starlark.String(dataAsJson)
 	input := starlark.NewDict(1)
 	templateRelativePath := "/foo/bar"
-	err = input.SetKey(starlark.String("/foo/bar"), subDict)
+	err := input.SetKey(starlark.String("/foo/bar"), starlarkstruct.FromStringDict(starlarkstruct.Default, templateDataStrDict))
 	require.Nil(t, err)
 
 	_, err = ParseTemplatesAndData(input)
@@ -534,16 +530,15 @@ func TestParseTemplatesAndData_FailsForInvalidJSONWithIntegerKey(t *testing.T) {
 
 func TestParseTemplatesAndData_FailsForMalformedJSONWithoutClosingBraces(t *testing.T) {
 	dataAsJson := `{"Name": "World"`
-	subDict := starlark.NewDict(2)
+	templateDataStrDict := starlark.StringDict{}
 	template := "Hello {{.Name}}"
-	err := subDict.SetKey(starlark.String("template"), starlark.String(template))
-	require.Nil(t, err)
-	err = subDict.SetKey(starlark.String("template_data_json"), starlark.String(dataAsJson))
-	require.Nil(t, err)
+	templateDataStrDict["template"] = starlark.String(template)
+	templateDataStrDict["data"] =  starlark.String(dataAsJson)
 	input := starlark.NewDict(1)
 	templateRelativePath := "/foo/bar"
-	err = input.SetKey(starlark.String("/foo/bar"), subDict)
+	err := input.SetKey(starlark.String("/foo/bar"), starlarkstruct.FromStringDict(starlarkstruct.Default, templateDataStrDict))
 	require.Nil(t, err)
+
 
 	_, err = ParseTemplatesAndData(input)
 	require.NotNil(t, err)
