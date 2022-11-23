@@ -1,5 +1,8 @@
 # TBD
 
+### Changes
+- Add 2 endpoints to the APIC that streams the output of a Startosis script execution
+
 # 0.53.8
 
 ### Fixes
@@ -27,9 +30,6 @@
 - Slightly update the way script output information are passed from the Startosis engine back the API container main class. This is a step to prepare for streaming this output all the way back the CLI.
 - Removed `load` statement in favour of `import_module`. Calling load will now throw an InterpretationError
 - Refactored startosis tests to enable parallel execution of tests
-
-### Features
-- Add 2 endpoints to the APIC that streams the output of a Startosis script execution
 
 # 0.53.4
 
