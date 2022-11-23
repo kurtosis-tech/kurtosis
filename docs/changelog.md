@@ -1,6 +1,7 @@
 # TBD
 ### Changes
 - Modified the `EnclaveIdGenerator` now is a user defined type and can be initialized once because it contains a time-seed inside
+- Renamed `artifact_uuid` to `artifact_id` and `src` to `src_path` in `upload_files` in Starlark
 
 ### Fixes
 - Fixed the `isEnclaveIdInUse` for the enclave validator, now uses on runtime for `is-key-in-map`
