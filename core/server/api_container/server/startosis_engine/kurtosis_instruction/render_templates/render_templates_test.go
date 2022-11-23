@@ -32,7 +32,7 @@ func TestRenderTemplate_TestStringRepresentation(t *testing.T) {
 	expectedStr := `# from: dummyFile[16:33]
 render_templates(
 	artifact_uuid="` + string(testArtifactUuid) + `",
-	template_and_data_by_dest_rel_filepath={
+	config={
 		"/foo/bar/test.txt": {
 			"template": "Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}.",
 			"template_data_json": "{\"Answer\":6,\"LargeFloat\":1231231243.43,\"Name\":\"Stranger\",\"Numbers\":[1,2,3],\"UnixTimeStamp\":1257894000}"
@@ -67,7 +67,7 @@ func TestRenderTemplate_TestMultipleTemplates(t *testing.T) {
 	expectedStr := `# from: dummyFile[16:33]
 render_templates(
 	artifact_uuid="` + string(testArtifactUuid) + `",
-	template_and_data_by_dest_rel_filepath={
+	config={
 		"/fizz/buzz/test.txt": {
 			"template": "Hello {{.LastName}}",
 			"template_data_json": "{\"LastName\": \"Doe\"}"

@@ -41,7 +41,7 @@ const (
 	commandArgName          = "command"
 	expectedExitCodeArgName = "expected_exit_code"
 
-	templatesAndDataArgName  = "template_and_data_by_dest_rel_filepath"
+	templatesAndDataArgName  = "config"
 	templateFieldKey         = starlark.String("template")
 	templateDataJSONFieldKey = starlark.String("template_data_json")
 

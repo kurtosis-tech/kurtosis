@@ -892,7 +892,7 @@ data = {
 		"template_data_json": encoded_json
     }
 }
-artifact_uuid = render_templates(template_and_data_by_dest_rel_filepath = data, artifact_uuid = "` + string(testArtifactUuid) + `")
+artifact_uuid = render_templates(config = data, artifact_uuid = "` + string(testArtifactUuid) + `")
 print(artifact_uuid)
 `
 
@@ -923,7 +923,7 @@ print(artifact_uuid)
 		kurtosis_instruction.NewInstructionPosition(18, 33, ModuleIdPlaceholderForStandaloneScripts),
 		templateAndDataByDestFilepath,
 		starlark.StringDict{
-			"template_and_data_by_dest_rel_filepath": templateAndDataValues,
+			"config": templateAndDataValues,
 			"artifact_uuid":                          starlark.String(testArtifactUuid),
 		},
 		testArtifactUuid,

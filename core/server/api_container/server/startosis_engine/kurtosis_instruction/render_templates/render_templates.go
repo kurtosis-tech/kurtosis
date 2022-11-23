@@ -17,7 +17,7 @@ import (
 const (
 	RenderTemplatesBuiltinName = "render_templates"
 
-	templateAndDataByDestinationRelFilepathArg = "template_and_data_by_dest_rel_filepath"
+	templateAndDataByDestinationRelFilepathArg = "config"
 
 	artifactUuidArgName            = "artifact_uuid?"
 	nonOptionalArtifactUuidArgName = "artifact_uuid"
