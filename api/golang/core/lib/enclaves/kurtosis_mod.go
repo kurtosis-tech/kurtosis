@@ -5,7 +5,7 @@ import (
 	"github.com/go-yaml/yaml"
 	"github.com/kurtosis-tech/stacktrace"
 	"io/fs"
-	"os"
+	"io/ioutil"
 )
 
 const (
@@ -21,7 +21,7 @@ type Module struct {
 }
 
 func parseKurtosisMod(kurtosisModFilepath string) (*KurtosisMod, error) {
-	kurtosisModContents, err := os.ReadFile(kurtosisModFilepath)
+	kurtosisModContents, err := ioutil.ReadFile(kurtosisModFilepath)
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
 			return nil, stacktrace.NewError("Couldn't find a '%v' in the root of the module at '%v'. Modules are expected to have a '%v' at root, have a look at '%v' for more", modFilename, kurtosisModFilepath, modFilename, dependenciesUrl)
