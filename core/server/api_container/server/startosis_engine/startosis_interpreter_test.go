@@ -923,8 +923,8 @@ print(artifact_uuid)
 		kurtosis_instruction.NewInstructionPosition(18, 33, ModuleIdPlaceholderForStandaloneScripts),
 		templateAndDataByDestFilepath,
 		starlark.StringDict{
-			"config": templateAndDataValues,
-			"artifact_id":                          starlark.String(testArtifactId),
+			"config":      templateAndDataValues,
+			"artifact_id": starlark.String(testArtifactId),
 		},
 		testArtifactId,
 	)
@@ -1288,7 +1288,7 @@ print("The datastore service ip address is " + datastore_service.ip_address)`
 
 	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
 	require.Nil(t, interpretationError)
-	require.Equal(t, 5, len(instructions))
+	require.Equal(t, 4, len(instructions))
 
 	addServiceInstruction := createSimpleAddServiceInstruction(t, "example-datastore-server", testContainerImageName, 0, 10, 32, ModuleIdPlaceholderForStandaloneScripts, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder)
 	require.Equal(t, instructions[2], addServiceInstruction)
