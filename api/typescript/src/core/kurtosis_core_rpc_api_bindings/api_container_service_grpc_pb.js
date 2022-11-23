@@ -194,15 +194,15 @@ function deserialize_api_container_api_GetServicesResponse(buffer_arg) {
   return api_container_service_pb.GetServicesResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
-function serialize_api_container_api_KurtosisResponseLine(arg) {
-  if (!(arg instanceof api_container_service_pb.KurtosisResponseLine)) {
-    throw new Error('Expected argument of type api_container_api.KurtosisResponseLine');
+function serialize_api_container_api_KurtosisExecutionResponseLine(arg) {
+  if (!(arg instanceof api_container_service_pb.KurtosisExecutionResponseLine)) {
+    throw new Error('Expected argument of type api_container_api.KurtosisExecutionResponseLine');
   }
   return Buffer.from(arg.serializeBinary());
 }
 
-function deserialize_api_container_api_KurtosisResponseLine(buffer_arg) {
-  return api_container_service_pb.KurtosisResponseLine.deserializeBinary(new Uint8Array(buffer_arg));
+function deserialize_api_container_api_KurtosisExecutionResponseLine(buffer_arg) {
+  return api_container_service_pb.KurtosisExecutionResponseLine.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
 function serialize_api_container_api_LoadModuleArgs(arg) {
@@ -516,11 +516,11 @@ executeKurtosisScript: {
     requestStream: false,
     responseStream: true,
     requestType: api_container_service_pb.ExecuteStartosisScriptArgs,
-    responseType: api_container_service_pb.KurtosisResponseLine,
+    responseType: api_container_service_pb.KurtosisExecutionResponseLine,
     requestSerialize: serialize_api_container_api_ExecuteStartosisScriptArgs,
     requestDeserialize: deserialize_api_container_api_ExecuteStartosisScriptArgs,
-    responseSerialize: serialize_api_container_api_KurtosisResponseLine,
-    responseDeserialize: deserialize_api_container_api_KurtosisResponseLine,
+    responseSerialize: serialize_api_container_api_KurtosisExecutionResponseLine,
+    responseDeserialize: deserialize_api_container_api_KurtosisExecutionResponseLine,
   },
   // Executes a startosis module on the user's behalf
 // Will soon be deprecated in favour of its streamed version ExecuteKurtosisModule
@@ -541,11 +541,11 @@ executeKurtosisModule: {
     requestStream: false,
     responseStream: true,
     requestType: api_container_service_pb.ExecuteStartosisModuleArgs,
-    responseType: api_container_service_pb.KurtosisResponseLine,
+    responseType: api_container_service_pb.KurtosisExecutionResponseLine,
     requestSerialize: serialize_api_container_api_ExecuteStartosisModuleArgs,
     requestDeserialize: deserialize_api_container_api_ExecuteStartosisModuleArgs,
-    responseSerialize: serialize_api_container_api_KurtosisResponseLine,
-    responseDeserialize: deserialize_api_container_api_KurtosisResponseLine,
+    responseSerialize: serialize_api_container_api_KurtosisExecutionResponseLine,
+    responseDeserialize: deserialize_api_container_api_KurtosisExecutionResponseLine,
   },
   // Start services by creating containers for them
 startServices: {

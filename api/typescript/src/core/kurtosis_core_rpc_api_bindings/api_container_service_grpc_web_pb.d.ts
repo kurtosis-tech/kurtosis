@@ -47,7 +47,7 @@ export class ApiContainerServiceClient {
   executeKurtosisScript(
     request: api_container_service_pb.ExecuteStartosisScriptArgs,
     metadata?: grpcWeb.Metadata
-  ): grpcWeb.ClientReadableStream<api_container_service_pb.KurtosisResponseLine>;
+  ): grpcWeb.ClientReadableStream<api_container_service_pb.KurtosisExecutionResponseLine>;
 
   executeStartosisModule(
     request: api_container_service_pb.ExecuteStartosisModuleArgs,
@@ -59,7 +59,7 @@ export class ApiContainerServiceClient {
   executeKurtosisModule(
     request: api_container_service_pb.ExecuteStartosisModuleArgs,
     metadata?: grpcWeb.Metadata
-  ): grpcWeb.ClientReadableStream<api_container_service_pb.KurtosisResponseLine>;
+  ): grpcWeb.ClientReadableStream<api_container_service_pb.KurtosisExecutionResponseLine>;
 
   startServices(
     request: api_container_service_pb.StartServicesArgs,
@@ -208,7 +208,7 @@ export class ApiContainerServicePromiseClient {
   executeKurtosisScript(
     request: api_container_service_pb.ExecuteStartosisScriptArgs,
     metadata?: grpcWeb.Metadata
-  ): grpcWeb.ClientReadableStream<api_container_service_pb.KurtosisResponseLine>;
+  ): grpcWeb.ClientReadableStream<api_container_service_pb.KurtosisExecutionResponseLine>;
 
   executeStartosisModule(
     request: api_container_service_pb.ExecuteStartosisModuleArgs,
@@ -218,7 +218,7 @@ export class ApiContainerServicePromiseClient {
   executeKurtosisModule(
     request: api_container_service_pb.ExecuteStartosisModuleArgs,
     metadata?: grpcWeb.Metadata
-  ): grpcWeb.ClientReadableStream<api_container_service_pb.KurtosisResponseLine>;
+  ): grpcWeb.ClientReadableStream<api_container_service_pb.KurtosisExecutionResponseLine>;
 
   startServices(
     request: api_container_service_pb.StartServicesArgs,

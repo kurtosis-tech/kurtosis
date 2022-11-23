@@ -27,14 +27,14 @@ service ApiContainerService {
   rpc ExecuteStartosisScript(ExecuteStartosisScriptArgs) returns (ExecuteStartosisResponse) {};
 
   // Executes a startosis script on the user's behalf
-  rpc ExecuteKurtosisScript(ExecuteStartosisScriptArgs) returns (stream KurtosisResponseLine) {};
+  rpc ExecuteKurtosisScript(ExecuteStartosisScriptArgs) returns (stream KurtosisExecutionResponseLine) {};
 
   // Executes a startosis module on the user's behalf
   // Will soon be deprecated in favour of its streamed version ExecuteKurtosisModule
   rpc ExecuteStartosisModule(ExecuteStartosisModuleArgs) returns (ExecuteStartosisResponse) {};
 
   // Executes a startosis script on the user's behalf
-  rpc ExecuteKurtosisModule(ExecuteStartosisModuleArgs) returns (stream KurtosisResponseLine) {};
+  rpc ExecuteKurtosisModule(ExecuteStartosisModuleArgs) returns (stream KurtosisExecutionResponseLine) {};
 
   // Start services by creating containers for them
   rpc StartServices(StartServicesArgs) returns (StartServicesResponse) {};
@@ -328,8 +328,8 @@ message KurtosisError {
   }
 }
 
-message KurtosisResponseLine {
-  oneof kurtosis_response_line {
+message KurtosisExecutionResponseLine {
+  oneof kurtosis_execution_response_line {
     KurtosisInstruction instruction = 1;
     KurtosisError error = 2;
   }

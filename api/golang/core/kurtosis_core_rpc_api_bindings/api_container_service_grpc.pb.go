@@ -145,7 +145,7 @@ func (c *apiContainerServiceClient) ExecuteKurtosisScript(ctx context.Context, i
 }
 
 type ApiContainerService_ExecuteKurtosisScriptClient interface {
-	Recv() (*KurtosisResponseLine, error)
+	Recv() (*KurtosisExecutionResponseLine, error)
 	grpc.ClientStream
 }
 
@@ -153,8 +153,8 @@ type apiContainerServiceExecuteKurtosisScriptClient struct {
 	grpc.ClientStream
 }
 
-func (x *apiContainerServiceExecuteKurtosisScriptClient) Recv() (*KurtosisResponseLine, error) {
-	m := new(KurtosisResponseLine)
+func (x *apiContainerServiceExecuteKurtosisScriptClient) Recv() (*KurtosisExecutionResponseLine, error) {
+	m := new(KurtosisExecutionResponseLine)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -186,7 +186,7 @@ func (c *apiContainerServiceClient) ExecuteKurtosisModule(ctx context.Context, i
 }
 
 type ApiContainerService_ExecuteKurtosisModuleClient interface {
-	Recv() (*KurtosisResponseLine, error)
+	Recv() (*KurtosisExecutionResponseLine, error)
 	grpc.ClientStream
 }
 
@@ -194,8 +194,8 @@ type apiContainerServiceExecuteKurtosisModuleClient struct {
 	grpc.ClientStream
 }
 
-func (x *apiContainerServiceExecuteKurtosisModuleClient) Recv() (*KurtosisResponseLine, error) {
-	m := new(KurtosisResponseLine)
+func (x *apiContainerServiceExecuteKurtosisModuleClient) Recv() (*KurtosisExecutionResponseLine, error) {
+	m := new(KurtosisExecutionResponseLine)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -590,7 +590,7 @@ func _ApiContainerService_ExecuteKurtosisScript_Handler(srv interface{}, stream 
 }
 
 type ApiContainerService_ExecuteKurtosisScriptServer interface {
-	Send(*KurtosisResponseLine) error
+	Send(*KurtosisExecutionResponseLine) error
 	grpc.ServerStream
 }
 
@@ -598,7 +598,7 @@ type apiContainerServiceExecuteKurtosisScriptServer struct {
 	grpc.ServerStream
 }
 
-func (x *apiContainerServiceExecuteKurtosisScriptServer) Send(m *KurtosisResponseLine) error {
+func (x *apiContainerServiceExecuteKurtosisScriptServer) Send(m *KurtosisExecutionResponseLine) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -629,7 +629,7 @@ func _ApiContainerService_ExecuteKurtosisModule_Handler(srv interface{}, stream 
 }
 
 type ApiContainerService_ExecuteKurtosisModuleServer interface {
-	Send(*KurtosisResponseLine) error
+	Send(*KurtosisExecutionResponseLine) error
 	grpc.ServerStream
 }
 
@@ -637,7 +637,7 @@ type apiContainerServiceExecuteKurtosisModuleServer struct {
 	grpc.ServerStream
 }
 
-func (x *apiContainerServiceExecuteKurtosisModuleServer) Send(m *KurtosisResponseLine) error {
+func (x *apiContainerServiceExecuteKurtosisModuleServer) Send(m *KurtosisExecutionResponseLine) error {
 	return x.ServerStream.SendMsg(m)
 }
 

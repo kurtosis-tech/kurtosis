@@ -874,8 +874,8 @@ func (apicService ApiContainerService) executeStartosis(ctx context.Context, dry
 	validatorErrors := make([]*kurtosis_core_rpc_api_bindings.KurtosisValidationError, 0)
 	var executionError *kurtosis_core_rpc_api_bindings.KurtosisExecutionError
 
-	responseLineStream := apicService.startosisRunner.Run(ctx, dryRun, moduleId, serializedStartosis, serializedParams)
-	for responseLine := range responseLineStream {
+	kurtosisExecutionResponseLines := apicService.startosisRunner.Run(ctx, dryRun, moduleId, serializedStartosis, serializedParams)
+	for responseLine := range kurtosisExecutionResponseLines {
 		if responseLine.GetInstruction() != nil {
 			instructions = append(instructions, responseLine.GetInstruction())
 		} else if responseLine.GetError() != nil {

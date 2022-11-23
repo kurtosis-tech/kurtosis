@@ -366,17 +366,17 @@ func NewKurtosisInstructionPosition(filename string, line int32, column int32) *
 	}
 }
 
-func NewKurtosisResponseLineFromInstruction(instruction *kurtosis_core_rpc_api_bindings.KurtosisInstruction) *kurtosis_core_rpc_api_bindings.KurtosisResponseLine {
-	return &kurtosis_core_rpc_api_bindings.KurtosisResponseLine{
-		KurtosisResponseLine: &kurtosis_core_rpc_api_bindings.KurtosisResponseLine_Instruction{
+func NewKurtosisExecutionResponseLineFromInstruction(instruction *kurtosis_core_rpc_api_bindings.KurtosisInstruction) *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine {
+	return &kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine{
+		KurtosisExecutionResponseLine: &kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine_Instruction{
 			Instruction: instruction,
 		},
 	}
 }
 
-func NewKurtosisResponseLineFromInterpretationError(interpretationError *kurtosis_core_rpc_api_bindings.KurtosisInterpretationError) *kurtosis_core_rpc_api_bindings.KurtosisResponseLine {
-	return &kurtosis_core_rpc_api_bindings.KurtosisResponseLine{
-		KurtosisResponseLine: &kurtosis_core_rpc_api_bindings.KurtosisResponseLine_Error{
+func NewKurtosisExecutionResponseLineFromInterpretationError(interpretationError *kurtosis_core_rpc_api_bindings.KurtosisInterpretationError) *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine {
+	return &kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine{
+		KurtosisExecutionResponseLine: &kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine_Error{
 			Error: &kurtosis_core_rpc_api_bindings.KurtosisError{
 				Error: &kurtosis_core_rpc_api_bindings.KurtosisError_InterpretationError{
 					InterpretationError: interpretationError,
@@ -386,9 +386,9 @@ func NewKurtosisResponseLineFromInterpretationError(interpretationError *kurtosi
 	}
 }
 
-func NewKurtosisResponseLineFromValidationError(validationError *kurtosis_core_rpc_api_bindings.KurtosisValidationError) *kurtosis_core_rpc_api_bindings.KurtosisResponseLine {
-	return &kurtosis_core_rpc_api_bindings.KurtosisResponseLine{
-		KurtosisResponseLine: &kurtosis_core_rpc_api_bindings.KurtosisResponseLine_Error{
+func NewKurtosisExecutionResponseLineFromValidationError(validationError *kurtosis_core_rpc_api_bindings.KurtosisValidationError) *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine {
+	return &kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine{
+		KurtosisExecutionResponseLine: &kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine_Error{
 			Error: &kurtosis_core_rpc_api_bindings.KurtosisError{
 				Error: &kurtosis_core_rpc_api_bindings.KurtosisError_ValidationError{
 					ValidationError: validationError,
@@ -398,9 +398,9 @@ func NewKurtosisResponseLineFromValidationError(validationError *kurtosis_core_r
 	}
 }
 
-func NewKurtosisResponseLineFromExecutionError(executionError *kurtosis_core_rpc_api_bindings.KurtosisExecutionError) *kurtosis_core_rpc_api_bindings.KurtosisResponseLine {
-	return &kurtosis_core_rpc_api_bindings.KurtosisResponseLine{
-		KurtosisResponseLine: &kurtosis_core_rpc_api_bindings.KurtosisResponseLine_Error{
+func NewKurtosisExecutionResponseLineFromExecutionError(executionError *kurtosis_core_rpc_api_bindings.KurtosisExecutionError) *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine {
+	return &kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine{
+		KurtosisExecutionResponseLine: &kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine_Error{
 			Error: &kurtosis_core_rpc_api_bindings.KurtosisError{
 				Error: &kurtosis_core_rpc_api_bindings.KurtosisError_ExecutionError{
 					ExecutionError: executionError,

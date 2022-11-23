@@ -15,23 +15,23 @@ type StartosisRunner struct {
 	startosisExecutor *StartosisExecutor
 }
 
-func NewStartosisRunner(insterpreter *StartosisInterpreter, validator *StartosisValidator, executor *StartosisExecutor) *StartosisRunner {
+func NewStartosisRunner(interpreter *StartosisInterpreter, validator *StartosisValidator, executor *StartosisExecutor) *StartosisRunner {
 	return &StartosisRunner{
-		startosisInterpreter: insterpreter,
+		startosisInterpreter: interpreter,
 		startosisValidator:   validator,
 		startosisExecutor:    executor,
 	}
 }
 
-func (runner *StartosisRunner) Run(ctx context.Context, dryRun bool, moduleId string, serializedStartosis string, serializedParams string) <-chan *kurtosis_core_rpc_api_bindings.KurtosisResponseLine {
+func (runner *StartosisRunner) Run(ctx context.Context, dryRun bool, moduleId string, serializedStartosis string, serializedParams string) <-chan *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine {
 	// TODO(gb): add metric tracking maybe?
-	responseLineChan := make(chan *kurtosis_core_rpc_api_bindings.KurtosisResponseLine)
+	kurtosisExecutionResponseLines := make(chan *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine)
 
 	go func() {
-		defer close(responseLineChan)
+		defer close(kurtosisExecutionResponseLines)
 		generatedInstructionsList, interpretationError := runner.startosisInterpreter.Interpret(ctx, moduleId, serializedStartosis, serializedParams)
 		if interpretationError != nil {
-			responseLineChan <- binding_constructors.NewKurtosisResponseLineFromInterpretationError(interpretationError)
+			kurtosisExecutionResponseLines <- binding_constructors.NewKurtosisExecutionResponseLineFromInterpretationError(interpretationError)
 			return
 		}
 		logrus.Debugf("Successfully interpreted Startosis script into a series of Kurtosis instructions: \n%v",
@@ -41,7 +41,7 @@ func (runner *StartosisRunner) Run(ctx context.Context, dryRun bool, moduleId st
 		if validationErrors != nil {
 			// TODO(gb): push this logic down to the validator
 			for _, validationError := range validationErrors.GetErrors() {
-				responseLineChan <- binding_constructors.NewKurtosisResponseLineFromValidationError(validationError)
+				kurtosisExecutionResponseLines <- binding_constructors.NewKurtosisExecutionResponseLineFromValidationError(validationError)
 			}
 			return
 		}
@@ -58,16 +58,16 @@ func (runner *StartosisRunner) Run(ctx context.Context, dryRun bool, moduleId st
 					break ReadChannelsLoop
 				}
 				logrus.Debugf("Received serialized Kurtosis instruction:\n%v", executedKurtosisInstruction.GetExecutableInstruction())
-				responseLineChan <- binding_constructors.NewKurtosisResponseLineFromInstruction(executedKurtosisInstruction)
+				kurtosisExecutionResponseLines <- binding_constructors.NewKurtosisExecutionResponseLineFromInstruction(executedKurtosisInstruction)
 			case executionError, isChanOpen := <-errChan:
 				if !isChanOpen {
 					logrus.Debug("Kurtosis execution error channel was closed. Exiting execution loop")
 					break ReadChannelsLoop
 				}
-				responseLineChan <- binding_constructors.NewKurtosisResponseLineFromExecutionError(executionError)
+				kurtosisExecutionResponseLines <- binding_constructors.NewKurtosisExecutionResponseLineFromExecutionError(executionError)
 			}
 		}
 		logrus.Debugf("Successfully executed the list of %d Kurtosis instructions", len(generatedInstructionsList))
 	}()
-	return responseLineChan
+	return kurtosisExecutionResponseLines
 }

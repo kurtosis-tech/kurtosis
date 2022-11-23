@@ -642,35 +642,35 @@ export namespace KurtosisError {
   }
 }
 
-export class KurtosisResponseLine extends jspb.Message {
+export class KurtosisExecutionResponseLine extends jspb.Message {
   getInstruction(): KurtosisInstruction | undefined;
-  setInstruction(value?: KurtosisInstruction): KurtosisResponseLine;
+  setInstruction(value?: KurtosisInstruction): KurtosisExecutionResponseLine;
   hasInstruction(): boolean;
-  clearInstruction(): KurtosisResponseLine;
+  clearInstruction(): KurtosisExecutionResponseLine;
 
   getError(): KurtosisError | undefined;
-  setError(value?: KurtosisError): KurtosisResponseLine;
+  setError(value?: KurtosisError): KurtosisExecutionResponseLine;
   hasError(): boolean;
-  clearError(): KurtosisResponseLine;
+  clearError(): KurtosisExecutionResponseLine;
 
-  getKurtosisResponseLineCase(): KurtosisResponseLine.KurtosisResponseLineCase;
+  getKurtosisExecutionResponseLineCase(): KurtosisExecutionResponseLine.KurtosisExecutionResponseLineCase;
 
   serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): KurtosisResponseLine.AsObject;
-  static toObject(includeInstance: boolean, msg: KurtosisResponseLine): KurtosisResponseLine.AsObject;
-  static serializeBinaryToWriter(message: KurtosisResponseLine, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): KurtosisResponseLine;
-  static deserializeBinaryFromReader(message: KurtosisResponseLine, reader: jspb.BinaryReader): KurtosisResponseLine;
+  toObject(includeInstance?: boolean): KurtosisExecutionResponseLine.AsObject;
+  static toObject(includeInstance: boolean, msg: KurtosisExecutionResponseLine): KurtosisExecutionResponseLine.AsObject;
+  static serializeBinaryToWriter(message: KurtosisExecutionResponseLine, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): KurtosisExecutionResponseLine;
+  static deserializeBinaryFromReader(message: KurtosisExecutionResponseLine, reader: jspb.BinaryReader): KurtosisExecutionResponseLine;
 }
 
-export namespace KurtosisResponseLine {
+export namespace KurtosisExecutionResponseLine {
   export type AsObject = {
     instruction?: KurtosisInstruction.AsObject,
     error?: KurtosisError.AsObject,
   }
 
-  export enum KurtosisResponseLineCase { 
-    KURTOSIS_RESPONSE_LINE_NOT_SET = 0,
+  export enum KurtosisExecutionResponseLineCase { 
+    KURTOSIS_EXECUTION_RESPONSE_LINE_NOT_SET = 0,
     INSTRUCTION = 1,
     ERROR = 2,
   }
