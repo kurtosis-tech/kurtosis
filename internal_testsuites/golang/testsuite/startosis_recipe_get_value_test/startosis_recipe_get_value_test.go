@@ -57,9 +57,9 @@ func TestStartosis(t *testing.T) {
 	executionResult, err := enclaveCtx.ExecuteStartosisScript(startosisScript, defaultDryRun)
 	require.NoError(t, err, "Unexpected error executing startosis script")
 
-	require.Empty(t, executionResult.GetInterpretationError(), "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
-	require.Lenf(t, executionResult.GetValidationErrors(), 0, "Unexpected validation error")
-	require.Empty(t, executionResult.GetExecutionError(), "Unexpected execution error")
+	require.Nil(t, executionResult.GetInterpretationError(), "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
+	require.Empty(t, executionResult.GetValidationErrors().GetErrors(), "Unexpected validation error")
+	require.Nil(t, executionResult.GetExecutionError(), "Unexpected execution error")
 	logrus.Infof("Successfully ran Startosis script")
 
 }

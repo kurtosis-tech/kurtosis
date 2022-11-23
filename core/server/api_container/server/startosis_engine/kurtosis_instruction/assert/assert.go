@@ -97,7 +97,7 @@ func (instruction *AssertInstruction) Execute(ctx context.Context) (*string, err
 				return nil, stacktrace.NewError("Assertion failed '%v' '%v' '%v'", currentValue, instruction.assertion, instruction.target)
 			}
 		case "NOT_IN":
-			if !inList {
+			if inList {
 				return nil, stacktrace.NewError("Assertion failed '%v' '%v' '%v'", currentValue, instruction.assertion, instruction.target)
 			}
 		}
