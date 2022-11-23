@@ -43,7 +43,7 @@ const (
 	//  or it was repartitioned away)
 	defaultPartitionId PartitionID = ""
 
-	modFilename = "kurtosis.mod"
+	kurtosisYamlFilename = "kurtosis.mod"
 
 	ensureCompressedFileIsLesserThanGRPCLimit = true
 )
@@ -750,18 +750,18 @@ func runReceiveKurtosisResponseLineRoutine(cancelCtxFunc context.CancelFunc, str
 }
 
 func (enclaveCtx *EnclaveContext) assembleExecuteStartosisModuleArg(moduleRootPath string, serializedParams string, dryRun bool) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleArgs, error) {
-	kurtosisModFilepath := path.Join(moduleRootPath, modFilename)
+	kurtosisYamlFilepath := path.Join(moduleRootPath, kurtosisYamlFilename)
 
-	kurtosisMod, err := parseKurtosisMod(kurtosisModFilepath)
+	kurtosisYaml, err := parseKurtosisMod(kurtosisYamlFilepath)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "There was an error parsing the '%v' at '%v'", modFilename, moduleRootPath)
+		return nil, stacktrace.Propagate(err, "There was an error parsing the '%v' at '%v'", kurtosisYamlFilename, moduleRootPath)
 	}
 
-	logrus.Infof("Compressing module '%v'  at '%v' for upload", kurtosisMod.Module.ModuleName, moduleRootPath)
+	logrus.Infof("Compressing module '%v'  at '%v' for upload", kurtosisYaml.Module.ModuleName, moduleRootPath)
 	compressedModule, err := shared_utils.CompressPath(moduleRootPath, ensureCompressedFileIsLesserThanGRPCLimit)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "There was an error compressing module '%v' before upload", moduleRootPath)
 	}
-	logrus.Infof("Uploading and executing module '%v'", kurtosisMod.Module.ModuleName)
-	return binding_constructors.NewExecuteStartosisModuleArgs(kurtosisMod.Module.ModuleName, compressedModule, serializedParams, dryRun), nil
+	logrus.Infof("Uploading and executing module '%v'", kurtosisYaml.Module.ModuleName)
+	return binding_constructors.NewExecuteStartosisModuleArgs(kurtosisYaml.Module.ModuleName, compressedModule, serializedParams, dryRun), nil
 }

@@ -59,7 +59,6 @@ import {
     ModuleInfo,
     PauseServiceArgs,
     ServiceInfo,
-    UnloadModuleResponse,
     UnpauseServiceArgs,
     StartServicesArgs,
     ExecuteStartosisScriptArgs,
@@ -78,7 +77,7 @@ export type PartitionID = string;
 //  or it was repartitioned away)
 const DEFAULT_PARTITION_ID: PartitionID = "";
 
-const KURTOSIS_MOD_FILENAME = "kurtosis.mod";
+const KURTOSIS_YAML_FILENAME = "kurtosis.mod";
 
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
@@ -812,13 +811,13 @@ export class EnclaveContext {
     }
 
     private async assembleExecuteStartosisModuleArg(moduleRootPath: string, serializedParams: string, dryRun: boolean,): Promise<Result<ExecuteStartosisModuleArgs, Error>> {
-        const kurtosisModFilepath = path.join(moduleRootPath, KURTOSIS_MOD_FILENAME)
+        const kurtosisYamlFilepath = path.join(moduleRootPath, KURTOSIS_YAML_FILENAME)
 
-        const  resultParseKurtosisMod = await parseKurtosisMod(kurtosisModFilepath)
-        if (resultParseKurtosisMod.isErr()) {
-            return err(resultParseKurtosisMod.error)
+        const resultParseKurtosisYaml = await parseKurtosisMod(kurtosisYamlFilepath)
+        if (resultParseKurtosisYaml.isErr()) {
+            return err(resultParseKurtosisYaml.error)
         }
-        const kurtosisMod = resultParseKurtosisMod.value
+        const kurtosisMod = resultParseKurtosisYaml.value
 
         const archiverResponse = await this.genericTgzArchiver.createTgzByteArray(moduleRootPath)
         if (archiverResponse.isErr()){
