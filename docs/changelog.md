@@ -1,5 +1,7 @@
 # TBD
 
+# 0.54.1
+
 ### Fixes
 - Fixes a bug where the CLI was returning 0 even when an error happened running a Kurtosis script
 
