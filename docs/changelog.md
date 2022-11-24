@@ -2,7 +2,6 @@
 
 ### Changes
 - Renamed `kurtosis exec` to `kurtosis run` and `main in main.star` to `run in main.star`
-- Make `kurtosis run` an EngineConsumingKurtosis command, which automatically starts an engine
 
 ### Breaking Changes
 - Renamed `kurtosis exec` to `kurtosis run` and `main in main.star` to `run in main.star`
