@@ -53,6 +53,13 @@ var (
 	kurtosisNoInterpretationError *kurtosis_core_rpc_api_bindings.KurtosisInterpretationError
 	kurtosisNoValidationError     *kurtosis_core_rpc_api_bindings.KurtosisValidationErrors
 	kurtosisNoExecutionError      *kurtosis_core_rpc_api_bindings.KurtosisExecutionError
+	githubScriptpathValidationExceptionFunc = func(scriptpath string) bool {
+		if strings.HasPrefix(scriptpath, githubDomainPrefix) {
+			// if it's a Github path we don't validate further, the APIC will do it for us
+			return true
+		}
+		return false
+	}
 )
 
 var StartosisExecCmd = &lowlevel.LowlevelKurtosisCommand{
@@ -100,6 +107,7 @@ var StartosisExecCmd = &lowlevel.LowlevelKurtosisCommand{
 		file_system_path_arg.NewFilepathOrDirpathArg(
 			scriptOrModulePathKey,
 			isScriptOrModulePathArgumentOptional,
+			githubScriptpathValidationExceptionFunc,
 		),
 	},
 	PreValidationAndRunFunc:  nil,

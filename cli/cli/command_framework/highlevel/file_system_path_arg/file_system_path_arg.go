@@ -11,18 +11,24 @@ import (
 
 const (
 	isNotGreedyArg = false
-	defaultValue = ""
+	defaultValue   = ""
 )
+
+// This function type can be used to create custom argument value conditions where the validation will be omitted
+// To omit the argument value the function has to return true when the condition is accomplished
+type fileSystemArgumentValidationExceptionFunc func(argumentValue string) (isValid bool)
 
 // Prebuilt file path arg which has tab-completion and validation ready out-of-the-box
 func NewFilepathArg(
 	argKey string,
 	isOptional bool,
+	validationExceptionFunc fileSystemArgumentValidationExceptionFunc,
 ) *args.ArgConfig {
 	return newFileSystemPathArg(
 		argKey,
 		isOptional,
 		FileSystemPathType_Filepath,
+		validationExceptionFunc,
 	)
 }
 
@@ -30,11 +36,13 @@ func NewFilepathArg(
 func NewDirpathArg(
 	argKey string,
 	isOptional bool,
+	validationExceptionFunc fileSystemArgumentValidationExceptionFunc,
 ) *args.ArgConfig {
 	return newFileSystemPathArg(
 		argKey,
 		isOptional,
 		FileSystemPathType_Dirpath,
+		validationExceptionFunc,
 	)
 }
 
@@ -42,11 +50,13 @@ func NewDirpathArg(
 func NewFilepathOrDirpathArg(
 	argKey string,
 	isOptional bool,
+	validationExceptionFunc fileSystemArgumentValidationExceptionFunc,
 ) *args.ArgConfig {
 	return newFileSystemPathArg(
 		argKey,
 		isOptional,
 		FileSystemPathType_FilepathOrDirpath,
+		validationExceptionFunc,
 	)
 }
 
@@ -55,15 +65,17 @@ func newFileSystemPathArg(
 	argKey string,
 	isOptional bool,
 	pathType FileSystemPathType,
+	validationExceptionFunc fileSystemArgumentValidationExceptionFunc,
 ) *args.ArgConfig {
-	validate := getValidationFunc(argKey, pathType)
+
+	validate := getValidationFunc(argKey, pathType, validationExceptionFunc)
 
 	return &args.ArgConfig{
-		Key:                                     argKey,
-		IsOptional:                              isOptional,
-		DefaultValue:                            defaultValue,
-		IsGreedy:                                isNotGreedyArg,
-		ValidationFunc:                          validate,
+		Key:            argKey,
+		IsOptional:     isOptional,
+		DefaultValue:   defaultValue,
+		IsGreedy:       isNotGreedyArg,
+		ValidationFunc: validate,
 		//No custom completion because we are enabling default shell's file completion with ShouldShellProvideDefaultFileCompletion
 		ArgCompletionProvider: args.NewDefaultShellFileCompletionProvider(),
 	}
@@ -73,6 +85,7 @@ func newFileSystemPathArg(
 func getValidationFunc(
 	argKey string,
 	pathType FileSystemPathType,
+	validationExceptionFunc fileSystemArgumentValidationExceptionFunc,
 ) func(context.Context, *flags.ParsedFlags, *args.ParsedArgs) error {
 	return func(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error {
 
@@ -84,6 +97,11 @@ func getValidationFunc(
 		filePathOrDirpath = strings.TrimSpace(filePathOrDirpath)
 		if filePathOrDirpath == "" {
 			return stacktrace.NewError("Received an empty '%v'. It should be a non empty string.", argKey)
+		}
+
+		isExceptionalValue := validationExceptionFunc(filePathOrDirpath)
+		if isExceptionalValue {
+			return nil
 		}
 
 		fileInfo, err := os.Stat(filePathOrDirpath)
