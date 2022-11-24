@@ -160,6 +160,14 @@ func run(
 		defer output_printers.PrintEnclaveId(enclaveCtx.GetEnclaveID())
 	}
 
+	if strings.HasPrefix(starlarkScriptOrModulePath, githubDomainPrefix) {
+		err = executeRemoteModule(enclaveCtx, starlarkScriptOrModulePath, serializedJsonArgs, dryRun)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred while running the module '%v'", starlarkScriptOrModulePath)
+		}
+		return nil
+	}
+
 	fileOrDir, err := os.Stat(starlarkScriptOrModulePath)
 	if fileOrDir.Mode().IsRegular() {
 		if !strings.HasSuffix(starlarkScriptOrModulePath, starlarkExtension) {
