@@ -117,7 +117,7 @@ func ParseHttpRequestFactRecipe(serviceConfig *starlarkstruct.Struct) (*kurtosis
 		builtConfig := binding_constructors.NewPostHttpRequestFactRecipeDefinition(portId, endpoint, contentType, body, maybeFieldExtractor)
 		return builtConfig, nil
 	} else {
-		return nil, startosis_errors.NewInterpretationError("Define fact HTTP method not recognized")
+		return nil, startosis_errors.NewInterpretationError("HTTP Recipe method not recognized")
 	}
 }
 

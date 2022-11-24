@@ -53,6 +53,7 @@ post_recipe = struct(
 )
 post_response = get_value(post_recipe)
 assert(post_response.code, "==", 200)
+assert(post_response.code, "==", "200")
 post_test_output = extract(post_response.body, ".body")
 assert(post_test_output, "==", "post_output")
 `

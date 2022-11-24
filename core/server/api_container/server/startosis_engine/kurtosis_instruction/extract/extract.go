@@ -24,14 +24,14 @@ const (
 func GenerateExtractInstructionBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, recipeExecutor *runtime_value_store.RuntimeValueStore, serviceNetwork service_network.ServiceNetwork) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 	// TODO: Force returning an InterpretationError rather than a normal error
 	return func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
-		runtimeValue, fieldExtractor, interpretationError := parseStartosisArgs(b, args, kwargs)
+		runtimeValueArg, fieldExtractorArg, interpretationError := parseStartosisArgs(b, args, kwargs)
 		if interpretationError != nil {
 			return nil, interpretationError
 		}
-		extractRecipe := recipe.NewExtractRecipe(fieldExtractor)
+		extractRecipe := recipe.NewExtractRecipe(string(fieldExtractorArg))
 		resultUuid := recipeExecutor.CreateValue()
 		returnValue := recipe.CreateStarlarkReturnValueFromExtractRuntimeValue(resultUuid)
-		extractInstruction := NewExtractInstruction(serviceNetwork, *shared_helpers.GetCallerPositionFromThread(thread), recipeExecutor, resultUuid, runtimeValue, extractRecipe)
+		extractInstruction := NewExtractInstruction(serviceNetwork, *shared_helpers.GetCallerPositionFromThread(thread), recipeExecutor, resultUuid, runtimeValueArg, fieldExtractorArg, extractRecipe)
 		*instructionsQueue = append(*instructionsQueue, extractInstruction)
 		return returnValue, nil
 	}
@@ -45,16 +45,21 @@ type ExtractInstruction struct {
 	resultUuid     string
 	extractRecipe  *recipe.ExtractRecipe
 	runtimeValue   string
+
+	runtimeValueArg   starlark.String
+	fieldExtractorArg starlark.String
 }
 
-func NewExtractInstruction(serviceNetwork service_network.ServiceNetwork, position kurtosis_instruction.InstructionPosition, recipeExecutor *runtime_value_store.RuntimeValueStore, resultUuid string, runtimeValue string, extractRecipe *recipe.ExtractRecipe) *ExtractInstruction {
+func NewExtractInstruction(serviceNetwork service_network.ServiceNetwork, position kurtosis_instruction.InstructionPosition, recipeExecutor *runtime_value_store.RuntimeValueStore, resultUuid string, runtimeValueArg starlark.String, fieldExtractorArg starlark.String, extractRecipe *recipe.ExtractRecipe) *ExtractInstruction {
 	return &ExtractInstruction{
-		serviceNetwork: serviceNetwork,
-		position:       position,
-		recipeExecutor: recipeExecutor,
-		runtimeValue:   runtimeValue,
-		extractRecipe:  extractRecipe,
-		resultUuid:     resultUuid,
+		serviceNetwork:    serviceNetwork,
+		position:          position,
+		recipeExecutor:    recipeExecutor,
+		runtimeValue:      string(runtimeValueArg),
+		runtimeValueArg:   runtimeValueArg,
+		fieldExtractorArg: fieldExtractorArg,
+		extractRecipe:     extractRecipe,
+		resultUuid:        resultUuid,
 	}
 }
 
@@ -92,10 +97,13 @@ func (instruction *ExtractInstruction) ValidateAndUpdateEnvironment(environment 
 }
 
 func (instruction *ExtractInstruction) getKwargs() starlark.StringDict {
-	return starlark.StringDict{}
+	return starlark.StringDict{
+		runtimeValueArgName:   instruction.runtimeValueArg,
+		fieldExtractorArgName: instruction.runtimeValueArg,
+	}
 }
 
-func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (string, string, *startosis_errors.InterpretationError) {
+func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.String, starlark.String, *startosis_errors.InterpretationError) {
 
 	var (
 		runtimeValueArg   starlark.String
@@ -106,5 +114,5 @@ func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starl
 		return "", "", startosis_errors.NewInterpretationError(err.Error())
 	}
 
-	return string(runtimeValueArg), string(fieldExtractorArg), nil
+	return runtimeValueArg, fieldExtractorArg, nil
 }

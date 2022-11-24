@@ -75,6 +75,9 @@ func (instruction *AssertInstruction) Execute(ctx context.Context) (*string, err
 	if err != nil {
 		return nil, err
 	}
+	if currentValue.Type() != instruction.target.Type() {
+		return nil, stacktrace.NewError("Assert failed because '%v' is type '%v' and '%v' is type '%v'", currentValue, currentValue.Type(), instruction.target, instruction.target.Type())
+	}
 	if comparisonToken, found := stringTokenToComparisonStarlarkToken[instruction.assertion]; found {
 		result, err := currentValue.CompareSameType(comparisonToken, instruction.target, 1)
 		if err != nil {
