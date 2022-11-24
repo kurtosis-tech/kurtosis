@@ -56,15 +56,15 @@ print("Stored file at " + artifact_id)
 
 template_str = read_file(TEMPLATE_FILE_TO_RENDER)
 
-template_data = json.encode({
+template_data = {
 	"CLNodesMetricsInfo" : [{"name" : "foo", "path": "/foo/path", "url": "foobar.com"}]
-})
+}
 
 template_data_by_path = {
-	RENDER_RELATIVE_PATH : {
-		"template": template_str,
-		"template_data_json": template_data
-	}
+	RENDER_RELATIVE_PATH : struct(
+		template= template_str,
+		data= template_data
+	)
 }
 
 rendered_artifact = render_templates(template_data_by_path)
@@ -97,8 +97,9 @@ func TestStartosis(t *testing.T) {
 	logrus.Infof("Executing Startosis script...")
 	logrus.Debugf("Startosis script content: \n%v", startosisScript)
 
-	executionResult, err := enclaveCtx.ExecuteStartosisScript(startosisScript, defaultDryRun)
+	outputStream, _, err := enclaveCtx.ExecuteKurtosisScript(ctx, startosisScript, defaultDryRun)
 	require.NoError(t, err, "Unexpected error executing startosis script")
+	interpretationError, validationErrors, executionError, instructions := test_helpers.ReadStreamContentUntilClosed(outputStream)
 
 	expectedScriptOutput := `Adding service example-datastore-server-1.
 Service example-datastore-server-1 deployed successfully.
@@ -106,10 +107,10 @@ Stored file at [a-f0-9-]{36}
 Rendered file to [a-f0-9-]{36}
 Deployed example-datastore-server-2 successfully
 `
-	require.Nil(t, executionResult.GetInterpretationError(), "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
-	require.Nil(t, executionResult.GetValidationErrors(), 0, "Unexpected validation error")
-	require.Nil(t, executionResult.GetExecutionError(), "Unexpected execution error")
-	require.Regexp(t, expectedScriptOutput, test_helpers.GenerateScriptOutput(executionResult.GetKurtosisInstructions()))
+	require.Nil(t, interpretationError, "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
+	require.Empty(t, validationErrors, "Unexpected validation error")
+	require.Nil(t, executionError, "Unexpected execution error")
+	require.Regexp(t, expectedScriptOutput, test_helpers.GenerateScriptOutput(instructions))
 	logrus.Infof("Successfully ran Startosis script")
 
 	// Check that the service added by the script is functional

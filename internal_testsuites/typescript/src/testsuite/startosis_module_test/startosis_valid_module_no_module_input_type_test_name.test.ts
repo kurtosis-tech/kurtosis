@@ -9,7 +9,8 @@ import {
 } from "./shared_constants";
 import * as path from "path";
 import log from "loglevel";
-import {generateScriptOutput} from "../../test_helpers/startosis_helpers";
+import {generateScriptOutput, readStreamContentUntilClosed} from "../../test_helpers/startosis_helpers";
+import {err} from "neverthrow";
 
 jest.setTimeout(JEST_TIMEOUT_MS)
 
@@ -29,21 +30,19 @@ test("Test valid startosis module with no module input type in types file", asyn
 
         log.info(`Loading module at path '${moduleRootPath}'`)
 
-        const executeStartosisModuleResult = await enclaveContext.executeStartosisModule(moduleRootPath, EMPTY_EXECUTE_PARAMS, DEFAULT_DRY_RUN)
-
-        if (executeStartosisModuleResult.isErr()) {
-            log.error(`An error occurred execute startosis module '${moduleRootPath}'`);
-            throw executeStartosisModuleResult.error
+        const outputStream = await enclaveContext.executeKurtosisModule(moduleRootPath, EMPTY_EXECUTE_PARAMS, DEFAULT_DRY_RUN)
+        if (outputStream.isErr()) {
+            throw err(new Error(`An error occurred execute startosis module '${moduleRootPath}'`));
         }
-        const executeStartosisModuleValue = executeStartosisModuleResult.value;
+        const [interpretationError, validationErrors, executionError, instructions] = await readStreamContentUntilClosed(outputStream.value);
 
         const expectedScriptOutput = "Hello world!\n"
 
-        expect(generateScriptOutput(executeStartosisModuleValue.getKurtosisInstructionsList())).toEqual(expectedScriptOutput)
+        expect(generateScriptOutput(instructions)).toEqual(expectedScriptOutput)
 
-        expect(executeStartosisModuleValue.getInterpretationError()).toBeUndefined()
-        expect(executeStartosisModuleValue.getExecutionError()).toBeUndefined()
-        expect(executeStartosisModuleValue.getValidationErrors()).toBeUndefined()
+        expect(interpretationError).toBeUndefined()
+        expect(validationErrors).toEqual([])
+        expect(executionError).toBeUndefined()
     } finally {
         stopEnclaveFunction()
     }

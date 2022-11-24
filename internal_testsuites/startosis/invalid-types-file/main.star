@@ -1,2 +1,2 @@
-def main(input_args):
+def run(input_args):
     print("Hello world!")

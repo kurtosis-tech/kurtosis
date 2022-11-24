@@ -366,6 +366,50 @@ func NewKurtosisInstructionPosition(filename string, line int32, column int32) *
 	}
 }
 
+func NewKurtosisExecutionResponseLineFromInstruction(instruction *kurtosis_core_rpc_api_bindings.KurtosisInstruction) *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine {
+	return &kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine{
+		KurtosisExecutionResponseLine: &kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine_Instruction{
+			Instruction: instruction,
+		},
+	}
+}
+
+func NewKurtosisExecutionResponseLineFromInterpretationError(interpretationError *kurtosis_core_rpc_api_bindings.KurtosisInterpretationError) *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine {
+	return &kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine{
+		KurtosisExecutionResponseLine: &kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine_Error{
+			Error: &kurtosis_core_rpc_api_bindings.KurtosisError{
+				Error: &kurtosis_core_rpc_api_bindings.KurtosisError_InterpretationError{
+					InterpretationError: interpretationError,
+				},
+			},
+		},
+	}
+}
+
+func NewKurtosisExecutionResponseLineFromValidationError(validationError *kurtosis_core_rpc_api_bindings.KurtosisValidationError) *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine {
+	return &kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine{
+		KurtosisExecutionResponseLine: &kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine_Error{
+			Error: &kurtosis_core_rpc_api_bindings.KurtosisError{
+				Error: &kurtosis_core_rpc_api_bindings.KurtosisError_ValidationError{
+					ValidationError: validationError,
+				},
+			},
+		},
+	}
+}
+
+func NewKurtosisExecutionResponseLineFromExecutionError(executionError *kurtosis_core_rpc_api_bindings.KurtosisExecutionError) *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine {
+	return &kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine{
+		KurtosisExecutionResponseLine: &kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine_Error{
+			Error: &kurtosis_core_rpc_api_bindings.KurtosisError{
+				Error: &kurtosis_core_rpc_api_bindings.KurtosisError_ExecutionError{
+					ExecutionError: executionError,
+				},
+			},
+		},
+	}
+}
+
 // ==============================================================================================
 //
 //	Start Service

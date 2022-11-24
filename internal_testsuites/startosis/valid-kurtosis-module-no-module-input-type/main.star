@@ -1,7 +1,7 @@
 types = import_types("github.com/sample/sample-kurtosis-module/types.proto")
 
 
-def main(input_args):
+def run(input_args):
     output = types.ModuleOutput({
         "message": "Hello world!"
     })

@@ -41,7 +41,7 @@ const (
 	//  or it was repartitioned away)
 	defaultPartitionId PartitionID = ""
 
-	kurtosisYmlFilename = "kurtosis.yml"
+	kurtosisYamlFilename = "kurtosis.yml"
 
 	ensureCompressedFileIsLesserThanGRPCLimit = true
 )
@@ -147,26 +147,51 @@ func (enclaveCtx *EnclaveContext) ExecuteStartosisScript(serializedScript string
 	return executeStartosisResponse, nil
 }
 
+func (enclaveCtx *EnclaveContext) ExecuteKurtosisScript(ctx context.Context, serializedScript string, dryRun bool) (chan *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine, context.CancelFunc, error) {
+	ctxWithCancel, cancelCtxFunc := context.WithCancel(ctx)
+	executeStartosisScriptArgs := binding_constructors.NewExecuteStartosisScriptArgs(serializedScript, dryRun)
+	kurtosisResponseLineChan := make(chan *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine)
+
+	stream, err := enclaveCtx.client.ExecuteKurtosisScript(ctxWithCancel, executeStartosisScriptArgs)
+	if err != nil {
+		cancelCtxFunc() // manually call the cancel function as something went wrong
+		return nil, nil, stacktrace.Propagate(err, "Unexpected error happened executing Kurtosis script.")
+	}
+
+	go runReceiveKurtosisResponseLineRoutine(cancelCtxFunc, stream, kurtosisResponseLineChan)
+	return kurtosisResponseLineChan, cancelCtxFunc, nil
+}
+
 func (enclaveCtx *EnclaveContext) ExecuteStartosisModule(moduleRootPath string, serializedParams string, dryRun bool) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse, error) {
-	kurtosisYmlFilepath := path.Join(moduleRootPath, kurtosisYmlFilename)
-
-	kurtosisYml, err := parseKurtosisYml(kurtosisYmlFilepath)
+	executeStartosisModuleArgs, err := enclaveCtx.assembleExecuteStartosisModuleArg(moduleRootPath, serializedParams, dryRun)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "There was an error parsing the '%v' at '%v'", kurtosisYmlFilename, moduleRootPath)
+		return nil, stacktrace.Propagate(err, "Error preparing module for execution '%v'", moduleRootPath)
 	}
 
-	logrus.Infof("Compressing module '%v'  at '%v' for upload", kurtosisYml.Module.ModuleName, moduleRootPath)
-	compressedModule, err := shared_utils.CompressPath(moduleRootPath, ensureCompressedFileIsLesserThanGRPCLimit)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "There was an error compressing module '%v' before upload", moduleRootPath)
-	}
-	executeStartosisModuleArgs := binding_constructors.NewExecuteStartosisModuleArgs(kurtosisYml.Module.ModuleName, compressedModule, serializedParams, dryRun)
-	logrus.Infof("Uploading and executing module '%v'", kurtosisYml.Module.ModuleName)
 	executeStartosisResponse, err := enclaveCtx.client.ExecuteStartosisModule(context.Background(), executeStartosisModuleArgs)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Unexpected error happened executing Startosis module \n%v", moduleRootPath)
+		return nil, stacktrace.Propagate(err, "Unexpected error happened executing Starlark module \n%v", moduleRootPath)
 	}
 	return executeStartosisResponse, nil
+}
+
+func (enclaveCtx *EnclaveContext) ExecuteKurtosisModule(ctx context.Context, moduleRootPath string, serializedParams string, dryRun bool) (chan *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine, context.CancelFunc, error) {
+	ctxWithCancel, cancelCtxFunc := context.WithCancel(ctx)
+	kurtosisResponseLineChan := make(chan *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine)
+	executeStartosisModuleArgs, err := enclaveCtx.assembleExecuteStartosisModuleArg(moduleRootPath, serializedParams, dryRun)
+	if err != nil {
+		cancelCtxFunc() // manually call the cancel function as something went wrong
+		return nil, nil, stacktrace.Propagate(err, "Error preparing module for execution '%v'", moduleRootPath)
+	}
+
+	stream, err := enclaveCtx.client.ExecuteKurtosisModule(ctxWithCancel, executeStartosisModuleArgs)
+	if err != nil {
+		cancelCtxFunc() // manually call the cancel function as something went wrong
+		return nil, nil, stacktrace.Propagate(err, "Unexpected error happened executing Startosis module '%v'", moduleRootPath)
+	}
+
+	go runReceiveKurtosisResponseLineRoutine(cancelCtxFunc, stream, kurtosisResponseLineChan)
+	return kurtosisResponseLineChan, cancelCtxFunc, nil
 }
 
 func (enclaveCtx *EnclaveContext) ExecuteStartosisRemoteModule(moduleId string, serializedParams string, dryRun bool) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse, error) {
@@ -176,6 +201,21 @@ func (enclaveCtx *EnclaveContext) ExecuteStartosisRemoteModule(moduleId string, 
 		return nil, stacktrace.Propagate(err, "Unexpected error happened executing Starlark module '%v'", moduleId)
 	}
 	return executeStartosisResponse, nil
+}
+
+func (enclaveCtx *EnclaveContext) ExecuteKurtosisRemoteModule(ctx context.Context, moduleId string, serializedParams string, dryRun bool) (chan *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine, context.CancelFunc, error) {
+	ctxWithCancel, cancelCtxFunc := context.WithCancel(ctx)
+	kurtosisResponseLineChan := make(chan *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine)
+	executeStartosisScriptArgs := binding_constructors.NewExecuteStartosisRemoteModuleArgs(moduleId, serializedParams, dryRun)
+
+	stream, err := enclaveCtx.client.ExecuteKurtosisModule(ctxWithCancel, executeStartosisScriptArgs)
+	if err != nil {
+		cancelCtxFunc() // manually call the cancel function as something went wrong
+		return nil, nil, stacktrace.Propagate(err, "Unexpected error happened executing Startosis module '%v'", moduleId)
+	}
+
+	go runReceiveKurtosisResponseLineRoutine(cancelCtxFunc, stream, kurtosisResponseLineChan)
+	return kurtosisResponseLineChan, cancelCtxFunc, nil
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
@@ -685,4 +725,41 @@ func convertApiPortsToServiceContextPorts(apiPorts map[string]*kurtosis_core_rpc
 		)
 	}
 	return result, nil
+}
+
+func runReceiveKurtosisResponseLineRoutine(cancelCtxFunc context.CancelFunc, stream grpc.ClientStream, kurtosisResponseLineChan chan *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine) {
+	defer func() {
+		close(kurtosisResponseLineChan)
+		cancelCtxFunc()
+	}()
+	for {
+		responseLine := new(kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine)
+		err := stream.RecvMsg(responseLine)
+		if err == io.EOF {
+			logrus.Debugf("Successfully reached the end of the response stream. Closing.")
+			return
+		}
+		if err != nil {
+			logrus.Errorf("Unexpected error happened reading the stream. Client might have cancelled the stream\n%v", err.Error())
+			return
+		}
+		kurtosisResponseLineChan <- responseLine
+	}
+}
+
+func (enclaveCtx *EnclaveContext) assembleExecuteStartosisModuleArg(moduleRootPath string, serializedParams string, dryRun bool) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleArgs, error) {
+	kurtosisYamlFilepath := path.Join(moduleRootPath, kurtosisYamlFilename)
+
+	kurtosisYaml, err := parseKurtosisMod(kurtosisYamlFilepath)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "There was an error parsing the '%v' at '%v'", kurtosisYamlFilename, moduleRootPath)
+	}
+
+	logrus.Infof("Compressing module '%v'  at '%v' for upload", kurtosisYaml.Module.ModuleName, moduleRootPath)
+	compressedModule, err := shared_utils.CompressPath(moduleRootPath, ensureCompressedFileIsLesserThanGRPCLimit)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "There was an error compressing module '%v' before upload", moduleRootPath)
+	}
+	logrus.Infof("Uploading and executing module '%v'", kurtosisYaml.Module.ModuleName)
+	return binding_constructors.NewExecuteStartosisModuleArgs(kurtosisYaml.Module.ModuleName, compressedModule, serializedParams, dryRun), nil
 }
