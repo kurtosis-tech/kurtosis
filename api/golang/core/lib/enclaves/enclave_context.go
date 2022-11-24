@@ -28,6 +28,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
+	"io"
 	"math"
 	"path"
 )
@@ -750,7 +752,7 @@ func runReceiveKurtosisResponseLineRoutine(cancelCtxFunc context.CancelFunc, str
 func (enclaveCtx *EnclaveContext) assembleExecuteStartosisModuleArg(moduleRootPath string, serializedParams string, dryRun bool) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleArgs, error) {
 	kurtosisYamlFilepath := path.Join(moduleRootPath, kurtosisYamlFilename)
 
-	kurtosisYaml, err := parseKurtosisMod(kurtosisYamlFilepath)
+	kurtosisYaml, err := parseKurtosisYaml(kurtosisYamlFilepath)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "There was an error parsing the '%v' at '%v'", kurtosisYamlFilename, moduleRootPath)
 	}

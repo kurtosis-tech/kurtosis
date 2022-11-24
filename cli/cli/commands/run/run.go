@@ -49,7 +49,7 @@ var StarlarkExecCmd = &lowlevel.LowlevelKurtosisCommand{
 	CommandStr:       command_str_consts.StarlarkRunCmdStr,
 	ShortDescription: "Run a Starlark script or module",
 	LongDescription: "Run a Starlark module or script in an enclave. For a script we expect a path to a " + starlarkExtension +
-		" file. For a module we expect path to a directory containing kurtosis.mod or a fully qualified Github repository path containing a module. If the enclave-id param is provided, Kurtosis " +
+		" file. For a module we expect path to a directory containing kurtosis.yml or a fully qualified Github repository path containing a module. If the enclave-id param is provided, Kurtosis " +
 		"will exec the script inside this enclave, or create it if it doesn't exist. If no enclave-id param is " +
 		"provided, Kurtosis will create a new enclave with a default name derived from the script or module name.",
 	Flags: []*flags.FlagConfig{

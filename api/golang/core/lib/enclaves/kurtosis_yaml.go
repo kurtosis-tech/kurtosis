@@ -4,9 +4,14 @@ import (
 	"github.com/go-yaml/yaml"
 	"github.com/kurtosis-tech/stacktrace"
 	"io/ioutil"
+	"os"
 )
 
-type KurtosisYml struct {
+const (
+	dependenciesUrl = "https://docs.kurtosis.com/reference/starlark-reference/#dependencies"
+)
+
+type KurtosisYaml struct {
 	Module Module `yaml:"module"`
 }
 
@@ -14,21 +19,24 @@ type Module struct {
 	ModuleName string `yaml:"name"`
 }
 
-func parseKurtosisYml(kurtosisYmlFilepath string) (*KurtosisYml, error) {
-	kurtosisYmlContents, err := ioutil.ReadFile(kurtosisYmlFilepath)
+func parseKurtosisYaml(kurtosisYamlFilepath string) (*KurtosisYaml, error) {
+	kurtosisYamlContents, err := ioutil.ReadFile(kurtosisYamlFilepath)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while reading the '%v' file at '%v'", kurtosisYmlFilename, kurtosisYmlFilepath)
+		if os.IsNotExist(err) {
+			return nil, stacktrace.NewError("Couldn't find a '%v' in the root of the package at '%v'. Packages are expected to have a '%v' at root; have a look at '%v' for more", kurtosisYamlFilename, kurtosisYamlFilepath, kurtosisYamlFilename, dependenciesUrl)
+		}
+		return nil, stacktrace.Propagate(err, "An error occurred while reading the '%v' file at '%v'", kurtosisYamlFilename, kurtosisYamlFilepath)
 	}
 
-	var kurtosisYml KurtosisYml
-	err = yaml.Unmarshal(kurtosisYmlContents, &kurtosisYml)
+	var kurtosisYaml KurtosisYaml
+	err = yaml.Unmarshal(kurtosisYamlContents, &kurtosisYaml)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while parsing the '%v' file at '%v'", kurtosisYmlFilename, kurtosisYmlFilepath)
+		return nil, stacktrace.Propagate(err, "An error occurred while parsing the '%v' file at '%v'", kurtosisYamlFilename, kurtosisYamlFilepath)
 	}
 
-	if kurtosisYml.Module.ModuleName == "" {
-		return nil, stacktrace.NewError("Field module.name in %v needs to be set and cannot be empty", kurtosisYmlFilename)
+	if kurtosisYaml.Module.ModuleName == "" {
+		return nil, stacktrace.NewError("Field module.name in %v needs to be set and cannot be empty", kurtosisYamlFilename)
 	}
 
-	return &kurtosisYml, nil
+	return &kurtosisYaml, nil
 }

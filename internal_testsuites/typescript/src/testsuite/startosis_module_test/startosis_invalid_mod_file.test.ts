@@ -31,7 +31,7 @@ test("Test invalid module with invalid mod file", async () => {
             throw err(new Error("Module with invalid module was expected to error but didn't"))
         }
 
-        if (!outputStream.error.message.includes(`Field module.name in kurtosis.mod needs to be set and cannot be empty`)) {
+        if (!outputStream.error.message.includes(`Field module.name in kurtosis.yml needs to be set and cannot be empty`)) {
             throw err(new Error("Unexpected error message"))
         }
     } finally {
