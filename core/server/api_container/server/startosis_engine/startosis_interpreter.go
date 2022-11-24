@@ -21,7 +21,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/store_service_files"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/upload_files"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/wait"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/recipe_executor"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_modules"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_modules/proto_compiler"
@@ -57,7 +57,7 @@ type StartosisInterpreter struct {
 	mutex              *sync.Mutex
 	serviceNetwork     service_network.ServiceNetwork
 	factsEngine        *facts_engine.FactsEngine
-	recipeExecutor     *recipe_executor.RuntimeValueStore
+	recipeExecutor     *runtime_value_store.RuntimeValueStore
 	moduleGlobalsCache map[string]*startosis_modules.ModuleCacheEntry
 	// TODO AUTH there will be a leak here in case people with different repo visibility access a module
 	moduleContentProvider startosis_modules.ModuleContentProvider
@@ -78,7 +78,7 @@ func NewStartosisInterpreter(serviceNetwork service_network.ServiceNetwork, modu
 	}
 }
 
-func NewStartosisInterpreterWithFacts(serviceNetwork service_network.ServiceNetwork, factsEngine *facts_engine.FactsEngine, moduleContentProvider startosis_modules.ModuleContentProvider, recipeExecutor *recipe_executor.RuntimeValueStore) *StartosisInterpreter {
+func NewStartosisInterpreterWithFacts(serviceNetwork service_network.ServiceNetwork, factsEngine *facts_engine.FactsEngine, moduleContentProvider startosis_modules.ModuleContentProvider, recipeExecutor *runtime_value_store.RuntimeValueStore) *StartosisInterpreter {
 	return &StartosisInterpreter{
 		mutex:                 &sync.Mutex{},
 		serviceNetwork:        serviceNetwork,

@@ -5,7 +5,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/facts_engine"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/recipe_executor"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
 	"regexp"
@@ -101,39 +101,40 @@ func ReplaceFactsInString(originalString string, factsEngine *facts_engine.Facts
 	return replacedString, nil
 }
 
-func ReplaceRuntimeValueInString(originalString string, recipeEngine *recipe_executor.RuntimeValueStore) (string, error) {
+func ReplaceRuntimeValueInString(originalString string, recipeEngine *runtime_value_store.RuntimeValueStore) (string, error) {
 	matches := compiledRuntimeValueReplacementRegex.FindAllStringSubmatch(originalString, unlimitedMatches)
 	replacedString := originalString
 	for _, match := range matches {
-		runtimeValueMatchIndex := compiledRuntimeValueReplacementRegex.SubexpIndex(runtimeValueSubgroupName)
-		if runtimeValueMatchIndex == subExpNotFound {
-			return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", runtimeValueSubgroupName, compiledRuntimeValueReplacementRegex.String())
-		}
-		runtimeValueFieldMatchIndex := compiledRuntimeValueReplacementRegex.SubexpIndex(runtimeValueFieldSubgroupName)
-		if runtimeValueFieldMatchIndex == subExpNotFound {
-			return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", runtimeValueFieldSubgroupName, compiledRuntimeValueReplacementRegex.String())
-		}
-		runtimeValue, err := recipeEngine.GetValue(match[runtimeValueMatchIndex])
+		selectedRuntimeValue, err := getRuntimeValueFromRegexMatch(match, recipeEngine)
 		if err != nil {
-			return "", stacktrace.Propagate(err, "An error happened getting runtime value '%v'", match[runtimeValueMatchIndex])
+			return "", stacktrace.Propagate(err, "An error happened getting runtime value from regex match '%v'", match)
 		}
 		allMatchIndex := compiledRuntimeValueReplacementRegex.SubexpIndex(allSubgroupName)
 		if allMatchIndex == subExpNotFound {
 			return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", serviceIdSubgroupName, compiledFactReplacementRegex.String())
 		}
 		allMatch := match[allMatchIndex]
-		replacedString = strings.Replace(replacedString, allMatch, runtimeValue[match[runtimeValueFieldMatchIndex]].String(), singleMatch)
+		switch value := selectedRuntimeValue.(type) {
+		case starlark.String:
+			replacedString = strings.Replace(replacedString, allMatch, value.GoString(), singleMatch)
+		default:
+			replacedString = strings.Replace(replacedString, allMatch, value.String(), singleMatch)
+		}
 	}
 	return replacedString, nil
 }
 
-func GetRuntimeValueFromString(originalString string, runtimeValueStore *recipe_executor.RuntimeValueStore) (starlark.Comparable, error) {
+func GetRuntimeValueFromString(originalString string, runtimeValueStore *runtime_value_store.RuntimeValueStore) (starlark.Comparable, error) {
 	matches := compiledRuntimeValueReplacementRegex.FindAllStringSubmatch(originalString, unlimitedMatches)
-	if len(matches) != 1 {
-		return nil, stacktrace.NewError("More than one match was found on regexp '%v'. Match count '%v'", compiledRuntimeValueReplacementRegex.String(), len(matches))
-
+	if len(matches) == 1 && len(matches[0][0]) == len(originalString) {
+		return getRuntimeValueFromRegexMatch(matches[0], runtimeValueStore)
+	} else {
+		runtimeValue, err := ReplaceRuntimeValueInString(originalString, runtimeValueStore)
+		return starlark.String(runtimeValue), err
 	}
-	match := matches[0]
+}
+
+func getRuntimeValueFromRegexMatch(match []string, runtimeValueStore *runtime_value_store.RuntimeValueStore) (starlark.Comparable, error) {
 	runtimeValueMatchIndex := compiledRuntimeValueReplacementRegex.SubexpIndex(runtimeValueSubgroupName)
 	if runtimeValueMatchIndex == subExpNotFound {
 		return nil, stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", runtimeValueSubgroupName, compiledRuntimeValueReplacementRegex.String())

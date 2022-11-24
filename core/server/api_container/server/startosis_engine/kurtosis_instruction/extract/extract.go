@@ -7,7 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/recipe"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/recipe_executor"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
@@ -21,7 +21,7 @@ const (
 	fieldExtractorArgName = "extractor"
 )
 
-func GenerateExtractInstructionBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, recipeExecutor *recipe_executor.RuntimeValueStore, serviceNetwork service_network.ServiceNetwork) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+func GenerateExtractInstructionBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, recipeExecutor *runtime_value_store.RuntimeValueStore, serviceNetwork service_network.ServiceNetwork) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 	// TODO: Force returning an InterpretationError rather than a normal error
 	return func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 		runtimeValue, fieldExtractor, interpretationError := parseStartosisArgs(b, args, kwargs)
@@ -41,13 +41,13 @@ type ExtractInstruction struct {
 	serviceNetwork service_network.ServiceNetwork
 
 	position       kurtosis_instruction.InstructionPosition
-	recipeExecutor *recipe_executor.RuntimeValueStore
+	recipeExecutor *runtime_value_store.RuntimeValueStore
 	resultUuid     string
 	extractRecipe  *recipe.ExtractRecipe
 	runtimeValue   string
 }
 
-func NewExtractInstruction(serviceNetwork service_network.ServiceNetwork, position kurtosis_instruction.InstructionPosition, recipeExecutor *recipe_executor.RuntimeValueStore, resultUuid string, runtimeValue string, extractRecipe *recipe.ExtractRecipe) *ExtractInstruction {
+func NewExtractInstruction(serviceNetwork service_network.ServiceNetwork, position kurtosis_instruction.InstructionPosition, recipeExecutor *runtime_value_store.RuntimeValueStore, resultUuid string, runtimeValue string, extractRecipe *recipe.ExtractRecipe) *ExtractInstruction {
 	return &ExtractInstruction{
 		serviceNetwork: serviceNetwork,
 		position:       position,

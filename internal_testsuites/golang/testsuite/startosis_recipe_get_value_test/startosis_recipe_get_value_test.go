@@ -33,6 +33,7 @@ get_recipe = struct(
 )
 response = get_value(get_recipe)
 assert(response.code, "==", 200)
+assert("My test returned " + response.code, "==", "My test returned 200")
 assert(response.code, "!=", 500)
 assert(response.code, ">=", 200)
 assert(response.code, "<=", 200)

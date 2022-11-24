@@ -1,4 +1,4 @@
-package recipe_executor
+package runtime_value_store
 
 import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
@@ -10,7 +10,7 @@ type RuntimeValueStore struct {
 	recipeResultMap map[string]map[string]starlark.Comparable
 }
 
-func NewRecipeExecutor() *RuntimeValueStore {
+func NewRuntimeValueStore() *RuntimeValueStore {
 	return &RuntimeValueStore{
 		recipeResultMap: make(map[string]map[string]starlark.Comparable),
 	}
