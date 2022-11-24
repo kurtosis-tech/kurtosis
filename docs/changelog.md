@@ -1,14 +1,20 @@
 # TBD
 
 ### Changes
-- Changed occurrences of `[sS]tartosis` to `Starlark` in errors sent by the CLI and its long and short description
-- Changed some logs and error messages inside core that which had references to Startosis to Starlark
 - Renamed `kurtosis exec` to `kurtosis run` and `main in main.star` to `run in main.star`
+- Make `kurtosis run` an EngineConsumingKurtosis command, which automatically starts an engine
 
 ### Breaking Changes
 - Renamed `kurtosis exec` to `kurtosis run` and `main in main.star` to `run in main.star`
   - Upgrade to the latest CLI, and use the `run` function instead
   - Upgrade existing modules to have `run` and not `main` in `main.star`
+
+# 0.53.12
+
+### Changes
+- Changed occurrences of `[sS]tartosis` to `Starlark` in errors sent by the CLI and its long and short description
+- Changed some logs and error messages inside core that which had references to Startosis to Starlark
+- Allow `dicts` & `structs` to be passed to `render_templates.config.data`
 
 # 0.53.11
 ### Changes
@@ -47,7 +53,7 @@
 # 0.53.5
 ### Changes
 - Error types in ExecuteStartosisResponse type is now a union type, to better represent they are exclusive and prepare for transition to streaming
-- Update the KurtosisInstruction API type returned to the CLI. It now contains a combination of instruction position, the canonicalized instruction, and an optional instruction result 
+- Update the KurtosisInstruction API type returned to the CLI. It now contains a combination of instruction position, the canonicalized instruction, and an optional instruction result
 - Renamed `store_files_from_service` to `store_service_files`
 - Slightly update the way script output information are passed from the Startosis engine back the API container main class. This is a step to prepare for streaming this output all the way back the CLI.
 - Removed `load` statement in favour of `import_module`. Calling load will now throw an InterpretationError
@@ -74,7 +80,7 @@
 
 ### Breaking Changes
 - Renamed `cmd_args` and `entrypoint_args` inside `config` inside `add_service` to `cmd` and `entrypoint`
-  - Users will have to replace their use of `cmd_args` and `entry_point_args` to the above inside their Starlark modules 
+  - Users will have to replace their use of `cmd_args` and `entry_point_args` to the above inside their Starlark modules
 
 # 0.53.2
 ### Features
@@ -96,7 +102,7 @@
 # 0.53.0
 ### Features
 - Made `render_templates`, `upload_files`, `store_Files_from_service` accept `artifact_uuid` and
-return `artifact_uuid` during interpretation time
+  return `artifact_uuid` during interpretation time
 - Moved `kurtosis startosis exec` to `kurtosis exec`
 
 ### Breaking Features
@@ -159,7 +165,7 @@ return `artifact_uuid` during interpretation time
 
 # 0.51.13
 ### Fixes
-- Set `entrypoint` and `cmd_args` to `nil` if not specified instead of empty array 
+- Set `entrypoint` and `cmd_args` to `nil` if not specified instead of empty array
 
 # 0.51.12
 ### Features
@@ -267,7 +273,7 @@ return `artifact_uuid` during interpretation time
 # 0.51.0
 ### Breaking Changes
 - Updated `kurtosisBackend.CreateLogsCollector` method in `container-engine-lib`, added the `logsCollectorTcpPortNumber` parameter
-  - Users will need to update all the `kurtosisBackend.CreateLogsCollector` setting the logs collector `TCP` port number 
+  - Users will need to update all the `kurtosisBackend.CreateLogsCollector` setting the logs collector `TCP` port number
 
 ### Features
 - Added `KurtosisContext.GetUserServiceLogs` method in `golang` and `typescript` api libraries
@@ -305,10 +311,10 @@ return `artifact_uuid` during interpretation time
 
 ### Breaking Changes
 - Updated `CreateEngine` method in `container-engine-lib`, removed the `logsCollectorHttpPortNumber` parameter
-    - Users will need to update all the `CreateEngine` calls removing this parameter
+  - Users will need to update all the `CreateEngine` calls removing this parameter
 - Updated `NewEngineServerArgs`,  `LaunchWithDefaultVersion` and `LaunchWithCustomVersion` methods in `engine_server_launcher` removed the `logsCollectorHttpPortNumber` parameter
-    - Users will need to update these method calls removing this parameter
-  
+  - Users will need to update these method calls removing this parameter
+
 ### Changes
 - Untied the logs components containers and volumes creation and removal from the engine's crud in `container-engine-lib`
 - Made some changes to the implementation of the module manager based on some PR comments by Kevin
@@ -320,7 +326,7 @@ return `artifact_uuid` during interpretation time
 
 ### Fixes
 - Fix IP address placeholder injected by default in Startosis instructions. It used to be empty, which is invalid now
-it is set to `KURTOSIS_IP_ADDR_PLACEHOLDER`
+  it is set to `KURTOSIS_IP_ADDR_PLACEHOLDER`
 - Fix enclave inspect CLI command error when there are additional port bindings
 - Fix a stale message the run-all-test-against-latest-code script
 - Fix bug that creates database while running local unit tests
