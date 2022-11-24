@@ -2,6 +2,7 @@ package service_guid_arg
 
 import (
 	"context"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
@@ -9,7 +10,10 @@ import (
 	"sort"
 )
 
-// Prebuilt service GUID arg which has tab-completion and validation ready out-of-the-box
+const (
+	enclaveIdArgKey = "enclave-id"
+)
+
 func NewServiceGUIDArg(
 	argKey string,
 	engineClientCtxKey string,
@@ -28,9 +32,10 @@ func NewServiceGUIDArg(
 	}
 }
 
-// Make best-effort attempt to get service GUIDs
 func getCompletions(ctx context.Context, flags *flags.ParsedFlags, previousArgs *args.ParsedArgs) ([]string, error) {
-	print("HERE")
+	enclaveIdStr, err := previousArgs.GetNonGreedyArg(enclaveIdArgKey)
+	enclaveId := enclaves.EnclaveID(enclaveIdStr)
+
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	if err != nil {
 		return nil, stacktrace.Propagate(
@@ -38,25 +43,19 @@ func getCompletions(ctx context.Context, flags *flags.ParsedFlags, previousArgs 
 			"An error occurred connecting to the Kurtosis engine for retrieving the enclave IDs for tab completion",
 		)
 	}
-
-	// TODO close the client inside the kurtosisCtx, but requires https://github.com/kurtosis-tech/kurtosis-engine-server/issues/89
-
-	enclaves, err := kurtosisCtx.GetEnclaves(ctx)
+	services, err := kurtosisCtx.GetServices(ctx, enclaveId)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred getting the enclaves retrieving for enclave ID tab completion",
+			"An error occurred getting the services retrieving for enclave ID tab completion",
 		)
 	}
 
 	result := []string{}
-	for enclaveId := range enclaves {
-		result = append(result, string(enclaveId))
+	for serviceGuid := range services {
+		result = append(result, string(serviceGuid))
 	}
 	sort.Strings(result)
-
-	// NOTE: If this arg is greedy, we could actually examine the enclave IDs already stored for this arg in ParsedArgs
-	//  and remove enclave IDs that are already set so that we don't repeat any
 
 	return result, nil
 }
@@ -64,7 +63,6 @@ func getCompletions(ctx context.Context, flags *flags.ParsedFlags, previousArgs 
 // Create a validation function using the previously-created
 func getValidationFunc(argKey string, engineClientCtxKey string, isGreedy bool) func(context.Context, *flags.ParsedFlags, *args.ParsedArgs) error {
 	return func(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error {
-		println("TEST")
 		//uncastedEngineClient := ctx.Value(engineClientCtxKey)
 		//if uncastedEngineClient == nil {
 		//	return stacktrace.NewError("Expected an engine client to have been stored in the context under key '%v', but none was found; this is a bug in Kurtosis!", engineClientCtxKey)
@@ -99,7 +97,6 @@ func getValidationFunc(argKey string, engineClientCtxKey string, isGreedy bool) 
 		//		return stacktrace.NewError("No enclave found with ID '%v'", enclaveId)
 		//	}
 		//}
-		//return nil
-		return stacktrace.NewError("No non-greedy arg with key ")
+		return nil
 	}
 }
