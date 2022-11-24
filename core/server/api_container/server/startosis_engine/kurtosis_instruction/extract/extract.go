@@ -15,7 +15,10 @@ import (
 )
 
 const (
-	DefineGetValueBuiltinName = "extract"
+	DefineExtractBuiltinName = "extract"
+
+	runtimeValueArgName   = "input"
+	fieldExtractorArgName = "extractor"
 )
 
 func GenerateExtractInstructionBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, recipeExecutor *recipe_executor.RuntimeValueStore, serviceNetwork service_network.ServiceNetwork) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
@@ -60,7 +63,7 @@ func (instruction *ExtractInstruction) GetPositionInOriginalScript() *kurtosis_i
 }
 
 func (instruction *ExtractInstruction) GetCanonicalInstruction() string {
-	return shared_helpers.CanonicalizeInstruction(DefineGetValueBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs())
+	return shared_helpers.CanonicalizeInstruction(DefineExtractBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs())
 }
 
 func (instruction *ExtractInstruction) Execute(ctx context.Context) (*string, error) {
@@ -95,12 +98,12 @@ func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starl
 
 	var (
 		runtimeValueArg   starlark.String
-		fieldExtractorAeg starlark.String
+		fieldExtractorArg starlark.String
 	)
 
-	if err := starlark.UnpackArgs(b.Name(), args, kwargs, "input", &runtimeValueArg, "extractor", &fieldExtractorAeg); err != nil {
+	if err := starlark.UnpackArgs(b.Name(), args, kwargs, runtimeValueArgName, &runtimeValueArg, fieldExtractorArgName, &fieldExtractorArg); err != nil {
 		return "", "", startosis_errors.NewInterpretationError(err.Error())
 	}
 
-	return string(runtimeValueArg), string(fieldExtractorAeg), nil
+	return string(runtimeValueArg), string(fieldExtractorArg), nil
 }
