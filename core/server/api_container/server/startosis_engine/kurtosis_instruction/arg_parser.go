@@ -568,6 +568,7 @@ func encodeStarlarkObjectAsJSON(object starlark.Value, argNameForLogging string)
 		Print: func(_ *starlark.Thread, msg string) {
 			jsonifiedVersion = msg
 		},
+		Load: nil,
 	}
 
 	predeclared := &starlark.StringDict{
