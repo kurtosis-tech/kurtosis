@@ -242,8 +242,8 @@ func ParseTemplatesAndData(templatesAndData *starlark.Dict) (map[string]*kurtosi
 			return nil, startosis_errors.NewInterpretationError("Expected values in '%v' to have a '%v' field", templatesAndDataArgName, templateDataFieldKey)
 		}
 
-		templateDataJSONStrValue, castErr := encodeStarlarkObjectAsJSON(templateDataStarlarkValue, templateDataFieldKey)
-		if castErr != nil {
+		templateDataJSONStrValue, encodingError := encodeStarlarkObjectAsJSON(templateDataStarlarkValue, templateDataFieldKey)
+		if encodingError != nil {
 			return nil, castErr
 		}
 		// Massive Hack
