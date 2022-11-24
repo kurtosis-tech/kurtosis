@@ -36,7 +36,7 @@ test("Test invalid module with no main in main.star", async () => {
 
         expect(executeStartosisModuleValue.getInterpretationError()).not.toBeUndefined()
         expect(executeStartosisModuleValue.getInterpretationError()?.getErrorMessage())
-            .toContain("Evaluation error: module has no .main field or method\n\tat [3:12]: <toplevel>")
+            .toContain("Evaluation error: module has no .run field or method\n\tat [3:12]: <toplevel>")
 
         expect(executeStartosisModuleValue.getExecutionError()).toBeUndefined()
         expect(executeStartosisModuleValue.getValidationErrors()).toBeUndefined()

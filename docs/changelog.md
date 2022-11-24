@@ -3,6 +3,12 @@
 ### Changes
 - Changed occurrences of `[sS]tartosis` to `Starlark` in errors sent by the CLI and its long and short description
 - Changed some logs and error messages inside core that which had references to Startosis to Starlark
+- Renamed `kurtosis exec` to `kurtosis run` and `main in main.star` to `run in main.star`
+
+### Breaking Changes
+- Renamed `kurtosis exec` to `kurtosis run` and `main in main.star` to `run in main.star`
+  - Upgrade to the latest CLI, and use the `run` function instead
+  - Upgrade existing modules to have `run` and not `main` in `main.star`
 
 # 0.53.11
 ### Changes

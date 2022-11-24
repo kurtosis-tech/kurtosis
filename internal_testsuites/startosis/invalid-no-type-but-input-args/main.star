@@ -1,2 +1,2 @@
 def main(input_args):
-    print("Hello world!")
+    run("Hello world!")
