@@ -1,5 +1,8 @@
 # TBD
 
+### Changes
+- Made `run` an EngineCosumingKurtosisCommand, i.e it automatically creates an engine if it doesn't exist
+
 # 0.54.0
 
 ### Breaking Changes
