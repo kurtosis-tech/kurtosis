@@ -139,6 +139,27 @@ export class GrpcWebApiContainerClient implements GenericApiContainerClient {
         return ok(resultExecuteStartosisModule.value)
     }
 
+    public async executeStartosisRemoteModule(startosisRemoteModuleArgs:ExecuteStartosisModuleArgs): Promise<Result<ExecuteStartosisResponse, Error>> {
+        const promiseExecuteStartosisRemoteModule: Promise<Result<ExecuteStartosisResponse, Error>> = new Promise((resolve, _unusedReject) => {
+            this.client.executeStartosisModule(startosisRemoteModuleArgs, {}, (error: grpc_web.RpcError | null, response?: ExecuteStartosisResponse) => {
+                if (error === null) {
+                    if (!response) {
+                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
+                    } else {
+                        resolve(ok(response!));
+                    }
+                } else {
+                    resolve(err(error));
+                }
+            })
+        })
+        const resultExecuteStartosisRemoteModule: Result<ExecuteStartosisResponse, Error> = await promiseExecuteStartosisRemoteModule;
+        if (resultExecuteStartosisRemoteModule.isErr()) {
+            return err(resultExecuteStartosisRemoteModule.error)
+        }
+        return ok(resultExecuteStartosisRemoteModule.value)
+    }
+
     public async startServices(startServicesArgs: StartServicesArgs): Promise<Result<StartServicesResponse, Error>>{
         const promiseStartServices: Promise<Result<StartServicesResponse, Error>> = new Promise((resolve, _unusedReject) => {
             this.client.startServices(startServicesArgs, {}, (error: grpc_web.RpcError | null, response?: StartServicesResponse) => {

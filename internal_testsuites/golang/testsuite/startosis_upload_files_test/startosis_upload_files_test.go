@@ -31,8 +31,8 @@ PATH_TO_MOUNT_UPLOADED_DIR = "` + pathToMountUploadedDir + `"
 
 print("Adding service " + DATASTORE_SERVICE_ID + ".")
 
-uploaded_artifact_uuid = upload_files(DIR_TO_UPLOAD)
-print("Uploaded " + uploaded_artifact_uuid)
+uploaded_artifact_id = upload_files(DIR_TO_UPLOAD)
+print("Uploaded " + uploaded_artifact_id)
 
 
 config = struct(
@@ -41,7 +41,7 @@ config = struct(
         DATASTORE_PORT_ID: struct(number = DATASTORE_PORT_NUMBER, protocol = DATASTORE_PORT_PROTOCOL)
     },
 	files = {
-		uploaded_artifact_uuid: PATH_TO_MOUNT_UPLOADED_DIR
+		uploaded_artifact_id: PATH_TO_MOUNT_UPLOADED_DIR
 	}
 )
 

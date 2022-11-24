@@ -62,7 +62,7 @@ func (instruction *DefineFactInstruction) GetPositionInOriginalScript() *kurtosi
 }
 
 func (instruction *DefineFactInstruction) GetCanonicalInstruction() string {
-	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(DefineFactBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs(), instruction.position)
+	return shared_helpers.CanonicalizeInstruction(DefineFactBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs())
 }
 
 func (instruction *DefineFactInstruction) Execute(_ context.Context) (*string, error) {
@@ -74,7 +74,7 @@ func (instruction *DefineFactInstruction) Execute(_ context.Context) (*string, e
 }
 
 func (instruction *DefineFactInstruction) String() string {
-	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(DefineFactBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs(), instruction.position)
+	return instruction.GetCanonicalInstruction()
 }
 
 func (instruction *DefineFactInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {

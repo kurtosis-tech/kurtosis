@@ -13,7 +13,6 @@ import (
 const (
 	maxWaitForLokiServiceAvailabilityRetries         = 10
 	timeBetweenWaitForLokiServiceAvailabilityRetries = 1 * time.Second
-	shouldFollowLogsWhenTheContainerWillBeRemoved    = false
 )
 
 type lokiLogsDatabaseContainer struct{}
@@ -25,6 +24,7 @@ func NewLokiLogDatabaseContainer() *lokiLogsDatabaseContainer {
 func (lokiContainer *lokiLogsDatabaseContainer) CreateAndStart(
 	ctx context.Context,
 	httpPortId string,
+	httpPortNumber uint16,
 	targetNetworkId string,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 	dockerManager *docker_manager.DockerManager,
@@ -35,7 +35,7 @@ func (lokiContainer *lokiLogsDatabaseContainer) CreateAndStart(
 	resultErr error,
 ) {
 
-	lokiContainerConfigProviderObj := createLokiContainerConfigProviderForKurtosis()
+	lokiContainerConfigProviderObj := createLokiContainerConfigProviderForKurtosis(httpPortNumber)
 
 	privateHttpPortSpec, err := lokiContainerConfigProviderObj.GetPrivateHttpPortSpec()
 	if err != nil {
