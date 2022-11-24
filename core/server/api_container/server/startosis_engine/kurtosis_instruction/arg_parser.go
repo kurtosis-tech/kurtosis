@@ -152,7 +152,7 @@ func ParseHttpRequestRecipe(serviceConfig *starlarkstruct.Struct) (*recipe.HttpR
 			return nil, interpretationErr
 		}
 
-		builtConfig := recipe.NewPostHttpRequestRecipe(service.ServiceID(serviceId), portId, endpoint, contentType, body)
+		builtConfig := recipe.NewPostHttpRequestRecipe(service.ServiceID(serviceId), portId, contentType, endpoint, body)
 		return builtConfig, nil
 	} else {
 		return nil, startosis_errors.NewInterpretationError("Define fact HTTP method not recognized")

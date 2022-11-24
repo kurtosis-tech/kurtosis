@@ -25,13 +25,13 @@ add_service(service_id = "web-server", config = service_config)
 define_fact(service_id = "web-server", fact_name = "placeholder", fact_recipe=struct(method="GET", endpoint="?input=output", port_id="http-port", field_extractor=".query.input"))
 get_fact = wait(service_id="web-server", fact_name= "placeholder")
 # Drop this when wait is migrated to new framework
-recipe = struct(
+get_recipe = struct(
     service_id = "web-server",
     port_id = "http-port",
     endpoint = "?input=output",
     method = "GET",
 )
-response = get_value(recipe)
+response = get_value(get_recipe)
 assert(response.code, "==", 200)
 assert(response.code, "!=", 500)
 assert(response.code, ">=", 200)
@@ -40,8 +40,20 @@ assert(response.code, "<", 300)
 assert(response.code, ">", 100)
 assert(response.code, "IN", [100, 200])
 assert(response.code, "NOT_IN", [100, 300])
-test_output = extract(response.body, ".query.input")
-assert(test_output, "==", "output")
+get_test_output = extract(response.body, ".query.input")
+assert(get_test_output, "==", "output")
+post_recipe = struct(
+    service_id = "web-server",
+    port_id = "http-port",
+    endpoint = "/",
+    method = "POST",
+	content_type="text/plain",
+	body="post_output"
+)
+post_response = get_value(post_recipe)
+assert(post_response.code, "==", 200)
+post_test_output = extract(post_response.body, ".body")
+assert(post_test_output, "==", "post_output")
 `
 )
 
