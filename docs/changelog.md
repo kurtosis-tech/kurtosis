@@ -1,5 +1,8 @@
 # TBD
 
+### Fixes
+- Fixes a bug where the CLI was returning 0 even when an error happened running a Kurtosis script
+
 ### Changes
 - Small cleanup in `grpc_web_api_container_client` and `grpc_node_api_container_client`. They were implementing executeRemoteKurtosisModule unnecessarily
 

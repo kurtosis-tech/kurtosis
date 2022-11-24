@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/bazelbuild/buildtools/build"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"strings"
 )
@@ -14,30 +15,31 @@ const (
 
 // PrintKurtosisExecutionResponseLineToStdOut format and prints the instruction to StdOut. It returns a boolean indicating whether an error occurred during printing
 // TODO(gb): scriptOutput buffer will be abandoned once we start printing the instruciton output right next to the instruction itself
-func PrintKurtosisExecutionResponseLineToStdOut(responseLine *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine, scriptOutput *strings.Builder) bool {
-	var printingError error
+func PrintKurtosisExecutionResponseLineToStdOut(responseLine *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine, scriptOutput *strings.Builder) (bool, error) {
+	var errorRunningKurtosisCode bool
 	if responseLine.GetInstruction() != nil {
-		_, printingError = fmt.Fprintln(logrus.StandardLogger().Out, formatInstruction(responseLine.GetInstruction()))
+		formattedInstruction := formatInstruction(responseLine.GetInstruction())
+		if _, err := fmt.Fprintln(logrus.StandardLogger().Out, formattedInstruction); err != nil {
+			return errorRunningKurtosisCode, stacktrace.Propagate(err, "Error printing Kurtosis instruction: \n%v", formattedInstruction)
+		}
 		if responseLine.GetInstruction().InstructionResult != nil {
 			scriptOutput.WriteString(responseLine.GetInstruction().GetInstructionResult())
 		}
 	} else if responseLine.GetError() != nil {
+		errorRunningKurtosisCode = true
+		var errorMsg string
 		if responseLine.GetError().GetInterpretationError() != nil {
-			errorMsg := fmt.Sprintf("There was an error interpreting Kurtosis code \n%v", responseLine.GetError().GetInterpretationError().GetErrorMessage())
-			_, printingError = fmt.Fprintln(logrus.StandardLogger().Out, errorMsg)
+			errorMsg = fmt.Sprintf("There was an error interpreting Starlark code \n%v", responseLine.GetError().GetInterpretationError().GetErrorMessage())
 		} else if responseLine.GetError().GetValidationError() != nil {
-			errorMsg := fmt.Sprintf("There was an error validating Kurtosis code \n%v", responseLine.GetError().GetValidationError().GetErrorMessage())
-			_, printingError = fmt.Fprintln(logrus.StandardLogger().Out, errorMsg)
+			errorMsg = fmt.Sprintf("There was an error validating Starlark code \n%v", responseLine.GetError().GetValidationError().GetErrorMessage())
 		} else if responseLine.GetError().GetExecutionError() != nil {
-			errorMsg := fmt.Sprintf("There was an error executing Kurtosis code \n%v", responseLine.GetError().GetExecutionError().GetErrorMessage())
-			_, printingError = fmt.Fprintln(logrus.StandardLogger().Out, errorMsg)
+			errorMsg = fmt.Sprintf("There was an error executing Starlark code \n%v", responseLine.GetError().GetExecutionError().GetErrorMessage())
+		}
+		if _, err := fmt.Fprintln(logrus.StandardLogger().Out, errorMsg); err != nil {
+			return errorRunningKurtosisCode, stacktrace.Propagate(err, "An error happened executing Starlark code but the error couldn't be printed to the CLI output. Error message was: \n%v", errorMsg)
 		}
 	}
-	if printingError != nil {
-		logrus.Errorf("An error occured printing Kurtosis output to the terminal: \n%v", responseLine.GetInstruction())
-		return true
-	}
-	return false
+	return errorRunningKurtosisCode, nil
 }
 
 func formatInstruction(instruction *kurtosis_core_rpc_api_bindings.KurtosisInstruction) string {
