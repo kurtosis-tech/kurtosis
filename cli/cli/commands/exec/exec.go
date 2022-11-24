@@ -53,11 +53,8 @@ var (
 	kurtosisNoValidationError     *kurtosis_core_rpc_api_bindings.KurtosisValidationErrors
 	kurtosisNoExecutionError      *kurtosis_core_rpc_api_bindings.KurtosisExecutionError
 	githubScriptpathValidationExceptionFunc = func(scriptpath string) bool {
-		if strings.HasPrefix(scriptpath, githubDomainPrefix) {
-			// if it's a Github path we don't validate further, the APIC will do it for us
-			return true
-		}
-		return false
+		// if it's a Github path we don't validate further, the APIC will do it for us
+		return strings.HasPrefix(scriptpath, githubDomainPrefix)
 	}
 )
 
