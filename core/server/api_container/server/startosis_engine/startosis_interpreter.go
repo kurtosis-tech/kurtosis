@@ -110,7 +110,6 @@ func (interpreter *StartosisInterpreter) interpretInternal(moduleId string, seri
 	}
 
 	globalVariables, err := starlark.ExecFile(thread, moduleId, serializedStartosis, *predeclared)
-
 	if err != nil {
 		return nil, err
 	}
