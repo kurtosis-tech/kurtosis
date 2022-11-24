@@ -56,9 +56,9 @@ print("Stored file at " + artifact_id)
 
 template_str = read_file(TEMPLATE_FILE_TO_RENDER)
 
-template_data = json.encode({
+template_data = {
 	"CLNodesMetricsInfo" : [{"name" : "foo", "path": "/foo/path", "url": "foobar.com"}]
-})
+}
 
 template_data_by_path = {
 	RENDER_RELATIVE_PATH : struct(
