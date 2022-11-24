@@ -44,17 +44,17 @@ func (recipe *ExtractRecipe) Execute(input string) (map[string]starlark.Comparab
 		if matchValue != nil {
 			var parsedMatchValue starlark.Comparable
 			logrus.Debug("Start parsing...")
-			switch matchValue.(type) {
+			switch value := matchValue.(type) {
 			case int:
-				parsedMatchValue = starlark.MakeInt(matchValue.(int))
+				parsedMatchValue = starlark.MakeInt(value)
 			case string:
-				parsedMatchValue = starlark.String(matchValue.(string))
+				parsedMatchValue = starlark.String(value)
 			case float32:
-				parsedMatchValue = starlark.Float(matchValue.(float32))
+				parsedMatchValue = starlark.Float(value)
 			case float64:
-				parsedMatchValue = starlark.Float(matchValue.(float64))
+				parsedMatchValue = starlark.Float(value)
 			default:
-				parsedMatchValue = starlark.String(fmt.Sprintf("%v", matchValue))
+				parsedMatchValue = starlark.String(fmt.Sprintf("%v", value))
 			}
 			logrus.Debugf("Parsed successfully %v %v", matchValue, parsedMatchValue)
 			return map[string]starlark.Comparable{
