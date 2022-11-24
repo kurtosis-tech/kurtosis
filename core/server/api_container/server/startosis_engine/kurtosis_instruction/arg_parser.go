@@ -244,7 +244,7 @@ func ParseTemplatesAndData(templatesAndData *starlark.Dict) (map[string]*kurtosi
 
 		templateDataJSONStrValue, encodingError := encodeStarlarkObjectAsJSON(templateDataStarlarkValue, templateDataFieldKey)
 		if encodingError != nil {
-			return nil, castErr
+			return nil, encodingError
 		}
 		// Massive Hack
 		// We do this for a couple of reasons,
