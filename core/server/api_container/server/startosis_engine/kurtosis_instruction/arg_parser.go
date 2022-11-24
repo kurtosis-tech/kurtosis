@@ -42,9 +42,9 @@ const (
 	commandArgName          = "command"
 	expectedExitCodeArgName = "expected_exit_code"
 
-	templatesAndDataArgName  = "config"
-	templateFieldKey         = "template"
-	templateDataJSONFieldKey = "data"
+	templatesAndDataArgName = "config"
+	templateFieldKey        = "template"
+	templateDataFieldKey    = "data"
 
 	maxPortNumber = 65535
 
@@ -52,7 +52,7 @@ const (
 	postRequestMethod = "POST"
 
 	jsonParsingThreadName = "Unused thread name"
-	jsonParsingModuleId = "Unused module id"
+	jsonParsingModuleId   = "Unused module id"
 )
 
 func ParseServiceId(serviceIdRaw starlark.String) (service.ServiceID, *startosis_errors.InterpretationError) {
@@ -237,11 +237,12 @@ func ParseTemplatesAndData(templatesAndData *starlark.Dict) (map[string]*kurtosi
 		if castErr != nil {
 			return nil, castErr
 		}
-		templateDataJSONStarlarkValue, err := structValue.Attr(templateDataJSONFieldKey)
+		templateDataStarlarkValue, err := structValue.Attr(templateDataFieldKey)
 		if err != nil {
-			return nil, startosis_errors.NewInterpretationError("Expected values in '%v' to have a '%v' field", templatesAndDataArgName, templateDataJSONFieldKey)
+			return nil, startosis_errors.NewInterpretationError("Expected values in '%v' to have a '%v' field", templatesAndDataArgName, templateDataFieldKey)
 		}
-		templateDataJSONStrValue, castErr := safeCastToString(templateDataJSONStarlarkValue, fmt.Sprintf("%v[\"%v\"][\"%v\"]", templatesAndDataArgName, relPathInFilesArtifactStr, templateDataJSONFieldKey))
+
+		templateDataJSONStrValue, castErr := encodeStarlarkObjectAsJSON(templateDataStarlarkValue, templateDataFieldKey)
 		if castErr != nil {
 			return nil, castErr
 		}
@@ -559,19 +560,19 @@ func safeCastToInt32(expectedValueString starlark.Value, argNameForLogging strin
 
 }
 
-func encodeStarlarkObjectAsJSON(object starlark.Value) (string,*startosis_errors.InterpretationError) {
+func encodeStarlarkObjectAsJSON(object starlark.Value, argNameForLogging string) (string, *startosis_errors.InterpretationError) {
 	jsonifiedVersion := ""
 	thread := &starlark.Thread{
 		Name:       jsonParsingThreadName,
 		OnMaxSteps: nil,
-		Print: 	func(_ *starlark.Thread, msg string) {
+		Print: func(_ *starlark.Thread, msg string) {
 			jsonifiedVersion = msg
 		},
 	}
 
 	predeclared := &starlark.StringDict{
 		// go-starlark add-ons
-		starlarkjson.Module.Name: starlarkjson.Module,
+		starlarkjson.Module.Name:          starlarkjson.Module,
 		starlarkstruct.Default.GoString(): starlark.NewBuiltin(starlarkstruct.Default.GoString(), starlarkstruct.Make), // extension to build struct in starlark
 	}
 
@@ -583,7 +584,7 @@ print(encoded_json)`, object.String())
 	_, err := starlark.ExecFile(thread, jsonParsingModuleId, scriptToRun, *predeclared)
 
 	if err != nil {
-		return "" ,startosis_errors.NewInterpretationError("Error converting '%v' to JSON", object.String())
+		return "", startosis_errors.NewInterpretationError("Error converting '%v' with string value '%v' to JSON", argNameForLogging, object.String())
 	}
 
 	return jsonifiedVersion, nil
