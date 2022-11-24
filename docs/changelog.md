@@ -4,6 +4,14 @@
 - Made `run` an EngineCosumingKurtosisCommand, i.e it automatically creates an engine if it doesn't exist
 - Added serialized arguments to KurtosisInstruction API type such that the CLI can display executed instructions in a nicer way.
 
+### Breaking changes
+- Removed support for protobuf in Starlark package:
+  - `ModuleInput` and `ModuleOuput` don't have schema anymore. No more proto file inside a package.
+  - `input_args` passed to the run method is deserialized as `struct` (if complex JSON) or basic Starlark types (`int`, `string`, etc) directly from the CLI input 
+  - `import_types()` Starlark instruction has been removed
+  - `proto` module is not available anymore in Starlark code
+  - A package can return any kind of object
+
 # 0.54.1
 
 ### Fixes

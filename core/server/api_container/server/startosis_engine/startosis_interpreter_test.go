@@ -23,7 +23,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
-	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -973,217 +972,6 @@ print(artifact_id)
 	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutput)
 }
 
-func TestStartosisInterpreter_ReadTypesFromProtoFileInScript(t *testing.T) {
-	typesFilePath := "github.com/kurtosis/module/types.proto"
-	typesFileContent := `
-syntax = "proto3";
-message TestType {
-  string greetings = 1;
-}
-`
-
-	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
-	defer moduleContentProvider.RemoveAll()
-	require.Nil(t, moduleContentProvider.AddFileContent(typesFilePath, typesFileContent))
-	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
-	script := `
-types = import_types(types_file = "github.com/kurtosis/module/types.proto")
-test_type = types.TestType({
-    "greetings": "Hello World!"
-})
-print(test_type)
-print(test_type.greetings)
-`
-
-	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
-	require.Nil(t, interpretationError)
-	require.Len(t, instructions, 2) // the print statement
-
-	expectedOutput := `TestType(greetings="Hello World!")
-Hello World!
-`
-	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutput)
-}
-
-func TestStartosisInterpreter_ReadTypesFromProtoFile_FailuresWrongArgument(t *testing.T) {
-	moduleId := "github.com/kurtosis/module"
-	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
-	defer moduleContentProvider.RemoveAll()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
-	script := `
-types = import_types(proto_types_file_bad_argument = "github.com/kurtosis/module/types.proto")
-print("Hello world!")
-`
-
-	instructions, interpretationError := interpreter.Interpret(context.Background(), moduleId, script, EmptyInputArgs)
-	require.Empty(t, instructions)
-
-	expectedErrorString := "Evaluation error: Unable to parse arguments of command 'import_types'. It should be a non empty string argument pointing to the fully qualified .proto types file (i.e. \"github.com/kurtosis/module/types.proto\")"
-	require.Contains(t, interpretationError.GetErrorMessage(), expectedErrorString)
-}
-
-func TestStartosisInterpreter_ReadTypesFromProtoFile_FailuresNoTypesFile(t *testing.T) {
-	moduleId := "github.com/kurtosis/module"
-	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
-	defer moduleContentProvider.RemoveAll()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
-	script := `
-types = import_types("github.com/kurtosis/module/types.proto")
-print("Hello world!")
-`
-
-	instructions, interpretationError := interpreter.Interpret(context.Background(), moduleId, script, EmptyInputArgs)
-	require.Empty(t, instructions)
-
-	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
-		[]startosis_errors.CallFrame{
-			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(2, 21)),
-			*startosis_errors.NewCallFrame("import_types", startosis_errors.NewScriptPosition(0, 0)),
-		},
-		"Evaluation error: Unable to load types file github.com/kurtosis/module/types.proto. Is the corresponding type file present in the module?",
-	).ToAPIType()
-	require.Equal(t, expectedError, interpretationError)
-}
-
-func TestStartosisInterpreter_InjectValidInputArgsToModule(t *testing.T) {
-	moduleId := "github.com/kurtosis/module"
-	typesFilePath := moduleId + "/types.proto"
-	typesFileContent := `
-syntax = "proto3";
-message ModuleInput {
-  string greetings = 1;
-}
-`
-
-	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
-	defer moduleContentProvider.RemoveAll()
-	require.Nil(t, moduleContentProvider.AddFileContent(typesFilePath, typesFileContent))
-	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
-	script := `
-print(input_args.greetings)
-`
-	serializedArgs := `{"greetings": "Hello World!"}`
-	instructions, interpretationError := interpreter.Interpret(context.Background(), moduleId, script, serializedArgs)
-	require.Nil(t, interpretationError)
-	require.Len(t, instructions, 1) // the print statement
-
-	expectedOutput := `Hello World!
-`
-	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutput)
-}
-
-func TestStartosisInterpreter_InjectValidInputArgsToNonModuleScript(t *testing.T) {
-	moduleId := "github.com/kurtosis/module"
-	typesFilePath := moduleId + "/types.proto"
-	typesFileContent := `
-syntax = "proto3";
-message ModuleInput {
-  string greetings = 1;
-}
-`
-
-	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
-	defer moduleContentProvider.RemoveAll()
-	require.Nil(t, moduleContentProvider.AddFileContent(typesFilePath, typesFileContent))
-	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
-	script := `
-print(input_args.greetings)
-`
-	serializedArgs := `{"greetings": "Hello World!"}`
-	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, serializedArgs)
-	require.Empty(t, instructions)
-
-	expectedError := binding_constructors.NewKurtosisInterpretationError("Passing parameter to a standalone script is not yet supported in Kurtosis.")
-	require.Equal(t, expectedError, interpretationError)
-}
-
-func TestStartosisInterpreter_InvalidProtoFile(t *testing.T) {
-	moduleId := "github.com/kurtosis/module"
-	typesFilePath := moduleId + "/types.proto"
-	typesFileContent := `
-syntax "proto3"; // Missing '=' between 'syntax' and '"proto3"''
-message ModuleInput {
-  string greetings = 1
-}
-`
-
-	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
-	defer moduleContentProvider.RemoveAll()
-	require.Nil(t, moduleContentProvider.AddFileContent(typesFilePath, typesFileContent))
-	absFilePath, err := moduleContentProvider.GetOnDiskAbsoluteFilePath(typesFilePath)
-	require.Nil(t, err)
-	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
-	script := `
-def main(input_args):
-	print(input_args.greetings)
-`
-	serializedArgs := `{"greetings": "Hello World!"}`
-	instructions, interpretationError := interpreter.Interpret(context.Background(), moduleId, script, serializedArgs)
-	require.Empty(t, instructions)
-
-	expectedErrorMsg := fmt.Sprintf(`A non empty parameter was passed to the module 'github.com/kurtosis/module' but the module doesn't contain a valid 'types.proto' file (it is either absent of invalid). To be able to pass a parameter to a Kurtosis module, please define a 'ModuleInput' type in the module's 'types.proto' file
-	Caused by: Unable to compile .proto file 'github.com/kurtosis/module/types.proto' (checked out at '%s'). Proto compiler output was: 
-%s:2:8: Expected "=".
-`, absFilePath, filepath.Base(absFilePath))
-	require.Equal(t, expectedErrorMsg, interpretationError.GetErrorMessage())
-}
-
-func TestStartosisInterpreter_InjectValidInvalidInputArgsToModule_InvalidJson(t *testing.T) {
-	moduleId := "github.com/kurtosis/module"
-	typesFilePath := moduleId + "/types.proto"
-	typesFileContent := `
-syntax = "proto3";
-message ModuleInput {
-  string greetings = 1;
-}
-`
-
-	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
-	defer moduleContentProvider.RemoveAll()
-	require.Nil(t, moduleContentProvider.AddFileContent(typesFilePath, typesFileContent))
-	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
-	script := `
-print(input_args.greetings)
-`
-	serializedArgs := `"greetings": "Hello World!"` // Invalid JSON
-	instructions, interpretationError := interpreter.Interpret(context.Background(), moduleId, script, serializedArgs)
-	require.Empty(t, instructions)
-
-	expectedError := binding_constructors.NewKurtosisInterpretationError(`Module parameter shape does not fit the module expected input type (module: 'github.com/kurtosis/module'). Parameter was: 
-"greetings": "Hello World!"
-Error was: 
-proto: syntax error (line 1:1): unexpected token "greetings"`)
-	require.Equal(t, expectedError, interpretationError)
-}
-
-func TestStartosisInterpreter_InjectValidInvalidInputArgsToModule_ValidJsonButWrongType(t *testing.T) {
-	moduleId := "github.com/kurtosis/module"
-	typesFilePath := moduleId + "/types.proto"
-	typesFileContent := `
-syntax = "proto3";
-message ModuleInput {
-  string greetings = 1;
-}
-`
-
-	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
-	defer moduleContentProvider.RemoveAll()
-	require.Nil(t, moduleContentProvider.AddFileContent(typesFilePath, typesFileContent))
-	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
-	script := `
-print(input_args.greetings)
-`
-	serializedArgs := `{"greetings": 3}` // greeting should be a string here
-	instructions, interpretationError := interpreter.Interpret(context.Background(), moduleId, script, serializedArgs)
-	require.Empty(t, instructions)
-
-	expectedError := binding_constructors.NewKurtosisInterpretationError(`Module parameter shape does not fit the module expected input type (module: 'github.com/kurtosis/module'). Parameter was: 
-{"greetings": 3}
-Error was: 
-proto: (line 1:15): invalid value for string type: 3`)
-	require.Equal(t, expectedError, interpretationError)
-}
-
 func TestStartosisInterpreter_ThreeLevelNestedInstructionPositionTest(t *testing.T) {
 	testArtifactUuid, err := enclave_data_directory.NewFilesArtifactUUID()
 	require.Nil(t, err)
@@ -1347,6 +1135,19 @@ Adding service example-datastore-server
 The datastore service ip address is {{kurtosis:example-datastore-server.ip_address}}
 `
 	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutput)
+}
+
+func TestStartosisInterpreter_processInput(t *testing.T) {
+	dict := starlark.NewDict(1)
+	require.Nil(t, dict.SetKey(starlark.String("greetings"), starlark.String("bonjour!")))
+	result, err := convertValueToStructIfPossible(dict)
+
+	require.Nil(t, err)
+
+	expectedResult := starlarkstruct.FromStringDict(starlarkstruct.Default, starlark.StringDict{
+		"greetings": starlark.String("bonjour!"),
+	})
+	require.Equal(t, expectedResult, result)
 }
 
 // #####################################################################################################################
