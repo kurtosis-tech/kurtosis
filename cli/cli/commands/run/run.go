@@ -63,7 +63,7 @@ var StarlarkExecCmd = &lowlevel.LowlevelKurtosisCommand{
 		{
 			Key: dryRunFlagKey,
 			// TODO(gb): link to a doc page mentioning what a "Kurtosis instruction" is
-			Usage:   "If true, the Kurtosis instructions will not be run, they will just be printed to the output of the CLI",
+			Usage:   "If true, the Kurtosis instructions will not be executed, they will just be printed to the output of the CLI",
 			Type:    flags.FlagType_Bool,
 			Default: defaultDryRun,
 		},
