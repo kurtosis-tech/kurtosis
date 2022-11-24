@@ -25,13 +25,13 @@ test("Test invalid module with invalid mod file", async () => {
 
         log.info(`Loading module at path '${moduleRootPath}'`)
 
-        const executeStartosisModuleResult = await enclaveContext.executeStartosisModule(moduleRootPath, EMPTY_EXECUTE_PARAMS, DEFAULT_DRY_RUN)
+        const outputStream = await enclaveContext.executeKurtosisModule(moduleRootPath, EMPTY_EXECUTE_PARAMS, DEFAULT_DRY_RUN)
 
-        if (!executeStartosisModuleResult.isErr()) {
+        if (!outputStream.isErr()) {
             throw err(new Error("Module with invalid module was expected to error but didn't"))
         }
 
-        if (!executeStartosisModuleResult.error.message.includes(`Field module.name in kurtosis.mod needs to be set and cannot be empty`)) {
+        if (!outputStream.error.message.includes(`Field module.name in kurtosis.mod needs to be set and cannot be empty`)) {
             throw err(new Error("Unexpected error message"))
         }
     } finally {

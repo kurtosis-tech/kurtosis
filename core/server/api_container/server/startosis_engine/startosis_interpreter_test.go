@@ -77,7 +77,7 @@ unknownInstruction()
 		[]startosis_errors.CallFrame{
 			*startosis_errors.NewCallFrame("undefined: unknownInstruction", startosis_errors.NewScriptPosition(4, 1)),
 		},
-		"Multiple errors caught interpreting the Startosis script. Listing each of them below.",
+		multipleInterpretationErrorMsg,
 	).ToAPIType()
 	require.Equal(t, expectedError, interpretationError)
 }
@@ -870,7 +870,7 @@ wait(service_id="%v", fact_name="%v")
 }
 
 func TestStartosisInterpreter_RenderTemplates(t *testing.T) {
-	testArtifactUuid, err := enclave_data_directory.NewFilesArtifactUUID()
+	testArtifactId, err := enclave_data_directory.NewFilesArtifactUUID()
 	require.Nil(t, err)
 	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
@@ -885,15 +885,14 @@ template_data = {
 			"LargeFloat": 1231231243.43,
 			"Alive": True
 }
-encoded_json = json.encode(template_data)
 data = {
-	"/foo/bar/test.txt" : {
-		"template": "Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}. Am I Alive? {{.Alive}}",
-		"template_data_json": encoded_json
-    }
+	"/foo/bar/test.txt" : struct(
+		template="Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}. Am I Alive? {{.Alive}}",
+		data=template_data
+    )
 }
-artifact_uuid = render_templates(template_and_data_by_dest_rel_filepath = data, artifact_uuid = "` + string(testArtifactUuid) + `")
-print(artifact_uuid)
+artifact_id = render_templates(config = data, artifact_id = "` + string(testArtifactId) + `")
+print(artifact_id)
 `
 
 	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
@@ -902,7 +901,7 @@ print(artifact_uuid)
 
 	template := "Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}. Am I Alive? {{.Alive}}"
 	templateData := map[string]interface{}{"Name": "Stranger", "Answer": 6, "Numbers": []int{1, 2, 3}, "UnixTimeStamp": 1257894000, "LargeFloat": 1231231243.43, "Alive": true}
-	serializedTemplateData := `{"Alive":true,"Answer":6,"LargeFloat":1.23123124343e+09,"Name":"Stranger","Numbers":[1,2,3],"UnixTimeStamp":1257894000}`
+
 	templateDataAsJson, err := json.Marshal(templateData)
 	require.Nil(t, err)
 	templateAndData := binding_constructors.NewTemplateAndData(template, string(templateDataAsJson))
@@ -911,29 +910,45 @@ print(artifact_uuid)
 	}
 
 	templateAndDataValues := starlark.NewDict(1)
-	fooBarTestValuesValues := starlark.NewDict(2)
-	require.Nil(t, fooBarTestValuesValues.SetKey(starlark.String("template"), starlark.String("Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}. Am I Alive? {{.Alive}}")))
-	require.Nil(t, fooBarTestValuesValues.SetKey(starlark.String("template_data_json"), starlark.String(serializedTemplateData)))
+	fooBarTestValuesValues := starlark.StringDict{}
+	fooBarTestValuesValues["template"] = starlark.String("Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}. Am I Alive? {{.Alive}}")
+
+	expectedData := starlark.NewDict(6)
+	err = expectedData.SetKey(starlark.String("Name"), starlark.String("Stranger"))
+	require.Nil(t, err)
+	err = expectedData.SetKey(starlark.String("Answer"), starlark.MakeInt(6))
+	require.Nil(t, err)
+	err = expectedData.SetKey(starlark.String("Numbers"), starlark.NewList([]starlark.Value{starlark.MakeInt(1), starlark.MakeInt(2), starlark.MakeInt(3)}))
+	require.Nil(t, err)
+	err = expectedData.SetKey(starlark.String("UnixTimeStamp"), starlark.MakeInt64(1257894000))
+	require.Nil(t, err)
+	err = expectedData.SetKey(starlark.String("LargeFloat"), starlark.Float(1231231243.43))
+	require.Nil(t, err)
+	err = expectedData.SetKey(starlark.String("Alive"), starlark.Bool(true))
+	require.Nil(t, err)
+	expectedData.Freeze()
+
+	fooBarTestValuesValues["data"] = expectedData
 	fooBarTestValuesValues.Freeze()
-	require.Nil(t, templateAndDataValues.SetKey(starlark.String("/foo/bar/test.txt"), fooBarTestValuesValues))
+	require.Nil(t, templateAndDataValues.SetKey(starlark.String("/foo/bar/test.txt"), starlarkstruct.FromStringDict(starlarkstruct.Default, fooBarTestValuesValues)))
 	templateAndDataValues.Freeze()
 
 	renderInstruction := render_templates.NewRenderTemplatesInstruction(
 		testServiceNetwork,
-		kurtosis_instruction.NewInstructionPosition(18, 33, ModuleIdPlaceholderForStandaloneScripts),
+		kurtosis_instruction.NewInstructionPosition(17, 31, ModuleIdPlaceholderForStandaloneScripts),
 		templateAndDataByDestFilepath,
 		starlark.StringDict{
-			"template_and_data_by_dest_rel_filepath": templateAndDataValues,
-			"artifact_uuid":                          starlark.String(testArtifactUuid),
+			"config":      templateAndDataValues,
+			"artifact_id": starlark.String(testArtifactId),
 		},
-		testArtifactUuid,
+		testArtifactId,
 	)
 
 	require.Equal(t, renderInstruction, instructions[1])
 
 	expectedOutput := fmt.Sprintf(`Rendering template to disk!
 %v
-`, testArtifactUuid)
+`, testArtifactId)
 	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutput)
 }
 
@@ -1284,8 +1299,7 @@ config = struct(
 	image = "` + testContainerImageName + `",
 )
 datastore_service = add_service(service_id = service_id, config = config)
-print("The datastore service ip address is " + datastore_service.ip_address)
-`
+print("The datastore service ip address is " + datastore_service.ip_address)`
 
 	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
 	require.Nil(t, interpretationError)

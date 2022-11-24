@@ -3,6 +3,7 @@ import {DEFAULT_DRY_RUN, EMPTY_EXECUTE_PARAMS, IS_PARTITIONING_ENABLED, JEST_TIM
 import * as path from "path";
 import log from "loglevel";
 import {err} from "neverthrow";
+import {generateScriptOutput, readStreamContentUntilClosed} from "../../test_helpers/startosis_helpers";
 
 const MISSING_MAIN_STAR_TEST_NAME = "invalid-module-no-main-file"
 const MODULE_WITH_NO_MAIN_STAR_REL_PATH = "../../../../startosis/no-main-star"
@@ -25,13 +26,19 @@ test("Test invalid module with no main.star", async () => {
 
         log.info(`Loading module at path '${moduleRootPath}'`)
 
-        const executeStartosisModuleResult = await enclaveContext.executeStartosisModule(moduleRootPath, EMPTY_EXECUTE_PARAMS, DEFAULT_DRY_RUN)
-
-        if (!executeStartosisModuleResult.isErr()) {
-            throw err(new Error("Module with invalid module was expected to error but didn't"))
+        const outputStream = await enclaveContext.executeKurtosisModule(moduleRootPath, EMPTY_EXECUTE_PARAMS, DEFAULT_DRY_RUN)
+        if (outputStream.isErr()) {
+            throw err(new Error(`An error occurred execute startosis module '${moduleRootPath}'`));
         }
+        const [interpretationError, validationErrors, executionError, instructions] = await readStreamContentUntilClosed(outputStream.value);
 
-        expect(executeStartosisModuleResult.error.message).toContain("An error occurred while verifying that 'main.star' exists on root of module")
+        expect(interpretationError).not.toBeUndefined()
+        expect(interpretationError?.getErrorMessage())
+            .toContain("An error occurred while verifying that 'main.star' exists on root of module")
+        expect(validationErrors).toEqual([])
+        expect(executionError).toBeUndefined()
+
+        expect(generateScriptOutput(instructions)).toEqual("")
     } finally {
         stopEnclaveFunction()
     }

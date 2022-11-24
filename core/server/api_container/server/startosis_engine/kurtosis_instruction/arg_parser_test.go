@@ -1,7 +1,6 @@
 package kurtosis_instruction
 
 import (
-	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
@@ -492,19 +491,22 @@ func TestParseFilesArtifactMountDirpaths_FailureOnNonStringValue(t *testing.T) {
 	require.Equal(t, map[string]string(nil), output)
 }
 
-func TestParseTemplatesAndData_SimpleCase(t *testing.T) {
-	dataAsJson := `{"LargeFloat":1231231243.43,"Name":"John","UnixTs":1257894000}`
-	subDict := starlark.NewDict(2)
-	template := "Hello {{.Name}}. {{.LargeFloat}} {{.UnixTs}}"
-	err := subDict.SetKey(starlark.String("template"), starlark.String(template))
-	require.Nil(t, err)
-	err = subDict.SetKey(starlark.String("template_data_json"), starlark.String(dataAsJson))
-	require.Nil(t, err)
+func TestParseTemplatesAndData_SimpleCaseStruct(t *testing.T) {
+	dataStringDict := starlark.StringDict{}
+	dataStringDict["LargeFloat"] = starlark.Float(1231231243.43)
+	dataStringDict["Name"] = starlark.String("John")
+	dataStringDict["UnixTs"] = starlark.MakeInt64(1257894000)
+	dataStringDict["Boolean"] = starlark.Bool(true)
+	data := starlarkstruct.FromStringDict(starlarkstruct.Default, dataStringDict)
+	templateDataStrDict := starlark.StringDict{}
+	template := "Hello {{.Name}}. {{.LargeFloat}} {{.UnixTs}} {{.Boolean}}"
+	templateDataStrDict["template"] = starlark.String(template)
+	templateDataStrDict["data"] = data
 	input := starlark.NewDict(1)
-	err = input.SetKey(starlark.String("/foo/bar"), subDict)
+	err := input.SetKey(starlark.String("/foo/bar"), starlarkstruct.FromStringDict(starlarkstruct.Default, templateDataStrDict))
 	require.Nil(t, err)
 
-	expectedTemplateAndData := binding_constructors.NewTemplateAndData(template, `{"LargeFloat":1231231243.43,"Name":"John","UnixTs":1257894000}`)
+	expectedTemplateAndData := binding_constructors.NewTemplateAndData(template, `{"Boolean":true,"LargeFloat":1231231243.43,"Name":"John","UnixTs":1257894000}`)
 	expectedOutput := map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData{
 		"/foo/bar": expectedTemplateAndData,
 	}
@@ -514,40 +516,48 @@ func TestParseTemplatesAndData_SimpleCase(t *testing.T) {
 	require.Equal(t, expectedOutput, output)
 }
 
-func TestParseTemplatesAndData_FailsForInvalidJSONWithIntegerKey(t *testing.T) {
-	dataAsJson := `{12344:"John"}`
-	subDict := starlark.NewDict(2)
-	template := "Hello {{.Name}}"
-	err := subDict.SetKey(starlark.String("template"), starlark.String(template))
+func TestParseTemplatesAndData_SimpleCaseDict(t *testing.T) {
+	dataDict := starlark.NewDict(4)
+	err := dataDict.SetKey(starlark.String("LargeFloat"), starlark.Float(1231231243.43))
 	require.Nil(t, err)
-	err = subDict.SetKey(starlark.String("template_data_json"), starlark.String(dataAsJson))
+	err = dataDict.SetKey(starlark.String("Name"), starlark.String("John"))
 	require.Nil(t, err)
+	err = dataDict.SetKey(starlark.String("UnixTs"), starlark.MakeInt64(1257894000))
+	require.Nil(t, err)
+	err = dataDict.SetKey(starlark.String("Boolean"), starlark.Bool(true))
+	require.Nil(t, err)
+	templateDataStrDict := starlark.StringDict{}
+	template := "Hello {{.Name}}. {{.LargeFloat}} {{.UnixTs}} {{.Boolean}}"
+	templateDataStrDict["template"] = starlark.String(template)
+	templateDataStrDict["data"] = dataDict
 	input := starlark.NewDict(1)
-	templateRelativePath := "/foo/bar"
-	err = input.SetKey(starlark.String("/foo/bar"), subDict)
+	err = input.SetKey(starlark.String("/foo/bar"), starlarkstruct.FromStringDict(starlarkstruct.Default, templateDataStrDict))
 	require.Nil(t, err)
 
-	_, err = ParseTemplatesAndData(input)
-	require.NotNil(t, err)
-	require.Contains(t, err.Error(), fmt.Sprintf("Template data for file '%v', '%v' isn't valid JSON", templateRelativePath, dataAsJson))
+	expectedTemplateAndData := binding_constructors.NewTemplateAndData(template, `{"Boolean":true,"LargeFloat":1231231243.43,"Name":"John","UnixTs":1257894000}`)
+	expectedOutput := map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData{
+		"/foo/bar": expectedTemplateAndData,
+	}
+
+	output, err := ParseTemplatesAndData(input)
+	require.Nil(t, err)
+	require.Equal(t, expectedOutput, output)
 }
 
-func TestParseTemplatesAndData_FailsForMalformedJSONWithoutClosingBraces(t *testing.T) {
-	dataAsJson := `{"Name": "World"`
-	subDict := starlark.NewDict(2)
+func TestParseTemplatesAndData_FailsForDictWithIntegerKey(t *testing.T) {
+	dataDict := starlark.NewDict(1)
+	err := dataDict.SetKey(starlark.MakeInt(42), starlark.Float(1231231243.43))
+	require.Nil(t, err)
+	templateDataStrDict := starlark.StringDict{}
 	template := "Hello {{.Name}}"
-	err := subDict.SetKey(starlark.String("template"), starlark.String(template))
-	require.Nil(t, err)
-	err = subDict.SetKey(starlark.String("template_data_json"), starlark.String(dataAsJson))
-	require.Nil(t, err)
+	templateDataStrDict["template"] = starlark.String(template)
+	templateDataStrDict["data"] = dataDict
 	input := starlark.NewDict(1)
-	templateRelativePath := "/foo/bar"
-	err = input.SetKey(starlark.String("/foo/bar"), subDict)
+	err = input.SetKey(starlark.String("/foo/bar"), starlarkstruct.FromStringDict(starlarkstruct.Default, templateDataStrDict))
 	require.Nil(t, err)
 
 	_, err = ParseTemplatesAndData(input)
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), fmt.Sprintf("Template data for file '%v', '%v' isn't valid JSON", templateRelativePath, dataAsJson))
 }
 
 func TestParsePrivateIPAddressPlaceholder_Success(t *testing.T) {
@@ -605,4 +615,17 @@ func TestParseHttpRequestFactRecipe_GetRequestWithOptionalFields(t *testing.T) {
 	recipe, err := ParseHttpRequestFactRecipe(input)
 	require.Nil(t, err)
 	require.Equal(t, expectedRecipe, recipe.HttpRequestFact)
+}
+
+func TestEncodeStarlarkObjectAsJSON_EncodesStructsCorrectly(t *testing.T) {
+	structToJsonifyStrDict := starlark.StringDict{}
+	structToJsonifyStrDict["foo"] = starlark.String("bar")
+	structToJsonifyStrDict["buzz"] = starlark.MakeInt(42)
+	structToJsonifyStrDict["fizz"] = starlark.Bool(false)
+	structToJsonify := starlarkstruct.FromStringDict(starlarkstruct.Default, structToJsonifyStrDict)
+	require.NotNil(t, structToJsonify)
+	structJsonStr, err := encodeStarlarkObjectAsJSON(structToJsonify, "test")
+	require.Nil(t, err)
+	expectedStr := `{"buzz":42,"fizz":false,"foo":"bar"}`
+	require.Equal(t, expectedStr, structJsonStr)
 }

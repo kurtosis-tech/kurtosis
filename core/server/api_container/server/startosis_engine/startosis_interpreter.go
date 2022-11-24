@@ -48,7 +48,7 @@ const (
 	nonBreakingSpaceChar = "\u00a0"
 	regularSpaceChar     = " "
 
-	multipleInterpretationErrorMsg = "Multiple errors caught interpreting the Startosis script. Listing each of them below."
+	multipleInterpretationErrorMsg = "Multiple errors caught interpreting the Starlark script. Listing each of them below."
 )
 
 type StartosisInterpreter struct {
@@ -105,7 +105,7 @@ func (interpreter *StartosisInterpreter) Interpret(ctx context.Context, moduleId
 		return nil, generateInterpretationError(err).ToAPIType()
 	}
 
-	logrus.Debugf("Successfully interpreted Startosis code into instruction queue: \n%s", instructionsQueue)
+	logrus.Debugf("Successfully interpreted Starlark code into instruction queue: \n%s", instructionsQueue)
 	return instructionsQueue, nil
 }
 

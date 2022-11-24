@@ -30,12 +30,13 @@ func TestStartosisRemoteModule(t *testing.T) {
 	// ------------------------------------- TEST RUN ----------------------------------------------
 	logrus.Debugf("Executing Startosis module: '%v'", remoteModule)
 
-	executionResult, err := enclaveCtx.ExecuteStartosisRemoteModule(remoteModule, executeParams, defaultDryRun)
+	outputStream, _, err := enclaveCtx.ExecuteKurtosisRemoteModule(ctx, remoteModule, executeParams, defaultDryRun)
 	require.NoError(t, err, "Unexpected error executing startosis module")
+	interpretationError, validationErrors, executionError, _ := test_helpers.ReadStreamContentUntilClosed(outputStream)
 
-	require.Nil(t, executionResult.GetInterpretationError(), "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
-	require.Nil(t, executionResult.GetValidationErrors(), "Unexpected validation error")
-	require.Empty(t, executionResult.GetExecutionError(), "Unexpected execution error")
+	require.Nil(t, interpretationError, "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
+	require.Empty(t, validationErrors, "Unexpected validation error")
+	require.Empty(t, executionError, "Unexpected execution error")
 	logrus.Infof("Successfully ran Startosis Module")
 
 	// Check that the service added by the script is functional
