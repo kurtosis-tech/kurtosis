@@ -6,7 +6,7 @@ import {err} from "neverthrow";
 import {generateScriptOutput, readStreamContentUntilClosed} from "../../test_helpers/startosis_helpers";
 
 const MISSING_MAIN_FUNCTION_TEST_NAME = "invalid-module-missing-main"
-const MODULE_WITH_NO_MAIN_IN_MAIN_STAR_REL_PATH = "../../../../startosis/no-main-in-main-star"
+const MODULE_WITH_NO_MAIN_IN_MAIN_STAR_REL_PATH = "../../../../startosis/no-run-in-main-star"
 
 jest.setTimeout(JEST_TIMEOUT_MS)
 
@@ -36,7 +36,7 @@ test("Test invalid module with no main in main.star", async () => {
 
         expect(interpretationError).not.toBeUndefined()
         expect(interpretationError?.getErrorMessage())
-            .toContain("Evaluation error: module has no .main field or method\n\tat [3:12]: <toplevel>")
+            .toContain("Evaluation error: module has no .run field or method\n\tat [3:12]: <toplevel>")
 
         expect(validationErrors).toEqual([])
         expect(executionError).toBeUndefined()
