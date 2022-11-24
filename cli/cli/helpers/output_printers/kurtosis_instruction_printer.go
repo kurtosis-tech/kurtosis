@@ -12,7 +12,35 @@ const (
 	bazelBuildDefaultFilename = ""
 )
 
-func FormatInstruction(instruction *kurtosis_core_rpc_api_bindings.KurtosisInstruction) string {
+// PrintKurtosisExecutionResponseLineToStdOut format and prints the instruction to StdOut. It returns a boolean indicating whether an error occurred during printing
+// TODO(gb): scriptOutput buffer will be abandoned once we start printing the instruciton output right next to the instruction itself
+func PrintKurtosisExecutionResponseLineToStdOut(responseLine *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine, scriptOutput *strings.Builder) bool {
+	var printingError error
+	if responseLine.GetInstruction() != nil {
+		_, printingError = fmt.Fprintln(logrus.StandardLogger().Out, formatInstruction(responseLine.GetInstruction()))
+		if responseLine.GetInstruction().InstructionResult != nil {
+			scriptOutput.WriteString(responseLine.GetInstruction().GetInstructionResult())
+		}
+	} else if responseLine.GetError() != nil {
+		if responseLine.GetError().GetInterpretationError() != nil {
+			errorMsg := fmt.Sprintf("There was an error interpreting Kurtosis code \n%v", responseLine.GetError().GetInterpretationError().GetErrorMessage())
+			_, printingError = fmt.Fprintln(logrus.StandardLogger().Out, errorMsg)
+		} else if responseLine.GetError().GetValidationError() != nil {
+			errorMsg := fmt.Sprintf("There was an error validating Kurtosis code \n%v", responseLine.GetError().GetValidationError().GetErrorMessage())
+			_, printingError = fmt.Fprintln(logrus.StandardLogger().Out, errorMsg)
+		} else if responseLine.GetError().GetExecutionError() != nil {
+			errorMsg := fmt.Sprintf("There was an error executing Kurtosis code \n%v", responseLine.GetError().GetExecutionError().GetErrorMessage())
+			_, printingError = fmt.Fprintln(logrus.StandardLogger().Out, errorMsg)
+		}
+	}
+	if printingError != nil {
+		logrus.Errorf("An error occured printing Kurtosis output to the terminal: \n%v", responseLine.GetInstruction())
+		return true
+	}
+	return false
+}
+
+func formatInstruction(instruction *kurtosis_core_rpc_api_bindings.KurtosisInstruction) string {
 	canonicalizedInstructionWithComment := fmt.Sprintf(
 		"# from %s[%d:%d]\n%s",
 		instruction.GetPosition().GetFilename(),
