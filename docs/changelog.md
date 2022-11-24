@@ -1,8 +1,6 @@
 # TBD
 
 ### Changes
-- Changed occurrences of `[sS]tartosis` to `Starlark` in errors sent by the CLI and its long and short description
-- Changed some logs and error messages inside core that which had references to Startosis to Starlark
 - Renamed `kurtosis exec` to `kurtosis run` and `main in main.star` to `run in main.star`
 - Make `kurtosis run` an EngineConsumingKurtosis command, which automatically starts an engine
 
@@ -10,6 +8,13 @@
 - Renamed `kurtosis exec` to `kurtosis run` and `main in main.star` to `run in main.star`
   - Upgrade to the latest CLI, and use the `run` function instead
   - Upgrade existing modules to have `run` and not `main` in `main.star`
+
+# 0.53.12
+
+### Changes
+- Changed occurrences of `[sS]tartosis` to `Starlark` in errors sent by the CLI and its long and short description
+- Changed some logs and error messages inside core that which had references to Startosis to Starlark
+- Allow `dicts` & `structs` to be passed to `render_templates.config.data`
 
 # 0.53.11
 ### Changes

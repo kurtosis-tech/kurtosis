@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"go.starlark.net/starlark"
+	"go.starlark.net/starlarkjson"
 	"go.starlark.net/starlarkstruct"
 	"math"
 	"reflect"
@@ -41,14 +42,17 @@ const (
 	commandArgName          = "command"
 	expectedExitCodeArgName = "expected_exit_code"
 
-	templatesAndDataArgName  = "config"
-	templateFieldKey         = "template"
-	templateDataJSONFieldKey = "data"
+	templatesAndDataArgName = "config"
+	templateFieldKey        = "template"
+	templateDataFieldKey    = "data"
 
 	maxPortNumber = 65535
 
 	getRequestMethod  = "GET"
 	postRequestMethod = "POST"
+
+	jsonParsingThreadName = "Unused thread name"
+	jsonParsingModuleId   = "Unused module id"
 )
 
 func ParseServiceId(serviceIdRaw starlark.String) (service.ServiceID, *startosis_errors.InterpretationError) {
@@ -233,13 +237,14 @@ func ParseTemplatesAndData(templatesAndData *starlark.Dict) (map[string]*kurtosi
 		if castErr != nil {
 			return nil, castErr
 		}
-		templateDataJSONStarlarkValue, err := structValue.Attr(templateDataJSONFieldKey)
+		templateDataStarlarkValue, err := structValue.Attr(templateDataFieldKey)
 		if err != nil {
-			return nil, startosis_errors.NewInterpretationError("Expected values in '%v' to have a '%v' field", templatesAndDataArgName, templateDataJSONFieldKey)
+			return nil, startosis_errors.NewInterpretationError("Expected values in '%v' to have a '%v' field", templatesAndDataArgName, templateDataFieldKey)
 		}
-		templateDataJSONStrValue, castErr := safeCastToString(templateDataJSONStarlarkValue, fmt.Sprintf("%v[\"%v\"][\"%v\"]", templatesAndDataArgName, relPathInFilesArtifactStr, templateDataJSONFieldKey))
-		if castErr != nil {
-			return nil, castErr
+
+		templateDataJSONStrValue, encodingError := encodeStarlarkObjectAsJSON(templateDataStarlarkValue, templateDataFieldKey)
+		if encodingError != nil {
+			return nil, encodingError
 		}
 		// Massive Hack
 		// We do this for a couple of reasons,
@@ -553,4 +558,35 @@ func safeCastToInt32(expectedValueString starlark.Value, argNameForLogging strin
 	}
 	return int32(int64Value), nil
 
+}
+
+func encodeStarlarkObjectAsJSON(object starlark.Value, argNameForLogging string) (string, *startosis_errors.InterpretationError) {
+	jsonifiedVersion := ""
+	thread := &starlark.Thread{
+		Name:       jsonParsingThreadName,
+		OnMaxSteps: nil,
+		Print: func(_ *starlark.Thread, msg string) {
+			jsonifiedVersion = msg
+		},
+		Load: nil,
+	}
+
+	predeclared := &starlark.StringDict{
+		// go-starlark add-ons
+		starlarkjson.Module.Name:          starlarkjson.Module,
+		starlarkstruct.Default.GoString(): starlark.NewBuiltin(starlarkstruct.Default.GoString(), starlarkstruct.Make), // extension to build struct in starlark
+	}
+
+	// We do a print here as if we return the encoded variable we get extra quotes and slashes
+	// {"fizz": "buzz"} becomes "{\"fizz": \"buzz"\}"
+	scriptToRun := fmt.Sprintf(`encoded_json = json.encode(%v)
+print(encoded_json)`, object.String())
+
+	_, err := starlark.ExecFile(thread, jsonParsingModuleId, scriptToRun, *predeclared)
+
+	if err != nil {
+		return "", startosis_errors.NewInterpretationError("Error converting '%v' with string value '%v' to JSON", argNameForLogging, object.String())
+	}
+
+	return jsonifiedVersion, nil
 }
