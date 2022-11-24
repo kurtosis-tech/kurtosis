@@ -35,7 +35,7 @@ test("Test invalid startosis module no types file but input_args in main", async
 
         expect(executeStartosisModuleValue.getInterpretationError()).not.toBeUndefined()
         expect(executeStartosisModuleValue.getInterpretationError()?.getErrorMessage())
-            .toContain("Evaluation error: function main missing 1 argument (input_args)")
+            .toContain("Evaluation error: function run missing 1 argument (input_args)")
 
         expect(executeStartosisModuleValue.getExecutionError()).toBeUndefined()
         expect(executeStartosisModuleValue.getValidationErrors()).toBeUndefined()

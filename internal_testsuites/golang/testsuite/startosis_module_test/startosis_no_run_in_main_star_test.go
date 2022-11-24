@@ -12,7 +12,7 @@ import (
 
 const (
 	invalidCaseNoMainInMainStarTestName = "invalid-module-missing-main"
-	moduleWithNoMainInMainStarRelPath   = "../../../startosis/no-main-in-main-star"
+	moduleWithNoMainInMainStarRelPath   = "../../../startosis/no-run-in-main-star"
 )
 
 func TestStartosisModule_NoMainInMainStar(t *testing.T) {
