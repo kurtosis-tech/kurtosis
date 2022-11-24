@@ -1,5 +1,7 @@
 # TBD
 
+# 0.53.12
+
 ### Changes
 - Changed occurrences of `[sS]tartosis` to `Starlark` in errors sent by the CLI and its long and short description
 - Changed some logs and error messages inside core that which had references to Startosis to Starlark
