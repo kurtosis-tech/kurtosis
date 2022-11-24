@@ -4,6 +4,7 @@
 - Changed occurrences of `[sS]tartosis` to `Starlark` in errors sent by the CLI and its long and short description
 - Changed some logs and error messages inside core that which had references to Startosis to Starlark
 - Renamed `kurtosis exec` to `kurtosis run` and `main in main.star` to `run in main.star`
+- Make `kurtosis run` an EngineConsumingKurtosis command, which automatically starts an engine
 
 ### Breaking Changes
 - Renamed `kurtosis exec` to `kurtosis run` and `main in main.star` to `run in main.star`
