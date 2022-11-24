@@ -1,5 +1,7 @@
 # TBD
 
+# 0.54.0
+
 ### Breaking Changes
 - Renamed `kurtosis exec` to `kurtosis run` and `main in main.star` to `run in main.star`
   - Upgrade to the latest CLI, and use the `run` function instead
