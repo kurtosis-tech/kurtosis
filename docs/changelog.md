@@ -2,6 +2,7 @@
 
 ### Features
 - Updated the CLI to consume the streaming endpoints to execute Startosis. Kurtosis Instructions are now returned live, but the script output is still printed at the end (until we have better formatting).
+- Update integration tests to consume Startosis streaming endpoints
 
 # 0.53.12
 
