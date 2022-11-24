@@ -44,16 +44,10 @@ const (
 	githubDomainPrefix          = "github.com/"
 	isNewEnclaveFlagWhenCreated = true
 
+	interruptChanBufferSize = 5
+
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
-)
-
-var (
-	kurtosisInstructionNoResult   *string
-	kurtosisNoInterpretationError *kurtosis_core_rpc_api_bindings.KurtosisInterpretationError
-	kurtosisNoValidationError     *kurtosis_core_rpc_api_bindings.KurtosisValidationErrors
-	kurtosisNoExecutionError      *kurtosis_core_rpc_api_bindings.KurtosisExecutionError
-	interruptChanBufferSize       = 5
 )
 
 var StarlarkExecCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
