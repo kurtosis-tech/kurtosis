@@ -169,6 +169,9 @@ func run(
 	}
 
 	fileOrDir, err := os.Stat(starlarkScriptOrModulePath)
+	if err != nil {
+		return stacktrace.Propagate(err, "There was an error reading file or module from disk at '%v'", starlarkScriptOrModulePath)
+	}
 	if fileOrDir.Mode().IsRegular() {
 		if !strings.HasSuffix(starlarkScriptOrModulePath, starlarkExtension) {
 			return stacktrace.NewError("Expected a script with a '%s' extension but got file '%v' with a different extension", starlarkExtension, starlarkScriptOrModulePath)
