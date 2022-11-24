@@ -71,12 +71,13 @@ func (instruction *ExtractInstruction) Execute(ctx context.Context) (*string, er
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error fetching value")
 	}
-	if _, ok := runtimeValueCurrent.(starlark.String); !ok {
+	castedRuntimeValue, ok := runtimeValueCurrent.(starlark.String)
+	if !ok {
 		return nil, stacktrace.Propagate(err, "Only string values are supported, got '%v'", runtimeValueCurrent)
 	}
-	result, err := instruction.extractRecipe.Execute(runtimeValueCurrent.(starlark.String).GoString())
+	result, err := instruction.extractRecipe.Execute(castedRuntimeValue.GoString())
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error executing get_value")
+		return nil, stacktrace.Propagate(err, "Error executing extract recipe")
 	}
 	instruction.recipeExecutor.SetValue(instruction.resultUuid, result)
 	return nil, err

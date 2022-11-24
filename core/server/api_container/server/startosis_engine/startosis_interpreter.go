@@ -147,7 +147,7 @@ func (interpreter *StartosisInterpreter) buildBindings(threadName string, instru
 		assert.AssertBuiltinName:                         starlark.NewBuiltin(assert.AssertBuiltinName, assert.GenerateAssertBuiltin(instructionsQueue, interpreter.recipeExecutor, interpreter.serviceNetwork)),
 		exec.ExecBuiltinName:                             starlark.NewBuiltin(exec.ExecBuiltinName, exec.GenerateExecBuiltin(instructionsQueue, interpreter.serviceNetwork)),
 		extract.DefineExtractBuiltinName:                 starlark.NewBuiltin(extract.DefineExtractBuiltinName, extract.GenerateExtractInstructionBuiltin(instructionsQueue, interpreter.recipeExecutor, interpreter.serviceNetwork)),
-		get_value.DefineGetValueBuiltinName:              starlark.NewBuiltin(get_value.DefineGetValueBuiltinName, get_value.GenerateGetValueBuiltin(instructionsQueue, interpreter.recipeExecutor, interpreter.serviceNetwork)),
+		get_value.GetValueBuiltinName:                    starlark.NewBuiltin(get_value.GetValueBuiltinName, get_value.GenerateGetValueBuiltin(instructionsQueue, interpreter.recipeExecutor, interpreter.serviceNetwork)),
 		kurtosis_print.PrintBuiltinName:                  starlark.NewBuiltin(kurtosis_print.PrintBuiltinName, kurtosis_print.GeneratePrintBuiltin(instructionsQueue, interpreter.recipeExecutor)),
 		remove_service.RemoveServiceBuiltinName:          starlark.NewBuiltin(remove_service.RemoveServiceBuiltinName, remove_service.GenerateRemoveServiceBuiltin(instructionsQueue, interpreter.serviceNetwork)),
 		render_templates.RenderTemplatesBuiltinName:      starlark.NewBuiltin(render_templates.RenderTemplatesBuiltinName, render_templates.GenerateRenderTemplatesBuiltin(instructionsQueue, interpreter.serviceNetwork)),

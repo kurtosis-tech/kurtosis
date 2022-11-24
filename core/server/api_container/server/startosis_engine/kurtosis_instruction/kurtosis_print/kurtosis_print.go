@@ -34,8 +34,8 @@ func GeneratePrintBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInst
 			return nil, interpretationError
 		}
 		instructionPosition := shared_helpers.GetCallerPositionFromThread(thread)
-		defineFactInstruction := NewPrintInstruction(instructionPosition, args, separatorStr, endStr, recipeExecutor)
-		*instructionsQueue = append(*instructionsQueue, defineFactInstruction)
+		printInstruction := NewPrintInstruction(instructionPosition, args, separatorStr, endStr, recipeExecutor)
+		*instructionsQueue = append(*instructionsQueue, printInstruction)
 		return starlark.None, nil
 	}
 }

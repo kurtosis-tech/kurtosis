@@ -19,7 +19,7 @@ const (
 
 	runtimeValueArgName = "value"
 	assertionArgName    = "assertion"
-	targetArgName       = "value"
+	targetArgName       = "target_value"
 )
 
 var stringTokenToComparisonStarlarkToken = map[string]syntax.Token{

@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	DefineGetValueBuiltinName = "get_value"
+	GetValueBuiltinName = "get_value"
 
 	recipeArgName = "recipe"
 )
@@ -63,13 +63,13 @@ func (instruction *GetValueInstruction) GetPositionInOriginalScript() *kurtosis_
 }
 
 func (instruction *GetValueInstruction) GetCanonicalInstruction() string {
-	return shared_helpers.CanonicalizeInstruction(DefineGetValueBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs())
+	return shared_helpers.CanonicalizeInstruction(GetValueBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs())
 }
 
 func (instruction *GetValueInstruction) Execute(ctx context.Context) (*string, error) {
 	result, err := instruction.httpRequestRecipe.Execute(ctx, instruction.serviceNetwork)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error executing get_value")
+		return nil, stacktrace.Propagate(err, "Error executing http recipe")
 	}
 	instruction.recipeExecutor.SetValue(instruction.resultUuid, result)
 	return nil, err
