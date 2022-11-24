@@ -263,7 +263,7 @@ func readResponseLinesUntilClosed(responseLineChan <-chan *kurtosis_core_rpc_api
 			}
 			executionErrored, err := output_printers.PrintKurtosisExecutionResponseLineToStdOut(responseLine, scriptOutput)
 			if err != nil {
-				logrus.Error("An error occurred trying to write the Kurtosis execution output to StdOut. The script execution will continue, but the output printed here is incomplete")
+				logrus.Error("An error occurred trying to write the output of Starlark execution to stdout. The script execution will continue, but the output printed here is incomplete")
 				// independently of the status of the execution, mark this run as errored to double tap on the fact that something went wrong.
 				isError = true
 			}

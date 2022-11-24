@@ -29,14 +29,14 @@ func PrintKurtosisExecutionResponseLineToStdOut(responseLine *kurtosis_core_rpc_
 		errorRunningKurtosisCode = true
 		var errorMsg string
 		if responseLine.GetError().GetInterpretationError() != nil {
-			errorMsg = fmt.Sprintf("There was an error interpreting Kurtosis code \n%v", responseLine.GetError().GetInterpretationError().GetErrorMessage())
+			errorMsg = fmt.Sprintf("There was an error interpreting Starlark code \n%v", responseLine.GetError().GetInterpretationError().GetErrorMessage())
 		} else if responseLine.GetError().GetValidationError() != nil {
-			errorMsg = fmt.Sprintf("There was an error validating Kurtosis code \n%v", responseLine.GetError().GetValidationError().GetErrorMessage())
+			errorMsg = fmt.Sprintf("There was an error validating Starlark code \n%v", responseLine.GetError().GetValidationError().GetErrorMessage())
 		} else if responseLine.GetError().GetExecutionError() != nil {
-			errorMsg = fmt.Sprintf("There was an error executing Kurtosis code \n%v", responseLine.GetError().GetExecutionError().GetErrorMessage())
+			errorMsg = fmt.Sprintf("There was an error executing Starlark code \n%v", responseLine.GetError().GetExecutionError().GetErrorMessage())
 		}
 		if _, err := fmt.Fprintln(logrus.StandardLogger().Out, errorMsg); err != nil {
-			return errorRunningKurtosisCode, stacktrace.Propagate(err, "An error happened executing Kurtosis code but the error couldn't be printed to the CLI output. Error message was: \n%v", errorMsg)
+			return errorRunningKurtosisCode, stacktrace.Propagate(err, "An error happened executing Starlark code but the error couldn't be printed to the CLI output. Error message was: \n%v", errorMsg)
 		}
 	}
 	return errorRunningKurtosisCode, nil
