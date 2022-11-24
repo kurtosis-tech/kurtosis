@@ -1,4 +1,4 @@
-package exec
+package run
 
 import (
 	"github.com/stretchr/testify/require"

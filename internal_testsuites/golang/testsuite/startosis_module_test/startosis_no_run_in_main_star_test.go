@@ -12,7 +12,7 @@ import (
 
 const (
 	invalidCaseNoMainInMainStarTestName = "invalid-module-missing-main"
-	moduleWithNoMainInMainStarRelPath   = "../../../startosis/no-main-in-main-star"
+	moduleWithNoMainInMainStarRelPath   = "../../../startosis/no-run-in-main-star"
 )
 
 func TestStartosisModule_NoMainInMainStar(t *testing.T) {
@@ -33,7 +33,7 @@ func TestStartosisModule_NoMainInMainStar(t *testing.T) {
 
 	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
 
-	expectedInterpretationErr := "Evaluation error: module has no .main field or method\n\tat [3:12]: <toplevel>"
+	expectedInterpretationErr := "Evaluation error: module has no .run field or method\n\tat [3:12]: <toplevel>"
 	outputStream, _, err := enclaveCtx.ExecuteKurtosisModule(ctx, moduleDirpath, emptyExecuteParams, defaultDryRun)
 	require.Nil(t, err, "Unexpected error executing startosis module")
 	interpretationError, validationErrors, executionError, instructions := test_helpers.ReadStreamContentUntilClosed(outputStream)
