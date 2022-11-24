@@ -75,6 +75,8 @@
 
 ### Features
 - Log that the module is being compressed & uploaded during `kurtosis exec`
+- Added `file_system_path_arg` in the CLI which provides validation and tab auto-completion for filepath, dirpath, or both kind of arguments
+- Added tab-auto-complete for the `script-or-module-path` argument in `kurtosis exec` CLI command
 
 ### Changes
 - `print()` is now a regular instructions like others, and it takes effect at execution time (used to be during interpretation)

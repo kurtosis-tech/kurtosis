@@ -218,7 +218,7 @@ func (kurtosisCmd *LowlevelKurtosisCommand) MustGetCobraCommand() *cobra.Command
 			return nil, cobra.ShellCompDirectiveNoFileComp
 		}
 
-		completionFunc := argToComplete.CompletionsFunc
+		completionFunc := argToComplete.ArgCompletionProvider
 		if completionFunc == nil {
 			// NOTE: We can't just use logrus because anything printed to STDOUT will be interpreted as a completion
 			// See:
@@ -233,7 +233,8 @@ func (kurtosisCmd *LowlevelKurtosisCommand) MustGetCobraCommand() *cobra.Command
 			return nil, cobra.ShellCompDirectiveNoFileComp
 		}
 
-		completions, err := argToComplete.CompletionsFunc(ctx, parsedFlags, parsedArgs)
+		//completions, sellCompDirective, err := argToComplete.CompletionsFunc(ctx, parsedFlags, parsedArgs)
+		completions, sellCompDirective, err := argToComplete.ArgCompletionProvider.RunCompletionFunction(ctx, parsedFlags, parsedArgs)
 		if err != nil {
 			// NOTE: We can't just use logrus because anything printed to STDOUT will be interpreted as a completion
 			// See:
@@ -249,7 +250,8 @@ func (kurtosisCmd *LowlevelKurtosisCommand) MustGetCobraCommand() *cobra.Command
 			)
 			return nil, cobra.ShellCompDirectiveNoFileComp
 		}
-		return completions, cobra.ShellCompDirectiveNoFileComp
+
+		return completions, sellCompDirective
 	}
 
 	// Prepare the run function to be slotted into the Cobra command, which will do both arg validation & logic execution

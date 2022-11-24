@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
 	enclave_consts "github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/enclave"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/file_system_path_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
@@ -24,6 +25,8 @@ import (
 
 const (
 	scriptOrModulePathKey = "script-or-module-path"
+	isScriptOrModulePathArgumentOptional = false
+
 	starlarkExtension     = ".star"
 
 	moduleArgsFlagKey = "args"
@@ -41,8 +44,14 @@ const (
 
 	githubDomainPrefix          = "github.com/"
 	isNewEnclaveFlagWhenCreated = true
-
 	interruptChanBufferSize = 5
+)
+
+var (
+	githubScriptpathValidationExceptionFunc = func(scriptpath string) bool {
+		// if it's a Github path we don't validate further, the APIC will do it for us
+		return strings.HasPrefix(scriptpath, githubDomainPrefix)
+	}
 )
 
 var StarlarkExecCmd = &lowlevel.LowlevelKurtosisCommand{
@@ -86,17 +95,12 @@ var StarlarkExecCmd = &lowlevel.LowlevelKurtosisCommand{
 		},
 	},
 	Args: []*args.ArgConfig{
-		&args.ArgConfig{
-			// for a module we expect a path to a directory
-			// for a script we expect a script with a `.star` extension
-			// TODO add a `Usage` description here when ArgConfig supports it
-			Key:             scriptOrModulePathKey,
-			IsOptional:      false,
-			DefaultValue:    "",
-			IsGreedy:        false,
-			CompletionsFunc: nil,
-			ValidationFunc:  validateScriptOrModulePath,
-		},
+		// TODO add a `Usage` description here when ArgConfig supports it
+		file_system_path_arg.NewFilepathOrDirpathArg(
+			scriptOrModulePathKey,
+			isScriptOrModulePathArgumentOptional,
+			githubScriptpathValidationExceptionFunc,
+		),
 	},
 	PreValidationAndRunFunc:  nil,
 	RunFunc:                  run,
@@ -193,32 +197,6 @@ func run(
 //	Private Helper Functions
 //
 // ====================================================================================================
-func validateScriptOrModulePath(_ context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error {
-	scriptOrModulePath, err := args.GetNonGreedyArg(scriptOrModulePathKey)
-	if err != nil {
-		return stacktrace.Propagate(err, "Unable to get argument '%s'", scriptOrModulePathKey)
-	}
-
-	scriptOrModulePath = strings.TrimSpace(scriptOrModulePath)
-	if scriptOrModulePath == "" {
-		return stacktrace.NewError("Received an empty '%v'. It should be a non empty string.", scriptOrModulePathKey)
-	}
-
-	if strings.HasPrefix(scriptOrModulePath, githubDomainPrefix) {
-		// if it's a Github path we don't validate further, the APIC will do it for us
-		return nil
-	}
-
-	fileInfo, err := os.Stat(scriptOrModulePath)
-	if err != nil {
-		return stacktrace.Propagate(err, "Error reading script file or module dir '%s'", scriptOrModulePath)
-	}
-	if !fileInfo.Mode().IsRegular() && !fileInfo.Mode().IsDir() {
-		return stacktrace.Propagate(err, "Script or module path should point to a file on disk or to a directory '%s'", scriptOrModulePath)
-	}
-	return nil
-}
-
 func executeScript(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, scriptPath string, dryRun bool) (<-chan *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine, context.CancelFunc, error) {
 	fileContentBytes, err := os.ReadFile(scriptPath)
 	if err != nil {
