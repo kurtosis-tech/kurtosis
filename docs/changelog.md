@@ -3,10 +3,19 @@
 ### Features
 - Updated the CLI to consume the streaming endpoints to execute Startosis. Kurtosis Instructions are now returned live, but the script output is still printed at the end (until we have better formatting).
 
+### Changes
+- Changed occurrences of `[sS]tartosis` to `Starlark` in errors sent by the CLI and its long and short description
+- Changed some logs and error messages inside core that which had references to Startosis to Starlark
+
+# 0.53.11
+### Changes
+- Published the log-database HTTP port to the host machine
+
 # 0.53.10
 
 ### Changes
 - Add 2 endpoints to the APIC that streams the output of a Startosis script execution
+- Changed the syntax of render_templates in Starlark
 
 ### Fixes
 - Fixed the error that would happen if there was a missing `kurtosis.mod` file at the root of the module

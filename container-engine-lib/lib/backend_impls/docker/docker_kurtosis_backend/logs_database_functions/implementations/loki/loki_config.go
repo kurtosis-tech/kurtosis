@@ -115,7 +115,7 @@ type Querier struct {
 
 // The following Loki configuration values are specific for the Kurtosis centralized logs Loki implementation
 // some values were suggested by the Loki's documentation and this video: https://grafana.com/go/webinar/logging-with-loki-essential-configuration-settings/?pg=docs-loki&plcmt=footer-resources-2
-func newDefaultLokiConfigForKurtosisCentralizedLogs() *LokiConfig {
+func newDefaultLokiConfigForKurtosisCentralizedLogs(httpPortNumber uint16) *LokiConfig {
 	newConfig := &LokiConfig{
 		AuthEnabled: authEnabled,
 		Server: Server{

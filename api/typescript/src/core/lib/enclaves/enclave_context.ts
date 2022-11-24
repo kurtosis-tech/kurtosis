@@ -247,7 +247,7 @@ export class EnclaveContext {
         }
         const resultModuleExecution : Result<Readable, Error> = await this.backend.executeKurtosisModule(args.value)
         if (resultModuleExecution.isErr()) {
-            return err(new Error(`Unexpected error happened executing Startosis module \n${resultModuleExecution.error}`))
+            return err(new Error(`Unexpected error happened executing Starlark module \n${resultModuleExecution.error}`))
         }
         return ok(resultModuleExecution.value)
     }

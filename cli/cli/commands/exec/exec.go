@@ -24,7 +24,7 @@ import (
 
 const (
 	scriptOrModulePathKey = "script-or-module-path"
-	startosisExtension    = ".star"
+	starlarkExtension     = ".star"
 
 	moduleArgsFlagKey = "args"
 	defaultModuleArgs = "{}"
@@ -45,10 +45,10 @@ const (
 	interruptChanBufferSize = 5
 )
 
-var StartosisExecCmd = &lowlevel.LowlevelKurtosisCommand{
-	CommandStr:       command_str_consts.StartosisExecCmdStr,
-	ShortDescription: "Execute a Startosis script or module",
-	LongDescription: "Execute a Startosis module or script in an enclave. For a script we expect a path to a " + startosisExtension +
+var StarlarkExecCmd = &lowlevel.LowlevelKurtosisCommand{
+	CommandStr:       command_str_consts.StarlarkExecCmdStr,
+	ShortDescription: "Execute a Starlark script or module",
+	LongDescription: "Execute a Starlark module or script in an enclave. For a script we expect a path to a " + starlarkExtension +
 		" file. For a module we expect path to a directory containing kurtosis.mod or a fully qualified Github repository path containing a module. If the enclave-id param is provided, Kurtosis " +
 		"will exec the script inside this enclave, or create it if it doesn't exist. If no enclave-id param is " +
 		"provided, Kurtosis will create a new enclave with a default name derived from the script or module name.",
@@ -126,9 +126,9 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the is-partitioning-enabled setting using flag key '%v'", isPartitioningEnabledFlagKey)
 	}
 
-	startosisScriptOrModulePath, err := args.GetNonGreedyArg(scriptOrModulePathKey)
+	starlarkScriptOrModulePath, err := args.GetNonGreedyArg(scriptOrModulePathKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "Error reading the Startosis script or module dir at '%s'. Does it exist?", startosisScriptOrModulePath)
+		return stacktrace.Propagate(err, "Error reading the Starlark script or module dir at '%s'. Does it exist?", starlarkScriptOrModulePath)
 	}
 
 	dryRun, err := flags.GetBool(dryRunFlagKey)
@@ -157,27 +157,27 @@ func run(
 	var cancelFunc context.CancelFunc
 	var errRunningKurtosis error
 
-	isRemoteModule := strings.HasPrefix(startosisScriptOrModulePath, githubDomainPrefix)
+	isRemoteModule := strings.HasPrefix(starlarkScriptOrModulePath, githubDomainPrefix)
 	if isRemoteModule {
-		responseLineChan, cancelFunc, errRunningKurtosis = executeRemoteModule(ctx, enclaveCtx, startosisScriptOrModulePath, serializedJsonArgs, dryRun)
+		responseLineChan, cancelFunc, errRunningKurtosis = executeRemoteModule(ctx, enclaveCtx, starlarkScriptOrModulePath, serializedJsonArgs, dryRun)
 	} else {
-		fileOrDir, err := os.Stat(startosisScriptOrModulePath)
+		fileOrDir, err := os.Stat(starlarkScriptOrModulePath)
 		if err != nil {
-			return stacktrace.Propagate(err, "There was an error reading file or module from disk at '%v'", startosisScriptOrModulePath)
+			return stacktrace.Propagate(err, "There was an error reading file or module from disk at '%v'", starlarkScriptOrModulePath)
 		}
 
 		isStandaloneScript := fileOrDir.Mode().IsRegular()
 		if isStandaloneScript {
-			if !strings.HasSuffix(startosisScriptOrModulePath, startosisExtension) {
-				return stacktrace.NewError("Expected a script with a '%s' extension but got file '%v' with a different extension", startosisExtension, startosisScriptOrModulePath)
+			if !strings.HasSuffix(starlarkScriptOrModulePath, starlarkExtension) {
+				return stacktrace.NewError("Expected a script with a '%s' extension but got file '%v' with a different extension", starlarkExtension, starlarkScriptOrModulePath)
 			}
-			responseLineChan, cancelFunc, errRunningKurtosis = executeScript(ctx, enclaveCtx, startosisScriptOrModulePath, dryRun)
+			responseLineChan, cancelFunc, errRunningKurtosis = executeScript(ctx, enclaveCtx, starlarkScriptOrModulePath, dryRun)
 		} else {
-			responseLineChan, cancelFunc, errRunningKurtosis = executeModule(ctx, enclaveCtx, startosisScriptOrModulePath, serializedJsonArgs, dryRun)
+			responseLineChan, cancelFunc, errRunningKurtosis = executeModule(ctx, enclaveCtx, starlarkScriptOrModulePath, serializedJsonArgs, dryRun)
 		}
 	}
 	if errRunningKurtosis != nil {
-		return stacktrace.Propagate(errRunningKurtosis, "An error starting the Kurtosis code execution '%v'", startosisScriptOrModulePath)
+		return stacktrace.Propagate(errRunningKurtosis, "An error starting the Kurtosis code execution '%v'", starlarkScriptOrModulePath)
 	}
 
 	scriptOutput, errRunningKurtosis := readResponseLinesUntilClosed(responseLineChan, cancelFunc)
@@ -222,7 +222,7 @@ func validateScriptOrModulePath(_ context.Context, _ *flags.ParsedFlags, args *a
 func executeScript(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, scriptPath string, dryRun bool) (<-chan *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine, context.CancelFunc, error) {
 	fileContentBytes, err := os.ReadFile(scriptPath)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "Unable to read content of Startosis script file '%s'", scriptPath)
+		return nil, nil, stacktrace.Propagate(err, "Unable to read content of Starlark script file '%s'", scriptPath)
 	}
 	return enclaveCtx.ExecuteKurtosisScript(ctx, string(fileContentBytes), dryRun)
 }
