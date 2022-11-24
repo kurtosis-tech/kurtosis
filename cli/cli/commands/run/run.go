@@ -1,4 +1,4 @@
-package exec
+package run
 
 import (
 	"context"
@@ -55,9 +55,9 @@ var (
 )
 
 var StarlarkExecCmd = &lowlevel.LowlevelKurtosisCommand{
-	CommandStr:       command_str_consts.StarlarkExecCmdStr,
-	ShortDescription: "Execute a Starlark script or module",
-	LongDescription: "Execute a Starlark module or script in an enclave. For a script we expect a path to a " + starlarkExtension +
+	CommandStr:       command_str_consts.StarlarkRunCmdStr,
+	ShortDescription: "Run a Starlark script or module",
+	LongDescription: "Run a Starlark module or script in an enclave. For a script we expect a path to a " + starlarkExtension +
 		" file. For a module we expect path to a directory containing kurtosis.mod or a fully qualified Github repository path containing a module. If the enclave-id param is provided, Kurtosis " +
 		"will exec the script inside this enclave, or create it if it doesn't exist. If no enclave-id param is " +
 		"provided, Kurtosis will create a new enclave with a default name derived from the script or module name.",
@@ -72,14 +72,14 @@ var StarlarkExecCmd = &lowlevel.LowlevelKurtosisCommand{
 		{
 			Key: moduleArgsFlagKey,
 			// TODO(gb): Link to a proper doc page explaining what a proto file is, etc. when we have it
-			Usage:   "The parameters that should be passed to the Kurtosis module when executing it. It is expected to be a serialized JSON string. Note that if a standalone Kurtosis script is being executed, no parameter should be passed.",
+			Usage:   "The parameters that should be passed to the Kurtosis module when running it. It is expected to be a serialized JSON string. Note that if a standalone Kurtosis script is being run, no parameter should be passed.",
 			Type:    flags.FlagType_String,
 			Default: defaultModuleArgs,
 		},
 		{
 			Key: enclaveIdFlagKey,
 			Usage: fmt.Sprintf(
-				"The enclave ID in which the script or module will be executed, which must match regex '%v' "+
+				"The enclave ID in which the script or module will be ran, which must match regex '%v' "+
 					"(emptystring will autogenerate an enclave ID). An enclave with this ID will be created if it doesn't exist.",
 				enclave_consts.AllowedEnclaveIdCharsRegexStr,
 			),
@@ -88,7 +88,7 @@ var StarlarkExecCmd = &lowlevel.LowlevelKurtosisCommand{
 		},
 		{
 			Key: isPartitioningEnabledFlagKey,
-			Usage: "If set to true, the enclave that the module executes in will have partitioning enabled so " +
+			Usage: "If set to true, the enclave that the module runs in will have partitioning enabled so " +
 				"network partitioning simulations can be run",
 			Type:    flags.FlagType_Bool,
 			Default: strconv.FormatBool(defaultIsPartitioningEnabled),
@@ -264,7 +264,7 @@ func getOrCreateEnclaveContext(
 		}
 		return enclaveContext, false, nil
 	}
-	logrus.Infof("Creating a new enclave for Starlark to execute inside...")
+	logrus.Infof("Creating a new enclave for Starlark to run inside...")
 	enclaveContext, err := kurtosisContext.CreateEnclave(ctx, enclaveId, isPartitioningEnabled)
 	if err != nil {
 		return nil, false, stacktrace.Propagate(err, fmt.Sprintf("Unable to create new enclave with ID '%s'", enclaveId))

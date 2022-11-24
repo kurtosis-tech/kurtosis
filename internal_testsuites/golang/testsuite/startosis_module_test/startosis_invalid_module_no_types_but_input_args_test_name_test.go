@@ -37,7 +37,7 @@ func TestStartosisModule_InvalidModuleNoTypesButInputArgsTestName(t *testing.T) 
 	require.Nil(t, err, "Unexpected error executing startosis module")
 	interpretationError, validationErrors, executionError, instructions := test_helpers.ReadStreamContentUntilClosed(outputStream)
 	require.NotNil(t, interpretationError)
-	expectedInterpretationErr := "Evaluation error: function main missing 1 argument (input_args)"
+	expectedInterpretationErr := "Evaluation error: function run missing 1 argument (input_args)"
 	require.Contains(t, interpretationError.GetErrorMessage(), expectedInterpretationErr)
 	require.Empty(t, validationErrors)
 	require.Nil(t, executionError)
