@@ -169,6 +169,15 @@ func (enclaveCtx *EnclaveContext) ExecuteStartosisModule(moduleRootPath string, 
 	return executeStartosisResponse, nil
 }
 
+func (enclaveCtx *EnclaveContext) ExecuteStartosisRemoteModule(moduleId string, serializedParams string, dryRun bool) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse, error) {
+	executeStartosisScriptArgs := binding_constructors.NewExecuteStartosisRemoteModuleArgs(moduleId, serializedParams, dryRun)
+	executeStartosisResponse, err := enclaveCtx.client.ExecuteStartosisModule(context.Background(), executeStartosisScriptArgs)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Unexpected error happened executing Starlark module '%v'", moduleId)
+	}
+	return executeStartosisResponse, nil
+}
+
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 func (enclaveCtx *EnclaveContext) AddService(
 	serviceID services.ServiceID,

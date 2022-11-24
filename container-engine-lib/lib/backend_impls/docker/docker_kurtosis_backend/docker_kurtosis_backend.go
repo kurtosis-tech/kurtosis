@@ -276,6 +276,7 @@ func (backend *DockerKurtosisBackend) DestroyUserServices(
 
 func (backend *DockerKurtosisBackend) CreateLogsDatabase(
 	ctx context.Context,
+	logsDatabaseHttpPortNumber uint16,
 ) (
 	*logs_database.LogsDatabase,
 	error,
@@ -286,12 +287,13 @@ func (backend *DockerKurtosisBackend) CreateLogsDatabase(
 
 	logsDatabase, err := logs_database_functions.CreateLogsDatabase(
 		ctx,
+		logsDatabaseHttpPortNumber,
 		logsDatabaseContainer,
 		backend.dockerManager,
 		backend.objAttrsProvider,
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the logs database using the logs database container '%+v'", logsDatabaseContainer)
+		return nil, stacktrace.Propagate(err, "An error occurred creating the logs database using the logs database container '%+v' and the HTTP port number '%v'", logsDatabaseContainer, logsDatabaseHttpPortNumber)
 	}
 	return logsDatabase, nil
 }

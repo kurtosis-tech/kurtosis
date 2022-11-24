@@ -16,6 +16,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -40,7 +41,8 @@ const (
 	scriptArgForLogging = "script"
 	moduleArgForLogging = "module"
 
-	isNewEnclave = true
+	githubDomainPrefix = "github.com/"
+	isNewEnclave       = true
 )
 
 var (
@@ -54,7 +56,7 @@ var StarlarkExecCmd = &lowlevel.LowlevelKurtosisCommand{
 	CommandStr:       command_str_consts.StarlarkExecCmdStr,
 	ShortDescription: "Execute a Starlark script or module",
 	LongDescription: "Execute a Starlark module or script in an enclave. For a script we expect a path to a " + starlarkExtension +
-		" file. For a module we expect path to a directory containing kurtosis.mod. If the enclave-id param is provided, Kurtosis " +
+		" file. For a module we expect path to a directory containing kurtosis.mod or a fully qualified Github repository path containing a module. If the enclave-id param is provided, Kurtosis " +
 		"will exec the script inside this enclave, or create it if it doesn't exist. If no enclave-id param is " +
 		"provided, Kurtosis will create a new enclave with a default name derived from the script or module name.",
 	Flags: []*flags.FlagConfig{
@@ -159,10 +161,6 @@ func run(
 	}
 
 	fileOrDir, err := os.Stat(starlarkScriptOrModulePath)
-	if err != nil {
-		return stacktrace.Propagate(err, "There was an error reading file or module from disk at '%v'", starlarkScriptOrModulePath)
-	}
-
 	if fileOrDir.Mode().IsRegular() {
 		if !strings.HasSuffix(starlarkScriptOrModulePath, starlarkExtension) {
 			return stacktrace.NewError("Expected a script with a '%s' extension but got file '%v' with a different extension", starlarkExtension, starlarkScriptOrModulePath)
@@ -198,6 +196,11 @@ func validateScriptOrModulePath(_ context.Context, _ *flags.ParsedFlags, args *a
 		return stacktrace.NewError("Received an empty '%v'. It should be a non empty string.", scriptOrModulePathKey)
 	}
 
+	if strings.HasPrefix(scriptOrModulePath, githubDomainPrefix) {
+		// if it's a Github path we don't validate further, the APIC will do it for us
+		return nil
+	}
+
 	fileInfo, err := os.Stat(scriptOrModulePath)
 	if err != nil {
 		return stacktrace.Propagate(err, "Error reading script file or module dir '%s'", scriptOrModulePath)
@@ -228,7 +231,15 @@ func executeScript(enclaveCtx *enclaves.EnclaveContext, scriptPath string, dryRu
 }
 
 func executeModule(enclaveCtx *enclaves.EnclaveContext, modulePath string, serializedParams string, dryRun bool) error {
-	executionResponse, err := enclaveCtx.ExecuteStartosisModule(modulePath, serializedParams, dryRun)
+	// we get the absolute path so that the logs make more sense
+	absoluteModulePath, err := filepath.Abs(modulePath)
+	logrus.Infof("Executing Starlark package at '%v' as the passed argument '%v' looks like a directory", absoluteModulePath, modulePath)
+
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while getting the absolute path for '%v'", modulePath)
+	}
+
+	executionResponse, err := enclaveCtx.ExecuteStartosisModule(absoluteModulePath, serializedParams, dryRun)
 	if err != nil {
 		return stacktrace.Propagate(err, "An unexpected error occurred executing the Starlark module '%s'", modulePath)
 	}
@@ -236,6 +247,20 @@ func executeModule(enclaveCtx *enclaves.EnclaveContext, modulePath string, seria
 	err = validateExecutionResponse(executionResponse, modulePath, moduleArgForLogging, dryRun)
 	if err != nil {
 		return stacktrace.Propagate(err, "Ran into a few errors while interpreting, validating or executing the module '%v' with dry-run set to '%v'", modulePath, dryRun)
+	}
+
+	return nil
+}
+
+func executeRemoteModule(enclaveCtx *enclaves.EnclaveContext, moduleId string, serializedParams string, dryRun bool) error {
+	executionResponse, err := enclaveCtx.ExecuteStartosisRemoteModule(moduleId, serializedParams, dryRun)
+	if err != nil {
+		return stacktrace.Propagate(err, "An unexpected error occurred executing the Startosis module '%s'", moduleId)
+	}
+
+	err = validateExecutionResponse(executionResponse, moduleId, moduleArgForLogging, dryRun)
+	if err != nil {
+		return stacktrace.Propagate(err, "Ran into a few errors while interpreting, validating or executing the module '%v' with dry-run set to '%v'", moduleId, dryRun)
 	}
 
 	return nil
@@ -252,7 +277,7 @@ func validateExecutionResponse(executionResponse *kurtosis_core_rpc_api_bindings
 	var scriptOutputLines []string
 	concatenatedKurtosisInstructions := make([]string, len(executionResponse.GetKurtosisInstructions()))
 	for idx, instruction := range executionResponse.GetKurtosisInstructions() {
-		concatenatedKurtosisInstructions[idx] = instruction.GetExecutableInstruction()
+		concatenatedKurtosisInstructions[idx] = output_printers.FormatInstruction(instruction)
 		if instruction.InstructionResult != kurtosisInstructionNoResult {
 			scriptOutputLines = append(scriptOutputLines, instruction.GetInstructionResult())
 		}
@@ -290,7 +315,7 @@ func getOrCreateEnclaveContext(
 		}
 		return enclaveContext, false, nil
 	}
-	logrus.Infof("Creating a new enclave for the Starlark script to execute inside...")
+	logrus.Infof("Creating a new enclave for Starlark to execute inside...")
 	enclaveContext, err := kurtosisContext.CreateEnclave(ctx, enclaveId, isPartitioningEnabled)
 	if err != nil {
 		return nil, false, stacktrace.Propagate(err, fmt.Sprintf("Unable to create new enclave with ID '%s'", enclaveId))

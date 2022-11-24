@@ -61,10 +61,10 @@ template_data = json.encode({
 })
 
 template_data_by_path = {
-	RENDER_RELATIVE_PATH : {
-		"template": template_str,
-		"template_data_json": template_data
-	}
+	RENDER_RELATIVE_PATH : struct(
+		template= template_str,
+		data= template_data
+	)
 }
 
 rendered_artifact = render_templates(template_data_by_path)
