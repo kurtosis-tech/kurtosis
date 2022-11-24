@@ -1,5 +1,8 @@
 # TBD
 
+### Changes
+- Small cleanup in `grpc_web_api_container_client` and `grpc_node_api_container_client`. They were implementing executeRemoteKurtosisModule unnecessarily
+
 # 0.54.0
 
 ### Breaking Changes
