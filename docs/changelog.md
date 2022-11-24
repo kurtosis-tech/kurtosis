@@ -1,5 +1,8 @@
 # TBD
 
+### Changes
+- Allow `dicts` & `structs` to be passed to `render_templates.config.data`
+
 # 0.53.11
 ### Changes
 - Published the log-database HTTP port to the host machine
