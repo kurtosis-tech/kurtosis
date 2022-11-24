@@ -263,7 +263,7 @@ func executeModule(enclaveCtx *enclaves.EnclaveContext, modulePath string, seria
 func executeRemoteModule(enclaveCtx *enclaves.EnclaveContext, moduleId string, serializedParams string, dryRun bool) error {
 	executionResponse, err := enclaveCtx.ExecuteStartosisRemoteModule(moduleId, serializedParams, dryRun)
 	if err != nil {
-		return stacktrace.Propagate(err, "An unexpected error occurred executing the Startosis module '%s'", moduleId)
+		return stacktrace.Propagate(err, "An unexpected error occurred executing the Starlark module '%s'", moduleId)
 	}
 
 	err = validateExecutionResponse(executionResponse, moduleId, moduleArgForLogging, dryRun)
