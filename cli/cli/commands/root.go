@@ -91,7 +91,7 @@ func init() {
 	RootCmd.AddCommand(enclave.EnclaveCmd)
 	RootCmd.AddCommand(service.ServiceCmd)
 	RootCmd.AddCommand(module.ModuleCmd)
-	RootCmd.AddCommand(exec.StartosisExecCmd.MustGetCobraCommand())
+	RootCmd.AddCommand(exec.StarlarkExecCmd.MustGetCobraCommand())
 	RootCmd.AddCommand(engine.EngineCmd)
 	RootCmd.AddCommand(version.VersionCmd)
 	RootCmd.AddCommand(gateway.GatewayCmd)

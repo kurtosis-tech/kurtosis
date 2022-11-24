@@ -1,6 +1,8 @@
 # TBD
 
 ### Changes
+- Changed occurrences of `[sS]tartosis` to `Starlark` in errors sent by the CLI and its long and short description
+- Changed some logs and error messages inside core that which had references to Startosis to Starlark
 - Allow `dicts` & `structs` to be passed to `render_templates.config.data`
 
 # 0.53.11
