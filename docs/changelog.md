@@ -10,6 +10,7 @@
 
 ### Changes
 - Small cleanup in `grpc_web_api_container_client` and `grpc_node_api_container_client`. They were implementing executeRemoteKurtosisModule unnecessarily
+- Added serialized arguments to KurtosisInstruction API type such that the CLI can display executed instructions in a nicer way.
 
 
 # 0.54.0

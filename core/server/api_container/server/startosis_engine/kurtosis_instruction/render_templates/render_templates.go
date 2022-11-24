@@ -74,8 +74,12 @@ func (instruction *RenderTemplatesInstruction) GetPositionInOriginalScript() *ku
 	return instruction.position
 }
 
-func (instruction *RenderTemplatesInstruction) GetCanonicalInstruction() string {
-	return shared_helpers.CanonicalizeInstruction(RenderTemplatesBuiltinName, kurtosis_instruction.NoArgs, instruction.starlarkKwargs)
+func (instruction *RenderTemplatesInstruction) GetCanonicalInstruction() *kurtosis_core_rpc_api_bindings.KurtosisInstruction {
+	args := []*kurtosis_core_rpc_api_bindings.KurtosisInstructionArg{
+		binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[nonOptionalArtifactIdArgName]), nonOptionalArtifactIdArgName, true),
+		binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[templateAndDataByDestinationRelFilepathArg]), templateAndDataByDestinationRelFilepathArg, false),
+	}
+	return binding_constructors.NewKurtosisInstruction(instruction.position.ToAPIType(), RenderTemplatesBuiltinName, instruction.String(), args)
 }
 
 func (instruction *RenderTemplatesInstruction) Execute(_ context.Context) (*string, error) {
@@ -97,7 +101,7 @@ func (instruction *RenderTemplatesInstruction) Execute(_ context.Context) (*stri
 }
 
 func (instruction *RenderTemplatesInstruction) String() string {
-	return instruction.GetCanonicalInstruction()
+	return shared_helpers.CanonicalizeInstruction(RenderTemplatesBuiltinName, kurtosis_instruction.NoArgs, instruction.starlarkKwargs)
 }
 
 func (instruction *RenderTemplatesInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
@@ -122,6 +126,7 @@ func (instruction *RenderTemplatesInstruction) parseStartosisArgs(b *starlark.Bu
 		artifactUuidArg = starlark.String(placeHolderArtifactUuid)
 	}
 
+	instruction.starlarkKwargs[nonOptionalArtifactIdArgName] = artifactUuidArg
 	instruction.starlarkKwargs[templateAndDataByDestinationRelFilepathArg] = templatesAndDataArg
 
 	templatesAndDataByDestRelFilepath, interpretationErr := kurtosis_instruction.ParseTemplatesAndData(templatesAndDataArg)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	kurtosis_backend_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/facts_engine"
@@ -82,8 +83,12 @@ func (instruction *AddServiceInstruction) GetPositionInOriginalScript() *kurtosi
 	return instruction.position
 }
 
-func (instruction *AddServiceInstruction) GetCanonicalInstruction() string {
-	return shared_helpers.CanonicalizeInstruction(AddServiceBuiltinName, kurtosis_instruction.NoArgs, instruction.starlarkKwargs)
+func (instruction *AddServiceInstruction) GetCanonicalInstruction() *kurtosis_core_rpc_api_bindings.KurtosisInstruction {
+	args := []*kurtosis_core_rpc_api_bindings.KurtosisInstructionArg{
+		binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[serviceIdArgName]), serviceIdArgName, true),
+		binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[serviceConfigArgName]), serviceConfigArgName, false),
+	}
+	return binding_constructors.NewKurtosisInstruction(instruction.position.ToAPIType(), AddServiceBuiltinName, instruction.String(), args)
 }
 
 func (instruction *AddServiceInstruction) Execute(ctx context.Context) (*string, error) {
@@ -116,7 +121,7 @@ func (instruction *AddServiceInstruction) Execute(ctx context.Context) (*string,
 }
 
 func (instruction *AddServiceInstruction) String() string {
-	return instruction.GetCanonicalInstruction()
+	return shared_helpers.CanonicalizeInstruction(AddServiceBuiltinName, kurtosis_instruction.NoArgs, instruction.starlarkKwargs)
 }
 
 func (instruction *AddServiceInstruction) replaceMagicStrings() error {

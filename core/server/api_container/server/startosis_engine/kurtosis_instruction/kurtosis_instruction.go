@@ -2,6 +2,7 @@ package kurtosis_instruction
 
 import (
 	"context"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"go.starlark.net/starlark"
 )
@@ -13,7 +14,7 @@ var (
 type KurtosisInstruction interface {
 	GetPositionInOriginalScript() *InstructionPosition
 
-	GetCanonicalInstruction() string
+	GetCanonicalInstruction() *kurtosis_core_rpc_api_bindings.KurtosisInstruction
 
 	Execute(ctx context.Context) (*string, error)
 

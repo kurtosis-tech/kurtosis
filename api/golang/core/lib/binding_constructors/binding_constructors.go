@@ -350,10 +350,22 @@ func NewKurtosisExecutionError(errorMessage string) *kurtosis_core_rpc_api_bindi
 	}
 }
 
-func NewKurtosisInstruction(position *kurtosis_core_rpc_api_bindings.KurtosisInstructionPosition, executableInstruction string, maybeInstructionResult *string) *kurtosis_core_rpc_api_bindings.KurtosisInstruction {
+func NewKurtosisInstruction(position *kurtosis_core_rpc_api_bindings.KurtosisInstructionPosition, name string, executableInstruction string, arguments []*kurtosis_core_rpc_api_bindings.KurtosisInstructionArg) *kurtosis_core_rpc_api_bindings.KurtosisInstruction {
 	return &kurtosis_core_rpc_api_bindings.KurtosisInstruction{
+		InstructionName:       name,
 		Position:              position,
 		ExecutableInstruction: executableInstruction,
+		Arguments:             arguments,
+		InstructionResult:     nil,
+	}
+}
+
+func AddResultToKurtosisInstruction(kurtosisInstructionWithNoResult *kurtosis_core_rpc_api_bindings.KurtosisInstruction, maybeInstructionResult *string) *kurtosis_core_rpc_api_bindings.KurtosisInstruction {
+	return &kurtosis_core_rpc_api_bindings.KurtosisInstruction{
+		InstructionName:       kurtosisInstructionWithNoResult.GetInstructionName(),
+		Position:              kurtosisInstructionWithNoResult.GetPosition(),
+		ExecutableInstruction: kurtosisInstructionWithNoResult.GetExecutableInstruction(),
+		Arguments:             kurtosisInstructionWithNoResult.GetArguments(),
 		InstructionResult:     maybeInstructionResult,
 	}
 }
@@ -363,6 +375,22 @@ func NewKurtosisInstructionPosition(filename string, line int32, column int32) *
 		Filename: filename,
 		Line:     line,
 		Column:   column,
+	}
+}
+
+func NewKurtosisInstructionKwarg(serializedArgValue string, argName string, isRepresentative bool) *kurtosis_core_rpc_api_bindings.KurtosisInstructionArg {
+	return &kurtosis_core_rpc_api_bindings.KurtosisInstructionArg{
+		SerializedArgValue: serializedArgValue,
+		ArgName:            &argName,
+		IsRepresentative:   isRepresentative,
+	}
+}
+
+func NewKurtosisInstructionArg(serializedArgValue string, isRepresentative bool) *kurtosis_core_rpc_api_bindings.KurtosisInstructionArg {
+	return &kurtosis_core_rpc_api_bindings.KurtosisInstructionArg{
+		SerializedArgValue: serializedArgValue,
+		ArgName:            nil,
+		IsRepresentative:   isRepresentative,
 	}
 }
 
