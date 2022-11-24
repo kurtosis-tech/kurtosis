@@ -225,9 +225,11 @@ func (apicService ApiContainerService) ExecuteKurtosisModule(args *kurtosis_core
 	serializedParams := args.SerializedParams
 	dryRun := shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun)
 
-	scriptWithMainToExecute, err := apicService.executeKurtosisModuleSetup(moduleId, isRemote, moduleContentIfLocal)
-	if err != nil {
-		return stacktrace.Propagate(err, "Error preparing for module execution: '%s'", moduleId)
+	scriptWithMainToExecute, interpretationError := apicService.executeKurtosisModuleSetup(moduleId, isRemote, moduleContentIfLocal)
+	if interpretationError != nil {
+		if err := stream.SendMsg(binding_constructors.NewKurtosisExecutionResponseLineFromInterpretationError(interpretationError.ToAPIType())); err != nil {
+			return stacktrace.Propagate(err, "Error preparing for module execution and this error could not be sent through the output stream: '%s'", moduleId)
+		}
 	}
 	apicService.runStartosis(dryRun, moduleId, scriptWithMainToExecute, serializedParams, stream)
 	return nil
@@ -814,7 +816,7 @@ func (apicService ApiContainerService) getModuleInfo(ctx context.Context, module
 	return response, nil
 }
 
-func (apicService ApiContainerService) executeKurtosisModuleSetup(moduleId string, isRemote bool, moduleContentIfLocal []byte) (string, error) {
+func (apicService ApiContainerService) executeKurtosisModuleSetup(moduleId string, isRemote bool, moduleContentIfLocal []byte) (string, *startosis_errors.InterpretationError) {
 	var moduleRootPathOnDisk string
 	var interpretationError *startosis_errors.InterpretationError
 	if isRemote {
@@ -823,12 +825,12 @@ func (apicService ApiContainerService) executeKurtosisModuleSetup(moduleId strin
 		moduleRootPathOnDisk, interpretationError = apicService.startosisModuleContentProvider.StoreModuleContents(moduleId, moduleContentIfLocal, doOverwriteExistingModule)
 	}
 	if interpretationError != nil {
-		return "", stacktrace.Propagate(interpretationError, "An error occurred while writing module '%s' to disk", moduleId)
+		return "", interpretationError
 	}
 
 	pathToMainFile := path.Join(moduleRootPathOnDisk, startosis_engine.MainFileName)
 	if _, err := os.Stat(pathToMainFile); err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred while verifying that '%v' exists on root of module '%v' at '%v'", startosis_engine.MainFileName, moduleId, pathToMainFile)
+		return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred while verifying that '%v' exists on root of module '%v' at '%v'", startosis_engine.MainFileName, moduleId, pathToMainFile)
 	}
 
 	var scriptWithMainToExecute string

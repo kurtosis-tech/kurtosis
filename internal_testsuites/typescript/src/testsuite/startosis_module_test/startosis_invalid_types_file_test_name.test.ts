@@ -2,7 +2,7 @@ import {createEnclave} from "../../test_helpers/enclave_setup";
 import {DEFAULT_DRY_RUN, IS_PARTITIONING_ENABLED, JEST_TIMEOUT_MS} from "./shared_constants";
 import log from "loglevel";
 import * as path from "path";
-import {generateScriptOutput} from "../../test_helpers/startosis_helpers";
+import {generateScriptOutput, readStreamContentUntilClosed} from "../../test_helpers/startosis_helpers";
 
 const INVALID_TYPES_FILE_TEST_NAME = "invalid-types-file"
 const INVALID_TYPES_FILE_REL_PATH = "../../../../startosis/invalid-types-file"
@@ -26,22 +26,21 @@ test("Test invalid startosis module invalid types file", async () => {
         log.info(`Loading module at path '${moduleRootPath}'`)
 
         const serializedParams = "{\"greetings\": \"Bonjour!\"}"
-        const executeStartosisModuleResult = await enclaveContext.executeStartosisModule(moduleRootPath, serializedParams, DEFAULT_DRY_RUN)
-
-        if (executeStartosisModuleResult.isErr()) {
+        const outputStream = await enclaveContext.executeKurtosisModule(moduleRootPath, serializedParams, DEFAULT_DRY_RUN)
+        if (outputStream.isErr()) {
             log.error(`An error occurred execute startosis module '${moduleRootPath}'`);
-            throw executeStartosisModuleResult.error
+            throw outputStream.error
         }
-        const executeStartosisModuleValue = executeStartosisModuleResult.value;
+        const [interpretationError, validationErrors, executionError, instructions] = await readStreamContentUntilClosed(outputStream.value);
 
-        expect(executeStartosisModuleValue.getInterpretationError()).not.toBeUndefined()
-        expect(executeStartosisModuleValue.getInterpretationError()?.getErrorMessage())
+        expect(interpretationError).not.toBeUndefined()
+        expect(interpretationError?.getErrorMessage())
             .toContain("A non empty parameter was passed to the module 'github.com/sample/sample-kurtosis-module' but the module doesn't contain a valid 'types.proto' file (it is either absent of invalid).")
 
-        expect(executeStartosisModuleValue.getExecutionError()).toBeUndefined()
-        expect(executeStartosisModuleValue.getValidationErrors()).toBeUndefined()
+        expect(validationErrors).toEqual([])
+        expect(executionError).toBeUndefined()
 
-        expect(generateScriptOutput(executeStartosisModuleValue.getKurtosisInstructionsList())).toEqual("")
+        expect(generateScriptOutput(instructions)).toEqual("")
     } finally {
         stopEnclaveFunction()
     }

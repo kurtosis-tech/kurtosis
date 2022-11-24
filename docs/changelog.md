@@ -1,13 +1,13 @@
 # TBD
 
-### Changes
-- Renamed `kurtosis exec` to `kurtosis run` and `main in main.star` to `run in main.star`
-- Make `kurtosis run` an EngineConsumingKurtosis command, which automatically starts an engine
-
 ### Breaking Changes
 - Renamed `kurtosis exec` to `kurtosis run` and `main in main.star` to `run in main.star`
   - Upgrade to the latest CLI, and use the `run` function instead
   - Upgrade existing modules to have `run` and not `main` in `main.star`
+
+### Features
+- Updated the CLI to consume the streaming endpoints to execute Startosis. Kurtosis Instructions are now returned live, but the script output is still printed at the end (until we have better formatting).
+- Update integration tests to consume Startosis streaming endpoints
 
 # 0.53.12
 

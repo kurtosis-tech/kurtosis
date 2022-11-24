@@ -6,7 +6,7 @@ import { createEnclave } from "../../test_helpers/enclave_setup";
 import {
     validateDataStoreServiceIsHealthy,
 } from "../../test_helpers/test_helpers";
-import {generateScriptOutput} from "../../test_helpers/startosis_helpers";
+import {generateScriptOutput, readStreamContentUntilClosed} from "../../test_helpers/startosis_helpers";
 
 const TEST_NAME = "module"
 
@@ -33,17 +33,17 @@ test("Test remote starlark module execution", async () => {
     try {
         // ------------------------------------- TEST SETUP ----------------------------------------------
         log.info(`Executing Startosis module: '${REMOTE_MODULE}'`)
-        const executeStartosisRemoteModuleResult = await enclaveContext.executeStartosisRemoteModule(REMOTE_MODULE, EXECUTE_PARAMS, IS_DRY_RUN)
-        if (executeStartosisRemoteModuleResult.isErr()) {
+        const outputStream = await enclaveContext.executeKurtosisRemoteModule(REMOTE_MODULE, EXECUTE_PARAMS, IS_DRY_RUN)
+        if (outputStream.isErr()) {
             log.error("An error occurred executing the Startosis Module")
-            throw executeStartosisRemoteModuleResult.error
+            throw outputStream.error
         }
 
-        const executeStartosisRemoteModuleValue = executeStartosisRemoteModuleResult.value
+        const [interpretationError, validationErrors, executionError, _] = await readStreamContentUntilClosed(outputStream.value);
 
-        expect(executeStartosisRemoteModuleValue.getInterpretationError()).toBeUndefined()
-        expect(executeStartosisRemoteModuleValue.getExecutionError()).toBeUndefined()
-        expect(executeStartosisRemoteModuleValue.getValidationErrors()).toBeUndefined()
+        expect(interpretationError).toBeUndefined()
+        expect(validationErrors).toEqual([])
+        expect(executionError).toBeUndefined()
         log.info("Successfully ran Startosis Module")
 
         log.info("Checking that services are all healthy")
