@@ -3,9 +3,12 @@
 ### Features
 - Updated the CLI to consume the streaming endpoints to execute Startosis. Kurtosis Instructions are now returned live, but the script output is still printed at the end (until we have better formatting).
 
+# 0.53.12
+
 ### Changes
 - Changed occurrences of `[sS]tartosis` to `Starlark` in errors sent by the CLI and its long and short description
 - Changed some logs and error messages inside core that which had references to Startosis to Starlark
+- Allow `dicts` & `structs` to be passed to `render_templates.config.data`
 
 # 0.53.11
 ### Changes
