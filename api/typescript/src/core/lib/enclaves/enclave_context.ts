@@ -245,7 +245,7 @@ export class EnclaveContext {
         args.setDryRun(dryRun)
         const resultModuleExecution : Result<ExecuteStartosisResponse, Error> = await this.backend.executeStartosisModule(args)
         if (resultModuleExecution.isErr()) {
-            return err(new Error(`Unexpected error happened executing Startosis module \n${resultModuleExecution.error}`))
+            return err(new Error(`Unexpected error happened executing Starlark module \n${resultModuleExecution.error}`))
         }
         return ok(resultModuleExecution.value)
     }
