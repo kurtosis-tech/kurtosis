@@ -34,12 +34,13 @@ func TestStartosisModule_InvalidTypesFileTestName(t *testing.T) {
 	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
 
 	serializedParams := `{"greetings": "Bonjour!"}`
-	executionResult, err := enclaveCtx.ExecuteStartosisModule(moduleDirpath, serializedParams, defaultDryRun)
+	outputStream, _, err := enclaveCtx.ExecuteKurtosisModule(ctx, moduleDirpath, serializedParams, defaultDryRun)
 	require.Nil(t, err, "Unexpected error executing startosis module")
-	require.NotNil(t, executionResult.GetInterpretationError())
+	interpretationError, validationErrors, executionError, instructions := test_helpers.ReadStreamContentUntilClosed(outputStream)
+	require.NotNil(t, interpretationError)
 	expectedInterpretationErr := "A non empty parameter was passed to the module 'github.com/sample/sample-kurtosis-module' but the module doesn't contain a valid 'types.proto' file (it is either absent of invalid)."
-	require.Contains(t, executionResult.GetInterpretationError().GetErrorMessage(), expectedInterpretationErr)
-	require.Nil(t, executionResult.GetValidationErrors())
-	require.Nil(t, executionResult.GetExecutionError())
-	require.Empty(t, test_helpers.GenerateScriptOutput(executionResult.GetKurtosisInstructions()))
+	require.Contains(t, interpretationError.GetErrorMessage(), expectedInterpretationErr)
+	require.Empty(t, validationErrors)
+	require.Nil(t, executionError)
+	require.Empty(t, test_helpers.GenerateScriptOutput(instructions))
 }

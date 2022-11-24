@@ -34,7 +34,7 @@ func TestStartosisModule_InvalidModFile(t *testing.T) {
 	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
 
 	expectedErrorContents := "Field module.name in kurtosis.mod needs to be set and cannot be empty"
-	_, err = enclaveCtx.ExecuteStartosisModule(moduleDirpath, emptyExecuteParams, defaultDryRun)
+	_, _, err = enclaveCtx.ExecuteKurtosisModule(ctx, moduleDirpath, emptyExecuteParams, defaultDryRun)
 	require.NotNil(t, err, "Unexpected error executing startosis module")
 	require.Contains(t, err.Error(), expectedErrorContents)
 }
