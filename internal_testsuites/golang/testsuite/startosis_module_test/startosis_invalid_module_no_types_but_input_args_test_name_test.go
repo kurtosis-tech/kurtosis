@@ -33,12 +33,13 @@ func TestStartosisModule_InvalidModuleNoTypesButInputArgsTestName(t *testing.T) 
 
 	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
 
-	executionResult, err := enclaveCtx.ExecuteStartosisModule(moduleDirpath, emptyExecuteParams, defaultDryRun)
+	outputStream, _, err := enclaveCtx.ExecuteKurtosisModule(ctx, moduleDirpath, emptyExecuteParams, defaultDryRun)
 	require.Nil(t, err, "Unexpected error executing startosis module")
-	require.NotNil(t, executionResult.GetInterpretationError())
+	interpretationError, validationErrors, executionError, instructions := test_helpers.ReadStreamContentUntilClosed(outputStream)
+	require.NotNil(t, interpretationError)
 	expectedInterpretationErr := "Evaluation error: function run missing 1 argument (input_args)"
-	require.Contains(t, executionResult.GetInterpretationError().GetErrorMessage(), expectedInterpretationErr)
-	require.Nil(t, executionResult.GetValidationErrors())
-	require.Nil(t, executionResult.GetExecutionError())
-	require.Empty(t, test_helpers.GenerateScriptOutput(executionResult.GetKurtosisInstructions()))
+	require.Contains(t, interpretationError.GetErrorMessage(), expectedInterpretationErr)
+	require.Empty(t, validationErrors)
+	require.Nil(t, executionError)
+	require.Empty(t, test_helpers.GenerateScriptOutput(instructions))
 }

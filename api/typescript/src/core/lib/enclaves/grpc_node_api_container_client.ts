@@ -1,5 +1,5 @@
-import {ok, err, Result, Err} from "neverthrow";
-import type { ServiceError } from "@grpc/grpc-js";
+import {ok, err, Result} from "neverthrow";
+import type {ClientReadableStream, ServiceError} from "@grpc/grpc-js";
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
 import {
     StartServicesArgs,
@@ -30,12 +30,15 @@ import {
     RenderTemplatesToFilesArtifactArgs,
     RenderTemplatesToFilesArtifactResponse,
     ExecuteStartosisScriptArgs,
-    ExecuteStartosisModuleArgs, ExecuteStartosisResponse,
+    ExecuteStartosisModuleArgs,
+    ExecuteStartosisResponse,
+    KurtosisExecutionResponseLine,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import type { ApiContainerServiceClient as ApiContainerServiceClientNode } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
 import { GenericApiContainerClient } from "./generic_api_container_client";
 import { EnclaveID } from "./enclave_context";
 import {RemoveServiceResponse} from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
+import {Readable} from "stream";
 
 export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
 
@@ -116,6 +119,17 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
         return ok(resultExecuteStartosisScript.value)
     }
 
+    public async executeKurtosisScript(serializedStartosisScript: ExecuteStartosisScriptArgs): Promise<Result<Readable, Error>> {
+        const promiseExecuteKurtosisScript: Promise<Result<ClientReadableStream<KurtosisExecutionResponseLine>, Error>> = new Promise((resolve, _unusedReject) => {
+            resolve(ok(this.client.executeKurtosisScript(serializedStartosisScript)))
+        })
+        const resultExecuteKurtosisScript: Result<Readable, Error> = await promiseExecuteKurtosisScript;
+        if (resultExecuteKurtosisScript.isErr()) {
+            return err(resultExecuteKurtosisScript.error)
+        }
+        return ok(resultExecuteKurtosisScript.value)
+    }
+
     public async executeStartosisModule(startosisModuleArgs:ExecuteStartosisModuleArgs): Promise<Result<ExecuteStartosisResponse, Error>> {
         const promiseExecuteStartosisModule: Promise<Result<ExecuteStartosisResponse, Error>> = new Promise((resolve, _unusedReject) => {
             this.client.executeStartosisModule(startosisModuleArgs, (error: ServiceError | null, response?: ExecuteStartosisResponse) => {
@@ -137,6 +151,17 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
         return ok(resultExecuteStartosisModule.value)
     }
 
+    public async executeKurtosisModule(startosisModuleArgs:ExecuteStartosisModuleArgs): Promise<Result<Readable, Error>> {
+        const promiseExecuteKurtosisModule: Promise<Result<ClientReadableStream<KurtosisExecutionResponseLine>, Error>> = new Promise((resolve, _unusedReject) => {
+            resolve(ok(this.client.executeKurtosisModule(startosisModuleArgs)))
+        })
+        const resultExecuteKurtosisModule: Result<Readable, Error> = await promiseExecuteKurtosisModule;
+        if (resultExecuteKurtosisModule.isErr()) {
+            return err(resultExecuteKurtosisModule.error)
+        }
+        return ok(resultExecuteKurtosisModule.value)
+    }
+
     public async executeStartosisRemoteModule(startosisRemoteModuleArgs:ExecuteStartosisModuleArgs): Promise<Result<ExecuteStartosisResponse, Error>> {
         const promiseExecuteStartosisRemoteModule: Promise<Result<ExecuteStartosisResponse, Error>> = new Promise((resolve, _unusedReject) => {
             this.client.executeStartosisModule(startosisRemoteModuleArgs, (error: ServiceError | null, response?: ExecuteStartosisResponse) => {
@@ -156,6 +181,17 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
             return err(resultExecuteStartosisRemoteModule.error)
         }
         return ok(resultExecuteStartosisRemoteModule.value)
+    }
+
+    public async executeKurtosisRemoteModule(startosisRemoteModuleArgs:ExecuteStartosisModuleArgs): Promise<Result<Readable, Error>> {
+        const promiseExecuteKurtosisRemoteModule: Promise<Result<ClientReadableStream<KurtosisExecutionResponseLine>, Error>> = new Promise((resolve, _unusedReject) => {
+            resolve(ok(this.client.executeKurtosisModule(startosisRemoteModuleArgs)));
+        })
+        const resultExecuteKurtosisRemoteModule: Result<Readable, Error> = await promiseExecuteKurtosisRemoteModule;
+        if (resultExecuteKurtosisRemoteModule.isErr()) {
+            return err(resultExecuteKurtosisRemoteModule.error)
+        }
+        return ok(resultExecuteKurtosisRemoteModule.value)
     }
 
     public async startServices(startServicesArgs: StartServicesArgs): Promise<Result<StartServicesResponse, Error>>{
