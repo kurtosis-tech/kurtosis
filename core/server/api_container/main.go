@@ -47,10 +47,11 @@ const (
 	shouldFlushMetricsClientQueueOnEachEvent = false
 
 	logMethodAlongWithLogLine = true
-	functionPathSeparator     = "."
-	emptyFunctionName         = ""
 	forceColors               = true
 	fullTimestamp             = true
+
+	functionPathSeparator = "."
+	emptyFunctionName     = ""
 )
 
 type doNothingMetricsClientCallback struct{}
@@ -81,7 +82,7 @@ func main() {
 			fullFunctionPath := strings.Split(f.Function, functionPathSeparator)
 			functionName := fullFunctionPath[len(fullFunctionPath)-1]
 			_, filename := path.Split(f.File)
-			return emptyFunctionName, wrapStringInSquareBrackets(filename) + wrapStringInSquareBrackets(functionName)
+			return emptyFunctionName, formatFilenameFunctionForLogs(filename, functionName)
 		},
 	})
 
@@ -283,6 +284,12 @@ func createServiceNetworkAndModuleStore(
 	return serviceNetwork, moduleStore, nil
 }
 
-func wrapStringInSquareBrackets(stringTobeWrapped string) string {
-	return "[" + stringTobeWrapped + "]"
+func formatFilenameFunctionForLogs(filename string, functionName string) string {
+	var output strings.Builder
+	output.WriteString("[")
+	output.WriteString(filename)
+	output.WriteString(":")
+	output.WriteString(functionName)
+	output.WriteString("]")
+	return output.String()
 }
