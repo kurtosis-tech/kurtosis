@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/bazelbuild/buildtools/build"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_args/run"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"strings"
@@ -11,19 +12,20 @@ import (
 
 const (
 	bazelBuildDefaultFilename = ""
+
+	instructionPrefixString = "> "
+	resultPrefixString      = ""
 )
 
 // PrintKurtosisExecutionResponseLineToStdOut format and prints the instruction to StdOut. It returns a boolean indicating whether an error occurred during printing
-// TODO(gb): scriptOutput buffer will be abandoned once we start printing the instruciton output right next to the instruction itself
-func PrintKurtosisExecutionResponseLineToStdOut(responseLine *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine, scriptOutput *strings.Builder) (bool, error) {
+func PrintKurtosisExecutionResponseLineToStdOut(responseLine *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine, verbosity run.Verbosity) (bool, error) {
 	var errorRunningKurtosisCode bool
 	if responseLine.GetInstruction() != nil {
-		formattedInstruction := formatInstruction(responseLine.GetInstruction())
-		if _, err := fmt.Fprintln(logrus.StandardLogger().Out, formattedInstruction); err != nil {
+		formattedInstruction := formatInstruction(responseLine.GetInstruction(), verbosity)
+		// we separate each tuple (isntruction, result) with an additional newline
+		formattedInstructionWithNewline := fmt.Sprintf("%s\n", formattedInstruction)
+		if _, err := fmt.Fprintln(logrus.StandardLogger().Out, formattedInstructionWithNewline); err != nil {
 			return errorRunningKurtosisCode, stacktrace.Propagate(err, "Error printing Kurtosis instruction: \n%v", formattedInstruction)
-		}
-		if responseLine.GetInstruction().InstructionResult != nil {
-			scriptOutput.WriteString(responseLine.GetInstruction().GetInstructionResult())
 		}
 	} else if responseLine.GetError() != nil {
 		errorRunningKurtosisCode = true
@@ -42,8 +44,54 @@ func PrintKurtosisExecutionResponseLineToStdOut(responseLine *kurtosis_core_rpc_
 	return errorRunningKurtosisCode, nil
 }
 
-func formatInstruction(instruction *kurtosis_core_rpc_api_bindings.KurtosisInstruction) string {
-	canonicalizedInstructionWithComment := fmt.Sprintf(
+func formatInstruction(instruction *kurtosis_core_rpc_api_bindings.KurtosisInstruction, verbosity run.Verbosity) string {
+	var serializedInstruction string
+	switch verbosity {
+	case run.Brief:
+		serializedInstruction = formatInstructionToReadableString(instruction, false)
+	case run.Detailed:
+		serializedInstruction = formatInstructionToReadableString(instruction, true)
+	case run.Executable:
+		serializedInstruction = formatInstructionToExecutable(instruction)
+	default:
+		logrus.Warnf("Unsupported verbosity flag: '%s'. Supported values are: (%s). The instruction will be printed with the default verbosity '%s'",
+			verbosity.String(), strings.Join(run.VerbosityStrings(), ", "), run.Brief.String())
+		serializedInstruction = formatInstructionToReadableString(instruction, false)
+	}
+
+	if instruction.InstructionResult != nil {
+		return appendInstructionResult(serializedInstruction, instruction.GetInstructionResult())
+	}
+	return serializedInstruction
+}
+
+func formatInstructionToReadableString(instruction *kurtosis_core_rpc_api_bindings.KurtosisInstruction, exhaustive bool) string {
+	serializedInstructionComponents := []string{instruction.GetInstructionName()}
+	for _, arg := range instruction.GetArguments() {
+		if exhaustive || arg.GetIsRepresentative() {
+			var serializedArg string
+			if arg.ArgName != nil {
+				serializedArg = fmt.Sprintf("%s=%s", arg.GetArgName(), arg.GetSerializedArgValue())
+			} else {
+				serializedArg = arg.GetSerializedArgValue()
+			}
+			serializedInstructionComponents = append(serializedInstructionComponents, serializedArg)
+		}
+	}
+
+	var serializedInstruction string
+	if exhaustive {
+		separator := fmt.Sprintf("\n%s\t", instructionPrefixString)
+		serializedInstruction = strings.Join(serializedInstructionComponents, separator)
+	} else {
+		separator := " "
+		serializedInstruction = strings.Join(serializedInstructionComponents, separator)
+	}
+	return fmt.Sprintf("%s%s", instructionPrefixString, serializedInstruction)
+}
+
+func formatInstructionToExecutable(instruction *kurtosis_core_rpc_api_bindings.KurtosisInstruction) string {
+	serializedInstructionWithComment := fmt.Sprintf(
 		"# from %s[%d:%d]\n%s",
 		instruction.GetPosition().GetFilename(),
 		instruction.GetPosition().GetLine(),
@@ -51,10 +99,10 @@ func formatInstruction(instruction *kurtosis_core_rpc_api_bindings.KurtosisInstr
 		instruction.GetExecutableInstruction(),
 	)
 
-	parsedInstruction, err := build.ParseDefault(bazelBuildDefaultFilename, []byte(canonicalizedInstructionWithComment))
+	parsedInstruction, err := build.ParseDefault(bazelBuildDefaultFilename, []byte(serializedInstructionWithComment))
 	if err != nil {
-		logrus.Warnf("Unable to format instruction. Will print it with no indentation. Problematic instruction was: \n%v", canonicalizedInstructionWithComment)
-		return canonicalizedInstructionWithComment
+		logrus.Warnf("Unable to format instruction. Will print it with no indentation. Problematic instruction was: \n%v", serializedInstructionWithComment)
+		return serializedInstructionWithComment
 	}
 
 	multiLineInstruction := strings.Builder{}
@@ -62,4 +110,8 @@ func formatInstruction(instruction *kurtosis_core_rpc_api_bindings.KurtosisInstr
 		multiLineInstruction.WriteString(build.FormatString(statement))
 	}
 	return multiLineInstruction.String()
+}
+
+func appendInstructionResult(serializedInstruction string, instructionResult string) string {
+	return fmt.Sprintf("%s\n%s%s", serializedInstruction, resultPrefixString, instructionResult)
 }

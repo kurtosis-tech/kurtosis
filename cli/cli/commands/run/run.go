@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	enclave_consts "github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/enclave"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
+	run2 "github.com/kurtosis-tech/kurtosis/cli/cli/command_args/run"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/file_system_path_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
@@ -43,6 +44,9 @@ const (
 
 	isPartitioningEnabledFlagKey = "with-partitioning"
 	defaultIsPartitioningEnabled = false
+
+	verbosityFlagKey = "verbosity"
+	defaultVerbosity = "brief"
 
 	githubDomainPrefix          = "github.com/"
 	isNewEnclaveFlagWhenCreated = true
@@ -100,6 +104,13 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			Type:    flags.FlagType_Bool,
 			Default: strconv.FormatBool(defaultIsPartitioningEnabled),
 		},
+		{
+			Key:       verbosityFlagKey,
+			Usage:     "The parameters that should be passed to the Kurtosis module when running it. It is expected to be a serialized JSON string. Note that if a standalone Kurtosis script is being run, no parameter should be passed.",
+			Type:      flags.FlagType_String,
+			Shorthand: "v",
+			Default:   defaultVerbosity,
+		},
 	},
 	Args: []*args.ArgConfig{
 		// TODO add a `Usage` description here when ArgConfig supports it
@@ -147,6 +158,11 @@ func run(
 		return stacktrace.Propagate(err, "Expected a boolean flag with key '%v' but none was found; this is an error in Kurtosis!", dryRunFlagKey)
 	}
 
+	verbosity, err := parseVerbosityFlag(flags)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the verbosity using flag key '%s'", verbosityFlagKey)
+	}
+
 	// Get or create enclave in Kurtosis
 	enclaveIdStr := userRequestedEnclaveId
 	enclaveId := enclaves.EnclaveID(enclaveIdStr)
@@ -191,7 +207,7 @@ func run(
 		return stacktrace.Propagate(errRunningKurtosis, "An error starting the Kurtosis code execution '%v'", starlarkScriptOrModulePath)
 	}
 
-	scriptOutput, errRunningKurtosis := readResponseLinesUntilClosed(responseLineChan, cancelFunc)
+	scriptOutput, errRunningKurtosis := readAndPrintResponseLinesUntilClosed(responseLineChan, cancelFunc, verbosity)
 	if errRunningKurtosis != nil {
 		return stacktrace.Propagate(errRunningKurtosis, "Error executing Kurtosis code")
 	}
@@ -227,7 +243,7 @@ func executeRemoteModule(ctx context.Context, enclaveCtx *enclaves.EnclaveContex
 	return enclaveCtx.ExecuteKurtosisRemoteModule(ctx, moduleId, serializedParams, dryRun)
 }
 
-func readResponseLinesUntilClosed(responseLineChan <-chan *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine, cancelFunc context.CancelFunc) (string, error) {
+func readAndPrintResponseLinesUntilClosed(responseLineChan <-chan *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine, cancelFunc context.CancelFunc, verbosity run2.Verbosity) (string, error) {
 	defer cancelFunc()
 
 	// This channel will receive a signal when the user presses an interrupt
@@ -246,7 +262,7 @@ func readResponseLinesUntilClosed(responseLineChan <-chan *kurtosis_core_rpc_api
 				}
 				return scriptOutput.String(), nil
 			}
-			executionErrored, err := output_printers.PrintKurtosisExecutionResponseLineToStdOut(responseLine, scriptOutput)
+			executionErrored, err := output_printers.PrintKurtosisExecutionResponseLineToStdOut(responseLine, verbosity)
 			if err != nil {
 				logrus.Error("An error occurred trying to write the output of Starlark execution to stdout. The script execution will continue, but the output printed here is incomplete")
 				// independently of the status of the execution, mark this run as errored to double tap on the fact that something went wrong.
@@ -293,4 +309,17 @@ func validateModuleArgs(serializedJson string) error {
 		return stacktrace.Propagate(err, "Error validating args, likely because it is not a valid JSON.")
 	}
 	return nil
+}
+
+// parseVerbosityFlag Get the verbosity flag is present, and parse it to a valid Verbosity value
+func parseVerbosityFlag(flags *flags.ParsedFlags) (run2.Verbosity, error) {
+	verbosityStr, err := flags.GetString(verbosityFlagKey)
+	if err != nil {
+		return 0, stacktrace.Propagate(err, "An error occurred getting the verbosity using flag key '%s'", verbosityFlagKey)
+	}
+	verbosity, err := run2.VerbosityString(verbosityStr)
+	if err != nil {
+		return 0, stacktrace.Propagate(err, "Invalid verbosity value: '%s'. Possible values are %s", verbosityStr, strings.Join(run2.VerbosityStrings(), ", "))
+	}
+	return verbosity, nil
 }
