@@ -124,7 +124,7 @@ func (cmd *EngineConsumingKurtosisCommand) getSetupFunc() func(context.Context) 
 }
 
 func (cmd *EngineConsumingKurtosisCommand) getRunFunc() func(context.Context, *flags.ParsedFlags, *args.ParsedArgs) error {
-	// Do the gruntwork necessary to give a Kurtosis dev the Docker manager & engine client without them
+	// Do the groundwork necessary to give a Kurtosis dev the Docker manager & engine client without them
 	// needing to think about how they should get it
 	return func(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error {
 		uncastedEngineClient := ctx.Value(cmd.EngineClientContextKey)
