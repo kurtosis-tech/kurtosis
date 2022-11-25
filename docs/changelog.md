@@ -1,4 +1,7 @@
 # TBD
+### Breaking Changes
+- Renamed `kurtosis.mod` file to `kurtosis.yml` this file extension enable syntax highlighting
+  - Users will have to rename all theirs `kurtosis.mod` files
 
 ### Changes
 - Made `run` an EngineCosumingKurtosisCommand, i.e it automatically creates an engine if it doesn't exist

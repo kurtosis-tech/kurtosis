@@ -67,7 +67,7 @@ import {
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import {TemplateAndData} from "./template_and_data";
 import * as path from "path";
-import {parseKurtosisMod} from "./kurtosis_mod";
+import {parseKurtosisYaml} from "./kurtosis_yaml";
 import {Readable} from "stream";
 
 export type EnclaveID = string;
@@ -77,7 +77,7 @@ export type PartitionID = string;
 //  or it was repartitioned away)
 const DEFAULT_PARTITION_ID: PartitionID = "";
 
-const KURTOSIS_YAML_FILENAME = "kurtosis.mod";
+export const KURTOSIS_YAML_FILENAME = "kurtosis.yml";
 
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
@@ -813,7 +813,7 @@ export class EnclaveContext {
     private async assembleExecuteStartosisModuleArg(moduleRootPath: string, serializedParams: string, dryRun: boolean,): Promise<Result<ExecuteStartosisModuleArgs, Error>> {
         const kurtosisYamlFilepath = path.join(moduleRootPath, KURTOSIS_YAML_FILENAME)
 
-        const resultParseKurtosisYaml = await parseKurtosisMod(kurtosisYamlFilepath)
+        const resultParseKurtosisYaml = await parseKurtosisYaml(kurtosisYamlFilepath)
         if (resultParseKurtosisYaml.isErr()) {
             return err(resultParseKurtosisYaml.error)
         }
