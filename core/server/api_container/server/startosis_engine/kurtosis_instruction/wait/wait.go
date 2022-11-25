@@ -2,7 +2,8 @@ package wait
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	kurtosis_backend_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/facts_engine"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
@@ -23,14 +24,13 @@ const (
 func GenerateWaitBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, factsEngine *facts_engine.FactsEngine) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 	// TODO: Force returning an InterpretationError rather than a normal error
 	return func(thread *starlark.Thread, builtin *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
-		serviceId, factName, interpretationError := parseStartosisArgs(builtin, args, kwargs)
-		if interpretationError != nil {
+		instructionPosition := shared_helpers.GetCallerPositionFromThread(thread)
+		waitInstruction := newEmptyWaitInstruction(factsEngine, instructionPosition)
+		if interpretationError := waitInstruction.parseStartosisArgs(builtin, args, kwargs); interpretationError != nil {
 			return nil, interpretationError
 		}
-		instructionPosition := shared_helpers.GetCallerPositionFromThread(thread)
-		waitInstruction := NewWaitInstruction(factsEngine, instructionPosition, serviceId, factName)
 		*instructionsQueue = append(*instructionsQueue, waitInstruction)
-		returnValue := shared_helpers.MakeWaitInterpretationReturnValue(serviceId, factName)
+		returnValue := shared_helpers.MakeWaitInterpretationReturnValue(waitInstruction.serviceId, waitInstruction.factName)
 		return returnValue, nil
 	}
 }
@@ -38,17 +38,20 @@ func GenerateWaitBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstr
 type WaitInstruction struct {
 	factsEngine *facts_engine.FactsEngine
 
-	position  *kurtosis_instruction.InstructionPosition
+	position       *kurtosis_instruction.InstructionPosition
+	starlarkKwargs starlark.StringDict
+
 	serviceId kurtosis_backend_service.ServiceID
 	factName  string
 }
 
-func NewWaitInstruction(factsEngine *facts_engine.FactsEngine, position *kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceID, factName string) *WaitInstruction {
+func newEmptyWaitInstruction(factsEngine *facts_engine.FactsEngine, position *kurtosis_instruction.InstructionPosition) *WaitInstruction {
 	return &WaitInstruction{
-		factsEngine: factsEngine,
-		position:    position,
-		serviceId:   serviceId,
-		factName:    factName,
+		factsEngine:    factsEngine,
+		position:       position,
+		serviceId:      "",
+		factName:       "",
+		starlarkKwargs: starlark.StringDict{},
 	}
 }
 
@@ -56,8 +59,12 @@ func (instruction *WaitInstruction) GetPositionInOriginalScript() *kurtosis_inst
 	return instruction.position
 }
 
-func (instruction *WaitInstruction) GetCanonicalInstruction() string {
-	return shared_helpers.CanonicalizeInstruction(WaitBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs())
+func (instruction *WaitInstruction) GetCanonicalInstruction() *kurtosis_core_rpc_api_bindings.KurtosisInstruction {
+	args := []*kurtosis_core_rpc_api_bindings.KurtosisInstructionArg{
+		binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[serviceIdArgName]), serviceIdArgName, kurtosis_instruction.Representative),
+		binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[factNameArgName]), factNameArgName, kurtosis_instruction.Representative),
+	}
+	return binding_constructors.NewKurtosisInstruction(instruction.position.ToAPIType(), WaitBuiltinName, instruction.String(), args)
 }
 
 func (instruction *WaitInstruction) Execute(_ context.Context) (*string, error) {
@@ -69,7 +76,7 @@ func (instruction *WaitInstruction) Execute(_ context.Context) (*string, error) 
 }
 
 func (instruction *WaitInstruction) String() string {
-	return instruction.GetCanonicalInstruction()
+	return shared_helpers.CanonicalizeInstruction(WaitBuiltinName, kurtosis_instruction.NoArgs, instruction.starlarkKwargs)
 }
 
 func (instruction *WaitInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
@@ -80,30 +87,26 @@ func (instruction *WaitInstruction) ValidateAndUpdateEnvironment(environment *st
 	return nil
 }
 
-func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (service.ServiceID, string, *startosis_errors.InterpretationError) {
-
+func (instruction *WaitInstruction) parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) *startosis_errors.InterpretationError {
 	var serviceIdArg starlark.String
 	var factNameArg starlark.String
 	if err := starlark.UnpackArgs(b.Name(), args, kwargs, serviceIdArgName, &serviceIdArg, factNameArgName, &factNameArg); err != nil {
-		return "", "", startosis_errors.NewInterpretationError(err.Error())
+		return startosis_errors.WrapWithInterpretationError(err, "Failed parsing arguments for function '%s' (unparsed arguments were: '%v' '%v')", WaitBuiltinName, args, kwargs)
 	}
+	instruction.starlarkKwargs[serviceIdArgName] = serviceIdArg
+	instruction.starlarkKwargs[factNameArgName] = factNameArg
+	instruction.starlarkKwargs.Freeze()
 
 	serviceId, interpretationErr := kurtosis_instruction.ParseServiceId(serviceIdArg)
 	if interpretationErr != nil {
-		return "", "", interpretationErr
+		return interpretationErr
 	}
 
 	factName, interpretationErr := kurtosis_instruction.ParseFactName(factNameArg)
 	if interpretationErr != nil {
-		return "", "", interpretationErr
+		return interpretationErr
 	}
-
-	return serviceId, factName, nil
-}
-
-func (instruction *WaitInstruction) getKwargs() starlark.StringDict {
-	return starlark.StringDict{
-		serviceIdArgName: starlark.String(instruction.serviceId),
-		factNameArgName:  starlark.String(instruction.factName),
-	}
+	instruction.serviceId = serviceId
+	instruction.factName = factName
+	return nil
 }

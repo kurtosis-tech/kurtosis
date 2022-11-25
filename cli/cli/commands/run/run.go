@@ -6,13 +6,16 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	enclave_consts "github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/enclave"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/file_system_path_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"os"
@@ -23,8 +26,10 @@ import (
 )
 
 const (
-	scriptOrModulePathKey = "script-or-module-path"
-	starlarkExtension     = ".star"
+	scriptOrModulePathKey                = "script-or-module-path"
+	isScriptOrModulePathArgumentOptional = false
+
+	starlarkExtension = ".star"
 
 	moduleArgsFlagKey = "args"
 	defaultModuleArgs = "{}"
@@ -41,13 +46,24 @@ const (
 
 	githubDomainPrefix          = "github.com/"
 	isNewEnclaveFlagWhenCreated = true
+	interruptChanBufferSize     = 5
 
-	interruptChanBufferSize = 5
+	kurtosisBackendCtxKey = "kurtosis-backend"
+	engineClientCtxKey    = "engine-client"
 )
 
-var StarlarkExecCmd = &lowlevel.LowlevelKurtosisCommand{
-	CommandStr:       command_str_consts.StarlarkRunCmdStr,
-	ShortDescription: "Run a Starlark script or module",
+var (
+	githubScriptpathValidationExceptionFunc = func(scriptpath string) bool {
+		// if it's a Github path we don't validate further, the APIC will do it for us
+		return strings.HasPrefix(scriptpath, githubDomainPrefix)
+	}
+)
+
+var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
+	CommandStr:                command_str_consts.StarlarkRunCmdStr,
+	KurtosisBackendContextKey: kurtosisBackendCtxKey,
+	EngineClientContextKey:    engineClientCtxKey,
+	ShortDescription:          "Run a Starlark script or module",
 	LongDescription: "Run a Starlark module or script in an enclave. For a script we expect a path to a " + starlarkExtension +
 		" file. For a module we expect path to a directory containing kurtosis.yml or a fully qualified Github repository path containing a module. If the enclave-id flag argument is provided, Kurtosis " +
 		"will run the script inside this enclave, or create it if it doesn't exist. If no enclave-id param is " +
@@ -86,25 +102,20 @@ var StarlarkExecCmd = &lowlevel.LowlevelKurtosisCommand{
 		},
 	},
 	Args: []*args.ArgConfig{
-		&args.ArgConfig{
-			// for a module we expect a path to a directory
-			// for a script we expect a script with a `.star` extension
-			// TODO add a `Usage` description here when ArgConfig supports it
-			Key:             scriptOrModulePathKey,
-			IsOptional:      false,
-			DefaultValue:    "",
-			IsGreedy:        false,
-			CompletionsFunc: nil,
-			ValidationFunc:  validateScriptOrModulePath,
-		},
+		// TODO add a `Usage` description here when ArgConfig supports it
+		file_system_path_arg.NewFilepathOrDirpathArg(
+			scriptOrModulePathKey,
+			isScriptOrModulePathArgumentOptional,
+			githubScriptpathValidationExceptionFunc,
+		),
 	},
-	PreValidationAndRunFunc:  nil,
-	RunFunc:                  run,
-	PostValidationAndRunFunc: nil,
+	RunFunc: run,
 }
 
 func run(
 	ctx context.Context,
+	_ backend_interface.KurtosisBackend,
+	_ kurtosis_engine_rpc_api_bindings.EngineServiceClient,
 	flags *flags.ParsedFlags,
 	args *args.ParsedArgs,
 ) error {
@@ -193,32 +204,6 @@ func run(
 //	Private Helper Functions
 //
 // ====================================================================================================
-func validateScriptOrModulePath(_ context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error {
-	scriptOrModulePath, err := args.GetNonGreedyArg(scriptOrModulePathKey)
-	if err != nil {
-		return stacktrace.Propagate(err, "Unable to get argument '%s'", scriptOrModulePathKey)
-	}
-
-	scriptOrModulePath = strings.TrimSpace(scriptOrModulePath)
-	if scriptOrModulePath == "" {
-		return stacktrace.NewError("Received an empty '%v'. It should be a non empty string.", scriptOrModulePathKey)
-	}
-
-	if strings.HasPrefix(scriptOrModulePath, githubDomainPrefix) {
-		// if it's a Github path we don't validate further, the APIC will do it for us
-		return nil
-	}
-
-	fileInfo, err := os.Stat(scriptOrModulePath)
-	if err != nil {
-		return stacktrace.Propagate(err, "Error reading script file or module dir '%s'", scriptOrModulePath)
-	}
-	if !fileInfo.Mode().IsRegular() && !fileInfo.Mode().IsDir() {
-		return stacktrace.Propagate(err, "Script or module path should point to a file on disk or to a directory '%s'", scriptOrModulePath)
-	}
-	return nil
-}
-
 func executeScript(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, scriptPath string, dryRun bool) (<-chan *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine, context.CancelFunc, error) {
 	fileContentBytes, err := os.ReadFile(scriptPath)
 	if err != nil {
@@ -261,7 +246,13 @@ func readResponseLinesUntilClosed(responseLineChan <-chan *kurtosis_core_rpc_api
 				}
 				return scriptOutput.String(), nil
 			}
-			isError = isError || output_printers.PrintKurtosisExecutionResponseLineToStdOut(responseLine, scriptOutput)
+			executionErrored, err := output_printers.PrintKurtosisExecutionResponseLineToStdOut(responseLine, scriptOutput)
+			if err != nil {
+				logrus.Error("An error occurred trying to write the output of Starlark execution to stdout. The script execution will continue, but the output printed here is incomplete")
+				// independently of the status of the execution, mark this run as errored to double tap on the fact that something went wrong.
+				isError = true
+			}
+			isError = isError || executionErrored
 		case <-interruptChan:
 			return scriptOutput.String(), stacktrace.NewError("User manually interrupted the execution, returning. Note that the execution will continue in the Kurtosis enclave")
 		}

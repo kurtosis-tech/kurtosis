@@ -11,4 +11,7 @@ const (
 	EmptyInputArgs   = "{}" // empty JSON
 
 	ModuleIdPlaceholderForStandaloneScripts = "DEFAULT_MODULE_ID_FOR_SCRIPT"
+
+	Representative    = true
+	NotRepresentative = false
 )
