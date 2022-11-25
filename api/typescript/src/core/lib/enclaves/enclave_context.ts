@@ -77,7 +77,7 @@ export type PartitionID = string;
 //  or it was repartitioned away)
 const DEFAULT_PARTITION_ID: PartitionID = "";
 
-const KURTOSIS_YAML_FILENAME = "kurtosis.yml";
+export const KURTOSIS_YAML_FILENAME = "kurtosis.yml";
 
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation

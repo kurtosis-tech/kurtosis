@@ -16,7 +16,7 @@ type KurtosisYaml struct {
 }
 
 type Module struct {
-	ModuleName string `yaml:"name"`
+	PackageName string `yaml:"name"`
 }
 
 func parseKurtosisYaml(kurtosisYamlFilepath string) (*KurtosisYaml, error) {
@@ -34,7 +34,7 @@ func parseKurtosisYaml(kurtosisYamlFilepath string) (*KurtosisYaml, error) {
 		return nil, stacktrace.Propagate(err, "An error occurred while parsing the '%v' file at '%v'", kurtosisYamlFilename, kurtosisYamlFilepath)
 	}
 
-	if kurtosisYaml.Module.ModuleName == "" {
+	if kurtosisYaml.Module.PackageName == "" {
 		return nil, stacktrace.NewError("Field module.name in %v needs to be set and cannot be empty", kurtosisYamlFilename)
 	}
 
