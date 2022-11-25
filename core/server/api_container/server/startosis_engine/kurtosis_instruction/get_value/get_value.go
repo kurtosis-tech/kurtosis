@@ -33,7 +33,7 @@ func GenerateGetValueBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisI
 		}
 		resultUuid := recipeExecutor.CreateValue()
 		returnValue := recipe.CreateStarlarkReturnValueFromHttpRequestRecipe(resultUuid)
-		getValueInstruction := NewGetValueInstruction(serviceNetwork, *shared_helpers.GetCallerPositionFromThread(thread), recipeExecutor, httpRequestRecipe, resultUuid)
+		getValueInstruction := NewGetValueInstruction(serviceNetwork, *shared_helpers.GetCallerPositionFromThread(thread), recipeExecutor, httpRequestRecipe, recipeConfig, resultUuid)
 		*instructionsQueue = append(*instructionsQueue, getValueInstruction)
 		return returnValue, nil
 	}
@@ -45,15 +45,17 @@ type GetValueInstruction struct {
 	position          kurtosis_instruction.InstructionPosition
 	recipeExecutor    *runtime_value_store.RuntimeValueStore
 	httpRequestRecipe *recipe.HttpRequestRecipe
+	recipeConfigArg   *starlarkstruct.Struct
 	resultUuid        string
 }
 
-func NewGetValueInstruction(serviceNetwork service_network.ServiceNetwork, position kurtosis_instruction.InstructionPosition, recipeExecutor *runtime_value_store.RuntimeValueStore, httpRequestRecipe *recipe.HttpRequestRecipe, resultUuid string) *GetValueInstruction {
+func NewGetValueInstruction(serviceNetwork service_network.ServiceNetwork, position kurtosis_instruction.InstructionPosition, recipeExecutor *runtime_value_store.RuntimeValueStore, httpRequestRecipe *recipe.HttpRequestRecipe, recipeConfigArg *starlarkstruct.Struct, resultUuid string) *GetValueInstruction {
 	return &GetValueInstruction{
 		serviceNetwork:    serviceNetwork,
 		position:          position,
 		recipeExecutor:    recipeExecutor,
 		httpRequestRecipe: httpRequestRecipe,
+		recipeConfigArg:   recipeConfigArg,
 		resultUuid:        resultUuid,
 	}
 }
@@ -84,7 +86,9 @@ func (instruction *GetValueInstruction) ValidateAndUpdateEnvironment(environment
 }
 
 func (instruction *GetValueInstruction) getKwargs() starlark.StringDict {
-	return starlark.StringDict{}
+	return starlark.StringDict{
+		recipeArgName: instruction.recipeConfigArg,
+	}
 }
 
 func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (*starlarkstruct.Struct, *startosis_errors.InterpretationError) {

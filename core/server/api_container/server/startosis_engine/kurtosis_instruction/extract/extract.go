@@ -99,7 +99,7 @@ func (instruction *ExtractInstruction) ValidateAndUpdateEnvironment(environment 
 func (instruction *ExtractInstruction) getKwargs() starlark.StringDict {
 	return starlark.StringDict{
 		runtimeValueArgName:   instruction.runtimeValueArg,
-		fieldExtractorArgName: instruction.runtimeValueArg,
+		fieldExtractorArgName: instruction.fieldExtractorArg,
 	}
 }
 

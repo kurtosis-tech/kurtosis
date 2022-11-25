@@ -87,7 +87,10 @@ func (instruction *AssertInstruction) Execute(ctx context.Context) (*string, err
 			return nil, stacktrace.NewError("Assertion failed '%v' '%v' '%v'", currentValue, instruction.assertion, instruction.target)
 		}
 	} else {
-		listTarget := instruction.target.(*starlark.List)
+		listTarget, ok := instruction.target.(*starlark.List)
+		if !ok {
+			return nil, stacktrace.NewError("Assertion failed, expected list but got '%v'", instruction.target)
+		}
 		inList := false
 		for i := 0; i < listTarget.Len(); i++ {
 			if listTarget.Index(i) == currentValue {
@@ -118,7 +121,11 @@ func (instruction *AssertInstruction) ValidateAndUpdateEnvironment(environment *
 }
 
 func (instruction *AssertInstruction) getKwargs() starlark.StringDict {
-	return starlark.StringDict{}
+	return starlark.StringDict{
+		runtimeValueArgName: starlark.String(instruction.runtimeValue),
+		assertionArgName:    starlark.String(instruction.assertion),
+		targetArgName:       instruction.target,
+	}
 }
 
 func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (string, string, starlark.Comparable, *startosis_errors.InterpretationError) {
