@@ -26,13 +26,18 @@ var (
 )
 
 func TestGetValueInstruction_StringRepresentationWorks(t *testing.T) {
+	starlarkKwargs := starlark.StringDict{
+		"recipe": testRecipeConfig,
+	}
+	starlarkKwargs.Freeze()
 	getValueInstruction := NewGetValueInstruction(
 		emptyServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(1, 1, "dummyFile"),
+		kurtosis_instruction.NewInstructionPosition(1, 1, "dummyFile"),
 		nil,
 		nil,
 		testRecipeConfig,
 		testUuid,
+		starlarkKwargs,
 	)
 	expectedStr := `get_value(recipe=struct(body="post_output", content_type="text/plain", endpoint="/", method="POST", port_id="http-port", service_id="web-server"))`
 	require.Equal(t, expectedStr, getValueInstruction.String())

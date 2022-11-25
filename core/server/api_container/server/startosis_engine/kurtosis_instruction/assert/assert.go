@@ -2,6 +2,8 @@ package assert
 
 import (
 	"context"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
@@ -34,40 +36,59 @@ var stringTokenToComparisonStarlarkToken = map[string]syntax.Token{
 func GenerateAssertBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, recipeExecutor *runtime_value_store.RuntimeValueStore, serviceNetwork service_network.ServiceNetwork) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 	// TODO: Force returning an InterpretationError rather than a normal error
 	return func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
-		runtimeValue, assertion, target, interpretationError := parseStartosisArgs(b, args, kwargs)
-		if interpretationError != nil {
+		instructionPosition := shared_helpers.GetCallerPositionFromThread(thread)
+		instruction := NewEmptyAssertInstruction(instructionPosition, recipeExecutor)
+		if interpretationError := instruction.parseStartosisArgs(b, args, kwargs); interpretationError != nil {
 			return nil, interpretationError
 		}
-		assertInstruction := NewAssertInstruction(*shared_helpers.GetCallerPositionFromThread(thread), recipeExecutor, runtimeValue, assertion, target)
-		*instructionsQueue = append(*instructionsQueue, assertInstruction)
+		*instructionsQueue = append(*instructionsQueue, instruction)
 		return starlark.None, nil
 	}
 }
 
 type AssertInstruction struct {
-	position       kurtosis_instruction.InstructionPosition
+	position       *kurtosis_instruction.InstructionPosition
+	starlarkKwargs starlark.StringDict
+
 	recipeExecutor *runtime_value_store.RuntimeValueStore
 	runtimeValue   string
 	assertion      string
 	target         starlark.Comparable
 }
 
-func NewAssertInstruction(position kurtosis_instruction.InstructionPosition, recipeExecutor *runtime_value_store.RuntimeValueStore, runtimeValue string, assertion string, target starlark.Comparable) *AssertInstruction {
+func NewAssertInstruction(position *kurtosis_instruction.InstructionPosition, recipeExecutor *runtime_value_store.RuntimeValueStore, runtimeValue string, assertion string, target starlark.Comparable, starlarkKwargs starlark.StringDict) *AssertInstruction {
 	return &AssertInstruction{
 		position:       position,
 		recipeExecutor: recipeExecutor,
 		runtimeValue:   runtimeValue,
 		assertion:      assertion,
 		target:         target,
+		starlarkKwargs: starlarkKwargs,
+	}
+}
+
+func NewEmptyAssertInstruction(position *kurtosis_instruction.InstructionPosition, recipeExecutor *runtime_value_store.RuntimeValueStore) *AssertInstruction {
+	return &AssertInstruction{
+		position:       position,
+		recipeExecutor: recipeExecutor,
+		runtimeValue:   "",
+		assertion:      "",
+		target:         nil,
+		starlarkKwargs: nil,
 	}
 }
 
 func (instruction *AssertInstruction) GetPositionInOriginalScript() *kurtosis_instruction.InstructionPosition {
-	return &instruction.position
+	return instruction.position
 }
 
-func (instruction *AssertInstruction) GetCanonicalInstruction() string {
-	return shared_helpers.CanonicalizeInstruction(AssertBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs())
+func (instruction *AssertInstruction) GetCanonicalInstruction() *kurtosis_core_rpc_api_bindings.KurtosisInstruction {
+	args := []*kurtosis_core_rpc_api_bindings.KurtosisInstructionArg{
+		binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[runtimeValueArgName]), runtimeValueArgName, kurtosis_instruction.Representative),
+		binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[assertionArgName]), assertionArgName, kurtosis_instruction.Representative),
+		binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[targetArgName]), targetArgName, kurtosis_instruction.Representative),
+	}
+	return binding_constructors.NewKurtosisInstruction(instruction.position.ToAPIType(), AssertBuiltinName, instruction.String(), args)
 }
 
 func (instruction *AssertInstruction) Execute(ctx context.Context) (*string, error) {
@@ -113,22 +134,14 @@ func (instruction *AssertInstruction) Execute(ctx context.Context) (*string, err
 }
 
 func (instruction *AssertInstruction) String() string {
-	return instruction.GetCanonicalInstruction()
+	return shared_helpers.CanonicalizeInstruction(AssertBuiltinName, kurtosis_instruction.NoArgs, instruction.starlarkKwargs)
 }
 
 func (instruction *AssertInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
 	return nil
 }
 
-func (instruction *AssertInstruction) getKwargs() starlark.StringDict {
-	return starlark.StringDict{
-		runtimeValueArgName: starlark.String(instruction.runtimeValue),
-		assertionArgName:    starlark.String(instruction.assertion),
-		targetArgName:       instruction.target,
-	}
-}
-
-func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (string, string, starlark.Comparable, *startosis_errors.InterpretationError) {
+func (instruction *AssertInstruction) parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) *startosis_errors.InterpretationError {
 
 	var (
 		runtimeValueArg starlark.String
@@ -137,17 +150,25 @@ func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starl
 	)
 
 	if err := starlark.UnpackArgs(b.Name(), args, kwargs, runtimeValueArgName, &runtimeValueArg, assertionArgName, &assertionArg, targetArgName, &targetArg); err != nil {
-		return "", "", nil, startosis_errors.NewInterpretationError(err.Error())
-	}
-	assertion := string(assertionArg)
-	runtimeValue := string(runtimeValueArg)
-
-	if _, found := stringTokenToComparisonStarlarkToken[assertion]; !found && assertionArg != "IN" && assertion != "NOT_IN" {
-		return "", "", nil, startosis_errors.NewInterpretationError("'%v' is not a valid assertion", assertionArg)
-	}
-	if _, ok := targetArg.(*starlark.List); (assertionArg == "IN" || assertionArg == "NOT_IN") && !ok {
-		return "", "", nil, startosis_errors.NewInterpretationError("'%v' assertion requires list, got '%v'", assertionArg, targetArg.Type())
+		return startosis_errors.NewInterpretationError(err.Error())
 	}
 
-	return runtimeValue, assertion, targetArg, nil
+	instruction.starlarkKwargs = starlark.StringDict{
+		runtimeValueArgName: starlark.String(instruction.runtimeValue),
+		assertionArgName:    starlark.String(instruction.assertion),
+		targetArgName:       instruction.target,
+	}
+	instruction.starlarkKwargs.Freeze()
+
+	instruction.assertion = string(assertionArg)
+	instruction.runtimeValue = string(runtimeValueArg)
+	instruction.target = targetArg
+	if _, found := stringTokenToComparisonStarlarkToken[instruction.assertion]; !found && instruction.assertion != "IN" && instruction.assertion != "NOT_IN" {
+		return startosis_errors.NewInterpretationError("'%v' is not a valid assertion", assertionArg)
+	}
+	if _, ok := instruction.target.(*starlark.List); (instruction.assertion == "IN" || instruction.assertion == "NOT_IN") && !ok {
+		return startosis_errors.NewInterpretationError("'%v' assertion requires list, got '%v'", assertionArg, targetArg.Type())
+	}
+
+	return nil
 }

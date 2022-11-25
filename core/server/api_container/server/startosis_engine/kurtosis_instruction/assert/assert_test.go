@@ -22,12 +22,19 @@ var (
 )
 
 func TestAssertInstruction_StringRepresentationWorks(t *testing.T) {
+	starlarkKwargs := starlark.StringDict{
+		"value":        starlark.String(testRuntimeValue),
+		"assertion":    starlark.String(testAssertion),
+		"target_value": testTarget,
+	}
+	starlarkKwargs.Freeze()
 	assertInstruction := NewAssertInstruction(
-		*kurtosis_instruction.NewInstructionPosition(1, 1, "dummyFile"),
+		kurtosis_instruction.NewInstructionPosition(1, 1, "dummyFile"),
 		emptyRuntimeValueStore,
 		testRuntimeValue,
 		testAssertion,
 		testTarget,
+		starlarkKwargs,
 	)
 	expectedStr := `assert(assertion="==", target_value=0, value="{{runtime-value}}")`
 	require.Equal(t, expectedStr, assertInstruction.String())
