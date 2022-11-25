@@ -1137,19 +1137,6 @@ The datastore service ip address is {{kurtosis:example-datastore-server.ip_addre
 	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutput)
 }
 
-func TestStartosisInterpreter_processInput(t *testing.T) {
-	dict := starlark.NewDict(1)
-	require.Nil(t, dict.SetKey(starlark.String("greetings"), starlark.String("bonjour!")))
-	result, err := convertValueToStructIfPossible(dict)
-
-	require.Nil(t, err)
-
-	expectedResult := starlarkstruct.FromStringDict(starlarkstruct.Default, starlark.StringDict{
-		"greetings": starlark.String("bonjour!"),
-	})
-	require.Equal(t, expectedResult, result)
-}
-
 // #####################################################################################################################
 //                                                  TEST HELPERS
 // #####################################################################################################################

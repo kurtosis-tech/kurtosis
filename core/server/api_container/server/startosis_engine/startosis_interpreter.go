@@ -17,6 +17,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/store_service_files"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/upload_files"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/wait"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/package_io"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_modules"
 	"github.com/sirupsen/logrus"
@@ -26,7 +27,6 @@ import (
 	"go.starlark.net/starlarkjson"
 	"go.starlark.net/starlarkstruct"
 	"go.starlark.net/syntax"
-	"reflect"
 	"sync"
 )
 
@@ -141,31 +141,22 @@ func (interpreter *StartosisInterpreter) buildBindings(threadName string, instru
 // This method handles the different cases a Startosis module can be executed. Here are the different cases handled:
 // - For a Kurtosis Package, the run method will always receive input args. If non wer passed through the CLI params, empty JSON will be used
 // - For a standalone Kurtosis script however, no params can be passed. It will fail if it is the case
-func (interpreter *StartosisInterpreter) addInputArgsToPredeclared(thread *starlark.Thread, moduleId string, serializedJsonParams string, predeclared *starlark.StringDict) *startosis_errors.InterpretationError {
-	if moduleId == ModuleIdPlaceholderForStandaloneScripts && serializedJsonParams == EmptyInputArgs {
+func (interpreter *StartosisInterpreter) addInputArgsToPredeclared(thread *starlark.Thread, moduleId string, serializedJsonArgs string, predeclared *starlark.StringDict) *startosis_errors.InterpretationError {
+	if moduleId == ModuleIdPlaceholderForStandaloneScripts && serializedJsonArgs == EmptyInputArgs {
 		(*predeclared)[MainInputArgName] = starlark.None
 		return nil
 	}
-	if moduleId == ModuleIdPlaceholderForStandaloneScripts && serializedJsonParams != EmptyInputArgs {
+	if moduleId == ModuleIdPlaceholderForStandaloneScripts && serializedJsonArgs != EmptyInputArgs {
 		// This _cannot_ be reached right now. Just being nice in the logs in case it can be hit in the future
 		return startosis_errors.NewInterpretationError("Passing parameter to a standalone script is not yet supported in Kurtosis.")
 	}
 
 	// it is a module, and it has input args -> deserialize the JSON input and add it as a struct to the predeclared
-	// TODO: clean this up a bit to make it safer
-	deserializedInputValue, err := starlarkjson.Module.Members["decode"].(*starlark.Builtin).CallInternal(thread, []starlark.Value{starlark.String(serializedJsonParams)}, []starlark.Tuple{})
-	if err != nil {
-		return startosis_errors.WrapWithInterpretationError(err, "Unable to deserialize package input. Is it a valid JSON?")
-	}
-
-	processedValue, interpretationError := convertValueToStructIfPossible(deserializedInputValue)
+	deserializedArgs, interpretationError := package_io.DeserializeArgs(thread, serializedJsonArgs)
 	if interpretationError != nil {
-		// error is not fatal here, we just pass the deserialized starlark.Value object with no transformation
-		logrus.Warnf("JSON input successfully deserialized but it failed to be processed by Kurtosis. It will be passed to the module with no transformation. Intput was: \n%v\nError was: \n%v", deserializedInputValue, interpretationError.Error())
-		(*predeclared)[MainInputArgName] = deserializedInputValue
-		return nil
+		return interpretationError
 	}
-	(*predeclared)[MainInputArgName] = processedValue
+	(*predeclared)[MainInputArgName] = deserializedArgs
 	return nil
 }
 
@@ -218,41 +209,4 @@ func generateInterpretationError(err error) *startosis_errors.InterpretationErro
 		return slError
 	}
 	return startosis_errors.NewInterpretationError("UnknownError: %s\n", err.Error())
-}
-
-func convertValueToStructIfPossible(genericValue starlark.Value) (starlark.Value, *startosis_errors.InterpretationError) {
-	switch value := genericValue.(type) {
-	case starlark.NoneType, starlark.Bool, starlark.String, starlark.Bytes, starlark.Int, starlark.Float:
-		return value, nil
-	case *starlark.List, *starlark.Set, starlark.Tuple:
-		return value, nil
-	case *starlark.Dict:
-		// Dictionaries returned by JSON deserialization should have strings as keys. We therefore convert them to struct to facilitate reading from them in Starlark
-		stringDict := starlark.StringDict{}
-		for _, key := range value.Keys() {
-			stringKey, ok := key.(starlark.String)
-			if !ok {
-				return nil, startosis_errors.NewInterpretationError("JSON input was deserialized in an unexpected manner. It seems some JSON keys were not string, which is currently not supported in Kurtosis (key: '%s', type: '%s')", key, reflect.TypeOf(key))
-			}
-			genericDictValue, found, err := value.Get(key)
-			if !found {
-				return nil, startosis_errors.NewInterpretationError("Unexpected error postprocessing JSON input. No value associated with key '%s'", key)
-			}
-			if err != nil {
-				return nil, startosis_errors.NewInterpretationError("Unexpected error postprocessing JSON input (key: '%s')", key)
-
-			}
-			postProcessedValue, interpretationError := convertValueToStructIfPossible(genericDictValue)
-			if err != nil {
-				// do not wrap the interpretation error here as it's coming from a recursive call.
-				return nil, interpretationError
-			}
-			stringDict[stringKey.GoString()] = postProcessedValue
-		}
-		return starlarkstruct.FromStringDict(starlarkstruct.Default, stringDict), nil
-	case *starlarkstruct.Struct:
-		return value, nil
-	default:
-		return nil, startosis_errors.NewInterpretationError("Unexpected type when trying to deserialize module input. Data will be passed to the module with no processing (unsupported type was: '%s').", reflect.TypeOf(genericValue))
-	}
 }
