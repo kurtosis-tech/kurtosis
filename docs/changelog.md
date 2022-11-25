@@ -7,6 +7,9 @@
 - Made `run` an EngineCosumingKurtosisCommand, i.e it automatically creates an engine if it doesn't exist
 - Added serialized arguments to KurtosisInstruction API type such that the CLI can display executed instructions in a nicer way.
 
+### Features
+- Added one-off HTTP requests, `extract` and `assert`
+
 # 0.54.1
 
 ### Fixes
@@ -14,9 +17,6 @@
 
 ### Changes
 - Small cleanup in `grpc_web_api_container_client` and `grpc_node_api_container_client`. They were implementing executeRemoteKurtosisModule unnecessarily
-
-### Fixes
-- Added one-off HTTP requests, `extract` and `assert`
 
 # 0.54.0
 
