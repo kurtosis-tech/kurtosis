@@ -7,6 +7,10 @@ import (
 	"sync"
 )
 
+var (
+	noError []error
+)
+
 type DockerImagesValidator struct {
 	kurtosisBackend *backend_interface.KurtosisBackend
 }
@@ -27,13 +31,13 @@ func (validator *DockerImagesValidator) Validate(ctx context.Context, environmen
 	wg.Wait()
 	close(pullErrors)
 	if len(pullErrors) > 0 {
-		errors := []error{}
+		var errors []error
 		for pullError := range pullErrors {
 			errors = append(errors, pullError)
 		}
 		return errors
 	}
-	return nil
+	return noError
 }
 
 func fetchImageFromBackend(ctx context.Context, wg *sync.WaitGroup, backend *backend_interface.KurtosisBackend, image string, pullError chan<- error) {
