@@ -3,6 +3,15 @@
 ### Changes
 - Made `run` an EngineCosumingKurtosisCommand, i.e it automatically creates an engine if it doesn't exist
 
+# 0.54.1
+
+### Fixes
+- Fixes a bug where the CLI was returning 0 even when an error happened running a Kurtosis script
+
+### Changes
+- Small cleanup in `grpc_web_api_container_client` and `grpc_node_api_container_client`. They were implementing executeRemoteKurtosisModule unnecessarily
+
+
 # 0.54.0
 
 ### Breaking Changes
@@ -72,6 +81,8 @@
 
 ### Features
 - Log that the module is being compressed & uploaded during `kurtosis exec`
+- Added `file_system_path_arg` in the CLI which provides validation and tab auto-completion for filepath, dirpath, or both kind of arguments
+- Added tab-auto-complete for the `script-or-module-path` argument in `kurtosis exec` CLI command
 
 ### Changes
 - `print()` is now a regular instructions like others, and it takes effect at execution time (used to be during interpretation)
