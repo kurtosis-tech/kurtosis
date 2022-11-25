@@ -1,7 +1,7 @@
 # TBD
 
   ### Features
-- Log file name and function while logging in `core`
+- Log file name and function like [filename.go:FunctionName()] while logging in `core` & `engine`
 
 # 0.54.1
 

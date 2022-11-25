@@ -26,6 +26,9 @@ import (
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"os"
+	"path"
+	"runtime"
+	"strings"
 	"time"
 )
 
@@ -39,6 +42,9 @@ const (
 
 	forceColors   = true
 	fullTimestamp = true
+
+	functionPathSeparator = "."
+	emptyFunctionName     = ""
 )
 
 // Nil indicates that the KurtosisBackend should not operate in API container mode, which is appropriate here
@@ -68,7 +74,12 @@ func main() {
 		PadLevelText:              false,
 		QuoteEmptyFields:          false,
 		FieldMap:                  nil,
-		CallerPrettyfier:          nil,
+		CallerPrettyfier: func(f *runtime.Frame) (string, string) {
+			fullFunctionPath := strings.Split(f.Function, functionPathSeparator)
+			functionName := fullFunctionPath[len(fullFunctionPath)-1]
+			_, filename := path.Split(f.File)
+			return emptyFunctionName, formatFilenameFunctionForLogs(filename, functionName)
+		},
 	})
 
 	err := runMain()
@@ -217,4 +228,14 @@ func getKurtosisBackend(ctx context.Context, kurtosisBackendType args.KurtosisBa
 	}
 
 	return kurtosisBackend, nil
+}
+
+func formatFilenameFunctionForLogs(filename string, functionName string) string {
+	var output strings.Builder
+	output.WriteString("[")
+	output.WriteString(filename)
+	output.WriteString(":")
+	output.WriteString(functionName)
+	output.WriteString("]")
+	return output.String()
 }
