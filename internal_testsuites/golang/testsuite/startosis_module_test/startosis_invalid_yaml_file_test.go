@@ -11,22 +11,22 @@ import (
 )
 
 const (
-	invalidCaseModFileTestName          = "invalid-module-invalid-mod-file"
-	moduleWithInvalidKurtosisModRelPath = "../../../startosis/invalid-mod-file"
+	invalidCaseYamlFileTestName          = "invalid-module-invalid-yaml-file"
+	moduleWithInvalidKurtosisYamlRelPath = "../../../startosis/invalid-yaml-file"
 )
 
-func TestStartosisModule_InvalidModFile(t *testing.T) {
+func TestStartosisModule_InvalidYamlFile(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
-	enclaveCtx, destroyEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, invalidCaseModFileTestName, isPartitioningEnabled)
+	enclaveCtx, destroyEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, invalidCaseYamlFileTestName, isPartitioningEnabled)
 	require.NoError(t, err, "An error occurred creating an enclave")
 	defer destroyEnclaveFunc()
 
 	currentWorkingDirectory, err := os.Getwd()
 	require.Nil(t, err)
-	moduleDirpath := path.Join(currentWorkingDirectory, moduleWithInvalidKurtosisModRelPath)
+	moduleDirpath := path.Join(currentWorkingDirectory, moduleWithInvalidKurtosisYamlRelPath)
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
 	logrus.Info("Executing Startosis Module...")
