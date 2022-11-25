@@ -10,7 +10,7 @@ export function generateScriptOutput(instructions: Array<KurtosisInstruction>): 
     let scriptOutput = "";
     instructions.forEach((instruction) => {
         if (instruction.hasInstructionResult()) {
-            scriptOutput += instruction.getInstructionResult()
+            scriptOutput += instruction.getInstructionResult() + "\n"
         }
     })
     return scriptOutput

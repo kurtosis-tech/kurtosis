@@ -3,6 +3,7 @@ package output_printers
 import (
 	"fmt"
 	"github.com/bazelbuild/buildtools/build"
+	"github.com/fatih/color"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_args/run"
 	"github.com/kurtosis-tech/stacktrace"
@@ -17,12 +18,18 @@ const (
 	resultPrefixString      = ""
 )
 
+var (
+	colorizeInstruction = color.New(color.FgCyan).SprintfFunc()
+	colorizeResult      = color.New(color.FgWhite).SprintfFunc()
+	colorizeError       = color.New(color.FgRed).SprintfFunc()
+)
+
 // PrintKurtosisExecutionResponseLineToStdOut format and prints the instruction to StdOut. It returns a boolean indicating whether an error occurred during printing
 func PrintKurtosisExecutionResponseLineToStdOut(responseLine *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine, verbosity run.Verbosity) (bool, error) {
 	var errorRunningKurtosisCode bool
 	if responseLine.GetInstruction() != nil {
 		formattedInstruction := formatInstruction(responseLine.GetInstruction(), verbosity)
-		// we separate each tuple (isntruction, result) with an additional newline
+		// we separate each tuple (instruction, result) with an additional newline
 		formattedInstructionWithNewline := fmt.Sprintf("%s\n", formattedInstruction)
 		if _, err := fmt.Fprintln(logrus.StandardLogger().Out, formattedInstructionWithNewline); err != nil {
 			return errorRunningKurtosisCode, stacktrace.Propagate(err, "Error printing Kurtosis instruction: \n%v", formattedInstruction)
@@ -37,11 +44,16 @@ func PrintKurtosisExecutionResponseLineToStdOut(responseLine *kurtosis_core_rpc_
 		} else if responseLine.GetError().GetExecutionError() != nil {
 			errorMsg = fmt.Sprintf("There was an error executing Starlark code \n%v", responseLine.GetError().GetExecutionError().GetErrorMessage())
 		}
-		if _, err := fmt.Fprintln(logrus.StandardLogger().Out, errorMsg); err != nil {
+		formattedError := formatError(errorMsg)
+		if _, err := fmt.Fprintln(logrus.StandardLogger().Out, formattedError); err != nil {
 			return errorRunningKurtosisCode, stacktrace.Propagate(err, "An error happened executing Starlark code but the error couldn't be printed to the CLI output. Error message was: \n%v", errorMsg)
 		}
 	}
 	return errorRunningKurtosisCode, nil
+}
+
+func formatError(errorMessage string) string {
+	return colorizeError(errorMessage)
 }
 
 func formatInstruction(instruction *kurtosis_core_rpc_api_bindings.KurtosisInstruction, verbosity run.Verbosity) string {
@@ -60,9 +72,10 @@ func formatInstruction(instruction *kurtosis_core_rpc_api_bindings.KurtosisInstr
 	}
 
 	if instruction.InstructionResult != nil {
-		return appendInstructionResult(serializedInstruction, instruction.GetInstructionResult())
+		serializedResult := formatInstructionResult(instruction.GetInstructionResult())
+		return fmt.Sprintf("%s\n%s", colorizeInstruction(serializedInstruction), colorizeResult(serializedResult))
 	}
-	return serializedInstruction
+	return colorizeInstruction(serializedInstruction)
 }
 
 func formatInstructionToReadableString(instruction *kurtosis_core_rpc_api_bindings.KurtosisInstruction, exhaustive bool) string {
@@ -112,6 +125,6 @@ func formatInstructionToExecutable(instruction *kurtosis_core_rpc_api_bindings.K
 	return multiLineInstruction.String()
 }
 
-func appendInstructionResult(serializedInstruction string, instructionResult string) string {
-	return fmt.Sprintf("%s\n%s%s", serializedInstruction, resultPrefixString, instructionResult)
+func formatInstructionResult(instructionResult string) string {
+	return fmt.Sprintf("%s%s", resultPrefixString, instructionResult)
 }

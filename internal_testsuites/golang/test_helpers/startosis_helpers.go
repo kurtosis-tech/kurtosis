@@ -10,6 +10,7 @@ func GenerateScriptOutput(instructions []*kurtosis_core_rpc_api_bindings.Kurtosi
 	for _, instruction := range instructions {
 		if instruction.InstructionResult != nil {
 			scriptOutput.WriteString(instruction.GetInstructionResult())
+			scriptOutput.WriteString("\n")
 		}
 	}
 	return scriptOutput.String()
