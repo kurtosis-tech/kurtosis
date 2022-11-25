@@ -11,12 +11,11 @@ const (
 	dependenciesUrl = "https://docs.kurtosis.com/reference/starlark-reference/#dependencies"
 )
 
+// fields are public because it's needed for YAML decoding
 type KurtosisYaml struct {
-	Module Module `yaml:"module"`
-}
-
-type Module struct {
 	PackageName string `yaml:"name"`
+	//TODO uncomment this field when it's implemented
+	//Dependencies string `yaml:"dependencies"`
 }
 
 func parseKurtosisYaml(kurtosisYamlFilepath string) (*KurtosisYaml, error) {
@@ -34,8 +33,8 @@ func parseKurtosisYaml(kurtosisYamlFilepath string) (*KurtosisYaml, error) {
 		return nil, stacktrace.Propagate(err, "An error occurred while parsing the '%v' file at '%v'", kurtosisYamlFilename, kurtosisYamlFilepath)
 	}
 
-	if kurtosisYaml.Module.PackageName == "" {
-		return nil, stacktrace.NewError("Field module.name in %v needs to be set and cannot be empty", kurtosisYamlFilename)
+	if kurtosisYaml.PackageName == "" {
+		return nil, stacktrace.NewError("Field 'name', which is the Starlark package's name, in %v needs to be set and cannot be empty", kurtosisYamlFilename)
 	}
 
 	return &kurtosisYaml, nil
