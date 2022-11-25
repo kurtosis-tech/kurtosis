@@ -43,8 +43,9 @@ const (
 	forceColors   = true
 	fullTimestamp = true
 
-	functionPathSeparator = "."
-	emptyFunctionName     = ""
+	logMethodAlongWithLogLine = true
+	functionPathSeparator     = "."
+	emptyFunctionName         = ""
 )
 
 // Nil indicates that the KurtosisBackend should not operate in API container mode, which is appropriate here
@@ -58,6 +59,8 @@ func (d doNothingMetricsClientCallback) Success()          {}
 func (d doNothingMetricsClientCallback) Failure(err error) {}
 
 func main() {
+	// This allows the filename & function to be reported
+	logrus.SetReportCaller(logMethodAlongWithLogLine)
 	// NOTE: we'll want to change the ForceColors to false if we ever want structured logging
 	logrus.SetFormatter(&logrus.TextFormatter{
 		ForceColors:               forceColors,

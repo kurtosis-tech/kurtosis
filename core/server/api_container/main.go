@@ -46,12 +46,12 @@ const (
 
 	shouldFlushMetricsClientQueueOnEachEvent = false
 
-	logMethodAlongWithLogLine = true
-	forceColors               = true
-	fullTimestamp             = true
+	forceColors   = true
+	fullTimestamp = true
 
-	functionPathSeparator = "."
-	emptyFunctionName     = ""
+	logMethodAlongWithLogLine = true
+	functionPathSeparator     = "."
+	emptyFunctionName         = ""
 )
 
 type doNothingMetricsClientCallback struct{}
