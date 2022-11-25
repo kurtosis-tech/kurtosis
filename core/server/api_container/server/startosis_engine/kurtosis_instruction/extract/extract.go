@@ -31,8 +31,8 @@ func GenerateExtractInstructionBuiltin(instructionsQueue *[]kurtosis_instruction
 		if interpretationError := instruction.parseStartosisArgs(b, args, kwargs); interpretationError != nil {
 			return nil, interpretationError
 		}
-		resultUuid := recipeExecutor.CreateValue()
-		returnValue := recipe.CreateStarlarkReturnValueFromExtractRuntimeValue(resultUuid)
+		instruction.resultUuid = recipeExecutor.CreateValue()
+		returnValue := recipe.CreateStarlarkReturnValueFromExtractRuntimeValue(instruction.resultUuid)
 		*instructionsQueue = append(*instructionsQueue, instruction)
 		return returnValue, nil
 	}
