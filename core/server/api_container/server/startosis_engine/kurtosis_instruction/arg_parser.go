@@ -246,15 +246,15 @@ func ParseNonEmptyString(argName string, argValue starlark.Value) (string, *star
 	return strArgValue, nil
 }
 
-func ParseArtifactUuid(artifactUuidArgName string, artifactUuidStr starlark.String) (enclave_data_directory.FilesArtifactUUID, *startosis_errors.InterpretationError) {
-	artifactUuid, interpretationErr := safeCastToString(artifactUuidStr, artifactUuidArgName)
+func ParseArtifactId(artifactUuidArgName string, artifactIdStr starlark.String) (enclave_data_directory.FilesArtifactUUID, *startosis_errors.InterpretationError) {
+	artifactId, interpretationErr := safeCastToString(artifactIdStr, artifactUuidArgName)
 	if interpretationErr != nil {
 		return "", interpretationErr
 	}
-	if len(artifactUuid) == 0 {
+	if len(artifactId) == 0 {
 		return "", startosis_errors.NewInterpretationError("Artifact Uuid can't be empty for argument '%s'", artifactUuidArgName)
 	}
-	return enclave_data_directory.FilesArtifactUUID(artifactUuid), interpretationErr
+	return enclave_data_directory.FilesArtifactUUID(artifactId), interpretationErr
 }
 
 func ParseTemplatesAndData(templatesAndData *starlark.Dict) (map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, *startosis_errors.InterpretationError) {

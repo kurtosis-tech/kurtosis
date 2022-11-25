@@ -3,6 +3,8 @@ package kurtosis_print
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
@@ -62,8 +64,14 @@ func (instruction *PrintInstruction) GetPositionInOriginalScript() *kurtosis_ins
 	return instruction.position
 }
 
-func (instruction *PrintInstruction) GetCanonicalInstruction() string {
-	return shared_helpers.CanonicalizeInstruction(PrintBuiltinName, instruction.args, instruction.getKwargs())
+func (instruction *PrintInstruction) GetCanonicalInstruction() *kurtosis_core_rpc_api_bindings.KurtosisInstruction {
+	args := make([]*kurtosis_core_rpc_api_bindings.KurtosisInstructionArg, len(instruction.args))
+	for idx, arg := range instruction.args {
+		args[idx] = binding_constructors.NewKurtosisInstructionArg(shared_helpers.CanonicalizeArgValue(arg), kurtosis_instruction.Representative)
+	}
+	args = append(args, binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(starlark.String(instruction.separator)), separatorArgName, kurtosis_instruction.NotRepresentative))
+	args = append(args, binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(starlark.String(instruction.end)), endArgName, kurtosis_instruction.NotRepresentative))
+	return binding_constructors.NewKurtosisInstruction(instruction.position.ToAPIType(), PrintBuiltinName, instruction.String(), args)
 }
 
 func (instruction *PrintInstruction) Execute(_ context.Context) (*string, error) {
@@ -90,7 +98,7 @@ func (instruction *PrintInstruction) Execute(_ context.Context) (*string, error)
 }
 
 func (instruction *PrintInstruction) String() string {
-	return instruction.GetCanonicalInstruction()
+	return shared_helpers.CanonicalizeInstruction(PrintBuiltinName, instruction.args, instruction.getKwargs())
 }
 
 func (instruction *PrintInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {

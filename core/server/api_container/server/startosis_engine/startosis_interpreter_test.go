@@ -752,12 +752,19 @@ exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"])
 	require.Len(t, instructions, 2)
 	require.Nil(t, interpretationError)
 
+	starlarkKwargs := starlark.StringDict{
+		"service_id":         starlark.String("example-datastore-server"),
+		"command":            starlark.NewList([]starlark.Value{starlark.String("mkdir"), starlark.String("/tmp/foo")}),
+		"expected_exit_code": starlark.MakeInt(0),
+	}
+	starlarkKwargs.Freeze()
 	execInstruction := exec.NewExecInstruction(
 		testServiceNetwork,
 		kurtosis_instruction.NewInstructionPosition(3, 5, ModuleIdPlaceholderForStandaloneScripts),
 		"example-datastore-server",
 		[]string{"mkdir", "/tmp/foo"},
 		0,
+		starlarkKwargs,
 	)
 
 	require.Equal(t, execInstruction, instructions[1])
@@ -780,12 +787,19 @@ exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"], e
 	require.Len(t, instructions, 2)
 	require.Nil(t, interpretationError)
 
+	starlarkKwargs := starlark.StringDict{
+		"service_id":         starlark.String("example-datastore-server"),
+		"command":            starlark.NewList([]starlark.Value{starlark.String("mkdir"), starlark.String("/tmp/foo")}),
+		"expected_exit_code": starlark.MakeInt(-7),
+	}
+	starlarkKwargs.Freeze()
 	execInstruction := exec.NewExecInstruction(
 		testServiceNetwork,
 		kurtosis_instruction.NewInstructionPosition(3, 5, ModuleIdPlaceholderForStandaloneScripts),
 		"example-datastore-server",
 		[]string{"mkdir", "/tmp/foo"},
 		-7,
+		starlarkKwargs,
 	)
 
 	require.Equal(t, execInstruction, instructions[1])
@@ -796,14 +810,14 @@ exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"], e
 }
 
 func TestStartosisInterpreter_StoreFileFromService(t *testing.T) {
-	testArtifactUuid, err := enclave_data_directory.NewFilesArtifactUUID()
+	testArtifactId, err := enclave_data_directory.NewFilesArtifactUUID()
 	require.Nil(t, err)
 	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
 print("Storing file from service!")
-artifact_uuid=store_service_files(service_id="example-datastore-server", src="/foo/bar", artifact_id="` + string(testArtifactUuid) + `")
+artifact_uuid=store_service_files(service_id="example-datastore-server", src="/foo/bar", artifact_id="` + string(testArtifactId) + `")
 print(artifact_uuid)
 `
 
@@ -811,19 +825,26 @@ print(artifact_uuid)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 3)
 
+	starlarkKwargs := starlark.StringDict{
+		"service_id":  starlark.String("example-datastore-server"),
+		"src":         starlark.String("/foo/bar"),
+		"artifact_id": starlark.String(testArtifactId),
+	}
+	starlarkKwargs.Freeze()
 	storeInstruction := store_service_files.NewStoreServiceFilesInstruction(
 		testServiceNetwork,
 		kurtosis_instruction.NewInstructionPosition(3, 34, ModuleIdPlaceholderForStandaloneScripts),
 		"example-datastore-server",
 		"/foo/bar",
-		testArtifactUuid,
+		testArtifactId,
+		starlarkKwargs,
 	)
 
 	require.Equal(t, storeInstruction, instructions[1])
 
 	expectedOutput := fmt.Sprintf(`Storing file from service!
 %v
-`, testArtifactUuid)
+`, testArtifactId)
 	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutput)
 }
 
@@ -1201,12 +1222,19 @@ print(uuid)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 4)
 
+	starlarkKwargs := starlark.StringDict{
+		"artifact_id": starlark.String(testArtifactUuid),
+		"service_id":  starlark.String("example-datastore-server"),
+		"src":         starlark.String("/foo/bar"),
+	}
+	starlarkKwargs.Freeze()
 	storeInstruction := store_service_files.NewStoreServiceFilesInstruction(
 		testServiceNetwork,
 		kurtosis_instruction.NewInstructionPosition(4, 35, storeFileDefinitionPath),
 		"example-datastore-server",
 		"/foo/bar",
 		testArtifactUuid,
+		starlarkKwargs,
 	)
 
 	require.Equal(t, storeInstruction, instructions[2])
@@ -1265,9 +1293,15 @@ func TestStartosisInterpreter_UploadGetsInterpretedCorrectly(t *testing.T) {
 	require.Len(t, instructions, 1)
 	validateScriptOutputFromPrintInstructions(t, instructions, "")
 
+	starlarkKwargs := starlark.StringDict{
+		"artifact_id": starlark.String(artifactId),
+		"src":         starlark.String(filePath),
+	}
+	starlarkKwargs.Freeze()
 	expectedUploadInstruction := upload_files.NewUploadFilesInstruction(
 		kurtosis_instruction.NewInstructionPosition(1, 13, ModuleIdPlaceholderForStandaloneScripts),
 		testServiceNetwork, moduleContentProvider, filePath, filePathOnDisk, artifactId,
+		starlarkKwargs,
 	)
 
 	require.Equal(t, expectedUploadInstruction, instructions[0])
