@@ -1,7 +1,6 @@
 package assert
 
 import (
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/stretchr/testify/require"
@@ -14,11 +13,9 @@ const (
 	testAssertion    = "=="
 )
 
-var testTarget = starlark.MakeInt(0)
-
 var (
+	testTarget             = starlark.MakeInt(0)
 	emptyRuntimeValueStore *runtime_value_store.RuntimeValueStore
-	emptyFactsRecipe       *kurtosis_core_rpc_api_bindings.FactRecipe = nil
 )
 
 func TestAssertInstruction_StringRepresentationWorks(t *testing.T) {

@@ -102,12 +102,6 @@ func (instruction *GetValueInstruction) ValidateAndUpdateEnvironment(environment
 	return nil
 }
 
-func (instruction *GetValueInstruction) getKwargs() starlark.StringDict {
-	return starlark.StringDict{
-		recipeArgName: instruction.recipeConfigArg,
-	}
-}
-
 func (instruction *GetValueInstruction) parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) *startosis_errors.InterpretationError {
 
 	var recipeConfigArg *starlarkstruct.Struct
