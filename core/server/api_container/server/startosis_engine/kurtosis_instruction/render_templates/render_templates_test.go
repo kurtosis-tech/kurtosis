@@ -2,6 +2,8 @@ package render_templates
 
 import (
 	"encoding/json"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"github.com/stretchr/testify/require"
@@ -21,18 +23,26 @@ func TestRenderTemplate_TestStringRepresentation(t *testing.T) {
 	templateStrDict["data"] = starlark.String(templateDataAsJson)
 	require.Nil(t, templateAndDataDict.SetKey(starlark.String("/foo/bar/test.txt"), starlarkstruct.FromStringDict(starlarkstruct.Default, templateStrDict)))
 
-	renderInstruction := newEmptyRenderTemplatesInstruction(
-		nil,
-		kurtosis_instruction.NewInstructionPosition(16, 33, "dummyFile"),
-	)
+	position := kurtosis_instruction.NewInstructionPosition(16, 33, "dummyFile")
+	renderInstruction := newEmptyRenderTemplatesInstruction(nil, position)
 	renderInstruction.starlarkKwargs[templateAndDataByDestinationRelFilepathArg] = templateAndDataDict
 	testArtifactId, err := enclave_data_directory.NewFilesArtifactUUID()
 	require.Nil(t, err)
 	renderInstruction.starlarkKwargs[nonOptionalArtifactIdArgName] = starlark.String(testArtifactId)
 
-	expectedStr := `render_templates(artifact_id="` + string(testArtifactId) + `", config={"/foo/bar/test.txt": struct(data="{\"Answer\":6,\"LargeFloat\":1231231243.43,\"Name\":\"Stranger\",\"Numbers\":[1,2,3],\"UnixTimeStamp\":1257894000}", template="Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}.")})`
-	require.Equal(t, expectedStr, renderInstruction.GetCanonicalInstruction())
+	expectedConfig := `{"/foo/bar/test.txt": struct(data="{\"Answer\":6,\"LargeFloat\":1231231243.43,\"Name\":\"Stranger\",\"Numbers\":[1,2,3],\"UnixTimeStamp\":1257894000}", template="Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}.")}`
+	expectedStr := `render_templates(artifact_id="` + string(testArtifactId) + `", config=` + expectedConfig + `)`
 	require.Equal(t, expectedStr, renderInstruction.String())
+
+	canonicalInstruction := binding_constructors.NewKurtosisInstruction(
+		position.ToAPIType(),
+		RenderTemplatesBuiltinName,
+		expectedStr,
+		[]*kurtosis_core_rpc_api_bindings.KurtosisInstructionArg{
+			binding_constructors.NewKurtosisInstructionKwarg(`"`+string(testArtifactId)+`"`, nonOptionalArtifactIdArgName, true),
+			binding_constructors.NewKurtosisInstructionKwarg(expectedConfig, templateAndDataByDestinationRelFilepathArg, false),
+		})
+	require.Equal(t, canonicalInstruction, renderInstruction.GetCanonicalInstruction())
 }
 
 func TestRenderTemplate_TestMultipleTemplates(t *testing.T) {
@@ -47,17 +57,25 @@ func TestRenderTemplate_TestMultipleTemplates(t *testing.T) {
 	require.Nil(t, templateAndDataByDestFilepath.SetKey(starlark.String("/foo/bar/test.txt"), starlarkstruct.FromStringDict(starlarkstruct.Default, templateDataOneStrDict)))
 	require.Nil(t, templateAndDataByDestFilepath.SetKey(starlark.String("/fizz/buzz/test.txt"), starlarkstruct.FromStringDict(starlarkstruct.Default, templateDataTwoStrDict)))
 
-	renderInstruction := newEmptyRenderTemplatesInstruction(
-		nil,
-		kurtosis_instruction.NewInstructionPosition(16, 33, "dummyFile"),
-	)
+	position := kurtosis_instruction.NewInstructionPosition(16, 33, "dummyFile")
+	renderInstruction := newEmptyRenderTemplatesInstruction(nil, position)
 	renderInstruction.starlarkKwargs[templateAndDataByDestinationRelFilepathArg] = templateAndDataByDestFilepath
 	testArtifactId, err := enclave_data_directory.NewFilesArtifactUUID()
 	require.Nil(t, err)
 	renderInstruction.starlarkKwargs[nonOptionalArtifactIdArgName] = starlark.String(testArtifactId)
 
 	// keys of the map are sorted alphabetically by the canonicalizer
-	expectedStr := `render_templates(artifact_id="` + string(testArtifactId) + `", config={"/fizz/buzz/test.txt": struct(data="{\"LastName\": \"Doe\"}", template="Hello {{.LastName}}"), "/foo/bar/test.txt": struct(data="{\"Name\": \"John\"}", template="Hello {{.Name}}")})`
-	require.Equal(t, expectedStr, renderInstruction.GetCanonicalInstruction())
+	expectedConfig := `{"/fizz/buzz/test.txt": struct(data="{\"LastName\": \"Doe\"}", template="Hello {{.LastName}}"), "/foo/bar/test.txt": struct(data="{\"Name\": \"John\"}", template="Hello {{.Name}}")}`
+	expectedStr := `render_templates(artifact_id="` + string(testArtifactId) + `", config=` + expectedConfig + `)`
 	require.Equal(t, expectedStr, renderInstruction.String())
+
+	canonicalInstruction := binding_constructors.NewKurtosisInstruction(
+		position.ToAPIType(),
+		RenderTemplatesBuiltinName,
+		expectedStr,
+		[]*kurtosis_core_rpc_api_bindings.KurtosisInstructionArg{
+			binding_constructors.NewKurtosisInstructionKwarg(`"`+string(testArtifactId)+`"`, nonOptionalArtifactIdArgName, true),
+			binding_constructors.NewKurtosisInstructionKwarg(expectedConfig, templateAndDataByDestinationRelFilepathArg, false),
+		})
+	require.Equal(t, canonicalInstruction, renderInstruction.GetCanonicalInstruction())
 }

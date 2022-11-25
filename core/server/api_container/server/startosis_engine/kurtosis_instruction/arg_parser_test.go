@@ -434,14 +434,14 @@ func TestParseCommand_InvalidCommandsWithIntegers(t *testing.T) {
 
 func TestArtifactUuidPathPath_ValidValue(t *testing.T) {
 	input := starlark.String("abde-f23dd-1")
-	output, err := ParseArtifactUuid("artifact_uuid", input)
+	output, err := ParseArtifactId("artifact_id", input)
 	require.Nil(t, err)
 	require.Equal(t, enclave_data_directory.FilesArtifactUUID("abde-f23dd-1"), output)
 }
 
 func TestArtifactUuidPathPath_EmptyStringFails(t *testing.T) {
 	input := starlark.String("")
-	_, err := ParseArtifactUuid("artifact_uuid", input)
+	_, err := ParseArtifactId("artifact_id", input)
 	require.NotNil(t, err)
 }
 
