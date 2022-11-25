@@ -28,6 +28,21 @@ func NewGitModuleContentProvider(moduleDir string, tmpDir string) *GitModuleCont
 	}
 }
 
+func (provider *GitModuleContentProvider) CloneModule(moduleId string) (string, *startosis_errors.InterpretationError) {
+	parsedURL, interpretationError := parseGitURL(moduleId)
+	if interpretationError != nil {
+		return "", interpretationError
+	}
+
+	moduleAbsolutePathOnDisk := path.Join(provider.modulesDir, parsedURL.relativeRepoPath)
+
+	interpretationError = provider.atomicClone(parsedURL)
+	if interpretationError != nil {
+		return "", interpretationError
+	}
+	return moduleAbsolutePathOnDisk, nil
+}
+
 func (provider *GitModuleContentProvider) GetOnDiskAbsoluteFilePath(fileInsideModuleUrl string) (string, *startosis_errors.InterpretationError) {
 	parsedURL, interpretationError := parseGitURL(fileInsideModuleUrl)
 	if interpretationError != nil {
@@ -116,7 +131,20 @@ func (provider *GitModuleContentProvider) atomicClone(parsedURL *ParsedGitURL) *
 	}
 	defer os.RemoveAll(tempRepoDirPath)
 	gitClonePath := path.Join(tempRepoDirPath, parsedURL.relativeRepoPath)
-	_, err = git.PlainClone(gitClonePath, false, &git.CloneOptions{URL: parsedURL.gitURL, Progress: io.Discard})
+	_, err = git.PlainClone(gitClonePath, false, &git.CloneOptions{
+		URL:               parsedURL.gitURL,
+		Auth:              nil,
+		RemoteName:        "",
+		ReferenceName:     "",
+		SingleBranch:      false,
+		NoCheckout:        false,
+		Depth:             0,
+		RecurseSubmodules: 0,
+		Progress:          io.Discard,
+		Tags:              0,
+		InsecureSkipTLS:   false,
+		CABundle:          nil,
+	})
 	if err != nil {
 		return startosis_errors.WrapWithInterpretationError(err, "Error in cloning git repository '%s' to '%s'", parsedURL.gitURL, gitClonePath)
 	}

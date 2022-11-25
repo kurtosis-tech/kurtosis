@@ -23,8 +23,8 @@ import (
 )
 
 const (
-	enclaveIdColumnHeader          = "EnclaveID"
-	enclaveStatusColumnHeader      = "Status"
+	enclaveIdColumnHeader           = "EnclaveID"
+	enclaveStatusColumnHeader       = "Status"
 	enclaveCreationTimeColumnHeader = "Creation Time"
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
@@ -39,6 +39,8 @@ var EnclaveLsCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCom
 	LongDescription:           "Lists the enclaves running in the Kurtosis engine",
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
 	EngineClientContextKey:    engineClientCtxKey,
+	Flags:                     nil,
+	Args:                      nil,
 	RunFunc:                   run,
 }
 
@@ -101,7 +103,7 @@ func getOrderedEnclaveInfoMapAndEnclaveWithoutCreationTimeMap(
 	map[string]*kurtosis_engine_rpc_api_bindings.EnclaveInfo,
 ) {
 
-	orderedEnclaveInfoMaps :=  []*kurtosis_engine_rpc_api_bindings.EnclaveInfo{}
+	orderedEnclaveInfoMaps := []*kurtosis_engine_rpc_api_bindings.EnclaveInfo{}
 
 	enclaveWithoutCreationTimeInfoMap := map[string]*kurtosis_engine_rpc_api_bindings.EnclaveInfo{}
 

@@ -9,7 +9,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"go.starlark.net/starlark"
+	"go.starlark.net/starlarkjson"
 	"go.starlark.net/starlarkstruct"
 	"math"
 	"reflect"
@@ -24,8 +26,8 @@ const (
 	containerImageNameKey          = "image"
 	factNameArgName                = "fact_name"
 	usedPortsKey                   = "ports"
-	entryPointArgsKey              = "entry_point_args"
-	cmdArgsKey                     = "cmd_args"
+	entryPointArgsKey              = "entrypoint"
+	cmdArgsKey                     = "cmd"
 	envVarArgsKey                  = "env_vars"
 	filesArtifactMountDirpathsKey  = "files"
 	portIdKey                      = "port_id"
@@ -40,13 +42,17 @@ const (
 	commandArgName          = "command"
 	expectedExitCodeArgName = "expected_exit_code"
 
-	templatesAndDataArgName  = "template_and_data_by_dest_rel_filepath"
-	templateFieldKey         = starlark.String("template")
-	templateDataJSONFieldKey = starlark.String("template_data_json")
+	templatesAndDataArgName = "config"
+	templateFieldKey        = "template"
+	templateDataFieldKey    = "data"
 
 	maxPortNumber = 65535
 
-	getRequestMethod = "GET"
+	getRequestMethod  = "GET"
+	postRequestMethod = "POST"
+
+	jsonParsingThreadName = "Unused thread name"
+	jsonParsingModuleId   = "Unused module id"
 )
 
 func ParseServiceId(serviceIdRaw starlark.String) (service.ServiceID, *startosis_errors.InterpretationError) {
@@ -95,6 +101,19 @@ func ParseHttpRequestFactRecipe(serviceConfig *starlarkstruct.Struct) (*kurtosis
 
 	if method == getRequestMethod {
 		builtConfig := binding_constructors.NewGetHttpRequestFactRecipeDefinition(portId, endpoint, maybeFieldExtractor)
+		return builtConfig, nil
+	} else if method == postRequestMethod {
+		contentType, interpretationErr := extractStringValue(serviceConfig, "content_type", defineFactArgName)
+		if interpretationErr != nil {
+			return nil, interpretationErr
+		}
+
+		body, interpretationErr := extractStringValue(serviceConfig, "body", defineFactArgName)
+		if interpretationErr != nil {
+			return nil, interpretationErr
+		}
+
+		builtConfig := binding_constructors.NewPostHttpRequestFactRecipeDefinition(portId, endpoint, contentType, body, maybeFieldExtractor)
 		return builtConfig, nil
 	} else {
 		return nil, startosis_errors.NewInterpretationError("Define fact HTTP method not recognized")
@@ -173,15 +192,26 @@ func ParseExpectedExitCode(expectedExitCodeRaw starlark.Int) (int32, *startosis_
 	return expectedExitCode, nil
 }
 
-func ParseFilePath(filePathArgName string, filePathStr starlark.String) (string, *startosis_errors.InterpretationError) {
-	srcPath, interpretationErr := safeCastToString(filePathStr, filePathArgName)
+func ParseNonEmptyString(argName string, argValue starlark.Value) (string, *startosis_errors.InterpretationError) {
+	strArgValue, interpretationErr := safeCastToString(argValue, argName)
 	if interpretationErr != nil {
 		return "", interpretationErr
 	}
-	if len(srcPath) == 0 {
-		return "", startosis_errors.NewInterpretationError("File path cannot be empty for argument '%s'", filePathArgName)
+	if len(strArgValue) == 0 {
+		return "", startosis_errors.NewInterpretationError("Expected non empty string for argument '%s'", argName)
 	}
-	return srcPath, nil
+	return strArgValue, nil
+}
+
+func ParseArtifactUuid(artifactUuidArgName string, artifactUuidStr starlark.String) (enclave_data_directory.FilesArtifactUUID, *startosis_errors.InterpretationError) {
+	artifactUuid, interpretationErr := safeCastToString(artifactUuidStr, artifactUuidArgName)
+	if interpretationErr != nil {
+		return "", interpretationErr
+	}
+	if len(artifactUuid) == 0 {
+		return "", startosis_errors.NewInterpretationError("Artifact Uuid can't be empty for argument '%s'", artifactUuidArgName)
+	}
+	return enclave_data_directory.FilesArtifactUUID(artifactUuid), interpretationErr
 }
 
 func ParseTemplatesAndData(templatesAndData *starlark.Dict) (map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, *startosis_errors.InterpretationError) {
@@ -195,25 +225,26 @@ func ParseTemplatesAndData(templatesAndData *starlark.Dict) (map[string]*kurtosi
 		if !found || dictErr != nil {
 			return nil, startosis_errors.NewInterpretationError("'%s' key in dict '%s' doesn't have a value we could retrieve. This is a Kurtosis bug.", relPathInFilesArtifactKey.String(), templatesAndDataArgName)
 		}
-		dictValue, ok := value.(*starlark.Dict)
+		structValue, ok := value.(*starlarkstruct.Struct)
 		if !ok {
 			return nil, startosis_errors.NewInterpretationError("Expected %v[\"%v\"] to be a dict. Got '%s'", templatesAndData, relPathInFilesArtifactStr, reflect.TypeOf(value))
 		}
-		template, found, dictErr := dictValue.Get(templateFieldKey)
-		if !found || dictErr != nil {
+		template, err := structValue.Attr(templateFieldKey)
+		if err != nil {
 			return nil, startosis_errors.NewInterpretationError("Expected values in '%v' to have a '%v' field", templatesAndDataArgName, templateFieldKey)
 		}
 		templateStr, castErr := safeCastToString(template, fmt.Sprintf("%v[\"%v\"][\"%v\"]", templatesAndDataArgName, relPathInFilesArtifactStr, templateFieldKey))
 		if castErr != nil {
 			return nil, castErr
 		}
-		templateDataJSONStarlarkValue, found, dictErr := dictValue.Get(templateDataJSONFieldKey)
-		if !found || dictErr != nil {
-			return nil, startosis_errors.NewInterpretationError("Expected values in '%v' to have a '%v' field", templatesAndDataArgName, templateDataJSONFieldKey)
+		templateDataStarlarkValue, err := structValue.Attr(templateDataFieldKey)
+		if err != nil {
+			return nil, startosis_errors.NewInterpretationError("Expected values in '%v' to have a '%v' field", templatesAndDataArgName, templateDataFieldKey)
 		}
-		templateDataJSONStrValue, castErr := safeCastToString(templateDataJSONStarlarkValue, fmt.Sprintf("%v[\"%v\"][\"%v\"]", templatesAndDataArgName, relPathInFilesArtifactStr, templateDataJSONFieldKey))
-		if castErr != nil {
-			return nil, castErr
+
+		templateDataJSONStrValue, encodingError := encodeStarlarkObjectAsJSON(templateDataStarlarkValue, templateDataFieldKey)
+		if encodingError != nil {
+			return nil, encodingError
 		}
 		// Massive Hack
 		// We do this for a couple of reasons,
@@ -222,7 +253,7 @@ func ParseTemplatesAndData(templatesAndData *starlark.Dict) (map[string]*kurtosi
 		// 3. This behaves as close to marshalling primitives in Golang as possible
 		// 4. Allows us to validate that string input is valid JSON
 		var temporaryUnmarshalledValue interface{}
-		err := json.Unmarshal([]byte(templateDataJSONStrValue), &temporaryUnmarshalledValue)
+		err = json.Unmarshal([]byte(templateDataJSONStrValue), &temporaryUnmarshalledValue)
 		if err != nil {
 			return nil, startosis_errors.NewInterpretationError("Template data for file '%v', '%v' isn't valid JSON", relPathInFilesArtifactStr, templateDataJSONStrValue)
 		}
@@ -527,4 +558,35 @@ func safeCastToInt32(expectedValueString starlark.Value, argNameForLogging strin
 	}
 	return int32(int64Value), nil
 
+}
+
+func encodeStarlarkObjectAsJSON(object starlark.Value, argNameForLogging string) (string, *startosis_errors.InterpretationError) {
+	jsonifiedVersion := ""
+	thread := &starlark.Thread{
+		Name:       jsonParsingThreadName,
+		OnMaxSteps: nil,
+		Print: func(_ *starlark.Thread, msg string) {
+			jsonifiedVersion = msg
+		},
+		Load: nil,
+	}
+
+	predeclared := &starlark.StringDict{
+		// go-starlark add-ons
+		starlarkjson.Module.Name:          starlarkjson.Module,
+		starlarkstruct.Default.GoString(): starlark.NewBuiltin(starlarkstruct.Default.GoString(), starlarkstruct.Make), // extension to build struct in starlark
+	}
+
+	// We do a print here as if we return the encoded variable we get extra quotes and slashes
+	// {"fizz": "buzz"} becomes "{\"fizz": \"buzz"\}"
+	scriptToRun := fmt.Sprintf(`encoded_json = json.encode(%v)
+print(encoded_json)`, object.String())
+
+	_, err := starlark.ExecFile(thread, jsonParsingModuleId, scriptToRun, *predeclared)
+
+	if err != nil {
+		return "", startosis_errors.NewInterpretationError("Error converting '%v' with string value '%v' to JSON", argNameForLogging, object.String())
+	}
+
+	return jsonifiedVersion, nil
 }

@@ -18,19 +18,23 @@ const (
 
 type lokiContainerConfigProvider struct {
 	config *LokiConfig
+	//TODO now the httpPortNumber is configured from the client, because this will be published to the host machine until
+	//TODO we productize logs search, tracked by this issue: https://github.com/kurtosis-tech/kurtosis/issues/340
+	//TODO remove the httpPortNumber field when we do not publish the port again
+	httpPortNumber uint16
 }
 
-func newLokiContainerConfigProvider(config *LokiConfig) *lokiContainerConfigProvider {
-	return &lokiContainerConfigProvider{config: config}
+func newLokiContainerConfigProvider(config *LokiConfig, httpPortNumber uint16) *lokiContainerConfigProvider {
+	return &lokiContainerConfigProvider{config: config, httpPortNumber: httpPortNumber}
 }
 
 func (loki *lokiContainerConfigProvider) GetPrivateHttpPortSpec() (*port_spec.PortSpec, error) {
-	privateHttpPortSpec, err := port_spec.NewPortSpec(httpPortNumber, httpPortProtocol)
+	privateHttpPortSpec, err := port_spec.NewPortSpec(loki.httpPortNumber, httpPortProtocol)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred creating the Loki container's private HTTP port spec object using number '%v' and protocol '%v'",
-			httpPortNumber,
+			loki.httpPortNumber,
 			httpPortProtocol,
 		)
 	}
@@ -55,7 +59,7 @@ func (loki *lokiContainerConfigProvider) GetContainerArgs(
 	}
 
 	usedPorts := map[nat.Port]docker_manager.PortPublishSpec{
-		privateHttpDockerPort: docker_manager.NewNoPublishingSpec(),
+		privateHttpDockerPort: docker_manager.NewManualPublishingSpec(privateHttpPortSpec.GetNumber()),
 	}
 
 	volumeMounts := map[string]string{

@@ -19,10 +19,14 @@ const (
 )
 
 var DiscordCmd = &lowlevel.LowlevelKurtosisCommand{
-	CommandStr:       command_str_consts.DiscordCmdStr,
-	ShortDescription: "Opens the Kurtosis Discord",
-	LongDescription:  "Opens the #general channel on the Kurtosis Discord server",
-	RunFunc:          run,
+	CommandStr:               command_str_consts.DiscordCmdStr,
+	ShortDescription:         "Opens the Kurtosis Discord",
+	LongDescription:          "Opens the #general channel on the Kurtosis Discord server",
+	Flags:                    nil,
+	Args:                     nil,
+	PreValidationAndRunFunc:  nil,
+	RunFunc:                  run,
+	PostValidationAndRunFunc: nil,
 }
 
 func run(_ context.Context, _ *flags.ParsedFlags, _ *args.ParsedArgs) error {

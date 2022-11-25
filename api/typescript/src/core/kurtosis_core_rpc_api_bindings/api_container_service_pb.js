@@ -32,7 +32,9 @@ goog.exportSymbol('proto.api_container_api.ExecFactRecipe', null, global);
 goog.exportSymbol('proto.api_container_api.ExecuteModuleArgs', null, global);
 goog.exportSymbol('proto.api_container_api.ExecuteModuleResponse', null, global);
 goog.exportSymbol('proto.api_container_api.ExecuteStartosisModuleArgs', null, global);
+goog.exportSymbol('proto.api_container_api.ExecuteStartosisModuleArgs.StartosisModuleContentCase', null, global);
 goog.exportSymbol('proto.api_container_api.ExecuteStartosisResponse', null, global);
+goog.exportSymbol('proto.api_container_api.ExecuteStartosisResponse.KurtosisErrorCase', null, global);
 goog.exportSymbol('proto.api_container_api.ExecuteStartosisScriptArgs', null, global);
 goog.exportSymbol('proto.api_container_api.FactRecipe', null, global);
 goog.exportSymbol('proto.api_container_api.FactRecipe.FactRecipeDefinitionCase', null, global);
@@ -46,6 +48,16 @@ goog.exportSymbol('proto.api_container_api.GetServicesArgs', null, global);
 goog.exportSymbol('proto.api_container_api.GetServicesResponse', null, global);
 goog.exportSymbol('proto.api_container_api.HttpRequestFactRecipe', null, global);
 goog.exportSymbol('proto.api_container_api.HttpRequestMethod', null, global);
+goog.exportSymbol('proto.api_container_api.KurtosisError', null, global);
+goog.exportSymbol('proto.api_container_api.KurtosisError.ErrorCase', null, global);
+goog.exportSymbol('proto.api_container_api.KurtosisExecutionError', null, global);
+goog.exportSymbol('proto.api_container_api.KurtosisExecutionResponseLine', null, global);
+goog.exportSymbol('proto.api_container_api.KurtosisExecutionResponseLine.KurtosisExecutionResponseLineCase', null, global);
+goog.exportSymbol('proto.api_container_api.KurtosisInstruction', null, global);
+goog.exportSymbol('proto.api_container_api.KurtosisInstructionPosition', null, global);
+goog.exportSymbol('proto.api_container_api.KurtosisInterpretationError', null, global);
+goog.exportSymbol('proto.api_container_api.KurtosisValidationError', null, global);
+goog.exportSymbol('proto.api_container_api.KurtosisValidationErrors', null, global);
 goog.exportSymbol('proto.api_container_api.LoadModuleArgs', null, global);
 goog.exportSymbol('proto.api_container_api.LoadModuleResponse', null, global);
 goog.exportSymbol('proto.api_container_api.ModuleInfo', null, global);
@@ -61,12 +73,10 @@ goog.exportSymbol('proto.api_container_api.RenderTemplatesToFilesArtifactArgs', 
 goog.exportSymbol('proto.api_container_api.RenderTemplatesToFilesArtifactArgs.TemplateAndData', null, global);
 goog.exportSymbol('proto.api_container_api.RenderTemplatesToFilesArtifactResponse', null, global);
 goog.exportSymbol('proto.api_container_api.RepartitionArgs', null, global);
-goog.exportSymbol('proto.api_container_api.SerializedKurtosisInstruction', null, global);
 goog.exportSymbol('proto.api_container_api.ServiceConfig', null, global);
 goog.exportSymbol('proto.api_container_api.ServiceInfo', null, global);
 goog.exportSymbol('proto.api_container_api.StartServicesArgs', null, global);
 goog.exportSymbol('proto.api_container_api.StartServicesResponse', null, global);
-goog.exportSymbol('proto.api_container_api.StartosisValidationError', null, global);
 goog.exportSymbol('proto.api_container_api.StoreFilesArtifactFromServiceArgs', null, global);
 goog.exportSymbol('proto.api_container_api.StoreFilesArtifactFromServiceResponse', null, global);
 goog.exportSymbol('proto.api_container_api.StoreWebFilesArtifactArgs', null, global);
@@ -362,7 +372,7 @@ if (goog.DEBUG && !COMPILED) {
  * @constructor
  */
 proto.api_container_api.ExecuteStartosisModuleArgs = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+  jspb.Message.initialize(this, opt_data, 0, -1, null, proto.api_container_api.ExecuteStartosisModuleArgs.oneofGroups_);
 };
 goog.inherits(proto.api_container_api.ExecuteStartosisModuleArgs, jspb.Message);
 if (goog.DEBUG && !COMPILED) {
@@ -383,7 +393,7 @@ if (goog.DEBUG && !COMPILED) {
  * @constructor
  */
 proto.api_container_api.ExecuteStartosisResponse = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, proto.api_container_api.ExecuteStartosisResponse.repeatedFields_, null);
+  jspb.Message.initialize(this, opt_data, 0, -1, proto.api_container_api.ExecuteStartosisResponse.repeatedFields_, proto.api_container_api.ExecuteStartosisResponse.oneofGroups_);
 };
 goog.inherits(proto.api_container_api.ExecuteStartosisResponse, jspb.Message);
 if (goog.DEBUG && !COMPILED) {
@@ -403,16 +413,16 @@ if (goog.DEBUG && !COMPILED) {
  * @extends {jspb.Message}
  * @constructor
  */
-proto.api_container_api.StartosisValidationError = function(opt_data) {
+proto.api_container_api.KurtosisInterpretationError = function(opt_data) {
   jspb.Message.initialize(this, opt_data, 0, -1, null, null);
 };
-goog.inherits(proto.api_container_api.StartosisValidationError, jspb.Message);
+goog.inherits(proto.api_container_api.KurtosisInterpretationError, jspb.Message);
 if (goog.DEBUG && !COMPILED) {
   /**
    * @public
    * @override
    */
-  proto.api_container_api.StartosisValidationError.displayName = 'proto.api_container_api.StartosisValidationError';
+  proto.api_container_api.KurtosisInterpretationError.displayName = 'proto.api_container_api.KurtosisInterpretationError';
 }
 /**
  * Generated by JsPbCodeGenerator.
@@ -424,16 +434,142 @@ if (goog.DEBUG && !COMPILED) {
  * @extends {jspb.Message}
  * @constructor
  */
-proto.api_container_api.SerializedKurtosisInstruction = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+proto.api_container_api.KurtosisValidationErrors = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, proto.api_container_api.KurtosisValidationErrors.repeatedFields_, null);
 };
-goog.inherits(proto.api_container_api.SerializedKurtosisInstruction, jspb.Message);
+goog.inherits(proto.api_container_api.KurtosisValidationErrors, jspb.Message);
 if (goog.DEBUG && !COMPILED) {
   /**
    * @public
    * @override
    */
-  proto.api_container_api.SerializedKurtosisInstruction.displayName = 'proto.api_container_api.SerializedKurtosisInstruction';
+  proto.api_container_api.KurtosisValidationErrors.displayName = 'proto.api_container_api.KurtosisValidationErrors';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.api_container_api.KurtosisValidationError = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.api_container_api.KurtosisValidationError, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.api_container_api.KurtosisValidationError.displayName = 'proto.api_container_api.KurtosisValidationError';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.api_container_api.KurtosisExecutionError = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.api_container_api.KurtosisExecutionError, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.api_container_api.KurtosisExecutionError.displayName = 'proto.api_container_api.KurtosisExecutionError';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.api_container_api.KurtosisInstruction = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.api_container_api.KurtosisInstruction, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.api_container_api.KurtosisInstruction.displayName = 'proto.api_container_api.KurtosisInstruction';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.api_container_api.KurtosisInstructionPosition = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.api_container_api.KurtosisInstructionPosition, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.api_container_api.KurtosisInstructionPosition.displayName = 'proto.api_container_api.KurtosisInstructionPosition';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.api_container_api.KurtosisError = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, proto.api_container_api.KurtosisError.oneofGroups_);
+};
+goog.inherits(proto.api_container_api.KurtosisError, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.api_container_api.KurtosisError.displayName = 'proto.api_container_api.KurtosisError';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.api_container_api.KurtosisExecutionResponseLine = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, proto.api_container_api.KurtosisExecutionResponseLine.oneofGroups_);
+};
+goog.inherits(proto.api_container_api.KurtosisExecutionResponseLine, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.api_container_api.KurtosisExecutionResponseLine.displayName = 'proto.api_container_api.KurtosisExecutionResponseLine';
 }
 /**
  * Generated by JsPbCodeGenerator.
@@ -1840,7 +1976,7 @@ proto.api_container_api.ServiceConfig.serializeBinaryToWriter = function(message
 
 
 /**
- * optional string image = 1;
+ * optional string container_image_name = 1;
  * @return {string}
  */
 proto.api_container_api.ServiceConfig.prototype.getContainerImageName = function() {
@@ -3842,6 +3978,32 @@ proto.api_container_api.ExecuteStartosisScriptArgs.prototype.hasDryRun = functio
 
 
 
+/**
+ * Oneof group definitions for this message. Each group defines the field
+ * numbers belonging to that group. When of these fields' value is set, all
+ * other fields in the group are cleared. During deserialization, if multiple
+ * fields are encountered for a group, only the last value seen will be kept.
+ * @private {!Array<!Array<number>>}
+ * @const
+ */
+proto.api_container_api.ExecuteStartosisModuleArgs.oneofGroups_ = [[3,4]];
+
+/**
+ * @enum {number}
+ */
+proto.api_container_api.ExecuteStartosisModuleArgs.StartosisModuleContentCase = {
+  STARTOSIS_MODULE_CONTENT_NOT_SET: 0,
+  LOCAL: 3,
+  REMOTE: 4
+};
+
+/**
+ * @return {proto.api_container_api.ExecuteStartosisModuleArgs.StartosisModuleContentCase}
+ */
+proto.api_container_api.ExecuteStartosisModuleArgs.prototype.getStartosisModuleContentCase = function() {
+  return /** @type {proto.api_container_api.ExecuteStartosisModuleArgs.StartosisModuleContentCase} */(jspb.Message.computeOneofCase(this, proto.api_container_api.ExecuteStartosisModuleArgs.oneofGroups_[0]));
+};
+
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
@@ -3874,9 +4036,10 @@ proto.api_container_api.ExecuteStartosisModuleArgs.prototype.toObject = function
 proto.api_container_api.ExecuteStartosisModuleArgs.toObject = function(includeInstance, msg) {
   var f, obj = {
     moduleId: jspb.Message.getFieldWithDefault(msg, 1, ""),
-    data: msg.getData_asB64(),
-    serializedParams: jspb.Message.getFieldWithDefault(msg, 3, ""),
-    dryRun: jspb.Message.getBooleanFieldWithDefault(msg, 4, false)
+    local: msg.getLocal_asB64(),
+    remote: jspb.Message.getBooleanFieldWithDefault(msg, 4, false),
+    serializedParams: jspb.Message.getFieldWithDefault(msg, 5, ""),
+    dryRun: jspb.Message.getBooleanFieldWithDefault(msg, 6, false)
   };
 
   if (includeInstance) {
@@ -3917,15 +4080,19 @@ proto.api_container_api.ExecuteStartosisModuleArgs.deserializeBinaryFromReader =
       var value = /** @type {string} */ (reader.readString());
       msg.setModuleId(value);
       break;
-    case 2:
-      var value = /** @type {!Uint8Array} */ (reader.readBytes());
-      msg.setData(value);
-      break;
     case 3:
+      var value = /** @type {!Uint8Array} */ (reader.readBytes());
+      msg.setLocal(value);
+      break;
+    case 4:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setRemote(value);
+      break;
+    case 5:
       var value = /** @type {string} */ (reader.readString());
       msg.setSerializedParams(value);
       break;
-    case 4:
+    case 6:
       var value = /** @type {boolean} */ (reader.readBool());
       msg.setDryRun(value);
       break;
@@ -3965,16 +4132,9 @@ proto.api_container_api.ExecuteStartosisModuleArgs.serializeBinaryToWriter = fun
       f
     );
   }
-  f = message.getData_asU8();
-  if (f.length > 0) {
+  f = /** @type {!(string|Uint8Array)} */ (jspb.Message.getField(message, 3));
+  if (f != null) {
     writer.writeBytes(
-      2,
-      f
-    );
-  }
-  f = message.getSerializedParams();
-  if (f.length > 0) {
-    writer.writeString(
       3,
       f
     );
@@ -3983,6 +4143,20 @@ proto.api_container_api.ExecuteStartosisModuleArgs.serializeBinaryToWriter = fun
   if (f != null) {
     writer.writeBool(
       4,
+      f
+    );
+  }
+  f = message.getSerializedParams();
+  if (f.length > 0) {
+    writer.writeString(
+      5,
+      f
+    );
+  }
+  f = /** @type {boolean} */ (jspb.Message.getField(message, 6));
+  if (f != null) {
+    writer.writeBool(
+      6,
       f
     );
   }
@@ -4008,35 +4182,35 @@ proto.api_container_api.ExecuteStartosisModuleArgs.prototype.setModuleId = funct
 
 
 /**
- * optional bytes data = 2;
+ * optional bytes local = 3;
  * @return {string}
  */
-proto.api_container_api.ExecuteStartosisModuleArgs.prototype.getData = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, ""));
+proto.api_container_api.ExecuteStartosisModuleArgs.prototype.getLocal = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 3, ""));
 };
 
 
 /**
- * optional bytes data = 2;
- * This is a type-conversion wrapper around `getData()`
+ * optional bytes local = 3;
+ * This is a type-conversion wrapper around `getLocal()`
  * @return {string}
  */
-proto.api_container_api.ExecuteStartosisModuleArgs.prototype.getData_asB64 = function() {
+proto.api_container_api.ExecuteStartosisModuleArgs.prototype.getLocal_asB64 = function() {
   return /** @type {string} */ (jspb.Message.bytesAsB64(
-      this.getData()));
+      this.getLocal()));
 };
 
 
 /**
- * optional bytes data = 2;
+ * optional bytes local = 3;
  * Note that Uint8Array is not supported on all browsers.
  * @see http://caniuse.com/Uint8Array
- * This is a type-conversion wrapper around `getData()`
+ * This is a type-conversion wrapper around `getLocal()`
  * @return {!Uint8Array}
  */
-proto.api_container_api.ExecuteStartosisModuleArgs.prototype.getData_asU8 = function() {
+proto.api_container_api.ExecuteStartosisModuleArgs.prototype.getLocal_asU8 = function() {
   return /** @type {!Uint8Array} */ (jspb.Message.bytesAsU8(
-      this.getData()));
+      this.getLocal()));
 };
 
 
@@ -4044,34 +4218,34 @@ proto.api_container_api.ExecuteStartosisModuleArgs.prototype.getData_asU8 = func
  * @param {!(string|Uint8Array)} value
  * @return {!proto.api_container_api.ExecuteStartosisModuleArgs} returns this
  */
-proto.api_container_api.ExecuteStartosisModuleArgs.prototype.setData = function(value) {
-  return jspb.Message.setProto3BytesField(this, 2, value);
+proto.api_container_api.ExecuteStartosisModuleArgs.prototype.setLocal = function(value) {
+  return jspb.Message.setOneofField(this, 3, proto.api_container_api.ExecuteStartosisModuleArgs.oneofGroups_[0], value);
 };
 
 
 /**
- * optional string serialized_params = 3;
- * @return {string}
- */
-proto.api_container_api.ExecuteStartosisModuleArgs.prototype.getSerializedParams = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 3, ""));
-};
-
-
-/**
- * @param {string} value
+ * Clears the field making it undefined.
  * @return {!proto.api_container_api.ExecuteStartosisModuleArgs} returns this
  */
-proto.api_container_api.ExecuteStartosisModuleArgs.prototype.setSerializedParams = function(value) {
-  return jspb.Message.setProto3StringField(this, 3, value);
+proto.api_container_api.ExecuteStartosisModuleArgs.prototype.clearLocal = function() {
+  return jspb.Message.setOneofField(this, 3, proto.api_container_api.ExecuteStartosisModuleArgs.oneofGroups_[0], undefined);
 };
 
 
 /**
- * optional bool dry_run = 4;
+ * Returns whether this field is set.
  * @return {boolean}
  */
-proto.api_container_api.ExecuteStartosisModuleArgs.prototype.getDryRun = function() {
+proto.api_container_api.ExecuteStartosisModuleArgs.prototype.hasLocal = function() {
+  return jspb.Message.getField(this, 3) != null;
+};
+
+
+/**
+ * optional bool remote = 4;
+ * @return {boolean}
+ */
+proto.api_container_api.ExecuteStartosisModuleArgs.prototype.getRemote = function() {
   return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 4, false));
 };
 
@@ -4080,8 +4254,62 @@ proto.api_container_api.ExecuteStartosisModuleArgs.prototype.getDryRun = functio
  * @param {boolean} value
  * @return {!proto.api_container_api.ExecuteStartosisModuleArgs} returns this
  */
+proto.api_container_api.ExecuteStartosisModuleArgs.prototype.setRemote = function(value) {
+  return jspb.Message.setOneofField(this, 4, proto.api_container_api.ExecuteStartosisModuleArgs.oneofGroups_[0], value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.api_container_api.ExecuteStartosisModuleArgs} returns this
+ */
+proto.api_container_api.ExecuteStartosisModuleArgs.prototype.clearRemote = function() {
+  return jspb.Message.setOneofField(this, 4, proto.api_container_api.ExecuteStartosisModuleArgs.oneofGroups_[0], undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.ExecuteStartosisModuleArgs.prototype.hasRemote = function() {
+  return jspb.Message.getField(this, 4) != null;
+};
+
+
+/**
+ * optional string serialized_params = 5;
+ * @return {string}
+ */
+proto.api_container_api.ExecuteStartosisModuleArgs.prototype.getSerializedParams = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 5, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.api_container_api.ExecuteStartosisModuleArgs} returns this
+ */
+proto.api_container_api.ExecuteStartosisModuleArgs.prototype.setSerializedParams = function(value) {
+  return jspb.Message.setProto3StringField(this, 5, value);
+};
+
+
+/**
+ * optional bool dry_run = 6;
+ * @return {boolean}
+ */
+proto.api_container_api.ExecuteStartosisModuleArgs.prototype.getDryRun = function() {
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 6, false));
+};
+
+
+/**
+ * @param {boolean} value
+ * @return {!proto.api_container_api.ExecuteStartosisModuleArgs} returns this
+ */
 proto.api_container_api.ExecuteStartosisModuleArgs.prototype.setDryRun = function(value) {
-  return jspb.Message.setField(this, 4, value);
+  return jspb.Message.setField(this, 6, value);
 };
 
 
@@ -4090,7 +4318,7 @@ proto.api_container_api.ExecuteStartosisModuleArgs.prototype.setDryRun = functio
  * @return {!proto.api_container_api.ExecuteStartosisModuleArgs} returns this
  */
 proto.api_container_api.ExecuteStartosisModuleArgs.prototype.clearDryRun = function() {
-  return jspb.Message.setField(this, 4, undefined);
+  return jspb.Message.setField(this, 6, undefined);
 };
 
 
@@ -4099,7 +4327,7 @@ proto.api_container_api.ExecuteStartosisModuleArgs.prototype.clearDryRun = funct
  * @return {boolean}
  */
 proto.api_container_api.ExecuteStartosisModuleArgs.prototype.hasDryRun = function() {
-  return jspb.Message.getField(this, 4) != null;
+  return jspb.Message.getField(this, 6) != null;
 };
 
 
@@ -4109,7 +4337,34 @@ proto.api_container_api.ExecuteStartosisModuleArgs.prototype.hasDryRun = functio
  * @private {!Array<number>}
  * @const
  */
-proto.api_container_api.ExecuteStartosisResponse.repeatedFields_ = [3,5];
+proto.api_container_api.ExecuteStartosisResponse.repeatedFields_ = [1];
+
+/**
+ * Oneof group definitions for this message. Each group defines the field
+ * numbers belonging to that group. When of these fields' value is set, all
+ * other fields in the group are cleared. During deserialization, if multiple
+ * fields are encountered for a group, only the last value seen will be kept.
+ * @private {!Array<!Array<number>>}
+ * @const
+ */
+proto.api_container_api.ExecuteStartosisResponse.oneofGroups_ = [[2,3,4]];
+
+/**
+ * @enum {number}
+ */
+proto.api_container_api.ExecuteStartosisResponse.KurtosisErrorCase = {
+  KURTOSIS_ERROR_NOT_SET: 0,
+  INTERPRETATION_ERROR: 2,
+  VALIDATION_ERRORS: 3,
+  EXECUTION_ERROR: 4
+};
+
+/**
+ * @return {proto.api_container_api.ExecuteStartosisResponse.KurtosisErrorCase}
+ */
+proto.api_container_api.ExecuteStartosisResponse.prototype.getKurtosisErrorCase = function() {
+  return /** @type {proto.api_container_api.ExecuteStartosisResponse.KurtosisErrorCase} */(jspb.Message.computeOneofCase(this, proto.api_container_api.ExecuteStartosisResponse.oneofGroups_[0]));
+};
 
 
 
@@ -4142,13 +4397,11 @@ proto.api_container_api.ExecuteStartosisResponse.prototype.toObject = function(o
  */
 proto.api_container_api.ExecuteStartosisResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-    serializedScriptOutput: jspb.Message.getFieldWithDefault(msg, 1, ""),
-    interpretationError: jspb.Message.getFieldWithDefault(msg, 2, ""),
-    validationErrorsList: jspb.Message.toObjectList(msg.getValidationErrorsList(),
-    proto.api_container_api.StartosisValidationError.toObject, includeInstance),
-    executionError: jspb.Message.getFieldWithDefault(msg, 4, ""),
-    serializedInstructionsList: jspb.Message.toObjectList(msg.getSerializedInstructionsList(),
-    proto.api_container_api.SerializedKurtosisInstruction.toObject, includeInstance)
+    kurtosisInstructionsList: jspb.Message.toObjectList(msg.getKurtosisInstructionsList(),
+    proto.api_container_api.KurtosisInstruction.toObject, includeInstance),
+    interpretationError: (f = msg.getInterpretationError()) && proto.api_container_api.KurtosisInterpretationError.toObject(includeInstance, f),
+    validationErrors: (f = msg.getValidationErrors()) && proto.api_container_api.KurtosisValidationErrors.toObject(includeInstance, f),
+    executionError: (f = msg.getExecutionError()) && proto.api_container_api.KurtosisExecutionError.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -4186,26 +4439,24 @@ proto.api_container_api.ExecuteStartosisResponse.deserializeBinaryFromReader = f
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
-      msg.setSerializedScriptOutput(value);
+      var value = new proto.api_container_api.KurtosisInstruction;
+      reader.readMessage(value,proto.api_container_api.KurtosisInstruction.deserializeBinaryFromReader);
+      msg.addKurtosisInstructions(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = new proto.api_container_api.KurtosisInterpretationError;
+      reader.readMessage(value,proto.api_container_api.KurtosisInterpretationError.deserializeBinaryFromReader);
       msg.setInterpretationError(value);
       break;
     case 3:
-      var value = new proto.api_container_api.StartosisValidationError;
-      reader.readMessage(value,proto.api_container_api.StartosisValidationError.deserializeBinaryFromReader);
-      msg.addValidationErrors(value);
+      var value = new proto.api_container_api.KurtosisValidationErrors;
+      reader.readMessage(value,proto.api_container_api.KurtosisValidationErrors.deserializeBinaryFromReader);
+      msg.setValidationErrors(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readString());
+      var value = new proto.api_container_api.KurtosisExecutionError;
+      reader.readMessage(value,proto.api_container_api.KurtosisExecutionError.deserializeBinaryFromReader);
       msg.setExecutionError(value);
-      break;
-    case 5:
-      var value = new proto.api_container_api.SerializedKurtosisInstruction;
-      reader.readMessage(value,proto.api_container_api.SerializedKurtosisInstruction.deserializeBinaryFromReader);
-      msg.addSerializedInstructions(value);
       break;
     default:
       reader.skipField();
@@ -4236,173 +4487,187 @@ proto.api_container_api.ExecuteStartosisResponse.prototype.serializeBinary = fun
  */
 proto.api_container_api.ExecuteStartosisResponse.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
-  f = message.getSerializedScriptOutput();
+  f = message.getKurtosisInstructionsList();
   if (f.length > 0) {
-    writer.writeString(
+    writer.writeRepeatedMessage(
       1,
-      f
+      f,
+      proto.api_container_api.KurtosisInstruction.serializeBinaryToWriter
     );
   }
   f = message.getInterpretationError();
-  if (f.length > 0) {
-    writer.writeString(
+  if (f != null) {
+    writer.writeMessage(
       2,
-      f
+      f,
+      proto.api_container_api.KurtosisInterpretationError.serializeBinaryToWriter
     );
   }
-  f = message.getValidationErrorsList();
-  if (f.length > 0) {
-    writer.writeRepeatedMessage(
+  f = message.getValidationErrors();
+  if (f != null) {
+    writer.writeMessage(
       3,
       f,
-      proto.api_container_api.StartosisValidationError.serializeBinaryToWriter
+      proto.api_container_api.KurtosisValidationErrors.serializeBinaryToWriter
     );
   }
   f = message.getExecutionError();
-  if (f.length > 0) {
-    writer.writeString(
+  if (f != null) {
+    writer.writeMessage(
       4,
-      f
-    );
-  }
-  f = message.getSerializedInstructionsList();
-  if (f.length > 0) {
-    writer.writeRepeatedMessage(
-      5,
       f,
-      proto.api_container_api.SerializedKurtosisInstruction.serializeBinaryToWriter
+      proto.api_container_api.KurtosisExecutionError.serializeBinaryToWriter
     );
   }
 };
 
 
 /**
- * optional string serialized_script_output = 1;
- * @return {string}
+ * repeated KurtosisInstruction kurtosis_instructions = 1;
+ * @return {!Array<!proto.api_container_api.KurtosisInstruction>}
  */
-proto.api_container_api.ExecuteStartosisResponse.prototype.getSerializedScriptOutput = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
+proto.api_container_api.ExecuteStartosisResponse.prototype.getKurtosisInstructionsList = function() {
+  return /** @type{!Array<!proto.api_container_api.KurtosisInstruction>} */ (
+    jspb.Message.getRepeatedWrapperField(this, proto.api_container_api.KurtosisInstruction, 1));
 };
 
 
 /**
- * @param {string} value
+ * @param {!Array<!proto.api_container_api.KurtosisInstruction>} value
+ * @return {!proto.api_container_api.ExecuteStartosisResponse} returns this
+*/
+proto.api_container_api.ExecuteStartosisResponse.prototype.setKurtosisInstructionsList = function(value) {
+  return jspb.Message.setRepeatedWrapperField(this, 1, value);
+};
+
+
+/**
+ * @param {!proto.api_container_api.KurtosisInstruction=} opt_value
+ * @param {number=} opt_index
+ * @return {!proto.api_container_api.KurtosisInstruction}
+ */
+proto.api_container_api.ExecuteStartosisResponse.prototype.addKurtosisInstructions = function(opt_value, opt_index) {
+  return jspb.Message.addToRepeatedWrapperField(this, 1, opt_value, proto.api_container_api.KurtosisInstruction, opt_index);
+};
+
+
+/**
+ * Clears the list making it empty but non-null.
  * @return {!proto.api_container_api.ExecuteStartosisResponse} returns this
  */
-proto.api_container_api.ExecuteStartosisResponse.prototype.setSerializedScriptOutput = function(value) {
-  return jspb.Message.setProto3StringField(this, 1, value);
+proto.api_container_api.ExecuteStartosisResponse.prototype.clearKurtosisInstructionsList = function() {
+  return this.setKurtosisInstructionsList([]);
 };
 
 
 /**
- * optional string interpretation_error = 2;
- * @return {string}
+ * optional KurtosisInterpretationError interpretation_error = 2;
+ * @return {?proto.api_container_api.KurtosisInterpretationError}
  */
 proto.api_container_api.ExecuteStartosisResponse.prototype.getInterpretationError = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, ""));
+  return /** @type{?proto.api_container_api.KurtosisInterpretationError} */ (
+    jspb.Message.getWrapperField(this, proto.api_container_api.KurtosisInterpretationError, 2));
 };
 
 
 /**
- * @param {string} value
- * @return {!proto.api_container_api.ExecuteStartosisResponse} returns this
- */
-proto.api_container_api.ExecuteStartosisResponse.prototype.setInterpretationError = function(value) {
-  return jspb.Message.setProto3StringField(this, 2, value);
-};
-
-
-/**
- * repeated StartosisValidationError validation_errors = 3;
- * @return {!Array<!proto.api_container_api.StartosisValidationError>}
- */
-proto.api_container_api.ExecuteStartosisResponse.prototype.getValidationErrorsList = function() {
-  return /** @type{!Array<!proto.api_container_api.StartosisValidationError>} */ (
-    jspb.Message.getRepeatedWrapperField(this, proto.api_container_api.StartosisValidationError, 3));
-};
-
-
-/**
- * @param {!Array<!proto.api_container_api.StartosisValidationError>} value
+ * @param {?proto.api_container_api.KurtosisInterpretationError|undefined} value
  * @return {!proto.api_container_api.ExecuteStartosisResponse} returns this
 */
-proto.api_container_api.ExecuteStartosisResponse.prototype.setValidationErrorsList = function(value) {
-  return jspb.Message.setRepeatedWrapperField(this, 3, value);
+proto.api_container_api.ExecuteStartosisResponse.prototype.setInterpretationError = function(value) {
+  return jspb.Message.setOneofWrapperField(this, 2, proto.api_container_api.ExecuteStartosisResponse.oneofGroups_[0], value);
 };
 
 
 /**
- * @param {!proto.api_container_api.StartosisValidationError=} opt_value
- * @param {number=} opt_index
- * @return {!proto.api_container_api.StartosisValidationError}
- */
-proto.api_container_api.ExecuteStartosisResponse.prototype.addValidationErrors = function(opt_value, opt_index) {
-  return jspb.Message.addToRepeatedWrapperField(this, 3, opt_value, proto.api_container_api.StartosisValidationError, opt_index);
-};
-
-
-/**
- * Clears the list making it empty but non-null.
+ * Clears the message field making it undefined.
  * @return {!proto.api_container_api.ExecuteStartosisResponse} returns this
  */
-proto.api_container_api.ExecuteStartosisResponse.prototype.clearValidationErrorsList = function() {
-  return this.setValidationErrorsList([]);
+proto.api_container_api.ExecuteStartosisResponse.prototype.clearInterpretationError = function() {
+  return this.setInterpretationError(undefined);
 };
 
 
 /**
- * optional string execution_error = 4;
- * @return {string}
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.ExecuteStartosisResponse.prototype.hasInterpretationError = function() {
+  return jspb.Message.getField(this, 2) != null;
+};
+
+
+/**
+ * optional KurtosisValidationErrors validation_errors = 3;
+ * @return {?proto.api_container_api.KurtosisValidationErrors}
+ */
+proto.api_container_api.ExecuteStartosisResponse.prototype.getValidationErrors = function() {
+  return /** @type{?proto.api_container_api.KurtosisValidationErrors} */ (
+    jspb.Message.getWrapperField(this, proto.api_container_api.KurtosisValidationErrors, 3));
+};
+
+
+/**
+ * @param {?proto.api_container_api.KurtosisValidationErrors|undefined} value
+ * @return {!proto.api_container_api.ExecuteStartosisResponse} returns this
+*/
+proto.api_container_api.ExecuteStartosisResponse.prototype.setValidationErrors = function(value) {
+  return jspb.Message.setOneofWrapperField(this, 3, proto.api_container_api.ExecuteStartosisResponse.oneofGroups_[0], value);
+};
+
+
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.api_container_api.ExecuteStartosisResponse} returns this
+ */
+proto.api_container_api.ExecuteStartosisResponse.prototype.clearValidationErrors = function() {
+  return this.setValidationErrors(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.ExecuteStartosisResponse.prototype.hasValidationErrors = function() {
+  return jspb.Message.getField(this, 3) != null;
+};
+
+
+/**
+ * optional KurtosisExecutionError execution_error = 4;
+ * @return {?proto.api_container_api.KurtosisExecutionError}
  */
 proto.api_container_api.ExecuteStartosisResponse.prototype.getExecutionError = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 4, ""));
+  return /** @type{?proto.api_container_api.KurtosisExecutionError} */ (
+    jspb.Message.getWrapperField(this, proto.api_container_api.KurtosisExecutionError, 4));
 };
 
 
 /**
- * @param {string} value
- * @return {!proto.api_container_api.ExecuteStartosisResponse} returns this
- */
-proto.api_container_api.ExecuteStartosisResponse.prototype.setExecutionError = function(value) {
-  return jspb.Message.setProto3StringField(this, 4, value);
-};
-
-
-/**
- * repeated SerializedKurtosisInstruction serialized_instructions = 5;
- * @return {!Array<!proto.api_container_api.SerializedKurtosisInstruction>}
- */
-proto.api_container_api.ExecuteStartosisResponse.prototype.getSerializedInstructionsList = function() {
-  return /** @type{!Array<!proto.api_container_api.SerializedKurtosisInstruction>} */ (
-    jspb.Message.getRepeatedWrapperField(this, proto.api_container_api.SerializedKurtosisInstruction, 5));
-};
-
-
-/**
- * @param {!Array<!proto.api_container_api.SerializedKurtosisInstruction>} value
+ * @param {?proto.api_container_api.KurtosisExecutionError|undefined} value
  * @return {!proto.api_container_api.ExecuteStartosisResponse} returns this
 */
-proto.api_container_api.ExecuteStartosisResponse.prototype.setSerializedInstructionsList = function(value) {
-  return jspb.Message.setRepeatedWrapperField(this, 5, value);
+proto.api_container_api.ExecuteStartosisResponse.prototype.setExecutionError = function(value) {
+  return jspb.Message.setOneofWrapperField(this, 4, proto.api_container_api.ExecuteStartosisResponse.oneofGroups_[0], value);
 };
 
 
 /**
- * @param {!proto.api_container_api.SerializedKurtosisInstruction=} opt_value
- * @param {number=} opt_index
- * @return {!proto.api_container_api.SerializedKurtosisInstruction}
- */
-proto.api_container_api.ExecuteStartosisResponse.prototype.addSerializedInstructions = function(opt_value, opt_index) {
-  return jspb.Message.addToRepeatedWrapperField(this, 5, opt_value, proto.api_container_api.SerializedKurtosisInstruction, opt_index);
-};
-
-
-/**
- * Clears the list making it empty but non-null.
+ * Clears the message field making it undefined.
  * @return {!proto.api_container_api.ExecuteStartosisResponse} returns this
  */
-proto.api_container_api.ExecuteStartosisResponse.prototype.clearSerializedInstructionsList = function() {
-  return this.setSerializedInstructionsList([]);
+proto.api_container_api.ExecuteStartosisResponse.prototype.clearExecutionError = function() {
+  return this.setExecutionError(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.ExecuteStartosisResponse.prototype.hasExecutionError = function() {
+  return jspb.Message.getField(this, 4) != null;
 };
 
 
@@ -4422,8 +4687,8 @@ if (jspb.Message.GENERATE_TO_OBJECT) {
  *     http://goto/soy-param-migration
  * @return {!Object}
  */
-proto.api_container_api.StartosisValidationError.prototype.toObject = function(opt_includeInstance) {
-  return proto.api_container_api.StartosisValidationError.toObject(opt_includeInstance, this);
+proto.api_container_api.KurtosisInterpretationError.prototype.toObject = function(opt_includeInstance) {
+  return proto.api_container_api.KurtosisInterpretationError.toObject(opt_includeInstance, this);
 };
 
 
@@ -4432,13 +4697,13 @@ proto.api_container_api.StartosisValidationError.prototype.toObject = function(o
  * @param {boolean|undefined} includeInstance Deprecated. Whether to include
  *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
- * @param {!proto.api_container_api.StartosisValidationError} msg The msg instance to transform.
+ * @param {!proto.api_container_api.KurtosisInterpretationError} msg The msg instance to transform.
  * @return {!Object}
  * @suppress {unusedLocalVariables} f is only used for nested messages
  */
-proto.api_container_api.StartosisValidationError.toObject = function(includeInstance, msg) {
+proto.api_container_api.KurtosisInterpretationError.toObject = function(includeInstance, msg) {
   var f, obj = {
-    error: jspb.Message.getFieldWithDefault(msg, 1, "")
+    errorMessage: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -4452,23 +4717,23 @@ proto.api_container_api.StartosisValidationError.toObject = function(includeInst
 /**
  * Deserializes binary data (in protobuf wire format).
  * @param {jspb.ByteSource} bytes The bytes to deserialize.
- * @return {!proto.api_container_api.StartosisValidationError}
+ * @return {!proto.api_container_api.KurtosisInterpretationError}
  */
-proto.api_container_api.StartosisValidationError.deserializeBinary = function(bytes) {
+proto.api_container_api.KurtosisInterpretationError.deserializeBinary = function(bytes) {
   var reader = new jspb.BinaryReader(bytes);
-  var msg = new proto.api_container_api.StartosisValidationError;
-  return proto.api_container_api.StartosisValidationError.deserializeBinaryFromReader(msg, reader);
+  var msg = new proto.api_container_api.KurtosisInterpretationError;
+  return proto.api_container_api.KurtosisInterpretationError.deserializeBinaryFromReader(msg, reader);
 };
 
 
 /**
  * Deserializes binary data (in protobuf wire format) from the
  * given reader into the given message object.
- * @param {!proto.api_container_api.StartosisValidationError} msg The message object to deserialize into.
+ * @param {!proto.api_container_api.KurtosisInterpretationError} msg The message object to deserialize into.
  * @param {!jspb.BinaryReader} reader The BinaryReader to use.
- * @return {!proto.api_container_api.StartosisValidationError}
+ * @return {!proto.api_container_api.KurtosisInterpretationError}
  */
-proto.api_container_api.StartosisValidationError.deserializeBinaryFromReader = function(msg, reader) {
+proto.api_container_api.KurtosisInterpretationError.deserializeBinaryFromReader = function(msg, reader) {
   while (reader.nextField()) {
     if (reader.isEndGroup()) {
       break;
@@ -4477,6 +4742,1288 @@ proto.api_container_api.StartosisValidationError.deserializeBinaryFromReader = f
     switch (field) {
     case 1:
       var value = /** @type {string} */ (reader.readString());
+      msg.setErrorMessage(value);
+      break;
+    default:
+      reader.skipField();
+      break;
+    }
+  }
+  return msg;
+};
+
+
+/**
+ * Serializes the message to binary data (in protobuf wire format).
+ * @return {!Uint8Array}
+ */
+proto.api_container_api.KurtosisInterpretationError.prototype.serializeBinary = function() {
+  var writer = new jspb.BinaryWriter();
+  proto.api_container_api.KurtosisInterpretationError.serializeBinaryToWriter(this, writer);
+  return writer.getResultBuffer();
+};
+
+
+/**
+ * Serializes the given message to binary data (in protobuf wire
+ * format), writing to the given BinaryWriter.
+ * @param {!proto.api_container_api.KurtosisInterpretationError} message
+ * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.api_container_api.KurtosisInterpretationError.serializeBinaryToWriter = function(message, writer) {
+  var f = undefined;
+  f = message.getErrorMessage();
+  if (f.length > 0) {
+    writer.writeString(
+      1,
+      f
+    );
+  }
+};
+
+
+/**
+ * optional string error_message = 1;
+ * @return {string}
+ */
+proto.api_container_api.KurtosisInterpretationError.prototype.getErrorMessage = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.api_container_api.KurtosisInterpretationError} returns this
+ */
+proto.api_container_api.KurtosisInterpretationError.prototype.setErrorMessage = function(value) {
+  return jspb.Message.setProto3StringField(this, 1, value);
+};
+
+
+
+/**
+ * List of repeated fields within this message type.
+ * @private {!Array<number>}
+ * @const
+ */
+proto.api_container_api.KurtosisValidationErrors.repeatedFields_ = [1];
+
+
+
+if (jspb.Message.GENERATE_TO_OBJECT) {
+/**
+ * Creates an object representation of this proto.
+ * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
+ * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
+ * For the list of reserved names please see:
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @return {!Object}
+ */
+proto.api_container_api.KurtosisValidationErrors.prototype.toObject = function(opt_includeInstance) {
+  return proto.api_container_api.KurtosisValidationErrors.toObject(opt_includeInstance, this);
+};
+
+
+/**
+ * Static version of the {@see toObject} method.
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @param {!proto.api_container_api.KurtosisValidationErrors} msg The msg instance to transform.
+ * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.api_container_api.KurtosisValidationErrors.toObject = function(includeInstance, msg) {
+  var f, obj = {
+    errorsList: jspb.Message.toObjectList(msg.getErrorsList(),
+    proto.api_container_api.KurtosisValidationError.toObject, includeInstance)
+  };
+
+  if (includeInstance) {
+    obj.$jspbMessageInstance = msg;
+  }
+  return obj;
+};
+}
+
+
+/**
+ * Deserializes binary data (in protobuf wire format).
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @return {!proto.api_container_api.KurtosisValidationErrors}
+ */
+proto.api_container_api.KurtosisValidationErrors.deserializeBinary = function(bytes) {
+  var reader = new jspb.BinaryReader(bytes);
+  var msg = new proto.api_container_api.KurtosisValidationErrors;
+  return proto.api_container_api.KurtosisValidationErrors.deserializeBinaryFromReader(msg, reader);
+};
+
+
+/**
+ * Deserializes binary data (in protobuf wire format) from the
+ * given reader into the given message object.
+ * @param {!proto.api_container_api.KurtosisValidationErrors} msg The message object to deserialize into.
+ * @param {!jspb.BinaryReader} reader The BinaryReader to use.
+ * @return {!proto.api_container_api.KurtosisValidationErrors}
+ */
+proto.api_container_api.KurtosisValidationErrors.deserializeBinaryFromReader = function(msg, reader) {
+  while (reader.nextField()) {
+    if (reader.isEndGroup()) {
+      break;
+    }
+    var field = reader.getFieldNumber();
+    switch (field) {
+    case 1:
+      var value = new proto.api_container_api.KurtosisValidationError;
+      reader.readMessage(value,proto.api_container_api.KurtosisValidationError.deserializeBinaryFromReader);
+      msg.addErrors(value);
+      break;
+    default:
+      reader.skipField();
+      break;
+    }
+  }
+  return msg;
+};
+
+
+/**
+ * Serializes the message to binary data (in protobuf wire format).
+ * @return {!Uint8Array}
+ */
+proto.api_container_api.KurtosisValidationErrors.prototype.serializeBinary = function() {
+  var writer = new jspb.BinaryWriter();
+  proto.api_container_api.KurtosisValidationErrors.serializeBinaryToWriter(this, writer);
+  return writer.getResultBuffer();
+};
+
+
+/**
+ * Serializes the given message to binary data (in protobuf wire
+ * format), writing to the given BinaryWriter.
+ * @param {!proto.api_container_api.KurtosisValidationErrors} message
+ * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.api_container_api.KurtosisValidationErrors.serializeBinaryToWriter = function(message, writer) {
+  var f = undefined;
+  f = message.getErrorsList();
+  if (f.length > 0) {
+    writer.writeRepeatedMessage(
+      1,
+      f,
+      proto.api_container_api.KurtosisValidationError.serializeBinaryToWriter
+    );
+  }
+};
+
+
+/**
+ * repeated KurtosisValidationError errors = 1;
+ * @return {!Array<!proto.api_container_api.KurtosisValidationError>}
+ */
+proto.api_container_api.KurtosisValidationErrors.prototype.getErrorsList = function() {
+  return /** @type{!Array<!proto.api_container_api.KurtosisValidationError>} */ (
+    jspb.Message.getRepeatedWrapperField(this, proto.api_container_api.KurtosisValidationError, 1));
+};
+
+
+/**
+ * @param {!Array<!proto.api_container_api.KurtosisValidationError>} value
+ * @return {!proto.api_container_api.KurtosisValidationErrors} returns this
+*/
+proto.api_container_api.KurtosisValidationErrors.prototype.setErrorsList = function(value) {
+  return jspb.Message.setRepeatedWrapperField(this, 1, value);
+};
+
+
+/**
+ * @param {!proto.api_container_api.KurtosisValidationError=} opt_value
+ * @param {number=} opt_index
+ * @return {!proto.api_container_api.KurtosisValidationError}
+ */
+proto.api_container_api.KurtosisValidationErrors.prototype.addErrors = function(opt_value, opt_index) {
+  return jspb.Message.addToRepeatedWrapperField(this, 1, opt_value, proto.api_container_api.KurtosisValidationError, opt_index);
+};
+
+
+/**
+ * Clears the list making it empty but non-null.
+ * @return {!proto.api_container_api.KurtosisValidationErrors} returns this
+ */
+proto.api_container_api.KurtosisValidationErrors.prototype.clearErrorsList = function() {
+  return this.setErrorsList([]);
+};
+
+
+
+
+
+if (jspb.Message.GENERATE_TO_OBJECT) {
+/**
+ * Creates an object representation of this proto.
+ * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
+ * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
+ * For the list of reserved names please see:
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @return {!Object}
+ */
+proto.api_container_api.KurtosisValidationError.prototype.toObject = function(opt_includeInstance) {
+  return proto.api_container_api.KurtosisValidationError.toObject(opt_includeInstance, this);
+};
+
+
+/**
+ * Static version of the {@see toObject} method.
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @param {!proto.api_container_api.KurtosisValidationError} msg The msg instance to transform.
+ * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.api_container_api.KurtosisValidationError.toObject = function(includeInstance, msg) {
+  var f, obj = {
+    errorMessage: jspb.Message.getFieldWithDefault(msg, 1, "")
+  };
+
+  if (includeInstance) {
+    obj.$jspbMessageInstance = msg;
+  }
+  return obj;
+};
+}
+
+
+/**
+ * Deserializes binary data (in protobuf wire format).
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @return {!proto.api_container_api.KurtosisValidationError}
+ */
+proto.api_container_api.KurtosisValidationError.deserializeBinary = function(bytes) {
+  var reader = new jspb.BinaryReader(bytes);
+  var msg = new proto.api_container_api.KurtosisValidationError;
+  return proto.api_container_api.KurtosisValidationError.deserializeBinaryFromReader(msg, reader);
+};
+
+
+/**
+ * Deserializes binary data (in protobuf wire format) from the
+ * given reader into the given message object.
+ * @param {!proto.api_container_api.KurtosisValidationError} msg The message object to deserialize into.
+ * @param {!jspb.BinaryReader} reader The BinaryReader to use.
+ * @return {!proto.api_container_api.KurtosisValidationError}
+ */
+proto.api_container_api.KurtosisValidationError.deserializeBinaryFromReader = function(msg, reader) {
+  while (reader.nextField()) {
+    if (reader.isEndGroup()) {
+      break;
+    }
+    var field = reader.getFieldNumber();
+    switch (field) {
+    case 1:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setErrorMessage(value);
+      break;
+    default:
+      reader.skipField();
+      break;
+    }
+  }
+  return msg;
+};
+
+
+/**
+ * Serializes the message to binary data (in protobuf wire format).
+ * @return {!Uint8Array}
+ */
+proto.api_container_api.KurtosisValidationError.prototype.serializeBinary = function() {
+  var writer = new jspb.BinaryWriter();
+  proto.api_container_api.KurtosisValidationError.serializeBinaryToWriter(this, writer);
+  return writer.getResultBuffer();
+};
+
+
+/**
+ * Serializes the given message to binary data (in protobuf wire
+ * format), writing to the given BinaryWriter.
+ * @param {!proto.api_container_api.KurtosisValidationError} message
+ * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.api_container_api.KurtosisValidationError.serializeBinaryToWriter = function(message, writer) {
+  var f = undefined;
+  f = message.getErrorMessage();
+  if (f.length > 0) {
+    writer.writeString(
+      1,
+      f
+    );
+  }
+};
+
+
+/**
+ * optional string error_message = 1;
+ * @return {string}
+ */
+proto.api_container_api.KurtosisValidationError.prototype.getErrorMessage = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.api_container_api.KurtosisValidationError} returns this
+ */
+proto.api_container_api.KurtosisValidationError.prototype.setErrorMessage = function(value) {
+  return jspb.Message.setProto3StringField(this, 1, value);
+};
+
+
+
+
+
+if (jspb.Message.GENERATE_TO_OBJECT) {
+/**
+ * Creates an object representation of this proto.
+ * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
+ * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
+ * For the list of reserved names please see:
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @return {!Object}
+ */
+proto.api_container_api.KurtosisExecutionError.prototype.toObject = function(opt_includeInstance) {
+  return proto.api_container_api.KurtosisExecutionError.toObject(opt_includeInstance, this);
+};
+
+
+/**
+ * Static version of the {@see toObject} method.
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @param {!proto.api_container_api.KurtosisExecutionError} msg The msg instance to transform.
+ * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.api_container_api.KurtosisExecutionError.toObject = function(includeInstance, msg) {
+  var f, obj = {
+    errorMessage: jspb.Message.getFieldWithDefault(msg, 1, "")
+  };
+
+  if (includeInstance) {
+    obj.$jspbMessageInstance = msg;
+  }
+  return obj;
+};
+}
+
+
+/**
+ * Deserializes binary data (in protobuf wire format).
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @return {!proto.api_container_api.KurtosisExecutionError}
+ */
+proto.api_container_api.KurtosisExecutionError.deserializeBinary = function(bytes) {
+  var reader = new jspb.BinaryReader(bytes);
+  var msg = new proto.api_container_api.KurtosisExecutionError;
+  return proto.api_container_api.KurtosisExecutionError.deserializeBinaryFromReader(msg, reader);
+};
+
+
+/**
+ * Deserializes binary data (in protobuf wire format) from the
+ * given reader into the given message object.
+ * @param {!proto.api_container_api.KurtosisExecutionError} msg The message object to deserialize into.
+ * @param {!jspb.BinaryReader} reader The BinaryReader to use.
+ * @return {!proto.api_container_api.KurtosisExecutionError}
+ */
+proto.api_container_api.KurtosisExecutionError.deserializeBinaryFromReader = function(msg, reader) {
+  while (reader.nextField()) {
+    if (reader.isEndGroup()) {
+      break;
+    }
+    var field = reader.getFieldNumber();
+    switch (field) {
+    case 1:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setErrorMessage(value);
+      break;
+    default:
+      reader.skipField();
+      break;
+    }
+  }
+  return msg;
+};
+
+
+/**
+ * Serializes the message to binary data (in protobuf wire format).
+ * @return {!Uint8Array}
+ */
+proto.api_container_api.KurtosisExecutionError.prototype.serializeBinary = function() {
+  var writer = new jspb.BinaryWriter();
+  proto.api_container_api.KurtosisExecutionError.serializeBinaryToWriter(this, writer);
+  return writer.getResultBuffer();
+};
+
+
+/**
+ * Serializes the given message to binary data (in protobuf wire
+ * format), writing to the given BinaryWriter.
+ * @param {!proto.api_container_api.KurtosisExecutionError} message
+ * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.api_container_api.KurtosisExecutionError.serializeBinaryToWriter = function(message, writer) {
+  var f = undefined;
+  f = message.getErrorMessage();
+  if (f.length > 0) {
+    writer.writeString(
+      1,
+      f
+    );
+  }
+};
+
+
+/**
+ * optional string error_message = 1;
+ * @return {string}
+ */
+proto.api_container_api.KurtosisExecutionError.prototype.getErrorMessage = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.api_container_api.KurtosisExecutionError} returns this
+ */
+proto.api_container_api.KurtosisExecutionError.prototype.setErrorMessage = function(value) {
+  return jspb.Message.setProto3StringField(this, 1, value);
+};
+
+
+
+
+
+if (jspb.Message.GENERATE_TO_OBJECT) {
+/**
+ * Creates an object representation of this proto.
+ * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
+ * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
+ * For the list of reserved names please see:
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @return {!Object}
+ */
+proto.api_container_api.KurtosisInstruction.prototype.toObject = function(opt_includeInstance) {
+  return proto.api_container_api.KurtosisInstruction.toObject(opt_includeInstance, this);
+};
+
+
+/**
+ * Static version of the {@see toObject} method.
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @param {!proto.api_container_api.KurtosisInstruction} msg The msg instance to transform.
+ * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.api_container_api.KurtosisInstruction.toObject = function(includeInstance, msg) {
+  var f, obj = {
+    position: (f = msg.getPosition()) && proto.api_container_api.KurtosisInstructionPosition.toObject(includeInstance, f),
+    executableInstruction: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    instructionResult: jspb.Message.getFieldWithDefault(msg, 3, "")
+  };
+
+  if (includeInstance) {
+    obj.$jspbMessageInstance = msg;
+  }
+  return obj;
+};
+}
+
+
+/**
+ * Deserializes binary data (in protobuf wire format).
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @return {!proto.api_container_api.KurtosisInstruction}
+ */
+proto.api_container_api.KurtosisInstruction.deserializeBinary = function(bytes) {
+  var reader = new jspb.BinaryReader(bytes);
+  var msg = new proto.api_container_api.KurtosisInstruction;
+  return proto.api_container_api.KurtosisInstruction.deserializeBinaryFromReader(msg, reader);
+};
+
+
+/**
+ * Deserializes binary data (in protobuf wire format) from the
+ * given reader into the given message object.
+ * @param {!proto.api_container_api.KurtosisInstruction} msg The message object to deserialize into.
+ * @param {!jspb.BinaryReader} reader The BinaryReader to use.
+ * @return {!proto.api_container_api.KurtosisInstruction}
+ */
+proto.api_container_api.KurtosisInstruction.deserializeBinaryFromReader = function(msg, reader) {
+  while (reader.nextField()) {
+    if (reader.isEndGroup()) {
+      break;
+    }
+    var field = reader.getFieldNumber();
+    switch (field) {
+    case 1:
+      var value = new proto.api_container_api.KurtosisInstructionPosition;
+      reader.readMessage(value,proto.api_container_api.KurtosisInstructionPosition.deserializeBinaryFromReader);
+      msg.setPosition(value);
+      break;
+    case 2:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setExecutableInstruction(value);
+      break;
+    case 3:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setInstructionResult(value);
+      break;
+    default:
+      reader.skipField();
+      break;
+    }
+  }
+  return msg;
+};
+
+
+/**
+ * Serializes the message to binary data (in protobuf wire format).
+ * @return {!Uint8Array}
+ */
+proto.api_container_api.KurtosisInstruction.prototype.serializeBinary = function() {
+  var writer = new jspb.BinaryWriter();
+  proto.api_container_api.KurtosisInstruction.serializeBinaryToWriter(this, writer);
+  return writer.getResultBuffer();
+};
+
+
+/**
+ * Serializes the given message to binary data (in protobuf wire
+ * format), writing to the given BinaryWriter.
+ * @param {!proto.api_container_api.KurtosisInstruction} message
+ * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.api_container_api.KurtosisInstruction.serializeBinaryToWriter = function(message, writer) {
+  var f = undefined;
+  f = message.getPosition();
+  if (f != null) {
+    writer.writeMessage(
+      1,
+      f,
+      proto.api_container_api.KurtosisInstructionPosition.serializeBinaryToWriter
+    );
+  }
+  f = message.getExecutableInstruction();
+  if (f.length > 0) {
+    writer.writeString(
+      2,
+      f
+    );
+  }
+  f = /** @type {string} */ (jspb.Message.getField(message, 3));
+  if (f != null) {
+    writer.writeString(
+      3,
+      f
+    );
+  }
+};
+
+
+/**
+ * optional KurtosisInstructionPosition position = 1;
+ * @return {?proto.api_container_api.KurtosisInstructionPosition}
+ */
+proto.api_container_api.KurtosisInstruction.prototype.getPosition = function() {
+  return /** @type{?proto.api_container_api.KurtosisInstructionPosition} */ (
+    jspb.Message.getWrapperField(this, proto.api_container_api.KurtosisInstructionPosition, 1));
+};
+
+
+/**
+ * @param {?proto.api_container_api.KurtosisInstructionPosition|undefined} value
+ * @return {!proto.api_container_api.KurtosisInstruction} returns this
+*/
+proto.api_container_api.KurtosisInstruction.prototype.setPosition = function(value) {
+  return jspb.Message.setWrapperField(this, 1, value);
+};
+
+
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.api_container_api.KurtosisInstruction} returns this
+ */
+proto.api_container_api.KurtosisInstruction.prototype.clearPosition = function() {
+  return this.setPosition(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.KurtosisInstruction.prototype.hasPosition = function() {
+  return jspb.Message.getField(this, 1) != null;
+};
+
+
+/**
+ * optional string executable_instruction = 2;
+ * @return {string}
+ */
+proto.api_container_api.KurtosisInstruction.prototype.getExecutableInstruction = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.api_container_api.KurtosisInstruction} returns this
+ */
+proto.api_container_api.KurtosisInstruction.prototype.setExecutableInstruction = function(value) {
+  return jspb.Message.setProto3StringField(this, 2, value);
+};
+
+
+/**
+ * optional string instruction_result = 3;
+ * @return {string}
+ */
+proto.api_container_api.KurtosisInstruction.prototype.getInstructionResult = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 3, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.api_container_api.KurtosisInstruction} returns this
+ */
+proto.api_container_api.KurtosisInstruction.prototype.setInstructionResult = function(value) {
+  return jspb.Message.setField(this, 3, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.api_container_api.KurtosisInstruction} returns this
+ */
+proto.api_container_api.KurtosisInstruction.prototype.clearInstructionResult = function() {
+  return jspb.Message.setField(this, 3, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.KurtosisInstruction.prototype.hasInstructionResult = function() {
+  return jspb.Message.getField(this, 3) != null;
+};
+
+
+
+
+
+if (jspb.Message.GENERATE_TO_OBJECT) {
+/**
+ * Creates an object representation of this proto.
+ * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
+ * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
+ * For the list of reserved names please see:
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @return {!Object}
+ */
+proto.api_container_api.KurtosisInstructionPosition.prototype.toObject = function(opt_includeInstance) {
+  return proto.api_container_api.KurtosisInstructionPosition.toObject(opt_includeInstance, this);
+};
+
+
+/**
+ * Static version of the {@see toObject} method.
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @param {!proto.api_container_api.KurtosisInstructionPosition} msg The msg instance to transform.
+ * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.api_container_api.KurtosisInstructionPosition.toObject = function(includeInstance, msg) {
+  var f, obj = {
+    filename: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    line: jspb.Message.getFieldWithDefault(msg, 2, 0),
+    column: jspb.Message.getFieldWithDefault(msg, 3, 0)
+  };
+
+  if (includeInstance) {
+    obj.$jspbMessageInstance = msg;
+  }
+  return obj;
+};
+}
+
+
+/**
+ * Deserializes binary data (in protobuf wire format).
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @return {!proto.api_container_api.KurtosisInstructionPosition}
+ */
+proto.api_container_api.KurtosisInstructionPosition.deserializeBinary = function(bytes) {
+  var reader = new jspb.BinaryReader(bytes);
+  var msg = new proto.api_container_api.KurtosisInstructionPosition;
+  return proto.api_container_api.KurtosisInstructionPosition.deserializeBinaryFromReader(msg, reader);
+};
+
+
+/**
+ * Deserializes binary data (in protobuf wire format) from the
+ * given reader into the given message object.
+ * @param {!proto.api_container_api.KurtosisInstructionPosition} msg The message object to deserialize into.
+ * @param {!jspb.BinaryReader} reader The BinaryReader to use.
+ * @return {!proto.api_container_api.KurtosisInstructionPosition}
+ */
+proto.api_container_api.KurtosisInstructionPosition.deserializeBinaryFromReader = function(msg, reader) {
+  while (reader.nextField()) {
+    if (reader.isEndGroup()) {
+      break;
+    }
+    var field = reader.getFieldNumber();
+    switch (field) {
+    case 1:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setFilename(value);
+      break;
+    case 2:
+      var value = /** @type {number} */ (reader.readInt32());
+      msg.setLine(value);
+      break;
+    case 3:
+      var value = /** @type {number} */ (reader.readInt32());
+      msg.setColumn(value);
+      break;
+    default:
+      reader.skipField();
+      break;
+    }
+  }
+  return msg;
+};
+
+
+/**
+ * Serializes the message to binary data (in protobuf wire format).
+ * @return {!Uint8Array}
+ */
+proto.api_container_api.KurtosisInstructionPosition.prototype.serializeBinary = function() {
+  var writer = new jspb.BinaryWriter();
+  proto.api_container_api.KurtosisInstructionPosition.serializeBinaryToWriter(this, writer);
+  return writer.getResultBuffer();
+};
+
+
+/**
+ * Serializes the given message to binary data (in protobuf wire
+ * format), writing to the given BinaryWriter.
+ * @param {!proto.api_container_api.KurtosisInstructionPosition} message
+ * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.api_container_api.KurtosisInstructionPosition.serializeBinaryToWriter = function(message, writer) {
+  var f = undefined;
+  f = message.getFilename();
+  if (f.length > 0) {
+    writer.writeString(
+      1,
+      f
+    );
+  }
+  f = message.getLine();
+  if (f !== 0) {
+    writer.writeInt32(
+      2,
+      f
+    );
+  }
+  f = message.getColumn();
+  if (f !== 0) {
+    writer.writeInt32(
+      3,
+      f
+    );
+  }
+};
+
+
+/**
+ * optional string filename = 1;
+ * @return {string}
+ */
+proto.api_container_api.KurtosisInstructionPosition.prototype.getFilename = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.api_container_api.KurtosisInstructionPosition} returns this
+ */
+proto.api_container_api.KurtosisInstructionPosition.prototype.setFilename = function(value) {
+  return jspb.Message.setProto3StringField(this, 1, value);
+};
+
+
+/**
+ * optional int32 line = 2;
+ * @return {number}
+ */
+proto.api_container_api.KurtosisInstructionPosition.prototype.getLine = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 2, 0));
+};
+
+
+/**
+ * @param {number} value
+ * @return {!proto.api_container_api.KurtosisInstructionPosition} returns this
+ */
+proto.api_container_api.KurtosisInstructionPosition.prototype.setLine = function(value) {
+  return jspb.Message.setProto3IntField(this, 2, value);
+};
+
+
+/**
+ * optional int32 column = 3;
+ * @return {number}
+ */
+proto.api_container_api.KurtosisInstructionPosition.prototype.getColumn = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 3, 0));
+};
+
+
+/**
+ * @param {number} value
+ * @return {!proto.api_container_api.KurtosisInstructionPosition} returns this
+ */
+proto.api_container_api.KurtosisInstructionPosition.prototype.setColumn = function(value) {
+  return jspb.Message.setProto3IntField(this, 3, value);
+};
+
+
+
+/**
+ * Oneof group definitions for this message. Each group defines the field
+ * numbers belonging to that group. When of these fields' value is set, all
+ * other fields in the group are cleared. During deserialization, if multiple
+ * fields are encountered for a group, only the last value seen will be kept.
+ * @private {!Array<!Array<number>>}
+ * @const
+ */
+proto.api_container_api.KurtosisError.oneofGroups_ = [[1,2,3]];
+
+/**
+ * @enum {number}
+ */
+proto.api_container_api.KurtosisError.ErrorCase = {
+  ERROR_NOT_SET: 0,
+  INTERPRETATION_ERROR: 1,
+  VALIDATION_ERROR: 2,
+  EXECUTION_ERROR: 3
+};
+
+/**
+ * @return {proto.api_container_api.KurtosisError.ErrorCase}
+ */
+proto.api_container_api.KurtosisError.prototype.getErrorCase = function() {
+  return /** @type {proto.api_container_api.KurtosisError.ErrorCase} */(jspb.Message.computeOneofCase(this, proto.api_container_api.KurtosisError.oneofGroups_[0]));
+};
+
+
+
+if (jspb.Message.GENERATE_TO_OBJECT) {
+/**
+ * Creates an object representation of this proto.
+ * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
+ * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
+ * For the list of reserved names please see:
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @return {!Object}
+ */
+proto.api_container_api.KurtosisError.prototype.toObject = function(opt_includeInstance) {
+  return proto.api_container_api.KurtosisError.toObject(opt_includeInstance, this);
+};
+
+
+/**
+ * Static version of the {@see toObject} method.
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @param {!proto.api_container_api.KurtosisError} msg The msg instance to transform.
+ * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.api_container_api.KurtosisError.toObject = function(includeInstance, msg) {
+  var f, obj = {
+    interpretationError: (f = msg.getInterpretationError()) && proto.api_container_api.KurtosisInterpretationError.toObject(includeInstance, f),
+    validationError: (f = msg.getValidationError()) && proto.api_container_api.KurtosisValidationError.toObject(includeInstance, f),
+    executionError: (f = msg.getExecutionError()) && proto.api_container_api.KurtosisExecutionError.toObject(includeInstance, f)
+  };
+
+  if (includeInstance) {
+    obj.$jspbMessageInstance = msg;
+  }
+  return obj;
+};
+}
+
+
+/**
+ * Deserializes binary data (in protobuf wire format).
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @return {!proto.api_container_api.KurtosisError}
+ */
+proto.api_container_api.KurtosisError.deserializeBinary = function(bytes) {
+  var reader = new jspb.BinaryReader(bytes);
+  var msg = new proto.api_container_api.KurtosisError;
+  return proto.api_container_api.KurtosisError.deserializeBinaryFromReader(msg, reader);
+};
+
+
+/**
+ * Deserializes binary data (in protobuf wire format) from the
+ * given reader into the given message object.
+ * @param {!proto.api_container_api.KurtosisError} msg The message object to deserialize into.
+ * @param {!jspb.BinaryReader} reader The BinaryReader to use.
+ * @return {!proto.api_container_api.KurtosisError}
+ */
+proto.api_container_api.KurtosisError.deserializeBinaryFromReader = function(msg, reader) {
+  while (reader.nextField()) {
+    if (reader.isEndGroup()) {
+      break;
+    }
+    var field = reader.getFieldNumber();
+    switch (field) {
+    case 1:
+      var value = new proto.api_container_api.KurtosisInterpretationError;
+      reader.readMessage(value,proto.api_container_api.KurtosisInterpretationError.deserializeBinaryFromReader);
+      msg.setInterpretationError(value);
+      break;
+    case 2:
+      var value = new proto.api_container_api.KurtosisValidationError;
+      reader.readMessage(value,proto.api_container_api.KurtosisValidationError.deserializeBinaryFromReader);
+      msg.setValidationError(value);
+      break;
+    case 3:
+      var value = new proto.api_container_api.KurtosisExecutionError;
+      reader.readMessage(value,proto.api_container_api.KurtosisExecutionError.deserializeBinaryFromReader);
+      msg.setExecutionError(value);
+      break;
+    default:
+      reader.skipField();
+      break;
+    }
+  }
+  return msg;
+};
+
+
+/**
+ * Serializes the message to binary data (in protobuf wire format).
+ * @return {!Uint8Array}
+ */
+proto.api_container_api.KurtosisError.prototype.serializeBinary = function() {
+  var writer = new jspb.BinaryWriter();
+  proto.api_container_api.KurtosisError.serializeBinaryToWriter(this, writer);
+  return writer.getResultBuffer();
+};
+
+
+/**
+ * Serializes the given message to binary data (in protobuf wire
+ * format), writing to the given BinaryWriter.
+ * @param {!proto.api_container_api.KurtosisError} message
+ * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.api_container_api.KurtosisError.serializeBinaryToWriter = function(message, writer) {
+  var f = undefined;
+  f = message.getInterpretationError();
+  if (f != null) {
+    writer.writeMessage(
+      1,
+      f,
+      proto.api_container_api.KurtosisInterpretationError.serializeBinaryToWriter
+    );
+  }
+  f = message.getValidationError();
+  if (f != null) {
+    writer.writeMessage(
+      2,
+      f,
+      proto.api_container_api.KurtosisValidationError.serializeBinaryToWriter
+    );
+  }
+  f = message.getExecutionError();
+  if (f != null) {
+    writer.writeMessage(
+      3,
+      f,
+      proto.api_container_api.KurtosisExecutionError.serializeBinaryToWriter
+    );
+  }
+};
+
+
+/**
+ * optional KurtosisInterpretationError interpretation_error = 1;
+ * @return {?proto.api_container_api.KurtosisInterpretationError}
+ */
+proto.api_container_api.KurtosisError.prototype.getInterpretationError = function() {
+  return /** @type{?proto.api_container_api.KurtosisInterpretationError} */ (
+    jspb.Message.getWrapperField(this, proto.api_container_api.KurtosisInterpretationError, 1));
+};
+
+
+/**
+ * @param {?proto.api_container_api.KurtosisInterpretationError|undefined} value
+ * @return {!proto.api_container_api.KurtosisError} returns this
+*/
+proto.api_container_api.KurtosisError.prototype.setInterpretationError = function(value) {
+  return jspb.Message.setOneofWrapperField(this, 1, proto.api_container_api.KurtosisError.oneofGroups_[0], value);
+};
+
+
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.api_container_api.KurtosisError} returns this
+ */
+proto.api_container_api.KurtosisError.prototype.clearInterpretationError = function() {
+  return this.setInterpretationError(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.KurtosisError.prototype.hasInterpretationError = function() {
+  return jspb.Message.getField(this, 1) != null;
+};
+
+
+/**
+ * optional KurtosisValidationError validation_error = 2;
+ * @return {?proto.api_container_api.KurtosisValidationError}
+ */
+proto.api_container_api.KurtosisError.prototype.getValidationError = function() {
+  return /** @type{?proto.api_container_api.KurtosisValidationError} */ (
+    jspb.Message.getWrapperField(this, proto.api_container_api.KurtosisValidationError, 2));
+};
+
+
+/**
+ * @param {?proto.api_container_api.KurtosisValidationError|undefined} value
+ * @return {!proto.api_container_api.KurtosisError} returns this
+*/
+proto.api_container_api.KurtosisError.prototype.setValidationError = function(value) {
+  return jspb.Message.setOneofWrapperField(this, 2, proto.api_container_api.KurtosisError.oneofGroups_[0], value);
+};
+
+
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.api_container_api.KurtosisError} returns this
+ */
+proto.api_container_api.KurtosisError.prototype.clearValidationError = function() {
+  return this.setValidationError(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.KurtosisError.prototype.hasValidationError = function() {
+  return jspb.Message.getField(this, 2) != null;
+};
+
+
+/**
+ * optional KurtosisExecutionError execution_error = 3;
+ * @return {?proto.api_container_api.KurtosisExecutionError}
+ */
+proto.api_container_api.KurtosisError.prototype.getExecutionError = function() {
+  return /** @type{?proto.api_container_api.KurtosisExecutionError} */ (
+    jspb.Message.getWrapperField(this, proto.api_container_api.KurtosisExecutionError, 3));
+};
+
+
+/**
+ * @param {?proto.api_container_api.KurtosisExecutionError|undefined} value
+ * @return {!proto.api_container_api.KurtosisError} returns this
+*/
+proto.api_container_api.KurtosisError.prototype.setExecutionError = function(value) {
+  return jspb.Message.setOneofWrapperField(this, 3, proto.api_container_api.KurtosisError.oneofGroups_[0], value);
+};
+
+
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.api_container_api.KurtosisError} returns this
+ */
+proto.api_container_api.KurtosisError.prototype.clearExecutionError = function() {
+  return this.setExecutionError(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.KurtosisError.prototype.hasExecutionError = function() {
+  return jspb.Message.getField(this, 3) != null;
+};
+
+
+
+/**
+ * Oneof group definitions for this message. Each group defines the field
+ * numbers belonging to that group. When of these fields' value is set, all
+ * other fields in the group are cleared. During deserialization, if multiple
+ * fields are encountered for a group, only the last value seen will be kept.
+ * @private {!Array<!Array<number>>}
+ * @const
+ */
+proto.api_container_api.KurtosisExecutionResponseLine.oneofGroups_ = [[1,2]];
+
+/**
+ * @enum {number}
+ */
+proto.api_container_api.KurtosisExecutionResponseLine.KurtosisExecutionResponseLineCase = {
+  KURTOSIS_EXECUTION_RESPONSE_LINE_NOT_SET: 0,
+  INSTRUCTION: 1,
+  ERROR: 2
+};
+
+/**
+ * @return {proto.api_container_api.KurtosisExecutionResponseLine.KurtosisExecutionResponseLineCase}
+ */
+proto.api_container_api.KurtosisExecutionResponseLine.prototype.getKurtosisExecutionResponseLineCase = function() {
+  return /** @type {proto.api_container_api.KurtosisExecutionResponseLine.KurtosisExecutionResponseLineCase} */(jspb.Message.computeOneofCase(this, proto.api_container_api.KurtosisExecutionResponseLine.oneofGroups_[0]));
+};
+
+
+
+if (jspb.Message.GENERATE_TO_OBJECT) {
+/**
+ * Creates an object representation of this proto.
+ * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
+ * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
+ * For the list of reserved names please see:
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @return {!Object}
+ */
+proto.api_container_api.KurtosisExecutionResponseLine.prototype.toObject = function(opt_includeInstance) {
+  return proto.api_container_api.KurtosisExecutionResponseLine.toObject(opt_includeInstance, this);
+};
+
+
+/**
+ * Static version of the {@see toObject} method.
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @param {!proto.api_container_api.KurtosisExecutionResponseLine} msg The msg instance to transform.
+ * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.api_container_api.KurtosisExecutionResponseLine.toObject = function(includeInstance, msg) {
+  var f, obj = {
+    instruction: (f = msg.getInstruction()) && proto.api_container_api.KurtosisInstruction.toObject(includeInstance, f),
+    error: (f = msg.getError()) && proto.api_container_api.KurtosisError.toObject(includeInstance, f)
+  };
+
+  if (includeInstance) {
+    obj.$jspbMessageInstance = msg;
+  }
+  return obj;
+};
+}
+
+
+/**
+ * Deserializes binary data (in protobuf wire format).
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @return {!proto.api_container_api.KurtosisExecutionResponseLine}
+ */
+proto.api_container_api.KurtosisExecutionResponseLine.deserializeBinary = function(bytes) {
+  var reader = new jspb.BinaryReader(bytes);
+  var msg = new proto.api_container_api.KurtosisExecutionResponseLine;
+  return proto.api_container_api.KurtosisExecutionResponseLine.deserializeBinaryFromReader(msg, reader);
+};
+
+
+/**
+ * Deserializes binary data (in protobuf wire format) from the
+ * given reader into the given message object.
+ * @param {!proto.api_container_api.KurtosisExecutionResponseLine} msg The message object to deserialize into.
+ * @param {!jspb.BinaryReader} reader The BinaryReader to use.
+ * @return {!proto.api_container_api.KurtosisExecutionResponseLine}
+ */
+proto.api_container_api.KurtosisExecutionResponseLine.deserializeBinaryFromReader = function(msg, reader) {
+  while (reader.nextField()) {
+    if (reader.isEndGroup()) {
+      break;
+    }
+    var field = reader.getFieldNumber();
+    switch (field) {
+    case 1:
+      var value = new proto.api_container_api.KurtosisInstruction;
+      reader.readMessage(value,proto.api_container_api.KurtosisInstruction.deserializeBinaryFromReader);
+      msg.setInstruction(value);
+      break;
+    case 2:
+      var value = new proto.api_container_api.KurtosisError;
+      reader.readMessage(value,proto.api_container_api.KurtosisError.deserializeBinaryFromReader);
       msg.setError(value);
       break;
     default:
@@ -4492,9 +6039,9 @@ proto.api_container_api.StartosisValidationError.deserializeBinaryFromReader = f
  * Serializes the message to binary data (in protobuf wire format).
  * @return {!Uint8Array}
  */
-proto.api_container_api.StartosisValidationError.prototype.serializeBinary = function() {
+proto.api_container_api.KurtosisExecutionResponseLine.prototype.serializeBinary = function() {
   var writer = new jspb.BinaryWriter();
-  proto.api_container_api.StartosisValidationError.serializeBinaryToWriter(this, writer);
+  proto.api_container_api.KurtosisExecutionResponseLine.serializeBinaryToWriter(this, writer);
   return writer.getResultBuffer();
 };
 
@@ -4502,167 +6049,102 @@ proto.api_container_api.StartosisValidationError.prototype.serializeBinary = fun
 /**
  * Serializes the given message to binary data (in protobuf wire
  * format), writing to the given BinaryWriter.
- * @param {!proto.api_container_api.StartosisValidationError} message
+ * @param {!proto.api_container_api.KurtosisExecutionResponseLine} message
  * @param {!jspb.BinaryWriter} writer
  * @suppress {unusedLocalVariables} f is only used for nested messages
  */
-proto.api_container_api.StartosisValidationError.serializeBinaryToWriter = function(message, writer) {
+proto.api_container_api.KurtosisExecutionResponseLine.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
+  f = message.getInstruction();
+  if (f != null) {
+    writer.writeMessage(
+      1,
+      f,
+      proto.api_container_api.KurtosisInstruction.serializeBinaryToWriter
+    );
+  }
   f = message.getError();
-  if (f.length > 0) {
-    writer.writeString(
-      1,
-      f
+  if (f != null) {
+    writer.writeMessage(
+      2,
+      f,
+      proto.api_container_api.KurtosisError.serializeBinaryToWriter
     );
   }
 };
 
 
 /**
- * optional string error = 1;
- * @return {string}
+ * optional KurtosisInstruction instruction = 1;
+ * @return {?proto.api_container_api.KurtosisInstruction}
  */
-proto.api_container_api.StartosisValidationError.prototype.getError = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
+proto.api_container_api.KurtosisExecutionResponseLine.prototype.getInstruction = function() {
+  return /** @type{?proto.api_container_api.KurtosisInstruction} */ (
+    jspb.Message.getWrapperField(this, proto.api_container_api.KurtosisInstruction, 1));
 };
 
 
 /**
- * @param {string} value
- * @return {!proto.api_container_api.StartosisValidationError} returns this
- */
-proto.api_container_api.StartosisValidationError.prototype.setError = function(value) {
-  return jspb.Message.setProto3StringField(this, 1, value);
-};
-
-
-
-
-
-if (jspb.Message.GENERATE_TO_OBJECT) {
-/**
- * Creates an object representation of this proto.
- * Field names that are reserved in JavaScript and will be renamed to pb_name.
- * Optional fields that are not set will be set to undefined.
- * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
- * For the list of reserved names please see:
- *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
- * @param {boolean=} opt_includeInstance Deprecated. whether to include the
- *     JSPB instance for transitional soy proto support:
- *     http://goto/soy-param-migration
- * @return {!Object}
- */
-proto.api_container_api.SerializedKurtosisInstruction.prototype.toObject = function(opt_includeInstance) {
-  return proto.api_container_api.SerializedKurtosisInstruction.toObject(opt_includeInstance, this);
+ * @param {?proto.api_container_api.KurtosisInstruction|undefined} value
+ * @return {!proto.api_container_api.KurtosisExecutionResponseLine} returns this
+*/
+proto.api_container_api.KurtosisExecutionResponseLine.prototype.setInstruction = function(value) {
+  return jspb.Message.setOneofWrapperField(this, 1, proto.api_container_api.KurtosisExecutionResponseLine.oneofGroups_[0], value);
 };
 
 
 /**
- * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Deprecated. Whether to include
- *     the JSPB instance for transitional soy proto support:
- *     http://goto/soy-param-migration
- * @param {!proto.api_container_api.SerializedKurtosisInstruction} msg The msg instance to transform.
- * @return {!Object}
- * @suppress {unusedLocalVariables} f is only used for nested messages
+ * Clears the message field making it undefined.
+ * @return {!proto.api_container_api.KurtosisExecutionResponseLine} returns this
  */
-proto.api_container_api.SerializedKurtosisInstruction.toObject = function(includeInstance, msg) {
-  var f, obj = {
-    serializedInstruction: jspb.Message.getFieldWithDefault(msg, 1, "")
-  };
-
-  if (includeInstance) {
-    obj.$jspbMessageInstance = msg;
-  }
-  return obj;
-};
-}
-
-
-/**
- * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
- * @return {!proto.api_container_api.SerializedKurtosisInstruction}
- */
-proto.api_container_api.SerializedKurtosisInstruction.deserializeBinary = function(bytes) {
-  var reader = new jspb.BinaryReader(bytes);
-  var msg = new proto.api_container_api.SerializedKurtosisInstruction;
-  return proto.api_container_api.SerializedKurtosisInstruction.deserializeBinaryFromReader(msg, reader);
+proto.api_container_api.KurtosisExecutionResponseLine.prototype.clearInstruction = function() {
+  return this.setInstruction(undefined);
 };
 
 
 /**
- * Deserializes binary data (in protobuf wire format) from the
- * given reader into the given message object.
- * @param {!proto.api_container_api.SerializedKurtosisInstruction} msg The message object to deserialize into.
- * @param {!jspb.BinaryReader} reader The BinaryReader to use.
- * @return {!proto.api_container_api.SerializedKurtosisInstruction}
+ * Returns whether this field is set.
+ * @return {boolean}
  */
-proto.api_container_api.SerializedKurtosisInstruction.deserializeBinaryFromReader = function(msg, reader) {
-  while (reader.nextField()) {
-    if (reader.isEndGroup()) {
-      break;
-    }
-    var field = reader.getFieldNumber();
-    switch (field) {
-    case 1:
-      var value = /** @type {string} */ (reader.readString());
-      msg.setSerializedInstruction(value);
-      break;
-    default:
-      reader.skipField();
-      break;
-    }
-  }
-  return msg;
+proto.api_container_api.KurtosisExecutionResponseLine.prototype.hasInstruction = function() {
+  return jspb.Message.getField(this, 1) != null;
 };
 
 
 /**
- * Serializes the message to binary data (in protobuf wire format).
- * @return {!Uint8Array}
+ * optional KurtosisError error = 2;
+ * @return {?proto.api_container_api.KurtosisError}
  */
-proto.api_container_api.SerializedKurtosisInstruction.prototype.serializeBinary = function() {
-  var writer = new jspb.BinaryWriter();
-  proto.api_container_api.SerializedKurtosisInstruction.serializeBinaryToWriter(this, writer);
-  return writer.getResultBuffer();
+proto.api_container_api.KurtosisExecutionResponseLine.prototype.getError = function() {
+  return /** @type{?proto.api_container_api.KurtosisError} */ (
+    jspb.Message.getWrapperField(this, proto.api_container_api.KurtosisError, 2));
 };
 
 
 /**
- * Serializes the given message to binary data (in protobuf wire
- * format), writing to the given BinaryWriter.
- * @param {!proto.api_container_api.SerializedKurtosisInstruction} message
- * @param {!jspb.BinaryWriter} writer
- * @suppress {unusedLocalVariables} f is only used for nested messages
- */
-proto.api_container_api.SerializedKurtosisInstruction.serializeBinaryToWriter = function(message, writer) {
-  var f = undefined;
-  f = message.getSerializedInstruction();
-  if (f.length > 0) {
-    writer.writeString(
-      1,
-      f
-    );
-  }
+ * @param {?proto.api_container_api.KurtosisError|undefined} value
+ * @return {!proto.api_container_api.KurtosisExecutionResponseLine} returns this
+*/
+proto.api_container_api.KurtosisExecutionResponseLine.prototype.setError = function(value) {
+  return jspb.Message.setOneofWrapperField(this, 2, proto.api_container_api.KurtosisExecutionResponseLine.oneofGroups_[0], value);
 };
 
 
 /**
- * optional string serialized_instruction = 1;
- * @return {string}
+ * Clears the message field making it undefined.
+ * @return {!proto.api_container_api.KurtosisExecutionResponseLine} returns this
  */
-proto.api_container_api.SerializedKurtosisInstruction.prototype.getSerializedInstruction = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
+proto.api_container_api.KurtosisExecutionResponseLine.prototype.clearError = function() {
+  return this.setError(undefined);
 };
 
 
 /**
- * @param {string} value
- * @return {!proto.api_container_api.SerializedKurtosisInstruction} returns this
+ * Returns whether this field is set.
+ * @return {boolean}
  */
-proto.api_container_api.SerializedKurtosisInstruction.prototype.setSerializedInstruction = function(value) {
-  return jspb.Message.setProto3StringField(this, 1, value);
+proto.api_container_api.KurtosisExecutionResponseLine.prototype.hasError = function() {
+  return jspb.Message.getField(this, 2) != null;
 };
 
 

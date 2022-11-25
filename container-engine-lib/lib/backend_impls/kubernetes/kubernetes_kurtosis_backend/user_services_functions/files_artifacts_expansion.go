@@ -7,7 +7,7 @@ import (
 
 const (
 	filesArtifactExpanderInitContainerName = "files-artifact-expander"
-	filesArtifactExpansionVolumeName = "files-artifact-expansion"
+	filesArtifactExpansionVolumeName       = "files-artifact-expansion"
 	isFilesArtifactExpansionVolumeReadOnly = false
 )
 
@@ -26,7 +26,38 @@ func prepareFilesArtifactsExpansionResources(
 		{
 			Name: filesArtifactExpansionVolumeName,
 			VolumeSource: apiv1.VolumeSource{
-				EmptyDir: &apiv1.EmptyDirVolumeSource{},
+				HostPath: nil,
+				EmptyDir: &apiv1.EmptyDirVolumeSource{
+					Medium:    "",
+					SizeLimit: nil,
+				},
+				GCEPersistentDisk:     nil,
+				AWSElasticBlockStore:  nil,
+				GitRepo:               nil,
+				Secret:                nil,
+				NFS:                   nil,
+				ISCSI:                 nil,
+				Glusterfs:             nil,
+				PersistentVolumeClaim: nil,
+				RBD:                   nil,
+				FlexVolume:            nil,
+				Cinder:                nil,
+				CephFS:                nil,
+				Flocker:               nil,
+				DownwardAPI:           nil,
+				FC:                    nil,
+				AzureFile:             nil,
+				ConfigMap:             nil,
+				VsphereVolume:         nil,
+				Quobyte:               nil,
+				AzureDisk:             nil,
+				PhotonPersistentDisk:  nil,
+				Projected:             nil,
+				PortworxVolume:        nil,
+				ScaleIO:               nil,
+				StorageOS:             nil,
+				CSI:                   nil,
+				Ephemeral:             nil,
 			},
 		},
 	}
@@ -38,18 +69,22 @@ func prepareFilesArtifactsExpansionResources(
 		subdirName := strconv.Itoa(volumeSubdirIndex)
 
 		expanderContainerMount := apiv1.VolumeMount{
-			Name:      filesArtifactExpansionVolumeName,
-			ReadOnly:  isFilesArtifactExpansionVolumeReadOnly,
-			MountPath: requestedExpanderDirpath,
-			SubPath:   subdirName,
+			Name:             filesArtifactExpansionVolumeName,
+			ReadOnly:         isFilesArtifactExpansionVolumeReadOnly,
+			MountPath:        requestedExpanderDirpath,
+			SubPath:          subdirName,
+			MountPropagation: nil,
+			SubPathExpr:      "",
 		}
 		volumeMountsOnExpanderContainer = append(volumeMountsOnExpanderContainer, expanderContainerMount)
 
 		userServiceContainerMount := apiv1.VolumeMount{
-			Name:      filesArtifactExpansionVolumeName,
-			ReadOnly:  isFilesArtifactExpansionVolumeReadOnly,
-			MountPath: requestedUserServiceDirpath,
-			SubPath:   subdirName,
+			Name:             filesArtifactExpansionVolumeName,
+			ReadOnly:         isFilesArtifactExpansionVolumeReadOnly,
+			MountPath:        requestedUserServiceDirpath,
+			SubPath:          subdirName,
+			MountPropagation: nil,
+			SubPathExpr:      "",
 		}
 		volumeMountsOnUserServiceContainer = append(volumeMountsOnUserServiceContainer, userServiceContainerMount)
 
@@ -77,17 +112,39 @@ func getFilesArtifactExpansionInitContainerSpecs(
 	expanderEnvVars := []apiv1.EnvVar{}
 	for key, value := range envVars {
 		envVar := apiv1.EnvVar{
-			Name:  key,
-			Value: value,
+			Name:      key,
+			Value:     value,
+			ValueFrom: nil,
 		}
 		expanderEnvVars = append(expanderEnvVars, envVar)
 	}
 
 	filesArtifactExpansionInitContainer := apiv1.Container{
-		Name:         filesArtifactExpanderInitContainerName,
-		Image:        image,
-		Env:          expanderEnvVars,
-		VolumeMounts: volumeMounts,
+		Name:       filesArtifactExpanderInitContainerName,
+		Image:      image,
+		Command:    nil,
+		Args:       nil,
+		WorkingDir: "",
+		Ports:      nil,
+		EnvFrom:    nil,
+		Env:        expanderEnvVars,
+		Resources: apiv1.ResourceRequirements{
+			Limits:   nil,
+			Requests: nil,
+		},
+		VolumeMounts:             volumeMounts,
+		VolumeDevices:            nil,
+		LivenessProbe:            nil,
+		ReadinessProbe:           nil,
+		StartupProbe:             nil,
+		Lifecycle:                nil,
+		TerminationMessagePath:   "",
+		TerminationMessagePolicy: "",
+		ImagePullPolicy:          "",
+		SecurityContext:          nil,
+		Stdin:                    false,
+		StdinOnce:                false,
+		TTY:                      false,
 	}
 
 	return filesArtifactExpansionInitContainer

@@ -8,18 +8,20 @@ package exec
 import (
 	"context"
 	"fmt"
-	"github.com/docker/distribution/reference"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	enclave_consts "github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/enclave"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/defaults"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/enclave_ids"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/enclave_liveness_validator"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/image_name_generator"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/logrus_log_levels"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/module"
@@ -30,7 +32,6 @@ import (
 	"io"
 	"strconv"
 	"strings"
-	"time"
 )
 
 const (
@@ -45,8 +46,10 @@ const (
 
 	defaultLoadParams            = "{}"
 	defaultExecuteParams         = "{}"
-	defaultEnclaveId             = ""
 	defaultIsPartitioningEnabled = false
+
+	// Signifies that an enclave ID should be auto-generated
+	autogenerateEnclaveIdKeyword = ""
 
 	shouldFollowModuleLogs = true
 
@@ -92,11 +95,11 @@ var ModuleExecCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 		{
 			Key: enclaveIdFlagKey,
 			Usage: fmt.Sprintf(
-				"The ID to give the enclave that will be created to execute the module inside, which must match regex '%v' (default: use the module image and the current Unix time)",
-				enclave_ids.AllowedEnclaveIdCharsRegexStr,
+				"The ID to give the enclave that will be created to execute the module inside, which must match regex '%v' (emptystring will autogenerate an enclave ID)",
+				enclave_consts.AllowedEnclaveIdCharsRegexStr,
 			),
 			Type:    flags.FlagType_String,
-			Default: defaultEnclaveId,
+			Default: autogenerateEnclaveIdKeyword,
 		},
 		{
 			Key:     isPartitioningEnabledFlagKey,
@@ -153,18 +156,10 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the module image using arg key '%v'", moduleImageArgKey)
 	}
 
-	imageNameWithUnixTimestamp := getImageNameWithUnixTimestamp(moduleImage)
+	imageNameWithUnixTimestamp := image_name_generator.GetImageNameWithUnixTimestamp(moduleImage)
 
 	enclaveIdStr := userRequestedEnclaveId
-	if enclaveIdStr == defaultEnclaveId {
-		enclaveIdStr = imageNameWithUnixTimestamp
-	}
 	enclaveId := enclave.EnclaveID(enclaveIdStr)
-
-	err = enclave_ids.ValidateEnclaveId(enclaveIdStr)
-	if err != nil {
-		return stacktrace.Propagate(err, "Invalid enclave ID argument '%s'", enclaveIdStr)
-	}
 
 	getEnclavesResp, err := engineClient.GetEnclaves(ctx, &emptypb.Empty{})
 	if err != nil {
@@ -175,7 +170,7 @@ func run(
 	// If no enclave with the requested ID exists, create it
 	didModuleExecutionCompleteSuccessfully := false
 	if !foundExistingEnclave {
-		logrus.Infof("Creating enclave '%v' for the module to execute inside...", enclaveIdStr)
+		logrus.Infof("Creating a new enclave for the module to execute inside...")
 		createEnclaveArgs := &kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs{
 			EnclaveId:              enclaveIdStr,
 			ApiContainerVersionTag: apiContainerVersion,
@@ -200,7 +195,11 @@ func run(
 			}
 		}()
 		enclaveInfo = response.GetEnclaveInfo()
+		enclaveIdStr = enclaveInfo.GetEnclaveId()
 		logrus.Infof("Enclave '%v' created successfully", enclaveIdStr)
+
+		createdEnclaveId := enclaves.EnclaveID(enclaveIdStr)
+		defer output_printers.PrintEnclaveId(createdEnclaveId)
 	}
 
 	apicHostMachineIp, apicHostMachineGrpcPort, err := enclave_liveness_validator.ValidateEnclaveLiveness(enclaveInfo)
@@ -258,6 +257,7 @@ func run(
 		GUIDs: map[module.ModuleGUID]bool{
 			moduleGUID: true,
 		},
+		Statuses: nil,
 	}
 
 	//TODO replace with API Container call
@@ -269,9 +269,12 @@ func run(
 	if len(successfulModuleLogs) == 0 {
 		return stacktrace.NewError("Didn't find any module logs for newly-created GUID '%v'; this is a bug in Kurtosis", moduleGUID)
 	}
-	for _, readCloser := range successfulModuleLogs {
-		defer readCloser.Close()
-	}
+	defer func() {
+		for _, readCloser := range successfulModuleLogs {
+			readCloser.Close()
+		}
+	}()
+
 	if len(erroredModuleGuids) > 0 {
 		moduleLogErr, found := erroredModuleGuids[moduleGUID]
 		if !found {
@@ -313,31 +316,4 @@ func run(
 
 	didModuleExecutionCompleteSuccessfully = true
 	return nil
-}
-
-// ====================================================================================================
-//
-//	Private Helper Methods
-//
-// ====================================================================================================
-func getImageNameWithUnixTimestamp(moduleImage string) string {
-	enclaveId := enclave_ids.GenerateNewEnclaveID()
-	parsedModuleImage, err := reference.Parse(moduleImage)
-	if err != nil {
-		logrus.Warnf("Couldn't parse the module image string '%v'; using enclave ID '%v'", moduleImage, enclaveId)
-		return enclaveId
-	}
-
-	namedModuleImage, ok := parsedModuleImage.(reference.Named)
-	if !ok {
-		logrus.Warnf("Module image string '%v' couldn't be cast to a named reference; using enclave ID '%v'", moduleImage, enclaveId)
-		return enclaveId
-	}
-	pathElement := reference.Path(namedModuleImage)
-
-	return fmt.Sprintf(
-		"%v--%v",
-		pathElement,
-		time.Now().Unix(),
-	)
 }

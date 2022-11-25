@@ -49,6 +49,8 @@ const (
 	logMethodAlongWithLogLine = true
 	functionPathSeparator     = "."
 	emptyFunctionName         = ""
+	forceColors               = true
+	fullTimestamp             = true
 )
 
 type doNothingMetricsClientCallback struct{}
@@ -61,9 +63,20 @@ func main() {
 	logrus.SetReportCaller(logMethodAlongWithLogLine)
 	// NOTE: we'll want to change the ForceColors to false if we ever want structured logging
 	logrus.SetFormatter(&logrus.TextFormatter{
-		ForceColors:   true,
-		FullTimestamp: true,
-		// This allows us to truncate the full path to file, and function
+		ForceColors:               forceColors,
+		DisableColors:             false,
+		ForceQuote:                false,
+		DisableQuote:              false,
+		EnvironmentOverrideColors: false,
+		DisableTimestamp:          false,
+		FullTimestamp:             fullTimestamp,
+		TimestampFormat:           "",
+		DisableSorting:            false,
+		SortingFunc:               nil,
+		DisableLevelTruncation:    false,
+		PadLevelText:              false,
+		QuoteEmptyFields:          false,
+		FieldMap:                  nil,
 		CallerPrettyfier: func(f *runtime.Frame) (string, string) {
 			fullFunctionPath := strings.Split(f.Function, functionPathSeparator)
 			functionName := fullFunctionPath[len(fullFunctionPath)-1]
@@ -173,9 +186,10 @@ func runMain() error {
 	}
 	factsEngine := facts_engine.NewFactsEngine(db, serviceNetwork)
 	// TODO: Consolidate Interpreter, Validator and Executor into a single interface
-	startosisValidator := startosis_engine.NewStartosisValidator(&kurtosisBackend)
-	startosisInterpreter := startosis_engine.NewStartosisInterpreterWithFacts(serviceNetwork, factsEngine, gitModuleContentProvider)
-	startosisExecutor := startosis_engine.NewStartosisExecutor()
+	startosisRunner := startosis_engine.NewStartosisRunner(
+		startosis_engine.NewStartosisInterpreterWithFacts(serviceNetwork, factsEngine, gitModuleContentProvider),
+		startosis_engine.NewStartosisValidator(&kurtosisBackend, serviceNetwork),
+		startosis_engine.NewStartosisExecutor())
 
 	//Creation of ApiContainerService
 	apiContainerService, err := server.NewApiContainerService(
@@ -183,9 +197,7 @@ func runMain() error {
 		serviceNetwork,
 		moduleStore,
 		factsEngine,
-		startosisInterpreter,
-		startosisValidator,
-		startosisExecutor,
+		startosisRunner,
 		metricsClient,
 		gitModuleContentProvider,
 	)

@@ -56,6 +56,7 @@ var EnclaveInspectCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtos
 	LongDescription:           "List information about the enclave's status and contents",
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
 	EngineClientContextKey:    engineClientCtxKey,
+	Flags:                     nil,
 	Args: []*args.ArgConfig{
 		enclave_id_arg.NewEnclaveIDArg(
 			enclaveIdArgKey,
@@ -105,7 +106,7 @@ func run(
 	//TODO remove this condition after 2023-01-01 when we are sure that there is not any old enclave created without the creation time label
 	//TODO and add a fail loudly check
 	if enclaveCreationTime != nil {
-		enclaveCreationTimeStr := enclaveCreationTime.AsTime().Local().Format(time.RFC822)
+		enclaveCreationTimeStr := enclaveCreationTime.AsTime().Local().Format(time.RFC1123)
 
 		keyValuePrinter.AddPair(enclaveCreationTimeTitleName, enclaveCreationTimeStr)
 	}

@@ -14,4 +14,7 @@ type ModuleContentProvider interface {
 
 	// StoreModuleContents writes on disk the content of the module passed as params
 	StoreModuleContents(string, []byte, bool) (string, *startosis_errors.InterpretationError)
+
+	// CloneModule clones the module with the given id and returns the absolute path on disk
+	CloneModule(moduleId string) (string, *startosis_errors.InterpretationError)
 }

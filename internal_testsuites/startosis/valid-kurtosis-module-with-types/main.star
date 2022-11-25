@@ -1,11 +1,11 @@
-load("github.com/sample/sample-kurtosis-module/lib/lib.star", "world")
+lib = import_module("github.com/sample/sample-kurtosis-module/lib/lib.star")
 types = import_types("github.com/sample/sample-kurtosis-module/types.proto")
 
 
-def main(input_args):
+def run(input_args):
     print(input_args.greetings)
     output = types.ModuleOutput({
-        "message": "Hello " + world + "!"
+        "message": "Hello " + lib.world + "!"
     })
     print(output.message)
     return output

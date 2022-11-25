@@ -8,7 +8,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_executor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -28,7 +27,8 @@ func GenerateRemoveServiceBuiltin(instructionsQueue *[]kurtosis_instruction.Kurt
 		if interpretationError != nil {
 			return nil, interpretationError
 		}
-		removeServiceInstruction := NewRemoveServiceInstruction(serviceNetwork, *shared_helpers.GetCallerPositionFromThread(thread), serviceId)
+		instructionPosition := shared_helpers.GetCallerPositionFromThread(thread)
+		removeServiceInstruction := NewRemoveServiceInstruction(serviceNetwork, instructionPosition, serviceId)
 		*instructionsQueue = append(*instructionsQueue, removeServiceInstruction)
 		return starlark.None, nil
 	}
@@ -37,11 +37,11 @@ func GenerateRemoveServiceBuiltin(instructionsQueue *[]kurtosis_instruction.Kurt
 type RemoveServiceInstruction struct {
 	serviceNetwork service_network.ServiceNetwork
 
-	position  kurtosis_instruction.InstructionPosition
+	position  *kurtosis_instruction.InstructionPosition
 	serviceId kurtosis_backend_service.ServiceID
 }
 
-func NewRemoveServiceInstruction(serviceNetwork service_network.ServiceNetwork, position kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceID) *RemoveServiceInstruction {
+func NewRemoveServiceInstruction(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceID) *RemoveServiceInstruction {
 	return &RemoveServiceInstruction{
 		serviceNetwork: serviceNetwork,
 		position:       position,
@@ -50,24 +50,24 @@ func NewRemoveServiceInstruction(serviceNetwork service_network.ServiceNetwork, 
 }
 
 func (instruction *RemoveServiceInstruction) GetPositionInOriginalScript() *kurtosis_instruction.InstructionPosition {
-	return &instruction.position
+	return instruction.position
 }
 
 func (instruction *RemoveServiceInstruction) GetCanonicalInstruction() string {
-	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(RemoveServiceBuiltinName, instruction.getKwargs(), &instruction.position)
+	return shared_helpers.CanonicalizeInstruction(RemoveServiceBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs())
 }
 
-func (instruction *RemoveServiceInstruction) Execute(ctx context.Context, environment *startosis_executor.ExecutionEnvironment) error {
+func (instruction *RemoveServiceInstruction) Execute(ctx context.Context) (*string, error) {
 	serviceGUID, err := instruction.serviceNetwork.RemoveService(ctx, instruction.serviceId)
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed removing service with unexpected error")
+		return nil, stacktrace.Propagate(err, "Failed removing service with unexpected error")
 	}
 	logrus.Infof("Successfully removed service '%v' with guid '%v'", instruction.serviceId, serviceGUID)
-	return nil
+	return nil, nil
 }
 
 func (instruction *RemoveServiceInstruction) String() string {
-	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(RemoveServiceBuiltinName, instruction.getKwargs(), &instruction.position)
+	return instruction.GetCanonicalInstruction()
 }
 
 func (instruction *RemoveServiceInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {

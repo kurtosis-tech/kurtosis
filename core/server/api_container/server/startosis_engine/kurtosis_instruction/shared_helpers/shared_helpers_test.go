@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_executor"
 	"github.com/stretchr/testify/require"
 	"net"
 	"regexp"
@@ -19,50 +17,10 @@ const (
 	testServiceDependence2ServiceId = "test-service-id-2"
 	testServiceDependence2IPAddress = "172.17.13.45"
 
+	testFactName = "test-fact-name"
+
 	unknownServiceId = "unknown_service"
 )
-
-func TestReplaceMagicStringWithValue_SimpleCase(t *testing.T) {
-	instruction := kurtosis_instruction.NewInstructionPosition(5, 3, "dummyFile")
-	inputStr := instruction.MagicString(ArtifactUUIDSuffix)
-	environment := startosis_executor.NewExecutionEnvironment()
-	testUuid := "test-uuid"
-	environment.SetArtifactUuid(inputStr, testUuid)
-
-	expectedOutput := testUuid
-	replacedStr, err := ReplaceArtifactUuidMagicStringWithValue(inputStr, testServiceId, environment)
-
-	require.Nil(t, err)
-	require.Equal(t, expectedOutput, replacedStr)
-}
-
-func TestReplaceMagicStringWithValue_ValidMultipleReplaces(t *testing.T) {
-	instructionA := kurtosis_instruction.NewInstructionPosition(45, 60, "github.com/kurtosis-tech/eth2-module/src/participant_network/prelaunch_data_generator/el_genesis/el_genesis_data_generator.star")
-	instructionB := kurtosis_instruction.NewInstructionPosition(56, 33, "github.com/kurtosis-tech/eth2-module/src/participant_network/prelaunch_data_generator/cl_genesis/cl_genesis_data_generator.star")
-	magicStringA := instructionA.MagicString(ArtifactUUIDSuffix)
-	magicStringB := instructionB.MagicString(ArtifactUUIDSuffix)
-	inputStr := fmt.Sprintf("%v %v %v", magicStringB, magicStringA, magicStringB)
-
-	environment := startosis_executor.NewExecutionEnvironment()
-	testUuidA := "test-uuid-a"
-	testUuidB := "test-uuid-b"
-	expectedOutput := fmt.Sprintf("%v %v %v", testUuidB, testUuidA, testUuidB)
-
-	environment.SetArtifactUuid(magicStringA, testUuidA)
-	environment.SetArtifactUuid(magicStringB, testUuidB)
-
-	replacedStr, err := ReplaceArtifactUuidMagicStringWithValue(inputStr, testServiceId, environment)
-	require.Nil(t, err)
-	require.Equal(t, expectedOutput, replacedStr)
-}
-
-func TestReplaceMagicStringWithValue_MagicStringNotInEnvironment(t *testing.T) {
-	instruction := kurtosis_instruction.NewInstructionPosition(5, 3, "dummyFile")
-	magicString := instruction.MagicString(ArtifactUUIDSuffix)
-	emptyEnvironment := startosis_executor.NewExecutionEnvironment()
-	_, err := ReplaceArtifactUuidMagicStringWithValue(magicString, testServiceId, emptyEnvironment)
-	require.NotNil(t, err)
-}
 
 func TestReplaceIPAddressInString_MultipleOccurrencesOfSameStringReplaced(t *testing.T) {
 	ipAddresses := map[service.ServiceID]net.IP{
@@ -75,6 +33,11 @@ func TestReplaceIPAddressInString_MultipleOccurrencesOfSameStringReplaced(t *tes
 	replacedString, err := ReplaceIPAddressInString(originalString, serviceNetwork, testServiceId)
 	require.Nil(t, err)
 	require.Equal(t, expectedString, replacedString)
+}
+
+func TestReplaceFactInString(t *testing.T) {
+	returnValue := MakeWaitInterpretationReturnValue(testServiceId, testFactName)
+	require.Equal(t, returnValue.String(), "\"{{kurtosis:tesT-SerVice-id:test-fact-name.fact}}\"")
 }
 
 func TestReplaceIPAddressInString_MultipleReplacesOfDifferentStrings(t *testing.T) {

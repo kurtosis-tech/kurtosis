@@ -16,6 +16,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// EnclaveCmd Suppressing exhaustruct requirement because this struct has ~40 properties
+// nolint: exhaustruct
 var EnclaveCmd = &cobra.Command{
 	Use:   command_str_consts.EnclaveCmdStr,
 	Short: "Manage enclaves",

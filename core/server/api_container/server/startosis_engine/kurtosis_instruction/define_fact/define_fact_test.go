@@ -22,20 +22,13 @@ var (
 func TestDefineFactInstruction_GetCanonicalizedInstruction(t *testing.T) {
 	execInstruction := NewDefineFactInstruction(
 		emptyFactsEngine,
-		*kurtosis_instruction.NewInstructionPosition(1, 1, "dummyFile"),
+		kurtosis_instruction.NewInstructionPosition(1, 1, "dummyFile"),
 		testServiceId,
 		testFactName,
 		emptyFactsRecipe,
 	)
-	expectedMultiLineFormatStr := `# from: dummyFile[1:1]
-define_fact(
-	fact_name="%v",
-	service_id="%v"
-)`
-	expectedMultiLineStr := fmt.Sprintf(expectedMultiLineFormatStr, testFactName, testServiceId)
-	require.Equal(t, expectedMultiLineStr, execInstruction.GetCanonicalInstruction())
-
-	expectedSingleLineFormatStr := `define_fact(fact_name="%v", service_id="%v")`
-	expectedSingleLineStr := fmt.Sprintf(expectedSingleLineFormatStr, testFactName, testServiceId)
-	require.Equal(t, expectedSingleLineStr, execInstruction.String())
+	expectedFormatStr := `define_fact(fact_name="%v", service_id="%v")`
+	expectedStr := fmt.Sprintf(expectedFormatStr, testFactName, testServiceId)
+	require.Equal(t, expectedStr, execInstruction.GetCanonicalInstruction())
+	require.Equal(t, expectedStr, execInstruction.String())
 }

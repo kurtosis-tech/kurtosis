@@ -23,10 +23,18 @@ service ApiContainerService {
   rpc ExecuteModule(ExecuteModuleArgs) returns (ExecuteModuleResponse) {};
 
   // Executes a startosis script on the user's behalf
+  // Will soon be deprecated in favour of its streamed version ExecuteKurtosisScript
   rpc ExecuteStartosisScript(ExecuteStartosisScriptArgs) returns (ExecuteStartosisResponse) {};
 
+  // Executes a startosis script on the user's behalf
+  rpc ExecuteKurtosisScript(ExecuteStartosisScriptArgs) returns (stream KurtosisExecutionResponseLine) {};
+
   // Executes a startosis module on the user's behalf
+  // Will soon be deprecated in favour of its streamed version ExecuteKurtosisModule
   rpc ExecuteStartosisModule(ExecuteStartosisModuleArgs) returns (ExecuteStartosisResponse) {};
+
+  // Executes a startosis script on the user's behalf
+  rpc ExecuteKurtosisModule(ExecuteStartosisModuleArgs) returns (stream KurtosisExecutionResponseLine) {};
 
   // Start services by creating containers for them
   rpc StartServices(StartServicesArgs) returns (StartServicesResponse) {};
@@ -116,7 +124,7 @@ message ServiceInfo {
 }
 
 message ServiceConfig {
-  string image = 1;
+  string container_image_name = 1;
 
   // Definition of the ports *inside* the enclave that the container should have exposed, specified as user_friendly_port_id -> port_definition
   map<string, Port> private_ports = 2;
@@ -253,37 +261,78 @@ message ExecuteStartosisScriptArgs {
 // ==============================================================================================
 message ExecuteStartosisModuleArgs {
   string module_id = 1;
-  bytes data = 2;
 
   // Serialized parameters data for the Startosis module main function
   // This should be a valid JSON string
-  string serialized_params = 3;
+  oneof startosis_module_content {
+    bytes local = 3; // the payload of the local module
+    bool remote = 4; // just a flag to indicate the module must be cloned inside the API
+  }
+
+  string serialized_params = 5;
 
   // Defaults to false
-  optional bool dry_run = 4;
+  optional bool dry_run = 6;
 }
 
 // ==============================================================================================
 //                                 Startosis Execution Response
 // ==============================================================================================
 message ExecuteStartosisResponse {
-  string serialized_script_output = 1;
+  repeated KurtosisInstruction kurtosis_instructions = 1;
 
-  string interpretation_error = 2;
-
-  repeated StartosisValidationError validation_errors = 3;
-
-  string execution_error = 4;
-
-  repeated SerializedKurtosisInstruction serialized_instructions = 5;
+  oneof kurtosis_error {
+    KurtosisInterpretationError interpretation_error = 2;
+    KurtosisValidationErrors validation_errors = 3;
+    KurtosisExecutionError execution_error = 4;
+  }
 }
 
-message StartosisValidationError {
-  string error = 1;
+message KurtosisInterpretationError {
+  string error_message = 1;
 }
 
-message SerializedKurtosisInstruction {
-  string serialized_instruction = 1;
+message KurtosisValidationErrors {
+  repeated KurtosisValidationError errors = 1;
+}
+
+message KurtosisValidationError {
+  string error_message = 1;
+}
+
+message KurtosisExecutionError {
+  string error_message = 1;
+}
+
+message KurtosisInstruction {
+  KurtosisInstructionPosition position = 1;
+
+  string executable_instruction = 2;
+
+  optional string instruction_result = 3;
+}
+
+message KurtosisInstructionPosition {
+  string filename = 1;
+
+  int32 line = 2;
+
+  int32 column = 3;
+}
+
+message KurtosisError {
+  oneof error {
+    KurtosisInterpretationError interpretation_error = 1;
+    KurtosisValidationError validation_error = 2;
+    KurtosisExecutionError execution_error = 3;
+  }
+}
+
+message KurtosisExecutionResponseLine {
+  oneof kurtosis_execution_response_line {
+    KurtosisInstruction instruction = 1;
+    KurtosisError error = 2;
+  }
 }
 
 // ==============================================================================================

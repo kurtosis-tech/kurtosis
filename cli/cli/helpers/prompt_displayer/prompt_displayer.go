@@ -10,12 +10,12 @@ import (
 
 const (
 	//Valid confirm inputs
-	yInput    validPromptInput = "y"
-	yesInput  validPromptInput = "yes"
+	yInput   validPromptInput = "y"
+	yesInput validPromptInput = "yes"
 
 	//Valid not confirm inputs
-	nInput   validPromptInput = "n"
-	noInput  validPromptInput = "no"
+	nInput  validPromptInput = "n"
+	noInput validPromptInput = "no"
 
 	// Anything beyond this and it runs off the edge of the screen so the user doesn't see it
 	maxLabelLength = 110
@@ -26,7 +26,6 @@ type validPromptInput string
 var validConfirmInputs = []validPromptInput{yInput, yesInput}
 var validRejectInputs = []validPromptInput{nInput, noInput}
 var allValidDecisionInputs = append(validConfirmInputs, validRejectInputs...)
-
 
 func DisplayConfirmationPromptAndGetBooleanResult(label string, defaultValue bool) (bool, error) {
 	if len(label) > maxLabelLength {
@@ -45,9 +44,18 @@ func DisplayConfirmationPromptAndGetBooleanResult(label string, defaultValue boo
 		nInput,
 	)
 	prompt := promptui.Prompt{
-		Label:    labelWithValidInputs,
-		Default:  defaultValueStr,
-		Validate: validateConfirmationInput,
+		Label:       labelWithValidInputs,
+		Default:     defaultValueStr,
+		AllowEdit:   false,
+		Validate:    validateConfirmationInput,
+		Mask:        0,
+		HideEntered: false,
+		Templates:   nil,
+		IsConfirm:   false,
+		IsVimMode:   false,
+		Pointer:     nil,
+		Stdin:       nil,
+		Stdout:      nil,
 	}
 
 	userInput, err := prompt.Run()

@@ -2,6 +2,8 @@ package startosis_errors
 
 import (
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"strings"
 )
 
@@ -42,20 +44,24 @@ type InterpretationError struct {
 
 func NewInterpretationError(msg string, args ...interface{}) *InterpretationError {
 	return &InterpretationError{
-		msg: fmt.Sprintf(msg, args...),
+		msg:        fmt.Sprintf(msg, args...),
+		cause:      nil,
+		stacktrace: nil,
 	}
 }
 
 func WrapWithInterpretationError(err error, msg string, args ...interface{}) *InterpretationError {
 	return &InterpretationError{
-		msg:   fmt.Sprintf(msg, args...),
-		cause: err,
+		msg:        fmt.Sprintf(msg, args...),
+		cause:      err,
+		stacktrace: nil,
 	}
 }
 
 func NewInterpretationErrorFromStacktrace(stacktrace []CallFrame) *InterpretationError {
 	return &InterpretationError{
 		msg:        "",
+		cause:      nil,
 		stacktrace: stacktrace,
 	}
 }
@@ -63,8 +69,13 @@ func NewInterpretationErrorFromStacktrace(stacktrace []CallFrame) *Interpretatio
 func NewInterpretationErrorWithCustomMsg(stacktrace []CallFrame, msg string, args ...interface{}) *InterpretationError {
 	return &InterpretationError{
 		msg:        fmt.Sprintf(msg, args...),
+		cause:      nil,
 		stacktrace: stacktrace,
 	}
+}
+
+func (err *InterpretationError) ToAPIType() *kurtosis_core_rpc_api_bindings.KurtosisInterpretationError {
+	return binding_constructors.NewKurtosisInterpretationError(err.Error())
 }
 
 func (err *InterpretationError) Error() string {

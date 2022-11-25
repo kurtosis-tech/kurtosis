@@ -25,7 +25,8 @@ const (
 	waitForEngineResponseTimeout    = 5 * time.Second
 	defaultClusterName              = resolved_config.DefaultDockerClusterName
 	defaultHttpLogsCollectorPortNum = uint16(9712)
-	defaultTcpLogsCollectorPortNum = uint16(9713)
+	defaultTcpLogsCollectorPortNum  = uint16(9713)
+	defaultHttpLogsDatabasePortNum  = uint16(9714)
 )
 
 // Unfortunately, Docker doesn't have constants for the protocols it supports declared
@@ -304,6 +305,7 @@ func getEngineInfoWithTimeout(ctx context.Context, client kurtosis_engine_rpc_ap
 // getRunningEnginesFilter returns a filter for engines with status engine.EngineStatus_Running
 func getRunningEnginesFilter() *engine.EngineFilters {
 	return &engine.EngineFilters{
+		GUIDs: nil,
 		Statuses: map[container_status.ContainerStatus]bool{
 			container_status.ContainerStatus_Running: true,
 		},

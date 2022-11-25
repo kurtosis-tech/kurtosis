@@ -3,8 +3,10 @@ package render_templates
 import (
 	"encoding/json"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
+	"go.starlark.net/starlarkstruct"
 	"testing"
 )
 
@@ -14,60 +16,48 @@ func TestRenderTemplate_TestStringRepresentation(t *testing.T) {
 	templateDataAsJson, err := json.Marshal(templateData)
 	require.Nil(t, err)
 	templateAndDataDict := &starlark.Dict{}
-	templateDict := &starlark.Dict{}
-	require.Nil(t, templateDict.SetKey(starlark.String("template"), starlark.String(template)))
-	require.Nil(t, templateDict.SetKey(starlark.String("template_data_json"), starlark.String(templateDataAsJson)))
-	require.Nil(t, templateAndDataDict.SetKey(starlark.String("/foo/bar/test.txt"), templateDict))
+	templateStrDict := starlark.StringDict{}
+	templateStrDict["template"] = starlark.String(template)
+	templateStrDict["data"] = starlark.String(templateDataAsJson)
+	require.Nil(t, templateAndDataDict.SetKey(starlark.String("/foo/bar/test.txt"), starlarkstruct.FromStringDict(starlarkstruct.Default, templateStrDict)))
 
 	renderInstruction := newEmptyRenderTemplatesInstruction(
 		nil,
-		*kurtosis_instruction.NewInstructionPosition(16, 33, "dummyFile"),
+		kurtosis_instruction.NewInstructionPosition(16, 33, "dummyFile"),
 	)
 	renderInstruction.starlarkKwargs[templateAndDataByDestinationRelFilepathArg] = templateAndDataDict
+	testArtifactId, err := enclave_data_directory.NewFilesArtifactUUID()
+	require.Nil(t, err)
+	renderInstruction.starlarkKwargs[nonOptionalArtifactIdArgName] = starlark.String(testArtifactId)
 
-	expectedStr := `# from: dummyFile[16:33]
-render_templates(
-	template_and_data_by_dest_rel_filepath={
-		"/foo/bar/test.txt": {
-			"template": "Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}.",
-			"template_data_json": "{\"Answer\":6,\"LargeFloat\":1231231243.43,\"Name\":\"Stranger\",\"Numbers\":[1,2,3],\"UnixTimeStamp\":1257894000}"
-		}
-	}
-)`
+	expectedStr := `render_templates(artifact_id="` + string(testArtifactId) + `", config={"/foo/bar/test.txt": struct(data="{\"Answer\":6,\"LargeFloat\":1231231243.43,\"Name\":\"Stranger\",\"Numbers\":[1,2,3],\"UnixTimeStamp\":1257894000}", template="Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}.")})`
 	require.Equal(t, expectedStr, renderInstruction.GetCanonicalInstruction())
+	require.Equal(t, expectedStr, renderInstruction.String())
 }
 
 func TestRenderTemplate_TestMultipleTemplates(t *testing.T) {
-	templateDataOne := &starlark.Dict{}
-	require.Nil(t, templateDataOne.SetKey(starlark.String("template"), starlark.String("Hello {{.Name}}")))
-	require.Nil(t, templateDataOne.SetKey(starlark.String("template_data_json"), starlark.String(`{"Name": "John"}`)))
-	templateDataTwo := &starlark.Dict{}
-	require.Nil(t, templateDataTwo.SetKey(starlark.String("template"), starlark.String("Hello {{.LastName}}")))
-	require.Nil(t, templateDataTwo.SetKey(starlark.String("template_data_json"), starlark.String(`{"LastName": "Doe"}`)))
+	templateDataOneStrDict := starlark.StringDict{}
+	templateDataOneStrDict["template"] = starlark.String("Hello {{.Name}}")
+	templateDataOneStrDict["data"] = starlark.String(`{"Name": "John"}`)
+	templateDataTwoStrDict := starlark.StringDict{}
+	templateDataTwoStrDict["template"] = starlark.String("Hello {{.LastName}}")
+	templateDataTwoStrDict["data"] = starlark.String(`{"LastName": "Doe"}`)
 
 	templateAndDataByDestFilepath := &starlark.Dict{}
-	require.Nil(t, templateAndDataByDestFilepath.SetKey(starlark.String("/foo/bar/test.txt"), templateDataOne))
-	require.Nil(t, templateAndDataByDestFilepath.SetKey(starlark.String("/fizz/buzz/test.txt"), templateDataTwo))
+	require.Nil(t, templateAndDataByDestFilepath.SetKey(starlark.String("/foo/bar/test.txt"), starlarkstruct.FromStringDict(starlarkstruct.Default, templateDataOneStrDict)))
+	require.Nil(t, templateAndDataByDestFilepath.SetKey(starlark.String("/fizz/buzz/test.txt"), starlarkstruct.FromStringDict(starlarkstruct.Default, templateDataTwoStrDict)))
 
 	renderInstruction := newEmptyRenderTemplatesInstruction(
 		nil,
-		*kurtosis_instruction.NewInstructionPosition(16, 33, "dummyFile"),
+		kurtosis_instruction.NewInstructionPosition(16, 33, "dummyFile"),
 	)
 	renderInstruction.starlarkKwargs[templateAndDataByDestinationRelFilepathArg] = templateAndDataByDestFilepath
+	testArtifactId, err := enclave_data_directory.NewFilesArtifactUUID()
+	require.Nil(t, err)
+	renderInstruction.starlarkKwargs[nonOptionalArtifactIdArgName] = starlark.String(testArtifactId)
 
 	// keys of the map are sorted alphabetically by the canonicalizer
-	expectedStr := `# from: dummyFile[16:33]
-render_templates(
-	template_and_data_by_dest_rel_filepath={
-		"/fizz/buzz/test.txt": {
-			"template": "Hello {{.LastName}}",
-			"template_data_json": "{\"LastName\": \"Doe\"}"
-		},
-		"/foo/bar/test.txt": {
-			"template": "Hello {{.Name}}",
-			"template_data_json": "{\"Name\": \"John\"}"
-		}
-	}
-)`
+	expectedStr := `render_templates(artifact_id="` + string(testArtifactId) + `", config={"/fizz/buzz/test.txt": struct(data="{\"LastName\": \"Doe\"}", template="Hello {{.LastName}}"), "/foo/bar/test.txt": struct(data="{\"Name\": \"John\"}", template="Hello {{.Name}}")})`
 	require.Equal(t, expectedStr, renderInstruction.GetCanonicalInstruction())
+	require.Equal(t, expectedStr, renderInstruction.String())
 }

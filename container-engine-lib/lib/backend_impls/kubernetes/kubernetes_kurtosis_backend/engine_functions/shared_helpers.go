@@ -123,7 +123,14 @@ func getMatchingEngineKubernetesResources(
 		}
 		engineResources, found := result[engineGuid]
 		if !found {
-			engineResources = &engineKubernetesResources{}
+			engineResources = &engineKubernetesResources{
+				clusterRole:        nil,
+				clusterRoleBinding: nil,
+				namespace:          nil,
+				serviceAccount:     nil,
+				service:            nil,
+				pod:                nil,
+			}
 		}
 		engineResources.namespace = namespacesForId[0]
 		result[engineGuid] = engineResources
@@ -151,7 +158,14 @@ func getMatchingEngineKubernetesResources(
 		}
 		engineResources, found := result[engineGuid]
 		if !found {
-			engineResources = &engineKubernetesResources{}
+			engineResources = &engineKubernetesResources{
+				clusterRole:        nil,
+				clusterRoleBinding: nil,
+				namespace:          nil,
+				serviceAccount:     nil,
+				service:            nil,
+				pod:                nil,
+			}
 		}
 		engineResources.clusterRole = clusterRolesForId[0]
 		result[engineGuid] = engineResources
@@ -179,7 +193,14 @@ func getMatchingEngineKubernetesResources(
 		}
 		engineResources, found := result[engineGuid]
 		if !found {
-			engineResources = &engineKubernetesResources{}
+			engineResources = &engineKubernetesResources{
+				clusterRole:        nil,
+				clusterRoleBinding: nil,
+				namespace:          nil,
+				serviceAccount:     nil,
+				service:            nil,
+				pod:                nil,
+			}
 		}
 		engineResources.clusterRoleBinding = clusterRoleBindingsForId[0]
 		result[engineGuid] = engineResources

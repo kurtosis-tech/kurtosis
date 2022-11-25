@@ -123,6 +123,7 @@ func (backend KubernetesKurtosisBackend) CreateEnclave(
 	enclaveResources := &enclaveKubernetesResources{
 		namespace: enclaveNamespace,
 		pods:      []apiv1.Pod{},
+		services:  nil,
 	}
 	enclaveObjsById, err := getEnclaveObjectsFromKubernetesResources(map[enclave.EnclaveID]*enclaveKubernetesResources{
 		enclaveId: enclaveResources,
@@ -385,6 +386,7 @@ func (backend KubernetesKurtosisBackend) getSingleEnclaveAndKubernetesResources(
 		IDs: map[enclave.EnclaveID]bool{
 			enclaveId: true,
 		},
+		Statuses: nil,
 	}
 	matchingEnclaveObjects, matchingKubernetesResources, err := backend.getMatchingEnclaveObjectsAndKubernetesResources(ctx, enclaveSearchFilters)
 	if err != nil {
