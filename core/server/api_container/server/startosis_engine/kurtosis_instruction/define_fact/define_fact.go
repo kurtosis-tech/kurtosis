@@ -64,9 +64,9 @@ func (instruction *DefineFactInstruction) GetPositionInOriginalScript() *kurtosi
 
 func (instruction *DefineFactInstruction) GetCanonicalInstruction() *kurtosis_core_rpc_api_bindings.KurtosisInstruction {
 	args := []*kurtosis_core_rpc_api_bindings.KurtosisInstructionArg{
-		binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[serviceIdArgName]), serviceIdArgName, true),
-		binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[factNameArgName]), factNameArgName, true),
-		binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[recipeArgName]), recipeArgName, false),
+		binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[serviceIdArgName]), serviceIdArgName, kurtosis_instruction.Representative),
+		binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[factNameArgName]), factNameArgName, kurtosis_instruction.Representative),
+		binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[recipeArgName]), recipeArgName, kurtosis_instruction.NotRepresentative),
 	}
 	return binding_constructors.NewKurtosisInstruction(instruction.position.ToAPIType(), DefineFactBuiltinName, instruction.String(), args)
 }
@@ -98,7 +98,7 @@ func (instruction *DefineFactInstruction) parseStartosisArgs(b *starlark.Builtin
 	var recipeConfigArg *starlarkstruct.Struct
 
 	if err := starlark.UnpackArgs(b.Name(), args, kwargs, serviceIdArgName, &serviceIdArg, factNameArgName, &factNameArg, recipeArgName, &recipeConfigArg); err != nil {
-		return startosis_errors.NewInterpretationError(err.Error())
+		return startosis_errors.WrapWithInterpretationError(err, "Failed parsing arguments for function '%s' (unparsed arguments were: '%v' '%v')", DefineFactBuiltinName, args, kwargs)
 	}
 
 	instruction.starlarkKwargs[serviceIdArgName] = serviceIdArg

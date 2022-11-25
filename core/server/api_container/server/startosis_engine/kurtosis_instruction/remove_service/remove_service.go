@@ -57,7 +57,7 @@ func (instruction *RemoveServiceInstruction) GetPositionInOriginalScript() *kurt
 
 func (instruction *RemoveServiceInstruction) GetCanonicalInstruction() *kurtosis_core_rpc_api_bindings.KurtosisInstruction {
 	args := []*kurtosis_core_rpc_api_bindings.KurtosisInstructionArg{
-		binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(starlark.String(instruction.serviceId)), serviceIdArgName, true),
+		binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(starlark.String(instruction.serviceId)), serviceIdArgName, kurtosis_instruction.Representative),
 	}
 	return binding_constructors.NewKurtosisInstruction(instruction.position.ToAPIType(), RemoveServiceBuiltinName, instruction.String(), args)
 }
@@ -86,7 +86,7 @@ func (instruction *RemoveServiceInstruction) ValidateAndUpdateEnvironment(enviro
 func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (service.ServiceID, *startosis_errors.InterpretationError) {
 	var serviceIdArg starlark.String
 	if err := starlark.UnpackArgs(b.Name(), args, kwargs, serviceIdArgName, &serviceIdArg); err != nil {
-		return "", startosis_errors.NewInterpretationError(err.Error())
+		return "", startosis_errors.WrapWithInterpretationError(err, "Failed parsing arguments for function '%s' (unparsed arguments were: '%v' '%v')", RemoveServiceBuiltinName, args, kwargs)
 	}
 
 	serviceId, interpretationErr := kurtosis_instruction.ParseServiceId(serviceIdArg)

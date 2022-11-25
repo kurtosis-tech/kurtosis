@@ -61,8 +61,8 @@ func (instruction *WaitInstruction) GetPositionInOriginalScript() *kurtosis_inst
 
 func (instruction *WaitInstruction) GetCanonicalInstruction() *kurtosis_core_rpc_api_bindings.KurtosisInstruction {
 	args := []*kurtosis_core_rpc_api_bindings.KurtosisInstructionArg{
-		binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[serviceIdArgName]), serviceIdArgName, true),
-		binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[factNameArgName]), factNameArgName, true),
+		binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[serviceIdArgName]), serviceIdArgName, kurtosis_instruction.Representative),
+		binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[factNameArgName]), factNameArgName, kurtosis_instruction.Representative),
 	}
 	return binding_constructors.NewKurtosisInstruction(instruction.position.ToAPIType(), WaitBuiltinName, instruction.String(), args)
 }
@@ -91,7 +91,7 @@ func (instruction *WaitInstruction) parseStartosisArgs(b *starlark.Builtin, args
 	var serviceIdArg starlark.String
 	var factNameArg starlark.String
 	if err := starlark.UnpackArgs(b.Name(), args, kwargs, serviceIdArgName, &serviceIdArg, factNameArgName, &factNameArg); err != nil {
-		return startosis_errors.NewInterpretationError(err.Error())
+		return startosis_errors.WrapWithInterpretationError(err, "Failed parsing arguments for function '%s' (unparsed arguments were: '%v' '%v')", WaitBuiltinName, args, kwargs)
 	}
 	instruction.starlarkKwargs[serviceIdArgName] = serviceIdArg
 	instruction.starlarkKwargs[factNameArgName] = factNameArg

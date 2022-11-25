@@ -86,8 +86,8 @@ func (instruction *UploadFilesInstruction) GetPositionInOriginalScript() *kurtos
 
 func (instruction *UploadFilesInstruction) GetCanonicalInstruction() *kurtosis_core_rpc_api_bindings.KurtosisInstruction {
 	args := []*kurtosis_core_rpc_api_bindings.KurtosisInstructionArg{
-		binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[srcArgName]), srcArgName, true),
-		binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[nonOptionalArtifactIdArgName]), nonOptionalArtifactIdArgName, true),
+		binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[srcArgName]), srcArgName, kurtosis_instruction.Representative),
+		binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[nonOptionalArtifactIdArgName]), nonOptionalArtifactIdArgName, kurtosis_instruction.Representative),
 	}
 	return binding_constructors.NewKurtosisInstruction(instruction.position.ToAPIType(), UploadFilesBuiltinName, instruction.String(), args)
 }
@@ -119,15 +119,15 @@ func (instruction *UploadFilesInstruction) parseStartosisArgs(b *starlark.Builti
 	var srcPathArg starlark.String
 	var artifactIdArg = emptyStarlarkString
 	if err := starlark.UnpackArgs(b.Name(), args, kwargs, srcArgName, &srcPathArg, artifactIdArgName, &artifactIdArg); err != nil {
-		return startosis_errors.NewInterpretationError(err.Error())
+		return startosis_errors.WrapWithInterpretationError(err, "Failed parsing arguments for function '%s' (unparsed arguments were: '%v' '%v')", UploadFilesBuiltinName, args, kwargs)
 	}
 
 	if artifactIdArg == emptyStarlarkString {
-		placeHolderArtifactUuid, err := enclave_data_directory.NewFilesArtifactUUID()
+		placeHolderArtifactId, err := enclave_data_directory.NewFilesArtifactUUID()
 		if err != nil {
 			return startosis_errors.NewInterpretationError("An empty or no artifact_uuid was passed, we tried creating one but failed")
 		}
-		artifactIdArg = starlark.String(placeHolderArtifactUuid)
+		artifactIdArg = starlark.String(placeHolderArtifactId)
 	}
 
 	instruction.starlarkKwargs[srcArgName] = srcPathArg
@@ -139,7 +139,7 @@ func (instruction *UploadFilesInstruction) parseStartosisArgs(b *starlark.Builti
 		return interpretationErr
 	}
 
-	artifactId, interpretationErr := kurtosis_instruction.ParseArtifactUuid(nonOptionalArtifactIdArgName, artifactIdArg)
+	artifactId, interpretationErr := kurtosis_instruction.ParseArtifactId(nonOptionalArtifactIdArgName, artifactIdArg)
 	if interpretationErr != nil {
 		return interpretationErr
 	}

@@ -49,7 +49,8 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, ins
 					errorChan <- binding_constructors.NewKurtosisExecutionError(stacktrace.Propagate(err, "An error occurred executing instruction (number %d): \n%v", index+1, instruction.String()).Error())
 					return
 				}
-				kurtosisInstructionsStream <- binding_constructors.AddResultToKurtosisInstruction(instruction.GetCanonicalInstruction(), instructionOutput)
+				instructionWithResult := binding_constructors.AddResultToKurtosisInstruction(instruction.GetCanonicalInstruction(), instructionOutput)
+				kurtosisInstructionsStream <- instructionWithResult
 			} else {
 				kurtosisInstructionsStream <- instruction.GetCanonicalInstruction()
 			}

@@ -63,10 +63,10 @@ func (instruction *PrintInstruction) GetPositionInOriginalScript() *kurtosis_ins
 func (instruction *PrintInstruction) GetCanonicalInstruction() *kurtosis_core_rpc_api_bindings.KurtosisInstruction {
 	args := make([]*kurtosis_core_rpc_api_bindings.KurtosisInstructionArg, len(instruction.args))
 	for idx, arg := range instruction.args {
-		args[idx] = binding_constructors.NewKurtosisInstructionArg(shared_helpers.CanonicalizeArgValue(arg), true)
+		args[idx] = binding_constructors.NewKurtosisInstructionArg(shared_helpers.CanonicalizeArgValue(arg), kurtosis_instruction.Representative)
 	}
-	args = append(args, binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(starlark.String(instruction.separator)), separatorArgName, false))
-	args = append(args, binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(starlark.String(instruction.end)), endArgName, false))
+	args = append(args, binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(starlark.String(instruction.separator)), separatorArgName, kurtosis_instruction.NotRepresentative))
+	args = append(args, binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(starlark.String(instruction.end)), endArgName, kurtosis_instruction.NotRepresentative))
 	return binding_constructors.NewKurtosisInstruction(instruction.position.ToAPIType(), PrintBuiltinName, instruction.String(), args)
 }
 

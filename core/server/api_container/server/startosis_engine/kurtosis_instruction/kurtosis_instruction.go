@@ -7,6 +7,11 @@ import (
 	"go.starlark.net/starlark"
 )
 
+const (
+	Representative    = true
+	NotRepresentative = false
+)
+
 var (
 	NoArgs []starlark.Value
 )
