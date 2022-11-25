@@ -59,7 +59,7 @@ var (
 	}
 )
 
-var StarlarkExecCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
+var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
 	CommandStr:                command_str_consts.StarlarkRunCmdStr,
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
 	EngineClientContextKey:    engineClientCtxKey,
