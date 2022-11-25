@@ -153,6 +153,10 @@ func (instruction *AssertInstruction) parseStartosisArgs(b *starlark.Builtin, ar
 		return startosis_errors.NewInterpretationError(err.Error())
 	}
 
+	instruction.assertion = string(assertionArg)
+	instruction.runtimeValue = string(runtimeValueArg)
+	instruction.target = targetArg
+
 	instruction.starlarkKwargs = starlark.StringDict{
 		runtimeValueArgName: starlark.String(instruction.runtimeValue),
 		assertionArgName:    starlark.String(instruction.assertion),
@@ -160,9 +164,6 @@ func (instruction *AssertInstruction) parseStartosisArgs(b *starlark.Builtin, ar
 	}
 	instruction.starlarkKwargs.Freeze()
 
-	instruction.assertion = string(assertionArg)
-	instruction.runtimeValue = string(runtimeValueArg)
-	instruction.target = targetArg
 	if _, found := stringTokenToComparisonStarlarkToken[instruction.assertion]; !found && instruction.assertion != "IN" && instruction.assertion != "NOT_IN" {
 		return startosis_errors.NewInterpretationError("'%v' is not a valid assertion", assertionArg)
 	}
