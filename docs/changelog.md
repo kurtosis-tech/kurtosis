@@ -2,6 +2,8 @@
 ### Breaking Changes
 - Renamed `kurtosis.mod` file to `kurtosis.yml` this file extension enable syntax highlighting
   - Users will have to rename all theirs `kurtosis.mod` files
+- Removed `module` key in the `kurtosis.yml` (formerly called `kurtosis.mod`) file to don't have nested keys
+  - Users will have to update their `kurtosis.yml` to remove the key and move the `name` key in the root
 
 ### Changes
 - Made `run` an EngineCosumingKurtosisCommand, i.e it automatically creates an engine if it doesn't exist
