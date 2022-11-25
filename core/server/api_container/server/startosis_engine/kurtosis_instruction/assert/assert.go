@@ -75,10 +75,10 @@ func (instruction *AssertInstruction) Execute(ctx context.Context) (*string, err
 	if err != nil {
 		return nil, err
 	}
-	if currentValue.Type() != instruction.target.Type() {
-		return nil, stacktrace.NewError("Assert failed because '%v' is type '%v' and '%v' is type '%v'", currentValue, currentValue.Type(), instruction.target, instruction.target.Type())
-	}
 	if comparisonToken, found := stringTokenToComparisonStarlarkToken[instruction.assertion]; found {
+		if currentValue.Type() != instruction.target.Type() {
+			return nil, stacktrace.NewError("Assert failed because '%v' is type '%v' and '%v' is type '%v'", currentValue, currentValue.Type(), instruction.target, instruction.target.Type())
+		}
 		result, err := currentValue.CompareSameType(comparisonToken, instruction.target, 1)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Assert comparison failed '%v' '%v' '%v'", currentValue, instruction.assertion, instruction.target)
@@ -89,7 +89,7 @@ func (instruction *AssertInstruction) Execute(ctx context.Context) (*string, err
 	} else {
 		listTarget, ok := instruction.target.(*starlark.List)
 		if !ok {
-			return nil, stacktrace.NewError("Assertion failed, expected list but got '%v'", instruction.target)
+			return nil, stacktrace.NewError("Assertion failed, expected list but got '%v'", instruction.target.Type())
 		}
 		inList := false
 		for i := 0; i < listTarget.Len(); i++ {
