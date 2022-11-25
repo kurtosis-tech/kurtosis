@@ -29,9 +29,6 @@ export async  function parseKurtosisYaml(kurtosisYamlFilepath: string): Promise<
     try {
         kurtosisYamlFile = fs.readFileSync(kurtosisYamlFilepath, UTF8_ENCODING)
     } catch(error) {
-        if (error instanceof Error) {
-            return err(error);
-        }
         return err(new Error(
             `An error occurred while reading the '${KURTOSIS_YAML_FILENAME}' file at '${kurtosisYamlFilepath}'`
         ));
@@ -41,9 +38,6 @@ export async  function parseKurtosisYaml(kurtosisYamlFilepath: string): Promise<
     try {
         parsedYAML = (yaml.load(kurtosisYamlFile) as KurtosisYaml)
     } catch(error) {
-        if (error instanceof Error) {
-            return err(error);
-        }
         return err(new Error(
             `"An error occurred while parsing the '${KURTOSIS_YAML_FILENAME}' file at '${kurtosisYamlFilepath}'`
         ));
