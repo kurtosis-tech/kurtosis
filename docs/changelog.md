@@ -1,5 +1,8 @@
 # TBD
 
+### Changes
+- Made `run` an EngineCosumingKurtosisCommand, i.e it automatically creates an engine if it doesn't exist
+
 # 0.54.1
 
 ### Fixes
@@ -7,6 +10,7 @@
 
 ### Changes
 - Small cleanup in `grpc_web_api_container_client` and `grpc_node_api_container_client`. They were implementing executeRemoteKurtosisModule unnecessarily
+
 
 # 0.54.0
 

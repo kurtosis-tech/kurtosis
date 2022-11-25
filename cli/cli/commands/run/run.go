@@ -6,14 +6,16 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	enclave_consts "github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/enclave"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/file_system_path_arg"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"os"
@@ -24,10 +26,10 @@ import (
 )
 
 const (
-	scriptOrModulePathKey = "script-or-module-path"
+	scriptOrModulePathKey                = "script-or-module-path"
 	isScriptOrModulePathArgumentOptional = false
 
-	starlarkExtension     = ".star"
+	starlarkExtension = ".star"
 
 	moduleArgsFlagKey = "args"
 	defaultModuleArgs = "{}"
@@ -44,7 +46,10 @@ const (
 
 	githubDomainPrefix          = "github.com/"
 	isNewEnclaveFlagWhenCreated = true
-	interruptChanBufferSize = 5
+	interruptChanBufferSize     = 5
+
+	kurtosisBackendCtxKey = "kurtosis-backend"
+	engineClientCtxKey    = "engine-client"
 )
 
 var (
@@ -54,9 +59,11 @@ var (
 	}
 )
 
-var StarlarkExecCmd = &lowlevel.LowlevelKurtosisCommand{
-	CommandStr:       command_str_consts.StarlarkRunCmdStr,
-	ShortDescription: "Run a Starlark script or module",
+var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
+	CommandStr:                command_str_consts.StarlarkRunCmdStr,
+	KurtosisBackendContextKey: kurtosisBackendCtxKey,
+	EngineClientContextKey:    engineClientCtxKey,
+	ShortDescription:          "Run a Starlark script or module",
 	LongDescription: "Run a Starlark module or script in an enclave. For a script we expect a path to a " + starlarkExtension +
 		" file. For a module we expect path to a directory containing kurtosis.mod or a fully qualified Github repository path containing a module. If the enclave-id param is provided, Kurtosis " +
 		"will exec the script inside this enclave, or create it if it doesn't exist. If no enclave-id param is " +
@@ -102,13 +109,13 @@ var StarlarkExecCmd = &lowlevel.LowlevelKurtosisCommand{
 			githubScriptpathValidationExceptionFunc,
 		),
 	},
-	PreValidationAndRunFunc:  nil,
-	RunFunc:                  run,
-	PostValidationAndRunFunc: nil,
+	RunFunc: run,
 }
 
 func run(
 	ctx context.Context,
+	_ backend_interface.KurtosisBackend,
+	_ kurtosis_engine_rpc_api_bindings.EngineServiceClient,
 	flags *flags.ParsedFlags,
 	args *args.ParsedArgs,
 ) error {
