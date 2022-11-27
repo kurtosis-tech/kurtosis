@@ -515,19 +515,11 @@ func (enclaveCtx *EnclaveContext) WaitForHttpPostEndpointAvailability(serviceId 
 	return nil
 }
 
-func (enclaveCtx *EnclaveContext) getServicesResponse() (*kurtosis_core_rpc_api_bindings.GetServicesResponse, error) {
+// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+func (enclaveCtx *EnclaveContext) GetServices() (map[services.ServiceID]bool, map[services.ServiceGUID]bool, error) {
 	getAllServicesIdFilter := map[string]bool{}
 	getServicesArgs := binding_constructors.NewGetServicesArgs(getAllServicesIdFilter)
 	response, err := enclaveCtx.client.GetServices(context.Background(), getServicesArgs)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the service IDs in the enclave")
-	}
-	return response, nil
-}
-
-// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-func (enclaveCtx *EnclaveContext) GetServices() (map[services.ServiceID]bool, map[services.ServiceGUID]bool, error) {
-	response, err := enclaveCtx.getServicesResponse()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the service IDs in the enclave")
 	}
