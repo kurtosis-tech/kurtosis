@@ -73,7 +73,6 @@ func getCompletions(ctx context.Context, flags *flags.ParsedFlags, previousArgs 
 	return result, nil
 }
 
-// Create a validation function using the previously-created
 func getValidationFunc(
 	argKey string,
 	engineClientCtxKey string,
