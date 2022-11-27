@@ -388,6 +388,62 @@ proto.api_container_api.ApiContainerServicePromiseClient.prototype.executeStarto
 /**
  * @const
  * @type {!grpc.web.MethodDescriptor<
+ *   !proto.api_container_api.ExecuteStartosisScriptArgs,
+ *   !proto.api_container_api.KurtosisExecutionResponseLine>}
+ */
+const methodDescriptor_ApiContainerService_ExecuteKurtosisScript = new grpc.web.MethodDescriptor(
+  '/api_container_api.ApiContainerService/ExecuteKurtosisScript',
+  grpc.web.MethodType.SERVER_STREAMING,
+  proto.api_container_api.ExecuteStartosisScriptArgs,
+  proto.api_container_api.KurtosisExecutionResponseLine,
+  /**
+   * @param {!proto.api_container_api.ExecuteStartosisScriptArgs} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.api_container_api.KurtosisExecutionResponseLine.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.api_container_api.ExecuteStartosisScriptArgs} request The request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.KurtosisExecutionResponseLine>}
+ *     The XHR Node Readable Stream
+ */
+proto.api_container_api.ApiContainerServiceClient.prototype.executeKurtosisScript =
+    function(request, metadata) {
+  return this.client_.serverStreaming(this.hostname_ +
+      '/api_container_api.ApiContainerService/ExecuteKurtosisScript',
+      request,
+      metadata || {},
+      methodDescriptor_ApiContainerService_ExecuteKurtosisScript);
+};
+
+
+/**
+ * @param {!proto.api_container_api.ExecuteStartosisScriptArgs} request The request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.KurtosisExecutionResponseLine>}
+ *     The XHR Node Readable Stream
+ */
+proto.api_container_api.ApiContainerServicePromiseClient.prototype.executeKurtosisScript =
+    function(request, metadata) {
+  return this.client_.serverStreaming(this.hostname_ +
+      '/api_container_api.ApiContainerService/ExecuteKurtosisScript',
+      request,
+      metadata || {},
+      methodDescriptor_ApiContainerService_ExecuteKurtosisScript);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
  *   !proto.api_container_api.ExecuteStartosisModuleArgs,
  *   !proto.api_container_api.ExecuteStartosisResponse>}
  */
@@ -443,6 +499,62 @@ proto.api_container_api.ApiContainerServicePromiseClient.prototype.executeStarto
       request,
       metadata || {},
       methodDescriptor_ApiContainerService_ExecuteStartosisModule);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.api_container_api.ExecuteStartosisModuleArgs,
+ *   !proto.api_container_api.KurtosisExecutionResponseLine>}
+ */
+const methodDescriptor_ApiContainerService_ExecuteKurtosisModule = new grpc.web.MethodDescriptor(
+  '/api_container_api.ApiContainerService/ExecuteKurtosisModule',
+  grpc.web.MethodType.SERVER_STREAMING,
+  proto.api_container_api.ExecuteStartosisModuleArgs,
+  proto.api_container_api.KurtosisExecutionResponseLine,
+  /**
+   * @param {!proto.api_container_api.ExecuteStartosisModuleArgs} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.api_container_api.KurtosisExecutionResponseLine.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.api_container_api.ExecuteStartosisModuleArgs} request The request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.KurtosisExecutionResponseLine>}
+ *     The XHR Node Readable Stream
+ */
+proto.api_container_api.ApiContainerServiceClient.prototype.executeKurtosisModule =
+    function(request, metadata) {
+  return this.client_.serverStreaming(this.hostname_ +
+      '/api_container_api.ApiContainerService/ExecuteKurtosisModule',
+      request,
+      metadata || {},
+      methodDescriptor_ApiContainerService_ExecuteKurtosisModule);
+};
+
+
+/**
+ * @param {!proto.api_container_api.ExecuteStartosisModuleArgs} request The request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.KurtosisExecutionResponseLine>}
+ *     The XHR Node Readable Stream
+ */
+proto.api_container_api.ApiContainerServicePromiseClient.prototype.executeKurtosisModule =
+    function(request, metadata) {
+  return this.client_.serverStreaming(this.hostname_ +
+      '/api_container_api.ApiContainerService/ExecuteKurtosisModule',
+      request,
+      metadata || {},
+      methodDescriptor_ApiContainerService_ExecuteKurtosisModule);
 };
 
 

@@ -4,7 +4,7 @@ import * as grpc from "@grpc/grpc-js"
 
 import { createEnclave } from "../../test_helpers/enclave_setup";
 import {validateDataStoreServiceIsHealthy} from "../../test_helpers/test_helpers";
-import {generateScriptOutput} from "../../test_helpers/startosis_helpers";
+import {generateScriptOutput, readStreamContentUntilClosed} from "../../test_helpers/startosis_helpers";
 
 const TEST_NAME = "upload-files-test"
 const IS_PARTITIONING_ENABLED = false
@@ -28,8 +28,8 @@ PATH_TO_MOUNT_UPLOADED_DIR = "` + PATH_TO_MOUNT_UPLOADED_DIR + `"
 
 print("Adding service " + DATASTORE_SERVICE_ID + ".")
 
-uploaded_artifact_uuid = upload_files(DIR_TO_UPLOAD)
-print("Uploaded " + uploaded_artifact_uuid)
+uploaded_artifact_id = upload_files(DIR_TO_UPLOAD)
+print("Uploaded " + uploaded_artifact_id)
 
 
 config = struct(
@@ -38,7 +38,7 @@ config = struct(
         DATASTORE_PORT_ID: struct(number = DATASTORE_PORT_NUMBER, protocol = DATASTORE_PORT_PROTOCOL)
     },
 	files = {
-		uploaded_artifact_uuid: PATH_TO_MOUNT_UPLOADED_DIR
+		uploaded_artifact_id: PATH_TO_MOUNT_UPLOADED_DIR
 	}
 )
 
@@ -57,23 +57,23 @@ test("Test upload files startosis", async () => {
     try {
         // ------------------------------------- TEST SETUP ----------------------------------------------
         log.info("Loading module...")
-        const executeStartosisScriptResult = await enclaveContext.executeStartosisScript(STARTOSIS_SCRIPT, DEFAULT_DRY_RUN)
-
-        if (executeStartosisScriptResult.isErr()) {
+        const outputStream = await enclaveContext.executeKurtosisScript(STARTOSIS_SCRIPT, DEFAULT_DRY_RUN)
+        if (outputStream.isErr()) {
             log.error("An error occurred executing the Startosis SCript")
-            throw executeStartosisScriptResult.error
+            throw outputStream.error
         }
-        const executeStartosisScriptValue = executeStartosisScriptResult.value
+        const [interpretationError, validationErrors, executionError, instructions] = await readStreamContentUntilClosed(outputStream.value);
+
         const expectedScriptRegexPattern = `Adding service example-datastore-server-1.
 Uploaded [a-f0-9-]{36}
 `
         const expectedScriptRegex = new RegExp(expectedScriptRegexPattern)
 
-        expect(generateScriptOutput(executeStartosisScriptValue.getKurtosisInstructionsList())).toMatch(expectedScriptRegex)
+        expect(generateScriptOutput(instructions)).toMatch(expectedScriptRegex)
 
-        expect(executeStartosisScriptValue.getInterpretationError()).toBeUndefined()
-        expect(executeStartosisScriptValue.getExecutionError()).toBeUndefined()
-        expect(executeStartosisScriptValue.getValidationErrors()).toBeUndefined()
+        expect(interpretationError).toBeUndefined()
+        expect(validationErrors).toEqual([])
+        expect(executionError).toBeUndefined()
         log.info("Script Executed Successfully")
 
         // ------------------------------------- TEST RUN ----------------------------------------------

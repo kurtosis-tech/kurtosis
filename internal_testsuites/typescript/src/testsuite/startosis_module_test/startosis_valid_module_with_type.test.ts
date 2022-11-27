@@ -2,7 +2,7 @@ import {createEnclave} from "../../test_helpers/enclave_setup";
 import {DEFAULT_DRY_RUN, IS_PARTITIONING_ENABLED, JEST_TIMEOUT_MS} from "./shared_constants";
 import * as path from "path";
 import log from "loglevel";
-import {generateScriptOutput} from "../../test_helpers/startosis_helpers";
+import {generateScriptOutput, readStreamContentUntilClosed} from "../../test_helpers/startosis_helpers";
 
 const VALID_MODULE_WITH_TYPES_TEST_NAME = "valid-module-with-types";
 const VALID_MODULE_WITH_TYPES_REL_PATH = "../../../../startosis/valid-kurtosis-module-with-types"
@@ -26,21 +26,21 @@ test("Test valid startosis module with types", async () => {
         log.info(`Loading module at path '${moduleRootPath}'`)
 
         const serializedParams = "{\"greetings\": \"Bonjour!\"}"
-        const executeStartosisModuleResult = await enclaveContext.executeStartosisModule(moduleRootPath, serializedParams, DEFAULT_DRY_RUN)
+        const outputStream = await enclaveContext.executeKurtosisModule(moduleRootPath, serializedParams, DEFAULT_DRY_RUN)
 
-        if (executeStartosisModuleResult.isErr()) {
+        if (outputStream.isErr()) {
             log.error(`An error occurred execute startosis module '${moduleRootPath}'`);
-            throw executeStartosisModuleResult.error
+            throw outputStream.error
         }
-        const executeStartosisModuleValue = executeStartosisModuleResult.value;
+        const [interpretationError, validationErrors, executionError, instructions] = await readStreamContentUntilClosed(outputStream.value);
 
         const expectedScriptOutput = "Bonjour!\nHello World!\n"
 
-        expect(generateScriptOutput(executeStartosisModuleValue.getKurtosisInstructionsList())).toEqual(expectedScriptOutput)
+        expect(generateScriptOutput(instructions)).toEqual(expectedScriptOutput)
 
-        expect(executeStartosisModuleValue.getInterpretationError()).toBeUndefined()
-        expect(executeStartosisModuleValue.getExecutionError()).toBeUndefined()
-        expect(executeStartosisModuleValue.getValidationErrors()).toBeUndefined()
+        expect(interpretationError).toBeUndefined()
+        expect(validationErrors).toEqual([])
+        expect(executionError).toBeUndefined()
     } finally {
         stopEnclaveFunction()
     }

@@ -1,6 +1,8 @@
 package kurtosis_print
 
 import (
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
@@ -8,8 +10,9 @@ import (
 )
 
 func TestPrintInstruction_StringRepresentation(t *testing.T) {
+	position := kurtosis_instruction.NewInstructionPosition(1, 1, "dummyFile")
 	instruction := NewPrintInstruction(
-		kurtosis_instruction.NewInstructionPosition(1, 1, "dummyFile"),
+		position,
 		[]starlark.Value{
 			starlark.String("foo"),
 			starlark.NewList([]starlark.Value{
@@ -19,16 +22,18 @@ func TestPrintInstruction_StringRepresentation(t *testing.T) {
 		"; ",
 		"EOL",
 	)
-	expectedMultiLineStr := `# from: dummyFile[1:1]
-print(
-	"foo",
-	[
-		"bar"
-	],
-	end="EOL",
-	sep="; "
-)`
-	require.Equal(t, expectedMultiLineStr, instruction.GetCanonicalInstruction())
-	expectedSingleLineStr := `print("foo", ["bar"], end="EOL", sep="; ")`
-	require.Equal(t, expectedSingleLineStr, instruction.String())
+	expectedStr := `print("foo", ["bar"], end="EOL", sep="; ")`
+	require.Equal(t, expectedStr, instruction.String())
+
+	canonicalInstruction := binding_constructors.NewKurtosisInstruction(
+		position.ToAPIType(),
+		PrintBuiltinName,
+		expectedStr,
+		[]*kurtosis_core_rpc_api_bindings.KurtosisInstructionArg{
+			binding_constructors.NewKurtosisInstructionArg(`"foo"`, true),
+			binding_constructors.NewKurtosisInstructionArg(`["bar"]`, true),
+			binding_constructors.NewKurtosisInstructionKwarg(`"; "`, "sep", false),
+			binding_constructors.NewKurtosisInstructionKwarg(`"EOL"`, "end", false),
+		})
+	require.Equal(t, canonicalInstruction, instruction.GetCanonicalInstruction())
 }

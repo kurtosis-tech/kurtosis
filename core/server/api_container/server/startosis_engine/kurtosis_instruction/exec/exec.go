@@ -2,7 +2,8 @@ package exec
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	kurtosis_backend_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
@@ -27,12 +28,11 @@ const (
 func GenerateExecBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, serviceNetwork service_network.ServiceNetwork) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 	// TODO: Force returning an InterpretationError rather than a normal error
 	return func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
-		serviceId, commandArgs, expectedExitCode, interpretationError := parseStartosisArgs(b, args, kwargs)
-		if interpretationError != nil {
+		instructionPosition := shared_helpers.GetCallerPositionFromThread(thread)
+		execInstruction := newEmptyExecInstruction(serviceNetwork, instructionPosition)
+		if interpretationError := execInstruction.parseStartosisArgs(b, args, kwargs); interpretationError != nil {
 			return nil, interpretationError
 		}
-		instructionPosition := shared_helpers.GetCallerPositionFromThread(thread)
-		execInstruction := NewExecInstruction(serviceNetwork, instructionPosition, serviceId, commandArgs, expectedExitCode)
 		*instructionsQueue = append(*instructionsQueue, execInstruction)
 		return starlark.None, nil
 	}
@@ -41,19 +41,33 @@ func GenerateExecBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstr
 type ExecInstruction struct {
 	serviceNetwork service_network.ServiceNetwork
 
-	position         *kurtosis_instruction.InstructionPosition
+	position       *kurtosis_instruction.InstructionPosition
+	starlarkKwargs starlark.StringDict
+
 	serviceId        kurtosis_backend_service.ServiceID
 	command          []string
 	expectedExitCode int32
 }
 
-func NewExecInstruction(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceID, command []string, expectedExitCode int32) *ExecInstruction {
+func NewExecInstruction(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceID, command []string, expectedExitCode int32, starlarkKwargs starlark.StringDict) *ExecInstruction {
 	return &ExecInstruction{
 		serviceNetwork:   serviceNetwork,
 		position:         position,
 		serviceId:        serviceId,
 		command:          command,
 		expectedExitCode: expectedExitCode,
+		starlarkKwargs:   starlarkKwargs,
+	}
+}
+
+func newEmptyExecInstruction(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition) *ExecInstruction {
+	return &ExecInstruction{
+		serviceNetwork:   serviceNetwork,
+		position:         position,
+		serviceId:        "",
+		command:          nil,
+		expectedExitCode: 0,
+		starlarkKwargs:   starlark.StringDict{},
 	}
 }
 
@@ -61,8 +75,13 @@ func (instruction *ExecInstruction) GetPositionInOriginalScript() *kurtosis_inst
 	return instruction.position
 }
 
-func (instruction *ExecInstruction) GetCanonicalInstruction() string {
-	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(ExecBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs(), instruction.position)
+func (instruction *ExecInstruction) GetCanonicalInstruction() *kurtosis_core_rpc_api_bindings.KurtosisInstruction {
+	args := []*kurtosis_core_rpc_api_bindings.KurtosisInstructionArg{
+		binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[serviceIdArgName]), serviceIdArgName, kurtosis_instruction.Representative),
+		binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[commandArgName]), commandArgName, kurtosis_instruction.NotRepresentative),
+		binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[nonOptionalExitCodeArgName]), nonOptionalExitCodeArgName, kurtosis_instruction.NotRepresentative),
+	}
+	return binding_constructors.NewKurtosisInstruction(instruction.position.ToAPIType(), ExecBuiltinName, instruction.String(), args)
 }
 
 func (instruction *ExecInstruction) Execute(ctx context.Context) (*string, error) {
@@ -77,7 +96,7 @@ func (instruction *ExecInstruction) Execute(ctx context.Context) (*string, error
 }
 
 func (instruction *ExecInstruction) String() string {
-	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(ExecBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs(), instruction.position)
+	return shared_helpers.CanonicalizeInstruction(ExecBuiltinName, kurtosis_instruction.NoArgs, instruction.starlarkKwargs)
 }
 
 func (instruction *ExecInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
@@ -87,40 +106,35 @@ func (instruction *ExecInstruction) ValidateAndUpdateEnvironment(environment *st
 	return nil
 }
 
-func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (service.ServiceID, []string, int32, *startosis_errors.InterpretationError) {
+func (instruction *ExecInstruction) parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) *startosis_errors.InterpretationError {
 
 	var serviceIdArg starlark.String
 	var commandArg *starlark.List
 	var expectedExitCodeArg = starlark.MakeInt(successfulExitCode)
 	if err := starlark.UnpackArgs(b.Name(), args, kwargs, serviceIdArgName, &serviceIdArg, commandArgName, &commandArg, expectedExitCodeArgName, &expectedExitCodeArg); err != nil {
-		return "", nil, 0, startosis_errors.NewInterpretationError(err.Error())
+		return startosis_errors.WrapWithInterpretationError(err, "Failed parsing arguments for function '%s' (unparsed arguments were: '%v' '%v')", ExecBuiltinName, args, kwargs)
 	}
+	instruction.starlarkKwargs[serviceIdArgName] = serviceIdArg
+	instruction.starlarkKwargs[commandArgName] = commandArg
+	instruction.starlarkKwargs[nonOptionalExitCodeArgName] = expectedExitCodeArg
+	instruction.starlarkKwargs.Freeze()
 
 	serviceId, interpretationErr := kurtosis_instruction.ParseServiceId(serviceIdArg)
 	if interpretationErr != nil {
-		return "", nil, 0, interpretationErr
+		return interpretationErr
 	}
 
 	command, interpretationErr := kurtosis_instruction.ParseCommand(commandArg)
 	if interpretationErr != nil {
-		return "", nil, 0, interpretationErr
+		return interpretationErr
 	}
 
 	expectedExitCode, interpretationErr := kurtosis_instruction.ParseExpectedExitCode(expectedExitCodeArg)
 	if interpretationErr != nil {
-		return "", nil, 0, interpretationErr
+		return interpretationErr
 	}
-	return serviceId, command, expectedExitCode, nil
-}
-
-func (instruction *ExecInstruction) getKwargs() starlark.StringDict {
-	command := make([]starlark.Value, len(instruction.command))
-	for idx := 0; idx < len(instruction.command); idx++ {
-		command[idx] = starlark.String(instruction.command[idx])
-	}
-	return starlark.StringDict{
-		serviceIdArgName:           starlark.String(instruction.serviceId),
-		commandArgName:             starlark.NewList(command),
-		nonOptionalExitCodeArgName: starlark.MakeInt(int(instruction.expectedExitCode)),
-	}
+	instruction.serviceId = serviceId
+	instruction.command = command
+	instruction.expectedExitCode = expectedExitCode
+	return nil
 }

@@ -1,10 +1,9 @@
-package exec
+package run
 
 import (
 	"github.com/stretchr/testify/require"
 	"testing"
 )
-
 
 func TestValidateArgs_valid(t *testing.T) {
 	input := `{"hello": "world!"}`

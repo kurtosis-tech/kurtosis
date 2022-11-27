@@ -261,10 +261,23 @@ func NewExecuteStartosisScriptArgs(serializedString string, dryRun bool) *kurtos
 
 func NewExecuteStartosisModuleArgs(moduleId string, compressedModule []byte, serializedParams string, dryRun bool) *kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleArgs {
 	return &kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleArgs{
-		ModuleId:         moduleId,
-		Data:             compressedModule,
-		SerializedParams: serializedParams,
-		DryRun:           &dryRun,
+		ModuleId:               moduleId,
+		StartosisModuleContent: &kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleArgs_Local{Local: compressedModule},
+		SerializedParams:       serializedParams,
+		DryRun:                 &dryRun,
+	}
+}
+
+// ==============================================================================================
+//                                 Execute Startosis Remote Module
+// ==============================================================================================
+
+func NewExecuteStartosisRemoteModuleArgs(moduleId string, serializedParams string, dryRun bool) *kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleArgs {
+	return &kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleArgs{
+		ModuleId:               moduleId,
+		SerializedParams:       serializedParams,
+		DryRun:                 &dryRun,
+		StartosisModuleContent: &kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleArgs_Remote{Remote: true},
 	}
 }
 
@@ -337,10 +350,22 @@ func NewKurtosisExecutionError(errorMessage string) *kurtosis_core_rpc_api_bindi
 	}
 }
 
-func NewKurtosisInstruction(position *kurtosis_core_rpc_api_bindings.KurtosisInstructionPosition, executableInstruction string, maybeInstructionResult *string) *kurtosis_core_rpc_api_bindings.KurtosisInstruction {
+func NewKurtosisInstruction(position *kurtosis_core_rpc_api_bindings.KurtosisInstructionPosition, name string, executableInstruction string, arguments []*kurtosis_core_rpc_api_bindings.KurtosisInstructionArg) *kurtosis_core_rpc_api_bindings.KurtosisInstruction {
 	return &kurtosis_core_rpc_api_bindings.KurtosisInstruction{
+		InstructionName:       name,
 		Position:              position,
 		ExecutableInstruction: executableInstruction,
+		Arguments:             arguments,
+		InstructionResult:     nil,
+	}
+}
+
+func AddResultToKurtosisInstruction(kurtosisInstructionWithNoResult *kurtosis_core_rpc_api_bindings.KurtosisInstruction, maybeInstructionResult *string) *kurtosis_core_rpc_api_bindings.KurtosisInstruction {
+	return &kurtosis_core_rpc_api_bindings.KurtosisInstruction{
+		InstructionName:       kurtosisInstructionWithNoResult.GetInstructionName(),
+		Position:              kurtosisInstructionWithNoResult.GetPosition(),
+		ExecutableInstruction: kurtosisInstructionWithNoResult.GetExecutableInstruction(),
+		Arguments:             kurtosisInstructionWithNoResult.GetArguments(),
 		InstructionResult:     maybeInstructionResult,
 	}
 }
@@ -350,6 +375,66 @@ func NewKurtosisInstructionPosition(filename string, line int32, column int32) *
 		Filename: filename,
 		Line:     line,
 		Column:   column,
+	}
+}
+
+func NewKurtosisInstructionKwarg(serializedArgValue string, argName string, isRepresentative bool) *kurtosis_core_rpc_api_bindings.KurtosisInstructionArg {
+	return &kurtosis_core_rpc_api_bindings.KurtosisInstructionArg{
+		SerializedArgValue: serializedArgValue,
+		ArgName:            &argName,
+		IsRepresentative:   isRepresentative,
+	}
+}
+
+func NewKurtosisInstructionArg(serializedArgValue string, isRepresentative bool) *kurtosis_core_rpc_api_bindings.KurtosisInstructionArg {
+	return &kurtosis_core_rpc_api_bindings.KurtosisInstructionArg{
+		SerializedArgValue: serializedArgValue,
+		ArgName:            nil,
+		IsRepresentative:   isRepresentative,
+	}
+}
+
+func NewKurtosisExecutionResponseLineFromInstruction(instruction *kurtosis_core_rpc_api_bindings.KurtosisInstruction) *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine {
+	return &kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine{
+		KurtosisExecutionResponseLine: &kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine_Instruction{
+			Instruction: instruction,
+		},
+	}
+}
+
+func NewKurtosisExecutionResponseLineFromInterpretationError(interpretationError *kurtosis_core_rpc_api_bindings.KurtosisInterpretationError) *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine {
+	return &kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine{
+		KurtosisExecutionResponseLine: &kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine_Error{
+			Error: &kurtosis_core_rpc_api_bindings.KurtosisError{
+				Error: &kurtosis_core_rpc_api_bindings.KurtosisError_InterpretationError{
+					InterpretationError: interpretationError,
+				},
+			},
+		},
+	}
+}
+
+func NewKurtosisExecutionResponseLineFromValidationError(validationError *kurtosis_core_rpc_api_bindings.KurtosisValidationError) *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine {
+	return &kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine{
+		KurtosisExecutionResponseLine: &kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine_Error{
+			Error: &kurtosis_core_rpc_api_bindings.KurtosisError{
+				Error: &kurtosis_core_rpc_api_bindings.KurtosisError_ValidationError{
+					ValidationError: validationError,
+				},
+			},
+		},
+	}
+}
+
+func NewKurtosisExecutionResponseLineFromExecutionError(executionError *kurtosis_core_rpc_api_bindings.KurtosisExecutionError) *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine {
+	return &kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine{
+		KurtosisExecutionResponseLine: &kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine_Error{
+			Error: &kurtosis_core_rpc_api_bindings.KurtosisError{
+				Error: &kurtosis_core_rpc_api_bindings.KurtosisError_ExecutionError{
+					ExecutionError: executionError,
+				},
+			},
+		},
 	}
 }
 

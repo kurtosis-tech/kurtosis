@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	kurtosis_backend_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/facts_engine"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
@@ -27,12 +26,11 @@ const (
 func GenerateDefineFactBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, factsEngine *facts_engine.FactsEngine) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 	// TODO: Force returning an InterpretationError rather than a normal error
 	return func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
-		serviceId, commandArgs, factRecipe, interpretationError := parseStartosisArgs(b, args, kwargs)
-		if interpretationError != nil {
+		instructionPosition := shared_helpers.GetCallerPositionFromThread(thread)
+		defineFactInstruction := newEmptyDefineFactInstruction(factsEngine, instructionPosition)
+		if interpretationError := defineFactInstruction.parseStartosisArgs(b, args, kwargs); interpretationError != nil {
 			return nil, interpretationError
 		}
-		instructionPosition := shared_helpers.GetCallerPositionFromThread(thread)
-		defineFactInstruction := NewDefineFactInstruction(factsEngine, instructionPosition, serviceId, commandArgs, factRecipe)
 		*instructionsQueue = append(*instructionsQueue, defineFactInstruction)
 		return starlark.None, nil
 	}
@@ -41,19 +39,22 @@ func GenerateDefineFactBuiltin(instructionsQueue *[]kurtosis_instruction.Kurtosi
 type DefineFactInstruction struct {
 	factsEngine *facts_engine.FactsEngine
 
-	position   *kurtosis_instruction.InstructionPosition
+	position       *kurtosis_instruction.InstructionPosition
+	starlarkKwargs starlark.StringDict
+
 	serviceId  kurtosis_backend_service.ServiceID
 	factName   string
 	factRecipe *kurtosis_core_rpc_api_bindings.FactRecipe
 }
 
-func NewDefineFactInstruction(factsEngine *facts_engine.FactsEngine, position *kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceID, factName string, factRecipe *kurtosis_core_rpc_api_bindings.FactRecipe) *DefineFactInstruction {
+func newEmptyDefineFactInstruction(factsEngine *facts_engine.FactsEngine, position *kurtosis_instruction.InstructionPosition) *DefineFactInstruction {
 	return &DefineFactInstruction{
-		factsEngine: factsEngine,
-		position:    position,
-		serviceId:   serviceId,
-		factName:    factName,
-		factRecipe:  factRecipe,
+		factsEngine:    factsEngine,
+		position:       position,
+		serviceId:      "",
+		factName:       "",
+		factRecipe:     nil,
+		starlarkKwargs: starlark.StringDict{},
 	}
 }
 
@@ -61,8 +62,13 @@ func (instruction *DefineFactInstruction) GetPositionInOriginalScript() *kurtosi
 	return instruction.position
 }
 
-func (instruction *DefineFactInstruction) GetCanonicalInstruction() string {
-	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(DefineFactBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs(), instruction.position)
+func (instruction *DefineFactInstruction) GetCanonicalInstruction() *kurtosis_core_rpc_api_bindings.KurtosisInstruction {
+	args := []*kurtosis_core_rpc_api_bindings.KurtosisInstructionArg{
+		binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[serviceIdArgName]), serviceIdArgName, kurtosis_instruction.Representative),
+		binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[factNameArgName]), factNameArgName, kurtosis_instruction.Representative),
+		binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[recipeArgName]), recipeArgName, kurtosis_instruction.NotRepresentative),
+	}
+	return binding_constructors.NewKurtosisInstruction(instruction.position.ToAPIType(), DefineFactBuiltinName, instruction.String(), args)
 }
 
 func (instruction *DefineFactInstruction) Execute(_ context.Context) (*string, error) {
@@ -74,7 +80,7 @@ func (instruction *DefineFactInstruction) Execute(_ context.Context) (*string, e
 }
 
 func (instruction *DefineFactInstruction) String() string {
-	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(DefineFactBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs(), instruction.position)
+	return shared_helpers.CanonicalizeInstruction(DefineFactBuiltinName, kurtosis_instruction.NoArgs, instruction.starlarkKwargs)
 }
 
 func (instruction *DefineFactInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
@@ -85,37 +91,38 @@ func (instruction *DefineFactInstruction) ValidateAndUpdateEnvironment(environme
 	return nil
 }
 
-func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (service.ServiceID, string, *kurtosis_core_rpc_api_bindings.FactRecipe, *startosis_errors.InterpretationError) {
+func (instruction *DefineFactInstruction) parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) *startosis_errors.InterpretationError {
 
 	var serviceIdArg starlark.String
 	var factNameArg starlark.String
 	var recipeConfigArg *starlarkstruct.Struct
 
 	if err := starlark.UnpackArgs(b.Name(), args, kwargs, serviceIdArgName, &serviceIdArg, factNameArgName, &factNameArg, recipeArgName, &recipeConfigArg); err != nil {
-		return "", "", nil, startosis_errors.NewInterpretationError(err.Error())
+		return startosis_errors.WrapWithInterpretationError(err, "Failed parsing arguments for function '%s' (unparsed arguments were: '%v' '%v')", DefineFactBuiltinName, args, kwargs)
 	}
+
+	instruction.starlarkKwargs[serviceIdArgName] = serviceIdArg
+	instruction.starlarkKwargs[factNameArgName] = factNameArg
+	instruction.starlarkKwargs[recipeArgName] = recipeConfigArg
+	instruction.starlarkKwargs.Freeze()
 
 	serviceId, interpretationErr := kurtosis_instruction.ParseServiceId(serviceIdArg)
 	if interpretationErr != nil {
-		return "", "", nil, interpretationErr
+		return interpretationErr
 	}
 
 	factName, interpretationErr := kurtosis_instruction.ParseFactName(factNameArg)
 	if interpretationErr != nil {
-		return "", "", nil, interpretationErr
+		return interpretationErr
 	}
 
 	factRecipe, interpretationErr := kurtosis_instruction.ParseHttpRequestFactRecipe(recipeConfigArg)
 	if interpretationErr != nil {
-		return "", "", nil, interpretationErr
+		return interpretationErr
 	}
 
-	return serviceId, factName, binding_constructors.NewHttpRequestFactRecipeWithDefaultRefresh(string(serviceId), factName, factRecipe), nil
-}
-
-func (instruction *DefineFactInstruction) getKwargs() starlark.StringDict {
-	return starlark.StringDict{
-		serviceIdArgName: starlark.String(instruction.serviceId),
-		factNameArgName:  starlark.String(instruction.factName),
-	}
+	instruction.serviceId = serviceId
+	instruction.factName = factName
+	instruction.factRecipe = binding_constructors.NewHttpRequestFactRecipeWithDefaultRefresh(string(serviceId), factName, factRecipe)
+	return nil
 }

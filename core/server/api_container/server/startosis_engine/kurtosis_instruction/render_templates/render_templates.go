@@ -17,10 +17,10 @@ import (
 const (
 	RenderTemplatesBuiltinName = "render_templates"
 
-	templateAndDataByDestinationRelFilepathArg = "template_and_data_by_dest_rel_filepath"
+	templateAndDataByDestinationRelFilepathArg = "config"
 
-	artifactUuidArgName            = "artifact_uuid?"
-	nonOptionalArtifactUuidArgName = "artifact_uuid"
+	artifactIdArgName            = "artifact_id?"
+	nonOptionalArtifactIdArgName = "artifact_id"
 
 	emptyStarlarkString = starlark.String("")
 )
@@ -74,8 +74,12 @@ func (instruction *RenderTemplatesInstruction) GetPositionInOriginalScript() *ku
 	return instruction.position
 }
 
-func (instruction *RenderTemplatesInstruction) GetCanonicalInstruction() string {
-	return shared_helpers.MultiLineCanonicalizer.CanonicalizeInstruction(RenderTemplatesBuiltinName, kurtosis_instruction.NoArgs, instruction.starlarkKwargs, instruction.position)
+func (instruction *RenderTemplatesInstruction) GetCanonicalInstruction() *kurtosis_core_rpc_api_bindings.KurtosisInstruction {
+	args := []*kurtosis_core_rpc_api_bindings.KurtosisInstructionArg{
+		binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[nonOptionalArtifactIdArgName]), nonOptionalArtifactIdArgName, kurtosis_instruction.Representative),
+		binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[templateAndDataByDestinationRelFilepathArg]), templateAndDataByDestinationRelFilepathArg, kurtosis_instruction.NotRepresentative),
+	}
+	return binding_constructors.NewKurtosisInstruction(instruction.position.ToAPIType(), RenderTemplatesBuiltinName, instruction.String(), args)
 }
 
 func (instruction *RenderTemplatesInstruction) Execute(_ context.Context) (*string, error) {
@@ -97,7 +101,7 @@ func (instruction *RenderTemplatesInstruction) Execute(_ context.Context) (*stri
 }
 
 func (instruction *RenderTemplatesInstruction) String() string {
-	return shared_helpers.SingleLineCanonicalizer.CanonicalizeInstruction(RenderTemplatesBuiltinName, kurtosis_instruction.NoArgs, instruction.starlarkKwargs, instruction.position)
+	return shared_helpers.CanonicalizeInstruction(RenderTemplatesBuiltinName, kurtosis_instruction.NoArgs, instruction.starlarkKwargs)
 }
 
 func (instruction *RenderTemplatesInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
@@ -108,20 +112,20 @@ func (instruction *RenderTemplatesInstruction) ValidateAndUpdateEnvironment(envi
 
 func (instruction *RenderTemplatesInstruction) parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) *startosis_errors.InterpretationError {
 	var templatesAndDataArg *starlark.Dict
-	var artifactUuidArg = emptyStarlarkString
+	var artifactIdArg = emptyStarlarkString
 
-	if err := starlark.UnpackArgs(b.Name(), args, kwargs, templateAndDataByDestinationRelFilepathArg, &templatesAndDataArg, artifactUuidArgName, &artifactUuidArg); err != nil {
-		return startosis_errors.NewInterpretationError(err.Error())
+	if err := starlark.UnpackArgs(b.Name(), args, kwargs, templateAndDataByDestinationRelFilepathArg, &templatesAndDataArg, artifactIdArgName, &artifactIdArg); err != nil {
+		return startosis_errors.WrapWithInterpretationError(err, "Failed parsing arguments for function '%s' (unparsed arguments were: '%v' '%v')", RenderTemplatesBuiltinName, args, kwargs)
 	}
 
-	if artifactUuidArg == emptyStarlarkString {
+	if artifactIdArg == emptyStarlarkString {
 		placeHolderArtifactUuid, err := enclave_data_directory.NewFilesArtifactUUID()
 		if err != nil {
 			return startosis_errors.NewInterpretationError("An empty or no artifact_uuid was passed, we tried creating one but failed")
 		}
-		artifactUuidArg = starlark.String(placeHolderArtifactUuid)
+		artifactIdArg = starlark.String(placeHolderArtifactUuid)
 	}
-
+	instruction.starlarkKwargs[nonOptionalArtifactIdArgName] = artifactIdArg
 	instruction.starlarkKwargs[templateAndDataByDestinationRelFilepathArg] = templatesAndDataArg
 
 	templatesAndDataByDestRelFilepath, interpretationErr := kurtosis_instruction.ParseTemplatesAndData(templatesAndDataArg)
@@ -130,13 +134,13 @@ func (instruction *RenderTemplatesInstruction) parseStartosisArgs(b *starlark.Bu
 	}
 	instruction.templatesAndDataByDestRelFilepath = templatesAndDataByDestRelFilepath
 
-	artifactUuid, interpretationErr := kurtosis_instruction.ParseArtifactUuid(nonOptionalArtifactUuidArgName, artifactUuidArg)
+	artifactUuid, interpretationErr := kurtosis_instruction.ParseArtifactId(nonOptionalArtifactIdArgName, artifactIdArg)
 	if interpretationErr != nil {
 		return interpretationErr
 	}
 
 	instruction.artifactUuid = artifactUuid
-	instruction.starlarkKwargs[nonOptionalArtifactUuidArgName] = starlark.String(artifactUuid)
+	instruction.starlarkKwargs[nonOptionalArtifactIdArgName] = starlark.String(artifactUuid)
 
 	return nil
 }

@@ -1,26 +1,35 @@
 package upload_files
 
 import (
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"github.com/stretchr/testify/require"
+	"go.starlark.net/starlark"
 	"testing"
 )
 
 func TestUploadFiles_StringRepresentation(t *testing.T) {
+	position := kurtosis_instruction.NewInstructionPosition(1, 13, "dummyFile")
 	filePath := "github.com/kurtosis/module/lib/lib.star"
-	artifactUuid, err := enclave_data_directory.NewFilesArtifactUUID()
+	artifactId, err := enclave_data_directory.NewFilesArtifactUUID()
 	require.Nil(t, err)
-	uploadInstruction := NewUploadFilesInstruction(
-		kurtosis_instruction.NewInstructionPosition(1, 13, "dummyFile"),
-		nil, nil, filePath, "dummyPathOnDisk", artifactUuid,
-	)
-	expectedMultiLineStrRep := `# from: dummyFile[1:13]
-upload_files(
-	artifact_uuid="` + string(artifactUuid) + `",
-	src_path="` + filePath + `"
-)`
-	require.Equal(t, expectedMultiLineStrRep, uploadInstruction.GetCanonicalInstruction())
-	expectedSingleLineStrRep := `upload_files(artifact_uuid="` + string(artifactUuid) + `", src_path="` + filePath + `")`
-	require.Equal(t, expectedSingleLineStrRep, uploadInstruction.String())
+	uploadInstruction := newEmptyUploadFilesInstruction(position, nil, nil)
+	uploadInstruction.starlarkKwargs = starlark.StringDict{}
+	uploadInstruction.starlarkKwargs[srcArgName] = starlark.String(filePath)
+	uploadInstruction.starlarkKwargs[nonOptionalArtifactIdArgName] = starlark.String(artifactId)
+
+	expectedStr := `upload_files(artifact_id="` + string(artifactId) + `", src="` + filePath + `")`
+	require.Equal(t, expectedStr, uploadInstruction.String())
+
+	canonicalInstruction := binding_constructors.NewKurtosisInstruction(
+		position.ToAPIType(),
+		UploadFilesBuiltinName,
+		expectedStr,
+		[]*kurtosis_core_rpc_api_bindings.KurtosisInstructionArg{
+			binding_constructors.NewKurtosisInstructionKwarg(`"`+filePath+`"`, srcArgName, true),
+			binding_constructors.NewKurtosisInstructionKwarg(`"`+string(artifactId)+`"`, nonOptionalArtifactIdArgName, true),
+		})
+	require.Equal(t, canonicalInstruction, uploadInstruction.GetCanonicalInstruction())
 }

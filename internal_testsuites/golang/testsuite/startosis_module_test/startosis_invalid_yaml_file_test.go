@@ -11,30 +11,30 @@ import (
 )
 
 const (
-	invalidCaseModFileTestName          = "invalid-module-invalid-mod-file"
-	moduleWithInvalidKurtosisModRelPath = "../../../startosis/invalid-mod-file"
+	invalidCaseYamlFileTestName          = "invalid-module-invalid-yaml-file"
+	moduleWithInvalidKurtosisYamlRelPath = "../../../startosis/invalid-yaml-file"
 )
 
-func TestStartosisModule_InvalidModFile(t *testing.T) {
+func TestStartosisModule_InvalidYamlFile(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
-	enclaveCtx, destroyEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, invalidCaseModFileTestName, isPartitioningEnabled)
+	enclaveCtx, destroyEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, invalidCaseYamlFileTestName, isPartitioningEnabled)
 	require.NoError(t, err, "An error occurred creating an enclave")
 	defer destroyEnclaveFunc()
 
 	currentWorkingDirectory, err := os.Getwd()
 	require.Nil(t, err)
-	moduleDirpath := path.Join(currentWorkingDirectory, moduleWithInvalidKurtosisModRelPath)
+	moduleDirpath := path.Join(currentWorkingDirectory, moduleWithInvalidKurtosisYamlRelPath)
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
 	logrus.Info("Executing Startosis Module...")
 
 	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
 
-	expectedErrorContents := "Field module.name in kurtosis.mod needs to be set and cannot be empty"
-	_, err = enclaveCtx.ExecuteStartosisModule(moduleDirpath, emptyExecuteParams, defaultDryRun)
+	expectedErrorContents := "Field module.name in kurtosis.yml needs to be set and cannot be empty"
+	_, _, err = enclaveCtx.ExecuteKurtosisModule(ctx, moduleDirpath, emptyExecuteParams, defaultDryRun)
 	require.NotNil(t, err, "Unexpected error executing startosis module")
 	require.Contains(t, err.Error(), expectedErrorContents)
 }

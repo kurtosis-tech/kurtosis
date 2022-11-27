@@ -35,13 +35,16 @@ import {
     WaitForHttpPostEndpointAvailabilityArgs
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import { EnclaveID } from "./enclave_context";
+import {Readable} from "stream";
 
 export interface GenericApiContainerClient {
     getEnclaveId(): EnclaveID
     loadModule(loadModuleArgs: LoadModuleArgs): Promise<Result<null, Error>>
     unloadModule(unloadModuleArgs: UnloadModuleArgs): Promise<Result<UnloadModuleResponse,Error>>
     executeStartosisScript(serializedStartosisScript: ExecuteStartosisScriptArgs): Promise<Result<ExecuteStartosisResponse, Error>>
+    executeKurtosisScript(serializedStartosisScript: ExecuteStartosisScriptArgs): Promise<Result<Readable, Error>>
     executeStartosisModule(startosisModuleArgs: ExecuteStartosisModuleArgs): Promise<Result<ExecuteStartosisResponse, Error>>
+    executeKurtosisModule(startosisModuleArgs: ExecuteStartosisModuleArgs): Promise<Result<Readable, Error>>
     startServices(startServicesArgs: StartServicesArgs): Promise<Result<StartServicesResponse, Error>>
     removeService(args: RemoveServiceArgs): Promise<Result<RemoveServiceResponse, Error>>
     repartitionNetwork(repartitionArgs: RepartitionArgs): Promise<Result<null, Error>>

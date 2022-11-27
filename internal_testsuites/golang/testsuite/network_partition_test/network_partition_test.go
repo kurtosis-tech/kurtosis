@@ -1,4 +1,5 @@
-//+build !minikube
+//go:build !minikube
+// +build !minikube
 
 // We don't run this test in Kubernetes because, as of 2022-07-07, Kubernetes doesn't support network partitioning
 
@@ -132,6 +133,7 @@ func repartitionNetwork(
 	}
 
 	var connectionBetweenPartitions enclaves.PartitionConnection
+
 	if isConnectionBlocked {
 		connectionBetweenPartitions = enclaves.NewBlockedPartitionConnection()
 	} else {

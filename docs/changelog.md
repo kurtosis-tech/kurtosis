@@ -1,4 +1,69 @@
 # TBD
+### Breaking Changes
+- Renamed `kurtosis.mod` file to `kurtosis.yml` this file extension enable syntax highlighting
+  - Users will have to rename all theirs `kurtosis.mod` files
+
+### Changes
+- Made `run` an EngineCosumingKurtosisCommand, i.e it automatically creates an engine if it doesn't exist
+- Added serialized arguments to KurtosisInstruction API type such that the CLI can display executed instructions in a nicer way.
+
+# 0.54.1
+
+### Fixes
+- Fixes a bug where the CLI was returning 0 even when an error happened running a Kurtosis script
+
+### Changes
+- Small cleanup in `grpc_web_api_container_client` and `grpc_node_api_container_client`. They were implementing executeRemoteKurtosisModule unnecessarily
+
+# 0.54.0
+
+### Breaking Changes
+- Renamed `kurtosis exec` to `kurtosis run` and `main in main.star` to `run in main.star`
+  - Upgrade to the latest CLI, and use the `run` function instead
+  - Upgrade existing modules to have `run` and not `main` in `main.star`
+
+### Features
+- Updated the CLI to consume the streaming endpoints to execute Startosis. Kurtosis Instructions are now returned live, but the script output is still printed at the end (until we have better formatting).
+- Update integration tests to consume Startosis streaming endpoints
+
+# 0.53.12
+
+### Changes
+- Changed occurrences of `[sS]tartosis` to `Starlark` in errors sent by the CLI and its long and short description
+- Changed some logs and error messages inside core that which had references to Startosis to Starlark
+- Allow `dicts` & `structs` to be passed to `render_templates.config.data`
+
+# 0.53.11
+### Changes
+- Published the log-database HTTP port to the host machine
+
+# 0.53.10
+
+### Changes
+- Add 2 endpoints to the APIC that streams the output of a Startosis script execution
+- Changed the syntax of render_templates in Starlark
+
+### Fixes
+- Fixed the error that would happen if there was a missing `kurtosis.mod` file at the root of the module
+
+# 0.53.9
+
+### Fixes
+- Renamed `artifact_uuid` to `artifact_id` and `src` to `src_path` in `upload_files` in Starlark
+
+# 0.53.8
+
+# 0.53.7
+### Changes
+- Modified the `EnclaveIdGenerator` now is a user defined type and can be initialized once because it contains a time-seed inside
+- Simplify how the kurtosis instruction canonicalizer works. It now generates a single line canonicalized instruction, and indentation is performed at the CLI level using Bazel buildtools library.
+
+### Fixes
+- Fixed the `isEnclaveIdInUse` for the enclave validator, now uses on runtime for `is-key-in-map`
+
+### Features
+- Add the ability to execute remote modules using `EnclaveContext.ExecuteStartoisRemoteModule`
+- Add the ability to execute remote module using cli `kurtosis exec github.com/author/module`
 
 # 0.53.6
 
@@ -19,6 +84,8 @@
 
 ### Features
 - Log that the module is being compressed & uploaded during `kurtosis exec`
+- Added `file_system_path_arg` in the CLI which provides validation and tab auto-completion for filepath, dirpath, or both kind of arguments
+- Added tab-auto-complete for the `script-or-module-path` argument in `kurtosis exec` CLI command
 
 ### Changes
 - `print()` is now a regular instructions like others, and it takes effect at execution time (used to be during interpretation)

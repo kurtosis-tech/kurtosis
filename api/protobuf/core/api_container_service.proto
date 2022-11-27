@@ -23,10 +23,18 @@ service ApiContainerService {
   rpc ExecuteModule(ExecuteModuleArgs) returns (ExecuteModuleResponse) {};
 
   // Executes a startosis script on the user's behalf
+  // Will soon be deprecated in favour of its streamed version ExecuteKurtosisScript
   rpc ExecuteStartosisScript(ExecuteStartosisScriptArgs) returns (ExecuteStartosisResponse) {};
 
+  // Executes a startosis script on the user's behalf
+  rpc ExecuteKurtosisScript(ExecuteStartosisScriptArgs) returns (stream KurtosisExecutionResponseLine) {};
+
   // Executes a startosis module on the user's behalf
+  // Will soon be deprecated in favour of its streamed version ExecuteKurtosisModule
   rpc ExecuteStartosisModule(ExecuteStartosisModuleArgs) returns (ExecuteStartosisResponse) {};
+
+  // Executes a startosis script on the user's behalf
+  rpc ExecuteKurtosisModule(ExecuteStartosisModuleArgs) returns (stream KurtosisExecutionResponseLine) {};
 
   // Start services by creating containers for them
   rpc StartServices(StartServicesArgs) returns (StartServicesResponse) {};
@@ -253,14 +261,18 @@ message ExecuteStartosisScriptArgs {
 // ==============================================================================================
 message ExecuteStartosisModuleArgs {
   string module_id = 1;
-  bytes data = 2;
 
   // Serialized parameters data for the Startosis module main function
   // This should be a valid JSON string
-  string serialized_params = 3;
+  oneof startosis_module_content {
+    bytes local = 3; // the payload of the local module
+    bool remote = 4; // just a flag to indicate the module must be cloned inside the API
+  }
+
+  string serialized_params = 5;
 
   // Defaults to false
-  optional bool dry_run = 4;
+  optional bool dry_run = 6;
 }
 
 // ==============================================================================================
@@ -295,9 +307,21 @@ message KurtosisExecutionError {
 message KurtosisInstruction {
   KurtosisInstructionPosition position = 1;
 
-  string executable_instruction = 2;
+  string instruction_name = 2;
 
-  optional string instruction_result = 3;
+  repeated KurtosisInstructionArg arguments = 3;
+
+  string executable_instruction = 4;
+
+  optional string instruction_result = 5;
+}
+
+message KurtosisInstructionArg {
+  string serialized_arg_value = 1;
+
+  optional string arg_name = 2;
+
+  bool is_representative = 3;
 }
 
 message KurtosisInstructionPosition {
@@ -306,6 +330,21 @@ message KurtosisInstructionPosition {
   int32 line = 2;
 
   int32 column = 3;
+}
+
+message KurtosisError {
+  oneof error {
+    KurtosisInterpretationError interpretation_error = 1;
+    KurtosisValidationError validation_error = 2;
+    KurtosisExecutionError execution_error = 3;
+  }
+}
+
+message KurtosisExecutionResponseLine {
+  oneof kurtosis_execution_response_line {
+    KurtosisInstruction instruction = 1;
+    KurtosisError error = 2;
+  }
 }
 
 // ==============================================================================================

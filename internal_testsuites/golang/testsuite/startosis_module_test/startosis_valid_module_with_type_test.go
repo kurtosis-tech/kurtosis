@@ -34,15 +34,16 @@ func TestStartosisModule_ValidModuleWithType(t *testing.T) {
 	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
 
 	serializedParams := `{"greetings": "Bonjour!"}`
-	executionResult, err := enclaveCtx.ExecuteStartosisModule(moduleDirpath, serializedParams, defaultDryRun)
+	outputStream, _, err := enclaveCtx.ExecuteKurtosisModule(ctx, moduleDirpath, serializedParams, defaultDryRun)
 	require.NoError(t, err, "Unexpected error executing startosis module")
+	interpretationError, validationErrors, executionError, instructions := test_helpers.ReadStreamContentUntilClosed(outputStream)
 
 	expectedScriptOutput := `Bonjour!
 Hello World!
 `
-	require.Nil(t, executionResult.GetInterpretationError(), "Unexpected interpretation error")
-	require.Nil(t, executionResult.GetValidationErrors(), "Unexpected validation error")
-	require.Nil(t, executionResult.GetExecutionError(), "Unexpected execution error")
-	require.Equal(t, expectedScriptOutput, test_helpers.GenerateScriptOutput(executionResult.GetKurtosisInstructions()))
+	require.Nil(t, interpretationError, "Unexpected interpretation error")
+	require.Empty(t, validationErrors, "Unexpected validation error")
+	require.Nil(t, executionError, "Unexpected execution error")
+	require.Equal(t, expectedScriptOutput, test_helpers.GenerateScriptOutput(instructions))
 	logrus.Info("Successfully ran Startosis module")
 }

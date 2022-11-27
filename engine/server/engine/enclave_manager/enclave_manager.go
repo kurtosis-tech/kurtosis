@@ -56,16 +56,19 @@ type EnclaveManager struct {
 
 	kurtosisBackend                           backend_interface.KurtosisBackend
 	apiContainerKurtosisBackendConfigSupplier api_container_launcher.KurtosisBackendConfigSupplier
+	enclaveIdGenerator                        *enclaveIdGenerator
 }
 
 func NewEnclaveManager(
 	kurtosisBackend backend_interface.KurtosisBackend,
 	apiContainerKurtosisBackendConfigSupplier api_container_launcher.KurtosisBackendConfigSupplier,
+	enclaveIdGenerator *enclaveIdGenerator,
 ) *EnclaveManager {
 	return &EnclaveManager{
 		mutex:           &sync.Mutex{},
 		kurtosisBackend: kurtosisBackend,
 		apiContainerKurtosisBackendConfigSupplier: apiContainerKurtosisBackendConfigSupplier,
+		enclaveIdGenerator: enclaveIdGenerator,
 	}
 }
 
@@ -98,13 +101,13 @@ func (manager *EnclaveManager) CreateEnclave(
 	}
 
 	if enclaveId == autogenerateEnclaveIdKeyword {
-		enclaveId, err = getRandomEnclaveIdWithRetries(allCurrentEnclaves, getRandomEnclaveIdRetries)
+		enclaveId, err = manager.enclaveIdGenerator.GetRandomEnclaveIdWithRetries(allCurrentEnclaves, getRandomEnclaveIdRetries)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting a new random enclave ID using all current enclaves '%+v' and '%v' retries", allCurrentEnclaves, getRandomEnclaveIdRetries)
 		}
 	}
 
-	if err := validateEnclaveId(enclaveId); err !=nil {
+	if err := validateEnclaveId(enclaveId); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred validating enclave ID '%v'", enclaveId)
 	}
 
@@ -605,7 +608,3 @@ func getEnclaveCreationTimestamp(enclave *enclave.Enclave) *timestamppb.Timestam
 
 	return creationTime
 }
-
-
-
-

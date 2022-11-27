@@ -77,7 +77,7 @@ unknownInstruction()
 		[]startosis_errors.CallFrame{
 			*startosis_errors.NewCallFrame("undefined: unknownInstruction", startosis_errors.NewScriptPosition(4, 1)),
 		},
-		"Multiple errors caught interpreting the Startosis script. Listing each of them below.",
+		multipleInterpretationErrorMsg,
 	).ToAPIType()
 	require.Equal(t, expectedError, interpretationError)
 }
@@ -752,12 +752,19 @@ exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"])
 	require.Len(t, instructions, 2)
 	require.Nil(t, interpretationError)
 
+	starlarkKwargs := starlark.StringDict{
+		"service_id":         starlark.String("example-datastore-server"),
+		"command":            starlark.NewList([]starlark.Value{starlark.String("mkdir"), starlark.String("/tmp/foo")}),
+		"expected_exit_code": starlark.MakeInt(0),
+	}
+	starlarkKwargs.Freeze()
 	execInstruction := exec.NewExecInstruction(
 		testServiceNetwork,
 		kurtosis_instruction.NewInstructionPosition(3, 5, ModuleIdPlaceholderForStandaloneScripts),
 		"example-datastore-server",
 		[]string{"mkdir", "/tmp/foo"},
 		0,
+		starlarkKwargs,
 	)
 
 	require.Equal(t, execInstruction, instructions[1])
@@ -780,12 +787,19 @@ exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"], e
 	require.Len(t, instructions, 2)
 	require.Nil(t, interpretationError)
 
+	starlarkKwargs := starlark.StringDict{
+		"service_id":         starlark.String("example-datastore-server"),
+		"command":            starlark.NewList([]starlark.Value{starlark.String("mkdir"), starlark.String("/tmp/foo")}),
+		"expected_exit_code": starlark.MakeInt(-7),
+	}
+	starlarkKwargs.Freeze()
 	execInstruction := exec.NewExecInstruction(
 		testServiceNetwork,
 		kurtosis_instruction.NewInstructionPosition(3, 5, ModuleIdPlaceholderForStandaloneScripts),
 		"example-datastore-server",
 		[]string{"mkdir", "/tmp/foo"},
 		-7,
+		starlarkKwargs,
 	)
 
 	require.Equal(t, execInstruction, instructions[1])
@@ -796,14 +810,14 @@ exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"], e
 }
 
 func TestStartosisInterpreter_StoreFileFromService(t *testing.T) {
-	testArtifactUuid, err := enclave_data_directory.NewFilesArtifactUUID()
+	testArtifactId, err := enclave_data_directory.NewFilesArtifactUUID()
 	require.Nil(t, err)
 	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
 print("Storing file from service!")
-artifact_uuid=store_service_files(service_id="example-datastore-server", src="/foo/bar", artifact_id="` + string(testArtifactUuid) + `")
+artifact_uuid=store_service_files(service_id="example-datastore-server", src="/foo/bar", artifact_id="` + string(testArtifactId) + `")
 print(artifact_uuid)
 `
 
@@ -811,19 +825,26 @@ print(artifact_uuid)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 3)
 
+	starlarkKwargs := starlark.StringDict{
+		"service_id":  starlark.String("example-datastore-server"),
+		"src":         starlark.String("/foo/bar"),
+		"artifact_id": starlark.String(testArtifactId),
+	}
+	starlarkKwargs.Freeze()
 	storeInstruction := store_service_files.NewStoreServiceFilesInstruction(
 		testServiceNetwork,
 		kurtosis_instruction.NewInstructionPosition(3, 34, ModuleIdPlaceholderForStandaloneScripts),
 		"example-datastore-server",
 		"/foo/bar",
-		testArtifactUuid,
+		testArtifactId,
+		starlarkKwargs,
 	)
 
 	require.Equal(t, storeInstruction, instructions[1])
 
 	expectedOutput := fmt.Sprintf(`Storing file from service!
 %v
-`, testArtifactUuid)
+`, testArtifactId)
 	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutput)
 }
 
@@ -870,7 +891,7 @@ wait(service_id="%v", fact_name="%v")
 }
 
 func TestStartosisInterpreter_RenderTemplates(t *testing.T) {
-	testArtifactUuid, err := enclave_data_directory.NewFilesArtifactUUID()
+	testArtifactId, err := enclave_data_directory.NewFilesArtifactUUID()
 	require.Nil(t, err)
 	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
@@ -885,15 +906,14 @@ template_data = {
 			"LargeFloat": 1231231243.43,
 			"Alive": True
 }
-encoded_json = json.encode(template_data)
 data = {
-	"/foo/bar/test.txt" : {
-		"template": "Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}. Am I Alive? {{.Alive}}",
-		"template_data_json": encoded_json
-    }
+	"/foo/bar/test.txt" : struct(
+		template="Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}. Am I Alive? {{.Alive}}",
+		data=template_data
+    )
 }
-artifact_uuid = render_templates(template_and_data_by_dest_rel_filepath = data, artifact_uuid = "` + string(testArtifactUuid) + `")
-print(artifact_uuid)
+artifact_id = render_templates(config = data, artifact_id = "` + string(testArtifactId) + `")
+print(artifact_id)
 `
 
 	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
@@ -902,7 +922,7 @@ print(artifact_uuid)
 
 	template := "Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}. Am I Alive? {{.Alive}}"
 	templateData := map[string]interface{}{"Name": "Stranger", "Answer": 6, "Numbers": []int{1, 2, 3}, "UnixTimeStamp": 1257894000, "LargeFloat": 1231231243.43, "Alive": true}
-	serializedTemplateData := `{"Alive":true,"Answer":6,"LargeFloat":1.23123124343e+09,"Name":"Stranger","Numbers":[1,2,3],"UnixTimeStamp":1257894000}`
+
 	templateDataAsJson, err := json.Marshal(templateData)
 	require.Nil(t, err)
 	templateAndData := binding_constructors.NewTemplateAndData(template, string(templateDataAsJson))
@@ -911,29 +931,45 @@ print(artifact_uuid)
 	}
 
 	templateAndDataValues := starlark.NewDict(1)
-	fooBarTestValuesValues := starlark.NewDict(2)
-	require.Nil(t, fooBarTestValuesValues.SetKey(starlark.String("template"), starlark.String("Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}. Am I Alive? {{.Alive}}")))
-	require.Nil(t, fooBarTestValuesValues.SetKey(starlark.String("template_data_json"), starlark.String(serializedTemplateData)))
+	fooBarTestValuesValues := starlark.StringDict{}
+	fooBarTestValuesValues["template"] = starlark.String("Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}. Am I Alive? {{.Alive}}")
+
+	expectedData := starlark.NewDict(6)
+	err = expectedData.SetKey(starlark.String("Name"), starlark.String("Stranger"))
+	require.Nil(t, err)
+	err = expectedData.SetKey(starlark.String("Answer"), starlark.MakeInt(6))
+	require.Nil(t, err)
+	err = expectedData.SetKey(starlark.String("Numbers"), starlark.NewList([]starlark.Value{starlark.MakeInt(1), starlark.MakeInt(2), starlark.MakeInt(3)}))
+	require.Nil(t, err)
+	err = expectedData.SetKey(starlark.String("UnixTimeStamp"), starlark.MakeInt64(1257894000))
+	require.Nil(t, err)
+	err = expectedData.SetKey(starlark.String("LargeFloat"), starlark.Float(1231231243.43))
+	require.Nil(t, err)
+	err = expectedData.SetKey(starlark.String("Alive"), starlark.Bool(true))
+	require.Nil(t, err)
+	expectedData.Freeze()
+
+	fooBarTestValuesValues["data"] = expectedData
 	fooBarTestValuesValues.Freeze()
-	require.Nil(t, templateAndDataValues.SetKey(starlark.String("/foo/bar/test.txt"), fooBarTestValuesValues))
+	require.Nil(t, templateAndDataValues.SetKey(starlark.String("/foo/bar/test.txt"), starlarkstruct.FromStringDict(starlarkstruct.Default, fooBarTestValuesValues)))
 	templateAndDataValues.Freeze()
 
 	renderInstruction := render_templates.NewRenderTemplatesInstruction(
 		testServiceNetwork,
-		kurtosis_instruction.NewInstructionPosition(18, 33, ModuleIdPlaceholderForStandaloneScripts),
+		kurtosis_instruction.NewInstructionPosition(17, 31, ModuleIdPlaceholderForStandaloneScripts),
 		templateAndDataByDestFilepath,
 		starlark.StringDict{
-			"template_and_data_by_dest_rel_filepath": templateAndDataValues,
-			"artifact_uuid":                          starlark.String(testArtifactUuid),
+			"config":      templateAndDataValues,
+			"artifact_id": starlark.String(testArtifactId),
 		},
-		testArtifactUuid,
+		testArtifactId,
 	)
 
 	require.Equal(t, renderInstruction, instructions[1])
 
 	expectedOutput := fmt.Sprintf(`Rendering template to disk!
 %v
-`, testArtifactUuid)
+`, testArtifactId)
 	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutput)
 }
 
@@ -1186,12 +1222,19 @@ print(uuid)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 4)
 
+	starlarkKwargs := starlark.StringDict{
+		"artifact_id": starlark.String(testArtifactUuid),
+		"service_id":  starlark.String("example-datastore-server"),
+		"src":         starlark.String("/foo/bar"),
+	}
+	starlarkKwargs.Freeze()
 	storeInstruction := store_service_files.NewStoreServiceFilesInstruction(
 		testServiceNetwork,
 		kurtosis_instruction.NewInstructionPosition(4, 35, storeFileDefinitionPath),
 		"example-datastore-server",
 		"/foo/bar",
 		testArtifactUuid,
+		starlarkKwargs,
 	)
 
 	require.Equal(t, storeInstruction, instructions[2])
@@ -1234,7 +1277,7 @@ The service example-datastore-server has been removed
 
 func TestStartosisInterpreter_UploadGetsInterpretedCorrectly(t *testing.T) {
 	filePath := "github.com/kurtosis/module/lib/lib.star"
-	artifactUuid, err := enclave_data_directory.NewFilesArtifactUUID()
+	artifactId, err := enclave_data_directory.NewFilesArtifactUUID()
 	require.Nil(t, err)
 	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
@@ -1243,16 +1286,22 @@ func TestStartosisInterpreter_UploadGetsInterpretedCorrectly(t *testing.T) {
 	filePathOnDisk, err := moduleContentProvider.GetOnDiskAbsoluteFilePath(filePath)
 	require.Nil(t, err)
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
-	script := `upload_files("` + filePath + `","` + string(artifactUuid) + `")
+	script := `upload_files("` + filePath + `","` + string(artifactId) + `")
 `
 	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 1)
 	validateScriptOutputFromPrintInstructions(t, instructions, "")
 
+	starlarkKwargs := starlark.StringDict{
+		"artifact_id": starlark.String(artifactId),
+		"src":         starlark.String(filePath),
+	}
+	starlarkKwargs.Freeze()
 	expectedUploadInstruction := upload_files.NewUploadFilesInstruction(
 		kurtosis_instruction.NewInstructionPosition(1, 13, ModuleIdPlaceholderForStandaloneScripts),
-		testServiceNetwork, moduleContentProvider, filePath, filePathOnDisk, artifactUuid,
+		testServiceNetwork, moduleContentProvider, filePath, filePathOnDisk, artifactId,
+		starlarkKwargs,
 	)
 
 	require.Equal(t, expectedUploadInstruction, instructions[0])
@@ -1284,8 +1333,7 @@ config = struct(
 	image = "` + testContainerImageName + `",
 )
 datastore_service = add_service(service_id = service_id, config = config)
-print("The datastore service ip address is " + datastore_service.ip_address)
-`
+print("The datastore service ip address is " + datastore_service.ip_address)`
 
 	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
 	require.Nil(t, interpretationError)
