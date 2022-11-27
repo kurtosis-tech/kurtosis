@@ -23,12 +23,12 @@ func NewServiceGUIDArg(
 	validate := getValidationFunc(argKey, engineClientCtxKey, isGreedy)
 
 	return &args.ArgConfig{
-		Key:             argKey,
-		IsOptional:      isOptional,
-		DefaultValue:    "",
-		IsGreedy:        isGreedy,
-		CompletionsFunc: getCompletions,
-		ValidationFunc:  validate,
+		Key:                   argKey,
+		IsOptional:            isOptional,
+		DefaultValue:          "",
+		IsGreedy:              isGreedy,
+		ArgCompletionProvider: args.NewManualCompletionsProvider(getCompletions),
+		ValidationFunc:        validate,
 	}
 }
 
