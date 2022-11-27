@@ -521,7 +521,7 @@ func (enclaveCtx *EnclaveContext) GetServices() (map[services.ServiceID]bool, ma
 	getServicesArgs := binding_constructors.NewGetServicesArgs(getAllServicesIdFilter)
 	response, err := enclaveCtx.client.GetServices(context.Background(), getServicesArgs)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the service IDs in the enclave")
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the service IDs in the enclave")
 	}
 
 	serviceIds := make(map[services.ServiceID]bool, len(response.GetServiceInfo()))

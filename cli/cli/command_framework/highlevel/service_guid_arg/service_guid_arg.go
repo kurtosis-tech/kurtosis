@@ -43,7 +43,7 @@ func getCompletions(ctx context.Context, flags *flags.ParsedFlags, previousArgs 
 			"An error occurred connecting to the Kurtosis engine for retrieving the enclave IDs for tab completion",
 		)
 	}
-	services, err := kurtosisCtx.GetServices(ctx, enclaveId)
+	_, serviceGUIDs, err := kurtosisCtx.GetServices(ctx, enclaveId)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -52,8 +52,8 @@ func getCompletions(ctx context.Context, flags *flags.ParsedFlags, previousArgs 
 	}
 
 	result := []string{}
-	for serviceGuid := range services {
-		result = append(result, string(serviceGuid))
+	for serviceGUID := range serviceGUIDs {
+		result = append(result, string(serviceGUID))
 	}
 	sort.Strings(result)
 
