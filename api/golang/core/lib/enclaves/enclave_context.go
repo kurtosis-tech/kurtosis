@@ -526,41 +526,27 @@ func (enclaveCtx *EnclaveContext) getServicesResponse() (*kurtosis_core_rpc_api_
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-func (enclaveCtx *EnclaveContext) GetServices() (map[services.ServiceID]bool, error) {
+func (enclaveCtx *EnclaveContext) GetServices() (map[services.ServiceID]bool, map[services.ServiceGUID]bool, error) {
 	response, err := enclaveCtx.getServicesResponse()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the service IDs in the enclave")
 	}
 
 	serviceIds := make(map[services.ServiceID]bool, len(response.GetServiceInfo()))
+	serviceGUIDs := make(map[services.ServiceGUID]bool, len(response.GetServiceInfo()))
 
-	for key := range response.GetServiceInfo() {
+	for key, value := range response.GetServiceInfo() {
 		serviceId := services.ServiceID(key)
 		if _, ok := serviceIds[serviceId]; !ok {
 			serviceIds[serviceId] = true
 		}
-	}
-
-	return serviceIds, nil
-}
-
-// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-func (enclaveCtx *EnclaveContext) GetServiceGUIDs() (map[services.ServiceGUID]bool, error) {
-	response, err := enclaveCtx.getServicesResponse()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the service IDs in the enclave")
-	}
-
-	serviceIds := make(map[services.ServiceGUID]bool, len(response.GetServiceInfo()))
-
-	for _, value := range response.GetServiceInfo() {
 		serviceGUID := services.ServiceGUID(value.GetServiceGuid())
-		if _, ok := serviceIds[serviceGUID]; !ok {
-			serviceIds[serviceGUID] = true
+		if _, ok := serviceGUIDs[serviceGUID]; !ok {
+			serviceGUIDs[serviceGUID] = true
 		}
 	}
 
-	return serviceIds, nil
+	return serviceIds, serviceGUIDs, nil
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
