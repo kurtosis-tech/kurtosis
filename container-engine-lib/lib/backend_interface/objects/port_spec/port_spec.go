@@ -13,9 +13,11 @@ type PortSpec struct {
 /*
 	This method accepts port number, protocol and application protocol ( which is optional)
 */
-func NewPortSpec(number uint16, protocol PortProtocol, applicationProtocol ...ApplicationProtocol) (*PortSpec, error) {
+func NewPortSpec(number uint16, protocol PortProtocol, applicationProtocols ...ApplicationProtocol) (*PortSpec, error) {
+	var applicationProtocol *ApplicationProtocol
+
 	// throw an error if the method receives more than 3 parameters.
-	if len(applicationProtocol) > 1 {
+	if len(applicationProtocols) > 1 {
 		return nil, stacktrace.NewError("Application Protocol can have at most 1 value")
 	}
 
@@ -23,14 +25,16 @@ func NewPortSpec(number uint16, protocol PortProtocol, applicationProtocol ...Ap
 		return nil, stacktrace.NewError("Unrecognized protocol '%v'", protocol.String())
 	}
 
-	portSpec := &PortSpec{
-		number:   number,
-		protocol: protocol,
+	if len(applicationProtocols) == 1 {
+		applicationProtocol = &applicationProtocols[0]
 	}
 
-	if len(applicationProtocol) == 1 {
-		portSpec.applicationProtocol = &applicationProtocol[0]
+	portSpec := &PortSpec{
+		number:              number,
+		protocol:            protocol,
+		applicationProtocol: applicationProtocol,
 	}
+
 	return portSpec, nil
 }
 
