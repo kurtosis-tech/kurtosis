@@ -43,17 +43,33 @@ var disallowedPortIdChars = map[string]bool{
   This method is used to validate port id - it must not have any disallowed characters.
   This is not needed for protocol, and application protocol because they are defined as enums.
 */
-func validatePortSpec(portId string) error {
+func validatePortSpec(portId string, spec *port_spec.PortSpec) error {
 	validator := regexp.MustCompile(fmt.Sprintf("[%v%v%v]", portNumAndProtocolSeparator, portIdAndInfoSeparator, portSpecsSeparator))
+	applicationProtocol := spec.GetApplicationProtocol()
 
 	// validate portId
 	shouldBeEmptyForPortId := validator.FindString(portId)
+
+	//validate application protocol
+	shouldBeEmptyForApplicationProtocol := ""
+	if applicationProtocol != nil {
+		shouldBeEmptyForApplicationProtocol = validator.FindString(*applicationProtocol)
+	}
 
 	if len(shouldBeEmptyForPortId) > 0 {
 		return stacktrace.NewError(
 			"Port ID '%v' contains disallowed char '%v'",
 			portId,
 			shouldBeEmptyForPortId,
+		)
+	}
+
+	if len(shouldBeEmptyForApplicationProtocol) > 0 {
+		return stacktrace.NewError(
+			"Application Protocol '%v' associated with port ID '%v' contains disallowed char '%v'",
+			*applicationProtocol,
+			portId,
+			shouldBeEmptyForApplicationProtocol,
 		)
 	}
 
@@ -67,7 +83,7 @@ func SerializePortSpecs(ports map[string]*port_spec.PortSpec) (*docker_label_val
 	usedPortSpecStrs := map[string]string{}
 
 	for portId, portSpec := range ports {
-		err := validatePortSpec(portId)
+		err := validatePortSpec(portId, portSpec)
 
 		if err != nil {
 			return nil, err
@@ -104,7 +120,7 @@ func SerializePortSpecs(ports map[string]*port_spec.PortSpec) (*docker_label_val
 
 		// add application protocol to the label value if present
 		if portSpec.GetApplicationProtocol() != nil {
-			portIdAndSpecStr = fmt.Sprintf("%v/%v", portIdAndSpecStr, portSpec.GetApplicationProtocol().String())
+			portIdAndSpecStr = fmt.Sprintf("%v/%v", portIdAndSpecStr, *portSpec.GetApplicationProtocol())
 		}
 		portIdAndSpecStrs = append(portIdAndSpecStrs, portIdAndSpecStr)
 	}
@@ -159,8 +175,7 @@ func createPortSpec(
 	applicationProtocol string,
 ) (*port_spec.PortSpec, error) {
 	if applicationProtocol != "" {
-		appProtocol, _ := port_spec.ApplicationProtocolString(applicationProtocol)
-		return port_spec.NewPortSpec(number, protocol, appProtocol)
+		return port_spec.NewPortSpec(number, protocol, applicationProtocol)
 	}
 
 	return port_spec.NewPortSpec(number, protocol)

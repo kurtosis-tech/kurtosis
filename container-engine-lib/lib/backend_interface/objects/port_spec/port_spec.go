@@ -7,14 +7,14 @@ import (
 type PortSpec struct {
 	number              uint16
 	protocol            PortProtocol
-	applicationProtocol *ApplicationProtocol
+	applicationProtocol *string
 }
 
 /*
 	This method accepts port number, protocol and application protocol ( which is optional)
 */
-func NewPortSpec(number uint16, protocol PortProtocol, applicationProtocols ...ApplicationProtocol) (*PortSpec, error) {
-	var applicationProtocol *ApplicationProtocol
+func NewPortSpec(number uint16, protocol PortProtocol, applicationProtocols ...string) (*PortSpec, error) {
+	var applicationProtocol *string
 
 	// throw an error if the method receives more than 3 parameters.
 	if len(applicationProtocols) > 1 {
@@ -46,6 +46,6 @@ func (spec *PortSpec) GetProtocol() PortProtocol {
 	return spec.protocol
 }
 
-func (spec *PortSpec) GetApplicationProtocol() *ApplicationProtocol {
+func (spec *PortSpec) GetApplicationProtocol() *string {
 	return spec.applicationProtocol
 }

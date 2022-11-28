@@ -11,8 +11,8 @@ func TestConstructorErrorsOnUnrecognizedProtocol(t *testing.T) {
 }
 
 func TestNewPortSpec_WithApplicationProtocolPresent(t *testing.T) {
-	spec, err := NewPortSpec(123, PortProtocol_TCP, HTTPS)
-	https := HTTPS
+	https := "https"
+	spec, err := NewPortSpec(123, PortProtocol_TCP, https)
 
 	specActual := &PortSpec{
 		123,
@@ -38,6 +38,6 @@ func TestNewPortSpec_WithApplicationProtocolAbsent(t *testing.T) {
 }
 
 func TestNewPortSpec_WithMoreThanThreeArguments(t *testing.T) {
-	_, err := NewPortSpec(123, PortProtocol_TCP, HTTPS, HTTP)
+	_, err := NewPortSpec(123, PortProtocol_TCP, "http", "ws")
 	require.ErrorContains(t, err, "Application Protocol can have at most 1 value")
 }

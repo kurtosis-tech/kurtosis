@@ -150,7 +150,7 @@ func TestInvalidProtocolDeserialization(t *testing.T) {
 	require.Error(t, err, "Expected an error when deserializing a string with a port with an invalid protocol, but none was report")
 }
 
-func TestInvalidPortSpecWithIncorrectFragments(t *testing.T) {
+func TestDeserializePortSpecStrUsingDelimiters_PortSpecWithIncorrectNumberOfFragments(t *testing.T) {
 	invalidInputWithOneFragments := "myport:23"
 	invalidInputWithFourFragments := "myport:23/tcp/https/abc"
 
@@ -181,10 +181,20 @@ func TestNoPortProtosHaveDisallowedChars(t *testing.T) {
 	}
 }
 
-func TestValidatePortSpec_InvalidPortId(t *testing.T) {
+func createPortSpecForTesting(number uint16, protocol port_spec.PortProtocol, appProtocol string) *port_spec.PortSpec {
+	if appProtocol != "" {
+		spec, _ := port_spec.NewPortSpec(number, protocol, appProtocol)
+		return spec
+	}
 
+	spec, _ := port_spec.NewPortSpec(number, protocol)
+	return spec
+}
+
+func TestValidatePortSpec_InvalidPortId(t *testing.T) {
 	type args struct {
 		portId string
+		spec   *port_spec.PortSpec
 	}
 	tests := []struct {
 		name         string
@@ -195,32 +205,40 @@ func TestValidatePortSpec_InvalidPortId(t *testing.T) {
 			name: "Throw an error on Invalid Port Id ",
 			args: args{
 				portId: ",portid/",
+				spec:   createPortSpecForTesting(100, port_spec.PortProtocol_TCP, "https"),
 			},
 			errorMessage: fmt.Sprintf("Port ID '%v' contains disallowed char '%v'", ",portid/", ","),
+		},
+		{
+			name: "Throw an error on Invalid Application Protocol String ",
+			args: args{
+				portId: "PortId",
+				spec:   createPortSpecForTesting(100, port_spec.PortProtocol_TCP, "/https,"),
+			},
+			errorMessage: fmt.Sprintf("Application Protocol '%v' associated with port ID '%v' contains disallowed char '%v'", "/https,", "PortId", "/"),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := validatePortSpec(tt.args.portId)
+			err := validatePortSpec(tt.args.portId, tt.args.spec)
 			require.NotNil(t, err, "Error cannot be nil")
 			require.ErrorContains(t, err, tt.errorMessage)
 		})
 	}
 }
 
-func TestSerializeDeserializePortSpecs(t *testing.T) {
-	http := port_spec.HTTP
+func TestSerializeDeserializeMethods_ValidPortSpecs(t *testing.T) {
 	specs := map[string]*port_spec.PortSpec{}
 
 	portOne, _ := port_spec.NewPortSpec(3333, port_spec.PortProtocol_TCP)
-	portTwo, _ := port_spec.NewPortSpec(3333, port_spec.PortProtocol_UDP, http)
+	portTwo, _ := port_spec.NewPortSpec(3333, port_spec.PortProtocol_UDP, "https")
 
 	specs["portOne"] = portOne
 	specs["portTwo"] = portTwo
 
 	actualLabelValue, err := SerializePortSpecs(specs)
 	require.Nil(t, err)
-	expectedValue, err := DeserializePortSpecs(actualLabelValue.GetString())
+	deserializedValue, err := DeserializePortSpecs(actualLabelValue.GetString())
 	require.Nil(t, err)
-	require.Equal(t, specs, expectedValue)
+	require.Equal(t, specs, deserializedValue)
 }
