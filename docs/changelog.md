@@ -1,12 +1,14 @@
 # TBD
 
-### Fixes
-- Fix failing `docs-checker` checks by pointing to `https://kurtosis-tech.github.io/kurtosis/` instead of `docs.kurtosistech.com`
+### Features
+- Log file name and function like [filename.go:FunctionName()] while logging in `core` & `engine`
+
 
 # 0.55.0
 
 ### Fixes
 - Fix failing documentation tests by linking to new domain in `cli`
+- Fix failing `docs-checker` checks by pointing to `https://kurtosis-tech.github.io/kurtosis/` instead of `docs.kurtosistech.com`
 
 ### Breaking Changes
 - Renamed `kurtosis.mod` file to `kurtosis.yml` this file extension enable syntax highlighting
@@ -28,9 +30,6 @@
 ### Changes
 - Made `run` an EngineCosumingKurtosisCommand, i.e it automatically creates an engine if it doesn't exist
 - Added serialized arguments to KurtosisInstruction API type such that the CLI can display executed instructions in a nicer way.
-
-  ### Features
-- Log file name and function like [filename.go:FunctionName()] while logging in `core` & `engine`
 
 # 0.54.1
 
