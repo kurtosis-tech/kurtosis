@@ -112,6 +112,9 @@ to the enclave context to facilitate automated testing in our current modules.
 - Re-activate tests that had to be skipped because of the "Remove support for protobuf in Startosis" breaking change
 - Renamed `input_args` to `args`. All Starlark packages should update `run(input_args)` to `run(args)`
 
+### Features
+- Added capability for container-engine to store optional application protocol for docker.
+
 # 0.55.0
 ### Fixes
 - Fix failing documentation tests by linking to new domain in `cli`
