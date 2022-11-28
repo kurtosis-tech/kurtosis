@@ -307,9 +307,21 @@ message KurtosisExecutionError {
 message KurtosisInstruction {
   KurtosisInstructionPosition position = 1;
 
-  string executable_instruction = 2;
+  string instruction_name = 2;
 
-  optional string instruction_result = 3;
+  repeated KurtosisInstructionArg arguments = 3;
+
+  string executable_instruction = 4;
+
+  optional string instruction_result = 5;
+}
+
+message KurtosisInstructionArg {
+  string serialized_arg_value = 1;
+
+  optional string arg_name = 2;
+
+  bool is_representative = 3;
 }
 
 message KurtosisInstructionPosition {

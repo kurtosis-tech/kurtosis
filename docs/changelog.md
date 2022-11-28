@@ -1,4 +1,11 @@
 # TBD
+### Breaking Changes
+- Renamed `kurtosis.mod` file to `kurtosis.yml` this file extension enable syntax highlighting
+  - Users will have to rename all theirs `kurtosis.mod` files
+
+### Changes
+- Made `run` an EngineCosumingKurtosisCommand, i.e it automatically creates an engine if it doesn't exist
+- Added serialized arguments to KurtosisInstruction API type such that the CLI can display executed instructions in a nicer way.
 
   ### Features
 - Log file name and function like [filename.go:FunctionName()] while logging in `core` & `engine`

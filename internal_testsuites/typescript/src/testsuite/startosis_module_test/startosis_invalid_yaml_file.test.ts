@@ -4,14 +4,14 @@ import * as path from "path";
 import log from "loglevel";
 import {err} from "neverthrow";
 
-const INVALID_KURTOSIS_MOD_TEST_NAME = "invalid-module-invalid-mod-file"
-const INVALID_KURTOSIS_MOD_IN_MODULE_REL_PATH = "../../../../startosis/invalid-mod-file"
+const INVALID_KURTOSIS_YAML_TEST_NAME = "invalid-module-invalid-yaml-file"
+const INVALID_KURTOSIS_YAML_IN_MODULE_REL_PATH = "../../../../startosis/invalid-yaml-file"
 
 jest.setTimeout(JEST_TIMEOUT_MS)
 
-test("Test invalid module with invalid mod file", async () => {
+test("Test invalid module with invalid yaml file", async () => {
     // ------------------------------------- ENGINE SETUP ----------------------------------------------
-    const createEnclaveResult = await createEnclave(INVALID_KURTOSIS_MOD_TEST_NAME, IS_PARTITIONING_ENABLED)
+    const createEnclaveResult = await createEnclave(INVALID_KURTOSIS_YAML_TEST_NAME, IS_PARTITIONING_ENABLED)
 
     if (createEnclaveResult.isErr()) {
         throw createEnclaveResult.error
@@ -21,7 +21,7 @@ test("Test invalid module with invalid mod file", async () => {
 
     try {
         // ------------------------------------- TEST SETUP ----------------------------------------------
-        const moduleRootPath = path.join(__dirname, INVALID_KURTOSIS_MOD_IN_MODULE_REL_PATH)
+        const moduleRootPath = path.join(__dirname, INVALID_KURTOSIS_YAML_IN_MODULE_REL_PATH)
 
         log.info(`Loading module at path '${moduleRootPath}'`)
 
@@ -31,8 +31,8 @@ test("Test invalid module with invalid mod file", async () => {
             throw err(new Error("Module with invalid module was expected to error but didn't"))
         }
 
-        if (!outputStream.error.message.includes(`Field module.name in kurtosis.mod needs to be set and cannot be empty`)) {
-            throw err(new Error("Unexpected error message"))
+        if (!outputStream.error.message.includes(`Field module.name in 'kurtosis.yml' needs to be set and cannot be empty`)) {
+            throw err(new Error(`Unexpected error message. The received error is:\n${outputStream.error.message}`))
         }
     } finally {
         stopEnclaveFunction()

@@ -546,6 +546,14 @@ export class KurtosisInstruction extends jspb.Message {
   hasPosition(): boolean;
   clearPosition(): KurtosisInstruction;
 
+  getInstructionName(): string;
+  setInstructionName(value: string): KurtosisInstruction;
+
+  getArgumentsList(): Array<KurtosisInstructionArg>;
+  setArgumentsList(value: Array<KurtosisInstructionArg>): KurtosisInstruction;
+  clearArgumentsList(): KurtosisInstruction;
+  addArguments(value?: KurtosisInstructionArg, index?: number): KurtosisInstructionArg;
+
   getExecutableInstruction(): string;
   setExecutableInstruction(value: string): KurtosisInstruction;
 
@@ -565,13 +573,48 @@ export class KurtosisInstruction extends jspb.Message {
 export namespace KurtosisInstruction {
   export type AsObject = {
     position?: KurtosisInstructionPosition.AsObject,
+    instructionName: string,
+    argumentsList: Array<KurtosisInstructionArg.AsObject>,
     executableInstruction: string,
     instructionResult?: string,
   }
 
   export enum InstructionResultCase { 
     _INSTRUCTION_RESULT_NOT_SET = 0,
-    INSTRUCTION_RESULT = 3,
+    INSTRUCTION_RESULT = 5,
+  }
+}
+
+export class KurtosisInstructionArg extends jspb.Message {
+  getSerializedArgValue(): string;
+  setSerializedArgValue(value: string): KurtosisInstructionArg;
+
+  getArgName(): string;
+  setArgName(value: string): KurtosisInstructionArg;
+  hasArgName(): boolean;
+  clearArgName(): KurtosisInstructionArg;
+
+  getIsRepresentative(): boolean;
+  setIsRepresentative(value: boolean): KurtosisInstructionArg;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): KurtosisInstructionArg.AsObject;
+  static toObject(includeInstance: boolean, msg: KurtosisInstructionArg): KurtosisInstructionArg.AsObject;
+  static serializeBinaryToWriter(message: KurtosisInstructionArg, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): KurtosisInstructionArg;
+  static deserializeBinaryFromReader(message: KurtosisInstructionArg, reader: jspb.BinaryReader): KurtosisInstructionArg;
+}
+
+export namespace KurtosisInstructionArg {
+  export type AsObject = {
+    serializedArgValue: string,
+    argName?: string,
+    isRepresentative: boolean,
+  }
+
+  export enum ArgNameCase { 
+    _ARG_NAME_NOT_SET = 0,
+    ARG_NAME = 2,
   }
 }
 

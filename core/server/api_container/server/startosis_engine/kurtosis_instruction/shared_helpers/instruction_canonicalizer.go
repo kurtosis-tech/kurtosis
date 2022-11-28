@@ -24,7 +24,7 @@ func CanonicalizeInstruction(instructionName string, serializedArgs []starlark.V
 	// print each positional arg
 	canonicalizedArgs := make([]string, len(serializedArgs)+len(serializedKwargs))
 	for idx, genericArgValue := range serializedArgs {
-		canonicalizedArgs[idx] = canonicalizeArgValue(genericArgValue)
+		canonicalizedArgs[idx] = CanonicalizeArgValue(genericArgValue)
 	}
 
 	// print each named arg, sorting them first for determinism
@@ -40,7 +40,7 @@ func CanonicalizeInstruction(instructionName string, serializedArgs []starlark.V
 		if !found {
 			panic(fmt.Sprintf("Couldn't find a value for the key '%s' in the canonical instruction argument map ('%v'). This is unexpected and a bug in Kurtosis", kwargName, serializedKwargs))
 		}
-		canonicalizedArgs[idx] = fmt.Sprintf("%s=%s", kwargName, canonicalizeArgValue(genericKwargValue))
+		canonicalizedArgs[idx] = fmt.Sprintf("%s=%s", kwargName, CanonicalizeArgValue(genericKwargValue))
 		idx++
 	}
 	buffer.WriteString(strings.Join(canonicalizedArgs, ", "))
@@ -50,7 +50,7 @@ func CanonicalizeInstruction(instructionName string, serializedArgs []starlark.V
 	return buffer.String()
 }
 
-func canonicalizeArgValue(genericArgValue starlark.Value) string {
+func CanonicalizeArgValue(genericArgValue starlark.Value) string {
 	var stringifiedArg string
 	switch argValue := genericArgValue.(type) {
 	case starlark.NoneType, starlark.Bool, starlark.String, starlark.Bytes, starlark.Int, starlark.Float:
@@ -83,7 +83,7 @@ func canonicalizeArgValue(genericArgValue starlark.Value) string {
 			if err != nil || !found {
 				panic(fmt.Sprintf("Iterating over all keys from the struct, the key '%s' could not be found ('%v'). This is unexpected and a bug in Kurtosis", key, argValue))
 			}
-			stringifiedElement[idx] = fmt.Sprintf("%s: %s", canonicalizeArgValue(key), canonicalizeArgValue(value))
+			stringifiedElement[idx] = fmt.Sprintf("%s: %s", CanonicalizeArgValue(key), CanonicalizeArgValue(value))
 			idx++
 		}
 		sort.Strings(stringifiedElement)
@@ -112,7 +112,7 @@ func stringifyIterable(iterable starlark.Iterable, length int) []string {
 	defer iterator.Done()
 	var item starlark.Value
 	for idx := 0; iterator.Next(&item); idx++ {
-		stringifiedIterable[idx] = canonicalizeArgValue(item)
+		stringifiedIterable[idx] = CanonicalizeArgValue(item)
 	}
 	return stringifiedIterable
 }
