@@ -204,8 +204,7 @@ func generateInterpretationError(err error) *startosis_errors.InterpretationErro
 			slError.Unwrap().Error(),
 		)
 	case *startosis_errors.InterpretationError:
-		// TODO(gb): This is because interpretInternal returns an InterpretationError when adding the input_args
-		//  This won't be the case anymore when we remove protobuf, so we will be able to remove it if we want to
+		// If it's already an interpretation error -> nothing to convert
 		return slError
 	}
 	return startosis_errors.NewInterpretationError("UnknownError: %s\n", err.Error())
