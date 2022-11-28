@@ -1,4 +1,7 @@
 # TBD
+### Breaking Changes
+- Renamed `src_path` parameter in `read_file` to `src`
+  - Users will have to upgrade their `read_file` calls to reflect this change
 
 ### Features
 - Progress information (spinner, progress bar and quick progress message) is now printed by the CLI
