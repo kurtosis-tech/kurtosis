@@ -165,19 +165,6 @@ func (kurtosisCtx *KurtosisContext) DestroyEnclave(ctx context.Context, enclaveI
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis/engine-lib-documentation
-func (kurtosisCtx *KurtosisContext) GetServices(ctx context.Context, enclaveId enclaves.EnclaveID) (map[services.ServiceID]bool, map[services.ServiceGUID]bool, error) {
-	enclaveContext, err := kurtosisCtx.GetEnclaveContext(ctx, enclaveId)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(
-			err,
-			"An error occurred getting enclave context",
-		)
-	}
-
-	return enclaveContext.GetServices()
-}
-
-// Docs available at https://docs.kurtosistech.com/kurtosis/engine-lib-documentation
 func (kurtosisCtx *KurtosisContext) Clean(ctx context.Context, shouldCleanAll bool) (map[string]bool, error) {
 	cleanArgs := &kurtosis_engine_rpc_api_bindings.CleanArgs{
 		ShouldCleanAll: shouldCleanAll,

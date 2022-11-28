@@ -41,7 +41,13 @@ func getServiceGuidsForEnclave(ctx context.Context, enclaveID enclaves.EnclaveID
 			"An error occurred connecting to the Kurtosis engine for retrieving the enclave IDs for tab completion",
 		)
 	}
-	_, serviceGUIDs, err := kurtosisCtx.GetServices(ctx, enclaveID)
+
+	enclaveContext, err := kurtosisCtx.GetEnclaveContext(ctx, enclaveID)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting enclave context")
+	}
+
+	_, serviceGUIDs, err := enclaveContext.GetServices()
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
