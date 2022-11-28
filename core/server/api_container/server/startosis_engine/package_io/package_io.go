@@ -19,8 +19,8 @@ var (
 
 // DeserializeArgs deserializes the Kurtosis module args, which should be serialized JSON, into a starlark.Value type.
 //
-// It tries to convert starlark.Dict into starlarkstruct.Struct to allow users to do things like `input_args.my_param`
-// in their code package in place of `input_args["my_param"]`. See convertValueToStructIfPossible below for more info.
+// It tries to convert starlark.Dict into starlarkstruct.Struct to allow users to do things like `args.my_param`
+// in their code package in place of `args["my_param"]`. See convertValueToStructIfPossible below for more info.
 func DeserializeArgs(thread *starlark.Thread, serializedJsonArgs string) (starlark.Value, *startosis_errors.InterpretationError) {
 	if !starlarkjson.Module.Members.Has(decoderKey) {
 		return nil, startosis_errors.NewInterpretationError("Unable to deserialize package input because Starlark deserializer was not found.")
