@@ -28,8 +28,9 @@
 - The output of each instruction is now printed _after each_ instruction, not at the end of the execution
 
 ### Changes
-- Made `run` an EngineCosumingKurtosisCommand, i.e it automatically creates an engine if it doesn't exist
+- Made `run` an EngineConsumingKurtosisCommand, i.e. it automatically creates an engine if it doesn't exist
 - Added serialized arguments to KurtosisInstruction API type such that the CLI can display executed instructions in a nicer way.
+- Starlark execution progress is now returned to the CLI via the KurtosisExecutionResponseLine stream
 
 # 0.54.1
 
