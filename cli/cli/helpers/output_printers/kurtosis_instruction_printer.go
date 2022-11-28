@@ -204,8 +204,9 @@ func formatInstructionResult(instructionResult string) string {
 
 func formatProgressBar(currentStep uint32, totalSteps uint32) string {
 	progressBar := strings.Builder{}
-	for i := 0; i < progressBarLength; i++ {
-		if totalSteps != 0 && i < int(currentStep*progressBarLength/totalSteps) {
+	threshold := currentStep * progressBarLength
+	for i := uint32(0); i < progressBarLength; i++ {
+		if i*totalSteps < threshold {
 			progressBar.WriteString(colorizeProgressBarIsDone(progressBarChar))
 		} else {
 			progressBar.WriteString(colorizeProgressBarRemaining(progressBarChar))
