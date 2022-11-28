@@ -1,6 +1,7 @@
 package docker_port_spec_serializer
 
 import (
+	"fmt"
 	port_spec2 "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/stretchr/testify/require"
 	"strings"
@@ -149,10 +150,78 @@ func TestInvalidProtocolDeserialization(t *testing.T) {
 	require.Error(t, err, "Expected an error when deserializing a string with a port with an invalid protocol, but none was report")
 }
 
+func TestInvalidPortSpecWithIncorrectFragments(t *testing.T) {
+	invalidInputWithOneFragments := "myport:23"
+	invalidInputWithFourFragments := "myport:23/tcp/https/abc"
+
+	_, err := deserializePortSpecStrUsingDelimiters(
+		invalidInputWithOneFragments,
+		portSpecsSeparator,
+		portIdAndInfoSeparator,
+		portNumAndProtocolSeparator,
+	)
+	require.NotNil(t, err, fmt.Sprintf("Expected error to be not nil for %v", invalidInputWithOneFragments))
+	require.ErrorContains(t, err, "Expected splitting port num & protocol string '23' to yield '2' or '3' fragments but got 1")
+
+	_, err = deserializePortSpecStrUsingDelimiters(
+		invalidInputWithFourFragments,
+		portSpecsSeparator,
+		portIdAndInfoSeparator,
+		portNumAndProtocolSeparator,
+	)
+	require.NotNil(t, err, fmt.Sprintf("Expected error to be not nil for %v", invalidInputWithFourFragments))
+	require.ErrorContains(t, err, "Expected splitting port num & protocol string '23/tcp/https/abc' to yield '2' or '3' fragments but got 4")
+}
+
 func TestNoPortProtosHaveDisallowedChars(t *testing.T) {
 	for _, portProtoStr := range port_spec2.PortProtocolStrings() {
 		for illegalPortProtocolStr := range disallowedPortIdChars {
 			require.False(t, strings.Contains(portProtoStr, illegalPortProtocolStr))
 		}
 	}
+}
+
+func TestValidatePortSpec(t *testing.T) {
+	type args struct {
+		portId string
+	}
+	tests := []struct {
+		name         string
+		args         args
+		wantErr      bool
+		errorMessage string
+	}{
+		{
+			name: "Throw an error on Invalid Port Id ",
+			args: args{
+				portId: ",portid/",
+			},
+			wantErr:      false,
+			errorMessage: fmt.Sprintf("Port ID '%v' contains disallowed char '%v'", ",portid/", ","),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := validatePortSpec(tt.args.portId); (err != nil) != tt.wantErr {
+				require.ErrorContains(t, err, tt.errorMessage)
+			}
+		})
+	}
+}
+
+func TestSerializePortSpecsSuccess(t *testing.T) {
+	httpPtr := port_spec2.HTTP
+	specs := map[string]*port_spec2.PortSpec{}
+
+	portOne, _ := port_spec2.NewPortSpec(3333, port_spec2.PortProtocol_TCP)
+	portTwo, _ := port_spec2.NewPortSpec(3333, port_spec2.PortProtocol_UDP, httpPtr)
+
+	specs["portOne"] = portOne
+	specs["portTwo"] = portTwo
+
+	actualLabelValue, err := SerializePortSpecs(specs)
+	require.Nil(t, err)
+	expectedValue, err := DeserializePortSpecs(actualLabelValue.GetString())
+	require.Nil(t, err)
+	require.Equal(t, specs, expectedValue)
 }
