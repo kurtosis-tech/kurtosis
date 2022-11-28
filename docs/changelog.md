@@ -7,6 +7,12 @@
 ### Breaking Changes
 - Renamed `kurtosis.mod` file to `kurtosis.yml` this file extension enable syntax highlighting
   - Users will have to rename all theirs `kurtosis.mod` files
+- Removed support for protobuf in Starlark package:
+  - `ModuleInput` and `ModuleOuput` don't have schema anymore. No more proto file inside a package.
+  - `input_args` passed to the run method is deserialized as `struct` (if complex JSON) or basic Starlark types (`int`, `string`, etc) directly from the CLI input
+  - `import_types()` Starlark instruction has been removed
+  - `proto` module is not available anymore in Starlark code
+  - A package can return any kind of object
 
 ### Features
 - Added a `--verbosity` flag to the `run` CLI command which can take the following values (default is `brief`):
