@@ -32,6 +32,9 @@
 - Added serialized arguments to KurtosisInstruction API type such that the CLI can display executed instructions in a nicer way.
 - Starlark execution progress is now returned to the CLI via the KurtosisExecutionResponseLine stream
 
+### Features
+- Added one-off HTTP requests, `extract` and `assert`
+
 # 0.54.1
 
 ### Fixes

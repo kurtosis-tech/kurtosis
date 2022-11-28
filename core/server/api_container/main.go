@@ -23,6 +23,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/networking_sidecar"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/metrics-library/golang/lib/source"
@@ -174,7 +175,7 @@ func runMain() error {
 	factsEngine := facts_engine.NewFactsEngine(db, serviceNetwork)
 	// TODO: Consolidate Interpreter, Validator and Executor into a single interface
 	startosisRunner := startosis_engine.NewStartosisRunner(
-		startosis_engine.NewStartosisInterpreterWithFacts(serviceNetwork, factsEngine, gitModuleContentProvider),
+		startosis_engine.NewStartosisInterpreterWithFacts(serviceNetwork, factsEngine, gitModuleContentProvider, runtime_value_store.NewRuntimeValueStore()),
 		startosis_engine.NewStartosisValidator(&kurtosisBackend, serviceNetwork),
 		startosis_engine.NewStartosisExecutor())
 
