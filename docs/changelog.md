@@ -1,16 +1,25 @@
 # TBD
 ### Breaking Changes
-- Renamed `kurtosis.mod` file to `kurtosis.yml` this file extension enable syntax highlighting
-  - Users will have to rename all theirs `kurtosis.mod` files
 - Removed `module` key in the `kurtosis.yml` (formerly called `kurtosis.mod`) file to don't have nested keys
   - Users will have to update their `kurtosis.yml` to remove the key and move the `name` key in the root
+
+### Changes
+- Re-activate tests that had to be skipped because of the "Remove support for protobuf in Startosis" breaking change
+
+# 0.55.0
+### Fixes
+- Fix failing documentation tests by linking to new domain in `cli`
+- Fix failing `docs-checker` checks by pointing to `https://kurtosis-tech.github.io/kurtosis/` instead of `docs.kurtosistech.com`
+
+### Breaking Changes
+- Renamed `kurtosis.mod` file to `kurtosis.yml` this file extension enable syntax highlighting
+  - Users will have to rename all theirs `kurtosis.mod` files
 
 ### Changes
 - Made `run` an EngineCosumingKurtosisCommand, i.e it automatically creates an engine if it doesn't exist
 - Added serialized arguments to KurtosisInstruction API type such that the CLI can display executed instructions in a nicer way.
 
 # 0.54.1
-
 ### Fixes
 - Fixes a bug where the CLI was returning 0 even when an error happened running a Kurtosis script
 
@@ -18,7 +27,6 @@
 - Small cleanup in `grpc_web_api_container_client` and `grpc_node_api_container_client`. They were implementing executeRemoteKurtosisModule unnecessarily
 
 # 0.54.0
-
 ### Breaking Changes
 - Renamed `kurtosis exec` to `kurtosis run` and `main in main.star` to `run in main.star`
   - Upgrade to the latest CLI, and use the `run` function instead
@@ -29,7 +37,6 @@
 - Update integration tests to consume Startosis streaming endpoints
 
 # 0.53.12
-
 ### Changes
 - Changed occurrences of `[sS]tartosis` to `Starlark` in errors sent by the CLI and its long and short description
 - Changed some logs and error messages inside core that which had references to Startosis to Starlark
@@ -40,7 +47,6 @@
 - Published the log-database HTTP port to the host machine
 
 # 0.53.10
-
 ### Changes
 - Add 2 endpoints to the APIC that streams the output of a Startosis script execution
 - Changed the syntax of render_templates in Starlark
@@ -49,7 +55,6 @@
 - Fixed the error that would happen if there was a missing `kurtosis.mod` file at the root of the module
 
 # 0.53.9
-
 ### Fixes
 - Renamed `artifact_uuid` to `artifact_id` and `src` to `src_path` in `upload_files` in Starlark
 

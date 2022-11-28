@@ -362,7 +362,7 @@ Accidentally-released empty release; no changes
 * Upgraded the engine to v1.17.3
     * Users should run `kurtosis engine restart` to use the latest version
     * Users should upgrade their version of `kurtosis-engine-api-lib` to 1.17.3 as well
-* Removed several methods from `EnclaveContext`; users should follow [the remediation steps here](https://docs.kurtosistech.com/kurtosis/historical-core-changelog#1.45.3)
+* Removed several methods from `EnclaveContext`; users should follow [the remediation steps here](https://kurtosis-tech.github.io/kurtosis/historical-core-changelog#1.45.3)
 
 # 0.14.1
 ### Features
@@ -601,7 +601,7 @@ Accidentally-released empty release; no changes
 
 ### Breaking Changes
 * Required the user to make an election about whether to send product analytic metrics
-  * **Users using Kurtosis in CI will need to initialize the configuration as part of their CI steps [using these instructions](https://docs.kurtosistech.com/running-in-ci.html)**
+  * **Users using Kurtosis in CI will need to initialize the configuration as part of their CI steps [using these instructions](https://docs.kurtosis.com/ci)**
   * Users will need to run `kurtosis engine restart` after upgrading to this version of the CLI
   * Engine API users (e.g. in tests) will need to update to `kurtosis-engine-api-lib` 1.9.0
 
