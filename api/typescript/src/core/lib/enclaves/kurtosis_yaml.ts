@@ -8,8 +8,6 @@ const DEPENDENCIES_URL = "https://docs.kurtosis.com/reference/starlark-reference
 export class KurtosisYaml {
     constructor(
         public readonly  name: string,
-        //TODO uncomment this field when it's implemented
-        //public readonly  dependencies: string,
     ){}
 }
 

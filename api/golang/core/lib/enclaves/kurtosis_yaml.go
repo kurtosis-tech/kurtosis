@@ -14,8 +14,6 @@ const (
 // fields are public because it's needed for YAML decoding
 type KurtosisYaml struct {
 	PackageName string `yaml:"name"`
-	//TODO uncomment this field when it's implemented
-	//Dependencies string `yaml:"dependencies"`
 }
 
 func parseKurtosisYaml(kurtosisYamlFilepath string) (*KurtosisYaml, error) {

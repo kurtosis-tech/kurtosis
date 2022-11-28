@@ -757,7 +757,7 @@ func (enclaveCtx *EnclaveContext) assembleExecuteStartosisModuleArg(moduleRootPa
 		return nil, stacktrace.Propagate(err, "There was an error parsing the '%v' at '%v'", kurtosisYamlFilename, moduleRootPath)
 	}
 
-	logrus.Infof("Compressing module '%v' at '%v' for upload", kurtosisYaml.PackageName, moduleRootPath)
+	logrus.Infof("Compressing package '%v' at '%v' for upload", kurtosisYaml.PackageName, moduleRootPath)
 	compressedModule, err := shared_utils.CompressPath(moduleRootPath, ensureCompressedFileIsLesserThanGRPCLimit)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "There was an error compressing module '%v' before upload", moduleRootPath)
