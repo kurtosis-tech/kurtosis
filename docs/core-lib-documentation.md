@@ -204,7 +204,6 @@ Takes a filepath or directory path that will be compressed and uploaded to the K
 If a directory is specified, the _contents_ of the directory will be uploaded to the archive without additional nesting.
 Empty directories cannot be uploaded.
 
-
 **Args**
 
 * `pathToUpload`: Filepath or dirpath on the local machine to compress and upload to Kurtosis.
