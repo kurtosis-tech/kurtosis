@@ -1,11 +1,8 @@
 package startosis_engine
 
 const (
-	MainFileName  = "main.star"
-	TypesFileName = "types.proto"
-
-	ModuleInputTypeName  = "ModuleInput"
-	ModuleOutputTypeName = "ModuleOutput"
+	MainFileName = "main.star"
+	ModFileName  = "kurtosis.mod"
 
 	MainInputArgName = "input_args"
 	EmptyInputArgs   = "{}" // empty JSON

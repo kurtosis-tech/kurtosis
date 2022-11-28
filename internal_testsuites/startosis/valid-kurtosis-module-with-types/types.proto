@@ -1,9 +1,0 @@
-syntax = "proto3";
-
-message ModuleInput {
-  string greetings = 1;
-}
-
-message ModuleOutput {
-  string message = 1;
-}
