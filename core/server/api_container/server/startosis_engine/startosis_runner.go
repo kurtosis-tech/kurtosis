@@ -15,6 +15,14 @@ type StartosisRunner struct {
 	startosisExecutor *StartosisExecutor
 }
 
+const (
+	defaultCurrentStepNumber  = 0
+	defaultTotalStepsNumber   = 0
+	startingInterpretationMsg = "Interpreting Starlark code - execution will begin shortly"
+	startingValidationMsg     = "Pre-validating Starlark code and downloading docker images - execution will begin shortly"
+	startingExecutionMsg      = "Starting execution"
+)
+
 func NewStartosisRunner(interpreter *StartosisInterpreter, validator *StartosisValidator, executor *StartosisExecutor) *StartosisRunner {
 	return &StartosisRunner{
 		startosisInterpreter: interpreter,
@@ -31,8 +39,9 @@ func (runner *StartosisRunner) Run(ctx context.Context, dryRun bool, moduleId st
 		defer close(kurtosisExecutionResponseLines)
 
 		// Interpretation starts > send progress info (this line will be invisible as interpretation is super quick)
-		kurtosisExecutionResponseLines <- binding_constructors.NewKurtosisExecutionResponseLineFromProgressInfo(
-			"Interpreting Starlark code - execution will begin shortly", 0, 0)
+		progressInfo := binding_constructors.NewKurtosisExecutionResponseLineFromProgressInfo(
+			startingInterpretationMsg, defaultCurrentStepNumber, defaultTotalStepsNumber)
+		kurtosisExecutionResponseLines <- progressInfo
 
 		instructionsList, interpretationError := runner.startosisInterpreter.Interpret(ctx, moduleId, serializedStartosis, serializedParams)
 		if interpretationError != nil {
@@ -44,16 +53,18 @@ func (runner *StartosisRunner) Run(ctx context.Context, dryRun bool, moduleId st
 			instructionsList)
 
 		// Validation starts > send progress info
-		kurtosisExecutionResponseLines <- binding_constructors.NewKurtosisExecutionResponseLineFromProgressInfo(
-			"Pre-validating Starlark code and downloading docker images - execution will begin shortly", 0, totalNumberOfInstructions)
+		progressInfo = binding_constructors.NewKurtosisExecutionResponseLineFromProgressInfo(
+			startingValidationMsg, defaultCurrentStepNumber, totalNumberOfInstructions)
+		kurtosisExecutionResponseLines <- progressInfo
 
 		validationErrorsChan := runner.startosisValidator.Validate(ctx, instructionsList)
 		forwardKurtosisResponseLineChannelUntilSourceIsClosed(validationErrorsChan, kurtosisExecutionResponseLines)
 		logrus.Debugf("Successfully validated Startosis script")
 
 		// Execution starts > send progress info. This will soon be overridden byt the first instruction execution
-		kurtosisExecutionResponseLines <- binding_constructors.NewKurtosisExecutionResponseLineFromProgressInfo(
-			"Starting execution", 0, totalNumberOfInstructions)
+		progressInfo = binding_constructors.NewKurtosisExecutionResponseLineFromProgressInfo(
+			startingExecutionMsg, defaultCurrentStepNumber, totalNumberOfInstructions)
+		kurtosisExecutionResponseLines <- progressInfo
 
 		executionResponseLinesChan := runner.startosisExecutor.Execute(ctx, dryRun, instructionsList)
 		forwardKurtosisResponseLineChannelUntilSourceIsClosed(executionResponseLinesChan, kurtosisExecutionResponseLines)

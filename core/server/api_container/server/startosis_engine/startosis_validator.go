@@ -29,17 +29,19 @@ func (validator *StartosisValidator) Validate(ctx context.Context, instructions 
 	kurtosisExecutionResponseLineStream := make(chan *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine)
 	go func() {
 		defer close(kurtosisExecutionResponseLineStream)
-		environment := startosis_validator.NewValidatorEnvironment(map[string]bool{}, validator.serviceNetwork.GetServiceIDs())
+		environment := startosis_validator.NewValidatorEnvironment(validator.serviceNetwork.GetServiceIDs())
 		for _, instruction := range instructions {
 			err := instruction.ValidateAndUpdateEnvironment(environment)
 			if err != nil {
-				serializedError := binding_constructors.NewKurtosisValidationError(stacktrace.Propagate(err, "Error while validating instruction %v. The instruction can be found at %v", instruction.String(), instruction.GetPositionInOriginalScript().String()).Error())
+				propagatedError := stacktrace.Propagate(err, "Error while validating instruction %v. The instruction can be found at %v", instruction.String(), instruction.GetPositionInOriginalScript().String())
+				serializedError := binding_constructors.NewKurtosisValidationError(propagatedError.Error())
 				kurtosisExecutionResponseLineStream <- binding_constructors.NewKurtosisExecutionResponseLineFromValidationError(serializedError)
 			}
 		}
 		errors := validator.dockerImagesValidator.Validate(ctx, environment)
 		for _, err := range errors {
-			serializedError := binding_constructors.NewKurtosisValidationError(stacktrace.Propagate(err, "Error while validating final environment of script").Error())
+			propagatedError := stacktrace.Propagate(err, "Error while validating final environment of script")
+			serializedError := binding_constructors.NewKurtosisValidationError(propagatedError.Error())
 			kurtosisExecutionResponseLineStream <- binding_constructors.NewKurtosisExecutionResponseLineFromValidationError(serializedError)
 		}
 	}()

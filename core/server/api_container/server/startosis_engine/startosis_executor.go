@@ -42,12 +42,14 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, ins
 
 		totalNumberOfInstructions := uint32(len(instructions))
 		for index, instruction := range instructions {
+			instructionNumber := uint32(index + 1)
 			kurtosisExecutionResponseLineStream <- binding_constructors.NewKurtosisExecutionResponseLineFromProgressInfo(
-				"Execution in progress", uint32(index+1), totalNumberOfInstructions)
+				"Execution in progress", instructionNumber, totalNumberOfInstructions)
 			if !dryRun {
 				instructionOutput, err := instruction.Execute(ctx)
 				if err != nil {
-					serializedError := binding_constructors.NewKurtosisExecutionError(stacktrace.Propagate(err, "An error occurred executing instruction (number %d): \n%v", index+1, instruction.String()).Error())
+					propagatedError := stacktrace.Propagate(err, "An error occurred executing instruction (number %d): \n%v", instructionNumber, instruction.String())
+					serializedError := binding_constructors.NewKurtosisExecutionError(propagatedError.Error())
 					kurtosisExecutionResponseLineStream <- binding_constructors.NewKurtosisExecutionResponseLineFromExecutionError(serializedError)
 					return
 				}
