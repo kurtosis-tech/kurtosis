@@ -207,11 +207,10 @@ func run(
 		return stacktrace.Propagate(errRunningKurtosis, "An error starting the Kurtosis code execution '%v'", starlarkScriptOrModulePath)
 	}
 
-	scriptOutput, errRunningKurtosis := readAndPrintResponseLinesUntilClosed(responseLineChan, cancelFunc, verbosity)
+	errRunningKurtosis = readAndPrintResponseLinesUntilClosed(responseLineChan, cancelFunc, verbosity)
 	if errRunningKurtosis != nil {
 		return stacktrace.Propagate(errRunningKurtosis, "Error executing Kurtosis code")
 	}
-	logrus.Infof("Kurtosis script executed successfully. Output of the module was: \n%v", scriptOutput)
 	return nil
 }
 
@@ -243,7 +242,7 @@ func executeRemoteModule(ctx context.Context, enclaveCtx *enclaves.EnclaveContex
 	return enclaveCtx.ExecuteKurtosisRemoteModule(ctx, moduleId, serializedParams, dryRun)
 }
 
-func readAndPrintResponseLinesUntilClosed(responseLineChan <-chan *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine, cancelFunc context.CancelFunc, verbosity command_args_run.Verbosity) (string, error) {
+func readAndPrintResponseLinesUntilClosed(responseLineChan <-chan *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine, cancelFunc context.CancelFunc, verbosity command_args_run.Verbosity) error {
 	defer cancelFunc()
 
 	// This channel will receive a signal when the user presses an interrupt
@@ -251,26 +250,31 @@ func readAndPrintResponseLinesUntilClosed(responseLineChan <-chan *kurtosis_core
 	signal.Notify(interruptChan, os.Interrupt)
 	defer close(interruptChan)
 
-	scriptOutput := &strings.Builder{}
+	printer := output_printers.NewExecutionPrinter()
+	if err := printer.Start(); err != nil {
+		return stacktrace.Propagate(err, "Unable to start the printer for this execution. The execution will continue in the background but nothing will be printed.")
+	}
+	defer printer.Stop()
+
 	isError := false
 	for {
 		select {
 		case responseLine, isChanOpen := <-responseLineChan:
 			if !isChanOpen {
 				if isError {
-					return scriptOutput.String(), stacktrace.NewError("Kurtosis execution threw an error. See output above for more details")
+					return stacktrace.NewError("Kurtosis execution threw an error. See output above for more details")
 				}
-				return scriptOutput.String(), nil
+				return nil
 			}
-			executionErrored, err := output_printers.PrintKurtosisExecutionResponseLineToStdOut(responseLine, verbosity)
+			executionErrored, err := printer.PrintKurtosisExecutionResponseLineToStdOut(responseLine, verbosity)
 			if err != nil {
-				logrus.Error("An error occurred trying to write the output of Starlark execution to stdout. The script execution will continue, but the output printed here is incomplete")
+				logrus.Errorf("An error occurred trying to write the output of Starlark execution to stdout. The script execution will continue, but the output printed here is incomplete. Error was: \n%s", err.Error())
 				// independently of the status of the execution, mark this run as errored to double tap on the fact that something went wrong.
 				isError = true
 			}
 			isError = isError || executionErrored
 		case <-interruptChan:
-			return scriptOutput.String(), stacktrace.NewError("User manually interrupted the execution, returning. Note that the execution will continue in the Kurtosis enclave")
+			return stacktrace.NewError("User manually interrupted the execution, returning. Note that the execution will continue in the Kurtosis enclave")
 		}
 	}
 }

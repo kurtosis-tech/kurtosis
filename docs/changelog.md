@@ -1,5 +1,11 @@
 # TBD
 
+### Features
+- Progress information (spinner, progress bar and quick progress message) is now printed by the CLI
+
+### Changes
+- Starlark execution progress is now returned to the CLI via the KurtosisExecutionResponseLine stream
+
 # 0.56.0
 ### Breaking Changes
 - Removed `module` key in the `kurtosis.yml` (formerly called `kurtosis.mod`) file to don't have nested keys
@@ -23,7 +29,6 @@
 ### Changes
 - Made `run` an EngineConsumingKurtosisCommand, i.e. it automatically creates an engine if it doesn't exist
 - Added serialized arguments to KurtosisInstruction API type such that the CLI can display executed instructions in a nicer way.
-- Starlark execution progress is now returned to the CLI via the KurtosisExecutionResponseLine stream
 
 ### Features
 - Added one-off HTTP requests, `extract` and `assert`
