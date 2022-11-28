@@ -6,6 +6,11 @@
 ### Changes
 - Starlark execution progress is now returned to the CLI via the KurtosisExecutionResponseLine stream
 
+# 0.56.0
+### Breaking Changes
+- Removed `module` key in the `kurtosis.yml` (formerly called `kurtosis.mod`) file to don't have nested keys
+  - Users will have to update their `kurtosis.yml` to remove the key and move the `name` key in the root
+
 # 0.55.1
 
 ### Changes
@@ -13,7 +18,6 @@
 - Renamed `input_args` to `args`. All Starlark packages should update `run(input_args)` to `run(args)`
 
 # 0.55.0
-
 ### Fixes
 - Fix failing documentation tests by linking to new domain in `cli`
 - Fix failing `docs-checker` checks by pointing to `https://kurtosis-tech.github.io/kurtosis/` instead of `docs.kurtosistech.com`
@@ -21,19 +25,6 @@
 ### Breaking Changes
 - Renamed `kurtosis.mod` file to `kurtosis.yml` this file extension enable syntax highlighting
   - Users will have to rename all theirs `kurtosis.mod` files
-- Removed support for protobuf in Starlark package:
-  - `ModuleInput` and `ModuleOuput` don't have schema anymore. No more proto file inside a package.
-  - `input_args` passed to the run method is deserialized as `struct` (if complex JSON) or basic Starlark types (`int`, `string`, etc) directly from the CLI input
-  - `import_types()` Starlark instruction has been removed
-  - `proto` module is not available anymore in Starlark code
-  - A package can return any kind of object
-
-### Features
-- Added a `--verbosity` flag to the `run` CLI command which can take the following values (default is `brief`):
-  - `brief` which outputs the Kurtosis command printing only a subset of representative arguments, for better readability
-  - `detailed` which outputs each instruction with its exhaustive set of arguments
-  - `executable` which outputs valid Starlark instructions with their initial position in the source scripts
-- The output of each instruction is now printed _after each_ instruction, not at the end of the execution
 
 ### Changes
 - Made `run` an EngineConsumingKurtosisCommand, i.e. it automatically creates an engine if it doesn't exist
@@ -43,7 +34,6 @@
 - Added one-off HTTP requests, `extract` and `assert`
 
 # 0.54.1
-
 ### Fixes
 - Fixes a bug where the CLI was returning 0 even when an error happened running a Kurtosis script
 
@@ -51,7 +41,6 @@
 - Small cleanup in `grpc_web_api_container_client` and `grpc_node_api_container_client`. They were implementing executeRemoteKurtosisModule unnecessarily
 
 # 0.54.0
-
 ### Breaking Changes
 - Renamed `kurtosis exec` to `kurtosis run` and `main in main.star` to `run in main.star`
   - Upgrade to the latest CLI, and use the `run` function instead
@@ -62,7 +51,6 @@
 - Update integration tests to consume Startosis streaming endpoints
 
 # 0.53.12
-
 ### Changes
 - Changed occurrences of `[sS]tartosis` to `Starlark` in errors sent by the CLI and its long and short description
 - Changed some logs and error messages inside core that which had references to Startosis to Starlark
@@ -73,7 +61,6 @@
 - Published the log-database HTTP port to the host machine
 
 # 0.53.10
-
 ### Changes
 - Add 2 endpoints to the APIC that streams the output of a Startosis script execution
 - Changed the syntax of render_templates in Starlark
@@ -82,7 +69,6 @@
 - Fixed the error that would happen if there was a missing `kurtosis.mod` file at the root of the module
 
 # 0.53.9
-
 ### Fixes
 - Renamed `artifact_uuid` to `artifact_id` and `src` to `src_path` in `upload_files` in Starlark
 
