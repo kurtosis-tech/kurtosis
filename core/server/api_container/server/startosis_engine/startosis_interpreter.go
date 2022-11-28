@@ -6,7 +6,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/facts_engine"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/import_module"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/import_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/read_file"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_service"
@@ -22,31 +21,21 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/upload_files"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/wait"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/package_io"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_modules"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_modules/proto_compiler"
 	"github.com/sirupsen/logrus"
-	starlarkproto "go.starlark.net/lib/proto"
 	"go.starlark.net/lib/time"
 	"go.starlark.net/resolve"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkjson"
 	"go.starlark.net/starlarkstruct"
 	"go.starlark.net/syntax"
-	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/reflect/protoreflect"
-	"google.golang.org/protobuf/types/dynamicpb"
-	"path/filepath"
-	"strings"
 	"sync"
 )
 
 const (
 	starlarkGoThreadName = "Startosis interpreter thread"
-
-	nonBreakingSpaceChar = "\u00a0"
-	regularSpaceChar     = " "
 
 	multipleInterpretationErrorMsg = "Multiple errors caught interpreting the Starlark script. Listing each of them below."
 )
@@ -61,7 +50,6 @@ type StartosisInterpreter struct {
 	moduleGlobalsCache map[string]*startosis_modules.ModuleCacheEntry
 	// TODO AUTH there will be a leak here in case people with different repo visibility access a module
 	moduleContentProvider startosis_modules.ModuleContentProvider
-	protoFileStore        *proto_compiler.ProtoFileStore
 }
 
 type SerializedInterpretationOutput string
@@ -74,7 +62,6 @@ func NewStartosisInterpreter(serviceNetwork service_network.ServiceNetwork, modu
 		recipeExecutor:        nil,
 		moduleGlobalsCache:    make(map[string]*startosis_modules.ModuleCacheEntry),
 		moduleContentProvider: moduleContentProvider,
-		protoFileStore:        proto_compiler.NewProtoFileStore(moduleContentProvider),
 	}
 }
 
@@ -86,7 +73,6 @@ func NewStartosisInterpreterWithFacts(serviceNetwork service_network.ServiceNetw
 		recipeExecutor:        recipeExecutor,
 		moduleGlobalsCache:    make(map[string]*startosis_modules.ModuleCacheEntry),
 		factsEngine:           factsEngine,
-		protoFileStore:        proto_compiler.NewProtoFileStore(moduleContentProvider),
 	}
 }
 
@@ -112,7 +98,7 @@ func (interpreter *StartosisInterpreter) Interpret(ctx context.Context, moduleId
 func (interpreter *StartosisInterpreter) interpretInternal(moduleId string, serializedStartosis string, serializedJsonParams string, instructionsQueue *[]kurtosis_instruction.KurtosisInstruction) (starlark.StringDict, error) {
 	thread, predeclared := interpreter.buildBindings(starlarkGoThreadName, instructionsQueue)
 
-	if interpretationError := interpreter.addInputArgsToPredeclared(moduleId, serializedJsonParams, predeclared); interpretationError != nil {
+	if interpretationError := interpreter.addInputArgsToPredeclared(thread, moduleId, serializedJsonParams, predeclared); interpretationError != nil {
 		return nil, interpretationError
 	}
 
@@ -138,7 +124,6 @@ func (interpreter *StartosisInterpreter) buildBindings(threadName string, instru
 	predeclared := &starlark.StringDict{
 		// go-starlark add-ons
 		starlarkjson.Module.Name:          starlarkjson.Module,
-		starlarkproto.Module.Name:         starlarkproto.Module,
 		starlarkstruct.Default.GoString(): starlark.NewBuiltin(starlarkstruct.Default.GoString(), starlarkstruct.Make), // extension to build struct in starlark
 		time.Module.Name:                  time.Module,
 
@@ -158,70 +143,30 @@ func (interpreter *StartosisInterpreter) buildBindings(threadName string, instru
 
 		// Kurtosis custom builtins - pure interpretation-time helpers. Do not add any instructions to the queue
 		import_module.ImportModuleBuiltinName: starlark.NewBuiltin(import_module.ImportModuleBuiltinName, import_module.GenerateImportBuiltin(recursiveInterpretForModuleLoading, interpreter.moduleContentProvider, interpreter.moduleGlobalsCache)),
-		import_types.ImportTypesBuiltinName:   starlark.NewBuiltin(import_types.ImportTypesBuiltinName, import_types.GenerateImportTypesBuiltin(interpreter.protoFileStore)),
 		read_file.ReadFileBuiltinName:         starlark.NewBuiltin(read_file.ReadFileBuiltinName, read_file.GenerateReadFileBuiltin(interpreter.moduleContentProvider)),
 	}
 	return thread, predeclared
 }
 
 // This method handles the different cases a Startosis module can be executed. Here are the different cases handled:
-// - If there's no `types.proto` in the module, then the CLI should be called with no execute params (or default empty `{}`). The main function will not receive any arg. It should implement a simple `def main()`.
-// - If there's a `types.proto` in the module and this `types.proto` does not define a `ModuleInput` type, then the CLI should be called with no execute params (or default empty `{}`). The main function must have an `input_args` param and this `input_args` will be an empty object.
-// - If there's a `types.proto` in the module and this `types.proto` defines a `ModuleInput` type, then the CLI should be called with execute params (otherwise default values will be used). The main function must have an `input_args` param and `input_args` will be built from the execute params passed to the CLI
-func (interpreter *StartosisInterpreter) addInputArgsToPredeclared(moduleId string, serializedJsonParams string, predeclared *starlark.StringDict) *startosis_errors.InterpretationError {
-	if moduleId == ModuleIdPlaceholderForStandaloneScripts && serializedJsonParams == EmptyInputArgs {
+// - For a Kurtosis Package, the run method will always receive input args. If none were passed through the CLI params, empty JSON will be used
+// - For a standalone Kurtosis script however, no params can be passed. It will fail if it is the case
+func (interpreter *StartosisInterpreter) addInputArgsToPredeclared(thread *starlark.Thread, moduleId string, serializedJsonArgs string, predeclared *starlark.StringDict) *startosis_errors.InterpretationError {
+	if moduleId == ModuleIdPlaceholderForStandaloneScripts && serializedJsonArgs == EmptyInputArgs {
 		(*predeclared)[MainInputArgName] = starlark.None
 		return nil
 	}
-	if moduleId == ModuleIdPlaceholderForStandaloneScripts && serializedJsonParams != EmptyInputArgs {
+	if moduleId == ModuleIdPlaceholderForStandaloneScripts && serializedJsonArgs != EmptyInputArgs {
 		// This _cannot_ be reached right now. Just being nice in the logs in case it can be hit in the future
 		return startosis_errors.NewInterpretationError("Passing parameter to a standalone script is not yet supported in Kurtosis.")
 	}
 
-	// Get descriptor for type "ModuleInput" in the module types.proto file
-	protoTypesFile := strings.Join([]string{moduleId, TypesFileName}, string(filepath.Separator))
-	fileStore, interpretationError := interpreter.protoFileStore.LoadProtoFile(protoTypesFile)
-	if interpretationError != nil && serializedJsonParams == EmptyInputArgs {
-		// If am empty param was passed to the script, then it's valid to not have a types.proto inside the module
-		(*predeclared)[MainInputArgName] = starlark.None
-		return nil
-	}
+	// it is a module, and it has input args -> deserialize the JSON input and add it as a struct to the predeclared
+	deserializedArgs, interpretationError := package_io.DeserializeArgs(thread, serializedJsonArgs)
 	if interpretationError != nil {
-		// TODO(gb): rework the error piping here to include the compiler error message (see https://github.com/kurtosis-tech/kurtosis/issues/270)
-		return startosis_errors.WrapWithInterpretationError(interpretationError, "A non empty parameter was passed to the module '%s' but the module doesn't contain a valid '%s' file (it is either absent of invalid). To be able to pass a parameter to a Kurtosis module, please define a '%s' type in the module's '%s' file", moduleId, TypesFileName, ModuleInputTypeName, TypesFileName)
+		return interpretationError
 	}
-	reflectMessageDescriptor, err := fileStore.FindDescriptorByName(ModuleInputTypeName)
-	if err != nil && serializedJsonParams == EmptyInputArgs {
-		// If am empty param was passed to the script, then it's valid to not have a ModuleInput type defined in the module's types.proto
-		(*predeclared)[MainInputArgName] = starlark.None
-		return nil
-	}
-	if err != nil {
-		return startosis_errors.WrapWithInterpretationError(err, "A non empty parameter was passed to the module '%s' but '%s' type is not defined in the module's '%s' file. To be able to pass a parameter to a Kurtosis module, please define a '%s' type in the module's '%s' file", moduleId, ModuleInputTypeName, TypesFileName, ModuleInputTypeName, TypesFileName)
-	}
-	messageDescriptor, ok := reflectMessageDescriptor.(protoreflect.MessageDescriptor)
-	if !ok {
-		return startosis_errors.NewInterpretationError("Cannot cast protoreflect.Descriptor to protoreflect.MessageDescriptor. This is a very unexpected product bug (module ID: '%s', type: '%s')", moduleId, ModuleInputTypeName)
-	}
-
-	// Unmarshall the serialized params into this ModuleInput type
-	message := dynamicpb.NewMessage(messageDescriptor)
-	if err = protojson.Unmarshal([]byte(serializedJsonParams), message); err != nil {
-		// protoc compiler error can contain non-breaking spaces. For simplicity, convert them to regular spaces
-		protocErrorMsg := strings.ReplaceAll(err.Error(), nonBreakingSpaceChar, regularSpaceChar)
-		return startosis_errors.NewInterpretationError("Module parameter shape does not fit the module expected input type (module: '%s'). Parameter was: \n%v\nError was: \n%v", moduleId, serializedJsonParams, protocErrorMsg)
-	}
-
-	// Convert the proto.Message into a starlarkproto.Message
-	protobufMarshalledMessage, err := proto.Marshal(message)
-	if err != nil {
-		return startosis_errors.WrapWithInterpretationError(err, "Unable to serialize the '%s' type of module '%s'. This is unexpected.", ModuleInputTypeName, moduleId)
-	}
-	starlarkMessage, err := starlarkproto.Unmarshal(message.Descriptor(), protobufMarshalledMessage)
-	if err != nil {
-		return startosis_errors.WrapWithInterpretationError(err, "Unable to serialize the '%s' type of module '%s'. This is unexpected.", moduleId, serializedJsonParams)
-	}
-	(*predeclared)[MainInputArgName] = starlarkMessage
+	(*predeclared)[MainInputArgName] = deserializedArgs
 	return nil
 }
 
@@ -269,8 +214,7 @@ func generateInterpretationError(err error) *startosis_errors.InterpretationErro
 			slError.Unwrap().Error(),
 		)
 	case *startosis_errors.InterpretationError:
-		// TODO(gb): This is because interpretInternal returns an InterpretationError when adding the input_args
-		//  This won't be the case anymore when we remove protobuf, so we will be able to remove it if we want to
+		// If it's already an interpretation error -> nothing to convert
 		return slError
 	}
 	return startosis_errors.NewInterpretationError("UnknownError: %s\n", err.Error())

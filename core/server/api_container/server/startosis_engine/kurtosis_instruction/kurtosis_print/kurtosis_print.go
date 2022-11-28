@@ -26,7 +26,7 @@ const (
 	defaultSeparator = separator(" ")
 
 	endArgName = "end"
-	defaultEnd = end("\n")
+	defaultEnd = end("")
 )
 
 func GeneratePrintBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, recipeExecutor *runtime_value_store.RuntimeValueStore) func(thread *starlark.Thread, builtin *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {

@@ -1,11 +1,36 @@
 # TBD
+
+### Changes
+- Re-activate tests that had to be skipped because of the "Remove support for protobuf in Startosis" breaking change
+- Renamed `input_args` to `args`. All Starlark packages should update `run(input_args)` to `run(args)`
+
+# 0.55.0
+
+### Fixes
+- Fix failing documentation tests by linking to new domain in `cli`
+- Fix failing `docs-checker` checks by pointing to `https://kurtosis-tech.github.io/kurtosis/` instead of `docs.kurtosistech.com`
+
 ### Breaking Changes
 - Renamed `kurtosis.mod` file to `kurtosis.yml` this file extension enable syntax highlighting
   - Users will have to rename all theirs `kurtosis.mod` files
+- Removed support for protobuf in Starlark package:
+  - `ModuleInput` and `ModuleOuput` don't have schema anymore. No more proto file inside a package.
+  - `input_args` passed to the run method is deserialized as `struct` (if complex JSON) or basic Starlark types (`int`, `string`, etc) directly from the CLI input
+  - `import_types()` Starlark instruction has been removed
+  - `proto` module is not available anymore in Starlark code
+  - A package can return any kind of object
+
+### Features
+- Added a `--verbosity` flag to the `run` CLI command which can take the following values (default is `brief`):
+  - `brief` which outputs the Kurtosis command printing only a subset of representative arguments, for better readability
+  - `detailed` which outputs each instruction with its exhaustive set of arguments
+  - `executable` which outputs valid Starlark instructions with their initial position in the source scripts
+- The output of each instruction is now printed _after each_ instruction, not at the end of the execution
 
 ### Changes
-- Made `run` an EngineCosumingKurtosisCommand, i.e it automatically creates an engine if it doesn't exist
+- Made `run` an EngineConsumingKurtosisCommand, i.e. it automatically creates an engine if it doesn't exist
 - Added serialized arguments to KurtosisInstruction API type such that the CLI can display executed instructions in a nicer way.
+- Starlark execution progress is now returned to the CLI via the KurtosisExecutionResponseLine stream
 
 ### Features
 - Added one-off HTTP requests, `extract` and `assert`

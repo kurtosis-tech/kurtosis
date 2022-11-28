@@ -833,15 +833,7 @@ func (apicService ApiContainerService) executeKurtosisModuleSetup(moduleId strin
 		return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred while verifying that '%v' exists on root of module '%v' at '%v'", startosis_engine.MainFileName, moduleId, pathToMainFile)
 	}
 
-	var scriptWithMainToExecute string
-	pathToTypesFile := path.Join(moduleRootPathOnDisk, startosis_engine.TypesFileName)
-	if _, err := os.Stat(pathToTypesFile); err != nil {
-		// no types file provided for the module, no input_args expected
-		scriptWithMainToExecute = fmt.Sprintf(bootScript, moduleId, "")
-	} else {
-		// types file exists in module, input_args will be provided by the boot script
-		scriptWithMainToExecute = fmt.Sprintf(bootScript, moduleId, startosis_engine.MainInputArgName)
-	}
+	scriptWithMainToExecute := fmt.Sprintf(bootScript, moduleId, startosis_engine.MainInputArgName)
 	return scriptWithMainToExecute, nil
 }
 

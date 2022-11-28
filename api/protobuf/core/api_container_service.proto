@@ -344,7 +344,16 @@ message KurtosisExecutionResponseLine {
   oneof kurtosis_execution_response_line {
     KurtosisInstruction instruction = 1;
     KurtosisError error = 2;
+    KurtosisExecutionProgress progress_info = 3;
   }
+}
+
+message KurtosisExecutionProgress {
+  string current_step_info = 1;
+
+  uint32 total_steps = 2;
+
+  uint32 current_step_number = 3;
 }
 
 // ==============================================================================================
