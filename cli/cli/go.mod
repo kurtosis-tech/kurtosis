@@ -40,11 +40,16 @@ require (
 )
 
 require (
+	github.com/bazelbuild/buildtools v0.0.0-20221110131218-762712d8ce3f
+	github.com/briandowns/spinner v1.19.0
+	github.com/fatih/color v1.7.0
+)
+
+require (
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
 	github.com/Microsoft/go-winio v0.4.17 // indirect
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
-	github.com/bazelbuild/buildtools v0.0.0-20221110131218-762712d8ce3f // indirect
 	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/docker/docker v20.10.16+incompatible // indirect
@@ -52,7 +57,6 @@ require (
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/dsnet/compress v0.0.1 // indirect
 	github.com/emicklei/go-restful v2.9.5+incompatible // indirect
-	github.com/fatih/color v1.13.0 // indirect
 	github.com/gammazero/deque v0.1.0 // indirect
 	github.com/gammazero/workerpool v1.1.2 // indirect
 	github.com/go-logr/logr v1.2.0 // indirect
@@ -71,7 +75,7 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-1f73d028840d // indirect
 	github.com/mailru/easyjson v0.7.6 // indirect
-	github.com/mattn/go-colorable v0.1.9 // indirect
+	github.com/mattn/go-colorable v0.1.2 // indirect
 	github.com/mholt/archiver v3.1.1+incompatible // indirect
 	github.com/moby/spdystream v0.2.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
