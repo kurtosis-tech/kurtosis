@@ -24,38 +24,42 @@ func NewStartosisExecutor() *StartosisExecutor {
 }
 
 // Execute executes the list of Kurtosis instructions _asynchronously_ against the Kurtosis backend
-// Consumers of this method should read the 3 channels in a select/case loop and return as soon as one is closed (they are all closed at the same time)
+// Consumers of this method should read the response lines channel and return as soon as one it is closed
 //
-// The channels are the following:
-// - One channel of instruction output. Everytime an instruction is executed and returns a non-nil output, it is written to this channel
-// - One channel of serialized kurtosis instructions. Every successfully executed instruction will be serialized and sent to this channel
-// - One channel for potential error. As soon as an instruction fails to be executed, an error will be sent to this channel and the execution will stop
-func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, instructions []kurtosis_instruction.KurtosisInstruction) (<-chan *kurtosis_core_rpc_api_bindings.KurtosisInstruction, <-chan *kurtosis_core_rpc_api_bindings.KurtosisExecutionError) {
+// The channel of KurtosisExecutionResponseLine can contain three kinds of line:
+// - A regular KurtosisInstruction that was successfully executed
+// - A KurtosisExecutionError if the execution failed
+// - A ProgressInfo to update the current "state" of the execution
+func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, instructions []kurtosis_instruction.KurtosisInstruction) <-chan *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine {
 	executor.mutex.Lock()
-	kurtosisInstructionsStream := make(chan *kurtosis_core_rpc_api_bindings.KurtosisInstruction)
-	errorChan := make(chan *kurtosis_core_rpc_api_bindings.KurtosisExecutionError)
+	kurtosisExecutionResponseLineStream := make(chan *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine)
 
 	go func() {
 		defer func() {
 			executor.mutex.Unlock()
-			close(kurtosisInstructionsStream)
-			close(errorChan)
+			close(kurtosisExecutionResponseLineStream)
 		}()
 
+		totalNumberOfInstructions := uint32(len(instructions))
 		for index, instruction := range instructions {
+			instructionNumber := uint32(index + 1)
+			kurtosisExecutionResponseLineStream <- binding_constructors.NewKurtosisExecutionResponseLineFromProgressInfo(
+				"Execution in progress", instructionNumber, totalNumberOfInstructions)
 			if !dryRun {
 				instructionOutput, err := instruction.Execute(ctx)
 				if err != nil {
-					errorChan <- binding_constructors.NewKurtosisExecutionError(stacktrace.Propagate(err, "An error occurred executing instruction (number %d): \n%v", index+1, instruction.String()).Error())
+					propagatedError := stacktrace.Propagate(err, "An error occurred executing instruction (number %d): \n%v", instructionNumber, instruction.String())
+					serializedError := binding_constructors.NewKurtosisExecutionError(propagatedError.Error())
+					kurtosisExecutionResponseLineStream <- binding_constructors.NewKurtosisExecutionResponseLineFromExecutionError(serializedError)
 					return
 				}
 				instructionWithResult := binding_constructors.AddResultToKurtosisInstruction(instruction.GetCanonicalInstruction(), instructionOutput)
-				kurtosisInstructionsStream <- instructionWithResult
+				kurtosisExecutionResponseLineStream <- binding_constructors.NewKurtosisExecutionResponseLineFromInstruction(instructionWithResult)
 			} else {
-				kurtosisInstructionsStream <- instruction.GetCanonicalInstruction()
+				instructionWithoutResult := instruction.GetCanonicalInstruction()
+				kurtosisExecutionResponseLineStream <- binding_constructors.NewKurtosisExecutionResponseLineFromInstruction(instructionWithoutResult)
 			}
 		}
 	}()
-
-	return kurtosisInstructionsStream, errorChan
+	return kurtosisExecutionResponseLineStream
 }

@@ -3,8 +3,11 @@
 - Removed `module` key in the `kurtosis.yml` (formerly called `kurtosis.mod`) file to don't have nested keys
   - Users will have to update their `kurtosis.yml` to remove the key and move the `name` key in the root
 
+# 0.55.1
+
 ### Changes
 - Re-activate tests that had to be skipped because of the "Remove support for protobuf in Startosis" breaking change
+- Renamed `input_args` to `args`. All Starlark packages should update `run(input_args)` to `run(args)`
 
 # 0.55.0
 ### Fixes
@@ -16,8 +19,12 @@
   - Users will have to rename all theirs `kurtosis.mod` files
 
 ### Changes
-- Made `run` an EngineCosumingKurtosisCommand, i.e it automatically creates an engine if it doesn't exist
+- Made `run` an EngineConsumingKurtosisCommand, i.e. it automatically creates an engine if it doesn't exist
 - Added serialized arguments to KurtosisInstruction API type such that the CLI can display executed instructions in a nicer way.
+- Starlark execution progress is now returned to the CLI via the KurtosisExecutionResponseLine stream
+
+### Features
+- Added one-off HTTP requests, `extract` and `assert`
 
 # 0.54.1
 ### Fixes

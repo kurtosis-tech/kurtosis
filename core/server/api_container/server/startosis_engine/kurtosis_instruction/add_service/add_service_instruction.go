@@ -12,6 +12,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
@@ -92,7 +93,7 @@ func (instruction *AddServiceInstruction) GetCanonicalInstruction() *kurtosis_co
 }
 
 func (instruction *AddServiceInstruction) Execute(ctx context.Context) (*string, error) {
-	serviceIdStr, err := shared_helpers.ReplaceFactsInString(string(instruction.serviceId), instruction.factsEngine)
+	serviceIdStr, err := magic_string_helper.ReplaceFactsInString(string(instruction.serviceId), instruction.factsEngine)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error occurred while replacing facts in service id for '%v'", instruction.serviceId)
 	}
@@ -128,11 +129,11 @@ func (instruction *AddServiceInstruction) replaceMagicStrings() error {
 	serviceIdStr := string(instruction.serviceId)
 	entryPointArgs := instruction.serviceConfig.EntrypointArgs
 	for index, entryPointArg := range entryPointArgs {
-		entryPointArgWithIPAddressReplaced, err := shared_helpers.ReplaceIPAddressInString(entryPointArg, instruction.serviceNetwork, serviceIdStr)
+		entryPointArgWithIPAddressReplaced, err := magic_string_helper.ReplaceIPAddressInString(entryPointArg, instruction.serviceNetwork, serviceIdStr)
 		if err != nil {
 			return stacktrace.Propagate(err, "Error occurred while replacing IP address in entry point args for '%v'", entryPointArg)
 		}
-		entryPointArgWithIPAddressAndFactsReplaced, err := shared_helpers.ReplaceFactsInString(entryPointArgWithIPAddressReplaced, instruction.factsEngine)
+		entryPointArgWithIPAddressAndFactsReplaced, err := magic_string_helper.ReplaceFactsInString(entryPointArgWithIPAddressReplaced, instruction.factsEngine)
 		if err != nil {
 			return stacktrace.Propagate(err, "Error occurred while replacing facts in entry point args for '%v'", entryPointArg)
 		}
@@ -141,11 +142,11 @@ func (instruction *AddServiceInstruction) replaceMagicStrings() error {
 
 	cmdArgs := instruction.serviceConfig.CmdArgs
 	for index, cmdArg := range cmdArgs {
-		cmdArgWithIPAddressReplaced, err := shared_helpers.ReplaceIPAddressInString(cmdArg, instruction.serviceNetwork, serviceIdStr)
+		cmdArgWithIPAddressReplaced, err := magic_string_helper.ReplaceIPAddressInString(cmdArg, instruction.serviceNetwork, serviceIdStr)
 		if err != nil {
 			return stacktrace.Propagate(err, "Error occurred while replacing IP address in command args for '%v'", cmdArg)
 		}
-		cmdArgWithIPAddressAndFactsReplaced, err := shared_helpers.ReplaceFactsInString(cmdArgWithIPAddressReplaced, instruction.factsEngine)
+		cmdArgWithIPAddressAndFactsReplaced, err := magic_string_helper.ReplaceFactsInString(cmdArgWithIPAddressReplaced, instruction.factsEngine)
 		if err != nil {
 			return stacktrace.Propagate(err, "Error occurred while replacing facts in command args for '%v'", cmdArg)
 		}
@@ -154,11 +155,11 @@ func (instruction *AddServiceInstruction) replaceMagicStrings() error {
 
 	envVars := instruction.serviceConfig.EnvVars
 	for envVarName, envVarValue := range envVars {
-		envVarValueWithIPAddressReplaced, err := shared_helpers.ReplaceIPAddressInString(envVarValue, instruction.serviceNetwork, serviceIdStr)
+		envVarValueWithIPAddressReplaced, err := magic_string_helper.ReplaceIPAddressInString(envVarValue, instruction.serviceNetwork, serviceIdStr)
 		if err != nil {
 			return stacktrace.Propagate(err, "Error occurred while replacing IP address in env vars for '%v'", envVarValue)
 		}
-		envVarValueWithIPAddressAndFactsReplaced, err := shared_helpers.ReplaceFactsInString(envVarValueWithIPAddressReplaced, instruction.factsEngine)
+		envVarValueWithIPAddressAndFactsReplaced, err := magic_string_helper.ReplaceFactsInString(envVarValueWithIPAddressReplaced, instruction.factsEngine)
 		if err != nil {
 			return stacktrace.Propagate(err, "Error occurred while replacing facts in command args for '%v'", envVars)
 		}
@@ -179,7 +180,7 @@ func (instruction *AddServiceInstruction) makeAddServiceInterpretationReturnValu
 			return nil, startosis_errors.NewInterpretationError("An error occurred while creating a port spec for values (number: '%v', port: '%v') the add instruction return value", portNumber, portProtocol)
 		}
 	}
-	ipAddress := starlark.String(fmt.Sprintf(shared_helpers.IpAddressReplacementPlaceholderFormat, instruction.serviceId))
+	ipAddress := starlark.String(fmt.Sprintf(magic_string_helper.IpAddressReplacementPlaceholderFormat, instruction.serviceId))
 	returnValue := kurtosis_types.NewService(ipAddress, portSpecsDict)
 	return returnValue, nil
 }
