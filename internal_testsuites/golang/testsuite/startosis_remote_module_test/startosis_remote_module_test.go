@@ -32,7 +32,7 @@ func TestStartosisRemoteModule(t *testing.T) {
 
 	outputStream, _, err := enclaveCtx.ExecuteKurtosisRemoteModule(ctx, remoteModule, executeParams, defaultDryRun)
 	require.NoError(t, err, "Unexpected error executing startosis module")
-	interpretationError, validationErrors, executionError, _ := test_helpers.ReadStreamContentUntilClosed(outputStream)
+	_, _, interpretationError, validationErrors, executionError := test_helpers.ReadStreamContentUntilClosed(outputStream)
 
 	require.Nil(t, interpretationError, "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
 	require.Empty(t, validationErrors, "Unexpected validation error")

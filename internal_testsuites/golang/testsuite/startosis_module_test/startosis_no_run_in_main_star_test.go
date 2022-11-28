@@ -36,10 +36,10 @@ func TestStartosisModule_NoMainInMainStar(t *testing.T) {
 	expectedInterpretationErr := "Evaluation error: module has no .run field or method\n\tat [3:12]: <toplevel>"
 	outputStream, _, err := enclaveCtx.ExecuteKurtosisModule(ctx, moduleDirpath, emptyExecuteParams, defaultDryRun)
 	require.Nil(t, err, "Unexpected error executing startosis module")
-	interpretationError, validationErrors, executionError, instructions := test_helpers.ReadStreamContentUntilClosed(outputStream)
+	scriptOutput, _, interpretationError, validationErrors, executionError := test_helpers.ReadStreamContentUntilClosed(outputStream)
 	require.NotNil(t, interpretationError)
 	require.Contains(t, interpretationError.GetErrorMessage(), expectedInterpretationErr)
 	require.Empty(t, validationErrors)
 	require.Nil(t, executionError)
-	require.Empty(t, test_helpers.GenerateScriptOutput(instructions))
+	require.Empty(t, scriptOutput)
 }

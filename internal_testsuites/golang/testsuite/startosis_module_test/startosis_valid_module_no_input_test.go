@@ -35,7 +35,7 @@ func TestStartosisModule_ValidModuleNoInput(t *testing.T) {
 
 	outputStream, _, err := enclaveCtx.ExecuteKurtosisModule(ctx, moduleDirpath, emptyExecuteParams, defaultDryRun)
 	require.Nil(t, err, "Unexpected error executing startosis module")
-	interpretationError, validationErrors, executionError, instructions := test_helpers.ReadStreamContentUntilClosed(outputStream)
+	scriptOutput, _, interpretationError, validationErrors, executionError := test_helpers.ReadStreamContentUntilClosed(outputStream)
 
 	expectedScriptOutput := `Hello world!
 `
@@ -43,7 +43,7 @@ func TestStartosisModule_ValidModuleNoInput(t *testing.T) {
 	require.Nil(t, interpretationError)
 	require.Empty(t, validationErrors)
 	require.Nil(t, executionError)
-	require.Equal(t, expectedScriptOutput, test_helpers.GenerateScriptOutput(instructions))
+	require.Equal(t, expectedScriptOutput, scriptOutput)
 }
 
 func TestStartosisModule_ValidModuleNoInput_PassingParamsAlsoWorks(t *testing.T) {
@@ -67,7 +67,7 @@ func TestStartosisModule_ValidModuleNoInput_PassingParamsAlsoWorks(t *testing.T)
 	params := `{"greetings": "bonjour!"}`
 	outputStream, _, err := enclaveCtx.ExecuteKurtosisModule(ctx, moduleDirpath, params, defaultDryRun)
 	require.Nil(t, err, "Unexpected error executing startosis module")
-	interpretationError, validationErrors, executionError, instructions := test_helpers.ReadStreamContentUntilClosed(outputStream)
+	scriptOutput, _, interpretationError, validationErrors, executionError := test_helpers.ReadStreamContentUntilClosed(outputStream)
 
 	expectedScriptOutput := `Hello world!
 `
@@ -75,5 +75,5 @@ func TestStartosisModule_ValidModuleNoInput_PassingParamsAlsoWorks(t *testing.T)
 	require.Nil(t, interpretationError)
 	require.Empty(t, validationErrors)
 	require.Nil(t, executionError)
-	require.Equal(t, expectedScriptOutput, test_helpers.GenerateScriptOutput(instructions))
+	require.Equal(t, expectedScriptOutput, scriptOutput)
 }

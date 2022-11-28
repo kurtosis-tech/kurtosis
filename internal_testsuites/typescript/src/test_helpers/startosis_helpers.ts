@@ -7,22 +7,14 @@ import {Readable} from "stream";
 
 const NEWLINE_CHAR = "\n"
 
-export function generateScriptOutput(instructions: Array<KurtosisInstruction>): string {
-    let scriptOutput = "";
-    instructions.forEach((instruction) => {
-        if (instruction.hasInstructionResult()) {
-            scriptOutput += instruction.getInstructionResult() + NEWLINE_CHAR
-        }
-    })
-    return scriptOutput
-}
-
 export function readStreamContentUntilClosed(responseLines: Readable): Promise<[
+    string,
+    Array<KurtosisInstruction>,
     KurtosisInterpretationError | undefined,
     Array<KurtosisValidationError>,
-    KurtosisExecutionError | undefined,
-    Array<KurtosisInstruction>
+    KurtosisExecutionError | undefined
 ]> {
+    let scriptOutput = ""
     let interpretationError: KurtosisInterpretationError | undefined
     let validationErrors: Array<KurtosisValidationError> = []
     let executionError: KurtosisExecutionError | undefined
@@ -32,6 +24,8 @@ export function readStreamContentUntilClosed(responseLines: Readable): Promise<[
         responseLines.on('data', (responseLine: KurtosisExecutionResponseLine) => {
             if (responseLine.getInstruction() !== undefined) {
                 instructions.push(responseLine.getInstruction()!)
+            } else if (responseLine.getInstructionResult() !== undefined) {
+                scriptOutput += responseLine.getInstructionResult()?.getSerializedInstructionResult() + NEWLINE_CHAR
             } else if (responseLine.getError() !== undefined) {
                 if (responseLine.getError()?.getInterpretationError() !== undefined) {
                     interpretationError = responseLine.getError()?.getInterpretationError()
@@ -51,7 +45,7 @@ export function readStreamContentUntilClosed(responseLines: Readable): Promise<[
         responseLines.on('end', function () {
             if (!responseLines.destroyed) {
                 responseLines.destroy();
-                resolve([interpretationError, validationErrors, executionError, instructions])
+                resolve([scriptOutput, instructions, interpretationError, validationErrors, executionError])
             }
         });
     })

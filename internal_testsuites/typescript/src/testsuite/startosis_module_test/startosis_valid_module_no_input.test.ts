@@ -7,7 +7,7 @@ import {
 } from "./shared_constants";
 import * as path from "path";
 import log from "loglevel";
-import {generateScriptOutput, readStreamContentUntilClosed} from "../../test_helpers/startosis_helpers";
+import {readStreamContentUntilClosed} from "../../test_helpers/startosis_helpers";
 import {err} from "neverthrow";
 
 const VALID_MODULE_NO_MODULE_INPUT_TEST_NAME = "valid-module-no-input"
@@ -35,11 +35,11 @@ test("Test valid kurtosis module with input", async () => {
         if (outputStream.isErr()) {
             throw err(new Error(`An error occurred execute startosis module '${moduleRootPath}'`));
         }
-        const [interpretationError, validationErrors, executionError, instructions] = await readStreamContentUntilClosed(outputStream.value);
+        const [scriptOutput, _, interpretationError, validationErrors, executionError] = await readStreamContentUntilClosed(outputStream.value);
 
         const expectedScriptOutput = "Hello world!\n"
 
-        expect(generateScriptOutput(instructions)).toEqual(expectedScriptOutput)
+        expect(scriptOutput).toEqual(expectedScriptOutput)
 
         expect(interpretationError).toBeUndefined()
         expect(validationErrors).toEqual([])
@@ -70,11 +70,11 @@ test("Test valid kurtosis module with input - passing params also works", async 
         if (outputStream.isErr()) {
             throw err(new Error(`An error occurred execute startosis module '${moduleRootPath}'`));
         }
-        const [interpretationError, validationErrors, executionError, instructions] = await readStreamContentUntilClosed(outputStream.value);
+        const [scriptOutput, _, interpretationError, validationErrors, executionError] = await readStreamContentUntilClosed(outputStream.value);
 
         const expectedScriptOutput = "Hello world!\n"
 
-        expect(generateScriptOutput(instructions)).toEqual(expectedScriptOutput)
+        expect(scriptOutput).toEqual(expectedScriptOutput)
 
         expect(interpretationError).toBeUndefined()
         expect(validationErrors).toEqual([])
