@@ -1,10 +1,12 @@
 # TBD
 
+### Fixes
+- Fix failing `docs-checker` checks by pointing to `https://kurtosis-tech.github.io/kurtosis/` instead of `docs.kurtosistech.com`
+
 # 0.55.0
 
 ### Fixes
 - Fix failing documentation tests by linking to new domain in `cli`
-- Fix failing `docs-checker` checks by pointing to `https://kurtosis-tech.github.io/kurtosis/` instead of `docs.kurtosistech.com`
 
 ### Breaking Changes
 - Renamed `kurtosis.mod` file to `kurtosis.yml` this file extension enable syntax highlighting
