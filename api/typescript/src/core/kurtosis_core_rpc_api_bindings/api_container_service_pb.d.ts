@@ -696,6 +696,11 @@ export class KurtosisExecutionResponseLine extends jspb.Message {
   hasError(): boolean;
   clearError(): KurtosisExecutionResponseLine;
 
+  getProgressInfo(): KurtosisExecutionProgress | undefined;
+  setProgressInfo(value?: KurtosisExecutionProgress): KurtosisExecutionResponseLine;
+  hasProgressInfo(): boolean;
+  clearProgressInfo(): KurtosisExecutionResponseLine;
+
   getKurtosisExecutionResponseLineCase(): KurtosisExecutionResponseLine.KurtosisExecutionResponseLineCase;
 
   serializeBinary(): Uint8Array;
@@ -710,12 +715,40 @@ export namespace KurtosisExecutionResponseLine {
   export type AsObject = {
     instruction?: KurtosisInstruction.AsObject,
     error?: KurtosisError.AsObject,
+    progressInfo?: KurtosisExecutionProgress.AsObject,
   }
 
   export enum KurtosisExecutionResponseLineCase { 
     KURTOSIS_EXECUTION_RESPONSE_LINE_NOT_SET = 0,
     INSTRUCTION = 1,
     ERROR = 2,
+    PROGRESS_INFO = 3,
+  }
+}
+
+export class KurtosisExecutionProgress extends jspb.Message {
+  getCurrentStepInfo(): string;
+  setCurrentStepInfo(value: string): KurtosisExecutionProgress;
+
+  getTotalSteps(): number;
+  setTotalSteps(value: number): KurtosisExecutionProgress;
+
+  getCurrentStepNumber(): number;
+  setCurrentStepNumber(value: number): KurtosisExecutionProgress;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): KurtosisExecutionProgress.AsObject;
+  static toObject(includeInstance: boolean, msg: KurtosisExecutionProgress): KurtosisExecutionProgress.AsObject;
+  static serializeBinaryToWriter(message: KurtosisExecutionProgress, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): KurtosisExecutionProgress;
+  static deserializeBinaryFromReader(message: KurtosisExecutionProgress, reader: jspb.BinaryReader): KurtosisExecutionProgress;
+}
+
+export namespace KurtosisExecutionProgress {
+  export type AsObject = {
+    currentStepInfo: string,
+    totalSteps: number,
+    currentStepNumber: number,
   }
 }
 

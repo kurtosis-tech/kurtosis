@@ -7,12 +7,6 @@ const DEPENDENCIES_URL = "https://docs.kurtosis.com/reference/starlark-reference
 
 export class KurtosisYaml {
     constructor(
-        public readonly module: Module,
-    ){}
-}
-
-class Module {
-    constructor(
         public readonly  name: string,
     ){}
 }
@@ -43,8 +37,8 @@ export async  function parseKurtosisYaml(kurtosisYamlFilepath: string): Promise<
         ));
     }
 
-    if (parsedYAML.module === null || parsedYAML.module.name === null || parsedYAML.module.name === "") {
-        return err(new Error(`Field module.name in '${KURTOSIS_YAML_FILENAME}' needs to be set and cannot be empty`))
+    if ( parsedYAML.name === null || parsedYAML.name === "") {
+        return err(new Error(`Field 'name', which is the Starlark package's name, in '${KURTOSIS_YAML_FILENAME}' needs to be set and cannot be empty`))
     }
 
     return ok(parsedYAML)

@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/facts_engine"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
@@ -30,7 +31,7 @@ func GenerateWaitBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstr
 			return nil, interpretationError
 		}
 		*instructionsQueue = append(*instructionsQueue, waitInstruction)
-		returnValue := shared_helpers.MakeWaitInterpretationReturnValue(waitInstruction.serviceId, waitInstruction.factName)
+		returnValue := magic_string_helper.MakeWaitInterpretationReturnValue(waitInstruction.serviceId, waitInstruction.factName)
 		return returnValue, nil
 	}
 }

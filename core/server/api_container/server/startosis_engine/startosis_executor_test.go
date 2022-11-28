@@ -135,21 +135,20 @@ func createMockInstruction(t *testing.T, instructionName string, executeSuccessf
 func executeSynchronously(t *testing.T, executor *StartosisExecutor, dryRun bool, instructions []kurtosis_instruction.KurtosisInstruction) (string, []*kurtosis_core_rpc_api_bindings.KurtosisInstruction, *kurtosis_core_rpc_api_bindings.KurtosisExecutionError) {
 	scriptOutput := strings.Builder{}
 	var serializedInstructions []*kurtosis_core_rpc_api_bindings.KurtosisInstruction
-	serializedInstructionsStream, errChan := executor.Execute(context.Background(), dryRun, instructions)
-	for {
-		select {
-		case executedKurtosisInstruction, isChanOpen := <-serializedInstructionsStream:
-			if !isChanOpen {
-				return scriptOutput.String(), serializedInstructions, nil
-			}
+	executionResponseLines := executor.Execute(context.Background(), dryRun, instructions)
+	for executionResponseLine := range executionResponseLines {
+		if executionResponseLine.GetError() != nil {
+			return scriptOutput.String(), serializedInstructions, executionResponseLine.GetError().GetExecutionError()
+		}
+		if executionResponseLine.GetInstruction() != nil {
+			executedKurtosisInstruction := executionResponseLine.GetInstruction()
 			if executedKurtosisInstruction.InstructionResult != nil {
 				if _, err := scriptOutput.WriteString(executedKurtosisInstruction.GetInstructionResult()); err != nil {
 					require.Nil(t, err)
 				}
 			}
 			serializedInstructions = append(serializedInstructions, executedKurtosisInstruction)
-		case err := <-errChan:
-			return scriptOutput.String(), serializedInstructions, err
 		}
 	}
+	return scriptOutput.String(), serializedInstructions, nil
 }
