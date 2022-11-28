@@ -1450,6 +1450,7 @@ func validateScriptOutputFromPrintInstructions(t *testing.T, instructions []kurt
 			require.Nil(t, err, "Error running the print statements")
 			if instructionOutput != nil {
 				scriptOutput.WriteString(*instructionOutput)
+				scriptOutput.WriteString("\n")
 			}
 		}
 	}
