@@ -1,4 +1,8 @@
 # TBD
+
+### Fixes
+- Fix failing documentation tests by linking to new domain in `cli`
+
 ### Breaking Changes
 - Renamed `kurtosis.mod` file to `kurtosis.yml` this file extension enable syntax highlighting
   - Users will have to rename all theirs `kurtosis.mod` files
