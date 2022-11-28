@@ -139,7 +139,7 @@ func (interpreter *StartosisInterpreter) buildBindings(threadName string, instru
 }
 
 // This method handles the different cases a Startosis module can be executed. Here are the different cases handled:
-// - For a Kurtosis Package, the run method will always receive input args. If non wer passed through the CLI params, empty JSON will be used
+// - For a Kurtosis Package, the run method will always receive input args. If none were passed through the CLI params, empty JSON will be used
 // - For a standalone Kurtosis script however, no params can be passed. It will fail if it is the case
 func (interpreter *StartosisInterpreter) addInputArgsToPredeclared(thread *starlark.Thread, moduleId string, serializedJsonArgs string, predeclared *starlark.StringDict) *startosis_errors.InterpretationError {
 	if moduleId == ModuleIdPlaceholderForStandaloneScripts && serializedJsonArgs == EmptyInputArgs {
