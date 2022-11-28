@@ -20,6 +20,7 @@ const (
 	oldPortNumAndProtocolSeparator = "-"
 	oldPortSpecsSeparator          = "_"
 
+	maybeApplicationProtocolFragment  = 3
 	expectedNumPortIdAndSpecFragments = 2
 	minExpectedNumPortNumAndProtocol  = 2
 	maxExpectedNumPortNumAndProtocol  = 3
@@ -108,7 +109,6 @@ func SerializePortSpecs(ports map[string]*port_spec.PortSpec) (*docker_label_val
 		portIdAndSpecStrs = append(portIdAndSpecStrs, portIdAndSpecStr)
 	}
 	resultStr := strings.Join(portIdAndSpecStrs, portSpecsSeparator)
-
 	numResultBytes := len([]byte(resultStr))
 	if numResultBytes > maxLabelValueBytes {
 		return nil, stacktrace.NewError(
@@ -210,7 +210,7 @@ func deserializePortSpecStrUsingDelimiters(
 		portNumStr := portNumAndProtocolFragments[0]
 		portProtocolStr := portNumAndProtocolFragments[1]
 
-		if numPortNumAndProtocolFragments == 3 {
+		if numPortNumAndProtocolFragments == maybeApplicationProtocolFragment {
 			portApplicationProtocolStr = portNumAndProtocolFragments[2]
 		}
 
