@@ -359,7 +359,7 @@ used anywhere and can be deleted but has been preserved to preserve history.
 # 1.17.0
 ### Breaking Changes
 * Upgraded to Kurtosis Core 1.45.0
-    * Users should follow the changes [described in the changelog](https://docs.kurtosistech.com/kurtosis/historical-core-changelog)
+    * Users should follow the changes [described in the changelog](https://kurtosis-tech.github.io/kurtosis/historical-core-changelog)
 
 # 1.16.0
 ### Changes
@@ -368,7 +368,7 @@ used anywhere and can be deleted but has been preserved to preserve history.
 ### Breaking Changes
 * Upgraded to Kurtosis Core 1.44.0
     * Users should upgrade their engine-api-lib to version 1.44.0
-* The `EnclaveContext` has been modified fairly significantly; for a list of breaking changes and remediations see [the 1.44.0 docs](https://docs.kurtosistech.com/kurtosis/historical-core-changelog)
+* The `EnclaveContext` has been modified fairly significantly; for a list of breaking changes and remediations see [the 1.44.0 docs](https://kurtosis-tech.github.io/kurtosis/historical-core-changelog)
 
 # 1.15.6
 ### Features
