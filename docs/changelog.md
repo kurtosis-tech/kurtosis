@@ -1,7 +1,19 @@
 # TBD
+
+### Fixes
+- Fix failing documentation tests by linking to new domain in `cli`
+- Fix failing `docs-checker` checks by pointing to `https://kurtosis-tech.github.io/kurtosis/` instead of `docs.kurtosistech.com`
+
 ### Breaking Changes
 - Renamed `kurtosis.mod` file to `kurtosis.yml` this file extension enable syntax highlighting
   - Users will have to rename all theirs `kurtosis.mod` files
+
+### Features
+- Added a `--verbosity` flag to the `run` CLI command which can take the following values (default is `brief`):
+  - `brief` which outputs the Kurtosis command printing only a subset of representative arguments, for better readability
+  - `detailed` which outputs each instruction with its exhaustive set of arguments
+  - `executable` which outputs valid Starlark instructions with their initial position in the source scripts
+- The output of each instruction is now printed _after each_ instruction, not at the end of the execution
 
 ### Changes
 - Made `run` an EngineCosumingKurtosisCommand, i.e it automatically creates an engine if it doesn't exist

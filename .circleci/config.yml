@@ -1012,7 +1012,7 @@ workflows:
                 "replacementPatterns": [
                     {
                         "pattern": "^../kurtosis/",
-                        "replacement": "https://docs.kurtosistech.com/kurtosis/"
+                        "replacement": "https://kurtosis-tech.github.io/kurtosis/"
                     }
                 ],
                 "ignorePatterns": [
