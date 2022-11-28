@@ -1,4 +1,6 @@
 # TBD
+
+# 0.56.0
 ### Breaking Changes
 - Removed `module` key in the `kurtosis.yml` (formerly called `kurtosis.mod`) file to don't have nested keys
   - Users will have to update their `kurtosis.yml` to remove the key and move the `name` key in the root
