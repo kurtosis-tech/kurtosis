@@ -576,20 +576,20 @@ func (enclaveCtx *EnclaveContext) GetServices() (map[services.ServiceID]bool, ma
 	}
 
 	serviceIds := make(map[services.ServiceID]bool, len(response.GetServiceInfo()))
-	serviceGUIDs := make(map[services.ServiceGUID]bool, len(response.GetServiceInfo()))
+	serviceGuids := make(map[services.ServiceGUID]bool, len(response.GetServiceInfo()))
 
-	for key, value := range response.GetServiceInfo() {
+	for key, serviceInfo := range response.GetServiceInfo() {
 		serviceId := services.ServiceID(key)
 		if _, ok := serviceIds[serviceId]; !ok {
 			serviceIds[serviceId] = true
 		}
-		serviceGUID := services.ServiceGUID(value.GetServiceGuid())
-		if _, ok := serviceGUIDs[serviceGUID]; !ok {
-			serviceGUIDs[serviceGUID] = true
+		serviceGuid := services.ServiceGUID(serviceInfo.GetServiceGuid())
+		if _, ok := serviceGuids[serviceGuid]; !ok {
+			serviceGuids[serviceGuid] = true
 		}
 	}
 
-	return serviceIds, serviceGUIDs, nil
+	return serviceIds, serviceGuids, nil
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation

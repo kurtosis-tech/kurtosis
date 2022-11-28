@@ -30,8 +30,8 @@ const (
 	isEnclaveIdArgGreedy   = false
 
 	serviceGuidArgKey        = "service-guid"
-	isServiceGUIDArgOptional = false
-	isServiceGUIDArgGreedy   = false
+	isServiceGuidArgOptional = false
+	isServiceGuidArgGreedy   = false
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
@@ -53,9 +53,8 @@ var ServiceShellCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosis
 		),
 		service_guid_arg.NewServiceGUIDArg(
 			serviceGuidArgKey,
-			engineClientCtxKey,
-			isServiceGUIDArgOptional,
-			isServiceGUIDArgGreedy,
+			isServiceGuidArgOptional,
+			isServiceGuidArgGreedy,
 		),
 	},
 	RunFunc: run,

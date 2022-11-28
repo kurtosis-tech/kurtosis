@@ -37,8 +37,8 @@ const (
 	isEnclaveIdArgGreedy   = false
 
 	serviceGuidArgKey        = "service-guid"
-	isServiceGUIDArgOptional = false
-	isServiceGUIDArgGreedy   = false
+	isServiceGuidArgOptional = false
+	isServiceGuidArgGreedy   = false
 
 	shouldFollowLogsFlagKey = "follow"
 
@@ -74,9 +74,8 @@ var ServiceLogsCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 		),
 		service_guid_arg.NewServiceGUIDArg(
 			serviceGuidArgKey,
-			engineClientCtxKey,
-			isServiceGUIDArgOptional,
-			isServiceGUIDArgGreedy,
+			isServiceGuidArgOptional,
+			isServiceGuidArgGreedy,
 		),
 	},
 	RunFunc: run,

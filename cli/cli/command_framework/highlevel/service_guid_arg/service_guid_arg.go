@@ -18,23 +18,22 @@ const (
 
 func NewServiceGUIDArg(
 	argKey string,
-	engineClientCtxKey string,
 	isOptional bool,
 	isGreedy bool,
 ) *args.ArgConfig {
-	validate := getValidationFunc(argKey, engineClientCtxKey, isGreedy)
+	validate := getValidationFunc(argKey, isGreedy)
 
 	return &args.ArgConfig{
 		Key:                   argKey,
 		IsOptional:            isOptional,
 		DefaultValue:          "",
 		IsGreedy:              isGreedy,
-		ArgCompletionProvider: args.NewManualCompletionsProvider(getCompletions),
+		ArgCompletionProvider: args.NewManualCompletionsProvider(getOrderedEnclaveServiceGuids),
 		ValidationFunc:        validate,
 	}
 }
 
-func getServiceGUIDsForEnclave(ctx context.Context, enclaveID enclaves.EnclaveID) (map[services.ServiceGUID]bool, error) {
+func getServiceGuidsForEnclave(ctx context.Context, enclaveID enclaves.EnclaveID) (map[services.ServiceGUID]bool, error) {
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	if err != nil {
 		return nil, stacktrace.Propagate(
@@ -52,21 +51,21 @@ func getServiceGUIDsForEnclave(ctx context.Context, enclaveID enclaves.EnclaveID
 	return serviceGUIDs, nil
 }
 
-func getCompletions(ctx context.Context, flags *flags.ParsedFlags, previousArgs *args.ParsedArgs) ([]string, error) {
+func getOrderedEnclaveServiceGuids(ctx context.Context, flags *flags.ParsedFlags, previousArgs *args.ParsedArgs) ([]string, error) {
 	enclaveIdStr, err := previousArgs.GetNonGreedyArg(enclaveIdArgKey)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave ID using key '%v'", enclaveIdArgKey)
 	}
 
 	enclaveID := enclaves.EnclaveID(enclaveIdStr)
-	serviceGUIDs, err := getServiceGUIDsForEnclave(ctx, enclaveID)
+	serviceGuids, err := getServiceGuidsForEnclave(ctx, enclaveID)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the services retrieving for enclave ID tab completion")
 	}
 
 	result := []string{}
-	for serviceGUID := range serviceGUIDs {
-		result = append(result, string(serviceGUID))
+	for serviceGuid := range serviceGuids {
+		result = append(result, string(serviceGuid))
 	}
 	sort.Strings(result)
 
@@ -75,46 +74,45 @@ func getCompletions(ctx context.Context, flags *flags.ParsedFlags, previousArgs 
 
 func getValidationFunc(
 	argKey string,
-	engineClientCtxKey string,
 	isGreedy bool,
 ) func(context.Context, *flags.ParsedFlags, *args.ParsedArgs) error {
 	return func(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error {
-		var serviceGUIDsToValidate []string
+		var serviceGuidsToValidate []string
 		if isGreedy {
-			serviceGUID, err := args.GetGreedyArg(argKey)
+			serviceGuid, err := args.GetGreedyArg(argKey)
 			if err != nil {
 				return stacktrace.Propagate(err, "Expected a value for greedy arg '%v' but didn't find one", argKey)
 			}
-			serviceGUIDsToValidate = serviceGUID
+			serviceGuidsToValidate = serviceGuid
 		} else {
-			serviceGUID, err := args.GetNonGreedyArg(argKey)
+			serviceGuid, err := args.GetNonGreedyArg(argKey)
 			if err != nil {
 				return stacktrace.Propagate(err, "Expected a value for non-greedy arg '%v' but didn't find one", argKey)
 			}
-			serviceGUIDsToValidate = []string{serviceGUID}
+			serviceGuidsToValidate = []string{serviceGuid}
 		}
 
-		serviceGUIDs, err := getCompletions(ctx, flags, args)
+		serviceGuids, err := getOrderedEnclaveServiceGuids(ctx, flags, args)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred while getting the services for the enclave")
 		}
 
-		var errorServiceGUIDs []string
-		for _, serviceGUIDtoValidate := range serviceGUIDsToValidate {
+		var errorServiceGuids []string
+		for _, serviceGuidToValidate := range serviceGuidsToValidate {
 			var contains = false
-			for _, serviceGUID := range serviceGUIDs {
-				if found := serviceGUIDtoValidate == serviceGUID; found {
+			for _, serviceGuid := range serviceGuids {
+				if found := serviceGuidToValidate == serviceGuid; found {
 					contains = true
 					break
 				}
 			}
 			if !contains {
-				errorServiceGUIDs = append(errorServiceGUIDs, serviceGUIDtoValidate)
+				errorServiceGuids = append(errorServiceGuids, serviceGuidToValidate)
 			}
 		}
 
-		if len(errorServiceGUIDs) > 0 {
-			return stacktrace.NewError("One or more service GUIDs do not exist in the enclave: '%s'", strings.Join(errorServiceGUIDs, ", "))
+		if len(errorServiceGuids) > 0 {
+			return stacktrace.NewError("One or more service GUIDs do not exist in the enclave: '%s'", strings.Join(errorServiceGuids, ", "))
 		}
 		return nil
 	}
