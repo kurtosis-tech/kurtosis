@@ -5,12 +5,13 @@ import {
 } from "kurtosis-sdk/build/core/kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import {Readable} from "stream";
 
+const NEWLINE_CHAR = "\n"
 
 export function generateScriptOutput(instructions: Array<KurtosisInstruction>): string {
     let scriptOutput = "";
     instructions.forEach((instruction) => {
         if (instruction.hasInstructionResult()) {
-            scriptOutput += instruction.getInstructionResult() + "\n"
+            scriptOutput += instruction.getInstructionResult() + NEWLINE_CHAR
         }
     })
     return scriptOutput

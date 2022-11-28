@@ -9,7 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	enclave_consts "github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/enclave"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
-	run2 "github.com/kurtosis-tech/kurtosis/cli/cli/command_args/run"
+	command_args_run "github.com/kurtosis-tech/kurtosis/cli/cli/command_args/run"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/file_system_path_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
@@ -106,7 +106,7 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 		},
 		{
 			Key:       verbosityFlagKey,
-			Usage:     "The parameters that should be passed to the Kurtosis module when running it. It is expected to be a serialized JSON string. Note that if a standalone Kurtosis script is being run, no parameter should be passed.",
+			Usage:     fmt.Sprintf("The verbosity of the command output: %s. If unset, it defaults to `brief` for a concise and explicit output. Use `detailed` to display the exhaustive list of arguments for each command. `executable` will generate executable Starlark instructions.", strings.Join(command_args_run.VerbosityStrings(), ", ")),
 			Type:      flags.FlagType_String,
 			Shorthand: "v",
 			Default:   defaultVerbosity,
@@ -243,7 +243,7 @@ func executeRemoteModule(ctx context.Context, enclaveCtx *enclaves.EnclaveContex
 	return enclaveCtx.ExecuteKurtosisRemoteModule(ctx, moduleId, serializedParams, dryRun)
 }
 
-func readAndPrintResponseLinesUntilClosed(responseLineChan <-chan *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine, cancelFunc context.CancelFunc, verbosity run2.Verbosity) (string, error) {
+func readAndPrintResponseLinesUntilClosed(responseLineChan <-chan *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine, cancelFunc context.CancelFunc, verbosity command_args_run.Verbosity) (string, error) {
 	defer cancelFunc()
 
 	// This channel will receive a signal when the user presses an interrupt
@@ -312,14 +312,14 @@ func validateModuleArgs(serializedJson string) error {
 }
 
 // parseVerbosityFlag Get the verbosity flag is present, and parse it to a valid Verbosity value
-func parseVerbosityFlag(flags *flags.ParsedFlags) (run2.Verbosity, error) {
+func parseVerbosityFlag(flags *flags.ParsedFlags) (command_args_run.Verbosity, error) {
 	verbosityStr, err := flags.GetString(verbosityFlagKey)
 	if err != nil {
 		return 0, stacktrace.Propagate(err, "An error occurred getting the verbosity using flag key '%s'", verbosityFlagKey)
 	}
-	verbosity, err := run2.VerbosityString(verbosityStr)
+	verbosity, err := command_args_run.VerbosityString(verbosityStr)
 	if err != nil {
-		return 0, stacktrace.Propagate(err, "Invalid verbosity value: '%s'. Possible values are %s", verbosityStr, strings.Join(run2.VerbosityStrings(), ", "))
+		return 0, stacktrace.Propagate(err, "Invalid verbosity value: '%s'. Possible values are %s", verbosityStr, strings.Join(command_args_run.VerbosityStrings(), ", "))
 	}
 	return verbosity, nil
 }
