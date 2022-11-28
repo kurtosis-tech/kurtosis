@@ -38,7 +38,7 @@ export async  function parseKurtosisYaml(kurtosisYamlFilepath: string): Promise<
     }
 
     if ( parsedYAML.name === null || parsedYAML.name === "") {
-        return err(new Error(`Field 'name' in '${KURTOSIS_YAML_FILENAME}' needs to be set and cannot be empty`))
+        return err(new Error(`Field 'name', which is the Starlark package's name, in '${KURTOSIS_YAML_FILENAME}' needs to be set and cannot be empty`))
     }
 
     return ok(parsedYAML)
