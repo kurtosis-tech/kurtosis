@@ -13,15 +13,13 @@ const (
 	isPartitioningEnabled = false
 	defaultDryRun         = false
 	remoteModule          = "github.com/kurtosis-tech/datastore-army-module"
-	executeParams         = `{"num_datastores": "2"}`
+	executeParams         = `{"num_datastores": 2}`
 	dataStoreService0Id   = "datastore-0"
 	dataStoreService1Id   = "datastore-1"
 	datastorePortId       = "grpc"
 )
 
 func TestStartosisRemoteModule(t *testing.T) {
-	// TODO(gb): Re-activate post merge
-	t.Skip("Skipping as the remote module still uses import_types")
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------

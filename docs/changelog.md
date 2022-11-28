@@ -1,5 +1,8 @@
 # TBD
 
+### Changes
+- Re-activate tests that had to be skipped because of the "Remove support for protobuf in Startosis" breaking change
+
 # 0.55.0
 
 ### Fixes
