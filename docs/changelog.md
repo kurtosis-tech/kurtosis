@@ -2,6 +2,7 @@
 
 ### Changes
 - Re-activate tests that had to be skipped because of the "Remove support for protobuf in Startosis" breaking change
+- Added tab-completion (suggestions) to commands that require Service GUIDs, i.e.  `service shell` and `service logs` paths
 
 # 0.55.0
 
@@ -29,7 +30,6 @@
 ### Changes
 - Made `run` an EngineCosumingKurtosisCommand, i.e. it automatically creates an engine if it doesn't exist
 - Added serialized arguments to KurtosisInstruction API type such that the CLI can display executed instructions in a nicer way
-- Added tab-completion (suggestions) to commands that require Service GUIDs, i.e.  `service shell` and `service logs` paths
 
 # 0.54.1
 
