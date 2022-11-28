@@ -1,5 +1,7 @@
 # TBD
 
+# 0.55.1
+
 ### Changes
 - Re-activate tests that had to be skipped because of the "Remove support for protobuf in Startosis" breaking change
 - Renamed `input_args` to `args`. All Starlark packages should update `run(input_args)` to `run(args)`
