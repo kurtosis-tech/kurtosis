@@ -275,17 +275,17 @@ func NewRunStarlarkRemotePackageArgs(packageId string, serializedParams string, 
 //	Startosis Execution Response
 //
 // ==============================================================================================
-func NewStarlarkExecutionResponseLineFromInstruction(instruction *kurtosis_core_rpc_api_bindings.StarlarkInstruction) *kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine {
-	return &kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine{
-		KurtosisExecutionResponseLine: &kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine_Instruction{
+func NewStarlarkRunResponseLineFromInstruction(instruction *kurtosis_core_rpc_api_bindings.StarlarkInstruction) *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+	return &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine{
+		RunResponseLine: &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine_Instruction{
 			Instruction: instruction,
 		},
 	}
 }
 
-func NewStarlarkExecutionResponseLineFromInstructionResult(serializedInstructionResult string) *kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine {
-	return &kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine{
-		KurtosisExecutionResponseLine: &kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine_InstructionResult{
+func NewStarlarkRunResponseLineFromInstructionResult(serializedInstructionResult string) *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+	return &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine{
+		RunResponseLine: &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine_InstructionResult{
 			InstructionResult: &kurtosis_core_rpc_api_bindings.StarlarkInstructionResult{
 				SerializedInstructionResult: serializedInstructionResult,
 			},
@@ -293,9 +293,9 @@ func NewStarlarkExecutionResponseLineFromInstructionResult(serializedInstruction
 	}
 }
 
-func NewStarlarkExecutionResponseLineFromInterpretationError(interpretationError *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError) *kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine {
-	return &kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine{
-		KurtosisExecutionResponseLine: &kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine_Error{
+func NewStarlarkRunResponseLineFromInterpretationError(interpretationError *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError) *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+	return &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine{
+		RunResponseLine: &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine_Error{
 			Error: &kurtosis_core_rpc_api_bindings.StarlarkError{
 				Error: &kurtosis_core_rpc_api_bindings.StarlarkError_InterpretationError{
 					InterpretationError: interpretationError,
@@ -305,9 +305,9 @@ func NewStarlarkExecutionResponseLineFromInterpretationError(interpretationError
 	}
 }
 
-func NewStarlarkExecutionResponseLineFromValidationError(validationError *kurtosis_core_rpc_api_bindings.StarlarkValidationError) *kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine {
-	return &kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine{
-		KurtosisExecutionResponseLine: &kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine_Error{
+func NewStarlarkRunResponseLineFromValidationError(validationError *kurtosis_core_rpc_api_bindings.StarlarkValidationError) *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+	return &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine{
+		RunResponseLine: &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine_Error{
 			Error: &kurtosis_core_rpc_api_bindings.StarlarkError{
 				Error: &kurtosis_core_rpc_api_bindings.StarlarkError_ValidationError{
 					ValidationError: validationError,
@@ -317,9 +317,9 @@ func NewStarlarkExecutionResponseLineFromValidationError(validationError *kurtos
 	}
 }
 
-func NewStarlarkExecutionResponseLineFromExecutionError(executionError *kurtosis_core_rpc_api_bindings.StarlarkExecutionError) *kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine {
-	return &kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine{
-		KurtosisExecutionResponseLine: &kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine_Error{
+func NewStarlarkRunResponseLineFromExecutionError(executionError *kurtosis_core_rpc_api_bindings.StarlarkExecutionError) *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+	return &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine{
+		RunResponseLine: &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine_Error{
 			Error: &kurtosis_core_rpc_api_bindings.StarlarkError{
 				Error: &kurtosis_core_rpc_api_bindings.StarlarkError_ExecutionError{
 					ExecutionError: executionError,
@@ -329,10 +329,10 @@ func NewStarlarkExecutionResponseLineFromExecutionError(executionError *kurtosis
 	}
 }
 
-func NewStarlarkExecutionResponseLineFromProgressInfo(currentStepInfo string, currentStepNumber uint32, totalSteps uint32) *kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine {
-	return &kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine{
-		KurtosisExecutionResponseLine: &kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine_ProgressInfo{
-			ProgressInfo: &kurtosis_core_rpc_api_bindings.StarlarkExecutionProgress{
+func NewStarlarkRunResponseLineFromProgressInfo(currentStepInfo string, currentStepNumber uint32, totalSteps uint32) *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+	return &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine{
+		RunResponseLine: &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine_ProgressInfo{
+			ProgressInfo: &kurtosis_core_rpc_api_bindings.StarlarkRunProgress{
 				CurrentStepInfo:   currentStepInfo,
 				TotalSteps:        totalSteps,
 				CurrentStepNumber: currentStepNumber,

@@ -271,15 +271,15 @@ function deserialize_api_container_api_RunStarlarkScriptArgs(buffer_arg) {
   return api_container_service_pb.RunStarlarkScriptArgs.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
-function serialize_api_container_api_StarlarkExecutionResponseLine(arg) {
-  if (!(arg instanceof api_container_service_pb.StarlarkExecutionResponseLine)) {
-    throw new Error('Expected argument of type api_container_api.StarlarkExecutionResponseLine');
+function serialize_api_container_api_StarlarkRunResponseLine(arg) {
+  if (!(arg instanceof api_container_service_pb.StarlarkRunResponseLine)) {
+    throw new Error('Expected argument of type api_container_api.StarlarkRunResponseLine');
   }
   return Buffer.from(arg.serializeBinary());
 }
 
-function deserialize_api_container_api_StarlarkExecutionResponseLine(buffer_arg) {
-  return api_container_service_pb.StarlarkExecutionResponseLine.deserializeBinary(new Uint8Array(buffer_arg));
+function deserialize_api_container_api_StarlarkRunResponseLine(buffer_arg) {
+  return api_container_service_pb.StarlarkRunResponseLine.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
 function serialize_api_container_api_StartServicesArgs(arg) {
@@ -492,11 +492,11 @@ runStarlarkScript: {
     requestStream: false,
     responseStream: true,
     requestType: api_container_service_pb.RunStarlarkScriptArgs,
-    responseType: api_container_service_pb.StarlarkExecutionResponseLine,
+    responseType: api_container_service_pb.StarlarkRunResponseLine,
     requestSerialize: serialize_api_container_api_RunStarlarkScriptArgs,
     requestDeserialize: deserialize_api_container_api_RunStarlarkScriptArgs,
-    responseSerialize: serialize_api_container_api_StarlarkExecutionResponseLine,
-    responseDeserialize: deserialize_api_container_api_StarlarkExecutionResponseLine,
+    responseSerialize: serialize_api_container_api_StarlarkRunResponseLine,
+    responseDeserialize: deserialize_api_container_api_StarlarkRunResponseLine,
   },
   // Executes a Starlark script on the user's behalf
 runStarlarkPackage: {
@@ -504,11 +504,11 @@ runStarlarkPackage: {
     requestStream: false,
     responseStream: true,
     requestType: api_container_service_pb.RunStarlarkPackageArgs,
-    responseType: api_container_service_pb.StarlarkExecutionResponseLine,
+    responseType: api_container_service_pb.StarlarkRunResponseLine,
     requestSerialize: serialize_api_container_api_RunStarlarkPackageArgs,
     requestDeserialize: deserialize_api_container_api_RunStarlarkPackageArgs,
-    responseSerialize: serialize_api_container_api_StarlarkExecutionResponseLine,
-    responseDeserialize: deserialize_api_container_api_StarlarkExecutionResponseLine,
+    responseSerialize: serialize_api_container_api_StarlarkRunResponseLine,
+    responseDeserialize: deserialize_api_container_api_StarlarkRunResponseLine,
   },
   // Start services by creating containers for them
 startServices: {

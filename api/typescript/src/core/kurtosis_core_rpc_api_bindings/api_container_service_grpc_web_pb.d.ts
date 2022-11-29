@@ -40,12 +40,12 @@ export class ApiContainerServiceClient {
   runStarlarkScript(
     request: api_container_service_pb.RunStarlarkScriptArgs,
     metadata?: grpcWeb.Metadata
-  ): grpcWeb.ClientReadableStream<api_container_service_pb.StarlarkExecutionResponseLine>;
+  ): grpcWeb.ClientReadableStream<api_container_service_pb.StarlarkRunResponseLine>;
 
   runStarlarkPackage(
     request: api_container_service_pb.RunStarlarkPackageArgs,
     metadata?: grpcWeb.Metadata
-  ): grpcWeb.ClientReadableStream<api_container_service_pb.StarlarkExecutionResponseLine>;
+  ): grpcWeb.ClientReadableStream<api_container_service_pb.StarlarkRunResponseLine>;
 
   startServices(
     request: api_container_service_pb.StartServicesArgs,
@@ -189,12 +189,12 @@ export class ApiContainerServicePromiseClient {
   runStarlarkScript(
     request: api_container_service_pb.RunStarlarkScriptArgs,
     metadata?: grpcWeb.Metadata
-  ): grpcWeb.ClientReadableStream<api_container_service_pb.StarlarkExecutionResponseLine>;
+  ): grpcWeb.ClientReadableStream<api_container_service_pb.StarlarkRunResponseLine>;
 
   runStarlarkPackage(
     request: api_container_service_pb.RunStarlarkPackageArgs,
     metadata?: grpcWeb.Metadata
-  ): grpcWeb.ClientReadableStream<api_container_service_pb.StarlarkExecutionResponseLine>;
+  ): grpcWeb.ClientReadableStream<api_container_service_pb.StarlarkRunResponseLine>;
 
   startServices(
     request: api_container_service_pb.StartServicesArgs,

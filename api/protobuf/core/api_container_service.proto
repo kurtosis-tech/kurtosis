@@ -23,10 +23,10 @@ service ApiContainerService {
   rpc ExecuteModule(ExecuteModuleArgs) returns (ExecuteModuleResponse) {};
 
   // Executes a Starlark script on the user's behalf
-  rpc RunStarlarkScript(RunStarlarkScriptArgs) returns (stream StarlarkExecutionResponseLine) {};
+  rpc RunStarlarkScript(RunStarlarkScriptArgs) returns (stream StarlarkRunResponseLine) {};
 
   // Executes a Starlark script on the user's behalf
-  rpc RunStarlarkPackage(RunStarlarkPackageArgs) returns (stream StarlarkExecutionResponseLine) {};
+  rpc RunStarlarkPackage(RunStarlarkPackageArgs) returns (stream StarlarkRunResponseLine) {};
 
   // Start services by creating containers for them
   rpc StartServices(StartServicesArgs) returns (StartServicesResponse) {};
@@ -267,11 +267,11 @@ message RunStarlarkPackageArgs {
 // ==============================================================================================
 //                               Starlark Execution Response
 // ==============================================================================================
-message StarlarkExecutionResponseLine {
-  oneof kurtosis_execution_response_line {
+message StarlarkRunResponseLine {
+  oneof run_response_line {
     StarlarkInstruction instruction = 1;
     StarlarkError error = 2;
-    StarlarkExecutionProgress progress_info = 3;
+    StarlarkRunProgress progress_info = 3;
     StarlarkInstructionResult instruction_result = 4;
   }
 }
@@ -326,7 +326,7 @@ message StarlarkExecutionError {
   string error_message = 1;
 }
 
-message StarlarkExecutionProgress {
+message StarlarkRunProgress {
   string current_step_info = 1;
 
   uint32 total_steps = 2;

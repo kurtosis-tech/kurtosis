@@ -34,22 +34,22 @@ func NewStartosisRunner(interpreter *StartosisInterpreter, validator *StartosisV
 	}
 }
 
-func (runner *StartosisRunner) Run(ctx context.Context, dryRun bool, moduleId string, serializedStartosis string, serializedParams string) <-chan *kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine {
+func (runner *StartosisRunner) Run(ctx context.Context, dryRun bool, moduleId string, serializedStartosis string, serializedParams string) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
 	// TODO(gb): add metric tracking maybe?
-	kurtosisExecutionResponseLines := make(chan *kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine)
+	kurtosisExecutionResponseLines := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 
 	go func() {
 		defer close(kurtosisExecutionResponseLines)
 
 		// Interpretation starts > send progress info (this line will be invisible as interpretation is super quick)
-		progressInfo := binding_constructors.NewStarlarkExecutionResponseLineFromProgressInfo(
+		progressInfo := binding_constructors.NewStarlarkRunResponseLineFromProgressInfo(
 			startingInterpretationMsg, defaultCurrentStepNumber, defaultTotalStepsNumber)
 		kurtosisExecutionResponseLines <- progressInfo
 
 		instructionsList, interpretationError := runner.startosisInterpreter.Interpret(ctx, moduleId, serializedStartosis, serializedParams)
 		if interpretationError != nil {
 			interpretationError = maybeMakeMissingRunMethodErrorFriendlier(interpretationError, moduleId)
-			kurtosisExecutionResponseLines <- binding_constructors.NewStarlarkExecutionResponseLineFromInterpretationError(interpretationError)
+			kurtosisExecutionResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromInterpretationError(interpretationError)
 			return
 		}
 		totalNumberOfInstructions := uint32(len(instructionsList))
@@ -57,7 +57,7 @@ func (runner *StartosisRunner) Run(ctx context.Context, dryRun bool, moduleId st
 			instructionsList)
 
 		// Validation starts > send progress info
-		progressInfo = binding_constructors.NewStarlarkExecutionResponseLineFromProgressInfo(
+		progressInfo = binding_constructors.NewStarlarkRunResponseLineFromProgressInfo(
 			startingValidationMsg, defaultCurrentStepNumber, totalNumberOfInstructions)
 		kurtosisExecutionResponseLines <- progressInfo
 
@@ -68,7 +68,7 @@ func (runner *StartosisRunner) Run(ctx context.Context, dryRun bool, moduleId st
 		logrus.Debugf("Successfully validated Starlark script")
 
 		// Execution starts > send progress info. This will soon be overridden byt the first instruction execution
-		progressInfo = binding_constructors.NewStarlarkExecutionResponseLineFromProgressInfo(
+		progressInfo = binding_constructors.NewStarlarkRunResponseLineFromProgressInfo(
 			startingExecutionMsg, defaultCurrentStepNumber, totalNumberOfInstructions)
 		kurtosisExecutionResponseLines <- progressInfo
 
@@ -79,7 +79,7 @@ func (runner *StartosisRunner) Run(ctx context.Context, dryRun bool, moduleId st
 	return kurtosisExecutionResponseLines
 }
 
-func forwardKurtosisResponseLineChannelUntilSourceIsClosed(sourceChan <-chan *kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine, destChan chan<- *kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine) bool {
+func forwardKurtosisResponseLineChannelUntilSourceIsClosed(sourceChan <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, destChan chan<- *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine) bool {
 	messagesWereReceived := false
 	for executionResponseLine := range sourceChan {
 		logrus.Debugf("Received kurtosis execution line Kurtosis:\n%v", executionResponseLine)

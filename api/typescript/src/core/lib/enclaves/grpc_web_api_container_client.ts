@@ -32,7 +32,7 @@ import {
     RenderTemplatesToFilesArtifactResponse,
     RunStarlarkScriptArgs,
     RunStarlarkPackageArgs,
-    StarlarkExecutionResponseLine,
+    StarlarkRunResponseLine,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import { ApiContainerServiceClient as ApiContainerServiceClientWeb } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb";
 import { GenericApiContainerClient } from "./generic_api_container_client";
@@ -99,28 +99,28 @@ export class GrpcWebApiContainerClient implements GenericApiContainerClient {
     }
 
     public async runStarlarkScript(serializedStarlarkScript: RunStarlarkScriptArgs): Promise<Result<Readable, Error>> {
-        const promiseRunStarlarkScript: Promise<Result<grpc_web.ClientReadableStream<StarlarkExecutionResponseLine>, Error>> = new Promise((resolve, _unusedReject) => {
+        const promiseRunStarlarkScript: Promise<Result<grpc_web.ClientReadableStream<StarlarkRunResponseLine>, Error>> = new Promise((resolve, _unusedReject) => {
             resolve(ok(this.client.runStarlarkScript(serializedStarlarkScript, {})));
         })
-        const runStarlarkScriptResult: Result<grpc_web.ClientReadableStream<StarlarkExecutionResponseLine>, Error> = await promiseRunStarlarkScript;
+        const runStarlarkScriptResult: Result<grpc_web.ClientReadableStream<StarlarkRunResponseLine>, Error> = await promiseRunStarlarkScript;
         if (runStarlarkScriptResult.isErr()) {
             return err(runStarlarkScriptResult.error)
         }
-        const starlarkExecutionResponseLinesReadable: Readable = this.forwardKurtosisExecutionLinesStreamToReadable(runStarlarkScriptResult.value)
+        const starlarkExecutionResponseLinesReadable: Readable = this.forwardStarlarkRunResponseLinesStreamToReadable(runStarlarkScriptResult.value)
         return ok(starlarkExecutionResponseLinesReadable)
     }
 
     public async runStarlarkPackage(starlarkPackageArgs: RunStarlarkPackageArgs): Promise<Result<Readable, Error>> {
-        const promiseRunStarlarkPackage: Promise<Result<grpc_web.ClientReadableStream<StarlarkExecutionResponseLine>, Error>> = new Promise((resolve, _unusedReject) => {
+        const promiseRunStarlarkPackage: Promise<Result<grpc_web.ClientReadableStream<StarlarkRunResponseLine>, Error>> = new Promise((resolve, _unusedReject) => {
             resolve(ok(this.client.runStarlarkPackage(starlarkPackageArgs)))
         })
 
-        const runStarlarkPackageResult: Result<grpc_web.ClientReadableStream<StarlarkExecutionResponseLine>, Error> = await promiseRunStarlarkPackage;
+        const runStarlarkPackageResult: Result<grpc_web.ClientReadableStream<StarlarkRunResponseLine>, Error> = await promiseRunStarlarkPackage;
         if (runStarlarkPackageResult.isErr()) {
             return err(runStarlarkPackageResult.error)
         }
-        const starlarkExecutionResponseLinesReadable: Readable = this.forwardKurtosisExecutionLinesStreamToReadable(runStarlarkPackageResult.value)
-        return ok(starlarkExecutionResponseLinesReadable)
+        const starlarkRunResponseLinesReadable: Readable = this.forwardStarlarkRunResponseLinesStreamToReadable(runStarlarkPackageResult.value)
+        return ok(starlarkRunResponseLinesReadable)
     }
 
     public async startServices(startServicesArgs: StartServicesArgs): Promise<Result<StartServicesResponse, Error>>{
@@ -439,7 +439,7 @@ export class GrpcWebApiContainerClient implements GenericApiContainerClient {
         return ok(renderTemplatesToFilesArtifactResponse);
     }
 
-    private forwardKurtosisExecutionLinesStreamToReadable(incomingStream: grpc_web.ClientReadableStream<StarlarkExecutionResponseLine>): Readable {
+    private forwardStarlarkRunResponseLinesStreamToReadable(incomingStream: grpc_web.ClientReadableStream<StarlarkRunResponseLine>): Readable {
         const starlarkExecutionResponseLinesReadable: Readable = new Readable({
             objectMode: true, //setting object mode is to allow pass objects in the readable.push() method
             read() {

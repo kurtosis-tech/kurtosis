@@ -140,10 +140,10 @@ func (enclaveCtx *EnclaveContext) GetFactValues(serviceId string, factName strin
 	return factValuesResponse, nil
 }
 
-func (enclaveCtx *EnclaveContext) RunStarlarkScript(ctx context.Context, serializedScript string, dryRun bool) (chan *kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine, context.CancelFunc, error) {
+func (enclaveCtx *EnclaveContext) RunStarlarkScript(ctx context.Context, serializedScript string, dryRun bool) (chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(ctx)
 	executeStartosisScriptArgs := binding_constructors.NewRunStarlarkScriptArgs(serializedScript, dryRun)
-	kurtosisResponseLineChan := make(chan *kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine)
+	starlarkResponseLineChan := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 
 	stream, err := enclaveCtx.client.RunStarlarkScript(ctxWithCancel, executeStartosisScriptArgs)
 	if err != nil {
@@ -151,13 +151,13 @@ func (enclaveCtx *EnclaveContext) RunStarlarkScript(ctx context.Context, seriali
 		return nil, nil, stacktrace.Propagate(err, "Unexpected error happened executing Kurtosis script.")
 	}
 
-	go runReceiveKurtosisResponseLineRoutine(cancelCtxFunc, stream, kurtosisResponseLineChan)
-	return kurtosisResponseLineChan, cancelCtxFunc, nil
+	go runReceiveStarlarkResponseLineRoutine(cancelCtxFunc, stream, starlarkResponseLineChan)
+	return starlarkResponseLineChan, cancelCtxFunc, nil
 }
 
-func (enclaveCtx *EnclaveContext) RunStarlarkPackage(ctx context.Context, packageRootPath string, serializedParams string, dryRun bool) (chan *kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine, context.CancelFunc, error) {
+func (enclaveCtx *EnclaveContext) RunStarlarkPackage(ctx context.Context, packageRootPath string, serializedParams string, dryRun bool) (chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(ctx)
-	starlarkResponseLineChan := make(chan *kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine)
+	starlarkResponseLineChan := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 	executeStartosisPackageArgs, err := enclaveCtx.assembleRunStartosisPackageArg(packageRootPath, serializedParams, dryRun)
 	if err != nil {
 		cancelCtxFunc() // manually call the cancel function as something went wrong
@@ -170,13 +170,13 @@ func (enclaveCtx *EnclaveContext) RunStarlarkPackage(ctx context.Context, packag
 		return nil, nil, stacktrace.Propagate(err, "Unexpected error happened executing Starlark package '%v'", packageRootPath)
 	}
 
-	go runReceiveKurtosisResponseLineRoutine(cancelCtxFunc, stream, starlarkResponseLineChan)
+	go runReceiveStarlarkResponseLineRoutine(cancelCtxFunc, stream, starlarkResponseLineChan)
 	return starlarkResponseLineChan, cancelCtxFunc, nil
 }
 
-func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackage(ctx context.Context, packageId string, serializedParams string, dryRun bool) (chan *kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine, context.CancelFunc, error) {
+func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackage(ctx context.Context, packageId string, serializedParams string, dryRun bool) (chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(ctx)
-	starlarkResponseLineChan := make(chan *kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine)
+	starlarkResponseLineChan := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 	executeStartosisScriptArgs := binding_constructors.NewRunStarlarkRemotePackageArgs(packageId, serializedParams, dryRun)
 
 	stream, err := enclaveCtx.client.RunStarlarkPackage(ctxWithCancel, executeStartosisScriptArgs)
@@ -185,7 +185,7 @@ func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackage(ctx context.Context, 
 		return nil, nil, stacktrace.Propagate(err, "Unexpected error happened executing Starlark package '%v'", packageId)
 	}
 
-	go runReceiveKurtosisResponseLineRoutine(cancelCtxFunc, stream, starlarkResponseLineChan)
+	go runReceiveStarlarkResponseLineRoutine(cancelCtxFunc, stream, starlarkResponseLineChan)
 	return starlarkResponseLineChan, cancelCtxFunc, nil
 }
 
@@ -698,13 +698,13 @@ func convertApiPortsToServiceContextPorts(apiPorts map[string]*kurtosis_core_rpc
 	return result, nil
 }
 
-func runReceiveKurtosisResponseLineRoutine(cancelCtxFunc context.CancelFunc, stream grpc.ClientStream, kurtosisResponseLineChan chan *kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine) {
+func runReceiveStarlarkResponseLineRoutine(cancelCtxFunc context.CancelFunc, stream grpc.ClientStream, kurtosisResponseLineChan chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine) {
 	defer func() {
 		close(kurtosisResponseLineChan)
 		cancelCtxFunc()
 	}()
 	for {
-		responseLine := new(kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine)
+		responseLine := new(kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 		err := stream.RecvMsg(responseLine)
 		if err == io.EOF {
 			logrus.Debugf("Successfully reached the end of the response stream. Closing.")

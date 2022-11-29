@@ -328,13 +328,13 @@ proto.api_container_api.ApiContainerServicePromiseClient.prototype.executeModule
  * @const
  * @type {!grpc.web.MethodDescriptor<
  *   !proto.api_container_api.RunStarlarkScriptArgs,
- *   !proto.api_container_api.StarlarkExecutionResponseLine>}
+ *   !proto.api_container_api.StarlarkRunResponseLine>}
  */
 const methodDescriptor_ApiContainerService_RunStarlarkScript = new grpc.web.MethodDescriptor(
   '/api_container_api.ApiContainerService/RunStarlarkScript',
   grpc.web.MethodType.SERVER_STREAMING,
   proto.api_container_api.RunStarlarkScriptArgs,
-  proto.api_container_api.StarlarkExecutionResponseLine,
+  proto.api_container_api.StarlarkRunResponseLine,
   /**
    * @param {!proto.api_container_api.RunStarlarkScriptArgs} request
    * @return {!Uint8Array}
@@ -342,7 +342,7 @@ const methodDescriptor_ApiContainerService_RunStarlarkScript = new grpc.web.Meth
   function(request) {
     return request.serializeBinary();
   },
-  proto.api_container_api.StarlarkExecutionResponseLine.deserializeBinary
+  proto.api_container_api.StarlarkRunResponseLine.deserializeBinary
 );
 
 
@@ -350,7 +350,7 @@ const methodDescriptor_ApiContainerService_RunStarlarkScript = new grpc.web.Meth
  * @param {!proto.api_container_api.RunStarlarkScriptArgs} request The request proto
  * @param {?Object<string, string>=} metadata User defined
  *     call metadata
- * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.StarlarkExecutionResponseLine>}
+ * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.StarlarkRunResponseLine>}
  *     The XHR Node Readable Stream
  */
 proto.api_container_api.ApiContainerServiceClient.prototype.runStarlarkScript =
@@ -367,7 +367,7 @@ proto.api_container_api.ApiContainerServiceClient.prototype.runStarlarkScript =
  * @param {!proto.api_container_api.RunStarlarkScriptArgs} request The request proto
  * @param {?Object<string, string>=} metadata User defined
  *     call metadata
- * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.StarlarkExecutionResponseLine>}
+ * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.StarlarkRunResponseLine>}
  *     The XHR Node Readable Stream
  */
 proto.api_container_api.ApiContainerServicePromiseClient.prototype.runStarlarkScript =
@@ -384,13 +384,13 @@ proto.api_container_api.ApiContainerServicePromiseClient.prototype.runStarlarkSc
  * @const
  * @type {!grpc.web.MethodDescriptor<
  *   !proto.api_container_api.RunStarlarkPackageArgs,
- *   !proto.api_container_api.StarlarkExecutionResponseLine>}
+ *   !proto.api_container_api.StarlarkRunResponseLine>}
  */
 const methodDescriptor_ApiContainerService_RunStarlarkPackage = new grpc.web.MethodDescriptor(
   '/api_container_api.ApiContainerService/RunStarlarkPackage',
   grpc.web.MethodType.SERVER_STREAMING,
   proto.api_container_api.RunStarlarkPackageArgs,
-  proto.api_container_api.StarlarkExecutionResponseLine,
+  proto.api_container_api.StarlarkRunResponseLine,
   /**
    * @param {!proto.api_container_api.RunStarlarkPackageArgs} request
    * @return {!Uint8Array}
@@ -398,7 +398,7 @@ const methodDescriptor_ApiContainerService_RunStarlarkPackage = new grpc.web.Met
   function(request) {
     return request.serializeBinary();
   },
-  proto.api_container_api.StarlarkExecutionResponseLine.deserializeBinary
+  proto.api_container_api.StarlarkRunResponseLine.deserializeBinary
 );
 
 
@@ -406,7 +406,7 @@ const methodDescriptor_ApiContainerService_RunStarlarkPackage = new grpc.web.Met
  * @param {!proto.api_container_api.RunStarlarkPackageArgs} request The request proto
  * @param {?Object<string, string>=} metadata User defined
  *     call metadata
- * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.StarlarkExecutionResponseLine>}
+ * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.StarlarkRunResponseLine>}
  *     The XHR Node Readable Stream
  */
 proto.api_container_api.ApiContainerServiceClient.prototype.runStarlarkPackage =
@@ -423,7 +423,7 @@ proto.api_container_api.ApiContainerServiceClient.prototype.runStarlarkPackage =
  * @param {!proto.api_container_api.RunStarlarkPackageArgs} request The request proto
  * @param {?Object<string, string>=} metadata User defined
  *     call metadata
- * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.StarlarkExecutionResponseLine>}
+ * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.StarlarkRunResponseLine>}
  *     The XHR Node Readable Stream
  */
 proto.api_container_api.ApiContainerServicePromiseClient.prototype.runStarlarkPackage =

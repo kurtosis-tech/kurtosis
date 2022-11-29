@@ -31,7 +31,7 @@ import {
     RenderTemplatesToFilesArtifactResponse,
     RunStarlarkScriptArgs,
     RunStarlarkPackageArgs,
-    StarlarkExecutionResponseLine,
+    StarlarkRunResponseLine,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import type { ApiContainerServiceClient as ApiContainerServiceClientNode } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
 import { GenericApiContainerClient } from "./generic_api_container_client";
@@ -98,7 +98,7 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
     }
 
     public async runStarlarkScript(serializedStarlarkScript: RunStarlarkScriptArgs): Promise<Result<Readable, Error>> {
-        const promiseRunStarlarkScript: Promise<Result<ClientReadableStream<StarlarkExecutionResponseLine>, Error>> = new Promise((resolve, _unusedReject) => {
+        const promiseRunStarlarkScript: Promise<Result<ClientReadableStream<StarlarkRunResponseLine>, Error>> = new Promise((resolve, _unusedReject) => {
             resolve(ok(this.client.runStarlarkScript(serializedStarlarkScript)))
         })
         const starlarkScriptRunResult: Result<Readable, Error> = await promiseRunStarlarkScript;
@@ -109,7 +109,7 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
     }
 
     public async runStarlarkPackage(starlarkPackageArgs: RunStarlarkPackageArgs): Promise<Result<Readable, Error>> {
-        const promiseRunStarlarkPackage: Promise<Result<ClientReadableStream<StarlarkExecutionResponseLine>, Error>> = new Promise((resolve, _unusedReject) => {
+        const promiseRunStarlarkPackage: Promise<Result<ClientReadableStream<StarlarkRunResponseLine>, Error>> = new Promise((resolve, _unusedReject) => {
             resolve(ok(this.client.runStarlarkPackage(starlarkPackageArgs)))
         })
         const runStarlarkPackageResult: Result<Readable, Error> = await promiseRunStarlarkPackage;

@@ -25,8 +25,8 @@ func NewStartosisValidator(kurtosisBackend *backend_interface.KurtosisBackend, s
 	}
 }
 
-func (validator *StartosisValidator) Validate(ctx context.Context, instructions []kurtosis_instruction.KurtosisInstruction) <-chan *kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine {
-	starlarkExecutionResponseLineStream := make(chan *kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine)
+func (validator *StartosisValidator) Validate(ctx context.Context, instructions []kurtosis_instruction.KurtosisInstruction) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+	starlarkExecutionResponseLineStream := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 	go func() {
 		defer close(starlarkExecutionResponseLineStream)
 		environment := startosis_validator.NewValidatorEnvironment(validator.serviceNetwork.GetServiceIDs())
@@ -35,14 +35,14 @@ func (validator *StartosisValidator) Validate(ctx context.Context, instructions 
 			if err != nil {
 				propagatedError := stacktrace.Propagate(err, "Error while validating instruction %v. The instruction can be found at %v", instruction.String(), instruction.GetPositionInOriginalScript().String())
 				serializedError := binding_constructors.NewStarlarkValidationError(propagatedError.Error())
-				starlarkExecutionResponseLineStream <- binding_constructors.NewStarlarkExecutionResponseLineFromValidationError(serializedError)
+				starlarkExecutionResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromValidationError(serializedError)
 			}
 		}
 		errors := validator.dockerImagesValidator.Validate(ctx, environment)
 		for _, err := range errors {
 			propagatedError := stacktrace.Propagate(err, "Error while validating final environment of script")
 			serializedError := binding_constructors.NewStarlarkValidationError(propagatedError.Error())
-			starlarkExecutionResponseLineStream <- binding_constructors.NewStarlarkExecutionResponseLineFromValidationError(serializedError)
+			starlarkExecutionResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromValidationError(serializedError)
 		}
 	}()
 	return starlarkExecutionResponseLineStream

@@ -130,7 +130,7 @@ func (c *apiContainerServiceClient) RunStarlarkScript(ctx context.Context, in *R
 }
 
 type ApiContainerService_RunStarlarkScriptClient interface {
-	Recv() (*StarlarkExecutionResponseLine, error)
+	Recv() (*StarlarkRunResponseLine, error)
 	grpc.ClientStream
 }
 
@@ -138,8 +138,8 @@ type apiContainerServiceRunStarlarkScriptClient struct {
 	grpc.ClientStream
 }
 
-func (x *apiContainerServiceRunStarlarkScriptClient) Recv() (*StarlarkExecutionResponseLine, error) {
-	m := new(StarlarkExecutionResponseLine)
+func (x *apiContainerServiceRunStarlarkScriptClient) Recv() (*StarlarkRunResponseLine, error) {
+	m := new(StarlarkRunResponseLine)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -162,7 +162,7 @@ func (c *apiContainerServiceClient) RunStarlarkPackage(ctx context.Context, in *
 }
 
 type ApiContainerService_RunStarlarkPackageClient interface {
-	Recv() (*StarlarkExecutionResponseLine, error)
+	Recv() (*StarlarkRunResponseLine, error)
 	grpc.ClientStream
 }
 
@@ -170,8 +170,8 @@ type apiContainerServiceRunStarlarkPackageClient struct {
 	grpc.ClientStream
 }
 
-func (x *apiContainerServiceRunStarlarkPackageClient) Recv() (*StarlarkExecutionResponseLine, error) {
-	m := new(StarlarkExecutionResponseLine)
+func (x *apiContainerServiceRunStarlarkPackageClient) Recv() (*StarlarkRunResponseLine, error) {
+	m := new(StarlarkRunResponseLine)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -536,7 +536,7 @@ func _ApiContainerService_RunStarlarkScript_Handler(srv interface{}, stream grpc
 }
 
 type ApiContainerService_RunStarlarkScriptServer interface {
-	Send(*StarlarkExecutionResponseLine) error
+	Send(*StarlarkRunResponseLine) error
 	grpc.ServerStream
 }
 
@@ -544,7 +544,7 @@ type apiContainerServiceRunStarlarkScriptServer struct {
 	grpc.ServerStream
 }
 
-func (x *apiContainerServiceRunStarlarkScriptServer) Send(m *StarlarkExecutionResponseLine) error {
+func (x *apiContainerServiceRunStarlarkScriptServer) Send(m *StarlarkRunResponseLine) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -557,7 +557,7 @@ func _ApiContainerService_RunStarlarkPackage_Handler(srv interface{}, stream grp
 }
 
 type ApiContainerService_RunStarlarkPackageServer interface {
-	Send(*StarlarkExecutionResponseLine) error
+	Send(*StarlarkRunResponseLine) error
 	grpc.ServerStream
 }
 
@@ -565,7 +565,7 @@ type apiContainerServiceRunStarlarkPackageServer struct {
 	grpc.ServerStream
 }
 
-func (x *apiContainerServiceRunStarlarkPackageServer) Send(m *StarlarkExecutionResponseLine) error {
+func (x *apiContainerServiceRunStarlarkPackageServer) Send(m *StarlarkRunResponseLine) error {
 	return x.ServerStream.SendMsg(m)
 }
 

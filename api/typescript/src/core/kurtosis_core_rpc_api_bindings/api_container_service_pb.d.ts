@@ -419,47 +419,47 @@ export namespace RunStarlarkPackageArgs {
   }
 }
 
-export class StarlarkExecutionResponseLine extends jspb.Message {
+export class StarlarkRunResponseLine extends jspb.Message {
   getInstruction(): StarlarkInstruction | undefined;
-  setInstruction(value?: StarlarkInstruction): StarlarkExecutionResponseLine;
+  setInstruction(value?: StarlarkInstruction): StarlarkRunResponseLine;
   hasInstruction(): boolean;
-  clearInstruction(): StarlarkExecutionResponseLine;
+  clearInstruction(): StarlarkRunResponseLine;
 
   getError(): StarlarkError | undefined;
-  setError(value?: StarlarkError): StarlarkExecutionResponseLine;
+  setError(value?: StarlarkError): StarlarkRunResponseLine;
   hasError(): boolean;
-  clearError(): StarlarkExecutionResponseLine;
+  clearError(): StarlarkRunResponseLine;
 
-  getProgressInfo(): StarlarkExecutionProgress | undefined;
-  setProgressInfo(value?: StarlarkExecutionProgress): StarlarkExecutionResponseLine;
+  getProgressInfo(): StarlarkRunProgress | undefined;
+  setProgressInfo(value?: StarlarkRunProgress): StarlarkRunResponseLine;
   hasProgressInfo(): boolean;
-  clearProgressInfo(): StarlarkExecutionResponseLine;
+  clearProgressInfo(): StarlarkRunResponseLine;
 
   getInstructionResult(): StarlarkInstructionResult | undefined;
-  setInstructionResult(value?: StarlarkInstructionResult): StarlarkExecutionResponseLine;
+  setInstructionResult(value?: StarlarkInstructionResult): StarlarkRunResponseLine;
   hasInstructionResult(): boolean;
-  clearInstructionResult(): StarlarkExecutionResponseLine;
+  clearInstructionResult(): StarlarkRunResponseLine;
 
-  getKurtosisExecutionResponseLineCase(): StarlarkExecutionResponseLine.KurtosisExecutionResponseLineCase;
+  getRunResponseLineCase(): StarlarkRunResponseLine.RunResponseLineCase;
 
   serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): StarlarkExecutionResponseLine.AsObject;
-  static toObject(includeInstance: boolean, msg: StarlarkExecutionResponseLine): StarlarkExecutionResponseLine.AsObject;
-  static serializeBinaryToWriter(message: StarlarkExecutionResponseLine, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): StarlarkExecutionResponseLine;
-  static deserializeBinaryFromReader(message: StarlarkExecutionResponseLine, reader: jspb.BinaryReader): StarlarkExecutionResponseLine;
+  toObject(includeInstance?: boolean): StarlarkRunResponseLine.AsObject;
+  static toObject(includeInstance: boolean, msg: StarlarkRunResponseLine): StarlarkRunResponseLine.AsObject;
+  static serializeBinaryToWriter(message: StarlarkRunResponseLine, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): StarlarkRunResponseLine;
+  static deserializeBinaryFromReader(message: StarlarkRunResponseLine, reader: jspb.BinaryReader): StarlarkRunResponseLine;
 }
 
-export namespace StarlarkExecutionResponseLine {
+export namespace StarlarkRunResponseLine {
   export type AsObject = {
     instruction?: StarlarkInstruction.AsObject,
     error?: StarlarkError.AsObject,
-    progressInfo?: StarlarkExecutionProgress.AsObject,
+    progressInfo?: StarlarkRunProgress.AsObject,
     instructionResult?: StarlarkInstructionResult.AsObject,
   }
 
-  export enum KurtosisExecutionResponseLineCase { 
-    KURTOSIS_EXECUTION_RESPONSE_LINE_NOT_SET = 0,
+  export enum RunResponseLineCase { 
+    RUN_RESPONSE_LINE_NOT_SET = 0,
     INSTRUCTION = 1,
     ERROR = 2,
     PROGRESS_INFO = 3,
@@ -673,25 +673,25 @@ export namespace StarlarkExecutionError {
   }
 }
 
-export class StarlarkExecutionProgress extends jspb.Message {
+export class StarlarkRunProgress extends jspb.Message {
   getCurrentStepInfo(): string;
-  setCurrentStepInfo(value: string): StarlarkExecutionProgress;
+  setCurrentStepInfo(value: string): StarlarkRunProgress;
 
   getTotalSteps(): number;
-  setTotalSteps(value: number): StarlarkExecutionProgress;
+  setTotalSteps(value: number): StarlarkRunProgress;
 
   getCurrentStepNumber(): number;
-  setCurrentStepNumber(value: number): StarlarkExecutionProgress;
+  setCurrentStepNumber(value: number): StarlarkRunProgress;
 
   serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): StarlarkExecutionProgress.AsObject;
-  static toObject(includeInstance: boolean, msg: StarlarkExecutionProgress): StarlarkExecutionProgress.AsObject;
-  static serializeBinaryToWriter(message: StarlarkExecutionProgress, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): StarlarkExecutionProgress;
-  static deserializeBinaryFromReader(message: StarlarkExecutionProgress, reader: jspb.BinaryReader): StarlarkExecutionProgress;
+  toObject(includeInstance?: boolean): StarlarkRunProgress.AsObject;
+  static toObject(includeInstance: boolean, msg: StarlarkRunProgress): StarlarkRunProgress.AsObject;
+  static serializeBinaryToWriter(message: StarlarkRunProgress, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): StarlarkRunProgress;
+  static deserializeBinaryFromReader(message: StarlarkRunProgress, reader: jspb.BinaryReader): StarlarkRunProgress;
 }
 
-export namespace StarlarkExecutionProgress {
+export namespace StarlarkRunProgress {
   export type AsObject = {
     currentStepInfo: string,
     totalSteps: number,
