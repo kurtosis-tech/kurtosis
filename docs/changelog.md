@@ -1,10 +1,10 @@
 # TBD
-
 ### Features
 - Progress information (spinner, progress bar and quick progress message) is now printed by the CLI
 
 ### Changes
 - Starlark execution progress is now returned to the CLI via the KurtosisExecutionResponseLine stream
+- Added `startosis_add_service_with_empty_ports` Golang and Typescript internal tests
 
 # 0.56.0
 ### Breaking Changes
