@@ -47,14 +47,22 @@ func getServiceGuidsForEnclave(ctx context.Context, enclaveID enclaves.EnclaveID
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclave context")
 	}
 
-	_, serviceGUIDs, err := enclaveContext.GetServices()
+	serviceInfos, err := enclaveContext.GetServices()
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred getting the services retrieving for enclave ID tab completion",
 		)
 	}
-	return serviceGUIDs, nil
+
+	serviceGuids := make(map[services.ServiceGUID]bool, len(serviceInfos))
+	for _, serviceInfo := range serviceInfos {
+		if _, ok := serviceGuids[serviceInfo.ServiceGUID]; !ok {
+			serviceGuids[serviceInfo.ServiceGUID] = true
+		}
+	}
+
+	return serviceGuids, nil
 }
 
 func getOrderedEnclaveServiceGuids(ctx context.Context, flags *flags.ParsedFlags, previousArgs *args.ParsedArgs) ([]string, error) {

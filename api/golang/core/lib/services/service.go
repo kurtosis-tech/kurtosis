@@ -26,3 +26,8 @@ type ServiceID string
 The globally unique identifier used for services within the enclave.
 */
 type ServiceGUID string
+
+type ServiceInfo struct {
+	ServiceID   ServiceID
+	ServiceGUID ServiceGUID
+}
