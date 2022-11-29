@@ -1,5 +1,5 @@
 import {createEnclave} from "../../test_helpers/enclave_setup";
-import {DEFAULT_DRY_RUN, EMPTY_EXECUTE_PARAMS, IS_PARTITIONING_ENABLED, JEST_TIMEOUT_MS} from "./shared_constants";
+import {DEFAULT_DRY_RUN, EMPTY_RUN_PARAMS, IS_PARTITIONING_ENABLED, JEST_TIMEOUT_MS} from "./shared_constants";
 import * as path from "path";
 import log from "loglevel";
 import {err} from "neverthrow";
@@ -9,7 +9,7 @@ const INVALID_KURTOSIS_YAML_IN_MODULE_REL_PATH = "../../../../startosis/invalid-
 
 jest.setTimeout(JEST_TIMEOUT_MS)
 
-test("Test invalid module with invalid yaml file", async () => {
+test("Test invalid package with invalid yaml file", async () => {
     // ------------------------------------- ENGINE SETUP ----------------------------------------------
     const createEnclaveResult = await createEnclave(INVALID_KURTOSIS_YAML_TEST_NAME, IS_PARTITIONING_ENABLED)
 
@@ -21,14 +21,14 @@ test("Test invalid module with invalid yaml file", async () => {
 
     try {
         // ------------------------------------- TEST SETUP ----------------------------------------------
-        const moduleRootPath = path.join(__dirname, INVALID_KURTOSIS_YAML_IN_MODULE_REL_PATH)
+        const packageRootPath = path.join(__dirname, INVALID_KURTOSIS_YAML_IN_MODULE_REL_PATH)
 
-        log.info(`Loading module at path '${moduleRootPath}'`)
+        log.info(`Loading package at path '${packageRootPath}'`)
 
-        const outputStream = await enclaveContext.runStarlarkPackage(moduleRootPath, EMPTY_EXECUTE_PARAMS, DEFAULT_DRY_RUN)
+        const outputStream = await enclaveContext.runStarlarkPackage(packageRootPath, EMPTY_RUN_PARAMS, DEFAULT_DRY_RUN)
 
         if (!outputStream.isErr()) {
-            throw err(new Error("Module with invalid module was expected to error but didn't"))
+            throw err(new Error("Package with invalid package was expected to error but didn't"))
         }
 
         if (!outputStream.error.message.includes(`Field 'name', which is the Starlark package's name, in 'kurtosis.yml' needs to be set and cannot be empty`)) {

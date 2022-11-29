@@ -20,7 +20,7 @@ func GenerateReadFileBuiltin(provider startosis_packages.PackageContentProvider)
 		if interpretationError != nil {
 			return nil, interpretationError
 		}
-		fileContents, interpretationError := provider.GetPackageContents(srcPath)
+		fileContents, interpretationError := provider.GetModuleContents(srcPath)
 		if interpretationError != nil {
 			return nil, interpretationError
 		}

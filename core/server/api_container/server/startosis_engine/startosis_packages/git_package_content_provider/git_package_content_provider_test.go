@@ -8,62 +8,62 @@ import (
 )
 
 const (
-	modulesDirRelPath    = "startosis-modules"
-	modulesTmpDirRelPath = "tmp-startosis-modules"
+	packagesDirRelPath    = "startosis-packages"
+	packagesTmpDirRelPath = "tmp-startosis-packages"
 )
 
 func TestGitPackageProvider_SucceedsForValidPackage(t *testing.T) {
-	packageDir, err := os.MkdirTemp("", modulesDirRelPath)
+	packageDir, err := os.MkdirTemp("", packagesDirRelPath)
 	require.Nil(t, err)
 	defer os.RemoveAll(packageDir)
-	packageTmpDir, err := os.MkdirTemp("", modulesTmpDirRelPath)
+	packageTmpDir, err := os.MkdirTemp("", packagesTmpDirRelPath)
 	require.Nil(t, err)
 	defer os.RemoveAll(packageTmpDir)
 
 	provider := NewGitPackageContentProvider(packageDir, packageTmpDir)
 
 	sampleStartosisModule := "github.com/kurtosis-tech/sample-startosis-load/sample.star"
-	contents, err := provider.GetPackageContents(sampleStartosisModule)
+	contents, err := provider.GetModuleContents(sampleStartosisModule)
 	require.Nil(t, err)
 	require.Equal(t, "a = \"World!\"\n", contents)
 }
 
 func TestGitPackageProvider_SucceedsForNonStarlarkFile(t *testing.T) {
-	packageDir, err := os.MkdirTemp("", modulesDirRelPath)
+	packageDir, err := os.MkdirTemp("", packagesDirRelPath)
 	require.Nil(t, err)
 	defer os.RemoveAll(packageDir)
-	packageTmpDir, err := os.MkdirTemp("", modulesTmpDirRelPath)
+	packageTmpDir, err := os.MkdirTemp("", packagesTmpDirRelPath)
 	require.Nil(t, err)
 	defer os.RemoveAll(packageTmpDir)
 
 	provider := NewGitPackageContentProvider(packageDir, packageTmpDir)
 
 	sampleStarlarkPackage := "github.com/kurtosis-tech/eth2-merge-kurtosis-module/kurtosis-module/static_files/prometheus-config/prometheus.yml.tmpl"
-	contents, err := provider.GetPackageContents(sampleStarlarkPackage)
+	contents, err := provider.GetModuleContents(sampleStarlarkPackage)
 	require.Nil(t, err)
 	require.NotEmpty(t, contents)
 }
 
 func TestGitPackageProvider_FailsForNonExistentPackage(t *testing.T) {
-	oackageDir, err := os.MkdirTemp("", modulesDirRelPath)
+	oackageDir, err := os.MkdirTemp("", packagesDirRelPath)
 	require.Nil(t, err)
 	defer os.RemoveAll(oackageDir)
-	packageTmpDir, err := os.MkdirTemp("", modulesTmpDirRelPath)
+	packageTmpDir, err := os.MkdirTemp("", packagesTmpDirRelPath)
 	require.Nil(t, err)
 	defer os.RemoveAll(packageTmpDir)
 
 	provider := NewGitPackageContentProvider(oackageDir, packageTmpDir)
 	nonExistentModulePath := "github.com/kurtosis-tech/non-existent-startosis-load/sample.star"
 
-	_, err = provider.GetPackageContents(nonExistentModulePath)
+	_, err = provider.GetModuleContents(nonExistentModulePath)
 	require.NotNil(t, err)
 }
 
 func TestGetAbsolutePathOnDisk_WorksForPureDirectories(t *testing.T) {
-	packageDir, err := os.MkdirTemp("", modulesDirRelPath)
+	packageDir, err := os.MkdirTemp("", packagesDirRelPath)
 	require.Nil(t, err)
 	defer os.RemoveAll(packageDir)
-	packageTmpDir, err := os.MkdirTemp("", modulesTmpDirRelPath)
+	packageTmpDir, err := os.MkdirTemp("", packagesTmpDirRelPath)
 	require.Nil(t, err)
 	defer os.RemoveAll(packageTmpDir)
 

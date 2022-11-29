@@ -810,7 +810,7 @@ func (apicService ApiContainerService) runStarlarkPackageSetup(packageId string,
 
 	pathToMainFile := path.Join(packageRootPathOnDisk, startosis_engine.MainFileName)
 	if _, err := os.Stat(pathToMainFile); err != nil {
-		return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred while verifying that '%v' exists on root of module '%v' at '%v'", startosis_engine.MainFileName, packageId, pathToMainFile)
+		return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred while verifying that '%v' exists on root of package '%v' at '%v'", startosis_engine.MainFileName, packageId, pathToMainFile)
 	}
 
 	scriptWithMainToExecute := fmt.Sprintf(bootScript, packageId, startosis_engine.MainInputArgName)

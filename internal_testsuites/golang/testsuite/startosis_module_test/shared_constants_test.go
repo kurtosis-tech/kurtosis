@@ -2,6 +2,6 @@ package startosis_module_test
 
 const (
 	isPartitioningEnabled = false
-	emptyExecuteParams    = "{}"
+	emptyRunParams        = "{}"
 	defaultDryRun         = false
 )

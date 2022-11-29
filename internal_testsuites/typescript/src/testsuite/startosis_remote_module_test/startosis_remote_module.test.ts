@@ -10,7 +10,7 @@ import {readStreamContentUntilClosed} from "../../test_helpers/startosis_helpers
 
 const TEST_NAME = "module"
 
-const REMOTE_MODULE = "github.com/kurtosis-tech/datastore-army-module"
+const REMOTE_PACKAGE = "github.com/kurtosis-tech/datastore-army-module"
 const EXECUTE_PARAMS            = `{"num_datastores": 2}`
 const DATASTORE_SERVICE_0_ID     = "datastore-0"
 const DATASTORE_SERVICE_1_ID   = "datastore-1"
@@ -21,7 +21,7 @@ const IS_PARTITIONING_ENABLED  = false
 
 jest.setTimeout(180000)
 
-test("Test remote Starlark module execution", async () => {
+test("Test remote Starlark package execution", async () => {
     // ------------------------------------- ENGINE SETUP ----------------------------------------------
     const createEnclaveResult = await createEnclave(TEST_NAME, IS_PARTITIONING_ENABLED)
 
@@ -32,10 +32,10 @@ test("Test remote Starlark module execution", async () => {
 
     try {
         // ------------------------------------- TEST SETUP ----------------------------------------------
-        log.info(`Executing Startosis module: '${REMOTE_MODULE}'`)
-        const outputStream = await enclaveContext.runStarlarkRemotePackage(REMOTE_MODULE, EXECUTE_PARAMS, IS_DRY_RUN)
+        log.info(`Executing Starlark package: '${REMOTE_PACKAGE}'`)
+        const outputStream = await enclaveContext.runStarlarkRemotePackage(REMOTE_PACKAGE, EXECUTE_PARAMS, IS_DRY_RUN)
         if (outputStream.isErr()) {
-            log.error("An error occurred executing the Startosis Module")
+            log.error("An error occurred executing the Starlark Package")
             throw outputStream.error
         }
 
@@ -44,7 +44,7 @@ test("Test remote Starlark module execution", async () => {
         expect(interpretationError).toBeUndefined()
         expect(validationErrors).toEqual([])
         expect(executionError).toBeUndefined()
-        log.info("Successfully ran Startosis Module")
+        log.info("Successfully ran Starlark Package")
 
         log.info("Checking that services are all healthy")
         const validationResultDataStore0 = await validateDataStoreServiceIsHealthy(enclaveContext, DATASTORE_SERVICE_0_ID, DATASTORE_PORT_ID);
@@ -58,7 +58,7 @@ test("Test remote Starlark module execution", async () => {
             throw err(new Error(`Error validating that service '${DATASTORE_SERVICE_1_ID}' is healthy`))
         }
 
-        log.info("All services added via the module work as expected")
+        log.info("All services added via the package work as expected")
 
     }finally{
         stopEnclaveFunction()

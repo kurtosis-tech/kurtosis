@@ -1,5 +1,5 @@
 import {createEnclave} from "../../test_helpers/enclave_setup";
-import {DEFAULT_DRY_RUN, EMPTY_EXECUTE_PARAMS, IS_PARTITIONING_ENABLED, JEST_TIMEOUT_MS} from "./shared_constants";
+import {DEFAULT_DRY_RUN, EMPTY_RUN_PARAMS, IS_PARTITIONING_ENABLED, JEST_TIMEOUT_MS} from "./shared_constants";
 import * as path from "path";
 import log from "loglevel";
 import {err} from "neverthrow";
@@ -10,7 +10,7 @@ const MODULE_WITH_NO_MAIN_STAR_REL_PATH = "../../../../startosis/no-main-star"
 
 jest.setTimeout(JEST_TIMEOUT_MS)
 
-test("Test invalid module with no main.star", async () => {
+test("Test invalid package with no main.star", async () => {
     // ------------------------------------- ENGINE SETUP ----------------------------------------------
     const createEnclaveResult = await createEnclave(MISSING_MAIN_STAR_TEST_NAME, IS_PARTITIONING_ENABLED)
 
@@ -22,19 +22,19 @@ test("Test invalid module with no main.star", async () => {
 
     try {
         // ------------------------------------- TEST SETUP ----------------------------------------------
-        const moduleRootPath = path.join(__dirname, MODULE_WITH_NO_MAIN_STAR_REL_PATH)
+        const packageRootPath = path.join(__dirname, MODULE_WITH_NO_MAIN_STAR_REL_PATH)
 
-        log.info(`Loading module at path '${moduleRootPath}'`)
+        log.info(`Loading package at path '${packageRootPath}'`)
 
-        const outputStream = await enclaveContext.runStarlarkPackage(moduleRootPath, EMPTY_EXECUTE_PARAMS, DEFAULT_DRY_RUN)
+        const outputStream = await enclaveContext.runStarlarkPackage(packageRootPath, EMPTY_RUN_PARAMS, DEFAULT_DRY_RUN)
         if (outputStream.isErr()) {
-            throw err(new Error(`An error occurred execute startosis module '${moduleRootPath}'`));
+            throw err(new Error(`An error occurred execute Starlark package '${packageRootPath}'`));
         }
         const [scriptOutput, _, interpretationError, validationErrors, executionError] = await readStreamContentUntilClosed(outputStream.value);
 
         expect(interpretationError).not.toBeUndefined()
         expect(interpretationError?.getErrorMessage())
-            .toContain("An error occurred while verifying that 'main.star' exists on root of module")
+            .toContain("An error occurred while verifying that 'main.star' exists on root of package")
         expect(validationErrors).toEqual([])
         expect(executionError).toBeUndefined()
 

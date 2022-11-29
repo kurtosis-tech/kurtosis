@@ -26,16 +26,16 @@ func TestStartosisModule_NoMainFile(t *testing.T) {
 
 	currentWorkingDirectory, err := os.Getwd()
 	require.Nil(t, err)
-	moduleDirpath := path.Join(currentWorkingDirectory, moduleWithNoMainStarRelPath)
+	packageDirpath := path.Join(currentWorkingDirectory, moduleWithNoMainStarRelPath)
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
-	logrus.Info("Executing Startosis Module...")
+	logrus.Info("Executing Starlark Package...")
 
-	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
+	logrus.Infof("Starlark package path: \n%v", packageDirpath)
 
-	expectedErrorContents := "An error occurred while verifying that 'main.star' exists on root of module"
-	outputStream, _, err := enclaveCtx.RunStarlarkPackage(ctx, moduleDirpath, emptyExecuteParams, defaultDryRun)
-	require.Nil(t, err, "Unexpected error executing module")
+	expectedErrorContents := "An error occurred while verifying that 'main.star' exists on root of package"
+	outputStream, _, err := enclaveCtx.RunStarlarkPackage(ctx, packageDirpath, emptyRunParams, defaultDryRun)
+	require.Nil(t, err, "Unexpected error executing package")
 	scriptOutput, _, interpretationError, validationErrors, executionError := test_helpers.ReadStreamContentUntilClosed(outputStream)
 	require.NotNil(t, interpretationError)
 	require.Contains(t, interpretationError.GetErrorMessage(), expectedErrorContents)

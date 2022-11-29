@@ -85,7 +85,7 @@ func (service *ApiContainerGatewayServiceServer) ExecuteModule(ctx context.Conte
 }
 
 func (service *ApiContainerGatewayServiceServer) RunStarlarkScript(args *kurtosis_core_rpc_api_bindings.RunStarlarkScriptArgs, streamToWriteTo kurtosis_core_rpc_api_bindings.ApiContainerService_RunStarlarkScriptServer) error {
-	logrus.Debug("Executing Kurtosis script")
+	logrus.Debug("Executing Starlark script")
 	streamToReadFrom, err := service.remoteApiContainerClient.RunStarlarkScript(streamToWriteTo.Context(), args)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred starting the execution of Kurtosis code")
@@ -97,13 +97,13 @@ func (service *ApiContainerGatewayServiceServer) RunStarlarkScript(args *kurtosi
 }
 
 func (service *ApiContainerGatewayServiceServer) RunStarlarkPackage(args *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs, streamToWriteTo kurtosis_core_rpc_api_bindings.ApiContainerService_RunStarlarkPackageServer) error {
-	logrus.Debugf("Executing Kurtosis module '%s'", args.GetPackageId())
+	logrus.Debugf("Executing Starlark package '%s'", args.GetPackageId())
 	streamToReadFrom, err := service.remoteApiContainerClient.RunStarlarkPackage(streamToWriteTo.Context(), args)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred starting the execution of Kurtosis code")
 	}
 	if err := service.forwardKurtosisExecutionStream(streamToReadFrom, streamToWriteTo); err != nil {
-		return stacktrace.Propagate(err, "Error forwarding stream from Kurtosis core back to the user while executing module '%s'", args.GetPackageId())
+		return stacktrace.Propagate(err, "Error forwarding stream from Kurtosis core back to the user while executing package '%s'", args.GetPackageId())
 	}
 	return nil
 }

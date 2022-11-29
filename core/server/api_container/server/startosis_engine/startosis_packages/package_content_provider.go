@@ -9,8 +9,8 @@ type PackageContentProvider interface {
 	// The corresponding Github repo will be cloned if necessary
 	GetOnDiskAbsoluteFilePath(string) (string, *startosis_errors.InterpretationError)
 
-	// GetPackageContents returns the stringified content of a file inside a module
-	GetPackageContents(string) (string, *startosis_errors.InterpretationError)
+	// GetModuleContents returns the stringified content of a file inside a module
+	GetModuleContents(string) (string, *startosis_errors.InterpretationError)
 
 	// StorePackageContents writes on disk the content of the package passed as params
 	StorePackageContents(string, []byte, bool) (string, *startosis_errors.InterpretationError)

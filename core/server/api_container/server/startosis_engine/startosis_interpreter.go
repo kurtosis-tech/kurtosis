@@ -47,7 +47,7 @@ type StartosisInterpreter struct {
 	serviceNetwork     service_network.ServiceNetwork
 	factsEngine        *facts_engine.FactsEngine
 	recipeExecutor     *runtime_value_store.RuntimeValueStore
-	moduleGlobalsCache map[string]*startosis_packages.PackageCacheEntry
+	moduleGlobalsCache map[string]*startosis_packages.ModuleCacheEntry
 	// TODO AUTH there will be a leak here in case people with different repo visibility access a module
 	moduleContentProvider startosis_packages.PackageContentProvider
 }
@@ -60,7 +60,7 @@ func NewStartosisInterpreter(serviceNetwork service_network.ServiceNetwork, modu
 		serviceNetwork:        serviceNetwork,
 		factsEngine:           nil,
 		recipeExecutor:        nil,
-		moduleGlobalsCache:    make(map[string]*startosis_packages.PackageCacheEntry),
+		moduleGlobalsCache:    make(map[string]*startosis_packages.ModuleCacheEntry),
 		moduleContentProvider: moduleContentProvider,
 	}
 }
@@ -71,7 +71,7 @@ func NewStartosisInterpreterWithFacts(serviceNetwork service_network.ServiceNetw
 		serviceNetwork:        serviceNetwork,
 		moduleContentProvider: moduleContentProvider,
 		recipeExecutor:        recipeExecutor,
-		moduleGlobalsCache:    make(map[string]*startosis_packages.PackageCacheEntry),
+		moduleGlobalsCache:    make(map[string]*startosis_packages.ModuleCacheEntry),
 		factsEngine:           factsEngine,
 	}
 }

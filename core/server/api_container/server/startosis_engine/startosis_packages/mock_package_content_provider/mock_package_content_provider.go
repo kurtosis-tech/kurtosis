@@ -17,7 +17,7 @@ type MockPackageContentProvider struct {
 	starlarkPackages map[string]string
 }
 
-func NewMockModuleContentProvider() *MockPackageContentProvider {
+func NewMockPackageContentProvider() *MockPackageContentProvider {
 	return &MockPackageContentProvider{
 		starlarkPackages: make(map[string]string),
 	}
@@ -29,7 +29,7 @@ func (provider *MockPackageContentProvider) GetOnDiskAbsoluteFilePath(packageId 
 		return "", startosis_errors.NewInterpretationError("Module '%v' not found", packageId)
 	}
 	if _, err := os.Stat(absFilePath); err != nil {
-		return "", startosis_errors.NewInterpretationError("Unable to read content of module '%v'", packageId)
+		return "", startosis_errors.NewInterpretationError("Unable to read content of package '%v'", packageId)
 	}
 	return absFilePath, nil
 }
@@ -42,7 +42,7 @@ func (provider *MockPackageContentProvider) StorePackageContents(string, []byte,
 	panic(unimplementedMessage)
 }
 
-func (provider *MockPackageContentProvider) GetPackageContents(packageId string) (string, *startosis_errors.InterpretationError) {
+func (provider *MockPackageContentProvider) GetModuleContents(packageId string) (string, *startosis_errors.InterpretationError) {
 	absFilePath, found := provider.starlarkPackages[packageId]
 	if !found {
 		return "", startosis_errors.NewInterpretationError("Package '%v' not found", packageId)

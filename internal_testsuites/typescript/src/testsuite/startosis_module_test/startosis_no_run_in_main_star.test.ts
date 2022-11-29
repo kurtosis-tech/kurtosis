@@ -1,5 +1,5 @@
 import {createEnclave} from "../../test_helpers/enclave_setup";
-import {DEFAULT_DRY_RUN, EMPTY_EXECUTE_PARAMS, IS_PARTITIONING_ENABLED, JEST_TIMEOUT_MS} from "./shared_constants";
+import {DEFAULT_DRY_RUN, EMPTY_RUN_PARAMS, IS_PARTITIONING_ENABLED, JEST_TIMEOUT_MS} from "./shared_constants";
 import * as path from "path";
 import log from "loglevel";
 import {err} from "neverthrow";
@@ -10,7 +10,7 @@ const MODULE_WITH_NO_MAIN_IN_MAIN_STAR_REL_PATH = "../../../../startosis/no-run-
 
 jest.setTimeout(JEST_TIMEOUT_MS)
 
-test("Test invalid module with no main in main.star", async () => {
+test("Test invalid package with no main in main.star", async () => {
     // ------------------------------------- ENGINE SETUP ----------------------------------------------
     const createEnclaveResult = await createEnclave(MISSING_MAIN_FUNCTION_TEST_NAME, IS_PARTITIONING_ENABLED)
 
@@ -22,11 +22,11 @@ test("Test invalid module with no main in main.star", async () => {
 
     try {
         // ------------------------------------- TEST SETUP ----------------------------------------------
-        const moduleRootPath = path.join(__dirname, MODULE_WITH_NO_MAIN_IN_MAIN_STAR_REL_PATH)
+        const packageRootPath = path.join(__dirname, MODULE_WITH_NO_MAIN_IN_MAIN_STAR_REL_PATH)
 
-        log.info(`Loading module at path '${moduleRootPath}'`)
+        log.info(`Loading package at path '${packageRootPath}'`)
 
-        const outputStream = await enclaveContext.runStarlarkPackage(moduleRootPath, EMPTY_EXECUTE_PARAMS, DEFAULT_DRY_RUN)
+        const outputStream = await enclaveContext.runStarlarkPackage(packageRootPath, EMPTY_RUN_PARAMS, DEFAULT_DRY_RUN)
 
         if (outputStream.isErr()) {
             throw err(new Error("Unexpected execution error"))

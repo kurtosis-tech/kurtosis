@@ -13,7 +13,7 @@ const VALID_MODULE_WITH_MODULE_INPUT_REL_PATH = "../../../../startosis/valid-kur
 
 jest.setTimeout(JEST_TIMEOUT_MS)
 
-test("Test valid startosis module with input", async () => {
+test("Test valid Starlark package with input", async () => {
     // ------------------------------------- ENGINE SETUP ----------------------------------------------
     const createEnclaveResult = await createEnclave(VALID_MODULE_WITH_MODULE_INPUT_TEST_NAME, IS_PARTITIONING_ENABLED)
 
@@ -25,15 +25,15 @@ test("Test valid startosis module with input", async () => {
 
     try {
         // ------------------------------------- TEST SETUP ----------------------------------------------
-        const moduleRootPath = path.join(__dirname, VALID_MODULE_WITH_MODULE_INPUT_REL_PATH)
+        const packageRootPath = path.join(__dirname, VALID_MODULE_WITH_MODULE_INPUT_REL_PATH)
 
-        log.info(`Loading module at path '${moduleRootPath}'`)
+        log.info(`Loading package at path '${packageRootPath}'`)
 
         const params = `{"greetings": "bonjour!"}`
-        const outputStream = await enclaveContext.runStarlarkPackage(moduleRootPath, params, DEFAULT_DRY_RUN)
+        const outputStream = await enclaveContext.runStarlarkPackage(packageRootPath, params, DEFAULT_DRY_RUN)
 
         if (outputStream.isErr()) {
-            log.error(`An error occurred execute startosis module '${moduleRootPath}'`);
+            log.error(`An error occurred execute Starlark package '${packageRootPath}'`);
             throw outputStream.error
         }
         const [scriptOutput, _, interpretationError, validationErrors, executionError] = await readStreamContentUntilClosed(outputStream.value);
@@ -50,7 +50,7 @@ test("Test valid startosis module with input", async () => {
     }
 })
 
-test("Test valid startosis module with input - missing key in params", async () => {
+test("Test valid Starlark package with input - missing key in params", async () => {
     // ------------------------------------- ENGINE SETUP ----------------------------------------------
     const createEnclaveResult = await createEnclave(VALID_MODULE_WITH_MODULE_INPUT_TEST_NAME, IS_PARTITIONING_ENABLED)
 
@@ -62,15 +62,15 @@ test("Test valid startosis module with input - missing key in params", async () 
 
     try {
         // ------------------------------------- TEST SETUP ----------------------------------------------
-        const moduleRootPath = path.join(__dirname, VALID_MODULE_WITH_MODULE_INPUT_REL_PATH)
+        const packageRootPath = path.join(__dirname, VALID_MODULE_WITH_MODULE_INPUT_REL_PATH)
 
-        log.info(`Loading module at path '${moduleRootPath}'`)
+        log.info(`Loading package at path '${packageRootPath}'`)
 
         const params = `{"hello": "world"}` // expecting key 'greetings' here
-        const outputStream = await enclaveContext.runStarlarkPackage(moduleRootPath, params, DEFAULT_DRY_RUN)
+        const outputStream = await enclaveContext.runStarlarkPackage(packageRootPath, params, DEFAULT_DRY_RUN)
 
         if (outputStream.isErr()) {
-            log.error(`An error occurred execute startosis module '${moduleRootPath}'`);
+            log.error(`An error occurred execute Starlark package '${packageRootPath}'`);
             throw outputStream.error
         }
         const [scriptOutput, _, interpretationError, validationErrors, executionError] = await readStreamContentUntilClosed(outputStream.value);

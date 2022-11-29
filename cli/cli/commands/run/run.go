@@ -150,7 +150,7 @@ func run(
 
 	starlarkScriptOrPackagePath, err := args.GetNonGreedyArg(scriptOrModulePathKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "Error reading the Starlark script or module dir at '%s'. Does it exist?", starlarkScriptOrPackagePath)
+		return stacktrace.Propagate(err, "Error reading the Starlark script or package directory at '%s'. Does it exist?", starlarkScriptOrPackagePath)
 	}
 
 	dryRun, err := flags.GetBool(dryRunFlagKey)

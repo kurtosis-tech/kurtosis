@@ -158,7 +158,7 @@ func (enclaveCtx *EnclaveContext) RunStarlarkScript(ctx context.Context, seriali
 func (enclaveCtx *EnclaveContext) RunStarlarkPackage(ctx context.Context, packageRootPath string, serializedParams string, dryRun bool) (chan *kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine, context.CancelFunc, error) {
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(ctx)
 	starlarkResponseLineChan := make(chan *kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine)
-	executeStartosisPackageArgs, err := enclaveCtx.assembleExecuteStartosisPackageArg(packageRootPath, serializedParams, dryRun)
+	executeStartosisPackageArgs, err := enclaveCtx.assembleRunStartosisPackageArg(packageRootPath, serializedParams, dryRun)
 	if err != nil {
 		cancelCtxFunc() // manually call the cancel function as something went wrong
 		return nil, nil, stacktrace.Propagate(err, "Error preparing package for execution '%v'", packageRootPath)
@@ -718,7 +718,7 @@ func runReceiveKurtosisResponseLineRoutine(cancelCtxFunc context.CancelFunc, str
 	}
 }
 
-func (enclaveCtx *EnclaveContext) assembleExecuteStartosisPackageArg(moduleRootPath string, serializedParams string, dryRun bool) (*kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs, error) {
+func (enclaveCtx *EnclaveContext) assembleRunStartosisPackageArg(moduleRootPath string, serializedParams string, dryRun bool) (*kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs, error) {
 	kurtosisYamlFilepath := path.Join(moduleRootPath, kurtosisYamlFilename)
 
 	kurtosisYaml, err := parseKurtosisYaml(kurtosisYamlFilepath)

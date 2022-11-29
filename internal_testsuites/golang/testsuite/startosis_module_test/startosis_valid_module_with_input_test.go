@@ -26,16 +26,16 @@ func TestStartosisModule_ValidModuleWithInput(t *testing.T) {
 
 	currentWorkingDirectory, err := os.Getwd()
 	require.Nil(t, err)
-	moduleDirpath := path.Join(currentWorkingDirectory, validModuleWithInputRelPath)
+	packageDirpath := path.Join(currentWorkingDirectory, validModuleWithInputRelPath)
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
-	logrus.Info("Executing Startosis Module...")
+	logrus.Info("Executing Startosis Package...")
 
-	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
+	logrus.Infof("Startosis package path: \n%v", packageDirpath)
 
 	params := `{"greetings": "bonjour!"}`
-	outputStream, _, err := enclaveCtx.RunStarlarkPackage(ctx, moduleDirpath, params, defaultDryRun)
-	require.NoError(t, err, "Unexpected error executing startosis module")
+	outputStream, _, err := enclaveCtx.RunStarlarkPackage(ctx, packageDirpath, params, defaultDryRun)
+	require.NoError(t, err, "Unexpected error executing starlark package")
 	scriptOutput, _, interpretationError, validationErrors, executionError := test_helpers.ReadStreamContentUntilClosed(outputStream)
 
 	expectedScriptOutput := `bonjour!
@@ -62,7 +62,7 @@ func TestStartosisModule_ValidModuleWithInput_MissingKeyInParams(t *testing.T) {
 	moduleDirpath := path.Join(currentWorkingDirectory, validModuleWithInputRelPath)
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
-	logrus.Info("Executing Startosis Module...")
+	logrus.Info("Executing Startosis Package...")
 
 	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
 

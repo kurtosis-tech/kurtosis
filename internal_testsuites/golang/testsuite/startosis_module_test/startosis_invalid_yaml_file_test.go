@@ -26,15 +26,15 @@ func TestStartosisModule_InvalidYamlFile(t *testing.T) {
 
 	currentWorkingDirectory, err := os.Getwd()
 	require.Nil(t, err)
-	moduleDirpath := path.Join(currentWorkingDirectory, moduleWithInvalidKurtosisYamlRelPath)
+	packageDirpath := path.Join(currentWorkingDirectory, moduleWithInvalidKurtosisYamlRelPath)
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
-	logrus.Info("Executing Startosis Module...")
+	logrus.Info("Executing Starlark Package...")
 
-	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
+	logrus.Infof("Starlark package path: \n%v", packageDirpath)
 
 	expectedErrorContents := "Field 'name', which is the Starlark package's name, in kurtosis.yml needs to be set and cannot be empty"
-	_, _, err = enclaveCtx.RunStarlarkPackage(ctx, moduleDirpath, emptyExecuteParams, defaultDryRun)
-	require.NotNil(t, err, "Unexpected error executing startosis module")
+	_, _, err = enclaveCtx.RunStarlarkPackage(ctx, packageDirpath, emptyRunParams, defaultDryRun)
+	require.NotNil(t, err, "Unexpected error executing Starlark package")
 	require.Contains(t, err.Error(), expectedErrorContents)
 }

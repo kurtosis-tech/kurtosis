@@ -47,13 +47,13 @@ func (provider *GitPackageContentProvider) ClonePackage(moduleId string) (string
 	return moduleAbsolutePathOnDisk, nil
 }
 
-func (provider *GitPackageContentProvider) GetOnDiskAbsoluteFilePath(fileInsideModuleUrl string) (string, *startosis_errors.InterpretationError) {
-	parsedURL, interpretationError := parseGitURL(fileInsideModuleUrl)
+func (provider *GitPackageContentProvider) GetOnDiskAbsoluteFilePath(fileInsidePackageUrl string) (string, *startosis_errors.InterpretationError) {
+	parsedURL, interpretationError := parseGitURL(fileInsidePackageUrl)
 	if interpretationError != nil {
 		return "", interpretationError
 	}
 	if parsedURL.relativeFilePath == "" {
-		return "", startosis_errors.NewInterpretationError("The relative path to file is empty for '%v'", fileInsideModuleUrl)
+		return "", startosis_errors.NewInterpretationError("The relative path to file is empty for '%v'", fileInsidePackageUrl)
 	}
 	pathToFile := path.Join(provider.packagesDir, parsedURL.relativeFilePath)
 	packagePath := path.Join(provider.packagesDir, parsedURL.relativeRepoPath)
@@ -78,7 +78,7 @@ func (provider *GitPackageContentProvider) GetOnDiskAbsoluteFilePath(fileInsideM
 	return pathToFile, nil
 }
 
-func (provider *GitPackageContentProvider) GetPackageContents(fileInsideModuleUrl string) (string, *startosis_errors.InterpretationError) {
+func (provider *GitPackageContentProvider) GetModuleContents(fileInsideModuleUrl string) (string, *startosis_errors.InterpretationError) {
 	pathToFile, interpretationError := provider.GetOnDiskAbsoluteFilePath(fileInsideModuleUrl)
 	if interpretationError != nil {
 		return "", interpretationError

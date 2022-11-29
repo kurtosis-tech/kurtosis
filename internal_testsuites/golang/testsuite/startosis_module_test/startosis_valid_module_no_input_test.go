@@ -26,15 +26,15 @@ func TestStartosisModule_ValidModuleNoInput(t *testing.T) {
 
 	currentWorkingDirectory, err := os.Getwd()
 	require.Nil(t, err)
-	moduleDirpath := path.Join(currentWorkingDirectory, validModuleNoTypeRelPath)
+	packageDirpath := path.Join(currentWorkingDirectory, validModuleNoTypeRelPath)
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
-	logrus.Info("Executing Startosis Module...")
+	logrus.Info("Executing Starlark Package...")
 
-	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
+	logrus.Infof("Starlark package path: \n%v", packageDirpath)
 
-	outputStream, _, err := enclaveCtx.RunStarlarkPackage(ctx, moduleDirpath, emptyExecuteParams, defaultDryRun)
-	require.Nil(t, err, "Unexpected error executing startosis module")
+	outputStream, _, err := enclaveCtx.RunStarlarkPackage(ctx, packageDirpath, emptyRunParams, defaultDryRun)
+	require.Nil(t, err, "Unexpected error executing Starlark package")
 	scriptOutput, _, interpretationError, validationErrors, executionError := test_helpers.ReadStreamContentUntilClosed(outputStream)
 
 	expectedScriptOutput := `Hello world!
@@ -57,16 +57,16 @@ func TestStartosisModule_ValidModuleNoInput_PassingParamsAlsoWorks(t *testing.T)
 
 	currentWorkingDirectory, err := os.Getwd()
 	require.Nil(t, err)
-	moduleDirpath := path.Join(currentWorkingDirectory, validModuleNoTypeRelPath)
+	packageDirpath := path.Join(currentWorkingDirectory, validModuleNoTypeRelPath)
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
-	logrus.Info("Executing Startosis Module...")
+	logrus.Info("Executing Starlark Package...")
 
-	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
+	logrus.Infof("Starlark package path: \n%v", packageDirpath)
 
 	params := `{"greetings": "bonjour!"}`
-	outputStream, _, err := enclaveCtx.RunStarlarkPackage(ctx, moduleDirpath, params, defaultDryRun)
-	require.Nil(t, err, "Unexpected error executing startosis module")
+	outputStream, _, err := enclaveCtx.RunStarlarkPackage(ctx, packageDirpath, params, defaultDryRun)
+	require.Nil(t, err, "Unexpected error executing Starlark package")
 	scriptOutput, _, interpretationError, validationErrors, executionError := test_helpers.ReadStreamContentUntilClosed(outputStream)
 
 	expectedScriptOutput := `Hello world!

@@ -4,23 +4,23 @@ import (
 	"go.starlark.net/starlarkstruct"
 )
 
-// PackageCacheEntry The module cache entry
-type PackageCacheEntry struct {
-	starlarkPackage *starlarkstruct.Module
-	err             error
+// ModuleCacheEntry The module cache entry
+type ModuleCacheEntry struct {
+	module *starlarkstruct.Module
+	err    error
 }
 
-func NewPackageCacheEntry(starlarkPackage *starlarkstruct.Module, err error) *PackageCacheEntry {
-	return &PackageCacheEntry{
-		starlarkPackage: starlarkPackage,
-		err:             err,
+func NewPackageCacheEntry(module *starlarkstruct.Module, err error) *ModuleCacheEntry {
+	return &ModuleCacheEntry{
+		module: module,
+		err:    err,
 	}
 }
 
-func (packageCacheEntry *PackageCacheEntry) GetPackage() *starlarkstruct.Module {
-	return packageCacheEntry.starlarkPackage
+func (packageCacheEntry *ModuleCacheEntry) GetModule() *starlarkstruct.Module {
+	return packageCacheEntry.module
 }
 
-func (packageCacheEntry *PackageCacheEntry) GetError() error {
+func (packageCacheEntry *ModuleCacheEntry) GetError() error {
 	return packageCacheEntry.err
 }

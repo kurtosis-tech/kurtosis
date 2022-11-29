@@ -98,25 +98,25 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
     }
 
     public async runStarlarkScript(serializedStarlarkScript: RunStarlarkScriptArgs): Promise<Result<Readable, Error>> {
-        const promiseExecuteKurtosisScript: Promise<Result<ClientReadableStream<StarlarkExecutionResponseLine>, Error>> = new Promise((resolve, _unusedReject) => {
+        const promiseRunStarlarkScript: Promise<Result<ClientReadableStream<StarlarkExecutionResponseLine>, Error>> = new Promise((resolve, _unusedReject) => {
             resolve(ok(this.client.runStarlarkScript(serializedStarlarkScript)))
         })
-        const resultExecuteKurtosisScript: Result<Readable, Error> = await promiseExecuteKurtosisScript;
-        if (resultExecuteKurtosisScript.isErr()) {
-            return err(resultExecuteKurtosisScript.error)
+        const starlarkScriptRunResult: Result<Readable, Error> = await promiseRunStarlarkScript;
+        if (starlarkScriptRunResult.isErr()) {
+            return err(starlarkScriptRunResult.error)
         }
-        return ok(resultExecuteKurtosisScript.value)
+        return ok(starlarkScriptRunResult.value)
     }
 
     public async runStarlarkPackage(starlarkPackageArgs: RunStarlarkPackageArgs): Promise<Result<Readable, Error>> {
         const promiseRunStarlarkPackage: Promise<Result<ClientReadableStream<StarlarkExecutionResponseLine>, Error>> = new Promise((resolve, _unusedReject) => {
             resolve(ok(this.client.runStarlarkPackage(starlarkPackageArgs)))
         })
-        const resultRunStarlarkPackage: Result<Readable, Error> = await promiseRunStarlarkPackage;
-        if (resultRunStarlarkPackage.isErr()) {
-            return err(resultRunStarlarkPackage.error)
+        const runStarlarkPackageResult: Result<Readable, Error> = await promiseRunStarlarkPackage;
+        if (runStarlarkPackageResult.isErr()) {
+            return err(runStarlarkPackageResult.error)
         }
-        return ok(resultRunStarlarkPackage.value)
+        return ok(runStarlarkPackageResult.value)
     }
 
     public async startServices(startServicesArgs: StartServicesArgs): Promise<Result<StartServicesResponse, Error>>{
