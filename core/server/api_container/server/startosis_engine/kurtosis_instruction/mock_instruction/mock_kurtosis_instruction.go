@@ -72,15 +72,15 @@ func (_c *MockKurtosisInstruction_Execute_Call) Return(_a0 *string, _a1 error) *
 }
 
 // GetCanonicalInstruction provides a mock function with given fields:
-func (_m *MockKurtosisInstruction) GetCanonicalInstruction() *kurtosis_core_rpc_api_bindings.KurtosisInstruction {
+func (_m *MockKurtosisInstruction) GetCanonicalInstruction() *kurtosis_core_rpc_api_bindings.StarlarkInstruction {
 	ret := _m.Called()
 
-	var r0 *kurtosis_core_rpc_api_bindings.KurtosisInstruction
-	if rf, ok := ret.Get(0).(func() *kurtosis_core_rpc_api_bindings.KurtosisInstruction); ok {
+	var r0 *kurtosis_core_rpc_api_bindings.StarlarkInstruction
+	if rf, ok := ret.Get(0).(func() *kurtosis_core_rpc_api_bindings.StarlarkInstruction); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*kurtosis_core_rpc_api_bindings.KurtosisInstruction)
+			r0 = ret.Get(0).(*kurtosis_core_rpc_api_bindings.StarlarkInstruction)
 		}
 	}
 
@@ -104,7 +104,7 @@ func (_c *MockKurtosisInstruction_GetCanonicalInstruction_Call) Run(run func()) 
 	return _c
 }
 
-func (_c *MockKurtosisInstruction_GetCanonicalInstruction_Call) Return(_a0 *kurtosis_core_rpc_api_bindings.KurtosisInstruction) *MockKurtosisInstruction_GetCanonicalInstruction_Call {
+func (_c *MockKurtosisInstruction_GetCanonicalInstruction_Call) Return(_a0 *kurtosis_core_rpc_api_bindings.StarlarkInstruction) *MockKurtosisInstruction_GetCanonicalInstruction_Call {
 	_c.Call.Return(_a0)
 	return _c
 }

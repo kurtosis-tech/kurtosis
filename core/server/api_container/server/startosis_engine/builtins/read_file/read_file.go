@@ -3,24 +3,24 @@ package read_file
 import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_modules"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"go.starlark.net/starlark"
 )
 
 const (
 	ReadFileBuiltinName = "read_file"
 
-	srcPathArgName = "src_path"
+	srcArgName = "src"
 )
 
-func GenerateReadFileBuiltin(provider startosis_modules.ModuleContentProvider) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+func GenerateReadFileBuiltin(provider startosis_packages.PackageContentProvider) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 	// TODO: Force returning an InterpretationError rather than a normal error
 	return func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
-		srcPath, interpretationError := parseStartosisArgs(b, args, kwargs)
+		src, interpretationError := parseStartosisArgs(b, args, kwargs)
 		if interpretationError != nil {
 			return nil, interpretationError
 		}
-		fileContents, interpretationError := provider.GetModuleContents(srcPath)
+		fileContents, interpretationError := provider.GetModuleContents(src)
 		if interpretationError != nil {
 			return nil, interpretationError
 		}
@@ -29,17 +29,17 @@ func GenerateReadFileBuiltin(provider startosis_modules.ModuleContentProvider) f
 }
 
 func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (string, *startosis_errors.InterpretationError) {
-	var srcPathArg starlark.String
-	if err := starlark.UnpackArgs(b.Name(), args, kwargs, srcPathArgName, &srcPathArg); err != nil {
+	var srcArg starlark.String
+	if err := starlark.UnpackArgs(b.Name(), args, kwargs, srcArgName, &srcArg); err != nil {
 		return "", explicitInterpretationError(err)
 	}
 
-	srcPath, interpretationErr := kurtosis_instruction.ParseNonEmptyString(srcPathArgName, srcPathArg)
+	src, interpretationErr := kurtosis_instruction.ParseNonEmptyString(srcArgName, srcArg)
 	if interpretationErr != nil {
 		return "", explicitInterpretationError(interpretationErr)
 	}
 
-	return srcPath, nil
+	return src, nil
 }
 
 func explicitInterpretationError(err error) *startosis_errors.InterpretationError {

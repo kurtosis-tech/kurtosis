@@ -339,24 +339,24 @@ export namespace ExecuteModuleResponse {
   }
 }
 
-export class ExecuteStartosisScriptArgs extends jspb.Message {
+export class RunStarlarkScriptArgs extends jspb.Message {
   getSerializedScript(): string;
-  setSerializedScript(value: string): ExecuteStartosisScriptArgs;
+  setSerializedScript(value: string): RunStarlarkScriptArgs;
 
   getDryRun(): boolean;
-  setDryRun(value: boolean): ExecuteStartosisScriptArgs;
+  setDryRun(value: boolean): RunStarlarkScriptArgs;
   hasDryRun(): boolean;
-  clearDryRun(): ExecuteStartosisScriptArgs;
+  clearDryRun(): RunStarlarkScriptArgs;
 
   serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): ExecuteStartosisScriptArgs.AsObject;
-  static toObject(includeInstance: boolean, msg: ExecuteStartosisScriptArgs): ExecuteStartosisScriptArgs.AsObject;
-  static serializeBinaryToWriter(message: ExecuteStartosisScriptArgs, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): ExecuteStartosisScriptArgs;
-  static deserializeBinaryFromReader(message: ExecuteStartosisScriptArgs, reader: jspb.BinaryReader): ExecuteStartosisScriptArgs;
+  toObject(includeInstance?: boolean): RunStarlarkScriptArgs.AsObject;
+  static toObject(includeInstance: boolean, msg: RunStarlarkScriptArgs): RunStarlarkScriptArgs.AsObject;
+  static serializeBinaryToWriter(message: RunStarlarkScriptArgs, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): RunStarlarkScriptArgs;
+  static deserializeBinaryFromReader(message: RunStarlarkScriptArgs, reader: jspb.BinaryReader): RunStarlarkScriptArgs;
 }
 
-export namespace ExecuteStartosisScriptArgs {
+export namespace RunStarlarkScriptArgs {
   export type AsObject = {
     serializedScript: string,
     dryRun?: boolean,
@@ -368,47 +368,47 @@ export namespace ExecuteStartosisScriptArgs {
   }
 }
 
-export class ExecuteStartosisModuleArgs extends jspb.Message {
-  getModuleId(): string;
-  setModuleId(value: string): ExecuteStartosisModuleArgs;
+export class RunStarlarkPackageArgs extends jspb.Message {
+  getPackageId(): string;
+  setPackageId(value: string): RunStarlarkPackageArgs;
 
   getLocal(): Uint8Array | string;
   getLocal_asU8(): Uint8Array;
   getLocal_asB64(): string;
-  setLocal(value: Uint8Array | string): ExecuteStartosisModuleArgs;
+  setLocal(value: Uint8Array | string): RunStarlarkPackageArgs;
 
   getRemote(): boolean;
-  setRemote(value: boolean): ExecuteStartosisModuleArgs;
+  setRemote(value: boolean): RunStarlarkPackageArgs;
 
   getSerializedParams(): string;
-  setSerializedParams(value: string): ExecuteStartosisModuleArgs;
+  setSerializedParams(value: string): RunStarlarkPackageArgs;
 
   getDryRun(): boolean;
-  setDryRun(value: boolean): ExecuteStartosisModuleArgs;
+  setDryRun(value: boolean): RunStarlarkPackageArgs;
   hasDryRun(): boolean;
-  clearDryRun(): ExecuteStartosisModuleArgs;
+  clearDryRun(): RunStarlarkPackageArgs;
 
-  getStartosisModuleContentCase(): ExecuteStartosisModuleArgs.StartosisModuleContentCase;
+  getStarlarkPackageContentCase(): RunStarlarkPackageArgs.StarlarkPackageContentCase;
 
   serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): ExecuteStartosisModuleArgs.AsObject;
-  static toObject(includeInstance: boolean, msg: ExecuteStartosisModuleArgs): ExecuteStartosisModuleArgs.AsObject;
-  static serializeBinaryToWriter(message: ExecuteStartosisModuleArgs, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): ExecuteStartosisModuleArgs;
-  static deserializeBinaryFromReader(message: ExecuteStartosisModuleArgs, reader: jspb.BinaryReader): ExecuteStartosisModuleArgs;
+  toObject(includeInstance?: boolean): RunStarlarkPackageArgs.AsObject;
+  static toObject(includeInstance: boolean, msg: RunStarlarkPackageArgs): RunStarlarkPackageArgs.AsObject;
+  static serializeBinaryToWriter(message: RunStarlarkPackageArgs, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): RunStarlarkPackageArgs;
+  static deserializeBinaryFromReader(message: RunStarlarkPackageArgs, reader: jspb.BinaryReader): RunStarlarkPackageArgs;
 }
 
-export namespace ExecuteStartosisModuleArgs {
+export namespace RunStarlarkPackageArgs {
   export type AsObject = {
-    moduleId: string,
+    packageId: string,
     local: Uint8Array | string,
     remote: boolean,
     serializedParams: string,
     dryRun?: boolean,
   }
 
-  export enum StartosisModuleContentCase { 
-    STARTOSIS_MODULE_CONTENT_NOT_SET = 0,
+  export enum StarlarkPackageContentCase { 
+    STARLARK_PACKAGE_CONTENT_NOT_SET = 0,
     LOCAL = 3,
     REMOTE = 4,
   }
@@ -419,193 +419,127 @@ export namespace ExecuteStartosisModuleArgs {
   }
 }
 
-export class ExecuteStartosisResponse extends jspb.Message {
-  getKurtosisInstructionsList(): Array<KurtosisInstruction>;
-  setKurtosisInstructionsList(value: Array<KurtosisInstruction>): ExecuteStartosisResponse;
-  clearKurtosisInstructionsList(): ExecuteStartosisResponse;
-  addKurtosisInstructions(value?: KurtosisInstruction, index?: number): KurtosisInstruction;
+export class StarlarkRunResponseLine extends jspb.Message {
+  getInstruction(): StarlarkInstruction | undefined;
+  setInstruction(value?: StarlarkInstruction): StarlarkRunResponseLine;
+  hasInstruction(): boolean;
+  clearInstruction(): StarlarkRunResponseLine;
 
-  getInterpretationError(): KurtosisInterpretationError | undefined;
-  setInterpretationError(value?: KurtosisInterpretationError): ExecuteStartosisResponse;
-  hasInterpretationError(): boolean;
-  clearInterpretationError(): ExecuteStartosisResponse;
+  getError(): StarlarkError | undefined;
+  setError(value?: StarlarkError): StarlarkRunResponseLine;
+  hasError(): boolean;
+  clearError(): StarlarkRunResponseLine;
 
-  getValidationErrors(): KurtosisValidationErrors | undefined;
-  setValidationErrors(value?: KurtosisValidationErrors): ExecuteStartosisResponse;
-  hasValidationErrors(): boolean;
-  clearValidationErrors(): ExecuteStartosisResponse;
+  getProgressInfo(): StarlarkRunProgress | undefined;
+  setProgressInfo(value?: StarlarkRunProgress): StarlarkRunResponseLine;
+  hasProgressInfo(): boolean;
+  clearProgressInfo(): StarlarkRunResponseLine;
 
-  getExecutionError(): KurtosisExecutionError | undefined;
-  setExecutionError(value?: KurtosisExecutionError): ExecuteStartosisResponse;
-  hasExecutionError(): boolean;
-  clearExecutionError(): ExecuteStartosisResponse;
+  getInstructionResult(): StarlarkInstructionResult | undefined;
+  setInstructionResult(value?: StarlarkInstructionResult): StarlarkRunResponseLine;
+  hasInstructionResult(): boolean;
+  clearInstructionResult(): StarlarkRunResponseLine;
 
-  getKurtosisErrorCase(): ExecuteStartosisResponse.KurtosisErrorCase;
-
-  serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): ExecuteStartosisResponse.AsObject;
-  static toObject(includeInstance: boolean, msg: ExecuteStartosisResponse): ExecuteStartosisResponse.AsObject;
-  static serializeBinaryToWriter(message: ExecuteStartosisResponse, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): ExecuteStartosisResponse;
-  static deserializeBinaryFromReader(message: ExecuteStartosisResponse, reader: jspb.BinaryReader): ExecuteStartosisResponse;
-}
-
-export namespace ExecuteStartosisResponse {
-  export type AsObject = {
-    kurtosisInstructionsList: Array<KurtosisInstruction.AsObject>,
-    interpretationError?: KurtosisInterpretationError.AsObject,
-    validationErrors?: KurtosisValidationErrors.AsObject,
-    executionError?: KurtosisExecutionError.AsObject,
-  }
-
-  export enum KurtosisErrorCase { 
-    KURTOSIS_ERROR_NOT_SET = 0,
-    INTERPRETATION_ERROR = 2,
-    VALIDATION_ERRORS = 3,
-    EXECUTION_ERROR = 4,
-  }
-}
-
-export class KurtosisInterpretationError extends jspb.Message {
-  getErrorMessage(): string;
-  setErrorMessage(value: string): KurtosisInterpretationError;
+  getRunResponseLineCase(): StarlarkRunResponseLine.RunResponseLineCase;
 
   serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): KurtosisInterpretationError.AsObject;
-  static toObject(includeInstance: boolean, msg: KurtosisInterpretationError): KurtosisInterpretationError.AsObject;
-  static serializeBinaryToWriter(message: KurtosisInterpretationError, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): KurtosisInterpretationError;
-  static deserializeBinaryFromReader(message: KurtosisInterpretationError, reader: jspb.BinaryReader): KurtosisInterpretationError;
+  toObject(includeInstance?: boolean): StarlarkRunResponseLine.AsObject;
+  static toObject(includeInstance: boolean, msg: StarlarkRunResponseLine): StarlarkRunResponseLine.AsObject;
+  static serializeBinaryToWriter(message: StarlarkRunResponseLine, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): StarlarkRunResponseLine;
+  static deserializeBinaryFromReader(message: StarlarkRunResponseLine, reader: jspb.BinaryReader): StarlarkRunResponseLine;
 }
 
-export namespace KurtosisInterpretationError {
+export namespace StarlarkRunResponseLine {
   export type AsObject = {
-    errorMessage: string,
+    instruction?: StarlarkInstruction.AsObject,
+    error?: StarlarkError.AsObject,
+    progressInfo?: StarlarkRunProgress.AsObject,
+    instructionResult?: StarlarkInstructionResult.AsObject,
+  }
+
+  export enum RunResponseLineCase { 
+    RUN_RESPONSE_LINE_NOT_SET = 0,
+    INSTRUCTION = 1,
+    ERROR = 2,
+    PROGRESS_INFO = 3,
+    INSTRUCTION_RESULT = 4,
   }
 }
 
-export class KurtosisValidationErrors extends jspb.Message {
-  getErrorsList(): Array<KurtosisValidationError>;
-  setErrorsList(value: Array<KurtosisValidationError>): KurtosisValidationErrors;
-  clearErrorsList(): KurtosisValidationErrors;
-  addErrors(value?: KurtosisValidationError, index?: number): KurtosisValidationError;
-
-  serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): KurtosisValidationErrors.AsObject;
-  static toObject(includeInstance: boolean, msg: KurtosisValidationErrors): KurtosisValidationErrors.AsObject;
-  static serializeBinaryToWriter(message: KurtosisValidationErrors, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): KurtosisValidationErrors;
-  static deserializeBinaryFromReader(message: KurtosisValidationErrors, reader: jspb.BinaryReader): KurtosisValidationErrors;
-}
-
-export namespace KurtosisValidationErrors {
-  export type AsObject = {
-    errorsList: Array<KurtosisValidationError.AsObject>,
-  }
-}
-
-export class KurtosisValidationError extends jspb.Message {
-  getErrorMessage(): string;
-  setErrorMessage(value: string): KurtosisValidationError;
-
-  serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): KurtosisValidationError.AsObject;
-  static toObject(includeInstance: boolean, msg: KurtosisValidationError): KurtosisValidationError.AsObject;
-  static serializeBinaryToWriter(message: KurtosisValidationError, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): KurtosisValidationError;
-  static deserializeBinaryFromReader(message: KurtosisValidationError, reader: jspb.BinaryReader): KurtosisValidationError;
-}
-
-export namespace KurtosisValidationError {
-  export type AsObject = {
-    errorMessage: string,
-  }
-}
-
-export class KurtosisExecutionError extends jspb.Message {
-  getErrorMessage(): string;
-  setErrorMessage(value: string): KurtosisExecutionError;
-
-  serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): KurtosisExecutionError.AsObject;
-  static toObject(includeInstance: boolean, msg: KurtosisExecutionError): KurtosisExecutionError.AsObject;
-  static serializeBinaryToWriter(message: KurtosisExecutionError, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): KurtosisExecutionError;
-  static deserializeBinaryFromReader(message: KurtosisExecutionError, reader: jspb.BinaryReader): KurtosisExecutionError;
-}
-
-export namespace KurtosisExecutionError {
-  export type AsObject = {
-    errorMessage: string,
-  }
-}
-
-export class KurtosisInstruction extends jspb.Message {
-  getPosition(): KurtosisInstructionPosition | undefined;
-  setPosition(value?: KurtosisInstructionPosition): KurtosisInstruction;
+export class StarlarkInstruction extends jspb.Message {
+  getPosition(): StarlarkInstructionPosition | undefined;
+  setPosition(value?: StarlarkInstructionPosition): StarlarkInstruction;
   hasPosition(): boolean;
-  clearPosition(): KurtosisInstruction;
+  clearPosition(): StarlarkInstruction;
 
   getInstructionName(): string;
-  setInstructionName(value: string): KurtosisInstruction;
+  setInstructionName(value: string): StarlarkInstruction;
 
-  getArgumentsList(): Array<KurtosisInstructionArg>;
-  setArgumentsList(value: Array<KurtosisInstructionArg>): KurtosisInstruction;
-  clearArgumentsList(): KurtosisInstruction;
-  addArguments(value?: KurtosisInstructionArg, index?: number): KurtosisInstructionArg;
+  getArgumentsList(): Array<StarlarkInstructionArg>;
+  setArgumentsList(value: Array<StarlarkInstructionArg>): StarlarkInstruction;
+  clearArgumentsList(): StarlarkInstruction;
+  addArguments(value?: StarlarkInstructionArg, index?: number): StarlarkInstructionArg;
 
   getExecutableInstruction(): string;
-  setExecutableInstruction(value: string): KurtosisInstruction;
-
-  getInstructionResult(): string;
-  setInstructionResult(value: string): KurtosisInstruction;
-  hasInstructionResult(): boolean;
-  clearInstructionResult(): KurtosisInstruction;
+  setExecutableInstruction(value: string): StarlarkInstruction;
 
   serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): KurtosisInstruction.AsObject;
-  static toObject(includeInstance: boolean, msg: KurtosisInstruction): KurtosisInstruction.AsObject;
-  static serializeBinaryToWriter(message: KurtosisInstruction, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): KurtosisInstruction;
-  static deserializeBinaryFromReader(message: KurtosisInstruction, reader: jspb.BinaryReader): KurtosisInstruction;
+  toObject(includeInstance?: boolean): StarlarkInstruction.AsObject;
+  static toObject(includeInstance: boolean, msg: StarlarkInstruction): StarlarkInstruction.AsObject;
+  static serializeBinaryToWriter(message: StarlarkInstruction, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): StarlarkInstruction;
+  static deserializeBinaryFromReader(message: StarlarkInstruction, reader: jspb.BinaryReader): StarlarkInstruction;
 }
 
-export namespace KurtosisInstruction {
+export namespace StarlarkInstruction {
   export type AsObject = {
-    position?: KurtosisInstructionPosition.AsObject,
+    position?: StarlarkInstructionPosition.AsObject,
     instructionName: string,
-    argumentsList: Array<KurtosisInstructionArg.AsObject>,
+    argumentsList: Array<StarlarkInstructionArg.AsObject>,
     executableInstruction: string,
-    instructionResult?: string,
-  }
-
-  export enum InstructionResultCase { 
-    _INSTRUCTION_RESULT_NOT_SET = 0,
-    INSTRUCTION_RESULT = 5,
   }
 }
 
-export class KurtosisInstructionArg extends jspb.Message {
+export class StarlarkInstructionResult extends jspb.Message {
+  getSerializedInstructionResult(): string;
+  setSerializedInstructionResult(value: string): StarlarkInstructionResult;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): StarlarkInstructionResult.AsObject;
+  static toObject(includeInstance: boolean, msg: StarlarkInstructionResult): StarlarkInstructionResult.AsObject;
+  static serializeBinaryToWriter(message: StarlarkInstructionResult, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): StarlarkInstructionResult;
+  static deserializeBinaryFromReader(message: StarlarkInstructionResult, reader: jspb.BinaryReader): StarlarkInstructionResult;
+}
+
+export namespace StarlarkInstructionResult {
+  export type AsObject = {
+    serializedInstructionResult: string,
+  }
+}
+
+export class StarlarkInstructionArg extends jspb.Message {
   getSerializedArgValue(): string;
-  setSerializedArgValue(value: string): KurtosisInstructionArg;
+  setSerializedArgValue(value: string): StarlarkInstructionArg;
 
   getArgName(): string;
-  setArgName(value: string): KurtosisInstructionArg;
+  setArgName(value: string): StarlarkInstructionArg;
   hasArgName(): boolean;
-  clearArgName(): KurtosisInstructionArg;
+  clearArgName(): StarlarkInstructionArg;
 
   getIsRepresentative(): boolean;
-  setIsRepresentative(value: boolean): KurtosisInstructionArg;
+  setIsRepresentative(value: boolean): StarlarkInstructionArg;
 
   serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): KurtosisInstructionArg.AsObject;
-  static toObject(includeInstance: boolean, msg: KurtosisInstructionArg): KurtosisInstructionArg.AsObject;
-  static serializeBinaryToWriter(message: KurtosisInstructionArg, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): KurtosisInstructionArg;
-  static deserializeBinaryFromReader(message: KurtosisInstructionArg, reader: jspb.BinaryReader): KurtosisInstructionArg;
+  toObject(includeInstance?: boolean): StarlarkInstructionArg.AsObject;
+  static toObject(includeInstance: boolean, msg: StarlarkInstructionArg): StarlarkInstructionArg.AsObject;
+  static serializeBinaryToWriter(message: StarlarkInstructionArg, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): StarlarkInstructionArg;
+  static deserializeBinaryFromReader(message: StarlarkInstructionArg, reader: jspb.BinaryReader): StarlarkInstructionArg;
 }
 
-export namespace KurtosisInstructionArg {
+export namespace StarlarkInstructionArg {
   export type AsObject = {
     serializedArgValue: string,
     argName?: string,
@@ -618,25 +552,25 @@ export namespace KurtosisInstructionArg {
   }
 }
 
-export class KurtosisInstructionPosition extends jspb.Message {
+export class StarlarkInstructionPosition extends jspb.Message {
   getFilename(): string;
-  setFilename(value: string): KurtosisInstructionPosition;
+  setFilename(value: string): StarlarkInstructionPosition;
 
   getLine(): number;
-  setLine(value: number): KurtosisInstructionPosition;
+  setLine(value: number): StarlarkInstructionPosition;
 
   getColumn(): number;
-  setColumn(value: number): KurtosisInstructionPosition;
+  setColumn(value: number): StarlarkInstructionPosition;
 
   serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): KurtosisInstructionPosition.AsObject;
-  static toObject(includeInstance: boolean, msg: KurtosisInstructionPosition): KurtosisInstructionPosition.AsObject;
-  static serializeBinaryToWriter(message: KurtosisInstructionPosition, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): KurtosisInstructionPosition;
-  static deserializeBinaryFromReader(message: KurtosisInstructionPosition, reader: jspb.BinaryReader): KurtosisInstructionPosition;
+  toObject(includeInstance?: boolean): StarlarkInstructionPosition.AsObject;
+  static toObject(includeInstance: boolean, msg: StarlarkInstructionPosition): StarlarkInstructionPosition.AsObject;
+  static serializeBinaryToWriter(message: StarlarkInstructionPosition, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): StarlarkInstructionPosition;
+  static deserializeBinaryFromReader(message: StarlarkInstructionPosition, reader: jspb.BinaryReader): StarlarkInstructionPosition;
 }
 
-export namespace KurtosisInstructionPosition {
+export namespace StarlarkInstructionPosition {
   export type AsObject = {
     filename: string,
     line: number,
@@ -644,37 +578,37 @@ export namespace KurtosisInstructionPosition {
   }
 }
 
-export class KurtosisError extends jspb.Message {
-  getInterpretationError(): KurtosisInterpretationError | undefined;
-  setInterpretationError(value?: KurtosisInterpretationError): KurtosisError;
+export class StarlarkError extends jspb.Message {
+  getInterpretationError(): StarlarkInterpretationError | undefined;
+  setInterpretationError(value?: StarlarkInterpretationError): StarlarkError;
   hasInterpretationError(): boolean;
-  clearInterpretationError(): KurtosisError;
+  clearInterpretationError(): StarlarkError;
 
-  getValidationError(): KurtosisValidationError | undefined;
-  setValidationError(value?: KurtosisValidationError): KurtosisError;
+  getValidationError(): StarlarkValidationError | undefined;
+  setValidationError(value?: StarlarkValidationError): StarlarkError;
   hasValidationError(): boolean;
-  clearValidationError(): KurtosisError;
+  clearValidationError(): StarlarkError;
 
-  getExecutionError(): KurtosisExecutionError | undefined;
-  setExecutionError(value?: KurtosisExecutionError): KurtosisError;
+  getExecutionError(): StarlarkExecutionError | undefined;
+  setExecutionError(value?: StarlarkExecutionError): StarlarkError;
   hasExecutionError(): boolean;
-  clearExecutionError(): KurtosisError;
+  clearExecutionError(): StarlarkError;
 
-  getErrorCase(): KurtosisError.ErrorCase;
+  getErrorCase(): StarlarkError.ErrorCase;
 
   serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): KurtosisError.AsObject;
-  static toObject(includeInstance: boolean, msg: KurtosisError): KurtosisError.AsObject;
-  static serializeBinaryToWriter(message: KurtosisError, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): KurtosisError;
-  static deserializeBinaryFromReader(message: KurtosisError, reader: jspb.BinaryReader): KurtosisError;
+  toObject(includeInstance?: boolean): StarlarkError.AsObject;
+  static toObject(includeInstance: boolean, msg: StarlarkError): StarlarkError.AsObject;
+  static serializeBinaryToWriter(message: StarlarkError, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): StarlarkError;
+  static deserializeBinaryFromReader(message: StarlarkError, reader: jspb.BinaryReader): StarlarkError;
 }
 
-export namespace KurtosisError {
+export namespace StarlarkError {
   export type AsObject = {
-    interpretationError?: KurtosisInterpretationError.AsObject,
-    validationError?: KurtosisValidationError.AsObject,
-    executionError?: KurtosisExecutionError.AsObject,
+    interpretationError?: StarlarkInterpretationError.AsObject,
+    validationError?: StarlarkValidationError.AsObject,
+    executionError?: StarlarkExecutionError.AsObject,
   }
 
   export enum ErrorCase { 
@@ -685,66 +619,79 @@ export namespace KurtosisError {
   }
 }
 
-export class KurtosisExecutionResponseLine extends jspb.Message {
-  getInstruction(): KurtosisInstruction | undefined;
-  setInstruction(value?: KurtosisInstruction): KurtosisExecutionResponseLine;
-  hasInstruction(): boolean;
-  clearInstruction(): KurtosisExecutionResponseLine;
-
-  getError(): KurtosisError | undefined;
-  setError(value?: KurtosisError): KurtosisExecutionResponseLine;
-  hasError(): boolean;
-  clearError(): KurtosisExecutionResponseLine;
-
-  getProgressInfo(): KurtosisExecutionProgress | undefined;
-  setProgressInfo(value?: KurtosisExecutionProgress): KurtosisExecutionResponseLine;
-  hasProgressInfo(): boolean;
-  clearProgressInfo(): KurtosisExecutionResponseLine;
-
-  getKurtosisExecutionResponseLineCase(): KurtosisExecutionResponseLine.KurtosisExecutionResponseLineCase;
+export class StarlarkInterpretationError extends jspb.Message {
+  getErrorMessage(): string;
+  setErrorMessage(value: string): StarlarkInterpretationError;
 
   serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): KurtosisExecutionResponseLine.AsObject;
-  static toObject(includeInstance: boolean, msg: KurtosisExecutionResponseLine): KurtosisExecutionResponseLine.AsObject;
-  static serializeBinaryToWriter(message: KurtosisExecutionResponseLine, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): KurtosisExecutionResponseLine;
-  static deserializeBinaryFromReader(message: KurtosisExecutionResponseLine, reader: jspb.BinaryReader): KurtosisExecutionResponseLine;
+  toObject(includeInstance?: boolean): StarlarkInterpretationError.AsObject;
+  static toObject(includeInstance: boolean, msg: StarlarkInterpretationError): StarlarkInterpretationError.AsObject;
+  static serializeBinaryToWriter(message: StarlarkInterpretationError, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): StarlarkInterpretationError;
+  static deserializeBinaryFromReader(message: StarlarkInterpretationError, reader: jspb.BinaryReader): StarlarkInterpretationError;
 }
 
-export namespace KurtosisExecutionResponseLine {
+export namespace StarlarkInterpretationError {
   export type AsObject = {
-    instruction?: KurtosisInstruction.AsObject,
-    error?: KurtosisError.AsObject,
-    progressInfo?: KurtosisExecutionProgress.AsObject,
-  }
-
-  export enum KurtosisExecutionResponseLineCase { 
-    KURTOSIS_EXECUTION_RESPONSE_LINE_NOT_SET = 0,
-    INSTRUCTION = 1,
-    ERROR = 2,
-    PROGRESS_INFO = 3,
+    errorMessage: string,
   }
 }
 
-export class KurtosisExecutionProgress extends jspb.Message {
+export class StarlarkValidationError extends jspb.Message {
+  getErrorMessage(): string;
+  setErrorMessage(value: string): StarlarkValidationError;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): StarlarkValidationError.AsObject;
+  static toObject(includeInstance: boolean, msg: StarlarkValidationError): StarlarkValidationError.AsObject;
+  static serializeBinaryToWriter(message: StarlarkValidationError, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): StarlarkValidationError;
+  static deserializeBinaryFromReader(message: StarlarkValidationError, reader: jspb.BinaryReader): StarlarkValidationError;
+}
+
+export namespace StarlarkValidationError {
+  export type AsObject = {
+    errorMessage: string,
+  }
+}
+
+export class StarlarkExecutionError extends jspb.Message {
+  getErrorMessage(): string;
+  setErrorMessage(value: string): StarlarkExecutionError;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): StarlarkExecutionError.AsObject;
+  static toObject(includeInstance: boolean, msg: StarlarkExecutionError): StarlarkExecutionError.AsObject;
+  static serializeBinaryToWriter(message: StarlarkExecutionError, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): StarlarkExecutionError;
+  static deserializeBinaryFromReader(message: StarlarkExecutionError, reader: jspb.BinaryReader): StarlarkExecutionError;
+}
+
+export namespace StarlarkExecutionError {
+  export type AsObject = {
+    errorMessage: string,
+  }
+}
+
+export class StarlarkRunProgress extends jspb.Message {
   getCurrentStepInfo(): string;
-  setCurrentStepInfo(value: string): KurtosisExecutionProgress;
+  setCurrentStepInfo(value: string): StarlarkRunProgress;
 
   getTotalSteps(): number;
-  setTotalSteps(value: number): KurtosisExecutionProgress;
+  setTotalSteps(value: number): StarlarkRunProgress;
 
   getCurrentStepNumber(): number;
-  setCurrentStepNumber(value: number): KurtosisExecutionProgress;
+  setCurrentStepNumber(value: number): StarlarkRunProgress;
 
   serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): KurtosisExecutionProgress.AsObject;
-  static toObject(includeInstance: boolean, msg: KurtosisExecutionProgress): KurtosisExecutionProgress.AsObject;
-  static serializeBinaryToWriter(message: KurtosisExecutionProgress, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): KurtosisExecutionProgress;
-  static deserializeBinaryFromReader(message: KurtosisExecutionProgress, reader: jspb.BinaryReader): KurtosisExecutionProgress;
+  toObject(includeInstance?: boolean): StarlarkRunProgress.AsObject;
+  static toObject(includeInstance: boolean, msg: StarlarkRunProgress): StarlarkRunProgress.AsObject;
+  static serializeBinaryToWriter(message: StarlarkRunProgress, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): StarlarkRunProgress;
+  static deserializeBinaryFromReader(message: StarlarkRunProgress, reader: jspb.BinaryReader): StarlarkRunProgress;
 }
 
-export namespace KurtosisExecutionProgress {
+export namespace StarlarkRunProgress {
   export type AsObject = {
     currentStepInfo: string,
     totalSteps: number,

@@ -22,19 +22,11 @@ service ApiContainerService {
   // Executes an executable module on the user's behalf
   rpc ExecuteModule(ExecuteModuleArgs) returns (ExecuteModuleResponse) {};
 
-  // Executes a startosis script on the user's behalf
-  // Will soon be deprecated in favour of its streamed version ExecuteKurtosisScript
-  rpc ExecuteStartosisScript(ExecuteStartosisScriptArgs) returns (ExecuteStartosisResponse) {};
+  // Executes a Starlark script on the user's behalf
+  rpc RunStarlarkScript(RunStarlarkScriptArgs) returns (stream StarlarkRunResponseLine) {};
 
-  // Executes a startosis script on the user's behalf
-  rpc ExecuteKurtosisScript(ExecuteStartosisScriptArgs) returns (stream KurtosisExecutionResponseLine) {};
-
-  // Executes a startosis module on the user's behalf
-  // Will soon be deprecated in favour of its streamed version ExecuteKurtosisModule
-  rpc ExecuteStartosisModule(ExecuteStartosisModuleArgs) returns (ExecuteStartosisResponse) {};
-
-  // Executes a startosis script on the user's behalf
-  rpc ExecuteKurtosisModule(ExecuteStartosisModuleArgs) returns (stream KurtosisExecutionResponseLine) {};
+  // Executes a Starlark script on the user's behalf
+  rpc RunStarlarkPackage(RunStarlarkPackageArgs) returns (stream StarlarkRunResponseLine) {};
 
   // Start services by creating containers for them
   rpc StartServices(StartServicesArgs) returns (StartServicesResponse) {};
@@ -247,24 +239,21 @@ message ExecuteModuleResponse {
 }
 
 // ==============================================================================================
-//                                 Execute Startosis script
+//                               Execute Starlark Arguments
 // ==============================================================================================
-message ExecuteStartosisScriptArgs {
+message RunStarlarkScriptArgs {
   string serialized_script = 1;
 
   // Defaults to false
   optional bool dry_run = 2;
 }
 
-// ==============================================================================================
-//                                 Execute Startosis Module
-// ==============================================================================================
-message ExecuteStartosisModuleArgs {
-  string module_id = 1;
+message RunStarlarkPackageArgs {
+  string package_id = 1;
 
-  // Serialized parameters data for the Startosis module main function
+  // Serialized parameters data for the Starlark package main function
   // This should be a valid JSON string
-  oneof startosis_module_content {
+  oneof starlark_package_content {
     bytes local = 3; // the payload of the local module
     bool remote = 4; // just a flag to indicate the module must be cloned inside the API
   }
@@ -276,47 +265,32 @@ message ExecuteStartosisModuleArgs {
 }
 
 // ==============================================================================================
-//                                 Startosis Execution Response
+//                               Starlark Execution Response
 // ==============================================================================================
-message ExecuteStartosisResponse {
-  repeated KurtosisInstruction kurtosis_instructions = 1;
-
-  oneof kurtosis_error {
-    KurtosisInterpretationError interpretation_error = 2;
-    KurtosisValidationErrors validation_errors = 3;
-    KurtosisExecutionError execution_error = 4;
+message StarlarkRunResponseLine {
+  oneof run_response_line {
+    StarlarkInstruction instruction = 1;
+    StarlarkError error = 2;
+    StarlarkRunProgress progress_info = 3;
+    StarlarkInstructionResult instruction_result = 4;
   }
 }
 
-message KurtosisInterpretationError {
-  string error_message = 1;
-}
-
-message KurtosisValidationErrors {
-  repeated KurtosisValidationError errors = 1;
-}
-
-message KurtosisValidationError {
-  string error_message = 1;
-}
-
-message KurtosisExecutionError {
-  string error_message = 1;
-}
-
-message KurtosisInstruction {
-  KurtosisInstructionPosition position = 1;
+message StarlarkInstruction {
+  StarlarkInstructionPosition position = 1;
 
   string instruction_name = 2;
 
-  repeated KurtosisInstructionArg arguments = 3;
+  repeated StarlarkInstructionArg arguments = 3;
 
   string executable_instruction = 4;
-
-  optional string instruction_result = 5;
 }
 
-message KurtosisInstructionArg {
+message StarlarkInstructionResult {
+  string serialized_instruction_result = 1;
+}
+
+message StarlarkInstructionArg {
   string serialized_arg_value = 1;
 
   optional string arg_name = 2;
@@ -324,7 +298,7 @@ message KurtosisInstructionArg {
   bool is_representative = 3;
 }
 
-message KurtosisInstructionPosition {
+message StarlarkInstructionPosition {
   string filename = 1;
 
   int32 line = 2;
@@ -332,23 +306,27 @@ message KurtosisInstructionPosition {
   int32 column = 3;
 }
 
-message KurtosisError {
+message StarlarkError {
   oneof error {
-    KurtosisInterpretationError interpretation_error = 1;
-    KurtosisValidationError validation_error = 2;
-    KurtosisExecutionError execution_error = 3;
+    StarlarkInterpretationError interpretation_error = 1;
+    StarlarkValidationError validation_error = 2;
+    StarlarkExecutionError execution_error = 3;
   }
 }
 
-message KurtosisExecutionResponseLine {
-  oneof kurtosis_execution_response_line {
-    KurtosisInstruction instruction = 1;
-    KurtosisError error = 2;
-    KurtosisExecutionProgress progress_info = 3;
-  }
+message StarlarkInterpretationError {
+  string error_message = 1;
 }
 
-message KurtosisExecutionProgress {
+message StarlarkValidationError {
+  string error_message = 1;
+}
+
+message StarlarkExecutionError {
+  string error_message = 1;
+}
+
+message StarlarkRunProgress {
   string current_step_info = 1;
 
   uint32 total_steps = 2;

@@ -9,26 +9,19 @@ const (
 	newlineChar = "\n"
 )
 
-func GenerateScriptOutput(instructions []*kurtosis_core_rpc_api_bindings.KurtosisInstruction) string {
+func ReadStreamContentUntilClosed(responseLines chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine) (string, []*kurtosis_core_rpc_api_bindings.StarlarkInstruction, *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError, []*kurtosis_core_rpc_api_bindings.StarlarkValidationError, *kurtosis_core_rpc_api_bindings.StarlarkExecutionError) {
 	scriptOutput := strings.Builder{}
-	for _, instruction := range instructions {
-		if instruction.InstructionResult != nil {
-			scriptOutput.WriteString(instruction.GetInstructionResult())
-			scriptOutput.WriteString(newlineChar)
-		}
-	}
-	return scriptOutput.String()
-}
-
-func ReadStreamContentUntilClosed(responseLines chan *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine) (*kurtosis_core_rpc_api_bindings.KurtosisInterpretationError, []*kurtosis_core_rpc_api_bindings.KurtosisValidationError, *kurtosis_core_rpc_api_bindings.KurtosisExecutionError, []*kurtosis_core_rpc_api_bindings.KurtosisInstruction) {
-	var interpretationError *kurtosis_core_rpc_api_bindings.KurtosisInterpretationError
-	validationErrors := make([]*kurtosis_core_rpc_api_bindings.KurtosisValidationError, 0)
-	var executionError *kurtosis_core_rpc_api_bindings.KurtosisExecutionError
-	instructions := make([]*kurtosis_core_rpc_api_bindings.KurtosisInstruction, 0)
+	instructions := make([]*kurtosis_core_rpc_api_bindings.StarlarkInstruction, 0)
+	var interpretationError *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError
+	validationErrors := make([]*kurtosis_core_rpc_api_bindings.StarlarkValidationError, 0)
+	var executionError *kurtosis_core_rpc_api_bindings.StarlarkExecutionError
 
 	for responseLine := range responseLines {
 		if responseLine.GetInstruction() != nil {
 			instructions = append(instructions, responseLine.GetInstruction())
+		} else if responseLine.GetInstructionResult() != nil {
+			scriptOutput.WriteString(responseLine.GetInstructionResult().GetSerializedInstructionResult())
+			scriptOutput.WriteString(newlineChar)
 		} else if responseLine.GetError() != nil {
 			if responseLine.GetError().GetInterpretationError() != nil {
 				interpretationError = responseLine.GetError().GetInterpretationError()
@@ -39,6 +32,5 @@ func ReadStreamContentUntilClosed(responseLines chan *kurtosis_core_rpc_api_bind
 			}
 		}
 	}
-
-	return interpretationError, validationErrors, executionError, instructions
+	return scriptOutput.String(), instructions, interpretationError, validationErrors, executionError
 }

@@ -1,37 +1,33 @@
 import {
-    KurtosisExecutionError, KurtosisExecutionResponseLine,
-    KurtosisInstruction,
-    KurtosisInterpretationError, KurtosisValidationError, KurtosisValidationErrors
+    StarlarkExecutionError,
+    StarlarkRunResponseLine,
+    StarlarkInstruction,
+    StarlarkInterpretationError,
+    StarlarkValidationError
 } from "kurtosis-sdk/build/core/kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import {Readable} from "stream";
 
 const NEWLINE_CHAR = "\n"
 
-export function generateScriptOutput(instructions: Array<KurtosisInstruction>): string {
-    let scriptOutput = "";
-    instructions.forEach((instruction) => {
-        if (instruction.hasInstructionResult()) {
-            scriptOutput += instruction.getInstructionResult() + NEWLINE_CHAR
-        }
-    })
-    return scriptOutput
-}
-
 export function readStreamContentUntilClosed(responseLines: Readable): Promise<[
-    KurtosisInterpretationError | undefined,
-    Array<KurtosisValidationError>,
-    KurtosisExecutionError | undefined,
-    Array<KurtosisInstruction>
+    string,
+    Array<StarlarkInstruction>,
+    StarlarkInterpretationError | undefined,
+    Array<StarlarkValidationError>,
+    StarlarkExecutionError | undefined
 ]> {
-    let interpretationError: KurtosisInterpretationError | undefined
-    let validationErrors: Array<KurtosisValidationError> = []
-    let executionError: KurtosisExecutionError | undefined
-    let instructions: Array<KurtosisInstruction> = []
+    let scriptOutput = ""
+    let interpretationError: StarlarkInterpretationError | undefined
+    let validationErrors: Array<StarlarkValidationError> = []
+    let executionError: StarlarkExecutionError | undefined
+    let instructions: Array<StarlarkInstruction> = []
 
     return new Promise(resolve => {
-        responseLines.on('data', (responseLine: KurtosisExecutionResponseLine) => {
+        responseLines.on('data', (responseLine: StarlarkRunResponseLine) => {
             if (responseLine.getInstruction() !== undefined) {
                 instructions.push(responseLine.getInstruction()!)
+            } else if (responseLine.getInstructionResult() !== undefined) {
+                scriptOutput += responseLine.getInstructionResult()?.getSerializedInstructionResult() + NEWLINE_CHAR
             } else if (responseLine.getError() !== undefined) {
                 if (responseLine.getError()?.getInterpretationError() !== undefined) {
                     interpretationError = responseLine.getError()?.getInterpretationError()
@@ -51,7 +47,7 @@ export function readStreamContentUntilClosed(responseLines: Readable): Promise<[
         responseLines.on('end', function () {
             if (!responseLines.destroyed) {
                 responseLines.destroy();
-                resolve([interpretationError, validationErrors, executionError, instructions])
+                resolve([scriptOutput, instructions, interpretationError, validationErrors, executionError])
             }
         });
     })

@@ -9,6 +9,10 @@ import (
 	"sync"
 )
 
+const (
+	progressMsg = "Execution in progress"
+)
+
 type StartosisExecutor struct {
 	mutex *sync.Mutex
 }
@@ -30,36 +34,39 @@ func NewStartosisExecutor() *StartosisExecutor {
 // - A regular KurtosisInstruction that was successfully executed
 // - A KurtosisExecutionError if the execution failed
 // - A ProgressInfo to update the current "state" of the execution
-func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, instructions []kurtosis_instruction.KurtosisInstruction) <-chan *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine {
+func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, instructions []kurtosis_instruction.KurtosisInstruction) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
 	executor.mutex.Lock()
-	kurtosisExecutionResponseLineStream := make(chan *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine)
+	starlarkExecutionResponseLineStream := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 
 	go func() {
 		defer func() {
 			executor.mutex.Unlock()
-			close(kurtosisExecutionResponseLineStream)
+			close(starlarkExecutionResponseLineStream)
 		}()
 
 		totalNumberOfInstructions := uint32(len(instructions))
 		for index, instruction := range instructions {
 			instructionNumber := uint32(index + 1)
-			kurtosisExecutionResponseLineStream <- binding_constructors.NewKurtosisExecutionResponseLineFromProgressInfo(
-				"Execution in progress", instructionNumber, totalNumberOfInstructions)
+			progress := binding_constructors.NewStarlarkRunResponseLineFromProgressInfo(
+				progressMsg, instructionNumber, totalNumberOfInstructions)
+			starlarkExecutionResponseLineStream <- progress
+
+			canonicalInstruction := binding_constructors.NewStarlarkRunResponseLineFromInstruction(instruction.GetCanonicalInstruction())
+			starlarkExecutionResponseLineStream <- canonicalInstruction
+
 			if !dryRun {
 				instructionOutput, err := instruction.Execute(ctx)
 				if err != nil {
 					propagatedError := stacktrace.Propagate(err, "An error occurred executing instruction (number %d): \n%v", instructionNumber, instruction.String())
-					serializedError := binding_constructors.NewKurtosisExecutionError(propagatedError.Error())
-					kurtosisExecutionResponseLineStream <- binding_constructors.NewKurtosisExecutionResponseLineFromExecutionError(serializedError)
+					serializedError := binding_constructors.NewStarlarkExecutionError(propagatedError.Error())
+					starlarkExecutionResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromExecutionError(serializedError)
 					return
 				}
-				instructionWithResult := binding_constructors.AddResultToKurtosisInstruction(instruction.GetCanonicalInstruction(), instructionOutput)
-				kurtosisExecutionResponseLineStream <- binding_constructors.NewKurtosisExecutionResponseLineFromInstruction(instructionWithResult)
-			} else {
-				instructionWithoutResult := instruction.GetCanonicalInstruction()
-				kurtosisExecutionResponseLineStream <- binding_constructors.NewKurtosisExecutionResponseLineFromInstruction(instructionWithoutResult)
+				if instructionOutput != nil {
+					starlarkExecutionResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(*instructionOutput)
+				}
 			}
 		}
 	}()
-	return kurtosisExecutionResponseLineStream
+	return starlarkExecutionResponseLineStream
 }

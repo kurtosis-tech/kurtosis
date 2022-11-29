@@ -54,9 +54,9 @@ func TestStartosis(t *testing.T) {
 	logrus.Infof("Executing Startosis script...")
 	logrus.Debugf("Startosis script content: \n%v", startosisScript)
 
-	outputStream, _, err := enclaveCtx.ExecuteKurtosisScript(ctx, startosisScript, defaultDryRun)
+	outputStream, _, err := enclaveCtx.RunStarlarkScript(ctx, startosisScript, defaultDryRun)
 	require.NoError(t, err, "Unexpected error executing startosis script")
-	interpretationError, validationErrors, executionError, instructions := test_helpers.ReadStreamContentUntilClosed(outputStream)
+	scriptOutput, _, interpretationError, validationErrors, executionError := test_helpers.ReadStreamContentUntilClosed(outputStream)
 
 	expectedScriptOutput := `Adding service example-datastore-server-1.
 Service example-datastore-server-1 deployed successfully.
@@ -64,7 +64,7 @@ Service example-datastore-server-1 deployed successfully.
 	require.Nil(t, interpretationError, "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
 	require.Empty(t, validationErrors, "Unexpected validation error")
 	require.Nil(t, executionError, "Unexpected execution error")
-	require.Equal(t, expectedScriptOutput, test_helpers.GenerateScriptOutput(instructions))
+	require.Equal(t, expectedScriptOutput, scriptOutput)
 	logrus.Infof("Successfully ran Startosis script")
 
 	// Check that the service added by the script is functional
@@ -79,9 +79,9 @@ Service example-datastore-server-1 deployed successfully.
 	logrus.Infof("All services added via the module work as expected")
 
 	// we run the remove script and see if things still work
-	outputStream, _, err = enclaveCtx.ExecuteKurtosisScript(ctx, removeScript, defaultDryRun)
+	outputStream, _, err = enclaveCtx.RunStarlarkScript(ctx, removeScript, defaultDryRun)
 	require.NoError(t, err, "Unexpected error executing remove script")
-	interpretationError, validationErrors, executionError, _ = test_helpers.ReadStreamContentUntilClosed(outputStream)
+	_, _, interpretationError, validationErrors, executionError = test_helpers.ReadStreamContentUntilClosed(outputStream)
 	require.Nil(t, interpretationError, "Unexpected interpretation error")
 	require.Empty(t, validationErrors, "Unexpected validation error")
 	require.Nil(t, executionError, "Unexpected execution error")
@@ -94,7 +94,7 @@ Service example-datastore-server-1 deployed successfully.
 	)
 
 	// Ensure that service listing is empty too
-	serviceIds, err := enclaveCtx.GetServices()
+	serviceInfos, err := enclaveCtx.GetServices()
 	require.Nil(t, err)
-	require.Empty(t, serviceIds)
+	require.Empty(t, serviceInfos)
 }

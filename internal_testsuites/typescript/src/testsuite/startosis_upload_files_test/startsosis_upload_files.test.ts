@@ -4,7 +4,7 @@ import * as grpc from "@grpc/grpc-js"
 
 import { createEnclave } from "../../test_helpers/enclave_setup";
 import {validateDataStoreServiceIsHealthy} from "../../test_helpers/test_helpers";
-import {generateScriptOutput, readStreamContentUntilClosed} from "../../test_helpers/startosis_helpers";
+import {readStreamContentUntilClosed} from "../../test_helpers/startosis_helpers";
 
 const TEST_NAME = "upload-files-test"
 const IS_PARTITIONING_ENABLED = false
@@ -57,19 +57,19 @@ test("Test upload files startosis", async () => {
     try {
         // ------------------------------------- TEST SETUP ----------------------------------------------
         log.info("Loading module...")
-        const outputStream = await enclaveContext.executeKurtosisScript(STARTOSIS_SCRIPT, DEFAULT_DRY_RUN)
+        const outputStream = await enclaveContext.runStarlarkScript(STARTOSIS_SCRIPT, DEFAULT_DRY_RUN)
         if (outputStream.isErr()) {
             log.error("An error occurred executing the Startosis SCript")
             throw outputStream.error
         }
-        const [interpretationError, validationErrors, executionError, instructions] = await readStreamContentUntilClosed(outputStream.value);
+        const [scriptOutput, instructions, interpretationError, validationErrors, executionError] = await readStreamContentUntilClosed(outputStream.value);
 
         const expectedScriptRegexPattern = `Adding service example-datastore-server-1.
 Uploaded [a-f0-9-]{36}
 `
         const expectedScriptRegex = new RegExp(expectedScriptRegexPattern)
 
-        expect(generateScriptOutput(instructions)).toMatch(expectedScriptRegex)
+        expect(scriptOutput).toMatch(expectedScriptRegex)
 
         expect(interpretationError).toBeUndefined()
         expect(validationErrors).toEqual([])

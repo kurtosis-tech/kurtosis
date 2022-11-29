@@ -8,8 +8,7 @@ import {
     ExecCommandArgs,
     ExecCommandResponse,
     ExecuteModuleArgs,
-    ExecuteModuleResponse, ExecuteStartosisModuleArgs, ExecuteStartosisResponse,
-    ExecuteStartosisScriptArgs,
+    ExecuteModuleResponse,
     GetModulesArgs,
     GetModulesResponse,
     GetServicesArgs,
@@ -21,6 +20,8 @@ import {
     RenderTemplatesToFilesArtifactArgs,
     RenderTemplatesToFilesArtifactResponse,
     RepartitionArgs,
+    RunStarlarkPackageArgs,
+    RunStarlarkScriptArgs,
     StartServicesArgs,
     StartServicesResponse,
     StoreFilesArtifactFromServiceArgs,
@@ -41,10 +42,8 @@ export interface GenericApiContainerClient {
     getEnclaveId(): EnclaveID
     loadModule(loadModuleArgs: LoadModuleArgs): Promise<Result<null, Error>>
     unloadModule(unloadModuleArgs: UnloadModuleArgs): Promise<Result<UnloadModuleResponse,Error>>
-    executeStartosisScript(serializedStartosisScript: ExecuteStartosisScriptArgs): Promise<Result<ExecuteStartosisResponse, Error>>
-    executeKurtosisScript(serializedStartosisScript: ExecuteStartosisScriptArgs): Promise<Result<Readable, Error>>
-    executeStartosisModule(startosisModuleArgs: ExecuteStartosisModuleArgs): Promise<Result<ExecuteStartosisResponse, Error>>
-    executeKurtosisModule(startosisModuleArgs: ExecuteStartosisModuleArgs): Promise<Result<Readable, Error>>
+    runStarlarkScript(serializedStarlarkScript: RunStarlarkScriptArgs): Promise<Result<Readable, Error>>
+    runStarlarkPackage(starlarkPackageArgs: RunStarlarkPackageArgs): Promise<Result<Readable, Error>>
     startServices(startServicesArgs: StartServicesArgs): Promise<Result<StartServicesResponse, Error>>
     removeService(args: RemoveServiceArgs): Promise<Result<RemoveServiceResponse, Error>>
     repartitionNetwork(repartitionArgs: RepartitionArgs): Promise<Result<null, Error>>
