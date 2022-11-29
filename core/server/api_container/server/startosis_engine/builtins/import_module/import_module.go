@@ -31,13 +31,13 @@ This function is recursive in the sense, to load a module that loads modules we 
 */
 func GenerateImportBuiltin(recursiveInterpret func(moduleId string, scriptContent string) (starlark.StringDict, error), packageContentProvider startosis_packages.PackageContentProvider, moduleGlobalCache map[string]*startosis_packages.ModuleCacheEntry) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 	return func(_ *starlark.Thread, _ *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
-		fileInModule, interpretationError := parseStartosisArgs(args, kwargs)
+		fileInPackage, interpretationError := parseStartosisArgs(args, kwargs)
 		if interpretationError != nil {
 			return nil, interpretationError
 		}
 
 		var loadInProgress *startosis_packages.ModuleCacheEntry
-		cacheEntry, found := moduleGlobalCache[fileInModule]
+		cacheEntry, found := moduleGlobalCache[fileInPackage]
 		if found && cacheEntry == loadInProgress {
 			return nil, startosis_errors.NewInterpretationError("There's a cycle in the import_module calls")
 		}
@@ -45,33 +45,33 @@ func GenerateImportBuiltin(recursiveInterpret func(moduleId string, scriptConten
 			return cacheEntry.GetModule(), cacheEntry.GetError()
 		}
 
-		moduleGlobalCache[fileInModule] = loadInProgress
+		moduleGlobalCache[fileInPackage] = loadInProgress
 		shouldUnsetLoadInProgress := true
 		defer func() {
 			if shouldUnsetLoadInProgress {
-				delete(moduleGlobalCache, fileInModule)
+				delete(moduleGlobalCache, fileInPackage)
 			}
 		}()
 
 		// Load it.
-		contents, interpretationError := packageContentProvider.GetModuleContents(fileInModule)
+		contents, interpretationError := packageContentProvider.GetModuleContents(fileInPackage)
 		if interpretationError != nil {
-			return nil, startosis_errors.WrapWithInterpretationError(interpretationError, "An error occurred while loading the package '%v'", fileInModule)
+			return nil, startosis_errors.WrapWithInterpretationError(interpretationError, "An error occurred while loading the package '%v'", fileInPackage)
 		}
 
-		globalVariables, err := recursiveInterpret(fileInModule, contents)
+		globalVariables, err := recursiveInterpret(fileInPackage, contents)
 		// the above error goes unchecked as it needs to be persisted to the cache and then returned to the parent loader
 
 		// Update the cache.
 		var newModule *starlarkstruct.Module
 		if err == nil {
 			newModule = &starlarkstruct.Module{
-				Name:    fileInModule,
+				Name:    fileInPackage,
 				Members: globalVariables,
 			}
 		}
 		cacheEntry = startosis_packages.NewPackageCacheEntry(newModule, err)
-		moduleGlobalCache[fileInModule] = cacheEntry
+		moduleGlobalCache[fileInPackage] = cacheEntry
 
 		shouldUnsetLoadInProgress = false
 		return cacheEntry.GetModule(), cacheEntry.GetError()
@@ -96,6 +96,6 @@ func parseStartosisArgs(args starlark.Tuple, kwargs []starlark.Tuple) (string, *
 func explicitInterpretationError(err error) *startosis_errors.InterpretationError {
 	return startosis_errors.WrapWithInterpretationError(
 		err,
-		"Unable to parse arguments of command '%s'. It should be a non empty string argument pointing to the fully qualified .star file (i.e. \"github.com/kurtosis/module/helpers.star\")",
+		"Unable to parse arguments of command '%s'. It should be a non empty string argument pointing to the fully qualified .star file (i.e. \"github.com/kurtosis/package/helpers.star\")",
 		ImportModuleBuiltinName)
 }

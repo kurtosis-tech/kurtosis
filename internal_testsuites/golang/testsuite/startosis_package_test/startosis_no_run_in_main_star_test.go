@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	invalidCaseNoMainInMainStarTestName = "invalid-module-missing-main"
+	invalidCaseNoMainInMainStarTestName = "invalid-package-missing-main"
 	packageWithNoMainInMainStarRelPath  = "../../../startosis/no-run-in-main-star"
 )
 

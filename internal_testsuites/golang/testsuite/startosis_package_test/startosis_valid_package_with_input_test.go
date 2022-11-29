@@ -12,7 +12,7 @@ import (
 
 const (
 	validPackageWithInputTestName = "valid-module-with-input"
-	validPackageWithInputRelPath  = "../../../startosis/valid-kurtosis-module-with-input"
+	validPackageWithInputRelPath  = "../../../startosis/valid-kurtosis-package-with-input"
 )
 
 func TestStartosisPackage_ValidPackageWithInput(t *testing.T) {

@@ -5,7 +5,7 @@ import log from "loglevel";
 import {err} from "neverthrow";
 import {readStreamContentUntilClosed} from "../../test_helpers/startosis_helpers";
 
-const MISSING_MAIN_FUNCTION_TEST_NAME = "invalid-module-missing-main"
+const MISSING_MAIN_FUNCTION_TEST_NAME = "invalid-package-missing-main"
 const PACKAGE_WITH_NO_MAIN_IN_MAIN_STAR_REL_PATH = "../../../../startosis/no-run-in-main-star"
 
 jest.setTimeout(JEST_TIMEOUT_MS)

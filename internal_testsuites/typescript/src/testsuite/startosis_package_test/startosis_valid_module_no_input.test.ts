@@ -10,8 +10,8 @@ import log from "loglevel";
 import {readStreamContentUntilClosed} from "../../test_helpers/startosis_helpers";
 import {err} from "neverthrow";
 
-const VALID_PACKAGE_NO_PACKAGE_INPUT_TEST_NAME = "valid-module-no-input"
-const VALID_PACKAGE_NO_PACKAGE_INPUT_REL_PATH = "../../../../startosis/valid-kurtosis-module-no-input"
+const VALID_PACKAGE_NO_PACKAGE_INPUT_TEST_NAME = "valid-package-no-input"
+const VALID_PACKAGE_NO_PACKAGE_INPUT_REL_PATH = "../../../../startosis/valid-kurtosis-package-no-input"
 
 jest.setTimeout(JEST_TIMEOUT_MS)
 

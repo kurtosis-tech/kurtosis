@@ -4,7 +4,7 @@ import * as path from "path";
 import log from "loglevel";
 import {err} from "neverthrow";
 
-const INVALID_KURTOSIS_YAML_TEST_NAME = "invalid-module-invalid-yaml-file"
+const INVALID_KURTOSIS_YAML_TEST_NAME = "invalid-package-invalid-yaml-file"
 const INVALID_KURTOSIS_YAML_IN_PACKAGE_REL_PATH = "../../../../startosis/invalid-yaml-file"
 
 jest.setTimeout(JEST_TIMEOUT_MS)

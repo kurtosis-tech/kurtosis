@@ -8,8 +8,8 @@ import * as path from "path";
 import log from "loglevel";
 import {readStreamContentUntilClosed} from "../../test_helpers/startosis_helpers";
 
-const VALID_PACKAGE_WITH_PACKAGE_INPUT_TEST_NAME = "valid-module-with-input"
-const VALID_PACKAGE_WITH_PACKAGE_INPUT_REL_PATH = "../../../../startosis/valid-kurtosis-module-with-input"
+const VALID_PACKAGE_WITH_PACKAGE_INPUT_TEST_NAME = "valid-package-with-input"
+const VALID_PACKAGE_WITH_PACKAGE_INPUT_REL_PATH = "../../../../startosis/valid-kurtosis-package-with-input"
 
 jest.setTimeout(JEST_TIMEOUT_MS)
 

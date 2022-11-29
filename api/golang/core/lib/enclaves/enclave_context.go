@@ -718,19 +718,19 @@ func runReceiveStarlarkResponseLineRoutine(cancelCtxFunc context.CancelFunc, str
 	}
 }
 
-func (enclaveCtx *EnclaveContext) assembleRunStartosisPackageArg(moduleRootPath string, serializedParams string, dryRun bool) (*kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs, error) {
-	kurtosisYamlFilepath := path.Join(moduleRootPath, kurtosisYamlFilename)
+func (enclaveCtx *EnclaveContext) assembleRunStartosisPackageArg(packageRootPath string, serializedParams string, dryRun bool) (*kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs, error) {
+	kurtosisYamlFilepath := path.Join(packageRootPath, kurtosisYamlFilename)
 
 	kurtosisYaml, err := parseKurtosisYaml(kurtosisYamlFilepath)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "There was an error parsing the '%v' at '%v'", kurtosisYamlFilename, moduleRootPath)
+		return nil, stacktrace.Propagate(err, "There was an error parsing the '%v' at '%v'", kurtosisYamlFilename, packageRootPath)
 	}
 
-	logrus.Infof("Compressing package '%v' at '%v' for upload", kurtosisYaml.PackageName, moduleRootPath)
-	compressedModule, err := shared_utils.CompressPath(moduleRootPath, ensureCompressedFileIsLesserThanGRPCLimit)
+	logrus.Infof("Compressing package '%v' at '%v' for upload", kurtosisYaml.PackageName, packageRootPath)
+	compressedModule, err := shared_utils.CompressPath(packageRootPath, ensureCompressedFileIsLesserThanGRPCLimit)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "There was an error compressing module '%v' before upload", moduleRootPath)
+		return nil, stacktrace.Propagate(err, "There was an error compressing module '%v' before upload", packageRootPath)
 	}
-	logrus.Infof("Uploading and executing module '%v'", kurtosisYaml.PackageName)
+	logrus.Infof("Uploading and executing package '%v'", kurtosisYaml.PackageName)
 	return binding_constructors.NewRunStarlarkPackageArgs(kurtosisYaml.PackageName, compressedModule, serializedParams, dryRun), nil
 }

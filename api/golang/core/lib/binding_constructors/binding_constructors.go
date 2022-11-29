@@ -252,10 +252,10 @@ func NewRunStarlarkScriptArgs(serializedString string, dryRun bool) *kurtosis_co
 	}
 }
 
-func NewRunStarlarkPackageArgs(packageId string, compressedModule []byte, serializedParams string, dryRun bool) *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs {
+func NewRunStarlarkPackageArgs(packageId string, compressedPackage []byte, serializedParams string, dryRun bool) *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs {
 	return &kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs{
 		PackageId:              packageId,
-		StarlarkPackageContent: &kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs_Local{Local: compressedModule},
+		StarlarkPackageContent: &kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs_Local{Local: compressedPackage},
 		SerializedParams:       serializedParams,
 		DryRun:                 &dryRun,
 	}

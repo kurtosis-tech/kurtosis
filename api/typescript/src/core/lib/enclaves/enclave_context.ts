@@ -259,11 +259,11 @@ export class EnclaveContext {
         args.setDryRun(dryRun)
         args.setSerializedParams(serializedParams)
         args.setRemote(true)
-        const resultRemoteModuleExecution : Result<Readable, Error> = await this.backend.runStarlarkPackage(args)
-        if (resultRemoteModuleExecution.isErr()) {
-            return err(new Error(`Unexpected error happened executing Startosis module \n${resultRemoteModuleExecution.error}`))
+        const remotePackageRunResult : Result<Readable, Error> = await this.backend.runStarlarkPackage(args)
+        if (remotePackageRunResult.isErr()) {
+            return err(new Error(`Unexpected error happened executing Starlark package \n${remotePackageRunResult.error}`))
         }
-        return ok(resultRemoteModuleExecution.value)
+        return ok(remotePackageRunResult.value)
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
@@ -762,23 +762,23 @@ export class EnclaveContext {
         return result;
     }
 
-    private async assembleRunStarlarkPackageArg(moduleRootPath: string, serializedParams: string, dryRun: boolean,): Promise<Result<RunStarlarkPackageArgs, Error>> {
-        const kurtosisYamlFilepath = path.join(moduleRootPath, KURTOSIS_YAML_FILENAME)
+    private async assembleRunStarlarkPackageArg(packageRootPath: string, serializedParams: string, dryRun: boolean,): Promise<Result<RunStarlarkPackageArgs, Error>> {
+        const kurtosisYamlFilepath = path.join(packageRootPath, KURTOSIS_YAML_FILENAME)
 
         const resultParseKurtosisYaml = await parseKurtosisYaml(kurtosisYamlFilepath)
         if (resultParseKurtosisYaml.isErr()) {
             return err(resultParseKurtosisYaml.error)
         }
-        const kurtosisMod = resultParseKurtosisYaml.value
+        const kurtosisYaml = resultParseKurtosisYaml.value
 
-        const archiverResponse = await this.genericTgzArchiver.createTgzByteArray(moduleRootPath)
+        const archiverResponse = await this.genericTgzArchiver.createTgzByteArray(packageRootPath)
         if (archiverResponse.isErr()){
             return err(archiverResponse.error)
         }
 
         const args = new RunStarlarkPackageArgs;
         args.setLocal(archiverResponse.value)
-        args.setPackageId(kurtosisMod.name)
+        args.setPackageId(kurtosisYaml.name)
         args.setSerializedParams(serializedParams)
         args.setDryRun(dryRun)
         return ok(args)

@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	invalidCaseYamlFileTestName           = "invalid-module-invalid-yaml-file"
+	invalidCaseYamlFileTestName           = "invalid-package-invalid-yaml-file"
 	packageWithInvalidKurtosisYamlRelPath = "../../../startosis/invalid-yaml-file"
 )
 

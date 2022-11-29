@@ -1,4 +1,4 @@
-lib = import_module("github.com/sample/sample-kurtosis-module/lib/lib.star")
+lib = import_module("github.com/sample/sample-kurtosis-package/lib/lib.star")
 
 
 def run(args):
