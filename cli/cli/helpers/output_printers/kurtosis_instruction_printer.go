@@ -93,21 +93,21 @@ func (printer *ExecutionPrinter) PrintKurtosisExecutionResponseLineToStdOut(resp
 	printer.spinner.Stop()
 
 	// process response payload
-	var errorRunningKurtosisCode bool
+	isThisReponseLineAnError := false
 	if responseLine.GetInstruction() != nil {
 		formattedInstruction := formatInstruction(responseLine.GetInstruction(), verbosity)
 		// we separate each tuple (instruction, result) with an additional newline
 		formattedInstructionWithNewline := fmt.Sprintf("\n%s", formattedInstruction)
 		if _, err := fmt.Fprintln(writer, formattedInstructionWithNewline); err != nil {
-			return errorRunningKurtosisCode, stacktrace.Propagate(err, "Error printing Kurtosis instruction: \n%v", formattedInstruction)
+			return isThisReponseLineAnError, stacktrace.Propagate(err, "Error printing Kurtosis instruction: \n%v", formattedInstruction)
 		}
 	} else if responseLine.GetInstructionResult() != nil {
 		formattedInstructionResult := formatInstructionResult(responseLine.GetInstructionResult())
 		if _, err := fmt.Fprintln(logrus.StandardLogger().Out, formattedInstructionResult); err != nil {
-			return errorRunningKurtosisCode, stacktrace.Propagate(err, "Error printing Kurtosis instruction result: \n%v", formattedInstructionResult)
+			return isThisReponseLineAnError, stacktrace.Propagate(err, "Error printing Kurtosis instruction result: \n%v", formattedInstructionResult)
 		}
 	} else if responseLine.GetError() != nil {
-		errorRunningKurtosisCode = true
+		isThisReponseLineAnError = true
 		var errorMsg string
 		if responseLine.GetError().GetInterpretationError() != nil {
 			errorMsg = fmt.Sprintf("There was an error interpreting Starlark code \n%v", responseLine.GetError().GetInterpretationError().GetErrorMessage())
@@ -118,7 +118,7 @@ func (printer *ExecutionPrinter) PrintKurtosisExecutionResponseLineToStdOut(resp
 		}
 		formattedError := formatError(errorMsg)
 		if _, err := fmt.Fprintln(writer, formattedError); err != nil {
-			return errorRunningKurtosisCode, stacktrace.Propagate(err, "An error happened executing Starlark code but the error couldn't be printed to the CLI output. Error message was: \n%v", errorMsg)
+			return isThisReponseLineAnError, stacktrace.Propagate(err, "An error happened executing Starlark code but the error couldn't be printed to the CLI output. Error message was: \n%v", errorMsg)
 		}
 	} else if responseLine.GetProgressInfo() != nil {
 		progress := responseLine.GetProgressInfo()
@@ -129,7 +129,7 @@ func (printer *ExecutionPrinter) PrintKurtosisExecutionResponseLineToStdOut(resp
 
 	// re-start the spinner before exiting
 	printer.spinner.Start()
-	return errorRunningKurtosisCode, nil
+	return isThisReponseLineAnError, nil
 }
 
 func formatError(errorMessage string) string {
