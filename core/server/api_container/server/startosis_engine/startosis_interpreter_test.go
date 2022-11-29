@@ -848,9 +848,9 @@ print(artifact_uuid)
 }
 
 func TestStartosisInterpreter_ReadFileFromGithub(t *testing.T) {
-	srcPath := "github.com/foo/bar/static_files/main.txt"
+	src := "github.com/foo/bar/static_files/main.txt"
 	seed := map[string]string{
-		srcPath: "this is a test string",
+		src: "this is a test string",
 	}
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
@@ -858,7 +858,7 @@ func TestStartosisInterpreter_ReadFileFromGithub(t *testing.T) {
 	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider)
 	script := `
 print("Reading file from GitHub!")
-file_contents=read_file("` + srcPath + `")
+file_contents=read_file("` + src + `")
 print(file_contents)
 `
 
