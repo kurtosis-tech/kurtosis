@@ -34,7 +34,7 @@ func TestStartosisModule_NoMainFile(t *testing.T) {
 	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
 
 	expectedErrorContents := "An error occurred while verifying that 'main.star' exists on root of module"
-	outputStream, _, err := enclaveCtx.ExecuteStarlarkPackage(ctx, moduleDirpath, emptyExecuteParams, defaultDryRun)
+	outputStream, _, err := enclaveCtx.RunStarlarkPackage(ctx, moduleDirpath, emptyExecuteParams, defaultDryRun)
 	require.Nil(t, err, "Unexpected error executing module")
 	scriptOutput, _, interpretationError, validationErrors, executionError := test_helpers.ReadStreamContentUntilClosed(outputStream)
 	require.NotNil(t, interpretationError)

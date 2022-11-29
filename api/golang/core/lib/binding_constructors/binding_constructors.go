@@ -245,26 +245,26 @@ func GetFactValuesArgs(serviceId string, factName string) *kurtosis_core_rpc_api
 //	Execute Starlark Arguments
 //
 // ==============================================================================================
-func NewExecuteStarlarkScriptArgs(serializedString string, dryRun bool) *kurtosis_core_rpc_api_bindings.ExecuteStarlarkScriptArgs {
-	return &kurtosis_core_rpc_api_bindings.ExecuteStarlarkScriptArgs{
+func NewRunStarlarkScriptArgs(serializedString string, dryRun bool) *kurtosis_core_rpc_api_bindings.RunStarlarkScriptArgs {
+	return &kurtosis_core_rpc_api_bindings.RunStarlarkScriptArgs{
 		SerializedScript: serializedString,
 		DryRun:           &dryRun,
 	}
 }
 
-func NewExecuteStarlarkPackageArgs(packageId string, compressedModule []byte, serializedParams string, dryRun bool) *kurtosis_core_rpc_api_bindings.ExecuteStarlarkPackageArgs {
-	return &kurtosis_core_rpc_api_bindings.ExecuteStarlarkPackageArgs{
+func NewRunStarlarkPackageArgs(packageId string, compressedModule []byte, serializedParams string, dryRun bool) *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs {
+	return &kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs{
 		PackageId:              packageId,
-		StarlarkPackageContent: &kurtosis_core_rpc_api_bindings.ExecuteStarlarkPackageArgs_Local{Local: compressedModule},
+		StarlarkPackageContent: &kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs_Local{Local: compressedModule},
 		SerializedParams:       serializedParams,
 		DryRun:                 &dryRun,
 	}
 }
 
-func NewExecuteStarlarkRemotePackageArgs(packageId string, serializedParams string, dryRun bool) *kurtosis_core_rpc_api_bindings.ExecuteStarlarkPackageArgs {
-	return &kurtosis_core_rpc_api_bindings.ExecuteStarlarkPackageArgs{
+func NewRunStarlarkRemotePackageArgs(packageId string, serializedParams string, dryRun bool) *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs {
+	return &kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs{
 		PackageId:              packageId,
-		StarlarkPackageContent: &kurtosis_core_rpc_api_bindings.ExecuteStarlarkPackageArgs_Remote{Remote: true},
+		StarlarkPackageContent: &kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs_Remote{Remote: true},
 		SerializedParams:       serializedParams,
 		DryRun:                 &dryRun,
 	}

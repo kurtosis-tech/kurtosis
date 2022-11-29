@@ -9,8 +9,6 @@ import {
     ExecCommandResponse,
     ExecuteModuleArgs,
     ExecuteModuleResponse,
-    ExecuteStarlarkPackageArgs,
-    ExecuteStarlarkScriptArgs,
     GetModulesArgs,
     GetModulesResponse,
     GetServicesArgs,
@@ -22,6 +20,8 @@ import {
     RenderTemplatesToFilesArtifactArgs,
     RenderTemplatesToFilesArtifactResponse,
     RepartitionArgs,
+    RunStarlarkPackageArgs,
+    RunStarlarkScriptArgs,
     StartServicesArgs,
     StartServicesResponse,
     StoreFilesArtifactFromServiceArgs,
@@ -42,8 +42,8 @@ export interface GenericApiContainerClient {
     getEnclaveId(): EnclaveID
     loadModule(loadModuleArgs: LoadModuleArgs): Promise<Result<null, Error>>
     unloadModule(unloadModuleArgs: UnloadModuleArgs): Promise<Result<UnloadModuleResponse,Error>>
-    executeStarlarkScript(serializedStartosisScript: ExecuteStarlarkScriptArgs): Promise<Result<Readable, Error>>
-    executeStarlarkPackage(startosisModuleArgs: ExecuteStarlarkPackageArgs): Promise<Result<Readable, Error>>
+    runStarlarkScript(serializedStarlarkScript: RunStarlarkScriptArgs): Promise<Result<Readable, Error>>
+    runStarlarkPackage(starlarkPackageArgs: RunStarlarkPackageArgs): Promise<Result<Readable, Error>>
     startServices(startServicesArgs: StartServicesArgs): Promise<Result<StartServicesResponse, Error>>
     removeService(args: RemoveServiceArgs): Promise<Result<RemoveServiceResponse, Error>>
     repartitionNetwork(repartitionArgs: RepartitionArgs): Promise<Result<null, Error>>

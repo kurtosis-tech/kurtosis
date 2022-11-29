@@ -12,8 +12,8 @@ interface IApiContainerServiceService extends grpc.ServiceDefinition<grpc.Untype
   getModules: grpc.MethodDefinition<api_container_service_pb.GetModulesArgs, api_container_service_pb.GetModulesResponse>;
   unloadModule: grpc.MethodDefinition<api_container_service_pb.UnloadModuleArgs, api_container_service_pb.UnloadModuleResponse>;
   executeModule: grpc.MethodDefinition<api_container_service_pb.ExecuteModuleArgs, api_container_service_pb.ExecuteModuleResponse>;
-  executeStarlarkScript: grpc.MethodDefinition<api_container_service_pb.ExecuteStarlarkScriptArgs, api_container_service_pb.StarlarkExecutionResponseLine>;
-  executeStarlarkPackage: grpc.MethodDefinition<api_container_service_pb.ExecuteStarlarkPackageArgs, api_container_service_pb.StarlarkExecutionResponseLine>;
+  runStarlarkScript: grpc.MethodDefinition<api_container_service_pb.RunStarlarkScriptArgs, api_container_service_pb.StarlarkExecutionResponseLine>;
+  runStarlarkPackage: grpc.MethodDefinition<api_container_service_pb.RunStarlarkPackageArgs, api_container_service_pb.StarlarkExecutionResponseLine>;
   startServices: grpc.MethodDefinition<api_container_service_pb.StartServicesArgs, api_container_service_pb.StartServicesResponse>;
   getServices: grpc.MethodDefinition<api_container_service_pb.GetServicesArgs, api_container_service_pb.GetServicesResponse>;
   removeService: grpc.MethodDefinition<api_container_service_pb.RemoveServiceArgs, api_container_service_pb.RemoveServiceResponse>;
@@ -39,8 +39,8 @@ export interface IApiContainerServiceServer extends grpc.UntypedServiceImplement
   getModules: grpc.handleUnaryCall<api_container_service_pb.GetModulesArgs, api_container_service_pb.GetModulesResponse>;
   unloadModule: grpc.handleUnaryCall<api_container_service_pb.UnloadModuleArgs, api_container_service_pb.UnloadModuleResponse>;
   executeModule: grpc.handleUnaryCall<api_container_service_pb.ExecuteModuleArgs, api_container_service_pb.ExecuteModuleResponse>;
-  executeStarlarkScript: grpc.handleServerStreamingCall<api_container_service_pb.ExecuteStarlarkScriptArgs, api_container_service_pb.StarlarkExecutionResponseLine>;
-  executeStarlarkPackage: grpc.handleServerStreamingCall<api_container_service_pb.ExecuteStarlarkPackageArgs, api_container_service_pb.StarlarkExecutionResponseLine>;
+  runStarlarkScript: grpc.handleServerStreamingCall<api_container_service_pb.RunStarlarkScriptArgs, api_container_service_pb.StarlarkExecutionResponseLine>;
+  runStarlarkPackage: grpc.handleServerStreamingCall<api_container_service_pb.RunStarlarkPackageArgs, api_container_service_pb.StarlarkExecutionResponseLine>;
   startServices: grpc.handleUnaryCall<api_container_service_pb.StartServicesArgs, api_container_service_pb.StartServicesResponse>;
   getServices: grpc.handleUnaryCall<api_container_service_pb.GetServicesArgs, api_container_service_pb.GetServicesResponse>;
   removeService: grpc.handleUnaryCall<api_container_service_pb.RemoveServiceArgs, api_container_service_pb.RemoveServiceResponse>;
@@ -73,10 +73,10 @@ export class ApiContainerServiceClient extends grpc.Client {
   executeModule(argument: api_container_service_pb.ExecuteModuleArgs, callback: grpc.requestCallback<api_container_service_pb.ExecuteModuleResponse>): grpc.ClientUnaryCall;
   executeModule(argument: api_container_service_pb.ExecuteModuleArgs, metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.ExecuteModuleResponse>): grpc.ClientUnaryCall;
   executeModule(argument: api_container_service_pb.ExecuteModuleArgs, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.ExecuteModuleResponse>): grpc.ClientUnaryCall;
-  executeStarlarkScript(argument: api_container_service_pb.ExecuteStarlarkScriptArgs, metadataOrOptions?: grpc.Metadata | grpc.CallOptions | null): grpc.ClientReadableStream<api_container_service_pb.StarlarkExecutionResponseLine>;
-  executeStarlarkScript(argument: api_container_service_pb.ExecuteStarlarkScriptArgs, metadata?: grpc.Metadata | null, options?: grpc.CallOptions | null): grpc.ClientReadableStream<api_container_service_pb.StarlarkExecutionResponseLine>;
-  executeStarlarkPackage(argument: api_container_service_pb.ExecuteStarlarkPackageArgs, metadataOrOptions?: grpc.Metadata | grpc.CallOptions | null): grpc.ClientReadableStream<api_container_service_pb.StarlarkExecutionResponseLine>;
-  executeStarlarkPackage(argument: api_container_service_pb.ExecuteStarlarkPackageArgs, metadata?: grpc.Metadata | null, options?: grpc.CallOptions | null): grpc.ClientReadableStream<api_container_service_pb.StarlarkExecutionResponseLine>;
+  runStarlarkScript(argument: api_container_service_pb.RunStarlarkScriptArgs, metadataOrOptions?: grpc.Metadata | grpc.CallOptions | null): grpc.ClientReadableStream<api_container_service_pb.StarlarkExecutionResponseLine>;
+  runStarlarkScript(argument: api_container_service_pb.RunStarlarkScriptArgs, metadata?: grpc.Metadata | null, options?: grpc.CallOptions | null): grpc.ClientReadableStream<api_container_service_pb.StarlarkExecutionResponseLine>;
+  runStarlarkPackage(argument: api_container_service_pb.RunStarlarkPackageArgs, metadataOrOptions?: grpc.Metadata | grpc.CallOptions | null): grpc.ClientReadableStream<api_container_service_pb.StarlarkExecutionResponseLine>;
+  runStarlarkPackage(argument: api_container_service_pb.RunStarlarkPackageArgs, metadata?: grpc.Metadata | null, options?: grpc.CallOptions | null): grpc.ClientReadableStream<api_container_service_pb.StarlarkExecutionResponseLine>;
   startServices(argument: api_container_service_pb.StartServicesArgs, callback: grpc.requestCallback<api_container_service_pb.StartServicesResponse>): grpc.ClientUnaryCall;
   startServices(argument: api_container_service_pb.StartServicesArgs, metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.StartServicesResponse>): grpc.ClientUnaryCall;
   startServices(argument: api_container_service_pb.StartServicesArgs, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.StartServicesResponse>): grpc.ClientUnaryCall;

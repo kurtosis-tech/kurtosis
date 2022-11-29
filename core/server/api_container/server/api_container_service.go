@@ -191,21 +191,21 @@ func (apicService ApiContainerService) ExecuteModule(ctx context.Context, args *
 	return resp, nil
 }
 
-func (apicService ApiContainerService) ExecuteStarlarkScript(args *kurtosis_core_rpc_api_bindings.ExecuteStarlarkScriptArgs, stream kurtosis_core_rpc_api_bindings.ApiContainerService_ExecuteStarlarkScriptServer) error {
+func (apicService ApiContainerService) RunStarlarkScript(args *kurtosis_core_rpc_api_bindings.RunStarlarkScriptArgs, stream kurtosis_core_rpc_api_bindings.ApiContainerService_RunStarlarkScriptServer) error {
 	serializedStartosisScript := args.GetSerializedScript()
 	dryRun := shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun)
 	apicService.runStarlark(dryRun, startosis_engine.PackageIdPlaceholderForStandaloneScript, serializedStartosisScript, startosis_engine.EmptyInputArgs, stream)
 	return nil
 }
 
-func (apicService ApiContainerService) ExecuteStarlarkPackage(args *kurtosis_core_rpc_api_bindings.ExecuteStarlarkPackageArgs, stream kurtosis_core_rpc_api_bindings.ApiContainerService_ExecuteStarlarkPackageServer) error {
+func (apicService ApiContainerService) RunStarlarkPackage(args *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs, stream kurtosis_core_rpc_api_bindings.ApiContainerService_RunStarlarkPackageServer) error {
 	packageId := args.GetPackageId()
 	isRemote := args.GetRemote()
 	moduleContentIfLocal := args.GetLocal()
 	serializedParams := args.SerializedParams
 	dryRun := shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun)
 
-	scriptWithRunFunction, interpretationError := apicService.executeStarlarkPackageSetup(packageId, isRemote, moduleContentIfLocal)
+	scriptWithRunFunction, interpretationError := apicService.runStarlarkPackageSetup(packageId, isRemote, moduleContentIfLocal)
 	if interpretationError != nil {
 		if err := stream.SendMsg(binding_constructors.NewStarlarkExecutionResponseLineFromInterpretationError(interpretationError.ToAPIType())); err != nil {
 			return stacktrace.Propagate(err, "Error preparing for package execution and this error could not be sent through the output stream: '%s'", packageId)
@@ -796,7 +796,7 @@ func (apicService ApiContainerService) getModuleInfo(ctx context.Context, module
 	return response, nil
 }
 
-func (apicService ApiContainerService) executeStarlarkPackageSetup(packageId string, isRemote bool, moduleContentIfLocal []byte) (string, *startosis_errors.InterpretationError) {
+func (apicService ApiContainerService) runStarlarkPackageSetup(packageId string, isRemote bool, moduleContentIfLocal []byte) (string, *startosis_errors.InterpretationError) {
 	var packageRootPathOnDisk string
 	var interpretationError *startosis_errors.InterpretationError
 	if isRemote {

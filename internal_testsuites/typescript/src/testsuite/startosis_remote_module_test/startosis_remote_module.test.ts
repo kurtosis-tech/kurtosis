@@ -33,7 +33,7 @@ test("Test remote Starlark module execution", async () => {
     try {
         // ------------------------------------- TEST SETUP ----------------------------------------------
         log.info(`Executing Startosis module: '${REMOTE_MODULE}'`)
-        const outputStream = await enclaveContext.executeStarlarkRemotePackage(REMOTE_MODULE, EXECUTE_PARAMS, IS_DRY_RUN)
+        const outputStream = await enclaveContext.runStarlarkRemotePackage(REMOTE_MODULE, EXECUTE_PARAMS, IS_DRY_RUN)
         if (outputStream.isErr()) {
             log.error("An error occurred executing the Startosis Module")
             throw outputStream.error

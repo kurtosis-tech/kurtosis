@@ -26,7 +26,7 @@ test("Test invalid module with no main.star", async () => {
 
         log.info(`Loading module at path '${moduleRootPath}'`)
 
-        const outputStream = await enclaveContext.executeStarlarkPackage(moduleRootPath, EMPTY_EXECUTE_PARAMS, DEFAULT_DRY_RUN)
+        const outputStream = await enclaveContext.runStarlarkPackage(moduleRootPath, EMPTY_EXECUTE_PARAMS, DEFAULT_DRY_RUN)
         if (outputStream.isErr()) {
             throw err(new Error(`An error occurred execute startosis module '${moduleRootPath}'`));
         }

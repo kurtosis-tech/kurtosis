@@ -224,7 +224,7 @@ func executeScript(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, scr
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "Unable to read content of Starlark script file '%s'", scriptPath)
 	}
-	return enclaveCtx.ExecuteStarlarkScript(ctx, string(fileContentBytes), dryRun)
+	return enclaveCtx.RunStarlarkScript(ctx, string(fileContentBytes), dryRun)
 }
 
 func executePackage(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, packagePath string, serializedParams string, dryRun bool) (<-chan *kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine, context.CancelFunc, error) {
@@ -235,11 +235,11 @@ func executePackage(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, pa
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred while getting the absolute path for '%v'", packagePath)
 	}
-	return enclaveCtx.ExecuteStarlarkPackage(ctx, packagePath, serializedParams, dryRun)
+	return enclaveCtx.RunStarlarkPackage(ctx, packagePath, serializedParams, dryRun)
 }
 
 func executeRemotePackage(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, packageId string, serializedParams string, dryRun bool) (<-chan *kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine, context.CancelFunc, error) {
-	return enclaveCtx.ExecuteStarlarkRemotePackage(ctx, packageId, serializedParams, dryRun)
+	return enclaveCtx.RunStarlarkRemotePackage(ctx, packageId, serializedParams, dryRun)
 }
 
 func readAndPrintResponseLinesUntilClosed(responseLineChan <-chan *kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine, cancelFunc context.CancelFunc, verbosity command_args_run.Verbosity) error {

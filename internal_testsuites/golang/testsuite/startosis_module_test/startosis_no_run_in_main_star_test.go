@@ -34,7 +34,7 @@ func TestStartosisModule_NoMainInMainStar(t *testing.T) {
 	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
 
 	expectedInterpretationErr := "No 'run' function found in file 'github.com/sample/sample-kurtosis-module/main.star'; a 'run' entrypoint function is required in the main.star file of any Kurtosis package"
-	outputStream, _, err := enclaveCtx.ExecuteStarlarkPackage(ctx, moduleDirpath, emptyExecuteParams, defaultDryRun)
+	outputStream, _, err := enclaveCtx.RunStarlarkPackage(ctx, moduleDirpath, emptyExecuteParams, defaultDryRun)
 	require.Nil(t, err, "Unexpected error executing startosis module")
 	scriptOutput, _, interpretationError, validationErrors, executionError := test_helpers.ReadStreamContentUntilClosed(outputStream)
 	require.NotNil(t, interpretationError)

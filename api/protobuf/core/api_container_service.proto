@@ -23,10 +23,10 @@ service ApiContainerService {
   rpc ExecuteModule(ExecuteModuleArgs) returns (ExecuteModuleResponse) {};
 
   // Executes a Starlark script on the user's behalf
-  rpc ExecuteStarlarkScript(ExecuteStarlarkScriptArgs) returns (stream StarlarkExecutionResponseLine) {};
+  rpc RunStarlarkScript(RunStarlarkScriptArgs) returns (stream StarlarkExecutionResponseLine) {};
 
   // Executes a Starlark script on the user's behalf
-  rpc ExecuteStarlarkPackage(ExecuteStarlarkPackageArgs) returns (stream StarlarkExecutionResponseLine) {};
+  rpc RunStarlarkPackage(RunStarlarkPackageArgs) returns (stream StarlarkExecutionResponseLine) {};
 
   // Start services by creating containers for them
   rpc StartServices(StartServicesArgs) returns (StartServicesResponse) {};
@@ -241,14 +241,14 @@ message ExecuteModuleResponse {
 // ==============================================================================================
 //                               Execute Starlark Arguments
 // ==============================================================================================
-message ExecuteStarlarkScriptArgs {
+message RunStarlarkScriptArgs {
   string serialized_script = 1;
 
   // Defaults to false
   optional bool dry_run = 2;
 }
 
-message ExecuteStarlarkPackageArgs {
+message RunStarlarkPackageArgs {
   string package_id = 1;
 
   // Serialized parameters data for the Starlark package main function

@@ -32,9 +32,9 @@ type ApiContainerServiceClient interface {
 	// Executes an executable module on the user's behalf
 	ExecuteModule(ctx context.Context, in *ExecuteModuleArgs, opts ...grpc.CallOption) (*ExecuteModuleResponse, error)
 	// Executes a Starlark script on the user's behalf
-	ExecuteStarlarkScript(ctx context.Context, in *ExecuteStarlarkScriptArgs, opts ...grpc.CallOption) (ApiContainerService_ExecuteStarlarkScriptClient, error)
+	RunStarlarkScript(ctx context.Context, in *RunStarlarkScriptArgs, opts ...grpc.CallOption) (ApiContainerService_RunStarlarkScriptClient, error)
 	// Executes a Starlark script on the user's behalf
-	ExecuteStarlarkPackage(ctx context.Context, in *ExecuteStarlarkPackageArgs, opts ...grpc.CallOption) (ApiContainerService_ExecuteStarlarkPackageClient, error)
+	RunStarlarkPackage(ctx context.Context, in *RunStarlarkPackageArgs, opts ...grpc.CallOption) (ApiContainerService_RunStarlarkPackageClient, error)
 	// Start services by creating containers for them
 	StartServices(ctx context.Context, in *StartServicesArgs, opts ...grpc.CallOption) (*StartServicesResponse, error)
 	// Returns the IDs of the current services in the enclave
@@ -114,12 +114,12 @@ func (c *apiContainerServiceClient) ExecuteModule(ctx context.Context, in *Execu
 	return out, nil
 }
 
-func (c *apiContainerServiceClient) ExecuteStarlarkScript(ctx context.Context, in *ExecuteStarlarkScriptArgs, opts ...grpc.CallOption) (ApiContainerService_ExecuteStarlarkScriptClient, error) {
-	stream, err := c.cc.NewStream(ctx, &ApiContainerService_ServiceDesc.Streams[0], "/api_container_api.ApiContainerService/ExecuteStarlarkScript", opts...)
+func (c *apiContainerServiceClient) RunStarlarkScript(ctx context.Context, in *RunStarlarkScriptArgs, opts ...grpc.CallOption) (ApiContainerService_RunStarlarkScriptClient, error) {
+	stream, err := c.cc.NewStream(ctx, &ApiContainerService_ServiceDesc.Streams[0], "/api_container_api.ApiContainerService/RunStarlarkScript", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &apiContainerServiceExecuteStarlarkScriptClient{stream}
+	x := &apiContainerServiceRunStarlarkScriptClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -129,16 +129,16 @@ func (c *apiContainerServiceClient) ExecuteStarlarkScript(ctx context.Context, i
 	return x, nil
 }
 
-type ApiContainerService_ExecuteStarlarkScriptClient interface {
+type ApiContainerService_RunStarlarkScriptClient interface {
 	Recv() (*StarlarkExecutionResponseLine, error)
 	grpc.ClientStream
 }
 
-type apiContainerServiceExecuteStarlarkScriptClient struct {
+type apiContainerServiceRunStarlarkScriptClient struct {
 	grpc.ClientStream
 }
 
-func (x *apiContainerServiceExecuteStarlarkScriptClient) Recv() (*StarlarkExecutionResponseLine, error) {
+func (x *apiContainerServiceRunStarlarkScriptClient) Recv() (*StarlarkExecutionResponseLine, error) {
 	m := new(StarlarkExecutionResponseLine)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -146,12 +146,12 @@ func (x *apiContainerServiceExecuteStarlarkScriptClient) Recv() (*StarlarkExecut
 	return m, nil
 }
 
-func (c *apiContainerServiceClient) ExecuteStarlarkPackage(ctx context.Context, in *ExecuteStarlarkPackageArgs, opts ...grpc.CallOption) (ApiContainerService_ExecuteStarlarkPackageClient, error) {
-	stream, err := c.cc.NewStream(ctx, &ApiContainerService_ServiceDesc.Streams[1], "/api_container_api.ApiContainerService/ExecuteStarlarkPackage", opts...)
+func (c *apiContainerServiceClient) RunStarlarkPackage(ctx context.Context, in *RunStarlarkPackageArgs, opts ...grpc.CallOption) (ApiContainerService_RunStarlarkPackageClient, error) {
+	stream, err := c.cc.NewStream(ctx, &ApiContainerService_ServiceDesc.Streams[1], "/api_container_api.ApiContainerService/RunStarlarkPackage", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &apiContainerServiceExecuteStarlarkPackageClient{stream}
+	x := &apiContainerServiceRunStarlarkPackageClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -161,16 +161,16 @@ func (c *apiContainerServiceClient) ExecuteStarlarkPackage(ctx context.Context, 
 	return x, nil
 }
 
-type ApiContainerService_ExecuteStarlarkPackageClient interface {
+type ApiContainerService_RunStarlarkPackageClient interface {
 	Recv() (*StarlarkExecutionResponseLine, error)
 	grpc.ClientStream
 }
 
-type apiContainerServiceExecuteStarlarkPackageClient struct {
+type apiContainerServiceRunStarlarkPackageClient struct {
 	grpc.ClientStream
 }
 
-func (x *apiContainerServiceExecuteStarlarkPackageClient) Recv() (*StarlarkExecutionResponseLine, error) {
+func (x *apiContainerServiceRunStarlarkPackageClient) Recv() (*StarlarkExecutionResponseLine, error) {
 	m := new(StarlarkExecutionResponseLine)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -335,9 +335,9 @@ type ApiContainerServiceServer interface {
 	// Executes an executable module on the user's behalf
 	ExecuteModule(context.Context, *ExecuteModuleArgs) (*ExecuteModuleResponse, error)
 	// Executes a Starlark script on the user's behalf
-	ExecuteStarlarkScript(*ExecuteStarlarkScriptArgs, ApiContainerService_ExecuteStarlarkScriptServer) error
+	RunStarlarkScript(*RunStarlarkScriptArgs, ApiContainerService_RunStarlarkScriptServer) error
 	// Executes a Starlark script on the user's behalf
-	ExecuteStarlarkPackage(*ExecuteStarlarkPackageArgs, ApiContainerService_ExecuteStarlarkPackageServer) error
+	RunStarlarkPackage(*RunStarlarkPackageArgs, ApiContainerService_RunStarlarkPackageServer) error
 	// Start services by creating containers for them
 	StartServices(context.Context, *StartServicesArgs) (*StartServicesResponse, error)
 	// Returns the IDs of the current services in the enclave
@@ -389,11 +389,11 @@ func (UnimplementedApiContainerServiceServer) UnloadModule(context.Context, *Unl
 func (UnimplementedApiContainerServiceServer) ExecuteModule(context.Context, *ExecuteModuleArgs) (*ExecuteModuleResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ExecuteModule not implemented")
 }
-func (UnimplementedApiContainerServiceServer) ExecuteStarlarkScript(*ExecuteStarlarkScriptArgs, ApiContainerService_ExecuteStarlarkScriptServer) error {
-	return status.Errorf(codes.Unimplemented, "method ExecuteStarlarkScript not implemented")
+func (UnimplementedApiContainerServiceServer) RunStarlarkScript(*RunStarlarkScriptArgs, ApiContainerService_RunStarlarkScriptServer) error {
+	return status.Errorf(codes.Unimplemented, "method RunStarlarkScript not implemented")
 }
-func (UnimplementedApiContainerServiceServer) ExecuteStarlarkPackage(*ExecuteStarlarkPackageArgs, ApiContainerService_ExecuteStarlarkPackageServer) error {
-	return status.Errorf(codes.Unimplemented, "method ExecuteStarlarkPackage not implemented")
+func (UnimplementedApiContainerServiceServer) RunStarlarkPackage(*RunStarlarkPackageArgs, ApiContainerService_RunStarlarkPackageServer) error {
+	return status.Errorf(codes.Unimplemented, "method RunStarlarkPackage not implemented")
 }
 func (UnimplementedApiContainerServiceServer) StartServices(context.Context, *StartServicesArgs) (*StartServicesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StartServices not implemented")
@@ -527,45 +527,45 @@ func _ApiContainerService_ExecuteModule_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ApiContainerService_ExecuteStarlarkScript_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(ExecuteStarlarkScriptArgs)
+func _ApiContainerService_RunStarlarkScript_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(RunStarlarkScriptArgs)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(ApiContainerServiceServer).ExecuteStarlarkScript(m, &apiContainerServiceExecuteStarlarkScriptServer{stream})
+	return srv.(ApiContainerServiceServer).RunStarlarkScript(m, &apiContainerServiceRunStarlarkScriptServer{stream})
 }
 
-type ApiContainerService_ExecuteStarlarkScriptServer interface {
+type ApiContainerService_RunStarlarkScriptServer interface {
 	Send(*StarlarkExecutionResponseLine) error
 	grpc.ServerStream
 }
 
-type apiContainerServiceExecuteStarlarkScriptServer struct {
+type apiContainerServiceRunStarlarkScriptServer struct {
 	grpc.ServerStream
 }
 
-func (x *apiContainerServiceExecuteStarlarkScriptServer) Send(m *StarlarkExecutionResponseLine) error {
+func (x *apiContainerServiceRunStarlarkScriptServer) Send(m *StarlarkExecutionResponseLine) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func _ApiContainerService_ExecuteStarlarkPackage_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(ExecuteStarlarkPackageArgs)
+func _ApiContainerService_RunStarlarkPackage_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(RunStarlarkPackageArgs)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(ApiContainerServiceServer).ExecuteStarlarkPackage(m, &apiContainerServiceExecuteStarlarkPackageServer{stream})
+	return srv.(ApiContainerServiceServer).RunStarlarkPackage(m, &apiContainerServiceRunStarlarkPackageServer{stream})
 }
 
-type ApiContainerService_ExecuteStarlarkPackageServer interface {
+type ApiContainerService_RunStarlarkPackageServer interface {
 	Send(*StarlarkExecutionResponseLine) error
 	grpc.ServerStream
 }
 
-type apiContainerServiceExecuteStarlarkPackageServer struct {
+type apiContainerServiceRunStarlarkPackageServer struct {
 	grpc.ServerStream
 }
 
-func (x *apiContainerServiceExecuteStarlarkPackageServer) Send(m *StarlarkExecutionResponseLine) error {
+func (x *apiContainerServiceRunStarlarkPackageServer) Send(m *StarlarkExecutionResponseLine) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -947,13 +947,13 @@ var ApiContainerService_ServiceDesc = grpc.ServiceDesc{
 	},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "ExecuteStarlarkScript",
-			Handler:       _ApiContainerService_ExecuteStarlarkScript_Handler,
+			StreamName:    "RunStarlarkScript",
+			Handler:       _ApiContainerService_RunStarlarkScript_Handler,
 			ServerStreams: true,
 		},
 		{
-			StreamName:    "ExecuteStarlarkPackage",
-			Handler:       _ApiContainerService_ExecuteStarlarkPackage_Handler,
+			StreamName:    "RunStarlarkPackage",
+			Handler:       _ApiContainerService_RunStarlarkPackage_Handler,
 			ServerStreams: true,
 		},
 	},

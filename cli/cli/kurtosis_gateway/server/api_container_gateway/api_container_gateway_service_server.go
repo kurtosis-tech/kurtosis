@@ -84,9 +84,9 @@ func (service *ApiContainerGatewayServiceServer) ExecuteModule(ctx context.Conte
 	return remoteApiContainerResponse, nil
 }
 
-func (service *ApiContainerGatewayServiceServer) ExecuteStarlarkScript(args *kurtosis_core_rpc_api_bindings.ExecuteStarlarkScriptArgs, streamToWriteTo kurtosis_core_rpc_api_bindings.ApiContainerService_ExecuteStarlarkScriptServer) error {
+func (service *ApiContainerGatewayServiceServer) RunStarlarkScript(args *kurtosis_core_rpc_api_bindings.RunStarlarkScriptArgs, streamToWriteTo kurtosis_core_rpc_api_bindings.ApiContainerService_RunStarlarkScriptServer) error {
 	logrus.Debug("Executing Kurtosis script")
-	streamToReadFrom, err := service.remoteApiContainerClient.ExecuteStarlarkScript(streamToWriteTo.Context(), args)
+	streamToReadFrom, err := service.remoteApiContainerClient.RunStarlarkScript(streamToWriteTo.Context(), args)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred starting the execution of Kurtosis code")
 	}
@@ -96,9 +96,9 @@ func (service *ApiContainerGatewayServiceServer) ExecuteStarlarkScript(args *kur
 	return nil
 }
 
-func (service *ApiContainerGatewayServiceServer) ExecuteStarlarkPackage(args *kurtosis_core_rpc_api_bindings.ExecuteStarlarkPackageArgs, streamToWriteTo kurtosis_core_rpc_api_bindings.ApiContainerService_ExecuteStarlarkPackageServer) error {
+func (service *ApiContainerGatewayServiceServer) RunStarlarkPackage(args *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs, streamToWriteTo kurtosis_core_rpc_api_bindings.ApiContainerService_RunStarlarkPackageServer) error {
 	logrus.Debugf("Executing Kurtosis module '%s'", args.GetPackageId())
-	streamToReadFrom, err := service.remoteApiContainerClient.ExecuteStarlarkPackage(streamToWriteTo.Context(), args)
+	streamToReadFrom, err := service.remoteApiContainerClient.RunStarlarkPackage(streamToWriteTo.Context(), args)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred starting the execution of Kurtosis code")
 	}

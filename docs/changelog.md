@@ -6,7 +6,7 @@
 
 ### Breaking changes
 - Endpoints `ExecuteStartosisScript` and `ExecuteStartosisModule` were removed
-- Endpoints `ExecuteKurtosisScript` was renamed `ExecuteStarlarkScript` and `ExecuteKurtosisModule` was renamed `ExecuteStarlarkPackage`
+- Endpoints `ExecuteKurtosisScript` was renamed `RunStarlarkScript` and `ExecuteKurtosisModule` was renamed `RunStarlarkPackage`
 
 ### Changes
 - Starlark execution progress is now returned to the CLI via the KurtosisExecutionResponseLine stream

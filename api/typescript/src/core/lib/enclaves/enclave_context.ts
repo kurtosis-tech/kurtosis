@@ -61,8 +61,8 @@ import {
     ServiceInfo,
     UnpauseServiceArgs,
     StartServicesArgs,
-    ExecuteStarlarkScriptArgs,
-    ExecuteStarlarkPackageArgs,
+    RunStarlarkScriptArgs,
+    RunStarlarkPackageArgs,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import {TemplateAndData} from "./template_and_data";
 import * as path from "path";
@@ -219,21 +219,21 @@ export class EnclaveContext {
         return ok(moduleCtx)
     }
 
-    public async executeStarlarkScript(
+    public async runStarlarkScript(
         serializedStartosisScript: string,
         dryRun: boolean,
     ): Promise<Result<Readable, Error>> {
-        const args = new ExecuteStarlarkScriptArgs();
+        const args = new RunStarlarkScriptArgs();
         args.setSerializedScript(serializedStartosisScript)
         args.setDryRun(dryRun)
-        const resultScriptExecution : Result<Readable, Error> = await this.backend.executeStarlarkScript(args)
+        const resultScriptExecution : Result<Readable, Error> = await this.backend.runStarlarkScript(args)
         if (resultScriptExecution.isErr()) {
             return err(new Error(`Unexpected error happened executing Starlark script \n${resultScriptExecution.error}`))
         }
         return ok(resultScriptExecution.value)
     }
 
-    public async executeStarlarkPackage(
+    public async runStarlarkPackage(
         packageRootPath: string,
         serializedParams: string,
         dryRun: boolean,
@@ -242,24 +242,24 @@ export class EnclaveContext {
         if (args.isErr()) {
             return err(new Error(`Unexpected error while assembling arguments to pass to the Kurtosis executor \n${args.error}`))
         }
-        const resultPackageExecution : Result<Readable, Error> = await this.backend.executeStarlarkPackage(args.value)
+        const resultPackageExecution : Result<Readable, Error> = await this.backend.runStarlarkPackage(args.value)
         if (resultPackageExecution.isErr()) {
             return err(new Error(`Unexpected error happened executing Starlark package \n${resultPackageExecution.error}`))
         }
         return ok(resultPackageExecution.value)
     }
 
-    public async executeStarlarkRemotePackage(
+    public async runStarlarkRemotePackage(
         moduleId: string,
         serializedParams: string,
         dryRun: boolean,
     ): Promise<Result<Readable, Error>> {
-        const args = new ExecuteStarlarkPackageArgs();
+        const args = new RunStarlarkPackageArgs();
         args.setPackageId(moduleId)
         args.setDryRun(dryRun)
         args.setSerializedParams(serializedParams)
         args.setRemote(true)
-        const resultRemoteModuleExecution : Result<Readable, Error> = await this.backend.executeStarlarkPackage(args)
+        const resultRemoteModuleExecution : Result<Readable, Error> = await this.backend.runStarlarkPackage(args)
         if (resultRemoteModuleExecution.isErr()) {
             return err(new Error(`Unexpected error happened executing Startosis module \n${resultRemoteModuleExecution.error}`))
         }
@@ -762,7 +762,7 @@ export class EnclaveContext {
         return result;
     }
 
-    private async assembleExecuteStarlarkPackageArg(moduleRootPath: string, serializedParams: string, dryRun: boolean,): Promise<Result<ExecuteStarlarkPackageArgs, Error>> {
+    private async assembleExecuteStarlarkPackageArg(moduleRootPath: string, serializedParams: string, dryRun: boolean,): Promise<Result<RunStarlarkPackageArgs, Error>> {
         const kurtosisYamlFilepath = path.join(moduleRootPath, KURTOSIS_YAML_FILENAME)
 
         const resultParseKurtosisYaml = await parseKurtosisYaml(kurtosisYamlFilepath)
@@ -776,7 +776,7 @@ export class EnclaveContext {
             return err(archiverResponse.error)
         }
 
-        const args = new ExecuteStarlarkPackageArgs;
+        const args = new RunStarlarkPackageArgs;
         args.setLocal(archiverResponse.value)
         args.setPackageId(kurtosisMod.name)
         args.setSerializedParams(serializedParams)

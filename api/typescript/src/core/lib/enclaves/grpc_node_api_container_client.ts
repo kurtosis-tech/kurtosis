@@ -29,8 +29,8 @@ import {
     UnloadModuleResponse,
     RenderTemplatesToFilesArtifactArgs,
     RenderTemplatesToFilesArtifactResponse,
-    ExecuteStarlarkScriptArgs,
-    ExecuteStarlarkPackageArgs,
+    RunStarlarkScriptArgs,
+    RunStarlarkPackageArgs,
     StarlarkExecutionResponseLine,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import type { ApiContainerServiceClient as ApiContainerServiceClientNode } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
@@ -97,9 +97,9 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
         return ok(unloadModuleResult.value);
     }
 
-    public async executeStarlarkScript(serializedStartosisScript: ExecuteStarlarkScriptArgs): Promise<Result<Readable, Error>> {
+    public async runStarlarkScript(serializedStarlarkScript: RunStarlarkScriptArgs): Promise<Result<Readable, Error>> {
         const promiseExecuteKurtosisScript: Promise<Result<ClientReadableStream<StarlarkExecutionResponseLine>, Error>> = new Promise((resolve, _unusedReject) => {
-            resolve(ok(this.client.executeStarlarkScript(serializedStartosisScript)))
+            resolve(ok(this.client.runStarlarkScript(serializedStarlarkScript)))
         })
         const resultExecuteKurtosisScript: Result<Readable, Error> = await promiseExecuteKurtosisScript;
         if (resultExecuteKurtosisScript.isErr()) {
@@ -108,15 +108,15 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
         return ok(resultExecuteKurtosisScript.value)
     }
 
-    public async executeStarlarkPackage(startosisModuleArgs:ExecuteStarlarkPackageArgs): Promise<Result<Readable, Error>> {
-        const promiseExecuteStarlarkPackage: Promise<Result<ClientReadableStream<StarlarkExecutionResponseLine>, Error>> = new Promise((resolve, _unusedReject) => {
-            resolve(ok(this.client.executeStarlarkPackage(startosisModuleArgs)))
+    public async runStarlarkPackage(starlarkPackageArgs: RunStarlarkPackageArgs): Promise<Result<Readable, Error>> {
+        const promiseRunStarlarkPackage: Promise<Result<ClientReadableStream<StarlarkExecutionResponseLine>, Error>> = new Promise((resolve, _unusedReject) => {
+            resolve(ok(this.client.runStarlarkPackage(starlarkPackageArgs)))
         })
-        const resultExecuteStarlarkPackage: Result<Readable, Error> = await promiseExecuteStarlarkPackage;
-        if (resultExecuteStarlarkPackage.isErr()) {
-            return err(resultExecuteStarlarkPackage.error)
+        const resultRunStarlarkPackage: Result<Readable, Error> = await promiseRunStarlarkPackage;
+        if (resultRunStarlarkPackage.isErr()) {
+            return err(resultRunStarlarkPackage.error)
         }
-        return ok(resultExecuteStarlarkPackage.value)
+        return ok(resultRunStarlarkPackage.value)
     }
 
     public async startServices(startServicesArgs: StartServicesArgs): Promise<Result<StartServicesResponse, Error>>{

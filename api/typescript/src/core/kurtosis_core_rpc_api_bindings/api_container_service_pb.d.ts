@@ -339,24 +339,24 @@ export namespace ExecuteModuleResponse {
   }
 }
 
-export class ExecuteStarlarkScriptArgs extends jspb.Message {
+export class RunStarlarkScriptArgs extends jspb.Message {
   getSerializedScript(): string;
-  setSerializedScript(value: string): ExecuteStarlarkScriptArgs;
+  setSerializedScript(value: string): RunStarlarkScriptArgs;
 
   getDryRun(): boolean;
-  setDryRun(value: boolean): ExecuteStarlarkScriptArgs;
+  setDryRun(value: boolean): RunStarlarkScriptArgs;
   hasDryRun(): boolean;
-  clearDryRun(): ExecuteStarlarkScriptArgs;
+  clearDryRun(): RunStarlarkScriptArgs;
 
   serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): ExecuteStarlarkScriptArgs.AsObject;
-  static toObject(includeInstance: boolean, msg: ExecuteStarlarkScriptArgs): ExecuteStarlarkScriptArgs.AsObject;
-  static serializeBinaryToWriter(message: ExecuteStarlarkScriptArgs, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): ExecuteStarlarkScriptArgs;
-  static deserializeBinaryFromReader(message: ExecuteStarlarkScriptArgs, reader: jspb.BinaryReader): ExecuteStarlarkScriptArgs;
+  toObject(includeInstance?: boolean): RunStarlarkScriptArgs.AsObject;
+  static toObject(includeInstance: boolean, msg: RunStarlarkScriptArgs): RunStarlarkScriptArgs.AsObject;
+  static serializeBinaryToWriter(message: RunStarlarkScriptArgs, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): RunStarlarkScriptArgs;
+  static deserializeBinaryFromReader(message: RunStarlarkScriptArgs, reader: jspb.BinaryReader): RunStarlarkScriptArgs;
 }
 
-export namespace ExecuteStarlarkScriptArgs {
+export namespace RunStarlarkScriptArgs {
   export type AsObject = {
     serializedScript: string,
     dryRun?: boolean,
@@ -368,37 +368,37 @@ export namespace ExecuteStarlarkScriptArgs {
   }
 }
 
-export class ExecuteStarlarkPackageArgs extends jspb.Message {
+export class RunStarlarkPackageArgs extends jspb.Message {
   getPackageId(): string;
-  setPackageId(value: string): ExecuteStarlarkPackageArgs;
+  setPackageId(value: string): RunStarlarkPackageArgs;
 
   getLocal(): Uint8Array | string;
   getLocal_asU8(): Uint8Array;
   getLocal_asB64(): string;
-  setLocal(value: Uint8Array | string): ExecuteStarlarkPackageArgs;
+  setLocal(value: Uint8Array | string): RunStarlarkPackageArgs;
 
   getRemote(): boolean;
-  setRemote(value: boolean): ExecuteStarlarkPackageArgs;
+  setRemote(value: boolean): RunStarlarkPackageArgs;
 
   getSerializedParams(): string;
-  setSerializedParams(value: string): ExecuteStarlarkPackageArgs;
+  setSerializedParams(value: string): RunStarlarkPackageArgs;
 
   getDryRun(): boolean;
-  setDryRun(value: boolean): ExecuteStarlarkPackageArgs;
+  setDryRun(value: boolean): RunStarlarkPackageArgs;
   hasDryRun(): boolean;
-  clearDryRun(): ExecuteStarlarkPackageArgs;
+  clearDryRun(): RunStarlarkPackageArgs;
 
-  getStarlarkPackageContentCase(): ExecuteStarlarkPackageArgs.StarlarkPackageContentCase;
+  getStarlarkPackageContentCase(): RunStarlarkPackageArgs.StarlarkPackageContentCase;
 
   serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): ExecuteStarlarkPackageArgs.AsObject;
-  static toObject(includeInstance: boolean, msg: ExecuteStarlarkPackageArgs): ExecuteStarlarkPackageArgs.AsObject;
-  static serializeBinaryToWriter(message: ExecuteStarlarkPackageArgs, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): ExecuteStarlarkPackageArgs;
-  static deserializeBinaryFromReader(message: ExecuteStarlarkPackageArgs, reader: jspb.BinaryReader): ExecuteStarlarkPackageArgs;
+  toObject(includeInstance?: boolean): RunStarlarkPackageArgs.AsObject;
+  static toObject(includeInstance: boolean, msg: RunStarlarkPackageArgs): RunStarlarkPackageArgs.AsObject;
+  static serializeBinaryToWriter(message: RunStarlarkPackageArgs, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): RunStarlarkPackageArgs;
+  static deserializeBinaryFromReader(message: RunStarlarkPackageArgs, reader: jspb.BinaryReader): RunStarlarkPackageArgs;
 }
 
-export namespace ExecuteStarlarkPackageArgs {
+export namespace RunStarlarkPackageArgs {
   export type AsObject = {
     packageId: string,
     local: Uint8Array | string,

@@ -327,16 +327,16 @@ proto.api_container_api.ApiContainerServicePromiseClient.prototype.executeModule
 /**
  * @const
  * @type {!grpc.web.MethodDescriptor<
- *   !proto.api_container_api.ExecuteStarlarkScriptArgs,
+ *   !proto.api_container_api.RunStarlarkScriptArgs,
  *   !proto.api_container_api.StarlarkExecutionResponseLine>}
  */
-const methodDescriptor_ApiContainerService_ExecuteStarlarkScript = new grpc.web.MethodDescriptor(
-  '/api_container_api.ApiContainerService/ExecuteStarlarkScript',
+const methodDescriptor_ApiContainerService_RunStarlarkScript = new grpc.web.MethodDescriptor(
+  '/api_container_api.ApiContainerService/RunStarlarkScript',
   grpc.web.MethodType.SERVER_STREAMING,
-  proto.api_container_api.ExecuteStarlarkScriptArgs,
+  proto.api_container_api.RunStarlarkScriptArgs,
   proto.api_container_api.StarlarkExecutionResponseLine,
   /**
-   * @param {!proto.api_container_api.ExecuteStarlarkScriptArgs} request
+   * @param {!proto.api_container_api.RunStarlarkScriptArgs} request
    * @return {!Uint8Array}
    */
   function(request) {
@@ -347,52 +347,52 @@ const methodDescriptor_ApiContainerService_ExecuteStarlarkScript = new grpc.web.
 
 
 /**
- * @param {!proto.api_container_api.ExecuteStarlarkScriptArgs} request The request proto
+ * @param {!proto.api_container_api.RunStarlarkScriptArgs} request The request proto
  * @param {?Object<string, string>=} metadata User defined
  *     call metadata
  * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.StarlarkExecutionResponseLine>}
  *     The XHR Node Readable Stream
  */
-proto.api_container_api.ApiContainerServiceClient.prototype.executeStarlarkScript =
+proto.api_container_api.ApiContainerServiceClient.prototype.runStarlarkScript =
     function(request, metadata) {
   return this.client_.serverStreaming(this.hostname_ +
-      '/api_container_api.ApiContainerService/ExecuteStarlarkScript',
+      '/api_container_api.ApiContainerService/RunStarlarkScript',
       request,
       metadata || {},
-      methodDescriptor_ApiContainerService_ExecuteStarlarkScript);
+      methodDescriptor_ApiContainerService_RunStarlarkScript);
 };
 
 
 /**
- * @param {!proto.api_container_api.ExecuteStarlarkScriptArgs} request The request proto
+ * @param {!proto.api_container_api.RunStarlarkScriptArgs} request The request proto
  * @param {?Object<string, string>=} metadata User defined
  *     call metadata
  * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.StarlarkExecutionResponseLine>}
  *     The XHR Node Readable Stream
  */
-proto.api_container_api.ApiContainerServicePromiseClient.prototype.executeStarlarkScript =
+proto.api_container_api.ApiContainerServicePromiseClient.prototype.runStarlarkScript =
     function(request, metadata) {
   return this.client_.serverStreaming(this.hostname_ +
-      '/api_container_api.ApiContainerService/ExecuteStarlarkScript',
+      '/api_container_api.ApiContainerService/RunStarlarkScript',
       request,
       metadata || {},
-      methodDescriptor_ApiContainerService_ExecuteStarlarkScript);
+      methodDescriptor_ApiContainerService_RunStarlarkScript);
 };
 
 
 /**
  * @const
  * @type {!grpc.web.MethodDescriptor<
- *   !proto.api_container_api.ExecuteStarlarkPackageArgs,
+ *   !proto.api_container_api.RunStarlarkPackageArgs,
  *   !proto.api_container_api.StarlarkExecutionResponseLine>}
  */
-const methodDescriptor_ApiContainerService_ExecuteStarlarkPackage = new grpc.web.MethodDescriptor(
-  '/api_container_api.ApiContainerService/ExecuteStarlarkPackage',
+const methodDescriptor_ApiContainerService_RunStarlarkPackage = new grpc.web.MethodDescriptor(
+  '/api_container_api.ApiContainerService/RunStarlarkPackage',
   grpc.web.MethodType.SERVER_STREAMING,
-  proto.api_container_api.ExecuteStarlarkPackageArgs,
+  proto.api_container_api.RunStarlarkPackageArgs,
   proto.api_container_api.StarlarkExecutionResponseLine,
   /**
-   * @param {!proto.api_container_api.ExecuteStarlarkPackageArgs} request
+   * @param {!proto.api_container_api.RunStarlarkPackageArgs} request
    * @return {!Uint8Array}
    */
   function(request) {
@@ -403,36 +403,36 @@ const methodDescriptor_ApiContainerService_ExecuteStarlarkPackage = new grpc.web
 
 
 /**
- * @param {!proto.api_container_api.ExecuteStarlarkPackageArgs} request The request proto
+ * @param {!proto.api_container_api.RunStarlarkPackageArgs} request The request proto
  * @param {?Object<string, string>=} metadata User defined
  *     call metadata
  * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.StarlarkExecutionResponseLine>}
  *     The XHR Node Readable Stream
  */
-proto.api_container_api.ApiContainerServiceClient.prototype.executeStarlarkPackage =
+proto.api_container_api.ApiContainerServiceClient.prototype.runStarlarkPackage =
     function(request, metadata) {
   return this.client_.serverStreaming(this.hostname_ +
-      '/api_container_api.ApiContainerService/ExecuteStarlarkPackage',
+      '/api_container_api.ApiContainerService/RunStarlarkPackage',
       request,
       metadata || {},
-      methodDescriptor_ApiContainerService_ExecuteStarlarkPackage);
+      methodDescriptor_ApiContainerService_RunStarlarkPackage);
 };
 
 
 /**
- * @param {!proto.api_container_api.ExecuteStarlarkPackageArgs} request The request proto
+ * @param {!proto.api_container_api.RunStarlarkPackageArgs} request The request proto
  * @param {?Object<string, string>=} metadata User defined
  *     call metadata
  * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.StarlarkExecutionResponseLine>}
  *     The XHR Node Readable Stream
  */
-proto.api_container_api.ApiContainerServicePromiseClient.prototype.executeStarlarkPackage =
+proto.api_container_api.ApiContainerServicePromiseClient.prototype.runStarlarkPackage =
     function(request, metadata) {
   return this.client_.serverStreaming(this.hostname_ +
-      '/api_container_api.ApiContainerService/ExecuteStarlarkPackage',
+      '/api_container_api.ApiContainerService/RunStarlarkPackage',
       request,
       metadata || {},
-      methodDescriptor_ApiContainerService_ExecuteStarlarkPackage);
+      methodDescriptor_ApiContainerService_RunStarlarkPackage);
 };
 
 

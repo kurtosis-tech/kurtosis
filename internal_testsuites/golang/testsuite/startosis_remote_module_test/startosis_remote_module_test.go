@@ -30,7 +30,7 @@ func TestStartosisRemoteModule(t *testing.T) {
 	// ------------------------------------- TEST RUN ----------------------------------------------
 	logrus.Debugf("Executing Startosis module: '%v'", remoteModule)
 
-	outputStream, _, err := enclaveCtx.ExecuteStarlarkRemotePackage(ctx, remoteModule, executeParams, defaultDryRun)
+	outputStream, _, err := enclaveCtx.RunStarlarkRemotePackage(ctx, remoteModule, executeParams, defaultDryRun)
 	require.NoError(t, err, "Unexpected error executing startosis module")
 	_, _, interpretationError, validationErrors, executionError := test_helpers.ReadStreamContentUntilClosed(outputStream)
 
