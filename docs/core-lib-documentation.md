@@ -333,8 +333,8 @@ The builder that should be used to create [ContainerConfig][containerconfig] ins
 RunStarlarkResponseLine
 -----------------------
 
-This is a union object representing a single line returned by Kurtosis' Starlark executor. All Starlark execution
-endpoint will return a stream of this object.
+This is a union object representing a single line returned by Kurtosis' Starlark runner. All Starlark run endpoints
+will return a stream of this object.
 Each line is one of:
 
 ### [StarlarkInstruction][starlarkinstruction] `instruction`
@@ -344,7 +344,7 @@ An instruction that is _about to be_ executed.
 The result of an instruction that was successfully executed
 
 ### [StarlarkError][starlarkerror] `error`
-An error that was thrown running the Starlark code
+The error that was thrown running the Starlark code
 
 ### [StarlarkRunProgress][starlarkrunprogress] `progressInfo`
 Regularly during the run of the code, Kurtosis' Starlark engine will send progress information through the stream to
@@ -368,17 +368,18 @@ single string field corresponding to the output of the instruction.
 StarlarkError
 -------------
 Errors can be of three kind:
-- Interpretation error: those errors happens before Kurtosis was able to execute the script. It typically means
-there's a syntax error in the provided code. The error message should point the users to where the code is incorrect;
-- Validation error: those errors happens after interpretation was successful, but before the execution actually started
+- Interpretation error: these errors happens before Kurtosis was able to execute the script. It typically means
+there's a syntax error in the provided Starlark code. The error message should point the users to where the code is
+incorrect.
+- Validation error: these errors happens after interpretation was successful, but before the execution actually started
 in Kurtosis. Before starting the execution, Kurtosis runs some validation on the instructions that are about to be
-executed. The error message should contain more information on which instruction is incorrect;
-- Execution error: those errors happens during the execution of the script against Kurtosis engine. More information
+executed. The error message should contain more information on which instruction is incorrect.
+- Execution error: these errors happens during the execution of the script against Kurtosis engine. More information
 is available in the error message.
 
 StarlarkRunProgress
 -------------------
-`StarlarkRunProgress` accounts for progress that are made during a Starlark run. It contains three fields:
+`StarlarkRunProgress` accounts for progress that is made during a Starlark run. It contains three fields:
 - `totalSteps`: The total number of steps for this run
 - `currentStepNumber`: The number of the step that is currently being executed
 - `currentStepInfo`: A string field with some information on the current step being executed.
