@@ -11,10 +11,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 )
 
-const (
-	causedByPrefix = "\tCaused by: "
-)
-
 type StartosisValidator struct {
 	dockerImagesValidator *startosis_validator.DockerImagesValidator
 
