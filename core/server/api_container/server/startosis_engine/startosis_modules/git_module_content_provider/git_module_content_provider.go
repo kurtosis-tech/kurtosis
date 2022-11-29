@@ -52,10 +52,17 @@ func (provider *GitModuleContentProvider) GetOnDiskAbsoluteFilePath(fileInsideMo
 		return "", startosis_errors.NewInterpretationError("The relative path to file is empty for '%v'", fileInsideModuleUrl)
 	}
 	pathToFile := path.Join(provider.modulesDir, parsedURL.relativeFilePath)
+	modulePath := path.Join(provider.modulesDir, parsedURL.relativeRepoPath)
 
 	// Return the file path straight if it exists
 	if _, err := os.Stat(pathToFile); err == nil {
 		return pathToFile, nil
+	}
+
+	// Check if the repo exists
+	// If the repo exists but the `pathToFile` doesn't that means there's a mistake in the locator
+	if _, err := os.Stat(modulePath); err == nil {
+		return "", startosis_errors.NewInterpretationError("'%v' doesn't exist in the package '%v'", parsedURL.relativeFilePath, parsedURL.relativeRepoPath)
 	}
 
 	// Otherwise clone the repo and return the absolute path of the requested file
