@@ -9,6 +9,10 @@
 ### Changes
 - Starlark execution progress is now returned to the CLI via the KurtosisExecutionResponseLine stream
 
+### Fixes
+- Fixed the error message when the relative filename was incorrect in a Starlark import
+- Fixed the error message when package name was incorrect
+
 # 0.56.0
 ### Breaking Changes
 - Removed `module` key in the `kurtosis.yml` (formerly called `kurtosis.mod`) file to don't have nested keys
