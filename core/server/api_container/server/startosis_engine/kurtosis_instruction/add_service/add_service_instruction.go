@@ -187,6 +187,7 @@ func (instruction *AddServiceInstruction) makeAddServiceInterpretationReturnValu
 
 func (instruction *AddServiceInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
 	if environment.DoesServiceIdExist(instruction.serviceId) {
+		// this is intentionally not using stacktrace.NewError, as we don't want to pollute the error with Go line, column numbers
 		return fmt.Errorf("There was an error validating add service as service ID '%v' already exists", instruction.serviceId)
 	}
 	environment.AddServiceId(instruction.serviceId)

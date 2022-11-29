@@ -78,6 +78,7 @@ func (instruction *RemoveServiceInstruction) String() string {
 
 func (instruction *RemoveServiceInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
 	if !environment.DoesServiceIdExist(instruction.serviceId) {
+		// this is intentionally not using stacktrace.NewError, as we don't want to pollute the error with Go line, column numbers
 		return fmt.Errorf("There was an error validating remove service as service ID '%v' doesn't exist", instruction.serviceId)
 	}
 	environment.RemoveServiceId(instruction.serviceId)

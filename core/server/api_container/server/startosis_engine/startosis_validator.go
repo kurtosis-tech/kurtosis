@@ -37,13 +37,15 @@ func (validator *StartosisValidator) Validate(ctx context.Context, instructions 
 		for _, instruction := range instructions {
 			err := instruction.ValidateAndUpdateEnvironment(environment)
 			if err != nil {
-				propagatedError := fmt.Errorf("Error while validating instruction %v. The instruction can be found at %v\n%s%s", instruction.String(), instruction.GetPositionInOriginalScript().String(), causedByPrefix, err.Error())
-				serializedError := binding_constructors.NewKurtosisValidationError(propagatedError.Error())
+				// this is intentionally not using stacktrace.Propagate, as we don't want to pollute the error with Go line, column numbers
+				indentedError := fmt.Errorf("Error while validating instruction %v. The instruction can be found at %v\n%s%s", instruction.String(), instruction.GetPositionInOriginalScript().String(), causedByPrefix, err.Error())
+				serializedError := binding_constructors.NewKurtosisValidationError(indentedError.Error())
 				kurtosisExecutionResponseLineStream <- binding_constructors.NewKurtosisExecutionResponseLineFromValidationError(serializedError)
 			}
 		}
 		errors := validator.dockerImagesValidator.Validate(ctx, environment)
 		for _, err := range errors {
+			// this is intentionally not using stacktrace.Propagate, as we don't want to pollute the error with Go line, column numbers
 			indentedError := fmt.Sprintf("Error while validating final environment of script\n%s%s", causedByPrefix, err.Error())
 			serializedError := binding_constructors.NewKurtosisValidationError(indentedError)
 			kurtosisExecutionResponseLineStream <- binding_constructors.NewKurtosisExecutionResponseLineFromValidationError(serializedError)

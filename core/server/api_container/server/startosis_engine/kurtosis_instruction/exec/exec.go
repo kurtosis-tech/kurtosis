@@ -102,6 +102,7 @@ func (instruction *ExecInstruction) String() string {
 
 func (instruction *ExecInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
 	if !environment.DoesServiceIdExist(instruction.serviceId) {
+		// this is intentionally not using stacktrace.NewError, as we don't want to pollute the error with Go line, column numbers
 		return fmt.Errorf("There was an error validating exec with service ID '%v' that does not exist", instruction.serviceId)
 	}
 	return nil
