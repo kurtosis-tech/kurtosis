@@ -2,8 +2,8 @@ package startosis_validator
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
-	"github.com/kurtosis-tech/stacktrace"
 	"sync"
 )
 
@@ -44,6 +44,6 @@ func fetchImageFromBackend(ctx context.Context, wg *sync.WaitGroup, backend *bac
 	defer wg.Done()
 	err := (*backend).FetchImage(ctx, image)
 	if err != nil {
-		pullError <- stacktrace.NewError("Failed fetching the required image '%v', make sure that the image exists and is public", image)
+		pullError <- fmt.Errorf("Failed fetching the required image '%v', make sure that the image exists and is public", image)
 	}
 }
