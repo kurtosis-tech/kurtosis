@@ -557,11 +557,6 @@ export class KurtosisInstruction extends jspb.Message {
   getExecutableInstruction(): string;
   setExecutableInstruction(value: string): KurtosisInstruction;
 
-  getInstructionResult(): string;
-  setInstructionResult(value: string): KurtosisInstruction;
-  hasInstructionResult(): boolean;
-  clearInstructionResult(): KurtosisInstruction;
-
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): KurtosisInstruction.AsObject;
   static toObject(includeInstance: boolean, msg: KurtosisInstruction): KurtosisInstruction.AsObject;
@@ -576,12 +571,24 @@ export namespace KurtosisInstruction {
     instructionName: string,
     argumentsList: Array<KurtosisInstructionArg.AsObject>,
     executableInstruction: string,
-    instructionResult?: string,
   }
+}
 
-  export enum InstructionResultCase { 
-    _INSTRUCTION_RESULT_NOT_SET = 0,
-    INSTRUCTION_RESULT = 5,
+export class KurtosisInstructionResult extends jspb.Message {
+  getSerializedInstructionResult(): string;
+  setSerializedInstructionResult(value: string): KurtosisInstructionResult;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): KurtosisInstructionResult.AsObject;
+  static toObject(includeInstance: boolean, msg: KurtosisInstructionResult): KurtosisInstructionResult.AsObject;
+  static serializeBinaryToWriter(message: KurtosisInstructionResult, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): KurtosisInstructionResult;
+  static deserializeBinaryFromReader(message: KurtosisInstructionResult, reader: jspb.BinaryReader): KurtosisInstructionResult;
+}
+
+export namespace KurtosisInstructionResult {
+  export type AsObject = {
+    serializedInstructionResult: string,
   }
 }
 
@@ -701,6 +708,11 @@ export class KurtosisExecutionResponseLine extends jspb.Message {
   hasProgressInfo(): boolean;
   clearProgressInfo(): KurtosisExecutionResponseLine;
 
+  getInstructionResult(): KurtosisInstructionResult | undefined;
+  setInstructionResult(value?: KurtosisInstructionResult): KurtosisExecutionResponseLine;
+  hasInstructionResult(): boolean;
+  clearInstructionResult(): KurtosisExecutionResponseLine;
+
   getKurtosisExecutionResponseLineCase(): KurtosisExecutionResponseLine.KurtosisExecutionResponseLineCase;
 
   serializeBinary(): Uint8Array;
@@ -716,6 +728,7 @@ export namespace KurtosisExecutionResponseLine {
     instruction?: KurtosisInstruction.AsObject,
     error?: KurtosisError.AsObject,
     progressInfo?: KurtosisExecutionProgress.AsObject,
+    instructionResult?: KurtosisInstructionResult.AsObject,
   }
 
   export enum KurtosisExecutionResponseLineCase { 
@@ -723,6 +736,7 @@ export namespace KurtosisExecutionResponseLine {
     INSTRUCTION = 1,
     ERROR = 2,
     PROGRESS_INFO = 3,
+    INSTRUCTION_RESULT = 4,
   }
 }
 

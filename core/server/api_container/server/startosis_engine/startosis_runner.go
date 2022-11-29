@@ -63,7 +63,10 @@ func (runner *StartosisRunner) Run(ctx context.Context, dryRun bool, moduleId st
 		kurtosisExecutionResponseLines <- progressInfo
 
 		validationErrorsChan := runner.startosisValidator.Validate(ctx, instructionsList)
-		forwardKurtosisResponseLineChannelUntilSourceIsClosed(validationErrorsChan, kurtosisExecutionResponseLines)
+		if messagesWereReceived := forwardKurtosisResponseLineChannelUntilSourceIsClosed(validationErrorsChan, kurtosisExecutionResponseLines); messagesWereReceived {
+			return
+		}
+
 		logrus.Debugf("Successfully validated Startosis script")
 
 		// Execution starts > send progress info. This will soon be overridden byt the first instruction execution
@@ -78,12 +81,15 @@ func (runner *StartosisRunner) Run(ctx context.Context, dryRun bool, moduleId st
 	return kurtosisExecutionResponseLines
 }
 
-func forwardKurtosisResponseLineChannelUntilSourceIsClosed(sourceChan <-chan *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine, destChan chan<- *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine) {
+func forwardKurtosisResponseLineChannelUntilSourceIsClosed(sourceChan <-chan *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine, destChan chan<- *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine) bool {
+	messagesWereReceived := false
 	for executionResponseLine := range sourceChan {
 		logrus.Debugf("Received kurtosis execution line Kurtosis:\n%v", executionResponseLine)
 		destChan <- executionResponseLine
+		messagesWereReceived = true
 	}
 	logrus.Debug("Kurtosis instructions stream was closed. Exiting execution loop")
+	return messagesWereReceived
 }
 
 func maybeMakeMissingRunMethodErrorFriendlier(originalError *kurtosis_core_rpc_api_bindings.KurtosisInterpretationError, moduleId string) *kurtosis_core_rpc_api_bindings.KurtosisInterpretationError {
