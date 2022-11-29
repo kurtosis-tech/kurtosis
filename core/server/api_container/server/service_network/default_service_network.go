@@ -1100,7 +1100,7 @@ func transformApiPortToPortSpec(port *kurtosis_core_rpc_api_bindings.Port) (*por
 	if !found {
 		return nil, stacktrace.NewError("Couldn't find a port spec proto for API port proto '%v'; this should never happen, and is a bug in Kurtosis!", apiProto.String())
 	}
-	result, err := port_spec.NewPortSpec(portNumUint16, portSpecProto)
+	result, err := port_spec.NewPortSpec(portNumUint16, portSpecProto, "")
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,

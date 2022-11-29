@@ -14,16 +14,16 @@ const (
 
 type fluentbitContainerConfigProvider struct {
 	config         *FluentbitConfig
-	tcpPortNumber uint16
+	tcpPortNumber  uint16
 	httpPortNumber uint16
 }
 
 func newFluentbitContainerConfigProvider(config *FluentbitConfig, tcpPortNumber uint16, httpPortNumber uint16) *fluentbitContainerConfigProvider {
-	return &fluentbitContainerConfigProvider{config: config, tcpPortNumber:tcpPortNumber, httpPortNumber: httpPortNumber}
+	return &fluentbitContainerConfigProvider{config: config, tcpPortNumber: tcpPortNumber, httpPortNumber: httpPortNumber}
 }
 
 func (fluent *fluentbitContainerConfigProvider) GetPrivateTcpPortSpec() (*port_spec.PortSpec, error) {
-	privateTcpPortSpec, err := port_spec.NewPortSpec(fluent.tcpPortNumber, tcpPortProtocol)
+	privateTcpPortSpec, err := port_spec.NewPortSpec(fluent.tcpPortNumber, tcpPortProtocol, "")
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -36,7 +36,7 @@ func (fluent *fluentbitContainerConfigProvider) GetPrivateTcpPortSpec() (*port_s
 }
 
 func (fluent *fluentbitContainerConfigProvider) GetPrivateHttpPortSpec() (*port_spec.PortSpec, error) {
-	privateHttpPortSpec, err := port_spec.NewPortSpec(fluent.httpPortNumber, httpPortProtocol)
+	privateHttpPortSpec, err := port_spec.NewPortSpec(fluent.httpPortNumber, httpPortProtocol, "")
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,

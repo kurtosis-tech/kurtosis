@@ -63,9 +63,9 @@ func newLocalPortToPodPortConnection(kubernetesRestConfig *k8s_rest.Config, podP
 	for portspecId, portSpec := range remotePortSpecs {
 		// Kubernetes port-forwarding currently only supports TCP
 		// https://github.com/kubernetes/kubernetes/issues/47862
-		if portSpec.GetProtocol() != port_spec.PortProtocol_TCP {
+		if portSpec.GetTransportProtocol() != port_spec.PortProtocol_TCP {
 			// Warn the user the this port won't be forwarded
-			logrus.Warnf("The port with id '%v' won't be able to be forwarded from Kubernetes, it uses protocol '%v', but Kubernetes port forwarding only support the '%v' protocol", portspecId, portSpec.GetProtocol(), port_spec.PortProtocol_TCP)
+			logrus.Warnf("The port with id '%v' won't be able to be forwarded from Kubernetes, it uses protocol '%v', but Kubernetes port forwarding only support the '%v' protocol", portspecId, portSpec.GetTransportProtocol(), port_spec.PortProtocol_TCP)
 			continue
 		}
 		// For our purposes, local-port is set to 0, meaning the host will assign us a random local port
@@ -120,7 +120,7 @@ func newLocalPortToPodPortConnection(kubernetesRestConfig *k8s_rest.Config, podP
 			return nil, stacktrace.NewError("Expected to be able to find port_spec id of remote port '%v', instead found nothing", remotePort)
 		}
 		// Port forwarding in kubernetes only supports TCP
-		localPortSpec, err := port_spec.NewPortSpec(localPort, port_spec.PortProtocol_TCP)
+		localPortSpec, err := port_spec.NewPortSpec(localPort, port_spec.PortProtocol_TCP, "")
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Expected to be able to create port-spec describing local port '%v', instead a non-nil err was returned", localPort)
 		}

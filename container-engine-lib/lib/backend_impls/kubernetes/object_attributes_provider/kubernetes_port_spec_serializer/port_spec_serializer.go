@@ -43,7 +43,7 @@ func SerializePortSpecs(ports map[string]*port_spec.PortSpec) (*kubernetes_annot
 			if strings.Contains(portId, disallowedChar) {
 				return nil, stacktrace.NewError("Port ID '%v' contains disallowed char '%v'", portId, disallowedChar)
 			}
-			protocolStr := portSpec.GetProtocol().String()
+			protocolStr := portSpec.GetTransportProtocol().String()
 			if strings.Contains(protocolStr, disallowedChar) {
 				return nil, stacktrace.NewError(
 					"Port spec protocol '%v' for port with ID '%v' contains disallowed char '%v'",
@@ -54,7 +54,7 @@ func SerializePortSpecs(ports map[string]*port_spec.PortSpec) (*kubernetes_annot
 			}
 		}
 		portNum := portSpec.GetNumber()
-		portProtocol := portSpec.GetProtocol()
+		portProtocol := portSpec.GetTransportProtocol()
 		if !portProtocol.IsAPortProtocol() {
 			return nil, stacktrace.NewError("Unrecognized port protocol '%v'", portProtocol.String())
 		}
@@ -148,7 +148,7 @@ func DeserializePortSpecs(specsStr string) (map[string]*port_spec.PortSpec, erro
 			return nil, stacktrace.Propagate(err, "An error occurred converting port protocol string '%v' to a port protocol enum", portProtocolStr)
 		}
 
-		portSpec, err := port_spec.NewPortSpec(portNumUint16, portProtocol)
+		portSpec, err := port_spec.NewPortSpec(portNumUint16, portProtocol, "")
 		if err != nil {
 			return nil, stacktrace.Propagate(
 				err,
