@@ -27,13 +27,13 @@ import (
 )
 
 const (
-	scriptOrModulePathKey                = "script-or-module-path"
-	isScriptOrModulePathArgumentOptional = false
+	scriptOrPackagePathKey                = "script-or-package-path"
+	isScriptOrPackagePathArgumentOptional = false
 
 	starlarkExtension = ".star"
 
-	moduleArgsFlagKey = "args"
-	defaultModuleArgs = "{}"
+	packageArgsFlagKey = "args"
+	defaultPackageArgs = "{}"
 
 	dryRunFlagKey = "dry-run"
 	defaultDryRun = "false"
@@ -81,11 +81,11 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			Default: defaultDryRun,
 		},
 		{
-			Key: moduleArgsFlagKey,
+			Key: packageArgsFlagKey,
 			// TODO(gb): Link to a proper doc page explaining what a proto file is, etc. when we have it
 			Usage:   "The parameters that should be passed to the Kurtosis module when running it. It is expected to be a serialized JSON string. Note that if a standalone Kurtosis script is being run, no parameter should be passed.",
 			Type:    flags.FlagType_String,
-			Default: defaultModuleArgs,
+			Default: defaultPackageArgs,
 		},
 		{
 			Key: enclaveIdFlagKey,
@@ -115,8 +115,8 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 	Args: []*args.ArgConfig{
 		// TODO add a `Usage` description here when ArgConfig supports it
 		file_system_path_arg.NewFilepathOrDirpathArg(
-			scriptOrModulePathKey,
-			isScriptOrModulePathArgumentOptional,
+			scriptOrPackagePathKey,
+			isScriptOrPackagePathArgumentOptional,
 			githubScriptpathValidationExceptionFunc,
 		),
 	},
@@ -131,9 +131,9 @@ func run(
 	args *args.ParsedArgs,
 ) error {
 	// Args parsing and validation
-	serializedJsonArgs, err := flags.GetString(moduleArgsFlagKey)
+	serializedJsonArgs, err := flags.GetString(packageArgsFlagKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the module parameters using flag key '%v'", moduleArgsFlagKey)
+		return stacktrace.Propagate(err, "An error occurred getting the module parameters using flag key '%v'", packageArgsFlagKey)
 	}
 	if err = validatePackageArgs(serializedJsonArgs); err != nil {
 		return stacktrace.Propagate(err, "An error occurred parsing the module parameters '%v'", serializedJsonArgs)
@@ -148,7 +148,7 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the is-partitioning-enabled setting using flag key '%v'", isPartitioningEnabledFlagKey)
 	}
 
-	starlarkScriptOrPackagePath, err := args.GetNonGreedyArg(scriptOrModulePathKey)
+	starlarkScriptOrPackagePath, err := args.GetNonGreedyArg(scriptOrPackagePathKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "Error reading the Starlark script or package directory at '%s'. Does it exist?", starlarkScriptOrPackagePath)
 	}
