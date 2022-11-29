@@ -58,13 +58,11 @@ func (runner *StartosisRunner) Run(ctx context.Context, dryRun bool, moduleId st
 		kurtosisExecutionResponseLines <- progressInfo
 
 		validationErrorsChan := runner.startosisValidator.Validate(ctx, instructionsList)
-		messagesWereReceived := forwardKurtosisResponseLineChannelUntilSourceIsClosed(validationErrorsChan, kurtosisExecutionResponseLines)
-		logrus.Debugf("Successfully validated Startosis script")
-
-		if messagesWereReceived {
-			// we halt execution as the validationErrorsChan had some error messages
+		if messagesWereReceived := forwardKurtosisResponseLineChannelUntilSourceIsClosed(validationErrorsChan, kurtosisExecutionResponseLines); messagesWereReceived {
 			return
 		}
+
+		logrus.Debugf("Successfully validated Startosis script")
 
 		// Execution starts > send progress info. This will soon be overridden byt the first instruction execution
 		progressInfo = binding_constructors.NewKurtosisExecutionResponseLineFromProgressInfo(
