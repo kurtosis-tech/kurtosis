@@ -1,10 +1,12 @@
-package shared_helpers
+package magic_string_helper
 
 import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/stretchr/testify/require"
+	"go.starlark.net/starlark"
 	"net"
 	"regexp"
 	"testing"
@@ -20,7 +22,13 @@ const (
 	testFactName = "test-fact-name"
 
 	unknownServiceId = "unknown_service"
+
+	testStringRuntimeValue         = starlark.String("test_string")
+	testRuntimeValueField          = "field"
+	testExpectedInterpolatedString = starlark.String("test_string is not 0")
 )
+
+var testIntRuntimeValue = starlark.MakeInt(0)
 
 func TestReplaceIPAddressInString_MultipleOccurrencesOfSameStringReplaced(t *testing.T) {
 	ipAddresses := map[service.ServiceID]net.IP{
@@ -70,4 +78,32 @@ func TestReplaceIPAddressInString_EnforceRegexAndPlaceholderAlign(t *testing.T) 
 	regex := regexp.MustCompile(ipAddressReplacementRegex)
 	hasMatches := regex.MatchString(ipAddressPlaceholder)
 	require.True(t, hasMatches)
+}
+
+func TestGetRuntimeValueFromString_BasicFetch(t *testing.T) {
+	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
+	stringValueUuid := runtimeValueStore.CreateValue()
+	runtimeValueStore.SetValue(stringValueUuid, map[string]starlark.Comparable{testRuntimeValueField: testStringRuntimeValue})
+	intValueUuid := runtimeValueStore.CreateValue()
+	runtimeValueStore.SetValue(intValueUuid, map[string]starlark.Comparable{testRuntimeValueField: testIntRuntimeValue})
+	fetchedStringValue, err := GetRuntimeValueFromString(fmt.Sprintf(RuntimeValueReplacementPlaceholderFormat, stringValueUuid, testRuntimeValueField), runtimeValueStore)
+	require.Nil(t, err)
+	require.Equal(t, fetchedStringValue, testStringRuntimeValue)
+	fetchedIntValue, err := GetRuntimeValueFromString(fmt.Sprintf(RuntimeValueReplacementPlaceholderFormat, intValueUuid, testRuntimeValueField), runtimeValueStore)
+	require.Nil(t, err)
+	require.Equal(t, fetchedIntValue, testIntRuntimeValue)
+}
+
+func TestGetRuntimeValueFromString_Interpolated(t *testing.T) {
+	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
+	stringValueUuid := runtimeValueStore.CreateValue()
+	runtimeValueStore.SetValue(stringValueUuid, map[string]starlark.Comparable{testRuntimeValueField: testStringRuntimeValue})
+	intValueUuid := runtimeValueStore.CreateValue()
+	runtimeValueStore.SetValue(intValueUuid, map[string]starlark.Comparable{testRuntimeValueField: testIntRuntimeValue})
+	stringRuntimeValue := fmt.Sprintf(RuntimeValueReplacementPlaceholderFormat, stringValueUuid, testRuntimeValueField)
+	intRuntimeValue := fmt.Sprintf(RuntimeValueReplacementPlaceholderFormat, intValueUuid, testRuntimeValueField)
+	interpolatedString := fmt.Sprintf("%v is not %v", stringRuntimeValue, intRuntimeValue)
+	resolvedInterpolatedString, err := GetRuntimeValueFromString(interpolatedString, runtimeValueStore)
+	require.Nil(t, err)
+	require.Equal(t, resolvedInterpolatedString, testExpectedInterpolatedString)
 }

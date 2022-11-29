@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
@@ -86,7 +87,7 @@ func (instruction *RenderTemplatesInstruction) Execute(_ context.Context) (*stri
 	for relFilePath := range instruction.templatesAndDataByDestRelFilepath {
 		templateStr := instruction.templatesAndDataByDestRelFilepath[relFilePath].Template
 		dataAsJson := instruction.templatesAndDataByDestRelFilepath[relFilePath].DataAsJson
-		dataAsJsonMaybeIPAddressReplaced, err := shared_helpers.ReplaceIPAddressInString(dataAsJson, instruction.serviceNetwork, instruction.GetPositionInOriginalScript().String())
+		dataAsJsonMaybeIPAddressReplaced, err := magic_string_helper.ReplaceIPAddressInString(dataAsJson, instruction.serviceNetwork, instruction.GetPositionInOriginalScript().String())
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred while replacing IP address with place holder in the render_template instruction for target '%v'", relFilePath)
 		}

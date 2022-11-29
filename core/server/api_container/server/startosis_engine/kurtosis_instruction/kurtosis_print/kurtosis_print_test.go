@@ -21,6 +21,7 @@ func TestPrintInstruction_StringRepresentation(t *testing.T) {
 		},
 		"; ",
 		"EOL",
+		nil,
 	)
 	expectedStr := `print("foo", ["bar"], end="EOL", sep="; ")`
 	require.Equal(t, expectedStr, instruction.String())

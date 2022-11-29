@@ -8,10 +8,10 @@ type ValidatorEnvironment struct {
 	serviceIDs           map[service.ServiceID]bool
 }
 
-func NewValidatorEnvironment(requiredDockerImages map[string]bool, serviceIDs map[service.ServiceID]bool) *ValidatorEnvironment {
+func NewValidatorEnvironment(serviceIDs map[service.ServiceID]bool) *ValidatorEnvironment {
 	return &ValidatorEnvironment{
-		requiredDockerImages,
-		serviceIDs,
+		requiredDockerImages: map[string]bool{},
+		serviceIDs:           serviceIDs,
 	}
 }
 

@@ -826,7 +826,7 @@ export class EnclaveContext {
 
         const args = new ExecuteStartosisModuleArgs;
         args.setLocal(archiverResponse.value)
-        args.setModuleId(kurtosisMod.module.name)
+        args.setModuleId(kurtosisMod.name)
         args.setSerializedParams(serializedParams)
         args.setDryRun(dryRun)
         return ok(args)

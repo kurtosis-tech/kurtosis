@@ -11,7 +11,7 @@ import {generateScriptOutput, readStreamContentUntilClosed} from "../../test_hel
 const TEST_NAME = "module"
 
 const REMOTE_MODULE = "github.com/kurtosis-tech/datastore-army-module"
-const EXECUTE_PARAMS            = `{"num_datastores": "2"}`
+const EXECUTE_PARAMS            = `{"num_datastores": 2}`
 const DATASTORE_SERVICE_0_ID     = "datastore-0"
 const DATASTORE_SERVICE_1_ID   = "datastore-1"
 const DATASTORE_PORT_ID       = "grpc"
@@ -21,8 +21,7 @@ const IS_PARTITIONING_ENABLED  = false
 
 jest.setTimeout(180000)
 
-// TODO(gb): re-activate post merge
-test.skip("Skipped as the remote module still uses import_types - Test remote starlark module execution", async () => {
+test("Test remote Starlark module execution", async () => {
     // ------------------------------------- ENGINE SETUP ----------------------------------------------
     const createEnclaveResult = await createEnclave(TEST_NAME, IS_PARTITIONING_ENABLED)
 

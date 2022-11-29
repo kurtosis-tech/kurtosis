@@ -1708,6 +1708,7 @@ type KurtosisExecutionResponseLine struct {
 	// Types that are assignable to KurtosisExecutionResponseLine:
 	//	*KurtosisExecutionResponseLine_Instruction
 	//	*KurtosisExecutionResponseLine_Error
+	//	*KurtosisExecutionResponseLine_ProgressInfo
 	KurtosisExecutionResponseLine isKurtosisExecutionResponseLine_KurtosisExecutionResponseLine `protobuf_oneof:"kurtosis_execution_response_line"`
 }
 
@@ -1764,6 +1765,13 @@ func (x *KurtosisExecutionResponseLine) GetError() *KurtosisError {
 	return nil
 }
 
+func (x *KurtosisExecutionResponseLine) GetProgressInfo() *KurtosisExecutionProgress {
+	if x, ok := x.GetKurtosisExecutionResponseLine().(*KurtosisExecutionResponseLine_ProgressInfo); ok {
+		return x.ProgressInfo
+	}
+	return nil
+}
+
 type isKurtosisExecutionResponseLine_KurtosisExecutionResponseLine interface {
 	isKurtosisExecutionResponseLine_KurtosisExecutionResponseLine()
 }
@@ -1776,10 +1784,80 @@ type KurtosisExecutionResponseLine_Error struct {
 	Error *KurtosisError `protobuf:"bytes,2,opt,name=error,proto3,oneof"`
 }
 
+type KurtosisExecutionResponseLine_ProgressInfo struct {
+	ProgressInfo *KurtosisExecutionProgress `protobuf:"bytes,3,opt,name=progress_info,json=progressInfo,proto3,oneof"`
+}
+
 func (*KurtosisExecutionResponseLine_Instruction) isKurtosisExecutionResponseLine_KurtosisExecutionResponseLine() {
 }
 
 func (*KurtosisExecutionResponseLine_Error) isKurtosisExecutionResponseLine_KurtosisExecutionResponseLine() {
+}
+
+func (*KurtosisExecutionResponseLine_ProgressInfo) isKurtosisExecutionResponseLine_KurtosisExecutionResponseLine() {
+}
+
+type KurtosisExecutionProgress struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	CurrentStepInfo   string `protobuf:"bytes,1,opt,name=current_step_info,json=currentStepInfo,proto3" json:"current_step_info,omitempty"`
+	TotalSteps        uint32 `protobuf:"varint,2,opt,name=total_steps,json=totalSteps,proto3" json:"total_steps,omitempty"`
+	CurrentStepNumber uint32 `protobuf:"varint,3,opt,name=current_step_number,json=currentStepNumber,proto3" json:"current_step_number,omitempty"`
+}
+
+func (x *KurtosisExecutionProgress) Reset() {
+	*x = KurtosisExecutionProgress{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_api_container_service_proto_msgTypes[24]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *KurtosisExecutionProgress) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*KurtosisExecutionProgress) ProtoMessage() {}
+
+func (x *KurtosisExecutionProgress) ProtoReflect() protoreflect.Message {
+	mi := &file_api_container_service_proto_msgTypes[24]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use KurtosisExecutionProgress.ProtoReflect.Descriptor instead.
+func (*KurtosisExecutionProgress) Descriptor() ([]byte, []int) {
+	return file_api_container_service_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *KurtosisExecutionProgress) GetCurrentStepInfo() string {
+	if x != nil {
+		return x.CurrentStepInfo
+	}
+	return ""
+}
+
+func (x *KurtosisExecutionProgress) GetTotalSteps() uint32 {
+	if x != nil {
+		return x.TotalSteps
+	}
+	return 0
+}
+
+func (x *KurtosisExecutionProgress) GetCurrentStepNumber() uint32 {
+	if x != nil {
+		return x.CurrentStepNumber
+	}
+	return 0
 }
 
 // ==============================================================================================
@@ -1798,7 +1876,7 @@ type StartServicesArgs struct {
 func (x *StartServicesArgs) Reset() {
 	*x = StartServicesArgs{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_container_service_proto_msgTypes[24]
+		mi := &file_api_container_service_proto_msgTypes[25]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1811,7 +1889,7 @@ func (x *StartServicesArgs) String() string {
 func (*StartServicesArgs) ProtoMessage() {}
 
 func (x *StartServicesArgs) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[24]
+	mi := &file_api_container_service_proto_msgTypes[25]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1824,7 +1902,7 @@ func (x *StartServicesArgs) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StartServicesArgs.ProtoReflect.Descriptor instead.
 func (*StartServicesArgs) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{24}
+	return file_api_container_service_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *StartServicesArgs) GetServiceIdsToConfigs() map[string]*ServiceConfig {
@@ -1855,7 +1933,7 @@ type StartServicesResponse struct {
 func (x *StartServicesResponse) Reset() {
 	*x = StartServicesResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_container_service_proto_msgTypes[25]
+		mi := &file_api_container_service_proto_msgTypes[26]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1868,7 +1946,7 @@ func (x *StartServicesResponse) String() string {
 func (*StartServicesResponse) ProtoMessage() {}
 
 func (x *StartServicesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[25]
+	mi := &file_api_container_service_proto_msgTypes[26]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1881,7 +1959,7 @@ func (x *StartServicesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StartServicesResponse.ProtoReflect.Descriptor instead.
 func (*StartServicesResponse) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{25}
+	return file_api_container_service_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *StartServicesResponse) GetSuccessfulServiceIdsToServiceInfo() map[string]*ServiceInfo {
@@ -1914,7 +1992,7 @@ type GetServicesArgs struct {
 func (x *GetServicesArgs) Reset() {
 	*x = GetServicesArgs{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_container_service_proto_msgTypes[26]
+		mi := &file_api_container_service_proto_msgTypes[27]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1927,7 +2005,7 @@ func (x *GetServicesArgs) String() string {
 func (*GetServicesArgs) ProtoMessage() {}
 
 func (x *GetServicesArgs) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[26]
+	mi := &file_api_container_service_proto_msgTypes[27]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1940,7 +2018,7 @@ func (x *GetServicesArgs) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetServicesArgs.ProtoReflect.Descriptor instead.
 func (*GetServicesArgs) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{26}
+	return file_api_container_service_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *GetServicesArgs) GetServiceIds() map[string]bool {
@@ -1962,7 +2040,7 @@ type GetServicesResponse struct {
 func (x *GetServicesResponse) Reset() {
 	*x = GetServicesResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_container_service_proto_msgTypes[27]
+		mi := &file_api_container_service_proto_msgTypes[28]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1975,7 +2053,7 @@ func (x *GetServicesResponse) String() string {
 func (*GetServicesResponse) ProtoMessage() {}
 
 func (x *GetServicesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[27]
+	mi := &file_api_container_service_proto_msgTypes[28]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1988,7 +2066,7 @@ func (x *GetServicesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetServicesResponse.ProtoReflect.Descriptor instead.
 func (*GetServicesResponse) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{27}
+	return file_api_container_service_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *GetServicesResponse) GetServiceInfo() map[string]*ServiceInfo {
@@ -2012,7 +2090,7 @@ type RemoveServiceArgs struct {
 func (x *RemoveServiceArgs) Reset() {
 	*x = RemoveServiceArgs{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_container_service_proto_msgTypes[28]
+		mi := &file_api_container_service_proto_msgTypes[29]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2025,7 +2103,7 @@ func (x *RemoveServiceArgs) String() string {
 func (*RemoveServiceArgs) ProtoMessage() {}
 
 func (x *RemoveServiceArgs) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[28]
+	mi := &file_api_container_service_proto_msgTypes[29]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2038,7 +2116,7 @@ func (x *RemoveServiceArgs) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoveServiceArgs.ProtoReflect.Descriptor instead.
 func (*RemoveServiceArgs) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{28}
+	return file_api_container_service_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *RemoveServiceArgs) GetServiceId() string {
@@ -2060,7 +2138,7 @@ type RemoveServiceResponse struct {
 func (x *RemoveServiceResponse) Reset() {
 	*x = RemoveServiceResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_container_service_proto_msgTypes[29]
+		mi := &file_api_container_service_proto_msgTypes[30]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2073,7 +2151,7 @@ func (x *RemoveServiceResponse) String() string {
 func (*RemoveServiceResponse) ProtoMessage() {}
 
 func (x *RemoveServiceResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[29]
+	mi := &file_api_container_service_proto_msgTypes[30]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2086,7 +2164,7 @@ func (x *RemoveServiceResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoveServiceResponse.ProtoReflect.Descriptor instead.
 func (*RemoveServiceResponse) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{29}
+	return file_api_container_service_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *RemoveServiceResponse) GetServiceGuid() string {
@@ -2116,7 +2194,7 @@ type RepartitionArgs struct {
 func (x *RepartitionArgs) Reset() {
 	*x = RepartitionArgs{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_container_service_proto_msgTypes[30]
+		mi := &file_api_container_service_proto_msgTypes[31]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2129,7 +2207,7 @@ func (x *RepartitionArgs) String() string {
 func (*RepartitionArgs) ProtoMessage() {}
 
 func (x *RepartitionArgs) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[30]
+	mi := &file_api_container_service_proto_msgTypes[31]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2142,7 +2220,7 @@ func (x *RepartitionArgs) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RepartitionArgs.ProtoReflect.Descriptor instead.
 func (*RepartitionArgs) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{30}
+	return file_api_container_service_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *RepartitionArgs) GetPartitionServices() map[string]*PartitionServices {
@@ -2178,7 +2256,7 @@ type PartitionServices struct {
 func (x *PartitionServices) Reset() {
 	*x = PartitionServices{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_container_service_proto_msgTypes[31]
+		mi := &file_api_container_service_proto_msgTypes[32]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2191,7 +2269,7 @@ func (x *PartitionServices) String() string {
 func (*PartitionServices) ProtoMessage() {}
 
 func (x *PartitionServices) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[31]
+	mi := &file_api_container_service_proto_msgTypes[32]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2204,7 +2282,7 @@ func (x *PartitionServices) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PartitionServices.ProtoReflect.Descriptor instead.
 func (*PartitionServices) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{31}
+	return file_api_container_service_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *PartitionServices) GetServiceIdSet() map[string]bool {
@@ -2225,7 +2303,7 @@ type PartitionConnections struct {
 func (x *PartitionConnections) Reset() {
 	*x = PartitionConnections{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_container_service_proto_msgTypes[32]
+		mi := &file_api_container_service_proto_msgTypes[33]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2238,7 +2316,7 @@ func (x *PartitionConnections) String() string {
 func (*PartitionConnections) ProtoMessage() {}
 
 func (x *PartitionConnections) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[32]
+	mi := &file_api_container_service_proto_msgTypes[33]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2251,7 +2329,7 @@ func (x *PartitionConnections) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PartitionConnections.ProtoReflect.Descriptor instead.
 func (*PartitionConnections) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{32}
+	return file_api_container_service_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *PartitionConnections) GetConnectionInfo() map[string]*PartitionConnectionInfo {
@@ -2273,7 +2351,7 @@ type PartitionConnectionInfo struct {
 func (x *PartitionConnectionInfo) Reset() {
 	*x = PartitionConnectionInfo{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_container_service_proto_msgTypes[33]
+		mi := &file_api_container_service_proto_msgTypes[34]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2286,7 +2364,7 @@ func (x *PartitionConnectionInfo) String() string {
 func (*PartitionConnectionInfo) ProtoMessage() {}
 
 func (x *PartitionConnectionInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[33]
+	mi := &file_api_container_service_proto_msgTypes[34]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2299,7 +2377,7 @@ func (x *PartitionConnectionInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PartitionConnectionInfo.ProtoReflect.Descriptor instead.
 func (*PartitionConnectionInfo) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{33}
+	return file_api_container_service_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *PartitionConnectionInfo) GetPacketLossPercentage() float32 {
@@ -2325,7 +2403,7 @@ type ExecCommandArgs struct {
 func (x *ExecCommandArgs) Reset() {
 	*x = ExecCommandArgs{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_container_service_proto_msgTypes[34]
+		mi := &file_api_container_service_proto_msgTypes[35]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2338,7 +2416,7 @@ func (x *ExecCommandArgs) String() string {
 func (*ExecCommandArgs) ProtoMessage() {}
 
 func (x *ExecCommandArgs) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[34]
+	mi := &file_api_container_service_proto_msgTypes[35]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2351,7 +2429,7 @@ func (x *ExecCommandArgs) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExecCommandArgs.ProtoReflect.Descriptor instead.
 func (*ExecCommandArgs) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{34}
+	return file_api_container_service_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *ExecCommandArgs) GetServiceId() string {
@@ -2383,7 +2461,7 @@ type PauseServiceArgs struct {
 func (x *PauseServiceArgs) Reset() {
 	*x = PauseServiceArgs{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_container_service_proto_msgTypes[35]
+		mi := &file_api_container_service_proto_msgTypes[36]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2396,7 +2474,7 @@ func (x *PauseServiceArgs) String() string {
 func (*PauseServiceArgs) ProtoMessage() {}
 
 func (x *PauseServiceArgs) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[35]
+	mi := &file_api_container_service_proto_msgTypes[36]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2409,7 +2487,7 @@ func (x *PauseServiceArgs) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PauseServiceArgs.ProtoReflect.Descriptor instead.
 func (*PauseServiceArgs) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{35}
+	return file_api_container_service_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *PauseServiceArgs) GetServiceId() string {
@@ -2431,7 +2509,7 @@ type UnpauseServiceArgs struct {
 func (x *UnpauseServiceArgs) Reset() {
 	*x = UnpauseServiceArgs{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_container_service_proto_msgTypes[36]
+		mi := &file_api_container_service_proto_msgTypes[37]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2444,7 +2522,7 @@ func (x *UnpauseServiceArgs) String() string {
 func (*UnpauseServiceArgs) ProtoMessage() {}
 
 func (x *UnpauseServiceArgs) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[36]
+	mi := &file_api_container_service_proto_msgTypes[37]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2457,7 +2535,7 @@ func (x *UnpauseServiceArgs) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnpauseServiceArgs.ProtoReflect.Descriptor instead.
 func (*UnpauseServiceArgs) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{36}
+	return file_api_container_service_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *UnpauseServiceArgs) GetServiceId() string {
@@ -2480,7 +2558,7 @@ type ExecCommandResponse struct {
 func (x *ExecCommandResponse) Reset() {
 	*x = ExecCommandResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_container_service_proto_msgTypes[37]
+		mi := &file_api_container_service_proto_msgTypes[38]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2493,7 +2571,7 @@ func (x *ExecCommandResponse) String() string {
 func (*ExecCommandResponse) ProtoMessage() {}
 
 func (x *ExecCommandResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[37]
+	mi := &file_api_container_service_proto_msgTypes[38]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2506,7 +2584,7 @@ func (x *ExecCommandResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExecCommandResponse.ProtoReflect.Descriptor instead.
 func (*ExecCommandResponse) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{37}
+	return file_api_container_service_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *ExecCommandResponse) GetExitCode() int32 {
@@ -2550,7 +2628,7 @@ type WaitForHttpGetEndpointAvailabilityArgs struct {
 func (x *WaitForHttpGetEndpointAvailabilityArgs) Reset() {
 	*x = WaitForHttpGetEndpointAvailabilityArgs{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_container_service_proto_msgTypes[38]
+		mi := &file_api_container_service_proto_msgTypes[39]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2563,7 +2641,7 @@ func (x *WaitForHttpGetEndpointAvailabilityArgs) String() string {
 func (*WaitForHttpGetEndpointAvailabilityArgs) ProtoMessage() {}
 
 func (x *WaitForHttpGetEndpointAvailabilityArgs) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[38]
+	mi := &file_api_container_service_proto_msgTypes[39]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2576,7 +2654,7 @@ func (x *WaitForHttpGetEndpointAvailabilityArgs) ProtoReflect() protoreflect.Mes
 
 // Deprecated: Use WaitForHttpGetEndpointAvailabilityArgs.ProtoReflect.Descriptor instead.
 func (*WaitForHttpGetEndpointAvailabilityArgs) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{38}
+	return file_api_container_service_proto_rawDescGZIP(), []int{39}
 }
 
 func (x *WaitForHttpGetEndpointAvailabilityArgs) GetServiceId() string {
@@ -2657,7 +2735,7 @@ type WaitForHttpPostEndpointAvailabilityArgs struct {
 func (x *WaitForHttpPostEndpointAvailabilityArgs) Reset() {
 	*x = WaitForHttpPostEndpointAvailabilityArgs{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_container_service_proto_msgTypes[39]
+		mi := &file_api_container_service_proto_msgTypes[40]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2670,7 +2748,7 @@ func (x *WaitForHttpPostEndpointAvailabilityArgs) String() string {
 func (*WaitForHttpPostEndpointAvailabilityArgs) ProtoMessage() {}
 
 func (x *WaitForHttpPostEndpointAvailabilityArgs) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[39]
+	mi := &file_api_container_service_proto_msgTypes[40]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2683,7 +2761,7 @@ func (x *WaitForHttpPostEndpointAvailabilityArgs) ProtoReflect() protoreflect.Me
 
 // Deprecated: Use WaitForHttpPostEndpointAvailabilityArgs.ProtoReflect.Descriptor instead.
 func (*WaitForHttpPostEndpointAvailabilityArgs) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{39}
+	return file_api_container_service_proto_rawDescGZIP(), []int{40}
 }
 
 func (x *WaitForHttpPostEndpointAvailabilityArgs) GetServiceId() string {
@@ -2757,7 +2835,7 @@ type UploadFilesArtifactArgs struct {
 func (x *UploadFilesArtifactArgs) Reset() {
 	*x = UploadFilesArtifactArgs{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_container_service_proto_msgTypes[40]
+		mi := &file_api_container_service_proto_msgTypes[41]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2770,7 +2848,7 @@ func (x *UploadFilesArtifactArgs) String() string {
 func (*UploadFilesArtifactArgs) ProtoMessage() {}
 
 func (x *UploadFilesArtifactArgs) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[40]
+	mi := &file_api_container_service_proto_msgTypes[41]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2783,7 +2861,7 @@ func (x *UploadFilesArtifactArgs) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UploadFilesArtifactArgs.ProtoReflect.Descriptor instead.
 func (*UploadFilesArtifactArgs) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{40}
+	return file_api_container_service_proto_rawDescGZIP(), []int{41}
 }
 
 func (x *UploadFilesArtifactArgs) GetData() []byte {
@@ -2805,7 +2883,7 @@ type UploadFilesArtifactResponse struct {
 func (x *UploadFilesArtifactResponse) Reset() {
 	*x = UploadFilesArtifactResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_container_service_proto_msgTypes[41]
+		mi := &file_api_container_service_proto_msgTypes[42]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2818,7 +2896,7 @@ func (x *UploadFilesArtifactResponse) String() string {
 func (*UploadFilesArtifactResponse) ProtoMessage() {}
 
 func (x *UploadFilesArtifactResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[41]
+	mi := &file_api_container_service_proto_msgTypes[42]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2831,7 +2909,7 @@ func (x *UploadFilesArtifactResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UploadFilesArtifactResponse.ProtoReflect.Descriptor instead.
 func (*UploadFilesArtifactResponse) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{41}
+	return file_api_container_service_proto_rawDescGZIP(), []int{42}
 }
 
 func (x *UploadFilesArtifactResponse) GetUuid() string {
@@ -2856,7 +2934,7 @@ type DownloadFilesArtifactArgs struct {
 func (x *DownloadFilesArtifactArgs) Reset() {
 	*x = DownloadFilesArtifactArgs{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_container_service_proto_msgTypes[42]
+		mi := &file_api_container_service_proto_msgTypes[43]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2869,7 +2947,7 @@ func (x *DownloadFilesArtifactArgs) String() string {
 func (*DownloadFilesArtifactArgs) ProtoMessage() {}
 
 func (x *DownloadFilesArtifactArgs) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[42]
+	mi := &file_api_container_service_proto_msgTypes[43]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2882,7 +2960,7 @@ func (x *DownloadFilesArtifactArgs) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DownloadFilesArtifactArgs.ProtoReflect.Descriptor instead.
 func (*DownloadFilesArtifactArgs) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{42}
+	return file_api_container_service_proto_rawDescGZIP(), []int{43}
 }
 
 func (x *DownloadFilesArtifactArgs) GetId() string {
@@ -2904,7 +2982,7 @@ type DownloadFilesArtifactResponse struct {
 func (x *DownloadFilesArtifactResponse) Reset() {
 	*x = DownloadFilesArtifactResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_container_service_proto_msgTypes[43]
+		mi := &file_api_container_service_proto_msgTypes[44]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2917,7 +2995,7 @@ func (x *DownloadFilesArtifactResponse) String() string {
 func (*DownloadFilesArtifactResponse) ProtoMessage() {}
 
 func (x *DownloadFilesArtifactResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[43]
+	mi := &file_api_container_service_proto_msgTypes[44]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2930,7 +3008,7 @@ func (x *DownloadFilesArtifactResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DownloadFilesArtifactResponse.ProtoReflect.Descriptor instead.
 func (*DownloadFilesArtifactResponse) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{43}
+	return file_api_container_service_proto_rawDescGZIP(), []int{44}
 }
 
 func (x *DownloadFilesArtifactResponse) GetData() []byte {
@@ -2955,7 +3033,7 @@ type StoreWebFilesArtifactArgs struct {
 func (x *StoreWebFilesArtifactArgs) Reset() {
 	*x = StoreWebFilesArtifactArgs{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_container_service_proto_msgTypes[44]
+		mi := &file_api_container_service_proto_msgTypes[45]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2968,7 +3046,7 @@ func (x *StoreWebFilesArtifactArgs) String() string {
 func (*StoreWebFilesArtifactArgs) ProtoMessage() {}
 
 func (x *StoreWebFilesArtifactArgs) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[44]
+	mi := &file_api_container_service_proto_msgTypes[45]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2981,7 +3059,7 @@ func (x *StoreWebFilesArtifactArgs) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StoreWebFilesArtifactArgs.ProtoReflect.Descriptor instead.
 func (*StoreWebFilesArtifactArgs) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{44}
+	return file_api_container_service_proto_rawDescGZIP(), []int{45}
 }
 
 func (x *StoreWebFilesArtifactArgs) GetUrl() string {
@@ -3003,7 +3081,7 @@ type StoreWebFilesArtifactResponse struct {
 func (x *StoreWebFilesArtifactResponse) Reset() {
 	*x = StoreWebFilesArtifactResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_container_service_proto_msgTypes[45]
+		mi := &file_api_container_service_proto_msgTypes[46]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3016,7 +3094,7 @@ func (x *StoreWebFilesArtifactResponse) String() string {
 func (*StoreWebFilesArtifactResponse) ProtoMessage() {}
 
 func (x *StoreWebFilesArtifactResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[45]
+	mi := &file_api_container_service_proto_msgTypes[46]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3029,7 +3107,7 @@ func (x *StoreWebFilesArtifactResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StoreWebFilesArtifactResponse.ProtoReflect.Descriptor instead.
 func (*StoreWebFilesArtifactResponse) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{45}
+	return file_api_container_service_proto_rawDescGZIP(), []int{46}
 }
 
 func (x *StoreWebFilesArtifactResponse) GetUuid() string {
@@ -3053,7 +3131,7 @@ type StoreFilesArtifactFromServiceArgs struct {
 func (x *StoreFilesArtifactFromServiceArgs) Reset() {
 	*x = StoreFilesArtifactFromServiceArgs{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_container_service_proto_msgTypes[46]
+		mi := &file_api_container_service_proto_msgTypes[47]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3066,7 +3144,7 @@ func (x *StoreFilesArtifactFromServiceArgs) String() string {
 func (*StoreFilesArtifactFromServiceArgs) ProtoMessage() {}
 
 func (x *StoreFilesArtifactFromServiceArgs) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[46]
+	mi := &file_api_container_service_proto_msgTypes[47]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3079,7 +3157,7 @@ func (x *StoreFilesArtifactFromServiceArgs) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use StoreFilesArtifactFromServiceArgs.ProtoReflect.Descriptor instead.
 func (*StoreFilesArtifactFromServiceArgs) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{46}
+	return file_api_container_service_proto_rawDescGZIP(), []int{47}
 }
 
 func (x *StoreFilesArtifactFromServiceArgs) GetServiceId() string {
@@ -3108,7 +3186,7 @@ type StoreFilesArtifactFromServiceResponse struct {
 func (x *StoreFilesArtifactFromServiceResponse) Reset() {
 	*x = StoreFilesArtifactFromServiceResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_container_service_proto_msgTypes[47]
+		mi := &file_api_container_service_proto_msgTypes[48]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3121,7 +3199,7 @@ func (x *StoreFilesArtifactFromServiceResponse) String() string {
 func (*StoreFilesArtifactFromServiceResponse) ProtoMessage() {}
 
 func (x *StoreFilesArtifactFromServiceResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[47]
+	mi := &file_api_container_service_proto_msgTypes[48]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3134,7 +3212,7 @@ func (x *StoreFilesArtifactFromServiceResponse) ProtoReflect() protoreflect.Mess
 
 // Deprecated: Use StoreFilesArtifactFromServiceResponse.ProtoReflect.Descriptor instead.
 func (*StoreFilesArtifactFromServiceResponse) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{47}
+	return file_api_container_service_proto_rawDescGZIP(), []int{48}
 }
 
 func (x *StoreFilesArtifactFromServiceResponse) GetUuid() string {
@@ -3156,7 +3234,7 @@ type RenderTemplatesToFilesArtifactArgs struct {
 func (x *RenderTemplatesToFilesArtifactArgs) Reset() {
 	*x = RenderTemplatesToFilesArtifactArgs{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_container_service_proto_msgTypes[48]
+		mi := &file_api_container_service_proto_msgTypes[49]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3169,7 +3247,7 @@ func (x *RenderTemplatesToFilesArtifactArgs) String() string {
 func (*RenderTemplatesToFilesArtifactArgs) ProtoMessage() {}
 
 func (x *RenderTemplatesToFilesArtifactArgs) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[48]
+	mi := &file_api_container_service_proto_msgTypes[49]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3182,7 +3260,7 @@ func (x *RenderTemplatesToFilesArtifactArgs) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use RenderTemplatesToFilesArtifactArgs.ProtoReflect.Descriptor instead.
 func (*RenderTemplatesToFilesArtifactArgs) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{48}
+	return file_api_container_service_proto_rawDescGZIP(), []int{49}
 }
 
 func (x *RenderTemplatesToFilesArtifactArgs) GetTemplatesAndDataByDestinationRelFilepath() map[string]*RenderTemplatesToFilesArtifactArgs_TemplateAndData {
@@ -3204,7 +3282,7 @@ type RenderTemplatesToFilesArtifactResponse struct {
 func (x *RenderTemplatesToFilesArtifactResponse) Reset() {
 	*x = RenderTemplatesToFilesArtifactResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_container_service_proto_msgTypes[49]
+		mi := &file_api_container_service_proto_msgTypes[50]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3217,7 +3295,7 @@ func (x *RenderTemplatesToFilesArtifactResponse) String() string {
 func (*RenderTemplatesToFilesArtifactResponse) ProtoMessage() {}
 
 func (x *RenderTemplatesToFilesArtifactResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[49]
+	mi := &file_api_container_service_proto_msgTypes[50]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3230,7 +3308,7 @@ func (x *RenderTemplatesToFilesArtifactResponse) ProtoReflect() protoreflect.Mes
 
 // Deprecated: Use RenderTemplatesToFilesArtifactResponse.ProtoReflect.Descriptor instead.
 func (*RenderTemplatesToFilesArtifactResponse) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{49}
+	return file_api_container_service_proto_rawDescGZIP(), []int{50}
 }
 
 func (x *RenderTemplatesToFilesArtifactResponse) GetUuid() string {
@@ -3251,7 +3329,7 @@ type DefineFactArgs struct {
 func (x *DefineFactArgs) Reset() {
 	*x = DefineFactArgs{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_container_service_proto_msgTypes[50]
+		mi := &file_api_container_service_proto_msgTypes[51]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3264,7 +3342,7 @@ func (x *DefineFactArgs) String() string {
 func (*DefineFactArgs) ProtoMessage() {}
 
 func (x *DefineFactArgs) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[50]
+	mi := &file_api_container_service_proto_msgTypes[51]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3277,7 +3355,7 @@ func (x *DefineFactArgs) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DefineFactArgs.ProtoReflect.Descriptor instead.
 func (*DefineFactArgs) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{50}
+	return file_api_container_service_proto_rawDescGZIP(), []int{51}
 }
 
 func (x *DefineFactArgs) GetFactRecipe() *FactRecipe {
@@ -3296,7 +3374,7 @@ type DefineFactResponse struct {
 func (x *DefineFactResponse) Reset() {
 	*x = DefineFactResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_container_service_proto_msgTypes[51]
+		mi := &file_api_container_service_proto_msgTypes[52]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3309,7 +3387,7 @@ func (x *DefineFactResponse) String() string {
 func (*DefineFactResponse) ProtoMessage() {}
 
 func (x *DefineFactResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[51]
+	mi := &file_api_container_service_proto_msgTypes[52]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3322,7 +3400,7 @@ func (x *DefineFactResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DefineFactResponse.ProtoReflect.Descriptor instead.
 func (*DefineFactResponse) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{51}
+	return file_api_container_service_proto_rawDescGZIP(), []int{52}
 }
 
 type GetFactValuesArgs struct {
@@ -3338,7 +3416,7 @@ type GetFactValuesArgs struct {
 func (x *GetFactValuesArgs) Reset() {
 	*x = GetFactValuesArgs{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_container_service_proto_msgTypes[52]
+		mi := &file_api_container_service_proto_msgTypes[53]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3351,7 +3429,7 @@ func (x *GetFactValuesArgs) String() string {
 func (*GetFactValuesArgs) ProtoMessage() {}
 
 func (x *GetFactValuesArgs) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[52]
+	mi := &file_api_container_service_proto_msgTypes[53]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3364,7 +3442,7 @@ func (x *GetFactValuesArgs) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetFactValuesArgs.ProtoReflect.Descriptor instead.
 func (*GetFactValuesArgs) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{52}
+	return file_api_container_service_proto_rawDescGZIP(), []int{53}
 }
 
 func (x *GetFactValuesArgs) GetServiceId() string {
@@ -3400,7 +3478,7 @@ type GetFactValuesResponse struct {
 func (x *GetFactValuesResponse) Reset() {
 	*x = GetFactValuesResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_container_service_proto_msgTypes[53]
+		mi := &file_api_container_service_proto_msgTypes[54]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3413,7 +3491,7 @@ func (x *GetFactValuesResponse) String() string {
 func (*GetFactValuesResponse) ProtoMessage() {}
 
 func (x *GetFactValuesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[53]
+	mi := &file_api_container_service_proto_msgTypes[54]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3426,7 +3504,7 @@ func (x *GetFactValuesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetFactValuesResponse.ProtoReflect.Descriptor instead.
 func (*GetFactValuesResponse) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{53}
+	return file_api_container_service_proto_rawDescGZIP(), []int{54}
 }
 
 func (x *GetFactValuesResponse) GetFactValues() []*FactValue {
@@ -3457,7 +3535,7 @@ type FactValue struct {
 func (x *FactValue) Reset() {
 	*x = FactValue{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_container_service_proto_msgTypes[54]
+		mi := &file_api_container_service_proto_msgTypes[55]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3470,7 +3548,7 @@ func (x *FactValue) String() string {
 func (*FactValue) ProtoMessage() {}
 
 func (x *FactValue) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[54]
+	mi := &file_api_container_service_proto_msgTypes[55]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3483,7 +3561,7 @@ func (x *FactValue) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FactValue.ProtoReflect.Descriptor instead.
 func (*FactValue) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{54}
+	return file_api_container_service_proto_rawDescGZIP(), []int{55}
 }
 
 func (m *FactValue) GetFactValue() isFactValue_FactValue {
@@ -3528,7 +3606,7 @@ type ConstantFactRecipe struct {
 func (x *ConstantFactRecipe) Reset() {
 	*x = ConstantFactRecipe{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_container_service_proto_msgTypes[55]
+		mi := &file_api_container_service_proto_msgTypes[56]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3541,7 +3619,7 @@ func (x *ConstantFactRecipe) String() string {
 func (*ConstantFactRecipe) ProtoMessage() {}
 
 func (x *ConstantFactRecipe) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[55]
+	mi := &file_api_container_service_proto_msgTypes[56]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3554,7 +3632,7 @@ func (x *ConstantFactRecipe) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConstantFactRecipe.ProtoReflect.Descriptor instead.
 func (*ConstantFactRecipe) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{55}
+	return file_api_container_service_proto_rawDescGZIP(), []int{56}
 }
 
 func (x *ConstantFactRecipe) GetFactValue() *FactValue {
@@ -3575,7 +3653,7 @@ type ExecFactRecipe struct {
 func (x *ExecFactRecipe) Reset() {
 	*x = ExecFactRecipe{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_container_service_proto_msgTypes[56]
+		mi := &file_api_container_service_proto_msgTypes[57]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3588,7 +3666,7 @@ func (x *ExecFactRecipe) String() string {
 func (*ExecFactRecipe) ProtoMessage() {}
 
 func (x *ExecFactRecipe) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[56]
+	mi := &file_api_container_service_proto_msgTypes[57]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3601,7 +3679,7 @@ func (x *ExecFactRecipe) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExecFactRecipe.ProtoReflect.Descriptor instead.
 func (*ExecFactRecipe) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{56}
+	return file_api_container_service_proto_rawDescGZIP(), []int{57}
 }
 
 func (x *ExecFactRecipe) GetCmdArgs() []string {
@@ -3627,7 +3705,7 @@ type HttpRequestFactRecipe struct {
 func (x *HttpRequestFactRecipe) Reset() {
 	*x = HttpRequestFactRecipe{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_container_service_proto_msgTypes[57]
+		mi := &file_api_container_service_proto_msgTypes[58]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3640,7 +3718,7 @@ func (x *HttpRequestFactRecipe) String() string {
 func (*HttpRequestFactRecipe) ProtoMessage() {}
 
 func (x *HttpRequestFactRecipe) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[57]
+	mi := &file_api_container_service_proto_msgTypes[58]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3653,7 +3731,7 @@ func (x *HttpRequestFactRecipe) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HttpRequestFactRecipe.ProtoReflect.Descriptor instead.
 func (*HttpRequestFactRecipe) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{57}
+	return file_api_container_service_proto_rawDescGZIP(), []int{58}
 }
 
 func (x *HttpRequestFactRecipe) GetPortId() string {
@@ -3716,7 +3794,7 @@ type FactRecipe struct {
 func (x *FactRecipe) Reset() {
 	*x = FactRecipe{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_container_service_proto_msgTypes[58]
+		mi := &file_api_container_service_proto_msgTypes[59]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3729,7 +3807,7 @@ func (x *FactRecipe) String() string {
 func (*FactRecipe) ProtoMessage() {}
 
 func (x *FactRecipe) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[58]
+	mi := &file_api_container_service_proto_msgTypes[59]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3742,7 +3820,7 @@ func (x *FactRecipe) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FactRecipe.ProtoReflect.Descriptor instead.
 func (*FactRecipe) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{58}
+	return file_api_container_service_proto_rawDescGZIP(), []int{59}
 }
 
 func (x *FactRecipe) GetServiceId() string {
@@ -3831,7 +3909,7 @@ type RenderTemplatesToFilesArtifactArgs_TemplateAndData struct {
 func (x *RenderTemplatesToFilesArtifactArgs_TemplateAndData) Reset() {
 	*x = RenderTemplatesToFilesArtifactArgs_TemplateAndData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_container_service_proto_msgTypes[76]
+		mi := &file_api_container_service_proto_msgTypes[77]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3844,7 +3922,7 @@ func (x *RenderTemplatesToFilesArtifactArgs_TemplateAndData) String() string {
 func (*RenderTemplatesToFilesArtifactArgs_TemplateAndData) ProtoMessage() {}
 
 func (x *RenderTemplatesToFilesArtifactArgs_TemplateAndData) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[76]
+	mi := &file_api_container_service_proto_msgTypes[77]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3857,7 +3935,7 @@ func (x *RenderTemplatesToFilesArtifactArgs_TemplateAndData) ProtoReflect() prot
 
 // Deprecated: Use RenderTemplatesToFilesArtifactArgs_TemplateAndData.ProtoReflect.Descriptor instead.
 func (*RenderTemplatesToFilesArtifactArgs_TemplateAndData) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{48, 0}
+	return file_api_container_service_proto_rawDescGZIP(), []int{49, 0}
 }
 
 func (x *RenderTemplatesToFilesArtifactArgs_TemplateAndData) GetTemplate() string {
@@ -4191,7 +4269,7 @@ var file_api_container_service_proto_rawDesc = []byte{
 	0x70, 0x69, 0x2e, 0x4b, 0x75, 0x72, 0x74, 0x6f, 0x73, 0x69, 0x73, 0x45, 0x78, 0x65, 0x63, 0x75,
 	0x74, 0x69, 0x6f, 0x6e, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x48, 0x00, 0x52, 0x0e, 0x65, 0x78, 0x65,
 	0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x42, 0x07, 0x0a, 0x05, 0x65,
-	0x72, 0x72, 0x6f, 0x72, 0x22, 0xc9, 0x01, 0x0a, 0x1d, 0x4b, 0x75, 0x72, 0x74, 0x6f, 0x73, 0x69,
+	0x72, 0x72, 0x6f, 0x72, 0x22, 0x9e, 0x02, 0x0a, 0x1d, 0x4b, 0x75, 0x72, 0x74, 0x6f, 0x73, 0x69,
 	0x73, 0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
 	0x73, 0x65, 0x4c, 0x69, 0x6e, 0x65, 0x12, 0x4a, 0x0a, 0x0b, 0x69, 0x6e, 0x73, 0x74, 0x72, 0x75,
 	0x63, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x26, 0x2e, 0x61, 0x70,
@@ -4201,9 +4279,24 @@ var file_api_container_service_proto_rawDesc = []byte{
 	0x6f, 0x6e, 0x12, 0x38, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28,
 	0x0b, 0x32, 0x20, 0x2e, 0x61, 0x70, 0x69, 0x5f, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65,
 	0x72, 0x5f, 0x61, 0x70, 0x69, 0x2e, 0x4b, 0x75, 0x72, 0x74, 0x6f, 0x73, 0x69, 0x73, 0x45, 0x72,
-	0x72, 0x6f, 0x72, 0x48, 0x00, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x42, 0x22, 0x0a, 0x20,
-	0x6b, 0x75, 0x72, 0x74, 0x6f, 0x73, 0x69, 0x73, 0x5f, 0x65, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69,
-	0x6f, 0x6e, 0x5f, 0x72, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x5f, 0x6c, 0x69, 0x6e, 0x65,
+	0x72, 0x6f, 0x72, 0x48, 0x00, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x12, 0x53, 0x0a, 0x0d,
+	0x70, 0x72, 0x6f, 0x67, 0x72, 0x65, 0x73, 0x73, 0x5f, 0x69, 0x6e, 0x66, 0x6f, 0x18, 0x03, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x2c, 0x2e, 0x61, 0x70, 0x69, 0x5f, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69,
+	0x6e, 0x65, 0x72, 0x5f, 0x61, 0x70, 0x69, 0x2e, 0x4b, 0x75, 0x72, 0x74, 0x6f, 0x73, 0x69, 0x73,
+	0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x50, 0x72, 0x6f, 0x67, 0x72, 0x65, 0x73,
+	0x73, 0x48, 0x00, 0x52, 0x0c, 0x70, 0x72, 0x6f, 0x67, 0x72, 0x65, 0x73, 0x73, 0x49, 0x6e, 0x66,
+	0x6f, 0x42, 0x22, 0x0a, 0x20, 0x6b, 0x75, 0x72, 0x74, 0x6f, 0x73, 0x69, 0x73, 0x5f, 0x65, 0x78,
+	0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x72, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x5f, 0x6c, 0x69, 0x6e, 0x65, 0x22, 0x98, 0x01, 0x0a, 0x19, 0x4b, 0x75, 0x72, 0x74, 0x6f, 0x73,
+	0x69, 0x73, 0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x50, 0x72, 0x6f, 0x67, 0x72,
+	0x65, 0x73, 0x73, 0x12, 0x2a, 0x0a, 0x11, 0x63, 0x75, 0x72, 0x72, 0x65, 0x6e, 0x74, 0x5f, 0x73,
+	0x74, 0x65, 0x70, 0x5f, 0x69, 0x6e, 0x66, 0x6f, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0f,
+	0x63, 0x75, 0x72, 0x72, 0x65, 0x6e, 0x74, 0x53, 0x74, 0x65, 0x70, 0x49, 0x6e, 0x66, 0x6f, 0x12,
+	0x1f, 0x0a, 0x0b, 0x74, 0x6f, 0x74, 0x61, 0x6c, 0x5f, 0x73, 0x74, 0x65, 0x70, 0x73, 0x18, 0x02,
+	0x20, 0x01, 0x28, 0x0d, 0x52, 0x0a, 0x74, 0x6f, 0x74, 0x61, 0x6c, 0x53, 0x74, 0x65, 0x70, 0x73,
+	0x12, 0x2e, 0x0a, 0x13, 0x63, 0x75, 0x72, 0x72, 0x65, 0x6e, 0x74, 0x5f, 0x73, 0x74, 0x65, 0x70,
+	0x5f, 0x6e, 0x75, 0x6d, 0x62, 0x65, 0x72, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x11, 0x63,
+	0x75, 0x72, 0x72, 0x65, 0x6e, 0x74, 0x53, 0x74, 0x65, 0x70, 0x4e, 0x75, 0x6d, 0x62, 0x65, 0x72,
 	0x22, 0x94, 0x02, 0x0a, 0x11, 0x53, 0x74, 0x61, 0x72, 0x74, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63,
 	0x65, 0x73, 0x41, 0x72, 0x67, 0x73, 0x12, 0x72, 0x0a, 0x16, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63,
 	0x65, 0x5f, 0x69, 0x64, 0x73, 0x5f, 0x74, 0x6f, 0x5f, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x73,
@@ -4743,7 +4836,7 @@ func file_api_container_service_proto_rawDescGZIP() []byte {
 }
 
 var file_api_container_service_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_api_container_service_proto_msgTypes = make([]protoimpl.MessageInfo, 78)
+var file_api_container_service_proto_msgTypes = make([]protoimpl.MessageInfo, 79)
 var file_api_container_service_proto_goTypes = []interface{}{
 	(HttpRequestMethod)(0),                          // 0: api_container_api.HttpRequestMethod
 	(Port_Protocol)(0),                              // 1: api_container_api.Port.Protocol
@@ -4771,78 +4864,79 @@ var file_api_container_service_proto_goTypes = []interface{}{
 	(*KurtosisInstructionPosition)(nil),             // 23: api_container_api.KurtosisInstructionPosition
 	(*KurtosisError)(nil),                           // 24: api_container_api.KurtosisError
 	(*KurtosisExecutionResponseLine)(nil),           // 25: api_container_api.KurtosisExecutionResponseLine
-	(*StartServicesArgs)(nil),                       // 26: api_container_api.StartServicesArgs
-	(*StartServicesResponse)(nil),                   // 27: api_container_api.StartServicesResponse
-	(*GetServicesArgs)(nil),                         // 28: api_container_api.GetServicesArgs
-	(*GetServicesResponse)(nil),                     // 29: api_container_api.GetServicesResponse
-	(*RemoveServiceArgs)(nil),                       // 30: api_container_api.RemoveServiceArgs
-	(*RemoveServiceResponse)(nil),                   // 31: api_container_api.RemoveServiceResponse
-	(*RepartitionArgs)(nil),                         // 32: api_container_api.RepartitionArgs
-	(*PartitionServices)(nil),                       // 33: api_container_api.PartitionServices
-	(*PartitionConnections)(nil),                    // 34: api_container_api.PartitionConnections
-	(*PartitionConnectionInfo)(nil),                 // 35: api_container_api.PartitionConnectionInfo
-	(*ExecCommandArgs)(nil),                         // 36: api_container_api.ExecCommandArgs
-	(*PauseServiceArgs)(nil),                        // 37: api_container_api.PauseServiceArgs
-	(*UnpauseServiceArgs)(nil),                      // 38: api_container_api.UnpauseServiceArgs
-	(*ExecCommandResponse)(nil),                     // 39: api_container_api.ExecCommandResponse
-	(*WaitForHttpGetEndpointAvailabilityArgs)(nil),  // 40: api_container_api.WaitForHttpGetEndpointAvailabilityArgs
-	(*WaitForHttpPostEndpointAvailabilityArgs)(nil), // 41: api_container_api.WaitForHttpPostEndpointAvailabilityArgs
-	(*UploadFilesArtifactArgs)(nil),                 // 42: api_container_api.UploadFilesArtifactArgs
-	(*UploadFilesArtifactResponse)(nil),             // 43: api_container_api.UploadFilesArtifactResponse
-	(*DownloadFilesArtifactArgs)(nil),               // 44: api_container_api.DownloadFilesArtifactArgs
-	(*DownloadFilesArtifactResponse)(nil),           // 45: api_container_api.DownloadFilesArtifactResponse
-	(*StoreWebFilesArtifactArgs)(nil),               // 46: api_container_api.StoreWebFilesArtifactArgs
-	(*StoreWebFilesArtifactResponse)(nil),           // 47: api_container_api.StoreWebFilesArtifactResponse
-	(*StoreFilesArtifactFromServiceArgs)(nil),       // 48: api_container_api.StoreFilesArtifactFromServiceArgs
-	(*StoreFilesArtifactFromServiceResponse)(nil),   // 49: api_container_api.StoreFilesArtifactFromServiceResponse
-	(*RenderTemplatesToFilesArtifactArgs)(nil),      // 50: api_container_api.RenderTemplatesToFilesArtifactArgs
-	(*RenderTemplatesToFilesArtifactResponse)(nil),  // 51: api_container_api.RenderTemplatesToFilesArtifactResponse
-	(*DefineFactArgs)(nil),                          // 52: api_container_api.DefineFactArgs
-	(*DefineFactResponse)(nil),                      // 53: api_container_api.DefineFactResponse
-	(*GetFactValuesArgs)(nil),                       // 54: api_container_api.GetFactValuesArgs
-	(*GetFactValuesResponse)(nil),                   // 55: api_container_api.GetFactValuesResponse
-	(*FactValue)(nil),                               // 56: api_container_api.FactValue
-	(*ConstantFactRecipe)(nil),                      // 57: api_container_api.ConstantFactRecipe
-	(*ExecFactRecipe)(nil),                          // 58: api_container_api.ExecFactRecipe
-	(*HttpRequestFactRecipe)(nil),                   // 59: api_container_api.HttpRequestFactRecipe
-	(*FactRecipe)(nil),                              // 60: api_container_api.FactRecipe
-	nil,                                             // 61: api_container_api.ServiceInfo.PrivatePortsEntry
-	nil,                                             // 62: api_container_api.ServiceInfo.MaybePublicPortsEntry
-	nil,                                             // 63: api_container_api.ServiceConfig.PrivatePortsEntry
-	nil,                                             // 64: api_container_api.ServiceConfig.PublicPortsEntry
-	nil,                                             // 65: api_container_api.ServiceConfig.EnvVarsEntry
-	nil,                                             // 66: api_container_api.ServiceConfig.FilesArtifactMountpointsEntry
-	nil,                                             // 67: api_container_api.GetModulesArgs.IdsEntry
-	nil,                                             // 68: api_container_api.GetModulesResponse.ModuleInfoEntry
-	nil,                                             // 69: api_container_api.StartServicesArgs.ServiceIdsToConfigsEntry
-	nil,                                             // 70: api_container_api.StartServicesResponse.SuccessfulServiceIdsToServiceInfoEntry
-	nil,                                             // 71: api_container_api.StartServicesResponse.FailedServiceIdsToErrorEntry
-	nil,                                             // 72: api_container_api.GetServicesArgs.ServiceIdsEntry
-	nil,                                             // 73: api_container_api.GetServicesResponse.ServiceInfoEntry
-	nil,                                             // 74: api_container_api.RepartitionArgs.PartitionServicesEntry
-	nil,                                             // 75: api_container_api.RepartitionArgs.PartitionConnectionsEntry
-	nil,                                             // 76: api_container_api.PartitionServices.ServiceIdSetEntry
-	nil,                                             // 77: api_container_api.PartitionConnections.ConnectionInfoEntry
-	(*RenderTemplatesToFilesArtifactArgs_TemplateAndData)(nil), // 78: api_container_api.RenderTemplatesToFilesArtifactArgs.TemplateAndData
-	nil,                           // 79: api_container_api.RenderTemplatesToFilesArtifactArgs.TemplatesAndDataByDestinationRelFilepathEntry
-	(*timestamppb.Timestamp)(nil), // 80: google.protobuf.Timestamp
-	(*durationpb.Duration)(nil),   // 81: google.protobuf.Duration
-	(*emptypb.Empty)(nil),         // 82: google.protobuf.Empty
+	(*KurtosisExecutionProgress)(nil),               // 26: api_container_api.KurtosisExecutionProgress
+	(*StartServicesArgs)(nil),                       // 27: api_container_api.StartServicesArgs
+	(*StartServicesResponse)(nil),                   // 28: api_container_api.StartServicesResponse
+	(*GetServicesArgs)(nil),                         // 29: api_container_api.GetServicesArgs
+	(*GetServicesResponse)(nil),                     // 30: api_container_api.GetServicesResponse
+	(*RemoveServiceArgs)(nil),                       // 31: api_container_api.RemoveServiceArgs
+	(*RemoveServiceResponse)(nil),                   // 32: api_container_api.RemoveServiceResponse
+	(*RepartitionArgs)(nil),                         // 33: api_container_api.RepartitionArgs
+	(*PartitionServices)(nil),                       // 34: api_container_api.PartitionServices
+	(*PartitionConnections)(nil),                    // 35: api_container_api.PartitionConnections
+	(*PartitionConnectionInfo)(nil),                 // 36: api_container_api.PartitionConnectionInfo
+	(*ExecCommandArgs)(nil),                         // 37: api_container_api.ExecCommandArgs
+	(*PauseServiceArgs)(nil),                        // 38: api_container_api.PauseServiceArgs
+	(*UnpauseServiceArgs)(nil),                      // 39: api_container_api.UnpauseServiceArgs
+	(*ExecCommandResponse)(nil),                     // 40: api_container_api.ExecCommandResponse
+	(*WaitForHttpGetEndpointAvailabilityArgs)(nil),  // 41: api_container_api.WaitForHttpGetEndpointAvailabilityArgs
+	(*WaitForHttpPostEndpointAvailabilityArgs)(nil), // 42: api_container_api.WaitForHttpPostEndpointAvailabilityArgs
+	(*UploadFilesArtifactArgs)(nil),                 // 43: api_container_api.UploadFilesArtifactArgs
+	(*UploadFilesArtifactResponse)(nil),             // 44: api_container_api.UploadFilesArtifactResponse
+	(*DownloadFilesArtifactArgs)(nil),               // 45: api_container_api.DownloadFilesArtifactArgs
+	(*DownloadFilesArtifactResponse)(nil),           // 46: api_container_api.DownloadFilesArtifactResponse
+	(*StoreWebFilesArtifactArgs)(nil),               // 47: api_container_api.StoreWebFilesArtifactArgs
+	(*StoreWebFilesArtifactResponse)(nil),           // 48: api_container_api.StoreWebFilesArtifactResponse
+	(*StoreFilesArtifactFromServiceArgs)(nil),       // 49: api_container_api.StoreFilesArtifactFromServiceArgs
+	(*StoreFilesArtifactFromServiceResponse)(nil),   // 50: api_container_api.StoreFilesArtifactFromServiceResponse
+	(*RenderTemplatesToFilesArtifactArgs)(nil),      // 51: api_container_api.RenderTemplatesToFilesArtifactArgs
+	(*RenderTemplatesToFilesArtifactResponse)(nil),  // 52: api_container_api.RenderTemplatesToFilesArtifactResponse
+	(*DefineFactArgs)(nil),                          // 53: api_container_api.DefineFactArgs
+	(*DefineFactResponse)(nil),                      // 54: api_container_api.DefineFactResponse
+	(*GetFactValuesArgs)(nil),                       // 55: api_container_api.GetFactValuesArgs
+	(*GetFactValuesResponse)(nil),                   // 56: api_container_api.GetFactValuesResponse
+	(*FactValue)(nil),                               // 57: api_container_api.FactValue
+	(*ConstantFactRecipe)(nil),                      // 58: api_container_api.ConstantFactRecipe
+	(*ExecFactRecipe)(nil),                          // 59: api_container_api.ExecFactRecipe
+	(*HttpRequestFactRecipe)(nil),                   // 60: api_container_api.HttpRequestFactRecipe
+	(*FactRecipe)(nil),                              // 61: api_container_api.FactRecipe
+	nil,                                             // 62: api_container_api.ServiceInfo.PrivatePortsEntry
+	nil,                                             // 63: api_container_api.ServiceInfo.MaybePublicPortsEntry
+	nil,                                             // 64: api_container_api.ServiceConfig.PrivatePortsEntry
+	nil,                                             // 65: api_container_api.ServiceConfig.PublicPortsEntry
+	nil,                                             // 66: api_container_api.ServiceConfig.EnvVarsEntry
+	nil,                                             // 67: api_container_api.ServiceConfig.FilesArtifactMountpointsEntry
+	nil,                                             // 68: api_container_api.GetModulesArgs.IdsEntry
+	nil,                                             // 69: api_container_api.GetModulesResponse.ModuleInfoEntry
+	nil,                                             // 70: api_container_api.StartServicesArgs.ServiceIdsToConfigsEntry
+	nil,                                             // 71: api_container_api.StartServicesResponse.SuccessfulServiceIdsToServiceInfoEntry
+	nil,                                             // 72: api_container_api.StartServicesResponse.FailedServiceIdsToErrorEntry
+	nil,                                             // 73: api_container_api.GetServicesArgs.ServiceIdsEntry
+	nil,                                             // 74: api_container_api.GetServicesResponse.ServiceInfoEntry
+	nil,                                             // 75: api_container_api.RepartitionArgs.PartitionServicesEntry
+	nil,                                             // 76: api_container_api.RepartitionArgs.PartitionConnectionsEntry
+	nil,                                             // 77: api_container_api.PartitionServices.ServiceIdSetEntry
+	nil,                                             // 78: api_container_api.PartitionConnections.ConnectionInfoEntry
+	(*RenderTemplatesToFilesArtifactArgs_TemplateAndData)(nil), // 79: api_container_api.RenderTemplatesToFilesArtifactArgs.TemplateAndData
+	nil,                           // 80: api_container_api.RenderTemplatesToFilesArtifactArgs.TemplatesAndDataByDestinationRelFilepathEntry
+	(*timestamppb.Timestamp)(nil), // 81: google.protobuf.Timestamp
+	(*durationpb.Duration)(nil),   // 82: google.protobuf.Duration
+	(*emptypb.Empty)(nil),         // 83: google.protobuf.Empty
 }
 var file_api_container_service_proto_depIdxs = []int32{
 	1,  // 0: api_container_api.Port.protocol:type_name -> api_container_api.Port.Protocol
-	61, // 1: api_container_api.ServiceInfo.private_ports:type_name -> api_container_api.ServiceInfo.PrivatePortsEntry
-	62, // 2: api_container_api.ServiceInfo.maybe_public_ports:type_name -> api_container_api.ServiceInfo.MaybePublicPortsEntry
-	63, // 3: api_container_api.ServiceConfig.private_ports:type_name -> api_container_api.ServiceConfig.PrivatePortsEntry
-	64, // 4: api_container_api.ServiceConfig.public_ports:type_name -> api_container_api.ServiceConfig.PublicPortsEntry
-	65, // 5: api_container_api.ServiceConfig.env_vars:type_name -> api_container_api.ServiceConfig.EnvVarsEntry
-	66, // 6: api_container_api.ServiceConfig.files_artifact_mountpoints:type_name -> api_container_api.ServiceConfig.FilesArtifactMountpointsEntry
+	62, // 1: api_container_api.ServiceInfo.private_ports:type_name -> api_container_api.ServiceInfo.PrivatePortsEntry
+	63, // 2: api_container_api.ServiceInfo.maybe_public_ports:type_name -> api_container_api.ServiceInfo.MaybePublicPortsEntry
+	64, // 3: api_container_api.ServiceConfig.private_ports:type_name -> api_container_api.ServiceConfig.PrivatePortsEntry
+	65, // 4: api_container_api.ServiceConfig.public_ports:type_name -> api_container_api.ServiceConfig.PublicPortsEntry
+	66, // 5: api_container_api.ServiceConfig.env_vars:type_name -> api_container_api.ServiceConfig.EnvVarsEntry
+	67, // 6: api_container_api.ServiceConfig.files_artifact_mountpoints:type_name -> api_container_api.ServiceConfig.FilesArtifactMountpointsEntry
 	2,  // 7: api_container_api.ModuleInfo.private_grpc_port:type_name -> api_container_api.Port
 	2,  // 8: api_container_api.ModuleInfo.maybe_public_grpc_port:type_name -> api_container_api.Port
 	2,  // 9: api_container_api.LoadModuleResponse.private_port:type_name -> api_container_api.Port
 	2,  // 10: api_container_api.LoadModuleResponse.public_port:type_name -> api_container_api.Port
-	67, // 11: api_container_api.GetModulesArgs.ids:type_name -> api_container_api.GetModulesArgs.IdsEntry
-	68, // 12: api_container_api.GetModulesResponse.module_info:type_name -> api_container_api.GetModulesResponse.ModuleInfoEntry
+	68, // 11: api_container_api.GetModulesArgs.ids:type_name -> api_container_api.GetModulesArgs.IdsEntry
+	69, // 12: api_container_api.GetModulesResponse.module_info:type_name -> api_container_api.GetModulesResponse.ModuleInfoEntry
 	21, // 13: api_container_api.ExecuteStartosisResponse.kurtosis_instructions:type_name -> api_container_api.KurtosisInstruction
 	17, // 14: api_container_api.ExecuteStartosisResponse.interpretation_error:type_name -> api_container_api.KurtosisInterpretationError
 	18, // 15: api_container_api.ExecuteStartosisResponse.validation_errors:type_name -> api_container_api.KurtosisValidationErrors
@@ -4855,93 +4949,94 @@ var file_api_container_service_proto_depIdxs = []int32{
 	20, // 22: api_container_api.KurtosisError.execution_error:type_name -> api_container_api.KurtosisExecutionError
 	21, // 23: api_container_api.KurtosisExecutionResponseLine.instruction:type_name -> api_container_api.KurtosisInstruction
 	24, // 24: api_container_api.KurtosisExecutionResponseLine.error:type_name -> api_container_api.KurtosisError
-	69, // 25: api_container_api.StartServicesArgs.service_ids_to_configs:type_name -> api_container_api.StartServicesArgs.ServiceIdsToConfigsEntry
-	70, // 26: api_container_api.StartServicesResponse.successful_service_ids_to_service_info:type_name -> api_container_api.StartServicesResponse.SuccessfulServiceIdsToServiceInfoEntry
-	71, // 27: api_container_api.StartServicesResponse.failed_service_ids_to_error:type_name -> api_container_api.StartServicesResponse.FailedServiceIdsToErrorEntry
-	72, // 28: api_container_api.GetServicesArgs.service_ids:type_name -> api_container_api.GetServicesArgs.ServiceIdsEntry
-	73, // 29: api_container_api.GetServicesResponse.service_info:type_name -> api_container_api.GetServicesResponse.ServiceInfoEntry
-	74, // 30: api_container_api.RepartitionArgs.partition_services:type_name -> api_container_api.RepartitionArgs.PartitionServicesEntry
-	75, // 31: api_container_api.RepartitionArgs.partition_connections:type_name -> api_container_api.RepartitionArgs.PartitionConnectionsEntry
-	35, // 32: api_container_api.RepartitionArgs.default_connection:type_name -> api_container_api.PartitionConnectionInfo
-	76, // 33: api_container_api.PartitionServices.service_id_set:type_name -> api_container_api.PartitionServices.ServiceIdSetEntry
-	77, // 34: api_container_api.PartitionConnections.connection_info:type_name -> api_container_api.PartitionConnections.ConnectionInfoEntry
-	79, // 35: api_container_api.RenderTemplatesToFilesArtifactArgs.templates_and_data_by_destination_rel_filepath:type_name -> api_container_api.RenderTemplatesToFilesArtifactArgs.TemplatesAndDataByDestinationRelFilepathEntry
-	60, // 36: api_container_api.DefineFactArgs.fact_recipe:type_name -> api_container_api.FactRecipe
-	80, // 37: api_container_api.GetFactValuesArgs.starting_from:type_name -> google.protobuf.Timestamp
-	56, // 38: api_container_api.GetFactValuesResponse.fact_values:type_name -> api_container_api.FactValue
-	80, // 39: api_container_api.GetFactValuesResponse.last_timestamp_from_page:type_name -> google.protobuf.Timestamp
-	80, // 40: api_container_api.FactValue.updated_at:type_name -> google.protobuf.Timestamp
-	56, // 41: api_container_api.ConstantFactRecipe.fact_value:type_name -> api_container_api.FactValue
-	0,  // 42: api_container_api.HttpRequestFactRecipe.method:type_name -> api_container_api.HttpRequestMethod
-	57, // 43: api_container_api.FactRecipe.constant_fact:type_name -> api_container_api.ConstantFactRecipe
-	58, // 44: api_container_api.FactRecipe.exec_fact:type_name -> api_container_api.ExecFactRecipe
-	59, // 45: api_container_api.FactRecipe.http_request_fact:type_name -> api_container_api.HttpRequestFactRecipe
-	81, // 46: api_container_api.FactRecipe.refresh_interval:type_name -> google.protobuf.Duration
-	2,  // 47: api_container_api.ServiceInfo.PrivatePortsEntry.value:type_name -> api_container_api.Port
-	2,  // 48: api_container_api.ServiceInfo.MaybePublicPortsEntry.value:type_name -> api_container_api.Port
-	2,  // 49: api_container_api.ServiceConfig.PrivatePortsEntry.value:type_name -> api_container_api.Port
-	2,  // 50: api_container_api.ServiceConfig.PublicPortsEntry.value:type_name -> api_container_api.Port
-	5,  // 51: api_container_api.GetModulesResponse.ModuleInfoEntry.value:type_name -> api_container_api.ModuleInfo
-	4,  // 52: api_container_api.StartServicesArgs.ServiceIdsToConfigsEntry.value:type_name -> api_container_api.ServiceConfig
-	3,  // 53: api_container_api.StartServicesResponse.SuccessfulServiceIdsToServiceInfoEntry.value:type_name -> api_container_api.ServiceInfo
-	3,  // 54: api_container_api.GetServicesResponse.ServiceInfoEntry.value:type_name -> api_container_api.ServiceInfo
-	33, // 55: api_container_api.RepartitionArgs.PartitionServicesEntry.value:type_name -> api_container_api.PartitionServices
-	34, // 56: api_container_api.RepartitionArgs.PartitionConnectionsEntry.value:type_name -> api_container_api.PartitionConnections
-	35, // 57: api_container_api.PartitionConnections.ConnectionInfoEntry.value:type_name -> api_container_api.PartitionConnectionInfo
-	78, // 58: api_container_api.RenderTemplatesToFilesArtifactArgs.TemplatesAndDataByDestinationRelFilepathEntry.value:type_name -> api_container_api.RenderTemplatesToFilesArtifactArgs.TemplateAndData
-	6,  // 59: api_container_api.ApiContainerService.LoadModule:input_type -> api_container_api.LoadModuleArgs
-	8,  // 60: api_container_api.ApiContainerService.GetModules:input_type -> api_container_api.GetModulesArgs
-	10, // 61: api_container_api.ApiContainerService.UnloadModule:input_type -> api_container_api.UnloadModuleArgs
-	12, // 62: api_container_api.ApiContainerService.ExecuteModule:input_type -> api_container_api.ExecuteModuleArgs
-	14, // 63: api_container_api.ApiContainerService.ExecuteStartosisScript:input_type -> api_container_api.ExecuteStartosisScriptArgs
-	14, // 64: api_container_api.ApiContainerService.ExecuteKurtosisScript:input_type -> api_container_api.ExecuteStartosisScriptArgs
-	15, // 65: api_container_api.ApiContainerService.ExecuteStartosisModule:input_type -> api_container_api.ExecuteStartosisModuleArgs
-	15, // 66: api_container_api.ApiContainerService.ExecuteKurtosisModule:input_type -> api_container_api.ExecuteStartosisModuleArgs
-	26, // 67: api_container_api.ApiContainerService.StartServices:input_type -> api_container_api.StartServicesArgs
-	28, // 68: api_container_api.ApiContainerService.GetServices:input_type -> api_container_api.GetServicesArgs
-	30, // 69: api_container_api.ApiContainerService.RemoveService:input_type -> api_container_api.RemoveServiceArgs
-	32, // 70: api_container_api.ApiContainerService.Repartition:input_type -> api_container_api.RepartitionArgs
-	36, // 71: api_container_api.ApiContainerService.ExecCommand:input_type -> api_container_api.ExecCommandArgs
-	52, // 72: api_container_api.ApiContainerService.DefineFact:input_type -> api_container_api.DefineFactArgs
-	54, // 73: api_container_api.ApiContainerService.GetFactValues:input_type -> api_container_api.GetFactValuesArgs
-	37, // 74: api_container_api.ApiContainerService.PauseService:input_type -> api_container_api.PauseServiceArgs
-	38, // 75: api_container_api.ApiContainerService.UnpauseService:input_type -> api_container_api.UnpauseServiceArgs
-	40, // 76: api_container_api.ApiContainerService.WaitForHttpGetEndpointAvailability:input_type -> api_container_api.WaitForHttpGetEndpointAvailabilityArgs
-	41, // 77: api_container_api.ApiContainerService.WaitForHttpPostEndpointAvailability:input_type -> api_container_api.WaitForHttpPostEndpointAvailabilityArgs
-	42, // 78: api_container_api.ApiContainerService.UploadFilesArtifact:input_type -> api_container_api.UploadFilesArtifactArgs
-	44, // 79: api_container_api.ApiContainerService.DownloadFilesArtifact:input_type -> api_container_api.DownloadFilesArtifactArgs
-	46, // 80: api_container_api.ApiContainerService.StoreWebFilesArtifact:input_type -> api_container_api.StoreWebFilesArtifactArgs
-	48, // 81: api_container_api.ApiContainerService.StoreFilesArtifactFromService:input_type -> api_container_api.StoreFilesArtifactFromServiceArgs
-	50, // 82: api_container_api.ApiContainerService.RenderTemplatesToFilesArtifact:input_type -> api_container_api.RenderTemplatesToFilesArtifactArgs
-	7,  // 83: api_container_api.ApiContainerService.LoadModule:output_type -> api_container_api.LoadModuleResponse
-	9,  // 84: api_container_api.ApiContainerService.GetModules:output_type -> api_container_api.GetModulesResponse
-	11, // 85: api_container_api.ApiContainerService.UnloadModule:output_type -> api_container_api.UnloadModuleResponse
-	13, // 86: api_container_api.ApiContainerService.ExecuteModule:output_type -> api_container_api.ExecuteModuleResponse
-	16, // 87: api_container_api.ApiContainerService.ExecuteStartosisScript:output_type -> api_container_api.ExecuteStartosisResponse
-	25, // 88: api_container_api.ApiContainerService.ExecuteKurtosisScript:output_type -> api_container_api.KurtosisExecutionResponseLine
-	16, // 89: api_container_api.ApiContainerService.ExecuteStartosisModule:output_type -> api_container_api.ExecuteStartosisResponse
-	25, // 90: api_container_api.ApiContainerService.ExecuteKurtosisModule:output_type -> api_container_api.KurtosisExecutionResponseLine
-	27, // 91: api_container_api.ApiContainerService.StartServices:output_type -> api_container_api.StartServicesResponse
-	29, // 92: api_container_api.ApiContainerService.GetServices:output_type -> api_container_api.GetServicesResponse
-	31, // 93: api_container_api.ApiContainerService.RemoveService:output_type -> api_container_api.RemoveServiceResponse
-	82, // 94: api_container_api.ApiContainerService.Repartition:output_type -> google.protobuf.Empty
-	39, // 95: api_container_api.ApiContainerService.ExecCommand:output_type -> api_container_api.ExecCommandResponse
-	53, // 96: api_container_api.ApiContainerService.DefineFact:output_type -> api_container_api.DefineFactResponse
-	55, // 97: api_container_api.ApiContainerService.GetFactValues:output_type -> api_container_api.GetFactValuesResponse
-	82, // 98: api_container_api.ApiContainerService.PauseService:output_type -> google.protobuf.Empty
-	82, // 99: api_container_api.ApiContainerService.UnpauseService:output_type -> google.protobuf.Empty
-	82, // 100: api_container_api.ApiContainerService.WaitForHttpGetEndpointAvailability:output_type -> google.protobuf.Empty
-	82, // 101: api_container_api.ApiContainerService.WaitForHttpPostEndpointAvailability:output_type -> google.protobuf.Empty
-	43, // 102: api_container_api.ApiContainerService.UploadFilesArtifact:output_type -> api_container_api.UploadFilesArtifactResponse
-	45, // 103: api_container_api.ApiContainerService.DownloadFilesArtifact:output_type -> api_container_api.DownloadFilesArtifactResponse
-	47, // 104: api_container_api.ApiContainerService.StoreWebFilesArtifact:output_type -> api_container_api.StoreWebFilesArtifactResponse
-	49, // 105: api_container_api.ApiContainerService.StoreFilesArtifactFromService:output_type -> api_container_api.StoreFilesArtifactFromServiceResponse
-	51, // 106: api_container_api.ApiContainerService.RenderTemplatesToFilesArtifact:output_type -> api_container_api.RenderTemplatesToFilesArtifactResponse
-	83, // [83:107] is the sub-list for method output_type
-	59, // [59:83] is the sub-list for method input_type
-	59, // [59:59] is the sub-list for extension type_name
-	59, // [59:59] is the sub-list for extension extendee
-	0,  // [0:59] is the sub-list for field type_name
+	26, // 25: api_container_api.KurtosisExecutionResponseLine.progress_info:type_name -> api_container_api.KurtosisExecutionProgress
+	70, // 26: api_container_api.StartServicesArgs.service_ids_to_configs:type_name -> api_container_api.StartServicesArgs.ServiceIdsToConfigsEntry
+	71, // 27: api_container_api.StartServicesResponse.successful_service_ids_to_service_info:type_name -> api_container_api.StartServicesResponse.SuccessfulServiceIdsToServiceInfoEntry
+	72, // 28: api_container_api.StartServicesResponse.failed_service_ids_to_error:type_name -> api_container_api.StartServicesResponse.FailedServiceIdsToErrorEntry
+	73, // 29: api_container_api.GetServicesArgs.service_ids:type_name -> api_container_api.GetServicesArgs.ServiceIdsEntry
+	74, // 30: api_container_api.GetServicesResponse.service_info:type_name -> api_container_api.GetServicesResponse.ServiceInfoEntry
+	75, // 31: api_container_api.RepartitionArgs.partition_services:type_name -> api_container_api.RepartitionArgs.PartitionServicesEntry
+	76, // 32: api_container_api.RepartitionArgs.partition_connections:type_name -> api_container_api.RepartitionArgs.PartitionConnectionsEntry
+	36, // 33: api_container_api.RepartitionArgs.default_connection:type_name -> api_container_api.PartitionConnectionInfo
+	77, // 34: api_container_api.PartitionServices.service_id_set:type_name -> api_container_api.PartitionServices.ServiceIdSetEntry
+	78, // 35: api_container_api.PartitionConnections.connection_info:type_name -> api_container_api.PartitionConnections.ConnectionInfoEntry
+	80, // 36: api_container_api.RenderTemplatesToFilesArtifactArgs.templates_and_data_by_destination_rel_filepath:type_name -> api_container_api.RenderTemplatesToFilesArtifactArgs.TemplatesAndDataByDestinationRelFilepathEntry
+	61, // 37: api_container_api.DefineFactArgs.fact_recipe:type_name -> api_container_api.FactRecipe
+	81, // 38: api_container_api.GetFactValuesArgs.starting_from:type_name -> google.protobuf.Timestamp
+	57, // 39: api_container_api.GetFactValuesResponse.fact_values:type_name -> api_container_api.FactValue
+	81, // 40: api_container_api.GetFactValuesResponse.last_timestamp_from_page:type_name -> google.protobuf.Timestamp
+	81, // 41: api_container_api.FactValue.updated_at:type_name -> google.protobuf.Timestamp
+	57, // 42: api_container_api.ConstantFactRecipe.fact_value:type_name -> api_container_api.FactValue
+	0,  // 43: api_container_api.HttpRequestFactRecipe.method:type_name -> api_container_api.HttpRequestMethod
+	58, // 44: api_container_api.FactRecipe.constant_fact:type_name -> api_container_api.ConstantFactRecipe
+	59, // 45: api_container_api.FactRecipe.exec_fact:type_name -> api_container_api.ExecFactRecipe
+	60, // 46: api_container_api.FactRecipe.http_request_fact:type_name -> api_container_api.HttpRequestFactRecipe
+	82, // 47: api_container_api.FactRecipe.refresh_interval:type_name -> google.protobuf.Duration
+	2,  // 48: api_container_api.ServiceInfo.PrivatePortsEntry.value:type_name -> api_container_api.Port
+	2,  // 49: api_container_api.ServiceInfo.MaybePublicPortsEntry.value:type_name -> api_container_api.Port
+	2,  // 50: api_container_api.ServiceConfig.PrivatePortsEntry.value:type_name -> api_container_api.Port
+	2,  // 51: api_container_api.ServiceConfig.PublicPortsEntry.value:type_name -> api_container_api.Port
+	5,  // 52: api_container_api.GetModulesResponse.ModuleInfoEntry.value:type_name -> api_container_api.ModuleInfo
+	4,  // 53: api_container_api.StartServicesArgs.ServiceIdsToConfigsEntry.value:type_name -> api_container_api.ServiceConfig
+	3,  // 54: api_container_api.StartServicesResponse.SuccessfulServiceIdsToServiceInfoEntry.value:type_name -> api_container_api.ServiceInfo
+	3,  // 55: api_container_api.GetServicesResponse.ServiceInfoEntry.value:type_name -> api_container_api.ServiceInfo
+	34, // 56: api_container_api.RepartitionArgs.PartitionServicesEntry.value:type_name -> api_container_api.PartitionServices
+	35, // 57: api_container_api.RepartitionArgs.PartitionConnectionsEntry.value:type_name -> api_container_api.PartitionConnections
+	36, // 58: api_container_api.PartitionConnections.ConnectionInfoEntry.value:type_name -> api_container_api.PartitionConnectionInfo
+	79, // 59: api_container_api.RenderTemplatesToFilesArtifactArgs.TemplatesAndDataByDestinationRelFilepathEntry.value:type_name -> api_container_api.RenderTemplatesToFilesArtifactArgs.TemplateAndData
+	6,  // 60: api_container_api.ApiContainerService.LoadModule:input_type -> api_container_api.LoadModuleArgs
+	8,  // 61: api_container_api.ApiContainerService.GetModules:input_type -> api_container_api.GetModulesArgs
+	10, // 62: api_container_api.ApiContainerService.UnloadModule:input_type -> api_container_api.UnloadModuleArgs
+	12, // 63: api_container_api.ApiContainerService.ExecuteModule:input_type -> api_container_api.ExecuteModuleArgs
+	14, // 64: api_container_api.ApiContainerService.ExecuteStartosisScript:input_type -> api_container_api.ExecuteStartosisScriptArgs
+	14, // 65: api_container_api.ApiContainerService.ExecuteKurtosisScript:input_type -> api_container_api.ExecuteStartosisScriptArgs
+	15, // 66: api_container_api.ApiContainerService.ExecuteStartosisModule:input_type -> api_container_api.ExecuteStartosisModuleArgs
+	15, // 67: api_container_api.ApiContainerService.ExecuteKurtosisModule:input_type -> api_container_api.ExecuteStartosisModuleArgs
+	27, // 68: api_container_api.ApiContainerService.StartServices:input_type -> api_container_api.StartServicesArgs
+	29, // 69: api_container_api.ApiContainerService.GetServices:input_type -> api_container_api.GetServicesArgs
+	31, // 70: api_container_api.ApiContainerService.RemoveService:input_type -> api_container_api.RemoveServiceArgs
+	33, // 71: api_container_api.ApiContainerService.Repartition:input_type -> api_container_api.RepartitionArgs
+	37, // 72: api_container_api.ApiContainerService.ExecCommand:input_type -> api_container_api.ExecCommandArgs
+	53, // 73: api_container_api.ApiContainerService.DefineFact:input_type -> api_container_api.DefineFactArgs
+	55, // 74: api_container_api.ApiContainerService.GetFactValues:input_type -> api_container_api.GetFactValuesArgs
+	38, // 75: api_container_api.ApiContainerService.PauseService:input_type -> api_container_api.PauseServiceArgs
+	39, // 76: api_container_api.ApiContainerService.UnpauseService:input_type -> api_container_api.UnpauseServiceArgs
+	41, // 77: api_container_api.ApiContainerService.WaitForHttpGetEndpointAvailability:input_type -> api_container_api.WaitForHttpGetEndpointAvailabilityArgs
+	42, // 78: api_container_api.ApiContainerService.WaitForHttpPostEndpointAvailability:input_type -> api_container_api.WaitForHttpPostEndpointAvailabilityArgs
+	43, // 79: api_container_api.ApiContainerService.UploadFilesArtifact:input_type -> api_container_api.UploadFilesArtifactArgs
+	45, // 80: api_container_api.ApiContainerService.DownloadFilesArtifact:input_type -> api_container_api.DownloadFilesArtifactArgs
+	47, // 81: api_container_api.ApiContainerService.StoreWebFilesArtifact:input_type -> api_container_api.StoreWebFilesArtifactArgs
+	49, // 82: api_container_api.ApiContainerService.StoreFilesArtifactFromService:input_type -> api_container_api.StoreFilesArtifactFromServiceArgs
+	51, // 83: api_container_api.ApiContainerService.RenderTemplatesToFilesArtifact:input_type -> api_container_api.RenderTemplatesToFilesArtifactArgs
+	7,  // 84: api_container_api.ApiContainerService.LoadModule:output_type -> api_container_api.LoadModuleResponse
+	9,  // 85: api_container_api.ApiContainerService.GetModules:output_type -> api_container_api.GetModulesResponse
+	11, // 86: api_container_api.ApiContainerService.UnloadModule:output_type -> api_container_api.UnloadModuleResponse
+	13, // 87: api_container_api.ApiContainerService.ExecuteModule:output_type -> api_container_api.ExecuteModuleResponse
+	16, // 88: api_container_api.ApiContainerService.ExecuteStartosisScript:output_type -> api_container_api.ExecuteStartosisResponse
+	25, // 89: api_container_api.ApiContainerService.ExecuteKurtosisScript:output_type -> api_container_api.KurtosisExecutionResponseLine
+	16, // 90: api_container_api.ApiContainerService.ExecuteStartosisModule:output_type -> api_container_api.ExecuteStartosisResponse
+	25, // 91: api_container_api.ApiContainerService.ExecuteKurtosisModule:output_type -> api_container_api.KurtosisExecutionResponseLine
+	28, // 92: api_container_api.ApiContainerService.StartServices:output_type -> api_container_api.StartServicesResponse
+	30, // 93: api_container_api.ApiContainerService.GetServices:output_type -> api_container_api.GetServicesResponse
+	32, // 94: api_container_api.ApiContainerService.RemoveService:output_type -> api_container_api.RemoveServiceResponse
+	83, // 95: api_container_api.ApiContainerService.Repartition:output_type -> google.protobuf.Empty
+	40, // 96: api_container_api.ApiContainerService.ExecCommand:output_type -> api_container_api.ExecCommandResponse
+	54, // 97: api_container_api.ApiContainerService.DefineFact:output_type -> api_container_api.DefineFactResponse
+	56, // 98: api_container_api.ApiContainerService.GetFactValues:output_type -> api_container_api.GetFactValuesResponse
+	83, // 99: api_container_api.ApiContainerService.PauseService:output_type -> google.protobuf.Empty
+	83, // 100: api_container_api.ApiContainerService.UnpauseService:output_type -> google.protobuf.Empty
+	83, // 101: api_container_api.ApiContainerService.WaitForHttpGetEndpointAvailability:output_type -> google.protobuf.Empty
+	83, // 102: api_container_api.ApiContainerService.WaitForHttpPostEndpointAvailability:output_type -> google.protobuf.Empty
+	44, // 103: api_container_api.ApiContainerService.UploadFilesArtifact:output_type -> api_container_api.UploadFilesArtifactResponse
+	46, // 104: api_container_api.ApiContainerService.DownloadFilesArtifact:output_type -> api_container_api.DownloadFilesArtifactResponse
+	48, // 105: api_container_api.ApiContainerService.StoreWebFilesArtifact:output_type -> api_container_api.StoreWebFilesArtifactResponse
+	50, // 106: api_container_api.ApiContainerService.StoreFilesArtifactFromService:output_type -> api_container_api.StoreFilesArtifactFromServiceResponse
+	52, // 107: api_container_api.ApiContainerService.RenderTemplatesToFilesArtifact:output_type -> api_container_api.RenderTemplatesToFilesArtifactResponse
+	84, // [84:108] is the sub-list for method output_type
+	60, // [60:84] is the sub-list for method input_type
+	60, // [60:60] is the sub-list for extension type_name
+	60, // [60:60] is the sub-list for extension extendee
+	0,  // [0:60] is the sub-list for field type_name
 }
 
 func init() { file_api_container_service_proto_init() }
@@ -5239,7 +5334,7 @@ func file_api_container_service_proto_init() {
 			}
 		}
 		file_api_container_service_proto_msgTypes[24].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*StartServicesArgs); i {
+			switch v := v.(*KurtosisExecutionProgress); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5251,7 +5346,7 @@ func file_api_container_service_proto_init() {
 			}
 		}
 		file_api_container_service_proto_msgTypes[25].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*StartServicesResponse); i {
+			switch v := v.(*StartServicesArgs); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5263,7 +5358,7 @@ func file_api_container_service_proto_init() {
 			}
 		}
 		file_api_container_service_proto_msgTypes[26].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetServicesArgs); i {
+			switch v := v.(*StartServicesResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5275,7 +5370,7 @@ func file_api_container_service_proto_init() {
 			}
 		}
 		file_api_container_service_proto_msgTypes[27].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetServicesResponse); i {
+			switch v := v.(*GetServicesArgs); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5287,7 +5382,7 @@ func file_api_container_service_proto_init() {
 			}
 		}
 		file_api_container_service_proto_msgTypes[28].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RemoveServiceArgs); i {
+			switch v := v.(*GetServicesResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5299,7 +5394,7 @@ func file_api_container_service_proto_init() {
 			}
 		}
 		file_api_container_service_proto_msgTypes[29].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RemoveServiceResponse); i {
+			switch v := v.(*RemoveServiceArgs); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5311,7 +5406,7 @@ func file_api_container_service_proto_init() {
 			}
 		}
 		file_api_container_service_proto_msgTypes[30].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RepartitionArgs); i {
+			switch v := v.(*RemoveServiceResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5323,7 +5418,7 @@ func file_api_container_service_proto_init() {
 			}
 		}
 		file_api_container_service_proto_msgTypes[31].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PartitionServices); i {
+			switch v := v.(*RepartitionArgs); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5335,7 +5430,7 @@ func file_api_container_service_proto_init() {
 			}
 		}
 		file_api_container_service_proto_msgTypes[32].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PartitionConnections); i {
+			switch v := v.(*PartitionServices); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5347,7 +5442,7 @@ func file_api_container_service_proto_init() {
 			}
 		}
 		file_api_container_service_proto_msgTypes[33].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PartitionConnectionInfo); i {
+			switch v := v.(*PartitionConnections); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5359,7 +5454,7 @@ func file_api_container_service_proto_init() {
 			}
 		}
 		file_api_container_service_proto_msgTypes[34].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ExecCommandArgs); i {
+			switch v := v.(*PartitionConnectionInfo); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5371,7 +5466,7 @@ func file_api_container_service_proto_init() {
 			}
 		}
 		file_api_container_service_proto_msgTypes[35].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PauseServiceArgs); i {
+			switch v := v.(*ExecCommandArgs); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5383,7 +5478,7 @@ func file_api_container_service_proto_init() {
 			}
 		}
 		file_api_container_service_proto_msgTypes[36].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*UnpauseServiceArgs); i {
+			switch v := v.(*PauseServiceArgs); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5395,7 +5490,7 @@ func file_api_container_service_proto_init() {
 			}
 		}
 		file_api_container_service_proto_msgTypes[37].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ExecCommandResponse); i {
+			switch v := v.(*UnpauseServiceArgs); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5407,7 +5502,7 @@ func file_api_container_service_proto_init() {
 			}
 		}
 		file_api_container_service_proto_msgTypes[38].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*WaitForHttpGetEndpointAvailabilityArgs); i {
+			switch v := v.(*ExecCommandResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5419,7 +5514,7 @@ func file_api_container_service_proto_init() {
 			}
 		}
 		file_api_container_service_proto_msgTypes[39].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*WaitForHttpPostEndpointAvailabilityArgs); i {
+			switch v := v.(*WaitForHttpGetEndpointAvailabilityArgs); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5431,7 +5526,7 @@ func file_api_container_service_proto_init() {
 			}
 		}
 		file_api_container_service_proto_msgTypes[40].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*UploadFilesArtifactArgs); i {
+			switch v := v.(*WaitForHttpPostEndpointAvailabilityArgs); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5443,7 +5538,7 @@ func file_api_container_service_proto_init() {
 			}
 		}
 		file_api_container_service_proto_msgTypes[41].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*UploadFilesArtifactResponse); i {
+			switch v := v.(*UploadFilesArtifactArgs); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5455,7 +5550,7 @@ func file_api_container_service_proto_init() {
 			}
 		}
 		file_api_container_service_proto_msgTypes[42].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*DownloadFilesArtifactArgs); i {
+			switch v := v.(*UploadFilesArtifactResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5467,7 +5562,7 @@ func file_api_container_service_proto_init() {
 			}
 		}
 		file_api_container_service_proto_msgTypes[43].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*DownloadFilesArtifactResponse); i {
+			switch v := v.(*DownloadFilesArtifactArgs); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5479,7 +5574,7 @@ func file_api_container_service_proto_init() {
 			}
 		}
 		file_api_container_service_proto_msgTypes[44].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*StoreWebFilesArtifactArgs); i {
+			switch v := v.(*DownloadFilesArtifactResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5491,7 +5586,7 @@ func file_api_container_service_proto_init() {
 			}
 		}
 		file_api_container_service_proto_msgTypes[45].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*StoreWebFilesArtifactResponse); i {
+			switch v := v.(*StoreWebFilesArtifactArgs); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5503,7 +5598,7 @@ func file_api_container_service_proto_init() {
 			}
 		}
 		file_api_container_service_proto_msgTypes[46].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*StoreFilesArtifactFromServiceArgs); i {
+			switch v := v.(*StoreWebFilesArtifactResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5515,7 +5610,7 @@ func file_api_container_service_proto_init() {
 			}
 		}
 		file_api_container_service_proto_msgTypes[47].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*StoreFilesArtifactFromServiceResponse); i {
+			switch v := v.(*StoreFilesArtifactFromServiceArgs); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5527,7 +5622,7 @@ func file_api_container_service_proto_init() {
 			}
 		}
 		file_api_container_service_proto_msgTypes[48].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RenderTemplatesToFilesArtifactArgs); i {
+			switch v := v.(*StoreFilesArtifactFromServiceResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5539,7 +5634,7 @@ func file_api_container_service_proto_init() {
 			}
 		}
 		file_api_container_service_proto_msgTypes[49].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RenderTemplatesToFilesArtifactResponse); i {
+			switch v := v.(*RenderTemplatesToFilesArtifactArgs); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5551,7 +5646,7 @@ func file_api_container_service_proto_init() {
 			}
 		}
 		file_api_container_service_proto_msgTypes[50].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*DefineFactArgs); i {
+			switch v := v.(*RenderTemplatesToFilesArtifactResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5563,7 +5658,7 @@ func file_api_container_service_proto_init() {
 			}
 		}
 		file_api_container_service_proto_msgTypes[51].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*DefineFactResponse); i {
+			switch v := v.(*DefineFactArgs); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5575,7 +5670,7 @@ func file_api_container_service_proto_init() {
 			}
 		}
 		file_api_container_service_proto_msgTypes[52].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetFactValuesArgs); i {
+			switch v := v.(*DefineFactResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5587,7 +5682,7 @@ func file_api_container_service_proto_init() {
 			}
 		}
 		file_api_container_service_proto_msgTypes[53].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetFactValuesResponse); i {
+			switch v := v.(*GetFactValuesArgs); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5599,7 +5694,7 @@ func file_api_container_service_proto_init() {
 			}
 		}
 		file_api_container_service_proto_msgTypes[54].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*FactValue); i {
+			switch v := v.(*GetFactValuesResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5611,7 +5706,7 @@ func file_api_container_service_proto_init() {
 			}
 		}
 		file_api_container_service_proto_msgTypes[55].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ConstantFactRecipe); i {
+			switch v := v.(*FactValue); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5623,7 +5718,7 @@ func file_api_container_service_proto_init() {
 			}
 		}
 		file_api_container_service_proto_msgTypes[56].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ExecFactRecipe); i {
+			switch v := v.(*ConstantFactRecipe); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5635,7 +5730,7 @@ func file_api_container_service_proto_init() {
 			}
 		}
 		file_api_container_service_proto_msgTypes[57].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*HttpRequestFactRecipe); i {
+			switch v := v.(*ExecFactRecipe); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5647,6 +5742,18 @@ func file_api_container_service_proto_init() {
 			}
 		}
 		file_api_container_service_proto_msgTypes[58].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*HttpRequestFactRecipe); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_api_container_service_proto_msgTypes[59].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*FactRecipe); i {
 			case 0:
 				return &v.state
@@ -5658,7 +5765,7 @@ func file_api_container_service_proto_init() {
 				return nil
 			}
 		}
-		file_api_container_service_proto_msgTypes[76].Exporter = func(v interface{}, i int) interface{} {
+		file_api_container_service_proto_msgTypes[77].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*RenderTemplatesToFilesArtifactArgs_TemplateAndData); i {
 			case 0:
 				return &v.state
@@ -5691,13 +5798,14 @@ func file_api_container_service_proto_init() {
 	file_api_container_service_proto_msgTypes[23].OneofWrappers = []interface{}{
 		(*KurtosisExecutionResponseLine_Instruction)(nil),
 		(*KurtosisExecutionResponseLine_Error)(nil),
+		(*KurtosisExecutionResponseLine_ProgressInfo)(nil),
 	}
-	file_api_container_service_proto_msgTypes[52].OneofWrappers = []interface{}{}
-	file_api_container_service_proto_msgTypes[54].OneofWrappers = []interface{}{
+	file_api_container_service_proto_msgTypes[53].OneofWrappers = []interface{}{}
+	file_api_container_service_proto_msgTypes[55].OneofWrappers = []interface{}{
 		(*FactValue_StringValue)(nil),
 	}
-	file_api_container_service_proto_msgTypes[57].OneofWrappers = []interface{}{}
-	file_api_container_service_proto_msgTypes[58].OneofWrappers = []interface{}{
+	file_api_container_service_proto_msgTypes[58].OneofWrappers = []interface{}{}
+	file_api_container_service_proto_msgTypes[59].OneofWrappers = []interface{}{
 		(*FactRecipe_ConstantFact)(nil),
 		(*FactRecipe_ExecFact)(nil),
 		(*FactRecipe_HttpRequestFact)(nil),
@@ -5708,7 +5816,7 @@ func file_api_container_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_api_container_service_proto_rawDesc,
 			NumEnums:      2,
-			NumMessages:   78,
+			NumMessages:   79,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

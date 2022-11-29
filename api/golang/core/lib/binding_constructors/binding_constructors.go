@@ -394,6 +394,18 @@ func NewKurtosisInstructionArg(serializedArgValue string, isRepresentative bool)
 	}
 }
 
+func NewKurtosisExecutionResponseLineFromProgressInfo(currentStepInfo string, currentStepNumber uint32, totalSteps uint32) *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine {
+	return &kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine{
+		KurtosisExecutionResponseLine: &kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine_ProgressInfo{
+			ProgressInfo: &kurtosis_core_rpc_api_bindings.KurtosisExecutionProgress{
+				CurrentStepInfo:   currentStepInfo,
+				TotalSteps:        totalSteps,
+				CurrentStepNumber: currentStepNumber,
+			},
+		},
+	}
+}
+
 func NewKurtosisExecutionResponseLineFromInstruction(instruction *kurtosis_core_rpc_api_bindings.KurtosisInstruction) *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine {
 	return &kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine{
 		KurtosisExecutionResponseLine: &kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine_Instruction{
