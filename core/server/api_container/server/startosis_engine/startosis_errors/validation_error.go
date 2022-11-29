@@ -22,10 +22,10 @@ const (
 // an ValidationError is handy when you want to surface a Go error to the user. For example, when you read a file
 // in Go as part of a Startosis execution thread, you may get a Go error which contains valuable information about what
 // went wrong. You can create a ValidationError wrapping the Go error.
-// As mentioned above, it is still discouraged to wrap an error what was returned by stacktrace.Propagate(...),
+// As mentioned above, it is still discouraged to wrap an error that was returned by stacktrace.Propagate(...),
 // as this error message will contain the Go stacktrace the user doesn't really care about. Basically, make sure the
 // error is valuable enough to the end user before wrapping it.
-// It is also doable to wrap an ValidationError into another ValidationError. This is useful when you want to
+// It is also doable to wrap a ValidationError into another ValidationError. This is useful when you want to
 // surface context about the root error as well as where it ended up failing. Since both error messages are
 // surfaced to the user, it will have the info from both errors. However, when the root error is explicit enough, it's
 // not necessary to wrap it. In case of a doubt, wrapping should be the default choice (explicit over implicit!)
