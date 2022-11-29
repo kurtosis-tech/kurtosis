@@ -7,12 +7,12 @@ import (
 
 func TestValidateArgs_valid(t *testing.T) {
 	input := `{"hello": "world!"}`
-	err := validateModuleArgs(input)
+	err := validatePackageArgs(input)
 	require.Nil(t, err)
 }
 
 func TestValidateArgs_invalid(t *testing.T) {
 	input := `"hello": "world!"` // missing { }
-	err := validateModuleArgs(input)
+	err := validatePackageArgs(input)
 	require.NotNil(t, err)
 }

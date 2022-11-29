@@ -23,13 +23,13 @@ func TestUploadFiles_StringRepresentation(t *testing.T) {
 	expectedStr := `upload_files(artifact_id="` + string(artifactId) + `", src="` + filePath + `")`
 	require.Equal(t, expectedStr, uploadInstruction.String())
 
-	canonicalInstruction := binding_constructors.NewKurtosisInstruction(
+	canonicalInstruction := binding_constructors.NewStarlarkInstruction(
 		position.ToAPIType(),
 		UploadFilesBuiltinName,
 		expectedStr,
-		[]*kurtosis_core_rpc_api_bindings.KurtosisInstructionArg{
-			binding_constructors.NewKurtosisInstructionKwarg(`"`+filePath+`"`, srcArgName, true),
-			binding_constructors.NewKurtosisInstructionKwarg(`"`+string(artifactId)+`"`, nonOptionalArtifactIdArgName, true),
+		[]*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg{
+			binding_constructors.NewStarlarkInstructionKwarg(`"`+filePath+`"`, srcArgName, true),
+			binding_constructors.NewStarlarkInstructionKwarg(`"`+string(artifactId)+`"`, nonOptionalArtifactIdArgName, true),
 		})
 	require.Equal(t, canonicalInstruction, uploadInstruction.GetCanonicalInstruction())
 }

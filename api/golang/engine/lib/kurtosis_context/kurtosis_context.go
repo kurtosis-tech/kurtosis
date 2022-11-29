@@ -266,7 +266,6 @@ func runReceiveStreamLogsFromTheServerRoutine(
 	}
 }
 
-
 func newEnclaveContextFromEnclaveInfo(
 	enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo,
 ) (*enclaves.EnclaveContext, error) {
@@ -379,7 +378,7 @@ func newGetUserServiceLogsArgs(
 	getUserServiceLogsArgs := &kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs{
 		EnclaveId:      string(enclaveID),
 		ServiceGuidSet: userServiceGUIDStrSet,
-		FollowLogs: shouldFollowLogs,
+		FollowLogs:     shouldFollowLogs,
 	}
 
 	return getUserServiceLogsArgs

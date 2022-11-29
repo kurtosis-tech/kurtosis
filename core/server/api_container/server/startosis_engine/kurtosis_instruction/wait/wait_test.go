@@ -31,13 +31,13 @@ func TestWaitInstruction_GetCanonicalizedInstruction(t *testing.T) {
 	expectedStr := fmt.Sprintf(expectedFormatStr, testFactName, testServiceId)
 	require.Equal(t, expectedStr, waitInstruction.String())
 
-	canonicalInstruction := binding_constructors.NewKurtosisInstruction(
+	canonicalInstruction := binding_constructors.NewStarlarkInstruction(
 		position.ToAPIType(),
 		WaitBuiltinName,
 		expectedStr,
-		[]*kurtosis_core_rpc_api_bindings.KurtosisInstructionArg{
-			binding_constructors.NewKurtosisInstructionKwarg(`"`+string(testServiceId)+`"`, serviceIdArgName, true),
-			binding_constructors.NewKurtosisInstructionKwarg(`"`+testFactName+`"`, factNameArgName, true),
+		[]*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg{
+			binding_constructors.NewStarlarkInstructionKwarg(`"`+string(testServiceId)+`"`, serviceIdArgName, true),
+			binding_constructors.NewStarlarkInstructionKwarg(`"`+testFactName+`"`, factNameArgName, true),
 		})
 	require.Equal(t, canonicalInstruction, waitInstruction.GetCanonicalInstruction())
 }
