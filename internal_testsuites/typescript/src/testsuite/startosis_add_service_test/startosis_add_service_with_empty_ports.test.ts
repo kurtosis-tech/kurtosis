@@ -2,7 +2,7 @@ import {createEnclave} from "../../test_helpers/enclave_setup";
 import log from "loglevel";
 import {readStreamContentUntilClosed} from "../../test_helpers/startosis_helpers";
 import { Result } from "neverthrow"
-import {ServiceID} from "kurtosis-sdk";
+import {ServiceInfo} from "kurtosis-sdk";
 
 const ADD_SERVICE_WITH_EMPTY_PORTS_TEST_NAME = "add-service-empty-ports"
 const IS_PARTITIONING_ENABLED = false
@@ -88,16 +88,16 @@ Service ${serviceId} deployed successfully.
 
             // Ensure that the service is listed
             const expectedNumberOfServices: number = i + 1;
-            const getServiceIdsPromise: Promise<Result<Set<ServiceID>, Error>> = enclaveContext.getServices();
+            const getServiceIdsPromise: Promise<Result<Set<ServiceInfo>, Error>> = enclaveContext.getServices();
             const getServiceIdsResult = await getServiceIdsPromise;
             if(getServiceIdsResult.isErr()) {
                 log.error(`An error occurred getting service IDs`);
                 throw getServiceIdsResult.error;
             }
 
-            const servicesIds: Set<string> = getServiceIdsResult.value;
+            const servicesInfos: Set<ServiceInfo> = getServiceIdsResult.value;
 
-            const actualNumberOfServices: number = servicesIds.size
+            const actualNumberOfServices: number = servicesInfos.size
 
             if (expectedNumberOfServices !== actualNumberOfServices) {
                 throw new Error(`Expected to receive ${expectedNumberOfServices} services from get services, but ${actualNumberOfServices} were received`)

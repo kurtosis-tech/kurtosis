@@ -78,9 +78,9 @@ Service `+ serviceIds[starlarkScripIndex] +` deployed successfully.
 
 		// Ensure that the service is listed
 		expectedNumberOfServices := starlarkScripIndex + 1
-		serviceIds, err := enclaveCtx.GetServices()
+		serviceInfos, err := enclaveCtx.GetServices()
 		require.Nil(t, err)
-		actualNumberOfServices := len(serviceIds)
+		actualNumberOfServices := len(serviceInfos)
 		require.Equal(t, expectedNumberOfServices, actualNumberOfServices)
 	}
 }
