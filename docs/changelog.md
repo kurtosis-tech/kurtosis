@@ -2,6 +2,7 @@
 
 ### Features
 - Progress information (spinner, progress bar and quick progress message) is now printed by the CLI
+- Instruction are now printed before the execution, and the associated result is printed once the execution is finished. This allows failed instruction to be printed before the error message is returned.
 
 ### Changes
 - Starlark execution progress is now returned to the CLI via the KurtosisExecutionResponseLine stream

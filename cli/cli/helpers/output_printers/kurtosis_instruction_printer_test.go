@@ -10,19 +10,16 @@ import (
 
 func testInstruction() *kurtosis_core_rpc_api_bindings.KurtosisInstruction {
 	position := binding_constructors.NewKurtosisInstructionPosition("dummyFile", 12, 4)
-	instructionWithNoResult := binding_constructors.NewKurtosisInstruction(
+	return binding_constructors.NewKurtosisInstruction(
 		position,
 		"my_instruction",
 		`my_instruction("foo", ["bar", "doo"], kwarg1="serviceA", kwarg2=struct(bonjour=42, hello="world"))`,
-		// TODO(gb): for now result is appended manually in the exec command code. This is change once we start doing streaming where the result is displayed right after the instruction code
 		[]*kurtosis_core_rpc_api_bindings.KurtosisInstructionArg{
 			binding_constructors.NewKurtosisInstructionArg("foo", true),
 			binding_constructors.NewKurtosisInstructionArg(`["bar", "doo"]`, false),
 			binding_constructors.NewKurtosisInstructionKwarg("serviceA", "kwarg1", true),
 			binding_constructors.NewKurtosisInstructionKwarg(`struct(bonjour=42, hello="world")`, "kwarg2", false),
 		})
-	instructionResult := "RESULT"
-	return binding_constructors.AddResultToKurtosisInstruction(instructionWithNoResult, &instructionResult)
 }
 
 func TestFormatInstruction_Executable(t *testing.T) {
@@ -40,8 +37,7 @@ my_instruction(
         bonjour = 42,
         hello = "world",
     ),
-)
-RESULT`
+)`
 	require.Equal(t, expectedResult, formattedInstruction)
 }
 
@@ -52,16 +48,14 @@ func TestFormatInstruction_Detailed(t *testing.T) {
 > 	foo
 > 	["bar", "doo"]
 > 	kwarg1=serviceA
-> 	kwarg2=struct(bonjour=42, hello="world")
-RESULT`
+> 	kwarg2=struct(bonjour=42, hello="world")`
 	require.Equal(t, expectedResult, formattedInstruction)
 }
 
 func TestFormatInstruction_Brief(t *testing.T) {
 	instruction := testInstruction()
 	formattedInstruction := formatInstruction(instruction, run.Brief)
-	expectedResult := `> my_instruction foo kwarg1=serviceA
-RESULT`
+	expectedResult := `> my_instruction foo kwarg1=serviceA`
 	require.Equal(t, expectedResult, formattedInstruction)
 }
 

@@ -99,7 +99,7 @@ func TestStartosis(t *testing.T) {
 
 	outputStream, _, err := enclaveCtx.ExecuteKurtosisScript(ctx, startosisScript, defaultDryRun)
 	require.NoError(t, err, "Unexpected error executing startosis script")
-	interpretationError, validationErrors, executionError, instructions := test_helpers.ReadStreamContentUntilClosed(outputStream)
+	scriptOutput, _, interpretationError, validationErrors, executionError := test_helpers.ReadStreamContentUntilClosed(outputStream)
 
 	expectedScriptOutput := `Adding service example-datastore-server-1.
 Service example-datastore-server-1 deployed successfully.
@@ -110,7 +110,7 @@ Deployed example-datastore-server-2 successfully
 	require.Nil(t, interpretationError, "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
 	require.Empty(t, validationErrors, "Unexpected validation error")
 	require.Nil(t, executionError, "Unexpected execution error")
-	require.Regexp(t, expectedScriptOutput, test_helpers.GenerateScriptOutput(instructions))
+	require.Regexp(t, expectedScriptOutput, scriptOutput)
 	logrus.Infof("Successfully ran Startosis script")
 
 	// Check that the service added by the script is functional

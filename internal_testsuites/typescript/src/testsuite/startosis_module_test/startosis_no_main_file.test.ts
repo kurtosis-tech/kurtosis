@@ -3,7 +3,7 @@ import {DEFAULT_DRY_RUN, EMPTY_EXECUTE_PARAMS, IS_PARTITIONING_ENABLED, JEST_TIM
 import * as path from "path";
 import log from "loglevel";
 import {err} from "neverthrow";
-import {generateScriptOutput, readStreamContentUntilClosed} from "../../test_helpers/startosis_helpers";
+import {readStreamContentUntilClosed} from "../../test_helpers/startosis_helpers";
 
 const MISSING_MAIN_STAR_TEST_NAME = "invalid-module-no-main-file"
 const MODULE_WITH_NO_MAIN_STAR_REL_PATH = "../../../../startosis/no-main-star"
@@ -30,7 +30,7 @@ test("Test invalid module with no main.star", async () => {
         if (outputStream.isErr()) {
             throw err(new Error(`An error occurred execute startosis module '${moduleRootPath}'`));
         }
-        const [interpretationError, validationErrors, executionError, instructions] = await readStreamContentUntilClosed(outputStream.value);
+        const [scriptOutput, _, interpretationError, validationErrors, executionError] = await readStreamContentUntilClosed(outputStream.value);
 
         expect(interpretationError).not.toBeUndefined()
         expect(interpretationError?.getErrorMessage())
@@ -38,7 +38,7 @@ test("Test invalid module with no main.star", async () => {
         expect(validationErrors).toEqual([])
         expect(executionError).toBeUndefined()
 
-        expect(generateScriptOutput(instructions)).toEqual("")
+        expect(scriptOutput).toEqual("")
     } finally {
         stopEnclaveFunction()
     }
