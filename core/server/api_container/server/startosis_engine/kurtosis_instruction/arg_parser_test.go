@@ -199,8 +199,7 @@ func TestExtractUint32ValueFromStruct_FailureUnknownKey(t *testing.T) {
 }
 
 func TestExtractUint32ValueFromStruct_FailureWrongType(t *testing.T) {
-	expectedError :=
-		`Error casting value 'key' as element of the struct object 'dict'
+	expectedError := `Error casting value 'key' as element of the struct object 'dict'
 	Caused by: 'key' argument is expected to be a an integer greater than 0 and lower than 4294967295`
 	dict := starlark.StringDict{}
 	dict["key"] = starlark.MakeInt64(123456789012345678)
@@ -329,8 +328,7 @@ func TestParseEntryPointArgs_SuccessOnMissingValue(t *testing.T) {
 }
 
 func TestParseEntryPointArgs_FailureOnListContainingNonStringValues(t *testing.T) {
-	expectedError :=
-		`Error casting value 'entrypoint' as element of the struct object 'config'
+	expectedError := `Error casting value 'entrypoint' as element of the struct object 'config'
 	Caused by: 'entrypoint[0]' is expected to be a string. Got starlark.Int`
 	dict := starlark.StringDict{}
 	dict["entrypoint"] = starlark.NewList([]starlark.Value{starlark.MakeInt(42)})
@@ -359,8 +357,7 @@ func TestParseCommandArgs_SuccessOnMissingValue(t *testing.T) {
 }
 
 func TestParseCommandArgs_FailureOnListContainingNonStringValues(t *testing.T) {
-	expectedError :=
-		`Error casting value 'cmd' as element of the struct object 'config'
+	expectedError := `Error casting value 'cmd' as element of the struct object 'config'
 	Caused by: 'cmd[0]' is expected to be a string. Got starlark.Int`
 	dict := starlark.StringDict{}
 	dict["cmd"] = starlark.NewList([]starlark.Value{starlark.MakeInt(42)})
