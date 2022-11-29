@@ -24,7 +24,7 @@ const (
 	startingValidationMsg     = "Pre-validating Starlark code and downloading docker images - execution will begin shortly"
 	startingExecutionMsg      = "Starting execution"
 
-	missingRunMethodError = "Evaluation error: module has no .run field or method"
+	missingRunMethodErrorFromStarlark = "Evaluation error: module has no .run field or method"
 )
 
 func NewStartosisRunner(interpreter *StartosisInterpreter, validator *StartosisValidator, executor *StartosisExecutor) *StartosisRunner {
@@ -87,7 +87,7 @@ func forwardKurtosisResponseLineChannelUntilSourceIsClosed(sourceChan <-chan *ku
 }
 
 func maybeMakeMissingRunMethodErrorFriendlier(originalError *kurtosis_core_rpc_api_bindings.KurtosisInterpretationError, moduleId string) *kurtosis_core_rpc_api_bindings.KurtosisInterpretationError {
-	if strings.Contains(originalError.GetErrorMessage(), missingRunMethodError) {
+	if strings.Contains(originalError.GetErrorMessage(), missingRunMethodErrorFromStarlark) {
 		return binding_constructors.NewKurtosisInterpretationError(fmt.Sprintf("No 'run' function found in file '%v/main.star'; a 'run' entrypoint function is required in the main.star file of any Kurtosis package", moduleId))
 	}
 	return originalError

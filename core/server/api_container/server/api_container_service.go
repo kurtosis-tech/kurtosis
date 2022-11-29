@@ -211,11 +211,11 @@ func (apicService ApiContainerService) ExecuteStartosisModule(ctx context.Contex
 	serializedParams := args.SerializedParams
 	dryRun := shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun)
 
-	scriptWithRunToExecute, err := apicService.executeKurtosisModuleSetup(moduleId, isRemote, moduleContentIfLocal)
+	scriptWithRunFunction, err := apicService.executeKurtosisModuleSetup(moduleId, isRemote, moduleContentIfLocal)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error preparing for module execution: '%s'", moduleId)
 	}
-	return apicService.executeStartosis(ctx, dryRun, moduleId, scriptWithRunToExecute, serializedParams), nil
+	return apicService.executeStartosis(ctx, dryRun, moduleId, scriptWithRunFunction, serializedParams), nil
 }
 
 func (apicService ApiContainerService) ExecuteKurtosisModule(args *kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleArgs, stream kurtosis_core_rpc_api_bindings.ApiContainerService_ExecuteKurtosisModuleServer) error {
@@ -225,13 +225,13 @@ func (apicService ApiContainerService) ExecuteKurtosisModule(args *kurtosis_core
 	serializedParams := args.SerializedParams
 	dryRun := shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun)
 
-	scriptWithRunToExecute, interpretationError := apicService.executeKurtosisModuleSetup(moduleId, isRemote, moduleContentIfLocal)
+	scriptWithRunFunction, interpretationError := apicService.executeKurtosisModuleSetup(moduleId, isRemote, moduleContentIfLocal)
 	if interpretationError != nil {
 		if err := stream.SendMsg(binding_constructors.NewKurtosisExecutionResponseLineFromInterpretationError(interpretationError.ToAPIType())); err != nil {
 			return stacktrace.Propagate(err, "Error preparing for module execution and this error could not be sent through the output stream: '%s'", moduleId)
 		}
 	}
-	apicService.runStartosis(dryRun, moduleId, scriptWithRunToExecute, serializedParams, stream)
+	apicService.runStartosis(dryRun, moduleId, scriptWithRunFunction, serializedParams, stream)
 	return nil
 }
 
