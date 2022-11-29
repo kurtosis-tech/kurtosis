@@ -34,13 +34,13 @@ func TestRenderTemplate_TestStringRepresentation(t *testing.T) {
 	expectedStr := `render_templates(artifact_id="` + string(testArtifactId) + `", config=` + expectedConfig + `)`
 	require.Equal(t, expectedStr, renderInstruction.String())
 
-	canonicalInstruction := binding_constructors.NewKurtosisInstruction(
+	canonicalInstruction := binding_constructors.NewStarlarkInstruction(
 		position.ToAPIType(),
 		RenderTemplatesBuiltinName,
 		expectedStr,
-		[]*kurtosis_core_rpc_api_bindings.KurtosisInstructionArg{
-			binding_constructors.NewKurtosisInstructionKwarg(`"`+string(testArtifactId)+`"`, nonOptionalArtifactIdArgName, true),
-			binding_constructors.NewKurtosisInstructionKwarg(expectedConfig, templateAndDataByDestinationRelFilepathArg, false),
+		[]*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg{
+			binding_constructors.NewStarlarkInstructionKwarg(`"`+string(testArtifactId)+`"`, nonOptionalArtifactIdArgName, true),
+			binding_constructors.NewStarlarkInstructionKwarg(expectedConfig, templateAndDataByDestinationRelFilepathArg, false),
 		})
 	require.Equal(t, canonicalInstruction, renderInstruction.GetCanonicalInstruction())
 }
@@ -69,13 +69,13 @@ func TestRenderTemplate_TestMultipleTemplates(t *testing.T) {
 	expectedStr := `render_templates(artifact_id="` + string(testArtifactId) + `", config=` + expectedConfig + `)`
 	require.Equal(t, expectedStr, renderInstruction.String())
 
-	canonicalInstruction := binding_constructors.NewKurtosisInstruction(
+	canonicalInstruction := binding_constructors.NewStarlarkInstruction(
 		position.ToAPIType(),
 		RenderTemplatesBuiltinName,
 		expectedStr,
-		[]*kurtosis_core_rpc_api_bindings.KurtosisInstructionArg{
-			binding_constructors.NewKurtosisInstructionKwarg(`"`+string(testArtifactId)+`"`, nonOptionalArtifactIdArgName, true),
-			binding_constructors.NewKurtosisInstructionKwarg(expectedConfig, templateAndDataByDestinationRelFilepathArg, false),
+		[]*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg{
+			binding_constructors.NewStarlarkInstructionKwarg(`"`+string(testArtifactId)+`"`, nonOptionalArtifactIdArgName, true),
+			binding_constructors.NewStarlarkInstructionKwarg(expectedConfig, templateAndDataByDestinationRelFilepathArg, false),
 		})
 	require.Equal(t, canonicalInstruction, renderInstruction.GetCanonicalInstruction())
 }

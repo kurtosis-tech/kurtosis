@@ -184,12 +184,12 @@ Waits until a service endpoint is available by making requests to the endpoint u
 * `retriesDelayMilliseconds`: Number of milliseconds to wait between retries
 * `bodyText`: If this value is non-empty, the endpoint will not be marked as available until this value is returned (e.g. `Hello World`). If this value is emptystring, no body text comparison will be done.
 
-### getServices() -\> Set\<ServiceID\> serviceIDs
-Gets the IDs of the current services in the enclave.
+### getServices() -\> Set\<[ServiceInfo][ServiceInfo]\> serviceInfos
+Gets information (such as ids) for the current services in the enclave.
 
 **Returns**
 
-* `serviceIDs`: A set of service IDs
+* `serviceInfos`: A set of objects containing information about the services in the enclave  
 
 ### getModules() -\> Set\<ModuleID\> moduleIds
 Gets the IDs of the Kurtosis modules that have been loaded into the enclave.
@@ -394,8 +394,24 @@ Uses [Docker exec](https://docs.docker.com/engine/reference/commandline/exec/) f
 * `exitCode`: The exit code of the command.
 * `logs`: The output of the run command, assuming a UTF-8 encoding. **NOTE:** Commands that output non-UTF-8 output will likely be garbled!
 
+ServiceInfo
+-----------
+This object contains information about a service:
 
+### getServiceId() -\> ServiceID
+Gets the ID that Kurtosis uses to identify the service.
 
+**Returns**
+
+The service's ID.
+
+### getServiceGuid() -\> ServiceGUID
+Gets the GUID (Globally Unique Identifier) that Kurtosis creates and uses to identify the service.
+The differences with the ID is that this one is created by Kurtosis, users can't specify it, and this never can be repeated, every new execution of the same service will have a new GUID
+
+**Returns**
+
+The service's GUID.
 
 TemplateAndData
 ------------------
@@ -446,6 +462,7 @@ _Found a bug? File it on [the repo][issues]!_
 
 [servicecontext]: #servicecontext
 [servicecontext_getpublicports]: #getpublicports---mapportid-portspec
+[serviceinfo]: #serviceinfo
 
 [templateanddata]: #templateanddata
 

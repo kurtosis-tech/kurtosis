@@ -154,7 +154,7 @@ parameters:
     default: "engine-server-image.tgz"
   startosis-test-script-file-relative-path:
     type: string
-    default: "internal_testsuites/startosis/ci_tests/startosis_simple_script.star"
+    default: "internal_testsuites/starlark/ci_tests/startosis_simple_script.star"
 
 
 

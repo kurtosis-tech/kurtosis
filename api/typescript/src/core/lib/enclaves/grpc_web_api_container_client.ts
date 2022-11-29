@@ -30,10 +30,9 @@ import {
     RemoveServiceResponse,
     RenderTemplatesToFilesArtifactArgs,
     RenderTemplatesToFilesArtifactResponse,
-    ExecuteStartosisScriptArgs,
-    ExecuteStartosisModuleArgs,
-    ExecuteStartosisResponse,
-    KurtosisExecutionResponseLine,
+    RunStarlarkScriptArgs,
+    RunStarlarkPackageArgs,
+    StarlarkRunResponseLine,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import { ApiContainerServiceClient as ApiContainerServiceClientWeb } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb";
 import { GenericApiContainerClient } from "./generic_api_container_client";
@@ -99,71 +98,29 @@ export class GrpcWebApiContainerClient implements GenericApiContainerClient {
         return ok(unloadModuleResult.value);
     }
 
-    public async executeStartosisScript(serializedStartosisScript: ExecuteStartosisScriptArgs): Promise<Result<ExecuteStartosisResponse, Error>> {
-        const promiseExecuteStartosisScript: Promise<Result<ExecuteStartosisResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.executeStartosisScript(serializedStartosisScript, {}, (error: grpc_web.RpcError | null, response?: ExecuteStartosisResponse) => {
-                if (error === null) {
-                    if (!response) {
-                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
-                    } else {
-                        resolve(ok(response!));
-                    }
-                } else {
-                    resolve(err(error));
-                }
-            })
+    public async runStarlarkScript(serializedStarlarkScript: RunStarlarkScriptArgs): Promise<Result<Readable, Error>> {
+        const promiseRunStarlarkScript: Promise<Result<grpc_web.ClientReadableStream<StarlarkRunResponseLine>, Error>> = new Promise((resolve, _unusedReject) => {
+            resolve(ok(this.client.runStarlarkScript(serializedStarlarkScript, {})));
         })
-        const resultExecuteStartosisScript: Result<ExecuteStartosisResponse, Error> = await promiseExecuteStartosisScript;
-        if (resultExecuteStartosisScript.isErr()) {
-            return err(resultExecuteStartosisScript.error)
+        const runStarlarkScriptResult: Result<grpc_web.ClientReadableStream<StarlarkRunResponseLine>, Error> = await promiseRunStarlarkScript;
+        if (runStarlarkScriptResult.isErr()) {
+            return err(runStarlarkScriptResult.error)
         }
-        return ok(resultExecuteStartosisScript.value)
+        const starlarkExecutionResponseLinesReadable: Readable = this.forwardStarlarkRunResponseLinesStreamToReadable(runStarlarkScriptResult.value)
+        return ok(starlarkExecutionResponseLinesReadable)
     }
 
-    public async executeKurtosisScript(serializedStartosisScript: ExecuteStartosisScriptArgs): Promise<Result<Readable, Error>> {
-        const promiseExecuteKurtosisScript: Promise<Result<grpc_web.ClientReadableStream<KurtosisExecutionResponseLine>, Error>> = new Promise((resolve, _unusedReject) => {
-            resolve(ok(this.client.executeKurtosisScript(serializedStartosisScript, {})));
-        })
-        const resultExecuteKurtosisScript: Result<grpc_web.ClientReadableStream<KurtosisExecutionResponseLine>, Error> = await promiseExecuteKurtosisScript;
-        if (resultExecuteKurtosisScript.isErr()) {
-            return err(resultExecuteKurtosisScript.error)
-        }
-        const kurtosisExecutionResponseLinesReadable: Readable = this.forwardKurtosisExecutionLinesStreamToReadable(resultExecuteKurtosisScript.value)
-        return ok(kurtosisExecutionResponseLinesReadable)
-    }
-
-    public async executeStartosisModule(startosisModuleArgs:ExecuteStartosisModuleArgs): Promise<Result<ExecuteStartosisResponse, Error>> {
-        const promiseExecuteStartosisModule: Promise<Result<ExecuteStartosisResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.executeStartosisModule(startosisModuleArgs, {}, (error: grpc_web.RpcError | null, response?: ExecuteStartosisResponse) => {
-                if (error === null) {
-                    if (!response) {
-                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
-                    } else {
-                        resolve(ok(response!));
-                    }
-                } else {
-                    resolve(err(error));
-                }
-            })
-        })
-        const resultExecuteStartosisModule: Result<ExecuteStartosisResponse, Error> = await promiseExecuteStartosisModule;
-        if (resultExecuteStartosisModule.isErr()) {
-            return err(resultExecuteStartosisModule.error)
-        }
-        return ok(resultExecuteStartosisModule.value)
-    }
-
-    public async executeKurtosisModule(startosisModuleArgs:ExecuteStartosisModuleArgs): Promise<Result<Readable, Error>> {
-        const promiseExecuteKurtosisModule: Promise<Result<grpc_web.ClientReadableStream<KurtosisExecutionResponseLine>, Error>> = new Promise((resolve, _unusedReject) => {
-            resolve(ok(this.client.executeKurtosisModule(startosisModuleArgs)))
+    public async runStarlarkPackage(starlarkPackageArgs: RunStarlarkPackageArgs): Promise<Result<Readable, Error>> {
+        const promiseRunStarlarkPackage: Promise<Result<grpc_web.ClientReadableStream<StarlarkRunResponseLine>, Error>> = new Promise((resolve, _unusedReject) => {
+            resolve(ok(this.client.runStarlarkPackage(starlarkPackageArgs)))
         })
 
-        const resultExecuteKurtosisModule: Result<grpc_web.ClientReadableStream<KurtosisExecutionResponseLine>, Error> = await promiseExecuteKurtosisModule;
-        if (resultExecuteKurtosisModule.isErr()) {
-            return err(resultExecuteKurtosisModule.error)
+        const runStarlarkPackageResult: Result<grpc_web.ClientReadableStream<StarlarkRunResponseLine>, Error> = await promiseRunStarlarkPackage;
+        if (runStarlarkPackageResult.isErr()) {
+            return err(runStarlarkPackageResult.error)
         }
-        const kurtosisExecutionResponseLinesReadable: Readable = this.forwardKurtosisExecutionLinesStreamToReadable(resultExecuteKurtosisModule.value)
-        return ok(kurtosisExecutionResponseLinesReadable)
+        const starlarkRunResponseLinesReadable: Readable = this.forwardStarlarkRunResponseLinesStreamToReadable(runStarlarkPackageResult.value)
+        return ok(starlarkRunResponseLinesReadable)
     }
 
     public async startServices(startServicesArgs: StartServicesArgs): Promise<Result<StartServicesResponse, Error>>{
@@ -482,33 +439,33 @@ export class GrpcWebApiContainerClient implements GenericApiContainerClient {
         return ok(renderTemplatesToFilesArtifactResponse);
     }
 
-    private forwardKurtosisExecutionLinesStreamToReadable(incomingStream: grpc_web.ClientReadableStream<KurtosisExecutionResponseLine>): Readable {
-        const kurtosisExecutionResponseLinesReadable: Readable = new Readable({
+    private forwardStarlarkRunResponseLinesStreamToReadable(incomingStream: grpc_web.ClientReadableStream<StarlarkRunResponseLine>): Readable {
+        const starlarkExecutionResponseLinesReadable: Readable = new Readable({
             objectMode: true, //setting object mode is to allow pass objects in the readable.push() method
             read() {
             } //this is mandatory to implement, we implement empty as it's describe in the implementation examples here: https://nodesource.com/blog/understanding-streams-in-nodejs/
         })
-        kurtosisExecutionResponseLinesReadable.on("close", function () {
+        starlarkExecutionResponseLinesReadable.on("close", function () {
             //Cancel the GRPC stream when users close the source stream
             incomingStream.cancel();
         })
 
         incomingStream.on('data', responseLine => {
-            kurtosisExecutionResponseLinesReadable.push(responseLine)
+            starlarkExecutionResponseLinesReadable.push(responseLine)
         })
         incomingStream.on('error', err => {
-            if (!kurtosisExecutionResponseLinesReadable.destroyed) {
+            if (!starlarkExecutionResponseLinesReadable.destroyed) {
                 //Propagate the GRPC error to the service logs readable
                 const grpcStreamErr = new Error(`An error has been returned from the kurtosis execution response lines stream. Error:\n ${err}`)
-                kurtosisExecutionResponseLinesReadable.emit('error', grpcStreamErr);
+                starlarkExecutionResponseLinesReadable.emit('error', grpcStreamErr);
             }
         })
         incomingStream.on('end', () => {
             //Emit streams 'end' event when the GRPC stream has end
-            if (!kurtosisExecutionResponseLinesReadable.destroyed) {
-                kurtosisExecutionResponseLinesReadable.emit('end');
+            if (!starlarkExecutionResponseLinesReadable.destroyed) {
+                starlarkExecutionResponseLinesReadable.emit('end');
             }
         })
-        return kurtosisExecutionResponseLinesReadable
+        return starlarkExecutionResponseLinesReadable
     }
 }

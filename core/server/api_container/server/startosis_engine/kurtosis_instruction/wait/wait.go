@@ -60,12 +60,12 @@ func (instruction *WaitInstruction) GetPositionInOriginalScript() *kurtosis_inst
 	return instruction.position
 }
 
-func (instruction *WaitInstruction) GetCanonicalInstruction() *kurtosis_core_rpc_api_bindings.KurtosisInstruction {
-	args := []*kurtosis_core_rpc_api_bindings.KurtosisInstructionArg{
-		binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[serviceIdArgName]), serviceIdArgName, kurtosis_instruction.Representative),
-		binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[factNameArgName]), factNameArgName, kurtosis_instruction.Representative),
+func (instruction *WaitInstruction) GetCanonicalInstruction() *kurtosis_core_rpc_api_bindings.StarlarkInstruction {
+	args := []*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg{
+		binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[serviceIdArgName]), serviceIdArgName, kurtosis_instruction.Representative),
+		binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[factNameArgName]), factNameArgName, kurtosis_instruction.Representative),
 	}
-	return binding_constructors.NewKurtosisInstruction(instruction.position.ToAPIType(), WaitBuiltinName, instruction.String(), args)
+	return binding_constructors.NewStarlarkInstruction(instruction.position.ToAPIType(), WaitBuiltinName, instruction.String(), args)
 }
 
 func (instruction *WaitInstruction) Execute(_ context.Context) (*string, error) {

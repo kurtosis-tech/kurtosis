@@ -1,18 +1,35 @@
 # TBD
 
+### Fixes
+- Make validation more human-readable for missing docker images and instructions that depend on invalid service ids
+
+# 0.57.1
+
+### Changes
+- Added tab-completion (suggestions) to commands that require Service GUIDs, i.e.  `service shell` and `service logs` paths
+
+# 0.57.0
+### Breaking Changes
+- Renamed `src_path` parameter in `read_file` to `src`
+  - Users will have to upgrade their `read_file` calls to reflect this change
+
 ### Features
 - Progress information (spinner, progress bar and quick progress message) is now printed by the CLI
 - Instruction are now printed before the execution, and the associated result is printed once the execution is finished. This allows failed instruction to be printed before the error message is returned.
 
+### Breaking changes
+- Endpoints `ExecuteStartosisScript` and `ExecuteStartosisModule` were removed
+- Endpoints `ExecuteKurtosisScript` was renamed `RunStarlarkScript` and `ExecuteKurtosisModule` was renamed `RunStarlarkPackage`
+
 ### Changes
 - Starlark execution progress is now returned to the CLI via the KurtosisExecutionResponseLine stream
+- Renamed `module` to `package` in the context of the Startosis engine
 
 ### Fixes
 - Fixed the error message when the relative filename was incorrect in a Starlark import
 - Fixed the error message when package name was incorrect
 - Don't proceed with execution if there are validation errors in Starlark
 - Made missing `run` method interpretation error more user friendly
-- Make validation more human-readable for missing docker images and instructions that depend on invalid service ids
 
 # 0.56.0
 ### Breaking Changes

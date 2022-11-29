@@ -26,15 +26,15 @@ func TestPrintInstruction_StringRepresentation(t *testing.T) {
 	expectedStr := `print("foo", ["bar"], end="EOL", sep="; ")`
 	require.Equal(t, expectedStr, instruction.String())
 
-	canonicalInstruction := binding_constructors.NewKurtosisInstruction(
+	canonicalInstruction := binding_constructors.NewStarlarkInstruction(
 		position.ToAPIType(),
 		PrintBuiltinName,
 		expectedStr,
-		[]*kurtosis_core_rpc_api_bindings.KurtosisInstructionArg{
-			binding_constructors.NewKurtosisInstructionArg(`"foo"`, true),
-			binding_constructors.NewKurtosisInstructionArg(`["bar"]`, true),
-			binding_constructors.NewKurtosisInstructionKwarg(`"; "`, "sep", false),
-			binding_constructors.NewKurtosisInstructionKwarg(`"EOL"`, "end", false),
+		[]*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg{
+			binding_constructors.NewStarlarkInstructionArg(`"foo"`, true),
+			binding_constructors.NewStarlarkInstructionArg(`["bar"]`, true),
+			binding_constructors.NewStarlarkInstructionKwarg(`"; "`, "sep", false),
+			binding_constructors.NewStarlarkInstructionKwarg(`"EOL"`, "end", false),
 		})
 	require.Equal(t, canonicalInstruction, instruction.GetCanonicalInstruction())
 }

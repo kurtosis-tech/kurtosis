@@ -78,12 +78,12 @@ func (instruction *ExtractInstruction) GetPositionInOriginalScript() *kurtosis_i
 	return instruction.position
 }
 
-func (instruction *ExtractInstruction) GetCanonicalInstruction() *kurtosis_core_rpc_api_bindings.KurtosisInstruction {
-	args := []*kurtosis_core_rpc_api_bindings.KurtosisInstructionArg{
-		binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[runtimeValueArgName]), runtimeValueArgName, kurtosis_instruction.Representative),
-		binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[fieldExtractorArgName]), fieldExtractorArgName, kurtosis_instruction.NotRepresentative),
+func (instruction *ExtractInstruction) GetCanonicalInstruction() *kurtosis_core_rpc_api_bindings.StarlarkInstruction {
+	args := []*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg{
+		binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[runtimeValueArgName]), runtimeValueArgName, kurtosis_instruction.Representative),
+		binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[fieldExtractorArgName]), fieldExtractorArgName, kurtosis_instruction.NotRepresentative),
 	}
-	return binding_constructors.NewKurtosisInstruction(instruction.position.ToAPIType(), ExtractBuiltinName, instruction.String(), args)
+	return binding_constructors.NewStarlarkInstruction(instruction.position.ToAPIType(), ExtractBuiltinName, instruction.String(), args)
 }
 
 func (instruction *ExtractInstruction) Execute(ctx context.Context) (*string, error) {
