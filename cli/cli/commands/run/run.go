@@ -256,23 +256,24 @@ func readAndPrintResponseLinesUntilClosed(responseLineChan <-chan *kurtosis_core
 	}
 	defer printer.Stop()
 
-	isError := false
+	isRunSuccessful := false // defaults to false such that we fail loudly if something unexpected happens
 	for {
 		select {
 		case responseLine, isChanOpen := <-responseLineChan:
 			if !isChanOpen {
-				if isError {
+				if !isRunSuccessful {
 					return stacktrace.NewError("Kurtosis execution threw an error. See output above for more details")
 				}
 				return nil
 			}
-			executionErrored, err := printer.PrintKurtosisExecutionResponseLineToStdOut(responseLine, verbosity)
+			err := printer.PrintKurtosisExecutionResponseLineToStdOut(responseLine, verbosity)
 			if err != nil {
 				logrus.Errorf("An error occurred trying to write the output of Starlark execution to stdout. The script execution will continue, but the output printed here is incomplete. Error was: \n%s", err.Error())
-				// independently of the status of the execution, mark this run as errored to double tap on the fact that something went wrong.
-				isError = true
 			}
-			isError = isError || executionErrored
+			// If the run finished, persist its status to the isError bool to throw an error and return an non-zero status code
+			if responseLine.GetRunFinishedEvent() != nil {
+				isRunSuccessful = responseLine.GetRunFinishedEvent().GetIsRunSuccessful()
+			}
 		case <-interruptChan:
 			return stacktrace.NewError("User manually interrupted the execution, returning. Note that the execution will continue in the Kurtosis enclave")
 		}

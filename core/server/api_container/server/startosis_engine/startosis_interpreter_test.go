@@ -50,7 +50,7 @@ func TestStartosisInterpreter_SimplePrintScript(t *testing.T) {
 print("` + testString + `")
 `
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Len(t, instructions, 1) // Only the print statement
 	require.Nil(t, interpretationError)
 
@@ -69,7 +69,7 @@ print("Starting Startosis script!")
 unknownInstruction()
 `
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Empty(t, instructions)
 
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
@@ -94,7 +94,7 @@ print(unknownVariable)
 unknownInstruction2()
 `
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Empty(t, instructions)
 
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
@@ -118,7 +118,7 @@ print("Starting Startosis script!")
 load("otherScript.start") # fails b/c load takes in at least 2 args
 `
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Empty(t, instructions)
 
 	expectedError := startosis_errors.NewInterpretationErrorFromStacktrace(
@@ -153,7 +153,7 @@ print("The grpc port protocol is " + datastore_service.ports["grpc"].protocol)
 print("The datastore service ip address is " + datastore_service.ip_address)
 `
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Len(t, instructions, 6)
 	require.Nil(t, interpretationError)
 
@@ -188,7 +188,7 @@ config = struct(
 add_service(service_id = service_id, config = config)
 `
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Empty(t, instructions)
 
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
@@ -220,7 +220,7 @@ config = struct(
 add_service(service_id = service_id, config = config)
 `
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Empty(t, instructions)
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
 		[]startosis_errors.CallFrame{
@@ -252,7 +252,7 @@ add_service(service_id = service_id, config = config)
 `
 	expectedErrorStr := `Evaluation error: Error casting value 'number' as element of the struct object 'ports'
 	Caused by: Argument 'number' is expected to be an integer. Got starlark.String`
-	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Empty(t, instructions)
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
 		[]startosis_errors.CallFrame{
@@ -293,7 +293,7 @@ deploy_datastore_services()
 print("Done!")
 `
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Len(t, instructions, 8)
 	require.Nil(t, interpretationError)
 
@@ -327,7 +327,7 @@ func TestStartosisInterpreter_LoadStatementIsDisallowedInKurtosis(t *testing.T) 
 load("` + barModulePath + `", "a")
 print("Hello " + a)
 `
-	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
 		[]startosis_errors.CallFrame{
 			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(2, 1)),
@@ -352,7 +352,7 @@ func TestStartosisInterpreter_SimpleImport(t *testing.T) {
 my_module = import_module("` + barModulePath + `")
 print("Hello " + my_module.a)
 `
-	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Len(t, instructions, 1) // Only the print statement
 	require.Nil(t, interpretationError)
 
@@ -379,7 +379,7 @@ print(module_doo.b)
 
 `
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Len(t, instructions, 1) // Only the print statement
 	require.Nil(t, interpretationError)
 
@@ -406,10 +406,14 @@ module_doo = import_module("` + moduleDooLoadsModuleBar + `")
 print(module_doo.b)
 `
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Empty(t, instructions) // No kurtosis instruction
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
 		[]startosis_errors.CallFrame{
+			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(2, 27)),
+			*startosis_errors.NewCallFrame("import_module", startosis_errors.NewScriptPosition(0, 0)),
+			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(1, 27)),
+			*startosis_errors.NewCallFrame("import_module", startosis_errors.NewScriptPosition(0, 0)),
 			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(1, 27)),
 			*startosis_errors.NewCallFrame("import_module", startosis_errors.NewScriptPosition(0, 0)),
 		},
@@ -428,7 +432,7 @@ my_module = import_module("` + nonExistentModule + `")
 print(my_module.b)
 `
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Empty(t, instructions) // No kurtosis instruction
 
 	errorMsg := `Evaluation error: An error occurred while loading the package '` + nonExistentModule + `'
@@ -454,7 +458,7 @@ print("Hello " + my_module.a)
 `
 
 	// assert that first load fails
-	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Nil(t, instructions)
 	require.NotNil(t, interpretationError)
 
@@ -463,7 +467,7 @@ print("Hello " + my_module.a)
 	expectedOutput := `Hello World!
 `
 	// assert that second load succeeds
-	instructions, interpretationError = interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError = interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 1) // The print statement
 	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutput)
@@ -494,7 +498,7 @@ print("Adding service " + module_bar.service_id)
 add_service(service_id = module_bar.service_id, config = module_bar.config)
 `
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Len(t, instructions, 4)
 	require.Nil(t, interpretationError)
 
@@ -543,7 +547,7 @@ datastore_module.deploy_datastore_services()
 print("Done!")
 `
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Len(t, instructions, 8)
 	require.Nil(t, interpretationError)
 
@@ -578,7 +582,7 @@ my_module = import_module("` + barModulePath + `")
 print("World!")
 `
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Len(t, instructions, 2)
 	require.Nil(t, interpretationError)
 
@@ -612,7 +616,7 @@ import_module("` + moduleBar + `")
 print("Starting Startosis script!")
 `
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Len(t, instructions, 4)
 	require.Nil(t, interpretationError)
 
@@ -657,7 +661,7 @@ Adding service example-datastore-server
 Starting Startosis script!
 `
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, scriptA, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, scriptA, EmptyInputArgs)
 	require.Len(t, instructions, 4)
 	require.Nil(t, interpretationError)
 	require.Equal(t, addServiceInstructionFromScriptA, instructions[2])
@@ -682,7 +686,7 @@ add_service(service_id = service_id, config = config)
 Adding service example-datastore-server
 `
 
-	instructions, interpretationError = interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, scriptB, EmptyInputArgs)
+	_, instructions, interpretationError = interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, scriptB, EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 3)
 	require.Equal(t, addServiceInstructionFromScriptB, instructions[2])
@@ -718,7 +722,7 @@ client_config = struct(
 add_service(service_id = client_service_id, config = client_config)
 `
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 5)
 
@@ -748,7 +752,7 @@ print("Executing mkdir!")
 exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"])
 `
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Len(t, instructions, 2)
 	require.Nil(t, interpretationError)
 
@@ -783,7 +787,7 @@ print("Executing mkdir!")
 exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"], expected_exit_code = -7)
 `
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Len(t, instructions, 2)
 	require.Nil(t, interpretationError)
 
@@ -821,7 +825,7 @@ artifact_uuid=store_service_files(service_id="example-datastore-server", src="/f
 print(artifact_uuid)
 `
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 3)
 
@@ -863,7 +867,7 @@ file_contents=read_file("` + src + `")
 print(file_contents)
 `
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 2)
 
@@ -884,7 +888,7 @@ wait(service_id="%v", fact_name="%v")
 	serviceId := "service"
 	factName := "fact"
 	script := fmt.Sprintf(scriptFormatStr, serviceId, factName, serviceId, factName)
-	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.NotEmpty(t, instructions)
 	validateScriptOutputFromPrintInstructions(t, instructions, "")
@@ -916,7 +920,7 @@ artifact_id = render_templates(config = data, artifact_id = "` + string(testArti
 print(artifact_id)
 `
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 3)
 
@@ -1007,7 +1011,7 @@ uuid = call_store_for_me_module.call_store_for_me()
 print(uuid)
 `
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 4)
 
@@ -1046,7 +1050,7 @@ remove_service(service_id=service_id)
 print("The service example-datastore-server has been removed")
 `
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Len(t, instructions, 3)
 	require.Nil(t, interpretationError)
 
@@ -1077,7 +1081,7 @@ func TestStartosisInterpreter_UploadGetsInterpretedCorrectly(t *testing.T) {
 	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider)
 	script := `upload_files("` + filePath + `","` + string(artifactId) + `")
 `
-	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 1)
 	validateScriptOutputFromPrintInstructions(t, instructions, "")
@@ -1103,7 +1107,7 @@ func TestStartosisInterpreter_NoPanicIfUploadIsPassedAPathNotOnDisk(t *testing.T
 	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider)
 	script := `upload_files("` + filePath + `")
 `
-	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Nil(t, instructions)
 	require.NotNil(t, interpretationError)
 }
@@ -1124,7 +1128,7 @@ config = struct(
 datastore_service = add_service(service_id = service_id, config = config)
 print("The datastore service ip address is " + datastore_service.ip_address)`
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Equal(t, 4, len(instructions))
 
