@@ -14,8 +14,9 @@ const (
 	defaultDryRun         = false
 
 	serviceId = "docker-getting-started"
+	serviceId2 = "docker-getting-started-2"
 
-	startosisScript = `
+	starlarkScriptWithEmptyPorts = `
 DOCKER_GETTING_STARTED_IMAGE = "docker/getting-started:latest"
 SERVICE_ID = "` + serviceId + `"
 
@@ -29,9 +30,26 @@ config = struct(
 add_service(service_id = SERVICE_ID, config = config)
 print("Service " + SERVICE_ID + " deployed successfully.")
 `
+
+	starlarkScriptWithoutPorts = `
+DOCKER_GETTING_STARTED_IMAGE = "docker/getting-started:latest"
+SERVICE_ID = "` + serviceId2 + `"
+
+print("Adding service " + SERVICE_ID + ".")
+
+config = struct(
+    image = DOCKER_GETTING_STARTED_IMAGE,
 )
 
-func TestAddServiceWithEmptyPorts(t *testing.T) {
+add_service(service_id = SERVICE_ID, config = config)
+print("Service " + SERVICE_ID + " deployed successfully.")
+`
+)
+
+var serviceIds = []string{serviceId, serviceId2}
+var starlarkScriptToRun = []string{starlarkScriptWithEmptyPorts, starlarkScriptWithoutPorts}
+
+func TestAddServiceWithEmptyPortsAndWithoutPorts(t *testing.T) {
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
@@ -40,26 +58,29 @@ func TestAddServiceWithEmptyPorts(t *testing.T) {
 	defer destroyEnclaveFunc()
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
-	logrus.Infof("Executing Starlark script...")
-	logrus.Debugf("Starlark script content: \n%v", startosisScript)
 
-	outputStream, _, err := enclaveCtx.ExecuteKurtosisScript(ctx, startosisScript, defaultDryRun)
-	require.NoError(t, err, "Unexpected error executing starlark script")
-	interpretationError, validationErrors, executionError, instructions := test_helpers.ReadStreamContentUntilClosed(outputStream)
+	for starlarkScripIndex, starlarkScript := range starlarkScriptToRun {
+		logrus.Infof("Executing Starlark script...")
+		logrus.Debugf("Starlark script content: \n%v", starlarkScript)
 
-	expectedScriptOutput := `Adding service docker-getting-started.
-Service docker-getting-started deployed successfully.
+		outputStream, _, err := enclaveCtx.ExecuteKurtosisScript(ctx, starlarkScript, defaultDryRun)
+		require.NoError(t, err, "Unexpected error executing starlark script")
+		interpretationError, validationErrors, executionError, instructions := test_helpers.ReadStreamContentUntilClosed(outputStream)
+
+		expectedScriptOutput := `Adding service `+ serviceIds[starlarkScripIndex] +`.
+Service `+ serviceIds[starlarkScripIndex] +` deployed successfully.
 `
-	require.Nil(t, interpretationError, "Unexpected interpretation error.")
-	require.Empty(t, validationErrors, "Unexpected validation error")
-	require.Nil(t, executionError, "Unexpected execution error")
-	require.Equal(t, expectedScriptOutput, test_helpers.GenerateScriptOutput(instructions))
-	logrus.Infof("Successfully ran Starlark script")
+		require.Nil(t, interpretationError, "Unexpected interpretation error.")
+		require.Empty(t, validationErrors, "Unexpected validation error")
+		require.Nil(t, executionError, "Unexpected execution error")
+		require.Equal(t, expectedScriptOutput, test_helpers.GenerateScriptOutput(instructions))
+		logrus.Infof("Successfully ran Starlark script")
 
-	// Ensure that the service is listed
-	expectedAmountOfServices := 1
-	serviceIds, err := enclaveCtx.GetServices()
-	require.Nil(t, err)
-	actualAmountOfServices := len(serviceIds)
-	require.Equal(t, expectedAmountOfServices, actualAmountOfServices)
+		// Ensure that the service is listed
+		expectedAmountOfServices := starlarkScripIndex + 1
+		serviceIds, err := enclaveCtx.GetServices()
+		require.Nil(t, err)
+		actualAmountOfServices := len(serviceIds)
+		require.Equal(t, expectedAmountOfServices, actualAmountOfServices)
+	}
 }
