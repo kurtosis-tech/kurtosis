@@ -2,7 +2,6 @@ package remove_service
 
 import (
 	"context"
-	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
@@ -78,8 +77,7 @@ func (instruction *RemoveServiceInstruction) String() string {
 
 func (instruction *RemoveServiceInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
 	if !environment.DoesServiceIdExist(instruction.serviceId) {
-		// this is intentionally not using stacktrace.NewError, as we don't want to pollute the error with Go line, column numbers
-		return fmt.Errorf("There was an error validating remove service as service ID '%v' doesn't exist", instruction.serviceId)
+		return startosis_errors.NewValidationError("There was an error validating remove service as service ID '%v' doesn't exist", instruction.serviceId)
 	}
 	environment.RemoveServiceId(instruction.serviceId)
 	return nil
