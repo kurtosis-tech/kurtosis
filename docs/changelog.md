@@ -1,5 +1,8 @@
 # TBD
 
+### Fixes
+- Make validation more human-readable for missing docker images and instructions that depend on invalid service ids
+
 ### Changes
 - Updated Starlark section of core-lib-documentation.md to match the new streaming endpoints
 - Updated `datastore-army-module` -> `datastore-army-package`

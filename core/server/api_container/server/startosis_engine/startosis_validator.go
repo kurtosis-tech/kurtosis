@@ -7,8 +7,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
-	"github.com/kurtosis-tech/stacktrace"
 )
 
 type StartosisValidator struct {
@@ -33,16 +33,14 @@ func (validator *StartosisValidator) Validate(ctx context.Context, instructions 
 		for _, instruction := range instructions {
 			err := instruction.ValidateAndUpdateEnvironment(environment)
 			if err != nil {
-				propagatedError := stacktrace.Propagate(err, "Error while validating instruction %v. The instruction can be found at %v", instruction.String(), instruction.GetPositionInOriginalScript().String())
-				serializedError := binding_constructors.NewStarlarkValidationError(propagatedError.Error())
-				starlarkExecutionResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromValidationError(serializedError)
+				wrappedValidationError := startosis_errors.WrapWithValidationError(err, "Error while validating instruction %v. The instruction can be found at %v", instruction.String(), instruction.GetPositionInOriginalScript().String())
+				starlarkExecutionResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromValidationError(wrappedValidationError.ToAPIType())
 			}
 		}
 		errors := validator.dockerImagesValidator.Validate(ctx, environment)
 		for _, err := range errors {
-			propagatedError := stacktrace.Propagate(err, "Error while validating final environment of script")
-			serializedError := binding_constructors.NewStarlarkValidationError(propagatedError.Error())
-			starlarkExecutionResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromValidationError(serializedError)
+			wrappedValidationError := startosis_errors.WrapWithValidationError(err, "Error while validating final environment of script")
+			starlarkExecutionResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromValidationError(wrappedValidationError.ToAPIType())
 		}
 	}()
 	return starlarkExecutionResponseLineStream
