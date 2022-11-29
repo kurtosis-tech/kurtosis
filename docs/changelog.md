@@ -3,6 +3,11 @@
 ### Changes
 - Updated `datastore-army-module` -> `datastore-army-package`
 
+# 0.57.1
+
+### Changes
+- Added tab-completion (suggestions) to commands that require Service GUIDs, i.e.  `service shell` and `service logs` paths
+
 # 0.57.0
 ### Breaking Changes
 - Renamed `src_path` parameter in `read_file` to `src`

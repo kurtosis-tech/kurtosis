@@ -94,7 +94,7 @@ Service example-datastore-server-1 deployed successfully.
 	)
 
 	// Ensure that service listing is empty too
-	serviceIds, err := enclaveCtx.GetServices()
+	serviceInfos, err := enclaveCtx.GetServices()
 	require.Nil(t, err)
-	require.Empty(t, serviceIds)
+	require.Empty(t, serviceInfos)
 }
