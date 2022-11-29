@@ -6,7 +6,7 @@ import { createEnclave } from "../../test_helpers/enclave_setup";
 import {
     validateDataStoreServiceIsHealthy,
 } from "../../test_helpers/test_helpers";
-import {generateScriptOutput, readStreamContentUntilClosed} from "../../test_helpers/startosis_helpers";
+import {readStreamContentUntilClosed} from "../../test_helpers/startosis_helpers";
 
 const TEST_NAME = "module"
 
@@ -39,7 +39,7 @@ test("Test remote Starlark module execution", async () => {
             throw outputStream.error
         }
 
-        const [interpretationError, validationErrors, executionError, _] = await readStreamContentUntilClosed(outputStream.value);
+        const [scriptOutput, _, interpretationError, validationErrors, executionError] = await readStreamContentUntilClosed(outputStream.value);
 
         expect(interpretationError).toBeUndefined()
         expect(validationErrors).toEqual([])

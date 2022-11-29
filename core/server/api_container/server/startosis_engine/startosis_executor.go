@@ -9,6 +9,10 @@ import (
 	"sync"
 )
 
+const (
+	progressMsg = "Execution in progress"
+)
+
 type StartosisExecutor struct {
 	mutex *sync.Mutex
 }
@@ -43,8 +47,13 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, ins
 		totalNumberOfInstructions := uint32(len(instructions))
 		for index, instruction := range instructions {
 			instructionNumber := uint32(index + 1)
-			kurtosisExecutionResponseLineStream <- binding_constructors.NewKurtosisExecutionResponseLineFromProgressInfo(
-				"Execution in progress", instructionNumber, totalNumberOfInstructions)
+			progress := binding_constructors.NewKurtosisExecutionResponseLineFromProgressInfo(
+				progressMsg, instructionNumber, totalNumberOfInstructions)
+			kurtosisExecutionResponseLineStream <- progress
+
+			canonicalInstruction := binding_constructors.NewKurtosisExecutionResponseLineFromInstruction(instruction.GetCanonicalInstruction())
+			kurtosisExecutionResponseLineStream <- canonicalInstruction
+
 			if !dryRun {
 				instructionOutput, err := instruction.Execute(ctx)
 				if err != nil {
@@ -53,11 +62,10 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, ins
 					kurtosisExecutionResponseLineStream <- binding_constructors.NewKurtosisExecutionResponseLineFromExecutionError(serializedError)
 					return
 				}
-				instructionWithResult := binding_constructors.AddResultToKurtosisInstruction(instruction.GetCanonicalInstruction(), instructionOutput)
-				kurtosisExecutionResponseLineStream <- binding_constructors.NewKurtosisExecutionResponseLineFromInstruction(instructionWithResult)
-			} else {
-				instructionWithoutResult := instruction.GetCanonicalInstruction()
-				kurtosisExecutionResponseLineStream <- binding_constructors.NewKurtosisExecutionResponseLineFromInstruction(instructionWithoutResult)
+				if instructionOutput != nil {
+					instructionResult := binding_constructors.NewKurtosisInstructionResult(*instructionOutput)
+					kurtosisExecutionResponseLineStream <- binding_constructors.NewKurtosisExecutionResponseLineFromInstructionResult(instructionResult)
+				}
 			}
 		}
 	}()

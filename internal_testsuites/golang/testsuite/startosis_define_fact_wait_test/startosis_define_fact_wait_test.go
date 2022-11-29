@@ -69,7 +69,7 @@ func TestStartosis(t *testing.T) {
 
 	outputStream, _, err := enclaveCtx.ExecuteKurtosisScript(ctx, startosisScript, defaultDryRun)
 	require.NoError(t, err, "Unexpected error executing startosis script")
-	interpretationError, validationErrors, executionError, instructions := test_helpers.ReadStreamContentUntilClosed(outputStream)
+	scriptOutput, _, interpretationError, validationErrors, executionError := test_helpers.ReadStreamContentUntilClosed(outputStream)
 
 	expectedScriptOutput := `Service deployed successfully.
 Service dependency 1 deployed successfully.
@@ -78,7 +78,7 @@ Service dependency 2 deployed successfully.
 	require.Nil(t, interpretationError, "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
 	require.Empty(t, validationErrors, "Unexpected validation error")
 	require.Nil(t, executionError, "Unexpected execution error")
-	require.Equal(t, expectedScriptOutput, test_helpers.GenerateScriptOutput(instructions))
+	require.Equal(t, expectedScriptOutput, scriptOutput)
 	logrus.Infof("Successfully ran Startosis script")
 
 	serviceInfos, err := enclaveCtx.GetServices()
