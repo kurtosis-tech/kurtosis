@@ -1,5 +1,8 @@
 # TBD
 
+### Changes
+- Added tab-completion (suggestions) to commands that require Service GUIDs, i.e.  `service shell` and `service logs` paths
+
 # 0.57.0
 ### Breaking Changes
 - Renamed `src_path` parameter in `read_file` to `src`
@@ -16,7 +19,6 @@
 ### Changes
 - Starlark execution progress is now returned to the CLI via the KurtosisExecutionResponseLine stream
 - Renamed `module` to `package` in the context of the Startosis engine
-- Added tab-completion (suggestions) to commands that require Service GUIDs, i.e.  `service shell` and `service logs` paths
 
 ### Fixes
 - Fixed the error message when the relative filename was incorrect in a Starlark import
