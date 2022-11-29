@@ -5,6 +5,7 @@
 
 ### Changes
 - Starlark execution progress is now returned to the CLI via the KurtosisExecutionResponseLine stream
+- Make arg parsing errors more explicit on structs
 
 # 0.56.0
 ### Breaking Changes
