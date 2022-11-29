@@ -1,5 +1,8 @@
 # TBD
 
+### Features
+- Log file name and function like [filename.go:FunctionName()] while logging in `core` & `engine`
+
 # 0.57.1
 
 ### Changes
@@ -11,7 +14,6 @@
   - Users will have to upgrade their `read_file` calls to reflect this change
 
 ### Features
-- Log file name and function like [filename.go:FunctionName()] while logging in `core` & `engine`
 - Progress information (spinner, progress bar and quick progress message) is now printed by the CLI
 - Instruction are now printed before the execution, and the associated result is printed once the execution is finished. This allows failed instruction to be printed before the error message is returned.
 
