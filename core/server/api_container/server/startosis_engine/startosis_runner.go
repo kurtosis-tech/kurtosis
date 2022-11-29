@@ -2,6 +2,7 @@ package startosis_engine
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/sirupsen/logrus"
@@ -21,6 +22,8 @@ const (
 	startingInterpretationMsg = "Interpreting Starlark code - execution will begin shortly"
 	startingValidationMsg     = "Pre-validating Starlark code and downloading docker images - execution will begin shortly"
 	startingExecutionMsg      = "Starting execution"
+
+	missingRunMethodErrorFromStarlark = "Evaluation error: module has no .run field or method\n\tat [3:12]: <toplevel>"
 )
 
 func NewStartosisRunner(interpreter *StartosisInterpreter, validator *StartosisValidator, executor *StartosisExecutor) *StartosisRunner {
@@ -45,6 +48,7 @@ func (runner *StartosisRunner) Run(ctx context.Context, dryRun bool, moduleId st
 
 		instructionsList, interpretationError := runner.startosisInterpreter.Interpret(ctx, moduleId, serializedStartosis, serializedParams)
 		if interpretationError != nil {
+			interpretationError = maybeMakeMissingRunMethodErrorFriendlier(interpretationError, moduleId)
 			kurtosisExecutionResponseLines <- binding_constructors.NewKurtosisExecutionResponseLineFromInterpretationError(interpretationError)
 			return
 		}
@@ -85,4 +89,11 @@ func forwardKurtosisResponseLineChannelUntilSourceIsClosed(sourceChan <-chan *ku
 	}
 	logrus.Debug("Kurtosis instructions stream was closed. Exiting execution loop")
 	return messagesWereReceived
+}
+
+func maybeMakeMissingRunMethodErrorFriendlier(originalError *kurtosis_core_rpc_api_bindings.KurtosisInterpretationError, moduleId string) *kurtosis_core_rpc_api_bindings.KurtosisInterpretationError {
+	if originalError.GetErrorMessage() == missingRunMethodErrorFromStarlark {
+		return binding_constructors.NewKurtosisInterpretationError(fmt.Sprintf("No 'run' function found in file '%v/main.star'; a 'run' entrypoint function is required in the main.star file of any Kurtosis package", moduleId))
+	}
+	return originalError
 }
