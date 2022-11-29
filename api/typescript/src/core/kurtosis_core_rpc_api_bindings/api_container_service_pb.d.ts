@@ -343,6 +343,9 @@ export class RunStarlarkScriptArgs extends jspb.Message {
   getSerializedScript(): string;
   setSerializedScript(value: string): RunStarlarkScriptArgs;
 
+  getSerializedParams(): string;
+  setSerializedParams(value: string): RunStarlarkScriptArgs;
+
   getDryRun(): boolean;
   setDryRun(value: boolean): RunStarlarkScriptArgs;
   hasDryRun(): boolean;
@@ -359,12 +362,13 @@ export class RunStarlarkScriptArgs extends jspb.Message {
 export namespace RunStarlarkScriptArgs {
   export type AsObject = {
     serializedScript: string,
+    serializedParams: string,
     dryRun?: boolean,
   }
 
   export enum DryRunCase { 
     _DRY_RUN_NOT_SET = 0,
-    DRY_RUN = 2,
+    DRY_RUN = 3,
   }
 }
 

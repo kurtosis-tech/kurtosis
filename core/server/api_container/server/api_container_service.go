@@ -58,7 +58,14 @@ const (
 	bootScript = `
 main_module = import_module("%v/` + startosis_engine.MainFileName + `")
 main_module.run(%v)
+
 	`
+	// We concatenate a run() at the end of individual scripts to enforce a run method
+	runToConcatenateAtEndOfStandaloneScript = `
+	%s
+	run(%v)
+`
+
 	// Overwrite existing module with new module, this allows user to iterate on an enclave with a
 	// given module
 	doOverwriteExistingModule = true
@@ -193,8 +200,10 @@ func (apicService ApiContainerService) ExecuteModule(ctx context.Context, args *
 
 func (apicService ApiContainerService) RunStarlarkScript(args *kurtosis_core_rpc_api_bindings.RunStarlarkScriptArgs, stream kurtosis_core_rpc_api_bindings.ApiContainerService_RunStarlarkScriptServer) error {
 	serializedStartosisScript := args.GetSerializedScript()
+	serializedParams := args.GetSerializedParams()
 	dryRun := shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun)
-	apicService.runStarlark(dryRun, startosis_engine.PackageIdPlaceholderForStandaloneScript, serializedStartosisScript, startosis_engine.EmptyInputArgs, stream)
+	scriptWithRunFunction := fmt.Sprintf(runToConcatenateAtEndOfStandaloneScript, serializedStartosisScript, startosis_engine.MainInputArgName)
+	apicService.runStarlark(dryRun, startosis_engine.PackageIdPlaceholderForStandaloneScript, scriptWithRunFunction, serializedParams, stream)
 	return nil
 }
 
