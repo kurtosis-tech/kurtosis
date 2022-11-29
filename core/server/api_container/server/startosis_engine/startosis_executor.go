@@ -34,40 +34,39 @@ func NewStartosisExecutor() *StartosisExecutor {
 // - A regular KurtosisInstruction that was successfully executed
 // - A KurtosisExecutionError if the execution failed
 // - A ProgressInfo to update the current "state" of the execution
-func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, instructions []kurtosis_instruction.KurtosisInstruction) <-chan *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine {
+func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, instructions []kurtosis_instruction.KurtosisInstruction) <-chan *kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine {
 	executor.mutex.Lock()
-	kurtosisExecutionResponseLineStream := make(chan *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine)
+	starlarkExecutionResponseLineStream := make(chan *kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine)
 
 	go func() {
 		defer func() {
 			executor.mutex.Unlock()
-			close(kurtosisExecutionResponseLineStream)
+			close(starlarkExecutionResponseLineStream)
 		}()
 
 		totalNumberOfInstructions := uint32(len(instructions))
 		for index, instruction := range instructions {
 			instructionNumber := uint32(index + 1)
-			progress := binding_constructors.NewKurtosisExecutionResponseLineFromProgressInfo(
+			progress := binding_constructors.NewStarlarkExecutionResponseLineFromProgressInfo(
 				progressMsg, instructionNumber, totalNumberOfInstructions)
-			kurtosisExecutionResponseLineStream <- progress
+			starlarkExecutionResponseLineStream <- progress
 
-			canonicalInstruction := binding_constructors.NewKurtosisExecutionResponseLineFromInstruction(instruction.GetCanonicalInstruction())
-			kurtosisExecutionResponseLineStream <- canonicalInstruction
+			canonicalInstruction := binding_constructors.NewStarlarkExecutionResponseLineFromInstruction(instruction.GetCanonicalInstruction())
+			starlarkExecutionResponseLineStream <- canonicalInstruction
 
 			if !dryRun {
 				instructionOutput, err := instruction.Execute(ctx)
 				if err != nil {
 					propagatedError := stacktrace.Propagate(err, "An error occurred executing instruction (number %d): \n%v", instructionNumber, instruction.String())
-					serializedError := binding_constructors.NewKurtosisExecutionError(propagatedError.Error())
-					kurtosisExecutionResponseLineStream <- binding_constructors.NewKurtosisExecutionResponseLineFromExecutionError(serializedError)
+					serializedError := binding_constructors.NewStarlarkExecutionError(propagatedError.Error())
+					starlarkExecutionResponseLineStream <- binding_constructors.NewStarlarkExecutionResponseLineFromExecutionError(serializedError)
 					return
 				}
 				if instructionOutput != nil {
-					instructionResult := binding_constructors.NewKurtosisInstructionResult(*instructionOutput)
-					kurtosisExecutionResponseLineStream <- binding_constructors.NewKurtosisExecutionResponseLineFromInstructionResult(instructionResult)
+					starlarkExecutionResponseLineStream <- binding_constructors.NewStarlarkExecutionResponseLineFromInstructionResult(*instructionOutput)
 				}
 			}
 		}
 	}()
-	return kurtosisExecutionResponseLineStream
+	return starlarkExecutionResponseLineStream
 }

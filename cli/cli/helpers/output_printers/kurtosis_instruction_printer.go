@@ -77,7 +77,7 @@ func (printer *ExecutionPrinter) Stop() {
 }
 
 // PrintKurtosisExecutionResponseLineToStdOut format and prints the instruction to StdOut. It returns a boolean indicating whether an error occurred during printing
-func (printer *ExecutionPrinter) PrintKurtosisExecutionResponseLineToStdOut(responseLine *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine, verbosity run.Verbosity) (bool, error) {
+func (printer *ExecutionPrinter) PrintKurtosisExecutionResponseLineToStdOut(responseLine *kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine, verbosity run.Verbosity) (bool, error) {
 	// Printing is a 3 phase operation:
 	// 1. stop spinner to clear the ephemeral progress info
 	// 2. print whatever needs to be printed, could be nothing
@@ -136,7 +136,7 @@ func formatError(errorMessage string) string {
 	return colorizeError(errorMessage)
 }
 
-func formatInstruction(instruction *kurtosis_core_rpc_api_bindings.KurtosisInstruction, verbosity run.Verbosity) string {
+func formatInstruction(instruction *kurtosis_core_rpc_api_bindings.StarlarkInstruction, verbosity run.Verbosity) string {
 	var serializedInstruction string
 	switch verbosity {
 	case run.Brief:
@@ -153,12 +153,12 @@ func formatInstruction(instruction *kurtosis_core_rpc_api_bindings.KurtosisInstr
 	return colorizeInstruction(serializedInstruction)
 }
 
-func formatInstructionResult(instructionResult *kurtosis_core_rpc_api_bindings.KurtosisInstructionResult) string {
+func formatInstructionResult(instructionResult *kurtosis_core_rpc_api_bindings.StarlarkInstructionResult) string {
 	serializedInstructionResult := fmt.Sprintf("%s%s", resultPrefixString, instructionResult.GetSerializedInstructionResult())
 	return colorizeResult(serializedInstructionResult)
 }
 
-func formatInstructionToReadableString(instruction *kurtosis_core_rpc_api_bindings.KurtosisInstruction, exhaustive bool) string {
+func formatInstructionToReadableString(instruction *kurtosis_core_rpc_api_bindings.StarlarkInstruction, exhaustive bool) string {
 	serializedInstructionComponents := []string{instruction.GetInstructionName()}
 	for _, arg := range instruction.GetArguments() {
 		if exhaustive || arg.GetIsRepresentative() {
@@ -183,7 +183,7 @@ func formatInstructionToReadableString(instruction *kurtosis_core_rpc_api_bindin
 	return fmt.Sprintf("%s%s", instructionPrefixString, serializedInstruction)
 }
 
-func formatInstructionToExecutable(instruction *kurtosis_core_rpc_api_bindings.KurtosisInstruction) string {
+func formatInstructionToExecutable(instruction *kurtosis_core_rpc_api_bindings.StarlarkInstruction) string {
 	serializedInstruction := fmt.Sprintf(
 		"from %s[%d:%d]\n%s",
 		instruction.GetPosition().GetFilename(),

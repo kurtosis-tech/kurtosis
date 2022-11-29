@@ -9,12 +9,12 @@ const (
 	newlineChar = "\n"
 )
 
-func ReadStreamContentUntilClosed(responseLines chan *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine) (string, []*kurtosis_core_rpc_api_bindings.KurtosisInstruction, *kurtosis_core_rpc_api_bindings.KurtosisInterpretationError, []*kurtosis_core_rpc_api_bindings.KurtosisValidationError, *kurtosis_core_rpc_api_bindings.KurtosisExecutionError) {
+func ReadStreamContentUntilClosed(responseLines chan *kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine) (string, []*kurtosis_core_rpc_api_bindings.StarlarkInstruction, *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError, []*kurtosis_core_rpc_api_bindings.StarlarkValidationError, *kurtosis_core_rpc_api_bindings.StarlarkExecutionError) {
 	scriptOutput := strings.Builder{}
-	instructions := make([]*kurtosis_core_rpc_api_bindings.KurtosisInstruction, 0)
-	var interpretationError *kurtosis_core_rpc_api_bindings.KurtosisInterpretationError
-	validationErrors := make([]*kurtosis_core_rpc_api_bindings.KurtosisValidationError, 0)
-	var executionError *kurtosis_core_rpc_api_bindings.KurtosisExecutionError
+	instructions := make([]*kurtosis_core_rpc_api_bindings.StarlarkInstruction, 0)
+	var interpretationError *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError
+	validationErrors := make([]*kurtosis_core_rpc_api_bindings.StarlarkValidationError, 0)
+	var executionError *kurtosis_core_rpc_api_bindings.StarlarkExecutionError
 
 	for responseLine := range responseLines {
 		if responseLine.GetInstruction() != nil {

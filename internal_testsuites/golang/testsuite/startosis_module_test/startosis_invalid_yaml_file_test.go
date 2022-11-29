@@ -34,7 +34,7 @@ func TestStartosisModule_InvalidYamlFile(t *testing.T) {
 	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
 
 	expectedErrorContents := "Field 'name', which is the Starlark package's name, in kurtosis.yml needs to be set and cannot be empty"
-	_, _, err = enclaveCtx.ExecuteKurtosisModule(ctx, moduleDirpath, emptyExecuteParams, defaultDryRun)
+	_, _, err = enclaveCtx.ExecuteStarlarkPackage(ctx, moduleDirpath, emptyExecuteParams, defaultDryRun)
 	require.NotNil(t, err, "Unexpected error executing startosis module")
 	require.Contains(t, err.Error(), expectedErrorContents)
 }

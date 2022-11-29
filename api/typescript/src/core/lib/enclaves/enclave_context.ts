@@ -61,9 +61,8 @@ import {
     ServiceInfo,
     UnpauseServiceArgs,
     StartServicesArgs,
-    ExecuteStartosisScriptArgs,
-    ExecuteStartosisModuleArgs,
-    ExecuteStartosisResponse,
+    ExecuteStarlarkScriptArgs,
+    ExecuteStarlarkPackageArgs,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import {TemplateAndData} from "./template_and_data";
 import * as path from "path";
@@ -220,94 +219,47 @@ export class EnclaveContext {
         return ok(moduleCtx)
     }
 
-    public async executeStartosisModule(
-        moduleRootPath: string,
-        serializedParams: string,
-        dryRun: boolean,
-    ): Promise<Result<ExecuteStartosisResponse, Error>> {
-        const args = await this.assembleExecuteStartosisModuleArg(moduleRootPath, serializedParams, dryRun)
-        if (args.isErr()) {
-            return err(new Error(`Unexpected error while assembling arguments to pass to the Kurtosis executor \n${args.error}`))
-        }
-        const resultModuleExecution : Result<ExecuteStartosisResponse, Error> = await this.backend.executeStartosisModule(args.value)
-        if (resultModuleExecution.isErr()) {
-            return err(new Error(`Unexpected error happened executing Startosis module \n${resultModuleExecution.error}`))
-        }
-        return ok(resultModuleExecution.value)
-    }
-
-    public async executeKurtosisModule(
-        moduleRootPath: string,
-        serializedParams: string,
-        dryRun: boolean,
-    ): Promise<Result<Readable, Error>> {
-        const args = await this.assembleExecuteStartosisModuleArg(moduleRootPath, serializedParams, dryRun)
-        if (args.isErr()) {
-            return err(new Error(`Unexpected error while assembling arguments to pass to the Kurtosis executor \n${args.error}`))
-        }
-        const resultModuleExecution : Result<Readable, Error> = await this.backend.executeKurtosisModule(args.value)
-        if (resultModuleExecution.isErr()) {
-            return err(new Error(`Unexpected error happened executing Starlark module \n${resultModuleExecution.error}`))
-        }
-        return ok(resultModuleExecution.value)
-    }
-
-    public async executeStartosisScript(
-            serializedStartosisScript: string,
-            dryRun: boolean,
-        ): Promise<Result<ExecuteStartosisResponse, Error>> {
-        const args = new ExecuteStartosisScriptArgs();
-        args.setSerializedScript(serializedStartosisScript)
-        args.setDryRun(dryRun)
-        const resultScriptExecution : Result<ExecuteStartosisResponse, Error> = await this.backend.executeStartosisScript(args)
-        if (resultScriptExecution.isErr()) {
-            return err(new Error(`Unexpected error happened executing Startosis script \n${resultScriptExecution.error}`))
-        }
-        return ok(resultScriptExecution.value)
-    }
-
-    public async executeKurtosisScript(
+    public async executeStarlarkScript(
         serializedStartosisScript: string,
         dryRun: boolean,
     ): Promise<Result<Readable, Error>> {
-        const args = new ExecuteStartosisScriptArgs();
+        const args = new ExecuteStarlarkScriptArgs();
         args.setSerializedScript(serializedStartosisScript)
         args.setDryRun(dryRun)
-        const resultScriptExecution : Result<Readable, Error> = await this.backend.executeKurtosisScript(args)
+        const resultScriptExecution : Result<Readable, Error> = await this.backend.executeStarlarkScript(args)
         if (resultScriptExecution.isErr()) {
-            return err(new Error(`Unexpected error happened executing Startosis script \n${resultScriptExecution.error}`))
+            return err(new Error(`Unexpected error happened executing Starlark script \n${resultScriptExecution.error}`))
         }
         return ok(resultScriptExecution.value)
     }
 
-    public async executeStartosisRemoteModule(
-        moduleId: string,
+    public async executeStarlarkPackage(
+        packageRootPath: string,
         serializedParams: string,
         dryRun: boolean,
-    ): Promise<Result<ExecuteStartosisResponse, Error>> {
-        const args = new ExecuteStartosisModuleArgs();
-        args.setModuleId(moduleId)
-        args.setDryRun(dryRun)
-        args.setSerializedParams(serializedParams)
-        args.setRemote(true)
-        const resultRemoteModuleExecution : Result<ExecuteStartosisResponse, Error> = await this.backend.executeStartosisModule(args)
-        if (resultRemoteModuleExecution.isErr()) {
-            return err(new Error(`Unexpected error happened executing Startosis module \n${resultRemoteModuleExecution.error}`))
+    ): Promise<Result<Readable, Error>> {
+        const args = await this.assembleExecuteStarlarkPackageArg(packageRootPath, serializedParams, dryRun)
+        if (args.isErr()) {
+            return err(new Error(`Unexpected error while assembling arguments to pass to the Kurtosis executor \n${args.error}`))
         }
-        return ok(resultRemoteModuleExecution.value)
+        const resultPackageExecution : Result<Readable, Error> = await this.backend.executeStarlarkPackage(args.value)
+        if (resultPackageExecution.isErr()) {
+            return err(new Error(`Unexpected error happened executing Starlark package \n${resultPackageExecution.error}`))
+        }
+        return ok(resultPackageExecution.value)
     }
 
-    public async executeKurtosisRemoteModule(
+    public async executeStarlarkRemotePackage(
         moduleId: string,
         serializedParams: string,
         dryRun: boolean,
     ): Promise<Result<Readable, Error>> {
-        const args = new ExecuteStartosisModuleArgs();
-        args.setModuleId(moduleId)
+        const args = new ExecuteStarlarkPackageArgs();
+        args.setPackageId(moduleId)
         args.setDryRun(dryRun)
         args.setSerializedParams(serializedParams)
         args.setRemote(true)
-        const resultRemoteModuleExecution : Result<Readable, Error> = await this.backend.executeKurtosisModule(args)
+        const resultRemoteModuleExecution : Result<Readable, Error> = await this.backend.executeStarlarkPackage(args)
         if (resultRemoteModuleExecution.isErr()) {
             return err(new Error(`Unexpected error happened executing Startosis module \n${resultRemoteModuleExecution.error}`))
         }
@@ -810,7 +762,7 @@ export class EnclaveContext {
         return result;
     }
 
-    private async assembleExecuteStartosisModuleArg(moduleRootPath: string, serializedParams: string, dryRun: boolean,): Promise<Result<ExecuteStartosisModuleArgs, Error>> {
+    private async assembleExecuteStarlarkPackageArg(moduleRootPath: string, serializedParams: string, dryRun: boolean,): Promise<Result<ExecuteStarlarkPackageArgs, Error>> {
         const kurtosisYamlFilepath = path.join(moduleRootPath, KURTOSIS_YAML_FILENAME)
 
         const resultParseKurtosisYaml = await parseKurtosisYaml(kurtosisYamlFilepath)
@@ -824,9 +776,9 @@ export class EnclaveContext {
             return err(archiverResponse.error)
         }
 
-        const args = new ExecuteStartosisModuleArgs;
+        const args = new ExecuteStarlarkPackageArgs;
         args.setLocal(archiverResponse.value)
-        args.setModuleId(kurtosisMod.name)
+        args.setPackageId(kurtosisMod.name)
         args.setSerializedParams(serializedParams)
         args.setDryRun(dryRun)
         return ok(args)

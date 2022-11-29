@@ -25,7 +25,7 @@ test("Test invalid module with invalid yaml file", async () => {
 
         log.info(`Loading module at path '${moduleRootPath}'`)
 
-        const outputStream = await enclaveContext.executeKurtosisModule(moduleRootPath, EMPTY_EXECUTE_PARAMS, DEFAULT_DRY_RUN)
+        const outputStream = await enclaveContext.executeStarlarkPackage(moduleRootPath, EMPTY_EXECUTE_PARAMS, DEFAULT_DRY_RUN)
 
         if (!outputStream.isErr()) {
             throw err(new Error("Module with invalid module was expected to error but didn't"))

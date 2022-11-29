@@ -84,18 +84,9 @@ func (service *ApiContainerGatewayServiceServer) ExecuteModule(ctx context.Conte
 	return remoteApiContainerResponse, nil
 }
 
-func (service *ApiContainerGatewayServiceServer) ExecuteStartosisScript(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptArgs) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse, error) {
-	remoteApiContainerResponse, err := service.remoteApiContainerClient.ExecuteStartosisScript(ctx, args)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
-	}
-
-	return remoteApiContainerResponse, nil
-}
-
-func (service *ApiContainerGatewayServiceServer) ExecuteKurtosisScript(args *kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptArgs, streamToWriteTo kurtosis_core_rpc_api_bindings.ApiContainerService_ExecuteKurtosisScriptServer) error {
+func (service *ApiContainerGatewayServiceServer) ExecuteStarlarkScript(args *kurtosis_core_rpc_api_bindings.ExecuteStarlarkScriptArgs, streamToWriteTo kurtosis_core_rpc_api_bindings.ApiContainerService_ExecuteStarlarkScriptServer) error {
 	logrus.Debug("Executing Kurtosis script")
-	streamToReadFrom, err := service.remoteApiContainerClient.ExecuteKurtosisScript(streamToWriteTo.Context(), args)
+	streamToReadFrom, err := service.remoteApiContainerClient.ExecuteStarlarkScript(streamToWriteTo.Context(), args)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred starting the execution of Kurtosis code")
 	}
@@ -105,23 +96,14 @@ func (service *ApiContainerGatewayServiceServer) ExecuteKurtosisScript(args *kur
 	return nil
 }
 
-func (service *ApiContainerGatewayServiceServer) ExecuteStartosisModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleArgs) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse, error) {
-	remoteApiContainerResponse, err := service.remoteApiContainerClient.ExecuteStartosisModule(ctx, args)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
-	}
-
-	return remoteApiContainerResponse, nil
-}
-
-func (service *ApiContainerGatewayServiceServer) ExecuteKurtosisModule(args *kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleArgs, streamToWriteTo kurtosis_core_rpc_api_bindings.ApiContainerService_ExecuteKurtosisModuleServer) error {
-	logrus.Debugf("Executing Kurtosis module '%s'", args.GetModuleId())
-	streamToReadFrom, err := service.remoteApiContainerClient.ExecuteKurtosisModule(streamToWriteTo.Context(), args)
+func (service *ApiContainerGatewayServiceServer) ExecuteStarlarkPackage(args *kurtosis_core_rpc_api_bindings.ExecuteStarlarkPackageArgs, streamToWriteTo kurtosis_core_rpc_api_bindings.ApiContainerService_ExecuteStarlarkPackageServer) error {
+	logrus.Debugf("Executing Kurtosis module '%s'", args.GetPackageId())
+	streamToReadFrom, err := service.remoteApiContainerClient.ExecuteStarlarkPackage(streamToWriteTo.Context(), args)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred starting the execution of Kurtosis code")
 	}
 	if err := service.forwardKurtosisExecutionStream(streamToReadFrom, streamToWriteTo); err != nil {
-		return stacktrace.Propagate(err, "Error forwarding stream from Kurtosis core back to the user while executing module '%s'", args.GetModuleId())
+		return stacktrace.Propagate(err, "Error forwarding stream from Kurtosis core back to the user while executing module '%s'", args.GetPackageId())
 	}
 	return nil
 }
@@ -446,7 +428,7 @@ func (service *ApiContainerGatewayServiceServer) idempotentKillRunningConnection
 
 func (service *ApiContainerGatewayServiceServer) forwardKurtosisExecutionStream(streamToReadFrom grpc.ClientStream, streamToWriteTo grpc.ServerStream) error {
 	for {
-		kurtosisExecutionResponseLine := new(kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine)
+		kurtosisExecutionResponseLine := new(kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine)
 		// RecvMsg blocks until either a message is received or an error is thrown
 		readErr := streamToReadFrom.RecvMsg(kurtosisExecutionResponseLine)
 		if readErr == io.EOF {

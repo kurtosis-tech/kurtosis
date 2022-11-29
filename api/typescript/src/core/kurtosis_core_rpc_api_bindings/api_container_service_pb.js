@@ -31,11 +31,9 @@ goog.exportSymbol('proto.api_container_api.ExecCommandResponse', null, global);
 goog.exportSymbol('proto.api_container_api.ExecFactRecipe', null, global);
 goog.exportSymbol('proto.api_container_api.ExecuteModuleArgs', null, global);
 goog.exportSymbol('proto.api_container_api.ExecuteModuleResponse', null, global);
-goog.exportSymbol('proto.api_container_api.ExecuteStartosisModuleArgs', null, global);
-goog.exportSymbol('proto.api_container_api.ExecuteStartosisModuleArgs.StartosisModuleContentCase', null, global);
-goog.exportSymbol('proto.api_container_api.ExecuteStartosisResponse', null, global);
-goog.exportSymbol('proto.api_container_api.ExecuteStartosisResponse.KurtosisErrorCase', null, global);
-goog.exportSymbol('proto.api_container_api.ExecuteStartosisScriptArgs', null, global);
+goog.exportSymbol('proto.api_container_api.ExecuteStarlarkPackageArgs', null, global);
+goog.exportSymbol('proto.api_container_api.ExecuteStarlarkPackageArgs.StarlarkPackageContentCase', null, global);
+goog.exportSymbol('proto.api_container_api.ExecuteStarlarkScriptArgs', null, global);
 goog.exportSymbol('proto.api_container_api.FactRecipe', null, global);
 goog.exportSymbol('proto.api_container_api.FactRecipe.FactRecipeDefinitionCase', null, global);
 goog.exportSymbol('proto.api_container_api.FactValue', null, global);
@@ -48,19 +46,6 @@ goog.exportSymbol('proto.api_container_api.GetServicesArgs', null, global);
 goog.exportSymbol('proto.api_container_api.GetServicesResponse', null, global);
 goog.exportSymbol('proto.api_container_api.HttpRequestFactRecipe', null, global);
 goog.exportSymbol('proto.api_container_api.HttpRequestMethod', null, global);
-goog.exportSymbol('proto.api_container_api.KurtosisError', null, global);
-goog.exportSymbol('proto.api_container_api.KurtosisError.ErrorCase', null, global);
-goog.exportSymbol('proto.api_container_api.KurtosisExecutionError', null, global);
-goog.exportSymbol('proto.api_container_api.KurtosisExecutionProgress', null, global);
-goog.exportSymbol('proto.api_container_api.KurtosisExecutionResponseLine', null, global);
-goog.exportSymbol('proto.api_container_api.KurtosisExecutionResponseLine.KurtosisExecutionResponseLineCase', null, global);
-goog.exportSymbol('proto.api_container_api.KurtosisInstruction', null, global);
-goog.exportSymbol('proto.api_container_api.KurtosisInstructionArg', null, global);
-goog.exportSymbol('proto.api_container_api.KurtosisInstructionPosition', null, global);
-goog.exportSymbol('proto.api_container_api.KurtosisInstructionResult', null, global);
-goog.exportSymbol('proto.api_container_api.KurtosisInterpretationError', null, global);
-goog.exportSymbol('proto.api_container_api.KurtosisValidationError', null, global);
-goog.exportSymbol('proto.api_container_api.KurtosisValidationErrors', null, global);
 goog.exportSymbol('proto.api_container_api.LoadModuleArgs', null, global);
 goog.exportSymbol('proto.api_container_api.LoadModuleResponse', null, global);
 goog.exportSymbol('proto.api_container_api.ModuleInfo', null, global);
@@ -78,6 +63,18 @@ goog.exportSymbol('proto.api_container_api.RenderTemplatesToFilesArtifactRespons
 goog.exportSymbol('proto.api_container_api.RepartitionArgs', null, global);
 goog.exportSymbol('proto.api_container_api.ServiceConfig', null, global);
 goog.exportSymbol('proto.api_container_api.ServiceInfo', null, global);
+goog.exportSymbol('proto.api_container_api.StarlarkError', null, global);
+goog.exportSymbol('proto.api_container_api.StarlarkError.ErrorCase', null, global);
+goog.exportSymbol('proto.api_container_api.StarlarkExecutionError', null, global);
+goog.exportSymbol('proto.api_container_api.StarlarkExecutionProgress', null, global);
+goog.exportSymbol('proto.api_container_api.StarlarkExecutionResponseLine', null, global);
+goog.exportSymbol('proto.api_container_api.StarlarkExecutionResponseLine.KurtosisExecutionResponseLineCase', null, global);
+goog.exportSymbol('proto.api_container_api.StarlarkInstruction', null, global);
+goog.exportSymbol('proto.api_container_api.StarlarkInstructionArg', null, global);
+goog.exportSymbol('proto.api_container_api.StarlarkInstructionPosition', null, global);
+goog.exportSymbol('proto.api_container_api.StarlarkInstructionResult', null, global);
+goog.exportSymbol('proto.api_container_api.StarlarkInterpretationError', null, global);
+goog.exportSymbol('proto.api_container_api.StarlarkValidationError', null, global);
 goog.exportSymbol('proto.api_container_api.StartServicesArgs', null, global);
 goog.exportSymbol('proto.api_container_api.StartServicesResponse', null, global);
 goog.exportSymbol('proto.api_container_api.StoreFilesArtifactFromServiceArgs', null, global);
@@ -353,16 +350,16 @@ if (goog.DEBUG && !COMPILED) {
  * @extends {jspb.Message}
  * @constructor
  */
-proto.api_container_api.ExecuteStartosisScriptArgs = function(opt_data) {
+proto.api_container_api.ExecuteStarlarkScriptArgs = function(opt_data) {
   jspb.Message.initialize(this, opt_data, 0, -1, null, null);
 };
-goog.inherits(proto.api_container_api.ExecuteStartosisScriptArgs, jspb.Message);
+goog.inherits(proto.api_container_api.ExecuteStarlarkScriptArgs, jspb.Message);
 if (goog.DEBUG && !COMPILED) {
   /**
    * @public
    * @override
    */
-  proto.api_container_api.ExecuteStartosisScriptArgs.displayName = 'proto.api_container_api.ExecuteStartosisScriptArgs';
+  proto.api_container_api.ExecuteStarlarkScriptArgs.displayName = 'proto.api_container_api.ExecuteStarlarkScriptArgs';
 }
 /**
  * Generated by JsPbCodeGenerator.
@@ -374,16 +371,16 @@ if (goog.DEBUG && !COMPILED) {
  * @extends {jspb.Message}
  * @constructor
  */
-proto.api_container_api.ExecuteStartosisModuleArgs = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, proto.api_container_api.ExecuteStartosisModuleArgs.oneofGroups_);
+proto.api_container_api.ExecuteStarlarkPackageArgs = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, proto.api_container_api.ExecuteStarlarkPackageArgs.oneofGroups_);
 };
-goog.inherits(proto.api_container_api.ExecuteStartosisModuleArgs, jspb.Message);
+goog.inherits(proto.api_container_api.ExecuteStarlarkPackageArgs, jspb.Message);
 if (goog.DEBUG && !COMPILED) {
   /**
    * @public
    * @override
    */
-  proto.api_container_api.ExecuteStartosisModuleArgs.displayName = 'proto.api_container_api.ExecuteStartosisModuleArgs';
+  proto.api_container_api.ExecuteStarlarkPackageArgs.displayName = 'proto.api_container_api.ExecuteStarlarkPackageArgs';
 }
 /**
  * Generated by JsPbCodeGenerator.
@@ -395,16 +392,16 @@ if (goog.DEBUG && !COMPILED) {
  * @extends {jspb.Message}
  * @constructor
  */
-proto.api_container_api.ExecuteStartosisResponse = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, proto.api_container_api.ExecuteStartosisResponse.repeatedFields_, proto.api_container_api.ExecuteStartosisResponse.oneofGroups_);
+proto.api_container_api.StarlarkExecutionResponseLine = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, proto.api_container_api.StarlarkExecutionResponseLine.oneofGroups_);
 };
-goog.inherits(proto.api_container_api.ExecuteStartosisResponse, jspb.Message);
+goog.inherits(proto.api_container_api.StarlarkExecutionResponseLine, jspb.Message);
 if (goog.DEBUG && !COMPILED) {
   /**
    * @public
    * @override
    */
-  proto.api_container_api.ExecuteStartosisResponse.displayName = 'proto.api_container_api.ExecuteStartosisResponse';
+  proto.api_container_api.StarlarkExecutionResponseLine.displayName = 'proto.api_container_api.StarlarkExecutionResponseLine';
 }
 /**
  * Generated by JsPbCodeGenerator.
@@ -416,16 +413,37 @@ if (goog.DEBUG && !COMPILED) {
  * @extends {jspb.Message}
  * @constructor
  */
-proto.api_container_api.KurtosisInterpretationError = function(opt_data) {
+proto.api_container_api.StarlarkInstruction = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, proto.api_container_api.StarlarkInstruction.repeatedFields_, null);
+};
+goog.inherits(proto.api_container_api.StarlarkInstruction, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.api_container_api.StarlarkInstruction.displayName = 'proto.api_container_api.StarlarkInstruction';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.api_container_api.StarlarkInstructionResult = function(opt_data) {
   jspb.Message.initialize(this, opt_data, 0, -1, null, null);
 };
-goog.inherits(proto.api_container_api.KurtosisInterpretationError, jspb.Message);
+goog.inherits(proto.api_container_api.StarlarkInstructionResult, jspb.Message);
 if (goog.DEBUG && !COMPILED) {
   /**
    * @public
    * @override
    */
-  proto.api_container_api.KurtosisInterpretationError.displayName = 'proto.api_container_api.KurtosisInterpretationError';
+  proto.api_container_api.StarlarkInstructionResult.displayName = 'proto.api_container_api.StarlarkInstructionResult';
 }
 /**
  * Generated by JsPbCodeGenerator.
@@ -437,37 +455,16 @@ if (goog.DEBUG && !COMPILED) {
  * @extends {jspb.Message}
  * @constructor
  */
-proto.api_container_api.KurtosisValidationErrors = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, proto.api_container_api.KurtosisValidationErrors.repeatedFields_, null);
-};
-goog.inherits(proto.api_container_api.KurtosisValidationErrors, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  /**
-   * @public
-   * @override
-   */
-  proto.api_container_api.KurtosisValidationErrors.displayName = 'proto.api_container_api.KurtosisValidationErrors';
-}
-/**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
- */
-proto.api_container_api.KurtosisValidationError = function(opt_data) {
+proto.api_container_api.StarlarkInstructionArg = function(opt_data) {
   jspb.Message.initialize(this, opt_data, 0, -1, null, null);
 };
-goog.inherits(proto.api_container_api.KurtosisValidationError, jspb.Message);
+goog.inherits(proto.api_container_api.StarlarkInstructionArg, jspb.Message);
 if (goog.DEBUG && !COMPILED) {
   /**
    * @public
    * @override
    */
-  proto.api_container_api.KurtosisValidationError.displayName = 'proto.api_container_api.KurtosisValidationError';
+  proto.api_container_api.StarlarkInstructionArg.displayName = 'proto.api_container_api.StarlarkInstructionArg';
 }
 /**
  * Generated by JsPbCodeGenerator.
@@ -479,16 +476,16 @@ if (goog.DEBUG && !COMPILED) {
  * @extends {jspb.Message}
  * @constructor
  */
-proto.api_container_api.KurtosisExecutionError = function(opt_data) {
+proto.api_container_api.StarlarkInstructionPosition = function(opt_data) {
   jspb.Message.initialize(this, opt_data, 0, -1, null, null);
 };
-goog.inherits(proto.api_container_api.KurtosisExecutionError, jspb.Message);
+goog.inherits(proto.api_container_api.StarlarkInstructionPosition, jspb.Message);
 if (goog.DEBUG && !COMPILED) {
   /**
    * @public
    * @override
    */
-  proto.api_container_api.KurtosisExecutionError.displayName = 'proto.api_container_api.KurtosisExecutionError';
+  proto.api_container_api.StarlarkInstructionPosition.displayName = 'proto.api_container_api.StarlarkInstructionPosition';
 }
 /**
  * Generated by JsPbCodeGenerator.
@@ -500,16 +497,16 @@ if (goog.DEBUG && !COMPILED) {
  * @extends {jspb.Message}
  * @constructor
  */
-proto.api_container_api.KurtosisInstruction = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, proto.api_container_api.KurtosisInstruction.repeatedFields_, null);
+proto.api_container_api.StarlarkError = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, proto.api_container_api.StarlarkError.oneofGroups_);
 };
-goog.inherits(proto.api_container_api.KurtosisInstruction, jspb.Message);
+goog.inherits(proto.api_container_api.StarlarkError, jspb.Message);
 if (goog.DEBUG && !COMPILED) {
   /**
    * @public
    * @override
    */
-  proto.api_container_api.KurtosisInstruction.displayName = 'proto.api_container_api.KurtosisInstruction';
+  proto.api_container_api.StarlarkError.displayName = 'proto.api_container_api.StarlarkError';
 }
 /**
  * Generated by JsPbCodeGenerator.
@@ -521,16 +518,16 @@ if (goog.DEBUG && !COMPILED) {
  * @extends {jspb.Message}
  * @constructor
  */
-proto.api_container_api.KurtosisInstructionResult = function(opt_data) {
+proto.api_container_api.StarlarkInterpretationError = function(opt_data) {
   jspb.Message.initialize(this, opt_data, 0, -1, null, null);
 };
-goog.inherits(proto.api_container_api.KurtosisInstructionResult, jspb.Message);
+goog.inherits(proto.api_container_api.StarlarkInterpretationError, jspb.Message);
 if (goog.DEBUG && !COMPILED) {
   /**
    * @public
    * @override
    */
-  proto.api_container_api.KurtosisInstructionResult.displayName = 'proto.api_container_api.KurtosisInstructionResult';
+  proto.api_container_api.StarlarkInterpretationError.displayName = 'proto.api_container_api.StarlarkInterpretationError';
 }
 /**
  * Generated by JsPbCodeGenerator.
@@ -542,16 +539,16 @@ if (goog.DEBUG && !COMPILED) {
  * @extends {jspb.Message}
  * @constructor
  */
-proto.api_container_api.KurtosisInstructionArg = function(opt_data) {
+proto.api_container_api.StarlarkValidationError = function(opt_data) {
   jspb.Message.initialize(this, opt_data, 0, -1, null, null);
 };
-goog.inherits(proto.api_container_api.KurtosisInstructionArg, jspb.Message);
+goog.inherits(proto.api_container_api.StarlarkValidationError, jspb.Message);
 if (goog.DEBUG && !COMPILED) {
   /**
    * @public
    * @override
    */
-  proto.api_container_api.KurtosisInstructionArg.displayName = 'proto.api_container_api.KurtosisInstructionArg';
+  proto.api_container_api.StarlarkValidationError.displayName = 'proto.api_container_api.StarlarkValidationError';
 }
 /**
  * Generated by JsPbCodeGenerator.
@@ -563,16 +560,16 @@ if (goog.DEBUG && !COMPILED) {
  * @extends {jspb.Message}
  * @constructor
  */
-proto.api_container_api.KurtosisInstructionPosition = function(opt_data) {
+proto.api_container_api.StarlarkExecutionError = function(opt_data) {
   jspb.Message.initialize(this, opt_data, 0, -1, null, null);
 };
-goog.inherits(proto.api_container_api.KurtosisInstructionPosition, jspb.Message);
+goog.inherits(proto.api_container_api.StarlarkExecutionError, jspb.Message);
 if (goog.DEBUG && !COMPILED) {
   /**
    * @public
    * @override
    */
-  proto.api_container_api.KurtosisInstructionPosition.displayName = 'proto.api_container_api.KurtosisInstructionPosition';
+  proto.api_container_api.StarlarkExecutionError.displayName = 'proto.api_container_api.StarlarkExecutionError';
 }
 /**
  * Generated by JsPbCodeGenerator.
@@ -584,58 +581,16 @@ if (goog.DEBUG && !COMPILED) {
  * @extends {jspb.Message}
  * @constructor
  */
-proto.api_container_api.KurtosisError = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, proto.api_container_api.KurtosisError.oneofGroups_);
-};
-goog.inherits(proto.api_container_api.KurtosisError, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  /**
-   * @public
-   * @override
-   */
-  proto.api_container_api.KurtosisError.displayName = 'proto.api_container_api.KurtosisError';
-}
-/**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
- */
-proto.api_container_api.KurtosisExecutionResponseLine = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, proto.api_container_api.KurtosisExecutionResponseLine.oneofGroups_);
-};
-goog.inherits(proto.api_container_api.KurtosisExecutionResponseLine, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  /**
-   * @public
-   * @override
-   */
-  proto.api_container_api.KurtosisExecutionResponseLine.displayName = 'proto.api_container_api.KurtosisExecutionResponseLine';
-}
-/**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
- */
-proto.api_container_api.KurtosisExecutionProgress = function(opt_data) {
+proto.api_container_api.StarlarkExecutionProgress = function(opt_data) {
   jspb.Message.initialize(this, opt_data, 0, -1, null, null);
 };
-goog.inherits(proto.api_container_api.KurtosisExecutionProgress, jspb.Message);
+goog.inherits(proto.api_container_api.StarlarkExecutionProgress, jspb.Message);
 if (goog.DEBUG && !COMPILED) {
   /**
    * @public
    * @override
    */
-  proto.api_container_api.KurtosisExecutionProgress.displayName = 'proto.api_container_api.KurtosisExecutionProgress';
+  proto.api_container_api.StarlarkExecutionProgress.displayName = 'proto.api_container_api.StarlarkExecutionProgress';
 }
 /**
  * Generated by JsPbCodeGenerator.
@@ -3881,8 +3836,8 @@ if (jspb.Message.GENERATE_TO_OBJECT) {
  *     http://goto/soy-param-migration
  * @return {!Object}
  */
-proto.api_container_api.ExecuteStartosisScriptArgs.prototype.toObject = function(opt_includeInstance) {
-  return proto.api_container_api.ExecuteStartosisScriptArgs.toObject(opt_includeInstance, this);
+proto.api_container_api.ExecuteStarlarkScriptArgs.prototype.toObject = function(opt_includeInstance) {
+  return proto.api_container_api.ExecuteStarlarkScriptArgs.toObject(opt_includeInstance, this);
 };
 
 
@@ -3891,11 +3846,11 @@ proto.api_container_api.ExecuteStartosisScriptArgs.prototype.toObject = function
  * @param {boolean|undefined} includeInstance Deprecated. Whether to include
  *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
- * @param {!proto.api_container_api.ExecuteStartosisScriptArgs} msg The msg instance to transform.
+ * @param {!proto.api_container_api.ExecuteStarlarkScriptArgs} msg The msg instance to transform.
  * @return {!Object}
  * @suppress {unusedLocalVariables} f is only used for nested messages
  */
-proto.api_container_api.ExecuteStartosisScriptArgs.toObject = function(includeInstance, msg) {
+proto.api_container_api.ExecuteStarlarkScriptArgs.toObject = function(includeInstance, msg) {
   var f, obj = {
     serializedScript: jspb.Message.getFieldWithDefault(msg, 1, ""),
     dryRun: jspb.Message.getBooleanFieldWithDefault(msg, 2, false)
@@ -3912,23 +3867,23 @@ proto.api_container_api.ExecuteStartosisScriptArgs.toObject = function(includeIn
 /**
  * Deserializes binary data (in protobuf wire format).
  * @param {jspb.ByteSource} bytes The bytes to deserialize.
- * @return {!proto.api_container_api.ExecuteStartosisScriptArgs}
+ * @return {!proto.api_container_api.ExecuteStarlarkScriptArgs}
  */
-proto.api_container_api.ExecuteStartosisScriptArgs.deserializeBinary = function(bytes) {
+proto.api_container_api.ExecuteStarlarkScriptArgs.deserializeBinary = function(bytes) {
   var reader = new jspb.BinaryReader(bytes);
-  var msg = new proto.api_container_api.ExecuteStartosisScriptArgs;
-  return proto.api_container_api.ExecuteStartosisScriptArgs.deserializeBinaryFromReader(msg, reader);
+  var msg = new proto.api_container_api.ExecuteStarlarkScriptArgs;
+  return proto.api_container_api.ExecuteStarlarkScriptArgs.deserializeBinaryFromReader(msg, reader);
 };
 
 
 /**
  * Deserializes binary data (in protobuf wire format) from the
  * given reader into the given message object.
- * @param {!proto.api_container_api.ExecuteStartosisScriptArgs} msg The message object to deserialize into.
+ * @param {!proto.api_container_api.ExecuteStarlarkScriptArgs} msg The message object to deserialize into.
  * @param {!jspb.BinaryReader} reader The BinaryReader to use.
- * @return {!proto.api_container_api.ExecuteStartosisScriptArgs}
+ * @return {!proto.api_container_api.ExecuteStarlarkScriptArgs}
  */
-proto.api_container_api.ExecuteStartosisScriptArgs.deserializeBinaryFromReader = function(msg, reader) {
+proto.api_container_api.ExecuteStarlarkScriptArgs.deserializeBinaryFromReader = function(msg, reader) {
   while (reader.nextField()) {
     if (reader.isEndGroup()) {
       break;
@@ -3956,9 +3911,9 @@ proto.api_container_api.ExecuteStartosisScriptArgs.deserializeBinaryFromReader =
  * Serializes the message to binary data (in protobuf wire format).
  * @return {!Uint8Array}
  */
-proto.api_container_api.ExecuteStartosisScriptArgs.prototype.serializeBinary = function() {
+proto.api_container_api.ExecuteStarlarkScriptArgs.prototype.serializeBinary = function() {
   var writer = new jspb.BinaryWriter();
-  proto.api_container_api.ExecuteStartosisScriptArgs.serializeBinaryToWriter(this, writer);
+  proto.api_container_api.ExecuteStarlarkScriptArgs.serializeBinaryToWriter(this, writer);
   return writer.getResultBuffer();
 };
 
@@ -3966,11 +3921,11 @@ proto.api_container_api.ExecuteStartosisScriptArgs.prototype.serializeBinary = f
 /**
  * Serializes the given message to binary data (in protobuf wire
  * format), writing to the given BinaryWriter.
- * @param {!proto.api_container_api.ExecuteStartosisScriptArgs} message
+ * @param {!proto.api_container_api.ExecuteStarlarkScriptArgs} message
  * @param {!jspb.BinaryWriter} writer
  * @suppress {unusedLocalVariables} f is only used for nested messages
  */
-proto.api_container_api.ExecuteStartosisScriptArgs.serializeBinaryToWriter = function(message, writer) {
+proto.api_container_api.ExecuteStarlarkScriptArgs.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
   f = message.getSerializedScript();
   if (f.length > 0) {
@@ -3993,16 +3948,16 @@ proto.api_container_api.ExecuteStartosisScriptArgs.serializeBinaryToWriter = fun
  * optional string serialized_script = 1;
  * @return {string}
  */
-proto.api_container_api.ExecuteStartosisScriptArgs.prototype.getSerializedScript = function() {
+proto.api_container_api.ExecuteStarlarkScriptArgs.prototype.getSerializedScript = function() {
   return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
 };
 
 
 /**
  * @param {string} value
- * @return {!proto.api_container_api.ExecuteStartosisScriptArgs} returns this
+ * @return {!proto.api_container_api.ExecuteStarlarkScriptArgs} returns this
  */
-proto.api_container_api.ExecuteStartosisScriptArgs.prototype.setSerializedScript = function(value) {
+proto.api_container_api.ExecuteStarlarkScriptArgs.prototype.setSerializedScript = function(value) {
   return jspb.Message.setProto3StringField(this, 1, value);
 };
 
@@ -4011,25 +3966,25 @@ proto.api_container_api.ExecuteStartosisScriptArgs.prototype.setSerializedScript
  * optional bool dry_run = 2;
  * @return {boolean}
  */
-proto.api_container_api.ExecuteStartosisScriptArgs.prototype.getDryRun = function() {
+proto.api_container_api.ExecuteStarlarkScriptArgs.prototype.getDryRun = function() {
   return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 2, false));
 };
 
 
 /**
  * @param {boolean} value
- * @return {!proto.api_container_api.ExecuteStartosisScriptArgs} returns this
+ * @return {!proto.api_container_api.ExecuteStarlarkScriptArgs} returns this
  */
-proto.api_container_api.ExecuteStartosisScriptArgs.prototype.setDryRun = function(value) {
+proto.api_container_api.ExecuteStarlarkScriptArgs.prototype.setDryRun = function(value) {
   return jspb.Message.setField(this, 2, value);
 };
 
 
 /**
  * Clears the field making it undefined.
- * @return {!proto.api_container_api.ExecuteStartosisScriptArgs} returns this
+ * @return {!proto.api_container_api.ExecuteStarlarkScriptArgs} returns this
  */
-proto.api_container_api.ExecuteStartosisScriptArgs.prototype.clearDryRun = function() {
+proto.api_container_api.ExecuteStarlarkScriptArgs.prototype.clearDryRun = function() {
   return jspb.Message.setField(this, 2, undefined);
 };
 
@@ -4038,7 +3993,7 @@ proto.api_container_api.ExecuteStartosisScriptArgs.prototype.clearDryRun = funct
  * Returns whether this field is set.
  * @return {boolean}
  */
-proto.api_container_api.ExecuteStartosisScriptArgs.prototype.hasDryRun = function() {
+proto.api_container_api.ExecuteStarlarkScriptArgs.prototype.hasDryRun = function() {
   return jspb.Message.getField(this, 2) != null;
 };
 
@@ -4052,22 +4007,22 @@ proto.api_container_api.ExecuteStartosisScriptArgs.prototype.hasDryRun = functio
  * @private {!Array<!Array<number>>}
  * @const
  */
-proto.api_container_api.ExecuteStartosisModuleArgs.oneofGroups_ = [[3,4]];
+proto.api_container_api.ExecuteStarlarkPackageArgs.oneofGroups_ = [[3,4]];
 
 /**
  * @enum {number}
  */
-proto.api_container_api.ExecuteStartosisModuleArgs.StartosisModuleContentCase = {
-  STARTOSIS_MODULE_CONTENT_NOT_SET: 0,
+proto.api_container_api.ExecuteStarlarkPackageArgs.StarlarkPackageContentCase = {
+  STARLARK_PACKAGE_CONTENT_NOT_SET: 0,
   LOCAL: 3,
   REMOTE: 4
 };
 
 /**
- * @return {proto.api_container_api.ExecuteStartosisModuleArgs.StartosisModuleContentCase}
+ * @return {proto.api_container_api.ExecuteStarlarkPackageArgs.StarlarkPackageContentCase}
  */
-proto.api_container_api.ExecuteStartosisModuleArgs.prototype.getStartosisModuleContentCase = function() {
-  return /** @type {proto.api_container_api.ExecuteStartosisModuleArgs.StartosisModuleContentCase} */(jspb.Message.computeOneofCase(this, proto.api_container_api.ExecuteStartosisModuleArgs.oneofGroups_[0]));
+proto.api_container_api.ExecuteStarlarkPackageArgs.prototype.getStarlarkPackageContentCase = function() {
+  return /** @type {proto.api_container_api.ExecuteStarlarkPackageArgs.StarlarkPackageContentCase} */(jspb.Message.computeOneofCase(this, proto.api_container_api.ExecuteStarlarkPackageArgs.oneofGroups_[0]));
 };
 
 
@@ -4085,8 +4040,8 @@ if (jspb.Message.GENERATE_TO_OBJECT) {
  *     http://goto/soy-param-migration
  * @return {!Object}
  */
-proto.api_container_api.ExecuteStartosisModuleArgs.prototype.toObject = function(opt_includeInstance) {
-  return proto.api_container_api.ExecuteStartosisModuleArgs.toObject(opt_includeInstance, this);
+proto.api_container_api.ExecuteStarlarkPackageArgs.prototype.toObject = function(opt_includeInstance) {
+  return proto.api_container_api.ExecuteStarlarkPackageArgs.toObject(opt_includeInstance, this);
 };
 
 
@@ -4095,13 +4050,13 @@ proto.api_container_api.ExecuteStartosisModuleArgs.prototype.toObject = function
  * @param {boolean|undefined} includeInstance Deprecated. Whether to include
  *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
- * @param {!proto.api_container_api.ExecuteStartosisModuleArgs} msg The msg instance to transform.
+ * @param {!proto.api_container_api.ExecuteStarlarkPackageArgs} msg The msg instance to transform.
  * @return {!Object}
  * @suppress {unusedLocalVariables} f is only used for nested messages
  */
-proto.api_container_api.ExecuteStartosisModuleArgs.toObject = function(includeInstance, msg) {
+proto.api_container_api.ExecuteStarlarkPackageArgs.toObject = function(includeInstance, msg) {
   var f, obj = {
-    moduleId: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    packageId: jspb.Message.getFieldWithDefault(msg, 1, ""),
     local: msg.getLocal_asB64(),
     remote: jspb.Message.getBooleanFieldWithDefault(msg, 4, false),
     serializedParams: jspb.Message.getFieldWithDefault(msg, 5, ""),
@@ -4119,23 +4074,23 @@ proto.api_container_api.ExecuteStartosisModuleArgs.toObject = function(includeIn
 /**
  * Deserializes binary data (in protobuf wire format).
  * @param {jspb.ByteSource} bytes The bytes to deserialize.
- * @return {!proto.api_container_api.ExecuteStartosisModuleArgs}
+ * @return {!proto.api_container_api.ExecuteStarlarkPackageArgs}
  */
-proto.api_container_api.ExecuteStartosisModuleArgs.deserializeBinary = function(bytes) {
+proto.api_container_api.ExecuteStarlarkPackageArgs.deserializeBinary = function(bytes) {
   var reader = new jspb.BinaryReader(bytes);
-  var msg = new proto.api_container_api.ExecuteStartosisModuleArgs;
-  return proto.api_container_api.ExecuteStartosisModuleArgs.deserializeBinaryFromReader(msg, reader);
+  var msg = new proto.api_container_api.ExecuteStarlarkPackageArgs;
+  return proto.api_container_api.ExecuteStarlarkPackageArgs.deserializeBinaryFromReader(msg, reader);
 };
 
 
 /**
  * Deserializes binary data (in protobuf wire format) from the
  * given reader into the given message object.
- * @param {!proto.api_container_api.ExecuteStartosisModuleArgs} msg The message object to deserialize into.
+ * @param {!proto.api_container_api.ExecuteStarlarkPackageArgs} msg The message object to deserialize into.
  * @param {!jspb.BinaryReader} reader The BinaryReader to use.
- * @return {!proto.api_container_api.ExecuteStartosisModuleArgs}
+ * @return {!proto.api_container_api.ExecuteStarlarkPackageArgs}
  */
-proto.api_container_api.ExecuteStartosisModuleArgs.deserializeBinaryFromReader = function(msg, reader) {
+proto.api_container_api.ExecuteStarlarkPackageArgs.deserializeBinaryFromReader = function(msg, reader) {
   while (reader.nextField()) {
     if (reader.isEndGroup()) {
       break;
@@ -4144,7 +4099,7 @@ proto.api_container_api.ExecuteStartosisModuleArgs.deserializeBinaryFromReader =
     switch (field) {
     case 1:
       var value = /** @type {string} */ (reader.readString());
-      msg.setModuleId(value);
+      msg.setPackageId(value);
       break;
     case 3:
       var value = /** @type {!Uint8Array} */ (reader.readBytes());
@@ -4175,9 +4130,9 @@ proto.api_container_api.ExecuteStartosisModuleArgs.deserializeBinaryFromReader =
  * Serializes the message to binary data (in protobuf wire format).
  * @return {!Uint8Array}
  */
-proto.api_container_api.ExecuteStartosisModuleArgs.prototype.serializeBinary = function() {
+proto.api_container_api.ExecuteStarlarkPackageArgs.prototype.serializeBinary = function() {
   var writer = new jspb.BinaryWriter();
-  proto.api_container_api.ExecuteStartosisModuleArgs.serializeBinaryToWriter(this, writer);
+  proto.api_container_api.ExecuteStarlarkPackageArgs.serializeBinaryToWriter(this, writer);
   return writer.getResultBuffer();
 };
 
@@ -4185,13 +4140,13 @@ proto.api_container_api.ExecuteStartosisModuleArgs.prototype.serializeBinary = f
 /**
  * Serializes the given message to binary data (in protobuf wire
  * format), writing to the given BinaryWriter.
- * @param {!proto.api_container_api.ExecuteStartosisModuleArgs} message
+ * @param {!proto.api_container_api.ExecuteStarlarkPackageArgs} message
  * @param {!jspb.BinaryWriter} writer
  * @suppress {unusedLocalVariables} f is only used for nested messages
  */
-proto.api_container_api.ExecuteStartosisModuleArgs.serializeBinaryToWriter = function(message, writer) {
+proto.api_container_api.ExecuteStarlarkPackageArgs.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
-  f = message.getModuleId();
+  f = message.getPackageId();
   if (f.length > 0) {
     writer.writeString(
       1,
@@ -4230,19 +4185,19 @@ proto.api_container_api.ExecuteStartosisModuleArgs.serializeBinaryToWriter = fun
 
 
 /**
- * optional string module_id = 1;
+ * optional string package_id = 1;
  * @return {string}
  */
-proto.api_container_api.ExecuteStartosisModuleArgs.prototype.getModuleId = function() {
+proto.api_container_api.ExecuteStarlarkPackageArgs.prototype.getPackageId = function() {
   return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
 };
 
 
 /**
  * @param {string} value
- * @return {!proto.api_container_api.ExecuteStartosisModuleArgs} returns this
+ * @return {!proto.api_container_api.ExecuteStarlarkPackageArgs} returns this
  */
-proto.api_container_api.ExecuteStartosisModuleArgs.prototype.setModuleId = function(value) {
+proto.api_container_api.ExecuteStarlarkPackageArgs.prototype.setPackageId = function(value) {
   return jspb.Message.setProto3StringField(this, 1, value);
 };
 
@@ -4251,7 +4206,7 @@ proto.api_container_api.ExecuteStartosisModuleArgs.prototype.setModuleId = funct
  * optional bytes local = 3;
  * @return {string}
  */
-proto.api_container_api.ExecuteStartosisModuleArgs.prototype.getLocal = function() {
+proto.api_container_api.ExecuteStarlarkPackageArgs.prototype.getLocal = function() {
   return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 3, ""));
 };
 
@@ -4261,7 +4216,7 @@ proto.api_container_api.ExecuteStartosisModuleArgs.prototype.getLocal = function
  * This is a type-conversion wrapper around `getLocal()`
  * @return {string}
  */
-proto.api_container_api.ExecuteStartosisModuleArgs.prototype.getLocal_asB64 = function() {
+proto.api_container_api.ExecuteStarlarkPackageArgs.prototype.getLocal_asB64 = function() {
   return /** @type {string} */ (jspb.Message.bytesAsB64(
       this.getLocal()));
 };
@@ -4274,7 +4229,7 @@ proto.api_container_api.ExecuteStartosisModuleArgs.prototype.getLocal_asB64 = fu
  * This is a type-conversion wrapper around `getLocal()`
  * @return {!Uint8Array}
  */
-proto.api_container_api.ExecuteStartosisModuleArgs.prototype.getLocal_asU8 = function() {
+proto.api_container_api.ExecuteStarlarkPackageArgs.prototype.getLocal_asU8 = function() {
   return /** @type {!Uint8Array} */ (jspb.Message.bytesAsU8(
       this.getLocal()));
 };
@@ -4282,19 +4237,19 @@ proto.api_container_api.ExecuteStartosisModuleArgs.prototype.getLocal_asU8 = fun
 
 /**
  * @param {!(string|Uint8Array)} value
- * @return {!proto.api_container_api.ExecuteStartosisModuleArgs} returns this
+ * @return {!proto.api_container_api.ExecuteStarlarkPackageArgs} returns this
  */
-proto.api_container_api.ExecuteStartosisModuleArgs.prototype.setLocal = function(value) {
-  return jspb.Message.setOneofField(this, 3, proto.api_container_api.ExecuteStartosisModuleArgs.oneofGroups_[0], value);
+proto.api_container_api.ExecuteStarlarkPackageArgs.prototype.setLocal = function(value) {
+  return jspb.Message.setOneofField(this, 3, proto.api_container_api.ExecuteStarlarkPackageArgs.oneofGroups_[0], value);
 };
 
 
 /**
  * Clears the field making it undefined.
- * @return {!proto.api_container_api.ExecuteStartosisModuleArgs} returns this
+ * @return {!proto.api_container_api.ExecuteStarlarkPackageArgs} returns this
  */
-proto.api_container_api.ExecuteStartosisModuleArgs.prototype.clearLocal = function() {
-  return jspb.Message.setOneofField(this, 3, proto.api_container_api.ExecuteStartosisModuleArgs.oneofGroups_[0], undefined);
+proto.api_container_api.ExecuteStarlarkPackageArgs.prototype.clearLocal = function() {
+  return jspb.Message.setOneofField(this, 3, proto.api_container_api.ExecuteStarlarkPackageArgs.oneofGroups_[0], undefined);
 };
 
 
@@ -4302,7 +4257,7 @@ proto.api_container_api.ExecuteStartosisModuleArgs.prototype.clearLocal = functi
  * Returns whether this field is set.
  * @return {boolean}
  */
-proto.api_container_api.ExecuteStartosisModuleArgs.prototype.hasLocal = function() {
+proto.api_container_api.ExecuteStarlarkPackageArgs.prototype.hasLocal = function() {
   return jspb.Message.getField(this, 3) != null;
 };
 
@@ -4311,26 +4266,26 @@ proto.api_container_api.ExecuteStartosisModuleArgs.prototype.hasLocal = function
  * optional bool remote = 4;
  * @return {boolean}
  */
-proto.api_container_api.ExecuteStartosisModuleArgs.prototype.getRemote = function() {
+proto.api_container_api.ExecuteStarlarkPackageArgs.prototype.getRemote = function() {
   return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 4, false));
 };
 
 
 /**
  * @param {boolean} value
- * @return {!proto.api_container_api.ExecuteStartosisModuleArgs} returns this
+ * @return {!proto.api_container_api.ExecuteStarlarkPackageArgs} returns this
  */
-proto.api_container_api.ExecuteStartosisModuleArgs.prototype.setRemote = function(value) {
-  return jspb.Message.setOneofField(this, 4, proto.api_container_api.ExecuteStartosisModuleArgs.oneofGroups_[0], value);
+proto.api_container_api.ExecuteStarlarkPackageArgs.prototype.setRemote = function(value) {
+  return jspb.Message.setOneofField(this, 4, proto.api_container_api.ExecuteStarlarkPackageArgs.oneofGroups_[0], value);
 };
 
 
 /**
  * Clears the field making it undefined.
- * @return {!proto.api_container_api.ExecuteStartosisModuleArgs} returns this
+ * @return {!proto.api_container_api.ExecuteStarlarkPackageArgs} returns this
  */
-proto.api_container_api.ExecuteStartosisModuleArgs.prototype.clearRemote = function() {
-  return jspb.Message.setOneofField(this, 4, proto.api_container_api.ExecuteStartosisModuleArgs.oneofGroups_[0], undefined);
+proto.api_container_api.ExecuteStarlarkPackageArgs.prototype.clearRemote = function() {
+  return jspb.Message.setOneofField(this, 4, proto.api_container_api.ExecuteStarlarkPackageArgs.oneofGroups_[0], undefined);
 };
 
 
@@ -4338,7 +4293,7 @@ proto.api_container_api.ExecuteStartosisModuleArgs.prototype.clearRemote = funct
  * Returns whether this field is set.
  * @return {boolean}
  */
-proto.api_container_api.ExecuteStartosisModuleArgs.prototype.hasRemote = function() {
+proto.api_container_api.ExecuteStarlarkPackageArgs.prototype.hasRemote = function() {
   return jspb.Message.getField(this, 4) != null;
 };
 
@@ -4347,16 +4302,16 @@ proto.api_container_api.ExecuteStartosisModuleArgs.prototype.hasRemote = functio
  * optional string serialized_params = 5;
  * @return {string}
  */
-proto.api_container_api.ExecuteStartosisModuleArgs.prototype.getSerializedParams = function() {
+proto.api_container_api.ExecuteStarlarkPackageArgs.prototype.getSerializedParams = function() {
   return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 5, ""));
 };
 
 
 /**
  * @param {string} value
- * @return {!proto.api_container_api.ExecuteStartosisModuleArgs} returns this
+ * @return {!proto.api_container_api.ExecuteStarlarkPackageArgs} returns this
  */
-proto.api_container_api.ExecuteStartosisModuleArgs.prototype.setSerializedParams = function(value) {
+proto.api_container_api.ExecuteStarlarkPackageArgs.prototype.setSerializedParams = function(value) {
   return jspb.Message.setProto3StringField(this, 5, value);
 };
 
@@ -4365,25 +4320,25 @@ proto.api_container_api.ExecuteStartosisModuleArgs.prototype.setSerializedParams
  * optional bool dry_run = 6;
  * @return {boolean}
  */
-proto.api_container_api.ExecuteStartosisModuleArgs.prototype.getDryRun = function() {
+proto.api_container_api.ExecuteStarlarkPackageArgs.prototype.getDryRun = function() {
   return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 6, false));
 };
 
 
 /**
  * @param {boolean} value
- * @return {!proto.api_container_api.ExecuteStartosisModuleArgs} returns this
+ * @return {!proto.api_container_api.ExecuteStarlarkPackageArgs} returns this
  */
-proto.api_container_api.ExecuteStartosisModuleArgs.prototype.setDryRun = function(value) {
+proto.api_container_api.ExecuteStarlarkPackageArgs.prototype.setDryRun = function(value) {
   return jspb.Message.setField(this, 6, value);
 };
 
 
 /**
  * Clears the field making it undefined.
- * @return {!proto.api_container_api.ExecuteStartosisModuleArgs} returns this
+ * @return {!proto.api_container_api.ExecuteStarlarkPackageArgs} returns this
  */
-proto.api_container_api.ExecuteStartosisModuleArgs.prototype.clearDryRun = function() {
+proto.api_container_api.ExecuteStarlarkPackageArgs.prototype.clearDryRun = function() {
   return jspb.Message.setField(this, 6, undefined);
 };
 
@@ -4392,18 +4347,11 @@ proto.api_container_api.ExecuteStartosisModuleArgs.prototype.clearDryRun = funct
  * Returns whether this field is set.
  * @return {boolean}
  */
-proto.api_container_api.ExecuteStartosisModuleArgs.prototype.hasDryRun = function() {
+proto.api_container_api.ExecuteStarlarkPackageArgs.prototype.hasDryRun = function() {
   return jspb.Message.getField(this, 6) != null;
 };
 
 
-
-/**
- * List of repeated fields within this message type.
- * @private {!Array<number>}
- * @const
- */
-proto.api_container_api.ExecuteStartosisResponse.repeatedFields_ = [1];
 
 /**
  * Oneof group definitions for this message. Each group defines the field
@@ -4413,23 +4361,24 @@ proto.api_container_api.ExecuteStartosisResponse.repeatedFields_ = [1];
  * @private {!Array<!Array<number>>}
  * @const
  */
-proto.api_container_api.ExecuteStartosisResponse.oneofGroups_ = [[2,3,4]];
+proto.api_container_api.StarlarkExecutionResponseLine.oneofGroups_ = [[1,2,3,4]];
 
 /**
  * @enum {number}
  */
-proto.api_container_api.ExecuteStartosisResponse.KurtosisErrorCase = {
-  KURTOSIS_ERROR_NOT_SET: 0,
-  INTERPRETATION_ERROR: 2,
-  VALIDATION_ERRORS: 3,
-  EXECUTION_ERROR: 4
+proto.api_container_api.StarlarkExecutionResponseLine.KurtosisExecutionResponseLineCase = {
+  KURTOSIS_EXECUTION_RESPONSE_LINE_NOT_SET: 0,
+  INSTRUCTION: 1,
+  ERROR: 2,
+  PROGRESS_INFO: 3,
+  INSTRUCTION_RESULT: 4
 };
 
 /**
- * @return {proto.api_container_api.ExecuteStartosisResponse.KurtosisErrorCase}
+ * @return {proto.api_container_api.StarlarkExecutionResponseLine.KurtosisExecutionResponseLineCase}
  */
-proto.api_container_api.ExecuteStartosisResponse.prototype.getKurtosisErrorCase = function() {
-  return /** @type {proto.api_container_api.ExecuteStartosisResponse.KurtosisErrorCase} */(jspb.Message.computeOneofCase(this, proto.api_container_api.ExecuteStartosisResponse.oneofGroups_[0]));
+proto.api_container_api.StarlarkExecutionResponseLine.prototype.getKurtosisExecutionResponseLineCase = function() {
+  return /** @type {proto.api_container_api.StarlarkExecutionResponseLine.KurtosisExecutionResponseLineCase} */(jspb.Message.computeOneofCase(this, proto.api_container_api.StarlarkExecutionResponseLine.oneofGroups_[0]));
 };
 
 
@@ -4447,8 +4396,8 @@ if (jspb.Message.GENERATE_TO_OBJECT) {
  *     http://goto/soy-param-migration
  * @return {!Object}
  */
-proto.api_container_api.ExecuteStartosisResponse.prototype.toObject = function(opt_includeInstance) {
-  return proto.api_container_api.ExecuteStartosisResponse.toObject(opt_includeInstance, this);
+proto.api_container_api.StarlarkExecutionResponseLine.prototype.toObject = function(opt_includeInstance) {
+  return proto.api_container_api.StarlarkExecutionResponseLine.toObject(opt_includeInstance, this);
 };
 
 
@@ -4457,17 +4406,16 @@ proto.api_container_api.ExecuteStartosisResponse.prototype.toObject = function(o
  * @param {boolean|undefined} includeInstance Deprecated. Whether to include
  *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
- * @param {!proto.api_container_api.ExecuteStartosisResponse} msg The msg instance to transform.
+ * @param {!proto.api_container_api.StarlarkExecutionResponseLine} msg The msg instance to transform.
  * @return {!Object}
  * @suppress {unusedLocalVariables} f is only used for nested messages
  */
-proto.api_container_api.ExecuteStartosisResponse.toObject = function(includeInstance, msg) {
+proto.api_container_api.StarlarkExecutionResponseLine.toObject = function(includeInstance, msg) {
   var f, obj = {
-    kurtosisInstructionsList: jspb.Message.toObjectList(msg.getKurtosisInstructionsList(),
-    proto.api_container_api.KurtosisInstruction.toObject, includeInstance),
-    interpretationError: (f = msg.getInterpretationError()) && proto.api_container_api.KurtosisInterpretationError.toObject(includeInstance, f),
-    validationErrors: (f = msg.getValidationErrors()) && proto.api_container_api.KurtosisValidationErrors.toObject(includeInstance, f),
-    executionError: (f = msg.getExecutionError()) && proto.api_container_api.KurtosisExecutionError.toObject(includeInstance, f)
+    instruction: (f = msg.getInstruction()) && proto.api_container_api.StarlarkInstruction.toObject(includeInstance, f),
+    error: (f = msg.getError()) && proto.api_container_api.StarlarkError.toObject(includeInstance, f),
+    progressInfo: (f = msg.getProgressInfo()) && proto.api_container_api.StarlarkExecutionProgress.toObject(includeInstance, f),
+    instructionResult: (f = msg.getInstructionResult()) && proto.api_container_api.StarlarkInstructionResult.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -4481,23 +4429,23 @@ proto.api_container_api.ExecuteStartosisResponse.toObject = function(includeInst
 /**
  * Deserializes binary data (in protobuf wire format).
  * @param {jspb.ByteSource} bytes The bytes to deserialize.
- * @return {!proto.api_container_api.ExecuteStartosisResponse}
+ * @return {!proto.api_container_api.StarlarkExecutionResponseLine}
  */
-proto.api_container_api.ExecuteStartosisResponse.deserializeBinary = function(bytes) {
+proto.api_container_api.StarlarkExecutionResponseLine.deserializeBinary = function(bytes) {
   var reader = new jspb.BinaryReader(bytes);
-  var msg = new proto.api_container_api.ExecuteStartosisResponse;
-  return proto.api_container_api.ExecuteStartosisResponse.deserializeBinaryFromReader(msg, reader);
+  var msg = new proto.api_container_api.StarlarkExecutionResponseLine;
+  return proto.api_container_api.StarlarkExecutionResponseLine.deserializeBinaryFromReader(msg, reader);
 };
 
 
 /**
  * Deserializes binary data (in protobuf wire format) from the
  * given reader into the given message object.
- * @param {!proto.api_container_api.ExecuteStartosisResponse} msg The message object to deserialize into.
+ * @param {!proto.api_container_api.StarlarkExecutionResponseLine} msg The message object to deserialize into.
  * @param {!jspb.BinaryReader} reader The BinaryReader to use.
- * @return {!proto.api_container_api.ExecuteStartosisResponse}
+ * @return {!proto.api_container_api.StarlarkExecutionResponseLine}
  */
-proto.api_container_api.ExecuteStartosisResponse.deserializeBinaryFromReader = function(msg, reader) {
+proto.api_container_api.StarlarkExecutionResponseLine.deserializeBinaryFromReader = function(msg, reader) {
   while (reader.nextField()) {
     if (reader.isEndGroup()) {
       break;
@@ -4505,24 +4453,24 @@ proto.api_container_api.ExecuteStartosisResponse.deserializeBinaryFromReader = f
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = new proto.api_container_api.KurtosisInstruction;
-      reader.readMessage(value,proto.api_container_api.KurtosisInstruction.deserializeBinaryFromReader);
-      msg.addKurtosisInstructions(value);
+      var value = new proto.api_container_api.StarlarkInstruction;
+      reader.readMessage(value,proto.api_container_api.StarlarkInstruction.deserializeBinaryFromReader);
+      msg.setInstruction(value);
       break;
     case 2:
-      var value = new proto.api_container_api.KurtosisInterpretationError;
-      reader.readMessage(value,proto.api_container_api.KurtosisInterpretationError.deserializeBinaryFromReader);
-      msg.setInterpretationError(value);
+      var value = new proto.api_container_api.StarlarkError;
+      reader.readMessage(value,proto.api_container_api.StarlarkError.deserializeBinaryFromReader);
+      msg.setError(value);
       break;
     case 3:
-      var value = new proto.api_container_api.KurtosisValidationErrors;
-      reader.readMessage(value,proto.api_container_api.KurtosisValidationErrors.deserializeBinaryFromReader);
-      msg.setValidationErrors(value);
+      var value = new proto.api_container_api.StarlarkExecutionProgress;
+      reader.readMessage(value,proto.api_container_api.StarlarkExecutionProgress.deserializeBinaryFromReader);
+      msg.setProgressInfo(value);
       break;
     case 4:
-      var value = new proto.api_container_api.KurtosisExecutionError;
-      reader.readMessage(value,proto.api_container_api.KurtosisExecutionError.deserializeBinaryFromReader);
-      msg.setExecutionError(value);
+      var value = new proto.api_container_api.StarlarkInstructionResult;
+      reader.readMessage(value,proto.api_container_api.StarlarkInstructionResult.deserializeBinaryFromReader);
+      msg.setInstructionResult(value);
       break;
     default:
       reader.skipField();
@@ -4537,9 +4485,9 @@ proto.api_container_api.ExecuteStartosisResponse.deserializeBinaryFromReader = f
  * Serializes the message to binary data (in protobuf wire format).
  * @return {!Uint8Array}
  */
-proto.api_container_api.ExecuteStartosisResponse.prototype.serializeBinary = function() {
+proto.api_container_api.StarlarkExecutionResponseLine.prototype.serializeBinary = function() {
   var writer = new jspb.BinaryWriter();
-  proto.api_container_api.ExecuteStartosisResponse.serializeBinaryToWriter(this, writer);
+  proto.api_container_api.StarlarkExecutionResponseLine.serializeBinaryToWriter(this, writer);
   return writer.getResultBuffer();
 };
 
@@ -4547,110 +4495,72 @@ proto.api_container_api.ExecuteStartosisResponse.prototype.serializeBinary = fun
 /**
  * Serializes the given message to binary data (in protobuf wire
  * format), writing to the given BinaryWriter.
- * @param {!proto.api_container_api.ExecuteStartosisResponse} message
+ * @param {!proto.api_container_api.StarlarkExecutionResponseLine} message
  * @param {!jspb.BinaryWriter} writer
  * @suppress {unusedLocalVariables} f is only used for nested messages
  */
-proto.api_container_api.ExecuteStartosisResponse.serializeBinaryToWriter = function(message, writer) {
+proto.api_container_api.StarlarkExecutionResponseLine.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
-  f = message.getKurtosisInstructionsList();
-  if (f.length > 0) {
-    writer.writeRepeatedMessage(
+  f = message.getInstruction();
+  if (f != null) {
+    writer.writeMessage(
       1,
       f,
-      proto.api_container_api.KurtosisInstruction.serializeBinaryToWriter
+      proto.api_container_api.StarlarkInstruction.serializeBinaryToWriter
     );
   }
-  f = message.getInterpretationError();
+  f = message.getError();
   if (f != null) {
     writer.writeMessage(
       2,
       f,
-      proto.api_container_api.KurtosisInterpretationError.serializeBinaryToWriter
+      proto.api_container_api.StarlarkError.serializeBinaryToWriter
     );
   }
-  f = message.getValidationErrors();
+  f = message.getProgressInfo();
   if (f != null) {
     writer.writeMessage(
       3,
       f,
-      proto.api_container_api.KurtosisValidationErrors.serializeBinaryToWriter
+      proto.api_container_api.StarlarkExecutionProgress.serializeBinaryToWriter
     );
   }
-  f = message.getExecutionError();
+  f = message.getInstructionResult();
   if (f != null) {
     writer.writeMessage(
       4,
       f,
-      proto.api_container_api.KurtosisExecutionError.serializeBinaryToWriter
+      proto.api_container_api.StarlarkInstructionResult.serializeBinaryToWriter
     );
   }
 };
 
 
 /**
- * repeated KurtosisInstruction kurtosis_instructions = 1;
- * @return {!Array<!proto.api_container_api.KurtosisInstruction>}
+ * optional StarlarkInstruction instruction = 1;
+ * @return {?proto.api_container_api.StarlarkInstruction}
  */
-proto.api_container_api.ExecuteStartosisResponse.prototype.getKurtosisInstructionsList = function() {
-  return /** @type{!Array<!proto.api_container_api.KurtosisInstruction>} */ (
-    jspb.Message.getRepeatedWrapperField(this, proto.api_container_api.KurtosisInstruction, 1));
+proto.api_container_api.StarlarkExecutionResponseLine.prototype.getInstruction = function() {
+  return /** @type{?proto.api_container_api.StarlarkInstruction} */ (
+    jspb.Message.getWrapperField(this, proto.api_container_api.StarlarkInstruction, 1));
 };
 
 
 /**
- * @param {!Array<!proto.api_container_api.KurtosisInstruction>} value
- * @return {!proto.api_container_api.ExecuteStartosisResponse} returns this
+ * @param {?proto.api_container_api.StarlarkInstruction|undefined} value
+ * @return {!proto.api_container_api.StarlarkExecutionResponseLine} returns this
 */
-proto.api_container_api.ExecuteStartosisResponse.prototype.setKurtosisInstructionsList = function(value) {
-  return jspb.Message.setRepeatedWrapperField(this, 1, value);
-};
-
-
-/**
- * @param {!proto.api_container_api.KurtosisInstruction=} opt_value
- * @param {number=} opt_index
- * @return {!proto.api_container_api.KurtosisInstruction}
- */
-proto.api_container_api.ExecuteStartosisResponse.prototype.addKurtosisInstructions = function(opt_value, opt_index) {
-  return jspb.Message.addToRepeatedWrapperField(this, 1, opt_value, proto.api_container_api.KurtosisInstruction, opt_index);
-};
-
-
-/**
- * Clears the list making it empty but non-null.
- * @return {!proto.api_container_api.ExecuteStartosisResponse} returns this
- */
-proto.api_container_api.ExecuteStartosisResponse.prototype.clearKurtosisInstructionsList = function() {
-  return this.setKurtosisInstructionsList([]);
-};
-
-
-/**
- * optional KurtosisInterpretationError interpretation_error = 2;
- * @return {?proto.api_container_api.KurtosisInterpretationError}
- */
-proto.api_container_api.ExecuteStartosisResponse.prototype.getInterpretationError = function() {
-  return /** @type{?proto.api_container_api.KurtosisInterpretationError} */ (
-    jspb.Message.getWrapperField(this, proto.api_container_api.KurtosisInterpretationError, 2));
-};
-
-
-/**
- * @param {?proto.api_container_api.KurtosisInterpretationError|undefined} value
- * @return {!proto.api_container_api.ExecuteStartosisResponse} returns this
-*/
-proto.api_container_api.ExecuteStartosisResponse.prototype.setInterpretationError = function(value) {
-  return jspb.Message.setOneofWrapperField(this, 2, proto.api_container_api.ExecuteStartosisResponse.oneofGroups_[0], value);
+proto.api_container_api.StarlarkExecutionResponseLine.prototype.setInstruction = function(value) {
+  return jspb.Message.setOneofWrapperField(this, 1, proto.api_container_api.StarlarkExecutionResponseLine.oneofGroups_[0], value);
 };
 
 
 /**
  * Clears the message field making it undefined.
- * @return {!proto.api_container_api.ExecuteStartosisResponse} returns this
+ * @return {!proto.api_container_api.StarlarkExecutionResponseLine} returns this
  */
-proto.api_container_api.ExecuteStartosisResponse.prototype.clearInterpretationError = function() {
-  return this.setInterpretationError(undefined);
+proto.api_container_api.StarlarkExecutionResponseLine.prototype.clearInstruction = function() {
+  return this.setInstruction(undefined);
 };
 
 
@@ -4658,36 +4568,73 @@ proto.api_container_api.ExecuteStartosisResponse.prototype.clearInterpretationEr
  * Returns whether this field is set.
  * @return {boolean}
  */
-proto.api_container_api.ExecuteStartosisResponse.prototype.hasInterpretationError = function() {
+proto.api_container_api.StarlarkExecutionResponseLine.prototype.hasInstruction = function() {
+  return jspb.Message.getField(this, 1) != null;
+};
+
+
+/**
+ * optional StarlarkError error = 2;
+ * @return {?proto.api_container_api.StarlarkError}
+ */
+proto.api_container_api.StarlarkExecutionResponseLine.prototype.getError = function() {
+  return /** @type{?proto.api_container_api.StarlarkError} */ (
+    jspb.Message.getWrapperField(this, proto.api_container_api.StarlarkError, 2));
+};
+
+
+/**
+ * @param {?proto.api_container_api.StarlarkError|undefined} value
+ * @return {!proto.api_container_api.StarlarkExecutionResponseLine} returns this
+*/
+proto.api_container_api.StarlarkExecutionResponseLine.prototype.setError = function(value) {
+  return jspb.Message.setOneofWrapperField(this, 2, proto.api_container_api.StarlarkExecutionResponseLine.oneofGroups_[0], value);
+};
+
+
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.api_container_api.StarlarkExecutionResponseLine} returns this
+ */
+proto.api_container_api.StarlarkExecutionResponseLine.prototype.clearError = function() {
+  return this.setError(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.StarlarkExecutionResponseLine.prototype.hasError = function() {
   return jspb.Message.getField(this, 2) != null;
 };
 
 
 /**
- * optional KurtosisValidationErrors validation_errors = 3;
- * @return {?proto.api_container_api.KurtosisValidationErrors}
+ * optional StarlarkExecutionProgress progress_info = 3;
+ * @return {?proto.api_container_api.StarlarkExecutionProgress}
  */
-proto.api_container_api.ExecuteStartosisResponse.prototype.getValidationErrors = function() {
-  return /** @type{?proto.api_container_api.KurtosisValidationErrors} */ (
-    jspb.Message.getWrapperField(this, proto.api_container_api.KurtosisValidationErrors, 3));
+proto.api_container_api.StarlarkExecutionResponseLine.prototype.getProgressInfo = function() {
+  return /** @type{?proto.api_container_api.StarlarkExecutionProgress} */ (
+    jspb.Message.getWrapperField(this, proto.api_container_api.StarlarkExecutionProgress, 3));
 };
 
 
 /**
- * @param {?proto.api_container_api.KurtosisValidationErrors|undefined} value
- * @return {!proto.api_container_api.ExecuteStartosisResponse} returns this
+ * @param {?proto.api_container_api.StarlarkExecutionProgress|undefined} value
+ * @return {!proto.api_container_api.StarlarkExecutionResponseLine} returns this
 */
-proto.api_container_api.ExecuteStartosisResponse.prototype.setValidationErrors = function(value) {
-  return jspb.Message.setOneofWrapperField(this, 3, proto.api_container_api.ExecuteStartosisResponse.oneofGroups_[0], value);
+proto.api_container_api.StarlarkExecutionResponseLine.prototype.setProgressInfo = function(value) {
+  return jspb.Message.setOneofWrapperField(this, 3, proto.api_container_api.StarlarkExecutionResponseLine.oneofGroups_[0], value);
 };
 
 
 /**
  * Clears the message field making it undefined.
- * @return {!proto.api_container_api.ExecuteStartosisResponse} returns this
+ * @return {!proto.api_container_api.StarlarkExecutionResponseLine} returns this
  */
-proto.api_container_api.ExecuteStartosisResponse.prototype.clearValidationErrors = function() {
-  return this.setValidationErrors(undefined);
+proto.api_container_api.StarlarkExecutionResponseLine.prototype.clearProgressInfo = function() {
+  return this.setProgressInfo(undefined);
 };
 
 
@@ -4695,36 +4642,36 @@ proto.api_container_api.ExecuteStartosisResponse.prototype.clearValidationErrors
  * Returns whether this field is set.
  * @return {boolean}
  */
-proto.api_container_api.ExecuteStartosisResponse.prototype.hasValidationErrors = function() {
+proto.api_container_api.StarlarkExecutionResponseLine.prototype.hasProgressInfo = function() {
   return jspb.Message.getField(this, 3) != null;
 };
 
 
 /**
- * optional KurtosisExecutionError execution_error = 4;
- * @return {?proto.api_container_api.KurtosisExecutionError}
+ * optional StarlarkInstructionResult instruction_result = 4;
+ * @return {?proto.api_container_api.StarlarkInstructionResult}
  */
-proto.api_container_api.ExecuteStartosisResponse.prototype.getExecutionError = function() {
-  return /** @type{?proto.api_container_api.KurtosisExecutionError} */ (
-    jspb.Message.getWrapperField(this, proto.api_container_api.KurtosisExecutionError, 4));
+proto.api_container_api.StarlarkExecutionResponseLine.prototype.getInstructionResult = function() {
+  return /** @type{?proto.api_container_api.StarlarkInstructionResult} */ (
+    jspb.Message.getWrapperField(this, proto.api_container_api.StarlarkInstructionResult, 4));
 };
 
 
 /**
- * @param {?proto.api_container_api.KurtosisExecutionError|undefined} value
- * @return {!proto.api_container_api.ExecuteStartosisResponse} returns this
+ * @param {?proto.api_container_api.StarlarkInstructionResult|undefined} value
+ * @return {!proto.api_container_api.StarlarkExecutionResponseLine} returns this
 */
-proto.api_container_api.ExecuteStartosisResponse.prototype.setExecutionError = function(value) {
-  return jspb.Message.setOneofWrapperField(this, 4, proto.api_container_api.ExecuteStartosisResponse.oneofGroups_[0], value);
+proto.api_container_api.StarlarkExecutionResponseLine.prototype.setInstructionResult = function(value) {
+  return jspb.Message.setOneofWrapperField(this, 4, proto.api_container_api.StarlarkExecutionResponseLine.oneofGroups_[0], value);
 };
 
 
 /**
  * Clears the message field making it undefined.
- * @return {!proto.api_container_api.ExecuteStartosisResponse} returns this
+ * @return {!proto.api_container_api.StarlarkExecutionResponseLine} returns this
  */
-proto.api_container_api.ExecuteStartosisResponse.prototype.clearExecutionError = function() {
-  return this.setExecutionError(undefined);
+proto.api_container_api.StarlarkExecutionResponseLine.prototype.clearInstructionResult = function() {
+  return this.setInstructionResult(undefined);
 };
 
 
@@ -4732,148 +4679,18 @@ proto.api_container_api.ExecuteStartosisResponse.prototype.clearExecutionError =
  * Returns whether this field is set.
  * @return {boolean}
  */
-proto.api_container_api.ExecuteStartosisResponse.prototype.hasExecutionError = function() {
+proto.api_container_api.StarlarkExecutionResponseLine.prototype.hasInstructionResult = function() {
   return jspb.Message.getField(this, 4) != null;
 };
 
 
 
-
-
-if (jspb.Message.GENERATE_TO_OBJECT) {
-/**
- * Creates an object representation of this proto.
- * Field names that are reserved in JavaScript and will be renamed to pb_name.
- * Optional fields that are not set will be set to undefined.
- * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
- * For the list of reserved names please see:
- *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
- * @param {boolean=} opt_includeInstance Deprecated. whether to include the
- *     JSPB instance for transitional soy proto support:
- *     http://goto/soy-param-migration
- * @return {!Object}
- */
-proto.api_container_api.KurtosisInterpretationError.prototype.toObject = function(opt_includeInstance) {
-  return proto.api_container_api.KurtosisInterpretationError.toObject(opt_includeInstance, this);
-};
-
-
-/**
- * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Deprecated. Whether to include
- *     the JSPB instance for transitional soy proto support:
- *     http://goto/soy-param-migration
- * @param {!proto.api_container_api.KurtosisInterpretationError} msg The msg instance to transform.
- * @return {!Object}
- * @suppress {unusedLocalVariables} f is only used for nested messages
- */
-proto.api_container_api.KurtosisInterpretationError.toObject = function(includeInstance, msg) {
-  var f, obj = {
-    errorMessage: jspb.Message.getFieldWithDefault(msg, 1, "")
-  };
-
-  if (includeInstance) {
-    obj.$jspbMessageInstance = msg;
-  }
-  return obj;
-};
-}
-
-
-/**
- * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
- * @return {!proto.api_container_api.KurtosisInterpretationError}
- */
-proto.api_container_api.KurtosisInterpretationError.deserializeBinary = function(bytes) {
-  var reader = new jspb.BinaryReader(bytes);
-  var msg = new proto.api_container_api.KurtosisInterpretationError;
-  return proto.api_container_api.KurtosisInterpretationError.deserializeBinaryFromReader(msg, reader);
-};
-
-
-/**
- * Deserializes binary data (in protobuf wire format) from the
- * given reader into the given message object.
- * @param {!proto.api_container_api.KurtosisInterpretationError} msg The message object to deserialize into.
- * @param {!jspb.BinaryReader} reader The BinaryReader to use.
- * @return {!proto.api_container_api.KurtosisInterpretationError}
- */
-proto.api_container_api.KurtosisInterpretationError.deserializeBinaryFromReader = function(msg, reader) {
-  while (reader.nextField()) {
-    if (reader.isEndGroup()) {
-      break;
-    }
-    var field = reader.getFieldNumber();
-    switch (field) {
-    case 1:
-      var value = /** @type {string} */ (reader.readString());
-      msg.setErrorMessage(value);
-      break;
-    default:
-      reader.skipField();
-      break;
-    }
-  }
-  return msg;
-};
-
-
-/**
- * Serializes the message to binary data (in protobuf wire format).
- * @return {!Uint8Array}
- */
-proto.api_container_api.KurtosisInterpretationError.prototype.serializeBinary = function() {
-  var writer = new jspb.BinaryWriter();
-  proto.api_container_api.KurtosisInterpretationError.serializeBinaryToWriter(this, writer);
-  return writer.getResultBuffer();
-};
-
-
-/**
- * Serializes the given message to binary data (in protobuf wire
- * format), writing to the given BinaryWriter.
- * @param {!proto.api_container_api.KurtosisInterpretationError} message
- * @param {!jspb.BinaryWriter} writer
- * @suppress {unusedLocalVariables} f is only used for nested messages
- */
-proto.api_container_api.KurtosisInterpretationError.serializeBinaryToWriter = function(message, writer) {
-  var f = undefined;
-  f = message.getErrorMessage();
-  if (f.length > 0) {
-    writer.writeString(
-      1,
-      f
-    );
-  }
-};
-
-
-/**
- * optional string error_message = 1;
- * @return {string}
- */
-proto.api_container_api.KurtosisInterpretationError.prototype.getErrorMessage = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
-};
-
-
-/**
- * @param {string} value
- * @return {!proto.api_container_api.KurtosisInterpretationError} returns this
- */
-proto.api_container_api.KurtosisInterpretationError.prototype.setErrorMessage = function(value) {
-  return jspb.Message.setProto3StringField(this, 1, value);
-};
-
-
-
 /**
  * List of repeated fields within this message type.
  * @private {!Array<number>}
  * @const
  */
-proto.api_container_api.KurtosisValidationErrors.repeatedFields_ = [1];
+proto.api_container_api.StarlarkInstruction.repeatedFields_ = [3];
 
 
 
@@ -4890,8 +4707,8 @@ if (jspb.Message.GENERATE_TO_OBJECT) {
  *     http://goto/soy-param-migration
  * @return {!Object}
  */
-proto.api_container_api.KurtosisValidationErrors.prototype.toObject = function(opt_includeInstance) {
-  return proto.api_container_api.KurtosisValidationErrors.toObject(opt_includeInstance, this);
+proto.api_container_api.StarlarkInstruction.prototype.toObject = function(opt_includeInstance) {
+  return proto.api_container_api.StarlarkInstruction.toObject(opt_includeInstance, this);
 };
 
 
@@ -4900,436 +4717,16 @@ proto.api_container_api.KurtosisValidationErrors.prototype.toObject = function(o
  * @param {boolean|undefined} includeInstance Deprecated. Whether to include
  *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
- * @param {!proto.api_container_api.KurtosisValidationErrors} msg The msg instance to transform.
+ * @param {!proto.api_container_api.StarlarkInstruction} msg The msg instance to transform.
  * @return {!Object}
  * @suppress {unusedLocalVariables} f is only used for nested messages
  */
-proto.api_container_api.KurtosisValidationErrors.toObject = function(includeInstance, msg) {
+proto.api_container_api.StarlarkInstruction.toObject = function(includeInstance, msg) {
   var f, obj = {
-    errorsList: jspb.Message.toObjectList(msg.getErrorsList(),
-    proto.api_container_api.KurtosisValidationError.toObject, includeInstance)
-  };
-
-  if (includeInstance) {
-    obj.$jspbMessageInstance = msg;
-  }
-  return obj;
-};
-}
-
-
-/**
- * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
- * @return {!proto.api_container_api.KurtosisValidationErrors}
- */
-proto.api_container_api.KurtosisValidationErrors.deserializeBinary = function(bytes) {
-  var reader = new jspb.BinaryReader(bytes);
-  var msg = new proto.api_container_api.KurtosisValidationErrors;
-  return proto.api_container_api.KurtosisValidationErrors.deserializeBinaryFromReader(msg, reader);
-};
-
-
-/**
- * Deserializes binary data (in protobuf wire format) from the
- * given reader into the given message object.
- * @param {!proto.api_container_api.KurtosisValidationErrors} msg The message object to deserialize into.
- * @param {!jspb.BinaryReader} reader The BinaryReader to use.
- * @return {!proto.api_container_api.KurtosisValidationErrors}
- */
-proto.api_container_api.KurtosisValidationErrors.deserializeBinaryFromReader = function(msg, reader) {
-  while (reader.nextField()) {
-    if (reader.isEndGroup()) {
-      break;
-    }
-    var field = reader.getFieldNumber();
-    switch (field) {
-    case 1:
-      var value = new proto.api_container_api.KurtosisValidationError;
-      reader.readMessage(value,proto.api_container_api.KurtosisValidationError.deserializeBinaryFromReader);
-      msg.addErrors(value);
-      break;
-    default:
-      reader.skipField();
-      break;
-    }
-  }
-  return msg;
-};
-
-
-/**
- * Serializes the message to binary data (in protobuf wire format).
- * @return {!Uint8Array}
- */
-proto.api_container_api.KurtosisValidationErrors.prototype.serializeBinary = function() {
-  var writer = new jspb.BinaryWriter();
-  proto.api_container_api.KurtosisValidationErrors.serializeBinaryToWriter(this, writer);
-  return writer.getResultBuffer();
-};
-
-
-/**
- * Serializes the given message to binary data (in protobuf wire
- * format), writing to the given BinaryWriter.
- * @param {!proto.api_container_api.KurtosisValidationErrors} message
- * @param {!jspb.BinaryWriter} writer
- * @suppress {unusedLocalVariables} f is only used for nested messages
- */
-proto.api_container_api.KurtosisValidationErrors.serializeBinaryToWriter = function(message, writer) {
-  var f = undefined;
-  f = message.getErrorsList();
-  if (f.length > 0) {
-    writer.writeRepeatedMessage(
-      1,
-      f,
-      proto.api_container_api.KurtosisValidationError.serializeBinaryToWriter
-    );
-  }
-};
-
-
-/**
- * repeated KurtosisValidationError errors = 1;
- * @return {!Array<!proto.api_container_api.KurtosisValidationError>}
- */
-proto.api_container_api.KurtosisValidationErrors.prototype.getErrorsList = function() {
-  return /** @type{!Array<!proto.api_container_api.KurtosisValidationError>} */ (
-    jspb.Message.getRepeatedWrapperField(this, proto.api_container_api.KurtosisValidationError, 1));
-};
-
-
-/**
- * @param {!Array<!proto.api_container_api.KurtosisValidationError>} value
- * @return {!proto.api_container_api.KurtosisValidationErrors} returns this
-*/
-proto.api_container_api.KurtosisValidationErrors.prototype.setErrorsList = function(value) {
-  return jspb.Message.setRepeatedWrapperField(this, 1, value);
-};
-
-
-/**
- * @param {!proto.api_container_api.KurtosisValidationError=} opt_value
- * @param {number=} opt_index
- * @return {!proto.api_container_api.KurtosisValidationError}
- */
-proto.api_container_api.KurtosisValidationErrors.prototype.addErrors = function(opt_value, opt_index) {
-  return jspb.Message.addToRepeatedWrapperField(this, 1, opt_value, proto.api_container_api.KurtosisValidationError, opt_index);
-};
-
-
-/**
- * Clears the list making it empty but non-null.
- * @return {!proto.api_container_api.KurtosisValidationErrors} returns this
- */
-proto.api_container_api.KurtosisValidationErrors.prototype.clearErrorsList = function() {
-  return this.setErrorsList([]);
-};
-
-
-
-
-
-if (jspb.Message.GENERATE_TO_OBJECT) {
-/**
- * Creates an object representation of this proto.
- * Field names that are reserved in JavaScript and will be renamed to pb_name.
- * Optional fields that are not set will be set to undefined.
- * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
- * For the list of reserved names please see:
- *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
- * @param {boolean=} opt_includeInstance Deprecated. whether to include the
- *     JSPB instance for transitional soy proto support:
- *     http://goto/soy-param-migration
- * @return {!Object}
- */
-proto.api_container_api.KurtosisValidationError.prototype.toObject = function(opt_includeInstance) {
-  return proto.api_container_api.KurtosisValidationError.toObject(opt_includeInstance, this);
-};
-
-
-/**
- * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Deprecated. Whether to include
- *     the JSPB instance for transitional soy proto support:
- *     http://goto/soy-param-migration
- * @param {!proto.api_container_api.KurtosisValidationError} msg The msg instance to transform.
- * @return {!Object}
- * @suppress {unusedLocalVariables} f is only used for nested messages
- */
-proto.api_container_api.KurtosisValidationError.toObject = function(includeInstance, msg) {
-  var f, obj = {
-    errorMessage: jspb.Message.getFieldWithDefault(msg, 1, "")
-  };
-
-  if (includeInstance) {
-    obj.$jspbMessageInstance = msg;
-  }
-  return obj;
-};
-}
-
-
-/**
- * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
- * @return {!proto.api_container_api.KurtosisValidationError}
- */
-proto.api_container_api.KurtosisValidationError.deserializeBinary = function(bytes) {
-  var reader = new jspb.BinaryReader(bytes);
-  var msg = new proto.api_container_api.KurtosisValidationError;
-  return proto.api_container_api.KurtosisValidationError.deserializeBinaryFromReader(msg, reader);
-};
-
-
-/**
- * Deserializes binary data (in protobuf wire format) from the
- * given reader into the given message object.
- * @param {!proto.api_container_api.KurtosisValidationError} msg The message object to deserialize into.
- * @param {!jspb.BinaryReader} reader The BinaryReader to use.
- * @return {!proto.api_container_api.KurtosisValidationError}
- */
-proto.api_container_api.KurtosisValidationError.deserializeBinaryFromReader = function(msg, reader) {
-  while (reader.nextField()) {
-    if (reader.isEndGroup()) {
-      break;
-    }
-    var field = reader.getFieldNumber();
-    switch (field) {
-    case 1:
-      var value = /** @type {string} */ (reader.readString());
-      msg.setErrorMessage(value);
-      break;
-    default:
-      reader.skipField();
-      break;
-    }
-  }
-  return msg;
-};
-
-
-/**
- * Serializes the message to binary data (in protobuf wire format).
- * @return {!Uint8Array}
- */
-proto.api_container_api.KurtosisValidationError.prototype.serializeBinary = function() {
-  var writer = new jspb.BinaryWriter();
-  proto.api_container_api.KurtosisValidationError.serializeBinaryToWriter(this, writer);
-  return writer.getResultBuffer();
-};
-
-
-/**
- * Serializes the given message to binary data (in protobuf wire
- * format), writing to the given BinaryWriter.
- * @param {!proto.api_container_api.KurtosisValidationError} message
- * @param {!jspb.BinaryWriter} writer
- * @suppress {unusedLocalVariables} f is only used for nested messages
- */
-proto.api_container_api.KurtosisValidationError.serializeBinaryToWriter = function(message, writer) {
-  var f = undefined;
-  f = message.getErrorMessage();
-  if (f.length > 0) {
-    writer.writeString(
-      1,
-      f
-    );
-  }
-};
-
-
-/**
- * optional string error_message = 1;
- * @return {string}
- */
-proto.api_container_api.KurtosisValidationError.prototype.getErrorMessage = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
-};
-
-
-/**
- * @param {string} value
- * @return {!proto.api_container_api.KurtosisValidationError} returns this
- */
-proto.api_container_api.KurtosisValidationError.prototype.setErrorMessage = function(value) {
-  return jspb.Message.setProto3StringField(this, 1, value);
-};
-
-
-
-
-
-if (jspb.Message.GENERATE_TO_OBJECT) {
-/**
- * Creates an object representation of this proto.
- * Field names that are reserved in JavaScript and will be renamed to pb_name.
- * Optional fields that are not set will be set to undefined.
- * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
- * For the list of reserved names please see:
- *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
- * @param {boolean=} opt_includeInstance Deprecated. whether to include the
- *     JSPB instance for transitional soy proto support:
- *     http://goto/soy-param-migration
- * @return {!Object}
- */
-proto.api_container_api.KurtosisExecutionError.prototype.toObject = function(opt_includeInstance) {
-  return proto.api_container_api.KurtosisExecutionError.toObject(opt_includeInstance, this);
-};
-
-
-/**
- * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Deprecated. Whether to include
- *     the JSPB instance for transitional soy proto support:
- *     http://goto/soy-param-migration
- * @param {!proto.api_container_api.KurtosisExecutionError} msg The msg instance to transform.
- * @return {!Object}
- * @suppress {unusedLocalVariables} f is only used for nested messages
- */
-proto.api_container_api.KurtosisExecutionError.toObject = function(includeInstance, msg) {
-  var f, obj = {
-    errorMessage: jspb.Message.getFieldWithDefault(msg, 1, "")
-  };
-
-  if (includeInstance) {
-    obj.$jspbMessageInstance = msg;
-  }
-  return obj;
-};
-}
-
-
-/**
- * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
- * @return {!proto.api_container_api.KurtosisExecutionError}
- */
-proto.api_container_api.KurtosisExecutionError.deserializeBinary = function(bytes) {
-  var reader = new jspb.BinaryReader(bytes);
-  var msg = new proto.api_container_api.KurtosisExecutionError;
-  return proto.api_container_api.KurtosisExecutionError.deserializeBinaryFromReader(msg, reader);
-};
-
-
-/**
- * Deserializes binary data (in protobuf wire format) from the
- * given reader into the given message object.
- * @param {!proto.api_container_api.KurtosisExecutionError} msg The message object to deserialize into.
- * @param {!jspb.BinaryReader} reader The BinaryReader to use.
- * @return {!proto.api_container_api.KurtosisExecutionError}
- */
-proto.api_container_api.KurtosisExecutionError.deserializeBinaryFromReader = function(msg, reader) {
-  while (reader.nextField()) {
-    if (reader.isEndGroup()) {
-      break;
-    }
-    var field = reader.getFieldNumber();
-    switch (field) {
-    case 1:
-      var value = /** @type {string} */ (reader.readString());
-      msg.setErrorMessage(value);
-      break;
-    default:
-      reader.skipField();
-      break;
-    }
-  }
-  return msg;
-};
-
-
-/**
- * Serializes the message to binary data (in protobuf wire format).
- * @return {!Uint8Array}
- */
-proto.api_container_api.KurtosisExecutionError.prototype.serializeBinary = function() {
-  var writer = new jspb.BinaryWriter();
-  proto.api_container_api.KurtosisExecutionError.serializeBinaryToWriter(this, writer);
-  return writer.getResultBuffer();
-};
-
-
-/**
- * Serializes the given message to binary data (in protobuf wire
- * format), writing to the given BinaryWriter.
- * @param {!proto.api_container_api.KurtosisExecutionError} message
- * @param {!jspb.BinaryWriter} writer
- * @suppress {unusedLocalVariables} f is only used for nested messages
- */
-proto.api_container_api.KurtosisExecutionError.serializeBinaryToWriter = function(message, writer) {
-  var f = undefined;
-  f = message.getErrorMessage();
-  if (f.length > 0) {
-    writer.writeString(
-      1,
-      f
-    );
-  }
-};
-
-
-/**
- * optional string error_message = 1;
- * @return {string}
- */
-proto.api_container_api.KurtosisExecutionError.prototype.getErrorMessage = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
-};
-
-
-/**
- * @param {string} value
- * @return {!proto.api_container_api.KurtosisExecutionError} returns this
- */
-proto.api_container_api.KurtosisExecutionError.prototype.setErrorMessage = function(value) {
-  return jspb.Message.setProto3StringField(this, 1, value);
-};
-
-
-
-/**
- * List of repeated fields within this message type.
- * @private {!Array<number>}
- * @const
- */
-proto.api_container_api.KurtosisInstruction.repeatedFields_ = [3];
-
-
-
-if (jspb.Message.GENERATE_TO_OBJECT) {
-/**
- * Creates an object representation of this proto.
- * Field names that are reserved in JavaScript and will be renamed to pb_name.
- * Optional fields that are not set will be set to undefined.
- * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
- * For the list of reserved names please see:
- *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
- * @param {boolean=} opt_includeInstance Deprecated. whether to include the
- *     JSPB instance for transitional soy proto support:
- *     http://goto/soy-param-migration
- * @return {!Object}
- */
-proto.api_container_api.KurtosisInstruction.prototype.toObject = function(opt_includeInstance) {
-  return proto.api_container_api.KurtosisInstruction.toObject(opt_includeInstance, this);
-};
-
-
-/**
- * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Deprecated. Whether to include
- *     the JSPB instance for transitional soy proto support:
- *     http://goto/soy-param-migration
- * @param {!proto.api_container_api.KurtosisInstruction} msg The msg instance to transform.
- * @return {!Object}
- * @suppress {unusedLocalVariables} f is only used for nested messages
- */
-proto.api_container_api.KurtosisInstruction.toObject = function(includeInstance, msg) {
-  var f, obj = {
-    position: (f = msg.getPosition()) && proto.api_container_api.KurtosisInstructionPosition.toObject(includeInstance, f),
+    position: (f = msg.getPosition()) && proto.api_container_api.StarlarkInstructionPosition.toObject(includeInstance, f),
     instructionName: jspb.Message.getFieldWithDefault(msg, 2, ""),
     argumentsList: jspb.Message.toObjectList(msg.getArgumentsList(),
-    proto.api_container_api.KurtosisInstructionArg.toObject, includeInstance),
+    proto.api_container_api.StarlarkInstructionArg.toObject, includeInstance),
     executableInstruction: jspb.Message.getFieldWithDefault(msg, 4, "")
   };
 
@@ -5344,23 +4741,23 @@ proto.api_container_api.KurtosisInstruction.toObject = function(includeInstance,
 /**
  * Deserializes binary data (in protobuf wire format).
  * @param {jspb.ByteSource} bytes The bytes to deserialize.
- * @return {!proto.api_container_api.KurtosisInstruction}
+ * @return {!proto.api_container_api.StarlarkInstruction}
  */
-proto.api_container_api.KurtosisInstruction.deserializeBinary = function(bytes) {
+proto.api_container_api.StarlarkInstruction.deserializeBinary = function(bytes) {
   var reader = new jspb.BinaryReader(bytes);
-  var msg = new proto.api_container_api.KurtosisInstruction;
-  return proto.api_container_api.KurtosisInstruction.deserializeBinaryFromReader(msg, reader);
+  var msg = new proto.api_container_api.StarlarkInstruction;
+  return proto.api_container_api.StarlarkInstruction.deserializeBinaryFromReader(msg, reader);
 };
 
 
 /**
  * Deserializes binary data (in protobuf wire format) from the
  * given reader into the given message object.
- * @param {!proto.api_container_api.KurtosisInstruction} msg The message object to deserialize into.
+ * @param {!proto.api_container_api.StarlarkInstruction} msg The message object to deserialize into.
  * @param {!jspb.BinaryReader} reader The BinaryReader to use.
- * @return {!proto.api_container_api.KurtosisInstruction}
+ * @return {!proto.api_container_api.StarlarkInstruction}
  */
-proto.api_container_api.KurtosisInstruction.deserializeBinaryFromReader = function(msg, reader) {
+proto.api_container_api.StarlarkInstruction.deserializeBinaryFromReader = function(msg, reader) {
   while (reader.nextField()) {
     if (reader.isEndGroup()) {
       break;
@@ -5368,8 +4765,8 @@ proto.api_container_api.KurtosisInstruction.deserializeBinaryFromReader = functi
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = new proto.api_container_api.KurtosisInstructionPosition;
-      reader.readMessage(value,proto.api_container_api.KurtosisInstructionPosition.deserializeBinaryFromReader);
+      var value = new proto.api_container_api.StarlarkInstructionPosition;
+      reader.readMessage(value,proto.api_container_api.StarlarkInstructionPosition.deserializeBinaryFromReader);
       msg.setPosition(value);
       break;
     case 2:
@@ -5377,8 +4774,8 @@ proto.api_container_api.KurtosisInstruction.deserializeBinaryFromReader = functi
       msg.setInstructionName(value);
       break;
     case 3:
-      var value = new proto.api_container_api.KurtosisInstructionArg;
-      reader.readMessage(value,proto.api_container_api.KurtosisInstructionArg.deserializeBinaryFromReader);
+      var value = new proto.api_container_api.StarlarkInstructionArg;
+      reader.readMessage(value,proto.api_container_api.StarlarkInstructionArg.deserializeBinaryFromReader);
       msg.addArguments(value);
       break;
     case 4:
@@ -5398,9 +4795,9 @@ proto.api_container_api.KurtosisInstruction.deserializeBinaryFromReader = functi
  * Serializes the message to binary data (in protobuf wire format).
  * @return {!Uint8Array}
  */
-proto.api_container_api.KurtosisInstruction.prototype.serializeBinary = function() {
+proto.api_container_api.StarlarkInstruction.prototype.serializeBinary = function() {
   var writer = new jspb.BinaryWriter();
-  proto.api_container_api.KurtosisInstruction.serializeBinaryToWriter(this, writer);
+  proto.api_container_api.StarlarkInstruction.serializeBinaryToWriter(this, writer);
   return writer.getResultBuffer();
 };
 
@@ -5408,18 +4805,18 @@ proto.api_container_api.KurtosisInstruction.prototype.serializeBinary = function
 /**
  * Serializes the given message to binary data (in protobuf wire
  * format), writing to the given BinaryWriter.
- * @param {!proto.api_container_api.KurtosisInstruction} message
+ * @param {!proto.api_container_api.StarlarkInstruction} message
  * @param {!jspb.BinaryWriter} writer
  * @suppress {unusedLocalVariables} f is only used for nested messages
  */
-proto.api_container_api.KurtosisInstruction.serializeBinaryToWriter = function(message, writer) {
+proto.api_container_api.StarlarkInstruction.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
   f = message.getPosition();
   if (f != null) {
     writer.writeMessage(
       1,
       f,
-      proto.api_container_api.KurtosisInstructionPosition.serializeBinaryToWriter
+      proto.api_container_api.StarlarkInstructionPosition.serializeBinaryToWriter
     );
   }
   f = message.getInstructionName();
@@ -5434,7 +4831,7 @@ proto.api_container_api.KurtosisInstruction.serializeBinaryToWriter = function(m
     writer.writeRepeatedMessage(
       3,
       f,
-      proto.api_container_api.KurtosisInstructionArg.serializeBinaryToWriter
+      proto.api_container_api.StarlarkInstructionArg.serializeBinaryToWriter
     );
   }
   f = message.getExecutableInstruction();
@@ -5448,29 +4845,29 @@ proto.api_container_api.KurtosisInstruction.serializeBinaryToWriter = function(m
 
 
 /**
- * optional KurtosisInstructionPosition position = 1;
- * @return {?proto.api_container_api.KurtosisInstructionPosition}
+ * optional StarlarkInstructionPosition position = 1;
+ * @return {?proto.api_container_api.StarlarkInstructionPosition}
  */
-proto.api_container_api.KurtosisInstruction.prototype.getPosition = function() {
-  return /** @type{?proto.api_container_api.KurtosisInstructionPosition} */ (
-    jspb.Message.getWrapperField(this, proto.api_container_api.KurtosisInstructionPosition, 1));
+proto.api_container_api.StarlarkInstruction.prototype.getPosition = function() {
+  return /** @type{?proto.api_container_api.StarlarkInstructionPosition} */ (
+    jspb.Message.getWrapperField(this, proto.api_container_api.StarlarkInstructionPosition, 1));
 };
 
 
 /**
- * @param {?proto.api_container_api.KurtosisInstructionPosition|undefined} value
- * @return {!proto.api_container_api.KurtosisInstruction} returns this
+ * @param {?proto.api_container_api.StarlarkInstructionPosition|undefined} value
+ * @return {!proto.api_container_api.StarlarkInstruction} returns this
 */
-proto.api_container_api.KurtosisInstruction.prototype.setPosition = function(value) {
+proto.api_container_api.StarlarkInstruction.prototype.setPosition = function(value) {
   return jspb.Message.setWrapperField(this, 1, value);
 };
 
 
 /**
  * Clears the message field making it undefined.
- * @return {!proto.api_container_api.KurtosisInstruction} returns this
+ * @return {!proto.api_container_api.StarlarkInstruction} returns this
  */
-proto.api_container_api.KurtosisInstruction.prototype.clearPosition = function() {
+proto.api_container_api.StarlarkInstruction.prototype.clearPosition = function() {
   return this.setPosition(undefined);
 };
 
@@ -5479,7 +4876,7 @@ proto.api_container_api.KurtosisInstruction.prototype.clearPosition = function()
  * Returns whether this field is set.
  * @return {boolean}
  */
-proto.api_container_api.KurtosisInstruction.prototype.hasPosition = function() {
+proto.api_container_api.StarlarkInstruction.prototype.hasPosition = function() {
   return jspb.Message.getField(this, 1) != null;
 };
 
@@ -5488,54 +4885,54 @@ proto.api_container_api.KurtosisInstruction.prototype.hasPosition = function() {
  * optional string instruction_name = 2;
  * @return {string}
  */
-proto.api_container_api.KurtosisInstruction.prototype.getInstructionName = function() {
+proto.api_container_api.StarlarkInstruction.prototype.getInstructionName = function() {
   return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, ""));
 };
 
 
 /**
  * @param {string} value
- * @return {!proto.api_container_api.KurtosisInstruction} returns this
+ * @return {!proto.api_container_api.StarlarkInstruction} returns this
  */
-proto.api_container_api.KurtosisInstruction.prototype.setInstructionName = function(value) {
+proto.api_container_api.StarlarkInstruction.prototype.setInstructionName = function(value) {
   return jspb.Message.setProto3StringField(this, 2, value);
 };
 
 
 /**
- * repeated KurtosisInstructionArg arguments = 3;
- * @return {!Array<!proto.api_container_api.KurtosisInstructionArg>}
+ * repeated StarlarkInstructionArg arguments = 3;
+ * @return {!Array<!proto.api_container_api.StarlarkInstructionArg>}
  */
-proto.api_container_api.KurtosisInstruction.prototype.getArgumentsList = function() {
-  return /** @type{!Array<!proto.api_container_api.KurtosisInstructionArg>} */ (
-    jspb.Message.getRepeatedWrapperField(this, proto.api_container_api.KurtosisInstructionArg, 3));
+proto.api_container_api.StarlarkInstruction.prototype.getArgumentsList = function() {
+  return /** @type{!Array<!proto.api_container_api.StarlarkInstructionArg>} */ (
+    jspb.Message.getRepeatedWrapperField(this, proto.api_container_api.StarlarkInstructionArg, 3));
 };
 
 
 /**
- * @param {!Array<!proto.api_container_api.KurtosisInstructionArg>} value
- * @return {!proto.api_container_api.KurtosisInstruction} returns this
+ * @param {!Array<!proto.api_container_api.StarlarkInstructionArg>} value
+ * @return {!proto.api_container_api.StarlarkInstruction} returns this
 */
-proto.api_container_api.KurtosisInstruction.prototype.setArgumentsList = function(value) {
+proto.api_container_api.StarlarkInstruction.prototype.setArgumentsList = function(value) {
   return jspb.Message.setRepeatedWrapperField(this, 3, value);
 };
 
 
 /**
- * @param {!proto.api_container_api.KurtosisInstructionArg=} opt_value
+ * @param {!proto.api_container_api.StarlarkInstructionArg=} opt_value
  * @param {number=} opt_index
- * @return {!proto.api_container_api.KurtosisInstructionArg}
+ * @return {!proto.api_container_api.StarlarkInstructionArg}
  */
-proto.api_container_api.KurtosisInstruction.prototype.addArguments = function(opt_value, opt_index) {
-  return jspb.Message.addToRepeatedWrapperField(this, 3, opt_value, proto.api_container_api.KurtosisInstructionArg, opt_index);
+proto.api_container_api.StarlarkInstruction.prototype.addArguments = function(opt_value, opt_index) {
+  return jspb.Message.addToRepeatedWrapperField(this, 3, opt_value, proto.api_container_api.StarlarkInstructionArg, opt_index);
 };
 
 
 /**
  * Clears the list making it empty but non-null.
- * @return {!proto.api_container_api.KurtosisInstruction} returns this
+ * @return {!proto.api_container_api.StarlarkInstruction} returns this
  */
-proto.api_container_api.KurtosisInstruction.prototype.clearArgumentsList = function() {
+proto.api_container_api.StarlarkInstruction.prototype.clearArgumentsList = function() {
   return this.setArgumentsList([]);
 };
 
@@ -5544,16 +4941,16 @@ proto.api_container_api.KurtosisInstruction.prototype.clearArgumentsList = funct
  * optional string executable_instruction = 4;
  * @return {string}
  */
-proto.api_container_api.KurtosisInstruction.prototype.getExecutableInstruction = function() {
+proto.api_container_api.StarlarkInstruction.prototype.getExecutableInstruction = function() {
   return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 4, ""));
 };
 
 
 /**
  * @param {string} value
- * @return {!proto.api_container_api.KurtosisInstruction} returns this
+ * @return {!proto.api_container_api.StarlarkInstruction} returns this
  */
-proto.api_container_api.KurtosisInstruction.prototype.setExecutableInstruction = function(value) {
+proto.api_container_api.StarlarkInstruction.prototype.setExecutableInstruction = function(value) {
   return jspb.Message.setProto3StringField(this, 4, value);
 };
 
@@ -5574,8 +4971,8 @@ if (jspb.Message.GENERATE_TO_OBJECT) {
  *     http://goto/soy-param-migration
  * @return {!Object}
  */
-proto.api_container_api.KurtosisInstructionResult.prototype.toObject = function(opt_includeInstance) {
-  return proto.api_container_api.KurtosisInstructionResult.toObject(opt_includeInstance, this);
+proto.api_container_api.StarlarkInstructionResult.prototype.toObject = function(opt_includeInstance) {
+  return proto.api_container_api.StarlarkInstructionResult.toObject(opt_includeInstance, this);
 };
 
 
@@ -5584,11 +4981,11 @@ proto.api_container_api.KurtosisInstructionResult.prototype.toObject = function(
  * @param {boolean|undefined} includeInstance Deprecated. Whether to include
  *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
- * @param {!proto.api_container_api.KurtosisInstructionResult} msg The msg instance to transform.
+ * @param {!proto.api_container_api.StarlarkInstructionResult} msg The msg instance to transform.
  * @return {!Object}
  * @suppress {unusedLocalVariables} f is only used for nested messages
  */
-proto.api_container_api.KurtosisInstructionResult.toObject = function(includeInstance, msg) {
+proto.api_container_api.StarlarkInstructionResult.toObject = function(includeInstance, msg) {
   var f, obj = {
     serializedInstructionResult: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
@@ -5604,23 +5001,23 @@ proto.api_container_api.KurtosisInstructionResult.toObject = function(includeIns
 /**
  * Deserializes binary data (in protobuf wire format).
  * @param {jspb.ByteSource} bytes The bytes to deserialize.
- * @return {!proto.api_container_api.KurtosisInstructionResult}
+ * @return {!proto.api_container_api.StarlarkInstructionResult}
  */
-proto.api_container_api.KurtosisInstructionResult.deserializeBinary = function(bytes) {
+proto.api_container_api.StarlarkInstructionResult.deserializeBinary = function(bytes) {
   var reader = new jspb.BinaryReader(bytes);
-  var msg = new proto.api_container_api.KurtosisInstructionResult;
-  return proto.api_container_api.KurtosisInstructionResult.deserializeBinaryFromReader(msg, reader);
+  var msg = new proto.api_container_api.StarlarkInstructionResult;
+  return proto.api_container_api.StarlarkInstructionResult.deserializeBinaryFromReader(msg, reader);
 };
 
 
 /**
  * Deserializes binary data (in protobuf wire format) from the
  * given reader into the given message object.
- * @param {!proto.api_container_api.KurtosisInstructionResult} msg The message object to deserialize into.
+ * @param {!proto.api_container_api.StarlarkInstructionResult} msg The message object to deserialize into.
  * @param {!jspb.BinaryReader} reader The BinaryReader to use.
- * @return {!proto.api_container_api.KurtosisInstructionResult}
+ * @return {!proto.api_container_api.StarlarkInstructionResult}
  */
-proto.api_container_api.KurtosisInstructionResult.deserializeBinaryFromReader = function(msg, reader) {
+proto.api_container_api.StarlarkInstructionResult.deserializeBinaryFromReader = function(msg, reader) {
   while (reader.nextField()) {
     if (reader.isEndGroup()) {
       break;
@@ -5644,9 +5041,9 @@ proto.api_container_api.KurtosisInstructionResult.deserializeBinaryFromReader = 
  * Serializes the message to binary data (in protobuf wire format).
  * @return {!Uint8Array}
  */
-proto.api_container_api.KurtosisInstructionResult.prototype.serializeBinary = function() {
+proto.api_container_api.StarlarkInstructionResult.prototype.serializeBinary = function() {
   var writer = new jspb.BinaryWriter();
-  proto.api_container_api.KurtosisInstructionResult.serializeBinaryToWriter(this, writer);
+  proto.api_container_api.StarlarkInstructionResult.serializeBinaryToWriter(this, writer);
   return writer.getResultBuffer();
 };
 
@@ -5654,11 +5051,11 @@ proto.api_container_api.KurtosisInstructionResult.prototype.serializeBinary = fu
 /**
  * Serializes the given message to binary data (in protobuf wire
  * format), writing to the given BinaryWriter.
- * @param {!proto.api_container_api.KurtosisInstructionResult} message
+ * @param {!proto.api_container_api.StarlarkInstructionResult} message
  * @param {!jspb.BinaryWriter} writer
  * @suppress {unusedLocalVariables} f is only used for nested messages
  */
-proto.api_container_api.KurtosisInstructionResult.serializeBinaryToWriter = function(message, writer) {
+proto.api_container_api.StarlarkInstructionResult.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
   f = message.getSerializedInstructionResult();
   if (f.length > 0) {
@@ -5674,16 +5071,16 @@ proto.api_container_api.KurtosisInstructionResult.serializeBinaryToWriter = func
  * optional string serialized_instruction_result = 1;
  * @return {string}
  */
-proto.api_container_api.KurtosisInstructionResult.prototype.getSerializedInstructionResult = function() {
+proto.api_container_api.StarlarkInstructionResult.prototype.getSerializedInstructionResult = function() {
   return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
 };
 
 
 /**
  * @param {string} value
- * @return {!proto.api_container_api.KurtosisInstructionResult} returns this
+ * @return {!proto.api_container_api.StarlarkInstructionResult} returns this
  */
-proto.api_container_api.KurtosisInstructionResult.prototype.setSerializedInstructionResult = function(value) {
+proto.api_container_api.StarlarkInstructionResult.prototype.setSerializedInstructionResult = function(value) {
   return jspb.Message.setProto3StringField(this, 1, value);
 };
 
@@ -5704,8 +5101,8 @@ if (jspb.Message.GENERATE_TO_OBJECT) {
  *     http://goto/soy-param-migration
  * @return {!Object}
  */
-proto.api_container_api.KurtosisInstructionArg.prototype.toObject = function(opt_includeInstance) {
-  return proto.api_container_api.KurtosisInstructionArg.toObject(opt_includeInstance, this);
+proto.api_container_api.StarlarkInstructionArg.prototype.toObject = function(opt_includeInstance) {
+  return proto.api_container_api.StarlarkInstructionArg.toObject(opt_includeInstance, this);
 };
 
 
@@ -5714,11 +5111,11 @@ proto.api_container_api.KurtosisInstructionArg.prototype.toObject = function(opt
  * @param {boolean|undefined} includeInstance Deprecated. Whether to include
  *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
- * @param {!proto.api_container_api.KurtosisInstructionArg} msg The msg instance to transform.
+ * @param {!proto.api_container_api.StarlarkInstructionArg} msg The msg instance to transform.
  * @return {!Object}
  * @suppress {unusedLocalVariables} f is only used for nested messages
  */
-proto.api_container_api.KurtosisInstructionArg.toObject = function(includeInstance, msg) {
+proto.api_container_api.StarlarkInstructionArg.toObject = function(includeInstance, msg) {
   var f, obj = {
     serializedArgValue: jspb.Message.getFieldWithDefault(msg, 1, ""),
     argName: jspb.Message.getFieldWithDefault(msg, 2, ""),
@@ -5736,23 +5133,23 @@ proto.api_container_api.KurtosisInstructionArg.toObject = function(includeInstan
 /**
  * Deserializes binary data (in protobuf wire format).
  * @param {jspb.ByteSource} bytes The bytes to deserialize.
- * @return {!proto.api_container_api.KurtosisInstructionArg}
+ * @return {!proto.api_container_api.StarlarkInstructionArg}
  */
-proto.api_container_api.KurtosisInstructionArg.deserializeBinary = function(bytes) {
+proto.api_container_api.StarlarkInstructionArg.deserializeBinary = function(bytes) {
   var reader = new jspb.BinaryReader(bytes);
-  var msg = new proto.api_container_api.KurtosisInstructionArg;
-  return proto.api_container_api.KurtosisInstructionArg.deserializeBinaryFromReader(msg, reader);
+  var msg = new proto.api_container_api.StarlarkInstructionArg;
+  return proto.api_container_api.StarlarkInstructionArg.deserializeBinaryFromReader(msg, reader);
 };
 
 
 /**
  * Deserializes binary data (in protobuf wire format) from the
  * given reader into the given message object.
- * @param {!proto.api_container_api.KurtosisInstructionArg} msg The message object to deserialize into.
+ * @param {!proto.api_container_api.StarlarkInstructionArg} msg The message object to deserialize into.
  * @param {!jspb.BinaryReader} reader The BinaryReader to use.
- * @return {!proto.api_container_api.KurtosisInstructionArg}
+ * @return {!proto.api_container_api.StarlarkInstructionArg}
  */
-proto.api_container_api.KurtosisInstructionArg.deserializeBinaryFromReader = function(msg, reader) {
+proto.api_container_api.StarlarkInstructionArg.deserializeBinaryFromReader = function(msg, reader) {
   while (reader.nextField()) {
     if (reader.isEndGroup()) {
       break;
@@ -5784,9 +5181,9 @@ proto.api_container_api.KurtosisInstructionArg.deserializeBinaryFromReader = fun
  * Serializes the message to binary data (in protobuf wire format).
  * @return {!Uint8Array}
  */
-proto.api_container_api.KurtosisInstructionArg.prototype.serializeBinary = function() {
+proto.api_container_api.StarlarkInstructionArg.prototype.serializeBinary = function() {
   var writer = new jspb.BinaryWriter();
-  proto.api_container_api.KurtosisInstructionArg.serializeBinaryToWriter(this, writer);
+  proto.api_container_api.StarlarkInstructionArg.serializeBinaryToWriter(this, writer);
   return writer.getResultBuffer();
 };
 
@@ -5794,11 +5191,11 @@ proto.api_container_api.KurtosisInstructionArg.prototype.serializeBinary = funct
 /**
  * Serializes the given message to binary data (in protobuf wire
  * format), writing to the given BinaryWriter.
- * @param {!proto.api_container_api.KurtosisInstructionArg} message
+ * @param {!proto.api_container_api.StarlarkInstructionArg} message
  * @param {!jspb.BinaryWriter} writer
  * @suppress {unusedLocalVariables} f is only used for nested messages
  */
-proto.api_container_api.KurtosisInstructionArg.serializeBinaryToWriter = function(message, writer) {
+proto.api_container_api.StarlarkInstructionArg.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
   f = message.getSerializedArgValue();
   if (f.length > 0) {
@@ -5828,16 +5225,16 @@ proto.api_container_api.KurtosisInstructionArg.serializeBinaryToWriter = functio
  * optional string serialized_arg_value = 1;
  * @return {string}
  */
-proto.api_container_api.KurtosisInstructionArg.prototype.getSerializedArgValue = function() {
+proto.api_container_api.StarlarkInstructionArg.prototype.getSerializedArgValue = function() {
   return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
 };
 
 
 /**
  * @param {string} value
- * @return {!proto.api_container_api.KurtosisInstructionArg} returns this
+ * @return {!proto.api_container_api.StarlarkInstructionArg} returns this
  */
-proto.api_container_api.KurtosisInstructionArg.prototype.setSerializedArgValue = function(value) {
+proto.api_container_api.StarlarkInstructionArg.prototype.setSerializedArgValue = function(value) {
   return jspb.Message.setProto3StringField(this, 1, value);
 };
 
@@ -5846,25 +5243,25 @@ proto.api_container_api.KurtosisInstructionArg.prototype.setSerializedArgValue =
  * optional string arg_name = 2;
  * @return {string}
  */
-proto.api_container_api.KurtosisInstructionArg.prototype.getArgName = function() {
+proto.api_container_api.StarlarkInstructionArg.prototype.getArgName = function() {
   return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, ""));
 };
 
 
 /**
  * @param {string} value
- * @return {!proto.api_container_api.KurtosisInstructionArg} returns this
+ * @return {!proto.api_container_api.StarlarkInstructionArg} returns this
  */
-proto.api_container_api.KurtosisInstructionArg.prototype.setArgName = function(value) {
+proto.api_container_api.StarlarkInstructionArg.prototype.setArgName = function(value) {
   return jspb.Message.setField(this, 2, value);
 };
 
 
 /**
  * Clears the field making it undefined.
- * @return {!proto.api_container_api.KurtosisInstructionArg} returns this
+ * @return {!proto.api_container_api.StarlarkInstructionArg} returns this
  */
-proto.api_container_api.KurtosisInstructionArg.prototype.clearArgName = function() {
+proto.api_container_api.StarlarkInstructionArg.prototype.clearArgName = function() {
   return jspb.Message.setField(this, 2, undefined);
 };
 
@@ -5873,7 +5270,7 @@ proto.api_container_api.KurtosisInstructionArg.prototype.clearArgName = function
  * Returns whether this field is set.
  * @return {boolean}
  */
-proto.api_container_api.KurtosisInstructionArg.prototype.hasArgName = function() {
+proto.api_container_api.StarlarkInstructionArg.prototype.hasArgName = function() {
   return jspb.Message.getField(this, 2) != null;
 };
 
@@ -5882,16 +5279,16 @@ proto.api_container_api.KurtosisInstructionArg.prototype.hasArgName = function()
  * optional bool is_representative = 3;
  * @return {boolean}
  */
-proto.api_container_api.KurtosisInstructionArg.prototype.getIsRepresentative = function() {
+proto.api_container_api.StarlarkInstructionArg.prototype.getIsRepresentative = function() {
   return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 3, false));
 };
 
 
 /**
  * @param {boolean} value
- * @return {!proto.api_container_api.KurtosisInstructionArg} returns this
+ * @return {!proto.api_container_api.StarlarkInstructionArg} returns this
  */
-proto.api_container_api.KurtosisInstructionArg.prototype.setIsRepresentative = function(value) {
+proto.api_container_api.StarlarkInstructionArg.prototype.setIsRepresentative = function(value) {
   return jspb.Message.setProto3BooleanField(this, 3, value);
 };
 
@@ -5912,8 +5309,8 @@ if (jspb.Message.GENERATE_TO_OBJECT) {
  *     http://goto/soy-param-migration
  * @return {!Object}
  */
-proto.api_container_api.KurtosisInstructionPosition.prototype.toObject = function(opt_includeInstance) {
-  return proto.api_container_api.KurtosisInstructionPosition.toObject(opt_includeInstance, this);
+proto.api_container_api.StarlarkInstructionPosition.prototype.toObject = function(opt_includeInstance) {
+  return proto.api_container_api.StarlarkInstructionPosition.toObject(opt_includeInstance, this);
 };
 
 
@@ -5922,11 +5319,11 @@ proto.api_container_api.KurtosisInstructionPosition.prototype.toObject = functio
  * @param {boolean|undefined} includeInstance Deprecated. Whether to include
  *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
- * @param {!proto.api_container_api.KurtosisInstructionPosition} msg The msg instance to transform.
+ * @param {!proto.api_container_api.StarlarkInstructionPosition} msg The msg instance to transform.
  * @return {!Object}
  * @suppress {unusedLocalVariables} f is only used for nested messages
  */
-proto.api_container_api.KurtosisInstructionPosition.toObject = function(includeInstance, msg) {
+proto.api_container_api.StarlarkInstructionPosition.toObject = function(includeInstance, msg) {
   var f, obj = {
     filename: jspb.Message.getFieldWithDefault(msg, 1, ""),
     line: jspb.Message.getFieldWithDefault(msg, 2, 0),
@@ -5944,23 +5341,23 @@ proto.api_container_api.KurtosisInstructionPosition.toObject = function(includeI
 /**
  * Deserializes binary data (in protobuf wire format).
  * @param {jspb.ByteSource} bytes The bytes to deserialize.
- * @return {!proto.api_container_api.KurtosisInstructionPosition}
+ * @return {!proto.api_container_api.StarlarkInstructionPosition}
  */
-proto.api_container_api.KurtosisInstructionPosition.deserializeBinary = function(bytes) {
+proto.api_container_api.StarlarkInstructionPosition.deserializeBinary = function(bytes) {
   var reader = new jspb.BinaryReader(bytes);
-  var msg = new proto.api_container_api.KurtosisInstructionPosition;
-  return proto.api_container_api.KurtosisInstructionPosition.deserializeBinaryFromReader(msg, reader);
+  var msg = new proto.api_container_api.StarlarkInstructionPosition;
+  return proto.api_container_api.StarlarkInstructionPosition.deserializeBinaryFromReader(msg, reader);
 };
 
 
 /**
  * Deserializes binary data (in protobuf wire format) from the
  * given reader into the given message object.
- * @param {!proto.api_container_api.KurtosisInstructionPosition} msg The message object to deserialize into.
+ * @param {!proto.api_container_api.StarlarkInstructionPosition} msg The message object to deserialize into.
  * @param {!jspb.BinaryReader} reader The BinaryReader to use.
- * @return {!proto.api_container_api.KurtosisInstructionPosition}
+ * @return {!proto.api_container_api.StarlarkInstructionPosition}
  */
-proto.api_container_api.KurtosisInstructionPosition.deserializeBinaryFromReader = function(msg, reader) {
+proto.api_container_api.StarlarkInstructionPosition.deserializeBinaryFromReader = function(msg, reader) {
   while (reader.nextField()) {
     if (reader.isEndGroup()) {
       break;
@@ -5992,9 +5389,9 @@ proto.api_container_api.KurtosisInstructionPosition.deserializeBinaryFromReader 
  * Serializes the message to binary data (in protobuf wire format).
  * @return {!Uint8Array}
  */
-proto.api_container_api.KurtosisInstructionPosition.prototype.serializeBinary = function() {
+proto.api_container_api.StarlarkInstructionPosition.prototype.serializeBinary = function() {
   var writer = new jspb.BinaryWriter();
-  proto.api_container_api.KurtosisInstructionPosition.serializeBinaryToWriter(this, writer);
+  proto.api_container_api.StarlarkInstructionPosition.serializeBinaryToWriter(this, writer);
   return writer.getResultBuffer();
 };
 
@@ -6002,11 +5399,11 @@ proto.api_container_api.KurtosisInstructionPosition.prototype.serializeBinary = 
 /**
  * Serializes the given message to binary data (in protobuf wire
  * format), writing to the given BinaryWriter.
- * @param {!proto.api_container_api.KurtosisInstructionPosition} message
+ * @param {!proto.api_container_api.StarlarkInstructionPosition} message
  * @param {!jspb.BinaryWriter} writer
  * @suppress {unusedLocalVariables} f is only used for nested messages
  */
-proto.api_container_api.KurtosisInstructionPosition.serializeBinaryToWriter = function(message, writer) {
+proto.api_container_api.StarlarkInstructionPosition.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
   f = message.getFilename();
   if (f.length > 0) {
@@ -6036,16 +5433,16 @@ proto.api_container_api.KurtosisInstructionPosition.serializeBinaryToWriter = fu
  * optional string filename = 1;
  * @return {string}
  */
-proto.api_container_api.KurtosisInstructionPosition.prototype.getFilename = function() {
+proto.api_container_api.StarlarkInstructionPosition.prototype.getFilename = function() {
   return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
 };
 
 
 /**
  * @param {string} value
- * @return {!proto.api_container_api.KurtosisInstructionPosition} returns this
+ * @return {!proto.api_container_api.StarlarkInstructionPosition} returns this
  */
-proto.api_container_api.KurtosisInstructionPosition.prototype.setFilename = function(value) {
+proto.api_container_api.StarlarkInstructionPosition.prototype.setFilename = function(value) {
   return jspb.Message.setProto3StringField(this, 1, value);
 };
 
@@ -6054,16 +5451,16 @@ proto.api_container_api.KurtosisInstructionPosition.prototype.setFilename = func
  * optional int32 line = 2;
  * @return {number}
  */
-proto.api_container_api.KurtosisInstructionPosition.prototype.getLine = function() {
+proto.api_container_api.StarlarkInstructionPosition.prototype.getLine = function() {
   return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 2, 0));
 };
 
 
 /**
  * @param {number} value
- * @return {!proto.api_container_api.KurtosisInstructionPosition} returns this
+ * @return {!proto.api_container_api.StarlarkInstructionPosition} returns this
  */
-proto.api_container_api.KurtosisInstructionPosition.prototype.setLine = function(value) {
+proto.api_container_api.StarlarkInstructionPosition.prototype.setLine = function(value) {
   return jspb.Message.setProto3IntField(this, 2, value);
 };
 
@@ -6072,16 +5469,16 @@ proto.api_container_api.KurtosisInstructionPosition.prototype.setLine = function
  * optional int32 column = 3;
  * @return {number}
  */
-proto.api_container_api.KurtosisInstructionPosition.prototype.getColumn = function() {
+proto.api_container_api.StarlarkInstructionPosition.prototype.getColumn = function() {
   return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 3, 0));
 };
 
 
 /**
  * @param {number} value
- * @return {!proto.api_container_api.KurtosisInstructionPosition} returns this
+ * @return {!proto.api_container_api.StarlarkInstructionPosition} returns this
  */
-proto.api_container_api.KurtosisInstructionPosition.prototype.setColumn = function(value) {
+proto.api_container_api.StarlarkInstructionPosition.prototype.setColumn = function(value) {
   return jspb.Message.setProto3IntField(this, 3, value);
 };
 
@@ -6095,12 +5492,12 @@ proto.api_container_api.KurtosisInstructionPosition.prototype.setColumn = functi
  * @private {!Array<!Array<number>>}
  * @const
  */
-proto.api_container_api.KurtosisError.oneofGroups_ = [[1,2,3]];
+proto.api_container_api.StarlarkError.oneofGroups_ = [[1,2,3]];
 
 /**
  * @enum {number}
  */
-proto.api_container_api.KurtosisError.ErrorCase = {
+proto.api_container_api.StarlarkError.ErrorCase = {
   ERROR_NOT_SET: 0,
   INTERPRETATION_ERROR: 1,
   VALIDATION_ERROR: 2,
@@ -6108,10 +5505,10 @@ proto.api_container_api.KurtosisError.ErrorCase = {
 };
 
 /**
- * @return {proto.api_container_api.KurtosisError.ErrorCase}
+ * @return {proto.api_container_api.StarlarkError.ErrorCase}
  */
-proto.api_container_api.KurtosisError.prototype.getErrorCase = function() {
-  return /** @type {proto.api_container_api.KurtosisError.ErrorCase} */(jspb.Message.computeOneofCase(this, proto.api_container_api.KurtosisError.oneofGroups_[0]));
+proto.api_container_api.StarlarkError.prototype.getErrorCase = function() {
+  return /** @type {proto.api_container_api.StarlarkError.ErrorCase} */(jspb.Message.computeOneofCase(this, proto.api_container_api.StarlarkError.oneofGroups_[0]));
 };
 
 
@@ -6129,8 +5526,8 @@ if (jspb.Message.GENERATE_TO_OBJECT) {
  *     http://goto/soy-param-migration
  * @return {!Object}
  */
-proto.api_container_api.KurtosisError.prototype.toObject = function(opt_includeInstance) {
-  return proto.api_container_api.KurtosisError.toObject(opt_includeInstance, this);
+proto.api_container_api.StarlarkError.prototype.toObject = function(opt_includeInstance) {
+  return proto.api_container_api.StarlarkError.toObject(opt_includeInstance, this);
 };
 
 
@@ -6139,15 +5536,15 @@ proto.api_container_api.KurtosisError.prototype.toObject = function(opt_includeI
  * @param {boolean|undefined} includeInstance Deprecated. Whether to include
  *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
- * @param {!proto.api_container_api.KurtosisError} msg The msg instance to transform.
+ * @param {!proto.api_container_api.StarlarkError} msg The msg instance to transform.
  * @return {!Object}
  * @suppress {unusedLocalVariables} f is only used for nested messages
  */
-proto.api_container_api.KurtosisError.toObject = function(includeInstance, msg) {
+proto.api_container_api.StarlarkError.toObject = function(includeInstance, msg) {
   var f, obj = {
-    interpretationError: (f = msg.getInterpretationError()) && proto.api_container_api.KurtosisInterpretationError.toObject(includeInstance, f),
-    validationError: (f = msg.getValidationError()) && proto.api_container_api.KurtosisValidationError.toObject(includeInstance, f),
-    executionError: (f = msg.getExecutionError()) && proto.api_container_api.KurtosisExecutionError.toObject(includeInstance, f)
+    interpretationError: (f = msg.getInterpretationError()) && proto.api_container_api.StarlarkInterpretationError.toObject(includeInstance, f),
+    validationError: (f = msg.getValidationError()) && proto.api_container_api.StarlarkValidationError.toObject(includeInstance, f),
+    executionError: (f = msg.getExecutionError()) && proto.api_container_api.StarlarkExecutionError.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -6161,23 +5558,23 @@ proto.api_container_api.KurtosisError.toObject = function(includeInstance, msg) 
 /**
  * Deserializes binary data (in protobuf wire format).
  * @param {jspb.ByteSource} bytes The bytes to deserialize.
- * @return {!proto.api_container_api.KurtosisError}
+ * @return {!proto.api_container_api.StarlarkError}
  */
-proto.api_container_api.KurtosisError.deserializeBinary = function(bytes) {
+proto.api_container_api.StarlarkError.deserializeBinary = function(bytes) {
   var reader = new jspb.BinaryReader(bytes);
-  var msg = new proto.api_container_api.KurtosisError;
-  return proto.api_container_api.KurtosisError.deserializeBinaryFromReader(msg, reader);
+  var msg = new proto.api_container_api.StarlarkError;
+  return proto.api_container_api.StarlarkError.deserializeBinaryFromReader(msg, reader);
 };
 
 
 /**
  * Deserializes binary data (in protobuf wire format) from the
  * given reader into the given message object.
- * @param {!proto.api_container_api.KurtosisError} msg The message object to deserialize into.
+ * @param {!proto.api_container_api.StarlarkError} msg The message object to deserialize into.
  * @param {!jspb.BinaryReader} reader The BinaryReader to use.
- * @return {!proto.api_container_api.KurtosisError}
+ * @return {!proto.api_container_api.StarlarkError}
  */
-proto.api_container_api.KurtosisError.deserializeBinaryFromReader = function(msg, reader) {
+proto.api_container_api.StarlarkError.deserializeBinaryFromReader = function(msg, reader) {
   while (reader.nextField()) {
     if (reader.isEndGroup()) {
       break;
@@ -6185,18 +5582,18 @@ proto.api_container_api.KurtosisError.deserializeBinaryFromReader = function(msg
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = new proto.api_container_api.KurtosisInterpretationError;
-      reader.readMessage(value,proto.api_container_api.KurtosisInterpretationError.deserializeBinaryFromReader);
+      var value = new proto.api_container_api.StarlarkInterpretationError;
+      reader.readMessage(value,proto.api_container_api.StarlarkInterpretationError.deserializeBinaryFromReader);
       msg.setInterpretationError(value);
       break;
     case 2:
-      var value = new proto.api_container_api.KurtosisValidationError;
-      reader.readMessage(value,proto.api_container_api.KurtosisValidationError.deserializeBinaryFromReader);
+      var value = new proto.api_container_api.StarlarkValidationError;
+      reader.readMessage(value,proto.api_container_api.StarlarkValidationError.deserializeBinaryFromReader);
       msg.setValidationError(value);
       break;
     case 3:
-      var value = new proto.api_container_api.KurtosisExecutionError;
-      reader.readMessage(value,proto.api_container_api.KurtosisExecutionError.deserializeBinaryFromReader);
+      var value = new proto.api_container_api.StarlarkExecutionError;
+      reader.readMessage(value,proto.api_container_api.StarlarkExecutionError.deserializeBinaryFromReader);
       msg.setExecutionError(value);
       break;
     default:
@@ -6212,9 +5609,9 @@ proto.api_container_api.KurtosisError.deserializeBinaryFromReader = function(msg
  * Serializes the message to binary data (in protobuf wire format).
  * @return {!Uint8Array}
  */
-proto.api_container_api.KurtosisError.prototype.serializeBinary = function() {
+proto.api_container_api.StarlarkError.prototype.serializeBinary = function() {
   var writer = new jspb.BinaryWriter();
-  proto.api_container_api.KurtosisError.serializeBinaryToWriter(this, writer);
+  proto.api_container_api.StarlarkError.serializeBinaryToWriter(this, writer);
   return writer.getResultBuffer();
 };
 
@@ -6222,18 +5619,18 @@ proto.api_container_api.KurtosisError.prototype.serializeBinary = function() {
 /**
  * Serializes the given message to binary data (in protobuf wire
  * format), writing to the given BinaryWriter.
- * @param {!proto.api_container_api.KurtosisError} message
+ * @param {!proto.api_container_api.StarlarkError} message
  * @param {!jspb.BinaryWriter} writer
  * @suppress {unusedLocalVariables} f is only used for nested messages
  */
-proto.api_container_api.KurtosisError.serializeBinaryToWriter = function(message, writer) {
+proto.api_container_api.StarlarkError.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
   f = message.getInterpretationError();
   if (f != null) {
     writer.writeMessage(
       1,
       f,
-      proto.api_container_api.KurtosisInterpretationError.serializeBinaryToWriter
+      proto.api_container_api.StarlarkInterpretationError.serializeBinaryToWriter
     );
   }
   f = message.getValidationError();
@@ -6241,7 +5638,7 @@ proto.api_container_api.KurtosisError.serializeBinaryToWriter = function(message
     writer.writeMessage(
       2,
       f,
-      proto.api_container_api.KurtosisValidationError.serializeBinaryToWriter
+      proto.api_container_api.StarlarkValidationError.serializeBinaryToWriter
     );
   }
   f = message.getExecutionError();
@@ -6249,36 +5646,36 @@ proto.api_container_api.KurtosisError.serializeBinaryToWriter = function(message
     writer.writeMessage(
       3,
       f,
-      proto.api_container_api.KurtosisExecutionError.serializeBinaryToWriter
+      proto.api_container_api.StarlarkExecutionError.serializeBinaryToWriter
     );
   }
 };
 
 
 /**
- * optional KurtosisInterpretationError interpretation_error = 1;
- * @return {?proto.api_container_api.KurtosisInterpretationError}
+ * optional StarlarkInterpretationError interpretation_error = 1;
+ * @return {?proto.api_container_api.StarlarkInterpretationError}
  */
-proto.api_container_api.KurtosisError.prototype.getInterpretationError = function() {
-  return /** @type{?proto.api_container_api.KurtosisInterpretationError} */ (
-    jspb.Message.getWrapperField(this, proto.api_container_api.KurtosisInterpretationError, 1));
+proto.api_container_api.StarlarkError.prototype.getInterpretationError = function() {
+  return /** @type{?proto.api_container_api.StarlarkInterpretationError} */ (
+    jspb.Message.getWrapperField(this, proto.api_container_api.StarlarkInterpretationError, 1));
 };
 
 
 /**
- * @param {?proto.api_container_api.KurtosisInterpretationError|undefined} value
- * @return {!proto.api_container_api.KurtosisError} returns this
+ * @param {?proto.api_container_api.StarlarkInterpretationError|undefined} value
+ * @return {!proto.api_container_api.StarlarkError} returns this
 */
-proto.api_container_api.KurtosisError.prototype.setInterpretationError = function(value) {
-  return jspb.Message.setOneofWrapperField(this, 1, proto.api_container_api.KurtosisError.oneofGroups_[0], value);
+proto.api_container_api.StarlarkError.prototype.setInterpretationError = function(value) {
+  return jspb.Message.setOneofWrapperField(this, 1, proto.api_container_api.StarlarkError.oneofGroups_[0], value);
 };
 
 
 /**
  * Clears the message field making it undefined.
- * @return {!proto.api_container_api.KurtosisError} returns this
+ * @return {!proto.api_container_api.StarlarkError} returns this
  */
-proto.api_container_api.KurtosisError.prototype.clearInterpretationError = function() {
+proto.api_container_api.StarlarkError.prototype.clearInterpretationError = function() {
   return this.setInterpretationError(undefined);
 };
 
@@ -6287,35 +5684,35 @@ proto.api_container_api.KurtosisError.prototype.clearInterpretationError = funct
  * Returns whether this field is set.
  * @return {boolean}
  */
-proto.api_container_api.KurtosisError.prototype.hasInterpretationError = function() {
+proto.api_container_api.StarlarkError.prototype.hasInterpretationError = function() {
   return jspb.Message.getField(this, 1) != null;
 };
 
 
 /**
- * optional KurtosisValidationError validation_error = 2;
- * @return {?proto.api_container_api.KurtosisValidationError}
+ * optional StarlarkValidationError validation_error = 2;
+ * @return {?proto.api_container_api.StarlarkValidationError}
  */
-proto.api_container_api.KurtosisError.prototype.getValidationError = function() {
-  return /** @type{?proto.api_container_api.KurtosisValidationError} */ (
-    jspb.Message.getWrapperField(this, proto.api_container_api.KurtosisValidationError, 2));
+proto.api_container_api.StarlarkError.prototype.getValidationError = function() {
+  return /** @type{?proto.api_container_api.StarlarkValidationError} */ (
+    jspb.Message.getWrapperField(this, proto.api_container_api.StarlarkValidationError, 2));
 };
 
 
 /**
- * @param {?proto.api_container_api.KurtosisValidationError|undefined} value
- * @return {!proto.api_container_api.KurtosisError} returns this
+ * @param {?proto.api_container_api.StarlarkValidationError|undefined} value
+ * @return {!proto.api_container_api.StarlarkError} returns this
 */
-proto.api_container_api.KurtosisError.prototype.setValidationError = function(value) {
-  return jspb.Message.setOneofWrapperField(this, 2, proto.api_container_api.KurtosisError.oneofGroups_[0], value);
+proto.api_container_api.StarlarkError.prototype.setValidationError = function(value) {
+  return jspb.Message.setOneofWrapperField(this, 2, proto.api_container_api.StarlarkError.oneofGroups_[0], value);
 };
 
 
 /**
  * Clears the message field making it undefined.
- * @return {!proto.api_container_api.KurtosisError} returns this
+ * @return {!proto.api_container_api.StarlarkError} returns this
  */
-proto.api_container_api.KurtosisError.prototype.clearValidationError = function() {
+proto.api_container_api.StarlarkError.prototype.clearValidationError = function() {
   return this.setValidationError(undefined);
 };
 
@@ -6324,35 +5721,35 @@ proto.api_container_api.KurtosisError.prototype.clearValidationError = function(
  * Returns whether this field is set.
  * @return {boolean}
  */
-proto.api_container_api.KurtosisError.prototype.hasValidationError = function() {
+proto.api_container_api.StarlarkError.prototype.hasValidationError = function() {
   return jspb.Message.getField(this, 2) != null;
 };
 
 
 /**
- * optional KurtosisExecutionError execution_error = 3;
- * @return {?proto.api_container_api.KurtosisExecutionError}
+ * optional StarlarkExecutionError execution_error = 3;
+ * @return {?proto.api_container_api.StarlarkExecutionError}
  */
-proto.api_container_api.KurtosisError.prototype.getExecutionError = function() {
-  return /** @type{?proto.api_container_api.KurtosisExecutionError} */ (
-    jspb.Message.getWrapperField(this, proto.api_container_api.KurtosisExecutionError, 3));
+proto.api_container_api.StarlarkError.prototype.getExecutionError = function() {
+  return /** @type{?proto.api_container_api.StarlarkExecutionError} */ (
+    jspb.Message.getWrapperField(this, proto.api_container_api.StarlarkExecutionError, 3));
 };
 
 
 /**
- * @param {?proto.api_container_api.KurtosisExecutionError|undefined} value
- * @return {!proto.api_container_api.KurtosisError} returns this
+ * @param {?proto.api_container_api.StarlarkExecutionError|undefined} value
+ * @return {!proto.api_container_api.StarlarkError} returns this
 */
-proto.api_container_api.KurtosisError.prototype.setExecutionError = function(value) {
-  return jspb.Message.setOneofWrapperField(this, 3, proto.api_container_api.KurtosisError.oneofGroups_[0], value);
+proto.api_container_api.StarlarkError.prototype.setExecutionError = function(value) {
+  return jspb.Message.setOneofWrapperField(this, 3, proto.api_container_api.StarlarkError.oneofGroups_[0], value);
 };
 
 
 /**
  * Clears the message field making it undefined.
- * @return {!proto.api_container_api.KurtosisError} returns this
+ * @return {!proto.api_container_api.StarlarkError} returns this
  */
-proto.api_container_api.KurtosisError.prototype.clearExecutionError = function() {
+proto.api_container_api.StarlarkError.prototype.clearExecutionError = function() {
   return this.setExecutionError(undefined);
 };
 
@@ -6361,39 +5758,11 @@ proto.api_container_api.KurtosisError.prototype.clearExecutionError = function()
  * Returns whether this field is set.
  * @return {boolean}
  */
-proto.api_container_api.KurtosisError.prototype.hasExecutionError = function() {
+proto.api_container_api.StarlarkError.prototype.hasExecutionError = function() {
   return jspb.Message.getField(this, 3) != null;
 };
 
 
-
-/**
- * Oneof group definitions for this message. Each group defines the field
- * numbers belonging to that group. When of these fields' value is set, all
- * other fields in the group are cleared. During deserialization, if multiple
- * fields are encountered for a group, only the last value seen will be kept.
- * @private {!Array<!Array<number>>}
- * @const
- */
-proto.api_container_api.KurtosisExecutionResponseLine.oneofGroups_ = [[1,2,3,4]];
-
-/**
- * @enum {number}
- */
-proto.api_container_api.KurtosisExecutionResponseLine.KurtosisExecutionResponseLineCase = {
-  KURTOSIS_EXECUTION_RESPONSE_LINE_NOT_SET: 0,
-  INSTRUCTION: 1,
-  ERROR: 2,
-  PROGRESS_INFO: 3,
-  INSTRUCTION_RESULT: 4
-};
-
-/**
- * @return {proto.api_container_api.KurtosisExecutionResponseLine.KurtosisExecutionResponseLineCase}
- */
-proto.api_container_api.KurtosisExecutionResponseLine.prototype.getKurtosisExecutionResponseLineCase = function() {
-  return /** @type {proto.api_container_api.KurtosisExecutionResponseLine.KurtosisExecutionResponseLineCase} */(jspb.Message.computeOneofCase(this, proto.api_container_api.KurtosisExecutionResponseLine.oneofGroups_[0]));
-};
 
 
 
@@ -6410,8 +5779,8 @@ if (jspb.Message.GENERATE_TO_OBJECT) {
  *     http://goto/soy-param-migration
  * @return {!Object}
  */
-proto.api_container_api.KurtosisExecutionResponseLine.prototype.toObject = function(opt_includeInstance) {
-  return proto.api_container_api.KurtosisExecutionResponseLine.toObject(opt_includeInstance, this);
+proto.api_container_api.StarlarkInterpretationError.prototype.toObject = function(opt_includeInstance) {
+  return proto.api_container_api.StarlarkInterpretationError.toObject(opt_includeInstance, this);
 };
 
 
@@ -6420,16 +5789,13 @@ proto.api_container_api.KurtosisExecutionResponseLine.prototype.toObject = funct
  * @param {boolean|undefined} includeInstance Deprecated. Whether to include
  *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
- * @param {!proto.api_container_api.KurtosisExecutionResponseLine} msg The msg instance to transform.
+ * @param {!proto.api_container_api.StarlarkInterpretationError} msg The msg instance to transform.
  * @return {!Object}
  * @suppress {unusedLocalVariables} f is only used for nested messages
  */
-proto.api_container_api.KurtosisExecutionResponseLine.toObject = function(includeInstance, msg) {
+proto.api_container_api.StarlarkInterpretationError.toObject = function(includeInstance, msg) {
   var f, obj = {
-    instruction: (f = msg.getInstruction()) && proto.api_container_api.KurtosisInstruction.toObject(includeInstance, f),
-    error: (f = msg.getError()) && proto.api_container_api.KurtosisError.toObject(includeInstance, f),
-    progressInfo: (f = msg.getProgressInfo()) && proto.api_container_api.KurtosisExecutionProgress.toObject(includeInstance, f),
-    instructionResult: (f = msg.getInstructionResult()) && proto.api_container_api.KurtosisInstructionResult.toObject(includeInstance, f)
+    errorMessage: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -6443,23 +5809,23 @@ proto.api_container_api.KurtosisExecutionResponseLine.toObject = function(includ
 /**
  * Deserializes binary data (in protobuf wire format).
  * @param {jspb.ByteSource} bytes The bytes to deserialize.
- * @return {!proto.api_container_api.KurtosisExecutionResponseLine}
+ * @return {!proto.api_container_api.StarlarkInterpretationError}
  */
-proto.api_container_api.KurtosisExecutionResponseLine.deserializeBinary = function(bytes) {
+proto.api_container_api.StarlarkInterpretationError.deserializeBinary = function(bytes) {
   var reader = new jspb.BinaryReader(bytes);
-  var msg = new proto.api_container_api.KurtosisExecutionResponseLine;
-  return proto.api_container_api.KurtosisExecutionResponseLine.deserializeBinaryFromReader(msg, reader);
+  var msg = new proto.api_container_api.StarlarkInterpretationError;
+  return proto.api_container_api.StarlarkInterpretationError.deserializeBinaryFromReader(msg, reader);
 };
 
 
 /**
  * Deserializes binary data (in protobuf wire format) from the
  * given reader into the given message object.
- * @param {!proto.api_container_api.KurtosisExecutionResponseLine} msg The message object to deserialize into.
+ * @param {!proto.api_container_api.StarlarkInterpretationError} msg The message object to deserialize into.
  * @param {!jspb.BinaryReader} reader The BinaryReader to use.
- * @return {!proto.api_container_api.KurtosisExecutionResponseLine}
+ * @return {!proto.api_container_api.StarlarkInterpretationError}
  */
-proto.api_container_api.KurtosisExecutionResponseLine.deserializeBinaryFromReader = function(msg, reader) {
+proto.api_container_api.StarlarkInterpretationError.deserializeBinaryFromReader = function(msg, reader) {
   while (reader.nextField()) {
     if (reader.isEndGroup()) {
       break;
@@ -6467,24 +5833,8 @@ proto.api_container_api.KurtosisExecutionResponseLine.deserializeBinaryFromReade
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = new proto.api_container_api.KurtosisInstruction;
-      reader.readMessage(value,proto.api_container_api.KurtosisInstruction.deserializeBinaryFromReader);
-      msg.setInstruction(value);
-      break;
-    case 2:
-      var value = new proto.api_container_api.KurtosisError;
-      reader.readMessage(value,proto.api_container_api.KurtosisError.deserializeBinaryFromReader);
-      msg.setError(value);
-      break;
-    case 3:
-      var value = new proto.api_container_api.KurtosisExecutionProgress;
-      reader.readMessage(value,proto.api_container_api.KurtosisExecutionProgress.deserializeBinaryFromReader);
-      msg.setProgressInfo(value);
-      break;
-    case 4:
-      var value = new proto.api_container_api.KurtosisInstructionResult;
-      reader.readMessage(value,proto.api_container_api.KurtosisInstructionResult.deserializeBinaryFromReader);
-      msg.setInstructionResult(value);
+      var value = /** @type {string} */ (reader.readString());
+      msg.setErrorMessage(value);
       break;
     default:
       reader.skipField();
@@ -6499,9 +5849,9 @@ proto.api_container_api.KurtosisExecutionResponseLine.deserializeBinaryFromReade
  * Serializes the message to binary data (in protobuf wire format).
  * @return {!Uint8Array}
  */
-proto.api_container_api.KurtosisExecutionResponseLine.prototype.serializeBinary = function() {
+proto.api_container_api.StarlarkInterpretationError.prototype.serializeBinary = function() {
   var writer = new jspb.BinaryWriter();
-  proto.api_container_api.KurtosisExecutionResponseLine.serializeBinaryToWriter(this, writer);
+  proto.api_container_api.StarlarkInterpretationError.serializeBinaryToWriter(this, writer);
   return writer.getResultBuffer();
 };
 
@@ -6509,192 +5859,37 @@ proto.api_container_api.KurtosisExecutionResponseLine.prototype.serializeBinary 
 /**
  * Serializes the given message to binary data (in protobuf wire
  * format), writing to the given BinaryWriter.
- * @param {!proto.api_container_api.KurtosisExecutionResponseLine} message
+ * @param {!proto.api_container_api.StarlarkInterpretationError} message
  * @param {!jspb.BinaryWriter} writer
  * @suppress {unusedLocalVariables} f is only used for nested messages
  */
-proto.api_container_api.KurtosisExecutionResponseLine.serializeBinaryToWriter = function(message, writer) {
+proto.api_container_api.StarlarkInterpretationError.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
-  f = message.getInstruction();
-  if (f != null) {
-    writer.writeMessage(
+  f = message.getErrorMessage();
+  if (f.length > 0) {
+    writer.writeString(
       1,
-      f,
-      proto.api_container_api.KurtosisInstruction.serializeBinaryToWriter
-    );
-  }
-  f = message.getError();
-  if (f != null) {
-    writer.writeMessage(
-      2,
-      f,
-      proto.api_container_api.KurtosisError.serializeBinaryToWriter
-    );
-  }
-  f = message.getProgressInfo();
-  if (f != null) {
-    writer.writeMessage(
-      3,
-      f,
-      proto.api_container_api.KurtosisExecutionProgress.serializeBinaryToWriter
-    );
-  }
-  f = message.getInstructionResult();
-  if (f != null) {
-    writer.writeMessage(
-      4,
-      f,
-      proto.api_container_api.KurtosisInstructionResult.serializeBinaryToWriter
+      f
     );
   }
 };
 
 
 /**
- * optional KurtosisInstruction instruction = 1;
- * @return {?proto.api_container_api.KurtosisInstruction}
+ * optional string error_message = 1;
+ * @return {string}
  */
-proto.api_container_api.KurtosisExecutionResponseLine.prototype.getInstruction = function() {
-  return /** @type{?proto.api_container_api.KurtosisInstruction} */ (
-    jspb.Message.getWrapperField(this, proto.api_container_api.KurtosisInstruction, 1));
+proto.api_container_api.StarlarkInterpretationError.prototype.getErrorMessage = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
 };
 
 
 /**
- * @param {?proto.api_container_api.KurtosisInstruction|undefined} value
- * @return {!proto.api_container_api.KurtosisExecutionResponseLine} returns this
-*/
-proto.api_container_api.KurtosisExecutionResponseLine.prototype.setInstruction = function(value) {
-  return jspb.Message.setOneofWrapperField(this, 1, proto.api_container_api.KurtosisExecutionResponseLine.oneofGroups_[0], value);
-};
-
-
-/**
- * Clears the message field making it undefined.
- * @return {!proto.api_container_api.KurtosisExecutionResponseLine} returns this
+ * @param {string} value
+ * @return {!proto.api_container_api.StarlarkInterpretationError} returns this
  */
-proto.api_container_api.KurtosisExecutionResponseLine.prototype.clearInstruction = function() {
-  return this.setInstruction(undefined);
-};
-
-
-/**
- * Returns whether this field is set.
- * @return {boolean}
- */
-proto.api_container_api.KurtosisExecutionResponseLine.prototype.hasInstruction = function() {
-  return jspb.Message.getField(this, 1) != null;
-};
-
-
-/**
- * optional KurtosisError error = 2;
- * @return {?proto.api_container_api.KurtosisError}
- */
-proto.api_container_api.KurtosisExecutionResponseLine.prototype.getError = function() {
-  return /** @type{?proto.api_container_api.KurtosisError} */ (
-    jspb.Message.getWrapperField(this, proto.api_container_api.KurtosisError, 2));
-};
-
-
-/**
- * @param {?proto.api_container_api.KurtosisError|undefined} value
- * @return {!proto.api_container_api.KurtosisExecutionResponseLine} returns this
-*/
-proto.api_container_api.KurtosisExecutionResponseLine.prototype.setError = function(value) {
-  return jspb.Message.setOneofWrapperField(this, 2, proto.api_container_api.KurtosisExecutionResponseLine.oneofGroups_[0], value);
-};
-
-
-/**
- * Clears the message field making it undefined.
- * @return {!proto.api_container_api.KurtosisExecutionResponseLine} returns this
- */
-proto.api_container_api.KurtosisExecutionResponseLine.prototype.clearError = function() {
-  return this.setError(undefined);
-};
-
-
-/**
- * Returns whether this field is set.
- * @return {boolean}
- */
-proto.api_container_api.KurtosisExecutionResponseLine.prototype.hasError = function() {
-  return jspb.Message.getField(this, 2) != null;
-};
-
-
-/**
- * optional KurtosisExecutionProgress progress_info = 3;
- * @return {?proto.api_container_api.KurtosisExecutionProgress}
- */
-proto.api_container_api.KurtosisExecutionResponseLine.prototype.getProgressInfo = function() {
-  return /** @type{?proto.api_container_api.KurtosisExecutionProgress} */ (
-    jspb.Message.getWrapperField(this, proto.api_container_api.KurtosisExecutionProgress, 3));
-};
-
-
-/**
- * @param {?proto.api_container_api.KurtosisExecutionProgress|undefined} value
- * @return {!proto.api_container_api.KurtosisExecutionResponseLine} returns this
-*/
-proto.api_container_api.KurtosisExecutionResponseLine.prototype.setProgressInfo = function(value) {
-  return jspb.Message.setOneofWrapperField(this, 3, proto.api_container_api.KurtosisExecutionResponseLine.oneofGroups_[0], value);
-};
-
-
-/**
- * Clears the message field making it undefined.
- * @return {!proto.api_container_api.KurtosisExecutionResponseLine} returns this
- */
-proto.api_container_api.KurtosisExecutionResponseLine.prototype.clearProgressInfo = function() {
-  return this.setProgressInfo(undefined);
-};
-
-
-/**
- * Returns whether this field is set.
- * @return {boolean}
- */
-proto.api_container_api.KurtosisExecutionResponseLine.prototype.hasProgressInfo = function() {
-  return jspb.Message.getField(this, 3) != null;
-};
-
-
-/**
- * optional KurtosisInstructionResult instruction_result = 4;
- * @return {?proto.api_container_api.KurtosisInstructionResult}
- */
-proto.api_container_api.KurtosisExecutionResponseLine.prototype.getInstructionResult = function() {
-  return /** @type{?proto.api_container_api.KurtosisInstructionResult} */ (
-    jspb.Message.getWrapperField(this, proto.api_container_api.KurtosisInstructionResult, 4));
-};
-
-
-/**
- * @param {?proto.api_container_api.KurtosisInstructionResult|undefined} value
- * @return {!proto.api_container_api.KurtosisExecutionResponseLine} returns this
-*/
-proto.api_container_api.KurtosisExecutionResponseLine.prototype.setInstructionResult = function(value) {
-  return jspb.Message.setOneofWrapperField(this, 4, proto.api_container_api.KurtosisExecutionResponseLine.oneofGroups_[0], value);
-};
-
-
-/**
- * Clears the message field making it undefined.
- * @return {!proto.api_container_api.KurtosisExecutionResponseLine} returns this
- */
-proto.api_container_api.KurtosisExecutionResponseLine.prototype.clearInstructionResult = function() {
-  return this.setInstructionResult(undefined);
-};
-
-
-/**
- * Returns whether this field is set.
- * @return {boolean}
- */
-proto.api_container_api.KurtosisExecutionResponseLine.prototype.hasInstructionResult = function() {
-  return jspb.Message.getField(this, 4) != null;
+proto.api_container_api.StarlarkInterpretationError.prototype.setErrorMessage = function(value) {
+  return jspb.Message.setProto3StringField(this, 1, value);
 };
 
 
@@ -6714,8 +5909,8 @@ if (jspb.Message.GENERATE_TO_OBJECT) {
  *     http://goto/soy-param-migration
  * @return {!Object}
  */
-proto.api_container_api.KurtosisExecutionProgress.prototype.toObject = function(opt_includeInstance) {
-  return proto.api_container_api.KurtosisExecutionProgress.toObject(opt_includeInstance, this);
+proto.api_container_api.StarlarkValidationError.prototype.toObject = function(opt_includeInstance) {
+  return proto.api_container_api.StarlarkValidationError.toObject(opt_includeInstance, this);
 };
 
 
@@ -6724,11 +5919,271 @@ proto.api_container_api.KurtosisExecutionProgress.prototype.toObject = function(
  * @param {boolean|undefined} includeInstance Deprecated. Whether to include
  *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
- * @param {!proto.api_container_api.KurtosisExecutionProgress} msg The msg instance to transform.
+ * @param {!proto.api_container_api.StarlarkValidationError} msg The msg instance to transform.
  * @return {!Object}
  * @suppress {unusedLocalVariables} f is only used for nested messages
  */
-proto.api_container_api.KurtosisExecutionProgress.toObject = function(includeInstance, msg) {
+proto.api_container_api.StarlarkValidationError.toObject = function(includeInstance, msg) {
+  var f, obj = {
+    errorMessage: jspb.Message.getFieldWithDefault(msg, 1, "")
+  };
+
+  if (includeInstance) {
+    obj.$jspbMessageInstance = msg;
+  }
+  return obj;
+};
+}
+
+
+/**
+ * Deserializes binary data (in protobuf wire format).
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @return {!proto.api_container_api.StarlarkValidationError}
+ */
+proto.api_container_api.StarlarkValidationError.deserializeBinary = function(bytes) {
+  var reader = new jspb.BinaryReader(bytes);
+  var msg = new proto.api_container_api.StarlarkValidationError;
+  return proto.api_container_api.StarlarkValidationError.deserializeBinaryFromReader(msg, reader);
+};
+
+
+/**
+ * Deserializes binary data (in protobuf wire format) from the
+ * given reader into the given message object.
+ * @param {!proto.api_container_api.StarlarkValidationError} msg The message object to deserialize into.
+ * @param {!jspb.BinaryReader} reader The BinaryReader to use.
+ * @return {!proto.api_container_api.StarlarkValidationError}
+ */
+proto.api_container_api.StarlarkValidationError.deserializeBinaryFromReader = function(msg, reader) {
+  while (reader.nextField()) {
+    if (reader.isEndGroup()) {
+      break;
+    }
+    var field = reader.getFieldNumber();
+    switch (field) {
+    case 1:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setErrorMessage(value);
+      break;
+    default:
+      reader.skipField();
+      break;
+    }
+  }
+  return msg;
+};
+
+
+/**
+ * Serializes the message to binary data (in protobuf wire format).
+ * @return {!Uint8Array}
+ */
+proto.api_container_api.StarlarkValidationError.prototype.serializeBinary = function() {
+  var writer = new jspb.BinaryWriter();
+  proto.api_container_api.StarlarkValidationError.serializeBinaryToWriter(this, writer);
+  return writer.getResultBuffer();
+};
+
+
+/**
+ * Serializes the given message to binary data (in protobuf wire
+ * format), writing to the given BinaryWriter.
+ * @param {!proto.api_container_api.StarlarkValidationError} message
+ * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.api_container_api.StarlarkValidationError.serializeBinaryToWriter = function(message, writer) {
+  var f = undefined;
+  f = message.getErrorMessage();
+  if (f.length > 0) {
+    writer.writeString(
+      1,
+      f
+    );
+  }
+};
+
+
+/**
+ * optional string error_message = 1;
+ * @return {string}
+ */
+proto.api_container_api.StarlarkValidationError.prototype.getErrorMessage = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.api_container_api.StarlarkValidationError} returns this
+ */
+proto.api_container_api.StarlarkValidationError.prototype.setErrorMessage = function(value) {
+  return jspb.Message.setProto3StringField(this, 1, value);
+};
+
+
+
+
+
+if (jspb.Message.GENERATE_TO_OBJECT) {
+/**
+ * Creates an object representation of this proto.
+ * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
+ * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
+ * For the list of reserved names please see:
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @return {!Object}
+ */
+proto.api_container_api.StarlarkExecutionError.prototype.toObject = function(opt_includeInstance) {
+  return proto.api_container_api.StarlarkExecutionError.toObject(opt_includeInstance, this);
+};
+
+
+/**
+ * Static version of the {@see toObject} method.
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @param {!proto.api_container_api.StarlarkExecutionError} msg The msg instance to transform.
+ * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.api_container_api.StarlarkExecutionError.toObject = function(includeInstance, msg) {
+  var f, obj = {
+    errorMessage: jspb.Message.getFieldWithDefault(msg, 1, "")
+  };
+
+  if (includeInstance) {
+    obj.$jspbMessageInstance = msg;
+  }
+  return obj;
+};
+}
+
+
+/**
+ * Deserializes binary data (in protobuf wire format).
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @return {!proto.api_container_api.StarlarkExecutionError}
+ */
+proto.api_container_api.StarlarkExecutionError.deserializeBinary = function(bytes) {
+  var reader = new jspb.BinaryReader(bytes);
+  var msg = new proto.api_container_api.StarlarkExecutionError;
+  return proto.api_container_api.StarlarkExecutionError.deserializeBinaryFromReader(msg, reader);
+};
+
+
+/**
+ * Deserializes binary data (in protobuf wire format) from the
+ * given reader into the given message object.
+ * @param {!proto.api_container_api.StarlarkExecutionError} msg The message object to deserialize into.
+ * @param {!jspb.BinaryReader} reader The BinaryReader to use.
+ * @return {!proto.api_container_api.StarlarkExecutionError}
+ */
+proto.api_container_api.StarlarkExecutionError.deserializeBinaryFromReader = function(msg, reader) {
+  while (reader.nextField()) {
+    if (reader.isEndGroup()) {
+      break;
+    }
+    var field = reader.getFieldNumber();
+    switch (field) {
+    case 1:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setErrorMessage(value);
+      break;
+    default:
+      reader.skipField();
+      break;
+    }
+  }
+  return msg;
+};
+
+
+/**
+ * Serializes the message to binary data (in protobuf wire format).
+ * @return {!Uint8Array}
+ */
+proto.api_container_api.StarlarkExecutionError.prototype.serializeBinary = function() {
+  var writer = new jspb.BinaryWriter();
+  proto.api_container_api.StarlarkExecutionError.serializeBinaryToWriter(this, writer);
+  return writer.getResultBuffer();
+};
+
+
+/**
+ * Serializes the given message to binary data (in protobuf wire
+ * format), writing to the given BinaryWriter.
+ * @param {!proto.api_container_api.StarlarkExecutionError} message
+ * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.api_container_api.StarlarkExecutionError.serializeBinaryToWriter = function(message, writer) {
+  var f = undefined;
+  f = message.getErrorMessage();
+  if (f.length > 0) {
+    writer.writeString(
+      1,
+      f
+    );
+  }
+};
+
+
+/**
+ * optional string error_message = 1;
+ * @return {string}
+ */
+proto.api_container_api.StarlarkExecutionError.prototype.getErrorMessage = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.api_container_api.StarlarkExecutionError} returns this
+ */
+proto.api_container_api.StarlarkExecutionError.prototype.setErrorMessage = function(value) {
+  return jspb.Message.setProto3StringField(this, 1, value);
+};
+
+
+
+
+
+if (jspb.Message.GENERATE_TO_OBJECT) {
+/**
+ * Creates an object representation of this proto.
+ * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
+ * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
+ * For the list of reserved names please see:
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @return {!Object}
+ */
+proto.api_container_api.StarlarkExecutionProgress.prototype.toObject = function(opt_includeInstance) {
+  return proto.api_container_api.StarlarkExecutionProgress.toObject(opt_includeInstance, this);
+};
+
+
+/**
+ * Static version of the {@see toObject} method.
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @param {!proto.api_container_api.StarlarkExecutionProgress} msg The msg instance to transform.
+ * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.api_container_api.StarlarkExecutionProgress.toObject = function(includeInstance, msg) {
   var f, obj = {
     currentStepInfo: jspb.Message.getFieldWithDefault(msg, 1, ""),
     totalSteps: jspb.Message.getFieldWithDefault(msg, 2, 0),
@@ -6746,23 +6201,23 @@ proto.api_container_api.KurtosisExecutionProgress.toObject = function(includeIns
 /**
  * Deserializes binary data (in protobuf wire format).
  * @param {jspb.ByteSource} bytes The bytes to deserialize.
- * @return {!proto.api_container_api.KurtosisExecutionProgress}
+ * @return {!proto.api_container_api.StarlarkExecutionProgress}
  */
-proto.api_container_api.KurtosisExecutionProgress.deserializeBinary = function(bytes) {
+proto.api_container_api.StarlarkExecutionProgress.deserializeBinary = function(bytes) {
   var reader = new jspb.BinaryReader(bytes);
-  var msg = new proto.api_container_api.KurtosisExecutionProgress;
-  return proto.api_container_api.KurtosisExecutionProgress.deserializeBinaryFromReader(msg, reader);
+  var msg = new proto.api_container_api.StarlarkExecutionProgress;
+  return proto.api_container_api.StarlarkExecutionProgress.deserializeBinaryFromReader(msg, reader);
 };
 
 
 /**
  * Deserializes binary data (in protobuf wire format) from the
  * given reader into the given message object.
- * @param {!proto.api_container_api.KurtosisExecutionProgress} msg The message object to deserialize into.
+ * @param {!proto.api_container_api.StarlarkExecutionProgress} msg The message object to deserialize into.
  * @param {!jspb.BinaryReader} reader The BinaryReader to use.
- * @return {!proto.api_container_api.KurtosisExecutionProgress}
+ * @return {!proto.api_container_api.StarlarkExecutionProgress}
  */
-proto.api_container_api.KurtosisExecutionProgress.deserializeBinaryFromReader = function(msg, reader) {
+proto.api_container_api.StarlarkExecutionProgress.deserializeBinaryFromReader = function(msg, reader) {
   while (reader.nextField()) {
     if (reader.isEndGroup()) {
       break;
@@ -6794,9 +6249,9 @@ proto.api_container_api.KurtosisExecutionProgress.deserializeBinaryFromReader = 
  * Serializes the message to binary data (in protobuf wire format).
  * @return {!Uint8Array}
  */
-proto.api_container_api.KurtosisExecutionProgress.prototype.serializeBinary = function() {
+proto.api_container_api.StarlarkExecutionProgress.prototype.serializeBinary = function() {
   var writer = new jspb.BinaryWriter();
-  proto.api_container_api.KurtosisExecutionProgress.serializeBinaryToWriter(this, writer);
+  proto.api_container_api.StarlarkExecutionProgress.serializeBinaryToWriter(this, writer);
   return writer.getResultBuffer();
 };
 
@@ -6804,11 +6259,11 @@ proto.api_container_api.KurtosisExecutionProgress.prototype.serializeBinary = fu
 /**
  * Serializes the given message to binary data (in protobuf wire
  * format), writing to the given BinaryWriter.
- * @param {!proto.api_container_api.KurtosisExecutionProgress} message
+ * @param {!proto.api_container_api.StarlarkExecutionProgress} message
  * @param {!jspb.BinaryWriter} writer
  * @suppress {unusedLocalVariables} f is only used for nested messages
  */
-proto.api_container_api.KurtosisExecutionProgress.serializeBinaryToWriter = function(message, writer) {
+proto.api_container_api.StarlarkExecutionProgress.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
   f = message.getCurrentStepInfo();
   if (f.length > 0) {
@@ -6838,16 +6293,16 @@ proto.api_container_api.KurtosisExecutionProgress.serializeBinaryToWriter = func
  * optional string current_step_info = 1;
  * @return {string}
  */
-proto.api_container_api.KurtosisExecutionProgress.prototype.getCurrentStepInfo = function() {
+proto.api_container_api.StarlarkExecutionProgress.prototype.getCurrentStepInfo = function() {
   return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
 };
 
 
 /**
  * @param {string} value
- * @return {!proto.api_container_api.KurtosisExecutionProgress} returns this
+ * @return {!proto.api_container_api.StarlarkExecutionProgress} returns this
  */
-proto.api_container_api.KurtosisExecutionProgress.prototype.setCurrentStepInfo = function(value) {
+proto.api_container_api.StarlarkExecutionProgress.prototype.setCurrentStepInfo = function(value) {
   return jspb.Message.setProto3StringField(this, 1, value);
 };
 
@@ -6856,16 +6311,16 @@ proto.api_container_api.KurtosisExecutionProgress.prototype.setCurrentStepInfo =
  * optional uint32 total_steps = 2;
  * @return {number}
  */
-proto.api_container_api.KurtosisExecutionProgress.prototype.getTotalSteps = function() {
+proto.api_container_api.StarlarkExecutionProgress.prototype.getTotalSteps = function() {
   return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 2, 0));
 };
 
 
 /**
  * @param {number} value
- * @return {!proto.api_container_api.KurtosisExecutionProgress} returns this
+ * @return {!proto.api_container_api.StarlarkExecutionProgress} returns this
  */
-proto.api_container_api.KurtosisExecutionProgress.prototype.setTotalSteps = function(value) {
+proto.api_container_api.StarlarkExecutionProgress.prototype.setTotalSteps = function(value) {
   return jspb.Message.setProto3IntField(this, 2, value);
 };
 
@@ -6874,16 +6329,16 @@ proto.api_container_api.KurtosisExecutionProgress.prototype.setTotalSteps = func
  * optional uint32 current_step_number = 3;
  * @return {number}
  */
-proto.api_container_api.KurtosisExecutionProgress.prototype.getCurrentStepNumber = function() {
+proto.api_container_api.StarlarkExecutionProgress.prototype.getCurrentStepNumber = function() {
   return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 3, 0));
 };
 
 
 /**
  * @param {number} value
- * @return {!proto.api_container_api.KurtosisExecutionProgress} returns this
+ * @return {!proto.api_container_api.StarlarkExecutionProgress} returns this
  */
-proto.api_container_api.KurtosisExecutionProgress.prototype.setCurrentStepNumber = function(value) {
+proto.api_container_api.StarlarkExecutionProgress.prototype.setCurrentStepNumber = function(value) {
   return jspb.Message.setProto3IntField(this, 3, value);
 };
 

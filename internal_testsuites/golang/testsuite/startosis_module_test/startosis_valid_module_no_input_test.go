@@ -33,7 +33,7 @@ func TestStartosisModule_ValidModuleNoInput(t *testing.T) {
 
 	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
 
-	outputStream, _, err := enclaveCtx.ExecuteKurtosisModule(ctx, moduleDirpath, emptyExecuteParams, defaultDryRun)
+	outputStream, _, err := enclaveCtx.ExecuteStarlarkPackage(ctx, moduleDirpath, emptyExecuteParams, defaultDryRun)
 	require.Nil(t, err, "Unexpected error executing startosis module")
 	scriptOutput, _, interpretationError, validationErrors, executionError := test_helpers.ReadStreamContentUntilClosed(outputStream)
 
@@ -65,7 +65,7 @@ func TestStartosisModule_ValidModuleNoInput_PassingParamsAlsoWorks(t *testing.T)
 	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
 
 	params := `{"greetings": "bonjour!"}`
-	outputStream, _, err := enclaveCtx.ExecuteKurtosisModule(ctx, moduleDirpath, params, defaultDryRun)
+	outputStream, _, err := enclaveCtx.ExecuteStarlarkPackage(ctx, moduleDirpath, params, defaultDryRun)
 	require.Nil(t, err, "Unexpected error executing startosis module")
 	scriptOutput, _, interpretationError, validationErrors, executionError := test_helpers.ReadStreamContentUntilClosed(outputStream)
 

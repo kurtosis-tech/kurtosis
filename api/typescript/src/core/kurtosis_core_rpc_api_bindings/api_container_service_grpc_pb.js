@@ -95,37 +95,26 @@ function deserialize_api_container_api_ExecuteModuleResponse(buffer_arg) {
   return api_container_service_pb.ExecuteModuleResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
-function serialize_api_container_api_ExecuteStartosisModuleArgs(arg) {
-  if (!(arg instanceof api_container_service_pb.ExecuteStartosisModuleArgs)) {
-    throw new Error('Expected argument of type api_container_api.ExecuteStartosisModuleArgs');
+function serialize_api_container_api_ExecuteStarlarkPackageArgs(arg) {
+  if (!(arg instanceof api_container_service_pb.ExecuteStarlarkPackageArgs)) {
+    throw new Error('Expected argument of type api_container_api.ExecuteStarlarkPackageArgs');
   }
   return Buffer.from(arg.serializeBinary());
 }
 
-function deserialize_api_container_api_ExecuteStartosisModuleArgs(buffer_arg) {
-  return api_container_service_pb.ExecuteStartosisModuleArgs.deserializeBinary(new Uint8Array(buffer_arg));
+function deserialize_api_container_api_ExecuteStarlarkPackageArgs(buffer_arg) {
+  return api_container_service_pb.ExecuteStarlarkPackageArgs.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
-function serialize_api_container_api_ExecuteStartosisResponse(arg) {
-  if (!(arg instanceof api_container_service_pb.ExecuteStartosisResponse)) {
-    throw new Error('Expected argument of type api_container_api.ExecuteStartosisResponse');
+function serialize_api_container_api_ExecuteStarlarkScriptArgs(arg) {
+  if (!(arg instanceof api_container_service_pb.ExecuteStarlarkScriptArgs)) {
+    throw new Error('Expected argument of type api_container_api.ExecuteStarlarkScriptArgs');
   }
   return Buffer.from(arg.serializeBinary());
 }
 
-function deserialize_api_container_api_ExecuteStartosisResponse(buffer_arg) {
-  return api_container_service_pb.ExecuteStartosisResponse.deserializeBinary(new Uint8Array(buffer_arg));
-}
-
-function serialize_api_container_api_ExecuteStartosisScriptArgs(arg) {
-  if (!(arg instanceof api_container_service_pb.ExecuteStartosisScriptArgs)) {
-    throw new Error('Expected argument of type api_container_api.ExecuteStartosisScriptArgs');
-  }
-  return Buffer.from(arg.serializeBinary());
-}
-
-function deserialize_api_container_api_ExecuteStartosisScriptArgs(buffer_arg) {
-  return api_container_service_pb.ExecuteStartosisScriptArgs.deserializeBinary(new Uint8Array(buffer_arg));
+function deserialize_api_container_api_ExecuteStarlarkScriptArgs(buffer_arg) {
+  return api_container_service_pb.ExecuteStarlarkScriptArgs.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
 function serialize_api_container_api_GetFactValuesArgs(arg) {
@@ -192,17 +181,6 @@ function serialize_api_container_api_GetServicesResponse(arg) {
 
 function deserialize_api_container_api_GetServicesResponse(buffer_arg) {
   return api_container_service_pb.GetServicesResponse.deserializeBinary(new Uint8Array(buffer_arg));
-}
-
-function serialize_api_container_api_KurtosisExecutionResponseLine(arg) {
-  if (!(arg instanceof api_container_service_pb.KurtosisExecutionResponseLine)) {
-    throw new Error('Expected argument of type api_container_api.KurtosisExecutionResponseLine');
-  }
-  return Buffer.from(arg.serializeBinary());
-}
-
-function deserialize_api_container_api_KurtosisExecutionResponseLine(buffer_arg) {
-  return api_container_service_pb.KurtosisExecutionResponseLine.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
 function serialize_api_container_api_LoadModuleArgs(arg) {
@@ -291,6 +269,17 @@ function serialize_api_container_api_RepartitionArgs(arg) {
 
 function deserialize_api_container_api_RepartitionArgs(buffer_arg) {
   return api_container_service_pb.RepartitionArgs.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_api_container_api_StarlarkExecutionResponseLine(arg) {
+  if (!(arg instanceof api_container_service_pb.StarlarkExecutionResponseLine)) {
+    throw new Error('Expected argument of type api_container_api.StarlarkExecutionResponseLine');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_StarlarkExecutionResponseLine(buffer_arg) {
+  return api_container_service_pb.StarlarkExecutionResponseLine.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
 function serialize_api_container_api_StartServicesArgs(arg) {
@@ -497,55 +486,29 @@ executeModule: {
     responseSerialize: serialize_api_container_api_ExecuteModuleResponse,
     responseDeserialize: deserialize_api_container_api_ExecuteModuleResponse,
   },
-  // Executes a startosis script on the user's behalf
-// Will soon be deprecated in favour of its streamed version ExecuteKurtosisScript
-executeStartosisScript: {
-    path: '/api_container_api.ApiContainerService/ExecuteStartosisScript',
-    requestStream: false,
-    responseStream: false,
-    requestType: api_container_service_pb.ExecuteStartosisScriptArgs,
-    responseType: api_container_service_pb.ExecuteStartosisResponse,
-    requestSerialize: serialize_api_container_api_ExecuteStartosisScriptArgs,
-    requestDeserialize: deserialize_api_container_api_ExecuteStartosisScriptArgs,
-    responseSerialize: serialize_api_container_api_ExecuteStartosisResponse,
-    responseDeserialize: deserialize_api_container_api_ExecuteStartosisResponse,
-  },
-  // Executes a startosis script on the user's behalf
-executeKurtosisScript: {
-    path: '/api_container_api.ApiContainerService/ExecuteKurtosisScript',
+  // Executes a Starlark script on the user's behalf
+executeStarlarkScript: {
+    path: '/api_container_api.ApiContainerService/ExecuteStarlarkScript',
     requestStream: false,
     responseStream: true,
-    requestType: api_container_service_pb.ExecuteStartosisScriptArgs,
-    responseType: api_container_service_pb.KurtosisExecutionResponseLine,
-    requestSerialize: serialize_api_container_api_ExecuteStartosisScriptArgs,
-    requestDeserialize: deserialize_api_container_api_ExecuteStartosisScriptArgs,
-    responseSerialize: serialize_api_container_api_KurtosisExecutionResponseLine,
-    responseDeserialize: deserialize_api_container_api_KurtosisExecutionResponseLine,
+    requestType: api_container_service_pb.ExecuteStarlarkScriptArgs,
+    responseType: api_container_service_pb.StarlarkExecutionResponseLine,
+    requestSerialize: serialize_api_container_api_ExecuteStarlarkScriptArgs,
+    requestDeserialize: deserialize_api_container_api_ExecuteStarlarkScriptArgs,
+    responseSerialize: serialize_api_container_api_StarlarkExecutionResponseLine,
+    responseDeserialize: deserialize_api_container_api_StarlarkExecutionResponseLine,
   },
-  // Executes a startosis module on the user's behalf
-// Will soon be deprecated in favour of its streamed version ExecuteKurtosisModule
-executeStartosisModule: {
-    path: '/api_container_api.ApiContainerService/ExecuteStartosisModule',
-    requestStream: false,
-    responseStream: false,
-    requestType: api_container_service_pb.ExecuteStartosisModuleArgs,
-    responseType: api_container_service_pb.ExecuteStartosisResponse,
-    requestSerialize: serialize_api_container_api_ExecuteStartosisModuleArgs,
-    requestDeserialize: deserialize_api_container_api_ExecuteStartosisModuleArgs,
-    responseSerialize: serialize_api_container_api_ExecuteStartosisResponse,
-    responseDeserialize: deserialize_api_container_api_ExecuteStartosisResponse,
-  },
-  // Executes a startosis script on the user's behalf
-executeKurtosisModule: {
-    path: '/api_container_api.ApiContainerService/ExecuteKurtosisModule',
+  // Executes a Starlark script on the user's behalf
+executeStarlarkPackage: {
+    path: '/api_container_api.ApiContainerService/ExecuteStarlarkPackage',
     requestStream: false,
     responseStream: true,
-    requestType: api_container_service_pb.ExecuteStartosisModuleArgs,
-    responseType: api_container_service_pb.KurtosisExecutionResponseLine,
-    requestSerialize: serialize_api_container_api_ExecuteStartosisModuleArgs,
-    requestDeserialize: deserialize_api_container_api_ExecuteStartosisModuleArgs,
-    responseSerialize: serialize_api_container_api_KurtosisExecutionResponseLine,
-    responseDeserialize: deserialize_api_container_api_KurtosisExecutionResponseLine,
+    requestType: api_container_service_pb.ExecuteStarlarkPackageArgs,
+    responseType: api_container_service_pb.StarlarkExecutionResponseLine,
+    requestSerialize: serialize_api_container_api_ExecuteStarlarkPackageArgs,
+    requestDeserialize: deserialize_api_container_api_ExecuteStarlarkPackageArgs,
+    responseSerialize: serialize_api_container_api_StarlarkExecutionResponseLine,
+    responseDeserialize: deserialize_api_container_api_StarlarkExecutionResponseLine,
   },
   // Start services by creating containers for them
 startServices: {

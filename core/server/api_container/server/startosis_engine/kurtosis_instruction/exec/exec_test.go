@@ -27,14 +27,14 @@ func TestExecInstruction_StringRepresentationWorks(t *testing.T) {
 	expectedStr := `exec(command=["mkdir", "-p", "/tmp/store"], expected_exit_code=0, service_id="example-service-id")`
 	require.Equal(t, expectedStr, execInstruction.String())
 
-	canonicalInstruction := binding_constructors.NewKurtosisInstruction(
+	canonicalInstruction := binding_constructors.NewStarlarkInstruction(
 		position.ToAPIType(),
 		ExecBuiltinName,
 		expectedStr,
-		[]*kurtosis_core_rpc_api_bindings.KurtosisInstructionArg{
-			binding_constructors.NewKurtosisInstructionKwarg(`"example-service-id"`, serviceIdArgName, true),
-			binding_constructors.NewKurtosisInstructionKwarg(`["mkdir", "-p", "/tmp/store"]`, commandArgName, false),
-			binding_constructors.NewKurtosisInstructionKwarg(`0`, nonOptionalExitCodeArgName, false),
+		[]*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg{
+			binding_constructors.NewStarlarkInstructionKwarg(`"example-service-id"`, serviceIdArgName, true),
+			binding_constructors.NewStarlarkInstructionKwarg(`["mkdir", "-p", "/tmp/store"]`, commandArgName, false),
+			binding_constructors.NewStarlarkInstructionKwarg(`0`, nonOptionalExitCodeArgName, false),
 		})
 	require.Equal(t, canonicalInstruction, execInstruction.GetCanonicalInstruction())
 }

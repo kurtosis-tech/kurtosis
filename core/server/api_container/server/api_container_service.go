@@ -24,7 +24,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_modules"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/stacktrace"
@@ -84,7 +84,7 @@ type ApiContainerService struct {
 
 	metricsClient client.MetricsClient
 
-	startosisModuleContentProvider startosis_modules.ModuleContentProvider
+	startosisModuleContentProvider startosis_packages.PackageContentProvider
 }
 
 func NewApiContainerService(
@@ -94,7 +94,7 @@ func NewApiContainerService(
 	factsEngine *facts_engine.FactsEngine,
 	startosisRunner *startosis_engine.StartosisRunner,
 	metricsClient client.MetricsClient,
-	startosisModuleContentProvider startosis_modules.ModuleContentProvider,
+	startosisModuleContentProvider startosis_packages.PackageContentProvider,
 ) (*ApiContainerService, error) {
 	service := &ApiContainerService{
 		filesArtifactStore:             filesArtifactStore,
@@ -191,47 +191,27 @@ func (apicService ApiContainerService) ExecuteModule(ctx context.Context, args *
 	return resp, nil
 }
 
-func (apicService ApiContainerService) ExecuteStartosisScript(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptArgs) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse, error) {
+func (apicService ApiContainerService) ExecuteStarlarkScript(args *kurtosis_core_rpc_api_bindings.ExecuteStarlarkScriptArgs, stream kurtosis_core_rpc_api_bindings.ApiContainerService_ExecuteStarlarkScriptServer) error {
 	serializedStartosisScript := args.GetSerializedScript()
 	dryRun := shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun)
-	return apicService.executeStartosis(ctx, dryRun, startosis_engine.ModuleIdPlaceholderForStandaloneScripts, serializedStartosisScript, startosis_engine.EmptyInputArgs), nil
-}
-
-func (apicService ApiContainerService) ExecuteKurtosisScript(args *kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptArgs, stream kurtosis_core_rpc_api_bindings.ApiContainerService_ExecuteKurtosisScriptServer) error {
-	serializedStartosisScript := args.GetSerializedScript()
-	dryRun := shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun)
-	apicService.runStartosis(dryRun, startosis_engine.ModuleIdPlaceholderForStandaloneScripts, serializedStartosisScript, startosis_engine.EmptyInputArgs, stream)
+	apicService.runStarlark(dryRun, startosis_engine.PackageIdPlaceholderForStandaloneScript, serializedStartosisScript, startosis_engine.EmptyInputArgs, stream)
 	return nil
 }
 
-func (apicService ApiContainerService) ExecuteStartosisModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleArgs) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse, error) {
-	moduleId := args.ModuleId
+func (apicService ApiContainerService) ExecuteStarlarkPackage(args *kurtosis_core_rpc_api_bindings.ExecuteStarlarkPackageArgs, stream kurtosis_core_rpc_api_bindings.ApiContainerService_ExecuteStarlarkPackageServer) error {
+	packageId := args.GetPackageId()
 	isRemote := args.GetRemote()
 	moduleContentIfLocal := args.GetLocal()
 	serializedParams := args.SerializedParams
 	dryRun := shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun)
 
-	scriptWithRunFunction, err := apicService.executeKurtosisModuleSetup(moduleId, isRemote, moduleContentIfLocal)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error preparing for module execution: '%s'", moduleId)
-	}
-	return apicService.executeStartosis(ctx, dryRun, moduleId, scriptWithRunFunction, serializedParams), nil
-}
-
-func (apicService ApiContainerService) ExecuteKurtosisModule(args *kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleArgs, stream kurtosis_core_rpc_api_bindings.ApiContainerService_ExecuteKurtosisModuleServer) error {
-	moduleId := args.ModuleId
-	isRemote := args.GetRemote()
-	moduleContentIfLocal := args.GetLocal()
-	serializedParams := args.SerializedParams
-	dryRun := shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun)
-
-	scriptWithRunFunction, interpretationError := apicService.executeKurtosisModuleSetup(moduleId, isRemote, moduleContentIfLocal)
+	scriptWithRunFunction, interpretationError := apicService.executeStarlarkPackageSetup(packageId, isRemote, moduleContentIfLocal)
 	if interpretationError != nil {
-		if err := stream.SendMsg(binding_constructors.NewKurtosisExecutionResponseLineFromInterpretationError(interpretationError.ToAPIType())); err != nil {
-			return stacktrace.Propagate(err, "Error preparing for module execution and this error could not be sent through the output stream: '%s'", moduleId)
+		if err := stream.SendMsg(binding_constructors.NewStarlarkExecutionResponseLineFromInterpretationError(interpretationError.ToAPIType())); err != nil {
+			return stacktrace.Propagate(err, "Error preparing for package execution and this error could not be sent through the output stream: '%s'", packageId)
 		}
 	}
-	apicService.runStartosis(dryRun, moduleId, scriptWithRunFunction, serializedParams, stream)
+	apicService.runStarlark(dryRun, packageId, scriptWithRunFunction, serializedParams, stream)
 	return nil
 }
 
@@ -816,29 +796,29 @@ func (apicService ApiContainerService) getModuleInfo(ctx context.Context, module
 	return response, nil
 }
 
-func (apicService ApiContainerService) executeKurtosisModuleSetup(moduleId string, isRemote bool, moduleContentIfLocal []byte) (string, *startosis_errors.InterpretationError) {
-	var moduleRootPathOnDisk string
+func (apicService ApiContainerService) executeStarlarkPackageSetup(packageId string, isRemote bool, moduleContentIfLocal []byte) (string, *startosis_errors.InterpretationError) {
+	var packageRootPathOnDisk string
 	var interpretationError *startosis_errors.InterpretationError
 	if isRemote {
-		moduleRootPathOnDisk, interpretationError = apicService.startosisModuleContentProvider.CloneModule(moduleId)
+		packageRootPathOnDisk, interpretationError = apicService.startosisModuleContentProvider.ClonePackage(packageId)
 	} else {
-		moduleRootPathOnDisk, interpretationError = apicService.startosisModuleContentProvider.StoreModuleContents(moduleId, moduleContentIfLocal, doOverwriteExistingModule)
+		packageRootPathOnDisk, interpretationError = apicService.startosisModuleContentProvider.StorePackageContents(packageId, moduleContentIfLocal, doOverwriteExistingModule)
 	}
 	if interpretationError != nil {
 		return "", interpretationError
 	}
 
-	pathToMainFile := path.Join(moduleRootPathOnDisk, startosis_engine.MainFileName)
+	pathToMainFile := path.Join(packageRootPathOnDisk, startosis_engine.MainFileName)
 	if _, err := os.Stat(pathToMainFile); err != nil {
-		return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred while verifying that '%v' exists on root of module '%v' at '%v'", startosis_engine.MainFileName, moduleId, pathToMainFile)
+		return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred while verifying that '%v' exists on root of module '%v' at '%v'", startosis_engine.MainFileName, packageId, pathToMainFile)
 	}
 
-	scriptWithMainToExecute := fmt.Sprintf(bootScript, moduleId, startosis_engine.MainInputArgName)
+	scriptWithMainToExecute := fmt.Sprintf(bootScript, packageId, startosis_engine.MainInputArgName)
 	return scriptWithMainToExecute, nil
 }
 
-func (apicService ApiContainerService) runStartosis(dryRun bool, moduleId string, serializedStartosis string, serializedParams string, stream grpc.ServerStream) {
-	responseLineStream := apicService.startosisRunner.Run(stream.Context(), dryRun, moduleId, serializedStartosis, serializedParams)
+func (apicService ApiContainerService) runStarlark(dryRun bool, packageId string, serializedStarlark string, serializedParams string, stream grpc.ServerStream) {
+	responseLineStream := apicService.startosisRunner.Run(stream.Context(), dryRun, packageId, serializedStarlark, serializedParams)
 	for {
 		select {
 		case <-stream.Context().Done():
@@ -853,43 +833,10 @@ func (apicService ApiContainerService) runStartosis(dryRun bool, moduleId string
 				return
 			}
 			// in addition to send the msg to the RPC stream, we also print the lines to the APIC logs at debug level
-			logrus.Debugf("Received response line from Startosis runner: '%v'", responseLine)
+			logrus.Debugf("Received response line from Starlark runner: '%v'", responseLine)
 			if err := stream.SendMsg(responseLine); err != nil {
-				logrus.Errorf("Kurtosis response line sent through the channel but could not be forwarded to API Container client. Some log lines will not be returned to the user.\nResponse line was: \n%v. Error was: \n%v", responseLine, err.Error())
+				logrus.Errorf("Starlark response line sent through the channel but could not be forwarded to API Container client. Some log lines will not be returned to the user.\nResponse line was: \n%v. Error was: \n%v", responseLine, err.Error())
 			}
 		}
 	}
-}
-
-// executeStartosis will be removed soon. It is kept for backward compat with non-streaming endpoint
-func (apicService ApiContainerService) executeStartosis(ctx context.Context, dryRun bool, moduleId string, serializedStartosis string, serializedParams string) *kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse {
-	instructions := make([]*kurtosis_core_rpc_api_bindings.KurtosisInstruction, 0)
-	var interpretationError *kurtosis_core_rpc_api_bindings.KurtosisInterpretationError
-	validatorErrors := make([]*kurtosis_core_rpc_api_bindings.KurtosisValidationError, 0)
-	var executionError *kurtosis_core_rpc_api_bindings.KurtosisExecutionError
-
-	kurtosisExecutionResponseLines := apicService.startosisRunner.Run(ctx, dryRun, moduleId, serializedStartosis, serializedParams)
-	for responseLine := range kurtosisExecutionResponseLines {
-		if responseLine.GetInstruction() != nil {
-			instructions = append(instructions, responseLine.GetInstruction())
-		} else if responseLine.GetError() != nil {
-			if responseLine.GetError().GetInterpretationError() != nil {
-				interpretationError = responseLine.GetError().GetInterpretationError()
-			} else if responseLine.GetError().GetValidationError() != nil {
-				validatorErrors = append(validatorErrors, responseLine.GetError().GetValidationError())
-			} else if responseLine.GetError().GetExecutionError() != nil {
-				executionError = responseLine.GetError().GetExecutionError()
-			}
-		}
-	}
-
-	if interpretationError != nil {
-		return binding_constructors.NewExecuteStartosisResponseFromInterpretationError(interpretationError)
-	} else if len(validatorErrors) > 0 {
-		return binding_constructors.NewExecuteStartosisResponseFromValidationErrors(
-			binding_constructors.NewKurtosisValidationErrors(validatorErrors))
-	} else if executionError != nil {
-		return binding_constructors.NewExecuteStartosisResponseFromExecutionError(instructions, executionError)
-	}
-	return binding_constructors.NewExecuteStartosisResponse(instructions)
 }

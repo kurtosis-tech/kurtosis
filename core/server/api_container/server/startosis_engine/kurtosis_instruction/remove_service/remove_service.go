@@ -55,11 +55,11 @@ func (instruction *RemoveServiceInstruction) GetPositionInOriginalScript() *kurt
 	return instruction.position
 }
 
-func (instruction *RemoveServiceInstruction) GetCanonicalInstruction() *kurtosis_core_rpc_api_bindings.KurtosisInstruction {
-	args := []*kurtosis_core_rpc_api_bindings.KurtosisInstructionArg{
-		binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(starlark.String(instruction.serviceId)), serviceIdArgName, kurtosis_instruction.Representative),
+func (instruction *RemoveServiceInstruction) GetCanonicalInstruction() *kurtosis_core_rpc_api_bindings.StarlarkInstruction {
+	args := []*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg{
+		binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(starlark.String(instruction.serviceId)), serviceIdArgName, kurtosis_instruction.Representative),
 	}
-	return binding_constructors.NewKurtosisInstruction(instruction.position.ToAPIType(), RemoveServiceBuiltinName, instruction.String(), args)
+	return binding_constructors.NewStarlarkInstruction(instruction.position.ToAPIType(), RemoveServiceBuiltinName, instruction.String(), args)
 }
 
 func (instruction *RemoveServiceInstruction) Execute(ctx context.Context) (*string, error) {

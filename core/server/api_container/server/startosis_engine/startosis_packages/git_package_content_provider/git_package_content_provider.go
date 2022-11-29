@@ -1,4 +1,4 @@
-package git_module_content_provider
+package git_package_content_provider
 
 import (
 	"github.com/go-git/go-git/v5"
@@ -20,25 +20,25 @@ const (
 	replacedWithEmptyString = ""
 )
 
-type GitModuleContentProvider struct {
-	modulesTmpDir string
-	modulesDir    string
+type GitPackageContentProvider struct {
+	packagesTmpDir string
+	packagesDir    string
 }
 
-func NewGitModuleContentProvider(moduleDir string, tmpDir string) *GitModuleContentProvider {
-	return &GitModuleContentProvider{
-		modulesDir:    moduleDir,
-		modulesTmpDir: tmpDir,
+func NewGitPackageContentProvider(moduleDir string, tmpDir string) *GitPackageContentProvider {
+	return &GitPackageContentProvider{
+		packagesDir:    moduleDir,
+		packagesTmpDir: tmpDir,
 	}
 }
 
-func (provider *GitModuleContentProvider) CloneModule(moduleId string) (string, *startosis_errors.InterpretationError) {
+func (provider *GitPackageContentProvider) ClonePackage(moduleId string) (string, *startosis_errors.InterpretationError) {
 	parsedURL, interpretationError := parseGitURL(moduleId)
 	if interpretationError != nil {
 		return "", interpretationError
 	}
 
-	moduleAbsolutePathOnDisk := path.Join(provider.modulesDir, parsedURL.relativeRepoPath)
+	moduleAbsolutePathOnDisk := path.Join(provider.packagesDir, parsedURL.relativeRepoPath)
 
 	interpretationError = provider.atomicClone(parsedURL)
 	if interpretationError != nil {
@@ -47,7 +47,7 @@ func (provider *GitModuleContentProvider) CloneModule(moduleId string) (string, 
 	return moduleAbsolutePathOnDisk, nil
 }
 
-func (provider *GitModuleContentProvider) GetOnDiskAbsoluteFilePath(fileInsideModuleUrl string) (string, *startosis_errors.InterpretationError) {
+func (provider *GitPackageContentProvider) GetOnDiskAbsoluteFilePath(fileInsideModuleUrl string) (string, *startosis_errors.InterpretationError) {
 	parsedURL, interpretationError := parseGitURL(fileInsideModuleUrl)
 	if interpretationError != nil {
 		return "", interpretationError
@@ -55,8 +55,8 @@ func (provider *GitModuleContentProvider) GetOnDiskAbsoluteFilePath(fileInsideMo
 	if parsedURL.relativeFilePath == "" {
 		return "", startosis_errors.NewInterpretationError("The relative path to file is empty for '%v'", fileInsideModuleUrl)
 	}
-	pathToFile := path.Join(provider.modulesDir, parsedURL.relativeFilePath)
-	modulePath := path.Join(provider.modulesDir, parsedURL.relativeRepoPath)
+	pathToFile := path.Join(provider.packagesDir, parsedURL.relativeFilePath)
+	packagePath := path.Join(provider.packagesDir, parsedURL.relativeRepoPath)
 
 	// Return the file path straight if it exists
 	if _, err := os.Stat(pathToFile); err == nil {
@@ -65,7 +65,7 @@ func (provider *GitModuleContentProvider) GetOnDiskAbsoluteFilePath(fileInsideMo
 
 	// Check if the repo exists
 	// If the repo exists but the `pathToFile` doesn't that means there's a mistake in the locator
-	if _, err := os.Stat(modulePath); err == nil {
+	if _, err := os.Stat(packagePath); err == nil {
 		relativeFilePathWithoutPackageName := strings.Replace(parsedURL.relativeFilePath, parsedURL.relativeRepoPath, replacedWithEmptyString, onlyOneReplacement)
 		return "", startosis_errors.NewInterpretationError("'%v' doesn't exist in the package '%v'", relativeFilePathWithoutPackageName, parsedURL.relativeRepoPath)
 	}
@@ -78,7 +78,7 @@ func (provider *GitModuleContentProvider) GetOnDiskAbsoluteFilePath(fileInsideMo
 	return pathToFile, nil
 }
 
-func (provider *GitModuleContentProvider) GetModuleContents(fileInsideModuleUrl string) (string, *startosis_errors.InterpretationError) {
+func (provider *GitPackageContentProvider) GetPackageContents(fileInsideModuleUrl string) (string, *startosis_errors.InterpretationError) {
 	pathToFile, interpretationError := provider.GetOnDiskAbsoluteFilePath(fileInsideModuleUrl)
 	if interpretationError != nil {
 		return "", interpretationError
@@ -93,51 +93,51 @@ func (provider *GitModuleContentProvider) GetModuleContents(fileInsideModuleUrl 
 	return string(contents), nil
 }
 
-func (provider *GitModuleContentProvider) StoreModuleContents(moduleId string, moduleTar []byte, overwriteExisting bool) (string, *startosis_errors.InterpretationError) {
-	parsedModuleId, interpretationError := parseGitURL(moduleId)
+func (provider *GitPackageContentProvider) StorePackageContents(packageId string, moduleTar []byte, overwriteExisting bool) (string, *startosis_errors.InterpretationError) {
+	parsedPackageId, interpretationError := parseGitURL(packageId)
 	if interpretationError != nil {
 		return "", interpretationError
 	}
-	modulePathOnDisk := path.Join(provider.modulesDir, parsedModuleId.relativeRepoPath)
+	packagePathOnDisk := path.Join(provider.packagesDir, parsedPackageId.relativeRepoPath)
 
 	if overwriteExisting {
-		err := os.RemoveAll(modulePathOnDisk)
+		err := os.RemoveAll(packagePathOnDisk)
 		if err != nil {
-			return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred while removing the existing module '%v' from disk at '%v'", moduleId, modulePathOnDisk)
+			return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred while removing the existing module '%v' from disk at '%v'", packageId, packagePathOnDisk)
 		}
 	}
 
-	_, err := os.Stat(modulePathOnDisk)
+	_, err := os.Stat(packagePathOnDisk)
 	if err == nil {
-		return "", startosis_errors.NewInterpretationError("Module '%v' already exists on disk, not overwriting", modulePathOnDisk)
+		return "", startosis_errors.NewInterpretationError("Module '%v' already exists on disk, not overwriting", packagePathOnDisk)
 	}
 
 	tempFile, err := os.CreateTemp(defaultTmpDir, temporaryArchiveFilePattern)
 	if err != nil {
-		return "", startosis_errors.NewInterpretationError("An error occurred while creating temporary file to write compressed '%v' to", moduleId)
+		return "", startosis_errors.NewInterpretationError("An error occurred while creating temporary file to write compressed '%v' to", packageId)
 	}
 	defer os.Remove(tempFile.Name())
 
 	bytesWritten, err := tempFile.Write(moduleTar)
 	if err != nil {
-		return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred while writing contents of '%v' to '%v'", moduleId, tempFile.Name())
+		return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred while writing contents of '%v' to '%v'", packageId, tempFile.Name())
 	}
 	if bytesWritten != len(moduleTar) {
 		return "", startosis_errors.NewInterpretationError("Expected to write '%v' bytes but wrote '%v'", len(moduleTar), bytesWritten)
 	}
-	err = archiver.Unarchive(tempFile.Name(), modulePathOnDisk)
+	err = archiver.Unarchive(tempFile.Name(), packagePathOnDisk)
 	if err != nil {
-		return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred while unarchiving '%v' to '%v'", tempFile.Name(), modulePathOnDisk)
+		return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred while unarchiving '%v' to '%v'", tempFile.Name(), packagePathOnDisk)
 	}
 
-	return modulePathOnDisk, nil
+	return packagePathOnDisk, nil
 }
 
 // atomicClone This first clones to a temporary directory and then moves it
 // TODO make this support versioning via tags, commit hashes or branches
-func (provider *GitModuleContentProvider) atomicClone(parsedURL *ParsedGitURL) *startosis_errors.InterpretationError {
+func (provider *GitPackageContentProvider) atomicClone(parsedURL *ParsedGitURL) *startosis_errors.InterpretationError {
 	// First we clone into a temporary directory
-	tempRepoDirPath, err := os.MkdirTemp(provider.modulesTmpDir, temporaryRepoDirPattern)
+	tempRepoDirPath, err := os.MkdirTemp(provider.packagesTmpDir, temporaryRepoDirPattern)
 	if err != nil {
 		return startosis_errors.WrapWithInterpretationError(err, "Cloning the module '%s' failed. Error creating temporary directory for the repository to be cloned into", parsedURL.gitURL)
 	}
@@ -163,19 +163,19 @@ func (provider *GitModuleContentProvider) atomicClone(parsedURL *ParsedGitURL) *
 	}
 
 	// Then we move it into the target directory
-	moduleAuthorPath := path.Join(provider.modulesDir, parsedURL.moduleAuthor)
-	modulePath := path.Join(provider.modulesDir, parsedURL.relativeRepoPath)
-	fileMode, err := os.Stat(moduleAuthorPath)
+	packageAuthorPath := path.Join(provider.packagesDir, parsedURL.moduleAuthor)
+	packagePath := path.Join(provider.packagesDir, parsedURL.relativeRepoPath)
+	fileMode, err := os.Stat(packageAuthorPath)
 	if err == nil && !fileMode.IsDir() {
-		return startosis_errors.WrapWithInterpretationError(err, "Expected '%s' to be a directory but it is something else", moduleAuthorPath)
+		return startosis_errors.WrapWithInterpretationError(err, "Expected '%s' to be a directory but it is something else", packageAuthorPath)
 	}
 	if err != nil {
-		if err = os.Mkdir(moduleAuthorPath, moduleDirPermission); err != nil {
-			return startosis_errors.WrapWithInterpretationError(err, "Cloning the module '%s' failed. An error occurred while creating the directory '%s'.", parsedURL.gitURL, moduleAuthorPath)
+		if err = os.Mkdir(packageAuthorPath, moduleDirPermission); err != nil {
+			return startosis_errors.WrapWithInterpretationError(err, "Cloning the package '%s' failed. An error occurred while creating the directory '%s'.", parsedURL.gitURL, packageAuthorPath)
 		}
 	}
-	if err = os.Rename(gitClonePath, modulePath); err != nil {
-		return startosis_errors.NewInterpretationError("Cloning the module '%s' failed. An error occurred while moving module at temporary destination '%s' to final destination '%s'", parsedURL.gitURL, gitClonePath, modulePath)
+	if err = os.Rename(gitClonePath, packagePath); err != nil {
+		return startosis_errors.NewInterpretationError("Cloning the package '%s' failed. An error occurred while moving package at temporary destination '%s' to final destination '%s'", parsedURL.gitURL, gitClonePath, packagePath)
 	}
 	return nil
 }

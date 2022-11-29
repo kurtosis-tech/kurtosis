@@ -1,7 +1,9 @@
 import {
-    KurtosisExecutionError, KurtosisExecutionResponseLine,
-    KurtosisInstruction,
-    KurtosisInterpretationError, KurtosisValidationError, KurtosisValidationErrors
+    StarlarkExecutionError,
+    StarlarkExecutionResponseLine,
+    StarlarkInstruction,
+    StarlarkInterpretationError,
+    StarlarkValidationError
 } from "kurtosis-sdk/build/core/kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import {Readable} from "stream";
 
@@ -9,19 +11,19 @@ const NEWLINE_CHAR = "\n"
 
 export function readStreamContentUntilClosed(responseLines: Readable): Promise<[
     string,
-    Array<KurtosisInstruction>,
-    KurtosisInterpretationError | undefined,
-    Array<KurtosisValidationError>,
-    KurtosisExecutionError | undefined
+    Array<StarlarkInstruction>,
+    StarlarkInterpretationError | undefined,
+    Array<StarlarkValidationError>,
+    StarlarkExecutionError | undefined
 ]> {
     let scriptOutput = ""
-    let interpretationError: KurtosisInterpretationError | undefined
-    let validationErrors: Array<KurtosisValidationError> = []
-    let executionError: KurtosisExecutionError | undefined
-    let instructions: Array<KurtosisInstruction> = []
+    let interpretationError: StarlarkInterpretationError | undefined
+    let validationErrors: Array<StarlarkValidationError> = []
+    let executionError: StarlarkExecutionError | undefined
+    let instructions: Array<StarlarkInstruction> = []
 
     return new Promise(resolve => {
-        responseLines.on('data', (responseLine: KurtosisExecutionResponseLine) => {
+        responseLines.on('data', (responseLine: StarlarkExecutionResponseLine) => {
             if (responseLine.getInstruction() !== undefined) {
                 instructions.push(responseLine.getInstruction()!)
             } else if (responseLine.getInstructionResult() !== undefined) {

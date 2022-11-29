@@ -19,7 +19,7 @@ var (
 type KurtosisInstruction interface {
 	GetPositionInOriginalScript() *InstructionPosition
 
-	GetCanonicalInstruction() *kurtosis_core_rpc_api_bindings.KurtosisInstruction
+	GetCanonicalInstruction() *kurtosis_core_rpc_api_bindings.StarlarkInstruction
 
 	Execute(ctx context.Context) (*string, error)
 

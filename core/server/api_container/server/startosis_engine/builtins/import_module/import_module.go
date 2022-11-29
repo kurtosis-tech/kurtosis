@@ -3,7 +3,7 @@ package import_module
 import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_modules"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
 )
@@ -29,20 +29,20 @@ How does the returned function work?
 9. We now return the contents of the module and any interpretation errors
 This function is recursive in the sense, to load a module that loads modules we call the same function
 */
-func GenerateImportBuiltin(recursiveInterpret func(moduleId string, scriptContent string) (starlark.StringDict, error), moduleContentProvider startosis_modules.ModuleContentProvider, moduleGlobalCache map[string]*startosis_modules.ModuleCacheEntry) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+func GenerateImportBuiltin(recursiveInterpret func(moduleId string, scriptContent string) (starlark.StringDict, error), moduleContentProvider startosis_packages.PackageContentProvider, moduleGlobalCache map[string]*startosis_packages.PackageCacheEntry) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 	return func(_ *starlark.Thread, _ *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 		fileInModule, interpretationError := parseStartosisArgs(args, kwargs)
 		if interpretationError != nil {
 			return nil, interpretationError
 		}
 
-		var loadInProgress *startosis_modules.ModuleCacheEntry
+		var loadInProgress *startosis_packages.PackageCacheEntry
 		cacheEntry, found := moduleGlobalCache[fileInModule]
 		if found && cacheEntry == loadInProgress {
 			return nil, startosis_errors.NewInterpretationError("There's a cycle in the import_module calls")
 		}
 		if found {
-			return cacheEntry.GetModule(), cacheEntry.GetError()
+			return cacheEntry.GetPackage(), cacheEntry.GetError()
 		}
 
 		moduleGlobalCache[fileInModule] = loadInProgress
@@ -54,9 +54,9 @@ func GenerateImportBuiltin(recursiveInterpret func(moduleId string, scriptConten
 		}()
 
 		// Load it.
-		contents, interpretationError := moduleContentProvider.GetModuleContents(fileInModule)
+		contents, interpretationError := moduleContentProvider.GetPackageContents(fileInModule)
 		if interpretationError != nil {
-			return nil, startosis_errors.WrapWithInterpretationError(interpretationError, "An error occurred while loading the module '%v'", fileInModule)
+			return nil, startosis_errors.WrapWithInterpretationError(interpretationError, "An error occurred while loading the package '%v'", fileInModule)
 		}
 
 		globalVariables, err := recursiveInterpret(fileInModule, contents)
@@ -70,12 +70,12 @@ func GenerateImportBuiltin(recursiveInterpret func(moduleId string, scriptConten
 				Members: globalVariables,
 			}
 		}
-		cacheEntry = startosis_modules.NewModuleCacheEntry(newModule, err)
+		cacheEntry = startosis_packages.NewPackageCacheEntry(newModule, err)
 		moduleGlobalCache[fileInModule] = cacheEntry
 
 		shouldUnsetLoadInProgress = false
-		return cacheEntry.GetModule(), cacheEntry.GetError()
-		// this error isn't propagated as its returned to the interpreter & persisted in the cache
+		return cacheEntry.GetPackage(), cacheEntry.GetError()
+		// this error isn't propagated as it is returned to the interpreter & persisted in the cache
 	}
 }
 

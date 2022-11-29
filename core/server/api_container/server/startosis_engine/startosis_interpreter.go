@@ -23,7 +23,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/package_io"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_modules"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/lib/time"
 	"go.starlark.net/resolve"
@@ -47,46 +47,46 @@ type StartosisInterpreter struct {
 	serviceNetwork     service_network.ServiceNetwork
 	factsEngine        *facts_engine.FactsEngine
 	recipeExecutor     *runtime_value_store.RuntimeValueStore
-	moduleGlobalsCache map[string]*startosis_modules.ModuleCacheEntry
+	moduleGlobalsCache map[string]*startosis_packages.PackageCacheEntry
 	// TODO AUTH there will be a leak here in case people with different repo visibility access a module
-	moduleContentProvider startosis_modules.ModuleContentProvider
+	moduleContentProvider startosis_packages.PackageContentProvider
 }
 
 type SerializedInterpretationOutput string
 
-func NewStartosisInterpreter(serviceNetwork service_network.ServiceNetwork, moduleContentProvider startosis_modules.ModuleContentProvider) *StartosisInterpreter {
+func NewStartosisInterpreter(serviceNetwork service_network.ServiceNetwork, moduleContentProvider startosis_packages.PackageContentProvider) *StartosisInterpreter {
 	return &StartosisInterpreter{
 		mutex:                 &sync.Mutex{},
 		serviceNetwork:        serviceNetwork,
 		factsEngine:           nil,
 		recipeExecutor:        nil,
-		moduleGlobalsCache:    make(map[string]*startosis_modules.ModuleCacheEntry),
+		moduleGlobalsCache:    make(map[string]*startosis_packages.PackageCacheEntry),
 		moduleContentProvider: moduleContentProvider,
 	}
 }
 
-func NewStartosisInterpreterWithFacts(serviceNetwork service_network.ServiceNetwork, factsEngine *facts_engine.FactsEngine, moduleContentProvider startosis_modules.ModuleContentProvider, recipeExecutor *runtime_value_store.RuntimeValueStore) *StartosisInterpreter {
+func NewStartosisInterpreterWithFacts(serviceNetwork service_network.ServiceNetwork, factsEngine *facts_engine.FactsEngine, moduleContentProvider startosis_packages.PackageContentProvider, recipeExecutor *runtime_value_store.RuntimeValueStore) *StartosisInterpreter {
 	return &StartosisInterpreter{
 		mutex:                 &sync.Mutex{},
 		serviceNetwork:        serviceNetwork,
 		moduleContentProvider: moduleContentProvider,
 		recipeExecutor:        recipeExecutor,
-		moduleGlobalsCache:    make(map[string]*startosis_modules.ModuleCacheEntry),
+		moduleGlobalsCache:    make(map[string]*startosis_packages.PackageCacheEntry),
 		factsEngine:           factsEngine,
 	}
 }
 
-// Interpret interprets the Startosis script and produce different outputs:
+// Interpret interprets the Starlark script and produce different outputs:
 //   - A potential interpretation error that the writer of the script should be aware of (syntax error in the Startosis
 //     code, inconsistent). Can be nil if the script was successfully interpreted
 //   - The list of Kurtosis instructions that was generated based on the interpretation of the script. It can be empty
 //     if the interpretation of the script failed
-func (interpreter *StartosisInterpreter) Interpret(ctx context.Context, moduleId string, serializedStartosis string, serializedJsonParams string) ([]kurtosis_instruction.KurtosisInstruction, *kurtosis_core_rpc_api_bindings.KurtosisInterpretationError) {
+func (interpreter *StartosisInterpreter) Interpret(_ context.Context, packageId string, serializedStarlark string, serializedJsonParams string) ([]kurtosis_instruction.KurtosisInstruction, *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError) {
 	interpreter.mutex.Lock()
 	defer interpreter.mutex.Unlock()
 	var instructionsQueue []kurtosis_instruction.KurtosisInstruction
 
-	_, err := interpreter.interpretInternal(moduleId, serializedStartosis, serializedJsonParams, &instructionsQueue)
+	_, err := interpreter.interpretInternal(packageId, serializedStarlark, serializedJsonParams, &instructionsQueue)
 	if err != nil {
 		return nil, generateInterpretationError(err).ToAPIType()
 	}
@@ -95,14 +95,14 @@ func (interpreter *StartosisInterpreter) Interpret(ctx context.Context, moduleId
 	return instructionsQueue, nil
 }
 
-func (interpreter *StartosisInterpreter) interpretInternal(moduleId string, serializedStartosis string, serializedJsonParams string, instructionsQueue *[]kurtosis_instruction.KurtosisInstruction) (starlark.StringDict, error) {
+func (interpreter *StartosisInterpreter) interpretInternal(packageId string, serializedStarlark string, serializedJsonParams string, instructionsQueue *[]kurtosis_instruction.KurtosisInstruction) (starlark.StringDict, error) {
 	thread, predeclared := interpreter.buildBindings(starlarkGoThreadName, instructionsQueue)
 
-	if interpretationError := interpreter.addInputArgsToPredeclared(thread, moduleId, serializedJsonParams, predeclared); interpretationError != nil {
+	if interpretationError := interpreter.addInputArgsToPredeclared(thread, packageId, serializedJsonParams, predeclared); interpretationError != nil {
 		return nil, interpretationError
 	}
 
-	globalVariables, err := starlark.ExecFile(thread, moduleId, serializedStartosis, *predeclared)
+	globalVariables, err := starlark.ExecFile(thread, packageId, serializedStarlark, *predeclared)
 	if err != nil {
 		return nil, err
 	}
@@ -151,12 +151,12 @@ func (interpreter *StartosisInterpreter) buildBindings(threadName string, instru
 // This method handles the different cases a Startosis module can be executed. Here are the different cases handled:
 // - For a Kurtosis Package, the run method will always receive input args. If none were passed through the CLI params, empty JSON will be used
 // - For a standalone Kurtosis script however, no params can be passed. It will fail if it is the case
-func (interpreter *StartosisInterpreter) addInputArgsToPredeclared(thread *starlark.Thread, moduleId string, serializedJsonArgs string, predeclared *starlark.StringDict) *startosis_errors.InterpretationError {
-	if moduleId == ModuleIdPlaceholderForStandaloneScripts && serializedJsonArgs == EmptyInputArgs {
+func (interpreter *StartosisInterpreter) addInputArgsToPredeclared(thread *starlark.Thread, packageId string, serializedJsonArgs string, predeclared *starlark.StringDict) *startosis_errors.InterpretationError {
+	if packageId == PackageIdPlaceholderForStandaloneScript && serializedJsonArgs == EmptyInputArgs {
 		(*predeclared)[MainInputArgName] = starlark.None
 		return nil
 	}
-	if moduleId == ModuleIdPlaceholderForStandaloneScripts && serializedJsonArgs != EmptyInputArgs {
+	if packageId == PackageIdPlaceholderForStandaloneScript && serializedJsonArgs != EmptyInputArgs {
 		// This _cannot_ be reached right now. Just being nice in the logs in case it can be hit in the future
 		return startosis_errors.NewInterpretationError("Passing parameter to a standalone script is not yet supported in Kurtosis.")
 	}
@@ -170,7 +170,7 @@ func (interpreter *StartosisInterpreter) addInputArgsToPredeclared(thread *starl
 	return nil
 }
 
-func makeLoadFunction() func(_ *starlark.Thread, moduleID string) (starlark.StringDict, error) {
+func makeLoadFunction() func(_ *starlark.Thread, packageId string) (starlark.StringDict, error) {
 	return func(_ *starlark.Thread, _ string) (starlark.StringDict, error) {
 		return nil, startosis_errors.NewInterpretationError("'load(\"path/to/file.star\", var_in_file=\"var_in_file\")' statement is not available in Kurtosis. Please use instead `module = import(\"path/to/file.star\")` and then `module.var_in_file`")
 	}

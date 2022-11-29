@@ -140,21 +140,12 @@ func (enclaveCtx *EnclaveContext) GetFactValues(serviceId string, factName strin
 	return factValuesResponse, nil
 }
 
-func (enclaveCtx *EnclaveContext) ExecuteStartosisScript(serializedScript string, dryRun bool) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse, error) {
-	executeStartosisScriptArgs := binding_constructors.NewExecuteStartosisScriptArgs(serializedScript, dryRun)
-	executeStartosisResponse, err := enclaveCtx.client.ExecuteStartosisScript(context.Background(), executeStartosisScriptArgs)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Unexpected error happened executing Startosis script \n%v", serializedScript)
-	}
-	return executeStartosisResponse, nil
-}
-
-func (enclaveCtx *EnclaveContext) ExecuteKurtosisScript(ctx context.Context, serializedScript string, dryRun bool) (chan *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine, context.CancelFunc, error) {
+func (enclaveCtx *EnclaveContext) ExecuteStarlarkScript(ctx context.Context, serializedScript string, dryRun bool) (chan *kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine, context.CancelFunc, error) {
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(ctx)
-	executeStartosisScriptArgs := binding_constructors.NewExecuteStartosisScriptArgs(serializedScript, dryRun)
-	kurtosisResponseLineChan := make(chan *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine)
+	executeStartosisScriptArgs := binding_constructors.NewExecuteStarlarkScriptArgs(serializedScript, dryRun)
+	kurtosisResponseLineChan := make(chan *kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine)
 
-	stream, err := enclaveCtx.client.ExecuteKurtosisScript(ctxWithCancel, executeStartosisScriptArgs)
+	stream, err := enclaveCtx.client.ExecuteStarlarkScript(ctxWithCancel, executeStartosisScriptArgs)
 	if err != nil {
 		cancelCtxFunc() // manually call the cancel function as something went wrong
 		return nil, nil, stacktrace.Propagate(err, "Unexpected error happened executing Kurtosis script.")
@@ -164,60 +155,38 @@ func (enclaveCtx *EnclaveContext) ExecuteKurtosisScript(ctx context.Context, ser
 	return kurtosisResponseLineChan, cancelCtxFunc, nil
 }
 
-func (enclaveCtx *EnclaveContext) ExecuteStartosisModule(moduleRootPath string, serializedParams string, dryRun bool) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse, error) {
-	executeStartosisModuleArgs, err := enclaveCtx.assembleExecuteStartosisModuleArg(moduleRootPath, serializedParams, dryRun)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error preparing module for execution '%v'", moduleRootPath)
-	}
-
-	executeStartosisResponse, err := enclaveCtx.client.ExecuteStartosisModule(context.Background(), executeStartosisModuleArgs)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Unexpected error happened executing Starlark module \n%v", moduleRootPath)
-	}
-	return executeStartosisResponse, nil
-}
-
-func (enclaveCtx *EnclaveContext) ExecuteKurtosisModule(ctx context.Context, moduleRootPath string, serializedParams string, dryRun bool) (chan *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine, context.CancelFunc, error) {
+func (enclaveCtx *EnclaveContext) ExecuteStarlarkPackage(ctx context.Context, packageRootPath string, serializedParams string, dryRun bool) (chan *kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine, context.CancelFunc, error) {
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(ctx)
-	kurtosisResponseLineChan := make(chan *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine)
-	executeStartosisModuleArgs, err := enclaveCtx.assembleExecuteStartosisModuleArg(moduleRootPath, serializedParams, dryRun)
+	starlarkResponseLineChan := make(chan *kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine)
+	executeStartosisPackageArgs, err := enclaveCtx.assembleExecuteStartosisPackageArg(packageRootPath, serializedParams, dryRun)
 	if err != nil {
 		cancelCtxFunc() // manually call the cancel function as something went wrong
-		return nil, nil, stacktrace.Propagate(err, "Error preparing module for execution '%v'", moduleRootPath)
+		return nil, nil, stacktrace.Propagate(err, "Error preparing package for execution '%v'", packageRootPath)
 	}
 
-	stream, err := enclaveCtx.client.ExecuteKurtosisModule(ctxWithCancel, executeStartosisModuleArgs)
+	stream, err := enclaveCtx.client.ExecuteStarlarkPackage(ctxWithCancel, executeStartosisPackageArgs)
 	if err != nil {
 		cancelCtxFunc() // manually call the cancel function as something went wrong
-		return nil, nil, stacktrace.Propagate(err, "Unexpected error happened executing Startosis module '%v'", moduleRootPath)
+		return nil, nil, stacktrace.Propagate(err, "Unexpected error happened executing Starlark package '%v'", packageRootPath)
 	}
 
-	go runReceiveKurtosisResponseLineRoutine(cancelCtxFunc, stream, kurtosisResponseLineChan)
-	return kurtosisResponseLineChan, cancelCtxFunc, nil
+	go runReceiveKurtosisResponseLineRoutine(cancelCtxFunc, stream, starlarkResponseLineChan)
+	return starlarkResponseLineChan, cancelCtxFunc, nil
 }
 
-func (enclaveCtx *EnclaveContext) ExecuteStartosisRemoteModule(moduleId string, serializedParams string, dryRun bool) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse, error) {
-	executeStartosisScriptArgs := binding_constructors.NewExecuteStartosisRemoteModuleArgs(moduleId, serializedParams, dryRun)
-	executeStartosisResponse, err := enclaveCtx.client.ExecuteStartosisModule(context.Background(), executeStartosisScriptArgs)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Unexpected error happened executing Starlark module '%v'", moduleId)
-	}
-	return executeStartosisResponse, nil
-}
-
-func (enclaveCtx *EnclaveContext) ExecuteKurtosisRemoteModule(ctx context.Context, moduleId string, serializedParams string, dryRun bool) (chan *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine, context.CancelFunc, error) {
+func (enclaveCtx *EnclaveContext) ExecuteStarlarkRemotePackage(ctx context.Context, packageId string, serializedParams string, dryRun bool) (chan *kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine, context.CancelFunc, error) {
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(ctx)
-	kurtosisResponseLineChan := make(chan *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine)
-	executeStartosisScriptArgs := binding_constructors.NewExecuteStartosisRemoteModuleArgs(moduleId, serializedParams, dryRun)
+	starlarkResponseLineChan := make(chan *kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine)
+	executeStartosisScriptArgs := binding_constructors.NewExecuteStarlarkRemotePackageArgs(packageId, serializedParams, dryRun)
 
-	stream, err := enclaveCtx.client.ExecuteKurtosisModule(ctxWithCancel, executeStartosisScriptArgs)
+	stream, err := enclaveCtx.client.ExecuteStarlarkPackage(ctxWithCancel, executeStartosisScriptArgs)
 	if err != nil {
 		cancelCtxFunc() // manually call the cancel function as something went wrong
-		return nil, nil, stacktrace.Propagate(err, "Unexpected error happened executing Startosis module '%v'", moduleId)
+		return nil, nil, stacktrace.Propagate(err, "Unexpected error happened executing Starlark package '%v'", packageId)
 	}
 
-	go runReceiveKurtosisResponseLineRoutine(cancelCtxFunc, stream, kurtosisResponseLineChan)
-	return kurtosisResponseLineChan, cancelCtxFunc, nil
+	go runReceiveKurtosisResponseLineRoutine(cancelCtxFunc, stream, starlarkResponseLineChan)
+	return starlarkResponseLineChan, cancelCtxFunc, nil
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
@@ -729,13 +698,13 @@ func convertApiPortsToServiceContextPorts(apiPorts map[string]*kurtosis_core_rpc
 	return result, nil
 }
 
-func runReceiveKurtosisResponseLineRoutine(cancelCtxFunc context.CancelFunc, stream grpc.ClientStream, kurtosisResponseLineChan chan *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine) {
+func runReceiveKurtosisResponseLineRoutine(cancelCtxFunc context.CancelFunc, stream grpc.ClientStream, kurtosisResponseLineChan chan *kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine) {
 	defer func() {
 		close(kurtosisResponseLineChan)
 		cancelCtxFunc()
 	}()
 	for {
-		responseLine := new(kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine)
+		responseLine := new(kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine)
 		err := stream.RecvMsg(responseLine)
 		if err == io.EOF {
 			logrus.Debugf("Successfully reached the end of the response stream. Closing.")
@@ -749,7 +718,7 @@ func runReceiveKurtosisResponseLineRoutine(cancelCtxFunc context.CancelFunc, str
 	}
 }
 
-func (enclaveCtx *EnclaveContext) assembleExecuteStartosisModuleArg(moduleRootPath string, serializedParams string, dryRun bool) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleArgs, error) {
+func (enclaveCtx *EnclaveContext) assembleExecuteStartosisPackageArg(moduleRootPath string, serializedParams string, dryRun bool) (*kurtosis_core_rpc_api_bindings.ExecuteStarlarkPackageArgs, error) {
 	kurtosisYamlFilepath := path.Join(moduleRootPath, kurtosisYamlFilename)
 
 	kurtosisYaml, err := parseKurtosisYaml(kurtosisYamlFilepath)
@@ -763,5 +732,5 @@ func (enclaveCtx *EnclaveContext) assembleExecuteStartosisModuleArg(moduleRootPa
 		return nil, stacktrace.Propagate(err, "There was an error compressing module '%v' before upload", moduleRootPath)
 	}
 	logrus.Infof("Uploading and executing module '%v'", kurtosisYaml.PackageName)
-	return binding_constructors.NewExecuteStartosisModuleArgs(kurtosisYaml.PackageName, compressedModule, serializedParams, dryRun), nil
+	return binding_constructors.NewExecuteStarlarkPackageArgs(kurtosisYaml.PackageName, compressedModule, serializedParams, dryRun), nil
 }

@@ -30,7 +30,7 @@ test("Test valid startosis module with input", async () => {
         log.info(`Loading module at path '${moduleRootPath}'`)
 
         const params = `{"greetings": "bonjour!"}`
-        const outputStream = await enclaveContext.executeKurtosisModule(moduleRootPath, params, DEFAULT_DRY_RUN)
+        const outputStream = await enclaveContext.executeStarlarkPackage(moduleRootPath, params, DEFAULT_DRY_RUN)
 
         if (outputStream.isErr()) {
             log.error(`An error occurred execute startosis module '${moduleRootPath}'`);
@@ -67,7 +67,7 @@ test("Test valid startosis module with input - missing key in params", async () 
         log.info(`Loading module at path '${moduleRootPath}'`)
 
         const params = `{"hello": "world"}` // expecting key 'greetings' here
-        const outputStream = await enclaveContext.executeKurtosisModule(moduleRootPath, params, DEFAULT_DRY_RUN)
+        const outputStream = await enclaveContext.executeStarlarkPackage(moduleRootPath, params, DEFAULT_DRY_RUN)
 
         if (outputStream.isErr()) {
             log.error(`An error occurred execute startosis module '${moduleRootPath}'`);

@@ -57,7 +57,7 @@ test("Test upload files startosis", async () => {
     try {
         // ------------------------------------- TEST SETUP ----------------------------------------------
         log.info("Loading module...")
-        const outputStream = await enclaveContext.executeKurtosisScript(STARTOSIS_SCRIPT, DEFAULT_DRY_RUN)
+        const outputStream = await enclaveContext.executeStarlarkScript(STARTOSIS_SCRIPT, DEFAULT_DRY_RUN)
         if (outputStream.isErr()) {
             log.error("An error occurred executing the Startosis SCript")
             throw outputStream.error

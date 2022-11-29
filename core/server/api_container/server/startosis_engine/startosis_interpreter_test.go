@@ -18,7 +18,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/store_service_files"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/upload_files"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_modules/mock_module_content_provider"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/mock_package_content_provider"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
@@ -42,7 +42,7 @@ var (
 
 func TestStartosisInterpreter_SimplePrintScript(t *testing.T) {
 	testString := "Hello World!"
-	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
+	moduleContentProvider := mock_package_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
 	startosisInterpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	interpreter := startosisInterpreter
@@ -50,7 +50,7 @@ func TestStartosisInterpreter_SimplePrintScript(t *testing.T) {
 print("` + testString + `")
 `
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Len(t, instructions, 1) // Only the print statement
 	require.Nil(t, interpretationError)
 
@@ -60,7 +60,7 @@ print("` + testString + `")
 }
 
 func TestStartosisInterpreter_ScriptFailingSingleError(t *testing.T) {
-	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
+	moduleContentProvider := mock_package_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
@@ -69,7 +69,7 @@ print("Starting Startosis script!")
 unknownInstruction()
 `
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Empty(t, instructions)
 
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
@@ -82,7 +82,7 @@ unknownInstruction()
 }
 
 func TestStartosisInterpreter_ScriptFailingMultipleErrors(t *testing.T) {
-	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
+	moduleContentProvider := mock_package_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
@@ -94,7 +94,7 @@ print(unknownVariable)
 unknownInstruction2()
 `
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Empty(t, instructions)
 
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
@@ -109,7 +109,7 @@ unknownInstruction2()
 }
 
 func TestStartosisInterpreter_ScriptFailingSyntaxError(t *testing.T) {
-	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
+	moduleContentProvider := mock_package_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
@@ -118,7 +118,7 @@ print("Starting Startosis script!")
 load("otherScript.start") # fails b/c load takes in at least 2 args
 `
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Empty(t, instructions)
 
 	expectedError := startosis_errors.NewInterpretationErrorFromStacktrace(
@@ -130,7 +130,7 @@ load("otherScript.start") # fails b/c load takes in at least 2 args
 }
 
 func TestStartosisInterpreter_ValidSimpleScriptWithInstruction(t *testing.T) {
-	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
+	moduleContentProvider := mock_package_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	privateIPAddressPlaceholder := "MAGICAL_PLACEHOLDER_TO_REPLACE"
@@ -153,11 +153,11 @@ print("The grpc port protocol is " + datastore_service.ports["grpc"].protocol)
 print("The datastore service ip address is " + datastore_service.ip_address)
 `
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Len(t, instructions, 6)
 	require.Nil(t, interpretationError)
 
-	addServiceInstruction := createSimpleAddServiceInstruction(t, "example-datastore-server", testContainerImageName, 1323, 14, 32, ModuleIdPlaceholderForStandaloneScripts, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, privateIPAddressPlaceholder)
+	addServiceInstruction := createSimpleAddServiceInstruction(t, "example-datastore-server", testContainerImageName, 1323, 14, 32, PackageIdPlaceholderForStandaloneScript, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, privateIPAddressPlaceholder)
 	require.Equal(t, addServiceInstruction, instructions[2])
 
 	expectedOutput := `Starting Startosis script!
@@ -170,7 +170,7 @@ The datastore service ip address is {{kurtosis:example-datastore-server.ip_addre
 }
 
 func TestStartosisInterpreter_ValidSimpleScriptWithInstructionMissingContainerName(t *testing.T) {
-	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
+	moduleContentProvider := mock_package_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
@@ -188,7 +188,7 @@ config = struct(
 add_service(service_id = service_id, config = config)
 `
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Empty(t, instructions)
 
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
@@ -202,7 +202,7 @@ add_service(service_id = service_id, config = config)
 }
 
 func TestStartosisInterpreter_ValidSimpleScriptWithInstructionTypoInProtocol(t *testing.T) {
-	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
+	moduleContentProvider := mock_package_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
@@ -220,7 +220,7 @@ config = struct(
 add_service(service_id = service_id, config = config)
 `
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Empty(t, instructions)
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
 		[]startosis_errors.CallFrame{
@@ -233,7 +233,7 @@ add_service(service_id = service_id, config = config)
 }
 
 func TestStartosisInterpreter_ValidSimpleScriptWithInstructionPortNumberAsString(t *testing.T) {
-	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
+	moduleContentProvider := mock_package_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
@@ -251,7 +251,7 @@ config = struct(
 add_service(service_id = service_id, config = config)
 `
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Empty(t, instructions)
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
 		[]startosis_errors.CallFrame{
@@ -264,7 +264,7 @@ add_service(service_id = service_id, config = config)
 }
 
 func TestStartosisInterpreter_ValidScriptWithMultipleInstructions(t *testing.T) {
-	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
+	moduleContentProvider := mock_package_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
@@ -292,13 +292,13 @@ deploy_datastore_services()
 print("Done!")
 `
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Len(t, instructions, 8)
 	require.Nil(t, interpretationError)
 
-	addServiceInstruction0 := createSimpleAddServiceInstruction(t, "example-datastore-server-0", testContainerImageName, 1323, 20, 20, ModuleIdPlaceholderForStandaloneScripts, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder)
-	addServiceInstruction1 := createSimpleAddServiceInstruction(t, "example-datastore-server-1", testContainerImageName, 1324, 20, 20, ModuleIdPlaceholderForStandaloneScripts, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder)
-	addServiceInstruction2 := createSimpleAddServiceInstruction(t, "example-datastore-server-2", testContainerImageName, 1325, 20, 20, ModuleIdPlaceholderForStandaloneScripts, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder)
+	addServiceInstruction0 := createSimpleAddServiceInstruction(t, "example-datastore-server-0", testContainerImageName, 1323, 20, 20, PackageIdPlaceholderForStandaloneScript, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder)
+	addServiceInstruction1 := createSimpleAddServiceInstruction(t, "example-datastore-server-1", testContainerImageName, 1324, 20, 20, PackageIdPlaceholderForStandaloneScript, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder)
+	addServiceInstruction2 := createSimpleAddServiceInstruction(t, "example-datastore-server-2", testContainerImageName, 1325, 20, 20, PackageIdPlaceholderForStandaloneScript, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder)
 
 	require.Equal(t, addServiceInstruction0, instructions[2])
 	require.Equal(t, addServiceInstruction1, instructions[4])
@@ -318,7 +318,7 @@ func TestStartosisInterpreter_LoadStatementIsDisallowedInKurtosis(t *testing.T) 
 	seedModules := map[string]string{
 		barModulePath: "a=\"World!\"",
 	}
-	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
+	moduleContentProvider := mock_package_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
 	require.Nil(t, moduleContentProvider.BulkAddFileContent(seedModules))
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
@@ -326,7 +326,7 @@ func TestStartosisInterpreter_LoadStatementIsDisallowedInKurtosis(t *testing.T) 
 load("` + barModulePath + `", "a")
 print("Hello " + a)
 `
-	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
 		[]startosis_errors.CallFrame{
 			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(2, 1)),
@@ -343,7 +343,7 @@ func TestStartosisInterpreter_SimpleImport(t *testing.T) {
 	seedModules := map[string]string{
 		barModulePath: "a=\"World!\"",
 	}
-	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
+	moduleContentProvider := mock_package_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
 	require.Nil(t, moduleContentProvider.BulkAddFileContent(seedModules))
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
@@ -351,7 +351,7 @@ func TestStartosisInterpreter_SimpleImport(t *testing.T) {
 my_module = import_module("` + barModulePath + `")
 print("Hello " + my_module.a)
 `
-	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Len(t, instructions, 1) // Only the print statement
 	require.Nil(t, interpretationError)
 
@@ -368,7 +368,7 @@ func TestStartosisInterpreter_TransitiveLoading(t *testing.T) {
 	seedModules[moduleDooWhichLoadsModuleBar] = `module_bar = import_module("` + moduleBar + `")
 b = "Hello " + module_bar.a
 `
-	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
+	moduleContentProvider := mock_package_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
 	require.Nil(t, moduleContentProvider.BulkAddFileContent(seedModules))
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
@@ -378,7 +378,7 @@ print(module_doo.b)
 
 `
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Len(t, instructions, 1) // Only the print statement
 	require.Nil(t, interpretationError)
 
@@ -396,7 +396,7 @@ a = "Hello" + module_doo.b`
 	seedModules[moduleDooLoadsModuleBar] = `module_bar = import_module("` + moduleBarLoadsModuleDoo + `")
 b = "Hello " + module_bar.a
 `
-	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
+	moduleContentProvider := mock_package_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
 	require.Nil(t, moduleContentProvider.BulkAddFileContent(seedModules))
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
@@ -405,7 +405,7 @@ module_doo = import_module("` + moduleDooLoadsModuleBar + `")
 print(module_doo.b)
 `
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Empty(t, instructions) // No kurtosis instruction
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
 		[]startosis_errors.CallFrame{
@@ -418,7 +418,7 @@ print(module_doo.b)
 }
 
 func TestStartosisInterpreter_FailsOnNonExistentModule(t *testing.T) {
-	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
+	moduleContentProvider := mock_package_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	nonExistentModule := "github.com/non/existent/module.star"
@@ -427,11 +427,11 @@ my_module = import_module("` + nonExistentModule + `")
 print(my_module.b)
 `
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Empty(t, instructions) // No kurtosis instruction
 
-	errorMsg := `Evaluation error: An error occurred while loading the module '` + nonExistentModule + `'
-	Caused by: Module '` + nonExistentModule + `' not found`
+	errorMsg := `Evaluation error: An error occurred while loading the package '` + nonExistentModule + `'
+	Caused by: Package '` + nonExistentModule + `' not found`
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
 		[]startosis_errors.CallFrame{
 			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(2, 26)),
@@ -443,7 +443,7 @@ print(my_module.b)
 }
 
 func TestStartosisInterpreter_ImportingAValidModuleThatPreviouslyFailedToLoadSucceeds(t *testing.T) {
-	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
+	moduleContentProvider := mock_package_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
 	barModulePath := "github.com/foo/bar/lib.star"
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
@@ -453,7 +453,7 @@ print("Hello " + my_module.a)
 `
 
 	// assert that first load fails
-	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Nil(t, instructions)
 	require.NotNil(t, interpretationError)
 
@@ -462,7 +462,7 @@ print("Hello " + my_module.a)
 	expectedOutput := `Hello World!
 `
 	// assert that second load succeeds
-	instructions, interpretationError = interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError = interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 1) // The print statement
 	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutput)
@@ -481,7 +481,7 @@ config = struct(
 	}
 )
 `
-	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
+	moduleContentProvider := mock_package_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
 	require.Nil(t, moduleContentProvider.BulkAddFileContent(seedModules))
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
@@ -493,11 +493,11 @@ print("Adding service " + module_bar.service_id)
 add_service(service_id = module_bar.service_id, config = module_bar.config)
 `
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Len(t, instructions, 4)
 	require.Nil(t, interpretationError)
 
-	addServiceInstruction := createSimpleAddServiceInstruction(t, "example-datastore-server", testContainerImageName, 1323, 6, 12, ModuleIdPlaceholderForStandaloneScripts, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder)
+	addServiceInstruction := createSimpleAddServiceInstruction(t, "example-datastore-server", testContainerImageName, 1323, 6, 12, PackageIdPlaceholderForStandaloneScript, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder)
 
 	require.Equal(t, addServiceInstruction, instructions[3])
 
@@ -530,7 +530,7 @@ def deploy_datastore_services():
 		)
         add_service(service_id = unique_service_id, config = config)
 `
-	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
+	moduleContentProvider := mock_package_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
 	require.Nil(t, moduleContentProvider.BulkAddFileContent(seedModules))
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
@@ -542,7 +542,7 @@ datastore_module.deploy_datastore_services()
 print("Done!")
 `
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Len(t, instructions, 8)
 	require.Nil(t, interpretationError)
 
@@ -568,7 +568,7 @@ func TestStartosisInterpreter_ImportModuleWithNoGlobalVariables(t *testing.T) {
 	seedModules := map[string]string{
 		barModulePath: "print(\"Hello\")",
 	}
-	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
+	moduleContentProvider := mock_package_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
 	require.Nil(t, moduleContentProvider.BulkAddFileContent(seedModules))
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
@@ -577,7 +577,7 @@ my_module = import_module("` + barModulePath + `")
 print("World!")
 `
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Len(t, instructions, 2)
 	require.Nil(t, interpretationError)
 
@@ -602,7 +602,7 @@ config = struct(
 print("Adding service " + service_id)
 add_service(service_id = service_id, config = config)
 `
-	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
+	moduleContentProvider := mock_package_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
 	require.Nil(t, moduleContentProvider.BulkAddFileContent(seedModules))
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
@@ -611,7 +611,7 @@ import_module("` + moduleBar + `")
 print("Starting Startosis script!")
 `
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Len(t, instructions, 4)
 	require.Nil(t, interpretationError)
 
@@ -641,7 +641,7 @@ config = struct(
 print("Adding service " + service_id)
 add_service(service_id = service_id, config = config)
 `
-	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
+	moduleContentProvider := mock_package_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
 	require.Nil(t, moduleContentProvider.BulkAddFileContent(seedModules))
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
@@ -656,7 +656,7 @@ Adding service example-datastore-server
 Starting Startosis script!
 `
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, scriptA, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, scriptA, EmptyInputArgs)
 	require.Len(t, instructions, 4)
 	require.Nil(t, interpretationError)
 	require.Equal(t, addServiceInstructionFromScriptA, instructions[2])
@@ -676,12 +676,12 @@ config = struct(
 )
 add_service(service_id = service_id, config = config)
 `
-	addServiceInstructionFromScriptB := createSimpleAddServiceInstruction(t, "example-datastore-server", testContainerImageName, 1323, 13, 12, ModuleIdPlaceholderForStandaloneScripts, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder)
+	addServiceInstructionFromScriptB := createSimpleAddServiceInstruction(t, "example-datastore-server", testContainerImageName, 1323, 13, 12, PackageIdPlaceholderForStandaloneScript, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder)
 	expectedOutputFromScriptB := `Starting Startosis script!
 Adding service example-datastore-server
 `
 
-	instructions, interpretationError = interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, scriptB, EmptyInputArgs)
+	instructions, interpretationError = interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, scriptB, EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 3)
 	require.Equal(t, addServiceInstructionFromScriptB, instructions[2])
@@ -689,7 +689,7 @@ Adding service example-datastore-server
 }
 
 func TestStartosisInterpreter_AddServiceWithEnvVarsCmdArgsAndEntryPointArgs(t *testing.T) {
-	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
+	moduleContentProvider := mock_package_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
@@ -717,16 +717,16 @@ client_config = struct(
 add_service(service_id = client_service_id, config = client_config)
 `
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 5)
 
-	dataSourceAddServiceInstruction := createSimpleAddServiceInstruction(t, "example-datastore-server", testContainerImageName, 1323, 11, 32, ModuleIdPlaceholderForStandaloneScripts, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder)
+	dataSourceAddServiceInstruction := createSimpleAddServiceInstruction(t, "example-datastore-server", testContainerImageName, 1323, 11, 32, PackageIdPlaceholderForStandaloneScript, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder)
 
 	entryPointArgs := []string{"--store-port 1323", "--store-ip {{kurtosis:example-datastore-server.ip_address}}"}
 	cmdArgs := []string{"ping", "{{kurtosis:example-datastore-server.ip_address}}"}
 	envVars := map[string]string{"STORE_IP": "{{kurtosis:example-datastore-server.ip_address}}"}
-	clientAddServiceInstruction := createSimpleAddServiceInstruction(t, "example-datastore-client", "kurtosistech/example-datastore-client", 1337, 23, 12, ModuleIdPlaceholderForStandaloneScripts, entryPointArgs, cmdArgs, envVars, defaultPrivateIPAddressPlaceholder)
+	clientAddServiceInstruction := createSimpleAddServiceInstruction(t, "example-datastore-client", "kurtosistech/example-datastore-client", 1337, 23, 12, PackageIdPlaceholderForStandaloneScript, entryPointArgs, cmdArgs, envVars, defaultPrivateIPAddressPlaceholder)
 
 	require.Equal(t, dataSourceAddServiceInstruction, instructions[2])
 	require.Equal(t, clientAddServiceInstruction, instructions[4])
@@ -739,7 +739,7 @@ Adding service example-datastore-client
 }
 
 func TestStartosisInterpreter_ValidExecScriptWithoutExitCodeDefaultsTo0(t *testing.T) {
-	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
+	moduleContentProvider := mock_package_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
@@ -747,7 +747,7 @@ print("Executing mkdir!")
 exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"])
 `
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Len(t, instructions, 2)
 	require.Nil(t, interpretationError)
 
@@ -759,7 +759,7 @@ exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"])
 	starlarkKwargs.Freeze()
 	execInstruction := exec.NewExecInstruction(
 		testServiceNetwork,
-		kurtosis_instruction.NewInstructionPosition(3, 5, ModuleIdPlaceholderForStandaloneScripts),
+		kurtosis_instruction.NewInstructionPosition(3, 5, PackageIdPlaceholderForStandaloneScript),
 		"example-datastore-server",
 		[]string{"mkdir", "/tmp/foo"},
 		0,
@@ -774,7 +774,7 @@ exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"])
 }
 
 func TestStartosisInterpreter_PassedExitCodeIsInterpretedCorrectly(t *testing.T) {
-	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
+	moduleContentProvider := mock_package_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
@@ -782,7 +782,7 @@ print("Executing mkdir!")
 exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"], expected_exit_code = -7)
 `
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Len(t, instructions, 2)
 	require.Nil(t, interpretationError)
 
@@ -794,7 +794,7 @@ exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"], e
 	starlarkKwargs.Freeze()
 	execInstruction := exec.NewExecInstruction(
 		testServiceNetwork,
-		kurtosis_instruction.NewInstructionPosition(3, 5, ModuleIdPlaceholderForStandaloneScripts),
+		kurtosis_instruction.NewInstructionPosition(3, 5, PackageIdPlaceholderForStandaloneScript),
 		"example-datastore-server",
 		[]string{"mkdir", "/tmp/foo"},
 		-7,
@@ -811,7 +811,7 @@ exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"], e
 func TestStartosisInterpreter_StoreFileFromService(t *testing.T) {
 	testArtifactId, err := enclave_data_directory.NewFilesArtifactUUID()
 	require.Nil(t, err)
-	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
+	moduleContentProvider := mock_package_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
@@ -820,7 +820,7 @@ artifact_uuid=store_service_files(service_id="example-datastore-server", src="/f
 print(artifact_uuid)
 `
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 3)
 
@@ -832,7 +832,7 @@ print(artifact_uuid)
 	starlarkKwargs.Freeze()
 	storeInstruction := store_service_files.NewStoreServiceFilesInstruction(
 		testServiceNetwork,
-		kurtosis_instruction.NewInstructionPosition(3, 34, ModuleIdPlaceholderForStandaloneScripts),
+		kurtosis_instruction.NewInstructionPosition(3, 34, PackageIdPlaceholderForStandaloneScript),
 		"example-datastore-server",
 		"/foo/bar",
 		testArtifactId,
@@ -852,7 +852,7 @@ func TestStartosisInterpreter_ReadFileFromGithub(t *testing.T) {
 	seed := map[string]string{
 		srcPath: "this is a test string",
 	}
-	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
+	moduleContentProvider := mock_package_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
 	require.Nil(t, moduleContentProvider.BulkAddFileContent(seed))
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
@@ -862,7 +862,7 @@ file_contents=read_file("` + srcPath + `")
 print(file_contents)
 `
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 2)
 
@@ -873,7 +873,7 @@ this is a test string
 }
 
 func TestStartosisInterpreter_DefineFactAndWait(t *testing.T) {
-	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
+	moduleContentProvider := mock_package_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
 	interpreter := NewStartosisInterpreterWithFacts(testServiceNetwork, nil, moduleContentProvider, nil)
 	scriptFormatStr := `
@@ -883,7 +883,7 @@ wait(service_id="%v", fact_name="%v")
 	serviceId := "service"
 	factName := "fact"
 	script := fmt.Sprintf(scriptFormatStr, serviceId, factName, serviceId, factName)
-	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.NotEmpty(t, instructions)
 	validateScriptOutputFromPrintInstructions(t, instructions, "")
@@ -892,7 +892,7 @@ wait(service_id="%v", fact_name="%v")
 func TestStartosisInterpreter_RenderTemplates(t *testing.T) {
 	testArtifactId, err := enclave_data_directory.NewFilesArtifactUUID()
 	require.Nil(t, err)
-	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
+	moduleContentProvider := mock_package_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
@@ -915,7 +915,7 @@ artifact_id = render_templates(config = data, artifact_id = "` + string(testArti
 print(artifact_id)
 `
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 3)
 
@@ -955,7 +955,7 @@ print(artifact_id)
 
 	renderInstruction := render_templates.NewRenderTemplatesInstruction(
 		testServiceNetwork,
-		kurtosis_instruction.NewInstructionPosition(17, 31, ModuleIdPlaceholderForStandaloneScripts),
+		kurtosis_instruction.NewInstructionPosition(17, 31, PackageIdPlaceholderForStandaloneScript),
 		templateAndDataByDestFilepath,
 		starlark.StringDict{
 			"config":      templateAndDataValues,
@@ -991,7 +991,7 @@ def call_store_for_me():
 	return store_for_me_module.store_for_me()
 	`
 
-	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
+	moduleContentProvider := mock_package_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
 	err = moduleContentProvider.AddFileContent(storeFileDefinitionPath, storeFileContent)
 	require.Nil(t, err)
@@ -1006,7 +1006,7 @@ uuid = call_store_for_me_module.call_store_for_me()
 print(uuid)
 `
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 4)
 
@@ -1035,7 +1035,7 @@ In the store files instruction
 }
 
 func TestStartosisInterpreter_ValidSimpleRemoveService(t *testing.T) {
-	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
+	moduleContentProvider := mock_package_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
@@ -1045,13 +1045,13 @@ remove_service(service_id=service_id)
 print("The service example-datastore-server has been removed")
 `
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Len(t, instructions, 3)
 	require.Nil(t, interpretationError)
 
 	removeInstruction := remove_service.NewRemoveServiceInstruction(
 		testServiceNetwork,
-		kurtosis_instruction.NewInstructionPosition(4, 15, ModuleIdPlaceholderForStandaloneScripts),
+		kurtosis_instruction.NewInstructionPosition(4, 15, PackageIdPlaceholderForStandaloneScript),
 		"example-datastore-server",
 	)
 
@@ -1067,7 +1067,7 @@ func TestStartosisInterpreter_UploadGetsInterpretedCorrectly(t *testing.T) {
 	filePath := "github.com/kurtosis/module/lib/lib.star"
 	artifactId, err := enclave_data_directory.NewFilesArtifactUUID()
 	require.Nil(t, err)
-	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
+	moduleContentProvider := mock_package_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
 	err = moduleContentProvider.AddFileContent(filePath, "fooBar")
 	require.Nil(t, err)
@@ -1076,7 +1076,7 @@ func TestStartosisInterpreter_UploadGetsInterpretedCorrectly(t *testing.T) {
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `upload_files("` + filePath + `","` + string(artifactId) + `")
 `
-	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 1)
 	validateScriptOutputFromPrintInstructions(t, instructions, "")
@@ -1087,7 +1087,7 @@ func TestStartosisInterpreter_UploadGetsInterpretedCorrectly(t *testing.T) {
 	}
 	starlarkKwargs.Freeze()
 	expectedUploadInstruction := upload_files.NewUploadFilesInstruction(
-		kurtosis_instruction.NewInstructionPosition(1, 13, ModuleIdPlaceholderForStandaloneScripts),
+		kurtosis_instruction.NewInstructionPosition(1, 13, PackageIdPlaceholderForStandaloneScript),
 		testServiceNetwork, moduleContentProvider, filePath, filePathOnDisk, artifactId,
 		starlarkKwargs,
 	)
@@ -1097,18 +1097,18 @@ func TestStartosisInterpreter_UploadGetsInterpretedCorrectly(t *testing.T) {
 
 func TestStartosisInterpreter_NoPanicIfUploadIsPassedAPathNotOnDisk(t *testing.T) {
 	filePath := "github.com/kurtosis/module/lib/lib.star"
-	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
+	moduleContentProvider := mock_package_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `upload_files("` + filePath + `")
 `
-	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Nil(t, instructions)
 	require.NotNil(t, interpretationError)
 }
 
 func TestStartosisInterpreter_NoPortsIsOkayForAddServiceInstruction(t *testing.T) {
-	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
+	moduleContentProvider := mock_package_content_provider.NewMockModuleContentProvider()
 	defer moduleContentProvider.RemoveAll()
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
@@ -1123,11 +1123,11 @@ config = struct(
 datastore_service = add_service(service_id = service_id, config = config)
 print("The datastore service ip address is " + datastore_service.ip_address)`
 
-	instructions, interpretationError := interpreter.Interpret(context.Background(), ModuleIdPlaceholderForStandaloneScripts, script, EmptyInputArgs)
+	instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Equal(t, 4, len(instructions))
 
-	addServiceInstruction := createSimpleAddServiceInstruction(t, "example-datastore-server", testContainerImageName, 0, 10, 32, ModuleIdPlaceholderForStandaloneScripts, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder)
+	addServiceInstruction := createSimpleAddServiceInstruction(t, "example-datastore-server", testContainerImageName, 0, 10, 32, PackageIdPlaceholderForStandaloneScript, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder)
 	require.Equal(t, instructions[2], addServiceInstruction)
 
 	expectedOutput := `Starting Startosis script!
