@@ -1,6 +1,6 @@
 import {
     StarlarkExecutionError,
-    StarlarkExecutionResponseLine,
+    StarlarkRunResponseLine,
     StarlarkInstruction,
     StarlarkInterpretationError,
     StarlarkValidationError
@@ -23,7 +23,7 @@ export function readStreamContentUntilClosed(responseLines: Readable): Promise<[
     let instructions: Array<StarlarkInstruction> = []
 
     return new Promise(resolve => {
-        responseLines.on('data', (responseLine: StarlarkExecutionResponseLine) => {
+        responseLines.on('data', (responseLine: StarlarkRunResponseLine) => {
             if (responseLine.getInstruction() !== undefined) {
                 instructions.push(responseLine.getInstruction()!)
             } else if (responseLine.getInstructionResult() !== undefined) {

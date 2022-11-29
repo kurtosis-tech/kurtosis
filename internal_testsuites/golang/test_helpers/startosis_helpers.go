@@ -9,7 +9,7 @@ const (
 	newlineChar = "\n"
 )
 
-func ReadStreamContentUntilClosed(responseLines chan *kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine) (string, []*kurtosis_core_rpc_api_bindings.StarlarkInstruction, *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError, []*kurtosis_core_rpc_api_bindings.StarlarkValidationError, *kurtosis_core_rpc_api_bindings.StarlarkExecutionError) {
+func ReadStreamContentUntilClosed(responseLines chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine) (string, []*kurtosis_core_rpc_api_bindings.StarlarkInstruction, *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError, []*kurtosis_core_rpc_api_bindings.StarlarkValidationError, *kurtosis_core_rpc_api_bindings.StarlarkExecutionError) {
 	scriptOutput := strings.Builder{}
 	instructions := make([]*kurtosis_core_rpc_api_bindings.StarlarkInstruction, 0)
 	var interpretationError *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError
