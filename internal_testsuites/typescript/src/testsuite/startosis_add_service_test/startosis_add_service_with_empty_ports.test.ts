@@ -2,7 +2,7 @@ import {createEnclave} from "../../test_helpers/enclave_setup";
 import log from "loglevel";
 import {readStreamContentUntilClosed} from "../../test_helpers/startosis_helpers";
 import { Result } from "neverthrow"
-import {ServiceID} from "../../../../../api/typescript/src";
+import {ServiceID} from "kurtosis-sdk";
 
 const ADD_SERVICE_WITH_EMPTY_PORTS_TEST_NAME = "add-service-empty-ports"
 const IS_PARTITIONING_ENABLED = false
