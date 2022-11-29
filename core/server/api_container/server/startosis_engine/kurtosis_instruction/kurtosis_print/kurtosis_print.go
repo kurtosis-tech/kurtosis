@@ -64,14 +64,14 @@ func (instruction *PrintInstruction) GetPositionInOriginalScript() *kurtosis_ins
 	return instruction.position
 }
 
-func (instruction *PrintInstruction) GetCanonicalInstruction() *kurtosis_core_rpc_api_bindings.KurtosisInstruction {
-	args := make([]*kurtosis_core_rpc_api_bindings.KurtosisInstructionArg, len(instruction.args))
+func (instruction *PrintInstruction) GetCanonicalInstruction() *kurtosis_core_rpc_api_bindings.StarlarkInstruction {
+	args := make([]*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg, len(instruction.args))
 	for idx, arg := range instruction.args {
-		args[idx] = binding_constructors.NewKurtosisInstructionArg(shared_helpers.CanonicalizeArgValue(arg), kurtosis_instruction.Representative)
+		args[idx] = binding_constructors.NewStarlarkInstructionArg(shared_helpers.CanonicalizeArgValue(arg), kurtosis_instruction.Representative)
 	}
-	args = append(args, binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(starlark.String(instruction.separator)), separatorArgName, kurtosis_instruction.NotRepresentative))
-	args = append(args, binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(starlark.String(instruction.end)), endArgName, kurtosis_instruction.NotRepresentative))
-	return binding_constructors.NewKurtosisInstruction(instruction.position.ToAPIType(), PrintBuiltinName, instruction.String(), args)
+	args = append(args, binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(starlark.String(instruction.separator)), separatorArgName, kurtosis_instruction.NotRepresentative))
+	args = append(args, binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(starlark.String(instruction.end)), endArgName, kurtosis_instruction.NotRepresentative))
+	return binding_constructors.NewStarlarkInstruction(instruction.position.ToAPIType(), PrintBuiltinName, instruction.String(), args)
 }
 
 func (instruction *PrintInstruction) Execute(_ context.Context) (*string, error) {
