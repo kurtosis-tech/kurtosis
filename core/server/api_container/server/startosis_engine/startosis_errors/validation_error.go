@@ -56,8 +56,8 @@ func WrapWithValidationError(err error, msg string, args ...interface{}) *Valida
 	}
 }
 
-func (err *ValidationError) ToAPIType() *kurtosis_core_rpc_api_bindings.KurtosisValidationError {
-	return binding_constructors.NewKurtosisValidationError(err.Error())
+func (err *ValidationError) ToAPIType() *kurtosis_core_rpc_api_bindings.StarlarkValidationError {
+	return binding_constructors.NewStarlarkValidationError(err.Error())
 }
 
 func (err *ValidationError) Error() string {

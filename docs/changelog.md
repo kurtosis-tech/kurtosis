@@ -3,6 +3,9 @@
 ### Fixes
 - Make validation more human-readable for missing docker images and instructions that depend on invalid service ids
 
+### Features
+- Log file name and function like [filename.go:FunctionName()] while logging in `core` & `engine`
+
 # 0.57.1
 
 ### Changes
