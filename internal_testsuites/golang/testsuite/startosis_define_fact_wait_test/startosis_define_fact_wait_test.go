@@ -81,9 +81,9 @@ Service dependency 2 deployed successfully.
 	require.Equal(t, expectedScriptOutput, scriptOutput)
 	logrus.Infof("Successfully ran Startosis script")
 
-	servicesSet, err := enclaveCtx.GetServices()
-	require.Equal(t, 3, len(servicesSet))
-	require.Contains(t, servicesSet, services.ServiceID(expectedGetOutput))
-	require.Contains(t, servicesSet, services.ServiceID(expectedPostOutput))
+	serviceInfos, err := enclaveCtx.GetServices()
+	require.Equal(t, 3, len(serviceInfos))
+	require.Contains(t, serviceInfos, services.ServiceID(expectedGetOutput))
+	require.Contains(t, serviceInfos, services.ServiceID(expectedPostOutput))
 	require.Nil(t, err)
 }
