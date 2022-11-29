@@ -158,7 +158,8 @@ func (provider *GitModuleContentProvider) atomicClone(parsedURL *ParsedGitURL) *
 		CABundle:          nil,
 	})
 	if err != nil {
-		return startosis_errors.WrapWithInterpretationError(err, "Error in cloning git repository '%s' to '%s'. This usually indicates a typo in the package or author name; or an authorization issue.", parsedURL.gitURL, gitClonePath)
+		// TODO remove public repository from error after we support private repositories
+		return startosis_errors.WrapWithInterpretationError(err, "Error in cloning git repository '%s' to '%s'. Make sure that '%v' exists and is a public repository.", parsedURL.gitURL, gitClonePath, parsedURL.gitURL)
 	}
 
 	// Then we move it into the target directory
