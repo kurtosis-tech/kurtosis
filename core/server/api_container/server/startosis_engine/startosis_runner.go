@@ -2,9 +2,11 @@ package startosis_engine
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/sirupsen/logrus"
+	"strings"
 )
 
 type StartosisRunner struct {
@@ -21,6 +23,8 @@ const (
 	startingInterpretationMsg = "Interpreting Starlark code - execution will begin shortly"
 	startingValidationMsg     = "Pre-validating Starlark code and downloading docker images - execution will begin shortly"
 	startingExecutionMsg      = "Starting execution"
+
+	missingRunMethodError = "Evaluation error: module has no .run field or method"
 )
 
 func NewStartosisRunner(interpreter *StartosisInterpreter, validator *StartosisValidator, executor *StartosisExecutor) *StartosisRunner {
@@ -45,6 +49,9 @@ func (runner *StartosisRunner) Run(ctx context.Context, dryRun bool, moduleId st
 
 		instructionsList, interpretationError := runner.startosisInterpreter.Interpret(ctx, moduleId, serializedStartosis, serializedParams)
 		if interpretationError != nil {
+			if strings.Contains(interpretationError.GetErrorMessage(), missingRunMethodError) {
+				interpretationError = binding_constructors.NewKurtosisInterpretationError(fmt.Sprintf("No 'run' function found in file '%v/main.star'; a 'run' entrypoint function is required in the main.star file of any Kurtosis package", moduleId))
+			}
 			kurtosisExecutionResponseLines <- binding_constructors.NewKurtosisExecutionResponseLineFromInterpretationError(interpretationError)
 			return
 		}
