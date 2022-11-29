@@ -1,5 +1,8 @@
 # TBD
 
+### Fixes
+- Don't proceed with execution if there are validation errors in Starlark
+
 ### Features
 - Progress information (spinner, progress bar and quick progress message) is now printed by the CLI
 
