@@ -89,8 +89,10 @@ func forwardKurtosisResponseLineChannelUntilSourceIsClosed(sourceChan <-chan *ku
 // maybeMakeInterpretationErrorFriendlier this method converts interpretation errors into friendlier forms if the error message matches a given format
 // if there isn't a match it returns the original error
 func maybeMakeInterpretationErrorFriendlier(originalError *kurtosis_core_rpc_api_bindings.KurtosisInterpretationError, moduleId string) *kurtosis_core_rpc_api_bindings.KurtosisInterpretationError {
-	originalErrorMessageToFriendlierErrorMap := map[string]*kurtosis_core_rpc_api_bindings.KurtosisInterpretationError{}
-	originalErrorMessageToFriendlierErrorMap[missingRunMethodError] = binding_constructors.NewKurtosisInterpretationError(fmt.Sprintf("No 'run' function found in file '%v/main.star'; a 'run' entrypoint function is required in the main.star file of any Kurtosis package", moduleId))
+	originalErrorMessageToFriendlierErrorMap := map[string]*kurtosis_core_rpc_api_bindings.KurtosisInterpretationError{
+		missingRunMethodError: binding_constructors.NewKurtosisInterpretationError(fmt.Sprintf("No 'run' function found in file '%v/main.star'; a 'run' entrypoint function is required in the main.star file of any Kurtosis package", moduleId)),
+	}
+
 	for originalErrorMessage, friendlierError := range originalErrorMessageToFriendlierErrorMap {
 		if strings.Contains(originalError.GetErrorMessage(), originalErrorMessage) {
 			return friendlierError
