@@ -12,7 +12,7 @@ import (
 
 const (
 	validPackageNoTypeTestName = "valid-package-no-input"
-	validPackageNoTypeRelPath  = "../../../startosis/valid-kurtosis-package-no-input"
+	validPackageNoTypeRelPath  = "../../../starlark/valid-kurtosis-package-no-input"
 )
 
 func TestStartosisPackage_ValidPackageNoInput(t *testing.T) {

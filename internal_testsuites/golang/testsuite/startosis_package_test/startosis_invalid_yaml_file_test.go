@@ -12,7 +12,7 @@ import (
 
 const (
 	invalidCaseYamlFileTestName           = "invalid-package-invalid-yaml-file"
-	packageWithInvalidKurtosisYamlRelPath = "../../../startosis/invalid-yaml-file"
+	packageWithInvalidKurtosisYamlRelPath = "../../../starlark/invalid-yaml-file"
 )
 
 func TestStartosisPackage_InvalidYamlFile(t *testing.T) {

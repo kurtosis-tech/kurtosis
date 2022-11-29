@@ -6,7 +6,7 @@ import {err} from "neverthrow";
 import {readStreamContentUntilClosed} from "../../test_helpers/startosis_helpers";
 
 const MISSING_MAIN_STAR_TEST_NAME = "invalid-package-no-main-file"
-const PACKAGE_WITH_NO_MAIN_STAR_REL_PATH = "../../../../startosis/no-main-star"
+const PACKAGE_WITH_NO_MAIN_STAR_REL_PATH = "../../../../starlark/no-main-star"
 
 jest.setTimeout(JEST_TIMEOUT_MS)
 

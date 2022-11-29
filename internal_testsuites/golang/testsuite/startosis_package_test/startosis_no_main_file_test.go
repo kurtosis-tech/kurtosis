@@ -12,7 +12,7 @@ import (
 
 const (
 	invalidCaseMainStarMissingTestName = "invalid-package-no-main-file"
-	packageWithNoMainStarRelPath       = "../../../startosis/no-main-star"
+	packageWithNoMainStarRelPath       = "../../../starlark/no-main-star"
 )
 
 func TestStartosisPackage_NoMainFile(t *testing.T) {

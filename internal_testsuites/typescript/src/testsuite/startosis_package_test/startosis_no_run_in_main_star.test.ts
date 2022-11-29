@@ -6,7 +6,7 @@ import {err} from "neverthrow";
 import {readStreamContentUntilClosed} from "../../test_helpers/startosis_helpers";
 
 const MISSING_MAIN_FUNCTION_TEST_NAME = "invalid-package-missing-main"
-const PACKAGE_WITH_NO_MAIN_IN_MAIN_STAR_REL_PATH = "../../../../startosis/no-run-in-main-star"
+const PACKAGE_WITH_NO_MAIN_IN_MAIN_STAR_REL_PATH = "../../../../starlark/no-run-in-main-star"
 
 jest.setTimeout(JEST_TIMEOUT_MS)
 
@@ -36,7 +36,7 @@ test("Test invalid package with no main in main.star", async () => {
 
         expect(interpretationError).not.toBeUndefined()
         expect(interpretationError?.getErrorMessage())
-            .toContain("No 'run' function found in file 'github.com/sample/sample-kurtosis-module/main.star'; a 'run' entrypoint function is required in the main.star file of any Kurtosis package")
+            .toContain("No 'run' function found in file 'github.com/sample/sample-kurtosis-package/main.star'; a 'run' entrypoint function is required in the main.star file of any Kurtosis package")
 
         expect(validationErrors).toEqual([])
         expect(executionError).toBeUndefined()
