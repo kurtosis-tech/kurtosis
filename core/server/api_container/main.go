@@ -109,7 +109,7 @@ func runMain() error {
 		return stacktrace.NewError("Kurtosis backend type is '%v' but cluster configuration parameters are null.", args.KurtosisBackendType_Kubernetes.String())
 	}
 
-	gitModuleContentProvider, err := enclaveDataDir.GetGitModuleContentProvider()
+	gitPackageContentProvider, err := enclaveDataDir.GetGitPackageContentProvider()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while creating the Git module content provider")
 	}
@@ -175,7 +175,7 @@ func runMain() error {
 	factsEngine := facts_engine.NewFactsEngine(db, serviceNetwork)
 	// TODO: Consolidate Interpreter, Validator and Executor into a single interface
 	startosisRunner := startosis_engine.NewStartosisRunner(
-		startosis_engine.NewStartosisInterpreterWithFacts(serviceNetwork, factsEngine, gitModuleContentProvider, runtime_value_store.NewRuntimeValueStore()),
+		startosis_engine.NewStartosisInterpreterWithFacts(serviceNetwork, factsEngine, gitPackageContentProvider, runtime_value_store.NewRuntimeValueStore()),
 		startosis_engine.NewStartosisValidator(&kurtosisBackend, serviceNetwork),
 		startosis_engine.NewStartosisExecutor())
 
@@ -187,7 +187,7 @@ func runMain() error {
 		factsEngine,
 		startosisRunner,
 		metricsClient,
-		gitModuleContentProvider,
+		gitPackageContentProvider,
 	)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the API container service")

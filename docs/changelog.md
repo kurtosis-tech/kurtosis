@@ -1,11 +1,23 @@
 # TBD
+### Changes
+- Added `startosis_add_service_with_empty_ports` Golang and Typescript internal tests
+
+# 0.57.0
+### Breaking Changes
+- Renamed `src_path` parameter in `read_file` to `src`
+  - Users will have to upgrade their `read_file` calls to reflect this change
+
 ### Features
 - Progress information (spinner, progress bar and quick progress message) is now printed by the CLI
 - Instruction are now printed before the execution, and the associated result is printed once the execution is finished. This allows failed instruction to be printed before the error message is returned.
 
+### Breaking changes
+- Endpoints `ExecuteStartosisScript` and `ExecuteStartosisModule` were removed
+- Endpoints `ExecuteKurtosisScript` was renamed `RunStarlarkScript` and `ExecuteKurtosisModule` was renamed `RunStarlarkPackage`
+
 ### Changes
 - Starlark execution progress is now returned to the CLI via the KurtosisExecutionResponseLine stream
-- Added `startosis_add_service_with_empty_ports` Golang and Typescript internal tests
+- Renamed `module` to `package` in the context of the Startosis engine
 
 ### Fixes
 - Fixed the error message when the relative filename was incorrect in a Starlark import

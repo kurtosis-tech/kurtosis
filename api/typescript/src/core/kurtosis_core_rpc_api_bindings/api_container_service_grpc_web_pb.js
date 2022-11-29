@@ -327,234 +327,112 @@ proto.api_container_api.ApiContainerServicePromiseClient.prototype.executeModule
 /**
  * @const
  * @type {!grpc.web.MethodDescriptor<
- *   !proto.api_container_api.ExecuteStartosisScriptArgs,
- *   !proto.api_container_api.ExecuteStartosisResponse>}
+ *   !proto.api_container_api.RunStarlarkScriptArgs,
+ *   !proto.api_container_api.StarlarkRunResponseLine>}
  */
-const methodDescriptor_ApiContainerService_ExecuteStartosisScript = new grpc.web.MethodDescriptor(
-  '/api_container_api.ApiContainerService/ExecuteStartosisScript',
-  grpc.web.MethodType.UNARY,
-  proto.api_container_api.ExecuteStartosisScriptArgs,
-  proto.api_container_api.ExecuteStartosisResponse,
-  /**
-   * @param {!proto.api_container_api.ExecuteStartosisScriptArgs} request
-   * @return {!Uint8Array}
-   */
-  function(request) {
-    return request.serializeBinary();
-  },
-  proto.api_container_api.ExecuteStartosisResponse.deserializeBinary
-);
-
-
-/**
- * @param {!proto.api_container_api.ExecuteStartosisScriptArgs} request The
- *     request proto
- * @param {?Object<string, string>} metadata User defined
- *     call metadata
- * @param {function(?grpc.web.RpcError, ?proto.api_container_api.ExecuteStartosisResponse)}
- *     callback The callback function(error, response)
- * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.ExecuteStartosisResponse>|undefined}
- *     The XHR Node Readable Stream
- */
-proto.api_container_api.ApiContainerServiceClient.prototype.executeStartosisScript =
-    function(request, metadata, callback) {
-  return this.client_.rpcCall(this.hostname_ +
-      '/api_container_api.ApiContainerService/ExecuteStartosisScript',
-      request,
-      metadata || {},
-      methodDescriptor_ApiContainerService_ExecuteStartosisScript,
-      callback);
-};
-
-
-/**
- * @param {!proto.api_container_api.ExecuteStartosisScriptArgs} request The
- *     request proto
- * @param {?Object<string, string>=} metadata User defined
- *     call metadata
- * @return {!Promise<!proto.api_container_api.ExecuteStartosisResponse>}
- *     Promise that resolves to the response
- */
-proto.api_container_api.ApiContainerServicePromiseClient.prototype.executeStartosisScript =
-    function(request, metadata) {
-  return this.client_.unaryCall(this.hostname_ +
-      '/api_container_api.ApiContainerService/ExecuteStartosisScript',
-      request,
-      metadata || {},
-      methodDescriptor_ApiContainerService_ExecuteStartosisScript);
-};
-
-
-/**
- * @const
- * @type {!grpc.web.MethodDescriptor<
- *   !proto.api_container_api.ExecuteStartosisScriptArgs,
- *   !proto.api_container_api.KurtosisExecutionResponseLine>}
- */
-const methodDescriptor_ApiContainerService_ExecuteKurtosisScript = new grpc.web.MethodDescriptor(
-  '/api_container_api.ApiContainerService/ExecuteKurtosisScript',
+const methodDescriptor_ApiContainerService_RunStarlarkScript = new grpc.web.MethodDescriptor(
+  '/api_container_api.ApiContainerService/RunStarlarkScript',
   grpc.web.MethodType.SERVER_STREAMING,
-  proto.api_container_api.ExecuteStartosisScriptArgs,
-  proto.api_container_api.KurtosisExecutionResponseLine,
+  proto.api_container_api.RunStarlarkScriptArgs,
+  proto.api_container_api.StarlarkRunResponseLine,
   /**
-   * @param {!proto.api_container_api.ExecuteStartosisScriptArgs} request
+   * @param {!proto.api_container_api.RunStarlarkScriptArgs} request
    * @return {!Uint8Array}
    */
   function(request) {
     return request.serializeBinary();
   },
-  proto.api_container_api.KurtosisExecutionResponseLine.deserializeBinary
+  proto.api_container_api.StarlarkRunResponseLine.deserializeBinary
 );
 
 
 /**
- * @param {!proto.api_container_api.ExecuteStartosisScriptArgs} request The request proto
+ * @param {!proto.api_container_api.RunStarlarkScriptArgs} request The request proto
  * @param {?Object<string, string>=} metadata User defined
  *     call metadata
- * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.KurtosisExecutionResponseLine>}
+ * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.StarlarkRunResponseLine>}
  *     The XHR Node Readable Stream
  */
-proto.api_container_api.ApiContainerServiceClient.prototype.executeKurtosisScript =
+proto.api_container_api.ApiContainerServiceClient.prototype.runStarlarkScript =
     function(request, metadata) {
   return this.client_.serverStreaming(this.hostname_ +
-      '/api_container_api.ApiContainerService/ExecuteKurtosisScript',
+      '/api_container_api.ApiContainerService/RunStarlarkScript',
       request,
       metadata || {},
-      methodDescriptor_ApiContainerService_ExecuteKurtosisScript);
+      methodDescriptor_ApiContainerService_RunStarlarkScript);
 };
 
 
 /**
- * @param {!proto.api_container_api.ExecuteStartosisScriptArgs} request The request proto
+ * @param {!proto.api_container_api.RunStarlarkScriptArgs} request The request proto
  * @param {?Object<string, string>=} metadata User defined
  *     call metadata
- * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.KurtosisExecutionResponseLine>}
+ * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.StarlarkRunResponseLine>}
  *     The XHR Node Readable Stream
  */
-proto.api_container_api.ApiContainerServicePromiseClient.prototype.executeKurtosisScript =
+proto.api_container_api.ApiContainerServicePromiseClient.prototype.runStarlarkScript =
     function(request, metadata) {
   return this.client_.serverStreaming(this.hostname_ +
-      '/api_container_api.ApiContainerService/ExecuteKurtosisScript',
+      '/api_container_api.ApiContainerService/RunStarlarkScript',
       request,
       metadata || {},
-      methodDescriptor_ApiContainerService_ExecuteKurtosisScript);
+      methodDescriptor_ApiContainerService_RunStarlarkScript);
 };
 
 
 /**
  * @const
  * @type {!grpc.web.MethodDescriptor<
- *   !proto.api_container_api.ExecuteStartosisModuleArgs,
- *   !proto.api_container_api.ExecuteStartosisResponse>}
+ *   !proto.api_container_api.RunStarlarkPackageArgs,
+ *   !proto.api_container_api.StarlarkRunResponseLine>}
  */
-const methodDescriptor_ApiContainerService_ExecuteStartosisModule = new grpc.web.MethodDescriptor(
-  '/api_container_api.ApiContainerService/ExecuteStartosisModule',
-  grpc.web.MethodType.UNARY,
-  proto.api_container_api.ExecuteStartosisModuleArgs,
-  proto.api_container_api.ExecuteStartosisResponse,
-  /**
-   * @param {!proto.api_container_api.ExecuteStartosisModuleArgs} request
-   * @return {!Uint8Array}
-   */
-  function(request) {
-    return request.serializeBinary();
-  },
-  proto.api_container_api.ExecuteStartosisResponse.deserializeBinary
-);
-
-
-/**
- * @param {!proto.api_container_api.ExecuteStartosisModuleArgs} request The
- *     request proto
- * @param {?Object<string, string>} metadata User defined
- *     call metadata
- * @param {function(?grpc.web.RpcError, ?proto.api_container_api.ExecuteStartosisResponse)}
- *     callback The callback function(error, response)
- * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.ExecuteStartosisResponse>|undefined}
- *     The XHR Node Readable Stream
- */
-proto.api_container_api.ApiContainerServiceClient.prototype.executeStartosisModule =
-    function(request, metadata, callback) {
-  return this.client_.rpcCall(this.hostname_ +
-      '/api_container_api.ApiContainerService/ExecuteStartosisModule',
-      request,
-      metadata || {},
-      methodDescriptor_ApiContainerService_ExecuteStartosisModule,
-      callback);
-};
-
-
-/**
- * @param {!proto.api_container_api.ExecuteStartosisModuleArgs} request The
- *     request proto
- * @param {?Object<string, string>=} metadata User defined
- *     call metadata
- * @return {!Promise<!proto.api_container_api.ExecuteStartosisResponse>}
- *     Promise that resolves to the response
- */
-proto.api_container_api.ApiContainerServicePromiseClient.prototype.executeStartosisModule =
-    function(request, metadata) {
-  return this.client_.unaryCall(this.hostname_ +
-      '/api_container_api.ApiContainerService/ExecuteStartosisModule',
-      request,
-      metadata || {},
-      methodDescriptor_ApiContainerService_ExecuteStartosisModule);
-};
-
-
-/**
- * @const
- * @type {!grpc.web.MethodDescriptor<
- *   !proto.api_container_api.ExecuteStartosisModuleArgs,
- *   !proto.api_container_api.KurtosisExecutionResponseLine>}
- */
-const methodDescriptor_ApiContainerService_ExecuteKurtosisModule = new grpc.web.MethodDescriptor(
-  '/api_container_api.ApiContainerService/ExecuteKurtosisModule',
+const methodDescriptor_ApiContainerService_RunStarlarkPackage = new grpc.web.MethodDescriptor(
+  '/api_container_api.ApiContainerService/RunStarlarkPackage',
   grpc.web.MethodType.SERVER_STREAMING,
-  proto.api_container_api.ExecuteStartosisModuleArgs,
-  proto.api_container_api.KurtosisExecutionResponseLine,
+  proto.api_container_api.RunStarlarkPackageArgs,
+  proto.api_container_api.StarlarkRunResponseLine,
   /**
-   * @param {!proto.api_container_api.ExecuteStartosisModuleArgs} request
+   * @param {!proto.api_container_api.RunStarlarkPackageArgs} request
    * @return {!Uint8Array}
    */
   function(request) {
     return request.serializeBinary();
   },
-  proto.api_container_api.KurtosisExecutionResponseLine.deserializeBinary
+  proto.api_container_api.StarlarkRunResponseLine.deserializeBinary
 );
 
 
 /**
- * @param {!proto.api_container_api.ExecuteStartosisModuleArgs} request The request proto
+ * @param {!proto.api_container_api.RunStarlarkPackageArgs} request The request proto
  * @param {?Object<string, string>=} metadata User defined
  *     call metadata
- * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.KurtosisExecutionResponseLine>}
+ * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.StarlarkRunResponseLine>}
  *     The XHR Node Readable Stream
  */
-proto.api_container_api.ApiContainerServiceClient.prototype.executeKurtosisModule =
+proto.api_container_api.ApiContainerServiceClient.prototype.runStarlarkPackage =
     function(request, metadata) {
   return this.client_.serverStreaming(this.hostname_ +
-      '/api_container_api.ApiContainerService/ExecuteKurtosisModule',
+      '/api_container_api.ApiContainerService/RunStarlarkPackage',
       request,
       metadata || {},
-      methodDescriptor_ApiContainerService_ExecuteKurtosisModule);
+      methodDescriptor_ApiContainerService_RunStarlarkPackage);
 };
 
 
 /**
- * @param {!proto.api_container_api.ExecuteStartosisModuleArgs} request The request proto
+ * @param {!proto.api_container_api.RunStarlarkPackageArgs} request The request proto
  * @param {?Object<string, string>=} metadata User defined
  *     call metadata
- * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.KurtosisExecutionResponseLine>}
+ * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.StarlarkRunResponseLine>}
  *     The XHR Node Readable Stream
  */
-proto.api_container_api.ApiContainerServicePromiseClient.prototype.executeKurtosisModule =
+proto.api_container_api.ApiContainerServicePromiseClient.prototype.runStarlarkPackage =
     function(request, metadata) {
   return this.client_.serverStreaming(this.hostname_ +
-      '/api_container_api.ApiContainerService/ExecuteKurtosisModule',
+      '/api_container_api.ApiContainerService/RunStarlarkPackage',
       request,
       metadata || {},
-      methodDescriptor_ApiContainerService_ExecuteKurtosisModule);
+      methodDescriptor_ApiContainerService_RunStarlarkPackage);
 };
 
 

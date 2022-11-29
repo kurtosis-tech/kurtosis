@@ -82,13 +82,13 @@ func (instruction *AssertInstruction) GetPositionInOriginalScript() *kurtosis_in
 	return instruction.position
 }
 
-func (instruction *AssertInstruction) GetCanonicalInstruction() *kurtosis_core_rpc_api_bindings.KurtosisInstruction {
-	args := []*kurtosis_core_rpc_api_bindings.KurtosisInstructionArg{
-		binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[runtimeValueArgName]), runtimeValueArgName, kurtosis_instruction.Representative),
-		binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[assertionArgName]), assertionArgName, kurtosis_instruction.Representative),
-		binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[targetArgName]), targetArgName, kurtosis_instruction.Representative),
+func (instruction *AssertInstruction) GetCanonicalInstruction() *kurtosis_core_rpc_api_bindings.StarlarkInstruction {
+	args := []*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg{
+		binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[runtimeValueArgName]), runtimeValueArgName, kurtosis_instruction.Representative),
+		binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[assertionArgName]), assertionArgName, kurtosis_instruction.Representative),
+		binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[targetArgName]), targetArgName, kurtosis_instruction.Representative),
 	}
-	return binding_constructors.NewKurtosisInstruction(instruction.position.ToAPIType(), AssertBuiltinName, instruction.String(), args)
+	return binding_constructors.NewStarlarkInstruction(instruction.position.ToAPIType(), AssertBuiltinName, instruction.String(), args)
 }
 
 func (instruction *AssertInstruction) Execute(ctx context.Context) (*string, error) {

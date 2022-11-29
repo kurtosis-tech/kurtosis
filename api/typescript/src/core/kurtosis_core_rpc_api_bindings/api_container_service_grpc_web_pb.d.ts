@@ -37,29 +37,15 @@ export class ApiContainerServiceClient {
                response: api_container_service_pb.ExecuteModuleResponse) => void
   ): grpcWeb.ClientReadableStream<api_container_service_pb.ExecuteModuleResponse>;
 
-  executeStartosisScript(
-    request: api_container_service_pb.ExecuteStartosisScriptArgs,
-    metadata: grpcWeb.Metadata | undefined,
-    callback: (err: grpcWeb.RpcError,
-               response: api_container_service_pb.ExecuteStartosisResponse) => void
-  ): grpcWeb.ClientReadableStream<api_container_service_pb.ExecuteStartosisResponse>;
-
-  executeKurtosisScript(
-    request: api_container_service_pb.ExecuteStartosisScriptArgs,
+  runStarlarkScript(
+    request: api_container_service_pb.RunStarlarkScriptArgs,
     metadata?: grpcWeb.Metadata
-  ): grpcWeb.ClientReadableStream<api_container_service_pb.KurtosisExecutionResponseLine>;
+  ): grpcWeb.ClientReadableStream<api_container_service_pb.StarlarkRunResponseLine>;
 
-  executeStartosisModule(
-    request: api_container_service_pb.ExecuteStartosisModuleArgs,
-    metadata: grpcWeb.Metadata | undefined,
-    callback: (err: grpcWeb.RpcError,
-               response: api_container_service_pb.ExecuteStartosisResponse) => void
-  ): grpcWeb.ClientReadableStream<api_container_service_pb.ExecuteStartosisResponse>;
-
-  executeKurtosisModule(
-    request: api_container_service_pb.ExecuteStartosisModuleArgs,
+  runStarlarkPackage(
+    request: api_container_service_pb.RunStarlarkPackageArgs,
     metadata?: grpcWeb.Metadata
-  ): grpcWeb.ClientReadableStream<api_container_service_pb.KurtosisExecutionResponseLine>;
+  ): grpcWeb.ClientReadableStream<api_container_service_pb.StarlarkRunResponseLine>;
 
   startServices(
     request: api_container_service_pb.StartServicesArgs,
@@ -200,25 +186,15 @@ export class ApiContainerServicePromiseClient {
     metadata?: grpcWeb.Metadata
   ): Promise<api_container_service_pb.ExecuteModuleResponse>;
 
-  executeStartosisScript(
-    request: api_container_service_pb.ExecuteStartosisScriptArgs,
+  runStarlarkScript(
+    request: api_container_service_pb.RunStarlarkScriptArgs,
     metadata?: grpcWeb.Metadata
-  ): Promise<api_container_service_pb.ExecuteStartosisResponse>;
+  ): grpcWeb.ClientReadableStream<api_container_service_pb.StarlarkRunResponseLine>;
 
-  executeKurtosisScript(
-    request: api_container_service_pb.ExecuteStartosisScriptArgs,
+  runStarlarkPackage(
+    request: api_container_service_pb.RunStarlarkPackageArgs,
     metadata?: grpcWeb.Metadata
-  ): grpcWeb.ClientReadableStream<api_container_service_pb.KurtosisExecutionResponseLine>;
-
-  executeStartosisModule(
-    request: api_container_service_pb.ExecuteStartosisModuleArgs,
-    metadata?: grpcWeb.Metadata
-  ): Promise<api_container_service_pb.ExecuteStartosisResponse>;
-
-  executeKurtosisModule(
-    request: api_container_service_pb.ExecuteStartosisModuleArgs,
-    metadata?: grpcWeb.Metadata
-  ): grpcWeb.ClientReadableStream<api_container_service_pb.KurtosisExecutionResponseLine>;
+  ): grpcWeb.ClientReadableStream<api_container_service_pb.StarlarkRunResponseLine>;
 
   startServices(
     request: api_container_service_pb.StartServicesArgs,
