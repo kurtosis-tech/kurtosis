@@ -10,7 +10,7 @@
 - Fixed the error message when the relative filename was incorrect in a Starlark import
 - Fixed the error message when package name was incorrect
 - Don't proceed with execution if there are validation errors in Starlark
-- Make validation more human-readable
+- Make validation more human-readable for missing docker images and instructions that depend on invalid service ids
 
 # 0.56.0
 ### Breaking Changes

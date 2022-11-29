@@ -2,6 +2,7 @@ package exec
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	kurtosis_backend_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
@@ -101,7 +102,7 @@ func (instruction *ExecInstruction) String() string {
 
 func (instruction *ExecInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
 	if !environment.DoesServiceIdExist(instruction.serviceId) {
-		return stacktrace.NewError("There was an error validating exec with service ID '%v' that does not exist", instruction.serviceId)
+		return fmt.Errorf("There was an error validating exec with service ID '%v' that does not exist", instruction.serviceId)
 	}
 	return nil
 }

@@ -9,7 +9,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
-	"github.com/kurtosis-tech/stacktrace"
 )
 
 const (
@@ -38,7 +37,7 @@ func (validator *StartosisValidator) Validate(ctx context.Context, instructions 
 		for _, instruction := range instructions {
 			err := instruction.ValidateAndUpdateEnvironment(environment)
 			if err != nil {
-				propagatedError := stacktrace.Propagate(err, "Error while validating instruction %v. The instruction can be found at %v", instruction.String(), instruction.GetPositionInOriginalScript().String())
+				propagatedError := fmt.Errorf("Error while validating instruction %v. The instruction can be found at %v\n%s%s", instruction.String(), instruction.GetPositionInOriginalScript().String(), causedByPrefix, err.Error())
 				serializedError := binding_constructors.NewKurtosisValidationError(propagatedError.Error())
 				kurtosisExecutionResponseLineStream <- binding_constructors.NewKurtosisExecutionResponseLineFromValidationError(serializedError)
 			}
