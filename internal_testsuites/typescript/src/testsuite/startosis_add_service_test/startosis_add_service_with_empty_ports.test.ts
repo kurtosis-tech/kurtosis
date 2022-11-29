@@ -1,7 +1,6 @@
-import {JEST_TIMEOUT_MS} from "../startosis_module_test/shared_constants";
 import {createEnclave} from "../../test_helpers/enclave_setup";
 import log from "loglevel";
-import {generateScriptOutput, readStreamContentUntilClosed} from "../../test_helpers/startosis_helpers";
+import {readStreamContentUntilClosed} from "../../test_helpers/startosis_helpers";
 import { Result } from "neverthrow"
 import {ServiceID} from "../../../../../api/typescript/src";
 
@@ -39,7 +38,7 @@ add_service(service_id = SERVICE_ID, config = config)
 print("Service " + SERVICE_ID + " deployed successfully.")`
 
 
-jest.setTimeout(JEST_TIMEOUT_MS)
+jest.setTimeout(180000)
 
 test("Test add service with empty and without ports test", TestAddServiceWithEmptyAndWithoutPorts)
 
@@ -68,12 +67,12 @@ async function TestAddServiceWithEmptyAndWithoutPorts() {
             const serviceId:string = serviceIds[i]
             log.info("Executing Starlark script...");
             log.debug(`Starlark script content: \n%v ${starlarkScript}`);
-            const outputStream = await enclaveContext.executeKurtosisScript(starlarkScript, DEFAULT_DRY_RUN);
+            const outputStream = await enclaveContext.runStarlarkScript(starlarkScript, DEFAULT_DRY_RUN);
             if (outputStream.isErr()) {
                 log.error("Unexpected error executing Starlark script");
                 throw outputStream.error;
             }
-            const [interpretationError, validationErrors, executionError, instructions] = await readStreamContentUntilClosed(outputStream.value);
+            const [scriptOutput, _, interpretationError, validationErrors, executionError] = await readStreamContentUntilClosed(outputStream.value);
 
             const expectedScriptOutput: string = `Adding service ${serviceId}.
 Service ${serviceId} deployed successfully.
@@ -82,7 +81,7 @@ Service ${serviceId} deployed successfully.
             expect(interpretationError).toBeUndefined();
             expect(validationErrors).toEqual([]);
             expect(executionError).toBeUndefined();
-            expect(generateScriptOutput(instructions)).toEqual(expectedScriptOutput);
+            expect(expectedScriptOutput).toEqual(scriptOutput);
             log.info("Successfully ran Starlark script");
 
             // ------------------------------------- TEST RUN ----------------------------------------------
