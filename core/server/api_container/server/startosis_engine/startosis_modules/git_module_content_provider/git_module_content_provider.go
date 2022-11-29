@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"strings"
 )
 
 const (
@@ -14,6 +15,9 @@ const (
 	temporaryRepoDirPattern     = "tmp-repo-dir-*"
 	temporaryArchiveFilePattern = "temp-module-archive-*.tgz"
 	defaultTmpDir               = ""
+
+	onlyOneReplacement      = 1
+	replacedWithEmptyString = ""
 )
 
 type GitModuleContentProvider struct {
@@ -52,10 +56,18 @@ func (provider *GitModuleContentProvider) GetOnDiskAbsoluteFilePath(fileInsideMo
 		return "", startosis_errors.NewInterpretationError("The relative path to file is empty for '%v'", fileInsideModuleUrl)
 	}
 	pathToFile := path.Join(provider.modulesDir, parsedURL.relativeFilePath)
+	modulePath := path.Join(provider.modulesDir, parsedURL.relativeRepoPath)
 
 	// Return the file path straight if it exists
 	if _, err := os.Stat(pathToFile); err == nil {
 		return pathToFile, nil
+	}
+
+	// Check if the repo exists
+	// If the repo exists but the `pathToFile` doesn't that means there's a mistake in the locator
+	if _, err := os.Stat(modulePath); err == nil {
+		relativeFilePathWithoutPackageName := strings.Replace(parsedURL.relativeFilePath, parsedURL.relativeRepoPath, replacedWithEmptyString, onlyOneReplacement)
+		return "", startosis_errors.NewInterpretationError("'%v' doesn't exist in the package '%v'", relativeFilePathWithoutPackageName, parsedURL.relativeRepoPath)
 	}
 
 	// Otherwise clone the repo and return the absolute path of the requested file
@@ -146,7 +158,8 @@ func (provider *GitModuleContentProvider) atomicClone(parsedURL *ParsedGitURL) *
 		CABundle:          nil,
 	})
 	if err != nil {
-		return startosis_errors.WrapWithInterpretationError(err, "Error in cloning git repository '%s' to '%s'", parsedURL.gitURL, gitClonePath)
+		// TODO remove public repository from error after we support private repositories
+		return startosis_errors.WrapWithInterpretationError(err, "Error in cloning git repository '%s' to '%s'. Make sure that '%v' exists and is a public repository.", parsedURL.gitURL, gitClonePath, parsedURL.gitURL)
 	}
 
 	// Then we move it into the target directory

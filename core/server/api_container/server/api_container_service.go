@@ -53,8 +53,8 @@ const (
 	defaultStartosisDryRun = false
 
 	// We do it this way as if we were to interpret the main file,
-	// we'd only read the symbols, and maybe there's nothing that calls in `main()`
-	// This way, we're guaranteed that the `main()` function gets called within main.star
+	// we'd only read the symbols, and maybe there's nothing that calls in `run()`
+	// This way, we're guaranteed that the `run()` function gets called within main.star
 	bootScript = `
 main_module = import_module("%v/` + startosis_engine.MainFileName + `")
 main_module.run(%v)
@@ -211,11 +211,11 @@ func (apicService ApiContainerService) ExecuteStartosisModule(ctx context.Contex
 	serializedParams := args.SerializedParams
 	dryRun := shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun)
 
-	scriptWithMainToExecute, err := apicService.executeKurtosisModuleSetup(moduleId, isRemote, moduleContentIfLocal)
+	scriptWithRunFunction, err := apicService.executeKurtosisModuleSetup(moduleId, isRemote, moduleContentIfLocal)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error preparing for module execution: '%s'", moduleId)
 	}
-	return apicService.executeStartosis(ctx, dryRun, moduleId, scriptWithMainToExecute, serializedParams), nil
+	return apicService.executeStartosis(ctx, dryRun, moduleId, scriptWithRunFunction, serializedParams), nil
 }
 
 func (apicService ApiContainerService) ExecuteKurtosisModule(args *kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleArgs, stream kurtosis_core_rpc_api_bindings.ApiContainerService_ExecuteKurtosisModuleServer) error {
@@ -225,13 +225,13 @@ func (apicService ApiContainerService) ExecuteKurtosisModule(args *kurtosis_core
 	serializedParams := args.SerializedParams
 	dryRun := shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun)
 
-	scriptWithMainToExecute, interpretationError := apicService.executeKurtosisModuleSetup(moduleId, isRemote, moduleContentIfLocal)
+	scriptWithRunFunction, interpretationError := apicService.executeKurtosisModuleSetup(moduleId, isRemote, moduleContentIfLocal)
 	if interpretationError != nil {
 		if err := stream.SendMsg(binding_constructors.NewKurtosisExecutionResponseLineFromInterpretationError(interpretationError.ToAPIType())); err != nil {
 			return stacktrace.Propagate(err, "Error preparing for module execution and this error could not be sent through the output stream: '%s'", moduleId)
 		}
 	}
-	apicService.runStartosis(dryRun, moduleId, scriptWithMainToExecute, serializedParams, stream)
+	apicService.runStartosis(dryRun, moduleId, scriptWithRunFunction, serializedParams, stream)
 	return nil
 }
 
