@@ -153,7 +153,7 @@ func (provider *GitModuleContentProvider) atomicClone(parsedURL *ParsedGitURL) *
 		CABundle:          nil,
 	})
 	if err != nil {
-		return startosis_errors.WrapWithInterpretationError(err, "Error in cloning git repository '%s' to '%s'", parsedURL.gitURL, gitClonePath)
+		return startosis_errors.WrapWithInterpretationError(err, "Error in cloning git repository '%s' to '%s'. This usually indicates a typo in the package path or an authorization issue.", parsedURL.gitURL, gitClonePath)
 	}
 
 	// Then we move it into the target directory

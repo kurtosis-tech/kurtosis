@@ -8,6 +8,7 @@
 
 ### Fixes
 - Fixed the error message when the relative filename was incorrect in a Starlark import
+- Fixed the error message when package name was incorrect
 
 # 0.56.0
 ### Breaking Changes
