@@ -88,7 +88,7 @@ Service ${serviceId} deployed successfully.
             // ------------------------------------- TEST RUN ----------------------------------------------
 
             // Ensure that the service is listed
-            const expectedAmountOfServices: number = i + 1;
+            const expectedNumberOfServices: number = i + 1;
             const getServiceIdsPromise: Promise<Result<Set<ServiceID>, Error>> = enclaveContext.getServices();
             const getServiceIdsResult = await getServiceIdsPromise;
             if(getServiceIdsResult.isErr()) {
@@ -98,10 +98,10 @@ Service ${serviceId} deployed successfully.
 
             const servicesIds: Set<string> = getServiceIdsResult.value;
 
-            const actualAmountOfServices: number = servicesIds.size
+            const actualNumberOfServices: number = servicesIds.size
 
-            if (expectedAmountOfServices !== actualAmountOfServices) {
-                throw new Error(`Expected to receive ${expectedAmountOfServices} services from get services, but ${actualAmountOfServices} were received`)
+            if (expectedNumberOfServices !== actualNumberOfServices) {
+                throw new Error(`Expected to receive ${expectedNumberOfServices} services from get services, but ${actualNumberOfServices} were received`)
             }
         }
     }

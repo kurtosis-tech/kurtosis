@@ -77,10 +77,10 @@ Service `+ serviceIds[starlarkScripIndex] +` deployed successfully.
 		logrus.Infof("Successfully ran Starlark script")
 
 		// Ensure that the service is listed
-		expectedAmountOfServices := starlarkScripIndex + 1
+		expectedNumberOfServices := starlarkScripIndex + 1
 		serviceIds, err := enclaveCtx.GetServices()
 		require.Nil(t, err)
-		actualAmountOfServices := len(serviceIds)
-		require.Equal(t, expectedAmountOfServices, actualAmountOfServices)
+		actualNumberOfServices := len(serviceIds)
+		require.Equal(t, expectedNumberOfServices, actualNumberOfServices)
 	}
 }
