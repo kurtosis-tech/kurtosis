@@ -356,17 +356,12 @@ func NewKurtosisInstruction(position *kurtosis_core_rpc_api_bindings.KurtosisIns
 		Position:              position,
 		ExecutableInstruction: executableInstruction,
 		Arguments:             arguments,
-		InstructionResult:     nil,
 	}
 }
 
-func AddResultToKurtosisInstruction(kurtosisInstructionWithNoResult *kurtosis_core_rpc_api_bindings.KurtosisInstruction, maybeInstructionResult *string) *kurtosis_core_rpc_api_bindings.KurtosisInstruction {
-	return &kurtosis_core_rpc_api_bindings.KurtosisInstruction{
-		InstructionName:       kurtosisInstructionWithNoResult.GetInstructionName(),
-		Position:              kurtosisInstructionWithNoResult.GetPosition(),
-		ExecutableInstruction: kurtosisInstructionWithNoResult.GetExecutableInstruction(),
-		Arguments:             kurtosisInstructionWithNoResult.GetArguments(),
-		InstructionResult:     maybeInstructionResult,
+func NewKurtosisInstructionResult(serializedInstructionResult string) *kurtosis_core_rpc_api_bindings.KurtosisInstructionResult {
+	return &kurtosis_core_rpc_api_bindings.KurtosisInstructionResult{
+		SerializedInstructionResult: serializedInstructionResult,
 	}
 }
 
@@ -410,6 +405,14 @@ func NewKurtosisExecutionResponseLineFromInstruction(instruction *kurtosis_core_
 	return &kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine{
 		KurtosisExecutionResponseLine: &kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine_Instruction{
 			Instruction: instruction,
+		},
+	}
+}
+
+func NewKurtosisExecutionResponseLineFromInstructionResult(instructionResult *kurtosis_core_rpc_api_bindings.KurtosisInstructionResult) *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine {
+	return &kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine{
+		KurtosisExecutionResponseLine: &kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine_InstructionResult{
+			InstructionResult: instructionResult,
 		},
 	}
 }

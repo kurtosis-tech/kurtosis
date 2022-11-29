@@ -3,7 +3,7 @@ import {DEFAULT_DRY_RUN, EMPTY_EXECUTE_PARAMS, IS_PARTITIONING_ENABLED, JEST_TIM
 import * as path from "path";
 import log from "loglevel";
 import {err} from "neverthrow";
-import {generateScriptOutput, readStreamContentUntilClosed} from "../../test_helpers/startosis_helpers";
+import {readStreamContentUntilClosed} from "../../test_helpers/startosis_helpers";
 
 const MISSING_MAIN_FUNCTION_TEST_NAME = "invalid-module-missing-main"
 const MODULE_WITH_NO_MAIN_IN_MAIN_STAR_REL_PATH = "../../../../startosis/no-run-in-main-star"
@@ -32,16 +32,16 @@ test("Test invalid module with no main in main.star", async () => {
             throw err(new Error("Unexpected execution error"))
         }
 
-        const [interpretationError, validationErrors, executionError, instructions] = await readStreamContentUntilClosed(outputStream.value);
+        const [scriptOutput, _, interpretationError, validationErrors, executionError] = await readStreamContentUntilClosed(outputStream.value);
 
         expect(interpretationError).not.toBeUndefined()
         expect(interpretationError?.getErrorMessage())
-            .toContain("Evaluation error: module has no .run field or method\n\tat [3:12]: <toplevel>")
+            .toContain("No 'run' function found in file 'github.com/sample/sample-kurtosis-module/main.star'; a 'run' entrypoint function is required in the main.star file of any Kurtosis package")
 
         expect(validationErrors).toEqual([])
         expect(executionError).toBeUndefined()
 
-        expect(generateScriptOutput(instructions)).toEqual("")
+        expect(scriptOutput).toEqual("")
     } finally {
         stopEnclaveFunction()
     }

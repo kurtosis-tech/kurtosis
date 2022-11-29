@@ -81,10 +81,11 @@ instruction2()
 	require.Contains(t, executionError.GetErrorMessage(), expectedLowLevelErrorMessage)
 
 	expectedSerializedInstructions := []*kurtosis_core_rpc_api_bindings.KurtosisInstruction{
-		// only instruction 1 because it failed at instruction 2
+		// only instruction 1 and 2 because it failed at instruction 2
 		binding_constructors.NewKurtosisInstruction(dummyPosition.ToAPIType(), "instruction1", "instruction1()", noInstructionArgsForTesting),
+		binding_constructors.NewKurtosisInstruction(dummyPosition.ToAPIType(), "instruction2", "instruction2()", noInstructionArgsForTesting),
 	}
-	require.Equal(t, serializedInstruction, expectedSerializedInstructions)
+	require.Equal(t, expectedSerializedInstructions, serializedInstruction)
 }
 
 func TestExecuteKurtosisInstructions_DoDryRun(t *testing.T) {
@@ -142,12 +143,12 @@ func executeSynchronously(t *testing.T, executor *StartosisExecutor, dryRun bool
 		}
 		if executionResponseLine.GetInstruction() != nil {
 			executedKurtosisInstruction := executionResponseLine.GetInstruction()
-			if executedKurtosisInstruction.InstructionResult != nil {
-				if _, err := scriptOutput.WriteString(executedKurtosisInstruction.GetInstructionResult()); err != nil {
-					require.Nil(t, err)
-				}
-			}
 			serializedInstructions = append(serializedInstructions, executedKurtosisInstruction)
+		}
+		if executionResponseLine.GetInstructionResult() != nil {
+			if _, err := scriptOutput.WriteString(executionResponseLine.GetInstructionResult().GetSerializedInstructionResult()); err != nil {
+				require.Nil(t, err)
+			}
 		}
 	}
 	return scriptOutput.String(), serializedInstructions, nil

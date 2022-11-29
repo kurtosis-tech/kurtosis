@@ -36,7 +36,7 @@ func TestStartosisModule_ValidModuleWithInput(t *testing.T) {
 	params := `{"greetings": "bonjour!"}`
 	outputStream, _, err := enclaveCtx.ExecuteKurtosisModule(ctx, moduleDirpath, params, defaultDryRun)
 	require.NoError(t, err, "Unexpected error executing startosis module")
-	interpretationError, validationErrors, executionError, instructions := test_helpers.ReadStreamContentUntilClosed(outputStream)
+	scriptOutput, _, interpretationError, validationErrors, executionError := test_helpers.ReadStreamContentUntilClosed(outputStream)
 
 	expectedScriptOutput := `bonjour!
 Hello World!
@@ -44,7 +44,7 @@ Hello World!
 	require.Nil(t, interpretationError, "Unexpected interpretation error")
 	require.Empty(t, validationErrors, "Unexpected validation error")
 	require.Nil(t, executionError, "Unexpected execution error")
-	require.Equal(t, expectedScriptOutput, test_helpers.GenerateScriptOutput(instructions))
+	require.Equal(t, expectedScriptOutput, scriptOutput)
 	logrus.Info("Successfully ran Startosis module")
 }
 
@@ -69,12 +69,12 @@ func TestStartosisModule_ValidModuleWithInput_MissingKeyInParams(t *testing.T) {
 	params := `{"hello": "world"}` // expecting key 'greetings' here
 	outputStream, _, err := enclaveCtx.ExecuteKurtosisModule(ctx, moduleDirpath, params, defaultDryRun)
 	require.NoError(t, err, "Unexpected error executing startosis module")
-	interpretationError, validationErrors, executionError, instructions := test_helpers.ReadStreamContentUntilClosed(outputStream)
+	scriptOutput, _, interpretationError, validationErrors, executionError := test_helpers.ReadStreamContentUntilClosed(outputStream)
 
 	require.NotNil(t, interpretationError, "Unexpected interpretation error")
 	require.Contains(t, interpretationError.GetErrorMessage(), "Evaluation error: struct has no .greetings attribute")
 	require.Empty(t, validationErrors, "Unexpected validation error")
 	require.Nil(t, executionError, "Unexpected execution error")
-	require.Empty(t, test_helpers.GenerateScriptOutput(instructions))
+	require.Empty(t, scriptOutput)
 	logrus.Info("Successfully ran Startosis module")
 }

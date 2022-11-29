@@ -22,6 +22,8 @@ const (
 
 	progressBarLength = 20       // in characters
 	progressBarChar   = "\u2588" // unicode for: █
+
+	codeCommentPrefix = "# "
 )
 
 var (
@@ -99,6 +101,11 @@ func (printer *ExecutionPrinter) PrintKurtosisExecutionResponseLineToStdOut(resp
 		if _, err := fmt.Fprintln(writer, formattedInstructionWithNewline); err != nil {
 			return errorRunningKurtosisCode, stacktrace.Propagate(err, "Error printing Kurtosis instruction: \n%v", formattedInstruction)
 		}
+	} else if responseLine.GetInstructionResult() != nil {
+		formattedInstructionResult := formatInstructionResult(responseLine.GetInstructionResult())
+		if _, err := fmt.Fprintln(logrus.StandardLogger().Out, formattedInstructionResult); err != nil {
+			return errorRunningKurtosisCode, stacktrace.Propagate(err, "Error printing Kurtosis instruction result: \n%v", formattedInstructionResult)
+		}
 	} else if responseLine.GetError() != nil {
 		errorRunningKurtosisCode = true
 		var errorMsg string
@@ -143,12 +150,12 @@ func formatInstruction(instruction *kurtosis_core_rpc_api_bindings.KurtosisInstr
 			verbosity.String(), strings.Join(run.VerbosityStrings(), ", "), run.Brief.String())
 		serializedInstruction = formatInstructionToReadableString(instruction, false)
 	}
-
-	if instruction.InstructionResult != nil {
-		serializedResult := formatInstructionResult(instruction.GetInstructionResult())
-		return fmt.Sprintf("%s\n%s", colorizeInstruction(serializedInstruction), colorizeResult(serializedResult))
-	}
 	return colorizeInstruction(serializedInstruction)
+}
+
+func formatInstructionResult(instructionResult *kurtosis_core_rpc_api_bindings.KurtosisInstructionResult) string {
+	serializedInstructionResult := fmt.Sprintf("%s%s", resultPrefixString, instructionResult.GetSerializedInstructionResult())
+	return colorizeResult(serializedInstructionResult)
 }
 
 func formatInstructionToReadableString(instruction *kurtosis_core_rpc_api_bindings.KurtosisInstruction, exhaustive bool) string {
@@ -177,13 +184,14 @@ func formatInstructionToReadableString(instruction *kurtosis_core_rpc_api_bindin
 }
 
 func formatInstructionToExecutable(instruction *kurtosis_core_rpc_api_bindings.KurtosisInstruction) string {
-	serializedInstructionWithComment := fmt.Sprintf(
-		"# from %s[%d:%d]\n%s",
+	serializedInstruction := fmt.Sprintf(
+		"from %s[%d:%d]\n%s",
 		instruction.GetPosition().GetFilename(),
 		instruction.GetPosition().GetLine(),
 		instruction.GetPosition().GetColumn(),
 		instruction.GetExecutableInstruction(),
 	)
+	serializedInstructionWithComment := fmt.Sprintf("%s%s", codeCommentPrefix, serializedInstruction)
 
 	parsedInstruction, err := build.ParseDefault(bazelBuildDefaultFilename, []byte(serializedInstructionWithComment))
 	if err != nil {
@@ -196,10 +204,6 @@ func formatInstructionToExecutable(instruction *kurtosis_core_rpc_api_bindings.K
 		multiLineInstruction.WriteString(build.FormatString(statement))
 	}
 	return multiLineInstruction.String()
-}
-
-func formatInstructionResult(instructionResult string) string {
-	return fmt.Sprintf("%s%s", resultPrefixString, instructionResult)
 }
 
 func formatProgressBar(currentStep uint32, totalSteps uint32) string {
