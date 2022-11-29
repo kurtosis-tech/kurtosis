@@ -36,7 +36,7 @@ test("Test invalid module with no main in main.star", async () => {
 
         expect(interpretationError).not.toBeUndefined()
         expect(interpretationError?.getErrorMessage())
-            .toContain("Evaluation error: module has no .run field or method\n\tat [3:12]: <toplevel>")
+            .toContain("No 'run' function found in file 'github.com/sample/sample-kurtosis-module/main.star'; a 'run' entrypoint function is required in the main.star file of any Kurtosis package")
 
         expect(validationErrors).toEqual([])
         expect(executionError).toBeUndefined()

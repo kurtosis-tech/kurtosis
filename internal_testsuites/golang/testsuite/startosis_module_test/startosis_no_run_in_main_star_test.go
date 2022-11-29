@@ -33,7 +33,7 @@ func TestStartosisModule_NoMainInMainStar(t *testing.T) {
 
 	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
 
-	expectedInterpretationErr := "Evaluation error: module has no .run field or method\n\tat [3:12]: <toplevel>"
+	expectedInterpretationErr := "No 'run' function found in file 'github.com/sample/sample-kurtosis-module/main.star'; a 'run' entrypoint function is required in the main.star file of any Kurtosis package"
 	outputStream, _, err := enclaveCtx.ExecuteKurtosisModule(ctx, moduleDirpath, emptyExecuteParams, defaultDryRun)
 	require.Nil(t, err, "Unexpected error executing startosis module")
 	interpretationError, validationErrors, executionError, instructions := test_helpers.ReadStreamContentUntilClosed(outputStream)
