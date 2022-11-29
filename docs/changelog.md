@@ -1,5 +1,10 @@
 # TBD
 
+# 0.57.0
+### Breaking Changes
+- Renamed `src_path` parameter in `read_file` to `src`
+  - Users will have to upgrade their `read_file` calls to reflect this change
+
 ### Features
 - Progress information (spinner, progress bar and quick progress message) is now printed by the CLI
 - Instruction are now printed before the execution, and the associated result is printed once the execution is finished. This allows failed instruction to be printed before the error message is returned.
