@@ -49,7 +49,7 @@ func (runner *StartosisRunner) Run(ctx context.Context, dryRun bool, moduleId st
 
 		instructionsList, interpretationError := runner.startosisInterpreter.Interpret(ctx, moduleId, serializedStartosis, serializedParams)
 		if interpretationError != nil {
-			interpretationError = maybeMakeInterpretationErrorFriendlier(interpretationError, moduleId)
+			interpretationError = maybeMakeMissingRunMethodErrorFriendlier(interpretationError, moduleId)
 			kurtosisExecutionResponseLines <- binding_constructors.NewKurtosisExecutionResponseLineFromInterpretationError(interpretationError)
 			return
 		}
@@ -86,17 +86,9 @@ func forwardKurtosisResponseLineChannelUntilSourceIsClosed(sourceChan <-chan *ku
 	logrus.Debug("Kurtosis instructions stream was closed. Exiting execution loop")
 }
 
-// maybeMakeInterpretationErrorFriendlier this method converts interpretation errors into friendlier forms if the error message matches a given format
-// if there isn't a match it returns the original error
-func maybeMakeInterpretationErrorFriendlier(originalError *kurtosis_core_rpc_api_bindings.KurtosisInterpretationError, moduleId string) *kurtosis_core_rpc_api_bindings.KurtosisInterpretationError {
-	originalErrorMessageToFriendlierErrorMap := map[string]*kurtosis_core_rpc_api_bindings.KurtosisInterpretationError{
-		missingRunMethodError: binding_constructors.NewKurtosisInterpretationError(fmt.Sprintf("No 'run' function found in file '%v/main.star'; a 'run' entrypoint function is required in the main.star file of any Kurtosis package", moduleId)),
-	}
-
-	for originalErrorMessage, friendlierError := range originalErrorMessageToFriendlierErrorMap {
-		if strings.Contains(originalError.GetErrorMessage(), originalErrorMessage) {
-			return friendlierError
-		}
+func maybeMakeMissingRunMethodErrorFriendlier(originalError *kurtosis_core_rpc_api_bindings.KurtosisInterpretationError, moduleId string) *kurtosis_core_rpc_api_bindings.KurtosisInterpretationError {
+	if strings.Contains(originalError.GetErrorMessage(), missingRunMethodError) {
+		return binding_constructors.NewKurtosisInterpretationError(fmt.Sprintf("No 'run' function found in file '%v/main.star'; a 'run' entrypoint function is required in the main.star file of any Kurtosis package", moduleId))
 	}
 	return originalError
 }
