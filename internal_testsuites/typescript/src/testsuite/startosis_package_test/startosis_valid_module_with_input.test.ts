@@ -8,14 +8,14 @@ import * as path from "path";
 import log from "loglevel";
 import {readStreamContentUntilClosed} from "../../test_helpers/startosis_helpers";
 
-const VALID_MODULE_WITH_MODULE_INPUT_TEST_NAME = "valid-module-with-input"
-const VALID_MODULE_WITH_MODULE_INPUT_REL_PATH = "../../../../startosis/valid-kurtosis-module-with-input"
+const VALID_PACKAGE_WITH_PACKAGE_INPUT_TEST_NAME = "valid-module-with-input"
+const VALID_PACKAGE_WITH_PACKAGE_INPUT_REL_PATH = "../../../../startosis/valid-kurtosis-module-with-input"
 
 jest.setTimeout(JEST_TIMEOUT_MS)
 
 test("Test valid Starlark package with input", async () => {
     // ------------------------------------- ENGINE SETUP ----------------------------------------------
-    const createEnclaveResult = await createEnclave(VALID_MODULE_WITH_MODULE_INPUT_TEST_NAME, IS_PARTITIONING_ENABLED)
+    const createEnclaveResult = await createEnclave(VALID_PACKAGE_WITH_PACKAGE_INPUT_TEST_NAME, IS_PARTITIONING_ENABLED)
 
     if (createEnclaveResult.isErr()) {
         throw createEnclaveResult.error
@@ -25,7 +25,7 @@ test("Test valid Starlark package with input", async () => {
 
     try {
         // ------------------------------------- TEST SETUP ----------------------------------------------
-        const packageRootPath = path.join(__dirname, VALID_MODULE_WITH_MODULE_INPUT_REL_PATH)
+        const packageRootPath = path.join(__dirname, VALID_PACKAGE_WITH_PACKAGE_INPUT_REL_PATH)
 
         log.info(`Loading package at path '${packageRootPath}'`)
 
@@ -52,7 +52,7 @@ test("Test valid Starlark package with input", async () => {
 
 test("Test valid Starlark package with input - missing key in params", async () => {
     // ------------------------------------- ENGINE SETUP ----------------------------------------------
-    const createEnclaveResult = await createEnclave(VALID_MODULE_WITH_MODULE_INPUT_TEST_NAME, IS_PARTITIONING_ENABLED)
+    const createEnclaveResult = await createEnclave(VALID_PACKAGE_WITH_PACKAGE_INPUT_TEST_NAME, IS_PARTITIONING_ENABLED)
 
     if (createEnclaveResult.isErr()) {
         throw createEnclaveResult.error
@@ -62,7 +62,7 @@ test("Test valid Starlark package with input - missing key in params", async () 
 
     try {
         // ------------------------------------- TEST SETUP ----------------------------------------------
-        const packageRootPath = path.join(__dirname, VALID_MODULE_WITH_MODULE_INPUT_REL_PATH)
+        const packageRootPath = path.join(__dirname, VALID_PACKAGE_WITH_PACKAGE_INPUT_REL_PATH)
 
         log.info(`Loading package at path '${packageRootPath}'`)
 

@@ -1,4 +1,4 @@
-package startosis_module_test
+package startosis_package_test
 
 const (
 	isPartitioningEnabled = false

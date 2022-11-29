@@ -1,4 +1,4 @@
-package startosis_module_test
+package startosis_package_test
 
 import (
 	"context"
@@ -11,22 +11,22 @@ import (
 )
 
 const (
-	validModuleWithInputTestName = "valid-module-with-input"
-	validModuleWithInputRelPath  = "../../../startosis/valid-kurtosis-module-with-input"
+	validPackageWithInputTestName = "valid-module-with-input"
+	validPackageWithInputRelPath  = "../../../startosis/valid-kurtosis-module-with-input"
 )
 
-func TestStartosisModule_ValidModuleWithInput(t *testing.T) {
+func TestStartosisPackage_ValidPackageWithInput(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
-	enclaveCtx, destroyEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, validModuleWithInputTestName, isPartitioningEnabled)
+	enclaveCtx, destroyEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, validPackageWithInputTestName, isPartitioningEnabled)
 	require.NoError(t, err, "An error occurred creating an enclave")
 	defer destroyEnclaveFunc()
 
 	currentWorkingDirectory, err := os.Getwd()
 	require.Nil(t, err)
-	packageDirpath := path.Join(currentWorkingDirectory, validModuleWithInputRelPath)
+	packageDirpath := path.Join(currentWorkingDirectory, validPackageWithInputRelPath)
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
 	logrus.Info("Executing Startosis Package...")
@@ -48,18 +48,18 @@ Hello World!
 	logrus.Info("Successfully ran Startosis module")
 }
 
-func TestStartosisModule_ValidModuleWithInput_MissingKeyInParams(t *testing.T) {
+func TestStartosisPackage_ValidPackageWithInput_MissingKeyInParams(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
-	enclaveCtx, destroyEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, validModuleWithInputTestName, isPartitioningEnabled)
+	enclaveCtx, destroyEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, validPackageWithInputTestName, isPartitioningEnabled)
 	require.NoError(t, err, "An error occurred creating an enclave")
 	defer destroyEnclaveFunc()
 
 	currentWorkingDirectory, err := os.Getwd()
 	require.Nil(t, err)
-	moduleDirpath := path.Join(currentWorkingDirectory, validModuleWithInputRelPath)
+	moduleDirpath := path.Join(currentWorkingDirectory, validPackageWithInputRelPath)
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
 	logrus.Info("Executing Startosis Package...")

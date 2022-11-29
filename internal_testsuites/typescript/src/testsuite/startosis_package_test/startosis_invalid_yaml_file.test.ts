@@ -5,7 +5,7 @@ import log from "loglevel";
 import {err} from "neverthrow";
 
 const INVALID_KURTOSIS_YAML_TEST_NAME = "invalid-module-invalid-yaml-file"
-const INVALID_KURTOSIS_YAML_IN_MODULE_REL_PATH = "../../../../startosis/invalid-yaml-file"
+const INVALID_KURTOSIS_YAML_IN_PACKAGE_REL_PATH = "../../../../startosis/invalid-yaml-file"
 
 jest.setTimeout(JEST_TIMEOUT_MS)
 
@@ -21,7 +21,7 @@ test("Test invalid package with invalid yaml file", async () => {
 
     try {
         // ------------------------------------- TEST SETUP ----------------------------------------------
-        const packageRootPath = path.join(__dirname, INVALID_KURTOSIS_YAML_IN_MODULE_REL_PATH)
+        const packageRootPath = path.join(__dirname, INVALID_KURTOSIS_YAML_IN_PACKAGE_REL_PATH)
 
         log.info(`Loading package at path '${packageRootPath}'`)
 

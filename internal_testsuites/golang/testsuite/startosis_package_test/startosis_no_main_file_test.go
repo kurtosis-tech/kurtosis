@@ -1,4 +1,4 @@
-package startosis_module_test
+package startosis_package_test
 
 import (
 	"context"
@@ -11,34 +11,34 @@ import (
 )
 
 const (
-	invalidCaseNoMainInMainStarTestName = "invalid-module-missing-main"
-	moduleWithNoMainInMainStarRelPath   = "../../../startosis/no-run-in-main-star"
+	invalidCaseMainStarMissingTestName = "invalid-module-no-main-file"
+	packageWithNoMainStarRelPath       = "../../../startosis/no-main-star"
 )
 
-func TestStartosisModule_NoMainInMainStar(t *testing.T) {
+func TestStartosisPackage_NoMainFile(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
-	enclaveCtx, destroyEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, invalidCaseNoMainInMainStarTestName, isPartitioningEnabled)
+	enclaveCtx, destroyEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, invalidCaseMainStarMissingTestName, isPartitioningEnabled)
 	require.NoError(t, err, "An error occurred creating an enclave")
 	defer destroyEnclaveFunc()
 
 	currentWorkingDirectory, err := os.Getwd()
 	require.Nil(t, err)
-	packageDirpath := path.Join(currentWorkingDirectory, moduleWithNoMainInMainStarRelPath)
+	packageDirpath := path.Join(currentWorkingDirectory, packageWithNoMainStarRelPath)
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
 	logrus.Info("Executing Starlark Package...")
 
 	logrus.Infof("Starlark package path: \n%v", packageDirpath)
 
-	expectedInterpretationErr := "No 'run' function found in file 'github.com/sample/sample-kurtosis-module/main.star'; a 'run' entrypoint function is required in the main.star file of any Kurtosis package"
+	expectedErrorContents := "An error occurred while verifying that 'main.star' exists on root of package"
 	outputStream, _, err := enclaveCtx.RunStarlarkPackage(ctx, packageDirpath, emptyRunParams, defaultDryRun)
-	require.Nil(t, err, "Unexpected error executing Starlark package")
+	require.Nil(t, err, "Unexpected error executing package")
 	scriptOutput, _, interpretationError, validationErrors, executionError := test_helpers.ReadStreamContentUntilClosed(outputStream)
 	require.NotNil(t, interpretationError)
-	require.Contains(t, interpretationError.GetErrorMessage(), expectedInterpretationErr)
+	require.Contains(t, interpretationError.GetErrorMessage(), expectedErrorContents)
 	require.Empty(t, validationErrors)
 	require.Nil(t, executionError)
 	require.Empty(t, scriptOutput)

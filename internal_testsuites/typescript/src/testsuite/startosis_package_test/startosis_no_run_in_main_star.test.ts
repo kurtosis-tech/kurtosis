@@ -6,7 +6,7 @@ import {err} from "neverthrow";
 import {readStreamContentUntilClosed} from "../../test_helpers/startosis_helpers";
 
 const MISSING_MAIN_FUNCTION_TEST_NAME = "invalid-module-missing-main"
-const MODULE_WITH_NO_MAIN_IN_MAIN_STAR_REL_PATH = "../../../../startosis/no-run-in-main-star"
+const PACKAGE_WITH_NO_MAIN_IN_MAIN_STAR_REL_PATH = "../../../../startosis/no-run-in-main-star"
 
 jest.setTimeout(JEST_TIMEOUT_MS)
 
@@ -22,7 +22,7 @@ test("Test invalid package with no main in main.star", async () => {
 
     try {
         // ------------------------------------- TEST SETUP ----------------------------------------------
-        const packageRootPath = path.join(__dirname, MODULE_WITH_NO_MAIN_IN_MAIN_STAR_REL_PATH)
+        const packageRootPath = path.join(__dirname, PACKAGE_WITH_NO_MAIN_IN_MAIN_STAR_REL_PATH)
 
         log.info(`Loading package at path '${packageRootPath}'`)
 

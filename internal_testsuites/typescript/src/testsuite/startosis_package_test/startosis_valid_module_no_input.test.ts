@@ -10,14 +10,14 @@ import log from "loglevel";
 import {readStreamContentUntilClosed} from "../../test_helpers/startosis_helpers";
 import {err} from "neverthrow";
 
-const VALID_MODULE_NO_MODULE_INPUT_TEST_NAME = "valid-module-no-input"
-const VALID_MODULE_NO_MODULE_INPUT_REL_PATH = "../../../../startosis/valid-kurtosis-module-no-input"
+const VALID_PACKAGE_NO_PACKAGE_INPUT_TEST_NAME = "valid-module-no-input"
+const VALID_PACKAGE_NO_PACKAGE_INPUT_REL_PATH = "../../../../startosis/valid-kurtosis-module-no-input"
 
 jest.setTimeout(JEST_TIMEOUT_MS)
 
-test("Test valid Starlark module with input", async () => {
+test("Test valid Starlark package with input", async () => {
     // ------------------------------------- ENGINE SETUP ----------------------------------------------
-    const createEnclaveResult = await createEnclave(VALID_MODULE_NO_MODULE_INPUT_TEST_NAME, IS_PARTITIONING_ENABLED)
+    const createEnclaveResult = await createEnclave(VALID_PACKAGE_NO_PACKAGE_INPUT_TEST_NAME, IS_PARTITIONING_ENABLED)
 
     if (createEnclaveResult.isErr()) {
         throw createEnclaveResult.error
@@ -27,7 +27,7 @@ test("Test valid Starlark module with input", async () => {
 
     try {
         // ------------------------------------- TEST SETUP ----------------------------------------------
-        const packageRootPath = path.join(__dirname, VALID_MODULE_NO_MODULE_INPUT_REL_PATH)
+        const packageRootPath = path.join(__dirname, VALID_PACKAGE_NO_PACKAGE_INPUT_REL_PATH)
 
         log.info(`Loading package at path '${packageRootPath}'`)
 
@@ -51,7 +51,7 @@ test("Test valid Starlark module with input", async () => {
 
 test("Test valid Starlark package with input - passing params also works", async () => {
     // ------------------------------------- ENGINE SETUP ----------------------------------------------
-    const createEnclaveResult = await createEnclave(VALID_MODULE_NO_MODULE_INPUT_TEST_NAME, IS_PARTITIONING_ENABLED)
+    const createEnclaveResult = await createEnclave(VALID_PACKAGE_NO_PACKAGE_INPUT_TEST_NAME, IS_PARTITIONING_ENABLED)
 
     if (createEnclaveResult.isErr()) {
         throw createEnclaveResult.error
@@ -61,7 +61,7 @@ test("Test valid Starlark package with input - passing params also works", async
 
     try {
         // ------------------------------------- TEST SETUP ----------------------------------------------
-        const packageRootPath = path.join(__dirname, VALID_MODULE_NO_MODULE_INPUT_REL_PATH)
+        const packageRootPath = path.join(__dirname, VALID_PACKAGE_NO_PACKAGE_INPUT_REL_PATH)
 
         log.info(`Loading package at path '${packageRootPath}'`)
 

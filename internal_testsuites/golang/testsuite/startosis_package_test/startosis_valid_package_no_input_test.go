@@ -1,4 +1,4 @@
-package startosis_module_test
+package startosis_package_test
 
 import (
 	"context"
@@ -11,22 +11,22 @@ import (
 )
 
 const (
-	validModuleNoTypeTestName = "valid-module-no-input"
-	validModuleNoTypeRelPath  = "../../../startosis/valid-kurtosis-module-no-input"
+	validPackageNoTypeTestName = "valid-module-no-input"
+	validPackageNoTypeRelPath  = "../../../startosis/valid-kurtosis-module-no-input"
 )
 
-func TestStartosisModule_ValidModuleNoInput(t *testing.T) {
+func TestStartosisPackage_ValidPackageNoInput(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
-	enclaveCtx, destroyEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, validModuleNoTypeTestName, isPartitioningEnabled)
+	enclaveCtx, destroyEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, validPackageNoTypeTestName, isPartitioningEnabled)
 	require.NoError(t, err, "An error occurred creating an enclave")
 	defer destroyEnclaveFunc()
 
 	currentWorkingDirectory, err := os.Getwd()
 	require.Nil(t, err)
-	packageDirpath := path.Join(currentWorkingDirectory, validModuleNoTypeRelPath)
+	packageDirpath := path.Join(currentWorkingDirectory, validPackageNoTypeRelPath)
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
 	logrus.Info("Executing Starlark Package...")
@@ -46,18 +46,18 @@ func TestStartosisModule_ValidModuleNoInput(t *testing.T) {
 	require.Equal(t, expectedScriptOutput, scriptOutput)
 }
 
-func TestStartosisModule_ValidModuleNoInput_PassingParamsAlsoWorks(t *testing.T) {
+func TestStartosisPackage_ValidPackageNoInput_PassingParamsAlsoWorks(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
-	enclaveCtx, destroyEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, validModuleNoTypeTestName, isPartitioningEnabled)
+	enclaveCtx, destroyEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, validPackageNoTypeTestName, isPartitioningEnabled)
 	require.NoError(t, err, "An error occurred creating an enclave")
 	defer destroyEnclaveFunc()
 
 	currentWorkingDirectory, err := os.Getwd()
 	require.Nil(t, err)
-	packageDirpath := path.Join(currentWorkingDirectory, validModuleNoTypeRelPath)
+	packageDirpath := path.Join(currentWorkingDirectory, validPackageNoTypeRelPath)
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
 	logrus.Info("Executing Starlark Package...")

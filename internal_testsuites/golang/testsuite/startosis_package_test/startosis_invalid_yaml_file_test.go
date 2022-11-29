@@ -1,4 +1,4 @@
-package startosis_module_test
+package startosis_package_test
 
 import (
 	"context"
@@ -11,11 +11,11 @@ import (
 )
 
 const (
-	invalidCaseYamlFileTestName          = "invalid-module-invalid-yaml-file"
-	moduleWithInvalidKurtosisYamlRelPath = "../../../startosis/invalid-yaml-file"
+	invalidCaseYamlFileTestName           = "invalid-module-invalid-yaml-file"
+	packageWithInvalidKurtosisYamlRelPath = "../../../startosis/invalid-yaml-file"
 )
 
-func TestStartosisModule_InvalidYamlFile(t *testing.T) {
+func TestStartosisPackage_InvalidYamlFile(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
@@ -26,7 +26,7 @@ func TestStartosisModule_InvalidYamlFile(t *testing.T) {
 
 	currentWorkingDirectory, err := os.Getwd()
 	require.Nil(t, err)
-	packageDirpath := path.Join(currentWorkingDirectory, moduleWithInvalidKurtosisYamlRelPath)
+	packageDirpath := path.Join(currentWorkingDirectory, packageWithInvalidKurtosisYamlRelPath)
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
 	logrus.Info("Executing Starlark Package...")
