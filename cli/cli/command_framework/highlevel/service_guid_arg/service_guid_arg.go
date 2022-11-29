@@ -57,8 +57,8 @@ func getServiceGuidsForEnclave(ctx context.Context, enclaveID enclaves.EnclaveID
 
 	serviceGuids := make(map[services.ServiceGUID]bool, len(serviceInfos))
 	for _, serviceInfo := range serviceInfos {
-		if _, ok := serviceGuids[serviceInfo.ServiceGUID]; !ok {
-			serviceGuids[serviceInfo.ServiceGUID] = true
+		if _, ok := serviceGuids[serviceInfo.GetServiceGUID()]; !ok {
+			serviceGuids[serviceInfo.GetServiceGUID()] = true
 		}
 	}
 

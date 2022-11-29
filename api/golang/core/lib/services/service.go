@@ -28,6 +28,26 @@ The globally unique identifier used for services within the enclave.
 type ServiceGUID string
 
 type ServiceInfo struct {
-	ServiceID   ServiceID
-	ServiceGUID ServiceGUID
+	serviceId   ServiceID
+	serviceGuid ServiceGUID
+}
+
+func NewServiceInfo(
+	serviceId ServiceID,
+	serviceGuid ServiceGUID,
+) *ServiceInfo {
+	return &ServiceInfo{
+		serviceId:   serviceId,
+		serviceGuid: serviceGuid,
+	}
+}
+
+// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+func (serviceInfo *ServiceInfo) GetServiceID() ServiceID {
+	return serviceInfo.serviceId
+}
+
+// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+func (serviceInfo *ServiceInfo) GetServiceGUID() ServiceGUID {
+	return serviceInfo.serviceGuid
 }

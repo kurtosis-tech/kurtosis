@@ -16,16 +16,16 @@ export type ServiceGUID = string;
 
 export class ServiceInfo {
     constructor(
-        private readonly serviceID: ServiceID,
-        private readonly serviceGUID: ServiceGUID,
+        private readonly serviceId: ServiceID,
+        private readonly serviceGuid: ServiceGUID,
     ) {
     }
 
-    public getServiceID(): ServiceID {
-        return this.serviceID;
+    public getServiceId(): ServiceID {
+        return this.serviceId;
     }
 
-    public getServiceGUID(): ServiceGUID {
-        return this.serviceGUID;
+    public getServiceGuid(): ServiceGUID {
+        return this.serviceGuid;
     }
 }

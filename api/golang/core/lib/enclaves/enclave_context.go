@@ -546,11 +546,11 @@ func (enclaveCtx *EnclaveContext) GetServices() (map[services.ServiceID]*service
 	serviceInfos := make(map[services.ServiceID]*services.ServiceInfo, len(response.GetServiceInfo()))
 	for serviceIdStr, responseServiceInfo := range response.GetServiceInfo() {
 		serviceId := services.ServiceID(serviceIdStr)
-		serviceInfo := services.ServiceInfo{
-			ServiceID:   serviceId,
-			ServiceGUID: services.ServiceGUID(responseServiceInfo.GetServiceGuid()),
-		}
-		serviceInfos[serviceId] = &serviceInfo
+		serviceInfo := services.NewServiceInfo(
+			serviceId,
+			services.ServiceGUID(responseServiceInfo.GetServiceGuid()),
+		)
+		serviceInfos[serviceId] = serviceInfo
 	}
 	return serviceInfos, nil
 }
