@@ -5,9 +5,16 @@
 
 ### Features
 - Progress information (spinner, progress bar and quick progress message) is now printed by the CLI
+- Instruction are now printed before the execution, and the associated result is printed once the execution is finished. This allows failed instruction to be printed before the error message is returned.
 
 ### Changes
 - Starlark execution progress is now returned to the CLI via the KurtosisExecutionResponseLine stream
+
+### Fixes
+- Fixed the error message when the relative filename was incorrect in a Starlark import
+- Fixed the error message when package name was incorrect
+- Don't proceed with execution if there are validation errors in Starlark
+- Made missing `run` method interpretation error more user friendly
 
 # 0.56.0
 ### Breaking Changes

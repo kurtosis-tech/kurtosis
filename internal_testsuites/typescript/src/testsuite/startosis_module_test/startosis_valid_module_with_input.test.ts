@@ -6,7 +6,7 @@ import {
 } from "./shared_constants";
 import * as path from "path";
 import log from "loglevel";
-import {generateScriptOutput, readStreamContentUntilClosed} from "../../test_helpers/startosis_helpers";
+import {readStreamContentUntilClosed} from "../../test_helpers/startosis_helpers";
 
 const VALID_MODULE_WITH_MODULE_INPUT_TEST_NAME = "valid-module-with-input"
 const VALID_MODULE_WITH_MODULE_INPUT_REL_PATH = "../../../../startosis/valid-kurtosis-module-with-input"
@@ -36,7 +36,7 @@ test("Test valid startosis module with input", async () => {
             log.error(`An error occurred execute startosis module '${moduleRootPath}'`);
             throw outputStream.error
         }
-        const [interpretationError, validationErrors, executionError, instructions] = await readStreamContentUntilClosed(outputStream.value);
+        const [scriptOutput, _, interpretationError, validationErrors, executionError] = await readStreamContentUntilClosed(outputStream.value);
 
         expect(interpretationError).toBeUndefined()
         expect(validationErrors).toEqual([])
@@ -44,7 +44,7 @@ test("Test valid startosis module with input", async () => {
 
         const expectedScriptOutput = "bonjour!\nHello World!\n"
 
-        expect(generateScriptOutput(instructions)).toEqual(expectedScriptOutput)
+        expect(scriptOutput).toEqual(expectedScriptOutput)
     } finally {
         stopEnclaveFunction()
     }
@@ -73,14 +73,14 @@ test("Test valid startosis module with input - missing key in params", async () 
             log.error(`An error occurred execute startosis module '${moduleRootPath}'`);
             throw outputStream.error
         }
-        const [interpretationError, validationErrors, executionError, instructions] = await readStreamContentUntilClosed(outputStream.value);
+        const [scriptOutput, _, interpretationError, validationErrors, executionError] = await readStreamContentUntilClosed(outputStream.value);
 
         expect(interpretationError).not.toBeUndefined()
         expect(interpretationError?.getErrorMessage()).toContain("Evaluation error: struct has no .greetings attribute")
         expect(validationErrors).toEqual([])
         expect(executionError).toBeUndefined()
 
-        expect(generateScriptOutput(instructions)).toEqual("")
+        expect(scriptOutput).toEqual("")
     } finally {
         stopEnclaveFunction()
     }
