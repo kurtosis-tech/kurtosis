@@ -44,6 +44,6 @@ func fetchImageFromBackend(ctx context.Context, wg *sync.WaitGroup, backend *bac
 	defer wg.Done()
 	err := (*backend).FetchImage(ctx, image)
 	if err != nil {
-		pullError <- stacktrace.Propagate(err, "Failed fetching the required image '%v'", image)
+		pullError <- stacktrace.NewError("Failed fetching the required image '%v', make sure that the image exists and is public", image)
 	}
 }

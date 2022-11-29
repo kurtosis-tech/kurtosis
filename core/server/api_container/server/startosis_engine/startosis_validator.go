@@ -2,6 +2,7 @@ package startosis_engine
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
@@ -9,6 +10,10 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
+)
+
+const (
+	causedByPrefix = "\tCaused by: "
 )
 
 type StartosisValidator struct {
@@ -40,8 +45,8 @@ func (validator *StartosisValidator) Validate(ctx context.Context, instructions 
 		}
 		errors := validator.dockerImagesValidator.Validate(ctx, environment)
 		for _, err := range errors {
-			propagatedError := stacktrace.Propagate(err, "Error while validating final environment of script")
-			serializedError := binding_constructors.NewKurtosisValidationError(propagatedError.Error())
+			indentedError := fmt.Sprintf("Error while validating final environment of script\n%s%s", causedByPrefix, err.Error())
+			serializedError := binding_constructors.NewKurtosisValidationError(indentedError)
 			kurtosisExecutionResponseLineStream <- binding_constructors.NewKurtosisExecutionResponseLineFromValidationError(serializedError)
 		}
 	}()
