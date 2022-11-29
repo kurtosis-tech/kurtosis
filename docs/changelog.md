@@ -4,8 +4,13 @@
 - Progress information (spinner, progress bar and quick progress message) is now printed by the CLI
 - Instruction are now printed before the execution, and the associated result is printed once the execution is finished. This allows failed instruction to be printed before the error message is returned.
 
+### Breaking changes
+- Endpoints `ExecuteStartosisScript` and `ExecuteStartosisModule` were removed
+- Endpoints `ExecuteKurtosisScript` was renamed `RunStarlarkScript` and `ExecuteKurtosisModule` was renamed `RunStarlarkPackage`
+
 ### Changes
 - Starlark execution progress is now returned to the CLI via the KurtosisExecutionResponseLine stream
+- Renamed `module` to `package` in the context of the Startosis engine
 
 ### Fixes
 - Fixed the error message when the relative filename was incorrect in a Starlark import

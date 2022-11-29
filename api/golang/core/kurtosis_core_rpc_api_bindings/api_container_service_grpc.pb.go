@@ -31,16 +31,10 @@ type ApiContainerServiceClient interface {
 	UnloadModule(ctx context.Context, in *UnloadModuleArgs, opts ...grpc.CallOption) (*UnloadModuleResponse, error)
 	// Executes an executable module on the user's behalf
 	ExecuteModule(ctx context.Context, in *ExecuteModuleArgs, opts ...grpc.CallOption) (*ExecuteModuleResponse, error)
-	// Executes a startosis script on the user's behalf
-	// Will soon be deprecated in favour of its streamed version ExecuteKurtosisScript
-	ExecuteStartosisScript(ctx context.Context, in *ExecuteStartosisScriptArgs, opts ...grpc.CallOption) (*ExecuteStartosisResponse, error)
-	// Executes a startosis script on the user's behalf
-	ExecuteKurtosisScript(ctx context.Context, in *ExecuteStartosisScriptArgs, opts ...grpc.CallOption) (ApiContainerService_ExecuteKurtosisScriptClient, error)
-	// Executes a startosis module on the user's behalf
-	// Will soon be deprecated in favour of its streamed version ExecuteKurtosisModule
-	ExecuteStartosisModule(ctx context.Context, in *ExecuteStartosisModuleArgs, opts ...grpc.CallOption) (*ExecuteStartosisResponse, error)
-	// Executes a startosis script on the user's behalf
-	ExecuteKurtosisModule(ctx context.Context, in *ExecuteStartosisModuleArgs, opts ...grpc.CallOption) (ApiContainerService_ExecuteKurtosisModuleClient, error)
+	// Executes a Starlark script on the user's behalf
+	RunStarlarkScript(ctx context.Context, in *RunStarlarkScriptArgs, opts ...grpc.CallOption) (ApiContainerService_RunStarlarkScriptClient, error)
+	// Executes a Starlark script on the user's behalf
+	RunStarlarkPackage(ctx context.Context, in *RunStarlarkPackageArgs, opts ...grpc.CallOption) (ApiContainerService_RunStarlarkPackageClient, error)
 	// Start services by creating containers for them
 	StartServices(ctx context.Context, in *StartServicesArgs, opts ...grpc.CallOption) (*StartServicesResponse, error)
 	// Returns the IDs of the current services in the enclave
@@ -120,21 +114,12 @@ func (c *apiContainerServiceClient) ExecuteModule(ctx context.Context, in *Execu
 	return out, nil
 }
 
-func (c *apiContainerServiceClient) ExecuteStartosisScript(ctx context.Context, in *ExecuteStartosisScriptArgs, opts ...grpc.CallOption) (*ExecuteStartosisResponse, error) {
-	out := new(ExecuteStartosisResponse)
-	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/ExecuteStartosisScript", in, out, opts...)
+func (c *apiContainerServiceClient) RunStarlarkScript(ctx context.Context, in *RunStarlarkScriptArgs, opts ...grpc.CallOption) (ApiContainerService_RunStarlarkScriptClient, error) {
+	stream, err := c.cc.NewStream(ctx, &ApiContainerService_ServiceDesc.Streams[0], "/api_container_api.ApiContainerService/RunStarlarkScript", opts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
-}
-
-func (c *apiContainerServiceClient) ExecuteKurtosisScript(ctx context.Context, in *ExecuteStartosisScriptArgs, opts ...grpc.CallOption) (ApiContainerService_ExecuteKurtosisScriptClient, error) {
-	stream, err := c.cc.NewStream(ctx, &ApiContainerService_ServiceDesc.Streams[0], "/api_container_api.ApiContainerService/ExecuteKurtosisScript", opts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &apiContainerServiceExecuteKurtosisScriptClient{stream}
+	x := &apiContainerServiceRunStarlarkScriptClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -144,38 +129,29 @@ func (c *apiContainerServiceClient) ExecuteKurtosisScript(ctx context.Context, i
 	return x, nil
 }
 
-type ApiContainerService_ExecuteKurtosisScriptClient interface {
-	Recv() (*KurtosisExecutionResponseLine, error)
+type ApiContainerService_RunStarlarkScriptClient interface {
+	Recv() (*StarlarkRunResponseLine, error)
 	grpc.ClientStream
 }
 
-type apiContainerServiceExecuteKurtosisScriptClient struct {
+type apiContainerServiceRunStarlarkScriptClient struct {
 	grpc.ClientStream
 }
 
-func (x *apiContainerServiceExecuteKurtosisScriptClient) Recv() (*KurtosisExecutionResponseLine, error) {
-	m := new(KurtosisExecutionResponseLine)
+func (x *apiContainerServiceRunStarlarkScriptClient) Recv() (*StarlarkRunResponseLine, error) {
+	m := new(StarlarkRunResponseLine)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
 	return m, nil
 }
 
-func (c *apiContainerServiceClient) ExecuteStartosisModule(ctx context.Context, in *ExecuteStartosisModuleArgs, opts ...grpc.CallOption) (*ExecuteStartosisResponse, error) {
-	out := new(ExecuteStartosisResponse)
-	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/ExecuteStartosisModule", in, out, opts...)
+func (c *apiContainerServiceClient) RunStarlarkPackage(ctx context.Context, in *RunStarlarkPackageArgs, opts ...grpc.CallOption) (ApiContainerService_RunStarlarkPackageClient, error) {
+	stream, err := c.cc.NewStream(ctx, &ApiContainerService_ServiceDesc.Streams[1], "/api_container_api.ApiContainerService/RunStarlarkPackage", opts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
-}
-
-func (c *apiContainerServiceClient) ExecuteKurtosisModule(ctx context.Context, in *ExecuteStartosisModuleArgs, opts ...grpc.CallOption) (ApiContainerService_ExecuteKurtosisModuleClient, error) {
-	stream, err := c.cc.NewStream(ctx, &ApiContainerService_ServiceDesc.Streams[1], "/api_container_api.ApiContainerService/ExecuteKurtosisModule", opts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &apiContainerServiceExecuteKurtosisModuleClient{stream}
+	x := &apiContainerServiceRunStarlarkPackageClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -185,17 +161,17 @@ func (c *apiContainerServiceClient) ExecuteKurtosisModule(ctx context.Context, i
 	return x, nil
 }
 
-type ApiContainerService_ExecuteKurtosisModuleClient interface {
-	Recv() (*KurtosisExecutionResponseLine, error)
+type ApiContainerService_RunStarlarkPackageClient interface {
+	Recv() (*StarlarkRunResponseLine, error)
 	grpc.ClientStream
 }
 
-type apiContainerServiceExecuteKurtosisModuleClient struct {
+type apiContainerServiceRunStarlarkPackageClient struct {
 	grpc.ClientStream
 }
 
-func (x *apiContainerServiceExecuteKurtosisModuleClient) Recv() (*KurtosisExecutionResponseLine, error) {
-	m := new(KurtosisExecutionResponseLine)
+func (x *apiContainerServiceRunStarlarkPackageClient) Recv() (*StarlarkRunResponseLine, error) {
+	m := new(StarlarkRunResponseLine)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -358,16 +334,10 @@ type ApiContainerServiceServer interface {
 	UnloadModule(context.Context, *UnloadModuleArgs) (*UnloadModuleResponse, error)
 	// Executes an executable module on the user's behalf
 	ExecuteModule(context.Context, *ExecuteModuleArgs) (*ExecuteModuleResponse, error)
-	// Executes a startosis script on the user's behalf
-	// Will soon be deprecated in favour of its streamed version ExecuteKurtosisScript
-	ExecuteStartosisScript(context.Context, *ExecuteStartosisScriptArgs) (*ExecuteStartosisResponse, error)
-	// Executes a startosis script on the user's behalf
-	ExecuteKurtosisScript(*ExecuteStartosisScriptArgs, ApiContainerService_ExecuteKurtosisScriptServer) error
-	// Executes a startosis module on the user's behalf
-	// Will soon be deprecated in favour of its streamed version ExecuteKurtosisModule
-	ExecuteStartosisModule(context.Context, *ExecuteStartosisModuleArgs) (*ExecuteStartosisResponse, error)
-	// Executes a startosis script on the user's behalf
-	ExecuteKurtosisModule(*ExecuteStartosisModuleArgs, ApiContainerService_ExecuteKurtosisModuleServer) error
+	// Executes a Starlark script on the user's behalf
+	RunStarlarkScript(*RunStarlarkScriptArgs, ApiContainerService_RunStarlarkScriptServer) error
+	// Executes a Starlark script on the user's behalf
+	RunStarlarkPackage(*RunStarlarkPackageArgs, ApiContainerService_RunStarlarkPackageServer) error
 	// Start services by creating containers for them
 	StartServices(context.Context, *StartServicesArgs) (*StartServicesResponse, error)
 	// Returns the IDs of the current services in the enclave
@@ -419,17 +389,11 @@ func (UnimplementedApiContainerServiceServer) UnloadModule(context.Context, *Unl
 func (UnimplementedApiContainerServiceServer) ExecuteModule(context.Context, *ExecuteModuleArgs) (*ExecuteModuleResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ExecuteModule not implemented")
 }
-func (UnimplementedApiContainerServiceServer) ExecuteStartosisScript(context.Context, *ExecuteStartosisScriptArgs) (*ExecuteStartosisResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ExecuteStartosisScript not implemented")
+func (UnimplementedApiContainerServiceServer) RunStarlarkScript(*RunStarlarkScriptArgs, ApiContainerService_RunStarlarkScriptServer) error {
+	return status.Errorf(codes.Unimplemented, "method RunStarlarkScript not implemented")
 }
-func (UnimplementedApiContainerServiceServer) ExecuteKurtosisScript(*ExecuteStartosisScriptArgs, ApiContainerService_ExecuteKurtosisScriptServer) error {
-	return status.Errorf(codes.Unimplemented, "method ExecuteKurtosisScript not implemented")
-}
-func (UnimplementedApiContainerServiceServer) ExecuteStartosisModule(context.Context, *ExecuteStartosisModuleArgs) (*ExecuteStartosisResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ExecuteStartosisModule not implemented")
-}
-func (UnimplementedApiContainerServiceServer) ExecuteKurtosisModule(*ExecuteStartosisModuleArgs, ApiContainerService_ExecuteKurtosisModuleServer) error {
-	return status.Errorf(codes.Unimplemented, "method ExecuteKurtosisModule not implemented")
+func (UnimplementedApiContainerServiceServer) RunStarlarkPackage(*RunStarlarkPackageArgs, ApiContainerService_RunStarlarkPackageServer) error {
+	return status.Errorf(codes.Unimplemented, "method RunStarlarkPackage not implemented")
 }
 func (UnimplementedApiContainerServiceServer) StartServices(context.Context, *StartServicesArgs) (*StartServicesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StartServices not implemented")
@@ -563,81 +527,45 @@ func _ApiContainerService_ExecuteModule_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ApiContainerService_ExecuteStartosisScript_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ExecuteStartosisScriptArgs)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ApiContainerServiceServer).ExecuteStartosisScript(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api_container_api.ApiContainerService/ExecuteStartosisScript",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApiContainerServiceServer).ExecuteStartosisScript(ctx, req.(*ExecuteStartosisScriptArgs))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ApiContainerService_ExecuteKurtosisScript_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(ExecuteStartosisScriptArgs)
+func _ApiContainerService_RunStarlarkScript_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(RunStarlarkScriptArgs)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(ApiContainerServiceServer).ExecuteKurtosisScript(m, &apiContainerServiceExecuteKurtosisScriptServer{stream})
+	return srv.(ApiContainerServiceServer).RunStarlarkScript(m, &apiContainerServiceRunStarlarkScriptServer{stream})
 }
 
-type ApiContainerService_ExecuteKurtosisScriptServer interface {
-	Send(*KurtosisExecutionResponseLine) error
+type ApiContainerService_RunStarlarkScriptServer interface {
+	Send(*StarlarkRunResponseLine) error
 	grpc.ServerStream
 }
 
-type apiContainerServiceExecuteKurtosisScriptServer struct {
+type apiContainerServiceRunStarlarkScriptServer struct {
 	grpc.ServerStream
 }
 
-func (x *apiContainerServiceExecuteKurtosisScriptServer) Send(m *KurtosisExecutionResponseLine) error {
+func (x *apiContainerServiceRunStarlarkScriptServer) Send(m *StarlarkRunResponseLine) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func _ApiContainerService_ExecuteStartosisModule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ExecuteStartosisModuleArgs)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ApiContainerServiceServer).ExecuteStartosisModule(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api_container_api.ApiContainerService/ExecuteStartosisModule",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApiContainerServiceServer).ExecuteStartosisModule(ctx, req.(*ExecuteStartosisModuleArgs))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ApiContainerService_ExecuteKurtosisModule_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(ExecuteStartosisModuleArgs)
+func _ApiContainerService_RunStarlarkPackage_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(RunStarlarkPackageArgs)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(ApiContainerServiceServer).ExecuteKurtosisModule(m, &apiContainerServiceExecuteKurtosisModuleServer{stream})
+	return srv.(ApiContainerServiceServer).RunStarlarkPackage(m, &apiContainerServiceRunStarlarkPackageServer{stream})
 }
 
-type ApiContainerService_ExecuteKurtosisModuleServer interface {
-	Send(*KurtosisExecutionResponseLine) error
+type ApiContainerService_RunStarlarkPackageServer interface {
+	Send(*StarlarkRunResponseLine) error
 	grpc.ServerStream
 }
 
-type apiContainerServiceExecuteKurtosisModuleServer struct {
+type apiContainerServiceRunStarlarkPackageServer struct {
 	grpc.ServerStream
 }
 
-func (x *apiContainerServiceExecuteKurtosisModuleServer) Send(m *KurtosisExecutionResponseLine) error {
+func (x *apiContainerServiceRunStarlarkPackageServer) Send(m *StarlarkRunResponseLine) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -953,14 +881,6 @@ var ApiContainerService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ApiContainerService_ExecuteModule_Handler,
 		},
 		{
-			MethodName: "ExecuteStartosisScript",
-			Handler:    _ApiContainerService_ExecuteStartosisScript_Handler,
-		},
-		{
-			MethodName: "ExecuteStartosisModule",
-			Handler:    _ApiContainerService_ExecuteStartosisModule_Handler,
-		},
-		{
 			MethodName: "StartServices",
 			Handler:    _ApiContainerService_StartServices_Handler,
 		},
@@ -1027,13 +947,13 @@ var ApiContainerService_ServiceDesc = grpc.ServiceDesc{
 	},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "ExecuteKurtosisScript",
-			Handler:       _ApiContainerService_ExecuteKurtosisScript_Handler,
+			StreamName:    "RunStarlarkScript",
+			Handler:       _ApiContainerService_RunStarlarkScript_Handler,
 			ServerStreams: true,
 		},
 		{
-			StreamName:    "ExecuteKurtosisModule",
-			Handler:       _ApiContainerService_ExecuteKurtosisModule_Handler,
+			StreamName:    "RunStarlarkPackage",
+			Handler:       _ApiContainerService_RunStarlarkPackage_Handler,
 			ServerStreams: true,
 		},
 	},

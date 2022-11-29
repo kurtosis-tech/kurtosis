@@ -39,14 +39,14 @@ func TestDefineFactInstruction_GetCanonicalizedInstruction(t *testing.T) {
 	expectedStr := fmt.Sprintf(expectedFormatStr, testFactName, testServiceId)
 	require.Equal(t, expectedStr, defineFactInstruction.String())
 
-	canonicalInstruction := binding_constructors.NewKurtosisInstruction(
+	canonicalInstruction := binding_constructors.NewStarlarkInstruction(
 		position.ToAPIType(),
 		DefineFactBuiltinName,
 		expectedStr,
-		[]*kurtosis_core_rpc_api_bindings.KurtosisInstructionArg{
-			binding_constructors.NewKurtosisInstructionKwarg(`"example-service-id"`, serviceIdArgName, true),
-			binding_constructors.NewKurtosisInstructionKwarg(`"example-fact-name"`, factNameArgName, true),
-			binding_constructors.NewKurtosisInstructionKwarg(`struct(endpoint="my_endpoint", method="GET")`, recipeArgName, false),
+		[]*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg{
+			binding_constructors.NewStarlarkInstructionKwarg(`"example-service-id"`, serviceIdArgName, true),
+			binding_constructors.NewStarlarkInstructionKwarg(`"example-fact-name"`, factNameArgName, true),
+			binding_constructors.NewStarlarkInstructionKwarg(`struct(endpoint="my_endpoint", method="GET")`, recipeArgName, false),
 		})
 	require.Equal(t, canonicalInstruction, defineFactInstruction.GetCanonicalInstruction())
 }

@@ -17,12 +17,12 @@ func TestRemoveService_GetCanonicalInstruction(t *testing.T) {
 	expectedStr := `remove_service(service_id="dummy-service-id")`
 	require.Equal(t, expectedStr, removeInstruction.String())
 
-	canonicalInstruction := binding_constructors.NewKurtosisInstruction(
+	canonicalInstruction := binding_constructors.NewStarlarkInstruction(
 		position.ToAPIType(),
 		RemoveServiceBuiltinName,
 		expectedStr,
-		[]*kurtosis_core_rpc_api_bindings.KurtosisInstructionArg{
-			binding_constructors.NewKurtosisInstructionKwarg(`"dummy-service-id"`, serviceIdArgName, true),
+		[]*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg{
+			binding_constructors.NewStarlarkInstructionKwarg(`"dummy-service-id"`, serviceIdArgName, true),
 		})
 	require.Equal(t, canonicalInstruction, removeInstruction.GetCanonicalInstruction())
 }

@@ -74,8 +74,8 @@ func NewInterpretationErrorWithCustomMsg(stacktrace []CallFrame, msg string, arg
 	}
 }
 
-func (err *InterpretationError) ToAPIType() *kurtosis_core_rpc_api_bindings.KurtosisInterpretationError {
-	return binding_constructors.NewKurtosisInterpretationError(err.Error())
+func (err *InterpretationError) ToAPIType() *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError {
+	return binding_constructors.NewStarlarkInterpretationError(err.Error())
 }
 
 func (err *InterpretationError) Error() string {

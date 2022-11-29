@@ -29,10 +29,9 @@ import {
     UnloadModuleResponse,
     RenderTemplatesToFilesArtifactArgs,
     RenderTemplatesToFilesArtifactResponse,
-    ExecuteStartosisScriptArgs,
-    ExecuteStartosisModuleArgs,
-    ExecuteStartosisResponse,
-    KurtosisExecutionResponseLine,
+    RunStarlarkScriptArgs,
+    RunStarlarkPackageArgs,
+    StarlarkRunResponseLine,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import type { ApiContainerServiceClient as ApiContainerServiceClientNode } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
 import { GenericApiContainerClient } from "./generic_api_container_client";
@@ -98,68 +97,26 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
         return ok(unloadModuleResult.value);
     }
 
-    public async executeStartosisScript(serializedStartosisScript: ExecuteStartosisScriptArgs): Promise<Result<ExecuteStartosisResponse, Error>> {
-        const promiseExecuteStartosisScript: Promise<Result<ExecuteStartosisResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.executeStartosisScript(serializedStartosisScript, (error: ServiceError | null, response?: ExecuteStartosisResponse) => {
-                if (error === null) {
-                    if (!response) {
-                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
-                    } else {
-                        resolve(ok(response!));
-                    }
-                } else {
-                    resolve(err(error));
-                }
-            })
+    public async runStarlarkScript(serializedStarlarkScript: RunStarlarkScriptArgs): Promise<Result<Readable, Error>> {
+        const promiseRunStarlarkScript: Promise<Result<ClientReadableStream<StarlarkRunResponseLine>, Error>> = new Promise((resolve, _unusedReject) => {
+            resolve(ok(this.client.runStarlarkScript(serializedStarlarkScript)))
         })
-        const resultExecuteStartosisScript: Result<ExecuteStartosisResponse, Error> = await promiseExecuteStartosisScript;
-        if (resultExecuteStartosisScript.isErr()) {
-            return err(resultExecuteStartosisScript.error)
+        const starlarkScriptRunResult: Result<Readable, Error> = await promiseRunStarlarkScript;
+        if (starlarkScriptRunResult.isErr()) {
+            return err(starlarkScriptRunResult.error)
         }
-        return ok(resultExecuteStartosisScript.value)
+        return ok(starlarkScriptRunResult.value)
     }
 
-    public async executeKurtosisScript(serializedStartosisScript: ExecuteStartosisScriptArgs): Promise<Result<Readable, Error>> {
-        const promiseExecuteKurtosisScript: Promise<Result<ClientReadableStream<KurtosisExecutionResponseLine>, Error>> = new Promise((resolve, _unusedReject) => {
-            resolve(ok(this.client.executeKurtosisScript(serializedStartosisScript)))
+    public async runStarlarkPackage(starlarkPackageArgs: RunStarlarkPackageArgs): Promise<Result<Readable, Error>> {
+        const promiseRunStarlarkPackage: Promise<Result<ClientReadableStream<StarlarkRunResponseLine>, Error>> = new Promise((resolve, _unusedReject) => {
+            resolve(ok(this.client.runStarlarkPackage(starlarkPackageArgs)))
         })
-        const resultExecuteKurtosisScript: Result<Readable, Error> = await promiseExecuteKurtosisScript;
-        if (resultExecuteKurtosisScript.isErr()) {
-            return err(resultExecuteKurtosisScript.error)
+        const runStarlarkPackageResult: Result<Readable, Error> = await promiseRunStarlarkPackage;
+        if (runStarlarkPackageResult.isErr()) {
+            return err(runStarlarkPackageResult.error)
         }
-        return ok(resultExecuteKurtosisScript.value)
-    }
-
-    public async executeStartosisModule(startosisModuleArgs:ExecuteStartosisModuleArgs): Promise<Result<ExecuteStartosisResponse, Error>> {
-        const promiseExecuteStartosisModule: Promise<Result<ExecuteStartosisResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.executeStartosisModule(startosisModuleArgs, (error: ServiceError | null, response?: ExecuteStartosisResponse) => {
-                if (error === null) {
-                    if (!response) {
-                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
-                    } else {
-                        resolve(ok(response!));
-                    }
-                } else {
-                    resolve(err(error));
-                }
-            })
-        })
-        const resultExecuteStartosisModule: Result<ExecuteStartosisResponse, Error> = await promiseExecuteStartosisModule;
-        if (resultExecuteStartosisModule.isErr()) {
-            return err(resultExecuteStartosisModule.error)
-        }
-        return ok(resultExecuteStartosisModule.value)
-    }
-
-    public async executeKurtosisModule(startosisModuleArgs:ExecuteStartosisModuleArgs): Promise<Result<Readable, Error>> {
-        const promiseExecuteKurtosisModule: Promise<Result<ClientReadableStream<KurtosisExecutionResponseLine>, Error>> = new Promise((resolve, _unusedReject) => {
-            resolve(ok(this.client.executeKurtosisModule(startosisModuleArgs)))
-        })
-        const resultExecuteKurtosisModule: Result<Readable, Error> = await promiseExecuteKurtosisModule;
-        if (resultExecuteKurtosisModule.isErr()) {
-            return err(resultExecuteKurtosisModule.error)
-        }
-        return ok(resultExecuteKurtosisModule.value)
+        return ok(runStarlarkPackageResult.value)
     }
 
     public async startServices(startServicesArgs: StartServicesArgs): Promise<Result<StartServicesResponse, Error>>{
