@@ -2,6 +2,7 @@
 
 ### Changes
 - Updated Starlark section of core-lib-documentation.md to match the new streaming endpoints
+- Updated `datastore-army-module` -> `datastore-army-package`
 
 ### Features
 - Log file name and function like [filename.go:FunctionName()] while logging in `core` & `engine`
