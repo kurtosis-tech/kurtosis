@@ -2,6 +2,11 @@
 ### Changes
 - Added `startosis_add_service_with_empty_ports` Golang and Typescript internal tests
 
+# 0.57.1
+
+### Changes
+- Added tab-completion (suggestions) to commands that require Service GUIDs, i.e.  `service shell` and `service logs` paths
+
 # 0.57.0
 ### Breaking Changes
 - Renamed `src_path` parameter in `read_file` to `src`

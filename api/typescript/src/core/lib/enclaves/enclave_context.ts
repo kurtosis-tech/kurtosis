@@ -64,6 +64,7 @@ import {
     RunStarlarkScriptArgs,
     RunStarlarkPackageArgs,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
+import {ServiceInfo as ServiceInfoSimple} from './../services/service'
 import {TemplateAndData} from "./template_and_data";
 import * as path from "path";
 import {parseKurtosisYaml} from "./kurtosis_yaml";
@@ -125,7 +126,7 @@ export class EnclaveContext {
                 "An unknown exception value was thrown during creation of the API container client that wasn't an error: " + error
             ));
         }
-        
+
         const enclaveContext = new EnclaveContext(genericApiContainerClient, pathJoiner, genericTgzArchiver);
         return ok(enclaveContext)
     }
@@ -181,7 +182,7 @@ export class EnclaveContext {
         if(loadModuleResult.isErr()){
             return err(loadModuleResult.error)
         }
-        
+
         const moduleContext:ModuleContext = new ModuleContext(this.backend, moduleId);
         return ok(moduleContext)
     }
@@ -620,7 +621,7 @@ export class EnclaveContext {
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-    public async getServices(): Promise<Result<Set<ServiceID>, Error>> {
+    public async getServices(): Promise<Result<Set<ServiceInfoSimple>, Error>> {
         const getAllServicesArgMap: Map<string, boolean> = new Map<string,boolean>()
         const emptyGetServicesArg: GetServicesArgs = newGetServicesArgs(getAllServicesArgMap)
 
@@ -631,13 +632,11 @@ export class EnclaveContext {
 
         const getServicesResponse = getServicesResponseResult.value
 
-        const serviceIDs: Set<ServiceID> = new Set<ServiceID>()
-
+        const serviceInfos: Set<ServiceInfoSimple> = new Set<ServiceInfoSimple>()
         getServicesResponse.getServiceInfoMap().forEach((value: ServiceInfo, key: string) => {
-            serviceIDs.add(key)
+            serviceInfos.add(new ServiceInfoSimple(key, value.getServiceGuid()))
         });
-
-        return ok(serviceIDs)
+        return ok(serviceInfos)
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
@@ -676,7 +675,7 @@ export class EnclaveContext {
 
         return ok(uploadResult.value.getUuid())
     }
-      
+
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async storeWebFiles(url: string): Promise<Result<FilesArtifactUUID, Error>> {
         const args = newStoreWebFilesArtifactArgs(url);
@@ -748,7 +747,7 @@ export class EnclaveContext {
 
         return ok(renderTemplatesToFilesArtifactResult.value.getUuid())
     }
-  
+
     // ====================================================================================================
     //                                       Private helper functions
     // ====================================================================================================
