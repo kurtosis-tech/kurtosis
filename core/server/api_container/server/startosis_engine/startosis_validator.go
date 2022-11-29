@@ -34,15 +34,13 @@ func (validator *StartosisValidator) Validate(ctx context.Context, instructions 
 			err := instruction.ValidateAndUpdateEnvironment(environment)
 			if err != nil {
 				wrappedValidationError := startosis_errors.WrapWithValidationError(err, "Error while validating instruction %v. The instruction can be found at %v", instruction.String(), instruction.GetPositionInOriginalScript().String())
-				serializedError := wrappedValidationError.ToAPIType()
-				starlarkExecutionResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromValidationError(serializedError)
+				starlarkExecutionResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromValidationError(wrappedValidationError.ToAPIType())
 			}
 		}
 		errors := validator.dockerImagesValidator.Validate(ctx, environment)
 		for _, err := range errors {
 			wrappedValidationError := startosis_errors.WrapWithValidationError(err, "Error while validating final environment of script")
-			serializedError := wrappedValidationError.ToAPIType()
-			starlarkExecutionResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromValidationError(serializedError)
+			starlarkExecutionResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromValidationError(wrappedValidationError.ToAPIType())
 		}
 	}()
 	return starlarkExecutionResponseLineStream
