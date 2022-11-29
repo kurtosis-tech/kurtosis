@@ -1,5 +1,8 @@
 # TBD
 
+### Changes
+- Updated Starlark section of core-lib-documentation.md to match the new streaming endpoints
+
 # 0.57.0
 ### Breaking Changes
 - Renamed `src_path` parameter in `read_file` to `src`
