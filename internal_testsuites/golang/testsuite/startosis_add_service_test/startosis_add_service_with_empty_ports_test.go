@@ -47,7 +47,7 @@ print("Service " + SERVICE_ID + " deployed successfully.")
 )
 
 var serviceIds = []string{serviceId, serviceId2}
-var starlarkScriptToRun = []string{starlarkScriptWithEmptyPorts, starlarkScriptWithoutPorts}
+var starlarkScriptsToRun = []string{starlarkScriptWithEmptyPorts, starlarkScriptWithoutPorts}
 
 func TestAddServiceWithEmptyPortsAndWithoutPorts(t *testing.T) {
 	ctx := context.Background()
@@ -59,7 +59,7 @@ func TestAddServiceWithEmptyPortsAndWithoutPorts(t *testing.T) {
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
 
-	for starlarkScripIndex, starlarkScript := range starlarkScriptToRun {
+	for starlarkScripIndex, starlarkScript := range starlarkScriptsToRun {
 		logrus.Infof("Executing Starlark script...")
 		logrus.Debugf("Starlark script content: \n%v", starlarkScript)
 
