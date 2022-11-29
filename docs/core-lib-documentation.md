@@ -94,7 +94,7 @@ Run a Starlark script hosted in a remote github.com repo inside the enclave.
 
 **Args**
 
-* `packageId`: The ID of the package pointing to the github.com repo hosting the package. For example `github.com/kurtosistech/datastore-army-module`
+* `packageId`: The ID of the package pointing to the github.com repo hosting the package. For example `github.com/kurtosistech/datastore-army-package`
 * `serializedParams`: The parameters to pass to the package for the run. It should be a serialized JSON string.
 * `dryRun`: When set to true, the Kurtosis instructions are not executed.
 
@@ -354,7 +354,7 @@ StarlarkInstruction
 -------------------
 `StarlarkInstruction` represents a Starlark instruction that is currently being executed. It contains the following fields:
 - `instructionName`: the name of the instruction
-- `instructionPosition`: the position of the instruction in the source code. It is a triple of (filename, line number,
+- `instructionPosition`: the position of the instruction in the source code. It iscomposed of (filename, line number,
 column number)
 - `arguments`: The list of arguments provided to this instruction. Each argument is composed of an optional name (if
 it was named in the source script) and its serialized value
