@@ -33,7 +33,7 @@ func TestExecInstruction_StringRepresentationWorks(t *testing.T) {
 		expectedStr,
 		[]*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg{
 			binding_constructors.NewStarlarkInstructionKwarg(`"example-service-id"`, serviceIdArgName, true),
-			binding_constructors.NewStarlarkInstructionKwarg(`["mkdir", "-p", "/tmp/store"]`, commandArgName, false),
+			binding_constructors.NewStarlarkInstructionKwarg(`["mkdir", "-p", "/tmp/store"]`, commandArgName, true),
 			binding_constructors.NewStarlarkInstructionKwarg(`0`, nonOptionalExitCodeArgName, false),
 		})
 	require.Equal(t, canonicalInstruction, execInstruction.GetCanonicalInstruction())

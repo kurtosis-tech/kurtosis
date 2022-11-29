@@ -65,7 +65,9 @@ func TestStartosis(t *testing.T) {
 	scriptOutput, _, interpretationError, validationErrors, executionError := test_helpers.ReadStreamContentUntilClosed(outputStream)
 
 	expectedScriptOutput := `Adding service example-datastore-server-1.
+Files uploaded with artifact ID '[a-f0-9-]{36}'
 Uploaded [a-f0-9-]{36}
+Service 'example-datastore-server-1' added with UUID '[a-z-0-9]+'
 `
 
 	require.Nil(t, interpretationError, "Unexpected interpretation error. This test requires you to be online for the upload_file command to run")

@@ -2,6 +2,7 @@ package define_fact
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	kurtosis_backend_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
@@ -76,7 +77,8 @@ func (instruction *DefineFactInstruction) Execute(_ context.Context) (*string, e
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to wait for fact '%v' on service '%v'", instruction.factName, instruction.serviceId)
 	}
-	return nil, nil
+	instructionResult := fmt.Sprintf("Fact '%s' defined on service '%s'", instruction.factName, instruction.serviceId)
+	return &instructionResult, nil
 }
 
 func (instruction *DefineFactInstruction) String() string {

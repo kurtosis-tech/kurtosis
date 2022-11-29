@@ -9,6 +9,7 @@
 
 ### Features
 - Log file name and function like [filename.go:FunctionName()] while logging in `core` & `engine`
+- All Kurtosis instructions now returns a simple but explicit output
 
 # 0.57.1
 

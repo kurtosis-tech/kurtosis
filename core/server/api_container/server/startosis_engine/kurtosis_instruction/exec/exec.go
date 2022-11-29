@@ -2,6 +2,7 @@ package exec
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	kurtosis_backend_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
@@ -12,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
+	"strings"
 )
 
 const (
@@ -23,6 +25,8 @@ const (
 	nonOptionalExitCodeArgName = "expected_exit_code"
 
 	successfulExitCode = 0
+
+	newlineChar = "\n"
 )
 
 func GenerateExecBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, serviceNetwork service_network.ServiceNetwork) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
@@ -78,21 +82,22 @@ func (instruction *ExecInstruction) GetPositionInOriginalScript() *kurtosis_inst
 func (instruction *ExecInstruction) GetCanonicalInstruction() *kurtosis_core_rpc_api_bindings.StarlarkInstruction {
 	args := []*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg{
 		binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[serviceIdArgName]), serviceIdArgName, kurtosis_instruction.Representative),
-		binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[commandArgName]), commandArgName, kurtosis_instruction.NotRepresentative),
+		binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[commandArgName]), commandArgName, kurtosis_instruction.Representative),
 		binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[nonOptionalExitCodeArgName]), nonOptionalExitCodeArgName, kurtosis_instruction.NotRepresentative),
 	}
 	return binding_constructors.NewStarlarkInstruction(instruction.position.ToAPIType(), ExecBuiltinName, instruction.String(), args)
 }
 
 func (instruction *ExecInstruction) Execute(ctx context.Context) (*string, error) {
-	exitCode, _, err := instruction.serviceNetwork.ExecCommand(ctx, instruction.serviceId, instruction.command)
+	exitCode, commandOutput, err := instruction.serviceNetwork.ExecCommand(ctx, instruction.serviceId, instruction.command)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to execute command '%v' on service '%v'", instruction.command, instruction.serviceId)
 	}
 	if instruction.expectedExitCode != exitCode {
 		return nil, stacktrace.NewError("The exit code expected '%v' wasn't the exit code received '%v' while running the command", instruction.expectedExitCode, exitCode)
 	}
-	return nil, nil
+	instructionResult := formatInstructionOutput(exitCode, commandOutput)
+	return &instructionResult, nil
 }
 
 func (instruction *ExecInstruction) String() string {
@@ -137,4 +142,15 @@ func (instruction *ExecInstruction) parseStartosisArgs(b *starlark.Builtin, args
 	instruction.command = command
 	instruction.expectedExitCode = expectedExitCode
 	return nil
+}
+
+func formatInstructionOutput(exitCode int32, commandOutput string) string {
+	trimmedOutput := strings.TrimSpace(commandOutput)
+	if trimmedOutput == "" {
+		return fmt.Sprintf("Command returned with exit code '%d' with no output", exitCode)
+	}
+	if strings.Contains(trimmedOutput, newlineChar) {
+		return fmt.Sprintf("Command returned with exit code '%d' and the following output: \n%v", exitCode, trimmedOutput)
+	}
+	return fmt.Sprintf("Command returned with exit code '%d' and the following output: '%s'", exitCode, trimmedOutput)
 }

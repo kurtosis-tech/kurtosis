@@ -65,7 +65,9 @@ test("Test upload files startosis", async () => {
         const [scriptOutput, instructions, interpretationError, validationErrors, executionError] = await readStreamContentUntilClosed(outputStream.value);
 
         const expectedScriptRegexPattern = `Adding service example-datastore-server-1.
+Files uploaded with artifact ID '[a-f0-9-]{36}'
 Uploaded [a-f0-9-]{36}
+Service 'example-datastore-server-1' added with UUID '[a-z-0-9]+'
 `
         const expectedScriptRegex = new RegExp(expectedScriptRegexPattern)
 

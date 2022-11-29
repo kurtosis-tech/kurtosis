@@ -18,6 +18,9 @@ const (
 	getMethod         = "GET"
 	emptyBody         = ""
 	unusedContentType = ""
+
+	StatusCodeKey = "code"
+	BodyKey       = "body"
 )
 
 type HttpRequestRecipe struct {
@@ -76,8 +79,8 @@ func (recipe *HttpRequestRecipe) Execute(ctx context.Context, serviceNetwork ser
 		return nil, stacktrace.Propagate(err, "An error occurred when reading HTTP response body")
 	}
 	return map[string]starlark.Comparable{
-		"body": starlark.String(body),
-		"code": starlark.MakeInt(response.StatusCode),
+		BodyKey:       starlark.String(body),
+		StatusCodeKey: starlark.MakeInt(response.StatusCode),
 	}, nil
 }
 
