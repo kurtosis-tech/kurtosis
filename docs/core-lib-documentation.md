@@ -184,12 +184,12 @@ Waits until a service endpoint is available by making requests to the endpoint u
 * `retriesDelayMilliseconds`: Number of milliseconds to wait between retries
 * `bodyText`: If this value is non-empty, the endpoint will not be marked as available until this value is returned (e.g. `Hello World`). If this value is emptystring, no body text comparison will be done.
 
-### getServices() -\> Set\<ServiceID\> serviceIDs
-Gets the IDs of the current services in the enclave.
+### getServices() -\> Set\<ServiceInfo\> serviceIDs
+Gets information (such as ids) for the current services in the enclave.
 
 **Returns**
 
-* `serviceIDs`: A set of service IDs
+* `serviceInfos`: A set of objects containing information about the services in the enclave  
 
 ### getModules() -\> Set\<ModuleID\> moduleIds
 Gets the IDs of the Kurtosis modules that have been loaded into the enclave.
