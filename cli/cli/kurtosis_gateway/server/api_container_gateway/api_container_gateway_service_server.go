@@ -428,9 +428,9 @@ func (service *ApiContainerGatewayServiceServer) idempotentKillRunningConnection
 
 func (service *ApiContainerGatewayServiceServer) forwardKurtosisExecutionStream(streamToReadFrom grpc.ClientStream, streamToWriteTo grpc.ServerStream) error {
 	for {
-		kurtosisExecutionResponseLine := new(kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine)
+		starlarkRunResponseLine := new(kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 		// RecvMsg blocks until either a message is received or an error is thrown
-		readErr := streamToReadFrom.RecvMsg(kurtosisExecutionResponseLine)
+		readErr := streamToReadFrom.RecvMsg(starlarkRunResponseLine)
 		if readErr == io.EOF {
 			logrus.Debug("Finished reading from the Kurtosis response line stream.")
 			return nil
@@ -439,7 +439,7 @@ func (service *ApiContainerGatewayServiceServer) forwardKurtosisExecutionStream(
 			return stacktrace.Propagate(readErr, "Error reading Kurtosis execution lines from Kurtosis core stream")
 		}
 
-		if writeErr := streamToWriteTo.SendMsg(kurtosisExecutionResponseLine); writeErr != nil {
+		if writeErr := streamToWriteTo.SendMsg(starlarkRunResponseLine); writeErr != nil {
 			return stacktrace.Propagate(readErr, "Received a Kurtosis execution line but failed forwarding it back to the user")
 		}
 	}

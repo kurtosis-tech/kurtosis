@@ -77,7 +77,7 @@ func (printer *ExecutionPrinter) Stop() {
 }
 
 // PrintKurtosisExecutionResponseLineToStdOut format and prints the instruction to StdOut. It returns a boolean indicating whether an error occurred during printing
-func (printer *ExecutionPrinter) PrintKurtosisExecutionResponseLineToStdOut(responseLine *kurtosis_core_rpc_api_bindings.StarlarkExecutionResponseLine, verbosity run.Verbosity) (bool, error) {
+func (printer *ExecutionPrinter) PrintKurtosisExecutionResponseLineToStdOut(responseLine *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, verbosity run.Verbosity) (bool, error) {
 	// Printing is a 3 phase operation:
 	// 1. stop spinner to clear the ephemeral progress info
 	// 2. print whatever needs to be printed, could be nothing
