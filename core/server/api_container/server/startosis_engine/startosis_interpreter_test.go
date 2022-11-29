@@ -258,7 +258,8 @@ add_service(service_id = service_id, config = config)
 			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(13, 12)),
 			*startosis_errors.NewCallFrame("add_service", startosis_errors.NewScriptPosition(0, 0)),
 		},
-		"Evaluation error: Argument 'number' is expected to be an integer. Got starlark.String",
+		"Evaluation error: Error casting value 'number' as element of the struct object 'ports'\n"+
+			"	Caused by: Argument 'number' is expected to be an integer. Got starlark.String",
 	).ToAPIType()
 	require.Equal(t, expectedError, interpretationError)
 }
