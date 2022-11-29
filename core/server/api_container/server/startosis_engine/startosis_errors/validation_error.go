@@ -56,22 +56,6 @@ func WrapWithValidationError(err error, msg string, args ...interface{}) *Valida
 	}
 }
 
-func NewValidationErrorFromStacktrace(stacktrace []CallFrame) *ValidationError {
-	return &ValidationError{
-		msg:        "",
-		cause:      nil,
-		stacktrace: stacktrace,
-	}
-}
-
-func NewValidationErrorWithCustomMsg(stacktrace []CallFrame, msg string, args ...interface{}) *ValidationError {
-	return &ValidationError{
-		msg:        fmt.Sprintf(msg, args...),
-		cause:      nil,
-		stacktrace: stacktrace,
-	}
-}
-
 func (err *ValidationError) ToAPIType() *kurtosis_core_rpc_api_bindings.KurtosisValidationError {
 	return binding_constructors.NewKurtosisValidationError(err.Error())
 }
