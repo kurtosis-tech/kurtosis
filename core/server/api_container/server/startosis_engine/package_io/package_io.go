@@ -17,7 +17,7 @@ var (
 	noKwargs []starlark.Tuple
 )
 
-// DeserializeArgs deserializes the Kurtosis module args, which should be serialized JSON, into a starlark.Value type.
+// DeserializeArgs deserializes the Kurtosis package args, which should be serialized JSON, into a starlark.Value type.
 //
 // It tries to convert starlark.Dict into starlarkstruct.Struct to allow users to do things like `args.my_param`
 // in their code package in place of `args["my_param"]`. See convertValueToStructIfPossible below for more info.
@@ -41,7 +41,7 @@ func DeserializeArgs(thread *starlark.Thread, serializedJsonArgs string) (starla
 	processedValue, interpretationError := convertValueToStructIfPossible(deserializedInputValue)
 	if interpretationError != nil {
 		// error is not fatal here, we just pass the deserialized starlark.Value object with no transformation
-		logrus.Warnf("JSON input successfully deserialized but it failed to be processed by Kurtosis. It will be passed to the module with no transformation. Intput was: \n%v\nError was: \n%v", deserializedInputValue, interpretationError.Error())
+		logrus.Warnf("JSON input successfully deserialized but it failed to be processed by Kurtosis. It will be passed to the package with no transformation. Intput was: \n%v\nError was: \n%v", deserializedInputValue, interpretationError.Error())
 		return deserializedInputValue, nil
 	}
 	return processedValue, nil
@@ -86,6 +86,6 @@ func convertValueToStructIfPossible(genericValue starlark.Value) (starlark.Value
 	case *starlarkstruct.Struct:
 		return value, nil
 	default:
-		return nil, startosis_errors.NewInterpretationError("Unexpected type when trying to deserialize module input. Data will be passed to the module with no processing (unsupported type was: '%s').", reflect.TypeOf(genericValue))
+		return nil, startosis_errors.NewInterpretationError("Unexpected type when trying to deserialize package input. Data will be passed to the package with no processing (unsupported type was: '%s').", reflect.TypeOf(genericValue))
 	}
 }

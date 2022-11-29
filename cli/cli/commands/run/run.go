@@ -27,13 +27,13 @@ import (
 )
 
 const (
-	scriptOrModulePathKey                = "script-or-module-path"
-	isScriptOrModulePathArgumentOptional = false
+	scriptOrPackagePathKey                = "script-or-package-path"
+	isScriptOrPackagePathArgumentOptional = false
 
 	starlarkExtension = ".star"
 
-	moduleArgsFlagKey = "args"
-	defaultModuleArgs = "{}"
+	packageArgsFlagKey = "args"
+	defaultPackageArgs = "{}"
 
 	dryRunFlagKey = "dry-run"
 	defaultDryRun = "false"
@@ -81,11 +81,11 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			Default: defaultDryRun,
 		},
 		{
-			Key: moduleArgsFlagKey,
+			Key: packageArgsFlagKey,
 			// TODO(gb): Link to a proper doc page explaining what a proto file is, etc. when we have it
 			Usage:   "The parameters that should be passed to the Kurtosis module when running it. It is expected to be a serialized JSON string. Note that if a standalone Kurtosis script is being run, no parameter should be passed.",
 			Type:    flags.FlagType_String,
-			Default: defaultModuleArgs,
+			Default: defaultPackageArgs,
 		},
 		{
 			Key: enclaveIdFlagKey,
@@ -115,8 +115,8 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 	Args: []*args.ArgConfig{
 		// TODO add a `Usage` description here when ArgConfig supports it
 		file_system_path_arg.NewFilepathOrDirpathArg(
-			scriptOrModulePathKey,
-			isScriptOrModulePathArgumentOptional,
+			scriptOrPackagePathKey,
+			isScriptOrPackagePathArgumentOptional,
 			githubScriptpathValidationExceptionFunc,
 		),
 	},
@@ -131,11 +131,11 @@ func run(
 	args *args.ParsedArgs,
 ) error {
 	// Args parsing and validation
-	serializedJsonArgs, err := flags.GetString(moduleArgsFlagKey)
+	serializedJsonArgs, err := flags.GetString(packageArgsFlagKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the module parameters using flag key '%v'", moduleArgsFlagKey)
+		return stacktrace.Propagate(err, "An error occurred getting the module parameters using flag key '%v'", packageArgsFlagKey)
 	}
-	if err = validateModuleArgs(serializedJsonArgs); err != nil {
+	if err = validatePackageArgs(serializedJsonArgs); err != nil {
 		return stacktrace.Propagate(err, "An error occurred parsing the module parameters '%v'", serializedJsonArgs)
 	}
 
@@ -148,9 +148,9 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the is-partitioning-enabled setting using flag key '%v'", isPartitioningEnabledFlagKey)
 	}
 
-	starlarkScriptOrModulePath, err := args.GetNonGreedyArg(scriptOrModulePathKey)
+	starlarkScriptOrPackagePath, err := args.GetNonGreedyArg(scriptOrPackagePathKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "Error reading the Starlark script or module dir at '%s'. Does it exist?", starlarkScriptOrModulePath)
+		return stacktrace.Propagate(err, "Error reading the Starlark script or package directory at '%s'. Does it exist?", starlarkScriptOrPackagePath)
 	}
 
 	dryRun, err := flags.GetBool(dryRunFlagKey)
@@ -180,31 +180,31 @@ func run(
 		defer output_printers.PrintEnclaveId(enclaveCtx.GetEnclaveID())
 	}
 
-	var responseLineChan <-chan *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine
+	var responseLineChan <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine
 	var cancelFunc context.CancelFunc
 	var errRunningKurtosis error
 
-	isRemoteModule := strings.HasPrefix(starlarkScriptOrModulePath, githubDomainPrefix)
-	if isRemoteModule {
-		responseLineChan, cancelFunc, errRunningKurtosis = executeRemoteModule(ctx, enclaveCtx, starlarkScriptOrModulePath, serializedJsonArgs, dryRun)
+	isRemotePackage := strings.HasPrefix(starlarkScriptOrPackagePath, githubDomainPrefix)
+	if isRemotePackage {
+		responseLineChan, cancelFunc, errRunningKurtosis = executeRemotePackage(ctx, enclaveCtx, starlarkScriptOrPackagePath, serializedJsonArgs, dryRun)
 	} else {
-		fileOrDir, err := os.Stat(starlarkScriptOrModulePath)
+		fileOrDir, err := os.Stat(starlarkScriptOrPackagePath)
 		if err != nil {
-			return stacktrace.Propagate(err, "There was an error reading file or module from disk at '%v'", starlarkScriptOrModulePath)
+			return stacktrace.Propagate(err, "There was an error reading file or package from disk at '%v'", starlarkScriptOrPackagePath)
 		}
 
 		isStandaloneScript := fileOrDir.Mode().IsRegular()
 		if isStandaloneScript {
-			if !strings.HasSuffix(starlarkScriptOrModulePath, starlarkExtension) {
-				return stacktrace.NewError("Expected a script with a '%s' extension but got file '%v' with a different extension", starlarkExtension, starlarkScriptOrModulePath)
+			if !strings.HasSuffix(starlarkScriptOrPackagePath, starlarkExtension) {
+				return stacktrace.NewError("Expected a script with a '%s' extension but got file '%v' with a different extension", starlarkExtension, starlarkScriptOrPackagePath)
 			}
-			responseLineChan, cancelFunc, errRunningKurtosis = executeScript(ctx, enclaveCtx, starlarkScriptOrModulePath, dryRun)
+			responseLineChan, cancelFunc, errRunningKurtosis = executeScript(ctx, enclaveCtx, starlarkScriptOrPackagePath, dryRun)
 		} else {
-			responseLineChan, cancelFunc, errRunningKurtosis = executeModule(ctx, enclaveCtx, starlarkScriptOrModulePath, serializedJsonArgs, dryRun)
+			responseLineChan, cancelFunc, errRunningKurtosis = executePackage(ctx, enclaveCtx, starlarkScriptOrPackagePath, serializedJsonArgs, dryRun)
 		}
 	}
 	if errRunningKurtosis != nil {
-		return stacktrace.Propagate(errRunningKurtosis, "An error starting the Kurtosis code execution '%v'", starlarkScriptOrModulePath)
+		return stacktrace.Propagate(errRunningKurtosis, "An error starting the Kurtosis code execution '%v'", starlarkScriptOrPackagePath)
 	}
 
 	errRunningKurtosis = readAndPrintResponseLinesUntilClosed(responseLineChan, cancelFunc, verbosity)
@@ -219,30 +219,30 @@ func run(
 //	Private Helper Functions
 //
 // ====================================================================================================
-func executeScript(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, scriptPath string, dryRun bool) (<-chan *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine, context.CancelFunc, error) {
+func executeScript(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, scriptPath string, dryRun bool) (<-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
 	fileContentBytes, err := os.ReadFile(scriptPath)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "Unable to read content of Starlark script file '%s'", scriptPath)
 	}
-	return enclaveCtx.ExecuteKurtosisScript(ctx, string(fileContentBytes), dryRun)
+	return enclaveCtx.RunStarlarkScript(ctx, string(fileContentBytes), dryRun)
 }
 
-func executeModule(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, modulePath string, serializedParams string, dryRun bool) (<-chan *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine, context.CancelFunc, error) {
+func executePackage(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, packagePath string, serializedParams string, dryRun bool) (<-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
 	// we get the absolute path so that the logs make more sense
-	absoluteModulePath, err := filepath.Abs(modulePath)
-	logrus.Infof("Executing Starlark package at '%v' as the passed argument '%v' looks like a directory", absoluteModulePath, modulePath)
+	absolutePackagePath, err := filepath.Abs(packagePath)
+	logrus.Infof("Executing Starlark package at '%v' as the passed argument '%v' looks like a directory", absolutePackagePath, packagePath)
 
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred while getting the absolute path for '%v'", modulePath)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred while getting the absolute path for '%v'", packagePath)
 	}
-	return enclaveCtx.ExecuteKurtosisModule(ctx, modulePath, serializedParams, dryRun)
+	return enclaveCtx.RunStarlarkPackage(ctx, packagePath, serializedParams, dryRun)
 }
 
-func executeRemoteModule(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, moduleId string, serializedParams string, dryRun bool) (<-chan *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine, context.CancelFunc, error) {
-	return enclaveCtx.ExecuteKurtosisRemoteModule(ctx, moduleId, serializedParams, dryRun)
+func executeRemotePackage(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, packageId string, serializedParams string, dryRun bool) (<-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
+	return enclaveCtx.RunStarlarkRemotePackage(ctx, packageId, serializedParams, dryRun)
 }
 
-func readAndPrintResponseLinesUntilClosed(responseLineChan <-chan *kurtosis_core_rpc_api_bindings.KurtosisExecutionResponseLine, cancelFunc context.CancelFunc, verbosity command_args_run.Verbosity) error {
+func readAndPrintResponseLinesUntilClosed(responseLineChan <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, cancelFunc context.CancelFunc, verbosity command_args_run.Verbosity) error {
 	defer cancelFunc()
 
 	// This channel will receive a signal when the user presses an interrupt
@@ -306,8 +306,8 @@ func getOrCreateEnclaveContext(
 	return enclaveContext, isNewEnclaveFlagWhenCreated, nil
 }
 
-// validateModuleArgs just validates the args is a valid JSON string
-func validateModuleArgs(serializedJson string) error {
+// validatePackageArgs just validates the args is a valid JSON string
+func validatePackageArgs(serializedJson string) error {
 	var result interface{}
 	if err := json.Unmarshal([]byte(serializedJson), &result); err != nil {
 		return stacktrace.Propagate(err, "Error validating args, likely because it is not a valid JSON.")

@@ -77,11 +77,11 @@ func (instruction *GetValueInstruction) GetPositionInOriginalScript() *kurtosis_
 	return instruction.position
 }
 
-func (instruction *GetValueInstruction) GetCanonicalInstruction() *kurtosis_core_rpc_api_bindings.KurtosisInstruction {
-	args := []*kurtosis_core_rpc_api_bindings.KurtosisInstructionArg{
-		binding_constructors.NewKurtosisInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[recipeArgName]), recipeArgName, kurtosis_instruction.Representative),
+func (instruction *GetValueInstruction) GetCanonicalInstruction() *kurtosis_core_rpc_api_bindings.StarlarkInstruction {
+	args := []*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg{
+		binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[recipeArgName]), recipeArgName, kurtosis_instruction.Representative),
 	}
-	return binding_constructors.NewKurtosisInstruction(instruction.position.ToAPIType(), GetValueBuiltinName, instruction.String(), args)
+	return binding_constructors.NewStarlarkInstruction(instruction.position.ToAPIType(), GetValueBuiltinName, instruction.String(), args)
 
 }
 

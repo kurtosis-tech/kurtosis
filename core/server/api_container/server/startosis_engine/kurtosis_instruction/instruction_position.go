@@ -24,6 +24,6 @@ func (position *InstructionPosition) String() string {
 	return fmt.Sprintf("%s[%d:%d]", position.filename, position.line, position.col)
 }
 
-func (position *InstructionPosition) ToAPIType() *kurtosis_core_rpc_api_bindings.KurtosisInstructionPosition {
-	return binding_constructors.NewKurtosisInstructionPosition(position.filename, position.line, position.col)
+func (position *InstructionPosition) ToAPIType() *kurtosis_core_rpc_api_bindings.StarlarkInstructionPosition {
+	return binding_constructors.NewStarlarkInstructionPosition(position.filename, position.line, position.col)
 }

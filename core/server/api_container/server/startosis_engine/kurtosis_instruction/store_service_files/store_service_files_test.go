@@ -26,14 +26,14 @@ func TestStoreFilesFromService_StringRepresentationWorks(t *testing.T) {
 	expectedStr := `store_service_files(artifact_id="` + string(testFilesArtifactId) + `", service_id="example-service-id", src="/tmp/foo")`
 	require.Equal(t, expectedStr, storeFileFromServiceInstruction.String())
 
-	canonicalInstruction := binding_constructors.NewKurtosisInstruction(
+	canonicalInstruction := binding_constructors.NewStarlarkInstruction(
 		position.ToAPIType(),
 		StoreServiceFilesBuiltinName,
 		expectedStr,
-		[]*kurtosis_core_rpc_api_bindings.KurtosisInstructionArg{
-			binding_constructors.NewKurtosisInstructionKwarg(`"example-service-id"`, serviceIdArgName, true),
-			binding_constructors.NewKurtosisInstructionKwarg(`"/tmp/foo"`, srcArgName, true),
-			binding_constructors.NewKurtosisInstructionKwarg(`"`+string(testFilesArtifactId)+`"`, nonOptionalArtifactIdArgName, true),
+		[]*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg{
+			binding_constructors.NewStarlarkInstructionKwarg(`"example-service-id"`, serviceIdArgName, true),
+			binding_constructors.NewStarlarkInstructionKwarg(`"/tmp/foo"`, srcArgName, true),
+			binding_constructors.NewStarlarkInstructionKwarg(`"`+string(testFilesArtifactId)+`"`, nonOptionalArtifactIdArgName, true),
 		})
 	require.Equal(t, canonicalInstruction, storeFileFromServiceInstruction.GetCanonicalInstruction())
 }
