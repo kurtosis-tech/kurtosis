@@ -2,8 +2,6 @@
 
 ### Features
 - Log file name and function like [filename.go:FunctionName()] while logging in `core` & `engine`
-
-# 0.55.0
 - Progress information (spinner, progress bar and quick progress message) is now printed by the CLI
 
 ### Changes
