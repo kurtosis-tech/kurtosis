@@ -2,6 +2,7 @@
 
 ### Changes
 - Make arg parsing errors more explicit on structs
+- Updated Starlark section of core-lib-documentation.md to match the new streaming endpoints
 - Updated `datastore-army-module` -> `datastore-army-package`
 
 ### Features
