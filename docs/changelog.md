@@ -9,6 +9,7 @@
 ### Fixes
 - Fixed the error message when the relative filename was incorrect in a Starlark import
 - Fixed the error message when package name was incorrect
+- Don't proceed with execution if there are validation errors in Starlark
 
 # 0.56.0
 ### Breaking Changes
