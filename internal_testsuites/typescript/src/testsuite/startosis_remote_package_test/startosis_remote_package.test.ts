@@ -10,7 +10,7 @@ import {readStreamContentUntilClosed} from "../../test_helpers/startosis_helpers
 
 const TEST_NAME = "module"
 
-const REMOTE_PACKAGE = "github.com/kurtosis-tech/datastore-army-module"
+const REMOTE_PACKAGE = "github.com/kurtosis-tech/datastore-army-package"
 const EXECUTE_PARAMS            = `{"num_datastores": 2}`
 const DATASTORE_SERVICE_0_ID     = "datastore-0"
 const DATASTORE_SERVICE_1_ID   = "datastore-1"

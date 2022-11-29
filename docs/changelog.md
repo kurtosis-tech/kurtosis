@@ -1,5 +1,8 @@
 # TBD
 
+### Changes
+- Updated `datastore-army-module` -> `datastore-army-package`
+
 # 0.57.0
 ### Breaking Changes
 - Renamed `src_path` parameter in `read_file` to `src`

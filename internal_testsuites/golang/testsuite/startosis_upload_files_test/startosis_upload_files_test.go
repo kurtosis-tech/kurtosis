@@ -26,7 +26,7 @@ DATASTORE_PORT_ID = "` + portId + `"
 DATASTORE_PORT_NUMBER = 1323
 DATASTORE_PORT_PROTOCOL = "TCP"
 
-DIR_TO_UPLOAD = "github.com/kurtosis-tech/datastore-army-module/src"
+DIR_TO_UPLOAD = "github.com/kurtosis-tech/datastore-army-package/src"
 PATH_TO_MOUNT_UPLOADED_DIR = "` + pathToMountUploadedDir + `"
 
 print("Adding service " + DATASTORE_SERVICE_ID + ".")
