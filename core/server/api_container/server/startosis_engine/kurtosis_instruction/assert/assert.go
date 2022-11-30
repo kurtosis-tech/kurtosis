@@ -131,7 +131,7 @@ func (instruction *AssertInstruction) Execute(ctx context.Context) (*string, err
 			}
 		}
 	}
-	instructionResult := fmt.Sprintf("Assertion succeeded. Value is '%s'.", currentValue)
+	instructionResult := fmt.Sprintf("Assertion succeeded. Value is '%s'.", currentValue.String())
 	return &instructionResult, nil
 }
 

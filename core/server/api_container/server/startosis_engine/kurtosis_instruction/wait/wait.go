@@ -72,7 +72,8 @@ func (instruction *WaitInstruction) GetCanonicalInstruction() *kurtosis_core_rpc
 
 func (instruction *WaitInstruction) Execute(_ context.Context) (*string, error) {
 	startTime := time.Now()
-	factValue, err := instruction.factsEngine.WaitForValue(facts_engine.GetFactId(string(instruction.serviceId), instruction.factName))
+	factId := facts_engine.GetFactId(string(instruction.serviceId), instruction.factName)
+	factValue, err := instruction.factsEngine.WaitForValue(factId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to wait for fact '%v' on service '%v'", instruction.factName, instruction.serviceId)
 	}
