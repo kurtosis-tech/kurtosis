@@ -19,6 +19,7 @@ const (
 	expectedGetOutput  = "get-result"
 	expectedPostOutput = "post-result"
 
+	emptyParams     = "{}"
 	startosisScript = `
 IMAGE = "mendhak/http-https-echo:26"
 SERVICE_ID = "` + serviceId + `"
@@ -31,27 +32,28 @@ POST_ENDPOINT = "/"
 POST_BODY = "` + expectedPostOutput + `"
 POST_FACT_NAME = "post-fact"
 
-config = struct(
-    image = IMAGE,
-    ports = {
-        PORT_ID: struct(number = PORT_NUMBER, protocol = PORT_PROTOCOL)
-    }
-)
-
-add_service(service_id = SERVICE_ID, config = config)
-print("Service deployed successfully.")
-
-define_fact(service_id = SERVICE_ID, fact_name = GET_FACT_NAME, fact_recipe=struct(method="GET", endpoint=GET_ENDPOINT, port_id=PORT_ID, field_extractor=".query.service"))
-get_fact = wait(service_id=SERVICE_ID, fact_name=GET_FACT_NAME)
-
-add_service(service_id = get_fact, config = config)
-print("Service dependency 1 deployed successfully.")
-
-define_fact(service_id = SERVICE_ID, fact_name = POST_FACT_NAME, fact_recipe=struct(method="POST", endpoint=POST_ENDPOINT, port_id=PORT_ID, field_extractor=".body", content_type="text/plain", body=POST_BODY))
-post_fact = wait(service_id=SERVICE_ID, fact_name=POST_FACT_NAME)
-
-add_service(service_id = post_fact, config = config)
-print("Service dependency 2 deployed successfully.")
+def run(args):
+	config = struct(
+		image = IMAGE,
+		ports = {
+			PORT_ID: struct(number = PORT_NUMBER, protocol = PORT_PROTOCOL)
+		}
+	)
+	
+	add_service(service_id = SERVICE_ID, config = config)
+	print("Service deployed successfully.")
+	
+	define_fact(service_id = SERVICE_ID, fact_name = GET_FACT_NAME, fact_recipe=struct(method="GET", endpoint=GET_ENDPOINT, port_id=PORT_ID, field_extractor=".query.service"))
+	get_fact = wait(service_id=SERVICE_ID, fact_name=GET_FACT_NAME)
+	
+	add_service(service_id = get_fact, config = config)
+	print("Service dependency 1 deployed successfully.")
+	
+	define_fact(service_id = SERVICE_ID, fact_name = POST_FACT_NAME, fact_recipe=struct(method="POST", endpoint=POST_ENDPOINT, port_id=PORT_ID, field_extractor=".body", content_type="text/plain", body=POST_BODY))
+	post_fact = wait(service_id=SERVICE_ID, fact_name=POST_FACT_NAME)
+	
+	add_service(service_id = post_fact, config = config)
+	print("Service dependency 2 deployed successfully.")
 `
 )
 
@@ -67,7 +69,7 @@ func TestStartosis(t *testing.T) {
 	logrus.Infof("Executing Startosis script...")
 	logrus.Debugf("Startosis script content: \n%v", startosisScript)
 
-	outputStream, _, err := enclaveCtx.RunStarlarkScript(ctx, startosisScript, defaultDryRun)
+	outputStream, _, err := enclaveCtx.RunStarlarkScript(ctx, startosisScript, emptyParams, defaultDryRun)
 	require.NoError(t, err, "Unexpected error executing startosis script")
 	scriptOutput, _, interpretationError, validationErrors, executionError := test_helpers.ReadStreamContentUntilClosed(outputStream)
 

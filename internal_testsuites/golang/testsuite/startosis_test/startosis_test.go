@@ -39,7 +39,6 @@ TEMPLATE_FILE_TO_RENDER="github.com/kurtosis-tech/eth2-merge-kurtosis-module/kur
 PATH_TO_MOUNT_RENDERED_CONFIG="` + renderedConfigMountPath + `"
 RENDER_RELATIVE_PATH = "` + renderedConfigRelativePath + `"
 
-
 def run(args):
 	print("Adding service " + DATASTORE_SERVICE_ID + ".")
 	
