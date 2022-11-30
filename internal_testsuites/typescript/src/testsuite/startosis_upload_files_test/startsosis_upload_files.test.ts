@@ -67,7 +67,7 @@ test("Test upload files startosis", async () => {
         const expectedScriptRegexPattern = `Adding service example-datastore-server-1.
 Files uploaded with artifact ID '[a-f0-9-]{36}'
 Uploaded [a-f0-9-]{36}
-Service 'example-datastore-server-1' added with UUID '[a-z-0-9]+'
+Service 'example-datastore-server-1' added with internal ID '[a-z-0-9]+'
 `
         const expectedScriptRegex = new RegExp(expectedScriptRegexPattern)
 

@@ -74,15 +74,16 @@ async function TestAddServiceWithEmptyAndWithoutPorts() {
             }
             const [scriptOutput, _, interpretationError, validationErrors, executionError] = await readStreamContentUntilClosed(outputStream.value);
 
-            const expectedScriptOutput: string = `Adding service ${serviceId}.
-Service 'docker-getting-started' added with UUID '[a-z-0-9]+'
+            const expectedScriptOutputRegexpPattern = `Adding service ${serviceId}.
+Service '${serviceId}' added with internal ID '[a-z-0-9]+'
 Service ${serviceId} deployed successfully.
 `;
+            const expectedScriptOutputRegexp = new RegExp(expectedScriptOutputRegexpPattern)
 
             expect(interpretationError).toBeUndefined();
             expect(validationErrors).toEqual([]);
             expect(executionError).toBeUndefined();
-            expect(expectedScriptOutput).toMatch(scriptOutput);
+            expect(scriptOutput).toMatch(expectedScriptOutputRegexp);
             log.info("Successfully ran Starlark script");
 
             // ------------------------------------- TEST RUN ----------------------------------------------

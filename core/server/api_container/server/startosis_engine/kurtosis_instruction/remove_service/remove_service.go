@@ -69,7 +69,7 @@ func (instruction *RemoveServiceInstruction) Execute(ctx context.Context) (*stri
 		return nil, stacktrace.Propagate(err, "Failed removing service with unexpected error")
 	}
 	logrus.Infof("Successfully removed service '%v' with guid '%v'", instruction.serviceId, serviceGUID)
-	instructionResult := fmt.Sprintf("Service '%s' with UUID '%s' removed", instruction.serviceId, serviceGUID)
+	instructionResult := fmt.Sprintf("Service '%s' with internal ID '%s' removed", instruction.serviceId, serviceGUID)
 	return &instructionResult, nil
 }
 

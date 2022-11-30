@@ -71,15 +71,15 @@ func TestStartosis(t *testing.T) {
 	require.NoError(t, err, "Unexpected error executing startosis script")
 	scriptOutput, _, interpretationError, validationErrors, executionError := test_helpers.ReadStreamContentUntilClosed(outputStream)
 
-	expectedScriptOutput := `Service 'http-echo' added with UUID '[a-z-0-9]+'
+	expectedScriptOutput := `Service 'http-echo' added with internal ID '[a-z-0-9]+'
 Service deployed successfully.
 Fact 'get-fact' defined on service 'http-echo'
 Waited for '[0-9]+.[0-9]+s'. Fact now has value 'get-result'.
-Service 'get-result' added with UUID '[a-z-0-9]+'
+Service 'get-result' added with internal ID '[a-z-0-9]+'
 Service dependency 1 deployed successfully.
 Fact 'post-fact' defined on service 'http-echo'
 Waited for '[0-9]+.[0-9]+s'. Fact now has value 'post-result'.
-Service 'post-result' added with UUID '[a-z-0-9]+'
+Service 'post-result' added with internal ID '[a-z-0-9]+'
 Service dependency 2 deployed successfully.
 `
 	require.Nil(t, interpretationError, "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
