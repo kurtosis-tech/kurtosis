@@ -47,7 +47,7 @@ func getServiceGuidsForEnclave(ctx context.Context, enclaveID enclaves.EnclaveID
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclave context")
 	}
 
-	serviceInfos, err := enclaveContext.GetServices()
+	serviceIds, err := enclaveContext.GetServices()
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -55,10 +55,10 @@ func getServiceGuidsForEnclave(ctx context.Context, enclaveID enclaves.EnclaveID
 		)
 	}
 
-	serviceGuids := make(map[services.ServiceGUID]bool, len(serviceInfos))
-	for _, serviceInfo := range serviceInfos {
-		if _, ok := serviceGuids[serviceInfo.GetServiceGUID()]; !ok {
-			serviceGuids[serviceInfo.GetServiceGUID()] = true
+	serviceGuids := make(map[services.ServiceGUID]bool, len(serviceIds))
+	for _, serviceGuid := range serviceIds {
+		if _, ok := serviceGuids[serviceGuid]; !ok {
+			serviceGuids[serviceGuid] = true
 		}
 	}
 
