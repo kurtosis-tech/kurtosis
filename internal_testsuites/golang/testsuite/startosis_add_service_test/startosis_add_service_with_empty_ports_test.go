@@ -11,9 +11,9 @@ import (
 const (
 	addServiceWithEmptyPortsTestName = "add-service-empty-ports"
 	isPartitioningEnabled            = false
-	defaultDryRun         = false
+	defaultDryRun                    = false
 
-	serviceId = "docker-getting-started"
+	serviceId  = "docker-getting-started"
 	serviceId2 = "docker-getting-started-2"
 
 	starlarkScriptWithEmptyPorts = `
@@ -67,13 +67,14 @@ func TestAddServiceWithEmptyPortsAndWithoutPorts(t *testing.T) {
 		require.NoError(t, err, "Unexpected error executing starlark script")
 		scriptOutput, _, interpretationError, validationErrors, executionError := test_helpers.ReadStreamContentUntilClosed(outputStream)
 
-		expectedScriptOutput := `Adding service `+ serviceIds[starlarkScripIndex] +`.
-Service `+ serviceIds[starlarkScripIndex] +` deployed successfully.
+		expectedScriptOutput := `Adding service ` + serviceIds[starlarkScripIndex] + `.
+Service 'docker-getting-started' added with UUID '[a-z-0-9]+'
+Service ` + serviceIds[starlarkScripIndex] + ` deployed successfully.
 `
 		require.Nil(t, interpretationError, "Unexpected interpretation error.")
 		require.Empty(t, validationErrors, "Unexpected validation error")
 		require.Nil(t, executionError, "Unexpected execution error")
-		require.Equal(t, expectedScriptOutput, scriptOutput)
+		require.Regexp(t, expectedScriptOutput, scriptOutput)
 		logrus.Infof("Successfully ran Starlark script")
 
 		// Ensure that the service is listed
