@@ -57,7 +57,7 @@ const (
 	// This way, we're guaranteed that the `run()` function gets called within main.star
 	bootScript = `
 main_module = import_module("%v/` + startosis_engine.MainFileName + `")
-main_module.run(%v)
+%v = main_module.run(%v)
 	`
 	// We concatenate a run() at the end of individual scripts to enforce a run method
 	runToConcatenateAtEndOfStandaloneScript = `
