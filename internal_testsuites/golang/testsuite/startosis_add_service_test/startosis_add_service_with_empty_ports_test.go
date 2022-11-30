@@ -12,6 +12,7 @@ const (
 	addServiceWithEmptyPortsTestName = "add-service-empty-ports"
 	isPartitioningEnabled            = false
 	defaultDryRun                    = false
+	emptyArgs                        = "{}"
 
 	serviceId  = "docker-getting-started"
 	serviceId2 = "docker-getting-started-2"
@@ -20,29 +21,31 @@ const (
 DOCKER_GETTING_STARTED_IMAGE = "docker/getting-started:latest"
 SERVICE_ID = "` + serviceId + `"
 
-print("Adding service " + SERVICE_ID + ".")
-
-config = struct(
-    image = DOCKER_GETTING_STARTED_IMAGE,
-	ports = {}
-)
-
-add_service(service_id = SERVICE_ID, config = config)
-print("Service " + SERVICE_ID + " deployed successfully.")
+def run(args):
+	print("Adding service " + SERVICE_ID + ".")
+	
+	config = struct(
+		image = DOCKER_GETTING_STARTED_IMAGE,
+		ports = {}
+	)
+	
+	add_service(service_id = SERVICE_ID, config = config)
+	print("Service " + SERVICE_ID + " deployed successfully.")
 `
 
 	starlarkScriptWithoutPorts = `
 DOCKER_GETTING_STARTED_IMAGE = "docker/getting-started:latest"
 SERVICE_ID = "` + serviceId2 + `"
 
-print("Adding service " + SERVICE_ID + ".")
-
-config = struct(
-    image = DOCKER_GETTING_STARTED_IMAGE,
-)
-
-add_service(service_id = SERVICE_ID, config = config)
-print("Service " + SERVICE_ID + " deployed successfully.")
+def run(args):
+	print("Adding service " + SERVICE_ID + ".")
+	
+	config = struct(
+		image = DOCKER_GETTING_STARTED_IMAGE,
+	)
+	
+	add_service(service_id = SERVICE_ID, config = config)
+	print("Service " + SERVICE_ID + " deployed successfully.")
 `
 )
 
@@ -63,7 +66,7 @@ func TestAddServiceWithEmptyPortsAndWithoutPorts(t *testing.T) {
 		logrus.Infof("Executing Starlark script...")
 		logrus.Debugf("Starlark script content: \n%v", starlarkScript)
 
-		outputStream, _, err := enclaveCtx.RunStarlarkScript(ctx, starlarkScript, defaultDryRun)
+		outputStream, _, err := enclaveCtx.RunStarlarkScript(ctx, starlarkScript, emptyArgs, defaultDryRun)
 		require.NoError(t, err, "Unexpected error executing starlark script")
 		scriptOutput, _, interpretationError, validationErrors, executionError := test_helpers.ReadStreamContentUntilClosed(outputStream)
 

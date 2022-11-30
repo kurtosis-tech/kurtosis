@@ -198,7 +198,7 @@ func run(
 			if !strings.HasSuffix(starlarkScriptOrPackagePath, starlarkExtension) {
 				return stacktrace.NewError("Expected a script with a '%s' extension but got file '%v' with a different extension", starlarkExtension, starlarkScriptOrPackagePath)
 			}
-			responseLineChan, cancelFunc, errRunningKurtosis = executeScript(ctx, enclaveCtx, starlarkScriptOrPackagePath, dryRun)
+			responseLineChan, cancelFunc, errRunningKurtosis = executeScript(ctx, enclaveCtx, starlarkScriptOrPackagePath, serializedJsonArgs, dryRun)
 		} else {
 			responseLineChan, cancelFunc, errRunningKurtosis = executePackage(ctx, enclaveCtx, starlarkScriptOrPackagePath, serializedJsonArgs, dryRun)
 		}
@@ -219,12 +219,12 @@ func run(
 //	Private Helper Functions
 //
 // ====================================================================================================
-func executeScript(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, scriptPath string, dryRun bool) (<-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
+func executeScript(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, scriptPath string, serializedParams string, dryRun bool) (<-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
 	fileContentBytes, err := os.ReadFile(scriptPath)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "Unable to read content of Starlark script file '%s'", scriptPath)
 	}
-	return enclaveCtx.RunStarlarkScript(ctx, string(fileContentBytes), dryRun)
+	return enclaveCtx.RunStarlarkScript(ctx, string(fileContentBytes), serializedParams, dryRun)
 }
 
 func executePackage(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, packagePath string, serializedParams string, dryRun bool) (<-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {

@@ -3875,7 +3875,8 @@ proto.api_container_api.RunStarlarkScriptArgs.prototype.toObject = function(opt_
 proto.api_container_api.RunStarlarkScriptArgs.toObject = function(includeInstance, msg) {
   var f, obj = {
     serializedScript: jspb.Message.getFieldWithDefault(msg, 1, ""),
-    dryRun: jspb.Message.getBooleanFieldWithDefault(msg, 2, false)
+    serializedParams: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    dryRun: jspb.Message.getBooleanFieldWithDefault(msg, 3, false)
   };
 
   if (includeInstance) {
@@ -3917,6 +3918,10 @@ proto.api_container_api.RunStarlarkScriptArgs.deserializeBinaryFromReader = func
       msg.setSerializedScript(value);
       break;
     case 2:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setSerializedParams(value);
+      break;
+    case 3:
       var value = /** @type {boolean} */ (reader.readBool());
       msg.setDryRun(value);
       break;
@@ -3956,10 +3961,17 @@ proto.api_container_api.RunStarlarkScriptArgs.serializeBinaryToWriter = function
       f
     );
   }
-  f = /** @type {boolean} */ (jspb.Message.getField(message, 2));
+  f = message.getSerializedParams();
+  if (f.length > 0) {
+    writer.writeString(
+      2,
+      f
+    );
+  }
+  f = /** @type {boolean} */ (jspb.Message.getField(message, 3));
   if (f != null) {
     writer.writeBool(
-      2,
+      3,
       f
     );
   }
@@ -3985,11 +3997,29 @@ proto.api_container_api.RunStarlarkScriptArgs.prototype.setSerializedScript = fu
 
 
 /**
- * optional bool dry_run = 2;
+ * optional string serialized_params = 2;
+ * @return {string}
+ */
+proto.api_container_api.RunStarlarkScriptArgs.prototype.getSerializedParams = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.api_container_api.RunStarlarkScriptArgs} returns this
+ */
+proto.api_container_api.RunStarlarkScriptArgs.prototype.setSerializedParams = function(value) {
+  return jspb.Message.setProto3StringField(this, 2, value);
+};
+
+
+/**
+ * optional bool dry_run = 3;
  * @return {boolean}
  */
 proto.api_container_api.RunStarlarkScriptArgs.prototype.getDryRun = function() {
-  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 2, false));
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 3, false));
 };
 
 
@@ -3998,7 +4028,7 @@ proto.api_container_api.RunStarlarkScriptArgs.prototype.getDryRun = function() {
  * @return {!proto.api_container_api.RunStarlarkScriptArgs} returns this
  */
 proto.api_container_api.RunStarlarkScriptArgs.prototype.setDryRun = function(value) {
-  return jspb.Message.setField(this, 2, value);
+  return jspb.Message.setField(this, 3, value);
 };
 
 
@@ -4007,7 +4037,7 @@ proto.api_container_api.RunStarlarkScriptArgs.prototype.setDryRun = function(val
  * @return {!proto.api_container_api.RunStarlarkScriptArgs} returns this
  */
 proto.api_container_api.RunStarlarkScriptArgs.prototype.clearDryRun = function() {
-  return jspb.Message.setField(this, 2, undefined);
+  return jspb.Message.setField(this, 3, undefined);
 };
 
 
@@ -4016,7 +4046,7 @@ proto.api_container_api.RunStarlarkScriptArgs.prototype.clearDryRun = function()
  * @return {boolean}
  */
 proto.api_container_api.RunStarlarkScriptArgs.prototype.hasDryRun = function() {
-  return jspb.Message.getField(this, 2) != null;
+  return jspb.Message.getField(this, 3) != null;
 };
 
 
