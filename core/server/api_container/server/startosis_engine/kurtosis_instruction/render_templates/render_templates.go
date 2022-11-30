@@ -33,7 +33,7 @@ type RenderTemplatesInstruction struct {
 	position       *kurtosis_instruction.InstructionPosition
 	starlarkKwargs starlark.StringDict
 
-	artifactId enclave_data_directory.FilesArtifactUUID
+	artifactUuid enclave_data_directory.FilesArtifactUUID
 
 	templatesAndDataByDestRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData
 }
@@ -48,7 +48,7 @@ func GenerateRenderTemplatesBuiltin(instructionsQueue *[]kurtosis_instruction.Ku
 			return nil, interpretationError
 		}
 		*instructionsQueue = append(*instructionsQueue, renderTemplatesInstruction)
-		return starlark.String(renderTemplatesInstruction.artifactId), nil
+		return starlark.String(renderTemplatesInstruction.artifactUuid), nil
 	}
 }
 
@@ -57,7 +57,7 @@ func newEmptyRenderTemplatesInstruction(serviceNetwork service_network.ServiceNe
 		serviceNetwork:                    serviceNetwork,
 		position:                          position,
 		starlarkKwargs:                    starlark.StringDict{},
-		artifactId:                        "",
+		artifactUuid:                      "",
 		templatesAndDataByDestRelFilepath: nil,
 	}
 }
@@ -68,7 +68,7 @@ func NewRenderTemplatesInstruction(serviceNetwork service_network.ServiceNetwork
 		position:                          position,
 		templatesAndDataByDestRelFilepath: templatesAndDataByDestRelFilepath,
 		starlarkKwargs:                    starlarkKwargs,
-		artifactId:                        artifactUuid,
+		artifactUuid:                      artifactUuid,
 	}
 }
 
@@ -95,7 +95,7 @@ func (instruction *RenderTemplatesInstruction) Execute(_ context.Context) (*stri
 		instruction.templatesAndDataByDestRelFilepath[relFilePath] = binding_constructors.NewTemplateAndData(templateStr, dataAsJsonMaybeIPAddressReplaced)
 	}
 
-	artifactId, err := instruction.serviceNetwork.RenderTemplatesToTargetFilesArtifactUUID(instruction.templatesAndDataByDestRelFilepath, instruction.artifactId)
+	artifactId, err := instruction.serviceNetwork.RenderTemplatesToTargetFilesArtifactUUID(instruction.templatesAndDataByDestRelFilepath, instruction.artifactUuid)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to render templates '%v'", instruction.templatesAndDataByDestRelFilepath)
 	}
@@ -144,7 +144,7 @@ func (instruction *RenderTemplatesInstruction) parseStartosisArgs(b *starlark.Bu
 		return interpretationErr
 	}
 
-	instruction.artifactId = artifactUuid
+	instruction.artifactUuid = artifactUuid
 	instruction.starlarkKwargs[nonOptionalArtifactIdArgName] = starlark.String(artifactUuid)
 
 	return nil

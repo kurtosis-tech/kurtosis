@@ -88,7 +88,7 @@ func (instruction *StoreServiceFilesInstruction) GetCanonicalInstruction() *kurt
 }
 
 func (instruction *StoreServiceFilesInstruction) Execute(ctx context.Context) (*string, error) {
-	artifactId, err := instruction.serviceNetwork.CopyFilesFromServiceToTargetArtifactUUID(ctx, instruction.serviceId, instruction.src, instruction.artifactId)
+	artifactId, err := instruction.serviceNetwork.CopyFilesFromServiceToTargetArtifactUUID(ctx, instruction.serviceId, instruction.src, instruction.artifactUuid)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to copy file '%v' from service '%v", instruction.src, instruction.serviceId)
 	}

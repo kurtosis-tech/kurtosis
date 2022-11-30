@@ -101,7 +101,7 @@ func (instruction *UploadFilesInstruction) Execute(_ context.Context) (*string, 
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while uploading the compressed contents\n'%v'", compressedData)
 	}
-	instructionResult := fmt.Sprintf("Files uploaded with artifact ID '%s'", instruction.artifactId)
+	instructionResult := fmt.Sprintf("Files uploaded with artifact ID '%s'", instruction.artifactUuid)
 	return &instructionResult, nil
 }
 
