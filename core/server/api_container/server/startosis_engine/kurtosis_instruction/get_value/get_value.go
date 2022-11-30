@@ -2,6 +2,7 @@ package get_value
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
@@ -91,7 +92,8 @@ func (instruction *GetValueInstruction) Execute(ctx context.Context) (*string, e
 		return nil, stacktrace.Propagate(err, "Error executing http recipe")
 	}
 	instruction.recipeExecutor.SetValue(instruction.resultUuid, result)
-	return nil, err
+	instructionResult := fmt.Sprintf("Value obtained with status code '%d'", result[recipe.StatusCodeKey])
+	return &instructionResult, err
 }
 
 func (instruction *GetValueInstruction) String() string {

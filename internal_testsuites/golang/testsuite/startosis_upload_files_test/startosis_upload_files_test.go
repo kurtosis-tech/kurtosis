@@ -19,6 +19,7 @@ const (
 	pathToMountUploadedDir     = "/uploads"
 	pathToCheckForUploadedFile = "/uploads/helpers.star"
 
+	emptyParams     = "{}"
 	startosisScript = `
 DATASTORE_IMAGE = "kurtosistech/example-datastore-server"
 DATASTORE_SERVICE_ID = "` + serviceId + `"
@@ -26,26 +27,27 @@ DATASTORE_PORT_ID = "` + portId + `"
 DATASTORE_PORT_NUMBER = 1323
 DATASTORE_PORT_PROTOCOL = "TCP"
 
-DIR_TO_UPLOAD = "github.com/kurtosis-tech/datastore-army-module/src"
+DIR_TO_UPLOAD = "github.com/kurtosis-tech/datastore-army-package/src"
 PATH_TO_MOUNT_UPLOADED_DIR = "` + pathToMountUploadedDir + `"
 
-print("Adding service " + DATASTORE_SERVICE_ID + ".")
-
-uploaded_artifact_id = upload_files(DIR_TO_UPLOAD)
-print("Uploaded " + uploaded_artifact_id)
-
-
-config = struct(
-    image = DATASTORE_IMAGE,
-    ports = {
-        DATASTORE_PORT_ID: struct(number = DATASTORE_PORT_NUMBER, protocol = DATASTORE_PORT_PROTOCOL)
-    },
-	files = {
-		uploaded_artifact_id: PATH_TO_MOUNT_UPLOADED_DIR
-	}
-)
-
-add_service(service_id = DATASTORE_SERVICE_ID, config = config)`
+def run(args):
+	print("Adding service " + DATASTORE_SERVICE_ID + ".")
+	
+	uploaded_artifact_id = upload_files(DIR_TO_UPLOAD)
+	print("Uploaded " + uploaded_artifact_id)
+	
+	
+	config = struct(
+		image = DATASTORE_IMAGE,
+		ports = {
+			DATASTORE_PORT_ID: struct(number = DATASTORE_PORT_NUMBER, protocol = DATASTORE_PORT_PROTOCOL)
+		},
+		files = {
+			uploaded_artifact_id: PATH_TO_MOUNT_UPLOADED_DIR
+		}
+	)
+	
+	add_service(service_id = DATASTORE_SERVICE_ID, config = config)`
 )
 
 func TestStartosis(t *testing.T) {
@@ -60,12 +62,14 @@ func TestStartosis(t *testing.T) {
 	logrus.Infof("Executing Startosis script...")
 	logrus.Debugf("Startosis script content: \n%v", startosisScript)
 
-	outputStream, _, err := enclaveCtx.RunStarlarkScript(ctx, startosisScript, defaultDryRun)
+	outputStream, _, err := enclaveCtx.RunStarlarkScript(ctx, startosisScript, emptyParams, defaultDryRun)
 	require.NoError(t, err, "Unexpected error executing startosis script")
 	scriptOutput, _, interpretationError, validationErrors, executionError := test_helpers.ReadStreamContentUntilClosed(outputStream)
 
 	expectedScriptOutput := `Adding service example-datastore-server-1.
+Files uploaded with artifact ID '[a-f0-9-]{36}'
 Uploaded [a-f0-9-]{36}
+Service 'example-datastore-server-1' added with internal ID '[a-z-0-9]+'
 `
 
 	require.Nil(t, interpretationError, "Unexpected interpretation error. This test requires you to be online for the upload_file command to run")

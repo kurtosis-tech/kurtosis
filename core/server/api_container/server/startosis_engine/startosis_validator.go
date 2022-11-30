@@ -7,8 +7,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
-	"github.com/kurtosis-tech/stacktrace"
 )
 
 type StartosisValidator struct {
@@ -26,24 +26,29 @@ func NewStartosisValidator(kurtosisBackend *backend_interface.KurtosisBackend, s
 }
 
 func (validator *StartosisValidator) Validate(ctx context.Context, instructions []kurtosis_instruction.KurtosisInstruction) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
-	starlarkExecutionResponseLineStream := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
+	starlarkRunResponseLineStream := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 	go func() {
-		defer close(starlarkExecutionResponseLineStream)
+		defer close(starlarkRunResponseLineStream)
+		isValidationFailure := false
 		environment := startosis_validator.NewValidatorEnvironment(validator.serviceNetwork.GetServiceIDs())
 		for _, instruction := range instructions {
 			err := instruction.ValidateAndUpdateEnvironment(environment)
 			if err != nil {
-				propagatedError := stacktrace.Propagate(err, "Error while validating instruction %v. The instruction can be found at %v", instruction.String(), instruction.GetPositionInOriginalScript().String())
-				serializedError := binding_constructors.NewStarlarkValidationError(propagatedError.Error())
-				starlarkExecutionResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromValidationError(serializedError)
+				wrappedValidationError := startosis_errors.WrapWithValidationError(err, "Error while validating instruction %v. The instruction can be found at %v", instruction.String(), instruction.GetPositionInOriginalScript().String())
+				starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromValidationError(wrappedValidationError.ToAPIType())
+				isValidationFailure = true
 			}
 		}
 		errors := validator.dockerImagesValidator.Validate(ctx, environment)
 		for _, err := range errors {
-			propagatedError := stacktrace.Propagate(err, "Error while validating final environment of script")
-			serializedError := binding_constructors.NewStarlarkValidationError(propagatedError.Error())
-			starlarkExecutionResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromValidationError(serializedError)
+			wrappedValidationError := startosis_errors.WrapWithValidationError(err, "Error while validating final environment of script")
+			starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromValidationError(wrappedValidationError.ToAPIType())
+			isValidationFailure = true
+		}
+
+		if isValidationFailure {
+			starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunFailureEvent()
 		}
 	}()
-	return starlarkExecutionResponseLineStream
+	return starlarkRunResponseLineStream
 }

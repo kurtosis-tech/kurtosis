@@ -245,9 +245,10 @@ func GetFactValuesArgs(serviceId string, factName string) *kurtosis_core_rpc_api
 //	Execute Starlark Arguments
 //
 // ==============================================================================================
-func NewRunStarlarkScriptArgs(serializedString string, dryRun bool) *kurtosis_core_rpc_api_bindings.RunStarlarkScriptArgs {
+func NewRunStarlarkScriptArgs(serializedString string, serializedParams string, dryRun bool) *kurtosis_core_rpc_api_bindings.RunStarlarkScriptArgs {
 	return &kurtosis_core_rpc_api_bindings.RunStarlarkScriptArgs{
 		SerializedScript: serializedString,
+		SerializedParams: serializedParams,
 		DryRun:           &dryRun,
 	}
 }
@@ -336,6 +337,28 @@ func NewStarlarkRunResponseLineFromProgressInfo(currentStepInfo string, currentS
 				CurrentStepInfo:   currentStepInfo,
 				TotalSteps:        totalSteps,
 				CurrentStepNumber: currentStepNumber,
+			},
+		},
+	}
+}
+
+func NewStarlarkRunResponseLineFromRunFailureEvent() *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+	return &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine{
+		RunResponseLine: &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine_RunFinishedEvent{
+			RunFinishedEvent: &kurtosis_core_rpc_api_bindings.StarlarkRunFinishedEvent{
+				IsRunSuccessful:  false,
+				SerializedOutput: nil,
+			},
+		},
+	}
+}
+
+func NewStarlarkRunResponseLineFromRunSuccessEvent(serializedOutputObject string) *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+	return &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine{
+		RunResponseLine: &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine_RunFinishedEvent{
+			RunFinishedEvent: &kurtosis_core_rpc_api_bindings.StarlarkRunFinishedEvent{
+				IsRunSuccessful:  true,
+				SerializedOutput: &serializedOutputObject,
 			},
 		},
 	}

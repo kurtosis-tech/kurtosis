@@ -27,9 +27,10 @@ const (
 )
 
 var (
-	colorizeInstruction = color.New(color.FgCyan).SprintfFunc()
-	colorizeResult      = color.New(color.FgWhite).SprintfFunc()
-	colorizeError       = color.New(color.FgRed).SprintfFunc()
+	colorizeInstruction      = color.New(color.FgCyan).SprintfFunc()
+	colorizeResult           = color.New(color.FgWhite).SprintfFunc()
+	colorizeError            = color.New(color.FgRed).SprintfFunc()
+	colorizeRunSuccessfulMsg = color.New(color.FgGreen).SprintfFunc()
 
 	colorizeProgressBarIsDone    = color.New(color.FgGreen).SprintfFunc()
 	colorizeProgressBarRemaining = color.New(color.FgWhite).SprintfFunc()
@@ -76,8 +77,8 @@ func (printer *ExecutionPrinter) Stop() {
 	printer.isStarted = false
 }
 
-// PrintKurtosisExecutionResponseLineToStdOut format and prints the instruction to StdOut. It returns a boolean indicating whether an error occurred during printing
-func (printer *ExecutionPrinter) PrintKurtosisExecutionResponseLineToStdOut(responseLine *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, verbosity run.Verbosity) (bool, error) {
+// PrintKurtosisExecutionResponseLineToStdOut format and prints the instruction to StdOut.
+func (printer *ExecutionPrinter) PrintKurtosisExecutionResponseLineToStdOut(responseLine *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, verbosity run.Verbosity) error {
 	// Printing is a 3 phase operation:
 	// 1. stop spinner to clear the ephemeral progress info
 	// 2. print whatever needs to be printed, could be nothing
@@ -87,27 +88,25 @@ func (printer *ExecutionPrinter) PrintKurtosisExecutionResponseLineToStdOut(resp
 	defer printer.lock.Unlock()
 
 	if !printer.isStarted {
-		return false, stacktrace.NewError("Cannot print with a non started printer")
+		return stacktrace.NewError("Cannot print with a non started printer")
 	}
 	// Need to stop the current spinner otherwise it will conflict with whatever we're about to print
 	printer.spinner.Stop()
 
 	// process response payload
-	var errorRunningKurtosisCode bool
 	if responseLine.GetInstruction() != nil {
 		formattedInstruction := formatInstruction(responseLine.GetInstruction(), verbosity)
 		// we separate each tuple (instruction, result) with an additional newline
 		formattedInstructionWithNewline := fmt.Sprintf("\n%s", formattedInstruction)
 		if _, err := fmt.Fprintln(writer, formattedInstructionWithNewline); err != nil {
-			return errorRunningKurtosisCode, stacktrace.Propagate(err, "Error printing Kurtosis instruction: \n%v", formattedInstruction)
+			return stacktrace.Propagate(err, "Error printing Kurtosis instruction: \n%v", formattedInstruction)
 		}
 	} else if responseLine.GetInstructionResult() != nil {
 		formattedInstructionResult := formatInstructionResult(responseLine.GetInstructionResult())
 		if _, err := fmt.Fprintln(logrus.StandardLogger().Out, formattedInstructionResult); err != nil {
-			return errorRunningKurtosisCode, stacktrace.Propagate(err, "Error printing Kurtosis instruction result: \n%v", formattedInstructionResult)
+			return stacktrace.Propagate(err, "Error printing Kurtosis instruction result: \n%v", formattedInstructionResult)
 		}
 	} else if responseLine.GetError() != nil {
-		errorRunningKurtosisCode = true
 		var errorMsg string
 		if responseLine.GetError().GetInterpretationError() != nil {
 			errorMsg = fmt.Sprintf("There was an error interpreting Starlark code \n%v", responseLine.GetError().GetInterpretationError().GetErrorMessage())
@@ -118,18 +117,24 @@ func (printer *ExecutionPrinter) PrintKurtosisExecutionResponseLineToStdOut(resp
 		}
 		formattedError := formatError(errorMsg)
 		if _, err := fmt.Fprintln(writer, formattedError); err != nil {
-			return errorRunningKurtosisCode, stacktrace.Propagate(err, "An error happened executing Starlark code but the error couldn't be printed to the CLI output. Error message was: \n%v", errorMsg)
+			return stacktrace.Propagate(err, "An error happened executing Starlark code but the error couldn't be printed to the CLI output. Error message was: \n%v", errorMsg)
 		}
 	} else if responseLine.GetProgressInfo() != nil {
 		progress := responseLine.GetProgressInfo()
 		progressBarStr := formatProgressBar(progress.GetCurrentStepNumber(), progress.GetTotalSteps())
 		spinnerInfoString := fmt.Sprintf("   %s %s", progressBarStr, progress.GetCurrentStepInfo())
 		printer.spinner = spinner.New(spinnerChar, spinnerSpeed, spinnerColor, spinner.WithWriter(writer), spinner.WithSuffix(spinnerInfoString))
+	} else if responseLine.GetRunFinishedEvent() != nil {
+		formattedRunOutputMessage := formatRunOutput(responseLine.GetRunFinishedEvent())
+		formattedRunOutputMessageWithNewline := fmt.Sprintf("\n%s", formattedRunOutputMessage)
+		if _, err := fmt.Fprintln(writer, formattedRunOutputMessageWithNewline); err != nil {
+			return stacktrace.Propagate(err, "Unable to print the success output message containing the serialized output object. Message was: \n%v", formattedRunOutputMessage)
+		}
 	}
 
 	// re-start the spinner before exiting
 	printer.spinner.Start()
-	return errorRunningKurtosisCode, nil
+	return nil
 }
 
 func formatError(errorMessage string) string {
@@ -217,4 +222,17 @@ func formatProgressBar(currentStep uint32, totalSteps uint32) string {
 		}
 	}
 	return progressBar.String()
+}
+
+func formatRunOutput(runFinishedEvent *kurtosis_core_rpc_api_bindings.StarlarkRunFinishedEvent) string {
+	if !runFinishedEvent.GetIsRunSuccessful() {
+		return colorizeError("Error encountered running Starlark code")
+	}
+	var runSuccessMsg string
+	if runFinishedEvent.GetSerializedOutput() != "" {
+		runSuccessMsg = fmt.Sprintf("Starlark code successfully executed. Output was: \n%v", runFinishedEvent.GetSerializedOutput())
+	} else {
+		runSuccessMsg = "Starlark code successfully executed. No output was returned"
+	}
+	return colorizeRunSuccessfulMsg(runSuccessMsg)
 }

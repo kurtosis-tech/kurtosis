@@ -2,6 +2,7 @@ package assert
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
@@ -130,7 +131,8 @@ func (instruction *AssertInstruction) Execute(ctx context.Context) (*string, err
 			}
 		}
 	}
-	return nil, nil
+	instructionResult := fmt.Sprintf("Assertion succeeded. Value is '%s'.", currentValue.String())
+	return &instructionResult, nil
 }
 
 func (instruction *AssertInstruction) String() string {

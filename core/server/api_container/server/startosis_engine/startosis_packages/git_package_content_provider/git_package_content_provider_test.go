@@ -69,9 +69,9 @@ func TestGetAbsolutePathOnDisk_WorksForPureDirectories(t *testing.T) {
 
 	provider := NewGitPackageContentProvider(packageDir, packageTmpDir)
 
-	packagePath := "github.com/kurtosis-tech/datastore-army-module/src/helpers.star"
+	packagePath := "github.com/kurtosis-tech/datastore-army-package/src/helpers.star"
 	pathOnDisk, err := provider.GetOnDiskAbsoluteFilePath(packagePath)
 
-	require.Nil(t, err, "This test depends on your internet working and the kurtosis-tech/datastore-army-module existing")
-	require.Equal(t, path.Join(packageDir, "kurtosis-tech", "datastore-army-module", "src/helpers.star"), pathOnDisk)
+	require.Nil(t, err, "This test depends on your internet working and the kurtosis-tech/datastore-army-package existing")
+	require.Equal(t, path.Join(packageDir, "kurtosis-tech", "datastore-army-package", "src/helpers.star"), pathOnDisk)
 }

@@ -12,7 +12,7 @@ const (
 	testName              = "package"
 	isPartitioningEnabled = false
 	defaultDryRun         = false
-	remotePackage         = "github.com/kurtosis-tech/datastore-army-module"
+	remotePackage         = "github.com/kurtosis-tech/datastore-army-package"
 	executeParams         = `{"num_datastores": 2}`
 	dataStoreService0Id   = "datastore-0"
 	dataStoreService1Id   = "datastore-1"

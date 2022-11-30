@@ -116,10 +116,12 @@ func (instruction *AddServiceInstruction) Execute(ctx context.Context) (*string,
 	if failure, found := serviceFailed[instruction.serviceId]; found {
 		return nil, stacktrace.Propagate(failure, "Failed adding service to enclave")
 	}
-	if _, found := serviceSuccessful[instruction.serviceId]; !found {
+	deployedService, found := serviceSuccessful[instruction.serviceId]
+	if !found {
 		return nil, stacktrace.NewError("Service wasn't accounted as failed nor successfully added. This is a product bug")
 	}
-	return nil, nil
+	instructionResult := fmt.Sprintf("Service '%s' added with internal ID '%s'", instruction.serviceId, deployedService.GetRegistration().GetGUID())
+	return &instructionResult, nil
 }
 
 func (instruction *AddServiceInstruction) String() string {
@@ -188,11 +190,11 @@ func (instruction *AddServiceInstruction) makeAddServiceInterpretationReturnValu
 
 func (instruction *AddServiceInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
 	if environment.DoesServiceIdExist(instruction.serviceId) {
-		return stacktrace.NewError("There was an error validating '%v' as service ID '%v' already exists", AddServiceBuiltinName, instruction.serviceId)
+		return startosis_errors.NewValidationError("There was an error validating '%v' as service ID '%v' already exists", AddServiceBuiltinName, instruction.serviceId)
 	}
 	for artifactUuidKey, _ := range instruction.serviceConfig.FilesArtifactMountpoints {
 		if !environment.DoesArtifactUuidExist(enclave_data_directory.FilesArtifactUUID(artifactUuidKey)) {
-			return stacktrace.NewError("There was an error validating '%v' as artifact UUID '%v' does not exist", AddServiceBuiltinName, artifactUuidKey)
+			return startosis_errors.NewValidationError("There was an error validating '%v' as artifact UUID '%v' does not exist", AddServiceBuiltinName, artifactUuidKey)
 		}
 	}
 	environment.AddServiceId(instruction.serviceId)
