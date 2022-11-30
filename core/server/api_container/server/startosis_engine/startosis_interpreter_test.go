@@ -79,7 +79,7 @@ unknownInstruction()
 
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
 		[]startosis_errors.CallFrame{
-			*startosis_errors.NewCallFrame("undefined: unknownInstruction", startosis_errors.NewScriptPosition(4, 1)),
+			*startosis_errors.NewCallFrame("undefined: unknownInstruction", startosis_errors.NewScriptPosition(PackageIdPlaceholderForStandaloneScript, 4, 1)),
 		},
 		multipleInterpretationErrorMsg,
 	).ToAPIType()
@@ -104,9 +104,9 @@ unknownInstruction2()
 
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
 		[]startosis_errors.CallFrame{
-			*startosis_errors.NewCallFrame("undefined: unknownInstruction", startosis_errors.NewScriptPosition(4, 1)),
-			*startosis_errors.NewCallFrame("undefined: unknownVariable", startosis_errors.NewScriptPosition(5, 7)),
-			*startosis_errors.NewCallFrame("undefined: unknownInstruction2", startosis_errors.NewScriptPosition(7, 1)),
+			*startosis_errors.NewCallFrame("undefined: unknownInstruction", startosis_errors.NewScriptPosition(PackageIdPlaceholderForStandaloneScript, 4, 1)),
+			*startosis_errors.NewCallFrame("undefined: unknownVariable", startosis_errors.NewScriptPosition(PackageIdPlaceholderForStandaloneScript, 5, 7)),
+			*startosis_errors.NewCallFrame("undefined: unknownInstruction2", startosis_errors.NewScriptPosition(PackageIdPlaceholderForStandaloneScript, 7, 1)),
 		},
 		multipleInterpretationErrorMsg,
 	).ToAPIType()
@@ -128,7 +128,7 @@ load("otherScript.start") # fails b/c load takes in at least 2 args
 
 	expectedError := startosis_errors.NewInterpretationErrorFromStacktrace(
 		[]startosis_errors.CallFrame{
-			*startosis_errors.NewCallFrame("load statement must import at least 1 symbol", startosis_errors.NewScriptPosition(4, 5)),
+			*startosis_errors.NewCallFrame("load statement must import at least 1 symbol", startosis_errors.NewScriptPosition(PackageIdPlaceholderForStandaloneScript, 4, 5)),
 		},
 	).ToAPIType()
 	require.Equal(t, expectedError, interpretationError)
@@ -198,8 +198,8 @@ add_service(service_id = service_id, config = config)
 
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
 		[]startosis_errors.CallFrame{
-			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(13, 12)),
-			*startosis_errors.NewCallFrame("add_service", startosis_errors.NewScriptPosition(0, 0)),
+			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(PackageIdPlaceholderForStandaloneScript, 13, 12)),
+			*startosis_errors.NewCallFrame("add_service", startosis_errors.NewScriptPosition(PackageIdPlaceholderForStandaloneScript, 0, 0)),
 		},
 		"Evaluation error: Missing value 'image' as element of the struct object 'config'",
 	).ToAPIType()
@@ -229,8 +229,8 @@ add_service(service_id = service_id, config = config)
 	require.Empty(t, instructions)
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
 		[]startosis_errors.CallFrame{
-			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(13, 12)),
-			*startosis_errors.NewCallFrame("add_service", startosis_errors.NewScriptPosition(0, 0)),
+			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(PackageIdPlaceholderForStandaloneScript, 13, 12)),
+			*startosis_errors.NewCallFrame("add_service", startosis_errors.NewScriptPosition(PackageIdPlaceholderForStandaloneScript, 0, 0)),
 		},
 		"Evaluation error: Port protocol should be one of TCP, SCTP, UDP",
 	).ToAPIType()
@@ -261,8 +261,8 @@ add_service(service_id = service_id, config = config)
 	require.Empty(t, instructions)
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
 		[]startosis_errors.CallFrame{
-			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(13, 12)),
-			*startosis_errors.NewCallFrame("add_service", startosis_errors.NewScriptPosition(0, 0)),
+			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(PackageIdPlaceholderForStandaloneScript, 13, 12)),
+			*startosis_errors.NewCallFrame("add_service", startosis_errors.NewScriptPosition(PackageIdPlaceholderForStandaloneScript, 0, 0)),
 		},
 		expectedErrorStr,
 	).ToAPIType()
@@ -335,7 +335,7 @@ print("Hello " + a)
 	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
 		[]startosis_errors.CallFrame{
-			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(2, 1)),
+			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(PackageIdPlaceholderForStandaloneScript, 2, 1)),
 		},
 		"Evaluation error: cannot load github.com/foo/bar/lib.star: 'load(\"path/to/file.star\", var_in_file=\"var_in_file\")' statement is not available in Kurtosis. Please use instead `module = import(\"path/to/file.star\")` and then `module.var_in_file`",
 	).ToAPIType()
@@ -415,12 +415,12 @@ print(module_doo.b)
 	require.Empty(t, instructions) // No kurtosis instruction
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
 		[]startosis_errors.CallFrame{
-			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(2, 27)),
-			*startosis_errors.NewCallFrame("import_module", startosis_errors.NewScriptPosition(0, 0)),
-			*startosis_errors.NewCallFrame(moduleDooLoadsModuleBar, startosis_errors.NewScriptPosition(1, 27)),
-			*startosis_errors.NewCallFrame("import_module", startosis_errors.NewScriptPosition(0, 0)),
-			*startosis_errors.NewCallFrame(moduleBarLoadsModuleDoo, startosis_errors.NewScriptPosition(1, 27)),
-			*startosis_errors.NewCallFrame("import_module", startosis_errors.NewScriptPosition(0, 0)),
+			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(PackageIdPlaceholderForStandaloneScript, 2, 27)),
+			*startosis_errors.NewCallFrame("import_module", startosis_errors.NewScriptPosition(PackageIdPlaceholderForStandaloneScript, 0, 0)),
+			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(PackageIdPlaceholderForStandaloneScript, 1, 27)),
+			*startosis_errors.NewCallFrame("import_module", startosis_errors.NewScriptPosition(PackageIdPlaceholderForStandaloneScript, 0, 0)),
+			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(PackageIdPlaceholderForStandaloneScript, 1, 27)),
+			*startosis_errors.NewCallFrame("import_module", startosis_errors.NewScriptPosition(PackageIdPlaceholderForStandaloneScript, 0, 0)),
 		},
 		"Evaluation error: There's a cycle in the import_module calls",
 	).ToAPIType()
@@ -444,8 +444,8 @@ print(my_module.b)
 	Caused by: Package '` + nonExistentModule + `' not found`
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
 		[]startosis_errors.CallFrame{
-			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(2, 26)),
-			*startosis_errors.NewCallFrame("import_module", startosis_errors.NewScriptPosition(0, 0)),
+			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(PackageIdPlaceholderForStandaloneScript, 2, 26)),
+			*startosis_errors.NewCallFrame("import_module", startosis_errors.NewScriptPosition(PackageIdPlaceholderForStandaloneScript, 0, 0)),
 		},
 		errorMsg,
 	).ToAPIType()

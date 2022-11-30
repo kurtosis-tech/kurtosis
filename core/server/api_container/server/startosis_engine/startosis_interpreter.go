@@ -199,12 +199,12 @@ func generateInterpretationError(err error) *startosis_errors.InterpretationErro
 	switch slError := err.(type) {
 	case resolve.Error:
 		stacktrace := []startosis_errors.CallFrame{
-			*startosis_errors.NewCallFrame(slError.Msg, startosis_errors.NewScriptPosition(slError.Pos.Line, slError.Pos.Col)),
+			*startosis_errors.NewCallFrame(slError.Msg, startosis_errors.NewScriptPosition(slError.Pos.Filename(), slError.Pos.Line, slError.Pos.Col)),
 		}
 		return startosis_errors.NewInterpretationErrorFromStacktrace(stacktrace)
 	case syntax.Error:
 		stacktrace := []startosis_errors.CallFrame{
-			*startosis_errors.NewCallFrame(slError.Msg, startosis_errors.NewScriptPosition(slError.Pos.Line, slError.Pos.Col)),
+			*startosis_errors.NewCallFrame(slError.Msg, startosis_errors.NewScriptPosition(slError.Pos.Filename(), slError.Pos.Line, slError.Pos.Col)),
 		}
 		return startosis_errors.NewInterpretationErrorFromStacktrace(stacktrace)
 	case resolve.ErrorList:
@@ -212,19 +212,13 @@ func generateInterpretationError(err error) *startosis_errors.InterpretationErro
 		//  it's probably not worth adding another level of complexity here to handle InterpretationErrorList
 		stacktrace := make([]startosis_errors.CallFrame, 0)
 		for _, slError := range slError {
-			stacktrace = append(stacktrace, *startosis_errors.NewCallFrame(slError.Msg, startosis_errors.NewScriptPosition(slError.Pos.Line, slError.Pos.Col)))
+			stacktrace = append(stacktrace, *startosis_errors.NewCallFrame(slError.Msg, startosis_errors.NewScriptPosition(slError.Pos.Filename(), slError.Pos.Line, slError.Pos.Col)))
 		}
 		return startosis_errors.NewInterpretationErrorWithCustomMsg(stacktrace, multipleInterpretationErrorMsg)
 	case *starlark.EvalError:
 		stacktrace := make([]startosis_errors.CallFrame, 0)
 		for _, callStack := range slError.CallStack {
-			callFrameName := callStack.Pos.Filename()
-			//TODO we could remove this when the runScript endpoint receives the filename
-			//when the filename is equal to "DEFAULT_PACKAGE_ID_FOR_SCRIPT" or "<builtin>" we use the stack name (as we were doing before), which usually is "<toplevel>"
-			if _, found := replaceFilenameValuesSet[callFrameName]; found{
-				callFrameName = callStack.Name
-			}
-			stacktrace = append(stacktrace, *startosis_errors.NewCallFrame(callFrameName, startosis_errors.NewScriptPosition(callStack.Pos.Line, callStack.Pos.Col)))
+			stacktrace = append(stacktrace, *startosis_errors.NewCallFrame(callStack.Name, startosis_errors.NewScriptPosition(callStack.Pos.Filename(), callStack.Pos.Line, callStack.Pos.Col)))
 		}
 		return startosis_errors.NewInterpretationErrorWithCustomMsg(
 			stacktrace,
