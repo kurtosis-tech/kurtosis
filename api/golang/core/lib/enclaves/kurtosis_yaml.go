@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	dependenciesUrl = "https://docs.kurtosis.com/reference/starlark-reference/#dependencies"
+	dependenciesUrl = "https://docs.kurtosis.com/reference/locators"
 )
 
 // fields are public because it's needed for YAML decoding

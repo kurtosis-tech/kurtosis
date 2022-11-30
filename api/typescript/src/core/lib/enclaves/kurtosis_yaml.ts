@@ -3,7 +3,7 @@ import {err, ok, Result} from "neverthrow";
 import * as yaml from "js-yaml";
 import {KURTOSIS_YAML_FILENAME} from "./enclave_context";
 
-const DEPENDENCIES_URL = "https://docs.kurtosis.com/reference/starlark-reference/#dependencies";
+const DEPENDENCIES_URL = "https://docs.kurtosis.com/reference/locators";
 
 export class KurtosisYaml {
     constructor(
