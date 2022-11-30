@@ -1,5 +1,7 @@
 # TBD
 
+# 0.57.2
+
 ### Fixes
 - Make validation more human-readable for missing docker images and instructions that depend on invalid service ids
 - Fixed mismatch between `kurtosis enclave inspect` and `kurtosis enclave ls` displaying enclave creation time in different timezones
