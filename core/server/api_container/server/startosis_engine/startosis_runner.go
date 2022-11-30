@@ -25,7 +25,7 @@ const (
 	startingExecutionMsg      = "Starting execution"
 
 	missingRunMethodErrorFromStarlarkPackage = "Evaluation error: module has no .run field or method\n\tat [3:32]: <toplevel>"
-	missingRunMethodErrorFromStarlarkScript  = "at [1:1]: undefined: run"
+	missingRunMethodErrorFromStarlarkScript  = "undefined: run"
 )
 
 func NewStartosisRunner(interpreter *StartosisInterpreter, validator *StartosisValidator, executor *StartosisExecutor) *StartosisRunner {
