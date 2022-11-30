@@ -16,6 +16,7 @@ func NewValidatorEnvironment(serviceIDs map[service.ServiceID]bool) *ValidatorEn
 	return &ValidatorEnvironment{
 		requiredDockerImages: map[string]bool{},
 		serviceIDs:           serviceIDs,
+		artifactUUIDs:        map[enclave_data_directory.FilesArtifactUUID]bool{},
 	}
 }
 
