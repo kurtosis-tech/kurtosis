@@ -84,9 +84,9 @@ func run(
 			return stacktrace.Propagate(err, "An error occurred when stringify enclave containers status '%v'", enclaveInfo.GetContainersStatus())
 		}
 
-		enclaveCreationTime := enclaveInfo.CreationTime.AsTime()
+		enclaveCreationTime := enclaveInfo.CreationTime.AsTime().Local().Format(time.RFC1123)
 
-		if err := tablePrinter.AddRow(enclaveId, enclaveStatus, enclaveCreationTime.Format(time.RFC1123)); err != nil {
+		if err := tablePrinter.AddRow(enclaveId, enclaveStatus, enclaveCreationTime); err != nil {
 			return stacktrace.NewError("An error occurred adding row for enclave '%v' to the table printer", enclaveId)
 		}
 	}
