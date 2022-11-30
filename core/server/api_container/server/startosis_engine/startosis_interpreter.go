@@ -216,7 +216,7 @@ func generateInterpretationError(err error) *startosis_errors.InterpretationErro
 	case *starlark.EvalError:
 		stacktrace := make([]startosis_errors.CallFrame, 0)
 		for _, callStack := range slError.CallStack {
-			stacktrace = append(stacktrace, *startosis_errors.NewCallFrame(callStack.Name, startosis_errors.NewScriptPosition(callStack.Pos.Line, callStack.Pos.Col)))
+			stacktrace = append(stacktrace, *startosis_errors.NewCallFrame(callStack.Pos.Filename(), startosis_errors.NewScriptPosition(callStack.Pos.Line, callStack.Pos.Col)))
 		}
 		return startosis_errors.NewInterpretationErrorWithCustomMsg(
 			stacktrace,
