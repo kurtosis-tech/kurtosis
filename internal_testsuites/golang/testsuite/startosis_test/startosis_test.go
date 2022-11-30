@@ -40,7 +40,7 @@ PATH_TO_MOUNT_RENDERED_CONFIG="` + renderedConfigMountPath + `"
 RENDER_RELATIVE_PATH = "` + renderedConfigRelativePath + `"
 
 def run(args):
-	print("Hello" + args.greeting) 
+	print("Hello " + args.greeting) 
 	print("Adding service " + DATASTORE_SERVICE_ID + ".")
 	
 	config = struct(
