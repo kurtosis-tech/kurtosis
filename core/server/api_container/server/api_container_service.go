@@ -62,8 +62,8 @@ main_module.run(%v)
 	`
 	// We concatenate a run() at the end of individual scripts to enforce a run method
 	runToConcatenateAtEndOfStandaloneScript = `
-	%s
-	run(%v)
+%s
+run(%v)
 `
 
 	// Overwrite existing module with new module, this allows user to iterate on an enclave with a
