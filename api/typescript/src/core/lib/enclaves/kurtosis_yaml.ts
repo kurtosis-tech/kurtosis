@@ -3,7 +3,7 @@ import {err, ok, Result} from "neverthrow";
 import * as yaml from "js-yaml";
 import {KURTOSIS_YAML_FILENAME} from "./enclave_context";
 
-const DEPENDENCIES_URL = "https://docs.kurtosis.com/reference/starlark-reference/#dependencies";
+const PACKAGES_URL = "https://docs.kurtosis.com/reference/packages";
 
 export class KurtosisYaml {
     constructor(
@@ -16,7 +16,7 @@ const UTF8_ENCODING = "utf-8";
 export async  function parseKurtosisYaml(kurtosisYamlFilepath: string): Promise<Result<KurtosisYaml, Error>> {
     // check if the yml file actually exists
     if (!fs.existsSync(kurtosisYamlFilepath)) {
-        return err(new Error(`Couldn't find a '${KURTOSIS_YAML_FILENAME}' in the root of the package at '${kurtosisYamlFilepath}'. Packages are expected to have a '${KURTOSIS_YAML_FILENAME}' at root; have a look at '${DEPENDENCIES_URL}' for more`))
+        return err(new Error(`Couldn't find a '${KURTOSIS_YAML_FILENAME}' in the root of the package at '${kurtosisYamlFilepath}'. Packages are expected to have a '${KURTOSIS_YAML_FILENAME}' at root; have a look at '${PACKAGES_URL}' for more`))
     }
 
     let kurtosisYamlFile: string

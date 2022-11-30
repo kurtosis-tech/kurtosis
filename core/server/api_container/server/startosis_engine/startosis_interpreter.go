@@ -81,22 +81,39 @@ func NewStartosisInterpreterWithFacts(serviceNetwork service_network.ServiceNetw
 //     code, inconsistent). Can be nil if the script was successfully interpreted
 //   - The list of Kurtosis instructions that was generated based on the interpretation of the script. It can be empty
 //     if the interpretation of the script failed
-func (interpreter *StartosisInterpreter) Interpret(_ context.Context, packageId string, serializedStarlark string, serializedJsonParams string) ([]kurtosis_instruction.KurtosisInstruction, *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError) {
+func (interpreter *StartosisInterpreter) Interpret(_ context.Context, packageId string, serializedStarlark string, serializedJsonParams string) (string, []kurtosis_instruction.KurtosisInstruction, *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError) {
 	interpreter.mutex.Lock()
 	defer interpreter.mutex.Unlock()
 	var instructionsQueue []kurtosis_instruction.KurtosisInstruction
 
-	_, err := interpreter.interpretInternal(packageId, serializedStarlark, serializedJsonParams, &instructionsQueue)
+	thread := &starlark.Thread{
+		Name:       starlarkGoThreadName,
+		Print:      makePrintFunction(),
+		Load:       makeLoadFunction(),
+		OnMaxSteps: nil,
+	}
+
+	globalVariables, err := interpreter.interpretInternal(thread, packageId, serializedStarlark, serializedJsonParams, &instructionsQueue)
 	if err != nil {
-		return nil, generateInterpretationError(err).ToAPIType()
+		return NoOutputObject, nil, generateInterpretationError(err).ToAPIType()
 	}
 
 	logrus.Debugf("Successfully interpreted Starlark code into instruction queue: \n%s", instructionsQueue)
-	return instructionsQueue, nil
+
+	// Serialize and return the output object. It might contain magic strings that should be resolved post-execution
+	if globalVariables.Has(MainOutputObjectName) && globalVariables[MainOutputObjectName] != starlark.None {
+		logrus.Debugf("Starlark output object was: '%s'", globalVariables[MainOutputObjectName])
+		serializedOutputObject, interpretationError := package_io.SerializeOutputObject(thread, globalVariables[MainOutputObjectName])
+		if interpretationError != nil {
+			return NoOutputObject, nil, interpretationError.ToAPIType()
+		}
+		return serializedOutputObject, instructionsQueue, nil
+	}
+	return NoOutputObject, instructionsQueue, nil
 }
 
-func (interpreter *StartosisInterpreter) interpretInternal(packageId string, serializedStarlark string, serializedJsonParams string, instructionsQueue *[]kurtosis_instruction.KurtosisInstruction) (starlark.StringDict, error) {
-	thread, predeclared := interpreter.buildBindings(starlarkGoThreadName, instructionsQueue)
+func (interpreter *StartosisInterpreter) interpretInternal(thread *starlark.Thread, packageId string, serializedStarlark string, serializedJsonParams string, instructionsQueue *[]kurtosis_instruction.KurtosisInstruction) (starlark.StringDict, error) {
+	predeclared := interpreter.buildBindings(thread, instructionsQueue)
 
 	if interpretationError := interpreter.addInputArgsToPredeclared(thread, packageId, serializedJsonParams, predeclared); interpretationError != nil {
 		return nil, interpretationError
@@ -109,16 +126,9 @@ func (interpreter *StartosisInterpreter) interpretInternal(packageId string, ser
 	return globalVariables, nil
 }
 
-func (interpreter *StartosisInterpreter) buildBindings(threadName string, instructionsQueue *[]kurtosis_instruction.KurtosisInstruction) (*starlark.Thread, *starlark.StringDict) {
-	thread := &starlark.Thread{
-		Name:       threadName,
-		Print:      makePrintFunction(),
-		Load:       makeLoadFunction(),
-		OnMaxSteps: nil,
-	}
-
+func (interpreter *StartosisInterpreter) buildBindings(thread *starlark.Thread, instructionsQueue *[]kurtosis_instruction.KurtosisInstruction) *starlark.StringDict {
 	recursiveInterpretForModuleLoading := func(moduleId string, serializedStartosis string) (starlark.StringDict, error) {
-		return interpreter.interpretInternal(moduleId, serializedStartosis, EmptyInputArgs, instructionsQueue)
+		return interpreter.interpretInternal(thread, moduleId, serializedStartosis, EmptyInputArgs, instructionsQueue)
 	}
 
 	predeclared := &starlark.StringDict{
@@ -145,7 +155,7 @@ func (interpreter *StartosisInterpreter) buildBindings(threadName string, instru
 		import_module.ImportModuleBuiltinName: starlark.NewBuiltin(import_module.ImportModuleBuiltinName, import_module.GenerateImportBuiltin(recursiveInterpretForModuleLoading, interpreter.moduleContentProvider, interpreter.moduleGlobalsCache)),
 		read_file.ReadFileBuiltinName:         starlark.NewBuiltin(read_file.ReadFileBuiltinName, read_file.GenerateReadFileBuiltin(interpreter.moduleContentProvider)),
 	}
-	return thread, predeclared
+	return predeclared
 }
 
 // This method handles the different cases a Startosis module can be executed. Here are the different cases handled:

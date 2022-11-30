@@ -440,6 +440,11 @@ export class StarlarkRunResponseLine extends jspb.Message {
   hasInstructionResult(): boolean;
   clearInstructionResult(): StarlarkRunResponseLine;
 
+  getRunFinishedEvent(): StarlarkRunFinishedEvent | undefined;
+  setRunFinishedEvent(value?: StarlarkRunFinishedEvent): StarlarkRunResponseLine;
+  hasRunFinishedEvent(): boolean;
+  clearRunFinishedEvent(): StarlarkRunResponseLine;
+
   getRunResponseLineCase(): StarlarkRunResponseLine.RunResponseLineCase;
 
   serializeBinary(): Uint8Array;
@@ -456,6 +461,7 @@ export namespace StarlarkRunResponseLine {
     error?: StarlarkError.AsObject,
     progressInfo?: StarlarkRunProgress.AsObject,
     instructionResult?: StarlarkInstructionResult.AsObject,
+    runFinishedEvent?: StarlarkRunFinishedEvent.AsObject,
   }
 
   export enum RunResponseLineCase { 
@@ -464,6 +470,7 @@ export namespace StarlarkRunResponseLine {
     ERROR = 2,
     PROGRESS_INFO = 3,
     INSTRUCTION_RESULT = 4,
+    RUN_FINISHED_EVENT = 5,
   }
 }
 
@@ -696,6 +703,35 @@ export namespace StarlarkRunProgress {
     currentStepInfo: string,
     totalSteps: number,
     currentStepNumber: number,
+  }
+}
+
+export class StarlarkRunFinishedEvent extends jspb.Message {
+  getIsrunsuccessful(): boolean;
+  setIsrunsuccessful(value: boolean): StarlarkRunFinishedEvent;
+
+  getSerializedOutput(): string;
+  setSerializedOutput(value: string): StarlarkRunFinishedEvent;
+  hasSerializedOutput(): boolean;
+  clearSerializedOutput(): StarlarkRunFinishedEvent;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): StarlarkRunFinishedEvent.AsObject;
+  static toObject(includeInstance: boolean, msg: StarlarkRunFinishedEvent): StarlarkRunFinishedEvent.AsObject;
+  static serializeBinaryToWriter(message: StarlarkRunFinishedEvent, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): StarlarkRunFinishedEvent;
+  static deserializeBinaryFromReader(message: StarlarkRunFinishedEvent, reader: jspb.BinaryReader): StarlarkRunFinishedEvent;
+}
+
+export namespace StarlarkRunFinishedEvent {
+  export type AsObject = {
+    isrunsuccessful: boolean,
+    serializedOutput?: string,
+  }
+
+  export enum SerializedOutputCase { 
+    _SERIALIZED_OUTPUT_NOT_SET = 0,
+    SERIALIZED_OUTPUT = 2,
   }
 }
 
