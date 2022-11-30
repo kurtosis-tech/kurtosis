@@ -12,6 +12,7 @@
 
 ### Features
 - Log file name and function like [filename.go:FunctionName()] while logging in `core` & `engine`
+- The object returned by Starlark's `run()` function is serialized as JSON and returned to the CLI output. 
 
 # 0.57.1
 
