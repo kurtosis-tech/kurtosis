@@ -14,7 +14,7 @@ const (
 	DiscordUrl              = "https://discord.gg/6Jjp9c89z9"
 	GithubIssuesUrl         = "https://github.com/kurtosis-tech/kurtosis-sdk"
 	CLISetupDocsUrl         = DocumentationUrl + "/ci"
-	starlarkDependenciesURl = "https://docs.kurtosis.com/reference/starlark-reference/#dependencies"
+	starlarkDependenciesURl = "https://docs.kurtosis.com/reference/locators"
 )
 
 // List of URLs whose validity will be verified in a test
