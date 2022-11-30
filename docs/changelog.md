@@ -1,4 +1,6 @@
 # TBD
+
+# 0.57.3
 ### Changes
 - Added exponential back-off and retries to `get_value`
 
