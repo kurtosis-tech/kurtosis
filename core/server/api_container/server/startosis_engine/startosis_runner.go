@@ -23,7 +23,7 @@ const (
 	startingValidationMsg     = "Pre-validating Starlark code and downloading docker images - execution will begin shortly"
 	startingExecutionMsg      = "Starting execution"
 
-	missingRunMethodErrorFromStarlark = "Evaluation error: module has no .run field or method\n\tat [3:12]: <toplevel>"
+	missingRunMethodErrorFromStarlark = "Evaluation error: module has no .run field or method\n\tat [3:32]: <toplevel>"
 )
 
 func NewStartosisRunner(interpreter *StartosisInterpreter, validator *StartosisValidator, executor *StartosisExecutor) *StartosisRunner {
@@ -36,20 +36,21 @@ func NewStartosisRunner(interpreter *StartosisInterpreter, validator *StartosisV
 
 func (runner *StartosisRunner) Run(ctx context.Context, dryRun bool, moduleId string, serializedStartosis string, serializedParams string) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
 	// TODO(gb): add metric tracking maybe?
-	kurtosisExecutionResponseLines := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
+	starlarkRunResponseLines := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 
 	go func() {
-		defer close(kurtosisExecutionResponseLines)
+		defer close(starlarkRunResponseLines)
 
 		// Interpretation starts > send progress info (this line will be invisible as interpretation is super quick)
 		progressInfo := binding_constructors.NewStarlarkRunResponseLineFromProgressInfo(
 			startingInterpretationMsg, defaultCurrentStepNumber, defaultTotalStepsNumber)
-		kurtosisExecutionResponseLines <- progressInfo
+		starlarkRunResponseLines <- progressInfo
 
-		instructionsList, interpretationError := runner.startosisInterpreter.Interpret(ctx, moduleId, serializedStartosis, serializedParams)
+		serializedScriptOutput, instructionsList, interpretationError := runner.startosisInterpreter.Interpret(ctx, moduleId, serializedStartosis, serializedParams)
 		if interpretationError != nil {
 			interpretationError = maybeMakeMissingRunMethodErrorFriendlier(interpretationError, moduleId)
-			kurtosisExecutionResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromInterpretationError(interpretationError)
+			starlarkRunResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromInterpretationError(interpretationError)
+			starlarkRunResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromRunFailureEvent()
 			return
 		}
 		totalNumberOfInstructions := uint32(len(instructionsList))
@@ -59,10 +60,10 @@ func (runner *StartosisRunner) Run(ctx context.Context, dryRun bool, moduleId st
 		// Validation starts > send progress info
 		progressInfo = binding_constructors.NewStarlarkRunResponseLineFromProgressInfo(
 			startingValidationMsg, defaultCurrentStepNumber, totalNumberOfInstructions)
-		kurtosisExecutionResponseLines <- progressInfo
+		starlarkRunResponseLines <- progressInfo
 
 		validationErrorsChan := runner.startosisValidator.Validate(ctx, instructionsList)
-		if messagesWereReceived := forwardKurtosisResponseLineChannelUntilSourceIsClosed(validationErrorsChan, kurtosisExecutionResponseLines); messagesWereReceived {
+		if isRunFinished := forwardKurtosisResponseLineChannelUntilSourceIsClosed(validationErrorsChan, starlarkRunResponseLines); isRunFinished {
 			return
 		}
 		logrus.Debugf("Successfully validated Starlark script")
@@ -70,24 +71,28 @@ func (runner *StartosisRunner) Run(ctx context.Context, dryRun bool, moduleId st
 		// Execution starts > send progress info. This will soon be overridden byt the first instruction execution
 		progressInfo = binding_constructors.NewStarlarkRunResponseLineFromProgressInfo(
 			startingExecutionMsg, defaultCurrentStepNumber, totalNumberOfInstructions)
-		kurtosisExecutionResponseLines <- progressInfo
+		starlarkRunResponseLines <- progressInfo
 
-		executionResponseLinesChan := runner.startosisExecutor.Execute(ctx, dryRun, instructionsList)
-		forwardKurtosisResponseLineChannelUntilSourceIsClosed(executionResponseLinesChan, kurtosisExecutionResponseLines)
+		executionResponseLinesChan := runner.startosisExecutor.Execute(ctx, dryRun, instructionsList, serializedScriptOutput)
+		if isRunFinished := forwardKurtosisResponseLineChannelUntilSourceIsClosed(executionResponseLinesChan, starlarkRunResponseLines); !isRunFinished {
+			logrus.Warnf("Execution finished but no 'RunFinishedEvent' was received through the stream. This is unexpected as every execution should be terminal.")
+		}
 		logrus.Debugf("Successfully executed the list of %d Kurtosis instructions", len(instructionsList))
 	}()
-	return kurtosisExecutionResponseLines
+	return starlarkRunResponseLines
 }
 
 func forwardKurtosisResponseLineChannelUntilSourceIsClosed(sourceChan <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, destChan chan<- *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine) bool {
-	messagesWereReceived := false
+	isStarlarkRunFinished := false
 	for executionResponseLine := range sourceChan {
 		logrus.Debugf("Received kurtosis execution line Kurtosis:\n%v", executionResponseLine)
+		if executionResponseLine.GetRunFinishedEvent() != nil {
+			isStarlarkRunFinished = true
+		}
 		destChan <- executionResponseLine
-		messagesWereReceived = true
 	}
-	logrus.Debug("Kurtosis instructions stream was closed. Exiting execution loop")
-	return messagesWereReceived
+	logrus.Debugf("Kurtosis instructions stream was closed. Exiting execution loop. Run finishedL '%v'", isStarlarkRunFinished)
+	return isStarlarkRunFinished
 }
 
 func maybeMakeMissingRunMethodErrorFriendlier(originalError *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError, packageId string) *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError {

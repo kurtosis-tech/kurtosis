@@ -34,14 +34,14 @@ func NewStartosisExecutor() *StartosisExecutor {
 // - A regular KurtosisInstruction that was successfully executed
 // - A KurtosisExecutionError if the execution failed
 // - A ProgressInfo to update the current "state" of the execution
-func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, instructions []kurtosis_instruction.KurtosisInstruction) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, instructions []kurtosis_instruction.KurtosisInstruction, serializedScriptOutput string) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
 	executor.mutex.Lock()
-	starlarkExecutionResponseLineStream := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
+	starlarkRunResponseLineStream := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 
 	go func() {
 		defer func() {
 			executor.mutex.Unlock()
-			close(starlarkExecutionResponseLineStream)
+			close(starlarkRunResponseLineStream)
 		}()
 
 		totalNumberOfInstructions := uint32(len(instructions))
@@ -49,24 +49,28 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, ins
 			instructionNumber := uint32(index + 1)
 			progress := binding_constructors.NewStarlarkRunResponseLineFromProgressInfo(
 				progressMsg, instructionNumber, totalNumberOfInstructions)
-			starlarkExecutionResponseLineStream <- progress
+			starlarkRunResponseLineStream <- progress
 
 			canonicalInstruction := binding_constructors.NewStarlarkRunResponseLineFromInstruction(instruction.GetCanonicalInstruction())
-			starlarkExecutionResponseLineStream <- canonicalInstruction
+			starlarkRunResponseLineStream <- canonicalInstruction
 
 			if !dryRun {
 				instructionOutput, err := instruction.Execute(ctx)
 				if err != nil {
 					propagatedError := stacktrace.Propagate(err, "An error occurred executing instruction (number %d): \n%v", instructionNumber, instruction.String())
 					serializedError := binding_constructors.NewStarlarkExecutionError(propagatedError.Error())
-					starlarkExecutionResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromExecutionError(serializedError)
+					starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromExecutionError(serializedError)
+					starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunFailureEvent()
 					return
 				}
 				if instructionOutput != nil {
-					starlarkExecutionResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(*instructionOutput)
+					starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(*instructionOutput)
 				}
 			}
 		}
+
+		// TODO(gb): we should run magic string replacement on the output
+		starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunSuccessEvent(serializedScriptOutput)
 	}()
-	return starlarkExecutionResponseLineStream
+	return starlarkRunResponseLineStream
 }
