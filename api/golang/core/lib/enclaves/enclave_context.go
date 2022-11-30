@@ -536,21 +536,18 @@ func (enclaveCtx *EnclaveContext) WaitForHttpPostEndpointAvailability(serviceId 
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-func (enclaveCtx *EnclaveContext) GetServices() (map[services.ServiceID]*services.ServiceInfo, error) {
+func (enclaveCtx *EnclaveContext) GetServices() (map[services.ServiceID]services.ServiceGUID, error) {
 	getServicesArgs := binding_constructors.NewGetServicesArgs(map[string]bool{})
 	response, err := enclaveCtx.client.GetServices(context.Background(), getServicesArgs)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the service IDs in the enclave")
 	}
 
-	serviceInfos := make(map[services.ServiceID]*services.ServiceInfo, len(response.GetServiceInfo()))
+	serviceInfos := make(map[services.ServiceID]services.ServiceGUID, len(response.GetServiceInfo()))
 	for serviceIdStr, responseServiceInfo := range response.GetServiceInfo() {
 		serviceId := services.ServiceID(serviceIdStr)
-		serviceInfo := services.NewServiceInfo(
-			serviceId,
-			services.ServiceGUID(responseServiceInfo.GetServiceGuid()),
-		)
-		serviceInfos[serviceId] = serviceInfo
+		serviceGuid := services.ServiceGUID(responseServiceInfo.GetServiceGuid())
+		serviceInfos[serviceId] = serviceGuid
 	}
 	return serviceInfos, nil
 }

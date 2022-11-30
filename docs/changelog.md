@@ -1,5 +1,8 @@
 # TBD
 
+### Changes
+- Simplified the API by removing the ServiceInfo struct that was adding unnecessary complexity.
+
 # 0.57.3
 
 ### Changes
