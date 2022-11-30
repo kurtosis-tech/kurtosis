@@ -38,7 +38,14 @@ const (
 	starlarkGoThreadName = "Startosis interpreter thread"
 
 	multipleInterpretationErrorMsg = "Multiple errors caught interpreting the Starlark script. Listing each of them below."
+
+	builtinFilename = "<builtin>"
 )
+
+var replaceFilenameValuesSet = map[string]bool{
+	PackageIdPlaceholderForStandaloneScript: true,
+	builtinFilename: true,
+}
 
 type StartosisInterpreter struct {
 	// This is mutex protected as interpreting two different scripts in parallel could potentially cause
@@ -211,7 +218,13 @@ func generateInterpretationError(err error) *startosis_errors.InterpretationErro
 	case *starlark.EvalError:
 		stacktrace := make([]startosis_errors.CallFrame, 0)
 		for _, callStack := range slError.CallStack {
-			stacktrace = append(stacktrace, *startosis_errors.NewCallFrame(callStack.Pos.Filename(), startosis_errors.NewScriptPosition(callStack.Pos.Line, callStack.Pos.Col)))
+			stacktraceName := callStack.Pos.Filename()
+			//TODO we could remove this when the runScript endpoint receives the filename
+			//when the filename is equal to "DEFAULT_PACKAGE_ID_FOR_SCRIPT" or "<builtin>" we use the stack name, which usually is "<toplevel>"
+			if _, found := replaceFilenameValuesSet[stacktraceName]; found{
+				stacktraceName = callStack.Name
+			}
+			stacktrace = append(stacktrace, *startosis_errors.NewCallFrame(stacktraceName, startosis_errors.NewScriptPosition(callStack.Pos.Line, callStack.Pos.Col)))
 		}
 		return startosis_errors.NewInterpretationErrorWithCustomMsg(
 			stacktrace,

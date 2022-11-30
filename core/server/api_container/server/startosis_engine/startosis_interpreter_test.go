@@ -417,9 +417,9 @@ print(module_doo.b)
 		[]startosis_errors.CallFrame{
 			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(2, 27)),
 			*startosis_errors.NewCallFrame("import_module", startosis_errors.NewScriptPosition(0, 0)),
-			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(1, 27)),
+			*startosis_errors.NewCallFrame(moduleDooLoadsModuleBar, startosis_errors.NewScriptPosition(1, 27)),
 			*startosis_errors.NewCallFrame("import_module", startosis_errors.NewScriptPosition(0, 0)),
-			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(1, 27)),
+			*startosis_errors.NewCallFrame(moduleBarLoadsModuleDoo, startosis_errors.NewScriptPosition(1, 27)),
 			*startosis_errors.NewCallFrame("import_module", startosis_errors.NewScriptPosition(0, 0)),
 		},
 		"Evaluation error: There's a cycle in the import_module calls",

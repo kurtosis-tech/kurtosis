@@ -1,5 +1,4 @@
 # TBD
-
 ### Fixes
 - Make validation more human-readable for missing docker images and instructions that depend on invalid service ids
 - Fixed mismatch between `kurtosis enclave inspect` and `kurtosis enclave ls` displaying enclave creation time in different timezones
@@ -9,6 +8,7 @@
 - Updated Starlark section of core-lib-documentation.md to match the new streaming endpoints
 - Updated `datastore-army-module` -> `datastore-army-package`
 - Added `startosis_add_service_with_empty_ports` Golang and Typescript internal tests
+- Replaced stack name with the stack file name in custom evaluation errors
 
 ### Features
 - Log file name and function like [filename.go:FunctionName()] while logging in `core` & `engine`
