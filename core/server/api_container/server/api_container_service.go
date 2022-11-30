@@ -201,7 +201,7 @@ func (apicService ApiContainerService) RunStarlarkScript(args *kurtosis_core_rpc
 	serializedStartosisScript := args.GetSerializedScript()
 	serializedParams := args.GetSerializedParams()
 	dryRun := shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun)
-	scriptWithRunFunction := fmt.Sprintf(runToConcatenateAtEndOfStandaloneScript, serializedStartosisScript, startosis_engine.MainInputArgName)
+	scriptWithRunFunction := fmt.Sprintf(runToConcatenateAtEndOfStandaloneScript, startosis_engine.MainInputArgName, serializedStartosisScript)
 	apicService.runStarlark(dryRun, startosis_engine.PackageIdPlaceholderForStandaloneScript, scriptWithRunFunction, serializedParams, stream)
 	return nil
 }
