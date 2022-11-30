@@ -89,15 +89,15 @@ func (instruction *PrintInstruction) Execute(_ context.Context) (*string, error)
 		default:
 			serializedArgs[idx] = arg.String()
 		}
-		serializedArgsWithRuntimeValue, err := magic_string_helper.ReplaceRuntimeValueInString(serializedArgs[idx], instruction.recipeExecutor)
+		maybeSerializedArgsWithRuntimeValue, err := magic_string_helper.ReplaceRuntimeValueInString(serializedArgs[idx], instruction.recipeExecutor)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Error replacing runtime value '%v'", serializedArgs[idx])
 		}
-		serializedArgsWithIPAddress, err := magic_string_helper.ReplaceIPAddressInString(serializedArgsWithRuntimeValue, instruction.serviceNetwork, PrintBuiltinName)
+		maybeSerializedArgsWithIPAddress, err := magic_string_helper.ReplaceIPAddressInString(maybeSerializedArgsWithRuntimeValue, instruction.serviceNetwork, PrintBuiltinName)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Error replacing IP address value '%v'", serializedArgs[idx])
 		}
-		serializedArgs[idx] = serializedArgsWithIPAddress
+		serializedArgs[idx] = maybeSerializedArgsWithIPAddress
 	}
 	instructionOutput := fmt.Sprintf("%s%s", strings.Join(serializedArgs, string(instruction.separator)), instruction.end)
 
