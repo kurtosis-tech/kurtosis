@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
@@ -29,14 +30,14 @@ const (
 	defaultEnd = end("")
 )
 
-func GeneratePrintBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, recipeExecutor *runtime_value_store.RuntimeValueStore) func(thread *starlark.Thread, builtin *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+func GeneratePrintBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, recipeExecutor *runtime_value_store.RuntimeValueStore, serviceNetwork service_network.ServiceNetwork) func(thread *starlark.Thread, builtin *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 	return func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 		args, separatorStr, endStr, interpretationError := parseStartosisArg(b, args, kwargs)
 		if interpretationError != nil {
 			return nil, interpretationError
 		}
 		instructionPosition := shared_helpers.GetCallerPositionFromThread(thread)
-		printInstruction := NewPrintInstruction(instructionPosition, args, separatorStr, endStr, recipeExecutor)
+		printInstruction := NewPrintInstruction(instructionPosition, args, separatorStr, endStr, recipeExecutor, serviceNetwork)
 		*instructionsQueue = append(*instructionsQueue, printInstruction)
 		return starlark.None, nil
 	}
@@ -48,15 +49,17 @@ type PrintInstruction struct {
 	separator      separator
 	end            end
 	recipeExecutor *runtime_value_store.RuntimeValueStore
+	serviceNetwork service_network.ServiceNetwork
 }
 
-func NewPrintInstruction(position *kurtosis_instruction.InstructionPosition, args []starlark.Value, separatorStr separator, endStr end, recipeExecutor *runtime_value_store.RuntimeValueStore) *PrintInstruction {
+func NewPrintInstruction(position *kurtosis_instruction.InstructionPosition, args []starlark.Value, separatorStr separator, endStr end, recipeExecutor *runtime_value_store.RuntimeValueStore, serviceNetwork service_network.ServiceNetwork) *PrintInstruction {
 	return &PrintInstruction{
 		position:       position,
 		args:           args,
 		separator:      separatorStr,
 		end:            endStr,
 		recipeExecutor: recipeExecutor,
+		serviceNetwork: serviceNetwork,
 	}
 }
 
@@ -86,11 +89,15 @@ func (instruction *PrintInstruction) Execute(_ context.Context) (*string, error)
 		default:
 			serializedArgs[idx] = arg.String()
 		}
-		newValue, err := magic_string_helper.ReplaceRuntimeValueInString(serializedArgs[idx], instruction.recipeExecutor)
+		maybeSerializedArgsWithRuntimeValue, err := magic_string_helper.ReplaceRuntimeValueInString(serializedArgs[idx], instruction.recipeExecutor)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Error replacing runtime value '%v'", serializedArgs[idx])
 		}
-		serializedArgs[idx] = newValue
+		maybeSerializedArgsWithIPAddress, err := magic_string_helper.ReplaceIPAddressInString(maybeSerializedArgsWithRuntimeValue, instruction.serviceNetwork, PrintBuiltinName)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Error replacing IP address value '%v'", serializedArgs[idx])
+		}
+		serializedArgs[idx] = maybeSerializedArgsWithIPAddress
 	}
 	instructionOutput := fmt.Sprintf("%s%s", strings.Join(serializedArgs, string(instruction.separator)), instruction.end)
 
