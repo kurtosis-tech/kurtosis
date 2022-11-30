@@ -270,7 +270,7 @@ func readAndPrintResponseLinesUntilClosed(responseLineChan <-chan *kurtosis_core
 			if err != nil {
 				logrus.Errorf("An error occurred trying to write the output of Starlark execution to stdout. The script execution will continue, but the output printed here is incomplete. Error was: \n%s", err.Error())
 			}
-			// If the run finished, persist its status to the isError bool to throw an error and return an non-zero status code
+			// If the run finished, persist its status to the isRunSuccessful bool to throw an error and return a non-zero status code
 			if responseLine.GetRunFinishedEvent() != nil {
 				isRunSuccessful = responseLine.GetRunFinishedEvent().GetIsRunSuccessful()
 			}
