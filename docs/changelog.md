@@ -13,7 +13,8 @@
 ### Features
 - Log file name and function like [filename.go:FunctionName()] while logging in `core` & `engine`
 - All Kurtosis instructions now returns a simple but explicit output
-- The object returned by Starlark's `run()` function is serialized as JSON and returned to the CLI output. 
+- The object returned by Starlark's `run()` function is serialized as JSON and returned to the CLI output.
+- Enforce `run(args)` for individual scripts 
 
 # 0.57.1
 
