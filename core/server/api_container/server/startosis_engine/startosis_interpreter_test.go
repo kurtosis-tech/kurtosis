@@ -199,7 +199,7 @@ add_service(service_id = service_id, config = config)
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
 		[]startosis_errors.CallFrame{
 			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(PackageIdPlaceholderForStandaloneScript, 13, 12)),
-			*startosis_errors.NewCallFrame("add_service", startosis_errors.NewScriptPosition(PackageIdPlaceholderForStandaloneScript, 0, 0)),
+			*startosis_errors.NewCallFrame("add_service", startosis_errors.NewScriptPosition("<builtin>", 0, 0)),
 		},
 		"Evaluation error: Missing value 'image' as element of the struct object 'config'",
 	).ToAPIType()
@@ -230,7 +230,7 @@ add_service(service_id = service_id, config = config)
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
 		[]startosis_errors.CallFrame{
 			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(PackageIdPlaceholderForStandaloneScript, 13, 12)),
-			*startosis_errors.NewCallFrame("add_service", startosis_errors.NewScriptPosition(PackageIdPlaceholderForStandaloneScript, 0, 0)),
+			*startosis_errors.NewCallFrame("add_service", startosis_errors.NewScriptPosition("<builtin>", 0, 0)),
 		},
 		"Evaluation error: Port protocol should be one of TCP, SCTP, UDP",
 	).ToAPIType()
@@ -262,7 +262,7 @@ add_service(service_id = service_id, config = config)
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
 		[]startosis_errors.CallFrame{
 			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(PackageIdPlaceholderForStandaloneScript, 13, 12)),
-			*startosis_errors.NewCallFrame("add_service", startosis_errors.NewScriptPosition(PackageIdPlaceholderForStandaloneScript, 0, 0)),
+			*startosis_errors.NewCallFrame("add_service", startosis_errors.NewScriptPosition("<builtin>", 0, 0)),
 		},
 		expectedErrorStr,
 	).ToAPIType()
@@ -416,11 +416,11 @@ print(module_doo.b)
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
 		[]startosis_errors.CallFrame{
 			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(PackageIdPlaceholderForStandaloneScript, 2, 27)),
-			*startosis_errors.NewCallFrame("import_module", startosis_errors.NewScriptPosition(PackageIdPlaceholderForStandaloneScript, 0, 0)),
-			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(PackageIdPlaceholderForStandaloneScript, 1, 27)),
-			*startosis_errors.NewCallFrame("import_module", startosis_errors.NewScriptPosition(PackageIdPlaceholderForStandaloneScript, 0, 0)),
-			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(PackageIdPlaceholderForStandaloneScript, 1, 27)),
-			*startosis_errors.NewCallFrame("import_module", startosis_errors.NewScriptPosition(PackageIdPlaceholderForStandaloneScript, 0, 0)),
+			*startosis_errors.NewCallFrame("import_module", startosis_errors.NewScriptPosition("<builtin>", 0, 0)),
+			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(moduleDooLoadsModuleBar, 1, 27)),
+			*startosis_errors.NewCallFrame("import_module", startosis_errors.NewScriptPosition("<builtin>", 0, 0)),
+			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(moduleBarLoadsModuleDoo, 1, 27)),
+			*startosis_errors.NewCallFrame("import_module", startosis_errors.NewScriptPosition("<builtin>", 0, 0)),
 		},
 		"Evaluation error: There's a cycle in the import_module calls",
 	).ToAPIType()
@@ -445,7 +445,7 @@ print(my_module.b)
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
 		[]startosis_errors.CallFrame{
 			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(PackageIdPlaceholderForStandaloneScript, 2, 26)),
-			*startosis_errors.NewCallFrame("import_module", startosis_errors.NewScriptPosition(PackageIdPlaceholderForStandaloneScript, 0, 0)),
+			*startosis_errors.NewCallFrame("import_module", startosis_errors.NewScriptPosition("<builtin>", 0, 0)),
 		},
 		errorMsg,
 	).ToAPIType()
