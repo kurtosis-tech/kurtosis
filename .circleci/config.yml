@@ -62,7 +62,7 @@ run_dump_kurtosis_enclaves: &run_dump_kurtosis_enclaves
     done
 
     # Verify that we actually dumped enclaves by ensuring the number of dumped enclaves is greater than 0 (if not, it's a bug in this dumping logic)
-    num_dumped_enclaves="$(find "${output_dirname}" -type d -mindepth 1 -maxdepth 1 | wc -l)"
+    num_dumped_enclaves="$(find "${output_dirname}" -mindepth 1 -maxdepth 1 -type d | wc -l)"
     [ "${num_dumped_enclaves}" -gt 0 ]
 
     zip -r "${output_dirname}.zip" "${output_dirname}"
@@ -523,6 +523,9 @@ jobs:
       <<: *param_cli_cluster_backend
     steps:
       - checkout
+
+      - <<: *abort_job_if_only_docs_changes
+
       - attach_workspace:
           at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
       # We call Kurtosis a bunch later, so add it to the PATH so we can call it easily
@@ -590,6 +593,10 @@ jobs:
   test_old_enclave_continuity:
     executor: ubuntu_vm
     steps:
+      - checkout
+
+      - <<: *abort_job_if_only_docs_changes
+
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
       # Set up Kurtosis
@@ -660,6 +667,10 @@ jobs:
     parameters:
       <<: *param_cli_cluster_backend
     steps:
+      - checkout
+
+      - <<: *abort_job_if_only_docs_changes
+
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
       # Set up Kurtosis
@@ -703,7 +714,7 @@ jobs:
       - run: "${KURTOSIS_BINPATH} run --enclave-id test-enclave << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.startosis-test-script-file-relative-path >>"
 
       # Execute github starlark module
-      - run: "${KURTOSIS_BINPATH} run --enclave-id test-datastore github.com/kurtosis-tech/datastore-army-module --args '{\"num_datastores\": 2}'"
+      - run: "${KURTOSIS_BINPATH} run --enclave-id test-datastore github.com/kurtosis-tech/datastore-army-package --args '{\"num_datastores\": 2}'"
         
 
       - run: "${KURTOSIS_BINPATH} enclave stop test-enclave"
@@ -762,6 +773,9 @@ jobs:
     executor: ubuntu_vm
     steps:
       - checkout
+
+      - <<: *abort_job_if_only_docs_changes
+
       - attach_workspace:
           at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
       - run: |

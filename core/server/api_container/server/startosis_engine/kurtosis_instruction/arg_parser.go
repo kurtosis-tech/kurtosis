@@ -95,7 +95,7 @@ func ParseHttpRequestFactRecipe(serviceConfig *starlarkstruct.Struct) (*kurtosis
 		return nil, interpretationErr
 	}
 
-	maybeFieldExtractor, interpretationErr := maybeExtractStringValue(serviceConfig, fieldExtractorKey)
+	maybeFieldExtractor, interpretationErr := maybeExtractStringValue(serviceConfig, fieldExtractorKey, defineFactArgName)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
@@ -468,19 +468,19 @@ func extractStringValue(structField *starlarkstruct.Struct, key string, argNameF
 	}
 	stringValue, interpretationErr := safeCastToString(value, key)
 	if interpretationErr != nil {
-		return "", interpretationErr
+		return "", startosis_errors.WrapWithInterpretationError(interpretationErr, "Error casting value '%s' as element of the struct object '%s'", key, argNameForLogging)
 	}
 	return stringValue, nil
 }
 
-func maybeExtractStringValue(structField *starlarkstruct.Struct, key string) (*string, *startosis_errors.InterpretationError) {
+func maybeExtractStringValue(structField *starlarkstruct.Struct, key string, argNameForLogging string) (*string, *startosis_errors.InterpretationError) {
 	value, err := structField.Attr(key)
 	if err != nil {
 		return nil, nil
 	}
 	stringValue, interpretationErr := safeCastToString(value, key)
 	if interpretationErr != nil {
-		return nil, interpretationErr
+		return nil, startosis_errors.WrapWithInterpretationError(interpretationErr, "Error casting value '%s' as element of the struct object '%s'", key, argNameForLogging)
 	}
 	return &stringValue, nil
 }
@@ -492,7 +492,7 @@ func extractUint32Value(structField *starlarkstruct.Struct, key string, argNameF
 	}
 	uint32Value, interpretationErr := safeCastToUint32(value, key)
 	if interpretationErr != nil {
-		return 0, interpretationErr
+		return 0, startosis_errors.WrapWithInterpretationError(interpretationErr, "Error casting value '%s' as element of the struct object '%s'", key, argNameForLogging)
 	}
 	return uint32Value, nil
 }
@@ -504,7 +504,7 @@ func extractStringSliceValue(structField *starlarkstruct.Struct, key string, arg
 	}
 	stringSliceValue, interpretationErr := safeCastToStringSlice(value, key)
 	if interpretationErr != nil {
-		return nil, interpretationErr
+		return nil, startosis_errors.WrapWithInterpretationError(interpretationErr, "Error casting value '%s' as element of the struct object '%s'", key, argNameForLogging)
 	}
 	return stringSliceValue, nil
 }
@@ -516,7 +516,7 @@ func extractMapStringStringValue(structField *starlarkstruct.Struct, key string,
 	}
 	mapStringStringValue, interpretationErr := safeCastToMapStringString(value, key)
 	if interpretationErr != nil {
-		return nil, interpretationErr
+		return nil, startosis_errors.WrapWithInterpretationError(interpretationErr, "Error casting value '%s' as element of the struct object '%s'", key, argNameForLogging)
 	}
 	return mapStringStringValue, nil
 }

@@ -2,6 +2,7 @@ package upload_files
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
@@ -13,7 +14,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
 )
 
@@ -101,8 +101,8 @@ func (instruction *UploadFilesInstruction) Execute(_ context.Context) (*string, 
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while uploading the compressed contents\n'%v'", compressedData)
 	}
-	logrus.Infof("Succesfully uploaded files from instruction '%v' to '%v'", instruction.position.String(), instruction.artifactId)
-	return nil, nil
+	instructionResult := fmt.Sprintf("Files uploaded with artifact ID '%s'", instruction.artifactId)
+	return &instructionResult, nil
 }
 
 func (instruction *UploadFilesInstruction) String() string {

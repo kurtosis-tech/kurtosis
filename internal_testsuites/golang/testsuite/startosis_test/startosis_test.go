@@ -12,6 +12,7 @@ const (
 	testName              = "module"
 	isPartitioningEnabled = false
 	defaultDryRun         = false
+	greetingsArg          = `{"greeting": "World!"}`
 
 	serviceId                     = "example-datastore-server-1"
 	serviceIdForDependentService  = "example-datastore-server-2"
@@ -38,50 +39,52 @@ TEMPLATE_FILE_TO_RENDER="github.com/kurtosis-tech/eth2-merge-kurtosis-module/kur
 PATH_TO_MOUNT_RENDERED_CONFIG="` + renderedConfigMountPath + `"
 RENDER_RELATIVE_PATH = "` + renderedConfigRelativePath + `"
 
-print("Adding service " + DATASTORE_SERVICE_ID + ".")
-
-config = struct(
-    image = DATASTORE_IMAGE,
-    ports = {
-        DATASTORE_PORT_ID: struct(number = DATASTORE_PORT_NUMBER, protocol = DATASTORE_PORT_PROTOCOL)
-    }
-)
-
-add_service(service_id = DATASTORE_SERVICE_ID, config = config)
-print("Service " + DATASTORE_SERVICE_ID + " deployed successfully.")
-exec(service_id = DATASTORE_SERVICE_ID, command = ["touch", FILE_TO_BE_CREATED])
-
-artifact_id = store_service_files(service_id = DATASTORE_SERVICE_ID, src = FILE_TO_BE_CREATED)
-print("Stored file at " + artifact_id)
-
-template_str = read_file(TEMPLATE_FILE_TO_RENDER)
-
-template_data = {
-	"CLNodesMetricsInfo" : [{"name" : "foo", "path": "/foo/path", "url": "foobar.com"}]
-}
-
-template_data_by_path = {
-	RENDER_RELATIVE_PATH : struct(
-		template= template_str,
-		data= template_data
+def run(args):
+	print("Hello " + args.greeting) 
+	print("Adding service " + DATASTORE_SERVICE_ID + ".")
+	
+	config = struct(
+		image = DATASTORE_IMAGE,
+		ports = {
+			DATASTORE_PORT_ID: struct(number = DATASTORE_PORT_NUMBER, protocol = DATASTORE_PORT_PROTOCOL)
+		}
 	)
-}
-
-rendered_artifact = render_templates(template_data_by_path)
-print("Rendered file to " + rendered_artifact)
-
-dependent_config = struct(
-    image = DATASTORE_IMAGE,
-    ports = {
-        DATASTORE_PORT_ID: struct(number = DATASTORE_PORT_NUMBER, protocol = DATASTORE_PORT_PROTOCOL)
-    },
-	files = {
-		artifact_id : PATH_TO_MOUNT_ON_DEPENDENT_SERVICE,
-		rendered_artifact : PATH_TO_MOUNT_RENDERED_CONFIG
+	
+	add_service(service_id = DATASTORE_SERVICE_ID, config = config)
+	print("Service " + DATASTORE_SERVICE_ID + " deployed successfully.")
+	exec(service_id = DATASTORE_SERVICE_ID, command = ["touch", FILE_TO_BE_CREATED])
+	
+	artifact_id = store_service_files(service_id = DATASTORE_SERVICE_ID, src = FILE_TO_BE_CREATED)
+	print("Stored file at " + artifact_id)
+	
+	template_str = read_file(TEMPLATE_FILE_TO_RENDER)
+	
+	template_data = {
+		"CLNodesMetricsInfo" : [{"name" : "foo", "path": "/foo/path", "url": "foobar.com"}]
 	}
-)
-add_service(service_id = SERVICE_DEPENDENT_ON_DATASTORE_SERVICE, config = dependent_config)
-print("Deployed " + SERVICE_DEPENDENT_ON_DATASTORE_SERVICE + " successfully")
+	
+	template_data_by_path = {
+		RENDER_RELATIVE_PATH : struct(
+			template= template_str,
+			data= template_data
+		)
+	}
+	
+	rendered_artifact = render_templates(template_data_by_path)
+	print("Rendered file to " + rendered_artifact)
+	
+	dependent_config = struct(
+		image = DATASTORE_IMAGE,
+		ports = {
+			DATASTORE_PORT_ID: struct(number = DATASTORE_PORT_NUMBER, protocol = DATASTORE_PORT_PROTOCOL)
+		},
+		files = {
+			artifact_id : PATH_TO_MOUNT_ON_DEPENDENT_SERVICE,
+			rendered_artifact : PATH_TO_MOUNT_RENDERED_CONFIG
+		}
+	)
+	add_service(service_id = SERVICE_DEPENDENT_ON_DATASTORE_SERVICE, config = dependent_config)
+	print("Deployed " + SERVICE_DEPENDENT_ON_DATASTORE_SERVICE + " successfully")
 `
 )
 
@@ -97,14 +100,20 @@ func TestStartosis(t *testing.T) {
 	logrus.Infof("Executing Startosis script...")
 	logrus.Debugf("Startosis script content: \n%v", startosisScript)
 
-	outputStream, _, err := enclaveCtx.RunStarlarkScript(ctx, startosisScript, defaultDryRun)
+	outputStream, _, err := enclaveCtx.RunStarlarkScript(ctx, startosisScript, greetingsArg, defaultDryRun)
 	require.NoError(t, err, "Unexpected error executing startosis script")
 	scriptOutput, _, interpretationError, validationErrors, executionError := test_helpers.ReadStreamContentUntilClosed(outputStream)
 
-	expectedScriptOutput := `Adding service example-datastore-server-1.
+	expectedScriptOutput := `Hello World!
+Adding service example-datastore-server-1.
+Service 'example-datastore-server-1' added with internal ID '[a-z-0-9]+'
 Service example-datastore-server-1 deployed successfully.
+Command returned with exit code '0' with no output
+Files stored with artifact ID '[a-f0-9-]{36}'
 Stored file at [a-f0-9-]{36}
+Templates rendered and stored with artifact ID '[a-f0-9-]{36}'
 Rendered file to [a-f0-9-]{36}
+Service 'example-datastore-server-2' added with internal ID '[a-z-0-9]+'
 Deployed example-datastore-server-2 successfully
 `
 	require.Nil(t, interpretationError, "Unexpected interpretation error. This test requires you to be online for the read_file command to run")

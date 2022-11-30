@@ -7,14 +7,14 @@ package user_support_constants
 
 const (
 	// WARNING: If you add new URLs here, make sure to add them to the urlsToValidateInTest below!!!
-	Domain                  = "kurtosis.com"
-	InfoEmail               = "inquiries@" + Domain
-	DocumentationUrl        = "https://docs." + Domain
-	SupportEmail            = "support@" + Domain
-	DiscordUrl              = "https://discord.gg/6Jjp9c89z9"
-	GithubIssuesUrl         = "https://github.com/kurtosis-tech/kurtosis-sdk"
-	CLISetupDocsUrl         = DocumentationUrl + "/ci"
-	starlarkDependenciesURl = "https://docs.kurtosis.com/reference/starlark-reference/#dependencies"
+	Domain              = "kurtosis.com"
+	InfoEmail           = "inquiries@" + Domain
+	DocumentationUrl    = "https://docs." + Domain
+	SupportEmail        = "support@" + Domain
+	DiscordUrl          = "https://discord.gg/6Jjp9c89z9"
+	GithubIssuesUrl     = "https://github.com/kurtosis-tech/kurtosis-sdk"
+	CLISetupDocsUrl     = DocumentationUrl + "/ci"
+	starlarkPackagesURl = "https://docs.kurtosis.com/reference/packages"
 )
 
 // List of URLs whose validity will be verified in a test
@@ -23,5 +23,5 @@ var urlsToValidateInTest = []string{
 	DiscordUrl,
 	GithubIssuesUrl,
 	CLISetupDocsUrl,
-	starlarkDependenciesURl,
+	starlarkPackagesURl,
 }

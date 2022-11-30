@@ -2,6 +2,7 @@ package wait
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	kurtosis_backend_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
@@ -13,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
+	"time"
 )
 
 const (
@@ -69,11 +71,15 @@ func (instruction *WaitInstruction) GetCanonicalInstruction() *kurtosis_core_rpc
 }
 
 func (instruction *WaitInstruction) Execute(_ context.Context) (*string, error) {
-	_, err := instruction.factsEngine.WaitForValue(facts_engine.GetFactId(string(instruction.serviceId), instruction.factName))
+	startTime := time.Now()
+	factId := facts_engine.GetFactId(string(instruction.serviceId), instruction.factName)
+	factValue, err := instruction.factsEngine.WaitForValue(factId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to wait for fact '%v' on service '%v'", instruction.factName, instruction.serviceId)
 	}
-	return nil, nil
+	elapsedTime := time.Since(startTime)
+	instructionResult := formatInstructionOutput(factValue, elapsedTime)
+	return &instructionResult, nil
 }
 
 func (instruction *WaitInstruction) String() string {
@@ -82,7 +88,7 @@ func (instruction *WaitInstruction) String() string {
 
 func (instruction *WaitInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
 	if !environment.DoesServiceIdExist(instruction.serviceId) {
-		return stacktrace.NewError("There was an error validating exec with service ID '%v' that does not exist", instruction.serviceId)
+		return startosis_errors.NewValidationError("There was an error validating exec with service ID '%v' that does not exist", instruction.serviceId)
 	}
 	// TODO(victor.colombo): Add fact validation
 	return nil
@@ -110,4 +116,12 @@ func (instruction *WaitInstruction) parseStartosisArgs(b *starlark.Builtin, args
 	instruction.serviceId = serviceId
 	instruction.factName = factName
 	return nil
+}
+
+func formatInstructionOutput(factValue *kurtosis_core_rpc_api_bindings.FactValue, elapsedTime time.Duration) string {
+	formattedFactValue, err := facts_engine.StringifyFactValue(factValue)
+	if err != nil {
+		return fmt.Sprintf("Waited for '%s'. Unable to render fact value.", elapsedTime)
+	}
+	return fmt.Sprintf("Waited for '%s'. Fact now has value '%s'.", elapsedTime, formattedFactValue)
 }

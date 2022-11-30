@@ -140,9 +140,9 @@ func (enclaveCtx *EnclaveContext) GetFactValues(serviceId string, factName strin
 	return factValuesResponse, nil
 }
 
-func (enclaveCtx *EnclaveContext) RunStarlarkScript(ctx context.Context, serializedScript string, dryRun bool) (chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
+func (enclaveCtx *EnclaveContext) RunStarlarkScript(ctx context.Context, serializedScript string, serializedParams string, dryRun bool) (chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(ctx)
-	executeStartosisScriptArgs := binding_constructors.NewRunStarlarkScriptArgs(serializedScript, dryRun)
+	executeStartosisScriptArgs := binding_constructors.NewRunStarlarkScriptArgs(serializedScript, serializedParams, dryRun)
 	starlarkResponseLineChan := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 
 	stream, err := enclaveCtx.client.RunStarlarkScript(ctxWithCancel, executeStartosisScriptArgs)
@@ -536,21 +536,18 @@ func (enclaveCtx *EnclaveContext) WaitForHttpPostEndpointAvailability(serviceId 
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-func (enclaveCtx *EnclaveContext) GetServices() (map[services.ServiceID]*services.ServiceInfo, error) {
+func (enclaveCtx *EnclaveContext) GetServices() (map[services.ServiceID]services.ServiceGUID, error) {
 	getServicesArgs := binding_constructors.NewGetServicesArgs(map[string]bool{})
 	response, err := enclaveCtx.client.GetServices(context.Background(), getServicesArgs)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the service IDs in the enclave")
 	}
 
-	serviceInfos := make(map[services.ServiceID]*services.ServiceInfo, len(response.GetServiceInfo()))
+	serviceInfos := make(map[services.ServiceID]services.ServiceGUID, len(response.GetServiceInfo()))
 	for serviceIdStr, responseServiceInfo := range response.GetServiceInfo() {
 		serviceId := services.ServiceID(serviceIdStr)
-		serviceInfo := services.NewServiceInfo(
-			serviceId,
-			services.ServiceGUID(responseServiceInfo.GetServiceGuid()),
-		)
-		serviceInfos[serviceId] = serviceInfo
+		serviceGuid := services.ServiceGUID(responseServiceInfo.GetServiceGuid())
+		serviceInfos[serviceId] = serviceGuid
 	}
 	return serviceInfos, nil
 }

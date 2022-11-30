@@ -13,48 +13,47 @@ const (
 	isPartitioningEnabled = false
 	defaultDryRun         = false
 
+	emptyParams     = "{}"
 	startosisScript = `
-service_config = struct(
-    image = "mendhak/http-https-echo:26",
-    ports = {
-        "http-port": struct(number = 8080, protocol = "TCP")
-    }
-)
-add_service(service_id = "web-server", config = service_config)
-# TODO(vcolombo): Drop this when wait is migrated to new framework
-define_fact(service_id = "web-server", fact_name = "placeholder", fact_recipe=struct(method="GET", endpoint="?input=output", port_id="http-port", field_extractor=".query.input"))
-get_fact = wait(service_id="web-server", fact_name= "placeholder")
-# END TODO
-get_recipe = struct(
-    service_id = "web-server",
-    port_id = "http-port",
-    endpoint = "?input=output",
-    method = "GET",
-)
-response = get_value(get_recipe)
-assert(response.code, "==", 200)
-assert("My test returned " + response.code, "==", "My test returned 200")
-assert(response.code, "!=", 500)
-assert(response.code, ">=", 200)
-assert(response.code, "<=", 200)
-assert(response.code, "<", 300)
-assert(response.code, ">", 100)
-assert(response.code, "IN", [100, 200])
-assert(response.code, "NOT_IN", [100, 300])
-get_test_output = extract(response.body, ".query.input")
-assert(get_test_output, "==", "output")
-post_recipe = struct(
-    service_id = "web-server",
-    port_id = "http-port",
-    endpoint = "/",
-    method = "POST",
-	content_type="text/plain",
-	body="post_output"
-)
-post_response = get_value(post_recipe)
-assert(post_response.code, "==", 200)
-post_test_output = extract(post_response.body, ".body")
-assert(post_test_output, "==", "post_output")
+def run(args):
+	service_config = struct(
+		image = "mendhak/http-https-echo:26",
+		ports = {
+			"http-port": struct(number = 8080, protocol = "TCP")
+		}
+	)
+
+	add_service(service_id = "web-server", config = service_config)
+	get_recipe = struct(
+		service_id = "web-server",
+		port_id = "http-port",
+		endpoint = "?input=output",
+		method = "GET",
+	)
+	response = get_value(get_recipe)
+	assert(response.code, "==", 200)
+	assert("My test returned " + response.code, "==", "My test returned 200")
+	assert(response.code, "!=", 500)
+	assert(response.code, ">=", 200)
+	assert(response.code, "<=", 200)
+	assert(response.code, "<", 300)
+	assert(response.code, ">", 100)
+	assert(response.code, "IN", [100, 200])
+	assert(response.code, "NOT_IN", [100, 300])
+	get_test_output = extract(response.body, ".query.input")
+	assert(get_test_output, "==", "output")
+	post_recipe = struct(
+		service_id = "web-server",
+		port_id = "http-port",
+		endpoint = "/",
+		method = "POST",
+		content_type="text/plain",
+		body="post_output"
+	)
+	post_response = get_value(post_recipe)
+	assert(post_response.code, "==", 200)
+	post_test_output = extract(post_response.body, ".body")
+	assert(post_test_output, "==", "post_output")
 `
 )
 
@@ -70,7 +69,7 @@ func TestStartosis(t *testing.T) {
 	logrus.Infof("Executing Startosis script...")
 	logrus.Debugf("Startosis script content: \n%v", startosisScript)
 
-	outputStream, _, err := enclaveCtx.RunStarlarkScript(ctx, startosisScript, defaultDryRun)
+	outputStream, _, err := enclaveCtx.RunStarlarkScript(ctx, startosisScript, emptyParams, defaultDryRun)
 	require.NoError(t, err, "Unexpected error executing startosis script")
 	_, _, interpretationError, validationErrors, executionError := test_helpers.ReadStreamContentUntilClosed(outputStream)
 

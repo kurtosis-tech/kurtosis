@@ -244,8 +244,10 @@ message ExecuteModuleResponse {
 message RunStarlarkScriptArgs {
   string serialized_script = 1;
 
+  string serialized_params = 2;
+
   // Defaults to false
-  optional bool dry_run = 2;
+  optional bool dry_run = 3;
 }
 
 message RunStarlarkPackageArgs {
@@ -273,6 +275,7 @@ message StarlarkRunResponseLine {
     StarlarkError error = 2;
     StarlarkRunProgress progress_info = 3;
     StarlarkInstructionResult instruction_result = 4;
+    StarlarkRunFinishedEvent run_finished_event = 5;
   }
 }
 
@@ -332,6 +335,12 @@ message StarlarkRunProgress {
   uint32 total_steps = 2;
 
   uint32 current_step_number = 3;
+}
+
+message StarlarkRunFinishedEvent {
+  bool isRunSuccessful = 1;
+
+  optional string serialized_output = 2;
 }
 
 // ==============================================================================================

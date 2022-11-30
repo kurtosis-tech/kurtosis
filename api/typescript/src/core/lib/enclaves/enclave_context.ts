@@ -49,7 +49,7 @@ import {
     newRenderTemplatesToFilesArtifactArgs,
 } from "../constructor_calls";
 import type { ContainerConfig, FilesArtifactUUID } from "../services/container_config";
-import type { ServiceID } from "../services/service";
+import type { ServiceID, ServiceGUID } from "../services/service";
 import { ServiceContext } from "../services/service_context";
 import { PortProtocol, PortSpec } from "../services/port_spec";
 import type { GenericPathJoiner } from "./generic_path_joiner";
@@ -64,7 +64,6 @@ import {
     RunStarlarkScriptArgs,
     RunStarlarkPackageArgs,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
-import {ServiceInfo as ServiceInfoSimple} from './../services/service'
 import {TemplateAndData} from "./template_and_data";
 import * as path from "path";
 import {parseKurtosisYaml} from "./kurtosis_yaml";
@@ -222,10 +221,12 @@ export class EnclaveContext {
 
     public async runStarlarkScript(
         serializedStartosisScript: string,
+        serializedParams: string,
         dryRun: boolean,
     ): Promise<Result<Readable, Error>> {
         const args = new RunStarlarkScriptArgs();
         args.setSerializedScript(serializedStartosisScript)
+        args.setSerializedParams(serializedParams)
         args.setDryRun(dryRun)
         const scriptRunResult : Result<Readable, Error> = await this.backend.runStarlarkScript(args)
         if (scriptRunResult.isErr()) {
@@ -621,7 +622,7 @@ export class EnclaveContext {
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-    public async getServices(): Promise<Result<Set<ServiceInfoSimple>, Error>> {
+    public async getServices(): Promise<Result<Map<ServiceID, ServiceGUID>, Error>> {
         const getAllServicesArgMap: Map<string, boolean> = new Map<string,boolean>()
         const emptyGetServicesArg: GetServicesArgs = newGetServicesArgs(getAllServicesArgMap)
 
@@ -632,9 +633,9 @@ export class EnclaveContext {
 
         const getServicesResponse = getServicesResponseResult.value
 
-        const serviceInfos: Set<ServiceInfoSimple> = new Set<ServiceInfoSimple>()
+        const serviceInfos: Map<ServiceID, ServiceGUID> = new Map<ServiceID, ServiceGUID>()
         getServicesResponse.getServiceInfoMap().forEach((value: ServiceInfo, key: string) => {
-            serviceInfos.add(new ServiceInfoSimple(key, value.getServiceGuid()))
+            serviceInfos.set(key, value.getServiceGuid())
         });
         return ok(serviceInfos)
     }
