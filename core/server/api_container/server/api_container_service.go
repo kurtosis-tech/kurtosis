@@ -61,8 +61,8 @@ main_module = import_module("%v/` + startosis_engine.MainFileName + `")
 	`
 	// We concatenate a run() at the end of individual scripts to enforce a run method
 	runToConcatenateAtEndOfStandaloneScript = `
-run(%v)
 %s
+run(%v)
 `
 
 	// Overwrite existing module with new module, this allows user to iterate on an enclave with a
@@ -201,7 +201,7 @@ func (apicService ApiContainerService) RunStarlarkScript(args *kurtosis_core_rpc
 	serializedStartosisScript := args.GetSerializedScript()
 	serializedParams := args.GetSerializedParams()
 	dryRun := shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun)
-	scriptWithRunFunction := fmt.Sprintf(runToConcatenateAtEndOfStandaloneScript, startosis_engine.MainInputArgName, serializedStartosisScript)
+	scriptWithRunFunction := fmt.Sprintf(runToConcatenateAtEndOfStandaloneScript, serializedStartosisScript, startosis_engine.MainInputArgName)
 	apicService.runStarlark(dryRun, startosis_engine.PackageIdPlaceholderForStandaloneScript, scriptWithRunFunction, serializedParams, stream)
 	return nil
 }
