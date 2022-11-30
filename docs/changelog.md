@@ -2,6 +2,7 @@
 
 ### Features
 - Log file name and function like [filename.go:FunctionName()] while logging in `core` & `engine`
+- Add artifact UUID validation on Starlark commands
 
 # 0.57.1
 
