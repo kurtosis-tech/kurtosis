@@ -8,7 +8,7 @@ export type { ServiceID, ServiceGUID } from "./core/lib/services/service";
 export { ServiceContext } from "./core/lib/services/service_context";
 export { PortSpec, PortProtocol } from "./core/lib/services/port_spec"
 
-// Enclaves 
+// Enclaves
 export { EnclaveContext } from "./core/lib/enclaves/enclave_context";
 export type { EnclaveID, PartitionID } from "./core/lib/enclaves/enclave_context";
 export { UnblockedPartitionConnection, BlockedPartitionConnection, SoftPartitionConnection } from "./core/lib/enclaves/partition_connection"
