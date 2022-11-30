@@ -12,7 +12,7 @@ const (
 	testName              = "module"
 	isPartitioningEnabled = false
 	defaultDryRun         = false
-	emptyInputArgs        = "{}"
+	greetingsArg          = `{"greeting": "World!"}`
 
 	serviceId                     = "example-datastore-server-1"
 	serviceIdForDependentService  = "example-datastore-server-2"
@@ -40,6 +40,7 @@ PATH_TO_MOUNT_RENDERED_CONFIG="` + renderedConfigMountPath + `"
 RENDER_RELATIVE_PATH = "` + renderedConfigRelativePath + `"
 
 def run(args):
+	print("Hello" + args.greeting) 
 	print("Adding service " + DATASTORE_SERVICE_ID + ".")
 	
 	config = struct(
@@ -99,11 +100,12 @@ func TestStartosis(t *testing.T) {
 	logrus.Infof("Executing Startosis script...")
 	logrus.Debugf("Startosis script content: \n%v", startosisScript)
 
-	outputStream, _, err := enclaveCtx.RunStarlarkScript(ctx, startosisScript, emptyInputArgs, defaultDryRun)
+	outputStream, _, err := enclaveCtx.RunStarlarkScript(ctx, startosisScript, greetingsArg, defaultDryRun)
 	require.NoError(t, err, "Unexpected error executing startosis script")
 	scriptOutput, _, interpretationError, validationErrors, executionError := test_helpers.ReadStreamContentUntilClosed(outputStream)
 
-	expectedScriptOutput := `Adding service example-datastore-server-1.
+	expectedScriptOutput := `Hello World!
+Adding service example-datastore-server-1.
 Service 'example-datastore-server-1' added with internal ID '[a-z-0-9]+'
 Service example-datastore-server-1 deployed successfully.
 Command returned with exit code '0' with no output
