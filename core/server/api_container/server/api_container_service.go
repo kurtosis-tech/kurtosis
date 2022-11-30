@@ -61,8 +61,8 @@ main_module = import_module("%v/` + startosis_engine.MainFileName + `")
 	`
 	// We concatenate a run() at the end of individual scripts to enforce a run method
 	runToConcatenateAtEndOfStandaloneScript = `
-%s
 run(%v)
+%s
 `
 
 	// Overwrite existing module with new module, this allows user to iterate on an enclave with a

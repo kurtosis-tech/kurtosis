@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/sirupsen/logrus"
+	"strings"
 )
 
 type StartosisRunner struct {
@@ -24,7 +25,7 @@ const (
 	startingExecutionMsg      = "Starting execution"
 
 	missingRunMethodErrorFromStarlarkPackage = "Evaluation error: module has no .run field or method\n\tat [3:32]: <toplevel>"
-	missingRunMethodErrorFromStarlarkScript  = "at [3:1]: undefined: run"
+	missingRunMethodErrorFromStarlarkScript  = "at [1:1]: undefined: run"
 )
 
 func NewStartosisRunner(interpreter *StartosisInterpreter, validator *StartosisValidator, executor *StartosisExecutor) *StartosisRunner {
@@ -101,7 +102,7 @@ func maybeMakeMissingRunMethodErrorFriendlier(originalError *kurtosis_core_rpc_a
 		return binding_constructors.NewStarlarkInterpretationError(fmt.Sprintf("No 'run' function found in file '%v/main.star'; a 'run' entrypoint function is required in the main.star file of any Kurtosis package", packageId))
 	}
 
-	if originalError.GetErrorMessage() == missingRunMethodErrorFromStarlarkScript {
+	if strings.Contains(originalError.GetErrorMessage(), missingRunMethodErrorFromStarlarkScript) {
 		return binding_constructors.NewStarlarkInterpretationError("No 'run' function found in the script; a 'run' entrypoint function with the signature `run(args)` is required in any Kurtosis script")
 	}
 
