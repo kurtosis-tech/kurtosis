@@ -142,7 +142,7 @@ func TestStartosisInterpreter_ValidSimpleScriptWithInstruction(t *testing.T) {
 	script := `
 print("Starting Startosis script!")
 
-service_id = "example-datastore-server"
+service_id = "%v"
 print("Adding service " + service_id)
 
 config = struct(
@@ -158,20 +158,20 @@ print("The grpc port protocol is " + datastore_service.ports["grpc"].protocol)
 print("The datastore service ip address is " + datastore_service.ip_address)
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, fmt.Sprintf(script, testServiceId), EmptyInputArgs)
 	require.Len(t, instructions, 6)
 	require.Nil(t, interpretationError)
 
-	addServiceInstruction := createSimpleAddServiceInstruction(t, "example-datastore-server", testContainerImageName, 1323, 14, 32, PackageIdPlaceholderForStandaloneScript, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, privateIPAddressPlaceholder)
+	addServiceInstruction := createSimpleAddServiceInstruction(t, testServiceId, testContainerImageName, 1323, 14, 32, PackageIdPlaceholderForStandaloneScript, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, privateIPAddressPlaceholder)
 	require.Equal(t, addServiceInstruction, instructions[2])
 
 	expectedOutput := `Starting Startosis script!
 Adding service example-datastore-server
 The grpc port is 1323
 The grpc port protocol is TCP
-The datastore service ip address is {{kurtosis:example-datastore-server.ip_address}}
+The datastore service ip address is %v
 `
-	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutput)
+	validateScriptOutputFromPrintInstructions(t, instructions, fmt.Sprintf(expectedOutput, testServiceIpAddress))
 }
 
 func TestStartosisInterpreter_ValidSimpleScriptWithInstructionMissingContainerName(t *testing.T) {
