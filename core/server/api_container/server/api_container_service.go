@@ -58,7 +58,6 @@ const (
 	bootScript = `
 main_module = import_module("%v/` + startosis_engine.MainFileName + `")
 main_module.run(%v)
-
 	`
 	// We concatenate a run() at the end of individual scripts to enforce a run method
 	runToConcatenateAtEndOfStandaloneScript = `
@@ -822,7 +821,7 @@ func (apicService ApiContainerService) runStarlarkPackageSetup(packageId string,
 		return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred while verifying that '%v' exists on root of package '%v' at '%v'", startosis_engine.MainFileName, packageId, pathToMainFile)
 	}
 
-	scriptWithMainToExecute := fmt.Sprintf(bootScript, packageId, startosis_engine.MainInputArgName)
+	scriptWithMainToExecute := fmt.Sprintf(bootScript, packageId, startosis_engine.MainOutputObjectName, startosis_engine.MainInputArgName)
 	return scriptWithMainToExecute, nil
 }
 

@@ -115,10 +115,12 @@ func (instruction *AddServiceInstruction) Execute(ctx context.Context) (*string,
 	if failure, found := serviceFailed[instruction.serviceId]; found {
 		return nil, stacktrace.Propagate(failure, "Failed adding service to enclave")
 	}
-	if _, found := serviceSuccessful[instruction.serviceId]; !found {
+	deployedService, found := serviceSuccessful[instruction.serviceId]
+	if !found {
 		return nil, stacktrace.NewError("Service wasn't accounted as failed nor successfully added. This is a product bug")
 	}
-	return nil, nil
+	instructionResult := fmt.Sprintf("Service '%s' added with internal ID '%s'", instruction.serviceId, deployedService.GetRegistration().GetGUID())
+	return &instructionResult, nil
 }
 
 func (instruction *AddServiceInstruction) String() string {
@@ -187,7 +189,7 @@ func (instruction *AddServiceInstruction) makeAddServiceInterpretationReturnValu
 
 func (instruction *AddServiceInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
 	if environment.DoesServiceIdExist(instruction.serviceId) {
-		return stacktrace.NewError("There was an error validating add service as service ID '%v' already exists", instruction.serviceId)
+		return startosis_errors.NewValidationError("There was an error validating add service as service ID '%v' already exists", instruction.serviceId)
 	}
 	environment.AddServiceId(instruction.serviceId)
 	environment.AppendRequiredDockerImage(instruction.serviceConfig.ContainerImageName)

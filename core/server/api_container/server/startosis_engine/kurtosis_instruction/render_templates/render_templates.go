@@ -2,6 +2,7 @@ package render_templates
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
@@ -32,7 +33,7 @@ type RenderTemplatesInstruction struct {
 	position       *kurtosis_instruction.InstructionPosition
 	starlarkKwargs starlark.StringDict
 
-	artifactUuid enclave_data_directory.FilesArtifactUUID
+	artifactId enclave_data_directory.FilesArtifactUUID
 
 	templatesAndDataByDestRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData
 }
@@ -47,7 +48,7 @@ func GenerateRenderTemplatesBuiltin(instructionsQueue *[]kurtosis_instruction.Ku
 			return nil, interpretationError
 		}
 		*instructionsQueue = append(*instructionsQueue, renderTemplatesInstruction)
-		return starlark.String(renderTemplatesInstruction.artifactUuid), nil
+		return starlark.String(renderTemplatesInstruction.artifactId), nil
 	}
 }
 
@@ -56,7 +57,7 @@ func newEmptyRenderTemplatesInstruction(serviceNetwork service_network.ServiceNe
 		serviceNetwork:                    serviceNetwork,
 		position:                          position,
 		starlarkKwargs:                    starlark.StringDict{},
-		artifactUuid:                      "",
+		artifactId:                        "",
 		templatesAndDataByDestRelFilepath: nil,
 	}
 }
@@ -67,7 +68,7 @@ func NewRenderTemplatesInstruction(serviceNetwork service_network.ServiceNetwork
 		position:                          position,
 		templatesAndDataByDestRelFilepath: templatesAndDataByDestRelFilepath,
 		starlarkKwargs:                    starlarkKwargs,
-		artifactUuid:                      artifactUuid,
+		artifactId:                        artifactUuid,
 	}
 }
 
@@ -94,11 +95,12 @@ func (instruction *RenderTemplatesInstruction) Execute(_ context.Context) (*stri
 		instruction.templatesAndDataByDestRelFilepath[relFilePath] = binding_constructors.NewTemplateAndData(templateStr, dataAsJsonMaybeIPAddressReplaced)
 	}
 
-	_, err := instruction.serviceNetwork.RenderTemplatesToTargetFilesArtifactUUID(instruction.templatesAndDataByDestRelFilepath, instruction.artifactUuid)
+	artifactId, err := instruction.serviceNetwork.RenderTemplatesToTargetFilesArtifactUUID(instruction.templatesAndDataByDestRelFilepath, instruction.artifactId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to render templates '%v'", instruction.templatesAndDataByDestRelFilepath)
 	}
-	return nil, nil
+	instructionResult := fmt.Sprintf("Templates rendered and stored with artifact ID '%s'", artifactId)
+	return &instructionResult, nil
 }
 
 func (instruction *RenderTemplatesInstruction) String() string {
@@ -140,7 +142,7 @@ func (instruction *RenderTemplatesInstruction) parseStartosisArgs(b *starlark.Bu
 		return interpretationErr
 	}
 
-	instruction.artifactUuid = artifactUuid
+	instruction.artifactId = artifactUuid
 	instruction.starlarkKwargs[nonOptionalArtifactIdArgName] = starlark.String(artifactUuid)
 
 	return nil

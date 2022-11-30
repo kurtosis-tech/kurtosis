@@ -129,12 +129,14 @@ func TestExtractStringValueFromStruct_FailureUnknownKey(t *testing.T) {
 }
 
 func TestExtractStringValueFromStruct_FailureWrongValue(t *testing.T) {
+	expectedError := `Error casting value 'key' as element of the struct object 'dict'
+	Caused by: 'key' is expected to be a string. Got starlark.Int`
 	dict := starlark.StringDict{}
 	dict["key"] = starlark.MakeInt(32)
 	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
 	output, err := extractStringValue(input, "key", "dict")
 	require.NotNil(t, err)
-	require.Equal(t, "'key' is expected to be a string. Got starlark.Int", err.Error())
+	require.Equal(t, expectedError, err.Error())
 	require.Equal(t, "", output)
 }
 
@@ -197,12 +199,14 @@ func TestExtractUint32ValueFromStruct_FailureUnknownKey(t *testing.T) {
 }
 
 func TestExtractUint32ValueFromStruct_FailureWrongType(t *testing.T) {
+	expectedError := `Error casting value 'key' as element of the struct object 'dict'
+	Caused by: 'key' argument is expected to be a an integer greater than 0 and lower than 4294967295`
 	dict := starlark.StringDict{}
 	dict["key"] = starlark.MakeInt64(123456789012345678)
 	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
 	output, err := extractUint32Value(input, "key", "dict")
 	require.NotNil(t, err)
-	require.Equal(t, "'key' argument is expected to be a an integer greater than 0 and lower than 4294967295", err.Error())
+	require.Equal(t, expectedError, err.Error())
 	require.Equal(t, uint32(0), output)
 }
 
@@ -324,12 +328,14 @@ func TestParseEntryPointArgs_SuccessOnMissingValue(t *testing.T) {
 }
 
 func TestParseEntryPointArgs_FailureOnListContainingNonStringValues(t *testing.T) {
+	expectedError := `Error casting value 'entrypoint' as element of the struct object 'config'
+	Caused by: 'entrypoint[0]' is expected to be a string. Got starlark.Int`
 	dict := starlark.StringDict{}
 	dict["entrypoint"] = starlark.NewList([]starlark.Value{starlark.MakeInt(42)})
 	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
 	output, err := parseEntryPointArgs(input)
 	require.NotNil(t, err)
-	require.Equal(t, "'entrypoint[0]' is expected to be a string. Got starlark.Int", err.Error())
+	require.Equal(t, expectedError, err.Error())
 	require.Equal(t, []string(nil), output)
 }
 
@@ -351,12 +357,14 @@ func TestParseCommandArgs_SuccessOnMissingValue(t *testing.T) {
 }
 
 func TestParseCommandArgs_FailureOnListContainingNonStringValues(t *testing.T) {
+	expectedError := `Error casting value 'cmd' as element of the struct object 'config'
+	Caused by: 'cmd[0]' is expected to be a string. Got starlark.Int`
 	dict := starlark.StringDict{}
 	dict["cmd"] = starlark.NewList([]starlark.Value{starlark.MakeInt(42)})
 	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
 	output, err := parseCmdArgs(input)
 	require.NotNil(t, err)
-	require.Equal(t, "'cmd[0]' is expected to be a string. Got starlark.Int", err.Error())
+	require.Equal(t, expectedError, err.Error())
 	require.Equal(t, []string(nil), output)
 }
 
@@ -381,6 +389,8 @@ func TestParseEnvVars_SuccessOnMissingValue(t *testing.T) {
 }
 
 func TestParseEnvVars_FailureOnNonStringKey(t *testing.T) {
+	expectedError := `Error casting value 'env_vars' as element of the struct object 'config'
+	Caused by: 'env_vars.key:42' is expected to be a string. Got starlark.Int`
 	subDict := starlark.NewDict(1)
 	err := subDict.SetKey(starlark.MakeInt(42), starlark.String("value"))
 	require.Nil(t, err)
@@ -389,11 +399,13 @@ func TestParseEnvVars_FailureOnNonStringKey(t *testing.T) {
 	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
 	output, err := parseEnvVars(input)
 	require.NotNil(t, err)
-	require.Equal(t, "'env_vars.key:42' is expected to be a string. Got starlark.Int", err.Error())
+	require.Equal(t, expectedError, err.Error())
 	require.Equal(t, map[string]string(nil), output)
 }
 
 func TestParseEnvVars_FailureOnNonStringValue(t *testing.T) {
+	expectedError := `Error casting value 'env_vars' as element of the struct object 'config'
+	Caused by: 'env_vars["key"]' is expected to be a string. Got starlark.Int`
 	subDict := starlark.NewDict(1)
 	err := subDict.SetKey(starlark.String("key"), starlark.MakeInt(42))
 	require.Nil(t, err)
@@ -402,7 +414,7 @@ func TestParseEnvVars_FailureOnNonStringValue(t *testing.T) {
 	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
 	output, err := parseEnvVars(input)
 	require.NotNil(t, err)
-	require.Equal(t, "'env_vars[\"key\"]' is expected to be a string. Got starlark.Int", err.Error())
+	require.Equal(t, expectedError, err.Error())
 	require.Equal(t, map[string]string(nil), output)
 }
 
@@ -466,6 +478,8 @@ func TestParseFilesArtifactMountDirpaths_SuccessOnMissingValue(t *testing.T) {
 }
 
 func TestParseFilesArtifactMountDirpaths_FailureOnNonStringKey(t *testing.T) {
+	expectedError := `Error casting value 'files' as element of the struct object 'config'
+	Caused by: 'files.key:42' is expected to be a string. Got starlark.Int`
 	subDict := starlark.NewDict(1)
 	err := subDict.SetKey(starlark.MakeInt(42), starlark.String("value"))
 	require.Nil(t, err)
@@ -474,11 +488,13 @@ func TestParseFilesArtifactMountDirpaths_FailureOnNonStringKey(t *testing.T) {
 	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
 	output, err := parseFilesArtifactMountDirpaths(input)
 	require.NotNil(t, err)
-	require.Equal(t, "'files.key:42' is expected to be a string. Got starlark.Int", err.Error())
+	require.Equal(t, expectedError, err.Error())
 	require.Equal(t, map[string]string(nil), output)
 }
 
 func TestParseFilesArtifactMountDirpaths_FailureOnNonStringValue(t *testing.T) {
+	expectedError := `Error casting value 'files' as element of the struct object 'config'
+	Caused by: 'files["key"]' is expected to be a string. Got starlark.Int`
 	subDict := starlark.NewDict(1)
 	err := subDict.SetKey(starlark.String("key"), starlark.MakeInt(42))
 	require.Nil(t, err)
@@ -487,7 +503,7 @@ func TestParseFilesArtifactMountDirpaths_FailureOnNonStringValue(t *testing.T) {
 	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
 	output, err := parseFilesArtifactMountDirpaths(input)
 	require.NotNil(t, err)
-	require.Equal(t, "'files[\"key\"]' is expected to be a string. Got starlark.Int", err.Error())
+	require.Equal(t, expectedError, err.Error())
 	require.Equal(t, map[string]string(nil), output)
 }
 

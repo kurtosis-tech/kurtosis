@@ -342,6 +342,28 @@ func NewStarlarkRunResponseLineFromProgressInfo(currentStepInfo string, currentS
 	}
 }
 
+func NewStarlarkRunResponseLineFromRunFailureEvent() *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+	return &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine{
+		RunResponseLine: &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine_RunFinishedEvent{
+			RunFinishedEvent: &kurtosis_core_rpc_api_bindings.StarlarkRunFinishedEvent{
+				IsRunSuccessful:  false,
+				SerializedOutput: nil,
+			},
+		},
+	}
+}
+
+func NewStarlarkRunResponseLineFromRunSuccessEvent(serializedOutputObject string) *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+	return &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine{
+		RunResponseLine: &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine_RunFinishedEvent{
+			RunFinishedEvent: &kurtosis_core_rpc_api_bindings.StarlarkRunFinishedEvent{
+				IsRunSuccessful:  true,
+				SerializedOutput: &serializedOutputObject,
+			},
+		},
+	}
+}
+
 func NewStarlarkInstruction(position *kurtosis_core_rpc_api_bindings.StarlarkInstructionPosition, name string, executableInstruction string, arguments []*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg) *kurtosis_core_rpc_api_bindings.StarlarkInstruction {
 	return &kurtosis_core_rpc_api_bindings.StarlarkInstruction{
 		InstructionName:       name,

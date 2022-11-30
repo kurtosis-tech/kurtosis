@@ -23,7 +23,7 @@ DATASTORE_PORT_ID = "` + PORT_ID + `"
 DATASTORE_PORT_NUMBER = 1323
 DATASTORE_PORT_PROTOCOL = "TCP"
 
-DIR_TO_UPLOAD = "github.com/kurtosis-tech/datastore-army-module/src"
+DIR_TO_UPLOAD = "github.com/kurtosis-tech/datastore-army-package/src"
 PATH_TO_MOUNT_UPLOADED_DIR = "` + PATH_TO_MOUNT_UPLOADED_DIR + `"
 
 print("Adding service " + DATASTORE_SERVICE_ID + ".")
@@ -65,7 +65,9 @@ test("Test upload files startosis", async () => {
         const [scriptOutput, instructions, interpretationError, validationErrors, executionError] = await readStreamContentUntilClosed(outputStream.value);
 
         const expectedScriptRegexPattern = `Adding service example-datastore-server-1.
+Files uploaded with artifact ID '[a-f0-9-]{36}'
 Uploaded [a-f0-9-]{36}
+Service 'example-datastore-server-1' added with internal ID '[a-z-0-9]+'
 `
         const expectedScriptRegex = new RegExp(expectedScriptRegexPattern)
 
