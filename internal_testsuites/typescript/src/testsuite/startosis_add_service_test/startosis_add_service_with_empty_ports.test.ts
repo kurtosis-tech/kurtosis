@@ -7,6 +7,7 @@ import {ServiceInfo} from "kurtosis-sdk";
 const ADD_SERVICE_WITH_EMPTY_PORTS_TEST_NAME = "add-service-empty-ports"
 const IS_PARTITIONING_ENABLED = false
 const DEFAULT_DRY_RUN = false
+const EMPTY_ARGS = "{}"
 const SERVICE_ID = "docker-getting-started"
 const SERVICE_ID_2 = "docker-getting-started-2"
 
@@ -14,28 +15,30 @@ const STARLARK_SCRIPT_WITH_EMPTY_PORTS = `
 DOCKER_GETTING_STARTED_IMAGE = "docker/getting-started:latest"
 SERVICE_ID = "${SERVICE_ID}"
 
-print("Adding service " + SERVICE_ID + ".")
-
-config = struct(
-    image = DOCKER_GETTING_STARTED_IMAGE,
-	ports = {}
-)
-
-add_service(service_id = SERVICE_ID, config = config)
-print("Service " + SERVICE_ID + " deployed successfully.")`
+def run(args):
+    print("Adding service " + SERVICE_ID + ".")
+    
+    config = struct(
+        image = DOCKER_GETTING_STARTED_IMAGE,
+        ports = {}
+    )
+    
+    add_service(service_id = SERVICE_ID, config = config)
+    print("Service " + SERVICE_ID + " deployed successfully.")`
 
 const STARLARK_SCRIPT_WITHOUT_PORTS = `
 DOCKER_GETTING_STARTED_IMAGE = "docker/getting-started:latest"
 SERVICE_ID = "${SERVICE_ID_2}"
 
-print("Adding service " + SERVICE_ID + ".")
-
-config = struct(
-    image = DOCKER_GETTING_STARTED_IMAGE,
-)
-
-add_service(service_id = SERVICE_ID, config = config)
-print("Service " + SERVICE_ID + " deployed successfully.")`
+def run(args):
+    print("Adding service " + SERVICE_ID + ".")
+    
+    config = struct(
+        image = DOCKER_GETTING_STARTED_IMAGE,
+    )
+    
+    add_service(service_id = SERVICE_ID, config = config)
+    print("Service " + SERVICE_ID + " deployed successfully.")`
 
 
 jest.setTimeout(180000)
@@ -67,7 +70,7 @@ async function TestAddServiceWithEmptyAndWithoutPorts() {
             const serviceId:string = serviceIds[i]
             log.info("Executing Starlark script...");
             log.debug(`Starlark script content: \n%v ${starlarkScript}`);
-            const outputStream = await enclaveContext.runStarlarkScript(starlarkScript, DEFAULT_DRY_RUN);
+            const outputStream = await enclaveContext.runStarlarkScript(starlarkScript, EMPTY_ARGS, DEFAULT_DRY_RUN);
             if (outputStream.isErr()) {
                 log.error("Unexpected error executing Starlark script");
                 throw outputStream.error;

@@ -1,19 +1,21 @@
 # TBD
-### Changes
-- Added `startosis_add_service_with_empty_ports` Golang and Typescript internal tests
 
 ### Fixes
 - Make validation more human-readable for missing docker images and instructions that depend on invalid service ids
+- Fixed mismatch between `kurtosis enclave inspect` and `kurtosis enclave ls` displaying enclave creation time in different timezones
 
 ### Changes
 - Make arg parsing errors more explicit on structs
 - Updated Starlark section of core-lib-documentation.md to match the new streaming endpoints
 - Updated `datastore-army-module` -> `datastore-army-package`
+- Added `startosis_add_service_with_empty_ports` Golang and Typescript internal tests
 
 ### Features
 - Log file name and function like [filename.go:FunctionName()] while logging in `core` & `engine`
+- Add IP address string replacement in `print` command
 - All Kurtosis instructions now returns a simple but explicit output
-- The object returned by Starlark's `run()` function is serialized as JSON and returned to the CLI output. 
+- The object returned by Starlark's `run()` function is serialized as JSON and returned to the CLI output.
+- Enforce `run(args)` for individual scripts 
 
 # 0.57.1
 

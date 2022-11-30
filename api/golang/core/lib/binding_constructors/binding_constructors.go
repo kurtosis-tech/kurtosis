@@ -245,9 +245,10 @@ func GetFactValuesArgs(serviceId string, factName string) *kurtosis_core_rpc_api
 //	Execute Starlark Arguments
 //
 // ==============================================================================================
-func NewRunStarlarkScriptArgs(serializedString string, dryRun bool) *kurtosis_core_rpc_api_bindings.RunStarlarkScriptArgs {
+func NewRunStarlarkScriptArgs(serializedString string, serializedParams string, dryRun bool) *kurtosis_core_rpc_api_bindings.RunStarlarkScriptArgs {
 	return &kurtosis_core_rpc_api_bindings.RunStarlarkScriptArgs{
 		SerializedScript: serializedString,
+		SerializedParams: serializedParams,
 		DryRun:           &dryRun,
 	}
 }

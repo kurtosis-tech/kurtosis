@@ -143,7 +143,7 @@ func (interpreter *StartosisInterpreter) buildBindings(thread *starlark.Thread, 
 		exec.ExecBuiltinName:                             starlark.NewBuiltin(exec.ExecBuiltinName, exec.GenerateExecBuiltin(instructionsQueue, interpreter.serviceNetwork)),
 		extract.ExtractBuiltinName:                       starlark.NewBuiltin(extract.ExtractBuiltinName, extract.GenerateExtractInstructionBuiltin(instructionsQueue, interpreter.recipeExecutor, interpreter.serviceNetwork)),
 		get_value.GetValueBuiltinName:                    starlark.NewBuiltin(get_value.GetValueBuiltinName, get_value.GenerateGetValueBuiltin(instructionsQueue, interpreter.recipeExecutor, interpreter.serviceNetwork)),
-		kurtosis_print.PrintBuiltinName:                  starlark.NewBuiltin(kurtosis_print.PrintBuiltinName, kurtosis_print.GeneratePrintBuiltin(instructionsQueue, interpreter.recipeExecutor)),
+		kurtosis_print.PrintBuiltinName:                  starlark.NewBuiltin(kurtosis_print.PrintBuiltinName, kurtosis_print.GeneratePrintBuiltin(instructionsQueue, interpreter.recipeExecutor, interpreter.serviceNetwork)),
 		remove_service.RemoveServiceBuiltinName:          starlark.NewBuiltin(remove_service.RemoveServiceBuiltinName, remove_service.GenerateRemoveServiceBuiltin(instructionsQueue, interpreter.serviceNetwork)),
 		render_templates.RenderTemplatesBuiltinName:      starlark.NewBuiltin(render_templates.RenderTemplatesBuiltinName, render_templates.GenerateRenderTemplatesBuiltin(instructionsQueue, interpreter.serviceNetwork)),
 		store_service_files.StoreServiceFilesBuiltinName: starlark.NewBuiltin(store_service_files.StoreServiceFilesBuiltinName, store_service_files.GenerateStoreServiceFilesBuiltin(instructionsQueue, interpreter.serviceNetwork)),
@@ -166,11 +166,6 @@ func (interpreter *StartosisInterpreter) addInputArgsToPredeclared(thread *starl
 		(*predeclared)[MainInputArgName] = starlark.None
 		return nil
 	}
-	if packageId == PackageIdPlaceholderForStandaloneScript && serializedJsonArgs != EmptyInputArgs {
-		// This _cannot_ be reached right now. Just being nice in the logs in case it can be hit in the future
-		return startosis_errors.NewInterpretationError("Passing parameter to a standalone script is not yet supported in Kurtosis.")
-	}
-
 	// it is a module, and it has input args -> deserialize the JSON input and add it as a struct to the predeclared
 	deserializedArgs, interpretationError := package_io.DeserializeArgs(thread, serializedJsonArgs)
 	if interpretationError != nil {
