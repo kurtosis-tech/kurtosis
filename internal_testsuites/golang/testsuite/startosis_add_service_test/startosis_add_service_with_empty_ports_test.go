@@ -37,14 +37,15 @@ def run(args):
 DOCKER_GETTING_STARTED_IMAGE = "docker/getting-started:latest"
 SERVICE_ID = "` + serviceId2 + `"
 
-print("Adding service " + SERVICE_ID + ".")
-
-config = struct(
-    image = DOCKER_GETTING_STARTED_IMAGE,
-)
-
-add_service(service_id = SERVICE_ID, config = config)
-print("Service " + SERVICE_ID + " deployed successfully.")
+def run(args):
+	print("Adding service " + SERVICE_ID + ".")
+	
+	config = struct(
+		image = DOCKER_GETTING_STARTED_IMAGE,
+	)
+	
+	add_service(service_id = SERVICE_ID, config = config)
+	print("Service " + SERVICE_ID + " deployed successfully.")
 `
 )
 

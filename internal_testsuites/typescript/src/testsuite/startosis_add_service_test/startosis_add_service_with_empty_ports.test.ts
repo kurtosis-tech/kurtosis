@@ -15,15 +15,16 @@ const STARLARK_SCRIPT_WITH_EMPTY_PORTS = `
 DOCKER_GETTING_STARTED_IMAGE = "docker/getting-started:latest"
 SERVICE_ID = "${SERVICE_ID}"
 
-print("Adding service " + SERVICE_ID + ".")
-
-config = struct(
-    image = DOCKER_GETTING_STARTED_IMAGE,
-	ports = {}
-)
-
-add_service(service_id = SERVICE_ID, config = config)
-print("Service " + SERVICE_ID + " deployed successfully.")`
+def run(args):
+    print("Adding service " + SERVICE_ID + ".")
+    
+    config = struct(
+        image = DOCKER_GETTING_STARTED_IMAGE,
+        ports = {}
+    )
+    
+    add_service(service_id = SERVICE_ID, config = config)
+    print("Service " + SERVICE_ID + " deployed successfully.")`
 
 const STARLARK_SCRIPT_WITHOUT_PORTS = `
 DOCKER_GETTING_STARTED_IMAGE = "docker/getting-started:latest"
