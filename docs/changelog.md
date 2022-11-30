@@ -1,8 +1,10 @@
 # TBD
 
 # 0.57.3
+
 ### Changes
 - Added exponential back-off and retries to `get_value`
+- Removed `core-lib-documentation.md` and `engine-lib-documentation.md` in favour of the ones in the public docs repo
 
 # 0.57.2
 
@@ -18,6 +20,7 @@
 - Updated Starlark section of core-lib-documentation.md to match the new streaming endpoints
 - Updated `datastore-army-module` -> `datastore-army-package`
 - Added `startosis_add_service_with_empty_ports` Golang and Typescript internal tests
+- Removed `core-lib-documentation.md` and `engine-lib-documentation.md` in favour of the ones in the public docs repo
 
 ### Features
 - Log file name and function like [filename.go:FunctionName()] while logging in `core` & `engine`
