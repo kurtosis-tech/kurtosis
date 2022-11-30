@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	dependenciesUrl = "https://docs.kurtosis.com/reference/starlark-reference/#dependencies"
+	packagesUrl = "https://docs.kurtosis.com/reference/packages"
 )
 
 // fields are public because it's needed for YAML decoding
@@ -20,7 +20,7 @@ func parseKurtosisYaml(kurtosisYamlFilepath string) (*KurtosisYaml, error) {
 	kurtosisYamlContents, err := ioutil.ReadFile(kurtosisYamlFilepath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, stacktrace.NewError("Couldn't find a '%v' in the root of the package at '%v'. Packages are expected to have a '%v' at root; have a look at '%v' for more", kurtosisYamlFilename, kurtosisYamlFilepath, kurtosisYamlFilename, dependenciesUrl)
+			return nil, stacktrace.NewError("Couldn't find a '%v' in the root of the package at '%v'. Packages are expected to have a '%v' at root; have a look at '%v' for more", kurtosisYamlFilename, kurtosisYamlFilepath, kurtosisYamlFilename, packagesUrl)
 		}
 		return nil, stacktrace.Propagate(err, "An error occurred while reading the '%v' file at '%v'", kurtosisYamlFilename, kurtosisYamlFilepath)
 	}
