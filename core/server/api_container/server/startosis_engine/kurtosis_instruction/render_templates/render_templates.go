@@ -106,8 +106,10 @@ func (instruction *RenderTemplatesInstruction) String() string {
 }
 
 func (instruction *RenderTemplatesInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
-	// this doesn't do anything but can't return an error as the validator runs this regardless
-	// this is a no-op
+	if environment.DoesArtifactUuidExist(instruction.artifactUuid) {
+		return stacktrace.NewError("There was an error validating '%v' as artifact UUID '%v' already exists", RenderTemplatesBuiltinName, instruction.artifactUuid)
+	}
+	environment.AddArtifactUuid(instruction.artifactUuid)
 	return nil
 }
 

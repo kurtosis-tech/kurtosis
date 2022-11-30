@@ -16,6 +16,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
+	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
@@ -187,7 +188,12 @@ func (instruction *AddServiceInstruction) makeAddServiceInterpretationReturnValu
 
 func (instruction *AddServiceInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
 	if environment.DoesServiceIdExist(instruction.serviceId) {
-		return stacktrace.NewError("There was an error validating add service as service ID '%v' already exists", instruction.serviceId)
+		return stacktrace.NewError("There was an error validating '%v' as service ID '%v' already exists", AddServiceBuiltinName, instruction.serviceId)
+	}
+	for artifactUuidKey, _ := range instruction.serviceConfig.FilesArtifactMountpoints {
+		if !environment.DoesArtifactUuidExist(enclave_data_directory.FilesArtifactUUID(artifactUuidKey)) {
+			return stacktrace.NewError("There was an error validating '%v' as artifact UUID '%v' does not exist", AddServiceBuiltinName, artifactUuidKey)
+		}
 	}
 	environment.AddServiceId(instruction.serviceId)
 	environment.AppendRequiredDockerImage(instruction.serviceConfig.ContainerImageName)

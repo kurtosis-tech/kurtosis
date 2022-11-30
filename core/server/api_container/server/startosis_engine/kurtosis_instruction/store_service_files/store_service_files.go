@@ -33,9 +33,9 @@ type StoreServiceFilesInstruction struct {
 	position       *kurtosis_instruction.InstructionPosition
 	starlarkKwargs starlark.StringDict
 
-	serviceId  kurtosis_backend_service.ServiceID
-	src        string
-	artifactId enclave_data_directory.FilesArtifactUUID
+	serviceId    kurtosis_backend_service.ServiceID
+	src          string
+	artifactUuid enclave_data_directory.FilesArtifactUUID
 }
 
 func GenerateStoreServiceFilesBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, serviceNetwork service_network.ServiceNetwork) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
@@ -47,7 +47,7 @@ func GenerateStoreServiceFilesBuiltin(instructionsQueue *[]kurtosis_instruction.
 			return nil, interpretationError
 		}
 		*instructionsQueue = append(*instructionsQueue, storeFilesFromServiceInstruction)
-		return starlark.String(storeFilesFromServiceInstruction.artifactId), nil
+		return starlark.String(storeFilesFromServiceInstruction.artifactUuid), nil
 	}
 }
 
@@ -57,7 +57,7 @@ func NewStoreServiceFilesInstruction(serviceNetwork service_network.ServiceNetwo
 		position:       position,
 		serviceId:      serviceId,
 		src:            srcPath,
-		artifactId:     artifactUuid,
+		artifactUuid:   artifactUuid,
 		starlarkKwargs: starlarkKwargs,
 	}
 }
@@ -68,7 +68,7 @@ func newEmptyStoreServiceFilesInstruction(serviceNetwork service_network.Service
 		position:       position,
 		serviceId:      "",
 		src:            "",
-		artifactId:     "",
+		artifactUuid:   "",
 		starlarkKwargs: starlark.StringDict{},
 	}
 }
@@ -87,7 +87,7 @@ func (instruction *StoreServiceFilesInstruction) GetCanonicalInstruction() *kurt
 }
 
 func (instruction *StoreServiceFilesInstruction) Execute(ctx context.Context) (*string, error) {
-	_, err := instruction.serviceNetwork.CopyFilesFromServiceToTargetArtifactUUID(ctx, instruction.serviceId, instruction.src, instruction.artifactId)
+	_, err := instruction.serviceNetwork.CopyFilesFromServiceToTargetArtifactUUID(ctx, instruction.serviceId, instruction.src, instruction.artifactUuid)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to copy file '%v' from service '%v", instruction.src, instruction.serviceId)
 	}
@@ -100,8 +100,12 @@ func (instruction *StoreServiceFilesInstruction) String() string {
 
 func (instruction *StoreServiceFilesInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
 	if !environment.DoesServiceIdExist(instruction.serviceId) {
-		return stacktrace.NewError("There was an error validating exec with service ID '%v' that does not exist for instruction '%v'", instruction.serviceId, instruction.position.String())
+		return stacktrace.NewError("There was an error validating '%v' with service ID '%v' that does not exist for instruction '%v'", StoreServiceFilesBuiltinName, instruction.serviceId, instruction.position.String())
 	}
+	if environment.DoesArtifactUuidExist(instruction.artifactUuid) {
+		return stacktrace.NewError("There was an error validating '%v' as artifact UUID '%v' already exists", StoreServiceFilesBuiltinName, instruction.artifactUuid)
+	}
+	environment.AddArtifactUuid(instruction.artifactUuid)
 	return nil
 }
 
@@ -143,6 +147,6 @@ func (instruction *StoreServiceFilesInstruction) parseStartosisArgs(b *starlark.
 
 	instruction.serviceId = serviceId
 	instruction.src = srcPath
-	instruction.artifactId = artifactId
+	instruction.artifactUuid = artifactId
 	return nil
 }

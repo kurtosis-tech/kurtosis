@@ -37,8 +37,8 @@ type UploadFilesInstruction struct {
 	position       *kurtosis_instruction.InstructionPosition
 	starlarkKwargs starlark.StringDict
 
-	src        string
-	artifactId enclave_data_directory.FilesArtifactUUID
+	src          string
+	artifactUuid enclave_data_directory.FilesArtifactUUID
 
 	pathOnDisk string
 }
@@ -52,7 +52,7 @@ func GenerateUploadFilesBuiltin(instructionsQueue *[]kurtosis_instruction.Kurtos
 			return nil, interpretationError
 		}
 		*instructionsQueue = append(*instructionsQueue, uploadInstruction)
-		return starlark.String(uploadInstruction.artifactId), nil
+		return starlark.String(uploadInstruction.artifactUuid), nil
 	}
 }
 
@@ -63,7 +63,7 @@ func NewUploadFilesInstruction(position *kurtosis_instruction.InstructionPositio
 		src:            src,
 		provider:       provider,
 		pathOnDisk:     pathOnDisk,
-		artifactId:     artifactId,
+		artifactUuid:   artifactId,
 		starlarkKwargs: starlarkKwargs,
 	}
 }
@@ -75,7 +75,7 @@ func newEmptyUploadFilesInstruction(position *kurtosis_instruction.InstructionPo
 		provider:       provider,
 		src:            "",
 		pathOnDisk:     "",
-		artifactId:     "",
+		artifactUuid:   "",
 		starlarkKwargs: starlark.StringDict{},
 	}
 }
@@ -97,11 +97,11 @@ func (instruction *UploadFilesInstruction) Execute(_ context.Context) (*string, 
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while compressing the files '%v'", instruction.pathOnDisk)
 	}
-	err = instruction.serviceNetwork.UploadFilesArtifactToTargetArtifactUUID(compressedData, instruction.artifactId)
+	err = instruction.serviceNetwork.UploadFilesArtifactToTargetArtifactUUID(compressedData, instruction.artifactUuid)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while uploading the compressed contents\n'%v'", compressedData)
 	}
-	logrus.Infof("Succesfully uploaded files from instruction '%v' to '%v'", instruction.position.String(), instruction.artifactId)
+	logrus.Infof("Succesfully uploaded files from instruction '%v' to '%v'", instruction.position.String(), instruction.artifactUuid)
 	return nil, nil
 }
 
@@ -110,8 +110,10 @@ func (instruction *UploadFilesInstruction) String() string {
 }
 
 func (instruction *UploadFilesInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
-	// this doesn't do anything but can't return an error as the validator runs this regardless
-	// this is a no-op
+	if environment.DoesArtifactUuidExist(instruction.artifactUuid) {
+		return stacktrace.NewError("There was an error validating '%v' as artifact UUID '%v' already exists", UploadFilesBuiltinName, instruction.artifactUuid)
+	}
+	environment.AddArtifactUuid(instruction.artifactUuid)
 	return nil
 }
 
@@ -150,7 +152,7 @@ func (instruction *UploadFilesInstruction) parseStartosisArgs(b *starlark.Builti
 	}
 
 	instruction.src = srcPath
-	instruction.artifactId = artifactId
+	instruction.artifactUuid = artifactId
 	instruction.pathOnDisk = pathOnDisk
 	return nil
 }
