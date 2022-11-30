@@ -218,13 +218,13 @@ func generateInterpretationError(err error) *startosis_errors.InterpretationErro
 	case *starlark.EvalError:
 		stacktrace := make([]startosis_errors.CallFrame, 0)
 		for _, callStack := range slError.CallStack {
-			stacktraceName := callStack.Pos.Filename()
+			callFrameName := callStack.Pos.Filename()
 			//TODO we could remove this when the runScript endpoint receives the filename
-			//when the filename is equal to "DEFAULT_PACKAGE_ID_FOR_SCRIPT" or "<builtin>" we use the stack name, which usually is "<toplevel>"
-			if _, found := replaceFilenameValuesSet[stacktraceName]; found{
-				stacktraceName = callStack.Name
+			//when the filename is equal to "DEFAULT_PACKAGE_ID_FOR_SCRIPT" or "<builtin>" we use the stack name (as we were doing before), which usually is "<toplevel>"
+			if _, found := replaceFilenameValuesSet[callFrameName]; found{
+				callFrameName = callStack.Name
 			}
-			stacktrace = append(stacktrace, *startosis_errors.NewCallFrame(stacktraceName, startosis_errors.NewScriptPosition(callStack.Pos.Line, callStack.Pos.Col)))
+			stacktrace = append(stacktrace, *startosis_errors.NewCallFrame(callFrameName, startosis_errors.NewScriptPosition(callStack.Pos.Line, callStack.Pos.Col)))
 		}
 		return startosis_errors.NewInterpretationErrorWithCustomMsg(
 			stacktrace,
