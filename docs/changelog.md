@@ -12,6 +12,7 @@
 
 ### Features
 - Log file name and function like [filename.go:FunctionName()] while logging in `core` & `engine`
+- Add IP address string replacement in `print` command
 
 # 0.57.1
 
