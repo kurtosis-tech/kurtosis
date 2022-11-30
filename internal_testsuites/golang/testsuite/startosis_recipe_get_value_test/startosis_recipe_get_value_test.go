@@ -24,10 +24,6 @@ def run(args):
 	)
 
 	add_service(service_id = "web-server", config = service_config)
-	# TODO(vcolombo): Drop this when wait is migrated to new framework
-	define_fact(service_id = "web-server", fact_name = "placeholder", fact_recipe=struct(method="GET", endpoint="?input=output", port_id="http-port", field_extractor=".query.input"))
-	get_fact = wait(service_id="web-server", fact_name= "placeholder")
-	# END TODO
 	get_recipe = struct(
 		service_id = "web-server",
 		port_id = "http-port",

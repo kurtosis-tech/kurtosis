@@ -1,6 +1,11 @@
 # TBD
+### Changes
+- Added exponential back-off and retries to `get_value`
 
 # 0.57.2
+
+### Changes
+- Added `startosis_add_service_with_empty_ports` Golang and Typescript internal tests
 
 ### Fixes
 - Make validation more human-readable for missing docker images and instructions that depend on invalid service ids
