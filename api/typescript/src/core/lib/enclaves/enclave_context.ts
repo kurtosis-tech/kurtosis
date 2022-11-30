@@ -222,10 +222,12 @@ export class EnclaveContext {
 
     public async runStarlarkScript(
         serializedStartosisScript: string,
+        serializedParams: string,
         dryRun: boolean,
     ): Promise<Result<Readable, Error>> {
         const args = new RunStarlarkScriptArgs();
         args.setSerializedScript(serializedStartosisScript)
+        args.setSerializedParams(serializedParams)
         args.setDryRun(dryRun)
         const scriptRunResult : Result<Readable, Error> = await this.backend.runStarlarkScript(args)
         if (scriptRunResult.isErr()) {

@@ -166,11 +166,6 @@ func (interpreter *StartosisInterpreter) addInputArgsToPredeclared(thread *starl
 		(*predeclared)[MainInputArgName] = starlark.None
 		return nil
 	}
-	if packageId == PackageIdPlaceholderForStandaloneScript && serializedJsonArgs != EmptyInputArgs {
-		// This _cannot_ be reached right now. Just being nice in the logs in case it can be hit in the future
-		return startosis_errors.NewInterpretationError("Passing parameter to a standalone script is not yet supported in Kurtosis.")
-	}
-
 	// it is a module, and it has input args -> deserialize the JSON input and add it as a struct to the predeclared
 	deserializedArgs, interpretationError := package_io.DeserializeArgs(thread, serializedJsonArgs)
 	if interpretationError != nil {
