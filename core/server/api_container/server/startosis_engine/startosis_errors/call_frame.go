@@ -2,6 +2,10 @@ package startosis_errors
 
 import "fmt"
 
+const(
+	skipTopLevelCallFrameName = "<toplevel>"
+)
+
 type CallFrame struct {
 	name string
 
@@ -16,5 +20,8 @@ func NewCallFrame(name string, position *ScriptPosition) *CallFrame {
 }
 
 func (callFrame *CallFrame) String() string {
+	if callFrame.name == skipTopLevelCallFrameName{
+		return callFrame.position.String()
+	}
 	return fmt.Sprintf("%s: %s", callFrame.position.String(), callFrame.name)
 }

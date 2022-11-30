@@ -1,4 +1,4 @@
-package startosis_engine
+package startosis_const
 
 const (
 	MainFileName = "main.star"

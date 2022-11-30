@@ -22,6 +22,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/wait"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/package_io"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_const"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/sirupsen/logrus"
@@ -39,13 +40,9 @@ const (
 
 	multipleInterpretationErrorMsg = "Multiple errors caught interpreting the Starlark script. Listing each of them below."
 
-	builtinFilename = "<builtin>"
-)
+	skipImportInstructionInStacktraceValue = "import_module"
 
-var replaceFilenameValuesSet = map[string]bool{
-	PackageIdPlaceholderForStandaloneScript: true,
-	builtinFilename: true,
-}
+)
 
 type StartosisInterpreter struct {
 	// This is mutex protected as interpreting two different scripts in parallel could potentially cause
@@ -102,21 +99,21 @@ func (interpreter *StartosisInterpreter) Interpret(_ context.Context, packageId 
 
 	globalVariables, err := interpreter.interpretInternal(thread, packageId, serializedStarlark, serializedJsonParams, &instructionsQueue)
 	if err != nil {
-		return NoOutputObject, nil, generateInterpretationError(err).ToAPIType()
+		return startosis_const.NoOutputObject, nil, generateInterpretationError(err).ToAPIType()
 	}
 
 	logrus.Debugf("Successfully interpreted Starlark code into instruction queue: \n%s", instructionsQueue)
 
 	// Serialize and return the output object. It might contain magic strings that should be resolved post-execution
-	if globalVariables.Has(MainOutputObjectName) && globalVariables[MainOutputObjectName] != starlark.None {
-		logrus.Debugf("Starlark output object was: '%s'", globalVariables[MainOutputObjectName])
-		serializedOutputObject, interpretationError := package_io.SerializeOutputObject(thread, globalVariables[MainOutputObjectName])
+	if globalVariables.Has(startosis_const.MainOutputObjectName) && globalVariables[startosis_const.MainOutputObjectName] != starlark.None {
+		logrus.Debugf("Starlark output object was: '%s'", globalVariables[startosis_const.MainOutputObjectName])
+		serializedOutputObject, interpretationError := package_io.SerializeOutputObject(thread, globalVariables[startosis_const.MainOutputObjectName])
 		if interpretationError != nil {
-			return NoOutputObject, nil, interpretationError.ToAPIType()
+			return startosis_const.NoOutputObject, nil, interpretationError.ToAPIType()
 		}
 		return serializedOutputObject, instructionsQueue, nil
 	}
-	return NoOutputObject, instructionsQueue, nil
+	return startosis_const.NoOutputObject, instructionsQueue, nil
 }
 
 func (interpreter *StartosisInterpreter) interpretInternal(thread *starlark.Thread, packageId string, serializedStarlark string, serializedJsonParams string, instructionsQueue *[]kurtosis_instruction.KurtosisInstruction) (starlark.StringDict, error) {
@@ -135,7 +132,7 @@ func (interpreter *StartosisInterpreter) interpretInternal(thread *starlark.Thre
 
 func (interpreter *StartosisInterpreter) buildBindings(thread *starlark.Thread, instructionsQueue *[]kurtosis_instruction.KurtosisInstruction) *starlark.StringDict {
 	recursiveInterpretForModuleLoading := func(moduleId string, serializedStartosis string) (starlark.StringDict, error) {
-		return interpreter.interpretInternal(thread, moduleId, serializedStartosis, EmptyInputArgs, instructionsQueue)
+		return interpreter.interpretInternal(thread, moduleId, serializedStartosis, startosis_const.EmptyInputArgs, instructionsQueue)
 	}
 
 	predeclared := &starlark.StringDict{
@@ -169,8 +166,8 @@ func (interpreter *StartosisInterpreter) buildBindings(thread *starlark.Thread, 
 // - For a Kurtosis Package, the run method will always receive input args. If none were passed through the CLI params, empty JSON will be used
 // - For a standalone Kurtosis script however, no params can be passed. It will fail if it is the case
 func (interpreter *StartosisInterpreter) addInputArgsToPredeclared(thread *starlark.Thread, packageId string, serializedJsonArgs string, predeclared *starlark.StringDict) *startosis_errors.InterpretationError {
-	if packageId == PackageIdPlaceholderForStandaloneScript && serializedJsonArgs == EmptyInputArgs {
-		(*predeclared)[MainInputArgName] = starlark.None
+	if packageId == startosis_const.PackageIdPlaceholderForStandaloneScript && serializedJsonArgs == startosis_const.EmptyInputArgs {
+		(*predeclared)[startosis_const.MainInputArgName] = starlark.None
 		return nil
 	}
 	// it is a module, and it has input args -> deserialize the JSON input and add it as a struct to the predeclared
@@ -178,7 +175,7 @@ func (interpreter *StartosisInterpreter) addInputArgsToPredeclared(thread *starl
 	if interpretationError != nil {
 		return interpretationError
 	}
-	(*predeclared)[MainInputArgName] = deserializedArgs
+	(*predeclared)[startosis_const.MainInputArgName] = deserializedArgs
 	return nil
 }
 
@@ -211,14 +208,14 @@ func generateInterpretationError(err error) *startosis_errors.InterpretationErro
 		// TODO(gb): a bit hacky but it's an acceptable way to wrap multiple errors into a single Interpretation
 		//  it's probably not worth adding another level of complexity here to handle InterpretationErrorList
 		stacktrace := make([]startosis_errors.CallFrame, 0)
-		for _, slError := range slError {
-			stacktrace = append(stacktrace, *startosis_errors.NewCallFrame(slError.Msg, startosis_errors.NewScriptPosition(slError.Pos.Filename(), slError.Pos.Line, slError.Pos.Col)))
+		for _, slErr := range slError {
+			stacktrace = addCallFrameInStacktraceIfItAddValue(stacktrace, slErr.Msg, slErr.Pos.Filename(), slErr.Pos.Line, slErr.Pos.Col)
 		}
 		return startosis_errors.NewInterpretationErrorWithCustomMsg(stacktrace, multipleInterpretationErrorMsg)
 	case *starlark.EvalError:
 		stacktrace := make([]startosis_errors.CallFrame, 0)
 		for _, callStack := range slError.CallStack {
-			stacktrace = append(stacktrace, *startosis_errors.NewCallFrame(callStack.Name, startosis_errors.NewScriptPosition(callStack.Pos.Filename(), callStack.Pos.Line, callStack.Pos.Col)))
+			stacktrace = addCallFrameInStacktraceIfItAddValue(stacktrace, callStack.Name, callStack.Pos.Filename(), callStack.Pos.Line, callStack.Pos.Col)
 		}
 		return startosis_errors.NewInterpretationErrorWithCustomMsg(
 			stacktrace,
@@ -230,4 +227,15 @@ func generateInterpretationError(err error) *startosis_errors.InterpretationErro
 		return slError
 	}
 	return startosis_errors.NewInterpretationError("UnknownError: %s\n", err.Error())
+}
+
+func addCallFrameInStacktraceIfItAddValue(stacktrace []startosis_errors.CallFrame, callStackName string, filename string, line int32, col int32) []startosis_errors.CallFrame {
+	if callStackName == skipImportInstructionInStacktraceValue {
+		return stacktrace
+	}
+
+	scriptPosition := startosis_errors.NewScriptPosition(filename, line, col)
+	newCallFrame := *startosis_errors.NewCallFrame(callStackName, scriptPosition)
+	stacktrace = append(stacktrace, newCallFrame)
+	return stacktrace
 }
