@@ -17,6 +17,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/render_templates"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/store_service_files"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/upload_files"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/mock_package_content_provider"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
@@ -56,7 +57,7 @@ func TestStartosisInterpreter_SimplePrintScript(t *testing.T) {
 print("` + testString + `")
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 	require.Len(t, instructions, 1) // Only the print statement
 	require.Nil(t, interpretationError)
 
@@ -75,12 +76,12 @@ print("Starting Startosis script!")
 unknownInstruction()
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 	require.Empty(t, instructions)
 
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
 		[]startosis_errors.CallFrame{
-			*startosis_errors.NewCallFrame("undefined: unknownInstruction", startosis_errors.NewScriptPosition(4, 1)),
+			*startosis_errors.NewCallFrame("undefined: unknownInstruction", startosis_errors.NewScriptPosition(startosis_constants.PackageIdPlaceholderForStandaloneScript, 4, 1)),
 		},
 		multipleInterpretationErrorMsg,
 	).ToAPIType()
@@ -100,14 +101,14 @@ print(unknownVariable)
 unknownInstruction2()
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 	require.Empty(t, instructions)
 
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
 		[]startosis_errors.CallFrame{
-			*startosis_errors.NewCallFrame("undefined: unknownInstruction", startosis_errors.NewScriptPosition(4, 1)),
-			*startosis_errors.NewCallFrame("undefined: unknownVariable", startosis_errors.NewScriptPosition(5, 7)),
-			*startosis_errors.NewCallFrame("undefined: unknownInstruction2", startosis_errors.NewScriptPosition(7, 1)),
+			*startosis_errors.NewCallFrame("undefined: unknownInstruction", startosis_errors.NewScriptPosition(startosis_constants.PackageIdPlaceholderForStandaloneScript, 4, 1)),
+			*startosis_errors.NewCallFrame("undefined: unknownVariable", startosis_errors.NewScriptPosition(startosis_constants.PackageIdPlaceholderForStandaloneScript, 5, 7)),
+			*startosis_errors.NewCallFrame("undefined: unknownInstruction2", startosis_errors.NewScriptPosition(startosis_constants.PackageIdPlaceholderForStandaloneScript, 7, 1)),
 		},
 		multipleInterpretationErrorMsg,
 	).ToAPIType()
@@ -124,12 +125,12 @@ print("Starting Startosis script!")
 load("otherScript.start") # fails b/c load takes in at least 2 args
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 	require.Empty(t, instructions)
 
 	expectedError := startosis_errors.NewInterpretationErrorFromStacktrace(
 		[]startosis_errors.CallFrame{
-			*startosis_errors.NewCallFrame("load statement must import at least 1 symbol", startosis_errors.NewScriptPosition(4, 5)),
+			*startosis_errors.NewCallFrame("load statement must import at least 1 symbol", startosis_errors.NewScriptPosition(startosis_constants.PackageIdPlaceholderForStandaloneScript, 4, 5)),
 		},
 	).ToAPIType()
 	require.Equal(t, expectedError, interpretationError)
@@ -159,11 +160,11 @@ print("The grpc port protocol is " + datastore_service.ports["grpc"].protocol)
 print("The datastore service ip address is " + datastore_service.ip_address)
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, fmt.Sprintf(script, testServiceId), EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, fmt.Sprintf(script, testServiceId), startosis_constants.EmptyInputArgs)
 	require.Len(t, instructions, 6)
 	require.Nil(t, interpretationError)
 
-	addServiceInstruction := createSimpleAddServiceInstruction(t, testServiceId, testContainerImageName, 1323, 14, 32, PackageIdPlaceholderForStandaloneScript, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, privateIPAddressPlaceholder, defaultPublicPortNumber)
+	addServiceInstruction := createSimpleAddServiceInstruction(t, testServiceId, testContainerImageName, 1323, 14, 32, startosis_constants.PackageIdPlaceholderForStandaloneScript, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, privateIPAddressPlaceholder, defaultPublicPortNumber)
 	require.Equal(t, addServiceInstruction, instructions[2])
 
 	expectedOutput := `Starting Startosis script!
@@ -194,13 +195,13 @@ config = struct(
 add_service(service_id = service_id, config = config)
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 	require.Empty(t, instructions)
 
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
 		[]startosis_errors.CallFrame{
-			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(13, 12)),
-			*startosis_errors.NewCallFrame("add_service", startosis_errors.NewScriptPosition(0, 0)),
+			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(startosis_constants.PackageIdPlaceholderForStandaloneScript, 13, 12)),
+			*startosis_errors.NewCallFrame("add_service", startosis_errors.NewScriptPosition("<builtin>", 0, 0)),
 		},
 		"Evaluation error: Missing value 'image' as element of the struct object 'config'",
 	).ToAPIType()
@@ -226,12 +227,12 @@ config = struct(
 add_service(service_id = service_id, config = config)
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 	require.Empty(t, instructions)
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
 		[]startosis_errors.CallFrame{
-			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(13, 12)),
-			*startosis_errors.NewCallFrame("add_service", startosis_errors.NewScriptPosition(0, 0)),
+			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(startosis_constants.PackageIdPlaceholderForStandaloneScript, 13, 12)),
+			*startosis_errors.NewCallFrame("add_service", startosis_errors.NewScriptPosition("<builtin>", 0, 0)),
 		},
 		"Evaluation error: Port protocol should be one of TCP, SCTP, UDP",
 	).ToAPIType()
@@ -258,12 +259,12 @@ add_service(service_id = service_id, config = config)
 `
 	expectedErrorStr := `Evaluation error: Error casting value 'number' as element of the struct object 'ports'
 	Caused by: Argument 'number' is expected to be an integer. Got starlark.String`
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 	require.Empty(t, instructions)
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
 		[]startosis_errors.CallFrame{
-			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(13, 12)),
-			*startosis_errors.NewCallFrame("add_service", startosis_errors.NewScriptPosition(0, 0)),
+			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(startosis_constants.PackageIdPlaceholderForStandaloneScript, 13, 12)),
+			*startosis_errors.NewCallFrame("add_service", startosis_errors.NewScriptPosition("<builtin>", 0, 0)),
 		},
 		expectedErrorStr,
 	).ToAPIType()
@@ -299,13 +300,13 @@ deploy_datastore_services()
 print("Done!")
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 	require.Len(t, instructions, 8)
 	require.Nil(t, interpretationError)
 
-	addServiceInstruction0 := createSimpleAddServiceInstruction(t, "example-datastore-server-0", testContainerImageName, 1323, 20, 20, PackageIdPlaceholderForStandaloneScript, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder, defaultPublicPortNumber)
-	addServiceInstruction1 := createSimpleAddServiceInstruction(t, "example-datastore-server-1", testContainerImageName, 1324, 20, 20, PackageIdPlaceholderForStandaloneScript, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder, defaultPublicPortNumber)
-	addServiceInstruction2 := createSimpleAddServiceInstruction(t, "example-datastore-server-2", testContainerImageName, 1325, 20, 20, PackageIdPlaceholderForStandaloneScript, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder, defaultPublicPortNumber)
+	addServiceInstruction0 := createSimpleAddServiceInstruction(t, "example-datastore-server-0", testContainerImageName, 1323, 20, 20, startosis_constants.PackageIdPlaceholderForStandaloneScript, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder, defaultPublicPortNumber)
+	addServiceInstruction1 := createSimpleAddServiceInstruction(t, "example-datastore-server-1", testContainerImageName, 1324, 20, 20, startosis_constants.PackageIdPlaceholderForStandaloneScript, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder, defaultPublicPortNumber)
+	addServiceInstruction2 := createSimpleAddServiceInstruction(t, "example-datastore-server-2", testContainerImageName, 1325, 20, 20, startosis_constants.PackageIdPlaceholderForStandaloneScript, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder, defaultPublicPortNumber)
 
 	require.Equal(t, addServiceInstruction0, instructions[2])
 	require.Equal(t, addServiceInstruction1, instructions[4])
@@ -333,10 +334,10 @@ func TestStartosisInterpreter_LoadStatementIsDisallowedInKurtosis(t *testing.T) 
 load("` + barModulePath + `", "a")
 print("Hello " + a)
 `
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
 		[]startosis_errors.CallFrame{
-			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(2, 1)),
+			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(startosis_constants.PackageIdPlaceholderForStandaloneScript, 2, 1)),
 		},
 		"Evaluation error: cannot load github.com/foo/bar/lib.star: 'load(\"path/to/file.star\", var_in_file=\"var_in_file\")' statement is not available in Kurtosis. Please use instead `module = import(\"path/to/file.star\")` and then `module.var_in_file`",
 	).ToAPIType()
@@ -358,7 +359,7 @@ func TestStartosisInterpreter_SimpleImport(t *testing.T) {
 my_module = import_module("` + barModulePath + `")
 print("Hello " + my_module.a)
 `
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 	require.Len(t, instructions, 1) // Only the print statement
 	require.Nil(t, interpretationError)
 
@@ -385,7 +386,7 @@ print(module_doo.b)
 
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 	require.Len(t, instructions, 1) // Only the print statement
 	require.Nil(t, interpretationError)
 
@@ -412,16 +413,13 @@ module_doo = import_module("` + moduleDooLoadsModuleBar + `")
 print(module_doo.b)
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 	require.Empty(t, instructions) // No kurtosis instruction
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
 		[]startosis_errors.CallFrame{
-			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(2, 27)),
-			*startosis_errors.NewCallFrame("import_module", startosis_errors.NewScriptPosition(0, 0)),
-			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(1, 27)),
-			*startosis_errors.NewCallFrame("import_module", startosis_errors.NewScriptPosition(0, 0)),
-			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(1, 27)),
-			*startosis_errors.NewCallFrame("import_module", startosis_errors.NewScriptPosition(0, 0)),
+			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(startosis_constants.PackageIdPlaceholderForStandaloneScript, 2, 27)),
+			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(moduleDooLoadsModuleBar, 1, 27)),
+			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(moduleBarLoadsModuleDoo, 1, 27)),
 		},
 		"Evaluation error: There's a cycle in the import_module calls",
 	).ToAPIType()
@@ -438,15 +436,14 @@ my_module = import_module("` + nonExistentModule + `")
 print(my_module.b)
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 	require.Empty(t, instructions) // No kurtosis instruction
 
 	errorMsg := `Evaluation error: An error occurred while loading the package '` + nonExistentModule + `'
 	Caused by: Package '` + nonExistentModule + `' not found`
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
 		[]startosis_errors.CallFrame{
-			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(2, 26)),
-			*startosis_errors.NewCallFrame("import_module", startosis_errors.NewScriptPosition(0, 0)),
+			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(startosis_constants.PackageIdPlaceholderForStandaloneScript, 2, 26)),
 		},
 		errorMsg,
 	).ToAPIType()
@@ -464,7 +461,7 @@ print("Hello " + my_module.a)
 `
 
 	// assert that first load fails
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 	require.Nil(t, instructions)
 	require.NotNil(t, interpretationError)
 
@@ -473,7 +470,7 @@ print("Hello " + my_module.a)
 	expectedOutput := `Hello World!
 `
 	// assert that second load succeeds
-	_, instructions, interpretationError = interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError = interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 1) // The print statement
 	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutput)
@@ -504,11 +501,11 @@ print("Adding service " + module_bar.service_id)
 add_service(service_id = module_bar.service_id, config = module_bar.config)
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 	require.Len(t, instructions, 4)
 	require.Nil(t, interpretationError)
 
-	addServiceInstruction := createSimpleAddServiceInstruction(t, "example-datastore-server", testContainerImageName, 1323, 6, 12, PackageIdPlaceholderForStandaloneScript, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder, defaultPublicPortNumber)
+	addServiceInstruction := createSimpleAddServiceInstruction(t, "example-datastore-server", testContainerImageName, 1323, 6, 12, startosis_constants.PackageIdPlaceholderForStandaloneScript, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder, defaultPublicPortNumber)
 
 	require.Equal(t, addServiceInstruction, instructions[3])
 
@@ -553,7 +550,7 @@ datastore_module.deploy_datastore_services()
 print("Done!")
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 	require.Len(t, instructions, 8)
 	require.Nil(t, interpretationError)
 
@@ -588,7 +585,7 @@ my_module = import_module("` + barModulePath + `")
 print("World!")
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 	require.Len(t, instructions, 2)
 	require.Nil(t, interpretationError)
 
@@ -622,7 +619,7 @@ import_module("` + moduleBar + `")
 print("Starting Startosis script!")
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 	require.Len(t, instructions, 4)
 	require.Nil(t, interpretationError)
 
@@ -667,7 +664,7 @@ Adding service example-datastore-server
 Starting Startosis script!
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, scriptA, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, scriptA, startosis_constants.EmptyInputArgs)
 	require.Len(t, instructions, 4)
 	require.Nil(t, interpretationError)
 	require.Equal(t, addServiceInstructionFromScriptA, instructions[2])
@@ -687,12 +684,12 @@ config = struct(
 )
 add_service(service_id = service_id, config = config)
 `
-	addServiceInstructionFromScriptB := createSimpleAddServiceInstruction(t, "example-datastore-server", testContainerImageName, 1323, 13, 12, PackageIdPlaceholderForStandaloneScript, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder, defaultPublicPortNumber)
+	addServiceInstructionFromScriptB := createSimpleAddServiceInstruction(t, "example-datastore-server", testContainerImageName, 1323, 13, 12, startosis_constants.PackageIdPlaceholderForStandaloneScript, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder, defaultPublicPortNumber)
 	expectedOutputFromScriptB := `Starting Startosis script!
 Adding service example-datastore-server
 `
 
-	_, instructions, interpretationError = interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, scriptB, EmptyInputArgs)
+	_, instructions, interpretationError = interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, scriptB, startosis_constants.EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 3)
 	require.Equal(t, addServiceInstructionFromScriptB, instructions[2])
@@ -728,16 +725,16 @@ client_config = struct(
 add_service(service_id = client_service_id, config = client_config)
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 5)
 
-	dataSourceAddServiceInstruction := createSimpleAddServiceInstruction(t, "example-datastore-server", testContainerImageName, 1323, 11, 32, PackageIdPlaceholderForStandaloneScript, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder, defaultPublicPortNumber)
+	dataSourceAddServiceInstruction := createSimpleAddServiceInstruction(t, "example-datastore-server", testContainerImageName, 1323, 11, 32, startosis_constants.PackageIdPlaceholderForStandaloneScript, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder, defaultPublicPortNumber)
 
 	entryPointArgs := []string{"--store-port 1323", "--store-ip {{kurtosis:example-datastore-server.ip_address}}"}
 	cmdArgs := []string{"ping", "{{kurtosis:example-datastore-server.ip_address}}"}
 	envVars := map[string]string{"STORE_IP": "{{kurtosis:example-datastore-server.ip_address}}"}
-	clientAddServiceInstruction := createSimpleAddServiceInstruction(t, "example-datastore-client", "kurtosistech/example-datastore-client", 1337, 23, 12, PackageIdPlaceholderForStandaloneScript, entryPointArgs, cmdArgs, envVars, defaultPrivateIPAddressPlaceholder, defaultPublicPortNumber)
+	clientAddServiceInstruction := createSimpleAddServiceInstruction(t, "example-datastore-client", "kurtosistech/example-datastore-client", 1337, 23, 12, startosis_constants.PackageIdPlaceholderForStandaloneScript, entryPointArgs, cmdArgs, envVars, defaultPrivateIPAddressPlaceholder, defaultPublicPortNumber)
 
 	require.Equal(t, dataSourceAddServiceInstruction, instructions[2])
 	require.Equal(t, clientAddServiceInstruction, instructions[4])
@@ -758,7 +755,7 @@ print("Executing mkdir!")
 exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"])
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 	require.Len(t, instructions, 2)
 	require.Nil(t, interpretationError)
 
@@ -770,7 +767,7 @@ exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"])
 	starlarkKwargs.Freeze()
 	execInstruction := exec.NewExecInstruction(
 		testServiceNetwork,
-		kurtosis_instruction.NewInstructionPosition(3, 5, PackageIdPlaceholderForStandaloneScript),
+		kurtosis_instruction.NewInstructionPosition(3, 5, startosis_constants.PackageIdPlaceholderForStandaloneScript),
 		"example-datastore-server",
 		[]string{"mkdir", "/tmp/foo"},
 		0,
@@ -793,7 +790,7 @@ print("Executing mkdir!")
 exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"], expected_exit_code = -7)
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 	require.Len(t, instructions, 2)
 	require.Nil(t, interpretationError)
 
@@ -805,7 +802,7 @@ exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"], e
 	starlarkKwargs.Freeze()
 	execInstruction := exec.NewExecInstruction(
 		testServiceNetwork,
-		kurtosis_instruction.NewInstructionPosition(3, 5, PackageIdPlaceholderForStandaloneScript),
+		kurtosis_instruction.NewInstructionPosition(3, 5, startosis_constants.PackageIdPlaceholderForStandaloneScript),
 		"example-datastore-server",
 		[]string{"mkdir", "/tmp/foo"},
 		-7,
@@ -831,7 +828,7 @@ artifact_uuid=store_service_files(service_id="example-datastore-server", src="/f
 print(artifact_uuid)
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 3)
 
@@ -843,7 +840,7 @@ print(artifact_uuid)
 	starlarkKwargs.Freeze()
 	storeInstruction := store_service_files.NewStoreServiceFilesInstruction(
 		testServiceNetwork,
-		kurtosis_instruction.NewInstructionPosition(3, 34, PackageIdPlaceholderForStandaloneScript),
+		kurtosis_instruction.NewInstructionPosition(3, 34, startosis_constants.PackageIdPlaceholderForStandaloneScript),
 		"example-datastore-server",
 		"/foo/bar",
 		testArtifactId,
@@ -873,7 +870,7 @@ file_contents=read_file("` + src + `")
 print(file_contents)
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 2)
 
@@ -894,7 +891,7 @@ wait(service_id="%v", fact_name="%v")
 	serviceId := "service"
 	factName := "fact"
 	script := fmt.Sprintf(scriptFormatStr, serviceId, factName, serviceId, factName)
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.NotEmpty(t, instructions)
 	validateScriptOutputFromPrintInstructions(t, instructions, "")
@@ -926,7 +923,7 @@ artifact_id = render_templates(config = data, artifact_id = "` + string(testArti
 print(artifact_id)
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 3)
 
@@ -966,7 +963,7 @@ print(artifact_id)
 
 	renderInstruction := render_templates.NewRenderTemplatesInstruction(
 		testServiceNetwork,
-		kurtosis_instruction.NewInstructionPosition(17, 31, PackageIdPlaceholderForStandaloneScript),
+		kurtosis_instruction.NewInstructionPosition(17, 31, startosis_constants.PackageIdPlaceholderForStandaloneScript),
 		templateAndDataByDestFilepath,
 		starlark.StringDict{
 			"config":      templateAndDataValues,
@@ -1017,7 +1014,7 @@ uuid = call_store_for_me_module.call_store_for_me()
 print(uuid)
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 4)
 
@@ -1056,13 +1053,13 @@ remove_service(service_id=service_id)
 print("The service example-datastore-server has been removed")
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 	require.Len(t, instructions, 3)
 	require.Nil(t, interpretationError)
 
 	removeInstruction := remove_service.NewRemoveServiceInstruction(
 		testServiceNetwork,
-		kurtosis_instruction.NewInstructionPosition(4, 15, PackageIdPlaceholderForStandaloneScript),
+		kurtosis_instruction.NewInstructionPosition(4, 15, startosis_constants.PackageIdPlaceholderForStandaloneScript),
 		"example-datastore-server",
 	)
 
@@ -1087,7 +1084,7 @@ func TestStartosisInterpreter_UploadGetsInterpretedCorrectly(t *testing.T) {
 	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider)
 	script := `upload_files("` + filePath + `","` + string(artifactId) + `")
 `
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 1)
 	validateScriptOutputFromPrintInstructions(t, instructions, "")
@@ -1098,7 +1095,7 @@ func TestStartosisInterpreter_UploadGetsInterpretedCorrectly(t *testing.T) {
 	}
 	starlarkKwargs.Freeze()
 	expectedUploadInstruction := upload_files.NewUploadFilesInstruction(
-		kurtosis_instruction.NewInstructionPosition(1, 13, PackageIdPlaceholderForStandaloneScript),
+		kurtosis_instruction.NewInstructionPosition(1, 13, startosis_constants.PackageIdPlaceholderForStandaloneScript),
 		testServiceNetwork, packageContentProvider, filePath, filePathOnDisk, artifactId,
 		starlarkKwargs,
 	)
@@ -1113,7 +1110,7 @@ func TestStartosisInterpreter_NoPanicIfUploadIsPassedAPathNotOnDisk(t *testing.T
 	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider)
 	script := `upload_files("` + filePath + `")
 `
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, script, EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 	require.Nil(t, instructions)
 	require.NotNil(t, interpretationError)
 }
@@ -1134,11 +1131,11 @@ config = struct(
 datastore_service = add_service(service_id = service_id, config = config)
 print("The datastore service ip address is " + datastore_service.ip_address)`
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, fmt.Sprintf(script, testServiceId), EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, fmt.Sprintf(script, testServiceId), startosis_constants.EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Equal(t, 4, len(instructions))
 
-	addServiceInstruction := createSimpleAddServiceInstruction(t, testServiceId, testContainerImageName, 0, 10, 32, PackageIdPlaceholderForStandaloneScript, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder, defaultPublicPortNumber)
+	addServiceInstruction := createSimpleAddServiceInstruction(t, testServiceId, testContainerImageName, 0, 10, 32, startosis_constants.PackageIdPlaceholderForStandaloneScript, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder, defaultPublicPortNumber)
 	require.Equal(t, instructions[2], addServiceInstruction)
 
 	expectedOutput := `Starting Startosis script!
@@ -1175,11 +1172,11 @@ print("The grpc port protocol is " + datastore_service.ports["grpc"].protocol)
 print("The datastore service ip address is " + datastore_service.ip_address)
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), PackageIdPlaceholderForStandaloneScript, fmt.Sprintf(script, testServiceId), EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, fmt.Sprintf(script, testServiceId), startosis_constants.EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 6)
 
-	addServiceInstruction := createSimpleAddServiceInstruction(t, testServiceId, testContainerImageName, 1323, 17, 32, PackageIdPlaceholderForStandaloneScript, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, privateIPAddressPlaceholder, 11323)
+	addServiceInstruction := createSimpleAddServiceInstruction(t, testServiceId, testContainerImageName, 1323, 17, 32, startosis_constants.PackageIdPlaceholderForStandaloneScript, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, privateIPAddressPlaceholder, 11323)
 	require.Equal(t, addServiceInstruction, instructions[2])
 
 	expectedOutput := `Starting Startosis script!

@@ -68,7 +68,7 @@ func TestStartosis(t *testing.T) {
 	scriptOutput, _, interpretationError, validationErrors, executionError := test_helpers.ReadStreamContentUntilClosed(outputStream)
 
 	expectedScriptOutput := `Adding service example-datastore-server-1.
-Service 'example-datastore-server-1' added with internal ID '[a-z-0-9]+'
+Service 'example-datastore-server-1' added with service GUID '[a-z-0-9]+'
 Service example-datastore-server-1 deployed successfully.
 `
 	require.Nil(t, interpretationError, "Unexpected interpretation error")

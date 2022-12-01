@@ -1,4 +1,6 @@
 # TBD
+### Changes
+- Replaced stack name with the stack file name in custom evaluation errors
 
 ### Changes
 - Replaced "insternal ID" in the output message of `add_service` and `remove_service` instructions with "service GUID"
