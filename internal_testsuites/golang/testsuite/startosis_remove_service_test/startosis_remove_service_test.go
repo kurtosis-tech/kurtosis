@@ -12,11 +12,11 @@ const (
 	testName              = "startosis_remove_service_test"
 	isPartitioningEnabled = false
 	defaultDryRun         = false
+	emptyArgs             = "{}"
 
 	serviceId = "example-datastore-server-1"
 	portId    = "grpc"
 
-	emptyParams     = "{}"
 	startosisScript = `
 DATASTORE_IMAGE = "kurtosistech/example-datastore-server"
 DATASTORE_SERVICE_ID = "` + serviceId + `"
@@ -54,22 +54,22 @@ func TestStartosis(t *testing.T) {
 	defer destroyEnclaveFunc()
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
-	logrus.Infof("Executing Startosis script...")
+	logrus.Infof("Executing Startosis script to first add the datastore service...")
 	logrus.Debugf("Startosis script content: \n%v", startosisScript)
 
-	outputStream, _, err := enclaveCtx.RunStarlarkScript(ctx, startosisScript, emptyParams, defaultDryRun)
+	outputStream, _, err := enclaveCtx.RunStarlarkScript(ctx, startosisScript, emptyArgs, defaultDryRun)
 	require.NoError(t, err, "Unexpected error executing startosis script")
 	scriptOutput, _, interpretationError, validationErrors, executionError := test_helpers.ReadStreamContentUntilClosed(outputStream)
 
 	expectedScriptOutput := `Adding service example-datastore-server-1.
-Service 'example-datastore-server-1' added with internal ID '[a-z-0-9]+'
+Service 'example-datastore-server-1' added with service GUID '[a-z-0-9]+'
 Service example-datastore-server-1 deployed successfully.
 `
 	require.Nil(t, interpretationError, "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
 	require.Empty(t, validationErrors, "Unexpected validation error")
 	require.Nil(t, executionError, "Unexpected execution error")
 	require.Regexp(t, expectedScriptOutput, scriptOutput)
-	logrus.Infof("Successfully ran Startosis script")
+	logrus.Infof("Successfully ran Startosis script to add datastore service")
 
 	// Check that the service added by the script is functional
 	logrus.Infof("Checking that services are all healthy")
@@ -80,15 +80,20 @@ Service example-datastore-server-1 deployed successfully.
 		serviceId,
 	)
 
-	logrus.Infof("All services added via the module work as expected")
+	logrus.Infof("Validated that all services are healthy")
 
 	// we run the remove script and see if things still work
-	outputStream, _, err = enclaveCtx.RunStarlarkScript(ctx, removeScript, emptyParams, defaultDryRun)
+	outputStream, _, err = enclaveCtx.RunStarlarkScript(ctx, removeScript, emptyArgs, defaultDryRun)
 	require.NoError(t, err, "Unexpected error executing remove script")
-	_, _, interpretationError, validationErrors, executionError = test_helpers.ReadStreamContentUntilClosed(outputStream)
+	scriptOutput, _, interpretationError, validationErrors, executionError = test_helpers.ReadStreamContentUntilClosed(outputStream)
+
+	expectedScriptOutput = `Service 'example-datastore-server-1' with service GUID '[a-z-0-9]+' removed
+`
 	require.Nil(t, interpretationError, "Unexpected interpretation error")
 	require.Empty(t, validationErrors, "Unexpected validation error")
 	require.Nil(t, executionError, "Unexpected execution error")
+
+	require.Regexp(t, expectedScriptOutput, scriptOutput)
 
 	require.Error(
 		t,
