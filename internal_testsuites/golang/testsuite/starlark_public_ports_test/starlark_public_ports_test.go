@@ -1,4 +1,10 @@
-package startosis_remove_service_test
+//go:build !minikube
+// +build !minikube
+
+// We don't run this test in Kubernetes because public ports aren't supported in Kubernetes backend
+// TODO remove this test once we have the Kurtosis Portal, and public_ports isn't a thing
+
+package starlark_public_ports_test
 
 import (
 	"context"
@@ -9,19 +15,22 @@ import (
 )
 
 const (
-	testName              = "startosis_remove_service_test"
+	testName              = "starlark_public_ports_test"
 	isPartitioningEnabled = false
 	defaultDryRun         = false
 	emptyArgs             = "{}"
 
-	serviceId = "example-datastore-server-1"
-	portId    = "grpc"
+	serviceId           = "example-datastore-server-1"
+	portId              = "grpc"
+	publicPortNumberStr = "11323"
+	publicPortNumber    = uint16(11323)
 
 	starlarkScript = `
 DATASTORE_IMAGE = "kurtosistech/example-datastore-server"
 DATASTORE_SERVICE_ID = "` + serviceId + `"
 DATASTORE_PORT_ID = "` + portId + `"
 DATASTORE_PORT_NUMBER = 1323
+DATASTORE_PUBLIC_PORT_NUMBER = ` + publicPortNumberStr + `
 DATASTORE_PORT_PROTOCOL = "TCP"
 
 def run(args):
@@ -31,17 +40,14 @@ def run(args):
 		image = DATASTORE_IMAGE,
 		ports = {
 			DATASTORE_PORT_ID: struct(number = DATASTORE_PORT_NUMBER, protocol = DATASTORE_PORT_PROTOCOL)
+		},
+		public_ports = {
+			DATASTORE_PORT_ID: struct(number = DATASTORE_PUBLIC_PORT_NUMBER, protocol = DATASTORE_PORT_PROTOCOL)
 		}
 	)
 	
 	add_service(service_id = DATASTORE_SERVICE_ID, config = config)
 	print("Service " + DATASTORE_SERVICE_ID + " deployed successfully.")
-`
-	// We remove the service we created through the script above with a different script
-	removeScript = `
-DATASTORE_SERVICE_ID = "` + serviceId + `"
-def run(args):
-	remove_service(DATASTORE_SERVICE_ID)
 `
 )
 
@@ -54,8 +60,8 @@ func TestStartosis(t *testing.T) {
 	defer destroyEnclaveFunc()
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
-	logrus.Infof("Executing Starlark script to first add the datastore service...")
-	logrus.Debugf("Starlark script content: \n%v", starlarkScript)
+	logrus.Infof("Executing Startosis script...")
+	logrus.Debugf("Startosis script content: \n%v", starlarkScript)
 
 	outputStream, _, err := enclaveCtx.RunStarlarkScript(ctx, starlarkScript, emptyArgs, defaultDryRun)
 	require.NoError(t, err, "Unexpected error executing Starlark script")
@@ -65,45 +71,27 @@ func TestStartosis(t *testing.T) {
 Service 'example-datastore-server-1' added with service GUID '[a-z-0-9]+'
 Service example-datastore-server-1 deployed successfully.
 `
-	require.Nil(t, interpretationError, "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
+	require.Nil(t, interpretationError, "Unexpected interpretation error")
 	require.Empty(t, validationErrors, "Unexpected validation error")
 	require.Nil(t, executionError, "Unexpected execution error")
 	require.Regexp(t, expectedScriptOutput, scriptOutput)
-	logrus.Infof("Successfully ran Starlark script to add datastore service")
+	logrus.Infof("Successfully ran Starlark script")
 
 	// Check that the service added by the script is functional
-	logrus.Infof("Checking that services are all healthy")
+	logrus.Infof("Checking that service is healthy")
 	require.NoError(
 		t,
 		test_helpers.ValidateDatastoreServiceHealthy(context.Background(), enclaveCtx, serviceId, portId),
 		"Error validating datastore server '%s' is healthy",
 		serviceId,
 	)
+	logrus.Infof("All services added via the module work as expected")
 
-	logrus.Infof("Validated that all services are healthy")
-
-	// we run the remove script and see if things still work
-	outputStream, _, err = enclaveCtx.RunStarlarkScript(ctx, removeScript, emptyArgs, defaultDryRun)
-	require.NoError(t, err, "Unexpected error executing remove script")
-	scriptOutput, _, interpretationError, validationErrors, executionError = test_helpers.ReadStreamContentUntilClosed(outputStream)
-
-	expectedScriptOutput = `Service 'example-datastore-server-1' with service GUID '[a-z-0-9]+' removed
-`
-	require.Nil(t, interpretationError, "Unexpected interpretation error")
-	require.Empty(t, validationErrors, "Unexpected validation error")
-	require.Nil(t, executionError, "Unexpected execution error")
-
-	require.Regexp(t, expectedScriptOutput, scriptOutput)
-
-	require.Error(
-		t,
-		test_helpers.ValidateDatastoreServiceHealthy(context.Background(), enclaveCtx, serviceId, portId),
-		"Error validating datastore server '%s' is not healthy",
-		serviceId,
-	)
-
-	// Ensure that service listing is empty too
-	serviceInfos, err := enclaveCtx.GetServices()
-	require.Nil(t, err)
-	require.Empty(t, serviceInfos)
+	// Check that the right port got exposed
+	logrus.Infof("Checking the right port got exposed on " + serviceId)
+	serviceCtx, err := enclaveCtx.GetServiceContext(serviceId)
+	require.Nil(t, err, "Unexpected Error Creating Service Context")
+	exposedPort, found := serviceCtx.GetPublicPorts()[portId]
+	require.True(t, found)
+	require.Equal(t, publicPortNumber, exposedPort.GetNumber())
 }

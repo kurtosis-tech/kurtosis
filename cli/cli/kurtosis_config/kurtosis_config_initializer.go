@@ -16,7 +16,7 @@ const (
 	metricsConsentPromptLabel       = "Is it okay to send anonymized metrics purely to improve the product?"
 	secondMetricsConsentPromptLabel = "Is it alright if we record your opt-out as a one-time event so we can see how much users dislike metrics?"
 
-	shouldSendMetricsDefaultValue = true
+	shouldSendMetricsDefaultValue            = true
 	shouldSendMetricsOptOutEventDefaultValue = true
 )
 
@@ -24,10 +24,10 @@ func initInteractiveConfig() (*resolved_config.KurtosisConfig, error) {
 	// Check if we're actually running in interactive mode (i.e. STDOUT is a terminal)
 	if !interactive_terminal_decider.IsInteractiveTerminal() {
 		return nil, stacktrace.NewError(
-			"The Kurtosis config isn't initialized so we'd initialize it interactively here except STDOUT isn't " +
-				"a terminal (indicating that this is probably running in CI) which means that you'll need to manually " +
+			"The Kurtosis config isn't initialized so we'd initialize it interactively here except STDOUT isn't "+
+				"a terminal (indicating that this is probably running in CI) which means that you'll need to manually "+
 				"initialize the config using the instructions here: %v",
-			user_support_constants.CLISetupDocsUrl,
+			user_support_constants.CLICommandsReferenceURL,
 		)
 	}
 
@@ -51,12 +51,12 @@ func initInteractiveConfig() (*resolved_config.KurtosisConfig, error) {
 		userMetricsElectionEventBacklog := user_metrics_election_event_backlog.GetUserMetricsElectionEventBacklog()
 		if err := userMetricsElectionEventBacklog.Set(didUserAcceptSendingMetrics); err != nil {
 			//We don't want to interrupt users flow if something fails when tracking metrics
-			logrus.Debugf("An error occurred creating user-consent-to-send-metrics election file\n%v",err)
+			logrus.Debugf("An error occurred creating user-consent-to-send-metrics election file\n%v", err)
 		}
 		//Here we are trying to send this metric for first time, but if it fails we'll continue to retry every time the CLI runs
 		if err := user_send_metrics_election.SendAnyBackloggedUserMetricsElectionEvent(); err != nil {
 			//We don't want to interrupt users flow if something fails when tracking metrics
-			logrus.Debugf("An error occurred tracking user-consent-to-send-metrics election\n%v",err)
+			logrus.Debugf("An error occurred tracking user-consent-to-send-metrics election\n%v", err)
 		}
 	}
 

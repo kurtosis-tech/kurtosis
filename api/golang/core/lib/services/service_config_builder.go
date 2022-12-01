@@ -38,6 +38,11 @@ func (builder *ServiceConfigBuilder) WithPrivatePorts(privatePorts map[string]*k
 	return builder
 }
 
+func (builder *ServiceConfigBuilder) WithPublicPorts(publicPorts map[string]*kurtosis_core_rpc_api_bindings.Port) *ServiceConfigBuilder {
+	builder.publicPorts = publicPorts
+	return builder
+}
+
 func (builder *ServiceConfigBuilder) WithEntryPointArgs(entryPointArgs []string) *ServiceConfigBuilder {
 	builder.entrypointArgs = entryPointArgs
 	return builder

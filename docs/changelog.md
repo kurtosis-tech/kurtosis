@@ -1,10 +1,27 @@
 # TBD
 
 ### Changes
-- Added automated installation of tab completion with brew installation. 
+- Added automated installation of tab completion with brew installation.
+
+# 0.57.5
+### Changes
+- Replaced stack name with the stack file name in custom evaluation errors
+
+### Changes
+- Replaced "insternal ID" in the output message of `add_service` and `remove_service` instructions with "service GUID"
+
+### Fixes
+- Corrected some old references to Starlark "modules"
+- Fixed a typo where the CLI setup URL was redirecting to the CI setup
+- Corrected almost all old references to `docs.kurtosistech.com`
+- Changed the name from startosis to starlark in the `internal_testsuite` build script
+- Fixed `internal-testsuites` omission during build time
+- Fixed a bug related to omitting the `enclave ID` value when a function which filters modules is called
+
+### Features
+- Support public ports in Starlark to cover the NEAR usecase
 
 # 0.57.4
-
 ### Changes
 - Simplified the API by removing the ServiceInfo struct that was adding unnecessary complexity.
 
