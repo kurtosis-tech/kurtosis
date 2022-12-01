@@ -49,7 +49,7 @@ import {
     newRenderTemplatesToFilesArtifactArgs,
 } from "../constructor_calls";
 import type { ContainerConfig, FilesArtifactUUID } from "../services/container_config";
-import type { ServiceID } from "../services/service";
+import type { ServiceID, ServiceGUID } from "../services/service";
 import { ServiceContext } from "../services/service_context";
 import { PortProtocol, PortSpec } from "../services/port_spec";
 import type { GenericPathJoiner } from "./generic_path_joiner";
@@ -64,7 +64,6 @@ import {
     RunStarlarkScriptArgs,
     RunStarlarkPackageArgs,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
-import {ServiceInfo as ServiceInfoSimple} from './../services/service'
 import {TemplateAndData} from "./template_and_data";
 import * as path from "path";
 import {parseKurtosisYaml} from "./kurtosis_yaml";
@@ -80,7 +79,7 @@ const DEFAULT_PARTITION_ID: PartitionID = "";
 export const KURTOSIS_YAML_FILENAME = "kurtosis.yml";
 
 
-// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+// Docs available at https://docs.kurtosis.com/sdk/#enclavecontext
 export class EnclaveContext {
 
     private readonly backend: GenericApiContainerClient
@@ -169,12 +168,12 @@ export class EnclaveContext {
         return ok(enclaveContext)
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+    // Docs available at https://docs.kurtosis.com/sdk/#getenclaveid---enclaveid
     public getEnclaveId(): EnclaveID {
         return this.backend.getEnclaveId();
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+    // Docs available at https://docs.kurtosis.com/sdk/#loadmodulestring-moduleid-string-image-string-serializedparams---modulecontext-modulecontext
     public async loadModule(moduleId: ModuleID, image: string, serializedParams: string): Promise<Result<ModuleContext, Error>> {
         const loadModuleArgs: LoadModuleArgs = newLoadModuleArgs(moduleId, image, serializedParams);
 
@@ -187,7 +186,7 @@ export class EnclaveContext {
         return ok(moduleContext)
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+    // Docs available at https://docs.kurtosis.com/sdk/#unloadmodulestring-moduleid
     public async unloadModule(moduleId: ModuleID): Promise<Result<null ,Error>> {
         const unloadModuleArgs: UnloadModuleArgs = newUnloadModuleArgs(moduleId);
 
@@ -200,7 +199,7 @@ export class EnclaveContext {
         return ok(null)
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+    // Docs available at https://docs.kurtosis.com/sdk/#getmodulecontextstring-moduleid---modulecontext-modulecontext
     public async getModuleContext(moduleId: ModuleID): Promise<Result<ModuleContext, Error>> {
         const moduleMapForArgs = new Map<string, boolean>()
         moduleMapForArgs.set(moduleId, true)
@@ -220,6 +219,7 @@ export class EnclaveContext {
         return ok(moduleCtx)
     }
 
+    // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkscriptstring-serializedstarlarkscript-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
     public async runStarlarkScript(
         serializedStartosisScript: string,
         serializedParams: string,
@@ -236,6 +236,7 @@ export class EnclaveContext {
         return ok(scriptRunResult.value)
     }
 
+    // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkpackagestring-packagerootpath-string-serializedparams-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
     public async runStarlarkPackage(
         packageRootPath: string,
         serializedParams: string,
@@ -252,6 +253,7 @@ export class EnclaveContext {
         return ok(packageRunResult.value)
     }
 
+    // Docs available at https://docs.kurtosis.com/sdk/#runremotestarlarkpackagestring-packageid-string-serializedparams-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
     public async runStarlarkRemotePackage(
         moduleId: string,
         serializedParams: string,
@@ -269,7 +271,7 @@ export class EnclaveContext {
         return ok(remotePackageRunResult.value)
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+    // Docs available at https://docs.kurtosis.com/sdk/#addserviceserviceid-serviceid--containerconfig-containerconfig---servicecontext-servicecontext
     public async addService(
             serviceId: ServiceID,
             containerConfig: ContainerConfig
@@ -295,7 +297,7 @@ export class EnclaveContext {
         return ok(serviceCtx);
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+    // Docs available at https://docs.kurtosis.com/sdk/#addservicesmapserviceid-containerconfig-containerconfigs---mapserviceid-servicecontext-successfulservices-mapserviceid-error-failedservices
     public async addServices(
             containerConfigs : Map<ServiceID, ContainerConfig>
         ): Promise<Result<[Map<ServiceID, ServiceContext>, Map<ServiceID, Error>], Error>> {
@@ -311,7 +313,7 @@ export class EnclaveContext {
         return ok(resultAddServicesToPartition.value);
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+    // Docs available at https://docs.kurtosis.com/sdk/#addservicetopartitionserviceid-serviceid-partitionid-partitionid-containerconfig-containerconfig---servicecontext-servicecontext
     public async addServiceToPartition(
             serviceId: ServiceID,
             partitionId: PartitionID,
@@ -338,7 +340,7 @@ export class EnclaveContext {
         return ok(serviceCtx);
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+    // Docs available at https://docs.kurtosis.com/sdk/#addservicestopartitionmapserviceid-containerconfig-containerconfigs-partitionid-partitionid---mapserviceid-servicecontext-successfulservices-mapserviceid-error-failedservices
     public async addServicesToPartition(
         containerConfigs: Map<ServiceID, ContainerConfig>,
         partitionID: PartitionID,
@@ -458,7 +460,7 @@ export class EnclaveContext {
         return ok([successfulServices, failedServicesPool])
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+    // Docs available at https://docs.kurtosis.com/sdk/#getservicecontextserviceid-serviceid---servicecontext-servicecontext
     public async getServiceContext(serviceId: ServiceID): Promise<Result<ServiceContext, Error>> {
         const serviceArgMap = new Map<string, boolean>()
         serviceArgMap.set(serviceId, true)
@@ -502,7 +504,7 @@ export class EnclaveContext {
         return ok(serviceContext);
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+    // Docs available at https://docs.kurtosis.com/sdk/#removeserviceserviceid-serviceid-uint64-containerstoptimeoutseconds
     public async removeService(serviceId: ServiceID): Promise<Result<null, Error>> {
         log.debug("Removing service '" + serviceId + "'...");
         const removeServiceArgs: RemoveServiceArgs = newRemoveServiceArgs(serviceId);
@@ -517,7 +519,7 @@ export class EnclaveContext {
         return ok(null)
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+    // Docs available at https://docs.kurtosis.com/sdk/#repartitionnetworkmappartitionid-setserviceid-partitionservices-mappartitionid-mappartitionid-partitionconnection-partitionconnections-partitionconnection-defaultconnection
     public async repartitionNetwork(
             partitionServices: Map<PartitionID, Set<ServiceID>>,
             partitionConnections: Map<PartitionID, Map<PartitionID, PartitionConnection>>,
@@ -568,7 +570,7 @@ export class EnclaveContext {
         return ok(null)
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+    // Docs available at https://docs.kurtosis.com/sdk/#waitforhttpgetendpointavailabilityserviceid-serviceid-uint32-port-string-path-string-requestbody-uint32-initialdelaymilliseconds-uint32-retries-uint32-retriesdelaymilliseconds-string-bodytext
     public async waitForHttpGetEndpointAvailability(
             serviceId: ServiceID,
             port: number,
@@ -598,7 +600,7 @@ export class EnclaveContext {
         return ok(result)
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+    // Docs available at https://docs.kurtosis.com/sdk/#waitforhttppostendpointavailabilityserviceid-serviceid-uint32-port-string-path-string-requestbody-uint32-initialdelaymilliseconds-uint32-retries-uint32-retriesdelaymilliseconds-string-bodytext
     public async waitForHttpPostEndpointAvailability(
             serviceId: ServiceID,
             port: number,
@@ -622,8 +624,8 @@ export class EnclaveContext {
         return this.backend.waitForHttpPostEndpointAvailability(availabilityArgs)
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-    public async getServices(): Promise<Result<Set<ServiceInfoSimple>, Error>> {
+    // Docs available at https://docs.kurtosis.com/sdk/#getservices---mapserviceid--serviceguid-serviceids
+    public async getServices(): Promise<Result<Map<ServiceID, ServiceGUID>, Error>> {
         const getAllServicesArgMap: Map<string, boolean> = new Map<string,boolean>()
         const emptyGetServicesArg: GetServicesArgs = newGetServicesArgs(getAllServicesArgMap)
 
@@ -634,14 +636,14 @@ export class EnclaveContext {
 
         const getServicesResponse = getServicesResponseResult.value
 
-        const serviceInfos: Set<ServiceInfoSimple> = new Set<ServiceInfoSimple>()
+        const serviceInfos: Map<ServiceID, ServiceGUID> = new Map<ServiceID, ServiceGUID>()
         getServicesResponse.getServiceInfoMap().forEach((value: ServiceInfo, key: string) => {
-            serviceInfos.add(new ServiceInfoSimple(key, value.getServiceGuid()))
+            serviceInfos.set(key, value.getServiceGuid())
         });
         return ok(serviceInfos)
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+    // Docs available at https://docs.kurtosis.com/sdk/#getmodules---setmoduleid-moduleids
     public async getModules(): Promise<Result<Set<ModuleID>, Error>> {
         const getAllModulesArgMap: Map<string, boolean> = new Map<string,boolean>()
         const emptyGetModulesArg: GetModulesArgs = newGetModulesArgs(getAllModulesArgMap)
@@ -662,7 +664,7 @@ export class EnclaveContext {
         return ok(moduleIds)
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+    // Docs available at https://docs.kurtosis.com/sdk/#uploadfilesstring-pathtoupload
     public async uploadFiles(pathToArchive: string): Promise<Result<FilesArtifactUUID, Error>>  {
         const archiverResponse = await this.genericTgzArchiver.createTgzByteArray(pathToArchive)
         if (archiverResponse.isErr()){
@@ -678,7 +680,7 @@ export class EnclaveContext {
         return ok(uploadResult.value.getUuid())
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+    // Docs available at https://docs.kurtosis.com/sdk/#storewebfilesstring-urltodownload
     public async storeWebFiles(url: string): Promise<Result<FilesArtifactUUID, Error>> {
         const args = newStoreWebFilesArtifactArgs(url);
         const storeWebFilesArtifactResponseResult = await this.backend.storeWebFilesArtifact(args)
@@ -689,7 +691,7 @@ export class EnclaveContext {
         return ok(storeWebFilesArtifactResponse.getUuid())
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+    // Docs available at https://docs.kurtosis.com/sdk/#storeservicefilesserviceid-serviceid-string-absolutefilepathonservicecontainer
     public async storeServiceFiles(serviceId: ServiceID, absoluteFilepathOnServiceContainer: string): Promise<Result<FilesArtifactUUID, Error>> {
         const args = newStoreFilesArtifactFromServiceArgs(serviceId, absoluteFilepathOnServiceContainer)
         const storeFilesArtifactFromServiceResponseResult = await this.backend.storeFilesArtifactFromService(args)
@@ -700,7 +702,7 @@ export class EnclaveContext {
         return ok(storeFilesArtifactFromServiceResponse.getUuid())
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+    // Docs available at https://docs.kurtosis.com/sdk/#pauseserviceserviceid-serviceid
     public async pauseService(serviceId: string): Promise<Result<null, Error>> {
         const pauseServiceArgs: PauseServiceArgs = newPauseServiceArgs(serviceId)
 
@@ -712,7 +714,7 @@ export class EnclaveContext {
         return ok(null)
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+    // Docs available at https://docs.kurtosis.com/sdk/#unpauseserviceserviceid-serviceid
     public async unpauseService(serviceId: string): Promise<Result<null, Error>> {
         const unpauseServiceArgs: UnpauseServiceArgs = newUnpauseServiceArgs(serviceId)
 
@@ -724,7 +726,7 @@ export class EnclaveContext {
         return ok(null)
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+    // Docs available at https://docs.kurtosis.com/sdk/#rendertemplatesmapstring-templateanddata-templateanddatabydestinationrelfilepaths
     public async renderTemplates(templateAndDataByDestinationRelFilepath: Map<string, TemplateAndData>): Promise<Result<FilesArtifactUUID, Error>> {
 
         if (templateAndDataByDestinationRelFilepath.size === 0) {

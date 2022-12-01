@@ -523,6 +523,9 @@ jobs:
       <<: *param_cli_cluster_backend
     steps:
       - checkout
+
+      - <<: *abort_job_if_only_docs_changes
+
       - attach_workspace:
           at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
       # We call Kurtosis a bunch later, so add it to the PATH so we can call it easily
@@ -590,6 +593,10 @@ jobs:
   test_old_enclave_continuity:
     executor: ubuntu_vm
     steps:
+      - checkout
+
+      - <<: *abort_job_if_only_docs_changes
+
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
       # Set up Kurtosis
@@ -660,6 +667,10 @@ jobs:
     parameters:
       <<: *param_cli_cluster_backend
     steps:
+      - checkout
+
+      - <<: *abort_job_if_only_docs_changes
+
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
       # Set up Kurtosis
@@ -762,6 +773,9 @@ jobs:
     executor: ubuntu_vm
     steps:
       - checkout
+
+      - <<: *abort_job_if_only_docs_changes
+
       - attach_workspace:
           at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
       - run: |
@@ -1017,6 +1031,9 @@ workflows:
                 "ignorePatterns": [
                     {
                         "pattern": "https://github.com/kurtosis-tech/kurtosis-internal-docs/.*"
+                    },
+                    {
+                        "pattern": "https://github.com/kurtosis-tech/docs"
                     }
                 ]
             }

@@ -120,7 +120,7 @@ func (instruction *AddServiceInstruction) Execute(ctx context.Context) (*string,
 	if !found {
 		return nil, stacktrace.NewError("Service wasn't accounted as failed nor successfully added. This is a product bug")
 	}
-	instructionResult := fmt.Sprintf("Service '%s' added with internal ID '%s'", instruction.serviceId, deployedService.GetRegistration().GetGUID())
+	instructionResult := fmt.Sprintf("Service '%s' added with service GUID '%s'", instruction.serviceId, deployedService.GetRegistration().GetGUID())
 	return &instructionResult, nil
 }
 

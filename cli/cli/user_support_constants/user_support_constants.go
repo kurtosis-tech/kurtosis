@@ -6,15 +6,20 @@
 package user_support_constants
 
 const (
-	// WARNING: If you add new URLs here, make sure to add them to the urlsToValidateInTest below!!!
-	Domain              = "kurtosis.com"
-	InfoEmail           = "inquiries@" + Domain
-	DocumentationUrl    = "https://docs." + Domain
-	SupportEmail        = "support@" + Domain
-	DiscordUrl          = "https://discord.gg/6Jjp9c89z9"
-	GithubIssuesUrl     = "https://github.com/kurtosis-tech/kurtosis-sdk"
-	CLISetupDocsUrl     = DocumentationUrl + "/ci"
-	starlarkPackagesURl = "https://docs.kurtosis.com/reference/packages"
+	// WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
+	//    If you add new URLs below, make sure to add them to the urlsToValidateInTest below!!!
+	Domain                       = "kurtosis.com"
+	InfoEmail                    = "inquiries@" + Domain
+	DocumentationUrl             = "https://docs." + Domain
+	SupportEmail                 = "support@" + Domain
+	DiscordUrl                   = "https://discord.gg/6Jjp9c89z9"
+	GithubIssuesUrl              = "https://github.com/kurtosis-tech/kurtosis-sdk"
+	CLICommandsReferenceURL      = DocumentationUrl + "/cli"
+	StarlarkPackagesReferenceURL = DocumentationUrl + "/reference/packages"
+	StarlarkLocatorsReferenceURL = DocumentationUrl + "/reference/locators"
+	UpgradeCLIInstructionsPage   = DocumentationUrl + "/install#upgrading"
+	//    If you add new URLs above, make sure to add them to the urlsToValidateInTest below!!!
+	// WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
 )
 
 // List of URLs whose validity will be verified in a test
@@ -22,6 +27,8 @@ var urlsToValidateInTest = []string{
 	DocumentationUrl,
 	DiscordUrl,
 	GithubIssuesUrl,
-	CLISetupDocsUrl,
-	starlarkPackagesURl,
+	CLICommandsReferenceURL,
+	StarlarkPackagesReferenceURL,
+	StarlarkLocatorsReferenceURL,
+	UpgradeCLIInstructionsPage,
 }

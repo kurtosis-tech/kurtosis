@@ -24,6 +24,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/host_machine_directories"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/user_send_metrics_election"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/user_support_constants"
 	"github.com/kurtosis-tech/kurtosis/kurtosis_version"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -47,8 +48,6 @@ const (
 	contentTypeHttpHeaderValue = "application/json"
 	userAgentHttpHeaderKey     = "User-Agent"
 	userAgentHttpHeaderValue   = "kurtosis-tech"
-
-	upgradeCLIInstructionsDocsPageURL = "https://docs.kurtosistech.com/installation.html#upgrading-kurtosis-cli"
 
 	latestCLIReleaseCacheFileContentSeparator       = ";"
 	latestCLIReleaseCacheFileExpirationHours        = 24
@@ -146,12 +145,12 @@ func checkCLIVersion(cmd *cobra.Command) {
 		logrus.Warning("An error occurred trying to check if you are running the latest Kurtosis CLI version.")
 		logrus.Debugf("Checking latest version error: %v", err)
 		logrus.Warningf("Your current version is '%v'", kurtosis_version.KurtosisVersion)
-		logrus.Warningf("You can manually upgrade the CLI tool following these instructions: %v", upgradeCLIInstructionsDocsPageURL)
+		logrus.Warningf("You can manually upgrade the CLI tool following these instructions: %v", user_support_constants.UpgradeCLIInstructionsPage)
 		return
 	}
 	if !isLatestVersion {
 		logrus.Warningf("You are running an old version of the Kurtosis CLI; we suggest you to update it to the latest version, '%v'", latestVersion)
-		logrus.Warningf("You can manually upgrade the CLI tool following these instructions: %v", upgradeCLIInstructionsDocsPageURL)
+		logrus.Warningf("You can manually upgrade the CLI tool following these instructions: %v", user_support_constants.UpgradeCLIInstructionsPage)
 	}
 }
 

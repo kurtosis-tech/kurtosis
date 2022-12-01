@@ -2,7 +2,7 @@ import {createEnclave} from "../../test_helpers/enclave_setup";
 import log from "loglevel";
 import {readStreamContentUntilClosed} from "../../test_helpers/startosis_helpers";
 import { Result } from "neverthrow"
-import {ServiceInfo} from "kurtosis-sdk";
+import {ServiceGUID, ServiceID} from "kurtosis-sdk";
 
 const ADD_SERVICE_WITH_EMPTY_PORTS_TEST_NAME = "add-service-empty-ports"
 const IS_PARTITIONING_ENABLED = false
@@ -78,7 +78,7 @@ async function TestAddServiceWithEmptyAndWithoutPorts() {
             const [scriptOutput, _, interpretationError, validationErrors, executionError] = await readStreamContentUntilClosed(outputStream.value);
 
             const expectedScriptOutputRegexpPattern = `Adding service ${serviceId}.
-Service '${serviceId}' added with internal ID '[a-z-0-9]+'
+Service '${serviceId}' added with service GUID '[a-z-0-9]+'
 Service ${serviceId} deployed successfully.
 `;
             const expectedScriptOutputRegexp = new RegExp(expectedScriptOutputRegexpPattern)
@@ -93,16 +93,16 @@ Service ${serviceId} deployed successfully.
 
             // Ensure that the service is listed
             const expectedNumberOfServices: number = i + 1;
-            const getServiceIdsPromise: Promise<Result<Set<ServiceInfo>, Error>> = enclaveContext.getServices();
+            const getServiceIdsPromise: Promise<Result<Map<ServiceID, ServiceGUID>, Error>> = enclaveContext.getServices();
             const getServiceIdsResult = await getServiceIdsPromise;
             if(getServiceIdsResult.isErr()) {
                 log.error(`An error occurred getting service IDs`);
                 throw getServiceIdsResult.error;
             }
 
-            const servicesInfos: Set<ServiceInfo> = getServiceIdsResult.value;
+            const serviceIdMap: Map<ServiceID, ServiceGUID> = getServiceIdsResult.value;
 
-            const actualNumberOfServices: number = servicesInfos.size
+            const actualNumberOfServices: number = serviceIdMap.size
 
             if (expectedNumberOfServices !== actualNumberOfServices) {
                 throw new Error(`Expected to receive ${expectedNumberOfServices} services from get services, but ${actualNumberOfServices} were received`)

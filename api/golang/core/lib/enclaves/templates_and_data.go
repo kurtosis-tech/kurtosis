@@ -5,13 +5,13 @@
 
 package enclaves
 
-// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+// TemplateAndData Docs available at https://docs.kurtosis.com/sdk#templateanddata
 type TemplateAndData struct {
 	template     string
 	templateData interface{}
 }
 
-// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+// NewTemplateAndData Docs available at https://docs.kurtosis.com/sdk#templateanddata
 func NewTemplateAndData(template string, templateData interface{}) *TemplateAndData {
 	return &TemplateAndData{template, templateData}
 }
