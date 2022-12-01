@@ -11,6 +11,7 @@
 - Corrected almost all old references to `docs.kurtosistech.com`
 - Changed the name from startosis to starlark in the `internal_testsuite` build script
 - Fixed `internal-testsuites` omission during build time
+- Fixed a bug related to omitting the `enclave ID` value when a function which filters modules is called
 
 ### Features
 - Support public ports in Starlark to cover the NEAR usecase
