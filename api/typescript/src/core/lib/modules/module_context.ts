@@ -5,7 +5,7 @@ import { GenericApiContainerClient } from "../enclaves/generic_api_container_cli
 
 export type ModuleID = string;
 
-// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+// Docs available at https://docs.kurtosis.com/sdk
 export class ModuleContext {
 
     private readonly client: GenericApiContainerClient
@@ -16,7 +16,7 @@ export class ModuleContext {
         this.client = client
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+    // Docs available at https://docs.kurtosis.com/sdk
     public async execute(serializedParams: string): Promise<Result<string, Error>> {
         const executeModuleArgs: ExecuteModuleArgs = newExecuteModuleArgs(this.moduleId, serializedParams);
 

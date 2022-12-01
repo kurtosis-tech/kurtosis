@@ -24,10 +24,10 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 )
 
-// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+// Docs available at https://docs.kurtosis.com/sdk
 type ServiceContext struct {
-	client    kurtosis_core_rpc_api_bindings.ApiContainerServiceClient
-	serviceId ServiceID
+	client      kurtosis_core_rpc_api_bindings.ApiContainerServiceClient
+	serviceId   ServiceID
 	serviceGuid ServiceGUID
 
 	// Network location inside the enclave
@@ -49,47 +49,47 @@ func NewServiceContext(
 	publicPorts map[string]*PortSpec,
 ) *ServiceContext {
 	return &ServiceContext{
-		client: client,
-		serviceId: serviceId,
-		serviceGuid: serviceGuid,
+		client:        client,
+		serviceId:     serviceId,
+		serviceGuid:   serviceGuid,
 		privateIpAddr: privateIpAddr,
-		privatePorts: privatePorts,
-		publicIpAddr: publicIpAddr,
-		publicPorts: publicPorts,
+		privatePorts:  privatePorts,
+		publicIpAddr:  publicIpAddr,
+		publicPorts:   publicPorts,
 	}
 }
 
-// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+// Docs available at https://docs.kurtosis.com/sdk
 func (service *ServiceContext) GetServiceID() ServiceID {
 	return service.serviceId
 }
 
-// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+// Docs available at https://docs.kurtosis.com/sdk
 func (service *ServiceContext) GetServiceGUID() ServiceGUID {
 	return service.serviceGuid
 }
 
-// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+// Docs available at https://docs.kurtosis.com/sdk
 func (service *ServiceContext) GetPrivateIPAddress() string {
 	return service.privateIpAddr
 }
 
-// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+// Docs available at https://docs.kurtosis.com/sdk
 func (service *ServiceContext) GetPrivatePorts() map[string]*PortSpec {
 	return service.privatePorts
 }
 
-// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+// Docs available at https://docs.kurtosis.com/sdk
 func (service *ServiceContext) GetMaybePublicIPAddress() string {
 	return service.publicIpAddr
 }
 
-// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+// Docs available at https://docs.kurtosis.com/sdk
 func (service *ServiceContext) GetPublicPorts() map[string]*PortSpec {
 	return service.publicPorts
 }
 
-// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+// Docs available at https://docs.kurtosis.com/sdk
 func (service *ServiceContext) ExecCommand(command []string) (int32, string, error) {
 	serviceId := service.serviceId
 	args := binding_constructors.NewExecCommandArgs(string(serviceId), command)

@@ -43,7 +43,7 @@ export const DEFAULT_GRPC_PROXY_ENGINE_SERVER_PORT_NUM: number = 9711;
 // Blank tells the engine server to use the default
 const DEFAULT_API_CONTAINER_VERSION_TAG = "";
 
-// Docs available at https://docs.kurtosistech.com/kurtosis/engine-lib-documentation
+// Docs available at https://docs.kurtosis.com/sdk#kurtosiscontext
 export class KurtosisContext {
     private readonly client: GenericEngineClient
 
@@ -95,7 +95,7 @@ export class KurtosisContext {
         return ok(kurtosisContext)
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis/engine-lib-documentation
+    // Docs available at https://docs.kurtosis.com/sdk#createenclaveenclaveid-enclaveid-boolean-ispartitioningenabled---enclavecontextenclavecontext-enclavecontext
     public async createEnclave(enclaveId: string, isPartitioningEnabled: boolean): Promise<Result<EnclaveContext, Error>> {
         const enclaveArgs: CreateEnclaveArgs = newCreateEnclaveArgs(
             enclaveId,
@@ -125,7 +125,7 @@ export class KurtosisContext {
         return ok(enclaveContext);
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis/engine-lib-documentation
+    // Docs available at https://docs.kurtosis.com/sdk#getenclavecontextenclaveid-enclaveid---enclavecontextenclavecontext-enclavecontext
     public async getEnclaveContext(enclaveId: EnclaveID): Promise<Result<EnclaveContext, Error>> {
         const getEnclavesResponseResult = await this.client.getEnclavesResponse();
         if (getEnclavesResponseResult.isErr()) {
@@ -147,7 +147,7 @@ export class KurtosisContext {
         return ok(newEnclaveContextResult.value);
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis/engine-lib-documentation
+    // Docs available at https://docs.kurtosis.com/sdk#getenclaves---setenclaveid-enclaveids
     public async getEnclaves(): Promise<Result<Set<EnclaveID>, Error>>{
         const getEnclavesResponseResult = await this.client.getEnclavesResponse();
         if (getEnclavesResponseResult.isErr()) {
@@ -163,7 +163,7 @@ export class KurtosisContext {
         return ok(enclaves);
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis/engine-lib-documentation
+    // Docs available at https://docs.kurtosis.com/sdk#stopenclaveenclaveid-enclaveid
     public async stopEnclave(enclaveId: EnclaveID): Promise<Result<null, Error>>{
         const stopEnclaveArgs: StopEnclaveArgs = newStopEnclaveArgs(enclaveId)
         const stopEnclaveResult = await this.client.stopEnclave(stopEnclaveArgs)
@@ -174,7 +174,7 @@ export class KurtosisContext {
         return ok(null)
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis/engine-lib-documentation
+    // Docs available at https://docs.kurtosis.com/sdk#destroyenclaveenclaveid-enclaveid
     public async destroyEnclave(enclaveId: EnclaveID): Promise<Result<null, Error>>{
         const destroyEnclaveArgs: DestroyEnclaveArgs = newDestroyEnclaveArgs(enclaveId);
         const destroyEnclaveResult = await this.client.destroyEnclave(destroyEnclaveArgs)
@@ -185,7 +185,7 @@ export class KurtosisContext {
         return ok(null)
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis/engine-lib-documentation
+    // Docs available at https://docs.kurtosis.com/sdk#cleanboolean-shouldcleanall---setenclaveid-removedenclaveids
     public async clean(shouldCleanAll: boolean): Promise<Result<Set<string>, Error>>{
         const cleanArgs: CleanArgs = newCleanArgs(shouldCleanAll);
         const cleanResponseResult = await this.client.clean(cleanArgs)
@@ -304,7 +304,7 @@ export class KurtosisContext {
             if (!doApiVersionsMatch) {
                 return err(new Error(
                     `An API version mismatch was detected between the running engine version '${runningEngineSemver.version}' and the engine version this Kurtosis SDK library expects, '${libraryEngineSemver.version}'. You should:\n` +
-                    `  1) upgrade your Kurtosis CLI to latest using the instructions at https://docs.kurtosistech.com/installation.html\n` +
+                    `  1) upgrade your Kurtosis CLI to latest using the instructions at https://docs.kurtosis.com/install#upgrading\n` +
                     `  2) use the Kurtosis CLI to restart your engine via 'kurtosis engine restart'\n`	+
                     `  3) upgrade your Kurtosis SDK library using the instructions at https://github.com/kurtosis-tech/kurtosis-sdk\n`,
                 ));
