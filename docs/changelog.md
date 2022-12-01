@@ -1,7 +1,9 @@
 # TBD
+### Fixes
+- Corrected some old references to Starlark "modules"
+- Fixed a typo where the CLI setup URL was redirecting to the CI setup
 
 # 0.57.4
-
 ### Changes
 - Simplified the API by removing the ServiceInfo struct that was adding unnecessary complexity.
 
