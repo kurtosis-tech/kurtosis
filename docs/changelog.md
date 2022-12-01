@@ -9,6 +9,7 @@
 - Corrected some old references to Starlark "modules"
 - Fixed a typo where the CLI setup URL was redirecting to the CI setup
 - Corrected almost all old references to `docs.kurtosistech.com`
+- Fixed `internal-testsuites` omission during build time
 
 ### Features
 - Support public ports in Starlark to cover the NEAR usecase
