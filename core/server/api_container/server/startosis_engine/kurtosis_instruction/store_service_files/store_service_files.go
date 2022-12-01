@@ -36,7 +36,7 @@ type StoreServiceFilesInstruction struct {
 
 	serviceId    kurtosis_backend_service.ServiceID
 	src          string
-	artifactUuid enclave_data_directory.FilesArtifactUUID
+	artifactUuid enclave_data_directory.FilesArtifactID
 }
 
 func GenerateStoreServiceFilesBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, serviceNetwork service_network.ServiceNetwork) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
@@ -52,7 +52,7 @@ func GenerateStoreServiceFilesBuiltin(instructionsQueue *[]kurtosis_instruction.
 	}
 }
 
-func NewStoreServiceFilesInstruction(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceID, srcPath string, artifactUuid enclave_data_directory.FilesArtifactUUID, starlarkKwargs starlark.StringDict) *StoreServiceFilesInstruction {
+func NewStoreServiceFilesInstruction(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceID, srcPath string, artifactUuid enclave_data_directory.FilesArtifactID, starlarkKwargs starlark.StringDict) *StoreServiceFilesInstruction {
 	return &StoreServiceFilesInstruction{
 		serviceNetwork: serviceNetwork,
 		position:       position,
@@ -104,10 +104,10 @@ func (instruction *StoreServiceFilesInstruction) ValidateAndUpdateEnvironment(en
 	if !environment.DoesServiceIdExist(instruction.serviceId) {
 		return startosis_errors.NewValidationError("There was an error validating '%v' with service ID '%v' that does not exist for instruction '%v'", StoreServiceFilesBuiltinName, instruction.serviceId, instruction.position.String())
 	}
-	if environment.DoesArtifactUuidExist(instruction.artifactUuid) {
+	if environment.DoesArtifactIdExist(instruction.artifactUuid) {
 		return stacktrace.NewError("There was an error validating '%v' as artifact UUID '%v' already exists", StoreServiceFilesBuiltinName, instruction.artifactUuid)
 	}
-	environment.AddArtifactUuid(instruction.artifactUuid)
+	environment.AddArtifactId(instruction.artifactUuid)
 	return nil
 }
 
@@ -120,7 +120,7 @@ func (instruction *StoreServiceFilesInstruction) parseStartosisArgs(b *starlark.
 	}
 
 	if artifactIdArg == emptyStarlarkString {
-		placeHolderArtifactUuid, err := enclave_data_directory.NewFilesArtifactUUID()
+		placeHolderArtifactUuid, err := enclave_data_directory.NewFilesArtifactID()
 		if err != nil {
 			return startosis_errors.NewInterpretationError("An empty or no artifact_uuid was passed, we tried creating one but failed")
 		}

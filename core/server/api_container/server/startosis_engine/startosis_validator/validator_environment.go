@@ -9,14 +9,14 @@ import (
 type ValidatorEnvironment struct {
 	requiredDockerImages map[string]bool
 	serviceIDs           map[service.ServiceID]bool
-	artifactUUIDs        map[enclave_data_directory.FilesArtifactUUID]bool
+	artifactIDs          map[enclave_data_directory.FilesArtifactID]bool
 }
 
 func NewValidatorEnvironment(serviceIDs map[service.ServiceID]bool) *ValidatorEnvironment {
 	return &ValidatorEnvironment{
 		requiredDockerImages: map[string]bool{},
 		serviceIDs:           serviceIDs,
-		artifactUUIDs:        map[enclave_data_directory.FilesArtifactUUID]bool{},
+		artifactIDs:          map[enclave_data_directory.FilesArtifactID]bool{},
 	}
 }
 
@@ -37,15 +37,15 @@ func (environment *ValidatorEnvironment) DoesServiceIdExist(serviceId service.Se
 	return ok
 }
 
-func (environment *ValidatorEnvironment) AddArtifactUuid(artifactUuid enclave_data_directory.FilesArtifactUUID) {
-	environment.artifactUUIDs[artifactUuid] = true
+func (environment *ValidatorEnvironment) AddArtifactId(artifactId enclave_data_directory.FilesArtifactID) {
+	environment.artifactIDs[artifactId] = true
 }
 
-func (environment *ValidatorEnvironment) RemoveArtifactUuid(artifactUuid enclave_data_directory.FilesArtifactUUID) {
-	delete(environment.artifactUUIDs, artifactUuid)
+func (environment *ValidatorEnvironment) RemoveArtifactId(artifactId enclave_data_directory.FilesArtifactID) {
+	delete(environment.artifactIDs, artifactId)
 }
 
-func (environment *ValidatorEnvironment) DoesArtifactUuidExist(artifactUuid enclave_data_directory.FilesArtifactUUID) bool {
-	_, ok := environment.artifactUUIDs[artifactUuid]
+func (environment *ValidatorEnvironment) DoesArtifactIdExist(artifactId enclave_data_directory.FilesArtifactID) bool {
+	_, ok := environment.artifactIDs[artifactId]
 	return ok
 }

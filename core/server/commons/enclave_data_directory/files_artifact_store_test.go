@@ -39,7 +39,7 @@ func TestFileStore_StoreFileToArtifactUUIDSimpleCase(t *testing.T) {
 	fileStore := getTestFileStore(t)
 	testContent := "Long Live Kurtosis!"
 	reader := strings.NewReader(testContent)
-	targetArtifactUuid, err := NewFilesArtifactUUID()
+	targetArtifactUuid, err := NewFilesArtifactID()
 	require.Equal(t, 36, len(targetArtifactUuid)) //UUID is 128 bits but in string it is hex represented chars so 32 chars
 	require.Nil(t, err)
 	err = fileStore.StoreFileToArtifactUUID(reader, targetArtifactUuid)
@@ -139,7 +139,7 @@ func TestFileStore_RemoveFileRemovesFileFromDisk(t *testing.T) {
 
 func TestFileStore_RemoveFileFailsForNonExistentUuid(t *testing.T) {
 	fileStore := getTestFileStore(t)
-	nonExistentUuid, err := NewFilesArtifactUUID()
+	nonExistentUuid, err := NewFilesArtifactID()
 	require.Nil(t, err)
 
 	err = fileStore.RemoveFile(nonExistentUuid)

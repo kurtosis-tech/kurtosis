@@ -605,8 +605,8 @@ func (network *DefaultServiceNetwork) GetServiceIDs() map[service.ServiceID]bool
 	return serviceIDs
 }
 
-func (network *DefaultServiceNetwork) CopyFilesFromService(ctx context.Context, serviceId service.ServiceID, srcPath string) (enclave_data_directory.FilesArtifactUUID, error) {
-	filesArtifactUuid, err := enclave_data_directory.NewFilesArtifactUUID()
+func (network *DefaultServiceNetwork) CopyFilesFromService(ctx context.Context, serviceId service.ServiceID, srcPath string) (enclave_data_directory.FilesArtifactID, error) {
+	filesArtifactUuid, err := enclave_data_directory.NewFilesArtifactID()
 	if err != nil {
 		return "", stacktrace.Propagate(err, "There was an error in creating a files artifact uuid to copy the files to")
 	}
@@ -618,7 +618,7 @@ func (network *DefaultServiceNetwork) CopyFilesFromService(ctx context.Context, 
 	return filesArtifactUuid, nil
 }
 
-func (network *DefaultServiceNetwork) CopyFilesFromServiceToTargetArtifactUUID(ctx context.Context, serviceId service.ServiceID, srcPath string, filesArtifactUuid enclave_data_directory.FilesArtifactUUID) (enclave_data_directory.FilesArtifactUUID, error) {
+func (network *DefaultServiceNetwork) CopyFilesFromServiceToTargetArtifactUUID(ctx context.Context, serviceId service.ServiceID, srcPath string, filesArtifactUuid enclave_data_directory.FilesArtifactID) (enclave_data_directory.FilesArtifactID, error) {
 	err := network.copyFilesFromServiceToTargetArtifactUUIDUnlocked(ctx, serviceId, srcPath, filesArtifactUuid)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "There was an error in copying files over to disk")
@@ -636,12 +636,12 @@ func (network *DefaultServiceNetwork) GetIPAddressForService(serviceID service.S
 	return registration.GetPrivateIP(), true
 }
 
-func (network *DefaultServiceNetwork) RenderTemplates(templatesAndDataByDestinationRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData) (enclave_data_directory.FilesArtifactUUID, error) {
+func (network *DefaultServiceNetwork) RenderTemplates(templatesAndDataByDestinationRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData) (enclave_data_directory.FilesArtifactID, error) {
 	// calling mutex just in case, even though we don't change or read from the network, just get the file store
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 
-	filesArtifactUuid, err := enclave_data_directory.NewFilesArtifactUUID()
+	filesArtifactUuid, err := enclave_data_directory.NewFilesArtifactID()
 	if err != nil {
 		return "", stacktrace.Propagate(err, "There was an error in creating a files artifact uuid to render the templates to")
 	}
@@ -652,7 +652,7 @@ func (network *DefaultServiceNetwork) RenderTemplates(templatesAndDataByDestinat
 	return filesArtifactUuid, nil
 }
 
-func (network *DefaultServiceNetwork) RenderTemplatesToTargetFilesArtifactUUID(templatesAndDataByDestinationRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, filesArtifactUuid enclave_data_directory.FilesArtifactUUID) (enclave_data_directory.FilesArtifactUUID, error) {
+func (network *DefaultServiceNetwork) RenderTemplatesToTargetFilesArtifactUUID(templatesAndDataByDestinationRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, filesArtifactUuid enclave_data_directory.FilesArtifactID) (enclave_data_directory.FilesArtifactID, error) {
 	// calling mutex just in case, even though we don't change or read from the network, just get the file store
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
@@ -664,8 +664,8 @@ func (network *DefaultServiceNetwork) RenderTemplatesToTargetFilesArtifactUUID(t
 	return filesArtifactUuid, nil
 }
 
-func (network *DefaultServiceNetwork) UploadFilesArtifact(data []byte) (enclave_data_directory.FilesArtifactUUID, error) {
-	filesArtifactUuid, err := enclave_data_directory.NewFilesArtifactUUID()
+func (network *DefaultServiceNetwork) UploadFilesArtifact(data []byte) (enclave_data_directory.FilesArtifactID, error) {
+	filesArtifactUuid, err := enclave_data_directory.NewFilesArtifactID()
 	if err != nil {
 		return "", stacktrace.Propagate(err, "There was an error in creating a files artifact uuid to upload the files to")
 	}
@@ -678,7 +678,7 @@ func (network *DefaultServiceNetwork) UploadFilesArtifact(data []byte) (enclave_
 	return filesArtifactUuid, nil
 }
 
-func (network *DefaultServiceNetwork) UploadFilesArtifactToTargetArtifactUUID(data []byte, targetFilesArtifactUuid enclave_data_directory.FilesArtifactUUID) error {
+func (network *DefaultServiceNetwork) UploadFilesArtifactToTargetArtifactUUID(data []byte, targetFilesArtifactUuid enclave_data_directory.FilesArtifactID) error {
 	err := network.uploadFilesArtifactToTargetArtifactUUIDUnlocked(data, targetFilesArtifactUuid)
 	if err != nil {
 		return stacktrace.Propagate(err, "There was an error in uploading the files")
@@ -851,7 +851,7 @@ func (network *DefaultServiceNetwork) startServices(
 }
 
 // This method is not thread safe. Only call this from a method where there is a mutex lock on the network.
-func (network *DefaultServiceNetwork) copyFilesFromServiceToTargetArtifactUUIDUnlocked(ctx context.Context, serviceId service.ServiceID, srcPath string, filesArtifactUuId enclave_data_directory.FilesArtifactUUID) error {
+func (network *DefaultServiceNetwork) copyFilesFromServiceToTargetArtifactUUIDUnlocked(ctx context.Context, serviceId service.ServiceID, srcPath string, filesArtifactUuId enclave_data_directory.FilesArtifactID) error {
 	serviceObj, found := network.registeredServiceInfo[serviceId]
 	if !found {
 		return stacktrace.NewError("Cannot copy files from service '%v' because it does not exist in the network", serviceId)
@@ -974,7 +974,7 @@ func (network *DefaultServiceNetwork) createSidecarAndAddToMap(ctx context.Conte
 }
 
 // This method is not thread safe. Only call this from a method where there is a mutex lock on the network.
-func (network *DefaultServiceNetwork) renderTemplatesToTargetArtifactUUIDUnlocked(templatesAndDataByDestinationRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, filesArtifactUuid enclave_data_directory.FilesArtifactUUID) error {
+func (network *DefaultServiceNetwork) renderTemplatesToTargetArtifactUUIDUnlocked(templatesAndDataByDestinationRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, filesArtifactUuid enclave_data_directory.FilesArtifactID) error {
 	tempDirForRenderedTemplates, err := os.MkdirTemp("", tempDirForRenderedTemplatesPrefix)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while creating a temp dir for rendered templates '%v'", tempDirForRenderedTemplates)
@@ -1032,7 +1032,7 @@ func (network *DefaultServiceNetwork) renderTemplatesToTargetArtifactUUIDUnlocke
 }
 
 // This method is not thread safe. Only call this from a method where there is a mutex lock on the network.
-func (network *DefaultServiceNetwork) uploadFilesArtifactToTargetArtifactUUIDUnlocked(data []byte, targetFilesArtifactUuid enclave_data_directory.FilesArtifactUUID) error {
+func (network *DefaultServiceNetwork) uploadFilesArtifactToTargetArtifactUUIDUnlocked(data []byte, targetFilesArtifactUuid enclave_data_directory.FilesArtifactID) error {
 	reader := bytes.NewReader(data)
 
 	filesArtifactStore, err := network.enclaveDataDir.GetFilesArtifactStore()

@@ -448,7 +448,7 @@ func TestArtifactUuidPathPath_ValidValue(t *testing.T) {
 	input := starlark.String("abde-f23dd-1")
 	output, err := ParseArtifactId("artifact_id", input)
 	require.Nil(t, err)
-	require.Equal(t, enclave_data_directory.FilesArtifactUUID("abde-f23dd-1"), output)
+	require.Equal(t, enclave_data_directory.FilesArtifactID("abde-f23dd-1"), output)
 }
 
 func TestArtifactUuidPathPath_EmptyStringFails(t *testing.T) {

@@ -193,7 +193,7 @@ func (instruction *AddServiceInstruction) ValidateAndUpdateEnvironment(environme
 		return startosis_errors.NewValidationError("There was an error validating '%v' as service ID '%v' already exists", AddServiceBuiltinName, instruction.serviceId)
 	}
 	for artifactUuidKey := range instruction.serviceConfig.FilesArtifactMountpoints {
-		if !environment.DoesArtifactUuidExist(enclave_data_directory.FilesArtifactUUID(artifactUuidKey)) {
+		if !environment.DoesArtifactIdExist(enclave_data_directory.FilesArtifactID(artifactUuidKey)) {
 			return startosis_errors.NewValidationError("There was an error validating '%v' as artifact UUID '%v' does not exist", AddServiceBuiltinName, artifactUuidKey)
 		}
 	}

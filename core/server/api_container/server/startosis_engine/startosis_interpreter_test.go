@@ -819,7 +819,7 @@ exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"], e
 }
 
 func TestStartosisInterpreter_StoreFileFromService(t *testing.T) {
-	testArtifactId, err := enclave_data_directory.NewFilesArtifactUUID()
+	testArtifactId, err := enclave_data_directory.NewFilesArtifactID()
 	require.Nil(t, err)
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
@@ -900,7 +900,7 @@ wait(service_id="%v", fact_name="%v")
 }
 
 func TestStartosisInterpreter_RenderTemplates(t *testing.T) {
-	testArtifactId, err := enclave_data_directory.NewFilesArtifactUUID()
+	testArtifactId, err := enclave_data_directory.NewFilesArtifactID()
 	require.Nil(t, err)
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
@@ -983,7 +983,7 @@ print(artifact_id)
 }
 
 func TestStartosisInterpreter_ThreeLevelNestedInstructionPositionTest(t *testing.T) {
-	testArtifactUuid, err := enclave_data_directory.NewFilesArtifactUUID()
+	testArtifactUuid, err := enclave_data_directory.NewFilesArtifactID()
 	require.Nil(t, err)
 	storeFileDefinitionPath := "github.com/kurtosis/store.star"
 	storeFileContent := `
@@ -1075,7 +1075,7 @@ The service example-datastore-server has been removed
 
 func TestStartosisInterpreter_UploadGetsInterpretedCorrectly(t *testing.T) {
 	filePath := "github.com/kurtosis/module/lib/lib.star"
-	artifactId, err := enclave_data_directory.NewFilesArtifactUUID()
+	artifactId, err := enclave_data_directory.NewFilesArtifactID()
 	require.Nil(t, err)
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()

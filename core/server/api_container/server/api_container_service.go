@@ -539,7 +539,7 @@ func (apicService ApiContainerService) DownloadFilesArtifact(ctx context.Context
 	if strings.TrimSpace(filesArtifactUuidStr) == "" {
 		return nil, stacktrace.NewError("Cannot download file with empty files artifact UUID")
 	}
-	filesArtifactUuid := enclave_data_directory.FilesArtifactUUID(filesArtifactUuidStr)
+	filesArtifactUuid := enclave_data_directory.FilesArtifactID(filesArtifactUuidStr)
 
 	artifactFile, err := apicService.filesArtifactStore.GetFile(filesArtifactUuid)
 	if err != nil {

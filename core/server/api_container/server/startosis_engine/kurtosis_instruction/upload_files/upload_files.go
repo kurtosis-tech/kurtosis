@@ -38,7 +38,7 @@ type UploadFilesInstruction struct {
 	starlarkKwargs starlark.StringDict
 
 	src          string
-	artifactUuid enclave_data_directory.FilesArtifactUUID
+	artifactUuid enclave_data_directory.FilesArtifactID
 
 	pathOnDisk string
 }
@@ -56,7 +56,7 @@ func GenerateUploadFilesBuiltin(instructionsQueue *[]kurtosis_instruction.Kurtos
 	}
 }
 
-func NewUploadFilesInstruction(position *kurtosis_instruction.InstructionPosition, serviceNetwork service_network.ServiceNetwork, provider startosis_packages.PackageContentProvider, src string, pathOnDisk string, artifactId enclave_data_directory.FilesArtifactUUID, starlarkKwargs starlark.StringDict) *UploadFilesInstruction {
+func NewUploadFilesInstruction(position *kurtosis_instruction.InstructionPosition, serviceNetwork service_network.ServiceNetwork, provider startosis_packages.PackageContentProvider, src string, pathOnDisk string, artifactId enclave_data_directory.FilesArtifactID, starlarkKwargs starlark.StringDict) *UploadFilesInstruction {
 	return &UploadFilesInstruction{
 		position:       position,
 		serviceNetwork: serviceNetwork,
@@ -110,10 +110,10 @@ func (instruction *UploadFilesInstruction) String() string {
 }
 
 func (instruction *UploadFilesInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
-	if environment.DoesArtifactUuidExist(instruction.artifactUuid) {
+	if environment.DoesArtifactIdExist(instruction.artifactUuid) {
 		return stacktrace.NewError("There was an error validating '%v' as artifact UUID '%v' already exists", UploadFilesBuiltinName, instruction.artifactUuid)
 	}
-	environment.AddArtifactUuid(instruction.artifactUuid)
+	environment.AddArtifactId(instruction.artifactUuid)
 	return nil
 }
 
@@ -125,7 +125,7 @@ func (instruction *UploadFilesInstruction) parseStartosisArgs(b *starlark.Builti
 	}
 
 	if artifactIdArg == emptyStarlarkString {
-		placeHolderArtifactId, err := enclave_data_directory.NewFilesArtifactUUID()
+		placeHolderArtifactId, err := enclave_data_directory.NewFilesArtifactID()
 		if err != nil {
 			return startosis_errors.NewInterpretationError("An empty or no artifact_uuid was passed, we tried creating one but failed")
 		}

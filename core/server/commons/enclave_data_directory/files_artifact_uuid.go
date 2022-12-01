@@ -10,14 +10,14 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 )
 
-type FilesArtifactUUID string
+type FilesArtifactID string
 
-func NewFilesArtifactUUID() (FilesArtifactUUID, error) {
+func NewFilesArtifactID() (FilesArtifactID, error) {
 	newUUIDStr, err := getUniversallyUniqueID()
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Could not generate Universally Unique ID.")
 	}
-	newFilesArtifactUuid := FilesArtifactUUID(newUUIDStr)
+	newFilesArtifactUuid := FilesArtifactID(newUUIDStr)
 	return newFilesArtifactUuid, nil
 }
 
