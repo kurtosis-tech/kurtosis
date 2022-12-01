@@ -27,7 +27,7 @@ const (
 	containerImageNameKey = "image"
 	factNameArgName       = "fact_name"
 	usedPortsKey          = "ports"
-	// TODO remove this as this is a temporary hack to meet the NEAR use cae
+	// TODO remove this when we have the Portal as this is a temporary hack to meet the NEAR use case
 	publicPortsKey                 = "public_ports"
 	entryPointArgsKey              = "entrypoint"
 	cmdArgsKey                     = "cmd"

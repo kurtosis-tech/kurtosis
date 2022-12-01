@@ -14,21 +14,25 @@ const (
 	defaultDryRun         = false
 	greetingsArg          = `{"greeting": "World!"}`
 
-	serviceId                     = "example-datastore-server-1"
-	serviceIdForDependentService  = "example-datastore-server-2"
-	portId                        = "grpc"
-	fileToBeCreated               = "/tmp/foo"
-	mountPathOnDependentService   = "/tmp/doo"
-	pathToCheckOnDependentService = mountPathOnDependentService + "/foo"
-	renderedConfigMountPath       = "/config"
-	renderedConfigRelativePath    = "foo/bar.yml"
-	renderedConfigFile            = renderedConfigMountPath + "/" + renderedConfigRelativePath
+	serviceId = "example-datastore-server-1"
+	// TODO remove this when we have the Portal as this is a temporary hack to meet the NEAR use case
+	publicPortOnFirstDataStoreService    = uint16(11323)
+	publicPortOnFirstDataStoreServiceStr = "11323"
+	serviceIdForDependentService         = "example-datastore-server-2"
+	portId                               = "grpc"
+	fileToBeCreated                      = "/tmp/foo"
+	mountPathOnDependentService          = "/tmp/doo"
+	pathToCheckOnDependentService        = mountPathOnDependentService + "/foo"
+	renderedConfigMountPath              = "/config"
+	renderedConfigRelativePath           = "foo/bar.yml"
+	renderedConfigFile                   = renderedConfigMountPath + "/" + renderedConfigRelativePath
 
 	startosisScript = `
 DATASTORE_IMAGE = "kurtosistech/example-datastore-server"
 DATASTORE_SERVICE_ID = "` + serviceId + `"
 DATASTORE_PORT_ID = "` + portId + `"
 DATASTORE_PORT_NUMBER = 1323
+DATASTORE_PUBLIC_PORT_NUMBER = ` + publicPortOnFirstDataStoreServiceStr + `
 DATASTORE_PORT_PROTOCOL = "TCP"
 FILE_TO_BE_CREATED = "` + fileToBeCreated + `"
 
@@ -47,6 +51,9 @@ def run(args):
 		image = DATASTORE_IMAGE,
 		ports = {
 			DATASTORE_PORT_ID: struct(number = DATASTORE_PORT_NUMBER, protocol = DATASTORE_PORT_PROTOCOL)
+		},
+		public_ports = {
+			DATASTORE_PORT_ID: struct(number = DATASTORE_PUBLIC_PORT_NUMBER, protocol = DATASTORE_PORT_PROTOCOL)
 		}
 	)
 	
@@ -145,6 +152,10 @@ Deployed example-datastore-server-2 successfully
 	exitCode, _, err := serviceCtx.ExecCommand([]string{"ls", fileToBeCreated})
 	require.Nil(t, err, "Unexpected err running verification on created file on "+serviceId)
 	require.Equal(t, int32(0), exitCode)
+	// assert that the public port for the first datastore service is what we set
+	exposedPort, found := serviceCtx.GetPublicPorts()[portId]
+	require.True(t, found)
+	require.Equal(t, publicPortOnFirstDataStoreService, exposedPort.GetNumber())
 
 	// Check that the file got mounted on the second service
 	logrus.Infof("Checking that the file got mounted on " + serviceIdForDependentService)
