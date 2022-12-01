@@ -1033,7 +1033,7 @@ workflows:
                         "pattern": "https://github.com/kurtosis-tech/kurtosis-internal-docs/.*"
                     },
                     {
-                        "pattern": "pattern": "https://github.com/kurtosis-tech/docs"
+                        "pattern": "https://github.com/kurtosis-tech/docs"
                     }
                 ]
             }
