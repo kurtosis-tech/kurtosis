@@ -30,24 +30,10 @@ archives:
     files:
       - "*THIS_FILE_DOES_NOT_EXIST*"
       - completions/*
-      - scripts/add_kurtosis_completion_to_bash_profile_safely.sh
     name_template: kurtosis-cli_{{ .Version }}_{{ .Os }}_{{ .Arch }}
 
 # Gemfury accepts deb & rpm packages but not APK, so we build these two separately
 nfpms:
-#  - contents:
-#      - src: ./completions/kurtosis.bash
-#        dst: /usr/share/bash-completion/completions/kurtosis
-#        file_info:
-#          mode: 0644
-#      - src: ./completions/kurtosis.fish
-#        dst: /usr/share/fish/vendor_completions.d/kurtosis.fish
-#        file_info:
-#          mode: 0644
-#      - src: ./completions/kurtosis.zsh
-#        dst:  /usr/share/zsh/vendor-completions/_kurtosis
-#        file_info:
-#          mode: 0644
   - id: deb-and-rpm-packages
     package_name: kurtosis-cli
     homepage: https://kurtosistech.com
@@ -95,8 +81,6 @@ brews:
     commit_msg_template: "Automated formula update for the CLI, version {{ .Tag }}"
     homepage: "https://www.kurtosistech.com"
     description: "CLI for managing Kurtosis environments."
-#    dependencies:
-#      - name: bash-completion@2
     # One day, we'll probably want to put a license
     # license: SOME-SPDX-LICENSE
 
@@ -108,18 +92,8 @@ brews:
       bash_completion.install "completions/kurtosis.bash" => "kurtosis"
       zsh_completion.install "completions/kurtosis.zsh" => "_kurtosis"
       fish_completion.install "completions/kurtosis.fish"  
-#      bin.install 'scripts/add_kurtosis_completion_to_bash_profile_safely.sh'
-#    post_install: |
-#      system "#{bin}/add_kurtosis_completion_to_bash_profile_safely.sh", "{{ .Version }}"
     caveats: |
-      Your ~/.bash_profile had a couple of lines added to it to make kurtosis tab completion available on the command line.
-      They will still be there after an uninstall, but are adaptive (nothing happens if kurtosis was uninstalled).
-      EOS
-
-#      if File.file?("#{etc}/switchjdk-module.bash") then
-#          system "rm", "#{etc}/switchjdk-module.bash"
-#      end
-
+      The kurtosis CLI is installed with tab completion support. For more details visit https://docs.kurtosis.com/. 
 
 publishers:
   # Inspired by https://netdevops.me/2021/building-and-publishing-deb/rpm-packages-with-goreleaser-and-fury.io/
