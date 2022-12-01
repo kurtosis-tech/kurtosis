@@ -159,14 +159,20 @@ func run(
 	imageNameWithUnixTimestamp := image_name_generator.GetImageNameWithUnixTimestamp(moduleImage)
 
 	enclaveIdStr := userRequestedEnclaveId
-	enclaveId := enclave.EnclaveID(enclaveIdStr)
+	var moduleEnclaveId enclave.EnclaveID
+	foundExistingEnclave := false
+	var enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo
+	if enclaveIdStr != autogenerateEnclaveIdKeyword {
+		moduleEnclaveId = enclave.EnclaveID(enclaveIdStr)
 
-	getEnclavesResp, err := engineClient.GetEnclaves(ctx, &emptypb.Empty{})
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the existing enclaves")
+		getEnclavesResp, err := engineClient.GetEnclaves(ctx, &emptypb.Empty{})
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred getting the existing enclaves")
+		}
+
+		enclaveInfo, foundExistingEnclave = getEnclavesResp.EnclaveInfo[enclaveIdStr]
 	}
 
-	enclaveInfo, foundExistingEnclave := getEnclavesResp.EnclaveInfo[enclaveIdStr]
 	// If no enclave with the requested ID exists, create it
 	didModuleExecutionCompleteSuccessfully := false
 	if !foundExistingEnclave {
@@ -199,6 +205,7 @@ func run(
 		logrus.Infof("Enclave '%v' created successfully", enclaveIdStr)
 
 		createdEnclaveId := enclaves.EnclaveID(enclaveIdStr)
+		moduleEnclaveId = enclave.EnclaveID(enclaveIdStr)
 		defer output_printers.PrintEnclaveId(createdEnclaveId)
 	}
 
@@ -261,7 +268,7 @@ func run(
 	}
 
 	//TODO replace with API Container call
-	successfulModuleLogs, erroredModuleGuids, err := kurtosisBackend.GetModuleLogs(ctx, enclaveId, moduleFilters, shouldFollowModuleLogs)
+	successfulModuleLogs, erroredModuleGuids, err := kurtosisBackend.GetModuleLogs(ctx, moduleEnclaveId, moduleFilters, shouldFollowModuleLogs)
 	if err != nil {
 		//We do not return because logs aren't mandatory, if it fails we continue executing the module without logs
 		logrus.Errorf("The module containers logs won't be printed. An error occurred getting logs for module with ID '%v': \n%v", moduleId, err)
