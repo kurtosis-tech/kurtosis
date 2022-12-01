@@ -21,13 +21,15 @@ func TestInterpretationError_serializationWithCustomMsg(t *testing.T) {
 	errorToSerialize := NewInterpretationErrorWithCustomMsg(
 		[]CallFrame{
 			*NewCallFrame("<toplevel>", NewScriptPosition(dummyFilenameForTesting, 13, 12)),
+			*NewCallFrame("add_datastore_service", NewScriptPosition(dummyFilenameForTesting, 18, 16)),
 			*NewCallFrame("add_service", NewScriptPosition(dummyFilenameForTesting, 0, 0)),
 		},
 		"Evaluation error: Missing `image` as part of the struct object",
 	)
 
 	expectedOutput := `Evaluation error: Missing ` + "`image`" + ` as part of the struct object
-	at [` + dummyFilenameForTesting + `:13:12]
+	at [` + dummyFilenameForTesting + `:13:12]: <toplevel>
+	at [` + dummyFilenameForTesting + `:18:16]: add_datastore_service
 	at [` + dummyFilenameForTesting + `:0:0]: add_service`
 	require.Equal(t, expectedOutput, errorToSerialize.Error())
 }
@@ -41,7 +43,7 @@ func TestInterpretationError_serializationFromStacktrace(t *testing.T) {
 	)
 
 	expectedOutput := errorDefaultMsg + `
-	at [` + dummyFilenameForTesting + `:13:12]
+	at [` + dummyFilenameForTesting + `:13:12]: <toplevel>
 	at [` + dummyFilenameForTesting + `:0:0]: add_service`
 	require.Equal(t, expectedOutput, errorToSerialize.Error())
 }

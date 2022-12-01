@@ -23,7 +23,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_const"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
@@ -57,7 +57,7 @@ const (
 	// we'd only read the symbols, and maybe there's nothing that calls in `run()`
 	// This way, we're guaranteed that the `run()` function gets called within main.star
 	bootScript = `
-main_module = import_module("%v/` + startosis_const.MainFileName + `")
+main_module = import_module("%v/` + startosis_constants.MainFileName + `")
 %v = main_module.run(%v)
 	`
 	// We concatenate a run() at the end of individual scripts to enforce a run method
@@ -202,8 +202,8 @@ func (apicService ApiContainerService) RunStarlarkScript(args *kurtosis_core_rpc
 	serializedStartosisScript := args.GetSerializedScript()
 	serializedParams := args.GetSerializedParams()
 	dryRun := shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun)
-	scriptWithRunFunction := fmt.Sprintf(runToConcatenateAtEndOfStandaloneScript, serializedStartosisScript, startosis_const.MainInputArgName)
-	apicService.runStarlark(dryRun, startosis_const.PackageIdPlaceholderForStandaloneScript, scriptWithRunFunction, serializedParams, stream)
+	scriptWithRunFunction := fmt.Sprintf(runToConcatenateAtEndOfStandaloneScript, serializedStartosisScript, startosis_constants.MainInputArgName)
+	apicService.runStarlark(dryRun, startosis_constants.PackageIdPlaceholderForStandaloneScript, scriptWithRunFunction, serializedParams, stream)
 	return nil
 }
 
@@ -817,12 +817,12 @@ func (apicService ApiContainerService) runStarlarkPackageSetup(packageId string,
 		return "", interpretationError
 	}
 
-	pathToMainFile := path.Join(packageRootPathOnDisk, startosis_const.MainFileName)
+	pathToMainFile := path.Join(packageRootPathOnDisk, startosis_constants.MainFileName)
 	if _, err := os.Stat(pathToMainFile); err != nil {
-		return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred while verifying that '%v' exists on root of package '%v' at '%v'", startosis_const.MainFileName, packageId, pathToMainFile)
+		return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred while verifying that '%v' exists on root of package '%v' at '%v'", startosis_constants.MainFileName, packageId, pathToMainFile)
 	}
 
-	scriptWithMainToExecute := fmt.Sprintf(bootScript, packageId, startosis_const.MainOutputObjectName, startosis_const.MainInputArgName)
+	scriptWithMainToExecute := fmt.Sprintf(bootScript, packageId, startosis_constants.MainOutputObjectName, startosis_constants.MainInputArgName)
 	return scriptWithMainToExecute, nil
 }
 

@@ -2,15 +2,15 @@ package startosis_errors
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_const"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 )
 
 const (
 	builtInName = "<builtin>"
 )
 
-var replaceFilenameValuesSet = map[string]bool{
-	startosis_const.PackageIdPlaceholderForStandaloneScript: true,
+var skipFilenamesValueSet = map[string]bool{
+	startosis_constants.PackageIdPlaceholderForStandaloneScript: true,
 	builtInName: true,
 }
 
@@ -30,7 +30,7 @@ func NewScriptPosition(filename string, line int32, col int32) *ScriptPosition {
 }
 
 func (pos *ScriptPosition) String() string {
-	if _, found := replaceFilenameValuesSet[pos.filename]; found{
+	if _, found := skipFilenamesValueSet[pos.filename]; found{
 		return fmt.Sprintf("[%d:%d]", pos.line, pos.col)
 	}
 	return fmt.Sprintf("[%s:%d:%d]", pos.filename, pos.line, pos.col)
