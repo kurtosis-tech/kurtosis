@@ -17,7 +17,7 @@ BUILD_SCRIPT_RELATIVE_FILEPATHS=(
     "core/scripts/build.sh"
     "engine/scripts/build.sh"
     "cli/scripts/build.sh"
-    #"internal_testsuites/scripts/build.sh"
+    "internal_testsuites/scripts/build.sh"
 )
 
 
