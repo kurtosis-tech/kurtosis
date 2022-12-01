@@ -26,7 +26,7 @@ const (
 	startingExecutionMsg      = "Starting execution"
 
 	missingRunMethodErrorPrefixFromStarlarkPackage = "Evaluation error: module has no .run field or method\n\tat"
-	missingRunMethodErrorSuffixFromStarlarkPackage = "3:32]"
+	missingRunMethodErrorSuffixFromStarlarkPackage = "3:32]: <toplevel>"
 	missingRunMethodErrorFromStarlarkScriptPattern = "Multiple errors caught interpreting the Starlark script. Listing each of them below.\n\tat \\[\\d+:1\\]: undefined: run"
 )
 
