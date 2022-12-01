@@ -25,9 +25,11 @@ const (
 type FilesArtifactUUID string
 
 // ====================================================================================================
-//                                    Config Object
+//
+//	Config Object
+//
 // ====================================================================================================
-// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+// Docs available at https://docs.kurtosis.com/sdk/#containerconfig
 type ContainerConfig struct {
 	image                        string
 	usedPorts                    map[string]*PortSpec
@@ -73,7 +75,7 @@ func (config *ContainerConfig) GetMemoryAllocationMegabytes() uint64 {
 	return config.memoryAllocationMegabytes
 }
 
-//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+// TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
 func (config *ContainerConfig) GetPublicPorts() map[string]*PortSpec {
 	return config.publicPorts
 }
@@ -83,10 +85,12 @@ func (config *ContainerConfig) GetPrivateIPAddrPlaceholder() string {
 }
 
 // ====================================================================================================
-//                                      Builder
+//
+//	Builder
+//
 // ====================================================================================================
 // TODO Defensive copies on all these With... functions???
-// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+// Docs available at https://docs.kurtosis.com/sdk/#containerconfigbuilder
 type ContainerConfigBuilder struct {
 	image                        string
 	usedPorts                    map[string]*PortSpec
@@ -140,7 +144,7 @@ func (builder *ContainerConfigBuilder) WithEnvironmentVariableOverrides(envVars 
 	return builder
 }
 
-//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+// TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
 func (builder *ContainerConfigBuilder) WithPublicPorts(publicPorts map[string]*PortSpec) *ContainerConfigBuilder {
 	builder.publicPorts = publicPorts
 	return builder

@@ -78,7 +78,7 @@ async function TestAddServiceWithEmptyAndWithoutPorts() {
             const [scriptOutput, _, interpretationError, validationErrors, executionError] = await readStreamContentUntilClosed(outputStream.value);
 
             const expectedScriptOutputRegexpPattern = `Adding service ${serviceId}.
-Service '${serviceId}' added with internal ID '[a-z-0-9]+'
+Service '${serviceId}' added with service GUID '[a-z-0-9]+'
 Service ${serviceId} deployed successfully.
 `;
             const expectedScriptOutputRegexp = new RegExp(expectedScriptOutputRegexpPattern)

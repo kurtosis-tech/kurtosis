@@ -2,8 +2,15 @@
 ### Changes
 - Replaced stack name with the stack file name in custom evaluation errors
 
-# 0.57.4
+### Changes
+- Replaced "insternal ID" in the output message of `add_service` and `remove_service` instructions with "service GUID"
 
+### Fixes
+- Corrected some old references to Starlark "modules"
+- Fixed a typo where the CLI setup URL was redirecting to the CI setup
+- Corrected almost all old references to `docs.kurtosistech.com`
+
+# 0.57.4
 ### Changes
 - Simplified the API by removing the ServiceInfo struct that was adding unnecessary complexity.
 

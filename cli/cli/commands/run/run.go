@@ -16,6 +16,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/user_support_constants"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -32,8 +33,8 @@ const (
 
 	starlarkExtension = ".star"
 
-	packageArgsFlagKey = "args"
-	defaultPackageArgs = "{}"
+	argsFlagKey = "args"
+	defaultArgs = "{}"
 
 	dryRunFlagKey = "dry-run"
 	defaultDryRun = "false"
@@ -67,11 +68,13 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 	CommandStr:                command_str_consts.StarlarkRunCmdStr,
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
 	EngineClientContextKey:    engineClientCtxKey,
-	ShortDescription:          "Run a Starlark script or module",
-	LongDescription: "Run a Starlark module or script in an enclave. For a script we expect a path to a " + starlarkExtension +
-		" file. For a module we expect path to a directory containing kurtosis.yml or a fully qualified Github repository path containing a module. If the enclave-id flag argument is provided, Kurtosis " +
-		"will run the script inside this enclave, or create it if it doesn't exist. If no enclave-id param is " +
-		"provided, Kurtosis will create a new enclave with a random name.",
+	ShortDescription:          "Run a Starlark script or package",
+	LongDescription: "Run a Starlark script or runnable package (" + user_support_constants.StarlarkPackagesReferenceURL + ") in " +
+		"an enclave. For a script we expect a path to a " + starlarkExtension + " file. For a runnable package we expect " +
+		"either a path to a local runnable package directory, or the locator URL (" + user_support_constants.StarlarkLocatorsReferenceURL +
+		") to a remote runnable package on Github. If the '" + enclaveIdFlagKey + "' flag argument " +
+		"is provided, Kurtosis will run the script inside the specified enclave or create it if it doesn't exist. If no '" +
+		enclaveIdFlagKey + "' flag param is provided, Kurtosis will create a new enclave with a random name.",
 	Flags: []*flags.FlagConfig{
 		{
 			Key: dryRunFlagKey,
@@ -81,16 +84,16 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			Default: defaultDryRun,
 		},
 		{
-			Key: packageArgsFlagKey,
+			Key: argsFlagKey,
 			// TODO(gb): Link to a proper doc page explaining what a proto file is, etc. when we have it
-			Usage:   "The parameters that should be passed to the Kurtosis module when running it. It is expected to be a serialized JSON string. Note that if a standalone Kurtosis script is being run, no parameter should be passed.",
+			Usage:   "The parameters that should be passed to the Starlark script or package when running it. It is expected to be a serialized JSON string. Note that if a standalone Kurtosis script is being run, no parameter should be passed.",
 			Type:    flags.FlagType_String,
-			Default: defaultPackageArgs,
+			Default: defaultArgs,
 		},
 		{
 			Key: enclaveIdFlagKey,
 			Usage: fmt.Sprintf(
-				"The enclave ID in which the script or module will be ran, which must match regex '%v' "+
+				"The enclave ID in which the script or package will be ran, which must match regex '%v' "+
 					"(emptystring will autogenerate an enclave ID). An enclave with this ID will be created if it doesn't exist.",
 				enclave_consts.AllowedEnclaveIdCharsRegexStr,
 			),
@@ -99,7 +102,7 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 		},
 		{
 			Key: isPartitioningEnabledFlagKey,
-			Usage: "If set to true, the enclave that the module runs in will have partitioning enabled so " +
+			Usage: "If set to true, the enclave that the script or package runs in will have partitioning enabled so " +
 				"network partitioning simulations can be run",
 			Type:    flags.FlagType_Bool,
 			Default: strconv.FormatBool(defaultIsPartitioningEnabled),
@@ -131,12 +134,12 @@ func run(
 	args *args.ParsedArgs,
 ) error {
 	// Args parsing and validation
-	serializedJsonArgs, err := flags.GetString(packageArgsFlagKey)
+	serializedJsonArgs, err := flags.GetString(argsFlagKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the module parameters using flag key '%v'", packageArgsFlagKey)
+		return stacktrace.Propagate(err, "An error occurred getting the script/package arguments using flag key '%v'", argsFlagKey)
 	}
 	if err = validatePackageArgs(serializedJsonArgs); err != nil {
-		return stacktrace.Propagate(err, "An error occurred parsing the module parameters '%v'", serializedJsonArgs)
+		return stacktrace.Propagate(err, "An error occurred parsing the script/package arguments '%v'", serializedJsonArgs)
 	}
 
 	userRequestedEnclaveId, err := flags.GetString(enclaveIdFlagKey)

@@ -106,14 +106,14 @@ func TestStartosis(t *testing.T) {
 
 	expectedScriptOutput := `Hello World!
 Adding service example-datastore-server-1.
-Service 'example-datastore-server-1' added with internal ID '[a-z-0-9]+'
+Service 'example-datastore-server-1' added with service GUID '[a-z-0-9]+'
 Service example-datastore-server-1 deployed successfully.
 Command returned with exit code '0' with no output
 Files stored with artifact ID '[a-f0-9-]{36}'
 Stored file at [a-f0-9-]{36}
 Templates rendered and stored with artifact ID '[a-f0-9-]{36}'
 Rendered file to [a-f0-9-]{36}
-Service 'example-datastore-server-2' added with internal ID '[a-z-0-9]+'
+Service 'example-datastore-server-2' added with service GUID '[a-z-0-9]+'
 Deployed example-datastore-server-2 successfully
 `
 	require.Nil(t, interpretationError, "Unexpected interpretation error. This test requires you to be online for the read_file command to run")

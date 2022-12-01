@@ -30,7 +30,7 @@ const (
 var FilesUploadCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
 	CommandStr:                command_str_consts.FilesUploadCmdStr,
 	ShortDescription:          "Uploads files to an enclave",
-	LongDescription:           "Uploads the requested files to the enclave so they can be used by modules and services within the enclave",
+	LongDescription:           "Uploads the requested files to the enclave so they can be used by services within the enclave",
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
 	EngineClientContextKey:    engineClientCtxKey,
 	Flags:                     nil,
