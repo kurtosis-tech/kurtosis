@@ -10,7 +10,7 @@
 - Fixed a typo where the CLI setup URL was redirecting to the CI setup
 - Corrected almost all old references to `docs.kurtosistech.com`
 - Changed the folder name to starlark to avoid running non-existent build script in it.
-g
+
 ### Features
 - Support public ports in Starlark to cover the NEAR usecase
 
