@@ -17,7 +17,7 @@ const (
 	serviceId = "example-datastore-server-1"
 	portId    = "grpc"
 
-	startosisScript = `
+	starlarkScript = `
 DATASTORE_IMAGE = "kurtosistech/example-datastore-server"
 DATASTORE_SERVICE_ID = "` + serviceId + `"
 DATASTORE_PORT_ID = "` + portId + `"
@@ -54,11 +54,11 @@ func TestStartosis(t *testing.T) {
 	defer destroyEnclaveFunc()
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
-	logrus.Infof("Executing Startosis script to first add the datastore service...")
-	logrus.Debugf("Startosis script content: \n%v", startosisScript)
+	logrus.Infof("Executing Starlark script to first add the datastore service...")
+	logrus.Debugf("Starlark script content: \n%v", starlarkScript)
 
-	outputStream, _, err := enclaveCtx.RunStarlarkScript(ctx, startosisScript, emptyArgs, defaultDryRun)
-	require.NoError(t, err, "Unexpected error executing startosis script")
+	outputStream, _, err := enclaveCtx.RunStarlarkScript(ctx, starlarkScript, emptyArgs, defaultDryRun)
+	require.NoError(t, err, "Unexpected error executing Starlark script")
 	scriptOutput, _, interpretationError, validationErrors, executionError := test_helpers.ReadStreamContentUntilClosed(outputStream)
 
 	expectedScriptOutput := `Adding service example-datastore-server-1.
@@ -69,7 +69,7 @@ Service example-datastore-server-1 deployed successfully.
 	require.Empty(t, validationErrors, "Unexpected validation error")
 	require.Nil(t, executionError, "Unexpected execution error")
 	require.Regexp(t, expectedScriptOutput, scriptOutput)
-	logrus.Infof("Successfully ran Startosis script to add datastore service")
+	logrus.Infof("Successfully ran Starlark script to add datastore service")
 
 	// Check that the service added by the script is functional
 	logrus.Infof("Checking that services are all healthy")

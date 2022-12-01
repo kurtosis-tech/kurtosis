@@ -14,7 +14,7 @@ const EMPTY_ARGS = "{}"
 const SERVICE_ID = "example-datastore-server-1"
 const PORT_ID = "grpc"
 
-const STARTOSIS_SCRIPT = `
+const STARLARK_SCRIPT = `
 DATASTORE_IMAGE = "kurtosistech/example-datastore-server"
 DATASTORE_SERVICE_ID = "` + SERVICE_ID + `"
 DATASTORE_PORT_ID = "` + PORT_ID + `"
@@ -52,9 +52,9 @@ test("Test remove service", async () => {
     try {
         // ------------------------------------- TEST SETUP ----------------------------------------------
         // Executing Startosis script to first add the datastore service...
-        const outputStream = await enclaveContext.runStarlarkScript(STARTOSIS_SCRIPT, EMPTY_ARGS, DEFAULT_DRY_RUN)
+        const outputStream = await enclaveContext.runStarlarkScript(STARLARK_SCRIPT, EMPTY_ARGS, DEFAULT_DRY_RUN)
         if (outputStream.isErr()) {
-            log.error("Unexpected error executing startosis script")
+            log.error("Unexpected error executing Starlark script")
             throw outputStream.error
         }
         const [scriptOutput, instructions, interpretationError, validationErrors, executionError] = await readStreamContentUntilClosed(outputStream.value);
@@ -80,7 +80,7 @@ Service example-datastore-server-1 deployed successfully.
         // we run the remove script and see if things still work
         const removeServiceOutputStream = await enclaveContext.runStarlarkScript(REMOVE_SCRIPT, EMPTY_ARGS, DEFAULT_DRY_RUN)
         if (removeServiceOutputStream.isErr()) {
-            log.error("Unexpected error executing startosis script")
+            log.error("Unexpected error executing Starlark script")
             throw removeServiceOutputStream.error
         }
         const [removeServiceScriptOutput, removeServiceInstructions, removeServiceInterpretationError, removeServiceValidationErrors, removeServiceExecutionError] = await readStreamContentUntilClosed(removeServiceOutputStream.value);
