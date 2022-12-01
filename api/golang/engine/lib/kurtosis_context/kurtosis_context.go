@@ -36,7 +36,7 @@ const (
 
 var apiContainerLogLevel = logrus.DebugLevel
 
-// Docs available at https://docs.kurtosistech.com/kurtosis/engine-lib-documentation
+// Docs available at https://docs.kurtosis.com/sdk#kurtosiscontext
 type KurtosisContext struct {
 	client kurtosis_engine_rpc_api_bindings.EngineServiceClient
 }
@@ -69,7 +69,7 @@ func NewKurtosisContextFromLocalEngine() (*KurtosisContext, error) {
 	return kurtosisContext, nil
 }
 
-// Docs available at https://docs.kurtosistech.com/kurtosis/engine-lib-documentation
+// Docs available at https://docs.kurtosis.com/sdk#createenclaveenclaveid-enclaveid-boolean-ispartitioningenabled---enclavecontextenclavecontext-enclavecontext
 func (kurtosisCtx *KurtosisContext) CreateEnclave(
 	ctx context.Context,
 	enclaveId enclaves.EnclaveID,
@@ -96,7 +96,7 @@ func (kurtosisCtx *KurtosisContext) CreateEnclave(
 	return enclaveContext, nil
 }
 
-// Docs available at https://docs.kurtosistech.com/kurtosis/engine-lib-documentation
+// Docs available at https://docs.kurtosis.com/sdk#getenclavecontextenclaveid-enclaveid---enclavecontextenclavecontext-enclavecontext
 func (kurtosisCtx *KurtosisContext) GetEnclaveContext(ctx context.Context, enclaveId enclaves.EnclaveID) (*enclaves.EnclaveContext, error) {
 	response, err := kurtosisCtx.client.GetEnclaves(ctx, &emptypb.Empty{})
 	if err != nil {
@@ -120,7 +120,7 @@ func (kurtosisCtx *KurtosisContext) GetEnclaveContext(ctx context.Context, encla
 	return enclaveCtx, nil
 }
 
-// Docs available at https://docs.kurtosistech.com/kurtosis/engine-lib-documentation
+// Docs available at https://docs.kurtosis.com/sdk#getenclaves---setenclaveid-enclaveids
 func (kurtosisCtx *KurtosisContext) GetEnclaves(ctx context.Context) (map[enclaves.EnclaveID]bool, error) {
 	response, err := kurtosisCtx.client.GetEnclaves(ctx, &emptypb.Empty{})
 	if err != nil {
@@ -138,7 +138,7 @@ func (kurtosisCtx *KurtosisContext) GetEnclaves(ctx context.Context) (map[enclav
 	return result, nil
 }
 
-// Docs available at https://docs.kurtosistech.com/kurtosis/engine-lib-documentation
+// Docs available at https://docs.kurtosis.com/sdk#stopenclaveenclaveid-enclaveid
 func (kurtosisCtx *KurtosisContext) StopEnclave(ctx context.Context, enclaveId enclaves.EnclaveID) error {
 	stopEnclaveArgs := &kurtosis_engine_rpc_api_bindings.StopEnclaveArgs{
 		EnclaveId: string(enclaveId),
@@ -151,7 +151,7 @@ func (kurtosisCtx *KurtosisContext) StopEnclave(ctx context.Context, enclaveId e
 	return nil
 }
 
-// Docs available at https://docs.kurtosistech.com/kurtosis/engine-lib-documentation
+// Docs available at https://docs.kurtosis.com/sdk#destroyenclaveenclaveid-enclaveid
 func (kurtosisCtx *KurtosisContext) DestroyEnclave(ctx context.Context, enclaveId enclaves.EnclaveID) error {
 	destroyEnclaveArgs := &kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs{
 		EnclaveId: string(enclaveId),
@@ -164,7 +164,7 @@ func (kurtosisCtx *KurtosisContext) DestroyEnclave(ctx context.Context, enclaveI
 	return nil
 }
 
-// Docs available at https://docs.kurtosistech.com/kurtosis/engine-lib-documentation
+// Docs available at https://docs.kurtosis.com/sdk#cleanboolean-shouldcleanall---setenclaveid-removedenclaveids
 func (kurtosisCtx *KurtosisContext) Clean(ctx context.Context, shouldCleanAll bool) (map[string]bool, error) {
 	cleanArgs := &kurtosis_engine_rpc_api_bindings.CleanArgs{
 		ShouldCleanAll: shouldCleanAll,
@@ -177,7 +177,7 @@ func (kurtosisCtx *KurtosisContext) Clean(ctx context.Context, shouldCleanAll bo
 	return cleanResponse.RemovedEnclaveIds, nil
 }
 
-// Docs available at https://docs.kurtosistech.com/kurtosis/engine-lib-documentation
+// Docs available at https://docs.kurtosis.com/sdk#getservicelogsenclaveid-enclaveid-setserviceguid-serviceguids-boolean-shouldfollowlogs---servicelogsstreamcontent-servicelogsstreamcontent
 func (kurtosisCtx *KurtosisContext) GetServiceLogs(
 	ctx context.Context,
 	enclaveID enclaves.EnclaveID,
@@ -352,7 +352,7 @@ func validateEngineApiVersion(ctx context.Context, engineServiceClient kurtosis_
 	if !doApiVersionsMatch {
 		return stacktrace.NewError(
 			"An API version mismatch was detected between the running engine version '%v' and the engine version this Kurtosis SDK library expects, '%v'. You should:\n"+
-				"  1) upgrade your Kurtosis CLI to latest using the instructions at https://docs.kurtosistech.com/installation.html\n"+
+				"  1) upgrade your Kurtosis CLI to latest using the instructions at https://docs.kurtosis.com/install#upgrading\n"+
 				"  2) use the Kurtosis CLI to restart your engine via 'kurtosis engine restart'\n"+
 				"  3) upgrade your Kurtosis SDK library using the instructions at https://github.com/kurtosis-tech/kurtosis-engine-api-lib\n",
 			runningEngineSemver.String(),

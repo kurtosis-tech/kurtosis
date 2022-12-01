@@ -5,9 +5,13 @@
 code successfully run in dry-run mode" and "Error encountered running Starlark code in dry-run mode" when Starlark is 
 run in dry-run mode (and without the "in dry-run mode" when the script is executed for real)
 
+### Changes
+- Replaced "internal ID" in the output message of `add_service` and `remove_service` instructions with "service GUID"
+
 ### Fixes
 - Corrected some old references to Starlark "modules"
 - Fixed a typo where the CLI setup URL was redirecting to the CI setup
+- Corrected almost all old references to `docs.kurtosistech.com`
 
 # 0.57.4
 ### Changes
