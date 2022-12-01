@@ -1,4 +1,10 @@
 # TBD
+
+### Features
+- The "Starlark code successfully executed" or "Error encountered running Starlark code" messages are now "Starlark 
+code successfully run in dry-run mode" and "Error encountered running Starlark code in dry-run mode" when Starlark is 
+run in dry-run mode (and without the "in dry-run mode" when the script is executed for real)
+
 ### Fixes
 - Corrected some old references to Starlark "modules"
 - Fixed a typo where the CLI setup URL was redirecting to the CI setup
