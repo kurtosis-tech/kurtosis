@@ -98,13 +98,13 @@ func TestFormatProgressBar(t *testing.T) {
 	require.Equal(t, expectedResult, progressBar)
 }
 
-func TestFormatProgressBar_floatingPointDivision(t *testing.T) {
+func TestFormatProgressBar_FloatingPointDivision(t *testing.T) {
 	progressBar := formatProgressBar(10, 17, "=")
 	expectedResult := fmt.Sprintf("%s%s", colorizeProgressBarIsDone("==========="), colorizeProgressBarRemaining("========="))
 	require.Equal(t, expectedResult, progressBar)
 }
 
-func TestFormatProgressBar_noTotalSteps(t *testing.T) {
+func TestFormatProgressBar_NoTotalSteps(t *testing.T) {
 	progressBar := formatProgressBar(0, 0, "=")
 	expectedResult := colorizeProgressBarRemaining("====================")
 	require.Equal(t, expectedResult, progressBar)
