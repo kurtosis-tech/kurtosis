@@ -9,7 +9,7 @@ const DEFAULT_PRIVATE_IP_ADDR_PLACEHOLDER = "KURTOSIS_PRIVATE_IP_ADDR_PLACEHOLDE
 //                                    Config Object
 // ====================================================================================================
 // TODO defensive copy when we're giving back complex objects?????
-// Docs available at https://docs.kurtosis.com/sdk
+// Docs available at https://docs.kurtosis.com/sdk/#containerconfig
 export class ContainerConfig {
     constructor(
         public readonly image: string,
@@ -31,7 +31,7 @@ export class ContainerConfig {
 //                                        Builder
 // ====================================================================================================
 // TODO Defensive copies on all these With... functions???
-// Docs available at https://docs.kurtosis.com/sdk
+// Docs available at https://docs.kurtosis.com/sdk/#containerconfigbuilder
 export class ContainerConfigBuilder {
     private readonly image: string;
     private usedPorts: Map<string, PortSpec>;

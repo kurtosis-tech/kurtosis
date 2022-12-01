@@ -29,7 +29,7 @@ type FilesArtifactUUID string
 //	Config Object
 //
 // ====================================================================================================
-// Docs available at https://docs.kurtosis.com/sdk
+// Docs available at https://docs.kurtosis.com/sdk/#containerconfig
 type ContainerConfig struct {
 	image                        string
 	usedPorts                    map[string]*PortSpec
@@ -90,7 +90,7 @@ func (config *ContainerConfig) GetPrivateIPAddrPlaceholder() string {
 //
 // ====================================================================================================
 // TODO Defensive copies on all these With... functions???
-// Docs available at https://docs.kurtosis.com/sdk
+// Docs available at https://docs.kurtosis.com/sdk/#containerconfigbuilder
 type ContainerConfigBuilder struct {
 	image                        string
 	usedPorts                    map[string]*PortSpec
