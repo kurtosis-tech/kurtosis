@@ -1,4 +1,8 @@
 # TBD
+
+### Changes
+- Replaced "insternal ID" in the output message of `add_service` and `remove_service` instructions with "service GUID"
+
 ### Fixes
 - Corrected some old references to Starlark "modules"
 - Fixed a typo where the CLI setup URL was redirecting to the CI setup

@@ -71,7 +71,7 @@ func TestAddServiceWithEmptyPortsAndWithoutPorts(t *testing.T) {
 		scriptOutput, _, interpretationError, validationErrors, executionError := test_helpers.ReadStreamContentUntilClosed(outputStream)
 
 		expectedScriptOutput := `Adding service ` + serviceIds[starlarkScripIndex] + `.
-Service '` + serviceIds[starlarkScripIndex] + `' added with internal ID '[a-z-0-9]+'
+Service '` + serviceIds[starlarkScripIndex] + `' added with service GUID '[a-z-0-9]+'
 Service ` + serviceIds[starlarkScripIndex] + ` deployed successfully.
 `
 		require.Nil(t, interpretationError, "Unexpected interpretation error.")
