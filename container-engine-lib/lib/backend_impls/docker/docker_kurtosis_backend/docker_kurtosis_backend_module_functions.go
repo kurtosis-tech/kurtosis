@@ -281,6 +281,7 @@ func (backend *DockerKurtosisBackend) GetModuleLogs(
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting modules matching filters '%+v'", filters)
 	}
+	//TODO remove this debug
 	logrus.Debugf("Matching module by container ID for enclave ID %v and filters %+v, modules found:\n%+v", enclaveId, filters, matchingModulesByContainerId)
 
 	successfulModuleLogs := map[module.ModuleGUID]io.ReadCloser{}
@@ -291,6 +292,7 @@ func (backend *DockerKurtosisBackend) GetModuleLogs(
 	for containerId, module := range matchingModulesByContainerId {
 		rawLogStream, err := backend.dockerManager.GetContainerLogs(ctx, containerId, shouldFollowLogs)
 		if err != nil {
+			logrus.Debugf("Error getting module logs for container ID %v. Error:\n%v", containerId, err)
 			serviceError := stacktrace.Propagate(err, "An error occurred getting logs for module with GUID '%v' and container ID '%v'", module.GetGUID(), containerId)
 			erroredModules[module.GetGUID()] = serviceError
 			continue
