@@ -1,8 +1,6 @@
 # TBD
 ### Changes
 - Replaced stack name with the stack file name in custom evaluation errors
-
-### Changes
 - Replaced "internal ID" in the output message of `add_service` and `remove_service` instructions with "service GUID"
 - Disabled progress info in non-interactive terminals when running a Starlark Package
 

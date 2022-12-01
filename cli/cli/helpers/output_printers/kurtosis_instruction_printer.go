@@ -66,7 +66,7 @@ func (printer *ExecutionPrinter) Start() error {
 		return stacktrace.NewError("printer already started")
 	}
 	printer.isStarted = true
-	if interactive_terminal_decider.IsInteractiveTerminal() {
+	if !interactive_terminal_decider.IsInteractiveTerminal() {
 		printer.isSpinnerBeingUsed = false
 		logrus.Infof("Kurtosis CLI is running in a non interactive terminal. Everything will work but progress information and the progress bar will not be displayed.")
 		return nil
