@@ -24,9 +24,11 @@ const (
 	serviceConfigArgName = "config"
 	defineFactArgName    = "define_fact"
 
-	containerImageNameKey          = "image"
-	factNameArgName                = "fact_name"
-	usedPortsKey                   = "ports"
+	containerImageNameKey = "image"
+	factNameArgName       = "fact_name"
+	usedPortsKey          = "ports"
+	// TODO remove this as this is a temporary hack to meet the NEAR use cae
+	publicPortsKey                 = "public_ports"
 	entryPointArgsKey              = "entrypoint"
 	cmdArgsKey                     = "cmd"
 	envVarArgsKey                  = "env_vars"
@@ -169,7 +171,12 @@ func ParseServiceConfigArg(serviceConfig *starlarkstruct.Struct) (*kurtosis_core
 		return nil, interpretationErr
 	}
 
-	privatePorts, interpretationErr := parseServiceConfigPrivatePorts(serviceConfig)
+	privatePorts, interpretationErr := parseServiceConfigPorts(serviceConfig, usedPortsKey)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
+	publicPorts, interpretationErr := parseServiceConfigPorts(serviceConfig, publicPortsKey)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
@@ -211,6 +218,8 @@ func ParseServiceConfigArg(serviceConfig *starlarkstruct.Struct) (*kurtosis_core
 		filesArtifactMountDirpaths,
 	).WithPrivateIPAddressPlaceholder(
 		privateIPAddressPlaceholder,
+	).WithPublicPorts(
+		publicPorts,
 	).Build()
 
 	return builtConfig, nil
@@ -320,8 +329,8 @@ func parseServiceConfigContainerImageName(serviceConfig *starlarkstruct.Struct) 
 	return containerImageName, nil
 }
 
-func parseServiceConfigPrivatePorts(serviceConfig *starlarkstruct.Struct) (map[string]*kurtosis_core_rpc_api_bindings.Port, *startosis_errors.InterpretationError) {
-	privatePortsRawArg, err := serviceConfig.Attr(usedPortsKey)
+func parseServiceConfigPorts(serviceConfig *starlarkstruct.Struct, portsKey string) (map[string]*kurtosis_core_rpc_api_bindings.Port, *startosis_errors.InterpretationError) {
+	privatePortsRawArg, err := serviceConfig.Attr(portsKey)
 	if err != nil {
 		// not all services need to create ports, this being empty is okay
 		return map[string]*kurtosis_core_rpc_api_bindings.Port{}, nil
@@ -338,7 +347,7 @@ func parseServiceConfigPrivatePorts(serviceConfig *starlarkstruct.Struct) (map[s
 			return nil, startosis_errors.NewInterpretationError("Unable to find a value in a dict associated with a key that exists (key = '%s') - this is a product bug", portNameRaw)
 		}
 
-		portName, interpretationErr := safeCastToString(portNameRaw, usedPortsKey)
+		portName, interpretationErr := safeCastToString(portNameRaw, portsKey)
 		if interpretationErr != nil {
 			return nil, interpretationErr
 		}
@@ -348,7 +357,7 @@ func parseServiceConfigPrivatePorts(serviceConfig *starlarkstruct.Struct) (map[s
 			return nil, startosis_errors.NewInterpretationError("Port definition `%s` is expected to be a struct", portNameRaw)
 		}
 
-		port, interpretationErr := parsePort(portDefinition)
+		port, interpretationErr := parsePort(portDefinition, portsKey)
 		if interpretationErr != nil {
 			return nil, interpretationErr
 		}
@@ -357,8 +366,8 @@ func parseServiceConfigPrivatePorts(serviceConfig *starlarkstruct.Struct) (map[s
 	return privatePorts, nil
 }
 
-func parsePort(portArg *starlarkstruct.Struct) (*kurtosis_core_rpc_api_bindings.Port, *startosis_errors.InterpretationError) {
-	portNumber, interpretationErr := extractUint32Value(portArg, portNumberKey, usedPortsKey)
+func parsePort(portArg *starlarkstruct.Struct, portsKeyForLogging string) (*kurtosis_core_rpc_api_bindings.Port, *startosis_errors.InterpretationError) {
+	portNumber, interpretationErr := extractUint32Value(portArg, portNumberKey, portsKeyForLogging)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
@@ -366,7 +375,7 @@ func parsePort(portArg *starlarkstruct.Struct) (*kurtosis_core_rpc_api_bindings.
 		return nil, startosis_errors.NewInterpretationError("Port number should be less than or equal to %d", maxPortNumber)
 	}
 
-	protocolRaw, interpretationErr := extractStringValue(portArg, portProtocolKey, usedPortsKey)
+	protocolRaw, interpretationErr := extractStringValue(portArg, portProtocolKey, portsKeyForLogging)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
