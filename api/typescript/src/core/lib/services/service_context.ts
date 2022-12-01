@@ -6,7 +6,7 @@ import type { ServiceID, ServiceGUID } from './service';
 import { GenericApiContainerClient } from '../enclaves/generic_api_container_client';
 import {PauseServiceArgs, UnpauseServiceArgs} from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 
-// Docs available at https://docs.kurtosis.com/sdk
+// Docs available at https://docs.kurtosis.com/sdk/#servicecontext
 export class ServiceContext {
     constructor(
         private readonly client: GenericApiContainerClient,
@@ -18,37 +18,37 @@ export class ServiceContext {
         private readonly publicPorts: Map<string, PortSpec>,
     ) {}
 
-    // Docs available at https://docs.kurtosis.com/sdk
+    // Docs available at https://docs.kurtosis.com/sdk/#getserviceid---serviceid
     public getServiceID(): ServiceID { 
         return this.serviceId;
     }
 
-    // Docs available at https://docs.kurtosis.com/sdk
+    // Docs available at https://docs.kurtosis.com/sdk/#getserviceguid---serviceguid
     public getServiceGUID(): ServiceGUID {
         return this.serviceGuid;
     }
 
-    // Docs available at https://docs.kurtosis.com/sdk
+    // Docs available at https://docs.kurtosis.com/sdk/#getprivateipaddress---string
     public getPrivateIPAddress(): string {
         return this.privateIpAddress
     }
 
-    // Docs available at https://docs.kurtosis.com/sdk
+    // Docs available at https://docs.kurtosis.com/sdk/#getprivateports---mapportid-portspec
     public getPrivatePorts(): Map<string, PortSpec> {
         return this.privatePorts
     }
 
-    // Docs available at https://docs.kurtosis.com/sdk
+    // Docs available at https://docs.kurtosis.com/sdk/#getmaybepublicipaddress---string
     public getMaybePublicIPAddress(): string {
         return this.publicIpAddress
     }
 
-    // Docs available at https://docs.kurtosis.com/sdk
+    // Docs available at https://docs.kurtosis.com/sdk/#getpublicports---mapportid-portspec
     public getPublicPorts(): Map<string, PortSpec> {
         return this.publicPorts
     }
 
-    // Docs available at https://docs.kurtosis.com/sdk
+    // Docs available at https://docs.kurtosis.com/sdk/#execcommandliststring-command---int-exitcode-string-logs
     public async execCommand(command: string[]): Promise<Result<[number, string], Error>> {
         const execCommandArgs: ExecCommandArgs = newExecCommandArgs(this.serviceId, command);
 
