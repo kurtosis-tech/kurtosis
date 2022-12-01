@@ -20,7 +20,7 @@ script_dirname="$(basename "${script_dirpath}")"
 
 for maybe_testsuite_rel_dirpath in $(find "${internal_testsuites_root_dirpath}" -type d -mindepth 1 -maxdepth 1 ); do
     maybe_testsuite_dirname="$(basename "${maybe_testsuite_rel_dirpath}")"
-    if [ "${maybe_testsuite_dirname}" == "${script_dirname}" ] || [ "${maybe_testsuite_dirname}" == "$STARLARK_DIR_PATH" ]; then
+    if [ "${maybe_testsuite_dirname}" == "${script_dirname}" ] || [ "${maybe_testsuite_dirname}" == "${STARLARK_DIR_PATH}" ]; then
         continue
     fi
 
