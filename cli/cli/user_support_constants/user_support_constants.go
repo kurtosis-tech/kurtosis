@@ -17,6 +17,7 @@ const (
 	CLICommandsReferenceURL      = DocumentationUrl + "/cli"
 	StarlarkPackagesReferenceURL = DocumentationUrl + "/reference/packages"
 	StarlarkLocatorsReferenceURL = DocumentationUrl + "/reference/locators"
+	UpgradeCLIInstructionsPage   = DocumentationUrl + "/install#upgrading"
 	//    If you add new URLs above, make sure to add them to the urlsToValidateInTest below!!!
 	// WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
 )
@@ -29,4 +30,5 @@ var urlsToValidateInTest = []string{
 	CLICommandsReferenceURL,
 	StarlarkPackagesReferenceURL,
 	StarlarkLocatorsReferenceURL,
+	UpgradeCLIInstructionsPage,
 }
