@@ -120,11 +120,11 @@ func (instruction *StoreServiceFilesInstruction) parseStartosisArgs(b *starlark.
 	}
 
 	if artifactIdArg == emptyStarlarkString {
-		placeHolderArtifactUuid, err := enclave_data_directory.NewFilesArtifactID()
+		placeHolderArtifactId, err := enclave_data_directory.NewFilesArtifactID()
 		if err != nil {
 			return startosis_errors.NewInterpretationError("An empty or no artifact_uuid was passed, we tried creating one but failed")
 		}
-		artifactIdArg = starlark.String(placeHolderArtifactUuid)
+		artifactIdArg = starlark.String(placeHolderArtifactId)
 	}
 
 	instruction.starlarkKwargs[serviceIdArgName] = serviceIdArg

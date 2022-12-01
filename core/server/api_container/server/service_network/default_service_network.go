@@ -606,16 +606,16 @@ func (network *DefaultServiceNetwork) GetServiceIDs() map[service.ServiceID]bool
 }
 
 func (network *DefaultServiceNetwork) CopyFilesFromService(ctx context.Context, serviceId service.ServiceID, srcPath string) (enclave_data_directory.FilesArtifactID, error) {
-	filesArtifactUuid, err := enclave_data_directory.NewFilesArtifactID()
+	filesArtifactId, err := enclave_data_directory.NewFilesArtifactID()
 	if err != nil {
 		return "", stacktrace.Propagate(err, "There was an error in creating a files artifact uuid to copy the files to")
 	}
 
-	err = network.copyFilesFromServiceToTargetArtifactUUIDUnlocked(ctx, serviceId, srcPath, filesArtifactUuid)
+	err = network.copyFilesFromServiceToTargetArtifactUUIDUnlocked(ctx, serviceId, srcPath, filesArtifactId)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "There was an error in copying files over to disk")
 	}
-	return filesArtifactUuid, nil
+	return filesArtifactId, nil
 }
 
 func (network *DefaultServiceNetwork) CopyFilesFromServiceToTargetArtifactUUID(ctx context.Context, serviceId service.ServiceID, srcPath string, filesArtifactUuid enclave_data_directory.FilesArtifactID) (enclave_data_directory.FilesArtifactID, error) {
@@ -641,15 +641,15 @@ func (network *DefaultServiceNetwork) RenderTemplates(templatesAndDataByDestinat
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 
-	filesArtifactUuid, err := enclave_data_directory.NewFilesArtifactID()
+	filesArtifactId, err := enclave_data_directory.NewFilesArtifactID()
 	if err != nil {
 		return "", stacktrace.Propagate(err, "There was an error in creating a files artifact uuid to render the templates to")
 	}
-	err = network.renderTemplatesToTargetArtifactUUIDUnlocked(templatesAndDataByDestinationRelFilepath, filesArtifactUuid)
+	err = network.renderTemplatesToTargetArtifactUUIDUnlocked(templatesAndDataByDestinationRelFilepath, filesArtifactId)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "There was an error in rendering templates to disk")
 	}
-	return filesArtifactUuid, nil
+	return filesArtifactId, nil
 }
 
 func (network *DefaultServiceNetwork) RenderTemplatesToTargetFilesArtifactUUID(templatesAndDataByDestinationRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, filesArtifactUuid enclave_data_directory.FilesArtifactID) (enclave_data_directory.FilesArtifactID, error) {
@@ -665,17 +665,17 @@ func (network *DefaultServiceNetwork) RenderTemplatesToTargetFilesArtifactUUID(t
 }
 
 func (network *DefaultServiceNetwork) UploadFilesArtifact(data []byte) (enclave_data_directory.FilesArtifactID, error) {
-	filesArtifactUuid, err := enclave_data_directory.NewFilesArtifactID()
+	filesArtifactId, err := enclave_data_directory.NewFilesArtifactID()
 	if err != nil {
 		return "", stacktrace.Propagate(err, "There was an error in creating a files artifact uuid to upload the files to")
 	}
 
-	err = network.uploadFilesArtifactToTargetArtifactUUIDUnlocked(data, filesArtifactUuid)
+	err = network.uploadFilesArtifactToTargetArtifactUUIDUnlocked(data, filesArtifactId)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "There was an error in uploading the files")
 	}
 
-	return filesArtifactUuid, nil
+	return filesArtifactId, nil
 }
 
 func (network *DefaultServiceNetwork) UploadFilesArtifactToTargetArtifactUUID(data []byte, targetFilesArtifactUuid enclave_data_directory.FilesArtifactID) error {
