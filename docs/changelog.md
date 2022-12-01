@@ -2,6 +2,7 @@
 ### Fixes
 - Corrected some old references to Starlark "modules"
 - Fixed a typo where the CLI setup URL was redirecting to the CI setup
+- Corrected almost all old references to `docs.kurtosistech.com`
 
 # 0.57.4
 ### Changes
