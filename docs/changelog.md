@@ -1,4 +1,6 @@
 # TBD
+### Changes
+- Replaced stack name with the stack file name in custom evaluation errors
 
 ### Features
 - The "Starlark code successfully executed" or "Error encountered running Starlark code" messages are now "Starlark 
@@ -12,6 +14,10 @@ run in dry-run mode (and without the "in dry-run mode" when the script is execut
 - Corrected some old references to Starlark "modules"
 - Fixed a typo where the CLI setup URL was redirecting to the CI setup
 - Corrected almost all old references to `docs.kurtosistech.com`
+- Fixed `internal-testsuites` omission during build time
+
+### Features
+- Support public ports in Starlark to cover the NEAR usecase
 
 # 0.57.4
 ### Changes
