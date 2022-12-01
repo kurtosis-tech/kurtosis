@@ -1,4 +1,6 @@
 # TBD
+### Changes
+- Replaced stack name with the stack file name in custom evaluation errors
 
 ### Changes
 - Replaced "internal ID" in the output message of `add_service` and `remove_service` instructions with "service GUID"
@@ -8,6 +10,10 @@
 - Corrected some old references to Starlark "modules"
 - Fixed a typo where the CLI setup URL was redirecting to the CI setup
 - Corrected almost all old references to `docs.kurtosistech.com`
+- Fixed `internal-testsuites` omission during build time
+
+### Features
+- Support public ports in Starlark to cover the NEAR usecase
 
 # 0.57.4
 ### Changes

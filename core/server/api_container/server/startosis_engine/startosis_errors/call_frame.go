@@ -1,6 +1,8 @@
 package startosis_errors
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type CallFrame struct {
 	name string
