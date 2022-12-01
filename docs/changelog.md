@@ -1,23 +1,20 @@
 # TBD
+
 ### Changes
 - Replaced stack name with the stack file name in custom evaluation errors
+- Replaced "internal ID" in the output message of `add_service` and `remove_service` instructions with "service GUID"
 
 ### Features
 - The "Starlark code successfully executed" or "Error encountered running Starlark code" messages are now "Starlark 
 code successfully run in dry-run mode" and "Error encountered running Starlark code in dry-run mode" when Starlark is 
 run in dry-run mode (and without the "in dry-run mode" when the script is executed for real)
-
-### Changes
-- Replaced "internal ID" in the output message of `add_service` and `remove_service` instructions with "service GUID"
+- Support public ports in Starlark to cover the NEAR usecase
 
 ### Fixes
 - Corrected some old references to Starlark "modules"
 - Fixed a typo where the CLI setup URL was redirecting to the CI setup
 - Corrected almost all old references to `docs.kurtosistech.com`
 - Fixed `internal-testsuites` omission during build time
-
-### Features
-- Support public ports in Starlark to cover the NEAR usecase
 
 # 0.57.4
 ### Changes
