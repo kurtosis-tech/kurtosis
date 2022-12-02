@@ -1,8 +1,5 @@
 # TBD
 
-### Changes
-- Changed validation message from "Pre-validating" to "Validating"
-
 ### Features
 - The "Starlark code successfully executed" or "Error encountered running Starlark code" messages are now "Starlark 
 code successfully run in dry-run mode" and "Error encountered running Starlark code in dry-run mode" when Starlark is 
@@ -13,6 +10,10 @@ run in dry-run mode (and without the "in dry-run mode" when the script is execut
 
 ### Removals
 - Remove stack trace from validation errors as it isn't used currently
+
+### Changes
+- Changed validation message from "Pre-validating" to "Validating"
+- Disabled progress info in non-interactive terminals when running a Starlark Package
 
 # 0.57.5
 ### Changes
