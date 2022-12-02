@@ -11,6 +11,9 @@ run in dry-run mode (and without the "in dry-run mode" when the script is execut
 ### Fixes
 - Don't duplicate instruction position information in `store_service_files`
 
+### Removals
+- Remove stack trace from validation errors as it isn't used currently
+
 # 0.57.5
 ### Changes
 - Replaced stack name with the stack file name in custom evaluation errors
