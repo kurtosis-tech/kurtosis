@@ -59,5 +59,6 @@ export function newGetServiceLogsArgs(
         serviceGUIDSetMap.set(serviceGUID, isServiceGUIDInSet);
     }
     result.setFollowLogs(shouldFollowLogs)
+    //result.setLineFiltersList() //TODO implement line filters on the client side, now we started from the backend, we are going to implement the client side on next PRs
     return result;
 }
