@@ -87,7 +87,7 @@ func (printer *ExecutionPrinter) Stop() {
 }
 
 // PrintKurtosisExecutionResponseLineToStdOut format and prints the instruction to StdOut.
-func (printer *ExecutionPrinter) PrintKurtosisExecutionResponseLineToStdOut(responseLine *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, verbosity run.Verbosity) error {
+func (printer *ExecutionPrinter) PrintKurtosisExecutionResponseLineToStdOut(responseLine *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, verbosity run.Verbosity, dryRun bool) error {
 	// Printing is a 3 phase operation:
 	// 1. stop spinner to clear the ephemeral progress info
 	// 2. print whatever needs to be printed, could be nothing
@@ -129,12 +129,12 @@ func (printer *ExecutionPrinter) PrintKurtosisExecutionResponseLineToStdOut(resp
 	} else if responseLine.GetProgressInfo() != nil {
 		if printer.isSpinnerBeingUsed {
 			progress := responseLine.GetProgressInfo()
-			progressBarStr := formatProgressBar(progress.GetCurrentStepNumber(), progress.GetTotalSteps())
+			progressBarStr := formatProgressBar(progress.GetCurrentStepNumber(), progress.GetTotalSteps(), progressBarChar)
 			spinnerInfoString := fmt.Sprintf("   %s %s", progressBarStr, progress.GetCurrentStepInfo())
 			printer.spinner.Suffix = spinnerInfoString
 		}
 	} else if responseLine.GetRunFinishedEvent() != nil {
-		formattedRunOutputMessage := formatRunOutput(responseLine.GetRunFinishedEvent())
+		formattedRunOutputMessage := formatRunOutput(responseLine.GetRunFinishedEvent(), dryRun)
 		formattedRunOutputMessageWithNewline := fmt.Sprintf("\n%s", formattedRunOutputMessage)
 		if err := printer.printPersistentLineToStdOut(formattedRunOutputMessageWithNewline); err != nil {
 			return stacktrace.Propagate(err, "Unable to print the success output message containing the serialized output object. Message was: \n%v", formattedRunOutputMessage)
@@ -231,28 +231,33 @@ func formatInstructionToExecutable(instruction *kurtosis_core_rpc_api_bindings.S
 	return multiLineInstruction.String()
 }
 
-func formatProgressBar(currentStep uint32, totalSteps uint32) string {
-	progressBar := strings.Builder{}
-	threshold := currentStep * progressBarLength
-	for i := uint32(0); i < progressBarLength; i++ {
-		if i*totalSteps < threshold {
-			progressBar.WriteString(colorizeProgressBarIsDone(progressBarChar))
-		} else {
-			progressBar.WriteString(colorizeProgressBarRemaining(progressBarChar))
-		}
+func formatProgressBar(currentStep uint32, totalSteps uint32, progressBarChar string) string {
+	threshold := 0
+	if totalSteps != 0 {
+		threshold = int(currentStep * progressBarLength / totalSteps)
 	}
-	return progressBar.String()
+	isDone := colorizeProgressBarIsDone(strings.Repeat(progressBarChar, threshold))
+	remaining := colorizeProgressBarRemaining(strings.Repeat(progressBarChar, progressBarLength-threshold))
+	return fmt.Sprintf("%s%s", isDone, remaining)
 }
 
-func formatRunOutput(runFinishedEvent *kurtosis_core_rpc_api_bindings.StarlarkRunFinishedEvent) string {
+func formatRunOutput(runFinishedEvent *kurtosis_core_rpc_api_bindings.StarlarkRunFinishedEvent, dryRun bool) string {
 	if !runFinishedEvent.GetIsRunSuccessful() {
-		return colorizeError("Error encountered running Starlark code")
+		if dryRun {
+			return colorizeError("Error encountered running Starlark code in dry-run mode.")
+		}
+		return colorizeError("Error encountered running Starlark code.")
 	}
-	var runSuccessMsg string
+	// run was successful
+	runSuccessMsg := strings.Builder{}
+	runSuccessMsg.WriteString("Starlark code successfully run")
+	if dryRun {
+		runSuccessMsg.WriteString(" in dry-run mode")
+	}
 	if runFinishedEvent.GetSerializedOutput() != "" {
-		runSuccessMsg = fmt.Sprintf("Starlark code successfully executed. Output was: \n%v", runFinishedEvent.GetSerializedOutput())
+		runSuccessMsg.WriteString(fmt.Sprintf(". Output was:\n%v", runFinishedEvent.GetSerializedOutput()))
 	} else {
-		runSuccessMsg = "Starlark code successfully executed. No output was returned"
+		runSuccessMsg.WriteString(". No output was returned.")
 	}
-	return colorizeRunSuccessfulMsg(runSuccessMsg)
+	return colorizeRunSuccessfulMsg(runSuccessMsg.String())
 }
