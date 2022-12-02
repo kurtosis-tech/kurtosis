@@ -75,6 +75,7 @@ const (
 
 	logsByKurtosisUserServiceGuidChanBuffSize = 5
 	errorChanBuffSize                         = 2
+
 )
 
 // A backoff schedule for when and how often to retry failed HTTP
@@ -140,6 +141,7 @@ func (client *lokiLogsDatabaseClient) GetUserServiceLogs(
 	ctx context.Context,
 	enclaveID enclave.EnclaveID,
 	userServiceGUIDs map[service.ServiceGUID]bool,
+	logPipeline *lokiLogPipeline,
 ) (
 	chan map[service.ServiceGUID][]LogLine,
 	chan error,
@@ -159,7 +161,7 @@ func (client *lokiLogsDatabaseClient) GetUserServiceLogs(
 
 	userServiceContainerTypeDockerValue := label_value_consts.UserServiceContainerTypeDockerLabelValue.GetString()
 
-	queryParamValue := getQueryParamValue(userServiceContainerTypeDockerValue, kurtosisGuids)
+	queryParamValue := getQueryParamValue(userServiceContainerTypeDockerValue, kurtosisGuids, logPipeline)
 
 	getLogsPath := baseLokiApiPath + queryRangeEndpointSubpath
 
@@ -247,6 +249,7 @@ func (client *lokiLogsDatabaseClient) StreamUserServiceLogs(
 	ctx context.Context,
 	enclaveID enclave.EnclaveID,
 	userServiceGUIDs map[service.ServiceGUID]bool,
+	logPipeline *lokiLogPipeline,
 ) (
 	chan map[service.ServiceGUID][]LogLine,
 	chan error,
@@ -264,7 +267,7 @@ func (client *lokiLogsDatabaseClient) StreamUserServiceLogs(
 		}
 	}()
 
-	tailLogsEndpointURL, httpHeaderWithTenantID := client.getTailLogEndpointURLAndHeader(enclaveID, userServiceGUIDs)
+	tailLogsEndpointURL, httpHeaderWithTenantID := client.getTailLogEndpointURLAndHeader(enclaveID, userServiceGUIDs, logPipeline)
 
 	//this channel will return the user service log lines by service GUI
 	logsByKurtosisUserServiceGuidChan := make(chan map[service.ServiceGUID][]LogLine, logsByKurtosisUserServiceGuidChanBuffSize)
@@ -513,6 +516,7 @@ func getMaxRetentionLogsTimeParamValue() string {
 func getQueryParamValue(
 	kurtosisContainerType string,
 	kurtosisGuids []string,
+	logPipeline *lokiLogPipeline,
 ) string {
 	kurtosisGuidParaValues := getKurtosisGuidParamValues(kurtosisGuids)
 
@@ -526,14 +530,21 @@ func getQueryParamValue(
 
 	kurtosisGuidLokiTagKey := allLogsDatabaseKurtosisTrackedValidLokiTagsByDockerLabelKey[kurtosisGuidDockerLabelKey]
 
-	queryParamWithKurtosisTagsQueryValue := fmt.Sprintf(
+	streamSelectorInQuery := fmt.Sprintf(
 		`{%v="%v",%v=~"%v"}`,
 		kurtosisContainerTypeLokiTagKey,
 		kurtosisContainerType,
 		kurtosisGuidLokiTagKey,
 		kurtosisGuidParaValues,
 	)
-	return queryParamWithKurtosisTagsQueryValue
+
+	queryParamValue := streamSelectorInQuery
+
+	if logPipeline != nil {
+		queryParamValue = fmt.Sprintf("%s %s", queryParamValue, logPipeline)
+	}
+
+	return streamSelectorInQuery
 }
 
 func getKurtosisGuidParamValues(kurtosisGuids []string) string {
@@ -544,6 +555,7 @@ func getKurtosisGuidParamValues(kurtosisGuids []string) string {
 func (client *lokiLogsDatabaseClient) getTailLogEndpointURLAndHeader(
 	enclaveID enclave.EnclaveID,
 	userServiceGuids map[service.ServiceGUID]bool,
+	logPipeline *lokiLogPipeline,
 ) (url.URL, http.Header) {
 
 	kurtosisGuids := []string{}
@@ -555,7 +567,7 @@ func (client *lokiLogsDatabaseClient) getTailLogEndpointURLAndHeader(
 
 	userServiceContainerTypeDockerValue := label_value_consts.UserServiceContainerTypeDockerLabelValue.GetString()
 
-	queryParamValue := getQueryParamValue(userServiceContainerTypeDockerValue, kurtosisGuids)
+	queryParamValue := getQueryParamValue(userServiceContainerTypeDockerValue, kurtosisGuids, logPipeline)
 
 	tailLogsPath := baseLokiApiPath + tailEndpointSubpath
 

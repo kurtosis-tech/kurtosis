@@ -1,71 +1,7 @@
 package centralized_logs
 
-var mockedResponseBodyStr = `{
-    "status": "success",
-    "data": {
-        "resultType": "streams",
-        "result": [
-            {
-                "stream": {
-                    "comKurtosistechContainerType": "user-service",
-                    "comKurtosistechGuid": "test-user-service-1"
-                },
-                "values": [
-                    [
-                        "1664289367000000000",
-                        "{\"log\":\"This is the first log line.\"}"
-                    ],
-                    [
-                        "1664289367000000000",
-                        "{\"log\":\"This is the second log line.\"}"
-                    ],
-                    [
-                        "1664289367000000000",
-                        "{\"log\":\"This is the third log line.\"}"
-                    ]
-                ]
-            },
-            {
-                "stream": {
-                    "comKurtosistechContainerType": "user-service",
-                    "comKurtosistechGuid": "test-user-service-2"
-                },
-                "values": [
-                    [
-                        "1664289367000000000",
-                        "{\"log\":\"This is the first log line.\"}"
-                    ],
-                    [
-                        "1664289367000000000",
-                        "{\"log\":\"This is the second log line.\"}"
-                    ],
-                    [
-                        "1664289367000000000",
-                        "{\"log\":\"This is the third log line.\"}"
-                    ],
-					[
-                        "1664289367000000000",
-                        "{\"log\":\"This is the fourth log line.\"}"
-                    ]
-                ]
-            },
-			{
-                "stream": {
-                    "comKurtosistechContainerType": "user-service",
-                    "comKurtosistechGuid": "test-user-service-3"
-                },
-                "values": [
-                    [
-                        "1664289367000000000",
-                        "{\"log\":\"This is the first log line.\"}"
-                    ],
-                    [
-                        "1664289367000000000",
-                        "{\"log\":\"This is the second log line.\"}"
-                    ]
-                ]
-            }
-        ],
+const (
+	commonStatsResultStr = `
         "stats": {
             "summary": {
                 "bytesProcessedPerSecond": 1243011,
@@ -137,6 +73,121 @@ var mockedResponseBodyStr = `{
                     "requests": 0
                 }
             }
-        }
+        }`
+
+	mockedResponseBodyWithSeveralValuesStr = `{
+    "status": "success",
+    "data": {
+        "resultType": "streams",
+        "result": [
+            {
+                "stream": {
+                    "comKurtosistechContainerType": "user-service",
+                    "comKurtosistechGuid": "test-user-service-1"
+                },
+                "values": [
+                    [
+                        "1664289367000000000",
+                        "{\"log\":\"This is the first log line.\"}"
+                    ],
+                    [
+                        "1664289367000000000",
+                        "{\"log\":\"This is the second log line.\"}"
+                    ],
+                    [
+                        "1664289367000000000",
+                        "{\"log\":\"This is the third log line.\"}"
+                    ]
+                ]
+            },
+            {
+                "stream": {
+                    "comKurtosistechContainerType": "user-service",
+                    "comKurtosistechGuid": "test-user-service-2"
+                },
+                "values": [
+                    [
+                        "1664289367000000000",
+                        "{\"log\":\"This is the first log line.\"}"
+                    ],
+                    [
+                        "1664289367000000000",
+                        "{\"log\":\"This is the second log line.\"}"
+                    ],
+                    [
+                        "1664289367000000000",
+                        "{\"log\":\"This is the third log line.\"}"
+                    ],
+					[
+                        "1664289367000000000",
+                        "{\"log\":\"This is the fourth log line.\"}"
+                    ]
+                ]
+            },
+			{
+                "stream": {
+                    "comKurtosistechContainerType": "user-service",
+                    "comKurtosistechGuid": "test-user-service-3"
+                },
+                "values": [
+                    [
+                        "1664289367000000000",
+                        "{\"log\":\"This is the first log line.\"}"
+                    ],
+                    [
+                        "1664289367000000000",
+                        "{\"log\":\"This is the second log line.\"}"
+                    ]
+                ]
+            }
+        ],
+        `+ commonStatsResultStr +`
     }
 }`
+
+	mockedResponseBodyWithOneLineValuesStr = `{
+    "status": "success",
+    "data": {
+        "resultType": "streams",
+        "result": [
+            {
+                "stream": {
+                    "comKurtosistechContainerType": "user-service",
+                    "comKurtosistechGuid": "test-user-service-1"
+                },
+                "values": [
+                    [
+                        "1664289367000000000",
+                        "{\"log\":\"This is the first log line.\"}"
+                    ]
+                ]
+            },
+            {
+                "stream": {
+                    "comKurtosistechContainerType": "user-service",
+                    "comKurtosistechGuid": "test-user-service-2"
+                },
+                "values": [
+                    [
+                        "1664289367000000000",
+                        "{\"log\":\"This is the first log line.\"}"
+                    ]
+                ]
+            },
+			{
+                "stream": {
+                    "comKurtosistechContainerType": "user-service",
+                    "comKurtosistechGuid": "test-user-service-3"
+                },
+                "values": [
+                    [
+                        "1664289367000000000",
+                        "{\"log\":\"This is the first log line.\"}"
+                    ]
+                ]
+            }
+        ],
+        `+ commonStatsResultStr +`
+    }
+}`
+)
