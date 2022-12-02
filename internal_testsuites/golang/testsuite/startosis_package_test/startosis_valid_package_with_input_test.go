@@ -34,17 +34,18 @@ func TestStartosisPackage_ValidPackageWithInput(t *testing.T) {
 	logrus.Infof("Startosis package path: \n%v", packageDirpath)
 
 	params := `{"greetings": "bonjour!"}`
-	outputStream, _, err := enclaveCtx.RunStarlarkPackage(ctx, packageDirpath, params, defaultDryRun)
+	runResult, err := enclaveCtx.RunStarlarkPackageBlocking(ctx, packageDirpath, params, defaultDryRun)
 	require.NoError(t, err, "Unexpected error executing starlark package")
-	scriptOutput, _, interpretationError, validationErrors, executionError := test_helpers.ReadStreamContentUntilClosed(outputStream)
+
+	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
+	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")
+	require.Nil(t, runResult.ExecutionError, "Unexpected execution error")
 
 	expectedScriptOutput := `bonjour!
 Hello World!
 `
-	require.Nil(t, interpretationError, "Unexpected interpretation error")
-	require.Empty(t, validationErrors, "Unexpected validation error")
-	require.Nil(t, executionError, "Unexpected execution error")
-	require.Equal(t, expectedScriptOutput, scriptOutput)
+	require.Equal(t, expectedScriptOutput, string(runResult.RunOutput))
+	require.Len(t, runResult.Instructions, 2)
 	logrus.Info("Successfully ran Startosis module")
 }
 
@@ -67,14 +68,14 @@ func TestStartosisPackage_ValidPackageWithInput_MissingKeyInParams(t *testing.T)
 	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
 
 	params := `{"hello": "world"}` // expecting key 'greetings' here
-	outputStream, _, err := enclaveCtx.RunStarlarkPackage(ctx, moduleDirpath, params, defaultDryRun)
+	runResult, err := enclaveCtx.RunStarlarkPackageBlocking(ctx, moduleDirpath, params, defaultDryRun)
 	require.NoError(t, err, "Unexpected error executing startosis module")
-	scriptOutput, _, interpretationError, validationErrors, executionError := test_helpers.ReadStreamContentUntilClosed(outputStream)
 
-	require.NotNil(t, interpretationError, "Unexpected interpretation error")
-	require.Contains(t, interpretationError.GetErrorMessage(), "Evaluation error: struct has no .greetings attribute")
-	require.Empty(t, validationErrors, "Unexpected validation error")
-	require.Nil(t, executionError, "Unexpected execution error")
-	require.Empty(t, scriptOutput)
+	require.NotNil(t, runResult.InterpretationError, "Unexpected interpretation error")
+	require.Contains(t, runResult.InterpretationError.GetErrorMessage(), "Evaluation error: struct has no .greetings attribute")
+	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")
+	require.Nil(t, runResult.ExecutionError, "Unexpected execution error")
+	require.Empty(t, string(runResult.RunOutput))
+	require.Empty(t, runResult.Instructions)
 	logrus.Info("Successfully ran Startosis module")
 }

@@ -25,14 +25,14 @@ test("Test invalid package with invalid yaml file", async () => {
 
         log.info(`Loading package at path '${packageRootPath}'`)
 
-        const outputStream = await enclaveContext.runStarlarkPackage(packageRootPath, EMPTY_RUN_PARAMS, DEFAULT_DRY_RUN)
+        const runResult = await enclaveContext.runStarlarkPackageBlocking(packageRootPath, EMPTY_RUN_PARAMS, DEFAULT_DRY_RUN)
 
-        if (!outputStream.isErr()) {
+        if (!runResult.isErr()) {
             throw err(new Error("Package with invalid package was expected to error but didn't"))
         }
 
-        if (!outputStream.error.message.includes(`Field 'name', which is the Starlark package's name, in 'kurtosis.yml' needs to be set and cannot be empty`)) {
-            throw err(new Error(`Unexpected error message. The received error is:\n${outputStream.error.message}`))
+        if (!runResult.error.message.includes(`Field 'name', which is the Starlark package's name, in 'kurtosis.yml' needs to be set and cannot be empty`)) {
+            throw err(new Error(`Unexpected error message. The received error is:\n${runResult.error.message}`))
         }
     } finally {
         stopEnclaveFunction()

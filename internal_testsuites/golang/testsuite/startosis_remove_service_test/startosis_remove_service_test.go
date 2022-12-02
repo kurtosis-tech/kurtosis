@@ -57,18 +57,18 @@ func TestStartosis(t *testing.T) {
 	logrus.Infof("Executing Starlark script to first add the datastore service...")
 	logrus.Debugf("Starlark script content: \n%v", starlarkScript)
 
-	outputStream, _, err := enclaveCtx.RunStarlarkScript(ctx, starlarkScript, emptyArgs, defaultDryRun)
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkScript, emptyArgs, defaultDryRun)
 	require.NoError(t, err, "Unexpected error executing Starlark script")
-	scriptOutput, _, interpretationError, validationErrors, executionError := test_helpers.ReadStreamContentUntilClosed(outputStream)
+
+	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
+	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")
+	require.Nil(t, runResult.ExecutionError, "Unexpected execution error")
 
 	expectedScriptOutput := `Adding service example-datastore-server-1.
 Service 'example-datastore-server-1' added with service GUID '[a-z-0-9]+'
 Service example-datastore-server-1 deployed successfully.
 `
-	require.Nil(t, interpretationError, "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
-	require.Empty(t, validationErrors, "Unexpected validation error")
-	require.Nil(t, executionError, "Unexpected execution error")
-	require.Regexp(t, expectedScriptOutput, scriptOutput)
+	require.Regexp(t, expectedScriptOutput, string(runResult.RunOutput))
 	logrus.Infof("Successfully ran Starlark script to add datastore service")
 
 	// Check that the service added by the script is functional
@@ -83,17 +83,16 @@ Service example-datastore-server-1 deployed successfully.
 	logrus.Infof("Validated that all services are healthy")
 
 	// we run the remove script and see if things still work
-	outputStream, _, err = enclaveCtx.RunStarlarkScript(ctx, removeScript, emptyArgs, defaultDryRun)
+	runResult, err = enclaveCtx.RunStarlarkScriptBlocking(ctx, removeScript, emptyArgs, defaultDryRun)
 	require.NoError(t, err, "Unexpected error executing remove script")
-	scriptOutput, _, interpretationError, validationErrors, executionError = test_helpers.ReadStreamContentUntilClosed(outputStream)
+
+	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
+	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")
+	require.Nil(t, runResult.ExecutionError, "Unexpected execution error")
 
 	expectedScriptOutput = `Service 'example-datastore-server-1' with service GUID '[a-z-0-9]+' removed
 `
-	require.Nil(t, interpretationError, "Unexpected interpretation error")
-	require.Empty(t, validationErrors, "Unexpected validation error")
-	require.Nil(t, executionError, "Unexpected execution error")
-
-	require.Regexp(t, expectedScriptOutput, scriptOutput)
+	require.Regexp(t, expectedScriptOutput, string(runResult.RunOutput))
 
 	require.Error(
 		t,
