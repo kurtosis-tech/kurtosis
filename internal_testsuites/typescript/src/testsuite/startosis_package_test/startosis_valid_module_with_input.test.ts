@@ -42,6 +42,7 @@ test("Test valid Starlark package with input", async () => {
 
         const expectedScriptOutput = "bonjour!\nHello World!\n"
         expect(runResult.value.runOutput).toEqual(expectedScriptOutput)
+        expect(runResult.value.instructions).toHaveLength(2)
     } finally {
         stopEnclaveFunction()
     }
@@ -77,6 +78,7 @@ test("Test valid Starlark package with input - missing key in params", async () 
         expect(runResult.value.executionError).toBeUndefined()
 
         expect(runResult.value.runOutput).toEqual("")
+        expect(runResult.value.instructions).toHaveLength(0)
     } finally {
         stopEnclaveFunction()
     }

@@ -119,7 +119,7 @@ Rendered file to [a-f0-9-]{36}
 Service 'example-datastore-server-2' added with service GUID '[a-z-0-9]+'
 Deployed example-datastore-server-2 successfully
 `
-	require.Regexp(t, expectedScriptOutput, runResult.RunOutput)
+	require.Regexp(t, expectedScriptOutput, string(runResult.RunOutput))
 	logrus.Infof("Successfully ran Startosis script")
 
 	// Check that the service added by the script is functional

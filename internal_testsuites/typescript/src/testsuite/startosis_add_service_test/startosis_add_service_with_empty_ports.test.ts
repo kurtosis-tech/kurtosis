@@ -69,7 +69,7 @@ async function TestAddServiceWithEmptyAndWithoutPorts() {
             const serviceId:string = serviceIds[i]
             log.info("Executing Starlark script...");
             log.debug(`Starlark script content: \n%v ${starlarkScript}`);
-            const runResult = await enclaveContext.runStarlarkPackageBlocking(starlarkScript, EMPTY_ARGS, DEFAULT_DRY_RUN)
+            const runResult = await enclaveContext.runStarlarkScriptBlocking(starlarkScript, EMPTY_ARGS, DEFAULT_DRY_RUN)
             if (runResult.isErr()) {
                 log.error("Unexpected error executing Starlark script");
                 throw runResult.error;

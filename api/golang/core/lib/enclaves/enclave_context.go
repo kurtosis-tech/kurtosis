@@ -46,8 +46,6 @@ const (
 	kurtosisYamlFilename = "kurtosis.yml"
 
 	ensureCompressedFileIsLesserThanGRPCLimit = true
-
-	starlarkScriptOutputLineSplit = "\n"
 )
 
 // Docs available at https://docs.kurtosis.com/sdk/#enclavecontext
@@ -158,7 +156,7 @@ func (enclaveCtx *EnclaveContext) RunStarlarkScript(ctx context.Context, seriali
 	return starlarkResponseLineChan, cancelCtxFunc, nil
 }
 
-// TODO(gb): update docs link
+// Docs available at https://docs.kurtosis.com/sdk/#runstarlarkscriptblockingstring-serializedstarlarkscript-boolean-dryrun---starlarkrunresult-runresult-error-error
 func (enclaveCtx *EnclaveContext) RunStarlarkScriptBlocking(ctx context.Context, serializedScript string, serializedParams string, dryRun bool) (*StarlarkRunResult, error) {
 	starlarkRunResponseLineChan, _, err := enclaveCtx.RunStarlarkScript(ctx, serializedScript, serializedParams, dryRun)
 	if err != nil {
@@ -187,7 +185,7 @@ func (enclaveCtx *EnclaveContext) RunStarlarkPackage(ctx context.Context, packag
 	return starlarkResponseLineChan, cancelCtxFunc, nil
 }
 
-// TODO(gb): update docs link
+// Docs available at https://docs.kurtosis.com/sdk/#runstarlarkpackageblockingstring-packagerootpath-string-serializedparams-boolean-dryrun---starlarkrunresult-runresult-error-error
 func (enclaveCtx *EnclaveContext) RunStarlarkPackageBlocking(ctx context.Context, packageRootPath string, serializedParams string, dryRun bool) (*StarlarkRunResult, error) {
 	starlarkRunResponseLineChan, _, err := enclaveCtx.RunStarlarkPackage(ctx, packageRootPath, serializedParams, dryRun)
 	if err != nil {
@@ -212,7 +210,7 @@ func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackage(ctx context.Context, 
 	return starlarkResponseLineChan, cancelCtxFunc, nil
 }
 
-// TODO(gb): update docs link
+// Docs available at https://docs.kurtosis.com/sdk/#runstarlarkremotepackageblockingstring-packageid-string-serializedparams-boolean-dryrun---starlarkrunresult-runresult-error-error
 func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackageBlocking(ctx context.Context, packageId string, serializedParams string, dryRun bool) (*StarlarkRunResult, error) {
 	starlarkRunResponseLineChan, _, err := enclaveCtx.RunStarlarkRemotePackage(ctx, packageId, serializedParams, dryRun)
 	if err != nil {

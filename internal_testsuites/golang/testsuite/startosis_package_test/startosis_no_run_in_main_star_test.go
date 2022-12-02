@@ -40,5 +40,5 @@ func TestStartosisPackage_NoMainInMainStar(t *testing.T) {
 	require.Contains(t, runResult.InterpretationError.GetErrorMessage(), expectedInterpretationErr)
 	require.Empty(t, runResult.ValidationErrors)
 	require.Nil(t, runResult.ExecutionError)
-	require.Empty(t, runResult.RunOutput)
+	require.Empty(t, string(runResult.RunOutput))
 }

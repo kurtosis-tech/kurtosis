@@ -73,7 +73,7 @@ Service example-datastore-server-1 deployed successfully.
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
 	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")
 	require.Nil(t, runResult.ExecutionError, "Unexpected execution error")
-	require.Regexp(t, expectedScriptOutput, runResult.RunOutput)
+	require.Regexp(t, expectedScriptOutput, string(runResult.RunOutput))
 	logrus.Infof("Successfully ran Starlark script")
 
 	// Check that the service added by the script is functional

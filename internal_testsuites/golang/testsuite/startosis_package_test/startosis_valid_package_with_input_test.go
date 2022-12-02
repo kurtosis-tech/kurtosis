@@ -44,7 +44,8 @@ func TestStartosisPackage_ValidPackageWithInput(t *testing.T) {
 	expectedScriptOutput := `bonjour!
 Hello World!
 `
-	require.Equal(t, expectedScriptOutput, runResult.RunOutput)
+	require.Equal(t, expectedScriptOutput, string(runResult.RunOutput))
+	require.Len(t, runResult.Instructions, 2)
 	logrus.Info("Successfully ran Startosis module")
 }
 
@@ -74,6 +75,7 @@ func TestStartosisPackage_ValidPackageWithInput_MissingKeyInParams(t *testing.T)
 	require.Contains(t, runResult.InterpretationError.GetErrorMessage(), "Evaluation error: struct has no .greetings attribute")
 	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")
 	require.Nil(t, runResult.ExecutionError, "Unexpected execution error")
-	require.Empty(t, runResult.RunOutput)
+	require.Empty(t, string(runResult.RunOutput))
+	require.Empty(t, runResult.Instructions)
 	logrus.Info("Successfully ran Startosis module")
 }

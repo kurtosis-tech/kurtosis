@@ -237,7 +237,7 @@ export class EnclaveContext {
         return ok(scriptRunResult.value)
     }
 
-    // TODO(gb): update docs link
+    // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkscriptblockingstring-serializedstarlarkscript-boolean-dryrun---starlarkrunresult-runresult-error-error
     public async runStarlarkScriptBlocking(
         serializedStartosisScript: string,
         serializedParams: string,
@@ -268,7 +268,7 @@ export class EnclaveContext {
         return ok(packageRunResult.value)
     }
 
-    // TODO(gb): update docs link
+    // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkpackageblockingstring-packagerootpath-string-serializedparams-boolean-dryrun---starlarkrunresult-runresult-error-error
     public async runStarlarkPackageBlocking(
         packageRootPath: string,
         serializedParams: string,
@@ -300,13 +300,13 @@ export class EnclaveContext {
         return ok(remotePackageRunResult.value)
     }
 
-    // TODO(gb): update docs link
+    // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkremotepackageblockingstring-packageid-string-serializedparams-boolean-dryrun---starlarkrunresult-runresult-error-error
     public async runStarlarkRemotePackageBlocking(
         moduleId: string,
         serializedParams: string,
         dryRun: boolean,
     ): Promise<Result<StarlarkRunResult, Error>> {
-        const runAsyncResponse = await this.runStarlarkPackage(moduleId, serializedParams, dryRun)
+        const runAsyncResponse = await this.runStarlarkRemotePackage(moduleId, serializedParams, dryRun)
         if (runAsyncResponse.isErr()) {
             return err(runAsyncResponse.error)
         }

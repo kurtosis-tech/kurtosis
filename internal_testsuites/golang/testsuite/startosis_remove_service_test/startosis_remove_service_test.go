@@ -68,7 +68,7 @@ func TestStartosis(t *testing.T) {
 Service 'example-datastore-server-1' added with service GUID '[a-z-0-9]+'
 Service example-datastore-server-1 deployed successfully.
 `
-	require.Regexp(t, expectedScriptOutput, runResult.RunOutput)
+	require.Regexp(t, expectedScriptOutput, string(runResult.RunOutput))
 	logrus.Infof("Successfully ran Starlark script to add datastore service")
 
 	// Check that the service added by the script is functional
@@ -92,7 +92,7 @@ Service example-datastore-server-1 deployed successfully.
 
 	expectedScriptOutput = `Service 'example-datastore-server-1' with service GUID '[a-z-0-9]+' removed
 `
-	require.Regexp(t, expectedScriptOutput, runResult.RunOutput)
+	require.Regexp(t, expectedScriptOutput, string(runResult.RunOutput))
 
 	require.Error(
 		t,

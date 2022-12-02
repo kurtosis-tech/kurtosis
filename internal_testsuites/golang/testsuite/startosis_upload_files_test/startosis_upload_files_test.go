@@ -74,7 +74,7 @@ Files uploaded with artifact ID '[a-f0-9-]{36}'
 Uploaded [a-f0-9-]{36}
 Service 'example-datastore-server-1' added with service GUID '[a-z-0-9]+'
 `
-	require.Regexp(t, expectedScriptOutput, runResult.RunOutput)
+	require.Regexp(t, expectedScriptOutput, string(runResult.RunOutput))
 	logrus.Infof("Successfully ran Startosis script")
 
 	// Check that the service added by the script is functional

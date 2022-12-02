@@ -42,7 +42,8 @@ func TestStartosisPackage_ValidPackageNoInput(t *testing.T) {
 
 	expectedScriptOutput := `Hello world!
 `
-	require.Equal(t, expectedScriptOutput, runResult.Instructions)
+	require.Equal(t, expectedScriptOutput, string(runResult.RunOutput))
+	require.Len(t, runResult.Instructions, 1)
 }
 
 func TestStartosisPackage_ValidPackageNoInput_PassingParamsAlsoWorks(t *testing.T) {
@@ -73,5 +74,6 @@ func TestStartosisPackage_ValidPackageNoInput_PassingParamsAlsoWorks(t *testing.
 
 	expectedScriptOutput := `Hello world!
 `
-	require.Equal(t, expectedScriptOutput, runResult.RunOutput)
+	require.Equal(t, expectedScriptOutput, string(runResult.RunOutput))
+	require.Len(t, runResult.Instructions, 1)
 }

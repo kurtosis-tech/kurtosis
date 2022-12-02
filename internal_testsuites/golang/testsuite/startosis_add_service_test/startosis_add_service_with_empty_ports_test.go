@@ -76,7 +76,7 @@ Service ` + serviceIds[starlarkScripIndex] + ` deployed successfully.
 		require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error.")
 		require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")
 		require.Nil(t, runResult.ExecutionError, "Unexpected execution error")
-		require.Regexp(t, expectedScriptOutput, runResult.RunOutput)
+		require.Regexp(t, expectedScriptOutput, string(runResult.RunOutput))
 		logrus.Infof("Successfully ran Starlark script")
 
 		// Ensure that the service is listed

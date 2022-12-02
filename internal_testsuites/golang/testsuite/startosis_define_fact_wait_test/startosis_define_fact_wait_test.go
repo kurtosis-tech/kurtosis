@@ -87,7 +87,7 @@ Waited for '[0-9]+.[0-9]+s'. Fact now has value 'post-result'.
 Service 'post-result' added with service GUID '[a-z-0-9]+'
 Service dependency 2 deployed successfully.
 `
-	require.Regexp(t, expectedScriptOutput, runResult.RunOutput)
+	require.Regexp(t, expectedScriptOutput, string(runResult.RunOutput))
 	logrus.Infof("Successfully ran Startosis script")
 
 	serviceInfos, err := enclaveCtx.GetServices()
