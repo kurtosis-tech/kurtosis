@@ -3,12 +3,18 @@
 ### Changes
 - Changed validation message from "Pre-validating" to "Validating"
 
+### Features
+- The "Starlark code successfully executed" or "Error encountered running Starlark code" messages are now "Starlark 
+code successfully run in dry-run mode" and "Error encountered running Starlark code in dry-run mode" when Starlark is 
+run in dry-run mode (and without the "in dry-run mode" when the script is executed for real)
+
 # 0.57.5
 ### Changes
 - Replaced stack name with the stack file name in custom evaluation errors
+- Replaced "internal ID" in the output message of `add_service` and `remove_service` instructions with "service GUID"
 
-### Changes
-- Replaced "insternal ID" in the output message of `add_service` and `remove_service` instructions with "service GUID"
+### Features
+- Support public ports in Starlark to cover the NEAR usecase
 
 ### Fixes
 - Corrected some old references to Starlark "modules"
@@ -17,9 +23,6 @@
 - Changed the name from startosis to starlark in the `internal_testsuite` build script
 - Fixed `internal-testsuites` omission during build time
 - Fixed a bug related to omitting the `enclave ID` value when a function which filters modules is called
-
-### Features
-- Support public ports in Starlark to cover the NEAR usecase
 
 # 0.57.4
 ### Changes
