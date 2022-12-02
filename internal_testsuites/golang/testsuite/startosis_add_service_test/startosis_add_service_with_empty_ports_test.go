@@ -66,18 +66,17 @@ func TestAddServiceWithEmptyPortsAndWithoutPorts(t *testing.T) {
 		logrus.Infof("Executing Starlark script...")
 		logrus.Debugf("Starlark script content: \n%v", starlarkScript)
 
-		outputStream, _, err := enclaveCtx.RunStarlarkScript(ctx, starlarkScript, emptyArgs, defaultDryRun)
+		runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkScript, emptyArgs, defaultDryRun)
 		require.NoError(t, err, "Unexpected error executing starlark script")
-		scriptOutput, _, interpretationError, validationErrors, executionError := test_helpers.ReadStreamContentUntilClosed(outputStream)
 
 		expectedScriptOutput := `Adding service ` + serviceIds[starlarkScripIndex] + `.
 Service '` + serviceIds[starlarkScripIndex] + `' added with service GUID '[a-z-0-9]+'
 Service ` + serviceIds[starlarkScripIndex] + ` deployed successfully.
 `
-		require.Nil(t, interpretationError, "Unexpected interpretation error.")
-		require.Empty(t, validationErrors, "Unexpected validation error")
-		require.Nil(t, executionError, "Unexpected execution error")
-		require.Regexp(t, expectedScriptOutput, scriptOutput)
+		require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error.")
+		require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")
+		require.Nil(t, runResult.ExecutionError, "Unexpected execution error")
+		require.Regexp(t, expectedScriptOutput, runResult.RunOutput)
 		logrus.Infof("Successfully ran Starlark script")
 
 		// Ensure that the service is listed

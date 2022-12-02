@@ -4,7 +4,6 @@ import * as grpc from "@grpc/grpc-js"
 
 import { createEnclave } from "../../test_helpers/enclave_setup";
 import {validateDataStoreServiceIsHealthy} from "../../test_helpers/test_helpers";
-import {readStreamContentUntilClosed} from "../../test_helpers/startosis_helpers";
 
 const TEST_NAME = "startosis_remove_service_test"
 const IS_PARTITIONING_ENABLED = false
@@ -52,22 +51,21 @@ test("Test remove service", async () => {
     try {
         // ------------------------------------- TEST SETUP ----------------------------------------------
         // Executing Startosis script to first add the datastore service...
-        const outputStream = await enclaveContext.runStarlarkScript(STARLARK_SCRIPT, EMPTY_ARGS, DEFAULT_DRY_RUN)
-        if (outputStream.isErr()) {
+        const runResult = await enclaveContext.runStarlarkScriptBlocking(STARLARK_SCRIPT, EMPTY_ARGS, DEFAULT_DRY_RUN)
+        if (runResult.isErr()) {
             log.error("Unexpected error executing Starlark script")
-            throw outputStream.error
+            throw runResult.error
         }
-        const [scriptOutput, instructions, interpretationError, validationErrors, executionError] = await readStreamContentUntilClosed(outputStream.value);
+
+        expect(runResult.value.interpretationError).toBeUndefined()
+        expect(runResult.value.validationErrors).toEqual([])
+        expect(runResult.value.executionError).toBeUndefined()
 
         const expectedScriptRegex = new RegExp(`Adding service example-datastore-server-1.
 Service 'example-datastore-server-1' added with service GUID '[a-z-0-9]+'
 Service example-datastore-server-1 deployed successfully.
 `)
-
-        expect(interpretationError).toBeUndefined()
-        expect(validationErrors).toEqual([])
-        expect(executionError).toBeUndefined()
-        expect(scriptOutput).toMatch(expectedScriptRegex)
+        expect(runResult.value.runOutput).toMatch(expectedScriptRegex)
 
         // Checking that services are all healthy
         const validationResult = await validateDataStoreServiceIsHealthy(enclaveContext, SERVICE_ID, PORT_ID);
@@ -78,20 +76,19 @@ Service example-datastore-server-1 deployed successfully.
         // ------------------------------------- TEST RUN ----------------------------------------------
 
         // we run the remove script and see if things still work
-        const removeServiceOutputStream = await enclaveContext.runStarlarkScript(REMOVE_SCRIPT, EMPTY_ARGS, DEFAULT_DRY_RUN)
-        if (removeServiceOutputStream.isErr()) {
+        const removeServiceRunResult = await enclaveContext.runStarlarkScriptBlocking(REMOVE_SCRIPT, EMPTY_ARGS, DEFAULT_DRY_RUN)
+        if (removeServiceRunResult.isErr()) {
             log.error("Unexpected error executing Starlark script")
-            throw removeServiceOutputStream.error
+            throw removeServiceRunResult.error
         }
-        const [removeServiceScriptOutput, removeServiceInstructions, removeServiceInterpretationError, removeServiceValidationErrors, removeServiceExecutionError] = await readStreamContentUntilClosed(removeServiceOutputStream.value);
+
+        expect(removeServiceRunResult.value.interpretationError).toBeUndefined()
+        expect(removeServiceRunResult.value.validationErrors).toEqual([])
+        expect(removeServiceRunResult.value.executionError).toBeUndefined()
 
         const removeServiceExpectedScriptRegex = new RegExp(`Service 'example-datastore-server-1' with service GUID '[a-z-0-9]+' removed
 `)
-
-        expect(removeServiceInterpretationError).toBeUndefined()
-        expect(removeServiceValidationErrors).toEqual([])
-        expect(removeServiceExecutionError).toBeUndefined()
-        expect(removeServiceScriptOutput).toMatch(removeServiceExpectedScriptRegex)
+        expect(removeServiceRunResult.value.runOutput).toMatch(removeServiceExpectedScriptRegex)
 
         // Ensure that service listing is empty
         const serviceInfos = await enclaveContext.getServices()

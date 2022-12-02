@@ -1,6 +1,5 @@
 import {createEnclave} from "../../test_helpers/enclave_setup";
 import log from "loglevel";
-import {readStreamContentUntilClosed} from "../../test_helpers/startosis_helpers";
 import { Result } from "neverthrow"
 import {ServiceGUID, ServiceID} from "kurtosis-sdk";
 
@@ -70,12 +69,11 @@ async function TestAddServiceWithEmptyAndWithoutPorts() {
             const serviceId:string = serviceIds[i]
             log.info("Executing Starlark script...");
             log.debug(`Starlark script content: \n%v ${starlarkScript}`);
-            const outputStream = await enclaveContext.runStarlarkScript(starlarkScript, EMPTY_ARGS, DEFAULT_DRY_RUN);
-            if (outputStream.isErr()) {
+            const runResult = await enclaveContext.runStarlarkPackageBlocking(starlarkScript, EMPTY_ARGS, DEFAULT_DRY_RUN)
+            if (runResult.isErr()) {
                 log.error("Unexpected error executing Starlark script");
-                throw outputStream.error;
+                throw runResult.error;
             }
-            const [scriptOutput, _, interpretationError, validationErrors, executionError] = await readStreamContentUntilClosed(outputStream.value);
 
             const expectedScriptOutputRegexpPattern = `Adding service ${serviceId}.
 Service '${serviceId}' added with service GUID '[a-z-0-9]+'
@@ -83,10 +81,10 @@ Service ${serviceId} deployed successfully.
 `;
             const expectedScriptOutputRegexp = new RegExp(expectedScriptOutputRegexpPattern)
 
-            expect(interpretationError).toBeUndefined();
-            expect(validationErrors).toEqual([]);
-            expect(executionError).toBeUndefined();
-            expect(scriptOutput).toMatch(expectedScriptOutputRegexp);
+            expect(runResult.value.interpretationError).toBeUndefined();
+            expect(runResult.value.validationErrors).toEqual([]);
+            expect(runResult.value.executionError).toBeUndefined();
+            expect(runResult.value.runOutput).toMatch(expectedScriptOutputRegexp);
             log.info("Successfully ran Starlark script");
 
             // ------------------------------------- TEST RUN ----------------------------------------------

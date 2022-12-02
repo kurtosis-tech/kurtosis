@@ -69,9 +69,12 @@ func TestStartosis(t *testing.T) {
 	logrus.Infof("Executing Startosis script...")
 	logrus.Debugf("Startosis script content: \n%v", startosisScript)
 
-	outputStream, _, err := enclaveCtx.RunStarlarkScript(ctx, startosisScript, emptyParams, defaultDryRun)
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, startosisScript, emptyParams, defaultDryRun)
 	require.NoError(t, err, "Unexpected error executing startosis script")
-	scriptOutput, _, interpretationError, validationErrors, executionError := test_helpers.ReadStreamContentUntilClosed(outputStream)
+
+	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
+	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")
+	require.Nil(t, runResult.ExecutionError, "Unexpected execution error")
 
 	expectedScriptOutput := `Service 'http-echo' added with service GUID '[a-z-0-9]+'
 Service deployed successfully.
@@ -84,10 +87,7 @@ Waited for '[0-9]+.[0-9]+s'. Fact now has value 'post-result'.
 Service 'post-result' added with service GUID '[a-z-0-9]+'
 Service dependency 2 deployed successfully.
 `
-	require.Nil(t, interpretationError, "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
-	require.Empty(t, validationErrors, "Unexpected validation error")
-	require.Nil(t, executionError, "Unexpected execution error")
-	require.Regexp(t, expectedScriptOutput, scriptOutput)
+	require.Regexp(t, expectedScriptOutput, runResult.RunOutput)
 	logrus.Infof("Successfully ran Startosis script")
 
 	serviceInfos, err := enclaveCtx.GetServices()

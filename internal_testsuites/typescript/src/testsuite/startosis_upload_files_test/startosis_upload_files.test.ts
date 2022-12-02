@@ -4,7 +4,6 @@ import * as grpc from "@grpc/grpc-js"
 
 import { createEnclave } from "../../test_helpers/enclave_setup";
 import {validateDataStoreServiceIsHealthy} from "../../test_helpers/test_helpers";
-import {readStreamContentUntilClosed} from "../../test_helpers/startosis_helpers";
 
 const TEST_NAME = "upload-files-test"
 const IS_PARTITIONING_ENABLED = false
@@ -59,12 +58,15 @@ test("Test upload files startosis", async () => {
     try {
         // ------------------------------------- TEST SETUP ----------------------------------------------
         log.info("Loading module...")
-        const outputStream = await enclaveContext.runStarlarkScript(STARTOSIS_SCRIPT, EMPTY_ARGS, DEFAULT_DRY_RUN)
-        if (outputStream.isErr()) {
+        const runResult = await enclaveContext.runStarlarkScriptBlocking(STARTOSIS_SCRIPT, EMPTY_ARGS, DEFAULT_DRY_RUN)
+        if (runResult.isErr()) {
             log.error("An error occurred executing the Startosis SCript")
-            throw outputStream.error
+            throw runResult.error
         }
-        const [scriptOutput, instructions, interpretationError, validationErrors, executionError] = await readStreamContentUntilClosed(outputStream.value);
+
+        expect(runResult.value.interpretationError).toBeUndefined()
+        expect(runResult.value.validationErrors).toEqual([])
+        expect(runResult.value.executionError).toBeUndefined()
 
         const expectedScriptRegexPattern = `Adding service example-datastore-server-1.
 Files uploaded with artifact ID '[a-f0-9-]{36}'
@@ -72,12 +74,8 @@ Uploaded [a-f0-9-]{36}
 Service 'example-datastore-server-1' added with service GUID '[a-z-0-9]+'
 `
         const expectedScriptRegex = new RegExp(expectedScriptRegexPattern)
+        expect(runResult.value.runOutput).toMatch(expectedScriptRegex)
 
-        expect(scriptOutput).toMatch(expectedScriptRegex)
-
-        expect(interpretationError).toBeUndefined()
-        expect(validationErrors).toEqual([])
-        expect(executionError).toBeUndefined()
         log.info("Script Executed Successfully")
 
         // ------------------------------------- TEST RUN ----------------------------------------------

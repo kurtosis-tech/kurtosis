@@ -33,17 +33,16 @@ func TestStartosisPackage_ValidPackageNoInput(t *testing.T) {
 
 	logrus.Infof("Starlark package path: \n%v", packageDirpath)
 
-	outputStream, _, err := enclaveCtx.RunStarlarkPackage(ctx, packageDirpath, emptyRunParams, defaultDryRun)
+	runResult, err := enclaveCtx.RunStarlarkPackageBlocking(ctx, packageDirpath, emptyRunParams, defaultDryRun)
 	require.Nil(t, err, "Unexpected error executing Starlark package")
-	scriptOutput, _, interpretationError, validationErrors, executionError := test_helpers.ReadStreamContentUntilClosed(outputStream)
+
+	require.Nil(t, runResult.InterpretationError)
+	require.Empty(t, runResult.ValidationErrors)
+	require.Nil(t, runResult.ExecutionError)
 
 	expectedScriptOutput := `Hello world!
 `
-
-	require.Nil(t, interpretationError)
-	require.Empty(t, validationErrors)
-	require.Nil(t, executionError)
-	require.Equal(t, expectedScriptOutput, scriptOutput)
+	require.Equal(t, expectedScriptOutput, runResult.Instructions)
 }
 
 func TestStartosisPackage_ValidPackageNoInput_PassingParamsAlsoWorks(t *testing.T) {
@@ -65,15 +64,14 @@ func TestStartosisPackage_ValidPackageNoInput_PassingParamsAlsoWorks(t *testing.
 	logrus.Infof("Starlark package path: \n%v", packageDirpath)
 
 	params := `{"greetings": "bonjour!"}`
-	outputStream, _, err := enclaveCtx.RunStarlarkPackage(ctx, packageDirpath, params, defaultDryRun)
+	runResult, err := enclaveCtx.RunStarlarkPackageBlocking(ctx, packageDirpath, params, defaultDryRun)
 	require.Nil(t, err, "Unexpected error executing Starlark package")
-	scriptOutput, _, interpretationError, validationErrors, executionError := test_helpers.ReadStreamContentUntilClosed(outputStream)
+
+	require.Nil(t, runResult.InterpretationError)
+	require.Empty(t, runResult.ValidationErrors)
+	require.Nil(t, runResult.ExecutionError)
 
 	expectedScriptOutput := `Hello world!
 `
-
-	require.Nil(t, interpretationError)
-	require.Empty(t, validationErrors)
-	require.Nil(t, executionError)
-	require.Equal(t, expectedScriptOutput, scriptOutput)
+	require.Equal(t, expectedScriptOutput, runResult.RunOutput)
 }

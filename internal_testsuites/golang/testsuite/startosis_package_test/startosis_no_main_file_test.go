@@ -34,12 +34,11 @@ func TestStartosisPackage_NoMainFile(t *testing.T) {
 	logrus.Infof("Starlark package path: \n%v", packageDirpath)
 
 	expectedErrorContents := "An error occurred while verifying that 'main.star' exists on root of package"
-	outputStream, _, err := enclaveCtx.RunStarlarkPackage(ctx, packageDirpath, emptyRunParams, defaultDryRun)
+	runResult, err := enclaveCtx.RunStarlarkPackageBlocking(ctx, packageDirpath, emptyRunParams, defaultDryRun)
 	require.Nil(t, err, "Unexpected error executing package")
-	scriptOutput, _, interpretationError, validationErrors, executionError := test_helpers.ReadStreamContentUntilClosed(outputStream)
-	require.NotNil(t, interpretationError)
-	require.Contains(t, interpretationError.GetErrorMessage(), expectedErrorContents)
-	require.Empty(t, validationErrors)
-	require.Nil(t, executionError)
-	require.Empty(t, scriptOutput)
+	require.NotNil(t, runResult.InterpretationError)
+	require.Contains(t, runResult.InterpretationError.GetErrorMessage(), expectedErrorContents)
+	require.Empty(t, runResult.ValidationErrors)
+	require.Nil(t, runResult.ExecutionError)
+	require.Empty(t, runResult.RunOutput)
 }

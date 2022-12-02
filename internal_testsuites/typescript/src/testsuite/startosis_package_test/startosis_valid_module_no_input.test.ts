@@ -7,7 +7,6 @@ import {
 } from "./shared_constants";
 import * as path from "path";
 import log from "loglevel";
-import {readStreamContentUntilClosed} from "../../test_helpers/startosis_helpers";
 import {err} from "neverthrow";
 
 const VALID_PACKAGE_NO_PACKAGE_INPUT_TEST_NAME = "valid-package-no-input"
@@ -31,19 +30,17 @@ test("Test valid Starlark package with input", async () => {
 
         log.info(`Loading package at path '${packageRootPath}'`)
 
-        const outputStream = await enclaveContext.runStarlarkPackage(packageRootPath, EMPTY_RUN_PARAMS, DEFAULT_DRY_RUN)
-        if (outputStream.isErr()) {
+        const runResult = await enclaveContext.runStarlarkPackageBlocking(packageRootPath, EMPTY_RUN_PARAMS, DEFAULT_DRY_RUN)
+        if (runResult.isErr()) {
             throw err(new Error(`An error occurred execute Starlark package '${packageRootPath}'`));
         }
-        const [scriptOutput, _, interpretationError, validationErrors, executionError] = await readStreamContentUntilClosed(outputStream.value);
+
+        expect(runResult.value.interpretationError).toBeUndefined()
+        expect(runResult.value.validationErrors).toEqual([])
+        expect(runResult.value.executionError).toBeUndefined()
 
         const expectedScriptOutput = "Hello world!\n"
-
-        expect(scriptOutput).toEqual(expectedScriptOutput)
-
-        expect(interpretationError).toBeUndefined()
-        expect(validationErrors).toEqual([])
-        expect(executionError).toBeUndefined()
+        expect(runResult.value.runOutput).toEqual(expectedScriptOutput)
     } finally {
         stopEnclaveFunction()
     }
@@ -66,19 +63,17 @@ test("Test valid Starlark package with input - passing params also works", async
         log.info(`Loading package at path '${packageRootPath}'`)
 
         const params = `{"greetings": "bonjour!"}`
-        const outputStream = await enclaveContext.runStarlarkPackage(packageRootPath, params, DEFAULT_DRY_RUN)
-        if (outputStream.isErr()) {
+        const runResult = await enclaveContext.runStarlarkPackageBlocking(packageRootPath, params, DEFAULT_DRY_RUN)
+        if (runResult.isErr()) {
             throw err(new Error(`An error occurred execute Starlark package '${packageRootPath}'`));
         }
-        const [scriptOutput, _, interpretationError, validationErrors, executionError] = await readStreamContentUntilClosed(outputStream.value);
+
+        expect(runResult.value.interpretationError).toBeUndefined()
+        expect(runResult.value.validationErrors).toEqual([])
+        expect(runResult.value.executionError).toBeUndefined()
 
         const expectedScriptOutput = "Hello world!\n"
-
-        expect(scriptOutput).toEqual(expectedScriptOutput)
-
-        expect(interpretationError).toBeUndefined()
-        expect(validationErrors).toEqual([])
-        expect(executionError).toBeUndefined()
+        expect(runResult.value.runOutput).toEqual(expectedScriptOutput)
     } finally {
         stopEnclaveFunction()
     }

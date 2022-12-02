@@ -68,6 +68,7 @@ import {TemplateAndData} from "./template_and_data";
 import * as path from "path";
 import {parseKurtosisYaml} from "./kurtosis_yaml";
 import {Readable} from "stream";
+import {readStreamContentUntilClosed, StarlarkRunResult} from "./starlark_run_blocking";
 
 export type EnclaveID = string;
 export type PartitionID = string;
@@ -236,6 +237,20 @@ export class EnclaveContext {
         return ok(scriptRunResult.value)
     }
 
+    // TODO(gb): update docs link
+    public async runStarlarkScriptBlocking(
+        serializedStartosisScript: string,
+        serializedParams: string,
+        dryRun: boolean,
+    ): Promise<Result<StarlarkRunResult, Error>> {
+        const runAsyncResponse = await this.runStarlarkScript(serializedStartosisScript, serializedParams, dryRun)
+        if (runAsyncResponse.isErr()) {
+            return err(runAsyncResponse.error)
+        }
+        const fullRunResult = await readStreamContentUntilClosed(runAsyncResponse.value)
+        return ok(fullRunResult)
+    }
+
     // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkpackagestring-packagerootpath-string-serializedparams-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
     public async runStarlarkPackage(
         packageRootPath: string,
@@ -251,6 +266,20 @@ export class EnclaveContext {
             return err(new Error(`Unexpected error happened executing Starlark package \n${packageRunResult.error}`))
         }
         return ok(packageRunResult.value)
+    }
+
+    // TODO(gb): update docs link
+    public async runStarlarkPackageBlocking(
+        packageRootPath: string,
+        serializedParams: string,
+        dryRun: boolean,
+    ): Promise<Result<StarlarkRunResult, Error>> {
+        const runAsyncResponse = await this.runStarlarkPackage(packageRootPath, serializedParams, dryRun)
+        if (runAsyncResponse.isErr()) {
+            return err(runAsyncResponse.error)
+        }
+        const fullRunResult = await readStreamContentUntilClosed(runAsyncResponse.value)
+        return ok(fullRunResult)
     }
 
     // Docs available at https://docs.kurtosis.com/sdk/#runremotestarlarkpackagestring-packageid-string-serializedparams-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
@@ -269,6 +298,20 @@ export class EnclaveContext {
             return err(new Error(`Unexpected error happened executing Starlark package \n${remotePackageRunResult.error}`))
         }
         return ok(remotePackageRunResult.value)
+    }
+
+    // TODO(gb): update docs link
+    public async runStarlarkRemotePackageBlocking(
+        moduleId: string,
+        serializedParams: string,
+        dryRun: boolean,
+    ): Promise<Result<StarlarkRunResult, Error>> {
+        const runAsyncResponse = await this.runStarlarkPackage(moduleId, serializedParams, dryRun)
+        if (runAsyncResponse.isErr()) {
+            return err(runAsyncResponse.error)
+        }
+        const fullRunResult = await readStreamContentUntilClosed(runAsyncResponse.value)
+        return ok(fullRunResult)
     }
 
     // Docs available at https://docs.kurtosis.com/sdk/#addserviceserviceid-serviceid--containerconfig-containerconfig---servicecontext-servicecontext
