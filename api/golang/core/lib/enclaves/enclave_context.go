@@ -194,7 +194,7 @@ func (enclaveCtx *EnclaveContext) RunStarlarkPackageBlocking(ctx context.Context
 	return ReadStarlarkRunResponseLineBlocking(starlarkRunResponseLineChan), nil
 }
 
-// Docs available at https://docs.kurtosis.com/sdk/#runremotestarlarkpackagestring-packageid-string-serializedparams-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
+// Docs available at https://docs.kurtosis.com/sdk/#runstarlarkremotepackagestring-packageid-string-serializedparams-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
 func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackage(ctx context.Context, packageId string, serializedParams string, dryRun bool) (chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(ctx)
 	starlarkResponseLineChan := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
@@ -214,7 +214,7 @@ func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackage(ctx context.Context, 
 func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackageBlocking(ctx context.Context, packageId string, serializedParams string, dryRun bool) (*StarlarkRunResult, error) {
 	starlarkRunResponseLineChan, _, err := enclaveCtx.RunStarlarkRemotePackage(ctx, packageId, serializedParams, dryRun)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error running Remote Starlark package")
+		return nil, stacktrace.Propagate(err, "Error running remote Starlark package")
 	}
 	return ReadStarlarkRunResponseLineBlocking(starlarkRunResponseLineChan), nil
 }
