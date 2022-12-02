@@ -535,15 +535,15 @@ func (apicService ApiContainerService) UploadFilesArtifact(ctx context.Context, 
 }
 
 func (apicService ApiContainerService) DownloadFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.DownloadFilesArtifactResponse, error) {
-	filesArtifactUuidStr := args.Id
-	if strings.TrimSpace(filesArtifactUuidStr) == "" {
+	filesArtifactIdStr := args.Id
+	if strings.TrimSpace(filesArtifactIdStr) == "" {
 		return nil, stacktrace.NewError("Cannot download file with empty files artifact UUID")
 	}
-	filesArtifactUuid := enclave_data_directory.FilesArtifactID(filesArtifactUuidStr)
+	filesArtifactId := enclave_data_directory.FilesArtifactID(filesArtifactIdStr)
 
-	artifactFile, err := apicService.filesArtifactStore.GetFile(filesArtifactUuid)
+	artifactFile, err := apicService.filesArtifactStore.GetFile(filesArtifactId)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting files artifact '%v'", filesArtifactUuid)
+		return nil, stacktrace.Propagate(err, "An error occurred getting files artifact '%v'", filesArtifactId)
 	}
 
 	fileBytes, err := ioutil.ReadFile(artifactFile.GetAbsoluteFilepath())

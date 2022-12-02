@@ -13,12 +13,12 @@ import (
 type FilesArtifactID string
 
 func NewFilesArtifactID() (FilesArtifactID, error) {
-	newUUIDStr, err := getUniversallyUniqueID()
+	newIDStr, err := getUniversallyUniqueID()
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Could not generate Universally Unique ID.")
 	}
-	newFilesArtifactUuid := FilesArtifactID(newUUIDStr)
-	return newFilesArtifactUuid, nil
+	newFilesArtifactId := FilesArtifactID(newIDStr)
+	return newFilesArtifactId, nil
 }
 
 // There are some suggestions that go's implementation of uuid is not RFC compliant.

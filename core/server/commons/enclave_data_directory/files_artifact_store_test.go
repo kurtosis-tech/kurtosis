@@ -39,15 +39,15 @@ func TestFileStore_StoreFileToArtifactUUIDSimpleCase(t *testing.T) {
 	fileStore := getTestFileStore(t)
 	testContent := "Long Live Kurtosis!"
 	reader := strings.NewReader(testContent)
-	targetArtifactUuid, err := NewFilesArtifactID()
-	require.Equal(t, 36, len(targetArtifactUuid)) //UUID is 128 bits but in string it is hex represented chars so 32 chars
+	targetArtifactId, err := NewFilesArtifactID()
+	require.Equal(t, 36, len(targetArtifactId)) //UUID is 128 bits but in string it is hex represented chars so 32 chars
 	require.Nil(t, err)
-	err = fileStore.StoreFileToArtifactUUID(reader, targetArtifactUuid)
+	err = fileStore.StoreFileToArtifactUUID(reader, targetArtifactId)
 	require.Nil(t, err)
 
 	//Test that it saved where it said it would.
 	expectedFilename := strings.Join(
-		[]string{string(targetArtifactUuid), artifactExtension},
+		[]string{string(targetArtifactId), artifactExtension},
 		".",
 	)
 	expectedFilepath := filepath.Join(fileStore.fileCache.absoluteDirpath, expectedFilename)
@@ -137,12 +137,12 @@ func TestFileStore_RemoveFileRemovesFileFromDisk(t *testing.T) {
 	require.True(t, os.IsNotExist(err))
 }
 
-func TestFileStore_RemoveFileFailsForNonExistentUuid(t *testing.T) {
+func TestFileStore_RemoveFileFailsForNonExistentId(t *testing.T) {
 	fileStore := getTestFileStore(t)
-	nonExistentUuid, err := NewFilesArtifactID()
+	nonExistentId, err := NewFilesArtifactID()
 	require.Nil(t, err)
 
-	err = fileStore.RemoveFile(nonExistentUuid)
+	err = fileStore.RemoveFile(nonExistentId)
 	require.NotNil(t, err)
 }
 

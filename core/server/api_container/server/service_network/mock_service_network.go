@@ -101,6 +101,6 @@ func (m *MockServiceNetwork) UploadFilesArtifact(_ []byte) (enclave_data_directo
 	panic(unimplementedMsg)
 }
 
-func (m *MockServiceNetwork) UploadFilesArtifactToTargetArtifactUUID(data []byte, targetFilesArtifactUuid enclave_data_directory.FilesArtifactID) error {
+func (m *MockServiceNetwork) UploadFilesArtifactToTargetArtifactID(data []byte, targetFilesArtifactId enclave_data_directory.FilesArtifactID) error {
 	panic(unimplementedMsg)
 }

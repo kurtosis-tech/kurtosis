@@ -34,9 +34,9 @@ type StoreServiceFilesInstruction struct {
 	position       *kurtosis_instruction.InstructionPosition
 	starlarkKwargs starlark.StringDict
 
-	serviceId    kurtosis_backend_service.ServiceID
-	src          string
-	artifactUuid enclave_data_directory.FilesArtifactID
+	serviceId  kurtosis_backend_service.ServiceID
+	src        string
+	artifactId enclave_data_directory.FilesArtifactID
 }
 
 func GenerateStoreServiceFilesBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, serviceNetwork service_network.ServiceNetwork) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
@@ -48,17 +48,17 @@ func GenerateStoreServiceFilesBuiltin(instructionsQueue *[]kurtosis_instruction.
 			return nil, interpretationError
 		}
 		*instructionsQueue = append(*instructionsQueue, storeFilesFromServiceInstruction)
-		return starlark.String(storeFilesFromServiceInstruction.artifactUuid), nil
+		return starlark.String(storeFilesFromServiceInstruction.artifactId), nil
 	}
 }
 
-func NewStoreServiceFilesInstruction(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceID, srcPath string, artifactUuid enclave_data_directory.FilesArtifactID, starlarkKwargs starlark.StringDict) *StoreServiceFilesInstruction {
+func NewStoreServiceFilesInstruction(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceID, srcPath string, artifactId enclave_data_directory.FilesArtifactID, starlarkKwargs starlark.StringDict) *StoreServiceFilesInstruction {
 	return &StoreServiceFilesInstruction{
 		serviceNetwork: serviceNetwork,
 		position:       position,
 		serviceId:      serviceId,
 		src:            srcPath,
-		artifactUuid:   artifactUuid,
+		artifactId:     artifactId,
 		starlarkKwargs: starlarkKwargs,
 	}
 }
@@ -69,7 +69,7 @@ func newEmptyStoreServiceFilesInstruction(serviceNetwork service_network.Service
 		position:       position,
 		serviceId:      "",
 		src:            "",
-		artifactUuid:   "",
+		artifactId:     "",
 		starlarkKwargs: starlark.StringDict{},
 	}
 }
@@ -88,7 +88,7 @@ func (instruction *StoreServiceFilesInstruction) GetCanonicalInstruction() *kurt
 }
 
 func (instruction *StoreServiceFilesInstruction) Execute(ctx context.Context) (*string, error) {
-	artifactId, err := instruction.serviceNetwork.CopyFilesFromServiceToTargetArtifactUUID(ctx, instruction.serviceId, instruction.src, instruction.artifactUuid)
+	artifactId, err := instruction.serviceNetwork.CopyFilesFromServiceToTargetArtifactUUID(ctx, instruction.serviceId, instruction.src, instruction.artifactId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to copy file '%v' from service '%v", instruction.src, instruction.serviceId)
 	}
@@ -104,10 +104,10 @@ func (instruction *StoreServiceFilesInstruction) ValidateAndUpdateEnvironment(en
 	if !environment.DoesServiceIdExist(instruction.serviceId) {
 		return startosis_errors.NewValidationError("There was an error validating '%v' with service ID '%v' that does not exist for instruction '%v'", StoreServiceFilesBuiltinName, instruction.serviceId, instruction.position.String())
 	}
-	if environment.DoesArtifactIdExist(instruction.artifactUuid) {
-		return stacktrace.NewError("There was an error validating '%v' as artifact UUID '%v' already exists", StoreServiceFilesBuiltinName, instruction.artifactUuid)
+	if environment.DoesArtifactIdExist(instruction.artifactId) {
+		return stacktrace.NewError("There was an error validating '%v' as artifact UUID '%v' already exists", StoreServiceFilesBuiltinName, instruction.artifactId)
 	}
-	environment.AddArtifactId(instruction.artifactUuid)
+	environment.AddArtifactId(instruction.artifactId)
 	return nil
 }
 
@@ -149,6 +149,6 @@ func (instruction *StoreServiceFilesInstruction) parseStartosisArgs(b *starlark.
 
 	instruction.serviceId = serviceId
 	instruction.src = srcPath
-	instruction.artifactUuid = artifactId
+	instruction.artifactId = artifactId
 	return nil
 }

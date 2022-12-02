@@ -27,15 +27,15 @@ func newFilesArtifactStore(absoluteDirpath string, dirpathRelativeToDataDirRoot 
 
 // StoreFile: Saves file to disk.
 func (store FilesArtifactStore) StoreFile(reader io.Reader) (FilesArtifactID, error) {
-	newFilesArtifactUuid, err := NewFilesArtifactID()
+	newFilesArtifactId, err := NewFilesArtifactID()
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred creating new files artifact UUID")
 	}
-	err = store.StoreFileToArtifactUUID(reader, newFilesArtifactUuid)
+	err = store.StoreFileToArtifactUUID(reader, newFilesArtifactId)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "There was an error in storing data to files artifact with uuid '%v'", newFilesArtifactUuid)
+		return "", stacktrace.Propagate(err, "There was an error in storing data to files artifact with uuid '%v'", newFilesArtifactId)
 	}
-	return newFilesArtifactUuid, nil
+	return newFilesArtifactId, nil
 }
 
 // StoreFile: Saves file to disk.
