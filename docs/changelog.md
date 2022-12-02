@@ -8,6 +8,9 @@
 code successfully run in dry-run mode" and "Error encountered running Starlark code in dry-run mode" when Starlark is 
 run in dry-run mode (and without the "in dry-run mode" when the script is executed for real)
 
+### Fixes
+- Don't duplicate instruction position information in `store_service_files`
+
 # 0.57.5
 ### Changes
 - Replaced stack name with the stack file name in custom evaluation errors
