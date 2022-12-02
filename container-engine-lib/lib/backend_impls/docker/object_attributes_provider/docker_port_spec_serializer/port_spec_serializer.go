@@ -67,7 +67,7 @@ func SerializePortSpecs(ports map[string]*port_spec.PortSpec) (*docker_label_val
 		)
 
 		// add application protocol to the label value if present
-		maybeApplicationProtocol := portSpec.MaybeGetApplicationProtocol()
+		maybeApplicationProtocol := portSpec.GetMaybeApplicationProtocol()
 		if maybeApplicationProtocol != nil {
 			portSpecStr = fmt.Sprintf("%v%v%v", portSpecStr, portNumAndProtocolSeparator, *maybeApplicationProtocol)
 		}
@@ -218,7 +218,7 @@ func deserializePortSpecStrUsingDelimiters(
   This is not needed for protocol, because it is defined as enums.
 */
 func validatePortSpec(portId string, spec *port_spec.PortSpec) error {
-	maybeApplicationProtocol := spec.MaybeGetApplicationProtocol()
+	maybeApplicationProtocol := spec.GetMaybeApplicationProtocol()
 
 	// validate port id - it should not contain disallowed characters
 	hasDisallowedCharInPortId := disallowedCharactersMatcher.FindString(portId)

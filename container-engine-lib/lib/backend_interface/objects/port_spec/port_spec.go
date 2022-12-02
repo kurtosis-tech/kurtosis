@@ -40,6 +40,6 @@ func (spec *PortSpec) GetTransportProtocol() PortProtocol {
 	return spec.transportProtocol
 }
 
-func (spec *PortSpec) MaybeGetApplicationProtocol() *string {
+func (spec *PortSpec) GetMaybeApplicationProtocol() *string {
 	return spec.applicationProtocol
 }
