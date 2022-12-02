@@ -210,7 +210,7 @@ func run(
 		return stacktrace.Propagate(errRunningKurtosis, "An error starting the Kurtosis code execution '%v'", starlarkScriptOrPackagePath)
 	}
 
-	errRunningKurtosis = readAndPrintResponseLinesUntilClosed(responseLineChan, cancelFunc, verbosity)
+	errRunningKurtosis = readAndPrintResponseLinesUntilClosed(responseLineChan, cancelFunc, verbosity, dryRun)
 	if errRunningKurtosis != nil {
 		return stacktrace.Propagate(errRunningKurtosis, "Error executing Kurtosis code")
 	}
@@ -245,7 +245,7 @@ func executeRemotePackage(ctx context.Context, enclaveCtx *enclaves.EnclaveConte
 	return enclaveCtx.RunStarlarkRemotePackage(ctx, packageId, serializedParams, dryRun)
 }
 
-func readAndPrintResponseLinesUntilClosed(responseLineChan <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, cancelFunc context.CancelFunc, verbosity command_args_run.Verbosity) error {
+func readAndPrintResponseLinesUntilClosed(responseLineChan <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, cancelFunc context.CancelFunc, verbosity command_args_run.Verbosity, dryRun bool) error {
 	defer cancelFunc()
 
 	// This channel will receive a signal when the user presses an interrupt
@@ -269,7 +269,7 @@ func readAndPrintResponseLinesUntilClosed(responseLineChan <-chan *kurtosis_core
 				}
 				return nil
 			}
-			err := printer.PrintKurtosisExecutionResponseLineToStdOut(responseLine, verbosity)
+			err := printer.PrintKurtosisExecutionResponseLineToStdOut(responseLine, verbosity, dryRun)
 			if err != nil {
 				logrus.Errorf("An error occurred trying to write the output of Starlark execution to stdout. The script execution will continue, but the output printed here is incomplete. Error was: \n%s", err.Error())
 			}

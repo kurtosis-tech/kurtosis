@@ -35,24 +35,19 @@ type ValidationError struct {
 
 	// Optional cause
 	cause error
-
-	// Optional stacktrace
-	stacktrace []CallFrame
 }
 
 func NewValidationError(msg string, args ...interface{}) *ValidationError {
 	return &ValidationError{
-		msg:        fmt.Sprintf(msg, args...),
-		cause:      nil,
-		stacktrace: nil,
+		msg:   fmt.Sprintf(msg, args...),
+		cause: nil,
 	}
 }
 
 func WrapWithValidationError(err error, msg string, args ...interface{}) *ValidationError {
 	return &ValidationError{
-		msg:        fmt.Sprintf(msg, args...),
-		cause:      err,
-		stacktrace: nil,
+		msg:   fmt.Sprintf(msg, args...),
+		cause: err,
 	}
 }
 
@@ -69,9 +64,6 @@ func (err *ValidationError) Error() string {
 	}
 	if err.cause != nil {
 		serializedError.WriteString(fmt.Sprintf("\n%s%s", causedByPrefix, err.cause.Error()))
-	}
-	for _, stacktraceElement := range err.stacktrace {
-		serializedError.WriteString(fmt.Sprintf("\n%s%s", stacktracePrefix, stacktraceElement.String()))
 	}
 	return serializedError.String()
 }

@@ -6,6 +6,10 @@ import (
 	"testing"
 )
 
+const (
+	dummyFilenameForTesting = "dummy.star"
+)
+
 func TestInterpretationError_serializationSimpleError(t *testing.T) {
 	errorString := "This is an error!"
 	errorToSerialize := NewInterpretationError(errorString)
@@ -16,29 +20,31 @@ func TestInterpretationError_serializationSimpleError(t *testing.T) {
 func TestInterpretationError_serializationWithCustomMsg(t *testing.T) {
 	errorToSerialize := NewInterpretationErrorWithCustomMsg(
 		[]CallFrame{
-			*NewCallFrame("<toplevel>", NewScriptPosition(13, 12)),
-			*NewCallFrame("add_service", NewScriptPosition(0, 0)),
+			*NewCallFrame("<toplevel>", NewScriptPosition(dummyFilenameForTesting, 13, 12)),
+			*NewCallFrame("add_datastore_service", NewScriptPosition(dummyFilenameForTesting, 18, 16)),
+			*NewCallFrame("add_service", NewScriptPosition(dummyFilenameForTesting, 0, 0)),
 		},
 		"Evaluation error: Missing `image` as part of the struct object",
 	)
 
 	expectedOutput := `Evaluation error: Missing ` + "`image`" + ` as part of the struct object
-	at [13:12]: <toplevel>
-	at [0:0]: add_service`
+	at [` + dummyFilenameForTesting + `:13:12]: <toplevel>
+	at [` + dummyFilenameForTesting + `:18:16]: add_datastore_service
+	at [` + dummyFilenameForTesting + `:0:0]: add_service`
 	require.Equal(t, expectedOutput, errorToSerialize.Error())
 }
 
 func TestInterpretationError_serializationFromStacktrace(t *testing.T) {
 	errorToSerialize := NewInterpretationErrorFromStacktrace(
 		[]CallFrame{
-			*NewCallFrame("<toplevel>", NewScriptPosition(13, 12)),
-			*NewCallFrame("add_service", NewScriptPosition(0, 0)),
+			*NewCallFrame("<toplevel>", NewScriptPosition(dummyFilenameForTesting, 13, 12)),
+			*NewCallFrame("add_service", NewScriptPosition(dummyFilenameForTesting, 0, 0)),
 		},
 	)
 
 	expectedOutput := errorDefaultMsg + `
-	at [13:12]: <toplevel>
-	at [0:0]: add_service`
+	at [` + dummyFilenameForTesting + `:13:12]: <toplevel>
+	at [` + dummyFilenameForTesting + `:0:0]: add_service`
 	require.Equal(t, expectedOutput, errorToSerialize.Error())
 }
 

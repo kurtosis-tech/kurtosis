@@ -254,7 +254,7 @@ func (backend *DockerKurtosisBackend) GetModules(
 	map[module.ModuleGUID]*module.Module,
 	error,
 ) {
-	matchingModuleContainers, err := backend.getMatchingModules(ctx, filters)
+	matchingModuleContainers, err := backend.getMatchingModules(ctx, enclaveId, filters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting module containers matching the following filters: %+v", filters)
 	}
@@ -277,10 +277,12 @@ func (backend *DockerKurtosisBackend) GetModuleLogs(
 	map[module.ModuleGUID]error,
 	error,
 ) {
-	matchingModulesByContainerId, err := backend.getMatchingModules(ctx, filters)
+	matchingModulesByContainerId, err := backend.getMatchingModules(ctx, enclaveId, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting modules matching filters '%+v'", filters)
 	}
+	//TODO remove this debug
+	logrus.Debugf("Matching module by container ID for enclave ID %v and filters %+v, modules found:\n%+v", enclaveId, filters, matchingModulesByContainerId)
 
 	successfulModuleLogs := map[module.ModuleGUID]io.ReadCloser{}
 	erroredModules := map[module.ModuleGUID]error{}
@@ -290,6 +292,7 @@ func (backend *DockerKurtosisBackend) GetModuleLogs(
 	for containerId, module := range matchingModulesByContainerId {
 		rawLogStream, err := backend.dockerManager.GetContainerLogs(ctx, containerId, shouldFollowLogs)
 		if err != nil {
+			logrus.Debugf("Error getting module logs for container ID %v. Error:\n%v", containerId, err)
 			serviceError := stacktrace.Propagate(err, "An error occurred getting logs for module with GUID '%v' and container ID '%v'", module.GetGUID(), containerId)
 			erroredModules[module.GetGUID()] = serviceError
 			continue
@@ -323,7 +326,7 @@ func (backend *DockerKurtosisBackend) StopModules(
 	resultErroredModuleGuids map[module.ModuleGUID]error,
 	resultErr error,
 ) {
-	matchingModulesByContainerId, err := backend.getMatchingModules(ctx, filters)
+	matchingModulesByContainerId, err := backend.getMatchingModules(ctx, enclaveId, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting modules matching filters '%+v'", filters)
 	}
@@ -377,7 +380,7 @@ func (backend *DockerKurtosisBackend) DestroyModules(
 	erroredModuleIds map[module.ModuleGUID]error,
 	resultErr error,
 ) {
-	matchingModulesByContainerId, err := backend.getMatchingModules(ctx, filters)
+	matchingModulesByContainerId, err := backend.getMatchingModules(ctx, enclaveId, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting module containers matching the following filters: %+v", filters)
 	}
@@ -426,11 +429,12 @@ func (backend *DockerKurtosisBackend) DestroyModules(
 //                                     Private Helper Methods
 // ====================================================================================================
 // Gets modules matching the search filters, indexed by their container ID
-func (backend *DockerKurtosisBackend) getMatchingModules(ctx context.Context, filters *module.ModuleFilters) (map[string]*module.Module, error) {
+func (backend *DockerKurtosisBackend) getMatchingModules(ctx context.Context, enclaveId enclave.EnclaveID, filters *module.ModuleFilters) (map[string]*module.Module, error) {
 
 	moduleContainerSearchLabels := map[string]string{
 		label_key_consts.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),
 		label_key_consts.ContainerTypeDockerLabelKey.GetString(): label_value_consts.ModuleContainerTypeDockerLabelValue.GetString(),
+		label_key_consts.EnclaveIDDockerLabelKey.GetString(): string(enclaveId),
 	}
 	matchingModuleContainers, err := backend.dockerManager.GetContainersByLabels(ctx, moduleContainerSearchLabels, consts.ShouldFetchAllContainersWhenRetrievingContainers)
 	if err != nil {

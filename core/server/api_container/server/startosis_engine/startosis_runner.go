@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/sirupsen/logrus"
 	"regexp"
+	"strings"
 )
 
 type StartosisRunner struct {
@@ -21,10 +22,11 @@ const (
 	defaultCurrentStepNumber  = 0
 	defaultTotalStepsNumber   = 0
 	startingInterpretationMsg = "Interpreting Starlark code - execution will begin shortly"
-	startingValidationMsg     = "Pre-validating Starlark code and downloading docker images - execution will begin shortly"
+	startingValidationMsg     = "Validating Starlark code and downloading docker images - execution will begin shortly"
 	startingExecutionMsg      = "Starting execution"
 
-	missingRunMethodErrorFromStarlarkPackage       = "Evaluation error: module has no .run field or method\n\tat [3:32]: <toplevel>"
+	missingRunMethodErrorPrefixFromStarlarkPackage = "Evaluation error: module has no .run field or method\n\tat"
+	missingRunMethodErrorSuffixFromStarlarkPackage = "3:32]: <toplevel>"
 	missingRunMethodErrorFromStarlarkScriptPattern = "Multiple errors caught interpreting the Starlark script. Listing each of them below.\n\tat \\[\\d+:1\\]: undefined: run"
 )
 
@@ -102,7 +104,7 @@ func forwardKurtosisResponseLineChannelUntilSourceIsClosed(sourceChan <-chan *ku
 }
 
 func maybeMakeMissingRunMethodErrorFriendlier(originalError *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError, packageId string) *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError {
-	if originalError.GetErrorMessage() == missingRunMethodErrorFromStarlarkPackage {
+	if strings.HasPrefix(originalError.GetErrorMessage(), missingRunMethodErrorPrefixFromStarlarkPackage) && strings.HasSuffix(originalError.GetErrorMessage(), missingRunMethodErrorSuffixFromStarlarkPackage) {
 		return binding_constructors.NewStarlarkInterpretationError(fmt.Sprintf("No 'run' function found in file '%v/main.star'; a 'run' entrypoint function is required in the main.star file of any Kurtosis package", packageId))
 	}
 
