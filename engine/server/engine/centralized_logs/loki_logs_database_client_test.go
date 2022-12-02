@@ -141,7 +141,9 @@ func TestGetUserServiceLogsWithoutFilter_ValidResponse(t *testing.T) {
 		testUserService3Guid: 2,
 	}
 
-	var emptyLogPipeLine *lokiLogPipeline
+	var emptyLokiLineFilters []*LokiLineFilter
+	emptyLogPipeLine, err := NewLokiLogPipeline(emptyLokiLineFilters)
+	require.NoError(t, err)
 
 	userServiceLogsByGuidChan, errChan, closeStreamFunc, err := logsDatabaseClient.GetUserServiceLogs(ctx, enclaveId, userServiceGuids, emptyLogPipeLine)
 	defer closeStreamFunc()
@@ -228,7 +230,7 @@ func TestGetUserServiceLogsWithFilter_ValidResponse(t *testing.T) {
 		testUserService3Guid: 1,
 	}
 
-	lokiLineFilters := []*lokiLineFilter{
+	lokiLineFilters := []*LokiLineFilter{
 		NewLokiLineFilter(LokiLineFilterOperatorContains, filterText),
 	}
 	logPipeLine, err := NewLokiLogPipeline(lokiLineFilters)

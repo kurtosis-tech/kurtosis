@@ -2,23 +2,23 @@ package centralized_logs
 
 import "fmt"
 
-type lokiLineFilter struct {
+type LokiLineFilter struct {
 	operator LokiLineFilterOperator
 	text string
 }
 
-func NewLokiLineFilter(operator LokiLineFilterOperator, text string) *lokiLineFilter {
-	return &lokiLineFilter{operator: operator, text: text}
+func NewLokiLineFilter(operator LokiLineFilterOperator, text string) *LokiLineFilter {
+	return &LokiLineFilter{operator: operator, text: text}
 }
 
-func (lineFilter *lokiLineFilter) GetText() string {
+func (lineFilter *LokiLineFilter) GetText() string {
 	return lineFilter.text
 }
 
-func (lineFilter *lokiLineFilter) GetOperator() LokiLineFilterOperator {
+func (lineFilter *LokiLineFilter) GetOperator() LokiLineFilterOperator {
 	return lineFilter.operator
 }
 
-func (lineFilter *lokiLineFilter) String() string {
+func (lineFilter *LokiLineFilter) String() string {
 	return fmt.Sprintf(`%s "%s"`, lineFilter.operator, lineFilter.text)
 }

@@ -6,10 +6,10 @@ import (
 )
 
 type lokiLogPipeline struct {
-	lineFilters []*lokiLineFilter
+	lineFilters []*LokiLineFilter
 }
 
-func NewLokiLogPipeline(lineFilters []*lokiLineFilter) (*lokiLogPipeline, error) {
+func NewLokiLogPipeline(lineFilters []*LokiLineFilter) (*lokiLogPipeline, error) {
 	for lineFilterIndex, lineFilter := range lineFilters{
 		lineFilterOperator := lineFilter.GetOperator()
 		if !lineFilterOperator.IsDefined(){

@@ -5,6 +5,7 @@ package centralized_logs
 type LokiLineFilterOperator int
 
 const (
+	// Remember to upgrade allLoLineFilterOperators var if you add a new value here
 	lokiLineFilterOperatorUndefined LokiLineFilterOperator = iota
 	LokiLineFilterOperatorContains
 	LokiLineFilterOperatorDoesNotContains
@@ -13,6 +14,11 @@ const (
 	doesNotContainsValueStr = "!="
 	unknownValueStr = "unknown"
 )
+
+var allLoLineFilterOperators = map[LokiLineFilterOperator]bool{
+	LokiLineFilterOperatorContains: true,
+	LokiLineFilterOperatorDoesNotContains: true,
+}
 
 func (filterOperator LokiLineFilterOperator) String() string {
 	switch filterOperator {

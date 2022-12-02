@@ -25,7 +25,7 @@ func TestNewValidLokiLogPipeline(t *testing.T) {
 	lineFilterTwo := NewLokiLineFilter(LokiLineFilterOperatorDoesNotContains, doesNotContainTextStr)
 	lineFilterThree := NewLokiLineFilter(LokiLineFilterOperatorContains, containAnotherTextStr)
 
-	lineFilters := []*lokiLineFilter{
+	lineFilters := []*LokiLineFilter{
 		lineFilterOne,
 		lineFilterTwo,
 		lineFilterThree,
@@ -43,7 +43,7 @@ func TestNewNotValidLokiLogPipeline(t *testing.T) {
 	lineFilterOne := NewLokiLineFilter(LokiLineFilterOperatorContains, containTextStr)
 	lineFilterTwo := NewLokiLineFilter(undefinedLogLineOperator, doesNotContainTextStr)
 
-	lineFilters := []*lokiLineFilter{
+	lineFilters := []*LokiLineFilter{
 		lineFilterOne,
 		lineFilterTwo,
 	}
