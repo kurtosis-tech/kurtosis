@@ -27,7 +27,7 @@ func NewLokiLogPipeline(lineFilters []*lokiLineFilter) (*lokiLogPipeline, error)
 	return &lokiLogPipeline{lineFilters: lineFilters}, nil
 }
 
-func (logPipeline *lokiLogPipeline) String() string{
+func (logPipeline *lokiLogPipeline) PipeLineStringify() string{
 	var logPipelineStr string
 	for _, lineFilter := range logPipeline.lineFilters {
 		logPipelineStr = fmt.Sprintf("%s %s",logPipelineStr, lineFilter)

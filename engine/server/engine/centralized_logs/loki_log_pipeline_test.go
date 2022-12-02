@@ -33,7 +33,7 @@ func TestNewValidLokiLogPipeline(t *testing.T) {
 
 	logPipeLine, err := NewLokiLogPipeline(lineFilters)
 	require.NoError(t, err)
-	require.Equal(t, expectLogPipeLineStr, logPipeLine.String())
+	require.Equal(t, expectLogPipeLineStr, logPipeLine.PipeLineStringify())
 }
 
 func TestNewNotValidLokiLogPipeline(t *testing.T) {
@@ -48,6 +48,7 @@ func TestNewNotValidLokiLogPipeline(t *testing.T) {
 		lineFilterTwo,
 	}
 
-	_, err := NewLokiLogPipeline(lineFilters)
+	logPipeline, err := NewLokiLogPipeline(lineFilters)
 	require.Error(t, err)
+	require.Nil(t, logPipeline)
 }

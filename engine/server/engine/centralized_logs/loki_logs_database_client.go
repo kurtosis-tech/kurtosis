@@ -141,13 +141,18 @@ func (client *lokiLogsDatabaseClient) GetUserServiceLogs(
 	ctx context.Context,
 	enclaveID enclave.EnclaveID,
 	userServiceGUIDs map[service.ServiceGUID]bool,
-	logPipeline *lokiLogPipeline,
+	logPipeLine LogPipeLine,
 ) (
 	chan map[service.ServiceGUID][]LogLine,
 	chan error,
 	func(),
 	error,
 ) {
+
+	lokiLogPipelineObj, ok := logPipeLine.(*lokiLogPipeline)
+	if !ok {
+		return nil, nil, nil, stacktrace.NewError("Log pipe line '%v' couldn't be cast to a Loki log pipe line object; this is a bug in Kurtosis", logPipeLine)
+	}
 
 	httpHeaderWithTenantID := http.Header{}
 	httpHeaderWithTenantID.Add(organizationIdHttpHeaderKey, string(enclaveID))
@@ -161,7 +166,7 @@ func (client *lokiLogsDatabaseClient) GetUserServiceLogs(
 
 	userServiceContainerTypeDockerValue := label_value_consts.UserServiceContainerTypeDockerLabelValue.GetString()
 
-	queryParamValue := getQueryParamValue(userServiceContainerTypeDockerValue, kurtosisGuids, logPipeline)
+	queryParamValue := getQueryParamValue(userServiceContainerTypeDockerValue, kurtosisGuids, lokiLogPipelineObj)
 
 	getLogsPath := baseLokiApiPath + queryRangeEndpointSubpath
 
@@ -249,13 +254,18 @@ func (client *lokiLogsDatabaseClient) StreamUserServiceLogs(
 	ctx context.Context,
 	enclaveID enclave.EnclaveID,
 	userServiceGUIDs map[service.ServiceGUID]bool,
-	logPipeline *lokiLogPipeline,
+	logPipeLine LogPipeLine,
 ) (
 	chan map[service.ServiceGUID][]LogLine,
 	chan error,
 	func(),
 	error,
 ) {
+
+	lokiLogPipelineObj, ok := logPipeLine.(*lokiLogPipeline)
+	if !ok {
+		return nil, nil, nil, stacktrace.NewError("Log pipe line '%v' couldn't be cast to a Loki log pipe line object; this is a bug in Kurtosis", logPipeLine)
+	}
 
 	websocketDeadlineTime := getWebsocketDeadlineTime()
 
@@ -267,7 +277,7 @@ func (client *lokiLogsDatabaseClient) StreamUserServiceLogs(
 		}
 	}()
 
-	tailLogsEndpointURL, httpHeaderWithTenantID := client.getTailLogEndpointURLAndHeader(enclaveID, userServiceGUIDs, logPipeline)
+	tailLogsEndpointURL, httpHeaderWithTenantID := client.getTailLogEndpointURLAndHeader(enclaveID, userServiceGUIDs, lokiLogPipelineObj)
 
 	//this channel will return the user service log lines by service GUI
 	logsByKurtosisUserServiceGuidChan := make(chan map[service.ServiceGUID][]LogLine, logsByKurtosisUserServiceGuidChanBuffSize)
@@ -516,7 +526,7 @@ func getMaxRetentionLogsTimeParamValue() string {
 func getQueryParamValue(
 	kurtosisContainerType string,
 	kurtosisGuids []string,
-	logPipeline *lokiLogPipeline,
+	lokiLogPipelineObj *lokiLogPipeline,
 ) string {
 	kurtosisGuidParaValues := getKurtosisGuidParamValues(kurtosisGuids)
 
@@ -540,8 +550,9 @@ func getQueryParamValue(
 
 	queryParamValue := streamSelectorInQuery
 
-	if logPipeline != nil {
-		queryParamValue = fmt.Sprintf("%s %s", queryParamValue, logPipeline)
+
+	if lokiLogPipelineObj != nil{
+		queryParamValue = fmt.Sprintf("%s %s", queryParamValue, lokiLogPipelineObj.PipeLineStringify())
 	}
 
 	return streamSelectorInQuery
@@ -555,7 +566,7 @@ func getKurtosisGuidParamValues(kurtosisGuids []string) string {
 func (client *lokiLogsDatabaseClient) getTailLogEndpointURLAndHeader(
 	enclaveID enclave.EnclaveID,
 	userServiceGuids map[service.ServiceGUID]bool,
-	logPipeline *lokiLogPipeline,
+	lokiLogPipelineObj *lokiLogPipeline,
 ) (url.URL, http.Header) {
 
 	kurtosisGuids := []string{}
@@ -567,7 +578,7 @@ func (client *lokiLogsDatabaseClient) getTailLogEndpointURLAndHeader(
 
 	userServiceContainerTypeDockerValue := label_value_consts.UserServiceContainerTypeDockerLabelValue.GetString()
 
-	queryParamValue := getQueryParamValue(userServiceContainerTypeDockerValue, kurtosisGuids, logPipeline)
+	queryParamValue := getQueryParamValue(userServiceContainerTypeDockerValue, kurtosisGuids, lokiLogPipelineObj)
 
 	tailLogsPath := baseLokiApiPath + tailEndpointSubpath
 
