@@ -59,6 +59,7 @@ run in dry-run mode (and without the "in dry-run mode" when the script is execut
 
 ### Features
 - Log file name and function like [filename.go:FunctionName()] while logging in `core` & `engine`
+- Add artifact ID validation to Starlark commands
 - Add IP address string replacement in `print` command
 - All Kurtosis instructions now returns a simple but explicit output
 - The object returned by Starlark's `run()` function is serialized as JSON and returned to the CLI output.

@@ -817,7 +817,7 @@ exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"], e
 }
 
 func TestStartosisInterpreter_StoreFileFromService(t *testing.T) {
-	testArtifactId, err := enclave_data_directory.NewFilesArtifactUUID()
+	testArtifactId, err := enclave_data_directory.NewFilesArtifactID()
 	require.Nil(t, err)
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
@@ -898,7 +898,7 @@ wait(service_id="%v", fact_name="%v")
 }
 
 func TestStartosisInterpreter_RenderTemplates(t *testing.T) {
-	testArtifactId, err := enclave_data_directory.NewFilesArtifactUUID()
+	testArtifactId, err := enclave_data_directory.NewFilesArtifactID()
 	require.Nil(t, err)
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
@@ -981,13 +981,13 @@ print(artifact_id)
 }
 
 func TestStartosisInterpreter_ThreeLevelNestedInstructionPositionTest(t *testing.T) {
-	testArtifactUuid, err := enclave_data_directory.NewFilesArtifactUUID()
+	testArtifactId, err := enclave_data_directory.NewFilesArtifactID()
 	require.Nil(t, err)
 	storeFileDefinitionPath := "github.com/kurtosis/store.star"
 	storeFileContent := `
 def store_for_me():
 	print("In the store files instruction")
-	artifact_uuid=store_service_files(service_id="example-datastore-server", src="/foo/bar", artifact_id = "` + string(testArtifactUuid) + `")
+	artifact_uuid=store_service_files(service_id="example-datastore-server", src="/foo/bar", artifact_id = "` + string(testArtifactId) + `")
 	return artifact_uuid
 `
 
@@ -1019,7 +1019,7 @@ print(uuid)
 	require.Len(t, instructions, 4)
 
 	starlarkKwargs := starlark.StringDict{
-		"artifact_id": starlark.String(testArtifactUuid),
+		"artifact_id": starlark.String(testArtifactId),
 		"service_id":  starlark.String("example-datastore-server"),
 		"src":         starlark.String("/foo/bar"),
 	}
@@ -1029,7 +1029,7 @@ print(uuid)
 		kurtosis_instruction.NewInstructionPosition(4, 35, storeFileDefinitionPath),
 		"example-datastore-server",
 		"/foo/bar",
-		testArtifactUuid,
+		testArtifactId,
 		starlarkKwargs,
 	)
 
@@ -1038,7 +1038,7 @@ print(uuid)
 	expectedOutput := fmt.Sprintf(`In the module that calls store.star
 In the store files instruction
 %v
-`, testArtifactUuid)
+`, testArtifactId)
 	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutput)
 }
 
@@ -1073,7 +1073,7 @@ The service example-datastore-server has been removed
 
 func TestStartosisInterpreter_UploadGetsInterpretedCorrectly(t *testing.T) {
 	filePath := "github.com/kurtosis/module/lib/lib.star"
-	artifactId, err := enclave_data_directory.NewFilesArtifactUUID()
+	artifactId, err := enclave_data_directory.NewFilesArtifactID()
 	require.Nil(t, err)
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
