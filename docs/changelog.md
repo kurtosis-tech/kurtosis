@@ -9,6 +9,7 @@ to the enclave context to facilitate automated testing in our current modules.
 
 ### Fixes
 - Don't duplicate instruction position information in `store_service_files`
+- Use constants instead of hardcoded string for validation errors
 
 ### Removals
 - Remove stack trace from validation errors as it isn't used currently

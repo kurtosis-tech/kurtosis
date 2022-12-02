@@ -102,7 +102,7 @@ func (instruction *StoreServiceFilesInstruction) String() string {
 
 func (instruction *StoreServiceFilesInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
 	if !environment.DoesServiceIdExist(instruction.serviceId) {
-		return startosis_errors.NewValidationError("There was an error validating '%v' with service ID '%v' that does not exist for instruction '%v'", StoreServiceFilesBuiltinName, instruction.serviceId, instruction.position.String())
+		return startosis_errors.NewValidationError("There was an error validating '%v' with service ID '%v' that does not exist", StoreServiceFilesBuiltinName, instruction.serviceId)
 	}
 	if environment.DoesArtifactIdExist(instruction.artifactId) {
 		return stacktrace.NewError("There was an error validating '%v' as artifact UUID '%v' already exists", StoreServiceFilesBuiltinName, instruction.artifactId)
