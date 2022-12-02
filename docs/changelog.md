@@ -1,5 +1,8 @@
 # TBD
 
+### Changes
+- Changed validation message from "Pre-validating" to "Validating"
+
 ### Features
 - The "Starlark code successfully executed" or "Error encountered running Starlark code" messages are now "Starlark 
 code successfully run in dry-run mode" and "Error encountered running Starlark code in dry-run mode" when Starlark is 

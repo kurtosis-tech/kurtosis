@@ -22,7 +22,7 @@ const (
 	defaultCurrentStepNumber  = 0
 	defaultTotalStepsNumber   = 0
 	startingInterpretationMsg = "Interpreting Starlark code - execution will begin shortly"
-	startingValidationMsg     = "Pre-validating Starlark code and downloading docker images - execution will begin shortly"
+	startingValidationMsg     = "Validating Starlark code and downloading docker images - execution will begin shortly"
 	startingExecutionMsg      = "Starting execution"
 
 	missingRunMethodErrorPrefixFromStarlarkPackage = "Evaluation error: module has no .run field or method\n\tat"
