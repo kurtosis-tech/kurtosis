@@ -7,6 +7,7 @@ run in dry-run mode (and without the "in dry-run mode" when the script is execut
 
 ### Fixes
 - Don't duplicate instruction position information in `store_service_files`
+- Use constants instead of hardcoded string for validation errors
 
 ### Removals
 - Remove stack trace from validation errors as it isn't used currently

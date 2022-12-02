@@ -106,7 +106,7 @@ func (instruction *ExecInstruction) String() string {
 
 func (instruction *ExecInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
 	if !environment.DoesServiceIdExist(instruction.serviceId) {
-		return startosis_errors.NewValidationError("There was an error validating exec with service ID '%v' that does not exist", instruction.serviceId)
+		return startosis_errors.NewValidationError("There was an error validating '%v' with service ID '%v' that does not exist", ExecBuiltinName, instruction.serviceId)
 	}
 	return nil
 }
