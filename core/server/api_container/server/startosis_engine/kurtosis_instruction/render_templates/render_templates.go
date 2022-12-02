@@ -33,7 +33,7 @@ type RenderTemplatesInstruction struct {
 	position       *kurtosis_instruction.InstructionPosition
 	starlarkKwargs starlark.StringDict
 
-	artifactId enclave_data_directory.FilesArtifactUUID
+	artifactId enclave_data_directory.FilesArtifactID
 
 	templatesAndDataByDestRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData
 }
@@ -62,7 +62,7 @@ func newEmptyRenderTemplatesInstruction(serviceNetwork service_network.ServiceNe
 	}
 }
 
-func NewRenderTemplatesInstruction(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition, templatesAndDataByDestRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, starlarkKwargs starlark.StringDict, artifactUuid enclave_data_directory.FilesArtifactUUID) *RenderTemplatesInstruction {
+func NewRenderTemplatesInstruction(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition, templatesAndDataByDestRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, starlarkKwargs starlark.StringDict, artifactUuid enclave_data_directory.FilesArtifactID) *RenderTemplatesInstruction {
 	return &RenderTemplatesInstruction{
 		serviceNetwork:                    serviceNetwork,
 		position:                          position,
@@ -108,8 +108,10 @@ func (instruction *RenderTemplatesInstruction) String() string {
 }
 
 func (instruction *RenderTemplatesInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
-	// this doesn't do anything but can't return an error as the validator runs this regardless
-	// this is a no-op
+	if environment.DoesArtifactIdExist(instruction.artifactId) {
+		return stacktrace.NewError("There was an error validating '%v' as artifact UUID '%v' already exists", RenderTemplatesBuiltinName, instruction.artifactId)
+	}
+	environment.AddArtifactId(instruction.artifactId)
 	return nil
 }
 
@@ -122,11 +124,11 @@ func (instruction *RenderTemplatesInstruction) parseStartosisArgs(b *starlark.Bu
 	}
 
 	if artifactIdArg == emptyStarlarkString {
-		placeHolderArtifactUuid, err := enclave_data_directory.NewFilesArtifactUUID()
+		placeHolderArtifactId, err := enclave_data_directory.NewFilesArtifactID()
 		if err != nil {
 			return startosis_errors.NewInterpretationError("An empty or no artifact_uuid was passed, we tried creating one but failed")
 		}
-		artifactIdArg = starlark.String(placeHolderArtifactUuid)
+		artifactIdArg = starlark.String(placeHolderArtifactId)
 	}
 	instruction.starlarkKwargs[nonOptionalArtifactIdArgName] = artifactIdArg
 	instruction.starlarkKwargs[templateAndDataByDestinationRelFilepathArg] = templatesAndDataArg

@@ -3,7 +3,9 @@
 ### Features
 - The "Starlark code successfully executed" or "Error encountered running Starlark code" messages are now "Starlark 
 code successfully run in dry-run mode" and "Error encountered running Starlark code in dry-run mode" when Starlark is 
-run in dry-run mode (and without the "in dry-run mode" when the script is executed for real)
+run in dry-run mode (and without the "in dry-run mode" when the script is executed for real)\
+- Added `RunStarlarkScriptBlocking`, `RunStarlarkPackageBlocking` and `RunStarlarkRemotePackageBlocking` functions
+to the enclave context to facilitate automated testing in our current modules.
 
 ### Fixes
 - Don't duplicate instruction position information in `store_service_files`
@@ -60,6 +62,7 @@ run in dry-run mode (and without the "in dry-run mode" when the script is execut
 
 ### Features
 - Log file name and function like [filename.go:FunctionName()] while logging in `core` & `engine`
+- Add artifact ID validation to Starlark commands
 - Add IP address string replacement in `print` command
 - All Kurtosis instructions now returns a simple but explicit output
 - The object returned by Starlark's `run()` function is serialized as JSON and returned to the CLI output.

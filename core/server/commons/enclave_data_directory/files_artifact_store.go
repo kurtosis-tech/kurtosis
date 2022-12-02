@@ -26,20 +26,20 @@ func newFilesArtifactStore(absoluteDirpath string, dirpathRelativeToDataDirRoot 
 }
 
 // StoreFile: Saves file to disk.
-func (store FilesArtifactStore) StoreFile(reader io.Reader) (FilesArtifactUUID, error) {
-	newFilesArtifactUuid, err := NewFilesArtifactUUID()
+func (store FilesArtifactStore) StoreFile(reader io.Reader) (FilesArtifactID, error) {
+	newFilesArtifactId, err := NewFilesArtifactID()
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred creating new files artifact UUID")
 	}
-	err = store.StoreFileToArtifactUUID(reader, newFilesArtifactUuid)
+	err = store.StoreFileToArtifactUUID(reader, newFilesArtifactId)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "There was an error in storing data to files artifact with uuid '%v'", newFilesArtifactUuid)
+		return "", stacktrace.Propagate(err, "There was an error in storing data to files artifact with uuid '%v'", newFilesArtifactId)
 	}
-	return newFilesArtifactUuid, nil
+	return newFilesArtifactId, nil
 }
 
 // StoreFile: Saves file to disk.
-func (store FilesArtifactStore) StoreFileToArtifactUUID(reader io.Reader, targetArtifactUUID FilesArtifactUUID) error {
+func (store FilesArtifactStore) StoreFileToArtifactUUID(reader io.Reader, targetArtifactUUID FilesArtifactID) error {
 	filename := strings.Join(
 		[]string{string(targetArtifactUUID), artifactExtension},
 		".",
@@ -56,7 +56,7 @@ func (store FilesArtifactStore) StoreFileToArtifactUUID(reader io.Reader, target
 }
 
 // Get the file by uuid
-func (store FilesArtifactStore) GetFile(filesArtifactUuid FilesArtifactUUID) (*EnclaveDataDirFile, error) {
+func (store FilesArtifactStore) GetFile(filesArtifactUuid FilesArtifactID) (*EnclaveDataDirFile, error) {
 	filename := strings.Join(
 		[]string{string(filesArtifactUuid), artifactExtension},
 		".",
@@ -73,7 +73,7 @@ func (store FilesArtifactStore) GetFile(filesArtifactUuid FilesArtifactUUID) (*E
 }
 
 // RemoveFile: Remove the file by uuid
-func (store FilesArtifactStore) RemoveFile(filesArtifactUuid FilesArtifactUUID) error {
+func (store FilesArtifactStore) RemoveFile(filesArtifactUuid FilesArtifactID) error {
 	filename := strings.Join(
 		[]string{string(filesArtifactUuid), artifactExtension},
 		".",

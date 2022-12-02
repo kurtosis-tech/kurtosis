@@ -10,15 +10,15 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 )
 
-type FilesArtifactUUID string
+type FilesArtifactID string
 
-func NewFilesArtifactUUID() (FilesArtifactUUID, error) {
-	newUUIDStr, err := getUniversallyUniqueID()
+func NewFilesArtifactID() (FilesArtifactID, error) {
+	newIDStr, err := getUniversallyUniqueID()
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Could not generate Universally Unique ID.")
 	}
-	newFilesArtifactUuid := FilesArtifactUUID(newUUIDStr)
-	return newFilesArtifactUuid, nil
+	newFilesArtifactId := FilesArtifactID(newIDStr)
+	return newFilesArtifactId, nil
 }
 
 // There are some suggestions that go's implementation of uuid is not RFC compliant.
