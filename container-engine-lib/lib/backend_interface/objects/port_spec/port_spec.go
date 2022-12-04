@@ -11,7 +11,7 @@ type PortSpec struct {
 }
 
 /*
-	This method accepts port number, transportProtocol and application transportProtocol ( which is optional)
+	This method accepts port number, transportProtocol and application protocol ( which is optional)
 */
 func NewPortSpec(number uint16, transportProtocol PortProtocol, maybeApplicationProtocol string) (*PortSpec, error) {
 	var appProtocol *string

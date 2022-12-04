@@ -51,7 +51,7 @@ func SerializePortSpecs(ports map[string]*port_spec.PortSpec) (*docker_label_val
 		err := validatePortSpec(portId, portSpec)
 
 		if err != nil {
-			return nil, stacktrace.Propagate(err, fmt.Sprintf("Error occurred while validating PortSpec %v", portSpec))
+			return nil, stacktrace.Propagate(err, "Error occurred while validating port spec '%+v'", portSpec)
 		}
 
 		portNum := portSpec.GetNumber()
@@ -221,28 +221,26 @@ func validatePortSpec(portId string, spec *port_spec.PortSpec) error {
 	maybeApplicationProtocol := spec.GetMaybeApplicationProtocol()
 
 	// validate port id - it should not contain disallowed characters
-	hasDisallowedCharInPortId := disallowedCharactersMatcher.FindString(portId)
-	if len(hasDisallowedCharInPortId) > 0 {
+	firstDisallowedCharacterInPortId := disallowedCharactersMatcher.FindString(portId)
+	if len(firstDisallowedCharacterInPortId) > 0 {
 		return stacktrace.NewError(
 			"Port ID '%v' contains disallowed char '%v'",
 			portId,
-			hasDisallowedCharInPortId,
+			firstDisallowedCharacterInPortId,
 		)
 	}
 
 	// validate application protocol - it should not contain disallowed characters
-	hasDisallowedCharInApplicationProtocol := ""
 	if maybeApplicationProtocol != nil {
-		hasDisallowedCharInApplicationProtocol = disallowedCharactersMatcher.FindString(*maybeApplicationProtocol)
-	}
-
-	if len(hasDisallowedCharInApplicationProtocol) > 0 {
-		return stacktrace.NewError(
-			"Application Protocol '%v' associated with port ID '%v' contains disallowed char '%v'",
-			*maybeApplicationProtocol,
-			portId,
-			hasDisallowedCharInApplicationProtocol,
-		)
+		firstDisallowedCharacterInApplicationProtocol := disallowedCharactersMatcher.FindString(*maybeApplicationProtocol)
+		if len(firstDisallowedCharacterInApplicationProtocol) > 0 {
+			return stacktrace.NewError(
+				"Application Protocol '%v' associated with port ID '%v' contains disallowed char '%v'",
+				*maybeApplicationProtocol,
+				portId,
+				firstDisallowedCharacterInApplicationProtocol,
+			)
+		}
 	}
 
 	return nil
