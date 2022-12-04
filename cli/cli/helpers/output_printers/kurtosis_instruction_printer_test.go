@@ -153,3 +153,27 @@ func TestFormatRunOutput_Failure_ExecutedRun(t *testing.T) {
 	expectedMessage := `Error encountered running Starlark code.`
 	require.Equal(t, expectedMessage, message)
 }
+
+func TestComputeNumberOfLinesPrinted_SingleLine(t *testing.T) {
+	line := "Hello world"
+	result := computeNumberOfLinesInString(line, 50)
+	require.Equal(t, 1, result)
+}
+
+func TestComputeNumberOfLinesPrinted_MultiLine(t *testing.T) {
+	line := "Hello\n world"
+	result := computeNumberOfLinesInString(line, 50)
+	require.Equal(t, 2, result)
+}
+
+func TestComputeNumberOfLinesPrinted_LongString(t *testing.T) {
+	line := "Hello world! I am a super long string that will be printed in 2 lines"
+	result := computeNumberOfLinesInString(line, 50)
+	require.Equal(t, 2, result)
+}
+
+func TestComputeNumberOfLinesPrinted_LongStringWithNewlines(t *testing.T) {
+	line := "Hello world!\nI am a super long string that will be printed in 2 lines.\nAnother new line"
+	result := computeNumberOfLinesInString(line, 50)
+	require.Equal(t, 4, result)
+}
