@@ -10,6 +10,7 @@ import log from "loglevel";
 import {err} from "neverthrow";
 
 const VALID_PACKAGE_NO_PACKAGE_INPUT_TEST_NAME = "valid-package-no-input"
+const VALID_PACKAGE_WITH_PACKAGE_INPUT_TEST_NAME = "valid-package-with-input"
 const VALID_PACKAGE_NO_PACKAGE_INPUT_REL_PATH = "../../../../starlark/valid-kurtosis-package-no-input"
 
 jest.setTimeout(JEST_TIMEOUT_MS)
@@ -49,7 +50,7 @@ test("Test valid Starlark package with input", async () => {
 
 test("Test valid Starlark package with input - passing params also works", async () => {
     // ------------------------------------- ENGINE SETUP ----------------------------------------------
-    const createEnclaveResult = await createEnclave(VALID_PACKAGE_NO_PACKAGE_INPUT_TEST_NAME, IS_PARTITIONING_ENABLED)
+    const createEnclaveResult = await createEnclave(VALID_PACKAGE_WITH_PACKAGE_INPUT_TEST_NAME, IS_PARTITIONING_ENABLED)
 
     if (createEnclaveResult.isErr()) {
         throw createEnclaveResult.error
