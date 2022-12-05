@@ -26,7 +26,7 @@ func TestRenderTemplate_TestStringRepresentation(t *testing.T) {
 	position := kurtosis_instruction.NewInstructionPosition(16, 33, "dummyFile")
 	renderInstruction := newEmptyRenderTemplatesInstruction(nil, position)
 	renderInstruction.starlarkKwargs[templateAndDataByDestinationRelFilepathArg] = templateAndDataDict
-	testArtifactId, err := enclave_data_directory.NewFilesArtifactUUID()
+	testArtifactId, err := enclave_data_directory.NewFilesArtifactID()
 	require.Nil(t, err)
 	renderInstruction.starlarkKwargs[nonOptionalArtifactIdArgName] = starlark.String(testArtifactId)
 
@@ -60,7 +60,7 @@ func TestRenderTemplate_TestMultipleTemplates(t *testing.T) {
 	position := kurtosis_instruction.NewInstructionPosition(16, 33, "dummyFile")
 	renderInstruction := newEmptyRenderTemplatesInstruction(nil, position)
 	renderInstruction.starlarkKwargs[templateAndDataByDestinationRelFilepathArg] = templateAndDataByDestFilepath
-	testArtifactId, err := enclave_data_directory.NewFilesArtifactUUID()
+	testArtifactId, err := enclave_data_directory.NewFilesArtifactID()
 	require.Nil(t, err)
 	renderInstruction.starlarkKwargs[nonOptionalArtifactIdArgName] = starlark.String(testArtifactId)
 

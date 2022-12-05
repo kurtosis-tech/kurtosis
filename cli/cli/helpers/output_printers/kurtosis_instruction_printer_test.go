@@ -1,11 +1,20 @@
 package output_printers
 
 import (
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_args/run"
 	"github.com/stretchr/testify/require"
+	"strings"
 	"testing"
+)
+
+const (
+	dryRun      = true
+	executedRun = false
+
+	terminalWidth = 50
 )
 
 func testInstruction() *kurtosis_core_rpc_api_bindings.StarlarkInstruction {
@@ -71,4 +80,115 @@ func TestFormatInstruction_FormattingFail(t *testing.T) {
 	expectedResult := `# from dummyFile[12:4]
 print("UNSUPPORTED_TYPE['ModuleOutput(grafana_info=GrafanaInfo(dashboard_path="/d/QdTOwy-nz/eth2-merge-kurtosis-module-dashboard?orgId=1", user="admin", password="admin"))']")`
 	require.Equal(t, expectedResult, formattedInstruction)
+}
+
+func TestFormatError(t *testing.T) {
+	errorMessage := "There was an error"
+	formattedErrorMessage := formatError(errorMessage)
+	require.Equal(t, errorMessage, formattedErrorMessage)
+}
+
+func TestFormatResult(t *testing.T) {
+	resultMsg := "Hello world"
+	instructionResult := binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(resultMsg).GetInstructionResult()
+	formattedResultMessage := formatInstructionResult(instructionResult)
+	require.Equal(t, resultMsg, formattedResultMessage)
+}
+
+func TestFormatProgressBar(t *testing.T) {
+	progressBar := formatProgressBar(4, 10, "=")
+	expectedResult := fmt.Sprintf("%s%s", colorizeProgressBarIsDone("========"), colorizeProgressBarRemaining("============"))
+	require.Equal(t, expectedResult, progressBar)
+}
+
+func TestFormatProgressBar_FloatingPointDivision(t *testing.T) {
+	progressBar := formatProgressBar(10, 17, "=")
+	expectedResult := fmt.Sprintf("%s%s", colorizeProgressBarIsDone("==========="), colorizeProgressBarRemaining("========="))
+	require.Equal(t, expectedResult, progressBar)
+}
+
+func TestFormatProgressBar_NoTotalSteps(t *testing.T) {
+	progressBar := formatProgressBar(0, 0, "=")
+	expectedResult := colorizeProgressBarRemaining("====================")
+	require.Equal(t, expectedResult, progressBar)
+}
+
+func TestFormatRunOutput_Successful_NoOutput_DryRun(t *testing.T) {
+	runFinishedEvent := binding_constructors.NewStarlarkRunResponseLineFromRunSuccessEvent(``).GetRunFinishedEvent()
+	message := formatRunOutput(runFinishedEvent, dryRun)
+	expectedMessage := `Starlark code successfully run in dry-run mode. No output was returned.`
+	require.Equal(t, expectedMessage, message)
+}
+
+func TestFormatRunOutput_Successful_WithOutput_DryRun(t *testing.T) {
+	runFinishedEvent := binding_constructors.NewStarlarkRunResponseLineFromRunSuccessEvent(`{"hello": "world"}`).GetRunFinishedEvent()
+	message := formatRunOutput(runFinishedEvent, dryRun)
+	expectedMessage := `Starlark code successfully run in dry-run mode. Output was:
+{"hello": "world"}`
+	require.Equal(t, expectedMessage, message)
+}
+
+func TestFormatRunOutput_Successful_NoOutput_ExecutedRun(t *testing.T) {
+	runFinishedEvent := binding_constructors.NewStarlarkRunResponseLineFromRunSuccessEvent(``).GetRunFinishedEvent()
+	message := formatRunOutput(runFinishedEvent, executedRun)
+	expectedMessage := `Starlark code successfully run. No output was returned.`
+	require.Equal(t, expectedMessage, message)
+}
+
+func TestFormatRunOutput_Successful_WithOutput_ExecutedRun(t *testing.T) {
+	runFinishedEvent := binding_constructors.NewStarlarkRunResponseLineFromRunSuccessEvent(`{"hello": "world"}`).GetRunFinishedEvent()
+	message := formatRunOutput(runFinishedEvent, executedRun)
+	expectedMessage := `Starlark code successfully run. Output was:
+{"hello": "world"}`
+	require.Equal(t, expectedMessage, message)
+}
+
+func TestFormatRunOutput_Failure_DryRun(t *testing.T) {
+	runFinishedEvent := binding_constructors.NewStarlarkRunResponseLineFromRunFailureEvent().GetRunFinishedEvent()
+	message := formatRunOutput(runFinishedEvent, dryRun)
+	expectedMessage := `Error encountered running Starlark code in dry-run mode.`
+	require.Equal(t, expectedMessage, message)
+}
+
+func TestFormatRunOutput_Failure_ExecutedRun(t *testing.T) {
+	runFinishedEvent := binding_constructors.NewStarlarkRunResponseLineFromRunFailureEvent().GetRunFinishedEvent()
+	message := formatRunOutput(runFinishedEvent, executedRun)
+	expectedMessage := `Error encountered running Starlark code.`
+	require.Equal(t, expectedMessage, message)
+}
+
+func TestComputeNumberOfLinesPrinted_SingleLine(t *testing.T) {
+	line := "Hello world"
+	result := computeNumberOfLinesInString(line, terminalWidth)
+	require.Equal(t, 1, result)
+}
+
+func TestComputeNumberOfLinesPrinted_MultiLine(t *testing.T) {
+	line := "Hello\n world"
+	result := computeNumberOfLinesInString(line, terminalWidth)
+	require.Equal(t, 2, result)
+}
+
+func TestComputeNumberOfLinesPrinted_LongString(t *testing.T) {
+	line := "Hello world! I am a super long string that will be printed in 2 lines"
+	result := computeNumberOfLinesInString(line, terminalWidth)
+	require.Equal(t, 2, result)
+}
+
+func TestComputeNumberOfLinesPrinted_LongStringWithNewlines(t *testing.T) {
+	line := "Hello world!\nI am a super long string that will be printed in 2 lines.\nAnother new line"
+	result := computeNumberOfLinesInString(line, terminalWidth)
+	require.Equal(t, 4, result)
+}
+
+func TestComputeNumberOfLinesPrinted_NewlineCharAtTheEnd(t *testing.T) {
+	line := "Hello world!\n"
+	result := computeNumberOfLinesInString(line, terminalWidth)
+	require.Equal(t, 2, result)
+}
+
+func TestComputeNumberOfLinesPrinted_StringExactlyTheSizeOfTheScreen(t *testing.T) {
+	line := strings.Repeat("a", terminalWidth)
+	result := computeNumberOfLinesInString(line, terminalWidth)
+	require.Equal(t, 1, result)
 }

@@ -70,16 +70,16 @@ type ServiceNetwork interface {
 		serviceId service.ServiceID,
 		srcPath string,
 	) (
-		enclave_data_directory.FilesArtifactUUID,
+		enclave_data_directory.FilesArtifactID,
 		error,
 	)
 	CopyFilesFromServiceToTargetArtifactUUID(
 		ctx context.Context,
 		serviceId service.ServiceID,
 		srcPath string,
-		filesArtifactUuid enclave_data_directory.FilesArtifactUUID,
+		filesArtifactId enclave_data_directory.FilesArtifactID,
 	) (
-		enclave_data_directory.FilesArtifactUUID,
+		enclave_data_directory.FilesArtifactID,
 		error,
 	)
 
@@ -87,9 +87,9 @@ type ServiceNetwork interface {
 
 	GetIPAddressForService(serviceID service.ServiceID) (net.IP, bool)
 
-	RenderTemplates(templatesAndDataByDestinationRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData) (enclave_data_directory.FilesArtifactUUID, error)
-	RenderTemplatesToTargetFilesArtifactUUID(templatesAndDataByDestinationRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, filesArtifactUuid enclave_data_directory.FilesArtifactUUID) (enclave_data_directory.FilesArtifactUUID, error)
+	RenderTemplates(templatesAndDataByDestinationRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData) (enclave_data_directory.FilesArtifactID, error)
+	RenderTemplatesToTargetFilesArtifactUUID(templatesAndDataByDestinationRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, filesArtifactId enclave_data_directory.FilesArtifactID) (enclave_data_directory.FilesArtifactID, error)
 
-	UploadFilesArtifact(data []byte) (enclave_data_directory.FilesArtifactUUID, error)
-	UploadFilesArtifactToTargetArtifactUUID(data []byte, targetFilesArtifactUuid enclave_data_directory.FilesArtifactUUID) error
+	UploadFilesArtifact(data []byte) (enclave_data_directory.FilesArtifactID, error)
+	UploadFilesArtifactToTargetArtifactID(data []byte, targetFilesArtifactId enclave_data_directory.FilesArtifactID) error
 }

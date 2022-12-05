@@ -3,7 +3,6 @@ import {DEFAULT_DRY_RUN, EMPTY_RUN_PARAMS, IS_PARTITIONING_ENABLED, JEST_TIMEOUT
 import * as path from "path";
 import log from "loglevel";
 import {err} from "neverthrow";
-import {readStreamContentUntilClosed} from "../../test_helpers/startosis_helpers";
 
 const MISSING_MAIN_FUNCTION_TEST_NAME = "invalid-package-missing-main"
 const PACKAGE_WITH_NO_MAIN_IN_MAIN_STAR_REL_PATH = "../../../../starlark/no-run-in-main-star"
@@ -26,22 +25,18 @@ test("Test invalid package with no main in main.star", async () => {
 
         log.info(`Loading package at path '${packageRootPath}'`)
 
-        const outputStream = await enclaveContext.runStarlarkPackage(packageRootPath, EMPTY_RUN_PARAMS, DEFAULT_DRY_RUN)
-
-        if (outputStream.isErr()) {
+        const runResult = await enclaveContext.runStarlarkPackageBlocking(packageRootPath, EMPTY_RUN_PARAMS, DEFAULT_DRY_RUN)
+        if (runResult.isErr()) {
             throw err(new Error("Unexpected execution error"))
         }
 
-        const [scriptOutput, _, interpretationError, validationErrors, executionError] = await readStreamContentUntilClosed(outputStream.value);
-
-        expect(interpretationError).not.toBeUndefined()
-        expect(interpretationError?.getErrorMessage())
+        expect(runResult.value.interpretationError).not.toBeUndefined()
+        expect(runResult.value.interpretationError?.getErrorMessage())
             .toContain("No 'run' function found in file 'github.com/sample/sample-kurtosis-package/main.star'; a 'run' entrypoint function is required in the main.star file of any Kurtosis package")
 
-        expect(validationErrors).toEqual([])
-        expect(executionError).toBeUndefined()
-
-        expect(scriptOutput).toEqual("")
+        expect(runResult.value.validationErrors).toEqual([])
+        expect(runResult.value.executionError).toBeUndefined()
+        expect(runResult.value.runOutput).toEqual("")
     } finally {
         stopEnclaveFunction()
     }

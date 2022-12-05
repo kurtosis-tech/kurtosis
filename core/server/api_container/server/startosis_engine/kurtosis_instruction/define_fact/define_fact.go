@@ -87,7 +87,7 @@ func (instruction *DefineFactInstruction) String() string {
 
 func (instruction *DefineFactInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
 	if !environment.DoesServiceIdExist(instruction.serviceId) {
-		return startosis_errors.NewValidationError("There was an error validating exec with service ID '%v' that does not exist", instruction.serviceId)
+		return startosis_errors.NewValidationError("There was an error validating '%v' with service ID '%v' that does not exist", DefineFactBuiltinName, instruction.serviceId)
 	}
 	// TODO(victor.colombo): Add fact validation
 	return nil

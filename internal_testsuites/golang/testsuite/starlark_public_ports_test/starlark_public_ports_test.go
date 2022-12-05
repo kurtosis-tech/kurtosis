@@ -63,18 +63,17 @@ func TestStartosis(t *testing.T) {
 	logrus.Infof("Executing Startosis script...")
 	logrus.Debugf("Startosis script content: \n%v", starlarkScript)
 
-	outputStream, _, err := enclaveCtx.RunStarlarkScript(ctx, starlarkScript, emptyArgs, defaultDryRun)
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkScript, emptyArgs, defaultDryRun)
 	require.NoError(t, err, "Unexpected error executing Starlark script")
-	scriptOutput, _, interpretationError, validationErrors, executionError := test_helpers.ReadStreamContentUntilClosed(outputStream)
 
 	expectedScriptOutput := `Adding service example-datastore-server-1.
 Service 'example-datastore-server-1' added with service GUID '[a-z-0-9]+'
 Service example-datastore-server-1 deployed successfully.
 `
-	require.Nil(t, interpretationError, "Unexpected interpretation error")
-	require.Empty(t, validationErrors, "Unexpected validation error")
-	require.Nil(t, executionError, "Unexpected execution error")
-	require.Regexp(t, expectedScriptOutput, scriptOutput)
+	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
+	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")
+	require.Nil(t, runResult.ExecutionError, "Unexpected execution error")
+	require.Regexp(t, expectedScriptOutput, string(runResult.RunOutput))
 	logrus.Infof("Successfully ran Starlark script")
 
 	// Check that the service added by the script is functional

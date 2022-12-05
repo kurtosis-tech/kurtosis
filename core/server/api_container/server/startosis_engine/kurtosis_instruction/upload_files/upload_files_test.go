@@ -13,7 +13,7 @@ import (
 func TestUploadFiles_StringRepresentation(t *testing.T) {
 	position := kurtosis_instruction.NewInstructionPosition(1, 13, "dummyFile")
 	filePath := "github.com/kurtosis/module/lib/lib.star"
-	artifactId, err := enclave_data_directory.NewFilesArtifactUUID()
+	artifactId, err := enclave_data_directory.NewFilesArtifactID()
 	require.Nil(t, err)
 	uploadInstruction := newEmptyUploadFilesInstruction(position, nil, nil)
 	uploadInstruction.starlarkKwargs = starlark.StringDict{}

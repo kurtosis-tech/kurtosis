@@ -1,14 +1,35 @@
 # TBD
 
+### Fixes
+- Fixed a bug which was happening on small terminal windows regarding the display of the progress bar and progress info
+
+# 0.57.6
+
+### Features
+- The "Starlark code successfully executed" or "Error encountered running Starlark code" messages are now "Starlark 
+code successfully run in dry-run mode" and "Error encountered running Starlark code in dry-run mode" when Starlark is 
+run in dry-run mode (and without the "in dry-run mode" when the script is executed for real)\
+- Added `RunStarlarkScriptBlocking`, `RunStarlarkPackageBlocking` and `RunStarlarkRemotePackageBlocking` functions
+to the enclave context to facilitate automated testing in our current modules.
+
+### Fixes
+- Don't duplicate instruction position information in `store_service_files`
+- Use constants instead of hardcoded string for validation errors
+
+### Removals
+- Remove stack trace from validation errors as it isn't used currently
+
 ### Changes
-- Added automated installation of tab completion with brew installation.
+- Changed validation message from "Pre-validating" to "Validating"
+- Disabled progress info in non-interactive terminals when running a Starlark Package
 
 # 0.57.5
 ### Changes
 - Replaced stack name with the stack file name in custom evaluation errors
+- Replaced "internal ID" in the output message of `add_service` and `remove_service` instructions with "service GUID"
 
-### Changes
-- Replaced "insternal ID" in the output message of `add_service` and `remove_service` instructions with "service GUID"
+### Features
+- Support public ports in Starlark to cover the NEAR usecase
 
 ### Fixes
 - Corrected some old references to Starlark "modules"
@@ -17,9 +38,6 @@
 - Changed the name from startosis to starlark in the `internal_testsuite` build script
 - Fixed `internal-testsuites` omission during build time
 - Fixed a bug related to omitting the `enclave ID` value when a function which filters modules is called
-
-### Features
-- Support public ports in Starlark to cover the NEAR usecase
 
 # 0.57.4
 ### Changes
@@ -49,6 +67,7 @@
 
 ### Features
 - Log file name and function like [filename.go:FunctionName()] while logging in `core` & `engine`
+- Add artifact ID validation to Starlark commands
 - Add IP address string replacement in `print` command
 - All Kurtosis instructions now returns a simple but explicit output
 - The object returned by Starlark's `run()` function is serialized as JSON and returned to the CLI output.
