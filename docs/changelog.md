@@ -1,5 +1,7 @@
 # TBD
 
+# 0.57.7
+
 ### Changes
 - Added automated installation of tab completion with brew installation.
 
