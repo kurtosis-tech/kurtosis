@@ -323,6 +323,10 @@ func computeNumberOfLinesPrintedToTerminal(stringToPrint string) int {
 	if term.IsTerminal(currentTerminalIndex) {
 		terminalWidth, _, err := term.GetSize(currentTerminalIndex)
 		if err != nil {
+			// We assume infinite terminal width here because it's the less destructive approach. If we were assuming
+			// terminal width = 80 chars by default, long suffix lines would cause us to erase multiple lines,
+			// potentially clearing valuable printed lines that are not part of the progress info.
+			// Assuming infinite means we will erase at most a single line, which we're sure contains progress info.
 			logrus.Errorf("Unable to get width of terminal. Will assume infinite. Error was: %v", err.Error())
 			return computeNumberOfLinesInString(stringToPrint, math.MaxInt)
 		}
@@ -334,10 +338,14 @@ func computeNumberOfLinesPrintedToTerminal(stringToPrint string) int {
 // computeNumberOfLinesInString computes the number of lines needed to print the string with a maxWidth allowed
 // This is mostly to allow unit testing computeNumberOfLinesPrintedToTerminal
 func computeNumberOfLinesInString(stringToPrint string, maxWidth int) int {
+	if stringToPrint == "" {
+		// empty string will necessarily take one line
+		return 1
+	}
 	idxOfNewline := strings.Index(stringToPrint, newlineChar)
 	if idxOfNewline < 0 {
-		// we use utf8.RunCountInString() in place of len() because the string contains unicode chars that might be
-		// represented by multiple individual bytes (such as the spinner char)
+		// we use utf8.RunCountInString() in place of len() because the string contains "complex" unicode chars that
+		// might be represented by multiple individual bytes (such as the spinner char)
 		return int(math.Ceil(float64(utf8.RuneCountInString(stringToPrint)) / float64(maxWidth)))
 	} else {
 		return computeNumberOfLinesInString(stringToPrint[:idxOfNewline], maxWidth) + computeNumberOfLinesInString(stringToPrint[idxOfNewline+1:], maxWidth)
