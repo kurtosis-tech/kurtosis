@@ -330,7 +330,7 @@ message StarlarkExecutionError {
 }
 
 message StarlarkRunProgress {
-  string current_step_info = 1;
+  repeated string current_step_info = 1;
 
   uint32 total_steps = 2;
 

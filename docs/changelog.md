@@ -1,5 +1,9 @@
 # TBD
 
+### Features
+- The CLI now displays the list of container images currently being downloaded and validated during the Starlark
+validation step
+
 ### Fixes
 - Fixed a bug which was happening on small terminal windows regarding the display of the progress bar and progress info
 

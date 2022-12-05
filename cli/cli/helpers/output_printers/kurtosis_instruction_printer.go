@@ -160,8 +160,9 @@ func (printer *ExecutionPrinter) PrintKurtosisExecutionResponseLineToStdOut(resp
 	} else if responseLine.GetProgressInfo() != nil {
 		if printer.isSpinnerBeingUsed {
 			progress := responseLine.GetProgressInfo()
+			progressMsessageStr := formatProgressMessage(progress.GetCurrentStepInfo())
 			progressBarStr := formatProgressBar(progress.GetCurrentStepNumber(), progress.GetTotalSteps(), progressBarChar)
-			spinnerInfoString := fmt.Sprintf("   %s %s", progressBarStr, progress.GetCurrentStepInfo())
+			spinnerInfoString := fmt.Sprintf("   %s %s", progressBarStr, progressMsessageStr)
 			printer.progressInfoToPrintNext = &spinnerInfoString
 		}
 	} else if responseLine.GetRunFinishedEvent() != nil {
@@ -256,6 +257,10 @@ func formatInstructionToExecutable(instruction *kurtosis_core_rpc_api_bindings.S
 		multiLineInstruction.WriteString(build.FormatString(statement))
 	}
 	return multiLineInstruction.String()
+}
+
+func formatProgressMessage(messageLines []string) string {
+	return strings.Join(messageLines, "\n")
 }
 
 func formatProgressBar(currentStep uint32, totalSteps uint32, progressBarChar string) string {

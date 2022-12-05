@@ -334,7 +334,19 @@ func NewStarlarkRunResponseLineFromProgressInfo(currentStepInfo string, currentS
 	return &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine{
 		RunResponseLine: &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine_ProgressInfo{
 			ProgressInfo: &kurtosis_core_rpc_api_bindings.StarlarkRunProgress{
-				CurrentStepInfo:   currentStepInfo,
+				CurrentStepInfo:   []string{currentStepInfo},
+				TotalSteps:        totalSteps,
+				CurrentStepNumber: currentStepNumber,
+			},
+		},
+	}
+}
+
+func NewStarlarkRunResponseLineFromMultilineProgressInfo(currentStepInfoMultiline []string, currentStepNumber uint32, totalSteps uint32) *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+	return &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine{
+		RunResponseLine: &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine_ProgressInfo{
+			ProgressInfo: &kurtosis_core_rpc_api_bindings.StarlarkRunProgress{
+				CurrentStepInfo:   currentStepInfoMultiline,
 				TotalSteps:        totalSteps,
 				CurrentStepNumber: currentStepNumber,
 			},
