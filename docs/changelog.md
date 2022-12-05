@@ -9,6 +9,7 @@ validation step
 
 ### Changes
 - Remove completion files 
+- CLI now prints to StdOut. It used to be printing most of its output to StdErr
 
 # 0.57.8
 

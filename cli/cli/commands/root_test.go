@@ -2,6 +2,7 @@ package commands
 
 import (
 	"bytes"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/out"
 	"github.com/kurtosis-tech/kurtosis/kurtosis_version"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -20,14 +21,14 @@ func TestVersion(t *testing.T) {
 	buf := new(bytes.Buffer)
 
 	root := RootCmd
-	root.SetOut(buf)
-	root.SetErr(os.Stderr) // We do this because we don't want any "you're using an out-of-date version of the CLI" to fail this test
+	out.SetOut(buf)
+	out.SetErr(os.Stderr) // We do this because we don't want any "you're using an out-of-date version of the CLI" to fail this test
 	root.SetArgs([]string{"version"})
 
 	err := root.Execute()
 	require.NoError(t, err)
 
-	assert.Equal(t, kurtosis_version.KurtosisVersion + "\n", buf.String())
+	assert.Equal(t, kurtosis_version.KurtosisVersion+"\n", buf.String())
 }
 
 func TestGetLatestCLIReleaseVersionFromCacheFile_CacheFileDoesNotExist(t *testing.T) {
@@ -68,7 +69,7 @@ func TestGetLatestCLIReleaseVersionFromCacheFile_SaveVersionInCacheFileAndGetVer
 	require.NoError(t, err, "An error occurred removing the cache file for test")
 }
 
-func TestParseVersionStrToSemVer_CanParseValidVersions(t *testing.T){
+func TestParseVersionStrToSemVer_CanParseValidVersions(t *testing.T) {
 	validStrictSemanticVersionStr := "0.23.1" //Semantic Versioning 2.0.0
 
 	validPrefixedSemanticVersionStr := "v0.23.1" //Semantic Versioning 1.0.0 (tagging specification)

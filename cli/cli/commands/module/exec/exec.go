@@ -22,6 +22,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/image_name_generator"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/out"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/module"
@@ -301,7 +302,7 @@ func run(
 
 	logrus.Infof("Executing the module with execute params '%v'...", executeParamsStr)
 	if readCloserLogs != nil {
-		go io.Copy(logrus.StandardLogger().Out, readCloserLogs)
+		go io.Copy(out.GetOut(), readCloserLogs)
 		logrus.Info("----------------------- MODULE LOGS ----------------------")
 	}
 
