@@ -69,13 +69,12 @@ func TestStartosis(t *testing.T) {
 	logrus.Infof("Executing Startosis script...")
 	logrus.Debugf("Startosis script content: \n%v", startosisScript)
 
-	outputStream, _, err := enclaveCtx.RunStarlarkScript(ctx, startosisScript, emptyParams, defaultDryRun)
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, startosisScript, emptyParams, defaultDryRun)
 	require.NoError(t, err, "Unexpected error executing startosis script")
-	_, _, interpretationError, validationErrors, executionError := test_helpers.ReadStreamContentUntilClosed(outputStream)
 
-	require.Nil(t, interpretationError, "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
-	require.Empty(t, validationErrors, "Unexpected validation error")
-	require.Nil(t, executionError, "Unexpected execution error")
+	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
+	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")
+	require.Nil(t, runResult.ExecutionError, "Unexpected execution error")
 	logrus.Infof("Successfully ran Startosis script")
 
 }

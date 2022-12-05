@@ -15,7 +15,7 @@ var emptyServiceNetwork = service_network.NewEmptyMockServiceNetwork()
 
 func TestStoreFilesFromService_StringRepresentationWorks(t *testing.T) {
 	position := kurtosis_instruction.NewInstructionPosition(1, 1, "dummyFile")
-	testFilesArtifactId, err := enclave_data_directory.NewFilesArtifactUUID()
+	testFilesArtifactId, err := enclave_data_directory.NewFilesArtifactID()
 	require.Nil(t, err)
 	storeFileFromServiceInstruction := newEmptyStoreServiceFilesInstruction(emptyServiceNetwork, position)
 	storeFileFromServiceInstruction.starlarkKwargs = starlark.StringDict{}

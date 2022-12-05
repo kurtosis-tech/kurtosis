@@ -14,8 +14,8 @@ const (
 
 func TestNewValidLokiLogPipeline(t *testing.T) {
 
-	expectLogPipeLineStr := fmt.Sprintf(
-		` |= "%s" != "%s" |= "%s"`,
+	expectLogPipelineStr := fmt.Sprintf(
+		`|= "%s" != "%s" |= "%s"`,
 		containTextStr,
 		doesNotContainTextStr,
 		containAnotherTextStr,
@@ -31,6 +31,6 @@ func TestNewValidLokiLogPipeline(t *testing.T) {
 		lineFilterThree,
 	}
 
-	logPipeLine := NewLokiLogPipeline(lineFilters)
-	require.Equal(t, expectLogPipeLineStr, logPipeLine.PipeLineStringify())
+	logPipeline := NewLokiLogPipeline(lineFilters)
+	require.Equal(t, expectLogPipelineStr, logPipeline.PipelineStringify())
 }

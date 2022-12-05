@@ -38,7 +38,7 @@ type UploadFilesInstruction struct {
 	starlarkKwargs starlark.StringDict
 
 	src        string
-	artifactId enclave_data_directory.FilesArtifactUUID
+	artifactId enclave_data_directory.FilesArtifactID
 
 	pathOnDisk string
 }
@@ -56,7 +56,7 @@ func GenerateUploadFilesBuiltin(instructionsQueue *[]kurtosis_instruction.Kurtos
 	}
 }
 
-func NewUploadFilesInstruction(position *kurtosis_instruction.InstructionPosition, serviceNetwork service_network.ServiceNetwork, provider startosis_packages.PackageContentProvider, src string, pathOnDisk string, artifactId enclave_data_directory.FilesArtifactUUID, starlarkKwargs starlark.StringDict) *UploadFilesInstruction {
+func NewUploadFilesInstruction(position *kurtosis_instruction.InstructionPosition, serviceNetwork service_network.ServiceNetwork, provider startosis_packages.PackageContentProvider, src string, pathOnDisk string, artifactId enclave_data_directory.FilesArtifactID, starlarkKwargs starlark.StringDict) *UploadFilesInstruction {
 	return &UploadFilesInstruction{
 		position:       position,
 		serviceNetwork: serviceNetwork,
@@ -97,7 +97,7 @@ func (instruction *UploadFilesInstruction) Execute(_ context.Context) (*string, 
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while compressing the files '%v'", instruction.pathOnDisk)
 	}
-	err = instruction.serviceNetwork.UploadFilesArtifactToTargetArtifactUUID(compressedData, instruction.artifactId)
+	err = instruction.serviceNetwork.UploadFilesArtifactToTargetArtifactID(compressedData, instruction.artifactId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while uploading the compressed contents\n'%v'", compressedData)
 	}
@@ -110,8 +110,10 @@ func (instruction *UploadFilesInstruction) String() string {
 }
 
 func (instruction *UploadFilesInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
-	// this doesn't do anything but can't return an error as the validator runs this regardless
-	// this is a no-op
+	if environment.DoesArtifactIdExist(instruction.artifactId) {
+		return stacktrace.NewError("There was an error validating '%v' as artifact UUID '%v' already exists", UploadFilesBuiltinName, instruction.artifactId)
+	}
+	environment.AddArtifactId(instruction.artifactId)
 	return nil
 }
 
@@ -123,7 +125,7 @@ func (instruction *UploadFilesInstruction) parseStartosisArgs(b *starlark.Builti
 	}
 
 	if artifactIdArg == emptyStarlarkString {
-		placeHolderArtifactId, err := enclave_data_directory.NewFilesArtifactUUID()
+		placeHolderArtifactId, err := enclave_data_directory.NewFilesArtifactID()
 		if err != nil {
 			return startosis_errors.NewInterpretationError("An empty or no artifact_uuid was passed, we tried creating one but failed")
 		}

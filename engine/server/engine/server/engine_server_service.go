@@ -168,19 +168,18 @@ func (service *EngineServerService) GetServiceLogs(
 		return stacktrace.Propagate(err, "An error occurred reporting missing user service GUIDs for enclave '%v' and requested service GUIDs '%+v'", enclaveId, requestedServiceGuids)
 	}
 
-	//TODO testear localmente si args.GetLineFilters() es nil no se modifica nada
-	logPipeLine, err := newLokiLogPipeLineFromLineFilters(args.GetLineFilters())
+	logPipeline, err := newLokiLogPipelineFromLineFilters(args.GetLineFilters())
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating a new Loki log pipe from log line filters '%+v'", args.GetLineFilters())
+		return stacktrace.Propagate(err, "An error occurred creating a new Loki log pipeline from log line filters '%+v'", args.GetLineFilters())
 	}
 
 	if shouldFollowLogs {
-		serviceLogsByServiceGuidChan, errChan, cancelStreamFunc, err = service.logsDatabaseClient.StreamUserServiceLogs(stream.Context(), enclaveId, requestedServiceGuids, logPipeLine)
+		serviceLogsByServiceGuidChan, errChan, cancelStreamFunc, err = service.logsDatabaseClient.StreamUserServiceLogs(stream.Context(), enclaveId, requestedServiceGuids, logPipeline)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred streaming service logs for GUIDs '%+v' in enclave with ID '%v'", requestedServiceGuids, enclaveId)
 		}
 	} else {
-		serviceLogsByServiceGuidChan, errChan, cancelStreamFunc, err = service.logsDatabaseClient.GetUserServiceLogs(stream.Context(), enclaveId, requestedServiceGuids, logPipeLine)
+		serviceLogsByServiceGuidChan, errChan, cancelStreamFunc, err = service.logsDatabaseClient.GetUserServiceLogs(stream.Context(), enclaveId, requestedServiceGuids, logPipeline)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred streaming service logs for GUIDs '%+v' in enclave with ID '%v'", requestedServiceGuids, enclaveId)
 		}
@@ -315,31 +314,27 @@ func getNotFoundServiceGuidsAndEmptyServiceLogsMap(
 	return notFoundServiceGuids
 }
 
-func newLokiLogPipeLineFromLineFilters(
+func newLokiLogPipelineFromLineFilters(
 	logLineFilters []*kurtosis_engine_rpc_api_bindings.LogLineFilter,
-) (centralized_logs.LogPipeLine, error) {
+) (centralized_logs.LogPipeline, error) {
 	var lokiLogLineFilters []*centralized_logs.LokiLineFilter
-	if logLineFilters != nil {
-		for _, logLineFilter := range logLineFilters {
-			var lokiLogLineFilter *centralized_logs.LokiLineFilter
-			operator := logLineFilter.GetOperator()
-			filterTextPattern := logLineFilter.GetText()
-			switch operator {
-			case kurtosis_engine_rpc_api_bindings.LogLineFilter_Contain:
-				lokiLogLineFilter = centralized_logs.NewDoesContainLokiLineFilter(filterTextPattern)
-			case kurtosis_engine_rpc_api_bindings.LogLineFilter_DoesNotContain:
-				lokiLogLineFilter = centralized_logs.NewDoesNotContainLokiLineFilter(filterTextPattern)
-			default:
-				return nil, stacktrace.NewError("Unrecognized log line filter operator '%v' in filter '%v'; this is a bug in Kurtosis", operator, logLineFilter)
-			}
-			lokiLogLineFilters = append(lokiLogLineFilters, lokiLogLineFilter)
+
+	for _, logLineFilter := range logLineFilters {
+		var lokiLogLineFilter *centralized_logs.LokiLineFilter
+		operator := logLineFilter.GetOperator()
+		filterTextPattern := logLineFilter.GetTextPattern()
+		switch operator {
+		case kurtosis_engine_rpc_api_bindings.LogLineFilter_CONTAIN:
+			lokiLogLineFilter = centralized_logs.NewDoesContainLokiLineFilter(filterTextPattern)
+		case kurtosis_engine_rpc_api_bindings.LogLineFilter_DOES_NOT_CONTAIN:
+			lokiLogLineFilter = centralized_logs.NewDoesNotContainLokiLineFilter(filterTextPattern)
+		default:
+			return nil, stacktrace.NewError("Unrecognized log line filter operator '%v' in filter '%v'; this is a bug in Kurtosis", operator, logLineFilter)
 		}
+		lokiLogLineFilters = append(lokiLogLineFilters, lokiLogLineFilter)
 	}
 
-	logPipeLine, err := centralized_logs.NewLokiLogPipeline(lokiLogLineFilters)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a new Loki log pipe line with filters '%+v'", lokiLogLineFilters)
-	}
+	logPipeline := centralized_logs.NewLokiLogPipeline(lokiLogLineFilters)
 
-	return logPipeLine, nil
+	return logPipeline, nil
 }

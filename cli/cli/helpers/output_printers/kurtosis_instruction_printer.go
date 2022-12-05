@@ -10,13 +10,18 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/interactive_terminal_decider"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/term"
+	"math"
+	"os"
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 )
 
 const (
 	bazelBuildDefaultFilename = ""
+	spinnerDefaultSuffix      = ""
 
 	instructionPrefixString = "> "
 	resultPrefixString      = ""
@@ -25,6 +30,10 @@ const (
 	progressBarChar   = "\u2588" // unicode for: █
 
 	codeCommentPrefix = "# "
+
+	clearFromCurrentPositionChar = "\033[J"
+	goToBeginningOfLineChar      = "\r"
+	newlineChar                  = "\n"
 )
 
 var (
@@ -38,7 +47,8 @@ var (
 )
 
 var (
-	writer = logrus.StandardLogger().Out
+	writer               = logrus.StandardLogger().Out
+	currentTerminalIndex = int(os.Stderr.Fd()) // logrus.StandardLogger().Out writes to os.Stderr
 
 	spinnerChar  = spinner.CharSets[11]
 	spinnerSpeed = 250 * time.Millisecond
@@ -46,18 +56,24 @@ var (
 )
 
 type ExecutionPrinter struct {
-	lock               *sync.Mutex
-	isSpinnerBeingUsed bool
-	spinner            *spinner.Spinner
-	isStarted          bool
+	lock *sync.Mutex
+
+	isStarted bool
+
+	isSpinnerBeingUsed           bool
+	spinner                      *spinner.Spinner
+	progressInfoToPrintNext      *string
+	progressInfoCurrentlyPrinted *string
 }
 
 func NewExecutionPrinter() *ExecutionPrinter {
 	return &ExecutionPrinter{
-		lock:               &sync.Mutex{},
-		isSpinnerBeingUsed: false,
-		spinner:            nil,
-		isStarted:          false,
+		lock:                         &sync.Mutex{},
+		isSpinnerBeingUsed:           false,
+		spinner:                      nil,
+		isStarted:                    false,
+		progressInfoCurrentlyPrinted: nil,
+		progressInfoToPrintNext:      nil,
 	}
 }
 
@@ -71,18 +87,33 @@ func (printer *ExecutionPrinter) Start() error {
 		logrus.Infof("Kurtosis CLI is running in a non interactive terminal. Everything will work but progress information and the progress bar will not be displayed.")
 		return nil
 	}
+
+	// spinner setup
 	printer.isSpinnerBeingUsed = true
-	printer.spinner = spinner.New(spinnerChar, spinnerSpeed, spinnerColor, spinner.WithWriter(writer))
-	printer.spinner.Start()
+	printer.spinner = spinner.New(spinnerChar, spinnerSpeed, spinnerColor, spinner.WithWriter(writer), spinner.WithSuffix(spinnerDefaultSuffix))
+	// The spinner library naively assumes the spinner suffix is a single line on the terminal. This is quite
+	// restrictive as 1. it is not true on small terminal windows, and 2. it prevents us from printing multi line
+	// progress info. For now hack this by adding these PreUpdate and PostUpdate functions.
+	printer.spinner.PreUpdate = func(s *spinner.Spinner) {
+		// Clear all progress info currently being printed, if any
+		printer.clearSpinnerInfoIfNecessary()
+		// update the suffix if progressInfoToPrintNext is non nil
+		if printer.progressInfoToPrintNext != nil {
+			printer.spinner.Suffix = *printer.progressInfoToPrintNext
+		}
+	}
+	printer.spinner.PostUpdate = func(s *spinner.Spinner) {
+		// reset progressInfoToPrintNext to avoid updating the suffix every time
+		printer.progressInfoToPrintNext = nil
+		// store the suffix currently being printed to progressInfoCurrentlyPrinted
+		printer.progressInfoCurrentlyPrinted = &printer.spinner.Suffix
+	}
+	printer.startSpinnerIfUsed()
 	return nil
 }
 
 func (printer *ExecutionPrinter) Stop() {
-	if printer.isSpinnerBeingUsed && printer.isStarted {
-		if printer.spinner != nil && printer.spinner.Active() {
-			printer.spinner.Stop()
-		}
-	}
+	printer.stopSpinnerIfUsed()
 	printer.isStarted = false
 }
 
@@ -131,7 +162,7 @@ func (printer *ExecutionPrinter) PrintKurtosisExecutionResponseLineToStdOut(resp
 			progress := responseLine.GetProgressInfo()
 			progressBarStr := formatProgressBar(progress.GetCurrentStepNumber(), progress.GetTotalSteps(), progressBarChar)
 			spinnerInfoString := fmt.Sprintf("   %s %s", progressBarStr, progress.GetCurrentStepInfo())
-			printer.spinner.Suffix = spinnerInfoString
+			printer.progressInfoToPrintNext = &spinnerInfoString
 		}
 	} else if responseLine.GetRunFinishedEvent() != nil {
 		formattedRunOutputMessage := formatRunOutput(responseLine.GetRunFinishedEvent(), dryRun)
@@ -145,15 +176,11 @@ func (printer *ExecutionPrinter) PrintKurtosisExecutionResponseLineToStdOut(resp
 
 func (printer *ExecutionPrinter) printPersistentLineToStdOut(lineToPrint string) error {
 	// If spinner is being used, we have to stop spinner -> print -> start spinner in order to keep the spinner at the bottom of the output
-	if printer.isSpinnerBeingUsed {
-		printer.spinner.Stop()
-	}
+	printer.stopSpinnerIfUsed()
 	if _, err := fmt.Fprintln(writer, lineToPrint); err != nil {
 		return stacktrace.Propagate(err, "An error happened printing a Starlark run response line. Line was:\n%s", lineToPrint)
 	}
-	if printer.isSpinnerBeingUsed {
-		printer.spinner.Start()
-	}
+	printer.startSpinnerIfUsed()
 	return nil
 }
 
@@ -260,4 +287,78 @@ func formatRunOutput(runFinishedEvent *kurtosis_core_rpc_api_bindings.StarlarkRu
 		runSuccessMsg.WriteString(". No output was returned.")
 	}
 	return colorizeRunSuccessfulMsg(runSuccessMsg.String())
+}
+
+func (printer *ExecutionPrinter) startSpinnerIfUsed() {
+	if printer.isSpinnerBeingUsed {
+		printer.spinner.Start()
+	}
+}
+
+func (printer *ExecutionPrinter) stopSpinnerIfUsed() {
+	if printer.isSpinnerBeingUsed {
+		printer.spinner.Stop()
+		printer.clearSpinnerInfoIfNecessary()
+		// reset progressInfoCurrentlyPrinted to store the fact that the spinner is not printing anything at the moment
+		printer.progressInfoCurrentlyPrinted = nil
+	}
+}
+
+func (printer *ExecutionPrinter) clearSpinnerInfoIfNecessary() {
+	// if nothing is currently being printed, nothing to do
+	if printer.progressInfoCurrentlyPrinted != nil {
+		// compute the entire string currently being printed, including the spinner char
+		spinnerCharPlusSuffix := spinnerChar[0] + *printer.progressInfoCurrentlyPrinted
+		// from this string, compute the number of lines that are currently being taken to print it entirely
+		spinnerSuffixNumberOfLines := computeNumberOfLinesPrintedToTerminal(spinnerCharPlusSuffix)
+		// move the cursor up the required number of lines, and erase all content from this position
+		fmt.Print(moveLinesUpLeftStr(spinnerSuffixNumberOfLines - 1))
+		fmt.Print(clearFromCurrentPositionChar)
+	}
+}
+
+// computeNumberOfLinesPrintedToTerminal computes the number of lines that were required to print the given string to
+// the current terminal
+func computeNumberOfLinesPrintedToTerminal(stringToPrint string) int {
+	if term.IsTerminal(currentTerminalIndex) {
+		terminalWidth, _, err := term.GetSize(currentTerminalIndex)
+		if err != nil {
+			// We assume infinite terminal width here because it's the less destructive approach. If we were assuming
+			// terminal width = 80 chars by default, long suffix lines would cause us to erase multiple lines,
+			// potentially clearing valuable printed lines that are not part of the progress info.
+			// Assuming infinite means we will erase at most a single line, which we're sure contains progress info.
+			logrus.Errorf("Unable to get width of terminal. Will assume infinite. Error was: %v", err.Error())
+			return computeNumberOfLinesInString(stringToPrint, math.MaxInt)
+		}
+		return computeNumberOfLinesInString(stringToPrint, terminalWidth)
+	}
+	return computeNumberOfLinesInString(stringToPrint, math.MaxInt)
+}
+
+// computeNumberOfLinesInString computes the number of lines needed to print the string with a maxWidth allowed
+// This is mostly to allow unit testing computeNumberOfLinesPrintedToTerminal
+func computeNumberOfLinesInString(stringToPrint string, maxWidth int) int {
+	if stringToPrint == "" {
+		// empty string will necessarily take one line
+		return 1
+	}
+	idxOfNewline := strings.Index(stringToPrint, newlineChar)
+	if idxOfNewline < 0 {
+		// we use utf8.RunCountInString() in place of len() because the string contains "complex" unicode chars that
+		// might be represented by multiple individual bytes (such as the spinner char)
+		return int(math.Ceil(float64(utf8.RuneCountInString(stringToPrint)) / float64(maxWidth)))
+	} else {
+		return computeNumberOfLinesInString(stringToPrint[:idxOfNewline], maxWidth) + computeNumberOfLinesInString(stringToPrint[idxOfNewline+1:], maxWidth)
+	}
+}
+
+// moveLinesUpLeftStr generated the control string necessary to move the cursor numberOfLines up, and move it at the
+// beginning of the line
+func moveLinesUpLeftStr(numberOfLines int) string {
+	if numberOfLines > 0 {
+		// Character `\033[#A` moves the cursor `#` lines up. We here insert the right #
+		return fmt.Sprintf("\033[%dA%s", numberOfLines, goToBeginningOfLineChar)
+	} else {
+		return goToBeginningOfLineChar
+	}
 }

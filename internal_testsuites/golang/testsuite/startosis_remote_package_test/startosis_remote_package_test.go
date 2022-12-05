@@ -30,13 +30,12 @@ func TestStartosisRemotePackage(t *testing.T) {
 	// ------------------------------------- TEST RUN ----------------------------------------------
 	logrus.Debugf("Executing Starlark Package: '%v'", remotePackage)
 
-	outputStream, _, err := enclaveCtx.RunStarlarkRemotePackage(ctx, remotePackage, executeParams, defaultDryRun)
+	runResult, err := enclaveCtx.RunStarlarkRemotePackageBlocking(ctx, remotePackage, executeParams, defaultDryRun)
 	require.NoError(t, err, "Unexpected error executing starlark package")
-	_, _, interpretationError, validationErrors, executionError := test_helpers.ReadStreamContentUntilClosed(outputStream)
 
-	require.Nil(t, interpretationError, "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
-	require.Empty(t, validationErrors, "Unexpected validation error")
-	require.Empty(t, executionError, "Unexpected execution error")
+	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
+	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")
+	require.Empty(t, runResult.ExecutionError, "Unexpected execution error")
 	logrus.Infof("Successfully ran Starlark Package")
 
 	// Check that the service added by the script is functional

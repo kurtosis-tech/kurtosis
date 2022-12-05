@@ -141,7 +141,7 @@ func (client *lokiLogsDatabaseClient) GetUserServiceLogs(
 	ctx context.Context,
 	enclaveID enclave.EnclaveID,
 	userServiceGUIDs map[service.ServiceGUID]bool,
-	logPipeLine LogPipeLine,
+	logPipeline LogPipeline,
 ) (
 	chan map[service.ServiceGUID][]LogLine,
 	chan error,
@@ -149,9 +149,9 @@ func (client *lokiLogsDatabaseClient) GetUserServiceLogs(
 	error,
 ) {
 
-	lokiLogPipelineObj, ok := logPipeLine.(*lokiLogPipeline)
+	lokiLogPipelineObj, ok := logPipeline.(*lokiLogPipeline)
 	if !ok {
-		return nil, nil, nil, stacktrace.NewError("Log pipe line '%v' couldn't be cast to a Loki log pipe line object; this is a bug in Kurtosis", logPipeLine)
+		return nil, nil, nil, stacktrace.NewError("Log pipeline '%v' couldn't be cast to a Loki log pipeline object; this is a bug in Kurtosis", logPipeline)
 	}
 
 	httpHeaderWithTenantID := http.Header{}
@@ -254,7 +254,7 @@ func (client *lokiLogsDatabaseClient) StreamUserServiceLogs(
 	ctx context.Context,
 	enclaveID enclave.EnclaveID,
 	userServiceGUIDs map[service.ServiceGUID]bool,
-	logPipeLine LogPipeLine,
+	logPipeline LogPipeline,
 ) (
 	chan map[service.ServiceGUID][]LogLine,
 	chan error,
@@ -262,9 +262,9 @@ func (client *lokiLogsDatabaseClient) StreamUserServiceLogs(
 	error,
 ) {
 
-	lokiLogPipelineObj, ok := logPipeLine.(*lokiLogPipeline)
+	lokiLogPipelineObj, ok := logPipeline.(*lokiLogPipeline)
 	if !ok {
-		return nil, nil, nil, stacktrace.NewError("Log pipe line '%v' couldn't be cast to a Loki log pipe line object; this is a bug in Kurtosis", logPipeLine)
+		return nil, nil, nil, stacktrace.NewError("Log pipeline '%v' couldn't be cast to a Loki log pipeline object; this is a bug in Kurtosis", logPipeline)
 	}
 
 	websocketDeadlineTime := getWebsocketDeadlineTime()
@@ -551,10 +551,10 @@ func getQueryParamValue(
 	queryParamValue := streamSelectorInQuery
 
 	if lokiLogPipelineObj != nil{
-		queryParamValue = fmt.Sprintf("%s %s", queryParamValue, lokiLogPipelineObj.PipeLineStringify())
+		queryParamValue = fmt.Sprintf("%s %s", queryParamValue, lokiLogPipelineObj.PipelineStringify())
 	}
 
-	return streamSelectorInQuery
+	return queryParamValue
 }
 
 func getKurtosisGuidParamValues(kurtosisGuids []string) string {

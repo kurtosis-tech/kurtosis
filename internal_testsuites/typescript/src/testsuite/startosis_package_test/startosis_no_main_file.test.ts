@@ -3,7 +3,6 @@ import {DEFAULT_DRY_RUN, EMPTY_RUN_PARAMS, IS_PARTITIONING_ENABLED, JEST_TIMEOUT
 import * as path from "path";
 import log from "loglevel";
 import {err} from "neverthrow";
-import {readStreamContentUntilClosed} from "../../test_helpers/startosis_helpers";
 
 const MISSING_MAIN_STAR_TEST_NAME = "invalid-package-no-main-file"
 const PACKAGE_WITH_NO_MAIN_STAR_REL_PATH = "../../../../starlark/no-main-star"
@@ -26,19 +25,18 @@ test("Test invalid package with no main.star", async () => {
 
         log.info(`Loading package at path '${packageRootPath}'`)
 
-        const outputStream = await enclaveContext.runStarlarkPackage(packageRootPath, EMPTY_RUN_PARAMS, DEFAULT_DRY_RUN)
-        if (outputStream.isErr()) {
+        const runResult = await enclaveContext.runStarlarkPackageBlocking(packageRootPath, EMPTY_RUN_PARAMS, DEFAULT_DRY_RUN)
+        if (runResult.isErr()) {
             throw err(new Error(`An error occurred execute Starlark package '${packageRootPath}'`));
         }
-        const [scriptOutput, _, interpretationError, validationErrors, executionError] = await readStreamContentUntilClosed(outputStream.value);
 
-        expect(interpretationError).not.toBeUndefined()
-        expect(interpretationError?.getErrorMessage())
+        expect(runResult.value.interpretationError).not.toBeUndefined()
+        expect(runResult.value.interpretationError?.getErrorMessage())
             .toContain("An error occurred while verifying that 'main.star' exists on root of package")
-        expect(validationErrors).toEqual([])
-        expect(executionError).toBeUndefined()
+        expect(runResult.value.validationErrors).toEqual([])
+        expect(runResult.value.executionError).toBeUndefined()
 
-        expect(scriptOutput).toEqual("")
+        expect(runResult.value.runOutput).toEqual("")
     } finally {
         stopEnclaveFunction()
     }

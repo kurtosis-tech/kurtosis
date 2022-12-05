@@ -6,12 +6,15 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_args/run"
 	"github.com/stretchr/testify/require"
+	"strings"
 	"testing"
 )
 
 const (
 	dryRun      = true
 	executedRun = false
+
+	terminalWidth = 50
 )
 
 func testInstruction() *kurtosis_core_rpc_api_bindings.StarlarkInstruction {
@@ -152,4 +155,40 @@ func TestFormatRunOutput_Failure_ExecutedRun(t *testing.T) {
 	message := formatRunOutput(runFinishedEvent, executedRun)
 	expectedMessage := `Error encountered running Starlark code.`
 	require.Equal(t, expectedMessage, message)
+}
+
+func TestComputeNumberOfLinesPrinted_SingleLine(t *testing.T) {
+	line := "Hello world"
+	result := computeNumberOfLinesInString(line, terminalWidth)
+	require.Equal(t, 1, result)
+}
+
+func TestComputeNumberOfLinesPrinted_MultiLine(t *testing.T) {
+	line := "Hello\n world"
+	result := computeNumberOfLinesInString(line, terminalWidth)
+	require.Equal(t, 2, result)
+}
+
+func TestComputeNumberOfLinesPrinted_LongString(t *testing.T) {
+	line := "Hello world! I am a super long string that will be printed in 2 lines"
+	result := computeNumberOfLinesInString(line, terminalWidth)
+	require.Equal(t, 2, result)
+}
+
+func TestComputeNumberOfLinesPrinted_LongStringWithNewlines(t *testing.T) {
+	line := "Hello world!\nI am a super long string that will be printed in 2 lines.\nAnother new line"
+	result := computeNumberOfLinesInString(line, terminalWidth)
+	require.Equal(t, 4, result)
+}
+
+func TestComputeNumberOfLinesPrinted_NewlineCharAtTheEnd(t *testing.T) {
+	line := "Hello world!\n"
+	result := computeNumberOfLinesInString(line, terminalWidth)
+	require.Equal(t, 2, result)
+}
+
+func TestComputeNumberOfLinesPrinted_StringExactlyTheSizeOfTheScreen(t *testing.T) {
+	line := strings.Repeat("a", terminalWidth)
+	result := computeNumberOfLinesInString(line, terminalWidth)
+	require.Equal(t, 1, result)
 }

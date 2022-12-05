@@ -1,7 +1,7 @@
 package centralized_logs
 
 import (
-	"fmt"
+	"strings"
 )
 
 type lokiLogPipeline struct {
@@ -12,10 +12,12 @@ func NewLokiLogPipeline(lineFilters []*LokiLineFilter) *lokiLogPipeline {
 	return &lokiLogPipeline{lineFilters: lineFilters}
 }
 
-func (logPipeline *lokiLogPipeline) PipeLineStringify() string{
-	var logPipelineStr string
+func (logPipeline *lokiLogPipeline) PipelineStringify() string{
+	var lineFiltersStr []string
 	for _, lineFilter := range logPipeline.lineFilters {
-		logPipelineStr = fmt.Sprintf("%s %s",logPipelineStr, lineFilter)
+		lineFiltersStr = append(lineFiltersStr, lineFilter.String())
 	}
+	logPipelineStr := strings.Join(lineFiltersStr, " ")
+
 	return logPipelineStr
 }

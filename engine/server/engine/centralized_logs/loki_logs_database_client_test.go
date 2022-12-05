@@ -142,9 +142,9 @@ func TestGetUserServiceLogsWithoutFilter_ValidResponse(t *testing.T) {
 	}
 
 	var emptyLokiLineFilters []*LokiLineFilter
-	emptyLogPipeLine := NewLokiLogPipeline(emptyLokiLineFilters)
+	emptyLogPipeline := NewLokiLogPipeline(emptyLokiLineFilters)
 
-	userServiceLogsByGuidChan, errChan, closeStreamFunc, err := logsDatabaseClient.GetUserServiceLogs(ctx, enclaveId, userServiceGuids, emptyLogPipeLine)
+	userServiceLogsByGuidChan, errChan, closeStreamFunc, err := logsDatabaseClient.GetUserServiceLogs(ctx, enclaveId, userServiceGuids, emptyLogPipeline)
 	defer closeStreamFunc()
 
 	require.NoError(t, err, "An error occurred getting user service logs for GUIDs '%+v' in enclave '%v'", userServiceGuids, enclaveId)
@@ -232,12 +232,12 @@ func TestGetUserServiceLogsWithFilter_ValidResponse(t *testing.T) {
 	lokiLineFilters := []*LokiLineFilter{
 		NewDoesContainLokiLineFilter(filterText),
 	}
-	logPipeLine := NewLokiLogPipeline(lokiLineFilters)
+	logPipeline := NewLokiLogPipeline(lokiLineFilters)
 
-	userServiceLogsByGuidChan, errChan, closeStreamFunc, err := logsDatabaseClient.GetUserServiceLogs(ctx, enclaveId, userServiceGuids, logPipeLine)
+	userServiceLogsByGuidChan, errChan, closeStreamFunc, err := logsDatabaseClient.GetUserServiceLogs(ctx, enclaveId, userServiceGuids, logPipeline)
 	defer closeStreamFunc()
 
-	require.NoError(t, err, "An error occurred getting user service logs for GUIDs '%+v' using log pipe line '%v' in enclave '%v'", userServiceGuids, logPipeLine, enclaveId)
+	require.NoError(t, err, "An error occurred getting user service logs for GUIDs '%+v' using log pipeline '%v' in enclave '%v'", userServiceGuids, logPipeline, enclaveId)
 	require.NotNil(t, userServiceLogsByGuidChan, "Received a nil user service logs channel, but a non-nil value was expected")
 	require.Nil(t, errChan, "Received a not nil error channel, but a nil value was expected")
 
