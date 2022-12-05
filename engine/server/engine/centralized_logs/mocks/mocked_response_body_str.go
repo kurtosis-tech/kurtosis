@@ -1,4 +1,4 @@
-package centralized_logs
+package mocks
 
 const (
 	commonStatsResultStr = `
@@ -75,7 +75,7 @@ const (
             }
         }`
 
-	mockedResponseBodyWithSeveralValuesStr = `{
+	MockedResponseBodyWithSeveralValuesStr = `{
     "status": "success",
     "data": {
         "resultType": "streams",
@@ -145,7 +145,7 @@ const (
     }
 }`
 
-	mockedResponseBodyWithOneLineValuesStr = `{
+	MockedResponseBodyWithOneLineValuesStr = `{
     "status": "success",
     "data": {
         "resultType": "streams",

@@ -141,18 +141,13 @@ func (client *lokiLogsDatabaseClient) GetUserServiceLogs(
 	ctx context.Context,
 	enclaveID enclave.EnclaveID,
 	userServiceGUIDs map[service.ServiceGUID]bool,
-	logPipeline LogPipeline,
+	conjunctiveLogLineFilters ConjunctiveLogLineFilters,
 ) (
 	chan map[service.ServiceGUID][]LogLine,
 	chan error,
 	func(),
 	error,
 ) {
-
-	lokiLogPipelineObj, ok := logPipeline.(*lokiLogPipeline)
-	if !ok {
-		return nil, nil, nil, stacktrace.NewError("Log pipeline '%v' couldn't be cast to a Loki log pipeline object; this is a bug in Kurtosis", logPipeline)
-	}
 
 	httpHeaderWithTenantID := http.Header{}
 	httpHeaderWithTenantID.Add(organizationIdHttpHeaderKey, string(enclaveID))
@@ -166,7 +161,7 @@ func (client *lokiLogsDatabaseClient) GetUserServiceLogs(
 
 	userServiceContainerTypeDockerValue := label_value_consts.UserServiceContainerTypeDockerLabelValue.GetString()
 
-	queryParamValue := getQueryParamValue(userServiceContainerTypeDockerValue, kurtosisGuids, lokiLogPipelineObj)
+	queryParamValue := getQueryParamValue(userServiceContainerTypeDockerValue, kurtosisGuids, conjunctiveLogLineFilters)
 
 	getLogsPath := baseLokiApiPath + queryRangeEndpointSubpath
 
@@ -254,18 +249,13 @@ func (client *lokiLogsDatabaseClient) StreamUserServiceLogs(
 	ctx context.Context,
 	enclaveID enclave.EnclaveID,
 	userServiceGUIDs map[service.ServiceGUID]bool,
-	logPipeline LogPipeline,
+	conjunctiveLogLineFilters ConjunctiveLogLineFilters,
 ) (
 	chan map[service.ServiceGUID][]LogLine,
 	chan error,
 	func(),
 	error,
 ) {
-
-	lokiLogPipelineObj, ok := logPipeline.(*lokiLogPipeline)
-	if !ok {
-		return nil, nil, nil, stacktrace.NewError("Log pipeline '%v' couldn't be cast to a Loki log pipeline object; this is a bug in Kurtosis", logPipeline)
-	}
 
 	websocketDeadlineTime := getWebsocketDeadlineTime()
 
@@ -277,7 +267,7 @@ func (client *lokiLogsDatabaseClient) StreamUserServiceLogs(
 		}
 	}()
 
-	tailLogsEndpointURL, httpHeaderWithTenantID := client.getTailLogEndpointURLAndHeader(enclaveID, userServiceGUIDs, lokiLogPipelineObj)
+	tailLogsEndpointURL, httpHeaderWithTenantID := client.getTailLogEndpointURLAndHeader(enclaveID, userServiceGUIDs, conjunctiveLogLineFilters)
 
 	//this channel will return the user service log lines by service GUI
 	logsByKurtosisUserServiceGuidChan := make(chan map[service.ServiceGUID][]LogLine, logsByKurtosisUserServiceGuidChanBuffSize)
@@ -526,7 +516,7 @@ func getMaxRetentionLogsTimeParamValue() string {
 func getQueryParamValue(
 	kurtosisContainerType string,
 	kurtosisGuids []string,
-	lokiLogPipelineObj *lokiLogPipeline,
+	conjunctiveLogLineFilters ConjunctiveLogLineFilters,
 ) string {
 	kurtosisGuidParaValues := getKurtosisGuidParamValues(kurtosisGuids)
 
@@ -550,8 +540,8 @@ func getQueryParamValue(
 
 	queryParamValue := streamSelectorInQuery
 
-	if lokiLogPipelineObj != nil{
-		queryParamValue = fmt.Sprintf("%s %s", queryParamValue, lokiLogPipelineObj.PipelineStringify())
+	if conjunctiveLogLineFilters != nil {
+		queryParamValue = fmt.Sprintf("%s %s", queryParamValue, conjunctiveLogLineFilters.GetConjunctiveLogLineFiltersString())
 	}
 
 	return queryParamValue
@@ -565,7 +555,7 @@ func getKurtosisGuidParamValues(kurtosisGuids []string) string {
 func (client *lokiLogsDatabaseClient) getTailLogEndpointURLAndHeader(
 	enclaveID enclave.EnclaveID,
 	userServiceGuids map[service.ServiceGUID]bool,
-	lokiLogPipelineObj *lokiLogPipeline,
+	conjunctiveLogLineFilters ConjunctiveLogLineFilters,
 ) (url.URL, http.Header) {
 
 	kurtosisGuids := []string{}
@@ -577,7 +567,7 @@ func (client *lokiLogsDatabaseClient) getTailLogEndpointURLAndHeader(
 
 	userServiceContainerTypeDockerValue := label_value_consts.UserServiceContainerTypeDockerLabelValue.GetString()
 
-	queryParamValue := getQueryParamValue(userServiceContainerTypeDockerValue, kurtosisGuids, lokiLogPipelineObj)
+	queryParamValue := getQueryParamValue(userServiceContainerTypeDockerValue, kurtosisGuids, conjunctiveLogLineFilters)
 
 	tailLogsPath := baseLokiApiPath + tailEndpointSubpath
 

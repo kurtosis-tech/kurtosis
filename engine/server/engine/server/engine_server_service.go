@@ -168,18 +168,18 @@ func (service *EngineServerService) GetServiceLogs(
 		return stacktrace.Propagate(err, "An error occurred reporting missing user service GUIDs for enclave '%v' and requested service GUIDs '%+v'", enclaveId, requestedServiceGuids)
 	}
 
-	logPipeline, err := newLokiLogPipelineFromLineFilters(args.GetLineFilters())
+	conjunctiveLogLineFilters, err := newConjunctiveLogLineFiltersGRPC(args.GetConjunctiveLineFilters())
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating a new Loki log pipeline from log line filters '%+v'", args.GetLineFilters())
+		return stacktrace.Propagate(err, "An error occurred creating the conjunctive log line filters from the GRPC's conjunctive log line filters '%+v'", args.GetConjunctiveLineFilters())
 	}
 
 	if shouldFollowLogs {
-		serviceLogsByServiceGuidChan, errChan, cancelStreamFunc, err = service.logsDatabaseClient.StreamUserServiceLogs(stream.Context(), enclaveId, requestedServiceGuids, logPipeline)
+		serviceLogsByServiceGuidChan, errChan, cancelStreamFunc, err = service.logsDatabaseClient.StreamUserServiceLogs(stream.Context(), enclaveId, requestedServiceGuids, conjunctiveLogLineFilters)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred streaming service logs for GUIDs '%+v' in enclave with ID '%v'", requestedServiceGuids, enclaveId)
 		}
 	} else {
-		serviceLogsByServiceGuidChan, errChan, cancelStreamFunc, err = service.logsDatabaseClient.GetUserServiceLogs(stream.Context(), enclaveId, requestedServiceGuids, logPipeline)
+		serviceLogsByServiceGuidChan, errChan, cancelStreamFunc, err = service.logsDatabaseClient.GetUserServiceLogs(stream.Context(), enclaveId, requestedServiceGuids, conjunctiveLogLineFilters)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred streaming service logs for GUIDs '%+v' in enclave with ID '%v'", requestedServiceGuids, enclaveId)
 		}
@@ -314,9 +314,9 @@ func getNotFoundServiceGuidsAndEmptyServiceLogsMap(
 	return notFoundServiceGuids
 }
 
-func newLokiLogPipelineFromLineFilters(
+func newConjunctiveLogLineFiltersGRPC(
 	logLineFilters []*kurtosis_engine_rpc_api_bindings.LogLineFilter,
-) (centralized_logs.LogPipeline, error) {
+) (centralized_logs.ConjunctiveLogLineFilters, error) {
 	var lokiLogLineFilters []*centralized_logs.LokiLineFilter
 
 	for _, logLineFilter := range logLineFilters {

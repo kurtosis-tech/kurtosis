@@ -32,5 +32,23 @@ func TestNewValidLokiLogPipeline(t *testing.T) {
 	}
 
 	logPipeline := NewLokiLogPipeline(lineFilters)
-	require.Equal(t, expectLogPipelineStr, logPipeline.PipelineStringify())
+	require.Equal(t, expectLogPipelineStr, logPipeline.GetConjunctiveLogLineFiltersString())
+}
+
+func TestNewLokiLogPipelineWithEmptyFilters(t *testing.T) {
+
+	expectedEmptyLogPipeline := ""
+
+	emptyFilters := []*LokiLineFilter{}
+
+	logPipeline:= NewLokiLogPipeline(emptyFilters)
+	require.Equal(t, expectedEmptyLogPipeline, logPipeline.GetConjunctiveLogLineFiltersString())
+}
+
+func TestNewLokiLogPipelineWithNilFilters(t *testing.T) {
+
+	expectedEmptyLogPipeline := ""
+
+	logPipeline:= NewLokiLogPipeline(nil)
+	require.Equal(t, expectedEmptyLogPipeline, logPipeline.GetConjunctiveLogLineFiltersString())
 }

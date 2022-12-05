@@ -6,8 +6,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 )
 
-type LogPipeline interface {
-	PipelineStringify() string
+type ConjunctiveLogLineFilters interface {
+	GetConjunctiveLogLineFiltersString() string
 }
 
 type LogsDatabaseClient interface {
@@ -15,7 +15,7 @@ type LogsDatabaseClient interface {
 		ctx context.Context,
 		enclaveID enclave.EnclaveID,
 		userServiceGuids map[service.ServiceGUID]bool,
-		logPipeline LogPipeline,
+		conjunctiveLogLineFilters ConjunctiveLogLineFilters,
 	) (
 		userServiceLogsByServiceGuidChan chan map[service.ServiceGUID][]LogLine,
 		errChan chan error,
@@ -26,7 +26,7 @@ type LogsDatabaseClient interface {
 		ctx context.Context,
 		enclaveID enclave.EnclaveID,
 		userServiceGuids map[service.ServiceGUID]bool,
-		logPipeline LogPipeline,
+		conjunctiveLogLineFilters ConjunctiveLogLineFilters,
 	) (
 		userServiceLogsByServiceGuidChan chan map[service.ServiceGUID][]LogLine,
 		errChan chan error,
