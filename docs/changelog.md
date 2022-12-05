@@ -1,5 +1,8 @@
 # TBD
 
+### Fixes
+- Fixed a bug which was happening on small terminal windows regarding the display of the progress bar and progress info
+
 # 0.57.6
 
 ### Features
