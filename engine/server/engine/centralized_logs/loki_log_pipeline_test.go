@@ -21,9 +21,9 @@ func TestNewValidLokiLogPipeline(t *testing.T) {
 		containAnotherTextStr,
 	)
 
-	lineFilterOne := NewLokiLineFilter(LokiLineFilterOperatorContains, containTextStr)
-	lineFilterTwo := NewLokiLineFilter(LokiLineFilterOperatorDoesNotContains, doesNotContainTextStr)
-	lineFilterThree := NewLokiLineFilter(LokiLineFilterOperatorContains, containAnotherTextStr)
+	lineFilterOne := NewDoesContainLokiLineFilter(containTextStr)
+	lineFilterTwo := NewDoesNotContainLokiLineFilter(doesNotContainTextStr)
+	lineFilterThree := NewDoesContainLokiLineFilter(containAnotherTextStr)
 
 	lineFilters := []*LokiLineFilter{
 		lineFilterOne,
@@ -31,24 +31,6 @@ func TestNewValidLokiLogPipeline(t *testing.T) {
 		lineFilterThree,
 	}
 
-	logPipeLine, err := NewLokiLogPipeline(lineFilters)
-	require.NoError(t, err)
+	logPipeLine := NewLokiLogPipeline(lineFilters)
 	require.Equal(t, expectLogPipeLineStr, logPipeLine.PipeLineStringify())
-}
-
-func TestNewNotValidLokiLogPipeline(t *testing.T) {
-
-	var undefinedLogLineOperator LokiLineFilterOperator
-
-	lineFilterOne := NewLokiLineFilter(LokiLineFilterOperatorContains, containTextStr)
-	lineFilterTwo := NewLokiLineFilter(undefinedLogLineOperator, doesNotContainTextStr)
-
-	lineFilters := []*LokiLineFilter{
-		lineFilterOne,
-		lineFilterTwo,
-	}
-
-	logPipeline, err := NewLokiLogPipeline(lineFilters)
-	require.Error(t, err)
-	require.Nil(t, logPipeline)
 }

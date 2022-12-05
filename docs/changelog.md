@@ -1,10 +1,8 @@
 # TBD
-
 ### Features
 - The "Starlark code successfully executed" or "Error encountered running Starlark code" messages are now "Starlark 
 code successfully run in dry-run mode" and "Error encountered running Starlark code in dry-run mode" when Starlark is 
 run in dry-run mode (and without the "in dry-run mode" when the script is executed for real)
-- Prepared the Kurtosis engine server to do search in logs
 
 ### Fixes
 - Don't duplicate instruction position information in `store_service_files`
@@ -15,6 +13,7 @@ run in dry-run mode (and without the "in dry-run mode" when the script is execut
 ### Changes
 - Changed validation message from "Pre-validating" to "Validating"
 - Disabled progress info in non-interactive terminals when running a Starlark Package
+- Prepared the Kurtosis engine server to do search in logs
 - Adding `log line filters` parameter in the `GetServiceLogs` Kurtosis engine endpoint
 
 # 0.57.5

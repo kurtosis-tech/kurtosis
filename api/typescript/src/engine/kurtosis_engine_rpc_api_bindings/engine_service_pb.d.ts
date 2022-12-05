@@ -340,8 +340,8 @@ export class LogLineFilter extends jspb.Message {
   getOperator(): LogLineFilter.LogLineOperator;
   setOperator(value: LogLineFilter.LogLineOperator): LogLineFilter;
 
-  getText(): string;
-  setText(value: string): LogLineFilter;
+  getTextPattern(): string;
+  setTextPattern(value: string): LogLineFilter;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): LogLineFilter.AsObject;
@@ -354,12 +354,12 @@ export class LogLineFilter extends jspb.Message {
 export namespace LogLineFilter {
   export type AsObject = {
     operator: LogLineFilter.LogLineOperator,
-    text: string,
+    textPattern: string,
   }
 
   export enum LogLineOperator { 
     CONTAIN = 0,
-    DOESNOTCONTAIN = 1,
+    DOES_NOT_CONTAIN = 1,
   }
 }
 

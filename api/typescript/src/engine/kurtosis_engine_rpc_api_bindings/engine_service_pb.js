@@ -2870,7 +2870,7 @@ proto.engine_api.LogLineFilter.prototype.toObject = function(opt_includeInstance
 proto.engine_api.LogLineFilter.toObject = function(includeInstance, msg) {
   var f, obj = {
     operator: jspb.Message.getFieldWithDefault(msg, 1, 0),
-    text: jspb.Message.getFieldWithDefault(msg, 2, "")
+    textPattern: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -2913,7 +2913,7 @@ proto.engine_api.LogLineFilter.deserializeBinaryFromReader = function(msg, reade
       break;
     case 2:
       var value = /** @type {string} */ (reader.readString());
-      msg.setText(value);
+      msg.setTextPattern(value);
       break;
     default:
       reader.skipField();
@@ -2951,7 +2951,7 @@ proto.engine_api.LogLineFilter.serializeBinaryToWriter = function(message, write
       f
     );
   }
-  f = message.getText();
+  f = message.getTextPattern();
   if (f.length > 0) {
     writer.writeString(
       2,
@@ -2966,7 +2966,7 @@ proto.engine_api.LogLineFilter.serializeBinaryToWriter = function(message, write
  */
 proto.engine_api.LogLineFilter.LogLineOperator = {
   CONTAIN: 0,
-  DOESNOTCONTAIN: 1
+  DOES_NOT_CONTAIN: 1
 };
 
 /**
@@ -2988,10 +2988,10 @@ proto.engine_api.LogLineFilter.prototype.setOperator = function(value) {
 
 
 /**
- * optional string text = 2;
+ * optional string text_pattern = 2;
  * @return {string}
  */
-proto.engine_api.LogLineFilter.prototype.getText = function() {
+proto.engine_api.LogLineFilter.prototype.getTextPattern = function() {
   return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, ""));
 };
 
@@ -3000,7 +3000,7 @@ proto.engine_api.LogLineFilter.prototype.getText = function() {
  * @param {string} value
  * @return {!proto.engine_api.LogLineFilter} returns this
  */
-proto.engine_api.LogLineFilter.prototype.setText = function(value) {
+proto.engine_api.LogLineFilter.prototype.setTextPattern = function(value) {
   return jspb.Message.setProto3StringField(this, 2, value);
 };
 

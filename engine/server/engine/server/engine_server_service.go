@@ -168,6 +168,7 @@ func (service *EngineServerService) GetServiceLogs(
 		return stacktrace.Propagate(err, "An error occurred reporting missing user service GUIDs for enclave '%v' and requested service GUIDs '%+v'", enclaveId, requestedServiceGuids)
 	}
 
+	//TODO testear localmente si args.GetLineFilters() es nil no se modifica nada
 	logPipeLine, err := newLokiLogPipeLineFromLineFilters(args.GetLineFilters())
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating a new Loki log pipe from log line filters '%+v'", args.GetLineFilters())
@@ -314,33 +315,23 @@ func getNotFoundServiceGuidsAndEmptyServiceLogsMap(
 	return notFoundServiceGuids
 }
 
-func getLokiLineFilterOperatorFromLogLineFilter(
-	logLineFilter *kurtosis_engine_rpc_api_bindings.LogLineFilter,
-) (centralized_logs.LokiLineFilterOperator, error) {
-	operator := logLineFilter.GetOperator()
-
-	//TODO create a unit test to match all the Loki operators with Log line operators
-	switch operator {
-	case kurtosis_engine_rpc_api_bindings.LogLineFilter_Contain:
-		return centralized_logs.LokiLineFilterOperatorContains, nil
-	case kurtosis_engine_rpc_api_bindings.LogLineFilter_DoesNotContain:
-		return centralized_logs.LokiLineFilterOperatorDoesNotContains, nil
-	default:
-		return 0, stacktrace.NewError("Unrecognized log line filter operator '%v' in filter '%v'; this is a bug in Kurtosis", operator, logLineFilter)
-	}
-}
-
 func newLokiLogPipeLineFromLineFilters(
 	logLineFilters []*kurtosis_engine_rpc_api_bindings.LogLineFilter,
 ) (centralized_logs.LogPipeLine, error) {
 	var lokiLogLineFilters []*centralized_logs.LokiLineFilter
 	if logLineFilters != nil {
 		for _, logLineFilter := range logLineFilters {
-			lokiLogLineFilterOperator, err := getLokiLineFilterOperatorFromLogLineFilter(logLineFilter)
-			if err != nil {
-				return nil, stacktrace.Propagate(err, "An error occurred getting Loki line filter operator from log line filter '%v'", logLineFilter)
+			var lokiLogLineFilter *centralized_logs.LokiLineFilter
+			operator := logLineFilter.GetOperator()
+			filterTextPattern := logLineFilter.GetText()
+			switch operator {
+			case kurtosis_engine_rpc_api_bindings.LogLineFilter_Contain:
+				lokiLogLineFilter = centralized_logs.NewDoesContainLokiLineFilter(filterTextPattern)
+			case kurtosis_engine_rpc_api_bindings.LogLineFilter_DoesNotContain:
+				lokiLogLineFilter = centralized_logs.NewDoesNotContainLokiLineFilter(filterTextPattern)
+			default:
+				return nil, stacktrace.NewError("Unrecognized log line filter operator '%v' in filter '%v'; this is a bug in Kurtosis", operator, logLineFilter)
 			}
-			lokiLogLineFilter := centralized_logs.NewLokiLineFilter(lokiLogLineFilterOperator, logLineFilter.GetText())
 			lokiLogLineFilters = append(lokiLogLineFilters, lokiLogLineFilter)
 		}
 	}

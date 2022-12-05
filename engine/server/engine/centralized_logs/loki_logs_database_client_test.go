@@ -142,8 +142,7 @@ func TestGetUserServiceLogsWithoutFilter_ValidResponse(t *testing.T) {
 	}
 
 	var emptyLokiLineFilters []*LokiLineFilter
-	emptyLogPipeLine, err := NewLokiLogPipeline(emptyLokiLineFilters)
-	require.NoError(t, err)
+	emptyLogPipeLine := NewLokiLogPipeline(emptyLokiLineFilters)
 
 	userServiceLogsByGuidChan, errChan, closeStreamFunc, err := logsDatabaseClient.GetUserServiceLogs(ctx, enclaveId, userServiceGuids, emptyLogPipeLine)
 	defer closeStreamFunc()
@@ -231,10 +230,9 @@ func TestGetUserServiceLogsWithFilter_ValidResponse(t *testing.T) {
 	}
 
 	lokiLineFilters := []*LokiLineFilter{
-		NewLokiLineFilter(LokiLineFilterOperatorContains, filterText),
+		NewDoesContainLokiLineFilter(filterText),
 	}
-	logPipeLine, err := NewLokiLogPipeline(lokiLineFilters)
-	require.NoError(t, err, "An error occurred creating a new loki log pipeline with line filters '%+v'", lokiLineFilters)
+	logPipeLine := NewLokiLogPipeline(lokiLineFilters)
 
 	userServiceLogsByGuidChan, errChan, closeStreamFunc, err := logsDatabaseClient.GetUserServiceLogs(ctx, enclaveId, userServiceGuids, logPipeLine)
 	defer closeStreamFunc()

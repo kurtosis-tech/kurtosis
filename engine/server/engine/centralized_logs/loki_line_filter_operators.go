@@ -2,34 +2,29 @@ package centralized_logs
 
 //We weren't able to use github.com/dmarkham/enumer enum system here because we can't do this "LokiLineFilterOperator_|="
 
-type LokiLineFilterOperator int
+type lokiLineFilterOperator int
 
 const (
-	// Remember to upgrade allLoLineFilterOperators var if you add a new value here
-	lokiLineFilterOperatorUndefined LokiLineFilterOperator = iota
-	LokiLineFilterOperatorContains
-	LokiLineFilterOperatorDoesNotContains
+	// Remember to upgrade allLokiLineFilterOperators var if you add a new value here
+	lokiLineFilterOperatorUndefined lokiLineFilterOperator = iota
+	lokiLineFilterOperatorContains
+	lokiLineFilterOperatorDoesNotContains
 
 	containsValueStr = "|="
 	doesNotContainsValueStr = "!="
 	unknownValueStr = "unknown"
 )
 
-var allLoLineFilterOperators = map[LokiLineFilterOperator]bool{
-	LokiLineFilterOperatorContains: true,
-	LokiLineFilterOperatorDoesNotContains: true,
-}
-
-func (filterOperator LokiLineFilterOperator) String() string {
+func (filterOperator lokiLineFilterOperator) String() string {
 	switch filterOperator {
-	case LokiLineFilterOperatorContains:
+	case lokiLineFilterOperatorContains:
 		return containsValueStr
-	case LokiLineFilterOperatorDoesNotContains:
+	case lokiLineFilterOperatorDoesNotContains:
 		return doesNotContainsValueStr
 	}
 	return unknownValueStr
 }
 
-func (filterOperator LokiLineFilterOperator) IsDefined() bool {
+func (filterOperator lokiLineFilterOperator) IsDefined() bool {
 	return  filterOperator != lokiLineFilterOperatorUndefined
 }

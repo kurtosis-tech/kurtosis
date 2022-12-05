@@ -177,7 +177,7 @@ message GetServiceLogsArgs {
   // If true, It will follow the container logs
   bool follow_logs = 3;
   // The log lines filter pipe, the first filter is applied over the founded log lines, the second filter is applied over the filter one result and so on (like grep)
-  repeated LogLineFilter line_filters =4 ;
+  repeated LogLineFilter line_filters = 4;
 }
 
 message GetServiceLogsResponse {
@@ -195,9 +195,9 @@ message LogLine {
 
 message LogLineFilter {
   enum LogLineOperator {
-    Contain = 0;
-    DoesNotContain = 1;
+    CONTAIN = 0;
+    DOES_NOT_CONTAIN = 1;
   }
   LogLineOperator operator = 1;
-  string text = 2;
+  string text_pattern = 2;
 }

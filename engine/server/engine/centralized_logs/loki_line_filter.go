@@ -3,19 +3,26 @@ package centralized_logs
 import "fmt"
 
 type LokiLineFilter struct {
-	operator LokiLineFilterOperator
-	text string
+	operator lokiLineFilterOperator
+	text     string
 }
 
-func NewLokiLineFilter(operator LokiLineFilterOperator, text string) *LokiLineFilter {
+func NewDoesContainLokiLineFilter(text string) *LokiLineFilter {
+	operator := lokiLineFilterOperatorContains
 	return &LokiLineFilter{operator: operator, text: text}
 }
+
+func NewDoesNotContainLokiLineFilter(text string) *LokiLineFilter {
+	operator := lokiLineFilterOperatorDoesNotContains
+	return &LokiLineFilter{operator: operator, text: text}
+}
+
 
 func (lineFilter *LokiLineFilter) GetText() string {
 	return lineFilter.text
 }
 
-func (lineFilter *LokiLineFilter) GetOperator() LokiLineFilterOperator {
+func (lineFilter *LokiLineFilter) GetOperator() lokiLineFilterOperator {
 	return lineFilter.operator
 }
 

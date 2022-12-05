@@ -550,7 +550,6 @@ func getQueryParamValue(
 
 	queryParamValue := streamSelectorInQuery
 
-
 	if lokiLogPipelineObj != nil{
 		queryParamValue = fmt.Sprintf("%s %s", queryParamValue, lokiLogPipelineObj.PipeLineStringify())
 	}
