@@ -1,5 +1,8 @@
 # TBD
 
+### Changes
+- Added automated installation of tab completion with brew installation.
+
 ### Fixes
 - Fixed a bug which was happening on small terminal windows regarding the display of the progress bar and progress info
 
