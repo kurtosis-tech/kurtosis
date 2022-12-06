@@ -11,7 +11,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/sirupsen/logrus"
-	"sync"
 )
 
 const (
@@ -74,30 +73,37 @@ func (validator *StartosisValidator) validateAnUpdateEnvironment(instructions []
 
 func (validator *StartosisValidator) downloadAndValidateImagesAccountingForProgress(ctx context.Context, environment *startosis_validator.ValidatorEnvironment, starlarkRunResponseLineStream chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine) bool {
 	isValidationFailure := false
-	wg := &sync.WaitGroup{}
 
-	totalImageNumberToValidate, imageValidationStarted, imageValidationFinished, errors := validator.dockerImagesValidator.ValidateAsync(ctx, environment, wg)
+	errors := make(chan error)
+	imageValidationStarted := make(chan string)
+	imageValidationFinished := make(chan string)
+	go validator.dockerImagesValidator.Validate(ctx, environment, imageValidationStarted, imageValidationFinished, errors)
+
 	numberOfImageValidated := uint32(0)
-	readChannelSubroutineReturned := make(chan bool)
+	totalImageNumberToValidate := environment.GetNumberOfContainerImages()
+
+	waitForErrorChannelToBeClosed := make(chan bool)
+	defer close(waitForErrorChannelToBeClosed)
 
 	go func() {
 		var imageCurrentlyBeingValidated []string
 		// we read the three channels to update imageCurrentlyBeingValidated and return progress info back to the CLI
-		// it returns as soon as one channel is closed
+		// it returns when the error channel is closed. The error channel is the reference here as we don't want to
+		// hide an error from the user. I.e. we don't want this function to return before the error channel is closed
 		for {
 			select {
 			case image, isChanOpen := <-imageValidationStarted:
 				if !isChanOpen {
-					readChannelSubroutineReturned <- true
-					return
+					// the subroutine returns when the error channel is closed
+					continue
 				}
 				logrus.Debugf("Received image validation started event: '%s'", image)
 				imageCurrentlyBeingValidated = append(imageCurrentlyBeingValidated, image)
 				updateProgressWithDownloadInfo(starlarkRunResponseLineStream, imageCurrentlyBeingValidated, numberOfImageValidated, totalImageNumberToValidate)
 			case image, isChanOpen := <-imageValidationFinished:
 				if !isChanOpen {
-					readChannelSubroutineReturned <- true
-					return
+					// the subroutine returns when the error channel is closed
+					continue
 				}
 				numberOfImageValidated++
 				logrus.Debugf("Received image validation finished event: '%s'", image)
@@ -105,7 +111,9 @@ func (validator *StartosisValidator) downloadAndValidateImagesAccountingForProgr
 				updateProgressWithDownloadInfo(starlarkRunResponseLineStream, imageCurrentlyBeingValidated, numberOfImageValidated, totalImageNumberToValidate)
 			case err, isChanOpen := <-errors:
 				if !isChanOpen {
-					readChannelSubroutineReturned <- true
+					// the error channel is the important. If it's closed, then all errors have been forwarded to
+					// starlarkRunResponseLineStream and this method can return
+					waitForErrorChannelToBeClosed <- true
 					return
 				}
 				logrus.Debugf("Received an error during image validation: '%s'", err.Error())
@@ -117,12 +125,10 @@ func (validator *StartosisValidator) downloadAndValidateImagesAccountingForProgr
 	}()
 
 	logrus.Debug("Waiting for all images to be downloaded and validated")
-	wg.Wait()
-	close(imageValidationStarted)
-	close(imageValidationFinished)
-	close(errors)
-	// block until the subroutine returned to make sure we don't "flushed" all channels to starlarkRunResponseLineStream
-	<-readChannelSubroutineReturned
+
+	// block until the error channel is closed to make sure we forward _all_ errors to
+	// starlarkRunResponseLineStream before returning
+	<-waitForErrorChannelToBeClosed
 
 	return isValidationFailure
 }
