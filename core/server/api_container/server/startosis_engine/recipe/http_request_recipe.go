@@ -129,6 +129,7 @@ func (recipe *HttpRequestRecipe) extract(body []byte) (map[string]starlark.Compa
 			return nil, stacktrace.Propagate(err, "An error occurred when parsing field extractor '%v'", extractor)
 		}
 		iter := query.Run(jsonBody)
+		foundMatch := false
 		for {
 			matchValue, ok := iter.Next()
 			if !ok {
@@ -154,10 +155,13 @@ func (recipe *HttpRequestRecipe) extract(body []byte) (map[string]starlark.Compa
 				}
 				logrus.Debugf("Parsed successfully %v %v", matchValue, parsedMatchValue)
 				extractorResult[extractorKey] = parsedMatchValue
+				foundMatch = true
 				break
 			}
 		}
-		return nil, stacktrace.NewError("No field '%v' was found on input '%v'", extractor, body)
+		if !foundMatch {
+			return nil, stacktrace.NewError("No field '%v' was found on input '%v'", extractor, body)
+		}
 	}
 	logrus.Debugf("Extractor result map '%v'", extractorResult)
 	return extractorResult, nil
