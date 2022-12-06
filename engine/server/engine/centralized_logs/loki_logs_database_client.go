@@ -577,7 +577,7 @@ func getQueryParamValue(
 
 	var queryParamValue string
 	if conjunctiveLogLineFilters != nil {
-		queryParamValue = fmt.Sprintf("%s %s", queryParamValue, conjunctiveLogLineFilters.GetConjunctiveLogLineFiltersString())
+		queryParamValue = fmt.Sprintf("%s %s", streamSelectorInQuery, conjunctiveLogLineFilters.GetConjunctiveLogLineFiltersString())
 	} else {
 		queryParamValue = streamSelectorInQuery
 	}
