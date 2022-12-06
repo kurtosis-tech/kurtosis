@@ -33,7 +33,7 @@ def run(args):
 			"input": ".query.input"
 		}
 	)
-	response = get_value(get_recipe)
+	response = request(get_recipe)
 	assert(response["code"], "==", 200)
 	assert("My test returned " + response["code"], "==", "My test returned 200")
 	assert(response["code"], "!=", 500)
@@ -55,7 +55,7 @@ def run(args):
 			"my-body": ".body"
 		}
 	)
-	post_response = get_value(post_recipe)
+	post_response = request(post_recipe)
 	assert(post_response["code"], "==", 200)
 	assert(post_response["my-body"], "==", "post_output")
 `

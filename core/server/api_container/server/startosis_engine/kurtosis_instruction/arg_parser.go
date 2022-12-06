@@ -20,15 +20,19 @@ import (
 )
 
 const (
-	serviceIdArgName         = "service_id"
-	serviceConfigArgName     = "config"
-	defineFactArgName        = "define_fact"
-	httpRequestRecipeArgName = "recipe"
+	serviceIdArgName     = "service_id"
+	serviceConfigArgName = "config"
+	defineFactArgName    = "define_fact"
+	requestArgName       = "request"
 
 	containerImageNameKey = "image"
 	factNameArgName       = "fact_name"
 	usedPortsKey          = "ports"
 	// TODO remove this when we have the Portal as this is a temporary hack to meet the NEAR use case
+	serviceIdKey   = "service_id"
+	contentTypeKey = "content_type"
+	bodyKey        = "body"
+
 	publicPortsKey                 = "public_ports"
 	entryPointArgsKey              = "entrypoint"
 	cmdArgsKey                     = "cmd"
@@ -40,7 +44,7 @@ const (
 	fieldExtractorKey              = "field_extractor"
 	privateIPAddressPlaceholderKey = "private_ip_address_placeholder"
 
-	httpRequestExtractorsKey = "extractors"
+	httpRequestExtractorsKey = "extract"
 
 	portNumberKey   = "number"
 	portProtocolKey = "protocol"
@@ -126,28 +130,28 @@ func ParseHttpRequestFactRecipe(serviceConfig *starlarkstruct.Struct) (*kurtosis
 	}
 }
 
-func ParseHttpRequestRecipe(serviceConfig *starlarkstruct.Struct) (*recipe.HttpRequestRecipe, *startosis_errors.InterpretationError) {
-	serviceId, interpretationErr := extractStringValue(serviceConfig, "service_id", defineFactArgName)
+func ParseHttpRequestRecipe(recipeConfig *starlarkstruct.Struct) (*recipe.HttpRequestRecipe, *startosis_errors.InterpretationError) {
+	serviceId, interpretationErr := extractStringValue(recipeConfig, serviceIdKey, requestArgName)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
 
-	portId, interpretationErr := extractStringValue(serviceConfig, portIdKey, defineFactArgName)
+	portId, interpretationErr := extractStringValue(recipeConfig, portIdKey, requestArgName)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
 
-	endpoint, interpretationErr := extractStringValue(serviceConfig, requestEndpointKey, defineFactArgName)
+	endpoint, interpretationErr := extractStringValue(recipeConfig, requestEndpointKey, requestArgName)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
 
-	method, interpretationErr := extractStringValue(serviceConfig, requestMethodEndpointKey, defineFactArgName)
+	method, interpretationErr := extractStringValue(recipeConfig, requestMethodEndpointKey, requestArgName)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
 
-	extractors, interpretationErr := parseHttpRequestExtractors(serviceConfig)
+	extractors, interpretationErr := parseHttpRequestExtractors(recipeConfig)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
@@ -156,12 +160,12 @@ func ParseHttpRequestRecipe(serviceConfig *starlarkstruct.Struct) (*recipe.HttpR
 		builtConfig := recipe.NewGetHttpRequestRecipe(service.ServiceID(serviceId), portId, endpoint, extractors)
 		return builtConfig, nil
 	} else if method == postRequestMethod {
-		contentType, interpretationErr := extractStringValue(serviceConfig, "content_type", defineFactArgName)
+		contentType, interpretationErr := extractStringValue(recipeConfig, contentTypeKey, defineFactArgName)
 		if interpretationErr != nil {
 			return nil, interpretationErr
 		}
 
-		body, interpretationErr := extractStringValue(serviceConfig, "body", defineFactArgName)
+		body, interpretationErr := extractStringValue(recipeConfig, bodyKey, defineFactArgName)
 		if interpretationErr != nil {
 			return nil, interpretationErr
 		}
@@ -471,7 +475,7 @@ func parseHttpRequestExtractors(recipe *starlarkstruct.Struct) (map[string]strin
 	if err != nil {
 		return map[string]string{}, nil
 	}
-	httpRequestExtractorsArg, interpretationErr := extractMapStringStringValue(recipe, httpRequestExtractorsKey, httpRequestRecipeArgName)
+	httpRequestExtractorsArg, interpretationErr := extractMapStringStringValue(recipe, httpRequestExtractorsKey, requestArgName)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}

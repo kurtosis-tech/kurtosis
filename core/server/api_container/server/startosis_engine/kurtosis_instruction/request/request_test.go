@@ -1,4 +1,4 @@
-package get_value
+package request
 
 import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
@@ -30,7 +30,7 @@ func TestGetValueInstruction_StringRepresentationWorks(t *testing.T) {
 		"recipe": testRecipeConfig,
 	}
 	starlarkKwargs.Freeze()
-	getValueInstruction := NewGetValueInstruction(
+	getValueInstruction := NewRequestInstruction(
 		emptyServiceNetwork,
 		kurtosis_instruction.NewInstructionPosition(1, 1, "dummyFile"),
 		nil,
@@ -39,6 +39,6 @@ func TestGetValueInstruction_StringRepresentationWorks(t *testing.T) {
 		testUuid,
 		starlarkKwargs,
 	)
-	expectedStr := `get_value(recipe=struct(body="post_output", content_type="text/plain", endpoint="/", method="POST", port_id="http-port", service_id="web-server"))`
+	expectedStr := `request(recipe=struct(body="post_output", content_type="text/plain", endpoint="/", method="POST", port_id="http-port", service_id="web-server"))`
 	require.Equal(t, expectedStr, getValueInstruction.String())
 }
