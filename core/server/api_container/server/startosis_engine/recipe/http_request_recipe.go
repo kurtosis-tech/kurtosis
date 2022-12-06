@@ -123,7 +123,7 @@ func (recipe *HttpRequestRecipe) extract(body []byte) (map[string]starlark.Compa
 	}
 	extractorResult := map[string]starlark.Comparable{}
 	for extractorKey, extractor := range recipe.extractors {
-		logrus.Debugf("Running against '%v' '%v' '%v'", string(body), jsonBody, extractor)
+		logrus.Debugf("Running against '%v' '%v'", jsonBody, extractor)
 		query, err := gojq.Parse(extractor)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred when parsing field extractor '%v'", extractor)
@@ -159,6 +159,7 @@ func (recipe *HttpRequestRecipe) extract(body []byte) (map[string]starlark.Compa
 		}
 		return nil, stacktrace.NewError("No field '%v' was found on input '%v'", extractor, body)
 	}
+	logrus.Debugf("Extractor result map '%v'", extractorResult)
 	return extractorResult, nil
 }
 
