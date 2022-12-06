@@ -20,9 +20,10 @@ import (
 )
 
 const (
-	serviceIdArgName     = "service_id"
-	serviceConfigArgName = "config"
-	defineFactArgName    = "define_fact"
+	serviceIdArgName         = "service_id"
+	serviceConfigArgName     = "config"
+	defineFactArgName        = "define_fact"
+	httpRequestRecipeArgName = "recipe"
 
 	containerImageNameKey = "image"
 	factNameArgName       = "fact_name"
@@ -38,6 +39,8 @@ const (
 	requestMethodEndpointKey       = "method"
 	fieldExtractorKey              = "field_extractor"
 	privateIPAddressPlaceholderKey = "private_ip_address_placeholder"
+
+	httpRequestExtractorsKey = "extractors"
 
 	portNumberKey   = "number"
 	portProtocolKey = "protocol"
@@ -144,8 +147,13 @@ func ParseHttpRequestRecipe(serviceConfig *starlarkstruct.Struct) (*recipe.HttpR
 		return nil, interpretationErr
 	}
 
+	extractors, interpretationErr := parseHttpRequestExtractors(serviceConfig)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
 	if method == getRequestMethod {
-		builtConfig := recipe.NewGetHttpRequestRecipe(service.ServiceID(serviceId), portId, endpoint)
+		builtConfig := recipe.NewGetHttpRequestRecipe(service.ServiceID(serviceId), portId, endpoint, extractors)
 		return builtConfig, nil
 	} else if method == postRequestMethod {
 		contentType, interpretationErr := extractStringValue(serviceConfig, "content_type", defineFactArgName)
@@ -158,7 +166,7 @@ func ParseHttpRequestRecipe(serviceConfig *starlarkstruct.Struct) (*recipe.HttpR
 			return nil, interpretationErr
 		}
 
-		builtConfig := recipe.NewPostHttpRequestRecipe(service.ServiceID(serviceId), portId, contentType, endpoint, body)
+		builtConfig := recipe.NewPostHttpRequestRecipe(service.ServiceID(serviceId), portId, contentType, endpoint, body, extractors)
 		return builtConfig, nil
 	} else {
 		return nil, startosis_errors.NewInterpretationError("Define fact HTTP method not recognized")
@@ -455,6 +463,19 @@ func parseFilesArtifactMountDirpaths(serviceConfig *starlarkstruct.Struct) (map[
 		return nil, interpretationErr
 	}
 	return filesArtifactMountDirpathsArg, nil
+}
+
+func parseHttpRequestExtractors(recipe *starlarkstruct.Struct) (map[string]string, *startosis_errors.InterpretationError) {
+	_, err := recipe.Attr(httpRequestExtractorsKey)
+	//an error here means that no argument was found which is alright as this is an optional
+	if err != nil {
+		return map[string]string{}, nil
+	}
+	httpRequestExtractorsArg, interpretationErr := extractMapStringStringValue(recipe, httpRequestExtractorsKey, httpRequestRecipeArgName)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	return httpRequestExtractorsArg, nil
 }
 
 func parsePrivateIPAddressPlaceholder(serviceConfig *starlarkstruct.Struct) (string, *startosis_errors.InterpretationError) {
