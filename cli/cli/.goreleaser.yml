@@ -1,6 +1,7 @@
 # Make sure to check the documentation at http://goreleaser.com
 before:
-  hooks: []
+  hooks:
+    - ./scripts/completions.sh
 
 builds:
   - id: cli
@@ -28,6 +29,7 @@ archives:
     # Therefore, we set this to a glob of files that definitely don't exist
     files:
       - "*THIS_FILE_DOES_NOT_EXIST*"
+      - completions/*
     name_template: kurtosis-cli_{{ .Version }}_{{ .Os }}_{{ .Arch }}
 
 # Gemfury accepts deb & rpm packages but not APK, so we build these two separately
@@ -79,7 +81,6 @@ brews:
     commit_msg_template: "Automated formula update for the CLI, version {{ .Tag }}"
     homepage: "https://www.kurtosistech.com"
     description: "CLI for managing Kurtosis environments."
-
     # One day, we'll probably want to put a license
     # license: SOME-SPDX-LICENSE
 
@@ -88,6 +89,11 @@ brews:
     # When this is fixed, we can remove this section
     install: |
       bin.install "kurtosis"
+      bash_completion.install "completions/kurtosis.bash" => "kurtosis"
+      zsh_completion.install "completions/kurtosis.zsh" => "_kurtosis"
+      fish_completion.install "completions/kurtosis.fish"  
+    caveats: |
+      The kurtosis CLI is installed with tab completion support. For more details visit https://docs.kurtosis.com/. 
 
 publishers:
   # Inspired by https://netdevops.me/2021/building-and-publishing-deb/rpm-packages-with-goreleaser-and-fury.io/

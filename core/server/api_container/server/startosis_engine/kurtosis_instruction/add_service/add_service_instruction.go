@@ -198,7 +198,7 @@ func (instruction *AddServiceInstruction) ValidateAndUpdateEnvironment(environme
 		}
 	}
 	environment.AddServiceId(instruction.serviceId)
-	environment.AppendRequiredDockerImage(instruction.serviceConfig.ContainerImageName)
+	environment.AppendRequiredContainerImage(instruction.serviceConfig.ContainerImageName)
 	return nil
 }
 

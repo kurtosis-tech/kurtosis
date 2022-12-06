@@ -606,7 +606,7 @@ func (apicService ApiContainerService) RenderTemplatesToFilesArtifact(ctx contex
 // ====================================================================================================
 func transformPortSpecToApiPort(port *port_spec.PortSpec) (*kurtosis_core_rpc_api_bindings.Port, error) {
 	portNumUint16 := port.GetNumber()
-	portSpecProto := port.GetProtocol()
+	portSpecProto := port.GetTransportProtocol()
 	// Yes, this isn't the most efficient way to do this, but the map is tiny so it doesn't matter
 	var apiProto kurtosis_core_rpc_api_bindings.Port_Protocol
 	foundApiProto := false

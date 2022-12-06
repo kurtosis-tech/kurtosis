@@ -685,8 +685,10 @@ export namespace StarlarkExecutionError {
 }
 
 export class StarlarkRunProgress extends jspb.Message {
-  getCurrentStepInfo(): string;
-  setCurrentStepInfo(value: string): StarlarkRunProgress;
+  getCurrentStepInfoList(): Array<string>;
+  setCurrentStepInfoList(value: Array<string>): StarlarkRunProgress;
+  clearCurrentStepInfoList(): StarlarkRunProgress;
+  addCurrentStepInfo(value: string, index?: number): StarlarkRunProgress;
 
   getTotalSteps(): number;
   setTotalSteps(value: number): StarlarkRunProgress;
@@ -704,7 +706,7 @@ export class StarlarkRunProgress extends jspb.Message {
 
 export namespace StarlarkRunProgress {
   export type AsObject = {
-    currentStepInfo: string,
+    currentStepInfoList: Array<string>,
     totalSteps: number,
     currentStepNumber: number,
   }

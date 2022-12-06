@@ -46,7 +46,7 @@ func CreateEngine(
 	}
 	engineGuid := engine.EngineGUID(engineGuidStr)
 
-	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, consts.KurtosisServersPortProtocol)
+	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, consts.KurtosisServersPortProtocol, "")
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -55,7 +55,7 @@ func CreateEngine(
 			consts.KurtosisServersPortProtocol.String(),
 		)
 	}
-	privateGrpcProxyPortSpec, err := port_spec.NewPortSpec(grpcProxyPortNum, consts.KurtosisServersPortProtocol)
+	privateGrpcProxyPortSpec, err := port_spec.NewPortSpec(grpcProxyPortNum, consts.KurtosisServersPortProtocol, "")
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -192,7 +192,7 @@ func CreateEngine(
 		maxWaitForEngineContainerAvailabilityRetries,
 		timeBetweenWaitForEngineContainerAvailabilityRetries,
 	); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred waiting for the engine grpc port '%v/%v' to become available", privateGrpcPortSpec.GetProtocol(), privateGrpcPortSpec.GetNumber())
+		return nil, stacktrace.Propagate(err, "An error occurred waiting for the engine grpc port '%v/%v' to become available", privateGrpcPortSpec.GetTransportProtocol(), privateGrpcPortSpec.GetNumber())
 	}
 
 	// TODO UNCOMMENT THIS ONCE WE HAVE GRPC-PROXY WIRED UP!!
@@ -206,7 +206,7 @@ func CreateEngine(
 			maxWaitForEngineContainerAvailabilityRetries,
 			timeBetweenWaitForEngineContainerAvailabilityRetries,
 		); err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred waiting for the engine grpc proxy port '%v/%v' to become available", privateGrpcProxyPortSpec.GetProtocol(), privateGrpcProxyPortSpec.GetNumber())
+			return nil, stacktrace.Propagate(err, "An error occurred waiting for the engine grpc proxy port '%v/%v' to become available", privateGrpcProxyPortSpec.GetTransportProtocol(), privateGrpcProxyPortSpec.GetNumber())
 		}*/
 
 	shouldRemoveNamespace = false

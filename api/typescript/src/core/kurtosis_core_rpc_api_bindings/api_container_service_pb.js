@@ -583,7 +583,7 @@ if (goog.DEBUG && !COMPILED) {
  * @constructor
  */
 proto.api_container_api.StarlarkRunProgress = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+  jspb.Message.initialize(this, opt_data, 0, -1, proto.api_container_api.StarlarkRunProgress.repeatedFields_, null);
 };
 goog.inherits(proto.api_container_api.StarlarkRunProgress, jspb.Message);
 if (goog.DEBUG && !COMPILED) {
@@ -6258,6 +6258,13 @@ proto.api_container_api.StarlarkExecutionError.prototype.setErrorMessage = funct
 
 
 
+/**
+ * List of repeated fields within this message type.
+ * @private {!Array<number>}
+ * @const
+ */
+proto.api_container_api.StarlarkRunProgress.repeatedFields_ = [1];
+
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
@@ -6289,7 +6296,7 @@ proto.api_container_api.StarlarkRunProgress.prototype.toObject = function(opt_in
  */
 proto.api_container_api.StarlarkRunProgress.toObject = function(includeInstance, msg) {
   var f, obj = {
-    currentStepInfo: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    currentStepInfoList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f,
     totalSteps: jspb.Message.getFieldWithDefault(msg, 2, 0),
     currentStepNumber: jspb.Message.getFieldWithDefault(msg, 3, 0)
   };
@@ -6330,7 +6337,7 @@ proto.api_container_api.StarlarkRunProgress.deserializeBinaryFromReader = functi
     switch (field) {
     case 1:
       var value = /** @type {string} */ (reader.readString());
-      msg.setCurrentStepInfo(value);
+      msg.addCurrentStepInfo(value);
       break;
     case 2:
       var value = /** @type {number} */ (reader.readUint32());
@@ -6369,9 +6376,9 @@ proto.api_container_api.StarlarkRunProgress.prototype.serializeBinary = function
  */
 proto.api_container_api.StarlarkRunProgress.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
-  f = message.getCurrentStepInfo();
+  f = message.getCurrentStepInfoList();
   if (f.length > 0) {
-    writer.writeString(
+    writer.writeRepeatedString(
       1,
       f
     );
@@ -6394,20 +6401,39 @@ proto.api_container_api.StarlarkRunProgress.serializeBinaryToWriter = function(m
 
 
 /**
- * optional string current_step_info = 1;
- * @return {string}
+ * repeated string current_step_info = 1;
+ * @return {!Array<string>}
  */
-proto.api_container_api.StarlarkRunProgress.prototype.getCurrentStepInfo = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
+proto.api_container_api.StarlarkRunProgress.prototype.getCurrentStepInfoList = function() {
+  return /** @type {!Array<string>} */ (jspb.Message.getRepeatedField(this, 1));
+};
+
+
+/**
+ * @param {!Array<string>} value
+ * @return {!proto.api_container_api.StarlarkRunProgress} returns this
+ */
+proto.api_container_api.StarlarkRunProgress.prototype.setCurrentStepInfoList = function(value) {
+  return jspb.Message.setField(this, 1, value || []);
 };
 
 
 /**
  * @param {string} value
+ * @param {number=} opt_index
  * @return {!proto.api_container_api.StarlarkRunProgress} returns this
  */
-proto.api_container_api.StarlarkRunProgress.prototype.setCurrentStepInfo = function(value) {
-  return jspb.Message.setProto3StringField(this, 1, value);
+proto.api_container_api.StarlarkRunProgress.prototype.addCurrentStepInfo = function(value, opt_index) {
+  return jspb.Message.addToRepeatedField(this, 1, value, opt_index);
+};
+
+
+/**
+ * Clears the list making it empty but non-null.
+ * @return {!proto.api_container_api.StarlarkRunProgress} returns this
+ */
+proto.api_container_api.StarlarkRunProgress.prototype.clearCurrentStepInfoList = function() {
+  return this.setCurrentStepInfoList([]);
 };
 
 

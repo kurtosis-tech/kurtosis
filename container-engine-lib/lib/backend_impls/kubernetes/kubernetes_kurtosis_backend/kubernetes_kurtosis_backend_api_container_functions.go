@@ -91,7 +91,7 @@ func (backend KubernetesKurtosisBackend) CreateAPIContainer(
 		return nil, stacktrace.NewError("Found existing API container(s) in enclave '%v'; cannot start a new one", enclaveId)
 	}
 
-	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, consts.KurtosisServersPortProtocol)
+	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, consts.KurtosisServersPortProtocol, "")
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -100,7 +100,7 @@ func (backend KubernetesKurtosisBackend) CreateAPIContainer(
 			consts.KurtosisServersPortProtocol.String(),
 		)
 	}
-	privateGrpcProxyPortSpec, err := port_spec.NewPortSpec(grpcProxyPortNum, consts.KurtosisServersPortProtocol)
+	privateGrpcProxyPortSpec, err := port_spec.NewPortSpec(grpcProxyPortNum, consts.KurtosisServersPortProtocol, "")
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -383,7 +383,7 @@ func (backend KubernetesKurtosisBackend) CreateAPIContainer(
 		maxWaitForApiContainerContainerAvailabilityRetries,
 		timeBetweenWaitForApiContainerContainerAvailabilityRetries,
 	); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred waiting for the API container grpc port '%v/%v' to become available", privateGrpcPortSpec.GetProtocol(), privateGrpcPortSpec.GetNumber())
+		return nil, stacktrace.Propagate(err, "An error occurred waiting for the API container grpc port '%v/%v' to become available", privateGrpcPortSpec.GetTransportProtocol(), privateGrpcPortSpec.GetNumber())
 	}
 
 	shouldRemoveRoleBinding = false

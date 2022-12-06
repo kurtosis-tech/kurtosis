@@ -82,7 +82,7 @@ func getModulePortBindingString(module *module.Module) string {
 		"%v: %v/%v",
 		grpcPortId,
 		privatePort.GetNumber(),
-		strings.ToLower(privatePort.GetProtocol().String()),
+		strings.ToLower(privatePort.GetTransportProtocol().String()),
 	)
 
 	// If the container is running, add host machine port binding information

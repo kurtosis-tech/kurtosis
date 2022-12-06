@@ -3,6 +3,20 @@
 - Prepared the Kurtosis engine server to do search in logs
 - Adding `log line filters` parameter in the `GetServiceLogs` Kurtosis engine endpoint
 
+### Features
+- The CLI now displays the list of container images currently being downloaded and validated during the Starlark
+validation step
+
+### Changes
+- Remove completion files 
+
+# 0.57.8
+
+# 0.57.7
+
+### Changes
+- Added automated installation of tab completion with brew installation.
+
 ### Fixes
 - Fixed a bug which was happening on small terminal windows regarding the display of the progress bar and progress info
 
@@ -13,6 +27,7 @@ code successfully run in dry-run mode" and "Error encountered running Starlark c
 run in dry-run mode (and without the "in dry-run mode" when the script is executed for real)\
 - Added `RunStarlarkScriptBlocking`, `RunStarlarkPackageBlocking` and `RunStarlarkRemotePackageBlocking` functions
 to the enclave context to facilitate automated testing in our current modules.
+- Added capability for container-engine to store optional application protocol for docker.
 
 ### Fixes
 - Don't duplicate instruction position information in `store_service_files`

@@ -47,7 +47,7 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, ins
 		totalNumberOfInstructions := uint32(len(instructions))
 		for index, instruction := range instructions {
 			instructionNumber := uint32(index + 1)
-			progress := binding_constructors.NewStarlarkRunResponseLineFromProgressInfo(
+			progress := binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(
 				progressMsg, instructionNumber, totalNumberOfInstructions)
 			starlarkRunResponseLineStream <- progress
 
