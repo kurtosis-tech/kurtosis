@@ -272,6 +272,11 @@ export class GetServiceLogsArgs extends jspb.Message {
   getFollowLogs(): boolean;
   setFollowLogs(value: boolean): GetServiceLogsArgs;
 
+  getConjunctiveFiltersList(): Array<LogLineFilter>;
+  setConjunctiveFiltersList(value: Array<LogLineFilter>): GetServiceLogsArgs;
+  clearConjunctiveFiltersList(): GetServiceLogsArgs;
+  addConjunctiveFilters(value?: LogLineFilter, index?: number): LogLineFilter;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): GetServiceLogsArgs.AsObject;
   static toObject(includeInstance: boolean, msg: GetServiceLogsArgs): GetServiceLogsArgs.AsObject;
@@ -285,6 +290,7 @@ export namespace GetServiceLogsArgs {
     enclaveId: string,
     serviceGuidSetMap: Array<[string, boolean]>,
     followLogs: boolean,
+    conjunctiveFiltersList: Array<LogLineFilter.AsObject>,
   }
 }
 
@@ -327,6 +333,33 @@ export class LogLine extends jspb.Message {
 export namespace LogLine {
   export type AsObject = {
     lineList: Array<string>,
+  }
+}
+
+export class LogLineFilter extends jspb.Message {
+  getOperator(): LogLineFilter.LogLineOperator;
+  setOperator(value: LogLineFilter.LogLineOperator): LogLineFilter;
+
+  getTextPattern(): string;
+  setTextPattern(value: string): LogLineFilter;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): LogLineFilter.AsObject;
+  static toObject(includeInstance: boolean, msg: LogLineFilter): LogLineFilter.AsObject;
+  static serializeBinaryToWriter(message: LogLineFilter, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): LogLineFilter;
+  static deserializeBinaryFromReader(message: LogLineFilter, reader: jspb.BinaryReader): LogLineFilter;
+}
+
+export namespace LogLineFilter {
+  export type AsObject = {
+    operator: LogLineFilter.LogLineOperator,
+    textPattern: string,
+  }
+
+  export enum LogLineOperator { 
+    DOES_CONTAIN = 0,
+    DOES_NOT_CONTAIN = 1,
   }
 }
 

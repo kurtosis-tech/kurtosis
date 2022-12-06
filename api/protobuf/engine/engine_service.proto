@@ -176,7 +176,8 @@ message GetServiceLogsArgs {
   map<string, bool> service_guid_set = 2;
   // If true, It will follow the container logs
   bool follow_logs = 3;
-
+  // The conjunctive log lines filters, the first filter is applied over the found log lines, the second filter is applied over the filter one result and so on (like grep)
+  repeated LogLineFilter conjunctive_filters = 4;
 }
 
 message GetServiceLogsResponse {
@@ -190,4 +191,13 @@ message GetServiceLogsResponse {
 // TODO add timestamp as well, for when we do timestamp-handling on the client side
 message LogLine {
   repeated string line = 1;
+}
+
+message LogLineFilter {
+  enum LogLineOperator {
+    DOES_CONTAIN = 0;
+    DOES_NOT_CONTAIN = 1;
+  }
+  LogLineOperator operator = 1;
+  string text_pattern = 2;
 }
