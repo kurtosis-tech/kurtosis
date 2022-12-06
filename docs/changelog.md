@@ -1,4 +1,8 @@
 # TBD
+
+### Breaking Changes
+- Refactor one-off HTTP request command
+
 ### Changes
 - Prepared the Kurtosis engine server to do search in logs
 - Adding `log line filters` parameter in the `GetServiceLogs` Kurtosis engine endpoint
