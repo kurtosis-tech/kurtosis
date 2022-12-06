@@ -98,13 +98,16 @@ func (recipe *HttpRequestRecipe) Execute(ctx context.Context, serviceNetwork ser
 	body, err := io.ReadAll(response.Body)
 	logrus.Debugf("Got response '%v'", string(body))
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred when reading HTTP response body")
+		return nil, stacktrace.Propagate(err, "An error occurred while reading HTTP response body")
 	}
 	resultDict := map[string]starlark.Comparable{
 		BodyKey:       starlark.String(body),
 		StatusCodeKey: starlark.MakeInt(response.StatusCode),
 	}
 	extractDict, err := recipe.extract(body)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while running extractors on HTTP response body")
+	}
 	for extractorKey, extractorValue := range extractDict {
 		resultDict[extractorKey] = extractorValue
 	}
@@ -168,11 +171,11 @@ func (recipe *HttpRequestRecipe) extract(body []byte) (map[string]starlark.Compa
 }
 
 func (recipe *HttpRequestRecipe) CreateStarlarkReturnValue(resultUuid string) *starlark.Dict {
-	dict := starlark.NewDict(2)
-	dict.SetKey(starlark.String(BodyKey), starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, BodyKey)))
-	dict.SetKey(starlark.String(StatusCodeKey), starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, StatusCodeKey)))
+	dict := &starlark.Dict{}
+	_ = dict.SetKey(starlark.String(BodyKey), starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, BodyKey)))
+	_ = dict.SetKey(starlark.String(StatusCodeKey), starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, StatusCodeKey)))
 	for extractorKey := range recipe.extractors {
-		dict.SetKey(starlark.String(extractorKey), starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, extractorKey)))
+		_ = dict.SetKey(starlark.String(extractorKey), starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, extractorKey)))
 	}
 	dict.Freeze()
 	return dict
