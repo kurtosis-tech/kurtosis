@@ -531,7 +531,7 @@ func GetStringMapFromAnnotationMap(labelMap map[*kubernetes_annotation_key.Kuber
 func GetKubernetesServicePortsFromPrivatePortSpecs(privatePorts map[string]*port_spec.PortSpec) ([]apiv1.ServicePort, error) {
 	result := []apiv1.ServicePort{}
 	for portId, portSpec := range privatePorts {
-		kurtosisProtocol := portSpec.GetProtocol()
+		kurtosisProtocol := portSpec.GetTransportProtocol()
 		kubernetesProtocol, found := consts.KurtosisPortProtocolToKubernetesPortProtocolTranslator[kurtosisProtocol]
 		if !found {
 			// Should never happen because we enforce completeness via unit test
@@ -560,7 +560,7 @@ func GetKubernetesServicePortsFromPrivatePortSpecs(privatePorts map[string]*port
 func GetKubernetesContainerPortsFromPrivatePortSpecs(privatePorts map[string]*port_spec.PortSpec) ([]apiv1.ContainerPort, error) {
 	result := []apiv1.ContainerPort{}
 	for portId, portSpec := range privatePorts {
-		kurtosisProtocol := portSpec.GetProtocol()
+		kurtosisProtocol := portSpec.GetTransportProtocol()
 		kubernetesProtocol, found := consts.KurtosisPortProtocolToKubernetesPortProtocolTranslator[kurtosisProtocol]
 		if !found {
 			// Should never happen because we enforce completeness via unit test
@@ -591,7 +591,7 @@ func WaitForPortAvailabilityUsingNetstat(
 ) error {
 	commandStr := fmt.Sprintf(
 		"[ -n \"$(netstat -anp %v | grep LISTEN | grep %v)\" ]",
-		strings.ToLower(portSpec.GetProtocol().String()),
+		strings.ToLower(portSpec.GetTransportProtocol().String()),
 		portSpec.GetNumber(),
 	)
 	execCmd := []string{

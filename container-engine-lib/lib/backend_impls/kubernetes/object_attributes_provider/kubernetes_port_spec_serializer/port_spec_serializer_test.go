@@ -11,13 +11,13 @@ func TestValidSerDe(t *testing.T) {
 	port1Id := "port1"
 	port1Num := uint16(23)
 	port1Protocol := port_spec2.PortProtocol_TCP
-	port1Spec, err := port_spec2.NewPortSpec(port1Num, port1Protocol)
+	port1Spec, err := port_spec2.NewPortSpec(port1Num, port1Protocol, "")
 	require.NoError(t, err, "An unexpected error occurred creating port 1 spec")
 
 	port2Id := "port2"
 	port2Num := uint16(45)
 	port2Protocol := port_spec2.PortProtocol_TCP
-	port2Spec, err := port_spec2.NewPortSpec(port2Num, port2Protocol)
+	port2Spec, err := port_spec2.NewPortSpec(port2Num, port2Protocol, "")
 	require.NoError(t, err, "An unexpected error occurred creating port 2 spec")
 
 	input := map[string]*port_spec2.PortSpec{
@@ -37,7 +37,7 @@ func TestValidSerDe(t *testing.T) {
 		require.True(t, found, "Found port ID '%v' in the output that wasn't in the input", actualPortId)
 
 		require.Equal(t, expectedPortSpec.GetNumber(), actualPortSpec.GetNumber(), "Actual port number for port '%v' doesn't match input", actualPortId)
-		require.Equal(t, expectedPortSpec.GetProtocol(), actualPortSpec.GetProtocol(), "Actual port protocol for port '%v' doesn't match input", actualPortId)
+		require.Equal(t, expectedPortSpec.GetTransportProtocol(), actualPortSpec.GetTransportProtocol(), "Actual port protocol for port '%v' doesn't match input", actualPortId)
 	}
 }
 
@@ -52,7 +52,7 @@ func TestDisallowedCharsSerialization(t *testing.T) {
 		portId := "ohyeah" + disallowedChar
 		portNum := uint16(45)
 		portProtocol := port_spec2.PortProtocol_TCP
-		portSpec, err := port_spec2.NewPortSpec(portNum, portProtocol)
+		portSpec, err := port_spec2.NewPortSpec(portNum, portProtocol, "")
 		require.NoError(t, err, "An unexpected error occurred creating port spec for port with ID '%v'", portId)
 
 		ports := map[string]*port_spec2.PortSpec{
@@ -70,13 +70,13 @@ func TestDuplicatedPortNumDifferentProtoSerialization(t *testing.T) {
 	port1Id := "port1"
 	port1Num := dupedPortNum
 	port1Protocol := port_spec2.PortProtocol_TCP
-	port1Spec, err := port_spec2.NewPortSpec(port1Num, port1Protocol)
+	port1Spec, err := port_spec2.NewPortSpec(port1Num, port1Protocol, "")
 	require.NoError(t, err, "An unexpected error occurred creating port 1 spec")
 
 	port2Id := "port2"
 	port2Num := dupedPortNum
 	port2Protocol := port_spec2.PortProtocol_UDP
-	port2Spec, err := port_spec2.NewPortSpec(port2Num, port2Protocol)
+	port2Spec, err := port_spec2.NewPortSpec(port2Num, port2Protocol, "")
 	require.NoError(t, err, "An unexpected error occurred creating port 2 spec")
 
 	input := map[string]*port_spec2.PortSpec{
@@ -94,13 +94,13 @@ func TestDuplicatedPortNumSameProtoSerialization(t *testing.T) {
 	port1Id := "port1"
 	port1Num := dupedPortNum
 	port1Protocol := port_spec2.PortProtocol_TCP
-	port1Spec, err := port_spec2.NewPortSpec(port1Num, port1Protocol)
+	port1Spec, err := port_spec2.NewPortSpec(port1Num, port1Protocol, "")
 	require.NoError(t, err, "An unexpected error occurred creating port 1 spec")
 
 	port2Id := "port2"
 	port2Num := dupedPortNum
 	port2Protocol := port_spec2.PortProtocol_TCP
-	port2Spec, err := port_spec2.NewPortSpec(port2Num, port2Protocol)
+	port2Spec, err := port_spec2.NewPortSpec(port2Num, port2Protocol, "")
 	require.NoError(t, err, "An unexpected error occurred creating port 2 spec")
 
 	input := map[string]*port_spec2.PortSpec{

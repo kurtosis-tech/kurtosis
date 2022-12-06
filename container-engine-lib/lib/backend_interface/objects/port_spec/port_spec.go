@@ -1,26 +1,45 @@
 package port_spec
 
-import "github.com/kurtosis-tech/stacktrace"
+import (
+	"github.com/kurtosis-tech/stacktrace"
+)
 
 type PortSpec struct {
-	number   uint16
-	protocol PortProtocol
+	number              uint16
+	transportProtocol   PortProtocol
+	applicationProtocol *string
 }
 
-func NewPortSpec(number uint16, protocol PortProtocol) (*PortSpec, error) {
-	if !protocol.IsAPortProtocol() {
-		return nil, stacktrace.NewError("Unrecognized protocol '%v'", protocol.String())
+/*
+	This method accepts port number, transportProtocol and application protocol ( which is optional)
+*/
+func NewPortSpec(number uint16, transportProtocol PortProtocol, maybeApplicationProtocol string) (*PortSpec, error) {
+	var appProtocol *string
+	if maybeApplicationProtocol != "" {
+		appProtocol = &maybeApplicationProtocol
 	}
-	return &PortSpec{
-		number:   number,
-		protocol: protocol,
-	}, nil
+
+	// throw an error if the method receives more than 3 parameters.
+	if !transportProtocol.IsAPortProtocol() {
+		return nil, stacktrace.NewError("Unrecognized transportProtocol '%v'", transportProtocol.String())
+	}
+	portSpec := &PortSpec{
+		number:              number,
+		transportProtocol:   transportProtocol,
+		applicationProtocol: appProtocol,
+	}
+
+	return portSpec, nil
 }
 
 func (spec *PortSpec) GetNumber() uint16 {
 	return spec.number
 }
 
-func (spec *PortSpec) GetProtocol() PortProtocol {
-	return spec.protocol
+func (spec *PortSpec) GetTransportProtocol() PortProtocol {
+	return spec.transportProtocol
+}
+
+func (spec *PortSpec) GetMaybeApplicationProtocol() *string {
+	return spec.applicationProtocol
 }

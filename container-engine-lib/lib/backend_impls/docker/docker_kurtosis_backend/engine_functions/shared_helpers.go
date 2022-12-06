@@ -19,8 +19,6 @@ import (
 	"strings"
 )
 
-
-
 // Gets engines matching the search filters, indexed by their container ID
 func getMatchingEngines(ctx context.Context, filters *engine.EngineFilters, dockerManager *docker_manager.DockerManager) (map[string]*engine.Engine, error) {
 	engineContainerSearchLabels := map[string]string{
@@ -233,7 +231,7 @@ func deserialize_pre_2022_03_02_PortSpecs(specsStr string) (map[string]*port_spe
 			return nil, stacktrace.Propagate(err, "An error occurred converting port protocol string '%v' to a port protocol enum", portProtocolStr)
 		}
 
-		portSpec, err := port_spec.NewPortSpec(portNumUint16, portProtocol)
+		portSpec, err := port_spec.NewPortSpec(portNumUint16, portProtocol, "")
 		if err != nil {
 			return nil, stacktrace.Propagate(
 				err,

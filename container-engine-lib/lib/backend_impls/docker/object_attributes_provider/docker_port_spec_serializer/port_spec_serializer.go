@@ -5,6 +5,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_value"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -19,10 +20,12 @@ const (
 	oldPortNumAndProtocolSeparator = "-"
 	oldPortSpecsSeparator          = "_"
 
-	expectedNumPortIdAndSpecFragments      = 2
-	expectedNumPortNumAndProtocolFragments = 2
-	portUintBase                           = 10
-	portUintBits                           = 16
+	numPortSpecFragmentsWithApplicationProtocol = 3
+	expectedNumPortIdAndSpecFragments           = 2
+	minExpectedPortSpecFragments                = 2
+	maxExpectedPortSpecFragments                = 3
+	portUintBase                                = 10
+	portUintBits                                = 16
 
 	// The maximum number of bytes that a label value can be
 	// See https://github.com/docker/for-mac/issues/2208
@@ -36,28 +39,23 @@ var disallowedPortIdChars = map[string]bool{
 	portSpecsSeparator:          true,
 }
 
+var disallowedCharactersMatcher = regexp.MustCompile(fmt.Sprintf("[%v%v%v]", portNumAndProtocolSeparator, portIdAndInfoSeparator, portSpecsSeparator))
+
 // NOTE: We use a custom serialization format here (rather than, e.g., JSON) because there's a max label value size
 //  so brevity is important here
 func SerializePortSpecs(ports map[string]*port_spec.PortSpec) (*docker_label_value.DockerLabelValue, error) {
 	portIdAndSpecStrs := []string{}
 	usedPortSpecStrs := map[string]string{}
+
 	for portId, portSpec := range ports {
-		for disallowedChar := range disallowedPortIdChars {
-			if strings.Contains(portId, disallowedChar) {
-				return nil, stacktrace.NewError("Port ID '%v' contains disallowed char '%v'", portId, disallowedChar)
-			}
-			protocolStr := portSpec.GetProtocol().String()
-			if strings.Contains(protocolStr, disallowedChar) {
-				return nil, stacktrace.NewError(
-					"Port spec protocol '%v' for port with ID '%v' contains disallowed char '%v'",
-					protocolStr,
-					portId,
-					disallowedChar,
-				)
-			}
+		err := validatePortSpec(portId, portSpec)
+
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Error occurred while validating port spec '%+v'", portSpec)
 		}
+
 		portNum := portSpec.GetNumber()
-		portProtocol := portSpec.GetProtocol()
+		portProtocol := portSpec.GetTransportProtocol()
 		if !portProtocol.IsAPortProtocol() {
 			return nil, stacktrace.NewError("Unrecognized port protocol '%v'", portProtocol.String())
 		}
@@ -67,6 +65,12 @@ func SerializePortSpecs(ports map[string]*port_spec.PortSpec) (*docker_label_val
 			portNumAndProtocolSeparator,
 			portProtocol.String(),
 		)
+
+		// add application protocol to the label value if present
+		maybeApplicationProtocol := portSpec.GetMaybeApplicationProtocol()
+		if maybeApplicationProtocol != nil {
+			portSpecStr = fmt.Sprintf("%v%v%v", portSpecStr, portNumAndProtocolSeparator, *maybeApplicationProtocol)
+		}
 
 		if previousPortId, found := usedPortSpecStrs[portSpecStr]; found {
 			return nil, stacktrace.NewError(
@@ -84,6 +88,7 @@ func SerializePortSpecs(ports map[string]*port_spec.PortSpec) (*docker_label_val
 			portIdAndInfoSeparator,
 			portSpecStr,
 		)
+
 		portIdAndSpecStrs = append(portIdAndSpecStrs, portIdAndSpecStr)
 	}
 	resultStr := strings.Join(portIdAndSpecStrs, portSpecsSeparator)
@@ -159,19 +164,25 @@ func deserializePortSpecStrUsingDelimiters(
 		}
 		portId := portIdAndSpecFragments[0]
 		portSpecStr := portIdAndSpecFragments[1]
-
-		portNumAndProtocolFragments := strings.Split(portSpecStr, portNumAndProtocolSeparator)
-		numPortNumAndProtocolFragments := len(portNumAndProtocolFragments)
-		if numPortNumAndProtocolFragments != expectedNumPortNumAndProtocolFragments {
+		portSpecFragments := strings.Split(portSpecStr, portNumAndProtocolSeparator)
+		numPortSpecFragments := len(portSpecFragments)
+		if numPortSpecFragments < minExpectedPortSpecFragments || numPortSpecFragments > maxExpectedPortSpecFragments {
 			return nil, stacktrace.NewError(
-				"Expected splitting port num & protocol string '%v' to yield %v fragments but got %v",
+				"Expected splitting port spec string '%v' to yield '%v' to '%v' fragments but got %v",
 				portSpecStr,
-				expectedNumPortIdAndSpecFragments,
-				numPortIdAndSpecFragments,
+				minExpectedPortSpecFragments,
+				maxExpectedPortSpecFragments,
+				numPortSpecFragments,
 			)
 		}
-		portNumStr := portNumAndProtocolFragments[0]
-		portProtocolStr := portNumAndProtocolFragments[1]
+
+		portApplicationProtocolStr := ""
+		portNumStr := portSpecFragments[0]
+		portProtocolStr := portSpecFragments[1]
+
+		if numPortSpecFragments == numPortSpecFragmentsWithApplicationProtocol {
+			portApplicationProtocolStr = portSpecFragments[2]
+		}
 
 		portNumUint64, err := strconv.ParseUint(portNumStr, portUintBase, portUintBits)
 		if err != nil {
@@ -189,7 +200,7 @@ func deserializePortSpecStrUsingDelimiters(
 			return nil, stacktrace.Propagate(err, "An error occurred converting port protocol string '%v' to a port protocol enum", portProtocolStr)
 		}
 
-		portSpec, err := port_spec.NewPortSpec(portNumUint16, portProtocol)
+		portSpec, err := port_spec.NewPortSpec(portNumUint16, portProtocol, portApplicationProtocolStr)
 		if err != nil {
 			return nil, stacktrace.Propagate(
 				err,
@@ -197,8 +208,40 @@ func deserializePortSpecStrUsingDelimiters(
 				portIdAndSpecStr,
 			)
 		}
-
 		result[portId] = portSpec
 	}
 	return result, nil
+}
+
+/*
+  This method is used to validate port id - it must not have any disallowed characters.
+  This is not needed for protocol, because it is defined as enums.
+*/
+func validatePortSpec(portId string, spec *port_spec.PortSpec) error {
+	maybeApplicationProtocol := spec.GetMaybeApplicationProtocol()
+
+	// validate port id - it should not contain disallowed characters
+	firstDisallowedCharacterInPortId := disallowedCharactersMatcher.FindString(portId)
+	if len(firstDisallowedCharacterInPortId) > 0 {
+		return stacktrace.NewError(
+			"Port ID '%v' contains disallowed char '%v'",
+			portId,
+			firstDisallowedCharacterInPortId,
+		)
+	}
+
+	// validate application protocol - it should not contain disallowed characters
+	if maybeApplicationProtocol != nil {
+		firstDisallowedCharacterInApplicationProtocol := disallowedCharactersMatcher.FindString(*maybeApplicationProtocol)
+		if len(firstDisallowedCharacterInApplicationProtocol) > 0 {
+			return stacktrace.NewError(
+				"Application Protocol '%v' associated with port ID '%v' contains disallowed char '%v'",
+				*maybeApplicationProtocol,
+				portId,
+				firstDisallowedCharacterInApplicationProtocol,
+			)
+		}
+	}
+
+	return nil
 }

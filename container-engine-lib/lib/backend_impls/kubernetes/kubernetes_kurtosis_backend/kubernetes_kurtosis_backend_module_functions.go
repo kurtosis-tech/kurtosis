@@ -80,7 +80,7 @@ func (backend KubernetesKurtosisBackend) CreateModule(
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclave namespace name for enclave with ID '%v'", enclaveId)
 	}
 
-	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, kurtosisModulePortProtocol)
+	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, kurtosisModulePortProtocol, "")
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -238,7 +238,7 @@ func (backend KubernetesKurtosisBackend) CreateModule(
 		maxWaitForModuleContainerAvailabilityRetries,
 		timeBetweenWaitForModuleContainerAvailabilityRetries,
 	); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred waiting for the module grpc port '%v/%v' to become available", privateGrpcPortSpec.GetProtocol(), privateGrpcPortSpec.GetNumber())
+		return nil, stacktrace.Propagate(err, "An error occurred waiting for the module grpc port '%v/%v' to become available", privateGrpcPortSpec.GetTransportProtocol(), privateGrpcPortSpec.GetNumber())
 	}
 
 	shouldRemovePod = false
