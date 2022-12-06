@@ -20,8 +20,12 @@ func NewValidatorEnvironment(serviceIDs map[service.ServiceID]bool) *ValidatorEn
 	}
 }
 
-func (environment *ValidatorEnvironment) AppendRequiredDockerImage(dockerImage string) {
-	environment.requiredDockerImages[dockerImage] = true
+func (environment *ValidatorEnvironment) AppendRequiredContainerImage(containerImage string) {
+	environment.requiredDockerImages[containerImage] = true
+}
+
+func (environment *ValidatorEnvironment) GetNumberOfContainerImages() uint32 {
+	return uint32(len(environment.requiredDockerImages))
 }
 
 func (environment *ValidatorEnvironment) AddServiceId(serviceId service.ServiceID) {

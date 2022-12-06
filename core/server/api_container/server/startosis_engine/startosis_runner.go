@@ -22,7 +22,7 @@ const (
 	defaultCurrentStepNumber  = 0
 	defaultTotalStepsNumber   = 0
 	startingInterpretationMsg = "Interpreting Starlark code - execution will begin shortly"
-	startingValidationMsg     = "Validating Starlark code and downloading docker images - execution will begin shortly"
+	startingValidationMsg     = "Starting validation"
 	startingExecutionMsg      = "Starting execution"
 
 	missingRunMethodErrorPrefixFromStarlarkPackage = "Evaluation error: module has no .run field or method\n\tat"
@@ -50,7 +50,7 @@ func (runner *StartosisRunner) Run(ctx context.Context, dryRun bool, moduleId st
 		defer close(starlarkRunResponseLines)
 
 		// Interpretation starts > send progress info (this line will be invisible as interpretation is super quick)
-		progressInfo := binding_constructors.NewStarlarkRunResponseLineFromProgressInfo(
+		progressInfo := binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(
 			startingInterpretationMsg, defaultCurrentStepNumber, defaultTotalStepsNumber)
 		starlarkRunResponseLines <- progressInfo
 
@@ -66,7 +66,7 @@ func (runner *StartosisRunner) Run(ctx context.Context, dryRun bool, moduleId st
 			instructionsList)
 
 		// Validation starts > send progress info
-		progressInfo = binding_constructors.NewStarlarkRunResponseLineFromProgressInfo(
+		progressInfo = binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(
 			startingValidationMsg, defaultCurrentStepNumber, totalNumberOfInstructions)
 		starlarkRunResponseLines <- progressInfo
 
@@ -77,7 +77,7 @@ func (runner *StartosisRunner) Run(ctx context.Context, dryRun bool, moduleId st
 		logrus.Debugf("Successfully validated Starlark script")
 
 		// Execution starts > send progress info. This will soon be overridden byt the first instruction execution
-		progressInfo = binding_constructors.NewStarlarkRunResponseLineFromProgressInfo(
+		progressInfo = binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(
 			startingExecutionMsg, defaultCurrentStepNumber, totalNumberOfInstructions)
 		starlarkRunResponseLines <- progressInfo
 
