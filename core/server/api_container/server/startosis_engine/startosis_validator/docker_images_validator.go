@@ -25,13 +25,13 @@ func NewDockerImagesValidator(kurtosisBackend *backend_interface.KurtosisBackend
 // ValidateAsync validates all container images by downloading them. It is an async function, and it takes as input a
 // WaitGroup that will unblock once the function is complete (as opposed to when the function returns). It allows the
 // consumer to run this function synchronously by calling it and then waiting for wait group to resolve.
-// It returns three channels:
+// In addition to the total number of container images to validate, it returns three channels:
 // - One that receives an image name when this image validation starts
 // - One that receives an image name when an image validation finishes
 // - An error channel that receives all errors happening during validation
-// Note that since it is an async function, the channels aren't not closed by this function, consumers need to take
+// Note that since it is an async function, the channels are not closed by this function, consumers need to take
 // care of closing them.
-func (validator *DockerImagesValidator) ValidateAsync(ctx context.Context, environment *ValidatorEnvironment, wg *sync.WaitGroup) (chan string, chan string, chan error) {
+func (validator *DockerImagesValidator) ValidateAsync(ctx context.Context, environment *ValidatorEnvironment, wg *sync.WaitGroup) (uint32, chan string, chan string, chan error) {
 	pullErrors := make(chan error)
 	imageDownloadStarted := make(chan string)
 	imageDownloadFinished := make(chan string)
@@ -47,7 +47,7 @@ func (validator *DockerImagesValidator) ValidateAsync(ctx context.Context, envir
 	}
 
 	logrus.Debug("All image validation submitted, currently in progress.")
-	return imageDownloadStarted, imageDownloadFinished, pullErrors
+	return uint32(len(environment.requiredDockerImages)), imageDownloadStarted, imageDownloadFinished, pullErrors
 }
 
 func fetchImageFromBackend(ctx context.Context, wg *sync.WaitGroup, imageCurrentlyDownloading chan bool, backend *backend_interface.KurtosisBackend, image string, pullErrors chan<- error, imageDownloadStarted chan<- string, imageDownloadFinished chan<- string) {

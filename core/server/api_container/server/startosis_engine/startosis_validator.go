@@ -76,12 +76,9 @@ func (validator *StartosisValidator) downloadAndValidateImagesAccountingForProgr
 	isValidationFailure := false
 	wg := &sync.WaitGroup{}
 
-	imageValidationStarted, imageValidationFinished, errors := validator.dockerImagesValidator.ValidateAsync(ctx, environment, wg)
-	defer func() {
-		close(imageValidationStarted)
-		close(imageValidationFinished)
-		close(errors)
-	}()
+	totalImageNumberToValidate, imageValidationStarted, imageValidationFinished, errors := validator.dockerImagesValidator.ValidateAsync(ctx, environment, wg)
+	numberOfImageValidated := uint32(0)
+	readChannelSubroutineReturned := make(chan bool)
 
 	go func() {
 		var imageCurrentlyBeingValidated []string
@@ -91,20 +88,24 @@ func (validator *StartosisValidator) downloadAndValidateImagesAccountingForProgr
 			select {
 			case image, isChanOpen := <-imageValidationStarted:
 				if !isChanOpen {
+					readChannelSubroutineReturned <- true
 					return
 				}
 				logrus.Debugf("Received image validation started event: '%s'", image)
 				imageCurrentlyBeingValidated = append(imageCurrentlyBeingValidated, image)
-				updateProgressWithDownloadInfo(starlarkRunResponseLineStream, imageCurrentlyBeingValidated)
+				updateProgressWithDownloadInfo(starlarkRunResponseLineStream, imageCurrentlyBeingValidated, numberOfImageValidated, totalImageNumberToValidate)
 			case image, isChanOpen := <-imageValidationFinished:
 				if !isChanOpen {
+					readChannelSubroutineReturned <- true
 					return
 				}
+				numberOfImageValidated++
 				logrus.Debugf("Received image validation finished event: '%s'", image)
 				imageCurrentlyBeingValidated = removeIfPresent(imageCurrentlyBeingValidated, image)
-				updateProgressWithDownloadInfo(starlarkRunResponseLineStream, imageCurrentlyBeingValidated)
+				updateProgressWithDownloadInfo(starlarkRunResponseLineStream, imageCurrentlyBeingValidated, numberOfImageValidated, totalImageNumberToValidate)
 			case err, isChanOpen := <-errors:
 				if !isChanOpen {
+					readChannelSubroutineReturned <- true
 					return
 				}
 				logrus.Debugf("Received an error during image validation: '%s'", err.Error())
@@ -117,17 +118,22 @@ func (validator *StartosisValidator) downloadAndValidateImagesAccountingForProgr
 
 	logrus.Debug("Waiting for all images to be downloaded and validated")
 	wg.Wait()
+	close(imageValidationStarted)
+	close(imageValidationFinished)
+	close(errors)
+	// block until the subroutine returned to make sure we don't "flushed" all channels to starlarkRunResponseLineStream
+	<-readChannelSubroutineReturned
 
 	return isValidationFailure
 }
 
-func updateProgressWithDownloadInfo(starlarkRunResponseLineStream chan<- *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, imageCurrentlyInProgress []string) {
+func updateProgressWithDownloadInfo(starlarkRunResponseLineStream chan<- *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, imageCurrentlyInProgress []string, numberOfImageValidated uint32, totalNumberOfImagesToValidate uint32) {
 	msgLines := []string{validationInProgressMsg}
 	for _, imageName := range imageCurrentlyInProgress {
 		msgLines = append(msgLines, fmt.Sprintf("Downloading %s", imageName))
 	}
 	starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromMultilineProgressInfo(
-		msgLines, defaultCurrentStepNumber, defaultTotalStepsNumber)
+		msgLines, numberOfImageValidated, totalNumberOfImagesToValidate)
 }
 
 func removeIfPresent(slice []string, valueToRemove string) []string {
