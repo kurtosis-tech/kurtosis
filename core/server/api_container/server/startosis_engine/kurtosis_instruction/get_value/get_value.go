@@ -32,7 +32,7 @@ func GenerateGetValueBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisI
 			return nil, interpretationError
 		}
 		instruction.resultUuid = recipeExecutor.CreateValue()
-		returnValue := recipe.CreateStarlarkReturnValueFromHttpRequestRecipe(instruction.resultUuid)
+		returnValue := instruction.httpRequestRecipe.CreateStarlarkReturnValue(instruction.resultUuid)
 		*instructionsQueue = append(*instructionsQueue, instruction)
 		return returnValue, nil
 	}

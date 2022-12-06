@@ -123,7 +123,7 @@ func (recipe *HttpRequestRecipe) extract(body []byte) (map[string]starlark.Compa
 	}
 	extractorResult := map[string]starlark.Comparable{}
 	for extractorKey, extractor := range recipe.extractors {
-		logrus.Debugf("Running against '%v' '%v' '%v'", body, jsonBody, extractor)
+		logrus.Debugf("Running against '%v' '%v' '%v'", string(body), jsonBody, extractor)
 		query, err := gojq.Parse(extractor)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred when parsing field extractor '%v'", extractor)
@@ -162,10 +162,13 @@ func (recipe *HttpRequestRecipe) extract(body []byte) (map[string]starlark.Compa
 	return extractorResult, nil
 }
 
-func CreateStarlarkReturnValueFromHttpRequestRecipe(resultUuid string) *starlark.Dict {
+func (recipe *HttpRequestRecipe) CreateStarlarkReturnValue(resultUuid string) *starlark.Dict {
 	dict := starlark.NewDict(2)
-	dict.SetKey(starlark.String(BodyKey), starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, "body")))
-	dict.SetKey(starlark.String(StatusCodeKey), starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, "code")))
+	dict.SetKey(starlark.String(BodyKey), starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, BodyKey)))
+	dict.SetKey(starlark.String(StatusCodeKey), starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, StatusCodeKey)))
+	for extractorKey := range recipe.extractors {
+		dict.SetKey(starlark.String(extractorKey), starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, extractorKey)))
+	}
 	dict.Freeze()
 	return dict
 }
