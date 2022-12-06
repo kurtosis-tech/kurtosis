@@ -4,6 +4,9 @@
 - The CLI now displays the list of container images currently being downloaded and validated during the Starlark
 validation step
 
+### Changes
+- Remove completion files 
+
 # 0.57.8
 
 # 0.57.7
