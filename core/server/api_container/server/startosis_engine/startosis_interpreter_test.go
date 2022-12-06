@@ -17,6 +17,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/render_templates"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/store_service_files"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/upload_files"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/mock_package_content_provider"
@@ -45,6 +46,7 @@ var (
 	defaultEnvVars                     map[string]string = nil
 	defaultPrivateIPAddressPlaceholder                   = ""
 	defaultPublicPortNumber                              = uint32(0)
+	defaultResultUuid                                    = ""
 )
 
 func TestStartosisInterpreter_SimplePrintScript(t *testing.T) {
@@ -755,6 +757,8 @@ print("Executing mkdir!")
 exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"])
 `
 
+	testRuntimeValueStore := runtime_value_store.NewRuntimeValueStore()
+
 	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 	require.Len(t, instructions, 2)
 	require.Nil(t, interpretationError)
@@ -772,6 +776,8 @@ exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"])
 		[]string{"mkdir", "/tmp/foo"},
 		0,
 		starlarkKwargs,
+		testRuntimeValueStore,
+		defaultResultUuid,
 	)
 
 	require.Equal(t, execInstruction, instructions[1])
@@ -789,6 +795,7 @@ func TestStartosisInterpreter_PassedExitCodeIsInterpretedCorrectly(t *testing.T)
 print("Executing mkdir!")
 exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"], expected_exit_code = -7)
 `
+	testRuntimeValueStore := runtime_value_store.NewRuntimeValueStore()
 
 	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 	require.Len(t, instructions, 2)
@@ -807,6 +814,8 @@ exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"], e
 		[]string{"mkdir", "/tmp/foo"},
 		-7,
 		starlarkKwargs,
+		testRuntimeValueStore,
+		defaultResultUuid,
 	)
 
 	require.Equal(t, execInstruction, instructions[1])

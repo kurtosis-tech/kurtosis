@@ -9,10 +9,13 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
+	"go.starlark.net/starlarkstruct"
 	"strings"
 )
 
@@ -27,18 +30,23 @@ const (
 	successfulExitCode = 0
 
 	newlineChar = "\n"
+
+	execOutputSuffix   = "output"
+	execExitCodeSuffix = "code"
 )
 
-func GenerateExecBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, serviceNetwork service_network.ServiceNetwork) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+func GenerateExecBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 	// TODO: Force returning an InterpretationError rather than a normal error
 	return func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 		instructionPosition := shared_helpers.GetCallerPositionFromThread(thread)
-		execInstruction := newEmptyExecInstruction(serviceNetwork, instructionPosition)
+		execInstruction := newEmptyExecInstruction(serviceNetwork, instructionPosition, runtimeValueStore)
 		if interpretationError := execInstruction.parseStartosisArgs(b, args, kwargs); interpretationError != nil {
 			return nil, interpretationError
 		}
+		execInstruction.resultUuid = runtimeValueStore.CreateValue()
 		*instructionsQueue = append(*instructionsQueue, execInstruction)
-		return starlark.None, nil
+		returnValue := createStarlarkReturnValueForExec(execInstruction.resultUuid)
+		return returnValue, nil
 	}
 }
 
@@ -51,27 +59,34 @@ type ExecInstruction struct {
 	serviceId        kurtosis_backend_service.ServiceID
 	command          []string
 	expectedExitCode int32
+
+	runtimeValueStore *runtime_value_store.RuntimeValueStore
+	resultUuid        string
 }
 
-func NewExecInstruction(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceID, command []string, expectedExitCode int32, starlarkKwargs starlark.StringDict) *ExecInstruction {
+func NewExecInstruction(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceID, command []string, expectedExitCode int32, starlarkKwargs starlark.StringDict, runtimeValueStore *runtime_value_store.RuntimeValueStore, resultUuid string) *ExecInstruction {
 	return &ExecInstruction{
-		serviceNetwork:   serviceNetwork,
-		position:         position,
-		serviceId:        serviceId,
-		command:          command,
-		expectedExitCode: expectedExitCode,
-		starlarkKwargs:   starlarkKwargs,
+		serviceNetwork:    serviceNetwork,
+		position:          position,
+		serviceId:         serviceId,
+		command:           command,
+		expectedExitCode:  expectedExitCode,
+		starlarkKwargs:    starlarkKwargs,
+		runtimeValueStore: runtimeValueStore,
+		resultUuid:        resultUuid,
 	}
 }
 
-func newEmptyExecInstruction(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition) *ExecInstruction {
+func newEmptyExecInstruction(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition, runtimeValueStore *runtime_value_store.RuntimeValueStore) *ExecInstruction {
 	return &ExecInstruction{
-		serviceNetwork:   serviceNetwork,
-		position:         position,
-		serviceId:        "",
-		command:          nil,
-		expectedExitCode: 0,
-		starlarkKwargs:   starlark.StringDict{},
+		serviceNetwork:    serviceNetwork,
+		position:          position,
+		serviceId:         "",
+		command:           nil,
+		expectedExitCode:  0,
+		starlarkKwargs:    starlark.StringDict{},
+		resultUuid:        "",
+		runtimeValueStore: runtimeValueStore,
 	}
 }
 
@@ -96,6 +111,7 @@ func (instruction *ExecInstruction) Execute(ctx context.Context) (*string, error
 	if instruction.expectedExitCode != exitCode {
 		return nil, stacktrace.NewError("The exit code expected '%v' wasn't the exit code received '%v' while running the command", instruction.expectedExitCode, exitCode)
 	}
+	instruction.runtimeValueStore.SetValue(instruction.resultUuid, createComparableToSetRunTimeValue(commandOutput, exitCode))
 	instructionResult := formatInstructionOutput(exitCode, commandOutput)
 	return &instructionResult, nil
 }
@@ -153,4 +169,21 @@ func formatInstructionOutput(exitCode int32, commandOutput string) string {
 		return fmt.Sprintf("Command returned with exit code '%d' and the following output: \n%v", exitCode, trimmedOutput)
 	}
 	return fmt.Sprintf("Command returned with exit code '%d' and the following output: '%s'", exitCode, trimmedOutput)
+}
+
+func createStarlarkReturnValueForExec(resultUuid string) *starlarkstruct.Struct {
+	return starlarkstruct.FromKeywords(
+		starlarkstruct.Default,
+		[]starlark.Tuple{
+			{starlark.String(execOutputSuffix), starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, execOutputSuffix))},
+			{starlark.String(execExitCodeSuffix), starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, execExitCodeSuffix))},
+		},
+	)
+}
+
+func createComparableToSetRunTimeValue(execOutput string, exitCode int32) map[string]starlark.Comparable {
+	return map[string]starlark.Comparable{
+		execOutputSuffix:   starlark.String(execOutput),
+		execExitCodeSuffix: starlark.MakeInt(int(exitCode)),
+	}
 }

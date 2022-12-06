@@ -5,16 +5,18 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
 	"testing"
 )
 
 var emptyServiceNetwork = service_network.NewEmptyMockServiceNetwork()
+var defaultRuntimeValueStore *runtime_value_store.RuntimeValueStore = nil
 
 func TestExecInstruction_StringRepresentationWorks(t *testing.T) {
 	position := kurtosis_instruction.NewInstructionPosition(1, 1, "dummyFile")
-	execInstruction := newEmptyExecInstruction(emptyServiceNetwork, position)
+	execInstruction := newEmptyExecInstruction(emptyServiceNetwork, position, defaultRuntimeValueStore)
 	execInstruction.starlarkKwargs = starlark.StringDict{}
 	execInstruction.starlarkKwargs[serviceIdArgName] = starlark.String("example-service-id")
 	execInstruction.starlarkKwargs[commandArgName] = starlark.NewList([]starlark.Value{

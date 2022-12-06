@@ -6,6 +6,7 @@
 ### Features
 - The CLI now displays the list of container images currently being downloaded and validated during the Starlark
 validation step
+- `exec` now returns the command output
 
 ### Changes
 - Remove completion files 
