@@ -79,6 +79,17 @@ func NewStartosisInterpreterWithFacts(serviceNetwork service_network.ServiceNetw
 	}
 }
 
+func NewStartosisInterpreterWithRecipeExecutor(serviceNetwork service_network.ServiceNetwork, moduleContentProvider startosis_packages.PackageContentProvider, recipeExecutor *runtime_value_store.RuntimeValueStore) *StartosisInterpreter {
+	return &StartosisInterpreter{
+		mutex:                 &sync.Mutex{},
+		serviceNetwork:        serviceNetwork,
+		factsEngine:           nil,
+		recipeExecutor:        recipeExecutor,
+		moduleGlobalsCache:    make(map[string]*startosis_packages.ModuleCacheEntry),
+		moduleContentProvider: moduleContentProvider,
+	}
+}
+
 // Interpret interprets the Starlark script and produce different outputs:
 //   - A potential interpretation error that the writer of the script should be aware of (syntax error in the Startosis
 //     code, inconsistent). Can be nil if the script was successfully interpreted

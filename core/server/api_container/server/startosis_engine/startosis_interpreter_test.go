@@ -751,13 +751,12 @@ Adding service example-datastore-client
 func TestStartosisInterpreter_ValidExecScriptWithoutExitCodeDefaultsTo0(t *testing.T) {
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider)
+	testRuntimeValueStore := runtime_value_store.NewRuntimeValueStore()
+	interpreter := NewStartosisInterpreterWithRecipeExecutor(testServiceNetwork, packageContentProvider, testRuntimeValueStore)
 	script := `
 print("Executing mkdir!")
 exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"])
 `
-
-	testRuntimeValueStore := runtime_value_store.NewRuntimeValueStore()
 
 	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 	require.Len(t, instructions, 2)
@@ -790,12 +789,12 @@ exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"])
 func TestStartosisInterpreter_PassedExitCodeIsInterpretedCorrectly(t *testing.T) {
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider)
+	testRuntimeValueStore := runtime_value_store.NewRuntimeValueStore()
+	interpreter := NewStartosisInterpreterWithRecipeExecutor(testServiceNetwork, packageContentProvider, testRuntimeValueStore)
 	script := `
 print("Executing mkdir!")
 exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"], expected_exit_code = -7)
 `
-	testRuntimeValueStore := runtime_value_store.NewRuntimeValueStore()
 
 	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 	require.Len(t, instructions, 2)
