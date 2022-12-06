@@ -61,8 +61,8 @@ func (backend *DockerKurtosisBackend) CreateModule(
 	freeIpAddrProvider, found := backend.enclaveFreeIpProviders[enclaveId]
 	if !found {
 		return nil, stacktrace.NewError(
-			"Received a request to create module with ID '%v' in enclave '%v', but no free IP address provider was " +
-				"defined for this enclave; this likely means that the request is being called where it shouldn't " +
+			"Received a request to create module with ID '%v' in enclave '%v', but no free IP address provider was "+
+				"defined for this enclave; this likely means that the request is being called where it shouldn't "+
 				"be (i.e. outside the API container)",
 			id,
 			enclaveId,
@@ -80,7 +80,7 @@ func (backend *DockerKurtosisBackend) CreateModule(
 		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave data volume for enclave '%v'", enclaveId)
 	}
 
-	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, moduleContainerPortProtocol)
+	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, moduleContainerPortProtocol, "")
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -145,7 +145,7 @@ func (backend *DockerKurtosisBackend) CreateModule(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the logs collector")
 	}
-	if logsCollector == nil || logsCollector.GetStatus() != container_status.ContainerStatus_Running{
+	if logsCollector == nil || logsCollector.GetStatus() != container_status.ContainerStatus_Running {
 		return nil, stacktrace.NewError("The user services can't be started because there is no logs collector running for sending the logs")
 	}
 
@@ -161,7 +161,7 @@ func (backend *DockerKurtosisBackend) CreateModule(
 	// The least we can do is check if the collector server is healthy before starting the module, if in case it gets shut down later we can't do much about it anyway.
 	if err = logsCollectorAvailabilityChecker.WaitForAvailability(); err != nil {
 		return nil,
-			stacktrace.Propagate(err,"An error occurred while waiting for the log container to become available")
+			stacktrace.Propagate(err, "An error occurred while waiting for the log container to become available")
 	}
 
 	//We use the public TCP address because the logging driver connection link is from the Docker demon to the logs collector container

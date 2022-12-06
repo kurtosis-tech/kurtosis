@@ -1,7 +1,8 @@
 package docker_port_spec_serializer
 
 import (
-	port_spec2 "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/stretchr/testify/require"
 	"strings"
 	"testing"
@@ -10,17 +11,17 @@ import (
 func TestValidSerDe(t *testing.T) {
 	port1Id := "port1"
 	port1Num := uint16(23)
-	port1Protocol := port_spec2.PortProtocol_TCP
-	port1Spec, err := port_spec2.NewPortSpec(port1Num, port1Protocol)
+	port1Protocol := port_spec.PortProtocol_TCP
+	port1Spec, err := port_spec.NewPortSpec(port1Num, port1Protocol, "")
 	require.NoError(t, err, "An unexpected error occurred creating port 1 spec")
 
 	port2Id := "port2"
 	port2Num := uint16(45)
-	port2Protocol := port_spec2.PortProtocol_TCP
-	port2Spec, err := port_spec2.NewPortSpec(port2Num, port2Protocol)
+	port2Protocol := port_spec.PortProtocol_TCP
+	port2Spec, err := port_spec.NewPortSpec(port2Num, port2Protocol, "")
 	require.NoError(t, err, "An unexpected error occurred creating port 2 spec")
 
-	input := map[string]*port_spec2.PortSpec{
+	input := map[string]*port_spec.PortSpec{
 		port1Id: port1Spec,
 		port2Id: port2Spec,
 	}
@@ -37,7 +38,7 @@ func TestValidSerDe(t *testing.T) {
 		require.True(t, found, "Found port ID '%v' in the output that wasn't in the input", actualPortId)
 
 		require.Equal(t, expectedPortSpec.GetNumber(), actualPortSpec.GetNumber(), "Actual port number for port '%v' doesn't match input", actualPortId)
-		require.Equal(t, expectedPortSpec.GetProtocol(), actualPortSpec.GetProtocol(), "Actual port protocol for port '%v' doesn't match input", actualPortId)
+		require.Equal(t, expectedPortSpec.GetTransportProtocol(), actualPortSpec.GetTransportProtocol(), "Actual port protocol for port '%v' doesn't match input", actualPortId)
 	}
 }
 
@@ -58,11 +59,11 @@ func TestDisallowedCharsSerialization(t *testing.T) {
 	for disallowedChar := range disallowedPortIdChars {
 		portId := "ohyeah" + disallowedChar
 		portNum := uint16(45)
-		portProtocol := port_spec2.PortProtocol_TCP
-		portSpec, err := port_spec2.NewPortSpec(portNum, portProtocol)
+		portProtocol := port_spec.PortProtocol_TCP
+		portSpec, err := port_spec.NewPortSpec(portNum, portProtocol, "")
 		require.NoError(t, err, "An unexpected error occurred creating port spec for port with ID '%v'", portId)
 
-		ports := map[string]*port_spec2.PortSpec{
+		ports := map[string]*port_spec.PortSpec{
 			portId: portSpec,
 		}
 
@@ -76,17 +77,17 @@ func TestDuplicatedPortNumDifferentProtoSerialization(t *testing.T) {
 
 	port1Id := "port1"
 	port1Num := dupedPortNum
-	port1Protocol := port_spec2.PortProtocol_TCP
-	port1Spec, err := port_spec2.NewPortSpec(port1Num, port1Protocol)
+	port1Protocol := port_spec.PortProtocol_TCP
+	port1Spec, err := port_spec.NewPortSpec(port1Num, port1Protocol, "")
 	require.NoError(t, err, "An unexpected error occurred creating port 1 spec")
 
 	port2Id := "port2"
 	port2Num := dupedPortNum
-	port2Protocol := port_spec2.PortProtocol_UDP
-	port2Spec, err := port_spec2.NewPortSpec(port2Num, port2Protocol)
+	port2Protocol := port_spec.PortProtocol_UDP
+	port2Spec, err := port_spec.NewPortSpec(port2Num, port2Protocol, "")
 	require.NoError(t, err, "An unexpected error occurred creating port 2 spec")
 
-	input := map[string]*port_spec2.PortSpec{
+	input := map[string]*port_spec.PortSpec{
 		port1Id: port1Spec,
 		port2Id: port2Spec,
 	}
@@ -100,17 +101,17 @@ func TestDuplicatedPortNumSameProtoSerialization(t *testing.T) {
 
 	port1Id := "port1"
 	port1Num := dupedPortNum
-	port1Protocol := port_spec2.PortProtocol_TCP
-	port1Spec, err := port_spec2.NewPortSpec(port1Num, port1Protocol)
+	port1Protocol := port_spec.PortProtocol_TCP
+	port1Spec, err := port_spec.NewPortSpec(port1Num, port1Protocol, "")
 	require.NoError(t, err, "An unexpected error occurred creating port 1 spec")
 
 	port2Id := "port2"
 	port2Num := dupedPortNum
-	port2Protocol := port_spec2.PortProtocol_TCP
-	port2Spec, err := port_spec2.NewPortSpec(port2Num, port2Protocol)
+	port2Protocol := port_spec.PortProtocol_TCP
+	port2Spec, err := port_spec.NewPortSpec(port2Num, port2Protocol, "")
 	require.NoError(t, err, "An unexpected error occurred creating port 2 spec")
 
-	input := map[string]*port_spec2.PortSpec{
+	input := map[string]*port_spec.PortSpec{
 		port1Id: port1Spec,
 		port2Id: port2Spec,
 	}
@@ -149,10 +150,83 @@ func TestInvalidProtocolDeserialization(t *testing.T) {
 	require.Error(t, err, "Expected an error when deserializing a string with a port with an invalid protocol, but none was report")
 }
 
+func TestDeserializePortSpecStrUsingDelimiters_PortSpecWithIncorrectNumberOfFragments(t *testing.T) {
+	invalidInputWithOneFragments := "myport:23"
+	invalidInputWithFourFragments := "myport:23/tcp/https/abc"
+
+	_, err := deserializePortSpecStrUsingDelimiters(
+		invalidInputWithOneFragments,
+		portSpecsSeparator,
+		portIdAndInfoSeparator,
+		portNumAndProtocolSeparator,
+	)
+	require.NotNil(t, err, fmt.Sprintf("Expected error to be not nil for %v", invalidInputWithOneFragments))
+	require.ErrorContains(t, err, "Expected splitting port spec string '23' to yield '2' to '3' fragments but got 1")
+
+	_, err = deserializePortSpecStrUsingDelimiters(
+		invalidInputWithFourFragments,
+		portSpecsSeparator,
+		portIdAndInfoSeparator,
+		portNumAndProtocolSeparator,
+	)
+	require.NotNil(t, err, fmt.Sprintf("Expected error to be not nil for %v", invalidInputWithFourFragments))
+	require.ErrorContains(t, err, "Expected splitting port spec string '23/tcp/https/abc' to yield '2' to '3' fragments but got 4")
+}
+
 func TestNoPortProtosHaveDisallowedChars(t *testing.T) {
-	for _, portProtoStr := range port_spec2.PortProtocolStrings() {
+	for _, portProtoStr := range port_spec.PortProtocolStrings() {
 		for illegalPortProtocolStr := range disallowedPortIdChars {
 			require.False(t, strings.Contains(portProtoStr, illegalPortProtocolStr))
 		}
 	}
+}
+
+func TestValidatePortSpec_InvalidPortId(t *testing.T) {
+	spec, _ := port_spec.NewPortSpec(100, port_spec.PortProtocol_TCP, "https")
+	err := validatePortSpec(",portid/", spec)
+	require.NotNil(t, err, "Error cannot be nil")
+	require.ErrorContains(t, err, fmt.Sprintf("Port ID '%v' contains disallowed char '%v'", ",portid/", ","))
+}
+
+func TestValidatePortSpec_InvalidApplicationProtocol(t *testing.T) {
+	spec, _ := port_spec.NewPortSpec(100, port_spec.PortProtocol_TCP, "/https,")
+	err := validatePortSpec("PortId", spec)
+	require.NotNil(t, err, "Error cannot be nil")
+	require.ErrorContains(t, err, fmt.Sprintf("Application Protocol '%v' associated with port ID '%v' contains disallowed char '%v'", "/https,", "PortId", "/"))
+}
+
+func TestSerializeMethod_ValidPortSpecs(t *testing.T) {
+	specs := map[string]*port_spec.PortSpec{}
+	portOne, _ := port_spec.NewPortSpec(3333, port_spec.PortProtocol_TCP, "")
+	portTwo, _ := port_spec.NewPortSpec(3333, port_spec.PortProtocol_UDP, "https")
+
+	specs["portOne"] = portOne
+	specs["portTwo"] = portTwo
+
+	possibleValidExpectedSerializedPortSpec := []string{
+		"portOne:3333/TCP,portTwo:3333/UDP/https", "portTwo:3333/UDP/https,portOne:3333/TCP",
+	}
+
+	actualLabelValue, err := SerializePortSpecs(specs)
+	require.Nil(t, err)
+	// because map is not ordered therefore need to test against two possible valid outcomes
+	require.Contains(t, possibleValidExpectedSerializedPortSpec, actualLabelValue.GetString())
+}
+
+func TestDeSerializeMethod_ValidPortSpecs(t *testing.T) {
+	expectedSpecs := map[string]*port_spec.PortSpec{}
+	expectedPortOne, _ := port_spec.NewPortSpec(3333, port_spec.PortProtocol_TCP, "")
+	expectedPortTwo, _ := port_spec.NewPortSpec(3333, port_spec.PortProtocol_UDP, "https")
+	expectedSpecs["portOne"] = expectedPortOne
+	expectedSpecs["portTwo"] = expectedPortTwo
+
+	portSpecStr1 := "portOne:3333/TCP,portTwo:3333/UDP/https"
+	actualPortSpec1, err := DeserializePortSpecs(portSpecStr1)
+	require.Nil(t, err)
+	require.Equal(t, expectedSpecs, actualPortSpec1)
+
+	portSpecStr2 := "portOne:3333/TCP,portTwo:3333/UDP/https"
+	actualPortSpec2, err := DeserializePortSpecs(portSpecStr2)
+	require.Nil(t, err)
+	require.Equal(t, expectedSpecs, actualPortSpec2)
 }

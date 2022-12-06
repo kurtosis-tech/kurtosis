@@ -16,6 +16,7 @@ code successfully run in dry-run mode" and "Error encountered running Starlark c
 run in dry-run mode (and without the "in dry-run mode" when the script is executed for real)\
 - Added `RunStarlarkScriptBlocking`, `RunStarlarkPackageBlocking` and `RunStarlarkRemotePackageBlocking` functions
 to the enclave context to facilitate automated testing in our current modules.
+- Added capability for container-engine to store optional application protocol for docker.
 
 ### Fixes
 - Don't duplicate instruction position information in `store_service_files`

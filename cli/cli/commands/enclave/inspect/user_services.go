@@ -136,7 +136,7 @@ func getUserServicePortBindingStrings(userService *service.Service,
 			"%v: %v/%v",
 			portId,
 			privatePortSpec.GetNumber(),
-			strings.ToLower(privatePortSpec.GetProtocol().String()),
+			strings.ToLower(privatePortSpec.GetTransportProtocol().String()),
 		)
 		resultLines[portId] = line
 	}

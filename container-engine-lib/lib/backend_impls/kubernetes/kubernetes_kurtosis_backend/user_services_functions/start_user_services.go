@@ -587,7 +587,7 @@ func getUserServicePodContainerSpecs(
 func getKubernetesServicePortsFromPrivatePortSpecs(privatePorts map[string]*port_spec.PortSpec) ([]apiv1.ServicePort, error) {
 	result := []apiv1.ServicePort{}
 	for portId, portSpec := range privatePorts {
-		kurtosisProtocol := portSpec.GetProtocol()
+		kurtosisProtocol := portSpec.GetTransportProtocol()
 		kubernetesProtocol, found := kurtosisPortProtocolToKubernetesPortProtocolTranslator[kurtosisProtocol]
 		if !found {
 			// Should never happen because we enforce completeness via unit test
@@ -616,7 +616,7 @@ func getKubernetesServicePortsFromPrivatePortSpecs(privatePorts map[string]*port
 func getKubernetesContainerPortsFromPrivatePortSpecs(privatePorts map[string]*port_spec.PortSpec) ([]apiv1.ContainerPort, error) {
 	result := []apiv1.ContainerPort{}
 	for portId, portSpec := range privatePorts {
-		kurtosisProtocol := portSpec.GetProtocol()
+		kurtosisProtocol := portSpec.GetTransportProtocol()
 		kubernetesProtocol, found := kurtosisPortProtocolToKubernetesPortProtocolTranslator[kurtosisProtocol]
 		if !found {
 			// Should never happen because we enforce completeness via unit test

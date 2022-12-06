@@ -102,7 +102,7 @@ func GetDockerPortFromPortSpec(portSpec *port_spec.PortSpec) (nat.Port, error) {
 	portNum := portSpec.GetNumber()
 
 	// Convert port spec protocol -> Docker protocol string
-	portSpecProto := portSpec.GetProtocol()
+	portSpecProto := portSpec.GetTransportProtocol()
 	portDockerProto, found := portSpecProtosToDockerPortProtos[portSpecProto]
 	if !found {
 		return dockerPort, stacktrace.NewError(
@@ -148,7 +148,7 @@ func GetPublicPortBindingFromPrivatePortSpec(privatePortSpec *port_spec.PortSpec
 			"No host machine port binding was specified for Docker port '%v' which corresponds to port spec with num '%v' and protocol '%v'",
 			dockerPrivatePort,
 			privatePortSpec.GetNumber(),
-			privatePortSpec.GetProtocol().String(),
+			privatePortSpec.GetTransportProtocol().String(),
 		)
 	}
 
@@ -159,7 +159,7 @@ func GetPublicPortBindingFromPrivatePortSpec(privatePortSpec *port_spec.PortSpec
 			"Found host machine IP string '%v' for port spec with number '%v' and protocol '%v', but it wasn't a valid IP",
 			hostMachineIpAddrStr,
 			privatePortSpec.GetNumber(),
-			privatePortSpec.GetProtocol().String(),
+			privatePortSpec.GetTransportProtocol().String(),
 		)
 	}
 
@@ -175,16 +175,16 @@ func GetPublicPortBindingFromPrivatePortSpec(privatePortSpec *port_spec.PortSpec
 		)
 	}
 	hostMachinePortNumUint16 := uint16(hostMachinePortNumUint64) // Okay to do due to specifying the number of bits above
-	publicPortSpec, err := port_spec.NewPortSpec(hostMachinePortNumUint16, privatePortSpec.GetProtocol())
+	publicPortSpec, err := port_spec.NewPortSpec(hostMachinePortNumUint16, privatePortSpec.GetTransportProtocol(), "")
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred creating public port spec with host machine port num '%v' and protocol '%v'", hostMachinePortNumUint16, privatePortSpec.GetProtocol().String())
+		return nil, nil, stacktrace.Propagate(err, "An error occurred creating public port spec with host machine port num '%v' and protocol '%v'", hostMachinePortNumUint16, privatePortSpec.GetTransportProtocol().String())
 	}
 
 	return hostMachineIp, publicPortSpec, nil
 }
 
 func TransformPortSpecToDockerPort(portSpec *port_spec.PortSpec) (nat.Port, error) {
-	portSpecProto := portSpec.GetProtocol()
+	portSpecProto := portSpec.GetTransportProtocol()
 	dockerProto, found := portSpecProtosToDockerPortProtos[portSpecProto]
 	if !found {
 		// This should never happen because we enforce completeness via a unit test
@@ -258,7 +258,7 @@ func GetIpAndPortInfoFromContainer(
 				"An error occurred getting public port spec for private port '%v' with spec '%v/%v' on container '%v'",
 				portId,
 				privatePortSpec.GetNumber(),
-				privatePortSpec.GetProtocol().String(),
+				privatePortSpec.GetTransportProtocol().String(),
 				containerName,
 			)
 		}
@@ -397,7 +397,7 @@ func WaitForPortAvailabilityUsingNetstat(
 ) error {
 	commandStr := fmt.Sprintf(
 		"[ -n \"$(netstat -anp %v | grep LISTEN | grep %v)\" ]",
-		strings.ToLower(portSpec.GetProtocol().String()),
+		strings.ToLower(portSpec.GetTransportProtocol().String()),
 		portSpec.GetNumber(),
 	)
 	execCmd := []string{
