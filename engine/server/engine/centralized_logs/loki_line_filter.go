@@ -8,22 +8,13 @@ type LokiLineFilter struct {
 }
 
 func NewDoesContainLokiLineFilter(text string) *LokiLineFilter {
-	operator := lokiLineFilterOperatorContains
+	operator := lokiLineFilterOperatorDoesContain
 	return &LokiLineFilter{operator: operator, text: text}
 }
 
 func NewDoesNotContainLokiLineFilter(text string) *LokiLineFilter {
-	operator := lokiLineFilterOperatorDoesNotContains
+	operator := lokiLineFilterOperatorDoesNotContain
 	return &LokiLineFilter{operator: operator, text: text}
-}
-
-
-func (lineFilter *LokiLineFilter) GetText() string {
-	return lineFilter.text
-}
-
-func (lineFilter *LokiLineFilter) GetOperator() lokiLineFilterOperator {
-	return lineFilter.operator
 }
 
 func (lineFilter *LokiLineFilter) String() string {

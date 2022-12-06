@@ -168,9 +168,9 @@ func (service *EngineServerService) GetServiceLogs(
 		return stacktrace.Propagate(err, "An error occurred reporting missing user service GUIDs for enclave '%v' and requested service GUIDs '%+v'", enclaveId, requestedServiceGuids)
 	}
 
-	conjunctiveLogLineFilters, err := newConjunctiveLogLineFiltersGRPC(args.GetConjunctiveLineFilters())
+	conjunctiveLogLineFilters, err := newConjunctiveLogLineFiltersGRPC(args.GetConjunctiveFilters())
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating the conjunctive log line filters from the GRPC's conjunctive log line filters '%+v'", args.GetConjunctiveLineFilters())
+		return stacktrace.Propagate(err, "An error occurred creating the conjunctive log line filters from the GRPC's conjunctive log line filters '%+v'", args.GetConjunctiveFilters())
 	}
 
 	if shouldFollowLogs {
@@ -317,21 +317,21 @@ func getNotFoundServiceGuidsAndEmptyServiceLogsMap(
 func newConjunctiveLogLineFiltersGRPC(
 	logLineFilters []*kurtosis_engine_rpc_api_bindings.LogLineFilter,
 ) (centralized_logs.ConjunctiveLogLineFilters, error) {
-	var lokiLogLineFilters []*centralized_logs.LokiLineFilter
+	var lokiLogLineFilters []centralized_logs.LokiLineFilter
 
 	for _, logLineFilter := range logLineFilters {
 		var lokiLogLineFilter *centralized_logs.LokiLineFilter
 		operator := logLineFilter.GetOperator()
 		filterTextPattern := logLineFilter.GetTextPattern()
 		switch operator {
-		case kurtosis_engine_rpc_api_bindings.LogLineFilter_CONTAIN:
+		case kurtosis_engine_rpc_api_bindings.LogLineFilter_DOES_CONTAIN:
 			lokiLogLineFilter = centralized_logs.NewDoesContainLokiLineFilter(filterTextPattern)
 		case kurtosis_engine_rpc_api_bindings.LogLineFilter_DOES_NOT_CONTAIN:
 			lokiLogLineFilter = centralized_logs.NewDoesNotContainLokiLineFilter(filterTextPattern)
 		default:
 			return nil, stacktrace.NewError("Unrecognized log line filter operator '%v' in filter '%v'; this is a bug in Kurtosis", operator, logLineFilter)
 		}
-		lokiLogLineFilters = append(lokiLogLineFilters, lokiLogLineFilter)
+		lokiLogLineFilters = append(lokiLogLineFilters, *lokiLogLineFilter)
 	}
 
 	logPipeline := centralized_logs.NewLokiLogPipeline(lokiLogLineFilters)

@@ -176,8 +176,8 @@ message GetServiceLogsArgs {
   map<string, bool> service_guid_set = 2;
   // If true, It will follow the container logs
   bool follow_logs = 3;
-  // The conjunctive log lines filter, the first filter is applied over the founded log lines, the second filter is applied over the filter one result and so on (like grep)
-  repeated LogLineFilter conjunctive_line_filters = 4;
+  // The conjunctive log lines filters, the first filter is applied over the found log lines, the second filter is applied over the filter one result and so on (like grep)
+  repeated LogLineFilter conjunctive_filters = 4;
 }
 
 message GetServiceLogsResponse {
@@ -195,7 +195,7 @@ message LogLine {
 
 message LogLineFilter {
   enum LogLineOperator {
-    CONTAIN = 0;
+    DOES_CONTAIN = 0;
     DOES_NOT_CONTAIN = 1;
   }
   LogLineOperator operator = 1;

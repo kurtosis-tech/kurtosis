@@ -4,11 +4,15 @@ import (
 	"strings"
 )
 
+const (
+	separatorCharacter = " "
+)
+
 type lokiLogPipeline struct {
-	lineFilters []*LokiLineFilter
+	lineFilters []LokiLineFilter
 }
 
-func NewLokiLogPipeline(lineFilters []*LokiLineFilter) *lokiLogPipeline {
+func NewLokiLogPipeline(lineFilters []LokiLineFilter) *lokiLogPipeline {
 	return &lokiLogPipeline{lineFilters: lineFilters}
 }
 
@@ -17,7 +21,7 @@ func (logPipeline *lokiLogPipeline) GetConjunctiveLogLineFiltersString() string{
 	for _, lineFilter := range logPipeline.lineFilters {
 		lineFiltersStr = append(lineFiltersStr, lineFilter.String())
 	}
-	logPipelineStr := strings.Join(lineFiltersStr, " ")
+	logPipelineStr := strings.Join(lineFiltersStr, separatorCharacter)
 
 	return logPipelineStr
 }

@@ -379,7 +379,7 @@ func newGetServiceLogsArgs(
 		EnclaveId:      string(enclaveID),
 		ServiceGuidSet: userServiceGUIDStrSet,
 		FollowLogs:     shouldFollowLogs,
-		ConjunctiveLineFilters: nil, //TODO implement line filters on the client side, now we started from the backend, we are going to implement the client side on next PRs
+		ConjunctiveFilters: nil, //TODO implement log line filters on the client side, now we started from the backend, we are going to implement the client side on next PRs
 	}
 
 	return getUserServiceLogsArgs

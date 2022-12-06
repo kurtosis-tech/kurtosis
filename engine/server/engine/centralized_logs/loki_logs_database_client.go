@@ -76,6 +76,8 @@ const (
 	logsByKurtosisUserServiceGuidChanBuffSize = 5
 	errorChanBuffSize                         = 2
 
+	lokiEqualOperator = "="
+	lokiRegexMatchesOperator = "=~"
 )
 
 // A backoff schedule for when and how often to retry failed HTTP
@@ -505,53 +507,6 @@ func (client *lokiLogsDatabaseClient) doHttpRequest(
 	return httpResponse, httpResponseBodyBytes, nil
 }
 
-func getMaxRetentionLogsTimeParamValue() string {
-	now := time.Now()
-	maxRetentionLogsTime := now.Add(-maxRetentionPeriodHours)
-	maxRetentionLogsTimeNano := maxRetentionLogsTime.UnixNano()
-	maxRetentionLogsTimeNanoStr := fmt.Sprintf("%v", maxRetentionLogsTimeNano)
-	return maxRetentionLogsTimeNanoStr
-}
-
-func getQueryParamValue(
-	kurtosisContainerType string,
-	kurtosisGuids []string,
-	conjunctiveLogLineFilters ConjunctiveLogLineFilters,
-) string {
-	kurtosisGuidParaValues := getKurtosisGuidParamValues(kurtosisGuids)
-
-	allLogsDatabaseKurtosisTrackedValidLokiTagsByDockerLabelKey := docker_kurtosis_backend.GetAllLogsDatabaseKurtosisTrackedValidLokiTagsByDockerLabelKey()
-
-	kurtosisContainerTypeDockerLabelKey := label_key_consts.ContainerTypeDockerLabelKey
-
-	kurtosisContainerTypeLokiTagKey := allLogsDatabaseKurtosisTrackedValidLokiTagsByDockerLabelKey[kurtosisContainerTypeDockerLabelKey]
-
-	kurtosisGuidDockerLabelKey := label_key_consts.GUIDDockerLabelKey
-
-	kurtosisGuidLokiTagKey := allLogsDatabaseKurtosisTrackedValidLokiTagsByDockerLabelKey[kurtosisGuidDockerLabelKey]
-
-	streamSelectorInQuery := fmt.Sprintf(
-		`{%v="%v",%v=~"%v"}`,
-		kurtosisContainerTypeLokiTagKey,
-		kurtosisContainerType,
-		kurtosisGuidLokiTagKey,
-		kurtosisGuidParaValues,
-	)
-
-	queryParamValue := streamSelectorInQuery
-
-	if conjunctiveLogLineFilters != nil {
-		queryParamValue = fmt.Sprintf("%s %s", queryParamValue, conjunctiveLogLineFilters.GetConjunctiveLogLineFiltersString())
-	}
-
-	return queryParamValue
-}
-
-func getKurtosisGuidParamValues(kurtosisGuids []string) string {
-	kurtosisGuidsParamValues := strings.Join(kurtosisGuids, disjunctionTagOperator)
-	return kurtosisGuidsParamValues
-}
-
 func (client *lokiLogsDatabaseClient) getTailLogEndpointURLAndHeader(
 	enclaveID enclave.EnclaveID,
 	userServiceGuids map[service.ServiceGUID]bool,
@@ -586,6 +541,75 @@ func (client *lokiLogsDatabaseClient) getTailLogEndpointURLAndHeader(
 	httpHeaderWithTenantID.Add(organizationIdHttpHeaderKey, string(enclaveID))
 
 	return tailLogsEndpointUrl, httpHeaderWithTenantID
+}
+
+func getMaxRetentionLogsTimeParamValue() string {
+	now := time.Now()
+	maxRetentionLogsTime := now.Add(-maxRetentionPeriodHours)
+	maxRetentionLogsTimeNano := maxRetentionLogsTime.UnixNano()
+	maxRetentionLogsTimeNanoStr := fmt.Sprintf("%v", maxRetentionLogsTimeNano)
+	return maxRetentionLogsTimeNanoStr
+}
+
+func getQueryParamValue(
+	kurtosisContainerType string,
+	kurtosisGuids []string,
+	conjunctiveLogLineFilters ConjunctiveLogLineFilters,
+) string {
+	kurtosisGuidParaValues := getKurtosisGuidParamValues(kurtosisGuids)
+
+	allLogsDatabaseKurtosisTrackedValidLokiTagsByDockerLabelKey := docker_kurtosis_backend.GetAllLogsDatabaseKurtosisTrackedValidLokiTagsByDockerLabelKey()
+
+	kurtosisContainerTypeDockerLabelKey := label_key_consts.ContainerTypeDockerLabelKey
+
+	kurtosisContainerTypeLokiTagKey := allLogsDatabaseKurtosisTrackedValidLokiTagsByDockerLabelKey[kurtosisContainerTypeDockerLabelKey]
+
+	kurtosisGuidDockerLabelKey := label_key_consts.GUIDDockerLabelKey
+
+	kurtosisGuidLokiTagKey := allLogsDatabaseKurtosisTrackedValidLokiTagsByDockerLabelKey[kurtosisGuidDockerLabelKey]
+
+	streamSelectorInQuery := getLokiStreamSelectorStrWithContainerTypeAndGuidsTags(
+		kurtosisContainerTypeLokiTagKey,
+		kurtosisContainerType,
+		kurtosisGuidLokiTagKey,
+		kurtosisGuidParaValues,
+	)
+
+	var queryParamValue string
+	if conjunctiveLogLineFilters != nil {
+		queryParamValue = fmt.Sprintf("%s %s", queryParamValue, conjunctiveLogLineFilters.GetConjunctiveLogLineFiltersString())
+	} else {
+		queryParamValue = streamSelectorInQuery
+	}
+
+	return queryParamValue
+}
+
+//The stream selector determines which log streams to include in a query’s results.
+//This stream selector will return log streams which contains the declared "container-type" in "kurtosisContainerType"
+//and one of the "guids" defined in "kurtosisGuidParaValues"
+func getLokiStreamSelectorStrWithContainerTypeAndGuidsTags(
+	kurtosisContainerTypeLokiTagKey,
+	kurtosisContainerType,
+	kurtosisGuidLokiTagKey,
+	kurtosisGuidParaValues string,
+) string {
+	streamSelectorInQuery := fmt.Sprintf(
+		`{%v%v"%v",%v%v"%v"}`,
+		kurtosisContainerTypeLokiTagKey,
+		lokiEqualOperator,
+		kurtosisContainerType,
+		kurtosisGuidLokiTagKey,
+		lokiRegexMatchesOperator,
+		kurtosisGuidParaValues,
+	)
+
+	return streamSelectorInQuery
+}
+
+func getKurtosisGuidParamValues(kurtosisGuids []string) string {
+	kurtosisGuidsParamValues := strings.Join(kurtosisGuids, disjunctionTagOperator)
+	return kurtosisGuidsParamValues
 }
 
 func createUrl(scheme string, host string, path string) *url.URL {

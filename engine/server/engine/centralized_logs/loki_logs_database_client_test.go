@@ -28,21 +28,21 @@ const (
 	filterText = "first"
 
 	//Expected values
-	expectedFirstLogLineOnEachService       = "This is the first log line."
-	expectedOrganizationIdHttpHeaderKey     = "X-Scope-Orgid"
-	expectedStartTimeQueryParamKey          = "start"
-	expectedQueryLogsQueryParamKey          = "query"
-	expectedEntriesLimitQueryParamKey       = "limit"
-	expectedDirectionQueryParamKey          = "direction"
-	expectedKurtosisContainerTypeLokiTagKey = "comKurtosistechContainerType"
-	expectedKurtosisGuidLokiTagKey          = "comKurtosistechGuid"
-	expectedURLScheme                       = "http"
-	expectedQueryRangeURLPath               = "/loki/api/v1/query_range"
-	expectedQueryLogsQueryParamValueRegex   = `{comKurtosistechContainerType="user-service",comKurtosistechGuid=~"test-user-service-[1-3]\|test-user-service-[1-3]\|test-user-service-[1-3]"}`
-	expectedQueryLogsWithFilterQueryParamValueRegex   = expectedQueryLogsQueryParamValueRegex + "|= " + filterText
-	expectedEntriesLimitQueryParamValue     = "4000"
-	expectedDirectionQueryParamValue        = "forward"
-	expectedAmountQueryParams               = 4
+	expectedFirstLogLineOnEachService               = "This is the first log line."
+	expectedOrganizationIdHttpHeaderKey             = "X-Scope-Orgid"
+	expectedStartTimeQueryParamKey                  = "start"
+	expectedQueryLogsQueryParamKey                  = "query"
+	expectedEntriesLimitQueryParamKey               = "limit"
+	expectedDirectionQueryParamKey                  = "direction"
+	expectedKurtosisContainerTypeLokiTagKey         = "comKurtosistechContainerType"
+	expectedKurtosisGuidLokiTagKey                  = "comKurtosistechGuid"
+	expectedURLScheme                               = "http"
+	expectedQueryRangeURLPath                       = "/loki/api/v1/query_range"
+	expectedQueryLogsQueryParamValueRegex           = `{comKurtosistechContainerType="user-service",comKurtosistechGuid=~"test-user-service-[1-3]\|test-user-service-[1-3]\|test-user-service-[1-3]"}`
+	expectedQueryLogsWithFilterQueryParamValueRegex = expectedQueryLogsQueryParamValueRegex + "|= " + filterText
+	expectedEntriesLimitQueryParamValue             = "4000"
+	expectedDirectionQueryParamValue                = "forward"
+	expectedAmountQueryParams                       = 4
 
 	userServiceContainerType = "user-service"
 
@@ -141,7 +141,7 @@ func TestGetUserServiceLogsWithoutFilter_ValidResponse(t *testing.T) {
 		testUserService3Guid: 2,
 	}
 
-	var emptyLokiLineFilters []*LokiLineFilter
+	var emptyLokiLineFilters []LokiLineFilter
 	emptyLogPipeline := NewLokiLogPipeline(emptyLokiLineFilters)
 
 	userServiceLogsByGuidChan, errChan, closeStreamFunc, err := logsDatabaseClient.GetUserServiceLogs(ctx, enclaveId, userServiceGuids, emptyLogPipeline)
@@ -229,8 +229,10 @@ func TestGetUserServiceLogsWithFilter_ValidResponse(t *testing.T) {
 		testUserService3Guid: 1,
 	}
 
-	lokiLineFilters := []*LokiLineFilter{
-		NewDoesContainLokiLineFilter(filterText),
+	lokiLineFilter := NewDoesContainLokiLineFilter(filterText)
+
+	lokiLineFilters := []LokiLineFilter{
+		*lokiLineFilter,
 	}
 	logPipeline := NewLokiLogPipeline(lokiLineFilters)
 

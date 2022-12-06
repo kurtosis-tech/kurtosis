@@ -2304,7 +2304,7 @@ proto.engine_api.GetServiceLogsArgs.toObject = function(includeInstance, msg) {
     enclaveId: jspb.Message.getFieldWithDefault(msg, 1, ""),
     serviceGuidSetMap: (f = msg.getServiceGuidSetMap()) ? f.toObject(includeInstance, undefined) : [],
     followLogs: jspb.Message.getBooleanFieldWithDefault(msg, 3, false),
-    conjunctiveLineFiltersList: jspb.Message.toObjectList(msg.getConjunctiveLineFiltersList(),
+    conjunctiveFiltersList: jspb.Message.toObjectList(msg.getConjunctiveFiltersList(),
     proto.engine_api.LogLineFilter.toObject, includeInstance)
   };
 
@@ -2359,7 +2359,7 @@ proto.engine_api.GetServiceLogsArgs.deserializeBinaryFromReader = function(msg, 
     case 4:
       var value = new proto.engine_api.LogLineFilter;
       reader.readMessage(value,proto.engine_api.LogLineFilter.deserializeBinaryFromReader);
-      msg.addConjunctiveLineFilters(value);
+      msg.addConjunctiveFilters(value);
       break;
     default:
       reader.skipField();
@@ -2408,7 +2408,7 @@ proto.engine_api.GetServiceLogsArgs.serializeBinaryToWriter = function(message, 
       f
     );
   }
-  f = message.getConjunctiveLineFiltersList();
+  f = message.getConjunctiveFiltersList();
   if (f.length > 0) {
     writer.writeRepeatedMessage(
       4,
@@ -2478,10 +2478,10 @@ proto.engine_api.GetServiceLogsArgs.prototype.setFollowLogs = function(value) {
 
 
 /**
- * repeated LogLineFilter conjunctive_line_filters = 4;
+ * repeated LogLineFilter conjunctive_filters = 4;
  * @return {!Array<!proto.engine_api.LogLineFilter>}
  */
-proto.engine_api.GetServiceLogsArgs.prototype.getConjunctiveLineFiltersList = function() {
+proto.engine_api.GetServiceLogsArgs.prototype.getConjunctiveFiltersList = function() {
   return /** @type{!Array<!proto.engine_api.LogLineFilter>} */ (
     jspb.Message.getRepeatedWrapperField(this, proto.engine_api.LogLineFilter, 4));
 };
@@ -2491,7 +2491,7 @@ proto.engine_api.GetServiceLogsArgs.prototype.getConjunctiveLineFiltersList = fu
  * @param {!Array<!proto.engine_api.LogLineFilter>} value
  * @return {!proto.engine_api.GetServiceLogsArgs} returns this
 */
-proto.engine_api.GetServiceLogsArgs.prototype.setConjunctiveLineFiltersList = function(value) {
+proto.engine_api.GetServiceLogsArgs.prototype.setConjunctiveFiltersList = function(value) {
   return jspb.Message.setRepeatedWrapperField(this, 4, value);
 };
 
@@ -2501,7 +2501,7 @@ proto.engine_api.GetServiceLogsArgs.prototype.setConjunctiveLineFiltersList = fu
  * @param {number=} opt_index
  * @return {!proto.engine_api.LogLineFilter}
  */
-proto.engine_api.GetServiceLogsArgs.prototype.addConjunctiveLineFilters = function(opt_value, opt_index) {
+proto.engine_api.GetServiceLogsArgs.prototype.addConjunctiveFilters = function(opt_value, opt_index) {
   return jspb.Message.addToRepeatedWrapperField(this, 4, opt_value, proto.engine_api.LogLineFilter, opt_index);
 };
 
@@ -2510,8 +2510,8 @@ proto.engine_api.GetServiceLogsArgs.prototype.addConjunctiveLineFilters = functi
  * Clears the list making it empty but non-null.
  * @return {!proto.engine_api.GetServiceLogsArgs} returns this
  */
-proto.engine_api.GetServiceLogsArgs.prototype.clearConjunctiveLineFiltersList = function() {
-  return this.setConjunctiveLineFiltersList([]);
+proto.engine_api.GetServiceLogsArgs.prototype.clearConjunctiveFiltersList = function() {
+  return this.setConjunctiveFiltersList([]);
 };
 
 
@@ -2965,7 +2965,7 @@ proto.engine_api.LogLineFilter.serializeBinaryToWriter = function(message, write
  * @enum {number}
  */
 proto.engine_api.LogLineFilter.LogLineOperator = {
-  CONTAIN: 0,
+  DOES_CONTAIN: 0,
   DOES_NOT_CONTAIN: 1
 };
 

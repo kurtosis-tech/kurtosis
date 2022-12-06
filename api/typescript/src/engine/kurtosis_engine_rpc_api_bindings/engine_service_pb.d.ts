@@ -272,10 +272,10 @@ export class GetServiceLogsArgs extends jspb.Message {
   getFollowLogs(): boolean;
   setFollowLogs(value: boolean): GetServiceLogsArgs;
 
-  getConjunctiveLineFiltersList(): Array<LogLineFilter>;
-  setConjunctiveLineFiltersList(value: Array<LogLineFilter>): GetServiceLogsArgs;
-  clearConjunctiveLineFiltersList(): GetServiceLogsArgs;
-  addConjunctiveLineFilters(value?: LogLineFilter, index?: number): LogLineFilter;
+  getConjunctiveFiltersList(): Array<LogLineFilter>;
+  setConjunctiveFiltersList(value: Array<LogLineFilter>): GetServiceLogsArgs;
+  clearConjunctiveFiltersList(): GetServiceLogsArgs;
+  addConjunctiveFilters(value?: LogLineFilter, index?: number): LogLineFilter;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): GetServiceLogsArgs.AsObject;
@@ -290,7 +290,7 @@ export namespace GetServiceLogsArgs {
     enclaveId: string,
     serviceGuidSetMap: Array<[string, boolean]>,
     followLogs: boolean,
-    conjunctiveLineFiltersList: Array<LogLineFilter.AsObject>,
+    conjunctiveFiltersList: Array<LogLineFilter.AsObject>,
   }
 }
 
@@ -358,7 +358,7 @@ export namespace LogLineFilter {
   }
 
   export enum LogLineOperator { 
-    CONTAIN = 0,
+    DOES_CONTAIN = 0,
     DOES_NOT_CONTAIN = 1,
   }
 }

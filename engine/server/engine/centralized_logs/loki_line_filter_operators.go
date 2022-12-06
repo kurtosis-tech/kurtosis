@@ -7,24 +7,25 @@ type lokiLineFilterOperator int
 const (
 	// Remember to upgrade allLokiLineFilterOperators var if you add a new value here
 	lokiLineFilterOperatorUndefined lokiLineFilterOperator = iota
-	lokiLineFilterOperatorContains
-	lokiLineFilterOperatorDoesNotContains
+	lokiLineFilterOperatorDoesContain
+	lokiLineFilterOperatorDoesNotContain
 
-	containsValueStr = "|="
-	doesNotContainsValueStr = "!="
-	unknownValueStr = "unknown"
+	//These magic string are Loki's operators, you can read more about it here: https://grafana.com/docs/loki/latest/logql/log_queries/
+	doesContainValueStr    = "|="
+	doesNotContainValueStr = "!="
+	unknownValueStr        = "unknown"
 )
 
 func (filterOperator lokiLineFilterOperator) String() string {
 	switch filterOperator {
-	case lokiLineFilterOperatorContains:
-		return containsValueStr
-	case lokiLineFilterOperatorDoesNotContains:
-		return doesNotContainsValueStr
+	case lokiLineFilterOperatorDoesContain:
+		return doesContainValueStr
+	case lokiLineFilterOperatorDoesNotContain:
+		return doesNotContainValueStr
 	}
 	return unknownValueStr
 }
 
 func (filterOperator lokiLineFilterOperator) IsDefined() bool {
-	return  filterOperator != lokiLineFilterOperatorUndefined
+	return filterOperator != lokiLineFilterOperatorUndefined
 }
