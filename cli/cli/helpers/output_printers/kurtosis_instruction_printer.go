@@ -260,7 +260,7 @@ func formatInstructionToExecutable(instruction *kurtosis_core_rpc_api_bindings.S
 }
 
 func formatProgressMessage(messageLines []string) string {
-	return strings.Join(messageLines, "\n")
+	return strings.Join(messageLines, newlineChar)
 }
 
 func formatProgressBar(currentStep uint32, totalSteps uint32, progressBarChar string) string {

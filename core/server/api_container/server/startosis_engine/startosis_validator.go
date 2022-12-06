@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/sirupsen/logrus"
+	"sync"
 )
 
 const (
@@ -37,22 +38,22 @@ func (validator *StartosisValidator) Validate(ctx context.Context, instructions 
 		defer close(starlarkRunResponseLineStream)
 		isValidationFailure := false
 
-		starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromProgressInfo(
+		starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(
 			validationInProgressMsg, defaultCurrentStepNumber, defaultTotalStepsNumber)
 		environment := startosis_validator.NewValidatorEnvironment(validator.serviceNetwork.GetServiceIDs())
 
 		isValidationFailure = isValidationFailure ||
 			validator.validateAnUpdateEnvironment(instructions, environment, starlarkRunResponseLineStream)
-		logrus.Debug("Finished validating environment. Moving to container image validation.")
+		logrus.Debug("Finished validating environment. Validating and downloading container images.")
 
 		isValidationFailure = isValidationFailure ||
 			validator.downloadAndValidateImagesAccountingForProgress(ctx, environment, starlarkRunResponseLineStream)
 
 		if isValidationFailure {
-			logrus.Debug("All image validated with errors")
+			logrus.Debug("Errors encountered downloading and validating container images.")
 			starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunFailureEvent()
 		} else {
-			logrus.Debug("All image successfully validated")
+			logrus.Debug("All images successfully downloaded and validated.")
 		}
 	}()
 	return starlarkRunResponseLineStream
@@ -73,37 +74,50 @@ func (validator *StartosisValidator) validateAnUpdateEnvironment(instructions []
 
 func (validator *StartosisValidator) downloadAndValidateImagesAccountingForProgress(ctx context.Context, environment *startosis_validator.ValidatorEnvironment, starlarkRunResponseLineStream chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine) bool {
 	isValidationFailure := false
-	var imageCurrentlyBeingValidated []string
-	imageValidationStarted, imageValidationFinished, errors := validator.dockerImagesValidator.Validate(ctx, environment)
+	wg := &sync.WaitGroup{}
 
-	logrus.Debug("Waiting for all images to be validated")
-ReadAllChan:
-	for {
-		select {
-		case image, isChanOpen := <-imageValidationStarted:
-			if !isChanOpen {
-				break ReadAllChan
+	imageValidationStarted, imageValidationFinished, errors := validator.dockerImagesValidator.ValidateAsync(ctx, environment, wg)
+	defer func() {
+		close(imageValidationStarted)
+		close(imageValidationFinished)
+		close(errors)
+	}()
+
+	go func() {
+		var imageCurrentlyBeingValidated []string
+		// we read the three channels to update imageCurrentlyBeingValidated and return progress info back to the CLI
+		// it returns as soon as one channel is closed
+		for {
+			select {
+			case image, isChanOpen := <-imageValidationStarted:
+				if !isChanOpen {
+					return
+				}
+				logrus.Debugf("Received image validation started event: '%s'", image)
+				imageCurrentlyBeingValidated = append(imageCurrentlyBeingValidated, image)
+				updateProgressWithDownloadInfo(starlarkRunResponseLineStream, imageCurrentlyBeingValidated)
+			case image, isChanOpen := <-imageValidationFinished:
+				if !isChanOpen {
+					return
+				}
+				logrus.Debugf("Received image validation finished event: '%s'", image)
+				imageCurrentlyBeingValidated = removeIfPresent(imageCurrentlyBeingValidated, image)
+				updateProgressWithDownloadInfo(starlarkRunResponseLineStream, imageCurrentlyBeingValidated)
+			case err, isChanOpen := <-errors:
+				if !isChanOpen {
+					return
+				}
+				logrus.Debugf("Received an error during image validation: '%s'", err.Error())
+				isValidationFailure = true
+				wrappedValidationError := startosis_errors.WrapWithValidationError(err, "Error while validating final environment of script")
+				starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromValidationError(wrappedValidationError.ToAPIType())
 			}
-			logrus.Debugf("Received image validation started event: '%s'", image)
-			imageCurrentlyBeingValidated = append(imageCurrentlyBeingValidated, image)
-			updateProgressWithDownloadInfo(starlarkRunResponseLineStream, imageCurrentlyBeingValidated)
-		case image, isChanOpen := <-imageValidationFinished:
-			if !isChanOpen {
-				break ReadAllChan
-			}
-			logrus.Debugf("Received image validation finished event: '%s'", image)
-			imageCurrentlyBeingValidated = removeIfPresent(imageCurrentlyBeingValidated, image)
-			updateProgressWithDownloadInfo(starlarkRunResponseLineStream, imageCurrentlyBeingValidated)
-		case err, isChanOpen := <-errors:
-			if !isChanOpen {
-				break ReadAllChan
-			}
-			logrus.Debugf("Received an error during image validation: '%s'", err.Error())
-			isValidationFailure = true
-			wrappedValidationError := startosis_errors.WrapWithValidationError(err, "Error while validating final environment of script")
-			starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromValidationError(wrappedValidationError.ToAPIType())
 		}
-	}
+	}()
+
+	logrus.Debug("Waiting for all images to be downloaded and validated")
+	wg.Wait()
+
 	return isValidationFailure
 }
 

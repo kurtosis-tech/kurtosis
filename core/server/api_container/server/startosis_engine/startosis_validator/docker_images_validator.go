@@ -22,12 +22,16 @@ func NewDockerImagesValidator(kurtosisBackend *backend_interface.KurtosisBackend
 	}
 }
 
-// Validate validates all container images by downloading them.
+// ValidateAsync validates all container images by downloading them. It is an async function, and it takes as input a
+// WaitGroup that will unblock once the function is complete (as opposed to when the function returns). It allows the
+// consumer to run this function synchronously by calling it and then waiting for wait group to resolve.
 // It returns three channels:
 // - One that receives an image name when this image validation starts
 // - One that receives an image name when an image validation finishes
 // - An error channel that receives all errors happening during validation
-func (validator *DockerImagesValidator) Validate(ctx context.Context, environment *ValidatorEnvironment) (<-chan string, <-chan string, <-chan error) {
+// Note that since it is an async function, the channels aren't not closed by this function, consumers need to take
+// care of closing them.
+func (validator *DockerImagesValidator) ValidateAsync(ctx context.Context, environment *ValidatorEnvironment, wg *sync.WaitGroup) (chan string, chan string, chan error) {
 	pullErrors := make(chan error)
 	imageDownloadStarted := make(chan string)
 	imageDownloadFinished := make(chan string)
@@ -35,24 +39,13 @@ func (validator *DockerImagesValidator) Validate(ctx context.Context, environmen
 	// We use a buffered channel to control concurrency. We push a bool to this channel when a download starts, and
 	// pop one when it finishes
 	imageCurrentlyDownloading := make(chan bool, maxNumberOfConcurrentDownloads)
-	var wg sync.WaitGroup
-
-	go func() {
-		// The condition that allows us to close the channels is the WaitGroup returning.
-		// We need to make sure it always return, which is the case here since we decrease it immediately in
-		// fetchImageFromBackend
-		wg.Wait()
-		close(pullErrors)
-		close(imageCurrentlyDownloading)
-		close(imageDownloadStarted)
-		close(imageDownloadFinished)
-	}()
 
 	for image := range environment.requiredDockerImages {
 		wg.Add(1)
 		logrus.Debugf("Starting the download of image: '%s'", image)
-		go fetchImageFromBackend(ctx, &wg, imageCurrentlyDownloading, validator.kurtosisBackend, image, pullErrors, imageDownloadStarted, imageDownloadFinished)
+		go fetchImageFromBackend(ctx, wg, imageCurrentlyDownloading, validator.kurtosisBackend, image, pullErrors, imageDownloadStarted, imageDownloadFinished)
 	}
+
 	logrus.Debug("All image validation submitted, currently in progress.")
 	return imageDownloadStarted, imageDownloadFinished, pullErrors
 }

@@ -330,7 +330,7 @@ func NewStarlarkRunResponseLineFromExecutionError(executionError *kurtosis_core_
 	}
 }
 
-func NewStarlarkRunResponseLineFromProgressInfo(currentStepInfo string, currentStepNumber uint32, totalSteps uint32) *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+func NewStarlarkRunResponseLineFromSinglelineProgressInfo(currentStepInfo string, currentStepNumber uint32, totalSteps uint32) *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
 	return &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine{
 		RunResponseLine: &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine_ProgressInfo{
 			ProgressInfo: &kurtosis_core_rpc_api_bindings.StarlarkRunProgress{
