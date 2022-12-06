@@ -2,6 +2,7 @@
 ### Changes
 - Prepared the Kurtosis engine server to do search in logs
 - Adding `log line filters` parameter in the `GetServiceLogs` Kurtosis engine endpoint
+- Made the test for `get_value` use the `jq` string extraction features
 
 ### Features
 - The CLI now displays the list of container images currently being downloaded and validated during the Starlark

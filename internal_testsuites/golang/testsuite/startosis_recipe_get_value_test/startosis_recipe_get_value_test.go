@@ -27,7 +27,7 @@ def run(args):
 	get_recipe = struct(
 		service_id = "web-server",
 		port_id = "http-port",
-		endpoint = "?input=output",
+		endpoint = "?input=foo/bar",
 		method = "GET",
 	)
 	response = get_value(get_recipe)
@@ -40,8 +40,8 @@ def run(args):
 	assert(response.code, ">", 100)
 	assert(response.code, "IN", [100, 200])
 	assert(response.code, "NOT_IN", [100, 300])
-	get_test_output = extract(response.body, ".query.input")
-	assert(get_test_output, "==", "output")
+	get_test_output = extract(response.body, '.query.input | split("/") | .[1]')
+	assert(get_test_output, "==", "bar")
 	post_recipe = struct(
 		service_id = "web-server",
 		port_id = "http-port",
