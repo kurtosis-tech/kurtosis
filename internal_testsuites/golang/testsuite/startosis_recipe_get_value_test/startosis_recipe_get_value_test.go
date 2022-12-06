@@ -29,7 +29,7 @@ def run(args):
 		port_id = "http-port",
 		endpoint = "?input=output",
 		method = "GET",
-		extractors = {
+		extract = {
 			"input": ".query.input"
 		}
 	)
@@ -51,7 +51,7 @@ def run(args):
 		method = "POST",
 		content_type="text/plain",
 		body="post_output",
-		extractors = {
+		extract = {
 			"my-body": ".body"
 		}
 	)
