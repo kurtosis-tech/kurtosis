@@ -115,7 +115,7 @@ func (instruction *ExecInstruction) Execute(ctx context.Context) (*string, error
 	if instruction.expectedExitCode != exitCode {
 		return nil, stacktrace.NewError("The exit code expected '%v' wasn't the exit code received '%v' while running the command", instruction.expectedExitCode, exitCode)
 	}
-	instruction.runtimeValueStore.SetValue(instruction.execId, createComparableToSetRunTimeValue(commandOutput, exitCode))
+	instruction.runtimeValueStore.SetValue(instruction.execId, createStarlarkComparable(commandOutput, exitCode))
 	instructionResult := formatInstructionOutput(exitCode, commandOutput)
 	return &instructionResult, nil
 }
@@ -199,7 +199,7 @@ func createStarlarkReturnValueForExec(resultUuid string) *starlarkstruct.Struct 
 	)
 }
 
-func createComparableToSetRunTimeValue(execOutput string, exitCode int32) map[string]starlark.Comparable {
+func createStarlarkComparable(execOutput string, exitCode int32) map[string]starlark.Comparable {
 	return map[string]starlark.Comparable{
 		execOutputSuffix:   starlark.String(execOutput),
 		execExitCodeSuffix: starlark.MakeInt(int(exitCode)),
