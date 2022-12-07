@@ -201,11 +201,11 @@ func (kurtosisCtx *KurtosisContext) GetServiceLogs(
 	//this process could take much time until the next channel pull, so we could be filling the buffer during that time to not let the servers thread idled
 	serviceLogsStreamContentChan := make(chan *serviceLogsStreamContent, serviceLogsStreamContentChanBufferSize)
 
-	getUserServiceLogsArgs := newGetUserServiceLogsArgs(enclaveID, userServiceGuids, shouldFollowLogs)
+	getServiceLogsArgs := newGetServiceLogsArgs(enclaveID, userServiceGuids, shouldFollowLogs)
 
-	stream, err := kurtosisCtx.client.GetServiceLogs(ctxWithCancel, getUserServiceLogsArgs)
+	stream, err := kurtosisCtx.client.GetServiceLogs(ctxWithCancel, getServiceLogsArgs)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred streaming user service logs using args '%+v'", getUserServiceLogsArgs)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred streaming service logs using args '%+v'", getServiceLogsArgs)
 	}
 
 	go runReceiveStreamLogsFromTheServerRoutine(
@@ -363,7 +363,7 @@ func validateEngineApiVersion(ctx context.Context, engineServiceClient kurtosis_
 	return nil
 }
 
-func newGetUserServiceLogsArgs(
+func newGetServiceLogsArgs(
 	enclaveID enclaves.EnclaveID,
 	userServiceGUIDs map[services.ServiceGUID]bool,
 	shouldFollowLogs bool,
@@ -379,6 +379,7 @@ func newGetUserServiceLogsArgs(
 		EnclaveId:      string(enclaveID),
 		ServiceGuidSet: userServiceGUIDStrSet,
 		FollowLogs:     shouldFollowLogs,
+		ConjunctiveFilters: nil, //TODO implement log line filters on the client side, now we started from the backend, we are going to implement the client side on next PRs
 	}
 
 	return getUserServiceLogsArgs

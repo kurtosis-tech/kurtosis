@@ -168,13 +168,18 @@ func (service *EngineServerService) GetServiceLogs(
 		return stacktrace.Propagate(err, "An error occurred reporting missing user service GUIDs for enclave '%v' and requested service GUIDs '%+v'", enclaveId, requestedServiceGuids)
 	}
 
+	conjunctiveLogLineFilters, err := newConjunctiveLogLineFiltersGRPC(args.GetConjunctiveFilters())
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating the conjunctive log line filters from the GRPC's conjunctive log line filters '%+v'", args.GetConjunctiveFilters())
+	}
+
 	if shouldFollowLogs {
-		serviceLogsByServiceGuidChan, errChan, cancelStreamFunc, err = service.logsDatabaseClient.StreamUserServiceLogs(stream.Context(), enclaveId, requestedServiceGuids)
+		serviceLogsByServiceGuidChan, errChan, cancelStreamFunc, err = service.logsDatabaseClient.StreamUserServiceLogs(stream.Context(), enclaveId, requestedServiceGuids, conjunctiveLogLineFilters)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred streaming service logs for GUIDs '%+v' in enclave with ID '%v'", requestedServiceGuids, enclaveId)
 		}
 	} else {
-		serviceLogsByServiceGuidChan, errChan, cancelStreamFunc, err = service.logsDatabaseClient.GetUserServiceLogs(stream.Context(), enclaveId, requestedServiceGuids)
+		serviceLogsByServiceGuidChan, errChan, cancelStreamFunc, err = service.logsDatabaseClient.GetUserServiceLogs(stream.Context(), enclaveId, requestedServiceGuids, conjunctiveLogLineFilters)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred streaming service logs for GUIDs '%+v' in enclave with ID '%v'", requestedServiceGuids, enclaveId)
 		}
@@ -307,4 +312,29 @@ func getNotFoundServiceGuidsAndEmptyServiceLogsMap(
 	}
 
 	return notFoundServiceGuids
+}
+
+func newConjunctiveLogLineFiltersGRPC(
+	logLineFilters []*kurtosis_engine_rpc_api_bindings.LogLineFilter,
+) (centralized_logs.ConjunctiveLogLineFilters, error) {
+	var lokiLogLineFilters []centralized_logs.LokiLineFilter
+
+	for _, logLineFilter := range logLineFilters {
+		var lokiLogLineFilter *centralized_logs.LokiLineFilter
+		operator := logLineFilter.GetOperator()
+		filterTextPattern := logLineFilter.GetTextPattern()
+		switch operator {
+		case kurtosis_engine_rpc_api_bindings.LogLineFilter_DOES_CONTAIN:
+			lokiLogLineFilter = centralized_logs.NewDoesContainLokiLineFilter(filterTextPattern)
+		case kurtosis_engine_rpc_api_bindings.LogLineFilter_DOES_NOT_CONTAIN:
+			lokiLogLineFilter = centralized_logs.NewDoesNotContainLokiLineFilter(filterTextPattern)
+		default:
+			return nil, stacktrace.NewError("Unrecognized log line filter operator '%v' in filter '%v'; this is a bug in Kurtosis", operator, logLineFilter)
+		}
+		lokiLogLineFilters = append(lokiLogLineFilters, *lokiLogLineFilter)
+	}
+
+	logPipeline := centralized_logs.NewLokiLogPipeline(lokiLogLineFilters)
+
+	return logPipeline, nil
 }

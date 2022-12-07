@@ -1,8 +1,12 @@
 # TBD
+### Changes
+- Prepared the Kurtosis engine server to do search in logs
+- Adding `log line filters` parameter in the `GetServiceLogs` Kurtosis engine endpoint
 
 ### Features
 - The CLI now displays the list of container images currently being downloaded and validated during the Starlark
 validation step
+- `exec` now returns the command output and code
 
 ### Changes
 - Remove completion files 
@@ -18,7 +22,6 @@ validation step
 - Fixed a bug which was happening on small terminal windows regarding the display of the progress bar and progress info
 
 # 0.57.6
-
 ### Features
 - The "Starlark code successfully executed" or "Error encountered running Starlark code" messages are now "Starlark 
 code successfully run in dry-run mode" and "Error encountered running Starlark code in dry-run mode" when Starlark is 

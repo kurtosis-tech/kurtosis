@@ -25,28 +25,31 @@ const (
 	testUserService2Guid = "test-user-service-2"
 	testUserService3Guid = "test-user-service-3"
 
+	filterText = "first"
+
 	//Expected values
-	expectedFirstLogLineOnEachService       = "This is the first log line."
-	expectedOrganizationIdHttpHeaderKey     = "X-Scope-Orgid"
-	expectedStartTimeQueryParamKey          = "start"
-	expectedQueryLogsQueryParamKey          = "query"
-	expectedEntriesLimitQueryParamKey       = "limit"
-	expectedDirectionQueryParamKey          = "direction"
-	expectedKurtosisContainerTypeLokiTagKey = "comKurtosistechContainerType"
-	expectedKurtosisGuidLokiTagKey          = "comKurtosistechGuid"
-	expectedURLScheme                       = "http"
-	expectedQueryRangeURLPath               = "/loki/api/v1/query_range"
-	expectedQueryLogsQueryParamValueRegex   = `{comKurtosistechContainerType="user-service",comKurtosistechGuid=~"test-user-service-[1-3]\|test-user-service-[1-3]\|test-user-service-[1-3]"}`
-	expectedEntriesLimitQueryParamValue     = "4000"
-	expectedDirectionQueryParamValue        = "forward"
-	expectedAmountQueryParams               = 4
+	expectedFirstLogLineOnEachService               = "This is the first log line."
+	expectedOrganizationIdHttpHeaderKey             = "X-Scope-Orgid"
+	expectedStartTimeQueryParamKey                  = "start"
+	expectedQueryLogsQueryParamKey                  = "query"
+	expectedEntriesLimitQueryParamKey               = "limit"
+	expectedDirectionQueryParamKey                  = "direction"
+	expectedKurtosisContainerTypeLokiTagKey         = "comKurtosistechContainerType"
+	expectedKurtosisGuidLokiTagKey                  = "comKurtosistechGuid"
+	expectedURLScheme                               = "http"
+	expectedQueryRangeURLPath                       = "/loki/api/v1/query_range"
+	expectedQueryLogsQueryParamValueRegex           = `{comKurtosistechContainerType="user-service",comKurtosistechGuid=~"test-user-service-[1-3]\|test-user-service-[1-3]\|test-user-service-[1-3]"}`
+	expectedQueryLogsWithFilterQueryParamValueRegex = expectedQueryLogsQueryParamValueRegex + "|= " + filterText
+	expectedEntriesLimitQueryParamValue             = "4000"
+	expectedDirectionQueryParamValue                = "forward"
+	expectedAmountQueryParams                       = 4
 
 	userServiceContainerType = "user-service"
 
 	testTimeOut = 30 * time.Second
 )
 
-func TestGetUserServiceLogs_ValidResponse(t *testing.T) {
+func TestGetUserServiceLogsWithoutFilter_ValidResponse(t *testing.T) {
 	enclaveId := enclave.EnclaveID(testEnclaveId)
 	userServiceGuids := map[service.ServiceGUID]bool{
 		testUserService1Guid: true,
@@ -118,7 +121,7 @@ func TestGetUserServiceLogs_ValidResponse(t *testing.T) {
 		ProtoMajor:       0,
 		ProtoMinor:       0,
 		Header:           nil,
-		Body:             io.NopCloser(strings.NewReader(mockedResponseBodyStr)),
+		Body:             io.NopCloser(strings.NewReader(mocks.MockedResponseBodyWithSeveralValuesStr)),
 		ContentLength:    0,
 		TransferEncoding: nil,
 		Close:            false,
@@ -138,10 +141,105 @@ func TestGetUserServiceLogs_ValidResponse(t *testing.T) {
 		testUserService3Guid: 2,
 	}
 
-	userServiceLogsByGuidChan, errChan, closeStreamFunc, err := logsDatabaseClient.GetUserServiceLogs(ctx, enclaveId, userServiceGuids)
+	var emptyLokiLineFilters []LokiLineFilter
+	emptyLogPipeline := NewLokiLogPipeline(emptyLokiLineFilters)
+
+	userServiceLogsByGuidChan, errChan, closeStreamFunc, err := logsDatabaseClient.GetUserServiceLogs(ctx, enclaveId, userServiceGuids, emptyLogPipeline)
 	defer closeStreamFunc()
 
 	require.NoError(t, err, "An error occurred getting user service logs for GUIDs '%+v' in enclave '%v'", userServiceGuids, enclaveId)
+	require.NotNil(t, userServiceLogsByGuidChan, "Received a nil user service logs channel, but a non-nil value was expected")
+	require.Nil(t, errChan, "Received a not nil error channel, but a nil value was expected")
+
+	var testEvaluationErr error
+
+	shouldReceiveStream := true
+	for shouldReceiveStream {
+		select {
+		case <-time.Tick(testTimeOut):
+			testEvaluationErr = stacktrace.NewError("Receiving stream logs in the test has reached the '%v' time out", testTimeOut)
+			shouldReceiveStream = false
+			break
+		case userServiceLogsByGuid, isChanOpen := <-userServiceLogsByGuidChan:
+			if !isChanOpen {
+				shouldReceiveStream = false
+				break
+			}
+
+			require.Equal(t, len(userServiceGuids), len(userServiceLogsByGuid))
+
+			for userServiceGuid := range userServiceGuids {
+				logLines, found := userServiceLogsByGuid[userServiceGuid]
+				require.True(t, found)
+
+				expectedAmountLogLines, found := expectedUserServiceAmountLogLinesByUserServiceGuid[userServiceGuid]
+				require.True(t, found)
+
+				require.Equal(t, expectedAmountLogLines, len(logLines))
+
+				require.Equal(t, expectedFirstLogLineOnEachService, logLines[0].GetContent())
+			}
+
+			shouldReceiveStream = false
+			break
+		}
+	}
+
+	require.NoError(t, testEvaluationErr)
+
+}
+
+func TestGetUserServiceLogsWithFilter_ValidResponse(t *testing.T) {
+	enclaveId := enclave.EnclaveID(testEnclaveId)
+	userServiceGuids := map[service.ServiceGUID]bool{
+		testUserService1Guid: true,
+		testUserService2Guid: true,
+		testUserService3Guid: true,
+	}
+	mockHttpClient := mocks.NewMockHttpClient(t)
+	mockHttpClient.EXPECT().Do(mock.Anything).Run(func(request *http.Request) {
+
+		queryLogsQueryParams := request.URL.Query().Get(expectedQueryLogsQueryParamKey)
+		require.Regexp(t, regexp.MustCompile(expectedQueryLogsWithFilterQueryParamValueRegex), queryLogsQueryParams)
+
+	}).Return(&http.Response{
+		Status:           "",
+		StatusCode:       http.StatusOK,
+		Proto:            "",
+		ProtoMajor:       0,
+		ProtoMinor:       0,
+		Header:           nil,
+		Body:             io.NopCloser(strings.NewReader(mocks.MockedResponseBodyWithOneLineValuesStr)),
+		ContentLength:    0,
+		TransferEncoding: nil,
+		Close:            false,
+		Uncompressed:     false,
+		Trailer:          nil,
+		Request:          nil,
+		TLS:              nil,
+	}, nil)
+
+	logsDatabaseClient := NewLokiLogsDatabaseClient(fakeLogsDatabaseAddress, mockHttpClient)
+
+	ctx := context.Background()
+
+	expectedUserServiceAmountLogLinesByUserServiceGuid := map[service.ServiceGUID]int{
+		testUserService1Guid: 1,
+		testUserService2Guid: 1,
+		testUserService3Guid: 1,
+	}
+
+	lokiLineFilter := NewDoesContainLokiLineFilter(filterText)
+
+	lokiLineFilters := []LokiLineFilter{
+		*lokiLineFilter,
+	}
+	logPipeline := NewLokiLogPipeline(lokiLineFilters)
+
+	userServiceLogsByGuidChan, errChan, closeStreamFunc, err := logsDatabaseClient.GetUserServiceLogs(ctx, enclaveId, userServiceGuids, logPipeline)
+	defer closeStreamFunc()
+
+	require.NoError(t, err, "An error occurred getting user service logs for GUIDs '%+v' using log pipeline '%v' in enclave '%v'", userServiceGuids, logPipeline, enclaveId)
 	require.NotNil(t, userServiceLogsByGuidChan, "Received a nil user service logs channel, but a non-nil value was expected")
 	require.Nil(t, errChan, "Received a not nil error channel, but a nil value was expected")
 
