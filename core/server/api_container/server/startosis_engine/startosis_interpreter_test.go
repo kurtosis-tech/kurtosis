@@ -26,7 +26,6 @@ import (
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
 	"net"
-	"reflect"
 	"strings"
 	"testing"
 )
@@ -753,9 +752,10 @@ func TestStartosisInterpreter_ValidExecScriptWithoutExitCodeDefaultsTo0(t *testi
 	defer packageContentProvider.RemoveAll()
 	testRuntimeValueStore := runtime_value_store.NewRuntimeValueStore()
 	interpreter := NewStartosisInterpreterWithRecipeExecutor(testServiceNetwork, packageContentProvider, testRuntimeValueStore)
+	testExecId := "aed4492"
 	script := `
 print("Executing mkdir!")
-exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"])
+exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"], exec_id = "` + testExecId + `")
 `
 
 	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
@@ -766,11 +766,9 @@ exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"])
 		"service_id":         starlark.String("example-datastore-server"),
 		"command":            starlark.NewList([]starlark.Value{starlark.String("mkdir"), starlark.String("/tmp/foo")}),
 		"expected_exit_code": starlark.MakeInt(0),
+		"exec_id":            starlark.String(testExecId),
 	}
 	starlarkKwargs.Freeze()
-
-	// This is a hack to get the hidden random field `resultUuid` so that require.Equal works
-	resultUuidInInstruction := reflect.ValueOf(instructions[1]).Elem().FieldByName("resultUuid").String()
 
 	execInstruction := exec.NewExecInstruction(
 		testServiceNetwork,
@@ -780,7 +778,7 @@ exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"])
 		0,
 		starlarkKwargs,
 		testRuntimeValueStore,
-		resultUuidInInstruction,
+		testExecId,
 	)
 
 	require.Equal(t, execInstruction, instructions[1])
@@ -795,9 +793,10 @@ func TestStartosisInterpreter_PassedExitCodeIsInterpretedCorrectly(t *testing.T)
 	defer packageContentProvider.RemoveAll()
 	testRuntimeValueStore := runtime_value_store.NewRuntimeValueStore()
 	interpreter := NewStartosisInterpreterWithRecipeExecutor(testServiceNetwork, packageContentProvider, testRuntimeValueStore)
+	testExecId := "aed4492"
 	script := `
 print("Executing mkdir!")
-exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"], expected_exit_code = -7)
+exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"], expected_exit_code = -7 , exec_id = "` + testExecId + `")
 `
 
 	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
@@ -808,11 +807,9 @@ exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"], e
 		"service_id":         starlark.String("example-datastore-server"),
 		"command":            starlark.NewList([]starlark.Value{starlark.String("mkdir"), starlark.String("/tmp/foo")}),
 		"expected_exit_code": starlark.MakeInt(-7),
+		"exec_id":            starlark.String(testExecId),
 	}
 	starlarkKwargs.Freeze()
-
-	// This is a hack to get the hidden random field `resultUuid` so that require.Equal works
-	resultUuidInInstruction := reflect.ValueOf(instructions[1]).Elem().FieldByName("resultUuid").String()
 
 	execInstruction := exec.NewExecInstruction(
 		testServiceNetwork,
@@ -822,7 +819,7 @@ exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"], e
 		-7,
 		starlarkKwargs,
 		testRuntimeValueStore,
-		resultUuidInInstruction,
+		testExecId,
 	)
 
 	require.Equal(t, execInstruction, instructions[1])

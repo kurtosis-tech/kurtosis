@@ -266,6 +266,17 @@ func ParseArtifactId(artifactUuidArgName string, artifactIdStr starlark.String) 
 	return enclave_data_directory.FilesArtifactID(artifactId), interpretationErr
 }
 
+func ParseExecId(execIdArgName string, execIdStr starlark.String) (string, *startosis_errors.InterpretationError) {
+	execId, interpretationErr := safeCastToString(execIdStr, execIdArgName)
+	if interpretationErr != nil {
+		return "", interpretationErr
+	}
+	if len(execId) == 0 {
+		return "", startosis_errors.NewInterpretationError("exec id can't be empty for argument '%s'", execIdArgName)
+	}
+	return execId, interpretationErr
+}
+
 func ParseTemplatesAndData(templatesAndData *starlark.Dict) (map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, *startosis_errors.InterpretationError) {
 	templateAndDataByDestRelFilepath := make(map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData)
 	for _, relPathInFilesArtifactKey := range templatesAndData.Keys() {
