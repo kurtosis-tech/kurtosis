@@ -22,8 +22,8 @@ const (
 	emptyBody         = ""
 	unusedContentType = ""
 
-	StatusCodeKey = "code"
-	BodyKey       = "body"
+	statusCodeKey = "code"
+	bodyKey       = "body"
 )
 
 var backoffSchedule = []time.Duration{
@@ -101,8 +101,8 @@ func (recipe *HttpRequestRecipe) Execute(ctx context.Context, serviceNetwork ser
 		return nil, stacktrace.Propagate(err, "An error occurred while reading HTTP response body")
 	}
 	resultDict := map[string]starlark.Comparable{
-		BodyKey:       starlark.String(body),
-		StatusCodeKey: starlark.MakeInt(response.StatusCode),
+		bodyKey:       starlark.String(body),
+		statusCodeKey: starlark.MakeInt(response.StatusCode),
 	}
 	extractDict, err := recipe.extract(body)
 	if err != nil {
@@ -172,8 +172,8 @@ func (recipe *HttpRequestRecipe) extract(body []byte) (map[string]starlark.Compa
 
 func (recipe *HttpRequestRecipe) CreateStarlarkReturnValue(resultUuid string) *starlark.Dict {
 	dict := &starlark.Dict{}
-	_ = dict.SetKey(starlark.String(BodyKey), starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, BodyKey)))
-	_ = dict.SetKey(starlark.String(StatusCodeKey), starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, StatusCodeKey)))
+	_ = dict.SetKey(starlark.String(bodyKey), starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, bodyKey)))
+	_ = dict.SetKey(starlark.String(statusCodeKey), starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, statusCodeKey)))
 	for extractorKey := range recipe.extractors {
 		_ = dict.SetKey(starlark.String(extractorKey), starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, extractorKey)))
 	}

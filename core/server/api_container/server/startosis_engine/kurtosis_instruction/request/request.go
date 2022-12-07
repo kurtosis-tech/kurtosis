@@ -92,7 +92,7 @@ func (instruction *RequestInstruction) Execute(ctx context.Context) (*string, er
 		return nil, stacktrace.Propagate(err, "Error executing http recipe")
 	}
 	instruction.recipeExecutor.SetValue(instruction.resultUuid, result)
-	instructionResult := fmt.Sprintf("Value obtained with status code '%d'", result[recipe.StatusCodeKey])
+	instructionResult := fmt.Sprintf("Value obtained '%v'", result)
 	return &instructionResult, err
 }
 
