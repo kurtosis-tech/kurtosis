@@ -43,7 +43,7 @@ def run(args):
 	assert(response["code"], ">", 100)
 	assert(response["code"], "IN", [100, 200])
 	assert(response["code"], "NOT_IN", [100, 300])
-	assert(response["input"], "==", "output")
+	assert(response["extract.input"], "==", "output")
 	post_recipe = struct(
 		service_id = "web-server",
 		port_id = "http-port",
@@ -58,7 +58,7 @@ def run(args):
 	wait(post_recipe, "code", "==", 200)
 	post_response = request(post_recipe)
 	assert(post_response["code"], "==", 200)
-	assert(post_response["my-body"], "==", "post_output")
+	assert(post_response["extract.my-body"], "==", "post_output")
 `
 )
 

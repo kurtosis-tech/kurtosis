@@ -141,8 +141,8 @@ func (interpreter *StartosisInterpreter) buildBindings(thread *starlark.Thread, 
 		// Kurtosis instructions - will push instructions to the queue that will affect the enclave state at execution
 		add_service.AddServiceBuiltinName:                starlark.NewBuiltin(add_service.AddServiceBuiltinName, add_service.GenerateAddServiceBuiltin(instructionsQueue, interpreter.serviceNetwork, interpreter.factsEngine)),
 		assert.AssertBuiltinName:                         starlark.NewBuiltin(assert.AssertBuiltinName, assert.GenerateAssertBuiltin(instructionsQueue, interpreter.recipeExecutor, interpreter.serviceNetwork)),
-		exec.ExecBuiltinName:                             starlark.NewBuiltin(exec.ExecBuiltinName, exec.GenerateExecBuiltin(instructionsQueue, interpreter.serviceNetwork)),
 		request.RequestBuiltinName:                       starlark.NewBuiltin(request.RequestBuiltinName, request.GenerateRequestBuiltin(instructionsQueue, interpreter.recipeExecutor, interpreter.serviceNetwork)),
+		exec.ExecBuiltinName:                             starlark.NewBuiltin(exec.ExecBuiltinName, exec.GenerateExecBuiltin(instructionsQueue, interpreter.serviceNetwork, interpreter.recipeExecutor)),
 		kurtosis_print.PrintBuiltinName:                  starlark.NewBuiltin(kurtosis_print.PrintBuiltinName, kurtosis_print.GeneratePrintBuiltin(instructionsQueue, interpreter.recipeExecutor, interpreter.serviceNetwork)),
 		remove_service.RemoveServiceBuiltinName:          starlark.NewBuiltin(remove_service.RemoveServiceBuiltinName, remove_service.GenerateRemoveServiceBuiltin(instructionsQueue, interpreter.serviceNetwork)),
 		render_templates.RenderTemplatesBuiltinName:      starlark.NewBuiltin(render_templates.RenderTemplatesBuiltinName, render_templates.GenerateRenderTemplatesBuiltin(instructionsQueue, interpreter.serviceNetwork)),
@@ -228,4 +228,15 @@ func generateInterpretationError(err error) *startosis_errors.InterpretationErro
 		return slError
 	}
 	return startosis_errors.NewInterpretationError("UnknownError: %s\n", err.Error())
+}
+
+func newStartosisInterpreterWithRecipeExecutorForTesting(serviceNetwork service_network.ServiceNetwork, moduleContentProvider startosis_packages.PackageContentProvider, recipeExecutor *runtime_value_store.RuntimeValueStore) *StartosisInterpreter {
+	return &StartosisInterpreter{
+		mutex:                 &sync.Mutex{},
+		serviceNetwork:        serviceNetwork,
+		factsEngine:           nil,
+		recipeExecutor:        recipeExecutor,
+		moduleGlobalsCache:    make(map[string]*startosis_packages.ModuleCacheEntry),
+		moduleContentProvider: moduleContentProvider,
+	}
 }

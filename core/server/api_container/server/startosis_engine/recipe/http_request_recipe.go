@@ -21,8 +21,9 @@ const (
 	emptyBody         = ""
 	unusedContentType = ""
 
-	StatusCodeKey = "code"
-	BodyKey       = "body"
+	statusCodeKey    = "code"
+	bodyKey          = "body"
+	extractKeyPrefix = "extract"
 )
 
 type HttpRequestRecipe struct {
@@ -87,15 +88,15 @@ func (recipe *HttpRequestRecipe) Execute(ctx context.Context, serviceNetwork ser
 		return nil, stacktrace.Propagate(err, "An error occurred while reading HTTP response body")
 	}
 	resultDict := map[string]starlark.Comparable{
-		BodyKey:       starlark.String(body),
-		StatusCodeKey: starlark.MakeInt(response.StatusCode),
+		bodyKey:       starlark.String(body),
+		statusCodeKey: starlark.MakeInt(response.StatusCode),
 	}
 	extractDict, err := recipe.extract(body)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while running extractors on HTTP response body")
 	}
 	for extractorKey, extractorValue := range extractDict {
-		resultDict[extractorKey] = extractorValue
+		resultDict[fmt.Sprintf("%v.%v", extractKeyPrefix, extractorKey)] = extractorValue
 	}
 	return resultDict, nil
 }
@@ -125,7 +126,7 @@ func (recipe *HttpRequestRecipe) extract(body []byte) (map[string]starlark.Compa
 				break
 			}
 			if err, ok := matchValue.(error); ok {
-				logrus.Errorf("%v", err)
+				logrus.Errorf("HTTP request recipe extract emitted error '%v'", err)
 			}
 			if matchValue != nil {
 				var parsedMatchValue starlark.Comparable
@@ -158,10 +159,11 @@ func (recipe *HttpRequestRecipe) extract(body []byte) (map[string]starlark.Compa
 
 func (recipe *HttpRequestRecipe) CreateStarlarkReturnValue(resultUuid string) *starlark.Dict {
 	dict := &starlark.Dict{}
-	_ = dict.SetKey(starlark.String(BodyKey), starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, BodyKey)))
-	_ = dict.SetKey(starlark.String(StatusCodeKey), starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, StatusCodeKey)))
+	_ = dict.SetKey(starlark.String(bodyKey), starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, bodyKey)))
+	_ = dict.SetKey(starlark.String(statusCodeKey), starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, statusCodeKey)))
 	for extractorKey := range recipe.extractors {
-		_ = dict.SetKey(starlark.String(extractorKey), starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, extractorKey)))
+		fullExtractorKey := fmt.Sprintf("%v.%v", extractKeyPrefix, extractorKey)
+		_ = dict.SetKey(starlark.String(fullExtractorKey), starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, fullExtractorKey)))
 	}
 	dict.Freeze()
 	return dict
