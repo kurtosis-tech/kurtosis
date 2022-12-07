@@ -272,7 +272,7 @@ func ParseExecId(execIdArgName string, execIdStr starlark.String) (string, *star
 		return "", interpretationErr
 	}
 	if len(execId) == 0 {
-		return "", startosis_errors.NewInterpretationError("exec id can't be empty for argument '%s'", execIdArgName)
+		return "", startosis_errors.NewInterpretationError("%v can't be empty", execIdArgName)
 	}
 	return execId, interpretationErr
 }
