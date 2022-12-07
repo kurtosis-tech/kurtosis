@@ -2,7 +2,9 @@
 
 ### Breaking Changes
 - Rename command from `get_value` to `request` command
+- Change function signature of `wait`
 - Remove `extract` command
+- Remove `define_fact` command
 
 ### Changes
 - Add `extract` option to HTTP requests

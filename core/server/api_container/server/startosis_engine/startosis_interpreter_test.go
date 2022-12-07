@@ -880,23 +880,6 @@ this is a test string
 	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutput)
 }
 
-func TestStartosisInterpreter_DefineFactAndWait(t *testing.T) {
-	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
-	defer packageContentProvider.RemoveAll()
-	interpreter := NewStartosisInterpreterWithFacts(testServiceNetwork, nil, packageContentProvider, nil)
-	scriptFormatStr := `
-define_fact(service_id="%v", fact_name="%v", fact_recipe=struct(method="GET", endpoint="/", port_id="http"))
-wait(service_id="%v", fact_name="%v")
-`
-	serviceId := "service"
-	factName := "fact"
-	script := fmt.Sprintf(scriptFormatStr, serviceId, factName, serviceId, factName)
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
-	require.Nil(t, interpretationError)
-	require.NotEmpty(t, instructions)
-	validateScriptOutputFromPrintInstructions(t, instructions, "")
-}
-
 func TestStartosisInterpreter_RenderTemplates(t *testing.T) {
 	testArtifactId, err := enclave_data_directory.NewFilesArtifactID()
 	require.Nil(t, err)

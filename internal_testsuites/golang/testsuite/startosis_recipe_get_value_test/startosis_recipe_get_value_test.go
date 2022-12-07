@@ -33,7 +33,7 @@ def run(args):
 			"input": ".query.input"
 		}
 	)
-	response = request(get_recipe)
+	response = wait(get_recipe, "code", "==", 200)
 	assert(response["code"], "==", 200)
 	assert("My test returned " + response["code"], "==", "My test returned 200")
 	assert(response["code"], "!=", 500)
