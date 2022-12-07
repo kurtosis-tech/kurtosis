@@ -19,5 +19,3 @@ go build -o "${CLI_BINARY_PATH}" main.go
 for sh in bash zsh fish; do
 	"${CLI_BINARY_PATH}" completion "$sh" > "${COMPLETIONS_SCRIPT_DIR}/kurtosis.$sh"
 done
-
-#trap 'rm -rf "${COMPLETIONS_BINARY_DIR}"' exit
