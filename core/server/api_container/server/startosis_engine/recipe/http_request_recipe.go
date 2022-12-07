@@ -140,7 +140,7 @@ func (recipe *HttpRequestRecipe) extract(body []byte) (map[string]starlark.Compa
 				break
 			}
 			if err, ok := matchValue.(error); ok {
-				logrus.Errorf("%v", err)
+				logrus.Errorf("HTTP request recipe extract emitted error '%v'", err)
 			}
 			if matchValue != nil {
 				var parsedMatchValue starlark.Comparable
