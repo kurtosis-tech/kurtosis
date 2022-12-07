@@ -26,6 +26,7 @@ import (
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
 	"net"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -46,7 +47,6 @@ var (
 	defaultEnvVars                     map[string]string = nil
 	defaultPrivateIPAddressPlaceholder                   = ""
 	defaultPublicPortNumber                              = uint32(0)
-	defaultResultUuid                                    = ""
 )
 
 func TestStartosisInterpreter_SimplePrintScript(t *testing.T) {
@@ -768,6 +768,10 @@ exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"])
 		"expected_exit_code": starlark.MakeInt(0),
 	}
 	starlarkKwargs.Freeze()
+
+	// This is a hack to get the hidden random field `resultUuid` so that require.Equal works
+	resultUuidInInstruction := reflect.ValueOf(instructions[1]).Elem().FieldByName("resultUuid").String()
+
 	execInstruction := exec.NewExecInstruction(
 		testServiceNetwork,
 		kurtosis_instruction.NewInstructionPosition(3, 5, startosis_constants.PackageIdPlaceholderForStandaloneScript),
@@ -776,7 +780,7 @@ exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"])
 		0,
 		starlarkKwargs,
 		testRuntimeValueStore,
-		defaultResultUuid,
+		resultUuidInInstruction,
 	)
 
 	require.Equal(t, execInstruction, instructions[1])
@@ -806,6 +810,10 @@ exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"], e
 		"expected_exit_code": starlark.MakeInt(-7),
 	}
 	starlarkKwargs.Freeze()
+
+	// This is a hack to get the hidden random field `resultUuid` so that require.Equal works
+	resultUuidInInstruction := reflect.ValueOf(instructions[1]).Elem().FieldByName("resultUuid").String()
+
 	execInstruction := exec.NewExecInstruction(
 		testServiceNetwork,
 		kurtosis_instruction.NewInstructionPosition(3, 5, startosis_constants.PackageIdPlaceholderForStandaloneScript),
@@ -814,7 +822,7 @@ exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"], e
 		-7,
 		starlarkKwargs,
 		testRuntimeValueStore,
-		defaultResultUuid,
+		resultUuidInInstruction,
 	)
 
 	require.Equal(t, execInstruction, instructions[1])

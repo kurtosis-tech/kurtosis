@@ -43,7 +43,7 @@ func GenerateExecBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstr
 		if interpretationError := execInstruction.parseStartosisArgs(b, args, kwargs); interpretationError != nil {
 			return nil, interpretationError
 		}
-		execInstruction.resultUuid = ""
+		execInstruction.resultUuid = runtimeValueStore.CreateValue()
 		*instructionsQueue = append(*instructionsQueue, execInstruction)
 		returnValue := createStarlarkReturnValueForExec(execInstruction.resultUuid)
 		return returnValue, nil
