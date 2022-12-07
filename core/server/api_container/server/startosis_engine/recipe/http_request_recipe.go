@@ -22,8 +22,9 @@ const (
 	emptyBody         = ""
 	unusedContentType = ""
 
-	statusCodeKey = "code"
-	bodyKey       = "body"
+	statusCodeKey    = "code"
+	bodyKey          = "body"
+	extractKeyPrefix = "extract"
 )
 
 var backoffSchedule = []time.Duration{
@@ -109,7 +110,7 @@ func (recipe *HttpRequestRecipe) Execute(ctx context.Context, serviceNetwork ser
 		return nil, stacktrace.Propagate(err, "An error occurred while running extractors on HTTP response body")
 	}
 	for extractorKey, extractorValue := range extractDict {
-		resultDict[extractorKey] = extractorValue
+		resultDict[fmt.Sprintf("%v.%v", extractKeyPrefix, extractorKey)] = extractorValue
 	}
 	return resultDict, nil
 }
@@ -175,7 +176,8 @@ func (recipe *HttpRequestRecipe) CreateStarlarkReturnValue(resultUuid string) *s
 	_ = dict.SetKey(starlark.String(bodyKey), starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, bodyKey)))
 	_ = dict.SetKey(starlark.String(statusCodeKey), starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, statusCodeKey)))
 	for extractorKey := range recipe.extractors {
-		_ = dict.SetKey(starlark.String(extractorKey), starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, extractorKey)))
+		fullExtractorKey := fmt.Sprintf("%v.%v", extractKeyPrefix, extractorKey)
+		_ = dict.SetKey(starlark.String(fullExtractorKey), starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, fullExtractorKey)))
 	}
 	dict.Freeze()
 	return dict
