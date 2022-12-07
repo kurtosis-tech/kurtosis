@@ -27,7 +27,6 @@ test("Test Starlark Exec", TestAddServiceWithEmptyAndWithoutPorts)
 
 async function TestAddServiceWithEmptyAndWithoutPorts() {
 
-    // ------------------------------------- ENGINE SETUP ----------------------------------------------
     const createEnclaveResult = await createEnclave(STARLARK_EXEC_TEST, IS_PARTITIONING_ENABLED)
 
     if(createEnclaveResult.isErr()) { throw createEnclaveResult.error }
@@ -35,7 +34,6 @@ async function TestAddServiceWithEmptyAndWithoutPorts() {
     const { enclaveContext, stopEnclaveFunction } = createEnclaveResult.value
 
     try {
-        // ------------------------------------- TEST SETUP ----------------------------------------------
         log.info("Executing Starlark script...")
         const runResult = await enclaveContext.runStarlarkScriptBlocking(STARLARK_SCRIPT, EMPTY_ARGS, DEFAULT_DRY_RUN)
         if (runResult.isErr()) {
