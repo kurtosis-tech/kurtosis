@@ -29,7 +29,6 @@ const (
 	targetArgName                  = "target_value"
 	optionalBackoffDurationArgName = "backoff?"
 	optionalTimeoutArgName         = "timeout?"
-	defaultRetryCount              = 5
 )
 
 var (
@@ -155,7 +154,7 @@ func (instruction *WaitInstruction) parseStartosisArgs(b *starlark.Builtin, args
 		optionalTimeout         starlark.String = ""
 	)
 
-	if err := starlark.UnpackArgs(b.Name(), args, kwargs, recipeArgName, &recipeConfigArg, targetKeyArgName, &targetKeyArg, assertionArgName, &assertionArg, targetArgName, &targetArg, optionalBackoffDurationArgName, &optionalBackoffDuration, optionalRetryCountArgName, &optionalTimeout); err != nil {
+	if err := starlark.UnpackArgs(b.Name(), args, kwargs, recipeArgName, &recipeConfigArg, targetKeyArgName, &targetKeyArg, assertionArgName, &assertionArg, targetArgName, &targetArg, optionalBackoffDurationArgName, &optionalBackoffDuration, optionalTimeoutArgName, &optionalTimeout); err != nil {
 		return startosis_errors.NewInterpretationError(err.Error())
 	}
 	instruction.starlarkKwargs = starlark.StringDict{
