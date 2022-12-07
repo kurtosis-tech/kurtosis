@@ -40,7 +40,6 @@ func TestStarlarkExec(t *testing.T) {
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
 	logrus.Infof("Executing Starlark script...")
-	logrus.Debugf("Startosis script content: \n%v", starlarkScript)
 
 	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkScript, emptyParams, defaultDryRun)
 	require.NoError(t, err, "Unexpected error executing Starlark script")
