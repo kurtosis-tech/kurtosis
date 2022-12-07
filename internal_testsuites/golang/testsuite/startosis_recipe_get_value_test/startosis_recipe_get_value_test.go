@@ -33,7 +33,7 @@ def run(args):
 			"input": ".query.input"
 		}
 	)
-	response = wait(get_recipe, "code", "==", 200)
+	response = wait(get_recipe, "code", "==", 200, backoff="10s", retry=3)
 	assert(response["code"], "==", 200)
 	assert("My test returned " + response["code"], "==", "My test returned 200")
 	assert(response["code"], "!=", 500)
@@ -55,6 +55,7 @@ def run(args):
 			"my-body": ".body"
 		}
 	)
+	wait(post_recipe, "code", "==", 200)
 	post_response = request(post_recipe)
 	assert(post_response["code"], "==", 200)
 	assert(post_response["my-body"], "==", "post_output")

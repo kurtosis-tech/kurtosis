@@ -3,6 +3,7 @@ package wait
 import (
 	"context"
 	"fmt"
+	"github.com/cenkalti/backoff/v4"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
@@ -22,17 +23,18 @@ import (
 const (
 	WaitBuiltinName = "wait"
 
-	recipeArgName    = "recipe"
-	targetKeyArgName = "target_field"
-	assertionArgName = "assertion"
-	targetArgName    = "target_value"
+	recipeArgName                  = "recipe"
+	targetKeyArgName               = "target_field"
+	assertionArgName               = "assertion"
+	targetArgName                  = "target_value"
+	optionalBackoffDurationArgName = "backoff?"
+	optionalTimeoutArgName         = "timeout?"
+	defaultRetryCount              = 5
 )
 
-var backoffSchedule = []time.Duration{
-	1 * time.Second,
-	3 * time.Second,
-	10 * time.Second,
-}
+var (
+	defaultBackoffDuration = 5 * time.Second
+)
 
 func GenerateWaitBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, recipeExecutor *runtime_value_store.RuntimeValueStore, serviceNetwork service_network.ServiceNetwork) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 	// TODO: Force returning an InterpretationError rather than a normal error
@@ -62,6 +64,7 @@ type WaitInstruction struct {
 	targetKey         string
 	assertion         string
 	target            starlark.Comparable
+	backoff           *backoff.ExponentialBackOff
 }
 
 func newEmptyWaitInstructionInstruction(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition, recipeExecutor *runtime_value_store.RuntimeValueStore) *WaitInstruction {
@@ -76,6 +79,7 @@ func newEmptyWaitInstructionInstruction(serviceNetwork service_network.ServiceNe
 		targetKey:         "",
 		assertion:         "",
 		target:            nil,
+		backoff:           backoff.NewExponentialBackOff(),
 	}
 }
 
@@ -89,6 +93,8 @@ func (instruction *WaitInstruction) GetCanonicalInstruction() *kurtosis_core_rpc
 		binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[targetKeyArgName]), targetKeyArgName, kurtosis_instruction.Representative),
 		binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[assertionArgName]), assertionArgName, kurtosis_instruction.Representative),
 		binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[targetArgName]), targetArgName, kurtosis_instruction.Representative),
+		binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[optionalBackoffDurationArgName]), optionalBackoffDurationArgName, kurtosis_instruction.NotRepresentative),
+		binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[optionalTimeoutArgName]), optionalTimeoutArgName, kurtosis_instruction.NotRepresentative),
 	}
 	return binding_constructors.NewStarlarkInstruction(instruction.position.ToAPIType(), WaitBuiltinName, instruction.String(), args)
 }
@@ -99,10 +105,14 @@ func (instruction *WaitInstruction) Execute(ctx context.Context) (*string, error
 		assertErr  error
 	)
 	lastResult := map[string]starlark.Comparable{}
-	for _, backoff := range backoffSchedule {
+	for {
+		backoffDuration := instruction.backoff.NextBackOff()
+		if backoffDuration == backoff.Stop {
+			break
+		}
 		lastResult, requestErr = instruction.httpRequestRecipe.Execute(ctx, instruction.serviceNetwork)
 		if requestErr != nil {
-			time.Sleep(backoff)
+			time.Sleep(backoffDuration)
 			continue
 		}
 		instruction.recipeExecutor.SetValue(instruction.resultUuid, lastResult)
@@ -112,7 +122,7 @@ func (instruction *WaitInstruction) Execute(ctx context.Context) (*string, error
 		}
 		assertErr = assert.Assert(value, instruction.assertion, instruction.target)
 		if assertErr != nil {
-			time.Sleep(backoff)
+			time.Sleep(backoffDuration)
 			continue
 		}
 		break
@@ -137,20 +147,24 @@ func (instruction *WaitInstruction) ValidateAndUpdateEnvironment(environment *st
 
 func (instruction *WaitInstruction) parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) *startosis_errors.InterpretationError {
 	var (
-		recipeConfigArg *starlarkstruct.Struct
-		targetKeyArg    starlark.String
-		assertionArg    starlark.String
-		targetArg       starlark.Comparable
+		recipeConfigArg         *starlarkstruct.Struct
+		targetKeyArg            starlark.String
+		assertionArg            starlark.String
+		targetArg               starlark.Comparable
+		optionalBackoffDuration starlark.String = ""
+		optionalTimeout         starlark.String = ""
 	)
 
-	if err := starlark.UnpackArgs(b.Name(), args, kwargs, recipeArgName, &recipeConfigArg, targetKeyArgName, &targetKeyArg, assertionArgName, &assertionArg, targetArgName, &targetArg); err != nil {
+	if err := starlark.UnpackArgs(b.Name(), args, kwargs, recipeArgName, &recipeConfigArg, targetKeyArgName, &targetKeyArg, assertionArgName, &assertionArg, targetArgName, &targetArg, optionalBackoffDurationArgName, &optionalBackoffDuration, optionalRetryCountArgName, &optionalTimeout); err != nil {
 		return startosis_errors.NewInterpretationError(err.Error())
 	}
 	instruction.starlarkKwargs = starlark.StringDict{
-		recipeArgName:    recipeConfigArg,
-		targetKeyArgName: targetKeyArg,
-		assertionArgName: assertionArg,
-		targetArgName:    targetArg,
+		recipeArgName:                  recipeConfigArg,
+		targetKeyArgName:               targetKeyArg,
+		assertionArgName:               assertionArg,
+		targetArgName:                  targetArg,
+		optionalBackoffDurationArgName: optionalBackoffDuration,
+		optionalTimeoutArgName:         optionalTimeout,
 	}
 	instruction.starlarkKwargs.Freeze()
 
@@ -162,6 +176,20 @@ func (instruction *WaitInstruction) parseStartosisArgs(b *starlark.Builtin, args
 	instruction.assertion = string(assertionArg)
 	instruction.target = targetArg
 	instruction.targetKey = string(targetKeyArg)
+	if optionalBackoffDuration != "" {
+		backoffDuration, parseErr := time.ParseDuration(optionalBackoffDuration.GoString())
+		if parseErr != nil {
+			return startosis_errors.WrapWithInterpretationError(parseErr, "An error occurred when parsing duration '%v'", optionalBackoffDuration.GoString())
+		}
+		instruction.backoff.InitialInterval = backoffDuration
+	}
+	if optionalTimeout != "" {
+		timeout, parseErr := time.ParseDuration(optionalTimeout.GoString())
+		if parseErr != nil {
+			return startosis_errors.NewInterpretationError("An error occurred when parsing retry count '%v'", optionalTimeout)
+		}
+		instruction.backoff.MaxElapsedTime = timeout
+	}
 
 	if _, found := assert.StringTokenToComparisonStarlarkToken[instruction.assertion]; !found && instruction.assertion != "IN" && instruction.assertion != "NOT_IN" {
 		return startosis_errors.NewInterpretationError("'%v' is not a valid assertion", assertionArg)
