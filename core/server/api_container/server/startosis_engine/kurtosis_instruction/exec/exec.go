@@ -142,8 +142,7 @@ func (instruction *ExecInstruction) parseStartosisArgs(b *starlark.Builtin, args
 	}
 
 	if execIdArg == emptyStarlarkString {
-		execIdStr := runtimeValueStore.CreateValue()
-		execIdArg = starlark.String(execIdStr)
+		execIdArg = starlark.String(runtimeValueStore.CreateValue())
 	}
 
 	instruction.starlarkKwargs[serviceIdArgName] = serviceIdArg
