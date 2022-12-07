@@ -645,18 +645,3 @@ func TestEncodeStarlarkObjectAsJSON_EncodesStructsCorrectly(t *testing.T) {
 	expectedStr := `{"buzz":42,"fizz":false,"foo":"bar"}`
 	require.Equal(t, expectedStr, structJsonStr)
 }
-
-func TestParseExecId_ValidId(t *testing.T) {
-	testId := "foo"
-	testIdStarlarkStr := starlark.String(testId)
-	parsedExecId, err := ParseExecId("testArgName", testIdStarlarkStr)
-	require.Nil(t, err)
-	require.Equal(t, testId, parsedExecId)
-}
-
-func TestParseExecId_ZeroLengthId(t *testing.T) {
-	testId := ""
-	testIdStarlarkStr := starlark.String(testId)
-	_, err := ParseExecId("testArgName", testIdStarlarkStr)
-	require.NotNil(t, err)
-}

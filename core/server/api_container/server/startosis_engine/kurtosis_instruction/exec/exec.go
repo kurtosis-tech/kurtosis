@@ -166,7 +166,7 @@ func (instruction *ExecInstruction) parseStartosisArgs(b *starlark.Builtin, args
 		return interpretationErr
 	}
 
-	execId, interpretationErr := kurtosis_instruction.ParseExecId(execIdArgName, execIdArg)
+	execId, interpretationErr := kurtosis_instruction.ParseNonEmptyString(execIdArgName, execIdArg)
 	if interpretationErr != nil {
 		return interpretationErr
 	}

@@ -751,7 +751,7 @@ func TestStartosisInterpreter_ValidExecScriptWithoutExitCodeDefaultsTo0(t *testi
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
 	testRuntimeValueStore := runtime_value_store.NewRuntimeValueStore()
-	interpreter := NewStartosisInterpreterWithRecipeExecutor(testServiceNetwork, packageContentProvider, testRuntimeValueStore)
+	interpreter := newStartosisInterpreterWithRecipeExecutorForTesting(testServiceNetwork, packageContentProvider, testRuntimeValueStore)
 	testExecId := "aed4492"
 	script := `
 print("Executing mkdir!")
@@ -792,7 +792,7 @@ func TestStartosisInterpreter_PassedExitCodeIsInterpretedCorrectly(t *testing.T)
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
 	testRuntimeValueStore := runtime_value_store.NewRuntimeValueStore()
-	interpreter := NewStartosisInterpreterWithRecipeExecutor(testServiceNetwork, packageContentProvider, testRuntimeValueStore)
+	interpreter := newStartosisInterpreterWithRecipeExecutorForTesting(testServiceNetwork, packageContentProvider, testRuntimeValueStore)
 	testExecId := "aed4492"
 	script := `
 print("Executing mkdir!")
