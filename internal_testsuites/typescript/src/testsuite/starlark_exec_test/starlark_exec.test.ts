@@ -6,7 +6,7 @@ const IS_PARTITIONING_ENABLED = false
 const DEFAULT_DRY_RUN = false
 const EMPTY_ARGS = "{}"
 
-const STARLARK_SCRIPT = `
+const STARLARK_SCRIPT =`
 def run(args):
 	service_config = struct(
 		image = "mendhak/http-https-echo:26",
@@ -18,7 +18,7 @@ def run(args):
 	add_service(service_id = "web-server", config = service_config)
 	response = exec("web-server", ["echo", "hello", "world"])
 	assert(response.code, "==", 0)
-	assert(response.output, "==", "hello world\n")
+	assert(response.output, "==", "hello world\\n")
 `
 
 jest.setTimeout(180000)
