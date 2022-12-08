@@ -2,11 +2,12 @@
 ### Changes
 - Prepared the Kurtosis engine server to do search in logs
 - Adding `log line filters` parameter in the `GetServiceLogs` Kurtosis engine endpoint
-- The `args` to `kurtosis run` now are passed as the second positional argument, instead of the `--args` flag
+- Changed how `args` to `kurtosis run` are passed, they are passed as  second positional argument, instead of the `--args` flag
+- Made `CLI` error if more arguments than expected are passed
 
 ### Breaking Changes
-- The `args` to `kurtosis run` now are passed as the second positional argument, instead of the `--args` flag
-  - Users will have to start using `kurtosis run <script> <args>` without the flag
+- Changed how `args` to `kurtosis run` are passed, they are passed as  second positional argument, instead of the `--args` flag
+  - Users will have to start using `kurtosis run <script> <args>` without the `--arg` flag
   - If there are any scripts that depend on the `--args` flag, users should use the `args` arg instead
 
 ### Features
