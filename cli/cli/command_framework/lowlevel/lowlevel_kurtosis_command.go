@@ -322,7 +322,7 @@ func (kurtosisCmd *LowlevelKurtosisCommand) MustGetCobraCommand() *cobra.Command
 		Long:                  kurtosisCmd.LongDescription,
 		ValidArgsFunction:     getCompletionsFunc,
 		RunE:                  cobraRunFunc,
-		Args:                  cobra.OnlyValidArgs,
+		Args:                  cobra.ExactValidArgs(len(kurtosisCmd.Args)),
 	}
 
 	// Validates that the default values for the declared flags match the declard types, and add them to the Cobra command
