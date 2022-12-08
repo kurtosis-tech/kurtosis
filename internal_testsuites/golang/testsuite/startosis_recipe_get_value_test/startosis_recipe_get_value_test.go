@@ -30,7 +30,7 @@ def run(args):
 		endpoint = "?input=foo/bar",
 		method = "GET",
 		extract = {
-      "exploded-slash": ".query.input | split("/") | .[1]"
+			"exploded-slash": ".query.input | split("/") | .[1]"
 		}
 	)
 	response = request(get_recipe)
@@ -43,7 +43,7 @@ def run(args):
 	assert(response["code"], ">", 100)
 	assert(response["code"], "IN", [100, 200])
 	assert(response["code"], "NOT_IN", [100, 300])
-  assert(response["extract.exploded-slash"], "==", "bar")
+  	assert(response["extract.exploded-slash"], "==", "bar")
 	post_recipe = struct(
 		service_id = "web-server",
 		port_id = "http-port",
