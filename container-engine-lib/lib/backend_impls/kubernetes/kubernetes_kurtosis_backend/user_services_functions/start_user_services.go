@@ -449,10 +449,9 @@ func updateServiceWhenContainerStarted(
 			// on each loop so that we have a fixed moment-in-time value.
 			newServicePortCopy := newServicePort
 			portUpdateToApply := &applyconfigurationsv1.ServicePortApplyConfiguration{
-				Name:     &newServicePortCopy.Name,
-				Protocol: &newServicePortCopy.Protocol,
-				// TODO fill this out for an app port!
-				AppProtocol: nil,
+				Name:        &newServicePortCopy.Name,
+				Protocol:    &newServicePortCopy.Protocol,
+				AppProtocol: newServicePortCopy.AppProtocol,
 				Port:        &newServicePortCopy.Port,
 				TargetPort:  nil,
 				NodePort:    nil,
@@ -469,10 +468,9 @@ func updateServiceWhenContainerStarted(
 			specReversionToApply := applyconfigurationsv1.ServiceSpec()
 			for _, oldServicePort := range newServicePorts {
 				portUpdateToApply := &applyconfigurationsv1.ServicePortApplyConfiguration{
-					Name:     &oldServicePort.Name,
-					Protocol: &oldServicePort.Protocol,
-					// TODO fill this out for an app port!
-					AppProtocol: nil,
+					Name:        &oldServicePort.Name,
+					Protocol:    &oldServicePort.Protocol,
+					AppProtocol: oldServicePort.AppProtocol,
 					Port:        &oldServicePort.Port,
 					TargetPort:  nil,
 					NodePort:    nil,
@@ -595,10 +593,9 @@ func getKubernetesServicePortsFromPrivatePortSpecs(privatePorts map[string]*port
 		}
 
 		kubernetesPortObj := apiv1.ServicePort{
-			Name:     portId,
-			Protocol: kubernetesProtocol,
-			// TODO Specify this!!! Will make for a really nice user interface (e.g. "https")
-			AppProtocol: nil,
+			Name:        portId,
+			Protocol:    kubernetesProtocol,
+			AppProtocol: portSpec.GetMaybeApplicationProtocol(),
 			// Safe to cast because max uint16 < int32
 			Port: int32(portSpec.GetNumber()),
 			TargetPort: intstr.IntOrString{
