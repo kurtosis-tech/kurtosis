@@ -17,6 +17,9 @@ validation step
 - `exec` now returns the command output and code
 - Added capability for container-engine to store optional application protocol for Kubernetes.
 
+### Removals
+- Remove facts engine and endpoints
+
 
 ### Changes
 - Remove completion files 
