@@ -199,7 +199,7 @@ func run(
 			return stacktrace.Propagate(err, "There was an error reading file or package from disk at '%v'", starlarkScriptOrPackagePath)
 		}
 
-		if isStandAloneScript(fileOrDir) {
+		if isStandaloneScript(fileOrDir) {
 			if !strings.HasSuffix(starlarkScriptOrPackagePath, starlarkExtension) {
 				return stacktrace.NewError("Expected a script with a '%s' extension but got file '%v' with a different extension", starlarkExtension, starlarkScriptOrPackagePath)
 			}
@@ -339,8 +339,8 @@ func parseVerbosityFlag(flags *flags.ParsedFlags) (command_args_run.Verbosity, e
 	return verbosity, nil
 }
 
-// isStandAloneScript returns true if the fileInfo points to a non `kurtosis.yml` regular file
-func isStandAloneScript(fileInfo os.FileInfo) bool {
+// isStandaloneScript returns true if the fileInfo points to a non `kurtosis.yml` regular file
+func isStandaloneScript(fileInfo os.FileInfo) bool {
 	return fileInfo.Mode().IsRegular() && fileInfo.Name() != kurtosisYMLFilePath
 }
 
