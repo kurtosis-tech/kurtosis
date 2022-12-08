@@ -207,7 +207,7 @@ func run(
 		} else {
 			// if the path is a file with `kurtosis.yml` at the end it's a module dir
 			// we remove the `kurtosis.yml` to get just the Dir containing the module
-			if fileOrDir.Mode().IsRegular() && path.Base(starlarkScriptOrPackagePath) == kurtosisYMLFilePath {
+			if isKurtosisYMLFileInPackageDir(fileOrDir) {
 				starlarkScriptOrPackagePath = path.Dir(starlarkScriptOrPackagePath)
 			}
 			responseLineChan, cancelFunc, errRunningKurtosis = executePackage(ctx, enclaveCtx, starlarkScriptOrPackagePath, serializedJsonArgs, dryRun)
@@ -342,4 +342,8 @@ func parseVerbosityFlag(flags *flags.ParsedFlags) (command_args_run.Verbosity, e
 // isStandAloneScript returns true if the fileInfo points to a non `kurtosis.yml` regular file
 func isStandAloneScript(fileInfo os.FileInfo) bool {
 	return fileInfo.Mode().IsRegular() && fileInfo.Name() != kurtosisYMLFilePath
+}
+
+func isKurtosisYMLFileInPackageDir(fileInfo os.FileInfo) bool {
+	return fileInfo.Mode().IsRegular() && fileInfo.Name() == kurtosisYMLFilePath
 }
