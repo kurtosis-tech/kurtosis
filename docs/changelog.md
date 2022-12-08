@@ -7,8 +7,8 @@
 - The CLI now displays the list of container images currently being downloaded and validated during the Starlark
 validation step
 - `exec` now returns the command output and code
-- Allow paths to `kurtosis.yml` to be run as Kurtosis packages
 - Added capability for container-engine to store optional application protocol for Kubernetes.
+- Allow paths to `kurtosis.yml` to be run as Kurtosis packages
 
 ### Changes
 - Remove completion files 
