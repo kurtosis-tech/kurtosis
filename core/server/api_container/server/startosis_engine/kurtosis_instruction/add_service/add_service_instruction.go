@@ -70,13 +70,14 @@ func newEmptyAddServiceInstruction(serviceNetwork service_network.ServiceNetwork
 	}
 }
 
-func NewAddServiceInstruction(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceID, serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig, starlarkKwargs starlark.StringDict) *AddServiceInstruction {
+func NewAddServiceInstruction(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceID, serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig, starlarkKwargs starlark.StringDict, runtimeValueStore *runtime_value_store.RuntimeValueStore) *AddServiceInstruction {
 	return &AddServiceInstruction{
-		serviceNetwork: serviceNetwork,
-		position:       position,
-		serviceId:      serviceId,
-		serviceConfig:  serviceConfig,
-		starlarkKwargs: starlarkKwargs,
+		serviceNetwork:    serviceNetwork,
+		position:          position,
+		serviceId:         serviceId,
+		serviceConfig:     serviceConfig,
+		starlarkKwargs:    starlarkKwargs,
+		runtimeValueStore: runtimeValueStore,
 	}
 }
 

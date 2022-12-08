@@ -76,6 +76,7 @@ func TestAddServiceInstruction_EntryPointArgsAreReplaced(t *testing.T) {
 			[]string{"-- {{kurtosis:foo_service.ip_address}}"},
 		).Build(),
 		starlark.StringDict{}, // Unused
+		nil,
 	)
 
 	err := addServiceInstruction.replaceMagicStrings()

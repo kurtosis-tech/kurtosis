@@ -454,18 +454,6 @@ func extractStringValue(structField *starlarkstruct.Struct, key string, argNameF
 	return stringValue, nil
 }
 
-func maybeExtractStringValue(structField *starlarkstruct.Struct, key string, argNameForLogging string) (*string, *startosis_errors.InterpretationError) {
-	value, err := structField.Attr(key)
-	if err != nil {
-		return nil, nil
-	}
-	stringValue, interpretationErr := safeCastToString(value, key)
-	if interpretationErr != nil {
-		return nil, startosis_errors.WrapWithInterpretationError(interpretationErr, "Error casting value '%s' as element of the struct object '%s'", key, argNameForLogging)
-	}
-	return &stringValue, nil
-}
-
 func extractUint32Value(structField *starlarkstruct.Struct, key string, argNameForLogging string) (uint32, *startosis_errors.InterpretationError) {
 	value, err := structField.Attr(key)
 	if err != nil {
