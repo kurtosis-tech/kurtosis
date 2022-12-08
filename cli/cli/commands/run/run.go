@@ -118,8 +118,7 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			githubScriptpathValidationExceptionFunc,
 		),
 		{
-			Key: inputArgsArgKey,
-			// TODO(gb): Link to a proper doc page explaining what a proto file is, etc. when we have it
+			Key:            inputArgsArgKey,
 			DefaultValue:   inputArgsAreEmptyBracesByDefault,
 			IsOptional:     inputArgsArgIsOptional,
 			IsGreedy:       inputArgsAreNonGreedy,
