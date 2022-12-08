@@ -17,9 +17,7 @@ const (
 
 // LowlevelKurtosisCommand is the most configurable, lowest-level implementation of the KurtosisCommand interface
 // This is a struct intended to abstract away much of the details of creating a Cobra command that does what we want,
-//
-//	so that Kurtosis devs can talk in higher-level notions
-//
+// so that Kurtosis devs can talk in higher-level notions
 // E.g. simply by providing the flags and args, the usage string will be automatically generated for the Kurtosis dev
 type LowlevelKurtosisCommand struct {
 	// The string for the command (e.g. "inspect" or "ls")
@@ -52,8 +50,7 @@ type LowlevelKurtosisCommand struct {
 
 // Gets a Cobra command represnting the LowlevelKurtosisCommand
 // This function is intended to be run in an init() (i.e. before the program runs any logic), so it will panic if
-//
-//	any errors occur
+// any errors occur
 func (kurtosisCmd *LowlevelKurtosisCommand) MustGetCobraCommand() *cobra.Command {
 	// Verify basic things (e.g. command string & run function) are provided
 	if strings.TrimSpace(kurtosisCmd.CommandStr) == "" {
