@@ -451,6 +451,29 @@ print(my_module.b)
 	require.Equal(t, expectedError, interpretationError)
 }
 
+func TestStartosisInterpreter_RequestInstruction(t *testing.T) {
+	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
+	defer packageContentProvider.RemoveAll()
+	startosisInterpreter := newStartosisInterpreterWithRecipeExecutorForTesting(testServiceNetwork, packageContentProvider, runtime_value_store.NewRuntimeValueStore())
+	interpreter := startosisInterpreter
+	script := `
+get_recipe = struct(
+	service_id = "web-server",
+	port_id = "http-port",
+	endpoint = "?input=output",
+	method = "GET",
+	extract = {
+		"input": ".query.input"
+	}
+)
+response = request(get_recipe)
+print(response["code"])`
+
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
+	require.Nil(t, interpretationError)
+	require.Len(t, instructions, 2)
+}
+
 func TestStartosisInterpreter_ImportingAValidModuleThatPreviouslyFailedToLoadSucceeds(t *testing.T) {
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
