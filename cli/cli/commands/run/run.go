@@ -35,7 +35,7 @@ const (
 
 	inputArgsArgKey                  = "args"
 	inputArgsArgIsOptional           = true
-	inputArgsAreNonGreedy            = true
+	inputArgsAreNonGreedy            = false
 	inputArgsAreEmptyBracesByDefault = "{}"
 
 	dryRunFlagKey = "dry-run"
