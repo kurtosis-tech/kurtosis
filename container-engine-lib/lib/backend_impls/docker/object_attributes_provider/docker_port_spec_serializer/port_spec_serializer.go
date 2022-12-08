@@ -27,6 +27,9 @@ const (
 	portUintBase                                = 10
 	portUintBits                                = 16
 
+	portNumIndex                 = 0
+	portProtocolIndex            = 1
+	portApplicationProtocolIndex = 2
 	// The maximum number of bytes that a label value can be
 	// See https://github.com/docker/for-mac/issues/2208
 	maxLabelValueBytes = 65518
@@ -40,6 +43,7 @@ var disallowedPortIdChars = map[string]bool{
 }
 
 var disallowedCharactersMatcher = regexp.MustCompile(fmt.Sprintf("[%v%v%v]", portNumAndProtocolSeparator, portIdAndInfoSeparator, portSpecsSeparator))
+var validApplicationProtocolMatcher = regexp.MustCompile(`^[a-zA-Z0-9+.-]*$`)
 
 // NOTE: We use a custom serialization format here (rather than, e.g., JSON) because there's a max label value size
 //  so brevity is important here
@@ -49,7 +53,6 @@ func SerializePortSpecs(ports map[string]*port_spec.PortSpec) (*docker_label_val
 
 	for portId, portSpec := range ports {
 		err := validatePortSpec(portId, portSpec)
-
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Error occurred while validating port spec '%+v'", portSpec)
 		}
@@ -168,7 +171,7 @@ func deserializePortSpecStrUsingDelimiters(
 		numPortSpecFragments := len(portSpecFragments)
 		if numPortSpecFragments < minExpectedPortSpecFragments || numPortSpecFragments > maxExpectedPortSpecFragments {
 			return nil, stacktrace.NewError(
-				"Expected splitting port spec string '%v' to yield '%v' to '%v' fragments but got %v",
+				"Expected splitting port spec string '%v' to yield '%v' to '%v' fragments but got '%v'",
 				portSpecStr,
 				minExpectedPortSpecFragments,
 				maxExpectedPortSpecFragments,
@@ -176,12 +179,12 @@ func deserializePortSpecStrUsingDelimiters(
 			)
 		}
 
-		portApplicationProtocolStr := ""
-		portNumStr := portSpecFragments[0]
-		portProtocolStr := portSpecFragments[1]
+		portNumStr := portSpecFragments[portNumIndex]
+		portProtocolStr := portSpecFragments[portProtocolIndex]
 
+		portApplicationProtocolStr := ""
 		if numPortSpecFragments == numPortSpecFragmentsWithApplicationProtocol {
-			portApplicationProtocolStr = portSpecFragments[2]
+			portApplicationProtocolStr = portSpecFragments[portApplicationProtocolIndex]
 		}
 
 		portNumUint64, err := strconv.ParseUint(portNumStr, portUintBase, portUintBits)
@@ -218,8 +221,6 @@ func deserializePortSpecStrUsingDelimiters(
   This is not needed for protocol, because it is defined as enums.
 */
 func validatePortSpec(portId string, spec *port_spec.PortSpec) error {
-	maybeApplicationProtocol := spec.GetMaybeApplicationProtocol()
-
 	// validate port id - it should not contain disallowed characters
 	firstDisallowedCharacterInPortId := disallowedCharactersMatcher.FindString(portId)
 	if len(firstDisallowedCharacterInPortId) > 0 {
@@ -231,6 +232,7 @@ func validatePortSpec(portId string, spec *port_spec.PortSpec) error {
 	}
 
 	// validate application protocol - it should not contain disallowed characters
+	maybeApplicationProtocol := spec.GetMaybeApplicationProtocol()
 	if maybeApplicationProtocol != nil {
 		firstDisallowedCharacterInApplicationProtocol := disallowedCharactersMatcher.FindString(*maybeApplicationProtocol)
 		if len(firstDisallowedCharacterInApplicationProtocol) > 0 {
@@ -240,6 +242,14 @@ func validatePortSpec(portId string, spec *port_spec.PortSpec) error {
 				portId,
 				firstDisallowedCharacterInApplicationProtocol,
 			)
+		}
+
+		doesApplicationProtocolContainsValidChar := validApplicationProtocolMatcher.MatchString(*maybeApplicationProtocol)
+		if !doesApplicationProtocolContainsValidChar {
+			return stacktrace.NewError(
+				"application protocol '%v' associated with port ID '%v' contains invalid character(s). It must only contain [a-zA-Z0-9+.-]",
+				*maybeApplicationProtocol,
+				portId)
 		}
 	}
 
