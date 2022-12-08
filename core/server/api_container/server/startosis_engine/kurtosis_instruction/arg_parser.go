@@ -77,59 +77,6 @@ func ParseServiceId(serviceIdRaw starlark.String) (service.ServiceID, *startosis
 	return service.ServiceID(serviceId), nil
 }
 
-func ParseFactName(factNameRaw starlark.String) (string, *startosis_errors.InterpretationError) {
-	factName, interpretationErr := safeCastToString(factNameRaw, factNameArgName)
-	if interpretationErr != nil {
-		return "", interpretationErr
-	}
-	if len(factName) == 0 {
-		return "", startosis_errors.NewInterpretationError("Fact name cannot be empty")
-	}
-	return factName, nil
-}
-
-func ParseHttpRequestFactRecipe(serviceConfig *starlarkstruct.Struct) (*kurtosis_core_rpc_api_bindings.FactRecipe_HttpRequestFact, *startosis_errors.InterpretationError) {
-	portId, interpretationErr := extractStringValue(serviceConfig, portIdKey, defineFactArgName)
-	if interpretationErr != nil {
-		return nil, interpretationErr
-	}
-
-	endpoint, interpretationErr := extractStringValue(serviceConfig, requestEndpointKey, defineFactArgName)
-	if interpretationErr != nil {
-		return nil, interpretationErr
-	}
-
-	method, interpretationErr := extractStringValue(serviceConfig, requestMethodEndpointKey, defineFactArgName)
-	if interpretationErr != nil {
-		return nil, interpretationErr
-	}
-
-	maybeFieldExtractor, interpretationErr := maybeExtractStringValue(serviceConfig, fieldExtractorKey, defineFactArgName)
-	if interpretationErr != nil {
-		return nil, interpretationErr
-	}
-
-	if method == getRequestMethod {
-		builtConfig := binding_constructors.NewGetHttpRequestFactRecipeDefinition(portId, endpoint, maybeFieldExtractor)
-		return builtConfig, nil
-	} else if method == postRequestMethod {
-		contentType, interpretationErr := extractStringValue(serviceConfig, "content_type", defineFactArgName)
-		if interpretationErr != nil {
-			return nil, interpretationErr
-		}
-
-		body, interpretationErr := extractStringValue(serviceConfig, "body", defineFactArgName)
-		if interpretationErr != nil {
-			return nil, interpretationErr
-		}
-
-		builtConfig := binding_constructors.NewPostHttpRequestFactRecipeDefinition(portId, endpoint, contentType, body, maybeFieldExtractor)
-		return builtConfig, nil
-	} else {
-		return nil, startosis_errors.NewInterpretationError("HTTP Recipe method not recognized")
-	}
-}
-
 func ParseHttpRequestRecipe(recipeConfig *starlarkstruct.Struct) (*recipe.HttpRequestRecipe, *startosis_errors.InterpretationError) {
 	serviceId, interpretationErr := extractStringValue(recipeConfig, serviceIdKey, requestArgName)
 	if interpretationErr != nil {

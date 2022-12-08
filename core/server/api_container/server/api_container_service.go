@@ -391,14 +391,6 @@ func (apicService ApiContainerService) ExecCommand(ctx context.Context, args *ku
 	return resp, nil
 }
 
-func (apicService ApiContainerService) DefineFact(_ context.Context, args *kurtosis_core_rpc_api_bindings.DefineFactArgs) (*kurtosis_core_rpc_api_bindings.DefineFactResponse, error) {
-	return nil, stacktrace.NewError("Define fact has been deprecated")
-}
-
-func (apicService ApiContainerService) GetFactValues(_ context.Context, args *kurtosis_core_rpc_api_bindings.GetFactValuesArgs) (*kurtosis_core_rpc_api_bindings.GetFactValuesResponse, error) {
-	return nil, stacktrace.NewError("Get fact has been deprecated")
-}
-
 func (apicService ApiContainerService) WaitForHttpGetEndpointAvailability(ctx context.Context, args *kurtosis_core_rpc_api_bindings.WaitForHttpGetEndpointAvailabilityArgs) (*emptypb.Empty, error) {
 
 	serviceIdStr := args.ServiceId

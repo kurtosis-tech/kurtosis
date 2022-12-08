@@ -201,23 +201,6 @@ func (service *ApiContainerGatewayServiceServer) ExecCommand(ctx context.Context
 	return remoteApiContainerResponse, nil
 }
 
-func (service *ApiContainerGatewayServiceServer) DefineFact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.DefineFactArgs) (*kurtosis_core_rpc_api_bindings.DefineFactResponse, error) {
-	remoteApiContainerResponse, err := service.remoteApiContainerClient.DefineFact(ctx, args)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
-	}
-
-	return remoteApiContainerResponse, nil
-}
-
-func (service *ApiContainerGatewayServiceServer) GetFactValues(ctx context.Context, args *kurtosis_core_rpc_api_bindings.GetFactValuesArgs) (*kurtosis_core_rpc_api_bindings.GetFactValuesResponse, error) {
-	remoteApiContainerResponse, err := service.remoteApiContainerClient.GetFactValues(ctx, args)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
-	}
-	return remoteApiContainerResponse, nil
-}
-
 func (service *ApiContainerGatewayServiceServer) WaitForHttpGetEndpointAvailability(ctx context.Context, args *kurtosis_core_rpc_api_bindings.WaitForHttpGetEndpointAvailabilityArgs) (*emptypb.Empty, error) {
 	remoteApiContainerResponse, err := service.remoteApiContainerClient.WaitForHttpGetEndpointAvailability(ctx, args)
 	if err != nil {
