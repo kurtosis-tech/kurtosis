@@ -44,8 +44,8 @@ func TestAddServiceInstruction_GetCanonicalizedInstruction(t *testing.T) {
 
 	addServiceInstruction := newEmptyAddServiceInstruction(
 		nil,
-		nil,
 		kurtosis_instruction.NewInstructionPosition(22, 26, "dummyFile"),
+		nil,
 	)
 	addServiceInstruction.starlarkKwargs[serviceIdArgName] = starlark.String("example-datastore-server-2")
 	addServiceInstruction.starlarkKwargs[serviceConfigArgName] = starlarkstruct.FromStringDict(starlarkstruct.Default, serviceConfigDict)

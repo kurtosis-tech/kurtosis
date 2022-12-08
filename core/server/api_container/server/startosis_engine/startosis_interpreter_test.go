@@ -52,7 +52,7 @@ func TestStartosisInterpreter_SimplePrintScript(t *testing.T) {
 	testString := "Hello World!"
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
-	startosisInterpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider)
+	startosisInterpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, nil)
 	interpreter := startosisInterpreter
 	script := `
 print("` + testString + `")
@@ -70,7 +70,7 @@ print("` + testString + `")
 func TestStartosisInterpreter_ScriptFailingSingleError(t *testing.T) {
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, nil)
 	script := `
 print("Starting Startosis script!")
 
@@ -92,7 +92,7 @@ unknownInstruction()
 func TestStartosisInterpreter_ScriptFailingMultipleErrors(t *testing.T) {
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, nil)
 	script := `
 print("Starting Startosis script!")
 
@@ -119,7 +119,7 @@ unknownInstruction2()
 func TestStartosisInterpreter_ScriptFailingSyntaxError(t *testing.T) {
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, nil)
 	script := `
 print("Starting Startosis script!")
 
@@ -140,7 +140,7 @@ load("otherScript.start") # fails b/c load takes in at least 2 args
 func TestStartosisInterpreter_ValidSimpleScriptWithInstruction(t *testing.T) {
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, nil)
 	privateIPAddressPlaceholder := "MAGICAL_PLACEHOLDER_TO_REPLACE"
 	script := `
 print("Starting Startosis script!")
@@ -180,7 +180,7 @@ The datastore service ip address is %v
 func TestStartosisInterpreter_ValidSimpleScriptWithInstructionMissingContainerName(t *testing.T) {
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, nil)
 	script := `
 print("Starting Startosis script!")
 
@@ -212,7 +212,7 @@ add_service(service_id = service_id, config = config)
 func TestStartosisInterpreter_ValidSimpleScriptWithInstructionTypoInProtocol(t *testing.T) {
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, nil)
 	script := `
 print("Starting Startosis script!")
 
@@ -243,7 +243,7 @@ add_service(service_id = service_id, config = config)
 func TestStartosisInterpreter_ValidSimpleScriptWithInstructionPortNumberAsString(t *testing.T) {
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, nil)
 	script := `
 print("Starting Startosis script!")
 
@@ -275,7 +275,7 @@ add_service(service_id = service_id, config = config)
 func TestStartosisInterpreter_ValidScriptWithMultipleInstructions(t *testing.T) {
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, nil)
 	script := `
 print("Starting Startosis script!")
 
@@ -330,7 +330,7 @@ func TestStartosisInterpreter_LoadStatementIsDisallowedInKurtosis(t *testing.T) 
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
 	require.Nil(t, packageContentProvider.BulkAddFileContent(seedModules))
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, nil)
 	script := `
 load("` + barModulePath + `", "a")
 print("Hello " + a)
@@ -355,7 +355,7 @@ func TestStartosisInterpreter_SimpleImport(t *testing.T) {
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
 	require.Nil(t, packageContentProvider.BulkAddFileContent(seedModules))
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, nil)
 	script := `
 my_module = import_module("` + barModulePath + `")
 print("Hello " + my_module.a)
@@ -380,7 +380,7 @@ b = "Hello " + module_bar.a
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
 	require.Nil(t, packageContentProvider.BulkAddFileContent(seedModules))
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, nil)
 	script := `
 module_doo = import_module("` + moduleDooWhichLoadsModuleBar + `")
 print(module_doo.b)
@@ -408,7 +408,7 @@ b = "Hello " + module_bar.a
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
 	require.Nil(t, packageContentProvider.BulkAddFileContent(seedModules))
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, nil)
 	script := `
 module_doo = import_module("` + moduleDooLoadsModuleBar + `")
 print(module_doo.b)
@@ -430,7 +430,7 @@ print(module_doo.b)
 func TestStartosisInterpreter_FailsOnNonExistentModule(t *testing.T) {
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, nil)
 	nonExistentModule := "github.com/non/existent/module.star"
 	script := `
 my_module = import_module("` + nonExistentModule + `")
@@ -454,7 +454,7 @@ print(my_module.b)
 func TestStartosisInterpreter_RequestInstruction(t *testing.T) {
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
-	startosisInterpreter := newStartosisInterpreterWithRecipeExecutorForTesting(testServiceNetwork, packageContentProvider, runtime_value_store.NewRuntimeValueStore())
+	startosisInterpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, runtime_value_store.NewRuntimeValueStore())
 	interpreter := startosisInterpreter
 	script := `
 get_recipe = struct(
@@ -478,7 +478,7 @@ func TestStartosisInterpreter_ImportingAValidModuleThatPreviouslyFailedToLoadSuc
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
 	barModulePath := "github.com/foo/bar/lib.star"
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, nil)
 	script := `
 my_module = import_module("` + barModulePath + `")
 print("Hello " + my_module.a)
@@ -516,7 +516,7 @@ config = struct(
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
 	require.Nil(t, packageContentProvider.BulkAddFileContent(seedModules))
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, nil)
 	script := `
 module_bar = import_module("` + moduleBar + `")
 print("Starting Startosis script!")
@@ -565,7 +565,7 @@ def deploy_datastore_services():
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
 	require.Nil(t, packageContentProvider.BulkAddFileContent(seedModules))
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, nil)
 	script := `
 datastore_module = import_module("` + moduleBar + `")
 print("Starting Startosis script!")
@@ -603,7 +603,7 @@ func TestStartosisInterpreter_ImportModuleWithNoGlobalVariables(t *testing.T) {
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
 	require.Nil(t, packageContentProvider.BulkAddFileContent(seedModules))
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, nil)
 	script := `
 my_module = import_module("` + barModulePath + `")
 print("World!")
@@ -637,7 +637,7 @@ add_service(service_id = service_id, config = config)
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
 	require.Nil(t, packageContentProvider.BulkAddFileContent(seedModules))
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, nil)
 	script := `
 import_module("` + moduleBar + `")
 print("Starting Startosis script!")
@@ -676,7 +676,7 @@ add_service(service_id = service_id, config = config)
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
 	require.Nil(t, packageContentProvider.BulkAddFileContent(seedModules))
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, nil)
 	scriptA := `
 import_module("` + moduleBar + `")
 print("Starting Startosis script!")
@@ -723,7 +723,7 @@ Adding service example-datastore-server
 func TestStartosisInterpreter_AddServiceWithEnvVarsCmdArgsAndEntryPointArgs(t *testing.T) {
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, nil)
 	script := `
 print("Starting Startosis script!")
 service_id = "example-datastore-server"
@@ -774,7 +774,7 @@ func TestStartosisInterpreter_ValidExecScriptWithoutExitCodeDefaultsTo0(t *testi
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
 	testRuntimeValueStore := runtime_value_store.NewRuntimeValueStore()
-	interpreter := newStartosisInterpreterWithRecipeExecutorForTesting(testServiceNetwork, packageContentProvider, testRuntimeValueStore)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, testRuntimeValueStore)
 	testExecId := "aed4492"
 	script := `
 print("Executing mkdir!")
@@ -815,7 +815,7 @@ func TestStartosisInterpreter_PassedExitCodeIsInterpretedCorrectly(t *testing.T)
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
 	testRuntimeValueStore := runtime_value_store.NewRuntimeValueStore()
-	interpreter := newStartosisInterpreterWithRecipeExecutorForTesting(testServiceNetwork, packageContentProvider, testRuntimeValueStore)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, testRuntimeValueStore)
 	testExecId := "aed4492"
 	script := `
 print("Executing mkdir!")
@@ -857,7 +857,7 @@ func TestStartosisInterpreter_StoreFileFromService(t *testing.T) {
 	require.Nil(t, err)
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, nil)
 	script := `
 print("Storing file from service!")
 artifact_uuid=store_service_files(service_id="example-datastore-server", src="/foo/bar", artifact_id="` + string(testArtifactId) + `")
@@ -899,7 +899,7 @@ func TestStartosisInterpreter_ReadFileFromGithub(t *testing.T) {
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
 	require.Nil(t, packageContentProvider.BulkAddFileContent(seed))
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, nil)
 	script := `
 print("Reading file from GitHub!")
 file_contents=read_file("` + src + `")
@@ -921,7 +921,7 @@ func TestStartosisInterpreter_RenderTemplates(t *testing.T) {
 	require.Nil(t, err)
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, nil)
 	script := `
 print("Rendering template to disk!")
 template_data = {
@@ -1026,7 +1026,7 @@ def call_store_for_me():
 	err = packageContentProvider.AddFileContent(moduleThatCallsStoreFile, moduleThatCallsStoreFileContent)
 	require.Nil(t, err)
 
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, nil)
 	script := `
 call_store_for_me_module = import_module("github.com/kurtosis/foo.star")
 uuid = call_store_for_me_module.call_store_for_me()
@@ -1064,7 +1064,7 @@ In the store files instruction
 func TestStartosisInterpreter_ValidSimpleRemoveService(t *testing.T) {
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, nil)
 	script := `
 print("Starting Startosis script!")
 service_id = "example-datastore-server"
@@ -1100,7 +1100,7 @@ func TestStartosisInterpreter_UploadGetsInterpretedCorrectly(t *testing.T) {
 	require.Nil(t, err)
 	filePathOnDisk, err := packageContentProvider.GetOnDiskAbsoluteFilePath(filePath)
 	require.Nil(t, err)
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, nil)
 	script := `upload_files("` + filePath + `","` + string(artifactId) + `")
 `
 	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
@@ -1126,7 +1126,7 @@ func TestStartosisInterpreter_NoPanicIfUploadIsPassedAPathNotOnDisk(t *testing.T
 	filePath := "github.com/kurtosis/module/lib/lib.star"
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, nil)
 	script := `upload_files("` + filePath + `")
 `
 	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
@@ -1137,7 +1137,7 @@ func TestStartosisInterpreter_NoPanicIfUploadIsPassedAPathNotOnDisk(t *testing.T
 func TestStartosisInterpreter_NoPortsIsOkayForAddServiceInstruction(t *testing.T) {
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, nil)
 	script := `
 print("Starting Startosis script!")
 
@@ -1167,7 +1167,7 @@ The datastore service ip address is %v
 func TestStartosisInterpreter_AddServiceInstructionWithPublicPort(t *testing.T) {
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, nil)
 	privateIPAddressPlaceholder := "MAGICAL_PLACEHOLDER_TO_REPLACE"
 	script := `
 print("Starting Startosis script!")
