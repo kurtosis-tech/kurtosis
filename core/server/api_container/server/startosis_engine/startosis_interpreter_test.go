@@ -1318,6 +1318,7 @@ func createSimpleAddServiceInstruction(t *testing.T, serviceId service.ServiceID
 			"service_id": starlark.String(serviceId),
 			"config":     serviceConfigStruct,
 		},
+		nil,
 	)
 }
 
