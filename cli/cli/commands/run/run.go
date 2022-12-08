@@ -22,6 +22,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"os"
 	"os/signal"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -55,6 +56,8 @@ const (
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
+
+	kurtosisYMLFilePath = "kurtosis.yml"
 )
 
 var (
@@ -71,7 +74,7 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 	ShortDescription:          "Run a Starlark script or package",
 	LongDescription: "Run a Starlark script or runnable package (" + user_support_constants.StarlarkPackagesReferenceURL + ") in " +
 		"an enclave. For a script we expect a path to a " + starlarkExtension + " file. For a runnable package we expect " +
-		"either a path to a local runnable package directory, or the locator URL (" + user_support_constants.StarlarkLocatorsReferenceURL +
+		"either a path to a local runnable package directory, or a path to the " + kurtosisYMLFilePath + " file in the package, or the locator URL (" + user_support_constants.StarlarkLocatorsReferenceURL +
 		") to a remote runnable package on Github. If the '" + enclaveIdFlagKey + "' flag argument " +
 		"is provided, Kurtosis will run the script inside the specified enclave or create it if it doesn't exist. If no '" +
 		enclaveIdFlagKey + "' flag param is provided, Kurtosis will create a new enclave with a random name.",
@@ -196,13 +199,17 @@ func run(
 			return stacktrace.Propagate(err, "There was an error reading file or package from disk at '%v'", starlarkScriptOrPackagePath)
 		}
 
-		isStandaloneScript := fileOrDir.Mode().IsRegular()
-		if isStandaloneScript {
+		if isStandaloneScript(fileOrDir, kurtosisYMLFilePath) {
 			if !strings.HasSuffix(starlarkScriptOrPackagePath, starlarkExtension) {
 				return stacktrace.NewError("Expected a script with a '%s' extension but got file '%v' with a different extension", starlarkExtension, starlarkScriptOrPackagePath)
 			}
 			responseLineChan, cancelFunc, errRunningKurtosis = executeScript(ctx, enclaveCtx, starlarkScriptOrPackagePath, serializedJsonArgs, dryRun)
 		} else {
+			// if the path is a file with `kurtosis.yml` at the end it's a module dir
+			// we remove the `kurtosis.yml` to get just the Dir containing the module
+			if isKurtosisYMLFileInPackageDir(fileOrDir, kurtosisYMLFilePath) {
+				starlarkScriptOrPackagePath = path.Dir(starlarkScriptOrPackagePath)
+			}
 			responseLineChan, cancelFunc, errRunningKurtosis = executePackage(ctx, enclaveCtx, starlarkScriptOrPackagePath, serializedJsonArgs, dryRun)
 		}
 	}
@@ -330,4 +337,13 @@ func parseVerbosityFlag(flags *flags.ParsedFlags) (command_args_run.Verbosity, e
 		return 0, stacktrace.Propagate(err, "Invalid verbosity value: '%s'. Possible values are %s", verbosityStr, strings.Join(command_args_run.VerbosityStrings(), ", "))
 	}
 	return verbosity, nil
+}
+
+// isStandaloneScript returns true if the fileInfo points to a non `kurtosis.yml` regular file
+func isStandaloneScript(fileInfo os.FileInfo, kurtosisYMLFilePath string) bool {
+	return fileInfo.Mode().IsRegular() && fileInfo.Name() != kurtosisYMLFilePath
+}
+
+func isKurtosisYMLFileInPackageDir(fileInfo os.FileInfo, kurtosisYMLFilePath string) bool {
+	return fileInfo.Mode().IsRegular() && fileInfo.Name() == kurtosisYMLFilePath
 }
