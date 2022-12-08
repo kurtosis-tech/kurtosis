@@ -2,6 +2,12 @@
 ### Changes
 - Prepared the Kurtosis engine server to do search in logs
 - Adding `log line filters` parameter in the `GetServiceLogs` Kurtosis engine endpoint
+- The `args` to `kurtosis run` now are passed as the second positional argument, instead of the `--args` flag
+
+### Breaking Changes
+- The `args` to `kurtosis run` now are passed as the second positional argument, instead of the `--args` flag
+  - Users will have to start using `kurtosis run <script> <args>` without the flag
+  - If there are any scripts that depend on the `--args` flag, users should use the `args` arg instead
 
 ### Features
 - The CLI now displays the list of container images currently being downloaded and validated during the Starlark

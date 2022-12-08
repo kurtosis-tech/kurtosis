@@ -33,8 +33,10 @@ const (
 
 	starlarkExtension = ".star"
 
-	argsFlagKey = "args"
-	defaultArgs = "{}"
+	inputArgsArgKey                  = "args"
+	inputArgsArgIsOptional           = true
+	inputArgsAreNonGreedy            = true
+	inputArgsAreEmptyBracesByDefault = "{}"
 
 	dryRunFlagKey = "dry-run"
 	defaultDryRun = "false"
@@ -84,13 +86,6 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			Default: defaultDryRun,
 		},
 		{
-			Key: argsFlagKey,
-			// TODO(gb): Link to a proper doc page explaining what a proto file is, etc. when we have it
-			Usage:   "The parameters that should be passed to the Starlark script or package when running it. It is expected to be a serialized JSON string. Note that if a standalone Kurtosis script is being run, no parameter should be passed.",
-			Type:    flags.FlagType_String,
-			Default: defaultArgs,
-		},
-		{
 			Key: enclaveIdFlagKey,
 			Usage: fmt.Sprintf(
 				"The enclave ID in which the script or package will be ran, which must match regex '%v' "+
@@ -122,6 +117,14 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			isScriptOrPackagePathArgumentOptional,
 			githubScriptpathValidationExceptionFunc,
 		),
+		{
+			Key: inputArgsArgKey,
+			// TODO(gb): Link to a proper doc page explaining what a proto file is, etc. when we have it
+			DefaultValue:   inputArgsAreEmptyBracesByDefault,
+			IsOptional:     inputArgsArgIsOptional,
+			IsGreedy:       inputArgsAreNonGreedy,
+			ValidationFunc: validatePackageArgs,
+		},
 	},
 	RunFunc: run,
 }
@@ -134,12 +137,9 @@ func run(
 	args *args.ParsedArgs,
 ) error {
 	// Args parsing and validation
-	serializedJsonArgs, err := flags.GetString(argsFlagKey)
+	serializedJsonArgs, err := args.GetNonGreedyArg(inputArgsArgKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the script/package arguments using flag key '%v'", argsFlagKey)
-	}
-	if err = validatePackageArgs(serializedJsonArgs); err != nil {
-		return stacktrace.Propagate(err, "An error occurred parsing the script/package arguments '%v'", serializedJsonArgs)
+		return stacktrace.Propagate(err, "An error occurred getting the script/package arguments using flag key '%v'", inputArgsArgKey)
 	}
 
 	userRequestedEnclaveId, err := flags.GetString(enclaveIdFlagKey)
@@ -292,7 +292,7 @@ func getOrCreateEnclaveContext(
 
 	enclavesMap, err := kurtosisContext.GetEnclaves(ctx)
 	if err != nil {
-		return nil, false, stacktrace.Propagate(err, "Unable to get existing enclaves from Kurtosis backend")
+		return nil, false, stacktrace.Propagate(err, "Unable to get existing enclaves from Kurtosis ")
 	}
 	if _, found := enclavesMap[enclaveId]; found {
 		enclaveContext, err := kurtosisContext.GetEnclaveContext(ctx, enclaveId)
@@ -311,9 +311,13 @@ func getOrCreateEnclaveContext(
 }
 
 // validatePackageArgs just validates the args is a valid JSON string
-func validatePackageArgs(serializedJson string) error {
+func validatePackageArgs(_ context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error {
+	serializedJsonArgs, err := args.GetNonGreedyArg(inputArgsArgKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the script/package arguments using flag key '%v'", inputArgsArgKey)
+	}
 	var result interface{}
-	if err := json.Unmarshal([]byte(serializedJson), &result); err != nil {
+	if err := json.Unmarshal([]byte(serializedJsonArgs), &result); err != nil {
 		return stacktrace.Propagate(err, "Error validating args, likely because it is not a valid JSON.")
 	}
 	return nil
