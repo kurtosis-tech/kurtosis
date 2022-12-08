@@ -93,7 +93,7 @@ executors:
 parameters:
   go-version:
     type: string
-    default: "1.17"
+    default: "1.18"
   container-engine-lib-build-cache-key-prefix:
     type: string
     default: "go-mod-v1"   # Can bump this version to bust the cache

@@ -24,7 +24,7 @@ const (
 	WaitBuiltinName = "wait"
 
 	recipeArgName                  = "recipe"
-	targetKeyArgName               = "target_field"
+	targetKeyArgName               = "field"
 	assertionArgName               = "assertion"
 	targetArgName                  = "target_value"
 	optionalBackoffDurationArgName = "backoff?"
