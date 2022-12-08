@@ -7,12 +7,8 @@
 - The CLI now displays the list of container images currently being downloaded and validated during the Starlark
 validation step
 - `exec` now returns the command output and code
-<<<<<<< gyani/kurtosis-yml-module
 - Allow paths to `kurtosis.yml` to be run as Kurtosis packages
-=======
 - Added capability for container-engine to store optional application protocol for Kubernetes.
-
->>>>>>> master
 
 ### Changes
 - Remove completion files 
