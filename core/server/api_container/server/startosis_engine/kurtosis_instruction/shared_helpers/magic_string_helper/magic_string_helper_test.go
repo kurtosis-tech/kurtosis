@@ -24,7 +24,7 @@ const (
 	unknownServiceId = "unknown_service"
 
 	testStringRuntimeValue         = starlark.String("test_string")
-	testRuntimeValueField          = "field"
+	testRuntimeValueField          = "field.subfield"
 	testExpectedInterpolatedString = starlark.String("test_string is not 0")
 )
 
