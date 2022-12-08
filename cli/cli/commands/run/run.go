@@ -291,7 +291,7 @@ func getOrCreateEnclaveContext(
 
 	enclavesMap, err := kurtosisContext.GetEnclaves(ctx)
 	if err != nil {
-		return nil, false, stacktrace.Propagate(err, "Unable to get existing enclaves from Kurtosis ")
+		return nil, false, stacktrace.Propagate(err, "Unable to get existing enclaves from Kurtosis backend")
 	}
 	if _, found := enclavesMap[enclaveId]; found {
 		enclaveContext, err := kurtosisContext.GetEnclaveContext(ctx, enclaveId)
