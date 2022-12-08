@@ -161,7 +161,7 @@ func TestDeserializePortSpecStrUsingDelimiters_PortSpecWithIncorrectNumberOfFrag
 		portNumAndProtocolSeparator,
 	)
 	require.NotNil(t, err, fmt.Sprintf("Expected error to be not nil for %v", invalidInputWithOneFragments))
-	require.ErrorContains(t, err, "Expected splitting port spec string '23' to yield '2' to '3' fragments but got 1")
+	require.ErrorContains(t, err, "Expected splitting port spec string '23' to yield '2' to '3' fragments but got '1'")
 
 	_, err = deserializePortSpecStrUsingDelimiters(
 		invalidInputWithFourFragments,
@@ -170,7 +170,7 @@ func TestDeserializePortSpecStrUsingDelimiters_PortSpecWithIncorrectNumberOfFrag
 		portNumAndProtocolSeparator,
 	)
 	require.NotNil(t, err, fmt.Sprintf("Expected error to be not nil for %v", invalidInputWithFourFragments))
-	require.ErrorContains(t, err, "Expected splitting port spec string '23/tcp/https/abc' to yield '2' to '3' fragments but got 4")
+	require.ErrorContains(t, err, "Expected splitting port spec string '23/tcp/https/abc' to yield '2' to '3' fragments but got '4'")
 }
 
 func TestNoPortProtosHaveDisallowedChars(t *testing.T) {
@@ -181,18 +181,29 @@ func TestNoPortProtosHaveDisallowedChars(t *testing.T) {
 	}
 }
 
+func TestValidatePortSpec_ValidApplicationProtocol(t *testing.T) {
+	spec, _ := port_spec.NewPortSpec(100, port_spec.PortProtocol_UDP, "H-ttp.2")
+	err := validatePortSpec("PortId", spec)
+	require.Nil(t, err, "Error cannot be nil")
+}
+
 func TestValidatePortSpec_InvalidPortId(t *testing.T) {
 	spec, _ := port_spec.NewPortSpec(100, port_spec.PortProtocol_TCP, "https")
 	err := validatePortSpec(",portid/", spec)
 	require.NotNil(t, err, "Error cannot be nil")
-	require.ErrorContains(t, err, fmt.Sprintf("Port ID '%v' contains disallowed char '%v'", ",portid/", ","))
+	require.ErrorContains(t, err, fmt.Sprintf("Port ID '%v' contains disallowed char '%v'", ",portid/", portSpecsSeparator))
 }
 
 func TestValidatePortSpec_InvalidApplicationProtocol(t *testing.T) {
 	spec, _ := port_spec.NewPortSpec(100, port_spec.PortProtocol_TCP, "/https,")
 	err := validatePortSpec("PortId", spec)
 	require.NotNil(t, err, "Error cannot be nil")
-	require.ErrorContains(t, err, fmt.Sprintf("Application Protocol '%v' associated with port ID '%v' contains disallowed char '%v'", "/https,", "PortId", "/"))
+	require.ErrorContains(t, err, fmt.Sprintf("Application Protocol '%v' associated with port ID '%v' contains disallowed char '%v'", "/https,", "PortId", portNumAndProtocolSeparator))
+
+	spec, _ = port_spec.NewPortSpec(100, port_spec.PortProtocol_UDP, " H-ttp.2")
+	err = validatePortSpec("PortId", spec)
+	require.NotNil(t, err, "Error cannot be nil")
+	require.ErrorContains(t, err, "application protocol ' H-ttp.2' associated with port ID 'PortId' contains invalid character(s). It must only contain [a-zA-Z0-9+.-]")
 }
 
 func TestSerializeMethod_ValidPortSpecs(t *testing.T) {
