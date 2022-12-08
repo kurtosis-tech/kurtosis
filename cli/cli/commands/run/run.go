@@ -199,7 +199,7 @@ func run(
 			return stacktrace.Propagate(err, "There was an error reading file or package from disk at '%v'", starlarkScriptOrPackagePath)
 		}
 
-		if isStandaloneScript(fileOrDir) {
+		if isStandaloneScript(fileOrDir, kurtosisYMLFilePath) {
 			if !strings.HasSuffix(starlarkScriptOrPackagePath, starlarkExtension) {
 				return stacktrace.NewError("Expected a script with a '%s' extension but got file '%v' with a different extension", starlarkExtension, starlarkScriptOrPackagePath)
 			}
@@ -207,7 +207,7 @@ func run(
 		} else {
 			// if the path is a file with `kurtosis.yml` at the end it's a module dir
 			// we remove the `kurtosis.yml` to get just the Dir containing the module
-			if isKurtosisYMLFileInPackageDir(fileOrDir) {
+			if isKurtosisYMLFileInPackageDir(fileOrDir, kurtosisYMLFilePath) {
 				starlarkScriptOrPackagePath = path.Dir(starlarkScriptOrPackagePath)
 			}
 			responseLineChan, cancelFunc, errRunningKurtosis = executePackage(ctx, enclaveCtx, starlarkScriptOrPackagePath, serializedJsonArgs, dryRun)
@@ -340,10 +340,10 @@ func parseVerbosityFlag(flags *flags.ParsedFlags) (command_args_run.Verbosity, e
 }
 
 // isStandaloneScript returns true if the fileInfo points to a non `kurtosis.yml` regular file
-func isStandaloneScript(fileInfo os.FileInfo) bool {
+func isStandaloneScript(fileInfo os.FileInfo, kurtosisYMLFilePath string) bool {
 	return fileInfo.Mode().IsRegular() && fileInfo.Name() != kurtosisYMLFilePath
 }
 
-func isKurtosisYMLFileInPackageDir(fileInfo os.FileInfo) bool {
+func isKurtosisYMLFileInPackageDir(fileInfo os.FileInfo, kurtosisYMLFilePath string) bool {
 	return fileInfo.Mode().IsRegular() && fileInfo.Name() == kurtosisYMLFilePath
 }
