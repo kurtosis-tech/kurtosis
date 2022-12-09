@@ -10,6 +10,13 @@
 - Add `extract` option to HTTP requests
 - Prepared the Kurtosis engine server to do search in logs
 - Adding `log line filters` parameter in the `GetServiceLogs` Kurtosis engine endpoint
+- Changed how `args` to `kurtosis run` are passed, they are passed as  second positional argument, instead of the `--args` flag
+- Made `CLI` error if more arguments than expected are passed
+
+### Breaking Changes
+- Changed how `args` to `kurtosis run` are passed, they are passed as  second positional argument, instead of the `--args` flag
+  - Users will have to start using `kurtosis run <script> <args>` without the `--arg` flag
+  - If there are any scripts that depend on the `--args` flag, users should use the `args` arg instead
 
 ### Features
 - The CLI now displays the list of container images currently being downloaded and validated during the Starlark
