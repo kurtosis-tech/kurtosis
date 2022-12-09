@@ -8,9 +8,19 @@ package service_network
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
+	lib_networking_sidecar "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/networking_sidecar"
+	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
+	"github.com/kurtosis-tech/stacktrace"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"net"
 	"strconv"
@@ -21,7 +31,127 @@ const (
 	packetLossConfigForBlockedPartition = float32(100)
 
 	numServices = 10
+
+	enclaveId               = enclave.EnclaveID("test-enclave")
+	partitioningEnabled     = true
+	fakeApiContainerVersion = "0.0.0"
+	apiContainerPort        = uint16(1234)
+	testContainerImageName  = "kurtosistech/test-container"
 )
+
+var (
+	ip                   = testIpFromInt(0)
+	unusedEnclaveDataDir *enclave_data_directory.EnclaveDataDirectory
+)
+
+func TestStartService_Successful(t *testing.T) {
+	ctx := context.Background()
+	backend := backend_interface.NewMockKurtosisBackend(t)
+
+	// One service will be started successfully
+	successfulServiceId := testServiceIdFromInt(1)
+	successfulServiceGuid := testServiceGuidFromInt(1)
+	successfulServiceIp := testIpFromInt(1)
+	successfulServiceRegistration := service.NewServiceRegistration(successfulServiceId, successfulServiceGuid, enclaveId, successfulServiceIp)
+	successfulService := service.NewService(successfulServiceRegistration, container_status.ContainerStatus_Running, map[string]*port_spec.PortSpec{}, successfulServiceIp, map[string]*port_spec.PortSpec{})
+	successfulServiceConfig := services.NewServiceConfigBuilder(testContainerImageName).Build()
+
+	// One service will fail to be started
+	failedServiceId := testServiceIdFromInt(2)
+	failedServiceConfig := services.NewServiceConfigBuilder(testContainerImageName).Build()
+
+	// One service will be successfully started but its sidecar will fail to start
+	sidecarFailedServiceId := testServiceIdFromInt(3)
+	sidecarFailedServiceGuid := testServiceGuidFromInt(3)
+	sidecarFailedServiceIp := testIpFromInt(3)
+	sidecarFailedServiceRegistration := service.NewServiceRegistration(sidecarFailedServiceId, sidecarFailedServiceGuid, enclaveId, sidecarFailedServiceIp)
+	sidecarFailedService := service.NewService(sidecarFailedServiceRegistration, container_status.ContainerStatus_Running, map[string]*port_spec.PortSpec{}, sidecarFailedServiceIp, map[string]*port_spec.PortSpec{})
+	sidecarFailedServiceConfig := services.NewServiceConfigBuilder(testContainerImageName).Build()
+
+	network := NewDefaultServiceNetwork(
+		enclaveId,
+		ip,
+		apiContainerPort,
+		fakeApiContainerVersion,
+		partitioningEnabled,
+		backend,
+		unusedEnclaveDataDir,
+		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveId),
+	)
+
+	// Configre the mock to also be testing that the right functions are called along the way
+
+	// StartUSerService will be called exactly once, with all the provided services
+	backend.EXPECT().StartUserServices(
+		ctx,
+		enclaveId,
+		mock.MatchedBy(func(services map[service.ServiceID]*service.ServiceConfig) bool {
+			_, foundSuccessfulService := services[successfulServiceId]
+			_, foundFailedService := services[failedServiceId]
+			_, foundSidecarFailedService := services[sidecarFailedServiceId]
+			return len(services) == 3 && foundSuccessfulService && foundFailedService && foundSidecarFailedService
+		})).Times(1).Return(
+		map[service.ServiceID]*service.Service{
+			successfulServiceId:    successfulService,
+			sidecarFailedServiceId: sidecarFailedService,
+		},
+		map[service.ServiceID]error{
+			failedServiceId: stacktrace.NewError("Failed starting service"),
+		},
+		nil)
+
+	// CreateNetworkingSidecar will be called exactly twice with the 2 successfully started services
+	backend.EXPECT().CreateNetworkingSidecar(ctx, enclaveId, successfulServiceGuid).Times(1).Return(
+		lib_networking_sidecar.NewNetworkingSidecar(successfulServiceGuid, enclaveId, container_status.ContainerStatus_Running),
+		nil)
+	backend.EXPECT().CreateNetworkingSidecar(ctx, enclaveId, sidecarFailedServiceGuid).Times(1).Return(
+		nil,
+		stacktrace.NewError("Failed starting sidecar for service"))
+
+	// RunNetworkingSidecarExecCommands will be called only once for the successfully started sidecar
+	backend.EXPECT().RunNetworkingSidecarExecCommands(
+		ctx,
+		enclaveId,
+		mock.MatchedBy(func(commands map[service.ServiceGUID][]string) bool {
+			_, foundSuccessfulService := commands[successfulServiceGuid]
+			return len(commands) == 1 && foundSuccessfulService
+		})).Times(2).Return(
+		map[service.ServiceGUID]*exec_result.ExecResult{
+			successfulServiceGuid: exec_result.NewExecResult(0, ""),
+		},
+		map[service.ServiceGUID]error{},
+		nil)
+
+	// DestroyUserServices is being called for sidecarFailedService only because the sidecar failed to be started
+	backend.EXPECT().DestroyUserServices(
+		ctx,
+		enclaveId,
+		mock.MatchedBy(func(filters *service.ServiceFilters) bool {
+			_, foundSidecarFailedService := filters.GUIDs[sidecarFailedServiceGuid]
+			return len(filters.Statuses) == 0 && len(filters.IDs) == 0 && len(filters.GUIDs) == 1 && foundSidecarFailedService
+		})).Times(1).Return(
+		map[service.ServiceGUID]bool{
+			sidecarFailedServiceGuid: true,
+		},
+		map[service.ServiceGUID]error{},
+		nil)
+
+	success, failure, err := network.StartServices(
+		ctx,
+		map[service.ServiceID]*kurtosis_core_rpc_api_bindings.ServiceConfig{
+			successfulServiceId:    successfulServiceConfig,
+			failedServiceId:        failedServiceConfig,
+			sidecarFailedServiceId: sidecarFailedServiceConfig,
+		},
+		"",
+	)
+	require.Nil(t, err)
+	require.Len(t, success, 1)
+	require.Contains(t, success, successfulServiceId)
+	require.Len(t, failure, 2)
+	require.Contains(t, failure, failedServiceId)
+	require.Contains(t, failure, sidecarFailedServiceId)
+}
 
 func TestUpdateTrafficControl(t *testing.T) {
 	ctx := context.Background()

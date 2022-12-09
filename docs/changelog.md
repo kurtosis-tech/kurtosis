@@ -8,6 +8,7 @@
 - Add `extract` option to HTTP requests
 - Prepared the Kurtosis engine server to do search in logs
 - Adding `log line filters` parameter in the `GetServiceLogs` Kurtosis engine endpoint
+- Added an advanced test for default_service_network.StartServices in preparation of changing a bit the logic
 
 ### Features
 - The CLI now displays the list of container images currently being downloaded and validated during the Starlark
