@@ -17,6 +17,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/render_templates"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/store_service_files"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/upload_files"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/mock_package_content_provider"
@@ -450,6 +451,29 @@ print(my_module.b)
 	require.Equal(t, expectedError, interpretationError)
 }
 
+func TestStartosisInterpreter_RequestInstruction(t *testing.T) {
+	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
+	defer packageContentProvider.RemoveAll()
+	startosisInterpreter := newStartosisInterpreterWithRecipeExecutorForTesting(testServiceNetwork, packageContentProvider, runtime_value_store.NewRuntimeValueStore())
+	interpreter := startosisInterpreter
+	script := `
+get_recipe = struct(
+	service_id = "web-server",
+	port_id = "http-port",
+	endpoint = "?input=output",
+	method = "GET",
+	extract = {
+		"input": ".query.input"
+	}
+)
+response = request(get_recipe)
+print(response["code"])`
+
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
+	require.Nil(t, interpretationError)
+	require.Len(t, instructions, 2)
+}
+
 func TestStartosisInterpreter_ImportingAValidModuleThatPreviouslyFailedToLoadSucceeds(t *testing.T) {
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
@@ -749,10 +773,12 @@ Adding service example-datastore-client
 func TestStartosisInterpreter_ValidExecScriptWithoutExitCodeDefaultsTo0(t *testing.T) {
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider)
+	testRuntimeValueStore := runtime_value_store.NewRuntimeValueStore()
+	interpreter := newStartosisInterpreterWithRecipeExecutorForTesting(testServiceNetwork, packageContentProvider, testRuntimeValueStore)
+	testExecId := "aed4492"
 	script := `
 print("Executing mkdir!")
-exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"])
+exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"], exec_id = "` + testExecId + `")
 `
 
 	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
@@ -763,8 +789,10 @@ exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"])
 		"service_id":         starlark.String("example-datastore-server"),
 		"command":            starlark.NewList([]starlark.Value{starlark.String("mkdir"), starlark.String("/tmp/foo")}),
 		"expected_exit_code": starlark.MakeInt(0),
+		"exec_id":            starlark.String(testExecId),
 	}
 	starlarkKwargs.Freeze()
+
 	execInstruction := exec.NewExecInstruction(
 		testServiceNetwork,
 		kurtosis_instruction.NewInstructionPosition(3, 5, startosis_constants.PackageIdPlaceholderForStandaloneScript),
@@ -772,6 +800,8 @@ exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"])
 		[]string{"mkdir", "/tmp/foo"},
 		0,
 		starlarkKwargs,
+		testRuntimeValueStore,
+		testExecId,
 	)
 
 	require.Equal(t, execInstruction, instructions[1])
@@ -784,10 +814,12 @@ exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"])
 func TestStartosisInterpreter_PassedExitCodeIsInterpretedCorrectly(t *testing.T) {
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider)
+	testRuntimeValueStore := runtime_value_store.NewRuntimeValueStore()
+	interpreter := newStartosisInterpreterWithRecipeExecutorForTesting(testServiceNetwork, packageContentProvider, testRuntimeValueStore)
+	testExecId := "aed4492"
 	script := `
 print("Executing mkdir!")
-exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"], expected_exit_code = -7)
+exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"], expected_exit_code = -7 , exec_id = "` + testExecId + `")
 `
 
 	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
@@ -798,8 +830,10 @@ exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"], e
 		"service_id":         starlark.String("example-datastore-server"),
 		"command":            starlark.NewList([]starlark.Value{starlark.String("mkdir"), starlark.String("/tmp/foo")}),
 		"expected_exit_code": starlark.MakeInt(-7),
+		"exec_id":            starlark.String(testExecId),
 	}
 	starlarkKwargs.Freeze()
+
 	execInstruction := exec.NewExecInstruction(
 		testServiceNetwork,
 		kurtosis_instruction.NewInstructionPosition(3, 5, startosis_constants.PackageIdPlaceholderForStandaloneScript),
@@ -807,6 +841,8 @@ exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"], e
 		[]string{"mkdir", "/tmp/foo"},
 		-7,
 		starlarkKwargs,
+		testRuntimeValueStore,
+		testExecId,
 	)
 
 	require.Equal(t, execInstruction, instructions[1])

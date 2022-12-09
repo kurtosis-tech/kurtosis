@@ -1,17 +1,29 @@
 # TBD
+
+### Breaking Changes
+- Rename command from `get_value` to `request` command
+- Remove `extract` command
+
 ### Changes
+- Add `extract` option to HTTP requests
 - Prepared the Kurtosis engine server to do search in logs
 - Adding `log line filters` parameter in the `GetServiceLogs` Kurtosis engine endpoint
 
 ### Features
 - The CLI now displays the list of container images currently being downloaded and validated during the Starlark
 validation step
+- `exec` now returns the command output and code
+- Added capability for container-engine to store optional application protocol for Kubernetes.
+- Allow paths to `kurtosis.yml` to be run as Kurtosis packages
 
 ### Changes
 - Remove completion files 
 - CLI now prints to StdOut. It used to be printing most of its output to StdErr
 
 # 0.57.8
+
+### Features
+- Added capability for container-engine to store optional application protocol for Docker.
 
 # 0.57.7
 
@@ -28,7 +40,6 @@ code successfully run in dry-run mode" and "Error encountered running Starlark c
 run in dry-run mode (and without the "in dry-run mode" when the script is executed for real)\
 - Added `RunStarlarkScriptBlocking`, `RunStarlarkPackageBlocking` and `RunStarlarkRemotePackageBlocking` functions
 to the enclave context to facilitate automated testing in our current modules.
-- Added capability for container-engine to store optional application protocol for docker.
 
 ### Fixes
 - Don't duplicate instruction position information in `store_service_files`

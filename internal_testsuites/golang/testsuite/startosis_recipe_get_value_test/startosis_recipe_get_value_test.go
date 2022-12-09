@@ -29,31 +29,35 @@ def run(args):
 		port_id = "http-port",
 		endpoint = "?input=output",
 		method = "GET",
+		extract = {
+			"input": ".query.input"
+		}
 	)
-	response = get_value(get_recipe)
-	assert(response.code, "==", 200)
-	assert("My test returned " + response.code, "==", "My test returned 200")
-	assert(response.code, "!=", 500)
-	assert(response.code, ">=", 200)
-	assert(response.code, "<=", 200)
-	assert(response.code, "<", 300)
-	assert(response.code, ">", 100)
-	assert(response.code, "IN", [100, 200])
-	assert(response.code, "NOT_IN", [100, 300])
-	get_test_output = extract(response.body, ".query.input")
-	assert(get_test_output, "==", "output")
+	response = request(get_recipe)
+	assert(response["code"], "==", 200)
+	assert("My test returned " + response["code"], "==", "My test returned 200")
+	assert(response["code"], "!=", 500)
+	assert(response["code"], ">=", 200)
+	assert(response["code"], "<=", 200)
+	assert(response["code"], "<", 300)
+	assert(response["code"], ">", 100)
+	assert(response["code"], "IN", [100, 200])
+	assert(response["code"], "NOT_IN", [100, 300])
+	assert(response["extract.input"], "==", "output")
 	post_recipe = struct(
 		service_id = "web-server",
 		port_id = "http-port",
 		endpoint = "/",
 		method = "POST",
 		content_type="text/plain",
-		body="post_output"
+		body="post_output",
+		extract = {
+			"my-body": ".body"
+		}
 	)
-	post_response = get_value(post_recipe)
-	assert(post_response.code, "==", 200)
-	post_test_output = extract(post_response.body, ".body")
-	assert(post_test_output, "==", "post_output")
+	post_response = request(post_recipe)
+	assert(post_response["code"], "==", 200)
+	assert(post_response["extract.my-body"], "==", "post_output")
 `
 )
 
