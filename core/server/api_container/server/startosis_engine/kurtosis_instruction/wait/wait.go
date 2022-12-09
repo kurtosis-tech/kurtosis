@@ -29,6 +29,7 @@ const (
 	targetArgName           = "target_value"
 	optionalIntervalArgName = "interval?"
 	optionalTimeoutArgName  = "timeout?"
+	emptyOptionalField      = ""
 )
 
 func GenerateWaitBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, recipeExecutor *runtime_value_store.RuntimeValueStore, serviceNetwork service_network.ServiceNetwork) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
@@ -52,9 +53,8 @@ type WaitInstruction struct {
 	position       *kurtosis_instruction.InstructionPosition
 	starlarkKwargs starlark.StringDict
 
-	recipeExecutor    *runtime_value_store.RuntimeValueStore
+	runtimeValueStore *runtime_value_store.RuntimeValueStore
 	httpRequestRecipe *recipe.HttpRequestRecipe
-	recipeConfigArg   *starlarkstruct.Struct
 	resultUuid        string
 	targetKey         string
 	assertion         string
@@ -62,18 +62,32 @@ type WaitInstruction struct {
 	backoff           *backoff.ExponentialBackOff
 }
 
-func newEmptyWaitInstructionInstruction(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition, recipeExecutor *runtime_value_store.RuntimeValueStore) *WaitInstruction {
+func newEmptyWaitInstructionInstruction(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition, runtimeValueStore *runtime_value_store.RuntimeValueStore) *WaitInstruction {
 	return &WaitInstruction{
 		serviceNetwork:    serviceNetwork,
 		position:          position,
-		recipeExecutor:    recipeExecutor,
+		runtimeValueStore: runtimeValueStore,
 		httpRequestRecipe: nil,
-		recipeConfigArg:   nil,
 		resultUuid:        "",
 		starlarkKwargs:    nil,
 		targetKey:         "",
 		assertion:         "",
 		target:            nil,
+		backoff:           backoff.NewExponentialBackOff(),
+	}
+}
+
+func newWaitInstructionInstructionForTest(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition, runtimeValueStore *runtime_value_store.RuntimeValueStore, httpRequestRecipe *recipe.HttpRequestRecipe, resultUuid string, targetKey string, assertion string, target starlark.Comparable, starlarkKwargs starlark.StringDict) *WaitInstruction {
+	return &WaitInstruction{
+		serviceNetwork:    serviceNetwork,
+		position:          position,
+		runtimeValueStore: runtimeValueStore,
+		httpRequestRecipe: httpRequestRecipe,
+		resultUuid:        resultUuid,
+		starlarkKwargs:    starlarkKwargs,
+		targetKey:         targetKey,
+		assertion:         assertion,
+		target:            target,
 		backoff:           backoff.NewExponentialBackOff(),
 	}
 }
@@ -110,7 +124,7 @@ func (instruction *WaitInstruction) Execute(ctx context.Context) (*string, error
 			time.Sleep(backoffDuration)
 			continue
 		}
-		instruction.recipeExecutor.SetValue(instruction.resultUuid, lastResult)
+		instruction.runtimeValueStore.SetValue(instruction.resultUuid, lastResult)
 		value, found := lastResult[instruction.targetKey]
 		if !found {
 			return nil, stacktrace.NewError("Error grabbing value from key '%v'", instruction.targetKey)
@@ -137,6 +151,7 @@ func (instruction *WaitInstruction) String() string {
 }
 
 func (instruction *WaitInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
+	// TODO(vcolombo): Add validation step here
 	return nil
 }
 
@@ -146,8 +161,8 @@ func (instruction *WaitInstruction) parseStartosisArgs(b *starlark.Builtin, args
 		targetKeyArg     starlark.String
 		assertionArg     starlark.String
 		targetArg        starlark.Comparable
-		optionalInterval starlark.String = ""
-		optionalTimeout  starlark.String = ""
+		optionalInterval starlark.String = emptyOptionalField
+		optionalTimeout  starlark.String = emptyOptionalField
 	)
 
 	if err := starlark.UnpackArgs(b.Name(), args, kwargs, recipeArgName, &recipeConfigArg, targetKeyArgName, &targetKeyArg, assertionArgName, &assertionArg, targetArgName, &targetArg, optionalIntervalArgName, &optionalInterval, optionalTimeoutArgName, &optionalTimeout); err != nil {
@@ -171,14 +186,14 @@ func (instruction *WaitInstruction) parseStartosisArgs(b *starlark.Builtin, args
 	instruction.assertion = string(assertionArg)
 	instruction.target = targetArg
 	instruction.targetKey = string(targetKeyArg)
-	if optionalInterval != "" {
+	if optionalInterval != emptyOptionalField {
 		interval, parseErr := time.ParseDuration(optionalInterval.GoString())
 		if parseErr != nil {
 			return startosis_errors.WrapWithInterpretationError(parseErr, "An error occurred when parsing interval '%v'", optionalInterval.GoString())
 		}
 		instruction.backoff.InitialInterval = interval
 	}
-	if optionalTimeout != "" {
+	if optionalTimeout != emptyOptionalField {
 		timeout, parseErr := time.ParseDuration(optionalTimeout.GoString())
 		if parseErr != nil {
 			return startosis_errors.NewInterpretationError("An error occurred when parsing timeout '%v'", optionalTimeout)

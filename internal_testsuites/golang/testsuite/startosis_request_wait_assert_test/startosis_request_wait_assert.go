@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	testName              = "startosis_recipe_get_value_test"
+	testName              = "startosis_request_wait_assert_test"
 	isPartitioningEnabled = false
 	defaultDryRun         = false
 
