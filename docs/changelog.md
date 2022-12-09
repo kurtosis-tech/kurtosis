@@ -16,6 +16,7 @@
 - Added an advanced test for default_service_network.StartServices in preparation of changing a bit the logic
 - CLI now prints to StdOut. It used to be printing most of its output to StdErr
 - Remove completion files
+- Remove build binary and completions directory from git 
 
 ### Features
 - The CLI now displays the list of container images currently being downloaded and validated during the Starlark
