@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_args/run"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/interactive_terminal_decider"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/out"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/term"
@@ -47,8 +48,8 @@ var (
 )
 
 var (
-	writer               = logrus.StandardLogger().Out
-	currentTerminalIndex = int(os.Stderr.Fd()) // logrus.StandardLogger().Out writes to os.Stderr
+	writer               = out.GetOut()
+	currentTerminalIndex = int(os.Stdout.Fd())
 
 	spinnerChar  = spinner.CharSets[11]
 	spinnerSpeed = 250 * time.Millisecond
@@ -178,9 +179,7 @@ func (printer *ExecutionPrinter) PrintKurtosisExecutionResponseLineToStdOut(resp
 func (printer *ExecutionPrinter) printPersistentLineToStdOut(lineToPrint string) error {
 	// If spinner is being used, we have to stop spinner -> print -> start spinner in order to keep the spinner at the bottom of the output
 	printer.stopSpinnerIfUsed()
-	if _, err := fmt.Fprintln(writer, lineToPrint); err != nil {
-		return stacktrace.Propagate(err, "An error happened printing a Starlark run response line. Line was:\n%s", lineToPrint)
-	}
+	out.PrintOutLn(lineToPrint)
 	printer.startSpinnerIfUsed()
 	return nil
 }

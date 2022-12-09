@@ -2,6 +2,7 @@ package output_printers
 
 import (
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/out"
 	"github.com/sirupsen/logrus"
 	"strings"
 	"text/tabwriter"
@@ -18,12 +19,12 @@ const (
 )
 
 type kurtosisTabWriter struct {
-	underlying                *tabwriter.Writer
+	underlying *tabwriter.Writer
 }
 
 func newKurtosisTabWriter() *kurtosisTabWriter {
 	tabWriter := tabwriter.NewWriter(
-		logrus.StandardLogger().Out,
+		out.GetOut(),
 		tabWriterMinwidth,
 		tabWriterTabwidth,
 		tabWriterPadding,
@@ -31,17 +32,18 @@ func newKurtosisTabWriter() *kurtosisTabWriter {
 		tabWriterFlags,
 	)
 	return &kurtosisTabWriter{
-		underlying:                tabWriter,
+		underlying: tabWriter,
 	}
 }
 
 func (writer *kurtosisTabWriter) writeElems(elems ...string) {
-	fmt.Fprintln(
-		writer.underlying,
-		strings.Join(elems, tabWriterElemJoinChar),
-	)
+	if _, err := fmt.Fprintln(writer.underlying, strings.Join(elems, tabWriterElemJoinChar)); err != nil {
+		logrus.Errorf("Error printing table element to StdfOut. Error was: \n%v", err.Error())
+	}
 }
 
 func (writer *kurtosisTabWriter) flush() {
-	writer.underlying.Flush()
+	if err := writer.underlying.Flush(); err != nil {
+		logrus.Errorf("Error flushing table to StdfOut. Error was: \n%v", err.Error())
+	}
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/out"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
@@ -91,15 +92,15 @@ func run(
 			logrus.Infof("Successfully removed the following %v:", phaseTitle)
 			sort.Strings(successfullyRemovedArtifactUuids)
 			for _, successfulArtifactUuid := range successfullyRemovedArtifactUuids {
-				fmt.Fprintln(logrus.StandardLogger().Out, successfulArtifactUuid)
+				out.PrintOutLn(successfulArtifactUuid)
 			}
 		}
 
 		if len(removalErrors) > 0 {
 			logrus.Errorf("Errors occurred removing the following %v:", phaseTitle)
 			for _, err := range removalErrors {
-				fmt.Fprintln(logrus.StandardLogger().Out, "")
-				fmt.Fprintln(logrus.StandardLogger().Out, err.Error())
+				out.PrintErrLn("")
+				out.PrintErrLn(err.Error())
 			}
 			phasesWithErrors = append(phasesWithErrors, phaseTitle)
 			continue
@@ -115,7 +116,9 @@ func run(
 }
 
 // ====================================================================================================
-//                                       Private Helper Functions
+//
+//	Private Helper Functions
+//
 // ====================================================================================================
 func cleanStoppedEngineContainers(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend) ([]string, []error, error) {
 

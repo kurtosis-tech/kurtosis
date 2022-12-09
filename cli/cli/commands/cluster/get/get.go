@@ -2,17 +2,14 @@ package get
 
 import (
 	"context"
-	"fmt"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_cluster_setting"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/out"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/sirupsen/logrus"
 )
-
-const newLineChar = "\n"
 
 var GetCmd = &lowlevel.LowlevelKurtosisCommand{
 	CommandStr:               command_str_consts.ClusterGetCmdStr,
@@ -31,6 +28,6 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to get cluster setting.")
 	}
-	fmt.Fprint(logrus.StandardLogger().Out, clusterName+newLineChar)
+	out.PrintOutLn(clusterName)
 	return nil
 }
