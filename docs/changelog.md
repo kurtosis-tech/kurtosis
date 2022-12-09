@@ -10,6 +10,7 @@
 - Adding `log line filters` parameter in the `GetServiceLogs` Kurtosis engine endpoint
 - Changed how `args` to `kurtosis run` are passed, they are passed as  second positional argument, instead of the `--args` flag
 - Made `CLI` error if more arguments than expected are passed
+- Added an advanced test for default_service_network.StartServices in preparation of changing a bit the logic
 
 ### Breaking Changes
 - Changed how `args` to `kurtosis run` are passed, they are passed as  second positional argument, instead of the `--args` flag
