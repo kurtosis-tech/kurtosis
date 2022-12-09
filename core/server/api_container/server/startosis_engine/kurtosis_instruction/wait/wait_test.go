@@ -3,27 +3,23 @@ package wait
 import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
 	"testing"
 )
 
-const testUuid = "88a40d8d-8683-439e-ae16-45ea58b635ae"
-
-var emptyServiceNetwork = service_network.NewEmptyMockServiceNetwork()
-
 const (
 	testTargetKey   = "key"
 	testAssertion   = "=="
 	testTargetValue = "value"
 	testDurationStr = "5s"
+	testUuid        = "88a40d8d-8683-439e-ae16-45ea58b635ae"
 )
 
 var (
-	testTarget             = starlark.MakeInt(0)
-	emptyRuntimeValueStore *runtime_value_store.RuntimeValueStore
+	testTarget          = starlark.MakeInt(0)
+	emptyServiceNetwork = service_network.NewEmptyMockServiceNetwork()
 )
 
 func TestWaitInstruction_StringRepresentationWorks(t *testing.T) {

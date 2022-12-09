@@ -24,7 +24,7 @@ const (
 	WaitBuiltinName = "wait"
 
 	recipeArgName           = "recipe"
-	targetKeyArgName        = "field"
+	valueFieldArgName       = "field"
 	assertionArgName        = "assertion"
 	targetArgName           = "target_value"
 	optionalIntervalArgName = "interval?"
@@ -99,7 +99,7 @@ func (instruction *WaitInstruction) GetPositionInOriginalScript() *kurtosis_inst
 func (instruction *WaitInstruction) GetCanonicalInstruction() *kurtosis_core_rpc_api_bindings.StarlarkInstruction {
 	args := []*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg{
 		binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[recipeArgName]), recipeArgName, kurtosis_instruction.Representative),
-		binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[targetKeyArgName]), targetKeyArgName, kurtosis_instruction.Representative),
+		binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[valueFieldArgName]), valueFieldArgName, kurtosis_instruction.Representative),
 		binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[assertionArgName]), assertionArgName, kurtosis_instruction.Representative),
 		binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[targetArgName]), targetArgName, kurtosis_instruction.Representative),
 		binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[optionalIntervalArgName]), optionalIntervalArgName, kurtosis_instruction.NotRepresentative),
@@ -158,19 +158,19 @@ func (instruction *WaitInstruction) ValidateAndUpdateEnvironment(environment *st
 func (instruction *WaitInstruction) parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) *startosis_errors.InterpretationError {
 	var (
 		recipeConfigArg  *starlarkstruct.Struct
-		targetKeyArg     starlark.String
+		valueFieldArg    starlark.String
 		assertionArg     starlark.String
 		targetArg        starlark.Comparable
 		optionalInterval starlark.String = emptyOptionalField
 		optionalTimeout  starlark.String = emptyOptionalField
 	)
 
-	if err := starlark.UnpackArgs(b.Name(), args, kwargs, recipeArgName, &recipeConfigArg, targetKeyArgName, &targetKeyArg, assertionArgName, &assertionArg, targetArgName, &targetArg, optionalIntervalArgName, &optionalInterval, optionalTimeoutArgName, &optionalTimeout); err != nil {
+	if err := starlark.UnpackArgs(b.Name(), args, kwargs, recipeArgName, &recipeConfigArg, valueFieldArgName, &valueFieldArg, assertionArgName, &assertionArg, targetArgName, &targetArg, optionalIntervalArgName, &optionalInterval, optionalTimeoutArgName, &optionalTimeout); err != nil {
 		return startosis_errors.NewInterpretationError(err.Error())
 	}
 	instruction.starlarkKwargs = starlark.StringDict{
 		recipeArgName:           recipeConfigArg,
-		targetKeyArgName:        targetKeyArg,
+		valueFieldArgName:       valueFieldArg,
 		assertionArgName:        assertionArg,
 		targetArgName:           targetArg,
 		optionalIntervalArgName: optionalInterval,
@@ -185,7 +185,7 @@ func (instruction *WaitInstruction) parseStartosisArgs(b *starlark.Builtin, args
 	}
 	instruction.assertion = string(assertionArg)
 	instruction.target = targetArg
-	instruction.targetKey = string(targetKeyArg)
+	instruction.targetKey = string(valueFieldArg)
 	if optionalInterval != emptyOptionalField {
 		interval, parseErr := time.ParseDuration(optionalInterval.GoString())
 		if parseErr != nil {
