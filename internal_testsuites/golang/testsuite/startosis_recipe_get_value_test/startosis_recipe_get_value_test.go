@@ -30,7 +30,7 @@ def run(args):
 		endpoint = "?input=foo/bar",
 		method = "GET",
 		extract = {
-			"exploded-slash": ".query.input | split("/") | .[1]"
+			"exploded-slash": ".query.input | split('/') | .[1]"
 		}
 	)
 	response = request(get_recipe)
