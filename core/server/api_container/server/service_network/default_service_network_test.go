@@ -49,21 +49,24 @@ func TestStartService_Successful(t *testing.T) {
 	backend := backend_interface.NewMockKurtosisBackend(t)
 
 	// One service will be started successfully
-	successfulServiceId := testServiceIdFromInt(1)
-	successfulServiceGuid := testServiceGuidFromInt(1)
-	successfulServiceIp := testIpFromInt(1)
+	successfulServiceIndex := 1
+	successfulServiceId := testServiceIdFromInt(successfulServiceIndex)
+	successfulServiceGuid := testServiceGuidFromInt(successfulServiceIndex)
+	successfulServiceIp := testIpFromInt(successfulServiceIndex)
 	successfulServiceRegistration := service.NewServiceRegistration(successfulServiceId, successfulServiceGuid, enclaveId, successfulServiceIp)
 	successfulService := service.NewService(successfulServiceRegistration, container_status.ContainerStatus_Running, map[string]*port_spec.PortSpec{}, successfulServiceIp, map[string]*port_spec.PortSpec{})
 	successfulServiceConfig := services.NewServiceConfigBuilder(testContainerImageName).Build()
 
 	// One service will fail to be started
-	failedServiceId := testServiceIdFromInt(2)
+	failedServiceIndex := 2
+	failedServiceId := testServiceIdFromInt(failedServiceIndex)
 	failedServiceConfig := services.NewServiceConfigBuilder(testContainerImageName).Build()
 
 	// One service will be successfully started but its sidecar will fail to start
-	sidecarFailedServiceId := testServiceIdFromInt(3)
-	sidecarFailedServiceGuid := testServiceGuidFromInt(3)
-	sidecarFailedServiceIp := testIpFromInt(3)
+	sidecarFailedServiceIndex := 3
+	sidecarFailedServiceId := testServiceIdFromInt(sidecarFailedServiceIndex)
+	sidecarFailedServiceGuid := testServiceGuidFromInt(sidecarFailedServiceIndex)
+	sidecarFailedServiceIp := testIpFromInt(sidecarFailedServiceIndex)
 	sidecarFailedServiceRegistration := service.NewServiceRegistration(sidecarFailedServiceId, sidecarFailedServiceGuid, enclaveId, sidecarFailedServiceIp)
 	sidecarFailedService := service.NewService(sidecarFailedServiceRegistration, container_status.ContainerStatus_Running, map[string]*port_spec.PortSpec{}, sidecarFailedServiceIp, map[string]*port_spec.PortSpec{})
 	sidecarFailedServiceConfig := services.NewServiceConfigBuilder(testContainerImageName).Build()
@@ -86,6 +89,8 @@ func TestStartService_Successful(t *testing.T) {
 		ctx,
 		enclaveId,
 		mock.MatchedBy(func(services map[service.ServiceID]*service.ServiceConfig) bool {
+			// Matcher function returning true iff the services map arg contains exactly the following three keys:
+			// {successfulServiceId, failedServiceId, sidecarFailedServiceId}
 			_, foundSuccessfulService := services[successfulServiceId]
 			_, foundFailedService := services[failedServiceId]
 			_, foundSidecarFailedService := services[sidecarFailedServiceId]
@@ -113,6 +118,8 @@ func TestStartService_Successful(t *testing.T) {
 		ctx,
 		enclaveId,
 		mock.MatchedBy(func(commands map[service.ServiceGUID][]string) bool {
+			// Matcher function returning true iff the commands map arg contains exactly the following key:
+			// {successfulServiceGuid}
 			_, foundSuccessfulService := commands[successfulServiceGuid]
 			return len(commands) == 1 && foundSuccessfulService
 		})).Times(2).Return(
@@ -127,6 +134,8 @@ func TestStartService_Successful(t *testing.T) {
 		ctx,
 		enclaveId,
 		mock.MatchedBy(func(filters *service.ServiceFilters) bool {
+			// Matcher function returning true iff the filters map arg contains exactly the following key:
+			// {sidecarFailedServiceGuid}
 			_, foundSidecarFailedService := filters.GUIDs[sidecarFailedServiceGuid]
 			return len(filters.Statuses) == 0 && len(filters.IDs) == 0 && len(filters.GUIDs) == 1 && foundSidecarFailedService
 		})).Times(1).Return(
