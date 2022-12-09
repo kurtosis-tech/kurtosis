@@ -1,5 +1,11 @@
 # TBD
+
+### Breaking Changes
+- Rename command from `get_value` to `request` command
+- Remove `extract` command
+
 ### Changes
+- Add `extract` option to HTTP requests
 - Prepared the Kurtosis engine server to do search in logs
 - Adding `log line filters` parameter in the `GetServiceLogs` Kurtosis engine endpoint
 - Changed how `args` to `kurtosis run` are passed, they are passed as  second positional argument, instead of the `--args` flag
@@ -15,7 +21,7 @@
 validation step
 - `exec` now returns the command output and code
 - Added capability for container-engine to store optional application protocol for Kubernetes.
-
+- Allow paths to `kurtosis.yml` to be run as Kurtosis packages
 
 ### Changes
 - Remove completion files 
