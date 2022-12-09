@@ -2,18 +2,15 @@ package ls
 
 import (
 	"context"
-	"fmt"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/out"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/sirupsen/logrus"
 	"sort"
 )
-
-const newLineChar = "\n"
 
 var LsCmd = &lowlevel.LowlevelKurtosisCommand{
 	CommandStr:               command_str_consts.ClusterLsCmdStr,
@@ -39,7 +36,7 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 	}
 	sort.Strings(clusterList)
 	for _, clusterName := range clusterList {
-		fmt.Fprint(logrus.StandardLogger().Out, clusterName+newLineChar)
+		out.PrintOutLn(clusterName)
 	}
 	return nil
 }

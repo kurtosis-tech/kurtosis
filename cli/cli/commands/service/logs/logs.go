@@ -7,7 +7,6 @@ package logs
 
 import (
 	"context"
-	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
@@ -20,6 +19,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/kurtosis_config_getter"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/out"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
@@ -158,7 +158,7 @@ func run(
 			return stacktrace.NewError("Expected to find logs for user service with GUID '%v' on user service logs map '%+v' but was not found; this should never happen, and is a bug in Kurtosis", kurtosisBackendServiceGUID, userServiceReadCloserLog)
 		}
 
-		if _, err := io.Copy(logrus.StandardLogger().Out, userServiceReadCloserLog); err != nil {
+		if _, err := io.Copy(out.GetOut(), userServiceReadCloserLog); err != nil {
 			return stacktrace.Propagate(err, "An error occurred copying the service logs to STDOUT")
 		}
 
@@ -202,9 +202,7 @@ func run(
 			}
 
 			for _, serviceLog := range userServiceLogs {
-				if _, err := fmt.Fprintln(logrus.StandardLogger().Out, serviceLog.GetContent()); err != nil {
-					logrus.Errorf("An error occurred pringing log line '%v' in the standar logger output", serviceLog.GetContent())
-				}
+				out.PrintOutLn(serviceLog.GetContent())
 			}
 		case <-interruptChan:
 			logrus.Debugf("Received signal interruption in service logs Kurtosis CLI command")

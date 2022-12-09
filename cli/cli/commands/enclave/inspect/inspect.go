@@ -16,6 +16,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/enclave_status_stringifier"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/out"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -134,7 +135,7 @@ func run(
 		keyValuePrinter.AddPair(apiContainerHostGrpcProxyPortTitle, apiContainerHostGrpcProxyPortInfoStr)
 	}
 	keyValuePrinter.Print()
-	fmt.Fprintln(logrus.StandardLogger().Out, "")
+	out.PrintOutLn("")
 
 	sortedEnclaveObjHeaders := []string{}
 	for header := range enclaveObjectPrintingFuncs {
