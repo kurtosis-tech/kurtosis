@@ -2,7 +2,7 @@
 
 ### Breaking Changes
 - Rename command from `get_value` to `request` command
-- Change function signature of `wait`
+- Change function signature of `wait` to take in a recipe, assertion and request interval/timeout
 - Remove `extract` command
 - Remove `define_fact` command
 
