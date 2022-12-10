@@ -108,7 +108,7 @@ parameters:
   # the same version as the server
   server-go-version:
     type: string
-    default: "1.17"
+    default: "1.18"
   api-node-version:
     type: string
     default: 16.13.0
