@@ -16,10 +16,13 @@ func NewRuntimeValueStore() *RuntimeValueStore {
 	}
 }
 
-func (re *RuntimeValueStore) CreateValue() string {
-	uuid, _ := uuid_generator.GenerateUUIDString()
+func (re *RuntimeValueStore) CreateValue() (string, error) {
+	uuid, err := uuid_generator.GenerateUUIDString()
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred while generating uuid for runtime value")
+	}
 	re.recipeResultMap[uuid] = nil
-	return uuid
+	return uuid, nil
 }
 
 func (re *RuntimeValueStore) SetValue(uuid string, value map[string]starlark.Comparable) {
