@@ -13,7 +13,7 @@ const testUuid = "88a40d8d-8683-439e-ae16-45ea58b635ae"
 
 var emptyServiceNetwork = service_network.NewEmptyMockServiceNetwork()
 
-func TestGetValueInstruction_StringRepresentationWorks(t *testing.T) {
+func TestRequestInstruction_StringRepresentationWorks(t *testing.T) {
 	extractor := &starlark.Dict{}
 	err := extractor.SetKey(starlark.String("key"), starlark.String(".value"))
 	require.Nil(t, err)
