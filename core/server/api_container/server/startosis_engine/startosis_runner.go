@@ -5,7 +5,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/sirupsen/logrus"
-	"regexp"
 )
 
 type StartosisRunner struct {
@@ -22,14 +21,6 @@ const (
 	startingInterpretationMsg = "Interpreting Starlark code - execution will begin shortly"
 	startingValidationMsg     = "Starting validation"
 	startingExecutionMsg      = "Starting execution"
-
-	missingRunMethodErrorPrefixFromStarlarkPackage = "Evaluation error: module has no .run field or method\n\tat"
-	missingRunMethodErrorSuffixFromStarlarkPackage = "3:32]: <toplevel>"
-	missingRunMethodErrorFromStarlarkScriptPattern = "Multiple errors caught interpreting the Starlark script. Listing each of them below.\n\tat \\[\\d+:1\\]: undefined: run"
-)
-
-var (
-	missingRunMethodErrorFromStarlarkScriptRegex = regexp.MustCompile(missingRunMethodErrorFromStarlarkScriptPattern)
 )
 
 func NewStartosisRunner(interpreter *StartosisInterpreter, validator *StartosisValidator, executor *StartosisExecutor) *StartosisRunner {
