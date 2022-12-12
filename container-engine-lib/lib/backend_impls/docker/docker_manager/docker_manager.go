@@ -954,7 +954,6 @@ func (manager DockerManager) FetchImage(ctx context.Context, dockerImage string)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred checking for local availability of Docker image '%v'", dockerImage)
 	}
-
 	logrus.Tracef("Is image available locally?: %v", doesImageExistLocally)
 
 	if !doesImageExistLocally {
