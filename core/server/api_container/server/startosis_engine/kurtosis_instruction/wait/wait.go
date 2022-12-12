@@ -3,6 +3,7 @@ package wait
 import (
 	"context"
 	"fmt"
+	"github.com/cenkalti/backoff/v4"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
