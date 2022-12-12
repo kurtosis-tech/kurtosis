@@ -54,11 +54,11 @@ validation step
 
 # 0.57.6
 ### Features
-- The "Starlark code successfully executed" or "Error encountered running Starlark code" messages are now "Starlark
-code successfully run in dry-run mode" and "Error encountered running Starlark code in dry-run mode" when Starlark is
+- The "Starlark code successfully executed" or "Error encountered running Starlark code" messages are now "Starlark 
+code successfully run in dry-run mode" and "Error encountered running Starlark code in dry-run mode" when Starlark is 
 run in dry-run mode (and without the "in dry-run mode" when the script is executed for real)\
 - Added `RunStarlarkScriptBlocking`, `RunStarlarkPackageBlocking` and `RunStarlarkRemotePackageBlocking` functions
-  to the enclave context to facilitate automated testing in our current modules.
+to the enclave context to facilitate automated testing in our current modules.
 
 ### Fixes
 - Don't duplicate instruction position information in `store_service_files`
@@ -119,7 +119,7 @@ run in dry-run mode (and without the "in dry-run mode" when the script is execut
 - Add IP address string replacement in `print` command
 - All Kurtosis instructions now returns a simple but explicit output
 - The object returned by Starlark's `run()` function is serialized as JSON and returned to the CLI output.
-- Enforce `run(args)` for individual scripts
+- Enforce `run(args)` for individual scripts 
 
 # 0.57.1
 
@@ -234,7 +234,7 @@ run in dry-run mode (and without the "in dry-run mode" when the script is execut
 # 0.53.5
 ### Changes
 - Error types in ExecuteStartosisResponse type is now a union type, to better represent they are exclusive and prepare for transition to streaming
-- Update the KurtosisInstruction API type returned to the CLI. It now contains a combination of instruction position, the canonicalized instruction, and an optional instruction result
+- Update the KurtosisInstruction API type returned to the CLI. It now contains a combination of instruction position, the canonicalized instruction, and an optional instruction result 
 - Renamed `store_files_from_service` to `store_service_files`
 - Slightly update the way script output information are passed from the Startosis engine back the API container main class. This is a step to prepare for streaming this output all the way back the CLI.
 - Removed `load` statement in favour of `import_module`. Calling load will now throw an InterpretationError
@@ -263,7 +263,7 @@ run in dry-run mode (and without the "in dry-run mode" when the script is execut
 
 ### Breaking Changes
 - Renamed `cmd_args` and `entrypoint_args` inside `config` inside `add_service` to `cmd` and `entrypoint`
-  - Users will have to replace their use of `cmd_args` and `entry_point_args` to the above inside their Starlark modules
+  - Users will have to replace their use of `cmd_args` and `entry_point_args` to the above inside their Starlark modules 
 
 # 0.53.2
 ### Features
@@ -348,7 +348,7 @@ return `artifact_uuid` during interpretation time
 
 # 0.51.13
 ### Fixes
-- Set `entrypoint` and `cmd_args` to `nil` if not specified instead of empty array
+- Set `entrypoint` and `cmd_args` to `nil` if not specified instead of empty array 
 
 # 0.51.12
 ### Features
@@ -456,7 +456,7 @@ return `artifact_uuid` during interpretation time
 # 0.51.0
 ### Breaking Changes
 - Updated `kurtosisBackend.CreateLogsCollector` method in `container-engine-lib`, added the `logsCollectorTcpPortNumber` parameter
-  - Users will need to update all the `kurtosisBackend.CreateLogsCollector` setting the logs collector `TCP` port number
+  - Users will need to update all the `kurtosisBackend.CreateLogsCollector` setting the logs collector `TCP` port number 
 
 ### Features
 - Added `KurtosisContext.GetUserServiceLogs` method in `golang` and `typescript` api libraries
@@ -494,9 +494,9 @@ return `artifact_uuid` during interpretation time
 
 ### Breaking Changes
 - Updated `CreateEngine` method in `container-engine-lib`, removed the `logsCollectorHttpPortNumber` parameter
- - Users will need to update all the `CreateEngine` calls removing this parameter
+    - Users will need to update all the `CreateEngine` calls removing this parameter
 - Updated `NewEngineServerArgs`,  `LaunchWithDefaultVersion` and `LaunchWithCustomVersion` methods in `engine_server_launcher` removed the `logsCollectorHttpPortNumber` parameter
- - Users will need to update these method calls removing this parameter
+     - Users will need to update these method calls removing this parameter
 
 ### Changes
 - Untied the logs components containers and volumes creation and removal from the engine's crud in `container-engine-lib`
