@@ -45,9 +45,6 @@ func GenerateWaitBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstr
 			return nil, startosis_errors.NewInterpretationError("An error occurred while generating uuid for future reference for %v instruction", WaitBuiltinName)
 		}
 		waitInstruction.resultUuid = resultUuid
-		if err != nil {
-
-		}
 		returnValue := waitInstruction.httpRequestRecipe.CreateStarlarkReturnValue(waitInstruction.resultUuid)
 		*instructionsQueue = append(*instructionsQueue, waitInstruction)
 		return returnValue, nil
