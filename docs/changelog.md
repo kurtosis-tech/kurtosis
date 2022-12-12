@@ -497,7 +497,7 @@ return `artifact_uuid` during interpretation time
     - Users will need to update all the `CreateEngine` calls removing this parameter
 - Updated `NewEngineServerArgs`,  `LaunchWithDefaultVersion` and `LaunchWithCustomVersion` methods in `engine_server_launcher` removed the `logsCollectorHttpPortNumber` parameter
     - Users will need to update these method calls removing this parameter
- 
+  
 ### Changes
 - Untied the logs components containers and volumes creation and removal from the engine's crud in `container-engine-lib`
 - Made some changes to the implementation of the module manager based on some PR comments by Kevin
