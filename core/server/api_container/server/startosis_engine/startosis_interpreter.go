@@ -118,7 +118,8 @@ func (interpreter *StartosisInterpreter) Interpret(_ context.Context, packageId 
 
 	outputObject, err := starlark.Call(thread, runFunction, argsTuple, noKwargs)
 	if err != nil {
-		return "", nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred while running Starlark").ToAPIType()
+		//return "", nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred while running Starlark").ToAPIType()
+		return "", nil, generateInterpretationError(err).ToAPIType()
 	}
 
 	// Serialize and return the output object. It might contain magic strings that should be resolved post-execution
