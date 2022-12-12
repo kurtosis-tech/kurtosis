@@ -3,7 +3,6 @@ package magic_string_helper
 import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/facts_engine"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/stacktrace"
@@ -31,8 +30,9 @@ const (
 
 	runtimeValueSubgroupName      = "runtime_value"
 	runtimeValueFieldSubgroupName = "runtime_value_field"
+	runtimeValueKeyRegexp         = "[a-zA-Z0-9-_\\.]+"
 
-	runtimeValueReplacementRegex             = "(?P<" + allSubgroupName + ">\\{\\{" + kurtosisNamespace + ":(?P<" + runtimeValueSubgroupName + ">" + service.ServiceIdRegexp + ")" + ":(?P<" + runtimeValueFieldSubgroupName + ">" + service.ServiceIdRegexp + ")\\.runtime_value\\}\\})"
+	runtimeValueReplacementRegex             = "(?P<" + allSubgroupName + ">\\{\\{" + kurtosisNamespace + ":(?P<" + runtimeValueSubgroupName + ">" + service.ServiceIdRegexp + ")" + ":(?P<" + runtimeValueFieldSubgroupName + ">" + runtimeValueKeyRegexp + ")\\.runtime_value\\}\\})"
 	RuntimeValueReplacementPlaceholderFormat = "{{" + kurtosisNamespace + ":%v:%v.runtime_value}}"
 
 	subExpNotFound = -1
@@ -71,32 +71,6 @@ func ReplaceIPAddressInString(originalString string, network service_network.Ser
 		}
 		allMatch := match[allMatchIndex]
 		replacedString = strings.Replace(replacedString, allMatch, ipAddressStr, singleMatch)
-	}
-	return replacedString, nil
-}
-
-func ReplaceFactsInString(originalString string, factsEngine *facts_engine.FactsEngine) (string, error) {
-	matches := compiledFactReplacementRegex.FindAllStringSubmatch(originalString, unlimitedMatches)
-	replacedString := originalString
-	for _, match := range matches {
-		serviceIdMatchIndex := compiledFactReplacementRegex.SubexpIndex(serviceIdSubgroupName)
-		if serviceIdMatchIndex == subExpNotFound {
-			return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", serviceIdSubgroupName, compiledFactReplacementRegex.String())
-		}
-		factNameMatchIndex := compiledFactReplacementRegex.SubexpIndex(factNameSubgroupName)
-		if factNameMatchIndex == subExpNotFound {
-			return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", serviceIdSubgroupName, compiledFactReplacementRegex.String())
-		}
-		factValues, err := factsEngine.FetchLatestFactValues(facts_engine.GetFactId(match[serviceIdMatchIndex], match[factNameMatchIndex]))
-		if err != nil {
-			return "", stacktrace.Propagate(err, "There was an error fetching fact value while replacing string '%v' '%v' ", match[serviceIdMatchIndex], match[factNameMatchIndex])
-		}
-		allMatchIndex := compiledFactReplacementRegex.SubexpIndex(allSubgroupName)
-		if allMatchIndex == subExpNotFound {
-			return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", serviceIdSubgroupName, compiledFactReplacementRegex.String())
-		}
-		allMatch := match[allMatchIndex]
-		replacedString = strings.Replace(replacedString, allMatch, factValues[len(factValues)-1].GetStringValue(), singleMatch)
 	}
 	return replacedString, nil
 }

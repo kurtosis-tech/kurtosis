@@ -3,6 +3,7 @@ package kurtosis_instruction
 import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/recipe"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
@@ -593,44 +594,92 @@ func TestParsePrivateIPAddressPlaceholder_FailureNonString(t *testing.T) {
 	require.NotNil(t, err)
 }
 
-func TestParseHttpRequestFactRecipe_GetRequestWithoutOptionalFields(t *testing.T) {
-	dict := starlark.StringDict{}
-	expectedRecipe := &kurtosis_core_rpc_api_bindings.HttpRequestFactRecipe{
-		PortId:         "port",
-		Endpoint:       "/",
-		Method:         kurtosis_core_rpc_api_bindings.HttpRequestMethod_GET,
-		ContentType:    "",
-		Body:           "",
-		FieldExtractor: nil,
-	}
-	dict["port_id"] = starlark.String("port")
-	dict["method"] = starlark.String("GET")
-	dict["endpoint"] = starlark.String("/")
-	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
-	recipe, err := ParseHttpRequestFactRecipe(input)
+func TestParseHttpRequestRecipe_GetRequestWithoutExtractor(t *testing.T) {
+	inputDict := starlark.StringDict{}
+	expectedRecipe := recipe.NewGetHttpRequestRecipe(
+		"service_id",
+		"port_id",
+		"/",
+		map[string]string{})
+	inputDict["service_id"] = starlark.String("service_id")
+	inputDict["port_id"] = starlark.String("port_id")
+	inputDict["method"] = starlark.String("GET")
+	inputDict["endpoint"] = starlark.String("/")
+	input := starlarkstruct.FromStringDict(starlarkstruct.Default, inputDict)
+	actualRecipe, err := ParseHttpRequestRecipe(input)
 	require.Nil(t, err)
-	require.Equal(t, expectedRecipe, recipe.HttpRequestFact)
+	require.Equal(t, expectedRecipe, actualRecipe)
 }
 
-func TestParseHttpRequestFactRecipe_GetRequestWithOptionalFields(t *testing.T) {
-	dict := starlark.StringDict{}
-	var fieldExtractor = ".body"
-	expectedRecipe := &kurtosis_core_rpc_api_bindings.HttpRequestFactRecipe{
-		PortId:         "port",
-		Endpoint:       "/",
-		Method:         kurtosis_core_rpc_api_bindings.HttpRequestMethod_GET,
-		ContentType:    "",
-		Body:           "",
-		FieldExtractor: &fieldExtractor,
-	}
-	dict["port_id"] = starlark.String("port")
-	dict["method"] = starlark.String("GET")
-	dict["endpoint"] = starlark.String("/")
-	dict["field_extractor"] = starlark.String(fieldExtractor)
-	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
-	recipe, err := ParseHttpRequestFactRecipe(input)
+func TestParseHttpRequestRecipe_GetRequestWithExtractor(t *testing.T) {
+	extractorDict := &starlark.Dict{}
+	err := extractorDict.SetKey(starlark.String("key"), starlark.String(".value"))
 	require.Nil(t, err)
-	require.Equal(t, expectedRecipe, recipe.HttpRequestFact)
+	inputDict := starlark.StringDict{}
+	expectedRecipe := recipe.NewGetHttpRequestRecipe(
+		"service_id",
+		"port_id",
+		"/",
+		map[string]string{
+			"key": ".value",
+		})
+	inputDict["service_id"] = starlark.String("service_id")
+	inputDict["port_id"] = starlark.String("port_id")
+	inputDict["method"] = starlark.String("GET")
+	inputDict["endpoint"] = starlark.String("/")
+	inputDict["extract"] = extractorDict
+	input := starlarkstruct.FromStringDict(starlarkstruct.Default, inputDict)
+	actualRecipe, err := ParseHttpRequestRecipe(input)
+	require.Nil(t, err)
+	require.Equal(t, expectedRecipe, actualRecipe)
+}
+
+func TestParseHttpRequestRecipe_PostRequestWithoutExtractor(t *testing.T) {
+	inputDict := starlark.StringDict{}
+	expectedRecipe := recipe.NewPostHttpRequestRecipe(
+		"service_id",
+		"port_id",
+		"content/json",
+		"/",
+		"body",
+		map[string]string{})
+	inputDict["service_id"] = starlark.String("service_id")
+	inputDict["port_id"] = starlark.String("port_id")
+	inputDict["method"] = starlark.String("POST")
+	inputDict["endpoint"] = starlark.String("/")
+	inputDict["content_type"] = starlark.String("content/json")
+	inputDict["body"] = starlark.String("body")
+	input := starlarkstruct.FromStringDict(starlarkstruct.Default, inputDict)
+	actualRecipe, err := ParseHttpRequestRecipe(input)
+	require.Nil(t, err)
+	require.Equal(t, expectedRecipe, actualRecipe)
+}
+
+func TestParseHttpRequestRecipe_PostRequestWithExtractor(t *testing.T) {
+	extractorDict := &starlark.Dict{}
+	err := extractorDict.SetKey(starlark.String("key"), starlark.String(".value"))
+	require.Nil(t, err)
+	inputDict := starlark.StringDict{}
+	expectedRecipe := recipe.NewPostHttpRequestRecipe(
+		"service_id",
+		"port_id",
+		"content/json",
+		"/",
+		"body",
+		map[string]string{
+			"key": ".value",
+		})
+	inputDict["service_id"] = starlark.String("service_id")
+	inputDict["port_id"] = starlark.String("port_id")
+	inputDict["method"] = starlark.String("POST")
+	inputDict["endpoint"] = starlark.String("/")
+	inputDict["content_type"] = starlark.String("content/json")
+	inputDict["body"] = starlark.String("body")
+	inputDict["extract"] = extractorDict
+	input := starlarkstruct.FromStringDict(starlarkstruct.Default, inputDict)
+	actualRecipe, err := ParseHttpRequestRecipe(input)
+	require.Nil(t, err)
+	require.Equal(t, expectedRecipe, actualRecipe)
 }
 
 func TestEncodeStarlarkObjectAsJSON_EncodesStructsCorrectly(t *testing.T) {

@@ -25,7 +25,7 @@ const (
 	targetArgName       = "target_value"
 )
 
-var stringTokenToComparisonStarlarkToken = map[string]syntax.Token{
+var StringTokenToComparisonStarlarkToken = map[string]syntax.Token{
 	"==": syntax.EQL,
 	"!=": syntax.NEQ,
 	">=": syntax.GE,
@@ -97,39 +97,9 @@ func (instruction *AssertInstruction) Execute(ctx context.Context) (*string, err
 	if err != nil {
 		return nil, err
 	}
-	if comparisonToken, found := stringTokenToComparisonStarlarkToken[instruction.assertion]; found {
-		if currentValue.Type() != instruction.target.Type() {
-			return nil, stacktrace.NewError("Assert failed because '%v' is type '%v' and '%v' is type '%v'", currentValue, currentValue.Type(), instruction.target, instruction.target.Type())
-		}
-		result, err := currentValue.CompareSameType(comparisonToken, instruction.target, 1)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Assert comparison failed '%v' '%v' '%v'", currentValue, instruction.assertion, instruction.target)
-		}
-		if !result {
-			return nil, stacktrace.NewError("Assertion failed '%v' '%v' '%v'", currentValue, instruction.assertion, instruction.target)
-		}
-	} else {
-		listTarget, ok := instruction.target.(*starlark.List)
-		if !ok {
-			return nil, stacktrace.NewError("Assertion failed, expected list but got '%v'", instruction.target.Type())
-		}
-		inList := false
-		for i := 0; i < listTarget.Len(); i++ {
-			if listTarget.Index(i) == currentValue {
-				inList = true
-				break
-			}
-		}
-		switch instruction.assertion {
-		case "IN":
-			if !inList {
-				return nil, stacktrace.NewError("Assertion failed '%v' '%v' '%v'", currentValue, instruction.assertion, instruction.target)
-			}
-		case "NOT_IN":
-			if inList {
-				return nil, stacktrace.NewError("Assertion failed '%v' '%v' '%v'", currentValue, instruction.assertion, instruction.target)
-			}
-		}
+	err = Assert(currentValue, instruction.assertion, instruction.target)
+	if err != nil {
+		return nil, err
 	}
 	instructionResult := fmt.Sprintf("Assertion succeeded. Value is '%s'.", currentValue.String())
 	return &instructionResult, nil
@@ -166,12 +136,50 @@ func (instruction *AssertInstruction) parseStartosisArgs(b *starlark.Builtin, ar
 	}
 	instruction.starlarkKwargs.Freeze()
 
-	if _, found := stringTokenToComparisonStarlarkToken[instruction.assertion]; !found && instruction.assertion != "IN" && instruction.assertion != "NOT_IN" {
+	if _, found := StringTokenToComparisonStarlarkToken[instruction.assertion]; !found && instruction.assertion != "IN" && instruction.assertion != "NOT_IN" {
 		return startosis_errors.NewInterpretationError("'%v' is not a valid assertion", assertionArg)
 	}
 	if _, ok := instruction.target.(*starlark.List); (instruction.assertion == "IN" || instruction.assertion == "NOT_IN") && !ok {
 		return startosis_errors.NewInterpretationError("'%v' assertion requires list, got '%v'", assertionArg, targetArg.Type())
 	}
 
+	return nil
+}
+
+func Assert(currentValue starlark.Comparable, assertion string, targetValue starlark.Comparable) error {
+	if comparisonToken, found := StringTokenToComparisonStarlarkToken[assertion]; found {
+		if currentValue.Type() != targetValue.Type() {
+			return stacktrace.NewError("Assert failed because '%v' is type '%v' and '%v' is type '%v'", currentValue, currentValue.Type(), targetValue, targetValue.Type())
+		}
+		result, err := currentValue.CompareSameType(comparisonToken, targetValue, 1)
+		if err != nil {
+			return stacktrace.Propagate(err, "Assert comparison failed '%v' '%v' '%v'", currentValue, assertion, targetValue)
+		}
+		if !result {
+			return stacktrace.NewError("Assertion failed '%v' '%v' '%v'", currentValue, assertion, targetValue)
+		}
+	} else {
+		listTarget, ok := targetValue.(*starlark.List)
+		if !ok {
+			return stacktrace.NewError("Assertion failed, expected list but got '%v'", targetValue.Type())
+		}
+		inList := false
+		for i := 0; i < listTarget.Len(); i++ {
+			if listTarget.Index(i) == currentValue {
+				inList = true
+				break
+			}
+		}
+		switch assertion {
+		case "IN":
+			if !inList {
+				return stacktrace.NewError("Assertion failed '%v' '%v' '%v'", currentValue, assertion, targetValue)
+			}
+		case "NOT_IN":
+			if inList {
+				return stacktrace.NewError("Assertion failed '%v' '%v' '%v'", currentValue, assertion, targetValue)
+			}
+		}
+	}
 	return nil
 }

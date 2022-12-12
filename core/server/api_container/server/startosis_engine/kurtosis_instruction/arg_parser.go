@@ -23,11 +23,16 @@ const (
 	serviceIdArgName     = "service_id"
 	serviceConfigArgName = "config"
 	defineFactArgName    = "define_fact"
+	requestArgName       = "request"
 
 	containerImageNameKey = "image"
 	factNameArgName       = "fact_name"
 	usedPortsKey          = "ports"
 	// TODO remove this when we have the Portal as this is a temporary hack to meet the NEAR use case
+	serviceIdKey   = "service_id"
+	contentTypeKey = "content_type"
+	bodyKey        = "body"
+
 	publicPortsKey                 = "public_ports"
 	entryPointArgsKey              = "entrypoint"
 	cmdArgsKey                     = "cmd"
@@ -38,6 +43,8 @@ const (
 	requestMethodEndpointKey       = "method"
 	fieldExtractorKey              = "field_extractor"
 	privateIPAddressPlaceholderKey = "private_ip_address_placeholder"
+
+	httpRequestExtractorsKey = "extract"
 
 	portNumberKey   = "number"
 	portProtocolKey = "protocol"
@@ -70,95 +77,47 @@ func ParseServiceId(serviceIdRaw starlark.String) (service.ServiceID, *startosis
 	return service.ServiceID(serviceId), nil
 }
 
-func ParseFactName(factNameRaw starlark.String) (string, *startosis_errors.InterpretationError) {
-	factName, interpretationErr := safeCastToString(factNameRaw, factNameArgName)
-	if interpretationErr != nil {
-		return "", interpretationErr
-	}
-	if len(factName) == 0 {
-		return "", startosis_errors.NewInterpretationError("Fact name cannot be empty")
-	}
-	return factName, nil
-}
-
-func ParseHttpRequestFactRecipe(serviceConfig *starlarkstruct.Struct) (*kurtosis_core_rpc_api_bindings.FactRecipe_HttpRequestFact, *startosis_errors.InterpretationError) {
-	portId, interpretationErr := extractStringValue(serviceConfig, portIdKey, defineFactArgName)
+func ParseHttpRequestRecipe(recipeConfig *starlarkstruct.Struct) (*recipe.HttpRequestRecipe, *startosis_errors.InterpretationError) {
+	serviceId, interpretationErr := extractStringValue(recipeConfig, serviceIdKey, requestArgName)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
 
-	endpoint, interpretationErr := extractStringValue(serviceConfig, requestEndpointKey, defineFactArgName)
+	portId, interpretationErr := extractStringValue(recipeConfig, portIdKey, requestArgName)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
 
-	method, interpretationErr := extractStringValue(serviceConfig, requestMethodEndpointKey, defineFactArgName)
+	endpoint, interpretationErr := extractStringValue(recipeConfig, requestEndpointKey, requestArgName)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
 
-	maybeFieldExtractor, interpretationErr := maybeExtractStringValue(serviceConfig, fieldExtractorKey, defineFactArgName)
+	method, interpretationErr := extractStringValue(recipeConfig, requestMethodEndpointKey, requestArgName)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
+	extractors, interpretationErr := parseHttpRequestExtractors(recipeConfig)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
 
 	if method == getRequestMethod {
-		builtConfig := binding_constructors.NewGetHttpRequestFactRecipeDefinition(portId, endpoint, maybeFieldExtractor)
+		builtConfig := recipe.NewGetHttpRequestRecipe(service.ServiceID(serviceId), portId, endpoint, extractors)
 		return builtConfig, nil
 	} else if method == postRequestMethod {
-		contentType, interpretationErr := extractStringValue(serviceConfig, "content_type", defineFactArgName)
+		contentType, interpretationErr := extractStringValue(recipeConfig, contentTypeKey, defineFactArgName)
 		if interpretationErr != nil {
 			return nil, interpretationErr
 		}
 
-		body, interpretationErr := extractStringValue(serviceConfig, "body", defineFactArgName)
+		body, interpretationErr := extractStringValue(recipeConfig, bodyKey, defineFactArgName)
 		if interpretationErr != nil {
 			return nil, interpretationErr
 		}
 
-		builtConfig := binding_constructors.NewPostHttpRequestFactRecipeDefinition(portId, endpoint, contentType, body, maybeFieldExtractor)
-		return builtConfig, nil
-	} else {
-		return nil, startosis_errors.NewInterpretationError("HTTP Recipe method not recognized")
-	}
-}
-
-func ParseHttpRequestRecipe(serviceConfig *starlarkstruct.Struct) (*recipe.HttpRequestRecipe, *startosis_errors.InterpretationError) {
-	serviceId, interpretationErr := extractStringValue(serviceConfig, "service_id", defineFactArgName)
-	if interpretationErr != nil {
-		return nil, interpretationErr
-	}
-
-	portId, interpretationErr := extractStringValue(serviceConfig, portIdKey, defineFactArgName)
-	if interpretationErr != nil {
-		return nil, interpretationErr
-	}
-
-	endpoint, interpretationErr := extractStringValue(serviceConfig, requestEndpointKey, defineFactArgName)
-	if interpretationErr != nil {
-		return nil, interpretationErr
-	}
-
-	method, interpretationErr := extractStringValue(serviceConfig, requestMethodEndpointKey, defineFactArgName)
-	if interpretationErr != nil {
-		return nil, interpretationErr
-	}
-
-	if method == getRequestMethod {
-		builtConfig := recipe.NewGetHttpRequestRecipe(service.ServiceID(serviceId), portId, endpoint)
-		return builtConfig, nil
-	} else if method == postRequestMethod {
-		contentType, interpretationErr := extractStringValue(serviceConfig, "content_type", defineFactArgName)
-		if interpretationErr != nil {
-			return nil, interpretationErr
-		}
-
-		body, interpretationErr := extractStringValue(serviceConfig, "body", defineFactArgName)
-		if interpretationErr != nil {
-			return nil, interpretationErr
-		}
-
-		builtConfig := recipe.NewPostHttpRequestRecipe(service.ServiceID(serviceId), portId, contentType, endpoint, body)
+		builtConfig := recipe.NewPostHttpRequestRecipe(service.ServiceID(serviceId), portId, contentType, endpoint, body, extractors)
 		return builtConfig, nil
 	} else {
 		return nil, startosis_errors.NewInterpretationError("Define fact HTTP method not recognized")
@@ -457,6 +416,19 @@ func parseFilesArtifactMountDirpaths(serviceConfig *starlarkstruct.Struct) (map[
 	return filesArtifactMountDirpathsArg, nil
 }
 
+func parseHttpRequestExtractors(recipe *starlarkstruct.Struct) (map[string]string, *startosis_errors.InterpretationError) {
+	_, err := recipe.Attr(httpRequestExtractorsKey)
+	//an error here means that no argument was found which is alright as this is an optional
+	if err != nil {
+		return map[string]string{}, nil
+	}
+	httpRequestExtractorsArg, interpretationErr := extractMapStringStringValue(recipe, httpRequestExtractorsKey, requestArgName)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	return httpRequestExtractorsArg, nil
+}
+
 func parsePrivateIPAddressPlaceholder(serviceConfig *starlarkstruct.Struct) (string, *startosis_errors.InterpretationError) {
 	_, err := serviceConfig.Attr(privateIPAddressPlaceholderKey)
 	//an error here means that no argument was found which is alright as this is an optional
@@ -480,18 +452,6 @@ func extractStringValue(structField *starlarkstruct.Struct, key string, argNameF
 		return "", startosis_errors.WrapWithInterpretationError(interpretationErr, "Error casting value '%s' as element of the struct object '%s'", key, argNameForLogging)
 	}
 	return stringValue, nil
-}
-
-func maybeExtractStringValue(structField *starlarkstruct.Struct, key string, argNameForLogging string) (*string, *startosis_errors.InterpretationError) {
-	value, err := structField.Attr(key)
-	if err != nil {
-		return nil, nil
-	}
-	stringValue, interpretationErr := safeCastToString(value, key)
-	if interpretationErr != nil {
-		return nil, startosis_errors.WrapWithInterpretationError(interpretationErr, "Error casting value '%s' as element of the struct object '%s'", key, argNameForLogging)
-	}
-	return &stringValue, nil
 }
 
 func extractUint32Value(structField *starlarkstruct.Struct, key string, argNameForLogging string) (uint32, *startosis_errors.InterpretationError) {

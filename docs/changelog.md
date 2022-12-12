@@ -1,16 +1,46 @@
 # TBD
+
+### Breaking Changes
+- Rename command from `get_value` to `request` command
+- Change function signature of `wait` to take in a recipe, assertion and request interval/timeout
+- Remove `extract` command
+- Remove `define_fact` command
+
 ### Changes
+- Add `extract` option to HTTP requests
 - Prepared the Kurtosis engine server to do search in logs
 - Adding `log line filters` parameter in the `GetServiceLogs` Kurtosis engine endpoint
+- Made the test for `get_value` use the `jq` string extraction features
+- Changed how `args` to `kurtosis run` are passed, they are passed as  second positional argument, instead of the `--args` flag
+- Made `CLI` error if more arguments than expected are passed
+- Added an advanced test for default_service_network.StartServices in preparation of changing a bit the logic
+
+### Breaking Changes
+- Changed how `args` to `kurtosis run` are passed, they are passed as  second positional argument, instead of the `--args` flag
+  - Users will have to start using `kurtosis run <script> <args>` without the `--arg` flag
+  - If there are any scripts that depend on the `--args` flag, users should use the `args` arg instead
+
+### Fixes
+- Check an unchecked error in `CreateValue` in the `RunTimeValueStore`
 
 ### Features
 - The CLI now displays the list of container images currently being downloaded and validated during the Starlark
 validation step
+- `exec` now returns the command output and code
+- Added capability for container-engine to store optional application protocol for Kubernetes.
+- Allow paths to `kurtosis.yml` to be run as Kurtosis packages
+
+### Removals
+- Remove facts engine and endpoints
 
 ### Changes
 - Remove completion files 
+- CLI now prints to StdOut. It used to be printing most of its output to StdErr
 
 # 0.57.8
+
+### Features
+- Added capability for container-engine to store optional application protocol for Docker.
 
 # 0.57.7
 
@@ -27,7 +57,6 @@ code successfully run in dry-run mode" and "Error encountered running Starlark c
 run in dry-run mode (and without the "in dry-run mode" when the script is executed for real)\
 - Added `RunStarlarkScriptBlocking`, `RunStarlarkPackageBlocking` and `RunStarlarkRemotePackageBlocking` functions
 to the enclave context to facilitate automated testing in our current modules.
-- Added capability for container-engine to store optional application protocol for docker.
 
 ### Fixes
 - Don't duplicate instruction position information in `store_service_files`

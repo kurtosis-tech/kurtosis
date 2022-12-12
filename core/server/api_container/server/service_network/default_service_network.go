@@ -310,6 +310,8 @@ func (network *DefaultServiceNetwork) StartServices(
 			if err != nil {
 				failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred while adding networking sidecar for service '%v'", serviceID)
 				delete(servicesToProcessFurther, serviceID)
+				// remove service from topology as it has no sidecar. The service will be removed in a deferred function
+				network.topology.RemoveService(serviceID)
 				continue
 			}
 			logrus.Debugf("Successfully created sidecars for service with ID '%v'", serviceID)
@@ -1100,6 +1102,7 @@ func transformApiPortToPortSpec(port *kurtosis_core_rpc_api_bindings.Port) (*por
 	if !found {
 		return nil, stacktrace.NewError("Couldn't find a port spec proto for API port proto '%v'; this should never happen, and is a bug in Kurtosis!", apiProto.String())
 	}
+
 	result, err := port_spec.NewPortSpec(portNumUint16, portSpecProto, "")
 	if err != nil {
 		return nil, stacktrace.Propagate(
