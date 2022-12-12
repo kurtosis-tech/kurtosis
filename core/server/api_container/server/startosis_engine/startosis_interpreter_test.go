@@ -927,9 +927,10 @@ func TestStartosisInterpreter_StoreFileFromService(t *testing.T) {
 	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
 	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, runtimeValueStore)
 	script := `
-print("Storing file from service!")
-artifact_uuid=store_service_files(service_id="example-datastore-server", src="/foo/bar", artifact_id="` + string(testArtifactId) + `")
-print(artifact_uuid)
+def run():
+	print("Storing file from service!")
+	artifact_uuid=store_service_files(service_id="example-datastore-server", src="/foo/bar", artifact_id="` + string(testArtifactId) + `")
+	print(artifact_uuid)
 `
 
 	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
@@ -944,7 +945,7 @@ print(artifact_uuid)
 	starlarkKwargs.Freeze()
 	storeInstruction := store_service_files.NewStoreServiceFilesInstruction(
 		testServiceNetwork,
-		kurtosis_instruction.NewInstructionPosition(3, 34, startosis_constants.PackageIdPlaceholderForStandaloneScript),
+		kurtosis_instruction.NewInstructionPosition(4, 35, startosis_constants.PackageIdPlaceholderForStandaloneScript),
 		"example-datastore-server",
 		"/foo/bar",
 		testArtifactId,
@@ -970,9 +971,10 @@ func TestStartosisInterpreter_ReadFileFromGithub(t *testing.T) {
 	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
 	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, runtimeValueStore)
 	script := `
-print("Reading file from GitHub!")
-file_contents=read_file("` + src + `")
-print(file_contents)
+def run():
+	print("Reading file from GitHub!")
+	file_contents=read_file("` + src + `")
+	print(file_contents)
 `
 
 	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
@@ -993,7 +995,6 @@ func TestStartosisInterpreter_RenderTemplates(t *testing.T) {
 	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
 	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, runtimeValueStore)
 	script := `
-print("Rendering template to disk!")
 template_data = {
 			"Name" : "Stranger",
 			"Answer": 6,
@@ -1002,14 +1003,18 @@ template_data = {
 			"LargeFloat": 1231231243.43,
 			"Alive": True
 }
+
 data = {
 	"/foo/bar/test.txt" : struct(
 		template="Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}. Am I Alive? {{.Alive}}",
 		data=template_data
-    )
+	)
 }
-artifact_id = render_templates(config = data, artifact_id = "` + string(testArtifactId) + `")
-print(artifact_id)
+
+def run():
+	print("Rendering template to disk!")
+	artifact_id = render_templates(config = data, artifact_id = "` + string(testArtifactId) + `")
+	print(artifact_id)
 `
 
 	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
@@ -1052,7 +1057,7 @@ print(artifact_id)
 
 	renderInstruction := render_templates.NewRenderTemplatesInstruction(
 		testServiceNetwork,
-		kurtosis_instruction.NewInstructionPosition(17, 31, startosis_constants.PackageIdPlaceholderForStandaloneScript),
+		kurtosis_instruction.NewInstructionPosition(20, 32, startosis_constants.PackageIdPlaceholderForStandaloneScript),
 		templateAndDataByDestFilepath,
 		starlark.StringDict{
 			"config":      templateAndDataValues,
