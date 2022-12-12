@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	complexRequestWaitAssertTestName        = "startosis_complex_request_wait_assert_test"
+	complexRequestWaitAssertTestName        = "startosis_complex_request_test"
 	complexRequestWaitAssertStartosisScript = `
 def run(args):
 	service_config = struct(

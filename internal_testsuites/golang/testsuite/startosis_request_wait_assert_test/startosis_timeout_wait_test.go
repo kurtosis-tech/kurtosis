@@ -28,7 +28,7 @@ def run(args):
 			"exploded-slash": ".query.input | split(\"/\") | .[1]"
 		}
 	)
-	response = wait(get_recipe, "code", "==", 200, interval="100ms", timeout="30s")
+	response = wait(get_recipe, "code", "<", 0, interval="100ms", timeout="10s")
 `
 )
 
