@@ -1,5 +1,4 @@
 # TBD
-
 ### Breaking Changes
 - Rename command from `get_value` to `request` command
 - Change function signature of `wait` to take in a recipe, assertion and request interval/timeout
@@ -14,6 +13,7 @@
 - Changed how `args` to `kurtosis run` are passed, they are passed as  second positional argument, instead of the `--args` flag
 - Made `CLI` error if more arguments than expected are passed
 - Added an advanced test for default_service_network.StartServices in preparation of changing a bit the logic
+- Added `does contain match regex` and `does not contain match regex` operators in the Kurtosis engine's server `GetServiceLogs` endpoint 
 
 ### Breaking Changes
 - Changed how `args` to `kurtosis run` are passed, they are passed as  second positional argument, instead of the `--args` flag
