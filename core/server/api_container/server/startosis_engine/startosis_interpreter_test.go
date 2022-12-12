@@ -151,7 +151,8 @@ func TestStartosisInterpreter_ScriptFailingSyntaxError(t *testing.T) {
 	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
 	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, runtimeValueStore)
 	script := `
-print("Starting Startosis script!")
+def run():
+	print("Starting Startosis script!")
 
 load("otherScript.start") # fails b/c load takes in at least 2 args
 `
@@ -161,7 +162,7 @@ load("otherScript.start") # fails b/c load takes in at least 2 args
 
 	expectedError := startosis_errors.NewInterpretationErrorFromStacktrace(
 		[]startosis_errors.CallFrame{
-			*startosis_errors.NewCallFrame("load statement must import at least 1 symbol", startosis_errors.NewScriptPosition(startosis_constants.PackageIdPlaceholderForStandaloneScript, 4, 5)),
+			*startosis_errors.NewCallFrame("load statement must import at least 1 symbol", startosis_errors.NewScriptPosition(startosis_constants.PackageIdPlaceholderForStandaloneScript, 5, 5)),
 		},
 	).ToAPIType()
 	require.Equal(t, expectedError, interpretationError)
