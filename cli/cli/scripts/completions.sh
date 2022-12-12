@@ -16,7 +16,7 @@ if [ "${COMPLETIONS_BUILD_DIR}/" = "/" ]; then
     echo "ERROR: variable COMPLETIONS_BUILD_DIR is empty. Halting. Would have ran 'rm -rf /'!!" >&2
     exit 1
 fi
-rm -rf "${COMPLETIONS_BUILD_DIR}"q
+rm -rf "${COMPLETIONS_BUILD_DIR}"
 mkdir -p "${COMPLETIONS_BINARY_DIR}"
 mkdir -p "${COMPLETIONS_SCRIPT_DIR}"
 
