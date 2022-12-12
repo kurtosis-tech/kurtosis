@@ -142,7 +142,11 @@ func (instruction *ExecInstruction) parseStartosisArgs(b *starlark.Builtin, args
 	}
 
 	if execIdArg == emptyStarlarkString {
-		execIdArg = starlark.String(runtimeValueStore.CreateValue())
+		execId, err := runtimeValueStore.CreateValue()
+		if err != nil {
+			return startosis_errors.NewInterpretationError("An error occurred while generating exec id")
+		}
+		execIdArg = starlark.String(execId)
 	}
 
 	instruction.starlarkKwargs[serviceIdArgName] = serviceIdArg

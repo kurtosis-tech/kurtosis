@@ -31,7 +31,11 @@ func GenerateRequestBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisIn
 		if interpretationError := instruction.parseStartosisArgs(b, args, kwargs); interpretationError != nil {
 			return nil, interpretationError
 		}
-		instruction.resultUuid = recipeExecutor.CreateValue()
+		resultUuid, err := recipeExecutor.CreateValue()
+		if err != nil {
+			return nil, startosis_errors.NewInterpretationError("An error occurred while generating uuid for future reference for %v instruction", RequestBuiltinName)
+		}
+		instruction.resultUuid = resultUuid
 		returnValue := instruction.httpRequestRecipe.CreateStarlarkReturnValue(instruction.resultUuid)
 		*instructionsQueue = append(*instructionsQueue, instruction)
 		return returnValue, nil

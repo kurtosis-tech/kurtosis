@@ -19,6 +19,9 @@
   - Users will have to start using `kurtosis run <script> <args>` without the `--arg` flag
   - If there are any scripts that depend on the `--args` flag, users should use the `args` arg instead
 
+### Fixes
+- Check an unchecked error in `CreateValue` in the `RunTimeValueStore`
+
 ### Features
 - The CLI now displays the list of container images currently being downloaded and validated during the Starlark
 validation step
