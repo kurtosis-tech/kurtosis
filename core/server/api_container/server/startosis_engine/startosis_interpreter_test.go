@@ -70,7 +70,7 @@ print("` + testString + `")
 func TestStartosisInterpreter_DefineFactAndWait(t *testing.T) {
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
-	interpreter := NewStartosisInterpreterWithFacts(testServiceNetwork, nil, packageContentProvider, runtime_value_store.NewRuntimeValueStore())
+	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, runtime_value_store.NewRuntimeValueStore())
 	script := `
 get_recipe = struct(
 	service_id = "web-server",
