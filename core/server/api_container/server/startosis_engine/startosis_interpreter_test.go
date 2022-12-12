@@ -883,8 +883,9 @@ func TestStartosisInterpreter_PassedExitCodeIsInterpretedCorrectly(t *testing.T)
 	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, testRuntimeValueStore)
 	testExecId := "aed4492"
 	script := `
-print("Executing mkdir!")
-exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"], expected_exit_code = -7 , exec_id = "` + testExecId + `")
+def run():
+	print("Executing mkdir!")
+	exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"], expected_exit_code = -7 , exec_id = "` + testExecId + `")
 `
 
 	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
@@ -901,7 +902,7 @@ exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"], e
 
 	execInstruction := exec.NewExecInstruction(
 		testServiceNetwork,
-		kurtosis_instruction.NewInstructionPosition(3, 5, startosis_constants.PackageIdPlaceholderForStandaloneScript),
+		kurtosis_instruction.NewInstructionPosition(4, 6, startosis_constants.PackageIdPlaceholderForStandaloneScript),
 		"example-datastore-server",
 		[]string{"mkdir", "/tmp/foo"},
 		-7,
