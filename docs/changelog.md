@@ -31,6 +31,9 @@ validation step
 - Added capability for container-engine to store optional application protocol for Kubernetes.
 - Allow paths to `kurtosis.yml` to be run as Kurtosis packages
 
+### Removals
+- Remove facts engine and endpoints
+
 ### Changes
 - Remove completion files 
 - CLI now prints to StdOut. It used to be printing most of its output to StdErr
