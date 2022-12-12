@@ -77,7 +77,6 @@ doc/tags
 # Output directories
 build/
 dist/
-cli/cli/completions/
 
 # Java
 .gradle

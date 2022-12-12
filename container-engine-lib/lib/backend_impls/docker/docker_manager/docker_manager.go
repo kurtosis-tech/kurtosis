@@ -943,6 +943,12 @@ func (manager DockerManager) GetContainersByLabels(ctx context.Context, labels m
 }
 
 func (manager DockerManager) FetchImage(ctx context.Context, dockerImage string) error {
+	// if the image name doesn't have version information we concatenate `:latest`
+	// this behavior is similar to CreateAndStartContainer above
+	// this allows us to be deterministic in our behaviour
+	if !strings.Contains(dockerImage, dockerTagSeparatorChar) {
+		dockerImage = dockerImage + dockerTagSeparatorChar + dockerDefaultTag
+	}
 	logrus.Tracef("Checking if image '%v' is available locally...", dockerImage)
 	doesImageExistLocally, err := manager.isImageAvailableLocally(ctx, dockerImage)
 	if err != nil {
