@@ -114,6 +114,11 @@ func (interpreter *StartosisInterpreter) Interpret(_ context.Context, packageId 
 			return "", nil, interpretationError.ToAPIType()
 		}
 		argsTuple = append(argsTuple, inputArgs)
+		// TODO clean this up
+		tupleForNoKwargs := starlark.Tuple{}
+		tupleForNoKwargs = append(tupleForNoKwargs, starlark.String("args"))
+		tupleForNoKwargs = append(tupleForNoKwargs, inputArgs)
+		noKwargs = append(noKwargs, tupleForNoKwargs)
 	}
 
 	outputObject, err := runFunction.CallInternal(thread, argsTuple, noKwargs)
