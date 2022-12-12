@@ -199,6 +199,7 @@ func (apicService ApiContainerService) RunStarlarkPackage(args *kurtosis_core_rp
 		if err := stream.SendMsg(binding_constructors.NewStarlarkRunResponseLineFromInterpretationError(interpretationError.ToAPIType())); err != nil {
 			return stacktrace.Propagate(err, "Error preparing for package execution and this error could not be sent through the output stream: '%s'", packageId)
 		}
+		return nil
 	}
 	apicService.runStarlark(dryRun, packageId, scriptWithRunFunction, serializedParams, stream)
 	return nil
