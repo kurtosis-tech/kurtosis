@@ -1,5 +1,7 @@
 # TBD
 
+# 0.58.1
+
 ### Fixes
 - Changed installation of tab-completion
 
