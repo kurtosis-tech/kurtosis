@@ -1,7 +1,7 @@
 # TBD
 
 ### Fixes
-- Fix bug that panics server when `wait` assert fails
+- Fix bug that panics APIC when `wait` assert fails
 
 # 0.58.1
 
