@@ -1294,6 +1294,26 @@ The datastore service ip address is %v
 	validateScriptOutputFromPrintInstructions(t, instructions, fmt.Sprintf(expectedOutput, testServiceIpAddress))
 }
 
+func TestStartosisInterpreter_RunWithoutArgsNoArgsParsed(t *testing.T) {
+	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
+	defer packageContentProvider.RemoveAll()
+	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
+	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, runtimeValueStore)
+	script := `
+def run():
+	print("Hello World!")
+`
+
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
+	require.Nil(t, interpretationError)
+	require.Len(t, instructions, 1)
+
+	expectedOutput := `Hello World!
+`
+	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutput)
+
+}
+
 // #####################################################################################################################
 //                                                  TEST HELPERS
 // #####################################################################################################################
