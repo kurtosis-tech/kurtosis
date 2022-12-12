@@ -31,7 +31,7 @@
 
 ### Features
 - The CLI now displays the list of container images currently being downloaded and validated during the Starlark
-  validation step
+validation step
 - `exec` now returns the command output and code
 - Added capability for container-engine to store optional application protocol for Kubernetes.
 - Allow paths to `kurtosis.yml` to be run as Kurtosis packages
@@ -55,8 +55,8 @@
 # 0.57.6
 ### Features
 - The "Starlark code successfully executed" or "Error encountered running Starlark code" messages are now "Starlark
-  code successfully run in dry-run mode" and "Error encountered running Starlark code in dry-run mode" when Starlark is
-  run in dry-run mode (and without the "in dry-run mode" when the script is executed for real)\
+code successfully run in dry-run mode" and "Error encountered running Starlark code in dry-run mode" when Starlark is
+run in dry-run mode (and without the "in dry-run mode" when the script is executed for real)\
 - Added `RunStarlarkScriptBlocking`, `RunStarlarkPackageBlocking` and `RunStarlarkRemotePackageBlocking` functions
   to the enclave context to facilitate automated testing in our current modules.
 
@@ -285,7 +285,7 @@
 # 0.53.0
 ### Features
 - Made `render_templates`, `upload_files`, `store_Files_from_service` accept `artifact_uuid` and
-  return `artifact_uuid` during interpretation time
+return `artifact_uuid` during interpretation time
 - Moved `kurtosis startosis exec` to `kurtosis exec`
 
 ### Breaking Features
@@ -494,9 +494,9 @@
 
 ### Breaking Changes
 - Updated `CreateEngine` method in `container-engine-lib`, removed the `logsCollectorHttpPortNumber` parameter
-  - Users will need to update all the `CreateEngine` calls removing this parameter
+ - Users will need to update all the `CreateEngine` calls removing this parameter
 - Updated `NewEngineServerArgs`,  `LaunchWithDefaultVersion` and `LaunchWithCustomVersion` methods in `engine_server_launcher` removed the `logsCollectorHttpPortNumber` parameter
-  - Users will need to update these method calls removing this parameter
+ - Users will need to update these method calls removing this parameter
 
 ### Changes
 - Untied the logs components containers and volumes creation and removal from the engine's crud in `container-engine-lib`
@@ -509,7 +509,7 @@
 
 ### Fixes
 - Fix IP address placeholder injected by default in Startosis instructions. It used to be empty, which is invalid now
-  it is set to `KURTOSIS_IP_ADDR_PLACEHOLDER`
+it is set to `KURTOSIS_IP_ADDR_PLACEHOLDER`
 - Fix enclave inspect CLI command error when there are additional port bindings
 - Fix a stale message the run-all-test-against-latest-code script
 - Fix bug that creates database while running local unit tests
