@@ -53,11 +53,11 @@ type StartosisInterpreter struct {
 
 type SerializedInterpretationOutput string
 
-func NewStartosisInterpreter(serviceNetwork service_network.ServiceNetwork, moduleContentProvider startosis_packages.PackageContentProvider, recipeExecutor *runtime_value_store.RuntimeValueStore) *StartosisInterpreter {
+func NewStartosisInterpreter(serviceNetwork service_network.ServiceNetwork, moduleContentProvider startosis_packages.PackageContentProvider, runtimeValueStore *runtime_value_store.RuntimeValueStore) *StartosisInterpreter {
 	return &StartosisInterpreter{
 		mutex:                 &sync.Mutex{},
 		serviceNetwork:        serviceNetwork,
-		recipeExecutor:        recipeExecutor,
+		recipeExecutor:        runtimeValueStore,
 		moduleGlobalsCache:    make(map[string]*startosis_packages.ModuleCacheEntry),
 		moduleContentProvider: moduleContentProvider,
 	}
