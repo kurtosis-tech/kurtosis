@@ -322,10 +322,10 @@ service_id = "example-datastore-server"
 ports = [1323, 1324, 1325]	
 
 def deploy_datastore_services():
-    for i in range(len(ports)):
-        unique_service_id = service_id + "-" + str(i)
-        print("Adding service " + unique_service_id)
-        config = struct(
+	for i in range(len(ports)):
+		unique_service_id = service_id + "-" + str(i)
+		print("Adding service " + unique_service_id)
+		config = struct(
 			image = "` + testContainerImageName + `",
 			ports = {
 				"grpc": struct(
@@ -334,6 +334,7 @@ def deploy_datastore_services():
 				)
 			}
 		)
+
 		add_service(service_id = unique_service_id, config = config)
 
 def run():
@@ -345,9 +346,9 @@ def run():
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 8)
 
-	addServiceInstruction0 := createSimpleAddServiceInstruction(t, "example-datastore-server-0", testContainerImageName, 1323, 20, 20, startosis_constants.PackageIdPlaceholderForStandaloneScript, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder, defaultPublicPortNumber, runtimeValueStore)
-	addServiceInstruction1 := createSimpleAddServiceInstruction(t, "example-datastore-server-1", testContainerImageName, 1324, 20, 20, startosis_constants.PackageIdPlaceholderForStandaloneScript, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder, defaultPublicPortNumber, runtimeValueStore)
-	addServiceInstruction2 := createSimpleAddServiceInstruction(t, "example-datastore-server-2", testContainerImageName, 1325, 20, 20, startosis_constants.PackageIdPlaceholderForStandaloneScript, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder, defaultPublicPortNumber, runtimeValueStore)
+	addServiceInstruction0 := createSimpleAddServiceInstruction(t, "example-datastore-server-0", testContainerImageName, 1323, 20, 14, startosis_constants.PackageIdPlaceholderForStandaloneScript, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder, defaultPublicPortNumber, runtimeValueStore)
+	addServiceInstruction1 := createSimpleAddServiceInstruction(t, "example-datastore-server-1", testContainerImageName, 1324, 20, 14, startosis_constants.PackageIdPlaceholderForStandaloneScript, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder, defaultPublicPortNumber, runtimeValueStore)
+	addServiceInstruction2 := createSimpleAddServiceInstruction(t, "example-datastore-server-2", testContainerImageName, 1325, 20, 14, startosis_constants.PackageIdPlaceholderForStandaloneScript, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder, defaultPublicPortNumber, runtimeValueStore)
 
 	require.Equal(t, addServiceInstruction0, instructions[2])
 	require.Equal(t, addServiceInstruction1, instructions[4])
