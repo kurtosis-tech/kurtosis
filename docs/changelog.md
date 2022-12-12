@@ -22,7 +22,7 @@
 
 ### Fixes
 - Check an unchecked error in `CreateValue` in the `RunTimeValueStore`
-- Check for `:latest` before checking for images without a version in `DockerManager.FetchImages`
+- Appends `:latest` before checking for images without a version in `DockerManager.FetchImages`
 
 ### Features
 - The CLI now displays the list of container images currently being downloaded and validated during the Starlark
