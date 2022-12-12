@@ -1,5 +1,8 @@
 # TBD
 
+### Fixes
+- Fix bug that panics server when `wait` assert fails
+
 # 0.58.0
 
 ### Breaking Changes
