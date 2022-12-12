@@ -171,27 +171,28 @@ func TestStartosisInterpreter_ValidSimpleScriptWithInstruction(t *testing.T) {
 	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, runtimeValueStore)
 	privateIPAddressPlaceholder := "MAGICAL_PLACEHOLDER_TO_REPLACE"
 	script := `
-print("Starting Startosis script!")
+def run(args):
+	print("Starting Startosis script!")
 
-service_id = "%v"
-print("Adding service " + service_id)
+	service_id = "%v"
+	print("Adding service " + service_id)
 
-config = struct(
-	image = "` + testContainerImageName + `",
-	ports = {
-		"grpc": struct(number = 1323, protocol = "TCP")
-	},
-	private_ip_address_placeholder = "` + privateIPAddressPlaceholder + `"
-)
-datastore_service = add_service(service_id = service_id, config = config)
-print("The grpc port is " + str(datastore_service.ports["grpc"].number))
-print("The grpc port protocol is " + datastore_service.ports["grpc"].protocol)
-print("The datastore service ip address is " + datastore_service.ip_address)
+	config = struct(
+		image = "` + testContainerImageName + `",
+		ports = {
+			"grpc": struct(number = 1323, protocol = "TCP")
+		},
+		private_ip_address_placeholder = "` + privateIPAddressPlaceholder + `"
+	)
+	datastore_service = add_service(service_id = service_id, config = config)
+	print("The grpc port is " + str(datastore_service.ports["grpc"].number))
+	print("The grpc port protocol is " + datastore_service.ports["grpc"].protocol)
+	print("The datastore service ip address is " + datastore_service.ip_address)
 `
 
 	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, fmt.Sprintf(script, testServiceId), startosis_constants.EmptyInputArgs)
-	require.Len(t, instructions, 6)
 	require.Nil(t, interpretationError)
+	require.Len(t, instructions, 6)
 
 	addServiceInstruction := createSimpleAddServiceInstruction(t, testServiceId, testContainerImageName, 1323, 14, 32, startosis_constants.PackageIdPlaceholderForStandaloneScript, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, privateIPAddressPlaceholder, defaultPublicPortNumber, runtimeValueStore)
 	require.Equal(t, addServiceInstruction, instructions[2])

@@ -41,7 +41,11 @@ const (
 
 	runFunctionName = "run"
 
-	minimumParamsToHaveArgs = 1
+	paramsRequiredForArgs = 1
+)
+
+var (
+	noKwargs []starlark.Tuple
 )
 
 type StartosisInterpreter struct {
@@ -84,32 +88,12 @@ func (interpreter *StartosisInterpreter) Interpret(_ context.Context, packageId 
 		OnMaxSteps: nil,
 	}
 
-	outputObject, err := interpreter.interpretInternal(thread, packageId, serializedStarlark, serializedJsonParams, &instructionsQueue)
+	globalVariables, err := interpreter.interpretInternal(thread, packageId, serializedStarlark, &instructionsQueue)
 	if err != nil {
 		return startosis_constants.NoOutputObject, nil, generateInterpretationError(err).ToAPIType()
 	}
 
 	logrus.Debugf("Successfully interpreted Starlark code into instruction queue: \n%s", instructionsQueue)
-
-	// Serialize and return the output object. It might contain magic strings that should be resolved post-execution
-	if outputObject != starlark.None {
-		logrus.Debugf("Starlark output object was: '%s'", outputObject)
-		serializedOutputObject, interpretationError := package_io.SerializeOutputObject(thread, outputObject)
-		if interpretationError != nil {
-			return startosis_constants.NoOutputObject, nil, interpretationError.ToAPIType()
-		}
-		return serializedOutputObject, instructionsQueue, nil
-	}
-	return startosis_constants.NoOutputObject, instructionsQueue, nil
-}
-
-func (interpreter *StartosisInterpreter) interpretInternal(thread *starlark.Thread, packageId string, serializedStarlark string, serializedJsonParams string, instructionsQueue *[]kurtosis_instruction.KurtosisInstruction) (starlark.Value, error) {
-	predeclared := interpreter.buildBindings(thread, instructionsQueue)
-
-	globalVariables, err := starlark.ExecFile(thread, packageId, serializedStarlark, *predeclared)
-	if err != nil {
-		return nil, err
-	}
 
 	if !globalVariables.Has(runFunctionName) {
 		return missingRunFunctionReturnValue(packageId)
@@ -123,26 +107,46 @@ func (interpreter *StartosisInterpreter) interpretInternal(thread *starlark.Thre
 
 	var argsTuple starlark.Tuple
 
-	if runFunction.NumParams() > minimumParamsToHaveArgs {
+	if runFunction.NumParams() == paramsRequiredForArgs {
 		// run function has an argument so we parse input args
 		inputArgs, interpretationError := interpreter.parseInputArgs(thread, serializedJsonParams)
 		if interpretationError != nil {
-			return nil, interpretationError
+			return "", nil, interpretationError.ToAPIType()
 		}
 		argsTuple = append(argsTuple, inputArgs)
 	}
 
-	outputObject, err := runFunction.CallInternal(thread, argsTuple, nil)
+	outputObject, err := runFunction.CallInternal(thread, argsTuple, noKwargs)
+	if err != nil {
+		return "", nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred while running Starlark").ToAPIType()
+	}
+
+	// Serialize and return the output object. It might contain magic strings that should be resolved post-execution
+	if outputObject != starlark.None {
+		logrus.Debugf("Starlark output object was: '%s'", outputObject)
+		serializedOutputObject, interpretationError := package_io.SerializeOutputObject(thread, outputObject)
+		if interpretationError != nil {
+			return startosis_constants.NoOutputObject, nil, interpretationError.ToAPIType()
+		}
+		return serializedOutputObject, instructionsQueue, nil
+	}
+	return startosis_constants.NoOutputObject, instructionsQueue, nil
+}
+
+func (interpreter *StartosisInterpreter) interpretInternal(thread *starlark.Thread, packageId string, serializedStarlark string, instructionsQueue *[]kurtosis_instruction.KurtosisInstruction) (starlark.StringDict, error) {
+	predeclared := interpreter.buildBindings(thread, instructionsQueue)
+
+	globalVariables, err := starlark.ExecFile(thread, packageId, serializedStarlark, *predeclared)
 	if err != nil {
 		return nil, err
 	}
 
-	return outputObject, nil
+	return globalVariables, nil
 }
 
 func (interpreter *StartosisInterpreter) buildBindings(thread *starlark.Thread, instructionsQueue *[]kurtosis_instruction.KurtosisInstruction) *starlark.StringDict {
 	recursiveInterpretForModuleLoading := func(moduleId string, serializedStartosis string) (starlark.StringDict, error) {
-		return interpreter.interpretInternal(thread, moduleId, serializedStartosis, startosis_constants.EmptyInputArgs, instructionsQueue)
+		return interpreter.interpretInternal(thread, moduleId, serializedStartosis, instructionsQueue)
 	}
 
 	predeclared := &starlark.StringDict{
@@ -241,9 +245,9 @@ func generateInterpretationError(err error) *startosis_errors.InterpretationErro
 	return startosis_errors.NewInterpretationError("UnknownError: %s\n", err.Error())
 }
 
-func missingRunFunctionReturnValue(packageId string) (starlark.Value, error) {
+func missingRunFunctionReturnValue(packageId string) (string, []kurtosis_instruction.KurtosisInstruction, *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError) {
 	if packageId == startosis_constants.PackageIdPlaceholderForStandaloneScript {
-		return nil, startosis_errors.NewInterpretationError("No 'run' function found in the script; a 'run' entrypoint function with the signature `run(args)` is required in any Kurtosis script")
+		return "", nil, startosis_errors.NewInterpretationError("No 'run' function found in the script; a 'run' entrypoint function with the signature `run(args)` is required in any Kurtosis script").ToAPIType()
 	}
-	return nil, startosis_errors.NewInterpretationError("No 'run' function found in file '%v/main.star'; a 'run' entrypoint function is required in the main.star file of any Kurtosis package", packageId)
+	return "", nil, startosis_errors.NewInterpretationError("No 'run' function found in file '%v/main.star'; a 'run' entrypoint function is required in the main.star file of any Kurtosis package", packageId).ToAPIType()
 }
