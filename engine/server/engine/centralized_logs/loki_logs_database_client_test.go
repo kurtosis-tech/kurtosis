@@ -229,7 +229,7 @@ func TestGetUserServiceLogsWithFilter_ValidResponse(t *testing.T) {
 		testUserService3Guid: 1,
 	}
 
-	lokiLineFilter := NewDoesContainLokiLineFilter(filterText)
+	lokiLineFilter := NewDoesContainTextLokiLineFilter(filterText)
 
 	lokiLineFilters := []LokiLineFilter{
 		*lokiLineFilter,
