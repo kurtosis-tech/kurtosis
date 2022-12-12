@@ -138,7 +138,7 @@ func (instruction *AddServiceInstruction) replaceMagicStrings() error {
 		}
 		entryPointArgWithIPAddressAndRuntimeValueReplaced, err := magic_string_helper.ReplaceRuntimeValueInString(entryPointArgWithIPAddressReplaced, instruction.runtimeValueStore)
 		if err != nil {
-			return stacktrace.Propagate(err, "Error occurred while replacing facts in entry point args for '%v'", entryPointArg)
+			return stacktrace.Propagate(err, "Error occurred while replacing runtime value in entry point args for '%v'", entryPointArg)
 		}
 		entryPointArgs[index] = entryPointArgWithIPAddressAndRuntimeValueReplaced
 	}
@@ -151,7 +151,7 @@ func (instruction *AddServiceInstruction) replaceMagicStrings() error {
 		}
 		cmdArgWithIPAddressAndRuntimeValueReplaced, err := magic_string_helper.ReplaceRuntimeValueInString(cmdArgWithIPAddressReplaced, instruction.runtimeValueStore)
 		if err != nil {
-			return stacktrace.Propagate(err, "Error occurred while replacing facts in command args for '%v'", cmdArg)
+			return stacktrace.Propagate(err, "Error occurred while replacing runtime value in command args for '%v'", cmdArg)
 		}
 		cmdArgs[index] = cmdArgWithIPAddressAndRuntimeValueReplaced
 	}
@@ -164,7 +164,7 @@ func (instruction *AddServiceInstruction) replaceMagicStrings() error {
 		}
 		envVarValueWithIPAddressAndRuntimeValueReplaced, err := magic_string_helper.ReplaceRuntimeValueInString(envVarValueWithIPAddressReplaced, instruction.runtimeValueStore)
 		if err != nil {
-			return stacktrace.Propagate(err, "Error occurred while replacing facts in command args for '%v'", envVars)
+			return stacktrace.Propagate(err, "Error occurred while replacing runtime value in command args for '%v'", envVars)
 		}
 		envVars[envVarName] = envVarValueWithIPAddressAndRuntimeValueReplaced
 	}
