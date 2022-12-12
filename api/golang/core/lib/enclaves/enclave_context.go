@@ -122,24 +122,6 @@ func (enclaveCtx *EnclaveContext) GetModuleContext(moduleId modules.ModuleID) (*
 	return moduleCtx, nil
 }
 
-func (enclaveCtx *EnclaveContext) DefineFact(recipe *kurtosis_core_rpc_api_bindings.FactRecipe) (*kurtosis_core_rpc_api_bindings.DefineFactResponse, error) {
-	defineFactArgs := binding_constructors.NewDefineFactArgs(recipe)
-	defineFactResponse, err := enclaveCtx.client.DefineFact(context.Background(), defineFactArgs)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Unexpected error happened defining fact '%v'", recipe.GetFactName())
-	}
-	return defineFactResponse, nil
-}
-
-func (enclaveCtx *EnclaveContext) GetFactValues(serviceId string, factName string) (*kurtosis_core_rpc_api_bindings.GetFactValuesResponse, error) {
-	factValuesArgs := binding_constructors.GetFactValuesArgs(serviceId, factName)
-	factValuesResponse, err := enclaveCtx.client.GetFactValues(context.Background(), factValuesArgs)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Unexpected error happened getting fact values '%v' '%v'", serviceId, factName)
-	}
-	return factValuesResponse, nil
-}
-
 // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkscriptstring-serializedstarlarkscript-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
 func (enclaveCtx *EnclaveContext) RunStarlarkScript(ctx context.Context, serializedScript string, serializedParams string, dryRun bool) (chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(ctx)

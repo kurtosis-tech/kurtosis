@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	testName              = "startosis_recipe_get_value_test"
+	testName              = "startosis_request_wait_assert_test"
 	isPartitioningEnabled = false
 	defaultDryRun         = false
 
@@ -27,13 +27,13 @@ def run(args):
 	get_recipe = struct(
 		service_id = "web-server",
 		port_id = "http-port",
-		endpoint = "?input=output",
+		endpoint = "?input=foo/bar",
 		method = "GET",
 		extract = {
-			"input": ".query.input"
+			"exploded-slash": ".query.input | split(\"/\") | .[1]"
 		}
 	)
-	response = request(get_recipe)
+	response = wait(get_recipe, "code", "==", 200, interval="10s", timeout="200s")
 	assert(response["code"], "==", 200)
 	assert("My test returned " + response["code"], "==", "My test returned 200")
 	assert(response["code"], "!=", 500)
@@ -43,7 +43,7 @@ def run(args):
 	assert(response["code"], ">", 100)
 	assert(response["code"], "IN", [100, 200])
 	assert(response["code"], "NOT_IN", [100, 300])
-	assert(response["extract.input"], "==", "output")
+	assert(response["extract.exploded-slash"], "==", "bar")
 	post_recipe = struct(
 		service_id = "web-server",
 		port_id = "http-port",
@@ -55,6 +55,7 @@ def run(args):
 			"my-body": ".body"
 		}
 	)
+	wait(post_recipe, "code", "==", 200)
 	post_response = request(post_recipe)
 	assert(post_response["code"], "==", 200)
 	assert(post_response["extract.my-body"], "==", "post_output")

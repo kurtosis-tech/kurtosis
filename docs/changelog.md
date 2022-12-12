@@ -2,21 +2,27 @@
 
 ### Breaking Changes
 - Rename command from `get_value` to `request` command
+- Change function signature of `wait` to take in a recipe, assertion and request interval/timeout
 - Remove `extract` command
 - Changed how `args` to `kurtosis run` are passed, they are passed as  second positional argument, instead of the `--args` flag
   - Users will have to start using `kurtosis run <script> <args>` without the `--arg` flag
   - If there are any scripts that depend on the `--args` flag, users should use the `args` arg instead
+- Remove `define_fact` command
 
 ### Changes
 - Add `extract` option to HTTP requests
 - Prepared the Kurtosis engine server to do search in logs
 - Adding `log line filters` parameter in the `GetServiceLogs` Kurtosis engine endpoint
+- Made the test for `get_value` use the `jq` string extraction features
 - Changed how `args` to `kurtosis run` are passed, they are passed as  second positional argument, instead of the `--args` flag
 - Made `CLI` error if more arguments than expected are passed
 - Added an advanced test for default_service_network.StartServices in preparation of changing a bit the logic
-- CLI now prints to StdOut. It used to be printing most of its output to StdErr
 - Remove completion files
-- Remove build binary and completions directory from git 
+- CLI now prints to StdOut. It used to be printing most of its output to StdErr
+- Remove build binary and completions directory from git
+
+### Fixes
+- Check an unchecked error in `CreateValue` in the `RunTimeValueStore`
 
 ### Features
 - The CLI now displays the list of container images currently being downloaded and validated during the Starlark
@@ -24,6 +30,9 @@ validation step
 - `exec` now returns the command output and code
 - Added capability for container-engine to store optional application protocol for Kubernetes.
 - Allow paths to `kurtosis.yml` to be run as Kurtosis packages
+
+### Removals
+- Remove facts engine and endpoints
 
 # 0.57.8
 

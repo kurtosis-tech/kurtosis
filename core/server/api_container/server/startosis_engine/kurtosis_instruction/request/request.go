@@ -31,7 +31,11 @@ func GenerateRequestBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisIn
 		if interpretationError := instruction.parseStartosisArgs(b, args, kwargs); interpretationError != nil {
 			return nil, interpretationError
 		}
-		instruction.resultUuid = recipeExecutor.CreateValue()
+		resultUuid, err := recipeExecutor.CreateValue()
+		if err != nil {
+			return nil, startosis_errors.NewInterpretationError("An error occurred while generating uuid for future reference for %v instruction", RequestBuiltinName)
+		}
+		instruction.resultUuid = resultUuid
 		returnValue := instruction.httpRequestRecipe.CreateStarlarkReturnValue(instruction.resultUuid)
 		*instructionsQueue = append(*instructionsQueue, instruction)
 		return returnValue, nil
@@ -44,17 +48,17 @@ type RequestInstruction struct {
 	position       *kurtosis_instruction.InstructionPosition
 	starlarkKwargs starlark.StringDict
 
-	recipeExecutor    *runtime_value_store.RuntimeValueStore
+	runtimeValueStore *runtime_value_store.RuntimeValueStore
 	httpRequestRecipe *recipe.HttpRequestRecipe
 	recipeConfigArg   *starlarkstruct.Struct
 	resultUuid        string
 }
 
-func NewRequestInstruction(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition, recipeExecutor *runtime_value_store.RuntimeValueStore, httpRequestRecipe *recipe.HttpRequestRecipe, recipeConfigArg *starlarkstruct.Struct, resultUuid string, starlarkKwargs starlark.StringDict) *RequestInstruction {
+func NewRequestInstruction(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition, runtimeValueStore *runtime_value_store.RuntimeValueStore, httpRequestRecipe *recipe.HttpRequestRecipe, recipeConfigArg *starlarkstruct.Struct, resultUuid string, starlarkKwargs starlark.StringDict) *RequestInstruction {
 	return &RequestInstruction{
 		serviceNetwork:    serviceNetwork,
 		position:          position,
-		recipeExecutor:    recipeExecutor,
+		runtimeValueStore: runtimeValueStore,
 		httpRequestRecipe: httpRequestRecipe,
 		recipeConfigArg:   recipeConfigArg,
 		resultUuid:        resultUuid,
@@ -66,7 +70,7 @@ func newEmptyGetValueInstruction(serviceNetwork service_network.ServiceNetwork, 
 	return &RequestInstruction{
 		serviceNetwork:    serviceNetwork,
 		position:          position,
-		recipeExecutor:    recipeExecutor,
+		runtimeValueStore: recipeExecutor,
 		httpRequestRecipe: nil,
 		recipeConfigArg:   nil,
 		resultUuid:        "",
@@ -91,7 +95,7 @@ func (instruction *RequestInstruction) Execute(ctx context.Context) (*string, er
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error executing http recipe")
 	}
-	instruction.recipeExecutor.SetValue(instruction.resultUuid, result)
+	instruction.runtimeValueStore.SetValue(instruction.resultUuid, result)
 	instructionResult := fmt.Sprintf("Value obtained '%v'", result)
 	return &instructionResult, err
 }

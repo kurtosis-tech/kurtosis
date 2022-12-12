@@ -82,9 +82,11 @@ func TestReplaceIPAddressInString_EnforceRegexAndPlaceholderAlign(t *testing.T) 
 
 func TestGetRuntimeValueFromString_BasicFetch(t *testing.T) {
 	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
-	stringValueUuid := runtimeValueStore.CreateValue()
+	stringValueUuid, err := runtimeValueStore.CreateValue()
+	require.Nil(t, err)
 	runtimeValueStore.SetValue(stringValueUuid, map[string]starlark.Comparable{testRuntimeValueField: testStringRuntimeValue})
-	intValueUuid := runtimeValueStore.CreateValue()
+	intValueUuid, err := runtimeValueStore.CreateValue()
+	require.Nil(t, err)
 	runtimeValueStore.SetValue(intValueUuid, map[string]starlark.Comparable{testRuntimeValueField: testIntRuntimeValue})
 	fetchedStringValue, err := GetRuntimeValueFromString(fmt.Sprintf(RuntimeValueReplacementPlaceholderFormat, stringValueUuid, testRuntimeValueField), runtimeValueStore)
 	require.Nil(t, err)
@@ -96,9 +98,11 @@ func TestGetRuntimeValueFromString_BasicFetch(t *testing.T) {
 
 func TestGetRuntimeValueFromString_Interpolated(t *testing.T) {
 	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
-	stringValueUuid := runtimeValueStore.CreateValue()
+	stringValueUuid, err := runtimeValueStore.CreateValue()
+	require.Nil(t, err)
 	runtimeValueStore.SetValue(stringValueUuid, map[string]starlark.Comparable{testRuntimeValueField: testStringRuntimeValue})
-	intValueUuid := runtimeValueStore.CreateValue()
+	intValueUuid, err := runtimeValueStore.CreateValue()
+	require.Nil(t, err)
 	runtimeValueStore.SetValue(intValueUuid, map[string]starlark.Comparable{testRuntimeValueField: testIntRuntimeValue})
 	stringRuntimeValue := fmt.Sprintf(RuntimeValueReplacementPlaceholderFormat, stringValueUuid, testRuntimeValueField)
 	intRuntimeValue := fmt.Sprintf(RuntimeValueReplacementPlaceholderFormat, intValueUuid, testRuntimeValueField)

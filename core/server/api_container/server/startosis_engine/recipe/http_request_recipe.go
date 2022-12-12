@@ -13,7 +13,6 @@ import (
 	"go.starlark.net/starlark"
 	"io"
 	"net/http"
-	"time"
 )
 
 const (
@@ -26,12 +25,6 @@ const (
 	bodyKey          = "body"
 	extractKeyPrefix = "extract"
 )
-
-var backoffSchedule = []time.Duration{
-	1 * time.Second,
-	3 * time.Second,
-	10 * time.Second,
-}
 
 type HttpRequestRecipe struct {
 	serviceId   service.ServiceID
@@ -70,23 +63,16 @@ func NewGetHttpRequestRecipe(serviceId service.ServiceID, portId string, endpoin
 func (recipe *HttpRequestRecipe) Execute(ctx context.Context, serviceNetwork service_network.ServiceNetwork) (map[string]starlark.Comparable, error) {
 	var response *http.Response
 	var err error
-	for _, backoff := range backoffSchedule {
-		logrus.Debugf("Running HTTP request recipe '%v'", recipe)
-		response, err = serviceNetwork.HttpRequestService(
-			ctx,
-			recipe.serviceId,
-			recipe.portId,
-			recipe.method,
-			recipe.contentType,
-			recipe.endpoint,
-			recipe.body,
-		)
-		if err == nil {
-			break
-		}
-		logrus.Debugf("Running HTTP request recipe failed with error %v", err)
-		time.Sleep(backoff)
-	}
+	logrus.Debugf("Running HTTP request recipe '%v'", recipe)
+	response, err = serviceNetwork.HttpRequestService(
+		ctx,
+		recipe.serviceId,
+		recipe.portId,
+		recipe.method,
+		recipe.contentType,
+		recipe.endpoint,
+		recipe.body,
+	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred when running HTTP request recipe")
 	}
