@@ -6,9 +6,6 @@
 - Rename command from `get_value` to `request` command
 - Change function signature of `wait` to take in a recipe, assertion and request interval/timeout
 - Remove `extract` command
-- Changed how `args` to `kurtosis run` are passed, they are passed as  second positional argument, instead of the `--args` flag
-  - Users will have to start using `kurtosis run <script> <args>` without the `--arg` flag
-  - If there are any scripts that depend on the `--args` flag, users should use the `args` arg instead
 - Remove `define_fact` command
 
 ### Changes
@@ -19,9 +16,11 @@
 - Changed how `args` to `kurtosis run` are passed, they are passed as  second positional argument, instead of the `--args` flag
 - Made `CLI` error if more arguments than expected are passed
 - Added an advanced test for default_service_network.StartServices in preparation of changing a bit the logic
-- Remove completion files
-- CLI now prints to StdOut. It used to be printing most of its output to StdErr
-- Remove build binary and completions directory from git
+
+### Breaking Changes
+- Changed how `args` to `kurtosis run` are passed, they are passed as  second positional argument, instead of the `--args` flag
+  - Users will have to start using `kurtosis run <script> <args>` without the `--arg` flag
+  - If there are any scripts that depend on the `--args` flag, users should use the `args` arg instead
 
 ### Fixes
 - Check an unchecked error in `CreateValue` in the `RunTimeValueStore`
@@ -35,6 +34,10 @@ validation step
 
 ### Removals
 - Remove facts engine and endpoints
+
+### Changes
+- Remove completion files 
+- CLI now prints to StdOut. It used to be printing most of its output to StdErr
 
 # 0.57.8
 
