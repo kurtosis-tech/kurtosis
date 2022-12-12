@@ -2,8 +2,6 @@ package binding_constructors
 
 import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
-	"google.golang.org/protobuf/types/known/durationpb"
-	"time"
 )
 
 // The generated bindings don't come with constructors (leaving it up to the user to initialize all the fields), so we
@@ -147,96 +145,6 @@ func NewModuleInfo(
 		PrivateGrpcPort:     privateGrpcPort,
 		MaybePublicIpAddr:   maybePublicIpAddr,
 		MaybePublicGrpcPort: maybePublicGrpcPort,
-	}
-}
-
-// ==============================================================================================
-//
-//	Facts Engine
-//
-// ==============================================================================================
-
-func NewConstantFactRecipe(serviceId string, factName string, constantFactRecipeDefinition *kurtosis_core_rpc_api_bindings.ConstantFactRecipe, refreshInterval time.Duration) *kurtosis_core_rpc_api_bindings.FactRecipe {
-	return &kurtosis_core_rpc_api_bindings.FactRecipe{
-		ServiceId: serviceId,
-		FactName:  factName,
-		FactRecipeDefinition: &kurtosis_core_rpc_api_bindings.FactRecipe_ConstantFact{
-			ConstantFact: constantFactRecipeDefinition,
-		},
-		RefreshInterval: durationpb.New(refreshInterval),
-	}
-}
-
-func NewConstantFactRecipeWithDefaultRefresh(serviceId string, factName string, constantFactRecipeDefinition *kurtosis_core_rpc_api_bindings.ConstantFactRecipe) *kurtosis_core_rpc_api_bindings.FactRecipe {
-	return &kurtosis_core_rpc_api_bindings.FactRecipe{
-		ServiceId: serviceId,
-		FactName:  factName,
-		FactRecipeDefinition: &kurtosis_core_rpc_api_bindings.FactRecipe_ConstantFact{
-			ConstantFact: constantFactRecipeDefinition,
-		},
-		RefreshInterval: nil,
-	}
-}
-
-func NewHttpRequestFactRecipeWithDefaultRefresh(serviceId string, factName string, factRecipeDefinition *kurtosis_core_rpc_api_bindings.FactRecipe_HttpRequestFact) *kurtosis_core_rpc_api_bindings.FactRecipe {
-	return &kurtosis_core_rpc_api_bindings.FactRecipe{
-		ServiceId:            serviceId,
-		FactName:             factName,
-		FactRecipeDefinition: factRecipeDefinition,
-		RefreshInterval:      nil,
-	}
-}
-
-func NewGetHttpRequestFactRecipeDefinition(portId string, endpoint string, fieldExtractor *string) *kurtosis_core_rpc_api_bindings.FactRecipe_HttpRequestFact {
-	return &kurtosis_core_rpc_api_bindings.FactRecipe_HttpRequestFact{
-		HttpRequestFact: &kurtosis_core_rpc_api_bindings.HttpRequestFactRecipe{
-			PortId:         portId,
-			Endpoint:       endpoint,
-			Method:         kurtosis_core_rpc_api_bindings.HttpRequestMethod_GET,
-			ContentType:    "",
-			Body:           "",
-			FieldExtractor: fieldExtractor,
-		},
-	}
-}
-
-func NewPostHttpRequestFactRecipeDefinition(portId string, endpoint string, contentType string, body string, fieldExtractor *string) *kurtosis_core_rpc_api_bindings.FactRecipe_HttpRequestFact {
-	return &kurtosis_core_rpc_api_bindings.FactRecipe_HttpRequestFact{
-		HttpRequestFact: &kurtosis_core_rpc_api_bindings.HttpRequestFactRecipe{
-			PortId:         portId,
-			Method:         kurtosis_core_rpc_api_bindings.HttpRequestMethod_POST,
-			ContentType:    contentType,
-			Body:           body,
-			Endpoint:       endpoint,
-			FieldExtractor: fieldExtractor,
-		},
-	}
-}
-
-func NewExecFactRecipeWithDefaultRefresh(serviceId string, factName string, cmdArgs []string) *kurtosis_core_rpc_api_bindings.FactRecipe {
-	return &kurtosis_core_rpc_api_bindings.FactRecipe{
-		ServiceId: serviceId,
-		FactName:  factName,
-		FactRecipeDefinition: &kurtosis_core_rpc_api_bindings.FactRecipe_ExecFact{
-			ExecFact: &kurtosis_core_rpc_api_bindings.ExecFactRecipe{
-				CmdArgs: cmdArgs,
-			},
-		},
-		RefreshInterval: nil,
-	}
-}
-
-func NewDefineFactArgs(factRecipe *kurtosis_core_rpc_api_bindings.FactRecipe) *kurtosis_core_rpc_api_bindings.DefineFactArgs {
-	return &kurtosis_core_rpc_api_bindings.DefineFactArgs{
-		FactRecipe: factRecipe,
-	}
-}
-
-func GetFactValuesArgs(serviceId string, factName string) *kurtosis_core_rpc_api_bindings.GetFactValuesArgs {
-	return &kurtosis_core_rpc_api_bindings.GetFactValuesArgs{
-		ServiceId:    serviceId,
-		FactName:     factName,
-		StartingFrom: nil,
 	}
 }
 

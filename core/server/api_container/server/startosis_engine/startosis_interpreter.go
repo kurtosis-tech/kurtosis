@@ -3,7 +3,6 @@ package startosis_engine
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/facts_engine"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/import_module"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/read_file"
@@ -46,7 +45,6 @@ type StartosisInterpreter struct {
 	// problems with the moduleGlobalsCache & moduleContentProvider. Fixing this is quite complicated, which we decided not to do.
 	mutex              *sync.Mutex
 	serviceNetwork     service_network.ServiceNetwork
-	factsEngine        *facts_engine.FactsEngine
 	recipeExecutor     *runtime_value_store.RuntimeValueStore
 	moduleGlobalsCache map[string]*startosis_packages.ModuleCacheEntry
 	// TODO AUTH there will be a leak here in case people with different repo visibility access a module
@@ -55,25 +53,13 @@ type StartosisInterpreter struct {
 
 type SerializedInterpretationOutput string
 
-func NewStartosisInterpreter(serviceNetwork service_network.ServiceNetwork, moduleContentProvider startosis_packages.PackageContentProvider) *StartosisInterpreter {
+func NewStartosisInterpreter(serviceNetwork service_network.ServiceNetwork, moduleContentProvider startosis_packages.PackageContentProvider, runtimeValueStore *runtime_value_store.RuntimeValueStore) *StartosisInterpreter {
 	return &StartosisInterpreter{
 		mutex:                 &sync.Mutex{},
 		serviceNetwork:        serviceNetwork,
-		factsEngine:           nil,
-		recipeExecutor:        nil,
+		recipeExecutor:        runtimeValueStore,
 		moduleGlobalsCache:    make(map[string]*startosis_packages.ModuleCacheEntry),
 		moduleContentProvider: moduleContentProvider,
-	}
-}
-
-func NewStartosisInterpreterWithFacts(serviceNetwork service_network.ServiceNetwork, factsEngine *facts_engine.FactsEngine, moduleContentProvider startosis_packages.PackageContentProvider, recipeExecutor *runtime_value_store.RuntimeValueStore) *StartosisInterpreter {
-	return &StartosisInterpreter{
-		mutex:                 &sync.Mutex{},
-		serviceNetwork:        serviceNetwork,
-		moduleContentProvider: moduleContentProvider,
-		recipeExecutor:        recipeExecutor,
-		moduleGlobalsCache:    make(map[string]*startosis_packages.ModuleCacheEntry),
-		factsEngine:           factsEngine,
 	}
 }
 
@@ -139,7 +125,7 @@ func (interpreter *StartosisInterpreter) buildBindings(thread *starlark.Thread, 
 		time.Module.Name:                  time.Module,
 
 		// Kurtosis instructions - will push instructions to the queue that will affect the enclave state at execution
-		add_service.AddServiceBuiltinName:                starlark.NewBuiltin(add_service.AddServiceBuiltinName, add_service.GenerateAddServiceBuiltin(instructionsQueue, interpreter.serviceNetwork, interpreter.factsEngine)),
+		add_service.AddServiceBuiltinName:                starlark.NewBuiltin(add_service.AddServiceBuiltinName, add_service.GenerateAddServiceBuiltin(instructionsQueue, interpreter.serviceNetwork, interpreter.recipeExecutor)),
 		assert.AssertBuiltinName:                         starlark.NewBuiltin(assert.AssertBuiltinName, assert.GenerateAssertBuiltin(instructionsQueue, interpreter.recipeExecutor, interpreter.serviceNetwork)),
 		request.RequestBuiltinName:                       starlark.NewBuiltin(request.RequestBuiltinName, request.GenerateRequestBuiltin(instructionsQueue, interpreter.recipeExecutor, interpreter.serviceNetwork)),
 		exec.ExecBuiltinName:                             starlark.NewBuiltin(exec.ExecBuiltinName, exec.GenerateExecBuiltin(instructionsQueue, interpreter.serviceNetwork, interpreter.recipeExecutor)),
@@ -228,15 +214,4 @@ func generateInterpretationError(err error) *startosis_errors.InterpretationErro
 		return slError
 	}
 	return startosis_errors.NewInterpretationError("UnknownError: %s\n", err.Error())
-}
-
-func newStartosisInterpreterWithRecipeExecutorForTesting(serviceNetwork service_network.ServiceNetwork, moduleContentProvider startosis_packages.PackageContentProvider, recipeExecutor *runtime_value_store.RuntimeValueStore) *StartosisInterpreter {
-	return &StartosisInterpreter{
-		mutex:                 &sync.Mutex{},
-		serviceNetwork:        serviceNetwork,
-		factsEngine:           nil,
-		recipeExecutor:        recipeExecutor,
-		moduleGlobalsCache:    make(map[string]*startosis_packages.ModuleCacheEntry),
-		moduleContentProvider: moduleContentProvider,
-	}
 }
