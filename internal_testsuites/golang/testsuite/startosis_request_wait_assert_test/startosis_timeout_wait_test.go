@@ -36,8 +36,7 @@ func TestStartosis_TimeoutWait(t *testing.T) {
 	ctx := context.Background()
 	runResult := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, timeoutWaitTestName, timeoutWaitStartosisScript)
 
-	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
+	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
 	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")
 	require.NotEmpty(t, runResult.ExecutionError, "Expected execution error coming from wait timeout")
-
 }

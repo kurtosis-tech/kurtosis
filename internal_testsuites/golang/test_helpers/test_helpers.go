@@ -244,7 +244,7 @@ func AddAPIServiceToPartition(ctx context.Context, serviceId services.ServiceID,
 func SetupSimpleEnclaveAndRunScript(t *testing.T, ctx context.Context, testName string, script string) *enclaves.StarlarkRunResult {
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
-	enclaveCtx, destroyEnclaveFunc, _, err := CreateEnclave(t, ctx, testName, partitioningDisabled)
+	enclaveCtx, _, destroyEnclaveFunc, err := CreateEnclave(t, ctx, testName, partitioningDisabled)
 	require.NoError(t, err, "An error occurred creating an enclave")
 	defer destroyEnclaveFunc()
 
