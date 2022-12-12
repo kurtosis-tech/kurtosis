@@ -12,9 +12,9 @@ const (
 	lokiLineFilterOperatorDoesNotContainMatchRegex
 
 	//These magic string are Loki's operators, you can read more about it here: https://grafana.com/docs/loki/latest/logql/log_queries/
-	doesContainTextLokiOperatorStr       = "|="
-	doesNotContainTextLokiOperatorStr    = "!="
-	doesContainMatchRegexLokiOperatorStr = "|~"
+	doesContainTextLokiOperatorStr          = "|="
+	doesNotContainTextLokiOperatorStr       = "!="
+	doesContainMatchRegexLokiOperatorStr    = "|~"
 	doesNotContainMatchRegexLokiOperatorStr = "!~"
 	unknownValueStr                         = "unknown"
 )

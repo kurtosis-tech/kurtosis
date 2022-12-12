@@ -7,15 +7,15 @@ import (
 )
 
 const (
-	containTextOperatorStr = "|="
-	doesNotContainTextOperatorStr = "!="
-	containMatchRegexOperatorStr = "|~"
+	containTextOperatorStr              = "|="
+	doesNotContainTextOperatorStr       = "!="
+	containMatchRegexOperatorStr        = "|~"
 	doesNotContainMatchRegexOperatorStr = "!~"
 
-	containTextStr = "contains text"
-	doesNotContainTextStr = "does not contain text"
-	containAnotherTextStr = "contain this other text"
-	containsMatchRegexStr = "start-with.*finish-with"
+	containTextStr              = "contains text"
+	doesNotContainTextStr       = "does not contain text"
+	containAnotherTextStr       = "contain this other text"
+	containsMatchRegexStr       = "start-with.*finish-with"
 	doesNotContainMatchRegexStr = `error=\w+`
 )
 
@@ -59,7 +59,7 @@ func TestNewLokiLogPipelineWithEmptyFilters(t *testing.T) {
 
 	emptyFilters := []LokiLineFilter{}
 
-	logPipeline:= NewLokiLogPipeline(emptyFilters)
+	logPipeline := NewLokiLogPipeline(emptyFilters)
 	require.Equal(t, expectedEmptyLogPipeline, logPipeline.GetConjunctiveLogLineFiltersString())
 }
 
@@ -67,6 +67,6 @@ func TestNewLokiLogPipelineWithNilFilters(t *testing.T) {
 
 	expectedEmptyLogPipeline := ""
 
-	logPipeline:= NewLokiLogPipeline(nil)
+	logPipeline := NewLokiLogPipeline(nil)
 	require.Equal(t, expectedEmptyLogPipeline, logPipeline.GetConjunctiveLogLineFiltersString())
 }
