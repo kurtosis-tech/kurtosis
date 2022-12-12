@@ -1294,7 +1294,7 @@ The datastore service ip address is %v
 	validateScriptOutputFromPrintInstructions(t, instructions, fmt.Sprintf(expectedOutput, testServiceIpAddress))
 }
 
-func TestStartosisInterpreter_RunWithoutArgsNoArgsParsed(t *testing.T) {
+func TestStartosisInterpreter_RunWithoutArgsNoArgsPassed(t *testing.T) {
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
 	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
@@ -1311,7 +1311,66 @@ def run():
 	expectedOutput := `Hello World!
 `
 	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutput)
+}
 
+func TestStartosisInterpreter_RunWithoutArgsArgsPassed(t *testing.T) {
+	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
+	defer packageContentProvider.RemoveAll()
+	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
+	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, runtimeValueStore)
+	script := `
+def run():
+	print("Hello World!")
+`
+
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, `{"number": 4}`)
+	require.Nil(t, interpretationError)
+	require.Len(t, instructions, 1)
+
+	expectedOutput := `Hello World!
+`
+	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutput)
+}
+
+func TestStartosisInterpreter_RunWithArgsArgsPassed(t *testing.T) {
+	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
+	defer packageContentProvider.RemoveAll()
+	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
+	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, runtimeValueStore)
+	script := `
+def run(args):
+	print("My favorite number is {0}".format(args.number))
+`
+
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, `{"number": 4}`)
+	require.Nil(t, interpretationError)
+	require.Len(t, instructions, 1)
+
+	expectedOutput := `My favorite number is 4
+`
+	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutput)
+}
+
+func TestStartosisInterpreter_RunWithArgsNoArgsPassed(t *testing.T) {
+	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
+	defer packageContentProvider.RemoveAll()
+	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
+	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, runtimeValueStore)
+	script := `
+def run(args):
+	if hasattr(args, "number"):
+		print("My favorite number is {0}".format(args.number))
+	else:
+		print("Sorry no args!")
+`
+
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
+	require.Nil(t, interpretationError)
+	require.Len(t, instructions, 1)
+
+	expectedOutput := `Sorry no args!
+`
+	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutput)
 }
 
 // #####################################################################################################################
