@@ -310,6 +310,8 @@ func (network *DefaultServiceNetwork) StartServices(
 			if err != nil {
 				failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred while adding networking sidecar for service '%v'", serviceID)
 				delete(servicesToProcessFurther, serviceID)
+				// remove service from topology as it has no sidecar. The service will be removed in a deferred function
+				network.topology.RemoveService(serviceID)
 				continue
 			}
 			logrus.Debugf("Successfully created sidecars for service with ID '%v'", serviceID)

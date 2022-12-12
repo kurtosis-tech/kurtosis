@@ -2,7 +2,9 @@
 
 ### Breaking Changes
 - Rename command from `get_value` to `request` command
+- Change function signature of `wait` to take in a recipe, assertion and request interval/timeout
 - Remove `extract` command
+- Remove `define_fact` command
 
 ### Changes
 - Add `extract` option to HTTP requests
@@ -11,6 +13,7 @@
 - Made the test for `get_value` use the `jq` string extraction features
 - Changed how `args` to `kurtosis run` are passed, they are passed as  second positional argument, instead of the `--args` flag
 - Made `CLI` error if more arguments than expected are passed
+- Added an advanced test for default_service_network.StartServices in preparation of changing a bit the logic
 
 ### Breaking Changes
 - Changed how `args` to `kurtosis run` are passed, they are passed as  second positional argument, instead of the `--args` flag
@@ -26,6 +29,7 @@ validation step
 
 ### Changes
 - Remove completion files 
+- CLI now prints to StdOut. It used to be printing most of its output to StdErr
 
 # 0.57.8
 

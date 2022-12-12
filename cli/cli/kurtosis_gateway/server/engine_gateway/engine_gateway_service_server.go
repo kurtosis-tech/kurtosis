@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_gateway/live_engine_client_supplier"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_gateway/port_utils"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_gateway/run/api_container_gateway"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/out"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -85,7 +86,7 @@ func (service *EngineGatewayServiceServer) CreateEnclave(ctx context.Context, ar
 			destroyEnclaveArgs := &kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs{EnclaveId: args.GetEnclaveId()}
 			if _, err := remoteEngineClient.DestroyEnclave(ctx, destroyEnclaveArgs); err != nil {
 				logrus.Error("Launching the Enclave gateway failed, expected to be able to cleanup the created enclave, but an error occurred calling the backend to destroy the enclave we created:")
-				fmt.Fprintln(logrus.StandardLogger().Out, err)
+				out.PrintErrLn(err.Error())
 				logrus.Errorf("ACTION REQUIRED: You'll need to manually kill the enclave with id '%v'", args.GetEnclaveId())
 			}
 		}
