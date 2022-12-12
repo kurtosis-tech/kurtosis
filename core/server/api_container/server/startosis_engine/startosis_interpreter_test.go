@@ -56,7 +56,8 @@ func TestStartosisInterpreter_SimplePrintScript(t *testing.T) {
 	startosisInterpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, runtimeValueStore)
 	interpreter := startosisInterpreter
 	script := `
-print("` + testString + `")
+def run():
+	print("` + testString + `")
 `
 
 	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
@@ -74,17 +75,18 @@ func TestStartosisInterpreter_DefineFactAndWait(t *testing.T) {
 	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
 	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, runtimeValueStore)
 	script := `
-get_recipe = struct(
-	service_id = "web-server",
-	port_id = "http-port",
-	endpoint = "?input=output",
-	method = "GET",
-	extract = {
-		"input": ".query.input"
-	}
-)
-response = wait(get_recipe, "code", "==", 200, timeout="5m", interval="5s")
-print(response["body"])
+def run():
+	get_recipe = struct(
+		service_id = "web-server",
+		port_id = "http-port",
+		endpoint = "?input=output",
+		method = "GET",
+		extract = {
+			"input": ".query.input"
+		}
+	)
+	response = wait(get_recipe, "code", "==", 200, timeout="5m", interval="5s")
+	print(response["body"])
 `
 	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 	require.Nil(t, interpretationError)
@@ -97,7 +99,8 @@ func TestStartosisInterpreter_ScriptFailingSingleError(t *testing.T) {
 	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
 	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, runtimeValueStore)
 	script := `
-print("Starting Startosis script!")
+def run():
+	print("Starting Startosis script!")
 
 unknownInstruction()
 `
@@ -107,7 +110,7 @@ unknownInstruction()
 
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
 		[]startosis_errors.CallFrame{
-			*startosis_errors.NewCallFrame("undefined: unknownInstruction", startosis_errors.NewScriptPosition(startosis_constants.PackageIdPlaceholderForStandaloneScript, 4, 1)),
+			*startosis_errors.NewCallFrame("undefined: unknownInstruction", startosis_errors.NewScriptPosition(startosis_constants.PackageIdPlaceholderForStandaloneScript, 5, 1)),
 		},
 		multipleInterpretationErrorMsg,
 	).ToAPIType()
@@ -194,7 +197,7 @@ def run(args):
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 6)
 
-	addServiceInstruction := createSimpleAddServiceInstruction(t, testServiceId, testContainerImageName, 1323, 14, 32, startosis_constants.PackageIdPlaceholderForStandaloneScript, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, privateIPAddressPlaceholder, defaultPublicPortNumber, runtimeValueStore)
+	addServiceInstruction := createSimpleAddServiceInstruction(t, testServiceId, testContainerImageName, 1323, 15, 33, startosis_constants.PackageIdPlaceholderForStandaloneScript, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, privateIPAddressPlaceholder, defaultPublicPortNumber, runtimeValueStore)
 	require.Equal(t, addServiceInstruction, instructions[2])
 
 	expectedOutput := `Starting Startosis script!
