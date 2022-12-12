@@ -27,10 +27,10 @@ def run(args):
 	get_recipe = struct(
 		service_id = "web-server",
 		port_id = "http-port",
-		endpoint = "?input=output",
+		endpoint = "?input=foo/bar",
 		method = "GET",
 		extract = {
-			"input": ".query.input"
+			"exploded-slash": ".query.input | split(\"/\") | .[1]"
 		}
 	)
 	response = wait(get_recipe, "code", "==", 200, interval="10s", timeout="200s")
@@ -43,7 +43,7 @@ def run(args):
 	assert(response["code"], ">", 100)
 	assert(response["code"], "IN", [100, 200])
 	assert(response["code"], "NOT_IN", [100, 300])
-	assert(response["extract.input"], "==", "output")
+	assert(response["extract.exploded-slash"], "==", "bar")
 	post_recipe = struct(
 		service_id = "web-server",
 		port_id = "http-port",
