@@ -1,5 +1,8 @@
 # TBD
 
+### Features
+- Made `args` optional for `run`
+
 # 0.58.1
 
 ### Fixes
