@@ -2,12 +2,10 @@ package startosis_engine
 
 import (
 	"context"
-	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/sirupsen/logrus"
 	"regexp"
-	"strings"
 )
 
 type StartosisRunner struct {
@@ -56,7 +54,6 @@ func (runner *StartosisRunner) Run(ctx context.Context, dryRun bool, moduleId st
 
 		serializedScriptOutput, instructionsList, interpretationError := runner.startosisInterpreter.Interpret(ctx, moduleId, serializedStartosis, serializedParams)
 		if interpretationError != nil {
-			interpretationError = maybeMakeMissingRunMethodErrorFriendlier(interpretationError, moduleId)
 			starlarkRunResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromInterpretationError(interpretationError)
 			starlarkRunResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromRunFailureEvent()
 			return
@@ -101,16 +98,4 @@ func forwardKurtosisResponseLineChannelUntilSourceIsClosed(sourceChan <-chan *ku
 	}
 	logrus.Debugf("Kurtosis instructions stream was closed. Exiting execution loop. Run finishedL '%v'", isStarlarkRunFinished)
 	return isStarlarkRunFinished
-}
-
-func maybeMakeMissingRunMethodErrorFriendlier(originalError *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError, packageId string) *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError {
-	if strings.HasPrefix(originalError.GetErrorMessage(), missingRunMethodErrorPrefixFromStarlarkPackage) && strings.HasSuffix(originalError.GetErrorMessage(), missingRunMethodErrorSuffixFromStarlarkPackage) {
-		return binding_constructors.NewStarlarkInterpretationError(fmt.Sprintf("No 'run' function found in file '%v/main.star'; a 'run' entrypoint function is required in the main.star file of any Kurtosis package", packageId))
-	}
-
-	if missingRunMethodErrorFromStarlarkScriptRegex.MatchString(originalError.GetErrorMessage()) {
-		return binding_constructors.NewStarlarkInterpretationError("No 'run' function found in the script; a 'run' entrypoint function with the signature `run(args)` is required in any Kurtosis script")
-	}
-
-	return originalError
 }
