@@ -1,4 +1,4 @@
-package startosis_recipe_get_value_test
+package startosis_request_wait_assert_test
 
 import (
 	"context"
@@ -9,12 +9,8 @@ import (
 )
 
 const (
-	testName              = "startosis_request_wait_assert_test"
-	isPartitioningEnabled = false
-	defaultDryRun         = false
-
-	emptyParams     = "{}"
-	startosisScript = `
+	complexRequestWaitAssertTestName        = "startosis_complex_request_test"
+	complexRequestWaitAssertStartosisScript = `
 def run(args):
 	service_config = struct(
 		image = "mendhak/http-https-echo:26",
@@ -62,24 +58,12 @@ def run(args):
 `
 )
 
-func TestStartosis(t *testing.T) {
+func TestStartosis_ComplexRequestWaitAssert(t *testing.T) {
 	ctx := context.Background()
+	runResult := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, complexRequestWaitAssertTestName, complexRequestWaitAssertStartosisScript)
 
-	// ------------------------------------- ENGINE SETUP ----------------------------------------------
-	enclaveCtx, destroyEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
-	require.NoError(t, err, "An error occurred creating an enclave")
-	defer destroyEnclaveFunc()
-
-	// ------------------------------------- TEST RUN ----------------------------------------------
-	logrus.Infof("Executing Startosis script...")
-	logrus.Debugf("Startosis script content: \n%v", startosisScript)
-
-	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, startosisScript, emptyParams, defaultDryRun)
-	require.NoError(t, err, "Unexpected error executing startosis script")
-
-	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
+	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
 	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")
 	require.Nil(t, runResult.ExecutionError, "Unexpected execution error")
 	logrus.Infof("Successfully ran Startosis script")
-
 }
