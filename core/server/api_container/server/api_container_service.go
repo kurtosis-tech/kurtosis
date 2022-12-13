@@ -70,7 +70,7 @@ run(%v)
 
 	isScript    = true
 	isNotScript = false
-	isNotRemote = true
+	isNotRemote = false
 )
 
 // Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and port spec protos
