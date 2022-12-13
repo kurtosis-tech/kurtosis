@@ -1,9 +1,11 @@
 # TBD
+### Changes
+- Added `does contain match regex` and `does not contain match regex` operators in the Kurtosis engine's server `GetServiceLogs` endpoint
 
 # 0.58.2
-
 ### Features
 - Made `args` optional for `run`
+- Added metrics for `kurtosis run`
 
 ### Fixes
 - Fix bug that panics APIC when `wait` assert fails
@@ -11,16 +13,12 @@
 - Cancel redundant runs of golang-ci-lint
 - Fixed bug in installation of tab-completion
 
-### Features
-- Added metrics for `kurtosis run`
 
 # 0.58.1
-
 ### Fixes
 - Changed installation of tab-completion
 
 # 0.58.0
-
 ### Breaking Changes
 - Rename command from `get_value` to `request` command
 - Change function signature of `wait` to take in a recipe, assertion and request interval/timeout
@@ -57,12 +55,10 @@ validation step
 - Remove facts engine and endpoints
 
 # 0.57.8
-
 ### Features
 - Added capability for container-engine to store optional application protocol for Docker.
 
 # 0.57.7
-
 ### Changes
 - Added automated installation of tab completion with brew installation.
 

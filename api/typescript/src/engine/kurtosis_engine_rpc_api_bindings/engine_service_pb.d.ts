@@ -358,8 +358,10 @@ export namespace LogLineFilter {
   }
 
   export enum LogLineOperator { 
-    DOES_CONTAIN = 0,
-    DOES_NOT_CONTAIN = 1,
+    DOES_CONTAIN_TEXT = 0,
+    DOES_NOT_CONTAIN_TEXT = 1,
+    DOES_CONTAIN_MATCH_REGEX = 2,
+    DOES_NOT_CONTAIN_MATCH_REGEX = 3,
   }
 }
 

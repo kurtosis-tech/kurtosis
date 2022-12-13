@@ -7,28 +7,46 @@ import (
 )
 
 const (
-	containTextStr = "contains text"
-	doesNotContainTextStr = "does not contain text"
-	containAnotherTextStr = "contain this other text"
+	containTextOperatorStr              = "|="
+	doesNotContainTextOperatorStr       = "!="
+	containMatchRegexOperatorStr        = "|~"
+	doesNotContainMatchRegexOperatorStr = "!~"
+
+	containTextStr              = "contains text"
+	doesNotContainTextStr       = "does not contain text"
+	containAnotherTextStr       = "contain this other text"
+	containsMatchRegexStr       = "start-with.*finish-with"
+	doesNotContainMatchRegexStr = `error=\w+`
 )
 
 func TestNewValidLokiLogPipeline(t *testing.T) {
 
 	expectLogPipelineStr := fmt.Sprintf(
-		`|= "%s" != "%s" |= "%s"`,
+		`%s "%s" %s "%s" %s "%s" %s "%s" %s "%s"`,
+		containTextOperatorStr,
 		containTextStr,
+		doesNotContainTextOperatorStr,
 		doesNotContainTextStr,
+		containTextOperatorStr,
 		containAnotherTextStr,
+		containMatchRegexOperatorStr,
+		containsMatchRegexStr,
+		doesNotContainMatchRegexOperatorStr,
+		doesNotContainMatchRegexStr,
 	)
 
-	lineFilterOne := NewDoesContainLokiLineFilter(containTextStr)
-	lineFilterTwo := NewDoesNotContainLokiLineFilter(doesNotContainTextStr)
-	lineFilterThree := NewDoesContainLokiLineFilter(containAnotherTextStr)
+	lineFilterOne := NewDoesContainTextLokiLineFilter(containTextStr)
+	lineFilterTwo := NewDoesNotContainTextLokiLineFilter(doesNotContainTextStr)
+	lineFilterThree := NewDoesContainTextLokiLineFilter(containAnotherTextStr)
+	lineFilterFourth := NewDoesContainMatchRegexLokiLineFilter(containsMatchRegexStr)
+	lineFilterFifth := NewDoesNotContainMatchRegexLokiLineFilter(doesNotContainMatchRegexStr)
 
 	lineFilters := []LokiLineFilter{
 		*lineFilterOne,
 		*lineFilterTwo,
 		*lineFilterThree,
+		*lineFilterFourth,
+		*lineFilterFifth,
 	}
 
 	logPipeline := NewLokiLogPipeline(lineFilters)
@@ -41,7 +59,7 @@ func TestNewLokiLogPipelineWithEmptyFilters(t *testing.T) {
 
 	emptyFilters := []LokiLineFilter{}
 
-	logPipeline:= NewLokiLogPipeline(emptyFilters)
+	logPipeline := NewLokiLogPipeline(emptyFilters)
 	require.Equal(t, expectedEmptyLogPipeline, logPipeline.GetConjunctiveLogLineFiltersString())
 }
 
@@ -49,6 +67,6 @@ func TestNewLokiLogPipelineWithNilFilters(t *testing.T) {
 
 	expectedEmptyLogPipeline := ""
 
-	logPipeline:= NewLokiLogPipeline(nil)
+	logPipeline := NewLokiLogPipeline(nil)
 	require.Equal(t, expectedEmptyLogPipeline, logPipeline.GetConjunctiveLogLineFiltersString())
 }

@@ -324,10 +324,14 @@ func newConjunctiveLogLineFiltersGRPC(
 		operator := logLineFilter.GetOperator()
 		filterTextPattern := logLineFilter.GetTextPattern()
 		switch operator {
-		case kurtosis_engine_rpc_api_bindings.LogLineFilter_DOES_CONTAIN:
-			lokiLogLineFilter = centralized_logs.NewDoesContainLokiLineFilter(filterTextPattern)
-		case kurtosis_engine_rpc_api_bindings.LogLineFilter_DOES_NOT_CONTAIN:
-			lokiLogLineFilter = centralized_logs.NewDoesNotContainLokiLineFilter(filterTextPattern)
+		case kurtosis_engine_rpc_api_bindings.LogLineFilter_DOES_CONTAIN_TEXT:
+			lokiLogLineFilter = centralized_logs.NewDoesContainTextLokiLineFilter(filterTextPattern)
+		case kurtosis_engine_rpc_api_bindings.LogLineFilter_DOES_NOT_CONTAIN_TEXT:
+			lokiLogLineFilter = centralized_logs.NewDoesNotContainTextLokiLineFilter(filterTextPattern)
+		case kurtosis_engine_rpc_api_bindings.LogLineFilter_DOES_CONTAIN_MATCH_REGEX:
+			lokiLogLineFilter = centralized_logs.NewDoesContainMatchRegexLokiLineFilter(filterTextPattern)
+		case kurtosis_engine_rpc_api_bindings.LogLineFilter_DOES_NOT_CONTAIN_MATCH_REGEX:
+			lokiLogLineFilter = centralized_logs.NewDoesNotContainMatchRegexLokiLineFilter(filterTextPattern)
 		default:
 			return nil, stacktrace.NewError("Unrecognized log line filter operator '%v' in filter '%v'; this is a bug in Kurtosis", operator, logLineFilter)
 		}

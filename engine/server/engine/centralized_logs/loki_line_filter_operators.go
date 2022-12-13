@@ -5,23 +5,30 @@ package centralized_logs
 type lokiLineFilterOperator int
 
 const (
-	// Remember to upgrade allLokiLineFilterOperators var if you add a new value here
 	lokiLineFilterOperatorUndefined lokiLineFilterOperator = iota
-	lokiLineFilterOperatorDoesContain
-	lokiLineFilterOperatorDoesNotContain
+	lokiLineFilterOperatorDoesContainText
+	lokiLineFilterOperatorDoesNotContainText
+	lokiLineFilterOperatorDoesContainMatchRegex
+	lokiLineFilterOperatorDoesNotContainMatchRegex
 
 	//These magic string are Loki's operators, you can read more about it here: https://grafana.com/docs/loki/latest/logql/log_queries/
-	doesContainValueStr    = "|="
-	doesNotContainValueStr = "!="
-	unknownValueStr        = "unknown"
+	doesContainTextLokiOperatorStr          = "|="
+	doesNotContainTextLokiOperatorStr       = "!="
+	doesContainMatchRegexLokiOperatorStr    = "|~"
+	doesNotContainMatchRegexLokiOperatorStr = "!~"
+	unknownValueStr                         = "unknown"
 )
 
 func (filterOperator lokiLineFilterOperator) String() string {
 	switch filterOperator {
-	case lokiLineFilterOperatorDoesContain:
-		return doesContainValueStr
-	case lokiLineFilterOperatorDoesNotContain:
-		return doesNotContainValueStr
+	case lokiLineFilterOperatorDoesContainText:
+		return doesContainTextLokiOperatorStr
+	case lokiLineFilterOperatorDoesNotContainText:
+		return doesNotContainTextLokiOperatorStr
+	case lokiLineFilterOperatorDoesContainMatchRegex:
+		return doesContainMatchRegexLokiOperatorStr
+	case lokiLineFilterOperatorDoesNotContainMatchRegex:
+		return doesNotContainMatchRegexLokiOperatorStr
 	}
 	return unknownValueStr
 }
