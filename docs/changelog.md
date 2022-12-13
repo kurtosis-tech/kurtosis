@@ -1,5 +1,7 @@
 # TBD
 
+# 0.58.2
+
 ### Features
 - Made `args` optional for `run`
 
