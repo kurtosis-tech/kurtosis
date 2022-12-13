@@ -51,19 +51,6 @@ const (
 
 	defaultStartosisDryRun = false
 
-	// We do it this way as if we were to interpret the main file,
-	// we'd only read the symbols, and maybe there's nothing that calls in `run()`
-	// This way, we're guaranteed that the `run()` function gets called within main.star
-	bootScript = `
-main_module = import_module("%v/` + startosis_constants.MainFileName + `")
-%v = main_module.run(%v)
-	`
-	// We concatenate a run() at the end of individual scripts to enforce a run method
-	runToConcatenateAtEndOfStandaloneScript = `
-%s
-run(%v)
-`
-
 	// Overwrite existing module with new module, this allows user to iterate on an enclave with a
 	// given module
 	doOverwriteExistingModule = true
@@ -197,7 +184,7 @@ func (apicService ApiContainerService) ExecuteModule(ctx context.Context, args *
 }
 
 func (apicService ApiContainerService) RunStarlarkScript(args *kurtosis_core_rpc_api_bindings.RunStarlarkScriptArgs, stream kurtosis_core_rpc_api_bindings.ApiContainerService_RunStarlarkScriptServer) error {
-	serializedStartosisScript := args.GetSerializedScript()
+	serializedStarlarkScript := args.GetSerializedScript()
 	serializedParams := args.GetSerializedParams()
 	dryRun := shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun)
 
@@ -206,8 +193,7 @@ func (apicService ApiContainerService) RunStarlarkScript(args *kurtosis_core_rpc
 		logrus.Errorf("An error occurred tracking kurtosis run event\n%v", err)
 	}
 
-	scriptWithRunFunction := fmt.Sprintf(runToConcatenateAtEndOfStandaloneScript, serializedStartosisScript, startosis_constants.MainInputArgName)
-	apicService.runStarlark(dryRun, startosis_constants.PackageIdPlaceholderForStandaloneScript, scriptWithRunFunction, serializedParams, stream)
+	apicService.runStarlark(dryRun, startosis_constants.PackageIdPlaceholderForStandaloneScript, serializedStarlarkScript, serializedParams, stream)
 	return nil
 }
 
@@ -228,6 +214,7 @@ func (apicService ApiContainerService) RunStarlarkPackage(args *kurtosis_core_rp
 		if err := stream.SendMsg(binding_constructors.NewStarlarkRunResponseLineFromInterpretationError(interpretationError.ToAPIType())); err != nil {
 			return stacktrace.Propagate(err, "Error preparing for package execution and this error could not be sent through the output stream: '%s'", packageId)
 		}
+		return nil
 	}
 	apicService.runStarlark(dryRun, packageId, scriptWithRunFunction, serializedParams, stream)
 	return nil
@@ -798,8 +785,12 @@ func (apicService ApiContainerService) runStarlarkPackageSetup(packageId string,
 		return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred while verifying that '%v' exists on root of package '%v' at '%v'", startosis_constants.MainFileName, packageId, pathToMainFile)
 	}
 
-	scriptWithMainToExecute := fmt.Sprintf(bootScript, packageId, startosis_constants.MainOutputObjectName, startosis_constants.MainInputArgName)
-	return scriptWithMainToExecute, nil
+	mainScriptToExecute, err := os.ReadFile(pathToMainFile)
+	if err != nil {
+		return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred while reading '%v' at the root of package '%v' at '%v'", startosis_constants.MainFileName, packageId, pathToMainFile)
+	}
+
+	return string(mainScriptToExecute), nil
 }
 
 func (apicService ApiContainerService) runStarlark(dryRun bool, packageId string, serializedStarlark string, serializedParams string, stream grpc.ServerStream) {
