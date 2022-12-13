@@ -2,6 +2,7 @@
 
 ### Fixes
 - Fixed the CLI output which could contain weird `%!p(MISSING)` when the output of a command was containing `%p` (or another Go formatting token)
+- Fixed bug in installation of tab-completion
 
 # 0.58.1
 
