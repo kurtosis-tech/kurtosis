@@ -7,6 +7,9 @@
 - Fix bug that panics APIC when `wait` assert fails
 - Fixed the CLI output which could contain weird `%!p(MISSING)` when the output of a command was containing `%p` (or another Go formatting token)
 
+### Features
+- Added metrics for `kurtosis run`
+
 # 0.58.1
 
 ### Fixes
