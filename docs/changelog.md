@@ -3,6 +3,7 @@
 ### Fixes
 - Fix bug that panics APIC when `wait` assert fails
 - Fixed the CLI output which could contain weird `%!p(MISSING)` when the output of a command was containing `%p` (or another Go formatting token)
+- Cancel redundant runs of golang-ci-lint
 
 ### Features
 - Added metrics for `kurtosis run`
