@@ -3,6 +3,9 @@
 ### Features
 - Made `args` optional for `run`
 
+### Fixes
+- Fixed the CLI output which could contain weird `%!p(MISSING)` when the output of a command was containing `%p` (or another Go formatting token)
+
 # 0.58.1
 
 ### Fixes
@@ -33,6 +36,7 @@
 
 ### Fixes
 - Check an unchecked error in `CreateValue` in the `RunTimeValueStore`
+- Appends `:latest` before checking for images without a version in `DockerManager.FetchImages`
 
 ### Features
 - The CLI now displays the list of container images currently being downloaded and validated during the Starlark
