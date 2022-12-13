@@ -175,7 +175,7 @@ func (interpreter *StartosisInterpreter) buildBindings(thread *starlark.Thread, 
 }
 
 // This method handles the different cases a Startosis module can be executed.
-// - If input args are empty it uses the `{}` or empty JSON as the input args
+// - If input args are empty it uses empty JSON ({}) as the input args
 // - If input args aren't empty it tries to deserialize them
 func (interpreter *StartosisInterpreter) parseInputArgs(thread *starlark.Thread, serializedJsonArgs string) (starlark.Value, *startosis_errors.InterpretationError) {
 	if serializedJsonArgs == startosis_constants.EmptyInputArgs {
