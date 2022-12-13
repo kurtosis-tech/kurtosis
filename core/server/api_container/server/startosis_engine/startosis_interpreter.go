@@ -41,7 +41,8 @@ const (
 
 	runFunctionName = "run"
 
-	paramsRequiredForArgs = 1
+	paramsRequiredForArgs              = 1
+	maximumParamsAllowedForRunFunction = 1
 )
 
 var (
@@ -106,6 +107,10 @@ func (interpreter *StartosisInterpreter) Interpret(_ context.Context, packageId 
 	}
 
 	var argsTuple starlark.Tuple
+
+	if runFunction.NumParams() > maximumParamsAllowedForRunFunction {
+		return "", nil, startosis_errors.NewInterpretationError("The 'run' entrypoint function can have at most '%v' argument got '%v'", maximumParamsAllowedForRunFunction, runFunction.NumParams()).ToAPIType()
+	}
 
 	if runFunction.NumParams() == paramsRequiredForArgs {
 		// run function has an argument so we parse input args

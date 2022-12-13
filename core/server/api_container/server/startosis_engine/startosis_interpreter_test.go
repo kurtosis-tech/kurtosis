@@ -1373,6 +1373,25 @@ def run(args):
 	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutput)
 }
 
+func TestStartosisInterpreter_RunWithMoreThanExpectedArguments(t *testing.T) {
+	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
+	defer packageContentProvider.RemoveAll()
+	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
+	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, runtimeValueStore)
+	script := `
+def run(args, invalid_arg):
+	print("this wouldn't interpret so the text here doesnt matter")
+`
+
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
+	require.NotNil(t, interpretationError)
+	expectedError := fmt.Sprintf("The 'run' entrypoint function can have at most '%v' argument got '%v'", maximumParamsAllowedForRunFunction, 2)
+	require.Equal(t, expectedError, interpretationError.GetErrorMessage())
+
+	expectedOutput := ``
+	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutput)
+}
+
 // #####################################################################################################################
 //                                                  TEST HELPERS
 // #####################################################################################################################
