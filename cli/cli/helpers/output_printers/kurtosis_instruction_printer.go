@@ -38,13 +38,13 @@ const (
 )
 
 var (
-	colorizeInstruction      = color.New(color.FgCyan).SprintfFunc()
-	colorizeResult           = color.New(color.FgWhite).SprintfFunc()
-	colorizeError            = color.New(color.FgRed).SprintfFunc()
-	colorizeRunSuccessfulMsg = color.New(color.FgGreen).SprintfFunc()
+	colorizeInstruction      = color.New(color.FgCyan).SprintFunc()
+	colorizeResult           = color.New(color.FgWhite).SprintFunc()
+	colorizeError            = color.New(color.FgRed).SprintFunc()
+	colorizeRunSuccessfulMsg = color.New(color.FgGreen).SprintFunc()
 
-	colorizeProgressBarIsDone    = color.New(color.FgGreen).SprintfFunc()
-	colorizeProgressBarRemaining = color.New(color.FgWhite).SprintfFunc()
+	colorizeProgressBarIsDone    = color.New(color.FgGreen).SprintFunc()
+	colorizeProgressBarRemaining = color.New(color.FgWhite).SprintFunc()
 )
 
 var (
