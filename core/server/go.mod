@@ -16,7 +16,7 @@ require (
 	github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.0 // Local dependency
 	github.com/kurtosis-tech/kurtosis/core/files_artifacts_expander v0.0.0 // Local dependency
 	github.com/kurtosis-tech/kurtosis/core/launcher v0.0.0 // Local dependency
-	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220215151652-4f1a58645739
+	github.com/kurtosis-tech/metrics-library v0.0.0-20221213112629-71d7bb6b2583
 	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20211201000847-a204edc5a0b3
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/sirupsen/logrus v1.8.1
@@ -71,6 +71,7 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kevinburke/ssh_config v0.0.0-20201106050909-4977a11b4351 // indirect
 	github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-d3be9e82993e // indirect
+	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20221213112629-71d7bb6b2583 // indirect
 	github.com/mailru/easyjson v0.7.6 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/moby/spdystream v0.2.0 // indirect

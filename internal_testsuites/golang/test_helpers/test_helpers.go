@@ -13,12 +13,14 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"path"
+	"testing"
 	"time"
 )
 
@@ -72,6 +74,10 @@ const (
 	// datastore server dummy test values
 	testDatastoreKey   = "my-key"
 	testDatastoreValue = "test-value"
+
+	partitioningDisabled = false
+	defaultDryRun        = false
+	emptyParams          = "{}"
 )
 
 var fileServerPortSpec = services.NewPortSpec(
@@ -233,6 +239,23 @@ func AddAPIServiceToPartition(ctx context.Context, serviceId services.ServiceID,
 		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred waiting for the API service to become available")
 	}
 	return serviceCtx, client, clientCloseFunc, nil
+}
+
+func SetupSimpleEnclaveAndRunScript(t *testing.T, ctx context.Context, testName string, script string) *enclaves.StarlarkRunResult {
+
+	// ------------------------------------- ENGINE SETUP ----------------------------------------------
+	enclaveCtx, _, destroyEnclaveFunc, err := CreateEnclave(t, ctx, testName, partitioningDisabled)
+	require.NoError(t, err, "An error occurred creating an enclave")
+	defer func() { _ = destroyEnclaveFunc() }()
+
+	// ------------------------------------- TEST RUN ----------------------------------------------
+	logrus.Infof("Executing Startosis script...")
+	logrus.Debugf("Startosis script content: \n%v", script)
+
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, script, emptyParams, defaultDryRun)
+	require.NoError(t, err, "Unexpected error executing startosis script")
+
+	return runResult
 }
 
 func WaitForHealthy(ctx context.Context, client GrpcAvailabilityChecker, retries uint32, retriesDelayMilliseconds uint32) error {
