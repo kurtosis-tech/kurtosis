@@ -144,7 +144,7 @@ func (instruction *WaitInstruction) Execute(ctx context.Context) (*string, error
 		return nil, stacktrace.Propagate(requestErr, "Error executing HTTP recipe")
 	}
 	if assertErr != nil {
-		return nil, stacktrace.Propagate(requestErr, "Error asserting HTTP recipe on '%v'", WaitBuiltinName)
+		return nil, stacktrace.Propagate(assertErr, "Error asserting HTTP recipe on '%v'", WaitBuiltinName)
 	}
 	instructionResult := fmt.Sprintf("Value obtained '%v'", lastResult)
 	return &instructionResult, nil
