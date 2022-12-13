@@ -29,7 +29,7 @@ archives:
     # Therefore, we set this to a glob of files that definitely don't exist
     files:
       - "*THIS_FILE_DOES_NOT_EXIST*"
-      - completions/*
+      - scripts/completions/scripts/*
     name_template: kurtosis-cli_{{ .Version }}_{{ .Os }}_{{ .Arch }}
 
 # Gemfury accepts deb & rpm packages but not APK, so we build these two separately
@@ -89,9 +89,9 @@ brews:
     # When this is fixed, we can remove this section
     install: |
       bin.install "kurtosis"
-      bash_completion.install "completions/kurtosis.bash" => "kurtosis"
-      zsh_completion.install "completions/kurtosis.zsh" => "_kurtosis"
-      fish_completion.install "completions/kurtosis.fish"  
+      bash_completion.install "scripts/completions/scripts/kurtosis.bash" => "kurtosis"
+      zsh_completion.install "scripts/completions/scripts/kurtosis.zsh" => "_kurtosis"
+      fish_completion.install "scripts/completions/scripts/kurtosis.fish"
     caveats: |
       The kurtosis CLI is installed with tab completion support. For more details visit https://docs.kurtosis.com/. 
 
