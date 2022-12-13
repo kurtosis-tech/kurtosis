@@ -247,7 +247,7 @@ func generateInterpretationError(err error) *startosis_errors.InterpretationErro
 
 func missingRunFunctionReturnValue(packageId string) (string, []kurtosis_instruction.KurtosisInstruction, *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError) {
 	if packageId == startosis_constants.PackageIdPlaceholderForStandaloneScript {
-		return "", nil, startosis_errors.NewInterpretationError("No 'run' function found in the script; a 'run' entrypoint function with the signature `run(args)` is required in any Kurtosis script").ToAPIType()
+		return "", nil, startosis_errors.NewInterpretationError("No 'run' function found in the script; a 'run' entrypoint function with the signature `run(args)` or `run()` is required in any Kurtosis script").ToAPIType()
 	}
-	return "", nil, startosis_errors.NewInterpretationError("No 'run' function found in file '%v/main.star'; a 'run' entrypoint function is required in the main.star file of any Kurtosis package", packageId).ToAPIType()
+	return "", nil, startosis_errors.NewInterpretationError("No 'run' function found in file '%v/main.star'; a 'run' entrypoint function with the signature `run(args)` or `run()` is required in the main.star file of any Kurtosis package", packageId).ToAPIType()
 }
