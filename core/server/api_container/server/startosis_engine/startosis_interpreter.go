@@ -38,6 +38,15 @@ const (
 	multipleInterpretationErrorMsg = "Multiple errors caught interpreting the Starlark script. Listing each of them below."
 
 	skipImportInstructionInStacktraceValue = "import_module"
+
+	runFunctionName = "run"
+
+	paramsRequiredForArgs              = 1
+	maximumParamsAllowedForRunFunction = 1
+)
+
+var (
+	noKwargs []starlark.Tuple
 )
 
 type StartosisInterpreter struct {
@@ -80,17 +89,47 @@ func (interpreter *StartosisInterpreter) Interpret(_ context.Context, packageId 
 		OnMaxSteps: nil,
 	}
 
-	globalVariables, err := interpreter.interpretInternal(thread, packageId, serializedStarlark, serializedJsonParams, &instructionsQueue)
+	globalVariables, err := interpreter.interpretInternal(thread, packageId, serializedStarlark, &instructionsQueue)
 	if err != nil {
 		return startosis_constants.NoOutputObject, nil, generateInterpretationError(err).ToAPIType()
 	}
 
 	logrus.Debugf("Successfully interpreted Starlark code into instruction queue: \n%s", instructionsQueue)
 
+	if !globalVariables.Has(runFunctionName) {
+		return missingRunFunctionReturnValue(packageId)
+	}
+
+	runFunction, ok := globalVariables[runFunctionName].(*starlark.Function)
+	// if there is a `run` but it isn't a function we have to error as well
+	if !ok {
+		return missingRunFunctionReturnValue(packageId)
+	}
+
+	if runFunction.NumParams() > maximumParamsAllowedForRunFunction {
+		return "", nil, startosis_errors.NewInterpretationError("The 'run' entrypoint function can have at most '%v' argument got '%v'", maximumParamsAllowedForRunFunction, runFunction.NumParams()).ToAPIType()
+	}
+
+	var argsTuple starlark.Tuple
+
+	if runFunction.NumParams() == paramsRequiredForArgs {
+		// run function has an argument so we parse input args
+		inputArgs, interpretationError := interpreter.parseInputArgs(thread, serializedJsonParams)
+		if interpretationError != nil {
+			return "", nil, interpretationError.ToAPIType()
+		}
+		argsTuple = append(argsTuple, inputArgs)
+	}
+
+	outputObject, err := starlark.Call(thread, runFunction, argsTuple, noKwargs)
+	if err != nil {
+		return "", nil, generateInterpretationError(err).ToAPIType()
+	}
+
 	// Serialize and return the output object. It might contain magic strings that should be resolved post-execution
-	if globalVariables.Has(startosis_constants.MainOutputObjectName) && globalVariables[startosis_constants.MainOutputObjectName] != starlark.None {
-		logrus.Debugf("Starlark output object was: '%s'", globalVariables[startosis_constants.MainOutputObjectName])
-		serializedOutputObject, interpretationError := package_io.SerializeOutputObject(thread, globalVariables[startosis_constants.MainOutputObjectName])
+	if outputObject != starlark.None {
+		logrus.Debugf("Starlark output object was: '%s'", outputObject)
+		serializedOutputObject, interpretationError := package_io.SerializeOutputObject(thread, outputObject)
 		if interpretationError != nil {
 			return startosis_constants.NoOutputObject, nil, interpretationError.ToAPIType()
 		}
@@ -99,23 +138,20 @@ func (interpreter *StartosisInterpreter) Interpret(_ context.Context, packageId 
 	return startosis_constants.NoOutputObject, instructionsQueue, nil
 }
 
-func (interpreter *StartosisInterpreter) interpretInternal(thread *starlark.Thread, packageId string, serializedStarlark string, serializedJsonParams string, instructionsQueue *[]kurtosis_instruction.KurtosisInstruction) (starlark.StringDict, error) {
+func (interpreter *StartosisInterpreter) interpretInternal(thread *starlark.Thread, packageId string, serializedStarlark string, instructionsQueue *[]kurtosis_instruction.KurtosisInstruction) (starlark.StringDict, error) {
 	predeclared := interpreter.buildBindings(thread, instructionsQueue)
-
-	if interpretationError := interpreter.addInputArgsToPredeclared(thread, packageId, serializedJsonParams, predeclared); interpretationError != nil {
-		return nil, interpretationError
-	}
 
 	globalVariables, err := starlark.ExecFile(thread, packageId, serializedStarlark, *predeclared)
 	if err != nil {
 		return nil, err
 	}
+
 	return globalVariables, nil
 }
 
 func (interpreter *StartosisInterpreter) buildBindings(thread *starlark.Thread, instructionsQueue *[]kurtosis_instruction.KurtosisInstruction) *starlark.StringDict {
 	recursiveInterpretForModuleLoading := func(moduleId string, serializedStartosis string) (starlark.StringDict, error) {
-		return interpreter.interpretInternal(thread, moduleId, serializedStartosis, startosis_constants.EmptyInputArgs, instructionsQueue)
+		return interpreter.interpretInternal(thread, moduleId, serializedStartosis, instructionsQueue)
 	}
 
 	predeclared := &starlark.StringDict{
@@ -143,21 +179,19 @@ func (interpreter *StartosisInterpreter) buildBindings(thread *starlark.Thread, 
 	return predeclared
 }
 
-// This method handles the different cases a Startosis module can be executed. Here are the different cases handled:
-// - For a Kurtosis Package, the run method will always receive input args. If none were passed through the CLI params, empty JSON will be used
-// - For a standalone Kurtosis script however, no params can be passed. It will fail if it is the case
-func (interpreter *StartosisInterpreter) addInputArgsToPredeclared(thread *starlark.Thread, packageId string, serializedJsonArgs string, predeclared *starlark.StringDict) *startosis_errors.InterpretationError {
-	if packageId == startosis_constants.PackageIdPlaceholderForStandaloneScript && serializedJsonArgs == startosis_constants.EmptyInputArgs {
-		(*predeclared)[startosis_constants.MainInputArgName] = starlark.None
-		return nil
+// This method handles the different cases a Startosis module can be executed.
+// - If input args are empty it uses empty JSON ({}) as the input args
+// - If input args aren't empty it tries to deserialize them
+func (interpreter *StartosisInterpreter) parseInputArgs(thread *starlark.Thread, serializedJsonArgs string) (starlark.Value, *startosis_errors.InterpretationError) {
+	if serializedJsonArgs == startosis_constants.EmptyInputArgs {
+		return starlark.None, nil
 	}
 	// it is a module, and it has input args -> deserialize the JSON input and add it as a struct to the predeclared
 	deserializedArgs, interpretationError := package_io.DeserializeArgs(thread, serializedJsonArgs)
 	if interpretationError != nil {
-		return interpretationError
+		return nil, interpretationError
 	}
-	(*predeclared)[startosis_constants.MainInputArgName] = deserializedArgs
-	return nil
+	return deserializedArgs, nil
 }
 
 func makeLoadFunction() func(_ *starlark.Thread, packageId string) (starlark.StringDict, error) {
@@ -214,4 +248,11 @@ func generateInterpretationError(err error) *startosis_errors.InterpretationErro
 		return slError
 	}
 	return startosis_errors.NewInterpretationError("UnknownError: %s\n", err.Error())
+}
+
+func missingRunFunctionReturnValue(packageId string) (string, []kurtosis_instruction.KurtosisInstruction, *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError) {
+	if packageId == startosis_constants.PackageIdPlaceholderForStandaloneScript {
+		return "", nil, startosis_errors.NewInterpretationError("No 'run' function found in the script; a 'run' entrypoint function with the signature `run(args)` or `run()` is required in any Kurtosis script").ToAPIType()
+	}
+	return "", nil, startosis_errors.NewInterpretationError("No 'run' function found in file '%v/main.star'; a 'run' entrypoint function with the signature `run(args)` or `run()` is required in the main.star file of any Kurtosis package", packageId).ToAPIType()
 }

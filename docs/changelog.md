@@ -1,5 +1,8 @@
 # TBD
 
+### Features
+- Made `args` optional for `run`
+
 ### Fixes
 - Fix bug that panics APIC when `wait` assert fails
 - Fixed the CLI output which could contain weird `%!p(MISSING)` when the output of a command was containing `%p` (or another Go formatting token)

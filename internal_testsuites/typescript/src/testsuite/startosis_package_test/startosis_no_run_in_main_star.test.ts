@@ -32,7 +32,7 @@ test("Test invalid package with no main in main.star", async () => {
 
         expect(runResult.value.interpretationError).not.toBeUndefined()
         expect(runResult.value.interpretationError?.getErrorMessage())
-            .toContain("No 'run' function found in file 'github.com/sample/sample-kurtosis-package/main.star'; a 'run' entrypoint function is required in the main.star file of any Kurtosis package")
+            .toContain("No 'run' function found in file 'github.com/sample/sample-kurtosis-package/main.star'; a 'run' entrypoint function with the signature `run(args)` or `run()` is required in the main.star file of any Kurtosis package")
 
         expect(runResult.value.validationErrors).toEqual([])
         expect(runResult.value.executionError).toBeUndefined()

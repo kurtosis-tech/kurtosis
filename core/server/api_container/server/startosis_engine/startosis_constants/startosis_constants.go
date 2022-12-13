@@ -3,11 +3,9 @@ package startosis_constants
 const (
 	MainFileName = "main.star"
 
-	MainInputArgName = "args"
-	EmptyInputArgs   = "{}" // empty JSON
+	EmptyInputArgs = "{}" // empty JSON
 
-	MainOutputObjectName = "run_output_object"
-	NoOutputObject       = ""
+	NoOutputObject = ""
 
 	PackageIdPlaceholderForStandaloneScript = "DEFAULT_PACKAGE_ID_FOR_SCRIPT"
 )
