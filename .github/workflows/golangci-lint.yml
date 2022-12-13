@@ -4,10 +4,13 @@
 
 name: Golang Lint
 
+# We only want one run of this on a branch
+# if you push another commit the previous run should cancel
+concurrency:
+  group: ${{ github.head_ref }}
+  cancel-in-progress: true
+
 on:
-  push:
-    branches:
-      - master
   pull_request:
 
 jobs:
