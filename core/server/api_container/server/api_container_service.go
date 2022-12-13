@@ -67,6 +67,10 @@ run(%v)
 	// Overwrite existing module with new module, this allows user to iterate on an enclave with a
 	// given module
 	doOverwriteExistingModule = true
+
+	isScript    = true
+	isNotScript = false
+	isNotRemote = true
 )
 
 // Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and port spec protos
@@ -196,6 +200,12 @@ func (apicService ApiContainerService) RunStarlarkScript(args *kurtosis_core_rpc
 	serializedStartosisScript := args.GetSerializedScript()
 	serializedParams := args.GetSerializedParams()
 	dryRun := shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun)
+
+	if err := apicService.metricsClient.TrackKurtosisRun(startosis_constants.PackageIdPlaceholderForStandaloneScript, isNotRemote, dryRun, isScript); err != nil {
+		//We don't want to interrupt users flow if something fails when tracking metrics
+		logrus.Errorf("An error occurred tracking kurtosis run event\n%v", err)
+	}
+
 	scriptWithRunFunction := fmt.Sprintf(runToConcatenateAtEndOfStandaloneScript, serializedStartosisScript, startosis_constants.MainInputArgName)
 	apicService.runStarlark(dryRun, startosis_constants.PackageIdPlaceholderForStandaloneScript, scriptWithRunFunction, serializedParams, stream)
 	return nil
@@ -207,6 +217,11 @@ func (apicService ApiContainerService) RunStarlarkPackage(args *kurtosis_core_rp
 	moduleContentIfLocal := args.GetLocal()
 	serializedParams := args.SerializedParams
 	dryRun := shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun)
+
+	if err := apicService.metricsClient.TrackKurtosisRun(packageId, isRemote, dryRun, isNotScript); err != nil {
+		//We don't want to interrupt users flow if something fails when tracking metrics
+		logrus.Errorf("An error occurred tracking kurtosis run event\n%v", err)
+	}
 
 	scriptWithRunFunction, interpretationError := apicService.runStarlarkPackageSetup(packageId, isRemote, moduleContentIfLocal)
 	if interpretationError != nil {
