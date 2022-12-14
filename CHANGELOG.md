@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.59.3](https://github.com/kurtosis-tech/kurtosis/compare/0.59.2...0.59.3) (2022-12-14)
+
+
+### Bug Fixes
+
+* how we publish tags ([#686](https://github.com/kurtosis-tech/kurtosis/issues/686)) ([61d3234](https://github.com/kurtosis-tech/kurtosis/commit/61d3234a4edc2af6374d9b4fd6c502792c6909a2))
+
 ## [0.59.2](https://github.com/kurtosis-tech/kurtosis/compare/0.59.1...0.59.2) (2022-12-14)
 
 
