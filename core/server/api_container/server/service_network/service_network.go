@@ -19,6 +19,24 @@ type ServiceNetwork interface {
 		newDefaultConnection partition_topology.PartitionConnection,
 	) error
 
+	SetConnection(
+		ctx context.Context,
+		partition1 service_network_types.PartitionID,
+		partition2 service_network_types.PartitionID,
+		connection partition_topology.PartitionConnection,
+	) error
+
+	UnsetConnection(
+		ctx context.Context,
+		partition1 service_network_types.PartitionID,
+		partition2 service_network_types.PartitionID,
+	) error
+
+	SetDefaultConnection(
+		ctx context.Context,
+		connection partition_topology.PartitionConnection,
+	) error
+
 	StartServices(
 		ctx context.Context,
 		serviceConfigs map[service.ServiceID]*kurtosis_core_rpc_api_bindings.ServiceConfig,

@@ -34,6 +34,21 @@ func (m *MockServiceNetwork) Repartition(ctx context.Context, newPartitionServic
 	panic(unimplementedMsg)
 }
 
+func (m *MockServiceNetwork) SetConnection(ctx context.Context, partition1 service_network_types.PartitionID, partition2 service_network_types.PartitionID, connection partition_topology.PartitionConnection) error {
+	//TODO implement me
+	panic(unimplementedMsg)
+}
+
+func (m *MockServiceNetwork) UnsetConnection(ctx context.Context, partition1 service_network_types.PartitionID, partition2 service_network_types.PartitionID) error {
+	//TODO implement me
+	panic(unimplementedMsg)
+}
+
+func (m *MockServiceNetwork) SetDefaultConnection(ctx context.Context, connection partition_topology.PartitionConnection) error {
+	//TODO implement me
+	panic(unimplementedMsg)
+}
+
 func (m *MockServiceNetwork) StartServices(ctx context.Context, serviceConfigs map[service.ServiceID]*kurtosis_core_rpc_api_bindings.ServiceConfig, partitionID service_network_types.PartitionID) (map[service.ServiceID]*service.Service, map[service.ServiceID]error, error) {
 	//TODO implement me
 	panic(unimplementedMsg)

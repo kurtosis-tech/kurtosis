@@ -323,17 +323,13 @@ func (apicService ApiContainerService) Repartition(ctx context.Context, args *ku
 					partitionAId,
 					partitionBId)
 			}
-			partitionConnection := partition_topology.PartitionConnection{
-				PacketLossPercentage: connectionInfo.PacketLossPercentage,
-			}
+			partitionConnection := partition_topology.NewPartitionConnection(connectionInfo.PacketLossPercentage)
 			partitionConnections[partitionConnectionId] = partitionConnection
 		}
 	}
 
 	defaultConnectionInfo := args.DefaultConnection
-	defaultConnection := partition_topology.PartitionConnection{
-		PacketLossPercentage: defaultConnectionInfo.PacketLossPercentage,
-	}
+	defaultConnection := partition_topology.NewPartitionConnection(defaultConnectionInfo.PacketLossPercentage)
 
 	if err := apicService.serviceNetwork.Repartition(
 		ctx,

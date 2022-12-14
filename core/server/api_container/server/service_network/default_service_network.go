@@ -37,9 +37,6 @@ import (
 )
 
 const (
-	defaultPartitionId                       service_network_types.PartitionID = "default"
-	startingDefaultConnectionPacketLossValue float32                           = 0
-
 	filesArtifactExpansionDirsParentDirpath string = "/files-artifacts"
 
 	// TODO This should be populated from the build flow that builds the files-artifacts-expander Docker image
@@ -65,11 +62,8 @@ type storeFilesArtifactResult struct {
 	err error
 }
 
-/*
-This is the in-memory representation of the service network that the API container will manipulate. To make
-
-	any changes to the test network, this struct must be used.
-*/
+// DefaultServiceNetwork is the in-memory representation of the service network that the API container will manipulate.
+// To make any changes to the test network, this struct must be used.
 type DefaultServiceNetwork struct {
 	enclaveId enclave.EnclaveID
 
@@ -107,22 +101,20 @@ func NewDefaultServiceNetwork(
 	enclaveDataDir *enclave_data_directory.EnclaveDataDirectory,
 	networkingSidecarManager networking_sidecar.NetworkingSidecarManager,
 ) *DefaultServiceNetwork {
-	defaultPartitionConnection := partition_topology.PartitionConnection{
-		PacketLossPercentage: startingDefaultConnectionPacketLossValue,
-	}
+	networkTopology := partition_topology.NewPartitionTopology(
+		partition_topology.DefaultPartitionId,
+		partition_topology.ConnectionAllowed,
+	)
 	return &DefaultServiceNetwork{
-		enclaveId:               enclaveId,
-		apiContainerIpAddress:   apiContainerIpAddr,
-		apiContainerGrpcPortNum: apiContainerGrpcPortNum,
-		apiContainerVersion:     apiContainerVersion,
-		mutex:                   &sync.Mutex{},
-		isPartitioningEnabled:   isPartitioningEnabled,
-		kurtosisBackend:         kurtosisBackend,
-		enclaveDataDir:          enclaveDataDir,
-		topology: partition_topology.NewPartitionTopology(
-			defaultPartitionId,
-			defaultPartitionConnection,
-		),
+		enclaveId:                enclaveId,
+		apiContainerIpAddress:    apiContainerIpAddr,
+		apiContainerGrpcPortNum:  apiContainerGrpcPortNum,
+		apiContainerVersion:      apiContainerVersion,
+		mutex:                    &sync.Mutex{},
+		isPartitioningEnabled:    isPartitioningEnabled,
+		kurtosisBackend:          kurtosisBackend,
+		enclaveDataDir:           enclaveDataDir,
+		topology:                 networkTopology,
 		networkingSidecars:       map[service.ServiceID]networking_sidecar.NetworkingSidecarWrapper{},
 		networkingSidecarManager: networkingSidecarManager,
 		registeredServiceInfo:    map[service.ServiceID]*service.ServiceRegistration{},
@@ -149,19 +141,165 @@ func (network *DefaultServiceNetwork) Repartition(
 		return stacktrace.Propagate(err, "An error occurred repartitioning the network topology")
 	}
 
-	servicePacketLossConfigurationsByServiceID, err := network.topology.GetServicePacketLossConfigurationsByServiceID()
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the packet loss configuration by service ID "+
-			" after repartition, meaning that no partitions are actually being enforced!")
-	}
-
-	if err := updateTrafficControlConfiguration(ctx, servicePacketLossConfigurationsByServiceID, network.registeredServiceInfo, network.networkingSidecars); err != nil {
-		return stacktrace.Propagate(err, "An error occurred updating the traffic control configuration to match the target service packet loss configurations after repartitioning")
+	if err := network.updateAllConnectionsFromTopology(ctx); err != nil {
+		return stacktrace.Propagate(err, "Unable to update connections between the different partitions of the topology")
 	}
 	return nil
 }
 
-// Starts the services in the given partition in their own containers
+func (network *DefaultServiceNetwork) SetConnection(
+	ctx context.Context,
+	partition1 service_network_types.PartitionID,
+	partition2 service_network_types.PartitionID,
+	connection partition_topology.PartitionConnection,
+) error {
+	network.mutex.Lock()
+	defer network.mutex.Unlock()
+	isOperationSuccessful := false
+
+	if !network.isPartitioningEnabled {
+		return stacktrace.NewError("Cannot set connection; partitioning is not enabled")
+	}
+
+	currentPartitions := network.topology.GetPartitionServices()
+	createdPartitionToRemoveIfFailure := map[service_network_types.PartitionID]bool{}
+	for _, partition := range []service_network_types.PartitionID{partition1, partition2} {
+		if _, found := currentPartitions[partition]; !found {
+			logrus.Debugf("Setting connection between '%s' and '%s' but '%s' isn't registered as a partition yet. Creating it",
+				partition1, partition2, partition)
+			if err := network.topology.CreateEmptyPartitionWithDefaultConnection(partition); err != nil {
+				return stacktrace.Propagate(err, "Partition '%v' creation failed", partition)
+			}
+			createdPartitionToRemoveIfFailure[partition] = true
+		}
+	}
+	defer func() {
+		if isOperationSuccessful {
+			return
+		}
+		for partition := range createdPartitionToRemoveIfFailure {
+			if err := network.topology.RemovePartition(partition); err != nil {
+				logrus.Errorf("Partition '%s' was created as part of a SetConnection call, but due to a failure"+
+					"it should be removed. Unfortunately, the removal failed for the following reason so the "+
+					"partition will remain in place:\n%v", partition, err.Error())
+			}
+		}
+	}()
+
+	wasConnectionDefault, previousConnection, err := network.topology.GetPartitionConnection(partition1, partition2)
+	if err != nil {
+		return stacktrace.Propagate(err, "Unable to fetch current connection between '%s' and '%s'", partition1, partition2)
+	}
+
+	err = network.topology.SetConnection(partition1, partition2, connection)
+	if err != nil {
+		return stacktrace.Propagate(err, "Error setting the connection between '%s' and '%s'", partition1, partition2)
+	}
+	defer func() {
+		if isOperationSuccessful {
+			return
+		}
+		var resetConnectionErr error
+		if wasConnectionDefault {
+			resetConnectionErr = network.topology.UnsetConnection(partition1, partition2)
+		} else {
+			resetConnectionErr = network.topology.SetConnection(partition1, partition2, previousConnection)
+		}
+		if resetConnectionErr != nil {
+			logrus.Errorf("A failure happened after setting the connection between '%s' and '%s', so it should "+
+				"be reset to its previous value. Unfortunately, an error happened trying to set it back to its "+
+				"previous value:\n%v", partition1, partition2, err.Error())
+		}
+	}()
+
+	if err = network.updateAllConnectionsFromTopology(ctx); err != nil {
+		return stacktrace.Propagate(err, "Unable to update connections between the different partitions of the topology")
+	}
+	isOperationSuccessful = true
+	return nil
+}
+
+func (network *DefaultServiceNetwork) UnsetConnection(
+	ctx context.Context,
+	partition1 service_network_types.PartitionID,
+	partition2 service_network_types.PartitionID,
+) error {
+	network.mutex.Lock()
+	defer network.mutex.Unlock()
+	isOperationSuccessful := false
+
+	if !network.isPartitioningEnabled {
+		return stacktrace.NewError("Cannot unset connection; partitioning is not enabled")
+	}
+
+	currentPartitions := network.topology.GetPartitionServices()
+	for _, partition := range []service_network_types.PartitionID{partition1, partition2} {
+		if _, found := currentPartitions[partition]; !found {
+			logrus.Warnf("Unsetting connection between '%s' and '%s' but '%s' isn't registered as a partition yet. This will no-op",
+				partition1, partition2, partition)
+			return nil
+		}
+	}
+
+	wasDefaultConnection, previousConnection, err := network.topology.GetPartitionConnection(partition1, partition2)
+	if err != nil {
+		return stacktrace.Propagate(err, "Unable to retrieve current connection between '%s' and '%s'", partition1, partition2)
+	}
+	if wasDefaultConnection {
+		logrus.Debugf("Unsetting connection between '%s' and '%s' but connection was already the default. This will no-op",
+			partition1, partition2)
+		return nil
+	}
+
+	if err = network.topology.UnsetConnection(partition1, partition2); err != nil {
+		return stacktrace.Propagate(err, "Unsetting connection between '%s' and '%s' failed", partition1, partition2)
+	}
+	defer func() {
+		if isOperationSuccessful {
+			return
+		}
+		if resetConnectionErr := network.topology.SetConnection(partition1, partition2, previousConnection); resetConnectionErr != nil {
+			logrus.Errorf("An error happened resetting the connection between '%s' and '%s' and Kurtosis could not roll back the operation. Error was:\n%v", partition1, partition2, resetConnectionErr)
+		}
+	}()
+
+	if err = network.updateAllConnectionsFromTopology(ctx); err != nil {
+		return stacktrace.Propagate(err, "Unable to update connections between the different partitions of the topology")
+	}
+	isOperationSuccessful = true
+	return nil
+}
+
+func (network *DefaultServiceNetwork) SetDefaultConnection(
+	ctx context.Context,
+	connection partition_topology.PartitionConnection,
+) error {
+	network.mutex.Lock()
+	defer network.mutex.Unlock()
+	isOperationSuccessful := false
+
+	if !network.isPartitioningEnabled {
+		return stacktrace.NewError("Cannot set default connection; partitioning is not enabled")
+	}
+
+	previousDefaultConnection := network.topology.GetDefaultConnection()
+
+	network.topology.SetDefaultConnection(connection)
+	defer func() {
+		if isOperationSuccessful {
+			return
+		}
+		network.topology.SetDefaultConnection(previousDefaultConnection)
+	}()
+
+	if err := network.updateAllConnectionsFromTopology(ctx); err != nil {
+		return stacktrace.Propagate(err, "Unable to update connections between the different partitions of the topology")
+	}
+	isOperationSuccessful = true
+	return nil
+}
+
+// StartServices starts the services in the given partition in their own containers
 //
 // This is a bulk operation that follows a funnel/rollback approach.
 // This means that when an error occurs, for an indvidiual operation (service in this case), we add it to a set of
@@ -199,7 +337,7 @@ func (network *DefaultServiceNetwork) StartServices(
 	}
 
 	if partitionID == "" {
-		partitionID = defaultPartitionId
+		partitionID = partition_topology.DefaultPartitionId
 	}
 	if _, found := network.topology.GetPartitionServices()[partitionID]; !found {
 		return nil, nil, stacktrace.NewError(
@@ -339,16 +477,10 @@ func (network *DefaultServiceNetwork) StartServices(
 			}
 		}()
 
-		servicePacketLossConfigurationsByServiceID, err := network.topology.GetServicePacketLossConfigurationsByServiceID()
-		if err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred getting the packet loss configuration by service ID "+
-				" to know what packet loss updates to apply")
-		}
-
 		// We apply all the configurations. We can't filter to source/target being a service started in this method call as we'd miss configurations between existing services.
 		// The updates completely replace the tables, and we can't lose partitioning between existing services
-		if err := updateTrafficControlConfiguration(ctx, servicePacketLossConfigurationsByServiceID, network.registeredServiceInfo, network.networkingSidecars); err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred applying the traffic control configuration to partition off new nodes.")
+		if err := network.updateAllConnectionsFromTopology(ctx); err != nil {
+			return nil, nil, stacktrace.Propagate(err, "Unable to update connections between the different partitions of the topology")
 		}
 		logrus.Debugf("Successfully applied qdisc configurations")
 		// We don't need to undo the traffic control changes because in the worst case existing nodes have entries in their traffic control for IP addresses that don't resolve to any containers.
@@ -692,11 +824,22 @@ func (network *DefaultServiceNetwork) UploadFilesArtifactToTargetArtifactID(data
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================
-/*
-Updates the traffic control configuration of the services with the given IDs to match the target services packet loss configuration
 
-NOTE: This is not thread-safe, so it must be within a function that locks mutex!
-*/
+// updateAllConnectionsFromTopology reads the current topology and updates all connection according to it.
+func (network *DefaultServiceNetwork) updateAllConnectionsFromTopology(ctx context.Context) error {
+	servicePacketLossConfigurationsByServiceID, err := network.topology.GetServicePacketLossConfigurationsByServiceID()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the packet loss configuration by service ID "+
+			" to know what packet loss updates to apply")
+	}
+	if err = updateTrafficControlConfiguration(ctx, servicePacketLossConfigurationsByServiceID, network.registeredServiceInfo, network.networkingSidecars); err != nil {
+		return stacktrace.Propagate(err, "An error occurred applying the traffic control configuration to partition off new nodes.")
+	}
+	return nil
+}
+
+// Updates the traffic control configuration of the services with the given IDs to match the target services packet loss configuration
+// NOTE: This is not thread-safe, so it must be within a function that locks mutex!
 func updateTrafficControlConfiguration(
 	ctx context.Context,
 	targetServicePacketLossConfigs map[service.ServiceID]map[service.ServiceID]float32,
