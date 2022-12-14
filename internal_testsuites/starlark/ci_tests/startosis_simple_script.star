@@ -10,7 +10,7 @@ def run(args):
     config = struct(
         image = DATASTORE_IMAGE,
         ports = {
-            DATASTORE_PORT_ID: struct(number = DATASTORE_PORT_NUMBER, protocol = DATASTORE_PORT_PROTOCOL)
+            DATASTORE_PORT_ID: PortSpec(number = DATASTORE_PORT_NUMBER, protocol = DATASTORE_PORT_PROTOCOL)
         }
     )
 

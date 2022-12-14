@@ -17,6 +17,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/render_templates"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/store_service_files"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/upload_files"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
@@ -184,7 +185,7 @@ def run(args):
 	config = struct(
 		image = "` + testContainerImageName + `",
 		ports = {
-			"grpc": struct(number = 1323, protocol = "TCP")
+			"grpc": PortSpec(number = 1323, protocol = "TCP")
 		},
 		private_ip_address_placeholder = "` + privateIPAddressPlaceholder + `"
 	)
@@ -259,7 +260,7 @@ def run():
 	config = struct(
 		image = "` + testContainerImageName + `",
 		ports = {
-			"grpc": struct(number = 1323, protocol = "TCPK") # typo in protocol
+			"grpc": PortSpec(number = 1323, protocol = "TCPK") # typo in protocol
 		}
 	)
 	add_service(service_id = service_id, config = config)
@@ -269,8 +270,8 @@ def run():
 	require.Empty(t, instructions)
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
 		[]startosis_errors.CallFrame{
-			*startosis_errors.NewCallFrame("run", startosis_errors.NewScriptPosition(startosis_constants.PackageIdPlaceholderForStandaloneScript, 14, 13)),
-			*startosis_errors.NewCallFrame("add_service", startosis_errors.NewScriptPosition("<builtin>", 0, 0)),
+			*startosis_errors.NewCallFrame("run", startosis_errors.NewScriptPosition(startosis_constants.PackageIdPlaceholderForStandaloneScript, 11, 20)),
+			*startosis_errors.NewCallFrame("PortSpec", startosis_errors.NewScriptPosition("<builtin>", 0, 0)),
 		},
 		"Evaluation error: Port protocol should be one of TCP, SCTP, UDP",
 	).ToAPIType()
@@ -292,19 +293,19 @@ def run():
 	config = struct(
 		image = "` + testContainerImageName + `",
 		ports = {
-			"grpc": struct(number = "1234", protocol = "TCP") # port number should be an int
+		"grpc": PortSpec(number = "1234", protocol = "TCP") # port number should be an int
 		}
 	)
 	add_service(service_id = service_id, config = config)
 `
-	expectedErrorStr := `Evaluation error: Error casting value 'number' as element of the struct object 'ports'
-	Caused by: Argument 'number' is expected to be an integer. Got starlark.String`
+	expectedErrorStr := `Evaluation error: Cannot construct a PortSpec from the provided arguments. Error was: 
+PortSpec: for parameter "number": got string, want int`
 	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 	require.Empty(t, instructions)
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
 		[]startosis_errors.CallFrame{
-			*startosis_errors.NewCallFrame("run", startosis_errors.NewScriptPosition(startosis_constants.PackageIdPlaceholderForStandaloneScript, 14, 13)),
-			*startosis_errors.NewCallFrame("add_service", startosis_errors.NewScriptPosition("<builtin>", 0, 0)),
+			*startosis_errors.NewCallFrame("run", startosis_errors.NewScriptPosition(startosis_constants.PackageIdPlaceholderForStandaloneScript, 11, 19)),
+			*startosis_errors.NewCallFrame("PortSpec", startosis_errors.NewScriptPosition("<builtin>", 0, 0)),
 		},
 		expectedErrorStr,
 	).ToAPIType()
@@ -328,7 +329,7 @@ def deploy_datastore_services():
 		config = struct(
 			image = "` + testContainerImageName + `",
 			ports = {
-				"grpc": struct(
+				"grpc": PortSpec(
 					number = ports[i],
 					protocol = "TCP"
 				)
@@ -561,7 +562,7 @@ print("Constructing config")
 config = struct(
 	image = "kurtosistech/example-datastore-server",
 	ports = {
-		"grpc": struct(number = 1323, protocol = "TCP")
+		"grpc": PortSpec(number = 1323, protocol = "TCP")
 	}
 )
 `
@@ -608,7 +609,7 @@ def deploy_datastore_services():
         config = struct(
 			image = "kurtosistech/example-datastore-server",
 			ports = {
-				"grpc": struct(
+				"grpc": PortSpec(
 					number = ports[i],
 					protocol = "TCP"
 				)
@@ -686,7 +687,7 @@ print("Constructing config")
 config = struct(
 	image = "kurtosistech/example-datastore-server",
 	ports = {
-		"grpc": struct(number = 1323, protocol = "TCP")
+		"grpc": PortSpec(number = 1323, protocol = "TCP")
 	}
 )
 print("Adding service " + service_id)
@@ -727,7 +728,7 @@ print("Constructing config")
 config = struct(
 	image = "kurtosistech/example-datastore-server",
 	ports = {
-		"grpc": struct(number = 1323, protocol = "TCP")
+		"grpc": PortSpec(number = 1323, protocol = "TCP")
 	}
 )
 print("Adding service " + service_id)
@@ -766,7 +767,7 @@ def run():
 	config = struct(
 		image = "kurtosistech/example-datastore-server",
 		ports = {
-			"grpc": struct(number = 1323, protocol = "TCP")
+			"grpc": PortSpec(number = 1323, protocol = "TCP")
 		}
 	)
 	add_service(service_id = service_id, config = config)
@@ -796,7 +797,7 @@ def run():
 	store_config = struct(
 		image = "kurtosistech/example-datastore-server",
 		ports = {
-			"grpc": struct(number = 1323, protocol = "TCP")
+			"grpc": PortSpec(number = 1323, protocol = "TCP")
 		}
 	)
 	datastore_service = add_service(service_id = service_id, config = store_config)
@@ -805,7 +806,7 @@ def run():
 	client_config = struct(
 		image = "kurtosistech/example-datastore-client",
 		ports = {
-			"grpc": struct(number = 1337, protocol = "TCP")
+			"grpc": PortSpec(number = 1337, protocol = "TCP")
 		},
 		entrypoint = ["--store-port " + str(datastore_service.ports["grpc"].number), "--store-ip " + datastore_service.ip_address],
 		cmd = ["ping", datastore_service.ip_address],
@@ -1261,15 +1262,15 @@ def run():
 	
 	service_id = "%v"
 	print("Adding service " + service_id)
-
+	
 	config = struct(
 		image = "` + testContainerImageName + `",
 		ports = {
-			"grpc": struct(number = 1323, protocol = "TCP")
+			"grpc": PortSpec(number = 1323, protocol = "TCP")
 		},
 		private_ip_address_placeholder = "` + privateIPAddressPlaceholder + `",
 		public_ports = {
-			"grpc": struct(number = 11323, protocol = "TCP")
+			"grpc": PortSpec(number = 11323, protocol = "TCP")
 		}
 	)
 	datastore_service = add_service(service_id = service_id, config = config)
@@ -1404,10 +1405,7 @@ func createSimpleAddServiceInstruction(t *testing.T, serviceId service.ServiceID
 		usedPortDict := starlark.NewDict(1)
 		require.Nil(t, usedPortDict.SetKey(
 			starlark.String("grpc"),
-			starlarkstruct.FromStringDict(starlarkstruct.Default, starlark.StringDict{
-				"number":   starlark.MakeInt(int(portNumber)),
-				"protocol": starlark.String("TCP"),
-			})))
+			kurtosis_types.NewPortSpec(portNumber, kurtosis_core_rpc_api_bindings.Port_TCP)))
 		serviceConfigStringDict["ports"] = usedPortDict
 	}
 
@@ -1415,10 +1413,7 @@ func createSimpleAddServiceInstruction(t *testing.T, serviceId service.ServiceID
 		publicPortsDict := starlark.NewDict(1)
 		require.Nil(t, publicPortsDict.SetKey(
 			starlark.String("grpc"),
-			starlarkstruct.FromStringDict(starlarkstruct.Default, starlark.StringDict{
-				"number":   starlark.MakeInt(int(publicPortNumber)),
-				"protocol": starlark.String("TCP"),
-			})))
+			kurtosis_types.NewPortSpec(publicPortNumber, kurtosis_core_rpc_api_bindings.Port_TCP)))
 		serviceConfigStringDict["public_ports"] = publicPortsDict
 	}
 

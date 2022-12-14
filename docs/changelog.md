@@ -1,4 +1,8 @@
 # TBD
+
+### Breaking Changes
+- Introduce `PortSpec` constructor to starlark to create port definitions
+
 ### Changes
 - Added `does contain match regex` and `does not contain match regex` operators in the Kurtosis engine's server `GetServiceLogs` endpoint
 

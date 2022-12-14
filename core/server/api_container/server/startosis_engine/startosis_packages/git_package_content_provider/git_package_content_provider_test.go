@@ -59,7 +59,9 @@ func TestGitPackageProvider_FailsForNonExistentPackage(t *testing.T) {
 	require.NotNil(t, err)
 }
 
+// TODO: Remove skip once PortSpec is available is remote package
 func TestGetAbsolutePathOnDisk_WorksForPureDirectories(t *testing.T) {
+	t.Skip()
 	packageDir, err := os.MkdirTemp("", packagesDirRelPath)
 	require.Nil(t, err)
 	defer os.RemoveAll(packageDir)

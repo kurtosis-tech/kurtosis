@@ -250,67 +250,6 @@ func TestExtractMapStringString_FailureMissing(t *testing.T) {
 	require.Equal(t, map[string]string(nil), output)
 }
 
-func TestParsePortProtocol_TCP(t *testing.T) {
-	input := "TCP"
-	output, err := parsePortProtocol(input)
-	require.Nil(t, err)
-	require.Equal(t, kurtosis_core_rpc_api_bindings.Port_TCP, output)
-}
-
-func TestParsePortProtocol_UDP(t *testing.T) {
-	input := "UDP"
-	output, err := parsePortProtocol(input)
-	require.Nil(t, err)
-	require.Equal(t, kurtosis_core_rpc_api_bindings.Port_UDP, output)
-}
-
-func TestParsePortProtocol_SCTP(t *testing.T) {
-	input := "SCTP"
-	output, err := parsePortProtocol(input)
-	require.Nil(t, err)
-	require.Equal(t, kurtosis_core_rpc_api_bindings.Port_SCTP, output)
-}
-
-func TestParsePortProtocol_Unknown(t *testing.T) {
-	input := "BLAH"
-	output, err := parsePortProtocol(input)
-	require.NotNil(t, err)
-	require.Equal(t, "Port protocol should be one of TCP, SCTP, UDP", err.Error())
-	require.Equal(t, kurtosis_core_rpc_api_bindings.Port_Protocol(-1), output)
-}
-
-func TestParsePort_Success(t *testing.T) {
-	dict := starlark.StringDict{}
-	dict["number"] = starlark.MakeInt(1234)
-	dict["protocol"] = starlark.String("TCP")
-	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
-	output, err := parsePort(input, usedPortsKey)
-	require.Nil(t, err)
-	require.Equal(t, &kurtosis_core_rpc_api_bindings.Port{Number: 1234, Protocol: kurtosis_core_rpc_api_bindings.Port_TCP}, output)
-}
-
-func TestParsePort_FailureWrongProtocol(t *testing.T) {
-	dict := starlark.StringDict{}
-	dict["number"] = starlark.MakeInt(1234)
-	dict["protocol"] = starlark.String("TCPK")
-	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
-	output, err := parsePort(input, usedPortsKey)
-	require.NotNil(t, err)
-	require.Equal(t, "Port protocol should be one of TCP, SCTP, UDP", err.Error())
-	require.Nil(t, output)
-}
-
-func TestParsePort_FailurePortNumberInvalid(t *testing.T) {
-	dict := starlark.StringDict{}
-	dict["number"] = starlark.MakeInt(123456)
-	dict["protocol"] = starlark.String("TCP")
-	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
-	output, err := parsePort(input, usedPortsKey)
-	require.NotNil(t, err)
-	require.Equal(t, "Port number should be less than or equal to 65535", err.Error())
-	require.Nil(t, output)
-}
-
 func TestParseEntryPointArgs_Success(t *testing.T) {
 	dict := starlark.StringDict{}
 	dict["entrypoint"] = starlark.NewList([]starlark.Value{starlark.String("hello"), starlark.String("world")})

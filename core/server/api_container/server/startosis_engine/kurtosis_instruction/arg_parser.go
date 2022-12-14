@@ -6,8 +6,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/recipe"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
@@ -16,7 +16,6 @@ import (
 	"go.starlark.net/starlarkstruct"
 	"math"
 	"reflect"
-	"strings"
 )
 
 const (
@@ -26,7 +25,6 @@ const (
 	requestArgName       = "request"
 
 	containerImageNameKey = "image"
-	factNameArgName       = "fact_name"
 	usedPortsKey          = "ports"
 	// TODO remove this when we have the Portal as this is a temporary hack to meet the NEAR use case
 	serviceIdKey   = "service_id"
@@ -41,13 +39,9 @@ const (
 	portIdKey                      = "port_id"
 	requestEndpointKey             = "endpoint"
 	requestMethodEndpointKey       = "method"
-	fieldExtractorKey              = "field_extractor"
 	privateIPAddressPlaceholderKey = "private_ip_address_placeholder"
 
 	httpRequestExtractorsKey = "extract"
-
-	portNumberKey   = "number"
-	portProtocolKey = "protocol"
 
 	commandArgName          = "command"
 	expectedExitCodeArgName = "expected_exit_code"
@@ -55,8 +49,6 @@ const (
 	templatesAndDataArgName = "config"
 	templateFieldKey        = "template"
 	templateDataFieldKey    = "data"
-
-	maxPortNumber = 65535
 
 	getRequestMethod  = "GET"
 	postRequestMethod = "POST"
@@ -311,57 +303,15 @@ func parseServiceConfigPorts(serviceConfig *starlarkstruct.Struct, portsKey stri
 			return nil, interpretationErr
 		}
 
-		portDefinition, ok := portDefinitionRaw.(*starlarkstruct.Struct)
+		portDefinition, ok := portDefinitionRaw.(*kurtosis_types.PortSpec)
 		if !ok {
-			return nil, startosis_errors.NewInterpretationError("Port definition `%s` is expected to be a struct", portNameRaw)
+			return nil, startosis_errors.NewInterpretationError("Port definition `%s` is expected to be a PortSpec", portDefinitionRaw)
 		}
 
-		port, interpretationErr := parsePort(portDefinition, portsKey)
-		if interpretationErr != nil {
-			return nil, interpretationErr
-		}
+		port := binding_constructors.NewPort(portDefinition.GetNumber(), portDefinition.GetProtocol())
 		privatePorts[portName] = port
 	}
 	return privatePorts, nil
-}
-
-func parsePort(portArg *starlarkstruct.Struct, portsKeyForLogging string) (*kurtosis_core_rpc_api_bindings.Port, *startosis_errors.InterpretationError) {
-	portNumber, interpretationErr := extractUint32Value(portArg, portNumberKey, portsKeyForLogging)
-	if interpretationErr != nil {
-		return nil, interpretationErr
-	}
-	if portNumber > maxPortNumber {
-		return nil, startosis_errors.NewInterpretationError("Port number should be less than or equal to %d", maxPortNumber)
-	}
-
-	protocolRaw, interpretationErr := extractStringValue(portArg, portProtocolKey, portsKeyForLogging)
-	if interpretationErr != nil {
-		return nil, interpretationErr
-	}
-	protocol, interpretationErr := parsePortProtocol(protocolRaw)
-	if interpretationErr != nil {
-		return nil, interpretationErr
-	}
-
-	return binding_constructors.NewPort(portNumber, protocol), nil
-}
-
-func parsePortProtocol(portProtocol string) (kurtosis_core_rpc_api_bindings.Port_Protocol, *startosis_errors.InterpretationError) {
-	parsedPortProtocol, err := port_spec.PortProtocolString(portProtocol)
-	if err != nil {
-		return -1, startosis_errors.NewInterpretationError("Port protocol should be one of %s", strings.Join(port_spec.PortProtocolStrings(), ", "))
-	}
-
-	// TODO(gb): once we stop exposing this in the API, use only port_spec.PortProtocol enum and remove the below
-	switch parsedPortProtocol {
-	case port_spec.PortProtocol_TCP:
-		return kurtosis_core_rpc_api_bindings.Port_TCP, nil
-	case port_spec.PortProtocol_SCTP:
-		return kurtosis_core_rpc_api_bindings.Port_SCTP, nil
-	case port_spec.PortProtocol_UDP:
-		return kurtosis_core_rpc_api_bindings.Port_UDP, nil
-	}
-	return -1, startosis_errors.NewInterpretationError("Port protocol should be one of %s", strings.Join(port_spec.PortProtocolStrings(), ", "))
 }
 
 func parseEntryPointArgs(serviceConfig *starlarkstruct.Struct) ([]string, *startosis_errors.InterpretationError) {

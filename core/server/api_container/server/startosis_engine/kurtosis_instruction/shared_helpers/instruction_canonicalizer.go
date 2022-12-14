@@ -3,6 +3,7 @@ package shared_helpers
 import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"go.starlark.net/lib/time"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
@@ -54,6 +55,8 @@ func CanonicalizeArgValue(genericArgValue starlark.Value) string {
 	var stringifiedArg string
 	switch argValue := genericArgValue.(type) {
 	case starlark.NoneType, starlark.Bool, starlark.String, starlark.Bytes, starlark.Int, starlark.Float:
+		stringifiedArg = argValue.String()
+	case *kurtosis_types.PortSpec:
 		stringifiedArg = argValue.String()
 	case time.Time:
 		timestamp, err := argValue.Attr(starlarkTimeKeyComponent)

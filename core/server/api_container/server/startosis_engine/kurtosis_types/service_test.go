@@ -1,6 +1,7 @@
 package kurtosis_types
 
 import (
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
 	"testing"
@@ -14,7 +15,7 @@ const (
 func TestService_StringRepresentation(t *testing.T) {
 	service, err := createTestServiceType()
 	require.Nil(t, err)
-	expectedStr := `service(ip_address="{{kurtosis:service_id.ip_address}}", ports={"grpc": port_spec(number=123, protocol="TCP")})`
+	expectedStr := `service(ip_address="{{kurtosis:service_id.ip_address}}", ports={"grpc": PortSpec(number=123, protocol="TCP")})`
 	require.Equal(t, expectedStr, service.String())
 }
 
@@ -79,7 +80,7 @@ func TestService_TestAttrNames(t *testing.T) {
 
 func createTestServiceType() (*Service, error) {
 	ports := starlark.NewDict(1)
-	err := ports.SetKey(starlark.String("grpc"), NewPortSpec(starlark.MakeInt(123), "TCP"))
+	err := ports.SetKey(starlark.String("grpc"), NewPortSpec(123, kurtosis_core_rpc_api_bindings.Port_TCP))
 	if err != nil {
 		return nil, err
 	}
