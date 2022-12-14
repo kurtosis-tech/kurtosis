@@ -7,7 +7,7 @@ import {
     PartitionID,
     PortSpec,
     PortProtocol,
-    FilesArtifactUUID,
+    FilesArtifactUUID, ServiceGUID,
 } from "kurtosis-sdk";
 import * as datastoreApi from "example-datastore-server-api-lib";
 import * as serverApi from "example-api-server-api-lib";
@@ -484,4 +484,17 @@ export async function validateDataStoreServiceIsHealthy(enclaveContext : Enclave
     }
 
     return ok(null)
+}
+
+export function areEqualServiceGuidsSet(firstSet: Set<ServiceGUID>, secondSet: Set<ServiceGUID>): boolean {
+    const haveEqualSize: boolean = firstSet.size === secondSet.size;
+    const haveEqualContent: boolean = [...firstSet].every((x) => secondSet.has(x));
+
+    const areEqual: boolean = haveEqualSize && haveEqualContent;
+
+    return areEqual
+}
+
+export function delay(ms: number) {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }

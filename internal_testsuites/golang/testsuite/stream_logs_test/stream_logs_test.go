@@ -25,7 +25,7 @@ const (
 	exampleServiceId          services.ServiceID = "stream-logs"
 
 
-	waitForAllLogsBeingCollectedInSeconds = 2
+	waitForAllLogsBeingCollectedInSeconds = 3
 
 	testTimeOut = 90 * time.Second
 
@@ -87,7 +87,7 @@ func TestStreamLogs(t *testing.T) {
 		expectedLogLines := serviceLogsRequestInfoAndExpectedResultsObj.expectedLogLines
 		expectedNonExistenceServiceGuids := serviceLogsRequestInfoAndExpectedResultsObj.expectedNotFoundServiceGuids
 
-		serviceLogsStreamContentChan, cancelStreamServiceLogsFunc, err := kurtosisCtx.GetServiceLogs(ctx, requestedEnclaveId, requestedServiceGuids, requestedShouldFollowLogs)
+		serviceLogsStreamContentChan, cancelStreamServiceLogsFunc, err := kurtosisCtx.GetServiceLogs(ctx, requestedEnclaveId, requestedServiceGuids, requestedShouldFollowLogs, nil)
 		require.NoError(t, err)
 		require.NotNil(t, cancelStreamServiceLogsFunc)
 		require.NotNil(t, serviceLogsStreamContentChan)

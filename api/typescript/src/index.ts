@@ -34,5 +34,6 @@ export { ExecuteArgs, ExecuteResponse } from "./core/kurtosis_core_rpc_api_bindi
 export { KurtosisContext, DEFAULT_GRPC_PROXY_ENGINE_SERVER_PORT_NUM, DEFAULT_GRPC_ENGINE_SERVER_PORT_NUM } from "./engine/lib/kurtosis_context/kurtosis_context";
 export {ServiceLogsStreamContent} from "./engine/lib/kurtosis_context/service_logs_stream_content";
 export {ServiceLog} from "./engine/lib/kurtosis_context/service_log";
+export { LogLineFilter } from "./engine/lib/kurtosis_context/log_line_filter";
 
 export { EnclaveAPIContainerHostMachineInfo } from "./engine/kurtosis_engine_rpc_api_bindings/engine_service_pb"

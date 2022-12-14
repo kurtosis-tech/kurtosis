@@ -337,8 +337,8 @@ export namespace LogLine {
 }
 
 export class LogLineFilter extends jspb.Message {
-  getOperator(): LogLineFilter.LogLineOperator;
-  setOperator(value: LogLineFilter.LogLineOperator): LogLineFilter;
+  getOperator(): LogLineOperator;
+  setOperator(value: LogLineOperator): LogLineFilter;
 
   getTextPattern(): string;
   setTextPattern(value: string): LogLineFilter;
@@ -353,15 +353,8 @@ export class LogLineFilter extends jspb.Message {
 
 export namespace LogLineFilter {
   export type AsObject = {
-    operator: LogLineFilter.LogLineOperator,
+    operator: LogLineOperator,
     textPattern: string,
-  }
-
-  export enum LogLineOperator { 
-    DOES_CONTAIN_TEXT = 0,
-    DOES_NOT_CONTAIN_TEXT = 1,
-    DOES_CONTAIN_MATCH_REGEX = 2,
-    DOES_NOT_CONTAIN_MATCH_REGEX = 3,
   }
 }
 
@@ -374,4 +367,10 @@ export enum EnclaveAPIContainerStatus {
   ENCLAVEAPICONTAINERSTATUS_NONEXISTENT = 0,
   ENCLAVEAPICONTAINERSTATUS_RUNNING = 1,
   ENCLAVEAPICONTAINERSTATUS_STOPPED = 2,
+}
+export enum LogLineOperator { 
+  LOGLINEOPERATOR_DOES_CONTAIN_TEXT = 0,
+  LOGLINEOPERATOR_DOES_NOT_CONTAIN_TEXT = 1,
+  LOGLINEOPERATOR_DOES_CONTAIN_MATCH_REGEX = 2,
+  LOGLINEOPERATOR_DOES_NOT_CONTAIN_MATCH_REGEX = 3,
 }

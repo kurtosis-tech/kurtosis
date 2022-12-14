@@ -6,12 +6,13 @@ import {
     ServiceGUID,
     ServiceID,
     ServiceLog,
-    ServiceLogsStreamContent,
 } from "kurtosis-sdk";
 import log from "loglevel";
 import {err} from "neverthrow";
 import {createEnclave} from "../../test_helpers/enclave_setup";
 import {Readable} from "stream";
+import {newReceivedStreamContentPromise, ReceivedStreamContent} from "../../test_helpers/received_stream_content";
+import {areEqualServiceGuidsSet, delay} from "../../test_helpers/test_helpers";
 
 
 const TEST_NAME = "stream-logs"
@@ -20,7 +21,7 @@ const IS_PARTITIONING_ENABLED = false
 const DOCKER_GETTING_STARTED_IMAGE = "docker/getting-started"
 const EXAMPLE_SERVICE_ID: ServiceID = "stream-logs"
 
-const WAIT_FOR_ALL_LOGS_BEING_COLLECTED_IN_SECONDS = 2
+const WAIT_FOR_ALL_LOGS_BEING_COLLECTED_IN_SECONDS = 3
 
 const SHOULD_FOLLOW_LOGS = true;
 const SHOULD_NOT_FOLLOW_LOGS = false;
@@ -46,18 +47,6 @@ class ServiceLogsRequestInfoAndExpectedResults {
         this.requestedFollowLogs = requestedFollowLogs;
         this.expectedLogLines = expectedLogLines
         this.expectedNotFoundServiceGuids = expectedNotFoundServiceGuids;
-    }
-}
-class ReceivedStreamContent {
-    readonly receivedLogLines: Array<ServiceLog>;
-    readonly receivedNotFoundServiceGuids: Set<ServiceGUID>;
-
-    constructor(
-        receivedLogLines: Array<ServiceLog>,
-        receivedNotFoundServiceGuids: Set<ServiceGUID>,
-    ) {
-        this.receivedLogLines = receivedLogLines;
-        this.receivedNotFoundServiceGuids = receivedNotFoundServiceGuids;
     }
 }
 
@@ -125,7 +114,7 @@ async function TestStreamLogs() {
             const expectedLogLines = serviceLogsRequestInfoAndExpectedResults.expectedLogLines
             const expectedNonExistenceServiceGuids = serviceLogsRequestInfoAndExpectedResults.expectedNotFoundServiceGuids
 
-            const streamUserServiceLogsPromise = await kurtosisContext.getServiceLogs(requestedEnclaveId, requestedServiceGuids, requestedShouldFollowLogs);
+            const streamUserServiceLogsPromise = await kurtosisContext.getServiceLogs(requestedEnclaveId, requestedServiceGuids, requestedShouldFollowLogs, undefined);
 
             if (streamUserServiceLogsPromise.isErr()) {
                 throw streamUserServiceLogsPromise.error;
@@ -169,62 +158,6 @@ async function TestStreamLogs() {
 // ====================================================================================================
 //                                       Private helper functions
 // ====================================================================================================
-function newReceivedStreamContentPromise(
-    serviceLogsReadable: Readable,
-    serviceGuid: string,
-    expectedLogLines: string[],
-    expectedNonExistenceServiceGuids: Set<ServiceGUID>,
-): Promise<ReceivedStreamContent> {
-    const receivedStreamContentPromise: Promise<ReceivedStreamContent> = new Promise<ReceivedStreamContent>((resolve, _unusedReject) => {
-
-        serviceLogsReadable.on('data', (serviceLogsStreamContent: ServiceLogsStreamContent) => {
-            const serviceLogsByServiceGuids: Map<ServiceGUID, Array<ServiceLog>> = serviceLogsStreamContent.getServiceLogsByServiceGuids()
-            const notFoundServiceGuids: Set<ServiceGUID> = serviceLogsStreamContent.getNotFoundServiceGuids()
-
-            let receivedLogLines: Array<ServiceLog> | undefined = serviceLogsByServiceGuids.get(serviceGuid);
-
-            if (expectedNonExistenceServiceGuids.size > 0) {
-                if(receivedLogLines !== undefined){
-                    throw new Error(`Expected to receive undefined log lines but these log lines content ${receivedLogLines} was received instead`)
-                }
-            } else {
-                if(receivedLogLines === undefined){
-                    throw new Error("Expected to receive log lines content but and undefined value was received instead")
-                }
-            }
-
-            if(receivedLogLines === undefined) {
-                receivedLogLines = new Array<ServiceLog>()
-            }
-
-            if (receivedLogLines.length === expectedLogLines.length) {
-                const receivedStreamContent: ReceivedStreamContent = new ReceivedStreamContent(
-                    receivedLogLines,
-                    notFoundServiceGuids,
-                )
-                serviceLogsReadable.destroy()
-                resolve(receivedStreamContent)
-            }
-        })
-
-        serviceLogsReadable.on('error', function (readableErr: { message: any; }) {
-            if (!serviceLogsReadable.destroyed) {
-                serviceLogsReadable.destroy()
-                throw new Error(`Expected read all user service logs but an error was received from the user service readable object.\n Error: "${readableErr.message}"`)
-            }
-        })
-
-        serviceLogsReadable.on('end', function () {
-            if (!serviceLogsReadable.destroyed) {
-                serviceLogsReadable.destroy()
-                throw new Error("Expected read all user service logs but the user service readable logs object has finished before reading all the logs.")
-            }
-        })
-    })
-
-    return receivedStreamContentPromise;
-}
-
 function containerConfig(): ContainerConfig {
 
     const entrypointArgs = ["/bin/sh", "-c"]
@@ -238,9 +171,6 @@ function containerConfig(): ContainerConfig {
     return containerConfig
 }
 
-function delay(ms: number) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
 
 function getServiceLogsRequestInfoAndExpectedResultsList(
     enclaveID: EnclaveID,
@@ -286,11 +216,3 @@ function getServiceLogsRequestInfoAndExpectedResultsList(
     return serviceLogsRequestInfoAndExpectedResultsList
 }
 
-function areEqualServiceGuidsSet(firstSet: Set<ServiceGUID>, secondSet: Set<ServiceGUID>): boolean {
-    const haveEqualSize: boolean = firstSet.size === secondSet.size;
-    const haveEqualContent: boolean = [...firstSet].every((x) => secondSet.has(x));
-
-    const areEqual: boolean = haveEqualSize && haveEqualContent;
-
-    return areEqual
-}

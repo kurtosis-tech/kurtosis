@@ -194,12 +194,15 @@ message LogLine {
 }
 
 message LogLineFilter {
-  enum LogLineOperator {
-    DOES_CONTAIN_TEXT = 0;
-    DOES_NOT_CONTAIN_TEXT = 1;
-    DOES_CONTAIN_MATCH_REGEX = 2;
-    DOES_NOT_CONTAIN_MATCH_REGEX = 3;
-  }
   LogLineOperator operator = 1;
   string text_pattern = 2;
+}
+
+//The filter operator which can be text or regex type
+// NOTE: We have to prefix the enum values with the enum name due to the way Protobuf enum value uniqueness works
+enum LogLineOperator {
+  LogLineOperator_DOES_CONTAIN_TEXT = 0;
+  LogLineOperator_DOES_NOT_CONTAIN_TEXT = 1;
+  LogLineOperator_DOES_CONTAIN_MATCH_REGEX = 2;
+  LogLineOperator_DOES_NOT_CONTAIN_MATCH_REGEX = 3;
 }

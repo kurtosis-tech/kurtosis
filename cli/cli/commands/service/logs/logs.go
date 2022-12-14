@@ -46,7 +46,10 @@ const (
 	engineClientCtxKey    = "engine-client"
 
 	interruptChanBufferSize = 5
+
+
 )
+var doNotFilterLogLines *kurtosis_context.LogLineFilter = nil
 
 var defaultShouldFollowLogs = strconv.FormatBool(false)
 
@@ -171,7 +174,8 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred connecting to the local Kurtosis engine")
 	}
 
-	serviceLogsStreamContentChan, cancelStreamUserServiceLogsFunc, err := kurtosisCtx.GetServiceLogs(ctx, enclaveId, userServiceGuids, shouldFollowLogs)
+
+	serviceLogsStreamContentChan, cancelStreamUserServiceLogsFunc, err := kurtosisCtx.GetServiceLogs(ctx, enclaveId, userServiceGuids, shouldFollowLogs, doNotFilterLogLines)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting user service logs from user services with GUIDs '%+v' in enclave '%v' and with follow logs value '%v'", userServiceGuids, enclaveId, shouldFollowLogs)
 	}

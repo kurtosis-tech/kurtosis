@@ -16,7 +16,6 @@ require (
 	github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.0 // Local dependency
 	github.com/kurtosis-tech/kurtosis/core/files_artifacts_expander v0.0.0 // Local dependency
 	github.com/kurtosis-tech/kurtosis/core/launcher v0.0.0 // Local dependency
-	github.com/kurtosis-tech/metrics-library v0.0.0-20221213112629-71d7bb6b2583
 	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20211201000847-a204edc5a0b3
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/sirupsen/logrus v1.8.1
@@ -30,8 +29,8 @@ require (
 	github.com/cenkalti/backoff/v4 v4.2.0
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/itchyny/gojq v0.12.9
+	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20221213112629-71d7bb6b2583
 	github.com/mholt/archiver v3.1.1+incompatible
-	go.etcd.io/bbolt v1.3.6
 	go.starlark.net v0.0.0-20220928063852-5fccb4daaf6d
 )
 
@@ -71,7 +70,6 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kevinburke/ssh_config v0.0.0-20201106050909-4977a11b4351 // indirect
 	github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-d3be9e82993e // indirect
-	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20221213112629-71d7bb6b2583 // indirect
 	github.com/mailru/easyjson v0.7.6 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/moby/spdystream v0.2.0 // indirect
@@ -92,6 +90,7 @@ require (
 	github.com/xanzy/ssh-agent v0.3.0 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/xtgo/uuid v0.0.0-20140804021211-a0b114877d4c // indirect
+	go.etcd.io/bbolt v1.3.6 // indirect
 	golang.org/x/crypto v0.0.0-20220214200702-86341886e292 // indirect
 	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd // indirect
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8 // indirect

@@ -183,6 +183,7 @@ func (kurtosisCtx *KurtosisContext) GetServiceLogs(
 	enclaveID enclaves.EnclaveID,
 	userServiceGuids map[services.ServiceGUID]bool,
 	shouldFollowLogs bool,
+	logLineFilter *LogLineFilter,
 ) (
 	chan *serviceLogsStreamContent,
 	func(),
@@ -201,7 +202,17 @@ func (kurtosisCtx *KurtosisContext) GetServiceLogs(
 	//this process could take much time until the next channel pull, so we could be filling the buffer during that time to not let the servers thread idled
 	serviceLogsStreamContentChan := make(chan *serviceLogsStreamContent, serviceLogsStreamContentChanBufferSize)
 
-	getServiceLogsArgs := newGetServiceLogsArgs(enclaveID, userServiceGuids, shouldFollowLogs)
+	getServiceLogsArgs, err := newGetServiceLogsArgs(enclaveID, userServiceGuids, shouldFollowLogs, logLineFilter)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating the service logs arguments with enclave ID '%v', user service GUIDS '%+v', should follow logs value '%v' and with these conjunctive log line filters '%+v'",
+			enclaveID,
+			userServiceGuids,
+			shouldFollowLogs,
+			logLineFilter,
+		)
+	}
 
 	stream, err := kurtosisCtx.client.GetServiceLogs(ctxWithCancel, getServiceLogsArgs)
 	if err != nil {
@@ -367,7 +378,8 @@ func newGetServiceLogsArgs(
 	enclaveID enclaves.EnclaveID,
 	userServiceGUIDs map[services.ServiceGUID]bool,
 	shouldFollowLogs bool,
-) *kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs {
+	logLineFilter *LogLineFilter,
+) (*kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs, error) {
 	userServiceGUIDStrSet := make(map[string]bool, len(userServiceGUIDs))
 
 	for userServiceGUID, isUserServiceInSet := range userServiceGUIDs {
@@ -375,14 +387,55 @@ func newGetServiceLogsArgs(
 		userServiceGUIDStrSet[userServiceGUIDStr] = isUserServiceInSet
 	}
 
-	getUserServiceLogsArgs := &kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs{
-		EnclaveId:      string(enclaveID),
-		ServiceGuidSet: userServiceGUIDStrSet,
-		FollowLogs:     shouldFollowLogs,
-		ConjunctiveFilters: nil, //TODO implement log line filters on the client side, now we started from the backend, we are going to implement the client side on next PRs
+	grpcConjunctiveFilters, err := newGRPCConjunctiveFilters(logLineFilter)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the GRPC conjunctive log line filters '%+v'", logLineFilter)
 	}
 
-	return getUserServiceLogsArgs
+	getUserServiceLogsArgs := &kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs{
+		EnclaveId:          string(enclaveID),
+		ServiceGuidSet:     userServiceGUIDStrSet,
+		FollowLogs:         shouldFollowLogs,
+		ConjunctiveFilters: grpcConjunctiveFilters,
+	}
+
+	return getUserServiceLogsArgs, nil
+}
+
+//Even though the backend is prepared for receiving a list of conjunctive filters
+//We allow users to send only one filter so far, because it covers the current supported use cases
+func newGRPCConjunctiveFilters(
+	logLineFilter *LogLineFilter,
+) ([]*kurtosis_engine_rpc_api_bindings.LogLineFilter, error) {
+
+	grpcLogLineFilters := []*kurtosis_engine_rpc_api_bindings.LogLineFilter{}
+
+	if logLineFilter == nil {
+		return grpcLogLineFilters, nil
+	}
+
+	var grpcOperator kurtosis_engine_rpc_api_bindings.LogLineOperator
+
+	switch logLineFilter.operator {
+	case logLineOperator_DoesContainText:
+		grpcOperator = kurtosis_engine_rpc_api_bindings.LogLineOperator_LogLineOperator_DOES_CONTAIN_TEXT
+	case logLineOperator_DoesNotContainText:
+		grpcOperator = kurtosis_engine_rpc_api_bindings.LogLineOperator_LogLineOperator_DOES_NOT_CONTAIN_TEXT
+	case logLineOperator_DoesContainMatchRegex:
+		grpcOperator = kurtosis_engine_rpc_api_bindings.LogLineOperator_LogLineOperator_DOES_CONTAIN_MATCH_REGEX
+	case logLineOperator_DoesNotContainMatchRegex:
+		grpcOperator = kurtosis_engine_rpc_api_bindings.LogLineOperator_LogLineOperator_DOES_NOT_CONTAIN_MATCH_REGEX
+	default:
+		return nil, stacktrace.NewError("Unrecognized log line filter operator '%v' in filter '%v'; this is a bug in Kurtosis", logLineFilter.operator, logLineFilter)
+	}
+	grpcLogLineFilter := &kurtosis_engine_rpc_api_bindings.LogLineFilter{
+		TextPattern: logLineFilter.textPattern,
+		Operator: grpcOperator,
+	}
+
+	grpcLogLineFilters = append(grpcLogLineFilters, grpcLogLineFilter)
+
+	return grpcLogLineFilters, nil
 }
 
 func newServiceLogsStreamContentFromGrpcStreamResponse(

@@ -32,6 +32,7 @@ import {
     newStopEnclaveArgs
 } from "../constructor_calls";
 import {Readable} from "stream";
+import {LogLineFilter} from "./log_line_filter";
 
 const LOCAL_HOSTNAME: string = "localhost";
 
@@ -215,8 +216,14 @@ export class KurtosisContext {
     //      //insert your code here
     //})
     //You can cancel receiving the stream from the service calling serviceLogsReadable.destroy()
-    public async getServiceLogs(enclaveID: EnclaveID, serviceGUIDs: Set<ServiceGUID>, shouldFollowLogs: boolean): Promise<Result<Readable, Error>> {
-        const getServiceLogsArgs: GetServiceLogsArgs = newGetServiceLogsArgs(enclaveID, serviceGUIDs, shouldFollowLogs);
+    public async getServiceLogs(enclaveID: EnclaveID, serviceGUIDs: Set<ServiceGUID>, shouldFollowLogs: boolean, logLineFilter: LogLineFilter|undefined): Promise<Result<Readable, Error>> {
+        let getServiceLogsArgs: GetServiceLogsArgs;
+
+        try {
+            getServiceLogsArgs = newGetServiceLogsArgs(enclaveID, serviceGUIDs, shouldFollowLogs, logLineFilter);
+        } catch(error) {
+            return err(new Error(`An error occurred getting the get service logs arguments for enclave ID '${enclaveID}', service GUIDs '${serviceGUIDs}', with should follow value '${shouldFollowLogs}' and log line filter '${logLineFilter}'. Error:\n${error}`));
+        }
 
         const streamServiceLogsResult = await this.client.getServiceLogs(getServiceLogsArgs);
         if(streamServiceLogsResult.isErr()){
