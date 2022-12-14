@@ -83,7 +83,7 @@ version: 2.1
 
 orbs:
   npm-publisher: uraway/npm-publisher@0.2.0
-  kurtosis-docs-checker: kurtosis-tech/docs-checker@0.2.1
+  kurtosis-docs-checker: kurtosis-tech/docs-checker@0.2.3
 
 executors:
   ubuntu_vm:
@@ -1020,6 +1020,7 @@ workflows:
     jobs:
       # -- build jobs ------------------------------------------
       - kurtosis-docs-checker/check-docs:
+          should-check-changelog: false
           markdown-link-check-config-json: |
             {
                 "replacementPatterns": [

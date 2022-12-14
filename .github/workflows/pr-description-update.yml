@@ -1,0 +1,43 @@
+name: "Update Pull Request Description with conventional commits"
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - edited
+      - synchronize
+
+jobs:
+  update_pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: 8BitJonny/gh-get-current-pr@2.2.0
+        with:
+          sha: ${{ github.event.pull_request.head.sha }}
+        id: PR
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - run: |
+          pr_body="${{ steps.PR.outputs.pr_body }}"
+          delimiter="Changelog picked up from commits here:"
+          cleaned_body=${pr_body%${delimiter}*}
+          conventional_commits="$(git log --pretty=format:"%B"  origin/master..HEAD | grep -Pio '^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test|¯\\_\(ツ\)_\/¯)(\(\w+\)?((?=:\s)|(?=!:\s)))?(!)?(:\s.*)?(\n\n.*)?$' | grep ':' || true)"
+          echo "CONVENTIONAL_COMMITS<<EOF" >> $GITHUB_ENV
+          echo "${cleaned_body}" >> ${GITHUB_ENV}
+          if [ ${#conventional_commits} -gt 0 ]; then
+            echo "" >> ${GITHUB_ENV}
+            echo "${delimiter}" >> ${GITHUB_ENV}
+            echo "" >> ${GITHUB_ENV}
+            echo "${conventional_commits}" >> $GITHUB_ENV
+          fi
+          echo 'EOF'>> $GITHUB_ENV
+      - uses: tzkhan/pr-update-action@v2
+        with:
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"
+          # added this though it isn't used
+          base-branch-regex: '[a-z\d-_.\\/]+'
+          body-template: |
+            ${{ env.CONVENTIONAL_COMMITS }}
+          body-update-action: 'replace'
+          body-uppercase-base-match: false

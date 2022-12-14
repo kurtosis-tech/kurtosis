@@ -1,3 +1,0 @@
-api/scripts/update-package-versions.sh
-api/scripts/update-own-version-constants.sh
-scripts/generate-kurtosis-version.sh

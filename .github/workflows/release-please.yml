@@ -1,0 +1,19 @@
+on:
+  push:
+    branches: [master]
+
+name: release-please
+jobs:
+  release-please:
+    name: "Release please"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: google-github-actions/release-please-action@v3
+        with:
+          release-type: simple
+          package-name: kurtosis
+          bump-minor-pre-major: true
+          bump-patch-for-minor-pre-major: true
+          # Our CI, Docker Images, Kurtosis-SDK bumps all depend on
+          # non v tags
+          include-v-in-tag: false
