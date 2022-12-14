@@ -18,6 +18,7 @@ const (
 	// Typescript's grpc-web cannot communicate directly with GRPC ports, so Kurtosis-internal containers
 	// need a proxy  that will translate grpc-web requests before they hit the main GRPC server
 	KurtosisInternalContainerGrpcProxyPortSpecId = "grpc-proxy"
+	HttpApplicationProtocol                      = "http"
 )
 
 // This maps a Kubernetes pod's phase to a binary "is the pod considered running?" determiner

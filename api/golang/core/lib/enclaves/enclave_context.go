@@ -55,6 +55,10 @@ type EnclaveContext struct {
 	enclaveId EnclaveID
 }
 
+const (
+	emptyApplicationProtocol = ""
+)
+
 /*
 Creates a new EnclaveContext object with the given parameters.
 */
@@ -292,8 +296,9 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 		privatePortsForApi := map[string]*kurtosis_core_rpc_api_bindings.Port{}
 		for portId, portSpec := range privatePorts {
 			privatePortsForApi[portId] = &kurtosis_core_rpc_api_bindings.Port{
-				Number:   uint32(portSpec.GetNumber()),
-				Protocol: kurtosis_core_rpc_api_bindings.Port_Protocol(portSpec.GetProtocol()),
+				Number:                   uint32(portSpec.GetNumber()),
+				TransportProtocol:        kurtosis_core_rpc_api_bindings.Port_TransportProtocol(portSpec.GetTransportProtocol()),
+				MaybeApplicationProtocol: emptyApplicationProtocol,
 			}
 		}
 		//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
@@ -301,8 +306,9 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 		publicPortsForApi := map[string]*kurtosis_core_rpc_api_bindings.Port{}
 		for portId, portSpec := range publicPorts {
 			publicPortsForApi[portId] = &kurtosis_core_rpc_api_bindings.Port{
-				Number:   uint32(portSpec.GetNumber()),
-				Protocol: kurtosis_core_rpc_api_bindings.Port_Protocol(portSpec.GetProtocol()),
+				Number:                   uint32(portSpec.GetNumber()),
+				TransportProtocol:        kurtosis_core_rpc_api_bindings.Port_TransportProtocol(portSpec.GetTransportProtocol()),
+				MaybeApplicationProtocol: emptyApplicationProtocol,
 			}
 		}
 		//TODO finish the hack
@@ -686,8 +692,8 @@ func (enclaveCtx *EnclaveContext) RenderTemplates(templateAndDataByDestinationRe
 func convertApiPortsToServiceContextPorts(apiPorts map[string]*kurtosis_core_rpc_api_bindings.Port) (map[string]*services.PortSpec, error) {
 	result := map[string]*services.PortSpec{}
 	for portId, apiPortSpec := range apiPorts {
-		apiPortProtocol := apiPortSpec.GetProtocol()
-		serviceCtxPortProtocol := services.PortProtocol(apiPortProtocol)
+		apiPortProtocol := apiPortSpec.GetTransportProtocol()
+		serviceCtxPortProtocol := services.TransportProtocol(apiPortProtocol)
 		if !serviceCtxPortProtocol.IsValid() {
 			return nil, stacktrace.NewError("Received unrecognized protocol '%v' from the API", apiPortProtocol)
 		}

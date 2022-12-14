@@ -74,7 +74,7 @@ service ApiContainerService {
 //                           Shared Objects (Used By Multiple Endpoints)
 // ==============================================================================================
 message Port {
-  enum Protocol {
+  enum TransportProtocol {
     TCP = 0;
     SCTP = 1;
     UDP = 2;
@@ -83,7 +83,8 @@ message Port {
   uint32 number = 1;
 
   // The protocol that the port is listening on
-  Protocol protocol = 2;
+  TransportProtocol transport_protocol = 2;
+  string maybe_application_protocol = 3;
 }
 
 message ServiceInfo {

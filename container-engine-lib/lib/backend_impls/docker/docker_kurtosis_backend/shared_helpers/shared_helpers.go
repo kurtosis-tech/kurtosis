@@ -175,9 +175,15 @@ func GetPublicPortBindingFromPrivatePortSpec(privatePortSpec *port_spec.PortSpec
 		)
 	}
 	hostMachinePortNumUint16 := uint16(hostMachinePortNumUint64) // Okay to do due to specifying the number of bits above
-	publicPortSpec, err := port_spec.NewPortSpec(hostMachinePortNumUint16, privatePortSpec.GetTransportProtocol(), "")
+
+	maybeApplicationProtocol := ""
+	if privatePortSpec.GetMaybeApplicationProtocol() != nil {
+		maybeApplicationProtocol = *privatePortSpec.GetMaybeApplicationProtocol()
+	}
+	publicPortSpec, err := port_spec.NewPortSpec(hostMachinePortNumUint16, privatePortSpec.GetTransportProtocol(), maybeApplicationProtocol)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred creating public port spec with host machine port num '%v' and protocol '%v'", hostMachinePortNumUint16, privatePortSpec.GetTransportProtocol().String())
+		return nil, nil, stacktrace.Propagate(
+			err, "An error occurred creating public port spec with host machine port num '%v',  transport protocol '%v' and application protocol '%v'", hostMachinePortNumUint16, privatePortSpec.GetTransportProtocol().String(), maybeApplicationProtocol)
 	}
 
 	return hostMachineIp, publicPortSpec, nil

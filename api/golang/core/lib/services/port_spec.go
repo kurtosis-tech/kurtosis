@@ -11,41 +11,41 @@ import (
 )
 
 // Use a type alias here to make this a bit more user-friendly
-type PortProtocol kurtosis_core_rpc_api_bindings.Port_Protocol
+type TransportProtocol kurtosis_core_rpc_api_bindings.Port_TransportProtocol
 
 const (
-	PortProtocol_TCP = PortProtocol(kurtosis_core_rpc_api_bindings.Port_TCP)
-	PortProtocol_UDP = PortProtocol(kurtosis_core_rpc_api_bindings.Port_UDP)
+	PortProtocol_TCP = TransportProtocol(kurtosis_core_rpc_api_bindings.Port_TCP)
+	PortProtocol_UDP = TransportProtocol(kurtosis_core_rpc_api_bindings.Port_UDP)
 )
 
 // "Set" of allowed port protocols
-var allowedPortProtocols = map[PortProtocol]bool{
+var allowedPortProtocols = map[TransportProtocol]bool{
 	PortProtocol_TCP: true,
 	PortProtocol_UDP: true,
 }
 
-func (protocol PortProtocol) IsValid() bool {
+func (protocol TransportProtocol) IsValid() bool {
 	_, found := allowedPortProtocols[protocol]
 	return found
 }
 
 type PortSpec struct {
-	number   uint16
-	protocol PortProtocol
+	number            uint16
+	transportProtocol TransportProtocol
 }
 
-func NewPortSpec(number uint16, protocol PortProtocol) *PortSpec {
-	return &PortSpec{number: number, protocol: protocol}
+func NewPortSpec(number uint16, transportProtocol TransportProtocol) *PortSpec {
+	return &PortSpec{number: number, transportProtocol: transportProtocol}
 }
 
 func (spec *PortSpec) GetNumber() uint16 {
 	return spec.number
 }
 
-func (spec *PortSpec) GetProtocol() PortProtocol {
-	return spec.protocol
+func (spec *PortSpec) GetTransportProtocol() TransportProtocol {
+	return spec.transportProtocol
 }
 
 func (spec *PortSpec) String() string {
-	return fmt.Sprintf("%d/%v", spec.number, spec.protocol)
+	return fmt.Sprintf("%d/%v", spec.number, spec.transportProtocol)
 }

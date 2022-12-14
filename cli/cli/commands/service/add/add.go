@@ -255,7 +255,7 @@ func run(
 			continue
 		}
 
-		apiProtocolEnum := kurtosis_core_rpc_api_bindings.Port_Protocol(publicPortSpec.GetProtocol())
+		apiProtocolEnum := kurtosis_core_rpc_api_bindings.Port_TransportProtocol(publicPortSpec.GetTransportProtocol())
 		protocolStr := strings.ToLower(apiProtocolEnum.String())
 		portBindingInfo := fmt.Sprintf(
 			"%v/%v -> %v:%v",
@@ -472,11 +472,11 @@ func parsePortSpecStr(specStr string) (*services.PortSpec, error) {
 	}
 	portNumberUint16 := uint16(portNumberUint64)
 
-	portProtocolEnumInt, found := kurtosis_core_rpc_api_bindings.Port_Protocol_value[strings.ToUpper(portProtocolStr)]
+	portProtocolEnumInt, found := kurtosis_core_rpc_api_bindings.Port_TransportProtocol_value[strings.ToUpper(portProtocolStr)]
 	if !found {
 		return nil, stacktrace.NewError("Unrecognized port protocol '%v'", portProtocolStr)
 	}
-	portProtocol := services.PortProtocol(portProtocolEnumInt)
+	portProtocol := services.TransportProtocol(portProtocolEnumInt)
 
 	return services.NewPortSpec(portNumberUint16, portProtocol), nil
 }

@@ -801,7 +801,7 @@ export class EnclaveContext {
     private static convertApiPortsToServiceContextPorts(apiPorts: jspb.Map<string, Port>): Map<string, PortSpec> {
         const result: Map<string, PortSpec> = new Map();
         for (const [portId, apiPortSpec] of apiPorts.entries()) {
-            const portProtocol: PortProtocol = apiPortSpec.getProtocol();
+            const portProtocol: PortProtocol = apiPortSpec.getTransportProtocol();
             const portNum: number = apiPortSpec.getNumber();
             result.set(portId, new PortSpec(portNum, portProtocol))
         }

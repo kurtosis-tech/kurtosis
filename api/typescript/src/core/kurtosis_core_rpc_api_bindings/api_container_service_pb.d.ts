@@ -7,8 +7,11 @@ export class Port extends jspb.Message {
   getNumber(): number;
   setNumber(value: number): Port;
 
-  getProtocol(): Port.Protocol;
-  setProtocol(value: Port.Protocol): Port;
+  getTransportProtocol(): Port.TransportProtocol;
+  setTransportProtocol(value: Port.TransportProtocol): Port;
+
+  getMaybeApplicationProtocol(): string;
+  setMaybeApplicationProtocol(value: string): Port;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Port.AsObject;
@@ -21,10 +24,11 @@ export class Port extends jspb.Message {
 export namespace Port {
   export type AsObject = {
     number: number,
-    protocol: Port.Protocol,
+    transportProtocol: Port.TransportProtocol,
+    maybeApplicationProtocol: string,
   }
 
-  export enum Protocol { 
+  export enum TransportProtocol { 
     TCP = 0,
     SCTP = 1,
     UDP = 2,

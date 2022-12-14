@@ -8,7 +8,8 @@ import (
 )
 
 const (
-	tcpProtocolStr = "tcp"
+	tcpProtocolStr           = "tcp"
+	emptyApplicationProtocol = ""
 )
 
 // GetFreePort asks the kernel for a free open port that is ready to use.
@@ -28,7 +29,7 @@ func GetFreeTcpPort(networkInterface string) (resultFreePortSpec *port_spec.Port
 	portNumber := localHostPortListener.Addr().(*net.TCPAddr).Port
 	portNumberUint16 := uint16(portNumber)
 
-	localHostPortSpec, err := port_spec.NewPortSpec(portNumberUint16, port_spec.PortProtocol_TCP, "")
+	localHostPortSpec, err := port_spec.NewPortSpec(portNumberUint16, port_spec.PortProtocol_TCP, emptyApplicationProtocol)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to create a port spec describing a free open port on localhost, instead a non-nil error was returned")
 	}

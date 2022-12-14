@@ -1,5 +1,8 @@
 # TBD
 
+### Changes
+- Cleaned up magic strings and updated protobuf to accept application protocol
+
 # 0.59.0
 
 ### Breaking Changes
@@ -18,7 +21,6 @@
 - Fixed the CLI output which could contain weird `%!p(MISSING)` when the output of a command was containing `%p` (or another Go formatting token)
 - Cancel redundant runs of golang-ci-lint
 - Fixed bug in installation of tab-completion
-
 
 # 0.58.1
 ### Fixes

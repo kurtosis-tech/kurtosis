@@ -68,8 +68,8 @@ func TestAddServiceInstruction_EntryPointArgsAreReplaced(t *testing.T) {
 		).WithPrivatePorts(
 			map[string]*kurtosis_core_rpc_api_bindings.Port{
 				"grpc": {
-					Number:   1323,
-					Protocol: kurtosis_core_rpc_api_bindings.Port_TCP,
+					Number:            1323,
+					TransportProtocol: kurtosis_core_rpc_api_bindings.Port_TCP,
 				},
 			},
 		).WithEntryPointArgs(

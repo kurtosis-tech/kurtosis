@@ -26,14 +26,14 @@ func TestParsePortSpecstr_DefaultTcpProtocol(t *testing.T) {
 	portSpec, err := parsePortSpecStr("1234")
 	require.NoError(t, err)
 	require.Equal(t, uint16(1234), portSpec.GetNumber())
-	require.Equal(t, services.PortProtocol_TCP, portSpec.GetProtocol())
+	require.Equal(t, services.PortProtocol_TCP, portSpec.GetTransportProtocol())
 }
 
 func TestParsePortSpecstr_CustomProtocol(t *testing.T) {
 	portSpec, err := parsePortSpecStr("1234/udp")
 	require.NoError(t, err)
 	require.Equal(t, uint16(1234), portSpec.GetNumber())
-	require.Equal(t, services.PortProtocol_UDP, portSpec.GetProtocol())
+	require.Equal(t, services.PortProtocol_UDP, portSpec.GetTransportProtocol())
 }
 
 func TestParsePortsStr_DuplicatePortsCauseError(t *testing.T) {
@@ -54,12 +54,12 @@ func TestParsePortsStr_SuccessfulPortsString(t *testing.T) {
 	port1Spec, found := ports["port1"]
 	require.True(t, found)
 	require.Equal(t, uint16(8080), port1Spec.GetNumber())
-	require.Equal(t, services.PortProtocol_TCP, port1Spec.GetProtocol())
+	require.Equal(t, services.PortProtocol_TCP, port1Spec.GetTransportProtocol())
 
 	port2Spec, found := ports["port2"]
 	require.True(t, found)
 	require.Equal(t, uint16(2900), port2Spec.GetNumber())
-	require.Equal(t, services.PortProtocol_UDP, port2Spec.GetProtocol())
+	require.Equal(t, services.PortProtocol_UDP, port2Spec.GetTransportProtocol())
 }
 
 func TestParseEnvVarsStr_EqualSignInValueIsOkay(t *testing.T) {

@@ -26,13 +26,13 @@ const (
 // TODO use this in the add_service primitive while passing service config
 type PortSpec struct {
 	number   uint32
-	protocol kurtosis_core_rpc_api_bindings.Port_Protocol
+	protocol kurtosis_core_rpc_api_bindings.Port_TransportProtocol
 }
 
-func NewPortSpec(number uint32, portProtocol kurtosis_core_rpc_api_bindings.Port_Protocol) *PortSpec {
+func NewPortSpec(number uint32, protocol kurtosis_core_rpc_api_bindings.Port_TransportProtocol) *PortSpec {
 	return &PortSpec{
 		number:   number,
-		protocol: portProtocol,
+		protocol: protocol,
 	}
 }
 
@@ -107,7 +107,7 @@ func (ps *PortSpec) GetNumber() uint32 {
 	return ps.number
 }
 
-func (ps *PortSpec) GetProtocol() kurtosis_core_rpc_api_bindings.Port_Protocol {
+func (ps *PortSpec) GetProtocol() kurtosis_core_rpc_api_bindings.Port_TransportProtocol {
 	return ps.protocol
 }
 
@@ -116,16 +116,16 @@ func (ps *PortSpec) AttrNames() []string {
 	return []string{portNumberAttr, portProtocolAttr}
 }
 
-func parsePortProtocol(portProtocol string) (kurtosis_core_rpc_api_bindings.Port_Protocol, *startosis_errors.InterpretationError) {
+func parsePortProtocol(portProtocol string) (kurtosis_core_rpc_api_bindings.Port_TransportProtocol, *startosis_errors.InterpretationError) {
 	if portProtocol == emptyProtocol {
 		return kurtosis_core_rpc_api_bindings.Port_TCP, nil
 	}
 
-	parsedPortProtocol, found := kurtosis_core_rpc_api_bindings.Port_Protocol_value[portProtocol]
+	parsedPortProtocol, found := kurtosis_core_rpc_api_bindings.Port_TransportProtocol_value[portProtocol]
 	if !found {
 		return -1, startosis_errors.NewInterpretationError("Port protocol should be one of %s", strings.Join(port_spec.PortProtocolStrings(), ", "))
 	}
-	return kurtosis_core_rpc_api_bindings.Port_Protocol(parsedPortProtocol), nil
+	return kurtosis_core_rpc_api_bindings.Port_TransportProtocol(parsedPortProtocol), nil
 }
 
 func parsePortNumber(number int) (uint32, *startosis_errors.InterpretationError) {

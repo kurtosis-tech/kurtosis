@@ -103,7 +103,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		envVarsWithOwnIp[key] = value
 	}
 
-	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, apiContainerPortProtocol, "")
+	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, apiContainerPortProtocol, consts.HttpApplicationProtocol)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -112,7 +112,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 			consts.EnginePortProtocol.String(),
 		)
 	}
-	privateGrpcProxyPortSpec, err := port_spec.NewPortSpec(grpcProxyPortNum, apiContainerPortProtocol, "")
+	privateGrpcProxyPortSpec, err := port_spec.NewPortSpec(grpcProxyPortNum, apiContainerPortProtocol, consts.HttpApplicationProtocol)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,

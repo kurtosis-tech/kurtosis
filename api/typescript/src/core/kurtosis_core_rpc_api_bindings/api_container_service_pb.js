@@ -35,7 +35,7 @@ goog.exportSymbol('proto.api_container_api.PartitionConnections', null, global);
 goog.exportSymbol('proto.api_container_api.PartitionServices', null, global);
 goog.exportSymbol('proto.api_container_api.PauseServiceArgs', null, global);
 goog.exportSymbol('proto.api_container_api.Port', null, global);
-goog.exportSymbol('proto.api_container_api.Port.Protocol', null, global);
+goog.exportSymbol('proto.api_container_api.Port.TransportProtocol', null, global);
 goog.exportSymbol('proto.api_container_api.RemoveServiceArgs', null, global);
 goog.exportSymbol('proto.api_container_api.RemoveServiceResponse', null, global);
 goog.exportSymbol('proto.api_container_api.RenderTemplatesToFilesArtifactArgs', null, global);
@@ -1198,7 +1198,8 @@ proto.api_container_api.Port.prototype.toObject = function(opt_includeInstance) 
 proto.api_container_api.Port.toObject = function(includeInstance, msg) {
   var f, obj = {
     number: jspb.Message.getFieldWithDefault(msg, 1, 0),
-    protocol: jspb.Message.getFieldWithDefault(msg, 2, 0)
+    transportProtocol: jspb.Message.getFieldWithDefault(msg, 2, 0),
+    maybeApplicationProtocol: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
 
   if (includeInstance) {
@@ -1240,8 +1241,12 @@ proto.api_container_api.Port.deserializeBinaryFromReader = function(msg, reader)
       msg.setNumber(value);
       break;
     case 2:
-      var value = /** @type {!proto.api_container_api.Port.Protocol} */ (reader.readEnum());
-      msg.setProtocol(value);
+      var value = /** @type {!proto.api_container_api.Port.TransportProtocol} */ (reader.readEnum());
+      msg.setTransportProtocol(value);
+      break;
+    case 3:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setMaybeApplicationProtocol(value);
       break;
     default:
       reader.skipField();
@@ -1279,10 +1284,17 @@ proto.api_container_api.Port.serializeBinaryToWriter = function(message, writer)
       f
     );
   }
-  f = message.getProtocol();
+  f = message.getTransportProtocol();
   if (f !== 0.0) {
     writer.writeEnum(
       2,
+      f
+    );
+  }
+  f = message.getMaybeApplicationProtocol();
+  if (f.length > 0) {
+    writer.writeString(
+      3,
       f
     );
   }
@@ -1292,7 +1304,7 @@ proto.api_container_api.Port.serializeBinaryToWriter = function(message, writer)
 /**
  * @enum {number}
  */
-proto.api_container_api.Port.Protocol = {
+proto.api_container_api.Port.TransportProtocol = {
   TCP: 0,
   SCTP: 1,
   UDP: 2
@@ -1317,20 +1329,38 @@ proto.api_container_api.Port.prototype.setNumber = function(value) {
 
 
 /**
- * optional Protocol protocol = 2;
- * @return {!proto.api_container_api.Port.Protocol}
+ * optional TransportProtocol transport_protocol = 2;
+ * @return {!proto.api_container_api.Port.TransportProtocol}
  */
-proto.api_container_api.Port.prototype.getProtocol = function() {
-  return /** @type {!proto.api_container_api.Port.Protocol} */ (jspb.Message.getFieldWithDefault(this, 2, 0));
+proto.api_container_api.Port.prototype.getTransportProtocol = function() {
+  return /** @type {!proto.api_container_api.Port.TransportProtocol} */ (jspb.Message.getFieldWithDefault(this, 2, 0));
 };
 
 
 /**
- * @param {!proto.api_container_api.Port.Protocol} value
+ * @param {!proto.api_container_api.Port.TransportProtocol} value
  * @return {!proto.api_container_api.Port} returns this
  */
-proto.api_container_api.Port.prototype.setProtocol = function(value) {
+proto.api_container_api.Port.prototype.setTransportProtocol = function(value) {
   return jspb.Message.setProto3EnumField(this, 2, value);
+};
+
+
+/**
+ * optional string maybe_application_protocol = 3;
+ * @return {string}
+ */
+proto.api_container_api.Port.prototype.getMaybeApplicationProtocol = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 3, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.api_container_api.Port} returns this
+ */
+proto.api_container_api.Port.prototype.setMaybeApplicationProtocol = function(value) {
+  return jspb.Message.setProto3StringField(this, 3, value);
 };
 
 

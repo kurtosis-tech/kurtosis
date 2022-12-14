@@ -331,20 +331,20 @@ func (service *ApiContainerGatewayServiceServer) startRunningConnectionForKurtos
 	}
 	remotePrivatePortSpecs := map[string]*port_spec.PortSpec{}
 	for portSpecId, coreApiPort := range privatePortsFromApi {
-		if coreApiPort.GetProtocol() != kurtosis_core_rpc_api_bindings.Port_TCP {
+		if coreApiPort.GetTransportProtocol() != kurtosis_core_rpc_api_bindings.Port_TCP {
 			logrus.Warnf(
 				"Will not be able to forward service port with id '%v' for service with guid '%v' in enclave '%v'. "+
 					"The protocol of this port is '%v', but only '%v' is supported",
 				portSpecId,
 				serviceGuid,
 				service.enclaveId,
-				coreApiPort.GetProtocol(),
+				coreApiPort.GetTransportProtocol(),
 				kurtosis_core_rpc_api_bindings.Port_TCP.String(),
 			)
 			continue
 		}
 		portNumberUint16 := uint16(coreApiPort.GetNumber())
-		remotePortSpec, err := port_spec.NewPortSpec(portNumberUint16, port_spec.PortProtocol_TCP, "")
+		remotePortSpec, err := port_spec.NewPortSpec(portNumberUint16, port_spec.PortProtocol_TCP, coreApiPort.GetMaybeApplicationProtocol())
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Expected to be able to create port spec describing remote port '%v', instead a non-nil error was returned", portSpecId)
 		}
@@ -371,8 +371,9 @@ func (service *ApiContainerGatewayServiceServer) startRunningConnectionForKurtos
 			continue
 		}
 		localPublicApiPorts[portId] = &kurtosis_core_rpc_api_bindings.Port{
-			Number:   uint32(localPortSpec.GetNumber()),
-			Protocol: privateApiPort.Protocol,
+			Number:                   uint32(localPortSpec.GetNumber()),
+			TransportProtocol:        privateApiPort.GetTransportProtocol(),
+			MaybeApplicationProtocol: privateApiPort.GetMaybeApplicationProtocol(),
 		}
 	}
 

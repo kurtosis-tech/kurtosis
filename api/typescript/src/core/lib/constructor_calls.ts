@@ -41,10 +41,10 @@ import TemplateAndData = RenderTemplatesToFilesArtifactArgs.TemplateAndData;
 // ==============================================================================================
 //                           Shared Objects (Used By Multiple Endpoints)
 // ==============================================================================================
-export function newPort(number: number, protocol: Port.Protocol) {
+export function newPort(number: number, protocol: Port.TransportProtocol) {
     const result: Port = new Port();
     result.setNumber(number);
-    result.setProtocol(protocol);
+    result.setTransportProtocol(protocol);
     return result;
 }
 

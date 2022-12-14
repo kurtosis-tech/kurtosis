@@ -97,7 +97,7 @@ func TestParsePortProtocol_Unknown(t *testing.T) {
 	output, err := parsePortProtocol(input)
 	require.NotNil(t, err)
 	require.Equal(t, "Port protocol should be one of TCP, SCTP, UDP", err.Error())
-	require.Equal(t, kurtosis_core_rpc_api_bindings.Port_Protocol(-1), output)
+	require.Equal(t, kurtosis_core_rpc_api_bindings.Port_TransportProtocol(-1), output)
 }
 
 func TestValidatePort_Success(t *testing.T) {

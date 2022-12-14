@@ -7,7 +7,7 @@ const DEFAULT_DRY_RUN = false
 const EMPTY_ARGS = "{}"
 const SERVICE_ID = "docker-getting-started"
 
-const ADD_SERVICE_WITH_PORT_SPEC_SUCCESS = "add-service-with-port-spec1"
+const TEST_NAME = "add-service-with-port-spec1"
 const PORT_WITHOUT_PROTOCOL = "port1"
 const PORT_WITH_PROTOCOL = "port2"
 
@@ -33,7 +33,7 @@ def run(args):
 jest.setTimeout(180000)
 
 test("Test add service with optional protocol in port spec", async () => {
-    const createEnclaveResult = await createEnclave(ADD_SERVICE_WITH_PORT_SPEC_SUCCESS, IS_PARTITIONING_ENABLED)
+    const createEnclaveResult = await createEnclave(TEST_NAME, IS_PARTITIONING_ENABLED)
     if(createEnclaveResult.isErr()) { throw createEnclaveResult.error }
     const { enclaveContext, stopEnclaveFunction } = createEnclaveResult.value
 

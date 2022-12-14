@@ -80,13 +80,14 @@ func (backend *DockerKurtosisBackend) CreateModule(
 		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave data volume for enclave '%v'", enclaveId)
 	}
 
-	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, moduleContainerPortProtocol, "")
+	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, moduleContainerPortProtocol, consts.HttpApplicationProtocol)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred creating the module container's private grpc port spec object using number '%v' and protocol '%v'",
+			"An error occurred creating the module's private grpc port spec object using number '%v', transport protocol '%v' and application protocol '%v'",
 			grpcPortNum,
 			consts.EnginePortProtocol.String(),
+			consts.HttpApplicationProtocol,
 		)
 	}
 
@@ -434,7 +435,7 @@ func (backend *DockerKurtosisBackend) getMatchingModules(ctx context.Context, en
 	moduleContainerSearchLabels := map[string]string{
 		label_key_consts.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),
 		label_key_consts.ContainerTypeDockerLabelKey.GetString(): label_value_consts.ModuleContainerTypeDockerLabelValue.GetString(),
-		label_key_consts.EnclaveIDDockerLabelKey.GetString(): string(enclaveId),
+		label_key_consts.EnclaveIDDockerLabelKey.GetString():     string(enclaveId),
 	}
 	matchingModuleContainers, err := backend.dockerManager.GetContainersByLabels(ctx, moduleContainerSearchLabels, consts.ShouldFetchAllContainersWhenRetrievingContainers)
 	if err != nil {

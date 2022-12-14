@@ -61,7 +61,7 @@ const (
 )
 
 // Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and port spec protos
-var apiContainerPortProtoToPortSpecPortProto = map[kurtosis_core_rpc_api_bindings.Port_Protocol]port_spec.PortProtocol{
+var apiContainerPortProtoToPortSpecPortProto = map[kurtosis_core_rpc_api_bindings.Port_TransportProtocol]port_spec.PortProtocol{
 	kurtosis_core_rpc_api_bindings.Port_TCP:  port_spec.PortProtocol_TCP,
 	kurtosis_core_rpc_api_bindings.Port_SCTP: port_spec.PortProtocol_SCTP,
 	kurtosis_core_rpc_api_bindings.Port_UDP:  port_spec.PortProtocol_UDP,
@@ -570,8 +570,9 @@ func (apicService ApiContainerService) RenderTemplatesToFilesArtifact(ctx contex
 func transformPortSpecToApiPort(port *port_spec.PortSpec) (*kurtosis_core_rpc_api_bindings.Port, error) {
 	portNumUint16 := port.GetNumber()
 	portSpecProto := port.GetTransportProtocol()
+
 	// Yes, this isn't the most efficient way to do this, but the map is tiny so it doesn't matter
-	var apiProto kurtosis_core_rpc_api_bindings.Port_Protocol
+	var apiProto kurtosis_core_rpc_api_bindings.Port_TransportProtocol
 	foundApiProto := false
 	for mappedApiProto, mappedPortSpecProto := range apiContainerPortProtoToPortSpecPortProto {
 		if portSpecProto == mappedPortSpecProto {
@@ -583,7 +584,13 @@ func transformPortSpecToApiPort(port *port_spec.PortSpec) (*kurtosis_core_rpc_ap
 	if !foundApiProto {
 		return nil, stacktrace.NewError("Couldn't find an API port proto for port spec port proto '%v'; this should never happen, and is a bug in Kurtosis!", portSpecProto)
 	}
-	result := binding_constructors.NewPort(uint32(portNumUint16), apiProto)
+
+	maybeApplicationProtocol := ""
+	if port.GetMaybeApplicationProtocol() != nil {
+		maybeApplicationProtocol = *port.GetMaybeApplicationProtocol()
+	}
+
+	result := binding_constructors.NewPort(uint32(portNumUint16), apiProto, maybeApplicationProtocol)
 	return result, nil
 }
 

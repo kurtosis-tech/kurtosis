@@ -14,15 +14,15 @@ import (
 
 func TestOneToOneApiAndPortSpecProtoMapping(t *testing.T) {
 	// Ensure all port spec protos are covered
-	require.Equal(t, len(kurtosis_core_rpc_api_bindings.Port_Protocol_name), len(apiContainerPortProtoToPortSpecPortProto))
-	for enumInt, enumName := range kurtosis_core_rpc_api_bindings.Port_Protocol_name {
-		_, found := apiContainerPortProtoToPortSpecPortProto[kurtosis_core_rpc_api_bindings.Port_Protocol(enumInt)]
+	require.Equal(t, len(kurtosis_core_rpc_api_bindings.Port_TransportProtocol_name), len(apiContainerPortProtoToPortSpecPortProto))
+	for enumInt, enumName := range kurtosis_core_rpc_api_bindings.Port_TransportProtocol_name {
+		_, found := apiContainerPortProtoToPortSpecPortProto[kurtosis_core_rpc_api_bindings.Port_TransportProtocol(enumInt)]
 		require.True(t, found, "No port spec port proto found for API port proto '%v'", enumName)
 	}
 
 	// Ensure no duplicates in the kurtosis backend port protos
 	require.Equal(t, len(port_spec.PortProtocolValues()), len(apiContainerPortProtoToPortSpecPortProto))
-	seenPortSpecProtos := map[port_spec.PortProtocol]kurtosis_core_rpc_api_bindings.Port_Protocol{}
+	seenPortSpecProtos := map[port_spec.PortProtocol]kurtosis_core_rpc_api_bindings.Port_TransportProtocol{}
 	for apiPortProto, portSpecProto := range apiContainerPortProtoToPortSpecPortProto {
 		preexistingApiPortProto, found := seenPortSpecProtos[portSpecProto]
 		require.False(

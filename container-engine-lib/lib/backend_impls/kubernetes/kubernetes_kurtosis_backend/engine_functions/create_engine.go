@@ -25,6 +25,7 @@ const (
 
 	maxWaitForEngineContainerAvailabilityRetries         = 30
 	timeBetweenWaitForEngineContainerAvailabilityRetries = 1 * time.Second
+	httpApplicationProtocol                              = "http"
 )
 
 func CreateEngine(
@@ -46,7 +47,7 @@ func CreateEngine(
 	}
 	engineGuid := engine.EngineGUID(engineGuidStr)
 
-	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, consts.KurtosisServersPortProtocol, "")
+	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, consts.KurtosisServersPortProtocol, httpApplicationProtocol)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -55,7 +56,7 @@ func CreateEngine(
 			consts.KurtosisServersPortProtocol.String(),
 		)
 	}
-	privateGrpcProxyPortSpec, err := port_spec.NewPortSpec(grpcProxyPortNum, consts.KurtosisServersPortProtocol, "")
+	privateGrpcProxyPortSpec, err := port_spec.NewPortSpec(grpcProxyPortNum, consts.KurtosisServersPortProtocol, httpApplicationProtocol)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,

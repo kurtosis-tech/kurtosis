@@ -1457,8 +1457,8 @@ func createSimpleAddServiceInstruction(t *testing.T, serviceId service.ServiceID
 		serviceConfigBuilder.WithPrivatePorts(
 			map[string]*kurtosis_core_rpc_api_bindings.Port{
 				"grpc": {
-					Number:   portNumber,
-					Protocol: kurtosis_core_rpc_api_bindings.Port_TCP,
+					Number:            portNumber,
+					TransportProtocol: kurtosis_core_rpc_api_bindings.Port_TCP,
 				},
 			},
 		)
@@ -1468,8 +1468,8 @@ func createSimpleAddServiceInstruction(t *testing.T, serviceId service.ServiceID
 		serviceConfigBuilder.WithPublicPorts(
 			map[string]*kurtosis_core_rpc_api_bindings.Port{
 				"grpc": {
-					Number:   publicPortNumber,
-					Protocol: kurtosis_core_rpc_api_bindings.Port_TCP,
+					Number:            publicPortNumber,
+					TransportProtocol: kurtosis_core_rpc_api_bindings.Port_TCP,
 				},
 			},
 		)

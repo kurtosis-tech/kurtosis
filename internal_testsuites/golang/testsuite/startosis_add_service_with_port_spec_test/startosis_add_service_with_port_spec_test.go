@@ -10,9 +10,9 @@ import (
 )
 
 const (
-	addServiceWithPortSpecSuccess = "add-service-with-port-spec1"
-	isPartitioningEnabled         = false
-	defaultDryRun                 = false
+	testName              = "add-service-with-port-spec1"
+	isPartitioningEnabled = false
+	defaultDryRun         = false
 
 	serviceId = "docker-getting-started-success"
 	emptyArgs = "{}"
@@ -41,7 +41,7 @@ func TestAddServiceWithPortSpec_Success(t *testing.T) {
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
-	enclaveCtx, destroyEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, addServiceWithPortSpecSuccess, isPartitioningEnabled)
+	enclaveCtx, destroyEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
 	require.NoError(t, err, "An error occurred creating an enclave")
 	defer destroyEnclaveFunc()
 
@@ -55,9 +55,9 @@ func TestAddServiceWithPortSpec_Success(t *testing.T) {
 	require.NotNil(t, service, "Error occurred while fetching service with ID: '%v'. This may occur if service was not created")
 
 	ports := service.GetPrivatePorts()
-	require.Equal(t, services.PortProtocol_TCP, ports["port1"].GetProtocol())
+	require.Equal(t, services.PortProtocol_TCP, ports["port1"].GetTransportProtocol())
 	require.Equal(t, uint16(3333), ports["port1"].GetNumber())
 
-	require.Equal(t, services.PortProtocol_UDP, ports["port2"].GetProtocol())
+	require.Equal(t, services.PortProtocol_UDP, ports["port2"].GetTransportProtocol())
 	require.Equal(t, uint16(5000), ports["port2"].GetNumber())
 }

@@ -55,7 +55,7 @@ const (
 )
 
 // Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and port spec protos
-var apiContainerPortProtoToPortSpecPortProto = map[kurtosis_core_rpc_api_bindings.Port_Protocol]port_spec.PortProtocol{
+var apiContainerPortProtoToPortSpecPortProto = map[kurtosis_core_rpc_api_bindings.Port_TransportProtocol]port_spec.PortProtocol{
 	kurtosis_core_rpc_api_bindings.Port_TCP:  port_spec.PortProtocol_TCP,
 	kurtosis_core_rpc_api_bindings.Port_SCTP: port_spec.PortProtocol_SCTP,
 	kurtosis_core_rpc_api_bindings.Port_UDP:  port_spec.PortProtocol_UDP,
@@ -1089,7 +1089,7 @@ func convertAPIPortsToPortSpecs(
 
 func transformApiPortToPortSpec(port *kurtosis_core_rpc_api_bindings.Port) (*port_spec.PortSpec, error) {
 	portNumUint32 := port.GetNumber()
-	apiProto := port.GetProtocol()
+	apiProto := port.GetTransportProtocol()
 	if portNumUint32 > math.MaxUint16 {
 		return nil, stacktrace.NewError(
 			"API port num '%v' is bigger than max allowed port spec port num '%v'",
@@ -1103,7 +1103,7 @@ func transformApiPortToPortSpec(port *kurtosis_core_rpc_api_bindings.Port) (*por
 		return nil, stacktrace.NewError("Couldn't find a port spec proto for API port proto '%v'; this should never happen, and is a bug in Kurtosis!", apiProto.String())
 	}
 
-	result, err := port_spec.NewPortSpec(portNumUint16, portSpecProto, "")
+	result, err := port_spec.NewPortSpec(portNumUint16, portSpecProto, port.GetMaybeApplicationProtocol())
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,

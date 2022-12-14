@@ -80,13 +80,14 @@ func (backend KubernetesKurtosisBackend) CreateModule(
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclave namespace name for enclave with ID '%v'", enclaveId)
 	}
 
-	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, kurtosisModulePortProtocol, "")
+	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, kurtosisModulePortProtocol, consts.HttpApplicationProtocol)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred creating the module's private grpc port spec object using number '%v' and protocol '%v'",
+			"An error occurred creating the module's private grpc port spec object using number '%v', transport protocol '%v' and application protocol '%v'",
 			grpcPortNum,
 			kurtosisModulePortProtocol.String(),
+			consts.HttpApplicationProtocol,
 		)
 	}
 
