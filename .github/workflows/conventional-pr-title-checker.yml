@@ -10,7 +10,7 @@ on:
 
 # cancel redundant builds
 concurrency:
-  group: ${{ github.job }}-${{ github.ref }}
+  group: "title-checker-${{ github.ref }}"
   cancel-in-progress: true
 
 jobs:
