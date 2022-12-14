@@ -1,5 +1,7 @@
 # TBD
 
+# 0.59.1
+
 ### Changes
 - Cleaned up magic strings and updated protobuf to accept application protocol
 
