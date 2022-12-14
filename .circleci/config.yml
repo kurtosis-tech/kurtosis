@@ -1035,6 +1035,9 @@ workflows:
                     },
                     {
                         "pattern": "https://github.com/kurtosis-tech/docs"
+                    },
+                    {
+                        "pattern": "https://github.com/kurtosis-tech/kurtosis"
                     }
                 ]
             }
@@ -1042,7 +1045,6 @@ workflows:
             branches:
               ignore:
                 - master
-                - release-please--.*
       - build_container_engine_lib:
           context:
             # This pulls in KurtosisBot's Github token, so that we can read from our private repos

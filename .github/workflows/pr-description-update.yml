@@ -6,11 +6,15 @@ on:
       - reopened
       - edited
       - synchronize
-    branches-ignore:
-      - release-please--*
+
+# cancel redundant builds
+concurrency:
+  group: ${{ github.head_ref }}
+  cancel-in-progress: true
 
 jobs:
   update_pr:
+    if: contains(github.head_ref, 'release-please') != true
     runs-on: ubuntu-latest
     steps:
       - uses: 8BitJonny/gh-get-current-pr@2.2.0

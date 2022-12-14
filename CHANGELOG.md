@@ -1,9 +1,18 @@
-# 0.59.1
+# Changelog
+
+## [0.59.2](https://github.com/kurtosis-tech/kurtosis/compare/0.59.1...0.59.2) (2022-12-14)
+
+
+### Features
+
+* Added `SetConnection`, `UnsetConnection` and `SetDefaultConnection` to the `ServiceNetwork` to granularly update connections between two partitions ([#651](https://github.com/kurtosis-tech/kurtosis/issues/651)) ([40c8b56](https://github.com/kurtosis-tech/kurtosis/commit/40c8b564fec5f3fa30405c8e69c1395f224bc31b))
+
+## 0.59.1
 
 ### Changes
 - Cleaned up magic strings and updated protobuf to accept application protocol
 
-# 0.59.0
+## 0.59.0
 
 ### Breaking Changes
 - Introduce `PortSpec` constructor to starlark to create port definitions
@@ -11,7 +20,7 @@
 ### Changes
 - Added `does contain match regex` and `does not contain match regex` operators in the Kurtosis engine's server `GetServiceLogs` endpoint
 
-# 0.58.2
+## 0.58.2
 ### Features
 - Made `args` optional for `run`
 - Added metrics for `kurtosis run`
@@ -22,11 +31,11 @@
 - Cancel redundant runs of golang-ci-lint
 - Fixed bug in installation of tab-completion
 
-# 0.58.1
+## 0.58.1
 ### Fixes
 - Changed installation of tab-completion
 
-# 0.58.0
+## 0.58.0
 ### Breaking Changes
 - Rename command from `get_value` to `request` command
 - Change function signature of `wait` to take in a recipe, assertion and request interval/timeout
@@ -62,18 +71,18 @@ validation step
 ### Removals
 - Remove facts engine and endpoints
 
-# 0.57.8
+## 0.57.8
 ### Features
 - Added capability for container-engine to store optional application protocol for Docker.
 
-# 0.57.7
+## 0.57.7
 ### Changes
 - Added automated installation of tab completion with brew installation.
 
 ### Fixes
 - Fixed a bug which was happening on small terminal windows regarding the display of the progress bar and progress info
 
-# 0.57.6
+## 0.57.6
 ### Features
 - The "Starlark code successfully executed" or "Error encountered running Starlark code" messages are now "Starlark 
 code successfully run in dry-run mode" and "Error encountered running Starlark code in dry-run mode" when Starlark is 
@@ -92,7 +101,7 @@ to the enclave context to facilitate automated testing in our current modules.
 - Changed validation message from "Pre-validating" to "Validating"
 - Disabled progress info in non-interactive terminals when running a Starlark Package
 
-# 0.57.5
+## 0.57.5
 ### Changes
 - Replaced stack name with the stack file name in custom evaluation errors
 - Replaced "internal ID" in the output message of `add_service` and `remove_service` instructions with "service GUID"
@@ -108,17 +117,17 @@ to the enclave context to facilitate automated testing in our current modules.
 - Fixed `internal-testsuites` omission during build time
 - Fixed a bug related to omitting the `enclave ID` value when a function which filters modules is called
 
-# 0.57.4
+## 0.57.4
 ### Changes
 - Simplified the API by removing the ServiceInfo struct that was adding unnecessary complexity.
 
-# 0.57.3
+## 0.57.3
 
 ### Changes
 - Added exponential back-off and retries to `get_value`
 - Removed `core-lib-documentation.md` and `engine-lib-documentation.md` in favour of the ones in the public docs repo
 
-# 0.57.2
+## 0.57.2
 
 ### Changes
 - Added `startosis_add_service_with_empty_ports` Golang and Typescript internal tests
@@ -142,12 +151,12 @@ to the enclave context to facilitate automated testing in our current modules.
 - The object returned by Starlark's `run()` function is serialized as JSON and returned to the CLI output.
 - Enforce `run(args)` for individual scripts 
 
-# 0.57.1
+## 0.57.1
 
 ### Changes
 - Added tab-completion (suggestions) to commands that require Service GUIDs, i.e.  `service shell` and `service logs` paths
 
-# 0.57.0
+## 0.57.0
 ### Breaking Changes
 - Renamed `src_path` parameter in `read_file` to `src`
   - Users will have to upgrade their `read_file` calls to reflect this change
@@ -170,18 +179,18 @@ to the enclave context to facilitate automated testing in our current modules.
 - Don't proceed with execution if there are validation errors in Starlark
 - Made missing `run` method interpretation error more user friendly
 
-# 0.56.0
+## 0.56.0
 ### Breaking Changes
 - Removed `module` key in the `kurtosis.yml` (formerly called `kurtosis.mod`) file to don't have nested keys
   - Users will have to update their `kurtosis.yml` to remove the key and move the `name` key in the root
 
-# 0.55.1
+## 0.55.1
 
 ### Changes
 - Re-activate tests that had to be skipped because of the "Remove support for protobuf in Startosis" breaking change
 - Renamed `input_args` to `args`. All Starlark packages should update `run(input_args)` to `run(args)`
 
-# 0.55.0
+## 0.55.0
 ### Fixes
 - Fix failing documentation tests by linking to new domain in `cli`
 - Fix failing `docs-checker` checks by pointing to `https://kurtosis-tech.github.io/kurtosis/` instead of `docs.kurtosistech.com`
@@ -197,14 +206,14 @@ to the enclave context to facilitate automated testing in our current modules.
 ### Features
 - Added one-off HTTP requests, `extract` and `assert`
 
-# 0.54.1
+## 0.54.1
 ### Fixes
 - Fixes a bug where the CLI was returning 0 even when an error happened running a Kurtosis script
 
 ### Changes
 - Small cleanup in `grpc_web_api_container_client` and `grpc_node_api_container_client`. They were implementing executeRemoteKurtosisModule unnecessarily
 
-# 0.54.0
+## 0.54.0
 ### Breaking Changes
 - Renamed `kurtosis exec` to `kurtosis run` and `main in main.star` to `run in main.star`
   - Upgrade to the latest CLI, and use the `run` function instead
@@ -214,17 +223,17 @@ to the enclave context to facilitate automated testing in our current modules.
 - Updated the CLI to consume the streaming endpoints to execute Startosis. Kurtosis Instructions are now returned live, but the script output is still printed at the end (until we have better formatting).
 - Update integration tests to consume Startosis streaming endpoints
 
-# 0.53.12
+## 0.53.12
 ### Changes
 - Changed occurrences of `[sS]tartosis` to `Starlark` in errors sent by the CLI and its long and short description
 - Changed some logs and error messages inside core that which had references to Startosis to Starlark
 - Allow `dicts` & `structs` to be passed to `render_templates.config.data`
 
-# 0.53.11
+## 0.53.11
 ### Changes
 - Published the log-database HTTP port to the host machine
 
-# 0.53.10
+## 0.53.10
 ### Changes
 - Add 2 endpoints to the APIC that streams the output of a Startosis script execution
 - Changed the syntax of render_templates in Starlark
@@ -232,13 +241,13 @@ to the enclave context to facilitate automated testing in our current modules.
 ### Fixes
 - Fixed the error that would happen if there was a missing `kurtosis.mod` file at the root of the module
 
-# 0.53.9
+## 0.53.9
 ### Fixes
 - Renamed `artifact_uuid` to `artifact_id` and `src` to `src_path` in `upload_files` in Starlark
 
-# 0.53.8
+## 0.53.8
 
-# 0.53.7
+## 0.53.7
 ### Changes
 - Modified the `EnclaveIdGenerator` now is a user defined type and can be initialized once because it contains a time-seed inside
 - Simplify how the kurtosis instruction canonicalizer works. It now generates a single line canonicalized instruction, and indentation is performed at the CLI level using Bazel buildtools library.
@@ -250,9 +259,9 @@ to the enclave context to facilitate automated testing in our current modules.
 - Add the ability to execute remote modules using `EnclaveContext.ExecuteStartoisRemoteModule`
 - Add the ability to execute remote module using cli `kurtosis exec github.com/author/module`
 
-# 0.53.6
+## 0.53.6
 
-# 0.53.5
+## 0.53.5
 ### Changes
 - Error types in ExecuteStartosisResponse type is now a union type, to better represent they are exclusive and prepare for transition to streaming
 - Update the KurtosisInstruction API type returned to the CLI. It now contains a combination of instruction position, the canonicalized instruction, and an optional instruction result 
@@ -261,9 +270,9 @@ to the enclave context to facilitate automated testing in our current modules.
 - Removed `load` statement in favour of `import_module`. Calling load will now throw an InterpretationError
 - Refactored startosis tests to enable parallel execution of tests
 
-# 0.53.4
+## 0.53.4
 
-# 0.53.3
+## 0.53.3
 ### Fixes
 - Fixed a bug with dumping enclave logs during the CI run
 
@@ -286,12 +295,12 @@ to the enclave context to facilitate automated testing in our current modules.
 - Renamed `cmd_args` and `entrypoint_args` inside `config` inside `add_service` to `cmd` and `entrypoint`
   - Users will have to replace their use of `cmd_args` and `entry_point_args` to the above inside their Starlark modules 
 
-# 0.53.2
+## 0.53.2
 ### Features
 - Make facts referencable on `add_service`
 - Added a new log line for printing the `created enclave ID` just when this is created in `kurtosis exec` and `kurtosis module exec` commands
 
-# 0.53.1
+## 0.53.1
 ### Features
 - Added random enclave ID generation in `EnclaveManager.CreateEnclave()` when an empty enclave ID is provided
 - Added the `created enclave` spotlight message when a new enclave is created from the CLI (currently with the `enclave add`, `module exec` and `exec` commands)
@@ -303,7 +312,7 @@ to the enclave context to facilitate automated testing in our current modules.
 - Fixed a bug where we had renamed `container_image_name` inside the proto definition to `image`
 - Fix a test that dependent on an old on existent Starlark module
 
-# 0.53.0
+## 0.53.0
 ### Features
 - Made `render_templates`, `upload_files`, `store_Files_from_service` accept `artifact_uuid` and
 return `artifact_uuid` during interpretation time
@@ -316,24 +325,24 @@ return `artifact_uuid` during interpretation time
 ### Fixes
 - Fixed building kurtosis by adding a conditional to build.sh to ignore startosis folder under internal_testsuites
 
-# 0.52.5
+## 0.52.5
 ### Fixes
 - Renamed `files_artifact_mount_dirpaths` to just `files`
 
-# 0.52.4
+## 0.52.4
 ### Features
 - Added the enclave's creation time info which can be obtained through the `enclave ls` and the `enclave inspect` commands
 
 ### Fixes
 - Smoothened the experience `used_ports` -> `ports`, `container_image_name` -> `name`, `service_config` -> `config`
 
-# 0.52.3
+## 0.52.3
 ### Changes
 - Cleanup Startosis interpreter predeclared
 
-# 0.52.2
+## 0.52.2
 
-# 0.52.1
+## 0.52.1
 ### Features
 - Add `wait` and `define` command in Startosis
 - Added `not found service GUIDs information` in `KurtosisContext.GetServiceLogs` method
@@ -350,7 +359,7 @@ return `artifact_uuid` during interpretation time
 - Fixed a panic that would happen cause of a `nil` error being returned
 - Fixed TestValidUrls so that it checks for the correct http return code
 
-# 0.52.0
+## 0.52.0
 ### Breaking Changes
 - Unified `GetUserServiceLogs` and `StreamUserServiceLogs` engine's endpoints, now `GetUserServiceLogs` will handle both use cases
   - Users will have to re-adapt `GetUserServiceLogs` calls and replace the `StreamUserServiceLogs` call with this
@@ -367,15 +376,15 @@ return `artifact_uuid` during interpretation time
 - Add `--args` to `kurtosis startosis exec` CLI command to pass in a serialized JSON
 - Moved `read_file` to be a simple Startosis builtin in place of a Kurtosis instruction
 
-# 0.51.13
+## 0.51.13
 ### Fixes
 - Set `entrypoint` and `cmd_args` to `nil` if not specified instead of empty array 
 
-# 0.51.12
+## 0.51.12
 ### Features
 - Added an optional `--dry-run` flag to the `startosis exec` (defaulting to false) command which prints the list of Kurtosis instruction without executing any. When `--dry-run` is set to false, the list of Kurtosis instructions is printed to the output of CLI after being executed.
 
-# 0.51.11
+## 0.51.11
 ### Features
 - Improve how kurtosis instructions are canonicalized with a universal canonicalizer. Each instruction is now printed on multiple lines with a comment pointing the to position in the source code.
 - Support `private_ip_address_placeholder` to be passed in `config` for `add_service` in Starlark
@@ -383,11 +392,11 @@ return `artifact_uuid` during interpretation time
 ### Changes
 - Updated how we generate the canonical string for Kurtosis `upload_files` instruction
 
-# 0.51.10
+## 0.51.10
 ### Changes
 - Added Starlark `proto` module, such that you can now do `proto.has(msg, "field_name")` in Startosis to differentiate between when a field is set to its default value and when it is unset (the field has to be marked as optional) in the proto file though.
 
-# 0.51.9
+## 0.51.9
 ### Features
 - Implemented the new `StreamUserServiceLogs` endpoint in the Kurtosis engine server
 - Added the new `StreamUserServiceLogs` in the Kurtosis engine Golang library
@@ -402,7 +411,7 @@ return `artifact_uuid` during interpretation time
 - Added `upload_service` to Startosis
 - Add `--args` to `kurtosis startosis exec` CLI command to pass in a serialized JSON
 
-# 0.51.8
+## 0.51.8
 ### Features
 - Added exec and HTTP request facts
 - Prints out the instruction line, col & filename in the execution error
@@ -415,24 +424,24 @@ return `artifact_uuid` during interpretation time
 ### Changes
 - Add more integration tests for Kurtosis modules with input and output types
 
-# 0.51.7
+## 0.51.7
 ### Fixes
 - Fixed instruction position to work with nested functions
 
 ### Features
 - Instruction position now contains the filename too
 
-# 0.51.6
+## 0.51.6
 ### Features
 - Added an `import_types` Starlark instruction to read types from a .proto file inside a module
 - Added the `time` module for Starlark to the interpreter
 - Added the ability for a Starlark module to take input args when a `ModuleInput` in the module `types.proto` file
 
-# 0.51.5
+## 0.51.5
 ### Fixes
 - Testsuite CircleCI jobs also short-circuit if the only changes are to docs, to prevent them failing due to no CLI artifact
 
-# 0.51.4
+## 0.51.4
 ### Fixes
 - Fixed a bug in `GetLogsCollector` that was failing when there is an old logs collector container running that doesn't publish the TCP port
 - Add missing bindings to Kubernetes gateway
@@ -444,11 +453,11 @@ return `artifact_uuid` during interpretation time
 ### Features
 - Validate service IDs on Startosis commands
 
-# 0.51.3
+## 0.51.3
 ### Fixes
 - Added `protoc` install step to the `publish_api_container_server_image` CircleCI task
 
-# 0.51.2
+## 0.51.2
 ### Features
 - Added a `render_templates` command to Startosis
 - Implemented backend for facts engine
@@ -457,7 +466,7 @@ return `artifact_uuid` during interpretation time
 ### Changes
 - Simplified own-version constant generation by checking in `kurtosis_version` directory
 
-# 0.51.1
+## 0.51.1
 - Added an `exec` command to Startosis
 - Added a `store_files_from_service` command to Startosis
 - Added the ability to pass `files` to the service config
@@ -474,7 +483,7 @@ return `artifact_uuid` during interpretation time
 ### Removals
 - Removed  stale `scripts/run-pre-release-scripts` which isn't used anywhere and is invalid.
 
-# 0.51.0
+## 0.51.0
 ### Breaking Changes
 - Updated `kurtosisBackend.CreateLogsCollector` method in `container-engine-lib`, added the `logsCollectorTcpPortNumber` parameter
   - Users will need to update all the `kurtosisBackend.CreateLogsCollector` setting the logs collector `TCP` port number 
@@ -493,15 +502,15 @@ return `artifact_uuid` during interpretation time
 - Published the `FluentbitAvailabilityChecker` constructor for using it during starting modules and user services
 - Refactored `service logs` Kurtosis CLI command in order to get the user service logs from the `logs database` (implemented in Docker cluster so far)
 
-# 0.50.2
+## 0.50.2
 ### Fixes
 - Fixes how the push cli artifacts & publish engine runs by generating kurtosis_version before hand
 
-# 0.50.1
+## 0.50.1
 ### Fixes
 - Fix generate scripts to take passed version on release
 
-# 0.50.0
+## 0.50.0
 ### Features
 - Created new engine's endpoint `GetUserServiceLogs` for consuming user service container logs from the logs database server
 - Added `LogsDatabaseClient` interface for defining the behaviour for consuming logs from the centralized logs database
@@ -540,12 +549,12 @@ it is set to `KURTOSIS_IP_ADDR_PLACEHOLDER`
 - Removes version constants within launchers and cli in favor of centralized generated version constant
 - Removes remote-docker-setup from the `build_cli` job in Circle
 
-# 0.49.9
+## 0.49.9
 ### Features
 - Implement Startosis add_service method
 - Enable linter on Startosis codebase
 
-# 0.49.8
+## 0.49.8
 ### Changes
 - Added a linter
 - Made changes based on the linters output
@@ -558,7 +567,7 @@ it is set to `KURTOSIS_IP_ADDR_PLACEHOLDER`
 - Fix go.mod for commons & cli to reflect monorepo and replaced imports with write package name
 - Move linter core/server linter config to within core/server
 
-# 0.49.7
+## 0.49.7
 ### Features
 - Implement skeleton for the Startosis engine
 
@@ -568,11 +577,11 @@ it is set to `KURTOSIS_IP_ADDR_PLACEHOLDER`
 ### Changes
 - Added `cli` to the monorepo
 
-# 0.49.6
+## 0.49.6
 ### Fixes
 - Fixed a bug where engine launcher would try to launch older docker image `kurtosistech/kurtosis-engine-server`.
 
-# 0.49.5
+## 0.49.5
 ### Changes
 - Added `kurtosis-engine-server` to the monorepo
 - Merged the `kurtosis-engine-sdk` & `kurtosis-core-sdk`
@@ -580,16 +589,16 @@ it is set to `KURTOSIS_IP_ADDR_PLACEHOLDER`
 ### Removals
 - Remove unused variables from Docker Kurtosis backend
 
-# 0.49.4
+## 0.49.4
 ### Fixes
 - Fix historical changelog for `kurtosis-core`
 - Don't check for grpc proxy to be available
 
-# 0.49.3
+## 0.49.3
 ### Fixes
 - Fix typescript package releases
 
-# 0.49.2
+## 0.49.2
 ### Removals
 - Remove envoy proxy from docker image. No envoy proxy is being run anymore, effectively removing HTTP1.
 
@@ -599,12 +608,12 @@ it is set to `KURTOSIS_IP_ADDR_PLACEHOLDER`
 ### Fixes
 - Fixed circle to not docs check on merge
 
-# 0.49.1
+## 0.49.1
 ### Fixes
 - Attempting to fix the release version
 ### Changes
 - Added container-engine-lib
 
-# 0.49.0
+## 0.49.0
 ### Changes
-- This version is a dummy version to set the minimum. We pick a version greater than the current version of the CLI (0.29.1). 
+- This version is a dummy version to set the minimum. We pick a version greater than the current version of the CLI (0.29.1).
