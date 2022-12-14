@@ -948,7 +948,7 @@ jobs:
 
       # Generate Kurtosis Version
       - run: |
-          tag=$(git describe)
+          tag="$(git describe --tag)"
           "<<pipeline.parameters.generate-kurtosis-version-script-path>>" $tag
 
 
@@ -992,7 +992,7 @@ jobs:
 
       # Generate Kurtosis Version
       - run: |
-          tag=$(git describe)
+          tag="$(git describe --tag)"
           "<<pipeline.parameters.generate-kurtosis-version-script-path>>" $tag
 
       # Cache our dependencies

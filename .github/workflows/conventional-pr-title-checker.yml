@@ -10,7 +10,7 @@ on:
 
 # cancel redundant builds
 concurrency:
-  group: ${{ github.head_ref }}
+  group: ${{ github.job }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
