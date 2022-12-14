@@ -6,6 +6,8 @@ on:
       - reopened
       - edited
       - synchronize
+    branches-ignore:
+      - release-please--*
 
 jobs:
   update_pr:
