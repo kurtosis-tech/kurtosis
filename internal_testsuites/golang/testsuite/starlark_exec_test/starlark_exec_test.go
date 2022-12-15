@@ -22,11 +22,14 @@ def run(args):
 			"http-port": PortSpec(number = 8080, transport_protocol = "TCP")
 		}
 	)
-
 	add_service(service_id = "web-server", config = service_config)
-	response = exec("web-server", ["echo", "hello", "world"])
-	assert(response.code, "==", 0)
-	assert(response.output, "==", "hello world\n")
+	exec_recipe = struct(
+		service_id = "web-server",
+		command = ["echo", "hello", "world"]
+	)
+	response = exec(exec_recipe)
+	assert(response["code"], "==", 0)
+	assert(response["output"], "==", "hello world\n")
 `
 )
 

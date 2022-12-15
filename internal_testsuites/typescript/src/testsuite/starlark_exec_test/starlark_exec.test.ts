@@ -16,9 +16,13 @@ def run(args):
 	)
 
 	add_service(service_id = "web-server", config = service_config)
-	response = exec("web-server", ["echo", "hello", "world"])
-	assert(response.code, "==", 0)
-	assert(response.output, "==", "hello world\\n")
+	response = exec(
+	struct(
+	    service_id = "web-server",
+	    command = ["echo", "hello", "world"]
+	))
+	assert(response["code"], "==", 0)
+	assert(response["output"], "==", "hello world\\n")
 `
 
 jest.setTimeout(180000)

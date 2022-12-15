@@ -52,7 +52,10 @@ def run(args):
 	
 	add_service(service_id = DATASTORE_SERVICE_ID, config = config)
 	print("Service " + DATASTORE_SERVICE_ID + " deployed successfully.")
-	exec(service_id = DATASTORE_SERVICE_ID, command = ["touch", FILE_TO_BE_CREATED])
+	exec(struct(
+		service_id = DATASTORE_SERVICE_ID,
+		command = ["touch", FILE_TO_BE_CREATED],
+	))
 	
 	artifact_id = store_service_files(service_id = DATASTORE_SERVICE_ID, src = FILE_TO_BE_CREATED)
 	print("Stored file at " + artifact_id)

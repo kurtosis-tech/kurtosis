@@ -8,28 +8,28 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
+	"go.starlark.net/starlarkstruct"
 	"testing"
 )
 
 var emptyServiceNetwork = service_network.NewEmptyMockServiceNetwork()
 var defaultRuntimeValueStore *runtime_value_store.RuntimeValueStore = nil
 
-const testExecId = "aefd992"
-
 func TestExecInstruction_StringRepresentationWorks(t *testing.T) {
 	position := kurtosis_instruction.NewInstructionPosition(1, 1, "dummyFile")
 	execInstruction := newEmptyExecInstruction(emptyServiceNetwork, position, defaultRuntimeValueStore)
 	execInstruction.starlarkKwargs = starlark.StringDict{}
-	execInstruction.starlarkKwargs[serviceIdArgName] = starlark.String("example-service-id")
-	execInstruction.starlarkKwargs[commandArgName] = starlark.NewList([]starlark.Value{
-		starlark.String("mkdir"),
-		starlark.String("-p"),
-		starlark.String("/tmp/store"),
+	execRecipeStruct := starlarkstruct.FromStringDict(starlarkstruct.Default, starlark.StringDict{
+		"service_id": starlark.String("example-service-id"),
+		"command": starlark.NewList([]starlark.Value{
+			starlark.String("mkdir"),
+			starlark.String("-p"),
+			starlark.String("/tmp/store"),
+		}),
 	})
-	execInstruction.starlarkKwargs[nonOptionalExitCodeArgName] = starlark.MakeInt(0)
-	execInstruction.starlarkKwargs[nonOptionalExecIdArgName] = starlark.String(testExecId)
+	execInstruction.starlarkKwargs[recipeArgName] = execRecipeStruct
 
-	expectedStr := `exec(command=["mkdir", "-p", "/tmp/store"], exec_id="` + testExecId + `", expected_exit_code=0, service_id="example-service-id")`
+	expectedStr := `exec(recipe=struct(command=["mkdir", "-p", "/tmp/store"], service_id="example-service-id"))`
 	require.Equal(t, expectedStr, execInstruction.String())
 
 	canonicalInstruction := binding_constructors.NewStarlarkInstruction(
@@ -37,10 +37,7 @@ func TestExecInstruction_StringRepresentationWorks(t *testing.T) {
 		ExecBuiltinName,
 		expectedStr,
 		[]*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg{
-			binding_constructors.NewStarlarkInstructionKwarg(`"example-service-id"`, serviceIdArgName, true),
-			binding_constructors.NewStarlarkInstructionKwarg(`["mkdir", "-p", "/tmp/store"]`, commandArgName, true),
-			binding_constructors.NewStarlarkInstructionKwarg(`0`, nonOptionalExitCodeArgName, false),
-			binding_constructors.NewStarlarkInstructionKwarg(`"`+testExecId+`"`, nonOptionalExecIdArgName, true),
+			binding_constructors.NewStarlarkInstructionKwarg(`struct(command=["mkdir", "-p", "/tmp/store"], service_id="example-service-id")`, recipeArgName, true),
 		})
 	require.Equal(t, canonicalInstruction, execInstruction.GetCanonicalInstruction())
 }

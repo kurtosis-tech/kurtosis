@@ -551,6 +551,19 @@ func TestParseHttpRequestRecipe_GetRequestWithoutExtractor(t *testing.T) {
 	require.Equal(t, expectedRecipe, actualRecipe)
 }
 
+func TestParseExecRecipe(t *testing.T) {
+	inputDict := starlark.StringDict{}
+	expectedRecipe := recipe.NewExecRecipe(
+		"service_id",
+		[]string{"cd", ".."})
+	inputDict["service_id"] = starlark.String("service_id")
+	inputDict["command"] = starlark.NewList([]starlark.Value{starlark.String("cd"), starlark.String("..")})
+	input := starlarkstruct.FromStringDict(starlarkstruct.Default, inputDict)
+	actualRecipe, err := ParseExecRecipe(input)
+	require.Nil(t, err)
+	require.Equal(t, expectedRecipe, actualRecipe)
+}
+
 func TestParseHttpRequestRecipe_GetRequestWithExtractor(t *testing.T) {
 	extractorDict := &starlark.Dict{}
 	err := extractorDict.SetKey(starlark.String("key"), starlark.String(".value"))

@@ -24,6 +24,7 @@ const (
 	serviceConfigArgName = "config"
 	defineFactArgName    = "define_fact"
 	requestArgName       = "request"
+	execArgName          = "exec"
 	subnetworksArgName   = "subnetworks"
 
 	containerImageNameKey = "image"
@@ -115,6 +116,20 @@ func ParseHttpRequestRecipe(recipeConfig *starlarkstruct.Struct) (*recipe.HttpRe
 	} else {
 		return nil, startosis_errors.NewInterpretationError("Define fact HTTP method not recognized")
 	}
+}
+
+func ParseExecRecipe(recipeConfig *starlarkstruct.Struct) (*recipe.ExecRecipe, *startosis_errors.InterpretationError) {
+	serviceId, interpretationErr := extractStringValue(recipeConfig, serviceIdKey, execArgName)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
+	command, interpretationErr := extractStringSliceValue(recipeConfig, commandArgName, execArgName)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
+	return recipe.NewExecRecipe(service.ServiceID(serviceId), command), nil
 }
 
 func ParseServiceConfigArg(serviceConfig *starlarkstruct.Struct) (*kurtosis_core_rpc_api_bindings.ServiceConfig, *startosis_errors.InterpretationError) {
