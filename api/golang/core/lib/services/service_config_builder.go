@@ -5,6 +5,10 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 )
 
+const (
+	defaultSubnetwork = "default"
+)
+
 type ServiceConfigBuilder struct {
 	containerImageName         string
 	privatePorts               map[string]*kurtosis_core_rpc_api_bindings.Port
@@ -16,6 +20,7 @@ type ServiceConfigBuilder struct {
 	cpuAllocationMillicpus     uint64
 	memoryAllocationMegabytes  uint64
 	privateIPAddrPlaceholder   string
+	subnetwork                 string
 }
 
 func NewServiceConfigBuilder(containerImageName string) *ServiceConfigBuilder {
@@ -30,6 +35,7 @@ func NewServiceConfigBuilder(containerImageName string) *ServiceConfigBuilder {
 		cpuAllocationMillicpus:     0,
 		memoryAllocationMegabytes:  0,
 		privateIPAddrPlaceholder:   defaultPrivateIPAddrPlaceholder,
+		subnetwork:                 defaultSubnetwork,
 	}
 }
 
@@ -71,6 +77,11 @@ func (builder *ServiceConfigBuilder) WithPrivateIPAddressPlaceholder(privateIPAd
 	return builder
 }
 
+func (builder *ServiceConfigBuilder) WithSubnetwork(subnetwork string) *ServiceConfigBuilder {
+	builder.subnetwork = subnetwork
+	return builder
+}
+
 func (builder *ServiceConfigBuilder) Build() *kurtosis_core_rpc_api_bindings.ServiceConfig {
 	return binding_constructors.NewServiceConfig(
 		builder.containerImageName,
@@ -83,5 +94,6 @@ func (builder *ServiceConfigBuilder) Build() *kurtosis_core_rpc_api_bindings.Ser
 		builder.cpuAllocationMillicpus,
 		builder.memoryAllocationMegabytes,
 		builder.privateIPAddrPlaceholder,
+		builder.subnetwork,
 	)
 }

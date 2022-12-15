@@ -324,10 +324,11 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 			artifactIdStrToMountDirpath,
 			containerConfig.GetCPUAllocationMillicpus(),
 			containerConfig.GetMemoryAllocationMegabytes(),
-			containerConfig.GetPrivateIPAddrPlaceholder())
+			containerConfig.GetPrivateIPAddrPlaceholder(),
+			partitionIDStr)
 	}
 
-	startServicesArgs := binding_constructors.NewStartServicesArgs(serviceConfigs, partitionIDStr)
+	startServicesArgs := binding_constructors.NewStartServicesArgs(serviceConfigs)
 
 	logrus.Trace("Starting new services with Kurtosis API...")
 	startServicesResp, err := enclaveCtx.client.StartServices(ctx, startServicesArgs)

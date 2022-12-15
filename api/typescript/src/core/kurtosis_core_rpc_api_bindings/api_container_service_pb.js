@@ -1668,7 +1668,8 @@ proto.api_container_api.ServiceConfig.toObject = function(includeInstance, msg) 
     filesArtifactMountpointsMap: (f = msg.getFilesArtifactMountpointsMap()) ? f.toObject(includeInstance, undefined) : [],
     cpuAllocationMillicpus: jspb.Message.getFieldWithDefault(msg, 8, 0),
     memoryAllocationMegabytes: jspb.Message.getFieldWithDefault(msg, 9, 0),
-    privateIpAddrPlaceholder: jspb.Message.getFieldWithDefault(msg, 10, "")
+    privateIpAddrPlaceholder: jspb.Message.getFieldWithDefault(msg, 10, ""),
+    subnetwork: jspb.Message.getFieldWithDefault(msg, 11, "")
   };
 
   if (includeInstance) {
@@ -1752,6 +1753,10 @@ proto.api_container_api.ServiceConfig.deserializeBinaryFromReader = function(msg
     case 10:
       var value = /** @type {string} */ (reader.readString());
       msg.setPrivateIpAddrPlaceholder(value);
+      break;
+    case 11:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setSubnetwork(value);
       break;
     default:
       reader.skipField();
@@ -1837,6 +1842,13 @@ proto.api_container_api.ServiceConfig.serializeBinaryToWriter = function(message
   if (f.length > 0) {
     writer.writeString(
       10,
+      f
+    );
+  }
+  f = /** @type {string} */ (jspb.Message.getField(message, 11));
+  if (f != null) {
+    writer.writeString(
+      11,
       f
     );
   }
@@ -2074,6 +2086,42 @@ proto.api_container_api.ServiceConfig.prototype.getPrivateIpAddrPlaceholder = fu
  */
 proto.api_container_api.ServiceConfig.prototype.setPrivateIpAddrPlaceholder = function(value) {
   return jspb.Message.setProto3StringField(this, 10, value);
+};
+
+
+/**
+ * optional string subnetwork = 11;
+ * @return {string}
+ */
+proto.api_container_api.ServiceConfig.prototype.getSubnetwork = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 11, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.api_container_api.ServiceConfig} returns this
+ */
+proto.api_container_api.ServiceConfig.prototype.setSubnetwork = function(value) {
+  return jspb.Message.setField(this, 11, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.api_container_api.ServiceConfig} returns this
+ */
+proto.api_container_api.ServiceConfig.prototype.clearSubnetwork = function() {
+  return jspb.Message.setField(this, 11, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.ServiceConfig.prototype.hasSubnetwork = function() {
+  return jspb.Message.getField(this, 11) != null;
 };
 
 
@@ -6508,8 +6556,7 @@ proto.api_container_api.StartServicesArgs.prototype.toObject = function(opt_incl
  */
 proto.api_container_api.StartServicesArgs.toObject = function(includeInstance, msg) {
   var f, obj = {
-    serviceIdsToConfigsMap: (f = msg.getServiceIdsToConfigsMap()) ? f.toObject(includeInstance, proto.api_container_api.ServiceConfig.toObject) : [],
-    partitionId: jspb.Message.getFieldWithDefault(msg, 2, "")
+    serviceIdsToConfigsMap: (f = msg.getServiceIdsToConfigsMap()) ? f.toObject(includeInstance, proto.api_container_api.ServiceConfig.toObject) : []
   };
 
   if (includeInstance) {
@@ -6552,10 +6599,6 @@ proto.api_container_api.StartServicesArgs.deserializeBinaryFromReader = function
         jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.api_container_api.ServiceConfig.deserializeBinaryFromReader, "", new proto.api_container_api.ServiceConfig());
          });
       break;
-    case 2:
-      var value = /** @type {string} */ (reader.readString());
-      msg.setPartitionId(value);
-      break;
     default:
       reader.skipField();
       break;
@@ -6589,13 +6632,6 @@ proto.api_container_api.StartServicesArgs.serializeBinaryToWriter = function(mes
   if (f && f.getLength() > 0) {
     f.serializeBinary(1, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.api_container_api.ServiceConfig.serializeBinaryToWriter);
   }
-  f = message.getPartitionId();
-  if (f.length > 0) {
-    writer.writeString(
-      2,
-      f
-    );
-  }
 };
 
 
@@ -6619,24 +6655,6 @@ proto.api_container_api.StartServicesArgs.prototype.getServiceIdsToConfigsMap = 
 proto.api_container_api.StartServicesArgs.prototype.clearServiceIdsToConfigsMap = function() {
   this.getServiceIdsToConfigsMap().clear();
   return this;};
-
-
-/**
- * optional string partition_id = 2;
- * @return {string}
- */
-proto.api_container_api.StartServicesArgs.prototype.getPartitionId = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, ""));
-};
-
-
-/**
- * @param {string} value
- * @return {!proto.api_container_api.StartServicesArgs} returns this
- */
-proto.api_container_api.StartServicesArgs.prototype.setPartitionId = function(value) {
-  return jspb.Message.setProto3StringField(this, 2, value);
-};
 
 
 

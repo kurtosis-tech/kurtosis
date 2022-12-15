@@ -49,7 +49,7 @@ func (m *MockServiceNetwork) SetDefaultConnection(ctx context.Context, connectio
 	panic(unimplementedMsg)
 }
 
-func (m *MockServiceNetwork) StartServices(ctx context.Context, serviceConfigs map[service.ServiceID]*kurtosis_core_rpc_api_bindings.ServiceConfig, partitionID service_network_types.PartitionID) (map[service.ServiceID]*service.Service, map[service.ServiceID]error, error) {
+func (m *MockServiceNetwork) StartServices(ctx context.Context, serviceConfigs map[service.ServiceID]*kurtosis_core_rpc_api_bindings.ServiceConfig) (map[service.ServiceID]*service.Service, map[service.ServiceID]error, error) {
 	//TODO implement me
 	panic(unimplementedMsg)
 }

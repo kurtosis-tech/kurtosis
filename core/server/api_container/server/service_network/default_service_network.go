@@ -313,11 +313,10 @@ func (network *DefaultServiceNetwork) SetDefaultConnection(
 func (network *DefaultServiceNetwork) StartServices(
 	ctx context.Context,
 	serviceConfigs map[service.ServiceID]*kurtosis_core_rpc_api_bindings.ServiceConfig,
-	partitionID service_network_types.PartitionID,
 ) (
-	resultSuccessfulServices map[service.ServiceID]*service.Service,
-	resultFailedServices map[service.ServiceID]error,
-	resultErr error,
+	map[service.ServiceID]*service.Service,
+	map[service.ServiceID]error,
+	error,
 ) {
 	// TODO extract this into a wrapper function that can be wrapped around every service call (so we don't forget)
 	network.mutex.Lock()
@@ -325,7 +324,10 @@ func (network *DefaultServiceNetwork) StartServices(
 	failedServicesPool := map[service.ServiceID]error{}
 
 	servicesToStart := map[service.ServiceID]*kurtosis_core_rpc_api_bindings.ServiceConfig{}
-	for serviceID, config := range serviceConfigs {
+	serviceToPartitionMap := map[service.ServiceID]service_network_types.PartitionID{}
+	partitionsCreated := map[service_network_types.PartitionID]bool{}
+	for serviceID, serviceConfig := range serviceConfigs {
+		// check that a service with that ID does not exist yet
 		if _, found := network.registeredServiceInfo[serviceID]; found {
 			failedServicesPool[serviceID] = stacktrace.NewError(
 				"Cannot start service '%v' because it already exists in the network",
@@ -333,18 +335,45 @@ func (network *DefaultServiceNetwork) StartServices(
 			)
 			continue
 		}
-		servicesToStart[serviceID] = config
-	}
 
-	if partitionID == "" {
-		partitionID = partition_topology.DefaultPartitionId
+		// check the partition to which the service should be added exists, and if not create it
+		partitionIDStr := serviceConfig.Subnetwork
+		var partitionID service_network_types.PartitionID
+		if partitionIDStr == nil || *partitionIDStr == "" {
+			partitionID = partition_topology.DefaultPartitionId
+		} else {
+			partitionID = service_network_types.PartitionID(*partitionIDStr)
+		}
+		if _, found := network.topology.GetPartitionServices()[partitionID]; !found {
+			logrus.Debugf("Paritition with ID '%s' does not exist in current topology. Creating it to be able to "+
+				"add service '%s' to it when it's created", partitionID, serviceID)
+			if err := network.topology.CreateEmptyPartitionWithDefaultConnection(partitionID); err != nil {
+				failedServicesPool[serviceID] = stacktrace.Propagate(
+					err,
+					"Cannot start service '%v' because the creation of its partition '%s' needed to be created and it failed",
+					serviceID,
+					partitionID,
+				)
+				continue
+			}
+		}
+		servicesToStart[serviceID] = serviceConfig
+		serviceToPartitionMap[serviceID] = partitionID
+		partitionsCreated[partitionID] = true
 	}
-	if _, found := network.topology.GetPartitionServices()[partitionID]; !found {
-		return nil, nil, stacktrace.NewError(
-			"No partition with ID '%v' exists in the current partition topology",
-			partitionID,
-		)
-	}
+	defer func() {
+		// Remove all partitions that were created and remained empty (likely because starting the service inside it
+		// failed)
+		for partitionID := range partitionsCreated {
+			serviceIDs, found := network.topology.GetPartitionServices()[partitionID]
+			if !found || partitionID == partition_topology.DefaultPartitionId || len(serviceIDs) > 0 {
+				continue
+			}
+			if err := network.topology.RemovePartition(partitionID); err != nil {
+				logrus.Errorf("Paritition '%s' needs to be removed as it is empty, but its deletion failed with an unexpected error. Partition will remain in the topology. This is not critical but might be a sign of another more critical failure", partitionID)
+			}
+		}
+	}()
 
 	successfulStarts, failedStarts, err := network.startServices(ctx, servicesToStart)
 	if err != nil {
@@ -414,6 +443,12 @@ func (network *DefaultServiceNetwork) StartServices(
 	}()
 
 	for serviceID := range servicesToProcessFurther {
+		partitionID, found := serviceToPartitionMap[serviceID]
+		if !found {
+			failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred adding service '%v' to the topology as it wasn't mapped to any partition. This is an unexpected error", serviceID)
+			delete(servicesToProcessFurther, serviceID)
+			continue
+		}
 		err = network.addServiceToTopology(serviceID, partitionID)
 		if err != nil {
 			failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred adding service '%v' to the topology", serviceID)
@@ -885,9 +920,9 @@ func (network *DefaultServiceNetwork) startServices(
 	ctx context.Context,
 	APIServiceConfigs map[service.ServiceID]*kurtosis_core_rpc_api_bindings.ServiceConfig,
 ) (
-	resultSuccessfulServices map[service.ServiceID]*service.Service,
-	resultFailedServices map[service.ServiceID]error,
-	resultErr error,
+	map[service.ServiceID]*service.Service,
+	map[service.ServiceID]error,
+	error,
 ) {
 	failedServicesPool := map[service.ServiceID]error{}
 	serviceConfigs := map[service.ServiceID]*service.ServiceConfig{}

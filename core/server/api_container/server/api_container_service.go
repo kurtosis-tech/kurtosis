@@ -229,9 +229,7 @@ func (apicService ApiContainerService) StartServices(ctx context.Context, args *
 		serviceIDsToAPIConfigs[kurtosis_backend_service.ServiceID(serviceIDStr)] = apiServiceConfig
 	}
 
-	partition := service_network_types.PartitionID(args.PartitionId)
-
-	successfulServices, failedServices, err := apicService.serviceNetwork.StartServices(ctx, serviceIDsToAPIConfigs, partition)
+	successfulServices, failedServices, err := apicService.serviceNetwork.StartServices(ctx, serviceIDsToAPIConfigs)
 	if err != nil {
 		// TODO IP: Leaks internal information about the API container
 		return nil, stacktrace.Propagate(err, "An error occurred starting services in the service network")

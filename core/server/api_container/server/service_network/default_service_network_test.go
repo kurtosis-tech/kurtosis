@@ -36,7 +36,6 @@ const (
 
 	enclaveId               = enclave.EnclaveID("test-enclave")
 	partitioningEnabled     = true
-	partitioningDisabled    = false
 	fakeApiContainerVersion = "0.0.0"
 	apiContainerPort        = uint16(1234)
 	testContainerImageName  = "kurtosistech/test-container"
@@ -47,32 +46,35 @@ var (
 	unusedEnclaveDataDir *enclave_data_directory.EnclaveDataDirectory
 )
 
-func TestStartService_Successful(t *testing.T) {
+func TestStartService(t *testing.T) {
 	ctx := context.Background()
 	backend := backend_interface.NewMockKurtosisBackend(t)
 
 	// One service will be started successfully
 	successfulServiceIndex := 1
+	successfulServicePartitionId := testPartitionIdFromInt(successfulServiceIndex)
 	successfulServiceId := testServiceIdFromInt(successfulServiceIndex)
 	successfulServiceGuid := testServiceGuidFromInt(successfulServiceIndex)
 	successfulServiceIp := testIpFromInt(successfulServiceIndex)
 	successfulServiceRegistration := service.NewServiceRegistration(successfulServiceId, successfulServiceGuid, enclaveId, successfulServiceIp)
 	successfulService := service.NewService(successfulServiceRegistration, container_status.ContainerStatus_Running, map[string]*port_spec.PortSpec{}, successfulServiceIp, map[string]*port_spec.PortSpec{})
-	successfulServiceConfig := services.NewServiceConfigBuilder(testContainerImageName).Build()
+	successfulServiceConfig := services.NewServiceConfigBuilder(testContainerImageName).WithSubnetwork(string(successfulServicePartitionId)).Build()
 
 	// One service will fail to be started
 	failedServiceIndex := 2
+	failedServicePartitionId := testPartitionIdFromInt(failedServiceIndex)
 	failedServiceId := testServiceIdFromInt(failedServiceIndex)
-	failedServiceConfig := services.NewServiceConfigBuilder(testContainerImageName).Build()
+	failedServiceConfig := services.NewServiceConfigBuilder(testContainerImageName).WithSubnetwork(string(failedServicePartitionId)).Build()
 
 	// One service will be successfully started but its sidecar will fail to start
 	sidecarFailedServiceIndex := 3
+	sidecarFailedServicePartitionId := testPartitionIdFromInt(sidecarFailedServiceIndex)
 	sidecarFailedServiceId := testServiceIdFromInt(sidecarFailedServiceIndex)
 	sidecarFailedServiceGuid := testServiceGuidFromInt(sidecarFailedServiceIndex)
 	sidecarFailedServiceIp := testIpFromInt(sidecarFailedServiceIndex)
 	sidecarFailedServiceRegistration := service.NewServiceRegistration(sidecarFailedServiceId, sidecarFailedServiceGuid, enclaveId, sidecarFailedServiceIp)
 	sidecarFailedService := service.NewService(sidecarFailedServiceRegistration, container_status.ContainerStatus_Running, map[string]*port_spec.PortSpec{}, sidecarFailedServiceIp, map[string]*port_spec.PortSpec{})
-	sidecarFailedServiceConfig := services.NewServiceConfigBuilder(testContainerImageName).Build()
+	sidecarFailedServiceConfig := services.NewServiceConfigBuilder(testContainerImageName).WithSubnetwork(string(sidecarFailedServicePartitionId)).Build()
 
 	network := NewDefaultServiceNetwork(
 		enclaveId,
@@ -85,7 +87,7 @@ func TestStartService_Successful(t *testing.T) {
 		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveId),
 	)
 
-	// Configre the mock to also be testing that the right functions are called along the way
+	// Configure the mock to also be testing that the right functions are called along the way
 
 	// StartUSerService will be called exactly once, with all the provided services
 	backend.EXPECT().StartUserServices(
@@ -155,7 +157,6 @@ func TestStartService_Successful(t *testing.T) {
 			failedServiceId:        failedServiceConfig,
 			sidecarFailedServiceId: sidecarFailedServiceConfig,
 		},
-		"",
 	)
 	require.Nil(t, err)
 	require.Len(t, success, 1)
@@ -163,6 +164,21 @@ func TestStartService_Successful(t *testing.T) {
 	require.Len(t, failure, 2)
 	require.Contains(t, failure, failedServiceId)
 	require.Contains(t, failure, sidecarFailedServiceId)
+
+	require.Len(t, network.registeredServiceInfo, 1)
+	require.Contains(t, network.registeredServiceInfo, successfulServiceId)
+
+	require.Len(t, network.networkingSidecars, 1)
+	require.Contains(t, network.networkingSidecars, successfulServiceId)
+
+	expectedPartitionsInTopolody := map[service_network_types.PartitionID]map[service.ServiceID]bool{
+		partition_topology.DefaultPartitionId: {},
+		successfulServicePartitionId: {
+			successfulServiceId: true,
+		},
+		// partitions with services that failed to start were removed from the topology
+	}
+	require.Equal(t, expectedPartitionsInTopolody, network.topology.GetPartitionServices())
 }
 
 func TestSetDefaultConnection(t *testing.T) {
@@ -491,6 +507,10 @@ func testIpFromInt(i int) net.IP {
 
 func testServiceIdFromInt(i int) service.ServiceID {
 	return service.ServiceID("service-" + strconv.Itoa(i))
+}
+
+func testPartitionIdFromInt(i int) service_network_types.PartitionID {
+	return service_network_types.PartitionID("partition-" + strconv.Itoa(i))
 }
 
 func testServiceGuidFromInt(i int) service.ServiceGUID {

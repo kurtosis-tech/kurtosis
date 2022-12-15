@@ -8,7 +8,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	kurtosis_backend_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
@@ -108,8 +107,7 @@ func (instruction *AddServiceInstruction) Execute(ctx context.Context) (*string,
 		instruction.serviceId: instruction.serviceConfig,
 	}
 
-	// TODO Pull partition from user in Starlark
-	serviceSuccessful, serviceFailed, err := instruction.serviceNetwork.StartServices(ctx, serviceConfigMap, service_network_types.PartitionID(""))
+	serviceSuccessful, serviceFailed, err := instruction.serviceNetwork.StartServices(ctx, serviceConfigMap)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed adding service to enclave with an unexpected error")
 	}

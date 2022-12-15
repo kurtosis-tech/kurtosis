@@ -432,11 +432,12 @@ export class EnclaveContext {
                 containerConfig.cpuAllocationMillicpus,
                 containerConfig.memoryAllocationMegabytes,
                 containerConfig.privateIPAddrPlaceholder,
+                partitionID,
             )
             serviceConfigs.set(serviceID, serviceConfig);
         }
         log.trace("Starting new services with Kurtosis API...");
-        const startServicesArgs: StartServicesArgs = newStartServicesArgs(serviceConfigs, partitionID)
+        const startServicesArgs: StartServicesArgs = newStartServicesArgs(serviceConfigs)
         const startServicesResponseResult = await this.backend.startServices(startServicesArgs)
         if (startServicesResponseResult.isErr()) {
             return err(startServicesResponseResult.error)

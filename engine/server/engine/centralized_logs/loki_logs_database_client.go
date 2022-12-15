@@ -76,7 +76,7 @@ const (
 	logsByKurtosisUserServiceGuidChanBuffSize = 5
 	errorChanBuffSize                         = 2
 
-	lokiEqualOperator = "="
+	lokiEqualOperator        = "="
 	lokiRegexMatchesOperator = "=~"
 )
 
@@ -371,7 +371,9 @@ func (client *lokiLogsDatabaseClient) FilterExistingServiceGuids(ctx context.Con
 }
 
 // ====================================================================================================
-//                                       Private helper functions
+//
+//	Private helper functions
+//
 // ====================================================================================================
 func runReadStreamResponseAndAddUserServiceLogLinesToUserServiceLogsChannel(
 	ctx context.Context,
@@ -585,9 +587,9 @@ func getQueryParamValue(
 	return queryParamValue
 }
 
-//The stream selector determines which log streams to include in a query’s results.
-//This stream selector will return log streams which contains the declared "container-type" in "kurtosisContainerType"
-//and one of the "guids" defined in "kurtosisGuidParaValues"
+// The stream selector determines which log streams to include in a query’s results.
+// This stream selector will return log streams which contains the declared "container-type" in "kurtosisContainerType"
+// and one of the "guids" defined in "kurtosisGuidParaValues"
 func getLokiStreamSelectorStrWithContainerTypeAndGuidsTags(
 	kurtosisContainerTypeLokiTagKey,
 	kurtosisContainerType,

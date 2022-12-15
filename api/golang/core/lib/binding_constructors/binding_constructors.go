@@ -31,7 +31,8 @@ func NewServiceConfig(
 	filesArtifactMountDirpaths map[string]string,
 	cpuAllocationMillicpus uint64,
 	memoryAllocationMegabytes uint64,
-	privateIPAddrPlaceholder string) *kurtosis_core_rpc_api_bindings.ServiceConfig {
+	privateIPAddrPlaceholder string,
+	subnetwork string) *kurtosis_core_rpc_api_bindings.ServiceConfig {
 	return &kurtosis_core_rpc_api_bindings.ServiceConfig{
 		ContainerImageName:        containerImageName,
 		PrivatePorts:              privatePorts,
@@ -43,6 +44,7 @@ func NewServiceConfig(
 		CpuAllocationMillicpus:    cpuAllocationMillicpus,
 		MemoryAllocationMegabytes: memoryAllocationMegabytes,
 		PrivateIpAddrPlaceholder:  privateIPAddrPlaceholder,
+		Subnetwork:                &subnetwork,
 	}
 }
 
@@ -342,10 +344,9 @@ func NewStarlarkExecutionError(errorMessage string) *kurtosis_core_rpc_api_bindi
 //
 // ==============================================================================================
 
-func NewStartServicesArgs(serviceConfigs map[string]*kurtosis_core_rpc_api_bindings.ServiceConfig, partitionID string) *kurtosis_core_rpc_api_bindings.StartServicesArgs {
+func NewStartServicesArgs(serviceConfigs map[string]*kurtosis_core_rpc_api_bindings.ServiceConfig) *kurtosis_core_rpc_api_bindings.StartServicesArgs {
 	return &kurtosis_core_rpc_api_bindings.StartServicesArgs{
 		ServiceIdsToConfigs: serviceConfigs,
-		PartitionId:         partitionID,
 	}
 }
 
