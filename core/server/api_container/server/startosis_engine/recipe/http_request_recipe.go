@@ -8,11 +8,13 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
 	"io"
 	"net/http"
+	"strings"
 )
 
 const (
@@ -157,14 +159,39 @@ func (recipe *HttpRequestRecipe) extract(body []byte) (map[string]starlark.Compa
 	return extractorResult, nil
 }
 
-func (recipe *HttpRequestRecipe) CreateStarlarkReturnValue(resultUuid string) *starlark.Dict {
+func (recipe *HttpRequestRecipe) ResultMapToString(resultMap map[string]starlark.Comparable) string {
+	statusCode := resultMap[statusCodeKey]
+	body := resultMap[bodyKey]
+	extractedFieldString := strings.Builder{}
+	for resultKey, resultValue := range resultMap {
+		if strings.Contains(resultKey, extractKeyPrefix) {
+			extractedFieldString.WriteString(fmt.Sprintf("\n'%v': %v", resultKey, resultValue))
+		}
+	}
+	if extractedFieldString.Len() == 0 {
+		return fmt.Sprintf("Request had response code '%v' and body %v", statusCode, body)
+	} else {
+		return fmt.Sprintf("Request had response code '%v' and body %v, with extracted fields:%s", statusCode, body, extractedFieldString.String())
+	}
+}
+
+func (recipe *HttpRequestRecipe) CreateStarlarkReturnValue(resultUuid string) (*starlark.Dict, *startosis_errors.InterpretationError) {
 	dict := &starlark.Dict{}
-	_ = dict.SetKey(starlark.String(bodyKey), starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, bodyKey)))
-	_ = dict.SetKey(starlark.String(statusCodeKey), starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, statusCodeKey)))
+	err := dict.SetKey(starlark.String(bodyKey), starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, bodyKey)))
+	if err != nil {
+		return nil, startosis_errors.NewInterpretationError("An error has occurred when creating return value for request recipe, setting field '%v'", bodyKey)
+	}
+	err = dict.SetKey(starlark.String(statusCodeKey), starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, statusCodeKey)))
+	if err != nil {
+		return nil, startosis_errors.NewInterpretationError("An error has occurred when creating return value for request recipe, setting field '%v'", statusCodeKey)
+	}
 	for extractorKey := range recipe.extractors {
 		fullExtractorKey := fmt.Sprintf("%v.%v", extractKeyPrefix, extractorKey)
-		_ = dict.SetKey(starlark.String(fullExtractorKey), starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, fullExtractorKey)))
+		err = dict.SetKey(starlark.String(fullExtractorKey), starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, fullExtractorKey)))
+		if err != nil {
+			return nil, startosis_errors.NewInterpretationError("An error has occurred when creating return value for request recipe, setting field '%v'", fullExtractorKey)
+		}
 	}
 	dict.Freeze()
-	return dict
+	return dict, nil
 }

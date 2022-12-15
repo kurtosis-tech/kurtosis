@@ -2,7 +2,6 @@ package request
 
 import (
 	"context"
-	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
@@ -36,7 +35,10 @@ func GenerateRequestBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisIn
 			return nil, startosis_errors.NewInterpretationError("An error occurred while generating uuid for future reference for %v instruction", RequestBuiltinName)
 		}
 		instruction.resultUuid = resultUuid
-		returnValue := instruction.httpRequestRecipe.CreateStarlarkReturnValue(instruction.resultUuid)
+		returnValue, interpretationErr := instruction.httpRequestRecipe.CreateStarlarkReturnValue(instruction.resultUuid)
+		if interpretationErr != nil {
+			return nil, startosis_errors.NewInterpretationError("An error occurred while creating return value for %v instruction", RequestBuiltinName)
+		}
 		*instructionsQueue = append(*instructionsQueue, instruction)
 		return returnValue, nil
 	}
@@ -96,7 +98,7 @@ func (instruction *RequestInstruction) Execute(ctx context.Context) (*string, er
 		return nil, stacktrace.Propagate(err, "Error executing http recipe")
 	}
 	instruction.runtimeValueStore.SetValue(instruction.resultUuid, result)
-	instructionResult := fmt.Sprintf("Value obtained '%v'", result)
+	instructionResult := instruction.httpRequestRecipe.ResultMapToString(result)
 	return &instructionResult, err
 }
 

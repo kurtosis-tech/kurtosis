@@ -45,7 +45,10 @@ func GenerateWaitBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstr
 			return nil, startosis_errors.NewInterpretationError("An error occurred while generating uuid for future reference for %v instruction", WaitBuiltinName)
 		}
 		waitInstruction.resultUuid = resultUuid
-		returnValue := waitInstruction.httpRequestRecipe.CreateStarlarkReturnValue(waitInstruction.resultUuid)
+		returnValue, interpretationErr := waitInstruction.recipe.CreateStarlarkReturnValue(waitInstruction.resultUuid)
+		if interpretationErr != nil {
+			return nil, startosis_errors.NewInterpretationError("An error occurred while creating return value for %v instruction", WaitBuiltinName)
+		}
 		*instructionsQueue = append(*instructionsQueue, waitInstruction)
 		return returnValue, nil
 	}
@@ -58,7 +61,7 @@ type WaitInstruction struct {
 	starlarkKwargs starlark.StringDict
 
 	runtimeValueStore *runtime_value_store.RuntimeValueStore
-	httpRequestRecipe *recipe.HttpRequestRecipe
+	recipe            recipe.Recipe
 	resultUuid        string
 	targetKey         string
 	assertion         string
@@ -71,7 +74,7 @@ func newEmptyWaitInstructionInstruction(serviceNetwork service_network.ServiceNe
 		serviceNetwork:    serviceNetwork,
 		position:          position,
 		runtimeValueStore: runtimeValueStore,
-		httpRequestRecipe: nil,
+		recipe:            nil,
 		resultUuid:        "",
 		starlarkKwargs:    nil,
 		targetKey:         "",
@@ -81,12 +84,12 @@ func newEmptyWaitInstructionInstruction(serviceNetwork service_network.ServiceNe
 	}
 }
 
-func newWaitInstructionInstructionForTest(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition, runtimeValueStore *runtime_value_store.RuntimeValueStore, httpRequestRecipe *recipe.HttpRequestRecipe, resultUuid string, targetKey string, assertion string, target starlark.Comparable, starlarkKwargs starlark.StringDict) *WaitInstruction {
+func newWaitInstructionInstructionForTest(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition, runtimeValueStore *runtime_value_store.RuntimeValueStore, recipe recipe.Recipe, resultUuid string, targetKey string, assertion string, target starlark.Comparable, starlarkKwargs starlark.StringDict) *WaitInstruction {
 	return &WaitInstruction{
 		serviceNetwork:    serviceNetwork,
 		position:          position,
 		runtimeValueStore: runtimeValueStore,
-		httpRequestRecipe: httpRequestRecipe,
+		recipe:            recipe,
 		resultUuid:        resultUuid,
 		starlarkKwargs:    starlarkKwargs,
 		targetKey:         targetKey,
@@ -117,13 +120,15 @@ func (instruction *WaitInstruction) Execute(ctx context.Context) (*string, error
 		requestErr error
 		assertErr  error
 	)
+	tries := 0
 	lastResult := map[string]starlark.Comparable{}
 	for {
+		tries += 1
 		backoffDuration := instruction.backoff.NextBackOff()
 		if backoffDuration == backoff.Stop {
 			break
 		}
-		lastResult, requestErr = instruction.httpRequestRecipe.Execute(ctx, instruction.serviceNetwork)
+		lastResult, requestErr = instruction.recipe.Execute(ctx, instruction.serviceNetwork)
 		if requestErr != nil {
 			time.Sleep(backoffDuration)
 			continue
@@ -146,7 +151,7 @@ func (instruction *WaitInstruction) Execute(ctx context.Context) (*string, error
 	if assertErr != nil {
 		return nil, stacktrace.Propagate(assertErr, "Error asserting HTTP recipe on '%v'", WaitBuiltinName)
 	}
-	instructionResult := fmt.Sprintf("Value obtained '%v'", lastResult)
+	instructionResult := fmt.Sprintf("Wait took %d tries. Assertion passed with following:\n%s", tries, instruction.recipe.ResultMapToString(lastResult))
 	return &instructionResult, nil
 }
 
@@ -183,9 +188,12 @@ func (instruction *WaitInstruction) parseStartosisArgs(b *starlark.Builtin, args
 	instruction.starlarkKwargs.Freeze()
 
 	var err *startosis_errors.InterpretationError
-	instruction.httpRequestRecipe, err = kurtosis_instruction.ParseHttpRequestRecipe(recipeConfigArg)
+	instruction.recipe, err = kurtosis_instruction.ParseHttpRequestRecipe(recipeConfigArg)
 	if err != nil {
-		return err
+		instruction.recipe, err = kurtosis_instruction.ParseExecRecipe(recipeConfigArg)
+		if err != nil {
+			return startosis_errors.NewInterpretationError("There was no valid recipe found on arg '%v' (expected exec or request recipe)", recipeConfigArg)
+		}
 	}
 	instruction.assertion = string(assertionArg)
 	instruction.target = targetArg

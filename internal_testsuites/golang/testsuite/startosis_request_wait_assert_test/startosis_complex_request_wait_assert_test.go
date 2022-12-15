@@ -55,6 +55,12 @@ def run(args):
 	post_response = request(post_recipe)
 	assert(post_response["code"], "==", 200)
 	assert(post_response["extract.my-body"], "==", "post_output")
+	exec_recipe = struct(
+		service_id = "web-server",
+		command = ["echo", "hello", "world"]
+	)
+	exec_result = wait(exec_recipe, "code", "==", 0)
+	assert(exec_result["output"], "==", "hello world\n")
 `
 )
 
