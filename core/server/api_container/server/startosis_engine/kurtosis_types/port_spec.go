@@ -22,8 +22,6 @@ const (
 )
 
 // PortSpec A starlark.Value that represents a port number & protocol
-// TODO add a Make method so that this can be added as a built in
-// TODO use this in the add_service primitive while passing service config
 type PortSpec struct {
 	number   uint32
 	protocol kurtosis_core_rpc_api_bindings.Port_TransportProtocol
@@ -36,27 +34,25 @@ func NewPortSpec(number uint32, protocol kurtosis_core_rpc_api_bindings.Port_Tra
 	}
 }
 
-func MakePortSpec() func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
-	return func(_ *starlark.Thread, builtin *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
-		var number int
-		var protocol string
+func MakePortSpec(_ *starlark.Thread, builtin *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+	var number int
+	var protocol string
 
-		if err := starlark.UnpackArgs(builtin.Name(), args, kwargs, portNumberAttr, &number, optionalPortProtocolAttr, &protocol); err != nil {
-			return nil, startosis_errors.NewInterpretationError("Cannot construct a PortSpec from the provided arguments. Error was: \n%v", err.Error())
-		}
-
-		portProtocol, interpretationError := parsePortProtocol(protocol)
-		if interpretationError != nil {
-			return nil, interpretationError
-		}
-
-		uint32Number, interpretationError := parsePortNumber(number)
-		if interpretationError != nil {
-			return nil, interpretationError
-		}
-
-		return NewPortSpec(uint32Number, portProtocol), nil
+	if err := starlark.UnpackArgs(builtin.Name(), args, kwargs, portNumberAttr, &number, optionalPortProtocolAttr, &protocol); err != nil {
+		return nil, startosis_errors.NewInterpretationError("Cannot construct a PortSpec from the provided arguments. Error was: \n%v", err.Error())
 	}
+
+	portProtocol, interpretationError := parsePortProtocol(protocol)
+	if interpretationError != nil {
+		return nil, interpretationError
+	}
+
+	uint32Number, interpretationError := parsePortNumber(number)
+	if interpretationError != nil {
+		return nil, interpretationError
+	}
+
+	return NewPortSpec(uint32Number, portProtocol), nil
 }
 
 // String the starlark.Value interface

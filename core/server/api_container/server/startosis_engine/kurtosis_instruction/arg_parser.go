@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/recipe"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
@@ -23,6 +24,7 @@ const (
 	serviceConfigArgName = "config"
 	defineFactArgName    = "define_fact"
 	requestArgName       = "request"
+	subnetworksArgName   = "subnetworks"
 
 	containerImageNameKey = "image"
 	usedPortsKey          = "ports"
@@ -271,6 +273,19 @@ func ParseTemplatesAndData(templatesAndData *starlark.Dict) (map[string]*kurtosi
 	return templateAndDataByDestRelFilepath, nil
 }
 
+func ParseSubnetworks(subnetworksTuple starlark.Tuple) (service_network_types.PartitionID, service_network_types.PartitionID, *startosis_errors.InterpretationError) {
+	subnetworksStr, interpretationErr := safeCastToStringSlice(subnetworksTuple, subnetworksArgName)
+	if interpretationErr != nil {
+		return "", "", interpretationErr
+	}
+	if len(subnetworksStr) != 2 {
+		return "", "", startosis_errors.NewInterpretationError("Subnetworks tuple should contain exactly 2 subnetwork names. %d was/were provided", len(subnetworksStr))
+	}
+	subnetwork1 := service_network_types.PartitionID(subnetworksStr[0])
+	subnetwork2 := service_network_types.PartitionID(subnetworksStr[1])
+	return subnetwork1, subnetwork2, nil
+}
+
 func parseServiceConfigContainerImageName(serviceConfig *starlarkstruct.Struct) (string, *startosis_errors.InterpretationError) {
 	// containerImageName should be a simple string
 	containerImageName, interpretationErr := extractStringValue(serviceConfig, containerImageNameKey, serviceConfigArgName)
@@ -463,10 +478,10 @@ func safeCastToUint32(expectedValueString starlark.Value, argNameForLogging stri
 
 }
 
-func safeCastToStringSlice(expectedValueList starlark.Value, argNameForLogging string) ([]string, *startosis_errors.InterpretationError) {
-	listValue, ok := expectedValueList.(*starlark.List)
+func safeCastToStringSlice(expectedStringIterable starlark.Value, argNameForLogging string) ([]string, *startosis_errors.InterpretationError) {
+	listValue, ok := expectedStringIterable.(starlark.Iterable)
 	if !ok {
-		return nil, startosis_errors.NewInterpretationError("'%s' argument is expected to be a list. Got %s", argNameForLogging, reflect.TypeOf(expectedValueList))
+		return nil, startosis_errors.NewInterpretationError("'%s' argument is expected to be an iterable. Got %s", argNameForLogging, reflect.TypeOf(expectedStringIterable))
 	}
 	var castValue []string
 	listIterator := listValue.Iterate()

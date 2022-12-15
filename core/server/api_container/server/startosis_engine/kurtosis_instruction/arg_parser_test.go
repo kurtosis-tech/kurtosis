@@ -3,6 +3,7 @@ package kurtosis_instruction
 import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/recipe"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"github.com/stretchr/testify/require"
@@ -69,7 +70,7 @@ func TestSafeCastToStringSlice_FailureNotList(t *testing.T) {
 	input := starlark.MakeInt(42)
 	output, err := safeCastToStringSlice(input, "test")
 	require.NotNil(t, err)
-	require.Equal(t, "'test' argument is expected to be a list. Got starlark.Int", err.Error())
+	require.Equal(t, "'test' argument is expected to be an iterable. Got starlark.Int", err.Error())
 	require.Equal(t, []string(nil), output)
 }
 
@@ -632,4 +633,43 @@ func TestEncodeStarlarkObjectAsJSON_EncodesStructsCorrectly(t *testing.T) {
 	require.Nil(t, err)
 	expectedStr := `{"buzz":42,"fizz":false,"foo":"bar"}`
 	require.Equal(t, expectedStr, structJsonStr)
+}
+
+func TestParseSubnetworks_ValidArg(t *testing.T) {
+	expectedPartition1 := "subnetwork_1"
+	expectedPartition2 := "subnetwork_2"
+	subnetworks := starlark.Tuple([]starlark.Value{
+		starlark.String(expectedPartition1),
+		starlark.String(expectedPartition2),
+	})
+	partition1, partition2, err := ParseSubnetworks(subnetworks)
+	require.Nil(t, err)
+	require.Equal(t, service_network_types.PartitionID(expectedPartition1), partition1)
+	require.Equal(t, service_network_types.PartitionID(expectedPartition2), partition2)
+}
+
+func TestParseSubnetworks_TooManySubnetworks(t *testing.T) {
+	expectedPartition1 := "subnetwork_1"
+	expectedPartition2 := "subnetwork_2"
+	expectedPartition3 := "subnetwork_3"
+	subnetworks := starlark.Tuple([]starlark.Value{
+		starlark.String(expectedPartition1),
+		starlark.String(expectedPartition2),
+		starlark.String(expectedPartition3),
+	})
+	partition1, partition2, err := ParseSubnetworks(subnetworks)
+	require.Contains(t, err.Error(), "Subnetworks tuple should contain exactly 2 subnetwork names. 3 was/were provided")
+	require.Empty(t, partition1)
+	require.Empty(t, partition2)
+}
+
+func TestParseSubnetworks_TooFewSubnetworks(t *testing.T) {
+	expectedPartition1 := "subnetwork_1"
+	subnetworks := starlark.Tuple([]starlark.Value{
+		starlark.String(expectedPartition1),
+	})
+	partition1, partition2, err := ParseSubnetworks(subnetworks)
+	require.Contains(t, err.Error(), "Subnetworks tuple should contain exactly 2 subnetwork names. 1 was/were provided")
+	require.Empty(t, partition1)
+	require.Empty(t, partition2)
 }
