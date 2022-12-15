@@ -11,13 +11,13 @@ import (
 func TestValidSerDe(t *testing.T) {
 	port1Id := "port1"
 	port1Num := uint16(23)
-	port1Protocol := port_spec.PortProtocol_TCP
+	port1Protocol := port_spec.TransportProtocol_TCP
 	port1Spec, err := port_spec.NewPortSpec(port1Num, port1Protocol, "")
 	require.NoError(t, err, "An unexpected error occurred creating port 1 spec")
 
 	port2Id := "port2"
 	port2Num := uint16(45)
-	port2Protocol := port_spec.PortProtocol_TCP
+	port2Protocol := port_spec.TransportProtocol_TCP
 	port2Spec, err := port_spec.NewPortSpec(port2Num, port2Protocol, "")
 	require.NoError(t, err, "An unexpected error occurred creating port 2 spec")
 
@@ -59,7 +59,7 @@ func TestDisallowedCharsSerialization(t *testing.T) {
 	for disallowedChar := range disallowedPortIdChars {
 		portId := "ohyeah" + disallowedChar
 		portNum := uint16(45)
-		portProtocol := port_spec.PortProtocol_TCP
+		portProtocol := port_spec.TransportProtocol_TCP
 		portSpec, err := port_spec.NewPortSpec(portNum, portProtocol, "")
 		require.NoError(t, err, "An unexpected error occurred creating port spec for port with ID '%v'", portId)
 
@@ -77,13 +77,13 @@ func TestDuplicatedPortNumDifferentProtoSerialization(t *testing.T) {
 
 	port1Id := "port1"
 	port1Num := dupedPortNum
-	port1Protocol := port_spec.PortProtocol_TCP
+	port1Protocol := port_spec.TransportProtocol_TCP
 	port1Spec, err := port_spec.NewPortSpec(port1Num, port1Protocol, "")
 	require.NoError(t, err, "An unexpected error occurred creating port 1 spec")
 
 	port2Id := "port2"
 	port2Num := dupedPortNum
-	port2Protocol := port_spec.PortProtocol_UDP
+	port2Protocol := port_spec.TransportProtocol_UDP
 	port2Spec, err := port_spec.NewPortSpec(port2Num, port2Protocol, "")
 	require.NoError(t, err, "An unexpected error occurred creating port 2 spec")
 
@@ -101,13 +101,13 @@ func TestDuplicatedPortNumSameProtoSerialization(t *testing.T) {
 
 	port1Id := "port1"
 	port1Num := dupedPortNum
-	port1Protocol := port_spec.PortProtocol_TCP
+	port1Protocol := port_spec.TransportProtocol_TCP
 	port1Spec, err := port_spec.NewPortSpec(port1Num, port1Protocol, "")
 	require.NoError(t, err, "An unexpected error occurred creating port 1 spec")
 
 	port2Id := "port2"
 	port2Num := dupedPortNum
-	port2Protocol := port_spec.PortProtocol_TCP
+	port2Protocol := port_spec.TransportProtocol_TCP
 	port2Spec, err := port_spec.NewPortSpec(port2Num, port2Protocol, "")
 	require.NoError(t, err, "An unexpected error occurred creating port 2 spec")
 
@@ -174,33 +174,33 @@ func TestDeserializePortSpecStrUsingDelimiters_PortSpecWithIncorrectNumberOfFrag
 }
 
 func TestNoPortProtosHaveDisallowedChars(t *testing.T) {
-	for _, portProtoStr := range port_spec.PortProtocolStrings() {
-		for illegalPortProtocolStr := range disallowedPortIdChars {
-			require.False(t, strings.Contains(portProtoStr, illegalPortProtocolStr))
+	for _, portProtoStr := range port_spec.TransportProtocolStrings() {
+		for illegalTransportProtocolStr := range disallowedPortIdChars {
+			require.False(t, strings.Contains(portProtoStr, illegalTransportProtocolStr))
 		}
 	}
 }
 
 func TestValidatePortSpec_ValidApplicationProtocol(t *testing.T) {
-	spec, _ := port_spec.NewPortSpec(100, port_spec.PortProtocol_UDP, "H-ttp.2")
+	spec, _ := port_spec.NewPortSpec(100, port_spec.TransportProtocol_UDP, "H-ttp.2")
 	err := validatePortSpec("PortId", spec)
 	require.Nil(t, err, "Error cannot be nil")
 }
 
 func TestValidatePortSpec_InvalidPortId(t *testing.T) {
-	spec, _ := port_spec.NewPortSpec(100, port_spec.PortProtocol_TCP, "https")
+	spec, _ := port_spec.NewPortSpec(100, port_spec.TransportProtocol_TCP, "https")
 	err := validatePortSpec(",portid/", spec)
 	require.NotNil(t, err, "Error cannot be nil")
 	require.ErrorContains(t, err, fmt.Sprintf("Port ID '%v' contains disallowed char '%v'", ",portid/", portSpecsSeparator))
 }
 
 func TestValidatePortSpec_InvalidApplicationProtocol(t *testing.T) {
-	spec, _ := port_spec.NewPortSpec(100, port_spec.PortProtocol_TCP, "/https,")
+	spec, _ := port_spec.NewPortSpec(100, port_spec.TransportProtocol_TCP, "/https,")
 	err := validatePortSpec("PortId", spec)
 	require.NotNil(t, err, "Error cannot be nil")
 	require.ErrorContains(t, err, fmt.Sprintf("Application Protocol '%v' associated with port ID '%v' contains disallowed char '%v'", "/https,", "PortId", portNumAndProtocolSeparator))
 
-	spec, _ = port_spec.NewPortSpec(100, port_spec.PortProtocol_UDP, " H-ttp.2")
+	spec, _ = port_spec.NewPortSpec(100, port_spec.TransportProtocol_UDP, " H-ttp.2")
 	err = validatePortSpec("PortId", spec)
 	require.NotNil(t, err, "Error cannot be nil")
 	require.ErrorContains(t, err, "application protocol ' H-ttp.2' associated with port ID 'PortId' contains invalid character(s). It must only contain [a-zA-Z0-9+.-]")
@@ -208,8 +208,8 @@ func TestValidatePortSpec_InvalidApplicationProtocol(t *testing.T) {
 
 func TestSerializeMethod_ValidPortSpecs(t *testing.T) {
 	specs := map[string]*port_spec.PortSpec{}
-	portOne, _ := port_spec.NewPortSpec(3333, port_spec.PortProtocol_TCP, "")
-	portTwo, _ := port_spec.NewPortSpec(3333, port_spec.PortProtocol_UDP, "https")
+	portOne, _ := port_spec.NewPortSpec(3333, port_spec.TransportProtocol_TCP, "")
+	portTwo, _ := port_spec.NewPortSpec(3333, port_spec.TransportProtocol_UDP, "https")
 
 	specs["portOne"] = portOne
 	specs["portTwo"] = portTwo
@@ -226,8 +226,8 @@ func TestSerializeMethod_ValidPortSpecs(t *testing.T) {
 
 func TestDeSerializeMethod_ValidPortSpecs(t *testing.T) {
 	expectedSpecs := map[string]*port_spec.PortSpec{}
-	expectedPortOne, _ := port_spec.NewPortSpec(3333, port_spec.PortProtocol_TCP, "")
-	expectedPortTwo, _ := port_spec.NewPortSpec(3333, port_spec.PortProtocol_UDP, "https")
+	expectedPortOne, _ := port_spec.NewPortSpec(3333, port_spec.TransportProtocol_TCP, "")
+	expectedPortTwo, _ := port_spec.NewPortSpec(3333, port_spec.TransportProtocol_UDP, "https")
 	expectedSpecs["portOne"] = expectedPortOne
 	expectedSpecs["portTwo"] = expectedPortTwo
 

@@ -228,7 +228,7 @@ func deserialize_pre_2022_03_02_PortSpecs(specsStr string) (map[string]*port_spe
 			)
 		}
 		portNumUint16 := uint16(portNumUint64)
-		portProtocol, err := port_spec.PortProtocolString(portProtocolStr)
+		portProtocol, err := port_spec.TransportProtocolString(portProtocolStr)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred converting port protocol string '%v' to a port protocol enum", portProtocolStr)
 		}

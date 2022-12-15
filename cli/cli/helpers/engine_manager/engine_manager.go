@@ -11,8 +11,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/engine_server_launcher"
-	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -30,10 +30,10 @@ const (
 )
 
 // Unfortunately, Docker doesn't have constants for the protocols it supports declared
-var objAttrsSchemaPortProtosToDockerPortProtos = map[schema.PortProtocol]string{
-	schema.PortProtocol_TCP:  "tcp",
-	schema.PortProtocol_SCTP: "sctp",
-	schema.PortProtcol_UDP:   "udp",
+var objAttrsSchemaPortProtosToDockerPortProtos = map[port_spec.TransportProtocol]string{
+	port_spec.TransportProtocol_TCP:  "tcp",
+	port_spec.TransportProtocol_SCTP: "sctp",
+	port_spec.TransportProtocol_UDP:  "udp",
 }
 
 type EngineManager struct {

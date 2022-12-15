@@ -61,10 +61,10 @@ const (
 )
 
 // Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and port spec protos
-var apiContainerPortProtoToPortSpecPortProto = map[kurtosis_core_rpc_api_bindings.Port_TransportProtocol]port_spec.PortProtocol{
-	kurtosis_core_rpc_api_bindings.Port_TCP:  port_spec.PortProtocol_TCP,
-	kurtosis_core_rpc_api_bindings.Port_SCTP: port_spec.PortProtocol_SCTP,
-	kurtosis_core_rpc_api_bindings.Port_UDP:  port_spec.PortProtocol_UDP,
+var apiContainerPortProtoToPortSpecPortProto = map[kurtosis_core_rpc_api_bindings.Port_TransportProtocol]port_spec.TransportProtocol{
+	kurtosis_core_rpc_api_bindings.Port_TCP:  port_spec.TransportProtocol_TCP,
+	kurtosis_core_rpc_api_bindings.Port_SCTP: port_spec.TransportProtocol_SCTP,
+	kurtosis_core_rpc_api_bindings.Port_UDP:  port_spec.TransportProtocol_UDP,
 }
 
 type ApiContainerService struct {

@@ -174,9 +174,15 @@ func (instruction *AddServiceInstruction) makeAddServiceInterpretationReturnValu
 	ports := instruction.serviceConfig.GetPrivatePorts()
 	portSpecsDict := starlark.NewDict(len(ports))
 	for portId, port := range ports {
-		portSpec := kurtosis_types.NewPortSpec(port.GetNumber(), port.GetTransportProtocol())
+		number := port.GetNumber()
+		transportProtocol := port.GetTransportProtocol()
+		maybeApplicationProtocol := port.GetMaybeApplicationProtocol()
+
+		portSpec := kurtosis_types.NewPortSpec(number, transportProtocol, maybeApplicationProtocol)
 		if err := portSpecsDict.SetKey(starlark.String(portId), portSpec); err != nil {
-			return nil, startosis_errors.NewInterpretationError("An error occurred while creating a port spec for values (number: '%v', port: '%v') the add instruction return value", port.GetNumber(), port.GetTransportProtocol())
+			return nil, startosis_errors.NewInterpretationError("An error occurred while creating a port spec for values "+
+				"(number: '%v', transport_protocol: '%v', application_protocol: '%v') the add instruction return value",
+				number, transportProtocol, maybeApplicationProtocol)
 		}
 	}
 	ipAddress := starlark.String(fmt.Sprintf(magic_string_helper.IpAddressReplacementPlaceholderFormat, instruction.serviceId))

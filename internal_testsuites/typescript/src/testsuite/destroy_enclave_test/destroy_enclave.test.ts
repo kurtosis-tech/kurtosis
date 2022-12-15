@@ -1,4 +1,4 @@
-import { ContainerConfig, ContainerConfigBuilder, FilesArtifactUUID, PortProtocol, PortSpec, ServiceID } from "kurtosis-sdk"
+import { ContainerConfig, ContainerConfigBuilder, FilesArtifactUUID, PortSpec, TransportProtocol, ServiceID } from "kurtosis-sdk"
 import log from "loglevel";
 import { Result, ok, err } from "neverthrow";
 
@@ -14,7 +14,7 @@ const FILE_SERVER_PRIVATE_PORT_NUM = 80
 
 const TEST_FILES_ARTIFACT_URL = "https://kurtosis-public-access.s3.us-east-1.amazonaws.com/test-artifacts/static-fileserver-files.tgz"
 
-const FILE_SERVER_PORT_SPEC = new PortSpec( FILE_SERVER_PRIVATE_PORT_NUM, PortProtocol.TCP )
+const FILE_SERVER_PORT_SPEC = new PortSpec( FILE_SERVER_PRIVATE_PORT_NUM, TransportProtocol.TCP )
 
 const FILES_ARTIFACT_MOUNTPOINT  = "/static"
 

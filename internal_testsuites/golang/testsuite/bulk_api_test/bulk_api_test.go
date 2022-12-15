@@ -33,16 +33,12 @@ const (
 	datastoreServiceId services.ServiceID = "datastore"
 	apiServiceID       services.ServiceID = "api-service"
 	numServicesToAdd                      = 3
+
+	emptyApplicationProtocol = ""
 )
 
-var datastorePortSpec = services.NewPortSpec(
-	datastore_rpc_api_consts.ListenPort,
-	services.PortProtocol_TCP,
-)
-var apiPortSpec = services.NewPortSpec(
-	example_api_server_rpc_api_consts.ListenPort,
-	services.PortProtocol_TCP,
-)
+var datastorePortSpec = services.NewPortSpec(datastore_rpc_api_consts.ListenPort, services.TransportProtocol_TCP, emptyApplicationProtocol)
+var apiPortSpec = services.NewPortSpec(example_api_server_rpc_api_consts.ListenPort, services.TransportProtocol_TCP, emptyApplicationProtocol)
 
 type datastoreConfig struct {
 	DatastoreIp   string `json:"datastoreIp"`

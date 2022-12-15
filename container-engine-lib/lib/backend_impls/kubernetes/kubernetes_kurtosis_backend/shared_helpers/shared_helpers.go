@@ -532,7 +532,7 @@ func GetKubernetesServicePortsFromPrivatePortSpecs(privatePorts map[string]*port
 	result := []apiv1.ServicePort{}
 	for portId, portSpec := range privatePorts {
 		kurtosisProtocol := portSpec.GetTransportProtocol()
-		kubernetesProtocol, found := consts.KurtosisPortProtocolToKubernetesPortProtocolTranslator[kurtosisProtocol]
+		kubernetesProtocol, found := consts.KurtosisTransportProtocolToKubernetesTransportProtocolTranslator[kurtosisProtocol]
 		if !found {
 			// Should never happen because we enforce completeness via unit test
 			return nil, stacktrace.NewError("No Kubernetes port protocol was defined for Kurtosis port protocol '%v'; this is a bug in Kurtosis", kurtosisProtocol)
@@ -561,7 +561,7 @@ func GetKubernetesContainerPortsFromPrivatePortSpecs(privatePorts map[string]*po
 	result := []apiv1.ContainerPort{}
 	for portId, portSpec := range privatePorts {
 		kurtosisProtocol := portSpec.GetTransportProtocol()
-		kubernetesProtocol, found := consts.KurtosisPortProtocolToKubernetesPortProtocolTranslator[kurtosisProtocol]
+		kubernetesProtocol, found := consts.KurtosisTransportProtocolToKubernetesTransportProtocolTranslator[kurtosisProtocol]
 		if !found {
 			// Should never happen because we enforce completeness via unit test
 			return nil, stacktrace.NewError("No Kubernetes port protocol was defined for Kurtosis port protocol '%v'; this is a bug in Kurtosis", kurtosisProtocol)

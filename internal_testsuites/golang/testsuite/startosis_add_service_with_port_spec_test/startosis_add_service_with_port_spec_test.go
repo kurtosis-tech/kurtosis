@@ -21,7 +21,7 @@ const (
 DOCKER_GETTING_STARTED_IMAGE = "docker/getting-started:latest"
 SERVICE_ID = "` + serviceId + `"
 
-spec = PortSpec(number = 5000, protocol = "UDP")
+spec = PortSpec(number = 5000, transport_protocol = "UDP")
 
 def run(args):
     add_service(
@@ -55,9 +55,9 @@ func TestAddServiceWithPortSpec_Success(t *testing.T) {
 	require.NotNil(t, service, "Error occurred while fetching service with ID: '%v'. This may occur if service was not created")
 
 	ports := service.GetPrivatePorts()
-	require.Equal(t, services.PortProtocol_TCP, ports["port1"].GetTransportProtocol())
+	require.Equal(t, services.TransportProtocol_TCP, ports["port1"].GetTransportProtocol())
 	require.Equal(t, uint16(3333), ports["port1"].GetNumber())
 
-	require.Equal(t, services.PortProtocol_UDP, ports["port2"].GetTransportProtocol())
+	require.Equal(t, services.TransportProtocol_UDP, ports["port2"].GetTransportProtocol())
 	require.Equal(t, uint16(5000), ports["port2"].GetNumber())
 }

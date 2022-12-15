@@ -1,7 +1,7 @@
 import {
     ContainerConfig,
     ContainerConfigBuilder,
-    FilesArtifactUUID, PortProtocol,
+    FilesArtifactUUID, TransportProtocol,
     PortSpec,
     ServiceContext,
     ServiceID
@@ -35,11 +35,11 @@ const NUM_SERVICES_TO_ADD : number = 3
 
 const DATASTORE_PORT_SPEC = new PortSpec(
     datastoreApi.LISTEN_PORT,
-    PortProtocol.TCP,
+    TransportProtocol.TCP,
 )
 const API_PORT_SPEC = new PortSpec(
     serverApi.LISTEN_PORT,
-    PortProtocol.TCP,
+    TransportProtocol.TCP,
 )
 
 jest.setTimeout(180000)

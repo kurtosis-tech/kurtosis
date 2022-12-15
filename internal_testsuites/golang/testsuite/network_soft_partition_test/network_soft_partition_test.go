@@ -43,6 +43,7 @@ const (
 	softPartitionPacketLossPercentage = float32(99)
 
 	zeroElementsInMtrHubField = 0
+	emptyApplicationProtocol  = ""
 )
 
 type MtrReport struct {
@@ -211,7 +212,7 @@ func repartitionNetwork(
 }
 
 func getExampleServiceConfig() *services.ContainerConfig {
-	portSpec := services.NewPortSpec(exampleServicePortNumInsideNetwork, services.PortProtocol_TCP)
+	portSpec := services.NewPortSpec(exampleServicePortNumInsideNetwork, services.TransportProtocol_TCP, emptyApplicationProtocol)
 	containerConfig := services.NewContainerConfigBuilder(
 		dockerGettingStartedImage,
 	).WithUsedPorts(

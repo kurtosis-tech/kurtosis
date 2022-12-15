@@ -51,7 +51,7 @@ import {
 import type { ContainerConfig, FilesArtifactUUID } from "../services/container_config";
 import type { ServiceID, ServiceGUID } from "../services/service";
 import { ServiceContext } from "../services/service_context";
-import { PortProtocol, PortSpec } from "../services/port_spec";
+import { TransportProtocol, PortSpec } from "../services/port_spec";
 import type { GenericPathJoiner } from "./generic_path_joiner";
 import type { PartitionConnection } from "./partition_connection";
 import {GenericTgzArchiver} from "./generic_tgz_archiver";
@@ -405,7 +405,8 @@ export class EnclaveContext {
             for (const [portId, portSpec] of privatePorts.entries()) {
                 const portSpecForApi: Port = newPort(
                     portSpec.number,
-                    portSpec.protocol,
+                    portSpec.transportProtocol,
+                    portSpec.maybeApplicationProtocol
                 )
                 privatePortsForApi.set(portId, portSpecForApi);
             }
@@ -415,7 +416,8 @@ export class EnclaveContext {
             for (const [portId, portSpec] of publicPorts.entries()) {
                 const portSpecForApi: Port = newPort(
                     portSpec.number,
-                    portSpec.protocol,
+                    portSpec.transportProtocol,
+                    portSpec.maybeApplicationProtocol
                 )
                 publicPortsForApi.set(portId, portSpecForApi);
             }
@@ -802,9 +804,10 @@ export class EnclaveContext {
     private static convertApiPortsToServiceContextPorts(apiPorts: jspb.Map<string, Port>): Map<string, PortSpec> {
         const result: Map<string, PortSpec> = new Map();
         for (const [portId, apiPortSpec] of apiPorts.entries()) {
-            const portProtocol: PortProtocol = apiPortSpec.getTransportProtocol();
+            const portProtocol: TransportProtocol = apiPortSpec.getTransportProtocol();
             const portNum: number = apiPortSpec.getNumber();
-            result.set(portId, new PortSpec(portNum, portProtocol))
+            const portSpec = new PortSpec(portNum, portProtocol, apiPortSpec.getMaybeApplicationProtocol());
+            result.set(portId, portSpec)
         }
         return result;
     }

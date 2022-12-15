@@ -22,7 +22,7 @@ const (
 
 	// The engine server uses gRPC so MUST listen on TCP (no other protocols are supported), which also
 	// means that its grpc-proxy must listen on TCP
-	EnginePortProtocol = port_spec.PortProtocol_TCP
+	EngineTransportProtocol = port_spec.TransportProtocol_TCP
 
 	// This needs to be bind-mounted into the engine & API containers so they can manipulate Docker
 	DockerSocketFilepath = "/var/run/docker.sock"

@@ -1,4 +1,4 @@
-import { ContainerConfig, ContainerConfigBuilder, FilesArtifactUUID, PortProtocol, PortSpec, ServiceID } from "kurtosis-sdk"
+import { ContainerConfig, ContainerConfigBuilder, FilesArtifactUUID, TransportProtocol, PortSpec, ServiceID } from "kurtosis-sdk"
 import log from "loglevel";
 import { Result, ok, err } from "neverthrow";
 import axios from "axios"
@@ -26,7 +26,7 @@ const FILE2_FILENAME = "file2.txt"
 const EXPECTED_FILE1_CONTENTS = "file1\n"
 const EXPECTED_FILE2_CONTENTS = "file2\n"
 
-const FILE_SERVER_PORT_SPEC = new PortSpec( FILE_SERVER_PRIVATE_PORT_NUM, PortProtocol.TCP )
+const FILE_SERVER_PORT_SPEC = new PortSpec( FILE_SERVER_PRIVATE_PORT_NUM, TransportProtocol.TCP )
 
 const USER_SERVICE_MOUNTPOINT_FOR_TEST_FILESARTIFACT  = "/static"
 

@@ -75,24 +75,15 @@ const (
 	testDatastoreKey   = "my-key"
 	testDatastoreValue = "test-value"
 
-	partitioningDisabled = false
-	defaultDryRun        = false
-	emptyParams          = "{}"
+	partitioningDisabled     = false
+	defaultDryRun            = false
+	emptyParams              = "{}"
+	emptyApplicationProtocol = ""
 )
 
-var fileServerPortSpec = services.NewPortSpec(
-	fileServerPrivatePortNum,
-	services.PortProtocol_TCP,
-)
-
-var datastorePortSpec = services.NewPortSpec(
-	datastore_rpc_api_consts.ListenPort,
-	services.PortProtocol_TCP,
-)
-var apiPortSpec = services.NewPortSpec(
-	example_api_server_rpc_api_consts.ListenPort,
-	services.PortProtocol_TCP,
-)
+var fileServerPortSpec = services.NewPortSpec(fileServerPrivatePortNum, services.TransportProtocol_TCP, emptyApplicationProtocol)
+var datastorePortSpec = services.NewPortSpec(datastore_rpc_api_consts.ListenPort, services.TransportProtocol_TCP, emptyApplicationProtocol)
+var apiPortSpec = services.NewPortSpec(example_api_server_rpc_api_consts.ListenPort, services.TransportProtocol_TCP, emptyApplicationProtocol)
 
 type GrpcAvailabilityChecker interface {
 	IsAvailable(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)

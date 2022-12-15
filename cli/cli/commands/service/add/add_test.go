@@ -7,6 +7,108 @@ import (
 	"testing"
 )
 
+func TestParsePortSpecstr_SuccessCases(t *testing.T) {
+	type args struct {
+		specStr string
+	}
+
+	parsePortSpecSuccessTests := []struct {
+		name string
+		args args
+		want *services.PortSpec
+	}{
+		{
+			name: "Successfully parse str with application protocol and without transport protocol",
+			args: args{
+				specStr: "http:3333",
+			},
+			want: services.NewPortSpec(uint16(3333), services.TransportProtocol_TCP, "http"),
+		},
+		{
+			name: "Successfully parse str with application protocol and with transport protocol",
+			args: args{
+				specStr: "http:3333/udp",
+			},
+			want: services.NewPortSpec(uint16(3333), services.TransportProtocol_UDP, "http"),
+		},
+		{
+			name: "Successfully parse str without application protocol and with transport protocol",
+			args: args{
+				specStr: "3333/udp",
+			},
+			want: services.NewPortSpec(uint16(3333), services.TransportProtocol_UDP, ""),
+		},
+		{
+			name: "Successfully parse str without application protocol and without transport protocol",
+			args: args{
+				specStr: "3333",
+			},
+			want: services.NewPortSpec(uint16(3333), services.TransportProtocol_TCP, ""),
+		},
+	}
+	for _, parsePortSpecTest := range parsePortSpecSuccessTests {
+		t.Run(parsePortSpecTest.name, func(t *testing.T) {
+			got, err := parsePortSpecStr(parsePortSpecTest.args.specStr)
+			require.NoError(t, err, "Unexpected error occurred while testing")
+			require.Equal(t, parsePortSpecTest.want, got)
+		})
+	}
+}
+
+func TestParsePortSpecstr_FailureCases(t *testing.T) {
+	type args struct {
+		specStr string
+	}
+	parsePortSpecFailureTests := []struct {
+		name       string
+		args       args
+		errMessage string
+	}{
+		{
+			name: "Failure while parsing, missing port number",
+			args: args{
+				specStr: "http:tcp",
+			},
+			errMessage: fmt.Sprintf("Error occurred while parsing port number '%v' in port spec '%v'", "tcp", "http:tcp"),
+		},
+		{
+			name: "Failure while parsing, more than one delimiter ':'",
+			args: args{
+				specStr: "http:233:80",
+			},
+			errMessage: fmt.Sprintf("Error occurred while parsing port number '%v' in port spec '%v'", "233:80", "http:233:80"),
+		},
+		{
+			name: "Failure while parsing, empty application protocol",
+			args: args{
+				specStr: ":3333/udp",
+			},
+			errMessage: fmt.Sprintf("Error occurred while parsing application protocol '%v' in port spec '%v'", "", ":3333/udp"),
+		},
+		{
+			name: "Failure while parsing, extra delimeter(:) is present",
+			args: args{
+				specStr: "http:80/udp:",
+			},
+			errMessage: fmt.Sprintf("Error occurred while parsing transport protocol '%v' in port spec '%v'", "udp:", "http:80/udp:"),
+		},
+		{
+			name: "Failure while parsing, port number is not a number",
+			args: args{
+				specStr: "http:abc/udp",
+			},
+			errMessage: fmt.Sprintf("Error occurred while parsing port number '%v' in port spec '%v'", "abc", "http:abc/udp"),
+		},
+	}
+	for _, parsePortSpecTest := range parsePortSpecFailureTests {
+		t.Run(parsePortSpecTest.name, func(t *testing.T) {
+			_, err := parsePortSpecStr(parsePortSpecTest.args.specStr)
+			require.NotNil(t, err, "Expected error, but received nil")
+			require.ErrorContains(t, err, parsePortSpecTest.errMessage)
+		})
+	}
+}
+
 func TestParsePortSpecstr_EmptyIsError(t *testing.T) {
 	_, err := parsePortSpecStr("")
 	require.Error(t, err)
@@ -26,14 +128,14 @@ func TestParsePortSpecstr_DefaultTcpProtocol(t *testing.T) {
 	portSpec, err := parsePortSpecStr("1234")
 	require.NoError(t, err)
 	require.Equal(t, uint16(1234), portSpec.GetNumber())
-	require.Equal(t, services.PortProtocol_TCP, portSpec.GetTransportProtocol())
+	require.Equal(t, services.TransportProtocol_TCP, portSpec.GetTransportProtocol())
 }
 
 func TestParsePortSpecstr_CustomProtocol(t *testing.T) {
 	portSpec, err := parsePortSpecStr("1234/udp")
 	require.NoError(t, err)
 	require.Equal(t, uint16(1234), portSpec.GetNumber())
-	require.Equal(t, services.PortProtocol_UDP, portSpec.GetTransportProtocol())
+	require.Equal(t, services.TransportProtocol_UDP, portSpec.GetTransportProtocol())
 }
 
 func TestParsePortsStr_DuplicatePortsCauseError(t *testing.T) {
@@ -54,12 +156,12 @@ func TestParsePortsStr_SuccessfulPortsString(t *testing.T) {
 	port1Spec, found := ports["port1"]
 	require.True(t, found)
 	require.Equal(t, uint16(8080), port1Spec.GetNumber())
-	require.Equal(t, services.PortProtocol_TCP, port1Spec.GetTransportProtocol())
+	require.Equal(t, services.TransportProtocol_TCP, port1Spec.GetTransportProtocol())
 
 	port2Spec, found := ports["port2"]
 	require.True(t, found)
 	require.Equal(t, uint16(2900), port2Spec.GetNumber())
-	require.Equal(t, services.PortProtocol_UDP, port2Spec.GetTransportProtocol())
+	require.Equal(t, services.TransportProtocol_UDP, port2Spec.GetTransportProtocol())
 }
 
 func TestParseEnvVarsStr_EqualSignInValueIsOkay(t *testing.T) {

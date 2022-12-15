@@ -59,7 +59,7 @@ func SerializePortSpecs(ports map[string]*port_spec.PortSpec) (*docker_label_val
 
 		portNum := portSpec.GetNumber()
 		portProtocol := portSpec.GetTransportProtocol()
-		if !portProtocol.IsAPortProtocol() {
+		if !portProtocol.IsATransportProtocol() {
 			return nil, stacktrace.NewError("Unrecognized port protocol '%v'", portProtocol.String())
 		}
 		portSpecStr := fmt.Sprintf(
@@ -198,7 +198,7 @@ func deserializePortSpecStrUsingDelimiters(
 			)
 		}
 		portNumUint16 := uint16(portNumUint64)
-		portProtocol, err := port_spec.PortProtocolString(portProtocolStr)
+		portProtocol, err := port_spec.TransportProtocolString(portProtocolStr)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred converting port protocol string '%v' to a port protocol enum", portProtocolStr)
 		}

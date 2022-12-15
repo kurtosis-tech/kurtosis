@@ -6,53 +6,68 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"go.starlark.net/starlark"
+	"regexp"
 	"strings"
 )
 
 const (
-	portNumberAttr   = "number"
-	portProtocolAttr = "protocol"
-	PortSpecTypeName = "PortSpec"
+	portNumberAttr              = "number"
+	transportProtocolAttr       = "transport_protocol"
+	portApplicationProtocolAttr = "application_protocol"
 
-	optionalPortProtocolAttr = "protocol?"
-	maxPortNumber            = 65535
-	minPortNumber            = 1
+	PortSpecTypeName              = "PortSpec"
+	maxPortNumber                 = 65535
+	minPortNumber                 = 1
+	optionalStringIdentifier      = ""
+	validApplicationProtocolRegex = `[a-zA-Z0-9+.-]`
+)
 
-	emptyProtocol = ""
+var (
+	optionalTransportProtocolAttr   = fmt.Sprintf(`%v?`, transportProtocolAttr)
+	optionalApplicationProtocolAttr = fmt.Sprintf(`%v?`, portApplicationProtocolAttr)
+	validApplicationProtocolMatcher = regexp.MustCompile(fmt.Sprintf(`^%v*$`, validApplicationProtocolRegex))
 )
 
 // PortSpec A starlark.Value that represents a port number & protocol
 type PortSpec struct {
-	number   uint32
-	protocol kurtosis_core_rpc_api_bindings.Port_TransportProtocol
+	number                   uint32
+	transportProtocol        kurtosis_core_rpc_api_bindings.Port_TransportProtocol
+	maybeApplicationProtocol string
 }
 
-func NewPortSpec(number uint32, protocol kurtosis_core_rpc_api_bindings.Port_TransportProtocol) *PortSpec {
+func NewPortSpec(number uint32, transportProtocol kurtosis_core_rpc_api_bindings.Port_TransportProtocol, maybeApplicationProtocol string) *PortSpec {
 	return &PortSpec{
-		number:   number,
-		protocol: protocol,
+		number:                   number,
+		transportProtocol:        transportProtocol,
+		maybeApplicationProtocol: maybeApplicationProtocol,
 	}
 }
 
 func MakePortSpec(_ *starlark.Thread, builtin *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 	var number int
-	var protocol string
+	var transportProtocol string
+	var maybeApplicationProtocol string
 
-	if err := starlark.UnpackArgs(builtin.Name(), args, kwargs, portNumberAttr, &number, optionalPortProtocolAttr, &protocol); err != nil {
+	if err := starlark.UnpackArgs(builtin.Name(), args, kwargs, portNumberAttr, &number, optionalTransportProtocolAttr, &transportProtocol, optionalApplicationProtocolAttr, &maybeApplicationProtocol); err != nil {
 		return nil, startosis_errors.NewInterpretationError("Cannot construct a PortSpec from the provided arguments. Error was: \n%v", err.Error())
 	}
 
-	portProtocol, interpretationError := parsePortProtocol(protocol)
+	parsedTransportProtocol, interpretationError := parseTransportProtocol(transportProtocol)
 	if interpretationError != nil {
 		return nil, interpretationError
 	}
 
 	uint32Number, interpretationError := parsePortNumber(number)
+
 	if interpretationError != nil {
 		return nil, interpretationError
 	}
 
-	return NewPortSpec(uint32Number, portProtocol), nil
+	if interpretationError = validateApplicationProtocol(maybeApplicationProtocol); interpretationError != nil {
+		return nil, interpretationError
+	}
+
+	return NewPortSpec(uint32Number, parsedTransportProtocol, maybeApplicationProtocol), nil
 }
 
 // String the starlark.Value interface
@@ -61,8 +76,10 @@ func (ps *PortSpec) String() string {
 	buffer.WriteString(PortSpecTypeName + "(")
 	buffer.WriteString(portNumberAttr + "=")
 	buffer.WriteString(fmt.Sprintf("%v, ", ps.number))
-	buffer.WriteString(portProtocolAttr + "=")
-	buffer.WriteString(fmt.Sprintf("%q)", ps.protocol.String()))
+	buffer.WriteString(transportProtocolAttr + "=")
+	buffer.WriteString(fmt.Sprintf("%q, ", ps.transportProtocol.String()))
+	buffer.WriteString(portApplicationProtocolAttr + "=")
+	buffer.WriteString(fmt.Sprintf("%q)", ps.maybeApplicationProtocol))
 	return buffer.String()
 }
 
@@ -92,8 +109,10 @@ func (ps *PortSpec) Attr(name string) (starlark.Value, error) {
 	switch name {
 	case portNumberAttr:
 		return starlark.MakeInt(int(ps.number)), nil
-	case portProtocolAttr:
-		return starlark.String(ps.protocol.String()), nil
+	case transportProtocolAttr:
+		return starlark.String(ps.transportProtocol.String()), nil
+	case portApplicationProtocolAttr:
+		return starlark.String(ps.maybeApplicationProtocol), nil
 	default:
 		return nil, fmt.Errorf("'%v' has no attribute '%v;", PortSpecTypeName, name)
 	}
@@ -104,24 +123,28 @@ func (ps *PortSpec) GetNumber() uint32 {
 }
 
 func (ps *PortSpec) GetProtocol() kurtosis_core_rpc_api_bindings.Port_TransportProtocol {
-	return ps.protocol
+	return ps.transportProtocol
+}
+
+func (ps *PortSpec) GetMaybeApplicationProtocol() string {
+	return ps.maybeApplicationProtocol
 }
 
 // AttrNames implements the starlark.HasAttrs interface.
 func (ps *PortSpec) AttrNames() []string {
-	return []string{portNumberAttr, portProtocolAttr}
+	return []string{portNumberAttr, transportProtocolAttr, portApplicationProtocolAttr}
 }
 
-func parsePortProtocol(portProtocol string) (kurtosis_core_rpc_api_bindings.Port_TransportProtocol, *startosis_errors.InterpretationError) {
-	if portProtocol == emptyProtocol {
+func parseTransportProtocol(portProtocol string) (kurtosis_core_rpc_api_bindings.Port_TransportProtocol, *startosis_errors.InterpretationError) {
+	if portProtocol == optionalStringIdentifier {
 		return kurtosis_core_rpc_api_bindings.Port_TCP, nil
 	}
 
-	parsedPortProtocol, found := kurtosis_core_rpc_api_bindings.Port_TransportProtocol_value[portProtocol]
+	parsedTransportProtocol, found := kurtosis_core_rpc_api_bindings.Port_TransportProtocol_value[portProtocol]
 	if !found {
-		return -1, startosis_errors.NewInterpretationError("Port protocol should be one of %s", strings.Join(port_spec.PortProtocolStrings(), ", "))
+		return -1, startosis_errors.NewInterpretationError("Port protocol should be one of %s", strings.Join(port_spec.TransportProtocolStrings(), ", "))
 	}
-	return kurtosis_core_rpc_api_bindings.Port_TransportProtocol(parsedPortProtocol), nil
+	return kurtosis_core_rpc_api_bindings.Port_TransportProtocol(parsedTransportProtocol), nil
 }
 
 func parsePortNumber(number int) (uint32, *startosis_errors.InterpretationError) {
@@ -129,4 +152,21 @@ func parsePortNumber(number int) (uint32, *startosis_errors.InterpretationError)
 		return 0, startosis_errors.NewInterpretationError("Port number should be in range [%d - %d]", minPortNumber, maxPortNumber)
 	}
 	return uint32(number), nil
+}
+
+func validateApplicationProtocol(maybeApplicationProtocol string) *startosis_errors.InterpretationError {
+	if maybeApplicationProtocol == optionalStringIdentifier {
+		return nil
+	}
+
+	doesApplicationProtocolContainsValidChar := validApplicationProtocolMatcher.MatchString(maybeApplicationProtocol)
+	if !doesApplicationProtocolContainsValidChar {
+		return startosis_errors.NewInterpretationError(
+			`application protocol '%v' contains invalid character(s). It must only contain %v`,
+			maybeApplicationProtocol,
+			validApplicationProtocolRegex,
+		)
+	}
+
+	return nil
 }

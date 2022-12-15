@@ -14,28 +14,30 @@ import (
 type TransportProtocol kurtosis_core_rpc_api_bindings.Port_TransportProtocol
 
 const (
-	PortProtocol_TCP = TransportProtocol(kurtosis_core_rpc_api_bindings.Port_TCP)
-	PortProtocol_UDP = TransportProtocol(kurtosis_core_rpc_api_bindings.Port_UDP)
+	TransportProtocol_TCP    = TransportProtocol(kurtosis_core_rpc_api_bindings.Port_TCP)
+	TransportProtocol_UDP    = TransportProtocol(kurtosis_core_rpc_api_bindings.Port_UDP)
+	emptyApplicationProtocol = ""
 )
 
 // "Set" of allowed port protocols
-var allowedPortProtocols = map[TransportProtocol]bool{
-	PortProtocol_TCP: true,
-	PortProtocol_UDP: true,
+var allowedTransportProtocols = map[TransportProtocol]bool{
+	TransportProtocol_TCP: true,
+	TransportProtocol_UDP: true,
 }
 
 func (protocol TransportProtocol) IsValid() bool {
-	_, found := allowedPortProtocols[protocol]
+	_, found := allowedTransportProtocols[protocol]
 	return found
 }
 
 type PortSpec struct {
-	number            uint16
-	transportProtocol TransportProtocol
+	number                   uint16
+	transportProtocol        TransportProtocol
+	maybeApplicationProtocol string
 }
 
-func NewPortSpec(number uint16, transportProtocol TransportProtocol) *PortSpec {
-	return &PortSpec{number: number, transportProtocol: transportProtocol}
+func NewPortSpec(number uint16, transportProtocol TransportProtocol, maybeApplicationProtocol string) *PortSpec {
+	return &PortSpec{number: number, transportProtocol: transportProtocol, maybeApplicationProtocol: maybeApplicationProtocol}
 }
 
 func (spec *PortSpec) GetNumber() uint16 {
@@ -47,5 +49,12 @@ func (spec *PortSpec) GetTransportProtocol() TransportProtocol {
 }
 
 func (spec *PortSpec) String() string {
-	return fmt.Sprintf("%d/%v", spec.number, spec.transportProtocol)
+	if spec.maybeApplicationProtocol == emptyApplicationProtocol {
+		return fmt.Sprintf("%d/%v", spec.number, spec.transportProtocol)
+	}
+	return fmt.Sprintf("%v:%d/%v", spec.maybeApplicationProtocol, spec.number, spec.transportProtocol)
+}
+
+func (spec *PortSpec) GetMaybeApplicationProtocol() string {
+	return spec.maybeApplicationProtocol
 }

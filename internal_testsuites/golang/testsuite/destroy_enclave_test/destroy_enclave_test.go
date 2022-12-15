@@ -19,13 +19,11 @@ const (
 
 	testFilesArtifactUrl = "https://kurtosis-public-access.s3.us-east-1.amazonaws.com/test-artifacts/static-fileserver-files.tgz"
 
-	filesArtifactMountpoint = "/static"
+	filesArtifactMountpoint  = "/static"
+	emptyApplicationProtocol = ""
 )
 
-var fileServerPortSpec = services.NewPortSpec(
-	fileServerPrivatePortNum,
-	services.PortProtocol_TCP,
-)
+var fileServerPortSpec = services.NewPortSpec(fileServerPrivatePortNum, services.TransportProtocol_TCP, emptyApplicationProtocol)
 
 func TestDestroyEnclave(t *testing.T) {
 	ctx := context.Background()

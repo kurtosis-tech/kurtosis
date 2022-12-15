@@ -3,7 +3,7 @@ import {
     ContainerConfigBuilder, 
     EnclaveContext, 
     PartitionID, 
-    PortProtocol, 
+    TransportProtocol,
     PortSpec, 
     ServiceID, 
     SoftPartitionConnection,
@@ -293,7 +293,7 @@ async function repartitionNetwork(enclaveContext: EnclaveContext, partitionConne
 }
 function getExampleServiceConfig(): ContainerConfig {
 
-    const portSpec = new PortSpec(EXAMPLE_SERVICE_PORT_NUM_INSIDE_NETWORK, PortProtocol.TCP);
+    const portSpec = new PortSpec(EXAMPLE_SERVICE_PORT_NUM_INSIDE_NETWORK, TransportProtocol.TCP);
     const usedPorts = new Map<string,PortSpec>()
     usedPorts.set(EXAMPLE_SERVICE_MAIN_PORT_ID,portSpec)
     const containerConfig = new ContainerConfigBuilder(DOCKER_GETTING_STARTED_IMAGE)

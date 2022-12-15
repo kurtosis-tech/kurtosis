@@ -91,22 +91,22 @@ func (backend KubernetesKurtosisBackend) CreateAPIContainer(
 		return nil, stacktrace.NewError("Found existing API container(s) in enclave '%v'; cannot start a new one", enclaveId)
 	}
 
-	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, consts.KurtosisServersPortProtocol, consts.HttpApplicationProtocol)
+	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, consts.KurtosisServersTransportProtocol, consts.HttpApplicationProtocol)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred creating the API container's private grpc port spec object using number '%v' and protocol '%v'",
 			grpcPortNum,
-			consts.KurtosisServersPortProtocol.String(),
+			consts.KurtosisServersTransportProtocol.String(),
 		)
 	}
-	privateGrpcProxyPortSpec, err := port_spec.NewPortSpec(grpcProxyPortNum, consts.KurtosisServersPortProtocol, consts.HttpApplicationProtocol)
+	privateGrpcProxyPortSpec, err := port_spec.NewPortSpec(grpcProxyPortNum, consts.KurtosisServersTransportProtocol, consts.HttpApplicationProtocol)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred creating the API container's private grpc proxy port spec object using number '%v' and protocol '%v'",
 			grpcProxyPortNum,
-			consts.KurtosisServersPortProtocol.String(),
+			consts.KurtosisServersTransportProtocol.String(),
 		)
 	}
 	privatePortSpecs := map[string]*port_spec.PortSpec{

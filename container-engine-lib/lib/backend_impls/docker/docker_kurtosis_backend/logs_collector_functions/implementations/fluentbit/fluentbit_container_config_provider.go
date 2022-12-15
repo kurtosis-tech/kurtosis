@@ -23,26 +23,26 @@ func newFluentbitContainerConfigProvider(config *FluentbitConfig, tcpPortNumber 
 }
 
 func (fluent *fluentbitContainerConfigProvider) GetPrivateTcpPortSpec() (*port_spec.PortSpec, error) {
-	privateTcpPortSpec, err := port_spec.NewPortSpec(fluent.tcpPortNumber, tcpPortProtocol, httpProtocolStr)
+	privateTcpPortSpec, err := port_spec.NewPortSpec(fluent.tcpPortNumber, tcpTransportProtocol, httpProtocolStr)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred creating the Fluentbit server's private TCP port spec object using number '%v' and protocol '%v'",
 			fluent.tcpPortNumber,
-			tcpPortProtocol,
+			tcpTransportProtocol,
 		)
 	}
 	return privateTcpPortSpec, nil
 }
 
 func (fluent *fluentbitContainerConfigProvider) GetPrivateHttpPortSpec() (*port_spec.PortSpec, error) {
-	privateHttpPortSpec, err := port_spec.NewPortSpec(fluent.httpPortNumber, httpPortProtocol, httpProtocolStr)
+	privateHttpPortSpec, err := port_spec.NewPortSpec(fluent.httpPortNumber, httpTransportProtocol, httpProtocolStr)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred creating the Fluentbit server's private HTTP port spec object using number '%v' and protocol '%v'",
 			fluent.httpPortNumber,
-			httpPortProtocol,
+			httpTransportProtocol,
 		)
 	}
 	return privateHttpPortSpec, nil

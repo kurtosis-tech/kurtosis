@@ -23,12 +23,11 @@ const (
 	waitForStartupTimeBetweenPolls = 1
 	waitForStartupMaxPolls         = 15
 	waitInitialDelayMilliseconds   = 500
+
+	emptyApplicationProtocol = ""
 )
 
-var exampleServicePrivatePortSpec = services.NewPortSpec(
-	exampleServicePrivatePortNum,
-	services.PortProtocol_TCP,
-)
+var exampleServicePrivatePortSpec = services.NewPortSpec(exampleServicePrivatePortNum, services.TransportProtocol_TCP, emptyApplicationProtocol)
 
 func TestWaitForEndpointAvailabilityFunction(t *testing.T) {
 	ctx := context.Background()

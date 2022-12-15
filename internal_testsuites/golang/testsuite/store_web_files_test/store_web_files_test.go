@@ -36,12 +36,11 @@ const (
 	expectedFile2Contents = "file2\n"
 
 	userServiceMountPointForTestFilesArtifact = "/static"
+
+	emptyApplicationProtocol = ""
 )
 
-var fileServerPortSpec = services.NewPortSpec(
-	fileServerPrivatePortNum,
-	services.PortProtocol_TCP,
-)
+var fileServerPortSpec = services.NewPortSpec(fileServerPrivatePortNum, services.TransportProtocol_TCP, emptyApplicationProtocol)
 
 func TestStoreWebFiles(t *testing.T) {
 	ctx := context.Background()

@@ -43,10 +43,10 @@ const (
 )
 
 // Completeness enforced via unit test
-var kurtosisPortProtocolToKubernetesPortProtocolTranslator = map[port_spec.PortProtocol]apiv1.Protocol{
-	port_spec.PortProtocol_TCP:  apiv1.ProtocolTCP,
-	port_spec.PortProtocol_UDP:  apiv1.ProtocolUDP,
-	port_spec.PortProtocol_SCTP: apiv1.ProtocolSCTP,
+var kurtosisTransportProtocolToKubernetesTransportProtocolTranslator = map[port_spec.TransportProtocol]apiv1.Protocol{
+	port_spec.TransportProtocol_TCP:  apiv1.ProtocolTCP,
+	port_spec.TransportProtocol_UDP:  apiv1.ProtocolUDP,
+	port_spec.TransportProtocol_SCTP: apiv1.ProtocolSCTP,
 }
 
 func StartUserServices(
@@ -586,7 +586,7 @@ func getKubernetesServicePortsFromPrivatePortSpecs(privatePorts map[string]*port
 	result := []apiv1.ServicePort{}
 	for portId, portSpec := range privatePorts {
 		kurtosisProtocol := portSpec.GetTransportProtocol()
-		kubernetesProtocol, found := kurtosisPortProtocolToKubernetesPortProtocolTranslator[kurtosisProtocol]
+		kubernetesProtocol, found := kurtosisTransportProtocolToKubernetesTransportProtocolTranslator[kurtosisProtocol]
 		if !found {
 			// Should never happen because we enforce completeness via unit test
 			return nil, stacktrace.NewError("No Kubernetes port protocol was defined for Kurtosis port protocol '%v'; this is a bug in Kurtosis", kurtosisProtocol)
@@ -614,7 +614,7 @@ func getKubernetesContainerPortsFromPrivatePortSpecs(privatePorts map[string]*po
 	result := []apiv1.ContainerPort{}
 	for portId, portSpec := range privatePorts {
 		kurtosisProtocol := portSpec.GetTransportProtocol()
-		kubernetesProtocol, found := kurtosisPortProtocolToKubernetesPortProtocolTranslator[kurtosisProtocol]
+		kubernetesProtocol, found := kurtosisTransportProtocolToKubernetesTransportProtocolTranslator[kurtosisProtocol]
 		if !found {
 			// Should never happen because we enforce completeness via unit test
 			return nil, stacktrace.NewError("No Kubernetes port protocol was defined for Kurtosis port protocol '%v'; this is a bug in Kurtosis", kurtosisProtocol)

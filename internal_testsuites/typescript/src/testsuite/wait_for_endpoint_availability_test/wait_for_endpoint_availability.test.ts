@@ -1,7 +1,7 @@
 import { 
     ContainerConfig, 
     ContainerConfigBuilder, 
-    PortProtocol, 
+    TransportProtocol,
     PortSpec, 
     ServiceID, 
 } from "kurtosis-sdk"
@@ -24,7 +24,7 @@ const WAIT_FOR_STARTUP_TIME_BETWEEN_POLLS = 1
 const WAIT_FOR_STARTUP_MAX_POLLS = 15
 const WAIT_INITIAL_DELAY_MILLISECONDS = 500
 
-const exampleServicePrivatePortSpec = new PortSpec(EXAMPLE_SERVICE_PRIVATE_PORT_NUM, PortProtocol.TCP)
+const exampleServicePrivatePortSpec = new PortSpec(EXAMPLE_SERVICE_PRIVATE_PORT_NUM, TransportProtocol.TCP)
 
 jest.setTimeout(180000)
 

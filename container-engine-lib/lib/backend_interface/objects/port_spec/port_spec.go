@@ -6,21 +6,21 @@ import (
 
 type PortSpec struct {
 	number              uint16
-	transportProtocol   PortProtocol
+	transportProtocol   TransportProtocol
 	applicationProtocol *string
 }
 
 /*
 	This method accepts port number, transportProtocol and application protocol ( which is optional)
 */
-func NewPortSpec(number uint16, transportProtocol PortProtocol, maybeApplicationProtocol string) (*PortSpec, error) {
+func NewPortSpec(number uint16, transportProtocol TransportProtocol, maybeApplicationProtocol string) (*PortSpec, error) {
 	var appProtocol *string
 	if maybeApplicationProtocol != "" {
 		appProtocol = &maybeApplicationProtocol
 	}
 
 	// throw an error if the method receives more than 3 parameters.
-	if !transportProtocol.IsAPortProtocol() {
+	if !transportProtocol.IsATransportProtocol() {
 		return nil, stacktrace.NewError("Unrecognized transportProtocol '%v'", transportProtocol.String())
 	}
 	portSpec := &PortSpec{
@@ -36,7 +36,7 @@ func (spec *PortSpec) GetNumber() uint16 {
 	return spec.number
 }
 
-func (spec *PortSpec) GetTransportProtocol() PortProtocol {
+func (spec *PortSpec) GetTransportProtocol() TransportProtocol {
 	return spec.transportProtocol
 }
 

@@ -8,7 +8,7 @@ import (
 const (
 	// The Kurtosis servers (Engine and API Container) use gRPC so MUST listen on TCP (no other protocols are supported), which also
 	// means that its grpc-proxy must listen on TCP
-	KurtosisServersPortProtocol = port_spec.PortProtocol_TCP
+	KurtosisServersTransportProtocol = port_spec.TransportProtocol_TCP
 
 	// The ID of the GRPC port for Kurtosis-internal containers (e.g. API container, engine, modules, etc.) which will
 	//  be stored in the port spec label
@@ -32,8 +32,8 @@ var IsPodRunningDeterminer = map[v1.PodPhase]bool{
 }
 
 // Completeness enforced via unit test
-var KurtosisPortProtocolToKubernetesPortProtocolTranslator = map[port_spec.PortProtocol]v1.Protocol{
-	port_spec.PortProtocol_TCP:  v1.ProtocolTCP,
-	port_spec.PortProtocol_UDP:  v1.ProtocolUDP,
-	port_spec.PortProtocol_SCTP: v1.ProtocolSCTP,
+var KurtosisTransportProtocolToKubernetesTransportProtocolTranslator = map[port_spec.TransportProtocol]v1.Protocol{
+	port_spec.TransportProtocol_TCP:  v1.ProtocolTCP,
+	port_spec.TransportProtocol_UDP:  v1.ProtocolUDP,
+	port_spec.TransportProtocol_SCTP: v1.ProtocolSCTP,
 }

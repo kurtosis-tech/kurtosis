@@ -25,7 +25,7 @@ import (
 const (
 	// The API container uses gRPC so MUST listen on TCP (no other protocols are supported), which also
 	// means that its grpc-proxy must listen on TCP
-	apiContainerPortProtocol = port_spec.PortProtocol_TCP
+	apiContainerTransportProtocol = port_spec.TransportProtocol_TCP
 
 	maxWaitForApiContainerAvailabilityRetries         = 10
 	timeBetweenWaitForApiContainerAvailabilityRetries = 1 * time.Second
@@ -39,7 +39,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	enclaveId enclave.EnclaveID,
 	grpcPortNum uint16,
 	grpcProxyPortNum uint16,
-	// The dirpath on the API container where the enclave data volume should be mounted
+// The dirpath on the API container where the enclave data volume should be mounted
 	enclaveDataVolumeDirpath string,
 	ownIpAddressEnvVar string,
 	customEnvVars map[string]string,
@@ -103,22 +103,22 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		envVarsWithOwnIp[key] = value
 	}
 
-	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, apiContainerPortProtocol, consts.HttpApplicationProtocol)
+	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, apiContainerTransportProtocol, consts.HttpApplicationProtocol)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred creating the API container's private grpc port spec object using number '%v' and protocol '%v'",
 			grpcPortNum,
-			consts.EnginePortProtocol.String(),
+			consts.EngineTransportProtocol.String(),
 		)
 	}
-	privateGrpcProxyPortSpec, err := port_spec.NewPortSpec(grpcProxyPortNum, apiContainerPortProtocol, consts.HttpApplicationProtocol)
+	privateGrpcProxyPortSpec, err := port_spec.NewPortSpec(grpcProxyPortNum, apiContainerTransportProtocol, consts.HttpApplicationProtocol)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred creating the API container's private grpc proxy port spec object using number '%v' and protocol '%v'",
 			grpcProxyPortNum,
-			consts.EnginePortProtocol.String(),
+			consts.EngineTransportProtocol.String(),
 		)
 	}
 

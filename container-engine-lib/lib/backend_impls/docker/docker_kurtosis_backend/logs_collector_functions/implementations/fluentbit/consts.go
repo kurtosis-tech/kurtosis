@@ -8,9 +8,9 @@ const (
 	rootDirpath = "/fluent-bit"
 
 	////////////////////////--LOKI CONTAINER CONFIGURATION SECTION--/////////////////////////////
-	containerImage          = "fluent/fluent-bit:1.9.7"
-	tcpPortProtocol         = port_spec.PortProtocol_TCP
-	httpPortProtocol        = port_spec.PortProtocol_TCP
+	containerImage        = "fluent/fluent-bit:1.9.7"
+	tcpTransportProtocol  = port_spec.TransportProtocol_TCP
+	httpTransportProtocol = port_spec.TransportProtocol_TCP
 
 	lokiOutputTypeName = "loki"
 
@@ -19,7 +19,7 @@ const (
 
 	//these two values are used for configuring the filesystem buffer. See more here: https://docs.fluentbit.io/manual/administration/buffering-and-storage#filesystem-buffering-to-the-rescue
 	filesystemBufferStorageDirpath = configDirpathInContainer + "/storage/"
-	inputFilesystemStorageType = "filesystem"
+	inputFilesystemStorageType     = "filesystem"
 
 	configFileTemplateName = "fluentbitConfigFileTemplate"
 	configFileTemplate     = `

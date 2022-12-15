@@ -2,14 +2,9 @@ import {
     ContainerConfig,
     ContainerConfigBuilder,
     FilesArtifactUUID,
-    PortProtocol,
-    PortSpec,
     ServiceID
 } from "kurtosis-sdk";
 import {createEnclave} from "../../test_helpers/enclave_setup";
-import log from "loglevel";
-import {err, ok, Result} from "neverthrow";
-import axios from "axios";
 
 const TEST_NAME = "duplicate-files-artifact-mount"
 const IS_PARTITIONING_ENABLED = false

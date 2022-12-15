@@ -6,7 +6,7 @@ export type { FilesArtifactUUID, ContainerConfig } from "./core/lib/services/con
 export { ContainerConfigBuilder } from "./core/lib/services/container_config";
 export type { ServiceID, ServiceGUID } from "./core/lib/services/service";
 export { ServiceContext } from "./core/lib/services/service_context";
-export { PortSpec, PortProtocol } from "./core/lib/services/port_spec"
+export { PortSpec, TransportProtocol } from "./core/lib/services/port_spec"
 
 // Enclaves
 export { EnclaveContext } from "./core/lib/enclaves/enclave_context";

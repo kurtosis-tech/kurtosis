@@ -22,10 +22,10 @@ func TestIsPodRunningDeterminerCompleteness(t *testing.T) {
 	}
 }
 
-func TestKubernetesPortProtocolLookupCompleteness(t *testing.T) {
-	for _, kurtosisPortProtocol := range port_spec.PortProtocolValues() {
-		_, found := KurtosisPortProtocolToKubernetesPortProtocolTranslator[kurtosisPortProtocol]
-		require.True(t, found, "No Kubernetes port protocol defined for Kurtosis port protocol '%v'", kurtosisPortProtocol.String())
+func TestKubernetesTransportProtocolLookupCompleteness(t *testing.T) {
+	for _, kurtosisTransportProtocol := range port_spec.TransportProtocolValues() {
+		_, found := KurtosisTransportProtocolToKubernetesTransportProtocolTranslator[kurtosisTransportProtocol]
+		require.True(t, found, "No Kubernetes port protocol defined for Kurtosis port protocol '%v'", kurtosisTransportProtocol.String())
 	}
 }
 

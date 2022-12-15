@@ -12,7 +12,7 @@ func TestOneToOneMappingBetweenObjAttrProtosAndDockerProtos(t *testing.T) {
 
 	// Ensure all teh declared obj attr protos are valid
 	for candidateObjAttrProto := range objAttrsSchemaPortProtosToDockerPortProtos {
-		_, found := schema.AllowedProtocols[candidateObjAttrProto]
+		_, found := schema.AllowedProtocols[schema.PortProtocol(candidateObjAttrProto.String())]
 		require.True(t, found, "Invalid object attribute schema proto '%v'", candidateObjAttrProto)
 	}
 
@@ -21,6 +21,6 @@ func TestOneToOneMappingBetweenObjAttrProtosAndDockerProtos(t *testing.T) {
 	for objAttrProto, dockerProto := range objAttrsSchemaPortProtosToDockerPortProtos {
 		preexistingObjAttrProto, found := seenDockerProtos[dockerProto]
 		require.False(t, found, "Docker proto '%v' is already in use by obj attr proto '%v'", dockerProto, preexistingObjAttrProto)
-		seenDockerProtos[dockerProto] = objAttrProto
+		seenDockerProtos[dockerProto] = schema.PortProtocol(objAttrProto.String())
 	}
 }

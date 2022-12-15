@@ -8,14 +8,22 @@ import (
 )
 
 const (
-	ipAddressTestValue = starlark.String("{{kurtosis:service_id.ip_address}}")
-	testInvalidAttr    = "invalid-test-attr"
+	ipAddressTestValue      = starlark.String("{{kurtosis:service_id.ip_address}}")
+	testInvalidAttr         = "invalid-test-attr"
+	httpApplicationProtocol = "http"
 )
 
 func TestService_StringRepresentation(t *testing.T) {
 	service, err := createTestServiceType()
 	require.Nil(t, err)
-	expectedStr := `service(ip_address="{{kurtosis:service_id.ip_address}}", ports={"grpc": PortSpec(number=123, protocol="TCP")})`
+	expectedStr := `service(ip_address="{{kurtosis:service_id.ip_address}}", ports={"grpc": PortSpec(number=123, transport_protocol="TCP", application_protocol="")})`
+	require.Equal(t, expectedStr, service.String())
+}
+
+func TestService_StringRepresentationWithApplicationProtocol(t *testing.T) {
+	service, err := createTestServiceTypeWithApplicationProtocol()
+	require.Nil(t, err)
+	expectedStr := `service(ip_address="{{kurtosis:service_id.ip_address}}", ports={"grpc": PortSpec(number=123, transport_protocol="TCP", application_protocol="http")})`
 	require.Equal(t, expectedStr, service.String())
 }
 
@@ -80,7 +88,17 @@ func TestService_TestAttrNames(t *testing.T) {
 
 func createTestServiceType() (*Service, error) {
 	ports := starlark.NewDict(1)
-	err := ports.SetKey(starlark.String("grpc"), NewPortSpec(123, kurtosis_core_rpc_api_bindings.Port_TCP))
+	err := ports.SetKey(starlark.String("grpc"), NewPortSpec(123, kurtosis_core_rpc_api_bindings.Port_TCP, emptyApplicationProtocol))
+	if err != nil {
+		return nil, err
+	}
+	service := NewService(ipAddressTestValue, ports)
+	return service, nil
+}
+
+func createTestServiceTypeWithApplicationProtocol() (*Service, error) {
+	ports := starlark.NewDict(1)
+	err := ports.SetKey(starlark.String("grpc"), NewPortSpec(123, kurtosis_core_rpc_api_bindings.Port_TCP, httpApplicationProtocol))
 	if err != nil {
 		return nil, err
 	}

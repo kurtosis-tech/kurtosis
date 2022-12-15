@@ -9,8 +9,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/api_container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/core/launcher/api_container_launcher"
-	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -42,10 +42,10 @@ var isContainerRunningDeterminer = map[types.ContainerStatus]bool{
 }
 
 // Unfortunately, Docker doesn't have constants for the protocols it supports declared
-var objAttrsSchemaPortProtosToDockerPortProtos = map[schema.PortProtocol]string{
-	schema.PortProtocol_TCP:  "tcp",
-	schema.PortProtocol_SCTP: "sctp",
-	schema.PortProtcol_UDP:   "udp",
+var objAttrsSchemaPortProtosToDockerPortProtos = map[port_spec.TransportProtocol]string{
+	port_spec.TransportProtocol_TCP:  "tcp",
+	port_spec.TransportProtocol_SCTP: "sctp",
+	port_spec.TransportProtocol_UDP:  "udp",
 }
 
 // Manages Kurtosis enclaves, and creates new ones in response to running tasks
@@ -68,7 +68,7 @@ func NewEnclaveManager(
 		mutex:           &sync.Mutex{},
 		kurtosisBackend: kurtosisBackend,
 		apiContainerKurtosisBackendConfigSupplier: apiContainerKurtosisBackendConfigSupplier,
-		enclaveIdGenerator: enclaveIdGenerator,
+		enclaveIdGenerator:                        enclaveIdGenerator,
 	}
 }
 

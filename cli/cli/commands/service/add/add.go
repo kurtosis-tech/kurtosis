@@ -39,12 +39,13 @@ const (
 	envvarKeyValueDelimiter     = "="
 	envvarDeclarationsDelimiter = ","
 
-	portsFlagKey                = "ports"
-	portIdSpecDelimiter         = "="
-	portNumberProtocolDelimiter = "/"
-	portDeclarationsDelimiter   = ","
-	portNumberUintParsingBase   = 10
-	portNumberUintParsingBits   = 16
+	portsFlagKey                     = "ports"
+	portIdSpecDelimiter              = "="
+	portNumberProtocolDelimiter      = "/"
+	portDeclarationsDelimiter        = ","
+	portApplicationProtocolDelimiter = ":"
+	portNumberUintParsingBase        = 10
+	portNumberUintParsingBits        = 16
 
 	filesFlagKey                         = "files"
 	filesArtifactMountsDelimiter         = ","
@@ -57,10 +58,42 @@ const (
 	privateIPAddressPlaceholderDefault = "KURTOSIS_IP_ADDR_PLACEHOLDER"
 
 	// Each envvar should be KEY1=VALUE1, which means we should have two components to each envvar declaration
-	expectedNumberKeyValueComponentsInEnvvarDeclaration = 2
+	expectedNumberKeyValueComponentsInEnvvarDeclaration  = 2
+	portNumberIndex                                      = 0
+	transportProtocolIndex                               = 1
+	applicationProtocolIndex                             = 0
+	remainingPortSpecIndex                               = 1
+	maybePortSpecComponentsLengthWithApplicationProtocol = 2
+
+	minRemainingPortSpecComponents = 1
+	maxRemainingPortSpecComponents = 2
+
+	emptyApplicationProtocol = ""
+	linkDelimeter            = "://"
+
+	maybeApplicationProtocolSpecForHelp = "MAYBE_APPLICATION_PROTOCOL"
+	transportProtocolSpecForHelp        = "TRANSPORT_PROTOCOL"
+	portNumberSpecForHelp               = "PORT_NUMBER"
+	portIdSpecForHelp                   = "PORT_ID"
 )
 
-var defaultPortProtocolStr = strings.ToLower(kurtosis_core_rpc_api_bindings.Port_TCP.String())
+var (
+	defaultTransportProtocolStr = strings.ToLower(kurtosis_core_rpc_api_bindings.Port_TCP.String())
+	serviceAddSpec              = fmt.Sprintf(
+		`%v%v%v%v%v`,
+		maybeApplicationProtocolSpecForHelp,
+		portApplicationProtocolDelimiter,
+		portNumberSpecForHelp,
+		portNumberProtocolDelimiter,
+		transportProtocolSpecForHelp,
+	)
+	serviceAddSpecWithPortId = fmt.Sprintf(
+		`%v%v%v`,
+		portIdSpecForHelp,
+		portIdSpecDelimiter,
+		serviceAddSpec,
+	)
+)
 
 var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
 	CommandStr:                command_str_consts.ServiceAddCmdStr,
@@ -109,18 +142,18 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 		},
 		{
 			Key: portsFlagKey,
-			Usage: fmt.Sprintf(
-				"String containing declarations of ports that the container will listen on, in the form "+
-					"\"PORTID1%v1234%vPROTOCOL1%vPORTID2%v5678\" where the PORTID is a user-friendly string for "+
-					"identifying the port, the port number is required, and the PROTOCOL must be either '%v' or '%v' "+
-					"and defaults to '%v' if omitted",
-				portIdSpecDelimiter,
-				portNumberProtocolDelimiter,
-				portDeclarationsDelimiter,
-				portIdSpecDelimiter,
+			Usage: fmt.Sprintf(`String containing declarations of ports that the container will listen on, in the form, %q`+
+				` where %q is a user friendly string for identifying the port, %q is required field, %q is an optional field which must be either`+
+				` '%v' or '%v' and defaults to '%v' if omitted and %q is user defined optional value. %v`,
+				serviceAddSpecWithPortId,
+				portIdSpecForHelp,
+				portNumberSpecForHelp,
+				transportProtocolSpecForHelp,
 				strings.ToLower(kurtosis_core_rpc_api_bindings.Port_TCP.String()),
 				strings.ToLower(kurtosis_core_rpc_api_bindings.Port_UDP.String()),
-				defaultPortProtocolStr,
+				defaultTransportProtocolStr,
+				maybeApplicationProtocolSpecForHelp,
+				generateExampleForPortFlag(),
 			),
 			Type: flags.FlagType_String,
 		},
@@ -257,10 +290,16 @@ func run(
 
 		apiProtocolEnum := kurtosis_core_rpc_api_bindings.Port_TransportProtocol(publicPortSpec.GetTransportProtocol())
 		protocolStr := strings.ToLower(apiProtocolEnum.String())
+
+		portApplicationProtocolStr := emptyApplicationProtocol
+		if privatePortSpec.GetMaybeApplicationProtocol() != emptyApplicationProtocol {
+			portApplicationProtocolStr = fmt.Sprintf("%v%v", privatePortSpec.GetMaybeApplicationProtocol(), linkDelimeter)
+		}
 		portBindingInfo := fmt.Sprintf(
-			"%v/%v -> %v:%v",
+			"%v/%v -> %v%v:%v",
 			privatePortSpec.GetNumber(),
 			protocolStr,
+			portApplicationProtocolStr,
 			publicIpAddr,
 			publicPortSpec.GetNumber(),
 		)
@@ -440,29 +479,66 @@ func parsePortSpecStr(specStr string) (*services.PortSpec, error) {
 		return nil, stacktrace.NewError("Cannot parse empty spec string")
 	}
 
-	portSpecComponents := strings.Split(specStr, portNumberProtocolDelimiter)
-	if len(portSpecComponents) == 0 {
-		// Not sure how this would even happen
-		return nil, stacktrace.NewError("Port spec string '%v' was split into 0 components, which should never happen", specStr)
-	}
-	numPortSpecComponents := len(portSpecComponents)
-	if numPortSpecComponents > 2 {
-		return nil, stacktrace.NewError(
-			"Port spec string '%v' was split on delimiter '%v' into '%v' components, which indicates too many delimiters",
-			specStr,
-			portNumberProtocolDelimiter,
-			numPortSpecComponents,
-		)
-	}
-	portNumberStr := portSpecComponents[0]
-	portProtocolStr := defaultPortProtocolStr
-	if numPortSpecComponents > 1 {
-		portProtocolStr = portSpecComponents[1]
+	maybeApplicationProtocol, remainingPortSpec, err := getMaybeApplicationProtocolFromPortSpecString(specStr)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error occurred while parsing application protocol '%v' in port spec '%v'", maybeApplicationProtocol, specStr)
 	}
 
+	remainingPortSpecComponents := strings.Split(remainingPortSpec, portNumberProtocolDelimiter)
+	numRemainingPortSpecComponents := len(remainingPortSpecComponents)
+	if numRemainingPortSpecComponents > maxRemainingPortSpecComponents {
+		return nil, stacktrace.NewError(
+			`Invalid port spec string, expected format is %q but got '%v'`,
+			serviceAddSpec,
+			specStr,
+		)
+	}
+
+	portNumberUint16, err := getPortNumberFromPortSpecString(remainingPortSpecComponents[portNumberIndex])
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error occurred while parsing port number '%v' in port spec '%v'", remainingPortSpecComponents[portNumberIndex], specStr)
+	}
+
+	transportProtocol := defaultTransportProtocolStr
+	if numRemainingPortSpecComponents > minRemainingPortSpecComponents {
+		transportProtocol = remainingPortSpecComponents[transportProtocolIndex]
+	}
+
+	transportProtocolFromEnum, err := getTransportProtocolFromPortSpecString(transportProtocol)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error occurred while parsing transport protocol '%v' in port spec '%v'", remainingPortSpecComponents[transportProtocolIndex], specStr)
+	}
+	return services.NewPortSpec(portNumberUint16, transportProtocolFromEnum, maybeApplicationProtocol), nil
+}
+
+/**
+This method takes in port protocol string and parses it to get application protocol.
+It looks for `:` delimiter and splits the string into array of at most size 2. If the length
+of array is 2 then application protocol exists, otherwise it does not. This is basically what
+strings.Cut() does. // TODO: use that instead once we update go version
+*/
+func getMaybeApplicationProtocolFromPortSpecString(portProtocolStr string) (string, string, error) {
+	remainingPortSpec := portProtocolStr
+
+	splitSpecArray := strings.SplitN(portProtocolStr, portApplicationProtocolDelimiter, 2)
+
+	if splitSpecArray[applicationProtocolIndex] == emptyApplicationProtocol {
+		return emptyApplicationProtocol, "", stacktrace.NewError("optional application protocol argument cannot be empty")
+	}
+
+	maybeApplicationProtocol := emptyApplicationProtocol
+	if len(splitSpecArray) == maybePortSpecComponentsLengthWithApplicationProtocol {
+		maybeApplicationProtocol = splitSpecArray[applicationProtocolIndex]
+		remainingPortSpec = splitSpecArray[remainingPortSpecIndex]
+	}
+
+	return maybeApplicationProtocol, remainingPortSpec, nil
+}
+
+func getPortNumberFromPortSpecString(portNumberStr string) (uint16, error) {
 	portNumberUint64, err := strconv.ParseUint(portNumberStr, portNumberUintParsingBase, portNumberUintParsingBits)
 	if err != nil {
-		return nil, stacktrace.Propagate(
+		return 0, stacktrace.Propagate(
 			err,
 			"An error occurred parsing port number string '%v' with base '%v' and bits '%v'",
 			portNumberStr,
@@ -471,14 +547,16 @@ func parsePortSpecStr(specStr string) (*services.PortSpec, error) {
 		)
 	}
 	portNumberUint16 := uint16(portNumberUint64)
+	return portNumberUint16, nil
+}
 
-	portProtocolEnumInt, found := kurtosis_core_rpc_api_bindings.Port_TransportProtocol_value[strings.ToUpper(portProtocolStr)]
+func getTransportProtocolFromPortSpecString(portSpec string) (services.TransportProtocol, error) {
+	transportProtocolEnumInt, found := kurtosis_core_rpc_api_bindings.Port_TransportProtocol_value[strings.ToUpper(portSpec)]
 	if !found {
-		return nil, stacktrace.NewError("Unrecognized port protocol '%v'", portProtocolStr)
+		return 0, stacktrace.NewError("Unrecognized port protocol '%v'", portSpec)
 	}
-	portProtocol := services.TransportProtocol(portProtocolEnumInt)
-
-	return services.NewPortSpec(portNumberUint16, portProtocol), nil
+	transportProtocol := services.TransportProtocol(transportProtocolEnumInt)
+	return transportProtocol, nil
 }
 
 func parseFilesArtifactMountsStr(filesArtifactMountsStr string) (map[services.FilesArtifactUUID]string, error) {
@@ -520,4 +598,19 @@ func parseFilesArtifactMountsStr(filesArtifactMountsStr string) (map[services.Fi
 	}
 
 	return result, nil
+}
+
+func generateExampleForPortFlag() string {
+	return fmt.Sprintf(
+		`Example: "PORTID1%v1234%vudp%vPORTID2%vhttp%v5678%vPORTID3%vhttp%v6000%vudp"`,
+		portIdSpecDelimiter,
+		portNumberProtocolDelimiter,
+		portDeclarationsDelimiter,
+		portIdSpecDelimiter,
+		portApplicationProtocolDelimiter,
+		portDeclarationsDelimiter,
+		portIdSpecDelimiter,
+		portApplicationProtocolDelimiter,
+		portNumberProtocolDelimiter,
+	)
 }

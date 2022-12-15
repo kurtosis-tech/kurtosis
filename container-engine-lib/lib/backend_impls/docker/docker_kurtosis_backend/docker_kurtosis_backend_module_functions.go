@@ -28,7 +28,7 @@ import (
 
 const (
 	// The module container uses gRPC so MUST listen on TCP (no other protocols are supported)
-	moduleContainerPortProtocol = port_spec.PortProtocol_TCP
+	moduleContainerTransportProtocol = port_spec.TransportProtocol_TCP
 
 	// The location where the enclave data volume will be mounted
 	//  on the module container
@@ -80,13 +80,13 @@ func (backend *DockerKurtosisBackend) CreateModule(
 		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave data volume for enclave '%v'", enclaveId)
 	}
 
-	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, moduleContainerPortProtocol, consts.HttpApplicationProtocol)
+	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, moduleContainerTransportProtocol, consts.HttpApplicationProtocol)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred creating the module's private grpc port spec object using number '%v', transport protocol '%v' and application protocol '%v'",
 			grpcPortNum,
-			consts.EnginePortProtocol.String(),
+			consts.EngineTransportProtocol.String(),
 			consts.HttpApplicationProtocol,
 		)
 	}

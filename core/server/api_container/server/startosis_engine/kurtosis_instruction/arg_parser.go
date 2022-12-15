@@ -44,9 +44,8 @@ const (
 	privateIPAddressPlaceholderKey = "private_ip_address_placeholder"
 
 	httpRequestExtractorsKey = "extract"
-
-	commandArgName          = "command"
-	expectedExitCodeArgName = "expected_exit_code"
+	commandArgName           = "command"
+	expectedExitCodeArgName  = "expected_exit_code"
 
 	templatesAndDataArgName = "config"
 	templateFieldKey        = "template"
@@ -323,7 +322,7 @@ func parseServiceConfigPorts(serviceConfig *starlarkstruct.Struct, portsKey stri
 			return nil, startosis_errors.NewInterpretationError("Port definition `%s` is expected to be a PortSpec", portDefinitionRaw)
 		}
 
-		port := binding_constructors.NewPort(portDefinition.GetNumber(), portDefinition.GetProtocol(), "")
+		port := binding_constructors.NewPort(portDefinition.GetNumber(), portDefinition.GetProtocol(), portDefinition.GetMaybeApplicationProtocol())
 		privatePorts[portName] = port
 	}
 	return privatePorts, nil

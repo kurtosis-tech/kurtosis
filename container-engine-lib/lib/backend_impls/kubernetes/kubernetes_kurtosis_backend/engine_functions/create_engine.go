@@ -47,22 +47,22 @@ func CreateEngine(
 	}
 	engineGuid := engine.EngineGUID(engineGuidStr)
 
-	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, consts.KurtosisServersPortProtocol, httpApplicationProtocol)
+	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, consts.KurtosisServersTransportProtocol, httpApplicationProtocol)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred creating the engine's private grpc port spec object using number '%v' and protocol '%v'",
 			grpcPortNum,
-			consts.KurtosisServersPortProtocol.String(),
+			consts.KurtosisServersTransportProtocol.String(),
 		)
 	}
-	privateGrpcProxyPortSpec, err := port_spec.NewPortSpec(grpcProxyPortNum, consts.KurtosisServersPortProtocol, httpApplicationProtocol)
+	privateGrpcProxyPortSpec, err := port_spec.NewPortSpec(grpcProxyPortNum, consts.KurtosisServersTransportProtocol, httpApplicationProtocol)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred creating the engine's private grpc proxy port spec object using number '%v' and protocol '%v'",
 			grpcProxyPortNum,
-			consts.KurtosisServersPortProtocol.String(),
+			consts.KurtosisServersTransportProtocol.String(),
 		)
 	}
 	privatePortSpecs := map[string]*port_spec.PortSpec{

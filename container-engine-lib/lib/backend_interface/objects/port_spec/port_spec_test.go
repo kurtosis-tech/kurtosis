@@ -6,17 +6,17 @@ import (
 )
 
 func TestConstructorErrorsOnUnrecognizedProtocol(t *testing.T) {
-	_, err := NewPortSpec(123, PortProtocol(999), "")
+	_, err := NewPortSpec(123, TransportProtocol(999), "")
 	require.Error(t, err)
 }
 
 func TestNewPortSpec_WithApplicationProtocolPresent(t *testing.T) {
 	https := "https"
-	spec, err := NewPortSpec(123, PortProtocol_TCP, https)
+	spec, err := NewPortSpec(123, TransportProtocol_TCP, https)
 
 	specActual := &PortSpec{
 		123,
-		PortProtocol_TCP,
+		TransportProtocol_TCP,
 		&https,
 	}
 
@@ -25,11 +25,11 @@ func TestNewPortSpec_WithApplicationProtocolPresent(t *testing.T) {
 }
 
 func TestNewPortSpec_WithApplicationProtocolAbsent(t *testing.T) {
-	spec, err := NewPortSpec(123, PortProtocol_TCP, "")
+	spec, err := NewPortSpec(123, TransportProtocol_TCP, "")
 
 	specActual := &PortSpec{
 		123,
-		PortProtocol_TCP,
+		TransportProtocol_TCP,
 		nil,
 	}
 

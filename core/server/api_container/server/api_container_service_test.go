@@ -21,8 +21,8 @@ func TestOneToOneApiAndPortSpecProtoMapping(t *testing.T) {
 	}
 
 	// Ensure no duplicates in the kurtosis backend port protos
-	require.Equal(t, len(port_spec.PortProtocolValues()), len(apiContainerPortProtoToPortSpecPortProto))
-	seenPortSpecProtos := map[port_spec.PortProtocol]kurtosis_core_rpc_api_bindings.Port_TransportProtocol{}
+	require.Equal(t, len(port_spec.TransportProtocolValues()), len(apiContainerPortProtoToPortSpecPortProto))
+	seenPortSpecProtos := map[port_spec.TransportProtocol]kurtosis_core_rpc_api_bindings.Port_TransportProtocol{}
 	for apiPortProto, portSpecProto := range apiContainerPortProtoToPortSpecPortProto {
 		preexistingApiPortProto, found := seenPortSpecProtos[portSpecProto]
 		require.False(

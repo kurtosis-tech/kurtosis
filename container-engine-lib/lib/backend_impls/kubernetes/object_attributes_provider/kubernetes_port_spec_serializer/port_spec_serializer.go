@@ -55,7 +55,7 @@ func SerializePortSpecs(ports map[string]*port_spec.PortSpec) (*kubernetes_annot
 
 		portNum := portSpec.GetNumber()
 		transportProtocol := portSpec.GetTransportProtocol()
-		if !transportProtocol.IsAPortProtocol() {
+		if !transportProtocol.IsATransportProtocol() {
 			return nil, stacktrace.NewError("Unrecognized transport port protocol '%v'", transportProtocol.String())
 		}
 		portSpecStr := fmt.Sprintf(
@@ -156,7 +156,7 @@ func DeserializePortSpecs(specsStr string) (map[string]*port_spec.PortSpec, erro
 			)
 		}
 		portNumUint16 := uint16(portNumUint64)
-		portProtocol, err := port_spec.PortProtocolString(portProtocolStr)
+		portProtocol, err := port_spec.TransportProtocolString(portProtocolStr)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred converting port protocol string '%v' to a port protocol enum", portProtocolStr)
 		}

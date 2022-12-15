@@ -23,8 +23,9 @@ const (
 	userServicePortsColHeader     = "Ports"
 	userServiceStatusColHeader    = "Status"
 	defaultEmptyIPAddrForServices = ""
-
-	missingPortPlaceholder = "<none>"
+	emptyApplicationProtocol      = ""
+	missingPortPlaceholder        = "<none>"
+	linkDelimeter                 = "://"
 )
 
 func printUserServices(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo, isAPIContainerRunning bool) error {
@@ -153,7 +154,16 @@ func getUserServicePortBindingStrings(userService *service.Service,
 				continue
 			}
 			currentPortLine := resultLines[portId]
-			resultLines[portId] = currentPortLine + fmt.Sprintf(" -> %v:%v", publicIpAddr, publicPortSpec.GetNumber())
+
+			applicationProtocol := emptyApplicationProtocol
+			privatePortSpec, found := privatePorts[portId]
+			if !found {
+				return nil, stacktrace.NewError("port spec associated with %v is not found", portId)
+			}
+			if privatePortSpec.GetMaybeApplicationProtocol() != nil {
+				applicationProtocol = fmt.Sprintf("%v%v", *privatePorts[portId].GetMaybeApplicationProtocol(), linkDelimeter)
+			}
+			resultLines[portId] = currentPortLine + fmt.Sprintf(" -> %v%v:%v", applicationProtocol, publicIpAddr, publicPortSpec.GetNumber())
 		}
 	}
 

@@ -55,10 +55,6 @@ type EnclaveContext struct {
 	enclaveId EnclaveID
 }
 
-const (
-	emptyApplicationProtocol = ""
-)
-
 /*
 Creates a new EnclaveContext object with the given parameters.
 */
@@ -294,11 +290,12 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 		logrus.Tracef("Successfully created files artifact ID str -> mount dirpaths map for service with ID '%v'", serviceID)
 		privatePorts := containerConfig.GetUsedPorts()
 		privatePortsForApi := map[string]*kurtosis_core_rpc_api_bindings.Port{}
+
 		for portId, portSpec := range privatePorts {
 			privatePortsForApi[portId] = &kurtosis_core_rpc_api_bindings.Port{
 				Number:                   uint32(portSpec.GetNumber()),
 				TransportProtocol:        kurtosis_core_rpc_api_bindings.Port_TransportProtocol(portSpec.GetTransportProtocol()),
-				MaybeApplicationProtocol: emptyApplicationProtocol,
+				MaybeApplicationProtocol: portSpec.GetMaybeApplicationProtocol(),
 			}
 		}
 		//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
@@ -308,7 +305,7 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 			publicPortsForApi[portId] = &kurtosis_core_rpc_api_bindings.Port{
 				Number:                   uint32(portSpec.GetNumber()),
 				TransportProtocol:        kurtosis_core_rpc_api_bindings.Port_TransportProtocol(portSpec.GetTransportProtocol()),
-				MaybeApplicationProtocol: emptyApplicationProtocol,
+				MaybeApplicationProtocol: portSpec.GetMaybeApplicationProtocol(),
 			}
 		}
 		//TODO finish the hack
@@ -693,10 +690,10 @@ func (enclaveCtx *EnclaveContext) RenderTemplates(templateAndDataByDestinationRe
 func convertApiPortsToServiceContextPorts(apiPorts map[string]*kurtosis_core_rpc_api_bindings.Port) (map[string]*services.PortSpec, error) {
 	result := map[string]*services.PortSpec{}
 	for portId, apiPortSpec := range apiPorts {
-		apiPortProtocol := apiPortSpec.GetTransportProtocol()
-		serviceCtxPortProtocol := services.TransportProtocol(apiPortProtocol)
-		if !serviceCtxPortProtocol.IsValid() {
-			return nil, stacktrace.NewError("Received unrecognized protocol '%v' from the API", apiPortProtocol)
+		apiTransportProtocol := apiPortSpec.GetTransportProtocol()
+		serviceCtxTransportProtocol := services.TransportProtocol(apiTransportProtocol)
+		if !serviceCtxTransportProtocol.IsValid() {
+			return nil, stacktrace.NewError("Received unrecognized protocol '%v' from the API", apiTransportProtocol)
 		}
 		portNumUint32 := apiPortSpec.GetNumber()
 		if portNumUint32 > math.MaxUint16 {
@@ -706,10 +703,13 @@ func convertApiPortsToServiceContextPorts(apiPorts map[string]*kurtosis_core_rpc
 				math.MaxUint16,
 			)
 		}
+
 		portNumUint16 := uint16(portNumUint32)
+		apiMaybeApplicationProtocol := apiPortSpec.GetMaybeApplicationProtocol()
 		result[portId] = services.NewPortSpec(
 			portNumUint16,
-			serviceCtxPortProtocol,
+			serviceCtxTransportProtocol,
+			apiMaybeApplicationProtocol,
 		)
 	}
 	return result, nil

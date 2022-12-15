@@ -15,7 +15,7 @@ def run(args):
 	service_config = struct(
 		image = "mendhak/http-https-echo:26",
 		ports = {
-			"http-port": PortSpec(number = 8080, protocol = "TCP")
+			"http-port": PortSpec(number = 8080, transport_protocol = "TCP")
 		}
 	)
 

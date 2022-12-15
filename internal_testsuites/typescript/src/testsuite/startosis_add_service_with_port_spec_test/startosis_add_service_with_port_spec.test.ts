@@ -1,5 +1,5 @@
 import {createEnclave} from "../../test_helpers/enclave_setup";
-import {PortProtocol } from "kurtosis-sdk";
+import {TransportProtocol } from "kurtosis-sdk";
 import log from "loglevel";
 
 const IS_PARTITIONING_ENABLED = false
@@ -15,7 +15,7 @@ const STARLARK_SCRIPT_WITH_PORT_SPEC_SUCCESS = `
 DOCKER_GETTING_STARTED_IMAGE = "docker/getting-started:latest"
 SERVICE_ID = "${SERVICE_ID}"
 
-spec = PortSpec(number = 5000, protocol = "UDP")
+spec = PortSpec(number = 5000, transport_protocol = "UDP")
 
 def run(args):
     add_service(
@@ -55,14 +55,14 @@ test("Test add service with optional protocol in port spec", async () => {
         expect(portsWithProtocol).toBeDefined()
         if (portsWithProtocol !== undefined) {
             expect(portsWithProtocol.number).toEqual(5000)
-            expect(portsWithProtocol.protocol).toEqual(PortProtocol.UDP)
+            expect(portsWithProtocol.transportProtocol).toEqual(TransportProtocol.UDP)
         }
 
         const portsWithOutProtocol = ports.get(PORT_WITHOUT_PROTOCOL)
         expect(portsWithOutProtocol).toBeDefined()
         if (portsWithOutProtocol !== undefined) {
             expect(portsWithOutProtocol.number).toEqual(3333)
-            expect(portsWithOutProtocol.protocol).toEqual(PortProtocol.TCP)
+            expect(portsWithOutProtocol.transportProtocol).toEqual(TransportProtocol.TCP)
         }
     } finally {
         stopEnclaveFunction()

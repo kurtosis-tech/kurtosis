@@ -53,10 +53,10 @@ var (
 // E.g. only used by start user services functions thus could go in start_user_services.go
 
 // Unfortunately, Docker doesn't have an enum for the protocols it supports, so we have to create this translation map
-var portSpecProtosToDockerPortProtos = map[port_spec.PortProtocol]string{
-	port_spec.PortProtocol_TCP:  "tcp",
-	port_spec.PortProtocol_SCTP: "sctp",
-	port_spec.PortProtocol_UDP:  "udp",
+var portSpecProtosToDockerPortProtos = map[port_spec.TransportProtocol]string{
+	port_spec.TransportProtocol_TCP:  "tcp",
+	port_spec.TransportProtocol_SCTP: "sctp",
+	port_spec.TransportProtocol_UDP:  "udp",
 }
 
 // NOTE: Normally we'd have a "canonical" resource here, where that resource is always guaranteed to exist. For Kurtosis services,

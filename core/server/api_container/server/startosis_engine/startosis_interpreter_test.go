@@ -37,8 +37,9 @@ var (
 )
 
 const (
-	testServiceId          = service.ServiceID("example-datastore-server")
-	testContainerImageName = "kurtosistech/example-datastore-server"
+	testServiceId            = service.ServiceID("example-datastore-server")
+	testContainerImageName   = "kurtosistech/example-datastore-server"
+	emptyApplicationProtocol = ""
 )
 
 var (
@@ -185,13 +186,13 @@ def run(args):
 	config = struct(
 		image = "` + testContainerImageName + `",
 		ports = {
-			"grpc": PortSpec(number = 1323, protocol = "TCP")
+			"grpc": PortSpec(number = 1323, transport_protocol = "TCP")
 		},
 		private_ip_address_placeholder = "` + privateIPAddressPlaceholder + `"
 	)
 	datastore_service = add_service(service_id = service_id, config = config)
 	print("The grpc port is " + str(datastore_service.ports["grpc"].number))
-	print("The grpc port protocol is " + datastore_service.ports["grpc"].protocol)
+	print("The grpc transport protocol is " + datastore_service.ports["grpc"].transport_protocol)
 	print("The datastore service ip address is " + datastore_service.ip_address)
 `
 
@@ -205,10 +206,48 @@ def run(args):
 	expectedOutput := `Starting Startosis script!
 Adding service example-datastore-server
 The grpc port is 1323
-The grpc port protocol is TCP
+The grpc transport protocol is TCP
 The datastore service ip address is %v
 `
 	validateScriptOutputFromPrintInstructions(t, instructions, fmt.Sprintf(expectedOutput, testServiceIpAddress))
+}
+
+func TestStartosisInterpreter_ValidSimpleScriptWithApplicationProtocol(t *testing.T) {
+	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
+	defer packageContentProvider.RemoveAll()
+	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
+	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, runtimeValueStore)
+	privateIPAddressPlaceholder := "MAGICAL_PLACEHOLDER_TO_REPLACE"
+	script := `
+def run(args):
+	print("Starting Startosis script!")
+
+	service_id = "%v"
+	print("Adding service " + service_id)
+
+	config = struct(
+		image = "` + testContainerImageName + `",
+		ports = {
+			"grpc": PortSpec(number = 1323, transport_protocol = "TCP", application_protocol = "http")
+		},
+		private_ip_address_placeholder = "` + privateIPAddressPlaceholder + `"
+	)
+	datastore_service = add_service(service_id = service_id, config = config)
+	print("The port is " + str(datastore_service.ports["grpc"].number))
+	print("The transport protocol is " + datastore_service.ports["grpc"].transport_protocol)
+	print("The application protocol is " + datastore_service.ports["grpc"].application_protocol)
+`
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, fmt.Sprintf(script, testServiceId), startosis_constants.EmptyInputArgs)
+	require.Nil(t, interpretationError)
+	require.Len(t, instructions, 6)
+
+	expectedOutput := `Starting Startosis script!
+Adding service example-datastore-server
+The port is 1323
+The transport protocol is TCP
+The application protocol is http
+`
+	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutput)
 }
 
 func TestStartosisInterpreter_ValidSimpleScriptWithInstructionMissingContainerName(t *testing.T) {
@@ -226,7 +265,7 @@ def run():
 	config = struct(
 		# /!\ /!\ missing container name /!\ /!\
 		ports = {
-			"grpc": struct(number = 1323, protocol = "TCP")
+			"grpc": struct(number = 1323, transport_protocol = "TCP")
 		}
 	)
 	add_service(service_id = service_id, config = config)
@@ -260,7 +299,7 @@ def run():
 	config = struct(
 		image = "` + testContainerImageName + `",
 		ports = {
-			"grpc": PortSpec(number = 1323, protocol = "TCPK") # typo in protocol
+			"grpc": PortSpec(number = 1323, transport_protocol = "TCPK") # typo in protocol
 		}
 	)
 	add_service(service_id = service_id, config = config)
@@ -293,7 +332,7 @@ def run():
 	config = struct(
 		image = "` + testContainerImageName + `",
 		ports = {
-		"grpc": PortSpec(number = "1234", protocol = "TCP") # port number should be an int
+			"grpc": PortSpec(number = "1234", protocol = "TCP") # port number should be an int
 		}
 	)
 	add_service(service_id = service_id, config = config)
@@ -304,7 +343,7 @@ PortSpec: for parameter "number": got string, want int`
 	require.Empty(t, instructions)
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
 		[]startosis_errors.CallFrame{
-			*startosis_errors.NewCallFrame("run", startosis_errors.NewScriptPosition(startosis_constants.PackageIdPlaceholderForStandaloneScript, 11, 19)),
+			*startosis_errors.NewCallFrame("run", startosis_errors.NewScriptPosition(startosis_constants.PackageIdPlaceholderForStandaloneScript, 11, 20)),
 			*startosis_errors.NewCallFrame("PortSpec", startosis_errors.NewScriptPosition("<builtin>", 0, 0)),
 		},
 		expectedErrorStr,
@@ -331,7 +370,7 @@ def deploy_datastore_services():
 			ports = {
 				"grpc": PortSpec(
 					number = ports[i],
-					protocol = "TCP"
+					transport_protocol = "TCP"
 				)
 			}
 		)
@@ -562,7 +601,7 @@ print("Constructing config")
 config = struct(
 	image = "kurtosistech/example-datastore-server",
 	ports = {
-		"grpc": PortSpec(number = 1323, protocol = "TCP")
+		"grpc": PortSpec(number = 1323, transport_protocol = "TCP")
 	}
 )
 `
@@ -611,7 +650,7 @@ def deploy_datastore_services():
 			ports = {
 				"grpc": PortSpec(
 					number = ports[i],
-					protocol = "TCP"
+					transport_protocol = "TCP"
 				)
 			}
 		)
@@ -687,7 +726,7 @@ print("Constructing config")
 config = struct(
 	image = "kurtosistech/example-datastore-server",
 	ports = {
-		"grpc": PortSpec(number = 1323, protocol = "TCP")
+		"grpc": PortSpec(number = 1323, transport_protocol = "TCP")
 	}
 )
 print("Adding service " + service_id)
@@ -728,7 +767,7 @@ print("Constructing config")
 config = struct(
 	image = "kurtosistech/example-datastore-server",
 	ports = {
-		"grpc": PortSpec(number = 1323, protocol = "TCP")
+		"grpc": PortSpec(number = 1323, transport_protocol = "TCP")
 	}
 )
 print("Adding service " + service_id)
@@ -767,7 +806,7 @@ def run():
 	config = struct(
 		image = "kurtosistech/example-datastore-server",
 		ports = {
-			"grpc": PortSpec(number = 1323, protocol = "TCP")
+			"grpc": PortSpec(number = 1323, transport_protocol = "TCP")
 		}
 	)
 	add_service(service_id = service_id, config = config)
@@ -797,7 +836,7 @@ def run():
 	store_config = struct(
 		image = "kurtosistech/example-datastore-server",
 		ports = {
-			"grpc": PortSpec(number = 1323, protocol = "TCP")
+			"grpc": PortSpec(number = 1323, transport_protocol = "TCP")
 		}
 	)
 	datastore_service = add_service(service_id = service_id, config = store_config)
@@ -806,7 +845,7 @@ def run():
 	client_config = struct(
 		image = "kurtosistech/example-datastore-client",
 		ports = {
-			"grpc": PortSpec(number = 1337, protocol = "TCP")
+			"grpc": PortSpec(number = 1337, transport_protocol = "TCP")
 		},
 		entrypoint = ["--store-port " + str(datastore_service.ports["grpc"].number), "--store-ip " + datastore_service.ip_address],
 		cmd = ["ping", datastore_service.ip_address],
@@ -1266,16 +1305,16 @@ def run():
 	config = struct(
 		image = "` + testContainerImageName + `",
 		ports = {
-			"grpc": PortSpec(number = 1323, protocol = "TCP")
+			"grpc": PortSpec(number = 1323, transport_protocol = "TCP")
 		},
 		private_ip_address_placeholder = "` + privateIPAddressPlaceholder + `",
 		public_ports = {
-			"grpc": PortSpec(number = 11323, protocol = "TCP")
+			"grpc": PortSpec(number = 11323, transport_protocol = "TCP")
 		}
 	)
 	datastore_service = add_service(service_id = service_id, config = config)
 	print("The grpc port is " + str(datastore_service.ports["grpc"].number))
-	print("The grpc port protocol is " + datastore_service.ports["grpc"].protocol)
+	print("The grpc transport protocol is " + datastore_service.ports["grpc"].transport_protocol)
 	print("The datastore service ip address is " + datastore_service.ip_address)
 `
 
@@ -1289,7 +1328,7 @@ def run():
 	expectedOutput := `Starting Startosis script!
 Adding service example-datastore-server
 The grpc port is 1323
-The grpc port protocol is TCP
+The grpc transport protocol is TCP
 The datastore service ip address is %v
 `
 	validateScriptOutputFromPrintInstructions(t, instructions, fmt.Sprintf(expectedOutput, testServiceIpAddress))
@@ -1405,7 +1444,7 @@ func createSimpleAddServiceInstruction(t *testing.T, serviceId service.ServiceID
 		usedPortDict := starlark.NewDict(1)
 		require.Nil(t, usedPortDict.SetKey(
 			starlark.String("grpc"),
-			kurtosis_types.NewPortSpec(portNumber, kurtosis_core_rpc_api_bindings.Port_TCP)))
+			kurtosis_types.NewPortSpec(portNumber, kurtosis_core_rpc_api_bindings.Port_TCP, emptyApplicationProtocol)))
 		serviceConfigStringDict["ports"] = usedPortDict
 	}
 
@@ -1413,7 +1452,7 @@ func createSimpleAddServiceInstruction(t *testing.T, serviceId service.ServiceID
 		publicPortsDict := starlark.NewDict(1)
 		require.Nil(t, publicPortsDict.SetKey(
 			starlark.String("grpc"),
-			kurtosis_types.NewPortSpec(publicPortNumber, kurtosis_core_rpc_api_bindings.Port_TCP)))
+			kurtosis_types.NewPortSpec(publicPortNumber, kurtosis_core_rpc_api_bindings.Port_TCP, emptyApplicationProtocol)))
 		serviceConfigStringDict["public_ports"] = publicPortsDict
 	}
 

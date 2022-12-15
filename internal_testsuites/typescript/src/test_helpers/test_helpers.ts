@@ -6,8 +6,9 @@ import {
     ServiceContext,
     PartitionID,
     PortSpec,
-    PortProtocol,
-    FilesArtifactUUID, ServiceGUID,
+    TransportProtocol,
+    FilesArtifactUUID,
+    ServiceGUID,
 } from "kurtosis-sdk";
 import * as datastoreApi from "example-datastore-server-api-lib";
 import * as serverApi from "example-api-server-api-lib";
@@ -40,11 +41,11 @@ const DEFAULT_PARTITION_ID = "";
 
 const DATASTORE_PORT_SPEC = new PortSpec(
     datastoreApi.LISTEN_PORT,
-    PortProtocol.TCP,
+    TransportProtocol.TCP,
 )
 const API_PORT_SPEC = new PortSpec(
     serverApi.LISTEN_PORT,
-    PortProtocol.TCP,
+    TransportProtocol.TCP,
 )
 
 const FILE_SERVER_SERVICE_IMAGE         = "flashspys/nginx-static"
@@ -58,7 +59,7 @@ const WAIT_FOR_AVAILABILITY_BODY_TEXT     = ""
 
 const USER_SERVICE_MOUNT_POINT_FOR_TEST_FILES_ARTIFACT  = "/static"
 
-const FILE_SERVER_PORT_SPEC = new PortSpec( FILE_SERVER_PRIVATE_PORT_NUM, PortProtocol.TCP )
+const FILE_SERVER_PORT_SPEC = new PortSpec( FILE_SERVER_PRIVATE_PORT_NUM, TransportProtocol.TCP )
 
 // for validating data store is healthy
 /*
