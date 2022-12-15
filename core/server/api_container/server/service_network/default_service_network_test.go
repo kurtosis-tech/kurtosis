@@ -9,6 +9,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
@@ -179,6 +180,163 @@ func TestStartService(t *testing.T) {
 		// partitions with services that failed to start were removed from the topology
 	}
 	require.Equal(t, expectedPartitionsInTopolody, network.topology.GetPartitionServices())
+}
+
+func TestUpdateService(t *testing.T) {
+	ctx := context.Background()
+	backend := backend_interface.NewMockKurtosisBackend(t)
+
+	network := NewDefaultServiceNetwork(
+		enclaveId,
+		ip,
+		apiContainerPort,
+		fakeApiContainerVersion,
+		partitioningEnabled,
+		backend,
+		unusedEnclaveDataDir,
+		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveId),
+	)
+
+	partition0 := service_network_types.PartitionID("partition0")
+	partition1 := service_network_types.PartitionID("partition1")
+	partition2 := service_network_types.PartitionID("partition2")
+
+	// service that will be successfully moved from partition1 to partition2
+	successfulServiceIndex := 1
+	successfulService := service.NewServiceRegistration(
+		testServiceIdFromInt(successfulServiceIndex),
+		testServiceGuidFromInt(successfulServiceIndex),
+		enclaveId,
+		testIpFromInt(successfulServiceIndex))
+
+	// service that will be in partition0 from the start and be updated to partition0 (i.e. it will no-op)
+	serviceAlreadyInPartitionIndex := 2
+	serviceAlreadyInPartition := service.NewServiceRegistration(
+		testServiceIdFromInt(serviceAlreadyInPartitionIndex),
+		testServiceGuidFromInt(serviceAlreadyInPartitionIndex),
+		enclaveId,
+		testIpFromInt(serviceAlreadyInPartitionIndex))
+
+	// service that does not exist, and yet we will try to update it. It should fail
+	nonExistentServiceIndex := 3
+	nonExistentService := service.NewServiceRegistration(
+		testServiceIdFromInt(nonExistentServiceIndex),
+		testServiceGuidFromInt(nonExistentServiceIndex),
+		enclaveId,
+		testIpFromInt(nonExistentServiceIndex))
+
+	// service that will be moved from default partition to partition2
+	serviceToMoveOutOfDefaultPartitionIndex := 4
+	serviceToMoveOutOfDefaultPartition := service.NewServiceRegistration(
+		testServiceIdFromInt(serviceToMoveOutOfDefaultPartitionIndex),
+		testServiceGuidFromInt(serviceToMoveOutOfDefaultPartitionIndex),
+		enclaveId,
+		testIpFromInt(serviceToMoveOutOfDefaultPartitionIndex))
+
+	require.Nil(t, network.topology.CreateEmptyPartitionWithDefaultConnection(partition1))
+	require.Nil(t, network.topology.CreateEmptyPartitionWithDefaultConnection(partition0))
+	require.Nil(t, network.topology.AddService(successfulService.GetID(), partition1))
+	require.Nil(t, network.topology.AddService(serviceAlreadyInPartition.GetID(), partition0))
+	require.Nil(t, network.topology.AddService(serviceToMoveOutOfDefaultPartition.GetID(), partition_topology.DefaultPartitionId))
+
+	network.registeredServiceInfo[successfulService.GetID()] = successfulService
+	network.registeredServiceInfo[serviceAlreadyInPartition.GetID()] = serviceAlreadyInPartition
+	network.registeredServiceInfo[serviceToMoveOutOfDefaultPartition.GetID()] = serviceToMoveOutOfDefaultPartition
+	// nonExistentService don't get added here as it is supposed to be an unknown service
+
+	network.networkingSidecars[successfulService.GetID()] = networking_sidecar.NewMockNetworkingSidecarWrapper()
+	network.networkingSidecars[serviceAlreadyInPartition.GetID()] = networking_sidecar.NewMockNetworkingSidecarWrapper()
+	network.networkingSidecars[serviceToMoveOutOfDefaultPartition.GetID()] = networking_sidecar.NewMockNetworkingSidecarWrapper()
+
+	success, failure, err := network.UpdateService(ctx, map[service.ServiceID]*kurtosis_core_rpc_api_bindings.UpdateServiceConfig{
+		successfulService.GetID():                  binding_constructors.NewUpdateServiceConfig(string(partition2)),
+		serviceAlreadyInPartition.GetID():          binding_constructors.NewUpdateServiceConfig(string(partition0)),
+		nonExistentService.GetID():                 binding_constructors.NewUpdateServiceConfig(string(partition2)),
+		serviceToMoveOutOfDefaultPartition.GetID(): binding_constructors.NewUpdateServiceConfig(string(partition2)),
+	})
+	require.Nil(t, err)
+	require.Len(t, success, 3)
+	require.Contains(t, success, successfulService.GetID())
+	require.Contains(t, success, serviceAlreadyInPartition.GetID())
+	require.Contains(t, success, serviceToMoveOutOfDefaultPartition.GetID())
+
+	require.Len(t, failure, 1)
+	require.Contains(t, failure, nonExistentService.GetID())
+
+	expectedPartitions := map[service_network_types.PartitionID]map[service.ServiceID]bool{
+		partition_topology.DefaultPartitionId: {},
+		partition0: {
+			serviceAlreadyInPartition.GetID(): true,
+		},
+		partition1: {},
+		partition2: {
+			successfulService.GetID():                  true,
+			serviceToMoveOutOfDefaultPartition.GetID(): true,
+		},
+	}
+	require.Equal(t, expectedPartitions, network.topology.GetPartitionServices())
+}
+
+func TestUpdateService_FullBatchFailureRollBack(t *testing.T) {
+	ctx := context.Background()
+	backend := backend_interface.NewMockKurtosisBackend(t)
+
+	network := NewDefaultServiceNetwork(
+		enclaveId,
+		ip,
+		apiContainerPort,
+		fakeApiContainerVersion,
+		partitioningEnabled,
+		backend,
+		unusedEnclaveDataDir,
+		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveId),
+	)
+
+	partition1 := service_network_types.PartitionID("partition1")
+	partition2 := service_network_types.PartitionID("partition2")
+
+	failingServiceIndex := 1
+	failingService := service.NewServiceRegistration(
+		testServiceIdFromInt(failingServiceIndex),
+		testServiceGuidFromInt(failingServiceIndex),
+		enclaveId,
+		testIpFromInt(failingServiceIndex))
+	successfulServiceIndex := 2
+	successfulService := service.NewServiceRegistration(
+		testServiceIdFromInt(successfulServiceIndex),
+		testServiceGuidFromInt(successfulServiceIndex),
+		enclaveId,
+		testIpFromInt(successfulServiceIndex))
+
+	require.Nil(t, network.topology.CreateEmptyPartitionWithDefaultConnection(partition1))
+	require.Nil(t, network.topology.AddService(failingService.GetID(), partition1))
+	require.Nil(t, network.topology.AddService(successfulService.GetID(), partition1))
+
+	network.registeredServiceInfo[failingService.GetID()] = failingService
+	network.registeredServiceInfo[successfulService.GetID()] = successfulService
+
+	// do not add sidecar for failingService so that it fails updating the connections
+	network.networkingSidecars[successfulService.GetID()] = networking_sidecar.NewMockNetworkingSidecarWrapper()
+
+	success, failure, err := network.UpdateService(ctx, map[service.ServiceID]*kurtosis_core_rpc_api_bindings.UpdateServiceConfig{
+		failingService.GetID():    binding_constructors.NewUpdateServiceConfig(string(partition2)),
+		successfulService.GetID(): binding_constructors.NewUpdateServiceConfig(string(partition2)),
+	})
+	require.Contains(t, err.Error(), "Unable to update connections between the different partitions of the topology")
+
+	require.Nil(t, success)
+	require.Nil(t, failure)
+
+	expectedPartitions := map[service_network_types.PartitionID]map[service.ServiceID]bool{
+		partition_topology.DefaultPartitionId: {},
+		// partition2 was removed as it was a new partition that remained empty
+		// both services were left into partition1
+		partition1: {
+			failingService.GetID():    true,
+			successfulService.GetID(): true,
+		},
+	}
+	require.Equal(t, expectedPartitions, network.topology.GetPartitionServices())
 }
 
 func TestSetDefaultConnection(t *testing.T) {

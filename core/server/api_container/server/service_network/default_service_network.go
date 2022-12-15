@@ -462,9 +462,6 @@ func (network *DefaultServiceNetwork) StartServices(
 		serviceIDsForTopologyCleanup[serviceID] = true
 	}
 	defer func() {
-		if len(serviceIDsForTopologyCleanup) == 0 {
-			return
-		}
 		for serviceID := range serviceIDsForTopologyCleanup {
 			network.topology.RemoveService(serviceID)
 		}
@@ -535,6 +532,108 @@ func (network *DefaultServiceNetwork) StartServices(
 		delete(sidecarsToCleanUp, serviceID)
 	}
 	return successfulServicePool, failedServicesPool, nil
+}
+
+func (network *DefaultServiceNetwork) UpdateService(
+	ctx context.Context,
+	updateServiceConfigs map[service.ServiceID]*kurtosis_core_rpc_api_bindings.UpdateServiceConfig,
+) (
+	map[service.ServiceID]bool,
+	map[service.ServiceID]error,
+	error,
+) {
+	failedServicesPool := map[service.ServiceID]error{}
+	successfullyUpdatedService := map[service.ServiceID]bool{}
+
+	previousServicePartitions := map[service.ServiceID]service_network_types.PartitionID{}
+	partitionCreatedDuringThisOperation := map[service_network_types.PartitionID]bool{}
+	for serviceID, updateServiceConfig := range updateServiceConfigs {
+		if updateServiceConfig.Subnetwork == nil {
+			// nothing to do for this service
+			continue
+		}
+
+		previousServicePartition, found := network.topology.GetServicePartitions()[serviceID]
+		if !found {
+			failedServicesPool[serviceID] = stacktrace.NewError("Error updating service '%s' as this service does not exist", serviceID)
+			continue
+		}
+		previousServicePartitions[serviceID] = previousServicePartition
+
+		var newServicePartition service_network_types.PartitionID
+		if *updateServiceConfig.Subnetwork == "" {
+			newServicePartition = partition_topology.DefaultPartitionId
+		} else {
+			newServicePartition = service_network_types.PartitionID(*updateServiceConfig.Subnetwork)
+		}
+
+		if newServicePartition == previousServicePartition {
+			// nothing to do for this service
+			continue
+		}
+
+		if _, found = network.topology.GetPartitionServices()[newServicePartition]; !found {
+			logrus.Debugf("Partition with ID '%s' does not exist in current topology. Creating it to be able to "+
+				"add service '%s' to it when it's created", newServicePartition, serviceID)
+			if err := network.topology.CreateEmptyPartitionWithDefaultConnection(newServicePartition); err != nil {
+				failedServicesPool[serviceID] = stacktrace.Propagate(
+					err,
+					"Cannot update service '%v' its new partition '%s' needed to be created and it failed",
+					serviceID,
+					newServicePartition,
+				)
+				continue
+			}
+			partitionCreatedDuringThisOperation[newServicePartition] = true
+		}
+
+		if err := network.moveServiceToPartitionInTopology(serviceID, newServicePartition); err != nil {
+			failedServicesPool[serviceID] = stacktrace.Propagate(err, "Error updating service '%s' adding it to the new partition '%s'", serviceID, newServicePartition)
+			continue
+		}
+	}
+	defer func() {
+		for serviceID, partitionIDToRollbackTo := range previousServicePartitions {
+			if _, found := successfullyUpdatedService[serviceID]; found {
+				continue
+			}
+			currentPartitionId, found := network.topology.GetServicePartitions()[serviceID]
+			if !found {
+				// service does not exist, nothing to roll back
+				continue
+			}
+			if currentPartitionId == partitionIDToRollbackTo {
+				// service is still in the partition it was before the call to UpdateService, nothing to roll back
+				continue
+			}
+			// if service exists and is not in successfullyUpdatedService, roll it back to its previous partition
+			if err := network.moveServiceToPartitionInTopology(serviceID, partitionIDToRollbackTo); err != nil {
+				logrus.Errorf("An error happened updating service '%s' and it needed to be moved back to partition '%s', but an error happened during this operation. The service will be left in '%s'. Error was:\n%v", serviceID, partitionIDToRollbackTo, currentPartitionId, err)
+			}
+		}
+		// finally, after all updates and roll-back have been performed, check for potentially empty partitions and remove them to keep the topology clean
+		for partitionID := range partitionCreatedDuringThisOperation {
+			servicesInPartition, found := network.topology.GetPartitionServices()[partitionID]
+			if found && len(servicesInPartition) == 0 {
+				if err := network.topology.RemovePartition(partitionID); err != nil {
+					logrus.Errorf("Partition '%s' was left empty after a service update. It failed to be removes", partitionID)
+				}
+			}
+		}
+	}()
+
+	if err := network.updateAllConnectionsFromTopology(ctx); err != nil {
+		// successfullyUpdatedService is still empty here, so all services will be rolled back to their previous partition
+		return nil, nil, stacktrace.Propagate(err, "Unable to update connections between the different partitions of the topology")
+	}
+
+	for serviceID := range updateServiceConfigs {
+		if _, found := failedServicesPool[serviceID]; found {
+			continue
+		}
+		successfullyUpdatedService[serviceID] = true
+	}
+	return successfullyUpdatedService, failedServicesPool, nil
 }
 
 func (network *DefaultServiceNetwork) RemoveService(
@@ -883,6 +982,7 @@ func updateTrafficControlConfiguration(
 ) error {
 
 	// TODO PERF: Run the container updates in parallel, with the container being modified being the most important
+	// TODO: we need to roll back all services if one fails because upstream, when calling updateTrafficControlConfiguration, we throw the entire batch
 
 	for serviceId, allOtherServicesPacketLossConfigurations := range targetServicePacketLossConfigs {
 		allPacketLossPercentageForIpAddresses := map[string]float32{}
@@ -1113,6 +1213,29 @@ func (network *DefaultServiceNetwork) addServiceToTopology(serviceID service.Ser
 	}()
 
 	shouldRemoveFromTopology = false
+	return nil
+}
+
+func (network *DefaultServiceNetwork) moveServiceToPartitionInTopology(serviceID service.ServiceID, partitionID service_network_types.PartitionID) error {
+	isOperationSuccessful := false
+	serviceCurrentPartition, found := network.topology.GetServicePartitions()[serviceID]
+	if !found {
+		return stacktrace.NewError("Service with ID '%s' not found in the topology", serviceID)
+	}
+	network.topology.RemoveService(serviceID)
+	defer func() {
+		if isOperationSuccessful {
+			return
+		}
+		if err := network.topology.AddService(serviceID, serviceCurrentPartition); err != nil {
+			logrus.Errorf("Service '%s' could not be moved to partition '%s'. It should have been rolled back to its previous partition '%s' but this operation failed", serviceID, partitionID, serviceCurrentPartition)
+			return
+		}
+	}()
+	if err := network.topology.AddService(serviceID, partitionID); err != nil {
+		return stacktrace.Propagate(err, "Error moving service '%s' to its new partition '%s'", serviceID, partitionID)
+	}
+	isOperationSuccessful = true
 	return nil
 }
 

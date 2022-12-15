@@ -54,6 +54,11 @@ func (m *MockServiceNetwork) StartServices(ctx context.Context, serviceConfigs m
 	panic(unimplementedMsg)
 }
 
+func (m *MockServiceNetwork) UpdateService(ctx context.Context, updateServiceConfigs map[service.ServiceID]*kurtosis_core_rpc_api_bindings.UpdateServiceConfig) (map[service.ServiceID]bool, map[service.ServiceID]error, error) {
+	//TODO implement me
+	panic(unimplementedMsg)
+}
+
 func (m *MockServiceNetwork) RemoveService(ctx context.Context, serviceId service.ServiceID) (service.ServiceGUID, error) {
 	//TODO implement me
 	panic(unimplementedMsg)

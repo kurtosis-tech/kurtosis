@@ -253,9 +253,8 @@ func (topology *PartitionTopology) AddService(serviceId service.ServiceID, parti
 	return nil
 }
 
-/*
-Removes the given service from the toplogy, if it exists. If it doesn't exist, this is a no-op.
-*/
+// RemoveService removes the given service from the topology, if it exists. If it doesn't exist, this is a no-op.
+// Note that RemoveService leaves the partition in the topology even if it is empty after the service has been removed
 func (topology *PartitionTopology) RemoveService(serviceId service.ServiceID) {
 	partitionId, found := topology.servicePartitions[serviceId]
 	if !found {
@@ -268,16 +267,6 @@ func (topology *PartitionTopology) RemoveService(serviceId service.ServiceID) {
 		return
 	}
 	delete(servicesForPartition, serviceId)
-
-	partitionServices, found := topology.partitionServices[partitionId]
-	if !found {
-		logrus.Errorf("Unable to find services mapped to this partition to check if it's empty: '%s'. The network topology is inconsistent, this is a Kurtosis bug", partitionId)
-	}
-	if len(partitionServices) == 0 {
-		if err := topology.RemovePartition(partitionId); err != nil {
-			logrus.Errorf("Failed removing an empty partition: '%s'. This is not critical but migh be a sign of a malfunction", partitionId)
-		}
-	}
 }
 
 func (topology *PartitionTopology) GetPartitionServices() map[service_network_types.PartitionID]map[service.ServiceID]bool {
@@ -301,6 +290,10 @@ func (topology *PartitionTopology) GetPartitionConnection(partition1 service_net
 		return true, topology.GetDefaultConnection(), nil
 	}
 	return false, currentPartitionConnection, nil
+}
+
+func (topology *PartitionTopology) GetServicePartitions() map[service.ServiceID]service_network_types.PartitionID {
+	return topology.servicePartitions
 }
 
 func (topology *PartitionTopology) GetServicePacketLossConfigurationsByServiceID() (map[service.ServiceID]map[service.ServiceID]float32, error) {

@@ -142,6 +142,14 @@ message ServiceConfig {
   optional string subnetwork = 11;
 }
 
+// Subset of ServiceConfig attributes containing only the fields that are "live-updatable"
+// This will eventually get removed in favour of ServiceConfig when all attributes become "live-updatable"
+message UpdateServiceConfig {
+  // The name of the subnetwork the service will be moved to. If the subnetwork does not exist, it will be created.
+  // If it is set to "" the service will be moved to the default subnetwork
+  optional string subnetwork = 1;
+}
+
 message ModuleInfo {
   // GUID of the module
   string guid = 1;

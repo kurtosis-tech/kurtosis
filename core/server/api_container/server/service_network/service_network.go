@@ -46,6 +46,15 @@ type ServiceNetwork interface {
 		error,
 	)
 
+	UpdateService(
+		ctx context.Context,
+		updateServiceConfigs map[service.ServiceID]*kurtosis_core_rpc_api_bindings.UpdateServiceConfig,
+	) (
+		map[service.ServiceID]bool,
+		map[service.ServiceID]error,
+		error,
+	)
+
 	RemoveService(
 		ctx context.Context,
 		serviceId service.ServiceID,
