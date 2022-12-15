@@ -8,6 +8,7 @@ internal_testsuites_root_dirpath="$(dirname "${script_dirpath}")"
 # ==================================================================================================
 #                                             Constants
 # ==================================================================================================
+CHILD_TEST_SCRIPT_FILENAME="test.sh"
 STARLARK_DIR_PATH="starlark"
 
 # ==================================================================================================
@@ -25,7 +26,7 @@ for maybe_testsuite_rel_dirpath in $(find "${internal_testsuites_root_dirpath}" 
     fi
 
     echo "Running buildscript for testsuite '${maybe_testsuite_dirname}'..."
-    testsuite_buildscript_filepath="${maybe_testsuite_rel_dirpath}/scripts/build.sh"
+    testsuite_buildscript_filepath="${maybe_testsuite_rel_dirpath}/scripts/${CHILD_TEST_SCRIPT_FILENAME}"
     if ! [ -f "${testsuite_buildscript_filepath}" ]; then
         echo "Error: Expected a buildscript for testsuite directory '${maybe_testsuite_dirname}' at '${testsuite_buildscript_filepath}', but none was found" >&2
         exit 1

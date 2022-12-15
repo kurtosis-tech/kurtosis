@@ -482,7 +482,7 @@ jobs:
             equal: [ "minikube", << parameters.cli-cluster-backend >> ]
           steps:
             - run: |
-                if ! ./internal_testsuites/golang/scripts/build.sh minikube; then
+                if ! ./internal_testsuites/golang/scripts/test.sh minikube; then
                   touch /tmp/testsuite-failed
                 fi
 
@@ -493,7 +493,7 @@ jobs:
             equal: [ "docker", << parameters.cli-cluster-backend >> ]
           steps:
             - run: |
-                if ! ./internal_testsuites/golang/scripts/build.sh; then
+                if ! ./internal_testsuites/golang/scripts/test.sh; then
                   touch /tmp/testsuite-failed
                 fi
 
@@ -555,7 +555,7 @@ jobs:
             equal: [ "minikube", << parameters.cli-cluster-backend >> ]
           steps:
             - run: |
-                if ! ./internal_testsuites/typescript/scripts/build.sh minikube; then
+                if ! ./internal_testsuites/typescript/scripts/test.sh minikube; then
                    touch /tmp/testsuite-failed
                 fi
       - when:
@@ -563,7 +563,7 @@ jobs:
             equal: [ "docker", << parameters.cli-cluster-backend >> ]
           steps:
             - run: |
-                if ! ./internal_testsuites/typescript/scripts/build.sh; then
+                if ! ./internal_testsuites/typescript/scripts/test.sh; then
                    touch /tmp/testsuite-failed
                  fi
 

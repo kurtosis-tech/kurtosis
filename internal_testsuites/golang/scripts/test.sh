@@ -46,8 +46,11 @@ go build ./...
 
 # The count=1 disables caching for the testsuite (which we want, because the engine server might have changed even though the test code didn't)
 if [ "${testsuite_cluster_backend_arg}" == "${TESTSUITE_CLUSTER_BACKEND_MINIKUBE}" ]; then
-  CGO_ENABLED=0 go test ./... -p "${PARALLELISM}" -count=1 -timeout "${TIMEOUT}" -tags minikube
+    # TODO This should be removed! Go Kurtosis tests should be completely agnostic to the backend they're running against
+    # The only reason this exists is because, as of 2022-10-28, network partitioning doesn't work on Kubernetes so we have to know to skip
+    #  those tests
+    CGO_ENABLED=0 go test ./... -p "${PARALLELISM}" -count=1 -timeout "${TIMEOUT}" -tags minikube
 else
-  CGO_ENABLED=0 go test ./... -p "${PARALLELISM}" -count=1 -timeout "${TIMEOUT}"
+    CGO_ENABLED=0 go test ./... -p "${PARALLELISM}" -count=1 -timeout "${TIMEOUT}"
 fi
 

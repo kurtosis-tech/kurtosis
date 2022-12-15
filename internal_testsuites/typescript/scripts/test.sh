@@ -58,7 +58,10 @@ yarn install
 yarn build
 
 if [ "${testsuite_cluster_backend_arg}" == "${TESTSUITE_CLUSTER_BACKEND_MINIKUBE}" ]; then
-  yarn test --testPathIgnorePatterns=${KUBERNETES_TEST_IGNORE_PATTERNS}
+    # TODO This should be removed! Typescript Kurtosis tests should be completely agnostic to the backend they're running against
+    # The only reason this exists is because, as of 2022-10-28, network partitioning doesn't work on Kubernetes so we have to know to skip
+    #  those tests
+    yarn test --testPathIgnorePatterns=${KUBERNETES_TEST_IGNORE_PATTERNS}
 else
-  yarn test
+    yarn test
 fi
