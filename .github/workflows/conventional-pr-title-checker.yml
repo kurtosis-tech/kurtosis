@@ -10,14 +10,14 @@ on:
 
 # cancel redundant builds
 concurrency:
-  group: "title-checker-${{ github.ref }}"
+  group: "title-checker-${{ github.head_ref }}"
   cancel-in-progress: true
 
 jobs:
   title_check:
-    if: contains(github.head_ref, 'release-please') != true
     runs-on: ubuntu-latest
     steps:
       - uses: aslafy-z/conventional-pr-title-action@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

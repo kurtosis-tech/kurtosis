@@ -9,7 +9,7 @@ on:
 
 # cancel redundant builds
 concurrency:
-  group: "update-pr-${{ github.ref }}"
+  group: "update-pr-${{ github.head_ref }}"
   cancel-in-progress: true
 
 jobs:

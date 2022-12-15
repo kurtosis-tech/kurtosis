@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.60.0](https://github.com/kurtosis-tech/kurtosis/compare/0.59.3...0.60.0) (2022-12-15)
+
+
+### ⚠ BREAKING CHANGES
+
+* Updated 'KurtosisContext.GetServiceLogs' now receives a 'LogLineFilter' argument. Users will need to upgrade all the 'GetServiceLogs' call in order to pass the new 'LogLineFilter' argument ([#697](https://github.com/kurtosis-tech/kurtosis/issues/697))
+
+### Features
+
+* Added four constructors NewDoesContainTextLogLineFilter, NewDoesNotContainTextLogLineFilter, NewDoesContainMatchRegexLogLineFilter, and NewDoesNotContainMatchRegexLogLineFilter to create a LogLineFilter object, each constructor specifies the operator (text or regex expression) that will be used to filter the log lines. ([0956343](https://github.com/kurtosis-tech/kurtosis/commit/0956343ec3f2099fcf5109ef7f7760e535c90199))
+* Added LogLineFilter object which can be used to filter the service logs when calling KurtosisContext.GetServiceLogs ([0956343](https://github.com/kurtosis-tech/kurtosis/commit/0956343ec3f2099fcf5109ef7f7760e535c90199))
+* Updated 'KurtosisContext.GetServiceLogs' now receives a 'LogLineFilter' argument. Users will need to upgrade all the 'GetServiceLogs' call in order to pass the new 'LogLineFilter' argument ([#697](https://github.com/kurtosis-tech/kurtosis/issues/697)) ([0956343](https://github.com/kurtosis-tech/kurtosis/commit/0956343ec3f2099fcf5109ef7f7760e535c90199))
+
+
+### Bug Fixes
+
+* fix the update script ([5223aac](https://github.com/kurtosis-tech/kurtosis/commit/5223aac3c20c948a039d8299c25fd488b22e3c71))
+
 ## [0.59.3](https://github.com/kurtosis-tech/kurtosis/compare/0.59.2...0.59.3) (2022-12-14)
 
 
