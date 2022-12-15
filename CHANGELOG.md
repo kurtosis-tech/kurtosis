@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.61.0](https://github.com/kurtosis-tech/kurtosis/compare/0.60.0...0.61.0) (2022-12-15)
+
+
+### ⚠ BREAKING CHANGES
+
+* exposed application protocol to users via starlark ([#649](https://github.com/kurtosis-tech/kurtosis/issues/649))
+* added application protocol to starlark
+* expose application protocol to kurtosis cli ([#641](https://github.com/kurtosis-tech/kurtosis/issues/641))
+* exposed application protocol to cli
+* expose app protocol to sdks ([#640](https://github.com/kurtosis-tech/kurtosis/issues/640))
+* expose application protocol to users ([#703](https://github.com/kurtosis-tech/kurtosis/issues/703))
+
+### Features
+
+* Added `set_connection` instruction to configure a connection between two subnetworks ([#690](https://github.com/kurtosis-tech/kurtosis/issues/690)) ([6a8f6dd](https://github.com/kurtosis-tech/kurtosis/commit/6a8f6dd4a15b0cc4a6f05d1ed11653e109cb490b))
+* Added `subnetwork` attribute to `ServiceConfig` to granularly add service to a partition when starting it ([#665](https://github.com/kurtosis-tech/kurtosis/issues/665)) ([9e1bc46](https://github.com/kurtosis-tech/kurtosis/commit/9e1bc46a6425ef8a6eb2ef3da99d73d3d9a16819))
+* Added `UpdateService` function to `ServiceNetwork` to granularly update service partition once it is started ([#667](https://github.com/kurtosis-tech/kurtosis/issues/667)) ([3fdc6c3](https://github.com/kurtosis-tech/kurtosis/commit/3fdc6c327f80f7b76c364c0128c7626d12273925))
+* added application protocol to starlark ([03b38b8](https://github.com/kurtosis-tech/kurtosis/commit/03b38b8e855341dbf20e2dbb2b3c383d56adaa7e))
+* expose app protocol to sdks ([#640](https://github.com/kurtosis-tech/kurtosis/issues/640)) ([03b38b8](https://github.com/kurtosis-tech/kurtosis/commit/03b38b8e855341dbf20e2dbb2b3c383d56adaa7e))
+* expose application protocol to kurtosis cli ([#641](https://github.com/kurtosis-tech/kurtosis/issues/641)) ([03b38b8](https://github.com/kurtosis-tech/kurtosis/commit/03b38b8e855341dbf20e2dbb2b3c383d56adaa7e))
+* expose application protocol to users ([#703](https://github.com/kurtosis-tech/kurtosis/issues/703)) ([03b38b8](https://github.com/kurtosis-tech/kurtosis/commit/03b38b8e855341dbf20e2dbb2b3c383d56adaa7e))
+* exposed application protocol to cli ([03b38b8](https://github.com/kurtosis-tech/kurtosis/commit/03b38b8e855341dbf20e2dbb2b3c383d56adaa7e))
+* exposed application protocol to users via starlark ([#649](https://github.com/kurtosis-tech/kurtosis/issues/649)) ([03b38b8](https://github.com/kurtosis-tech/kurtosis/commit/03b38b8e855341dbf20e2dbb2b3c383d56adaa7e))
+
+
+### Bug Fixes
+
+* made the filestore thread safe ([#710](https://github.com/kurtosis-tech/kurtosis/issues/710)) ([f297248](https://github.com/kurtosis-tech/kurtosis/commit/f29724852e42efb6999d95e9acf6888cc4e15df1))
+
 ## [0.60.0](https://github.com/kurtosis-tech/kurtosis/compare/0.59.3...0.60.0) (2022-12-15)
 
 
