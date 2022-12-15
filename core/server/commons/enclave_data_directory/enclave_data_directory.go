@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/git_package_content_provider"
 	"github.com/kurtosis-tech/stacktrace"
 	"path"
+	"sync"
 )
 
 const (
@@ -31,6 +32,13 @@ type EnclaveDataDirectory struct {
 	absMountDirpath string
 }
 
+var (
+	// NOTE: This will be initialized exactly once (singleton pattern)
+	currentFilesArtifactStore *FilesArtifactStore
+	once sync.Once
+)
+
+
 func NewEnclaveDataDirectory(absMountDirpath string) *EnclaveDataDirectory {
 	return &EnclaveDataDirectory{absMountDirpath: absMountDirpath}
 }
@@ -42,7 +50,13 @@ func (dir EnclaveDataDirectory) GetFilesArtifactStore() (*FilesArtifactStore, er
 		return nil, stacktrace.Propagate(err, "An error occurred ensuring the files artifact store dirpath '%v' exists.", absoluteDirpath)
 	}
 
-	return newFilesArtifactStore(absoluteDirpath, relativeDirpath), nil
+	// NOTE: We use a 'once' to initialize the filesArtifactStore because it contains a mutex,
+	// and we don't ever want multiple filesArtifactStore instances in existence
+	once.Do(func() {
+		currentFilesArtifactStore = newFilesArtifactStore(absoluteDirpath, relativeDirpath)
+	})
+
+	return currentFilesArtifactStore, nil
 }
 
 func (dir EnclaveDataDirectory) GetGitPackageContentProvider() (*git_package_content_provider.GitPackageContentProvider, error) {

@@ -905,10 +905,6 @@ func (network *DefaultServiceNetwork) GetIPAddressForService(serviceID service.S
 }
 
 func (network *DefaultServiceNetwork) RenderTemplates(templatesAndDataByDestinationRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData) (enclave_data_directory.FilesArtifactID, error) {
-	// calling mutex just in case, even though we don't change or read from the network, just get the file store
-	network.mutex.Lock()
-	defer network.mutex.Unlock()
-
 	filesArtifactId, err := enclave_data_directory.NewFilesArtifactID()
 	if err != nil {
 		return "", stacktrace.Propagate(err, "There was an error in creating a files artifact uuid to render the templates to")
@@ -921,10 +917,6 @@ func (network *DefaultServiceNetwork) RenderTemplates(templatesAndDataByDestinat
 }
 
 func (network *DefaultServiceNetwork) RenderTemplatesToTargetFilesArtifactUUID(templatesAndDataByDestinationRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, filesArtifactUuid enclave_data_directory.FilesArtifactID) (enclave_data_directory.FilesArtifactID, error) {
-	// calling mutex just in case, even though we don't change or read from the network, just get the file store
-	network.mutex.Lock()
-	defer network.mutex.Unlock()
-
 	err := network.renderTemplatesToTargetArtifactIDUnlocked(templatesAndDataByDestinationRelFilepath, filesArtifactUuid)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "There was an error in rendering templates to disk")
