@@ -93,7 +93,7 @@ func (instruction *RequestInstruction) GetCanonicalInstruction() *kurtosis_core_
 }
 
 func (instruction *RequestInstruction) Execute(ctx context.Context) (*string, error) {
-	result, err := instruction.httpRequestRecipe.Execute(ctx, instruction.serviceNetwork)
+	result, err := instruction.httpRequestRecipe.Execute(ctx, instruction.serviceNetwork, instruction.runtimeValueStore)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error executing http recipe")
 	}

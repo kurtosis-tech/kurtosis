@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -62,10 +63,18 @@ func NewGetHttpRequestRecipe(serviceId service.ServiceID, portId string, endpoin
 	}
 }
 
-func (recipe *HttpRequestRecipe) Execute(ctx context.Context, serviceNetwork service_network.ServiceNetwork) (map[string]starlark.Comparable, error) {
+func (recipe *HttpRequestRecipe) Execute(ctx context.Context, serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) (map[string]starlark.Comparable, error) {
 	var response *http.Response
 	var err error
 	logrus.Debugf("Running HTTP request recipe '%v'", recipe)
+	maybeRecipeBodyWithIPAddress, err := magic_string_helper.ReplaceIPAddressInString(recipe.body, serviceNetwork, bodyKey)
+	if err != nil {
+		return nil, stacktrace.Propagate(err,"An error occurred while replacing IP address in the body of the http recipe")
+	}
+	maybeRecipeBodyWithIPAddressAndRuntimeValue, err := magic_string_helper.ReplaceRuntimeValueInString(maybeRecipeBodyWithIPAddress, runtimeValueStore)
+	if err != nil {
+		return nil, stacktrace.Propagate(err,"An error occurred while replacing runtime values in the body of the http recipe")
+	}
 	response, err = serviceNetwork.HttpRequestService(
 		ctx,
 		recipe.serviceId,
@@ -73,7 +82,7 @@ func (recipe *HttpRequestRecipe) Execute(ctx context.Context, serviceNetwork ser
 		recipe.method,
 		recipe.contentType,
 		recipe.endpoint,
-		recipe.body,
+		maybeRecipeBodyWithIPAddressAndRuntimeValue,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred when running HTTP request recipe")

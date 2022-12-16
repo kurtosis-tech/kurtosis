@@ -78,7 +78,7 @@ func (instruction *ExecInstruction) GetCanonicalInstruction() *kurtosis_core_rpc
 }
 
 func (instruction *ExecInstruction) Execute(ctx context.Context) (*string, error) {
-	result, err := instruction.execRecipe.Execute(ctx, instruction.serviceNetwork)
+	result, err := instruction.execRecipe.Execute(ctx, instruction.serviceNetwork, instruction.runtimeValueStore)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error executing exec recipe")
 	}

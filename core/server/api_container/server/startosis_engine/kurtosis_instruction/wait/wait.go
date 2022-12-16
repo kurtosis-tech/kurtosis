@@ -128,7 +128,7 @@ func (instruction *WaitInstruction) Execute(ctx context.Context) (*string, error
 		if backoffDuration == backoff.Stop {
 			break
 		}
-		lastResult, requestErr = instruction.recipe.Execute(ctx, instruction.serviceNetwork)
+		lastResult, requestErr = instruction.recipe.Execute(ctx, instruction.serviceNetwork, instruction.runtimeValueStore)
 		if requestErr != nil {
 			time.Sleep(backoffDuration)
 			continue

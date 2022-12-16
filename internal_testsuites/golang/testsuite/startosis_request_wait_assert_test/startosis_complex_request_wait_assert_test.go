@@ -46,7 +46,7 @@ def run(args):
 		endpoint = "/",
 		method = "POST",
 		content_type="text/plain",
-		body="post_output",
+		body=response["extract.exploded-slash"],
 		extract = {
 			"my-body": ".body"
 		}
@@ -54,13 +54,13 @@ def run(args):
 	wait(post_recipe, "code", "==", 200)
 	post_response = request(post_recipe)
 	assert(post_response["code"], "==", 200)
-	assert(post_response["extract.my-body"], "==", "post_output")
+	assert(post_response["extract.my-body"], "==", "bar")
 	exec_recipe = struct(
 		service_id = "web-server",
-		command = ["echo", "hello", "world"]
+		command = ["echo", "hello", post_response["extract.my-body"]]
 	)
 	exec_result = wait(exec_recipe, "code", "==", 0)
-	assert(exec_result["output"], "==", "hello world\n")
+	assert(exec_result["output"], "==", "hello bar\n")
 `
 )
 

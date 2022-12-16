@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
@@ -16,6 +17,8 @@ const (
 	execOutputKey   = "output"
 	execExitCodeKey = "code"
 	newlineChar     = "\n"
+
+	commandKey = "command"
 )
 
 type ExecRecipe struct {
@@ -30,8 +33,20 @@ func NewExecRecipe(serviceId service.ServiceID, command []string) *ExecRecipe {
 	}
 }
 
-func (recipe *ExecRecipe) Execute(ctx context.Context, serviceNetwork service_network.ServiceNetwork) (map[string]starlark.Comparable, error) {
-	exitCode, commandOutput, err := serviceNetwork.ExecCommand(ctx, recipe.serviceId, recipe.command)
+func (recipe *ExecRecipe) Execute(ctx context.Context, serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) (map[string]starlark.Comparable, error) {
+	var commandWithIPAddressAndRuntimeValue []string
+	for _, subCommand := range recipe.command {
+		maybeSubCommandWithIPAddress, err := magic_string_helper.ReplaceIPAddressInString(subCommand, serviceNetwork, commandKey)
+		if err != nil {
+			return nil, stacktrace.Propagate(err,"An error occurred while replacing IP address in the command of the exec recipe")
+		}
+		maybeSubCommandWithRuntimeValuesAndIPAddress, err := magic_string_helper.ReplaceRuntimeValueInString(maybeSubCommandWithIPAddress, runtimeValueStore)
+		if err != nil {
+			return nil, stacktrace.Propagate(err,"An error occurred while replacing runtime values in the command of the exec recipe")
+		}
+		commandWithIPAddressAndRuntimeValue = append(commandWithIPAddressAndRuntimeValue, maybeSubCommandWithRuntimeValuesAndIPAddress)
+	}
+	exitCode, commandOutput, err := serviceNetwork.ExecCommand(ctx, recipe.serviceId, commandWithIPAddressAndRuntimeValue)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to execute command '%v' on service '%v'", recipe.command, recipe.serviceId)
 	}
