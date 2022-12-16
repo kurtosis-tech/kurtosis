@@ -44,7 +44,7 @@ func TestConnectionConfig_Attr_Exists(t *testing.T) {
 func TestConnectionConfig_Attr_DoesNotExist(t *testing.T) {
 	connectionConfig := NewConnectionConfig(50.5)
 	attr, err := connectionConfig.Attr("do-not-exist")
-	expectedError := fmt.Sprintf("'%s' has no attribute 'do-not-exist;", ConnectionConfigTypeName)
+	expectedError := fmt.Sprintf("'%s' has no attribute 'do-not-exist'", ConnectionConfigTypeName)
 	require.Equal(t, expectedError, err.Error())
 	require.Nil(t, attr)
 }
@@ -75,8 +75,8 @@ func TestConnectionConfig_MakeWithArgs_FailureBadArgument(t *testing.T) {
 		starlark.String("hello"),
 	})
 	connectionConfig, err := MakeConnectionConfig(nil, builtin, args, noKwargs)
-	expectedError := fmt.Sprintf(`Cannot construct a %s from the provided arguments. Expecting a single argument for '%s'. Error was: 
-: for parameter %s: got string, want float`, ConnectionConfigTypeName, packetLossPercentageAttr, packetLossPercentageAttr)
+	expectedError := fmt.Sprintf(`Cannot construct '%s' from the provided arguments. Expecting a single argument '%s'
+	Caused by: : for parameter %s: got string, want float`, ConnectionConfigTypeName, packetLossPercentageAttr, packetLossPercentageAttr)
 	require.Equal(t, expectedError, err.Error())
 	require.Nil(t, connectionConfig)
 }
@@ -108,8 +108,8 @@ func TestConnectionConfig_MakeWithKwargs_FailureWrongArg(t *testing.T) {
 		}),
 	}
 	connectionConfig, err := MakeConnectionConfig(nil, builtin, noArgs, kwargs)
-	expectedError := fmt.Sprintf(`Cannot construct a %s from the provided arguments. Expecting a single argument for '%s'. Error was: 
-: unexpected keyword argument "unknown-kwarg"`, ConnectionConfigTypeName, packetLossPercentageAttr)
+	expectedError := fmt.Sprintf(`Cannot construct '%s' from the provided arguments. Expecting a single argument '%s'
+	Caused by: : unexpected keyword argument "unknown-kwarg"`, ConnectionConfigTypeName, packetLossPercentageAttr)
 	require.Equal(t, expectedError, err.Error())
 	require.Nil(t, connectionConfig)
 }

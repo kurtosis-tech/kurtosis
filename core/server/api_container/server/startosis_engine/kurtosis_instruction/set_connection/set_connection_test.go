@@ -17,7 +17,7 @@ var (
 	thread = shared_helpers.NewStarlarkThread("test-set-connection")
 )
 
-func TestSetService_Interpreter(t *testing.T) {
+func TestSetConnection_Interpreter(t *testing.T) {
 	var instructions []kurtosis_instruction.KurtosisInstruction
 	starlarkInstruction := `set_connection(("subnetwork1", "subnetwork2"), ConnectionConfig(50.0))`
 	_, err := starlark.ExecFile(thread, startosis_constants.PackageIdPlaceholderForStandaloneScript, starlarkInstruction, starlark.StringDict{
@@ -45,7 +45,7 @@ func TestSetService_Interpreter(t *testing.T) {
 	require.Equal(t, expectedInstruction, instructions[0])
 }
 
-func TestSetService_Interpreter_SetDefaultConnection(t *testing.T) {
+func TestSetConnection_Interpreter_SetDefaultConnection(t *testing.T) {
 	var instructions []kurtosis_instruction.KurtosisInstruction
 	starlarkInstruction := `set_connection(ConnectionConfig(50.0))`
 	_, err := starlark.ExecFile(thread, startosis_constants.PackageIdPlaceholderForStandaloneScript, starlarkInstruction, starlark.StringDict{
@@ -67,7 +67,7 @@ func TestSetService_Interpreter_SetDefaultConnection(t *testing.T) {
 	require.Equal(t, expectedInstruction, instructions[0])
 }
 
-func TestSetService_Interpreter_SetDefaultConnection_PreBuiltConnections(t *testing.T) {
+func TestSetConnection_Interpreter_SetDefaultConnection_PreBuiltConnections(t *testing.T) {
 	var instructions []kurtosis_instruction.KurtosisInstruction
 	starlarkInstruction := `set_connection(kurtosis.connection.BLOCKED)`
 	_, err := starlark.ExecFile(thread, startosis_constants.PackageIdPlaceholderForStandaloneScript, starlarkInstruction, starlark.StringDict{

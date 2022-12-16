@@ -125,7 +125,7 @@ func (instruction *AddServiceInstruction) Execute(ctx context.Context) (*string,
 func (instruction *AddServiceInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
 	if partition_topology.ParsePartitionId(instruction.serviceConfig.Subnetwork) != partition_topology.DefaultPartitionId {
 		if !environment.IsNetworkPartitioningEnabled() {
-			return startosis_errors.NewValidationError("Service was is about to be started inside subnetwork '%s' but the Kurtosis enclave was started with subnetwork capabilities disabled. Make sure to run the Starlark script with subnetwork enabled.", *instruction.serviceConfig.Subnetwork)
+			return startosis_errors.NewValidationError("Service was about to be started inside subnetwork '%s' but the Kurtosis enclave was started with subnetwork capabilities disabled. Make sure to run the Starlark script with subnetwork enabled.", *instruction.serviceConfig.Subnetwork)
 		}
 	}
 	if environment.DoesServiceIdExist(instruction.serviceId) {

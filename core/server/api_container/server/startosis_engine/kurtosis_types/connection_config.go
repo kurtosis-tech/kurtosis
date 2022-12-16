@@ -38,10 +38,10 @@ func NewConnectionConfig(packetLossPercentage starlark.Float) *ConnectionConfig 
 func MakeConnectionConfig(_ *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 	var packetLossPercentage starlark.Float
 	if err := starlark.UnpackArgs(b.Name(), args, kwargs, packetLossPercentageAttr, &packetLossPercentage); err != nil {
-		return nil, startosis_errors.NewInterpretationError("Cannot construct a ConnectionConfig from the provided arguments. Expecting a single argument for '%s'. Error was: \n%v", packetLossPercentageAttr, err.Error())
+		return nil, startosis_errors.WrapWithInterpretationError(err, "Cannot construct '%s' from the provided arguments. Expecting a single argument '%s'", ConnectionConfigTypeName, packetLossPercentageAttr)
 	}
 	if packetLossPercentage < 0 || packetLossPercentage > 100 {
-		return nil, startosis_errors.NewInterpretationError("Invalid attribute. '%s' in ConnectionConfig should be greater than 0 and lower than 100. Got '%v'", packetLossPercentageAttr, packetLossPercentage)
+		return nil, startosis_errors.NewInterpretationError("Invalid attribute. '%s' in '%s' should be greater than 0 and lower than 100. Got '%v'", packetLossPercentageAttr, ConnectionConfigTypeName, packetLossPercentage)
 	}
 	return NewConnectionConfig(packetLossPercentage), nil
 }
@@ -88,7 +88,7 @@ func (connectionConfig *ConnectionConfig) Attr(name string) (starlark.Value, err
 	case packetLossPercentageAttr:
 		return connectionConfig.packetLossPercentage, nil
 	default:
-		return nil, fmt.Errorf("'%s' has no attribute '%s;", ConnectionConfigTypeName, name)
+		return nil, fmt.Errorf("'%s' has no attribute '%s'", ConnectionConfigTypeName, name)
 	}
 }
 
