@@ -48,7 +48,7 @@ func CreateLogsDatabase(
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred creating the logs database container with http port id '%v' in Docker network with ID '%v'",
+			"An error occurred creating the logs database container with HTTP port id '%v' in Docker network with ID '%v'",
 			logsDatabaseHttpPortId,
 			targetNetworkId,
 		)
