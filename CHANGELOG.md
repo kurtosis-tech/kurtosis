@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.62.0](https://github.com/kurtosis-tech/kurtosis/compare/0.61.0...0.62.0) (2022-12-16)
+
+
+### ⚠ BREAKING CHANGES
+
+* Kurtosis subnetwork capabilities are available in Starlark ([#734](https://github.com/kurtosis-tech/kurtosis/issues/734))
+* invert the order of files and artifact ids passed to files artifacts. users will have to invert the dictionary in their starlark code. ([#711](https://github.com/kurtosis-tech/kurtosis/issues/711))
+
+### Features
+
+* `add_service` now accepts `subnetwork` inside its config argument ([#670](https://github.com/kurtosis-tech/kurtosis/issues/670)) ([996c24b](https://github.com/kurtosis-tech/kurtosis/commit/996c24b5941db06cf765735475bba73e82297fb0))
+* Add `kurtosis` module containing `connection.[BLOCKED|ALLOWED]` ([#718](https://github.com/kurtosis-tech/kurtosis/issues/718)) ([b71ee95](https://github.com/kurtosis-tech/kurtosis/commit/b71ee9598bfa857200351d2f270842366374f51a))
+* Add recipe support to exec command  ([#668](https://github.com/kurtosis-tech/kurtosis/issues/668)) ([c8fd7c1](https://github.com/kurtosis-tech/kurtosis/commit/c8fd7c1c3e1106ce4c946a401c15d12132651cf8)), closes [#510](https://github.com/kurtosis-tech/kurtosis/issues/510) [#627](https://github.com/kurtosis-tech/kurtosis/issues/627)
+* Add support for exec recipe on wait command ([#700](https://github.com/kurtosis-tech/kurtosis/issues/700)) ([b9bc1d0](https://github.com/kurtosis-tech/kurtosis/commit/b9bc1d087a6e7c51a474ecd336c27e603c7a830c)), closes [#698](https://github.com/kurtosis-tech/kurtosis/issues/698)
+* Added `match`, `regex-match` and `invert-match` flags in the `search logs` CLI command to allow users to filter the returned log lines ([#717](https://github.com/kurtosis-tech/kurtosis/issues/717)) ([4a3e814](https://github.com/kurtosis-tech/kurtosis/commit/4a3e814e1ddf8b09d72e2e757b7269f0674e95ce))
+* Added `remove_connection` instruction to remove a connection between 2 subnetworks ([#692](https://github.com/kurtosis-tech/kurtosis/issues/692)) ([5905cc3](https://github.com/kurtosis-tech/kurtosis/commit/5905cc3f26a305557d25b9093b45c69bd4d3f288))
+* Added `update-service` instruction to move a service from a subnetwork to a different subnetwork ([#715](https://github.com/kurtosis-tech/kurtosis/issues/715)) ([d652a5d](https://github.com/kurtosis-tech/kurtosis/commit/d652a5dd70976f3b95650a82f43ca263f491386c))
+* Added validation that will fail early if subnetwork feature is being used in an enclave that does not support it ([#731](https://github.com/kurtosis-tech/kurtosis/issues/731)) ([9c3e869](https://github.com/kurtosis-tech/kurtosis/commit/9c3e869e03776ac14058e47c5f7ed16b9f364419))
+* invert the order of files and artifact ids passed to files artifacts. users will have to invert the dictionary in their starlark code. ([#711](https://github.com/kurtosis-tech/kurtosis/issues/711)) ([9acfe3e](https://github.com/kurtosis-tech/kurtosis/commit/9acfe3e08bbb310da903980891c520236803711b)), closes [#545](https://github.com/kurtosis-tech/kurtosis/issues/545)
+* Kurtosis subnetwork capabilities are available in Starlark ([#734](https://github.com/kurtosis-tech/kurtosis/issues/734)) ([cfacf16](https://github.com/kurtosis-tech/kurtosis/commit/cfacf16447f4da3d96b53baed3550c34c7fe12bd))
+* support runtime values and ip addresses in exec and request ([f09b65c](https://github.com/kurtosis-tech/kurtosis/commit/f09b65c36a0519757a089e629b0c299a3b41d466))
+* support runtime values and ip addresses in exec and request ([#730](https://github.com/kurtosis-tech/kurtosis/issues/730)) ([f09b65c](https://github.com/kurtosis-tech/kurtosis/commit/f09b65c36a0519757a089e629b0c299a3b41d466))
+
+
+### Bug Fixes
+
+* re-enabled skipped tests ([5428e88](https://github.com/kurtosis-tech/kurtosis/commit/5428e8830926e043983e0992472a1508b3a37e4b))
+* re-enabled skipped tests ([#726](https://github.com/kurtosis-tech/kurtosis/issues/726)) ([5428e88](https://github.com/kurtosis-tech/kurtosis/commit/5428e8830926e043983e0992472a1508b3a37e4b))
+
 ## [0.61.0](https://github.com/kurtosis-tech/kurtosis/compare/0.60.0...0.61.0) (2022-12-15)
 
 
