@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/stretchr/testify/require"
@@ -22,12 +23,7 @@ const (
 )
 
 var (
-	thread = &starlark.Thread{
-		Name:       "test-add-service",
-		Print:      nil,
-		Load:       nil,
-		OnMaxSteps: nil,
-	}
+	thread = shared_helpers.NewStarlarkThread("test-add-service")
 )
 
 func TestAddServiceInstruction_GetCanonicalizedInstruction(t *testing.T) {

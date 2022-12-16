@@ -3,6 +3,7 @@ package set_connection
 import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
@@ -62,6 +63,28 @@ func TestSetService_Interpreter_SetDefaultConnection(t *testing.T) {
 		partition_topology.NewPartitionConnection(50),
 		starlark.StringDict{
 			"config": kurtosis_types.NewConnectionConfig(50),
+		})
+	require.Equal(t, expectedInstruction, instructions[0])
+}
+
+func TestSetService_Interpreter_SetDefaultConnection_PreBuiltConnections(t *testing.T) {
+	var instructions []kurtosis_instruction.KurtosisInstruction
+	starlarkInstruction := `set_connection(kurtosis.connection.BLOCKED)`
+	_, err := starlark.ExecFile(thread, startosis_constants.PackageIdPlaceholderForStandaloneScript, starlarkInstruction, starlark.StringDict{
+		builtins.KurtosisModuleName: builtins.KurtosisModule(),
+		SetConnectionBuiltinName:    starlark.NewBuiltin(SetConnectionBuiltinName, GenerateSetConnectionBuiltin(&instructions, nil)),
+	})
+	require.Nil(t, err)
+
+	require.Len(t, instructions, 1)
+	expectedInstruction := NewSetConnectionInstruction(
+		nil,
+		kurtosis_instruction.NewInstructionPosition(1, 15, startosis_constants.PackageIdPlaceholderForStandaloneScript),
+		nil,
+		nil,
+		partition_topology.NewPartitionConnection(100),
+		starlark.StringDict{
+			"config": kurtosis_types.NewConnectionConfig(100),
 		})
 	require.Equal(t, expectedInstruction, instructions[0])
 }
