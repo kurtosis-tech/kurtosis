@@ -207,21 +207,21 @@ func TestParseFilesArtifactMountStr_ValidParse(t *testing.T) {
 
 	result, err := parseFilesArtifactMountsStr(fmt.Sprintf(
 		"%v:%v,%v:%v",
-		artifactUuid1,
 		mountpoint1,
-		artifactUuid2,
+		artifactUuid1,
 		mountpoint2,
+		artifactUuid2,
 	))
 	require.NoError(t, err)
 	require.Equal(t, 2, len(result))
 
-	parsedMountpoint1, found := result[artifactUuid1]
+	parsedArtifactUuid1, found := result[mountpoint1]
 	require.True(t, found)
-	require.Equal(t, mountpoint1, parsedMountpoint1)
+	require.Equal(t, artifactUuid1, parsedArtifactUuid1)
 
-	parsedMountpoint2, found := result[artifactUuid2]
+	parsedArtifactUuid2, found := result[mountpoint2]
 	require.True(t, found)
-	require.Equal(t, mountpoint2, parsedMountpoint2)
+	require.Equal(t, artifactUuid2, parsedArtifactUuid2)
 }
 
 func TestParseFilesArtifactMountStr_EmptyDeclarationsAreSkipped(t *testing.T) {
@@ -232,21 +232,21 @@ func TestParseFilesArtifactMountStr_EmptyDeclarationsAreSkipped(t *testing.T) {
 
 	result, err := parseFilesArtifactMountsStr(fmt.Sprintf(
 		"%v:%v,,,,,%v:%v",
-		artifactUuid1,
 		mountpoint1,
-		artifactUuid2,
+		artifactUuid1,
 		mountpoint2,
+		artifactUuid2,
 	))
 	require.NoError(t, err)
 	require.Equal(t, 2, len(result))
 
-	parsedMountpoint1, found := result[artifactUuid1]
+	parsedArtifactUuid1, found := result[mountpoint1]
 	require.True(t, found)
-	require.Equal(t, mountpoint1, parsedMountpoint1)
+	require.Equal(t, artifactUuid1, parsedArtifactUuid1)
 
-	parsedMountpoint2, found := result[artifactUuid2]
+	parsedArtifactUuid2, found := result[mountpoint2]
 	require.True(t, found)
-	require.Equal(t, mountpoint2, parsedMountpoint2)
+	require.Equal(t, artifactUuid2, parsedArtifactUuid2)
 }
 
 func TestParseFilesArtifactMountStr_TooManyArtifactUuidMountpointDelimitersIsError(t *testing.T) {

@@ -54,8 +54,8 @@ func TestStoreWebFiles(t *testing.T) {
 	filesArtifactUuid, err := enclaveCtx.StoreWebFiles(context.Background(), testFilesArtifactUrl)
 	require.NoError(t, err, "An error occurred storing the files artifact")
 
-	filesArtifactMountpoints := map[services.FilesArtifactUUID]string{
-		filesArtifactUuid: userServiceMountPointForTestFilesArtifact,
+	filesArtifactMountpoints := map[string]services.FilesArtifactUUID{
+		userServiceMountPointForTestFilesArtifact: filesArtifactUuid,
 	}
 	fileServerContainerConfig := getFileServerContainerConfig(filesArtifactMountpoints)
 
@@ -109,7 +109,7 @@ func TestStoreWebFiles(t *testing.T) {
 // ====================================================================================================
 //                                       Private helper functions
 // ====================================================================================================
-func getFileServerContainerConfig(filesArtifactMountpoints map[services.FilesArtifactUUID]string) *services.ContainerConfig {
+func getFileServerContainerConfig(filesArtifactMountpoints map[string]services.FilesArtifactUUID) *services.ContainerConfig {
 	containerConfig := services.NewContainerConfigBuilder(
 		fileServerServiceImage,
 	).WithUsedPorts(map[string]*services.PortSpec{

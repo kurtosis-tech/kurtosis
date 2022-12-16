@@ -61,8 +61,8 @@ func getFileServerContainerConfig(filesArtifactUuid services.FilesArtifactUUID) 
 		fileServerServiceImage,
 	).WithUsedPorts(map[string]*services.PortSpec{
 		fileServerPortId: fileServerPortSpec,
-	}).WithFiles(map[services.FilesArtifactUUID]string{
-		filesArtifactUuid: filesArtifactMountpoint,
+	}).WithFiles(map[string]services.FilesArtifactUUID{
+		filesArtifactMountpoint: filesArtifactUuid,
 	}).Build()
 	return containerConfig
 }

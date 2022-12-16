@@ -38,8 +38,8 @@ func TestAddServiceInstruction_GetCanonicalizedInstruction(t *testing.T) {
 	serviceConfigDict["env_vars"] = envVar
 
 	fileArtifactMountDirPath := starlark.NewDict(2)
-	require.Nil(t, fileArtifactMountDirPath.SetKey(starlark.String("file_1"), starlark.String("path/to/file/1")))
-	require.Nil(t, fileArtifactMountDirPath.SetKey(starlark.String("file_2"), starlark.String("path/to/file/2")))
+	require.Nil(t, fileArtifactMountDirPath.SetKey(starlark.String("path/to/file/1"), starlark.String("file_1")))
+	require.Nil(t, fileArtifactMountDirPath.SetKey(starlark.String("path/to/file/2"), starlark.String("file_2")))
 	serviceConfigDict["files"] = fileArtifactMountDirPath
 
 	addServiceInstruction := newEmptyAddServiceInstruction(
@@ -50,7 +50,7 @@ func TestAddServiceInstruction_GetCanonicalizedInstruction(t *testing.T) {
 	addServiceInstruction.starlarkKwargs[serviceIdArgName] = starlark.String("example-datastore-server-2")
 	addServiceInstruction.starlarkKwargs[serviceConfigArgName] = starlarkstruct.FromStringDict(starlarkstruct.Default, serviceConfigDict)
 
-	expectedOutput := `add_service(config=struct(cmd=["bash", "-c", "/apps/main.py", 1234], entrypoint=["127.0.0.0", 1234], env_vars={"VAR_1": "VALUE_1", "VAR_2": "VALUE_2"}, files={"file_1": "path/to/file/1", "file_2": "path/to/file/2"}, image="kurtosistech/example-datastore-server", ports={"grpc": struct(number=1234, protocol="TCP")}), service_id="example-datastore-server-2")`
+	expectedOutput := `add_service(config=struct(cmd=["bash", "-c", "/apps/main.py", 1234], entrypoint=["127.0.0.0", 1234], env_vars={"VAR_1": "VALUE_1", "VAR_2": "VALUE_2"}, files={"path/to/file/1": "file_1", "path/to/file/2": "file_2"}, image="kurtosistech/example-datastore-server", ports={"grpc": struct(number=1234, protocol="TCP")}), service_id="example-datastore-server-2")`
 	require.Equal(t, expectedOutput, addServiceInstruction.String())
 }
 

@@ -1058,7 +1058,7 @@ func (network *DefaultServiceNetwork) startServices(
 
 		filesArtifactsExpansions := []args.FilesArtifactExpansion{}
 		expanderDirpathToUserServiceDirpathMap := map[string]string{}
-		for filesArtifactUUIDStr, mountpointOnUserService := range config.FilesArtifactMountpoints {
+		for mountpointOnUserService, filesArtifactUUIDStr := range config.FilesArtifactMountpoints {
 			dirpathToExpandTo := path.Join(filesArtifactExpansionDirsParentDirpath, filesArtifactUUIDStr)
 			expansion := args.FilesArtifactExpansion{
 				FilesArtifactUUID: filesArtifactUUIDStr,

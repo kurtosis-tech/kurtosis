@@ -78,8 +78,8 @@ function getFileServerContainerConfig(filesArtifactUuid: FilesArtifactUUID): Con
     const usedPorts = new Map<string, PortSpec>()
     usedPorts.set(FILE_SERVER_PORT_ID, FILE_SERVER_PORT_SPEC)
 
-    const filesArtifactMountpoints = new Map<FilesArtifactUUID, string>()
-    filesArtifactMountpoints.set(filesArtifactUuid, FILES_ARTIFACT_MOUNTPOINT)
+    const filesArtifactMountpoints = new Map<string, FilesArtifactUUID>()
+    filesArtifactMountpoints.set(FILES_ARTIFACT_MOUNTPOINT, filesArtifactUuid)
 
     const containerConfig = new ContainerConfigBuilder(FILE_SERVER_SERVICE_IMAGE)
         .withUsedPorts(usedPorts)

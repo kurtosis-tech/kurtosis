@@ -82,8 +82,8 @@ def run(args):
 			DATASTORE_PORT_ID: PortSpec(number = DATASTORE_PORT_NUMBER, transport_protocol = DATASTORE_PORT_PROTOCOL)
 		},
 		files = {
-			artifact_id : PATH_TO_MOUNT_ON_DEPENDENT_SERVICE,
-			rendered_artifact : PATH_TO_MOUNT_RENDERED_CONFIG
+			PATH_TO_MOUNT_ON_DEPENDENT_SERVICE: artifact_id,
+			PATH_TO_MOUNT_RENDERED_CONFIG: rendered_artifact
 		}
 	)
 	add_service(service_id = SERVICE_DEPENDENT_ON_DATASTORE_SERVICE, config = dependent_config)

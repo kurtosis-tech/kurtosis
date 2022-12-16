@@ -15,7 +15,7 @@ export class ContainerConfig {
         public readonly image: string,
         public readonly usedPorts: Map<string, PortSpec>,
         public readonly publicPorts: Map<string, PortSpec>, //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-        public readonly filesArtifactMountpoints: Map<FilesArtifactUUID, string>,
+        public readonly filesArtifactMountpoints: Map<string, FilesArtifactUUID>,
         public readonly entrypointOverrideArgs: string[],
         public readonly cmdOverrideArgs: string[],
         public readonly environmentVariableOverrides: Map<string,string>,
@@ -36,7 +36,7 @@ export class ContainerConfigBuilder {
     private readonly image: string;
     private usedPorts: Map<string, PortSpec>;
     private publicPorts: Map<string, PortSpec>; //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-    private filesArtifactMountpoints: Map<FilesArtifactUUID, string>;
+    private filesArtifactMountpoints: Map<string, FilesArtifactUUID>;
     private entrypointOverrideArgs: string[];
 	private cmdOverrideArgs: string[];
 	private environmentVariableOverrides: Map<string,string>;
@@ -62,7 +62,7 @@ export class ContainerConfigBuilder {
         return this;
     }
 
-    public withFiles(filesArtifactMountpoints: Map<FilesArtifactUUID, string>): ContainerConfigBuilder {
+    public withFiles(filesArtifactMountpoints: Map<string, FilesArtifactUUID>): ContainerConfigBuilder {
         this.filesArtifactMountpoints = filesArtifactMountpoints;
         return this;
     }

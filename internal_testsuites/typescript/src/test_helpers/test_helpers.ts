@@ -249,8 +249,8 @@ export async function waitForHealthy(
 }
 
 export async function startFileServer(fileServerServiceId: ServiceID, filesArtifactUuid: string, pathToCheckOnFileServer: string, enclaveCtx: EnclaveContext) : Promise<Result<StartFileServerResponse, Error>> {
-    const filesArtifactsMountPoints = new Map<FilesArtifactUUID, string>()
-    filesArtifactsMountPoints.set(filesArtifactUuid, USER_SERVICE_MOUNT_POINT_FOR_TEST_FILES_ARTIFACT)
+    const filesArtifactsMountPoints = new Map<string, FilesArtifactUUID>()
+    filesArtifactsMountPoints.set(USER_SERVICE_MOUNT_POINT_FOR_TEST_FILES_ARTIFACT, filesArtifactUuid)
 
     const fileServerContainerConfig = getFileServerContainerConfig(filesArtifactsMountPoints)
     const addServiceResult = await enclaveCtx.addService(fileServerServiceId, fileServerContainerConfig)
@@ -322,8 +322,8 @@ function getApiServiceContainerConfig(
         path.join(CONFIG_MOUNTPATH_ON_API_CONTAINER, CONFIG_FILENAME),
     ]
 
-    const filesArtifactMountpoints = new Map<FilesArtifactUUID, string>()
-    filesArtifactMountpoints.set(apiConfigArtifactUuid, CONFIG_MOUNTPATH_ON_API_CONTAINER)
+    const filesArtifactMountpoints = new Map<string, FilesArtifactUUID>()
+    filesArtifactMountpoints.set(CONFIG_MOUNTPATH_ON_API_CONTAINER, apiConfigArtifactUuid)
 
     const containerConfig = new ContainerConfigBuilder(API_SERVICE_IMAGE)
         .withUsedPorts(usedPorts)
@@ -372,7 +372,7 @@ async function createApiConfigFile(datastoreIP: string): Promise<Result<string, 
 
 }
 
-function getFileServerContainerConfig(filesArtifactMountPoints: Map<FilesArtifactUUID, string>): ContainerConfig {
+function getFileServerContainerConfig(filesArtifactMountPoints: Map<string, FilesArtifactUUID>): ContainerConfig {
     const usedPorts = new Map<string, PortSpec>()
     usedPorts.set(FILE_SERVER_PORT_ID, FILE_SERVER_PORT_SPEC)
 

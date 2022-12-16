@@ -43,7 +43,7 @@ def run(args):
 			DATASTORE_PORT_ID: PortSpec(number = DATASTORE_PORT_NUMBER, transport_protocol = DATASTORE_PORT_PROTOCOL)
 		},
 		files = {
-			uploaded_artifact_id: PATH_TO_MOUNT_UPLOADED_DIR
+			PATH_TO_MOUNT_UPLOADED_DIR: uploaded_artifact_id
 		}
 	)
 	

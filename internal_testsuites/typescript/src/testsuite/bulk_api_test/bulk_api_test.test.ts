@@ -141,8 +141,8 @@ function getApiServiceContainerConfig(
         path.join(CONFIG_MOUNTPATH_ON_API_CONTAINER, CONFIG_FILENAME),
     ]
 
-    const filesArtifactMountpoints = new Map<FilesArtifactUUID, string>()
-    filesArtifactMountpoints.set(apiConfigArtifactUuid, CONFIG_MOUNTPATH_ON_API_CONTAINER)
+    const filesArtifactMountpoints = new Map<string, FilesArtifactUUID>()
+    filesArtifactMountpoints.set(CONFIG_MOUNTPATH_ON_API_CONTAINER, apiConfigArtifactUuid)
 
     const containerConfig = new ContainerConfigBuilder(API_SERVICE_IMAGE)
         .withUsedPorts(usedPorts)

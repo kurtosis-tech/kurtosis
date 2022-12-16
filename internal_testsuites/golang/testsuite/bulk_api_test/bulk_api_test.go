@@ -109,8 +109,8 @@ func getContainerConfig(apiConfigArtifactUuid services.FilesArtifactUUID) *servi
 		apiServiceImage,
 	).WithUsedPorts(map[string]*services.PortSpec{
 		apiPortId: apiPortSpec,
-	}).WithFiles(map[services.FilesArtifactUUID]string{
-		apiConfigArtifactUuid: configMountpathOnApiContainer,
+	}).WithFiles(map[string]services.FilesArtifactUUID{
+		configMountpathOnApiContainer: apiConfigArtifactUuid,
 	}).WithCmdOverride(startCmd).Build()
 
 	return containerConfig

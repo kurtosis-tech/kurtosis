@@ -276,8 +276,8 @@ func WaitForHealthy(ctx context.Context, client GrpcAvailabilityChecker, retries
 }
 
 func StartFileServer(fileServerServiceId services.ServiceID, filesArtifactUUID services.FilesArtifactUUID, pathToCheckOnFileServer string, enclaveCtx *enclaves.EnclaveContext) (string, uint16, error) {
-	filesArtifactMountPoints := map[services.FilesArtifactUUID]string{
-		filesArtifactUUID: userServiceMountPointForTestFilesArtifact,
+	filesArtifactMountPoints := map[string]services.FilesArtifactUUID{
+		userServiceMountPointForTestFilesArtifact: filesArtifactUUID,
 	}
 	fileServerContainerConfig := getFileServerContainerConfig(filesArtifactMountPoints)
 	serviceCtx, err := enclaveCtx.AddService(fileServerServiceId, fileServerContainerConfig)
@@ -354,8 +354,8 @@ func getApiServiceContainerConfig(apiConfigArtifactUuid services.FilesArtifactUU
 		apiServiceImage,
 	).WithUsedPorts(map[string]*services.PortSpec{
 		apiPortId: apiPortSpec,
-	}).WithFiles(map[services.FilesArtifactUUID]string{
-		apiConfigArtifactUuid: configMountpathOnApiContainer,
+	}).WithFiles(map[string]services.FilesArtifactUUID{
+		configMountpathOnApiContainer: apiConfigArtifactUuid,
 	}).WithCmdOverride(startCmd).Build()
 
 	return containerConfig
@@ -406,7 +406,7 @@ func getFileContents(ipAddress string, portNum uint16, realtiveFilepath string) 
 	return bodyStr, nil
 }
 
-func getFileServerContainerConfig(filesArtifactMountPoints map[services.FilesArtifactUUID]string) *services.ContainerConfig {
+func getFileServerContainerConfig(filesArtifactMountPoints map[string]services.FilesArtifactUUID) *services.ContainerConfig {
 	containerConfig := services.NewContainerConfigBuilder(
 		fileServerServiceImage,
 	).WithUsedPorts(map[string]*services.PortSpec{

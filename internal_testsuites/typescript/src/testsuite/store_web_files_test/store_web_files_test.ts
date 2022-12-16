@@ -47,8 +47,8 @@ test("Test web file storing", async () => {
         if(storeWebFilesResult.isErr()) { throw storeWebFilesResult.error }
         const filesArtifactUuid = storeWebFilesResult.value;
 
-        const filesArtifactsMountpoints = new Map<FilesArtifactUUID, string>()
-        filesArtifactsMountpoints.set(filesArtifactUuid, USER_SERVICE_MOUNTPOINT_FOR_TEST_FILESARTIFACT)
+        const filesArtifactsMountpoints = new Map<string, FilesArtifactUUID>()
+        filesArtifactsMountpoints.set(USER_SERVICE_MOUNTPOINT_FOR_TEST_FILESARTIFACT, filesArtifactUuid)
 
         const fileServerContainerConfig = getFileServerContainerConfig(filesArtifactsMountpoints)
 

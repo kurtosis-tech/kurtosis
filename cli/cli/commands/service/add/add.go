@@ -160,8 +160,8 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 		{
 			Key: filesFlagKey,
 			Usage: fmt.Sprintf(
-				"String containing declarations of files artifact UUIDs -> paths on the container where the contents of those "+
-					"files artifacts should be mounted, in the form \"ARTIFACTUUID1%vMOUNTPATH1%vARTIFACTUUID2%vMOUNTPATH2\" where "+
+				"String containing declarations of files paths on the container -> artifact UUIDs  where the contents of those "+
+					"files artifacts should be mounted, in the form \"MOUNTPATH1%vARTIFACTUUID1%vMOUNTPATH2%vARTIFACTUUID2\" where "+
 					"ARTIFACTUUID is the UUID returned by Kurtosis when uploading files to the enclave (e.g. via the '%v %v' command)",
 				filesArtifactUuidMountpointDelimiter,
 				filesArtifactMountsDelimiter,
@@ -559,8 +559,8 @@ func getTransportProtocolFromPortSpecString(portSpec string) (services.Transport
 	return transportProtocol, nil
 }
 
-func parseFilesArtifactMountsStr(filesArtifactMountsStr string) (map[services.FilesArtifactUUID]string, error) {
-	result := map[services.FilesArtifactUUID]string{}
+func parseFilesArtifactMountsStr(filesArtifactMountsStr string) (map[string]services.FilesArtifactUUID, error) {
+	result := map[string]services.FilesArtifactUUID{}
 	if strings.TrimSpace(filesArtifactMountsStr) == "" {
 		return result, nil
 	}
@@ -576,25 +576,25 @@ func parseFilesArtifactMountsStr(filesArtifactMountsStr string) (map[services.Fi
 		mountFragments := strings.Split(trimmedMountStr, filesArtifactUuidMountpointDelimiter)
 		if len(mountFragments) != 2 {
 			return nil, stacktrace.NewError(
-				"Files artifact mountpoint string %v was '%v' but should be in the form 'files_artifact_uuid%vmountpoint'",
+				"Files artifact mountpoint string %v was '%v' but should be in the form 'mountpoint%sfiles_artifact_uuid'",
 				idx,
 				trimmedMountStr,
 				filesArtifactUuidMountpointDelimiter,
 			)
 		}
-		filesArtifactUuid := services.FilesArtifactUUID(mountFragments[0])
-		mountpoint := mountFragments[1]
+		mountpoint := mountFragments[0]
+		filesArtifactUuid := services.FilesArtifactUUID(mountFragments[1])
 
-		if existingMountpoint, found := result[filesArtifactUuid]; found {
+		if existingArtifactId, found := result[mountpoint]; found {
 			return nil, stacktrace.NewError(
-				"Files artifact with UUID '%v' is declared twice; once to mountpoint '%v' and again to mountpoint '%v'",
-				filesArtifactUuid,
-				existingMountpoint,
+				"Mountpoint '%v' is declared twice; once to artifact id '%v' and again to artifact id '%v'",
 				mountpoint,
+				existingArtifactId,
+				filesArtifactUuid,
 			)
 		}
 
-		result[filesArtifactUuid] = mountpoint
+		result[mountpoint] = filesArtifactUuid
 	}
 
 	return result, nil

@@ -34,7 +34,7 @@ type ContainerConfig struct {
 	image                        string
 	usedPorts                    map[string]*PortSpec
 	publicPorts                  map[string]*PortSpec //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-	filesArtifactMountpoints     map[FilesArtifactUUID]string
+	filesArtifactMountpoints     map[string]FilesArtifactUUID
 	entrypointOverrideArgs       []string
 	cmdOverrideArgs              []string
 	environmentVariableOverrides map[string]string
@@ -51,7 +51,7 @@ func (config *ContainerConfig) GetUsedPorts() map[string]*PortSpec {
 	return config.usedPorts
 }
 
-func (config *ContainerConfig) GetFilesArtifactMountpoints() map[FilesArtifactUUID]string {
+func (config *ContainerConfig) GetFilesArtifactMountpoints() map[string]FilesArtifactUUID {
 	return config.filesArtifactMountpoints
 }
 
@@ -95,7 +95,7 @@ type ContainerConfigBuilder struct {
 	image                        string
 	usedPorts                    map[string]*PortSpec
 	publicPorts                  map[string]*PortSpec //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-	filesArtifactMountpoints     map[FilesArtifactUUID]string
+	filesArtifactMountpoints     map[string]FilesArtifactUUID
 	entrypointOverrideArgs       []string
 	cmdOverrideArgs              []string
 	environmentVariableOverrides map[string]string
@@ -109,7 +109,7 @@ func NewContainerConfigBuilder(image string) *ContainerConfigBuilder {
 		image:                        image,
 		usedPorts:                    map[string]*PortSpec{},
 		publicPorts:                  nil,
-		filesArtifactMountpoints:     map[FilesArtifactUUID]string{},
+		filesArtifactMountpoints:     map[string]FilesArtifactUUID{},
 		entrypointOverrideArgs:       nil,
 		cmdOverrideArgs:              nil,
 		environmentVariableOverrides: map[string]string{},
@@ -124,7 +124,7 @@ func (builder *ContainerConfigBuilder) WithUsedPorts(usedPorts map[string]*PortS
 	return builder
 }
 
-func (builder *ContainerConfigBuilder) WithFiles(filesArtifactMountpoints map[FilesArtifactUUID]string) *ContainerConfigBuilder {
+func (builder *ContainerConfigBuilder) WithFiles(filesArtifactMountpoints map[string]FilesArtifactUUID) *ContainerConfigBuilder {
 	builder.filesArtifactMountpoints = filesArtifactMountpoints
 	return builder
 }

@@ -395,8 +395,8 @@ export class EnclaveContext {
         for (const [serviceID, containerConfig] of containerConfigs.entries()) {
             log.trace(`Creating files artifact ID str -> mount dirpaths map for service with Id '${serviceID}'...`);
             const artifactIdStrToMountDirpath: Map<string, string> = new Map<string, string>();
-            for (const [filesArtifactId, mountDirpath] of containerConfig.filesArtifactMountpoints) {
-                artifactIdStrToMountDirpath.set(filesArtifactId, mountDirpath);
+            for (const [mountDirpath, filesArtifactId] of containerConfig.filesArtifactMountpoints) {
+                artifactIdStrToMountDirpath.set(mountDirpath, filesArtifactId);
             }
             log.trace(`Successfully created files artifact ID str -> mount dirpaths map for service with Id '${serviceID}'`);
 

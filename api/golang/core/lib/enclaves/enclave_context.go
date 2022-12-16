@@ -284,8 +284,8 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 	for serviceID, containerConfig := range containerConfigs {
 		logrus.Tracef("Creating files artifact ID str -> mount dirpaths map for service with Id '%v'...", serviceID)
 		artifactIdStrToMountDirpath := map[string]string{}
-		for filesArtifactID, mountDirpath := range containerConfig.GetFilesArtifactMountpoints() {
-			artifactIdStrToMountDirpath[string(filesArtifactID)] = mountDirpath
+		for mountDirpath, filesArtifactID  := range containerConfig.GetFilesArtifactMountpoints() {
+			artifactIdStrToMountDirpath[mountDirpath] = string(filesArtifactID)
 		}
 		logrus.Tracef("Successfully created files artifact ID str -> mount dirpaths map for service with ID '%v'", serviceID)
 		privatePorts := containerConfig.GetUsedPorts()
