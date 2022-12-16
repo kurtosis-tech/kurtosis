@@ -34,7 +34,7 @@ export async function readStreamContentUntilClosed(responseLines: Readable): Pro
                 if (responseLine.getError()?.getInterpretationError() !== undefined) {
                     interpretationError = responseLine.getError()?.getInterpretationError()
                 } else if (responseLine.getError()?.getValidationError() !== undefined) {
-                    validationErrors.push(responseLine.getError()!.getInterpretationError()!)
+                    validationErrors.push(responseLine.getError()!.getValidationError()!)
                 } else if (responseLine.getError()?.getExecutionError() !== undefined) {
                     executionError = responseLine.getError()?.getExecutionError()
                 }
