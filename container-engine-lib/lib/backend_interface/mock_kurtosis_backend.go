@@ -284,13 +284,13 @@ func (_c *MockKurtosisBackend_CreateLogsCollector_Call) Return(_a0 *logs_collect
 	return _c
 }
 
-// CreateLogsDatabase provides a mock function with given fields: ctx, logsDatabaseHttpPortNumber
-func (_m *MockKurtosisBackend) CreateLogsDatabase(ctx context.Context, logsDatabaseHttpPortNumber uint16) (*logs_database.LogsDatabase, error) {
-	ret := _m.Called(ctx, logsDatabaseHttpPortNumber)
+// CreateLogsDatabase provides a mock function with given fields: ctx
+func (_m *MockKurtosisBackend) CreateLogsDatabase(ctx context.Context) (*logs_database.LogsDatabase, error) {
+	ret := _m.Called(ctx)
 
 	var r0 *logs_database.LogsDatabase
-	if rf, ok := ret.Get(0).(func(context.Context, uint16) *logs_database.LogsDatabase); ok {
-		r0 = rf(ctx, logsDatabaseHttpPortNumber)
+	if rf, ok := ret.Get(0).(func(context.Context) *logs_database.LogsDatabase); ok {
+		r0 = rf(ctx)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*logs_database.LogsDatabase)
@@ -298,14 +298,15 @@ func (_m *MockKurtosisBackend) CreateLogsDatabase(ctx context.Context, logsDatab
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, uint16) error); ok {
-		r1 = rf(ctx, logsDatabaseHttpPortNumber)
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
 	} else {
 		r1 = ret.Error(1)
 	}
 
 	return r0, r1
 }
+
 
 // MockKurtosisBackend_CreateLogsDatabase_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateLogsDatabase'
 type MockKurtosisBackend_CreateLogsDatabase_Call struct {
