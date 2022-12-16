@@ -29,6 +29,7 @@ const (
 
 	containerImageNameKey = "image"
 	usedPortsKey          = "ports"
+	subnetworkKey         = "subnetwork"
 	// TODO remove this when we have the Portal as this is a temporary hack to meet the NEAR use case
 	serviceIdKey   = "service_id"
 	contentTypeKey = "content_type"
@@ -133,7 +134,7 @@ func ParseExecRecipe(recipeConfig *starlarkstruct.Struct) (*recipe.ExecRecipe, *
 }
 
 func ParseServiceConfigArg(serviceConfig *starlarkstruct.Struct) (*kurtosis_core_rpc_api_bindings.ServiceConfig, *startosis_errors.InterpretationError) {
-	containerImageName, interpretationErr := parseServiceConfigContainerImageName(serviceConfig)
+	containerImageName, interpretationErr := extractStringValue(serviceConfig, containerImageNameKey, serviceConfigArgName)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
@@ -173,6 +174,11 @@ func ParseServiceConfigArg(serviceConfig *starlarkstruct.Struct) (*kurtosis_core
 		return nil, interpretationErr
 	}
 
+	subnetwork, interpretationErr := parseServiceConfigSubnetwork(serviceConfig)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
 	builtConfig := services.NewServiceConfigBuilder(containerImageName).WithPrivatePorts(
 		privatePorts,
 	).WithEntryPointArgs(
@@ -187,6 +193,8 @@ func ParseServiceConfigArg(serviceConfig *starlarkstruct.Struct) (*kurtosis_core
 		privateIPAddressPlaceholder,
 	).WithPublicPorts(
 		publicPorts,
+	).WithSubnetwork(
+		subnetwork,
 	).Build()
 
 	return builtConfig, nil
@@ -299,14 +307,18 @@ func ParseSubnetworks(subnetworksTuple starlark.Tuple) (service_network_types.Pa
 	subnetwork2 := service_network_types.PartitionID(subnetworksStr[1])
 	return subnetwork1, subnetwork2, nil
 }
-
-func parseServiceConfigContainerImageName(serviceConfig *starlarkstruct.Struct) (string, *startosis_errors.InterpretationError) {
-	// containerImageName should be a simple string
-	containerImageName, interpretationErr := extractStringValue(serviceConfig, containerImageNameKey, serviceConfigArgName)
+func parseServiceConfigSubnetwork(serviceConfig *starlarkstruct.Struct) (string, *startosis_errors.InterpretationError) {
+	// subnetwork, if present, should be a simple string
+	_, err := serviceConfig.Attr(subnetworkKey)
+	if err != nil {
+		// subnetwork is optional, if it's not present -> return empty string
+		return "", nil
+	}
+	subnetwork, interpretationErr := extractStringValue(serviceConfig, subnetworkKey, serviceConfigArgName)
 	if interpretationErr != nil {
 		return "", interpretationErr
 	}
-	return containerImageName, nil
+	return subnetwork, nil
 }
 
 func parseServiceConfigPorts(serviceConfig *starlarkstruct.Struct, portsKey string) (map[string]*kurtosis_core_rpc_api_bindings.Port, *startosis_errors.InterpretationError) {

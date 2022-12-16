@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	kurtosis_backend_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
@@ -30,7 +31,6 @@ const (
 )
 
 func GenerateAddServiceBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
-
 	// TODO: Force returning an InterpretationError rather than a normal error
 	return func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 		instructionPosition := shared_helpers.GetCallerPositionFromThread(thread)
@@ -122,6 +122,25 @@ func (instruction *AddServiceInstruction) Execute(ctx context.Context) (*string,
 	return &instructionResult, nil
 }
 
+func (instruction *AddServiceInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
+	if partition_topology.ParsePartitionId(instruction.serviceConfig.Subnetwork) != partition_topology.DefaultPartitionId {
+		if !environment.IsNetworkPartitioningEnabled() {
+			return startosis_errors.NewValidationError("Service was is about to be started inside subnetwork '%s' but the Kurtosis enclave was started with subnetwork capabilities disabled. Make sure to run the Starlark script with subnetwork enabled.", *instruction.serviceConfig.Subnetwork)
+		}
+	}
+	if environment.DoesServiceIdExist(instruction.serviceId) {
+		return startosis_errors.NewValidationError("There was an error validating '%v' as service ID '%v' already exists", AddServiceBuiltinName, instruction.serviceId)
+	}
+	for _, artifactIdKey := range instruction.serviceConfig.FilesArtifactMountpoints {
+		if !environment.DoesArtifactIdExist(enclave_data_directory.FilesArtifactID(artifactIdKey)) {
+			return startosis_errors.NewValidationError("There was an error validating '%v' as artifact UUID '%v' does not exist", AddServiceBuiltinName, artifactIdKey)
+		}
+	}
+	environment.AddServiceId(instruction.serviceId)
+	environment.AppendRequiredContainerImage(instruction.serviceConfig.ContainerImageName)
+	return nil
+}
+
 func (instruction *AddServiceInstruction) String() string {
 	return shared_helpers.CanonicalizeInstruction(AddServiceBuiltinName, kurtosis_instruction.NoArgs, instruction.starlarkKwargs)
 }
@@ -188,20 +207,6 @@ func (instruction *AddServiceInstruction) makeAddServiceInterpretationReturnValu
 	ipAddress := starlark.String(fmt.Sprintf(magic_string_helper.IpAddressReplacementPlaceholderFormat, instruction.serviceId))
 	returnValue := kurtosis_types.NewService(ipAddress, portSpecsDict)
 	return returnValue, nil
-}
-
-func (instruction *AddServiceInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
-	if environment.DoesServiceIdExist(instruction.serviceId) {
-		return startosis_errors.NewValidationError("There was an error validating '%v' as service ID '%v' already exists", AddServiceBuiltinName, instruction.serviceId)
-	}
-	for _, artifactIdKey := range instruction.serviceConfig.FilesArtifactMountpoints {
-		if !environment.DoesArtifactIdExist(enclave_data_directory.FilesArtifactID(artifactIdKey)) {
-			return startosis_errors.NewValidationError("There was an error validating '%v' as artifact UUID '%v' does not exist", AddServiceBuiltinName, artifactIdKey)
-		}
-	}
-	environment.AddServiceId(instruction.serviceId)
-	environment.AppendRequiredContainerImage(instruction.serviceConfig.ContainerImageName)
-	return nil
 }
 
 func (instruction *AddServiceInstruction) parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) *startosis_errors.InterpretationError {

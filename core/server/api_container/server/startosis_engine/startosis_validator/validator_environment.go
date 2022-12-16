@@ -7,16 +7,18 @@ import (
 
 // ValidatorEnvironment fields are not exported so that only validators can access its fields
 type ValidatorEnvironment struct {
-	requiredDockerImages map[string]bool
-	serviceIDs           map[service.ServiceID]bool
-	artifactIDs          map[enclave_data_directory.FilesArtifactID]bool
+	isNetworkPartitioningEnabled bool
+	requiredDockerImages         map[string]bool
+	serviceIDs                   map[service.ServiceID]bool
+	artifactIDs                  map[enclave_data_directory.FilesArtifactID]bool
 }
 
-func NewValidatorEnvironment(serviceIDs map[service.ServiceID]bool) *ValidatorEnvironment {
+func NewValidatorEnvironment(isNetworkPartitioningEnabled bool, serviceIDs map[service.ServiceID]bool) *ValidatorEnvironment {
 	return &ValidatorEnvironment{
-		requiredDockerImages: map[string]bool{},
-		serviceIDs:           serviceIDs,
-		artifactIDs:          map[enclave_data_directory.FilesArtifactID]bool{},
+		isNetworkPartitioningEnabled: isNetworkPartitioningEnabled,
+		requiredDockerImages:         map[string]bool{},
+		serviceIDs:                   serviceIDs,
+		artifactIDs:                  map[enclave_data_directory.FilesArtifactID]bool{},
 	}
 }
 
@@ -52,4 +54,8 @@ func (environment *ValidatorEnvironment) RemoveArtifactId(artifactId enclave_dat
 func (environment *ValidatorEnvironment) DoesArtifactIdExist(artifactId enclave_data_directory.FilesArtifactID) bool {
 	_, ok := environment.artifactIDs[artifactId]
 	return ok
+}
+
+func (environment *ValidatorEnvironment) IsNetworkPartitioningEnabled() bool {
+	return environment.isNetworkPartitioningEnabled
 }

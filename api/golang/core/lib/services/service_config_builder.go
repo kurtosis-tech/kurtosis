@@ -78,7 +78,9 @@ func (builder *ServiceConfigBuilder) WithPrivateIPAddressPlaceholder(privateIPAd
 }
 
 func (builder *ServiceConfigBuilder) WithSubnetwork(subnetwork string) *ServiceConfigBuilder {
-	builder.subnetwork = subnetwork
+	if subnetwork != "" {
+		builder.subnetwork = subnetwork
+	}
 	return builder
 }
 

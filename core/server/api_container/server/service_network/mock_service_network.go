@@ -124,3 +124,7 @@ func (m *MockServiceNetwork) UploadFilesArtifact(_ []byte) (enclave_data_directo
 func (m *MockServiceNetwork) UploadFilesArtifactToTargetArtifactID(data []byte, targetFilesArtifactId enclave_data_directory.FilesArtifactID) error {
 	panic(unimplementedMsg)
 }
+
+func (m *MockServiceNetwork) IsNetworkPartitioningEnabled() bool {
+	panic(unimplementedMsg)
+}

@@ -337,13 +337,7 @@ func (network *DefaultServiceNetwork) StartServices(
 		}
 
 		// check the partition to which the service should be added exists, and if not create it
-		partitionIDStr := serviceConfig.Subnetwork
-		var partitionID service_network_types.PartitionID
-		if partitionIDStr == nil || *partitionIDStr == "" {
-			partitionID = partition_topology.DefaultPartitionId
-		} else {
-			partitionID = service_network_types.PartitionID(*partitionIDStr)
-		}
+		partitionID := partition_topology.ParsePartitionId(serviceConfig.Subnetwork)
 		if _, found := network.topology.GetPartitionServices()[partitionID]; !found {
 			logrus.Debugf("Paritition with ID '%s' does not exist in current topology. Creating it to be able to "+
 				"add service '%s' to it when it's created", partitionID, serviceID)
@@ -560,13 +554,7 @@ func (network *DefaultServiceNetwork) UpdateService(
 		}
 		previousServicePartitions[serviceID] = previousServicePartition
 
-		var newServicePartition service_network_types.PartitionID
-		if *updateServiceConfig.Subnetwork == "" {
-			newServicePartition = partition_topology.DefaultPartitionId
-		} else {
-			newServicePartition = service_network_types.PartitionID(*updateServiceConfig.Subnetwork)
-		}
-
+		newServicePartition := partition_topology.ParsePartitionId(updateServiceConfig.Subnetwork)
 		if newServicePartition == previousServicePartition {
 			// nothing to do for this service
 			continue
@@ -945,6 +933,10 @@ func (network *DefaultServiceNetwork) UploadFilesArtifactToTargetArtifactID(data
 	}
 
 	return nil
+}
+
+func (network *DefaultServiceNetwork) IsNetworkPartitioningEnabled() bool {
+	return network.isPartitioningEnabled
 }
 
 // ====================================================================================================

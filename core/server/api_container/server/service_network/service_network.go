@@ -118,4 +118,6 @@ type ServiceNetwork interface {
 
 	UploadFilesArtifact(data []byte) (enclave_data_directory.FilesArtifactID, error)
 	UploadFilesArtifactToTargetArtifactID(data []byte, targetFilesArtifactId enclave_data_directory.FilesArtifactID) error
+
+	IsNetworkPartitioningEnabled() bool
 }

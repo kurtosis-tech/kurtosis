@@ -42,6 +42,15 @@ func NewPartitionTopology(defaultPartition service_network_types.PartitionID, de
 	}
 }
 
+// ParsePartitionId returns the partition ID form the provided strings.
+// As partition ID is optional in most places, it falls back to DefaultPartitionID is the argument is nil or empty
+func ParsePartitionId(partitionIdMaybe *string) service_network_types.PartitionID {
+	if partitionIdMaybe == nil || *partitionIdMaybe == "" {
+		return DefaultPartitionId
+	}
+	return service_network_types.PartitionID(*partitionIdMaybe)
+}
+
 // ================================================================================================
 //
 //	Public Methods

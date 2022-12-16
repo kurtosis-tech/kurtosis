@@ -39,7 +39,9 @@ func (validator *StartosisValidator) Validate(ctx context.Context, instructions 
 
 		starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(
 			validationInProgressMsg, defaultCurrentStepNumber, defaultTotalStepsNumber)
-		environment := startosis_validator.NewValidatorEnvironment(validator.serviceNetwork.GetServiceIDs())
+		environment := startosis_validator.NewValidatorEnvironment(
+			validator.serviceNetwork.IsNetworkPartitioningEnabled(),
+			validator.serviceNetwork.GetServiceIDs())
 
 		isValidationFailure = isValidationFailure ||
 			validator.validateAnUpdateEnvironment(instructions, environment, starlarkRunResponseLineStream)
