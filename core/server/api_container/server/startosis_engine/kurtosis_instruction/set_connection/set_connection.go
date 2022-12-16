@@ -122,7 +122,9 @@ func (instruction *SetConnectionInstruction) Execute(ctx context.Context) (*stri
 }
 
 func (instruction *SetConnectionInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
-	// TODO(gb):  validate that network partitioning is enabled at the network service level
+	if !environment.IsNetworkPartitioningEnabled() {
+		return startosis_errors.NewValidationError("Setting connection between two subnetworks cannot be performed because the Kurtosis enclave was started with subnetwork capabilities disabled. Make sure to run the Starlark script with subnetwork enabled.")
+	}
 	return nil
 }
 
