@@ -11,7 +11,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
-	"github.com/kurtosis-tech/stacktrace"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
@@ -24,7 +23,6 @@ const (
 	dockerGettingStartedImage                    = "docker/getting-started"
 	exampleServiceId          services.ServiceID = "stream-logs"
 
-
 	waitForAllLogsBeingCollectedInSeconds = 3
 
 	testTimeOut = 90 * time.Second
@@ -34,6 +32,8 @@ const (
 
 	nonExistentServiceGuid = "stream-logs-1667939326-non-existent"
 )
+
+var doNotFilterLogLines *kurtosis_context.LogLineFilter = nil
 
 type serviceLogsRequestInfoAndExpectedResults struct {
 	requestedEnclaveID    enclaves.EnclaveID
@@ -61,7 +61,7 @@ func TestStreamLogs(t *testing.T) {
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	require.NoError(t, err)
 
-	enclaveID := enclaveCtx.GetEnclaveID()
+	enclaveId := enclaveCtx.GetEnclaveID()
 
 	serviceCtx, err := enclaveCtx.GetServiceContext(exampleServiceId)
 	require.NoError(t, err)
@@ -75,7 +75,7 @@ func TestStreamLogs(t *testing.T) {
 	time.Sleep(waitForAllLogsBeingCollectedInSeconds * time.Second)
 
 	serviceLogsRequestInfoAndExpectedResultsList := getServiceLogsRequestInfoAndExpectedResultsList(
-		enclaveID,
+		enclaveId,
 		serviceGuids,
 	)
 
@@ -87,60 +87,30 @@ func TestStreamLogs(t *testing.T) {
 		expectedLogLines := serviceLogsRequestInfoAndExpectedResultsObj.expectedLogLines
 		expectedNonExistenceServiceGuids := serviceLogsRequestInfoAndExpectedResultsObj.expectedNotFoundServiceGuids
 
-		serviceLogsStreamContentChan, cancelStreamServiceLogsFunc, err := kurtosisCtx.GetServiceLogs(ctx, requestedEnclaveId, requestedServiceGuids, requestedShouldFollowLogs, nil)
-		require.NoError(t, err)
-		require.NotNil(t, cancelStreamServiceLogsFunc)
-		require.NotNil(t, serviceLogsStreamContentChan)
-
-		receivedLogLines := []string{}
-		receivedNotFoundServiceGuids := map[services.ServiceGUID]bool{}
-
-		var testEvaluationErr error
-
-		shouldContinueInTheLoop := true
-
-		for shouldContinueInTheLoop {
-			select {
-			case <-time.Tick(testTimeOut):
-				testEvaluationErr = stacktrace.NewError("Receiving stream logs in the test has reached the '%v' time out", testTimeOut)
-				shouldContinueInTheLoop = false
-				break
-			case serviceLogsStreamContent, isChanOpen := <-serviceLogsStreamContentChan:
-				if !isChanOpen {
-					shouldContinueInTheLoop = false
-					break
-				}
-
-				serviceLogsByGuid := serviceLogsStreamContent.GetServiceLogsByServiceGuids()
-				notFoundGuids := serviceLogsStreamContent.GetNotFoundServiceGuids()
-
-				serviceLogLines, found := serviceLogsByGuid[serviceGuid]
-				if len(expectedNonExistenceServiceGuids) > 0 {
-					require.False(t, found)
-				} else {
-					require.True(t, found)
-				}
-
-				receivedNotFoundServiceGuids = notFoundGuids
-
-				for _, serviceLog := range serviceLogLines {
-					receivedLogLines = append(receivedLogLines, serviceLog.GetContent())
-				}
-
-				if len(receivedLogLines) == len(expectedLogLines) {
-					shouldContinueInTheLoop = false
-					break
-				}
-			}
+		expectedLogLinesByService := map[services.ServiceGUID][]string{}
+		for userServiceGuid := range requestedServiceGuids{
+			expectedLogLinesByService[userServiceGuid] = expectedLogLines
 		}
 
+		testEvaluationErr, receivedLogLinesByService, receivedNotFoundServiceGuids := test_helpers.GetLogsResponse(
+			t,
+			ctx,
+			testTimeOut,
+			kurtosisCtx,
+			requestedEnclaveId,
+			requestedServiceGuids,
+			expectedLogLinesByService,
+			requestedShouldFollowLogs,
+			doNotFilterLogLines,
+		)
+
 		require.NoError(t, testEvaluationErr)
-		require.Equal(t, expectedLogLines, receivedLogLines)
+		for userServiceGuid := range requestedServiceGuids {
+			require.Equal(t, expectedLogLines, receivedLogLinesByService[userServiceGuid])
+		}
 		require.Equal(t, expectedNonExistenceServiceGuids, receivedNotFoundServiceGuids)
-		cancelStreamServiceLogsFunc()
 	}
 }
-
 
 // ====================================================================================================
 //                                       Private helper functions

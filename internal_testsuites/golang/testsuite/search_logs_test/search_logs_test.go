@@ -13,7 +13,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
-	"github.com/kurtosis-tech/stacktrace"
 	"strings"
 	"time"
 
@@ -121,17 +120,22 @@ func TestSearchLogs(t *testing.T) {
 	time.Sleep(waitForAllLogsBeingCollectedInSeconds * time.Second)
 
 	for requestIndex, filter := range filtersByRequest {
-		testEvaluationErr, receivedLogLines, receivedNotFoundServiceGuids := getLogsResponse(
+		testEvaluationErr, receivedLogLinesByService, receivedNotFoundServiceGuids := test_helpers.GetLogsResponse(
 			t,
 			ctx,
+			testTimeOut,
 			kurtosisCtx,
 			enclaveId,
 			userServiceGuids,
+			nil,
+			shouldNotFollowLogs,
 			&filter,
 		)
 
 		require.NoError(t, testEvaluationErr)
-		require.Equal(t, expectedLogLinesByRequest[requestIndex], receivedLogLines)
+		for serviceGuid := range userServiceGuids {
+			require.Equal(t, expectedLogLinesByRequest[requestIndex], receivedLogLinesByService[serviceGuid])
+		}
 		require.Equal(t, expectedNonExistenceServiceGuids, receivedNotFoundServiceGuids)
 	}
 }
@@ -139,54 +143,6 @@ func TestSearchLogs(t *testing.T) {
 // ====================================================================================================
 //                                       Private helper functions
 // ====================================================================================================
-func getLogsResponse(
-	t *testing.T,
-	ctx context.Context,
-	kurtosisCtx *kurtosis_context.KurtosisContext,
-	enclaveId enclaves.EnclaveID,
-	userServiceGuids map[services.ServiceGUID]bool,
-	logLineFilter *kurtosis_context.LogLineFilter,
-) (
-	error,
-	[]string,
-	map[services.ServiceGUID]bool,
-) {
-	serviceLogsStreamContentChan, cancelStreamUserServiceLogsFunc, err := kurtosisCtx.GetServiceLogs(ctx, enclaveId, userServiceGuids, shouldNotFollowLogs, logLineFilter)
-	require.NoError(t, err, "An error occurred getting user service logs from user services with GUIDs '%+v' in enclave '%v' and with follow logs value '%v'", userServiceGuids, enclaveId, shouldNotFollowLogs)
-	defer cancelStreamUserServiceLogsFunc()
-
-	receivedNotFoundServiceGuids := map[services.ServiceGUID]bool{}
-	receivedLogLines := []string{}
-
-	var testEvaluationErr error
-
-	shouldContinueInTheLoop := true
-
-	for shouldContinueInTheLoop {
-		select {
-		case <-time.Tick(testTimeOut):
-			testEvaluationErr = stacktrace.NewError("Receiving stream logs in the test has reached the '%v' time out", testTimeOut)
-			shouldContinueInTheLoop = false
-			break
-		case serviceLogsStreamContent, isChanOpen := <-serviceLogsStreamContentChan:
-			if !isChanOpen {
-				shouldContinueInTheLoop = false
-				break
-			}
-
-			serviceLogsByGuid := serviceLogsStreamContent.GetServiceLogsByServiceGuids()
-			receivedNotFoundServiceGuids = serviceLogsStreamContent.GetNotFoundServiceGuids()
-
-			for _, serviceLogLines := range serviceLogsByGuid {
-				for _, serviceLogLine := range serviceLogLines {
-					receivedLogLines = append(receivedLogLines, serviceLogLine.GetContent())
-				}
-			}
-		}
-	}
-
-	return testEvaluationErr, receivedLogLines, receivedNotFoundServiceGuids
-}
 
 func addServices(
 	t *testing.T,
