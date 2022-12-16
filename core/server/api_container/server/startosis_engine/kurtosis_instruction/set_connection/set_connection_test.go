@@ -4,6 +4,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/stretchr/testify/require"
@@ -11,10 +12,14 @@ import (
 	"testing"
 )
 
+var (
+	thread = shared_helpers.NewStarlarkThread("test-set-connection")
+)
+
 func TestSetService_Interpreter(t *testing.T) {
 	var instructions []kurtosis_instruction.KurtosisInstruction
 	starlarkInstruction := `set_connection(("subnetwork1", "subnetwork2"), ConnectionConfig(50.0))`
-	_, err := starlark.ExecFile(newThread(), startosis_constants.PackageIdPlaceholderForStandaloneScript, starlarkInstruction, starlark.StringDict{
+	_, err := starlark.ExecFile(thread, startosis_constants.PackageIdPlaceholderForStandaloneScript, starlarkInstruction, starlark.StringDict{
 		kurtosis_types.ConnectionConfigTypeName: starlark.NewBuiltin(kurtosis_types.ConnectionConfigTypeName, kurtosis_types.MakeConnectionConfig),
 		SetConnectionBuiltinName:                starlark.NewBuiltin(SetConnectionBuiltinName, GenerateSetConnectionBuiltin(&instructions, nil)),
 	})
@@ -42,7 +47,7 @@ func TestSetService_Interpreter(t *testing.T) {
 func TestSetService_Interpreter_SetDefaultConnection(t *testing.T) {
 	var instructions []kurtosis_instruction.KurtosisInstruction
 	starlarkInstruction := `set_connection(ConnectionConfig(50.0))`
-	_, err := starlark.ExecFile(newThread(), startosis_constants.PackageIdPlaceholderForStandaloneScript, starlarkInstruction, starlark.StringDict{
+	_, err := starlark.ExecFile(thread, startosis_constants.PackageIdPlaceholderForStandaloneScript, starlarkInstruction, starlark.StringDict{
 		kurtosis_types.ConnectionConfigTypeName: starlark.NewBuiltin(kurtosis_types.ConnectionConfigTypeName, kurtosis_types.MakeConnectionConfig),
 		SetConnectionBuiltinName:                starlark.NewBuiltin(SetConnectionBuiltinName, GenerateSetConnectionBuiltin(&instructions, nil)),
 	})
@@ -113,7 +118,7 @@ func TestSetConnection_SerializeAndParseAgain(t *testing.T) {
 	canonicalizedInstruction := initialInstruction.String()
 
 	var instructions []kurtosis_instruction.KurtosisInstruction
-	_, err := starlark.ExecFile(newThread(), startosis_constants.PackageIdPlaceholderForStandaloneScript, canonicalizedInstruction, starlark.StringDict{
+	_, err := starlark.ExecFile(thread, startosis_constants.PackageIdPlaceholderForStandaloneScript, canonicalizedInstruction, starlark.StringDict{
 		kurtosis_types.ConnectionConfigTypeName: starlark.NewBuiltin(kurtosis_types.ConnectionConfigTypeName, kurtosis_types.MakeConnectionConfig),
 		SetConnectionBuiltinName:                starlark.NewBuiltin(SetConnectionBuiltinName, GenerateSetConnectionBuiltin(&instructions, nil)),
 	})
@@ -137,7 +142,7 @@ func TestSetConnection_SerializeAndParseAgain_DefaultConnection(t *testing.T) {
 	canonicalizedInstruction := initialInstruction.String()
 
 	var instructions []kurtosis_instruction.KurtosisInstruction
-	_, err := starlark.ExecFile(newThread(), startosis_constants.PackageIdPlaceholderForStandaloneScript, canonicalizedInstruction, starlark.StringDict{
+	_, err := starlark.ExecFile(thread, startosis_constants.PackageIdPlaceholderForStandaloneScript, canonicalizedInstruction, starlark.StringDict{
 		kurtosis_types.ConnectionConfigTypeName: starlark.NewBuiltin(kurtosis_types.ConnectionConfigTypeName, kurtosis_types.MakeConnectionConfig),
 		SetConnectionBuiltinName:                starlark.NewBuiltin(SetConnectionBuiltinName, GenerateSetConnectionBuiltin(&instructions, nil)),
 	})
@@ -145,13 +150,4 @@ func TestSetConnection_SerializeAndParseAgain_DefaultConnection(t *testing.T) {
 
 	require.Len(t, instructions, 1)
 	require.Equal(t, initialInstruction, instructions[0])
-}
-
-func newThread() *starlark.Thread {
-	return &starlark.Thread{
-		Name:       "Test thread",
-		Print:      nil,
-		Load:       nil,
-		OnMaxSteps: nil,
-	}
 }

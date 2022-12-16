@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/assert"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/exec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/kurtosis_print"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/remove_connection"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/remove_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/render_templates"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/request"
@@ -172,6 +173,7 @@ func (interpreter *StartosisInterpreter) buildBindings(thread *starlark.Thread, 
 		request.RequestBuiltinName:                       starlark.NewBuiltin(request.RequestBuiltinName, request.GenerateRequestBuiltin(instructionsQueue, interpreter.recipeExecutor, interpreter.serviceNetwork)),
 		exec.ExecBuiltinName:                             starlark.NewBuiltin(exec.ExecBuiltinName, exec.GenerateExecBuiltin(instructionsQueue, interpreter.serviceNetwork, interpreter.recipeExecutor)),
 		kurtosis_print.PrintBuiltinName:                  starlark.NewBuiltin(kurtosis_print.PrintBuiltinName, kurtosis_print.GeneratePrintBuiltin(instructionsQueue, interpreter.recipeExecutor, interpreter.serviceNetwork)),
+		remove_connection.RemoveConnectionBuiltinName:    starlark.NewBuiltin(remove_connection.RemoveConnectionBuiltinName, remove_connection.GenerateRemoveConnectionBuiltin(instructionsQueue, interpreter.serviceNetwork)),
 		remove_service.RemoveServiceBuiltinName:          starlark.NewBuiltin(remove_service.RemoveServiceBuiltinName, remove_service.GenerateRemoveServiceBuiltin(instructionsQueue, interpreter.serviceNetwork)),
 		render_templates.RenderTemplatesBuiltinName:      starlark.NewBuiltin(render_templates.RenderTemplatesBuiltinName, render_templates.GenerateRenderTemplatesBuiltin(instructionsQueue, interpreter.serviceNetwork)),
 		set_connection.SetConnectionBuiltinName:          starlark.NewBuiltin(set_connection.SetConnectionBuiltinName, set_connection.GenerateSetConnectionBuiltin(instructionsQueue, interpreter.serviceNetwork)),
