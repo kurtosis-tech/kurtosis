@@ -46,8 +46,8 @@ const (
 	// Signifies that an enclave ID should be auto-generated
 	autogenerateEnclaveIdKeyword = ""
 
-	isPartitioningEnabledFlagKey = "with-partitioning"
-	defaultIsPartitioningEnabled = false
+	isSubnetworkCapabilitiesEnabledFlagKey = "with-subnetworks"
+	defaultIsSubnetworkCapabilitiesEnabled = false
 
 	verbosityFlagKey = "verbosity"
 	defaultVerbosity = "brief"
@@ -99,11 +99,11 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			Default: autogenerateEnclaveIdKeyword,
 		},
 		{
-			Key: isPartitioningEnabledFlagKey,
-			Usage: "If set to true, the enclave that the script or package runs in will have partitioning enabled so " +
-				"network partitioning simulations can be run",
+			Key: isSubnetworkCapabilitiesEnabledFlagKey,
+			Usage: "If set to true, the enclave that the script or package runs in will have subnetwork capabilities" +
+				" enabled.",
 			Type:    flags.FlagType_Bool,
-			Default: strconv.FormatBool(defaultIsPartitioningEnabled),
+			Default: strconv.FormatBool(defaultIsSubnetworkCapabilitiesEnabled),
 		},
 		{
 			Key:       verbosityFlagKey,
@@ -148,9 +148,9 @@ func run(
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the enclave ID using flag key '%s'", enclaveIdFlagKey)
 	}
-	isPartitioningEnabled, err := flags.GetBool(isPartitioningEnabledFlagKey)
+	isPartitioningEnabled, err := flags.GetBool(isSubnetworkCapabilitiesEnabledFlagKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the is-partitioning-enabled setting using flag key '%v'", isPartitioningEnabledFlagKey)
+		return stacktrace.Propagate(err, "An error occurred getting the is-subnetwork-enabled setting using flag key '%v'", isSubnetworkCapabilitiesEnabledFlagKey)
 	}
 
 	starlarkScriptOrPackagePath, err := args.GetNonGreedyArg(scriptOrPackagePathKey)
