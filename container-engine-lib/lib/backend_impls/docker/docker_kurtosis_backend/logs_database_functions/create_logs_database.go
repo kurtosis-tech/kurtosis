@@ -16,7 +16,6 @@ const (
 
 func CreateLogsDatabase(
 	ctx context.Context,
-	httpPortNumber uint16,
 	logsDatabaseContainer LogsDatabaseContainer,
 	dockerManager *docker_manager.DockerManager,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
@@ -42,7 +41,6 @@ func CreateLogsDatabase(
 	containerId, containerLabels, removeLogsDatabaseContainerFunc, err := logsDatabaseContainer.CreateAndStart(
 		ctx,
 		logsDatabaseHttpPortId,
-		httpPortNumber,
 		targetNetworkId,
 		objAttrsProvider,
 		dockerManager,
@@ -50,9 +48,8 @@ func CreateLogsDatabase(
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred creating the logs database container with HTTP port id '%v' and HTTP port number '%v' in Docker network with ID '%v'",
+			"An error occurred creating the logs database container with http port id '%v' in Docker network with ID '%v'",
 			logsDatabaseHttpPortId,
-			httpPortNumber,
 			targetNetworkId,
 		)
 	}

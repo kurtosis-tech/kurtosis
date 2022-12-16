@@ -9,10 +9,7 @@ const (
 
 	////////////////////////--LOKI CONTAINER CONFIGURATION SECTION--/////////////////////////////
 	containerImage = "grafana/loki:main-19c7315"
-	//TODO now the httpPortNumber is configured from the client, because this will be published to the host machine until
-	//TODO we productize logs search, tracked by this issue: https://github.com/kurtosis-tech/kurtosis/issues/340
-	//TODO uncomment this when we don't expose this port again
-	//httpPortNumber   uint16 = 3100 // Default Loki HTTP API port number, more here: https://grafana.com/docs/loki/latest/api/
+	httpPortNumber   uint16 = 3100 // Default Loki HTTP API port number, more here: https://grafana.com/docs/loki/latest/api/
 	httpTransportProtocol = port_spec.TransportProtocol_TCP
 	logLevel              = "info"
 

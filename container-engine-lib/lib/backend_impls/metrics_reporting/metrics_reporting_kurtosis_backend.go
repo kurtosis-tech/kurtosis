@@ -539,15 +539,14 @@ func (backend *MetricsReportingKurtosisBackend) DestroyNetworkingSidecars(
 
 func (backend *MetricsReportingKurtosisBackend) CreateLogsDatabase(
 	ctx context.Context,
-	logsDatabaseHttpPortNumber uint16,
 ) (
 	*logs_database.LogsDatabase,
 	error,
 ){
 
-	logsDatabase, err := backend.underlying.CreateLogsDatabase(ctx, logsDatabaseHttpPortNumber)
+	logsDatabase, err := backend.underlying.CreateLogsDatabase(ctx)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the logs database with HTTP port number '%v'", logsDatabaseHttpPortNumber)
+		return nil, stacktrace.Propagate(err, "An error occurred creating the logs database")
 	}
 
 	return logsDatabase, nil

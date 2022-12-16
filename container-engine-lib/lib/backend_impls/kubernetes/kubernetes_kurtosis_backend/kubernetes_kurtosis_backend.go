@@ -338,7 +338,7 @@ func (backend *KubernetesKurtosisBackend) DestroyUserServices(ctx context.Contex
 		backend.kubernetesManager)
 }
 
-func (backend *KubernetesKurtosisBackend) CreateLogsDatabase(ctx context.Context, logsDatabaseHttpPortNumber uint16,) (*logs_database.LogsDatabase, error) {
+func (backend *KubernetesKurtosisBackend) CreateLogsDatabase(ctx context.Context) (*logs_database.LogsDatabase, error) {
 	// TODO IMPLEMENT
 	return nil, stacktrace.NewError("Creating the logs database isn't yet implemented on Kubernetes")
 }

@@ -297,8 +297,8 @@ func (guarantor *engineExistenceGuarantor) ensureCentralizedLogsComponentsAreRun
 	}
 
 	if !isThereLogsDatabase {
-		if _, err := guarantor.kurtosisBackend.CreateLogsDatabase(ctx, defaultHttpLogsDatabasePortNum); err != nil {
-			return stacktrace.Propagate(err, "An error occurred creating the logs database with HTTP port number '%v'", defaultHttpLogsDatabasePortNum)
+		if _, err := guarantor.kurtosisBackend.CreateLogsDatabase(ctx); err != nil {
+			return stacktrace.Propagate(err, "An error occurred creating the logs database")
 		}
 	}
 

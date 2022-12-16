@@ -384,10 +384,6 @@ type KurtosisBackend interface {
 	// Create a new Logs Database for storing and requesting the container's logs
 	CreateLogsDatabase(
 		ctx context.Context,
-		//TODO now the httpPortNumber is configured from the client, because this will be published to the host machine until
-		//TODO we productize logs search, tracked by this issue: https://github.com/kurtosis-tech/kurtosis/issues/340
-		//TODO remove this parameter when we do not publish the port again
-		logsDatabaseHttpPortNumber uint16,
 	) (
 		*logs_database.LogsDatabase,
 		error,

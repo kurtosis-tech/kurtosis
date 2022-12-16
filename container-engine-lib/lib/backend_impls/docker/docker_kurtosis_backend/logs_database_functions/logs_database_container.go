@@ -10,10 +10,6 @@ type LogsDatabaseContainer interface {
 	CreateAndStart(
 		ctx context.Context,
 		httpPortId string,
-		//TODO now the httpPortNumber is configured from the client, because this will be published to the host machine until
-		//TODO we productize logs search, tracked by this issue: https://github.com/kurtosis-tech/kurtosis/issues/340
-		//TODO remove this parameter when we do not publish the port again
-		httpPortNumber uint16,
 		targetNetworkId string,
 		objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 		dockerManager *docker_manager.DockerManager,

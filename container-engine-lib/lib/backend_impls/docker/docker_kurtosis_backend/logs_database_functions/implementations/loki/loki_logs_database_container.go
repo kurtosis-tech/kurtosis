@@ -24,7 +24,6 @@ func NewLokiLogDatabaseContainer() *lokiLogsDatabaseContainer {
 func (lokiContainer *lokiLogsDatabaseContainer) CreateAndStart(
 	ctx context.Context,
 	httpPortId string,
-	httpPortNumber uint16,
 	targetNetworkId string,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 	dockerManager *docker_manager.DockerManager,
@@ -35,7 +34,7 @@ func (lokiContainer *lokiLogsDatabaseContainer) CreateAndStart(
 	resultErr error,
 ) {
 
-	lokiContainerConfigProviderObj := createLokiContainerConfigProviderForKurtosis(httpPortNumber)
+	lokiContainerConfigProviderObj := createLokiContainerConfigProviderForKurtosis()
 
 	privateHttpPortSpec, err := lokiContainerConfigProviderObj.GetPrivateHttpPortSpec()
 	if err != nil {
