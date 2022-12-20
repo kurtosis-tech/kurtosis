@@ -340,22 +340,6 @@ export class EnclaveContext {
         return ok(serviceCtx);
     }
 
-    // Docs available at https://docs.kurtosis.com/sdk/#addservicesmapserviceid-containerconfig-containerconfigs---mapserviceid-servicecontext-successfulservices-mapserviceid-error-failedservices
-    public async addServices(
-            containerConfigs : Map<ServiceID, ContainerConfig>
-        ): Promise<Result<[Map<ServiceID, ServiceContext>, Map<ServiceID, Error>], Error>> {
-
-        const resultAddServicesToPartition : Result<[Map<ServiceID, ServiceContext>, Map<ServiceID, Error>], Error> = await this.addServicesToPartition(
-            containerConfigs,
-            DEFAULT_PARTITION_ID,
-        );
-        if (resultAddServicesToPartition.isErr()) {
-            return err(resultAddServicesToPartition.error);
-        }
-
-        return ok(resultAddServicesToPartition.value);
-    }
-
     // Docs available at https://docs.kurtosis.com/sdk/#addservicetopartitionserviceid-serviceid-partitionid-partitionid-containerconfig-containerconfig---servicecontext-servicecontext
     public async addServiceToPartition(
             serviceId: ServiceID,

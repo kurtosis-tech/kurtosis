@@ -226,21 +226,6 @@ func (enclaveCtx *EnclaveContext) AddService(
 	return serviceCtx, nil
 }
 
-// Docs available at https://docs.kurtosis.com/sdk/#addservicesmapserviceid-containerconfig-containerconfigs---mapserviceid-servicecontext-successfulservices-mapserviceid-error-failedservices
-func (enclaveCtx *EnclaveContext) AddServices(
-	containerConfigs map[services.ServiceID]*services.ContainerConfig,
-) (
-	resultSuccessfulServices map[services.ServiceID]*services.ServiceContext,
-	resultFailedServices map[services.ServiceID]error,
-	resultErr error,
-) {
-	successfulServices, failedServices, err := enclaveCtx.AddServicesToPartition(containerConfigs, defaultPartitionId)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred adding services to the enclave in the default partition.")
-	}
-	return successfulServices, failedServices, err
-}
-
 // Docs available at https://docs.kurtosis.com/sdk/#addservicetopartitionserviceid-serviceid-partitionid-partitionid-containerconfig-containerconfig---servicecontext-servicecontext
 func (enclaveCtx *EnclaveContext) AddServiceToPartition(
 	serviceID services.ServiceID,

@@ -14,35 +14,51 @@ const (
 	serviceIdStr           = "service-with-port-spec"
 	portWithAppProtocol    = "port1"
 	portWithOutAppProtocol = "port2"
-	dockerImage            = "docker/getting-started:latest"
+	starlarkScript         = `
+def run(plan):
+	plan.add_service(
+		service_id = "service-with-port-spec",
+		config = struct(
+			image = "docker/getting-started:latest",
+			ports = {
+				"port1": PortSpec(
+					number = 4444,
+					transport_protocol = "UDP",
+					application_protocol = "http"
+				),
+				"port2": PortSpec(
+					number = 3333,
+					transport_protocol = "TCP"
+				)
+			},
+		)
+	)
+`
 )
 
 func TestAddServiceWithApplicationProtocol(t *testing.T) {
 	ctx := context.Background()
 	serviceId := services.ServiceID(serviceIdStr)
-	// ENGINE SETUP
-	enclaveCtx, destroyEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
-	defer destroyEnclaveFunc()
+
+	// ------------------------------------- ENGINE SETUP ----------------------------------------------
+	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
+	defer func() {
+		err := destroyEnclaveFunc()
+		require.Nil(t, err)
+	}()
 	require.NoError(t, err, "An error occurred creating an enclave")
 
-	portSpecMap := map[string]*services.PortSpec{
-		portWithAppProtocol:    services.NewPortSpec(4444, services.TransportProtocol_UDP, "http"),
-		portWithOutAppProtocol: services.NewPortSpec(3333, services.TransportProtocol_TCP, ""),
-	}
+	// -------------------------------------- SCRIPT RUN -----------------------------------------------
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkScript, "", false)
+	require.NoError(t, err, "An unexpected error occurred while running Starlark script")
+	require.Empty(t, runResult.InterpretationError, "An unexpected error occurred while interpreting Starlark script")
+	require.Empty(t, runResult.ValidationErrors, "An unexpected error occurred while validating Starlark script")
+	require.Empty(t, runResult.ExecutionError, "An unexpected error occurred while executing Starlark script")
 
-	containerConfig := services.NewContainerConfigBuilder(dockerImage).WithUsedPorts(portSpecMap)
-	containerConfigs := map[services.ServiceID]*services.ContainerConfig{
-		serviceId: containerConfig.Build(),
-	}
-
-	successServices, failureServices, err := enclaveCtx.AddServices(containerConfigs)
-	require.NoError(t, err, "An unexpected error occurred while adding serivce")
-	require.Empty(t, failureServices)
-
-	service, found := successServices[serviceId]
-	require.True(t, found)
+	// ------------------------------------ TEST ASSERTIONS ---------------------------------------------
+	service, err := enclaveCtx.GetServiceContext(serviceId)
+	require.NoError(t, err, "An unexpected error occurred while getting service")
 	ports := service.GetPrivatePorts()
-
 	portSpecWithAppProtocol := ports[portWithAppProtocol]
 	portSpecWithoutAppProtocol := ports[portWithOutAppProtocol]
 
