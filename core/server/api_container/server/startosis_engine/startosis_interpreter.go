@@ -6,21 +6,10 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/import_module"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/print_builtin"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/read_file"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_service"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/assert"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/exec"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/kurtosis_print"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/remove_connection"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/remove_service"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/render_templates"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/request"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/set_connection"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/store_service_files"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/update_service"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/upload_files"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/wait"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/plan_module"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/package_io"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
@@ -46,8 +35,15 @@ const (
 
 	runFunctionName = "run"
 
-	paramsRequiredForArgs              = 1
-	maximumParamsAllowedForRunFunction = 1
+	paramsRequiredForArgs              = 2
+	minimumParamsRequiredForPlan       = 1
+	maximumParamsAllowedForRunFunction = 2
+
+	planParamIndex = 0
+	planParamName = "plan"
+	argsParamIndex = 1
+	argsParamName = "args"
+	unexpectedArgNameError = "Expected argument at index '%v' of run function to be called '%v' got '%v' "
 )
 
 var (
@@ -117,7 +113,18 @@ func (interpreter *StartosisInterpreter) Interpret(_ context.Context, packageId 
 
 	var argsTuple starlark.Tuple
 
+	if runFunction.NumParams() >= minimumParamsRequiredForPlan {
+		if paramName, _ := runFunction.Param(planParamIndex) ; paramName != planParamName {
+			return "", nil, startosis_errors.NewInterpretationError(unexpectedArgNameError, planParamIndex, planParamName, paramName).ToAPIType()
+		}
+		planModule := plan_module.PlanModule(&instructionsQueue, interpreter.serviceNetwork, interpreter.recipeExecutor, interpreter.moduleContentProvider)
+		argsTuple = append(argsTuple, planModule)
+	}
+
 	if runFunction.NumParams() == paramsRequiredForArgs {
+		if paramName, _ := runFunction.Param(argsParamIndex) ; paramName != argsParamName {
+			return "", nil, startosis_errors.NewInterpretationError(unexpectedArgNameError, argsParamIndex, argsParamName, paramName).ToAPIType()
+		}
 		// run function has an argument so we parse input args
 		inputArgs, interpretationError := interpreter.parseInputArgs(thread, serializedJsonParams)
 		if interpretationError != nil {
@@ -173,23 +180,9 @@ func (interpreter *StartosisInterpreter) buildBindings(thread *starlark.Thread, 
 		kurtosis_types.ConnectionConfigTypeName:    starlark.NewBuiltin(kurtosis_types.ConnectionConfigTypeName, kurtosis_types.MakeConnectionConfig),
 		kurtosis_types.UpdateServiceConfigTypeName: starlark.NewBuiltin(kurtosis_types.UpdateServiceConfigTypeName, kurtosis_types.MakeUpdateServiceConfig),
 
-		// Kurtosis instructions - will push instructions to the queue that will affect the enclave state at execution
-		add_service.AddServiceBuiltinName:                starlark.NewBuiltin(add_service.AddServiceBuiltinName, add_service.GenerateAddServiceBuiltin(instructionsQueue, interpreter.serviceNetwork, interpreter.recipeExecutor)),
-		assert.AssertBuiltinName:                         starlark.NewBuiltin(assert.AssertBuiltinName, assert.GenerateAssertBuiltin(instructionsQueue, interpreter.recipeExecutor, interpreter.serviceNetwork)),
-		request.RequestBuiltinName:                       starlark.NewBuiltin(request.RequestBuiltinName, request.GenerateRequestBuiltin(instructionsQueue, interpreter.recipeExecutor, interpreter.serviceNetwork)),
-		exec.ExecBuiltinName:                             starlark.NewBuiltin(exec.ExecBuiltinName, exec.GenerateExecBuiltin(instructionsQueue, interpreter.serviceNetwork, interpreter.recipeExecutor)),
-		kurtosis_print.PrintBuiltinName:                  starlark.NewBuiltin(kurtosis_print.PrintBuiltinName, kurtosis_print.GeneratePrintBuiltin(instructionsQueue, interpreter.recipeExecutor, interpreter.serviceNetwork)),
-		remove_connection.RemoveConnectionBuiltinName:    starlark.NewBuiltin(remove_connection.RemoveConnectionBuiltinName, remove_connection.GenerateRemoveConnectionBuiltin(instructionsQueue, interpreter.serviceNetwork)),
-		remove_service.RemoveServiceBuiltinName:          starlark.NewBuiltin(remove_service.RemoveServiceBuiltinName, remove_service.GenerateRemoveServiceBuiltin(instructionsQueue, interpreter.serviceNetwork)),
-		render_templates.RenderTemplatesBuiltinName:      starlark.NewBuiltin(render_templates.RenderTemplatesBuiltinName, render_templates.GenerateRenderTemplatesBuiltin(instructionsQueue, interpreter.serviceNetwork)),
-		set_connection.SetConnectionBuiltinName:          starlark.NewBuiltin(set_connection.SetConnectionBuiltinName, set_connection.GenerateSetConnectionBuiltin(instructionsQueue, interpreter.serviceNetwork)),
-		store_service_files.StoreServiceFilesBuiltinName: starlark.NewBuiltin(store_service_files.StoreServiceFilesBuiltinName, store_service_files.GenerateStoreServiceFilesBuiltin(instructionsQueue, interpreter.serviceNetwork)),
-		update_service.UpdateServiceBuiltinName:          starlark.NewBuiltin(update_service.UpdateServiceBuiltinName, update_service.GenerateUpdateServiceBuiltin(instructionsQueue, interpreter.serviceNetwork)),
-		upload_files.UploadFilesBuiltinName:              starlark.NewBuiltin(upload_files.UploadFilesBuiltinName, upload_files.GenerateUploadFilesBuiltin(instructionsQueue, interpreter.moduleContentProvider, interpreter.serviceNetwork)),
-		wait.WaitBuiltinName:                             starlark.NewBuiltin(wait.WaitBuiltinName, wait.GenerateWaitBuiltin(instructionsQueue, interpreter.recipeExecutor, interpreter.serviceNetwork)),
-
 		// Kurtosis custom builtins - pure interpretation-time helpers. Do not add any instructions to the queue
 		import_module.ImportModuleBuiltinName: starlark.NewBuiltin(import_module.ImportModuleBuiltinName, import_module.GenerateImportBuiltin(recursiveInterpretForModuleLoading, interpreter.moduleContentProvider, interpreter.moduleGlobalsCache)),
+		print_builtin.PrintBuiltinName:        starlark.NewBuiltin(print_builtin.PrintBuiltinName, print_builtin.GeneratePrintBuiltin()),
 		read_file.ReadFileBuiltinName:         starlark.NewBuiltin(read_file.ReadFileBuiltinName, read_file.GenerateReadFileBuiltin(interpreter.moduleContentProvider)),
 	}
 	return predeclared
@@ -218,8 +211,9 @@ func makeLoadFunction() func(_ *starlark.Thread, packageId string) (starlark.Str
 
 func makePrintFunction() func(*starlark.Thread, string) {
 	return func(_ *starlark.Thread, msg string) {
-		// the `print` function must be overriden with the custom kurtosis_print instruction in the predeclared map
-		panic("The print function does not function correctly. This is a Kurtosis bug")
+		// the `print` function must be overriden with the custom print builtin in the predeclared map
+		// which just exists to throw a nice interpretation error as this itself can't
+		panic(print_builtin.UsePlanFromKurtosisInstructionError)
 	}
 }
 

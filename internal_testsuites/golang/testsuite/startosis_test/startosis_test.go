@@ -39,9 +39,9 @@ TEMPLATE_FILE_TO_RENDER="github.com/kurtosis-tech/eth2-merge-kurtosis-module/kur
 PATH_TO_MOUNT_RENDERED_CONFIG="` + renderedConfigMountPath + `"
 RENDER_RELATIVE_PATH = "` + renderedConfigRelativePath + `"
 
-def run(args):
-	print("Hello " + args.greeting) 
-	print("Adding service " + DATASTORE_SERVICE_ID + ".")
+def run(plan, args):
+	plan.print("Hello " + args.greeting) 
+	plan.print("Adding service " + DATASTORE_SERVICE_ID + ".")
 	
 	config = struct(
 		image = DATASTORE_IMAGE,
@@ -50,15 +50,15 @@ def run(args):
 		}
 	)
 	
-	add_service(service_id = DATASTORE_SERVICE_ID, config = config)
-	print("Service " + DATASTORE_SERVICE_ID + " deployed successfully.")
-	exec(struct(
+	plan.add_service(service_id = DATASTORE_SERVICE_ID, config = config)
+	plan.print("Service " + DATASTORE_SERVICE_ID + " deployed successfully.")
+	plan.exec(struct(
 		service_id = DATASTORE_SERVICE_ID,
 		command = ["touch", FILE_TO_BE_CREATED],
 	))
 	
-	artifact_id = store_service_files(service_id = DATASTORE_SERVICE_ID, src = FILE_TO_BE_CREATED)
-	print("Stored file at " + artifact_id)
+	artifact_id = plan.store_service_files(service_id = DATASTORE_SERVICE_ID, src = FILE_TO_BE_CREATED)
+	plan.print("Stored file at " + artifact_id)
 	
 	template_str = read_file(TEMPLATE_FILE_TO_RENDER)
 	
@@ -73,8 +73,8 @@ def run(args):
 		)
 	}
 	
-	rendered_artifact = render_templates(template_data_by_path)
-	print("Rendered file to " + rendered_artifact)
+	rendered_artifact = plan.render_templates(template_data_by_path)
+	plan.print("Rendered file to " + rendered_artifact)
 	
 	dependent_config = struct(
 		image = DATASTORE_IMAGE,
@@ -86,8 +86,8 @@ def run(args):
 			PATH_TO_MOUNT_RENDERED_CONFIG: rendered_artifact
 		}
 	)
-	add_service(service_id = SERVICE_DEPENDENT_ON_DATASTORE_SERVICE, config = dependent_config)
-	print("Deployed " + SERVICE_DEPENDENT_ON_DATASTORE_SERVICE + " successfully")
+	plan.add_service(service_id = SERVICE_DEPENDENT_ON_DATASTORE_SERVICE, config = dependent_config)
+	plan.print("Deployed " + SERVICE_DEPENDENT_ON_DATASTORE_SERVICE + " successfully")
 `
 )
 

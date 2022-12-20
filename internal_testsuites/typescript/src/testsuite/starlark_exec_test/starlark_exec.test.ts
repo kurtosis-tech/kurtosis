@@ -7,7 +7,7 @@ const DEFAULT_DRY_RUN = false
 const EMPTY_ARGS = "{}"
 
 const STARLARK_SCRIPT =`
-def run(args):
+def run(plan):
 	service_config = struct(
 		image = "mendhak/http-https-echo:26",
 		ports = {
@@ -15,14 +15,14 @@ def run(args):
 		}
 	)
 
-	add_service(service_id = "web-server", config = service_config)
-	response = exec(
+	plan.add_service(service_id = "web-server", config = service_config)
+	response = plan.exec(
 	struct(
 	    service_id = "web-server",
 	    command = ["echo", "hello", "world"]
 	))
-	assert(response["code"], "==", 0)
-	assert(response["output"], "==", "hello world\\n")
+	plan.assert(response["code"], "==", 0)
+	plan.assert(response["output"], "==", "hello world\\n")
 `
 
 jest.setTimeout(180000)

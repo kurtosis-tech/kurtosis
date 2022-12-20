@@ -30,11 +30,11 @@ DATASTORE_PORT_PROTOCOL = "TCP"
 DIR_TO_UPLOAD = "github.com/kurtosis-tech/datastore-army-package/src"
 PATH_TO_MOUNT_UPLOADED_DIR = "` + pathToMountUploadedDir + `"
 
-def run(args):
-	print("Adding service " + DATASTORE_SERVICE_ID + ".")
+def run(plan):
+	plan.print("Adding service " + DATASTORE_SERVICE_ID + ".")
 	
-	uploaded_artifact_id = upload_files(DIR_TO_UPLOAD)
-	print("Uploaded " + uploaded_artifact_id)
+	uploaded_artifact_id = plan.upload_files(DIR_TO_UPLOAD)
+	plan.print("Uploaded " + uploaded_artifact_id)
 	
 	
 	config = struct(
@@ -47,7 +47,7 @@ def run(args):
 		}
 	)
 	
-	add_service(service_id = DATASTORE_SERVICE_ID, config = config)`
+	plan.add_service(service_id = DATASTORE_SERVICE_ID, config = config)`
 )
 
 func TestStartosis(t *testing.T) {

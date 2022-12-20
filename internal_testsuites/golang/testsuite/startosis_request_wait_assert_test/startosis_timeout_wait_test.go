@@ -10,7 +10,7 @@ import (
 const (
 	timeoutWaitTestName        = "startosis_timeout_wait_test"
 	timeoutWaitStartosisScript = `
-def run(args):
+def run(plan):
 	service_config = struct(
 		image = "mendhak/http-https-echo:26",
 		ports = {
@@ -18,7 +18,7 @@ def run(args):
 		}
 	)
 
-	add_service(service_id = "web-server", config = service_config)
+	plan.add_service(service_id = "web-server", config = service_config)
 	get_recipe = struct(
 		service_id = "web-server",
 		port_id = "http-port",
@@ -28,7 +28,7 @@ def run(args):
 			"exploded-slash": ".query.input | split(\"/\") | .[1]"
 		}
 	)
-	response = wait(get_recipe, "code", "<", 0, interval="100ms", timeout="10s")
+	response = plan.wait(get_recipe, "code", "<", 0, interval="100ms", timeout="10s")
 `
 )
 

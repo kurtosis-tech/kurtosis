@@ -1,2 +1,2 @@
-def run():
-    print("Hello World!")
+def run(plan):
+    plan.print("Hello World!")

@@ -11,7 +11,7 @@ import (
 const (
 	complexRequestWaitAssertTestName        = "startosis_complex_request_test"
 	complexRequestWaitAssertStartosisScript = `
-def run(args):
+def run(plan):
 	service_config = struct(
 		image = "mendhak/http-https-echo:26",
 		ports = {
@@ -19,7 +19,7 @@ def run(args):
 		}
 	)
 
-	add_service(service_id = "web-server", config = service_config)
+	plan.add_service(service_id = "web-server", config = service_config)
 	get_recipe = struct(
 		service_id = "web-server",
 		port_id = "http-port",
@@ -29,17 +29,17 @@ def run(args):
 			"exploded-slash": ".query.input | split(\"/\") | .[1]"
 		}
 	)
-	response = wait(get_recipe, "code", "==", 200, interval="10s", timeout="200s")
-	assert(response["code"], "==", 200)
-	assert("My test returned " + response["code"], "==", "My test returned 200")
-	assert(response["code"], "!=", 500)
-	assert(response["code"], ">=", 200)
-	assert(response["code"], "<=", 200)
-	assert(response["code"], "<", 300)
-	assert(response["code"], ">", 100)
-	assert(response["code"], "IN", [100, 200])
-	assert(response["code"], "NOT_IN", [100, 300])
-	assert(response["extract.exploded-slash"], "==", "bar")
+	response = plan.wait(get_recipe, "code", "==", 200, interval="10s", timeout="200s")
+	plan.assert(response["code"], "==", 200)
+	plan.assert("My test returned " + response["code"], "==", "My test returned 200")
+	plan.assert(response["code"], "!=", 500)
+	plan.assert(response["code"], ">=", 200)
+	plan.assert(response["code"], "<=", 200)
+	plan.assert(response["code"], "<", 300)
+	plan.assert(response["code"], ">", 100)
+	plan.assert(response["code"], "IN", [100, 200])
+	plan.assert(response["code"], "NOT_IN", [100, 300])
+	plan.assert(response["extract.exploded-slash"], "==", "bar")
 	post_recipe = struct(
 		service_id = "web-server",
 		port_id = "http-port",
@@ -51,16 +51,16 @@ def run(args):
 			"my-body": ".body"
 		}
 	)
-	wait(post_recipe, "code", "==", 200)
-	post_response = request(post_recipe)
-	assert(post_response["code"], "==", 200)
-	assert(post_response["extract.my-body"], "==", "bar")
+	plan.wait(post_recipe, "code", "==", 200)
+	post_response = plan.request(post_recipe)
+	plan.assert(post_response["code"], "==", 200)
+	plan.assert(post_response["extract.my-body"], "==", "bar")
 	exec_recipe = struct(
 		service_id = "web-server",
 		command = ["echo", "hello", post_response["extract.my-body"]]
 	)
-	exec_result = wait(exec_recipe, "code", "==", 0)
-	assert(exec_result["output"], "==", "hello bar\n")
+	exec_result = plan.wait(exec_recipe, "code", "==", 0)
+	plan.assert(exec_result["output"], "==", "hello bar\n")
 `
 )
 

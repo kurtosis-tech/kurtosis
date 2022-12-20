@@ -21,31 +21,31 @@ const (
 DOCKER_GETTING_STARTED_IMAGE = "docker/getting-started:latest"
 SERVICE_ID = "` + serviceId + `"
 
-def run(args):
-	print("Adding service " + SERVICE_ID + ".")
+def run(plan):
+	plan.print("Adding service " + SERVICE_ID + ".")
 	
 	config = struct(
 		image = DOCKER_GETTING_STARTED_IMAGE,
 		ports = {}
 	)
 	
-	add_service(service_id = SERVICE_ID, config = config)
-	print("Service " + SERVICE_ID + " deployed successfully.")
+	plan.add_service(service_id = SERVICE_ID, config = config)
+	plan.print("Service " + SERVICE_ID + " deployed successfully.")
 `
 
 	starlarkScriptWithoutPorts = `
 DOCKER_GETTING_STARTED_IMAGE = "docker/getting-started:latest"
 SERVICE_ID = "` + serviceId2 + `"
 
-def run(args):
-	print("Adding service " + SERVICE_ID + ".")
+def run(plan, args):
+	plan.print("Adding service " + SERVICE_ID + ".")
 	
 	config = struct(
 		image = DOCKER_GETTING_STARTED_IMAGE,
 	)
 	
-	add_service(service_id = SERVICE_ID, config = config)
-	print("Service " + SERVICE_ID + " deployed successfully.")
+	plan.add_service(service_id = SERVICE_ID, config = config)
+	plan.print("Service " + SERVICE_ID + " deployed successfully.")
 `
 )
 

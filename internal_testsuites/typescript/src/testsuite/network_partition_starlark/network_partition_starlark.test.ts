@@ -25,19 +25,19 @@ SUBNETWORK_3 = "${SUBNETWORK_3}"
 CONNECTION_SUCCESS = 0
 CONNECTION_FAILURE = 1
 
-def run(args):
+def run(plan, args):
 	# block all connections by default
-	set_connection(kurtosis.connection.BLOCKED)
+	plan.set_connection(kurtosis.connection.BLOCKED)
 
 	# adding 2 services to play with, each in their own subnetwork
-	service_1 = add_service(
+	service_1 = plan.add_service(
 		service_id=SERVICE_ID_1, 
 		config=struct(
 			image=DOCKER_GETTING_STARTED_IMAGE,
 			subnetwork=SUBNETWORK_1,
 		)
 	)
-	service_2 = add_service(
+	service_2 = plan.add_service(
 		service_id=SERVICE_ID_2, 
 		config=struct(
 			image=DOCKER_GETTING_STARTED_IMAGE,
@@ -46,44 +46,44 @@ def run(args):
 	)
 
 	# Validate connection is indeed blocked
-	connection_result = exec(recipe=struct(
+	connection_result = plan.exec(recipe=struct(
 		service_id=SERVICE_ID_2,
 		command=["ping", "-W", "1", "-c", "1", service_1.ip_address],
 	))
-	assert(connection_result["code"], "==", CONNECTION_FAILURE)
+	plan.assert(connection_result["code"], "==", CONNECTION_FAILURE)
 
 	# Allow connection between 1 and 2
-	set_connection((SUBNETWORK_1, SUBNETWORK_2), kurtosis.connection.ALLOWED)
+	plan.set_connection((SUBNETWORK_1, SUBNETWORK_2), kurtosis.connection.ALLOWED)
 
 	# Connection now works
-	connection_result = exec(recipe=struct(
+	connection_result = plan.exec(recipe=struct(
 		service_id=SERVICE_ID_2,
 		command=["ping", "-W", "1", "-c", "1", service_1.ip_address],
 	))
-	assert(connection_result["code"], "==", CONNECTION_SUCCESS)
+	plan.assert(connection_result["code"], "==", CONNECTION_SUCCESS)
 
 	# Reset connection to default (which is BLOCKED)
-	remove_connection((SUBNETWORK_1, SUBNETWORK_2))
+	plan.remove_connection((SUBNETWORK_1, SUBNETWORK_2))
 
 	# Connection is back to BLOCKED
-	connection_result = exec(recipe=struct(
+	connection_result = plan.exec(recipe=struct(
 		service_id=SERVICE_ID_2,
 		command=["ping", "-W", "1", "-c", "1", service_1.ip_address],
 	))
-	assert(connection_result["code"], "==", CONNECTION_FAILURE)
+	plan.assert(connection_result["code"], "==", CONNECTION_FAILURE)
 
 	# Create a third subnetwork connected to SUBNETWORK_1 and add service2 to it
-	set_connection((SUBNETWORK_3, SUBNETWORK_1), ConnectionConfig(packet_loss_percentage=0.0))
-	update_service(SERVICE_ID_2, config=UpdateServiceConfig(subnetwork=SUBNETWORK_3))
+	plan.set_connection((SUBNETWORK_3, SUBNETWORK_1), ConnectionConfig(packet_loss_percentage=0.0))
+	plan.update_service(SERVICE_ID_2, config=UpdateServiceConfig(subnetwork=SUBNETWORK_3))
 	
 	# Service 2 can now talk to Service 1 again!
-	connection_result = exec(recipe=struct(
+	connection_result = plan.exec(recipe=struct(
 		service_id=SERVICE_ID_2,
 		command=["ping", "-W", "1", "-c", "1", service_1.ip_address],
 	))
-	assert(connection_result["code"], "==", CONNECTION_SUCCESS)
+	plan.assert(connection_result["code"], "==", CONNECTION_SUCCESS)
 
-	print("Test successfully executed")
+	plan.print("Test successfully executed")
 `
 
 jest.setTimeout(180000)

@@ -15,21 +15,21 @@ const (
 
 	emptyParams    = "{}"
 	starlarkScript = `
-def run(args):
+def run(plan):
 	service_config = struct(
 		image = "mendhak/http-https-echo:26",
 		ports = {
 			"http-port": PortSpec(number = 8080, transport_protocol = "TCP")
 		}
 	)
-	add_service(service_id = "web-server", config = service_config)
+	plan.add_service(service_id = "web-server", config = service_config)
 	exec_recipe = struct(
 		service_id = "web-server",
 		command = ["echo", "hello", "world"]
 	)
-	response = exec(exec_recipe)
-	assert(response["code"], "==", 0)
-	assert(response["output"], "==", "hello world\n")
+	response = plan.exec(exec_recipe)
+	plan.assert(response["code"], "==", 0)
+	plan.assert(response["output"], "==", "hello world\n")
 `
 )
 

@@ -24,8 +24,8 @@ DATASTORE_PORT_ID = "` + portId + `"
 DATASTORE_PORT_NUMBER = 1323
 DATASTORE_PORT_PROTOCOL = "TCP"
 
-def run(args):
-	print("Adding service " + DATASTORE_SERVICE_ID + ".")
+def run(plan):
+	plan.print("Adding service " + DATASTORE_SERVICE_ID + ".")
 	
 	config = struct(
 		image = DATASTORE_IMAGE,
@@ -34,14 +34,14 @@ def run(args):
 		}
 	)
 	
-	add_service(service_id = DATASTORE_SERVICE_ID, config = config)
-	print("Service " + DATASTORE_SERVICE_ID + " deployed successfully.")
+	plan.add_service(service_id = DATASTORE_SERVICE_ID, config = config)
+	plan.print("Service " + DATASTORE_SERVICE_ID + " deployed successfully.")
 `
 	// We remove the service we created through the script above with a different script
 	removeScript = `
 DATASTORE_SERVICE_ID = "` + serviceId + `"
-def run(args):
-	remove_service(DATASTORE_SERVICE_ID)
+def run(plan):
+	plan.remove_service(DATASTORE_SERVICE_ID)
 `
 )
 

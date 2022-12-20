@@ -1,4 +1,4 @@
-def run(args):
+def run(plan):
     output = struct(message="Hello world!")
-    print(output.message)
+    plan.print(output.message)
     return output

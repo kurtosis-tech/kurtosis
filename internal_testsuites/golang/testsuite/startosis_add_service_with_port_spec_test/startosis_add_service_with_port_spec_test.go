@@ -23,8 +23,8 @@ SERVICE_ID = "` + serviceId + `"
 
 spec = PortSpec(number = 5000, transport_protocol = "UDP")
 
-def run(args):
-    add_service(
+def run(plan):
+    plan.add_service(
         service_id = SERVICE_ID, 
         config = struct(
             image = DOCKER_GETTING_STARTED_IMAGE, 
@@ -34,7 +34,7 @@ def run(args):
             }
         )
     )
-    print("httpd has been added successfully")`
+    plan.print("httpd has been added successfully")`
 )
 
 func TestAddServiceWithPortSpec_Success(t *testing.T) {
