@@ -3,6 +3,7 @@ package kurtosis_types
 import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
 	"testing"
@@ -147,4 +148,10 @@ func TestValidateApplicationProtocol_Success(t *testing.T) {
 	maybeApplicationProtocol := "H-ttp.2"
 	err := validateApplicationProtocol(maybeApplicationProtocol)
 	require.Nil(t, err)
+}
+
+func TestPortSpec_ToKurtosisType(t *testing.T) {
+	portSpec := NewPortSpec(testPortNumber, testTransportProtocol, emptyApplicationProtocol)
+	expectedKurtosisType := binding_constructors.NewPort(testPortNumber, testTransportProtocol, emptyApplicationProtocol)
+	require.Equal(t, expectedKurtosisType, portSpec.ToKurtosisType())
 }

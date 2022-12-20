@@ -62,7 +62,7 @@ const (
 
 func ParseServiceId(serviceIdRaw starlark.String) (service.ServiceID, *startosis_errors.InterpretationError) {
 	// TODO(gb): maybe prohibit certain characters for service ids
-	serviceId, interpretationErr := safeCastToString(serviceIdRaw, serviceIdArgName)
+	serviceId, interpretationErr := kurtosis_types.SafeCastToString(serviceIdRaw, serviceIdArgName)
 	if interpretationErr != nil {
 		return "", interpretationErr
 	}
@@ -201,7 +201,7 @@ func ParseServiceConfigArg(serviceConfig *starlarkstruct.Struct) (*kurtosis_core
 }
 
 func ParseCommand(commandsRaw *starlark.List) ([]string, *startosis_errors.InterpretationError) {
-	commandArgs, interpretationErr := safeCastToStringSlice(commandsRaw, commandArgName)
+	commandArgs, interpretationErr := kurtosis_types.SafeCastToStringSlice(commandsRaw, commandArgName)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
@@ -220,7 +220,7 @@ func ParseExpectedExitCode(expectedExitCodeRaw starlark.Int) (int32, *startosis_
 }
 
 func ParseNonEmptyString(argName string, argValue starlark.Value) (string, *startosis_errors.InterpretationError) {
-	strArgValue, interpretationErr := safeCastToString(argValue, argName)
+	strArgValue, interpretationErr := kurtosis_types.SafeCastToString(argValue, argName)
 	if interpretationErr != nil {
 		return "", interpretationErr
 	}
@@ -231,7 +231,7 @@ func ParseNonEmptyString(argName string, argValue starlark.Value) (string, *star
 }
 
 func ParseArtifactId(artifactUuidArgName string, artifactIdStr starlark.String) (enclave_data_directory.FilesArtifactID, *startosis_errors.InterpretationError) {
-	artifactId, interpretationErr := safeCastToString(artifactIdStr, artifactUuidArgName)
+	artifactId, interpretationErr := kurtosis_types.SafeCastToString(artifactIdStr, artifactUuidArgName)
 	if interpretationErr != nil {
 		return "", interpretationErr
 	}
@@ -244,7 +244,7 @@ func ParseArtifactId(artifactUuidArgName string, artifactIdStr starlark.String) 
 func ParseTemplatesAndData(templatesAndData *starlark.Dict) (map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, *startosis_errors.InterpretationError) {
 	templateAndDataByDestRelFilepath := make(map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData)
 	for _, relPathInFilesArtifactKey := range templatesAndData.Keys() {
-		relPathInFilesArtifactStr, castErr := safeCastToString(relPathInFilesArtifactKey, fmt.Sprintf("%v.key:%v", templatesAndDataArgName, relPathInFilesArtifactKey))
+		relPathInFilesArtifactStr, castErr := kurtosis_types.SafeCastToString(relPathInFilesArtifactKey, fmt.Sprintf("%v.key:%v", templatesAndDataArgName, relPathInFilesArtifactKey))
 		if castErr != nil {
 			return nil, castErr
 		}
@@ -260,7 +260,7 @@ func ParseTemplatesAndData(templatesAndData *starlark.Dict) (map[string]*kurtosi
 		if err != nil {
 			return nil, startosis_errors.NewInterpretationError("Expected values in '%v' to have a '%v' field", templatesAndDataArgName, templateFieldKey)
 		}
-		templateStr, castErr := safeCastToString(template, fmt.Sprintf("%v[\"%v\"][\"%v\"]", templatesAndDataArgName, relPathInFilesArtifactStr, templateFieldKey))
+		templateStr, castErr := kurtosis_types.SafeCastToString(template, fmt.Sprintf("%v[\"%v\"][\"%v\"]", templatesAndDataArgName, relPathInFilesArtifactStr, templateFieldKey))
 		if castErr != nil {
 			return nil, castErr
 		}
@@ -296,7 +296,7 @@ func ParseTemplatesAndData(templatesAndData *starlark.Dict) (map[string]*kurtosi
 }
 
 func ParseSubnetworks(subnetworksTuple starlark.Tuple) (service_network_types.PartitionID, service_network_types.PartitionID, *startosis_errors.InterpretationError) {
-	subnetworksStr, interpretationErr := safeCastToStringSlice(subnetworksTuple, subnetworksArgName)
+	subnetworksStr, interpretationErr := kurtosis_types.SafeCastToStringSlice(subnetworksTuple, subnetworksArgName)
 	if interpretationErr != nil {
 		return "", "", interpretationErr
 	}
@@ -339,7 +339,7 @@ func parseServiceConfigPorts(serviceConfig *starlarkstruct.Struct, portsKey stri
 			return nil, startosis_errors.NewInterpretationError("Unable to find a value in a dict associated with a key that exists (key = '%s') - this is a product bug", portNameRaw)
 		}
 
-		portName, interpretationErr := safeCastToString(portNameRaw, portsKey)
+		portName, interpretationErr := kurtosis_types.SafeCastToString(portNameRaw, portsKey)
 		if interpretationErr != nil {
 			return nil, interpretationErr
 		}
@@ -348,9 +348,7 @@ func parseServiceConfigPorts(serviceConfig *starlarkstruct.Struct, portsKey stri
 		if !ok {
 			return nil, startosis_errors.NewInterpretationError("Port definition `%s` is expected to be a PortSpec", portDefinitionRaw)
 		}
-
-		port := binding_constructors.NewPort(portDefinition.GetNumber(), portDefinition.GetProtocol(), portDefinition.GetMaybeApplicationProtocol())
-		privatePorts[portName] = port
+		privatePorts[portName] = portDefinition.ToKurtosisType()
 	}
 	return privatePorts, nil
 }
@@ -438,7 +436,7 @@ func extractStringValue(structField *starlarkstruct.Struct, key string, argNameF
 	if err != nil {
 		return "", startosis_errors.NewInterpretationError("Missing value '%s' as element of the struct object '%s'", key, argNameForLogging)
 	}
-	stringValue, interpretationErr := safeCastToString(value, key)
+	stringValue, interpretationErr := kurtosis_types.SafeCastToString(value, key)
 	if interpretationErr != nil {
 		return "", startosis_errors.WrapWithInterpretationError(interpretationErr, "Error casting value '%s' as element of the struct object '%s'", key, argNameForLogging)
 	}
@@ -462,7 +460,7 @@ func extractStringSliceValue(structField *starlarkstruct.Struct, key string, arg
 	if err != nil {
 		return nil, startosis_errors.NewInterpretationError("Missing value '%s' as element of the struct object '%s'", key, argNameForLogging)
 	}
-	stringSliceValue, interpretationErr := safeCastToStringSlice(value, key)
+	stringSliceValue, interpretationErr := kurtosis_types.SafeCastToStringSlice(value, key)
 	if interpretationErr != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(interpretationErr, "Error casting value '%s' as element of the struct object '%s'", key, argNameForLogging)
 	}
@@ -474,19 +472,11 @@ func extractMapStringStringValue(structField *starlarkstruct.Struct, key string,
 	if err != nil {
 		return nil, startosis_errors.NewInterpretationError("Missing value '%s' as element of the struct object '%s'", key, argNameForLogging)
 	}
-	mapStringStringValue, interpretationErr := safeCastToMapStringString(value, key)
+	mapStringStringValue, interpretationErr := kurtosis_types.SafeCastToMapStringString(value, key)
 	if interpretationErr != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(interpretationErr, "Error casting value '%s' as element of the struct object '%s'", key, argNameForLogging)
 	}
 	return mapStringStringValue, nil
-}
-
-func safeCastToString(expectedValueString starlark.Value, argNameForLogging string) (string, *startosis_errors.InterpretationError) {
-	castValue, ok := expectedValueString.(starlark.String)
-	if !ok {
-		return "", startosis_errors.NewInterpretationError("'%s' is expected to be a string. Got %s", argNameForLogging, reflect.TypeOf(expectedValueString))
-	}
-	return castValue.GoString(), nil
 }
 
 func safeCastToUint32(expectedValueString starlark.Value, argNameForLogging string) (uint32, *startosis_errors.InterpretationError) {
@@ -502,50 +492,6 @@ func safeCastToUint32(expectedValueString starlark.Value, argNameForLogging stri
 	}
 	return uint32(uint64Value), nil
 
-}
-
-func safeCastToStringSlice(expectedStringIterable starlark.Value, argNameForLogging string) ([]string, *startosis_errors.InterpretationError) {
-	listValue, ok := expectedStringIterable.(starlark.Iterable)
-	if !ok {
-		return nil, startosis_errors.NewInterpretationError("'%s' argument is expected to be an iterable. Got %s", argNameForLogging, reflect.TypeOf(expectedStringIterable))
-	}
-	var castValue []string
-	listIterator := listValue.Iterate()
-	var value starlark.Value
-	var index = 0
-	for listIterator.Next(&value) {
-		stringValue, err := safeCastToString(value, fmt.Sprintf("%v[%v]", argNameForLogging, index))
-		if err != nil {
-			return nil, err
-		}
-		castValue = append(castValue, stringValue)
-		index += 1
-	}
-	return castValue, nil
-}
-
-func safeCastToMapStringString(expectedValue starlark.Value, argNameForLogging string) (map[string]string, *startosis_errors.InterpretationError) {
-	dictValue, ok := expectedValue.(*starlark.Dict)
-	if !ok {
-		return nil, startosis_errors.NewInterpretationError("'%s' argument is expected to be a dict. Got %s", argNameForLogging, reflect.TypeOf(expectedValue))
-	}
-	castValue := make(map[string]string)
-	for _, key := range dictValue.Keys() {
-		stringKey, castErr := safeCastToString(key, fmt.Sprintf("%v.key:%v", argNameForLogging, key))
-		if castErr != nil {
-			return nil, castErr
-		}
-		value, found, dictErr := dictValue.Get(key)
-		if !found || dictErr != nil {
-			return nil, startosis_errors.NewInterpretationError("'%s' key in dict '%s' doesn't have a value we could retrieve. This is a Kurtosis bug.", key.String(), argNameForLogging)
-		}
-		stringValue, castErr := safeCastToString(value, fmt.Sprintf("%v[\"%v\"]", argNameForLogging, stringKey))
-		if castErr != nil {
-			return nil, castErr
-		}
-		castValue[stringKey] = stringValue
-	}
-	return castValue, nil
 }
 
 func safeCastToInt32(expectedValueString starlark.Value, argNameForLogging string) (int32, *startosis_errors.InterpretationError) {

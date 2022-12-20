@@ -3,6 +3,7 @@ package kurtosis_types
 import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"go.starlark.net/starlark"
@@ -23,8 +24,6 @@ const (
 )
 
 var (
-	optionalTransportProtocolAttr   = fmt.Sprintf(`%v?`, transportProtocolAttr)
-	optionalApplicationProtocolAttr = fmt.Sprintf(`%v?`, portApplicationProtocolAttr)
 	validApplicationProtocolMatcher = regexp.MustCompile(fmt.Sprintf(`^%v*$`, validApplicationProtocolRegex))
 )
 
@@ -48,7 +47,11 @@ func MakePortSpec(_ *starlark.Thread, builtin *starlark.Builtin, args starlark.T
 	var transportProtocol string
 	var maybeApplicationProtocol string
 
-	if err := starlark.UnpackArgs(builtin.Name(), args, kwargs, portNumberAttr, &number, optionalTransportProtocolAttr, &transportProtocol, optionalApplicationProtocolAttr, &maybeApplicationProtocol); err != nil {
+	if err := starlark.UnpackArgs(builtin.Name(), args, kwargs,
+		portNumberAttr, &number,
+		makeOptional(transportProtocolAttr), &transportProtocol,
+		makeOptional(portApplicationProtocolAttr), &maybeApplicationProtocol,
+	); err != nil {
 		return nil, startosis_errors.NewInterpretationError("Cannot construct a PortSpec from the provided arguments. Error was: \n%v", err.Error())
 	}
 
@@ -101,7 +104,7 @@ func (ps *PortSpec) Truth() starlark.Bool {
 // Hash implements the starlark.Value interface
 // This shouldn't be hashed, users should use a portId instead
 func (ps *PortSpec) Hash() (uint32, error) {
-	return 0, fmt.Errorf("unhashable type: '%v'", PortSpecTypeName)
+	return 0, startosis_errors.NewInterpretationError("unhashable type: '%v'", PortSpecTypeName)
 }
 
 // Attr implements the starlark.HasAttrs interface.
@@ -114,25 +117,17 @@ func (ps *PortSpec) Attr(name string) (starlark.Value, error) {
 	case portApplicationProtocolAttr:
 		return starlark.String(ps.maybeApplicationProtocol), nil
 	default:
-		return nil, fmt.Errorf("'%v' has no attribute '%v;", PortSpecTypeName, name)
+		return nil, startosis_errors.NewInterpretationError("'%v' has no attribute '%v;", PortSpecTypeName, name)
 	}
-}
-
-func (ps *PortSpec) GetNumber() uint32 {
-	return ps.number
-}
-
-func (ps *PortSpec) GetProtocol() kurtosis_core_rpc_api_bindings.Port_TransportProtocol {
-	return ps.transportProtocol
-}
-
-func (ps *PortSpec) GetMaybeApplicationProtocol() string {
-	return ps.maybeApplicationProtocol
 }
 
 // AttrNames implements the starlark.HasAttrs interface.
 func (ps *PortSpec) AttrNames() []string {
 	return []string{portNumberAttr, transportProtocolAttr, portApplicationProtocolAttr}
+}
+
+func (ps *PortSpec) ToKurtosisType() *kurtosis_core_rpc_api_bindings.Port {
+	return binding_constructors.NewPort(ps.number, ps.transportProtocol, ps.maybeApplicationProtocol)
 }
 
 func parseTransportProtocol(portProtocol string) (kurtosis_core_rpc_api_bindings.Port_TransportProtocol, *startosis_errors.InterpretationError) {

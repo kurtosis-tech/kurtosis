@@ -16,7 +16,7 @@ const (
 	emptyParams    = "{}"
 	starlarkScript = `
 def run(plan):
-	service_config = struct(
+	service_config = ServiceConfig(
 		image = "mendhak/http-https-echo:26",
 		ports = {
 			"http-port": PortSpec(number = 8080, transport_protocol = "TCP")

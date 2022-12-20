@@ -210,25 +210,26 @@ func (instruction *AddServiceInstruction) makeAddServiceInterpretationReturnValu
 }
 
 func (instruction *AddServiceInstruction) parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) *startosis_errors.InterpretationError {
-	// TODO(gb): Right now, we expect the Startosis script to be very "untyped" like:
-	//  ```startosis
-	//  my_service_port = struct(port = 1234, protocol = "TCP")
-	//  my_config = struct(private_port = port, other_arg = "blah")
-	//  ```
-	//  But we can do better than this defining our own structures:
-	//  ```
-	//  my_service_port = port_spec(port = 1234, protocol = "TCP") # port() is a Startosis defined struct
-	//  my_config = config(port = port, other_arg = "blah")
-	//  ```
-	//  With custom types, we can parse the args directly to our own Go types and potentially isolate the checks
-
+	// TODO(gb): this now handles both serviceConfig being an unnamed struct or a fully fleshed ServiceConfig type
+	//  Remove code to handle struc once downstream code is migrated
 	var serviceIdArg starlark.String
-	var serviceConfigArg *starlarkstruct.Struct
+	var serviceConfigArgAsStruct *starlarkstruct.Struct
+	var serviceConfigArg *kurtosis_types.ServiceConfig
+	var isServiceConfigGenericStruct bool
 	if err := starlark.UnpackArgs(b.Name(), args, kwargs, serviceIdArgName, &serviceIdArg, serviceConfigArgName, &serviceConfigArg); err != nil {
-		return startosis_errors.WrapWithInterpretationError(err, "Failed parsing arguments for function '%s' (unparsed arguments were: '%v' '%v')", AddServiceBuiltinName, args, kwargs)
+		if errParsingConfigAsStruct := starlark.UnpackArgs(b.Name(), args, kwargs, serviceIdArgName, &serviceIdArg, serviceConfigArgName, &serviceConfigArgAsStruct); errParsingConfigAsStruct != nil {
+			return startosis_errors.WrapWithInterpretationError(err, "Failed parsing arguments for function '%s' (unparsed arguments were: '%v' '%v')", AddServiceBuiltinName, args, kwargs)
+		}
+		isServiceConfigGenericStruct = true
+	} else {
+		isServiceConfigGenericStruct = false
 	}
 	instruction.starlarkKwargs[serviceIdArgName] = serviceIdArg
-	instruction.starlarkKwargs[serviceConfigArgName] = serviceConfigArg
+	if isServiceConfigGenericStruct {
+		instruction.starlarkKwargs[serviceConfigArgName] = serviceConfigArgAsStruct
+	} else {
+		instruction.starlarkKwargs[serviceConfigArgName] = serviceConfigArg
+	}
 	instruction.starlarkKwargs.Freeze()
 
 	serviceId, interpretationErr := kurtosis_instruction.ParseServiceId(serviceIdArg)
@@ -236,7 +237,12 @@ func (instruction *AddServiceInstruction) parseStartosisArgs(b *starlark.Builtin
 		return interpretationErr
 	}
 
-	serviceConfig, interpretationErr := kurtosis_instruction.ParseServiceConfigArg(serviceConfigArg)
+	var serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig
+	if isServiceConfigGenericStruct {
+		serviceConfig, interpretationErr = kurtosis_instruction.ParseServiceConfigArg(serviceConfigArgAsStruct)
+	} else {
+		serviceConfig, interpretationErr = serviceConfigArg.ToKurtosisType()
+	}
 	if interpretationErr != nil {
 		return interpretationErr
 	}

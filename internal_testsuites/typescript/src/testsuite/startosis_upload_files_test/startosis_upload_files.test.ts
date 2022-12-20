@@ -33,7 +33,7 @@ def run(plan):
     plan.print("Uploaded " + uploaded_artifact_id)
     
     
-    config = struct(
+    config = ServiceConfig(
         image = DATASTORE_IMAGE,
         ports = {
             DATASTORE_PORT_ID: PortSpec(number = DATASTORE_PORT_NUMBER, transport_protocol = DATASTORE_PORT_PROTOCOL)

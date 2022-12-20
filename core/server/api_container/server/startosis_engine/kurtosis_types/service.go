@@ -2,6 +2,7 @@ package kurtosis_types
 
 import (
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"go.starlark.net/starlark"
 	"strings"
 )
@@ -53,7 +54,7 @@ func (rv *Service) Truth() starlark.Bool {
 // Hash implements the starlark.Value interface
 // This shouldn't be hashed, users should use a portId instead
 func (rv *Service) Hash() (uint32, error) {
-	return 0, fmt.Errorf("unhashable type: '%v'", serviceTypeName)
+	return 0, startosis_errors.NewInterpretationError("unhashable type: '%v'", serviceTypeName)
 }
 
 // Attr implements the starlark.HasAttrs interface.
@@ -64,7 +65,7 @@ func (rv *Service) Attr(name string) (starlark.Value, error) {
 	case portsAttr:
 		return rv.ports, nil
 	default:
-		return nil, fmt.Errorf("'%v' has no attribute '%v'", serviceTypeName, name)
+		return nil, startosis_errors.NewInterpretationError("'%v' has no attribute '%v'", serviceTypeName, name)
 	}
 }
 

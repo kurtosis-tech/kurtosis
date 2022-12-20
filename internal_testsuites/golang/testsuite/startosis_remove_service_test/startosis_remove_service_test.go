@@ -27,7 +27,7 @@ DATASTORE_PORT_PROTOCOL = "TCP"
 def run(plan):
 	plan.print("Adding service " + DATASTORE_SERVICE_ID + ".")
 	
-	config = struct(
+	config = ServiceConfig(
 		image = DATASTORE_IMAGE,
 		ports = {
 			DATASTORE_PORT_ID: PortSpec(number = DATASTORE_PORT_NUMBER, transport_protocol = DATASTORE_PORT_PROTOCOL)

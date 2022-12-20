@@ -39,10 +39,10 @@ const (
 	minimumParamsRequiredForPlan       = 1
 	maximumParamsAllowedForRunFunction = 2
 
-	planParamIndex = 0
-	planParamName = "plan"
-	argsParamIndex = 1
-	argsParamName = "args"
+	planParamIndex         = 0
+	planParamName          = "plan"
+	argsParamIndex         = 1
+	argsParamName          = "args"
 	unexpectedArgNameError = "Expected argument at index '%v' of run function to be called '%v' got '%v' "
 )
 
@@ -114,7 +114,7 @@ func (interpreter *StartosisInterpreter) Interpret(_ context.Context, packageId 
 	var argsTuple starlark.Tuple
 
 	if runFunction.NumParams() >= minimumParamsRequiredForPlan {
-		if paramName, _ := runFunction.Param(planParamIndex) ; paramName != planParamName {
+		if paramName, _ := runFunction.Param(planParamIndex); paramName != planParamName {
 			return "", nil, startosis_errors.NewInterpretationError(unexpectedArgNameError, planParamIndex, planParamName, paramName).ToAPIType()
 		}
 		planModule := plan_module.PlanModule(&instructionsQueue, interpreter.serviceNetwork, interpreter.recipeExecutor, interpreter.moduleContentProvider)
@@ -122,7 +122,7 @@ func (interpreter *StartosisInterpreter) Interpret(_ context.Context, packageId 
 	}
 
 	if runFunction.NumParams() == paramsRequiredForArgs {
-		if paramName, _ := runFunction.Param(argsParamIndex) ; paramName != argsParamName {
+		if paramName, _ := runFunction.Param(argsParamIndex); paramName != argsParamName {
 			return "", nil, startosis_errors.NewInterpretationError(unexpectedArgNameError, argsParamIndex, argsParamName, paramName).ToAPIType()
 		}
 		// run function has an argument so we parse input args
@@ -176,8 +176,9 @@ func (interpreter *StartosisInterpreter) buildBindings(thread *starlark.Thread, 
 		builtins.KurtosisModuleName: builtins.KurtosisModule(),
 
 		// Kurtosis types
-		kurtosis_types.PortSpecTypeName:            starlark.NewBuiltin(kurtosis_types.PortSpecTypeName, kurtosis_types.MakePortSpec),
 		kurtosis_types.ConnectionConfigTypeName:    starlark.NewBuiltin(kurtosis_types.ConnectionConfigTypeName, kurtosis_types.MakeConnectionConfig),
+		kurtosis_types.PortSpecTypeName:            starlark.NewBuiltin(kurtosis_types.PortSpecTypeName, kurtosis_types.MakePortSpec),
+		kurtosis_types.ServiceConfigTypeName:       starlark.NewBuiltin(kurtosis_types.ServiceConfigTypeName, kurtosis_types.MakeServiceConfig),
 		kurtosis_types.UpdateServiceConfigTypeName: starlark.NewBuiltin(kurtosis_types.UpdateServiceConfigTypeName, kurtosis_types.MakeUpdateServiceConfig),
 
 		// Kurtosis custom builtins - pure interpretation-time helpers. Do not add any instructions to the queue

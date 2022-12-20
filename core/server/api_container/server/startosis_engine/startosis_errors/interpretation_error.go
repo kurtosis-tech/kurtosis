@@ -74,6 +74,14 @@ func NewInterpretationErrorWithCustomMsg(stacktrace []CallFrame, msg string, arg
 	}
 }
 
+func NewInterpretationErrorWithCauseAndCustomMsg(err error, stacktrace []CallFrame, msg string, args ...interface{}) *InterpretationError {
+	return &InterpretationError{
+		msg:        fmt.Sprintf(msg, args...),
+		cause:      err,
+		stacktrace: stacktrace,
+	}
+}
+
 func (err *InterpretationError) ToAPIType() *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError {
 	return binding_constructors.NewStarlarkInterpretationError(err.Error())
 }

@@ -24,7 +24,7 @@ SERVICE_ID = "` + serviceId + `"
 def run(plan):
 	plan.print("Adding service " + SERVICE_ID + ".")
 	
-	config = struct(
+	config = ServiceConfig(
 		image = DOCKER_GETTING_STARTED_IMAGE,
 		ports = {}
 	)
@@ -40,7 +40,7 @@ SERVICE_ID = "` + serviceId2 + `"
 def run(plan, args):
 	plan.print("Adding service " + SERVICE_ID + ".")
 	
-	config = struct(
+	config = ServiceConfig(
 		image = DOCKER_GETTING_STARTED_IMAGE,
 	)
 	

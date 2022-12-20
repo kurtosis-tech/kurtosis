@@ -61,7 +61,7 @@ func (config *UpdateServiceConfig) Truth() starlark.Bool {
 // Hash implements the starlark.Value interface
 // This shouldn't be hashed
 func (config *UpdateServiceConfig) Hash() (uint32, error) {
-	return 0, fmt.Errorf("unhashable type: '%s'", ConnectionConfigTypeName)
+	return 0, startosis_errors.NewInterpretationError("unhashable type: '%s'", ConnectionConfigTypeName)
 }
 
 // Attr implements the starlark.HasAttrs interface.
@@ -70,7 +70,7 @@ func (config *UpdateServiceConfig) Attr(name string) (starlark.Value, error) {
 	case subnetworkAttr:
 		return config.subnetwork, nil
 	default:
-		return nil, fmt.Errorf("'%s' has no attribute '%s'", UpdateServiceConfigTypeName, name)
+		return nil, startosis_errors.NewInterpretationError("'%s' has no attribute '%s'", UpdateServiceConfigTypeName, name)
 	}
 }
 

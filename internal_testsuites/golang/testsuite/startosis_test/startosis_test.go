@@ -43,7 +43,7 @@ def run(plan, args):
 	plan.print("Hello " + args.greeting) 
 	plan.print("Adding service " + DATASTORE_SERVICE_ID + ".")
 	
-	config = struct(
+	config = ServiceConfig(
 		image = DATASTORE_IMAGE,
 		ports = {
 			DATASTORE_PORT_ID: PortSpec(number = DATASTORE_PORT_NUMBER, transport_protocol = DATASTORE_PORT_PROTOCOL)
@@ -76,7 +76,7 @@ def run(plan, args):
 	rendered_artifact = plan.render_templates(template_data_by_path)
 	plan.print("Rendered file to " + rendered_artifact)
 	
-	dependent_config = struct(
+	dependent_config = ServiceConfig(
 		image = DATASTORE_IMAGE,
 		ports = {
 			DATASTORE_PORT_ID: PortSpec(number = DATASTORE_PORT_NUMBER, transport_protocol = DATASTORE_PORT_PROTOCOL)

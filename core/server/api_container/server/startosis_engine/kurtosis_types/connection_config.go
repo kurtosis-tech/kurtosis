@@ -79,7 +79,7 @@ func (connectionConfig *ConnectionConfig) Truth() starlark.Bool {
 // Hash implements the starlark.Value interface
 // This shouldn't be hashed
 func (connectionConfig *ConnectionConfig) Hash() (uint32, error) {
-	return 0, fmt.Errorf("unhashable type: '%s'", ConnectionConfigTypeName)
+	return 0, startosis_errors.NewInterpretationError("unhashable type: '%s'", ConnectionConfigTypeName)
 }
 
 // Attr implements the starlark.HasAttrs interface.
@@ -88,7 +88,7 @@ func (connectionConfig *ConnectionConfig) Attr(name string) (starlark.Value, err
 	case packetLossPercentageAttr:
 		return connectionConfig.packetLossPercentage, nil
 	default:
-		return nil, fmt.Errorf("'%s' has no attribute '%s'", ConnectionConfigTypeName, name)
+		return nil, startosis_errors.NewInterpretationError("'%s' has no attribute '%s'", ConnectionConfigTypeName, name)
 	}
 }
 

@@ -3,6 +3,7 @@ package startosis_engine
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
@@ -182,7 +183,7 @@ def run(plan):
 	service_id = "%v"
 	plan.print("Adding service " + service_id)
 
-	config = struct(
+	config = ServiceConfig(
 		image = "` + testContainerImageName + `",
 		ports = {
 			"grpc": PortSpec(number = 1323, transport_protocol = "TCP")
@@ -224,7 +225,7 @@ def run(plan):
 	service_id = "%v"
 	plan.print("Adding service " + service_id)
 
-	config = struct(
+	config = ServiceConfig(
 		image = "` + testContainerImageName + `",
 		ports = {
 			"grpc": PortSpec(number = 1323, transport_protocol = "TCP", application_protocol = "http")
@@ -261,7 +262,7 @@ def run(plan):
 	service_id = "example-datastore-server"
 	plan.print("Adding service " + service_id)
 	
-	config = struct(
+	config = ServiceConfig(
 		# /!\ /!\ missing container name /!\ /!\
 		ports = {
 			"grpc": struct(number = 1323, transport_protocol = "TCP")
@@ -273,12 +274,13 @@ def run(plan):
 	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 	require.Empty(t, instructions)
 
-	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
+	expectedError := startosis_errors.NewInterpretationErrorWithCauseAndCustomMsg(
+		errors.New("ServiceConfig: missing argument for image"),
 		[]startosis_errors.CallFrame{
-			*startosis_errors.NewCallFrame("run", startosis_errors.NewScriptPosition(startosis_constants.PackageIdPlaceholderForStandaloneScript, 14, 18)),
-			*startosis_errors.NewCallFrame("add_service", startosis_errors.NewScriptPosition("<builtin>", 0, 0)),
+			*startosis_errors.NewCallFrame("run", startosis_errors.NewScriptPosition(startosis_constants.PackageIdPlaceholderForStandaloneScript, 8, 24)),
+			*startosis_errors.NewCallFrame("ServiceConfig", startosis_errors.NewScriptPosition("<builtin>", 0, 0)),
 		},
-		"Evaluation error: Missing value 'image' as element of the struct object 'config'",
+		"Evaluation error: Cannot construct 'ServiceConfig' from the provided arguments.",
 	).ToAPIType()
 	require.Equal(t, expectedError, interpretationError)
 }
@@ -295,7 +297,7 @@ def run(plan):
 	service_id = "example-datastore-server"
 	plan.print("Adding service " + service_id)
 
-	config = struct(
+	config = ServiceConfig(
 		image = "` + testContainerImageName + `",
 		ports = {
 			"grpc": PortSpec(number = 1323, transport_protocol = "TCPK") # typo in protocol
@@ -328,7 +330,7 @@ def run(plan):
 	service_id = "example-datastore-server"
 	plan.print("Adding service " + service_id)
 
-	config = struct(
+	config = ServiceConfig(
 		image = "` + testContainerImageName + `",
 		ports = {
 			"grpc": PortSpec(number = "1234", protocol = "TCP") # port number should be an int
@@ -363,7 +365,7 @@ def deploy_datastore_services(plan):
 	for i in range(len(ports)):
 		unique_service_id = service_id + "-" + str(i)
 		plan.print("Adding service " + unique_service_id)
-		config = struct(
+		config = ServiceConfig(
 			image = "` + testContainerImageName + `",
 			ports = {
 				"grpc": PortSpec(
@@ -598,7 +600,7 @@ func TestStartosisInterpreter_ValidSimpleScriptWithImportedStruct(t *testing.T) 
 	moduleBar := "github.com/foo/bar/lib.star"
 	seedModules[moduleBar] = `
 service_id = "example-datastore-server"
-config = struct(
+config = ServiceConfig(
 	image = "kurtosistech/example-datastore-server",
 	ports = {
 		"grpc": PortSpec(number = 1323, transport_protocol = "TCP")
@@ -643,7 +645,7 @@ def deploy_datastore_services(plan):
     for i in range(len(ports)):
         unique_service_id = service_id + "-" + str(i)
         plan.print("Adding service " + unique_service_id)
-        config = struct(
+        config = ServiceConfig(
 			image = "kurtosistech/example-datastore-server",
 			ports = {
 				"grpc": PortSpec(
@@ -721,7 +723,7 @@ func TestStartosisInterpreter_TestInstructionQueueAndOutputBufferDontHaveDupesIn
 def deploy_service(plan):
 	service_id = "example-datastore-server"
 	plan.print("Constructing config")
-	config = struct(
+	config = ServiceConfig(
 		image = "kurtosistech/example-datastore-server",
 		ports = {
 			"grpc": PortSpec(number = 1323, transport_protocol = "TCP")
@@ -761,7 +763,7 @@ def run(plan):
 	service_id = "example-datastore-server"
 	plan.print("Adding service " + service_id)
 	
-	config = struct(
+	config = ServiceConfig(
 		image = "kurtosistech/example-datastore-server",
 		ports = {
 			"grpc": PortSpec(number = 1323, transport_protocol = "TCP")
@@ -791,7 +793,7 @@ def run(plan):
 	plan.print("Starting Startosis script!")
 	service_id = "example-datastore-server"
 	plan.print("Adding service " + service_id)
-	store_config = struct(
+	store_config = ServiceConfig(
 		image = "kurtosistech/example-datastore-server",
 		ports = {
 			"grpc": PortSpec(number = 1323, transport_protocol = "TCP")
@@ -800,7 +802,7 @@ def run(plan):
 	datastore_service = plan.add_service(service_id = service_id, config = store_config)
 	client_service_id = "example-datastore-client"
 	plan.print("Adding service " + client_service_id)
-	client_config = struct(
+	client_config = ServiceConfig(
 		image = "kurtosistech/example-datastore-client",
 		ports = {
 			"grpc": PortSpec(number = 1337, transport_protocol = "TCP")
@@ -1165,7 +1167,7 @@ def run(plan):
 	service_id = "%v"
 	plan.print("Adding service " + service_id)
 
-	config = struct(
+	config = ServiceConfig(
 		image = "` + testContainerImageName + `",
 	)
 	datastore_service = plan.add_service(service_id = service_id, config = config)
@@ -1198,7 +1200,7 @@ def run(plan):
 	service_id = "%v"
 	plan.print("Adding service " + service_id)
 	
-	config = struct(
+	config = ServiceConfig(
 		image = "` + testContainerImageName + `",
 		ports = {
 			"grpc": PortSpec(number = 1323, transport_protocol = "TCP")
@@ -1343,63 +1345,70 @@ def run(plan):
 	require.Equal(t, fmt.Sprintf("Evaluation error: %v\n\tat [3:7]: run\n\tat [0:0]: print", print_builtin.UsePlanFromKurtosisInstructionError), interpretationError.GetErrorMessage())
 }
 
-
-
 // #####################################################################################################################
 //                                                  TEST HELPERS
 // #####################################################################################################################
 
 func createSimpleAddServiceInstruction(t *testing.T, serviceId service.ServiceID, imageName string, portNumber uint32, lineNumber int32, colNumber int32, fileName string, entryPointArgs []string, cmdArgs []string, envVars map[string]string, privateIPAddressPlaceholder string, publicPortNumber uint32, runtimeValueStore *runtime_value_store.RuntimeValueStore) *add_service.AddServiceInstruction {
-	serviceConfigStringDict := starlark.StringDict{}
-	serviceConfigStringDict["image"] = starlark.String(imageName)
-
+	var privatePortsStarlarkArgs *starlark.Dict
 	if portNumber != 0 {
-		usedPortDict := starlark.NewDict(1)
-		require.Nil(t, usedPortDict.SetKey(
+		privatePortsStarlarkArgs = starlark.NewDict(1)
+		require.Nil(t, privatePortsStarlarkArgs.SetKey(
 			starlark.String("grpc"),
 			kurtosis_types.NewPortSpec(portNumber, kurtosis_core_rpc_api_bindings.Port_TCP, emptyApplicationProtocol)))
-		serviceConfigStringDict["ports"] = usedPortDict
 	}
 
+	var publicPortsStarlarkArgs *starlark.Dict
 	if publicPortNumber != defaultPublicPortNumber {
-		publicPortsDict := starlark.NewDict(1)
-		require.Nil(t, publicPortsDict.SetKey(
+		publicPortsStarlarkArgs = starlark.NewDict(1)
+		require.Nil(t, publicPortsStarlarkArgs.SetKey(
 			starlark.String("grpc"),
 			kurtosis_types.NewPortSpec(publicPortNumber, kurtosis_core_rpc_api_bindings.Port_TCP, emptyApplicationProtocol)))
-		serviceConfigStringDict["public_ports"] = publicPortsDict
 	}
 
+	var entryPointStarlarkArgs *starlark.List
 	if entryPointArgs != nil {
 		entryPointArgsValues := make([]starlark.Value, 0)
 		for _, entryPointArg := range entryPointArgs {
 			entryPointArgsValues = append(entryPointArgsValues, starlark.String(entryPointArg))
 		}
-		serviceConfigStringDict["entrypoint"] = starlark.NewList(entryPointArgsValues)
+		entryPointStarlarkArgs = starlark.NewList(entryPointArgsValues)
 	}
 
+	var cmdStarlarkArgs *starlark.List
 	if cmdArgs != nil {
 		cmdArgsValues := make([]starlark.Value, 0)
 		for _, cmdArg := range cmdArgs {
 			cmdArgsValues = append(cmdArgsValues, starlark.String(cmdArg))
 		}
-		serviceConfigStringDict["cmd"] = starlark.NewList(cmdArgsValues)
+		cmdStarlarkArgs = starlark.NewList(cmdArgsValues)
 	}
 
+	var envVarsStarlarkArgs *starlark.Dict
 	if envVars != nil {
-		envVarsValues := starlark.NewDict(len(envVars))
+		envVarsStarlarkArgs = starlark.NewDict(len(envVars))
 		for key, value := range envVars {
-			require.Nil(t, envVarsValues.SetKey(starlark.String(key), starlark.String(value)))
+			require.Nil(t, envVarsStarlarkArgs.SetKey(starlark.String(key), starlark.String(value)))
 		}
-		serviceConfigStringDict["env_vars"] = envVarsValues
 	}
 
+	var privateIPAddressPlaceholderStarlarkStarlarkArgMaybe *starlark.String
 	if privateIPAddressPlaceholder != "" {
-		privateIPAddressPlaceholderStarlarkValue := starlark.String(privateIPAddressPlaceholder)
-		serviceConfigStringDict["private_ip_address_placeholder"] = privateIPAddressPlaceholderStarlarkValue
+		privateIPAddressPlaceholderStarlarkArg := starlark.String(privateIPAddressPlaceholder)
+		privateIPAddressPlaceholderStarlarkStarlarkArgMaybe = &privateIPAddressPlaceholderStarlarkArg
 	}
 
-	serviceConfigStruct := starlarkstruct.FromStringDict(starlarkstruct.Default, serviceConfigStringDict)
-	serviceConfigStruct.Freeze()
+	serviceConfig := kurtosis_types.NewServiceConfig(
+		starlark.String(imageName),
+		privatePortsStarlarkArgs,
+		publicPortsStarlarkArgs,
+		nil,
+		entryPointStarlarkArgs,
+		cmdStarlarkArgs,
+		envVarsStarlarkArgs,
+		privateIPAddressPlaceholderStarlarkStarlarkArgMaybe,
+		nil,
+	)
 
 	serviceConfigBuilder := services.NewServiceConfigBuilder(
 		imageName,
@@ -1448,7 +1457,7 @@ func createSimpleAddServiceInstruction(t *testing.T, serviceId service.ServiceID
 		serviceConfigBuilder.Build(),
 		starlark.StringDict{
 			"service_id": starlark.String(serviceId),
-			"config":     serviceConfigStruct,
+			"config":     serviceConfig,
 		},
 		runtimeValueStore,
 	)
