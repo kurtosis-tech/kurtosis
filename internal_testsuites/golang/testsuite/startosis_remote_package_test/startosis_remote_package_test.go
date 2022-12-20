@@ -20,7 +20,6 @@ const (
 )
 
 func TestStartosisRemotePackage(t *testing.T) {
-	t.Skip("Skipping this till we fix the `plan` related breaking change")
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
