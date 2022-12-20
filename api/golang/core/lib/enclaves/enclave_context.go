@@ -19,7 +19,6 @@ package enclaves
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
@@ -599,40 +598,6 @@ func (enclaveCtx *EnclaveContext) StoreWebFiles(ctx context.Context, urlToStoreW
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred downloading files artifact from URL '%v'", urlToStoreWeb)
 	}
-	return services.FilesArtifactUUID(response.Uuid), nil
-}
-
-// Docs available at https://docs.kurtosis.com/sdk/#rendertemplatesmapstring-templateanddata-templateanddatabydestinationrelfilepaths
-func (enclaveCtx *EnclaveContext) RenderTemplates(templateAndDataByDestinationRelFilepaths map[string]*TemplateAndData) (services.FilesArtifactUUID, error) {
-	if len(templateAndDataByDestinationRelFilepaths) == 0 {
-		return "", stacktrace.NewError("Expected at least one template got 0")
-	}
-
-	templateAndDataByRelDestinationFilepathArgs := make(map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData)
-
-	for destinationRelFilepath, templateAndData := range templateAndDataByDestinationRelFilepaths {
-		template := templateAndData.template
-		templateData := templateAndData.templateData
-
-		templateDataAsJson, err := json.Marshal(templateData)
-		if err != nil {
-			return "", stacktrace.Propagate(err, "Failed to jsonify templateData '%v' for filename '%v'", templateData, destinationRelFilepath)
-		}
-
-		templateAndDataAsJsonString := binding_constructors.NewTemplateAndData(
-			template,
-			string(templateDataAsJson),
-		)
-		templateAndDataByRelDestinationFilepathArgs[destinationRelFilepath] = templateAndDataAsJsonString
-	}
-
-	renderTemplatesToFilesArtifactArgs := binding_constructors.NewRenderTemplatesToFilesArtifactArgs(templateAndDataByRelDestinationFilepathArgs)
-
-	response, err := enclaveCtx.client.RenderTemplatesToFilesArtifact(context.Background(), renderTemplatesToFilesArtifactArgs)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "Error in rendering templates")
-	}
-
 	return services.FilesArtifactUUID(response.Uuid), nil
 }
 

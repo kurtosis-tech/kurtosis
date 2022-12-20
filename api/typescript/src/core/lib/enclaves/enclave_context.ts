@@ -721,32 +721,6 @@ export class EnclaveContext {
         return ok(storeWebFilesArtifactResponse.getUuid())
     }
 
-    // Docs available at https://docs.kurtosis.com/sdk/#rendertemplatesmapstring-templateanddata-templateanddatabydestinationrelfilepaths
-    public async renderTemplates(templateAndDataByDestinationRelFilepath: Map<string, TemplateAndData>): Promise<Result<FilesArtifactUUID, Error>> {
-
-        if (templateAndDataByDestinationRelFilepath.size === 0) {
-            return err(new Error("Expected at least one template got 0"))
-        }
-
-        let renderTemplatesToFilesArtifactArgs = newRenderTemplatesToFilesArtifactArgs()
-        let templateAndDataByRelDestinationFilepath = renderTemplatesToFilesArtifactArgs.getTemplatesAndDataByDestinationRelFilepathMap()
-
-        for(let [destinationRelFilepath, templateAndData] of templateAndDataByDestinationRelFilepath) {
-
-            const templateDataAsJsonString = JSON.stringify(templateAndData.templateData)
-            const templateAndDataAsJson = newTemplateAndData(templateAndData.template, templateDataAsJsonString)
-
-            templateAndDataByRelDestinationFilepath.set(destinationRelFilepath, templateAndDataAsJson)
-        }
-
-        const renderTemplatesToFilesArtifactResult = await this.backend.renderTemplatesToFilesArtifact(renderTemplatesToFilesArtifactArgs)
-        if (renderTemplatesToFilesArtifactResult.isErr()) {
-            return err(renderTemplatesToFilesArtifactResult.error)
-        }
-
-        return ok(renderTemplatesToFilesArtifactResult.value.getUuid())
-    }
-
     // ====================================================================================================
     //                                       Private helper functions
     // ====================================================================================================

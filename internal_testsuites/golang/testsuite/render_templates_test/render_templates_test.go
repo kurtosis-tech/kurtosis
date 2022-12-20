@@ -3,9 +3,6 @@ package render_templates_test
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
-	"github.com/kurtosis-tech/stacktrace"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -14,11 +11,58 @@ const (
 	enclaveTestName       = "render-templates-test"
 	isPartitioningEnabled = false
 
-	rootFilename      = "config.yml"
-	nestedRelFilepath = "grafana/config.yml"
-	expectedContents  = "Hello Stranger. The sum of [1 2 3] is 6. My favorite moment in history 1257894000. My favorite number 1231231243.43."
-
-	fileServerServiceId services.ServiceID = "file-server"
+	starlarkScript = `
+def run(plan):
+	template_data = {
+		"Name" : "Stranger",
+		"Answer": 6,
+		"Numbers": [1, 2, 3],
+		"UnixTimeStamp": 1257894000,
+		"LargeFloat": 1231231243.43,
+		"Alive": True
+	}
+	template = "Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}. Am I Alive? {{.Alive}}"
+	expected_contents  = "Hello Stranger. The sum of [1 2 3] is 6. My favorite moment in history 1257894000. My favorite number 1231231243.43. Am I Alive? true"
+	template_dict = {
+		"grafana/config.yml": struct(
+			template=template,
+			data=template_data,
+		),
+		"config.yml": struct(
+			template=template,
+			data=template_data,
+		)
+	}
+	
+	artifact_id = plan.render_templates(config = template_dict)
+	
+	service = plan.add_service(
+		service_id = "file-server",
+		config = struct(
+			image = "flashspys/nginx-static",
+			ports = {
+				"http": PortSpec(
+					number = 80,
+					transport_protocol = "TCP",
+				)
+			},
+			files = {
+				"/static": artifact_id,
+			},
+		)
+	)
+	for filePath in template_dict:
+		get_recipe = struct(
+			service_id = "file-server",
+			method = "GET",
+			port_id = "http",
+			endpoint = "/" + filePath,
+		)
+		response = plan.wait(get_recipe, "code", "==", 200)
+		plan.assert(response["body"], "==", expected_contents)
+`
+	noStarlarkParams = "{}"
+	doNotDryRun      = false
 )
 
 func TestRenderTemplates(t *testing.T) {
@@ -27,46 +71,10 @@ func TestRenderTemplates(t *testing.T) {
 	require.NoError(t, err, "An error occurred creating an enclave")
 	defer destroyEnclaveFunc()
 
-	templateAndDataByDestRelFilepath := getTemplateAndDataByDestRelFilepath()
-
-	filesArtifactUUID, err := enclaveCtx.RenderTemplates(templateAndDataByDestRelFilepath)
-	require.NoError(t, err)
-
-	fileServerPublicIp, fileServerPublicPortNum, err := test_helpers.StartFileServer(fileServerServiceId, filesArtifactUUID, rootFilename, enclaveCtx)
-	require.NoError(t, err)
-
-	err = testRenderedTemplates(templateAndDataByDestRelFilepath, fileServerPublicIp, fileServerPublicPortNum)
-	require.NoError(t, err)
-}
-
-// ========================================================================
-// Helpers
-// ========================================================================
-
-// Checks templates are rendered correctly and to the right files in the right subdirectories
-func testRenderedTemplates(
-	templateDataByDestinationFilepath map[string]*enclaves.TemplateAndData,
-	ipAddress string,
-	portNum uint16,
-) error {
-
-	for renderedTemplateFilepath := range templateDataByDestinationFilepath {
-		if err := test_helpers.CheckFileContents(ipAddress, portNum, renderedTemplateFilepath, expectedContents); err != nil {
-			return stacktrace.Propagate(err, "There was an error testing the content of file '%s'.", renderedTemplateFilepath)
-		}
-	}
-	return nil
-}
-
-func getTemplateAndDataByDestRelFilepath() map[string]*enclaves.TemplateAndData {
-	templateAndDataByDestRelFilepath := make(map[string]*enclaves.TemplateAndData)
-
-	template := "Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}."
-	templateData := map[string]interface{}{"Name": "Stranger", "Answer": 6, "Numbers": []int{1, 2, 3}, "UnixTimeStamp": 1257894000, "LargeFloat": 1231231243.43}
-	templateAndData := enclaves.NewTemplateAndData(template, templateData)
-
-	templateAndDataByDestRelFilepath[nestedRelFilepath] = templateAndData
-	templateAndDataByDestRelFilepath[rootFilename] = templateAndData
-
-	return templateAndDataByDestRelFilepath
+	// -------------------------------------- SCRIPT RUN -----------------------------------------------
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkScript, noStarlarkParams, doNotDryRun)
+	require.NoError(t, err, "An unexpected error occurred while running Starlark script")
+	require.Empty(t, runResult.InterpretationError, "An unexpected error occurred while interpreting Starlark script")
+	require.Empty(t, runResult.ValidationErrors, "An unexpected error occurred while validating Starlark script")
+	require.Empty(t, runResult.ExecutionError, "An unexpected error occurred while executing Starlark script")
 }

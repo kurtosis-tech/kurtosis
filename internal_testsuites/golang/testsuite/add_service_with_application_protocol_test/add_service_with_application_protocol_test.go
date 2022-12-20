@@ -34,6 +34,8 @@ def run(plan):
 		)
 	)
 `
+	doNotDryRun      = false
+	noStarlarkParams = "{}"
 )
 
 func TestAddServiceWithApplicationProtocol(t *testing.T) {
@@ -49,7 +51,7 @@ func TestAddServiceWithApplicationProtocol(t *testing.T) {
 	require.NoError(t, err, "An error occurred creating an enclave")
 
 	// -------------------------------------- SCRIPT RUN -----------------------------------------------
-	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkScript, "", false)
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkScript, noStarlarkParams, doNotDryRun)
 	require.NoError(t, err, "An unexpected error occurred while running Starlark script")
 	require.Empty(t, runResult.InterpretationError, "An unexpected error occurred while interpreting Starlark script")
 	require.Empty(t, runResult.ValidationErrors, "An unexpected error occurred while validating Starlark script")

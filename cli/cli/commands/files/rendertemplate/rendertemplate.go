@@ -3,6 +3,7 @@ package rendertemplate
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
@@ -29,6 +30,17 @@ const (
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
+
+	starlarkTemplate = `
+def run(args):
+	render_templates(config = {
+		args.file_name: struct(
+			template = args.template,
+			data = args.template_data,
+		)
+	})
+`
+	doNotDryRun = false
 )
 
 var RenderTemplateCommand = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -120,15 +132,11 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred while decoding the JSON file '%v'", dataJSONFilepath)
 	}
 
-	templateAndData := enclaves.NewTemplateAndData(templateFileContents, templateData)
-	templateAndDataByDestRelFilepath := make(map[string]*enclaves.TemplateAndData)
-	templateAndDataByDestRelFilepath[destRelFilepath] = templateAndData
-
-	filesArtifactUuid, err := enclaveCtx.RenderTemplates(templateAndDataByDestRelFilepath)
+	filesArtifactOutputMessage, err := renderTemplateStarlarkCommand(ctx, enclaveCtx, destRelFilepath, templateFileContents, templateData)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred rendering the template file at path '%v' with data in the file at path '%v' to enclave '%v'", templateFilepath, dataJSONFilepath, enclaveId)
 	}
-	logrus.Infof("Files package UUID: %v", filesArtifactUuid)
+	logrus.Info(filesArtifactOutputMessage)
 	return nil
 }
 
@@ -173,4 +181,22 @@ func validateDestRelFilePathArg(ctx context.Context, flags *flags.ParsedFlags, a
 	}
 
 	return nil
+}
+
+func renderTemplateStarlarkCommand(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, destRelFilepath string, templateFileContents string, templateData interface{}) (string, error) {
+	templateDataBytes, err := json.Marshal(templateData)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error has occurred when parsing input params to render template Starlark command")
+	}
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkTemplate, fmt.Sprintf(`{"file_name": "%s", "template": "%s", "template_data": %s}`, destRelFilepath, templateFileContents, string(templateDataBytes)), doNotDryRun)
+	if runResult.ExecutionError != nil {
+		return "", stacktrace.NewError("An error occurred during Starlark script execution for rendering template: %s", runResult.ExecutionError.GetErrorMessage())
+	}
+	if runResult.InterpretationError != nil {
+		return "", stacktrace.NewError("An error occurred during Starlark script interpretation for rendering template: %s", runResult.InterpretationError.GetErrorMessage())
+	}
+	if len(runResult.ValidationErrors) > 0 {
+		return "", stacktrace.NewError("An error occurred during Starlark script validation for rendering template: %v", runResult.ValidationErrors)
+	}
+	return string(runResult.RunOutput), err
 }
