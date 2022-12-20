@@ -17,3 +17,7 @@ jobs:
           # Our CI, Docker Images, Kurtosis-SDK bumps all depend on
           # non v tags
           include-v-in-tag: false
+          # TODO remove this immediately
+          # gyani - force version 0.63.0 as my plan change got read as a minor bump
+          # instead of a breaking change
+          release-as: 0.63.0
