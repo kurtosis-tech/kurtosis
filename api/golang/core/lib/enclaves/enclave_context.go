@@ -617,17 +617,6 @@ func (enclaveCtx *EnclaveContext) StoreWebFiles(ctx context.Context, urlToStoreW
 	return services.FilesArtifactUUID(response.Uuid), nil
 }
 
-// Docs available at https://docs.kurtosis.com/sdk/#storeservicefilesserviceid-serviceid-string-absolutefilepathonservicecontainer
-func (enclaveCtx *EnclaveContext) StoreServiceFiles(ctx context.Context, serviceId services.ServiceID, absoluteFilepathOnServiceContainer string) (services.FilesArtifactUUID, error) {
-	serviceIdStr := string(serviceId)
-	args := binding_constructors.NewStoreFilesArtifactFromServiceArgs(serviceIdStr, absoluteFilepathOnServiceContainer)
-	response, err := enclaveCtx.client.StoreFilesArtifactFromService(ctx, args)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred copying source content from absolute filepath '%v' in service container with ID '%v'", absoluteFilepathOnServiceContainer, serviceIdStr)
-	}
-	return services.FilesArtifactUUID(response.Uuid), nil
-}
-
 // Docs available at https://docs.kurtosis.com/sdk/#rendertemplatesmapstring-templateanddata-templateanddatabydestinationrelfilepaths
 func (enclaveCtx *EnclaveContext) RenderTemplates(templateAndDataByDestinationRelFilepaths map[string]*TemplateAndData) (services.FilesArtifactUUID, error) {
 	if len(templateAndDataByDestinationRelFilepaths) == 0 {

@@ -27,6 +27,14 @@ const (
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
+
+	starlarkTemplate = `
+def run(args):
+	store_service_files(
+		service_id = args.service_id,
+		src = args.src
+	)
+`
 )
 
 var FilesStoreServiceCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -90,7 +98,7 @@ func run(
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the enclave context for enclave '%v'", enclaveId)
 	}
-	filesArtifactUuid, err := enclaveCtx.StoreServiceFiles(ctx, serviceId, filepath)
+	runResult, err := storeServiceFileStarlarkCommand(ctx, enclaveCtx, serviceId, filepath, enclaveId)
 	if err != nil {
 		return stacktrace.Propagate(
 			err,
@@ -100,6 +108,19 @@ func run(
 			enclaveId,
 		)
 	}
-	logrus.Infof("Files package UUID: %v", filesArtifactUuid)
+	logrus.Info(runResult.RunOutput)
 	return nil
+}
+
+func storeServiceFileStarlarkCommand(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, serviceId services.ServiceID, filePath string, enclaveId enclaves.EnclaveID) (*enclaves.StarlarkRunResult, error) {
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkTemplate, fmt.Sprintf(`{"service_id": "%s", "src": "%s"}`, serviceId, filePath), false)
+	if len(runResult.ValidationErrors) > 0 || runResult.ExecutionError != nil || len(runResult.ValidationErrors) > 0 {
+		return nil, stacktrace.NewError(
+			"An error occurred running Starlark script for copying content from filepath '%v' in user service with ID '%v' to enclave '%v'",
+			filePath,
+			serviceId,
+			enclaveId,
+		)
+	}
+	return runResult, err
 }

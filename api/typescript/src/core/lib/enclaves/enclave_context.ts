@@ -737,17 +737,6 @@ export class EnclaveContext {
         return ok(storeWebFilesArtifactResponse.getUuid())
     }
 
-    // Docs available at https://docs.kurtosis.com/sdk/#storeservicefilesserviceid-serviceid-string-absolutefilepathonservicecontainer
-    public async storeServiceFiles(serviceId: ServiceID, absoluteFilepathOnServiceContainer: string): Promise<Result<FilesArtifactUUID, Error>> {
-        const args = newStoreFilesArtifactFromServiceArgs(serviceId, absoluteFilepathOnServiceContainer)
-        const storeFilesArtifactFromServiceResponseResult = await this.backend.storeFilesArtifactFromService(args)
-        if (storeFilesArtifactFromServiceResponseResult.isErr()) {
-            return err(storeFilesArtifactFromServiceResponseResult.error)
-        }
-        const storeFilesArtifactFromServiceResponse = storeFilesArtifactFromServiceResponseResult.value;
-        return ok(storeFilesArtifactFromServiceResponse.getUuid())
-    }
-
     // Docs available at https://docs.kurtosis.com/sdk/#rendertemplatesmapstring-templateanddata-templateanddatabydestinationrelfilepaths
     public async renderTemplates(templateAndDataByDestinationRelFilepath: Map<string, TemplateAndData>): Promise<Result<FilesArtifactUUID, Error>> {
 
