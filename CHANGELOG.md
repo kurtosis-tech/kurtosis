@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.63.0](https://github.com/kurtosis-tech/kurtosis/compare/0.62.0...0.63.0) (2022-12-20)
+
+### ⚠ BREAKING CHANGES
+
+* Make a plan argument required for run. Users will have to now pass a `plan` object to the `run` function in the main.star as the first argument. If you are passing args the argument should be called `args` and has to be the second argument. Users will have to futher use all enclave-modifying functions like add_service, remove_service from the `plan` object. ([#728](https://github.com/kurtosis-tech/kurtosis/issues/728)) ([a33c0aa](https://github.com/kurtosis-tech/kurtosis/commit/a33c0aaca4ded827e6f92a9c200689540f212146))
+
+### Features
+
+* make a plan argument required for run ([#728](https://github.com/kurtosis-tech/kurtosis/issues/728)) ([a33c0aa](https://github.com/kurtosis-tech/kurtosis/commit/a33c0aaca4ded827e6f92a9c200689540f212146))
+
 ## [0.62.0](https://github.com/kurtosis-tech/kurtosis/compare/0.61.0...0.62.0) (2022-12-16)
 
 
