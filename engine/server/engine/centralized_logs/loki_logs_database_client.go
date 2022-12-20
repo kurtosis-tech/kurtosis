@@ -73,6 +73,9 @@ const (
 
 	oneHourLess = -time.Hour
 
+	//It' for using in it the "start" query param
+	maxRetentionPeriodHoursStartTime = - maxRetentionPeriodHours
+
 	logsByKurtosisUserServiceGuidChanBuffSize = 5
 	errorChanBuffSize                         = 2
 
@@ -309,9 +312,9 @@ func (client *lokiLogsDatabaseClient) FilterExistingServiceGuids(ctx context.Con
 
 	queryRangeEndpointQuery := queryRangeEndpointUrl.Query()
 
-	startTimeForStreamingLogsParamValue := getStartTimeForStreamingLogsParamValue()
+	startTimeQueryParamValue := getStartTimeForFilteringExistingServiceGuidsParamValue()
 
-	queryRangeEndpointQuery.Set(startTimeQueryParamKey, startTimeForStreamingLogsParamValue)
+	queryRangeEndpointQuery.Set(startTimeQueryParamKey, startTimeQueryParamValue)
 
 	queryRangeEndpointUrl.RawQuery = queryRangeEndpointQuery.Encode()
 
@@ -632,9 +635,23 @@ func createUrl(scheme string, host string, path string) *url.URL {
 func getStartTimeForStreamingLogsParamValue() string {
 	now := time.Now()
 	startTime := now.Add(oneHourLess)
-	startTimeNano := startTime.UnixNano()
-	startTimeNanoStr := fmt.Sprintf("%v", startTimeNano)
+	startTimeNanoStr := getTimeInNanoString(startTime)
 	return startTimeNanoStr
+}
+
+//Because the logs can be consumed from several days before the current date
+//we have to set the start time from the max retention period time
+func getStartTimeForFilteringExistingServiceGuidsParamValue() string {
+	now := time.Now()
+	startTime := now.Add(maxRetentionPeriodHoursStartTime)
+	startTimeNanoStr := getTimeInNanoString(startTime)
+	return startTimeNanoStr
+}
+
+func getTimeInNanoString(timeObj time.Time) string {
+	timeNano := timeObj.UnixNano()
+	timeNanoStr := fmt.Sprintf("%v", timeNano)
+	return timeNanoStr
 }
 
 func newUserServiceLogLinesByUserServiceGuidFromLokiStreams(lokiStreams []lokiStreamValue) (map[service.ServiceGUID][]LogLine, error) {

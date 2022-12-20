@@ -21,6 +21,7 @@ func NewServiceGUIDArg(
 	isOptional bool,
 	isGreedy bool,
 ) *args.ArgConfig {
+
 	validate := getValidationFunc(argKey, isGreedy)
 
 	return &args.ArgConfig{
@@ -30,6 +31,26 @@ func NewServiceGUIDArg(
 		IsGreedy:              isGreedy,
 		ArgCompletionProvider: args.NewManualCompletionsProvider(getOrderedEnclaveServiceGuids),
 		ValidationFunc:        validate,
+	}
+}
+
+//TODO we added this constructor for allowing 'service logs' command to disable the validation for consuming logs from removed or stopped enclaves
+//TODO probably we should remove it when #310 is ready: https://github.com/
+func NewServiceGUIDArgWithValidationDisabled(
+	argKey string,
+	isOptional bool,
+	isGreedy bool,
+) *args.ArgConfig {
+
+	var noValidationFunc func(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error
+
+	return &args.ArgConfig{
+		Key:                   argKey,
+		IsOptional:            isOptional,
+		DefaultValue:          "",
+		IsGreedy:              isGreedy,
+		ArgCompletionProvider: args.NewManualCompletionsProvider(getOrderedEnclaveServiceGuids),
+		ValidationFunc:        noValidationFunc,
 	}
 }
 

@@ -22,6 +22,7 @@ func NewEnclaveIDArg(
 	isOptional bool,
 	isGreedy bool,
 ) *args.ArgConfig {
+
 	validate := getValidationFunc(argKey, engineClientCtxKey, isGreedy)
 
 	return &args.ArgConfig{
@@ -30,6 +31,26 @@ func NewEnclaveIDArg(
 		DefaultValue:    "",
 		IsGreedy:        isGreedy,
 		ValidationFunc:  validate,
+		ArgCompletionProvider: args.NewManualCompletionsProvider(getCompletions),
+	}
+}
+
+//TODO we added this constructor for allowing 'service logs' command to disable the validation for consuming logs from removed or stopped enclaves
+//TODO probably we should remove it when #310 is ready: https://github.com/
+func NewEnclaveIDArgWithValidationDisabled(
+	argKey string,
+	isOptional bool,
+	isGreedy bool,
+) *args.ArgConfig {
+
+	var noValidationFunc func(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error
+
+	return &args.ArgConfig{
+		Key:             argKey,
+		IsOptional:      isOptional,
+		DefaultValue:    "",
+		IsGreedy:        isGreedy,
+		ValidationFunc:  noValidationFunc,
 		ArgCompletionProvider: args.NewManualCompletionsProvider(getCompletions),
 	}
 }
