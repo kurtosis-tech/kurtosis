@@ -748,30 +748,6 @@ export class EnclaveContext {
         return ok(storeFilesArtifactFromServiceResponse.getUuid())
     }
 
-    // Docs available at https://docs.kurtosis.com/sdk/#pauseserviceserviceid-serviceid
-    public async pauseService(serviceId: string): Promise<Result<null, Error>> {
-        const pauseServiceArgs: PauseServiceArgs = newPauseServiceArgs(serviceId)
-
-        const pauseServiceResult = await this.backend.pauseService(pauseServiceArgs)
-        if(pauseServiceResult.isErr()){
-            return err(pauseServiceResult.error)
-        }
-        const pauseServiceResponse = pauseServiceResult.value
-        return ok(null)
-    }
-
-    // Docs available at https://docs.kurtosis.com/sdk/#unpauseserviceserviceid-serviceid
-    public async unpauseService(serviceId: string): Promise<Result<null, Error>> {
-        const unpauseServiceArgs: UnpauseServiceArgs = newUnpauseServiceArgs(serviceId)
-
-        const unpauseServiceResult = await this.backend.unpauseService(unpauseServiceArgs)
-        if(unpauseServiceResult.isErr()){
-            return err(unpauseServiceResult.error)
-        }
-        const pauseServiceResponse = unpauseServiceResult.value
-        return ok(null)
-    }
-
     // Docs available at https://docs.kurtosis.com/sdk/#rendertemplatesmapstring-templateanddata-templateanddatabydestinationrelfilepaths
     public async renderTemplates(templateAndDataByDestinationRelFilepath: Map<string, TemplateAndData>): Promise<Result<FilesArtifactUUID, Error>> {
 

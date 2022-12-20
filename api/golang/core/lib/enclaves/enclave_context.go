@@ -284,7 +284,7 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 	for serviceID, containerConfig := range containerConfigs {
 		logrus.Tracef("Creating files artifact ID str -> mount dirpaths map for service with Id '%v'...", serviceID)
 		artifactIdStrToMountDirpath := map[string]string{}
-		for mountDirpath, filesArtifactID  := range containerConfig.GetFilesArtifactMountpoints() {
+		for mountDirpath, filesArtifactID := range containerConfig.GetFilesArtifactMountpoints() {
 			artifactIdStrToMountDirpath[mountDirpath] = string(filesArtifactID)
 		}
 		logrus.Tracef("Successfully created files artifact ID str -> mount dirpaths map for service with ID '%v'", serviceID)
@@ -626,26 +626,6 @@ func (enclaveCtx *EnclaveContext) StoreServiceFiles(ctx context.Context, service
 		return "", stacktrace.Propagate(err, "An error occurred copying source content from absolute filepath '%v' in service container with ID '%v'", absoluteFilepathOnServiceContainer, serviceIdStr)
 	}
 	return services.FilesArtifactUUID(response.Uuid), nil
-}
-
-// Docs available at https://docs.kurtosis.com/sdk/#pauseserviceserviceid-serviceid
-func (enclaveCtx *EnclaveContext) PauseService(serviceId services.ServiceID) error {
-	args := binding_constructors.NewPauseServiceArgs(string(serviceId))
-	_, err := enclaveCtx.client.PauseService(context.Background(), args)
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to pause service '%v'", serviceId)
-	}
-	return nil
-}
-
-// Docs available at https://docs.kurtosis.com/sdk/#unpauseserviceserviceid-serviceid
-func (enclaveCtx *EnclaveContext) UnpauseService(serviceId services.ServiceID) error {
-	args := binding_constructors.NewUnpauseServiceArgs(string(serviceId))
-	_, err := enclaveCtx.client.UnpauseService(context.Background(), args)
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to unpause service '%v'", serviceId)
-	}
-	return nil
 }
 
 // Docs available at https://docs.kurtosis.com/sdk/#rendertemplatesmapstring-templateanddata-templateanddatabydestinationrelfilepaths
