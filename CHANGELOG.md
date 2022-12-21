@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.63.1](https://github.com/kurtosis-tech/kurtosis/compare/0.63.0...0.63.1) (2022-12-20)
+
+
+### Features
+
+* Add a `ServiceConfig` for the add_service instruction. All `add_service` instructions should update their `config` argument to use a ServiceConfig object rather than an unnamed `struct`. Support for `struct` will be removed shortly. ([#757](https://github.com/kurtosis-tech/kurtosis/issues/757)) ([de48639](https://github.com/kurtosis-tech/kurtosis/commit/de486394978addd8230f4aa937b93b42bac9361e))
+
+
+### Bug Fixes
+
+* fixed and issue when the start time request values was not properly set when finding for existing service GUIDs before streaming logs ([#755](https://github.com/kurtosis-tech/kurtosis/issues/755)) ([995381a](https://github.com/kurtosis-tech/kurtosis/commit/995381a71b210a67cde3c2297c7160be4de24559))
+
 ## [0.63.0](https://github.com/kurtosis-tech/kurtosis/compare/0.62.0...0.63.0) (2022-12-20)
 
 ### ⚠ BREAKING CHANGES
