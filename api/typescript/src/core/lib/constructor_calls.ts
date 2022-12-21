@@ -14,28 +14,19 @@ import {
     RepartitionArgs,
     WaitForHttpGetEndpointAvailabilityArgs,
     WaitForHttpPostEndpointAvailabilityArgs,
-    LoadModuleArgs,
-    UnloadModuleArgs,
-    ExecuteModuleArgs,
-    GetModulesArgs,
     Port,
     StoreWebFilesArtifactArgs,
     StoreFilesArtifactFromServiceArgs,
     UploadFilesArtifactArgs,
     PauseServiceArgs,
     UnpauseServiceArgs,
-    ModuleInfo,
     ServiceInfo,
     ServiceConfig,
     RemoveServiceResponse,
-    UnloadModuleResponse,
-    GetModulesResponse,
     GetServicesResponse, StartServicesArgs,
     RenderTemplatesToFilesArtifactArgs,
 } from '../kurtosis_core_rpc_api_bindings/api_container_service_pb';
 import { ServiceID } from './services/service';
-import { PartitionID } from './enclaves/enclave_context';
-import { ModuleID } from "./modules/module_context";
 import TemplateAndData = RenderTemplatesToFilesArtifactArgs.TemplateAndData;
 
 // ==============================================================================================
@@ -97,89 +88,6 @@ export function newServiceConfig(
     result.setPrivateIpAddrPlaceholder(privateIPAddrPlaceholder);
     result.setSubnetwork(subnetwork);
     return result;
-}
-
-
-// ==============================================================================================
-//                                     Load Module
-// ==============================================================================================
-export function newLoadModuleArgs(moduleId: ModuleID, image: string, serializedParams: string): LoadModuleArgs {
-    const result: LoadModuleArgs = new LoadModuleArgs();
-    result.setModuleId(String(moduleId));
-    result.setContainerImage(image);
-    result.setSerializedParams(serializedParams);
-
-    return result;
-}
-
-// ==============================================================================================
-//                                     Unload Module
-// ==============================================================================================
-export function newUnloadModuleArgs(moduleId: ModuleID): UnloadModuleArgs {
-    const result: UnloadModuleArgs = new UnloadModuleArgs();
-    result.setModuleId(String(moduleId));
-
-    return result;
-}
-
-export function newUnloadModuleResponse(moduleGuid: string): UnloadModuleResponse {
-    const result: UnloadModuleResponse = new UnloadModuleResponse();
-    result.setModuleGuid(moduleGuid)
-
-    return result;
-}
-
-
-// ==============================================================================================
-//                                     Execute Module
-// ==============================================================================================
-export function newExecuteModuleArgs(moduleId: ModuleID, serializedParams: string): ExecuteModuleArgs {
-    const result: ExecuteModuleArgs = new ExecuteModuleArgs();
-    result.setModuleId(String(moduleId));
-    result.setSerializedParams(serializedParams);
-
-    return result;
-}
-
-
-// ==============================================================================================
-//                                     Get Modules
-// ==============================================================================================
-export function newGetModulesArgs(moduleIds: Map<string, boolean>): GetModulesArgs {
-    const result: GetModulesArgs = new GetModulesArgs();
-    const moduleMap: jspb.Map<string, boolean> = result.getIdsMap();
-    for (const [moduleId, isModuleIncluded] of moduleIds) {
-        moduleMap.set(moduleId, isModuleIncluded);
-    }
-
-    return result;
-}
-
-export function newGetModulesResponse(moduleInfoMap: Map<string, ModuleInfo>): GetModulesResponse {
-    const result: GetModulesResponse = new GetModulesResponse();
-    const resultModuleInfoMap: jspb.Map<string, ModuleInfo> = result.getModuleInfoMap();
-    for (const [moduleId, moduleInfo] of moduleInfoMap) {
-        resultModuleInfoMap.set(moduleId, moduleInfo);
-    }
-
-    return result;
-}
-
-
-export function newModuleInfo(
-    guid: string,
-    privateIpAddr: string,
-    privateGrpcPort: Port,
-    maybePublicIpAddr: string,
-    maybePublicGrpcPort: Port,): ModuleInfo {
-    const result: ModuleInfo = new ModuleInfo();
-    result.setGuid(guid)
-    result.setPrivateIpAddr(privateIpAddr)
-    result.setPrivateGrpcPort(privateGrpcPort)
-    result.setMaybePublicIpAddr(maybePublicIpAddr)
-    result.setMaybePublicGrpcPort(maybePublicGrpcPort)
-
-    return result
 }
 
 

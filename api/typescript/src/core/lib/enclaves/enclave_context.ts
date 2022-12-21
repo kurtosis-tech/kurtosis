@@ -15,9 +15,6 @@ import type {
     RepartitionArgs,
     ServiceConfig,
     PartitionConnections,
-    LoadModuleArgs,
-    UnloadModuleArgs,
-    GetModulesArgs,
     GetServicesArgs,
     WaitForHttpGetEndpointAvailabilityArgs,
     WaitForHttpPostEndpointAvailabilityArgs,
@@ -25,11 +22,8 @@ import type {
 import { GrpcNodeApiContainerClient } from "./grpc_node_api_container_client";
 import { GrpcWebApiContainerClient } from "./grpc_web_api_container_client";
 import type { GenericApiContainerClient } from "./generic_api_container_client";
-import { ModuleContext, ModuleID } from "../modules/module_context";
 import {
-    newGetModulesArgs,
     newGetServicesArgs,
-    newLoadModuleArgs,
     newPartitionConnections,
     newPartitionServices,
     newPort,
@@ -39,7 +33,6 @@ import {
     newStartServicesArgs,
     newStoreWebFilesArtifactArgs,
     newStoreFilesArtifactFromServiceArgs,
-    newUnloadModuleArgs,
     newWaitForHttpGetEndpointAvailabilityArgs,
     newWaitForHttpPostEndpointAvailabilityArgs,
     newUploadFilesArtifactArgs,
@@ -56,7 +49,6 @@ import type { GenericPathJoiner } from "./generic_path_joiner";
 import type { PartitionConnection } from "./partition_connection";
 import {GenericTgzArchiver} from "./generic_tgz_archiver";
 import {
-    ModuleInfo,
     PauseServiceArgs,
     ServiceInfo,
     UnpauseServiceArgs,
@@ -172,52 +164,6 @@ export class EnclaveContext {
     // Docs available at https://docs.kurtosis.com/sdk/#getenclaveid---enclaveid
     public getEnclaveId(): EnclaveID {
         return this.backend.getEnclaveId();
-    }
-
-    // Docs available at https://docs.kurtosis.com/sdk/#loadmodulestring-moduleid-string-image-string-serializedparams---modulecontext-modulecontext
-    public async loadModule(moduleId: ModuleID, image: string, serializedParams: string): Promise<Result<ModuleContext, Error>> {
-        const loadModuleArgs: LoadModuleArgs = newLoadModuleArgs(moduleId, image, serializedParams);
-
-        const loadModuleResult = await this.backend.loadModule(loadModuleArgs)
-        if(loadModuleResult.isErr()){
-            return err(loadModuleResult.error)
-        }
-
-        const moduleContext:ModuleContext = new ModuleContext(this.backend, moduleId);
-        return ok(moduleContext)
-    }
-
-    // Docs available at https://docs.kurtosis.com/sdk/#unloadmodulestring-moduleid
-    public async unloadModule(moduleId: ModuleID): Promise<Result<null ,Error>> {
-        const unloadModuleArgs: UnloadModuleArgs = newUnloadModuleArgs(moduleId);
-
-        const unloadModuleResult = await this.backend.unloadModule(unloadModuleArgs)
-        if(unloadModuleResult.isErr()){
-            return err(unloadModuleResult.error)
-        }
-
-        // We discard the module GUID
-        return ok(null)
-    }
-
-    // Docs available at https://docs.kurtosis.com/sdk/#getmodulecontextstring-moduleid---modulecontext-modulecontext
-    public async getModuleContext(moduleId: ModuleID): Promise<Result<ModuleContext, Error>> {
-        const moduleMapForArgs = new Map<string, boolean>()
-        moduleMapForArgs.set(moduleId, true)
-        const args: GetModulesArgs = newGetModulesArgs(moduleMapForArgs);
-
-        const getModuleInfoResult = await this.backend.getModules(args)
-        if(getModuleInfoResult.isErr()){
-            return err(getModuleInfoResult.error)
-        }
-        const resp = getModuleInfoResult.value
-
-        if (!resp.getModuleInfoMap().has(moduleId)) {
-            return err(new Error(`Module '${moduleId}' does not exist`))
-        }
-
-        const moduleCtx: ModuleContext = new ModuleContext(this.backend, moduleId);
-        return ok(moduleCtx)
     }
 
     // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkscriptstring-serializedstarlarkscript-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
@@ -671,27 +617,6 @@ export class EnclaveContext {
             serviceInfos.set(key, value.getServiceGuid())
         });
         return ok(serviceInfos)
-    }
-
-    // Docs available at https://docs.kurtosis.com/sdk/#getmodules---setmoduleid-moduleids
-    public async getModules(): Promise<Result<Set<ModuleID>, Error>> {
-        const getAllModulesArgMap: Map<string, boolean> = new Map<string,boolean>()
-        const emptyGetModulesArg: GetModulesArgs = newGetModulesArgs(getAllModulesArgMap)
-
-        const getModulesResponseResult = await this.backend.getModules(emptyGetModulesArg)
-        if(getModulesResponseResult.isErr()){
-            return err(getModulesResponseResult.error)
-        }
-
-        const modulesResponse = getModulesResponseResult.value
-
-        const moduleIds: Set<ModuleID> = new Set<ModuleID>()
-
-        modulesResponse.getModuleInfoMap().forEach((value: ModuleInfo, key: string) => {
-            moduleIds.add(key)
-        })
-
-        return ok(moduleIds)
     }
 
     // Docs available at https://docs.kurtosis.com/sdk/#uploadfilesstring-pathtoupload

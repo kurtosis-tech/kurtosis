@@ -706,7 +706,6 @@ jobs:
       - run: "${KURTOSIS_BINPATH} service add test-enclave test2 httpd --ports http=80"
 
       # Module inside an enclave
-      - run: "${KURTOSIS_BINPATH} module exec --enclave-id test-enclave kurtosistech/datastore-army-module --execute-params '{\"numDatastores\":2}'"
       - run: "${KURTOSIS_BINPATH} enclave ls"
       - run: "${KURTOSIS_BINPATH} enclave inspect test-enclave"
 

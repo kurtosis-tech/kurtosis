@@ -13,12 +13,8 @@ export { EnclaveContext } from "./core/lib/enclaves/enclave_context";
 export type { EnclaveID, PartitionID } from "./core/lib/enclaves/enclave_context";
 export { UnblockedPartitionConnection, BlockedPartitionConnection, SoftPartitionConnection } from "./core/lib/enclaves/partition_connection"
 
-// Modules
-export type { ModuleID } from "./core/lib/modules/module_context";
-export { ModuleContext } from "./core/lib/modules/module_context";
-
 // Constructor Calls
-export { newExecCommandArgs, newLoadModuleArgs, newStartServicesArgs, newGetServicesArgs, newRemoveServiceArgs, newPartitionServices, newRepartitionArgs, newPartitionConnections, newPartitionConnectionInfo, newWaitForHttpGetEndpointAvailabilityArgs, newWaitForHttpPostEndpointAvailabilityArgs, newExecuteModuleArgs, newGetModulesArgs } from "./core/lib/constructor_calls";
+export { newExecCommandArgs, newStartServicesArgs, newGetServicesArgs, newRemoveServiceArgs, newPartitionServices, newRepartitionArgs, newPartitionConnections, newPartitionConnectionInfo, newWaitForHttpGetEndpointAvailabilityArgs, newWaitForHttpPostEndpointAvailabilityArgs } from "./core/lib/constructor_calls";
 
 // Module Launch API
 export { ModuleContainerArgs } from "./core/module_launch_api/module_container_args";

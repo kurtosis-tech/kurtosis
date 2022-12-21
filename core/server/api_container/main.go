@@ -16,8 +16,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/launcher/args"
 	"github.com/kurtosis-tech/kurtosis/core/launcher/args/kurtosis_backend_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/module_store"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/module_store/module_launcher"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/networking_sidecar"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
@@ -158,7 +156,7 @@ func runMain() error {
 		return stacktrace.NewError("Backend type '%v' was not recognized by API container.", serverArgs.KurtosisBackendType.String())
 	}
 
-	serviceNetwork, moduleStore, err := createServiceNetworkAndModuleStore(kurtosisBackend, enclaveDataDir, serverArgs, ownIpAddress)
+	serviceNetwork, err := createServiceNetwork(kurtosisBackend, enclaveDataDir, serverArgs, ownIpAddress)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the service network & module store")
 	}
@@ -190,7 +188,6 @@ func runMain() error {
 	apiContainerService, err := server.NewApiContainerService(
 		filesArtifactStore,
 		serviceNetwork,
-		moduleStore,
 		startosisRunner,
 		metricsClient,
 		gitPackageContentProvider,
@@ -218,12 +215,12 @@ func runMain() error {
 	return nil
 }
 
-func createServiceNetworkAndModuleStore(
+func createServiceNetwork(
 	kurtosisBackend backend_interface.KurtosisBackend,
 	enclaveDataDir *enclave_data_directory.EnclaveDataDirectory,
 	args *args.APIContainerArgs,
 	ownIpAddress net.IP,
-) (service_network.ServiceNetwork, *module_store.ModuleStore, error) {
+) (service_network.ServiceNetwork, error) {
 	enclaveIdStr := args.EnclaveId
 	enclaveId := enclave.EnclaveID(enclaveIdStr)
 
@@ -235,12 +232,6 @@ func createServiceNetworkAndModuleStore(
 	*/
 
 	isPartitioningEnabled := args.IsPartitioningEnabled
-
-	apiContainerSocketInsideNetwork := fmt.Sprintf(
-		"%v:%v",
-		ownIpAddress.String(),
-		args.GrpcListenPortNum,
-	)
 
 	/*
 		filesArtifactExpander := files_artifact_expander.NewFilesArtifactExpander(
@@ -265,16 +256,7 @@ func createServiceNetworkAndModuleStore(
 		enclaveDataDir,
 		networkingSidecarManager,
 	)
-
-	moduleLauncher := module_launcher.NewModuleLauncher(
-		enclaveId,
-		kurtosisBackend,
-		apiContainerSocketInsideNetwork,
-	)
-
-	moduleStore := module_store.NewModuleStore(enclaveId, kurtosisBackend, moduleLauncher)
-
-	return serviceNetwork, moduleStore, nil
+	return serviceNetwork, nil
 }
 
 func formatFilenameFunctionForLogs(filename string, functionName string) string {

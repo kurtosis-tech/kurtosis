@@ -22,7 +22,6 @@ import (
 	"errors"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/modules"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
 	"github.com/kurtosis-tech/stacktrace"
@@ -72,53 +71,6 @@ func NewEnclaveContext(
 // Docs available at https://docs.kurtosis.com/sdk/#getenclaveid---enclaveid
 func (enclaveCtx *EnclaveContext) GetEnclaveID() EnclaveID {
 	return enclaveCtx.enclaveId
-}
-
-// Docs available at https://docs.kurtosis.com/sdk/#loadmodulestring-moduleid-string-image-string-serializedparams---modulecontext-modulecontext
-func (enclaveCtx *EnclaveContext) LoadModule(
-	moduleId modules.ModuleID,
-	image string,
-	serializedParams string) (*modules.ModuleContext, error) {
-	args := binding_constructors.NewLoadModuleArgs(string(moduleId), image, serializedParams)
-
-	// We proxy calls to execute modules via the API container, so actually no need to use the response here
-	_, err := enclaveCtx.client.LoadModule(context.Background(), args)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred loading new module '%v' with image '%v' and serialized params '%v'", moduleId, image, serializedParams)
-	}
-	moduleCtx := modules.NewModuleContext(enclaveCtx.client, moduleId)
-	return moduleCtx, nil
-}
-
-// Docs available at https://docs.kurtosis.com/sdk/#unloadmodulestring-moduleid
-func (enclaveCtx *EnclaveContext) UnloadModule(moduleId modules.ModuleID) error {
-	args := binding_constructors.NewUnloadModuleArgs(string(moduleId))
-
-	_, err := enclaveCtx.client.UnloadModule(context.Background(), args)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred unloading module '%v'", moduleId)
-	}
-	return nil
-}
-
-// Docs available at https://docs.kurtosis.com/sdk/#getmodulecontextstring-moduleid---modulecontext-modulecontext
-func (enclaveCtx *EnclaveContext) GetModuleContext(moduleId modules.ModuleID) (*modules.ModuleContext, error) {
-	moduleMapForArgs := map[string]bool{
-		string(moduleId): true,
-	}
-	args := binding_constructors.NewGetModulesArgs(moduleMapForArgs)
-
-	resp, err := enclaveCtx.client.GetModules(context.Background(), args)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting info for module '%v'", moduleId)
-	}
-
-	if _, found := resp.ModuleInfo[string(moduleId)]; !found {
-		return nil, stacktrace.NewError("Module '%v' does not exist", moduleId)
-	}
-
-	moduleCtx := modules.NewModuleContext(enclaveCtx.client, moduleId)
-	return moduleCtx, nil
 }
 
 // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkscriptstring-serializedstarlarkscript-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
@@ -551,27 +503,6 @@ func (enclaveCtx *EnclaveContext) GetServices() (map[services.ServiceID]services
 		serviceInfos[serviceId] = serviceGuid
 	}
 	return serviceInfos, nil
-}
-
-// Docs available at https://docs.kurtosis.com/sdk/#getmodules---setmoduleid-moduleids
-func (enclaveCtx *EnclaveContext) GetModules() (map[modules.ModuleID]bool, error) {
-	getAllModulesIdFilter := map[string]bool{}
-	emptyGetModulesArgs := binding_constructors.NewGetModulesArgs(getAllModulesIdFilter)
-	response, err := enclaveCtx.client.GetModules(context.Background(), emptyGetModulesArgs)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the IDs of the modules in the enclave")
-	}
-
-	moduleIDs := make(map[modules.ModuleID]bool, len(response.GetModuleInfo()))
-
-	for key := range response.GetModuleInfo() {
-		moduleID := modules.ModuleID(key)
-		if _, ok := moduleIDs[moduleID]; !ok {
-			moduleIDs[moduleID] = true
-		}
-	}
-
-	return moduleIDs, nil
 }
 
 // Docs available at https://docs.kurtosis.com/sdk/#uploadfilesstring-pathtoupload

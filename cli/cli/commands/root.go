@@ -17,7 +17,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/engine"
 	files "github.com/kurtosis-tech/kurtosis/cli/cli/commands/files"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/gateway"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/module"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/run"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/version"
@@ -89,7 +88,6 @@ func init() {
 
 	RootCmd.AddCommand(enclave.EnclaveCmd)
 	RootCmd.AddCommand(service.ServiceCmd)
-	RootCmd.AddCommand(module.ModuleCmd)
 	RootCmd.AddCommand(run.StarlarkRunCmd.MustGetCobraCommand())
 	RootCmd.AddCommand(engine.EngineCmd)
 	RootCmd.AddCommand(version.VersionCmd)

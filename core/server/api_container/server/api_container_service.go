@@ -14,10 +14,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	kurtosis_backend_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/module_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
@@ -72,8 +70,6 @@ type ApiContainerService struct {
 
 	serviceNetwork service_network.ServiceNetwork
 
-	moduleStore *module_store.ModuleStore
-
 	startosisRunner *startosis_engine.StartosisRunner
 
 	metricsClient client.MetricsClient
@@ -84,7 +80,6 @@ type ApiContainerService struct {
 func NewApiContainerService(
 	filesArtifactStore *enclave_data_directory.FilesArtifactStore,
 	serviceNetwork service_network.ServiceNetwork,
-	moduleStore *module_store.ModuleStore,
 	startosisRunner *startosis_engine.StartosisRunner,
 	metricsClient client.MetricsClient,
 	startosisModuleContentProvider startosis_packages.PackageContentProvider,
@@ -92,7 +87,6 @@ func NewApiContainerService(
 	service := &ApiContainerService{
 		filesArtifactStore:             filesArtifactStore,
 		serviceNetwork:                 serviceNetwork,
-		moduleStore:                    moduleStore,
 		startosisRunner:                startosisRunner,
 		metricsClient:                  metricsClient,
 		startosisModuleContentProvider: startosisModuleContentProvider,
@@ -102,85 +96,15 @@ func NewApiContainerService(
 }
 
 func (apicService ApiContainerService) LoadModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.LoadModuleArgs) (*kurtosis_core_rpc_api_bindings.LoadModuleResponse, error) {
-	moduleId := module.ModuleID(args.ModuleId)
-	image := args.ContainerImage
-	serializedParams := args.SerializedParams
-
-	if err := apicService.metricsClient.TrackLoadModule(args.ModuleId, image, serializedParams); err != nil {
-		//We don't want to interrupt users flow if something fails when tracking metrics
-		logrus.Errorf("An error occurred tracking load module event\n%v", err)
-	}
-
-	loadedModule, err := apicService.moduleStore.LoadModule(ctx, moduleId, image, serializedParams)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred loading module '%v' with container image '%v' and serialized params '%v'", moduleId, image, serializedParams)
-	}
-
-	privateIpStr := loadedModule.GetPrivateIP().String()
-	privateApiPort, err := transformPortSpecToApiPort(loadedModule.GetPrivatePort())
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred transforming the module's private port spec port to an API port")
-	}
-
-	maybePublicIpStr := missingPublicIpAddrStr
-	if loadedModule.GetMaybePublicIP() != nil {
-		maybePublicIpStr = loadedModule.GetMaybePublicIP().String()
-	}
-	var maybePublicApiPort *kurtosis_core_rpc_api_bindings.Port
-	if loadedModule.GetMaybePublicPort() != nil {
-		candidatePublicApiPort, err := transformPortSpecToApiPort(loadedModule.GetMaybePublicPort())
-		if err != nil {
-			return nil, stacktrace.Propagate(
-				err,
-				"An error occurred transforming the module's public port '%v' to an API port",
-				loadedModule.GetMaybePublicPort(),
-			)
-		}
-		maybePublicApiPort = candidatePublicApiPort
-	}
-
-	result := binding_constructors.NewLoadModuleResponse(
-		string(loadedModule.GetGUID()),
-		privateIpStr,
-		privateApiPort,
-		maybePublicIpStr,
-		maybePublicApiPort,
-	)
-	return result, nil
+	return nil, stacktrace.NewError("LoadModule has been deprecated. Use Starlark package instead.")
 }
 
 func (apicService ApiContainerService) UnloadModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.UnloadModuleArgs) (*kurtosis_core_rpc_api_bindings.UnloadModuleResponse, error) {
-	moduleId := module.ModuleID(args.ModuleId)
-
-	if err := apicService.metricsClient.TrackUnloadModule(args.ModuleId); err != nil {
-		//We don't want to interrupt users flow if something fails when tracking metrics
-		logrus.Errorf("An error occurred tracking unload module event\n%v", err)
-	}
-
-	moduleGuid, err := apicService.moduleStore.UnloadModule(ctx, moduleId)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred unloading module '%v' from the network", moduleId)
-	}
-
-	return binding_constructors.NewUnloadModuleResponse(string(moduleGuid)), nil
+	return nil, stacktrace.NewError("UnloadModule has been deprecated. Use Starlark package instead.")
 }
 
 func (apicService ApiContainerService) ExecuteModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecuteModuleArgs) (*kurtosis_core_rpc_api_bindings.ExecuteModuleResponse, error) {
-	moduleId := module.ModuleID(args.ModuleId)
-	serializedParams := args.SerializedParams
-
-	if err := apicService.metricsClient.TrackExecuteModule(args.ModuleId, serializedParams); err != nil {
-		//We don't want to interrupt users flow if something fails when tracking metrics
-		logrus.Errorf("An error occurred tracking execute module event\n%v", err)
-	}
-
-	serializedResult, err := apicService.moduleStore.ExecuteModule(ctx, moduleId, serializedParams)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred executing module '%v' with serialized params '%v'", moduleId, serializedParams)
-	}
-
-	resp := &kurtosis_core_rpc_api_bindings.ExecuteModuleResponse{SerializedResult: serializedResult}
-	return resp, nil
+	return nil, stacktrace.NewError("ExecuteModule has been deprecated. Use Starlark package instead.")
 }
 
 func (apicService ApiContainerService) RunStarlarkScript(args *kurtosis_core_rpc_api_bindings.RunStarlarkScriptArgs, stream kurtosis_core_rpc_api_bindings.ApiContainerService_RunStarlarkScriptServer) error {
@@ -460,25 +384,7 @@ func (apicService ApiContainerService) GetServices(ctx context.Context, args *ku
 }
 
 func (apicService ApiContainerService) GetModules(ctx context.Context, args *kurtosis_core_rpc_api_bindings.GetModulesArgs) (*kurtosis_core_rpc_api_bindings.GetModulesResponse, error) {
-	moduleInfos := map[string]*kurtosis_core_rpc_api_bindings.ModuleInfo{}
-	filterModuleIds := args.Ids
-
-	for moduleID := range apicService.moduleStore.GetModules() {
-		moduleIDStr := string(moduleID)
-		if filterModuleIds != nil && len(filterModuleIds) > 0 {
-			if _, found := filterModuleIds[moduleIDStr]; !found {
-				continue
-			}
-		}
-		moduleInfo, err := apicService.getModuleInfo(ctx, moduleID)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Failed to get Module info for Module '%v'", moduleID)
-		}
-		moduleInfos[moduleIDStr] = moduleInfo
-	}
-
-	resp := binding_constructors.NewGetModulesResponse(moduleInfos)
-	return resp, nil
+	return nil, stacktrace.NewError("GetModules has been deprecated. Use Starlark package instead.")
 }
 
 func (apicService ApiContainerService) UploadFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.UploadFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse, error) {
@@ -734,39 +640,6 @@ func (apicService ApiContainerService) getServiceInfo(ctx context.Context, servi
 		publicApiPorts,
 	)
 	return serviceInfoResponse, nil
-}
-
-func (apicService ApiContainerService) getModuleInfo(ctx context.Context, moduleId module.ModuleID) (*kurtosis_core_rpc_api_bindings.ModuleInfo, error) {
-	moduleGuid, privateIpAddr, privateModulePort, maybePublicIpAddr, maybePublicModulePort, err := apicService.moduleStore.GetModuleInfo(moduleId)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the IP address for module '%v'", moduleId)
-	}
-	privateApiPort, err := transformPortSpecToApiPort(privateModulePort)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred transforming the module's private port spec port to an API port")
-	}
-	var publicApiPort *kurtosis_core_rpc_api_bindings.Port
-	if maybePublicModulePort != nil {
-		publicApiPort, err = transformPortSpecToApiPort(maybePublicModulePort)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred transforming the module's public port spec port to an API port")
-		}
-	}
-	publicIpAddr := missingPublicIpAddrStr
-	if maybePublicIpAddr != nil {
-		publicIpAddr = maybePublicIpAddr.String()
-	}
-	if privateIpAddr == nil {
-		return nil, stacktrace.NewError("Private IP address for module '%v' was nil - this should never happen.", moduleId)
-	}
-	response := binding_constructors.NewModuleInfo(
-		string(moduleGuid),
-		privateIpAddr.String(),
-		privateApiPort,
-		publicIpAddr,
-		publicApiPort,
-	)
-	return response, nil
 }
 
 func (apicService ApiContainerService) runStarlarkPackageSetup(packageId string, isRemote bool, moduleContentIfLocal []byte) (string, *startosis_errors.InterpretationError) {
