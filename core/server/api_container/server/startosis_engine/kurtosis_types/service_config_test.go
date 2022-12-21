@@ -15,67 +15,123 @@ var (
 )
 
 func TestServiceConfig_StringRepresentation(t *testing.T) {
-	serviceConfig := newServiceConfig(image)
+	serviceConfig := newMinimalServiceConfig(image)
 	expectedRepresentation := fmt.Sprintf(`%s(%s="%s")`, ServiceConfigTypeName, serviceConfigImageAttr, image)
 	require.Equal(t, expectedRepresentation, serviceConfig.String())
 }
 
 func TestServiceConfig_Type(t *testing.T) {
-	serviceConfig := newServiceConfig(image)
+	serviceConfig := newMinimalServiceConfig(image)
 	require.Equal(t, ServiceConfigTypeName, serviceConfig.Type())
 }
 
 func TestServiceConfig_Truth_True(t *testing.T) {
-	serviceConfig := newServiceConfig(image)
+	serviceConfig := newMinimalServiceConfig(image)
 	require.Equal(t, starlark.Bool(true), serviceConfig.Truth())
 }
 
 func TestServiceConfig_Truth_False(t *testing.T) {
-	serviceConfig := newServiceConfig("")
+	serviceConfig := newMinimalServiceConfig("")
 	require.Equal(t, starlark.Bool(false), serviceConfig.Truth())
 }
 
-func TestServiceConfig_Attr_Exists(t *testing.T) {
-	serviceConfig := newServiceConfig(image)
+func TestServiceConfig_Attr_ExistsOnMinimal(t *testing.T) {
+	serviceConfig := newMinimalServiceConfig(image)
+	attr, err := serviceConfig.Attr(serviceConfigImageAttr)
+	require.Nil(t, err)
+	require.Equal(t, starlark.String(image), attr)
+
+	_, err = serviceConfig.Attr(serviceConfigPortsAttr)
+	require.NotNil(t, err)
+
+	_, err = serviceConfig.Attr(serviceConfigPublicPortsAttr)
+	require.NotNil(t, err)
+
+	_, err = serviceConfig.Attr(serviceConfigFilesAttr)
+	require.NotNil(t, err)
+
+	_, err = serviceConfig.Attr(serviceConfigEntrypointAttr)
+	require.NotNil(t, err)
+
+	_, err = serviceConfig.Attr(serviceConfigCmdAttr)
+	require.NotNil(t, err)
+
+	_, err = serviceConfig.Attr(serviceConfigEnvVarsAttr)
+	require.NotNil(t, err)
+
+	_, err = serviceConfig.Attr(serviceConfigPrivateIpAddressPlaceholderAttr)
+	require.NotNil(t, err)
+
+	_, err = serviceConfig.Attr(serviceConfigSubnetworkAttr)
+	require.NotNil(t, err)
+
+	_, err = serviceConfig.Attr("attribute-that-definitely-does-not-exist")
+	require.NotNil(t, err)
+}
+
+func TestServiceConfig_Attr_ExistsOnFull(t *testing.T) {
+	privatePorts := newPortsMap(t, 1323)
+	publicPorts := newPortsMap(t, 80)
+	files := newStarlarkDict(t, "/path/to/file", "file1")
+	entrypoint := newStarlarkList("bash")
+	cmd := newStarlarkList("-c sleep 99")
+	envVars := newStarlarkDict(t, "VAR", "VALUE")
+	privateIpAddressPlaceholder := starlark.String("<IP_ADDRESS>")
+	subnetwork := starlark.String("subnetwork_1")
+	serviceConfig := NewServiceConfig(
+		starlark.String(image),
+		privatePorts,
+		publicPorts,
+		files,
+		entrypoint,
+		cmd,
+		envVars,
+		&privateIpAddressPlaceholder,
+		&subnetwork,
+	)
+
 	attr, err := serviceConfig.Attr(serviceConfigImageAttr)
 	require.Nil(t, err)
 	require.Equal(t, starlark.String(image), attr)
 
 	attr, err = serviceConfig.Attr(serviceConfigPortsAttr)
 	require.Nil(t, err)
-	require.Nil(t, attr)
+	require.Equal(t, privatePorts, attr)
 
 	attr, err = serviceConfig.Attr(serviceConfigPublicPortsAttr)
 	require.Nil(t, err)
-	require.Nil(t, attr)
+	require.Equal(t, publicPorts, attr)
 
 	attr, err = serviceConfig.Attr(serviceConfigFilesAttr)
 	require.Nil(t, err)
-	require.Nil(t, attr)
+	require.Equal(t, files, attr)
 
 	attr, err = serviceConfig.Attr(serviceConfigEntrypointAttr)
 	require.Nil(t, err)
-	require.Nil(t, attr)
+	require.Equal(t, entrypoint, attr)
 
 	attr, err = serviceConfig.Attr(serviceConfigCmdAttr)
 	require.Nil(t, err)
-	require.Nil(t, attr)
+	require.Equal(t, cmd, attr)
 
 	attr, err = serviceConfig.Attr(serviceConfigEnvVarsAttr)
 	require.Nil(t, err)
-	require.Nil(t, attr)
+	require.Equal(t, envVars, attr)
 
 	attr, err = serviceConfig.Attr(serviceConfigPrivateIpAddressPlaceholderAttr)
 	require.Nil(t, err)
-	require.Nil(t, attr)
+	require.Equal(t, privateIpAddressPlaceholder, attr)
 
 	attr, err = serviceConfig.Attr(serviceConfigSubnetworkAttr)
 	require.Nil(t, err)
-	require.Nil(t, attr)
+	require.Equal(t, subnetwork, attr)
+
+	_, err = serviceConfig.Attr("attribute-that-definitely-does-not-exist")
+	require.NotNil(t, err)
 }
 
 func TestServiceConfig_Attr_DoesNotExist(t *testing.T) {
-	serviceConfig := newServiceConfig(image)
+	serviceConfig := newMinimalServiceConfig(image)
 	attr, err := serviceConfig.Attr("do-not-exist")
 	expectedError := fmt.Sprintf("'%s' has no attribute 'do-not-exist'", ServiceConfigTypeName)
 	require.Equal(t, expectedError, err.Error())
@@ -83,11 +139,37 @@ func TestServiceConfig_Attr_DoesNotExist(t *testing.T) {
 }
 
 func TestServiceConfig_AttrNames(t *testing.T) {
-	serviceConfig := newServiceConfig(image)
+	serviceConfig := newMinimalServiceConfig(image)
 	attrs := serviceConfig.AttrNames()
 	expectedAttrs := []string{
 		serviceConfigImageAttr,
-		serviceConfigPortsAttr,
+	}
+	require.Equal(t, expectedAttrs, attrs)
+}
+
+func TestServiceConfig_AttrNames_OnFull(t *testing.T) {
+	privatePorts := newPortsMap(t, 1323)
+	publicPorts := newPortsMap(t, 80)
+	files := newStarlarkDict(t, "/path/to/file", "file1")
+	entrypoint := newStarlarkList("bash")
+	cmd := newStarlarkList("-c sleep 99")
+	envVars := newStarlarkDict(t, "VAR", "VALUE")
+	privateIpAddressPlaceholder := starlark.String("<IP_ADDRESS>")
+	subnetwork := starlark.String("subnetwork_1")
+	serviceConfig := NewServiceConfig(
+		starlark.String(image),
+		privatePorts,
+		publicPorts,
+		files,
+		entrypoint,
+		cmd,
+		envVars,
+		&privateIpAddressPlaceholder,
+		&subnetwork,
+	)
+	attrs := serviceConfig.AttrNames()
+	expectedAttrs := []string{
+		serviceConfigImageAttr, serviceConfigPortsAttr,
 		serviceConfigPublicPortsAttr,
 		serviceConfigFilesAttr,
 		serviceConfigEntrypointAttr,
@@ -105,7 +187,7 @@ func TestServiceConfig_MakeWithArgs_Minimal(t *testing.T) {
 	})
 	serviceConfig, err := MakeServiceConfig(nil, fakeBuiltin, args, noKwargs)
 	require.Nil(t, err)
-	expectedConnectionResult := newServiceConfig(image)
+	expectedConnectionResult := newMinimalServiceConfig(image)
 	require.Equal(t, expectedConnectionResult, serviceConfig)
 }
 
@@ -145,7 +227,7 @@ func TestServiceConfig_MakeWithKwargs_Minimal(t *testing.T) {
 	}
 	serviceConfig, err := MakeServiceConfig(nil, fakeBuiltin, noArgs, kwargs)
 	require.Nil(t, err)
-	expectedConnectionResult := newServiceConfig(image)
+	expectedConnectionResult := newMinimalServiceConfig(image)
 	require.Equal(t, expectedConnectionResult, serviceConfig)
 }
 
@@ -205,14 +287,14 @@ func TestServiceConfig_MakeWithKwargs_Full(t *testing.T) {
 }
 
 func TestServiceConfig_ToKurtosisType(t *testing.T) {
-	serviceConfig := newServiceConfig(image)
+	serviceConfig := newMinimalServiceConfig(image)
 	expectedKurtosisType := services.NewServiceConfigBuilder(image).Build()
 	convertedServiceConfig, err := serviceConfig.ToKurtosisType()
 	require.Nil(t, err)
 	require.Equal(t, expectedKurtosisType, convertedServiceConfig)
 }
 
-func newServiceConfig(image string) *ServiceConfig {
+func newMinimalServiceConfig(image string) *ServiceConfig {
 	return NewServiceConfig(
 		starlark.String(image),
 		nil,

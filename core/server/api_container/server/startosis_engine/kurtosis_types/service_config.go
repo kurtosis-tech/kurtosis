@@ -160,39 +160,79 @@ func (serviceConfig *ServiceConfig) Attr(name string) (starlark.Value, error) {
 	case serviceConfigImageAttr:
 		return serviceConfig.image, nil
 	case serviceConfigPortsAttr:
+		if serviceConfig.ports == nil {
+			break
+		}
 		return serviceConfig.ports, nil
 	case serviceConfigPublicPortsAttr:
+		if serviceConfig.publicPorts == nil {
+			break
+		}
 		return serviceConfig.publicPorts, nil
 	case serviceConfigFilesAttr:
+		if serviceConfig.files == nil {
+			break
+		}
 		return serviceConfig.files, nil
 	case serviceConfigEntrypointAttr:
+		if serviceConfig.entrypoint == nil {
+			break
+		}
 		return serviceConfig.entrypoint, nil
 	case serviceConfigCmdAttr:
+		if serviceConfig.cmd == nil {
+			break
+		}
 		return serviceConfig.cmd, nil
 	case serviceConfigEnvVarsAttr:
+		if serviceConfig.envVars == nil {
+			break
+		}
 		return serviceConfig.envVars, nil
 	case serviceConfigPrivateIpAddressPlaceholderAttr:
-		return serviceConfig.privateIpAddressPlaceholder, nil
+		if serviceConfig.privateIpAddressPlaceholder == nil {
+			break
+		}
+		return *serviceConfig.privateIpAddressPlaceholder, nil
 	case serviceConfigSubnetworkAttr:
-		return serviceConfig.subnetwork, nil
-	default:
-		return nil, startosis_errors.NewInterpretationError("'%s' has no attribute '%s'", ServiceConfigTypeName, name)
+		if serviceConfig.subnetwork == nil {
+			break
+		}
+		return *serviceConfig.subnetwork, nil
 	}
+	return nil, startosis_errors.NewInterpretationError("'%s' has no attribute '%s'", ServiceConfigTypeName, name)
 }
 
 // AttrNames implements the starlark.HasAttrs interface.
 func (serviceConfig *ServiceConfig) AttrNames() []string {
-	return []string{
-		serviceConfigImageAttr,
-		serviceConfigPortsAttr,
-		serviceConfigPublicPortsAttr,
-		serviceConfigFilesAttr,
-		serviceConfigEntrypointAttr,
-		serviceConfigCmdAttr,
-		serviceConfigEnvVarsAttr,
-		serviceConfigPrivateIpAddressPlaceholderAttr,
-		serviceConfigSubnetworkAttr,
+	attrs := []string{
+		serviceConfigImageAttr, // only required attribute
 	}
+	if serviceConfig.ports != nil {
+		attrs = append(attrs, serviceConfigPortsAttr)
+	}
+	if serviceConfig.publicPorts != nil {
+		attrs = append(attrs, serviceConfigPublicPortsAttr)
+	}
+	if serviceConfig.files != nil {
+		attrs = append(attrs, serviceConfigFilesAttr)
+	}
+	if serviceConfig.entrypoint != nil {
+		attrs = append(attrs, serviceConfigEntrypointAttr)
+	}
+	if serviceConfig.cmd != nil {
+		attrs = append(attrs, serviceConfigCmdAttr)
+	}
+	if serviceConfig.envVars != nil {
+		attrs = append(attrs, serviceConfigEnvVarsAttr)
+	}
+	if serviceConfig.privateIpAddressPlaceholder != nil {
+		attrs = append(attrs, serviceConfigPrivateIpAddressPlaceholderAttr)
+	}
+	if serviceConfig.subnetwork != nil {
+		attrs = append(attrs, serviceConfigSubnetworkAttr)
+	}
+	return attrs
 }
 
 func (serviceConfig *ServiceConfig) ToKurtosisType() (*kurtosis_core_rpc_api_bindings.ServiceConfig, *startosis_errors.InterpretationError) {
