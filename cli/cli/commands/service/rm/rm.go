@@ -26,12 +26,14 @@ const (
 
 	serviceIdArgKey = "service-id"
 
-	timeoutFlagKey = "timeout"
-
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
 
-	defaultContainerStopTimeoutSeconds = uint32(0)
+	starlarkScript = `
+def run(plan, args):
+	plan.remove_service(service_id=args.service_id)
+`
+	doNotDryRun = false
 )
 
 var ServiceRmCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -51,14 +53,7 @@ var ServiceRmCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCom
 			Key: serviceIdArgKey,
 		},
 	},
-	Flags: []*flags.FlagConfig{
-		{
-			Key:     timeoutFlagKey,
-			Usage:   "Number of seconds to wait for the service to gracefully stop before sending SIGKILL",
-			Type:    flags.FlagType_Uint32,
-			Default: fmt.Sprintf("%v", defaultContainerStopTimeoutSeconds),
-		},
-	},
+	Flags:   []*flags.FlagConfig{},
 	RunFunc: run,
 }
 
@@ -79,11 +74,6 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the service ID value using key '%v'", serviceIdArgKey)
 	}
 
-	timeoutSeconds, err := flags.GetUint32(timeoutFlagKey)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the timeout seconds value using key '%v'", timeoutFlagKey)
-	}
-
 	// TODO SWITCH TO RETURNING A KURTOSIS_CTX
 	getEnclavesResp, err := engineClient.GetEnclaves(ctx, &emptypb.Empty{})
 	if err != nil {
@@ -100,7 +90,7 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting an enclave context from enclave info for enclave '%v'", enclaveId)
 	}
 
-	if err := enclaveCtx.RemoveService(services.ServiceID(serviceId), uint64(timeoutSeconds)); err != nil {
+	if err := removeServiceStarlarkCommand(ctx, enclaveCtx, services.ServiceID(serviceId)); err != nil {
 		return stacktrace.Propagate(err, "An error occurred removing service '%v' from enclave '%v'", serviceId, enclaveId)
 	}
 	return nil
@@ -136,4 +126,21 @@ func getEnclaveContextFromEnclaveInfo(infoForEnclave *kurtosis_engine_rpc_api_bi
 	)
 
 	return enclaveCtx, nil
+}
+
+func removeServiceStarlarkCommand(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, serviceId services.ServiceID) error {
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkScript, fmt.Sprintf(`{"service_id": "%s"}`, serviceId), doNotDryRun)
+	if err != nil {
+		return stacktrace.Propagate(err, "An unexpected error occurred on Starlark for rendering template")
+	}
+	if runResult.ExecutionError != nil {
+		return stacktrace.NewError("An error occurred during Starlark script execution for rendering template: %s", runResult.ExecutionError.GetErrorMessage())
+	}
+	if runResult.InterpretationError != nil {
+		return stacktrace.NewError("An error occurred during Starlark script interpretation for rendering template: %s", runResult.InterpretationError.GetErrorMessage())
+	}
+	if len(runResult.ValidationErrors) > 0 {
+		return stacktrace.NewError("An error occurred during Starlark script validation for rendering template: %v", runResult.ValidationErrors)
+	}
+	return nil
 }

@@ -366,23 +366,6 @@ func (enclaveCtx *EnclaveContext) GetServiceContext(serviceId services.ServiceID
 	return serviceContext, nil
 }
 
-// Docs available at https://docs.kurtosis.com/sdk/#removeserviceserviceid-serviceid-uint64-containerstoptimeoutseconds
-func (enclaveCtx *EnclaveContext) RemoveService(serviceId services.ServiceID, containerStopTimeoutSeconds uint64) error {
-
-	logrus.Debugf("Removing service '%v'...", serviceId)
-	// NOTE: This is kinda weird - when we remove a service we can never get it back so having a container
-	//  stop timeout doesn't make much sense. It will make more sense when we can stop/start containers
-	// Independent of adding/removing them from the enclave
-	args := binding_constructors.NewRemoveServiceArgs(string(serviceId))
-	if _, err := enclaveCtx.client.RemoveService(context.Background(), args); err != nil {
-		return stacktrace.Propagate(err, "An error occurred removing service '%v' from the enclave", serviceId)
-	}
-
-	logrus.Debugf("Successfully removed service ID %v", serviceId)
-
-	return nil
-}
-
 // Docs available at https://docs.kurtosis.com/sdk/#repartitionnetworkmappartitionid-setserviceid-partitionservices-mappartitionid-mappartitionid-partitionconnection-partitionconnections-partitionconnection-defaultconnection
 func (enclaveCtx *EnclaveContext) RepartitionNetwork(
 	partitionServices map[PartitionID]map[services.ServiceID]bool,

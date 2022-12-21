@@ -480,21 +480,6 @@ export class EnclaveContext {
         return ok(serviceContext);
     }
 
-    // Docs available at https://docs.kurtosis.com/sdk/#removeserviceserviceid-serviceid-uint64-containerstoptimeoutseconds
-    public async removeService(serviceId: ServiceID): Promise<Result<null, Error>> {
-        log.debug("Removing service '" + serviceId + "'...");
-        const removeServiceArgs: RemoveServiceArgs = newRemoveServiceArgs(serviceId);
-
-        const removeServiceResult = await this.backend.removeService(removeServiceArgs)
-        if(removeServiceResult.isErr()){
-            return err(removeServiceResult.error)
-        }
-
-        log.debug("Successfully removed service ID " + serviceId);
-
-        return ok(null)
-    }
-
     // Docs available at https://docs.kurtosis.com/sdk/#repartitionnetworkmappartitionid-setserviceid-partitionservices-mappartitionid-mappartitionid-partitionconnection-partitionconnections-partitionconnection-defaultconnection
     public async repartitionNetwork(
             partitionServices: Map<PartitionID, Set<ServiceID>>,
