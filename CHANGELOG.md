@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.63.2](https://github.com/kurtosis-tech/kurtosis/compare/0.63.1...0.63.2) (2022-12-21)
+
+
+### Bug Fixes
+
+* Fix `ServiceConfig` attributes for `hasattr` to be backward compatible ([#779](https://github.com/kurtosis-tech/kurtosis/issues/779)) ([1361292](https://github.com/kurtosis-tech/kurtosis/commit/136129220e9d13f084b33db4ce174dcd8dfe319e))
+
 ## [0.63.1](https://github.com/kurtosis-tech/kurtosis/compare/0.63.0...0.63.1) (2022-12-20)
 
 
