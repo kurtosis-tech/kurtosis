@@ -97,7 +97,16 @@ func (instruction *AssertInstruction) Execute(ctx context.Context) (*string, err
 	if err != nil {
 		return nil, err
 	}
-	err = Assert(currentValue, instruction.assertion, instruction.target)
+	targetWithReplacedRuntimeValuesMaybe := instruction.target
+	targetStr, ok := instruction.target.(starlark.String)
+	if ok {
+		// target ws a string. Apply runtime value replacement in case it contains one
+		targetWithReplacedRuntimeValuesMaybe, err = magic_string_helper.GetRuntimeValueFromString(targetStr.GoString(), instruction.recipeExecutor)
+		if err != nil {
+			return nil, err
+		}
+	}
+	err = Assert(currentValue, instruction.assertion, targetWithReplacedRuntimeValuesMaybe)
 	if err != nil {
 		return nil, err
 	}
@@ -125,14 +134,14 @@ func (instruction *AssertInstruction) parseStartosisArgs(b *starlark.Builtin, ar
 		return startosis_errors.NewInterpretationError(err.Error())
 	}
 
-	instruction.assertion = string(assertionArg)
-	instruction.runtimeValue = string(runtimeValueArg)
+	instruction.assertion = assertionArg.GoString()
+	instruction.runtimeValue = runtimeValueArg.GoString()
 	instruction.target = targetArg
 
 	instruction.starlarkKwargs = starlark.StringDict{
-		runtimeValueArgName: starlark.String(instruction.runtimeValue),
-		assertionArgName:    starlark.String(instruction.assertion),
-		targetArgName:       instruction.target,
+		runtimeValueArgName: runtimeValueArg,
+		assertionArgName:    assertionArg,
+		targetArgName:       targetArg,
 	}
 	instruction.starlarkKwargs.Freeze()
 

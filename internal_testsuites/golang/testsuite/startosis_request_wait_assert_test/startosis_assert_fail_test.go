@@ -30,6 +30,9 @@ def run(plan):
 	)
 	response = plan.wait(get_recipe, "code", "==", 200, interval="100ms", timeout="30s")
 	plan.assert(response["code"], "!=", 200)
+
+	# dumb test to validate we can pass 2 runtime values here
+	plan.assert(response["code"], "==", response["code"])
 `
 )
 
