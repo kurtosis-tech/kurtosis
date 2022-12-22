@@ -30,6 +30,9 @@ const (
 	optionalIntervalArgName = "interval?"
 	optionalTimeoutArgName  = "timeout?"
 	emptyOptionalField      = ""
+
+	defaultInterval = 1 * time.Second
+	defaultTimeout  = 15 * time.Minute
 )
 
 func GenerateWaitBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, recipeExecutor *runtime_value_store.RuntimeValueStore, serviceNetwork service_network.ServiceNetwork) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
@@ -66,7 +69,8 @@ type WaitInstruction struct {
 	targetKey         string
 	assertion         string
 	target            starlark.Comparable
-	backoff           *backoff.ExponentialBackOff
+	backoff           backoff.BackOff
+	timeout           time.Duration
 }
 
 func newEmptyWaitInstructionInstruction(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition, runtimeValueStore *runtime_value_store.RuntimeValueStore) *WaitInstruction {
@@ -80,7 +84,8 @@ func newEmptyWaitInstructionInstruction(serviceNetwork service_network.ServiceNe
 		targetKey:         "",
 		assertion:         "",
 		target:            nil,
-		backoff:           backoff.NewExponentialBackOff(),
+		backoff:           nil,
+		timeout:           defaultTimeout,
 	}
 }
 
@@ -95,7 +100,8 @@ func newWaitInstructionInstructionForTest(serviceNetwork service_network.Service
 		targetKey:         targetKey,
 		assertion:         assertion,
 		target:            target,
-		backoff:           backoff.NewExponentialBackOff(),
+		backoff:           nil,
+		timeout:           defaultTimeout,
 	}
 }
 
@@ -127,7 +133,7 @@ func (instruction *WaitInstruction) Execute(ctx context.Context) (*string, error
 	for {
 		tries += 1
 		backoffDuration := instruction.backoff.NextBackOff()
-		if backoffDuration == backoff.Stop {
+		if backoffDuration == backoff.Stop || time.Since(startTime) > instruction.timeout {
 			timedOut = true
 			break
 		}
@@ -209,14 +215,19 @@ func (instruction *WaitInstruction) parseStartosisArgs(b *starlark.Builtin, args
 		if parseErr != nil {
 			return startosis_errors.WrapWithInterpretationError(parseErr, "An error occurred when parsing interval '%v'", optionalInterval.GoString())
 		}
-		instruction.backoff.InitialInterval = interval
+		instruction.backoff = backoff.NewConstantBackOff(interval)
+	} else {
+		instruction.backoff = backoff.NewConstantBackOff(defaultInterval)
 	}
+
 	if optionalTimeout != emptyOptionalField {
 		timeout, parseErr := time.ParseDuration(optionalTimeout.GoString())
 		if parseErr != nil {
 			return startosis_errors.NewInterpretationError("An error occurred when parsing timeout '%v'", optionalTimeout)
 		}
-		instruction.backoff.MaxElapsedTime = timeout
+		instruction.timeout = timeout
+	} else {
+		instruction.timeout = defaultTimeout
 	}
 
 	if _, found := assert.StringTokenToComparisonStarlarkToken[instruction.assertion]; !found && instruction.assertion != "IN" && instruction.assertion != "NOT_IN" {
