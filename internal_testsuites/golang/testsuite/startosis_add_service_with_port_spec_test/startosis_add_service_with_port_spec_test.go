@@ -30,7 +30,8 @@ def run(plan):
             image = DOCKER_GETTING_STARTED_IMAGE, 
             ports = {
                 "port1": PortSpec(number = 3333),
-                "port2": spec
+                "port2": spec,
+                "port3": PortSpec(number = 1234, transport_protocol = "TCP", application_protocol = "http"),
             }
         )
     )
@@ -60,4 +61,9 @@ func TestAddServiceWithPortSpec_Success(t *testing.T) {
 
 	require.Equal(t, services.TransportProtocol_UDP, ports["port2"].GetTransportProtocol())
 	require.Equal(t, uint16(5000), ports["port2"].GetNumber())
+
+	require.Equal(t, services.TransportProtocol_TCP, ports["port3"].GetTransportProtocol())
+	require.Equal(t, uint16(1234), ports["port3"].GetNumber())
+	require.Equal(t, "http", ports["port3"].GetMaybeApplicationProtocol())
+
 }
