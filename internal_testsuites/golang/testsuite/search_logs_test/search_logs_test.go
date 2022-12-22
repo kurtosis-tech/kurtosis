@@ -36,14 +36,15 @@ const (
 	secondFilterText    = "network"
 	matchRegexFilterStr = "Starting.*logs'"
 
-	waitForAllLogsBeingCollectedInSeconds = 3
-
 	testTimeOut = 90 * time.Second
 
 	logLine1 = "Starting feature 'centralized logs'"
 	logLine2 = "Starting feature 'network partitioning'"
 	logLine3 = "Starting feature 'network soft partitioning'"
 	logLine4 = "The data have being loaded"
+
+	getLogsMaxRetries = 5
+	getLogsTimeBetweenRetries = 1 * time.Second
 )
 
 var (
@@ -117,9 +118,14 @@ func TestSearchLogs(t *testing.T) {
 		userServiceGuids[serviceGuid] = true
 	}
 
-	time.Sleep(waitForAllLogsBeingCollectedInSeconds * time.Second)
+	expectedLogLinesByService := map[services.ServiceGUID][]string{}
 
 	for requestIndex, filter := range filtersByRequest {
+
+		for serviceGuid := range userServiceGuids {
+			expectedLogLinesByService[serviceGuid] = expectedLogLinesByRequest[requestIndex]
+		}
+
 		testEvaluationErr, receivedLogLinesByService, receivedNotFoundServiceGuids := test_helpers.GetLogsResponse(
 			t,
 			ctx,
@@ -127,9 +133,11 @@ func TestSearchLogs(t *testing.T) {
 			kurtosisCtx,
 			enclaveId,
 			userServiceGuids,
-			nil,
+			expectedLogLinesByService,
 			shouldNotFollowLogs,
 			&filter,
+			getLogsMaxRetries,
+			getLogsTimeBetweenRetries,
 		)
 
 		require.NoError(t, testEvaluationErr)

@@ -1,18 +1,23 @@
 import {
-    ServiceID,
-    EnclaveContext,
     ContainerConfig,
     ContainerConfigBuilder,
-    ServiceContext,
+    EnclaveContext,
+    EnclaveID,
+    FilesArtifactUUID,
+    KurtosisContext,
+    LogLineFilter,
     PartitionID,
     PortSpec,
-    TransportProtocol,
-    FilesArtifactUUID,
+    ServiceContext,
     ServiceGUID,
+    ServiceID,
+    ServiceLog,
+    TransportProtocol
 } from "kurtosis-sdk";
 import * as datastoreApi from "example-datastore-server-api-lib";
+import {GetArgs, GetResponse, UpsertArgs} from "example-datastore-server-api-lib";
 import * as serverApi from "example-api-server-api-lib";
-import { err, ok, Result } from "neverthrow";
+import {err, ok, Result} from "neverthrow";
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
 import * as grpc from "@grpc/grpc-js";
 import log from "loglevel";
@@ -20,7 +25,8 @@ import * as fs from 'fs';
 import * as path from "path";
 import * as os from "os";
 import axios from "axios";
-import {GetArgs, GetResponse, UpsertArgs} from "example-datastore-server-api-lib";
+import {Readable} from "stream";
+import {newReceivedStreamContentPromise, ReceivedStreamContent} from "./received_stream_content";
 
 const CONFIG_FILENAME = "config.json"
 const CONFIG_MOUNTPATH_ON_API_CONTAINER = "/config"
@@ -48,18 +54,18 @@ const API_PORT_SPEC = new PortSpec(
     TransportProtocol.TCP,
 )
 
-const FILE_SERVER_SERVICE_IMAGE         = "flashspys/nginx-static"
-const FILE_SERVER_PORT_ID               = "http"
-const FILE_SERVER_PRIVATE_PORT_NUM      = 80
+const FILE_SERVER_SERVICE_IMAGE = "flashspys/nginx-static"
+const FILE_SERVER_PORT_ID = "http"
+const FILE_SERVER_PRIVATE_PORT_NUM = 80
 
 const WAIT_FOR_STARTUP_TIME_BETWEEN_POLLS = 500
-const WAIT_FOR_STARTUP_MAX_RETRIES        = 15
-const WAIT_INITIAL_DELAY_MILLISECONDS     = 0
-const WAIT_FOR_AVAILABILITY_BODY_TEXT     = ""
+const WAIT_FOR_STARTUP_MAX_RETRIES = 15
+const WAIT_INITIAL_DELAY_MILLISECONDS = 0
+const WAIT_FOR_AVAILABILITY_BODY_TEXT = ""
 
-const USER_SERVICE_MOUNT_POINT_FOR_TEST_FILES_ARTIFACT  = "/static"
+const USER_SERVICE_MOUNT_POINT_FOR_TEST_FILES_ARTIFACT = "/static"
 
-const FILE_SERVER_PORT_SPEC = new PortSpec( FILE_SERVER_PRIVATE_PORT_NUM, TransportProtocol.TCP )
+const FILE_SERVER_PORT_SPEC = new PortSpec(FILE_SERVER_PRIVATE_PORT_NUM, TransportProtocol.TCP)
 
 // for validating data store is healthy
 /*
@@ -86,7 +92,7 @@ const TEST_DATASTORE_KEY = "my-key"
 const TEST_DATASTORE_VALUE = "test-value"
 
 
-class StartFileServerResponse  {
+class StartFileServerResponse {
     fileServerPublicIp: string
     fileServerPublicPortNum: number
 
@@ -101,8 +107,8 @@ export async function addDatastoreService(serviceId: ServiceID, enclaveContext: 
         serviceContext: ServiceContext;
         client: datastoreApi.DatastoreServiceClientNode;
         clientCloseFunction: () => void;
-    },Error>> {
-    
+    }, Error>> {
+
     const containerConfig = getDatastoreContainerConfig();
 
     const addServiceResult = await enclaveContext.addService(serviceId, containerConfig);
@@ -119,7 +125,7 @@ export async function addDatastoreService(serviceId: ServiceID, enclaveContext: 
 
     const publicIp = serviceContext.getMaybePublicIPAddress();
     const publicPortNum = publicPort.number;
-    const { client, clientCloseFunction } = createDatastoreClient(publicIp, publicPortNum);
+    const {client, clientCloseFunction} = createDatastoreClient(publicIp, publicPortNum);
 
     const waitForHealthyResult = await waitForHealthy(
         client,
@@ -132,7 +138,7 @@ export async function addDatastoreService(serviceId: ServiceID, enclaveContext: 
         return err(waitForHealthyResult.error);
     }
 
-    return ok({ serviceContext, client, clientCloseFunction });
+    return ok({serviceContext, client, clientCloseFunction});
 };
 
 export function createDatastoreClient(ipAddr: string, portNum: number): { client: datastoreApi.DatastoreServiceClientNode; clientCloseFunction: () => void } {
@@ -140,26 +146,26 @@ export function createDatastoreClient(ipAddr: string, portNum: number): { client
     const client = new datastoreApi.DatastoreServiceClientNode(url, grpc.credentials.createInsecure());
     const clientCloseFunction = () => client.close();
 
-    return { client, clientCloseFunction }
+    return {client, clientCloseFunction}
 };
 
-export async function addAPIService( serviceId: ServiceID, enclaveContext: EnclaveContext, datastoreIPInsideNetwork: string):
+export async function addAPIService(serviceId: ServiceID, enclaveContext: EnclaveContext, datastoreIPInsideNetwork: string):
     Promise<Result<{
         serviceContext: ServiceContext;
         client: serverApi.ExampleAPIServerServiceClientNode;
         clientCloseFunction: () => void;
     }, Error>> {
-  
+
     const addAPIServiceToPartitionResult = await addAPIServiceToPartition(
         serviceId,
         enclaveContext,
         datastoreIPInsideNetwork,
         DEFAULT_PARTITION_ID
     );
-    if(addAPIServiceToPartitionResult.isErr()) return err(addAPIServiceToPartitionResult.error)
-    const { serviceContext, client, clientCloseFunction} = addAPIServiceToPartitionResult.value
-  
-    return ok({ serviceContext, client, clientCloseFunction})
+    if (addAPIServiceToPartitionResult.isErr()) return err(addAPIServiceToPartitionResult.error)
+    const {serviceContext, client, clientCloseFunction} = addAPIServiceToPartitionResult.value
+
+    return ok({serviceContext, client, clientCloseFunction})
 }
 
 export async function addAPIServiceToPartition(
@@ -187,7 +193,7 @@ export async function addAPIServiceToPartition(
     const containerConfig = getApiServiceContainerConfig(datastoreConfigArtifactUuid)
 
     const addServiceToPartitionResult = await enclaveContext.addServiceToPartition(serviceId, partitionId, containerConfig)
-    if(addServiceToPartitionResult.isErr()) return err(addServiceToPartitionResult.error)
+    if (addServiceToPartitionResult.isErr()) return err(addServiceToPartitionResult.error)
 
     const serviceContext = addServiceToPartitionResult.value;
 
@@ -195,25 +201,25 @@ export async function addAPIServiceToPartition(
     if (publicPort === undefined) {
         return err(new Error(`No API service public port found for port ID '${API_PORT_ID}'`));
     }
-  
+
     const url = `${serviceContext.getMaybePublicIPAddress()}:${publicPort.number}`;
     const client = new serverApi.ExampleAPIServerServiceClientNode(url, grpc.credentials.createInsecure());
     const clientCloseFunction = () => client.close();
 
     const waitForHealthyResult = await waitForHealthy(client, API_WAIT_FOR_STARTUP_MAX_POLLS, API_WAIT_FOR_STARTUP_DELAY_MILLISECONDS)
 
-    if(waitForHealthyResult.isErr()) {
+    if (waitForHealthyResult.isErr()) {
         log.error("An error occurred waiting for the API service to become available")
         return err(waitForHealthyResult.error)
     }
-  
-    return ok({ serviceContext, client, clientCloseFunction })
+
+    return ok({serviceContext, client, clientCloseFunction})
 };
 
 export async function waitForHealthy(
-  client: datastoreApi.DatastoreServiceClientNode | serverApi.ExampleAPIServerServiceClientNode,
-  retries: number,
-  retriesDelayMilliseconds: number
+    client: datastoreApi.DatastoreServiceClientNode | serverApi.ExampleAPIServerServiceClientNode,
+    retries: number,
+    retriesDelayMilliseconds: number
 ): Promise<Result<null, Error>> {
 
     const emptyArgs: google_protobuf_empty_pb.Empty = new google_protobuf_empty_pb.Empty();
@@ -222,15 +228,15 @@ export async function waitForHealthy(
 
     const clientAvailability: () => Promise<Result<google_protobuf_empty_pb.Empty, Error>> = () => new Promise(async (resolve, _unusedReject) => {
         client.isAvailable(emptyArgs, (error: grpc.ServiceError | null, response?: google_protobuf_empty_pb.Empty) => {
-        if (error === null) {
-            if (!response) {
-                resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
+            if (error === null) {
+                if (!response) {
+                    resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
+                } else {
+                    resolve(ok(response));
+                }
             } else {
-                resolve(ok(response));
+                resolve(err(error));
             }
-        } else {
-            resolve(err(error));
-        }
         });
     });
 
@@ -248,17 +254,19 @@ export async function waitForHealthy(
 
 }
 
-export async function startFileServer(fileServerServiceId: ServiceID, filesArtifactUuid: string, pathToCheckOnFileServer: string, enclaveCtx: EnclaveContext) : Promise<Result<StartFileServerResponse, Error>> {
+export async function startFileServer(fileServerServiceId: ServiceID, filesArtifactUuid: string, pathToCheckOnFileServer: string, enclaveCtx: EnclaveContext): Promise<Result<StartFileServerResponse, Error>> {
     const filesArtifactsMountPoints = new Map<string, FilesArtifactUUID>()
     filesArtifactsMountPoints.set(USER_SERVICE_MOUNT_POINT_FOR_TEST_FILES_ARTIFACT, filesArtifactUuid)
 
     const fileServerContainerConfig = getFileServerContainerConfig(filesArtifactsMountPoints)
     const addServiceResult = await enclaveCtx.addService(fileServerServiceId, fileServerContainerConfig)
-    if(addServiceResult.isErr()){ throw addServiceResult.error }
+    if (addServiceResult.isErr()) {
+        throw addServiceResult.error
+    }
 
     const serviceContext = addServiceResult.value
     const publicPort = serviceContext.getPublicPorts().get(FILE_SERVER_PORT_ID)
-    if(publicPort === undefined){
+    if (publicPort === undefined) {
         throw new Error(`Expected to find public port for ID "${FILE_SERVER_PORT_ID}", but none was found`)
     }
 
@@ -275,7 +283,7 @@ export async function startFileServer(fileServerServiceId: ServiceID, filesArtif
         WAIT_FOR_AVAILABILITY_BODY_TEXT
     );
 
-    if(waitForHttpGetEndpointAvailabilityResult.isErr()){
+    if (waitForHttpGetEndpointAvailabilityResult.isErr()) {
         log.error("An error occurred waiting for the file server service to become available")
         throw waitForHttpGetEndpointAvailabilityResult.error
     }
@@ -288,10 +296,12 @@ export async function startFileServer(fileServerServiceId: ServiceID, filesArtif
 // Compare the file contents on the server against expectedContent and see if they match.
 export async function checkFileContents(ipAddress: string, portNum: number, filename: string, expectedContents: string): Promise<Result<null, Error>> {
     let fileContentResults = await getFileContents(ipAddress, portNum, filename)
-    if(fileContentResults.isErr()) { return err(fileContentResults.error)}
+    if (fileContentResults.isErr()) {
+        return err(fileContentResults.error)
+    }
 
     let dataAsString = String(fileContentResults.value)
-    if (dataAsString !== expectedContents){
+    if (dataAsString !== expectedContents) {
         return err(new Error(`The contents of '${filename}' do not match the expected content '${expectedContents}'.`))
     }
     return ok(null)
@@ -381,18 +391,18 @@ function getFileServerContainerConfig(filesArtifactMountPoints: Map<string, File
         .withFiles(filesArtifactMountPoints)
         .build()
 
-   return containerConfig
+    return containerConfig
 }
 
 async function getFileContents(ipAddress: string, portNum: number, relativeFilepath: string): Promise<Result<any, Error>> {
     let response;
     try {
         response = await axios(`http://${ipAddress}:${portNum}/${relativeFilepath}`)
-    } catch(error){
+    } catch (error) {
         log.error(`An error occurred getting the contents of file "${relativeFilepath}"`)
-        if(error instanceof Error){
+        if (error instanceof Error) {
             return err(error)
-        }else{
+        } else {
             return err(new Error("An error occurred getting the contents of file, but the error wasn't of type Error"))
         }
     }
@@ -401,7 +411,7 @@ async function getFileContents(ipAddress: string, portNum: number, relativeFilep
     return ok(bodyStr)
 }
 
-export async function validateDataStoreServiceIsHealthy(enclaveContext : EnclaveContext, serviceId: string, portId: string): Promise<Result<null, Error>> {
+export async function validateDataStoreServiceIsHealthy(enclaveContext: EnclaveContext, serviceId: string, portId: string): Promise<Result<null, Error>> {
     const getServiceContextResult = await enclaveContext.getServiceContext(serviceId)
     if (getServiceContextResult.isErr()) {
         log.error(`An error occurred getting the service context for service '${serviceId}'; this indicates that the module says it created a service that it actually didn't`)
@@ -431,7 +441,7 @@ export async function validateDataStoreServiceIsHealthy(enclaveContext : Enclave
         upsertArgs.setKey(TEST_DATASTORE_KEY)
         upsertArgs.setValue(TEST_DATASTORE_VALUE)
 
-        const upsertResponseResultPromise:Promise<Result<google_protobuf_empty_pb.Empty, Error>> = new Promise((resolve, _unusedReject) => {
+        const upsertResponseResultPromise: Promise<Result<google_protobuf_empty_pb.Empty, Error>> = new Promise((resolve, _unusedReject) => {
             datastoreClient.upsert(upsertArgs, (error: grpc.ServiceError | null, response?: google_protobuf_empty_pb.Empty) => {
                 if (error === null) {
                     if (!response) {
@@ -446,7 +456,7 @@ export async function validateDataStoreServiceIsHealthy(enclaveContext : Enclave
         })
 
         const upsertResponseResult = await upsertResponseResultPromise;
-        if(upsertResponseResult.isErr()){
+        if (upsertResponseResult.isErr()) {
             log.error(`An error occurred adding the test key to datastore service "${serviceId}"`)
             throw upsertResponseResult.error
         }
@@ -454,7 +464,7 @@ export async function validateDataStoreServiceIsHealthy(enclaveContext : Enclave
         const getArgs = new GetArgs();
         getArgs.setKey(TEST_DATASTORE_KEY)
 
-        const getResponseResultPromise:Promise<Result<GetResponse, Error>> = new Promise((resolve, _unusedReject) => {
+        const getResponseResultPromise: Promise<Result<GetResponse, Error>> = new Promise((resolve, _unusedReject) => {
             datastoreClient.get(getArgs, (error: grpc.ServiceError | null, response?: GetResponse) => {
                 if (error === null) {
                     if (!response) {
@@ -469,14 +479,14 @@ export async function validateDataStoreServiceIsHealthy(enclaveContext : Enclave
         })
 
         const getResponseResult = await getResponseResultPromise;
-        if(getResponseResult.isErr()){
+        if (getResponseResult.isErr()) {
             log.error(`An error occurred getting the test key to datastore service "${serviceId}"`)
             throw getResponseResult.error
         }
 
         const getResponse = getResponseResult.value;
         const actualValue = getResponse.getValue();
-        if(actualValue !== TEST_DATASTORE_VALUE){
+        if (actualValue !== TEST_DATASTORE_VALUE) {
             log.error(`Datastore service "${serviceId}" is storing value "${actualValue}" for the test key, which doesn't match the expected value ""${TEST_DATASTORE_VALUE}`)
         }
 
@@ -498,4 +508,94 @@ export function areEqualServiceGuidsSet(firstSet: Set<ServiceGUID>, secondSet: S
 
 export function delay(ms: number) {
     return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+export async function getLogsResponseAndEvaluateResponse(
+    kurtosisCtx: KurtosisContext,
+    enclaveId: EnclaveID,
+    serviceGuids: Set<ServiceGUID>,
+    expectedLogLinesByService: Map<ServiceGUID, ServiceLog[]>,
+    expectedNonExistenceServiceGuids: Set<ServiceGUID>,
+    shouldFollowLogs: boolean,
+    logLineFilter: LogLineFilter | undefined,
+    maxRetries: number,
+    timeBetweenRetriesMillisecond: number,
+): Promise<Result<null, Error>> {
+
+    let receivedLogLinesByService: Map<ServiceGUID, Array<ServiceLog>> = new Map<ServiceGUID, Array<ServiceLog>>;
+    let receivedNotFoundServiceGuids: Set<ServiceGUID> = new Set<ServiceGUID>();
+
+
+    for (let i: number = 0; i < maxRetries; i++) {
+        let shouldRetry: boolean = false;
+        const streamUserServiceLogsPromise = await kurtosisCtx.getServiceLogs(enclaveId, serviceGuids, shouldFollowLogs, logLineFilter);
+
+        if (streamUserServiceLogsPromise.isErr()) {
+            return err(streamUserServiceLogsPromise.error);
+        }
+
+        const serviceLogsReadable: Readable = streamUserServiceLogsPromise.value;
+
+        const receivedStreamContentPromise: Promise<ReceivedStreamContent> = newReceivedStreamContentPromise(
+            serviceLogsReadable,
+        )
+
+        const receivedStreamContent: ReceivedStreamContent = await receivedStreamContentPromise;
+        receivedLogLinesByService = receivedStreamContent.receivedLogLinesByService;
+        receivedNotFoundServiceGuids = receivedStreamContent.receivedNotFoundServiceGuids;
+
+        for (let [serviceGuid, expectedLogLines] of expectedLogLinesByService) {
+            if (expectedLogLines === undefined && !receivedLogLinesByService.has(serviceGuid)){
+                break;
+            }
+
+            if (!receivedLogLinesByService.has(serviceGuid)) {
+                //retry because we are expecting to receive a defined 'receivedLogLines'
+                shouldRetry = true;
+                break;
+            }
+
+            const receivedLogLines: ServiceLog[] | undefined = receivedLogLinesByService.get(serviceGuid);
+
+            if (expectedLogLines !== undefined && receivedLogLines === undefined) {
+                //retry because we are expecting to receive a defined 'receivedLogLines'
+                shouldRetry = true;
+                break;
+            }
+
+            if (receivedLogLines !== undefined && expectedLogLines.length !== receivedLogLines.length) {
+                //retry because we are not received the expected number of lines
+                shouldRetry = true;
+                break;
+            }
+        }
+
+        if (!shouldRetry){
+            break;
+        }
+
+        await delay(timeBetweenRetriesMillisecond );
+    }
+
+    receivedLogLinesByService.forEach((receivedLogLines, serviceGuid) => {
+        const expectedLogLines = expectedLogLinesByService.get(serviceGuid);
+        if (expectedLogLines === undefined){
+            return err(new Error(`No expected log lines for service with GUID '${serviceGuid}' was found in the expectedLogLinesByService map'${expectedLogLinesByService}'`))
+        }
+        if ( expectedLogLines.length === receivedLogLines.length) {
+            receivedLogLines.forEach((logLine: ServiceLog, logLineIndex: number) => {
+                if (expectedLogLines[logLineIndex].getContent() !== logLine.getContent()) {
+                    return err(new Error(`Expected to match the number ${logLineIndex} log line with this value ${expectedLogLines[logLineIndex]} but this one was received instead ${logLine.getContent()}`));
+                }
+            })
+        } else {
+            throw new Error(`Expected to receive ${expectedLogLines.length} of log lines but ${receivedLogLines.length} log lines were received instead`);
+        }
+    })
+
+    if(!areEqualServiceGuidsSet(expectedNonExistenceServiceGuids, receivedNotFoundServiceGuids)) {
+        throw new Error(`Expected to receive a not found service GUIDs set equal to ${expectedNonExistenceServiceGuids} but a different set ${receivedNotFoundServiceGuids} was received instead`);
+    }
+
+    return ok(null)
 }

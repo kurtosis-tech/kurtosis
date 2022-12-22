@@ -336,66 +336,83 @@ func GetLogsResponse(
 	timeout time.Duration,
 	kurtosisCtx *kurtosis_context.KurtosisContext,
 	enclaveId enclaves.EnclaveID,
-	userServiceGuids map[services.ServiceGUID]bool,
+	serviceGuids map[services.ServiceGUID]bool,
 	expectedLogLinesByService map[services.ServiceGUID][]string,
 	shouldFollowLogs bool,
 	logLineFilter *kurtosis_context.LogLineFilter,
+	maxRetries uint,
+	timeBetweenRetries time.Duration,
 ) (
 	error,
 	map[services.ServiceGUID][]string,
 	map[services.ServiceGUID]bool,
 ) {
-	serviceLogsStreamContentChan, cancelStreamUserServiceLogsFunc, err := kurtosisCtx.GetServiceLogs(ctx, enclaveId, userServiceGuids, shouldFollowLogs, logLineFilter)
-	require.NoError(t, err, "An error occurred getting user service logs from user services with GUIDs '%+v' in enclave '%v' and with follow logs value '%v'", userServiceGuids, enclaveId, shouldFollowLogs)
-	defer cancelStreamUserServiceLogsFunc()
 
-	receivedNotFoundServiceGuids := map[services.ServiceGUID]bool{}
+	if expectedLogLinesByService == nil {
+		return stacktrace.NewError("The 'expectedLogLinesByService' can't be nil because it is needed for handling the retry strategy"), nil, nil
+	}
+
 	receivedLogLinesByService := map[services.ServiceGUID][]string{}
-
+	receivedNotFoundServiceGuids := map[services.ServiceGUID]bool{}
 	var testEvaluationErr error
 
-	shouldContinueInTheLoop := true
+	shouldCancelRetry := false
 
-	ticker := time.NewTicker(timeout)
+	for i := uint(0); i < maxRetries; i++ {
 
-	for shouldContinueInTheLoop {
-		select {
-		case <-ticker.C:
-			testEvaluationErr = stacktrace.NewError("Receiving stream logs in the test has reached the '%v' time out", timeout.String())
-			shouldContinueInTheLoop = false
-			break
-		case serviceLogsStreamContent, isChanOpen := <-serviceLogsStreamContentChan:
-			if !isChanOpen {
+		serviceLogsStreamContentChan, cancelStreamUserServiceLogsFunc, err := kurtosisCtx.GetServiceLogs(ctx, enclaveId, serviceGuids, shouldFollowLogs, logLineFilter)
+		require.NoError(t, err, "An error occurred getting user service logs from user services with GUIDs '%+v' in enclave '%v' and with follow logs value '%v'", serviceGuids, enclaveId, shouldFollowLogs)
+
+		shouldContinueInTheLoop := true
+
+		ticker := time.NewTicker(timeout)
+
+		for shouldContinueInTheLoop {
+			select {
+			case <-ticker.C:
+				testEvaluationErr = stacktrace.NewError("Receiving stream logs in the test has reached the '%v' time out", timeout.String())
 				shouldContinueInTheLoop = false
 				break
-			}
-
-			serviceLogsByGuid := serviceLogsStreamContent.GetServiceLogsByServiceGuids()
-			receivedNotFoundServiceGuids = serviceLogsStreamContent.GetNotFoundServiceGuids()
-
-			for serviceGuid, serviceLogLines := range serviceLogsByGuid {
-				receivedLogLines := []string{}
-				for _, serviceLogLine := range serviceLogLines {
-					receivedLogLines = append(receivedLogLines, serviceLogLine.GetContent())
+			case serviceLogsStreamContent, isChanOpen := <-serviceLogsStreamContentChan:
+				if !isChanOpen {
+					shouldContinueInTheLoop = false
+					break
 				}
-				receivedLogLinesByService[serviceGuid] = receivedLogLines
-			}
 
-			if expectedLogLinesByService != nil {
-				for serviceGuid, receivedLogLines := range receivedLogLinesByService{
+				serviceLogsByGuid := serviceLogsStreamContent.GetServiceLogsByServiceGuids()
+				receivedNotFoundServiceGuids = serviceLogsStreamContent.GetNotFoundServiceGuids()
+
+				for serviceGuid, serviceLogLines := range serviceLogsByGuid {
+					receivedLogLines := []string{}
+					for _, serviceLogLine := range serviceLogLines {
+						receivedLogLines = append(receivedLogLines, serviceLogLine.GetContent())
+					}
+					receivedLogLinesByService[serviceGuid] = receivedLogLines
+				}
+
+				for serviceGuid, receivedLogLines := range receivedLogLinesByService {
 					expectedLogLines, found := expectedLogLinesByService[serviceGuid]
 					if !found {
+						cancelStreamUserServiceLogsFunc()
 						return stacktrace.NewError("Expected to find expected log lines for service with GUID '%v' but none was found in the expected log lines by service map '%+v'", serviceGuid, expectedLogLinesByService), nil, nil
 					}
 					if len(receivedLogLines) != len(expectedLogLines) {
 						break
 					}
 					shouldContinueInTheLoop = false
+					shouldCancelRetry = true
 				}
 			}
 			if !shouldContinueInTheLoop {
-				break
+				cancelStreamUserServiceLogsFunc()
 			}
+		}
+
+		if shouldCancelRetry {
+			break
+		}
+		if i < maxRetries {
+			time.Sleep(timeBetweenRetries)
 		}
 	}
 

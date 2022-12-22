@@ -12,34 +12,35 @@ import {err} from "neverthrow";
 import {createEnclave} from "../../test_helpers/enclave_setup";
 import {Readable} from "stream";
 import {newReceivedStreamContentPromise, ReceivedStreamContent} from "../../test_helpers/received_stream_content";
-import {areEqualServiceGuidsSet, delay} from "../../test_helpers/test_helpers";
+import {areEqualServiceGuidsSet, delay, getLogsResponseAndEvaluateResponse} from "../../test_helpers/test_helpers";
 
 
-const TEST_NAME = "stream-logs"
-const IS_PARTITIONING_ENABLED = false
+const TEST_NAME = "stream-logs";
+const IS_PARTITIONING_ENABLED = false;
 
-const DOCKER_GETTING_STARTED_IMAGE = "docker/getting-started"
-const EXAMPLE_SERVICE_ID: ServiceID = "stream-logs"
-
-const WAIT_FOR_ALL_LOGS_BEING_COLLECTED_IN_SECONDS = 3
+const DOCKER_GETTING_STARTED_IMAGE = "docker/getting-started";
+const EXAMPLE_SERVICE_ID: ServiceID = "stream-logs";
 
 const SHOULD_FOLLOW_LOGS = true;
 const SHOULD_NOT_FOLLOW_LOGS = false;
 
-const NON_EXISTENT_SERVICE_GUID = "stream-logs-1667939326-non-existent"
+const GET_LOGS_MAX_RETRIES = 5;
+const GET_LOGS_TIME_BETWEEN_RETRIES_MILLISECONDS  = 1000;
+
+const NON_EXISTENT_SERVICE_GUID = "stream-logs-1667939326-non-existent";
 
 class ServiceLogsRequestInfoAndExpectedResults {
     readonly requestedEnclaveID: EnclaveID;
     readonly requestedServiceGuids: Set<ServiceGUID>;
     readonly requestedFollowLogs: boolean;
-    readonly expectedLogLines: Array<string>;
+    readonly expectedLogLines: ServiceLog[];
     readonly expectedNotFoundServiceGuids: Set<ServiceGUID>
 
     constructor(
         requestedEnclaveID: EnclaveID,
         requestedServiceGuids: Set<ServiceGUID>,
         requestedFollowLogs: boolean,
-        expectedLogLines: Array<string>,
+        expectedLogLines: ServiceLog[],
         expectedNotFoundServiceGuids: Set<ServiceGUID>
     ) {
         this.requestedEnclaveID = requestedEnclaveID;
@@ -50,9 +51,9 @@ class ServiceLogsRequestInfoAndExpectedResults {
     }
 }
 
-jest.setTimeout(180000)
+jest.setTimeout(180000);
 
-test("Test Stream Logs", TestStreamLogs)
+test("Test Stream Logs", TestStreamLogs);
 
 async function TestStreamLogs() {
 
@@ -78,10 +79,10 @@ async function TestStreamLogs() {
 
         const newKurtosisContextResult = await KurtosisContext.newKurtosisContextFromLocalEngine();
         if (newKurtosisContextResult.isErr()) {
-            log.error(`An error occurred connecting to the Kurtosis engine for running test stream logs`)
-            return err(newKurtosisContextResult.error)
+            log.error(`An error occurred connecting to the Kurtosis engine for running test stream logs`);
+            return err(newKurtosisContextResult.error);
         }
-        const kurtosisContext = newKurtosisContextResult.value;
+        const kurtosisCtx = newKurtosisContextResult.value;
 
         const enclaveID: EnclaveID = enclaveContext.getEnclaveId();
 
@@ -99,8 +100,6 @@ async function TestStreamLogs() {
         const serviceGuids: Set<ServiceGUID> = new Set<ServiceGUID>();
         serviceGuids.add(serviceGuid);
 
-        await delay(WAIT_FOR_ALL_LOGS_BEING_COLLECTED_IN_SECONDS * 1000);
-
         const serviceLogsRequestInfoAndExpectedResultsList = getServiceLogsRequestInfoAndExpectedResultsList(
             enclaveID,
             serviceGuids,
@@ -108,50 +107,40 @@ async function TestStreamLogs() {
 
         for (let serviceLogsRequestInfoAndExpectedResults of serviceLogsRequestInfoAndExpectedResultsList) {
 
-            const requestedEnclaveId = serviceLogsRequestInfoAndExpectedResults.requestedEnclaveID
-            const requestedServiceGuids = serviceLogsRequestInfoAndExpectedResults.requestedServiceGuids
-            const requestedShouldFollowLogs = serviceLogsRequestInfoAndExpectedResults.requestedFollowLogs
-            const expectedLogLines = serviceLogsRequestInfoAndExpectedResults.expectedLogLines
-            const expectedNonExistenceServiceGuids = serviceLogsRequestInfoAndExpectedResults.expectedNotFoundServiceGuids
+            const requestedEnclaveId = serviceLogsRequestInfoAndExpectedResults.requestedEnclaveID;
+            const requestedServiceGuids = serviceLogsRequestInfoAndExpectedResults.requestedServiceGuids;
+            const requestedShouldFollowLogs = serviceLogsRequestInfoAndExpectedResults.requestedFollowLogs;
+            const expectedLogLines = serviceLogsRequestInfoAndExpectedResults.expectedLogLines;
+            const expectedNonExistenceServiceGuids = serviceLogsRequestInfoAndExpectedResults.expectedNotFoundServiceGuids;
 
-            const streamUserServiceLogsPromise = await kurtosisContext.getServiceLogs(requestedEnclaveId, requestedServiceGuids, requestedShouldFollowLogs, undefined);
+            const requestedLogLineFilter = undefined;
 
-            if (streamUserServiceLogsPromise.isErr()) {
-                throw streamUserServiceLogsPromise.error;
-            }
+            let expectedLogLinesByService: Map<ServiceGUID, ServiceLog[]> = new Map<ServiceGUID, ServiceLog[]>;
+            for (const userServiceGuid of requestedServiceGuids) {
+                expectedLogLinesByService.set(userServiceGuid, expectedLogLines);
+            };
 
-            const serviceLogsReadable: Readable = streamUserServiceLogsPromise.value;
-
-            const receivedStreamContentPromise: Promise<ReceivedStreamContent> = newReceivedStreamContentPromise(
-                serviceLogsReadable,
-                serviceGuid,
-                expectedLogLines,
+            const getLogsResponseResult = await getLogsResponseAndEvaluateResponse(
+                kurtosisCtx,
+                requestedEnclaveId,
+                requestedServiceGuids,
+                expectedLogLinesByService,
                 expectedNonExistenceServiceGuids,
+                requestedShouldFollowLogs,
+                requestedLogLineFilter,
+                GET_LOGS_MAX_RETRIES,
+                GET_LOGS_TIME_BETWEEN_RETRIES_MILLISECONDS,
             )
 
-            const receivedStreamContent: ReceivedStreamContent = await receivedStreamContentPromise
-            const receivedLogLines: Array<ServiceLog> = receivedStreamContent.receivedLogLines
-            const receivedNotFoundServiceGuids: Set<ServiceGUID> = receivedStreamContent.receivedNotFoundServiceGuids
-
-            if ( expectedLogLines.length === receivedLogLines.length) {
-                receivedLogLines.forEach((logLine: ServiceLog, logLineIndex: number) => {
-                    if (expectedLogLines[logLineIndex] !== logLine.getContent()) {
-                        return err(new Error(`Expected to match the number ${logLineIndex} log line with this value ${expectedLogLines[logLineIndex]} but this one was received instead ${logLine.getContent()}`))
-                    }
-                })
-            } else {
-                throw new Error(`Expected to receive ${expectedLogLines.length} of log lines but ${receivedLogLines.length} log lines were received instead`)
-            }
-
-            if(!areEqualServiceGuidsSet(expectedNonExistenceServiceGuids, receivedNotFoundServiceGuids)) {
-                throw new Error(`Expected to receive a not found service GUIDs set equal to ${expectedNonExistenceServiceGuids} but a different set ${receivedNotFoundServiceGuids} was received instead`)
+            if (getLogsResponseResult.isErr()){
+                throw getLogsResponseResult.error
             }
         }
     } finally {
-        stopEnclaveFunction()
+        stopEnclaveFunction();
     }
 
-    jest.clearAllTimers()
+    jest.clearAllTimers();
 
 }
 
@@ -176,13 +165,18 @@ function getServiceLogsRequestInfoAndExpectedResultsList(
     enclaveID: EnclaveID,
     serviceGuids: Set<ServiceGUID>,
 ): Array<ServiceLogsRequestInfoAndExpectedResults> {
-    const expectedEmptyLogLineValues: Array<string> = [];
+    const expectedEmptyLogLineValues: ServiceLog[] = [];
     const emptyServiceGuids: Set<ServiceGUID> = new Set<ServiceGUID>();
 
     const nonExistentServiceGuids: Set<ServiceGUID> = new Set<ServiceGUID>();
     nonExistentServiceGuids.add(NON_EXISTENT_SERVICE_GUID);
 
-    const expectedLogLineValues = ["kurtosis", "test", "running", "successfully"];
+    const expectedLogLineValues: ServiceLog[] = [
+        new ServiceLog("kurtosis"),
+        new ServiceLog("test"),
+        new ServiceLog("running"),
+        new ServiceLog("successfully"),
+    ];
 
     const firstCallRequestInfoAndExpectedResults: ServiceLogsRequestInfoAndExpectedResults = new ServiceLogsRequestInfoAndExpectedResults(
         enclaveID,

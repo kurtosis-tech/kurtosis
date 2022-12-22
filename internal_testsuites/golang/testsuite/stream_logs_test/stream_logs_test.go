@@ -23,14 +23,15 @@ const (
 	dockerGettingStartedImage                    = "docker/getting-started"
 	exampleServiceId          services.ServiceID = "stream-logs"
 
-	waitForAllLogsBeingCollectedInSeconds = 3
-
 	testTimeOut = 90 * time.Second
 
 	shouldFollowLogs  = true
 	shouldNotFollowLogs = false
 
 	nonExistentServiceGuid = "stream-logs-1667939326-non-existent"
+
+	getLogsMaxRetries = 5
+	getLogsTimeBetweenRetries = 1 * time.Second
 )
 
 var doNotFilterLogLines *kurtosis_context.LogLineFilter = nil
@@ -72,8 +73,6 @@ func TestStreamLogs(t *testing.T) {
 		serviceGuid: true,
 	}
 
-	time.Sleep(waitForAllLogsBeingCollectedInSeconds * time.Second)
-
 	serviceLogsRequestInfoAndExpectedResultsList := getServiceLogsRequestInfoAndExpectedResultsList(
 		enclaveId,
 		serviceGuids,
@@ -102,6 +101,8 @@ func TestStreamLogs(t *testing.T) {
 			expectedLogLinesByService,
 			requestedShouldFollowLogs,
 			doNotFilterLogLines,
+			getLogsMaxRetries,
+			getLogsTimeBetweenRetries,
 		)
 
 		require.NoError(t, testEvaluationErr)
