@@ -121,11 +121,14 @@ func (instruction *WaitInstruction) Execute(ctx context.Context) (*string, error
 		assertErr  error
 	)
 	tries := 0
+	timedOut := false
 	lastResult := map[string]starlark.Comparable{}
+	startTime := time.Now()
 	for {
 		tries += 1
 		backoffDuration := instruction.backoff.NextBackOff()
 		if backoffDuration == backoff.Stop {
+			timedOut = true
 			break
 		}
 		lastResult, requestErr = instruction.recipe.Execute(ctx, instruction.serviceNetwork, instruction.runtimeValueStore)
@@ -145,13 +148,16 @@ func (instruction *WaitInstruction) Execute(ctx context.Context) (*string, error
 		}
 		break
 	}
+	if timedOut {
+		return nil, stacktrace.NewError("Wait timed-out waiting for the assertion to become valid. Waited for '%v'. Last assertion error was: \n%v", time.Since(startTime), assertErr)
+	}
 	if requestErr != nil {
 		return nil, stacktrace.Propagate(requestErr, "Error executing HTTP recipe")
 	}
 	if assertErr != nil {
 		return nil, stacktrace.Propagate(assertErr, "Error asserting HTTP recipe on '%v'", WaitBuiltinName)
 	}
-	instructionResult := fmt.Sprintf("Wait took %d tries. Assertion passed with following:\n%s", tries, instruction.recipe.ResultMapToString(lastResult))
+	instructionResult := fmt.Sprintf("Wait took %d tries (%v in total). Assertion passed with following:\n%s", tries, time.Since(startTime), instruction.recipe.ResultMapToString(lastResult))
 	return &instructionResult, nil
 }
 
