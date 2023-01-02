@@ -42,9 +42,9 @@ require (
 require github.com/bazelbuild/buildtools v0.0.0-20221110131218-762712d8ce3f
 
 require (
-	github.com/briandowns/spinner v1.19.0
+	github.com/briandowns/spinner v1.20.0
 	github.com/fatih/color v1.7.0
-	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211
+	golang.org/x/term v0.1.0
 )
 
 require (
