@@ -21,11 +21,18 @@ const (
 	serviceConfigEnvVarsAttr                     = "env_vars"
 	serviceConfigPrivateIpAddressPlaceholderAttr = "private_ip_address_placeholder"
 	serviceConfigSubnetworkAttr                  = "subnetwork"
+	serviceConfigCpuAllocationAttr               = "cpu_allocation"
+	serviceConfigMemoryAllocationAttr            = "memory_allocation"
 
 	emptyPrivateIpAddressPlaceholderValue = ""
 	emptySubnetworkValue                  = ""
 
 	argumentPatternStr = "%s=%s"
+)
+
+var (
+	emptyCpuAllocationValue    starlark.Int
+	emptyMemoryAllocationValue starlark.Int
 )
 
 // ServiceConfig A starlark.Value that represents a service config used in the add_service instruction
@@ -39,6 +46,8 @@ type ServiceConfig struct {
 	envVars                     *starlark.Dict
 	privateIpAddressPlaceholder *starlark.String
 	subnetwork                  *starlark.String
+	cpuAllocation               *starlark.Int
+	memoryAllocation            *starlark.Int
 }
 
 func NewServiceConfig(image starlark.String,
@@ -49,7 +58,9 @@ func NewServiceConfig(image starlark.String,
 	cmd *starlark.List,
 	envVars *starlark.Dict,
 	privateIpAddressPlaceholder *starlark.String,
-	subnetwork *starlark.String) *ServiceConfig {
+	subnetwork *starlark.String,
+	cpuAllocation *starlark.Int,
+	memoryAllocation *starlark.Int) *ServiceConfig {
 	return &ServiceConfig{
 		image:                       image,
 		ports:                       ports,
@@ -60,6 +71,8 @@ func NewServiceConfig(image starlark.String,
 		envVars:                     envVars,
 		privateIpAddressPlaceholder: privateIpAddressPlaceholder,
 		subnetwork:                  subnetwork,
+		cpuAllocation:               cpuAllocation,
+		memoryAllocation:            memoryAllocation,
 	}
 }
 
@@ -74,6 +87,8 @@ func MakeServiceConfig(_ *starlark.Thread, b *starlark.Builtin, args starlark.Tu
 		envVars                     *starlark.Dict
 		privateIpAddressPlaceholder starlark.String
 		subnetwork                  starlark.String
+		cpuAllocation               starlark.Int
+		memoryAllocation            starlark.Int
 	)
 	if err := starlark.UnpackArgs(b.Name(), args, kwargs,
 		serviceConfigImageAttr, &image,
@@ -85,6 +100,8 @@ func MakeServiceConfig(_ *starlark.Thread, b *starlark.Builtin, args starlark.Tu
 		makeOptional(serviceConfigEnvVarsAttr), &envVars,
 		makeOptional(serviceConfigPrivateIpAddressPlaceholderAttr), &privateIpAddressPlaceholder,
 		makeOptional(serviceConfigSubnetworkAttr), &subnetwork,
+		makeOptional(serviceConfigCpuAllocationAttr), &cpuAllocation,
+		makeOptional(serviceConfigMemoryAllocationAttr), &memoryAllocation,
 	); err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Cannot construct '%s' from the provided arguments.", ServiceConfigTypeName)
 	}
@@ -96,7 +113,15 @@ func MakeServiceConfig(_ *starlark.Thread, b *starlark.Builtin, args starlark.Tu
 	if subnetwork != emptySubnetworkValue {
 		subnetworkMaybe = &subnetwork
 	}
-	return NewServiceConfig(image, ports, publicPorts, files, entrypoint, cmd, envVars, privateIpAddressPlaceholderMaybe, subnetworkMaybe), nil
+	var cpuAllocationMaybe *starlark.Int
+	if cpuAllocation != emptyCpuAllocationValue {
+		cpuAllocationMaybe = &cpuAllocation
+	}
+	var memoryAllocationMaybe *starlark.Int
+	if memoryAllocation != emptyMemoryAllocationValue {
+		memoryAllocationMaybe = &memoryAllocation
+	}
+	return NewServiceConfig(image, ports, publicPorts, files, entrypoint, cmd, envVars, privateIpAddressPlaceholderMaybe, subnetworkMaybe, cpuAllocationMaybe, memoryAllocationMaybe), nil
 }
 
 // String the starlark.Value interface
@@ -128,6 +153,12 @@ func (serviceConfig *ServiceConfig) String() string {
 	}
 	if serviceConfig.subnetwork != nil {
 		args = append(args, fmt.Sprintf(argumentPatternStr, serviceConfigSubnetworkAttr, serviceConfig.subnetwork.String()))
+	}
+	if serviceConfig.cpuAllocation != nil {
+		args = append(args, fmt.Sprintf(argumentPatternStr, serviceConfigCpuAllocationAttr, serviceConfig.cpuAllocation.String()))
+	}
+	if serviceConfig.memoryAllocation != nil {
+		args = append(args, fmt.Sprintf(argumentPatternStr, serviceConfigMemoryAllocationAttr, serviceConfig.memoryAllocation.String()))
 	}
 	return fmt.Sprintf("%s(%s)", ServiceConfigTypeName, strings.Join(args, ", "))
 }
@@ -199,6 +230,16 @@ func (serviceConfig *ServiceConfig) Attr(name string) (starlark.Value, error) {
 			break
 		}
 		return *serviceConfig.subnetwork, nil
+	case serviceConfigCpuAllocationAttr:
+		if serviceConfig.cpuAllocation == nil {
+			break
+		}
+		return *serviceConfig.cpuAllocation, nil
+	case serviceConfigMemoryAllocationAttr:
+		if serviceConfig.memoryAllocation == nil {
+			break
+		}
+		return *serviceConfig.memoryAllocation, nil
 	}
 	return nil, startosis_errors.NewInterpretationError("'%s' has no attribute '%s'", ServiceConfigTypeName, name)
 }
@@ -231,6 +272,12 @@ func (serviceConfig *ServiceConfig) AttrNames() []string {
 	}
 	if serviceConfig.subnetwork != nil {
 		attrs = append(attrs, serviceConfigSubnetworkAttr)
+	}
+	if serviceConfig.cpuAllocation != nil {
+		attrs = append(attrs, serviceConfigCpuAllocationAttr)
+	}
+	if serviceConfig.memoryAllocation != nil {
+		attrs = append(attrs, serviceConfigMemoryAllocationAttr)
 	}
 	return attrs
 }
@@ -300,6 +347,22 @@ func (serviceConfig *ServiceConfig) ToKurtosisType() (*kurtosis_core_rpc_api_bin
 
 	if serviceConfig.subnetwork != nil && serviceConfig.subnetwork.GoString() != "" {
 		builder.WithSubnetwork(serviceConfig.subnetwork.GoString())
+	}
+
+	if serviceConfig.cpuAllocation != nil {
+		cpuAllocation, ok := serviceConfig.cpuAllocation.Uint64()
+		if !ok {
+			return nil, startosis_errors.NewInterpretationError("An error occurred parsing field '%v' with value '%v' to uint64", serviceConfigCpuAllocationAttr, serviceConfig.cpuAllocation)
+		}
+		builder.WithCpuAllocationMillicpus(cpuAllocation)
+	}
+
+	if serviceConfig.memoryAllocation != nil {
+		memoryAllocation, ok := serviceConfig.memoryAllocation.Uint64()
+		if !ok {
+			return nil, startosis_errors.NewInterpretationError("An error occurred parsing field '%v' with value '%v' to uint64", serviceConfigMemoryAllocationAttr, serviceConfig.memoryAllocation)
+		}
+		builder.WithMemoryAllocationMegabytes(memoryAllocation)
 	}
 
 	return builder.Build(), nil

@@ -65,6 +65,12 @@ func TestServiceConfig_Attr_ExistsOnMinimal(t *testing.T) {
 	_, err = serviceConfig.Attr(serviceConfigSubnetworkAttr)
 	require.NotNil(t, err)
 
+	_, err = serviceConfig.Attr(serviceConfigCpuAllocationAttr)
+	require.NotNil(t, err)
+
+	_, err = serviceConfig.Attr(serviceConfigMemoryAllocationAttr)
+	require.NotNil(t, err)
+
 	_, err = serviceConfig.Attr("attribute-that-definitely-does-not-exist")
 	require.NotNil(t, err)
 }
@@ -78,6 +84,9 @@ func TestServiceConfig_Attr_ExistsOnFull(t *testing.T) {
 	envVars := newStarlarkDict(t, "VAR", "VALUE")
 	privateIpAddressPlaceholder := starlark.String("<IP_ADDRESS>")
 	subnetwork := starlark.String("subnetwork_1")
+	memoryAllocation := starlark.MakeUint64(1024)
+	cpuAllocation := starlark.MakeUint64(2000)
+
 	serviceConfig := NewServiceConfig(
 		starlark.String(image),
 		privatePorts,
@@ -88,6 +97,8 @@ func TestServiceConfig_Attr_ExistsOnFull(t *testing.T) {
 		envVars,
 		&privateIpAddressPlaceholder,
 		&subnetwork,
+		&cpuAllocation,
+		&memoryAllocation,
 	)
 
 	attr, err := serviceConfig.Attr(serviceConfigImageAttr)
@@ -126,6 +137,14 @@ func TestServiceConfig_Attr_ExistsOnFull(t *testing.T) {
 	require.Nil(t, err)
 	require.Equal(t, subnetwork, attr)
 
+	attr, err = serviceConfig.Attr(serviceConfigCpuAllocationAttr)
+	require.Nil(t, err)
+	require.Equal(t, cpuAllocation, attr)
+
+	attr, err = serviceConfig.Attr(serviceConfigMemoryAllocationAttr)
+	require.Nil(t, err)
+	require.Equal(t, memoryAllocation, attr)
+
 	_, err = serviceConfig.Attr("attribute-that-definitely-does-not-exist")
 	require.NotNil(t, err)
 }
@@ -156,6 +175,9 @@ func TestServiceConfig_AttrNames_OnFull(t *testing.T) {
 	envVars := newStarlarkDict(t, "VAR", "VALUE")
 	privateIpAddressPlaceholder := starlark.String("<IP_ADDRESS>")
 	subnetwork := starlark.String("subnetwork_1")
+	memoryAllocation := starlark.MakeUint64(1024)
+	cpuAllocation := starlark.MakeUint64(2000)
+
 	serviceConfig := NewServiceConfig(
 		starlark.String(image),
 		privatePorts,
@@ -166,6 +188,8 @@ func TestServiceConfig_AttrNames_OnFull(t *testing.T) {
 		envVars,
 		&privateIpAddressPlaceholder,
 		&subnetwork,
+		&cpuAllocation,
+		&memoryAllocation,
 	)
 	attrs := serviceConfig.AttrNames()
 	expectedAttrs := []string{
@@ -177,6 +201,8 @@ func TestServiceConfig_AttrNames_OnFull(t *testing.T) {
 		serviceConfigEnvVarsAttr,
 		serviceConfigPrivateIpAddressPlaceholderAttr,
 		serviceConfigSubnetworkAttr,
+		serviceConfigCpuAllocationAttr,
+		serviceConfigMemoryAllocationAttr,
 	}
 	require.Equal(t, expectedAttrs, attrs)
 }
@@ -200,6 +226,8 @@ func TestServiceConfig_MakeWithArgs_Full(t *testing.T) {
 	envVars := newStarlarkDict(t, "VAR", "VALUE")
 	privateIpAddressPlaceholder := starlark.String("<IP_ADDRESS>")
 	subnetwork := starlark.String("subnetwork_1")
+	memoryAllocation := starlark.MakeUint64(1024)
+	cpuAllocation := starlark.MakeUint64(2000)
 
 	args := starlark.Tuple([]starlark.Value{
 		starlark.String(image),
@@ -211,10 +239,12 @@ func TestServiceConfig_MakeWithArgs_Full(t *testing.T) {
 		envVars,
 		privateIpAddressPlaceholder,
 		subnetwork,
+		cpuAllocation,
+		memoryAllocation,
 	})
 	serviceConfig, err := MakeServiceConfig(nil, fakeBuiltin, args, noKwargs)
 	require.Nil(t, err)
-	expectedConnectionResult := NewServiceConfig(starlark.String(image), privatePorts, publicPorts, files, entrypoint, cmd, envVars, &privateIpAddressPlaceholder, &subnetwork)
+	expectedConnectionResult := NewServiceConfig(starlark.String(image), privatePorts, publicPorts, files, entrypoint, cmd, envVars, &privateIpAddressPlaceholder, &subnetwork, &cpuAllocation, &memoryAllocation)
 	require.Equal(t, expectedConnectionResult, serviceConfig)
 }
 
@@ -240,6 +270,8 @@ func TestServiceConfig_MakeWithKwargs_Full(t *testing.T) {
 	envVars := newStarlarkDict(t, "VAR", "VALUE")
 	privateIpAddressPlaceholder := starlark.String("<IP_ADDRESS>")
 	subnetwork := starlark.String("subnetwork_1")
+	memoryAllocation := starlark.MakeUint64(1024)
+	cpuAllocation := starlark.MakeUint64(2000)
 
 	kwargs := []starlark.Tuple{
 		starlark.Tuple([]starlark.Value{
@@ -278,11 +310,19 @@ func TestServiceConfig_MakeWithKwargs_Full(t *testing.T) {
 			starlark.String(serviceConfigSubnetworkAttr),
 			subnetwork,
 		}),
+		starlark.Tuple([]starlark.Value{
+			starlark.String(serviceConfigMemoryAllocationAttr),
+			memoryAllocation,
+		}),
+		starlark.Tuple([]starlark.Value{
+			starlark.String(serviceConfigCpuAllocationAttr),
+			cpuAllocation,
+		}),
 	}
 
 	serviceConfig, err := MakeServiceConfig(nil, fakeBuiltin, noArgs, kwargs)
 	require.Nil(t, err)
-	expectedConnectionResult := NewServiceConfig(starlark.String(image), privatePorts, publicPorts, files, entrypoint, cmd, envVars, &privateIpAddressPlaceholder, &subnetwork)
+	expectedConnectionResult := NewServiceConfig(starlark.String(image), privatePorts, publicPorts, files, entrypoint, cmd, envVars, &privateIpAddressPlaceholder, &subnetwork, &cpuAllocation, &memoryAllocation)
 	require.Equal(t, expectedConnectionResult, serviceConfig)
 }
 
@@ -297,6 +337,8 @@ func TestServiceConfig_ToKurtosisType(t *testing.T) {
 func newMinimalServiceConfig(image string) *ServiceConfig {
 	return NewServiceConfig(
 		starlark.String(image),
+		nil,
+		nil,
 		nil,
 		nil,
 		nil,

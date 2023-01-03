@@ -26,7 +26,8 @@ def run(plan):
 	
 	config = ServiceConfig(
 		image = DOCKER_GETTING_STARTED_IMAGE,
-		ports = {}
+		cpu_allocation = 500,
+		memory_allocation = 512,
 	)
 	
 	plan.add_service(service_id = SERVICE_ID, config = config)

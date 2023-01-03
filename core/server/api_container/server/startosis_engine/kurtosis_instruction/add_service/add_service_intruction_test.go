@@ -22,6 +22,8 @@ const (
 	testContainerImageName   = "kurtosistech/example-datastore-server"
 	testSubnetwork           = "subnetwork_1"
 	testIpAddressPlaceholder = "<IP_ADDRESS>"
+	testMemoryAllocation     = 1024
+	testCpuAllocation        = 2000
 )
 
 var (
@@ -37,7 +39,7 @@ func TestAddServiceInstruction_GetCanonicalizedInstruction(t *testing.T) {
 	addServiceInstruction.starlarkKwargs[serviceIdArgName] = starlark.String(testServiceId)
 	addServiceInstruction.starlarkKwargs[serviceConfigArgName] = newTestStarlarkServiceConfig(t)
 
-	expectedOutput := `add_service(config=ServiceConfig(image="kurtosistech/example-datastore-server", ports={"grpc": PortSpec(number=1234, transport_protocol="TCP", application_protocol="http")}, public_ports={"grpc": PortSpec(number=80, transport_protocol="TCP", application_protocol="http")}, files={"path/to/file/1": "file_1", "path/to/file/2": "file_2"}, entrypoint=["127.0.0.0", "1234"], cmd=["bash", "-c", "/apps/main.py", "1234"], env_vars={"VAR_1": "VALUE_1", "VAR_2": "VALUE_2"}, private_ip_address_placeholder="<IP_ADDRESS>", subnetwork="subnetwork_1"), service_id="example-datastore-server-2")`
+	expectedOutput := `add_service(config=ServiceConfig(image="kurtosistech/example-datastore-server", ports={"grpc": PortSpec(number=1234, transport_protocol="TCP", application_protocol="http")}, public_ports={"grpc": PortSpec(number=80, transport_protocol="TCP", application_protocol="http")}, files={"path/to/file/1": "file_1", "path/to/file/2": "file_2"}, entrypoint=["127.0.0.0", "1234"], cmd=["bash", "-c", "/apps/main.py", "1234"], env_vars={"VAR_1": "VALUE_1", "VAR_2": "VALUE_2"}, private_ip_address_placeholder="<IP_ADDRESS>", subnetwork="subnetwork_1", cpu_allocation=2000, memory_allocation=1024), service_id="example-datastore-server-2")`
 	require.Equal(t, expectedOutput, addServiceInstruction.String())
 }
 
@@ -109,6 +111,10 @@ func TestAddServiceInstruction_SerializeAndParseAgain(t *testing.T) {
 		testIpAddressPlaceholder,
 	).WithSubnetwork(
 		"subnetwork_1",
+	).WithMemoryAllocationMegabytes(
+		testMemoryAllocation,
+	).WithCpuAllocationMillicpus(
+		testCpuAllocation,
 	)
 	starlarkArgs := starlark.StringDict{
 		serviceIdArgName:     starlark.String(testServiceId),
@@ -241,6 +247,9 @@ func newTestStarlarkServiceConfig(t *testing.T) *kurtosis_types.ServiceConfig {
 	ipAddressPlaceholder := starlark.String(testIpAddressPlaceholder)
 	subnetwork := starlark.String(testSubnetwork)
 
+	cpuAllocation := starlark.MakeUint64(testCpuAllocation)
+	memoryAllocation := starlark.MakeUint64(testMemoryAllocation)
+
 	return kurtosis_types.NewServiceConfig(
 		testContainerImageName,
 		privatePortsDict,
@@ -251,5 +260,7 @@ func newTestStarlarkServiceConfig(t *testing.T) *kurtosis_types.ServiceConfig {
 		envVar,
 		&ipAddressPlaceholder,
 		&subnetwork,
+		&cpuAllocation,
+		&memoryAllocation,
 	)
 }

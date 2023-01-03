@@ -1408,6 +1408,8 @@ func createSimpleAddServiceInstruction(t *testing.T, serviceId service.ServiceID
 		envVarsStarlarkArgs,
 		privateIPAddressPlaceholderStarlarkStarlarkArgMaybe,
 		nil,
+		nil,
+		nil,
 	)
 
 	serviceConfigBuilder := services.NewServiceConfigBuilder(

@@ -84,6 +84,16 @@ func (builder *ServiceConfigBuilder) WithSubnetwork(subnetwork string) *ServiceC
 	return builder
 }
 
+func (builder *ServiceConfigBuilder) WithCpuAllocationMillicpus(cpuAllocationMillicpus uint64) *ServiceConfigBuilder {
+	builder.cpuAllocationMillicpus = cpuAllocationMillicpus
+	return builder
+}
+
+func (builder *ServiceConfigBuilder) WithMemoryAllocationMegabytes(memoryAllocationMegabytes uint64) *ServiceConfigBuilder {
+	builder.memoryAllocationMegabytes = memoryAllocationMegabytes
+	return builder
+}
+
 func (builder *ServiceConfigBuilder) Build() *kurtosis_core_rpc_api_bindings.ServiceConfig {
 	return binding_constructors.NewServiceConfig(
 		builder.containerImageName,
