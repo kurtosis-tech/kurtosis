@@ -14,22 +14,62 @@ export class ReceivedStreamContent {
     }
 }
 
-export function newReceivedStreamContentPromise(
+export function receiveExpectedLogLinesFromServiceLogsReadable(
     serviceLogsReadable: Readable,
+    expectedLogLinesByService: Map<ServiceGUID, ServiceLog[]>,
 ): Promise<ReceivedStreamContent> {
     const receivedStreamContentPromise: Promise<ReceivedStreamContent> = new Promise<ReceivedStreamContent>((resolve, _unusedReject) => {
 
+        let receivedLogLinesByService: Map<ServiceGUID, Array<ServiceLog>> = new Map<ServiceGUID, Array<ServiceLog>>;
+        let receivedNotFoundServiceGuids: Set<ServiceGUID> = new Set<ServiceGUID>;
+
+        let allExpectedLogLinesWhereReceived = false;
+
         serviceLogsReadable.on('data', (serviceLogsStreamContent: ServiceLogsStreamContent) => {
-            const receivedLogLinesByService: Map<ServiceGUID, Array<ServiceLog>> = serviceLogsStreamContent.getServiceLogsByServiceGuids();
-            const notFoundServiceGuids: Set<ServiceGUID> = serviceLogsStreamContent.getNotFoundServiceGuids();
+            const serviceLogsByGuid: Map<ServiceGUID, Array<ServiceLog>> = serviceLogsStreamContent.getServiceLogsByServiceGuids();
+            receivedNotFoundServiceGuids = serviceLogsStreamContent.getNotFoundServiceGuids();
 
-            const receivedStreamContent: ReceivedStreamContent = new ReceivedStreamContent(
-                receivedLogLinesByService,
-                notFoundServiceGuids,
-            )
-            serviceLogsReadable.destroy()
-            resolve(receivedStreamContent)
+            for (let [serviceGuid, serviceLogLines] of serviceLogsByGuid) {
+                let receivedLogLines: ServiceLog[] = new Array<ServiceLog>;
+                if(receivedLogLinesByService.has(serviceGuid)){
+                    const userServiceLogLines: ServiceLog[] | undefined = receivedLogLinesByService.get(serviceGuid)
+                    if (userServiceLogLines !== undefined) {
+                        receivedLogLines = userServiceLogLines.concat(serviceLogLines)
+                    }
+                } else {
+                    receivedLogLines = serviceLogLines;
+                }
+                receivedLogLinesByService.set(serviceGuid, receivedLogLines)
+            }
 
+            for (let [serviceGuid, expectedLogLines] of expectedLogLinesByService) {
+                if (expectedLogLines === undefined && !receivedLogLinesByService.has(serviceGuid)) {
+                    break;
+                }
+
+                if (expectedLogLines.length < 0 && !receivedLogLinesByService.has(serviceGuid)) {
+                    break;
+                }
+
+                let receivedLogLines: ServiceLog[] | undefined = receivedLogLinesByService.get(serviceGuid);
+
+                if (receivedLogLines === undefined) {
+                    receivedLogLines = new Array<ServiceLog>;
+                }
+
+                if (expectedLogLines.length !== receivedLogLines.length) {
+                    break;
+                }
+                allExpectedLogLinesWhereReceived = true
+            }
+            if (allExpectedLogLinesWhereReceived) {
+                serviceLogsReadable.destroy()
+                const receivedStreamContent: ReceivedStreamContent = new ReceivedStreamContent(
+                    receivedLogLinesByService,
+                    receivedNotFoundServiceGuids,
+                )
+                resolve(receivedStreamContent)
+            }
         })
 
         serviceLogsReadable.on('error', function (readableErr: { message: any; }) {
@@ -45,6 +85,7 @@ export function newReceivedStreamContentPromise(
                 throw new Error("Expected read all user service logs but the user service readable logs object has finished before reading all the logs.")
             }
         })
+
     })
 
     return receivedStreamContentPromise;

@@ -20,28 +20,44 @@ const (
 	testName              = "stream-logs"
 	isPartitioningEnabled = false
 
-	dockerGettingStartedImage                    = "docker/getting-started"
 	exampleServiceId          services.ServiceID = "stream-logs"
 
 	testTimeOut = 90 * time.Second
 
-	shouldFollowLogs  = true
+	shouldFollowLogs    = true
 	shouldNotFollowLogs = false
 
 	nonExistentServiceGuid = "stream-logs-1667939326-non-existent"
 
-	getLogsMaxRetries = 5
-	getLogsTimeBetweenRetries = 1 * time.Second
+	firstLogLine  = "kurtosis"
+	secondLogLine = "test"
+	thirdLogLine  = "running"
+	lastLogLine   = "successfully"
 )
 
-var doNotFilterLogLines *kurtosis_context.LogLineFilter = nil
+var (
+	doNotFilterLogLines   *kurtosis_context.LogLineFilter = nil
+	doesContainTextFilter                                 = kurtosis_context.NewDoesContainTextLogLineFilter(lastLogLine)
+
+	exampleServiceLogLines = []string{
+		firstLogLine,
+		secondLogLine,
+		thirdLogLine,
+		lastLogLine,
+	}
+
+	logLinesByService = map[services.ServiceID][]string{
+		exampleServiceId: exampleServiceLogLines,
+	}
+)
 
 type serviceLogsRequestInfoAndExpectedResults struct {
-	requestedEnclaveID    enclaves.EnclaveID
-	requestedServiceGuids map[services.ServiceGUID]bool
-	requestedFollowLogs   bool
-	expectedLogLines []string
+	requestedEnclaveID           enclaves.EnclaveID
+	requestedServiceGuids        map[services.ServiceGUID]bool
+	requestedFollowLogs          bool
+	expectedLogLines             []string
 	expectedNotFoundServiceGuids map[services.ServiceGUID]bool
+	logLineFilter                *kurtosis_context.LogLineFilter
 }
 
 func TestStreamLogs(t *testing.T) {
@@ -53,24 +69,20 @@ func TestStreamLogs(t *testing.T) {
 	defer stopEnclaveFunc()
 
 	// ------------------------------------- TEST SETUP ----------------------------------------------
-	containerConfig := getExampleServiceConfig()
-	_, err = enclaveCtx.AddService(exampleServiceId, containerConfig)
+	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
+	require.NoError(t, err)
+
+	serviceList, err := test_helpers.AddServicesWithLogLines(enclaveCtx, logLinesByService)
 	require.NoError(t, err, "An error occurred adding the datastore service")
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
 
-	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
-	require.NoError(t, err)
-
 	enclaveId := enclaveCtx.GetEnclaveID()
 
-	serviceCtx, err := enclaveCtx.GetServiceContext(exampleServiceId)
-	require.NoError(t, err)
-
-	serviceGuid := serviceCtx.GetServiceGUID()
-
-	serviceGuids := map[services.ServiceGUID]bool{
-		serviceGuid: true,
+	serviceGuids := map[services.ServiceGUID]bool{}
+	for _, serviceCtx := range serviceList {
+		serviceGuid := serviceCtx.GetServiceGUID()
+		serviceGuids[serviceGuid] = true
 	}
 
 	serviceLogsRequestInfoAndExpectedResultsList := getServiceLogsRequestInfoAndExpectedResultsList(
@@ -85,9 +97,10 @@ func TestStreamLogs(t *testing.T) {
 		requestedShouldFollowLogs := serviceLogsRequestInfoAndExpectedResultsObj.requestedFollowLogs
 		expectedLogLines := serviceLogsRequestInfoAndExpectedResultsObj.expectedLogLines
 		expectedNonExistenceServiceGuids := serviceLogsRequestInfoAndExpectedResultsObj.expectedNotFoundServiceGuids
+		filter := serviceLogsRequestInfoAndExpectedResultsObj.logLineFilter
 
 		expectedLogLinesByService := map[services.ServiceGUID][]string{}
-		for userServiceGuid := range requestedServiceGuids{
+		for userServiceGuid := range requestedServiceGuids {
 			expectedLogLinesByService[userServiceGuid] = expectedLogLines
 		}
 
@@ -100,9 +113,7 @@ func TestStreamLogs(t *testing.T) {
 			requestedServiceGuids,
 			expectedLogLinesByService,
 			requestedShouldFollowLogs,
-			doNotFilterLogLines,
-			getLogsMaxRetries,
-			getLogsTimeBetweenRetries,
+			filter,
 		)
 
 		require.NoError(t, testEvaluationErr)
@@ -116,28 +127,10 @@ func TestStreamLogs(t *testing.T) {
 // ====================================================================================================
 //                                       Private helper functions
 // ====================================================================================================
-func getExampleServiceConfig() *services.ContainerConfig {
-
-	entrypointArgs := []string{"/bin/sh", "-c"}
-	cmdArgs := []string{"for i in kurtosis test running successfully; do echo \"$i\"; done;"}
-
-	containerConfig := services.NewContainerConfigBuilder(
-		dockerGettingStartedImage,
-	).WithEntrypointOverride(
-		entrypointArgs,
-	).WithCmdOverride(
-		cmdArgs,
-	).Build()
-	return containerConfig
-}
-
 func getServiceLogsRequestInfoAndExpectedResultsList(
 	enclaveId enclaves.EnclaveID,
 	serviceGuids map[services.ServiceGUID]bool,
 ) []*serviceLogsRequestInfoAndExpectedResults {
-
-	expectedLogLineValues := []string{"kurtosis", "test", "running", "successfully"}
-	expectedEmptyLogLineValues := []string{}
 
 	emptyServiceGuids := map[services.ServiceGUID]bool{}
 
@@ -148,32 +141,44 @@ func getServiceLogsRequestInfoAndExpectedResultsList(
 	firstCallRequestInfoAndExpectedResults := &serviceLogsRequestInfoAndExpectedResults{
 		requestedEnclaveID:           enclaveId,
 		requestedServiceGuids:        serviceGuids,
-		requestedFollowLogs:          shouldNotFollowLogs,
-		expectedLogLines:             expectedLogLineValues,
+		requestedFollowLogs:          shouldFollowLogs,
+		expectedLogLines:             []string{lastLogLine},
 		expectedNotFoundServiceGuids: emptyServiceGuids,
-
+		logLineFilter:                doesContainTextFilter,
 	}
 
 	secondCallRequestInfoAndExpectedResults := &serviceLogsRequestInfoAndExpectedResults{
 		requestedEnclaveID:           enclaveId,
 		requestedServiceGuids:        serviceGuids,
 		requestedFollowLogs:          shouldFollowLogs,
-		expectedLogLines:             expectedLogLineValues,
+		expectedLogLines:             []string{firstLogLine, secondLogLine, thirdLogLine, lastLogLine},
 		expectedNotFoundServiceGuids: emptyServiceGuids,
+		logLineFilter:                doNotFilterLogLines,
 	}
 
 	thirdCallRequestInfoAndExpectedResults := &serviceLogsRequestInfoAndExpectedResults{
 		requestedEnclaveID:           enclaveId,
+		requestedServiceGuids:        serviceGuids,
+		requestedFollowLogs:          shouldNotFollowLogs,
+		expectedLogLines:             []string{firstLogLine, secondLogLine, thirdLogLine, lastLogLine},
+		expectedNotFoundServiceGuids: emptyServiceGuids,
+		logLineFilter:                doNotFilterLogLines,
+	}
+
+	fourthCallRequestInfoAndExpectedResults := &serviceLogsRequestInfoAndExpectedResults{
+		requestedEnclaveID:           enclaveId,
 		requestedServiceGuids:        nonExistentServiceGuids,
 		requestedFollowLogs:          shouldFollowLogs,
-		expectedLogLines:             expectedEmptyLogLineValues,
+		expectedLogLines:             []string{},
 		expectedNotFoundServiceGuids: nonExistentServiceGuids,
+		logLineFilter:                doNotFilterLogLines,
 	}
 
 	serviceLogsRequestInfoAndExpectedResultsList := []*serviceLogsRequestInfoAndExpectedResults{
 		firstCallRequestInfoAndExpectedResults,
 		secondCallRequestInfoAndExpectedResults,
 		thirdCallRequestInfoAndExpectedResults,
+		fourthCallRequestInfoAndExpectedResults,
 	}
 
 	return serviceLogsRequestInfoAndExpectedResultsList

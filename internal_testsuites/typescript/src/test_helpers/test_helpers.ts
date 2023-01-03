@@ -27,7 +27,7 @@ import axios from "axios";
 import {GetArgs, GetResponse, UpsertArgs} from "example-datastore-server-api-lib";
 import {StarlarkRunResult} from "kurtosis-sdk/build/core/lib/enclaves/starlark_run_blocking";
 import {Readable} from "stream";
-import {newReceivedStreamContentPromise, ReceivedStreamContent} from "./received_stream_content";
+import {receiveExpectedLogLinesFromServiceLogsReadable, ReceivedStreamContent} from "./received_stream_content";
 
 const CONFIG_FILENAME = "config.json"
 const CONFIG_MOUNTPATH_ON_API_CONTAINER = "/config"
@@ -101,6 +101,7 @@ def run(plan, args):
 	plan.wait(get_recipe, "code", "==", 200, args.interval, args.timeout)
 `
 
+const DOCKER_GETTING_STARTED_IMAGE = "docker/getting-started";
 
 class StartFileServerResponse {
     fileServerPublicIp: string
@@ -149,7 +150,7 @@ export async function addDatastoreService(serviceId: ServiceID, enclaveContext: 
     }
 
     return ok({serviceContext, client, clientCloseFunction});
-};
+}
 
 export function createDatastoreClient(ipAddr: string, portNum: number): { client: datastoreApi.DatastoreServiceClientNode; clientCloseFunction: () => void } {
     const url = `${ipAddr}:${portNum}`;
@@ -157,7 +158,7 @@ export function createDatastoreClient(ipAddr: string, portNum: number): { client
     const clientCloseFunction = () => client.close();
 
     return {client, clientCloseFunction}
-};
+}
 
 export async function addAPIService(serviceId: ServiceID, enclaveContext: EnclaveContext, datastoreIPInsideNetwork: string):
     Promise<Result<{
@@ -224,7 +225,7 @@ export async function addAPIServiceToPartition(
     }
 
     return ok({serviceContext, client, clientCloseFunction})
-};
+}
 
 export async function waitForHealthy(
     client: datastoreApi.DatastoreServiceClientNode | serverApi.ExampleAPIServerServiceClientNode,
@@ -528,6 +529,29 @@ export function delay(ms: number) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+export async function addServicesWithLogLines(
+    enclaveContext: EnclaveContext,
+    logLinesByServiceID: Map<ServiceID, ServiceLog[]>,
+): Promise<Result<Map<ServiceID, ServiceContext>, Error>> {
+
+    const servicesAdded: Map<ServiceID, ServiceContext> = new Map<ServiceID, ServiceContext>();
+
+    for (let [serviceId, logLines] of logLinesByServiceID) {
+        const containerConf: ContainerConfig = getServiceWithLogLinesConfig(logLines);
+        const addServiceResult = await enclaveContext.addService(serviceId, containerConf);
+
+        if (addServiceResult.isErr()) {
+            return err(new Error(`An error occurred adding service '${serviceId}'`));
+        }
+
+        const serviceContext: ServiceContext = addServiceResult.value;
+
+        servicesAdded.set(serviceId, serviceContext)
+    }
+
+    return ok(servicesAdded)
+}
+
 export async function getLogsResponseAndEvaluateResponse(
     kurtosisCtx: KurtosisContext,
     enclaveId: EnclaveID,
@@ -536,71 +560,35 @@ export async function getLogsResponseAndEvaluateResponse(
     expectedNonExistenceServiceGuids: Set<ServiceGUID>,
     shouldFollowLogs: boolean,
     logLineFilter: LogLineFilter | undefined,
-    maxRetries: number,
-    timeBetweenRetriesMillisecond: number,
 ): Promise<Result<null, Error>> {
 
     let receivedLogLinesByService: Map<ServiceGUID, Array<ServiceLog>> = new Map<ServiceGUID, Array<ServiceLog>>;
     let receivedNotFoundServiceGuids: Set<ServiceGUID> = new Set<ServiceGUID>();
 
+    const streamUserServiceLogsPromise = await kurtosisCtx.getServiceLogs(enclaveId, serviceGuids, shouldFollowLogs, logLineFilter);
 
-    for (let i: number = 0; i < maxRetries; i++) {
-        let shouldRetry: boolean = false;
-        const streamUserServiceLogsPromise = await kurtosisCtx.getServiceLogs(enclaveId, serviceGuids, shouldFollowLogs, logLineFilter);
-
-        if (streamUserServiceLogsPromise.isErr()) {
-            return err(streamUserServiceLogsPromise.error);
-        }
-
-        const serviceLogsReadable: Readable = streamUserServiceLogsPromise.value;
-
-        const receivedStreamContentPromise: Promise<ReceivedStreamContent> = newReceivedStreamContentPromise(
-            serviceLogsReadable,
-        )
-
-        const receivedStreamContent: ReceivedStreamContent = await receivedStreamContentPromise;
-        receivedLogLinesByService = receivedStreamContent.receivedLogLinesByService;
-        receivedNotFoundServiceGuids = receivedStreamContent.receivedNotFoundServiceGuids;
-
-        for (let [serviceGuid, expectedLogLines] of expectedLogLinesByService) {
-            if (expectedLogLines === undefined && !receivedLogLinesByService.has(serviceGuid)){
-                break;
-            }
-
-            if (!receivedLogLinesByService.has(serviceGuid)) {
-                //retry because we are expecting to receive a defined 'receivedLogLines'
-                shouldRetry = true;
-                break;
-            }
-
-            const receivedLogLines: ServiceLog[] | undefined = receivedLogLinesByService.get(serviceGuid);
-
-            if (expectedLogLines !== undefined && receivedLogLines === undefined) {
-                //retry because we are expecting to receive a defined 'receivedLogLines'
-                shouldRetry = true;
-                break;
-            }
-
-            if (receivedLogLines !== undefined && expectedLogLines.length !== receivedLogLines.length) {
-                //retry because we are not received the expected number of lines
-                shouldRetry = true;
-                break;
-            }
-        }
-
-        if (!shouldRetry){
-            break;
-        }
-
-        await delay(timeBetweenRetriesMillisecond );
+    if (streamUserServiceLogsPromise.isErr()) {
+        return err(streamUserServiceLogsPromise.error);
     }
+
+    const serviceLogsReadable: Readable = streamUserServiceLogsPromise.value;
+
+    const receivedStreamContentPromise: Promise<ReceivedStreamContent> = receiveExpectedLogLinesFromServiceLogsReadable(
+        serviceLogsReadable,
+        expectedLogLinesByService,
+    )
+
+    const receivedStreamContent: ReceivedStreamContent = await receivedStreamContentPromise;
+    receivedLogLinesByService = receivedStreamContent.receivedLogLinesByService;
+    receivedNotFoundServiceGuids = receivedStreamContent.receivedNotFoundServiceGuids;
+
 
     receivedLogLinesByService.forEach((receivedLogLines, serviceGuid) => {
         const expectedLogLines = expectedLogLinesByService.get(serviceGuid);
-        if (expectedLogLines === undefined){
+        if (expectedLogLines === undefined) {
             return err(new Error(`No expected log lines for service with GUID '${serviceGuid}' was found in the expectedLogLinesByService map'${expectedLogLinesByService}'`))
         }
-        if ( expectedLogLines.length === receivedLogLines.length) {
+        if (expectedLogLines.length === receivedLogLines.length) {
             receivedLogLines.forEach((logLine: ServiceLog, logLineIndex: number) => {
                 if (expectedLogLines[logLineIndex].getContent() !== logLine.getContent()) {
                     return err(new Error(`Expected to match the number ${logLineIndex} log line with this value ${expectedLogLines[logLineIndex]} but this one was received instead ${logLine.getContent()}`));
@@ -611,9 +599,34 @@ export async function getLogsResponseAndEvaluateResponse(
         }
     })
 
-    if(!areEqualServiceGuidsSet(expectedNonExistenceServiceGuids, receivedNotFoundServiceGuids)) {
-        throw new Error(`Expected to receive a not found service GUIDs set equal to ${expectedNonExistenceServiceGuids} but a different set ${receivedNotFoundServiceGuids} was received instead`);
+    if (!areEqualServiceGuidsSet(expectedNonExistenceServiceGuids, receivedNotFoundServiceGuids)) {
+        throw new Error(`Expected to receive a not found service GUIDs set equal to '${[...expectedNonExistenceServiceGuids.entries()]}' but a different set '${[...receivedNotFoundServiceGuids.entries()]}' was received instead`);
     }
 
     return ok(null)
+}
+
+function getServiceWithLogLinesConfig(logLines: ServiceLog[]): ContainerConfig {
+
+    const entrypointArgs = ["/bin/sh", "-c"];
+
+    const logLinesWithQuotes: Array<string> = new Array<string>();
+
+    for (let logLine of logLines) {
+        const logLineWithQuotes: string = `"${logLine.getContent()}"`;
+        logLinesWithQuotes.push(logLineWithQuotes);
+    }
+
+    const logLineSeparator: string = " ";
+    const logLinesStr: string = logLinesWithQuotes.join(logLineSeparator);
+    const echoLogLinesLoopCmdStr: string = `for i in ${logLinesStr}; do echo "$i"; done;`
+
+    const cmdArgs = [echoLogLinesLoopCmdStr]
+
+    const containerConfig = new ContainerConfigBuilder(DOCKER_GETTING_STARTED_IMAGE)
+        .withEntrypointOverride(entrypointArgs)
+        .withCmdOverride(cmdArgs)
+        .build()
+
+    return containerConfig
 }

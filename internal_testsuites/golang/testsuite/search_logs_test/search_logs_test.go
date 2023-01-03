@@ -8,24 +8,19 @@ package search_logs_test
 
 import (
 	"context"
-	"fmt"
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
-	"strings"
-	"time"
-
-	//"github.com/kurtosis-tech/stacktrace"
 	"github.com/stretchr/testify/require"
 	"testing"
+	"time"
 )
 
 const (
 	testName              = "search-logs"
 	isPartitioningEnabled = false
 
-	dockerGettingStartedImage = "docker/getting-started"
+
 	exampleServiceIdPrefix    = "search-logs-"
 
 	shouldNotFollowLogs = false
@@ -42,9 +37,6 @@ const (
 	logLine2 = "Starting feature 'network partitioning'"
 	logLine3 = "Starting feature 'network soft partitioning'"
 	logLine4 = "The data have being loaded"
-
-	getLogsMaxRetries = 5
-	getLogsTimeBetweenRetries = 1 * time.Second
 )
 
 var (
@@ -107,9 +99,11 @@ func TestSearchLogs(t *testing.T) {
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	require.NoError(t, err)
 
-	serviceList := addServices(t, enclaveCtx, logLinesByService)
+	serviceList, err := test_helpers.AddServicesWithLogLines(enclaveCtx, logLinesByService)
+	require.NoError(t, err, "An error occurred adding services with log lines '%+v'", logLinesByService)
 	require.Equal(t, len(logLinesByService), len(serviceList))
 
+	// ------------------------------------- TEST RUN -------------------------------------------------
 	enclaveId := enclaveCtx.GetEnclaveID()
 
 	userServiceGuids := map[services.ServiceGUID]bool{}
@@ -136,8 +130,6 @@ func TestSearchLogs(t *testing.T) {
 			expectedLogLinesByService,
 			shouldNotFollowLogs,
 			&filter,
-			getLogsMaxRetries,
-			getLogsTimeBetweenRetries,
 		)
 
 		require.NoError(t, testEvaluationErr)
@@ -146,50 +138,4 @@ func TestSearchLogs(t *testing.T) {
 		}
 		require.Equal(t, expectedNonExistenceServiceGuids, receivedNotFoundServiceGuids)
 	}
-}
-
-// ====================================================================================================
-//                                       Private helper functions
-// ====================================================================================================
-
-func addServices(
-	t *testing.T,
-	enclaveCtx *enclaves.EnclaveContext,
-	logLinesByServiceID map[services.ServiceID][]string,
-) map[services.ServiceID]*services.ServiceContext {
-
-	servicesAdded := make(map[services.ServiceID]*services.ServiceContext, len(logLinesByServiceID))
-	for serviceId, logLines := range logLinesByServiceID {
-		containerConfig := getExampleServiceConfig(logLines)
-		serviceCtx, err := enclaveCtx.AddService(serviceId, containerConfig)
-		require.NoError(t, err, "An error occurred adding service with ID %v", serviceId)
-		servicesAdded[serviceId] = serviceCtx
-	}
-	return servicesAdded
-}
-
-func getExampleServiceConfig(logLines []string) *services.ContainerConfig {
-
-	entrypointArgs := []string{"/bin/sh", "-c"}
-
-	var logLinesWithQuotes []string
-	for _, logLine := range logLines {
-		logLineWithQuote := fmt.Sprintf("\"%s\"", logLine)
-		logLinesWithQuotes = append(logLinesWithQuotes, logLineWithQuote)
-	}
-
-	logLineSeparator := " "
-	logLinesStr := strings.Join(logLinesWithQuotes, logLineSeparator)
-	echoLogLinesLoopCmdStr := fmt.Sprintf("for i in %s; do echo \"$i\"; done;", logLinesStr)
-
-	cmdArgs := []string{echoLogLinesLoopCmdStr}
-
-	containerConfig := services.NewContainerConfigBuilder(
-		dockerGettingStartedImage,
-	).WithEntrypointOverride(
-		entrypointArgs,
-	).WithCmdOverride(
-		cmdArgs,
-	).Build()
-	return containerConfig
 }

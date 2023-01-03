@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"strings"
 	"testing"
 	"time"
 )
@@ -94,6 +95,10 @@ def run(plan, args):
 	plan.wait(get_recipe, "code", "==", 200, args.interval, args.timeout)
 `
 	waitForGetAvaliabilityStalarkScriptParams = `{ "service_id": "%s", "port_id": "%s", "endpoint": "/%s", "interval": "%dms", "timeout": "%dms"}`
+
+	noExpectedLogLines = 0
+
+	dockerGettingStartedImage = "docker/getting-started"
 )
 
 var fileServerPortSpec = services.NewPortSpec(fileServerPrivatePortNum, services.TransportProtocol_TCP, emptyApplicationProtocol)
@@ -354,8 +359,6 @@ func GetLogsResponse(
 	expectedLogLinesByService map[services.ServiceGUID][]string,
 	shouldFollowLogs bool,
 	logLineFilter *kurtosis_context.LogLineFilter,
-	maxRetries uint,
-	timeBetweenRetries time.Duration,
 ) (
 	error,
 	map[services.ServiceGUID][]string,
@@ -370,19 +373,16 @@ func GetLogsResponse(
 	receivedNotFoundServiceGuids := map[services.ServiceGUID]bool{}
 	var testEvaluationErr error
 
-	shouldCancelRetry := false
+	serviceLogsStreamContentChan, cancelStreamUserServiceLogsFunc, err := kurtosisCtx.GetServiceLogs(ctx, enclaveId, serviceGuids, shouldFollowLogs, logLineFilter)
+	defer cancelStreamUserServiceLogsFunc()
+	require.NoError(t, err, "An error occurred getting user service logs from user services with GUIDs '%+v' in enclave '%v' and with follow logs value '%v'", serviceGuids, enclaveId, shouldFollowLogs)
 
-	for i := uint(0); i < maxRetries; i++ {
+	shouldContinueInTheLoop := true
 
-		serviceLogsStreamContentChan, cancelStreamUserServiceLogsFunc, err := kurtosisCtx.GetServiceLogs(ctx, enclaveId, serviceGuids, shouldFollowLogs, logLineFilter)
-		require.NoError(t, err, "An error occurred getting user service logs from user services with GUIDs '%+v' in enclave '%v' and with follow logs value '%v'", serviceGuids, enclaveId, shouldFollowLogs)
+	ticker := time.NewTicker(timeout)
 
-		shouldContinueInTheLoop := true
-
-		ticker := time.NewTicker(timeout)
-
-		for shouldContinueInTheLoop {
-			select {
+	for shouldContinueInTheLoop {
+		select {
 			case <-ticker.C:
 				testEvaluationErr = stacktrace.NewError("Receiving stream logs in the test has reached the '%v' time out", timeout.String())
 				shouldContinueInTheLoop = false
@@ -401,37 +401,52 @@ func GetLogsResponse(
 					for _, serviceLogLine := range serviceLogLines {
 						receivedLogLines = append(receivedLogLines, serviceLogLine.GetContent())
 					}
-					receivedLogLinesByService[serviceGuid] = receivedLogLines
+					if _, found := receivedLogLinesByService[serviceGuid]; found {
+						receivedLogLinesByService[serviceGuid] = append(receivedLogLinesByService[serviceGuid], receivedLogLines...)
+					} else {
+						receivedLogLinesByService[serviceGuid] = receivedLogLines
+					}
 				}
 
-				for serviceGuid, receivedLogLines := range receivedLogLinesByService {
-					expectedLogLines, found := expectedLogLinesByService[serviceGuid]
-					if !found {
-						cancelStreamUserServiceLogsFunc()
-						return stacktrace.NewError("Expected to find expected log lines for service with GUID '%v' but none was found in the expected log lines by service map '%+v'", serviceGuid, expectedLogLinesByService), nil, nil
+				for serviceGuid, expectedLogLines := range expectedLogLinesByService {
+					receivedLogLines, found := receivedLogLinesByService[serviceGuid]
+					if len(expectedLogLines) == noExpectedLogLines && !found {
+						receivedLogLines = []string{}
+					} else if !found {
+						return stacktrace.NewError("Expected to receive log lines for service with GUID '%v' but none was found in the received log lines by service map '%+v'", serviceGuid, receivedLogLinesByService), nil, nil
 					}
 					if len(receivedLogLines) != len(expectedLogLines) {
 						break
 					}
 					shouldContinueInTheLoop = false
-					shouldCancelRetry = true
 				}
-			}
-			if !shouldContinueInTheLoop {
-				cancelStreamUserServiceLogsFunc()
-			}
-		}
 
-		if shouldCancelRetry {
-			break
-		}
-		if i < maxRetries {
-			time.Sleep(timeBetweenRetries)
+				if !shouldContinueInTheLoop {
+					break
+				}
 		}
 	}
 
 	return testEvaluationErr, receivedLogLinesByService, receivedNotFoundServiceGuids
 }
+
+func AddServicesWithLogLines(
+	enclaveCtx *enclaves.EnclaveContext,
+	logLinesByServiceID map[services.ServiceID][]string,
+) (map[services.ServiceID]*services.ServiceContext, error) {
+
+	servicesAdded := make(map[services.ServiceID]*services.ServiceContext, len(logLinesByServiceID))
+	for serviceId, logLines := range logLinesByServiceID {
+		containerConfig := getServiceWithLogLinesConfig(logLines)
+		serviceCtx, err := enclaveCtx.AddService(serviceId, containerConfig)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred adding service with ID %v", serviceId)
+		}
+		servicesAdded[serviceId] = serviceCtx
+	}
+	return servicesAdded, nil
+}
+
 
 // ====================================================================================================
 //
@@ -551,4 +566,30 @@ func waitForFileServerAvailability(ctx context.Context, enclaveCtx *enclaves.Enc
 		return stacktrace.NewError("An error has occurred getting endpoint availability during Starlark due to validation error %v", runResult.ValidationErrors)
 	}
 	return nil
+}
+
+func getServiceWithLogLinesConfig(logLines []string) *services.ContainerConfig {
+
+	entrypointArgs := []string{"/bin/sh", "-c"}
+
+	var logLinesWithQuotes []string
+	for _, logLine := range logLines {
+		logLineWithQuote := fmt.Sprintf("\"%s\"", logLine)
+		logLinesWithQuotes = append(logLinesWithQuotes, logLineWithQuote)
+	}
+
+	logLineSeparator := " "
+	logLinesStr := strings.Join(logLinesWithQuotes, logLineSeparator)
+	echoLogLinesLoopCmdStr := fmt.Sprintf("for i in %s; do echo \"$i\"; done;", logLinesStr)
+
+	cmdArgs := []string{echoLogLinesLoopCmdStr}
+
+	containerConfig := services.NewContainerConfigBuilder(
+		dockerGettingStartedImage,
+	).WithEntrypointOverride(
+		entrypointArgs,
+	).WithCmdOverride(
+		cmdArgs,
+	).Build()
+	return containerConfig
 }

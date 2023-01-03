@@ -1,53 +1,68 @@
 import {
-    ContainerConfig,
-    ContainerConfigBuilder,
     EnclaveID,
     KurtosisContext,
+    LogLineFilter,
+    ServiceContext,
     ServiceGUID,
     ServiceID,
     ServiceLog,
 } from "kurtosis-sdk";
 import log from "loglevel";
-import {err} from "neverthrow";
+import {err, Result} from "neverthrow";
 import {createEnclave} from "../../test_helpers/enclave_setup";
-import {Readable} from "stream";
-import {newReceivedStreamContentPromise, ReceivedStreamContent} from "../../test_helpers/received_stream_content";
-import {areEqualServiceGuidsSet, delay, getLogsResponseAndEvaluateResponse} from "../../test_helpers/test_helpers";
-
+import {addServicesWithLogLines, getLogsResponseAndEvaluateResponse} from "../../test_helpers/test_helpers";
 
 const TEST_NAME = "stream-logs";
 const IS_PARTITIONING_ENABLED = false;
 
-const DOCKER_GETTING_STARTED_IMAGE = "docker/getting-started";
 const EXAMPLE_SERVICE_ID: ServiceID = "stream-logs";
 
 const SHOULD_FOLLOW_LOGS = true;
 const SHOULD_NOT_FOLLOW_LOGS = false;
 
-const GET_LOGS_MAX_RETRIES = 5;
-const GET_LOGS_TIME_BETWEEN_RETRIES_MILLISECONDS  = 1000;
-
 const NON_EXISTENT_SERVICE_GUID = "stream-logs-1667939326-non-existent";
+
+const FIRST_LOG_LINE_STR = "kurtosis"
+const SECOND_LOG_LINE_STR = "test"
+const THIRD_LOG_LINE_STR = "running"
+const LAST_LOG_LINE_STR = "successfully"
+
+const FIRST_LOG_LINE = new ServiceLog(FIRST_LOG_LINE_STR)
+const SECOND_LOG_LINE = new ServiceLog(SECOND_LOG_LINE_STR)
+const THIRD_LOG_LINE = new ServiceLog(THIRD_LOG_LINE_STR)
+const LAST_LOG_LINE = new ServiceLog(LAST_LOG_LINE_STR)
+
+const DO_NOT_FILTER_LOG_LINES = undefined;
+const DOES_CONTAIN_TEXT_FILTER = LogLineFilter.NewDoesContainTextLogLineFilter(LAST_LOG_LINE_STR);
+
+const EXAMPLE_SERVICE_LOG_LINES = [FIRST_LOG_LINE, SECOND_LOG_LINE, THIRD_LOG_LINE, LAST_LOG_LINE];
+
+const LOG_LINES_BY_SERVICE = new Map<ServiceID, ServiceLog[]>([
+    [EXAMPLE_SERVICE_ID, EXAMPLE_SERVICE_LOG_LINES],
+])
 
 class ServiceLogsRequestInfoAndExpectedResults {
     readonly requestedEnclaveID: EnclaveID;
     readonly requestedServiceGuids: Set<ServiceGUID>;
     readonly requestedFollowLogs: boolean;
     readonly expectedLogLines: ServiceLog[];
-    readonly expectedNotFoundServiceGuids: Set<ServiceGUID>
+    readonly expectedNotFoundServiceGuids: Set<ServiceGUID>;
+    readonly logLineFilter: LogLineFilter | undefined;
 
     constructor(
         requestedEnclaveID: EnclaveID,
         requestedServiceGuids: Set<ServiceGUID>,
         requestedFollowLogs: boolean,
         expectedLogLines: ServiceLog[],
-        expectedNotFoundServiceGuids: Set<ServiceGUID>
+        expectedNotFoundServiceGuids: Set<ServiceGUID>,
+        logLineFilter: LogLineFilter | undefined
     ) {
         this.requestedEnclaveID = requestedEnclaveID;
         this.requestedServiceGuids = requestedServiceGuids;
         this.requestedFollowLogs = requestedFollowLogs;
-        this.expectedLogLines = expectedLogLines
+        this.expectedLogLines = expectedLogLines;
         this.expectedNotFoundServiceGuids = expectedNotFoundServiceGuids;
+        this.logLineFilter = logLineFilter;
     }
 }
 
@@ -67,16 +82,6 @@ async function TestStreamLogs() {
 
     try {
         // ------------------------------------- TEST SETUP ----------------------------------------------
-
-        const addServiceResult = await enclaveContext.addService(EXAMPLE_SERVICE_ID, containerConfig());
-
-        if (addServiceResult.isErr()) {
-            log.error("An error occurred adding the datastore service");
-            throw addServiceResult.error;
-        }
-
-        // ------------------------------------- TEST RUN ----------------------------------------------
-
         const newKurtosisContextResult = await KurtosisContext.newKurtosisContextFromLocalEngine();
         if (newKurtosisContextResult.isErr()) {
             log.error(`An error occurred connecting to the Kurtosis engine for running test stream logs`);
@@ -84,21 +89,28 @@ async function TestStreamLogs() {
         }
         const kurtosisCtx = newKurtosisContextResult.value;
 
-        const enclaveID: EnclaveID = enclaveContext.getEnclaveId();
+        const serviceListResult: Result<Map<ServiceID, ServiceContext>, Error> = await addServicesWithLogLines(enclaveContext, LOG_LINES_BY_SERVICE);
 
-        const getServiceContextResult = await enclaveContext.getServiceContext(EXAMPLE_SERVICE_ID);
-
-        if (getServiceContextResult.isErr()) {
-            log.error(`An error occurred getting the service context for service "${EXAMPLE_SERVICE_ID}"`);
-            throw getServiceContextResult.error;
+        if (serviceListResult.isErr()) {
+            throw new Error(`An error occurred adding the services for the test. Error:\n${serviceListResult.error}`);
         }
 
-        const serviceContext = getServiceContextResult.value;
+        const serviceList: Map<ServiceID, ServiceContext> = serviceListResult.value;
 
-        const serviceGuid = serviceContext.getServiceGUID();
+        if (LOG_LINES_BY_SERVICE.size != serviceList.size) {
+            throw new Error(`Expected number of added services '${LOG_LINES_BY_SERVICE.size}', but the actual number of added services is '${serviceList.size}'`);
+        }
+
+        // ------------------------------------- TEST RUN ----------------------------------------------
+
+        const enclaveID: EnclaveID = enclaveContext.getEnclaveId();
 
         const serviceGuids: Set<ServiceGUID> = new Set<ServiceGUID>();
-        serviceGuids.add(serviceGuid);
+
+        for (let [, serviceCtx] of serviceList) {
+            const serviceGuid = serviceCtx.getServiceGUID();
+            serviceGuids.add(serviceGuid);
+        }
 
         const serviceLogsRequestInfoAndExpectedResultsList = getServiceLogsRequestInfoAndExpectedResultsList(
             enclaveID,
@@ -112,13 +124,12 @@ async function TestStreamLogs() {
             const requestedShouldFollowLogs = serviceLogsRequestInfoAndExpectedResults.requestedFollowLogs;
             const expectedLogLines = serviceLogsRequestInfoAndExpectedResults.expectedLogLines;
             const expectedNonExistenceServiceGuids = serviceLogsRequestInfoAndExpectedResults.expectedNotFoundServiceGuids;
-
-            const requestedLogLineFilter = undefined;
+            const filter = serviceLogsRequestInfoAndExpectedResults.logLineFilter;
 
             let expectedLogLinesByService: Map<ServiceGUID, ServiceLog[]> = new Map<ServiceGUID, ServiceLog[]>;
             for (const userServiceGuid of requestedServiceGuids) {
                 expectedLogLinesByService.set(userServiceGuid, expectedLogLines);
-            };
+            }
 
             const getLogsResponseResult = await getLogsResponseAndEvaluateResponse(
                 kurtosisCtx,
@@ -127,12 +138,10 @@ async function TestStreamLogs() {
                 expectedLogLinesByService,
                 expectedNonExistenceServiceGuids,
                 requestedShouldFollowLogs,
-                requestedLogLineFilter,
-                GET_LOGS_MAX_RETRIES,
-                GET_LOGS_TIME_BETWEEN_RETRIES_MILLISECONDS,
+                filter,
             )
 
-            if (getLogsResponseResult.isErr()){
+            if (getLogsResponseResult.isErr()) {
                 throw getLogsResponseResult.error
             }
         }
@@ -141,72 +150,61 @@ async function TestStreamLogs() {
     }
 
     jest.clearAllTimers();
-
 }
 
 // ====================================================================================================
 //                                       Private helper functions
 // ====================================================================================================
-function containerConfig(): ContainerConfig {
-
-    const entrypointArgs = ["/bin/sh", "-c"]
-    const cmdArgs = ["for i in kurtosis test running successfully; do echo \"$i\"; done;"]
-
-    const containerConfig = new ContainerConfigBuilder(DOCKER_GETTING_STARTED_IMAGE)
-        .withEntrypointOverride(entrypointArgs)
-        .withCmdOverride(cmdArgs)
-        .build()
-
-    return containerConfig
-}
-
-
 function getServiceLogsRequestInfoAndExpectedResultsList(
     enclaveID: EnclaveID,
     serviceGuids: Set<ServiceGUID>,
 ): Array<ServiceLogsRequestInfoAndExpectedResults> {
-    const expectedEmptyLogLineValues: ServiceLog[] = [];
-    const emptyServiceGuids: Set<ServiceGUID> = new Set<ServiceGUID>();
 
+    const emptyServiceGuids: Set<ServiceGUID> = new Set<ServiceGUID>();
     const nonExistentServiceGuids: Set<ServiceGUID> = new Set<ServiceGUID>();
     nonExistentServiceGuids.add(NON_EXISTENT_SERVICE_GUID);
-
-    const expectedLogLineValues: ServiceLog[] = [
-        new ServiceLog("kurtosis"),
-        new ServiceLog("test"),
-        new ServiceLog("running"),
-        new ServiceLog("successfully"),
-    ];
 
     const firstCallRequestInfoAndExpectedResults: ServiceLogsRequestInfoAndExpectedResults = new ServiceLogsRequestInfoAndExpectedResults(
         enclaveID,
         serviceGuids,
-        SHOULD_NOT_FOLLOW_LOGS,
-        expectedLogLineValues,
+        SHOULD_FOLLOW_LOGS,
+        [LAST_LOG_LINE],
         emptyServiceGuids,
+        DOES_CONTAIN_TEXT_FILTER,
     )
 
     const secondCallRequestInfoAndExpectedResults: ServiceLogsRequestInfoAndExpectedResults = new ServiceLogsRequestInfoAndExpectedResults(
         enclaveID,
         serviceGuids,
         SHOULD_FOLLOW_LOGS,
-        expectedLogLineValues,
+        [FIRST_LOG_LINE, SECOND_LOG_LINE, THIRD_LOG_LINE, LAST_LOG_LINE],
         emptyServiceGuids,
+        DO_NOT_FILTER_LOG_LINES,
     )
 
     const thirdCallRequestInfoAndExpectedResults: ServiceLogsRequestInfoAndExpectedResults = new ServiceLogsRequestInfoAndExpectedResults(
         enclaveID,
+        serviceGuids,
+        SHOULD_NOT_FOLLOW_LOGS,
+        [FIRST_LOG_LINE, SECOND_LOG_LINE, THIRD_LOG_LINE, LAST_LOG_LINE],
+        emptyServiceGuids,
+        DO_NOT_FILTER_LOG_LINES,
+    )
+
+    const fourthCallRequestInfoAndExpectedResults: ServiceLogsRequestInfoAndExpectedResults = new ServiceLogsRequestInfoAndExpectedResults(
+        enclaveID,
         nonExistentServiceGuids,
         SHOULD_FOLLOW_LOGS,
-        expectedEmptyLogLineValues,
+        [],
         nonExistentServiceGuids,
+        DO_NOT_FILTER_LOG_LINES,
     )
 
     const serviceLogsRequestInfoAndExpectedResultsList: Array<ServiceLogsRequestInfoAndExpectedResults> = new Array<ServiceLogsRequestInfoAndExpectedResults>();
     serviceLogsRequestInfoAndExpectedResultsList.push(firstCallRequestInfoAndExpectedResults)
     serviceLogsRequestInfoAndExpectedResultsList.push(secondCallRequestInfoAndExpectedResults)
     serviceLogsRequestInfoAndExpectedResultsList.push(thirdCallRequestInfoAndExpectedResults)
+    serviceLogsRequestInfoAndExpectedResultsList.push(fourthCallRequestInfoAndExpectedResults)
 
     return serviceLogsRequestInfoAndExpectedResultsList
 }
-

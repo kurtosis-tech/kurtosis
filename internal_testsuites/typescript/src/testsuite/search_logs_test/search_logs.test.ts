@@ -1,8 +1,5 @@
 import {createEnclave} from "../../test_helpers/enclave_setup";
 import {
-    ContainerConfig,
-    ContainerConfigBuilder,
-    EnclaveContext,
     EnclaveID,
     KurtosisContext,
     LogLineFilter,
@@ -13,12 +10,10 @@ import {
 } from "kurtosis-sdk";
 import {err, ok, Result} from "neverthrow";
 import log from "loglevel";
-import {areEqualServiceGuidsSet, delay, getLogsResponseAndEvaluateResponse} from "../../test_helpers/test_helpers";
+import {getLogsResponseAndEvaluateResponse, addServicesWithLogLines} from "../../test_helpers/test_helpers";
 
 const TEST_NAME = "search-logs";
 const IS_PARTITIONING_ENABLED = false;
-
-const DOCKER_GETTING_STARTED_IMAGE = "docker/getting-started";
 
 const EXAMPLE_SERVICE_ID_PREFIX = "search-logs-";
 
@@ -34,9 +29,6 @@ const LOG_LINE_1 = new ServiceLog("Starting feature 'centralized logs'");
 const LOG_LINE_2 = new ServiceLog("Starting feature 'network partitioning'");
 const LOG_LINE_3 = new ServiceLog("Starting feature 'network soft partitioning'");
 const LOG_LINE_4 = new ServiceLog("The data have being loaded");
-
-const GET_LOGS_MAX_RETRIES = 5;
-const GET_LOGS_TIME_BETWEEN_RETRIES_MILLISECONDS  = 1000;
 
 const EXPECTED_NON_EXISTENCE_SERVICE_GUIDS = new Set<ServiceGUID>;
 
@@ -95,7 +87,7 @@ async function TestSearchLogs() {
     try {
         // ------------------------------------- TEST SETUP ----------------------------------------------
 
-        const serviceListResult: Result<Map<ServiceID, ServiceContext>, Error> = await addServices(enclaveContext, LOG_LINES_BY_SERVICE);
+        const serviceListResult: Result<Map<ServiceID, ServiceContext>, Error> = await addServicesWithLogLines(enclaveContext, LOG_LINES_BY_SERVICE);
 
         if (serviceListResult.isErr()) {
             throw new Error(`An error occurred adding the services for the test. Error:\n${serviceListResult.error}`);
@@ -122,7 +114,7 @@ async function TestSearchLogs() {
 
         let serviceGuid: ServiceGUID = "";
 
-        for (let [serviceId, serviceCtx] of serviceList) {
+        for (let [, serviceCtx] of serviceList) {
             serviceGuid = serviceCtx.getServiceGUID();
             userServiceGuids.add(serviceGuid);
         }
@@ -178,8 +170,6 @@ async function executeGetLogsRequestAndEvaluateResult(
         EXPECTED_NON_EXISTENCE_SERVICE_GUIDS,
         SHOULD_NOT_FOLLOW_LOGS,
         logLineFilter,
-        GET_LOGS_MAX_RETRIES,
-        GET_LOGS_TIME_BETWEEN_RETRIES_MILLISECONDS,
     )
 
     if (getLogsResponseResult.isErr()) {
@@ -187,51 +177,4 @@ async function executeGetLogsRequestAndEvaluateResult(
     }
 
     return ok(null);
-}
-
-async function addServices(
-    enclaveContext: EnclaveContext,
-    logLinesByServiceID: Map<ServiceID, ServiceLog[]>,
-): Promise<Result<Map<ServiceID, ServiceContext>, Error>> {
-
-    const servicesAdded: Map<ServiceID, ServiceContext> = new Map<ServiceID, ServiceContext>();
-
-    for (let [serviceId, logLines] of logLinesByServiceID) {
-        const containerConf: ContainerConfig = containerConfig(logLines);
-        const addServiceResult = await enclaveContext.addService(serviceId, containerConf);
-
-        if (addServiceResult.isErr()) {
-            return err(new Error(`An error occurred adding service '${serviceId}'`));
-        }
-
-        const serviceContext: ServiceContext = addServiceResult.value;
-
-        servicesAdded.set(serviceId, serviceContext)
-    }
-    return ok(servicesAdded)
-}
-
-function containerConfig(logLines: ServiceLog[]): ContainerConfig {
-
-    const entrypointArgs = ["/bin/sh", "-c"];
-
-    const logLinesWithQuotes: Array<string> = new Array<string>();
-
-    for (let logLine of logLines) {
-        const logLineWithQuotes: string = `"${logLine.getContent()}"`;
-        logLinesWithQuotes.push(logLineWithQuotes);
-    }
-
-    const logLineSeparator: string = " ";
-    const logLinesStr: string = logLinesWithQuotes.join(logLineSeparator);
-    const echoLogLinesLoopCmdStr: string = `for i in ${logLinesStr}; do echo "$i"; done;`
-
-    const cmdArgs = [echoLogLinesLoopCmdStr]
-
-    const containerConfig = new ContainerConfigBuilder(DOCKER_GETTING_STARTED_IMAGE)
-        .withEntrypointOverride(entrypointArgs)
-        .withCmdOverride(cmdArgs)
-        .build()
-
-    return containerConfig
 }
