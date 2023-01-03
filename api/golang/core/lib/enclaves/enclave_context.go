@@ -416,61 +416,6 @@ func (enclaveCtx *EnclaveContext) RepartitionNetwork(
 	return nil
 }
 
-// Docs available at https://docs.kurtosis.com/sdk/#waitforhttpgetendpointavailabilityserviceid-serviceid-uint32-port-string-path-string-requestbody-uint32-initialdelaymilliseconds-uint32-retries-uint32-retriesdelaymilliseconds-string-bodytext
-func (enclaveCtx *EnclaveContext) WaitForHttpGetEndpointAvailability(serviceId services.ServiceID, port uint32, path string, initialDelayMilliseconds uint32, retries uint32, retriesDelayMilliseconds uint32, bodyText string) error {
-
-	availabilityArgs := binding_constructors.NewWaitForHttpGetEndpointAvailabilityArgs(
-		string(serviceId),
-		port,
-		path,
-		initialDelayMilliseconds,
-		retries,
-		retriesDelayMilliseconds,
-		bodyText,
-	)
-
-	if _, err := enclaveCtx.client.WaitForHttpGetEndpointAvailability(context.Background(), availabilityArgs); err != nil {
-		return stacktrace.Propagate(
-			err,
-			"Endpoint '%v' on port '%v' for service '%v' did not become available despite polling %v times with %v between polls",
-			path,
-			port,
-			serviceId,
-			retries,
-			retriesDelayMilliseconds,
-		)
-	}
-	return nil
-}
-
-// Docs available at https://docs.kurtosis.com/sdk/#waitforhttppostendpointavailabilityserviceid-serviceid-uint32-port-string-path-string-requestbody-uint32-initialdelaymilliseconds-uint32-retries-uint32-retriesdelaymilliseconds-string-bodytext
-func (enclaveCtx *EnclaveContext) WaitForHttpPostEndpointAvailability(serviceId services.ServiceID, port uint32, path string, requestBody string, initialDelayMilliseconds uint32, retries uint32, retriesDelayMilliseconds uint32, bodyText string) error {
-
-	availabilityArgs := binding_constructors.NewWaitForHttpPostEndpointAvailabilityArgs(
-		string(serviceId),
-		port,
-		path,
-		requestBody,
-		initialDelayMilliseconds,
-		retries,
-		retriesDelayMilliseconds,
-		bodyText,
-	)
-
-	if _, err := enclaveCtx.client.WaitForHttpPostEndpointAvailability(context.Background(), availabilityArgs); err != nil {
-		return stacktrace.Propagate(
-			err,
-			"Endpoint '%v' on port '%v' for service '%v' did not become available despite polling %v times with %v between polls",
-			path,
-			port,
-			serviceId,
-			retries,
-			retriesDelayMilliseconds,
-		)
-	}
-	return nil
-}
-
 // Docs available at https://docs.kurtosis.com/sdk/#getservices---mapserviceid--serviceguid-serviceids
 func (enclaveCtx *EnclaveContext) GetServices() (map[services.ServiceID]services.ServiceGUID, error) {
 	getServicesArgs := binding_constructors.NewGetServicesArgs(map[string]bool{})

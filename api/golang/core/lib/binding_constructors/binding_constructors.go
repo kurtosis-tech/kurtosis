@@ -492,58 +492,6 @@ func NewExecCommandResponse(exitCode int32, logOutput string) *kurtosis_core_rpc
 
 // ==============================================================================================
 //
-//	Wait For Http Get Endpoint Availability
-//
-// ==============================================================================================
-
-func NewWaitForHttpGetEndpointAvailabilityArgs(
-	serviceId string,
-	port uint32,
-	path string,
-	initialDelayMilliseconds uint32,
-	retries uint32,
-	retriesDelayMilliseconds uint32,
-	bodyText string) *kurtosis_core_rpc_api_bindings.WaitForHttpGetEndpointAvailabilityArgs {
-	return &kurtosis_core_rpc_api_bindings.WaitForHttpGetEndpointAvailabilityArgs{
-		ServiceId:                serviceId,
-		Port:                     port,
-		Path:                     path,
-		InitialDelayMilliseconds: initialDelayMilliseconds,
-		Retries:                  retries,
-		RetriesDelayMilliseconds: retriesDelayMilliseconds,
-		BodyText:                 bodyText,
-	}
-}
-
-// ==============================================================================================
-//
-//	Wait For Http Post Endpoint Availability
-//
-// ==============================================================================================
-
-func NewWaitForHttpPostEndpointAvailabilityArgs(
-	serviceId string,
-	port uint32,
-	path string,
-	requestBody string,
-	initialDelayMilliseconds uint32,
-	retries uint32,
-	retriesDelayMilliseconds uint32,
-	bodyText string) *kurtosis_core_rpc_api_bindings.WaitForHttpPostEndpointAvailabilityArgs {
-	return &kurtosis_core_rpc_api_bindings.WaitForHttpPostEndpointAvailabilityArgs{
-		ServiceId:                serviceId,
-		Port:                     port,
-		Path:                     path,
-		RequestBody:              requestBody,
-		InitialDelayMilliseconds: initialDelayMilliseconds,
-		Retries:                  retries,
-		RetriesDelayMilliseconds: retriesDelayMilliseconds,
-		BodyText:                 bodyText,
-	}
-}
-
-// ==============================================================================================
-//
 //	Upload Files Artifact
 //
 // ==============================================================================================

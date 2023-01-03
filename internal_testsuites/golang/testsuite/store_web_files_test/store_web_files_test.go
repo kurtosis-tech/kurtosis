@@ -17,14 +17,7 @@ const (
 	testName              = "files-artifact-mounting"
 	isPartitioningEnabled = false
 
-	fileServerServiceImage                      = "flashspys/nginx-static"
-	fileServerServiceId      services.ServiceID = "file-server"
-	fileServerPortId                            = "http"
-	fileServerPrivatePortNum                    = 80
-
-	waitForStartupTimeBetweenPolls = 500
-	waitForStartupMaxRetries       = 15
-	waitInitialDelayMilliseconds   = 0
+	fileServerServiceId services.ServiceID = "file-server"
 
 	testFilesArtifactUrl = "https://kurtosis-public-access.s3.us-east-1.amazonaws.com/test-artifacts/static-fileserver-files.tgz"
 
@@ -34,13 +27,7 @@ const (
 
 	expectedFile1Contents = "file1\n"
 	expectedFile2Contents = "file2\n"
-
-	userServiceMountPointForTestFilesArtifact = "/static"
-
-	emptyApplicationProtocol = ""
 )
-
-var fileServerPortSpec = services.NewPortSpec(fileServerPrivatePortNum, services.TransportProtocol_TCP, emptyApplicationProtocol)
 
 func TestStoreWebFiles(t *testing.T) {
 	ctx := context.Background()
@@ -54,24 +41,8 @@ func TestStoreWebFiles(t *testing.T) {
 	filesArtifactUuid, err := enclaveCtx.StoreWebFiles(context.Background(), testFilesArtifactUrl)
 	require.NoError(t, err, "An error occurred storing the files artifact")
 
-	filesArtifactMountpoints := map[string]services.FilesArtifactUUID{
-		userServiceMountPointForTestFilesArtifact: filesArtifactUuid,
-	}
-	fileServerContainerConfig := getFileServerContainerConfig(filesArtifactMountpoints)
-
-	serviceCtx, err := enclaveCtx.AddService(fileServerServiceId, fileServerContainerConfig)
-	require.NoError(t, err, "An error occurred adding the file server service")
-	publicPort, found := serviceCtx.GetPublicPorts()[fileServerPortId]
-	require.True(t, found, "Expected to find public port for ID '%v', but none was found", fileServerPortId)
-	fileServerPublicIp := serviceCtx.GetMaybePublicIPAddress()
-	fileServerPublicPortNum := publicPort.GetNumber()
-
-	require.NoError(t,
-		// TODO It's suuuuuuuuuuper confusing that we have to pass the private port in here!!!! We should just require the user
-		//  to pass in the port ID and the API container will translate that to the private port automatically!!!
-		enclaveCtx.WaitForHttpGetEndpointAvailability(fileServerServiceId, fileServerPrivatePortNum, file1Filename, waitInitialDelayMilliseconds, waitForStartupMaxRetries, waitForStartupTimeBetweenPolls, ""),
-		"An error occurred waiting for the file server service to become available",
-	)
+	fileServerPublicIp, fileServerPublicPortNum, err := test_helpers.StartFileServer(ctx, fileServerServiceId, filesArtifactUuid, file1Filename, enclaveCtx)
+	require.NoError(t, err, "An error occurred waiting for the file server service to become available")
 	logrus.Infof("Added file server service with public IP '%v' and port '%v'", fileServerPublicIp, fileServerPublicPortNum)
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
@@ -107,18 +78,10 @@ func TestStoreWebFiles(t *testing.T) {
 }
 
 // ====================================================================================================
-//                                       Private helper functions
+//
+//	Private helper functions
+//
 // ====================================================================================================
-func getFileServerContainerConfig(filesArtifactMountpoints map[string]services.FilesArtifactUUID) *services.ContainerConfig {
-	containerConfig := services.NewContainerConfigBuilder(
-		fileServerServiceImage,
-	).WithUsedPorts(map[string]*services.PortSpec{
-		fileServerPortId: fileServerPortSpec,
-	}).WithFiles(
-		filesArtifactMountpoints,
-	).Build()
-	return containerConfig
-}
 
 func getFileContents(ipAddress string, portNum uint16, filename string) (string, error) {
 	resp, err := http.Get(fmt.Sprintf("http://%v:%v/%v", ipAddress, portNum, filename))

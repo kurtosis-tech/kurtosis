@@ -16,8 +16,6 @@ import type {
     ServiceConfig,
     PartitionConnections,
     GetServicesArgs,
-    WaitForHttpGetEndpointAvailabilityArgs,
-    WaitForHttpPostEndpointAvailabilityArgs,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import { GrpcNodeApiContainerClient } from "./grpc_node_api_container_client";
 import { GrpcWebApiContainerClient } from "./grpc_web_api_container_client";
@@ -529,60 +527,6 @@ export class EnclaveContext {
         }
 
         return ok(null)
-    }
-
-    // Docs available at https://docs.kurtosis.com/sdk/#waitforhttpgetendpointavailabilityserviceid-serviceid-uint32-port-string-path-string-requestbody-uint32-initialdelaymilliseconds-uint32-retries-uint32-retriesdelaymilliseconds-string-bodytext
-    public async waitForHttpGetEndpointAvailability(
-            serviceId: ServiceID,
-            port: number,
-            path: string,
-            initialDelayMilliseconds: number,
-            retries: number,
-            retriesDelayMilliseconds: number,
-            bodyText: string
-        ): Promise<Result<null, Error>> {
-
-        const availabilityArgs: WaitForHttpGetEndpointAvailabilityArgs = newWaitForHttpGetEndpointAvailabilityArgs(
-            serviceId,
-            port,
-            path,
-            initialDelayMilliseconds,
-            retries,
-            retriesDelayMilliseconds,
-            bodyText
-        );
-
-        const waitForHttpGetEndpointAvailabilityResult = await this.backend.waitForHttpGetEndpointAvailability(availabilityArgs)
-        if(waitForHttpGetEndpointAvailabilityResult.isErr()){
-            return err(waitForHttpGetEndpointAvailabilityResult.error)
-        }
-
-        const result = waitForHttpGetEndpointAvailabilityResult.value
-        return ok(result)
-    }
-
-    // Docs available at https://docs.kurtosis.com/sdk/#waitforhttppostendpointavailabilityserviceid-serviceid-uint32-port-string-path-string-requestbody-uint32-initialdelaymilliseconds-uint32-retries-uint32-retriesdelaymilliseconds-string-bodytext
-    public async waitForHttpPostEndpointAvailability(
-            serviceId: ServiceID,
-            port: number,
-            path: string,
-            requestBody: string,
-            initialDelayMilliseconds: number,
-            retries: number,
-            retriesDelayMilliseconds: number,
-            bodyText: string
-        ): Promise<Result<null, Error>> {
-        const availabilityArgs: WaitForHttpPostEndpointAvailabilityArgs = newWaitForHttpPostEndpointAvailabilityArgs(
-            serviceId,
-            port,
-            path,
-            requestBody,
-            initialDelayMilliseconds,
-            retries,
-            retriesDelayMilliseconds,
-            bodyText);
-
-        return this.backend.waitForHttpPostEndpointAvailability(availabilityArgs)
     }
 
     // Docs available at https://docs.kurtosis.com/sdk/#getservices---mapserviceid--serviceguid-serviceids

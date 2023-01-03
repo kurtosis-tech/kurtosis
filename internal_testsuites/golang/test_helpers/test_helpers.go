@@ -66,9 +66,11 @@ const (
 		the datastore service is showing itself as up *before* we even start the check-if-available wait. We're in crunch mode
 		so I'm going to bump this up to 30s, but I suspect there's some sort of nondeterministic underlying failure happening.
 	*/
-	waitForStartupMaxRetries     = 30
-	waitInitialDelayMilliseconds = 0
-	waitForAvailabilityBodyText  = ""
+	waitForStartupMaxRetries = 30
+
+	// File server wait for availability configuration
+	waitForFileServerTimeoutMilliseconds  = 45000
+	waitForFileServerIntervalMilliseconds = 100
 
 	userServiceMountPointForTestFilesArtifact = "/static"
 
@@ -80,6 +82,18 @@ const (
 	defaultDryRun            = false
 	emptyParams              = "{}"
 	emptyApplicationProtocol = ""
+
+	waitForGetAvaliabilityStalarkScript = `
+def run(plan, args):
+	get_recipe = struct(
+		service_id = args.service_id,
+		port_id = args.port_id,
+		endpoint = args.endpoint,
+		method = "GET",
+	)
+	plan.wait(get_recipe, "code", "==", 200, args.interval, args.timeout)
+`
+	waitForGetAvaliabilityStalarkScriptParams = `{ "service_id": "%s", "port_id": "%s", "endpoint": "/%s", "interval": "%dms", "timeout": "%dms"}`
 )
 
 var fileServerPortSpec = services.NewPortSpec(fileServerPrivatePortNum, services.TransportProtocol_TCP, emptyApplicationProtocol)
@@ -276,7 +290,7 @@ func WaitForHealthy(ctx context.Context, client GrpcAvailabilityChecker, retries
 	return nil
 }
 
-func StartFileServer(fileServerServiceId services.ServiceID, filesArtifactUUID services.FilesArtifactUUID, pathToCheckOnFileServer string, enclaveCtx *enclaves.EnclaveContext) (string, uint16, error) {
+func StartFileServer(ctx context.Context, fileServerServiceId services.ServiceID, filesArtifactUUID services.FilesArtifactUUID, pathToCheckOnFileServer string, enclaveCtx *enclaves.EnclaveContext) (string, uint16, error) {
 	filesArtifactMountPoints := map[string]services.FilesArtifactUUID{
 		userServiceMountPointForTestFilesArtifact: filesArtifactUUID,
 	}
@@ -294,18 +308,18 @@ func StartFileServer(fileServerServiceId services.ServiceID, filesArtifactUUID s
 	fileServerPublicIp := serviceCtx.GetMaybePublicIPAddress()
 	fileServerPublicPortNum := publicPort.GetNumber()
 
-	err = enclaveCtx.WaitForHttpGetEndpointAvailability(
+	err = waitForFileServerAvailability(
+		ctx,
+		enclaveCtx,
 		fileServerServiceId,
-		fileServerPrivatePortNum,
+		fileServerPortId,
 		pathToCheckOnFileServer,
-		waitInitialDelayMilliseconds,
-		waitForStartupMaxRetries,
-		waitForStartupTimeBetweenPolls,
-		waitForAvailabilityBodyText,
+		waitForFileServerIntervalMilliseconds,
+		waitForFileServerTimeoutMilliseconds,
 	)
 
 	if err != nil {
-		return "", 0, stacktrace.NewError("An error occurred waiting for the file server service to become available.")
+		return "", 0, stacktrace.Propagate(err, "An error occurred waiting for the file server service to become available.")
 	}
 
 	logrus.Infof("Added file server service with public IP '%v' and port '%v'", fileServerPublicIp,
@@ -520,4 +534,21 @@ func createDatastoreClient(ipAddr string, portNum uint16) (datastore_rpc_api_bin
 	}
 	client := datastore_rpc_api_bindings.NewDatastoreServiceClient(conn)
 	return client, clientCloseFunc, nil
+}
+
+func waitForFileServerAvailability(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, serviceId services.ServiceID, portId string, endpoint string, initialDelayMilliseconds uint32, timeoutMilliseconds uint32) error {
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, waitForGetAvaliabilityStalarkScript, fmt.Sprintf(waitForGetAvaliabilityStalarkScriptParams, serviceId, portId, endpoint, initialDelayMilliseconds, timeoutMilliseconds), false)
+	if err != nil {
+		return stacktrace.Propagate(err, "An unexpected error has occurred getting endpoint availability using Starlark")
+	}
+	if runResult.ExecutionError != nil {
+		return stacktrace.NewError("An error has occurred getting endpoint availability during Starlark due to execution error %s", runResult.ExecutionError.GetErrorMessage())
+	}
+	if runResult.InterpretationError != nil {
+		return stacktrace.NewError("An error has occurred getting endpoint availability using Starlark due to interpretation error %s", runResult.InterpretationError.GetErrorMessage())
+	}
+	if len(runResult.ValidationErrors) > 0 {
+		return stacktrace.NewError("An error has occurred getting endpoint availability during Starlark due to validation error %v", runResult.ValidationErrors)
+	}
+	return nil
 }

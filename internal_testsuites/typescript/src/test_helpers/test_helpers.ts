@@ -15,7 +15,6 @@ import {
     TransportProtocol
 } from "kurtosis-sdk";
 import * as datastoreApi from "example-datastore-server-api-lib";
-import {GetArgs, GetResponse, UpsertArgs} from "example-datastore-server-api-lib";
 import * as serverApi from "example-api-server-api-lib";
 import {err, ok, Result} from "neverthrow";
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
@@ -25,6 +24,8 @@ import * as fs from 'fs';
 import * as path from "path";
 import * as os from "os";
 import axios from "axios";
+import {GetArgs, GetResponse, UpsertArgs} from "example-datastore-server-api-lib";
+import {StarlarkRunResult} from "kurtosis-sdk/build/core/lib/enclaves/starlark_run_blocking";
 import {Readable} from "stream";
 import {newReceivedStreamContentPromise, ReceivedStreamContent} from "./received_stream_content";
 
@@ -58,10 +59,8 @@ const FILE_SERVER_SERVICE_IMAGE = "flashspys/nginx-static"
 const FILE_SERVER_PORT_ID = "http"
 const FILE_SERVER_PRIVATE_PORT_NUM = 80
 
-const WAIT_FOR_STARTUP_TIME_BETWEEN_POLLS = 500
-const WAIT_FOR_STARTUP_MAX_RETRIES = 15
-const WAIT_INITIAL_DELAY_MILLISECONDS = 0
-const WAIT_FOR_AVAILABILITY_BODY_TEXT = ""
+const WAIT_FOR_FILE_SERVER_TIMEOUT_MILLISECONDS = 45000
+const WAIT_FOR_FILE_SERVER_INTERVAL_MILLISECONDS = 100
 
 const USER_SERVICE_MOUNT_POINT_FOR_TEST_FILES_ARTIFACT = "/static"
 
@@ -90,6 +89,17 @@ const WAIT_FOR_STARTUP_MAX_POLLS = 30
 const MILLIS_BETWEEN_AVAILABILITY_RETRIES = 1000
 const TEST_DATASTORE_KEY = "my-key"
 const TEST_DATASTORE_VALUE = "test-value"
+
+const WAIT_FOR_GET_AVAILABILITY_STARLARK_SCRIPT = `
+def run(plan, args):
+	get_recipe = struct(
+		service_id = args.service_id,
+		port_id = args.port_id,
+		endpoint = args.endpoint,
+		method = "GET",
+	)
+	plan.wait(get_recipe, "code", "==", 200, args.interval, args.timeout)
+`
 
 
 class StartFileServerResponse {
@@ -254,6 +264,10 @@ export async function waitForHealthy(
 
 }
 
+export async function waitForGetAvailabilityStarlarkScript(enclaveContext: EnclaveContext, serviceId: string, portId: string, endpoint: string, interval: number, timeout: number) : Promise<Result<StarlarkRunResult, Error>> {
+    return enclaveContext.runStarlarkScriptBlocking(WAIT_FOR_GET_AVAILABILITY_STARLARK_SCRIPT, `{ "service_id": "${serviceId}", "port_id": "${portId}", "endpoint": "/${endpoint}", "interval": "${interval}ms", "timeout": "${timeout}ms"}`, false)
+}
+
 export async function startFileServer(fileServerServiceId: ServiceID, filesArtifactUuid: string, pathToCheckOnFileServer: string, enclaveCtx: EnclaveContext): Promise<Result<StartFileServerResponse, Error>> {
     const filesArtifactsMountPoints = new Map<string, FilesArtifactUUID>()
     filesArtifactsMountPoints.set(USER_SERVICE_MOUNT_POINT_FOR_TEST_FILES_ARTIFACT, filesArtifactUuid)
@@ -273,19 +287,23 @@ export async function startFileServer(fileServerServiceId: ServiceID, filesArtif
     const fileServerPublicIp = serviceContext.getMaybePublicIPAddress();
     const fileServerPublicPortNum = publicPort.number
 
-    const waitForHttpGetEndpointAvailabilityResult = await enclaveCtx.waitForHttpGetEndpointAvailability(
-        fileServerServiceId,
-        FILE_SERVER_PRIVATE_PORT_NUM,
-        pathToCheckOnFileServer,
-        WAIT_INITIAL_DELAY_MILLISECONDS,
-        WAIT_FOR_STARTUP_MAX_RETRIES,
-        WAIT_FOR_STARTUP_TIME_BETWEEN_POLLS,
-        WAIT_FOR_AVAILABILITY_BODY_TEXT
-    );
+    const waitForHttpGetEndpointAvailabilityResult = await waitForGetAvailabilityStarlarkScript(enclaveCtx, fileServerServiceId, FILE_SERVER_PORT_ID, pathToCheckOnFileServer, WAIT_FOR_FILE_SERVER_INTERVAL_MILLISECONDS, WAIT_FOR_FILE_SERVER_TIMEOUT_MILLISECONDS)
 
     if (waitForHttpGetEndpointAvailabilityResult.isErr()) {
-        log.error("An error occurred waiting for the file server service to become available")
+        log.error("An unexpected error has occurred getting endpoint availability using Starlark")
         throw waitForHttpGetEndpointAvailabilityResult.error
+    }
+    if(waitForHttpGetEndpointAvailabilityResult.value.interpretationError !== undefined){
+        log.error("An error has occurred getting endpoint availability during Starlark due to interpretation error")
+        throw waitForHttpGetEndpointAvailabilityResult.value.interpretationError
+    }
+    if(waitForHttpGetEndpointAvailabilityResult.value.validationErrors.length > 0){
+        log.error("An error has occurred getting endpoint availability using Starlark due to validation error")
+        throw waitForHttpGetEndpointAvailabilityResult.value.validationErrors
+    }
+    if(waitForHttpGetEndpointAvailabilityResult.value.executionError !== undefined){
+        log.error("An error has occurred getting endpoint availability during Starlark due to execution error")
+        throw waitForHttpGetEndpointAvailabilityResult.value.executionError
     }
     log.info(`Added file server service with public IP "${fileServerPublicIp}" and port "${fileServerPublicPortNum}"`)
 
