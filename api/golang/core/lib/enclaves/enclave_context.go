@@ -366,56 +366,6 @@ func (enclaveCtx *EnclaveContext) GetServiceContext(serviceId services.ServiceID
 	return serviceContext, nil
 }
 
-// Docs available at https://docs.kurtosis.com/sdk/#repartitionnetworkmappartitionid-setserviceid-partitionservices-mappartitionid-mappartitionid-partitionconnection-partitionconnections-partitionconnection-defaultconnection
-func (enclaveCtx *EnclaveContext) RepartitionNetwork(
-	partitionServices map[PartitionID]map[services.ServiceID]bool,
-	partitionConnections map[PartitionID]map[PartitionID]PartitionConnection,
-	defaultConnection PartitionConnection) error {
-
-	if partitionServices == nil {
-		return stacktrace.NewError("Partition services map cannot be nil")
-	}
-	if defaultConnection == nil {
-		return stacktrace.NewError("Default connection cannot be nil")
-	}
-
-	// Cover for lazy/confused users
-	if partitionConnections == nil {
-		partitionConnections = map[PartitionID]map[PartitionID]PartitionConnection{}
-	}
-
-	reqPartitionServices := map[string]*kurtosis_core_rpc_api_bindings.PartitionServices{}
-	for partitionId, serviceIdSet := range partitionServices {
-		serviceIdStrPseudoSet := map[string]bool{}
-		for serviceId := range serviceIdSet {
-			serviceIdStr := string(serviceId)
-			serviceIdStrPseudoSet[serviceIdStr] = true
-		}
-		partitionIdStr := string(partitionId)
-		reqPartitionServices[partitionIdStr] = binding_constructors.NewPartitionServices(serviceIdStrPseudoSet)
-	}
-
-	reqPartitionConns := map[string]*kurtosis_core_rpc_api_bindings.PartitionConnections{}
-	for partitionAId, partitionAConnsMap := range partitionConnections {
-		partitionAConnsStrMap := map[string]*kurtosis_core_rpc_api_bindings.PartitionConnectionInfo{}
-		for partitionBId, conn := range partitionAConnsMap {
-			partitionBIdStr := string(partitionBId)
-			partitionAConnsStrMap[partitionBIdStr] = conn.getPartitionConnectionInfo()
-		}
-		partitionAConns := binding_constructors.NewPartitionConnections(partitionAConnsStrMap)
-		partitionAIdStr := string(partitionAId)
-		reqPartitionConns[partitionAIdStr] = partitionAConns
-	}
-
-	reqDefaultConnection := defaultConnection.getPartitionConnectionInfo()
-
-	repartitionArgs := binding_constructors.NewRepartitionArgs(reqPartitionServices, reqPartitionConns, reqDefaultConnection)
-	if _, err := enclaveCtx.client.Repartition(context.Background(), repartitionArgs); err != nil {
-		return stacktrace.Propagate(err, "An error occurred repartitioning the enclave")
-	}
-	return nil
-}
-
 // Docs available at https://docs.kurtosis.com/sdk/#getservices---mapserviceid--serviceguid-serviceids
 func (enclaveCtx *EnclaveContext) GetServices() (map[services.ServiceID]services.ServiceGUID, error) {
 	getServicesArgs := binding_constructors.NewGetServicesArgs(map[string]bool{})
