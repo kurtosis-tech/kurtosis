@@ -19,7 +19,6 @@ const (
 	apiContainerKurtosisResourceTypeLabelValueStr      = "api-container"
 	userServiceKurtosisResourceTypeLabelValueStr       = "user-service"
 	networkingSidecarKurtosisResourceTypeLabelValueStr = "networking-sidecar"
-	moduleKurtosisResourceTypeLabelValueStr            = "module"
 
 	enclaveDataVolumeTypeLabelValueStr             = "enclave-data"
 	filesArtifactsExpansionVolumeTypeLabelValueStr = "files-artifacts-expansion"
@@ -39,7 +38,6 @@ var EngineKurtosisResourceTypeKubernetesLabelValue = kubernetes_label_value.Must
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-var ModuleKurtosisResourceTypeKubernetesLabelValue = kubernetes_label_value.MustCreateNewKubernetesLabelValue(moduleKurtosisResourceTypeLabelValueStr)
 var EnclaveKurtosisResourceTypeKubernetesLabelValue = kubernetes_label_value.MustCreateNewKubernetesLabelValue(enclaveKurtosisResourceTypeLabelValueStr)
 var APIContainerKurtosisResourceTypeKubernetesLabelValue = kubernetes_label_value.MustCreateNewKubernetesLabelValue(apiContainerKurtosisResourceTypeLabelValueStr)
 var UserServiceKurtosisResourceTypeKubernetesLabelValue = kubernetes_label_value.MustCreateNewKubernetesLabelValue(userServiceKurtosisResourceTypeLabelValueStr)

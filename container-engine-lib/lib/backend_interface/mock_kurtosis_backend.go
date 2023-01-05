@@ -21,8 +21,6 @@ import (
 
 	mock "github.com/stretchr/testify/mock"
 
-	module "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/module"
-
 	net "net"
 
 	networking_sidecar "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
@@ -331,57 +329,6 @@ func (_c *MockKurtosisBackend_CreateLogsDatabase_Call) Return(_a0 *logs_database
 	return _c
 }
 
-// CreateModule provides a mock function with given fields: ctx, image, enclaveId, id, grpcPortNum, envVars
-func (_m *MockKurtosisBackend) CreateModule(ctx context.Context, image string, enclaveId enclave.EnclaveID, id module.ModuleID, grpcPortNum uint16, envVars map[string]string) (*module.Module, error) {
-	ret := _m.Called(ctx, image, enclaveId, id, grpcPortNum, envVars)
-
-	var r0 *module.Module
-	if rf, ok := ret.Get(0).(func(context.Context, string, enclave.EnclaveID, module.ModuleID, uint16, map[string]string) *module.Module); ok {
-		r0 = rf(ctx, image, enclaveId, id, grpcPortNum, envVars)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*module.Module)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, enclave.EnclaveID, module.ModuleID, uint16, map[string]string) error); ok {
-		r1 = rf(ctx, image, enclaveId, id, grpcPortNum, envVars)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// MockKurtosisBackend_CreateModule_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateModule'
-type MockKurtosisBackend_CreateModule_Call struct {
-	*mock.Call
-}
-
-// CreateModule is a helper method to define mock.On call
-//   - ctx context.Context
-//   - image string
-//   - enclaveId enclave.EnclaveID
-//   - id module.ModuleID
-//   - grpcPortNum uint16
-//   - envVars map[string]string
-func (_e *MockKurtosisBackend_Expecter) CreateModule(ctx interface{}, image interface{}, enclaveId interface{}, id interface{}, grpcPortNum interface{}, envVars interface{}) *MockKurtosisBackend_CreateModule_Call {
-	return &MockKurtosisBackend_CreateModule_Call{Call: _e.mock.On("CreateModule", ctx, image, enclaveId, id, grpcPortNum, envVars)}
-}
-
-func (_c *MockKurtosisBackend_CreateModule_Call) Run(run func(ctx context.Context, image string, enclaveId enclave.EnclaveID, id module.ModuleID, grpcPortNum uint16, envVars map[string]string)) *MockKurtosisBackend_CreateModule_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string), args[2].(enclave.EnclaveID), args[3].(module.ModuleID), args[4].(uint16), args[5].(map[string]string))
-	})
-	return _c
-}
-
-func (_c *MockKurtosisBackend_CreateModule_Call) Return(newModule *module.Module, resultErr error) *MockKurtosisBackend_CreateModule_Call {
-	_c.Call.Return(newModule, resultErr)
-	return _c
-}
-
 // CreateNetworkingSidecar provides a mock function with given fields: ctx, enclaveId, serviceGuid
 func (_m *MockKurtosisBackend) CreateNetworkingSidecar(ctx context.Context, enclaveId enclave.EnclaveID, serviceGuid service.ServiceGUID) (*networking_sidecar.NetworkingSidecar, error) {
 	ret := _m.Called(ctx, enclaveId, serviceGuid)
@@ -669,63 +616,6 @@ func (_c *MockKurtosisBackend_DestroyLogsDatabase_Call) Run(run func(ctx context
 
 func (_c *MockKurtosisBackend_DestroyLogsDatabase_Call) Return(_a0 error) *MockKurtosisBackend_DestroyLogsDatabase_Call {
 	_c.Call.Return(_a0)
-	return _c
-}
-
-// DestroyModules provides a mock function with given fields: ctx, enclaveId, filters
-func (_m *MockKurtosisBackend) DestroyModules(ctx context.Context, enclaveId enclave.EnclaveID, filters *module.ModuleFilters) (map[module.ModuleGUID]bool, map[module.ModuleGUID]error, error) {
-	ret := _m.Called(ctx, enclaveId, filters)
-
-	var r0 map[module.ModuleGUID]bool
-	if rf, ok := ret.Get(0).(func(context.Context, enclave.EnclaveID, *module.ModuleFilters) map[module.ModuleGUID]bool); ok {
-		r0 = rf(ctx, enclaveId, filters)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[module.ModuleGUID]bool)
-		}
-	}
-
-	var r1 map[module.ModuleGUID]error
-	if rf, ok := ret.Get(1).(func(context.Context, enclave.EnclaveID, *module.ModuleFilters) map[module.ModuleGUID]error); ok {
-		r1 = rf(ctx, enclaveId, filters)
-	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(map[module.ModuleGUID]error)
-		}
-	}
-
-	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, enclave.EnclaveID, *module.ModuleFilters) error); ok {
-		r2 = rf(ctx, enclaveId, filters)
-	} else {
-		r2 = ret.Error(2)
-	}
-
-	return r0, r1, r2
-}
-
-// MockKurtosisBackend_DestroyModules_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DestroyModules'
-type MockKurtosisBackend_DestroyModules_Call struct {
-	*mock.Call
-}
-
-// DestroyModules is a helper method to define mock.On call
-//   - ctx context.Context
-//   - enclaveId enclave.EnclaveID
-//   - filters *module.ModuleFilters
-func (_e *MockKurtosisBackend_Expecter) DestroyModules(ctx interface{}, enclaveId interface{}, filters interface{}) *MockKurtosisBackend_DestroyModules_Call {
-	return &MockKurtosisBackend_DestroyModules_Call{Call: _e.mock.On("DestroyModules", ctx, enclaveId, filters)}
-}
-
-func (_c *MockKurtosisBackend_DestroyModules_Call) Run(run func(ctx context.Context, enclaveId enclave.EnclaveID, filters *module.ModuleFilters)) *MockKurtosisBackend_DestroyModules_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(enclave.EnclaveID), args[2].(*module.ModuleFilters))
-	})
-	return _c
-}
-
-func (_c *MockKurtosisBackend_DestroyModules_Call) Return(successfulModuleIds map[module.ModuleGUID]bool, erroredModuleIds map[module.ModuleGUID]error, resultErr error) *MockKurtosisBackend_DestroyModules_Call {
-	_c.Call.Return(successfulModuleIds, erroredModuleIds, resultErr)
 	return _c
 }
 
@@ -1196,112 +1086,6 @@ func (_c *MockKurtosisBackend_GetLogsDatabase_Call) Run(run func(ctx context.Con
 }
 
 func (_c *MockKurtosisBackend_GetLogsDatabase_Call) Return(_a0 *logs_database.LogsDatabase, _a1 error) *MockKurtosisBackend_GetLogsDatabase_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-// GetModuleLogs provides a mock function with given fields: ctx, enclaveId, filters, shouldFollowLogs
-func (_m *MockKurtosisBackend) GetModuleLogs(ctx context.Context, enclaveId enclave.EnclaveID, filters *module.ModuleFilters, shouldFollowLogs bool) (map[module.ModuleGUID]io.ReadCloser, map[module.ModuleGUID]error, error) {
-	ret := _m.Called(ctx, enclaveId, filters, shouldFollowLogs)
-
-	var r0 map[module.ModuleGUID]io.ReadCloser
-	if rf, ok := ret.Get(0).(func(context.Context, enclave.EnclaveID, *module.ModuleFilters, bool) map[module.ModuleGUID]io.ReadCloser); ok {
-		r0 = rf(ctx, enclaveId, filters, shouldFollowLogs)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[module.ModuleGUID]io.ReadCloser)
-		}
-	}
-
-	var r1 map[module.ModuleGUID]error
-	if rf, ok := ret.Get(1).(func(context.Context, enclave.EnclaveID, *module.ModuleFilters, bool) map[module.ModuleGUID]error); ok {
-		r1 = rf(ctx, enclaveId, filters, shouldFollowLogs)
-	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(map[module.ModuleGUID]error)
-		}
-	}
-
-	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, enclave.EnclaveID, *module.ModuleFilters, bool) error); ok {
-		r2 = rf(ctx, enclaveId, filters, shouldFollowLogs)
-	} else {
-		r2 = ret.Error(2)
-	}
-
-	return r0, r1, r2
-}
-
-// MockKurtosisBackend_GetModuleLogs_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetModuleLogs'
-type MockKurtosisBackend_GetModuleLogs_Call struct {
-	*mock.Call
-}
-
-// GetModuleLogs is a helper method to define mock.On call
-//   - ctx context.Context
-//   - enclaveId enclave.EnclaveID
-//   - filters *module.ModuleFilters
-//   - shouldFollowLogs bool
-func (_e *MockKurtosisBackend_Expecter) GetModuleLogs(ctx interface{}, enclaveId interface{}, filters interface{}, shouldFollowLogs interface{}) *MockKurtosisBackend_GetModuleLogs_Call {
-	return &MockKurtosisBackend_GetModuleLogs_Call{Call: _e.mock.On("GetModuleLogs", ctx, enclaveId, filters, shouldFollowLogs)}
-}
-
-func (_c *MockKurtosisBackend_GetModuleLogs_Call) Run(run func(ctx context.Context, enclaveId enclave.EnclaveID, filters *module.ModuleFilters, shouldFollowLogs bool)) *MockKurtosisBackend_GetModuleLogs_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(enclave.EnclaveID), args[2].(*module.ModuleFilters), args[3].(bool))
-	})
-	return _c
-}
-
-func (_c *MockKurtosisBackend_GetModuleLogs_Call) Return(successfulModuleLogs map[module.ModuleGUID]io.ReadCloser, erroredModuleGuids map[module.ModuleGUID]error, resultError error) *MockKurtosisBackend_GetModuleLogs_Call {
-	_c.Call.Return(successfulModuleLogs, erroredModuleGuids, resultError)
-	return _c
-}
-
-// GetModules provides a mock function with given fields: ctx, enclaveId, filters
-func (_m *MockKurtosisBackend) GetModules(ctx context.Context, enclaveId enclave.EnclaveID, filters *module.ModuleFilters) (map[module.ModuleGUID]*module.Module, error) {
-	ret := _m.Called(ctx, enclaveId, filters)
-
-	var r0 map[module.ModuleGUID]*module.Module
-	if rf, ok := ret.Get(0).(func(context.Context, enclave.EnclaveID, *module.ModuleFilters) map[module.ModuleGUID]*module.Module); ok {
-		r0 = rf(ctx, enclaveId, filters)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[module.ModuleGUID]*module.Module)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, enclave.EnclaveID, *module.ModuleFilters) error); ok {
-		r1 = rf(ctx, enclaveId, filters)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// MockKurtosisBackend_GetModules_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetModules'
-type MockKurtosisBackend_GetModules_Call struct {
-	*mock.Call
-}
-
-// GetModules is a helper method to define mock.On call
-//   - ctx context.Context
-//   - enclaveId enclave.EnclaveID
-//   - filters *module.ModuleFilters
-func (_e *MockKurtosisBackend_Expecter) GetModules(ctx interface{}, enclaveId interface{}, filters interface{}) *MockKurtosisBackend_GetModules_Call {
-	return &MockKurtosisBackend_GetModules_Call{Call: _e.mock.On("GetModules", ctx, enclaveId, filters)}
-}
-
-func (_c *MockKurtosisBackend_GetModules_Call) Run(run func(ctx context.Context, enclaveId enclave.EnclaveID, filters *module.ModuleFilters)) *MockKurtosisBackend_GetModules_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(enclave.EnclaveID), args[2].(*module.ModuleFilters))
-	})
-	return _c
-}
-
-func (_c *MockKurtosisBackend_GetModules_Call) Return(_a0 map[module.ModuleGUID]*module.Module, _a1 error) *MockKurtosisBackend_GetModules_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
@@ -1834,63 +1618,6 @@ func (_c *MockKurtosisBackend_StopEngines_Call) Run(run func(ctx context.Context
 
 func (_c *MockKurtosisBackend_StopEngines_Call) Return(successfulEngineGuids map[engine.EngineGUID]bool, erroredEngineGuids map[engine.EngineGUID]error, resultErr error) *MockKurtosisBackend_StopEngines_Call {
 	_c.Call.Return(successfulEngineGuids, erroredEngineGuids, resultErr)
-	return _c
-}
-
-// StopModules provides a mock function with given fields: ctx, enclaveId, filters
-func (_m *MockKurtosisBackend) StopModules(ctx context.Context, enclaveId enclave.EnclaveID, filters *module.ModuleFilters) (map[module.ModuleGUID]bool, map[module.ModuleGUID]error, error) {
-	ret := _m.Called(ctx, enclaveId, filters)
-
-	var r0 map[module.ModuleGUID]bool
-	if rf, ok := ret.Get(0).(func(context.Context, enclave.EnclaveID, *module.ModuleFilters) map[module.ModuleGUID]bool); ok {
-		r0 = rf(ctx, enclaveId, filters)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[module.ModuleGUID]bool)
-		}
-	}
-
-	var r1 map[module.ModuleGUID]error
-	if rf, ok := ret.Get(1).(func(context.Context, enclave.EnclaveID, *module.ModuleFilters) map[module.ModuleGUID]error); ok {
-		r1 = rf(ctx, enclaveId, filters)
-	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(map[module.ModuleGUID]error)
-		}
-	}
-
-	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, enclave.EnclaveID, *module.ModuleFilters) error); ok {
-		r2 = rf(ctx, enclaveId, filters)
-	} else {
-		r2 = ret.Error(2)
-	}
-
-	return r0, r1, r2
-}
-
-// MockKurtosisBackend_StopModules_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'StopModules'
-type MockKurtosisBackend_StopModules_Call struct {
-	*mock.Call
-}
-
-// StopModules is a helper method to define mock.On call
-//   - ctx context.Context
-//   - enclaveId enclave.EnclaveID
-//   - filters *module.ModuleFilters
-func (_e *MockKurtosisBackend_Expecter) StopModules(ctx interface{}, enclaveId interface{}, filters interface{}) *MockKurtosisBackend_StopModules_Call {
-	return &MockKurtosisBackend_StopModules_Call{Call: _e.mock.On("StopModules", ctx, enclaveId, filters)}
-}
-
-func (_c *MockKurtosisBackend_StopModules_Call) Run(run func(ctx context.Context, enclaveId enclave.EnclaveID, filters *module.ModuleFilters)) *MockKurtosisBackend_StopModules_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(enclave.EnclaveID), args[2].(*module.ModuleFilters))
-	})
-	return _c
-}
-
-func (_c *MockKurtosisBackend_StopModules_Call) Return(successfulModuleIds map[module.ModuleGUID]bool, erroredModuleIds map[module.ModuleGUID]error, resultErr error) *MockKurtosisBackend_StopModules_Call {
-	_c.Call.Return(successfulModuleIds, erroredModuleIds, resultErr)
 	return _c
 }
 

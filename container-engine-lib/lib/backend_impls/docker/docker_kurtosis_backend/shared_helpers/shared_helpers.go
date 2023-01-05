@@ -213,7 +213,7 @@ func TransformPortSpecToDockerPort(portSpec *port_spec.PortSpec) (nat.Port, erro
 	return dockerPort, nil
 }
 
-// TODO Extract this to DockerKurtosisBackend and use it everywhere, for Engines, Modules, and API containers?
+// TODO Extract this to DockerKurtosisBackend and use it everywhere, for Engines and API containers?
 func GetIpAndPortInfoFromContainer(
 	containerName string,
 	labels map[string]string,

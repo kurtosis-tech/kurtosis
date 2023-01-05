@@ -609,7 +609,7 @@ jobs:
       # We don't send metrics to avoid polluting our logs
       - run: kurtosis config init dont-send-metrics
 
-      # Start up an enclave with a module and some services inside
+      # Start up an enclave with some services inside
       - run: kurtosis enclave add --id=running-old-enclave
       - run: kurtosis enclave add --id=stopped-old-enclave
       - run: kurtosis service add running-old-enclave test-datastore-one kurtosistech/example-datastore-server
@@ -630,7 +630,7 @@ jobs:
       - run: "${KURTOSIS_BINPATH} enclave stop running-old-enclave"
       - run: "${KURTOSIS_BINPATH} enclave inspect stopped-old-enclave"
 
-      # Ensure modules & enclaves still work
+      # Ensure enclaves still work
       - run: "${KURTOSIS_BINPATH} clean -a"
       - run: "${KURTOSIS_BINPATH} engine stop"
 

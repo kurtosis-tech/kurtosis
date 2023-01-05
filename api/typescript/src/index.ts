@@ -16,15 +16,7 @@ export { UnblockedPartitionConnection, BlockedPartitionConnection, SoftPartition
 // Constructor Calls
 export { newExecCommandArgs, newStartServicesArgs, newGetServicesArgs, newRemoveServiceArgs, newPartitionServices, newRepartitionArgs, newPartitionConnections, newPartitionConnectionInfo, newWaitForHttpGetEndpointAvailabilityArgs, newWaitForHttpPostEndpointAvailabilityArgs } from "./core/lib/constructor_calls";
 
-// Module Launch API
-export { ModuleContainerArgs } from "./core/module_launch_api/module_container_args";
-export { getArgsFromEnv } from "./core/module_launch_api/args_io";
-
 export { PartitionConnections } from "./core/kurtosis_core_rpc_api_bindings/api_container_service_pb";
-export type { IExecutableModuleServiceServer } from "./core/kurtosis_core_rpc_api_bindings/executable_module_service_grpc_pb";
-export { ExecuteArgs, ExecuteResponse } from "./core/kurtosis_core_rpc_api_bindings/executable_module_service_pb";
-
-
 
 // TODO Remove this - shouldn't be necessary to be exported due to the newKurtosisContextFromLocalEngine() method
 export { KurtosisContext, DEFAULT_GRPC_PROXY_ENGINE_SERVER_PORT_NUM, DEFAULT_GRPC_ENGINE_SERVER_PORT_NUM } from "./engine/lib/kurtosis_context/kurtosis_context";

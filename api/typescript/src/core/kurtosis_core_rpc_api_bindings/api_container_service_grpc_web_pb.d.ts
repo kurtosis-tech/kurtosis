@@ -9,34 +9,6 @@ export class ApiContainerServiceClient {
                credentials?: null | { [index: string]: string; },
                options?: null | { [index: string]: any; });
 
-  loadModule(
-    request: api_container_service_pb.LoadModuleArgs,
-    metadata: grpcWeb.Metadata | undefined,
-    callback: (err: grpcWeb.RpcError,
-               response: api_container_service_pb.LoadModuleResponse) => void
-  ): grpcWeb.ClientReadableStream<api_container_service_pb.LoadModuleResponse>;
-
-  getModules(
-    request: api_container_service_pb.GetModulesArgs,
-    metadata: grpcWeb.Metadata | undefined,
-    callback: (err: grpcWeb.RpcError,
-               response: api_container_service_pb.GetModulesResponse) => void
-  ): grpcWeb.ClientReadableStream<api_container_service_pb.GetModulesResponse>;
-
-  unloadModule(
-    request: api_container_service_pb.UnloadModuleArgs,
-    metadata: grpcWeb.Metadata | undefined,
-    callback: (err: grpcWeb.RpcError,
-               response: api_container_service_pb.UnloadModuleResponse) => void
-  ): grpcWeb.ClientReadableStream<api_container_service_pb.UnloadModuleResponse>;
-
-  executeModule(
-    request: api_container_service_pb.ExecuteModuleArgs,
-    metadata: grpcWeb.Metadata | undefined,
-    callback: (err: grpcWeb.RpcError,
-               response: api_container_service_pb.ExecuteModuleResponse) => void
-  ): grpcWeb.ClientReadableStream<api_container_service_pb.ExecuteModuleResponse>;
-
   runStarlarkScript(
     request: api_container_service_pb.RunStarlarkScriptArgs,
     metadata?: grpcWeb.Metadata
@@ -151,26 +123,6 @@ export class ApiContainerServicePromiseClient {
   constructor (hostname: string,
                credentials?: null | { [index: string]: string; },
                options?: null | { [index: string]: any; });
-
-  loadModule(
-    request: api_container_service_pb.LoadModuleArgs,
-    metadata?: grpcWeb.Metadata
-  ): Promise<api_container_service_pb.LoadModuleResponse>;
-
-  getModules(
-    request: api_container_service_pb.GetModulesArgs,
-    metadata?: grpcWeb.Metadata
-  ): Promise<api_container_service_pb.GetModulesResponse>;
-
-  unloadModule(
-    request: api_container_service_pb.UnloadModuleArgs,
-    metadata?: grpcWeb.Metadata
-  ): Promise<api_container_service_pb.UnloadModuleResponse>;
-
-  executeModule(
-    request: api_container_service_pb.ExecuteModuleArgs,
-    metadata?: grpcWeb.Metadata
-  ): Promise<api_container_service_pb.ExecuteModuleResponse>;
 
   runStarlarkScript(
     request: api_container_service_pb.RunStarlarkScriptArgs,

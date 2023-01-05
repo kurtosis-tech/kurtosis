@@ -21,7 +21,7 @@ const (
 	// A label to identify a Kurtosis resource (e.g. network, container, etc.) by its id
 	idLabelKeyStr = labelNamespaceStr + "id"
 
-	// Used for things like service GUID, module GUID, etc.
+	// Used for things like service GUID, etc.
 	guidLabelKeyStr = labelNamespaceStr + "guid"
 
 	userServiceGuidDockerLabelKeyStr = labelNamespaceStr + "user-service-guid"

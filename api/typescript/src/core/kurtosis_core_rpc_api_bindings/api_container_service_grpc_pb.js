@@ -49,50 +49,6 @@ function deserialize_api_container_api_ExecCommandResponse(buffer_arg) {
   return api_container_service_pb.ExecCommandResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
-function serialize_api_container_api_ExecuteModuleArgs(arg) {
-  if (!(arg instanceof api_container_service_pb.ExecuteModuleArgs)) {
-    throw new Error('Expected argument of type api_container_api.ExecuteModuleArgs');
-  }
-  return Buffer.from(arg.serializeBinary());
-}
-
-function deserialize_api_container_api_ExecuteModuleArgs(buffer_arg) {
-  return api_container_service_pb.ExecuteModuleArgs.deserializeBinary(new Uint8Array(buffer_arg));
-}
-
-function serialize_api_container_api_ExecuteModuleResponse(arg) {
-  if (!(arg instanceof api_container_service_pb.ExecuteModuleResponse)) {
-    throw new Error('Expected argument of type api_container_api.ExecuteModuleResponse');
-  }
-  return Buffer.from(arg.serializeBinary());
-}
-
-function deserialize_api_container_api_ExecuteModuleResponse(buffer_arg) {
-  return api_container_service_pb.ExecuteModuleResponse.deserializeBinary(new Uint8Array(buffer_arg));
-}
-
-function serialize_api_container_api_GetModulesArgs(arg) {
-  if (!(arg instanceof api_container_service_pb.GetModulesArgs)) {
-    throw new Error('Expected argument of type api_container_api.GetModulesArgs');
-  }
-  return Buffer.from(arg.serializeBinary());
-}
-
-function deserialize_api_container_api_GetModulesArgs(buffer_arg) {
-  return api_container_service_pb.GetModulesArgs.deserializeBinary(new Uint8Array(buffer_arg));
-}
-
-function serialize_api_container_api_GetModulesResponse(arg) {
-  if (!(arg instanceof api_container_service_pb.GetModulesResponse)) {
-    throw new Error('Expected argument of type api_container_api.GetModulesResponse');
-  }
-  return Buffer.from(arg.serializeBinary());
-}
-
-function deserialize_api_container_api_GetModulesResponse(buffer_arg) {
-  return api_container_service_pb.GetModulesResponse.deserializeBinary(new Uint8Array(buffer_arg));
-}
-
 function serialize_api_container_api_GetServicesArgs(arg) {
   if (!(arg instanceof api_container_service_pb.GetServicesArgs)) {
     throw new Error('Expected argument of type api_container_api.GetServicesArgs');
@@ -113,28 +69,6 @@ function serialize_api_container_api_GetServicesResponse(arg) {
 
 function deserialize_api_container_api_GetServicesResponse(buffer_arg) {
   return api_container_service_pb.GetServicesResponse.deserializeBinary(new Uint8Array(buffer_arg));
-}
-
-function serialize_api_container_api_LoadModuleArgs(arg) {
-  if (!(arg instanceof api_container_service_pb.LoadModuleArgs)) {
-    throw new Error('Expected argument of type api_container_api.LoadModuleArgs');
-  }
-  return Buffer.from(arg.serializeBinary());
-}
-
-function deserialize_api_container_api_LoadModuleArgs(buffer_arg) {
-  return api_container_service_pb.LoadModuleArgs.deserializeBinary(new Uint8Array(buffer_arg));
-}
-
-function serialize_api_container_api_LoadModuleResponse(arg) {
-  if (!(arg instanceof api_container_service_pb.LoadModuleResponse)) {
-    throw new Error('Expected argument of type api_container_api.LoadModuleResponse');
-  }
-  return Buffer.from(arg.serializeBinary());
-}
-
-function deserialize_api_container_api_LoadModuleResponse(buffer_arg) {
-  return api_container_service_pb.LoadModuleResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
 function serialize_api_container_api_PauseServiceArgs(arg) {
@@ -302,28 +236,6 @@ function deserialize_api_container_api_StoreWebFilesArtifactResponse(buffer_arg)
   return api_container_service_pb.StoreWebFilesArtifactResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
-function serialize_api_container_api_UnloadModuleArgs(arg) {
-  if (!(arg instanceof api_container_service_pb.UnloadModuleArgs)) {
-    throw new Error('Expected argument of type api_container_api.UnloadModuleArgs');
-  }
-  return Buffer.from(arg.serializeBinary());
-}
-
-function deserialize_api_container_api_UnloadModuleArgs(buffer_arg) {
-  return api_container_service_pb.UnloadModuleArgs.deserializeBinary(new Uint8Array(buffer_arg));
-}
-
-function serialize_api_container_api_UnloadModuleResponse(arg) {
-  if (!(arg instanceof api_container_service_pb.UnloadModuleResponse)) {
-    throw new Error('Expected argument of type api_container_api.UnloadModuleResponse');
-  }
-  return Buffer.from(arg.serializeBinary());
-}
-
-function deserialize_api_container_api_UnloadModuleResponse(buffer_arg) {
-  return api_container_service_pb.UnloadModuleResponse.deserializeBinary(new Uint8Array(buffer_arg));
-}
-
 function serialize_api_container_api_UnpauseServiceArgs(arg) {
   if (!(arg instanceof api_container_service_pb.UnpauseServiceArgs)) {
     throw new Error('Expected argument of type api_container_api.UnpauseServiceArgs');
@@ -392,54 +304,6 @@ function deserialize_google_protobuf_Empty(buffer_arg) {
 
 
 var ApiContainerServiceService = exports.ApiContainerServiceService = {
-  // Starts a module container in the enclave
-loadModule: {
-    path: '/api_container_api.ApiContainerService/LoadModule',
-    requestStream: false,
-    responseStream: false,
-    requestType: api_container_service_pb.LoadModuleArgs,
-    responseType: api_container_service_pb.LoadModuleResponse,
-    requestSerialize: serialize_api_container_api_LoadModuleArgs,
-    requestDeserialize: deserialize_api_container_api_LoadModuleArgs,
-    responseSerialize: serialize_api_container_api_LoadModuleResponse,
-    responseDeserialize: deserialize_api_container_api_LoadModuleResponse,
-  },
-  // Gets information about loaded modules
-getModules: {
-    path: '/api_container_api.ApiContainerService/GetModules',
-    requestStream: false,
-    responseStream: false,
-    requestType: api_container_service_pb.GetModulesArgs,
-    responseType: api_container_service_pb.GetModulesResponse,
-    requestSerialize: serialize_api_container_api_GetModulesArgs,
-    requestDeserialize: deserialize_api_container_api_GetModulesArgs,
-    responseSerialize: serialize_api_container_api_GetModulesResponse,
-    responseDeserialize: deserialize_api_container_api_GetModulesResponse,
-  },
-  // Stop and remove a module from the enclave
-unloadModule: {
-    path: '/api_container_api.ApiContainerService/UnloadModule',
-    requestStream: false,
-    responseStream: false,
-    requestType: api_container_service_pb.UnloadModuleArgs,
-    responseType: api_container_service_pb.UnloadModuleResponse,
-    requestSerialize: serialize_api_container_api_UnloadModuleArgs,
-    requestDeserialize: deserialize_api_container_api_UnloadModuleArgs,
-    responseSerialize: serialize_api_container_api_UnloadModuleResponse,
-    responseDeserialize: deserialize_api_container_api_UnloadModuleResponse,
-  },
-  // Executes an executable module on the user's behalf
-executeModule: {
-    path: '/api_container_api.ApiContainerService/ExecuteModule',
-    requestStream: false,
-    responseStream: false,
-    requestType: api_container_service_pb.ExecuteModuleArgs,
-    responseType: api_container_service_pb.ExecuteModuleResponse,
-    requestSerialize: serialize_api_container_api_ExecuteModuleArgs,
-    requestDeserialize: deserialize_api_container_api_ExecuteModuleArgs,
-    responseSerialize: serialize_api_container_api_ExecuteModuleResponse,
-    responseDeserialize: deserialize_api_container_api_ExecuteModuleResponse,
-  },
   // Executes a Starlark script on the user's behalf
 runStarlarkScript: {
     path: '/api_container_api.ApiContainerService/RunStarlarkScript',

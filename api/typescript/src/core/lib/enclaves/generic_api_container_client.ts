@@ -7,13 +7,8 @@ import { Result } from "neverthrow";
 import {
     ExecCommandArgs,
     ExecCommandResponse,
-    ExecuteModuleArgs,
-    ExecuteModuleResponse,
-    GetModulesArgs,
-    GetModulesResponse,
     GetServicesArgs,
     GetServicesResponse,
-    LoadModuleArgs,
     PauseServiceArgs,
     RemoveServiceArgs,
     RemoveServiceResponse,
@@ -27,8 +22,6 @@ import {
     StoreFilesArtifactFromServiceArgs,
     StoreWebFilesArtifactArgs,
     StoreWebFilesArtifactResponse,
-    UnloadModuleArgs,
-    UnloadModuleResponse,
     UnpauseServiceArgs,
     UploadFilesArtifactArgs,
     UploadFilesArtifactResponse,
@@ -40,8 +33,6 @@ import {Readable} from "stream";
 
 export interface GenericApiContainerClient {
     getEnclaveId(): EnclaveID
-    loadModule(loadModuleArgs: LoadModuleArgs): Promise<Result<null, Error>>
-    unloadModule(unloadModuleArgs: UnloadModuleArgs): Promise<Result<UnloadModuleResponse,Error>>
     runStarlarkScript(serializedStarlarkScript: RunStarlarkScriptArgs): Promise<Result<Readable, Error>>
     runStarlarkPackage(starlarkPackageArgs: RunStarlarkPackageArgs): Promise<Result<Readable, Error>>
     startServices(startServicesArgs: StartServicesArgs): Promise<Result<StartServicesResponse, Error>>
@@ -50,8 +41,6 @@ export interface GenericApiContainerClient {
     waitForHttpGetEndpointAvailability(availabilityArgs: WaitForHttpGetEndpointAvailabilityArgs): Promise<Result<null, Error>>
     waitForHttpPostEndpointAvailability(availabilityArgs: WaitForHttpPostEndpointAvailabilityArgs): Promise<Result<null, Error>>
     getServices(getServicesArgs: GetServicesArgs): Promise<Result<GetServicesResponse, Error>>
-    getModules(getModulesArgs: GetModulesArgs): Promise<Result<GetModulesResponse, Error>>
-    executeModule(executeModuleArgs: ExecuteModuleArgs): Promise<Result<ExecuteModuleResponse, Error>>
     execCommand(execCommandArgs: ExecCommandArgs): Promise<Result<ExecCommandResponse, Error>>
     pauseService(pauseServiceArgs: PauseServiceArgs): Promise<Result<null, Error>>
     unpauseService(unpauseServiceArgs: UnpauseServiceArgs): Promise<Result<null, Error>>

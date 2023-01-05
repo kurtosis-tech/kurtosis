@@ -8,7 +8,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_database"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"io"
@@ -155,64 +154,6 @@ type KurtosisBackend interface {
 		successfulApiContainerIds map[enclave.EnclaveID]bool,
 		erroredApiContainerIds map[enclave.EnclaveID]error,
 		resultErr error,
-	)
-
-	// Create a module from a container image with serialized params
-	CreateModule(
-		ctx context.Context,
-		image string,
-		enclaveId enclave.EnclaveID,
-		id module.ModuleID,
-		grpcPortNum uint16,
-		envVars map[string]string,
-	) (
-		newModule *module.Module,
-		resultErr error,
-	)
-
-	// Gets modules using the given filters, returning a map of matched modules identified by their module ID
-	GetModules(
-		ctx context.Context,
-		enclaveId enclave.EnclaveID,
-		filters *module.ModuleFilters,
-	) (
-		map[module.ModuleGUID]*module.Module,
-		error,
-	)
-
-	// Get module logs using the given filters, returning a map of matched modules identified by their GUID and a readCloser object for each one
-	// User is responsible for closing the 'ReadCloser' object returned in the successfulModuleLogs map
-	GetModuleLogs(
-		ctx context.Context,
-		enclaveId enclave.EnclaveID,
-		filters *module.ModuleFilters,
-		shouldFollowLogs bool,
-	) (
-		successfulModuleLogs map[module.ModuleGUID]io.ReadCloser,
-		erroredModuleGuids map[module.ModuleGUID]error,
-		resultError error,
-	)
-
-	// Stops the modules matching the given filters
-	StopModules(
-		ctx context.Context,
-		enclaveId enclave.EnclaveID,
-		filters *module.ModuleFilters,
-	) (
-		successfulModuleIds map[module.ModuleGUID]bool, // "set" of module IDs that were successfully stopped
-		erroredModuleIds map[module.ModuleGUID]error, // "set" of module IDs that errored when being stopped, with the error
-		resultErr error, // Represents an error with the function itself, rather than the modules
-	)
-
-	// Destroys the modules with the given filters, regardless of if they're running or not
-	DestroyModules(
-		ctx context.Context,
-		enclaveId enclave.EnclaveID,
-		filters *module.ModuleFilters,
-	) (
-		successfulModuleIds map[module.ModuleGUID]bool, // "set" of module IDs that were successfully destroyed
-		erroredModuleIds map[module.ModuleGUID]error, // "set" of module IDs that errored when destroying, with the error
-		resultErr error, // Represents an error with the function itself, rather than the modules
 	)
 
 	/*

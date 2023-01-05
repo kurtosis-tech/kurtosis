@@ -95,18 +95,6 @@ func NewApiContainerService(
 	return service, nil
 }
 
-func (apicService ApiContainerService) LoadModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.LoadModuleArgs) (*kurtosis_core_rpc_api_bindings.LoadModuleResponse, error) {
-	return nil, stacktrace.NewError("LoadModule has been deprecated. Use Starlark package instead.")
-}
-
-func (apicService ApiContainerService) UnloadModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.UnloadModuleArgs) (*kurtosis_core_rpc_api_bindings.UnloadModuleResponse, error) {
-	return nil, stacktrace.NewError("UnloadModule has been deprecated. Use Starlark package instead.")
-}
-
-func (apicService ApiContainerService) ExecuteModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecuteModuleArgs) (*kurtosis_core_rpc_api_bindings.ExecuteModuleResponse, error) {
-	return nil, stacktrace.NewError("ExecuteModule has been deprecated. Use Starlark package instead.")
-}
-
 func (apicService ApiContainerService) RunStarlarkScript(args *kurtosis_core_rpc_api_bindings.RunStarlarkScriptArgs, stream kurtosis_core_rpc_api_bindings.ApiContainerService_RunStarlarkScriptServer) error {
 	serializedStarlarkScript := args.GetSerializedScript()
 	serializedParams := args.GetSerializedParams()
@@ -381,10 +369,6 @@ func (apicService ApiContainerService) GetServices(ctx context.Context, args *ku
 
 	resp := binding_constructors.NewGetServicesResponse(serviceInfos)
 	return resp, nil
-}
-
-func (apicService ApiContainerService) GetModules(ctx context.Context, args *kurtosis_core_rpc_api_bindings.GetModulesArgs) (*kurtosis_core_rpc_api_bindings.GetModulesResponse, error) {
-	return nil, stacktrace.NewError("GetModules has been deprecated. Use Starlark package instead.")
 }
 
 func (apicService ApiContainerService) UploadFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.UploadFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse, error) {

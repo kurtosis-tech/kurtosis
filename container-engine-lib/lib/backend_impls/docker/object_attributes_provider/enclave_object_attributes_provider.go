@@ -7,7 +7,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_port_spec_serializer"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
@@ -23,7 +22,6 @@ const (
 	networkingSidecarContainerNameFragment = "networking-sidecar"
 	artifactExpansionVolumeNameFragment    = "files-artifact-expansion"
 	artifactsExpanderContainerNameFragment = "files-artifacts-expander"
-	moduleContainerNameFragment            = "module"
 )
 
 type DockerEnclaveObjectAttributesProvider interface {
@@ -32,7 +30,6 @@ type DockerEnclaveObjectAttributesProvider interface {
 		creationTime time.Time,
 	) (DockerObjectAttributes, error)
 	ForEnclaveDataVolume() (DockerObjectAttributes, error)
-
 	ForApiContainer(
 		ipAddr net.IP,
 		privateGrpcPortId string,
@@ -54,13 +51,6 @@ type DockerEnclaveObjectAttributesProvider interface {
 	) (DockerObjectAttributes, error)
 	ForSingleFilesArtifactExpansionVolume(
 		serviceGUID service.ServiceGUID,
-	) (DockerObjectAttributes, error)
-	ForModuleContainer(
-		privateIpAddr net.IP,
-		moduleID module.ModuleID,
-		moduleGUID module.ModuleGUID,
-		privatePortId string,
-		privatePortSpec *port_spec.PortSpec,
 	) (DockerObjectAttributes, error)
 }
 
@@ -282,57 +272,6 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForNetworkingSidecarC
 			name.GetString(),
 			getLabelKeyValuesAsStrings(labels),
 		)
-	}
-
-	return objectAttributes, nil
-}
-
-func (provider *dockerEnclaveObjectAttributesProviderImpl) ForModuleContainer(
-	privateIpAddr net.IP,
-	moduleID module.ModuleID,
-	moduleGUID module.ModuleGUID,
-	privatePortId string,
-	privatePortSpec *port_spec.PortSpec,
-) (DockerObjectAttributes, error) {
-	name, err := provider.getNameForEnclaveObject([]string{
-		moduleContainerNameFragment,
-		string(moduleGUID),
-	})
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the module container name object")
-	}
-
-	privateIpLabelValue, err := docker_label_value.CreateNewDockerLabelValue(privateIpAddr.String())
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred creating a Docker label value object from module container private IP address '%v'",
-			privateIpAddr.String(),
-		)
-	}
-
-	usedPorts := map[string]*port_spec.PortSpec{
-		privatePortId: privatePortSpec,
-	}
-	serializedPortsSpec, err := docker_port_spec_serializer.SerializePortSpecs(usedPorts)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred serializing the following module container ports object to a string for storing in the ports label: %+v", usedPorts)
-	}
-
-	moduleIDStr := string(moduleID)
-	moduleGUIDStr := string(moduleGUID)
-
-	labels, err := provider.getLabelsForEnclaveObjectWithIDAndGUID(moduleIDStr, moduleGUIDStr)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the module labels using ID '%v' and GUID '%v'", moduleID, moduleGUID)
-	}
-	labels[label_key_consts.ContainerTypeDockerLabelKey] = label_value_consts.ModuleContainerTypeDockerLabelValue
-	labels[label_key_consts.PortSpecsDockerLabelKey] = serializedPortsSpec
-	labels[label_key_consts.PrivateIPDockerLabelKey] = privateIpLabelValue
-
-	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while creating the ObjectAttributesImpl with the name '%s' and labels '%+v'", name, labels)
 	}
 
 	return objectAttributes, nil

@@ -9,7 +9,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_database"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
@@ -210,103 +209,6 @@ func (backend *MetricsReportingKurtosisBackend) DestroyAPIContainers(ctx context
 	successes, failures, err := backend.underlying.DestroyAPIContainers(ctx, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying API containers using filters: %+v", filters)
-	}
-	return successes, failures, nil
-}
-
-func (backend *MetricsReportingKurtosisBackend) CreateModule(
-	ctx context.Context,
-	image string,
-	enclaveId enclave.EnclaveID,
-	id module.ModuleID,
-	grpcPortNum uint16,
-	envVars map[string]string,
-) (
-	newModule *module.Module,
-	resultErr error,
-) {
-	newModule, err := backend.underlying.CreateModule(
-		ctx,
-		image,
-		enclaveId,
-		id,
-		grpcPortNum,
-		envVars,
-	)
-	if err != nil {
-		return nil,
-			stacktrace.Propagate(
-				err,
-				"An error occurred creating module with ID '%v' in enclave '%v', and image '%v'",
-				id,
-				enclaveId,
-				image,
-			)
-	}
-
-	return newModule, nil
-}
-
-func (backend *MetricsReportingKurtosisBackend) GetModules(
-	ctx context.Context,
-	enclaveId enclave.EnclaveID,
-	filters *module.ModuleFilters,
-) (
-	map[module.ModuleGUID]*module.Module,
-	error,
-) {
-	modules, err := backend.underlying.GetModules(ctx, enclaveId, filters)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting modules in enclave '%v' using filters: %+v", enclaveId, filters)
-	}
-	return modules, nil
-}
-
-func (backend *MetricsReportingKurtosisBackend) GetModuleLogs(
-	ctx context.Context,
-	enclaveId enclave.EnclaveID,
-	filters *module.ModuleFilters,
-	shouldFollowLogs bool,
-) (
-	map[module.ModuleGUID]io.ReadCloser,
-	map[module.ModuleGUID]error,
-	error,
-) {
-	moduleLogs, erroredModules, err := backend.underlying.GetModuleLogs(ctx, enclaveId, filters, shouldFollowLogs)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting module logs in enclave '%v' using filters '%+v'", enclaveId, filters)
-	}
-	return moduleLogs, erroredModules, nil
-}
-
-func (backend *MetricsReportingKurtosisBackend) StopModules(
-	ctx context.Context,
-	enclaveId enclave.EnclaveID,
-	filters *module.ModuleFilters,
-) (
-	successfulModuleIds map[module.ModuleGUID]bool,
-	erroredModuleIds map[module.ModuleGUID]error,
-	resultErr error,
-) {
-	successes, failures, err := backend.underlying.StopModules(ctx, enclaveId, filters)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred stopping modules in enclave '%v' using filters: %+v", enclaveId, filters)
-	}
-	return successes, failures, nil
-}
-
-func (backend *MetricsReportingKurtosisBackend) DestroyModules(
-	ctx context.Context,
-	enclaveId enclave.EnclaveID,
-	filters *module.ModuleFilters,
-) (
-	successfulModuleIds map[module.ModuleGUID]bool,
-	erroredModuleIds map[module.ModuleGUID]error,
-	resultErr error,
-) {
-	successes, failures, err := backend.underlying.DestroyModules(ctx, enclaveId, filters)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying modules in enclave '%v' using filters: %+v", enclaveId, filters)
 	}
 	return successes, failures, nil
 }

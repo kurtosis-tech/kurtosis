@@ -9,11 +9,6 @@ import {
     WaitForHttpGetEndpointAvailabilityArgs,
     WaitForHttpPostEndpointAvailabilityArgs,
     GetServicesResponse,
-    LoadModuleArgs,
-    UnloadModuleArgs,
-    GetModulesResponse,
-    ExecuteModuleResponse,
-    ExecuteModuleArgs,
     ExecCommandArgs,
     ExecCommandResponse,
     PauseServiceArgs,
@@ -25,8 +20,6 @@ import {
     StoreFilesArtifactFromServiceArgs,
     StoreFilesArtifactFromServiceResponse,
     GetServicesArgs,
-    GetModulesArgs,
-    UnloadModuleResponse,
     RenderTemplatesToFilesArtifactArgs,
     RenderTemplatesToFilesArtifactResponse,
     RunStarlarkScriptArgs,
@@ -51,50 +44,6 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
 
     public getEnclaveId(): EnclaveID {
         return this.enclaveId;
-    }
-
-    public async loadModule(loadModuleArgs: LoadModuleArgs): Promise<Result<null, Error>> {
-        const loadModulePromise: Promise<Result<google_protobuf_empty_pb.Empty, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.loadModule(loadModuleArgs, (error: ServiceError | null, response?: google_protobuf_empty_pb.Empty) => {
-                if (error === null) {
-                    if (!response) {
-                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
-                    } else {
-                        resolve(ok(response!));
-                    }
-                } else {
-                    resolve(err(error));
-                }
-            })
-        });
-        const loadModulePromiseResult: Result<google_protobuf_empty_pb.Empty, Error> = await loadModulePromise;
-        if (loadModulePromiseResult.isErr()) {
-            return err(loadModulePromiseResult.error);
-        }
-
-        return ok(null);
-    }
-
-    public async unloadModule(unloadModuleArgs: UnloadModuleArgs): Promise<Result<UnloadModuleResponse,Error>> {
-        const unloadModulePromise: Promise<Result<UnloadModuleResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.unloadModule(unloadModuleArgs, (error: ServiceError | null, unloadModuleResponse: UnloadModuleResponse | undefined) => {
-                if (error === null) {
-                    if (!unloadModuleResponse) {
-                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
-                    } else {
-                        resolve(ok(unloadModuleResponse!));
-                    }
-                } else {
-                    resolve(err(error));
-                }
-            })
-        })
-
-        const unloadModuleResult: Result<UnloadModuleResponse, Error> = await unloadModulePromise;
-        if (unloadModuleResult.isErr()) {
-            return err(unloadModuleResult.error);
-        }
-        return ok(unloadModuleResult.value);
     }
 
     public async runStarlarkScript(serializedStarlarkScript: RunStarlarkScriptArgs): Promise<Result<Readable, Error>> {
@@ -240,53 +189,6 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
 
         const getServicesResponse = resultGetServices.value;
         return ok(getServicesResponse)
-    }
-
-    public async getModules(getModulesArgs: GetModulesArgs): Promise<Result<GetModulesResponse, Error>> {
-        const getModulesPromise: Promise<Result<GetModulesResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.getModules(getModulesArgs, (error: ServiceError | null, response?: GetModulesResponse) => {
-                if (error === null) {
-                    if (!response) {
-                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
-                    } else {
-                        resolve(ok(response!));
-                    }
-                } else {
-                    resolve(err(error));
-                }
-            })
-        });
-
-        const getModulesResult: Result<GetModulesResponse, Error> = await getModulesPromise;
-        if (getModulesResult.isErr()) {
-            return err(getModulesResult.error);
-        }
-
-        const getModulesResponse = getModulesResult.value;
-        return ok(getModulesResponse)
-    }
-
-    public async executeModule(executeModuleArgs: ExecuteModuleArgs): Promise<Result<ExecuteModuleResponse, Error>> {
-        const executeModulePromise: Promise<Result<ExecuteModuleResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.executeModule(executeModuleArgs, (error: ServiceError | null, response?: ExecuteModuleResponse) => {
-                if (error === null) {
-                    if (!response) {
-                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
-                    } else {
-                        resolve(ok(response!));
-                    }
-                } else {
-                    resolve(err(error));
-                }
-            })
-        });
-        const executeModuleResult: Result<ExecuteModuleResponse, Error> = await executeModulePromise;
-        if (executeModuleResult.isErr()) {
-            return err(executeModuleResult.error);
-        }
-
-        const executeModuleResponse: ExecuteModuleResponse = executeModuleResult.value;
-        return ok(executeModuleResponse);
     }
 
     public async execCommand(execCommandArgs: ExecCommandArgs): Promise<Result<ExecCommandResponse, Error>> {

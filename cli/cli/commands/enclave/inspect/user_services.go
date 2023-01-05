@@ -26,6 +26,7 @@ const (
 	emptyApplicationProtocol      = ""
 	missingPortPlaceholder        = "<none>"
 	linkDelimeter                 = "://"
+	defaultEmptyIPAddrForAPIC = ""
 )
 
 func printUserServices(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo, isAPIContainerRunning bool) error {
@@ -65,7 +66,7 @@ func printUserServices(ctx context.Context, kurtosisBackend backend_interface.Ku
 
 		// Look for public port and IP information in API container map
 		maybePublicPortMapFromAPIC := map[string]*kurtosis_core_rpc_api_bindings.Port{}
-		maybePublicIpAddrFromAPIC := defaultEmptyIPAddrForModules
+		maybePublicIpAddrFromAPIC := defaultEmptyIPAddrForAPIC
 		serviceInfoFromAPIC, found := serviceInfoMapFromAPIC[serviceIdStr]
 		if found {
 			// Set public port from API container information

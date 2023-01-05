@@ -276,7 +276,7 @@ func (service *EngineGatewayServiceServer) startRunningGatewayForEnclave(enclave
 	return runningGatewayInfo, nil
 }
 
-// Calls `GetModules` and waits for the gateway to be ready
+// Calls `GetServices` and waits for the gateway to be ready
 func waitForGatewayReady(apiContainerHostMachineInfo *kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo) error {
 	backgroundCtx := context.Background()
 	gatewayAddress := fmt.Sprintf("%v:%v", apiContainerHostMachineInfo.IpOnHostMachine, apiContainerHostMachineInfo.GrpcPortOnHostMachine)
@@ -288,14 +288,14 @@ func waitForGatewayReady(apiContainerHostMachineInfo *kurtosis_engine_rpc_api_bi
 	apiContainerClient := kurtosis_core_rpc_api_bindings.NewApiContainerServiceClient(conn)
 
 	// The GRPC Server for our `API Container Gateway` is spun up in a gofunc
-	// We call `GetModules` with `WaitForReady` to wait for the server to finish setting up
+	// We call `GetServices` with `WaitForReady` to wait for the server to finish setting up
 	// Modifying
 	ctxWithTimeout, cancelFunc := context.WithTimeout(backgroundCtx, apiContainerGatewayHealthcheckTimeout)
 	defer cancelFunc()
-	getModulesHealthCheckParams := &kurtosis_core_rpc_api_bindings.GetModulesArgs{Ids: nil}
-	_, err = apiContainerClient.GetModules(ctxWithTimeout, getModulesHealthCheckParams, grpc.WaitForReady(waitForGatewayGrpcReady))
+	getServicesHealthCheckParams := &kurtosis_core_rpc_api_bindings.GetServicesArgs{ServiceIds: nil}
+	_, err = apiContainerClient.GetServices(ctxWithTimeout, getServicesHealthCheckParams, grpc.WaitForReady(waitForGatewayGrpcReady))
 	if err != nil {
-		return stacktrace.Propagate(err, "Expected to be to call `GetModules` and wait for server to be ready, instead a non-nil error was returned")
+		return stacktrace.Propagate(err, "Expected to be to call `GetServices` and wait for server to be ready, instead a non-nil error was returned")
 	}
 
 	return nil

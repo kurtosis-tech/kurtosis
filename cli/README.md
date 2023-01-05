@@ -19,7 +19,7 @@ Developers should be able to run and debug tests within Goland in both `typescri
 Debugging User Issues
 ---------------------
 ### The CLI's not working and there's not enough info to figure out why
-The CLI has its own log level (separate from the engine, core, & modules). Set the `--cli-log-level` flag to `debug` or `trace` to see more info about what the CLI is doing (can be set on any command).
+The CLI has its own log level (separate from the engine & core). Set the `--cli-log-level` flag to `debug` or `trace` to see more info about what the CLI is doing (can be set on any command).
 
 ### Tab completion isn't working
 Have the user run the following command, so that all the logs during completion get logged:

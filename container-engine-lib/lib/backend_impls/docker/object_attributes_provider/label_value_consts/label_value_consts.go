@@ -20,7 +20,6 @@ const (
 	apiContainerContainerTypeLabelValueStr           = "api-container"
 	userServiceContainerTypeLabelValueStr            = "user-service"
 	networkingSidecarContainerTypeLabelValueStr      = "networking-sidecar"
-	moduleContainerTypeLabelValueStr                 = "module"
 	filesArtifactsExpanderContainerTypeLabelValueStr = "files-artifacts-expander"
 
 	enclaveDataVolumeTypeLabelValueStr            = "enclave-data"
@@ -42,7 +41,6 @@ var AppIDDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(app
 var EngineContainerTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(engineContainerTypeLabelValueStr)
 var LogsDatabaseTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(logsDatabaseContainerTypeLabelValueStr)
 var LogsCollectorTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(logsCollectorContainerTypeLabelValueStr)
-var ModuleContainerTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(moduleContainerTypeLabelValueStr)
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 

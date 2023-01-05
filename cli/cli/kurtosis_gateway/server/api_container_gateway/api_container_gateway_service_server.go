@@ -59,31 +59,6 @@ func NewEnclaveApiContainerGatewayServer(connectionProvider *connection.GatewayC
 	}, closeGatewayFunc
 }
 
-func (service *ApiContainerGatewayServiceServer) LoadModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.LoadModuleArgs) (*kurtosis_core_rpc_api_bindings.LoadModuleResponse, error) {
-	remoteApiContainerResponse, err := service.remoteApiContainerClient.LoadModule(ctx, args)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
-	}
-
-	return remoteApiContainerResponse, nil
-}
-func (service *ApiContainerGatewayServiceServer) UnloadModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.UnloadModuleArgs) (*kurtosis_core_rpc_api_bindings.UnloadModuleResponse, error) {
-	remoteApiContainerResponse, err := service.remoteApiContainerClient.UnloadModule(ctx, args)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
-	}
-
-	return remoteApiContainerResponse, nil
-}
-func (service *ApiContainerGatewayServiceServer) ExecuteModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecuteModuleArgs) (*kurtosis_core_rpc_api_bindings.ExecuteModuleResponse, error) {
-	remoteApiContainerResponse, err := service.remoteApiContainerClient.ExecuteModule(ctx, args)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
-	}
-
-	return remoteApiContainerResponse, nil
-}
-
 func (service *ApiContainerGatewayServiceServer) RunStarlarkScript(args *kurtosis_core_rpc_api_bindings.RunStarlarkScriptArgs, streamToWriteTo kurtosis_core_rpc_api_bindings.ApiContainerService_RunStarlarkScriptServer) error {
 	logrus.Debug("Executing Starlark script")
 	streamToReadFrom, err := service.remoteApiContainerClient.RunStarlarkScript(streamToWriteTo.Context(), args)
@@ -218,14 +193,6 @@ func (service *ApiContainerGatewayServiceServer) WaitForHttpPostEndpointAvailabi
 	return remoteApiContainerResponse, nil
 }
 
-func (service *ApiContainerGatewayServiceServer) GetModules(ctx context.Context, args *kurtosis_core_rpc_api_bindings.GetModulesArgs) (*kurtosis_core_rpc_api_bindings.GetModulesResponse, error) {
-	remoteApiContainerResponse, err := service.remoteApiContainerClient.GetModules(ctx, args)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
-	}
-
-	return remoteApiContainerResponse, nil
-}
 func (service *ApiContainerGatewayServiceServer) UploadFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.UploadFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse, error) {
 	remoteApiContainerResponse, err := service.remoteApiContainerClient.UploadFilesArtifact(ctx, args)
 	if err != nil {

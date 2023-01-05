@@ -23,14 +23,6 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ApiContainerServiceClient interface {
-	// Starts a module container in the enclave
-	LoadModule(ctx context.Context, in *LoadModuleArgs, opts ...grpc.CallOption) (*LoadModuleResponse, error)
-	// Gets information about loaded modules
-	GetModules(ctx context.Context, in *GetModulesArgs, opts ...grpc.CallOption) (*GetModulesResponse, error)
-	// Stop and remove a module from the enclave
-	UnloadModule(ctx context.Context, in *UnloadModuleArgs, opts ...grpc.CallOption) (*UnloadModuleResponse, error)
-	// Executes an executable module on the user's behalf
-	ExecuteModule(ctx context.Context, in *ExecuteModuleArgs, opts ...grpc.CallOption) (*ExecuteModuleResponse, error)
 	// Executes a Starlark script on the user's behalf
 	RunStarlarkScript(ctx context.Context, in *RunStarlarkScriptArgs, opts ...grpc.CallOption) (ApiContainerService_RunStarlarkScriptClient, error)
 	// Executes a Starlark script on the user's behalf
@@ -72,42 +64,6 @@ type apiContainerServiceClient struct {
 
 func NewApiContainerServiceClient(cc grpc.ClientConnInterface) ApiContainerServiceClient {
 	return &apiContainerServiceClient{cc}
-}
-
-func (c *apiContainerServiceClient) LoadModule(ctx context.Context, in *LoadModuleArgs, opts ...grpc.CallOption) (*LoadModuleResponse, error) {
-	out := new(LoadModuleResponse)
-	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/LoadModule", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *apiContainerServiceClient) GetModules(ctx context.Context, in *GetModulesArgs, opts ...grpc.CallOption) (*GetModulesResponse, error) {
-	out := new(GetModulesResponse)
-	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/GetModules", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *apiContainerServiceClient) UnloadModule(ctx context.Context, in *UnloadModuleArgs, opts ...grpc.CallOption) (*UnloadModuleResponse, error) {
-	out := new(UnloadModuleResponse)
-	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/UnloadModule", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *apiContainerServiceClient) ExecuteModule(ctx context.Context, in *ExecuteModuleArgs, opts ...grpc.CallOption) (*ExecuteModuleResponse, error) {
-	out := new(ExecuteModuleResponse)
-	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/ExecuteModule", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *apiContainerServiceClient) RunStarlarkScript(ctx context.Context, in *RunStarlarkScriptArgs, opts ...grpc.CallOption) (ApiContainerService_RunStarlarkScriptClient, error) {
@@ -304,14 +260,6 @@ func (c *apiContainerServiceClient) RenderTemplatesToFilesArtifact(ctx context.C
 // All implementations should embed UnimplementedApiContainerServiceServer
 // for forward compatibility
 type ApiContainerServiceServer interface {
-	// Starts a module container in the enclave
-	LoadModule(context.Context, *LoadModuleArgs) (*LoadModuleResponse, error)
-	// Gets information about loaded modules
-	GetModules(context.Context, *GetModulesArgs) (*GetModulesResponse, error)
-	// Stop and remove a module from the enclave
-	UnloadModule(context.Context, *UnloadModuleArgs) (*UnloadModuleResponse, error)
-	// Executes an executable module on the user's behalf
-	ExecuteModule(context.Context, *ExecuteModuleArgs) (*ExecuteModuleResponse, error)
 	// Executes a Starlark script on the user's behalf
 	RunStarlarkScript(*RunStarlarkScriptArgs, ApiContainerService_RunStarlarkScriptServer) error
 	// Executes a Starlark script on the user's behalf
@@ -351,18 +299,6 @@ type ApiContainerServiceServer interface {
 type UnimplementedApiContainerServiceServer struct {
 }
 
-func (UnimplementedApiContainerServiceServer) LoadModule(context.Context, *LoadModuleArgs) (*LoadModuleResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method LoadModule not implemented")
-}
-func (UnimplementedApiContainerServiceServer) GetModules(context.Context, *GetModulesArgs) (*GetModulesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetModules not implemented")
-}
-func (UnimplementedApiContainerServiceServer) UnloadModule(context.Context, *UnloadModuleArgs) (*UnloadModuleResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UnloadModule not implemented")
-}
-func (UnimplementedApiContainerServiceServer) ExecuteModule(context.Context, *ExecuteModuleArgs) (*ExecuteModuleResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ExecuteModule not implemented")
-}
 func (UnimplementedApiContainerServiceServer) RunStarlarkScript(*RunStarlarkScriptArgs, ApiContainerService_RunStarlarkScriptServer) error {
 	return status.Errorf(codes.Unimplemented, "method RunStarlarkScript not implemented")
 }
@@ -421,78 +357,6 @@ type UnsafeApiContainerServiceServer interface {
 
 func RegisterApiContainerServiceServer(s grpc.ServiceRegistrar, srv ApiContainerServiceServer) {
 	s.RegisterService(&ApiContainerService_ServiceDesc, srv)
-}
-
-func _ApiContainerService_LoadModule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(LoadModuleArgs)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ApiContainerServiceServer).LoadModule(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api_container_api.ApiContainerService/LoadModule",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApiContainerServiceServer).LoadModule(ctx, req.(*LoadModuleArgs))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ApiContainerService_GetModules_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetModulesArgs)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ApiContainerServiceServer).GetModules(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api_container_api.ApiContainerService/GetModules",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApiContainerServiceServer).GetModules(ctx, req.(*GetModulesArgs))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ApiContainerService_UnloadModule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UnloadModuleArgs)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ApiContainerServiceServer).UnloadModule(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api_container_api.ApiContainerService/UnloadModule",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApiContainerServiceServer).UnloadModule(ctx, req.(*UnloadModuleArgs))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ApiContainerService_ExecuteModule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ExecuteModuleArgs)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ApiContainerServiceServer).ExecuteModule(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api_container_api.ApiContainerService/ExecuteModule",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApiContainerServiceServer).ExecuteModule(ctx, req.(*ExecuteModuleArgs))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _ApiContainerService_RunStarlarkScript_Handler(srv interface{}, stream grpc.ServerStream) error {
@@ -796,22 +660,6 @@ var ApiContainerService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "api_container_api.ApiContainerService",
 	HandlerType: (*ApiContainerServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "LoadModule",
-			Handler:    _ApiContainerService_LoadModule_Handler,
-		},
-		{
-			MethodName: "GetModules",
-			Handler:    _ApiContainerService_GetModules_Handler,
-		},
-		{
-			MethodName: "UnloadModule",
-			Handler:    _ApiContainerService_UnloadModule_Handler,
-		},
-		{
-			MethodName: "ExecuteModule",
-			Handler:    _ApiContainerService_ExecuteModule_Handler,
-		},
 		{
 			MethodName: "StartServices",
 			Handler:    _ApiContainerService_StartServices_Handler,

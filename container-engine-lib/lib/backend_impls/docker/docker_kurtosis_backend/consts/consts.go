@@ -11,7 +11,7 @@ const (
 	// should also be considered as running)
 	ShouldFetchAllContainersWhenRetrievingContainers = true
 
-	// The ID of the GRPC port for Kurtosis-internal containers (e.g. API container, engine, modules, etc.) which will
+	// The ID of the GRPC port for Kurtosis-internal containers (e.g. API container, engine, etc.) which will
 	//  be stored in the port spec label
 	KurtosisInternalContainerGrpcPortId = "grpc"
 

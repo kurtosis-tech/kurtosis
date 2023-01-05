@@ -158,7 +158,7 @@ func runMain() error {
 
 	serviceNetwork, err := createServiceNetwork(kurtosisBackend, enclaveDataDir, serverArgs, ownIpAddress)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating the service network & module store")
+		return stacktrace.Propagate(err, "An error occurred creating the service network")
 	}
 
 	metricsClient, closeClientFunc, err := metrics_client.CreateMetricsClient(
