@@ -10,6 +10,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
+	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"github.com/sirupsen/logrus"
 )
 
@@ -20,14 +21,16 @@ const (
 type StartosisValidator struct {
 	dockerImagesValidator *startosis_validator.DockerImagesValidator
 
-	serviceNetwork service_network.ServiceNetwork
+	serviceNetwork    service_network.ServiceNetwork
+	fileArtifactStore *enclave_data_directory.FilesArtifactStore
 }
 
-func NewStartosisValidator(kurtosisBackend *backend_interface.KurtosisBackend, serviceNetwork service_network.ServiceNetwork) *StartosisValidator {
+func NewStartosisValidator(kurtosisBackend *backend_interface.KurtosisBackend, serviceNetwork service_network.ServiceNetwork, fileArtifactStore *enclave_data_directory.FilesArtifactStore) *StartosisValidator {
 	dockerImagesValidator := startosis_validator.NewDockerImagesValidator(kurtosisBackend)
 	return &StartosisValidator{
 		dockerImagesValidator,
 		serviceNetwork,
+		fileArtifactStore,
 	}
 }
 
@@ -41,7 +44,8 @@ func (validator *StartosisValidator) Validate(ctx context.Context, instructions 
 			validationInProgressMsg, defaultCurrentStepNumber, defaultTotalStepsNumber)
 		environment := startosis_validator.NewValidatorEnvironment(
 			validator.serviceNetwork.IsNetworkPartitioningEnabled(),
-			validator.serviceNetwork.GetServiceIDs())
+			validator.serviceNetwork.GetServiceIDs(),
+			validator.fileArtifactStore.ListFiles())
 
 		isValidationFailure = isValidationFailure ||
 			validator.validateAnUpdateEnvironment(instructions, environment, starlarkRunResponseLineStream)

@@ -20,7 +20,7 @@ const (
 	testName              = "stream-logs"
 	isPartitioningEnabled = false
 
-	exampleServiceId          services.ServiceID = "stream-logs"
+	exampleServiceId services.ServiceID = "stream-logs"
 
 	testTimeOut = 90 * time.Second
 
@@ -72,7 +72,7 @@ func TestStreamLogs(t *testing.T) {
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	require.NoError(t, err)
 
-	serviceList, err := test_helpers.AddServicesWithLogLines(enclaveCtx, logLinesByService)
+	serviceList, err := test_helpers.AddServicesWithLogLines(ctx, enclaveCtx, logLinesByService)
 	require.NoError(t, err, "An error occurred adding the datastore service")
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
@@ -125,7 +125,9 @@ func TestStreamLogs(t *testing.T) {
 }
 
 // ====================================================================================================
-//                                       Private helper functions
+//
+//	Private helper functions
+//
 // ====================================================================================================
 func getServiceLogsRequestInfoAndExpectedResultsList(
 	enclaveId enclaves.EnclaveID,

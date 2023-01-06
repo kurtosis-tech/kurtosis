@@ -248,7 +248,7 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting an enclave context from enclave info for enclave '%v'", enclaveId)
 	}
 
-	containerConfig, err := getContainerConfig(image, portsStr, cmdArgs, entrypointStr, envvarsStr, filesArtifactMountsStr, privateIPAddressPlaceholder)
+	serviceConfigStarlark, err := getServiceConfigStarlark(image, portsStr, cmdArgs, entrypointStr, envvarsStr, filesArtifactMountsStr, privateIPAddressPlaceholder)
 	if err != nil {
 		return stacktrace.Propagate(
 			err,
@@ -262,12 +262,23 @@ func run(
 	}
 
 	// TODO Allow adding services to an already-repartitioned enclave
-	serviceCtx, err := enclaveCtx.AddService(
-		services.ServiceID(serviceId),
-		containerConfig,
-	)
+	starlarkRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, fmt.Sprintf(`def run(plan):
+	plan.add_service(service_id = "%s", config = %s)`, serviceId, serviceConfigStarlark), "", false)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred adding service '%v' to enclave '%v'", serviceId, enclaveId)
+		return stacktrace.Propagate(err, "An error has occurred when running Starlark to add service")
+	}
+	if starlarkRunResult.InterpretationError != nil {
+		return stacktrace.NewError("An error has occurred when adding service: %s\nThis is a bug in Kurtosis, please report.", starlarkRunResult.InterpretationError)
+	}
+	if len(starlarkRunResult.ValidationErrors) > 0 {
+		return stacktrace.NewError("An error occurred when validating add service '%v' to enclave '%v': %s", serviceId, enclaveId, starlarkRunResult.ValidationErrors)
+	}
+	if starlarkRunResult.ExecutionError != nil {
+		return stacktrace.NewError("An error occurred adding service '%v' to enclave '%v': %s", serviceId, enclaveId, starlarkRunResult.ExecutionError)
+	}
+	serviceCtx, err := enclaveCtx.GetServiceContext(services.ServiceID(serviceId))
+	if err != nil {
+		return stacktrace.Propagate(err, "An error has occurred when getting service added using add command")
 	}
 
 	privatePorts := serviceCtx.GetPrivatePorts()
@@ -345,7 +356,7 @@ func getEnclaveContextFromEnclaveInfo(infoForEnclave *kurtosis_engine_rpc_api_bi
 	return enclaveCtx, nil
 }
 
-func getContainerConfig(
+func getServiceConfigStarlark(
 	image string,
 	portsStr string,
 	cmdArgs []string,
@@ -353,44 +364,31 @@ func getContainerConfig(
 	envvarsStr string,
 	filesArtifactMountsStr string,
 	privateIPAddressPlaceholder string,
-) (*services.ContainerConfig, error) {
+) (string, error) {
 	envvarsMap, err := parseEnvVarsStr(envvarsStr)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred parsing environment variables string '%v'", envvarsStr)
+		return "", stacktrace.Propagate(err, "An error occurred parsing environment variables string '%v'", envvarsStr)
 	}
 
 	ports, err := parsePortsStr(portsStr)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred parsing ports string '%v'", portsStr)
+		return "", stacktrace.Propagate(err, "An error occurred parsing ports string '%v'", portsStr)
 	}
 
 	filesArtifactMounts, err := parseFilesArtifactMountsStr(filesArtifactMountsStr)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred parsing files artifact mounts string '%v'", filesArtifactMountsStr)
+		return "", stacktrace.Propagate(err, "An error occurred parsing files artifact mounts string '%v'", filesArtifactMountsStr)
 	}
 
-	resultBuilder := services.NewContainerConfigBuilder(image)
+	resultBuilder := services.NewServiceConfigBuilder(image)
 	if len(cmdArgs) > 0 {
-		resultBuilder.WithCmdOverride(cmdArgs)
+		resultBuilder.WithCmdArgs(cmdArgs)
 	}
+	entryPointArgs := []string{}
 	if entrypoint != "" {
-		resultBuilder.WithEntrypointOverride([]string{entrypoint})
+		entryPointArgs = []string{entrypoint}
 	}
-	if len(envvarsMap) > 0 {
-		resultBuilder.WithEnvironmentVariableOverrides(envvarsMap)
-	}
-	if len(ports) > 0 {
-		resultBuilder.WithUsedPorts(ports)
-	}
-	if len(filesArtifactMounts) > 0 {
-		resultBuilder.WithFiles(filesArtifactMounts)
-	}
-
-	if len(privateIPAddressPlaceholder) > 0 {
-		resultBuilder.WithPrivateIPAddrPlaceholder(privateIPAddressPlaceholder)
-	}
-
-	return resultBuilder.Build(), nil
+	return services.GetServiceConfigStarlark(image, ports, filesArtifactMounts, entryPointArgs, cmdArgs, envvarsMap, "", privateIPAddressPlaceholder, 0, 0), nil
 }
 
 // Parses a string in the form KEY1=VALUE1,KEY2=VALUE2 into a map of strings
@@ -434,8 +432,8 @@ func parseEnvVarsStr(envvarsStr string) (map[string]string, error) {
 // Parses a string in the form PORTID1=1234,PORTID2=5678/udp
 // An empty string will result in an empty map
 // Empty strings will be skipped (e.g. ',,,' will result in an empty map)
-func parsePortsStr(portsStr string) (map[string]*services.PortSpec, error) {
-	result := map[string]*services.PortSpec{}
+func parsePortsStr(portsStr string) (map[string]*kurtosis_core_rpc_api_bindings.Port, error) {
+	result := map[string]*kurtosis_core_rpc_api_bindings.Port{}
 	if strings.TrimSpace(portsStr) == "" {
 		return result, nil
 	}
@@ -474,7 +472,7 @@ func parsePortsStr(portsStr string) (map[string]*services.PortSpec, error) {
 	return result, nil
 }
 
-func parsePortSpecStr(specStr string) (*services.PortSpec, error) {
+func parsePortSpecStr(specStr string) (*kurtosis_core_rpc_api_bindings.Port, error) {
 	if len(strings.TrimSpace(specStr)) == 0 {
 		return nil, stacktrace.NewError("Cannot parse empty spec string")
 	}
@@ -508,10 +506,15 @@ func parsePortSpecStr(specStr string) (*services.PortSpec, error) {
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error occurred while parsing transport protocol '%v' in port spec '%v'", remainingPortSpecComponents[transportProtocolIndex], specStr)
 	}
-	return services.NewPortSpec(portNumberUint16, transportProtocolFromEnum, maybeApplicationProtocol), nil
+	return &kurtosis_core_rpc_api_bindings.Port{
+		Number:                   portNumberUint16,
+		TransportProtocol:        transportProtocolFromEnum,
+		MaybeApplicationProtocol: maybeApplicationProtocol,
+	}, nil
 }
 
-/**
+/*
+*
 This method takes in port protocol string and parses it to get application protocol.
 It looks for `:` delimiter and splits the string into array of at most size 2. If the length
 of array is 2 then application protocol exists, otherwise it does not. This is basically what
@@ -535,7 +538,7 @@ func getMaybeApplicationProtocolFromPortSpecString(portProtocolStr string) (stri
 	return maybeApplicationProtocol, remainingPortSpec, nil
 }
 
-func getPortNumberFromPortSpecString(portNumberStr string) (uint16, error) {
+func getPortNumberFromPortSpecString(portNumberStr string) (uint32, error) {
 	portNumberUint64, err := strconv.ParseUint(portNumberStr, portNumberUintParsingBase, portNumberUintParsingBits)
 	if err != nil {
 		return 0, stacktrace.Propagate(
@@ -546,21 +549,20 @@ func getPortNumberFromPortSpecString(portNumberStr string) (uint16, error) {
 			portNumberUintParsingBits,
 		)
 	}
-	portNumberUint16 := uint16(portNumberUint64)
-	return portNumberUint16, nil
+	portNumberUint32 := uint32(portNumberUint64)
+	return portNumberUint32, nil
 }
 
-func getTransportProtocolFromPortSpecString(portSpec string) (services.TransportProtocol, error) {
+func getTransportProtocolFromPortSpecString(portSpec string) (kurtosis_core_rpc_api_bindings.Port_TransportProtocol, error) {
 	transportProtocolEnumInt, found := kurtosis_core_rpc_api_bindings.Port_TransportProtocol_value[strings.ToUpper(portSpec)]
 	if !found {
 		return 0, stacktrace.NewError("Unrecognized port protocol '%v'", portSpec)
 	}
-	transportProtocol := services.TransportProtocol(transportProtocolEnumInt)
-	return transportProtocol, nil
+	return kurtosis_core_rpc_api_bindings.Port_TransportProtocol(transportProtocolEnumInt), nil
 }
 
-func parseFilesArtifactMountsStr(filesArtifactMountsStr string) (map[string]services.FilesArtifactUUID, error) {
-	result := map[string]services.FilesArtifactUUID{}
+func parseFilesArtifactMountsStr(filesArtifactMountsStr string) (map[string]string, error) {
+	result := map[string]string{}
 	if strings.TrimSpace(filesArtifactMountsStr) == "" {
 		return result, nil
 	}
@@ -583,7 +585,7 @@ func parseFilesArtifactMountsStr(filesArtifactMountsStr string) (map[string]serv
 			)
 		}
 		mountpoint := mountFragments[0]
-		filesArtifactUuid := services.FilesArtifactUUID(mountFragments[1])
+		filesArtifactUuid := mountFragments[1]
 
 		if existingArtifactId, found := result[mountpoint]; found {
 			return nil, stacktrace.NewError(

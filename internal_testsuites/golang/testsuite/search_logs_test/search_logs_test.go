@@ -20,8 +20,7 @@ const (
 	testName              = "search-logs"
 	isPartitioningEnabled = false
 
-
-	exampleServiceIdPrefix    = "search-logs-"
+	exampleServiceIdPrefix = "search-logs-"
 
 	shouldNotFollowLogs = false
 
@@ -84,7 +83,6 @@ var (
 			logLine4,
 		},
 	}
-
 )
 
 func TestSearchLogs(t *testing.T) {
@@ -99,7 +97,7 @@ func TestSearchLogs(t *testing.T) {
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	require.NoError(t, err)
 
-	serviceList, err := test_helpers.AddServicesWithLogLines(enclaveCtx, logLinesByService)
+	serviceList, err := test_helpers.AddServicesWithLogLines(ctx, enclaveCtx, logLinesByService)
 	require.NoError(t, err, "An error occurred adding services with log lines '%+v'", logLinesByService)
 	require.Equal(t, len(logLinesByService), len(serviceList))
 

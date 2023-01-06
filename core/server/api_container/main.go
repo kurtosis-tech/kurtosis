@@ -181,7 +181,7 @@ func runMain() error {
 	// TODO: Consolidate Interpreter, Validator and Executor into a single interface
 	startosisRunner := startosis_engine.NewStartosisRunner(
 		startosis_engine.NewStartosisInterpreter(serviceNetwork, gitPackageContentProvider, runtime_value_store.NewRuntimeValueStore()),
-		startosis_engine.NewStartosisValidator(&kurtosisBackend, serviceNetwork),
+		startosis_engine.NewStartosisValidator(&kurtosisBackend, serviceNetwork, filesArtifactStore),
 		startosis_engine.NewStartosisExecutor())
 
 	//Creation of ApiContainerService

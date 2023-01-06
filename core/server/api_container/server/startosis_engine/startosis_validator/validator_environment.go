@@ -13,12 +13,12 @@ type ValidatorEnvironment struct {
 	artifactIDs                  map[enclave_data_directory.FilesArtifactID]bool
 }
 
-func NewValidatorEnvironment(isNetworkPartitioningEnabled bool, serviceIDs map[service.ServiceID]bool) *ValidatorEnvironment {
+func NewValidatorEnvironment(isNetworkPartitioningEnabled bool, serviceIDs map[service.ServiceID]bool, artifactIDs map[enclave_data_directory.FilesArtifactID]bool) *ValidatorEnvironment {
 	return &ValidatorEnvironment{
 		isNetworkPartitioningEnabled: isNetworkPartitioningEnabled,
 		requiredDockerImages:         map[string]bool{},
 		serviceIDs:                   serviceIDs,
-		artifactIDs:                  map[enclave_data_directory.FilesArtifactID]bool{},
+		artifactIDs:                  artifactIDs,
 	}
 }
 

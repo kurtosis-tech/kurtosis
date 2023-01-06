@@ -2,6 +2,7 @@ package add
 
 import (
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -15,35 +16,35 @@ func TestParsePortSpecstr_SuccessCases(t *testing.T) {
 	parsePortSpecSuccessTests := []struct {
 		name string
 		args args
-		want *services.PortSpec
+		want *kurtosis_core_rpc_api_bindings.Port
 	}{
 		{
 			name: "Successfully parse str with application protocol and without transport protocol",
 			args: args{
 				specStr: "http:3333",
 			},
-			want: services.NewPortSpec(uint16(3333), services.TransportProtocol_TCP, "http"),
+			want: &kurtosis_core_rpc_api_bindings.Port{Number: uint32(3333), TransportProtocol: kurtosis_core_rpc_api_bindings.Port_TCP, MaybeApplicationProtocol: "http"},
 		},
 		{
 			name: "Successfully parse str with application protocol and with transport protocol",
 			args: args{
 				specStr: "http:3333/udp",
 			},
-			want: services.NewPortSpec(uint16(3333), services.TransportProtocol_UDP, "http"),
+			want: &kurtosis_core_rpc_api_bindings.Port{Number: uint32(3333), TransportProtocol: kurtosis_core_rpc_api_bindings.Port_UDP, MaybeApplicationProtocol: "http"},
 		},
 		{
 			name: "Successfully parse str without application protocol and with transport protocol",
 			args: args{
 				specStr: "3333/udp",
 			},
-			want: services.NewPortSpec(uint16(3333), services.TransportProtocol_UDP, ""),
+			want: &kurtosis_core_rpc_api_bindings.Port{Number: uint32(3333), TransportProtocol: kurtosis_core_rpc_api_bindings.Port_UDP, MaybeApplicationProtocol: ""},
 		},
 		{
 			name: "Successfully parse str without application protocol and without transport protocol",
 			args: args{
 				specStr: "3333",
 			},
-			want: services.NewPortSpec(uint16(3333), services.TransportProtocol_TCP, ""),
+			want: &kurtosis_core_rpc_api_bindings.Port{Number: uint32(3333), TransportProtocol: kurtosis_core_rpc_api_bindings.Port_TCP, MaybeApplicationProtocol: ""},
 		},
 	}
 	for _, parsePortSpecTest := range parsePortSpecSuccessTests {
@@ -127,15 +128,15 @@ func TestParsePortSpecstr_TooManyDelimsIsError(t *testing.T) {
 func TestParsePortSpecstr_DefaultTcpProtocol(t *testing.T) {
 	portSpec, err := parsePortSpecStr("1234")
 	require.NoError(t, err)
-	require.Equal(t, uint16(1234), portSpec.GetNumber())
-	require.Equal(t, services.TransportProtocol_TCP, portSpec.GetTransportProtocol())
+	require.Equal(t, uint32(1234), portSpec.GetNumber())
+	require.Equal(t, kurtosis_core_rpc_api_bindings.Port_TCP, portSpec.GetTransportProtocol())
 }
 
 func TestParsePortSpecstr_CustomProtocol(t *testing.T) {
 	portSpec, err := parsePortSpecStr("1234/udp")
 	require.NoError(t, err)
-	require.Equal(t, uint16(1234), portSpec.GetNumber())
-	require.Equal(t, services.TransportProtocol_UDP, portSpec.GetTransportProtocol())
+	require.Equal(t, uint32(1234), portSpec.GetNumber())
+	require.Equal(t, kurtosis_core_rpc_api_bindings.Port_UDP, portSpec.GetTransportProtocol())
 }
 
 func TestParsePortsStr_DuplicatePortsCauseError(t *testing.T) {
@@ -155,13 +156,13 @@ func TestParsePortsStr_SuccessfulPortsString(t *testing.T) {
 
 	port1Spec, found := ports["port1"]
 	require.True(t, found)
-	require.Equal(t, uint16(8080), port1Spec.GetNumber())
-	require.Equal(t, services.TransportProtocol_TCP, port1Spec.GetTransportProtocol())
+	require.Equal(t, uint32(8080), port1Spec.GetNumber())
+	require.Equal(t, kurtosis_core_rpc_api_bindings.Port_TCP, port1Spec.GetTransportProtocol())
 
 	port2Spec, found := ports["port2"]
 	require.True(t, found)
-	require.Equal(t, uint16(2900), port2Spec.GetNumber())
-	require.Equal(t, services.TransportProtocol_UDP, port2Spec.GetTransportProtocol())
+	require.Equal(t, uint32(2900), port2Spec.GetNumber())
+	require.Equal(t, kurtosis_core_rpc_api_bindings.Port_UDP, port2Spec.GetTransportProtocol())
 }
 
 func TestParseEnvVarsStr_EqualSignInValueIsOkay(t *testing.T) {
@@ -200,8 +201,8 @@ func TestParseEnvVarsStr_EmptyDeclarations(t *testing.T) {
 }
 
 func TestParseFilesArtifactMountStr_ValidParse(t *testing.T) {
-	artifactUuid1 := services.FilesArtifactUUID("1234")
-	artifactUuid2 := services.FilesArtifactUUID("4567")
+	artifactUuid1 := "1234"
+	artifactUuid2 := "4567"
 	mountpoint1 := "/dest1"
 	mountpoint2 := "/dest2"
 
@@ -225,8 +226,8 @@ func TestParseFilesArtifactMountStr_ValidParse(t *testing.T) {
 }
 
 func TestParseFilesArtifactMountStr_EmptyDeclarationsAreSkipped(t *testing.T) {
-	artifactUuid1 := services.FilesArtifactUUID("1234")
-	artifactUuid2 := services.FilesArtifactUUID("4567")
+	artifactUuid1 := "1234"
+	artifactUuid2 := "4567"
 	mountpoint1 := "/dest1"
 	mountpoint2 := "/dest2"
 

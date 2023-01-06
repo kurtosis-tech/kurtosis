@@ -12,15 +12,8 @@ const (
 	testName              = "destroy-enclave"
 	isPartitioningEnabled = false
 
-	fileServerServiceImage                      = "flashspys/nginx-static"
-	fileServerServiceId      services.ServiceID = "file-server"
-	fileServerPortId                            = "http"
-	fileServerPrivatePortNum                    = 80
-
-	emptyApplicationProtocol = ""
+	datastoreServiceId services.ServiceID = "datastore-service"
 )
-
-var fileServerPortSpec = services.NewPortSpec(fileServerPrivatePortNum, services.TransportProtocol_TCP, emptyApplicationProtocol)
 
 func TestDestroyEnclave(t *testing.T) {
 	ctx := context.Background()
@@ -36,24 +29,10 @@ func TestDestroyEnclave(t *testing.T) {
 	}()
 
 	// ------------------------------------- TEST SETUP ----------------------------------------------
-	fileServerContainerConfig := getFileServerContainerConfig()
-	_, err = enclaveCtx.AddService(fileServerServiceId, fileServerContainerConfig)
+	_, _, _, err = test_helpers.AddDatastoreService(ctx, datastoreServiceId, enclaveCtx)
 	require.NoError(t, err, "An error occurred adding the file server service")
 
 	err = destroyEnclaveFunc()
 	require.NoErrorf(t, err, "An error occurred destroying enclave with ID '%v'", enclaveCtx.GetEnclaveID())
 	shouldStopEnclaveAtTheEnd = false
-}
-
-// ====================================================================================================
-//                                       Private helper functions
-// ====================================================================================================
-
-func getFileServerContainerConfig() *services.ContainerConfig {
-	containerConfig := services.NewContainerConfigBuilder(
-		fileServerServiceImage,
-	).WithUsedPorts(map[string]*services.PortSpec{
-		fileServerPortId: fileServerPortSpec,
-	}).Build()
-	return containerConfig
 }

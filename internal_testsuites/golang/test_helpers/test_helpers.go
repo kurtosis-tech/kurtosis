@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/example-api-server/api/golang/example_api_server_rpc_api_consts"
 	"github.com/kurtosis-tech/example-datastore-server/api/golang/datastore_rpc_api_bindings"
 	"github.com/kurtosis-tech/example-datastore-server/api/golang/datastore_rpc_api_consts"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
@@ -79,10 +80,9 @@ const (
 	testDatastoreKey   = "my-key"
 	testDatastoreValue = "test-value"
 
-	partitioningDisabled     = false
-	defaultDryRun            = false
-	emptyParams              = "{}"
-	emptyApplicationProtocol = ""
+	partitioningDisabled = false
+	defaultDryRun        = false
+	emptyParams          = "{}"
 
 	waitForGetAvaliabilityStalarkScript = `
 def run(plan, args):
@@ -99,11 +99,37 @@ def run(plan, args):
 	noExpectedLogLines = 0
 
 	dockerGettingStartedImage = "docker/getting-started"
+
+	emptySubnetwork                = ""
+	emptyPrivateIpAddrPlaceholder  = ""
+	emptyCpuAllocationMillicpus    = 0
+	emptyMemoryAllocationMegabytes = 0
+	emptyApplicationProtocol       = ""
 )
 
-var fileServerPortSpec = services.NewPortSpec(fileServerPrivatePortNum, services.TransportProtocol_TCP, emptyApplicationProtocol)
-var datastorePortSpec = services.NewPortSpec(datastore_rpc_api_consts.ListenPort, services.TransportProtocol_TCP, emptyApplicationProtocol)
-var apiPortSpec = services.NewPortSpec(example_api_server_rpc_api_consts.ListenPort, services.TransportProtocol_TCP, emptyApplicationProtocol)
+var (
+	emptyPrivatePorts            = map[string]*kurtosis_core_rpc_api_bindings.Port{}
+	emptyFileArtifactMountPoints = map[string]string{}
+	emptyEntrypointArgs          = []string{}
+	emptyCmdArgs                 = []string{}
+	emptyEnvVars                 = map[string]string{}
+)
+
+var fileServerPortSpec = &kurtosis_core_rpc_api_bindings.Port{
+	Number:                   fileServerPrivatePortNum,
+	TransportProtocol:        kurtosis_core_rpc_api_bindings.Port_TCP,
+	MaybeApplicationProtocol: emptyApplicationProtocol,
+}
+var datastorePortSpec = &kurtosis_core_rpc_api_bindings.Port{
+	Number:                   uint32(datastore_rpc_api_consts.ListenPort),
+	TransportProtocol:        kurtosis_core_rpc_api_bindings.Port_TCP,
+	MaybeApplicationProtocol: emptyApplicationProtocol,
+}
+var apiPortSpec = &kurtosis_core_rpc_api_bindings.Port{
+	Number:                   uint32(example_api_server_rpc_api_consts.ListenPort),
+	TransportProtocol:        kurtosis_core_rpc_api_bindings.Port_TCP,
+	MaybeApplicationProtocol: emptyApplicationProtocol,
+}
 
 type GrpcAvailabilityChecker interface {
 	IsAvailable(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -112,6 +138,32 @@ type GrpcAvailabilityChecker interface {
 type datastoreConfig struct {
 	DatastoreIp   string `json:"datastoreIp"`
 	DatastorePort uint16 `json:"datastorePort"`
+}
+
+func AddService(
+	ctx context.Context,
+	enclaveCtx *enclaves.EnclaveContext,
+	serviceID services.ServiceID,
+	serviceConfigStarlark string) (*services.ServiceContext, error) {
+	starlarkRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, fmt.Sprintf(`def run(plan):
+	plan.add_service(service_id = "%s", config = %s)`, serviceID, serviceConfigStarlark), "", false)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error has occurred when running Starlark to add service")
+	}
+	if len(starlarkRunResult.ValidationErrors) > 0 {
+		return nil, stacktrace.NewError("An error has occurred when validating Starlark to add service: %s", starlarkRunResult.ValidationErrors)
+	}
+	if starlarkRunResult.InterpretationError != nil {
+		return nil, stacktrace.NewError("An error has occurred when interpreting Starlark to add service: %s", starlarkRunResult.InterpretationError)
+	}
+	if starlarkRunResult.ExecutionError != nil {
+		return nil, stacktrace.NewError("An error has occurred when executing Starlark to add service: %s", starlarkRunResult.ExecutionError)
+	}
+	serviceContext, err := enclaveCtx.GetServiceContext(serviceID)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error has occurred when getting service added by Starlark")
+	}
+	return serviceContext, nil
 }
 
 func AddDatastoreService(
@@ -124,9 +176,9 @@ func AddDatastoreService(
 	resultClientCloseFunc func(),
 	resultErr error,
 ) {
-	containerConfig := getDatastoreContainerConfig()
+	serviceConfigStarlark := getDatastoreServiceConfigStarlark()
 
-	serviceCtx, err := enclaveCtx.AddService(serviceId, containerConfig)
+	serviceCtx, err := AddService(ctx, enclaveCtx, serviceId, serviceConfigStarlark)
 	if err != nil {
 		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred adding the datastore service")
 	}
@@ -222,9 +274,9 @@ func AddAPIServiceToPartition(ctx context.Context, serviceId services.ServiceID,
 		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred uploading the datastore config file")
 	}
 
-	containerConfig := getApiServiceContainerConfig(datastoreConfigArtifactUuid)
+	serviceConfigStarlark := getApiServiceServiceConfigStarlark(datastoreConfigArtifactUuid, partitionId)
 
-	serviceCtx, err := enclaveCtx.AddServiceToPartition(serviceId, partitionId, containerConfig)
+	serviceCtx, err := AddService(ctx, enclaveCtx, serviceId, serviceConfigStarlark)
 	if err != nil {
 		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred adding the API service")
 	}
@@ -299,8 +351,8 @@ func StartFileServer(ctx context.Context, fileServerServiceId services.ServiceID
 	filesArtifactMountPoints := map[string]services.FilesArtifactUUID{
 		userServiceMountPointForTestFilesArtifact: filesArtifactUUID,
 	}
-	fileServerContainerConfig := getFileServerContainerConfig(filesArtifactMountPoints)
-	serviceCtx, err := enclaveCtx.AddService(fileServerServiceId, fileServerContainerConfig)
+	fileServerServiceConfigStarlark := getFileServerServiceConfigStarlark(filesArtifactMountPoints)
+	serviceCtx, err := AddService(ctx, enclaveCtx, fileServerServiceId, fileServerServiceConfigStarlark)
 	if err != nil {
 		return "", 0, stacktrace.Propagate(err, "An error occurred adding the file server service")
 	}
@@ -383,47 +435,47 @@ func GetLogsResponse(
 
 	for shouldContinueInTheLoop {
 		select {
-			case <-ticker.C:
-				testEvaluationErr = stacktrace.NewError("Receiving stream logs in the test has reached the '%v' time out", timeout.String())
+		case <-ticker.C:
+			testEvaluationErr = stacktrace.NewError("Receiving stream logs in the test has reached the '%v' time out", timeout.String())
+			shouldContinueInTheLoop = false
+			break
+		case serviceLogsStreamContent, isChanOpen := <-serviceLogsStreamContentChan:
+			if !isChanOpen {
 				shouldContinueInTheLoop = false
 				break
-			case serviceLogsStreamContent, isChanOpen := <-serviceLogsStreamContentChan:
-				if !isChanOpen {
-					shouldContinueInTheLoop = false
+			}
+
+			serviceLogsByGuid := serviceLogsStreamContent.GetServiceLogsByServiceGuids()
+			receivedNotFoundServiceGuids = serviceLogsStreamContent.GetNotFoundServiceGuids()
+
+			for serviceGuid, serviceLogLines := range serviceLogsByGuid {
+				receivedLogLines := []string{}
+				for _, serviceLogLine := range serviceLogLines {
+					receivedLogLines = append(receivedLogLines, serviceLogLine.GetContent())
+				}
+				if _, found := receivedLogLinesByService[serviceGuid]; found {
+					receivedLogLinesByService[serviceGuid] = append(receivedLogLinesByService[serviceGuid], receivedLogLines...)
+				} else {
+					receivedLogLinesByService[serviceGuid] = receivedLogLines
+				}
+			}
+
+			for serviceGuid, expectedLogLines := range expectedLogLinesByService {
+				receivedLogLines, found := receivedLogLinesByService[serviceGuid]
+				if len(expectedLogLines) == noExpectedLogLines && !found {
+					receivedLogLines = []string{}
+				} else if !found {
+					return stacktrace.NewError("Expected to receive log lines for service with GUID '%v' but none was found in the received log lines by service map '%+v'", serviceGuid, receivedLogLinesByService), nil, nil
+				}
+				if len(receivedLogLines) != len(expectedLogLines) {
 					break
 				}
+				shouldContinueInTheLoop = false
+			}
 
-				serviceLogsByGuid := serviceLogsStreamContent.GetServiceLogsByServiceGuids()
-				receivedNotFoundServiceGuids = serviceLogsStreamContent.GetNotFoundServiceGuids()
-
-				for serviceGuid, serviceLogLines := range serviceLogsByGuid {
-					receivedLogLines := []string{}
-					for _, serviceLogLine := range serviceLogLines {
-						receivedLogLines = append(receivedLogLines, serviceLogLine.GetContent())
-					}
-					if _, found := receivedLogLinesByService[serviceGuid]; found {
-						receivedLogLinesByService[serviceGuid] = append(receivedLogLinesByService[serviceGuid], receivedLogLines...)
-					} else {
-						receivedLogLinesByService[serviceGuid] = receivedLogLines
-					}
-				}
-
-				for serviceGuid, expectedLogLines := range expectedLogLinesByService {
-					receivedLogLines, found := receivedLogLinesByService[serviceGuid]
-					if len(expectedLogLines) == noExpectedLogLines && !found {
-						receivedLogLines = []string{}
-					} else if !found {
-						return stacktrace.NewError("Expected to receive log lines for service with GUID '%v' but none was found in the received log lines by service map '%+v'", serviceGuid, receivedLogLinesByService), nil, nil
-					}
-					if len(receivedLogLines) != len(expectedLogLines) {
-						break
-					}
-					shouldContinueInTheLoop = false
-				}
-
-				if !shouldContinueInTheLoop {
-					break
-				}
+			if !shouldContinueInTheLoop {
+				break
+			}
 		}
 	}
 
@@ -431,14 +483,15 @@ func GetLogsResponse(
 }
 
 func AddServicesWithLogLines(
+	ctx context.Context,
 	enclaveCtx *enclaves.EnclaveContext,
 	logLinesByServiceID map[services.ServiceID][]string,
 ) (map[services.ServiceID]*services.ServiceContext, error) {
 
 	servicesAdded := make(map[services.ServiceID]*services.ServiceContext, len(logLinesByServiceID))
 	for serviceId, logLines := range logLinesByServiceID {
-		containerConfig := getServiceWithLogLinesConfig(logLines)
-		serviceCtx, err := enclaveCtx.AddService(serviceId, containerConfig)
+		serviceConfigStarlark := getServiceWithLogLinesServiceConfigStarlark(logLines)
+		serviceCtx, err := AddService(ctx, enclaveCtx, serviceId, serviceConfigStarlark)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred adding service with ID %v", serviceId)
 		}
@@ -447,37 +500,44 @@ func AddServicesWithLogLines(
 	return servicesAdded, nil
 }
 
-
 // ====================================================================================================
 //
 //	Private Helper Methods
 //
 // ====================================================================================================
-func getDatastoreContainerConfig() *services.ContainerConfig {
-	containerConfig := services.NewContainerConfigBuilder(
+func getDatastoreServiceConfigStarlark() string {
+	return services.GetServiceConfigStarlark(
 		datastoreImage,
-	).WithUsedPorts(map[string]*services.PortSpec{
-		datastorePortId: datastorePortSpec,
-	}).Build()
-	return containerConfig
+		map[string]*kurtosis_core_rpc_api_bindings.Port{datastorePortId: datastorePortSpec},
+		emptyFileArtifactMountPoints,
+		emptyEntrypointArgs,
+		emptyCmdArgs,
+		emptyEnvVars,
+		emptySubnetwork,
+		emptyPrivateIpAddrPlaceholder,
+		emptyCpuAllocationMillicpus,
+		emptyMemoryAllocationMegabytes,
+	)
 }
 
-func getApiServiceContainerConfig(apiConfigArtifactUuid services.FilesArtifactUUID) *services.ContainerConfig {
+func getApiServiceServiceConfigStarlark(apiConfigArtifactUuid services.FilesArtifactUUID, partitionId enclaves.PartitionID) string {
 	startCmd := []string{
 		"./example-api-server.bin",
 		"--config",
 		path.Join(configMountpathOnApiContainer, configFilename),
 	}
 
-	containerConfig := services.NewContainerConfigBuilder(
+	return services.GetServiceConfigStarlark(
 		apiServiceImage,
-	).WithUsedPorts(map[string]*services.PortSpec{
-		apiPortId: apiPortSpec,
-	}).WithFiles(map[string]services.FilesArtifactUUID{
-		configMountpathOnApiContainer: apiConfigArtifactUuid,
-	}).WithCmdOverride(startCmd).Build()
-
-	return containerConfig
+		map[string]*kurtosis_core_rpc_api_bindings.Port{apiPortId: apiPortSpec},
+		map[string]string{configMountpathOnApiContainer: string(apiConfigArtifactUuid)},
+		emptyEntrypointArgs,
+		startCmd,
+		emptyEnvVars, string(partitionId),
+		emptyPrivateIpAddrPlaceholder,
+		emptyCpuAllocationMillicpus,
+		emptyMemoryAllocationMegabytes,
+	)
 }
 
 func createApiConfigFile(datastoreIP string) (string, error) {
@@ -525,15 +585,23 @@ func getFileContents(ipAddress string, portNum uint16, realtiveFilepath string) 
 	return bodyStr, nil
 }
 
-func getFileServerContainerConfig(filesArtifactMountPoints map[string]services.FilesArtifactUUID) *services.ContainerConfig {
-	containerConfig := services.NewContainerConfigBuilder(
+func getFileServerServiceConfigStarlark(filesArtifactMountPoints map[string]services.FilesArtifactUUID) string {
+	filesArtifactMountPointsStr := map[string]string{}
+	for k, v := range filesArtifactMountPoints {
+		filesArtifactMountPointsStr[k] = string(v)
+	}
+
+	return services.GetServiceConfigStarlark(
 		fileServerServiceImage,
-	).WithUsedPorts(map[string]*services.PortSpec{
-		fileServerPortId: fileServerPortSpec,
-	}).WithFiles(
-		filesArtifactMountPoints,
-	).Build()
-	return containerConfig
+		map[string]*kurtosis_core_rpc_api_bindings.Port{fileServerPortId: fileServerPortSpec},
+		filesArtifactMountPointsStr,
+		emptyEntrypointArgs,
+		emptyCmdArgs,
+		emptyEnvVars,
+		emptySubnetwork,
+		emptyPrivateIpAddrPlaceholder,
+		emptyCpuAllocationMillicpus,
+		emptyMemoryAllocationMegabytes)
 }
 
 func createDatastoreClient(ipAddr string, portNum uint16) (datastore_rpc_api_bindings.DatastoreServiceClient, func(), error) {
@@ -568,7 +636,7 @@ func waitForFileServerAvailability(ctx context.Context, enclaveCtx *enclaves.Enc
 	return nil
 }
 
-func getServiceWithLogLinesConfig(logLines []string) *services.ContainerConfig {
+func getServiceWithLogLinesServiceConfigStarlark(logLines []string) string {
 
 	entrypointArgs := []string{"/bin/sh", "-c"}
 
@@ -584,12 +652,15 @@ func getServiceWithLogLinesConfig(logLines []string) *services.ContainerConfig {
 
 	cmdArgs := []string{echoLogLinesLoopCmdStr}
 
-	containerConfig := services.NewContainerConfigBuilder(
+	return services.GetServiceConfigStarlark(
 		dockerGettingStartedImage,
-	).WithEntrypointOverride(
+		emptyPrivatePorts,
+		emptyFileArtifactMountPoints,
 		entrypointArgs,
-	).WithCmdOverride(
 		cmdArgs,
-	).Build()
-	return containerConfig
+		emptyEnvVars,
+		emptySubnetwork,
+		emptyPrivateIpAddrPlaceholder,
+		emptyCpuAllocationMillicpus,
+		emptyMemoryAllocationMegabytes)
 }

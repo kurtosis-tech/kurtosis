@@ -17,14 +17,16 @@ const (
 )
 
 type FilesArtifactStore struct {
-	fileCache *FileCache
-	mutex *sync.RWMutex
+	fileCache         *FileCache
+	fileCacheInMemory map[FilesArtifactID]bool
+	mutex             *sync.RWMutex
 }
 
 func newFilesArtifactStore(absoluteDirpath string, dirpathRelativeToDataDirRoot string) *FilesArtifactStore {
 	return &FilesArtifactStore{
-		fileCache: newFileCache(absoluteDirpath, dirpathRelativeToDataDirRoot),
-		mutex: &sync.RWMutex{},
+		fileCache:         newFileCache(absoluteDirpath, dirpathRelativeToDataDirRoot),
+		mutex:             &sync.RWMutex{},
+		fileCacheInMemory: map[FilesArtifactID]bool{},
 	}
 }
 
@@ -71,6 +73,13 @@ func (store FilesArtifactStore) GetFile(filesArtifactUuid FilesArtifactID) (*Enc
 	return enclaveDataDirFile, nil
 }
 
+// List the file uuids
+func (store FilesArtifactStore) ListFiles() map[FilesArtifactID]bool {
+	store.mutex.RLock()
+	defer store.mutex.RUnlock()
+	return store.fileCacheInMemory
+}
+
 // RemoveFile: Remove the file by uuid
 func (store FilesArtifactStore) RemoveFile(filesArtifactUuid FilesArtifactID) error {
 	store.mutex.Lock()
@@ -84,7 +93,7 @@ func (store FilesArtifactStore) RemoveFile(filesArtifactUuid FilesArtifactID) er
 	if err := store.fileCache.RemoveFile(filename); err != nil {
 		return stacktrace.Propagate(err, "There was an error in removing '%v' from the file store", filename)
 	}
-
+	delete(store.fileCacheInMemory, filesArtifactUuid)
 	return nil
 }
 
@@ -102,5 +111,6 @@ func (store FilesArtifactStore) storeFilesToArtifactUuidUnlocked(reader io.Reade
 			filename,
 		)
 	}
+	store.fileCacheInMemory[targetArtifactUUID] = true
 	return nil
 }
