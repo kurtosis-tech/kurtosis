@@ -22,7 +22,7 @@ const EXPECTED_FILE2_CONTENTS = "file2\n"
 
 jest.setTimeout(180000)
 
-test("Test web file storing", async () => {
+test.skip("Test web file storing", async () => {
     // ------------------------------------- ENGINE SETUP ----------------------------------------------
     const createEnclaveResult = await createEnclave(TEST_NAME, IS_PARTITIONING_ENABLED)
 

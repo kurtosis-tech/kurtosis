@@ -12,8 +12,6 @@ const FILE_SERVER_SERVICE_ID: ServiceID = "file-server"
 const FILE_SERVER_PORT_ID = "http"
 const FILE_SERVER_PRIVATE_PORT_NUM = 80
 
-const TEST_FILES_ARTIFACT_URL = "https://kurtosis-public-access.s3.us-east-1.amazonaws.com/test-artifacts/static-fileserver-files.tgz"
-
 const FILE_SERVER_PORT_SPEC = new PortSpec( FILE_SERVER_PRIVATE_PORT_NUM, TransportProtocol.TCP )
 
 const FILES_ARTIFACT_MOUNTPOINT  = "/static"
@@ -33,11 +31,7 @@ test("Test destroy enclave", async () => {
     try {
 
         // ------------------------------------- TEST SETUP ----------------------------------------------
-        const storeWebFilesResult = await enclaveContext.storeWebFiles(TEST_FILES_ARTIFACT_URL);
-        if(storeWebFilesResult.isErr()) { throw storeWebFilesResult.error }
-        const filesArtifactUuid = storeWebFilesResult.value;
-
-        const fileServerContainerConfig = getFileServerContainerConfig(filesArtifactUuid)
+        const fileServerContainerConfig = getFileServerContainerConfig()
 
         const addServiceResult = await enclaveContext.addService(FILE_SERVER_SERVICE_ID, fileServerContainerConfig)
         if(addServiceResult.isErr()){ throw addServiceResult.error }
@@ -74,16 +68,12 @@ test("Test destroy enclave", async () => {
 //                                       Private helper functions
 // ====================================================================================================
 
-function getFileServerContainerConfig(filesArtifactUuid: FilesArtifactUUID): ContainerConfig {
+function getFileServerContainerConfig(): ContainerConfig {
     const usedPorts = new Map<string, PortSpec>()
     usedPorts.set(FILE_SERVER_PORT_ID, FILE_SERVER_PORT_SPEC)
 
-    const filesArtifactMountpoints = new Map<string, FilesArtifactUUID>()
-    filesArtifactMountpoints.set(FILES_ARTIFACT_MOUNTPOINT, filesArtifactUuid)
-
     const containerConfig = new ContainerConfigBuilder(FILE_SERVER_SERVICE_IMAGE)
         .withUsedPorts(usedPorts)
-        .withFiles(filesArtifactMountpoints)
         .build()
 
     return containerConfig

@@ -17,9 +17,6 @@ const (
 	fileServerPortId                            = "http"
 	fileServerPrivatePortNum                    = 80
 
-	testFilesArtifactUrl = "https://kurtosis-public-access.s3.us-east-1.amazonaws.com/test-artifacts/static-fileserver-files.tgz"
-
-	filesArtifactMountpoint  = "/static"
 	emptyApplicationProtocol = ""
 )
 
@@ -39,10 +36,7 @@ func TestDestroyEnclave(t *testing.T) {
 	}()
 
 	// ------------------------------------- TEST SETUP ----------------------------------------------
-	filesArtifactUuid, err := enclaveCtx.StoreWebFiles(ctx, testFilesArtifactUrl)
-	require.NoError(t, err, "An error occurred storing the files artifact")
-
-	fileServerContainerConfig := getFileServerContainerConfig(filesArtifactUuid)
+	fileServerContainerConfig := getFileServerContainerConfig()
 	_, err = enclaveCtx.AddService(fileServerServiceId, fileServerContainerConfig)
 	require.NoError(t, err, "An error occurred adding the file server service")
 
@@ -55,14 +49,11 @@ func TestDestroyEnclave(t *testing.T) {
 //                                       Private helper functions
 // ====================================================================================================
 
-func getFileServerContainerConfig(filesArtifactUuid services.FilesArtifactUUID) *services.ContainerConfig {
-
+func getFileServerContainerConfig() *services.ContainerConfig {
 	containerConfig := services.NewContainerConfigBuilder(
 		fileServerServiceImage,
 	).WithUsedPorts(map[string]*services.PortSpec{
 		fileServerPortId: fileServerPortSpec,
-	}).WithFiles(map[string]services.FilesArtifactUUID{
-		filesArtifactMountpoint: filesArtifactUuid,
 	}).Build()
 	return containerConfig
 }
