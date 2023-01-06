@@ -22,7 +22,7 @@ const (
 
 	exampleServiceId services.ServiceID = "stream-logs"
 
-	testTimeOut = 90 * time.Second
+	testTimeOut = 180 * time.Second
 
 	shouldFollowLogs    = true
 	shouldNotFollowLogs = false

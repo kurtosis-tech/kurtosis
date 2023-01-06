@@ -10,19 +10,21 @@ import {
 } from "kurtosis-sdk";
 import {err, ok, Result} from "neverthrow";
 import log from "loglevel";
-import {getLogsResponseAndEvaluateResponse, addServicesWithLogLines} from "../../test_helpers/test_helpers";
+import {addServicesWithLogLines, delay, getLogsResponseAndEvaluateResponse} from "../../test_helpers/test_helpers";
 
 const TEST_NAME = "search-logs";
 const IS_PARTITIONING_ENABLED = false;
 
 const EXAMPLE_SERVICE_ID_PREFIX = "search-logs-";
 
+const SHOULD_FOLLOW_LOGS = true;
 const SHOULD_NOT_FOLLOW_LOGS = false;
 
 const SERVICE_1_SERVICE_ID = EXAMPLE_SERVICE_ID_PREFIX + "service-1";
 
-const FIRST_FILTER_TEXT = "Starting feature";
-const SECOND_FILTER_TEXT = "network";
+const FIRST_FILTER_TEXT = "The data have being loaded";
+const SECOND_FILTER_TEXT = "Starting feature";
+const THIRD_FILTER_TEXT = "network";
 const MATCH_REGEX_FILTER_STR = "Starting.*logs'";
 
 const LOG_LINE_1 = new ServiceLog("Starting feature 'centralized logs'");
@@ -38,13 +40,15 @@ const LOG_LINES_BY_SERVICE = new Map<ServiceID, ServiceLog[]>([
     [SERVICE_1_SERVICE_ID, SERVICE_1_LOG_LINES],
 ])
 
-const DOES_CONTAIN_TEXT_FILTER = LogLineFilter.NewDoesContainTextLogLineFilter(FIRST_FILTER_TEXT);
-const DOES_NOT_CONTAIN_TEXT_FILTER = LogLineFilter.NewDoesNotContainTextLogLineFilter(SECOND_FILTER_TEXT);
+const DOES_CONTAIN_TEXT_FILTER_FOR_FIRST_REQUEST = LogLineFilter.NewDoesContainTextLogLineFilter(FIRST_FILTER_TEXT);
+const DOES_CONTAIN_TEXT_FILTER_FOR_SECOND_REQUEST = LogLineFilter.NewDoesContainTextLogLineFilter(SECOND_FILTER_TEXT);
+const DOES_NOT_CONTAIN_TEXT_FILTER = LogLineFilter.NewDoesNotContainTextLogLineFilter(THIRD_FILTER_TEXT);
 const DOES_CONTAIN_MATCH_REGEX_FILTER = LogLineFilter.NewDoesContainMatchRegexLogLineFilter(MATCH_REGEX_FILTER_STR);
 const DOES_NOT_CONTAIN_MATCH_REGEX_FILTER = LogLineFilter.NewDoesNotContainMatchRegexLogLineFilter(MATCH_REGEX_FILTER_STR);
 
 const FILTERS_BY_REQUEST = new Array<LogLineFilter>(
-    DOES_CONTAIN_TEXT_FILTER,
+    DOES_CONTAIN_TEXT_FILTER_FOR_FIRST_REQUEST,
+    DOES_CONTAIN_TEXT_FILTER_FOR_SECOND_REQUEST,
     DOES_NOT_CONTAIN_TEXT_FILTER,
     DOES_CONTAIN_MATCH_REGEX_FILTER,
     DOES_NOT_CONTAIN_MATCH_REGEX_FILTER,
@@ -53,6 +57,9 @@ const FILTERS_BY_REQUEST = new Array<LogLineFilter>(
 const EXPECTED_LOG_LINES_BY_REQUEST = Array<ServiceLog[]>(
     [
         LOG_LINE_1,
+    ],
+    [
+        LOG_LINE_1,
         LOG_LINE_2,
         LOG_LINE_3,
     ],
@@ -69,6 +76,14 @@ const EXPECTED_LOG_LINES_BY_REQUEST = Array<ServiceLog[]>(
         LOG_LINE_4,
     ],
 )
+
+const SHOULD_FOLLOW_LOGS_VALUES_BY_REQUEST: boolean[] = [
+    SHOULD_FOLLOW_LOGS,
+    SHOULD_NOT_FOLLOW_LOGS,
+    SHOULD_NOT_FOLLOW_LOGS,
+    SHOULD_NOT_FOLLOW_LOGS,
+    SHOULD_NOT_FOLLOW_LOGS,
+]
 
 jest.setTimeout(180000);
 
@@ -122,6 +137,7 @@ async function TestSearchLogs() {
         for (let i = 0; i < FILTERS_BY_REQUEST.length; i++) {
             const filter: LogLineFilter = FILTERS_BY_REQUEST[i];
             const expectedLogLines: ServiceLog[] = EXPECTED_LOG_LINES_BY_REQUEST[i];
+            const shouldFollowLogsOption: boolean = SHOULD_FOLLOW_LOGS_VALUES_BY_REQUEST[i];
             const executionResult = await executeGetLogsRequestAndEvaluateResult(
                 kurtosisContext,
                 enclaveId,
@@ -129,6 +145,7 @@ async function TestSearchLogs() {
                 userServiceGuids,
                 filter,
                 expectedLogLines,
+                shouldFollowLogsOption,
             );
 
             if (executionResult.isErr()) {
@@ -152,6 +169,7 @@ async function executeGetLogsRequestAndEvaluateResult(
     userServiceGuids: Set<ServiceGUID>,
     logLineFilter: LogLineFilter,
     expectedLogLines: ServiceLog[],
+    shouldFollowLogs: boolean,
 ): Promise<Result<null, Error>> {
 
     const serviceGuids: Set<ServiceGUID> = new Set<ServiceGUID>([
@@ -168,7 +186,7 @@ async function executeGetLogsRequestAndEvaluateResult(
         serviceGuids,
         expectedLogLinesByService,
         EXPECTED_NON_EXISTENCE_SERVICE_GUIDS,
-        SHOULD_NOT_FOLLOW_LOGS,
+        shouldFollowLogs,
         logLineFilter,
     )
 

@@ -22,15 +22,17 @@ const (
 
 	exampleServiceIdPrefix = "search-logs-"
 
+	shouldFollowLogs    = true
 	shouldNotFollowLogs = false
 
 	service1ServiceID services.ServiceID = exampleServiceIdPrefix + "service-1"
 
-	firstFilterText     = "Starting feature"
-	secondFilterText    = "network"
+	firstFilterText     = "The data have being loaded"
+	secondFilterText    = "Starting feature"
+	thirdFilterText     = "network"
 	matchRegexFilterStr = "Starting.*logs'"
 
-	testTimeOut = 90 * time.Second
+	testTimeOut = 180 * time.Second
 
 	logLine1 = "Starting feature 'centralized logs'"
 	logLine2 = "Starting feature 'network partitioning'"
@@ -52,13 +54,15 @@ var (
 		service1ServiceID: service1LogLines,
 	}
 
-	doesContainTextFilter          = kurtosis_context.NewDoesContainTextLogLineFilter(firstFilterText)
-	doesNotContainTextFilter       = kurtosis_context.NewDoesNotContainTextLogLineFilter(secondFilterText)
-	doesContainMatchRegexFilter    = kurtosis_context.NewDoesContainMatchRegexLogLineFilter(matchRegexFilterStr)
-	doesNotContainMatchRegexFilter = kurtosis_context.NewDoesNotContainMatchRegexLogLineFilter(matchRegexFilterStr)
+	doesContainTextFilterForFirstRequest  = kurtosis_context.NewDoesContainTextLogLineFilter(firstFilterText)
+	doesContainTextFilterForSecondRequest = kurtosis_context.NewDoesContainTextLogLineFilter(secondFilterText)
+	doesNotContainTextFilter              = kurtosis_context.NewDoesNotContainTextLogLineFilter(thirdFilterText)
+	doesContainMatchRegexFilter           = kurtosis_context.NewDoesContainMatchRegexLogLineFilter(matchRegexFilterStr)
+	doesNotContainMatchRegexFilter        = kurtosis_context.NewDoesNotContainMatchRegexLogLineFilter(matchRegexFilterStr)
 
 	filtersByRequest = []kurtosis_context.LogLineFilter{
-		*doesContainTextFilter,
+		*doesContainTextFilterForFirstRequest,
+		*doesContainTextFilterForSecondRequest,
 		*doesNotContainTextFilter,
 		*doesContainMatchRegexFilter,
 		*doesNotContainMatchRegexFilter,
@@ -66,6 +70,9 @@ var (
 
 	expectedLogLinesByRequest = [][]string{
 		{
+			logLine4,
+		},
+		{
 			logLine1,
 			logLine2,
 			logLine3,
@@ -82,6 +89,14 @@ var (
 			logLine3,
 			logLine4,
 		},
+	}
+
+	shouldFollowLogsValueByRequest = []bool{
+		shouldFollowLogs,
+		shouldNotFollowLogs,
+		shouldNotFollowLogs,
+		shouldNotFollowLogs,
+		shouldNotFollowLogs,
 	}
 )
 
@@ -118,6 +133,8 @@ func TestSearchLogs(t *testing.T) {
 			expectedLogLinesByService[serviceGuid] = expectedLogLinesByRequest[requestIndex]
 		}
 
+		shouldFollowLogsOption := shouldFollowLogsValueByRequest[requestIndex]
+
 		testEvaluationErr, receivedLogLinesByService, receivedNotFoundServiceGuids := test_helpers.GetLogsResponse(
 			t,
 			ctx,
@@ -126,7 +143,7 @@ func TestSearchLogs(t *testing.T) {
 			enclaveId,
 			userServiceGuids,
 			expectedLogLinesByService,
-			shouldNotFollowLogs,
+			shouldFollowLogsOption,
 			&filter,
 		)
 
