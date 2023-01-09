@@ -149,8 +149,8 @@ func GetServiceConfigStarlark(
 	starlarkFields = append(starlarkFields, fmt.Sprintf(`ports={%s}`, strings.Join(portStrings, ",")))
 
 	fileStrings := []string{}
-	for filePath, artifactId := range fileArtifactMountPoints {
-		fileStrings = append(fileStrings, fmt.Sprintf(`%q: %q`, filePath, artifactId))
+	for filePath, artifactName := range fileArtifactMountPoints {
+		fileStrings = append(fileStrings, fmt.Sprintf(`%q: %q`, filePath, artifactName))
 	}
 	starlarkFields = append(starlarkFields, fmt.Sprintf(`files={%s}`, strings.Join(fileStrings, ",")))
 

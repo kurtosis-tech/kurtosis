@@ -105,6 +105,8 @@ def run(plan, args):
 	emptyCpuAllocationMillicpus    = 0
 	emptyMemoryAllocationMegabytes = 0
 	emptyApplicationProtocol       = ""
+
+	artifactNamePrefix = "artifact-uploaded-via-helper-%v"
 )
 
 var (
@@ -269,12 +271,13 @@ func AddAPIServiceToPartition(ctx context.Context, serviceId services.ServiceID,
 	if err != nil {
 		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred creating the datastore config file")
 	}
-	datastoreConfigArtifactUuid, err := enclaveCtx.UploadFiles(configFilepath)
+	artifactName := fmt.Sprintf(artifactNamePrefix, time.Now().Unix())
+	_, err = enclaveCtx.UploadFiles(configFilepath, artifactName)
 	if err != nil {
 		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred uploading the datastore config file")
 	}
 
-	serviceConfigStarlark := getApiServiceServiceConfigStarlark(datastoreConfigArtifactUuid, partitionId)
+	serviceConfigStarlark := getApiServiceServiceConfigStarlark(artifactName, partitionId)
 
 	serviceCtx, err := AddService(ctx, enclaveCtx, serviceId, serviceConfigStarlark)
 	if err != nil {
@@ -520,7 +523,7 @@ func getDatastoreServiceConfigStarlark() string {
 	)
 }
 
-func getApiServiceServiceConfigStarlark(apiConfigArtifactUuid services.FilesArtifactUUID, partitionId enclaves.PartitionID) string {
+func getApiServiceServiceConfigStarlark(apiConfigArtifactName string, partitionId enclaves.PartitionID) string {
 	startCmd := []string{
 		"./example-api-server.bin",
 		"--config",
@@ -530,7 +533,7 @@ func getApiServiceServiceConfigStarlark(apiConfigArtifactUuid services.FilesArti
 	return services.GetServiceConfigStarlark(
 		apiServiceImage,
 		map[string]*kurtosis_core_rpc_api_bindings.Port{apiPortId: apiPortSpec},
-		map[string]string{configMountpathOnApiContainer: string(apiConfigArtifactUuid)},
+		map[string]string{configMountpathOnApiContainer: apiConfigArtifactName},
 		emptyEntrypointArgs,
 		startCmd,
 		emptyEnvVars, string(partitionId),

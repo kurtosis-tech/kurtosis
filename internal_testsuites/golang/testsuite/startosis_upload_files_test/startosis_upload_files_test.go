@@ -33,8 +33,8 @@ PATH_TO_MOUNT_UPLOADED_DIR = "` + pathToMountUploadedDir + `"
 def run(plan):
 	plan.print("Adding service " + DATASTORE_SERVICE_ID + ".")
 	
-	uploaded_artifact_id = plan.upload_files(DIR_TO_UPLOAD)
-	plan.print("Uploaded " + uploaded_artifact_id)
+	artifact_name = plan.upload_files(DIR_TO_UPLOAD, name = "test-artifact")
+	plan.print("Uploaded " + artifact_name)
 	
 	
 	config = ServiceConfig(
@@ -43,7 +43,37 @@ def run(plan):
 			DATASTORE_PORT_ID: PortSpec(number = DATASTORE_PORT_NUMBER, transport_protocol = DATASTORE_PORT_PROTOCOL)
 		},
 		files = {
-			PATH_TO_MOUNT_UPLOADED_DIR: uploaded_artifact_id
+			PATH_TO_MOUNT_UPLOADED_DIR: artifact_name
+		}
+	)
+	
+	plan.add_service(service_id = DATASTORE_SERVICE_ID, config = config)`
+
+	// TODO remove this when `artifact_id` is deprecated
+	starlarkScriptUsingOldSyntax = `
+DATASTORE_IMAGE = "kurtosistech/example-datastore-server"
+DATASTORE_SERVICE_ID = "` + serviceId + `"
+DATASTORE_PORT_ID = "` + portId + `"
+DATASTORE_PORT_NUMBER = 1323
+DATASTORE_PORT_PROTOCOL = "TCP"
+
+DIR_TO_UPLOAD = "github.com/kurtosis-tech/datastore-army-package/src"
+PATH_TO_MOUNT_UPLOADED_DIR = "` + pathToMountUploadedDir + `"
+
+def run(plan):
+	plan.print("Adding service " + DATASTORE_SERVICE_ID + ".")
+	
+	artifact_name = plan.upload_files(DIR_TO_UPLOAD, artifact_id = "test-artifact")
+	plan.print("Uploaded " + artifact_name)
+	
+	
+	config = ServiceConfig(
+		image = DATASTORE_IMAGE,
+		ports = {
+			DATASTORE_PORT_ID: PortSpec(number = DATASTORE_PORT_NUMBER, transport_protocol = DATASTORE_PORT_PROTOCOL)
+		},
+		files = {
+			PATH_TO_MOUNT_UPLOADED_DIR: artifact_name
 		}
 	)
 	
@@ -70,8 +100,52 @@ func TestStartosis(t *testing.T) {
 	require.Nil(t, runResult.ExecutionError, "Unexpected execution error")
 
 	expectedScriptOutput := `Adding service example-datastore-server-1.
-Files uploaded with artifact ID '[a-f0-9-]{36}'
-Uploaded [a-f0-9-]{36}
+Files  with artifact name 'test-artifact' uploaded with artifact UUID '[a-f0-9]{32}'
+Uploaded test-artifact
+Service 'example-datastore-server-1' added with service GUID '[a-z-0-9]+'
+`
+	require.Regexp(t, expectedScriptOutput, string(runResult.RunOutput))
+	logrus.Infof("Successfully ran Startosis script")
+
+	// Check that the service added by the script is functional
+	logrus.Infof("Checking that services are all healthy")
+	require.NoError(
+		t,
+		test_helpers.ValidateDatastoreServiceHealthy(context.Background(), enclaveCtx, serviceId, portId),
+		"Error validating datastore server '%s' is healthy",
+		serviceId,
+	)
+	// Check that the file got uploaded on the service
+	logrus.Infof("Checking that the file got uploaded on " + serviceId)
+	serviceCtx, err := enclaveCtx.GetServiceContext(serviceId)
+	require.Nil(t, err, "Unexpected Error Creating Service Context")
+	exitCode, _, err := serviceCtx.ExecCommand([]string{"ls", pathToCheckForUploadedFile})
+	require.Nil(t, err, "Unexpected err running verification on upload file on "+serviceId)
+	require.Equal(t, int32(0), exitCode)
+}
+
+func TestStarlarkUpload_IsBackwardsCompatible(t *testing.T) {
+	ctx := context.Background()
+
+	// ------------------------------------- ENGINE SETUP ----------------------------------------------
+	enclaveCtx, destroyEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
+	require.NoError(t, err, "An error occurred creating an enclave")
+	defer destroyEnclaveFunc()
+
+	// ------------------------------------- TEST RUN ----------------------------------------------
+	logrus.Infof("Executing Startosis script...")
+	logrus.Debugf("Startosis script content: \n%v", startosisScript)
+
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkScriptUsingOldSyntax, emptyParams, defaultDryRun)
+	require.NoError(t, err, "Unexpected error executing startosis script")
+
+	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error. This test requires you to be online for the upload_file command to run")
+	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")
+	require.Nil(t, runResult.ExecutionError, "Unexpected execution error")
+
+	expectedScriptOutput := `Adding service example-datastore-server-1.
+Files  with artifact name 'test-artifact' uploaded with artifact UUID '[a-f0-9]{32}'
+Uploaded test-artifact
 Service 'example-datastore-server-1' added with service GUID '[a-z-0-9]+'
 `
 	require.Regexp(t, expectedScriptOutput, string(runResult.RunOutput))

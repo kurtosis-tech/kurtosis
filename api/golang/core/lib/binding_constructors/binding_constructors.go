@@ -393,8 +393,8 @@ func NewExecCommandResponse(exitCode int32, logOutput string) *kurtosis_core_rpc
 //
 // ==============================================================================================
 
-func NewUploadFilesArtifactArgs(data []byte) *kurtosis_core_rpc_api_bindings.UploadFilesArtifactArgs {
-	return &kurtosis_core_rpc_api_bindings.UploadFilesArtifactArgs{Data: data}
+func NewUploadFilesArtifactArgs(data []byte, name string) *kurtosis_core_rpc_api_bindings.UploadFilesArtifactArgs {
+	return &kurtosis_core_rpc_api_bindings.UploadFilesArtifactArgs{Data: data, Name: name}
 }
 
 // ==============================================================================================
@@ -403,18 +403,8 @@ func NewUploadFilesArtifactArgs(data []byte) *kurtosis_core_rpc_api_bindings.Upl
 //
 // ==============================================================================================
 
-func NewStoreWebFilesArtifactArgs(url string) *kurtosis_core_rpc_api_bindings.StoreWebFilesArtifactArgs {
-	return &kurtosis_core_rpc_api_bindings.StoreWebFilesArtifactArgs{Url: url}
-}
-
-// ==============================================================================================
-//
-//	Store Files Artifact From Service
-//
-// ==============================================================================================
-
-func NewStoreFilesArtifactFromServiceArgs(serviceId string, sourcePath string) *kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceArgs {
-	return &kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceArgs{ServiceId: serviceId, SourcePath: sourcePath}
+func NewStoreWebFilesArtifactArgs(url string, name string) *kurtosis_core_rpc_api_bindings.StoreWebFilesArtifactArgs {
+	return &kurtosis_core_rpc_api_bindings.StoreWebFilesArtifactArgs{Url: url, Name: name}
 }
 
 // ==============================================================================================
@@ -427,12 +417,6 @@ func NewTemplateAndData(template string, dataAsJson string) *kurtosis_core_rpc_a
 	return &kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData{
 		Template:   template,
 		DataAsJson: dataAsJson,
-	}
-}
-
-func NewRenderTemplatesToFilesArtifactArgs(templatesAndDataByDestinationRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData) *kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs {
-	return &kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs{
-		TemplatesAndDataByDestinationRelFilepath: templatesAndDataByDestinationRelFilepath,
 	}
 }
 

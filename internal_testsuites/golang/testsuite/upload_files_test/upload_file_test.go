@@ -37,6 +37,8 @@ const (
 	filePermission   = 0644
 
 	fileServerServiceId services.ServiceID = "file-server"
+
+	testArtifactName = "test-artifact"
 )
 
 func TestUploadFiles(t *testing.T) {
@@ -50,13 +52,13 @@ func TestUploadFiles(t *testing.T) {
 
 	pathToUpload := filePathsMap[diskDirKeyword]
 	require.NotEmptyf(t, pathToUpload, "Failed to store uploadable path in path map.")
-	filesArtifactUUID, err := enclaveCtx.UploadFiles(filePathsMap[diskDirKeyword])
+	_, err = enclaveCtx.UploadFiles(filePathsMap[diskDirKeyword], testArtifactName)
 	require.NoError(t, err)
 
 	firstArchiveRootKeyword := fmt.Sprintf("%s%v", archiveRootFileKeywordPattern, 0)
 	firstArchiveRootFilename := filePathsMap[firstArchiveRootKeyword]
 
-	fileServerPublicIp, fileServerPublicPortNum, err := test_helpers.StartFileServer(ctx, fileServerServiceId, filesArtifactUUID, firstArchiveRootFilename, enclaveCtx)
+	fileServerPublicIp, fileServerPublicPortNum, err := test_helpers.StartFileServer(ctx, fileServerServiceId, testArtifactName, firstArchiveRootFilename, enclaveCtx)
 	require.NoError(t, err)
 
 	err = testAllContents(filePathsMap, fileServerPublicIp, fileServerPublicPortNum)

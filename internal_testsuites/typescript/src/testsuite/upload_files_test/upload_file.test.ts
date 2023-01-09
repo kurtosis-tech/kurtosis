@@ -11,6 +11,7 @@ const ARCHIVE_SUBDIRECTORY_TEST_PATTERN     = "sub-folder-"
 const ARCHIVE_TEST_FILE_PATTERN             = "test-file-"
 const ARCHIVE_TEST_FILE_EXTENSION           = ".txt"
 const ARCHIVE_TEST_CONTENT                  = "This file is for testing purposes."
+const TEST_ARTIFACT_NAME                    = "test-artifact"
 
 const NUMBER_OF_TEMP_FILES_IN_SUBDIRECTORY      = 3
 const NUMBER_OF_TEMP_FILES_IN_ROOT_DIRECTORY    = 1
@@ -45,13 +46,12 @@ async function TestUploadFiles() {
     try {
         const pathToUpload = filePathsMap.get(DISK_DIR_KEYWORD)
         if (typeof pathToUpload === "undefined") {throw new Error("Failed to store uploadable path in path map.")}
-        const uploadResults = await enclaveContext.uploadFiles(pathToUpload)
+        const uploadResults = await enclaveContext.uploadFiles(pathToUpload, TEST_ARTIFACT_NAME)
         if(uploadResults.isErr()) { throw uploadResults.error }
-        const filesArtifactUuid = uploadResults.value
         const firstArchiveRootKeyWord = `${ARCHIVE_ROOT_FILE_KEYWORD_PATTERN}0`
         const firstArchiveRootFilename = `${filePathsMap.get(firstArchiveRootKeyWord)}`
 
-        const startFileServerResult = await startFileServer(FILE_SERVER_SERVICE_ID, filesArtifactUuid, firstArchiveRootFilename, enclaveContext)
+        const startFileServerResult = await startFileServer(FILE_SERVER_SERVICE_ID, TEST_ARTIFACT_NAME, firstArchiveRootFilename, enclaveContext)
         if (startFileServerResult.isErr()){throw startFileServerResult.error}
         const {fileServerPublicIp, fileServerPublicPortNum} = startFileServerResult.value
 

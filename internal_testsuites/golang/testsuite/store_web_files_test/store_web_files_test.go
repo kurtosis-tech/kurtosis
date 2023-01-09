@@ -20,6 +20,7 @@ const (
 	fileServerServiceId services.ServiceID = "file-server"
 
 	testFilesArtifactUrl = "https://kurtosis-public-access.s3.us-east-1.amazonaws.com/test-artifacts/static-fileserver-files.tgz"
+	testArtifactName     = "test-artifact-name"
 
 	// Filenames & contents for the files stored in the files artifact
 	file1Filename = "file1.txt"
@@ -39,7 +40,7 @@ func TestStoreWebFiles(t *testing.T) {
 	require.NoError(t, err, "An error occurred creating an enclave")
 	defer stopEnclaveFunc()
 	// ------------------------------------- TEST SETUP ----------------------------------------------
-	filesArtifactUuid, err := enclaveCtx.StoreWebFiles(context.Background(), testFilesArtifactUrl)
+	filesArtifactUuid, err := enclaveCtx.StoreWebFiles(context.Background(), testFilesArtifactUrl, testArtifactName)
 	require.NoError(t, err, "An error occurred storing the files artifact")
 	fileServerPublicIp, fileServerPublicPortNum, err := test_helpers.StartFileServer(ctx, fileServerServiceId, filesArtifactUuid, file1Filename, enclaveCtx)
 	require.NoError(t, err, "An error occurred waiting for the file server service to become available")
@@ -81,7 +82,7 @@ func TestStoreWebFiles(t *testing.T) {
 //	Private helper functions
 //
 // ====================================================================================================
-//nolint
+// nolint
 func getFileContents(ipAddress string, portNum uint16, filename string) (string, error) {
 	resp, err := http.Get(fmt.Sprintf("http://%v:%v/%v", ipAddress, portNum, filename))
 	if err != nil {

@@ -298,9 +298,10 @@ export function newWaitForHttpPostEndpointAvailabilityArgs(
 // ==============================================================================================
 //                                     Download Files
 // ==============================================================================================
-export function newStoreWebFilesArtifactArgs(url: string): StoreWebFilesArtifactArgs {
+export function newStoreWebFilesArtifactArgs(url: string, name: string): StoreWebFilesArtifactArgs {
     const result: StoreWebFilesArtifactArgs = new StoreWebFilesArtifactArgs();
     result.setUrl(url);
+    result.setName(name);
     return result;
 }
 
@@ -317,9 +318,10 @@ export function newStoreFilesArtifactFromServiceArgs(serviceId: string, sourcePa
 // ==============================================================================================
 //                                      Upload Files
 // ==============================================================================================
-export function newUploadFilesArtifactArgs(data: Uint8Array) : UploadFilesArtifactArgs {
+export function newUploadFilesArtifactArgs(data: Uint8Array, name: string) : UploadFilesArtifactArgs {
     const result: UploadFilesArtifactArgs = new UploadFilesArtifactArgs()
     result.setData(data)
+    result.setName(name)
     return result
 }
 

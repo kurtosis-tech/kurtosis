@@ -11,7 +11,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
-	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
 )
@@ -21,8 +20,11 @@ const (
 
 	templateAndDataByDestinationRelFilepathArg = "config"
 
-	artifactIdArgName            = "artifact_id?"
-	nonOptionalArtifactIdArgName = "artifact_id"
+	// TODO Deprecate artifactIdArg in a future release
+	artifactIdArgName = "artifact_id?"
+
+	artifactNameArgName            = "name?"
+	nonOptionalArtifactNameArgName = "name"
 
 	emptyStarlarkString = starlark.String("")
 )
@@ -33,7 +35,7 @@ type RenderTemplatesInstruction struct {
 	position       *kurtosis_instruction.InstructionPosition
 	starlarkKwargs starlark.StringDict
 
-	artifactId enclave_data_directory.FilesArtifactID
+	artifactName string
 
 	templatesAndDataByDestRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData
 }
@@ -48,7 +50,7 @@ func GenerateRenderTemplatesBuiltin(instructionsQueue *[]kurtosis_instruction.Ku
 			return nil, interpretationError
 		}
 		*instructionsQueue = append(*instructionsQueue, renderTemplatesInstruction)
-		return starlark.String(renderTemplatesInstruction.artifactId), nil
+		return starlark.String(renderTemplatesInstruction.artifactName), nil
 	}
 }
 
@@ -57,18 +59,18 @@ func newEmptyRenderTemplatesInstruction(serviceNetwork service_network.ServiceNe
 		serviceNetwork:                    serviceNetwork,
 		position:                          position,
 		starlarkKwargs:                    starlark.StringDict{},
-		artifactId:                        "",
+		artifactName:                      "",
 		templatesAndDataByDestRelFilepath: nil,
 	}
 }
 
-func NewRenderTemplatesInstruction(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition, templatesAndDataByDestRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, starlarkKwargs starlark.StringDict, artifactUuid enclave_data_directory.FilesArtifactID) *RenderTemplatesInstruction {
+func NewRenderTemplatesInstruction(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition, templatesAndDataByDestRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, starlarkKwargs starlark.StringDict, artifactName string) *RenderTemplatesInstruction {
 	return &RenderTemplatesInstruction{
 		serviceNetwork:                    serviceNetwork,
 		position:                          position,
 		templatesAndDataByDestRelFilepath: templatesAndDataByDestRelFilepath,
 		starlarkKwargs:                    starlarkKwargs,
-		artifactId:                        artifactUuid,
+		artifactName:                      artifactName,
 	}
 }
 
@@ -78,7 +80,7 @@ func (instruction *RenderTemplatesInstruction) GetPositionInOriginalScript() *ku
 
 func (instruction *RenderTemplatesInstruction) GetCanonicalInstruction() *kurtosis_core_rpc_api_bindings.StarlarkInstruction {
 	args := []*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg{
-		binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[nonOptionalArtifactIdArgName]), nonOptionalArtifactIdArgName, kurtosis_instruction.Representative),
+		binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[nonOptionalArtifactNameArgName]), nonOptionalArtifactNameArgName, kurtosis_instruction.Representative),
 		binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[templateAndDataByDestinationRelFilepathArg]), templateAndDataByDestinationRelFilepathArg, kurtosis_instruction.NotRepresentative),
 	}
 	return binding_constructors.NewStarlarkInstruction(instruction.position.ToAPIType(), RenderTemplatesBuiltinName, instruction.String(), args)
@@ -95,11 +97,11 @@ func (instruction *RenderTemplatesInstruction) Execute(_ context.Context) (*stri
 		instruction.templatesAndDataByDestRelFilepath[relFilePath] = binding_constructors.NewTemplateAndData(templateStr, dataAsJsonMaybeIPAddressReplaced)
 	}
 
-	artifactId, err := instruction.serviceNetwork.RenderTemplatesToTargetFilesArtifactUUID(instruction.templatesAndDataByDestRelFilepath, instruction.artifactId)
+	artifactUUID, err := instruction.serviceNetwork.RenderTemplates(instruction.templatesAndDataByDestRelFilepath, instruction.artifactName)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to render templates '%v'", instruction.templatesAndDataByDestRelFilepath)
 	}
-	instructionResult := fmt.Sprintf("Templates rendered and stored with artifact ID '%s'", artifactId)
+	instructionResult := fmt.Sprintf("Templates artifact name '%s' rendered with artifact UUID '%s'", instruction.artifactName, artifactUUID)
 	return &instructionResult, nil
 }
 
@@ -108,29 +110,31 @@ func (instruction *RenderTemplatesInstruction) String() string {
 }
 
 func (instruction *RenderTemplatesInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
-	if environment.DoesArtifactIdExist(instruction.artifactId) {
-		return stacktrace.NewError("There was an error validating '%v' as artifact UUID '%v' already exists", RenderTemplatesBuiltinName, instruction.artifactId)
+	if environment.DoesArtifactNameExist(instruction.artifactName) {
+		return stacktrace.NewError("There was an error validating '%v' as artifact name '%v' already exists", RenderTemplatesBuiltinName, instruction.artifactName)
 	}
-	environment.AddArtifactId(instruction.artifactId)
+	environment.AddArtifactName(instruction.artifactName)
 	return nil
 }
 
 func (instruction *RenderTemplatesInstruction) parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) *startosis_errors.InterpretationError {
 	var templatesAndDataArg *starlark.Dict
 	var artifactIdArg = emptyStarlarkString
+	var artifactNameArg = emptyStarlarkString
 
-	if err := starlark.UnpackArgs(b.Name(), args, kwargs, templateAndDataByDestinationRelFilepathArg, &templatesAndDataArg, artifactIdArgName, &artifactIdArg); err != nil {
+	if err := starlark.UnpackArgs(b.Name(), args, kwargs, templateAndDataByDestinationRelFilepathArg, &templatesAndDataArg, artifactNameArgName, &artifactNameArg, artifactIdArgName, &artifactIdArg); err != nil {
 		return startosis_errors.WrapWithInterpretationError(err, "Failed parsing arguments for function '%s' (unparsed arguments were: '%v' '%v')", RenderTemplatesBuiltinName, args, kwargs)
 	}
 
-	if artifactIdArg == emptyStarlarkString {
-		placeHolderArtifactId, err := enclave_data_directory.NewFilesArtifactID()
-		if err != nil {
-			return startosis_errors.NewInterpretationError("An empty or no artifact_uuid was passed, we tried creating one but failed")
-		}
-		artifactIdArg = starlark.String(placeHolderArtifactId)
+	if artifactIdArg == emptyStarlarkString && artifactNameArg == emptyStarlarkString {
+		return startosis_errors.NewInterpretationError("A name must be provided for the artifact using the '%v' argument", nonOptionalArtifactNameArgName)
 	}
-	instruction.starlarkKwargs[nonOptionalArtifactIdArgName] = artifactIdArg
+
+	if artifactNameArg == emptyStarlarkString {
+		artifactNameArg = artifactIdArg
+	}
+
+	instruction.starlarkKwargs[nonOptionalArtifactNameArgName] = artifactNameArg
 	instruction.starlarkKwargs[templateAndDataByDestinationRelFilepathArg] = templatesAndDataArg
 
 	templatesAndDataByDestRelFilepath, interpretationErr := kurtosis_instruction.ParseTemplatesAndData(templatesAndDataArg)
@@ -139,13 +143,12 @@ func (instruction *RenderTemplatesInstruction) parseStartosisArgs(b *starlark.Bu
 	}
 	instruction.templatesAndDataByDestRelFilepath = templatesAndDataByDestRelFilepath
 
-	artifactUuid, interpretationErr := kurtosis_instruction.ParseArtifactId(nonOptionalArtifactIdArgName, artifactIdArg)
+	artifactName, interpretationErr := kurtosis_instruction.ParseNonEmptyString(nonOptionalArtifactNameArgName, artifactNameArg)
 	if interpretationErr != nil {
 		return interpretationErr
 	}
 
-	instruction.artifactId = artifactUuid
-	instruction.starlarkKwargs[nonOptionalArtifactIdArgName] = starlark.String(artifactUuid)
+	instruction.artifactName = artifactName
 
 	return nil
 }

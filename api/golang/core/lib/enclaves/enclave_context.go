@@ -206,8 +206,8 @@ func (enclaveCtx *EnclaveContext) GetServices() (map[services.ServiceID]services
 	return serviceInfos, nil
 }
 
-// Docs available at https://docs.kurtosis.com/sdk/#uploadfilesstring-pathtoupload
-func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (services.FilesArtifactUUID, error) {
+// Docs available at https://docs.kurtosis.com/sdk#uploadfilesstring-pathtoupload-string-artifactname
+func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string, artifactName string) (services.FilesArtifactUUID, error) {
 	content, err := shared_utils.CompressPath(pathToUpload, ensureCompressedFileIsLesserThanGRPCLimit)
 	if err != nil {
 		return "", stacktrace.Propagate(err,
@@ -215,7 +215,7 @@ func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (services.Fil
 			pathToUpload)
 	}
 
-	args := binding_constructors.NewUploadFilesArtifactArgs(content)
+	args := binding_constructors.NewUploadFilesArtifactArgs(content, artifactName)
 	response, err := enclaveCtx.client.UploadFilesArtifact(context.Background(), args)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error was encountered while uploading data to the API Container.")
@@ -223,9 +223,9 @@ func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (services.Fil
 	return services.FilesArtifactUUID(response.Uuid), nil
 }
 
-// Docs available at https://docs.kurtosis.com/sdk/#storewebfilesstring-urltodownload
-func (enclaveCtx *EnclaveContext) StoreWebFiles(ctx context.Context, urlToStoreWeb string) (services.FilesArtifactUUID, error) {
-	args := binding_constructors.NewStoreWebFilesArtifactArgs(urlToStoreWeb)
+// Docs available at https://docs.kurtosis.com/sdk#storewebfilesstring-urltodownload-string-artifactname
+func (enclaveCtx *EnclaveContext) StoreWebFiles(ctx context.Context, urlToStoreWeb string, artifactName string) (services.FilesArtifactUUID, error) {
+	args := binding_constructors.NewStoreWebFilesArtifactArgs(urlToStoreWeb, artifactName)
 	response, err := enclaveCtx.client.StoreWebFilesArtifact(ctx, args)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred downloading files artifact from URL '%v'", urlToStoreWeb)

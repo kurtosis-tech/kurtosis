@@ -89,13 +89,8 @@ func (m *MockServiceNetwork) GetService(ctx context.Context, serviceId service.S
 	panic(unimplementedMsg)
 }
 
-func (m *MockServiceNetwork) CopyFilesFromService(ctx context.Context, serviceId service.ServiceID, srcPath string) (enclave_data_directory.FilesArtifactID, error) {
+func (m *MockServiceNetwork) CopyFilesFromService(ctx context.Context, serviceId service.ServiceID, _ string, _ string) (enclave_data_directory.FilesArtifactUUID, error) {
 	//TODO implement me
-	panic(unimplementedMsg)
-}
-
-func (m *MockServiceNetwork) CopyFilesFromServiceToTargetArtifactUUID(ctx context.Context, serviceId service.ServiceID, srcPath string, filesArtifactUuid enclave_data_directory.FilesArtifactID) (enclave_data_directory.FilesArtifactID, error) {
-	// TODO implement me
 	panic(unimplementedMsg)
 }
 
@@ -109,19 +104,11 @@ func (m *MockServiceNetwork) GetIPAddressForService(serviceID service.ServiceID)
 	return ipAddress, found
 }
 
-func (m *MockServiceNetwork) RenderTemplates(_ map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData) (enclave_data_directory.FilesArtifactID, error) {
+func (m *MockServiceNetwork) RenderTemplates(_ map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, _ string) (enclave_data_directory.FilesArtifactUUID, error) {
 	panic(unimplementedMsg)
 }
 
-func (m *MockServiceNetwork) RenderTemplatesToTargetFilesArtifactUUID(_ map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, _ enclave_data_directory.FilesArtifactID) (enclave_data_directory.FilesArtifactID, error) {
-	panic(unimplementedMsg)
-}
-
-func (m *MockServiceNetwork) UploadFilesArtifact(_ []byte) (enclave_data_directory.FilesArtifactID, error) {
-	panic(unimplementedMsg)
-}
-
-func (m *MockServiceNetwork) UploadFilesArtifactToTargetArtifactID(data []byte, targetFilesArtifactId enclave_data_directory.FilesArtifactID) error {
+func (m *MockServiceNetwork) UploadFilesArtifact(_ []byte, _ string) (enclave_data_directory.FilesArtifactUUID, error) {
 	panic(unimplementedMsg)
 }
 

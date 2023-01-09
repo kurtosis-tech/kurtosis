@@ -5,7 +5,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/recipe"
-	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
@@ -307,19 +306,6 @@ func TestParseCommand_ValidValue(t *testing.T) {
 func TestParseCommand_InvalidCommandsWithIntegers(t *testing.T) {
 	input := starlark.NewList([]starlark.Value{starlark.String("foo"), starlark.MakeInt(42)})
 	_, err := ParseCommand(input)
-	require.NotNil(t, err)
-}
-
-func TestArtifactUuidPathPath_ValidValue(t *testing.T) {
-	input := starlark.String("abde-f23dd-1")
-	output, err := ParseArtifactId("artifact_id", input)
-	require.Nil(t, err)
-	require.Equal(t, enclave_data_directory.FilesArtifactID("abde-f23dd-1"), output)
-}
-
-func TestArtifactUuidPathPath_EmptyStringFails(t *testing.T) {
-	input := starlark.String("")
-	_, err := ParseArtifactId("artifact_id", input)
 	require.NotNil(t, err)
 }
 

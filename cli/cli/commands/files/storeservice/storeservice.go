@@ -29,8 +29,11 @@ const (
 	engineClientCtxKey    = "engine-client"
 
 	starlarkTemplate = `
+CURRENT_TIME_STR = str(time.now().unix)
+ARTIFACT_NAME = "cli-stored-artifact-" + CURRENT_TIME_STR
 def run(plan, args):
 	plan.store_service_files(
+		name = ARTIFACT_NAME,
 		service_id = args.service_id,
 		src = args.src
 	)

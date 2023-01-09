@@ -479,14 +479,14 @@ export class EnclaveContext {
         return ok(serviceInfos)
     }
 
-    // Docs available at https://docs.kurtosis.com/sdk/#uploadfilesstring-pathtoupload
-    public async uploadFiles(pathToArchive: string): Promise<Result<FilesArtifactUUID, Error>>  {
+    // Docs available at https://docs.kurtosis.com/sdk#uploadfilesstring-pathtoupload-string-artifactname
+    public async uploadFiles(pathToArchive: string, name: string): Promise<Result<FilesArtifactUUID, Error>>  {
         const archiverResponse = await this.genericTgzArchiver.createTgzByteArray(pathToArchive)
         if (archiverResponse.isErr()){
             return err(archiverResponse.error)
         }
 
-        const args = newUploadFilesArtifactArgs(archiverResponse.value)
+        const args = newUploadFilesArtifactArgs(archiverResponse.value, name)
         const uploadResult = await this.backend.uploadFiles(args)
         if (uploadResult.isErr()){
             return err(uploadResult.error)
@@ -495,9 +495,9 @@ export class EnclaveContext {
         return ok(uploadResult.value.getUuid())
     }
 
-    // Docs available at https://docs.kurtosis.com/sdk/#storewebfilesstring-urltodownload
-    public async storeWebFiles(url: string): Promise<Result<FilesArtifactUUID, Error>> {
-        const args = newStoreWebFilesArtifactArgs(url);
+    // Docs available at https://docs.kurtosis.com/sdk#storewebfilesstring-urltodownload-string-artifactname
+    public async storeWebFiles(url: string, name: string): Promise<Result<FilesArtifactUUID, Error>> {
+        const args = newStoreWebFilesArtifactArgs(url, name);
         const storeWebFilesArtifactResponseResult = await this.backend.storeWebFilesArtifact(args)
         if (storeWebFilesArtifactResponseResult.isErr()) {
             return err(storeWebFilesArtifactResponseResult.error)

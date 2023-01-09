@@ -7632,7 +7632,8 @@ proto.api_container_api.UploadFilesArtifactArgs.prototype.toObject = function(op
  */
 proto.api_container_api.UploadFilesArtifactArgs.toObject = function(includeInstance, msg) {
   var f, obj = {
-    data: msg.getData_asB64()
+    data: msg.getData_asB64(),
+    name: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -7673,6 +7674,10 @@ proto.api_container_api.UploadFilesArtifactArgs.deserializeBinaryFromReader = fu
       var value = /** @type {!Uint8Array} */ (reader.readBytes());
       msg.setData(value);
       break;
+    case 2:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setName(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -7706,6 +7711,13 @@ proto.api_container_api.UploadFilesArtifactArgs.serializeBinaryToWriter = functi
   if (f.length > 0) {
     writer.writeBytes(
       1,
+      f
+    );
+  }
+  f = message.getName();
+  if (f.length > 0) {
+    writer.writeString(
+      2,
       f
     );
   }
@@ -7751,6 +7763,24 @@ proto.api_container_api.UploadFilesArtifactArgs.prototype.getData_asU8 = functio
  */
 proto.api_container_api.UploadFilesArtifactArgs.prototype.setData = function(value) {
   return jspb.Message.setProto3BytesField(this, 1, value);
+};
+
+
+/**
+ * optional string name = 2;
+ * @return {string}
+ */
+proto.api_container_api.UploadFilesArtifactArgs.prototype.getName = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.api_container_api.UploadFilesArtifactArgs} returns this
+ */
+proto.api_container_api.UploadFilesArtifactArgs.prototype.setName = function(value) {
+  return jspb.Message.setProto3StringField(this, 2, value);
 };
 
 
@@ -7916,7 +7946,7 @@ proto.api_container_api.DownloadFilesArtifactArgs.prototype.toObject = function(
  */
 proto.api_container_api.DownloadFilesArtifactArgs.toObject = function(includeInstance, msg) {
   var f, obj = {
-    id: jspb.Message.getFieldWithDefault(msg, 1, "")
+    reference: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -7955,7 +7985,7 @@ proto.api_container_api.DownloadFilesArtifactArgs.deserializeBinaryFromReader = 
     switch (field) {
     case 1:
       var value = /** @type {string} */ (reader.readString());
-      msg.setId(value);
+      msg.setReference(value);
       break;
     default:
       reader.skipField();
@@ -7986,7 +8016,7 @@ proto.api_container_api.DownloadFilesArtifactArgs.prototype.serializeBinary = fu
  */
 proto.api_container_api.DownloadFilesArtifactArgs.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
-  f = message.getId();
+  f = message.getReference();
   if (f.length > 0) {
     writer.writeString(
       1,
@@ -7997,10 +8027,10 @@ proto.api_container_api.DownloadFilesArtifactArgs.serializeBinaryToWriter = func
 
 
 /**
- * optional string id = 1;
+ * optional string reference = 1;
  * @return {string}
  */
-proto.api_container_api.DownloadFilesArtifactArgs.prototype.getId = function() {
+proto.api_container_api.DownloadFilesArtifactArgs.prototype.getReference = function() {
   return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
 };
 
@@ -8009,7 +8039,7 @@ proto.api_container_api.DownloadFilesArtifactArgs.prototype.getId = function() {
  * @param {string} value
  * @return {!proto.api_container_api.DownloadFilesArtifactArgs} returns this
  */
-proto.api_container_api.DownloadFilesArtifactArgs.prototype.setId = function(value) {
+proto.api_container_api.DownloadFilesArtifactArgs.prototype.setReference = function(value) {
   return jspb.Message.setProto3StringField(this, 1, value);
 };
 
@@ -8200,7 +8230,8 @@ proto.api_container_api.StoreWebFilesArtifactArgs.prototype.toObject = function(
  */
 proto.api_container_api.StoreWebFilesArtifactArgs.toObject = function(includeInstance, msg) {
   var f, obj = {
-    url: jspb.Message.getFieldWithDefault(msg, 1, "")
+    url: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    name: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -8241,6 +8272,10 @@ proto.api_container_api.StoreWebFilesArtifactArgs.deserializeBinaryFromReader = 
       var value = /** @type {string} */ (reader.readString());
       msg.setUrl(value);
       break;
+    case 2:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setName(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -8277,6 +8312,13 @@ proto.api_container_api.StoreWebFilesArtifactArgs.serializeBinaryToWriter = func
       f
     );
   }
+  f = message.getName();
+  if (f.length > 0) {
+    writer.writeString(
+      2,
+      f
+    );
+  }
 };
 
 
@@ -8295,6 +8337,24 @@ proto.api_container_api.StoreWebFilesArtifactArgs.prototype.getUrl = function() 
  */
 proto.api_container_api.StoreWebFilesArtifactArgs.prototype.setUrl = function(value) {
   return jspb.Message.setProto3StringField(this, 1, value);
+};
+
+
+/**
+ * optional string name = 2;
+ * @return {string}
+ */
+proto.api_container_api.StoreWebFilesArtifactArgs.prototype.getName = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.api_container_api.StoreWebFilesArtifactArgs} returns this
+ */
+proto.api_container_api.StoreWebFilesArtifactArgs.prototype.setName = function(value) {
+  return jspb.Message.setProto3StringField(this, 2, value);
 };
 
 
@@ -8461,7 +8521,8 @@ proto.api_container_api.StoreFilesArtifactFromServiceArgs.prototype.toObject = f
 proto.api_container_api.StoreFilesArtifactFromServiceArgs.toObject = function(includeInstance, msg) {
   var f, obj = {
     serviceId: jspb.Message.getFieldWithDefault(msg, 1, ""),
-    sourcePath: jspb.Message.getFieldWithDefault(msg, 2, "")
+    sourcePath: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    name: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
 
   if (includeInstance) {
@@ -8506,6 +8567,10 @@ proto.api_container_api.StoreFilesArtifactFromServiceArgs.deserializeBinaryFromR
       var value = /** @type {string} */ (reader.readString());
       msg.setSourcePath(value);
       break;
+    case 3:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setName(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -8549,6 +8614,13 @@ proto.api_container_api.StoreFilesArtifactFromServiceArgs.serializeBinaryToWrite
       f
     );
   }
+  f = message.getName();
+  if (f.length > 0) {
+    writer.writeString(
+      3,
+      f
+    );
+  }
 };
 
 
@@ -8585,6 +8657,24 @@ proto.api_container_api.StoreFilesArtifactFromServiceArgs.prototype.getSourcePat
  */
 proto.api_container_api.StoreFilesArtifactFromServiceArgs.prototype.setSourcePath = function(value) {
   return jspb.Message.setProto3StringField(this, 2, value);
+};
+
+
+/**
+ * optional string name = 3;
+ * @return {string}
+ */
+proto.api_container_api.StoreFilesArtifactFromServiceArgs.prototype.getName = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 3, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.api_container_api.StoreFilesArtifactFromServiceArgs} returns this
+ */
+proto.api_container_api.StoreFilesArtifactFromServiceArgs.prototype.setName = function(value) {
+  return jspb.Message.setProto3StringField(this, 3, value);
 };
 
 
@@ -8750,7 +8840,8 @@ proto.api_container_api.RenderTemplatesToFilesArtifactArgs.prototype.toObject = 
  */
 proto.api_container_api.RenderTemplatesToFilesArtifactArgs.toObject = function(includeInstance, msg) {
   var f, obj = {
-    templatesAndDataByDestinationRelFilepathMap: (f = msg.getTemplatesAndDataByDestinationRelFilepathMap()) ? f.toObject(includeInstance, proto.api_container_api.RenderTemplatesToFilesArtifactArgs.TemplateAndData.toObject) : []
+    templatesAndDataByDestinationRelFilepathMap: (f = msg.getTemplatesAndDataByDestinationRelFilepathMap()) ? f.toObject(includeInstance, proto.api_container_api.RenderTemplatesToFilesArtifactArgs.TemplateAndData.toObject) : [],
+    name: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -8793,6 +8884,10 @@ proto.api_container_api.RenderTemplatesToFilesArtifactArgs.deserializeBinaryFrom
         jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.api_container_api.RenderTemplatesToFilesArtifactArgs.TemplateAndData.deserializeBinaryFromReader, "", new proto.api_container_api.RenderTemplatesToFilesArtifactArgs.TemplateAndData());
          });
       break;
+    case 2:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setName(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -8825,6 +8920,13 @@ proto.api_container_api.RenderTemplatesToFilesArtifactArgs.serializeBinaryToWrit
   f = message.getTemplatesAndDataByDestinationRelFilepathMap(true);
   if (f && f.getLength() > 0) {
     f.serializeBinary(1, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.api_container_api.RenderTemplatesToFilesArtifactArgs.TemplateAndData.serializeBinaryToWriter);
+  }
+  f = message.getName();
+  if (f.length > 0) {
+    writer.writeString(
+      2,
+      f
+    );
   }
 };
 
@@ -9009,6 +9111,24 @@ proto.api_container_api.RenderTemplatesToFilesArtifactArgs.prototype.getTemplate
 proto.api_container_api.RenderTemplatesToFilesArtifactArgs.prototype.clearTemplatesAndDataByDestinationRelFilepathMap = function() {
   this.getTemplatesAndDataByDestinationRelFilepathMap().clear();
   return this;};
+
+
+/**
+ * optional string name = 2;
+ * @return {string}
+ */
+proto.api_container_api.RenderTemplatesToFilesArtifactArgs.prototype.getName = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.api_container_api.RenderTemplatesToFilesArtifactArgs} returns this
+ */
+proto.api_container_api.RenderTemplatesToFilesArtifactArgs.prototype.setName = function(value) {
+  return jspb.Message.setProto3StringField(this, 2, value);
+};
 
 
 

@@ -12,7 +12,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
-	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
 )
@@ -22,8 +21,11 @@ const (
 
 	srcArgName = "src"
 
-	artifactIdArgName            = "artifact_id?"
-	nonOptionalArtifactIdArgName = "artifact_id"
+	// TODO Deprecate artifactIdArg in a future release
+	artifactIdArgName = "artifact_id?"
+
+	artifactNameArgName            = "name?"
+	nonOptionalArtifactNameArgName = "name"
 
 	ensureCompressedFileIsLesserThanGRPCLimit = false
 
@@ -37,8 +39,8 @@ type UploadFilesInstruction struct {
 	position       *kurtosis_instruction.InstructionPosition
 	starlarkKwargs starlark.StringDict
 
-	src        string
-	artifactId enclave_data_directory.FilesArtifactID
+	src          string
+	artifactName string
 
 	pathOnDisk string
 }
@@ -52,18 +54,18 @@ func GenerateUploadFilesBuiltin(instructionsQueue *[]kurtosis_instruction.Kurtos
 			return nil, interpretationError
 		}
 		*instructionsQueue = append(*instructionsQueue, uploadInstruction)
-		return starlark.String(uploadInstruction.artifactId), nil
+		return starlark.String(uploadInstruction.artifactName), nil
 	}
 }
 
-func NewUploadFilesInstruction(position *kurtosis_instruction.InstructionPosition, serviceNetwork service_network.ServiceNetwork, provider startosis_packages.PackageContentProvider, src string, pathOnDisk string, artifactId enclave_data_directory.FilesArtifactID, starlarkKwargs starlark.StringDict) *UploadFilesInstruction {
+func NewUploadFilesInstruction(position *kurtosis_instruction.InstructionPosition, serviceNetwork service_network.ServiceNetwork, provider startosis_packages.PackageContentProvider, src string, pathOnDisk string, artifactId string, starlarkKwargs starlark.StringDict) *UploadFilesInstruction {
 	return &UploadFilesInstruction{
 		position:       position,
 		serviceNetwork: serviceNetwork,
 		src:            src,
 		provider:       provider,
 		pathOnDisk:     pathOnDisk,
-		artifactId:     artifactId,
+		artifactName:   artifactId,
 		starlarkKwargs: starlarkKwargs,
 	}
 }
@@ -75,7 +77,7 @@ func newEmptyUploadFilesInstruction(position *kurtosis_instruction.InstructionPo
 		provider:       provider,
 		src:            "",
 		pathOnDisk:     "",
-		artifactId:     "",
+		artifactName:   "",
 		starlarkKwargs: starlark.StringDict{},
 	}
 }
@@ -87,7 +89,7 @@ func (instruction *UploadFilesInstruction) GetPositionInOriginalScript() *kurtos
 func (instruction *UploadFilesInstruction) GetCanonicalInstruction() *kurtosis_core_rpc_api_bindings.StarlarkInstruction {
 	args := []*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg{
 		binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[srcArgName]), srcArgName, kurtosis_instruction.Representative),
-		binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[nonOptionalArtifactIdArgName]), nonOptionalArtifactIdArgName, kurtosis_instruction.Representative),
+		binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[nonOptionalArtifactNameArgName]), nonOptionalArtifactNameArgName, kurtosis_instruction.Representative),
 	}
 	return binding_constructors.NewStarlarkInstruction(instruction.position.ToAPIType(), UploadFilesBuiltinName, instruction.String(), args)
 }
@@ -97,11 +99,11 @@ func (instruction *UploadFilesInstruction) Execute(_ context.Context) (*string, 
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while compressing the files '%v'", instruction.pathOnDisk)
 	}
-	err = instruction.serviceNetwork.UploadFilesArtifactToTargetArtifactID(compressedData, instruction.artifactId)
+	filesArtifactUuid, err := instruction.serviceNetwork.UploadFilesArtifact(compressedData, instruction.artifactName)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while uploading the compressed contents\n'%v'", compressedData)
 	}
-	instructionResult := fmt.Sprintf("Files uploaded with artifact ID '%s'", instruction.artifactId)
+	instructionResult := fmt.Sprintf("Files  with artifact name '%s' uploaded with artifact UUID '%s'", instruction.artifactName, filesArtifactUuid)
 	return &instructionResult, nil
 }
 
@@ -110,30 +112,31 @@ func (instruction *UploadFilesInstruction) String() string {
 }
 
 func (instruction *UploadFilesInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
-	if environment.DoesArtifactIdExist(instruction.artifactId) {
-		return stacktrace.NewError("There was an error validating '%v' as artifact UUID '%v' already exists", UploadFilesBuiltinName, instruction.artifactId)
+	if environment.DoesArtifactNameExist(instruction.artifactName) {
+		return stacktrace.NewError("There was an error validating '%v' as artifact name '%v' already exists", UploadFilesBuiltinName, instruction.artifactName)
 	}
-	environment.AddArtifactId(instruction.artifactId)
+	environment.AddArtifactName(instruction.artifactName)
 	return nil
 }
 
 func (instruction *UploadFilesInstruction) parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) *startosis_errors.InterpretationError {
 	var srcPathArg starlark.String
 	var artifactIdArg = emptyStarlarkString
-	if err := starlark.UnpackArgs(b.Name(), args, kwargs, srcArgName, &srcPathArg, artifactIdArgName, &artifactIdArg); err != nil {
+	var artifactNameArg = emptyStarlarkString
+	if err := starlark.UnpackArgs(b.Name(), args, kwargs, srcArgName, &srcPathArg, artifactNameArgName, &artifactNameArg, artifactIdArgName, &artifactIdArg); err != nil {
 		return startosis_errors.WrapWithInterpretationError(err, "Failed parsing arguments for function '%s' (unparsed arguments were: '%v' '%v')", UploadFilesBuiltinName, args, kwargs)
 	}
 
-	if artifactIdArg == emptyStarlarkString {
-		placeHolderArtifactId, err := enclave_data_directory.NewFilesArtifactID()
-		if err != nil {
-			return startosis_errors.NewInterpretationError("An empty or no artifact_uuid was passed, we tried creating one but failed")
-		}
-		artifactIdArg = starlark.String(placeHolderArtifactId)
+	if artifactIdArg == emptyStarlarkString && artifactNameArg == emptyStarlarkString {
+		return startosis_errors.NewInterpretationError("A name must be provided for the artifact using the '%v' argument", nonOptionalArtifactNameArgName)
+	}
+
+	if artifactNameArg == emptyStarlarkString {
+		artifactNameArg = artifactIdArg
 	}
 
 	instruction.starlarkKwargs[srcArgName] = srcPathArg
-	instruction.starlarkKwargs[nonOptionalArtifactIdArgName] = artifactIdArg
+	instruction.starlarkKwargs[nonOptionalArtifactNameArgName] = artifactNameArg
 	instruction.starlarkKwargs.Freeze()
 
 	srcPath, interpretationErr := kurtosis_instruction.ParseNonEmptyString(srcArgName, srcPathArg)
@@ -141,7 +144,7 @@ func (instruction *UploadFilesInstruction) parseStartosisArgs(b *starlark.Builti
 		return interpretationErr
 	}
 
-	artifactId, interpretationErr := kurtosis_instruction.ParseArtifactId(nonOptionalArtifactIdArgName, artifactIdArg)
+	artifactName, interpretationErr := kurtosis_instruction.ParseNonEmptyString(nonOptionalArtifactNameArgName, artifactNameArg)
 	if interpretationErr != nil {
 		return interpretationErr
 	}
@@ -152,7 +155,7 @@ func (instruction *UploadFilesInstruction) parseStartosisArgs(b *starlark.Builti
 	}
 
 	instruction.src = srcPath
-	instruction.artifactId = artifactId
+	instruction.artifactName = artifactName
 	instruction.pathOnDisk = pathOnDisk
 	return nil
 }

@@ -373,7 +373,7 @@ func (apicService ApiContainerService) GetServices(ctx context.Context, args *ku
 
 func (apicService ApiContainerService) UploadFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.UploadFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse, error) {
 
-	filesArtifactUuid, err := apicService.serviceNetwork.UploadFilesArtifact(args.Data)
+	filesArtifactUuid, err := apicService.serviceNetwork.UploadFilesArtifact(args.Data, args.Name)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while trying to upload the file")
 	}
@@ -383,18 +383,17 @@ func (apicService ApiContainerService) UploadFilesArtifact(ctx context.Context, 
 }
 
 func (apicService ApiContainerService) DownloadFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.DownloadFilesArtifactResponse, error) {
-	filesArtifactIdStr := args.Id
-	if strings.TrimSpace(filesArtifactIdStr) == "" {
-		return nil, stacktrace.NewError("Cannot download file with empty files artifact UUID")
+	artifactReference := args.Reference
+	if strings.TrimSpace(artifactReference) == "" {
+		return nil, stacktrace.NewError("Cannot download file with empty files artifact reference")
 	}
-	filesArtifactId := enclave_data_directory.FilesArtifactID(filesArtifactIdStr)
 
-	artifactFile, err := apicService.filesArtifactStore.GetFile(filesArtifactId)
+	filesArtifact, err := apicService.filesArtifactStore.GetFile(artifactReference)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting files artifact '%v'", filesArtifactId)
+		return nil, stacktrace.Propagate(err, "An error occurred getting files artifact '%v'", artifactReference)
 	}
 
-	fileBytes, err := ioutil.ReadFile(artifactFile.GetAbsoluteFilepath())
+	fileBytes, err := ioutil.ReadFile(filesArtifact.GetAbsoluteFilepath())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred reading files artifact file bytes")
 	}
@@ -405,6 +404,7 @@ func (apicService ApiContainerService) DownloadFilesArtifact(ctx context.Context
 
 func (apicService ApiContainerService) StoreWebFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StoreWebFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.StoreWebFilesArtifactResponse, error) {
 	url := args.Url
+	artifactName := args.Name
 
 	resp, err := http.Get(args.Url)
 	if err != nil {
@@ -413,7 +413,7 @@ func (apicService ApiContainerService) StoreWebFilesArtifact(ctx context.Context
 	defer resp.Body.Close()
 	body := bufio.NewReader(resp.Body)
 
-	filesArtifactUuId, err := apicService.filesArtifactStore.StoreFile(body)
+	filesArtifactUuId, err := apicService.filesArtifactStore.StoreFile(body, artifactName)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred storing the file from URL '%v' in the files artifact store", url)
 	}
@@ -426,8 +426,9 @@ func (apicService ApiContainerService) StoreFilesArtifactFromService(ctx context
 	serviceIdStr := args.ServiceId
 	serviceId := kurtosis_backend_service.ServiceID(serviceIdStr)
 	srcPath := args.SourcePath
+	name := args.Name
 
-	filesArtifactId, err := apicService.serviceNetwork.CopyFilesFromService(ctx, serviceId, srcPath)
+	filesArtifactId, err := apicService.serviceNetwork.CopyFilesFromService(ctx, serviceId, srcPath, name)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred copying source '%v' from service with ID '%v'", srcPath, serviceId)
 	}
@@ -438,7 +439,7 @@ func (apicService ApiContainerService) StoreFilesArtifactFromService(ctx context
 
 func (apicService ApiContainerService) RenderTemplatesToFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactResponse, error) {
 	templatesAndDataByDestinationRelFilepath := args.TemplatesAndDataByDestinationRelFilepath
-	filesArtifactUuid, err := apicService.serviceNetwork.RenderTemplates(templatesAndDataByDestinationRelFilepath)
+	filesArtifactUuid, err := apicService.serviceNetwork.RenderTemplates(templatesAndDataByDestinationRelFilepath, args.Name)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while rendering templates to files artifact")
 	}

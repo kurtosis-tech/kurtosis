@@ -5,7 +5,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
-	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
 	"testing"
@@ -15,15 +14,14 @@ var emptyServiceNetwork = service_network.NewEmptyMockServiceNetwork()
 
 func TestStoreFilesFromService_StringRepresentationWorks(t *testing.T) {
 	position := kurtosis_instruction.NewInstructionPosition(1, 1, "dummyFile")
-	testFilesArtifactId, err := enclave_data_directory.NewFilesArtifactID()
-	require.Nil(t, err)
+	testArtifactName := "test-artifact"
 	storeFileFromServiceInstruction := newEmptyStoreServiceFilesInstruction(emptyServiceNetwork, position)
 	storeFileFromServiceInstruction.starlarkKwargs = starlark.StringDict{}
 	storeFileFromServiceInstruction.starlarkKwargs[serviceIdArgName] = starlark.String("example-service-id")
 	storeFileFromServiceInstruction.starlarkKwargs[srcArgName] = starlark.String("/tmp/foo")
-	storeFileFromServiceInstruction.starlarkKwargs[nonOptionalArtifactIdArgName] = starlark.String(testFilesArtifactId)
+	storeFileFromServiceInstruction.starlarkKwargs[nonOptionalArtifactNameArgName] = starlark.String(testArtifactName)
 
-	expectedStr := `store_service_files(artifact_id="` + string(testFilesArtifactId) + `", service_id="example-service-id", src="/tmp/foo")`
+	expectedStr := `store_service_files(name="` + testArtifactName + `", service_id="example-service-id", src="/tmp/foo")`
 	require.Equal(t, expectedStr, storeFileFromServiceInstruction.String())
 
 	canonicalInstruction := binding_constructors.NewStarlarkInstruction(
@@ -33,7 +31,7 @@ func TestStoreFilesFromService_StringRepresentationWorks(t *testing.T) {
 		[]*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg{
 			binding_constructors.NewStarlarkInstructionKwarg(`"example-service-id"`, serviceIdArgName, true),
 			binding_constructors.NewStarlarkInstructionKwarg(`"/tmp/foo"`, srcArgName, true),
-			binding_constructors.NewStarlarkInstructionKwarg(`"`+string(testFilesArtifactId)+`"`, nonOptionalArtifactIdArgName, true),
+			binding_constructors.NewStarlarkInstructionKwarg(`"`+testArtifactName+`"`, nonOptionalArtifactNameArgName, true),
 		})
 	require.Equal(t, canonicalInstruction, storeFileFromServiceInstruction.GetCanonicalInstruction())
 }

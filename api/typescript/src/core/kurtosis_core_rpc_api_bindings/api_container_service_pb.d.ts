@@ -935,6 +935,9 @@ export class UploadFilesArtifactArgs extends jspb.Message {
   getData_asB64(): string;
   setData(value: Uint8Array | string): UploadFilesArtifactArgs;
 
+  getName(): string;
+  setName(value: string): UploadFilesArtifactArgs;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): UploadFilesArtifactArgs.AsObject;
   static toObject(includeInstance: boolean, msg: UploadFilesArtifactArgs): UploadFilesArtifactArgs.AsObject;
@@ -946,6 +949,7 @@ export class UploadFilesArtifactArgs extends jspb.Message {
 export namespace UploadFilesArtifactArgs {
   export type AsObject = {
     data: Uint8Array | string,
+    name: string,
   }
 }
 
@@ -968,8 +972,8 @@ export namespace UploadFilesArtifactResponse {
 }
 
 export class DownloadFilesArtifactArgs extends jspb.Message {
-  getId(): string;
-  setId(value: string): DownloadFilesArtifactArgs;
+  getReference(): string;
+  setReference(value: string): DownloadFilesArtifactArgs;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): DownloadFilesArtifactArgs.AsObject;
@@ -981,7 +985,7 @@ export class DownloadFilesArtifactArgs extends jspb.Message {
 
 export namespace DownloadFilesArtifactArgs {
   export type AsObject = {
-    id: string,
+    reference: string,
   }
 }
 
@@ -1009,6 +1013,9 @@ export class StoreWebFilesArtifactArgs extends jspb.Message {
   getUrl(): string;
   setUrl(value: string): StoreWebFilesArtifactArgs;
 
+  getName(): string;
+  setName(value: string): StoreWebFilesArtifactArgs;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StoreWebFilesArtifactArgs.AsObject;
   static toObject(includeInstance: boolean, msg: StoreWebFilesArtifactArgs): StoreWebFilesArtifactArgs.AsObject;
@@ -1020,6 +1027,7 @@ export class StoreWebFilesArtifactArgs extends jspb.Message {
 export namespace StoreWebFilesArtifactArgs {
   export type AsObject = {
     url: string,
+    name: string,
   }
 }
 
@@ -1048,6 +1056,9 @@ export class StoreFilesArtifactFromServiceArgs extends jspb.Message {
   getSourcePath(): string;
   setSourcePath(value: string): StoreFilesArtifactFromServiceArgs;
 
+  getName(): string;
+  setName(value: string): StoreFilesArtifactFromServiceArgs;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StoreFilesArtifactFromServiceArgs.AsObject;
   static toObject(includeInstance: boolean, msg: StoreFilesArtifactFromServiceArgs): StoreFilesArtifactFromServiceArgs.AsObject;
@@ -1060,6 +1071,7 @@ export namespace StoreFilesArtifactFromServiceArgs {
   export type AsObject = {
     serviceId: string,
     sourcePath: string,
+    name: string,
   }
 }
 
@@ -1085,6 +1097,9 @@ export class RenderTemplatesToFilesArtifactArgs extends jspb.Message {
   getTemplatesAndDataByDestinationRelFilepathMap(): jspb.Map<string, RenderTemplatesToFilesArtifactArgs.TemplateAndData>;
   clearTemplatesAndDataByDestinationRelFilepathMap(): RenderTemplatesToFilesArtifactArgs;
 
+  getName(): string;
+  setName(value: string): RenderTemplatesToFilesArtifactArgs;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RenderTemplatesToFilesArtifactArgs.AsObject;
   static toObject(includeInstance: boolean, msg: RenderTemplatesToFilesArtifactArgs): RenderTemplatesToFilesArtifactArgs.AsObject;
@@ -1096,6 +1111,7 @@ export class RenderTemplatesToFilesArtifactArgs extends jspb.Message {
 export namespace RenderTemplatesToFilesArtifactArgs {
   export type AsObject = {
     templatesAndDataByDestinationRelFilepathMap: Array<[string, RenderTemplatesToFilesArtifactArgs.TemplateAndData.AsObject]>,
+    name: string,
   }
 
   export class TemplateAndData extends jspb.Message {

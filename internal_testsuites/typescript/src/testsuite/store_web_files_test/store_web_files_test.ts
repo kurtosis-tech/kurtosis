@@ -12,6 +12,8 @@ const IS_PARTITIONING_ENABLED = false
 const FILE_SERVER_SERVICE_ID: ServiceID = "file-server"
 
 const TEST_FILES_ARTIFACT_URL = "https://kurtosis-public-access.s3.us-east-1.amazonaws.com/test-artifacts/static-fileserver-files.tgz"
+const TEST_ARTIFACT_NAME = "test-artifact"
+
 
 // Filenames & contents for the files stored in the files artifact
 const FILE1_FILENAME = "file1.txt"
@@ -33,7 +35,7 @@ test.skip("Test web file storing", async () => {
     try {
 
         // ------------------------------------- TEST SETUP ----------------------------------------------
-        const storeWebFilesResult = await enclaveContext.storeWebFiles(TEST_FILES_ARTIFACT_URL);
+        const storeWebFilesResult = await enclaveContext.storeWebFiles(TEST_FILES_ARTIFACT_URL, TEST_ARTIFACT_NAME);
         if(storeWebFilesResult.isErr()) { throw storeWebFilesResult.error }
         const filesArtifactUuid = storeWebFilesResult.value;
 

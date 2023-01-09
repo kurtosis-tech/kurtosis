@@ -391,6 +391,9 @@ message WaitForHttpPostEndpointAvailabilityArgs {
 message UploadFilesArtifactArgs {
   // Bytes of the files artifact to store
   bytes data = 1;
+
+  // Name of the files artifact
+  string name = 2;
 }
 
 message UploadFilesArtifactResponse {
@@ -403,8 +406,8 @@ message UploadFilesArtifactResponse {
 //                                          Download Files Artifact
 // ==============================================================================================
 message DownloadFilesArtifactArgs {
-  // Files artifact ID to get bytes for
-  string id = 1;
+  // Files reference to get bytes for
+  string reference = 1;
 }
 
 message DownloadFilesArtifactResponse {
@@ -419,6 +422,9 @@ message DownloadFilesArtifactResponse {
 message StoreWebFilesArtifactArgs {
   // URL to download the artifact from
   string url = 1;
+
+  // The name of the files artifact
+  string name = 2;
 }
 
 message StoreWebFilesArtifactResponse {
@@ -437,6 +443,9 @@ message StoreFilesArtifactFromServiceArgs {
 
   // The absolute source path where the source files will be copied from
   string source_path = 2;
+
+  // The name of the files artifact
+  string name = 3;
 }
 
 message StoreFilesArtifactFromServiceResponse {
@@ -460,6 +469,9 @@ message RenderTemplatesToFilesArtifactArgs {
 
   // A map of template and its data by the path of the file relative to the root of the files artifact it will be rendered into.
   map <string, TemplateAndData> templates_and_data_by_destination_rel_filepath = 1;
+
+  // Name of the files artifact
+  string name = 2;
 }
 
 message RenderTemplatesToFilesArtifactResponse {

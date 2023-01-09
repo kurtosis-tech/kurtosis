@@ -14,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"time"
 )
 
 const (
@@ -25,6 +26,8 @@ const (
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
+
+	artifactNamePrefix = "cli-stored-artifact-%v"
 )
 
 // TODO Maybe, instead of having 'storeweb' and 'storeservice' we could just have a flag that switches between the two??
@@ -80,7 +83,8 @@ func run(
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the enclave context for enclave '%v'", enclaveId)
 	}
-	filesArtifactUuid, err := enclaveCtx.StoreWebFiles(ctx, url)
+	artifactName := fmt.Sprintf(artifactNamePrefix, time.Now().Unix())
+	filesArtifactUuid, err := enclaveCtx.StoreWebFiles(ctx, url, artifactName)
 	if err != nil {
 		return stacktrace.Propagate(
 			err,
@@ -89,6 +93,6 @@ func run(
 			enclaveId,
 		)
 	}
-	logrus.Infof("Files package UUID: %v", filesArtifactUuid)
+	logrus.Infof("Files package '%v' stored with UUID: %v", artifactName, filesArtifactUuid)
 	return nil
 }

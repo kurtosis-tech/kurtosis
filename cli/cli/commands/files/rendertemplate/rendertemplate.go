@@ -32,13 +32,18 @@ const (
 	engineClientCtxKey    = "engine-client"
 
 	starlarkTemplate = `
+CURRENT_TIME_STR = str(time.now().unix)
+ARTIFACT_NAME = "cli-rendered-artifact-" + CURRENT_TIME_STR
 def run(plan, args):
-	plan.render_templates(config = {
-		args.file_name: struct(
-			template = args.template,
-			data = args.template_data,
-		)
-	})
+	plan.render_templates(
+		name = ARTIFACT_NAME,
+		config = {
+			args.file_name: struct(
+				template = args.template,
+				data = args.template_data,
+			),
+		}
+	)
 `
 	doNotDryRun = false
 )

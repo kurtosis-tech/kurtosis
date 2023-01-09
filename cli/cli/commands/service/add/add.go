@@ -47,9 +47,9 @@ const (
 	portNumberUintParsingBase        = 10
 	portNumberUintParsingBits        = 16
 
-	filesFlagKey                         = "files"
-	filesArtifactMountsDelimiter         = ","
-	filesArtifactUuidMountpointDelimiter = ":"
+	filesFlagKey                     = "files"
+	filesArtifactMountsDelimiter     = ","
+	filesArtifactMountpointDelimiter = ":"
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
@@ -160,12 +160,12 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 		{
 			Key: filesFlagKey,
 			Usage: fmt.Sprintf(
-				"String containing declarations of files paths on the container -> artifact UUIDs  where the contents of those "+
-					"files artifacts should be mounted, in the form \"MOUNTPATH1%vARTIFACTUUID1%vMOUNTPATH2%vARTIFACTUUID2\" where "+
-					"ARTIFACTUUID is the UUID returned by Kurtosis when uploading files to the enclave (e.g. via the '%v %v' command)",
-				filesArtifactUuidMountpointDelimiter,
+				"String containing declarations of files paths on the container -> artifact name  where the contents of those "+
+					"files artifacts should be mounted, in the form \"MOUNTPATH1%vARTIFACTNAME1%vMOUNTPATH2%vARTIFACTNAME2\" where "+
+					"ARTIFACTNAME is the name returned by Kurtosis when uploading files to the enclave (e.g. via the '%v %v' command)",
+				filesArtifactMountpointDelimiter,
 				filesArtifactMountsDelimiter,
-				filesArtifactUuidMountpointDelimiter,
+				filesArtifactMountpointDelimiter,
 				command_str_consts.FilesCmdStr,
 				command_str_consts.FilesUploadCmdStr,
 			),
@@ -575,28 +575,28 @@ func parseFilesArtifactMountsStr(filesArtifactMountsStr string) (map[string]stri
 			continue
 		}
 
-		mountFragments := strings.Split(trimmedMountStr, filesArtifactUuidMountpointDelimiter)
+		mountFragments := strings.Split(trimmedMountStr, filesArtifactMountpointDelimiter)
 		if len(mountFragments) != 2 {
 			return nil, stacktrace.NewError(
-				"Files artifact mountpoint string %v was '%v' but should be in the form 'mountpoint%sfiles_artifact_uuid'",
+				"Files artifact mountpoint string %v was '%v' but should be in the form 'mountpoint%sfiles_artifact_name'",
 				idx,
 				trimmedMountStr,
-				filesArtifactUuidMountpointDelimiter,
+				filesArtifactMountpointDelimiter,
 			)
 		}
 		mountpoint := mountFragments[0]
-		filesArtifactUuid := mountFragments[1]
+		filesArtifactName := mountFragments[1]
 
-		if existingArtifactId, found := result[mountpoint]; found {
+		if existingName, found := result[mountpoint]; found {
 			return nil, stacktrace.NewError(
-				"Mountpoint '%v' is declared twice; once to artifact id '%v' and again to artifact id '%v'",
+				"Mountpoint '%v' is declared twice; once to artifact name '%v' and again to artifact name '%v'",
 				mountpoint,
-				existingArtifactId,
-				filesArtifactUuid,
+				existingName,
+				filesArtifactName,
 			)
 		}
 
-		result[mountpoint] = filesArtifactUuid
+		result[mountpoint] = filesArtifactName
 	}
 
 	return result, nil

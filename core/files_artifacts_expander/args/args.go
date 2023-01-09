@@ -19,13 +19,13 @@ const (
 
 // Fields are public for JSON de/serialization
 type FilesArtifactsExpanderArgs struct {
-	APIContainerIpAddress string `json:"apiContainerIpAddress"`
+	APIContainerIpAddress   string                   `json:"apiContainerIpAddress"`
 	ApiContainerPort        uint16                   `json:"apiContainerPort"`
 	FilesArtifactExpansions []FilesArtifactExpansion `json:"filesArtifactExpansions"`
 }
 
 type FilesArtifactExpansion struct {
-	FilesArtifactUUID string `json:"filesArtifactUuid"`
+	FilesArtifactReference string `json:"filesArtifactReference"`
 
 	// Directory on the files artifacts expander where the files artifact will be expanded into
 	DirPathToExpandTo string `json:"dirPathToExpandTo"`

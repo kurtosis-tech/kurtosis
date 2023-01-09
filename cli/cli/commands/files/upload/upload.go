@@ -2,6 +2,7 @@ package upload
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
@@ -14,6 +15,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"os"
+	"time"
 )
 
 const (
@@ -25,6 +27,8 @@ const (
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
+
+	artifactNamePrefix = "cli-uploaded-artifact-%v"
 )
 
 var FilesUploadCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -75,11 +79,12 @@ func run(
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the enclave context for enclave '%v'", enclaveId)
 	}
-	filesArtifactUuid, err := enclaveCtx.UploadFiles(path)
+	artifactName := fmt.Sprintf(artifactNamePrefix, time.Now().Unix())
+	filesArtifactUuid, err := enclaveCtx.UploadFiles(path, artifactName)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred uploading files at path '%v' to enclave '%v'", path, enclaveId)
 	}
-	logrus.Infof("Files package UUID: %v", filesArtifactUuid)
+	logrus.Infof("Files package '%v' uploaded with UUID: %v", artifactName, filesArtifactUuid)
 	return nil
 }
 

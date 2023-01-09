@@ -95,17 +95,9 @@ type ServiceNetwork interface {
 		ctx context.Context,
 		serviceId service.ServiceID,
 		srcPath string,
+		artifactName string,
 	) (
-		enclave_data_directory.FilesArtifactID,
-		error,
-	)
-	CopyFilesFromServiceToTargetArtifactUUID(
-		ctx context.Context,
-		serviceId service.ServiceID,
-		srcPath string,
-		filesArtifactId enclave_data_directory.FilesArtifactID,
-	) (
-		enclave_data_directory.FilesArtifactID,
+		enclave_data_directory.FilesArtifactUUID,
 		error,
 	)
 
@@ -113,11 +105,9 @@ type ServiceNetwork interface {
 
 	GetIPAddressForService(serviceID service.ServiceID) (net.IP, bool)
 
-	RenderTemplates(templatesAndDataByDestinationRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData) (enclave_data_directory.FilesArtifactID, error)
-	RenderTemplatesToTargetFilesArtifactUUID(templatesAndDataByDestinationRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, filesArtifactId enclave_data_directory.FilesArtifactID) (enclave_data_directory.FilesArtifactID, error)
+	RenderTemplates(templatesAndDataByDestinationRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, artifactName string) (enclave_data_directory.FilesArtifactUUID, error)
 
-	UploadFilesArtifact(data []byte) (enclave_data_directory.FilesArtifactID, error)
-	UploadFilesArtifactToTargetArtifactID(data []byte, targetFilesArtifactId enclave_data_directory.FilesArtifactID) error
+	UploadFilesArtifact(data []byte, artifactName string) (enclave_data_directory.FilesArtifactUUID, error)
 
 	IsNetworkPartitioningEnabled() bool
 }

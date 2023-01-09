@@ -11,7 +11,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/recipe"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
-	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkjson"
 	"go.starlark.net/starlarkstruct"
@@ -228,17 +227,6 @@ func ParseNonEmptyString(argName string, argValue starlark.Value) (string, *star
 		return "", startosis_errors.NewInterpretationError("Expected non empty string for argument '%s'", argName)
 	}
 	return strArgValue, nil
-}
-
-func ParseArtifactId(artifactUuidArgName string, artifactIdStr starlark.String) (enclave_data_directory.FilesArtifactID, *startosis_errors.InterpretationError) {
-	artifactId, interpretationErr := kurtosis_types.SafeCastToString(artifactIdStr, artifactUuidArgName)
-	if interpretationErr != nil {
-		return "", interpretationErr
-	}
-	if len(artifactId) == 0 {
-		return "", startosis_errors.NewInterpretationError("Artifact Uuid can't be empty for argument '%s'", artifactUuidArgName)
-	}
-	return enclave_data_directory.FilesArtifactID(artifactId), interpretationErr
 }
 
 func ParseTemplatesAndData(templatesAndData *starlark.Dict) (map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, *startosis_errors.InterpretationError) {

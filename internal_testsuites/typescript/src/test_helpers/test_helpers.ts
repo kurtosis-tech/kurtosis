@@ -103,6 +103,8 @@ def run(plan, args):
 
 const DOCKER_GETTING_STARTED_IMAGE = "docker/getting-started";
 
+const ARTIFACT_NAME_PREFIX = "artifact-uploaded-via-helper-"
+
 class StartFileServerResponse {
     fileServerPublicIp: string
     fileServerPublicPortNum: number
@@ -194,14 +196,13 @@ export async function addAPIServiceToPartition(
         return err(createDatastoreConfigResult.error)
     }
     const configFilepath = createDatastoreConfigResult.value;
-
-    const uploadConfigResult = await enclaveContext.uploadFiles(configFilepath)
+    const artifactName = `${ARTIFACT_NAME_PREFIX}${Date.now()}`
+    const uploadConfigResult = await enclaveContext.uploadFiles(configFilepath, artifactName)
     if (uploadConfigResult.isErr()) {
         return err(uploadConfigResult.error)
     }
-    const datastoreConfigArtifactUuid = uploadConfigResult.value
 
-    const containerConfig = getApiServiceContainerConfig(datastoreConfigArtifactUuid)
+    const containerConfig = getApiServiceContainerConfig(artifactName)
 
     const addServiceToPartitionResult = await enclaveContext.addServiceToPartition(serviceId, partitionId, containerConfig)
     if (addServiceToPartitionResult.isErr()) return err(addServiceToPartitionResult.error)
@@ -341,7 +342,7 @@ function getDatastoreContainerConfig(): ContainerConfig {
 }
 
 function getApiServiceContainerConfig(
-    apiConfigArtifactUuid: FilesArtifactUUID,
+    artifactName: string,
 ): ContainerConfig {
     const usedPorts = new Map<string, PortSpec>();
     usedPorts.set(API_PORT_ID, API_PORT_SPEC);
@@ -352,7 +353,7 @@ function getApiServiceContainerConfig(
     ]
 
     const filesArtifactMountpoints = new Map<string, FilesArtifactUUID>()
-    filesArtifactMountpoints.set(CONFIG_MOUNTPATH_ON_API_CONTAINER, apiConfigArtifactUuid)
+    filesArtifactMountpoints.set(CONFIG_MOUNTPATH_ON_API_CONTAINER, artifactName)
 
     const containerConfig = new ContainerConfigBuilder(API_SERVICE_IMAGE)
         .withUsedPorts(usedPorts)
