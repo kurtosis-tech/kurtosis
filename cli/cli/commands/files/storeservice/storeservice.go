@@ -29,8 +29,8 @@ const (
 	engineClientCtxKey    = "engine-client"
 
 	starlarkTemplate = `
-def run(args):
-	store_service_files(
+def run(plan, args):
+	plan.store_service_files(
 		service_id = args.service_id,
 		src = args.src
 	)
@@ -114,12 +114,39 @@ func run(
 
 func storeServiceFileStarlarkCommand(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, serviceId services.ServiceID, filePath string, enclaveId enclaves.EnclaveID) (*enclaves.StarlarkRunResult, error) {
 	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkTemplate, fmt.Sprintf(`{"service_id": "%s", "src": "%s"}`, serviceId, filePath), false)
-	if len(runResult.ValidationErrors) > 0 || runResult.ExecutionError != nil || len(runResult.ValidationErrors) > 0 {
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An unexpected error occurred running command for copying content from filepath '%v' in user service with ID '%v' to enclave '%v'. This is a bug in Kurtosis, please report.",
+			filePath,
+			serviceId,
+			enclaveId)
+	}
+	if runResult.InterpretationError != nil {
 		return nil, stacktrace.NewError(
-			"An error occurred running Starlark script for copying content from filepath '%v' in user service with ID '%v' to enclave '%v'",
+			"An error occurred interpreting command for copying content from filepath '%v' in user service with ID '%v' to enclave '%v': %s\nThis is a bug in Kurtosis, please report.",
 			filePath,
 			serviceId,
 			enclaveId,
+			runResult.InterpretationError.GetErrorMessage(),
+		)
+	}
+	if len(runResult.ValidationErrors) > 0 {
+		return nil, stacktrace.NewError(
+			"An error occurred validating command for copying content from filepath '%v' in user service with ID '%v' to enclave '%v': %v",
+			filePath,
+			serviceId,
+			enclaveId,
+			runResult.ValidationErrors,
+		)
+	}
+	if runResult.ExecutionError != nil {
+		return nil, stacktrace.NewError(
+			"An error occurred executing command for copying content from filepath '%v' in user service with ID '%v' to enclave '%v': %s",
+			filePath,
+			serviceId,
+			enclaveId,
+			runResult.ExecutionError.GetErrorMessage(),
 		)
 	}
 	return runResult, err

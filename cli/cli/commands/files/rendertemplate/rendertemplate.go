@@ -32,8 +32,8 @@ const (
 	engineClientCtxKey    = "engine-client"
 
 	starlarkTemplate = `
-def run(args):
-	render_templates(config = {
+def run(plan, args):
+	plan.render_templates(config = {
 		args.file_name: struct(
 			template = args.template,
 			data = args.template_data,
