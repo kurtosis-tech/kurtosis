@@ -1,5 +1,39 @@
 # Changelog
 
+## [0.64.0](https://github.com/kurtosis-tech/kurtosis/compare/0.63.2...0.64.0) (2023-01-10)
+
+
+### ⚠ BREAKING CHANGES
+
+* Files artifacts now support both names and uuids. Names provided using (artifact_id, name) are mandatory in Starlark. Note that soon we will be dropping support for artifact_id in favor of name. This applies to upload_files, render_templates and store_service_files. In the Go or TS SDK artifactName has also been introduced and made mandatory in the uploadFiles and storeWebFiles functions. Users must choose a point in time unique name for their artifacts.
+* Deprecate AddService SDK call ([#803](https://github.com/kurtosis-tech/kurtosis/issues/803))
+
+### Features
+
+* **!:** Update `wait` backoff to be a constant backoff. The `interval` argument of `wait` is now the constant interval, not the initial interval for an "Exponential Backoff" strategy. You might want to increase it slightly if it is set to a small duration value ([#793](https://github.com/kurtosis-tech/kurtosis/issues/793)) ([4f728c0](https://github.com/kurtosis-tech/kurtosis/commit/4f728c0ec44d1202a94783b4bf8f3f25ee818670))
+* Add CPU and Memory allocation to ([27f505e](https://github.com/kurtosis-tech/kurtosis/commit/27f505e0ff3327a170236013d27357c982c0adcf))
+* Add CPU and Memory allocation to add_service ([#790](https://github.com/kurtosis-tech/kurtosis/issues/790)) ([27f505e](https://github.com/kurtosis-tech/kurtosis/commit/27f505e0ff3327a170236013d27357c982c0adcf))
+* Assert can take two runtime values ([#787](https://github.com/kurtosis-tech/kurtosis/issues/787)) ([c0bb124](https://github.com/kurtosis-tech/kurtosis/commit/c0bb124f911484f65fd658a8433a547e1a34a385))
+* support passing names for cli generated artifacts ([#834](https://github.com/kurtosis-tech/kurtosis/issues/834)) ([0cc8fb3](https://github.com/kurtosis-tech/kurtosis/commit/0cc8fb3ea0e5c2a071a682941b53aba72116c9d1))
+
+
+### Bug Fixes
+
+* disabled for typescripts tests as well ([97a0c1e](https://github.com/kurtosis-tech/kurtosis/commit/97a0c1e3998f309d9f590c975b6a4e3a3421ba3b))
+* Fix starlark command for CLI rendertemplate ([f8542dd](https://github.com/kurtosis-tech/kurtosis/commit/f8542dd5626494ba9f19a2df3872c7a0b509700e))
+* Fix starlark command for CLI storeservice ([f8542dd](https://github.com/kurtosis-tech/kurtosis/commit/f8542dd5626494ba9f19a2df3872c7a0b509700e))
+* Fix starlark scripts for CLI commands ([#824](https://github.com/kurtosis-tech/kurtosis/issues/824)) ([f8542dd](https://github.com/kurtosis-tech/kurtosis/commit/f8542dd5626494ba9f19a2df3872c7a0b509700e))
+* fixed search-logs-test in the internal testsuite ([#811](https://github.com/kurtosis-tech/kurtosis/issues/811)) ([3196e6c](https://github.com/kurtosis-tech/kurtosis/commit/3196e6cbbe4a574cdf92bff93d10c28b0bbd6b35))
+* removed the dependency on file-server static in tests ([97a0c1e](https://github.com/kurtosis-tech/kurtosis/commit/97a0c1e3998f309d9f590c975b6a4e3a3421ba3b))
+* removed the dependency on file-server static in tests ([#814](https://github.com/kurtosis-tech/kurtosis/issues/814)) ([97a0c1e](https://github.com/kurtosis-tech/kurtosis/commit/97a0c1e3998f309d9f590c975b6a4e3a3421ba3b))
+* Wait returns a nice message when it times out ([#788](https://github.com/kurtosis-tech/kurtosis/issues/788)) ([9e402ba](https://github.com/kurtosis-tech/kurtosis/commit/9e402ba5ab1f8594302cd18268611f04187566dc))
+
+
+### Code Refactoring
+
+* Deprecate AddService SDK call ([#803](https://github.com/kurtosis-tech/kurtosis/issues/803)) ([89bf3e7](https://github.com/kurtosis-tech/kurtosis/commit/89bf3e7d37184b96cb4ecff9df759fa7f23c13b7)), closes [#460](https://github.com/kurtosis-tech/kurtosis/issues/460) [#443](https://github.com/kurtosis-tech/kurtosis/issues/443)
+* Files artifacts support names and uuids ([#804](https://github.com/kurtosis-tech/kurtosis/issues/804)) ([d35299d](https://github.com/kurtosis-tech/kurtosis/commit/d35299dca0e5d34974277f271cb773ae3898a5ff)), closes [#799](https://github.com/kurtosis-tech/kurtosis/issues/799)
+
 ## [0.63.2](https://github.com/kurtosis-tech/kurtosis/compare/0.63.1...0.63.2) (2022-12-21)
 
 
