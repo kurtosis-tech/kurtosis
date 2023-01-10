@@ -16,14 +16,14 @@ const (
 func TestService_StringRepresentation(t *testing.T) {
 	service, err := createTestServiceType()
 	require.Nil(t, err)
-	expectedStr := `service(ip_address="{{kurtosis:service_id.ip_address}}", ports={"grpc": PortSpec(number=123, transport_protocol="TCP", application_protocol="")})`
+	expectedStr := `Service(ip_address="{{kurtosis:service_id.ip_address}}", ports={"grpc": PortSpec(number=123, transport_protocol="TCP", application_protocol="")})`
 	require.Equal(t, expectedStr, service.String())
 }
 
 func TestService_StringRepresentationWithApplicationProtocol(t *testing.T) {
 	service, err := createTestServiceTypeWithApplicationProtocol()
 	require.Nil(t, err)
-	expectedStr := `service(ip_address="{{kurtosis:service_id.ip_address}}", ports={"grpc": PortSpec(number=123, transport_protocol="TCP", application_protocol="http")})`
+	expectedStr := `Service(ip_address="{{kurtosis:service_id.ip_address}}", ports={"grpc": PortSpec(number=123, transport_protocol="TCP", application_protocol="http")})`
 	require.Equal(t, expectedStr, service.String())
 }
 

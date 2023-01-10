@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	serviceTypeName = "service"
+	serviceTypeName = "Service"
 	ipAddressAttr   = "ip_address"
 	portsAttr       = "ports"
 )

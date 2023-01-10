@@ -56,7 +56,7 @@ func CanonicalizeArgValue(genericArgValue starlark.Value) string {
 	switch argValue := genericArgValue.(type) {
 	case starlark.NoneType, starlark.Bool, starlark.String, starlark.Bytes, starlark.Int, starlark.Float:
 		stringifiedArg = argValue.String()
-	case *kurtosis_types.ConnectionConfig, *kurtosis_types.PortSpec, *kurtosis_types.ServiceConfig, *kurtosis_types.UpdateServiceConfig:
+	case *kurtosis_types.ConnectionConfig, *kurtosis_types.PortSpec, *kurtosis_types.Service, *kurtosis_types.ServiceConfig, *kurtosis_types.UpdateServiceConfig:
 		stringifiedArg = argValue.String()
 	case time.Time:
 		timestamp, err := argValue.Attr(starlarkTimeKeyComponent)
