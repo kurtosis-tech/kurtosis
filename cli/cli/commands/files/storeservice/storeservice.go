@@ -25,6 +25,9 @@ const (
 	serviceIdArgKey        = "service-id"
 	absoluteFilepathArgKey = "filepath"
 
+	nameFlagKey = "name"
+	defaultName = ""
+
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
 
@@ -32,8 +35,11 @@ const (
 CURRENT_TIME_STR = str(time.now().unix)
 ARTIFACT_NAME = "cli-stored-artifact-" + CURRENT_TIME_STR
 def run(plan, args):
+	name = ARTIFACT_NAME
+	if args.name != "":
+		name = args.name
 	plan.store_service_files(
-		name = ARTIFACT_NAME,
+		name = name,
 		service_id = args.service_id,
 		src = args.src
 	)
@@ -51,7 +57,14 @@ var FilesStoreServiceCmd = &engine_consuming_kurtosis_command.EngineConsumingKur
 	),
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
 	EngineClientContextKey:    engineClientCtxKey,
-	Flags:                     nil,
+	Flags: []*flags.FlagConfig{
+		{
+			Key:     nameFlagKey,
+			Usage:   "The name to be given to the produced of the artifact, auto generated if not passed",
+			Type:    flags.FlagType_String,
+			Default: defaultName,
+		},
+	},
 	Args: []*args.ArgConfig{
 		enclave_id_arg.NewEnclaveIDArg(
 			enclaveIdArgKey,
@@ -93,6 +106,11 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the absolute filepath value using key '%v'", absoluteFilepathArgKey)
 	}
 
+	artifactName, err := flags.GetString(nameFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the name to be given to the produced artifact")
+	}
+
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred connecting to the local Kurtosis engine")
@@ -101,7 +119,7 @@ func run(
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the enclave context for enclave '%v'", enclaveId)
 	}
-	runResult, err := storeServiceFileStarlarkCommand(ctx, enclaveCtx, serviceId, filepath, enclaveId)
+	runResult, err := storeServiceFileStarlarkCommand(ctx, enclaveCtx, serviceId, filepath, enclaveId, artifactName)
 	if err != nil {
 		return stacktrace.Propagate(
 			err,
@@ -115,8 +133,8 @@ func run(
 	return nil
 }
 
-func storeServiceFileStarlarkCommand(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, serviceId services.ServiceID, filePath string, enclaveId enclaves.EnclaveID) (*enclaves.StarlarkRunResult, error) {
-	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkTemplate, fmt.Sprintf(`{"service_id": "%s", "src": "%s"}`, serviceId, filePath), false)
+func storeServiceFileStarlarkCommand(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, serviceId services.ServiceID, filePath string, enclaveId enclaves.EnclaveID, artifactName string) (*enclaves.StarlarkRunResult, error) {
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkTemplate, fmt.Sprintf(`{"service_id": "%s", "src": "%s", "name": "%s"}`, serviceId, filePath, artifactName), false)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,

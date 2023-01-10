@@ -24,6 +24,9 @@ const (
 
 	urlArgKey = "url"
 
+	nameFlagKey = "name"
+	defaultName = ""
+
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
 
@@ -42,7 +45,14 @@ var FilesStoreWebCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosi
 	),
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
 	EngineClientContextKey:    engineClientCtxKey,
-	Flags:                     nil,
+	Flags: []*flags.FlagConfig{
+		{
+			Key:     nameFlagKey,
+			Usage:   "The name to be given to the produced of the artifact, auto generated if not passed",
+			Type:    flags.FlagType_String,
+			Default: defaultName,
+		},
+	},
 	Args: []*args.ArgConfig{
 		enclave_id_arg.NewEnclaveIDArg(
 			enclaveIdArgKey,
@@ -83,7 +93,15 @@ func run(
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the enclave context for enclave '%v'", enclaveId)
 	}
-	artifactName := fmt.Sprintf(artifactNamePrefix, time.Now().Unix())
+
+	artifactName, err := flags.GetString(nameFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the name to be given to the produced artifact")
+	}
+
+	if artifactName == defaultName {
+		artifactName = fmt.Sprintf(artifactNamePrefix, time.Now().Unix())
+	}
 	filesArtifactUuid, err := enclaveCtx.StoreWebFiles(ctx, url, artifactName)
 	if err != nil {
 		return stacktrace.Propagate(

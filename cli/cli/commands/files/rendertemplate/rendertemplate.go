@@ -28,6 +28,9 @@ const (
 	dataJSONFilepathArgKey = "data-json-filepath"
 	destRelFilepathArgKey  = "destination-relative-filepath"
 
+	nameFlagKey = "name"
+	defaultName = ""
+
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
 
@@ -35,8 +38,11 @@ const (
 CURRENT_TIME_STR = str(time.now().unix)
 ARTIFACT_NAME = "cli-rendered-artifact-" + CURRENT_TIME_STR
 def run(plan, args):
+	name = ARTIFACT_NAME
+	if args.name != "":
+		name = args.name
 	plan.render_templates(
-		name = ARTIFACT_NAME,
+		name = name,
 		config = {
 			args.file_name: struct(
 				template = args.template,
@@ -54,7 +60,14 @@ var RenderTemplateCommand = &engine_consuming_kurtosis_command.EngineConsumingKu
 	LongDescription:           "Renders a Golang text/template to an enclave so that the output can be accessed by services inside the enclave.",
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
 	EngineClientContextKey:    engineClientCtxKey,
-	Flags:                     nil,
+	Flags: []*flags.FlagConfig{
+		{
+			Key:     nameFlagKey,
+			Usage:   "The name to be given to the produced of the artifact, auto generated if not passed",
+			Type:    flags.FlagType_String,
+			Default: defaultName,
+		},
+	},
 	Args: []*args.ArgConfig{
 		enclave_id_arg.NewEnclaveIDArg(
 			enclaveIdArgKey,
@@ -106,6 +119,11 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the destination relative filepath using key '%v'", destRelFilepathArgKey)
 	}
 
+	artifactName, err := flags.GetString(nameFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the name to be given to the produced artifact")
+	}
+
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred connecting to the local Kurtosis engine")
@@ -137,7 +155,7 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred while decoding the JSON file '%v'", dataJSONFilepath)
 	}
 
-	filesArtifactOutputMessage, err := renderTemplateStarlarkCommand(ctx, enclaveCtx, destRelFilepath, templateFileContents, templateData)
+	filesArtifactOutputMessage, err := renderTemplateStarlarkCommand(ctx, enclaveCtx, destRelFilepath, templateFileContents, templateData, artifactName)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred rendering the template file at path '%v' with data in the file at path '%v' to enclave '%v'", templateFilepath, dataJSONFilepath, enclaveId)
 	}
@@ -188,12 +206,12 @@ func validateDestRelFilePathArg(ctx context.Context, flags *flags.ParsedFlags, a
 	return nil
 }
 
-func renderTemplateStarlarkCommand(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, destRelFilepath string, templateFileContents string, templateData interface{}) (string, error) {
+func renderTemplateStarlarkCommand(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, destRelFilepath string, templateFileContents string, templateData interface{}, artifactName string) (string, error) {
 	templateDataBytes, err := json.Marshal(templateData)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error has occurred when parsing input params to render template Starlark command")
 	}
-	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkTemplate, fmt.Sprintf(`{"file_name": "%s", "template": "%s", "template_data": %s}`, destRelFilepath, templateFileContents, string(templateDataBytes)), doNotDryRun)
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkTemplate, fmt.Sprintf(`{"file_name": "%s", "template": "%s", "template_data": %s, "name": "%s"}`, destRelFilepath, templateFileContents, string(templateDataBytes), artifactName), doNotDryRun)
 	if runResult.ExecutionError != nil {
 		return "", stacktrace.NewError("An error occurred during Starlark script execution for rendering template: %s", runResult.ExecutionError.GetErrorMessage())
 	}

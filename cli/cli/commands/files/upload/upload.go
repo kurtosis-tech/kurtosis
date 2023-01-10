@@ -25,6 +25,9 @@ const (
 
 	pathArgKey = "path"
 
+	nameFlagKey = "name"
+	defaultName = ""
+
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
 
@@ -37,7 +40,14 @@ var FilesUploadCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 	LongDescription:           "Uploads the requested files to the enclave so they can be used by services within the enclave",
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
 	EngineClientContextKey:    engineClientCtxKey,
-	Flags:                     nil,
+	Flags: []*flags.FlagConfig{
+		{
+			Key:     nameFlagKey,
+			Usage:   "The name to be given to the produced of the artifact, auto generated if not passed",
+			Type:    flags.FlagType_String,
+			Default: defaultName,
+		},
+	},
 	Args: []*args.ArgConfig{
 		enclave_id_arg.NewEnclaveIDArg(
 			enclaveIdArgKey,
@@ -79,7 +89,14 @@ func run(
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the enclave context for enclave '%v'", enclaveId)
 	}
-	artifactName := fmt.Sprintf(artifactNamePrefix, time.Now().Unix())
+	artifactName, err := flags.GetString(nameFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the name to be given to the produced artifact")
+	}
+	if artifactName == defaultName {
+		artifactName = fmt.Sprintf(artifactNamePrefix, time.Now().Unix())
+	}
+
 	filesArtifactUuid, err := enclaveCtx.UploadFiles(path, artifactName)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred uploading files at path '%v' to enclave '%v'", path, enclaveId)
