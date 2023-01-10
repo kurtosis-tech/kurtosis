@@ -25,7 +25,10 @@ jobs:
         with:
           fetch-depth: 0
       - run: |
-          pr_body='${{ steps.PR.outputs.pr_body }}'
+          pr_body=$(cat << EOF
+          ${{ steps.PR.outputs.pr_body }}
+          EOF
+          )
           delimiter="Changelog picked up from commits here:"
           cleaned_body="${pr_body%${delimiter}*}"
           cleaned_body_without_trailing_space="$(python .github/remove_trailing_space.py "${cleaned_body}")"
