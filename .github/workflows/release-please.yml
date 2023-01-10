@@ -10,6 +10,10 @@ jobs:
     steps:
       - uses: google-github-actions/release-please-action@v3
         with:
+          # We use the RELEASER_TOKEN so that the GitHub Actions
+          # can run on the PR created
+          # https://github.com/kurtosis-tech/kurtosis/issues/688
+          token: "${{ secrets.RELEASER_TOKEN }}"
           release-type: simple
           package-name: kurtosis
           bump-minor-pre-major: true
