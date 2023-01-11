@@ -24,7 +24,7 @@ import {
     ServiceConfig,
     RemoveServiceResponse,
     GetServicesResponse, StartServicesArgs,
-    RenderTemplatesToFilesArtifactArgs,
+    RenderTemplatesToFilesArtifactArgs, DownloadFilesArtifactArgs,
 } from '../kurtosis_core_rpc_api_bindings/api_container_service_pb';
 import { ServiceID } from './services/service';
 import TemplateAndData = RenderTemplatesToFilesArtifactArgs.TemplateAndData;
@@ -296,12 +296,21 @@ export function newWaitForHttpPostEndpointAvailabilityArgs(
 }
 
 // ==============================================================================================
-//                                     Download Files
+//                                     Store Web Files Files
 // ==============================================================================================
 export function newStoreWebFilesArtifactArgs(url: string, name: string): StoreWebFilesArtifactArgs {
     const result: StoreWebFilesArtifactArgs = new StoreWebFilesArtifactArgs();
     result.setUrl(url);
     result.setName(name);
+    return result;
+}
+
+// ==============================================================================================
+//                                     Download Files
+// ==============================================================================================
+export function newDownloadFilesArtifactArgs(identifier: string): DownloadFilesArtifactArgs {
+    const result: DownloadFilesArtifactArgs = new DownloadFilesArtifactArgs();
+    result.setIdentifier(identifier);
     return result;
 }
 

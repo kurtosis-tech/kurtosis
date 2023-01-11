@@ -41,7 +41,7 @@ const (
 	testArtifactName = "test-artifact"
 )
 
-func TestUploadFiles(t *testing.T) {
+func TestUploadAndDownloadFiles(t *testing.T) {
 	filePathsMap, err := createTestFolderToUpload()
 	require.NoError(t, err)
 
@@ -52,7 +52,7 @@ func TestUploadFiles(t *testing.T) {
 
 	pathToUpload := filePathsMap[diskDirKeyword]
 	require.NotEmptyf(t, pathToUpload, "Failed to store uploadable path in path map.")
-	_, err = enclaveCtx.UploadFiles(filePathsMap[diskDirKeyword], testArtifactName)
+	artifactUuid, err := enclaveCtx.UploadFiles(filePathsMap[diskDirKeyword], testArtifactName)
 	require.NoError(t, err)
 
 	firstArchiveRootKeyword := fmt.Sprintf("%s%v", archiveRootFileKeywordPattern, 0)
@@ -63,6 +63,16 @@ func TestUploadFiles(t *testing.T) {
 
 	err = testAllContents(filePathsMap, fileServerPublicIp, fileServerPublicPortNum)
 	require.NoError(t, err)
+
+	archiveBytesViaUuid, err := enclaveCtx.DownloadFilesArtifact(ctx, string(artifactUuid))
+	require.Nil(t, err)
+	archiveBytesViaShortenedUuid, err := enclaveCtx.DownloadFilesArtifact(ctx, string(artifactUuid)[:12])
+	require.Nil(t, err)
+	archiveBytesViaName, err := enclaveCtx.DownloadFilesArtifact(ctx, testArtifactName)
+	require.Nil(t, err)
+
+	require.Equal(t, archiveBytesViaShortenedUuid, archiveBytesViaUuid)
+	require.Equal(t, archiveBytesViaName, archiveBytesViaUuid)
 }
 
 // ========================================================================

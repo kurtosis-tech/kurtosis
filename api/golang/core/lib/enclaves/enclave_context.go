@@ -233,6 +233,16 @@ func (enclaveCtx *EnclaveContext) StoreWebFiles(ctx context.Context, urlToStoreW
 	return services.FilesArtifactUUID(response.Uuid), nil
 }
 
+// Docs available at https://docs.kurtosis.com/sdk#downloadfilesartifact-fileidentifier-string
+func (enclaveCtx *EnclaveContext) DownloadFilesArtifact(ctx context.Context, artifactIdentifier string) ([]byte, error) {
+	args := binding_constructors.DownloadFilesArtifactArgs(artifactIdentifier)
+	response, err := enclaveCtx.client.DownloadFilesArtifact(ctx, args)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred downloading files artifact '%v'", artifactIdentifier)
+	}
+	return response.Data, nil
+}
+
 // ====================================================================================================
 //
 //	Private helper methods

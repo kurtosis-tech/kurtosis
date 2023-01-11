@@ -972,8 +972,8 @@ export namespace UploadFilesArtifactResponse {
 }
 
 export class DownloadFilesArtifactArgs extends jspb.Message {
-  getReference(): string;
-  setReference(value: string): DownloadFilesArtifactArgs;
+  getIdentifier(): string;
+  setIdentifier(value: string): DownloadFilesArtifactArgs;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): DownloadFilesArtifactArgs.AsObject;
@@ -985,7 +985,7 @@ export class DownloadFilesArtifactArgs extends jspb.Message {
 
 export namespace DownloadFilesArtifactArgs {
   export type AsObject = {
-    reference: string,
+    identifier: string,
   }
 }
 

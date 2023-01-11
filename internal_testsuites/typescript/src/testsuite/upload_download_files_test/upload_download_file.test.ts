@@ -33,9 +33,9 @@ const FILE_SERVER_SERVICE_ID : ServiceID = "file-server"
 
 jest.setTimeout(180000)
 
-test("Test Upload Files", TestUploadFiles)
+test("Test Upload and Download Files", TestUploadAndDownloadFiles)
 
-async function TestUploadFiles() {
+async function TestUploadAndDownloadFiles() {
     const testFolderResults = await createTestFolderToUpload()
     if (testFolderResults.isErr()) { throw testFolderResults.error }
     const filePathsMap = testFolderResults.value
@@ -48,6 +48,8 @@ async function TestUploadFiles() {
         if (typeof pathToUpload === "undefined") {throw new Error("Failed to store uploadable path in path map.")}
         const uploadResults = await enclaveContext.uploadFiles(pathToUpload, TEST_ARTIFACT_NAME)
         if(uploadResults.isErr()) { throw uploadResults.error }
+        const artifactUuid = uploadResults.value;
+
         const firstArchiveRootKeyWord = `${ARCHIVE_ROOT_FILE_KEYWORD_PATTERN}0`
         const firstArchiveRootFilename = `${filePathsMap.get(firstArchiveRootKeyWord)}`
 
@@ -57,6 +59,20 @@ async function TestUploadFiles() {
 
         const allContentTestResults = await testAllContent(filePathsMap, fileServerPublicIp, fileServerPublicPortNum)
         if(allContentTestResults.isErr()) { throw allContentTestResults.error}
+
+        const downloadFilesViaUuidResult = await enclaveContext.downloadFilesArtifact(artifactUuid)
+        if (downloadFilesViaUuidResult.isErr()) {throw downloadFilesViaUuidResult.error}
+        const downloadFilesViaShortenedUuidResult = await enclaveContext.downloadFilesArtifact(artifactUuid.substring(0, 12))
+        if (downloadFilesViaShortenedUuidResult.isErr()) {throw downloadFilesViaShortenedUuidResult.error}
+        const downloadFilesViaNameResult = await enclaveContext.downloadFilesArtifact(TEST_ARTIFACT_NAME)
+        if (downloadFilesViaNameResult.isErr()) {throw downloadFilesViaNameResult.error}
+
+        for (let i = 0;  i < downloadFilesViaNameResult.value.length; i++) {
+            if (downloadFilesViaUuidResult.value.at(i) != downloadFilesViaShortenedUuidResult.value.at(i) || downloadFilesViaUuidResult.value.at(i) != downloadFilesViaNameResult.value.at(i)) {
+                throw new Error("Expected files downloaded via uuid, shortened uuid and name to be the same but weren't")
+            }
+        }
+
     } finally {
         stopEnclaveFunction()
     }

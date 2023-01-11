@@ -712,8 +712,10 @@ jobs:
       - run: "${KURTOSIS_BINPATH} service add test-enclave test2 httpd --ports http=80"
 
       # File commands
-      - run: "${KURTOSIS_BINPATH} files rendertemplate test-enclave << pipeline.parameters.rendertemplate-cli-test-template-relative-path >> << pipeline.parameters.rendertemplate-cli-test-data-json-relative-path >> ./rendered"
-      - run: "${KURTOSIS_BINPATH} files storeservice test-enclave test1 /usr/local/apache2/conf/httpd.conf"
+      - run: "${KURTOSIS_BINPATH} files rendertemplate test-enclave << pipeline.parameters.rendertemplate-cli-test-template-relative-path >> << pipeline.parameters.rendertemplate-cli-test-data-json-relative-path >> ./rendered --name rendered-file"
+      - run: "${KURTOSIS_BINPATH} files download test-enclave rendered-file ."
+      - run: "${KURTOSIS_BINPATH} files storeservice test-enclave test1 /usr/local/apache2/conf/httpd.conf --name stored-file"
+      - run: "${KURTOSIS_BINPATH} files download test-enclave stored-file ."
 
       # Module inside an enclave
       - run: "${KURTOSIS_BINPATH} enclave ls"

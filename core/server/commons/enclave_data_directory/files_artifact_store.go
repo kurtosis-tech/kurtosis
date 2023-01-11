@@ -50,68 +50,68 @@ func (store FilesArtifactStore) StoreFile(reader io.Reader, artifactName string)
 }
 
 // GetFile Get the file by uuid, then by shortened uuid and finally by name
-func (store FilesArtifactStore) GetFile(artifactReference string) (*EnclaveDataDirFile, error) {
+func (store FilesArtifactStore) GetFile(artifactIdentifier string) (*EnclaveDataDirFile, error) {
 	store.mutex.RLock()
 	defer store.mutex.RUnlock()
 
-	if uuid_generator.IsUUID(artifactReference) {
-		filesArtifactUuid := FilesArtifactUUID(artifactReference)
+	if uuid_generator.IsUUID(artifactIdentifier) {
+		filesArtifactUuid := FilesArtifactUUID(artifactIdentifier)
 		file, err := store.getFileUnlocked(filesArtifactUuid)
 		if err == nil {
 			return file, nil
 		}
 	}
 
-	if uuid_generator.ISShortenedUUID(artifactReference) {
-		filesArtifactUuids, found := store.shortenedUuidToFullUuid[artifactReference]
+	if uuid_generator.ISShortenedUUID(artifactIdentifier) {
+		filesArtifactUuids, found := store.shortenedUuidToFullUuid[artifactIdentifier]
 		if found {
 			if len(filesArtifactUuids) > maxAllowedMatchesAgainstShortenedUuid {
-				return nil, stacktrace.NewError("Tried using the shortened uuid '%v' to get file but found multiple matches '%v'. Use a complete uuid to be specific about what to get.", artifactReference, filesArtifactUuids)
+				return nil, stacktrace.NewError("Tried using the shortened uuid '%v' to get file but found multiple matches '%v'. Use a complete uuid to be specific about what to get.", artifactIdentifier, filesArtifactUuids)
 			}
 			filesArtifactUuid := filesArtifactUuids[0]
 			return store.getFileUnlocked(filesArtifactUuid)
 		}
 	}
 
-	filesArtifactUuid, found := store.artifactNameToArtifactUuid[artifactReference]
+	filesArtifactUuid, found := store.artifactNameToArtifactUuid[artifactIdentifier]
 	if found {
 		return store.getFileUnlocked(filesArtifactUuid)
 	}
 
-	return nil, stacktrace.NewError("Couldn't find file for reference '%v' tried, tried looking up UUID, shortened UUID and by name", artifactReference)
+	return nil, stacktrace.NewError("Couldn't find file for identifier '%v' tried, tried looking up UUID, shortened UUID and by name", artifactIdentifier)
 }
 
 // RemoveFile Remove the file by uuid, then by shortened uuid and then by name
-func (store FilesArtifactStore) RemoveFile(artifactReference string) error {
+func (store FilesArtifactStore) RemoveFile(artifactIdentifier string) error {
 	store.mutex.Lock()
 	defer store.mutex.Unlock()
 	var filesArtifactUuid FilesArtifactUUID
 
-	if uuid_generator.IsUUID(artifactReference) {
-		filesArtifactUuid = FilesArtifactUUID(artifactReference)
+	if uuid_generator.IsUUID(artifactIdentifier) {
+		filesArtifactUuid = FilesArtifactUUID(artifactIdentifier)
 		err := store.removeFileUnlocked(filesArtifactUuid)
 		if err == nil {
 			return nil
 		}
 	}
 
-	if uuid_generator.ISShortenedUUID(artifactReference) {
-		filesArtifactUuids, found := store.shortenedUuidToFullUuid[artifactReference]
+	if uuid_generator.ISShortenedUUID(artifactIdentifier) {
+		filesArtifactUuids, found := store.shortenedUuidToFullUuid[artifactIdentifier]
 		if found {
 			if len(filesArtifactUuids) > maxAllowedMatchesAgainstShortenedUuid {
-				return stacktrace.NewError("Tried using the shortened uuid '%v' to remove file but found multiple matches '%v'. Use a complete uuid to be specific about what to delete.", artifactReference, filesArtifactUuids)
+				return stacktrace.NewError("Tried using the shortened uuid '%v' to remove file but found multiple matches '%v'. Use a complete uuid to be specific about what to delete.", artifactIdentifier, filesArtifactUuids)
 			}
 			filesArtifactUuid = filesArtifactUuids[0]
 			return store.removeFileUnlocked(filesArtifactUuid)
 		}
 	}
 
-	filesArtifactUuid, found := store.artifactNameToArtifactUuid[artifactReference]
+	filesArtifactUuid, found := store.artifactNameToArtifactUuid[artifactIdentifier]
 	if found {
 		return store.removeFileUnlocked(filesArtifactUuid)
 	}
 
-	return stacktrace.NewError("Couldn't find file for reference '%v' tried, tried looking up UUID, shortened UUID and by name", artifactReference)
+	return stacktrace.NewError("Couldn't find file for identifier '%v' tried, tried looking up UUID, shortened UUID and by name", artifactIdentifier)
 }
 
 func (store FilesArtifactStore) ListFiles() map[string]bool {

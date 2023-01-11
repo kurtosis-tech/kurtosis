@@ -17,6 +17,7 @@ import { GrpcNodeApiContainerClient } from "./grpc_node_api_container_client";
 import { GrpcWebApiContainerClient } from "./grpc_web_api_container_client";
 import type { GenericApiContainerClient } from "./generic_api_container_client";
 import {
+    newDownloadFilesArtifactArgs,
     newGetServicesArgs,
     newPort,
     newRemoveServiceArgs,
@@ -504,6 +505,17 @@ export class EnclaveContext {
         }
         const storeWebFilesArtifactResponse = storeWebFilesArtifactResponseResult.value;
         return ok(storeWebFilesArtifactResponse.getUuid())
+    }
+
+    // Docs available at https://docs.kurtosis.com/sdk#downloadfilesartifact-fileidentifier-string
+    public async downloadFilesArtifact(identifier: string): Promise<Result<Uint8Array, Error>> {
+        const args = newDownloadFilesArtifactArgs(identifier);
+        const downloadFilesArtifactResponseResult = await this.backend.downloadFilesArtifact(args)
+        if (downloadFilesArtifactResponseResult.isErr()) {
+            return err(downloadFilesArtifactResponseResult.error)
+        }
+        const downloadFilesArtifactResponse = downloadFilesArtifactResponseResult.value;
+        return ok(downloadFilesArtifactResponse.getData_asU8())
     }
 
     // ====================================================================================================

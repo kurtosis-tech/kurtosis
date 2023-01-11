@@ -409,6 +409,18 @@ func NewStoreWebFilesArtifactArgs(url string, name string) *kurtosis_core_rpc_ap
 
 // ==============================================================================================
 //
+//	Download Files Artifact
+//
+// ==============================================================================================
+
+func DownloadFilesArtifactArgs(fileIdentifier string) *kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs {
+	return &kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs{
+		Identifier: fileIdentifier,
+	}
+}
+
+// ==============================================================================================
+//
 //	Render Templates To Files Artifact
 //
 // ==============================================================================================

@@ -25,7 +25,7 @@ type FilesArtifactsExpanderArgs struct {
 }
 
 type FilesArtifactExpansion struct {
-	FilesArtifactReference string `json:"filesArtifactReference"`
+	FilesIdentifier string `json:"filesIdentifier"`
 
 	// Directory on the files artifacts expander where the files artifact will be expanded into
 	DirPathToExpandTo string `json:"dirPathToExpandTo"`

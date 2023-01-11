@@ -24,7 +24,7 @@ import {
     RenderTemplatesToFilesArtifactResponse,
     RunStarlarkScriptArgs,
     RunStarlarkPackageArgs,
-    StarlarkRunResponseLine,
+    StarlarkRunResponseLine, DownloadFilesArtifactResponse, DownloadFilesArtifactArgs,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import type { ApiContainerServiceClient as ApiContainerServiceClientNode } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
 import { GenericApiContainerClient } from "./generic_api_container_client";
@@ -297,9 +297,9 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
         return ok(storeWebFilesArtifactResponse)
     }
 
-    public async storeFilesArtifactFromService(storeFilesArtifactFromServiceArgs: StoreFilesArtifactFromServiceArgs): Promise<Result<StoreWebFilesArtifactResponse, Error>> {
-        const storeFilesArtifactFromServicePromise: Promise<Result<StoreFilesArtifactFromServiceResponse, Error>> = new Promise( (resolve, _unusedReject) => {
-            this.client.storeFilesArtifactFromService(storeFilesArtifactFromServiceArgs, {}, (error: ServiceError | null, response?: StoreFilesArtifactFromServiceResponse) => {
+    public async downloadFilesArtifact(downloadFilesArtifactArgs: DownloadFilesArtifactArgs): Promise<Result<DownloadFilesArtifactResponse, Error>> {
+        const downloadFilesArtifactPromise: Promise<Result<DownloadFilesArtifactResponse, Error>> = new Promise((resolve, _unusedReject) => {
+            this.client.downloadFilesArtifact(downloadFilesArtifactArgs, (error: ServiceError | null, response?: DownloadFilesArtifactResponse) => {
                 if (error === null) {
                     if (!response) {
                         resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
@@ -311,33 +311,13 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
                 }
             })
         });
-        const storeFilesArtifactFromServiceResponseResult: Result<StoreFilesArtifactFromServiceResponse, Error> = await storeFilesArtifactFromServicePromise;
-        if (storeFilesArtifactFromServiceResponseResult.isErr()) {
-            return err(storeFilesArtifactFromServiceResponseResult.error)
-        }
-        const storeFilesArtifactFromServiceResponse = storeFilesArtifactFromServiceResponseResult.value;
-        return ok(storeFilesArtifactFromServiceResponse);
-    }
 
-    public async renderTemplatesToFilesArtifact(renderTemplatesToFilesArtifactArgs: RenderTemplatesToFilesArtifactArgs): Promise<Result<RenderTemplatesToFilesArtifactResponse, Error>> {
-        const renderTemplatesToFilesArtifactPromise: Promise<Result<RenderTemplatesToFilesArtifactResponse, Error>> = new Promise( (resolve, _unusedReject) => {
-            this.client.renderTemplatesToFilesArtifact(renderTemplatesToFilesArtifactArgs, {}, (error: ServiceError | null, response?: RenderTemplatesToFilesArtifactResponse) => {
-                if (error === null) {
-                    if (!response) {
-                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
-                    } else {
-                        resolve(ok(response!));
-                    }
-                } else {
-                    resolve(err(error));
-                }
-            })
-        });
-        const renderTemplatesToFilesArtifactResponseResult: Result<RenderTemplatesToFilesArtifactResponse, Error> = await renderTemplatesToFilesArtifactPromise;
-        if (renderTemplatesToFilesArtifactResponseResult.isErr()) {
-            return err(renderTemplatesToFilesArtifactResponseResult.error)
+        const downloadFilesArtifactResponseResult: Result<DownloadFilesArtifactResponse, Error> = await downloadFilesArtifactPromise;
+        if(downloadFilesArtifactResponseResult.isErr()){
+            return err(downloadFilesArtifactResponseResult.error)
         }
-        const renderTemplatesToFilesArtifactResponse = renderTemplatesToFilesArtifactResponseResult.value;
-        return ok(renderTemplatesToFilesArtifactResponse);
+
+        const downloadFilesArtifactResponse = downloadFilesArtifactResponseResult.value;
+        return ok(downloadFilesArtifactResponse)
     }
 }

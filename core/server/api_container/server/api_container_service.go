@@ -383,14 +383,14 @@ func (apicService ApiContainerService) UploadFilesArtifact(ctx context.Context, 
 }
 
 func (apicService ApiContainerService) DownloadFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.DownloadFilesArtifactResponse, error) {
-	artifactReference := args.Reference
-	if strings.TrimSpace(artifactReference) == "" {
-		return nil, stacktrace.NewError("Cannot download file with empty files artifact reference")
+	artifactIdentifier := args.Identifier
+	if strings.TrimSpace(artifactIdentifier) == "" {
+		return nil, stacktrace.NewError("Cannot download file with empty files artifact identifier")
 	}
 
-	filesArtifact, err := apicService.filesArtifactStore.GetFile(artifactReference)
+	filesArtifact, err := apicService.filesArtifactStore.GetFile(artifactIdentifier)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting files artifact '%v'", artifactReference)
+		return nil, stacktrace.Propagate(err, "An error occurred getting files artifact '%v'", artifactIdentifier)
 	}
 
 	fileBytes, err := ioutil.ReadFile(filesArtifact.GetAbsoluteFilepath())

@@ -7946,7 +7946,7 @@ proto.api_container_api.DownloadFilesArtifactArgs.prototype.toObject = function(
  */
 proto.api_container_api.DownloadFilesArtifactArgs.toObject = function(includeInstance, msg) {
   var f, obj = {
-    reference: jspb.Message.getFieldWithDefault(msg, 1, "")
+    identifier: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -7985,7 +7985,7 @@ proto.api_container_api.DownloadFilesArtifactArgs.deserializeBinaryFromReader = 
     switch (field) {
     case 1:
       var value = /** @type {string} */ (reader.readString());
-      msg.setReference(value);
+      msg.setIdentifier(value);
       break;
     default:
       reader.skipField();
@@ -8016,7 +8016,7 @@ proto.api_container_api.DownloadFilesArtifactArgs.prototype.serializeBinary = fu
  */
 proto.api_container_api.DownloadFilesArtifactArgs.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
-  f = message.getReference();
+  f = message.getIdentifier();
   if (f.length > 0) {
     writer.writeString(
       1,
@@ -8027,10 +8027,10 @@ proto.api_container_api.DownloadFilesArtifactArgs.serializeBinaryToWriter = func
 
 
 /**
- * optional string reference = 1;
+ * optional string identifier = 1;
  * @return {string}
  */
-proto.api_container_api.DownloadFilesArtifactArgs.prototype.getReference = function() {
+proto.api_container_api.DownloadFilesArtifactArgs.prototype.getIdentifier = function() {
   return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
 };
 
@@ -8039,7 +8039,7 @@ proto.api_container_api.DownloadFilesArtifactArgs.prototype.getReference = funct
  * @param {string} value
  * @return {!proto.api_container_api.DownloadFilesArtifactArgs} returns this
  */
-proto.api_container_api.DownloadFilesArtifactArgs.prototype.setReference = function(value) {
+proto.api_container_api.DownloadFilesArtifactArgs.prototype.setIdentifier = function(value) {
   return jspb.Message.setProto3StringField(this, 1, value);
 };
 

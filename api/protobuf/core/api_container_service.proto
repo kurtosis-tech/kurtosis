@@ -406,8 +406,8 @@ message UploadFilesArtifactResponse {
 //                                          Download Files Artifact
 // ==============================================================================================
 message DownloadFilesArtifactArgs {
-  // Files reference to get bytes for
-  string reference = 1;
+  // Files identifier to get bytes for
+  string identifier = 1;
 }
 
 message DownloadFilesArtifactResponse {
