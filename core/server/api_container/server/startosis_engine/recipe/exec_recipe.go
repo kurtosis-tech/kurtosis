@@ -9,7 +9,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
+	"reflect"
 	"strings"
 )
 
@@ -38,11 +40,11 @@ func (recipe *ExecRecipe) Execute(ctx context.Context, serviceNetwork service_ne
 	for _, subCommand := range recipe.command {
 		maybeSubCommandWithIPAddress, err := magic_string_helper.ReplaceIPAddressInString(subCommand, serviceNetwork, commandKey)
 		if err != nil {
-			return nil, stacktrace.Propagate(err,"An error occurred while replacing IP address in the command of the exec recipe")
+			return nil, stacktrace.Propagate(err, "An error occurred while replacing IP address in the command of the exec recipe")
 		}
 		maybeSubCommandWithRuntimeValuesAndIPAddress, err := magic_string_helper.ReplaceRuntimeValueInString(maybeSubCommandWithIPAddress, runtimeValueStore)
 		if err != nil {
-			return nil, stacktrace.Propagate(err,"An error occurred while replacing runtime values in the command of the exec recipe")
+			return nil, stacktrace.Propagate(err, "An error occurred while replacing runtime values in the command of the exec recipe")
 		}
 		commandWithIPAddressAndRuntimeValue = append(commandWithIPAddressAndRuntimeValue, maybeSubCommandWithRuntimeValuesAndIPAddress)
 	}
@@ -57,15 +59,24 @@ func (recipe *ExecRecipe) Execute(ctx context.Context, serviceNetwork service_ne
 }
 
 func (recipe *ExecRecipe) ResultMapToString(resultMap map[string]starlark.Comparable) string {
-	output := resultMap[execOutputKey]
 	exitCode := resultMap[execExitCodeKey]
-	if output == starlark.String("") {
+	rawOutput := resultMap[execOutputKey]
+	outputStarlarkStr, ok := rawOutput.(starlark.String)
+	if !ok {
+		logrus.Errorf("Result of an exec recipe was not a string (was: '%v' of type '%s'). This is not fatal but the object might be malformed in CLI output. It is very unexpected and hides a Kurtosis internal bug. This issue should be reported", rawOutput, reflect.TypeOf(rawOutput))
+		outputStarlarkStr = starlark.String(outputStarlarkStr.String())
+	}
+	outputStr := outputStarlarkStr.GoString()
+	if outputStr == "" {
 		return fmt.Sprintf("Command returned with exit code '%v' with no output", exitCode)
 	}
-	if strings.Contains(output.String(), newlineChar) {
-		return fmt.Sprintf("Command returned with exit code '%v' and the following output: \n%v", exitCode, output)
+	if strings.Contains(outputStr, newlineChar) {
+		return fmt.Sprintf(`Command returned with exit code '%v' and the following output:
+--------------------
+%v
+--------------------`, exitCode, outputStr)
 	}
-	return fmt.Sprintf("Command returned with exit code '%v' and the following output: %v", exitCode, output)
+	return fmt.Sprintf("Command returned with exit code '%v' and the following output: %v", exitCode, outputStr)
 }
 
 func (recipe *ExecRecipe) CreateStarlarkReturnValue(resultUuid string) (*starlark.Dict, *startosis_errors.InterpretationError) {
