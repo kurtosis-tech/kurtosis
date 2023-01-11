@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.64.1](https://github.com/kurtosis-tech/kurtosis/compare/0.64.0...0.64.1) (2023-01-11)
+
+
+### Features
+
+* allow downloading artifacts ([#840](https://github.com/kurtosis-tech/kurtosis/issues/840)) ([046e0b0](https://github.com/kurtosis-tech/kurtosis/commit/046e0b0ef1485c792b0624b91b67b84602886494)), closes [#832](https://github.com/kurtosis-tech/kurtosis/issues/832)
+
+
+### Bug Fixes
+
+* Fix the serialization of the `Service` object returned by the `add_service` instruction ([#845](https://github.com/kurtosis-tech/kurtosis/issues/845)) ([7fe5ec0](https://github.com/kurtosis-tech/kurtosis/commit/7fe5ec0ceed0845e705215400a8c3be5b90512b6)), closes [#721](https://github.com/kurtosis-tech/kurtosis/issues/721)
+* Make PR description update support dependabot PRs ([8e1c2da](https://github.com/kurtosis-tech/kurtosis/commit/8e1c2da5b2a2222b1bd52f21ae975afbf384ee24))
+* Make PR description update support dependabot PRs ([#842](https://github.com/kurtosis-tech/kurtosis/issues/842)) ([8e1c2da](https://github.com/kurtosis-tech/kurtosis/commit/8e1c2da5b2a2222b1bd52f21ae975afbf384ee24))
+* The multiline output of an recipe passed to an exec command is not printed on multiple lines ([#841](https://github.com/kurtosis-tech/kurtosis/issues/841)) ([700eb9d](https://github.com/kurtosis-tech/kurtosis/commit/700eb9da4534db4f3bdbc323005977e422cb4ef2)), closes [#732](https://github.com/kurtosis-tech/kurtosis/issues/732)
+
 ## [0.64.0](https://github.com/kurtosis-tech/kurtosis/compare/0.63.2...0.64.0) (2023-01-10)
 
 
