@@ -19,11 +19,10 @@ def run(plan):
 	)
 
 	plan.add_service(service_id = "web-server", config = service_config)
-	get_recipe = struct(
+	get_recipe = GetHttpRequestRecipe(
 		service_id = "web-server",
 		port_id = "http-port",
 		endpoint = "?input=foo/bar",
-		method = "GET",
 		extract = {
 			"exploded-slash": ".query.input | split(\"/\") | .[1]"
 		}

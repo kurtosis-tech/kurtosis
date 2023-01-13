@@ -52,7 +52,7 @@ def run(plan, args):
 	
 	plan.add_service(service_id = DATASTORE_SERVICE_ID, config = config)
 	plan.print("Service " + DATASTORE_SERVICE_ID + " deployed successfully.")
-	plan.exec(struct(
+	plan.exec(ExecRecipe(
 		service_id = DATASTORE_SERVICE_ID,
 		command = ["touch", FILE_TO_BE_CREATED],
 	))

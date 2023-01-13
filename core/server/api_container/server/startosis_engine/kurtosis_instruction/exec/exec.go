@@ -2,6 +2,7 @@ package exec
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
@@ -98,20 +99,26 @@ func (instruction *ExecInstruction) ValidateAndUpdateEnvironment(environment *st
 
 func (instruction *ExecInstruction) parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple, runtimeValueStore *runtime_value_store.RuntimeValueStore) *startosis_errors.InterpretationError {
 
-	var recipeConfigArg *starlarkstruct.Struct
+	var recipeConfigStruct *starlarkstruct.Struct
+	var recipeConfigExecRecipe *recipe.ExecRecipe
 
-	if err := starlark.UnpackArgs(b.Name(), args, kwargs, recipeArgName, &recipeConfigArg); err != nil {
-		return startosis_errors.NewInterpretationError(err.Error())
+	if err := starlark.UnpackArgs(b.Name(), args, kwargs, recipeArgName, &recipeConfigExecRecipe); err != nil {
+		//TODO: remove this and throw error when we stop supporting structs
+		if errWithStruct := starlark.UnpackArgs(b.Name(), args, kwargs, recipeArgName, &recipeConfigStruct); errWithStruct != nil {
+			return startosis_errors.NewInterpretationError(fmt.Sprintf("Error occurred while parsing recipe: %v", err.Error()))
+		}
+
+		var errorWhileParsingStruct *startosis_errors.InterpretationError
+		recipeConfigExecRecipe, errorWhileParsingStruct = kurtosis_instruction.ParseExecRecipe(recipeConfigStruct)
+		if errorWhileParsingStruct != nil {
+			return errorWhileParsingStruct
+		}
 	}
+
 	instruction.starlarkKwargs = starlark.StringDict{
-		recipeArgName: recipeConfigArg,
+		recipeArgName: recipeConfigExecRecipe,
 	}
 	instruction.starlarkKwargs.Freeze()
-
-	var err *startosis_errors.InterpretationError
-	instruction.execRecipe, err = kurtosis_instruction.ParseExecRecipe(recipeConfigArg)
-	if err != nil {
-		return err
-	}
+	instruction.execRecipe = recipeConfigExecRecipe
 	return nil
 }

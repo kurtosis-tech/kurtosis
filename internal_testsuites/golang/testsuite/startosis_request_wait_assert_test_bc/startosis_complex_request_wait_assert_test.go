@@ -8,9 +8,8 @@ import (
 	"testing"
 )
 
-const (
-	complexRequestWaitAssertTestName        = "startosis_complex_request_test"
-	complexRequestWaitAssertStartosisScript = `
+// TODO: remove everything below this once we stop supporting this functionality
+const complexRequestWaitAssertStartosisScriptWithStruct = `
 def run(plan):
 	service_config = ServiceConfig(
 		image = "mendhak/http-https-echo:26",
@@ -20,10 +19,11 @@ def run(plan):
 	)
 
 	plan.add_service(service_id = "web-server", config = service_config)
-	get_recipe = GetHttpRequestRecipe(
+	get_recipe = struct(
 		service_id = "web-server",
 		port_id = "http-port",
 		endpoint = "?input=foo/bar",
+		method = "GET",
 		extract = {
 			"exploded-slash": ".query.input | split(\"/\") | .[1]"
 		}
@@ -39,10 +39,11 @@ def run(plan):
 	plan.assert(response["code"], "IN", [100, 200])
 	plan.assert(response["code"], "NOT_IN", [100, 300])
 	plan.assert(response["extract.exploded-slash"], "==", "bar")
-	post_recipe = PostHttpRequestRecipe(
+	post_recipe = struct(
 		service_id = "web-server",
 		port_id = "http-port",
 		endpoint = "/",
+		method = "POST",
 		content_type="text/plain",
 		body=response["extract.exploded-slash"],
 		extract = {
@@ -53,18 +54,17 @@ def run(plan):
 	post_response = plan.request(post_recipe)
 	plan.assert(post_response["code"], "==", 200)
 	plan.assert(post_response["extract.my-body"], "==", "bar")
-	exec_recipe = ExecRecipe(
+	exec_recipe = struct(
 		service_id = "web-server",
 		command = ["echo", "hello", post_response["extract.my-body"]]
 	)
 	exec_result = plan.wait(exec_recipe, "code", "==", 0)
 	plan.assert(exec_result["output"], "==", "hello bar\n")
 `
-)
 
-func TestStartosis_ComplexRequestWaitAssert(t *testing.T) {
+func TestStartosis_ComplexRequestWaitAssertWithStruct(t *testing.T) {
 	ctx := context.Background()
-	runResult := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, complexRequestWaitAssertTestName, complexRequestWaitAssertStartosisScript)
+	runResult := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, "starlarkUnderTest", complexRequestWaitAssertStartosisScriptWithStruct)
 
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
 	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")

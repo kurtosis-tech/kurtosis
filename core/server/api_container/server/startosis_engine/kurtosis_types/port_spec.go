@@ -49,8 +49,8 @@ func MakePortSpec(_ *starlark.Thread, builtin *starlark.Builtin, args starlark.T
 
 	if err := starlark.UnpackArgs(builtin.Name(), args, kwargs,
 		portNumberAttr, &number,
-		makeOptional(transportProtocolAttr), &transportProtocol,
-		makeOptional(portApplicationProtocolAttr), &maybeApplicationProtocol,
+		MakeOptional(transportProtocolAttr), &transportProtocol,
+		MakeOptional(portApplicationProtocolAttr), &maybeApplicationProtocol,
 	); err != nil {
 		return nil, startosis_errors.NewInterpretationError("Cannot construct a PortSpec from the provided arguments. Error was: \n%v", err.Error())
 	}

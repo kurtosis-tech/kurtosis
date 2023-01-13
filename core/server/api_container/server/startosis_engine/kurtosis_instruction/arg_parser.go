@@ -71,6 +71,7 @@ func ParseServiceId(serviceIdRaw starlark.String) (service.ServiceID, *startosis
 	return service.ServiceID(serviceId), nil
 }
 
+//TODO: remove this method when we stop supporting struct for recipe defn
 func ParseHttpRequestRecipe(recipeConfig *starlarkstruct.Struct) (*recipe.HttpRequestRecipe, *startosis_errors.InterpretationError) {
 	serviceId, interpretationErr := extractStringValue(recipeConfig, serviceIdKey, requestArgName)
 	if interpretationErr != nil {
@@ -118,6 +119,7 @@ func ParseHttpRequestRecipe(recipeConfig *starlarkstruct.Struct) (*recipe.HttpRe
 	}
 }
 
+//TODO: remove this method when we stop supporting struct for recipe defn
 func ParseExecRecipe(recipeConfig *starlarkstruct.Struct) (*recipe.ExecRecipe, *startosis_errors.InterpretationError) {
 	serviceId, interpretationErr := extractStringValue(recipeConfig, serviceIdKey, execArgName)
 	if interpretationErr != nil {
@@ -197,17 +199,6 @@ func ParseServiceConfigArg(serviceConfig *starlarkstruct.Struct) (*kurtosis_core
 	).Build()
 
 	return builtConfig, nil
-}
-
-func ParseCommand(commandsRaw *starlark.List) ([]string, *startosis_errors.InterpretationError) {
-	commandArgs, interpretationErr := kurtosis_types.SafeCastToStringSlice(commandsRaw, commandArgName)
-	if interpretationErr != nil {
-		return nil, interpretationErr
-	}
-	if len(commandArgs) == 0 {
-		return nil, startosis_errors.NewInterpretationError("Command cannot be empty")
-	}
-	return commandArgs, nil
 }
 
 func ParseExpectedExitCode(expectedExitCodeRaw starlark.Int) (int32, *startosis_errors.InterpretationError) {
@@ -393,6 +384,7 @@ func parseFilesArtifactMountDirpaths(serviceConfig *starlarkstruct.Struct) (map[
 	return filesArtifactMountDirpathsArg, nil
 }
 
+//TODO: remove this method when we stop supporting struct for recipe defn
 func parseHttpRequestExtractors(recipe *starlarkstruct.Struct) (map[string]string, *startosis_errors.InterpretationError) {
 	_, err := recipe.Attr(httpRequestExtractorsKey)
 	//an error here means that no argument was found which is alright as this is an optional

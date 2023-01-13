@@ -7,9 +7,8 @@ import (
 	"testing"
 )
 
-const (
-	timeoutWaitTestName        = "startosis_timeout_wait_test"
-	timeoutWaitStartosisScript = `
+// TODO: remove everything below this once we stop supporting this functionality
+const timeoutWaitStartosisScriptWithStruct = `
 def run(plan):
 	service_config = ServiceConfig(
 		image = "mendhak/http-https-echo:26",
@@ -19,21 +18,21 @@ def run(plan):
 	)
 
 	plan.add_service(service_id = "web-server", config = service_config)
-	get_recipe = GetHttpRequestRecipe(
+	get_recipe = struct(
 		service_id = "web-server",
 		port_id = "http-port",
 		endpoint = "?input=foo/bar",
+		method = "GET",
 		extract = {
 			"exploded-slash": ".query.input | split(\"/\") | .[1]"
 		}
 	)
 	response = plan.wait(get_recipe, "code", "<", 0, interval="100ms", timeout="10s")
 `
-)
 
-func TestStartosis_TimeoutWait(t *testing.T) {
+func TestStartosis_TimeoutWaitWithStruct(t *testing.T) {
 	ctx := context.Background()
-	runResult := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, timeoutWaitTestName, timeoutWaitStartosisScript)
+	runResult := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, "starlarkUnderTest", timeoutWaitStartosisScriptWithStruct)
 
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
 	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")

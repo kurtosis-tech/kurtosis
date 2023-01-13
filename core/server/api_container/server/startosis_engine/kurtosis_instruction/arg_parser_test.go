@@ -296,19 +296,6 @@ func TestParseExpectedExitCode_OverflowForLargeUnsignedInt64(t *testing.T) {
 	require.NotNil(t, err)
 }
 
-func TestParseCommand_ValidValue(t *testing.T) {
-	input := starlark.NewList([]starlark.Value{starlark.String("foo"), starlark.String("bar")})
-	output, err := ParseCommand(input)
-	require.Nil(t, err)
-	require.Equal(t, []string{"foo", "bar"}, output)
-}
-
-func TestParseCommand_InvalidCommandsWithIntegers(t *testing.T) {
-	input := starlark.NewList([]starlark.Value{starlark.String("foo"), starlark.MakeInt(42)})
-	_, err := ParseCommand(input)
-	require.NotNil(t, err)
-}
-
 func TestParseFilesArtifactMountDirpaths_Success(t *testing.T) {
 	subDict := starlark.NewDict(1)
 	err := subDict.SetKey(starlark.String("key"), starlark.String("value"))

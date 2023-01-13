@@ -92,16 +92,16 @@ func MakeServiceConfig(_ *starlark.Thread, b *starlark.Builtin, args starlark.Tu
 	)
 	if err := starlark.UnpackArgs(b.Name(), args, kwargs,
 		serviceConfigImageAttr, &image,
-		makeOptional(serviceConfigPortsAttr), &ports,
-		makeOptional(serviceConfigPublicPortsAttr), &publicPorts,
-		makeOptional(serviceConfigFilesAttr), &files,
-		makeOptional(serviceConfigEntrypointAttr), &entrypoint,
-		makeOptional(serviceConfigCmdAttr), &cmd,
-		makeOptional(serviceConfigEnvVarsAttr), &envVars,
-		makeOptional(serviceConfigPrivateIpAddressPlaceholderAttr), &privateIpAddressPlaceholder,
-		makeOptional(serviceConfigSubnetworkAttr), &subnetwork,
-		makeOptional(serviceConfigCpuAllocationAttr), &cpuAllocation,
-		makeOptional(serviceConfigMemoryAllocationAttr), &memoryAllocation,
+		MakeOptional(serviceConfigPortsAttr), &ports,
+		MakeOptional(serviceConfigPublicPortsAttr), &publicPorts,
+		MakeOptional(serviceConfigFilesAttr), &files,
+		MakeOptional(serviceConfigEntrypointAttr), &entrypoint,
+		MakeOptional(serviceConfigCmdAttr), &cmd,
+		MakeOptional(serviceConfigEnvVarsAttr), &envVars,
+		MakeOptional(serviceConfigPrivateIpAddressPlaceholderAttr), &privateIpAddressPlaceholder,
+		MakeOptional(serviceConfigSubnetworkAttr), &subnetwork,
+		MakeOptional(serviceConfigCpuAllocationAttr), &cpuAllocation,
+		MakeOptional(serviceConfigMemoryAllocationAttr), &memoryAllocation,
 	); err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Cannot construct '%s' from the provided arguments.", ServiceConfigTypeName)
 	}

@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/stacktrace"
@@ -27,6 +28,17 @@ const (
 	statusCodeKey    = "code"
 	bodyKey          = "body"
 	extractKeyPrefix = "extract"
+
+	portIdAttr      = "port_id"
+	serviceIdAttr   = "service_id"
+	endpointAttr    = "endpoint"
+	methodAttr      = "method"
+	contentTypeAttr = "content_type"
+
+	PostHttpRecipeTypeName = "PostHttpRequestRecipe"
+	GetHttpRecipeTypeName  = "GetHttpRequestRecipe"
+
+	HttpRecipeTypeName = "HttpRequestRecipe"
 )
 
 type HttpRequestRecipe struct {
@@ -63,17 +75,174 @@ func NewGetHttpRequestRecipe(serviceId service.ServiceID, portId string, endpoin
 	}
 }
 
+// String the starlark.Value interface
+func (recipe *HttpRequestRecipe) String() string {
+	buffer := new(strings.Builder)
+	instanceName := recipe.GetInstanceName()
+
+	buffer.WriteString(instanceName + "(")
+	buffer.WriteString(portIdAttr + "=")
+	buffer.WriteString(fmt.Sprintf("%q, ", recipe.portId))
+	buffer.WriteString(serviceIdAttr + "=")
+	buffer.WriteString(fmt.Sprintf("%q, ", recipe.serviceId))
+	buffer.WriteString(endpointAttr + "=")
+	buffer.WriteString(fmt.Sprintf("%q, ", recipe.endpoint))
+
+	if recipe.method == postMethod {
+		buffer.WriteString(bodyKey + "=")
+		buffer.WriteString(fmt.Sprintf("%q, ", recipe.body))
+		buffer.WriteString(contentTypeAttr + "=")
+		buffer.WriteString(fmt.Sprintf("%q, ", recipe.contentType))
+	}
+
+	buffer.WriteString(extractKeyPrefix + "=")
+	extractors, err := convertMapToStarlarkDict(recipe.extractors)
+
+	if err != nil {
+		logrus.Errorf("Error occurred while accessing extractors")
+	}
+
+	if extractors.Len() > 0 {
+		buffer.WriteString(fmt.Sprintf("%q)", extractors))
+	} else {
+		buffer.WriteString(fmt.Sprintf("%q)", ""))
+	}
+	return buffer.String()
+}
+
+// Type implements the starlark.Value interface
+func (recipe *HttpRequestRecipe) Type() string {
+	return HttpRecipeTypeName
+}
+
+// Freeze implements the starlark.Value interface
+func (recipe *HttpRequestRecipe) Freeze() {
+	// this is a no-op its already immutable
+}
+
+// Truth implements the starlark.Value interface
+func (recipe *HttpRequestRecipe) Truth() starlark.Bool {
+	truth := recipe.portId != "" && recipe.serviceId != "" && recipe.endpoint != "" && recipe.method != ""
+	if recipe.method == postMethod {
+		truth = truth && recipe.body != "" && recipe.contentType != ""
+	}
+	return starlark.Bool(truth)
+}
+
+// Hash implements the starlark.Value interface
+// This shouldn't be hashed, users should use a portId instead
+func (recipe *HttpRequestRecipe) Hash() (uint32, error) {
+	return 0, startosis_errors.NewInterpretationError("unhashable type: '%v'", HttpRecipeTypeName)
+}
+
+func (recipe *HttpRequestRecipe) GetInstanceName() string {
+	instanceName := GetHttpRecipeTypeName
+	if recipe.method == postMethod {
+		instanceName = PostHttpRecipeTypeName
+	}
+	return instanceName
+}
+
+// Attr implements the starlark.HasAttrs interface.
+func (recipe *HttpRequestRecipe) Attr(name string) (starlark.Value, error) {
+	switch name {
+	case portIdAttr:
+		return starlark.String(recipe.portId), nil
+	case serviceIdAttr:
+		return starlark.String(recipe.serviceId), nil
+	case extractKeyPrefix:
+		return convertMapToStarlarkDict(recipe.extractors)
+	case bodyKey:
+		return starlark.String(recipe.body), nil
+	case contentTypeAttr:
+		return starlark.String(recipe.contentType), nil
+	case methodAttr:
+		return starlark.String(recipe.method), nil
+	case endpointAttr:
+		return starlark.String(recipe.endpoint), nil
+	default:
+		return nil, startosis_errors.NewInterpretationError("'%v' has no attribute '%v;", HttpRecipeTypeName, name)
+	}
+}
+
+// AttrNames implements the starlark.HasAttrs interface.
+func (recipe *HttpRequestRecipe) AttrNames() []string {
+	return []string{portIdAttr, serviceIdAttr, extractKeyPrefix, endpointAttr, contentTypeAttr, methodAttr, bodyKey}
+}
+
+func MakeGetHttpRequestRecipe(_ *starlark.Thread, builtin *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+	var portId string
+	var endpoint string
+	var serviceId string
+	var maybeExtractField starlark.Value
+
+	if err := starlark.UnpackArgs(builtin.Name(), args, kwargs,
+		serviceIdAttr, &serviceId,
+		portIdAttr, &portId,
+		endpointAttr, &endpoint,
+		kurtosis_types.MakeOptional(extractKeyPrefix), &maybeExtractField,
+	); err != nil {
+		return nil, startosis_errors.NewInterpretationError(err.Error())
+	}
+
+	extractedMap := map[string]string{}
+	var err *startosis_errors.InterpretationError
+
+	if maybeExtractField != nil {
+		extractedMap, err = kurtosis_types.SafeCastToMapStringString(maybeExtractField, extractKeyPrefix)
+		if err != nil {
+			return nil, err
+		}
+	}
+	recipe := NewGetHttpRequestRecipe(service.ServiceID(serviceId), portId, endpoint, extractedMap)
+	return recipe, nil
+}
+
+func MakePostHttpRequestRecipe(_ *starlark.Thread, builtin *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+	var portId string
+	var endpoint string
+	var serviceId string
+
+	var body string
+	var contentType string
+	var maybeExtractField starlark.Value
+
+	if err := starlark.UnpackArgs(builtin.Name(), args, kwargs,
+		serviceIdAttr, &serviceId,
+		portIdAttr, &portId,
+		endpointAttr, &endpoint,
+		bodyKey, &body,
+		contentTypeAttr, &contentType,
+		kurtosis_types.MakeOptional(extractKeyPrefix), &maybeExtractField,
+	); err != nil {
+		return nil, startosis_errors.NewInterpretationError("%v", err.Error())
+	}
+
+	extractedMap := map[string]string{}
+	var err *startosis_errors.InterpretationError
+
+	if maybeExtractField != nil {
+		extractedMap, err = kurtosis_types.SafeCastToMapStringString(maybeExtractField, extractKeyPrefix)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	recipe := NewPostHttpRequestRecipe(service.ServiceID(serviceId), portId, contentType, endpoint, body, extractedMap)
+	return recipe, nil
+}
+
 func (recipe *HttpRequestRecipe) Execute(ctx context.Context, serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) (map[string]starlark.Comparable, error) {
 	var response *http.Response
 	var err error
 	logrus.Debugf("Running HTTP request recipe '%v'", recipe)
 	maybeRecipeBodyWithIPAddress, err := magic_string_helper.ReplaceIPAddressInString(recipe.body, serviceNetwork, bodyKey)
 	if err != nil {
-		return nil, stacktrace.Propagate(err,"An error occurred while replacing IP address in the body of the http recipe")
+		return nil, stacktrace.Propagate(err, "An error occurred while replacing IP address in the body of the http recipe")
 	}
 	maybeRecipeBodyWithIPAddressAndRuntimeValue, err := magic_string_helper.ReplaceRuntimeValueInString(maybeRecipeBodyWithIPAddress, runtimeValueStore)
 	if err != nil {
-		return nil, stacktrace.Propagate(err,"An error occurred while replacing runtime values in the body of the http recipe")
+		return nil, stacktrace.Propagate(err, "An error occurred while replacing runtime values in the body of the http recipe")
 	}
 	response, err = serviceNetwork.HttpRequestService(
 		ctx,
@@ -202,5 +371,17 @@ func (recipe *HttpRequestRecipe) CreateStarlarkReturnValue(resultUuid string) (*
 		}
 	}
 	dict.Freeze()
+	return dict, nil
+}
+
+func convertMapToStarlarkDict(inputMap map[string]string) (*starlark.Dict, *startosis_errors.InterpretationError) {
+	sizeOfExtractors := len(inputMap)
+	dict := starlark.NewDict(sizeOfExtractors)
+	for key, val := range inputMap {
+		err := dict.SetKey(starlark.String(key), starlark.String(val))
+		if err != nil {
+			return nil, startosis_errors.NewInterpretationError("Error occurred while converting extractor map to starlark type")
+		}
+	}
 	return dict, nil
 }

@@ -178,7 +178,7 @@ func (instruction *WaitInstruction) ValidateAndUpdateEnvironment(environment *st
 
 func (instruction *WaitInstruction) parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) *startosis_errors.InterpretationError {
 	var (
-		recipeConfigArg  *starlarkstruct.Struct
+		recipeConfigArg  starlark.Value
 		valueFieldArg    starlark.String
 		assertionArg     starlark.String
 		targetArg        starlark.Comparable
@@ -189,6 +189,7 @@ func (instruction *WaitInstruction) parseStartosisArgs(b *starlark.Builtin, args
 	if err := starlark.UnpackArgs(b.Name(), args, kwargs, recipeArgName, &recipeConfigArg, valueFieldArgName, &valueFieldArg, assertionArgName, &assertionArg, targetArgName, &targetArg, optionalIntervalArgName, &optionalInterval, optionalTimeoutArgName, &optionalTimeout); err != nil {
 		return startosis_errors.NewInterpretationError(err.Error())
 	}
+
 	instruction.starlarkKwargs = starlark.StringDict{
 		recipeArgName:           recipeConfigArg,
 		valueFieldArgName:       valueFieldArg,
@@ -199,14 +200,20 @@ func (instruction *WaitInstruction) parseStartosisArgs(b *starlark.Builtin, args
 	}
 	instruction.starlarkKwargs.Freeze()
 
-	var err *startosis_errors.InterpretationError
-	instruction.recipe, err = kurtosis_instruction.ParseHttpRequestRecipe(recipeConfigArg)
-	if err != nil {
-		instruction.recipe, err = kurtosis_instruction.ParseExecRecipe(recipeConfigArg)
-		if err != nil {
-			return startosis_errors.NewInterpretationError("There was no valid recipe found on arg '%v' (expected exec or request recipe)", recipeConfigArg)
+	var ok bool
+	instruction.recipe, ok = recipeConfigArg.(*recipe.HttpRequestRecipe)
+	if !ok {
+		instruction.recipe, ok = recipeConfigArg.(*recipe.ExecRecipe)
+		if !ok {
+			// TODO: remove this after 2 or 3 weeks?
+			err := ensureBackwardCompatibleForWait(instruction, recipeConfigArg)
+			if err != nil {
+				return startosis_errors.NewInterpretationError("There was no valid recipe found for '%v' "+
+					"(Expected ExecRecipe or PostHttpRequestRecipe or GetHttpRequestRecipe type)", recipeConfigArg)
+			}
 		}
 	}
+
 	instruction.assertion = string(assertionArg)
 	instruction.target = targetArg
 	instruction.targetKey = string(valueFieldArg)
@@ -237,4 +244,20 @@ func (instruction *WaitInstruction) parseStartosisArgs(b *starlark.Builtin, args
 		return startosis_errors.NewInterpretationError("'%v' assertion requires list, got '%v'", assertionArg, targetArg.Type())
 	}
 	return nil
+}
+
+// TODO: remove this code after we stop using this -- maybe in 2 or 3 weeks?
+func ensureBackwardCompatibleForWait(instruction *WaitInstruction, recipeConfigArg starlark.Value) *startosis_errors.InterpretationError {
+	var err *startosis_errors.InterpretationError
+	recipeConfigStruct, ok := recipeConfigArg.(*starlarkstruct.Struct)
+	if !ok {
+		return startosis_errors.NewInterpretationError("Error occurred while parsing starlark value to starlark struct %v", recipeConfigArg)
+	}
+
+	instruction.recipe, err = kurtosis_instruction.ParseHttpRequestRecipe(recipeConfigStruct)
+	if err != nil {
+		instruction.recipe, err = kurtosis_instruction.ParseExecRecipe(recipeConfigStruct)
+	}
+
+	return err
 }

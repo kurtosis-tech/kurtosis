@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/stacktrace"
@@ -20,9 +21,12 @@ const (
 	execExitCodeKey = "code"
 	newlineChar     = "\n"
 
-	commandKey = "command"
+	commandKey     = "command"
+	serviceIdKey   = "service_id"
+	ExecRecipeName = "ExecRecipe"
 )
 
+// TODO: maybe change command to startlark.List once remove backward compatability support
 type ExecRecipe struct {
 	serviceId service.ServiceID
 	command   []string
@@ -33,6 +37,61 @@ func NewExecRecipe(serviceId service.ServiceID, command []string) *ExecRecipe {
 		serviceId: serviceId,
 		command:   command,
 	}
+}
+
+// String the starlark.Value interface
+func (recipe *ExecRecipe) String() string {
+	buffer := new(strings.Builder)
+	buffer.WriteString(ExecRecipeName + "(")
+	buffer.WriteString(serviceIdKey + "=")
+	buffer.WriteString(fmt.Sprintf("%q, ", recipe.serviceId))
+	buffer.WriteString(commandKey + "=")
+
+	command := convertListToStarlarkList(recipe.command)
+	if command.Len() > 0 {
+		buffer.WriteString(fmt.Sprintf("%q)", command))
+	} else {
+		buffer.WriteString(fmt.Sprintf("%q)", ""))
+	}
+	return buffer.String()
+}
+
+// Type implements the starlark.Value interface
+func (recipe *ExecRecipe) Type() string {
+	return ExecRecipeName
+}
+
+// Freeze implements the starlark.Value interface
+func (recipe *ExecRecipe) Freeze() {
+	// this is a no-op its already immutable
+}
+
+// Truth implements the starlark.Value interface
+func (recipe *ExecRecipe) Truth() starlark.Bool {
+	return recipe.serviceId != ""
+}
+
+// Hash implements the starlark.Value interface
+// This shouldn't be hashed, users should use a portId instead
+func (recipe *ExecRecipe) Hash() (uint32, error) {
+	return 0, startosis_errors.NewInterpretationError("unhashable type: '%v'", ExecRecipeName)
+}
+
+// Attr implements the starlark.HasAttrs interface.
+func (recipe *ExecRecipe) Attr(name string) (starlark.Value, error) {
+	switch name {
+	case serviceIdKey:
+		return starlark.String(recipe.serviceId), nil
+	case commandKey:
+		return convertListToStarlarkList(recipe.command), nil
+	default:
+		return nil, startosis_errors.NewInterpretationError("'%v' has no attribute '%v;", ExecRecipeName, name)
+	}
+}
+
+// AttrNames implements the starlark.HasAttrs interface.
+func (recipe *ExecRecipe) AttrNames() []string {
+	return []string{serviceIdKey, commandKey}
 }
 
 func (recipe *ExecRecipe) Execute(ctx context.Context, serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) (map[string]starlark.Comparable, error) {
@@ -91,4 +150,32 @@ func (recipe *ExecRecipe) CreateStarlarkReturnValue(resultUuid string) (*starlar
 	}
 	dict.Freeze()
 	return dict, nil
+}
+
+func MakeExecRequestRecipe(_ *starlark.Thread, builtin *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+	var serviceIdStr string
+	var unpackedCommandList *starlark.List
+
+	if err := starlark.UnpackArgs(builtin.Name(), args, kwargs,
+		commandKey, &unpackedCommandList,
+		serviceIdKey, &serviceIdStr,
+	); err != nil {
+		return nil, startosis_errors.NewInterpretationError("%v", err.Error())
+	}
+
+	commands, err := kurtosis_types.SafeCastToStringSlice(unpackedCommandList, commandKey)
+	if err != nil {
+		return nil, err
+	}
+	serviceId := service.ServiceID(serviceIdStr)
+	return NewExecRecipe(serviceId, commands), nil
+}
+
+func convertListToStarlarkList(inputList []string) *starlark.List {
+	sizeOfCommandArr := len(inputList)
+	var elems []starlark.Value
+	for i := 0; i < sizeOfCommandArr; i++ {
+		elems = append(elems, starlark.String(inputList[i]))
+	}
+	return starlark.NewList(elems)
 }

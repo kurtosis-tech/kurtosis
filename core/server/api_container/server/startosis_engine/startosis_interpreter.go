@@ -12,6 +12,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/plan_module"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/package_io"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/recipe"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
@@ -174,6 +175,11 @@ func (interpreter *StartosisInterpreter) buildBindings(thread *starlark.Thread, 
 
 		// Kurtosis pre-built module containing Kurtosis constant types
 		builtins.KurtosisModuleName: builtins.KurtosisModule(),
+
+		// Kurtosis recipes
+		recipe.PostHttpRecipeTypeName: starlark.NewBuiltin(recipe.PostHttpRecipeTypeName, recipe.MakePostHttpRequestRecipe),
+		recipe.GetHttpRecipeTypeName:  starlark.NewBuiltin(recipe.GetHttpRecipeTypeName, recipe.MakeGetHttpRequestRecipe),
+		recipe.ExecRecipeName:         starlark.NewBuiltin(recipe.ExecRecipeName, recipe.MakeExecRequestRecipe),
 
 		// Kurtosis types
 		kurtosis_types.ConnectionConfigTypeName:    starlark.NewBuiltin(kurtosis_types.ConnectionConfigTypeName, kurtosis_types.MakeConnectionConfig),

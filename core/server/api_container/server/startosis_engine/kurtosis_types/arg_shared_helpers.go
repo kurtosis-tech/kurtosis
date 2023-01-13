@@ -7,7 +7,7 @@ import (
 	"reflect"
 )
 
-func makeOptional(argName string) string {
+func MakeOptional(argName string) string {
 	return fmt.Sprintf("%s?", argName)
 }
 

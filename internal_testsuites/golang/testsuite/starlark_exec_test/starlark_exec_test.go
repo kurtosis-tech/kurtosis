@@ -36,7 +36,7 @@ def run(plan, args):
 `
 	testStarlarkScriptTemplate = `
 def run(plan, args):
-	exec_recipe = struct(
+	exec_recipe = ExecRecipe(
 		service_id = "test",
 		command = %v,
 	)
@@ -100,4 +100,65 @@ func sliceToStarlarkString(slice []string) string {
 		quotedSlice = append(quotedSlice, fmt.Sprintf(`"%s"`, s))
 	}
 	return fmt.Sprintf("[%v]", strings.Join(quotedSlice, ","))
+}
+
+// TODO: remove everything below this once we stop supporting this functionality
+const (
+	setupStarlarkScriptWithStruct = `
+def run(plan, args):
+	service_config = struct(
+		image = "alpine:3.12.4",
+		entrypoint = ["sleep"],
+		cmd = ["30"]
+	)
+	plan.add_service(service_id = "test", config = service_config)
+`
+	testStarlarkScriptTemplateWithStruct = `
+def run(plan, args):
+	exec_recipe = struct(
+		service_id = "test",
+		command = %v,
+	)
+	exec_result = plan.exec(exec_recipe)
+	plan.assert(exec_result["code"], "==", %d)
+	plan.assert(exec_result["output"], "==", "%s")
+`
+)
+
+var testStarlarkScriptsWithStruct = []string{
+	fmt.Sprintf(testStarlarkScriptTemplateWithStruct, sliceToStarlarkString(execCommandThatShouldWork), successExitCode, noExecOutput),
+	fmt.Sprintf(testStarlarkScriptTemplateWithStruct, sliceToStarlarkString(execCommandThatShouldFail), failureExitCode, noExecOutput),
+	fmt.Sprintf(testStarlarkScriptTemplateWithStruct, sliceToStarlarkString(execCommandThatShouldHaveLogOutput), successExitCode, expectedLogOutput),
+	fmt.Sprintf(testStarlarkScriptTemplateWithStruct, sliceToStarlarkString(execCommandThatWillFailIfShWrapped), successExitCode, expectedAdvancedLogOutput),
+}
+
+func TestStarlarkExecWithStruct(t *testing.T) {
+	ctx := context.Background()
+
+	// ------------------------------------- ENGINE SETUP ----------------------------------------------
+	enclaveCtx, destroyEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, "scriptUnderTest", isPartitioningEnabled)
+	require.NoError(t, err, "An error occurred creating an enclave")
+	defer destroyEnclaveFunc()
+
+	// -------------------------------------- TEST SETUP -----------------------------------------------
+	logrus.Infof("Executing Starlark setup script...")
+
+	setupRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, setupStarlarkScriptWithStruct, emptyParams, defaultDryRun)
+	require.NoError(t, err, "Unexpected error executing Starlark script")
+	require.Nil(t, setupRunResult.InterpretationError, "Unexpected interpretation error")
+	require.Empty(t, setupRunResult.ValidationErrors, "Unexpected validation error")
+	require.Nil(t, setupRunResult.ExecutionError, "Unexpected execution error")
+
+	// ------------------------------------- TEST RUN ----------------------------------------------
+
+	for testIndex, testStarlarkScript := range testStarlarkScriptsWithStruct {
+		logrus.Infof("Executing Starlark test script %d:\n%s", testIndex, testStarlarkScript)
+		runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, testStarlarkScript, emptyParams, defaultDryRun)
+		require.NoError(t, err, "Unexpected error executing Starlark script")
+		require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
+		require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")
+		require.Nil(t, runResult.ExecutionError, "Unexpected execution error")
+		logrus.Infof("Successfully ran Starlark test script")
+	}
+
 }

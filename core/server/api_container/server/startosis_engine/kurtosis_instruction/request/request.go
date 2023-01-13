@@ -2,6 +2,7 @@ package request
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
@@ -112,20 +113,26 @@ func (instruction *RequestInstruction) ValidateAndUpdateEnvironment(environment 
 
 func (instruction *RequestInstruction) parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) *startosis_errors.InterpretationError {
 
-	var recipeConfigArg *starlarkstruct.Struct
+	var recipeConfigStruct *starlarkstruct.Struct
+	var recipeConfigHttpRecipe *recipe.HttpRequestRecipe
 
-	if err := starlark.UnpackArgs(b.Name(), args, kwargs, recipeArgName, &recipeConfigArg); err != nil {
-		return startosis_errors.NewInterpretationError(err.Error())
+	if err := starlark.UnpackArgs(b.Name(), args, kwargs, recipeArgName, &recipeConfigHttpRecipe); err != nil {
+		//TODO: remove this and throw error when we stop supporting structs
+		if errWithStruct := starlark.UnpackArgs(b.Name(), args, kwargs, recipeArgName, &recipeConfigStruct); errWithStruct != nil {
+			return startosis_errors.NewInterpretationError(fmt.Sprintf("Error occurred while parsing recipe: %v", err.Error()))
+		}
+
+		var errorWhileParsingStruct *startosis_errors.InterpretationError
+		recipeConfigHttpRecipe, errorWhileParsingStruct = kurtosis_instruction.ParseHttpRequestRecipe(recipeConfigStruct)
+		if errorWhileParsingStruct != nil {
+			return errorWhileParsingStruct
+		}
 	}
+
 	instruction.starlarkKwargs = starlark.StringDict{
-		"recipe": recipeConfigArg,
+		recipeArgName: recipeConfigHttpRecipe,
 	}
 	instruction.starlarkKwargs.Freeze()
-
-	var err *startosis_errors.InterpretationError
-	instruction.httpRequestRecipe, err = kurtosis_instruction.ParseHttpRequestRecipe(recipeConfigArg)
-	if err != nil {
-		return err
-	}
+	instruction.httpRequestRecipe = recipeConfigHttpRecipe
 	return nil
 }
