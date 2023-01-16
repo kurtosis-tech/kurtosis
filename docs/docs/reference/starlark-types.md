@@ -24,9 +24,102 @@ connection_config = ConnectionConfig(
 See [kurtosis.connection][connection-config-prebuilt] for pre-built [ConnectionConfig][connection-config] objects
 :::
 
+### ExecRecipe
+
+The ExecRecipe can be used to run the `command` on the service (see [exec][starlark-instructions-exec]
+or [wait][starlark-instructions-wait])
+
+```python
+exec_recipe = ExecRecipe(
+    # The service ID to execute the command on.
+    # MANDATORY
+    service_id = "my_service",
+
+    # The actual command to execute. 
+    # Each item corresponds to one shell argument, so ["echo", "Hello world"] behaves as if you ran "echo 'Hello World'" in the shell.
+    # MANDATORY
+    command = ["echo", "Hello, World"],
+)
+```
+
+### HttpRequestRecipe
+
+The `HttpRequestRecipe` is used to make `HTTP` requests to an endpoint. Currently, we support `GET` and `POST` requests. (see [request][starlark-instructions-request] or [wait][starlark-instructions-wait]).
+
+#### GetHttpRequestRecipe
+
+The `GetHttpRequestRecipe` can be used to make `GET` requests.
+
+```python
+get_request_recipe = GetHttpRequestRecipe(
+    # The service ID that is the server for the request
+    # MANDATORY
+    service_id = "my_service",
+
+    # The port ID that is the server port for the request
+    # MANDATORY
+    port_id = "my_port",
+
+    # The endpoint for the request
+    # MANDATORY
+    endpoint = "/endpoint?input=data",
+
+    # The extract dictionary takes in key-value pairs where:
+    # Key is a way you refer to the extraction later on
+    # Value is a 'jq' string that contains logic to extract from response body
+    # To lean more about jq, please visit https://devdocs.io/jq/
+    # OPTIONAL
+    extract = {
+        "extractfield" : ".name.id"
+    }
+)
+```
+
+#### PostHttpRequestRecipe
+
+The `PostHttpRequestRecipe` can be used to make `POST` requests.
+
+```python
+post_request_recipe = PostHttpRequestRecipe(
+    # The service ID that is the server for the request
+    # MANDATORY
+    service_id = "my_service",
+
+    # The port ID that is the server port for the request
+    # MANDATORY
+    port_id = "my_port",
+
+    # The endpoint for the request
+    # MANDATORY
+    endpoint = "/endpoint",
+
+    # The content type header of the request (e.g. application/json, text/plain, etc)
+    # MANDATORY
+    content_type = "application/json",
+
+    # The body of the request
+    # MANDATORY
+    body = "{\"data\": \"this is sample body for POST\"}",
+    
+    # The extract dictionary takes in key-value pairs where:
+    # Key is a way you refer to the extraction later on
+    # Value is a 'jq' string that contains logic to extract from response body
+    # # To lean more about jq, please visit https://devdocs.io/jq/
+    # OPTIONAL
+    extract = {
+        "extractfield" : ".name.id"
+    }
+```
+
+:::caution
+
+Make sure that the endpoint returns valid JSON response for both POST and GET requests.
+
+:::
+
 ### PortSpec
 
-This `PortSpec` constructor creates a PortSpec object that encapsulates information pertaining to a port. 
+This `PortSpec` constructor creates a PortSpec object that encapsulates information pertaining to a port.
 
 ```python
 port_spec = PortSpec(
@@ -43,7 +136,7 @@ port_spec = PortSpec(
     application_protocol = "http"
 )
 ```
-The above constructor returns a `PortSpec` object that contains port information in the form of a [future reference][future-references-reference] and can be used with 
+The above constructor returns a `PortSpec` object that contains port information in the form of a [future reference][future-references-reference] and can be used with
 [add_service][starlark-instructions-add-service] to create services.
 
 ### ServiceConfig
@@ -112,6 +205,14 @@ config = ServiceConfig(
     # OPTIONAL (Default: "KURTOSIS_IP_ADDR_PLACEHOLDER")
     private_ip_address_placeholder = "KURTOSIS_IP_ADDRESS_PLACEHOLDER",
 
+    # The maximum amount of CPUs the service can use, in millicpu/millicore.
+    # OPTIONAL (Default: no limit)
+    cpu_allocation = 1000,
+
+    # The maximum amount of memory, in megabytes, the service can use.
+    # OPTIONAL (Default: no limit)
+    memory_allocation = 1024,
+
     # Defines the subnetwork in which the service will be started.
     # OPTIONAL (Default: "default")
     subnetwork = "service_subnetwork",
@@ -161,3 +262,6 @@ Kurtosis provides "pre-built" values for types that will be broadly used. Those 
 
 [starlark-instructions-add-service]: ./starlark-instructions.md#add_service
 [starlark-instructions-set-connection]: ./starlark-instructions.md#set_connection
+[starlark-instructions-request]: ./starlark-instructions.md#request
+[starlark-instructions-wait]: ./starlark-instructions.md#wait
+[starlark-instructions-exec]: ./starlark-instructions.md#exec

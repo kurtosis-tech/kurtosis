@@ -118,6 +118,7 @@ service = plan.add_service(
         # The maximum amount of CPUs the service can use, in millicpu/millicore.
         # OPTIONAL (Default: no limit)
         cpu_allocation = 1000,
+
         # The maximum amount of memory, in megabytes, the service can use.
         # OPTIONAL (Default: no limit)
         memory_allocation = 1024,
@@ -198,7 +199,7 @@ plan.assert(
 The `exec` instruction on the [`plan`][plan-reference] object executes commands on a given service as if they were running in a shell on the container.
 
 ```python
-exec_recipe = struct(
+exec_recipe = ExecRecipe(
     # The service ID to execute the command on.
     # MANDATORY
     service_id = "my_service",
@@ -219,7 +220,7 @@ The instruction returns a `dict` whose values are [future reference][future-refe
 They can be chained to `assert` and `wait`:
 
 ```python
-exec_recipe = struct(
+exec_recipe = ExecRecipe(
     service_id = "my_service",
     command = ["echo", "Hello, world"],
 )
@@ -341,7 +342,7 @@ The `request` instruction on the [`plan`][plan-reference] object executes either
 For GET requests:
 
 ```python
-get_request_recipe = struct(
+get_request_recipe = GetHttpRequestRecipe(
     # The service ID that is the server for the request
     # MANDATORY
     service_id = "my_service",
@@ -353,10 +354,6 @@ get_request_recipe = struct(
     # The endpoint for the request
     # MANDATORY
     endpoint = "/endpoint?input=data",
-
-    # The method is GET for this example
-    # MANDATORY
-    method = "GET",
 
     # The extract dictionary takes in key-value pairs where:
     # Key is a way you refer to the extraction later on
@@ -376,7 +373,7 @@ plan.print(get_response["extract.extracted-field"]) # Prints the result of runni
 
 For POST requests:
 ```python
-post_request_recipe = struct(
+post_request_recipe = PostHttpRequestRecipe(
     # The service ID that is the server for the request
     # MANDATORY
     service_id = "my_service",
@@ -388,10 +385,6 @@ post_request_recipe = struct(
     # The endpoint for the request
     # MANDATORY
     endpoint = "/endpoint",
-
-    # The method is POST for this example
-    # MANDATORY
-    method = "POST",
 
     # The content type header of the request (e.g. application/json, text/plain, etc)
     # MANDATORY
@@ -411,10 +404,10 @@ post_response = request(
 ```
 
 NOTE: You can use the power of `jq` during your extractions. For example, `jq`'s [regular expressions](https://devdocs.io/jq-regular-expressions-pcre/) can be used to manipulate the extracted strings like so:
- 
+
  ```python
  # Assuming response["body"] looks like {"result": {"foo": ["hello/world/welcome"]}}
-post_request_recipe = struct(
+post_request_recipe = PostHttpRequestRecipe(
     ...
     extract = {
         "second-element-from-list-head": '.result.foo | .[0] | split ("/") | .[1]' # 
@@ -430,7 +423,7 @@ response = request(
 
 Kurtosis uses a *default connection* to configure networking for any created subnetwork. The `set_connection` can be used for two purposes:
 
-1. Used with the `subnetworks` argument, it will override the default connection between the two specified [subnetworks][subnetworks-reference].  
+1. Used with the `subnetworks` argument, it will override the default connection between the two specified [subnetworks][subnetworks-reference].
 ```python
 set_connection(
     # The subnetwork connection that will be be overridden
@@ -534,14 +527,18 @@ The return value is a [future reference][future-references-reference] to the ID 
 ### wait
 
 The `wait` instruction on the [`plan`][plan-reference] object fails the Starlark script or package with an execution error if the assertion does not succeed in a given period of time.
+
+To learn more about the accepted recipe types, please checkout [ExecRecipe][starlark-types-exec-recipe], [GetHttpRequestRecipe][starlark-types-get-http-recipe] or [PostHttpRequestRecipe][starlark-types-post-http-recipe].
+
 If it succedes, it returns a [future references][future-references-reference] with the last recipe run.
 
 ```python
 # This fails in runtime if response["code"] != 200 for each request in a 5 minute time span
 response = plan.wait(
     # The recipe that will be run until assert passes.
+    # Valid values are of the following types: (ExecRecipe, GetHttpRequestRecipe, PostHttpRequestRecipe)
     # MANDATORY
-    recipe = get_request_recipe,
+    recipe = recipe,
 
     # The field of the recipe's result that will be asserted
     # MANDATORY
@@ -574,7 +571,7 @@ plan.print(response["code"])
 Starlark Standard Libraries
 ---------------------------
 
-The following Starlark libraries that ship with the `starlark-go` are included 
+The following Starlark libraries that ship with the `starlark-go` are included
 in Kurtosis Starlark by default
 
 1. The Starlark [time](https://github.com/google/starlark-go/blob/master/lib/time/time.go#L18-L52) is a collection of time-related functions
@@ -593,6 +590,9 @@ in Kurtosis Starlark by default
 [plan-reference]: ./plan.md
 [subnetworks-reference]: ./subnetworks.md
 
-[starlark-types-connection-config]: ./starlark-types.md#ConnectionConfig
-[starlark-types-service-config]: ./starlark-types.md#ServiceConfig
-[starlark-types-update-service-config]: ./starlark-types.md#UpdateServiceConfig
+[starlark-types-connection-config]: ./starlark-types.md#connectionconfig
+[starlark-types-service-config]: ./starlark-types.md#serviceconfig
+[starlark-types-update-service-config]: ./starlark-types.md#updateserviceconfig
+[starlark-types-exec-recipe]: ./starlark-types.md#execrecipe
+[starlark-types-post-http-recipe]: ./starlark-types.md#posthttprequestrecipe
+[starlark-types-get-http-recipe]: ./starlark-types.md#gethttprequestrecipe
