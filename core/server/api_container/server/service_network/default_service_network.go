@@ -300,166 +300,96 @@ func (network *DefaultServiceNetwork) SetDefaultConnection(
 	return nil
 }
 
-// StartServices starts the services in the given partition in their own containers
-//
-// This is a bulk operation that follows a funnel/rollback approach.
-// This means that when an error occurs, for an indvidiual operation (service in this case), we add it to a set of
-// failed service ids to errors, and return that to the client of this function. At the sametime we rollback/undo any
-// resources that were created during the failed operation, thus narrowing the funnel of operations
-// that were successful. Thus, this function:
-// Returns:
-//   - successfulService - mapping of successful service ids to service objects with info about that service
-//   - failedServices - mapping of failed service ids to errors causing those failures
-//   - error	- if error occurred with bulk operation as a whole
-func (network *DefaultServiceNetwork) StartServices(
+// StartService starts the service in the given partition in their own container
+func (network *DefaultServiceNetwork) StartService(
 	ctx context.Context,
-	serviceConfigs map[service.ServiceID]*kurtosis_core_rpc_api_bindings.ServiceConfig,
+	serviceId service.ServiceID,
+	serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig,
 ) (
-	map[service.ServiceID]*service.Service,
-	map[service.ServiceID]error,
+	*service.Service,
 	error,
 ) {
 	// TODO extract this into a wrapper function that can be wrapped around every service call (so we don't forget)
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
-	failedServicesPool := map[service.ServiceID]error{}
+	serviceStartedSuccessfully := false
+	// no lock as this can be called to start multiple services in parallel
 
-	servicesToStart := map[service.ServiceID]*kurtosis_core_rpc_api_bindings.ServiceConfig{}
-	serviceToPartitionMap := map[service.ServiceID]service_network_types.PartitionID{}
-	partitionsCreated := map[service_network_types.PartitionID]bool{}
-	for serviceID, serviceConfig := range serviceConfigs {
-		// check that a service with that ID does not exist yet
-		if _, found := network.registeredServiceInfo[serviceID]; found {
-			failedServicesPool[serviceID] = stacktrace.NewError(
-				"Cannot start service '%v' because it already exists in the network",
-				serviceID,
+	if _, found := network.registeredServiceInfo[serviceId]; found {
+		return nil, stacktrace.NewError("Cannot start service '%v' because it already exists in the network", serviceId)
+	}
+
+	partitionId := partition_topology.ParsePartitionId(serviceConfig.Subnetwork)
+	if _, found := network.topology.GetPartitionServices()[partitionId]; !found {
+		logrus.Debugf("Paritition with ID '%s' does not exist in current topology. Creating it to be able to "+
+			"add service '%s' to it when it's created", partitionId, serviceId)
+
+		if err := network.topology.CreateEmptyPartitionWithDefaultConnection(partitionId); err != nil {
+			return nil, stacktrace.Propagate(
+				err,
+				"Cannot start service '%v' because the creation of its partition '%s' needed to be created and it failed",
+				serviceId,
+				partitionId,
 			)
-			continue
 		}
-
-		// check the partition to which the service should be added exists, and if not create it
-		partitionID := partition_topology.ParsePartitionId(serviceConfig.Subnetwork)
-		if _, found := network.topology.GetPartitionServices()[partitionID]; !found {
-			logrus.Debugf("Paritition with ID '%s' does not exist in current topology. Creating it to be able to "+
-				"add service '%s' to it when it's created", partitionID, serviceID)
-			if err := network.topology.CreateEmptyPartitionWithDefaultConnection(partitionID); err != nil {
-				failedServicesPool[serviceID] = stacktrace.Propagate(
-					err,
-					"Cannot start service '%v' because the creation of its partition '%s' needed to be created and it failed",
-					serviceID,
-					partitionID,
-				)
-				continue
+		// undo partition creation if starting the something fails downstream
+		defer func() {
+			if serviceStartedSuccessfully || partitionId == partition_topology.DefaultPartitionId {
+				return
 			}
-		}
-		servicesToStart[serviceID] = serviceConfig
-		serviceToPartitionMap[serviceID] = partitionID
-		partitionsCreated[partitionID] = true
+			if err := network.topology.RemovePartition(partitionId); err != nil {
+				logrus.Errorf("Paritition '%s' needs to be removed as it is empty, but its deletion failed with an unexpected error. Partition will remain in the topology. This is not critical but might be a sign of another more critical failure", partitionId)
+			}
+		}()
 	}
-	defer func() {
-		// Remove all partitions that were created and remained empty (likely because starting the service inside it
-		// failed)
-		for partitionID := range partitionsCreated {
-			serviceIDs, found := network.topology.GetPartitionServices()[partitionID]
-			if !found || partitionID == partition_topology.DefaultPartitionId || len(serviceIDs) > 0 {
-				continue
-			}
-			if err := network.topology.RemovePartition(partitionID); err != nil {
-				logrus.Errorf("Paritition '%s' needs to be removed as it is empty, but its deletion failed with an unexpected error. Partition will remain in the topology. This is not critical but might be a sign of another more critical failure", partitionID)
-			}
-		}
-	}()
 
-	successfulStarts, failedStarts, err := network.startServices(ctx, servicesToStart)
+	startedService, err := network.startService(ctx, serviceId, serviceConfig)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred attempting to add services to the service network.")
+		return nil, stacktrace.Propagate(err, "An error occurred attempting to add service '%s' to the service network.", serviceId)
 	}
-	serviceGUIDsToRemove := map[service.ServiceGUID]bool{}
-	for _, serviceInfo := range successfulStarts {
-		guid := serviceInfo.GetRegistration().GetGUID()
-		serviceGUIDsToRemove[guid] = true
-	}
-	// defer undo all to destroy services that fail in a later phase
+	// undo service creation if something fails downstream
 	defer func() {
-		if len(serviceGUIDsToRemove) == 0 {
+		if serviceStartedSuccessfully {
 			return
 		}
+		serviceToDestroyGuid := startedService.GetRegistration().GetGUID()
 		userServiceFilters := &service.ServiceFilters{
-			IDs:      nil,
-			GUIDs:    serviceGUIDsToRemove,
+			IDs: nil,
+			GUIDs: map[service.ServiceGUID]bool{
+				serviceToDestroyGuid: true,
+			},
 			Statuses: nil,
 		}
-		_, failedToDestroyGUIDs, err := network.kurtosisBackend.DestroyUserServices(context.Background(), network.enclaveId, userServiceFilters)
+		_, failedToDestroyGuids, err := network.kurtosisBackend.DestroyUserServices(context.Background(), network.enclaveId, userServiceFilters)
 		if err != nil {
-			logrus.Errorf("Attempted to destroy all services with GUIDs '%v' together but had no success. You must manually destroy the services! The following error had occurred:\n'%v'", serviceGUIDsToRemove, err)
+			logrus.Errorf("Attempted to destroy the services with GUIDs '%v' but had no success. You must manually destroy the services! The following error had occurred:\n'%v'", serviceToDestroyGuid, err)
 			return
 		}
-		if len(failedToDestroyGUIDs) == 0 {
-			return
-		}
-		destroyFailuresAccountedFor := 0
-		for serviceID, serviceInfo := range successfulStarts {
-			guid := serviceInfo.GetRegistration().GetGUID()
-			destroyErr, found := failedToDestroyGUIDs[guid]
-			if !found {
-				continue
-			}
-			logrus.Errorf("Failed to destroy the service '%v' after it failed to start. You must manually destroy the service! The following error had occurred:\n'%v'", serviceID, destroyErr)
-			destroyFailuresAccountedFor += 1
-		}
-		if destroyFailuresAccountedFor != len(failedToDestroyGUIDs) {
-			logrus.Errorf("Couldn't propagate all failures while destroying services. This is a bug in Kurtosis. Accounted for '%v', expected '%v' services.", destroyFailuresAccountedFor, len(failedToDestroyGUIDs))
+		if failedToDestroyErr, found := failedToDestroyGuids[serviceToDestroyGuid]; found {
+			logrus.Errorf("Attempted to destroy the services with GUIDs '%v' but had no success. You must manually destroy the services! The following error had occurred:\n'%v'", serviceToDestroyGuid, failedToDestroyErr)
 		}
 	}()
 
-	// We add all the successfully started services to a list of services that will be processed in later phases
-	servicesToProcessFurther := map[service.ServiceID]*service.Service{}
-	for serviceID, serviceInfo := range successfulStarts {
-		servicesToProcessFurther[serviceID] = serviceInfo
-	}
-	for serviceID, err := range failedStarts {
-		failedServicesPool[serviceID] = err
-	}
-
-	for serviceID, serviceInfo := range servicesToProcessFurther {
-		network.registeredServiceInfo[serviceID] = serviceInfo.GetRegistration()
-	}
-	servicesToRemoveFromRegistrationMap := map[service.ServiceID]bool{}
-	for serviceID := range servicesToProcessFurther {
-		servicesToRemoveFromRegistrationMap[serviceID] = true
-	}
+	network.registeredServiceInfo[serviceId] = startedService.GetRegistration()
+	// remove service from the registered service map is something fails downstream
 	defer func() {
-		if len(servicesToRemoveFromRegistrationMap) == 0 {
+		if serviceStartedSuccessfully {
 			return
 		}
-		for serviceID := range servicesToRemoveFromRegistrationMap {
-			delete(network.registeredServiceInfo, serviceID)
-		}
+		delete(network.registeredServiceInfo, serviceId)
 	}()
 
-	for serviceID := range servicesToProcessFurther {
-		partitionID, found := serviceToPartitionMap[serviceID]
-		if !found {
-			failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred adding service '%v' to the topology as it wasn't mapped to any partition. This is an unexpected error", serviceID)
-			delete(servicesToProcessFurther, serviceID)
-			continue
-		}
-		err = network.addServiceToTopology(serviceID, partitionID)
-		if err != nil {
-			failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred adding service '%v' to the topology", serviceID)
-			delete(servicesToProcessFurther, serviceID)
-			continue
-		}
-		logrus.Debugf("Successfully added service with ID '%v' to topology", serviceID)
+	err = network.addServiceToTopology(serviceId, partitionId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error adding service '%s' to partition '%s' in network topology", serviceId, partitionId)
 	}
-	serviceIDsForTopologyCleanup := map[service.ServiceID]bool{}
-	for serviceID := range servicesToProcessFurther {
-		serviceIDsForTopologyCleanup[serviceID] = true
-	}
+	logrus.Debugf("Successfully added service with ID '%v' to topology", serviceId)
+	// remove service from topology is something fails downstream
 	defer func() {
-		for serviceID := range serviceIDsForTopologyCleanup {
-			network.topology.RemoveService(serviceID)
+		if serviceStartedSuccessfully {
+			return
 		}
+		network.topology.RemoveService(serviceId)
 	}()
 
 	// TODO Fix race condition
@@ -468,65 +398,71 @@ func (network *DefaultServiceNetwork) StartServices(
 	// 2. Then we create the sidecars for the target services
 	// 3. Only then we block access between the target services & the rest of the world (both ways)
 	// Between 1 & 3 the target & others can speak to each other if they choose to (eg: run a port scan)
-	sidecarsToCleanUp := map[service.ServiceID]bool{}
 	if network.isPartitioningEnabled {
-		for serviceID, serviceInfo := range servicesToProcessFurther {
-			err = network.createSidecarAndAddToMap(ctx, serviceInfo)
-			if err != nil {
-				failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred while adding networking sidecar for service '%v'", serviceID)
-				delete(servicesToProcessFurther, serviceID)
-				// remove service from topology as it has no sidecar. The service will be removed in a deferred function
-				network.topology.RemoveService(serviceID)
-				continue
-			}
-			logrus.Debugf("Successfully created sidecars for service with ID '%v'", serviceID)
+		err = network.createSidecarAndAddToMap(ctx, startedService)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Error creating sidecar for service '%s'", serviceId)
 		}
-		for serviceID := range servicesToProcessFurther {
-			sidecarsToCleanUp[serviceID] = true
-		}
+		logrus.Debugf("Successfully created sidecars for service with ID '%v'", serviceId)
+
 		// This defer-undo undoes resources created by `createSidecarAndAddToMap` in the reverse order of creation
 		defer func() {
-			if len(sidecarsToCleanUp) == 0 {
+			if serviceStartedSuccessfully {
 				return
 			}
-			for serviceID := range sidecarsToCleanUp {
-				networkingSidecar, found := network.networkingSidecars[serviceID]
-				if !found {
-					logrus.Errorf("Tried cleaning up sidecar for service with ID '%v' but couldn't retrieve it from the cache. This is a Kurtosis bug.", serviceID)
-					continue
-				}
-				err = network.networkingSidecarManager.Remove(ctx, networkingSidecar)
-				if err != nil {
-					logrus.Errorf("Attempted to clean up the sidecar for service with ID '%v' but the following error occurred:\n'%v'", serviceID, err)
-					continue
-				}
-				delete(network.networkingSidecars, serviceID)
+			networkingSidecar, found := network.networkingSidecars[serviceId]
+			if !found {
+				logrus.Errorf("Tried cleaning up sidecar for service with ID '%s' but couldn't retrieve it from the cache. This is a Kurtosis bug.", serviceId)
+				return
 			}
+			err = network.networkingSidecarManager.Remove(ctx, networkingSidecar)
+			if err != nil {
+				logrus.Errorf("Attempted to clean up the sidecar for service with ID '%s' but the following error occurred:\n'%v'", serviceId, err)
+				return
+			}
+			delete(network.networkingSidecars, serviceId)
 		}()
 
 		// We apply all the configurations. We can't filter to source/target being a service started in this method call as we'd miss configurations between existing services.
 		// The updates completely replace the tables, and we can't lose partitioning between existing services
 		if err := network.updateAllConnectionsFromTopology(ctx); err != nil {
-			return nil, nil, stacktrace.Propagate(err, "Unable to update connections between the different partitions of the topology")
+			return nil, stacktrace.Propagate(err, "Unable to update connections between the different partitions of the topology trying to start service '%s'", serviceId)
 		}
 		logrus.Debugf("Successfully applied qdisc configurations")
 		// We don't need to undo the traffic control changes because in the worst case existing nodes have entries in their traffic control for IP addresses that don't resolve to any containers.
 	}
 
 	// All processing is done so the services can be marked successful
-	successfulServicePool := map[service.ServiceID]*service.Service{}
-	for serviceID, serviceInfo := range servicesToProcessFurther {
-		successfulServicePool[serviceID] = serviceInfo
+	serviceStartedSuccessfully = true
+	logrus.Infof("Succesfully started service '%s' in the service network", serviceId)
+	return startedService, nil
+}
+
+// StartServices starts the services in the given partition in their own containers
+//
+// This is a bulk operation that follows a sequential approach with no parallelization yet.
+// This function returns:
+//   - successfulService - mapping of successful service ids to service objects with info about that service
+//   - failedServices - mapping of failed service ids to errors causing those failures
+func (network *DefaultServiceNetwork) StartServices(
+	ctx context.Context,
+	serviceConfigs map[service.ServiceID]*kurtosis_core_rpc_api_bindings.ServiceConfig,
+) (
+	map[service.ServiceID]*service.Service,
+	map[service.ServiceID]error,
+) {
+	startedServices := map[service.ServiceID]*service.Service{}
+	failedServices := map[service.ServiceID]error{}
+
+	for serviceId, serviceConfig := range serviceConfigs {
+		startedService, err := network.StartService(ctx, serviceId, serviceConfig)
+		if err != nil {
+			failedServices[serviceId] = err
+			continue
+		}
+		startedServices[serviceId] = startedService
 	}
-	logrus.Infof("Succesfully started services '%v' and failed '%v' in the service network", successfulServicePool, failedServicesPool)
-	for serviceID, serviceInfo := range successfulServicePool {
-		guid := serviceInfo.GetRegistration().GetGUID()
-		delete(serviceGUIDsToRemove, guid)
-		delete(servicesToRemoveFromRegistrationMap, serviceID)
-		delete(serviceIDsForTopologyCleanup, serviceID)
-		delete(sidecarsToCleanUp, serviceID)
-	}
-	return successfulServicePool, failedServicesPool, nil
+	return startedServices, failedServices
 }
 
 func (network *DefaultServiceNetwork) UpdateService(
@@ -961,57 +897,52 @@ func updateTrafficControlConfiguration(
 	return nil
 }
 
-func (network *DefaultServiceNetwork) startServices(
+// startService handles the logistic of starting a service in the relevant Kurtosis backend:
+// Convert API ServiceConfig's to service.ServiceConfig's by:
+// - converting API Ports to PortSpec's
+// - converting files artifacts mountpoints to FilesArtifactsExpansion's'
+// - passing down other data (eg. container image name, args, etc.)
+func (network *DefaultServiceNetwork) startService(
 	ctx context.Context,
-	APIServiceConfigs map[service.ServiceID]*kurtosis_core_rpc_api_bindings.ServiceConfig,
+	serviceId service.ServiceID,
+	serviceConfigApi *kurtosis_core_rpc_api_bindings.ServiceConfig,
 ) (
-	map[service.ServiceID]*service.Service,
-	map[service.ServiceID]error,
+	*service.Service,
 	error,
 ) {
-	failedServicesPool := map[service.ServiceID]error{}
-	serviceConfigs := map[service.ServiceID]*service.ServiceConfig{}
+	var serviceConfig *service.ServiceConfig
 
-	// Convert API ServiceConfig's to service.ServiceConfig's by:
-	// - converting API Ports to PortSpec's
-	// - converting files artifacts mountpoints to FilesArtifactsExpansion's'
-	// - passing down other data (eg. container image name, args, etc.)
-	for serviceID, config := range APIServiceConfigs {
-		// Docker and K8s requires the minimum memory limit to be 6 megabytes to we make sure the allocation is at least that amount
-		// But first, we check that it's not the default value, meaning the user potentially didn't even set it
-		if config.MemoryAllocationMegabytes != defaultMemoryAllocMegabytes && config.MemoryAllocationMegabytes < minMemoryLimit {
-			failedServicesPool[serviceID] = stacktrace.NewError("Memory allocation, `%d`, is too low. Kurtosis requires the memory limit to be at least `%d` megabytes for service with ID '%v'.", config.MemoryAllocationMegabytes, minMemoryLimit, serviceID)
-			continue
-		}
+	// Docker and K8s requires the minimum memory limit to be 6 megabytes to we make sure the allocation is at least that amount
+	// But first, we check that it's not the default value, meaning the user potentially didn't even set it
+	if serviceConfigApi.MemoryAllocationMegabytes != defaultMemoryAllocMegabytes && serviceConfigApi.MemoryAllocationMegabytes < minMemoryLimit {
+		return nil, stacktrace.NewError("Memory allocation, `%d`, is too low. Kurtosis requires the memory limit to be at least `%d` megabytes for service with ID '%v'.", serviceConfigApi.MemoryAllocationMegabytes, minMemoryLimit, serviceId)
+	}
 
-		// Convert ports
-		privateServicePortSpecs, requestedPublicServicePortSpecs, err := convertAPIPortsToPortSpecs(config.PrivatePorts, config.PublicPorts)
-		if err != nil {
-			failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred while trying to convert public and private API ports to port specs for service with ID '%v'", serviceID)
-			continue
-		}
+	// Convert ports
+	privateServicePortSpecs, requestedPublicServicePortSpecs, err := convertAPIPortsToPortSpecs(serviceConfigApi.PrivatePorts, serviceConfigApi.PublicPorts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while trying to convert public and private API ports to port specs for service with ID '%v'", serviceId)
+	}
 
-		// Creates files artifacts expansions
-		var filesArtifactsExpansion *files_artifacts_expansion.FilesArtifactsExpansion
-		if len(config.FilesArtifactMountpoints) == 0 {
-			// Create service config with empty filesArtifactsExpansion if no files artifacts mountpoints for this service
-			serviceConfigs[serviceID] = service.NewServiceConfig(
-				config.ContainerImageName,
-				privateServicePortSpecs,
-				requestedPublicServicePortSpecs,
-				config.EntrypointArgs,
-				config.CmdArgs,
-				config.EnvVars,
-				filesArtifactsExpansion,
-				config.CpuAllocationMillicpus,
-				config.MemoryAllocationMegabytes,
-				config.PrivateIpAddrPlaceholder)
-			continue
-		}
-
+	// Creates files artifacts expansions
+	var filesArtifactsExpansion *files_artifacts_expansion.FilesArtifactsExpansion
+	if len(serviceConfigApi.FilesArtifactMountpoints) == 0 {
+		// Create service config with empty filesArtifactsExpansion if no files artifacts mountpoints for this service
+		serviceConfig = service.NewServiceConfig(
+			serviceConfigApi.ContainerImageName,
+			privateServicePortSpecs,
+			requestedPublicServicePortSpecs,
+			serviceConfigApi.EntrypointArgs,
+			serviceConfigApi.CmdArgs,
+			serviceConfigApi.EnvVars,
+			filesArtifactsExpansion,
+			serviceConfigApi.CpuAllocationMillicpus,
+			serviceConfigApi.MemoryAllocationMegabytes,
+			serviceConfigApi.PrivateIpAddrPlaceholder)
+	} else {
 		filesArtifactsExpansions := []args.FilesArtifactExpansion{}
 		expanderDirpathToUserServiceDirpathMap := map[string]string{}
-		for mountpointOnUserService, filesArtifactIdentifier := range config.FilesArtifactMountpoints {
+		for mountpointOnUserService, filesArtifactIdentifier := range serviceConfigApi.FilesArtifactMountpoints {
 			dirpathToExpandTo := path.Join(filesArtifactExpansionDirsParentDirpath, filesArtifactIdentifier)
 			expansion := args.FilesArtifactExpansion{
 				FilesIdentifier:   filesArtifactIdentifier,
@@ -1028,13 +959,12 @@ func (network *DefaultServiceNetwork) startServices(
 			filesArtifactsExpansions,
 		)
 		if err != nil {
-			failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred creating files artifacts expander args for service `%v`", serviceID)
-			continue
+			return nil, stacktrace.Propagate(err, "An error occurred creating files artifacts expander args for service '%s'", serviceId)
 		}
+
 		expanderEnvVars, err := args.GetEnvFromArgs(filesArtifactsExpanderArgs)
 		if err != nil {
-			failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred getting files artifacts expander environment variables using args: %+v", filesArtifactsExpanderArgs)
-			continue
+			return nil, stacktrace.Propagate(err, "An error occurred getting files artifacts expander environment variables using args: %+v", filesArtifactsExpanderArgs)
 		}
 
 		expanderImageAndTag := fmt.Sprintf(
@@ -1049,30 +979,33 @@ func (network *DefaultServiceNetwork) startServices(
 			ExpanderDirpathsToServiceDirpaths: expanderDirpathToUserServiceDirpathMap,
 		}
 
-		serviceConfigs[serviceID] = service.NewServiceConfig(
-			config.ContainerImageName,
+		serviceConfig = service.NewServiceConfig(
+			serviceConfigApi.ContainerImageName,
 			privateServicePortSpecs,
 			requestedPublicServicePortSpecs,
-			config.EntrypointArgs,
-			config.CmdArgs,
-			config.EnvVars,
+			serviceConfigApi.EntrypointArgs,
+			serviceConfigApi.CmdArgs,
+			serviceConfigApi.EnvVars,
 			filesArtifactsExpansion,
-			config.CpuAllocationMillicpus,
-			config.MemoryAllocationMegabytes,
-			config.PrivateIpAddrPlaceholder)
+			serviceConfigApi.CpuAllocationMillicpus,
+			serviceConfigApi.MemoryAllocationMegabytes,
+			serviceConfigApi.PrivateIpAddrPlaceholder)
 	}
 
-	successfulServices, failedServices, err := network.kurtosisBackend.StartUserServices(ctx, network.enclaveId, serviceConfigs)
+	// TODO(gb): make the backend also handle starting service sequentially to simplify the logic there as well
+	serviceConfigMap := map[service.ServiceID]*service.ServiceConfig{
+		serviceId: serviceConfig,
+	}
+	successfulServices, failedServices, err := network.kurtosisBackend.StartUserServices(ctx, network.enclaveId, serviceConfigMap)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred starting user services in underlying container engine.")
+		return nil, err
 	}
-
-	// Add services that failed to start to failed services pool
-	for serviceID, serviceErr := range failedServices {
-		failedServicesPool[serviceID] = serviceErr
+	if startedService, isSuccessful := successfulServices[serviceId]; isSuccessful {
+		return startedService, nil
+	} else if failedServiceErr, isFailed := failedServices[serviceId]; isFailed {
+		return nil, failedServiceErr
 	}
-
-	return successfulServices, failedServicesPool, nil
+	return nil, stacktrace.NewError("The start-service operation did not return the ID of the service '%s' neither as a success nor a failure. And it also did not throw any unexpected error. The state of the service is unknown, this is a Kurtosis internal bug. or succeeded", serviceId)
 }
 
 // This method is not thread safe. Only call this from a method where there is a mutex lock on the network.

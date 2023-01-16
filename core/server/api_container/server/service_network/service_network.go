@@ -37,13 +37,21 @@ type ServiceNetwork interface {
 		connection partition_topology.PartitionConnection,
 	) error
 
+	StartService(
+		ctx context.Context,
+		serviceId service.ServiceID,
+		serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig,
+	) (
+		*service.Service,
+		error,
+	)
+
 	StartServices(
 		ctx context.Context,
 		serviceConfigs map[service.ServiceID]*kurtosis_core_rpc_api_bindings.ServiceConfig,
 	) (
 		map[service.ServiceID]*service.Service,
 		map[service.ServiceID]error,
-		error,
 	)
 
 	UpdateService(

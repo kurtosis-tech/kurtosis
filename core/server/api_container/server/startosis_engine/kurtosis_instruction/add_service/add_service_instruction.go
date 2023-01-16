@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	kurtosis_backend_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
@@ -102,22 +101,11 @@ func (instruction *AddServiceInstruction) Execute(ctx context.Context) (*string,
 		return nil, stacktrace.Propagate(err, "An error occurred replacing IP Address with actual values in add service instruction for service '%v'", instruction.serviceId)
 	}
 
-	serviceConfigMap := map[service.ServiceID]*kurtosis_core_rpc_api_bindings.ServiceConfig{
-		instruction.serviceId: instruction.serviceConfig,
-	}
-
-	serviceSuccessful, serviceFailed, err := instruction.serviceNetwork.StartServices(ctx, serviceConfigMap)
+	startedService, err := instruction.serviceNetwork.StartService(ctx, instruction.serviceId, instruction.serviceConfig)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed adding service to enclave with an unexpected error")
+		return nil, stacktrace.Propagate(err, "Failed adding service '%s' to enclave with an unexpected error", instruction.serviceId)
 	}
-	if failure, found := serviceFailed[instruction.serviceId]; found {
-		return nil, stacktrace.Propagate(failure, "Failed adding service to enclave")
-	}
-	deployedService, found := serviceSuccessful[instruction.serviceId]
-	if !found {
-		return nil, stacktrace.NewError("Service wasn't accounted as failed nor successfully added. This is a product bug")
-	}
-	instructionResult := fmt.Sprintf("Service '%s' added with service GUID '%s'", instruction.serviceId, deployedService.GetRegistration().GetGUID())
+	instructionResult := fmt.Sprintf("Service '%s' added with service GUID '%s'", instruction.serviceId, startedService.GetRegistration().GetGUID())
 	return &instructionResult, nil
 }
 
