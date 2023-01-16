@@ -91,3 +91,7 @@ yarn-error.log
 
 # Typescript
 tsconfig.tsbuildinfo
+
+# Generated files
+.docusaurus
+.cache-loader
