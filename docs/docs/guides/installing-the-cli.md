@@ -115,4 +115,4 @@ Download the appropriate artifact from [the release artifacts page][release-arti
 <!-------------------------- ONLY LINKS BELOW HERE ---------------------------->
 [installing-tab-completion]: ./adding-tab-completion.md
 [release-artifacts]: https://github.com/kurtosis-tech/kurtosis-cli-release-artifacts/releases
-[cli-changelog]: https://kurtosis-tech.github.io/kurtosis/changelog
+[cli-changelog]: ../changelog.md
