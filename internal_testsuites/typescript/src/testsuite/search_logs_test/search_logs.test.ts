@@ -1,6 +1,6 @@
 import {createEnclave} from "../../test_helpers/enclave_setup";
 import {
-    EnclaveID,
+    EnclaveUUID,
     KurtosisContext,
     LogLineFilter,
     ServiceContext,
@@ -123,7 +123,7 @@ async function TestSearchLogs() {
         }
         const kurtosisContext = newKurtosisContextResult.value;
 
-        const enclaveId: EnclaveID = enclaveContext.getEnclaveId();
+        const enclaveUuid: EnclaveUUID = enclaveContext.getEnclaveUuid();
 
         const userServiceGuids: Set<ServiceGUID> = new Set<ServiceGUID>();
 
@@ -140,7 +140,7 @@ async function TestSearchLogs() {
             const shouldFollowLogsOption: boolean = SHOULD_FOLLOW_LOGS_VALUES_BY_REQUEST[i];
             const executionResult = await executeGetLogsRequestAndEvaluateResult(
                 kurtosisContext,
-                enclaveId,
+                enclaveUuid,
                 serviceGuid,
                 userServiceGuids,
                 filter,
@@ -164,7 +164,7 @@ async function TestSearchLogs() {
 // ====================================================================================================
 async function executeGetLogsRequestAndEvaluateResult(
     kurtosisCtx: KurtosisContext,
-    enclaveId: EnclaveID,
+    enclaveUuid: EnclaveUUID,
     serviceGuid: ServiceGUID,
     userServiceGuids: Set<ServiceGUID>,
     logLineFilter: LogLineFilter,
@@ -182,7 +182,7 @@ async function executeGetLogsRequestAndEvaluateResult(
 
     const getLogsResponseResult = await getLogsResponseAndEvaluateResponse(
         kurtosisCtx,
-        enclaveId,
+        enclaveUuid,
         serviceGuids,
         expectedLogLinesByService,
         EXPECTED_NON_EXISTENCE_SERVICE_GUIDS,

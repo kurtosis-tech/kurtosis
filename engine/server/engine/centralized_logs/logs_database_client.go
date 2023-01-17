@@ -13,7 +13,7 @@ type ConjunctiveLogLineFilters interface {
 type LogsDatabaseClient interface {
 	GetUserServiceLogs(
 		ctx context.Context,
-		enclaveID enclave.EnclaveID,
+		enclaveID enclave.EnclaveUUID,
 		userServiceGuids map[service.ServiceGUID]bool,
 		conjunctiveLogLineFilters ConjunctiveLogLineFilters,
 	) (
@@ -24,7 +24,7 @@ type LogsDatabaseClient interface {
 	)
 	StreamUserServiceLogs(
 		ctx context.Context,
-		enclaveID enclave.EnclaveID,
+		enclaveID enclave.EnclaveUUID,
 		userServiceGuids map[service.ServiceGUID]bool,
 		conjunctiveLogLineFilters ConjunctiveLogLineFilters,
 	) (
@@ -35,7 +35,7 @@ type LogsDatabaseClient interface {
 	)
 	FilterExistingServiceGuids(
 		ctx context.Context,
-		enclaveId enclave.EnclaveID,
+		enclaveId enclave.EnclaveUUID,
 		userServiceGuids map[service.ServiceGUID]bool,
 	) (
 		map[service.ServiceGUID]bool,

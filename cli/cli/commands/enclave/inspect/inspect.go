@@ -9,6 +9,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/enclave_id_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
@@ -20,7 +21,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"google.golang.org/protobuf/types/known/emptypb"
 	"sort"
 	"strings"
 	"time"
@@ -28,11 +28,12 @@ import (
 )
 
 const (
-	enclaveIdArgKey        = "enclave-id"
-	isEnclaveIdArgOptional = false
-	isEnclaveIdArgGreedy   = false
+	enclaveIdentifierArgKey = "enclave-identifier"
+	isEnclaveIdArgOptional  = false
+	isEnclaveIdArgGreedy    = false
 
-	enclaveIdTitleName                 = "Enclave ID"
+	enclaveUUIDTitleName               = "Enclave UUID"
+	enclaveNameTitleName               = "Enclave Name"
 	enclaveStatusTitleName             = "Enclave Status"
 	enclaveCreationTimeTitleName       = "Creation Time"
 	apiContainerStatusTitleName        = "API Container Status"
@@ -47,7 +48,7 @@ const (
 )
 
 var enclaveObjectPrintingFuncs = map[string]func(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo, isAPIContainerRunning bool) error{
-	"User Services":    printUserServices,
+	"User Services": printUserServices,
 }
 
 var EnclaveInspectCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -58,8 +59,8 @@ var EnclaveInspectCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtos
 	EngineClientContextKey:    engineClientCtxKey,
 	Flags:                     nil,
 	Args: []*args.ArgConfig{
-		enclave_id_arg.NewEnclaveIDArg(
-			enclaveIdArgKey,
+		enclave_id_arg.NewEnclaveIdentifierArg(
+			enclaveIdentifierArgKey,
 			engineClientCtxKey,
 			isEnclaveIdArgOptional,
 			isEnclaveIdArgGreedy,
@@ -71,30 +72,31 @@ var EnclaveInspectCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtos
 func run(
 	ctx context.Context,
 	kurtosisBackend backend_interface.KurtosisBackend,
-	engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
-	flags *flags.ParsedFlags,
+	_ kurtosis_engine_rpc_api_bindings.EngineServiceClient,
+	_ *flags.ParsedFlags,
 	args *args.ParsedArgs,
 ) error {
-	enclaveIdStr, err := args.GetNonGreedyArg(enclaveIdArgKey)
+	enclaveIdentifier, err := args.GetNonGreedyArg(enclaveIdentifierArgKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "Expected a value for non-greedy enclave ID arg '%v' but none was found; this is a bug with Kurtosis!", enclaveIdArgKey)
+		return stacktrace.Propagate(err, "Expected a value for non-greedy enclave identifier arg '%v' but none was found; this is a bug with Kurtosis!", enclaveIdentifierArgKey)
 	}
 
-	getEnclavesResp, err := engineClient.GetEnclaves(ctx, &emptypb.Empty{})
+	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting enclaves, which is necessary to display the state for enclave '%v'", enclaveIdStr)
+		return stacktrace.Propagate(err, "An error occurred creating Kurtosis Context from local engine")
 	}
 
-	enclaveInfo, found := getEnclavesResp.EnclaveInfo[enclaveIdStr]
-	if !found {
-		return stacktrace.NewError("No enclave with ID '%v' exists", enclaveIdStr)
+	enclaveInfo, err := kurtosisCtx.GetEnclave(ctx, enclaveIdentifier)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the enclave for identifier '%v'", enclaveIdentifier)
 	}
 
 	enclaveContainersStatus := enclaveInfo.ContainersStatus
 	enclaveApiContainerStatus := enclaveInfo.ApiContainerStatus
 
 	keyValuePrinter := output_printers.NewKeyValuePrinter()
-	keyValuePrinter.AddPair(enclaveIdTitleName, enclaveIdStr)
+	keyValuePrinter.AddPair(enclaveUUIDTitleName, enclaveInfo.GetEnclaveUuid())
+	keyValuePrinter.AddPair(enclaveNameTitleName, enclaveInfo.GetName())
 
 	enclaveContainersStatusStr, err := enclave_status_stringifier.EnclaveContainersStatusStringifier(enclaveContainersStatus)
 	if err != nil {

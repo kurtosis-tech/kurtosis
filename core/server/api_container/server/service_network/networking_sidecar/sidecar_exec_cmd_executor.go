@@ -19,7 +19,9 @@ const (
 )
 
 // ==========================================================================================
-//                                  Interface
+//
+//	Interface
+//
 // ==========================================================================================
 // Extracted as an interface for testing
 type sidecarExecCmdExecutor interface {
@@ -27,7 +29,9 @@ type sidecarExecCmdExecutor interface {
 }
 
 // ==========================================================================================
-//                                  Implementation
+//
+//	Implementation
+//
 // ==========================================================================================
 // The API for the NetworkingSidecar class run exec commands against the Kurtosis Backend
 // This is a separate class because NetworkingSidecar we need to create also a mock to test purpose
@@ -37,11 +41,11 @@ type standardSidecarExecCmdExecutor struct {
 	// Service GUID of the networking sidecar in which exec commands should run
 	serviceGUID service.ServiceGUID
 
-	enclaveId enclave.EnclaveID
+	enclaveUuid enclave.EnclaveUUID
 }
 
-func newStandardSidecarExecCmdExecutor(kurtosisBackend backend_interface.KurtosisBackend, serviceGUID service.ServiceGUID, enclaveId enclave.EnclaveID) *standardSidecarExecCmdExecutor {
-	return &standardSidecarExecCmdExecutor{kurtosisBackend: kurtosisBackend, serviceGUID: serviceGUID, enclaveId: enclaveId}
+func newStandardSidecarExecCmdExecutor(kurtosisBackend backend_interface.KurtosisBackend, serviceGUID service.ServiceGUID, enclaveUuid enclave.EnclaveUUID) *standardSidecarExecCmdExecutor {
+	return &standardSidecarExecCmdExecutor{kurtosisBackend: kurtosisBackend, serviceGUID: serviceGUID, enclaveUuid: enclaveUuid}
 }
 
 func (executor standardSidecarExecCmdExecutor) exec(ctx context.Context, notShWrappedCmd []string) error {
@@ -55,7 +59,7 @@ func (executor standardSidecarExecCmdExecutor) exec(ctx context.Context, notShWr
 
 	successfulNetworkingSidecarExecResults, erroredNetworkingSidecars, err := executor.kurtosisBackend.RunNetworkingSidecarExecCommands(
 		ctx,
-		executor.enclaveId,
+		executor.enclaveUuid,
 		networkingSidecarCommands,
 	)
 	if err != nil {
@@ -82,7 +86,8 @@ func (executor standardSidecarExecCmdExecutor) exec(ctx context.Context, notShWr
 }
 
 // Embeds the given command in a call to sh shell, so that a command with things
-//  like '&&' will get executed as expected
+//
+//	like '&&' will get executed as expected
 func shWrapCommand(unwrappedCmd []string) []string {
 	return []string{
 		"sh",

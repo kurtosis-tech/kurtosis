@@ -27,21 +27,22 @@ const (
 // TODO: MIGRATE THIS FOLDER TO USE STRUCTURE OF USER_SERVICE_FUNCTIONS MODULE
 
 // We sleep forever because all the commands this container will run will be executed
-//  via Docker exec
+//
+//	via Docker exec
 var sidecarContainerCommand = []string{
 	"sleep", "infinity",
 }
 
 func (backend *DockerKurtosisBackend) CreateNetworkingSidecar(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
+	enclaveId enclave.EnclaveUUID,
 	serviceGuid service.ServiceGUID,
 ) (
 	*networking_sidecar.NetworkingSidecar,
 	error,
 ) {
 	// Get the Docker network ID where we'll start the new sidecar container
-	enclaveNetwork, err := backend.getEnclaveNetworkByEnclaveId(ctx, enclaveId)
+	enclaveNetwork, err := backend.getEnclaveNetworkByEnclaveUuid(ctx, enclaveId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclave network by enclave ID '%v'", enclaveId)
 	}
@@ -171,7 +172,7 @@ func (backend *DockerKurtosisBackend) GetNetworkingSidecars(
 
 func (backend *DockerKurtosisBackend) RunNetworkingSidecarExecCommands(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
+	enclaveUuid enclave.EnclaveUUID,
 	networkingSidecarsCommands map[service.ServiceGUID][]string,
 ) (
 	map[service.ServiceGUID]*exec_result.ExecResult,
@@ -187,8 +188,8 @@ func (backend *DockerKurtosisBackend) RunNetworkingSidecarExecCommands(
 	}
 
 	filters := &networking_sidecar.NetworkingSidecarFilters{
-		EnclaveIDs: map[enclave.EnclaveID]bool{
-			enclaveId: true,
+		EnclaveUUIDs: map[enclave.EnclaveUUID]bool{
+			enclaveUuid: true,
 		},
 		UserServiceGUIDs: userServiceGuids,
 		Statuses:         nil,
@@ -351,7 +352,9 @@ func (backend *DockerKurtosisBackend) DestroyNetworkingSidecars(
 }
 
 // ====================================================================================================
-// 									   Private helper methods
+//
+//	Private helper methods
+//
 // ====================================================================================================
 func (backend *DockerKurtosisBackend) getMatchingNetworkingSidecars(
 	ctx context.Context,
@@ -378,8 +381,8 @@ func (backend *DockerKurtosisBackend) getMatchingNetworkingSidecars(
 			return nil, stacktrace.Propagate(err, "An error occurred converting container with ID '%v' into a networking sidecar object", container.GetId())
 		}
 
-		if filters.EnclaveIDs != nil && len(filters.EnclaveIDs) > 0 {
-			if _, found := filters.EnclaveIDs[object.GetEnclaveID()]; !found {
+		if filters.EnclaveUUIDs != nil && len(filters.EnclaveUUIDs) > 0 {
+			if _, found := filters.EnclaveUUIDs[object.GetEnclaveUUID()]; !found {
 				continue
 			}
 		}
@@ -407,9 +410,9 @@ func getNetworkingSidecarObjectFromContainerInfo(
 	containerStatus types.ContainerStatus,
 ) (*networking_sidecar.NetworkingSidecar, error) {
 
-	enclaveId, found := labels[label_key_consts.EnclaveIDDockerLabelKey.GetString()]
+	enclaveId, found := labels[label_key_consts.EnclaveUUIDDockerLabelKey.GetString()]
 	if !found {
-		return nil, stacktrace.NewError("Expected the networking sidecar's enclave ID to be found under label '%v' but the label wasn't present", label_key_consts.EnclaveIDDockerLabelKey.GetString())
+		return nil, stacktrace.NewError("Expected the networking sidecar's enclave ID to be found under label '%v' but the label wasn't present", label_key_consts.EnclaveUUIDDockerLabelKey.GetString())
 	}
 
 	guid, found := labels[label_key_consts.GUIDDockerLabelKey.GetString()]
@@ -431,7 +434,7 @@ func getNetworkingSidecarObjectFromContainerInfo(
 
 	newObject := networking_sidecar.NewNetworkingSidecar(
 		service.ServiceGUID(guid),
-		enclave.EnclaveID(enclaveId),
+		enclave.EnclaveUUID(enclaveId),
 		status,
 	)
 

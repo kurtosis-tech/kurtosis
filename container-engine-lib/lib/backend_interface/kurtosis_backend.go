@@ -49,8 +49,8 @@ type KurtosisBackend interface {
 		filters *engine.EngineFilters,
 	) (
 		successfulEngineGuids map[engine.EngineGUID]bool, // "set" of engine GUIDs that were successfully stopped
-		erroredEngineGuids map[engine.EngineGUID]error,   // "set" of engine GUIDs that errored when stopping, with the error
-		resultErr error,                                  // Represents an error with the function itself, rather than the engines
+		erroredEngineGuids map[engine.EngineGUID]error, // "set" of engine GUIDs that errored when stopping, with the error
+		resultErr error, // Represents an error with the function itself, rather than the engines
 	)
 
 	// Destroys the engines matching the given filters, regardless of if they're running or not
@@ -59,26 +59,19 @@ type KurtosisBackend interface {
 		filters *engine.EngineFilters,
 	) (
 		successfulEngineGuids map[engine.EngineGUID]bool, // "set" of engine GUIDs that were successfully destroyed
-		erroredEngineGuids map[engine.EngineGUID]error,   // "set" of engine GUIDs that errored when destroying, with the error
-		resultErr error,                                  // Represents an error with the function itself, rather than the engines
+		erroredEngineGuids map[engine.EngineGUID]error, // "set" of engine GUIDs that errored when destroying, with the error
+		resultErr error, // Represents an error with the function itself, rather than the engines
 	)
 
 	// Creates an enclave with the given enclave ID
-	CreateEnclave(
-		ctx context.Context,
-		enclaveId enclave.EnclaveID,
-		isPartitioningEnabled bool,
-	) (
-		*enclave.Enclave,
-		error,
-	)
+	CreateEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, enclaveName string, isPartitioningEnabled bool) (*enclave.Enclave, error)
 
 	// Gets enclaves matching the given filters
 	GetEnclaves(
 		ctx context.Context,
 		filters *enclave.EnclaveFilters,
 	) (
-		map[enclave.EnclaveID]*enclave.Enclave,
+		map[enclave.EnclaveUUID]*enclave.Enclave,
 		error,
 	)
 
@@ -87,15 +80,15 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		filters *enclave.EnclaveFilters,
 	) (
-		successfulEnclaveIds map[enclave.EnclaveID]bool,
-		erroredEnclaveIds map[enclave.EnclaveID]error,
+		successfulEnclaveIds map[enclave.EnclaveUUID]bool,
+		erroredEnclaveIds map[enclave.EnclaveUUID]error,
 		resultErr error,
 	)
 
 	// Dumps the contents of the given enclave to the given directory
 	DumpEnclave(
 		ctx context.Context,
-		enclaveId enclave.EnclaveID,
+		enclaveUuid enclave.EnclaveUUID,
 		outputDirpath string,
 	) error
 
@@ -104,20 +97,20 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		filters *enclave.EnclaveFilters,
 	) (
-		successfulEnclaveIds map[enclave.EnclaveID]bool,
-		erroredEnclaveIds map[enclave.EnclaveID]error,
+		successfulEnclaveIds map[enclave.EnclaveUUID]bool,
+		erroredEnclaveIds map[enclave.EnclaveUUID]error,
 		resultErr error,
 	)
 
 	CreateAPIContainer(
 		ctx context.Context,
 		image string,
-		enclaveId enclave.EnclaveID,
+		enclaveUuid enclave.EnclaveUUID,
 		grpcPortNum uint16,
 		grpcProxyPortNum uint16,
 		enclaveDataVolumeDirpath string,
-	// The environment variable that the user is requesting to populate with the container's own IP address
-	// Must not conflict with the custom environment variables
+		// The environment variable that the user is requesting to populate with the container's own IP address
+		// Must not conflict with the custom environment variables
 		ownIpAddressEnvVar string,
 		customEnvVars map[string]string,
 	) (
@@ -129,8 +122,8 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		filters *api_container.APIContainerFilters,
 	) (
-	// Matching API containers, keyed by their enclave ID
-		map[enclave.EnclaveID]*api_container.APIContainer,
+		// Matching API containers, keyed by their enclave ID
+		map[enclave.EnclaveUUID]*api_container.APIContainer,
 		error,
 	)
 
@@ -139,9 +132,9 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		filters *api_container.APIContainerFilters,
 	) (
-	// Successful & errored API containers are keyed by their enclave ID
-		successfulApiContainerIds map[enclave.EnclaveID]bool,
-		erroredApiContainerIds map[enclave.EnclaveID]error,
+		// Successful & errored API containers are keyed by their enclave ID
+		successfulApiContainerIds map[enclave.EnclaveUUID]bool,
+		erroredApiContainerIds map[enclave.EnclaveUUID]error,
 		resultErr error,
 	)
 
@@ -150,58 +143,65 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		filters *api_container.APIContainerFilters,
 	) (
-	// Successful & errored API containers are keyed by their enclave ID
-		successfulApiContainerIds map[enclave.EnclaveID]bool,
-		erroredApiContainerIds map[enclave.EnclaveID]error,
+		// Successful & errored API containers are keyed by their enclave ID
+		successfulApiContainerIds map[enclave.EnclaveUUID]bool,
+		erroredApiContainerIds map[enclave.EnclaveUUID]error,
 		resultErr error,
 	)
 
 	/*
-		KURTOSIS SERVICE STATE DIAGRAM
+		<<<<<<< HEAD
+					                           KURTOSIS SERVICE STATE DIAGRAM
+				                                .-----------------DestroyServices--------------------.
+				                               /                                                      \
+					  StartServices--> RUNNING ---StopServices---> STOPPED ---DestroyServices---> DESTROYED
+		=======
+				KURTOSIS SERVICE STATE DIAGRAM
 
-			                                |
-			                        RegisterUserServices
-			                                |
-			                                V
-			                            REGISTERED
-			                                |
-			                    StartRegisteredUserServices
-			                                |
-			                                V
-			            .--------------- STARTED
-			            |                   |
-			            |           StopUserService
-			            |                   |
-			            |                   V
-			    DestroyUserServices      STOPPED
-			            |                   |
-			            |           DestroyUserServices
-			            |                   |
-			            |                   V
-			            '-------------> DESTROYED
+					                                |
+					                        RegisterUserServices
+					                                |
+					                                V
+					                            REGISTERED
+					                                |
+					                    StartRegisteredUserServices
+					                                |
+					                                V
+					            .--------------- STARTED
+					            |                   |
+					            |           StopUserService
+					            |                   |
+					            |                   V
+					    DestroyUserServices      STOPPED
+					            |                   |
+					            |           DestroyUserServices
+					            |                   |
+					            |                   V
+					            '-------------> DESTROYED
+		>>>>>>> master
 
-		- Note the above state diagram doesn't account for PauseService or UnpauseService
-		- As of 2022-05-15, Kurtosis services can never be restarted once stopped.
+					- Note the above state diagram doesn't account for PauseService or UnpauseService
+					- As of 2022-05-15, Kurtosis services can never be restarted once stopped.
 	*/
 
 	// RegisterUserServices registers the services allocating them an IP address and a GUID. The service is not started!
 	RegisterUserServices(
 		ctx context.Context,
-		enclaveId enclave.EnclaveID,
+		enclaveUuid enclave.EnclaveUUID,
 		services map[service.ServiceID]bool,
 	) (
 		map[service.ServiceID]*service.ServiceRegistration, // "set" of user service IDs that were successfully registered
-		map[service.ServiceID]error,                        // "set" of user service IDs that errored when being registered, with the error
+		map[service.ServiceID]error, // "set" of user service IDs that errored when being registered, with the error
 		error,
 	)
 
 	// UnregisterUserServices unregisters a set of services. If a service isn't registered, it no-ops for this service
 	UnregisterUserServices(
 		ctx context.Context,
-		enclaveId enclave.EnclaveID,
+		enclaveUuid enclave.EnclaveUUID,
 		services map[service.ServiceGUID]bool,
 	) (
-		map[service.ServiceGUID]bool,  // "set" of user service GUIDs that were successfully unregistered
+		map[service.ServiceGUID]bool, // "set" of user service GUIDs that were successfully unregistered
 		map[service.ServiceGUID]error, // "set" of user service GUIDs that errored when being unregistered, with the error
 		error,
 	)
@@ -209,18 +209,18 @@ type KurtosisBackend interface {
 	// StartRegisteredUserServices consumes service registrations to create auser container for each registration, given each service config
 	StartRegisteredUserServices(
 		ctx context.Context,
-		enclaveId enclave.EnclaveID,
+		enclaveUuid enclave.EnclaveUUID,
 		services map[service.ServiceGUID]*service.ServiceConfig,
 	) (
 		map[service.ServiceGUID]*service.Service, // "set" of user GUIDs that were successfully started
-		map[service.ServiceGUID]error,            // "set" of user service GUIDs that errored when attempting to start, with the error
-		error,                                    // represents an error with the function itself, rather than the user services
+		map[service.ServiceGUID]error, // "set" of user service GUIDs that errored when attempting to start, with the error
+		error, // represents an error with the function itself, rather than the user services
 	)
 
 	// Gets user services using the given filters, returning a map of matched user services identified by their GUID
 	GetUserServices(
 		ctx context.Context,
-		enclaveId enclave.EnclaveID,
+		enclaveUuid enclave.EnclaveUUID,
 		filters *service.ServiceFilters,
 	) (
 		map[service.ServiceGUID]*service.Service,
@@ -231,7 +231,7 @@ type KurtosisBackend interface {
 	// User is responsible for closing the 'ReadCloser' object returned in the successfulUserServiceLogs map
 	GetUserServiceLogs(
 		ctx context.Context,
-		enclaveId enclave.EnclaveID,
+		enclaveUuid enclave.EnclaveUUID,
 		filters *service.ServiceFilters,
 		shouldFollowLogs bool,
 	) (
@@ -243,7 +243,7 @@ type KurtosisBackend interface {
 	// Pauses execution of all processes on a service, but does not shut down the service (memory state is preserved)
 	PauseService(
 		ctx context.Context,
-		enclaveId enclave.EnclaveID,
+		enclaveUuid enclave.EnclaveUUID,
 		serviceId service.ServiceGUID,
 	) (
 		resultErr error,
@@ -252,7 +252,7 @@ type KurtosisBackend interface {
 	// Unpauses a service, resuming execution of all processes on the service that were previously paused.
 	UnpauseService(
 		ctx context.Context,
-		enclaveId enclave.EnclaveID,
+		enclaveUuid enclave.EnclaveUUID,
 		serviceId service.ServiceGUID,
 	) (
 		resultErr error,
@@ -261,7 +261,7 @@ type KurtosisBackend interface {
 	// Executes a shell command inside an user service instance indenfified by its ID
 	RunUserServiceExecCommands(
 		ctx context.Context,
-		enclaveId enclave.EnclaveID,
+		enclaveUuid enclave.EnclaveUUID,
 		userServiceCommands map[service.ServiceGUID][]string,
 	) (
 		succesfulUserServiceExecResults map[service.ServiceGUID]*exec_result.ExecResult,
@@ -272,7 +272,7 @@ type KurtosisBackend interface {
 	// Get a connection with user service to execute commands in
 	GetConnectionWithUserService(
 		ctx context.Context,
-		enclaveId enclave.EnclaveID,
+		enclaveUuid enclave.EnclaveUUID,
 		serviceGuid service.ServiceGUID,
 	) (
 		resultConn net.Conn,
@@ -282,7 +282,7 @@ type KurtosisBackend interface {
 	// Copy files, packaged as a TAR, from the given user service and writes the bytes to the given output writer
 	CopyFilesFromUserService(
 		ctx context.Context,
-		enclaveId enclave.EnclaveID,
+		enclaveUuid enclave.EnclaveUUID,
 		serviceGuid service.ServiceGUID,
 		srcPathOnService string,
 		output io.Writer,
@@ -292,30 +292,30 @@ type KurtosisBackend interface {
 	// A stopped service cannot be activated again as of 2022-05-14
 	StopUserServices(
 		ctx context.Context,
-		enclaveId enclave.EnclaveID,
+		enclaveUuid enclave.EnclaveUUID,
 		filters *service.ServiceFilters,
 	) (
 		successfulUserServiceGuids map[service.ServiceGUID]bool, // "set" of user service GUIDs that were successfully stopped
-		erroredUserServiceGuids map[service.ServiceGUID]error,   // "set" of user service GUIDs that errored when stopping, with the error
-		resultErr error,                                         // Represents an error with the function itself, rather than the user services
+		erroredUserServiceGuids map[service.ServiceGUID]error, // "set" of user service GUIDs that errored when stopping, with the error
+		resultErr error, // Represents an error with the function itself, rather than the user services
 	)
 
 	// DestroyUserServices destroys user services matching the given filters, removing all resources associated with it
 	DestroyUserServices(
 		ctx context.Context,
-		enclaveId enclave.EnclaveID,
+		enclaveUuid enclave.EnclaveUUID,
 		filters *service.ServiceFilters,
 	) (
 		successfulUserServiceGuids map[service.ServiceGUID]bool, // "set" of user service GUIDs that were successfully destroyed
-		erroredUserServiceGuids map[service.ServiceGUID]error,   // "set" of user service GUIDs that errored when destroying, with the error
-		resultErr error,                                         // Represents an error with the function itself, rather than the user services
+		erroredUserServiceGuids map[service.ServiceGUID]error, // "set" of user service GUIDs that errored when destroying, with the error
+		resultErr error, // Represents an error with the function itself, rather than the user services
 	)
 
 	// TODO Move this logic inside the user service, so that we have tighter controls on what can happen and what can't
 	//Create a user service's  networking sidecar inside enclave
 	CreateNetworkingSidecar(
 		ctx context.Context,
-		enclaveId enclave.EnclaveID,
+		enclaveUuid enclave.EnclaveUUID,
 		serviceGuid service.ServiceGUID,
 	) (
 		*networking_sidecar.NetworkingSidecar,
@@ -334,7 +334,7 @@ type KurtosisBackend interface {
 	//Executes many shell commands inside multiple networking sidecar instances indenfified by User Service GUIDs
 	RunNetworkingSidecarExecCommands(
 		ctx context.Context,
-		enclaveId enclave.EnclaveID,
+		enclaveUuid enclave.EnclaveUUID,
 		networkingSidecarsCommands map[service.ServiceGUID][]string,
 	) (
 		successfulNetworkingSidecarExecResults map[service.ServiceGUID]*exec_result.ExecResult,
@@ -365,9 +365,9 @@ type KurtosisBackend interface {
 	// Create a new Logs Database for storing and requesting the container's logs
 	CreateLogsDatabase(
 		ctx context.Context,
-	//TODO now the httpPortNumber is configured from the client, because this will be published to the host machine until
-	//TODO we productize logs search, tracked by this issue: https://github.com/kurtosis-tech/kurtosis/issues/340
-	//TODO remove this parameter when we do not publish the port again
+		//TODO now the httpPortNumber is configured from the client, because this will be published to the host machine until
+		//TODO we productize logs search, tracked by this issue: https://github.com/kurtosis-tech/kurtosis/issues/340
+		//TODO remove this parameter when we do not publish the port again
 		logsDatabaseHttpPortNumber uint16,
 	) (
 		*logs_database.LogsDatabase,

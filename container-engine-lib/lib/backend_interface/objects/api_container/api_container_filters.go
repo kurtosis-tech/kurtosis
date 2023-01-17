@@ -6,11 +6,11 @@ import (
 )
 
 type APIContainerFilters struct {
-	// Disjunctive set of enclave IDs for which to return API containers
-	// If nil or empty, will match all IDs
-	EnclaveIDs map[enclave.EnclaveID]bool
+	// Disjunctive set of enclave UUIDs for which to return API containers
+	// If nil or empty, will match all UUIDs
+	EnclaveIDs map[enclave.EnclaveUUID]bool
 
 	// Disjunctive set of statuses that returned API containers must conform to
-	// If nil or empty, will match all IDs
+	// If nil or empty, will match all UUIDs
 	Statuses map[container_status.ContainerStatus]bool
 }

@@ -2,20 +2,21 @@ package enclave
 
 import "time"
 
-type EnclaveID string
+type EnclaveUUID string
 
 type Enclave struct {
-	id EnclaveID
-	status EnclaveStatus
+	uuid         EnclaveUUID
+	name         string
+	status       EnclaveStatus
 	creationTime *time.Time
 }
 
-func NewEnclave(id EnclaveID, status EnclaveStatus, creationTime *time.Time) *Enclave {
-	return &Enclave{id: id, status: status, creationTime: creationTime}
+func NewEnclave(id EnclaveUUID, name string, status EnclaveStatus, creationTime *time.Time) *Enclave {
+	return &Enclave{uuid: id, name: name, status: status, creationTime: creationTime}
 }
 
-func (enclave *Enclave) GetID() EnclaveID {
-	return enclave.id
+func (enclave *Enclave) GetUUID() EnclaveUUID {
+	return enclave.uuid
 }
 
 func (enclave *Enclave) GetStatus() EnclaveStatus {
@@ -24,4 +25,8 @@ func (enclave *Enclave) GetStatus() EnclaveStatus {
 
 func (enclave *Enclave) GetCreationTime() *time.Time {
 	return enclave.creationTime
+}
+
+func (enclave *Enclave) GetName() string {
+	return enclave.name
 }

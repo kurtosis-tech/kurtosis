@@ -15,7 +15,9 @@ import (
 )
 
 // ==========================================================================================
-//                                        Interface
+//
+//	Interface
+//
 // ==========================================================================================
 type NetworkingSidecarManager interface {
 	Add(ctx context.Context, serviceId service.ServiceGUID) (NetworkingSidecarWrapper, error)
@@ -28,16 +30,18 @@ type NetworkingSidecarManager interface {
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 // This class's methods are NOT thread-safe - it's up to the caller to ensure that
-//  only one change at a time is run on a given sidecar container!!!
+//
+//	only one change at a time is run on a given sidecar container!!!
+//
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 type StandardNetworkingSidecarManager struct {
 	kurtosisBackend backend_interface.KurtosisBackend
 
-	enclaveId enclave.EnclaveID
+	enclaveUuid enclave.EnclaveUUID
 }
 
-func NewStandardNetworkingSidecarManager(kurtosisBackend backend_interface.KurtosisBackend, enclaveId enclave.EnclaveID) *StandardNetworkingSidecarManager {
-	return &StandardNetworkingSidecarManager{kurtosisBackend: kurtosisBackend, enclaveId: enclaveId}
+func NewStandardNetworkingSidecarManager(kurtosisBackend backend_interface.KurtosisBackend, enclaveId enclave.EnclaveUUID) *StandardNetworkingSidecarManager {
+	return &StandardNetworkingSidecarManager{kurtosisBackend: kurtosisBackend, enclaveUuid: enclaveId}
 }
 
 // Adds a sidecar container attached to the given service ID
@@ -46,15 +50,15 @@ func (manager *StandardNetworkingSidecarManager) Add(
 	serviceGUID service.ServiceGUID,
 ) (NetworkingSidecarWrapper, error) {
 
-	networkingSidecar, err := manager.kurtosisBackend.CreateNetworkingSidecar(ctx, manager.enclaveId, serviceGUID)
+	networkingSidecar, err := manager.kurtosisBackend.CreateNetworkingSidecar(ctx, manager.enclaveUuid, serviceGUID)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating networking sidecar for service with GUID '%v' in enclave with ID '%v'", serviceGUID, manager.enclaveId)
+		return nil, stacktrace.Propagate(err, "An error occurred creating networking sidecar for service with GUID '%v' in enclave with ID '%v'", serviceGUID, manager.enclaveUuid)
 	}
 
 	execCmdExecutor := newStandardSidecarExecCmdExecutor(
 		manager.kurtosisBackend,
 		networkingSidecar.GetServiceGUID(),
-		networkingSidecar.GetEnclaveID())
+		networkingSidecar.GetEnclaveUUID())
 
 	networkingSidecarWrapper, err := NewStandardNetworkingSidecarWrapper(networkingSidecar, execCmdExecutor)
 	if err != nil {
@@ -70,7 +74,7 @@ func (manager *StandardNetworkingSidecarManager) Remove(
 	networkingSidecarServiceGUID := networkingSidecarWrapper.GetServiceGUID()
 
 	filters := &networking_sidecar.NetworkingSidecarFilters{
-		EnclaveIDs: nil,
+		EnclaveUUIDs: nil,
 		UserServiceGUIDs: map[service.ServiceGUID]bool{
 			networkingSidecarServiceGUID: true,
 		},

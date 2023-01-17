@@ -20,9 +20,9 @@ import (
 )
 
 const (
-	enclaveIdArgKey        = "enclave-id"
-	isEnclaveIdArgOptional = false
-	isEnclaveIdArgGreedy   = false
+	enclaveIdentifierArgKey = "enclave-identifier"
+	isEnclaveIdArgOptional  = false
+	isEnclaveIdArgGreedy    = false
 
 	templateFilepathArgKey = "template-filepath"
 	dataJSONFilepathArgKey = "data-json-filepath"
@@ -69,8 +69,8 @@ var RenderTemplateCommand = &engine_consuming_kurtosis_command.EngineConsumingKu
 		},
 	},
 	Args: []*args.ArgConfig{
-		enclave_id_arg.NewEnclaveIDArg(
-			enclaveIdArgKey,
+		enclave_id_arg.NewEnclaveIdentifierArg(
+			enclaveIdentifierArgKey,
 			engineClientCtxKey,
 			isEnclaveIdArgOptional,
 			isEnclaveIdArgGreedy,
@@ -98,11 +98,10 @@ func run(
 	flags *flags.ParsedFlags,
 	args *args.ParsedArgs,
 ) error {
-	enclaveIdStr, err := args.GetNonGreedyArg(enclaveIdArgKey)
+	enclaveIdentifier, err := args.GetNonGreedyArg(enclaveIdentifierArgKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the enclave ID using key '%v'", enclaveIdArgKey)
+		return stacktrace.Propagate(err, "An error occurred getting the enclave ID using key '%v'", enclaveIdentifierArgKey)
 	}
-	enclaveId := enclaves.EnclaveID(enclaveIdStr)
 
 	templateFilepath, err := args.GetNonGreedyArg(templateFilepathArgKey)
 	if err != nil {
@@ -128,9 +127,9 @@ func run(
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred connecting to the local Kurtosis engine")
 	}
-	enclaveCtx, err := kurtosisCtx.GetEnclaveContext(ctx, enclaveId)
+	enclaveCtx, err := kurtosisCtx.GetEnclaveContext(ctx, enclaveIdentifier)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the enclave context for enclave '%v'", enclaveId)
+		return stacktrace.Propagate(err, "An error occurred getting the enclave context for enclave '%v'", enclaveIdentifier)
 	}
 
 	templateFileBytes, err := os.ReadFile(templateFilepath)
@@ -157,7 +156,7 @@ func run(
 
 	filesArtifactOutputMessage, err := renderTemplateStarlarkCommand(ctx, enclaveCtx, destRelFilepath, templateFileContents, templateData, artifactName)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred rendering the template file at path '%v' with data in the file at path '%v' to enclave '%v'", templateFilepath, dataJSONFilepath, enclaveId)
+		return stacktrace.Propagate(err, "An error occurred rendering the template file at path '%v' with data in the file at path '%v' to enclave '%v'", templateFilepath, dataJSONFilepath, enclaveIdentifier)
 	}
 	logrus.Info(filesArtifactOutputMessage)
 	return nil

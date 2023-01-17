@@ -28,22 +28,28 @@ import {
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import type { ApiContainerServiceClient as ApiContainerServiceClientNode } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
 import { GenericApiContainerClient } from "./generic_api_container_client";
-import { EnclaveID } from "./enclave_context";
+import { EnclaveUUID } from "./enclave_context";
 import {RemoveServiceResponse} from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import {Readable} from "stream";
 
 export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
 
     private readonly client: ApiContainerServiceClientNode;
-    private readonly enclaveId: EnclaveID;
+    private readonly enclaveUuid: EnclaveUUID;
+    private readonly enclaveName: string;
 
-    constructor(client: ApiContainerServiceClientNode, enclaveId: EnclaveID) {
+    constructor(client: ApiContainerServiceClientNode, enclaveUuid: EnclaveUUID, enclaveName: string) {
         this.client = client;
-        this.enclaveId = enclaveId;
+        this.enclaveUuid = enclaveUuid;
+        this.enclaveName = enclaveName;
     }
 
-    public getEnclaveId(): EnclaveID {
-        return this.enclaveId;
+    public getEnclaveUuid(): EnclaveUUID {
+        return this.enclaveUuid;
+    }
+
+    public getEnclaveName():string {
+        return this.enclaveName;
     }
 
     public async runStarlarkScript(serializedStarlarkScript: RunStarlarkScriptArgs): Promise<Result<Readable, Error>> {

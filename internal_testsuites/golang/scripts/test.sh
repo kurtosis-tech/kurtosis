@@ -11,7 +11,8 @@ lang_root_dirpath="$(dirname "${script_dirpath}")"
 #                                             Constants
 # ==================================================================================================
 PARALLELISM=2
-TIMEOUT="3m"   # This must be Go-parseable timeout
+DOCKER_TIMEOUT="3m"   # This must be Go-parseable timeout
+KUBERNETES_TIMEOUT="6m" # K8S takes longer than docker
 
 TESTSUITE_CLUSTER_BACKEND_DOCKER="docker"
 TESTSUITE_CLUSTER_BACKEND_MINIKUBE="minikube"
@@ -49,8 +50,9 @@ if [ "${testsuite_cluster_backend_arg}" == "${TESTSUITE_CLUSTER_BACKEND_MINIKUBE
     # TODO This should be removed! Go Kurtosis tests should be completely agnostic to the backend they're running against
     # The only reason this exists is because, as of 2022-10-28, network partitioning doesn't work on Kubernetes so we have to know to skip
     #  those tests
-    CGO_ENABLED=0 go test ./... -p "${PARALLELISM}" -count=1 -timeout "${TIMEOUT}" -tags minikube
+    # K8S is also slower than docker, so they have different timeouts
+    CGO_ENABLED=0 go test ./... -p "${PARALLELISM}" -count=1 -timeout "${KUBERNETES_TIMEOUT}" -tags minikube
 else
-    CGO_ENABLED=0 go test ./... -p "${PARALLELISM}" -count=1 -timeout "${TIMEOUT}"
+    CGO_ENABLED=0 go test ./... -p "${PARALLELISM}" -count=1 -timeout "${DOCKER_TIMEOUT}"
 fi
 

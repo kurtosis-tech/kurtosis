@@ -25,10 +25,7 @@ const (
 )
 
 type DockerEnclaveObjectAttributesProvider interface {
-	ForEnclaveNetwork(
-		isPartitioningEnabled bool,
-		creationTime time.Time,
-	) (DockerObjectAttributes, error)
+	ForEnclaveNetwork(enclaveName string, creationTime time.Time, isPartitioningEnabled bool) (DockerObjectAttributes, error)
 	ForEnclaveDataVolume() (DockerObjectAttributes, error)
 	ForApiContainer(
 		ipAddr net.IP,
@@ -67,10 +64,7 @@ func newDockerEnclaveObjectAttributesProviderImpl(
 	}
 }
 
-func (provider *dockerEnclaveObjectAttributesProviderImpl) ForEnclaveNetwork(
-	isPartitioningEnabled bool,
-	creationTime time.Time,
-) (DockerObjectAttributes, error) {
+func (provider *dockerEnclaveObjectAttributesProviderImpl) ForEnclaveNetwork(enclaveName string, creationTime time.Time, isPartitioningEnabled bool) (DockerObjectAttributes, error) {
 	enclaveIdStr := provider.enclaveId.GetString()
 	name, err := docker_object_name.CreateNewDockerObjectName(enclaveIdStr)
 	if err != nil {
@@ -85,6 +79,15 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForEnclaveNetwork(
 			err,
 			"An error occurred creating a Docker label value object from enclave creation time string '%v'",
 			creationTimeStr,
+		)
+	}
+
+	enclaveNameLabelValue, err := docker_label_value.CreateNewDockerLabelValue(enclaveName)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating a Docker label value object from enclave name string '%v'",
+			enclaveName,
 		)
 	}
 
@@ -104,6 +107,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForEnclaveNetwork(
 	labels[label_key_consts.IsNetworkPartitioningEnabledDockerLabelKey] = isPartitioningEnabledLabelValue
 
 	labels[label_key_consts.EnclaveCreationTimeLabelKey] = creationTimeLabelValue
+	labels[label_key_consts.EnclaveNameDockerLabelKey] = enclaveNameLabelValue
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
 	if err != nil {
@@ -387,7 +391,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) getNameForEnclaveObje
 
 func (provider *dockerEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveObject() map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue {
 	return map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue{
-		label_key_consts.EnclaveIDDockerLabelKey: provider.enclaveId,
+		label_key_consts.EnclaveUUIDDockerLabelKey: provider.enclaveId,
 	}
 }
 

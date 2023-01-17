@@ -3,6 +3,7 @@ package dump
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/enclave_id_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
@@ -15,9 +16,9 @@ import (
 )
 
 const (
-	enclaveIdArg           = "enclave-id"
-	isEnclaveIdArgOptional = false
-	isEnclaveIdArgGreedy   = false
+	enclaveIdentifierArgKey = "enclave-identifier"
+	isEnclaveIdArgOptional  = false
+	isEnclaveIdArgGreedy    = false
 
 	outputDirpathArg = "output-dirpath"
 
@@ -33,8 +34,8 @@ var EnclaveDumpCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 	EngineClientContextKey:    engineClientCtxKey,
 	Flags:                     nil,
 	Args: []*args.ArgConfig{
-		enclave_id_arg.NewEnclaveIDArg(
-			enclaveIdArg,
+		enclave_id_arg.NewEnclaveIdentifierArg(
+			enclaveIdentifierArgKey,
 			engineClientCtxKey,
 			isEnclaveIdArgOptional,
 			isEnclaveIdArgGreedy,
@@ -54,19 +55,31 @@ func run(
 	_ *flags.ParsedFlags,
 	args *args.ParsedArgs,
 ) error {
-	enclaveId, err := args.GetNonGreedyArg(enclaveIdArg)
+	enclaveIdentifier, err := args.GetNonGreedyArg(enclaveIdentifierArgKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting enclave ID using arg key '%v'", enclaveIdArg)
+		return stacktrace.Propagate(err, "An error occurred getting enclave identifier using arg key '%v'", enclaveIdentifierArgKey)
 	}
 	enclaveOutputDirpath, err := args.GetNonGreedyArg(outputDirpathArg)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting output dirpath using arg key '%v'", outputDirpathArg)
 	}
 
-	if err := kurtosisBackend.DumpEnclave(ctx, enclave.EnclaveID(enclaveId), enclaveOutputDirpath); err != nil {
-		return stacktrace.Propagate(err, "An error occurred dumping enclave '%v' to '%v'", enclaveId, enclaveOutputDirpath)
+	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating Kurtosis Context from local engine")
 	}
 
-	logrus.Infof("Dumped enclave '%v' to directory '%v'", enclaveId, enclaveOutputDirpath)
+	enclaveInfo, err := kurtosisCtx.GetEnclave(ctx, enclaveIdentifier)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while getting enclave for identifier '%v'", enclaveIdentifier)
+	}
+
+	enclaveUuid := enclaveInfo.GetEnclaveUuid()
+
+	if err := kurtosisBackend.DumpEnclave(ctx, enclave.EnclaveUUID(enclaveUuid), enclaveOutputDirpath); err != nil {
+		return stacktrace.Propagate(err, "An error occurred dumping enclave '%v' to '%v'", enclaveIdentifier, enclaveOutputDirpath)
+	}
+
+	logrus.Infof("Dumped enclave '%v' to directory '%v'", enclaveIdentifier, enclaveOutputDirpath)
 	return nil
 }

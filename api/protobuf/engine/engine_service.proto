@@ -40,8 +40,8 @@ message GetEngineInfoResponse {
 //                                        Create Enclave
 // ==============================================================================================
 message CreateEnclaveArgs {
-  // The ID of the new Kurtosis Enclave
-  string enclave_id = 1;
+  // The name of the new Kurtosis Enclave
+  string enclave_name = 1;
   // The image tag of the API container that should be used inside the enclave
   // If blank, will use the default version that the engine server uses
   string api_container_version_tag = 2;
@@ -111,27 +111,33 @@ message EnclaveAPIContainerHostMachineInfo {
 
 // Enclaves are defined by a network in the container system, which is why there's a bunch of network information here
 message EnclaveInfo {
-  // ID of the enclave
-  string enclave_id = 1;
+  // UUID of the enclave
+  string enclave_uuid = 1;
+
+  // Name of the enclave
+  string name = 2;
+
+  // The shortened uuid of the enclave
+  string shortened_uuid = 3;
 
   // State of all containers in the enclave
-  EnclaveContainersStatus containers_status = 2;
+  EnclaveContainersStatus containers_status = 4;
 
   // State specifically of the API container
-  EnclaveAPIContainerStatus api_container_status = 3;
+  EnclaveAPIContainerStatus api_container_status = 5;
 
   // NOTE: Will not be present if the API container status is "NONEXISTENT"!!
-  EnclaveAPIContainerInfo api_container_info = 4;
+  EnclaveAPIContainerInfo api_container_info = 6;
 
   // NOTE: Will not be present if the API container status is not "RUNNING"!!
-  EnclaveAPIContainerHostMachineInfo api_container_host_machine_info = 5;
+  EnclaveAPIContainerHostMachineInfo api_container_host_machine_info = 7;
 
   //The enclave's creation time
-  google.protobuf.Timestamp creation_time = 6;
+  google.protobuf.Timestamp creation_time = 8;
 }
 
 message GetEnclavesResponse {
-  // Mapping of enclave_id -> info_about_enclave
+  // Mapping of enclave_uuid -> info_about_enclave
   map<string, EnclaveInfo> enclave_info = 1;
 }
 
@@ -139,16 +145,16 @@ message GetEnclavesResponse {
 //                                       Stop Enclave
 // ==============================================================================================
 message StopEnclaveArgs {
-  //The ID of the Kurtosis enclave to stop
-  string enclave_id = 1;
+  //The identifier(uuid, shortened uuid, name) of the Kurtosis enclave to stop
+  string enclave_identifier = 1;
 }
 
 // ==============================================================================================
 //                                       Destroy Enclave
 // ==============================================================================================
 message DestroyEnclaveArgs {
-  //The ID of the Kurtosis enclave to destroy
-  string enclave_id = 1;
+  //The identifier(uuid, shortened uuid, name) of the Kurtosis enclave to destroy
+  string enclave_identifier = 1;
 }
 
 // ==============================================================================================
@@ -161,8 +167,8 @@ message CleanArgs {
 
 
 message CleanResponse {
-  // Set of removed enclave IDs
-  map<string, bool> removed_enclave_ids = 1;
+  // Set of removed enclave UUIDS
+  map<string, bool> removed_enclave_uuids = 1;
 
 }
 
@@ -170,8 +176,8 @@ message CleanResponse {
 //                                   Get User Service Logs
 // ==============================================================================================
 message GetServiceLogsArgs {
-  // The ID of the user service's Kurtosis Enclave
-  string enclave_id = 1;
+  // The identifier of the user service's Kurtosis Enclave
+  string enclave_identifier = 1;
   // "Set" of service GUIDs in the enclave
   map<string, bool> service_guid_set = 2;
   // If true, It will follow the container logs

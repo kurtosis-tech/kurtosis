@@ -3,7 +3,6 @@ package upload
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/enclave_id_arg"
@@ -19,9 +18,9 @@ import (
 )
 
 const (
-	enclaveIdArgKey        = "enclave-id"
-	isEnclaveIdArgOptional = false
-	isEnclaveIdArgGreedy   = false
+	enclaveIdentifierArgKey = "enclave-identifier"
+	isEnclaveIdArgOptional  = false
+	isEnclaveIdArgGreedy    = false
 
 	pathArgKey = "path"
 
@@ -49,8 +48,8 @@ var FilesUploadCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 		},
 	},
 	Args: []*args.ArgConfig{
-		enclave_id_arg.NewEnclaveIDArg(
-			enclaveIdArgKey,
+		enclave_id_arg.NewEnclaveIdentifierArg(
+			enclaveIdentifierArgKey,
 			engineClientCtxKey,
 			isEnclaveIdArgOptional,
 			isEnclaveIdArgGreedy,
@@ -70,11 +69,10 @@ func run(
 	flags *flags.ParsedFlags,
 	args *args.ParsedArgs,
 ) error {
-	enclaveIdStr, err := args.GetNonGreedyArg(enclaveIdArgKey)
+	enclaveIdentifier, err := args.GetNonGreedyArg(enclaveIdentifierArgKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the enclave ID using key '%v'", enclaveIdArgKey)
+		return stacktrace.Propagate(err, "An error occurred getting the enclave ID using key '%v'", enclaveIdentifierArgKey)
 	}
-	enclaveId := enclaves.EnclaveID(enclaveIdStr)
 
 	path, err := args.GetNonGreedyArg(pathArgKey)
 	if err != nil {
@@ -85,9 +83,9 @@ func run(
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred connecting to the local Kurtosis engine")
 	}
-	enclaveCtx, err := kurtosisCtx.GetEnclaveContext(ctx, enclaveId)
+	enclaveCtx, err := kurtosisCtx.GetEnclaveContext(ctx, enclaveIdentifier)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the enclave context for enclave '%v'", enclaveId)
+		return stacktrace.Propagate(err, "An error occurred getting the enclave context for enclave '%v'", enclaveIdentifier)
 	}
 	artifactName, err := flags.GetString(nameFlagKey)
 	if err != nil {
@@ -99,7 +97,7 @@ func run(
 
 	filesArtifactUuid, err := enclaveCtx.UploadFiles(path, artifactName)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred uploading files at path '%v' to enclave '%v'", path, enclaveId)
+		return stacktrace.Propagate(err, "An error occurred uploading files at path '%v' to enclave '%v'", path, enclaveIdentifier)
 	}
 	logrus.Infof("Files package '%v' uploaded with UUID: %v", artifactName, filesArtifactUuid)
 	return nil

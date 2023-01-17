@@ -15,9 +15,9 @@ import (
 )
 
 const (
-	engineServerNamePrefix   = "kurtosis-engine"
-	logsDatabaseName         = "kurtosis-logs-db"
-	logsCollectorName        = "kurtosis-logs-collector"
+	engineServerNamePrefix = "kurtosis-engine"
+	logsDatabaseName       = "kurtosis-logs-db"
+	logsCollectorName      = "kurtosis-logs-collector"
 
 	//We always use the same name because we are going to have only one instance of this volume,
 	//so when the engine is restarted it mounts the same volume with the previous logs
@@ -33,7 +33,7 @@ type DockerObjectAttributesProvider interface {
 		grpcProxyPortId string,
 		grpcProxyPortSpec *port_spec.PortSpec,
 	) (DockerObjectAttributes, error)
-	ForEnclave(enclaveId enclave.EnclaveID) (DockerEnclaveObjectAttributesProvider, error)
+	ForEnclave(enclaveUuid enclave.EnclaveUUID) (DockerEnclaveObjectAttributesProvider, error)
 	ForLogsDatabase(
 		httpApiPortId string,
 		httpApiPortSpec *port_spec.PortSpec,
@@ -112,14 +112,14 @@ func (provider *dockerObjectAttributesProviderImpl) ForEngineServer(
 	return objectAttributes, nil
 }
 
-func (provider *dockerObjectAttributesProviderImpl) ForEnclave(enclaveId enclave.EnclaveID) (DockerEnclaveObjectAttributesProvider, error) {
-	enclaveIdStr := string(enclaveId)
-	enclaveIdLabelValue, err := docker_label_value.CreateNewDockerLabelValue(enclaveIdStr)
+func (provider *dockerObjectAttributesProviderImpl) ForEnclave(enclaveUuid enclave.EnclaveUUID) (DockerEnclaveObjectAttributesProvider, error) {
+	enclaveUuidStr := string(enclaveUuid)
+	enclaveUuidLabelValue, err := docker_label_value.CreateNewDockerLabelValue(enclaveUuidStr)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker label value out of enclave ID string '%v'", enclaveIdStr)
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker label value out of enclave ID string '%v'", enclaveUuidStr)
 	}
 
-	return newDockerEnclaveObjectAttributesProviderImpl(enclaveIdLabelValue), nil
+	return newDockerEnclaveObjectAttributesProviderImpl(enclaveUuidLabelValue), nil
 }
 
 func (provider *dockerObjectAttributesProviderImpl) ForLogsDatabase(

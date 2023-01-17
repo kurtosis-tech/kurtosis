@@ -11,7 +11,7 @@ import (
 
 func GetUserServices(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
+	enclaveId enclave.EnclaveUUID,
 	filters *service.ServiceFilters,
 	dockerManager *docker_manager.DockerManager,
 ) (

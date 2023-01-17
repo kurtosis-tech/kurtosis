@@ -25,7 +25,7 @@ This code is INCREDIBLY tricky, as a result of:
 */
 func DestroyUserServices(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
+	enclaveUuid enclave.EnclaveUUID,
 	filters *service.ServiceFilters,
 	serviceRegistrationsForEnclave map[service.ServiceGUID]*service.ServiceRegistration,
 	serviceRegistrationMutex *sync.Mutex,
@@ -40,7 +40,7 @@ func DestroyUserServices(
 	serviceRegistrationMutex.Lock()
 	defer serviceRegistrationMutex.Unlock()
 
-	successfulGuids, erroredGuids, err := destroyUserServicesUnlocked(ctx, enclaveId, filters, serviceRegistrationsForEnclave, freeIpProviderForEnclave, dockerManager)
+	successfulGuids, erroredGuids, err := destroyUserServicesUnlocked(ctx, enclaveUuid, filters, serviceRegistrationsForEnclave, freeIpProviderForEnclave, dockerManager)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred while destroying user services")
 	}

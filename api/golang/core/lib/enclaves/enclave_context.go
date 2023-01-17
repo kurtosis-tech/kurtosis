@@ -31,7 +31,7 @@ import (
 	"path"
 )
 
-type EnclaveID string
+type EnclaveUUID string
 
 type PartitionID string
 
@@ -44,7 +44,8 @@ const (
 type EnclaveContext struct {
 	client kurtosis_core_rpc_api_bindings.ApiContainerServiceClient
 
-	enclaveId EnclaveID
+	enclaveUuid EnclaveUUID
+	enclaveName string
 }
 
 /*
@@ -54,17 +55,24 @@ Creates a new EnclaveContext object with the given parameters.
 //  Typescript does it, so that the user doesn't have to figure out how to instantiate the ApiContainerServiceClient on their own!
 func NewEnclaveContext(
 	client kurtosis_core_rpc_api_bindings.ApiContainerServiceClient,
-	enclaveId EnclaveID,
+	enclaveUuid EnclaveUUID,
+	enclaveName string,
 ) *EnclaveContext {
 	return &EnclaveContext{
-		client:    client,
-		enclaveId: enclaveId,
+		client:      client,
+		enclaveUuid: enclaveUuid,
+		enclaveName: enclaveName,
 	}
 }
 
-// Docs available at https://docs.kurtosis.com/sdk/#getenclaveid---enclaveid
-func (enclaveCtx *EnclaveContext) GetEnclaveID() EnclaveID {
-	return enclaveCtx.enclaveId
+// Docs available at https://docs.kurtosis.com/sdk/#getenclaveuuid---enclaveuuid
+func (enclaveCtx *EnclaveContext) GetEnclaveUuid() EnclaveUUID {
+	return enclaveCtx.enclaveUuid
+}
+
+// Docs available at https://docs.kurtosis.com/sdk/#getenclavename---string
+func (enclaveCtx *EnclaveContext) GetEnclaveName() string {
+	return enclaveCtx.enclaveName
 }
 
 // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkscriptstring-serializedstarlarkscript-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error

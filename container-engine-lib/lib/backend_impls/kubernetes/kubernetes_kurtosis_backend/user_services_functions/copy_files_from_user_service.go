@@ -19,7 +19,7 @@ const (
 
 func CopyFilesFromUserService(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
+	enclaveId enclave.EnclaveUUID,
 	serviceGuid service.ServiceGUID,
 	srcPath string,
 	output io.Writer,

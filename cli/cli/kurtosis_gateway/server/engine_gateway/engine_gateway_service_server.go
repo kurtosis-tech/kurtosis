@@ -83,18 +83,18 @@ func (service *EngineGatewayServiceServer) CreateEnclave(ctx context.Context, ar
 	cleanUpEnclave := true
 	defer func() {
 		if cleanUpEnclave {
-			destroyEnclaveArgs := &kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs{EnclaveId: args.GetEnclaveId()}
+			destroyEnclaveArgs := &kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs{EnclaveIdentifier: args.GetEnclaveName()}
 			if _, err := remoteEngineClient.DestroyEnclave(ctx, destroyEnclaveArgs); err != nil {
 				logrus.Error("Launching the Enclave gateway failed, expected to be able to cleanup the created enclave, but an error occurred calling the backend to destroy the enclave we created:")
 				out.PrintErrLn(err.Error())
-				logrus.Errorf("ACTION REQUIRED: You'll need to manually kill the enclave with id '%v'", args.GetEnclaveId())
+				logrus.Errorf("ACTION REQUIRED: You'll need to manually kill the enclave with name '%v'", args.GetEnclaveName())
 			}
 		}
 	}()
 	// Update enclave API Container Host Machine Info
 	// We want to update the host machine info for the api container
 	createdEnclaveInfo := remoteEngineResponse.GetEnclaveInfo()
-	createdEnclaveId := createdEnclaveInfo.GetEnclaveId()
+	createdEnclaveId := createdEnclaveInfo.GetEnclaveUuid()
 
 	runningApiContainerGateway, err := service.startRunningGatewayForEnclave(createdEnclaveInfo)
 	if err != nil {
@@ -157,7 +157,7 @@ func (service *EngineGatewayServiceServer) StopEnclave(ctx context.Context, args
 		return nil, stacktrace.Propagate(err, "Expected to be able to get a client for a live Kurtosis engine, instead a non nil error was returned")
 	}
 	if _, err := remoteEngineClient.StopEnclave(ctx, args); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred calling remote engine to stop enclave '%v'", args.EnclaveId)
+		return nil, stacktrace.Propagate(err, "An error occurred calling remote engine to stop enclave '%v'", args.EnclaveIdentifier)
 	}
 
 	return &emptypb.Empty{}, nil
@@ -169,10 +169,10 @@ func (service *EngineGatewayServiceServer) DestroyEnclave(ctx context.Context, a
 		return nil, stacktrace.Propagate(err, "Expected to be able to get a client for a live Kurtosis engine, instead a non nil error was returned")
 	}
 	if _, err := remoteEngineClient.DestroyEnclave(ctx, args); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred calling remote engine to destroy enclave with ID '%v':", args.EnclaveId)
+		return nil, stacktrace.Propagate(err, "An error occurred calling remote engine to destroy enclave with ID '%v':", args.EnclaveIdentifier)
 	}
 	// Kill the running api container gateway for this enclave
-	enclaveIdOfGatewayToKill := args.EnclaveId
+	enclaveIdOfGatewayToKill := args.EnclaveIdentifier
 	service.idempotentKillRunningGatewayForEnclaveId(enclaveIdOfGatewayToKill)
 
 	return &emptypb.Empty{}, nil
@@ -187,7 +187,7 @@ func (service *EngineGatewayServiceServer) Clean(ctx context.Context, args *kurt
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while cleaning enclaves")
 	}
-	gatewaysToKill := remoteEngineResponse.RemovedEnclaveIds
+	gatewaysToKill := remoteEngineResponse.RemovedEnclaveUuids
 	for gatewayEnclaveId := range gatewaysToKill {
 		service.idempotentKillRunningGatewayForEnclaveId(gatewayEnclaveId)
 	}
@@ -217,7 +217,7 @@ func (service *EngineGatewayServiceServer) GetServiceLogs(
 func (service *EngineGatewayServiceServer) startRunningGatewayForEnclave(enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo) (*runningApiContainerGateway, error) {
 	service.mutex.Lock()
 	defer service.mutex.Unlock()
-	enclaveId := enclaveInfo.GetEnclaveId()
+	enclaveId := enclaveInfo.GetEnclaveUuid()
 	// Ask the kernel for a free open TCP port
 	gatewayPortSpec, err := port_utils.GetFreeTcpPort(localHostIpStr)
 	if err != nil {

@@ -95,7 +95,7 @@ func GetApiContainerKubernetesKurtosisBackend(
 				namespaceName,
 			)
 		}
-		enclaveId := enclave.EnclaveID(enclaveIdStr)
+		enclaveId := enclave.EnclaveUUID(enclaveIdStr)
 
 		return kubernetes_kurtosis_backend.NewAPIContainerKubernetesKurtosisBackend(
 			kubernetesManager,
@@ -117,7 +117,9 @@ func GetApiContainerKubernetesKurtosisBackend(
 }
 
 // ====================================================================================================
-//                                      Private Helper Functions
+//
+//	Private Helper Functions
+//
 // ====================================================================================================
 func getWrappedKubernetesKurtosisBackend(
 	ctx context.Context,

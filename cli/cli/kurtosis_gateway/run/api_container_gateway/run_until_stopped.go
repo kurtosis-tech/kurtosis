@@ -1,10 +1,10 @@
 package api_container_gateway
 
 import (
-	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_gateway/connection"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_gateway/server/api_container_gateway"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_gateway/connection"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_gateway/server/api_container_gateway"
 	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
 	"github.com/kurtosis-tech/stacktrace"
 	"google.golang.org/grpc"
@@ -30,7 +30,7 @@ func RunApiContainerGatewayUntilStopped(connectionProvider *connection.GatewayCo
 	defer apiContainerGrpcClientConn.Close()
 
 	apiContainerClient := kurtosis_core_rpc_api_bindings.NewApiContainerServiceClient(apiContainerGrpcClientConn)
-	apiContainerGatewayServer, gatewayCloseFunc := api_container_gateway.NewEnclaveApiContainerGatewayServer(connectionProvider, apiContainerClient, enclaveInfo.GetEnclaveId())
+	apiContainerGatewayServer, gatewayCloseFunc := api_container_gateway.NewEnclaveApiContainerGatewayServer(connectionProvider, apiContainerClient, enclaveInfo.GetEnclaveUuid())
 	defer gatewayCloseFunc()
 
 	apiContainerGatewayServiceRegistrationFunc := func(grpcServer *grpc.Server) {

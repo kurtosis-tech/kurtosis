@@ -2,7 +2,7 @@ import {
     ContainerConfig,
     ContainerConfigBuilder,
     EnclaveContext,
-    EnclaveID,
+    EnclaveUUID,
     FilesArtifactUUID,
     KurtosisContext,
     LogLineFilter,
@@ -555,7 +555,7 @@ export async function addServicesWithLogLines(
 
 export async function getLogsResponseAndEvaluateResponse(
     kurtosisCtx: KurtosisContext,
-    enclaveId: EnclaveID,
+    enclaveUuid: EnclaveUUID,
     serviceGuids: Set<ServiceGUID>,
     expectedLogLinesByService: Map<ServiceGUID, ServiceLog[]>,
     expectedNonExistenceServiceGuids: Set<ServiceGUID>,
@@ -566,7 +566,7 @@ export async function getLogsResponseAndEvaluateResponse(
     let receivedLogLinesByService: Map<ServiceGUID, Array<ServiceLog>> = new Map<ServiceGUID, Array<ServiceLog>>;
     let receivedNotFoundServiceGuids: Set<ServiceGUID> = new Set<ServiceGUID>();
 
-    const streamUserServiceLogsPromise = await kurtosisCtx.getServiceLogs(enclaveId, serviceGuids, shouldFollowLogs, logLineFilter);
+    const streamUserServiceLogsPromise = await kurtosisCtx.getServiceLogs(enclaveUuid, serviceGuids, shouldFollowLogs, logLineFilter);
 
     if (streamUserServiceLogsPromise.isErr()) {
         return err(streamUserServiceLogsPromise.error);

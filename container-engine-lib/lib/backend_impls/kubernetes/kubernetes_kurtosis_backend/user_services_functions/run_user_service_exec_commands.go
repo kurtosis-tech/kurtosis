@@ -16,7 +16,7 @@ import (
 // TODO Switch these to streaming methods, so that huge command outputs don't blow up the memory of the API container
 func RunUserServiceExecCommands(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
+	enclaveId enclave.EnclaveUUID,
 	userServiceCommands map[service.ServiceGUID][]string,
 	cliModeArgs *shared_helpers.CliModeArgs,
 	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs,

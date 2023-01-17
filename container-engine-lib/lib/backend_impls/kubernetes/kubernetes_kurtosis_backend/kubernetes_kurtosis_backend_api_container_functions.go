@@ -61,7 +61,7 @@ type apiContainerKubernetesResources struct {
 func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 	ctx context.Context,
 	image string,
-	enclaveId enclave.EnclaveID,
+	enclaveId enclave.EnclaveUUID,
 	grpcPortNum uint16,
 	grpcProxyPortNum uint16,
 	enclaveDataVolumeDirpath string,
@@ -78,7 +78,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 	// TODO we could move this to a top layer for validations, perhaps
 	// Verify no API container already exists in the enclave
 	apiContainersInEnclaveFilters := &api_container.APIContainerFilters{
-		EnclaveIDs: map[enclave.EnclaveID]bool{
+		EnclaveIDs: map[enclave.EnclaveUUID]bool{
 			enclaveId: true,
 		},
 		Statuses: nil,
@@ -363,7 +363,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 		service:        apiContainerService,
 		pod:            apiContainerPod,
 	}
-	apiContainerObjsById, err := getApiContainerObjectsFromKubernetesResources(map[enclave.EnclaveID]*apiContainerKubernetesResources{
+	apiContainerObjsById, err := getApiContainerObjectsFromKubernetesResources(map[enclave.EnclaveUUID]*apiContainerKubernetesResources{
 		enclaveId: apiContainerResources,
 	})
 	if err != nil {
@@ -398,7 +398,7 @@ func (backend *KubernetesKurtosisBackend) GetAPIContainers(
 	ctx context.Context,
 	filters *api_container.APIContainerFilters,
 ) (
-	map[enclave.EnclaveID]*api_container.APIContainer,
+	map[enclave.EnclaveUUID]*api_container.APIContainer,
 	error,
 ) {
 	matchingApiContainers, _, err := backend.getMatchingApiContainerObjectsAndKubernetesResources(ctx, filters)
@@ -412,8 +412,8 @@ func (backend *KubernetesKurtosisBackend) StopAPIContainers(
 	ctx context.Context,
 	filters *api_container.APIContainerFilters,
 ) (
-	map[enclave.EnclaveID]bool,
-	map[enclave.EnclaveID]error,
+	map[enclave.EnclaveUUID]bool,
+	map[enclave.EnclaveUUID]error,
 	error,
 ) {
 	_, matchingKubernetesResources, err := backend.getMatchingApiContainerObjectsAndKubernetesResources(ctx, filters)
@@ -421,8 +421,8 @@ func (backend *KubernetesKurtosisBackend) StopAPIContainers(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting API containers and Kubernetes resources matching filters '%+v'", filters)
 	}
 
-	successfulEnclaveIds := map[enclave.EnclaveID]bool{}
-	erroredEnclaveIds := map[enclave.EnclaveID]error{}
+	successfulEnclaveIds := map[enclave.EnclaveUUID]bool{}
+	erroredEnclaveIds := map[enclave.EnclaveUUID]error{}
 	for enclaveId, resources := range matchingKubernetesResources {
 		kubernetesPod := resources.pod
 		if kubernetesPod != nil {
@@ -470,8 +470,8 @@ func (backend *KubernetesKurtosisBackend) DestroyAPIContainers(
 	ctx context.Context,
 	filters *api_container.APIContainerFilters,
 ) (
-	map[enclave.EnclaveID]bool,
-	map[enclave.EnclaveID]error,
+	map[enclave.EnclaveUUID]bool,
+	map[enclave.EnclaveUUID]error,
 	error,
 ) {
 
@@ -480,8 +480,8 @@ func (backend *KubernetesKurtosisBackend) DestroyAPIContainers(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting API container Kubernetes resources matching filters: %+v", filters)
 	}
 
-	successfulEnclaveIds := map[enclave.EnclaveID]bool{}
-	erroredEnclaveIds := map[enclave.EnclaveID]error{}
+	successfulEnclaveIds := map[enclave.EnclaveUUID]bool{}
+	erroredEnclaveIds := map[enclave.EnclaveUUID]error{}
 	for enclaveId, resources := range matchingResources {
 
 		// Remove Pod
@@ -569,13 +569,13 @@ func (backend *KubernetesKurtosisBackend) getMatchingApiContainerObjectsAndKuber
 	ctx context.Context,
 	filters *api_container.APIContainerFilters,
 ) (
-	map[enclave.EnclaveID]*api_container.APIContainer,
-	map[enclave.EnclaveID]*apiContainerKubernetesResources,
+	map[enclave.EnclaveUUID]*api_container.APIContainer,
+	map[enclave.EnclaveUUID]*apiContainerKubernetesResources,
 	error,
 ) {
 	matchingResources, err := backend.getMatchingApiContainerKubernetesResources(ctx, filters.EnclaveIDs)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting API container Kubernetes resources matching enclave IDs: %+v", filters.EnclaveIDs)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting API container Kubernetes resources matching enclave UUIDs: %+v", filters.EnclaveIDs)
 	}
 
 	apiContainerObjects, err := getApiContainerObjectsFromKubernetesResources(matchingResources)
@@ -584,8 +584,8 @@ func (backend *KubernetesKurtosisBackend) getMatchingApiContainerObjectsAndKuber
 	}
 
 	// Finally, apply the filters
-	resultApiContainerObjs := map[enclave.EnclaveID]*api_container.APIContainer{}
-	resultKubernetesResources := map[enclave.EnclaveID]*apiContainerKubernetesResources{}
+	resultApiContainerObjs := map[enclave.EnclaveUUID]*api_container.APIContainer{}
+	resultKubernetesResources := map[enclave.EnclaveUUID]*apiContainerKubernetesResources{}
 	for enclaveId, apiContainerObj := range apiContainerObjects {
 		if filters.EnclaveIDs != nil && len(filters.EnclaveIDs) > 0 {
 			if _, found := filters.EnclaveIDs[apiContainerObj.GetEnclaveID()]; !found {
@@ -608,14 +608,14 @@ func (backend *KubernetesKurtosisBackend) getMatchingApiContainerObjectsAndKuber
 }
 
 // Get back any and all API container's Kubernetes resources matching the given enclave IDs, where a nil or empty map == "match all enclave IDs"
-func (backend *KubernetesKurtosisBackend) getMatchingApiContainerKubernetesResources(ctx context.Context, enclaveIds map[enclave.EnclaveID]bool) (
-	map[enclave.EnclaveID]*apiContainerKubernetesResources,
+func (backend *KubernetesKurtosisBackend) getMatchingApiContainerKubernetesResources(ctx context.Context, enclaveUuids map[enclave.EnclaveUUID]bool) (
+	map[enclave.EnclaveUUID]*apiContainerKubernetesResources,
 	error,
 ) {
 	enclaveMatchLabels := getEnclaveMatchLabels()
 
 	enclaveIdsStrSet := map[string]bool{}
-	for enclaveId, booleanValue := range enclaveIds {
+	for enclaveId, booleanValue := range enclaveUuids {
 		enclaveIdStr := string(enclaveId)
 		enclaveIdsStrSet[enclaveIdStr] = booleanValue
 	}
@@ -625,17 +625,17 @@ func (backend *KubernetesKurtosisBackend) getMatchingApiContainerKubernetesResou
 		ctx,
 		backend.kubernetesManager,
 		enclaveMatchLabels,
-		label_key_consts.EnclaveIDKubernetesLabelKey.GetString(),
+		label_key_consts.EnclaveUUIDKubernetesLabelKey.GetString(),
 		enclaveIdsStrSet,
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting enclave namespaces matching IDs '%+v'", enclaveIdsStrSet)
+		return nil, stacktrace.Propagate(err, "An error occurred getting enclave namespaces matching UUIDs '%+v'", enclaveIdsStrSet)
 	}
 
 	apiContainerMatchLabels := getApiContainerMatchLabels()
 
 	// Per-namespace objects
-	result := map[enclave.EnclaveID]*apiContainerKubernetesResources{}
+	result := map[enclave.EnclaveUUID]*apiContainerKubernetesResources{}
 	for enclaveIdStr, namespacesForEnclaveId := range namespaces {
 		if len(namespacesForEnclaveId) > 1 {
 			return nil, stacktrace.NewError(
@@ -653,7 +653,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingApiContainerKubernetesResou
 			backend.kubernetesManager,
 			namespaceName,
 			apiContainerMatchLabels,
-			label_key_consts.EnclaveIDKubernetesLabelKey.GetString(),
+			label_key_consts.EnclaveUUIDKubernetesLabelKey.GetString(),
 			map[string]bool{
 				enclaveIdStr: true,
 			},
@@ -692,7 +692,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingApiContainerKubernetesResou
 			backend.kubernetesManager,
 			namespaceName,
 			apiContainerMatchLabels,
-			label_key_consts.EnclaveIDKubernetesLabelKey.GetString(),
+			label_key_consts.EnclaveUUIDKubernetesLabelKey.GetString(),
 			map[string]bool{
 				enclaveIdStr: true,
 			},
@@ -728,7 +728,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingApiContainerKubernetesResou
 			backend.kubernetesManager,
 			namespaceName,
 			apiContainerMatchLabels,
-			label_key_consts.EnclaveIDKubernetesLabelKey.GetString(),
+			label_key_consts.EnclaveUUIDKubernetesLabelKey.GetString(),
 			map[string]bool{
 				enclaveIdStr: true,
 			},
@@ -764,7 +764,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingApiContainerKubernetesResou
 			backend.kubernetesManager,
 			namespaceName,
 			apiContainerMatchLabels,
-			label_key_consts.EnclaveIDKubernetesLabelKey.GetString(),
+			label_key_consts.EnclaveUUIDKubernetesLabelKey.GetString(),
 			map[string]bool{
 				enclaveIdStr: true,
 			},
@@ -800,7 +800,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingApiContainerKubernetesResou
 			backend.kubernetesManager,
 			namespaceName,
 			apiContainerMatchLabels,
-			label_key_consts.EnclaveIDKubernetesLabelKey.GetString(),
+			label_key_consts.EnclaveUUIDKubernetesLabelKey.GetString(),
 			map[string]bool{
 				enclaveIdStr: true,
 			},
@@ -830,7 +830,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingApiContainerKubernetesResou
 			serviceAccount = serviceAccountsForEnclaveId[0]
 		}
 
-		enclaveId := enclave.EnclaveID(enclaveIdStr)
+		enclaveId := enclave.EnclaveUUID(enclaveIdStr)
 
 		result[enclaveId] = &apiContainerKubernetesResources{
 			service:        service,
@@ -845,12 +845,12 @@ func (backend *KubernetesKurtosisBackend) getMatchingApiContainerKubernetesResou
 }
 
 func getApiContainerObjectsFromKubernetesResources(
-	allResources map[enclave.EnclaveID]*apiContainerKubernetesResources,
+	allResources map[enclave.EnclaveUUID]*apiContainerKubernetesResources,
 ) (
-	map[enclave.EnclaveID]*api_container.APIContainer,
+	map[enclave.EnclaveUUID]*api_container.APIContainer,
 	error,
 ) {
-	result := map[enclave.EnclaveID]*api_container.APIContainer{}
+	result := map[enclave.EnclaveUUID]*api_container.APIContainer{}
 
 	for enclaveId, resourcesForEnclaveId := range allResources {
 		kubernetesService := resourcesForEnclaveId.service

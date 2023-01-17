@@ -10,11 +10,13 @@ var labelKeyStrsToEnsure = map[string]string{
 	labelKeyPrefixStr:         "kurtosistech.com/",
 	portSpecsAnnotationKeyStr: "kurtosistech.com/ports",
 	enclaveCreationTimeKeyStr: "kurtosistech.com/enclave-creation-time",
+	enclaveNameKeyStr:         "kurtosistech.com/enclave-name",
 }
 
 var labelKeysToEnsure = map[*kubernetes_annotation_key.KubernetesAnnotationKey]string{
 	PortSpecsKubernetesAnnotationKey: "kurtosistech.com/ports",
 	EnclaveCreationTimeAnnotationKey: "kurtosistech.com/enclave-creation-time",
+	EnclaveNameAnnotationKey:         "kurtosistech.com/enclave-name",
 }
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

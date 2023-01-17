@@ -7,7 +7,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
-	enclave_consts "github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/enclave"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	command_args_run "github.com/kurtosis-tech/kurtosis/cli/cli/command_args/run"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
@@ -42,9 +41,11 @@ const (
 	dryRunFlagKey = "dry-run"
 	defaultDryRun = "false"
 
-	enclaveIdFlagKey = "enclave-id"
+	enclaveIdentifierFlagKey = "enclave-identifier"
 	// Signifies that an enclave ID should be auto-generated
-	autogenerateEnclaveIdKeyword = ""
+	autogenerateEnclaveIdentifierKeyword = ""
+	// TODO deprecate this flag in the future
+	enclaveIdFlagKey = "enclave-id"
 
 	isSubnetworkCapabilitiesEnabledFlagKey = "with-subnetworks"
 	defaultIsSubnetworkCapabilitiesEnabled = false
@@ -77,9 +78,9 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 	LongDescription: "Run a Starlark script or runnable package (" + user_support_constants.StarlarkPackagesReferenceURL + ") in " +
 		"an enclave. For a script we expect a path to a " + starlarkExtension + " file. For a runnable package we expect " +
 		"either a path to a local runnable package directory, or a path to the " + kurtosisYMLFilePath + " file in the package, or the locator URL (" + user_support_constants.StarlarkLocatorsReferenceURL +
-		") to a remote runnable package on Github. If the '" + enclaveIdFlagKey + "' flag argument " +
+		") to a remote runnable package on Github. If the '" + enclaveIdentifierFlagKey + "' flag argument " +
 		"is provided, Kurtosis will run the script inside the specified enclave or create it if it doesn't exist. If no '" +
-		enclaveIdFlagKey + "' flag param is provided, Kurtosis will create a new enclave with a random name.",
+		enclaveIdentifierFlagKey + "' flag param is provided, Kurtosis will create a new enclave with a random name.",
 	Flags: []*flags.FlagConfig{
 		{
 			Key: dryRunFlagKey,
@@ -89,14 +90,21 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			Default: defaultDryRun,
 		},
 		{
+			Key: enclaveIdentifierFlagKey,
+			Usage: "The enclave identifier of the enclave in which the script or package will be ran." +
+				"An enclave with this name will be created if it doesn't exist.",
+			Type:    flags.FlagType_String,
+			Default: autogenerateEnclaveIdentifierKeyword,
+		},
+		{
 			Key: enclaveIdFlagKey,
 			Usage: fmt.Sprintf(
-				"The enclave ID in which the script or package will be ran, which must match regex '%v' "+
-					"(emptystring will autogenerate an enclave ID). An enclave with this ID will be created if it doesn't exist.",
-				enclave_consts.AllowedEnclaveIdCharsRegexStr,
+				"The enclave identifier of the enclave in which the script or package will be ran."+
+					"An enclave with this name will be created if it doesn't exist. This will be deprecated in favor of '%v'",
+				enclaveIdentifierFlagKey,
 			),
 			Type:    flags.FlagType_String,
-			Default: autogenerateEnclaveIdKeyword,
+			Default: autogenerateEnclaveIdentifierKeyword,
 		},
 		{
 			Key: isSubnetworkCapabilitiesEnabledFlagKey,
@@ -144,10 +152,18 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the script/package arguments using flag key '%v'", inputArgsArgKey)
 	}
 
-	userRequestedEnclaveId, err := flags.GetString(enclaveIdFlagKey)
+	userRequestedEnclaveIdentifier, err := flags.GetString(enclaveIdentifierFlagKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the enclave ID using flag key '%s'", enclaveIdFlagKey)
+		return stacktrace.Propagate(err, "An error occurred getting the enclave identifier using flag key '%s'", enclaveIdentifierFlagKey)
 	}
+
+	if userRequestedEnclaveIdentifier == autogenerateEnclaveIdentifierKeyword {
+		userRequestedEnclaveIdentifier, err = flags.GetString(enclaveIdFlagKey)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred getting the enclave identifier using flag key '%s'", enclaveIdFlagKey)
+		}
+	}
+
 	isPartitioningEnabled, err := flags.GetBool(isSubnetworkCapabilitiesEnabledFlagKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the is-subnetwork-enabled setting using flag key '%v'", isSubnetworkCapabilitiesEnabledFlagKey)
@@ -168,21 +184,17 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the verbosity using flag key '%s'", verbosityFlagKey)
 	}
 
-	// Get or create enclave in Kurtosis
-	enclaveIdStr := userRequestedEnclaveId
-	enclaveId := enclaves.EnclaveID(enclaveIdStr)
-
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred connecting to the local Kurtosis engine")
 	}
 
-	enclaveCtx, isNewEnclave, err := getOrCreateEnclaveContext(ctx, enclaveId, kurtosisCtx, isPartitioningEnabled)
+	enclaveCtx, isNewEnclave, err := getOrCreateEnclaveContext(ctx, userRequestedEnclaveIdentifier, kurtosisCtx, isPartitioningEnabled)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the enclave context for enclave '%v'", enclaveId)
+		return stacktrace.Propagate(err, "An error occurred getting the enclave context for enclave '%v'", userRequestedEnclaveIdentifier)
 	}
 	if isNewEnclave {
-		defer output_printers.PrintEnclaveId(enclaveCtx.GetEnclaveID())
+		defer output_printers.PrintEnclaveUUID(enclaveCtx.GetEnclaveName(), enclaveCtx.GetEnclaveUuid())
 	}
 
 	var responseLineChan <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine
@@ -291,28 +303,27 @@ func readAndPrintResponseLinesUntilClosed(responseLineChan <-chan *kurtosis_core
 
 func getOrCreateEnclaveContext(
 	ctx context.Context,
-	enclaveId enclaves.EnclaveID,
+	enclaveIdentifierOrName string,
 	kurtosisContext *kurtosis_context.KurtosisContext,
 	isPartitioningEnabled bool,
 ) (*enclaves.EnclaveContext, bool, error) {
 
-	enclavesMap, err := kurtosisContext.GetEnclaves(ctx)
-	if err != nil {
-		return nil, false, stacktrace.Propagate(err, "Unable to get existing enclaves from Kurtosis backend")
-	}
-	if _, found := enclavesMap[enclaveId]; found {
-		enclaveContext, err := kurtosisContext.GetEnclaveContext(ctx, enclaveId)
-		if err != nil {
-			return nil, false, stacktrace.Propagate(err, "Unable to get enclave context from the existing enclave '%s'", enclaveId)
+	if enclaveIdentifierOrName != autogenerateEnclaveIdentifierKeyword {
+		_, err := kurtosisContext.GetEnclave(ctx, enclaveIdentifierOrName)
+		if err == nil {
+			enclaveContext, err := kurtosisContext.GetEnclaveContext(ctx, enclaveIdentifierOrName)
+			if err != nil {
+				return nil, false, stacktrace.Propagate(err, "An error occurred while getting context for existing enclave with identifier '%v'", enclaveIdentifierOrName)
+			}
+			return enclaveContext, false, nil
 		}
-		return enclaveContext, false, nil
 	}
 	logrus.Infof("Creating a new enclave for Starlark to run inside...")
-	enclaveContext, err := kurtosisContext.CreateEnclave(ctx, enclaveId, isPartitioningEnabled)
+	enclaveContext, err := kurtosisContext.CreateEnclave(ctx, enclaveIdentifierOrName, isPartitioningEnabled)
 	if err != nil {
-		return nil, false, stacktrace.Propagate(err, fmt.Sprintf("Unable to create new enclave with ID '%s'", enclaveId))
+		return nil, false, stacktrace.Propagate(err, fmt.Sprintf("Unable to create new enclave with name '%s'", enclaveIdentifierOrName))
 	}
-	logrus.Infof("Enclave '%v' created successfully", enclaveContext.GetEnclaveID())
+	logrus.Infof("Enclave '%v' created successfully", enclaveContext.GetEnclaveName())
 	return enclaveContext, isNewEnclaveFlagWhenCreated, nil
 }
 

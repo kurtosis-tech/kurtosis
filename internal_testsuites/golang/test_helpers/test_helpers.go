@@ -409,7 +409,7 @@ func GetLogsResponse(
 	ctx context.Context,
 	timeout time.Duration,
 	kurtosisCtx *kurtosis_context.KurtosisContext,
-	enclaveId enclaves.EnclaveID,
+	enclaveIdentifier string,
 	serviceGuids map[services.ServiceGUID]bool,
 	expectedLogLinesByService map[services.ServiceGUID][]string,
 	shouldFollowLogs bool,
@@ -428,9 +428,9 @@ func GetLogsResponse(
 	receivedNotFoundServiceGuids := map[services.ServiceGUID]bool{}
 	var testEvaluationErr error
 
-	serviceLogsStreamContentChan, cancelStreamUserServiceLogsFunc, err := kurtosisCtx.GetServiceLogs(ctx, enclaveId, serviceGuids, shouldFollowLogs, logLineFilter)
+	serviceLogsStreamContentChan, cancelStreamUserServiceLogsFunc, err := kurtosisCtx.GetServiceLogs(ctx, enclaveIdentifier, serviceGuids, shouldFollowLogs, logLineFilter)
 	defer cancelStreamUserServiceLogsFunc()
-	require.NoError(t, err, "An error occurred getting user service logs from user services with GUIDs '%+v' in enclave '%v' and with follow logs value '%v'", serviceGuids, enclaveId, shouldFollowLogs)
+	require.NoError(t, err, "An error occurred getting user service logs from user services with GUIDs '%+v' in enclave '%v' and with follow logs value '%v'", serviceGuids, enclaveIdentifier, shouldFollowLogs)
 
 	shouldContinueInTheLoop := true
 

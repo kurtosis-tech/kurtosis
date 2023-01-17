@@ -43,13 +43,13 @@ type DockerKurtosisBackend struct {
 	//  KurtosisBackend functionality that it shouldn't (e.g. GetUserServiceLogs). This should all flow through the API
 	//  container API instaed.
 	// This map is set exactly once, upon creation of the DockerKubernetesBackend, and never modified afterwards. Therefore, it doesn't need to be protected with a mutex (because the FreeIPProviders are themselves threadsafe)
-	enclaveFreeIpProviders map[enclave.EnclaveID]*free_ip_addr_tracker.FreeIpAddrTracker
+	enclaveFreeIpProviders map[enclave.EnclaveUUID]*free_ip_addr_tracker.FreeIpAddrTracker
 
 	// TODO Migrate this to an on-disk database, so that the API container can be shut down & restarted!
 	// Canonical store of the registrations being tracked by this *DockerKurtosisBackend instance
 	// NOTE: Unlike Kubernetes, Docker doesn't have a concrete object representing a service registration/IP address
 	//  allocation. We use this in-memory store to accomplish the same thing.
-	serviceRegistrations map[enclave.EnclaveID]map[service.ServiceGUID]*service.ServiceRegistration
+	serviceRegistrations map[enclave.EnclaveUUID]map[service.ServiceGUID]*service.ServiceRegistration
 
 	// Control concurrent access to serviceRegistrations
 	serviceRegistrationMutex *sync.Mutex
@@ -57,12 +57,12 @@ type DockerKurtosisBackend struct {
 
 func NewDockerKurtosisBackend(
 	dockerManager *docker_manager.DockerManager,
-	enclaveFreeIpProviders map[enclave.EnclaveID]*free_ip_addr_tracker.FreeIpAddrTracker,
+	enclaveFreeIpProviders map[enclave.EnclaveUUID]*free_ip_addr_tracker.FreeIpAddrTracker,
 ) *DockerKurtosisBackend {
 	dockerNetworkAllocator := docker_network_allocator.NewDockerNetworkAllocator(dockerManager)
-	serviceRegistrations := map[enclave.EnclaveID]map[service.ServiceGUID]*service.ServiceRegistration{}
-	for enclaveId := range enclaveFreeIpProviders {
-		serviceRegistrations[enclaveId] = map[service.ServiceGUID]*service.ServiceRegistration{}
+	serviceRegistrations := map[enclave.EnclaveUUID]map[service.ServiceGUID]*service.ServiceRegistration{}
+	for enclaveUuid := range enclaveFreeIpProviders {
+		serviceRegistrations[enclaveUuid] = map[service.ServiceGUID]*service.ServiceRegistration{}
 	}
 	return &DockerKurtosisBackend{
 		dockerManager:            dockerManager,
@@ -137,50 +137,50 @@ func (backend *DockerKurtosisBackend) DestroyEngines(
 	return engine_functions.DestroyEngines(ctx, filters, backend.dockerManager)
 }
 
-func (backend *DockerKurtosisBackend) RegisterUserServices(_ context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceID]bool) (map[service.ServiceID]*service.ServiceRegistration, map[service.ServiceID]error, error) {
-	serviceRegistrationsForEnclave, found := backend.serviceRegistrations[enclaveId]
+func (backend *DockerKurtosisBackend) RegisterUserServices(_ context.Context, enclaveUuid enclave.EnclaveUUID, services map[service.ServiceID]bool) (map[service.ServiceID]*service.ServiceRegistration, map[service.ServiceID]error, error) {
+	serviceRegistrationsForEnclave, found := backend.serviceRegistrations[enclaveUuid]
 	if !found {
 		return nil, nil, stacktrace.NewError(
 			"No service registrations are being tracked for enclave '%v'; this likely means that the registration "+
 				"request is being called where it shouldn't be (i.e. outside the API container)",
-			enclaveId,
+			enclaveUuid,
 		)
 	}
 
-	freeIpAddrProviderForEnclave, found := backend.enclaveFreeIpProviders[enclaveId]
+	freeIpAddrProviderForEnclave, found := backend.enclaveFreeIpProviders[enclaveUuid]
 	if !found {
 		return nil, nil, stacktrace.NewError(
 			"Received a request to register services in enclave '%v', but no free IP address provider was "+
 				"defined for this enclave; this likely means that the start request is being called where it shouldn't "+
 				"be (i.e. outside the API container)",
-			enclaveId,
+			enclaveUuid,
 		)
 	}
 
-	registeredService, failedServices, err := user_service_functions.RegisterUserServices(enclaveId, services, serviceRegistrationsForEnclave, freeIpAddrProviderForEnclave, backend.serviceRegistrationMutex)
+	registeredService, failedServices, err := user_service_functions.RegisterUserServices(enclaveUuid, services, serviceRegistrationsForEnclave, freeIpAddrProviderForEnclave, backend.serviceRegistrationMutex)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "Unexpected error registering services to enclave '%s'", enclaveId)
+		return nil, nil, stacktrace.Propagate(err, "Unexpected error registering services to enclave '%s'", enclaveUuid)
 	}
 	return registeredService, failedServices, nil
 }
 
-func (backend *DockerKurtosisBackend) UnregisterUserServices(_ context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceGUID]bool) (map[service.ServiceGUID]bool, map[service.ServiceGUID]error, error) {
-	serviceRegistrationsForEnclave, found := backend.serviceRegistrations[enclaveId]
+func (backend *DockerKurtosisBackend) UnregisterUserServices(_ context.Context, enclaveUuid enclave.EnclaveUUID, services map[service.ServiceGUID]bool) (map[service.ServiceGUID]bool, map[service.ServiceGUID]error, error) {
+	serviceRegistrationsForEnclave, found := backend.serviceRegistrations[enclaveUuid]
 	if !found {
 		return nil, nil, stacktrace.NewError(
 			"No service registrations are being tracked for enclave '%v'; this likely means that the registration "+
 				"request is being called where it shouldn't be (i.e. outside the API container)",
-			enclaveId,
+			enclaveUuid,
 		)
 	}
 
-	freeIpAddrProviderForEnclave, found := backend.enclaveFreeIpProviders[enclaveId]
+	freeIpAddrProviderForEnclave, found := backend.enclaveFreeIpProviders[enclaveUuid]
 	if !found {
 		return nil, nil, stacktrace.NewError(
 			"Received a request to unregister services in enclave '%v', but no free IP address provider was "+
 				"defined for this enclave; this likely means that the start request is being called where it shouldn't "+
 				"be (i.e. outside the API container)",
-			enclaveId,
+			enclaveUuid,
 		)
 	}
 
@@ -188,23 +188,23 @@ func (backend *DockerKurtosisBackend) UnregisterUserServices(_ context.Context, 
 	return servicesSuccessfullyUnregistered, failedServices, nil
 }
 
-func (backend *DockerKurtosisBackend) StartRegisteredUserServices(ctx context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceGUID]*service.ServiceConfig) (map[service.ServiceGUID]*service.Service, map[service.ServiceGUID]error, error) {
-	serviceRegistrationsForEnclave, found := backend.serviceRegistrations[enclaveId]
+func (backend *DockerKurtosisBackend) StartRegisteredUserServices(ctx context.Context, enclaveUuid enclave.EnclaveUUID, services map[service.ServiceGUID]*service.ServiceConfig) (map[service.ServiceGUID]*service.Service, map[service.ServiceGUID]error, error) {
+	serviceRegistrationsForEnclave, found := backend.serviceRegistrations[enclaveUuid]
 	if !found {
 		return nil, nil, stacktrace.NewError(
 			"No service registrations are being tracked for enclave '%v'; this likely means that the registration "+
 				"request is being called where it shouldn't be (i.e. outside the API container)",
-			enclaveId,
+			enclaveUuid,
 		)
 	}
 
-	freeIpAddrProviderForEnclave, found := backend.enclaveFreeIpProviders[enclaveId]
+	freeIpAddrProviderForEnclave, found := backend.enclaveFreeIpProviders[enclaveUuid]
 	if !found {
 		return nil, nil, stacktrace.NewError(
 			"Received a request to start services in enclave '%v', but no free IP address provider was "+
 				"defined for this enclave; this likely means that the start request is being called where it shouldn't "+
 				"be (i.e. outside the API container)",
-			enclaveId,
+			enclaveUuid,
 		)
 	}
 
@@ -225,7 +225,7 @@ func (backend *DockerKurtosisBackend) StartRegisteredUserServices(ctx context.Co
 
 	successfullyStartedService, failedService, err := user_service_functions.StartUserServices(
 		ctx,
-		enclaveId,
+		enclaveUuid,
 		services,
 		serviceRegistrationsForEnclave,
 		logsCollector,
@@ -241,18 +241,18 @@ func (backend *DockerKurtosisBackend) StartRegisteredUserServices(ctx context.Co
 
 func (backend *DockerKurtosisBackend) GetUserServices(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
+	enclaveUuid enclave.EnclaveUUID,
 	filters *service.ServiceFilters,
 ) (
 	map[service.ServiceGUID]*service.Service,
 	error,
 ) {
-	return user_service_functions.GetUserServices(ctx, enclaveId, filters, backend.dockerManager)
+	return user_service_functions.GetUserServices(ctx, enclaveUuid, filters, backend.dockerManager)
 }
 
 func (backend *DockerKurtosisBackend) GetUserServiceLogs(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
+	enclaveUuid enclave.EnclaveUUID,
 	filters *service.ServiceFilters,
 	shouldFollowLogs bool,
 ) (
@@ -260,110 +260,110 @@ func (backend *DockerKurtosisBackend) GetUserServiceLogs(
 	map[service.ServiceGUID]error,
 	error,
 ) {
-	return user_service_functions.GetUserServiceLogs(ctx, enclaveId, filters, shouldFollowLogs, backend.dockerManager)
+	return user_service_functions.GetUserServiceLogs(ctx, enclaveUuid, filters, shouldFollowLogs, backend.dockerManager)
 }
 
 func (backend *DockerKurtosisBackend) PauseService(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
+	enclaveUuid enclave.EnclaveUUID,
 	serviceGuid service.ServiceGUID,
 ) error {
-	return user_service_functions.PauseService(ctx, enclaveId, serviceGuid, backend.dockerManager)
+	return user_service_functions.PauseService(ctx, enclaveUuid, serviceGuid, backend.dockerManager)
 }
 
 func (backend *DockerKurtosisBackend) UnpauseService(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
+	enclaveUuid enclave.EnclaveUUID,
 	serviceGuid service.ServiceGUID,
 ) error {
-	return user_service_functions.UnpauseService(ctx, enclaveId, serviceGuid, backend.dockerManager)
+	return user_service_functions.UnpauseService(ctx, enclaveUuid, serviceGuid, backend.dockerManager)
 }
 
 // TODO Switch these to streaming so that huge command outputs don't blow up the API container memory
 // NOTE: This function will block while the exec is ongoing; if we need more perf we can make it async
 func (backend *DockerKurtosisBackend) RunUserServiceExecCommands(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
+	enclaveUuid enclave.EnclaveUUID,
 	userServiceCommands map[service.ServiceGUID][]string,
 ) (
 	map[service.ServiceGUID]*exec_result.ExecResult,
 	map[service.ServiceGUID]error,
 	error,
 ) {
-	return user_service_functions.RunUserServiceExecCommands(ctx, enclaveId, userServiceCommands, backend.dockerManager)
+	return user_service_functions.RunUserServiceExecCommands(ctx, enclaveUuid, userServiceCommands, backend.dockerManager)
 }
 
 func (backend *DockerKurtosisBackend) GetConnectionWithUserService(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
+	enclaveUuid enclave.EnclaveUUID,
 	serviceGuid service.ServiceGUID,
 ) (
 	net.Conn,
 	error,
 ) {
-	return user_service_functions.GetConnectionWithUserService(ctx, enclaveId, serviceGuid, backend.dockerManager)
+	return user_service_functions.GetConnectionWithUserService(ctx, enclaveUuid, serviceGuid, backend.dockerManager)
 }
 
 // It returns io.ReadCloser which is a tar stream. It's up to the caller to close the reader.
 func (backend *DockerKurtosisBackend) CopyFilesFromUserService(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
+	enclaveUuid enclave.EnclaveUUID,
 	serviceGuid service.ServiceGUID,
 	srcPathOnContainer string,
 	output io.Writer,
 ) error {
-	return user_service_functions.CopyFilesFromUserService(ctx, enclaveId, serviceGuid, srcPathOnContainer, output, backend.dockerManager)
+	return user_service_functions.CopyFilesFromUserService(ctx, enclaveUuid, serviceGuid, srcPathOnContainer, output, backend.dockerManager)
 }
 
 func (backend *DockerKurtosisBackend) StopUserServices(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
+	enclaveUuid enclave.EnclaveUUID,
 	filters *service.ServiceFilters,
 ) (
 	resultSuccessfulServiceGUIDs map[service.ServiceGUID]bool,
 	resultErroredServiceGUIDs map[service.ServiceGUID]error,
 	resultErr error,
 ) {
-	return user_service_functions.StopUserServices(ctx, enclaveId, filters, backend.dockerManager)
+	return user_service_functions.StopUserServices(ctx, enclaveUuid, filters, backend.dockerManager)
 }
 
 func (backend *DockerKurtosisBackend) DestroyUserServices(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
+	enclaveUuid enclave.EnclaveUUID,
 	filters *service.ServiceFilters,
 ) (
 	resultSuccessfulGuids map[service.ServiceGUID]bool,
 	resultErroredGuids map[service.ServiceGUID]error,
 	resultErr error,
 ) {
-	serviceRegistrationsForEnclave, found := backend.serviceRegistrations[enclaveId]
+	serviceRegistrationsForEnclave, found := backend.serviceRegistrations[enclaveUuid]
 	if !found {
 		return nil, nil, stacktrace.NewError(
 			"No service registrations are being tracked for enclave '%v'; this likely means that the registration "+
 				"request is being called where it shouldn't be (i.e. outside the API container)",
-			enclaveId,
+			enclaveUuid,
 		)
 	}
 
-	freeIpAddrProviderForEnclave, found := backend.enclaveFreeIpProviders[enclaveId]
+	freeIpAddrProviderForEnclave, found := backend.enclaveFreeIpProviders[enclaveUuid]
 	if !found {
 		return nil, nil, stacktrace.NewError(
 			"Received a request to start services in enclave '%v', but no free IP address provider was "+
 				"defined for this enclave; this likely means that the start request is being called where it shouldn't "+
 				"be (i.e. outside the API container)",
-			enclaveId,
+			enclaveUuid,
 		)
 	}
 	successfullyDestroyedServices, failedServices, err := user_service_functions.DestroyUserServices(
 		ctx,
-		enclaveId,
+		enclaveUuid,
 		filters,
 		serviceRegistrationsForEnclave,
 		backend.serviceRegistrationMutex,
 		freeIpAddrProviderForEnclave,
 		backend.dockerManager)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "Unexpected error destroying services in enclave '%s'", enclaveId)
+		return nil, nil, stacktrace.Propagate(err, "Unexpected error destroying services in enclave '%s'", enclaveUuid)
 	}
 	return successfullyDestroyedServices, failedServices, nil
 }
@@ -499,24 +499,24 @@ func (backend *DockerKurtosisBackend) DestroyLogsCollector(
 //	Private helper functions shared by multiple subfunctions files
 //
 // ====================================================================================================
-func (backend *DockerKurtosisBackend) getEnclaveNetworkByEnclaveId(ctx context.Context, enclaveId enclave.EnclaveID) (*types.Network, error) {
+func (backend *DockerKurtosisBackend) getEnclaveNetworkByEnclaveUuid(ctx context.Context, enclaveUuid enclave.EnclaveUUID) (*types.Network, error) {
 	networkSearchLabels := map[string]string{
-		label_key_consts.AppIDDockerLabelKey.GetString():     label_value_consts.AppIDDockerLabelValue.GetString(),
-		label_key_consts.EnclaveIDDockerLabelKey.GetString(): string(enclaveId),
+		label_key_consts.AppIDDockerLabelKey.GetString():       label_value_consts.AppIDDockerLabelValue.GetString(),
+		label_key_consts.EnclaveUUIDDockerLabelKey.GetString(): string(enclaveUuid),
 	}
 
 	enclaveNetworksFound, err := backend.dockerManager.GetNetworksByLabels(ctx, networkSearchLabels)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting Docker networks by enclave ID '%v'", enclaveId)
+		return nil, stacktrace.Propagate(err, "An error occurred getting Docker networks by enclave ID '%v'", enclaveUuid)
 	}
 	numMatchingNetworks := len(enclaveNetworksFound)
 	if numMatchingNetworks == 0 {
-		return nil, stacktrace.NewError("No network was found for enclave with ID '%v'", enclaveId)
+		return nil, stacktrace.NewError("No network was found for enclave with ID '%v'", enclaveUuid)
 	}
 	if numMatchingNetworks > 1 {
 		return nil, stacktrace.NewError(
 			"Expected exactly one network matching enclave ID '%v', but got %v",
-			enclaveId,
+			enclaveUuid,
 			numMatchingNetworks,
 		)
 	}
@@ -524,21 +524,21 @@ func (backend *DockerKurtosisBackend) getEnclaveNetworkByEnclaveId(ctx context.C
 }
 
 // Guaranteed to either return an enclave data volume name or throw an error
-func (backend *DockerKurtosisBackend) getEnclaveDataVolumeByEnclaveId(ctx context.Context, enclaveId enclave.EnclaveID) (string, error) {
+func (backend *DockerKurtosisBackend) getEnclaveDataVolumeByEnclaveUuid(ctx context.Context, enclaveUuid enclave.EnclaveUUID) (string, error) {
 	volumeSearchLabels := map[string]string{
-		label_key_consts.AppIDDockerLabelKey.GetString():      label_value_consts.AppIDDockerLabelValue.GetString(),
-		label_key_consts.EnclaveIDDockerLabelKey.GetString():  string(enclaveId),
-		label_key_consts.VolumeTypeDockerLabelKey.GetString(): label_value_consts.EnclaveDataVolumeTypeDockerLabelValue.GetString(),
+		label_key_consts.AppIDDockerLabelKey.GetString():       label_value_consts.AppIDDockerLabelValue.GetString(),
+		label_key_consts.EnclaveUUIDDockerLabelKey.GetString(): string(enclaveUuid),
+		label_key_consts.VolumeTypeDockerLabelKey.GetString():  label_value_consts.EnclaveDataVolumeTypeDockerLabelValue.GetString(),
 	}
 	foundVolumes, err := backend.dockerManager.GetVolumesByLabels(ctx, volumeSearchLabels)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred getting enclave data volumes matching labels '%+v'", volumeSearchLabels)
 	}
 	if len(foundVolumes) > 1 {
-		return "", stacktrace.NewError("Found multiple enclave data volumes matching enclave ID '%v'; this should never happen", enclaveId)
+		return "", stacktrace.NewError("Found multiple enclave data volumes matching enclave ID '%v'; this should never happen", enclaveUuid)
 	}
 	if len(foundVolumes) == 0 {
-		return "", stacktrace.NewError("No enclave data volume found for enclave '%v'", enclaveId)
+		return "", stacktrace.NewError("No enclave data volume found for enclave '%v'", enclaveUuid)
 	}
 	volume := foundVolumes[0]
 	return volume.Name, nil

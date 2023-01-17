@@ -36,7 +36,7 @@ const (
 	//the global retention period store logs for 30 days = 720h.
 	maxRetentionPeriodHours = loki.LimitsRetentionPeriodHours * time.Hour
 
-	//We use this header because we are using the Loki multi-tenancy feature to split logs by the EnclaveID
+	//We use this header because we are using the Loki multi-tenancy feature to split logs by the EnclaveUUID
 	//Read more about it here: https://grafana.com/docs/loki/latest/operations/multi-tenancy/
 	//tenantID = enclaveID
 	organizationIdHttpHeaderKey = "X-Scope-OrgID"
@@ -74,7 +74,7 @@ const (
 	oneHourLess = -time.Hour
 
 	//It' for using in it the "start" query param
-	maxRetentionPeriodHoursStartTime = - maxRetentionPeriodHours
+	maxRetentionPeriodHoursStartTime = -maxRetentionPeriodHours
 
 	logsByKurtosisUserServiceGuidChanBuffSize = 5
 	errorChanBuffSize                         = 2
@@ -144,7 +144,7 @@ func NewLokiLogsDatabaseClientWithDefaultHttpClient(logsDatabaseAddress string) 
 
 func (client *lokiLogsDatabaseClient) GetUserServiceLogs(
 	ctx context.Context,
-	enclaveID enclave.EnclaveID,
+	enclaveID enclave.EnclaveUUID,
 	userServiceGUIDs map[service.ServiceGUID]bool,
 	conjunctiveLogLineFilters ConjunctiveLogLineFilters,
 ) (
@@ -252,7 +252,7 @@ func (client *lokiLogsDatabaseClient) GetUserServiceLogs(
 
 func (client *lokiLogsDatabaseClient) StreamUserServiceLogs(
 	ctx context.Context,
-	enclaveID enclave.EnclaveID,
+	enclaveID enclave.EnclaveUUID,
 	userServiceGUIDs map[service.ServiceGUID]bool,
 	conjunctiveLogLineFilters ConjunctiveLogLineFilters,
 ) (
@@ -302,7 +302,7 @@ func (client *lokiLogsDatabaseClient) StreamUserServiceLogs(
 	return logsByKurtosisUserServiceGuidChan, streamErrChan, cancelCtxFunc, nil
 }
 
-func (client *lokiLogsDatabaseClient) FilterExistingServiceGuids(ctx context.Context, enclaveId enclave.EnclaveID, userServiceGuids map[service.ServiceGUID]bool) (map[service.ServiceGUID]bool, error) {
+func (client *lokiLogsDatabaseClient) FilterExistingServiceGuids(ctx context.Context, enclaveId enclave.EnclaveUUID, userServiceGuids map[service.ServiceGUID]bool) (map[service.ServiceGUID]bool, error) {
 	httpHeaderWithTenantID := http.Header{}
 	httpHeaderWithTenantID.Add(organizationIdHttpHeaderKey, string(enclaveId))
 
@@ -513,7 +513,7 @@ func (client *lokiLogsDatabaseClient) doHttpRequest(
 }
 
 func (client *lokiLogsDatabaseClient) getTailLogEndpointURLAndHeader(
-	enclaveID enclave.EnclaveID,
+	enclaveID enclave.EnclaveUUID,
 	userServiceGuids map[service.ServiceGUID]bool,
 	conjunctiveLogLineFilters ConjunctiveLogLineFilters,
 ) (url.URL, http.Header) {
@@ -639,8 +639,8 @@ func getStartTimeForStreamingLogsParamValue() string {
 	return startTimeNanoStr
 }
 
-//Because the logs can be consumed from several days before the current date
-//we have to set the start time from the max retention period time
+// Because the logs can be consumed from several days before the current date
+// we have to set the start time from the max retention period time
 func getStartTimeForFilteringExistingServiceGuidsParamValue() string {
 	now := time.Now()
 	startTime := now.Add(maxRetentionPeriodHoursStartTime)

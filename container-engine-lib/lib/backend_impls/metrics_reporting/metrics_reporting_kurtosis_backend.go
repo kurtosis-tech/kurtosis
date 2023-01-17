@@ -87,14 +87,10 @@ func (backend *MetricsReportingKurtosisBackend) DestroyEngines(ctx context.Conte
 	return successes, failures, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) CreateEnclave(
-	ctx context.Context,
-	enclaveId enclave.EnclaveID,
-	isPartitioningEnabled bool,
-) (*enclave.Enclave, error) {
-	result, err := backend.underlying.CreateEnclave(ctx, enclaveId, isPartitioningEnabled)
+func (backend *MetricsReportingKurtosisBackend) CreateEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, enclaveName string, isPartitioningEnabled bool) (*enclave.Enclave, error) {
+	result, err := backend.underlying.CreateEnclave(ctx, enclaveUuid, enclaveName, isPartitioningEnabled)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating enclave with ID '%v' and is-partitioning-enabled value '%v'", enclaveId, isPartitioningEnabled)
+		return nil, stacktrace.Propagate(err, "An error occurred creating enclave with UUID '%v' and is-partitioning-enabled value '%v'", enclaveUuid, isPartitioningEnabled)
 	}
 	return result, nil
 }
@@ -103,7 +99,7 @@ func (backend *MetricsReportingKurtosisBackend) GetEnclaves(
 	ctx context.Context,
 	filters *enclave.EnclaveFilters,
 ) (
-	map[enclave.EnclaveID]*enclave.Enclave,
+	map[enclave.EnclaveUUID]*enclave.Enclave,
 	error,
 ) {
 	results, err := backend.underlying.GetEnclaves(ctx, filters)
@@ -117,8 +113,8 @@ func (backend *MetricsReportingKurtosisBackend) StopEnclaves(
 	ctx context.Context,
 	filters *enclave.EnclaveFilters,
 ) (
-	successfulEnclaveIds map[enclave.EnclaveID]bool,
-	erroredEnclaveIds map[enclave.EnclaveID]error,
+	successfulEnclaveIds map[enclave.EnclaveUUID]bool,
+	erroredEnclaveIds map[enclave.EnclaveUUID]error,
 	resultErr error,
 ) {
 	successes, failures, err := backend.underlying.StopEnclaves(ctx, filters)
@@ -130,7 +126,7 @@ func (backend *MetricsReportingKurtosisBackend) StopEnclaves(
 
 func (backend *MetricsReportingKurtosisBackend) DumpEnclave(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
+	enclaveId enclave.EnclaveUUID,
 	outputDirpath string,
 ) error {
 	if err := backend.underlying.DumpEnclave(ctx, enclaveId, outputDirpath); err != nil {
@@ -143,8 +139,8 @@ func (backend *MetricsReportingKurtosisBackend) DestroyEnclaves(
 	ctx context.Context,
 	filters *enclave.EnclaveFilters,
 ) (
-	successfulEnclaveIds map[enclave.EnclaveID]bool,
-	erroredEnclaveIds map[enclave.EnclaveID]error,
+	successfulEnclaveIds map[enclave.EnclaveUUID]bool,
+	erroredEnclaveIds map[enclave.EnclaveUUID]error,
 	resultErr error,
 ) {
 	successes, failures, err := backend.underlying.DestroyEnclaves(ctx, filters)
@@ -157,7 +153,7 @@ func (backend *MetricsReportingKurtosisBackend) DestroyEnclaves(
 func (backend *MetricsReportingKurtosisBackend) CreateAPIContainer(
 	ctx context.Context,
 	image string,
-	enclaveId enclave.EnclaveID,
+	enclaveId enclave.EnclaveUUID,
 	grpcPortNum uint16,
 	grpcProxyPortNum uint16,
 	enclaveDataVolumeDirpath string,
@@ -189,7 +185,7 @@ func (backend *MetricsReportingKurtosisBackend) CreateAPIContainer(
 	return result, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) GetAPIContainers(ctx context.Context, filters *api_container.APIContainerFilters) (map[enclave.EnclaveID]*api_container.APIContainer, error) {
+func (backend *MetricsReportingKurtosisBackend) GetAPIContainers(ctx context.Context, filters *api_container.APIContainerFilters) (map[enclave.EnclaveUUID]*api_container.APIContainer, error) {
 	results, err := backend.underlying.GetAPIContainers(ctx, filters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting API containers matching filters: %+v", filters)
@@ -197,7 +193,7 @@ func (backend *MetricsReportingKurtosisBackend) GetAPIContainers(ctx context.Con
 	return results, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) StopAPIContainers(ctx context.Context, filters *api_container.APIContainerFilters) (successfulApiContainerIds map[enclave.EnclaveID]bool, erroredApiContainerIds map[enclave.EnclaveID]error, resultErr error) {
+func (backend *MetricsReportingKurtosisBackend) StopAPIContainers(ctx context.Context, filters *api_container.APIContainerFilters) (successfulApiContainerIds map[enclave.EnclaveUUID]bool, erroredApiContainerIds map[enclave.EnclaveUUID]error, resultErr error) {
 	successes, failures, err := backend.underlying.StopAPIContainers(ctx, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred stopping API containers using filters: %+v", filters)
@@ -205,7 +201,7 @@ func (backend *MetricsReportingKurtosisBackend) StopAPIContainers(ctx context.Co
 	return successes, failures, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) DestroyAPIContainers(ctx context.Context, filters *api_container.APIContainerFilters) (successfulApiContainerIds map[enclave.EnclaveID]bool, erroredApiContainerIds map[enclave.EnclaveID]error, resultErr error) {
+func (backend *MetricsReportingKurtosisBackend) DestroyAPIContainers(ctx context.Context, filters *api_container.APIContainerFilters) (successfulApiContainerIds map[enclave.EnclaveUUID]bool, erroredApiContainerIds map[enclave.EnclaveUUID]error, resultErr error) {
 	successes, failures, err := backend.underlying.DestroyAPIContainers(ctx, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying API containers using filters: %+v", filters)
@@ -213,33 +209,33 @@ func (backend *MetricsReportingKurtosisBackend) DestroyAPIContainers(ctx context
 	return successes, failures, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) RegisterUserServices(ctx context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceID]bool) (map[service.ServiceID]*service.ServiceRegistration, map[service.ServiceID]error, error) {
-	successes, failures, err := backend.underlying.RegisterUserServices(ctx, enclaveId, services)
+func (backend *MetricsReportingKurtosisBackend) RegisterUserServices(ctx context.Context, enclaveUuid enclave.EnclaveUUID, services map[service.ServiceID]bool) (map[service.ServiceID]*service.ServiceRegistration, map[service.ServiceID]error, error) {
+	successes, failures, err := backend.underlying.RegisterUserServices(ctx, enclaveUuid, services)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred registering services to enclave '%v' with the following service ids: %+v", enclaveId, services)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred registering services to enclave '%v' with the following service ids: %+v", enclaveUuid, services)
 	}
 	return successes, failures, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) UnregisterUserServices(ctx context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceGUID]bool) (map[service.ServiceGUID]bool, map[service.ServiceGUID]error, error) {
-	successes, failures, err := backend.underlying.UnregisterUserServices(ctx, enclaveId, services)
+func (backend *MetricsReportingKurtosisBackend) UnregisterUserServices(ctx context.Context, enclaveUuid enclave.EnclaveUUID, services map[service.ServiceGUID]bool) (map[service.ServiceGUID]bool, map[service.ServiceGUID]error, error) {
+	successes, failures, err := backend.underlying.UnregisterUserServices(ctx, enclaveUuid, services)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred unregistering services from enclave '%v' with the following service guids: %+v", enclaveId, services)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred unregistering services from enclave '%v' with the following service guids: %+v", enclaveUuid, services)
 	}
 	return successes, failures, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) StartRegisteredUserServices(ctx context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceGUID]*service.ServiceConfig) (map[service.ServiceGUID]*service.Service, map[service.ServiceGUID]error, error) {
-	successes, failures, err := backend.underlying.StartRegisteredUserServices(ctx, enclaveId, services)
+func (backend *MetricsReportingKurtosisBackend) StartRegisteredUserServices(ctx context.Context, enclaveUuid enclave.EnclaveUUID, services map[service.ServiceGUID]*service.ServiceConfig) (map[service.ServiceGUID]*service.Service, map[service.ServiceGUID]error, error) {
+	successes, failures, err := backend.underlying.StartRegisteredUserServices(ctx, enclaveUuid, services)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred starting services in enclave '%v' with the following service ids: %+v", enclaveId, services)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred starting services in enclave '%v' with the following service ids: %+v", enclaveUuid, services)
 	}
 	return successes, failures, nil
 }
 
 func (backend *MetricsReportingKurtosisBackend) GetUserServices(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
+	enclaveId enclave.EnclaveUUID,
 	filters *service.ServiceFilters,
 ) (
 	map[service.ServiceGUID]*service.Service,
@@ -254,7 +250,7 @@ func (backend *MetricsReportingKurtosisBackend) GetUserServices(
 
 func (backend *MetricsReportingKurtosisBackend) GetUserServiceLogs(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
+	enclaveId enclave.EnclaveUUID,
 	filters *service.ServiceFilters,
 	shouldFollowLogs bool,
 ) (
@@ -271,7 +267,7 @@ func (backend *MetricsReportingKurtosisBackend) GetUserServiceLogs(
 
 func (backend *MetricsReportingKurtosisBackend) PauseService(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
+	enclaveId enclave.EnclaveUUID,
 	serviceId service.ServiceGUID,
 ) error {
 	err := backend.underlying.PauseService(ctx, enclaveId, serviceId)
@@ -283,7 +279,7 @@ func (backend *MetricsReportingKurtosisBackend) PauseService(
 
 func (backend *MetricsReportingKurtosisBackend) UnpauseService(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
+	enclaveId enclave.EnclaveUUID,
 	serviceId service.ServiceGUID,
 ) error {
 	err := backend.underlying.UnpauseService(ctx, enclaveId, serviceId)
@@ -295,7 +291,7 @@ func (backend *MetricsReportingKurtosisBackend) UnpauseService(
 
 func (backend *MetricsReportingKurtosisBackend) RunUserServiceExecCommands(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
+	enclaveId enclave.EnclaveUUID,
 	userServiceCommands map[service.ServiceGUID][]string,
 ) (
 	succesfulUserServiceExecResults map[service.ServiceGUID]*exec_result.ExecResult,
@@ -316,7 +312,7 @@ func (backend *MetricsReportingKurtosisBackend) RunUserServiceExecCommands(
 
 func (backend *MetricsReportingKurtosisBackend) GetConnectionWithUserService(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
+	enclaveId enclave.EnclaveUUID,
 	serviceGUID service.ServiceGUID,
 ) (
 	resultConn net.Conn,
@@ -331,7 +327,7 @@ func (backend *MetricsReportingKurtosisBackend) GetConnectionWithUserService(
 
 func (backend *MetricsReportingKurtosisBackend) CopyFilesFromUserService(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
+	enclaveId enclave.EnclaveUUID,
 	serviceGuid service.ServiceGUID,
 	srcPath string,
 	output io.Writer,
@@ -350,7 +346,7 @@ func (backend *MetricsReportingKurtosisBackend) CopyFilesFromUserService(
 
 func (backend *MetricsReportingKurtosisBackend) StopUserServices(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
+	enclaveId enclave.EnclaveUUID,
 	filters *service.ServiceFilters,
 ) (
 	successfulUserServiceGuids map[service.ServiceGUID]bool,
@@ -366,7 +362,7 @@ func (backend *MetricsReportingKurtosisBackend) StopUserServices(
 
 func (backend *MetricsReportingKurtosisBackend) DestroyUserServices(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
+	enclaveId enclave.EnclaveUUID,
 	filters *service.ServiceFilters,
 ) (
 	successfulUserServiceGuids map[service.ServiceGUID]bool,
@@ -382,7 +378,7 @@ func (backend *MetricsReportingKurtosisBackend) DestroyUserServices(
 
 func (backend *MetricsReportingKurtosisBackend) CreateNetworkingSidecar(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
+	enclaveId enclave.EnclaveUUID,
 	serviceGuid service.ServiceGUID,
 ) (
 	*networking_sidecar.NetworkingSidecar,
@@ -411,7 +407,7 @@ func (backend *MetricsReportingKurtosisBackend) GetNetworkingSidecars(
 
 func (backend *MetricsReportingKurtosisBackend) RunNetworkingSidecarExecCommands(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
+	enclaveId enclave.EnclaveUUID,
 	networkingSidecarsCommands map[service.ServiceGUID][]string,
 ) (
 	map[service.ServiceGUID]*exec_result.ExecResult,

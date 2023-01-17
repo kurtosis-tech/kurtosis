@@ -1,5 +1,5 @@
 import {
-    EnclaveID,
+    EnclaveUUID,
     KurtosisContext,
     LogLineFilter,
     ServiceContext,
@@ -42,7 +42,7 @@ const LOG_LINES_BY_SERVICE = new Map<ServiceID, ServiceLog[]>([
 ])
 
 class ServiceLogsRequestInfoAndExpectedResults {
-    readonly requestedEnclaveID: EnclaveID;
+    readonly requestedEnclaveUUID: EnclaveUUID;
     readonly requestedServiceGuids: Set<ServiceGUID>;
     readonly requestedFollowLogs: boolean;
     readonly expectedLogLines: ServiceLog[];
@@ -50,14 +50,14 @@ class ServiceLogsRequestInfoAndExpectedResults {
     readonly logLineFilter: LogLineFilter | undefined;
 
     constructor(
-        requestedEnclaveID: EnclaveID,
+        requestedEnclaveUUID: EnclaveUUID,
         requestedServiceGuids: Set<ServiceGUID>,
         requestedFollowLogs: boolean,
         expectedLogLines: ServiceLog[],
         expectedNotFoundServiceGuids: Set<ServiceGUID>,
         logLineFilter: LogLineFilter | undefined
     ) {
-        this.requestedEnclaveID = requestedEnclaveID;
+        this.requestedEnclaveUUID = requestedEnclaveUUID;
         this.requestedServiceGuids = requestedServiceGuids;
         this.requestedFollowLogs = requestedFollowLogs;
         this.expectedLogLines = expectedLogLines;
@@ -103,7 +103,7 @@ async function TestStreamLogs() {
 
         // ------------------------------------- TEST RUN ----------------------------------------------
 
-        const enclaveID: EnclaveID = enclaveContext.getEnclaveId();
+        const enclaveID: EnclaveUUID = enclaveContext.getEnclaveUuid();
 
         const serviceGuids: Set<ServiceGUID> = new Set<ServiceGUID>();
 
@@ -119,7 +119,7 @@ async function TestStreamLogs() {
 
         for (let serviceLogsRequestInfoAndExpectedResults of serviceLogsRequestInfoAndExpectedResultsList) {
 
-            const requestedEnclaveId = serviceLogsRequestInfoAndExpectedResults.requestedEnclaveID;
+            const requestedEnclaveUUID = serviceLogsRequestInfoAndExpectedResults.requestedEnclaveUUID;
             const requestedServiceGuids = serviceLogsRequestInfoAndExpectedResults.requestedServiceGuids;
             const requestedShouldFollowLogs = serviceLogsRequestInfoAndExpectedResults.requestedFollowLogs;
             const expectedLogLines = serviceLogsRequestInfoAndExpectedResults.expectedLogLines;
@@ -133,7 +133,7 @@ async function TestStreamLogs() {
 
             const getLogsResponseResult = await getLogsResponseAndEvaluateResponse(
                 kurtosisCtx,
-                requestedEnclaveId,
+                requestedEnclaveUUID,
                 requestedServiceGuids,
                 expectedLogLinesByService,
                 expectedNonExistenceServiceGuids,
@@ -156,7 +156,7 @@ async function TestStreamLogs() {
 //                                       Private helper functions
 // ====================================================================================================
 function getServiceLogsRequestInfoAndExpectedResultsList(
-    enclaveID: EnclaveID,
+    enclaveID: EnclaveUUID,
     serviceGuids: Set<ServiceGUID>,
 ): Array<ServiceLogsRequestInfoAndExpectedResults> {
 

@@ -33,6 +33,6 @@ func TestDestroyEnclave(t *testing.T) {
 	require.NoError(t, err, "An error occurred adding the file server service")
 
 	err = destroyEnclaveFunc()
-	require.NoErrorf(t, err, "An error occurred destroying enclave with ID '%v'", enclaveCtx.GetEnclaveID())
+	require.NoErrorf(t, err, "An error occurred destroying enclave with UUID '%v'", enclaveCtx.GetEnclaveUuid())
 	shouldStopEnclaveAtTheEnd = false
 }

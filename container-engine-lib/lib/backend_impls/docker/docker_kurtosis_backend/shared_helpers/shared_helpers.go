@@ -70,10 +70,10 @@ type UserServiceDockerResources struct {
 	ExpanderVolumeNames []string
 }
 
-func GetEnclaveNetworkByEnclaveId(ctx context.Context, enclaveId enclave.EnclaveID, dockerManager *docker_manager.DockerManager) (*types.Network, error) {
+func GetEnclaveNetworkByEnclaveId(ctx context.Context, enclaveId enclave.EnclaveUUID, dockerManager *docker_manager.DockerManager) (*types.Network, error) {
 	networkSearchLabels := map[string]string{
-		label_key_consts.AppIDDockerLabelKey.GetString():     label_value_consts.AppIDDockerLabelValue.GetString(),
-		label_key_consts.EnclaveIDDockerLabelKey.GetString(): string(enclaveId),
+		label_key_consts.AppIDDockerLabelKey.GetString():       label_value_consts.AppIDDockerLabelValue.GetString(),
+		label_key_consts.EnclaveUUIDDockerLabelKey.GetString(): string(enclaveId),
 	}
 
 	enclaveNetworksFound, err := dockerManager.GetNetworksByLabels(ctx, networkSearchLabels)
@@ -296,7 +296,7 @@ func GetIpAndPortInfoFromContainer(
 // Gets the service objects & Docker resources for services matching the given filters
 func GetMatchingUserServiceObjsAndDockerResourcesNoMutex(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
+	enclaveId enclave.EnclaveUUID,
 	filters *service.ServiceFilters,
 	dockerManager *docker_manager.DockerManager,
 ) (
@@ -355,7 +355,7 @@ func GetMatchingUserServiceObjsAndDockerResourcesNoMutex(
 // TODO Make private when networking sidecars are pushed down to the service level
 func GetSingleUserServiceObjAndResourcesNoMutex(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
+	enclaveId enclave.EnclaveUUID,
 	userServiceGuid service.ServiceGUID,
 	dockerManager *docker_manager.DockerManager,
 ) (
@@ -478,7 +478,7 @@ func GetEngineAndLogsComponentsNetwork(
 // ====================================================================================================
 func getMatchingUserServiceDockerResources(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
+	enclaveId enclave.EnclaveUUID,
 	maybeGuidsToMatch map[service.ServiceGUID]bool,
 	dockerManager *docker_manager.DockerManager,
 ) (map[service.ServiceGUID]*UserServiceDockerResources, error) {
@@ -487,7 +487,7 @@ func getMatchingUserServiceDockerResources(
 	// Grab services, INDEPENDENT OF volumes
 	userServiceContainerSearchLabels := map[string]string{
 		label_key_consts.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),
-		label_key_consts.EnclaveIDDockerLabelKey.GetString():     string(enclaveId),
+		label_key_consts.EnclaveUUIDDockerLabelKey.GetString():   string(enclaveId),
 		label_key_consts.ContainerTypeDockerLabelKey.GetString(): label_value_consts.UserServiceContainerTypeDockerLabelValue.GetString(),
 	}
 	userServiceContainers, err := dockerManager.GetContainersByLabels(ctx, userServiceContainerSearchLabels, shouldGetStoppedContainersWhenGettingServiceInfo)
@@ -521,9 +521,9 @@ func getMatchingUserServiceDockerResources(
 
 	// Grab volumes, INDEPENDENT OF whether there are any containers
 	filesArtifactExpansionVolumeSearchLabels := map[string]string{
-		label_key_consts.AppIDDockerLabelKey.GetString():      label_value_consts.AppIDDockerLabelValue.GetString(),
-		label_key_consts.EnclaveIDDockerLabelKey.GetString():  string(enclaveId),
-		label_key_consts.VolumeTypeDockerLabelKey.GetString(): label_value_consts.FilesArtifactExpansionVolumeTypeDockerLabelValue.GetString(),
+		label_key_consts.AppIDDockerLabelKey.GetString():       label_value_consts.AppIDDockerLabelValue.GetString(),
+		label_key_consts.EnclaveUUIDDockerLabelKey.GetString(): string(enclaveId),
+		label_key_consts.VolumeTypeDockerLabelKey.GetString():  label_value_consts.FilesArtifactExpansionVolumeTypeDockerLabelValue.GetString(),
 	}
 	matchingFilesArtifactExpansionVolumes, err := dockerManager.GetVolumesByLabels(ctx, filesArtifactExpansionVolumeSearchLabels)
 	if err != nil {
@@ -558,7 +558,7 @@ func getMatchingUserServiceDockerResources(
 }
 
 func getUserServiceObjsFromDockerResources(
-	enclaveId enclave.EnclaveID,
+	enclaveId enclave.EnclaveUUID,
 	allDockerResources map[service.ServiceGUID]*UserServiceDockerResources,
 ) (map[service.ServiceGUID]*service.Service, error) {
 	result := map[service.ServiceGUID]*service.Service{}

@@ -11,7 +11,7 @@ import (
 
 func PauseService(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
+	enclaveId enclave.EnclaveUUID,
 	serviceGuid service.ServiceGUID,
 	dockerManager *docker_manager.DockerManager,
 ) error {

@@ -72,7 +72,8 @@ type dumpPodResult struct {
 // ====================================================================================================
 func (backend *KubernetesKurtosisBackend) CreateEnclave(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
+	enclaveUuid enclave.EnclaveUUID,
+	enclaveName string,
 	isPartitioningEnabled bool,
 ) (
 	*enclave.Enclave,
@@ -84,24 +85,24 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 	teardownContext := context.Background()
 
 	searchNamespaceLabels := map[string]string{
-		label_key_consts.AppIDKubernetesLabelKey.GetString():     label_value_consts.AppIDKubernetesLabelValue.GetString(),
-		label_key_consts.EnclaveIDKubernetesLabelKey.GetString(): string(enclaveId),
+		label_key_consts.AppIDKubernetesLabelKey.GetString():       label_value_consts.AppIDKubernetesLabelValue.GetString(),
+		label_key_consts.EnclaveUUIDKubernetesLabelKey.GetString(): string(enclaveUuid),
 	}
 	namespaceList, err := backend.kubernetesManager.GetNamespacesByLabels(ctx, searchNamespaceLabels)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to list namespaces from Kubernetes, so can not verify if enclave '%v' already exists.", enclaveId)
+		return nil, stacktrace.Propagate(err, "Failed to list namespaces from Kubernetes, so can not verify if enclave '%v' already exists.", enclaveUuid)
 	}
 	if len(namespaceList.Items) > 0 {
-		return nil, stacktrace.NewError("Cannot create enclave with ID '%v' because an enclave with ID '%v' already exists", enclaveId, enclaveId)
+		return nil, stacktrace.NewError("Cannot create enclave with ID '%v' because an enclave with ID '%v' already exists", enclaveUuid, enclaveName)
 	}
 
 	creationTime := time.Now()
 
 	// Make Enclave attributes provider
-	enclaveObjAttrsProvider := backend.objAttrsProvider.ForEnclave(enclaveId)
-	enclaveNamespaceAttrs, err := enclaveObjAttrsProvider.ForEnclaveNamespace(isPartitioningEnabled, creationTime)
+	enclaveObjAttrsProvider := backend.objAttrsProvider.ForEnclave(enclaveUuid)
+	enclaveNamespaceAttrs, err := enclaveObjAttrsProvider.ForEnclaveNamespace(isPartitioningEnabled, creationTime, enclaveName)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while trying to get the enclave network attributes for the enclave with ID '%v'", enclaveId)
+		return nil, stacktrace.Propagate(err, "An error occurred while trying to get the enclave network attributes for the enclave with ID '%v'", enclaveUuid)
 	}
 
 	enclaveNamespaceName := enclaveNamespaceAttrs.GetName().GetString()
@@ -110,7 +111,7 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 
 	enclaveNamespace, err := backend.kubernetesManager.CreateNamespace(ctx, enclaveNamespaceName, enclaveNamespaceLabels, enclaveAnnotationsStrs)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to create namespace with name '%v' for enclave '%v'", enclaveNamespaceName, enclaveId)
+		return nil, stacktrace.Propagate(err, "Failed to create namespace with name '%v' for enclave '%v'", enclaveNamespaceName, enclaveUuid)
 	}
 	shouldDeleteNamespace := true
 	defer func() {
@@ -127,15 +128,15 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 		pods:      []apiv1.Pod{},
 		services:  nil,
 	}
-	enclaveObjsById, err := getEnclaveObjectsFromKubernetesResources(map[enclave.EnclaveID]*enclaveKubernetesResources{
-		enclaveId: enclaveResources,
+	enclaveObjsById, err := getEnclaveObjectsFromKubernetesResources(map[enclave.EnclaveUUID]*enclaveKubernetesResources{
+		enclaveUuid: enclaveResources,
 	})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred converting the new enclave's Kubernetes resources to enclave objects")
 	}
-	resultEnclave, found := enclaveObjsById[enclaveId]
+	resultEnclave, found := enclaveObjsById[enclaveUuid]
 	if !found {
-		return nil, stacktrace.NewError("Successfully converted the new enclave's Kubernetes resources to an enclave object, but the resulting map didn't have an entry for enclave ID '%v'", enclaveId)
+		return nil, stacktrace.NewError("Successfully converted the new enclave's Kubernetes resources to an enclave object, but the resulting map didn't have an entry for enclave UUID '%v'", enclaveUuid)
 	}
 
 	shouldDeleteNamespace = false
@@ -146,7 +147,7 @@ func (backend *KubernetesKurtosisBackend) GetEnclaves(
 	ctx context.Context,
 	filters *enclave.EnclaveFilters,
 ) (
-	map[enclave.EnclaveID]*enclave.Enclave,
+	map[enclave.EnclaveUUID]*enclave.Enclave,
 	error,
 ) {
 	matchingEnclaves, _, err := backend.getMatchingEnclaveObjectsAndKubernetesResources(ctx, filters)
@@ -160,8 +161,8 @@ func (backend *KubernetesKurtosisBackend) StopEnclaves(
 	ctx context.Context,
 	filters *enclave.EnclaveFilters,
 ) (
-	map[enclave.EnclaveID]bool,
-	map[enclave.EnclaveID]error,
+	map[enclave.EnclaveUUID]bool,
+	map[enclave.EnclaveUUID]error,
 	error,
 ) {
 
@@ -170,8 +171,8 @@ func (backend *KubernetesKurtosisBackend) StopEnclaves(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting enclaves and Kubernetes resources matching filters '%+v'", filters)
 	}
 
-	successfulEnclaveIds := map[enclave.EnclaveID]bool{}
-	erroredEnclaveIds := map[enclave.EnclaveID]error{}
+	successfulEnclaveIds := map[enclave.EnclaveUUID]bool{}
+	erroredEnclaveIds := map[enclave.EnclaveUUID]error{}
 	for enclaveId, resources := range matchingKubernetesResources {
 		namespaceName := resources.namespace.GetName()
 
@@ -233,14 +234,14 @@ func (backend *KubernetesKurtosisBackend) StopEnclaves(
 	return successfulEnclaveIds, erroredEnclaveIds, nil
 }
 
-func (backend *KubernetesKurtosisBackend) DumpEnclave(ctx context.Context, enclaveId enclave.EnclaveID, outputDirpath string) error {
-	_, kubernetesResources, err := backend.getSingleEnclaveAndKubernetesResources(ctx, enclaveId)
+func (backend *KubernetesKurtosisBackend) DumpEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, outputDirpath string) error {
+	_, kubernetesResources, err := backend.getSingleEnclaveAndKubernetesResources(ctx, enclaveUuid)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting enclave object and Kubernetes resources for enclave ID '%v'", enclaveId)
+		return stacktrace.Propagate(err, "An error occurred getting enclave object and Kubernetes resources for enclave ID '%v'", enclaveUuid)
 	}
 	namespace := kubernetesResources.namespace
 	if namespace == nil {
-		return stacktrace.NewError("Cannot dump enclave '%v' because no Kubernetes namespace exists for it", enclaveId)
+		return stacktrace.NewError("Cannot dump enclave '%v' because no Kubernetes namespace exists for it", enclaveUuid)
 	}
 
 	// Create output directory
@@ -301,8 +302,8 @@ func (backend *KubernetesKurtosisBackend) DestroyEnclaves(
 	ctx context.Context,
 	filters *enclave.EnclaveFilters,
 ) (
-	map[enclave.EnclaveID]bool,
-	map[enclave.EnclaveID]error,
+	map[enclave.EnclaveUUID]bool,
+	map[enclave.EnclaveUUID]error,
 	error,
 ) {
 	_, matchingResources, err := backend.getMatchingEnclaveObjectsAndKubernetesResources(ctx, filters)
@@ -310,8 +311,8 @@ func (backend *KubernetesKurtosisBackend) DestroyEnclaves(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting enclave Kubernetes resources matching filters: %+v", filters)
 	}
 
-	successfulEnclaveIds := map[enclave.EnclaveID]bool{}
-	erroredEnclaveIds := map[enclave.EnclaveID]error{}
+	successfulEnclaveIds := map[enclave.EnclaveUUID]bool{}
+	erroredEnclaveIds := map[enclave.EnclaveUUID]error{}
 	for enclaveId, resources := range matchingResources {
 		// Remove the namespace
 		if resources.namespace != nil {
@@ -342,13 +343,13 @@ func (backend *KubernetesKurtosisBackend) getMatchingEnclaveObjectsAndKubernetes
 	ctx context.Context,
 	filters *enclave.EnclaveFilters,
 ) (
-	map[enclave.EnclaveID]*enclave.Enclave,
-	map[enclave.EnclaveID]*enclaveKubernetesResources,
+	map[enclave.EnclaveUUID]*enclave.Enclave,
+	map[enclave.EnclaveUUID]*enclaveKubernetesResources,
 	error,
 ) {
-	matchingResources, err := backend.getMatchingEnclaveKubernetesResources(ctx, filters.IDs)
+	matchingResources, err := backend.getMatchingEnclaveKubernetesResources(ctx, filters.UUIDs)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting enclave Kubernetes resources matching IDs: %+v", filters.IDs)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting enclave Kubernetes resources matching UUIDs: %+v", filters.UUIDs)
 	}
 
 	enclaveObjects, err := getEnclaveObjectsFromKubernetesResources(matchingResources)
@@ -357,11 +358,11 @@ func (backend *KubernetesKurtosisBackend) getMatchingEnclaveObjectsAndKubernetes
 	}
 
 	// Finally, apply the filters
-	resultEnclaveObjs := map[enclave.EnclaveID]*enclave.Enclave{}
-	resultKubernetesResources := map[enclave.EnclaveID]*enclaveKubernetesResources{}
+	resultEnclaveObjs := map[enclave.EnclaveUUID]*enclave.Enclave{}
+	resultKubernetesResources := map[enclave.EnclaveUUID]*enclaveKubernetesResources{}
 	for enclaveId, enclaveObj := range enclaveObjects {
-		if filters.IDs != nil && len(filters.IDs) > 0 {
-			if _, found := filters.IDs[enclaveObj.GetID()]; !found {
+		if filters.UUIDs != nil && len(filters.UUIDs) > 0 {
+			if _, found := filters.UUIDs[enclaveObj.GetUUID()]; !found {
 				continue
 			}
 		}
@@ -383,46 +384,46 @@ func (backend *KubernetesKurtosisBackend) getMatchingEnclaveObjectsAndKubernetes
 	return resultEnclaveObjs, resultKubernetesResources, nil
 }
 
-func (backend *KubernetesKurtosisBackend) getSingleEnclaveAndKubernetesResources(ctx context.Context, enclaveId enclave.EnclaveID) (*enclave.Enclave, *enclaveKubernetesResources, error) {
+func (backend *KubernetesKurtosisBackend) getSingleEnclaveAndKubernetesResources(ctx context.Context, enclaveUuid enclave.EnclaveUUID) (*enclave.Enclave, *enclaveKubernetesResources, error) {
 	enclaveSearchFilters := &enclave.EnclaveFilters{
-		IDs: map[enclave.EnclaveID]bool{
-			enclaveId: true,
+		UUIDs: map[enclave.EnclaveUUID]bool{
+			enclaveUuid: true,
 		},
 		Statuses: nil,
 	}
 	matchingEnclaveObjects, matchingKubernetesResources, err := backend.getMatchingEnclaveObjectsAndKubernetesResources(ctx, enclaveSearchFilters)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting enclave objects and Kubernetes resources matching enclave '%v'", enclaveId)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting enclave objects and Kubernetes resources matching enclave '%v'", enclaveUuid)
 	}
 	if len(matchingEnclaveObjects) == 0 || len(matchingKubernetesResources) == 0 {
-		return nil, nil, stacktrace.NewError("Didn't find enclave objects and Kubernetes resources for enclave '%v'", enclaveId)
+		return nil, nil, stacktrace.NewError("Didn't find enclave objects and Kubernetes resources for enclave '%v'", enclaveUuid)
 	}
 	if len(matchingEnclaveObjects) > 1 || len(matchingKubernetesResources) > 1 {
-		return nil, nil, stacktrace.NewError("Found more than one enclave objects/Kubernetes resources for enclave '%v'", enclaveId)
+		return nil, nil, stacktrace.NewError("Found more than one enclave objects/Kubernetes resources for enclave '%v'", enclaveUuid)
 	}
 
-	enclaveObject, found := matchingEnclaveObjects[enclaveId]
+	enclaveObject, found := matchingEnclaveObjects[enclaveUuid]
 	if !found {
-		return nil, nil, stacktrace.NewError("No enclave object exists for enclave '%v'", enclaveId)
+		return nil, nil, stacktrace.NewError("No enclave object exists for enclave '%v'", enclaveUuid)
 	}
 
-	kubernetesResources, found := matchingKubernetesResources[enclaveId]
+	kubernetesResources, found := matchingKubernetesResources[enclaveUuid]
 	if !found {
-		return nil, nil, stacktrace.NewError("No Kubernetes resources object exists for enclave '%v'", enclaveId)
+		return nil, nil, stacktrace.NewError("No Kubernetes resources object exists for enclave '%v'", enclaveUuid)
 	}
 
 	return enclaveObject, kubernetesResources, nil
 }
 
 // Get back any and all enclave's Kubernetes resources matching the given enclave IDs, where a nil or empty map == "match all enclave IDs"
-func (backend *KubernetesKurtosisBackend) getMatchingEnclaveKubernetesResources(ctx context.Context, enclaveIds map[enclave.EnclaveID]bool) (
-	map[enclave.EnclaveID]*enclaveKubernetesResources,
+func (backend *KubernetesKurtosisBackend) getMatchingEnclaveKubernetesResources(ctx context.Context, enclaveUuids map[enclave.EnclaveUUID]bool) (
+	map[enclave.EnclaveUUID]*enclaveKubernetesResources,
 	error,
 ) {
 	enclaveMatchLabels := getEnclaveMatchLabels()
 
 	enclaveIdsStrSet := map[string]bool{}
-	for enclaveId, booleanValue := range enclaveIds {
+	for enclaveId, booleanValue := range enclaveUuids {
 		enclaveIdStr := string(enclaveId)
 		enclaveIdsStrSet[enclaveIdStr] = booleanValue
 	}
@@ -432,15 +433,15 @@ func (backend *KubernetesKurtosisBackend) getMatchingEnclaveKubernetesResources(
 		ctx,
 		backend.kubernetesManager,
 		enclaveMatchLabels,
-		label_key_consts.EnclaveIDKubernetesLabelKey.GetString(),
+		label_key_consts.EnclaveUUIDKubernetesLabelKey.GetString(),
 		enclaveIdsStrSet,
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting enclave namespaces matching IDs '%+v'", enclaveIdsStrSet)
+		return nil, stacktrace.Propagate(err, "An error occurred getting enclave namespaces matching UUIDs '%+v'", enclaveIdsStrSet)
 	}
 
 	// Per-namespace objects
-	result := map[enclave.EnclaveID]*enclaveKubernetesResources{}
+	result := map[enclave.EnclaveUUID]*enclaveKubernetesResources{}
 	for enclaveIdStr, namespacesForEnclaveId := range namespaces {
 		if len(namespacesForEnclaveId) == 0 {
 			return nil, stacktrace.NewError(
@@ -459,8 +460,8 @@ func (backend *KubernetesKurtosisBackend) getMatchingEnclaveKubernetesResources(
 
 		namespaceName := namespace.GetName()
 		enclaveWithIDMatchLabels := map[string]string{
-			label_key_consts.AppIDKubernetesLabelKey.GetString():     label_value_consts.AppIDKubernetesLabelValue.GetString(),
-			label_key_consts.EnclaveIDKubernetesLabelKey.GetString(): enclaveIdStr,
+			label_key_consts.AppIDKubernetesLabelKey.GetString():       label_value_consts.AppIDKubernetesLabelValue.GetString(),
+			label_key_consts.EnclaveUUIDKubernetesLabelKey.GetString(): enclaveIdStr,
 		}
 
 		// Pods
@@ -492,19 +493,19 @@ func (backend *KubernetesKurtosisBackend) getMatchingEnclaveKubernetesResources(
 			pods:      pods,
 			services:  services,
 		}
-		result[enclave.EnclaveID(enclaveIdStr)] = enclaveResources
+		result[enclave.EnclaveUUID(enclaveIdStr)] = enclaveResources
 	}
 
 	return result, nil
 }
 
 func getEnclaveObjectsFromKubernetesResources(
-	allResources map[enclave.EnclaveID]*enclaveKubernetesResources,
+	allResources map[enclave.EnclaveUUID]*enclaveKubernetesResources,
 ) (
-	map[enclave.EnclaveID]*enclave.Enclave,
+	map[enclave.EnclaveUUID]*enclave.Enclave,
 	error,
 ) {
-	result := map[enclave.EnclaveID]*enclave.Enclave{}
+	result := map[enclave.EnclaveUUID]*enclave.Enclave{}
 
 	for enclaveId, resourcesForEnclaveId := range allResources {
 
@@ -522,8 +523,11 @@ func getEnclaveObjectsFromKubernetesResources(
 			return nil, stacktrace.Propagate(err, "An error occurred getting the enclave's creation time from the enclave's namespace '%+v'", resourcesForEnclaveId.namespace)
 		}
 
+		enclaveName := getEnclaveNameFromEnclaveNamespace(resourcesForEnclaveId.namespace)
+
 		enclaveObj := enclave.NewEnclave(
 			enclaveId,
+			enclaveName,
 			enclaveStatus,
 			enclaveCreationTime,
 		)
@@ -673,4 +677,16 @@ func getEnclaveCreationTimeFromEnclaveNamespace(namespace *apiv1.Namespace) (*ti
 	}
 
 	return &enclaveCreationTime, nil
+}
+
+func getEnclaveNameFromEnclaveNamespace(namespace *apiv1.Namespace) string {
+	namespaceAnnotations := namespace.Annotations
+
+	enclaveCreationTimeStr, found := namespaceAnnotations[kubernetes_annotation_key_consts.EnclaveNameAnnotationKey.GetString()]
+	if !found {
+		//Handling retro-compatibility, enclaves that did not track enclave's name
+		return ""
+	}
+
+	return enclaveCreationTimeStr
 }

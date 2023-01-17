@@ -51,7 +51,7 @@ var kurtosisTransportProtocolToKubernetesTransportProtocolTranslator = map[port_
 
 func RegisterUserServices(
 	ctx context.Context,
-	enclaveID enclave.EnclaveID,
+	enclaveUUID enclave.EnclaveUUID,
 	servicesToRegister map[service.ServiceID]bool,
 	cliModeArgs *shared_helpers.CliModeArgs,
 	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs,
@@ -70,7 +70,7 @@ func RegisterUserServices(
 		return successfulServicesPool, failedServicesPool, nil
 	}
 
-	successfulRegistrations, failedRegistrations, err := registerUserServices(ctx, enclaveID, servicesToRegister, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
+	successfulRegistrations, failedRegistrations, err := registerUserServices(ctx, enclaveUUID, servicesToRegister, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred registering services with IDs '%v'", servicesToRegister)
 	}
@@ -79,7 +79,7 @@ func RegisterUserServices(
 
 func UnregisterUserServices(
 	ctx context.Context,
-	enclaveID enclave.EnclaveID,
+	enclaveUuid enclave.EnclaveUUID,
 	servicesToUnregister map[service.ServiceGUID]bool,
 	cliModeArgs *shared_helpers.CliModeArgs,
 	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs,
@@ -101,7 +101,7 @@ func UnregisterUserServices(
 		GUIDs:    servicesToUnregister,
 		Statuses: nil,
 	}
-	successfullyDestroyedServices, failedToDestroyGUIDs, err := DestroyUserServices(ctx, enclaveID, userServiceFilters, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
+	successfullyDestroyedServices, failedToDestroyGUIDs, err := DestroyUserServices(ctx, enclaveUuid, userServiceFilters, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "Attempted to destroy all services with GUIDs '%v' together but had no success. You must manually destroy the services!", servicesToUnregister)
 	}
@@ -110,7 +110,7 @@ func UnregisterUserServices(
 
 func StartRegisteredUserServices(
 	ctx context.Context,
-	enclaveID enclave.EnclaveID,
+	enclaveUuid enclave.EnclaveUUID,
 	services map[service.ServiceGUID]*service.ServiceConfig,
 	cliModeArgs *shared_helpers.CliModeArgs,
 	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs,
@@ -149,7 +149,7 @@ func StartRegisteredUserServices(
 		Statuses: nil,
 	}
 	// This is safe, as there's an N -> 1 mapping between GUID and ID and the GUIDs that we filter on don't have any matching IDs
-	existingObjectsAndResources, err := shared_helpers.GetMatchingUserServiceObjectsAndKubernetesResources(ctx, enclaveID, existingObjectsAndResourcesFilters, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
+	existingObjectsAndResources, err := shared_helpers.GetMatchingUserServiceObjectsAndKubernetesResources(ctx, enclaveUuid, existingObjectsAndResourcesFilters, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user service objects and Kubernetes resources matching service GUIDs '%v'", serviceGUIDsToFilter)
 	}
@@ -172,7 +172,7 @@ func StartRegisteredUserServices(
 
 	successfulStarts, failedStarts, err := runStartServiceOperationsInParallel(
 		ctx,
-		enclaveID,
+		enclaveUuid,
 		serviceRegisteredThatCanBeStarted,
 		existingObjectsAndResources,
 		kubernetesManager)
@@ -200,7 +200,7 @@ func StartRegisteredUserServices(
 // ====================================================================================================
 func runStartServiceOperationsInParallel(
 	ctx context.Context,
-	enclaveID enclave.EnclaveID,
+	enclaveUUID enclave.EnclaveUUID,
 	services map[service.ServiceGUID]*service.ServiceConfig,
 	servicesObjectsAndResources map[service.ServiceGUID]*shared_helpers.UserServiceObjectsAndKubernetesResources,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
@@ -216,7 +216,7 @@ func runStartServiceOperationsInParallel(
 			serviceID,
 			config,
 			servicesObjectsAndResources,
-			enclaveID,
+			enclaveUUID,
 			kubernetesManager)
 	}
 
@@ -249,7 +249,7 @@ func createStartServiceOperation(
 	serviceGuid service.ServiceGUID,
 	serviceConfig *service.ServiceConfig,
 	servicesObjectsAndResources map[service.ServiceGUID]*shared_helpers.UserServiceObjectsAndKubernetesResources,
-	enclaveID enclave.EnclaveID,
+	enclaveUuid enclave.EnclaveUUID,
 	kubernetesManager *kubernetes_manager.KubernetesManager) operation_parallelizer.Operation {
 
 	return func() (interface{}, error) {
@@ -301,7 +301,7 @@ func createStartServiceOperation(
 		}
 
 		objectAttributesProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
-		enclaveObjAttributesProvider := objectAttributesProvider.ForEnclave(enclaveID)
+		enclaveObjAttributesProvider := objectAttributesProvider.ForEnclave(enclaveUuid)
 
 		// Create the pod
 		podAttributes, err := enclaveObjAttributesProvider.ForUserServicePod(serviceGuid, serviceId, privatePorts)
@@ -368,7 +368,7 @@ func createStartServiceOperation(
 			},
 		}
 
-		convertedObjects, err := shared_helpers.GetUserServiceObjectsFromKubernetesResources(enclaveID, kubernetesResources)
+		convertedObjects, err := shared_helpers.GetUserServiceObjectsFromKubernetesResources(enclaveUuid, kubernetesResources)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting a service object from the Kubernetes service and newly-created pod")
 		}
@@ -625,7 +625,7 @@ func convertMegabytesToBytes(value uint64) uint64 {
 
 func registerUserServices(
 	ctx context.Context,
-	enclaveID enclave.EnclaveID,
+	enclaveUuid enclave.EnclaveUUID,
 	serviceIDs map[service.ServiceID]bool,
 	cliModeArgs *shared_helpers.CliModeArgs,
 	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs,
@@ -639,19 +639,19 @@ func registerUserServices(
 		return successfulServicesPool, failedServicesPool, nil
 	}
 
-	namespaceName, err := shared_helpers.GetEnclaveNamespaceName(ctx, enclaveID, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
+	namespaceName, err := shared_helpers.GetEnclaveNamespaceName(ctx, enclaveUuid, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting namespace name for enclave '%v'", enclaveID)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting namespace name for enclave '%v'", enclaveUuid)
 	}
 
 	objectAttributesProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
-	enclaveObjAttributesProvider := objectAttributesProvider.ForEnclave(enclaveID)
+	enclaveObjAttributesProvider := objectAttributesProvider.ForEnclave(enclaveUuid)
 
 	registerServiceOperations := map[operation_parallelizer.OperationID]operation_parallelizer.Operation{}
 	for serviceID := range serviceIDs {
 		registerServiceOperations[operation_parallelizer.OperationID(serviceID)] = createRegisterUserServiceOperation(
 			ctx,
-			enclaveID,
+			enclaveUuid,
 			serviceID,
 			namespaceName,
 			enclaveObjAttributesProvider,
@@ -680,7 +680,7 @@ func registerUserServices(
 
 func createRegisterUserServiceOperation(
 	ctx context.Context,
-	enclaveID enclave.EnclaveID,
+	enclaveID enclave.EnclaveUUID,
 	serviceID service.ServiceID,
 	namespaceName string,
 	enclaveObjAttributesProvider object_attributes_provider.KubernetesEnclaveObjectAttributesProvider,
@@ -713,9 +713,9 @@ func createRegisterUserServiceOperation(
 			return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes pod match label value for the enclave ID '%v'", enclaveID)
 		}
 		matchedPodLabels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
-			label_key_consts.AppIDKubernetesLabelKey:     label_value_consts.AppIDKubernetesLabelValue,
-			label_key_consts.EnclaveIDKubernetesLabelKey: enclaveIdLabelValue,
-			label_key_consts.GUIDKubernetesLabelKey:      serviceGuidLabelValue,
+			label_key_consts.AppIDKubernetesLabelKey:       label_value_consts.AppIDKubernetesLabelValue,
+			label_key_consts.EnclaveUUIDKubernetesLabelKey: enclaveIdLabelValue,
+			label_key_consts.GUIDKubernetesLabelKey:        serviceGuidLabelValue,
 		}
 		matchedPodLabelStrs := shared_helpers.GetStringMapFromLabelMap(matchedPodLabels)
 

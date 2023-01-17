@@ -36,7 +36,7 @@ const (
 
 	numServices = 10
 
-	enclaveId               = enclave.EnclaveID("test-enclave")
+	enclaveId               = enclave.EnclaveUUID("test-enclave")
 	partitioningEnabled     = true
 	fakeApiContainerVersion = "0.0.0"
 	apiContainerPort        = uint16(1234)
@@ -1007,7 +1007,7 @@ func TestUnsetConnection_FailureRollsBackChanges(t *testing.T) {
 func TestUpdateTrafficControl(t *testing.T) {
 	ctx := context.Background()
 
-	enclaveId := enclave.EnclaveID("test")
+	enclaveId := enclave.EnclaveUUID("test")
 
 	sidecars := map[service.ServiceID]networking_sidecar.NetworkingSidecarWrapper{}
 	registrations := map[service.ServiceID]*service.ServiceRegistration{}

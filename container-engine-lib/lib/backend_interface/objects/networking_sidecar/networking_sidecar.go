@@ -8,20 +8,20 @@ import (
 
 type NetworkingSidecar struct {
 	serviceGuid service.ServiceGUID
-	enclaveId   enclave.EnclaveID
+	enclaveUuid enclave.EnclaveUUID
 	status      container_status.ContainerStatus
 }
 
-func NewNetworkingSidecar(serviceGuid service.ServiceGUID, enclaveId enclave.EnclaveID, status container_status.ContainerStatus) *NetworkingSidecar {
-	return &NetworkingSidecar{serviceGuid: serviceGuid, enclaveId: enclaveId, status: status}
+func NewNetworkingSidecar(serviceGuid service.ServiceGUID, enclaveUuid enclave.EnclaveUUID, status container_status.ContainerStatus) *NetworkingSidecar {
+	return &NetworkingSidecar{serviceGuid: serviceGuid, enclaveUuid: enclaveUuid, status: status}
 }
 
 func (sidecar *NetworkingSidecar) GetServiceGUID() service.ServiceGUID {
 	return sidecar.serviceGuid
 }
 
-func (sidecar *NetworkingSidecar) GetEnclaveID() enclave.EnclaveID {
-	return sidecar.enclaveId
+func (sidecar *NetworkingSidecar) GetEnclaveUUID() enclave.EnclaveUUID {
+	return sidecar.enclaveUuid
 }
 
 func (sidecar *NetworkingSidecar) GetStatus() container_status.ContainerStatus {

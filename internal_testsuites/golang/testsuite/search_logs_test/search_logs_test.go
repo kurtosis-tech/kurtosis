@@ -117,7 +117,7 @@ func TestSearchLogs(t *testing.T) {
 	require.Equal(t, len(logLinesByService), len(serviceList))
 
 	// ------------------------------------- TEST RUN -------------------------------------------------
-	enclaveId := enclaveCtx.GetEnclaveID()
+	enclaveUuid := enclaveCtx.GetEnclaveUuid()
 
 	userServiceGuids := map[services.ServiceGUID]bool{}
 	for _, serviceCtx := range serviceList {
@@ -140,7 +140,7 @@ func TestSearchLogs(t *testing.T) {
 			ctx,
 			testTimeOut,
 			kurtosisCtx,
-			enclaveId,
+			string(enclaveUuid),
 			userServiceGuids,
 			expectedLogLinesByService,
 			shouldFollowLogsOption,

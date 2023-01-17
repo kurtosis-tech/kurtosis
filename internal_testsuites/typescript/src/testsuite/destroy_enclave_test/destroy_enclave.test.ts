@@ -51,7 +51,7 @@ test("Test destroy enclave", async () => {
         const destroyEnclaveResult = await destroyEnclaveFunction()
 
         if(destroyEnclaveResult.isErr()) {
-            log.error(`An error occurred destroying enclave with ID "${enclaveContext.getEnclaveId()}"`)
+            log.error(`An error occurred destroying enclave with ID "${enclaveContext.getEnclaveUuid()}"`)
             throw destroyEnclaveResult.error
         }
 

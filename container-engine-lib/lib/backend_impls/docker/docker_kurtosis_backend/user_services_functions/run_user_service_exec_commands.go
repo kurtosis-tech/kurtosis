@@ -15,7 +15,7 @@ import (
 // NOTE: This function will block while the exec is ongoing; if we need more perf we can make it async
 func RunUserServiceExecCommands(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
+	enclaveId enclave.EnclaveUUID,
 	userServiceCommands map[service.ServiceGUID][]string,
 	dockerManager *docker_manager.DockerManager,
 ) (

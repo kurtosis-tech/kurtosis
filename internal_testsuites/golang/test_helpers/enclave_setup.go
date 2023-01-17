@@ -20,26 +20,26 @@ const (
 func CreateEnclave(t *testing.T, ctx context.Context, testName string, isPartitioningEnabled bool) (resultEnclaveCtx *enclaves.EnclaveContext, resultStopEnclaveFunc func(), resultDestroyEnclaveFunc func() error, resultErr error) {
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	require.NoError(t, err, "An error occurred connecting to the Kurtosis engine for running test '%v'", testName)
-	enclaveId := enclaves.EnclaveID(fmt.Sprintf(
+	enclaveName := fmt.Sprintf(
 		"%v.%v.%v",
 		testsuiteNameEnclaveIDFragment,
 		testName,
 		time.Now().UnixNano()/millisInNanos,
-	))
-	enclaveCtx, err := kurtosisCtx.CreateEnclave(ctx, enclaveId, isPartitioningEnabled)
-	require.NoError(t, err, "An error occurred creating enclave '%v'", enclaveId)
+	)
+	enclaveCtx, err := kurtosisCtx.CreateEnclave(ctx, enclaveName, isPartitioningEnabled)
+	require.NoError(t, err, "An error occurred creating enclave '%v'", enclaveName)
 	stopEnclaveFunc := func() {
 
-		if err := kurtosisCtx.StopEnclave(ctx, enclaveId); err != nil {
-			logrus.Errorf("An error occurred stopping enclave '%v' that we created for this test:\n%v", enclaveId, err)
-			logrus.Errorf("ACTION REQUIRED: You'll need to stop enclave '%v' manually!!!!", enclaveId)
+		if err := kurtosisCtx.StopEnclave(ctx, enclaveName); err != nil {
+			logrus.Errorf("An error occurred stopping enclave '%v' that we created for this test:\n%v", enclaveName, err)
+			logrus.Errorf("ACTION REQUIRED: You'll need to stop enclave '%v' manually!!!!", enclaveName)
 		}
 
 	}
 	destroyEnclaveFunc := func() error {
-		if err := kurtosisCtx.DestroyEnclave(ctx, enclaveId); err != nil {
-			logrus.Errorf("An error occurred destroying enclave '%v' that we created for this test:\n%v", enclaveId, err)
-			logrus.Errorf("ACTION REQUIRED: You'll need to destroy enclave '%v' manually!!!!", enclaveId)
+		if err := kurtosisCtx.DestroyEnclave(ctx, enclaveName); err != nil {
+			logrus.Errorf("An error occurred destroying enclave '%v' that we created for this test:\n%v", enclaveName, err)
+			logrus.Errorf("ACTION REQUIRED: You'll need to destroy enclave '%v' manually!!!!", enclaveName)
 			return err
 		}
 		return nil

@@ -27,7 +27,7 @@ const (
 )
 
 func RegisterUserServices(
-	enclaveID enclave.EnclaveID,
+	enclaveUuid enclave.EnclaveUUID,
 	servicesToRegister map[service.ServiceID]bool,
 	serviceRegistrationsForEnclave map[service.ServiceGUID]*service.ServiceRegistration,
 	freeIpProvidersForEnclave *free_ip_addr_tracker.FreeIpAddrTracker,
@@ -48,7 +48,7 @@ func RegisterUserServices(
 		return successfulServicesPool, failedServicesPool, nil
 	}
 
-	successfulRegistrations, failedRegistrations, err := registerUserServices(enclaveID, servicesToRegister, serviceRegistrationsForEnclave, freeIpProvidersForEnclave)
+	successfulRegistrations, failedRegistrations, err := registerUserServices(enclaveUuid, servicesToRegister, serviceRegistrationsForEnclave, freeIpProvidersForEnclave)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred registering services with IDs '%v'", servicesToRegister)
 	}
@@ -95,7 +95,7 @@ func UnregisterUserServices(
 
 func StartUserServices(
 	ctx context.Context,
-	enclaveID enclave.EnclaveID,
+	enclaveUuid enclave.EnclaveUUID,
 	services map[service.ServiceGUID]*service.ServiceConfig,
 	serviceRegistrations map[service.ServiceGUID]*service.ServiceRegistration,
 	logsCollector *logs_collector.LogsCollector,
@@ -148,15 +148,15 @@ func StartUserServices(
 	}
 	//TODO END huge hack to temporarily enable static ports for NEAR
 
-	enclaveNetwork, err := shared_helpers.GetEnclaveNetworkByEnclaveId(ctx, enclaveID, dockerManager)
+	enclaveNetwork, err := shared_helpers.GetEnclaveNetworkByEnclaveId(ctx, enclaveUuid, dockerManager)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting enclave network by enclave ID '%v'", enclaveID)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting enclave network by enclave ID '%v'", enclaveUuid)
 	}
 	enclaveNetworkID := enclaveNetwork.GetId()
 
-	enclaveObjAttrsProvider, err := objAttrsProvider.ForEnclave(enclaveID)
+	enclaveObjAttrsProvider, err := objAttrsProvider.ForEnclave(enclaveUuid)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "Couldn't get an object attribute provider for enclave '%v'", enclaveID)
+		return nil, nil, stacktrace.Propagate(err, "Couldn't get an object attribute provider for enclave '%v'", enclaveUuid)
 	}
 
 	// Check if the logs collector is available
@@ -176,8 +176,8 @@ func StartUserServices(
 
 	//The following docker labels will be added into the logs stream which is necessary for creating new tags
 	//in the logs database and then use it for querying them to get the specific user service's logs
-	//even the 'enclaveID' value is used for Fluentbit to send it to Loki as the "X-Scope-OrgID" request's header
-	//due Loki is now configured to use multi tenancy, and we established this relation: enclaveID = tenantID
+	//even the 'enclaveUuid' value is used for Fluentbit to send it to Loki as the "X-Scope-OrgID" request's header
+	//due Loki is now configured to use multi tenancy, and we established this relation: enclaveUuid = tenantID
 	logsCollectorLabels := logs_collector_functions.GetKurtosisTrackedLogsCollectorLabels()
 
 	successfulStarts, failedStarts, err := runStartServiceOperationsInParallel(
@@ -490,7 +490,7 @@ func checkPrivateAndPublicPortsAreOneToOne(privatePorts map[string]*port_spec.Po
 
 // Registers a user service for each given serviceID, allocating each an IP and ServiceGUID
 func registerUserServices(
-	enclaveId enclave.EnclaveID,
+	enclaveUuid enclave.EnclaveUUID,
 	serviceIDs map[service.ServiceID]bool,
 	serviceRegistrationsForEnclave map[service.ServiceGUID]*service.ServiceRegistration,
 	freeIpAddrProvider *free_ip_addr_tracker.FreeIpAddrTracker) (map[service.ServiceID]*service.ServiceRegistration, map[service.ServiceID]error, error) {
@@ -507,7 +507,7 @@ func registerUserServices(
 	for serviceID := range serviceIDs {
 		ipAddr, err := freeIpAddrProvider.GetFreeIpAddr()
 		if err != nil {
-			failedRegistrations[serviceID] = stacktrace.Propagate(err, "An error occurred getting a free IP address to give to service '%v' in enclave '%v'", serviceID, enclaveId)
+			failedRegistrations[serviceID] = stacktrace.Propagate(err, "An error occurred getting a free IP address to give to service '%v' in enclave '%v'", serviceID, enclaveUuid)
 			continue
 		}
 		shouldFreeIp := true
@@ -527,7 +527,7 @@ func registerUserServices(
 		registration := service.NewServiceRegistration(
 			serviceID,
 			guid,
-			enclaveId,
+			enclaveUuid,
 			ipAddr,
 		)
 

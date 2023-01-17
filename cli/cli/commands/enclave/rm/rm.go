@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/enclave_id_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
@@ -13,15 +14,14 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"google.golang.org/protobuf/types/known/emptypb"
 	"sort"
 	"strings"
 )
 
 const (
-	enclaveIdArgKey        = "enclave-id"
-	isEnclaveIdArgOptional = false
-	isEnclaveIdArgGreedy   = true
+	enclaveIdentifiersArgKey = "enclave-identifiers"
+	isEnclaveIdArgOptional   = false
+	isEnclaveIdArgGreedy     = true
 
 	shouldForceRemoveFlagKey = "force"
 	defaultShouldForceRemove = "false"
@@ -46,8 +46,8 @@ var EnclaveRmCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCom
 		},
 	},
 	Args: []*args.ArgConfig{
-		enclave_id_arg.NewEnclaveIDArg(
-			enclaveIdArgKey,
+		enclave_id_arg.NewEnclaveIdentifierArg(
+			enclaveIdentifiersArgKey,
 			engineClientCtxKey,
 			isEnclaveIdArgOptional,
 			isEnclaveIdArgGreedy,
@@ -58,14 +58,14 @@ var EnclaveRmCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCom
 
 func run(
 	ctx context.Context,
-	kurtosisBackend backend_interface.KurtosisBackend,
-	engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
+	_ backend_interface.KurtosisBackend,
+	_ kurtosis_engine_rpc_api_bindings.EngineServiceClient,
 	flags *flags.ParsedFlags,
 	args *args.ParsedArgs,
 ) error {
-	enclaveIds, err := args.GetGreedyArg(enclaveIdArgKey)
+	enclaveIdentifiers, err := args.GetGreedyArg(enclaveIdentifiersArgKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "Expected a value for greedy enclave ID arg '%v' but none was found; this is a bug with Kurtosis!", enclaveIdArgKey)
+		return stacktrace.Propagate(err, "Expected a value for greedy enclave identifier arg '%v' but none was found; this is a bug with Kurtosis!", enclaveIdentifiersArgKey)
 	}
 
 	shouldForceRemove, err := flags.GetBool(shouldForceRemoveFlagKey)
@@ -73,23 +73,23 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the force-removal flag value using key '%v'; this is a bug in Kurtosis!", shouldForceRemoveFlagKey)
 	}
 
-	logrus.Debugf("inputted enclave IDs: %+v", enclaveIds)
+	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating Kurtosis Context from local engine")
+	}
 
-	// Condense the enclave IDs down into a unique set, so we don't try to double-destroy an enclave
-	enclaveIdsToDestroy := getUniqueSortedEnclaveIDs(enclaveIds)
+	logrus.Debugf("inputted enclave UUIDs: %+v", enclaveIdentifiers)
 
-	logrus.Debugf("Unique enclave IDs to destroy: %+v", enclaveIdsToDestroy)
+	// Condense the enclave UUIDs down into a unique set, so we don't try to double-destroy an enclave
+	enclaveIdsToDestroy := getUniqueSortedEnclaveIdentifiers(enclaveIdentifiers)
+
+	logrus.Debugf("Unique enclave UUIDs to destroy: %+v", enclaveIdsToDestroy)
 
 	logrus.Info("Destroying enclaves...")
-	getEnclavesResp, err := engineClient.GetEnclaves(ctx, &emptypb.Empty{})
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting enclaves to check that the ones to destroy are stopped")
-	}
-	allEnclaveInfo := getEnclavesResp.EnclaveInfo
 
 	enclaveDestructionErrorStrs := []string{}
 	for _, enclaveId := range enclaveIdsToDestroy {
-		if err := destroyEnclave(ctx, enclaveId, allEnclaveInfo, engineClient, shouldForceRemove); err != nil {
+		if err := destroyEnclave(ctx, kurtosisCtx, enclaveId, shouldForceRemove); err != nil {
 			enclaveDestructionErrorStrs = append(
 				enclaveDestructionErrorStrs,
 				fmt.Sprintf(
@@ -115,9 +115,11 @@ func run(
 }
 
 // ====================================================================================================
-// 									   Private helper methods
+//
+//	Private helper methods
+//
 // ====================================================================================================
-func getUniqueSortedEnclaveIDs(rawInput []string) []string {
+func getUniqueSortedEnclaveIdentifiers(rawInput []string) []string {
 	uniqueEnclaveIds := map[string]bool{}
 	for _, inputId := range rawInput {
 		uniqueEnclaveIds[inputId] = true
@@ -133,14 +135,13 @@ func getUniqueSortedEnclaveIDs(rawInput []string) []string {
 
 func destroyEnclave(
 	ctx context.Context,
-	enclaveId string,
-	allEnclaveInfo map[string]*kurtosis_engine_rpc_api_bindings.EnclaveInfo,
-	engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
+	kurtosisContext *kurtosis_context.KurtosisContext,
+	enclaveIdentifier string,
 	shouldForceRemove bool,
 ) error {
-	enclaveInfo, found := allEnclaveInfo[enclaveId]
-	if !found {
-		return stacktrace.NewError("No enclave '%v' exists", enclaveId)
+	enclaveInfo, err := kurtosisContext.GetEnclave(ctx, enclaveIdentifier)
+	if err != nil {
+		return stacktrace.NewError("No enclave '%v' exists", enclaveIdentifier)
 	}
 
 	enclaveStatus := enclaveInfo.ContainersStatus
@@ -157,15 +158,14 @@ func destroyEnclave(
 	if !shouldForceRemove && !isEnclaveRemovableWithoutForce {
 		return stacktrace.NewError(
 			"Refusing to destroy enclave '%v' because its status is '%v'; to force its removal, rerun this command with the '%v' flag",
-			enclaveId,
+			enclaveIdentifier,
 			enclaveStatus,
 			shouldForceRemoveFlagKey,
 		)
 	}
 
-	destroyEnclaveArgs := &kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs{EnclaveId: enclaveId}
-	if _, err := engineClient.DestroyEnclave(ctx, destroyEnclaveArgs); err != nil {
-		return stacktrace.Propagate(err, "An error occurred destroying enclave '%v'", enclaveId)
+	if err = kurtosisContext.DestroyEnclave(ctx, enclaveIdentifier); err != nil {
+		return stacktrace.Propagate(err, "An error occurred destroying enclave '%v'", enclaveIdentifier)
 	}
 	return nil
 }

@@ -29,11 +29,12 @@ import {
     WaitForHttpGetEndpointAvailabilityArgs,
     WaitForHttpPostEndpointAvailabilityArgs
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
-import { EnclaveID } from "./enclave_context";
+import { EnclaveUUID } from "./enclave_context";
 import {Readable} from "stream";
 
 export interface GenericApiContainerClient {
-    getEnclaveId(): EnclaveID
+    getEnclaveUuid(): EnclaveUUID
+    getEnclaveName(): string
     runStarlarkScript(serializedStarlarkScript: RunStarlarkScriptArgs): Promise<Result<Readable, Error>>
     runStarlarkPackage(starlarkPackageArgs: RunStarlarkPackageArgs): Promise<Result<Readable, Error>>
     startServices(startServicesArgs: StartServicesArgs): Promise<Result<StartServicesResponse, Error>>

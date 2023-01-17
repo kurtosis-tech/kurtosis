@@ -9,6 +9,7 @@ import (
 	"bufio"
 	"context"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/enclave_id_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/service_guid_arg"
@@ -25,9 +26,9 @@ import (
 )
 
 const (
-	enclaveIdArgKey        = "enclave-id"
-	isEnclaveIdArgOptional = false
-	isEnclaveIdArgGreedy   = false
+	enclaveIdentifierArgKey = "enclave-identifier"
+	isEnclaveIdArgOptional  = false
+	isEnclaveIdArgGreedy    = false
 
 	serviceGuidArgKey        = "service-guid"
 	isServiceGuidArgOptional = false
@@ -45,8 +46,8 @@ var ServiceShellCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosis
 	EngineClientContextKey:    engineClientCtxKey,
 	Flags:                     nil,
 	Args: []*args.ArgConfig{
-		enclave_id_arg.NewEnclaveIDArg(
-			enclaveIdArgKey,
+		enclave_id_arg.NewEnclaveIdentifierArg(
+			enclaveIdentifierArgKey,
 			engineClientCtxKey,
 			isEnclaveIdArgOptional,
 			isEnclaveIdArgGreedy,
@@ -67,11 +68,10 @@ func run(
 	flags *flags.ParsedFlags,
 	args *args.ParsedArgs,
 ) error {
-	enclaveIdStr, err := args.GetNonGreedyArg(enclaveIdArgKey)
+	enclaveIdentifier, err := args.GetNonGreedyArg(enclaveIdentifierArgKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the enclave ID using arg key '%v'", enclaveIdArgKey)
+		return stacktrace.Propagate(err, "An error occurred getting the enclave identifier using arg key '%v'", enclaveIdentifierArgKey)
 	}
-	enclaveId := enclave.EnclaveID(enclaveIdStr)
 
 	serviceGuidStr, err := args.GetNonGreedyArg(serviceGuidArgKey)
 	if err != nil {
@@ -79,9 +79,21 @@ func run(
 	}
 	serviceGuid := service.ServiceGUID(serviceGuidStr)
 
-	conn, err := kurtosisBackend.GetConnectionWithUserService(ctx, enclaveId, serviceGuid)
+	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting connection with user service with GUID '%v' in enclave '%v'", serviceGuid, enclaveId)
+		return stacktrace.Propagate(err, "An error occurred connecting to the local Kurtosis engine")
+	}
+
+	enclaveInfo, err := kurtosisCtx.GetEnclave(ctx, enclaveIdentifier)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while validating that enclave with identifier '%v' exists", enclaveIdentifier)
+	}
+
+	enclaveUuid := enclave.EnclaveUUID(enclaveInfo.EnclaveUuid)
+
+	conn, err := kurtosisBackend.GetConnectionWithUserService(ctx, enclaveUuid, serviceGuid)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting connection with user service with GUID '%v' in enclave '%v'", serviceGuid, enclaveIdentifier)
 	}
 	defer conn.Close()
 

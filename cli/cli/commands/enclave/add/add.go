@@ -21,18 +21,24 @@ const (
 	apiContainerVersionArg   = "api-container-version"
 	apiContainerLogLevelArg  = "api-container-log-level"
 	isPartitioningEnabledArg = "with-partitioning"
-	enclaveIdArg             = "id"
+	// TODO(deprecation) remove enclave ids in favor of names
+	enclaveIdArg   = "id"
+	enclaveNameArg = "name"
 
 	defaultIsPartitioningEnabled = false
 
 	// Signifies that an enclave ID should be auto-generated
 	autogenerateEnclaveIdKeyword = ""
+
+	// Signifies that an enclave name should be auto-generated
+	autogenerateEnclaveNameKeyword = ""
 )
 
 var apiContainerVersion string
 var isPartitioningEnabled bool
 var kurtosisLogLevelStr string
 var enclaveIdStr string
+var enclaveName string
 
 // EnclaveAddCmd Suppressing exhaustruct requirement because this struct has ~40 properties
 // nolint: exhaustruct
@@ -76,8 +82,20 @@ func init() {
 		autogenerateEnclaveIdKeyword,
 		fmt.Sprintf(
 			"The enclave ID to give the new enclave, which must match regex '%v' "+
-				"(emptystring will autogenerate an enclave ID)",
-			enclave_consts.AllowedEnclaveIdCharsRegexStr,
+				"(emptystring will autogenerate an enclave ID). Note this will be deprecated in favor of '%v'",
+			enclave_consts.AllowedEnclaveNameCharsRegexStr,
+			enclaveNameArg,
+		),
+	)
+	EnclaveAddCmd.Flags().StringVarP(
+		&enclaveName,
+		enclaveNameArg,
+		"n",
+		autogenerateEnclaveNameKeyword,
+		fmt.Sprintf(
+			"The enclave name to give the new enclave, which must match regex '%v' "+
+				"(emptystring will autogenerate an enclave name)",
+			enclave_consts.AllowedEnclaveNameCharsRegexStr,
 		),
 	)
 }
@@ -102,8 +120,14 @@ func run(cmd *cobra.Command, args []string) error {
 
 	logrus.Info("Creating new enclave...")
 
+	// if the enclave id is provider but name isn't we go with the supplied id
+	// TODO deprecate ids
+	if enclaveIdStr != autogenerateEnclaveIdKeyword && enclaveName == autogenerateEnclaveNameKeyword {
+		enclaveName = enclaveIdStr
+	}
+
 	createEnclaveArgs := &kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs{
-		EnclaveId:              enclaveIdStr,
+		EnclaveName:            enclaveName,
 		ApiContainerVersionTag: apiContainerVersion,
 		ApiContainerLogLevel:   kurtosisLogLevelStr,
 		IsPartitioningEnabled:  isPartitioningEnabled,
@@ -113,8 +137,11 @@ func run(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred creating an enclave with ID '%v'", enclaveIdStr)
 	}
 
-	createdEnclaveId := enclaves.EnclaveID(createdEnclaveResponse.GetEnclaveInfo().EnclaveId)
-	defer output_printers.PrintEnclaveId(createdEnclaveId)
+	enclaveInfo := createdEnclaveResponse.GetEnclaveInfo()
+	createdEnclaveUUID := enclaves.EnclaveUUID(enclaveInfo.EnclaveUuid)
+	enclaveName = enclaveInfo.Name
+
+	defer output_printers.PrintEnclaveUUID(enclaveName, createdEnclaveUUID)
 
 	return nil
 }

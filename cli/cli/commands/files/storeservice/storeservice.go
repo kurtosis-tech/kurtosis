@@ -18,9 +18,9 @@ import (
 )
 
 const (
-	enclaveIdArgKey        = "enclave-id"
-	isEnclaveIdArgOptional = false
-	isEnclaveIdArgGreedy   = false
+	enclaveIdentifierArgKey = "enclave-identifier"
+	isEnclaveIdArgOptional  = false
+	isEnclaveIdArgGreedy    = false
 
 	serviceIdArgKey        = "service-id"
 	absoluteFilepathArgKey = "filepath"
@@ -66,8 +66,8 @@ var FilesStoreServiceCmd = &engine_consuming_kurtosis_command.EngineConsumingKur
 		},
 	},
 	Args: []*args.ArgConfig{
-		enclave_id_arg.NewEnclaveIDArg(
-			enclaveIdArgKey,
+		enclave_id_arg.NewEnclaveIdentifierArg(
+			enclaveIdentifierArgKey,
 			engineClientCtxKey,
 			isEnclaveIdArgOptional,
 			isEnclaveIdArgGreedy,
@@ -89,11 +89,10 @@ func run(
 	flags *flags.ParsedFlags,
 	args *args.ParsedArgs,
 ) error {
-	enclaveIdStr, err := args.GetNonGreedyArg(enclaveIdArgKey)
+	enclaveIdentifier, err := args.GetNonGreedyArg(enclaveIdentifierArgKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the enclave ID using key '%v'", enclaveIdArgKey)
+		return stacktrace.Propagate(err, "An error occurred getting the enclave ID using key '%v'", enclaveIdentifierArgKey)
 	}
-	enclaveId := enclaves.EnclaveID(enclaveIdStr)
 
 	serviceIdStr, err := args.GetNonGreedyArg(serviceIdArgKey)
 	if err != nil {
@@ -115,25 +114,25 @@ func run(
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred connecting to the local Kurtosis engine")
 	}
-	enclaveCtx, err := kurtosisCtx.GetEnclaveContext(ctx, enclaveId)
+	enclaveCtx, err := kurtosisCtx.GetEnclaveContext(ctx, enclaveIdentifier)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the enclave context for enclave '%v'", enclaveId)
+		return stacktrace.Propagate(err, "An error occurred getting the enclave context for enclave '%v'", enclaveIdentifier)
 	}
-	runResult, err := storeServiceFileStarlarkCommand(ctx, enclaveCtx, serviceId, filepath, enclaveId, artifactName)
+	runResult, err := storeServiceFileStarlarkCommand(ctx, enclaveCtx, serviceId, filepath, enclaveIdentifier, artifactName)
 	if err != nil {
 		return stacktrace.Propagate(
 			err,
 			"An error occurred copying content from filepath '%v' in user service with ID '%v' to enclave '%v'",
 			filepath,
 			serviceId,
-			enclaveId,
+			enclaveIdentifier,
 		)
 	}
 	logrus.Info(runResult.RunOutput)
 	return nil
 }
 
-func storeServiceFileStarlarkCommand(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, serviceId services.ServiceID, filePath string, enclaveId enclaves.EnclaveID, artifactName string) (*enclaves.StarlarkRunResult, error) {
+func storeServiceFileStarlarkCommand(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, serviceId services.ServiceID, filePath string, enclaveIdentifier string, artifactName string) (*enclaves.StarlarkRunResult, error) {
 	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkTemplate, fmt.Sprintf(`{"service_id": "%s", "src": "%s", "name": "%s"}`, serviceId, filePath, artifactName), false)
 	if err != nil {
 		return nil, stacktrace.Propagate(
@@ -141,14 +140,14 @@ func storeServiceFileStarlarkCommand(ctx context.Context, enclaveCtx *enclaves.E
 			"An unexpected error occurred running command for copying content from filepath '%v' in user service with ID '%v' to enclave '%v'. This is a bug in Kurtosis, please report.",
 			filePath,
 			serviceId,
-			enclaveId)
+			enclaveIdentifier)
 	}
 	if runResult.InterpretationError != nil {
 		return nil, stacktrace.NewError(
 			"An error occurred interpreting command for copying content from filepath '%v' in user service with ID '%v' to enclave '%v': %s\nThis is a bug in Kurtosis, please report.",
 			filePath,
 			serviceId,
-			enclaveId,
+			enclaveIdentifier,
 			runResult.InterpretationError.GetErrorMessage(),
 		)
 	}
@@ -157,7 +156,7 @@ func storeServiceFileStarlarkCommand(ctx context.Context, enclaveCtx *enclaves.E
 			"An error occurred validating command for copying content from filepath '%v' in user service with ID '%v' to enclave '%v': %v",
 			filePath,
 			serviceId,
-			enclaveId,
+			enclaveIdentifier,
 			runResult.ValidationErrors,
 		)
 	}
@@ -166,7 +165,7 @@ func storeServiceFileStarlarkCommand(ctx context.Context, enclaveCtx *enclaves.E
 			"An error occurred executing command for copying content from filepath '%v' in user service with ID '%v' to enclave '%v': %s",
 			filePath,
 			serviceId,
-			enclaveId,
+			enclaveIdentifier,
 			runResult.ExecutionError.GetErrorMessage(),
 		)
 	}

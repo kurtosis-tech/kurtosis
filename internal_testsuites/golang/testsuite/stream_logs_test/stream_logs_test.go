@@ -8,7 +8,6 @@ package stream_logs_test
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/stretchr/testify/require"
@@ -52,7 +51,7 @@ var (
 )
 
 type serviceLogsRequestInfoAndExpectedResults struct {
-	requestedEnclaveID           enclaves.EnclaveID
+	requestedEnclaveIdentifier   string
 	requestedServiceGuids        map[services.ServiceGUID]bool
 	requestedFollowLogs          bool
 	expectedLogLines             []string
@@ -77,7 +76,7 @@ func TestStreamLogs(t *testing.T) {
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
 
-	enclaveId := enclaveCtx.GetEnclaveID()
+	enclaveUuid := enclaveCtx.GetEnclaveUuid()
 
 	serviceGuids := map[services.ServiceGUID]bool{}
 	for _, serviceCtx := range serviceList {
@@ -86,13 +85,13 @@ func TestStreamLogs(t *testing.T) {
 	}
 
 	serviceLogsRequestInfoAndExpectedResultsList := getServiceLogsRequestInfoAndExpectedResultsList(
-		enclaveId,
+		string(enclaveUuid),
 		serviceGuids,
 	)
 
 	for _, serviceLogsRequestInfoAndExpectedResultsObj := range serviceLogsRequestInfoAndExpectedResultsList {
 
-		requestedEnclaveId := serviceLogsRequestInfoAndExpectedResultsObj.requestedEnclaveID
+		requestedEnclaveIdentifier := serviceLogsRequestInfoAndExpectedResultsObj.requestedEnclaveIdentifier
 		requestedServiceGuids := serviceLogsRequestInfoAndExpectedResultsObj.requestedServiceGuids
 		requestedShouldFollowLogs := serviceLogsRequestInfoAndExpectedResultsObj.requestedFollowLogs
 		expectedLogLines := serviceLogsRequestInfoAndExpectedResultsObj.expectedLogLines
@@ -109,7 +108,7 @@ func TestStreamLogs(t *testing.T) {
 			ctx,
 			testTimeOut,
 			kurtosisCtx,
-			requestedEnclaveId,
+			string(requestedEnclaveIdentifier),
 			requestedServiceGuids,
 			expectedLogLinesByService,
 			requestedShouldFollowLogs,
@@ -130,7 +129,7 @@ func TestStreamLogs(t *testing.T) {
 //
 // ====================================================================================================
 func getServiceLogsRequestInfoAndExpectedResultsList(
-	enclaveId enclaves.EnclaveID,
+	enclaveIdentifier string,
 	serviceGuids map[services.ServiceGUID]bool,
 ) []*serviceLogsRequestInfoAndExpectedResults {
 
@@ -141,7 +140,7 @@ func getServiceLogsRequestInfoAndExpectedResultsList(
 	}
 
 	firstCallRequestInfoAndExpectedResults := &serviceLogsRequestInfoAndExpectedResults{
-		requestedEnclaveID:           enclaveId,
+		requestedEnclaveIdentifier:   enclaveIdentifier,
 		requestedServiceGuids:        serviceGuids,
 		requestedFollowLogs:          shouldFollowLogs,
 		expectedLogLines:             []string{lastLogLine},
@@ -150,7 +149,7 @@ func getServiceLogsRequestInfoAndExpectedResultsList(
 	}
 
 	secondCallRequestInfoAndExpectedResults := &serviceLogsRequestInfoAndExpectedResults{
-		requestedEnclaveID:           enclaveId,
+		requestedEnclaveIdentifier:   enclaveIdentifier,
 		requestedServiceGuids:        serviceGuids,
 		requestedFollowLogs:          shouldFollowLogs,
 		expectedLogLines:             []string{firstLogLine, secondLogLine, thirdLogLine, lastLogLine},
@@ -159,7 +158,7 @@ func getServiceLogsRequestInfoAndExpectedResultsList(
 	}
 
 	thirdCallRequestInfoAndExpectedResults := &serviceLogsRequestInfoAndExpectedResults{
-		requestedEnclaveID:           enclaveId,
+		requestedEnclaveIdentifier:   enclaveIdentifier,
 		requestedServiceGuids:        serviceGuids,
 		requestedFollowLogs:          shouldNotFollowLogs,
 		expectedLogLines:             []string{firstLogLine, secondLogLine, thirdLogLine, lastLogLine},
@@ -168,7 +167,7 @@ func getServiceLogsRequestInfoAndExpectedResultsList(
 	}
 
 	fourthCallRequestInfoAndExpectedResults := &serviceLogsRequestInfoAndExpectedResults{
-		requestedEnclaveID:           enclaveId,
+		requestedEnclaveIdentifier:   enclaveIdentifier,
 		requestedServiceGuids:        nonExistentServiceGuids,
 		requestedFollowLogs:          shouldFollowLogs,
 		expectedLogLines:             []string{},

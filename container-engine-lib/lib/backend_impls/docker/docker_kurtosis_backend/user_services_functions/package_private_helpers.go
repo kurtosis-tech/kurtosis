@@ -16,7 +16,7 @@ import (
 
 func destroyUserServicesUnlocked(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
+	enclaveId enclave.EnclaveUUID,
 	filters *service.ServiceFilters,
 	serviceRegistrationsForEnclave map[service.ServiceGUID]*service.ServiceRegistration,
 	enclaveFreeIpProvidersForEnclave *free_ip_addr_tracker.FreeIpAddrTracker,

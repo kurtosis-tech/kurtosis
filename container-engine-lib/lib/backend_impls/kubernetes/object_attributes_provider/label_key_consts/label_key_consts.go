@@ -25,6 +25,8 @@ const (
 	guidLabelKeyStr = labelKeyPrefixStr + "guid"
 
 	enclaveIdLabelKeyStr = labelKeyPrefixStr + "enclave-id"
+	// TODO deprecate this in favor of storing in DB
+	enclaveNameLabelKeyStr = labelKeyPrefixStr + "enclave-name"
 
 	isNetworkPartitioningEnabledKeyStr = labelKeyPrefixStr + "is-network-partitioning-enabled"
 
@@ -46,6 +48,7 @@ var KurtosisResourceTypeKubernetesLabelKey = kubernetes_label_key.MustCreateNewK
 var KurtosisVolumeTypeKubernetesLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(volumeTypeLabelKeyStr)
 var IDKubernetesLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(idLabelKeyStr)
 var GUIDKubernetesLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(guidLabelKeyStr)
-var EnclaveIDKubernetesLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(enclaveIdLabelKeyStr)
+var EnclaveUUIDKubernetesLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(enclaveIdLabelKeyStr)
+var EnclaveNameKubernetesLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(enclaveNameLabelKeyStr)
 var IsNetworkPartitioningEnabledKubernetesLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(isNetworkPartitioningEnabledKeyStr)
 var UserServiceGUIDKubernetesLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(userServiceGuidKeyStr)

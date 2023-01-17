@@ -21,7 +21,7 @@ import (
 type APIContainerModeArgs struct {
 	// Normally storing a context in a struct is bad, but we only do this to package it together as part of "optional" args
 	Context        context.Context
-	EnclaveID      enclave.EnclaveID
+	EnclaveID      enclave.EnclaveUUID
 	APIContainerIP net.IP
 }
 
@@ -39,7 +39,7 @@ func GetLocalDockerKurtosisBackend(
 
 	// If running within the API container context, detect the network that the API container is running inside
 	// so we can create the free IP address trackers
-	enclaveFreeIpAddrTrackers := map[enclave.EnclaveID]*free_ip_addr_tracker.FreeIpAddrTracker{}
+	enclaveFreeIpAddrTrackers := map[enclave.EnclaveUUID]*free_ip_addr_tracker.FreeIpAddrTracker{}
 	if optionalApiContainerModeArgs != nil {
 		db, err := shared_helpers.GetLocalDatabase()
 		if err != nil {

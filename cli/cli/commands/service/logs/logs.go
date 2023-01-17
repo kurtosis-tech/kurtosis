@@ -8,7 +8,6 @@ package logs
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
@@ -34,9 +33,9 @@ import (
 )
 
 const (
-	enclaveIdArgKey        = "enclave-id"
-	isEnclaveIdArgOptional = false
-	isEnclaveIdArgGreedy   = false
+	enclaveIdentifierArgKey = "enclave-identifier"
+	isEnclaveIdArgOptional  = false
+	isEnclaveIdArgGreedy    = false
 
 	serviceGuidArgKey        = "service-guid"
 	isServiceGuidArgOptional = false
@@ -55,7 +54,6 @@ const (
 	interruptChanBufferSize = 5
 
 	commonInstructionInMatchFlags = "Important: " + matchTextFilterFlagKey + " and " + matchRegexFilterFlagKey + " flags cannot be used at the same time. You should either use one or the other."
-
 )
 
 var doNotFilterLogLines *kurtosis_context.LogLineFilter = nil
@@ -78,31 +76,31 @@ var ServiceLogsCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			Default:   defaultShouldFollowLogs,
 		},
 		{
-			Key:     matchTextFilterFlagKey,
-			Usage:   fmt.Sprintf(
+			Key: matchTextFilterFlagKey,
+			Usage: fmt.Sprintf(
 				"Filter the log lines returning only those containing this match. %s",
 				commonInstructionInMatchFlags,
-				),
+			),
 			Default: defaultMatchTextOrRegexFilterFlagValue,
 		},
 		{
-			Key:     matchRegexFilterFlagKey,
-			Usage:   fmt.Sprintf(
+			Key: matchRegexFilterFlagKey,
+			Usage: fmt.Sprintf(
 				"Filter the log lines returning only those containing this regex expression match (re2 syntax regex may be used, more here: %s). This filter will always work but will have degraded performance for tokens. %s",
 				user_support_constants.GoogleRe2SyntaxDocumentation,
 				commonInstructionInMatchFlags,
-				),
+			),
 			Default: defaultMatchTextOrRegexFilterFlagValue,
 		},
 		{
-			Key:       invertMatchFilterFlagKey,
-			Usage:     fmt.Sprintf(
+			Key: invertMatchFilterFlagKey,
+			Usage: fmt.Sprintf(
 				"Inverts the filter condition specified by either '%s' or '%s'. Log lines NOT containing %s/%s will be returned",
 				matchTextFilterFlagKey,
 				matchRegexFilterFlagKey,
 				matchTextFilterFlagKey,
 				matchRegexFilterFlagKey,
-				),
+			),
 			Shorthand: "v",
 			Type:      flags.FlagType_Bool,
 			Default:   defaultInvertMatchFilterFlagValue,
@@ -111,8 +109,9 @@ var ServiceLogsCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 	Args: []*args.ArgConfig{
 		//TODO disabling enclaveID validation and serviceGUID validation for allowing consuming logs from removed or stopped enclaves
 		//TODO we should enable them when #310 is ready: https://github.com/kurtosis-tech/kurtosis/issues/310
-		enclave_id_arg.NewEnclaveIDArgWithValidationDisabled(
-			enclaveIdArgKey,
+		// Note from 2022-01-10 - We can do that once we start storing names in the DB
+		enclave_id_arg.NewEnclaveIdentifierArgWithValidationDisabled(
+			enclaveIdentifierArgKey,
 			isEnclaveIdArgOptional,
 			isEnclaveIdArgGreedy,
 		),
@@ -132,11 +131,10 @@ func run(
 	flags *flags.ParsedFlags,
 	args *args.ParsedArgs,
 ) error {
-	enclaveIdStr, err := args.GetNonGreedyArg(enclaveIdArgKey)
+	enclaveIdentifier, err := args.GetNonGreedyArg(enclaveIdentifierArgKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the enclave ID using arg key '%v'", enclaveIdArgKey)
+		return stacktrace.Propagate(err, "An error occurred getting the enclave identifier using arg key '%v'", enclaveIdentifierArgKey)
 	}
-	enclaveId := enclaves.EnclaveID(enclaveIdStr)
 
 	serviceGuidStr, err := args.GetNonGreedyArg(serviceGuidArgKey)
 	if err != nil {
@@ -164,6 +162,18 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the invert match flag using key '%v'", invertMatchFilterFlagKey)
 	}
 
+	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred connecting to the local Kurtosis engine")
+	}
+
+	enclaveInfo, err := kurtosisCtx.GetEnclave(ctx, enclaveIdentifier)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while validating that enclave with identifier '%v' exists", enclaveIdentifier)
+	}
+
+	enclaveUuid := enclave.EnclaveUUID(enclaveInfo.EnclaveUuid)
+
 	userServiceGuids := map[services.ServiceGUID]bool{
 		serviceGuid: true,
 	}
@@ -181,7 +191,6 @@ func run(
 	if clusterType == resolved_config.KurtosisClusterType_Kubernetes {
 		//These Kurtosis primitives came from the backend (container-engine-lib) and this is the reason
 		//why are different from the same defined earlier (which came from the Kurtosis SDK)
-		kurtosisBackendEnclaveId := enclave.EnclaveID(enclaveIdStr)
 		kurtosisBackendServiceGUID := service.ServiceGUID(serviceGuidStr)
 
 		userServiceFilters := &service.ServiceFilters{
@@ -192,7 +201,7 @@ func run(
 			Statuses: nil,
 		}
 
-		successfulUserServiceLogs, erroredUserServiceGuids, err := kurtosisBackend.GetUserServiceLogs(ctx, kurtosisBackendEnclaveId, userServiceFilters, shouldFollowLogs)
+		successfulUserServiceLogs, erroredUserServiceGuids, err := kurtosisBackend.GetUserServiceLogs(ctx, enclaveUuid, userServiceFilters, shouldFollowLogs)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred getting user service logs using filters '%+v'", userServiceFilters)
 		}
@@ -225,19 +234,14 @@ func run(
 	}
 
 	//Print logs for Docker cluster which uses the Kurtosis centralized logs feature
-	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred connecting to the local Kurtosis engine")
-	}
-
 	logLineFilter, err := getLogLineFilterFromFilterFlagValues(matchTextStr, matchRegexStr, invertMatch)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the log line filter using these filter flag values '%s=%s', '%s=%s', '%s=%v'", matchTextFilterFlagKey, matchTextStr, matchRegexFilterFlagKey, matchRegexStr, invertMatchFilterFlagKey, invertMatch)
 	}
 
-	serviceLogsStreamContentChan, cancelStreamUserServiceLogsFunc, err := kurtosisCtx.GetServiceLogs(ctx, enclaveId, userServiceGuids, shouldFollowLogs, logLineFilter)
+	serviceLogsStreamContentChan, cancelStreamUserServiceLogsFunc, err := kurtosisCtx.GetServiceLogs(ctx, enclaveIdentifier, userServiceGuids, shouldFollowLogs, logLineFilter)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting user service logs from user services with GUIDs '%+v' in enclave '%v' and with follow logs value '%v'", userServiceGuids, enclaveId, shouldFollowLogs)
+		return stacktrace.Propagate(err, "An error occurred getting user service logs from user services with GUIDs '%+v' in enclave '%v' and with follow logs value '%v'", userServiceGuids, enclaveIdentifier, shouldFollowLogs)
 	}
 	defer cancelStreamUserServiceLogsFunc()
 
@@ -280,7 +284,7 @@ func run(
 //	Private Helper Functions
 //
 // ====================================================================================================
-func getLogLineFilterFromFilterFlagValues(matchTextStr string, matchRegexStr string, invertMatch bool) (*kurtosis_context.LogLineFilter, error){
+func getLogLineFilterFromFilterFlagValues(matchTextStr string, matchRegexStr string, invertMatch bool) (*kurtosis_context.LogLineFilter, error) {
 
 	if matchTextStr == defaultMatchTextOrRegexFilterFlagValue && matchRegexStr == defaultMatchTextOrRegexFilterFlagValue {
 		return doNotFilterLogLines, nil

@@ -130,7 +130,7 @@ func runMain() error {
 	case args.KurtosisBackendType_Docker:
 		apiContainerModeArgs := &backend_creator.APIContainerModeArgs{
 			Context:        ctx,
-			EnclaveID:      enclave.EnclaveID(serverArgs.EnclaveId),
+			EnclaveID:      enclave.EnclaveUUID(serverArgs.EnclaveUUID),
 			APIContainerIP: ownIpAddress,
 		}
 		kurtosisBackend, err = backend_creator.GetLocalDockerKurtosisBackend(apiContainerModeArgs)
@@ -221,8 +221,8 @@ func createServiceNetwork(
 	args *args.APIContainerArgs,
 	ownIpAddress net.IP,
 ) (service_network.ServiceNetwork, error) {
-	enclaveIdStr := args.EnclaveId
-	enclaveId := enclave.EnclaveID(enclaveIdStr)
+	enclaveIdStr := args.EnclaveUUID
+	enclaveUuid := enclave.EnclaveUUID(enclaveIdStr)
 
 	/*
 		filesArtifactStore, err := enclaveDataDir.GetFilesArtifactStore()
@@ -237,17 +237,17 @@ func createServiceNetwork(
 		filesArtifactExpander := files_artifact_expander.NewFilesArtifactExpander(
 			kurtosisBackend,
 			enclaveObjAttrsProvider,
-			enclaveId,
+			enclaveUuid,
 			filesArtifactStore,
 		)
 	*/
 
 	networkingSidecarManager := networking_sidecar.NewStandardNetworkingSidecarManager(
 		kurtosisBackend,
-		enclaveId)
+		enclaveUuid)
 
 	serviceNetwork := service_network.NewDefaultServiceNetwork(
-		enclaveId,
+		enclaveUuid,
 		ownIpAddress,
 		args.GrpcListenPortNum,
 		args.Version,

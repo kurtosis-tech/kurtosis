@@ -78,7 +78,7 @@ func (provider *GatewayConnectionProvider) ForEnclaveApiContainer(enclaveInfo *k
 	apiContainerPorts := map[string]*port_spec.PortSpec{
 		grpcPortIdStr: apiContainerGrpcPortSpec,
 	}
-	enclaveId := enclaveInfo.GetEnclaveId()
+	enclaveId := enclaveInfo.GetEnclaveUuid()
 	podPortforwardEndpoint, err := provider.getApiContainerPodPortforwardEndpoint(enclaveId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to get an endpoint for portforwarding to the API Container in enclave '%v', instead a non-nil error was returned", enclaveId)
@@ -135,7 +135,7 @@ func (provider *GatewayConnectionProvider) getEnginePodPortforwardEndpoint(engin
 
 func (provider *GatewayConnectionProvider) getApiContainerPodPortforwardEndpoint(enclaveId string) (*url.URL, error) {
 	enclaveLabels := map[string]string{
-		label_key_consts.EnclaveIDKubernetesLabelKey.GetString():            enclaveId,
+		label_key_consts.EnclaveUUIDKubernetesLabelKey.GetString():          enclaveId,
 		label_key_consts.KurtosisResourceTypeKubernetesLabelKey.GetString(): label_value_consts.EnclaveKurtosisResourceTypeKubernetesLabelValue.GetString(),
 		label_key_consts.AppIDKubernetesLabelKey.GetString():                label_value_consts.AppIDKubernetesLabelValue.GetString(),
 	}
@@ -205,7 +205,7 @@ func (provider *GatewayConnectionProvider) getRunningPodNamesByLabels(namespace 
 
 func (provider *GatewayConnectionProvider) getEnclaveNamespaceNameForEnclaveId(enclaveId string) (string, error) {
 	enclaveLabels := map[string]string{
-		label_key_consts.EnclaveIDKubernetesLabelKey.GetString():            enclaveId,
+		label_key_consts.EnclaveUUIDKubernetesLabelKey.GetString():          enclaveId,
 		label_key_consts.KurtosisResourceTypeKubernetesLabelKey.GetString(): label_value_consts.EnclaveKurtosisResourceTypeKubernetesLabelValue.GetString(),
 		label_key_consts.AppIDKubernetesLabelKey.GetString():                label_value_consts.AppIDKubernetesLabelValue.GetString(),
 	}

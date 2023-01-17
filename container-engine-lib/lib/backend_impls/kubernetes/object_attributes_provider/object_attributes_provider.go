@@ -10,7 +10,7 @@ import (
 
 type KubernetesObjectAttributesProvider interface {
 	ForEngine(guid engine.EngineGUID) KubernetesEngineObjectAttributesProvider
-	ForEnclave(enclaveId enclave.EnclaveID) KubernetesEnclaveObjectAttributesProvider
+	ForEnclave(enclaveId enclave.EnclaveUUID) KubernetesEnclaveObjectAttributesProvider
 }
 
 func GetKubernetesObjectAttributesProvider() KubernetesObjectAttributesProvider {
@@ -28,7 +28,7 @@ func (provider *kubernetesObjectAttributesProviderImpl) ForEngine(engineGuid eng
 	return GetKubernetesEngineObjectAttributesProvider(engineGuid)
 }
 
-func (provider *kubernetesObjectAttributesProviderImpl) ForEnclave(enclaveId enclave.EnclaveID) KubernetesEnclaveObjectAttributesProvider {
+func (provider *kubernetesObjectAttributesProviderImpl) ForEnclave(enclaveId enclave.EnclaveUUID) KubernetesEnclaveObjectAttributesProvider {
 	return GetKubernetesEnclaveObjectAttributesProvider(enclaveId)
 }
 

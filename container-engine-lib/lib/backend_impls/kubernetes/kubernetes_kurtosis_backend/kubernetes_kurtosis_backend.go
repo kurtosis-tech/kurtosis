@@ -56,10 +56,10 @@ func newKubernetesKurtosisBackend(
 
 func NewAPIContainerKubernetesKurtosisBackend(
 	kubernetesManager *kubernetes_manager.KubernetesManager,
-	ownEnclaveId enclave.EnclaveID,
+	ownEnclaveUuid enclave.EnclaveUUID,
 	ownNamespaceName string,
 ) *KubernetesKurtosisBackend {
-	modeArgs := shared_helpers.NewApiContainerModeArgs(ownEnclaveId, ownNamespaceName)
+	modeArgs := shared_helpers.NewApiContainerModeArgs(ownEnclaveUuid, ownNamespaceName)
 	return newKubernetesKurtosisBackend(
 		kubernetesManager,
 		nil,
@@ -192,10 +192,10 @@ func (backend *KubernetesKurtosisBackend) DestroyEngines(
 	return successfulEngineGuids, erroredEngineGuids, nil
 }
 
-func (backend *KubernetesKurtosisBackend) RegisterUserServices(ctx context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceID]bool) (map[service.ServiceID]*service.ServiceRegistration, map[service.ServiceID]error, error) {
+func (backend *KubernetesKurtosisBackend) RegisterUserServices(ctx context.Context, enclaveUuid enclave.EnclaveUUID, services map[service.ServiceID]bool) (map[service.ServiceID]*service.ServiceRegistration, map[service.ServiceID]error, error) {
 	successfullyRegisteredService, failedServices, err := user_services_functions.RegisterUserServices(
 		ctx,
-		enclaveId,
+		enclaveUuid,
 		services,
 		backend.cliModeArgs,
 		backend.apiContainerModeArgs,
@@ -206,15 +206,15 @@ func (backend *KubernetesKurtosisBackend) RegisterUserServices(ctx context.Conte
 		for serviceId := range services {
 			serviceIds = append(serviceIds, serviceId)
 		}
-		return nil, nil, stacktrace.Propagate(err, "Unexpected error registering services with IDs '%v' to enclave '%s'", serviceIds, enclaveId)
+		return nil, nil, stacktrace.Propagate(err, "Unexpected error registering services with IDs '%v' to enclave '%s'", serviceIds, enclaveUuid)
 	}
 	return successfullyRegisteredService, failedServices, nil
 }
 
-func (backend *KubernetesKurtosisBackend) UnregisterUserServices(ctx context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceGUID]bool) (map[service.ServiceGUID]bool, map[service.ServiceGUID]error, error) {
+func (backend *KubernetesKurtosisBackend) UnregisterUserServices(ctx context.Context, enclaveUuid enclave.EnclaveUUID, services map[service.ServiceGUID]bool) (map[service.ServiceGUID]bool, map[service.ServiceGUID]error, error) {
 	successfullyUnregisteredServices, failedServices, err := user_services_functions.UnregisterUserServices(
 		ctx,
-		enclaveId,
+		enclaveUuid,
 		services,
 		backend.cliModeArgs,
 		backend.apiContainerModeArgs,
@@ -225,14 +225,14 @@ func (backend *KubernetesKurtosisBackend) UnregisterUserServices(ctx context.Con
 		for serviceGuid := range services {
 			serviceGuids = append(serviceGuids, serviceGuid)
 		}
-		return nil, nil, stacktrace.Propagate(err, "Unexpected error unregistering services with GUIDs '%v' from enclave '%s'", serviceGuids, enclaveId)
+		return nil, nil, stacktrace.Propagate(err, "Unexpected error unregistering services with GUIDs '%v' from enclave '%s'", serviceGuids, enclaveUuid)
 	}
 	return successfullyUnregisteredServices, failedServices, nil
 }
 
 func (backend *KubernetesKurtosisBackend) StartRegisteredUserServices(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
+	enclaveUuid enclave.EnclaveUUID,
 	services map[service.ServiceGUID]*service.ServiceConfig,
 ) (
 	map[service.ServiceGUID]*service.Service,
@@ -241,7 +241,7 @@ func (backend *KubernetesKurtosisBackend) StartRegisteredUserServices(
 ) {
 	successfullyStartedServices, failedServices, err := user_services_functions.StartRegisteredUserServices(
 		ctx,
-		enclaveId,
+		enclaveUuid,
 		services,
 		backend.cliModeArgs,
 		backend.apiContainerModeArgs,
@@ -252,19 +252,19 @@ func (backend *KubernetesKurtosisBackend) StartRegisteredUserServices(
 		for serviceGuid := range services {
 			serviceGuids = append(serviceGuids, serviceGuid)
 		}
-		return nil, nil, stacktrace.Propagate(err, "Unexpected error starting services with GUIDs '%v' in enclave '%s'", serviceGuids, enclaveId)
+		return nil, nil, stacktrace.Propagate(err, "Unexpected error starting services with GUIDs '%v' in enclave '%s'", serviceGuids, enclaveUuid)
 	}
 	return successfullyStartedServices, failedServices, nil
 }
 
 func (backend *KubernetesKurtosisBackend) GetUserServices(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
+	enclaveUuid enclave.EnclaveUUID,
 	filters *service.ServiceFilters,
 ) (successfulUserServices map[service.ServiceGUID]*service.Service, resultError error) {
 	return user_services_functions.GetUserServices(
 		ctx,
-		enclaveId,
+		enclaveUuid,
 		filters,
 		backend.cliModeArgs,
 		backend.apiContainerModeArgs,
@@ -274,13 +274,13 @@ func (backend *KubernetesKurtosisBackend) GetUserServices(
 
 func (backend *KubernetesKurtosisBackend) GetUserServiceLogs(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
+	enclaveUuid enclave.EnclaveUUID,
 	filters *service.ServiceFilters,
 	shouldFollowLogs bool,
 ) (successfulUserServiceLogs map[service.ServiceGUID]io.ReadCloser, erroredUserServiceGuids map[service.ServiceGUID]error, resultError error) {
 	return user_services_functions.GetUserServiceLogs(
 		ctx,
-		enclaveId,
+		enclaveUuid,
 		filters,
 		shouldFollowLogs,
 		backend.cliModeArgs,
@@ -291,24 +291,24 @@ func (backend *KubernetesKurtosisBackend) GetUserServiceLogs(
 
 func (backend *KubernetesKurtosisBackend) PauseService(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
+	enclaveUuid enclave.EnclaveUUID,
 	serviceId service.ServiceGUID,
 ) error {
-	return stacktrace.NewError("Cannot pause service '%v' in enclave '%v' because pausing is not supported by Kubernetes", serviceId, enclaveId)
+	return stacktrace.NewError("Cannot pause service '%v' in enclave '%v' because pausing is not supported by Kubernetes", serviceId, enclaveUuid)
 }
 
 func (backend *KubernetesKurtosisBackend) UnpauseService(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
+	enclaveUuid enclave.EnclaveUUID,
 	serviceId service.ServiceGUID,
 ) error {
-	return stacktrace.NewError("Cannot pause service '%v' in enclave '%v' because unpausing is not supported by Kubernetes", serviceId, enclaveId)
+	return stacktrace.NewError("Cannot pause service '%v' in enclave '%v' because unpausing is not supported by Kubernetes", serviceId, enclaveUuid)
 }
 
 // TODO Switch these to streaming methods, so that huge command outputs don't blow up the memory of the API container
 func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommands(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
+	enclaveUuid enclave.EnclaveUUID,
 	userServiceCommands map[service.ServiceGUID][]string,
 ) (
 	succesfulUserServiceExecResults map[service.ServiceGUID]*exec_result.ExecResult,
@@ -317,7 +317,7 @@ func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommands(
 ) {
 	return user_services_functions.RunUserServiceExecCommands(
 		ctx,
-		enclaveId,
+		enclaveUuid,
 		userServiceCommands,
 		backend.cliModeArgs,
 		backend.apiContainerModeArgs,
@@ -325,7 +325,7 @@ func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommands(
 		backend.kubernetesManager)
 }
 
-func (backend *KubernetesKurtosisBackend) GetConnectionWithUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceGUID service.ServiceGUID) (resultConn net.Conn, resultErr error) {
+func (backend *KubernetesKurtosisBackend) GetConnectionWithUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceGUID service.ServiceGUID) (resultConn net.Conn, resultErr error) {
 	// See https://github.com/kubernetes/client-go/issues/912
 	/*
 		in := streams.NewIn(os.Stdin)
@@ -345,14 +345,14 @@ func (backend *KubernetesKurtosisBackend) GetConnectionWithUserService(ctx conte
 
 func (backend *KubernetesKurtosisBackend) CopyFilesFromUserService(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
+	enclaveUuid enclave.EnclaveUUID,
 	serviceGuid service.ServiceGUID,
 	srcPath string,
 	output io.Writer,
 ) error {
 	return user_services_functions.CopyFilesFromUserService(
 		ctx,
-		enclaveId,
+		enclaveUuid,
 		serviceGuid,
 		srcPath,
 		output,
@@ -362,10 +362,10 @@ func (backend *KubernetesKurtosisBackend) CopyFilesFromUserService(
 		backend.kubernetesManager)
 }
 
-func (backend *KubernetesKurtosisBackend) StopUserServices(ctx context.Context, enclaveId enclave.EnclaveID, filters *service.ServiceFilters) (resultSuccessfulGuids map[service.ServiceGUID]bool, resultErroredGuids map[service.ServiceGUID]error, resultErr error) {
+func (backend *KubernetesKurtosisBackend) StopUserServices(ctx context.Context, enclaveUuid enclave.EnclaveUUID, filters *service.ServiceFilters) (resultSuccessfulGuids map[service.ServiceGUID]bool, resultErroredGuids map[service.ServiceGUID]error, resultErr error) {
 	return user_services_functions.StopUserServices(
 		ctx,
-		enclaveId,
+		enclaveUuid,
 		filters,
 		backend.cliModeArgs,
 		backend.apiContainerModeArgs,
@@ -373,10 +373,10 @@ func (backend *KubernetesKurtosisBackend) StopUserServices(ctx context.Context, 
 		backend.kubernetesManager)
 }
 
-func (backend *KubernetesKurtosisBackend) DestroyUserServices(ctx context.Context, enclaveId enclave.EnclaveID, filters *service.ServiceFilters) (resultSuccessfulGuids map[service.ServiceGUID]bool, resultErroredGuids map[service.ServiceGUID]error, resultErr error) {
+func (backend *KubernetesKurtosisBackend) DestroyUserServices(ctx context.Context, enclaveUuid enclave.EnclaveUUID, filters *service.ServiceFilters) (resultSuccessfulGuids map[service.ServiceGUID]bool, resultErroredGuids map[service.ServiceGUID]error, resultErr error) {
 	return user_services_functions.DestroyUserServices(
 		ctx,
-		enclaveId,
+		enclaveUuid,
 		filters,
 		backend.cliModeArgs,
 		backend.apiContainerModeArgs,
@@ -423,7 +423,7 @@ func (backend *KubernetesKurtosisBackend) DestroyLogsCollector(ctx context.Conte
 //	Private Helper Functions
 //
 // ====================================================================================================
-func (backend *KubernetesKurtosisBackend) getEnclaveNamespaceName(ctx context.Context, enclaveId enclave.EnclaveID) (string, error) {
+func (backend *KubernetesKurtosisBackend) getEnclaveNamespaceName(ctx context.Context, enclaveUuid enclave.EnclaveUUID) (string, error) {
 	// TODO This is a big janky hack that results from *KubernetesKurtosisBackend containing functions for all of API containers, engines, and CLIs
 	//  We want to fix this by splitting the *KubernetesKurtosisBackend into a bunch of different backends, one per user, but we can only
 	//  do this once the CLI no longer uses API container functionality (e.g. GetServices)
@@ -433,7 +433,7 @@ func (backend *KubernetesKurtosisBackend) getEnclaveNamespaceName(ctx context.Co
 	var namespaceName string
 	if backend.cliModeArgs != nil || backend.engineServerModeArgs != nil {
 		matchLabels := getEnclaveMatchLabels()
-		matchLabels[label_key_consts.EnclaveIDKubernetesLabelKey.GetString()] = string(enclaveId)
+		matchLabels[label_key_consts.EnclaveUUIDKubernetesLabelKey.GetString()] = string(enclaveUuid)
 
 		namespaces, err := backend.kubernetesManager.GetNamespacesByLabels(ctx, matchLabels)
 		if err != nil {
@@ -445,16 +445,16 @@ func (backend *KubernetesKurtosisBackend) getEnclaveNamespaceName(ctx context.Co
 			return "", stacktrace.NewError("No namespace matching labels '%+v' was found", matchLabels)
 		}
 		if numOfNamespaces > 1 {
-			return "", stacktrace.NewError("Expected to find only one enclave namespace matching enclave ID '%v', but found '%v'; this is a bug in Kurtosis", enclaveId, numOfNamespaces)
+			return "", stacktrace.NewError("Expected to find only one enclave namespace matching enclave ID '%v', but found '%v'; this is a bug in Kurtosis", enclaveUuid, numOfNamespaces)
 		}
 
 		namespaceName = namespaces.Items[0].Name
 	} else if backend.apiContainerModeArgs != nil {
-		if enclaveId != backend.apiContainerModeArgs.GetOwnEnclaveId() {
+		if enclaveUuid != backend.apiContainerModeArgs.GetOwnEnclaveId() {
 			return "", stacktrace.NewError(
 				"Received a request to get namespace for enclave '%v', but the Kubernetes Kurtosis backend is running in an API "+
 					"container in a different enclave '%v' (so Kubernetes would throw a permission error)",
-				enclaveId,
+				enclaveUuid,
 				backend.apiContainerModeArgs.GetOwnEnclaveId(),
 			)
 		}

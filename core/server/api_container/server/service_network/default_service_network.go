@@ -66,7 +66,7 @@ type storeFilesArtifactResult struct {
 // DefaultServiceNetwork is the in-memory representation of the service network that the API container will manipulate.
 // To make any changes to the test network, this struct must be used.
 type DefaultServiceNetwork struct {
-	enclaveId enclave.EnclaveID
+	enclaveUuid enclave.EnclaveUUID
 
 	apiContainerIpAddress   net.IP
 	apiContainerGrpcPortNum uint16
@@ -93,7 +93,7 @@ type DefaultServiceNetwork struct {
 }
 
 func NewDefaultServiceNetwork(
-	enclaveId enclave.EnclaveID,
+	enclaveUuid enclave.EnclaveUUID,
 	apiContainerIpAddr net.IP,
 	apiContainerGrpcPortNum uint16,
 	apiContainerVersion string,
@@ -107,7 +107,7 @@ func NewDefaultServiceNetwork(
 		partition_topology.ConnectionAllowed,
 	)
 	return &DefaultServiceNetwork{
-		enclaveId:                enclaveId,
+		enclaveUuid:              enclaveUuid,
 		apiContainerIpAddress:    apiContainerIpAddr,
 		apiContainerGrpcPortNum:  apiContainerGrpcPortNum,
 		apiContainerVersion:      apiContainerVersion,
@@ -346,7 +346,7 @@ func (network *DefaultServiceNetwork) StartService(
 	serviceToRegister := map[service.ServiceID]bool{
 		serviceId: true,
 	}
-	serviceSuccessfullyRegistered, serviceFailedRegistration, err := network.kurtosisBackend.RegisterUserServices(ctx, network.enclaveId, serviceToRegister)
+	serviceSuccessfullyRegistered, serviceFailedRegistration, err := network.kurtosisBackend.RegisterUserServices(ctx, network.enclaveUuid, serviceToRegister)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Unexpected error happened registering service '%s'", serviceId)
 	}
@@ -365,7 +365,7 @@ func (network *DefaultServiceNetwork) StartService(
 		serviceToUnregister := map[service.ServiceGUID]bool{
 			serviceGuid: true,
 		}
-		_, failedService, unexpectedErr := network.kurtosisBackend.UnregisterUserServices(ctx, network.enclaveId, serviceToUnregister)
+		_, failedService, unexpectedErr := network.kurtosisBackend.UnregisterUserServices(ctx, network.enclaveUuid, serviceToUnregister)
 		if unexpectedErr != nil {
 			logrus.Errorf("An unexpected error happened unregistering service '%s' after it failed starting. It"+
 				"is possible the service is still registered to the enclave.", serviceId)
@@ -396,7 +396,7 @@ func (network *DefaultServiceNetwork) StartService(
 			},
 			Statuses: nil,
 		}
-		_, failedToDestroyGuids, err := network.kurtosisBackend.DestroyUserServices(context.Background(), network.enclaveId, userServiceFilters)
+		_, failedToDestroyGuids, err := network.kurtosisBackend.DestroyUserServices(context.Background(), network.enclaveUuid, userServiceFilters)
 		if err != nil {
 			logrus.Errorf("Attempted to destroy the services with GUIDs '%v' but had no success. You must manually destroy the services! The following error had occurred:\n'%v'", serviceToDestroyGuid, err)
 			return
@@ -622,7 +622,7 @@ func (network *DefaultServiceNetwork) RemoveService(
 		},
 		Statuses: nil,
 	}
-	_, erroredGuids, err := network.kurtosisBackend.StopUserServices(ctx, network.enclaveId, stopServiceFilters)
+	_, erroredGuids, err := network.kurtosisBackend.StopUserServices(ctx, network.enclaveUuid, stopServiceFilters)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred during the call to stop service '%v'", serviceGuid)
 	}
@@ -660,7 +660,7 @@ func (network *DefaultServiceNetwork) PauseService(
 		return stacktrace.NewError("No service with ID '%v' exists in the network", serviceId)
 	}
 
-	if err := network.kurtosisBackend.PauseService(ctx, network.enclaveId, serviceObj.GetGUID()); err != nil {
+	if err := network.kurtosisBackend.PauseService(ctx, network.enclaveUuid, serviceObj.GetGUID()); err != nil {
 		return stacktrace.Propagate(err, "Failed to pause service '%v'", serviceId)
 	}
 	return nil
@@ -679,7 +679,7 @@ func (network *DefaultServiceNetwork) UnpauseService(
 		return stacktrace.NewError("No service with ID '%v' exists in the network", serviceId)
 	}
 
-	if err := network.kurtosisBackend.UnpauseService(ctx, network.enclaveId, serviceObj.GetGUID()); err != nil {
+	if err := network.kurtosisBackend.UnpauseService(ctx, network.enclaveUuid, serviceObj.GetGUID()); err != nil {
 		return stacktrace.Propagate(err, "Failed to unpause service '%v'", serviceId)
 	}
 	return nil
@@ -713,7 +713,7 @@ func (network *DefaultServiceNetwork) ExecCommand(
 
 	successfulExecCommands, failedExecCommands, err := network.kurtosisBackend.RunUserServiceExecCommands(
 		ctx,
-		network.enclaveId,
+		network.enclaveUuid,
 		userServiceCommand)
 	if err != nil {
 		return 0, "", stacktrace.Propagate(
@@ -800,7 +800,7 @@ func (network *DefaultServiceNetwork) GetService(ctx context.Context, serviceId 
 		},
 		Statuses: nil,
 	}
-	matchingServices, err := network.kurtosisBackend.GetUserServices(ctx, network.enclaveId, getServiceFilters)
+	matchingServices, err := network.kurtosisBackend.GetUserServices(ctx, network.enclaveUuid, getServiceFilters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting service '%v'", serviceGuid)
 	}
@@ -1032,7 +1032,7 @@ func (network *DefaultServiceNetwork) startRegisteredService(
 	serviceConfigMap := map[service.ServiceGUID]*service.ServiceConfig{
 		serviceGuid: serviceConfig,
 	}
-	successfulServices, failedServices, err := network.kurtosisBackend.StartRegisteredUserServices(ctx, network.enclaveId, serviceConfigMap)
+	successfulServices, failedServices, err := network.kurtosisBackend.StartRegisteredUserServices(ctx, network.enclaveUuid, serviceConfigMap)
 	if err != nil {
 		return nil, err
 	}
@@ -1102,8 +1102,8 @@ func (network *DefaultServiceNetwork) gzipAndPushTarredFileBytesToOutput(
 	gzippingOutput := gzip.NewWriter(output)
 	defer gzippingOutput.Close()
 
-	if err := network.kurtosisBackend.CopyFilesFromUserService(ctx, network.enclaveId, serviceGuid, srcPathOnContainer, gzippingOutput); err != nil {
-		return stacktrace.Propagate(err, "An error occurred copying source '%v' from user service with GUID '%v' in enclave with ID '%v'", srcPathOnContainer, serviceGuid, network.enclaveId)
+	if err := network.kurtosisBackend.CopyFilesFromUserService(ctx, network.enclaveUuid, serviceGuid, srcPathOnContainer, gzippingOutput); err != nil {
+		return stacktrace.Propagate(err, "An error occurred copying source '%v' from user service with GUID '%v' in enclave with UUID '%v'", srcPathOnContainer, serviceGuid, network.enclaveUuid)
 	}
 
 	return nil

@@ -58,7 +58,7 @@ func (service *EngineServerService) GetEngineInfo(ctx context.Context, empty *em
 }
 
 func (service *EngineServerService) CreateEnclave(ctx context.Context, args *kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs) (*kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse, error) {
-	if err := service.metricsClient.TrackCreateEnclave(args.EnclaveId); err != nil {
+	if err := service.metricsClient.TrackCreateEnclave(args.EnclaveName); err != nil {
 		//We don't want to interrupt users flow if something fails when tracking metrics
 		logrus.Errorf("An error occurred tracking create enclave event\n%v", err)
 	}
@@ -72,13 +72,13 @@ func (service *EngineServerService) CreateEnclave(ctx context.Context, args *kur
 		ctx,
 		args.ApiContainerVersionTag,
 		apiContainerLogLevel,
-		args.EnclaveId,
+		args.EnclaveName,
 		args.IsPartitioningEnabled,
 		service.metricsUserID,
 		service.didUserAcceptSendingMetrics,
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating new enclave with ID '%v'", args.EnclaveId)
+		return nil, stacktrace.Propagate(err, "An error occurred creating new enclave with name '%v'", args.EnclaveName)
 	}
 
 	response := &kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse{
@@ -98,42 +98,42 @@ func (service *EngineServerService) GetEnclaves(ctx context.Context, _ *emptypb.
 }
 
 func (service *EngineServerService) StopEnclave(ctx context.Context, args *kurtosis_engine_rpc_api_bindings.StopEnclaveArgs) (*emptypb.Empty, error) {
-	enclaveId := args.EnclaveId
+	enclaveIdentifier := args.EnclaveIdentifier
 
-	if err := service.metricsClient.TrackStopEnclave(enclaveId); err != nil {
+	if err := service.metricsClient.TrackStopEnclave(enclaveIdentifier); err != nil {
 		//We don't want to interrupt user's flow if something fails when tracking metrics
 		logrus.Errorf("An error occurred tracking stop enclave event\n%v", err)
 	}
 
-	if err := service.enclaveManager.StopEnclave(ctx, enclaveId); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred stopping enclave '%v'", enclaveId)
+	if err := service.enclaveManager.StopEnclave(ctx, enclaveIdentifier); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred stopping enclave '%v'", enclaveIdentifier)
 	}
 
 	return &emptypb.Empty{}, nil
 }
 
 func (service *EngineServerService) DestroyEnclave(ctx context.Context, args *kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs) (*emptypb.Empty, error) {
-	enclaveId := args.EnclaveId
+	enclaveIdentifier := args.EnclaveIdentifier
 
-	if err := service.metricsClient.TrackDestroyEnclave(enclaveId); err != nil {
+	if err := service.metricsClient.TrackDestroyEnclave(enclaveIdentifier); err != nil {
 		//We don't want to interrupt user's flow if something fails when tracking metrics
 		logrus.Errorf("An error occurred tracking destroy enclave event\n%v", err)
 	}
 
-	if err := service.enclaveManager.DestroyEnclave(ctx, enclaveId); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred destroying enclave with ID '%v':", args.EnclaveId)
+	if err := service.enclaveManager.DestroyEnclave(ctx, enclaveIdentifier); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred destroying enclave with identifier '%v':", args.EnclaveIdentifier)
 	}
 
 	return &emptypb.Empty{}, nil
 }
 
 func (service *EngineServerService) Clean(ctx context.Context, args *kurtosis_engine_rpc_api_bindings.CleanArgs) (*kurtosis_engine_rpc_api_bindings.CleanResponse, error) {
-	enclaveIDs, err := service.enclaveManager.Clean(ctx, args.ShouldCleanAll)
+	enclaveUuids, err := service.enclaveManager.Clean(ctx, args.ShouldCleanAll)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while cleaning enclaves")
 	}
 
-	response := &kurtosis_engine_rpc_api_bindings.CleanResponse{RemovedEnclaveIds: enclaveIDs}
+	response := &kurtosis_engine_rpc_api_bindings.CleanResponse{RemovedEnclaveUuids: enclaveUuids}
 	return response, nil
 }
 
@@ -142,7 +142,11 @@ func (service *EngineServerService) GetServiceLogs(
 	stream kurtosis_engine_rpc_api_bindings.EngineService_GetServiceLogsServer,
 ) error {
 
-	enclaveId := enclave.EnclaveID(args.GetEnclaveId())
+	enclaveIdentifier := args.GetEnclaveIdentifier()
+	enclaveUuid, err := service.enclaveManager.GetEnclaveUuidForEnclaveIdentifier(context.Background(), enclaveIdentifier)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while fetching uuid for enclave '%v'", enclaveIdentifier)
+	}
 	serviceGuidStrSet := args.GetServiceGuidSet()
 	requestedServiceGuids := make(map[user_service.ServiceGUID]bool, len(serviceGuidStrSet))
 	shouldFollowLogs := args.FollowLogs
@@ -160,12 +164,11 @@ func (service *EngineServerService) GetServiceLogs(
 		serviceLogsByServiceGuidChan chan map[user_service.ServiceGUID][]centralized_logs.LogLine
 		errChan                      chan error
 		cancelStreamFunc             func()
-		err                          error
 	)
 
-	notFoundServiceGuids, err := service.reportAnyMissingGuidsAndGetNotFoundGuidsList(enclaveId, requestedServiceGuids, stream)
+	notFoundServiceGuids, err := service.reportAnyMissingGuidsAndGetNotFoundGuidsList(enclaveUuid, requestedServiceGuids, stream)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred reporting missing user service GUIDs for enclave '%v' and requested service GUIDs '%+v'", enclaveId, requestedServiceGuids)
+		return stacktrace.Propagate(err, "An error occurred reporting missing user service GUIDs for enclave '%v' and requested service GUIDs '%+v'", enclaveUuid, requestedServiceGuids)
 	}
 
 	conjunctiveLogLineFilters, err := newConjunctiveLogLineFiltersGRPC(args.GetConjunctiveFilters())
@@ -174,14 +177,14 @@ func (service *EngineServerService) GetServiceLogs(
 	}
 
 	if shouldFollowLogs {
-		serviceLogsByServiceGuidChan, errChan, cancelStreamFunc, err = service.logsDatabaseClient.StreamUserServiceLogs(stream.Context(), enclaveId, requestedServiceGuids, conjunctiveLogLineFilters)
+		serviceLogsByServiceGuidChan, errChan, cancelStreamFunc, err = service.logsDatabaseClient.StreamUserServiceLogs(stream.Context(), enclaveUuid, requestedServiceGuids, conjunctiveLogLineFilters)
 		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred streaming service logs for GUIDs '%+v' in enclave with ID '%v'", requestedServiceGuids, enclaveId)
+			return stacktrace.Propagate(err, "An error occurred streaming service logs for GUIDs '%+v' in enclave with ID '%v'", requestedServiceGuids, enclaveUuid)
 		}
 	} else {
-		serviceLogsByServiceGuidChan, errChan, cancelStreamFunc, err = service.logsDatabaseClient.GetUserServiceLogs(stream.Context(), enclaveId, requestedServiceGuids, conjunctiveLogLineFilters)
+		serviceLogsByServiceGuidChan, errChan, cancelStreamFunc, err = service.logsDatabaseClient.GetUserServiceLogs(stream.Context(), enclaveUuid, requestedServiceGuids, conjunctiveLogLineFilters)
 		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred streaming service logs for GUIDs '%+v' in enclave with ID '%v'", requestedServiceGuids, enclaveId)
+			return stacktrace.Propagate(err, "An error occurred streaming service logs for GUIDs '%+v' in enclave with ID '%v'", requestedServiceGuids, enclaveUuid)
 		}
 	}
 	defer cancelStreamFunc()
@@ -221,13 +224,13 @@ func (service *EngineServerService) GetServiceLogs(
 //
 // ====================================================================================================
 func (service *EngineServerService) reportAnyMissingGuidsAndGetNotFoundGuidsList(
-	enclaveId enclave.EnclaveID,
+	enclaveUuid enclave.EnclaveUUID,
 	requestedServiceGuids map[user_service.ServiceGUID]bool,
 	stream kurtosis_engine_rpc_api_bindings.EngineService_GetServiceLogsServer,
 ) (map[string]bool, error) {
-	existingServiceGuids, err := service.logsDatabaseClient.FilterExistingServiceGuids(stream.Context(), enclaveId, requestedServiceGuids)
+	existingServiceGuids, err := service.logsDatabaseClient.FilterExistingServiceGuids(stream.Context(), enclaveUuid, requestedServiceGuids)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred retrieving the exhaustive list of service GUIDs from the log client for enclave '%v' and for the requested GUIDs '%+v'", enclaveId, requestedServiceGuids)
+		return nil, stacktrace.Propagate(err, "An error occurred retrieving the exhaustive list of service GUIDs from the log client for enclave '%v' and for the requested GUIDs '%+v'", enclaveUuid, requestedServiceGuids)
 	}
 
 	notFoundServiceGuids := getNotFoundServiceGuidsAndEmptyServiceLogsMap(requestedServiceGuids, existingServiceGuids)

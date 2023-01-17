@@ -7,9 +7,9 @@ import (
 )
 
 type NetworkingSidecarFilters struct {
-	// Disjunctive set of enclave IDs for which to return networking sidecars
-	// If nil or empty, will match all enclave IDs
-	EnclaveIDs map[enclave.EnclaveID]bool
+	// Disjunctive set of enclave UUIDs for which to return networking sidecars
+	// If nil or empty, will match all enclave UUIDs
+	EnclaveUUIDs map[enclave.EnclaveUUID]bool
 
 	// Disjunctive set of user service GUIDs to find networking sidecars for
 	// If nil or empty, will match all GUIDs

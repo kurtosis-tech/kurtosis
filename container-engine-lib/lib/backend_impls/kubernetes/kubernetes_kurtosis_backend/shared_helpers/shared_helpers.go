@@ -57,7 +57,7 @@ type CliModeArgs struct {
 }
 
 type ApiContainerModeArgs struct {
-	ownEnclaveId enclave.EnclaveID
+	ownEnclaveId enclave.EnclaveUUID
 
 	ownNamespaceName string
 
@@ -68,7 +68,7 @@ type ApiContainerModeArgs struct {
 }
 
 func NewApiContainerModeArgs(
-	ownEnclaveId enclave.EnclaveID,
+	ownEnclaveId enclave.EnclaveUUID,
 	ownNamespaceName string) *ApiContainerModeArgs {
 	return &ApiContainerModeArgs{
 		ownEnclaveId:     ownEnclaveId,
@@ -78,7 +78,7 @@ func NewApiContainerModeArgs(
 	}
 }
 
-func (apiContainerModeArgs *ApiContainerModeArgs) GetOwnEnclaveId() enclave.EnclaveID {
+func (apiContainerModeArgs *ApiContainerModeArgs) GetOwnEnclaveId() enclave.EnclaveUUID {
 	return apiContainerModeArgs.ownEnclaveId
 }
 
@@ -124,7 +124,7 @@ type UserServiceKubernetesResources struct {
 
 func GetEnclaveNamespaceName(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
+	enclaveId enclave.EnclaveUUID,
 	cliModeArgs *CliModeArgs,
 	apiContainerModeArgs *ApiContainerModeArgs,
 	engineServerModeArgs *EngineServerModeArgs,
@@ -138,7 +138,7 @@ func GetEnclaveNamespaceName(
 	var namespaceName string
 	if cliModeArgs != nil || engineServerModeArgs != nil {
 		matchLabels := getEnclaveMatchLabels()
-		matchLabels[label_key_consts.EnclaveIDKubernetesLabelKey.GetString()] = string(enclaveId)
+		matchLabels[label_key_consts.EnclaveUUIDKubernetesLabelKey.GetString()] = string(enclaveId)
 
 		namespaces, err := kubernetesManager.GetNamespacesByLabels(ctx, matchLabels)
 		if err != nil {
@@ -173,7 +173,7 @@ func GetEnclaveNamespaceName(
 
 func GetMatchingUserServiceObjectsAndKubernetesResources(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
+	enclaveId enclave.EnclaveUUID,
 	filters *service.ServiceFilters,
 	cliModeArgs *CliModeArgs,
 	apiContainerModeArgs *ApiContainerModeArgs,
@@ -243,7 +243,7 @@ func GetMatchingUserServiceObjectsAndKubernetesResources(
 
 func GetUserServiceKubernetesResourcesMatchingGuids(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
+	enclaveId enclave.EnclaveUUID,
 	serviceGuids map[service.ServiceGUID]bool,
 	cliModeArgs *CliModeArgs,
 	apiContainerModeArgs *ApiContainerModeArgs,
@@ -266,7 +266,7 @@ func GetUserServiceKubernetesResourcesMatchingGuids(
 
 	kubernetesResourceSearchLabels := map[string]string{
 		label_key_consts.AppIDKubernetesLabelKey.GetString():                label_value_consts.AppIDKubernetesLabelValue.GetString(),
-		label_key_consts.EnclaveIDKubernetesLabelKey.GetString():            string(enclaveId),
+		label_key_consts.EnclaveUUIDKubernetesLabelKey.GetString():          string(enclaveId),
 		label_key_consts.KurtosisResourceTypeKubernetesLabelKey.GetString(): label_value_consts.UserServiceKurtosisResourceTypeKubernetesLabelValue.GetString(),
 	}
 
@@ -350,7 +350,7 @@ func GetUserServiceKubernetesResourcesMatchingGuids(
 }
 
 func GetUserServiceObjectsFromKubernetesResources(
-	enclaveId enclave.EnclaveID,
+	enclaveId enclave.EnclaveUUID,
 	allKubernetesResources map[service.ServiceGUID]*UserServiceKubernetesResources,
 ) (map[service.ServiceGUID]*UserServiceObjectsAndKubernetesResources, error) {
 	results := map[service.ServiceGUID]*UserServiceObjectsAndKubernetesResources{}
@@ -439,7 +439,7 @@ func GetUserServiceObjectsFromKubernetesResources(
 
 func GetSingleUserServiceObjectsAndResources(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
+	enclaveId enclave.EnclaveUUID,
 	serviceGuid service.ServiceGUID,
 	cliModeArgs *CliModeArgs,
 	apiContainerModeArgs *ApiContainerModeArgs,
@@ -645,7 +645,7 @@ func WaitForPortAvailabilityUsingNetstat(
 
 func GetMatchingUserServiceObjectsAndKubernetesResourcesByServiceID(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
+	enclaveId enclave.EnclaveUUID,
 	filters *service.ServiceFilters,
 	cliModeArgs *CliModeArgs,
 	apiContainerModeArgs *ApiContainerModeArgs,
@@ -668,7 +668,9 @@ func GetMatchingUserServiceObjectsAndKubernetesResourcesByServiceID(
 }
 
 // ====================================================================================================
-//                                     Private Helper Methods
+//
+//	Private Helper Methods
+//
 // ====================================================================================================
 func getEnclaveMatchLabels() map[string]string {
 	matchLabels := map[string]string{

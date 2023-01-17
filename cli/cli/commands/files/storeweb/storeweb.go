@@ -3,7 +3,6 @@ package storeweb
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/enclave_id_arg"
@@ -18,9 +17,9 @@ import (
 )
 
 const (
-	enclaveIdArgKey        = "enclave-id"
-	isEnclaveIdArgOptional = false
-	isEnclaveIdArgGreedy   = false
+	enclaveIdentifierArgKey = "enclave-identifier"
+	isEnclaveIdArgOptional  = false
+	isEnclaveIdArgGreedy    = false
 
 	urlArgKey = "url"
 
@@ -54,8 +53,8 @@ var FilesStoreWebCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosi
 		},
 	},
 	Args: []*args.ArgConfig{
-		enclave_id_arg.NewEnclaveIDArg(
-			enclaveIdArgKey,
+		enclave_id_arg.NewEnclaveIdentifierArg(
+			enclaveIdentifierArgKey,
 			engineClientCtxKey,
 			isEnclaveIdArgOptional,
 			isEnclaveIdArgGreedy,
@@ -74,11 +73,10 @@ func run(
 	flags *flags.ParsedFlags,
 	args *args.ParsedArgs,
 ) error {
-	enclaveIdStr, err := args.GetNonGreedyArg(enclaveIdArgKey)
+	enclaveIdentifier, err := args.GetNonGreedyArg(enclaveIdentifierArgKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the enclave ID using key '%v'", enclaveIdArgKey)
+		return stacktrace.Propagate(err, "An error occurred getting the enclave ID using key '%v'", enclaveIdentifierArgKey)
 	}
-	enclaveId := enclaves.EnclaveID(enclaveIdStr)
 
 	url, err := args.GetNonGreedyArg(urlArgKey)
 	if err != nil {
@@ -89,9 +87,9 @@ func run(
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred connecting to the local Kurtosis engine")
 	}
-	enclaveCtx, err := kurtosisCtx.GetEnclaveContext(ctx, enclaveId)
+	enclaveCtx, err := kurtosisCtx.GetEnclaveContext(ctx, enclaveIdentifier)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the enclave context for enclave '%v'", enclaveId)
+		return stacktrace.Propagate(err, "An error occurred getting the enclave context for enclave '%v'", enclaveIdentifier)
 	}
 
 	artifactName, err := flags.GetString(nameFlagKey)
@@ -108,7 +106,7 @@ func run(
 			err,
 			"An error occurred downloading the archive file from URL '%v' to enclave '%v'",
 			url,
-			enclaveId,
+			enclaveIdentifier,
 		)
 	}
 	logrus.Infof("Files package '%v' stored with UUID: %v", artifactName, filesArtifactUuid)

@@ -2,7 +2,6 @@ package service_guid_arg
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
@@ -13,7 +12,7 @@ import (
 )
 
 const (
-	enclaveIdArgKey = "enclave-id"
+	enclaveIdentifierArgKey = "enclave-identifier"
 )
 
 func NewServiceGUIDArg(
@@ -34,8 +33,8 @@ func NewServiceGUIDArg(
 	}
 }
 
-//TODO we added this constructor for allowing 'service logs' command to disable the validation for consuming logs from removed or stopped enclaves
-//TODO probably we should remove it when #310 is ready: https://github.com/
+// TODO we added this constructor for allowing 'service logs' command to disable the validation for consuming logs from removed or stopped enclaves
+// TODO probably we should remove it when #310 is ready: https://github.com/
 func NewServiceGUIDArgWithValidationDisabled(
 	argKey string,
 	isOptional bool,
@@ -54,16 +53,16 @@ func NewServiceGUIDArgWithValidationDisabled(
 	}
 }
 
-func getServiceGuidsForEnclave(ctx context.Context, enclaveID enclaves.EnclaveID) (map[services.ServiceGUID]bool, error) {
+func getServiceGuidsForEnclave(ctx context.Context, enclaveIdentifier string) (map[services.ServiceGUID]bool, error) {
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred connecting to the Kurtosis engine for retrieving the enclave IDs for tab completion",
+			"An error occurred connecting to the Kurtosis engine for retrieving the enclave UUIDs for tab completion",
 		)
 	}
 
-	enclaveContext, err := kurtosisCtx.GetEnclaveContext(ctx, enclaveID)
+	enclaveContext, err := kurtosisCtx.GetEnclaveContext(ctx, enclaveIdentifier)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclave context")
 	}
@@ -87,15 +86,14 @@ func getServiceGuidsForEnclave(ctx context.Context, enclaveID enclaves.EnclaveID
 }
 
 func getOrderedEnclaveServiceGuids(ctx context.Context, flags *flags.ParsedFlags, previousArgs *args.ParsedArgs) ([]string, error) {
-	enclaveIdStr, err := previousArgs.GetNonGreedyArg(enclaveIdArgKey)
+	enclaveIdentifier, err := previousArgs.GetNonGreedyArg(enclaveIdentifierArgKey)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave ID using key '%v'", enclaveIdArgKey)
+		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave identifier using key '%v'", enclaveIdentifierArgKey)
 	}
 
-	enclaveID := enclaves.EnclaveID(enclaveIdStr)
-	serviceGuids, err := getServiceGuidsForEnclave(ctx, enclaveID)
+	serviceGuids, err := getServiceGuidsForEnclave(ctx, enclaveIdentifier)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the services retrieving for enclave ID tab completion")
+		return nil, stacktrace.Propagate(err, "An error occurred getting the services retrieving for enclave identifier tab completion")
 	}
 
 	result := []string{}

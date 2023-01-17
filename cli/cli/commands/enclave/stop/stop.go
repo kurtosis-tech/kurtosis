@@ -16,9 +16,9 @@ import (
 )
 
 const (
-	enclaveIdArg           = "enclave-id"
-	isEnclaveIdArgOptional = false
-	isEnclaveIdArgGreedy   = true // The user can specify multiple enclaves to stop
+	enclaveIdentifiersArgKey = "enclave-identifiers"
+	isEnclaveIdArgOptional   = false
+	isEnclaveIdArgGreedy     = true // The user can specify multiple enclaves to stop
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
@@ -27,13 +27,13 @@ const (
 var EnclaveStopCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
 	CommandStr:                command_str_consts.EnclaveStopCmdStr,
 	ShortDescription:          "Stops enclaves",
-	LongDescription:           "Stops the enclaves with the given IDs",
+	LongDescription:           "Stops the enclaves with the given UUIDs",
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
 	EngineClientContextKey:    engineClientCtxKey,
 	Flags:                     nil,
 	Args: []*args.ArgConfig{
-		enclave_id_arg.NewEnclaveIDArg(
-			enclaveIdArg,
+		enclave_id_arg.NewEnclaveIdentifierArg(
+			enclaveIdentifiersArgKey,
 			engineClientCtxKey,
 			isEnclaveIdArgOptional,
 			isEnclaveIdArgGreedy,
@@ -52,17 +52,17 @@ func run(
 	_ *flags.ParsedFlags,
 	args *args.ParsedArgs,
 ) error {
-	enclaveIds, err := args.GetGreedyArg(enclaveIdArg)
+	enclaveIdentifiers, err := args.GetGreedyArg(enclaveIdentifiersArgKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the enclave IDs arg using key '%v'", enclaveIdArg)
+		return stacktrace.Propagate(err, "An error occurred getting the enclave identifiers arg using key '%v'", enclaveIdentifiersArgKey)
 	}
 
 	logrus.Info("Stopping enclaves...")
 	stopEnclaveErrorStrs := []string{}
-	for _, enclaveId := range enclaveIds {
-		stopArgs := &kurtosis_engine_rpc_api_bindings.StopEnclaveArgs{EnclaveId: enclaveId}
+	for _, enclaveIdentifier := range enclaveIdentifiers {
+		stopArgs := &kurtosis_engine_rpc_api_bindings.StopEnclaveArgs{EnclaveIdentifier: enclaveIdentifier}
 		if _, err := engineClient.StopEnclave(ctx, stopArgs); err != nil {
-			wrappedErr := stacktrace.Propagate(err, "An error occurred stopping enclave '%v'", enclaveId)
+			wrappedErr := stacktrace.Propagate(err, "An error occurred stopping enclave '%v'", enclaveIdentifier)
 			stopEnclaveErrorStrs = append(stopEnclaveErrorStrs, wrappedErr.Error())
 		}
 	}

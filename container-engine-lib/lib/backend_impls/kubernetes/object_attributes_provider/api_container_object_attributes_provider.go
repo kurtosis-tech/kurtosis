@@ -40,11 +40,11 @@ type kubernetesApiContainerObjectAttributesProviderImpl struct {
 	enclaveId string
 }
 
-func GetKubernetesApiContainerObjectAttributesProvider(enclaveId enclave.EnclaveID) KubernetesApiContainerObjectAttributesProvider {
+func GetKubernetesApiContainerObjectAttributesProvider(enclaveId enclave.EnclaveUUID) KubernetesApiContainerObjectAttributesProvider {
 	return newKubernetesApiContainerObjectAttributesProviderImpl(enclaveId)
 }
 
-func newKubernetesApiContainerObjectAttributesProviderImpl(enclaveId enclave.EnclaveID) *kubernetesApiContainerObjectAttributesProviderImpl {
+func newKubernetesApiContainerObjectAttributesProviderImpl(enclaveId enclave.EnclaveUUID) *kubernetesApiContainerObjectAttributesProviderImpl {
 	return &kubernetesApiContainerObjectAttributesProviderImpl{
 		enclaveId: string(enclaveId),
 	}
@@ -163,6 +163,6 @@ func (provider *kubernetesApiContainerObjectAttributesProviderImpl) getLabelsFor
 	}
 	return map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
 		label_key_consts.KurtosisResourceTypeKubernetesLabelKey: label_value_consts.APIContainerKurtosisResourceTypeKubernetesLabelValue,
-		label_key_consts.EnclaveIDKubernetesLabelKey:            enclaveIdLabelValue,
+		label_key_consts.EnclaveUUIDKubernetesLabelKey:          enclaveIdLabelValue,
 	}, nil
 }

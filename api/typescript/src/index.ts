@@ -10,7 +10,7 @@ export { PortSpec, TransportProtocol } from "./core/lib/services/port_spec"
 
 // Enclaves
 export { EnclaveContext } from "./core/lib/enclaves/enclave_context";
-export type { EnclaveID, PartitionID } from "./core/lib/enclaves/enclave_context";
+export type { EnclaveUUID, PartitionID } from "./core/lib/enclaves/enclave_context";
 export { UnblockedPartitionConnection, BlockedPartitionConnection, SoftPartitionConnection } from "./core/lib/enclaves/partition_connection"
 
 // Constructor Calls

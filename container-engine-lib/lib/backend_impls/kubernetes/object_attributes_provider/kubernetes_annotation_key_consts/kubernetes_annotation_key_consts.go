@@ -13,6 +13,8 @@ const (
 	portSpecsAnnotationKeyStr = labelKeyPrefixStr + "ports"
 
 	enclaveCreationTimeKeyStr = labelKeyPrefixStr + "enclave-creation-time"
+
+	enclaveNameKeyStr = labelKeyPrefixStr + "enclave-name"
 )
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -20,3 +22,4 @@ const (
 //	If you add new immutable values to this section, MAKE SURE TO UPDATE THE UNIT TEST!
 var PortSpecsKubernetesAnnotationKey = kubernetes_annotation_key.MustCreateNewKubernetesAnnotationKey(portSpecsAnnotationKeyStr)
 var EnclaveCreationTimeAnnotationKey = kubernetes_annotation_key.MustCreateNewKubernetesAnnotationKey(enclaveCreationTimeKeyStr)
+var EnclaveNameAnnotationKey = kubernetes_annotation_key.MustCreateNewKubernetesAnnotationKey(enclaveNameKeyStr)

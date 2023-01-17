@@ -13,7 +13,7 @@ import (
 // It returns io.ReadCloser which is a tar stream. It's up to the caller to close the reader.
 func CopyFilesFromUserService(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
+	enclaveId enclave.EnclaveUUID,
 	serviceGuid service.ServiceGUID,
 	srcPathOnContainer string,
 	output io.Writer,

@@ -7,7 +7,7 @@ import (
 
 const createEnclaveTitle = "Created enclave"
 
-func PrintEnclaveId(enclaveId enclaves.EnclaveID) {
-	createdEnclaveMsg := fmt.Sprintf("%v: %v",createEnclaveTitle, enclaveId)
+func PrintEnclaveUUID(enclaveName string, enclaveUuid enclaves.EnclaveUUID) {
+	createdEnclaveMsg := fmt.Sprintf("%v with name %v and UUID %v", createEnclaveTitle, enclaveName, enclaveUuid)
 	GetSpotlightMessagePrinter().Print(createdEnclaveMsg)
 }

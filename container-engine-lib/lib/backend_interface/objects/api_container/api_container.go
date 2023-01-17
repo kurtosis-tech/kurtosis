@@ -11,7 +11,7 @@ import (
 // WARNING: Store this at your own risk!
 type APIContainer struct {
 	// The ID of the enclave the API container manages
-	enclaveId enclave.EnclaveID
+	enclaveId enclave.EnclaveUUID
 
 	status container_status.ContainerStatus
 
@@ -28,7 +28,7 @@ type APIContainer struct {
 }
 
 func NewAPIContainer(
-	enclaveId enclave.EnclaveID,
+	enclaveId enclave.EnclaveUUID,
 	status container_status.ContainerStatus,
 	privateIpAddr net.IP,
 	privateGrpcPort *port_spec.PortSpec,
@@ -48,7 +48,7 @@ func NewAPIContainer(
 		publicGrpcProxyPort:  publicGrpcProxyPort}
 }
 
-func (apiContainer *APIContainer) GetEnclaveID() enclave.EnclaveID {
+func (apiContainer *APIContainer) GetEnclaveID() enclave.EnclaveUUID {
 	return apiContainer.enclaveId
 }
 

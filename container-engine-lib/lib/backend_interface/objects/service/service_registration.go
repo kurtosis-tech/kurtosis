@@ -14,14 +14,14 @@ import (
 type ServiceRegistration struct {
 	id        ServiceID
 	guid      ServiceGUID
-	enclaveId enclave.EnclaveID
+	enclaveId enclave.EnclaveUUID
 
 	// The private IP is the IP of the service within the enclave, meaning other services can use this IP to communicate
 	// with the service
 	privateIp net.IP
 }
 
-func NewServiceRegistration(id ServiceID, guid ServiceGUID, enclaveId enclave.EnclaveID, privateIp net.IP) *ServiceRegistration {
+func NewServiceRegistration(id ServiceID, guid ServiceGUID, enclaveId enclave.EnclaveUUID, privateIp net.IP) *ServiceRegistration {
 	return &ServiceRegistration{id: id, guid: guid, enclaveId: enclaveId, privateIp: privateIp}
 }
 
@@ -33,7 +33,7 @@ func (registration *ServiceRegistration) GetGUID() ServiceGUID {
 	return registration.guid
 }
 
-func (registration *ServiceRegistration) GetEnclaveID() enclave.EnclaveID {
+func (registration *ServiceRegistration) GetEnclaveID() enclave.EnclaveUUID {
 	return registration.enclaveId
 }
 

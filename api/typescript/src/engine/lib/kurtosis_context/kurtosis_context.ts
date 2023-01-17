@@ -3,7 +3,7 @@ import * as semver from "semver"
 import * as jspb from "google-protobuf";
 import {err, ok, Result} from "neverthrow";
 import { isNode as isExecutionEnvNode} from "browser-or-node";
-import {EnclaveContext, EnclaveID, ServiceGUID} from "../../../index";
+import {EnclaveContext, EnclaveUUID, ServiceGUID} from "../../../index";
 import { GenericEngineClient } from "./generic_engine_client";
 import { KURTOSIS_VERSION } from "../../../kurtosis_version/kurtosis_version";
 import { GrpcWebEngineClient } from "./grpc_web_engine_client";
@@ -33,10 +33,18 @@ import {
 } from "../constructor_calls";
 import {Readable} from "stream";
 import {LogLineFilter} from "./log_line_filter";
+import {
+    StarlarkExecutionError,
+    StarlarkInstruction,
+    StarlarkInterpretationError, StarlarkValidationError
+} from "../../../core/kurtosis_core_rpc_api_bindings/api_container_service_pb";
+import {Enclaves} from "./enclaves";
 
 const LOCAL_HOSTNAME: string = "localhost";
 
 const API_CONTAINER_LOG_LEVEL: string = "debug";
+
+const SHORTENED_UUID_ALLOWED_MATCHES = 1;
 
 export const DEFAULT_GRPC_ENGINE_SERVER_PORT_NUM: number = 9710;
 export const DEFAULT_GRPC_PROXY_ENGINE_SERVER_PORT_NUM: number = 9711;
@@ -97,9 +105,9 @@ export class KurtosisContext {
     }
 
     // Docs available at https://docs.kurtosis.com/sdk#createenclaveenclaveid-enclaveid-boolean-ispartitioningenabled---enclavecontextenclavecontext-enclavecontext
-    public async createEnclave(enclaveId: string, isPartitioningEnabled: boolean): Promise<Result<EnclaveContext, Error>> {
+    public async createEnclave(enclaveName: string, isPartitioningEnabled: boolean): Promise<Result<EnclaveContext, Error>> {
         const enclaveArgs: CreateEnclaveArgs = newCreateEnclaveArgs(
-            enclaveId,
+            enclaveName,
             DEFAULT_API_CONTAINER_VERSION_TAG,
             API_CONTAINER_LOG_LEVEL,
             isPartitioningEnabled,
@@ -113,7 +121,7 @@ export class KurtosisContext {
         const enclaveResponse: CreateEnclaveResponse = getEnclaveResponseResult.value;
         const enclaveInfo: EnclaveInfo | undefined = enclaveResponse.getEnclaveInfo();
         if (enclaveInfo === undefined) {
-            return err(new Error("An error occurred creating enclave with ID " + enclaveId + " enclaveInfo is undefined; " +
+            return err(new Error("An error occurred creating enclave with name " + enclaveName + " enclaveInfo is undefined; " +
                 "this is a bug on this library" ))
         }
 
@@ -126,21 +134,17 @@ export class KurtosisContext {
         return ok(enclaveContext);
     }
 
-    // Docs available at https://docs.kurtosis.com/sdk#getenclavecontextenclaveid-enclaveid---enclavecontextenclavecontext-enclavecontext
-    public async getEnclaveContext(enclaveId: EnclaveID): Promise<Result<EnclaveContext, Error>> {
-        const getEnclavesResponseResult = await this.client.getEnclavesResponse();
-        if (getEnclavesResponseResult.isErr()) {
-            return err(getEnclavesResponseResult.error);
-        }
-        const getEnclavesResponse: GetEnclavesResponse = getEnclavesResponseResult.value;
+    // Docs available at https://docs.kurtosis.com/sdk/#getenclavecontextstring-enclaveidentifier---enclavecontextenclavecontext-enclavecontext
+    public async getEnclaveContext(enclaveIdentifier: string): Promise<Result<EnclaveContext, Error>> {
+        const enclaveInfoResult = await this.getEnclave(enclaveIdentifier)
 
-        const allEnclaveInfo: jspb.Map<string, EnclaveInfo> = getEnclavesResponse.getEnclaveInfoMap()
-        const maybeEnclaveInfo: EnclaveInfo | undefined = allEnclaveInfo.get(enclaveId);
-        if (maybeEnclaveInfo === undefined) {
-            return err(new Error(`No enclave with ID '${enclaveId}' found`))
+        if (enclaveInfoResult.isErr()) {
+            return err(enclaveInfoResult.error)
         }
 
-        const newEnclaveContextResult: Result<EnclaveContext, Error> = await this.newEnclaveContextFromEnclaveInfo(maybeEnclaveInfo);
+        const enclaveInfo = enclaveInfoResult.value
+
+        const newEnclaveContextResult: Result<EnclaveContext, Error> = await this.newEnclaveContextFromEnclaveInfo(enclaveInfo);
         if (newEnclaveContextResult.isErr()) {
             return err(newEnclaveContextResult.error);
         }
@@ -148,25 +152,63 @@ export class KurtosisContext {
         return ok(newEnclaveContextResult.value);
     }
 
-    // Docs available at https://docs.kurtosis.com/sdk#getenclaves---setenclaveid-enclaveids
-    public async getEnclaves(): Promise<Result<Set<EnclaveID>, Error>>{
+    // Docs available at https://docs.kurtosis.com/sdk#getenclaves---enclaves-enclaves
+    public async getEnclaves(): Promise<Result<Enclaves, Error>>{
         const getEnclavesResponseResult = await this.client.getEnclavesResponse();
         if (getEnclavesResponseResult.isErr()) {
             return err(getEnclavesResponseResult.error);
         }
 
         const getEnclavesResponse: GetEnclavesResponse = getEnclavesResponseResult.value;
-        const enclaves: Set<EnclaveID> = new Set();
-        for (let enclaveId of getEnclavesResponse.getEnclaveInfoMap().keys()) {
-            enclaves.add(enclaveId);
-        }
+        const enclavesByUuid : Map<EnclaveUUID, EnclaveInfo> = new Map<EnclaveUUID, EnclaveInfo>()
+        const enclavesByName : Map<string, EnclaveInfo> = new Map<EnclaveUUID, EnclaveInfo>()
+        const enclavesByShortenedUuid : Map<string, EnclaveInfo[]> = new Map<EnclaveUUID, EnclaveInfo[]>()
+        getEnclavesResponse.getEnclaveInfoMap().forEach((enclaveInfo: EnclaveInfo, enclaveUuid :string) => {
+            enclavesByUuid.set(enclaveUuid, enclaveInfo)
+            enclavesByName.set(enclaveInfo.getName(), enclaveInfo)
+            const shortenedUuid = enclaveInfo.getShortenedUuid()
+            if (enclavesByShortenedUuid.has(shortenedUuid)) {
+                enclavesByShortenedUuid.get(shortenedUuid)!.push(enclaveInfo)
+            } else {
+                enclavesByShortenedUuid.set(shortenedUuid,  [enclaveInfo])
+            }
+        });
 
-        return ok(enclaves);
+        return ok(new Enclaves(enclavesByUuid, enclavesByName, enclavesByShortenedUuid));
     }
 
-    // Docs available at https://docs.kurtosis.com/sdk#stopenclaveenclaveid-enclaveid
-    public async stopEnclave(enclaveId: EnclaveID): Promise<Result<null, Error>>{
-        const stopEnclaveArgs: StopEnclaveArgs = newStopEnclaveArgs(enclaveId)
+    // Docs available at https://docs.kurtosis.com/sdk/#getenclavestring-enclaveidentifier---enclaveinfo-enclaveinfo
+    public async getEnclave(enclaveIdentifier: string): Promise<Result<EnclaveInfo, Error>> {
+        const enclavesResult = await this.getEnclaves()
+        if (enclavesResult.isErr()) {
+            return err(enclavesResult.error)
+        }
+
+        const enclaves = enclavesResult.value
+
+        if (enclaves.enclavesByUuid.has(enclaveIdentifier)) {
+            return ok(enclaves.enclavesByUuid.get(enclaveIdentifier)!)
+        }
+
+        if (enclaves.enclavesByShortenedUuid.has(enclaveIdentifier)) {
+            const matchingEnclaves  = enclaves.enclavesByShortenedUuid.get(enclaveIdentifier)!
+            if (matchingEnclaves.length == SHORTENED_UUID_ALLOWED_MATCHES) {
+                return ok(matchingEnclaves[0])
+            } else if (matchingEnclaves.length > SHORTENED_UUID_ALLOWED_MATCHES) {
+                return err(new Error(`Found multiple ${matchingEnclaves} matches for shortened uuid ${enclaveIdentifier}`))
+            }
+        }
+
+        if (enclaves.enclavesByName.has(enclaveIdentifier)) {
+            return ok(enclaves.enclavesByName.get(enclaveIdentifier)!)
+        }
+
+        return err(new Error(`Couldn't find enclave for identifier '${enclaveIdentifier}'`))
+    }
+
+    // Docs available at https://docs.kurtosis.com/sdk/#stopenclavestring-enclaveidentifier
+    public async stopEnclave(enclaveIdentifier: string): Promise<Result<null, Error>>{
+        const stopEnclaveArgs: StopEnclaveArgs = newStopEnclaveArgs(enclaveIdentifier)
         const stopEnclaveResult = await this.client.stopEnclave(stopEnclaveArgs)
         if(stopEnclaveResult.isErr()){
             return err(stopEnclaveResult.error)
@@ -175,9 +217,9 @@ export class KurtosisContext {
         return ok(null)
     }
 
-    // Docs available at https://docs.kurtosis.com/sdk#destroyenclaveenclaveid-enclaveid
-    public async destroyEnclave(enclaveId: EnclaveID): Promise<Result<null, Error>>{
-        const destroyEnclaveArgs: DestroyEnclaveArgs = newDestroyEnclaveArgs(enclaveId);
+    // Docs available at https://docs.kurtosis.com/sdk/#destroyenclavestring-enclaveidentifier
+    public async destroyEnclave(enclaveIdentifier: string): Promise<Result<null, Error>>{
+        const destroyEnclaveArgs: DestroyEnclaveArgs = newDestroyEnclaveArgs(enclaveIdentifier);
         const destroyEnclaveResult = await this.client.destroyEnclave(destroyEnclaveArgs)
         if(destroyEnclaveResult.isErr()){
             return err(destroyEnclaveResult.error)
@@ -196,8 +238,8 @@ export class KurtosisContext {
 
         const cleanResponse: CleanResponse = cleanResponseResult.value
         const result: Set<string> = new Set();
-        for (let enclaveID of cleanResponse.getRemovedEnclaveIdsMap().keys()) {
-            result.add(enclaveID);
+        for (let enclaveUuid of cleanResponse.getRemovedEnclaveUuidsMap().keys()) {
+            result.add(enclaveUuid);
         }
 
         return ok(result)
@@ -216,13 +258,14 @@ export class KurtosisContext {
     //      //insert your code here
     //})
     //You can cancel receiving the stream from the service calling serviceLogsReadable.destroy()
-    public async getServiceLogs(enclaveID: EnclaveID, serviceGUIDs: Set<ServiceGUID>, shouldFollowLogs: boolean, logLineFilter: LogLineFilter|undefined): Promise<Result<Readable, Error>> {
+    // Docs available at https://docs.kurtosis.com/sdk#getservicelogsstring-enclaveidentifier-setserviceguid-serviceguids-boolean-shouldfollowlogs-loglinefilter-loglinefilter---servicelogsstreamcontent-servicelogsstreamcontent
+    public async getServiceLogs(enclaveIdentifier: string, serviceGUIDs: Set<ServiceGUID>, shouldFollowLogs: boolean, logLineFilter: LogLineFilter|undefined): Promise<Result<Readable, Error>> {
         let getServiceLogsArgs: GetServiceLogsArgs;
 
         try {
-            getServiceLogsArgs = newGetServiceLogsArgs(enclaveID, serviceGUIDs, shouldFollowLogs, logLineFilter);
+            getServiceLogsArgs = newGetServiceLogsArgs(enclaveIdentifier, serviceGUIDs, shouldFollowLogs, logLineFilter);
         } catch(error) {
-            return err(new Error(`An error occurred getting the get service logs arguments for enclave ID '${enclaveID}', service GUIDs '${serviceGUIDs}', with should follow value '${shouldFollowLogs}' and log line filter '${logLineFilter}'. Error:\n${error}`));
+            return err(new Error(`An error occurred getting the get service logs arguments for enclave ID '${enclaveIdentifier}', service GUIDs '${serviceGUIDs}', with should follow value '${shouldFollowLogs}' and log line filter '${logLineFilter}'. Error:\n${error}`));
         }
 
         const streamServiceLogsResult = await this.client.getServiceLogs(getServiceLogsArgs);
@@ -264,13 +307,15 @@ export class KurtosisContext {
             newEnclaveContextResult = await EnclaveContext.newGrpcNodeEnclaveContext(
                 LOCAL_HOSTNAME,
                 apiContainerHostMachineInfo.getGrpcPortOnHostMachine(),
-                enclaveInfo.getEnclaveId(),
+                enclaveInfo.getEnclaveUuid(),
+                enclaveInfo.getName(),
             )
         }else{
             newEnclaveContextResult = await EnclaveContext.newGrpcWebEnclaveContext(
                 LOCAL_HOSTNAME,
                 apiContainerHostMachineInfo.getGrpcProxyPortOnHostMachine(),
-                enclaveInfo.getEnclaveId(),
+                enclaveInfo.getEnclaveUuid(),
+                enclaveInfo.getName(),
             )
         }
         if(newEnclaveContextResult.isErr()){

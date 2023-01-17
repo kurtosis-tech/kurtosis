@@ -18,15 +18,12 @@ import (
 )
 
 const (
-	namespacePrefix               = "kurtosis-enclave"
-	userServicePrefix             = "user-service"
+	namespacePrefix   = "kurtosis-enclave"
+	userServicePrefix = "user-service"
 )
 
 type KubernetesEnclaveObjectAttributesProvider interface {
-	ForEnclaveNamespace(
-		isPartitioningEnabled bool,
-		creationTime time.Time,
-	) (KubernetesObjectAttributes, error)
+	ForEnclaveNamespace(isPartitioningEnabled bool, creationTime time.Time, enclaveName string) (KubernetesObjectAttributes, error)
 	ForApiContainer() KubernetesApiContainerObjectAttributesProvider
 	ForUserServiceService(
 		guid service.ServiceGUID,
@@ -46,21 +43,18 @@ type kubernetesEnclaveObjectAttributesProviderImpl struct {
 
 func newKubernetesEnclaveObjectAttributesProviderImpl(
 
-	enclaveId enclave.EnclaveID,
+	enclaveId enclave.EnclaveUUID,
 ) *kubernetesEnclaveObjectAttributesProviderImpl {
 	return &kubernetesEnclaveObjectAttributesProviderImpl{
 		enclaveId: string(enclaveId),
 	}
 }
 
-func GetKubernetesEnclaveObjectAttributesProvider(enclaveId enclave.EnclaveID) KubernetesEnclaveObjectAttributesProvider {
+func GetKubernetesEnclaveObjectAttributesProvider(enclaveId enclave.EnclaveUUID) KubernetesEnclaveObjectAttributesProvider {
 	return newKubernetesEnclaveObjectAttributesProviderImpl(enclaveId)
 }
 
-func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveNamespace(
-	isPartitioningEnabled bool,
-	creationTime time.Time,
-) (KubernetesObjectAttributes, error) {
+func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveNamespace(isPartitioningEnabled bool, creationTime time.Time, enclaveName string) (KubernetesObjectAttributes, error) {
 	namespaceUuid, err := uuid_generator.GenerateUUIDString()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to generate UUID string for namespace name for enclave '%v'", provider.enclaveId)
@@ -95,9 +89,15 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveNamespa
 		return nil, stacktrace.Propagate(err, "An error occurred creating Kubernetes annotation value from string '%v'", creationTimeStr)
 	}
 
+	enclaveNameAnnotationValue, err := kubernetes_annotation_value.CreateNewKubernetesAnnotationValue(enclaveName)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating Kubernetes annotation value from string '%v'", enclaveName)
+	}
+
 	// Store enclave's creation time info in annotation
 	customAnnotations := map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue{
 		kubernetes_annotation_key_consts.EnclaveCreationTimeAnnotationKey: creationTimeAnnotationValue,
+		kubernetes_annotation_key_consts.EnclaveNameAnnotationKey:         enclaveNameAnnotationValue,
 	}
 
 	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, customAnnotations)
@@ -114,7 +114,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveNamespa
 }
 
 func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForApiContainer() KubernetesApiContainerObjectAttributesProvider {
-	enclaveId := enclave.EnclaveID(provider.enclaveId)
+	enclaveId := enclave.EnclaveUUID(provider.enclaveId)
 	return GetKubernetesApiContainerObjectAttributesProvider(enclaveId)
 }
 
@@ -203,7 +203,9 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServicePod
 }
 
 // ====================================================================================================
-//                                      Private Helper Functions
+//
+//	Private Helper Functions
+//
 // ====================================================================================================
 func (provider *kubernetesEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveObject() (map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue, error) {
 	enclaveIdLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(provider.enclaveId)
@@ -212,7 +214,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) getLabelsForEncla
 	}
 	return map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
 		label_key_consts.KurtosisResourceTypeKubernetesLabelKey: label_value_consts.EnclaveKurtosisResourceTypeKubernetesLabelValue,
-		label_key_consts.EnclaveIDKubernetesLabelKey:            enclaveIdLabelValue,
+		label_key_consts.EnclaveUUIDKubernetesLabelKey:          enclaveIdLabelValue,
 	}, nil
 }
 

@@ -4,28 +4,25 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/enclave_id_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/enclave_liveness_validator"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/stacktrace"
-	"google.golang.org/grpc"
-	"google.golang.org/protobuf/types/known/emptypb"
 	"strconv"
 	"strings"
 )
 
 const (
-	enclaveIdArgKey        = "enclave-id"
-	isEnclaveIdArgOptional = false
-	isEnclaveIdArgGreedy   = false
+	enclaveIdentifierArgKey = "enclave-identifier"
+	isEnclaveIdArgOptional  = false
+	isEnclaveIdArgGreedy    = false
 
 	serviceIdArgKey = "service-id"
 
@@ -102,8 +99,8 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
 	EngineClientContextKey:    engineClientCtxKey,
 	Args: []*args.ArgConfig{
-		enclave_id_arg.NewEnclaveIDArg(
-			enclaveIdArgKey,
+		enclave_id_arg.NewEnclaveIdentifierArg(
+			enclaveIdentifierArgKey,
 			engineClientCtxKey,
 			isEnclaveIdArgOptional,
 			isEnclaveIdArgGreedy,
@@ -184,13 +181,13 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 func run(
 	ctx context.Context,
 	_ backend_interface.KurtosisBackend,
-	engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
+	_ kurtosis_engine_rpc_api_bindings.EngineServiceClient,
 	flags *flags.ParsedFlags,
 	args *args.ParsedArgs,
 ) error {
-	enclaveId, err := args.GetNonGreedyArg(enclaveIdArgKey)
+	enclaveIdentifier, err := args.GetNonGreedyArg(enclaveIdentifierArgKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the enclave ID value using key '%v'", enclaveIdArgKey)
+		return stacktrace.Propagate(err, "An error occurred getting the enclave identifier value using key '%v'", enclaveIdentifierArgKey)
 	}
 
 	serviceId, err := args.GetNonGreedyArg(serviceIdArgKey)
@@ -233,19 +230,14 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the private IP address place holder using key '%v'", privateIPAddressPlaceholderKey)
 	}
 
-	getEnclavesResp, err := engineClient.GetEnclaves(ctx, &emptypb.Empty{})
+	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting existing enclaves")
+		return stacktrace.Propagate(err, "An error occurred connecting to the local Kurtosis engine")
 	}
 
-	infoForEnclave, found := getEnclavesResp.EnclaveInfo[enclaveId]
-	if !found {
-		return stacktrace.Propagate(err, "No enclave with ID '%v' exists", enclaveId)
-	}
-
-	enclaveCtx, err := getEnclaveContextFromEnclaveInfo(infoForEnclave)
+	enclaveCtx, err := kurtosisCtx.GetEnclaveContext(ctx, enclaveIdentifier)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting an enclave context from enclave info for enclave '%v'", enclaveId)
+		return stacktrace.Propagate(err, "An error occurred getting an enclave context from enclave info for enclave '%v'", enclaveIdentifier)
 	}
 
 	serviceConfigStarlark, err := getServiceConfigStarlark(image, portsStr, cmdArgs, entrypointStr, envvarsStr, filesArtifactMountsStr, privateIPAddressPlaceholder)
@@ -271,10 +263,10 @@ func run(
 		return stacktrace.NewError("An error has occurred when adding service: %s\nThis is a bug in Kurtosis, please report.", starlarkRunResult.InterpretationError)
 	}
 	if len(starlarkRunResult.ValidationErrors) > 0 {
-		return stacktrace.NewError("An error occurred when validating add service '%v' to enclave '%v': %s", serviceId, enclaveId, starlarkRunResult.ValidationErrors)
+		return stacktrace.NewError("An error occurred when validating add service '%v' to enclave '%v': %s", serviceId, enclaveIdentifier, starlarkRunResult.ValidationErrors)
 	}
 	if starlarkRunResult.ExecutionError != nil {
-		return stacktrace.NewError("An error occurred adding service '%v' to enclave '%v': %s", serviceId, enclaveId, starlarkRunResult.ExecutionError)
+		return stacktrace.NewError("An error occurred adding service '%v' to enclave '%v': %s", serviceId, enclaveIdentifier, starlarkRunResult.ExecutionError)
 	}
 	serviceCtx, err := enclaveCtx.GetServiceContext(services.ServiceID(serviceId))
 	if err != nil {
@@ -322,38 +314,6 @@ func run(
 	keyValuePrinter.Print()
 
 	return nil
-}
-
-// TODO TODO REMOVE ALL THIS WHEN NewEnclaveContext CAN JUST TAKE IN IP ADDR & PORT NUM!!!
-func getEnclaveContextFromEnclaveInfo(infoForEnclave *kurtosis_engine_rpc_api_bindings.EnclaveInfo) (*enclaves.EnclaveContext, error) {
-	enclaveId := infoForEnclave.EnclaveId
-
-	apiContainerHostMachineIpAddr, apiContainerHostMachineGrpcPortNum, err := enclave_liveness_validator.ValidateEnclaveLiveness(infoForEnclave)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Cannot add service because the API container in enclave '%v' is not running", enclaveId)
-	}
-
-	apiContainerHostMachineUrl := fmt.Sprintf(
-		"%v:%v",
-		apiContainerHostMachineIpAddr,
-		apiContainerHostMachineGrpcPortNum,
-	)
-	conn, err := grpc.Dial(apiContainerHostMachineUrl, grpc.WithInsecure())
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred connecting to the API container grpc port at '%v' in enclave '%v'",
-			apiContainerHostMachineUrl,
-			enclaveId,
-		)
-	}
-	apiContainerClient := kurtosis_core_rpc_api_bindings.NewApiContainerServiceClient(conn)
-	enclaveCtx := enclaves.NewEnclaveContext(
-		apiContainerClient,
-		enclaves.EnclaveID(enclaveId),
-	)
-
-	return enclaveCtx, nil
 }
 
 func getServiceConfigStarlark(

@@ -25,7 +25,7 @@ const (
 	//The following Loki configuration values are specific for the Kurtosis centralized logs Loki implementation
 	//some values were suggested by the Loki's documentation and this video: https://grafana.com/go/webinar/logging-with-loki-essential-configuration-settings/?pg=docs-loki&plcmt=footer-resources-2
 
-	//We enable multi-tenancy mode, and we scope enclaves as tenants EnclaveId = TenantID (see more about multi-tenancy here: https://grafana.com/docs/loki/latest/operations/multi-tenancy/)
+	//We enable multi-tenancy mode, and we scope enclaves as tenants EnclaveUUID = TenantID (see more about multi-tenancy here: https://grafana.com/docs/loki/latest/operations/multi-tenancy/)
 	authEnabled = true
 	//The destinations path where the index, chunks and rules will be saved
 	dirpath       = "/loki"

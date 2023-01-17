@@ -26,12 +26,12 @@ const (
 	emptyApplicationProtocol      = ""
 	missingPortPlaceholder        = "<none>"
 	linkDelimeter                 = "://"
-	defaultEmptyIPAddrForAPIC = ""
+	defaultEmptyIPAddrForAPIC     = ""
 )
 
 func printUserServices(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo, isAPIContainerRunning bool) error {
-	enclaveIdStr := enclaveInfo.GetEnclaveId()
-	enclaveId := enclave.EnclaveID(enclaveIdStr)
+	enclaveUuidStr := enclaveInfo.GetEnclaveUuid()
+	enclaveId := enclave.EnclaveUUID(enclaveUuidStr)
 	userServiceFilters := &service.ServiceFilters{
 		IDs:      nil,
 		GUIDs:    nil,
@@ -48,7 +48,7 @@ func printUserServices(ctx context.Context, kurtosisBackend backend_interface.Ku
 	if isAPIContainerRunning {
 		serviceInfoMapFromAPIC, err = getUserServiceInfoMapFromAPIContainer(ctx, enclaveInfo)
 		if err != nil {
-			return stacktrace.Propagate(err, "Failed to get service info from API container in enclave '%v'", enclaveInfo.GetEnclaveId())
+			return stacktrace.Propagate(err, "Failed to get service info from API container in enclave '%v'", enclaveInfo.GetEnclaveUuid())
 		}
 	}
 
@@ -195,7 +195,7 @@ func getUserServiceInfoMapFromAPIContainer(ctx context.Context, enclaveInfo *kur
 			err,
 			"An error occurred connecting to the API container grpc port at '%v' in enclave '%v'",
 			apiContainerHostGrpcUrl,
-			enclaveInfo.EnclaveId,
+			enclaveInfo.EnclaveUuid,
 		)
 	}
 	defer func() {
@@ -207,7 +207,7 @@ func getUserServiceInfoMapFromAPIContainer(ctx context.Context, enclaveInfo *kur
 	getAllServicesArgs := binding_constructors.NewGetServicesArgs(getAllServicesMap)
 	allServicesResponse, err := apiContainerClient.GetServices(ctx, getAllServicesArgs)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to get service information for all services in enclave '%v'", enclaveInfo.GetEnclaveId())
+		return nil, stacktrace.Propagate(err, "Failed to get service information for all services in enclave '%v'", enclaveInfo.GetEnclaveUuid())
 	}
 	serviceInfoMapFromAPIC := allServicesResponse.GetServiceInfo()
 	return serviceInfoMapFromAPIC, nil

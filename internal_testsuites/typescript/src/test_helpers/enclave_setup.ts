@@ -1,8 +1,8 @@
-import { EnclaveContext, EnclaveID, KurtosisContext } from "kurtosis-sdk"
+import { EnclaveContext, EnclaveUUID, KurtosisContext } from "kurtosis-sdk"
 import {Result, err, ok} from "neverthrow"
 import log from "loglevel";
 
-const TEST_SUITE_NAME_ENCLAVE_ID_FRAGMENT = "ts-testsuite";
+const TEST_SUITE_NAME_ENCLAVE_UUID_FRAGMENT = "ts-testsuite";
 const MILLISECONDS_IN_SECOND = 1000;
 
 export async function createEnclave(testName:string, isPartitioningEnabled: boolean):
@@ -19,7 +19,7 @@ export async function createEnclave(testName:string, isPartitioningEnabled: bool
 	}
 	const kurtosisContext = newKurtosisContextResult.value;
 
-	const enclaveId:EnclaveID = `${TEST_SUITE_NAME_ENCLAVE_ID_FRAGMENT}.${testName}.${Math.round(Date.now()/MILLISECONDS_IN_SECOND)}`
+	const enclaveId:EnclaveUUID = `${TEST_SUITE_NAME_ENCLAVE_UUID_FRAGMENT}.${testName}.${Math.round(Date.now()/MILLISECONDS_IN_SECOND)}`
 	const createEnclaveResult = await kurtosisContext.createEnclave(enclaveId, isPartitioningEnabled);
 
 	if(createEnclaveResult.isErr()) {

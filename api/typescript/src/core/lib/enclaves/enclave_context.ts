@@ -43,7 +43,7 @@ import {parseKurtosisYaml} from "./kurtosis_yaml";
 import {Readable} from "stream";
 import {readStreamContentUntilClosed, StarlarkRunResult} from "./starlark_run_blocking";
 
-export type EnclaveID = string;
+export type EnclaveUUID = string;
 export type PartitionID = string;
 
 // This will always resolve to the default partition ID (regardless of whether such a partition exists in the enclave,
@@ -70,7 +70,8 @@ export class EnclaveContext {
     public static async newGrpcWebEnclaveContext(
         ipAddress: string,
         apiContainerGrpcProxyPortNum: number,
-        enclaveId: string,
+        enclaveUuid: string,
+        enclaveName: string,
     ): Promise<Result<EnclaveContext, Error>> {
 
         if(isExecutionEnvNode){
@@ -87,7 +88,7 @@ export class EnclaveContext {
 
             const apiContainerGrpcProxyUrl: string = `${ipAddress}:${apiContainerGrpcProxyPortNum}`
             const apiContainerClient = new apiContainerServiceWeb.ApiContainerServiceClient(apiContainerGrpcProxyUrl);
-            genericApiContainerClient = new GrpcWebApiContainerClient(apiContainerClient, enclaveId)
+            genericApiContainerClient = new GrpcWebApiContainerClient(apiContainerClient, enclaveUuid, enclaveName)
 
             const webFileArchiver = await import("./web_tgz_archiver")
             genericTgzArchiver = new webFileArchiver.WebTgzArchiver()
@@ -107,7 +108,8 @@ export class EnclaveContext {
     public static async newGrpcNodeEnclaveContext(
         ipAddress: string,
         apiContainerGrpcPortNum: number,
-        enclaveId: string,
+        enclaveUuid: string,
+        enclaveName: string,
     ): Promise<Result<EnclaveContext, Error>> {
 
         if(!isExecutionEnvNode){
@@ -125,7 +127,7 @@ export class EnclaveContext {
 
             const apiContainerGrpcUrl: string = `${ipAddress}:${apiContainerGrpcPortNum}`
             const apiContainerClient = new apiContainerServiceNode.ApiContainerServiceClient(apiContainerGrpcUrl, grpc_node.credentials.createInsecure());
-            genericApiContainerClient = new GrpcNodeApiContainerClient(apiContainerClient, enclaveId)
+            genericApiContainerClient = new GrpcNodeApiContainerClient(apiContainerClient, enclaveUuid, enclaveName)
 
             const nodeTgzArchiver = await import(/* webpackIgnore: true */ "./node_tgz_archiver")
             genericTgzArchiver = new nodeTgzArchiver.NodeTgzArchiver()
@@ -142,9 +144,14 @@ export class EnclaveContext {
         return ok(enclaveContext)
     }
 
-    // Docs available at https://docs.kurtosis.com/sdk/#getenclaveid---enclaveid
-    public getEnclaveId(): EnclaveID {
-        return this.backend.getEnclaveId();
+    // Docs available at https://docs.kurtosis.com/sdk/#getenclaveuuid---enclaveuuid
+    public getEnclaveUuid(): EnclaveUUID {
+        return this.backend.getEnclaveUuid();
+    }
+
+    // Docs available at https://docs.kurtosis.com/sdk/#getenclavename---string
+    public getEnclaveName(): string {
+        return this.backend.getEnclaveUuid();
     }
 
     // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkscriptstring-serializedstarlarkscript-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error

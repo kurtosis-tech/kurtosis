@@ -514,7 +514,7 @@ proto.engine_api.CreateEnclaveArgs.prototype.toObject = function(opt_includeInst
  */
 proto.engine_api.CreateEnclaveArgs.toObject = function(includeInstance, msg) {
   var f, obj = {
-    enclaveId: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    enclaveName: jspb.Message.getFieldWithDefault(msg, 1, ""),
     apiContainerVersionTag: jspb.Message.getFieldWithDefault(msg, 2, ""),
     apiContainerLogLevel: jspb.Message.getFieldWithDefault(msg, 3, ""),
     isPartitioningEnabled: jspb.Message.getBooleanFieldWithDefault(msg, 4, false)
@@ -556,7 +556,7 @@ proto.engine_api.CreateEnclaveArgs.deserializeBinaryFromReader = function(msg, r
     switch (field) {
     case 1:
       var value = /** @type {string} */ (reader.readString());
-      msg.setEnclaveId(value);
+      msg.setEnclaveName(value);
       break;
     case 2:
       var value = /** @type {string} */ (reader.readString());
@@ -599,7 +599,7 @@ proto.engine_api.CreateEnclaveArgs.prototype.serializeBinary = function() {
  */
 proto.engine_api.CreateEnclaveArgs.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
-  f = message.getEnclaveId();
+  f = message.getEnclaveName();
   if (f.length > 0) {
     writer.writeString(
       1,
@@ -631,10 +631,10 @@ proto.engine_api.CreateEnclaveArgs.serializeBinaryToWriter = function(message, w
 
 
 /**
- * optional string enclave_id = 1;
+ * optional string enclave_name = 1;
  * @return {string}
  */
-proto.engine_api.CreateEnclaveArgs.prototype.getEnclaveId = function() {
+proto.engine_api.CreateEnclaveArgs.prototype.getEnclaveName = function() {
   return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
 };
 
@@ -643,7 +643,7 @@ proto.engine_api.CreateEnclaveArgs.prototype.getEnclaveId = function() {
  * @param {string} value
  * @return {!proto.engine_api.CreateEnclaveArgs} returns this
  */
-proto.engine_api.CreateEnclaveArgs.prototype.setEnclaveId = function(value) {
+proto.engine_api.CreateEnclaveArgs.prototype.setEnclaveName = function(value) {
   return jspb.Message.setProto3StringField(this, 1, value);
 };
 
@@ -1295,9 +1295,11 @@ proto.engine_api.EnclaveInfo.prototype.toObject = function(opt_includeInstance) 
  */
 proto.engine_api.EnclaveInfo.toObject = function(includeInstance, msg) {
   var f, obj = {
-    enclaveId: jspb.Message.getFieldWithDefault(msg, 1, ""),
-    containersStatus: jspb.Message.getFieldWithDefault(msg, 2, 0),
-    apiContainerStatus: jspb.Message.getFieldWithDefault(msg, 3, 0),
+    enclaveUuid: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    name: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    shortenedUuid: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    containersStatus: jspb.Message.getFieldWithDefault(msg, 4, 0),
+    apiContainerStatus: jspb.Message.getFieldWithDefault(msg, 5, 0),
     apiContainerInfo: (f = msg.getApiContainerInfo()) && proto.engine_api.EnclaveAPIContainerInfo.toObject(includeInstance, f),
     apiContainerHostMachineInfo: (f = msg.getApiContainerHostMachineInfo()) && proto.engine_api.EnclaveAPIContainerHostMachineInfo.toObject(includeInstance, f),
     creationTime: (f = msg.getCreationTime()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f)
@@ -1339,27 +1341,35 @@ proto.engine_api.EnclaveInfo.deserializeBinaryFromReader = function(msg, reader)
     switch (field) {
     case 1:
       var value = /** @type {string} */ (reader.readString());
-      msg.setEnclaveId(value);
+      msg.setEnclaveUuid(value);
       break;
     case 2:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setName(value);
+      break;
+    case 3:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setShortenedUuid(value);
+      break;
+    case 4:
       var value = /** @type {!proto.engine_api.EnclaveContainersStatus} */ (reader.readEnum());
       msg.setContainersStatus(value);
       break;
-    case 3:
+    case 5:
       var value = /** @type {!proto.engine_api.EnclaveAPIContainerStatus} */ (reader.readEnum());
       msg.setApiContainerStatus(value);
       break;
-    case 4:
+    case 6:
       var value = new proto.engine_api.EnclaveAPIContainerInfo;
       reader.readMessage(value,proto.engine_api.EnclaveAPIContainerInfo.deserializeBinaryFromReader);
       msg.setApiContainerInfo(value);
       break;
-    case 5:
+    case 7:
       var value = new proto.engine_api.EnclaveAPIContainerHostMachineInfo;
       reader.readMessage(value,proto.engine_api.EnclaveAPIContainerHostMachineInfo.deserializeBinaryFromReader);
       msg.setApiContainerHostMachineInfo(value);
       break;
-    case 6:
+    case 8:
       var value = new google_protobuf_timestamp_pb.Timestamp;
       reader.readMessage(value,google_protobuf_timestamp_pb.Timestamp.deserializeBinaryFromReader);
       msg.setCreationTime(value);
@@ -1393,31 +1403,45 @@ proto.engine_api.EnclaveInfo.prototype.serializeBinary = function() {
  */
 proto.engine_api.EnclaveInfo.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
-  f = message.getEnclaveId();
+  f = message.getEnclaveUuid();
   if (f.length > 0) {
     writer.writeString(
       1,
       f
     );
   }
+  f = message.getName();
+  if (f.length > 0) {
+    writer.writeString(
+      2,
+      f
+    );
+  }
+  f = message.getShortenedUuid();
+  if (f.length > 0) {
+    writer.writeString(
+      3,
+      f
+    );
+  }
   f = message.getContainersStatus();
   if (f !== 0.0) {
     writer.writeEnum(
-      2,
+      4,
       f
     );
   }
   f = message.getApiContainerStatus();
   if (f !== 0.0) {
     writer.writeEnum(
-      3,
+      5,
       f
     );
   }
   f = message.getApiContainerInfo();
   if (f != null) {
     writer.writeMessage(
-      4,
+      6,
       f,
       proto.engine_api.EnclaveAPIContainerInfo.serializeBinaryToWriter
     );
@@ -1425,7 +1449,7 @@ proto.engine_api.EnclaveInfo.serializeBinaryToWriter = function(message, writer)
   f = message.getApiContainerHostMachineInfo();
   if (f != null) {
     writer.writeMessage(
-      5,
+      7,
       f,
       proto.engine_api.EnclaveAPIContainerHostMachineInfo.serializeBinaryToWriter
     );
@@ -1433,7 +1457,7 @@ proto.engine_api.EnclaveInfo.serializeBinaryToWriter = function(message, writer)
   f = message.getCreationTime();
   if (f != null) {
     writer.writeMessage(
-      6,
+      8,
       f,
       google_protobuf_timestamp_pb.Timestamp.serializeBinaryToWriter
     );
@@ -1442,10 +1466,10 @@ proto.engine_api.EnclaveInfo.serializeBinaryToWriter = function(message, writer)
 
 
 /**
- * optional string enclave_id = 1;
+ * optional string enclave_uuid = 1;
  * @return {string}
  */
-proto.engine_api.EnclaveInfo.prototype.getEnclaveId = function() {
+proto.engine_api.EnclaveInfo.prototype.getEnclaveUuid = function() {
   return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
 };
 
@@ -1454,17 +1478,53 @@ proto.engine_api.EnclaveInfo.prototype.getEnclaveId = function() {
  * @param {string} value
  * @return {!proto.engine_api.EnclaveInfo} returns this
  */
-proto.engine_api.EnclaveInfo.prototype.setEnclaveId = function(value) {
+proto.engine_api.EnclaveInfo.prototype.setEnclaveUuid = function(value) {
   return jspb.Message.setProto3StringField(this, 1, value);
 };
 
 
 /**
- * optional EnclaveContainersStatus containers_status = 2;
+ * optional string name = 2;
+ * @return {string}
+ */
+proto.engine_api.EnclaveInfo.prototype.getName = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.engine_api.EnclaveInfo} returns this
+ */
+proto.engine_api.EnclaveInfo.prototype.setName = function(value) {
+  return jspb.Message.setProto3StringField(this, 2, value);
+};
+
+
+/**
+ * optional string shortened_uuid = 3;
+ * @return {string}
+ */
+proto.engine_api.EnclaveInfo.prototype.getShortenedUuid = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 3, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.engine_api.EnclaveInfo} returns this
+ */
+proto.engine_api.EnclaveInfo.prototype.setShortenedUuid = function(value) {
+  return jspb.Message.setProto3StringField(this, 3, value);
+};
+
+
+/**
+ * optional EnclaveContainersStatus containers_status = 4;
  * @return {!proto.engine_api.EnclaveContainersStatus}
  */
 proto.engine_api.EnclaveInfo.prototype.getContainersStatus = function() {
-  return /** @type {!proto.engine_api.EnclaveContainersStatus} */ (jspb.Message.getFieldWithDefault(this, 2, 0));
+  return /** @type {!proto.engine_api.EnclaveContainersStatus} */ (jspb.Message.getFieldWithDefault(this, 4, 0));
 };
 
 
@@ -1473,16 +1533,16 @@ proto.engine_api.EnclaveInfo.prototype.getContainersStatus = function() {
  * @return {!proto.engine_api.EnclaveInfo} returns this
  */
 proto.engine_api.EnclaveInfo.prototype.setContainersStatus = function(value) {
-  return jspb.Message.setProto3EnumField(this, 2, value);
+  return jspb.Message.setProto3EnumField(this, 4, value);
 };
 
 
 /**
- * optional EnclaveAPIContainerStatus api_container_status = 3;
+ * optional EnclaveAPIContainerStatus api_container_status = 5;
  * @return {!proto.engine_api.EnclaveAPIContainerStatus}
  */
 proto.engine_api.EnclaveInfo.prototype.getApiContainerStatus = function() {
-  return /** @type {!proto.engine_api.EnclaveAPIContainerStatus} */ (jspb.Message.getFieldWithDefault(this, 3, 0));
+  return /** @type {!proto.engine_api.EnclaveAPIContainerStatus} */ (jspb.Message.getFieldWithDefault(this, 5, 0));
 };
 
 
@@ -1491,17 +1551,17 @@ proto.engine_api.EnclaveInfo.prototype.getApiContainerStatus = function() {
  * @return {!proto.engine_api.EnclaveInfo} returns this
  */
 proto.engine_api.EnclaveInfo.prototype.setApiContainerStatus = function(value) {
-  return jspb.Message.setProto3EnumField(this, 3, value);
+  return jspb.Message.setProto3EnumField(this, 5, value);
 };
 
 
 /**
- * optional EnclaveAPIContainerInfo api_container_info = 4;
+ * optional EnclaveAPIContainerInfo api_container_info = 6;
  * @return {?proto.engine_api.EnclaveAPIContainerInfo}
  */
 proto.engine_api.EnclaveInfo.prototype.getApiContainerInfo = function() {
   return /** @type{?proto.engine_api.EnclaveAPIContainerInfo} */ (
-    jspb.Message.getWrapperField(this, proto.engine_api.EnclaveAPIContainerInfo, 4));
+    jspb.Message.getWrapperField(this, proto.engine_api.EnclaveAPIContainerInfo, 6));
 };
 
 
@@ -1510,7 +1570,7 @@ proto.engine_api.EnclaveInfo.prototype.getApiContainerInfo = function() {
  * @return {!proto.engine_api.EnclaveInfo} returns this
 */
 proto.engine_api.EnclaveInfo.prototype.setApiContainerInfo = function(value) {
-  return jspb.Message.setWrapperField(this, 4, value);
+  return jspb.Message.setWrapperField(this, 6, value);
 };
 
 
@@ -1528,17 +1588,17 @@ proto.engine_api.EnclaveInfo.prototype.clearApiContainerInfo = function() {
  * @return {boolean}
  */
 proto.engine_api.EnclaveInfo.prototype.hasApiContainerInfo = function() {
-  return jspb.Message.getField(this, 4) != null;
+  return jspb.Message.getField(this, 6) != null;
 };
 
 
 /**
- * optional EnclaveAPIContainerHostMachineInfo api_container_host_machine_info = 5;
+ * optional EnclaveAPIContainerHostMachineInfo api_container_host_machine_info = 7;
  * @return {?proto.engine_api.EnclaveAPIContainerHostMachineInfo}
  */
 proto.engine_api.EnclaveInfo.prototype.getApiContainerHostMachineInfo = function() {
   return /** @type{?proto.engine_api.EnclaveAPIContainerHostMachineInfo} */ (
-    jspb.Message.getWrapperField(this, proto.engine_api.EnclaveAPIContainerHostMachineInfo, 5));
+    jspb.Message.getWrapperField(this, proto.engine_api.EnclaveAPIContainerHostMachineInfo, 7));
 };
 
 
@@ -1547,7 +1607,7 @@ proto.engine_api.EnclaveInfo.prototype.getApiContainerHostMachineInfo = function
  * @return {!proto.engine_api.EnclaveInfo} returns this
 */
 proto.engine_api.EnclaveInfo.prototype.setApiContainerHostMachineInfo = function(value) {
-  return jspb.Message.setWrapperField(this, 5, value);
+  return jspb.Message.setWrapperField(this, 7, value);
 };
 
 
@@ -1565,17 +1625,17 @@ proto.engine_api.EnclaveInfo.prototype.clearApiContainerHostMachineInfo = functi
  * @return {boolean}
  */
 proto.engine_api.EnclaveInfo.prototype.hasApiContainerHostMachineInfo = function() {
-  return jspb.Message.getField(this, 5) != null;
+  return jspb.Message.getField(this, 7) != null;
 };
 
 
 /**
- * optional google.protobuf.Timestamp creation_time = 6;
+ * optional google.protobuf.Timestamp creation_time = 8;
  * @return {?proto.google.protobuf.Timestamp}
  */
 proto.engine_api.EnclaveInfo.prototype.getCreationTime = function() {
   return /** @type{?proto.google.protobuf.Timestamp} */ (
-    jspb.Message.getWrapperField(this, google_protobuf_timestamp_pb.Timestamp, 6));
+    jspb.Message.getWrapperField(this, google_protobuf_timestamp_pb.Timestamp, 8));
 };
 
 
@@ -1584,7 +1644,7 @@ proto.engine_api.EnclaveInfo.prototype.getCreationTime = function() {
  * @return {!proto.engine_api.EnclaveInfo} returns this
 */
 proto.engine_api.EnclaveInfo.prototype.setCreationTime = function(value) {
-  return jspb.Message.setWrapperField(this, 6, value);
+  return jspb.Message.setWrapperField(this, 8, value);
 };
 
 
@@ -1602,7 +1662,7 @@ proto.engine_api.EnclaveInfo.prototype.clearCreationTime = function() {
  * @return {boolean}
  */
 proto.engine_api.EnclaveInfo.prototype.hasCreationTime = function() {
-  return jspb.Message.getField(this, 6) != null;
+  return jspb.Message.getField(this, 8) != null;
 };
 
 
@@ -1771,7 +1831,7 @@ proto.engine_api.StopEnclaveArgs.prototype.toObject = function(opt_includeInstan
  */
 proto.engine_api.StopEnclaveArgs.toObject = function(includeInstance, msg) {
   var f, obj = {
-    enclaveId: jspb.Message.getFieldWithDefault(msg, 1, "")
+    enclaveIdentifier: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -1810,7 +1870,7 @@ proto.engine_api.StopEnclaveArgs.deserializeBinaryFromReader = function(msg, rea
     switch (field) {
     case 1:
       var value = /** @type {string} */ (reader.readString());
-      msg.setEnclaveId(value);
+      msg.setEnclaveIdentifier(value);
       break;
     default:
       reader.skipField();
@@ -1841,7 +1901,7 @@ proto.engine_api.StopEnclaveArgs.prototype.serializeBinary = function() {
  */
 proto.engine_api.StopEnclaveArgs.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
-  f = message.getEnclaveId();
+  f = message.getEnclaveIdentifier();
   if (f.length > 0) {
     writer.writeString(
       1,
@@ -1852,10 +1912,10 @@ proto.engine_api.StopEnclaveArgs.serializeBinaryToWriter = function(message, wri
 
 
 /**
- * optional string enclave_id = 1;
+ * optional string enclave_identifier = 1;
  * @return {string}
  */
-proto.engine_api.StopEnclaveArgs.prototype.getEnclaveId = function() {
+proto.engine_api.StopEnclaveArgs.prototype.getEnclaveIdentifier = function() {
   return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
 };
 
@@ -1864,7 +1924,7 @@ proto.engine_api.StopEnclaveArgs.prototype.getEnclaveId = function() {
  * @param {string} value
  * @return {!proto.engine_api.StopEnclaveArgs} returns this
  */
-proto.engine_api.StopEnclaveArgs.prototype.setEnclaveId = function(value) {
+proto.engine_api.StopEnclaveArgs.prototype.setEnclaveIdentifier = function(value) {
   return jspb.Message.setProto3StringField(this, 1, value);
 };
 
@@ -1901,7 +1961,7 @@ proto.engine_api.DestroyEnclaveArgs.prototype.toObject = function(opt_includeIns
  */
 proto.engine_api.DestroyEnclaveArgs.toObject = function(includeInstance, msg) {
   var f, obj = {
-    enclaveId: jspb.Message.getFieldWithDefault(msg, 1, "")
+    enclaveIdentifier: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -1940,7 +2000,7 @@ proto.engine_api.DestroyEnclaveArgs.deserializeBinaryFromReader = function(msg, 
     switch (field) {
     case 1:
       var value = /** @type {string} */ (reader.readString());
-      msg.setEnclaveId(value);
+      msg.setEnclaveIdentifier(value);
       break;
     default:
       reader.skipField();
@@ -1971,7 +2031,7 @@ proto.engine_api.DestroyEnclaveArgs.prototype.serializeBinary = function() {
  */
 proto.engine_api.DestroyEnclaveArgs.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
-  f = message.getEnclaveId();
+  f = message.getEnclaveIdentifier();
   if (f.length > 0) {
     writer.writeString(
       1,
@@ -1982,10 +2042,10 @@ proto.engine_api.DestroyEnclaveArgs.serializeBinaryToWriter = function(message, 
 
 
 /**
- * optional string enclave_id = 1;
+ * optional string enclave_identifier = 1;
  * @return {string}
  */
-proto.engine_api.DestroyEnclaveArgs.prototype.getEnclaveId = function() {
+proto.engine_api.DestroyEnclaveArgs.prototype.getEnclaveIdentifier = function() {
   return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
 };
 
@@ -1994,7 +2054,7 @@ proto.engine_api.DestroyEnclaveArgs.prototype.getEnclaveId = function() {
  * @param {string} value
  * @return {!proto.engine_api.DestroyEnclaveArgs} returns this
  */
-proto.engine_api.DestroyEnclaveArgs.prototype.setEnclaveId = function(value) {
+proto.engine_api.DestroyEnclaveArgs.prototype.setEnclaveIdentifier = function(value) {
   return jspb.Message.setProto3StringField(this, 1, value);
 };
 
@@ -2161,7 +2221,7 @@ proto.engine_api.CleanResponse.prototype.toObject = function(opt_includeInstance
  */
 proto.engine_api.CleanResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-    removedEnclaveIdsMap: (f = msg.getRemovedEnclaveIdsMap()) ? f.toObject(includeInstance, undefined) : []
+    removedEnclaveUuidsMap: (f = msg.getRemovedEnclaveUuidsMap()) ? f.toObject(includeInstance, undefined) : []
   };
 
   if (includeInstance) {
@@ -2199,7 +2259,7 @@ proto.engine_api.CleanResponse.deserializeBinaryFromReader = function(msg, reade
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = msg.getRemovedEnclaveIdsMap();
+      var value = msg.getRemovedEnclaveUuidsMap();
       reader.readMessage(value, function(message, reader) {
         jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readBool, null, "", false);
          });
@@ -2233,7 +2293,7 @@ proto.engine_api.CleanResponse.prototype.serializeBinary = function() {
  */
 proto.engine_api.CleanResponse.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
-  f = message.getRemovedEnclaveIdsMap(true);
+  f = message.getRemovedEnclaveUuidsMap(true);
   if (f && f.getLength() > 0) {
     f.serializeBinary(1, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeBool);
   }
@@ -2241,12 +2301,12 @@ proto.engine_api.CleanResponse.serializeBinaryToWriter = function(message, write
 
 
 /**
- * map<string, bool> removed_enclave_ids = 1;
+ * map<string, bool> removed_enclave_uuids = 1;
  * @param {boolean=} opt_noLazyCreate Do not create the map if
  * empty, instead returning `undefined`
  * @return {!jspb.Map<string,boolean>}
  */
-proto.engine_api.CleanResponse.prototype.getRemovedEnclaveIdsMap = function(opt_noLazyCreate) {
+proto.engine_api.CleanResponse.prototype.getRemovedEnclaveUuidsMap = function(opt_noLazyCreate) {
   return /** @type {!jspb.Map<string,boolean>} */ (
       jspb.Message.getMapField(this, 1, opt_noLazyCreate,
       null));
@@ -2257,8 +2317,8 @@ proto.engine_api.CleanResponse.prototype.getRemovedEnclaveIdsMap = function(opt_
  * Clears values from the map. The map will be non-null.
  * @return {!proto.engine_api.CleanResponse} returns this
  */
-proto.engine_api.CleanResponse.prototype.clearRemovedEnclaveIdsMap = function() {
-  this.getRemovedEnclaveIdsMap().clear();
+proto.engine_api.CleanResponse.prototype.clearRemovedEnclaveUuidsMap = function() {
+  this.getRemovedEnclaveUuidsMap().clear();
   return this;};
 
 
@@ -2301,7 +2361,7 @@ proto.engine_api.GetServiceLogsArgs.prototype.toObject = function(opt_includeIns
  */
 proto.engine_api.GetServiceLogsArgs.toObject = function(includeInstance, msg) {
   var f, obj = {
-    enclaveId: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    enclaveIdentifier: jspb.Message.getFieldWithDefault(msg, 1, ""),
     serviceGuidSetMap: (f = msg.getServiceGuidSetMap()) ? f.toObject(includeInstance, undefined) : [],
     followLogs: jspb.Message.getBooleanFieldWithDefault(msg, 3, false),
     conjunctiveFiltersList: jspb.Message.toObjectList(msg.getConjunctiveFiltersList(),
@@ -2344,7 +2404,7 @@ proto.engine_api.GetServiceLogsArgs.deserializeBinaryFromReader = function(msg, 
     switch (field) {
     case 1:
       var value = /** @type {string} */ (reader.readString());
-      msg.setEnclaveId(value);
+      msg.setEnclaveIdentifier(value);
       break;
     case 2:
       var value = msg.getServiceGuidSetMap();
@@ -2390,7 +2450,7 @@ proto.engine_api.GetServiceLogsArgs.prototype.serializeBinary = function() {
  */
 proto.engine_api.GetServiceLogsArgs.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
-  f = message.getEnclaveId();
+  f = message.getEnclaveIdentifier();
   if (f.length > 0) {
     writer.writeString(
       1,
@@ -2420,10 +2480,10 @@ proto.engine_api.GetServiceLogsArgs.serializeBinaryToWriter = function(message, 
 
 
 /**
- * optional string enclave_id = 1;
+ * optional string enclave_identifier = 1;
  * @return {string}
  */
-proto.engine_api.GetServiceLogsArgs.prototype.getEnclaveId = function() {
+proto.engine_api.GetServiceLogsArgs.prototype.getEnclaveIdentifier = function() {
   return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
 };
 
@@ -2432,7 +2492,7 @@ proto.engine_api.GetServiceLogsArgs.prototype.getEnclaveId = function() {
  * @param {string} value
  * @return {!proto.engine_api.GetServiceLogsArgs} returns this
  */
-proto.engine_api.GetServiceLogsArgs.prototype.setEnclaveId = function(value) {
+proto.engine_api.GetServiceLogsArgs.prototype.setEnclaveIdentifier = function(value) {
   return jspb.Message.setProto3StringField(this, 1, value);
 };
 

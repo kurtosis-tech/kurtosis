@@ -50,7 +50,7 @@ const (
 )
 
 func TestGetUserServiceLogsWithoutFilter_ValidResponse(t *testing.T) {
-	enclaveId := enclave.EnclaveID(testEnclaveId)
+	enclaveId := enclave.EnclaveUUID(testEnclaveId)
 	userServiceGuids := map[service.ServiceGUID]bool{
 		testUserService1Guid: true,
 		testUserService2Guid: true,
@@ -70,7 +70,7 @@ func TestGetUserServiceLogsWithoutFilter_ValidResponse(t *testing.T) {
 		expectedEnclaveId := enclaveId
 		var foundExpectedEnclaveId bool
 		for _, organizationId := range organizationIds {
-			enclaveIdObj := enclave.EnclaveID(organizationId)
+			enclaveIdObj := enclave.EnclaveUUID(organizationId)
 			if enclaveIdObj == expectedEnclaveId {
 				foundExpectedEnclaveId = true
 			}
@@ -190,7 +190,7 @@ func TestGetUserServiceLogsWithoutFilter_ValidResponse(t *testing.T) {
 }
 
 func TestGetUserServiceLogsWithFilter_ValidResponse(t *testing.T) {
-	enclaveId := enclave.EnclaveID(testEnclaveId)
+	enclaveId := enclave.EnclaveUUID(testEnclaveId)
 	userServiceGuids := map[service.ServiceGUID]bool{
 		testUserService1Guid: true,
 		testUserService2Guid: true,

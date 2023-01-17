@@ -16,7 +16,7 @@ const (
 
 func GetUserServiceLogs(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
+	enclaveId enclave.EnclaveUUID,
 	filters *service.ServiceFilters,
 	shouldFollowLogs bool,
 	cliModeArgs *shared_helpers.CliModeArgs,

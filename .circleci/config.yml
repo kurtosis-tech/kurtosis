@@ -57,8 +57,8 @@ run_dump_kurtosis_enclaves: &run_dump_kurtosis_enclaves
 
     # We exclude "WARN" and "INFO" messages because otherwise they'll pollute the STDOUT grab
     # We can remove this tedious exclusion when https://github.com/kurtosis-tech/kurtosis/issues/399 is implemented
-    for enclave_id in $("${KURTOSIS_BINPATH}" enclave ls | grep -v "WARN" | grep -v "INFO" | grep -v "EnclaveID" | awk '{print $1}'); do
-      "${KURTOSIS_BINPATH}" enclave dump "${enclave_id}" "${output_dirname}/${enclave_id}"
+    for enclave_uuid in $("${KURTOSIS_BINPATH}" enclave ls | grep -v "WARN" | grep -v "INFO" | grep -v "EnclaveUUID" | awk '{print $1}'); do
+      "${KURTOSIS_BINPATH}" enclave dump "${enclave_uuid}" "${output_dirname}/${enclave_uuid}"
     done
 
     # Verify that we actually dumped enclaves by ensuring the number of dumped enclaves is greater than 0 (if not, it's a bug in this dumping logic)
@@ -722,10 +722,10 @@ jobs:
       - run: "${KURTOSIS_BINPATH} enclave inspect test-enclave"
 
       # Execute simple startosis script in new enclave
-      - run: "${KURTOSIS_BINPATH} run --enclave-id test-enclave << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.startosis-test-script-file-relative-path >>"
+      - run: "${KURTOSIS_BINPATH} run --enclave-identifier test-enclave << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.startosis-test-script-file-relative-path >>"
 
       # Execute github starlark module
-      - run: "${KURTOSIS_BINPATH} run --enclave-id test-datastore github.com/kurtosis-tech/datastore-army-package '{\"num_datastores\": 2}'"
+      - run: "${KURTOSIS_BINPATH} run --enclave-identifier test-datastore github.com/kurtosis-tech/datastore-army-package '{\"num_datastores\": 2}'"
         
 
       - run: "${KURTOSIS_BINPATH} enclave stop test-enclave"

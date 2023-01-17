@@ -12,7 +12,7 @@ import (
 
 func StopUserServices(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
+	enclaveUuid enclave.EnclaveUUID,
 	filters *service.ServiceFilters,
 	dockerManager *docker_manager.DockerManager,
 ) (
@@ -20,7 +20,7 @@ func StopUserServices(
 	resultErroredServiceGUIDs map[service.ServiceGUID]error,
 	resultErr error,
 ) {
-	allServiceObjs, allDockerResources, err := shared_helpers.GetMatchingUserServiceObjsAndDockerResourcesNoMutex(ctx, enclaveId, filters, dockerManager)
+	allServiceObjs, allDockerResources, err := shared_helpers.GetMatchingUserServiceObjsAndDockerResourcesNoMutex(ctx, enclaveUuid, filters, dockerManager)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services matching filters '%+v'", filters)
 	}
