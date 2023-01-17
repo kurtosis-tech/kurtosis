@@ -46,7 +46,7 @@ Naturally, if your job fails you'll want to see what was going on inside of Kurt
       # Run our custom logic (in this case, running a package), but don't exit immediately if it fails so that
       # we can upload the 'enclave dump' results before the CI job ends
       - run: |
-          if ! kurtosis run --enclave-id my-enclave github.com/kurtosis-tech/datastore-army-package; then
+          if ! kurtosis run --enclave-name my-enclave github.com/kurtosis-tech/datastore-army-package; then
             touch /tmp/testsuite-failed
           fi
 

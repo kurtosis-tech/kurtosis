@@ -107,13 +107,13 @@ To see all the enclaves in Kurtosis, run:
 kurtosis enclave ls
 ```
 
-The enclave IDs that are printed will be used in enclave manipulation commands.
+The enclave UUIDs and names that are printed will be used in enclave manipulation commands.
 
 ### View enclave details
 To view detailed information about a given enclave, run:
 
 ```bash
-kurtosis enclave inspect $THE_ENCLAVE_ID
+kurtosis enclave inspect $THE_ENCLAVE_IDENTIFIER
 ```
 
 This will print detailed information about:
@@ -125,7 +125,7 @@ This will print detailed information about:
 You'll likely need to store enclave logs to disk at some point. You may want to have a log package if your CI fails, or you want to send debugging information to [the author of a Kurtosis package][packages]. Whatever the case may be, you can run:
 
 ```bash
-kurtosis enclave dump $THE_ENCLAVE_ID $OUTPUT_DIRECTORY
+kurtosis enclave dump $THE_ENCLAVE_IDENTIFIER $OUTPUT_DIRECTORY
 ```
 
 You'll get the container logs & configuration in the output directory for further analysis & sharing.
@@ -134,7 +134,7 @@ You'll get the container logs & configuration in the output directory for furthe
 To delete an enclave and everything inside of it, run:
 
 ```bash
-kurtosis enclave rm $THE_ENCLAVE_ID
+kurtosis enclave rm $THE_ENCLAVE_IDENTIFIER
 ```
 
 Note that this will only delete stopped enclaves. To delete a running enclave, pass the `-f`/`--force` flag.
@@ -143,7 +143,7 @@ Note that this will only delete stopped enclaves. To delete a running enclave, p
 To add a service to an enclave, run:
 
 ```bash
-kurtosis service add $THE_ENCLAVE_ID $THE_SERVICE_ID $CONTAINER_IMAGE
+kurtosis service add $THE_ENCLAVE_IDENTIFIER $THE_SERVICE_ID $CONTAINER_IMAGE
 ```
 
 Much like `docker run`, this command has multiple options available to customize the service that's started:
@@ -162,7 +162,7 @@ kurtosis service add --entrypoint sh my-enclave test-service alpine -- -c "echo 
 To print the logs for a service, run:
 
 ```bash
-kurtosis service logs $THE_ENCLAVE_ID $THE_SERVICE_ID
+kurtosis service logs $THE_ENCLAVE_IDENTIFIER $THE_SERVICE_ID
 ```
 
 The service ID is printed upon inspecting an enclave.

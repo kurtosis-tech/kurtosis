@@ -15,12 +15,12 @@ kurtosis files upload $SOME_PATH
 If `$SOME_PATH` is a file, that single file will be packaged inside the files artifact. If `$SOME_PATH` is a directory, all of the directory's contents will be packaged inside the files artifact.
 :::
 
-Doing so will return a randomly-generated ID that can be used to reference the files artifact for later use.
+Doing so will return a randomly-generated ID and name that can be used to reference the files artifact for later use.
 
-For example, the `--files` flag of `kurtosis service add` can be used to mount the contents of a files artifact at specified location. This command will mount the contents of files artifact `b8aa8afd-d359-472d-8b39-c63926143df6` at the `/data` directory:
+For example, the `--files` flag of `kurtosis service add` can be used to mount the contents of a files artifact at specified location. This command will mount the contents of files artifact `test-artifact` at the `/data` directory:
 
 ```bash
-kurtosis service add "some-enclave" "some-service-id" --files "b8aa8afd-d359-472d-8b39-c63926143df6:/data"
+kurtosis service add "some-enclave" "some-service-id" --files "/data:test-artifact"
 ```
 
 The same files artifact can be reused many times because the contents of a files artifact is copied when it is used.

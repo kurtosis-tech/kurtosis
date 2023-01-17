@@ -17,61 +17,70 @@ KurtosisContext
 ---------------
 A connection to a Kurtosis engine, used for manipulating enclaves.
 
-### `createEnclave(EnclaveID enclaveId, boolean isPartitioningEnabled) -> [EnclaveContext][enclavecontext] enclaveContext`
+### `createEnclave(String enclaveName, boolean isPartitioningEnabled) -> [EnclaveContext][enclavecontext] enclaveContext`
 Creates a new Kurtosis enclave using the given parameters.
 
 **Args**
-* `enclaveId`: The ID to give the new enclave.
+* `enclaveName`: The name to give the new enclave.
 * `isPartitioningEnabled`: If set to true, the enclave will be set up to allow for repartitioning. This will make service addition & removal take slightly longer, but allow for calls to [EnclaveContext.repartitionNetwork][enclavecontext_repartitionnetwork].
 
 **Returns**
 * `enclaveContext`: An [EnclaveContext][enclavecontext] object representing the new enclave.
 
-### `getEnclaveContext(EnclaveID enclaveId) -> [EnclaveContext][enclavecontext] enclaveContext`
+### `getEnclaveContext(String enclaveIdentifier) -> [EnclaveContext][enclavecontext] enclaveContext`
 Gets the [EnclaveContext][enclavecontext] object for the given enclave ID.
 
 **Args**
-* `enclaveId`: The ID of the enclave to retrieve the context for.
+* `enclaveIdentifier`: The identifier(uuid, shortened uuid, name) of the enclave.
 
 **Returns**
 * `enclaveContext`: The [EnclaveContext][enclavecontext] representation of the enclave.
 
-### `getEnclaves() -> Set<EnclaveID> enclaveIds`
-Gets the IDs of the enclaves that the Kurtosis engine knows about.
+### `getEnclaves() -> Enclaves enclaves`
+Gets the enclaves that the Kurtosis engine knows about.
 
 **Returns**
-* `enclaveIds`: A set of the enclave IDs that the Kurtosis is aware of.
+* `enclaves`: The [Enclaves][enclaves] representation of all enclaves that Kurtosis the engine knows about.
 
-### `stopEnclave(EnclaveID enclaveId)`
-Stops the enclave with the given ID, but doesn't destroy the enclave objects (containers, networks, etc.) so they can be further examined.
+### `getEnclave(String enclaveIdentifier) -> EnclaveInfo enclaveInfo`
+Gets information about the enclave for the given identifier
+
+**Args**
+* `enclaveIdentifier`: The identifier of the enclave.
+
+**Returns**
+* `enclaves`: The [EnclaveInfo][enclaveinfo] object representing the enclave
+
+### `stopEnclave(String enclaveIdentifier)`
+Stops the enclave with the given identifier, but doesn't destroy the enclave objects (containers, networks, etc.) so they can be further examined.
 
 **NOTE:** Any [EnclaveContext][enclavecontext] objects representing the stopped enclave will become unusable.
 
 **Args**
-* `enclaveId`: ID of the enclave to stop.
+* `enclaveIdentifier`: Identifier of the enclave to stop.
 
-### `destroyEnclave(EnclaveID enclaveId)`
-Stops the enclave with the given ID and destroys the enclave objects (containers, networks, etc.).
+### `destroyEnclave(String enclaveIdentifier)`
+Stops the enclave with the given identifier and destroys the enclave objects (containers, networks, etc.).
 
 **NOTE:** Any [EnclaveContext][enclavecontext] objects representing the stopped enclave will become unusable.
 
 **Args**
-* `enclaveId`: ID of the enclave to destroy.
+* `enclaveId`: Identifier of the enclave to destroy.
 
-### `clean(boolean shouldCleanAll) -> Set<EnclaveID> RemovedEnclaveIds`
+### `clean(boolean shouldCleanAll) -> Set<EnclaveUUID> RemovedEnclaveUuids`
 Destroys enclaves in the Kurtosis engine.
 
 **Args**
 * `shouldCleanAll`: If set to true, destroys running enclaves in addition to stopped ones.
 
 **Returns**
-* `RemovedEnclaveIds`: A set of the removed enclave IDs.
+* `RemovedEnclaveUuids`: A set of the removed enclave Uuids.
 
-### `getServiceLogs(EnclaveID enclaveId, Set<ServiceGUID> serviceGuids, Boolean shouldFollowLogs, LogLineFilter logLineFilter) -> ServiceLogsStreamContent serviceLogsStreamContent`
+### `getServiceLogs(String enclaveIdentifier, Set<ServiceGUID> serviceGuids, Boolean shouldFollowLogs, LogLineFilter logLineFilter) -> ServiceLogsStreamContent serviceLogsStreamContent`
 Get and start a service container logs stream (showed in ascending order, with the oldest line first) from services identified by their GUID.
 
 **Args**
-* `enclaveId`: ID of the services' enclave.
+* `enclaveIdentifier`: Identifier of the services' enclave.
 * `serviceGuids`: A set of service GUIDs identifying the services from which logs should be retrieved.
 * `shouldFollowLogs`: If it's true, the stream will constantly send the new log lines. if it's false, the stream will be closed after the last created log line is sent.
 * `logLineFilter`: The [filter][loglinefilter] that will be used for filtering the returned log lines
@@ -144,12 +153,55 @@ Returns a LogLineFilter type which must be used for filtering the log lines that
 **Returns**
 * `logLineFilter`: The does-not-contain-regex-match log line filter
 
+Enclaves
+--------
+
+This Kurtosis provided class is a collection of various different [EnclaveInfo][enclaveinfo] objects, by uuid, shortened uuid, and name.
+
+### Map<String, EnclaveInfo> `enclavesByUuid`
+
+A map from uuids to the enclave info for the enclave with the given uuid.
+
+### Map<String, EnclaveInfo> `enclavesByName`
+
+A map from names to the enclave info for the enclave with the given name
+
+### Map<String, EnclaveInfo[]> `enclavesByShortenedUuid`
+
+A map from shortened uuid (first 12 characters of uuid) to the enclave infos of the enclaves it matches too.
+
+EnclaveInfo
+-----------
+
+This Kurtosis provided class contains information about enclaves. This class just contains data and no methods to manipulate enclaves. Users must use [EnclaveContext][enclavecontext] to modify the state of an enclave.
+
+### `getEnclaveUuid() -> EnclaveUuid`
+Gets the UUID of the enclave that this [EnclaveInfo][enclaveinfo] object represents.
+
+### `getShortenedUuid() -> String`
+Gets the shortened UUID of the enclave that this [EnclaveInfo][enclaveinfo] object represents.
+
+### `getName() -> String`
+Gets the name of the enclave that this [EnclaveInfo][enclaveinfo] object represents.
+
+### `getCreationTime() -> Timestamp`
+Gets the timestamp at which the enclave that this [EnclaveInfo][enclaveinfo] object represents was created.
+
+### `getCreationTime() -> Timestamp`
+Gets the timestamp at which the enclave that this [EnclaveInfo][enclaveinfo] object represents was created.
+
+### `getContainersStatus() -> Status`
+Gets the current status of the container running the enclave represented by this [EnclaveInfo][enclaveinfo]. Is one of 'EMPTY', 'RUNNING' and 'STOPPED'.
+
 EnclaveContext
 --------------
 This Kurtosis-provided class is the lowest-level representation of a Kurtosis enclave, and provides methods for inspecting and manipulating the contents of the enclave. 
 
-### `getEnclaveId() -> EnclaveID`
-Gets the ID of the enclave that this [EnclaveContext][enclavecontext] object represents.
+### `getEnclaveUuid() -> EnclaveUuid`
+Gets the UUID of the enclave that this [EnclaveContext][enclavecontext] object represents.
+
+### `getEnclaveName() -> String`
+Gets the name of the enclave that this [EnclaveContext][enclavecontext] object represents.
 
 ### `runStarlarkScript(String serializedStarlarkScript, Boolean dryRun) -> (Stream<StarlarkRunResponseLine> responseLines, Error error)`
 
@@ -553,7 +605,10 @@ the `Float64` method on the `json.Number` first, so above would look like `{{pri
   
 [templateanddata]: #templateanddata
 
-[kurtosiscontext_createenclave]: #createenclaveenclaveid-enclaveid-boolean-ispartitioningenabled---enclavecontextenclavecontext-enclavecontext
+[kurtosiscontext_createenclave]: #createenclavestring-enclaveid-boolean-ispartitioningenabled---enclavecontextenclavecontext-enclavecontext
 
 [loglinefilter]: #loglinefilter
 [google_re2_syntax_docs]: https://github.com/google/re2/wiki/Syntax
+
+[enclaveinfo]: #enclaveinfo
+[enclaves]: #enclaves

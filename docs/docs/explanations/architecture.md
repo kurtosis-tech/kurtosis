@@ -21,10 +21,9 @@ Kurtosis implements "environments as a first-class" concept using **enclaves**. 
 Example: Some enclaves running in a Kurtosis engine, as displayed by [the Kurtosis CLI][installation]:
 
 ```
-EnclaveID   Status    Creation Time
-eth2        RUNNING   Thu, 24 Nov 2022 14:11:27 UTC
-test        RUNNING   Thu, 24 Nov 2022 14:11:34 UTC
-local-dev   RUNNING   Thu, 24 Nov 2022 14:11:37 UTC
+EnclaveUUID                         Name     Status   Creation Time
+a525cee593af4b45aa15785e87d3b7c9    local    RUNNING   Thu, 24 Nov 2022 14:11:27 UTC
+edf36be917504e449a1648cf8d6c78a4    test     RUNNING   Thu, 24 Nov 2022 14:11:34 UTC
 ```
 
 Services
@@ -34,7 +33,8 @@ Enclaves contain distributed applications, and distributed applications have ser
 Example: A pair of Nginx services running inside an enclave called `test`, as reported by the Kurtosis CLI:
 
 ```
-Enclave ID:                           test
+Enclave UUID:                         2e42f9fd7b854eabb04f71a15bd1b55f
+Enclave Name:                         test
 Enclave Status:                       RUNNING
 Creation Time:                        Thu, 24 Nov 2022 11:11:34 -03
 API Container Status:                 RUNNING
