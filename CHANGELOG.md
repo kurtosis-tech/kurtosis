@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.64.2](https://github.com/kurtosis-tech/kurtosis/compare/0.64.1...0.64.2) (2023-01-17)
+
+
+### Features
+
+* added backward compatibility to the the new constructors ([2c319b3](https://github.com/kurtosis-tech/kurtosis/commit/2c319b30ab92b126c2f815f6b6448bd464f3f167))
+* added http and exec recipe constructor ([2c319b3](https://github.com/kurtosis-tech/kurtosis/commit/2c319b30ab92b126c2f815f6b6448bd464f3f167))
+* added http recipe constructor ([#794](https://github.com/kurtosis-tech/kurtosis/issues/794)) ([2c319b3](https://github.com/kurtosis-tech/kurtosis/commit/2c319b30ab92b126c2f815f6b6448bd464f3f167))
+
+
+### Bug Fixes
+
+* added cpu in starlark-instruction ([0bd0dfe](https://github.com/kurtosis-tech/kurtosis/commit/0bd0dfe881cc0b2935ae6457abb179f038b59a64))
+* created separate constructors for Post and Get request recipes. ([2c319b3](https://github.com/kurtosis-tech/kurtosis/commit/2c319b30ab92b126c2f815f6b6448bd464f3f167))
+* update add-service link ([0bd0dfe](https://github.com/kurtosis-tech/kurtosis/commit/0bd0dfe881cc0b2935ae6457abb179f038b59a64))
+
 ## [0.64.1](https://github.com/kurtosis-tech/kurtosis/compare/0.64.0...0.64.1) (2023-01-11)
 
 
