@@ -5,14 +5,10 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/import_module"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/print_builtin"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/read_file"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/plan_module"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/package_io"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/recipe"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
@@ -118,7 +114,8 @@ func (interpreter *StartosisInterpreter) Interpret(_ context.Context, packageId 
 		if paramName, _ := runFunction.Param(planParamIndex); paramName != planParamName {
 			return "", nil, startosis_errors.NewInterpretationError(unexpectedArgNameError, planParamIndex, planParamName, paramName).ToAPIType()
 		}
-		planModule := plan_module.PlanModule(&instructionsQueue, interpreter.serviceNetwork, interpreter.recipeExecutor, interpreter.moduleContentProvider)
+		kurtosisPlanInstructions := KurtosisPlanInstructions(&instructionsQueue, interpreter.moduleContentProvider, interpreter.serviceNetwork, interpreter.recipeExecutor)
+		planModule := plan_module.PlanModule(kurtosisPlanInstructions)
 		argsTuple = append(argsTuple, planModule)
 	}
 
@@ -167,7 +164,7 @@ func (interpreter *StartosisInterpreter) buildBindings(thread *starlark.Thread, 
 		return interpreter.interpretInternal(thread, moduleId, serializedStartosis, instructionsQueue)
 	}
 
-	predeclared := &starlark.StringDict{
+	predeclared := starlark.StringDict{
 		// go-starlark add-ons
 		starlarkjson.Module.Name:          starlarkjson.Module,
 		starlarkstruct.Default.GoString(): starlark.NewBuiltin(starlarkstruct.Default.GoString(), starlarkstruct.Make), // extension to build struct in starlark
@@ -175,24 +172,18 @@ func (interpreter *StartosisInterpreter) buildBindings(thread *starlark.Thread, 
 
 		// Kurtosis pre-built module containing Kurtosis constant types
 		builtins.KurtosisModuleName: builtins.KurtosisModule(),
-
-		// Kurtosis recipes
-		recipe.PostHttpRecipeTypeName: starlark.NewBuiltin(recipe.PostHttpRecipeTypeName, recipe.MakePostHttpRequestRecipe),
-		recipe.GetHttpRecipeTypeName:  starlark.NewBuiltin(recipe.GetHttpRecipeTypeName, recipe.MakeGetHttpRequestRecipe),
-		recipe.ExecRecipeName:         starlark.NewBuiltin(recipe.ExecRecipeName, recipe.MakeExecRequestRecipe),
-
-		// Kurtosis types
-		kurtosis_types.ConnectionConfigTypeName:    starlark.NewBuiltin(kurtosis_types.ConnectionConfigTypeName, kurtosis_types.MakeConnectionConfig),
-		kurtosis_types.PortSpecTypeName:            starlark.NewBuiltin(kurtosis_types.PortSpecTypeName, kurtosis_types.MakePortSpec),
-		kurtosis_types.ServiceConfigTypeName:       starlark.NewBuiltin(kurtosis_types.ServiceConfigTypeName, kurtosis_types.MakeServiceConfig),
-		kurtosis_types.UpdateServiceConfigTypeName: starlark.NewBuiltin(kurtosis_types.UpdateServiceConfigTypeName, kurtosis_types.MakeUpdateServiceConfig),
-
-		// Kurtosis custom builtins - pure interpretation-time helpers. Do not add any instructions to the queue
-		import_module.ImportModuleBuiltinName: starlark.NewBuiltin(import_module.ImportModuleBuiltinName, import_module.GenerateImportBuiltin(recursiveInterpretForModuleLoading, interpreter.moduleContentProvider, interpreter.moduleGlobalsCache)),
-		print_builtin.PrintBuiltinName:        starlark.NewBuiltin(print_builtin.PrintBuiltinName, print_builtin.GeneratePrintBuiltin()),
-		read_file.ReadFileBuiltinName:         starlark.NewBuiltin(read_file.ReadFileBuiltinName, read_file.GenerateReadFileBuiltin(interpreter.moduleContentProvider)),
 	}
-	return predeclared
+
+	// Add all Kurtosis helpers
+	for _, kurtosisHelper := range KurtosisHelpers(recursiveInterpretForModuleLoading, interpreter.moduleContentProvider, interpreter.moduleGlobalsCache) {
+		predeclared[kurtosisHelper.Name()] = kurtosisHelper
+	}
+
+	// Add all Kurtosis types
+	for _, kurtosisTypeConstructors := range KurtosisTypeConstructors() {
+		predeclared[kurtosisTypeConstructors.Name()] = kurtosisTypeConstructors
+	}
+	return &predeclared
 }
 
 // This method handles the different cases a Startosis module can be executed.

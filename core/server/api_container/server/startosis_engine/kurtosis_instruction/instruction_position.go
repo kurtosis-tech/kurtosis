@@ -6,6 +6,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 )
 
+// InstructionPosition represents the position of a given kurtosis instruction within a Starlark script.
+// TODO: remove once all instructions have been migrated to the framework and it is fully replaced by
+//  kurtosis_starlark_framework.InstructionPosition
 type InstructionPosition struct {
 	line     int32
 	col      int32
