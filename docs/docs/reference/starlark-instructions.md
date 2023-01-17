@@ -53,80 +53,9 @@ service = plan.add_service(
     # MANDATORY
     service_id = "example-datastore-server-1",
 
+    # The configuration for this service. See the 'ServiceConfig' section of 'Starlark Types' from the sidecar for more information.
     # MANDATORY
-    config = ServiceConfig(
-        # The name of the container image that Kurtosis should use when creating the service’s container.
-        # MANDATORY
-        image = "kurtosistech/example-datastore-server",
-
-        # The ports that the container should listen on, identified by a user-friendly ID that can be used to select the port again in the future.
-        # If no ports are provided, no ports will be exposed on the host machine, unless there is an EXPOSE in the Dockerfile
-        # OPTIONAL (Default: {})
-        ports = {
-            "grpc": PortSpec(
-                # The port number which we want to expose
-                # MANDATORY
-                number = 1234,
-
-                # Transport protocol for the port (can be either "TCP" or "UDP")
-                # Optional (DEFAULT:"TCP")
-                transport_protocol = "TCP",
-
-                # Application protocol for the port
-                # Optional
-                application_protocol = "http"
-            ),
-        },
-
-        # A mapping of path_on_container_where_contents_will_be_mounted -> files_artifact_name_to_mount
-        # For more info on what a files artifact is, see below
-        # OPTIONAL (Default: {})
-        files = {
-            "path/to/file/1": "files_artifact_1",
-            "path/to/file/2": "files_artifact_2",
-        },
-
-        # The ENTRYPOINT statement hardcoded in a container image's Dockerfile might not be suitable for your needs.
-        # This field allows you to override the ENTRYPOINT when the container starts.
-        # OPTIONAL (Default: [])
-        entrypoint = [
-            "bash",
-        ],
-
-        # The CMD statement hardcoded in a container image's Dockerfile might not be suitable for your needs.
-        # This field allows you to override the CMD when the container starts.
-        # OPTIONAL (Default: [])
-        cmd = [
-            "-c",
-            "sleep 99",
-        ],
-
-        # Defines environment variables that should be set inside the Docker container running the service. 
-        # This can be necessary for starting containers from Docker images you don’t control, as they’ll often be parameterized with environment variables.
-        # OPTIONAL (Default: {})
-        env_vars = {
-            "VAR_1": "VALUE_1",
-            "VAR_2": "VALUE_2",
-        },
-
-        # ENTRYPOINT, CMD, and ENV variables sometimes need to refer to the container's own IP address. 
-        # If this placeholder string is referenced inside the 'entrypoint', 'cmd', or 'env_vars' properties, the Kurtosis engine will replace it at launch time
-        # with the container's actual IP address.
-        # OPTIONAL (Default: "KURTOSIS_IP_ADDR_PLACEHOLDER")
-        private_ip_address_placeholder = "KURTOSIS_IP_ADDRESS_PLACEHOLDER",
-
-        # The maximum amount of CPUs the service can use, in millicpu/millicore.
-        # OPTIONAL (Default: no limit)
-        cpu_allocation = 1000,
-
-        # The maximum amount of memory, in megabytes, the service can use.
-        # OPTIONAL (Default: no limit)
-        memory_allocation = 1024,
-
-        # Defines the subnetwork in which the service will be started.
-        # OPTIONAL (Default: "default")
-        subnetwork = "service_subnetwork",
-    )
+    config = service_config,
 )
 ```
 
@@ -146,7 +75,7 @@ Example:
 ```python
 dependency = plan.add_service(
     service_id = "dependency",
-    config = struct(
+    config = ServiceConfig(
         image = "dependency",
         ports = {
             "http": PortSpec(number = 80),
@@ -158,7 +87,7 @@ dependency_http_port = dependency.ports["http"]
 
 plan.add_service(
     service_id = "dependant",
-    config = struct(
+    config = ServiceConfig(
         env_vars = {
             "DEPENDENCY_URL": "http://{}:{}".format(dependency.ip_address, dependency_http_port.number),
         },
@@ -430,12 +359,9 @@ set_connection(
     # OPTIONAL: See 2. below
     subnetworks = ("subnetwork_1", "subnetwork_2"),
 
+    # The configuration for this connection. See the 'ConnectionConfig' section of 'Starlark Types' from the sidecar for more information.
     # MANDATORY
-    config = ConnectionConfig(
-        # The percentage of packets that will be dropped between the two designated subnetworks
-        # MANDATORY
-        packet_loss_percentage = 50.0,
-    ),
+    config = connection_config,
 )
 ```
 
@@ -449,12 +375,9 @@ Doing so will _immediately_ affect all subnetwork connections that were not prev
 
 ```python
 set_connection(
+    # The configuration for this connection. See the 'ConnectionConfig' section of 'Starlark Types' from the sidecar for more information.
     # MANDATORY
-    config = ConnectionConfig(
-        # The percentage of packets that will be dropped
-        # MANDATORY
-        packet_loss_percentage = 100.0, # drop all packages
-    ),
+    config = connection_config,
 )
 ```
 
@@ -493,13 +416,9 @@ update_service(
     # MANDATORY
     service_id = "example-datastore-server-1",
 
+    # The changes to apply to this service. See the 'UpdateServiceConfig' section of 'Starlark Types' from the sidecar for more information.
     # MANDATORY
-    config = UpdateServiceConfig(
-        # The subnetwork to which the service will be moved.
-        # "default" can be used to move the service to the default subnetwork
-        # MANDATORY
-        subnetwork = "subnetwork_1"
-    )
+    config = update_service_config,
 )
 ```
 
