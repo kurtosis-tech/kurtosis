@@ -45,11 +45,7 @@ const sidebars = {
             label: 'Kurtosis-Managed Packages',
             href: 'https://github.com/kurtosis-tech?q=package+in%3Aname&type=all&language=&sort=',
         },
-        {
-            type: 'link',
-            label: 'Changelog',
-            href: 'https://kurtosis-tech.github.io/kurtosis/changelog',
-        },
+        'changelog',
     ],
 };
 
