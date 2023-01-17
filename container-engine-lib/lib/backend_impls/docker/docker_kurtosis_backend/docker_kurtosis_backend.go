@@ -137,7 +137,76 @@ func (backend *DockerKurtosisBackend) DestroyEngines(
 	return engine_functions.DestroyEngines(ctx, filters, backend.dockerManager)
 }
 
-func (backend *DockerKurtosisBackend) StartUserServices(ctx context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceID]*service.ServiceConfig) (map[service.ServiceID]*service.Service, map[service.ServiceID]error, error) {
+func (backend *DockerKurtosisBackend) RegisterUserServices(_ context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceID]bool) (map[service.ServiceID]*service.ServiceRegistration, map[service.ServiceID]error, error) {
+	serviceRegistrationsForEnclave, found := backend.serviceRegistrations[enclaveId]
+	if !found {
+		return nil, nil, stacktrace.NewError(
+			"No service registrations are being tracked for enclave '%v'; this likely means that the registration "+
+				"request is being called where it shouldn't be (i.e. outside the API container)",
+			enclaveId,
+		)
+	}
+
+	freeIpAddrProviderForEnclave, found := backend.enclaveFreeIpProviders[enclaveId]
+	if !found {
+		return nil, nil, stacktrace.NewError(
+			"Received a request to register services in enclave '%v', but no free IP address provider was "+
+				"defined for this enclave; this likely means that the start request is being called where it shouldn't "+
+				"be (i.e. outside the API container)",
+			enclaveId,
+		)
+	}
+
+	registeredService, failedServices, err := user_service_functions.RegisterUserServices(enclaveId, services, serviceRegistrationsForEnclave, freeIpAddrProviderForEnclave, backend.serviceRegistrationMutex)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "Unexpected error registering services to enclave '%s'", enclaveId)
+	}
+	return registeredService, failedServices, nil
+}
+
+func (backend *DockerKurtosisBackend) UnregisterUserServices(_ context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceGUID]bool) (map[service.ServiceGUID]bool, map[service.ServiceGUID]error, error) {
+	serviceRegistrationsForEnclave, found := backend.serviceRegistrations[enclaveId]
+	if !found {
+		return nil, nil, stacktrace.NewError(
+			"No service registrations are being tracked for enclave '%v'; this likely means that the registration "+
+				"request is being called where it shouldn't be (i.e. outside the API container)",
+			enclaveId,
+		)
+	}
+
+	freeIpAddrProviderForEnclave, found := backend.enclaveFreeIpProviders[enclaveId]
+	if !found {
+		return nil, nil, stacktrace.NewError(
+			"Received a request to unregister services in enclave '%v', but no free IP address provider was "+
+				"defined for this enclave; this likely means that the start request is being called where it shouldn't "+
+				"be (i.e. outside the API container)",
+			enclaveId,
+		)
+	}
+
+	servicesSuccessfullyUnregistered, failedServices := user_service_functions.UnregisterUserServices(services, serviceRegistrationsForEnclave, freeIpAddrProviderForEnclave, backend.serviceRegistrationMutex)
+	return servicesSuccessfullyUnregistered, failedServices, nil
+}
+
+func (backend *DockerKurtosisBackend) StartRegisteredUserServices(ctx context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceGUID]*service.ServiceConfig) (map[service.ServiceGUID]*service.Service, map[service.ServiceGUID]error, error) {
+	serviceRegistrationsForEnclave, found := backend.serviceRegistrations[enclaveId]
+	if !found {
+		return nil, nil, stacktrace.NewError(
+			"No service registrations are being tracked for enclave '%v'; this likely means that the registration "+
+				"request is being called where it shouldn't be (i.e. outside the API container)",
+			enclaveId,
+		)
+	}
+
+	freeIpAddrProviderForEnclave, found := backend.enclaveFreeIpProviders[enclaveId]
+	if !found {
+		return nil, nil, stacktrace.NewError(
+			"Received a request to start services in enclave '%v', but no free IP address provider was "+
+				"defined for this enclave; this likely means that the start request is being called where it shouldn't "+
+				"be (i.e. outside the API container)",
+			enclaveId,
+		)
+	}
 
 	logsCollector, err := backend.GetLogsCollector(ctx)
 	if err != nil {
@@ -154,17 +223,20 @@ func (backend *DockerKurtosisBackend) StartUserServices(ctx context.Context, enc
 
 	logsCollectorAvailabilityChecker := fluentbit.NewFluentbitAvailabilityChecker(privateIpAddr, logsCollector.GetPrivateHttpPort().GetNumber())
 
-	return user_service_functions.StartUserServices(
+	successfullyStartedService, failedService, err := user_service_functions.StartUserServices(
 		ctx,
 		enclaveId,
 		services,
-		backend.serviceRegistrations,
-		backend.serviceRegistrationMutex,
+		serviceRegistrationsForEnclave,
 		logsCollector,
 		logsCollectorAvailabilityChecker,
 		backend.objAttrsProvider,
-		backend.enclaveFreeIpProviders,
+		freeIpAddrProviderForEnclave,
 		backend.dockerManager)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "Unexpected error while starting user service")
+	}
+	return successfullyStartedService, failedService, nil
 }
 
 func (backend *DockerKurtosisBackend) GetUserServices(
@@ -264,14 +336,36 @@ func (backend *DockerKurtosisBackend) DestroyUserServices(
 	resultErroredGuids map[service.ServiceGUID]error,
 	resultErr error,
 ) {
-	return user_service_functions.DestroyUserServices(
+	serviceRegistrationsForEnclave, found := backend.serviceRegistrations[enclaveId]
+	if !found {
+		return nil, nil, stacktrace.NewError(
+			"No service registrations are being tracked for enclave '%v'; this likely means that the registration "+
+				"request is being called where it shouldn't be (i.e. outside the API container)",
+			enclaveId,
+		)
+	}
+
+	freeIpAddrProviderForEnclave, found := backend.enclaveFreeIpProviders[enclaveId]
+	if !found {
+		return nil, nil, stacktrace.NewError(
+			"Received a request to start services in enclave '%v', but no free IP address provider was "+
+				"defined for this enclave; this likely means that the start request is being called where it shouldn't "+
+				"be (i.e. outside the API container)",
+			enclaveId,
+		)
+	}
+	successfullyDestroyedServices, failedServices, err := user_service_functions.DestroyUserServices(
 		ctx,
 		enclaveId,
 		filters,
-		backend.serviceRegistrations,
+		serviceRegistrationsForEnclave,
 		backend.serviceRegistrationMutex,
-		backend.enclaveFreeIpProviders,
+		freeIpAddrProviderForEnclave,
 		backend.dockerManager)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "Unexpected error destroying services in enclave '%s'", enclaveId)
+	}
+	return successfullyDestroyedServices, failedServices, nil
 }
 
 func (backend *DockerKurtosisBackend) CreateLogsDatabase(

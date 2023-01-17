@@ -27,9 +27,9 @@ func DestroyUserServices(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
-	serviceRegistrations map[enclave.EnclaveID]map[service.ServiceGUID]*service.ServiceRegistration,
+	serviceRegistrationsForEnclave map[service.ServiceGUID]*service.ServiceRegistration,
 	serviceRegistrationMutex *sync.Mutex,
-	enclaveFreeIpProviders map[enclave.EnclaveID]*free_ip_addr_tracker.FreeIpAddrTracker,
+	freeIpProviderForEnclave *free_ip_addr_tracker.FreeIpAddrTracker,
 	dockerManager *docker_manager.DockerManager,
 ) (
 	resultSuccessfulGuids map[service.ServiceGUID]bool,
@@ -40,7 +40,7 @@ func DestroyUserServices(
 	serviceRegistrationMutex.Lock()
 	defer serviceRegistrationMutex.Unlock()
 
-	successfulGuids, erroredGuids, err := destroyUserServicesUnlocked(ctx, enclaveId, filters, serviceRegistrations, enclaveFreeIpProviders, dockerManager)
+	successfulGuids, erroredGuids, err := destroyUserServicesUnlocked(ctx, enclaveId, filters, serviceRegistrationsForEnclave, freeIpProviderForEnclave, dockerManager)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred while destroying user services")
 	}

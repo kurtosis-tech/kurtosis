@@ -343,7 +343,43 @@ func (network *DefaultServiceNetwork) StartService(
 		}()
 	}
 
-	startedService, err := network.startService(ctx, serviceId, serviceConfig)
+	serviceToRegister := map[service.ServiceID]bool{
+		serviceId: true,
+	}
+	serviceSuccessfullyRegistered, serviceFailedRegistration, err := network.kurtosisBackend.RegisterUserServices(ctx, network.enclaveId, serviceToRegister)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Unexpected error happened registering service '%s'", serviceId)
+	}
+	if serviceRegistrationErr, found := serviceFailedRegistration[serviceId]; found {
+		return nil, stacktrace.Propagate(serviceRegistrationErr, "Error registering service '%s'", serviceId)
+	}
+	serviceRegistration, found := serviceSuccessfullyRegistered[serviceId]
+	if !found {
+		return nil, stacktrace.NewError("Unexpected error while registering service '%s'. It was not flagged as neither failed nor successfully registered. This is a Kurtosis internal bug.", serviceId)
+	}
+	defer func() {
+		if serviceStartedSuccessfully {
+			return
+		}
+		serviceGuid := serviceRegistration.GetGUID()
+		serviceToUnregister := map[service.ServiceGUID]bool{
+			serviceGuid: true,
+		}
+		_, failedService, unexpectedErr := network.kurtosisBackend.UnregisterUserServices(ctx, network.enclaveId, serviceToUnregister)
+		if unexpectedErr != nil {
+			logrus.Errorf("An unexpected error happened unregistering service '%s' after it failed starting. It"+
+				"is possible the service is still registered to the enclave.", serviceId)
+			return
+		}
+		if unregisteringErr, found := failedService[serviceGuid]; found {
+			logrus.Errorf("An error happened unregistering service '%s' after it failed starting. It"+
+				"is possible the service is still registered to the enclave. The error was\n%v",
+				serviceId, unregisteringErr.Error())
+			return
+		}
+	}()
+
+	startedService, err := network.startRegisteredService(ctx, serviceRegistration.GetGUID(), serviceConfig)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred attempting to add service '%s' to the service network.", serviceId)
 	}
@@ -902,9 +938,9 @@ func updateTrafficControlConfiguration(
 // - converting API Ports to PortSpec's
 // - converting files artifacts mountpoints to FilesArtifactsExpansion's'
 // - passing down other data (eg. container image name, args, etc.)
-func (network *DefaultServiceNetwork) startService(
+func (network *DefaultServiceNetwork) startRegisteredService(
 	ctx context.Context,
-	serviceId service.ServiceID,
+	serviceGuid service.ServiceGUID,
 	serviceConfigApi *kurtosis_core_rpc_api_bindings.ServiceConfig,
 ) (
 	*service.Service,
@@ -915,13 +951,13 @@ func (network *DefaultServiceNetwork) startService(
 	// Docker and K8s requires the minimum memory limit to be 6 megabytes to we make sure the allocation is at least that amount
 	// But first, we check that it's not the default value, meaning the user potentially didn't even set it
 	if serviceConfigApi.MemoryAllocationMegabytes != defaultMemoryAllocMegabytes && serviceConfigApi.MemoryAllocationMegabytes < minMemoryLimit {
-		return nil, stacktrace.NewError("Memory allocation, `%d`, is too low. Kurtosis requires the memory limit to be at least `%d` megabytes for service with ID '%v'.", serviceConfigApi.MemoryAllocationMegabytes, minMemoryLimit, serviceId)
+		return nil, stacktrace.NewError("Memory allocation, `%d`, is too low. Kurtosis requires the memory limit to be at least `%d` megabytes for service with GUID '%v'.", serviceConfigApi.MemoryAllocationMegabytes, minMemoryLimit, serviceGuid)
 	}
 
 	// Convert ports
 	privateServicePortSpecs, requestedPublicServicePortSpecs, err := convertAPIPortsToPortSpecs(serviceConfigApi.PrivatePorts, serviceConfigApi.PublicPorts)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while trying to convert public and private API ports to port specs for service with ID '%v'", serviceId)
+		return nil, stacktrace.Propagate(err, "An error occurred while trying to convert public and private API ports to port specs for service with GUID '%v'", serviceGuid)
 	}
 
 	// Creates files artifacts expansions
@@ -959,7 +995,7 @@ func (network *DefaultServiceNetwork) startService(
 			filesArtifactsExpansions,
 		)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred creating files artifacts expander args for service '%s'", serviceId)
+			return nil, stacktrace.Propagate(err, "An error occurred creating files artifacts expander args for service with GUID '%s'", serviceGuid)
 		}
 
 		expanderEnvVars, err := args.GetEnvFromArgs(filesArtifactsExpanderArgs)
@@ -993,19 +1029,19 @@ func (network *DefaultServiceNetwork) startService(
 	}
 
 	// TODO(gb): make the backend also handle starting service sequentially to simplify the logic there as well
-	serviceConfigMap := map[service.ServiceID]*service.ServiceConfig{
-		serviceId: serviceConfig,
+	serviceConfigMap := map[service.ServiceGUID]*service.ServiceConfig{
+		serviceGuid: serviceConfig,
 	}
-	successfulServices, failedServices, err := network.kurtosisBackend.StartUserServices(ctx, network.enclaveId, serviceConfigMap)
+	successfulServices, failedServices, err := network.kurtosisBackend.StartRegisteredUserServices(ctx, network.enclaveId, serviceConfigMap)
 	if err != nil {
 		return nil, err
 	}
-	if startedService, isSuccessful := successfulServices[serviceId]; isSuccessful {
+	if startedService, isSuccessful := successfulServices[serviceGuid]; isSuccessful {
 		return startedService, nil
-	} else if failedServiceErr, isFailed := failedServices[serviceId]; isFailed {
+	} else if failedServiceErr, isFailed := failedServices[serviceGuid]; isFailed {
 		return nil, failedServiceErr
 	}
-	return nil, stacktrace.NewError("The start-service operation did not return the ID of the service '%s' neither as a success nor a failure. And it also did not throw any unexpected error. The state of the service is unknown, this is a Kurtosis internal bug. or succeeded", serviceId)
+	return nil, stacktrace.NewError("The start-service operation did not return the service with GUID '%s' neither as a success nor a failure. And it also did not throw any unexpected error. The state of the service is unknown, this is a Kurtosis internal bug.", serviceGuid)
 }
 
 // This method is not thread safe. Only call this from a method where there is a mutex lock on the network.

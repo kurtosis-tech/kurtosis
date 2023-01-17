@@ -49,97 +49,89 @@ var kurtosisTransportProtocolToKubernetesTransportProtocolTranslator = map[port_
 	port_spec.TransportProtocol_SCTP: apiv1.ProtocolSCTP,
 }
 
-func StartUserServices(
+func RegisterUserServices(
 	ctx context.Context,
 	enclaveID enclave.EnclaveID,
-	services map[service.ServiceID]*service.ServiceConfig,
+	servicesToRegister map[service.ServiceID]bool,
 	cliModeArgs *shared_helpers.CliModeArgs,
 	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs,
 	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 ) (
-	map[service.ServiceID]*service.Service,
+	map[service.ServiceID]*service.ServiceRegistration,
 	map[service.ServiceID]error,
 	error,
 ) {
-	successfulServicesPool := map[service.ServiceID]*service.Service{}
+	successfulServicesPool := map[service.ServiceID]*service.ServiceRegistration{}
 	failedServicesPool := map[service.ServiceID]error{}
+
+	// Check whether any services have been provided at all
+	if len(servicesToRegister) == 0 {
+		return successfulServicesPool, failedServicesPool, nil
+	}
+
+	successfulRegistrations, failedRegistrations, err := registerUserServices(ctx, enclaveID, servicesToRegister, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred registering services with IDs '%v'", servicesToRegister)
+	}
+	return successfulRegistrations, failedRegistrations, nil
+}
+
+func UnregisterUserServices(
+	ctx context.Context,
+	enclaveID enclave.EnclaveID,
+	servicesToUnregister map[service.ServiceGUID]bool,
+	cliModeArgs *shared_helpers.CliModeArgs,
+	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs,
+	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+) (
+	map[service.ServiceGUID]bool,
+	map[service.ServiceGUID]error,
+	error,
+) {
+	successfullyUnregisteredServices := map[service.ServiceGUID]bool{}
+	failedServices := map[service.ServiceGUID]error{}
+
+	if len(servicesToUnregister) == 0 {
+		return successfullyUnregisteredServices, failedServices, nil
+	}
+	userServiceFilters := &service.ServiceFilters{
+		IDs:      nil,
+		GUIDs:    servicesToUnregister,
+		Statuses: nil,
+	}
+	successfullyDestroyedServices, failedToDestroyGUIDs, err := DestroyUserServices(ctx, enclaveID, userServiceFilters, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "Attempted to destroy all services with GUIDs '%v' together but had no success. You must manually destroy the services!", servicesToUnregister)
+	}
+	return successfullyDestroyedServices, failedToDestroyGUIDs, nil
+}
+
+func StartRegisteredUserServices(
+	ctx context.Context,
+	enclaveID enclave.EnclaveID,
+	services map[service.ServiceGUID]*service.ServiceConfig,
+	cliModeArgs *shared_helpers.CliModeArgs,
+	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs,
+	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+) (
+	map[service.ServiceGUID]*service.Service,
+	map[service.ServiceGUID]error,
+	error,
+) {
+	successfulServicesPool := map[service.ServiceGUID]*service.Service{}
+	failedServicesPool := map[service.ServiceGUID]error{}
 
 	// Check whether any services have been provided at all
 	if len(services) == 0 {
 		return successfulServicesPool, failedServicesPool, nil
 	}
 
-	var serviceIDsToRegister []service.ServiceID
-	for serviceID, config := range services {
-		if config.GetPrivateIPAddrPlaceholder() == "" {
-			failedServicesPool[serviceID] = stacktrace.NewError("Service with ID '%v' has an empty private IP Address placeholder. Expect this to be of length greater than zero.", serviceID)
-			continue
-		}
-		serviceIDsToRegister = append(serviceIDsToRegister, serviceID)
-	}
-	if len(serviceIDsToRegister) == 0 {
-		return successfulServicesPool, failedServicesPool, nil
-	}
-
-	successfulRegistrations, failedRegistrations, err := registerUserServices(ctx, enclaveID, serviceIDsToRegister, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred registering services with IDs '%v'", serviceIDsToRegister)
-	}
-	// Defer an undo to all the successful registrations in case an error occurs in future phases
-	serviceGUIDsToRemove := map[service.ServiceGUID]bool{}
-	for _, registration := range successfulRegistrations {
-		serviceGUIDsToRemove[registration.GetGUID()] = true
-	}
-	defer func() {
-		if len(serviceGUIDsToRemove) == 0 {
-			return
-		}
-		userServiceFilters := &service.ServiceFilters{
-			IDs:      nil,
-			GUIDs:    serviceGUIDsToRemove,
-			Statuses: nil,
-		}
-		_, failedToDestroyGUIDs, err := DestroyUserServices(ctx, enclaveID, userServiceFilters, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
-		if err != nil {
-			logrus.Errorf("Attempted to destroy all services with GUIDs '%v' together but had no success. You must manually destroy the services! The following error had occurred:\n'%v'", serviceGUIDsToRemove, err)
-			return
-		}
-		if len(failedToDestroyGUIDs) == 0 {
-			return
-		}
-		for serviceID, registration := range successfulRegistrations {
-			destroyErr, found := failedToDestroyGUIDs[registration.GetGUID()]
-			if !found {
-				continue
-			}
-			logrus.Errorf("Failed to destroy the service '%v' after it failed to start. You must manually destroy the service! The following error had occurred:\n'%v'", serviceID, destroyErr)
-		}
-	}()
-	for serviceID, registrationError := range failedRegistrations {
-		failedServicesPool[serviceID] = stacktrace.Propagate(registrationError, "Failed to register service with ID '%v'", serviceID)
-	}
-
-	serviceConfigsToStart := map[service.ServiceID]*service.ServiceConfig{}
-	for serviceID, serviceConfig := range services {
-		if _, found := successfulRegistrations[serviceID]; !found {
-			continue
-		}
-		serviceConfigsToStart[serviceID] = serviceConfig
-	}
-
-	// If no services had successful registrations, return immediately
-	// This is to prevent an empty filter being used to query for matching objects and resources, returning all services
-	// and causing logic to break (eg. check for duplicate service GUIDs)
-	// Making this check allows us to eject early and maintain a guarantee that objects and resources returned
-	// are 1:1 with serviceGUIDs
-	if len(serviceConfigsToStart) == 0 {
-		return successfulServicesPool, failedServicesPool, nil
-	}
-
 	// Sanity check for port bindings on all services
 	//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-	for _, config := range serviceConfigsToStart {
+	for _, config := range services {
 		publicPorts := config.GetPublicPorts()
 		if publicPorts != nil && len(publicPorts) > 0 {
 			logrus.Warn("The Kubernetes Kurtosis backend doesn't support defining static ports for services; the public ports will be ignored.")
@@ -148,9 +140,8 @@ func StartUserServices(
 
 	// Get existing objects by GUID. We use GUIDs and not IDs as IDs can match services being deleted or services in other Enclaves.
 	serviceGUIDsToFilter := map[service.ServiceGUID]bool{}
-	for _, registration := range successfulRegistrations {
-		guid := registration.GetGUID()
-		serviceGUIDsToFilter[guid] = true
+	for serviceGuid := range services {
+		serviceGUIDsToFilter[serviceGuid] = true
 	}
 	existingObjectsAndResourcesFilters := &service.ServiceFilters{
 		IDs:      nil,
@@ -158,33 +149,31 @@ func StartUserServices(
 		Statuses: nil,
 	}
 	// This is safe, as there's an N -> 1 mapping between GUID and ID and the GUIDs that we filter on don't have any matching IDs
-	existingObjectsAndResources, err := shared_helpers.GetMatchingUserServiceObjectsAndKubernetesResourcesByServiceID(
-		ctx,
-		enclaveID,
-		existingObjectsAndResourcesFilters,
-		cliModeArgs,
-		apiContainerModeArgs,
-		engineServerModeArgs,
-		kubernetesManager,
-	)
+	existingObjectsAndResources, err := shared_helpers.GetMatchingUserServiceObjectsAndKubernetesResources(ctx, enclaveID, existingObjectsAndResourcesFilters, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user service objects and Kubernetes resources matching service GUIDs '%v'", serviceGUIDsToFilter)
-	}
-	for serviceID := range successfulRegistrations {
-		if _, found := existingObjectsAndResources[serviceID]; !found {
-			failedServicesPool[serviceID] = stacktrace.NewError("Couldn't find any service registrations for service ID '%v'. This is a bug in Kurtosis.", serviceID)
-			delete(serviceConfigsToStart, serviceID)
-		}
 	}
 	if len(existingObjectsAndResources) > len(serviceGUIDsToFilter) {
 		// Should never happen because service GUIDs should be unique
 		return nil, nil, stacktrace.NewError("Found more than one service registration matching service GUIDs; this is a bug in Kurtosis")
 	}
+	serviceRegisteredThatCanBeStarted := map[service.ServiceGUID]*service.ServiceConfig{}
+	for serviceGuid, serviceConfig := range services {
+		if _, found := existingObjectsAndResources[serviceGuid]; !found {
+			failedServicesPool[serviceGuid] = stacktrace.NewError("Couldn't find any service registrations for service GUID '%v'. This is a bug in Kurtosis.", serviceGuid)
+			continue
+		}
+		if serviceConfig.GetPrivateIPAddrPlaceholder() == "" {
+			failedServicesPool[serviceGuid] = stacktrace.NewError("Service with GUID '%v' has an empty private IP Address placeholder. Expect this to be of length greater than zero.", serviceGuid)
+			continue
+		}
+		serviceRegisteredThatCanBeStarted[serviceGuid] = serviceConfig
+	}
 
 	successfulStarts, failedStarts, err := runStartServiceOperationsInParallel(
 		ctx,
 		enclaveID,
-		serviceConfigsToStart,
+		serviceRegisteredThatCanBeStarted,
 		existingObjectsAndResources,
 		kubernetesManager)
 	if err != nil {
@@ -192,35 +181,32 @@ func StartUserServices(
 	}
 
 	// Add operations to their respective pools
-	for serviceID, service := range successfulStarts {
-		successfulServicesPool[serviceID] = service
+	for serviceGuid, serviceSuccessfullyStarted := range successfulStarts {
+		successfulServicesPool[serviceGuid] = serviceSuccessfullyStarted
 	}
 
-	for serviceID, serviceErr := range failedStarts {
-		failedServicesPool[serviceID] = serviceErr
+	for serviceGuid, serviceFailed := range failedStarts {
+		failedServicesPool[serviceGuid] = serviceFailed
 	}
 
-	// Do not remove services that were started successfully
-	for _, service := range successfulServicesPool {
-		guid := service.GetRegistration().GetGUID()
-		delete(serviceGUIDsToRemove, guid)
-	}
 	logrus.Debugf("Started services '%v' succesfully while '%v' failed", successfulServicesPool, failedServicesPool)
 	return successfulServicesPool, failedServicesPool, nil
 }
 
 // ====================================================================================================
-//                       Private helper functions
+//
+//	Private helper functions
+//
 // ====================================================================================================
 func runStartServiceOperationsInParallel(
 	ctx context.Context,
 	enclaveID enclave.EnclaveID,
-	services map[service.ServiceID]*service.ServiceConfig,
-	servicesObjectsAndResources map[service.ServiceID]*shared_helpers.UserServiceObjectsAndKubernetesResources,
+	services map[service.ServiceGUID]*service.ServiceConfig,
+	servicesObjectsAndResources map[service.ServiceGUID]*shared_helpers.UserServiceObjectsAndKubernetesResources,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 ) (
-	map[service.ServiceID]*service.Service,
-	map[service.ServiceID]error,
+	map[service.ServiceGUID]*service.Service,
+	map[service.ServiceGUID]error,
 	error,
 ) {
 	startServiceOperations := map[operation_parallelizer.OperationID]operation_parallelizer.Operation{}
@@ -236,23 +222,23 @@ func runStartServiceOperationsInParallel(
 
 	successfulServiceObjs, failedOperations := operation_parallelizer.RunOperationsInParallel(startServiceOperations)
 
-	successfulServices := map[service.ServiceID]*service.Service{}
-	failedServices := map[service.ServiceID]error{}
+	successfulServices := map[service.ServiceGUID]*service.Service{}
+	failedServices := map[service.ServiceGUID]error{}
 
-	for id, data := range successfulServiceObjs {
-		serviceID := service.ServiceID(id)
+	for guid, data := range successfulServiceObjs {
+		serviceGuid := service.ServiceGUID(guid)
 		serviceObjectPtr, ok := data.(*service.Service)
 		if !ok {
 			return nil, nil, stacktrace.NewError(
-				"An error occurred downcasting data returned from the start user service operation for service with ID: %v. "+
-					"This is a Kurtosis bug. Make sure the desired type is actually being returned in the corresponding Operation.", serviceID)
+				"An error occurred downcasting data returned from the start user service operation for service with GUID: %v. "+
+					"This is a Kurtosis bug. Make sure the desired type is actually being returned in the corresponding Operation.", serviceGuid)
 		}
-		successfulServices[serviceID] = serviceObjectPtr
+		successfulServices[serviceGuid] = serviceObjectPtr
 	}
 
-	for id, err := range failedOperations {
-		serviceID := service.ServiceID(id)
-		failedServices[serviceID] = err
+	for guid, err := range failedOperations {
+		serviceGuid := service.ServiceGUID(guid)
+		failedServices[serviceGuid] = err
 	}
 
 	return successfulServices, failedServices, nil
@@ -260,9 +246,9 @@ func runStartServiceOperationsInParallel(
 
 func createStartServiceOperation(
 	ctx context.Context,
-	serviceID service.ServiceID,
+	serviceGuid service.ServiceGUID,
 	serviceConfig *service.ServiceConfig,
-	servicesObjectsAndResources map[service.ServiceID]*shared_helpers.UserServiceObjectsAndKubernetesResources,
+	servicesObjectsAndResources map[service.ServiceGUID]*shared_helpers.UserServiceObjectsAndKubernetesResources,
 	enclaveID enclave.EnclaveID,
 	kubernetesManager *kubernetes_manager.KubernetesManager) operation_parallelizer.Operation {
 
@@ -277,14 +263,14 @@ func createStartServiceOperation(
 		memoryAllocationMegabytes := serviceConfig.GetMemoryAllocationMegabytes()
 		privateIPAddrPlaceholder := serviceConfig.GetPrivateIPAddrPlaceholder()
 
-		matchingObjectAndResources, found := servicesObjectsAndResources[serviceID]
+		matchingObjectAndResources, found := servicesObjectsAndResources[serviceGuid]
 		if !found {
-			return nil, stacktrace.NewError("Even though we pulled back some Kubernetes resources, no Kubernetes resources were available for requested service ID '%v'; this is a bug in Kurtosis", serviceID)
+			return nil, stacktrace.NewError("Even though we pulled back some Kubernetes resources, no Kubernetes resources were available for requested service GUID '%v'; this is a bug in Kurtosis", serviceGuid)
 		}
 		kubernetesService := matchingObjectAndResources.KubernetesResources.Service
 		serviceObj := matchingObjectAndResources.Service
 		if serviceObj != nil {
-			return nil, stacktrace.NewError("Cannot start service with ID '%v' because the service has already been started previously", serviceID)
+			return nil, stacktrace.NewError("Cannot start service with GUID '%v' because the service has already been started previously", serviceGuid)
 		}
 
 		// We replace the placeholder value with the actual private IP address
@@ -301,7 +287,7 @@ func createStartServiceOperation(
 
 		namespaceName := kubernetesService.GetNamespace()
 		serviceRegistrationObj := matchingObjectAndResources.ServiceRegistration
-		serviceGUID := serviceRegistrationObj.GetGUID()
+		serviceId := serviceRegistrationObj.GetID()
 
 		var podInitContainers []apiv1.Container
 		var podVolumes []apiv1.Volume
@@ -318,9 +304,9 @@ func createStartServiceOperation(
 		enclaveObjAttributesProvider := objectAttributesProvider.ForEnclave(enclaveID)
 
 		// Create the pod
-		podAttributes, err := enclaveObjAttributesProvider.ForUserServicePod(serviceGUID, serviceID, privatePorts)
+		podAttributes, err := enclaveObjAttributesProvider.ForUserServicePod(serviceGuid, serviceId, privatePorts)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting attributes for new pod for service with ID '%v'", serviceID)
+			return nil, stacktrace.Propagate(err, "An error occurred getting attributes for new pod for service with GUID '%v'", serviceGuid)
 		}
 		podLabelsStrs := shared_helpers.GetStringMapFromLabelMap(podAttributes.GetLabels())
 		podAnnotationsStrs := shared_helpers.GetStringMapFromAnnotationMap(podAttributes.GetAnnotations())
@@ -376,7 +362,7 @@ func createStartServiceOperation(
 		}()
 
 		kubernetesResources := map[service.ServiceGUID]*shared_helpers.UserServiceKubernetesResources{
-			serviceGUID: {
+			serviceGuid: {
 				Service: updatedService,
 				Pod:     createdPod,
 			},
@@ -386,12 +372,12 @@ func createStartServiceOperation(
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting a service object from the Kubernetes service and newly-created pod")
 		}
-		objectsAndResources, found := convertedObjects[serviceGUID]
+		objectsAndResources, found := convertedObjects[serviceGuid]
 		if !found {
 			return nil, stacktrace.NewError(
 				"Successfully converted the Kubernetes service + pod representing a running service with GUID '%v' to a "+
 					"Kurtosis object, but couldn't find that key in the resulting map; this is a bug in Kurtosis",
-				serviceGUID,
+				serviceGuid,
 			)
 		}
 
@@ -402,9 +388,9 @@ func createStartServiceOperation(
 }
 
 // Update the service to:
-// - Set the service ports appropriately
-// - Irrevocably record that a pod is bound to the service (so that even if the pod is deleted, the service won't
-// 	 be usable again
+//   - Set the service ports appropriately
+//   - Irrevocably record that a pod is bound to the service (so that even if the pod is deleted, the service won't
+//     be usable again
 func updateServiceWhenContainerStarted(
 	ctx context.Context,
 	namespaceName string,
@@ -640,7 +626,7 @@ func convertMegabytesToBytes(value uint64) uint64 {
 func registerUserServices(
 	ctx context.Context,
 	enclaveID enclave.EnclaveID,
-	serviceIDs []service.ServiceID,
+	serviceIDs map[service.ServiceID]bool,
 	cliModeArgs *shared_helpers.CliModeArgs,
 	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs,
 	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
@@ -662,7 +648,7 @@ func registerUserServices(
 	enclaveObjAttributesProvider := objectAttributesProvider.ForEnclave(enclaveID)
 
 	registerServiceOperations := map[operation_parallelizer.OperationID]operation_parallelizer.Operation{}
-	for _, serviceID := range serviceIDs {
+	for serviceID := range serviceIDs {
 		registerServiceOperations[operation_parallelizer.OperationID(serviceID)] = createRegisterUserServiceOperation(
 			ctx,
 			enclaveID,

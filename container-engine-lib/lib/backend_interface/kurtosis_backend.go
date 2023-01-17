@@ -49,8 +49,8 @@ type KurtosisBackend interface {
 		filters *engine.EngineFilters,
 	) (
 		successfulEngineGuids map[engine.EngineGUID]bool, // "set" of engine GUIDs that were successfully stopped
-		erroredEngineGuids map[engine.EngineGUID]error, // "set" of engine GUIDs that errored when stopping, with the error
-		resultErr error, // Represents an error with the function itself, rather than the engines
+		erroredEngineGuids map[engine.EngineGUID]error,   // "set" of engine GUIDs that errored when stopping, with the error
+		resultErr error,                                  // Represents an error with the function itself, rather than the engines
 	)
 
 	// Destroys the engines matching the given filters, regardless of if they're running or not
@@ -59,8 +59,8 @@ type KurtosisBackend interface {
 		filters *engine.EngineFilters,
 	) (
 		successfulEngineGuids map[engine.EngineGUID]bool, // "set" of engine GUIDs that were successfully destroyed
-		erroredEngineGuids map[engine.EngineGUID]error, // "set" of engine GUIDs that errored when destroying, with the error
-		resultErr error, // Represents an error with the function itself, rather than the engines
+		erroredEngineGuids map[engine.EngineGUID]error,   // "set" of engine GUIDs that errored when destroying, with the error
+		resultErr error,                                  // Represents an error with the function itself, rather than the engines
 	)
 
 	// Creates an enclave with the given enclave ID
@@ -116,8 +116,8 @@ type KurtosisBackend interface {
 		grpcPortNum uint16,
 		grpcProxyPortNum uint16,
 		enclaveDataVolumeDirpath string,
-		// The environment variable that the user is requesting to populate with the container's own IP address
-		// Must not conflict with the custom environment variables
+	// The environment variable that the user is requesting to populate with the container's own IP address
+	// Must not conflict with the custom environment variables
 		ownIpAddressEnvVar string,
 		customEnvVars map[string]string,
 	) (
@@ -129,7 +129,7 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		filters *api_container.APIContainerFilters,
 	) (
-		// Matching API containers, keyed by their enclave ID
+	// Matching API containers, keyed by their enclave ID
 		map[enclave.EnclaveID]*api_container.APIContainer,
 		error,
 	)
@@ -139,7 +139,7 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		filters *api_container.APIContainerFilters,
 	) (
-		// Successful & errored API containers are keyed by their enclave ID
+	// Successful & errored API containers are keyed by their enclave ID
 		successfulApiContainerIds map[enclave.EnclaveID]bool,
 		erroredApiContainerIds map[enclave.EnclaveID]error,
 		resultErr error,
@@ -150,31 +150,71 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		filters *api_container.APIContainerFilters,
 	) (
-		// Successful & errored API containers are keyed by their enclave ID
+	// Successful & errored API containers are keyed by their enclave ID
 		successfulApiContainerIds map[enclave.EnclaveID]bool,
 		erroredApiContainerIds map[enclave.EnclaveID]error,
 		resultErr error,
 	)
 
 	/*
-		                           KURTOSIS SERVICE STATE DIAGRAM
-	                                .-----------------DestroyServices--------------------.
-	                               /                                                      \
-		  StartServices--> RUNNING ---StopServices---> STOPPED ---DestroyServices---> DESTROYED
+		KURTOSIS SERVICE STATE DIAGRAM
+
+			                                |
+			                        RegisterUserServices
+			                                |
+			                                V
+			                            REGISTERED
+			                                |
+			                    StartRegisteredUserServices
+			                                |
+			                                V
+			            .--------------- STARTED
+			            |                   |
+			            |           StopUserService
+			            |                   |
+			            |                   V
+			    DestroyUserServices      STOPPED
+			            |                   |
+			            |           DestroyUserServices
+			            |                   |
+			            |                   V
+			            '-------------> DESTROYED
 
 		- Note the above state diagram doesn't account for PauseService or UnpauseService
 		- As of 2022-05-15, Kurtosis services can never be restarted once stopped.
 	*/
 
-	// StartUserService consumes service registrations to create auser container for each registration, given each service config
-	StartUserServices(
+	// RegisterUserServices registers the services allocating them an IP address and a GUID. The service is not started!
+	RegisterUserServices(
 		ctx context.Context,
 		enclaveId enclave.EnclaveID,
-		services map[service.ServiceID]*service.ServiceConfig,
+		services map[service.ServiceID]bool,
 	) (
-		successfulServices map[service.ServiceID]*service.Service, // "set" of user service IDs that were successfully started
-		unsuccessfulServices map[service.ServiceID]error, // "set" of user service IDs that errored when attempting to start, with the error
-		resultErr error, // represents an error with the function itself, rather than the user services
+		map[service.ServiceID]*service.ServiceRegistration, // "set" of user service IDs that were successfully registered
+		map[service.ServiceID]error,                        // "set" of user service IDs that errored when being registered, with the error
+		error,
+	)
+
+	// UnregisterUserServices unregisters a set of services. If a service isn't registered, it no-ops for this service
+	UnregisterUserServices(
+		ctx context.Context,
+		enclaveId enclave.EnclaveID,
+		services map[service.ServiceGUID]bool,
+	) (
+		map[service.ServiceGUID]bool,  // "set" of user service GUIDs that were successfully unregistered
+		map[service.ServiceGUID]error, // "set" of user service GUIDs that errored when being unregistered, with the error
+		error,
+	)
+
+	// StartRegisteredUserServices consumes service registrations to create auser container for each registration, given each service config
+	StartRegisteredUserServices(
+		ctx context.Context,
+		enclaveId enclave.EnclaveID,
+		services map[service.ServiceGUID]*service.ServiceConfig,
+	) (
+		map[service.ServiceGUID]*service.Service, // "set" of user GUIDs that were successfully started
+		map[service.ServiceGUID]error,            // "set" of user service GUIDs that errored when attempting to start, with the error
+		error,                                    // represents an error with the function itself, rather than the user services
 	)
 
 	// Gets user services using the given filters, returning a map of matched user services identified by their GUID
@@ -256,8 +296,8 @@ type KurtosisBackend interface {
 		filters *service.ServiceFilters,
 	) (
 		successfulUserServiceGuids map[service.ServiceGUID]bool, // "set" of user service GUIDs that were successfully stopped
-		erroredUserServiceGuids map[service.ServiceGUID]error, // "set" of user service GUIDs that errored when stopping, with the error
-		resultErr error, // Represents an error with the function itself, rather than the user services
+		erroredUserServiceGuids map[service.ServiceGUID]error,   // "set" of user service GUIDs that errored when stopping, with the error
+		resultErr error,                                         // Represents an error with the function itself, rather than the user services
 	)
 
 	// DestroyUserServices destroys user services matching the given filters, removing all resources associated with it
@@ -267,8 +307,8 @@ type KurtosisBackend interface {
 		filters *service.ServiceFilters,
 	) (
 		successfulUserServiceGuids map[service.ServiceGUID]bool, // "set" of user service GUIDs that were successfully destroyed
-		erroredUserServiceGuids map[service.ServiceGUID]error, // "set" of user service GUIDs that errored when destroying, with the error
-		resultErr error, // Represents an error with the function itself, rather than the user services
+		erroredUserServiceGuids map[service.ServiceGUID]error,   // "set" of user service GUIDs that errored when destroying, with the error
+		resultErr error,                                         // Represents an error with the function itself, rather than the user services
 	)
 
 	// TODO Move this logic inside the user service, so that we have tighter controls on what can happen and what can't
@@ -325,9 +365,9 @@ type KurtosisBackend interface {
 	// Create a new Logs Database for storing and requesting the container's logs
 	CreateLogsDatabase(
 		ctx context.Context,
-		//TODO now the httpPortNumber is configured from the client, because this will be published to the host machine until
-		//TODO we productize logs search, tracked by this issue: https://github.com/kurtosis-tech/kurtosis/issues/340
-		//TODO remove this parameter when we do not publish the port again
+	//TODO now the httpPortNumber is configured from the client, because this will be published to the host machine until
+	//TODO we productize logs search, tracked by this issue: https://github.com/kurtosis-tech/kurtosis/issues/340
+	//TODO remove this parameter when we do not publish the port again
 		logsDatabaseHttpPortNumber uint16,
 	) (
 		*logs_database.LogsDatabase,

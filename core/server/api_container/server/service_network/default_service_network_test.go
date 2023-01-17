@@ -53,13 +53,13 @@ func TestStartService_Successful(t *testing.T) {
 	backend := backend_interface.NewMockKurtosisBackend(t)
 
 	serviceInternalTestId := 1
-	serviceParitionId := testPartitionIdFromInt(serviceInternalTestId)
+	servicePartitionId := testPartitionIdFromInt(serviceInternalTestId)
 	serviceId := testServiceIdFromInt(serviceInternalTestId)
 	serviceGuid := testServiceGuidFromInt(serviceInternalTestId)
 	successfulServiceIp := testIpFromInt(serviceInternalTestId)
 	serviceRegistration := service.NewServiceRegistration(serviceId, serviceGuid, enclaveId, successfulServiceIp)
 	serviceObj := service.NewService(serviceRegistration, container_status.ContainerStatus_Running, map[string]*port_spec.PortSpec{}, successfulServiceIp, map[string]*port_spec.PortSpec{})
-	serviceConfig := services.NewServiceConfigBuilder(testContainerImageName).WithSubnetwork(string(serviceParitionId)).Build()
+	serviceConfig := services.NewServiceConfigBuilder(testContainerImageName).WithSubnetwork(string(servicePartitionId)).Build()
 
 	network := NewDefaultServiceNetwork(
 		enclaveId,
@@ -72,20 +72,35 @@ func TestStartService_Successful(t *testing.T) {
 		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveId),
 	)
 
-	// StartUserService will be called for this service
-	backend.EXPECT().StartUserServices(
+	// The service is registered before being started
+	backend.EXPECT().RegisterUserServices(
 		ctx,
 		enclaveId,
-		mock.MatchedBy(func(services map[service.ServiceID]*service.ServiceConfig) bool {
-			// Matcher function returning true iff the services map arg contains exactly the following key:
-			// {serviceId}
-			_, foundService := services[serviceId]
-			return len(services) == 1 && foundService
-		})).Times(1).Return(
-		map[service.ServiceID]*service.Service{
-			serviceId: serviceObj,
+		map[service.ServiceID]bool{
+			serviceId: true,
+		},
+	).Times(1).Return(
+		map[service.ServiceID]*service.ServiceRegistration{
+			serviceId: serviceRegistration,
 		},
 		map[service.ServiceID]error{},
+		nil,
+	)
+
+	// Then the service is started
+	backend.EXPECT().StartRegisteredUserServices(
+		ctx,
+		enclaveId,
+		mock.MatchedBy(func(services map[service.ServiceGUID]*service.ServiceConfig) bool {
+			// Matcher function returning true iff the services map arg contains exactly the following key:
+			// {serviceId}
+			_, foundService := services[serviceGuid]
+			return len(services) == 1 && foundService
+		})).Times(1).Return(
+		map[service.ServiceGUID]*service.Service{
+			serviceGuid: serviceObj,
+		},
+		map[service.ServiceGUID]error{},
 		nil)
 
 	// CreateNetworkingSidecar will be called for this service
@@ -129,7 +144,7 @@ func TestStartService_Successful(t *testing.T) {
 
 	expectedPartitionsInTopolody := map[service_network_types.PartitionID]map[service.ServiceID]bool{
 		partition_topology.DefaultPartitionId: {},
-		serviceParitionId: {
+		servicePartitionId: {
 			serviceId: true,
 		},
 		// partitions with services that failed to start were removed from the topology
@@ -142,9 +157,12 @@ func TestStartService_FailedToStart(t *testing.T) {
 	backend := backend_interface.NewMockKurtosisBackend(t)
 
 	serviceInternalTestId := 1
-	serviceParitionId := testPartitionIdFromInt(serviceInternalTestId)
+	servicePartitionId := testPartitionIdFromInt(serviceInternalTestId)
 	serviceId := testServiceIdFromInt(serviceInternalTestId)
-	serviceConfig := services.NewServiceConfigBuilder(testContainerImageName).WithSubnetwork(string(serviceParitionId)).Build()
+	serviceGuid := testServiceGuidFromInt(serviceInternalTestId)
+	serviceIp := testIpFromInt(serviceInternalTestId)
+	serviceRegistration := service.NewServiceRegistration(serviceId, serviceGuid, enclaveId, serviceIp)
+	serviceConfig := services.NewServiceConfigBuilder(testContainerImageName).WithSubnetwork(string(servicePartitionId)).Build()
 
 	network := NewDefaultServiceNetwork(
 		enclaveId,
@@ -157,19 +175,34 @@ func TestStartService_FailedToStart(t *testing.T) {
 		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveId),
 	)
 
-	// StartUserService will be called for this service
-	backend.EXPECT().StartUserServices(
+	// The service is registered before being started
+	backend.EXPECT().RegisterUserServices(
 		ctx,
 		enclaveId,
-		mock.MatchedBy(func(services map[service.ServiceID]*service.ServiceConfig) bool {
+		map[service.ServiceID]bool{
+			serviceId: true,
+		},
+	).Times(1).Return(
+		map[service.ServiceID]*service.ServiceRegistration{
+			serviceId: serviceRegistration,
+		},
+		map[service.ServiceID]error{},
+		nil,
+	)
+
+	// StartRegisteredUserServices will be called for this service
+	backend.EXPECT().StartRegisteredUserServices(
+		ctx,
+		enclaveId,
+		mock.MatchedBy(func(services map[service.ServiceGUID]*service.ServiceConfig) bool {
 			// Matcher function returning true iff the services map arg contains exactly the following key:
 			// {serviceId}
-			_, foundService := services[serviceId]
+			_, foundService := services[serviceGuid]
 			return len(services) == 1 && foundService
 		})).Times(1).Return(
-		map[service.ServiceID]*service.Service{},
-		map[service.ServiceID]error{
-			serviceId: stacktrace.NewError("Failed starting service"),
+		map[service.ServiceGUID]*service.Service{},
+		map[service.ServiceGUID]error{
+			serviceGuid: stacktrace.NewError("Failed starting service"),
 		},
 		nil)
 
@@ -182,11 +215,26 @@ func TestStartService_FailedToStart(t *testing.T) {
 		enclaveId,
 		mock.Anything).Maybe().Times(0)
 
-	// DestroyUserServices is never being called as everything is successful for this test
+	// DestroyUserServices is never being called as the service fails to start for this test
 	backend.EXPECT().DestroyUserServices(
 		ctx,
 		enclaveId,
 		mock.Anything).Maybe().Times(0)
+
+	// Since the service fails to start, it is unregistered in a deferred function
+	backend.EXPECT().UnregisterUserServices(
+		ctx,
+		enclaveId,
+		map[service.ServiceGUID]bool{
+			serviceGuid: true,
+		},
+	).Times(1).Return(
+		map[service.ServiceGUID]bool{
+			serviceGuid: true,
+		},
+		map[service.ServiceGUID]error{},
+		nil,
+	)
 
 	startedService, err := network.StartService(ctx, serviceId, serviceConfig)
 	require.NotNil(t, err)
@@ -207,13 +255,13 @@ func TestStartService_SidecarFailedToStart(t *testing.T) {
 	backend := backend_interface.NewMockKurtosisBackend(t)
 
 	serviceInternalTestId := 1
-	serviceParitionId := testPartitionIdFromInt(serviceInternalTestId)
+	servicePartitionId := testPartitionIdFromInt(serviceInternalTestId)
 	serviceId := testServiceIdFromInt(serviceInternalTestId)
 	serviceGuid := testServiceGuidFromInt(serviceInternalTestId)
 	successfulServiceIp := testIpFromInt(serviceInternalTestId)
 	serviceRegistration := service.NewServiceRegistration(serviceId, serviceGuid, enclaveId, successfulServiceIp)
 	serviceObj := service.NewService(serviceRegistration, container_status.ContainerStatus_Running, map[string]*port_spec.PortSpec{}, successfulServiceIp, map[string]*port_spec.PortSpec{})
-	serviceConfig := services.NewServiceConfigBuilder(testContainerImageName).WithSubnetwork(string(serviceParitionId)).Build()
+	serviceConfig := services.NewServiceConfigBuilder(testContainerImageName).WithSubnetwork(string(servicePartitionId)).Build()
 
 	network := NewDefaultServiceNetwork(
 		enclaveId,
@@ -226,20 +274,35 @@ func TestStartService_SidecarFailedToStart(t *testing.T) {
 		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveId),
 	)
 
-	// StartUserService will be called for this service
-	backend.EXPECT().StartUserServices(
+	// The service is registered before being started
+	backend.EXPECT().RegisterUserServices(
 		ctx,
 		enclaveId,
-		mock.MatchedBy(func(services map[service.ServiceID]*service.ServiceConfig) bool {
-			// Matcher function returning true iff the services map arg contains exactly the following key:
-			// {serviceId}
-			_, foundService := services[serviceId]
-			return len(services) == 1 && foundService
-		})).Times(1).Return(
-		map[service.ServiceID]*service.Service{
-			serviceId: serviceObj,
+		map[service.ServiceID]bool{
+			serviceId: true,
+		},
+	).Times(1).Return(
+		map[service.ServiceID]*service.ServiceRegistration{
+			serviceId: serviceRegistration,
 		},
 		map[service.ServiceID]error{},
+		nil,
+	)
+
+	// StartRegisteredUserServices will be called for this service
+	backend.EXPECT().StartRegisteredUserServices(
+		ctx,
+		enclaveId,
+		mock.MatchedBy(func(services map[service.ServiceGUID]*service.ServiceConfig) bool {
+			// Matcher function returning true iff the services map arg contains exactly the following key:
+			// {serviceId}
+			_, foundService := services[serviceGuid]
+			return len(services) == 1 && foundService
+		})).Times(1).Return(
+		map[service.ServiceGUID]*service.Service{
+			serviceGuid: serviceObj,
+		},
+		map[service.ServiceGUID]error{},
 		nil)
 
 	// CreateNetworkingSidecar will be called for this service
@@ -268,6 +331,21 @@ func TestStartService_SidecarFailedToStart(t *testing.T) {
 		},
 		map[service.ServiceGUID]error{},
 		nil)
+
+	// Since the service sidecar fails to start, the service is destroyed and then unregistered
+	backend.EXPECT().UnregisterUserServices(
+		ctx,
+		enclaveId,
+		map[service.ServiceGUID]bool{
+			serviceGuid: true,
+		},
+	).Times(1).Return(
+		map[service.ServiceGUID]bool{
+			serviceGuid: true,
+		},
+		map[service.ServiceGUID]error{},
+		nil,
+	)
 
 	startedService, err := network.StartService(ctx, serviceId, serviceConfig)
 	require.NotNil(t, err)
@@ -301,6 +379,9 @@ func TestStartServices(t *testing.T) {
 	failedServiceIndex := 2
 	failedServicePartitionId := testPartitionIdFromInt(failedServiceIndex)
 	failedServiceId := testServiceIdFromInt(failedServiceIndex)
+	failedServiceGuid := testServiceGuidFromInt(failedServiceIndex)
+	failedServiceIp := testIpFromInt(failedServiceIndex)
+	failedServiceRegistration := service.NewServiceRegistration(failedServiceId, failedServiceGuid, enclaveId, failedServiceIp)
 	failedServiceConfig := services.NewServiceConfigBuilder(testContainerImageName).WithSubnetwork(string(failedServicePartitionId)).Build()
 
 	// One service will be successfully started but its sidecar will fail to start
@@ -326,48 +407,89 @@ func TestStartServices(t *testing.T) {
 
 	// Configure the mock to also be testing that the right functions are called along the way
 
-	// StartUserService will be called three times, with all the provided services
-	backend.EXPECT().StartUserServices(
+	// The services are registered one by one before being started
+	backend.EXPECT().RegisterUserServices(
 		ctx,
 		enclaveId,
-		mock.MatchedBy(func(services map[service.ServiceID]*service.ServiceConfig) bool {
+		map[service.ServiceID]bool{
+			successfulServiceId: true,
+		},
+	).Times(1).Return(
+		map[service.ServiceID]*service.ServiceRegistration{
+			successfulServiceId: successfulServiceRegistration,
+		},
+		map[service.ServiceID]error{},
+		nil,
+	)
+	backend.EXPECT().RegisterUserServices(
+		ctx,
+		enclaveId,
+		map[service.ServiceID]bool{
+			failedServiceId: true,
+		},
+	).Times(1).Return(
+		map[service.ServiceID]*service.ServiceRegistration{
+			failedServiceId: failedServiceRegistration,
+		},
+		map[service.ServiceID]error{},
+		nil,
+	)
+	backend.EXPECT().RegisterUserServices(
+		ctx,
+		enclaveId,
+		map[service.ServiceID]bool{
+			sidecarFailedServiceId: true,
+		},
+	).Times(1).Return(
+		map[service.ServiceID]*service.ServiceRegistration{
+			sidecarFailedServiceId: sidecarFailedServiceRegistration,
+		},
+		map[service.ServiceID]error{},
+		nil,
+	)
+
+	// StartUserService will be called three times, with all the provided services
+	backend.EXPECT().StartRegisteredUserServices(
+		ctx,
+		enclaveId,
+		mock.MatchedBy(func(services map[service.ServiceGUID]*service.ServiceConfig) bool {
 			// Matcher function returning true iff the services map arg contains exactly the following key:
 			// {successfulServiceId}
-			_, foundSuccessfulService := services[successfulServiceId]
+			_, foundSuccessfulService := services[successfulServiceGuid]
 			return len(services) == 1 && foundSuccessfulService
 		})).Times(1).Return(
-		map[service.ServiceID]*service.Service{
-			successfulServiceId: successfulService,
+		map[service.ServiceGUID]*service.Service{
+			successfulServiceGuid: successfulService,
 		},
-		map[service.ServiceID]error{},
+		map[service.ServiceGUID]error{},
 		nil)
-	backend.EXPECT().StartUserServices(
+	backend.EXPECT().StartRegisteredUserServices(
 		ctx,
 		enclaveId,
-		mock.MatchedBy(func(services map[service.ServiceID]*service.ServiceConfig) bool {
+		mock.MatchedBy(func(services map[service.ServiceGUID]*service.ServiceConfig) bool {
 			// Matcher function returning true iff the services map arg contains exactly the following key:
 			// {failedServiceId}
-			_, foundFailedService := services[failedServiceId]
+			_, foundFailedService := services[failedServiceGuid]
 			return len(services) == 1 && foundFailedService
 		})).Times(1).Return(
-		map[service.ServiceID]*service.Service{},
-		map[service.ServiceID]error{
-			failedServiceId: stacktrace.NewError("Failed starting service"),
+		map[service.ServiceGUID]*service.Service{},
+		map[service.ServiceGUID]error{
+			failedServiceGuid: stacktrace.NewError("Failed starting service"),
 		},
 		nil)
-	backend.EXPECT().StartUserServices(
+	backend.EXPECT().StartRegisteredUserServices(
 		ctx,
 		enclaveId,
-		mock.MatchedBy(func(services map[service.ServiceID]*service.ServiceConfig) bool {
+		mock.MatchedBy(func(services map[service.ServiceGUID]*service.ServiceConfig) bool {
 			// Matcher function returning true iff the services map arg contains exactly the following key:
 			// {sidecarFailedServiceId}
-			_, foundSidecarFailedService := services[sidecarFailedServiceId]
+			_, foundSidecarFailedService := services[sidecarFailedServiceGuid]
 			return len(services) == 1 && foundSidecarFailedService
 		})).Times(1).Return(
-		map[service.ServiceID]*service.Service{
-			sidecarFailedServiceId: sidecarFailedService,
+		map[service.ServiceGUID]*service.Service{
+			sidecarFailedServiceGuid: sidecarFailedService,
 		},
-		map[service.ServiceID]error{},
+		map[service.ServiceGUID]error{},
 		nil)
 
 	// CreateNetworkingSidecar will be called exactly twice with the 2 successfully started services
@@ -409,6 +531,34 @@ func TestStartServices(t *testing.T) {
 		},
 		map[service.ServiceGUID]error{},
 		nil)
+
+	// Both failedService and sidecarFailedService are unregistered in the deferred functions
+	backend.EXPECT().UnregisterUserServices(
+		ctx,
+		enclaveId,
+		map[service.ServiceGUID]bool{
+			failedServiceGuid: true,
+		},
+	).Times(1).Return(
+		map[service.ServiceGUID]bool{
+			failedServiceGuid: true,
+		},
+		map[service.ServiceGUID]error{},
+		nil,
+	)
+	backend.EXPECT().UnregisterUserServices(
+		ctx,
+		enclaveId,
+		map[service.ServiceGUID]bool{
+			sidecarFailedServiceGuid: true,
+		},
+	).Times(1).Return(
+		map[service.ServiceGUID]bool{
+			sidecarFailedServiceGuid: true,
+		},
+		map[service.ServiceGUID]error{},
+		nil,
+	)
 
 	success, failure := network.StartServices(
 		ctx,

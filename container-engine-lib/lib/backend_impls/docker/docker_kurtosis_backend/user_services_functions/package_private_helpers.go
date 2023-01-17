@@ -18,37 +18,18 @@ func destroyUserServicesUnlocked(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
-	serviceRegistrations map[enclave.EnclaveID]map[service.ServiceGUID]*service.ServiceRegistration,
-	enclaveFreeIpProviders map[enclave.EnclaveID]*free_ip_addr_tracker.FreeIpAddrTracker,
+	serviceRegistrationsForEnclave map[service.ServiceGUID]*service.ServiceRegistration,
+	enclaveFreeIpProvidersForEnclave *free_ip_addr_tracker.FreeIpAddrTracker,
 	dockerManager *docker_manager.DockerManager,
 ) (
 	resultSuccessfulGuids map[service.ServiceGUID]bool,
 	resultErroredGuids map[service.ServiceGUID]error,
 	resultErr error,
 ) {
-
-	freeIpAddrTrackerForEnclave, found := enclaveFreeIpProviders[enclaveId]
-	if !found {
-		return nil, nil, stacktrace.NewError(
-			"Cannot destroy services in enclave '%v' because no free IP address tracker is registered for it; this likely "+
-				"means that the destroy user services call is being made from somewhere it shouldn't be (i.e. outside the API contianer)",
-			enclaveId,
-		)
-	}
-
-	registrationsForEnclave, found := serviceRegistrations[enclaveId]
-	if !found {
-		return nil, nil, stacktrace.NewError(
-			"No service registrations are being tracked for enclave '%v', so we cannot get service registrations matching filters: %+v",
-			enclaveId,
-			filters,
-		)
-	}
-
 	// We filter registrations here because a registration is the canonical resource for a Kurtosis user service - no registration,
 	// no Kurtosis service - and not all registrations will have Docker resources
 	matchingRegistrations := map[service.ServiceGUID]*service.ServiceRegistration{}
-	for guid, registration := range registrationsForEnclave {
+	for guid, registration := range serviceRegistrationsForEnclave {
 		if filters.GUIDs != nil && len(filters.GUIDs) > 0 {
 			if _, found := filters.GUIDs[registration.GetGUID()]; !found {
 				continue
@@ -143,10 +124,10 @@ func destroyUserServicesUnlocked(
 	// Finalize deregistration
 	for guid, registration := range registrationsToDeregister {
 		ipAddr := registration.GetPrivateIP()
-		if err = freeIpAddrTrackerForEnclave.ReleaseIpAddr(ipAddr); err != nil {
+		if err = enclaveFreeIpProvidersForEnclave.ReleaseIpAddr(ipAddr); err != nil {
 			logrus.Errorf("Error releasing IP address '%v'", ipAddr)
 		}
-		delete(registrationsForEnclave, guid)
+		delete(serviceRegistrationsForEnclave, guid)
 	}
 
 	return successfulGuids, erroredGuids, nil

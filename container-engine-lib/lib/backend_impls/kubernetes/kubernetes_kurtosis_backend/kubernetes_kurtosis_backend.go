@@ -46,11 +46,11 @@ func newKubernetesKurtosisBackend(
 ) *KubernetesKurtosisBackend {
 	objAttrsProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
 	return &KubernetesKurtosisBackend{
-		kubernetesManager:               kubernetesManager,
-		objAttrsProvider:                objAttrsProvider,
-		cliModeArgs:                     cliModeArgs,
-		engineServerModeArgs:            engineServerModeArgs,
-		apiContainerModeArgs:            apiContainerModeArgs,
+		kubernetesManager:    kubernetesManager,
+		objAttrsProvider:     objAttrsProvider,
+		cliModeArgs:          cliModeArgs,
+		engineServerModeArgs: engineServerModeArgs,
+		apiContainerModeArgs: apiContainerModeArgs,
 	}
 }
 
@@ -103,11 +103,11 @@ func NewKubernetesKurtosisBackend(
 ) *KubernetesKurtosisBackend {
 	objAttrsProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
 	return &KubernetesKurtosisBackend{
-		kubernetesManager:               kubernetesManager,
-		objAttrsProvider:                objAttrsProvider,
-		cliModeArgs:                     cliModeArgs,
-		engineServerModeArgs:            engineServerModeArgs,
-		apiContainerModeArgs:            apiContainerModeargs,
+		kubernetesManager:    kubernetesManager,
+		objAttrsProvider:     objAttrsProvider,
+		cliModeArgs:          cliModeArgs,
+		engineServerModeArgs: engineServerModeArgs,
+		apiContainerModeArgs: apiContainerModeargs,
 	}
 }
 
@@ -116,7 +116,7 @@ func (backend *KubernetesKurtosisBackend) FetchImage(ctx context.Context, image 
 	return nil
 }
 
-func (backend KubernetesKurtosisBackend) CreateEngine(
+func (backend *KubernetesKurtosisBackend) CreateEngine(
 	ctx context.Context,
 	imageOrgAndRepo string,
 	imageVersionTag string,
@@ -127,7 +127,7 @@ func (backend KubernetesKurtosisBackend) CreateEngine(
 	*engine.Engine,
 	error,
 ) {
-	engine, err := engine_functions.CreateEngine(
+	kubernetesEngine, err := engine_functions.CreateEngine(
 		ctx,
 		imageOrgAndRepo,
 		imageVersionTag,
@@ -148,10 +148,10 @@ func (backend KubernetesKurtosisBackend) CreateEngine(
 			envVars,
 		)
 	}
-	return engine, nil
+	return kubernetesEngine, nil
 }
 
-func (backend KubernetesKurtosisBackend) GetEngines(
+func (backend *KubernetesKurtosisBackend) GetEngines(
 	ctx context.Context,
 	filters *engine.EngineFilters,
 ) (map[engine.EngineGUID]*engine.Engine, error) {
@@ -162,7 +162,7 @@ func (backend KubernetesKurtosisBackend) GetEngines(
 	return engines, nil
 }
 
-func (backend KubernetesKurtosisBackend) StopEngines(
+func (backend *KubernetesKurtosisBackend) StopEngines(
 	ctx context.Context,
 	filters *engine.EngineFilters,
 ) (
@@ -177,7 +177,7 @@ func (backend KubernetesKurtosisBackend) StopEngines(
 	return successfulEngineGuids, erroredEngineGuids, nil
 }
 
-func (backend KubernetesKurtosisBackend) DestroyEngines(
+func (backend *KubernetesKurtosisBackend) DestroyEngines(
 	ctx context.Context,
 	filters *engine.EngineFilters,
 ) (
@@ -192,16 +192,8 @@ func (backend KubernetesKurtosisBackend) DestroyEngines(
 	return successfulEngineGuids, erroredEngineGuids, nil
 }
 
-func (backend *KubernetesKurtosisBackend) StartUserServices(
-	ctx context.Context,
-	enclaveId enclave.EnclaveID,
-	services map[service.ServiceID]*service.ServiceConfig,
-) (
-	map[service.ServiceID]*service.Service,
-	map[service.ServiceID]error,
-	error,
-) {
-	return user_services_functions.StartUserServices(
+func (backend *KubernetesKurtosisBackend) RegisterUserServices(ctx context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceID]bool) (map[service.ServiceID]*service.ServiceRegistration, map[service.ServiceID]error, error) {
+	successfullyRegisteredService, failedServices, err := user_services_functions.RegisterUserServices(
 		ctx,
 		enclaveId,
 		services,
@@ -209,6 +201,60 @@ func (backend *KubernetesKurtosisBackend) StartUserServices(
 		backend.apiContainerModeArgs,
 		backend.engineServerModeArgs,
 		backend.kubernetesManager)
+	if err != nil {
+		var serviceIds []service.ServiceID
+		for serviceId := range services {
+			serviceIds = append(serviceIds, serviceId)
+		}
+		return nil, nil, stacktrace.Propagate(err, "Unexpected error registering services with IDs '%v' to enclave '%s'", serviceIds, enclaveId)
+	}
+	return successfullyRegisteredService, failedServices, nil
+}
+
+func (backend *KubernetesKurtosisBackend) UnregisterUserServices(ctx context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceGUID]bool) (map[service.ServiceGUID]bool, map[service.ServiceGUID]error, error) {
+	successfullyUnregisteredServices, failedServices, err := user_services_functions.UnregisterUserServices(
+		ctx,
+		enclaveId,
+		services,
+		backend.cliModeArgs,
+		backend.apiContainerModeArgs,
+		backend.engineServerModeArgs,
+		backend.kubernetesManager)
+	if err != nil {
+		var serviceGuids []service.ServiceGUID
+		for serviceGuid := range services {
+			serviceGuids = append(serviceGuids, serviceGuid)
+		}
+		return nil, nil, stacktrace.Propagate(err, "Unexpected error unregistering services with GUIDs '%v' from enclave '%s'", serviceGuids, enclaveId)
+	}
+	return successfullyUnregisteredServices, failedServices, nil
+}
+
+func (backend *KubernetesKurtosisBackend) StartRegisteredUserServices(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	services map[service.ServiceGUID]*service.ServiceConfig,
+) (
+	map[service.ServiceGUID]*service.Service,
+	map[service.ServiceGUID]error,
+	error,
+) {
+	successfullyStartedServices, failedServices, err := user_services_functions.StartRegisteredUserServices(
+		ctx,
+		enclaveId,
+		services,
+		backend.cliModeArgs,
+		backend.apiContainerModeArgs,
+		backend.engineServerModeArgs,
+		backend.kubernetesManager)
+	if err != nil {
+		var serviceGuids []service.ServiceGUID
+		for serviceGuid := range services {
+			serviceGuids = append(serviceGuids, serviceGuid)
+		}
+		return nil, nil, stacktrace.Propagate(err, "Unexpected error starting services with GUIDs '%v' in enclave '%s'", serviceGuids, enclaveId)
+	}
+	return successfullyStartedServices, failedServices, nil
 }
 
 func (backend *KubernetesKurtosisBackend) GetUserServices(
@@ -338,7 +384,7 @@ func (backend *KubernetesKurtosisBackend) DestroyUserServices(ctx context.Contex
 		backend.kubernetesManager)
 }
 
-func (backend *KubernetesKurtosisBackend) CreateLogsDatabase(ctx context.Context, logsDatabaseHttpPortNumber uint16,) (*logs_database.LogsDatabase, error) {
+func (backend *KubernetesKurtosisBackend) CreateLogsDatabase(ctx context.Context, logsDatabaseHttpPortNumber uint16) (*logs_database.LogsDatabase, error) {
 	// TODO IMPLEMENT
 	return nil, stacktrace.NewError("Creating the logs database isn't yet implemented on Kubernetes")
 }
@@ -373,7 +419,9 @@ func (backend *KubernetesKurtosisBackend) DestroyLogsCollector(ctx context.Conte
 }
 
 // ====================================================================================================
-//                                      Private Helper Functions
+//
+//	Private Helper Functions
+//
 // ====================================================================================================
 func (backend *KubernetesKurtosisBackend) getEnclaveNamespaceName(ctx context.Context, enclaveId enclave.EnclaveID) (string, error) {
 	// TODO This is a big janky hack that results from *KubernetesKurtosisBackend containing functions for all of API containers, engines, and CLIs
@@ -404,7 +452,7 @@ func (backend *KubernetesKurtosisBackend) getEnclaveNamespaceName(ctx context.Co
 	} else if backend.apiContainerModeArgs != nil {
 		if enclaveId != backend.apiContainerModeArgs.GetOwnEnclaveId() {
 			return "", stacktrace.NewError(
-				"Received a request to get namespace for enclave '%v', but the Kubernetes Kurtosis backend is running in an API " +
+				"Received a request to get namespace for enclave '%v', but the Kubernetes Kurtosis backend is running in an API "+
 					"container in a different enclave '%v' (so Kubernetes would throw a permission error)",
 				enclaveId,
 				backend.apiContainerModeArgs.GetOwnEnclaveId(),

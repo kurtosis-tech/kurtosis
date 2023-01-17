@@ -213,8 +213,24 @@ func (backend *MetricsReportingKurtosisBackend) DestroyAPIContainers(ctx context
 	return successes, failures, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) StartUserServices(ctx context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceID]*service.ServiceConfig) (map[service.ServiceID]*service.Service, map[service.ServiceID]error, error) {
-	successes, failures, err := backend.underlying.StartUserServices(ctx, enclaveId, services)
+func (backend *MetricsReportingKurtosisBackend) RegisterUserServices(ctx context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceID]bool) (map[service.ServiceID]*service.ServiceRegistration, map[service.ServiceID]error, error) {
+	successes, failures, err := backend.underlying.RegisterUserServices(ctx, enclaveId, services)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred registering services to enclave '%v' with the following service ids: %+v", enclaveId, services)
+	}
+	return successes, failures, nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) UnregisterUserServices(ctx context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceGUID]bool) (map[service.ServiceGUID]bool, map[service.ServiceGUID]error, error) {
+	successes, failures, err := backend.underlying.UnregisterUserServices(ctx, enclaveId, services)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred unregistering services from enclave '%v' with the following service guids: %+v", enclaveId, services)
+	}
+	return successes, failures, nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) StartRegisteredUserServices(ctx context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceGUID]*service.ServiceConfig) (map[service.ServiceGUID]*service.Service, map[service.ServiceGUID]error, error) {
+	successes, failures, err := backend.underlying.StartRegisteredUserServices(ctx, enclaveId, services)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred starting services in enclave '%v' with the following service ids: %+v", enclaveId, services)
 	}
@@ -445,7 +461,7 @@ func (backend *MetricsReportingKurtosisBackend) CreateLogsDatabase(
 ) (
 	*logs_database.LogsDatabase,
 	error,
-){
+) {
 
 	logsDatabase, err := backend.underlying.CreateLogsDatabase(ctx, logsDatabaseHttpPortNumber)
 	if err != nil {
@@ -455,7 +471,7 @@ func (backend *MetricsReportingKurtosisBackend) CreateLogsDatabase(
 	return logsDatabase, nil
 }
 
-//if nothing is found returns nil
+// if nothing is found returns nil
 func (backend *MetricsReportingKurtosisBackend) GetLogsDatabase(
 	ctx context.Context,
 ) (
@@ -472,9 +488,7 @@ func (backend *MetricsReportingKurtosisBackend) GetLogsDatabase(
 
 func (backend *MetricsReportingKurtosisBackend) DestroyLogsDatabase(
 	ctx context.Context,
-) (
-	error,
-) {
+) error {
 	if err := backend.underlying.DestroyLogsDatabase(ctx); err != nil {
 		return stacktrace.Propagate(err, "An error occurred destroying the logs database")
 	}
@@ -499,7 +513,7 @@ func (backend *MetricsReportingKurtosisBackend) CreateLogsCollector(
 	return logsCollector, nil
 }
 
-//if nothing is found returns nil
+// if nothing is found returns nil
 func (backend *MetricsReportingKurtosisBackend) GetLogsCollector(
 	ctx context.Context,
 ) (
@@ -516,9 +530,7 @@ func (backend *MetricsReportingKurtosisBackend) GetLogsCollector(
 
 func (backend *MetricsReportingKurtosisBackend) DestroyLogsCollector(
 	ctx context.Context,
-) (
-	error,
-) {
+) error {
 
 	if err := backend.underlying.DestroyLogsCollector(ctx); err != nil {
 		return stacktrace.Propagate(err, "An error occurred destroying the logs collector")
