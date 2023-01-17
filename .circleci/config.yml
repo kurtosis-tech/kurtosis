@@ -1049,6 +1049,9 @@ workflows:
                     },
                     {
                         "pattern": "https://github.com/kurtosis-tech/kurtosis"
+                    },
+                    {
+                        "pattern": "https://www.notion.so/kurtosistech.*"
                     }
                 ]
             }
