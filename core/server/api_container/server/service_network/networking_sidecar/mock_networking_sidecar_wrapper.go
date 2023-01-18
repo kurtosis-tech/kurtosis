@@ -8,15 +8,16 @@ package networking_sidecar
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
 	"net"
 )
 
 type MockNetworkingSidecarWrapper struct {
-	updateFunctionCallsPacketLossConfig []map[string]float32
+	updateFunctionCallsPacketLossConfig []map[string]*partition_topology.PartitionConnection
 }
 
 func NewMockNetworkingSidecarWrapper() *MockNetworkingSidecarWrapper {
-	return &MockNetworkingSidecarWrapper{updateFunctionCallsPacketLossConfig: []map[string]float32{}}
+	return &MockNetworkingSidecarWrapper{updateFunctionCallsPacketLossConfig: []map[string]*partition_topology.PartitionConnection{}}
 }
 
 func (sidecar MockNetworkingSidecarWrapper) GetServiceGUID() service.ServiceGUID {
@@ -31,11 +32,11 @@ func (sidecar MockNetworkingSidecarWrapper) InitializeTrafficControl(ctx context
 	return nil
 }
 
-func (sidecar *MockNetworkingSidecarWrapper) UpdateTrafficControl(ctx context.Context, allPacketLossPercentageForIpAddresses map[string]float32) error {
+func (sidecar *MockNetworkingSidecarWrapper) UpdateTrafficControl(ctx context.Context, allPacketLossPercentageForIpAddresses map[string]*partition_topology.PartitionConnection) error {
 	sidecar.updateFunctionCallsPacketLossConfig = append(sidecar.updateFunctionCallsPacketLossConfig, allPacketLossPercentageForIpAddresses)
 	return nil
 }
 
-func (sidecar MockNetworkingSidecarWrapper) GetRecordedUpdatePacketLossConfig() []map[string]float32 {
+func (sidecar MockNetworkingSidecarWrapper) GetRecordedUpdatePacketLossConfig() []map[string]*partition_topology.PartitionConnection {
 	return sidecar.updateFunctionCallsPacketLossConfig
 }

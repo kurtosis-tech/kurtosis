@@ -1030,14 +1030,15 @@ func TestUpdateTrafficControl(t *testing.T) {
 	}
 
 	// Creates the pathological "line" of connections, where each service can only see the services adjacent
-	targetServicePacketLossConfigs := map[service.ServiceID]map[service.ServiceID]float32{}
+	targetServicePacketLossConfigs := map[service.ServiceID]map[service.ServiceID]*partition_topology.PartitionConnection{}
 	for i := 0; i < numServices; i++ {
 		serviceId := testServiceIdFromInt(i)
-		otherServicesPacketLossConfig := map[service.ServiceID]float32{}
+		otherServicesPacketLossConfig := map[service.ServiceID]*partition_topology.PartitionConnection{}
 		for j := 0; j < numServices; j++ {
 			if j < i-1 || j > i+1 {
 				blockedServiceId := testServiceIdFromInt(j)
-				otherServicesPacketLossConfig[blockedServiceId] = packetLossConfigForBlockedPartition
+				connectionConfig := partition_topology.NewPartitionConnection(packetLossConfigForBlockedPartition)
+				otherServicesPacketLossConfig[blockedServiceId] = &connectionConfig
 			}
 		}
 		targetServicePacketLossConfigs[serviceId] = otherServicesPacketLossConfig
@@ -1049,11 +1050,12 @@ func TestUpdateTrafficControl(t *testing.T) {
 	for i := 0; i < numServices; i++ {
 		serviceId := testServiceIdFromInt(i)
 
-		expected := map[string]float32{}
+		expected := map[string]*partition_topology.PartitionConnection{}
 		for j := 0; j < numServices; j++ {
 			if j < i-1 || j > i+1 {
 				ip := testIpFromInt(j)
-				expected[ip.String()] = packetLossConfigForBlockedPartition
+				connectionConfig := partition_topology.NewPartitionConnection(packetLossConfigForBlockedPartition)
+				expected[ip.String()] = &connectionConfig
 			}
 		}
 

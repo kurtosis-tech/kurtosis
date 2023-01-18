@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
 	"github.com/stretchr/testify/require"
 	"net"
 	"strings"
@@ -22,7 +23,7 @@ const (
 	packetLossPercentageValueForBlockedPartitions   float32 = 100
 	packetLossPercentageValueForSoftPartition       float32 = 25
 
-	testServiceGUID                  = "test"
+	testServiceGUID            = "test"
 	testEnclaveID              = "kt2022-03-17t16.33.01.495"
 	testContainerStatusRunning = container_status.ContainerStatus_Running
 
@@ -279,7 +280,7 @@ func TestNewClassId_QdiscAChildren(t *testing.T) {
 
 	parentQdiscId := qdiscAID
 
-	for childKey, expectedChildClassId  := range qdiscAChildrenClassId {
+	for childKey, expectedChildClassId := range qdiscAChildrenClassId {
 		decimalMinorNumber := qdiscAChildrenClassDecimalMinorNumber[childKey]
 		actualClassId := newClassId(parentQdiscId, decimalMinorNumber)
 		require.Equal(t, expectedChildClassId, actualClassId)
@@ -290,7 +291,7 @@ func TestNewClassId_QdiscBChildren(t *testing.T) {
 
 	parentQdiscId := qdiscBID
 
-	for childKey, expectedChildClassId  := range qdiscBChildrenClassId {
+	for childKey, expectedChildClassId := range qdiscBChildrenClassId {
 		decimalMinorNumber := qdiscBChildrenClassDecimalMinorNumber[childKey]
 		actualClassId := newClassId(parentQdiscId, decimalMinorNumber)
 		require.Equal(t, expectedChildClassId, actualClassId)
@@ -314,13 +315,14 @@ func TestConcurrencySafety(t *testing.T) {
 	for i := 0; i < numProcesses; i++ {
 		iByte := byte(i)
 		ip := net.IP{iByte, iByte, iByte, iByte}
-		allUserServicePacketLossConfigurations := map[string]float32{}
-		allUserServicePacketLossConfigurations[ip.String()] = packetLossPercentageValueForBlockedPartitions
+		allUserServicePacketLossConfigurations := map[string]*partition_topology.PartitionConnection{}
+		connectionConfig := partition_topology.NewPartitionConnection(packetLossPercentageValueForBlockedPartitions)
+		allUserServicePacketLossConfigurations[ip.String()] = &connectionConfig
 		go func() {
 			err := sidecar.UpdateTrafficControl(ctx, allUserServicePacketLossConfigurations)
 			require.NoErrorf(t, err, "An error occurred updating traffic control")
 		}()
-		time.Sleep(5 * time.Millisecond)  // Make sure they enter the sidecar in proper order
+		time.Sleep(5 * time.Millisecond) // Make sure they enter the sidecar in proper order
 	}
 
 	// At this point:
@@ -338,7 +340,7 @@ func TestConcurrencySafety(t *testing.T) {
 	for i := 1; i <= numProcesses; i++ {
 		expectedByte := byte(i - 1)
 		expectedIpStr := net.IP([]byte{expectedByte, expectedByte, expectedByte, expectedByte}).String()
-		expectedMatchIpDst := fmt.Sprintf("match ip dst %v", expectedIpStr )
+		expectedMatchIpDst := fmt.Sprintf("match ip dst %v", expectedIpStr)
 		actualCmd := strings.Join(execCmdExecutor.commands[i], stringSeparatorInCommand)
 		require.Contains(t, actualCmd, expectedMatchIpDst)
 	}
@@ -347,26 +349,29 @@ func TestConcurrencySafety(t *testing.T) {
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================
-func getAllUserServicePacketLossConfigurationsForSoftPartition() map[string]float32 {
-	allUserServicePacketLossConfigurations := map[string]float32{}
+func getAllUserServicePacketLossConfigurationsForSoftPartition() map[string]*partition_topology.PartitionConnection {
+	allUserServicePacketLossConfigurations := map[string]*partition_topology.PartitionConnection{}
 	for _, ip := range allUserServiceTestIPAddresses {
-		allUserServicePacketLossConfigurations[ip.String()] = packetLossPercentageValueForSoftPartition
+		connectionConfig := partition_topology.NewPartitionConnection(packetLossPercentageValueForSoftPartition)
+		allUserServicePacketLossConfigurations[ip.String()] = &connectionConfig
 	}
 	return allUserServicePacketLossConfigurations
 }
 
-func getAllUserServicePacketLossConfigurationsForBlockedPartition() map[string]float32 {
-	allUserServicePacketLossConfigurations := map[string]float32{}
+func getAllUserServicePacketLossConfigurationsForBlockedPartition() map[string]*partition_topology.PartitionConnection {
+	allUserServicePacketLossConfigurations := map[string]*partition_topology.PartitionConnection{}
 	for _, ip := range allUserServiceTestIPAddresses {
-		allUserServicePacketLossConfigurations[ip.String()] = packetLossPercentageValueForBlockedPartitions
+		connectionConfig := partition_topology.NewPartitionConnection(packetLossPercentageValueForBlockedPartitions)
+		allUserServicePacketLossConfigurations[ip.String()] = &connectionConfig
 	}
 	return allUserServicePacketLossConfigurations
 }
 
-func getAllUserServicePacketLossConfigurationsForUnblockedPartition() map[string]float32 {
-	allUserServicePacketLossConfigurations := map[string]float32{}
+func getAllUserServicePacketLossConfigurationsForUnblockedPartition() map[string]*partition_topology.PartitionConnection {
+	allUserServicePacketLossConfigurations := map[string]*partition_topology.PartitionConnection{}
 	for _, ip := range allUserServiceTestIPAddresses {
-		allUserServicePacketLossConfigurations[ip.String()] = packetLossPercentageValueForUnblockedPartitions
+		connectionConfig := partition_topology.NewPartitionConnection(packetLossPercentageValueForUnblockedPartitions)
+		allUserServicePacketLossConfigurations[ip.String()] = &connectionConfig
 	}
 	return allUserServicePacketLossConfigurations
 }

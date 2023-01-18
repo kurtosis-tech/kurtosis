@@ -878,12 +878,12 @@ func (network *DefaultServiceNetwork) IsNetworkPartitioningEnabled() bool {
 
 // updateAllConnectionsFromTopology reads the current topology and updates all connection according to it.
 func (network *DefaultServiceNetwork) updateAllConnectionsFromTopology(ctx context.Context) error {
-	servicePacketLossConfigurationsByServiceID, err := network.topology.GetServicePacketLossConfigurationsByServiceID()
+	availablePartitionConnectionConfigsPerServiceIds, err := network.topology.GetServicePacketLossConfigurationsByServiceID()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the packet loss configuration by service ID "+
 			" to know what packet loss updates to apply")
 	}
-	if err = updateTrafficControlConfiguration(ctx, servicePacketLossConfigurationsByServiceID, network.registeredServiceInfo, network.networkingSidecars); err != nil {
+	if err = updateTrafficControlConfiguration(ctx, availablePartitionConnectionConfigsPerServiceIds, network.registeredServiceInfo, network.networkingSidecars); err != nil {
 		return stacktrace.Propagate(err, "An error occurred applying the traffic control configuration to partition off new nodes.")
 	}
 	return nil
@@ -893,27 +893,26 @@ func (network *DefaultServiceNetwork) updateAllConnectionsFromTopology(ctx conte
 // NOTE: This is not thread-safe, so it must be within a function that locks mutex!
 func updateTrafficControlConfiguration(
 	ctx context.Context,
-	targetServicePacketLossConfigs map[service.ServiceID]map[service.ServiceID]float32,
+	availablePartitionConnectionConfigsPerServiceIds map[service.ServiceID]map[service.ServiceID]*partition_topology.PartitionConnection,
 	services map[service.ServiceID]*service.ServiceRegistration,
-	networkingSidecars map[service.ServiceID]networking_sidecar.NetworkingSidecarWrapper,
-) error {
+	networkingSidecars map[service.ServiceID]networking_sidecar.NetworkingSidecarWrapper) error {
 
 	// TODO PERF: Run the container updates in parallel, with the container being modified being the most important
 	// TODO: we need to roll back all services if one fails because upstream, when calling updateTrafficControlConfiguration, we throw the entire batch
 
-	for serviceId, allOtherServicesPacketLossConfigurations := range targetServicePacketLossConfigs {
-		allPacketLossPercentageForIpAddresses := map[string]float32{}
-		for otherServiceId, otherServicePacketLossPercentage := range allOtherServicesPacketLossConfigurations {
-			otherService, found := services[otherServiceId]
+	for serviceId, partitionConnectionConfigBetweenServices := range availablePartitionConnectionConfigsPerServiceIds {
+		partitionConnectionConfigPerIpAddress := map[string]*partition_topology.PartitionConnection{}
+		for connectedServiceId, partitionConnectionConfig := range partitionConnectionConfigBetweenServices {
+			connectedService, found := services[connectedServiceId]
 			if !found {
 				return stacktrace.NewError(
 					"Service with ID '%v' needs to add packet loss configuration for service with ID '%v', but the latter "+
 						"doesn't have service registration info (i.e. an IP) associated with it",
 					serviceId,
-					otherServiceId)
+					connectedServiceId)
 			}
 
-			allPacketLossPercentageForIpAddresses[otherService.GetPrivateIP().String()] = otherServicePacketLossPercentage
+			partitionConnectionConfigPerIpAddress[connectedService.GetPrivateIP().String()] = partitionConnectionConfig
 		}
 
 		sidecar, found := networkingSidecars[serviceId]
@@ -923,7 +922,7 @@ func updateTrafficControlConfiguration(
 				serviceId)
 		}
 
-		if err := sidecar.UpdateTrafficControl(ctx, allPacketLossPercentageForIpAddresses); err != nil {
+		if err := sidecar.UpdateTrafficControl(ctx, partitionConnectionConfigPerIpAddress); err != nil {
 			return stacktrace.Propagate(
 				err,
 				"An error occurred updating the qdisc configuration for service '%v'",

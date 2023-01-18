@@ -190,16 +190,16 @@ func TestServicesInSamePartitionAreNeverBlocked(t *testing.T) {
 
 	service1Blocks := getServicePacketLossConfigForService(t, service1, servicePacketLossConfigMapAfterRepartition)
 	require.Equal(t, len(service1Blocks), 1)
-	require.Equal(t, ConnectionBlocked.GetPacketLossPercentage(), service1Blocks[service3])
+	require.Equal(t, ConnectionBlocked.GetPacketLossPercentage(), service1Blocks[service3].GetPacketLossPercentage())
 
 	service2Blocks := getServicePacketLossConfigForService(t, service2, servicePacketLossConfigMapAfterRepartition)
 	require.Equal(t, len(service2Blocks), 1)
-	require.Equal(t, ConnectionBlocked.GetPacketLossPercentage(), service2Blocks[service3])
+	require.Equal(t, ConnectionBlocked.GetPacketLossPercentage(), service2Blocks[service3].GetPacketLossPercentage())
 
 	service3Blocks := getServicePacketLossConfigForService(t, service3, servicePacketLossConfigMapAfterRepartition)
 	require.Equal(t, len(service3Blocks), 2)
-	require.Equal(t, ConnectionBlocked.GetPacketLossPercentage(), service3Blocks[service1])
-	require.Equal(t, ConnectionBlocked.GetPacketLossPercentage(), service3Blocks[service2])
+	require.Equal(t, ConnectionBlocked.GetPacketLossPercentage(), service3Blocks[service1].GetPacketLossPercentage())
+	require.Equal(t, ConnectionBlocked.GetPacketLossPercentage(), service3Blocks[service2].GetPacketLossPercentage())
 
 }
 
@@ -224,7 +224,7 @@ func TestDefaultConnectionSettingsWork(t *testing.T) {
 		require.False(t, foundItself, "A service should never block itself")
 		require.Equal(t, expectedAmountOfServicesWithPacketLossConfig, len(otherServicesPacketLossConfig), "Expected to have 2 other services with packet loss configurations for this service")
 		for _, packetLossPercentage := range otherServicesPacketLossConfig {
-			require.Equal(t, ConnectionBlocked.GetPacketLossPercentage(), packetLossPercentage, "Expected packet loss percentage value for other service were 100%")
+			require.Equal(t, ConnectionBlocked.GetPacketLossPercentage(), packetLossPercentage.GetPacketLossPercentage(), "Expected packet loss percentage value for other service were 100%")
 		}
 	}
 
@@ -243,7 +243,7 @@ func TestDefaultConnectionSettingsWork(t *testing.T) {
 	for _, otherServicesPacketLossConfig := range servicePacketLossConfigMapWithOpenDefaultConn {
 		require.Equal(t, expectedAmountOfServicesWithPacketLossConfig, len(otherServicesPacketLossConfig), "All connections should be open now that the default connection is unblocked")
 		for _, packetLossPercentage := range otherServicesPacketLossConfig {
-			require.Equal(t, ConnectionAllowed.GetPacketLossPercentage(), packetLossPercentage, "Expected packet loss percentage value for other service were 0%")
+			require.Equal(t, ConnectionAllowed.GetPacketLossPercentage(), packetLossPercentage.GetPacketLossPercentage(), "Expected packet loss percentage value for other service were 0%")
 		}
 	}
 }
@@ -270,16 +270,16 @@ func TestExplicitConnectionBlocksWork(t *testing.T) {
 	servicePacketLossConfigurationsByServiceIDMap := getServicePacketLossConfigurationsByServiceIDMap(t, topology)
 
 	service1OtherServicesPacketLossConfig := getServicePacketLossConfigForService(t, service1, servicePacketLossConfigurationsByServiceIDMap)
-	require.Equal(t, ConnectionBlocked.GetPacketLossPercentage(), service1OtherServicesPacketLossConfig[service3])
-	require.Equal(t, ConnectionAllowed.GetPacketLossPercentage(), service1OtherServicesPacketLossConfig[service2])
+	require.Equal(t, ConnectionBlocked.GetPacketLossPercentage(), service1OtherServicesPacketLossConfig[service3].GetPacketLossPercentage())
+	require.Equal(t, ConnectionAllowed.GetPacketLossPercentage(), service1OtherServicesPacketLossConfig[service2].GetPacketLossPercentage())
 
 	service2OtherServicesPacketLossConfig := getServicePacketLossConfigForService(t, service2, servicePacketLossConfigurationsByServiceIDMap)
-	require.Equal(t, ConnectionAllowed.GetPacketLossPercentage(), service2OtherServicesPacketLossConfig[service1])
-	require.Equal(t, ConnectionAllowed.GetPacketLossPercentage(), service2OtherServicesPacketLossConfig[service3])
+	require.Equal(t, ConnectionAllowed.GetPacketLossPercentage(), service2OtherServicesPacketLossConfig[service1].GetPacketLossPercentage())
+	require.Equal(t, ConnectionAllowed.GetPacketLossPercentage(), service2OtherServicesPacketLossConfig[service3].GetPacketLossPercentage())
 
 	service3OtherServicesPacketLossConfig := getServicePacketLossConfigForService(t, service3, servicePacketLossConfigurationsByServiceIDMap)
-	require.Equal(t, ConnectionBlocked.GetPacketLossPercentage(), service3OtherServicesPacketLossConfig[service1])
-	require.Equal(t, ConnectionAllowed.GetPacketLossPercentage(), service3OtherServicesPacketLossConfig[service2])
+	require.Equal(t, ConnectionBlocked.GetPacketLossPercentage(), service3OtherServicesPacketLossConfig[service1].GetPacketLossPercentage())
+	require.Equal(t, ConnectionAllowed.GetPacketLossPercentage(), service3OtherServicesPacketLossConfig[service2].GetPacketLossPercentage())
 }
 
 func TestDuplicateServicesError(t *testing.T) {
@@ -454,11 +454,11 @@ func TestRegularRemoveServiceFlow(t *testing.T) {
 
 	service1Blocks := getServicePacketLossConfigForService(t, service1, servicePacketLossConfigurationsByServiceIDMap)
 	require.Equal(t, expectedAmountOfServicesWithPacketLossConfig, len(service1Blocks), "Network should have only one other node, so service1Blocks should be of size 1")
-	require.Equal(t, ConnectionBlocked.GetPacketLossPercentage(), service1Blocks[service3], "Service 1 should be blocking the only other node in the network, Service 3")
+	require.Equal(t, ConnectionBlocked.GetPacketLossPercentage(), service1Blocks[service3].GetPacketLossPercentage(), "Service 1 should be blocking the only other node in the network, Service 3")
 
 	service3Blocks := getServicePacketLossConfigForService(t, service3, servicePacketLossConfigurationsByServiceIDMap)
 	require.Equal(t, expectedAmountOfServicesWithPacketLossConfig, len(service3Blocks), "Network should have only one other node, so service3Blocks should be of size 1")
-	require.Equal(t, ConnectionBlocked.GetPacketLossPercentage(), service3Blocks[service1], "Service 3 should be blocking the only other node in the network, Service 1")
+	require.Equal(t, ConnectionBlocked.GetPacketLossPercentage(), service3Blocks[service1].GetPacketLossPercentage(), "Service 3 should be blocking the only other node in the network, Service 1")
 }
 
 func TestSetConnection(t *testing.T) {
@@ -866,7 +866,7 @@ func repartition(
 	}
 }
 
-func getServicePacketLossConfigurationsByServiceIDMap(t *testing.T, topology *PartitionTopology) map[service.ServiceID]map[service.ServiceID]float32 {
+func getServicePacketLossConfigurationsByServiceIDMap(t *testing.T, topology *PartitionTopology) map[service.ServiceID]map[service.ServiceID]*PartitionConnection {
 	servicePacketLossConfigurationByServiceID, err := topology.GetServicePacketLossConfigurationsByServiceID()
 	if err != nil {
 		t.Fatal(stacktrace.Propagate(err, "An error occurred getting service packet loss configuration by service id"))
@@ -877,8 +877,8 @@ func getServicePacketLossConfigurationsByServiceIDMap(t *testing.T, topology *Pa
 func getServicePacketLossConfigForService(
 	t *testing.T,
 	serviceId service.ServiceID,
-	servicePacketLossConfigMap map[service.ServiceID]map[service.ServiceID]float32,
-) map[service.ServiceID]float32 {
+	servicePacketLossConfigMap map[service.ServiceID]map[service.ServiceID]*PartitionConnection,
+) map[service.ServiceID]*PartitionConnection {
 	result, found := servicePacketLossConfigMap[serviceId]
 	if !found {
 		t.Fatal(stacktrace.NewError("Expected to find service '%v' in service packet loss config map but didn't", serviceId))

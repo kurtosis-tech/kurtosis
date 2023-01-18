@@ -305,11 +305,14 @@ func (topology *PartitionTopology) GetServicePartitions() map[service.ServiceID]
 	return topology.servicePartitions
 }
 
-func (topology *PartitionTopology) GetServicePacketLossConfigurationsByServiceID() (map[service.ServiceID]map[service.ServiceID]float32, error) {
-	result := map[service.ServiceID]map[service.ServiceID]float32{}
+// GetServicePacketLossConfigurationsByServiceID this method returns a partition config map
+// containing information a structure similar to adjacency graph hashmap data structure between services
+// where nodes are services, and edges are partition connection object
+func (topology *PartitionTopology) GetServicePacketLossConfigurationsByServiceID() (map[service.ServiceID]map[service.ServiceID]*PartitionConnection, error) {
+	result := map[service.ServiceID]map[service.ServiceID]*PartitionConnection{}
 	for partitionId, servicesInPartition := range topology.partitionServices {
 		for serviceId := range servicesInPartition {
-			otherServicesPacketLossConfigMap := map[service.ServiceID]float32{}
+			partitionConnectionConfigBetweenServices := map[service.ServiceID]*PartitionConnection{}
 			for otherPartitionId, servicesInOtherPartition := range topology.partitionServices {
 				if partitionId == otherPartitionId {
 					// Two services in the same partition will never block each other
@@ -320,10 +323,10 @@ func (topology *PartitionTopology) GetServicePacketLossConfigurationsByServiceID
 					return nil, stacktrace.NewError("Couldn't get connection between partitions '%v' and '%v'", partitionId, otherPartitionId)
 				}
 				for otherServiceId := range servicesInOtherPartition {
-					otherServicesPacketLossConfigMap[otherServiceId] = connection.GetPacketLossPercentage()
+					partitionConnectionConfigBetweenServices[otherServiceId] = &connection
 				}
 			}
-			result[serviceId] = otherServicesPacketLossConfigMap
+			result[serviceId] = partitionConnectionConfigBetweenServices
 		}
 	}
 	return result, nil

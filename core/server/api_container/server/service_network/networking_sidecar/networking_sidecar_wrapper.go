@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
@@ -75,7 +76,7 @@ type NetworkingSidecarWrapper interface {
 	GetServiceGUID() service.ServiceGUID
 	GetIPAddr() net.IP
 	InitializeTrafficControl(ctx context.Context) error
-	UpdateTrafficControl(ctx context.Context, allPacketLossPercentageForIpAddresses map[string]float32) error
+	UpdateTrafficControl(ctx context.Context, partitionConnectionConfigPerIpAddress map[string]*partition_topology.PartitionConnection) error
 }
 
 // ==========================================================================================
@@ -148,7 +149,7 @@ func (sidecarWrapper *StandardNetworkingSidecarWrapper) InitializeTrafficControl
 	return nil
 }
 
-func (sidecarWrapper *StandardNetworkingSidecarWrapper) UpdateTrafficControl(ctx context.Context, allPacketLossPercentageForIpAddresses map[string]float32) error {
+func (sidecarWrapper *StandardNetworkingSidecarWrapper) UpdateTrafficControl(ctx context.Context, partitionConnectionConfigPerIpAddress map[string]*partition_topology.PartitionConnection) error {
 	sidecarWrapper.mutex.Lock()
 	defer sidecarWrapper.mutex.Unlock()
 
@@ -157,13 +158,14 @@ func (sidecarWrapper *StandardNetworkingSidecarWrapper) UpdateTrafficControl(ctx
 	}
 
 	var isAnyPartitionBlocked bool
-	for _, packetLossPercentage := range allPacketLossPercentageForIpAddresses {
+	for _, connectionConfig := range partitionConnectionConfigPerIpAddress {
+		packetLossPercentage := connectionConfig.GetPacketLossPercentage()
 		if packetLossPercentage > unblockedPartitionConnectionPacketLossPercentageValue {
 			isAnyPartitionBlocked = true
 		}
 	}
 
-	if isAnyPartitionBlocked && len(allPacketLossPercentageForIpAddresses) > 0 {
+	if isAnyPartitionBlocked && len(partitionConnectionConfigPerIpAddress) > 0 {
 		primaryQdisc := sidecarWrapper.qdiscInUse
 		var backgroundQdisc qdiscID
 		var backgroundQdiscClass classID
@@ -177,12 +179,12 @@ func (sidecarWrapper *StandardNetworkingSidecarWrapper) UpdateTrafficControl(ctx
 			return stacktrace.NewError("Unrecognized tc qdisc ID '%v' in use; this is a code bug", primaryQdisc)
 		}
 
-		updateTcCmd, err := generateTcUpdateCmd(backgroundQdisc, backgroundQdiscClass, allPacketLossPercentageForIpAddresses)
+		updateTcCmd, err := generateTcUpdateCmd(backgroundQdisc, backgroundQdiscClass, partitionConnectionConfigPerIpAddress)
 		if err != nil {
 			return stacktrace.Propagate(
 				err,
 				"An error occurred generating tc update command with background qdisc ID '%v', "+
-					"background qdisc class ID '%v' and all packet loss percentage for IPs %+v ", backgroundQdisc, backgroundQdiscClass, allPacketLossPercentageForIpAddresses)
+					"background qdisc class ID '%v' and all packet loss percentage for IPs %+v ", backgroundQdisc, backgroundQdiscClass, partitionConnectionConfigPerIpAddress)
 		}
 
 		cmdDescription := "tc update"
@@ -258,7 +260,7 @@ func generateTcInitCmd() []string {
 	return resultCmd
 }
 
-func generateTcUpdateCmd(backgroundQdisc qdiscID, backgroundQdiscClass classID, allPacketLossPercentageForIpAddresses map[string]float32) ([]string, error) {
+func generateTcUpdateCmd(backgroundQdisc qdiscID, backgroundQdiscClass classID, partitionConnectionConfigPerIpAddress map[string]*partition_topology.PartitionConnection) ([]string, error) {
 	commandList := [][]string{
 		generateTcRemoveQdiscCmd(backgroundQdiscClass, backgroundQdisc),              //First remove all background Qdisc configuration in order to recreate it
 		generateTcAddQdiscCmd(backgroundQdiscClass, backgroundQdisc, tcQdiscTypeHtb), //Creating the background Qdisc again to fill it with new configuration
@@ -267,7 +269,8 @@ func generateTcUpdateCmd(backgroundQdisc qdiscID, backgroundQdiscClass classID, 
 	parentQdisc := backgroundQdisc
 	classIdDecimalMinorNumber := firstClassIdDecimalMinorNumber
 	previousQdiscIdDecimalMajorNumber := lastUsedQdiscIdDecimalMajorNumber
-	for ipAddress, packetLossPercentage := range allPacketLossPercentageForIpAddresses {
+	for ipAddress, connectionConfig := range partitionConnectionConfigPerIpAddress {
+		packetLossPercentage := connectionConfig.GetPacketLossPercentage()
 		classId := newClassId(parentQdisc, classIdDecimalMinorNumber)
 		classIdDecimalMinorNumber++
 		qdiscId, decimalMajorNumber, err := getNextUnusedQdiscId(parentQdisc, previousQdiscIdDecimalMajorNumber)
