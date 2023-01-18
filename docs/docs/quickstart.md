@@ -326,19 +326,19 @@ Replace your `main.star` contents with the following:
 
 ```python
 def run(plan, args):
-    rest_service = plan.add_service(
+    web_server = plan.add_service(
         "hello-world",
         config = struct(
-            image = "vad1mo/hello-world-rest",
+            image = "httpd",
             ports = {
-                "http": PortSpec(number = 5050),
+                "http": PortSpec(number = 80),
             },
         ),
     )
 
     nginx_conf_data = {
-        "HelloWorldIpAddress": rest_service.ip_address,
-        "HelloWorldPort": rest_service.ports["http"].number,
+        "HelloWorldIpAddress": web_server.ip_address,
+        "HelloWorldPort": web_server.ports["http"].number,
     }
 
     nginx_conf_template = """
@@ -361,7 +361,7 @@ def run(plan, args):
 
         # Reverse proxy configuration (note the template values!)
         location /sample{
-          proxy_pass http://{{ .HelloWorldIpAddress }}:{{ .HelloWorldPort }}/sample;
+          proxy_pass http://{{ .HelloWorldIpAddress }}:{{ .HelloWorldPort }}/;
         }
     }
     """
@@ -415,7 +415,7 @@ my-nginx-1669834483      my-nginx      http: 80/tcp -> 127.0.0.1:63749     RUNNI
 Now in your browser open the `my-nginx` endpoint with the `/sample` URL path (e.g. `http://127.0.0.1:63749/sample`, though your URL will be different). You'll see the `hello-world` service responding through the NginX proxy that we've configured:
 
 ```
-/ - Hello sample! Host:078807a8a776/172.17.0.11
+It works!
 ```
 
 Your Starlark script defined a set of instructions - a [plan][plan-reference] - for building the environment. This plan was:
