@@ -52,6 +52,7 @@ type ServiceNetwork interface {
 	) (
 		map[service.ServiceName]*service.Service,
 		map[service.ServiceName]error,
+		error,
 	)
 
 	UpdateService(

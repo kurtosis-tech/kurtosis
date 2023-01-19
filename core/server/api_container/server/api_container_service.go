@@ -142,7 +142,10 @@ func (apicService ApiContainerService) StartServices(ctx context.Context, args *
 		serviceNamesToAPIConfigs[kurtosis_backend_service.ServiceName(serviceNameStr)] = apiServiceConfig
 	}
 
-	successfulServices, failedServices := apicService.serviceNetwork.StartServices(ctx, serviceNamesToAPIConfigs)
+	successfulServices, failedServices, err := apicService.serviceNetwork.StartServices(ctx, serviceNamesToAPIConfigs)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "None of the services '%v' mentioned in the request were able to start due to an unexpected error", serviceNamesToAPIConfigs)
+	}
 	// TODO We SHOULD defer an undo to undo the service-starting resource that we did here, but we don't have a way to just undo
 	// that and leave the registration intact (since we only have RemoveService as of 2022-08-11, but that also deletes the registration,
 	// which would mean deleting a resource we don't own here)

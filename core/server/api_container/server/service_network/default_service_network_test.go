@@ -361,7 +361,112 @@ func TestStartService_SidecarFailedToStart(t *testing.T) {
 	require.Equal(t, expectedPartitionsInTopolody, network.topology.GetPartitionServices())
 }
 
-func TestStartServices(t *testing.T) {
+func TestStartServices_Success(t *testing.T) {
+	ctx := context.Background()
+	backend := backend_interface.NewMockKurtosisBackend(t)
+
+	// One service will be started successfully
+	successfulServiceIndex := 1
+	successfulServicePartitionId := testPartitionIdFromInt(successfulServiceIndex)
+	successfulServiceId := testServiceNameFromInt(successfulServiceIndex)
+	successfulServiceGuid := testServiceUuidFromInt(successfulServiceIndex)
+	successfulServiceIp := testIpFromInt(successfulServiceIndex)
+	successfulServiceRegistration := service.NewServiceRegistration(successfulServiceId, successfulServiceGuid, enclaveName, successfulServiceIp)
+	successfulService := service.NewService(successfulServiceRegistration, container_status.ContainerStatus_Running, map[string]*port_spec.PortSpec{}, successfulServiceIp, map[string]*port_spec.PortSpec{})
+	successfulServiceConfig := services.NewServiceConfigBuilder(testContainerImageName).WithSubnetwork(string(successfulServicePartitionId)).Build()
+
+	network := NewDefaultServiceNetwork(
+		enclaveName,
+		ip,
+		apiContainerPort,
+		fakeApiContainerVersion,
+		partitioningEnabled,
+		backend,
+		unusedEnclaveDataDir,
+		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveName),
+	)
+
+	// Configure the mock to also be testing that the right functions are called along the way
+
+	// The services are registered one by one before being started
+	backend.EXPECT().RegisterUserServices(
+		ctx,
+		enclaveName,
+		map[service.ServiceName]bool{
+			successfulServiceId: true,
+		},
+	).Times(1).Return(
+		map[service.ServiceName]*service.ServiceRegistration{
+			successfulServiceId: successfulServiceRegistration,
+		},
+		map[service.ServiceName]error{},
+		nil,
+	)
+
+	// StartUserService will be called three times, with all the provided services
+	backend.EXPECT().StartRegisteredUserServices(
+		ctx,
+		enclaveName,
+		mock.MatchedBy(func(services map[service.ServiceUUID]*service.ServiceConfig) bool {
+			// Matcher function returning true iff the services map arg contains exactly the following key:
+			// {successfulServiceId}
+			_, foundSuccessfulService := services[successfulServiceGuid]
+			return len(services) == 1 && foundSuccessfulService
+		})).Times(1).Return(
+		map[service.ServiceUUID]*service.Service{
+			successfulServiceGuid: successfulService,
+		},
+		map[service.ServiceUUID]error{},
+		nil)
+
+	// CreateNetworkingSidecar will be called exactly twice with the 2 successfully started services
+	backend.EXPECT().CreateNetworkingSidecar(ctx, enclaveName, successfulServiceGuid).Times(1).Return(
+		lib_networking_sidecar.NewNetworkingSidecar(successfulServiceGuid, enclaveName, container_status.ContainerStatus_Running),
+		nil)
+
+	// RunNetworkingSidecarExecCommands will be called only once for the successfully started sidecar
+	backend.EXPECT().RunNetworkingSidecarExecCommands(
+		ctx,
+		enclaveName,
+		mock.MatchedBy(func(commands map[service.ServiceUUID][]string) bool {
+			// Matcher function returning true iff the commands map arg contains exactly the following key:
+			// {successfulServiceGuid}
+			_, foundSuccessfulService := commands[successfulServiceGuid]
+			return len(commands) == 1 && foundSuccessfulService
+		})).Times(2).Return(
+		map[service.ServiceUUID]*exec_result.ExecResult{
+			successfulServiceGuid: exec_result.NewExecResult(0, ""),
+		},
+		map[service.ServiceUUID]error{},
+		nil)
+
+	success, failure, err := network.StartServices(
+		ctx,
+		map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig{
+			successfulServiceId: successfulServiceConfig,
+		},
+	)
+	require.Nil(t, err)
+	require.Len(t, success, 1)
+	require.Contains(t, success, successfulServiceId)
+	require.Empty(t, failure)
+
+	require.Len(t, network.registeredServiceInfo, 1)
+	require.Contains(t, network.registeredServiceInfo, successfulServiceId)
+
+	require.Len(t, network.networkingSidecars, 1)
+	require.Contains(t, network.networkingSidecars, successfulServiceId)
+
+	expectedPartitionsInTopolody := map[service_network_types.PartitionID]map[service.ServiceName]bool{
+		partition_topology.DefaultPartitionId: {},
+		successfulServicePartitionId: {
+			successfulServiceId: true,
+		},
+	}
+	require.Equal(t, expectedPartitionsInTopolody, network.topology.GetPartitionServices())
+}
+
+func TestStartServices_FailureRollsBackTheEntireBatch(t *testing.T) {
 	ctx := context.Background()
 	backend := backend_interface.NewMockKurtosisBackend(t)
 
@@ -509,7 +614,7 @@ func TestStartServices(t *testing.T) {
 			// {successfulServiceUuid}
 			_, foundSuccessfulService := commands[successfulServiceUuid]
 			return len(commands) == 1 && foundSuccessfulService
-		})).Times(2).Return(
+		})).Times(1).Return(
 		map[service.ServiceUUID]*exec_result.ExecResult{
 			successfulServiceUuid: exec_result.NewExecResult(0, ""),
 		},
@@ -522,7 +627,21 @@ func TestStartServices(t *testing.T) {
 		enclaveName,
 		mock.MatchedBy(func(filters *service.ServiceFilters) bool {
 			// Matcher function returning true iff the filters map arg contains exactly the following key:
-			// {sidecarFailedServiceUuid}
+			// {sidecarFailedServiceGuid}
+			_, foundSuccessfulService := filters.UUIDs[successfulServiceUuid]
+			return len(filters.Statuses) == 0 && len(filters.Names) == 0 && len(filters.UUIDs) == 1 && foundSuccessfulService
+		})).Times(1).Return(
+		map[service.ServiceUUID]bool{
+			successfulServiceUuid: true,
+		},
+		map[service.ServiceUUID]error{},
+		nil)
+	backend.EXPECT().DestroyUserServices(
+		ctx,
+		enclaveName,
+		mock.MatchedBy(func(filters *service.ServiceFilters) bool {
+			// Matcher function returning true iff the filters map arg contains exactly the following key:
+			// {sidecarFailedServiceGuid}
 			_, foundSidecarFailedService := filters.UUIDs[sidecarFailedServiceUuid]
 			return len(filters.Statuses) == 0 && len(filters.Names) == 0 && len(filters.UUIDs) == 1 && foundSidecarFailedService
 		})).Times(1).Return(
@@ -537,6 +656,19 @@ func TestStartServices(t *testing.T) {
 		ctx,
 		enclaveName,
 		map[service.ServiceUUID]bool{
+			successfulServiceUuid: true,
+		},
+	).Times(1).Return(
+		map[service.ServiceUUID]bool{
+			successfulServiceUuid: true,
+		},
+		map[service.ServiceUUID]error{},
+		nil,
+	)
+	backend.EXPECT().UnregisterUserServices(
+		ctx,
+		enclaveName,
+		map[service.ServiceUUID]bool{
 			failedServiceUuid: true,
 		},
 	).Times(1).Return(
@@ -560,7 +692,24 @@ func TestStartServices(t *testing.T) {
 		nil,
 	)
 
-	success, failure := network.StartServices(
+	backend.EXPECT().StopNetworkingSidecars(
+		ctx,
+		&lib_networking_sidecar.NetworkingSidecarFilters{
+			EnclaveUUIDs: nil,
+			UserServiceUUIDs: map[service.ServiceUUID]bool{
+				successfulServiceUuid: true,
+			},
+			Statuses: nil,
+		},
+	).Times(1).Return(
+		map[service.ServiceUUID]bool{
+			sidecarFailedServiceUuid: true,
+		},
+		map[service.ServiceUUID]error{},
+		nil,
+	)
+
+	success, failure, err := network.StartServices(
 		ctx,
 		map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig{
 			successfulServiceName:    successfulServiceConfig,
@@ -568,24 +717,18 @@ func TestStartServices(t *testing.T) {
 			sidecarFailedServiceName: sidecarFailedServiceConfig,
 		},
 	)
-	require.Len(t, success, 1)
-	require.Contains(t, success, successfulServiceName)
+	require.Nil(t, err)
+	require.Empty(t, success) // as the full batch failed, the successful service should have been destroyed
 	require.Len(t, failure, 2)
 	require.Contains(t, failure, failedServiceName)
 	require.Contains(t, failure, sidecarFailedServiceName)
 
-	require.Len(t, network.registeredServiceInfo, 1)
-	require.Contains(t, network.registeredServiceInfo, successfulServiceName)
+	require.Empty(t, network.registeredServiceInfo)
 
-	require.Len(t, network.networkingSidecars, 1)
-	require.Contains(t, network.networkingSidecars, successfulServiceName)
+	require.Empty(t, network.networkingSidecars)
 
 	expectedPartitionsInTopolody := map[service_network_types.PartitionID]map[service.ServiceName]bool{
 		partition_topology.DefaultPartitionId: {},
-		successfulServicePartitionId: {
-			successfulServiceName: true,
-		},
-		// partitions with services that failed to start were removed from the topology
 	}
 	require.Equal(t, expectedPartitionsInTopolody, network.topology.GetPartitionServices())
 }

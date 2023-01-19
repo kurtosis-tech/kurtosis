@@ -67,6 +67,7 @@ func (m *MockServiceNetwork) StartServices(
 ) (
 	map[service.ServiceName]*service.Service,
 	map[service.ServiceName]error,
+	error,
 ) {
 	//TODO implement me
 	panic(unimplementedMsg)
