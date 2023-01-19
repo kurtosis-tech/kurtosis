@@ -17,7 +17,7 @@ func StopUserServices(
 	cliModeArgs *shared_helpers.CliModeArgs,
 	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs,
 	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
-	kubernetesManager *kubernetes_manager.KubernetesManager) (resultSuccessfulGuids map[service.ServiceGUID]bool, resultErroredGuids map[service.ServiceGUID]error, resultErr error) {
+	kubernetesManager *kubernetes_manager.KubernetesManager) (resultSuccessfulUuids map[service.ServiceUUID]bool, resultErroredUuids map[service.ServiceUUID]error, resultErr error) {
 	namespaceName, err := shared_helpers.GetEnclaveNamespaceName(ctx, enclaveId, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting namespace name for enclave '%v'", enclaveId)
@@ -28,15 +28,15 @@ func StopUserServices(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services in enclave '%v' matching filters: %+v", enclaveId, filters)
 	}
 
-	successfulGuids := map[service.ServiceGUID]bool{}
-	erroredGuids := map[service.ServiceGUID]error{}
-	for serviceGuid, serviceObjsAndResources := range allObjectsAndResources {
+	successfulUuids := map[service.ServiceUUID]bool{}
+	erroredUuids := map[service.ServiceUUID]error{}
+	for serviceUuid, serviceObjsAndResources := range allObjectsAndResources {
 		resources := serviceObjsAndResources.KubernetesResources
 
 		pod := resources.Pod
 		if pod != nil {
 			if err := kubernetesManager.RemovePod(ctx, pod); err != nil {
-				erroredGuids[serviceGuid] = stacktrace.Propagate(
+				erroredUuids[serviceUuid] = stacktrace.Propagate(
 					err,
 					"An error occurred removing Kubernetes pod '%v' in namespace '%v'",
 					pod.Name,
@@ -53,7 +53,7 @@ func StopUserServices(
 			updatesToApply.WithSpec(specUpdates)
 		}
 		if _, err := kubernetesManager.UpdateService(ctx, namespaceName, serviceName, updateConfigurator); err != nil {
-			erroredGuids[serviceGuid] = stacktrace.Propagate(
+			erroredUuids[serviceUuid] = stacktrace.Propagate(
 				err,
 				"An error occurred updating service '%v' in namespace '%v' to reflect that it's no longer running",
 				serviceName,
@@ -62,7 +62,7 @@ func StopUserServices(
 			continue
 		}
 
-		successfulGuids[serviceGuid] = true
+		successfulUuids[serviceUuid] = true
 	}
-	return successfulGuids, erroredGuids, nil
+	return successfulUuids, erroredUuids, nil
 }

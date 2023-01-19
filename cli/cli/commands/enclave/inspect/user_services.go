@@ -18,8 +18,8 @@ import (
 )
 
 const (
-	userServiceGUIDColHeader      = "GUID"
-	userServiceIDColHeader        = "ID"
+	userServiceUUIDColHeader      = "UUID"
+	userServiceNameColHeader      = "Name"
 	userServicePortsColHeader     = "Ports"
 	userServiceStatusColHeader    = "Status"
 	defaultEmptyIPAddrForServices = ""
@@ -33,8 +33,8 @@ func printUserServices(ctx context.Context, kurtosisBackend backend_interface.Ku
 	enclaveUuidStr := enclaveInfo.GetEnclaveUuid()
 	enclaveId := enclave.EnclaveUUID(enclaveUuidStr)
 	userServiceFilters := &service.ServiceFilters{
-		IDs:      nil,
-		GUIDs:    nil,
+		Names:    nil,
+		UUIDs:    nil,
 		Statuses: nil,
 	}
 
@@ -53,15 +53,15 @@ func printUserServices(ctx context.Context, kurtosisBackend backend_interface.Ku
 	}
 
 	tablePrinter := output_printers.NewTablePrinter(
-		userServiceGUIDColHeader,
-		userServiceIDColHeader,
+		userServiceUUIDColHeader,
+		userServiceNameColHeader,
 		userServicePortsColHeader,
 		userServiceStatusColHeader,
 	)
 	sortedUserServices := getSortedUserServiceSliceFromUserServiceMap(userServices)
 	for _, userService := range sortedUserServices {
-		serviceIdStr := string(userService.GetRegistration().GetID())
-		guidStr := string(userService.GetRegistration().GetGUID())
+		serviceIdStr := string(userService.GetRegistration().GetName())
+		uuidStr := string(userService.GetRegistration().GetUUID())
 		serviceStatusStr := userService.GetStatus().String()
 
 		// Look for public port and IP information in API container map
@@ -82,11 +82,11 @@ func printUserServices(ctx context.Context, kurtosisBackend backend_interface.Ku
 		firstPortBindingLine := portBindingLines[0]
 		additionalPortBindingLines := portBindingLines[1:]
 
-		if err := tablePrinter.AddRow(guidStr, serviceIdStr, firstPortBindingLine, serviceStatusStr); err != nil {
+		if err := tablePrinter.AddRow(uuidStr, serviceIdStr, firstPortBindingLine, serviceStatusStr); err != nil {
 			return stacktrace.Propagate(
 				err,
-				"An error occurred adding row for user service with GUID '%v' to the table printer",
-				guidStr,
+				"An error occurred adding row for user service with UUID '%v' to the table printer",
+				uuidStr,
 			)
 		}
 
@@ -94,9 +94,9 @@ func printUserServices(ctx context.Context, kurtosisBackend backend_interface.Ku
 			if err := tablePrinter.AddRow("", "", additionalPortBindingLine, ""); err != nil {
 				return stacktrace.Propagate(
 					err,
-					"An error occurred adding additional port binding row '%v' for user service with GUID '%v' to the table printer",
+					"An error occurred adding additional port binding row '%v' for user service with UUID '%v' to the table printer",
 					additionalPortBindingLine,
-					guidStr,
+					uuidStr,
 				)
 			}
 		}
@@ -106,7 +106,7 @@ func printUserServices(ctx context.Context, kurtosisBackend backend_interface.Ku
 	return nil
 }
 
-func getSortedUserServiceSliceFromUserServiceMap(userServices map[service.ServiceGUID]*service.Service) []*service.Service {
+func getSortedUserServiceSliceFromUserServiceMap(userServices map[service.ServiceUUID]*service.Service) []*service.Service {
 	userServicesResult := make([]*service.Service, 0, len(userServices))
 	for _, userService := range userServices {
 		userServicesResult = append(userServicesResult, userService)
@@ -115,7 +115,7 @@ func getSortedUserServiceSliceFromUserServiceMap(userServices map[service.Servic
 	sort.Slice(userServicesResult, func(i, j int) bool {
 		firstService := userServicesResult[i]
 		secondService := userServicesResult[j]
-		return firstService.GetRegistration().GetGUID() < secondService.GetRegistration().GetGUID()
+		return firstService.GetRegistration().GetUUID() < secondService.GetRegistration().GetUUID()
 	})
 
 	return userServicesResult

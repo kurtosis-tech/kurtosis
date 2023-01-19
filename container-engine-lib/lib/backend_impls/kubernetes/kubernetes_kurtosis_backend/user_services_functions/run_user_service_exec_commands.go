@@ -17,14 +17,14 @@ import (
 func RunUserServiceExecCommands(
 	ctx context.Context,
 	enclaveId enclave.EnclaveUUID,
-	userServiceCommands map[service.ServiceGUID][]string,
+	userServiceCommands map[service.ServiceUUID][]string,
 	cliModeArgs *shared_helpers.CliModeArgs,
 	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs,
 	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 ) (
-	succesfulUserServiceExecResults map[service.ServiceGUID]*exec_result.ExecResult,
-	erroredUserServiceGuids map[service.ServiceGUID]error,
+	succesfulUserServiceExecResults map[service.ServiceUUID]*exec_result.ExecResult,
+	erroredUserServiceGuids map[service.ServiceUUID]error,
 	resultErr error,
 ) {
 	namespaceName, err := shared_helpers.GetEnclaveNamespaceName(ctx, enclaveId, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
@@ -32,18 +32,18 @@ func RunUserServiceExecCommands(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting namespace name for enclave '%v'", enclaveId)
 	}
 
-	requestedGuids := map[service.ServiceGUID]bool{}
+	requestedGuids := map[service.ServiceUUID]bool{}
 	for guid := range userServiceCommands {
 		requestedGuids[guid] = true
 	}
 	matchingServicesFilters := &service.ServiceFilters{
-		IDs:      nil,
-		GUIDs:    requestedGuids,
+		Names:    nil,
+		UUIDs:    requestedGuids,
 		Statuses: nil,
 	}
 	matchingObjectsAndResources, err := shared_helpers.GetMatchingUserServiceObjectsAndKubernetesResources(ctx, enclaveId, matchingServicesFilters, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services matching the requested GUIDs: %+v", requestedGuids)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services matching the requested UUIDs: %+v", requestedGuids)
 	}
 
 	for guid, commandArgs := range userServiceCommands {
@@ -74,13 +74,13 @@ func RunUserServiceExecCommands(
 	}
 
 	// TODO Parallelize for perf
-	userServiceExecSuccess := map[service.ServiceGUID]*exec_result.ExecResult{}
-	userServiceExecErr := map[service.ServiceGUID]error{}
-	for serviceGuid, serviceCommand := range userServiceCommands {
-		userServiceObjectAndResources, found := matchingObjectsAndResources[serviceGuid]
+	userServiceExecSuccess := map[service.ServiceUUID]*exec_result.ExecResult{}
+	userServiceExecErr := map[service.ServiceUUID]error{}
+	for serviceUuid, serviceCommand := range userServiceCommands {
+		userServiceObjectAndResources, found := matchingObjectsAndResources[serviceUuid]
 		if !found {
 			// Should never happen because we validate that the object exists earlier
-			return nil, nil, stacktrace.NewError("Validated that service '%v' has Kubernetes resources, but couldn't find them when we need to run the exec", serviceGuid)
+			return nil, nil, stacktrace.NewError("Validated that service '%v' has Kubernetes resources, but couldn't find them when we need to run the exec", serviceUuid)
 		}
 		// Don't need to validate that this is non-nil because we did so before we started executing
 		userServicePod := userServiceObjectAndResources.KubernetesResources.Pod
@@ -97,18 +97,18 @@ func RunUserServiceExecCommands(
 			concurrentBuffer,
 		)
 		if err != nil {
-			userServiceExecErr[serviceGuid] = stacktrace.Propagate(
+			userServiceExecErr[serviceUuid] = stacktrace.Propagate(
 				err,
 				"Expected to be able to execute command '%+v' in user service container '%v' in Kubernetes pod '%v' "+
 					"for Kurtosis service with guid '%v', instead a non-nil error was returned",
 				serviceCommand,
 				userServiceContainerName,
 				userServicePodName,
-				serviceGuid,
+				serviceUuid,
 			)
 			continue
 		}
-		userServiceExecSuccess[serviceGuid] = exec_result.NewExecResult(exitCode, outputBuffer.String())
+		userServiceExecSuccess[serviceUuid] = exec_result.NewExecResult(exitCode, outputBuffer.String())
 	}
 	return userServiceExecSuccess, userServiceExecErr, nil
 }

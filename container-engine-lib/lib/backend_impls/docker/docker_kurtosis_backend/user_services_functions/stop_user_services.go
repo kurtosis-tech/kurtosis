@@ -16,8 +16,8 @@ func StopUserServices(
 	filters *service.ServiceFilters,
 	dockerManager *docker_manager.DockerManager,
 ) (
-	resultSuccessfulServiceGUIDs map[service.ServiceGUID]bool,
-	resultErroredServiceGUIDs map[service.ServiceGUID]error,
+	resultSuccessfulServiceUUIDs map[service.ServiceUUID]bool,
+	resultErroredServiceUUIDs map[service.ServiceUUID]error,
 	resultErr error,
 ) {
 	allServiceObjs, allDockerResources, err := shared_helpers.GetMatchingUserServiceObjsAndDockerResourcesNoMutex(ctx, enclaveUuid, filters, dockerManager)
@@ -26,11 +26,11 @@ func StopUserServices(
 	}
 
 	servicesToStopByContainerId := map[string]interface{}{}
-	for guid, serviceResources := range allDockerResources {
-		serviceObj, found := allServiceObjs[guid]
+	for uuid, serviceResources := range allDockerResources {
+		serviceObj, found := allServiceObjs[uuid]
 		if !found {
 			// Should never happen; there should be a 1:1 mapping between service_objects:docker_resources by GUID
-			return nil, nil, stacktrace.NewError("No service object found for service '%v' that had Docker resources", guid)
+			return nil, nil, stacktrace.NewError("No service object found for service '%v' that had Docker resources", uuid)
 		}
 		servicesToStopByContainerId[serviceResources.ServiceContainer.GetId()] = serviceObj
 	}
@@ -47,30 +47,30 @@ func StopUserServices(
 		return nil
 	}
 
-	successfulGuidStrs, erroredGuidStrs, err := docker_operation_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
+	successfulUuidStrs, erroredUuidStrs, err := docker_operation_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
 		ctx,
 		servicesToStopByContainerId,
 		dockerManager,
-		extractServiceGUIDFromServiceObj,
+		extractServiceUUIDFromServiceObj,
 		dockerOperation,
 	)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred killing user service containers matching filters '%+v'", filters)
 	}
 
-	successfulGuids := map[service.ServiceGUID]bool{}
-	for guidStr := range successfulGuidStrs {
-		successfulGuids[service.ServiceGUID(guidStr)] = true
+	successfulUuids := map[service.ServiceUUID]bool{}
+	for uuidStr := range successfulUuidStrs {
+		successfulUuids[service.ServiceUUID(uuidStr)] = true
 	}
 
-	erroredGuids := map[service.ServiceGUID]error{}
-	for guidStr, err := range erroredGuidStrs {
-		erroredGuids[service.ServiceGUID(guidStr)] = stacktrace.Propagate(
+	erroredUuids := map[service.ServiceUUID]error{}
+	for uuidStr, err := range erroredUuidStrs {
+		erroredUuids[service.ServiceUUID(uuidStr)] = stacktrace.Propagate(
 			err,
 			"An error occurred stopping service '%v'",
-			guidStr,
+			uuidStr,
 		)
 	}
 
-	return successfulGuids, erroredGuids, nil
+	return successfulUuids, erroredUuids, nil
 }

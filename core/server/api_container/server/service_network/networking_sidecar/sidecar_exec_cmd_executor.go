@@ -39,21 +39,21 @@ type standardSidecarExecCmdExecutor struct {
 	kurtosisBackend backend_interface.KurtosisBackend
 
 	// Service GUID of the networking sidecar in which exec commands should run
-	serviceGUID service.ServiceGUID
+	serviceUUID service.ServiceUUID
 
 	enclaveUuid enclave.EnclaveUUID
 }
 
-func newStandardSidecarExecCmdExecutor(kurtosisBackend backend_interface.KurtosisBackend, serviceGUID service.ServiceGUID, enclaveUuid enclave.EnclaveUUID) *standardSidecarExecCmdExecutor {
-	return &standardSidecarExecCmdExecutor{kurtosisBackend: kurtosisBackend, serviceGUID: serviceGUID, enclaveUuid: enclaveUuid}
+func newStandardSidecarExecCmdExecutor(kurtosisBackend backend_interface.KurtosisBackend, serviceUUID service.ServiceUUID, enclaveUuid enclave.EnclaveUUID) *standardSidecarExecCmdExecutor {
+	return &standardSidecarExecCmdExecutor{kurtosisBackend: kurtosisBackend, serviceUUID: serviceUUID, enclaveUuid: enclaveUuid}
 }
 
 func (executor standardSidecarExecCmdExecutor) exec(ctx context.Context, notShWrappedCmd []string) error {
 
 	shWrappedCmd := shWrapCommand(notShWrappedCmd)
 	var (
-		networkingSidecarCommands = map[service.ServiceGUID][]string{
-			executor.serviceGUID: shWrappedCmd,
+		networkingSidecarCommands = map[service.ServiceUUID][]string{
+			executor.serviceUUID: shWrappedCmd,
 		}
 	)
 
@@ -63,19 +63,19 @@ func (executor standardSidecarExecCmdExecutor) exec(ctx context.Context, notShWr
 		networkingSidecarCommands,
 	)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred running exec command in networking sidecar with GUID '%v'", executor.serviceGUID)
+		return stacktrace.Propagate(err, "An error occurred running exec command in networking sidecar with UUID '%v'", executor.serviceUUID)
 	}
 	if len(erroredNetworkingSidecars) > 0 {
-		sidecarError, sidecarErrorFound := erroredNetworkingSidecars[executor.serviceGUID]
+		sidecarError, sidecarErrorFound := erroredNetworkingSidecars[executor.serviceUUID]
 		if !sidecarErrorFound {
-			return stacktrace.NewError("Unable to find error for networking sidecar with GUID '%v'. This is a bug in kurtosis", executor.serviceGUID)
+			return stacktrace.NewError("Unable to find error for networking sidecar with UUID '%v'. This is a bug in kurtosis", executor.serviceUUID)
 		}
 
-		return stacktrace.Propagate(sidecarError, "An error occurred running exec command in networking sidecar with GUID '%v'", executor.serviceGUID)
+		return stacktrace.Propagate(sidecarError, "An error occurred running exec command in networking sidecar with UUID '%v'", executor.serviceUUID)
 	}
-	execResult, found := successfulNetworkingSidecarExecResults[executor.serviceGUID]
+	execResult, found := successfulNetworkingSidecarExecResults[executor.serviceUUID]
 	if !found {
-		return stacktrace.NewError("Expected to receive the execution result information after running commands from '%+v' for service with GUID '%v'; but none was found", successfulNetworkingSidecarExecResults, executor.serviceGUID)
+		return stacktrace.NewError("Expected to receive the execution result information after running commands from '%+v' for service with UUID '%v'; but none was found", successfulNetworkingSidecarExecResults, executor.serviceUUID)
 	}
 
 	if execResult.GetExitCode() != successExitCode {

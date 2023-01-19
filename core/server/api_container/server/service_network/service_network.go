@@ -14,7 +14,7 @@ import (
 type ServiceNetwork interface {
 	Repartition(
 		ctx context.Context,
-		newPartitionServices map[service_network_types.PartitionID]map[service.ServiceID]bool,
+		newPartitionServices map[service_network_types.PartitionID]map[service.ServiceName]bool,
 		newPartitionConnections map[service_network_types.PartitionConnectionID]partition_topology.PartitionConnection,
 		newDefaultConnection partition_topology.PartitionConnection,
 	) error
@@ -39,7 +39,7 @@ type ServiceNetwork interface {
 
 	StartService(
 		ctx context.Context,
-		serviceId service.ServiceID,
+		serviceId service.ServiceName,
 		serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig,
 	) (
 		*service.Service,
@@ -48,70 +48,38 @@ type ServiceNetwork interface {
 
 	StartServices(
 		ctx context.Context,
-		serviceConfigs map[service.ServiceID]*kurtosis_core_rpc_api_bindings.ServiceConfig,
+		serviceConfigs map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig,
 	) (
-		map[service.ServiceID]*service.Service,
-		map[service.ServiceID]error,
+		map[service.ServiceName]*service.Service,
+		map[service.ServiceName]error,
 	)
 
 	UpdateService(
 		ctx context.Context,
-		updateServiceConfigs map[service.ServiceID]*kurtosis_core_rpc_api_bindings.UpdateServiceConfig,
+		updateServiceConfigs map[service.ServiceName]*kurtosis_core_rpc_api_bindings.UpdateServiceConfig,
 	) (
-		map[service.ServiceID]bool,
-		map[service.ServiceID]error,
+		map[service.ServiceName]bool,
+		map[service.ServiceName]error,
 		error,
 	)
 
-	RemoveService(
-		ctx context.Context,
-		serviceId service.ServiceID,
-	) (service.ServiceGUID, error)
+	RemoveService(ctx context.Context, serviceIdentifier string) (service.ServiceUUID, error)
 
-	PauseService(
-		ctx context.Context,
-		serviceId service.ServiceID,
-	) error
+	PauseService(ctx context.Context, serviceIdentifier string) error
 
-	UnpauseService(
-		ctx context.Context,
-		serviceId service.ServiceID,
-	) error
+	UnpauseService(ctx context.Context, serviceIdentifier string) error
 
-	ExecCommand(
-		ctx context.Context,
-		serviceId service.ServiceID,
-		command []string,
-	) (int32, string, error)
+	ExecCommand(ctx context.Context, serviceIdentifier string, command []string) (int32, string, error)
 
-	HttpRequestService(
-		ctx context.Context,
-		serviceId service.ServiceID,
-		portId string,
-		method string,
-		contentType string,
-		endpoint string,
-		body string,
-	) (*http.Response, error)
+	HttpRequestService(ctx context.Context, serviceIdentifier string, portId string, method string, contentType string, endpoint string, body string) (*http.Response, error)
 
-	GetService(ctx context.Context, serviceId service.ServiceID) (
-		*service.Service,
-		error,
-	)
+	GetService(ctx context.Context, serviceIdentifier string) (*service.Service, error)
 
-	CopyFilesFromService(
-		ctx context.Context,
-		serviceId service.ServiceID,
-		srcPath string,
-		artifactName string,
-	) (
-		enclave_data_directory.FilesArtifactUUID,
-		error,
-	)
+	CopyFilesFromService(ctx context.Context, serviceIdentifier string, srcPath string, artifactName string) (enclave_data_directory.FilesArtifactUUID, error)
 
-	GetServiceIDs() map[service.ServiceID]bool
+	GetServiceNames() map[service.ServiceName]bool
 
-	GetIPAddressForService(serviceID service.ServiceID) (net.IP, bool)
+	GetIPAddressForService(serviceName service.ServiceName) (net.IP, bool)
 
 	RenderTemplates(templatesAndDataByDestinationRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, artifactName string) (enclave_data_directory.FilesArtifactUUID, error)
 

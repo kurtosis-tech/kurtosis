@@ -2362,7 +2362,7 @@ proto.engine_api.GetServiceLogsArgs.prototype.toObject = function(opt_includeIns
 proto.engine_api.GetServiceLogsArgs.toObject = function(includeInstance, msg) {
   var f, obj = {
     enclaveIdentifier: jspb.Message.getFieldWithDefault(msg, 1, ""),
-    serviceGuidSetMap: (f = msg.getServiceGuidSetMap()) ? f.toObject(includeInstance, undefined) : [],
+    serviceUuidSetMap: (f = msg.getServiceUuidSetMap()) ? f.toObject(includeInstance, undefined) : [],
     followLogs: jspb.Message.getBooleanFieldWithDefault(msg, 3, false),
     conjunctiveFiltersList: jspb.Message.toObjectList(msg.getConjunctiveFiltersList(),
     proto.engine_api.LogLineFilter.toObject, includeInstance)
@@ -2407,7 +2407,7 @@ proto.engine_api.GetServiceLogsArgs.deserializeBinaryFromReader = function(msg, 
       msg.setEnclaveIdentifier(value);
       break;
     case 2:
-      var value = msg.getServiceGuidSetMap();
+      var value = msg.getServiceUuidSetMap();
       reader.readMessage(value, function(message, reader) {
         jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readBool, null, "", false);
          });
@@ -2457,7 +2457,7 @@ proto.engine_api.GetServiceLogsArgs.serializeBinaryToWriter = function(message, 
       f
     );
   }
-  f = message.getServiceGuidSetMap(true);
+  f = message.getServiceUuidSetMap(true);
   if (f && f.getLength() > 0) {
     f.serializeBinary(2, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeBool);
   }
@@ -2498,12 +2498,12 @@ proto.engine_api.GetServiceLogsArgs.prototype.setEnclaveIdentifier = function(va
 
 
 /**
- * map<string, bool> service_guid_set = 2;
+ * map<string, bool> service_uuid_set = 2;
  * @param {boolean=} opt_noLazyCreate Do not create the map if
  * empty, instead returning `undefined`
  * @return {!jspb.Map<string,boolean>}
  */
-proto.engine_api.GetServiceLogsArgs.prototype.getServiceGuidSetMap = function(opt_noLazyCreate) {
+proto.engine_api.GetServiceLogsArgs.prototype.getServiceUuidSetMap = function(opt_noLazyCreate) {
   return /** @type {!jspb.Map<string,boolean>} */ (
       jspb.Message.getMapField(this, 2, opt_noLazyCreate,
       null));
@@ -2514,8 +2514,8 @@ proto.engine_api.GetServiceLogsArgs.prototype.getServiceGuidSetMap = function(op
  * Clears values from the map. The map will be non-null.
  * @return {!proto.engine_api.GetServiceLogsArgs} returns this
  */
-proto.engine_api.GetServiceLogsArgs.prototype.clearServiceGuidSetMap = function() {
-  this.getServiceGuidSetMap().clear();
+proto.engine_api.GetServiceLogsArgs.prototype.clearServiceUuidSetMap = function() {
+  this.getServiceUuidSetMap().clear();
   return this;};
 
 
@@ -2607,8 +2607,8 @@ proto.engine_api.GetServiceLogsResponse.prototype.toObject = function(opt_includ
  */
 proto.engine_api.GetServiceLogsResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-    serviceLogsByServiceGuidMap: (f = msg.getServiceLogsByServiceGuidMap()) ? f.toObject(includeInstance, proto.engine_api.LogLine.toObject) : [],
-    notFoundServiceGuidSetMap: (f = msg.getNotFoundServiceGuidSetMap()) ? f.toObject(includeInstance, undefined) : []
+    serviceLogsByServiceUuidMap: (f = msg.getServiceLogsByServiceUuidMap()) ? f.toObject(includeInstance, proto.engine_api.LogLine.toObject) : [],
+    notFoundServiceUuidSetMap: (f = msg.getNotFoundServiceUuidSetMap()) ? f.toObject(includeInstance, undefined) : []
   };
 
   if (includeInstance) {
@@ -2646,13 +2646,13 @@ proto.engine_api.GetServiceLogsResponse.deserializeBinaryFromReader = function(m
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = msg.getServiceLogsByServiceGuidMap();
+      var value = msg.getServiceLogsByServiceUuidMap();
       reader.readMessage(value, function(message, reader) {
         jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.engine_api.LogLine.deserializeBinaryFromReader, "", new proto.engine_api.LogLine());
          });
       break;
     case 2:
-      var value = msg.getNotFoundServiceGuidSetMap();
+      var value = msg.getNotFoundServiceUuidSetMap();
       reader.readMessage(value, function(message, reader) {
         jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readBool, null, "", false);
          });
@@ -2686,11 +2686,11 @@ proto.engine_api.GetServiceLogsResponse.prototype.serializeBinary = function() {
  */
 proto.engine_api.GetServiceLogsResponse.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
-  f = message.getServiceLogsByServiceGuidMap(true);
+  f = message.getServiceLogsByServiceUuidMap(true);
   if (f && f.getLength() > 0) {
     f.serializeBinary(1, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.engine_api.LogLine.serializeBinaryToWriter);
   }
-  f = message.getNotFoundServiceGuidSetMap(true);
+  f = message.getNotFoundServiceUuidSetMap(true);
   if (f && f.getLength() > 0) {
     f.serializeBinary(2, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeBool);
   }
@@ -2698,12 +2698,12 @@ proto.engine_api.GetServiceLogsResponse.serializeBinaryToWriter = function(messa
 
 
 /**
- * map<string, LogLine> service_logs_by_service_guid = 1;
+ * map<string, LogLine> service_logs_by_service_uuid = 1;
  * @param {boolean=} opt_noLazyCreate Do not create the map if
  * empty, instead returning `undefined`
  * @return {!jspb.Map<string,!proto.engine_api.LogLine>}
  */
-proto.engine_api.GetServiceLogsResponse.prototype.getServiceLogsByServiceGuidMap = function(opt_noLazyCreate) {
+proto.engine_api.GetServiceLogsResponse.prototype.getServiceLogsByServiceUuidMap = function(opt_noLazyCreate) {
   return /** @type {!jspb.Map<string,!proto.engine_api.LogLine>} */ (
       jspb.Message.getMapField(this, 1, opt_noLazyCreate,
       proto.engine_api.LogLine));
@@ -2714,18 +2714,18 @@ proto.engine_api.GetServiceLogsResponse.prototype.getServiceLogsByServiceGuidMap
  * Clears values from the map. The map will be non-null.
  * @return {!proto.engine_api.GetServiceLogsResponse} returns this
  */
-proto.engine_api.GetServiceLogsResponse.prototype.clearServiceLogsByServiceGuidMap = function() {
-  this.getServiceLogsByServiceGuidMap().clear();
+proto.engine_api.GetServiceLogsResponse.prototype.clearServiceLogsByServiceUuidMap = function() {
+  this.getServiceLogsByServiceUuidMap().clear();
   return this;};
 
 
 /**
- * map<string, bool> not_found_service_guid_set = 2;
+ * map<string, bool> not_found_service_uuid_set = 2;
  * @param {boolean=} opt_noLazyCreate Do not create the map if
  * empty, instead returning `undefined`
  * @return {!jspb.Map<string,boolean>}
  */
-proto.engine_api.GetServiceLogsResponse.prototype.getNotFoundServiceGuidSetMap = function(opt_noLazyCreate) {
+proto.engine_api.GetServiceLogsResponse.prototype.getNotFoundServiceUuidSetMap = function(opt_noLazyCreate) {
   return /** @type {!jspb.Map<string,boolean>} */ (
       jspb.Message.getMapField(this, 2, opt_noLazyCreate,
       null));
@@ -2736,8 +2736,8 @@ proto.engine_api.GetServiceLogsResponse.prototype.getNotFoundServiceGuidSetMap =
  * Clears values from the map. The map will be non-null.
  * @return {!proto.engine_api.GetServiceLogsResponse} returns this
  */
-proto.engine_api.GetServiceLogsResponse.prototype.clearNotFoundServiceGuidSetMap = function() {
-  this.getNotFoundServiceGuidSetMap().clear();
+proto.engine_api.GetServiceLogsResponse.prototype.clearNotFoundServiceUuidSetMap = function() {
+  this.getNotFoundServiceUuidSetMap().clear();
   return this;};
 
 

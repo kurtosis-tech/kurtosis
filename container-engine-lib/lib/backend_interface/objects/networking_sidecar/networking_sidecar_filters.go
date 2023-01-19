@@ -11,9 +11,9 @@ type NetworkingSidecarFilters struct {
 	// If nil or empty, will match all enclave UUIDs
 	EnclaveUUIDs map[enclave.EnclaveUUID]bool
 
-	// Disjunctive set of user service GUIDs to find networking sidecars for
-	// If nil or empty, will match all GUIDs
-	UserServiceGUIDs map[service.ServiceGUID]bool
+	// Disjunctive set of user service UUIDs to find networking sidecars for
+	// If nil or empty, will match all UUIDs
+	UserServiceUUIDs map[service.ServiceUUID]bool
 
 	// Disjunctive set of statuses that returned networking sidecars must conform to
 	// If nil or empty, will match all statuses

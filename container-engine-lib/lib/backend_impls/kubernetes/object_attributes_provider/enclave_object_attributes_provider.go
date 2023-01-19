@@ -26,12 +26,12 @@ type KubernetesEnclaveObjectAttributesProvider interface {
 	ForEnclaveNamespace(isPartitioningEnabled bool, creationTime time.Time, enclaveName string) (KubernetesObjectAttributes, error)
 	ForApiContainer() KubernetesApiContainerObjectAttributesProvider
 	ForUserServiceService(
-		guid service.ServiceGUID,
-		id service.ServiceID,
+		uuid service.ServiceUUID,
+		id service.ServiceName,
 	) (KubernetesObjectAttributes, error)
 	ForUserServicePod(
-		guid service.ServiceGUID,
-		id service.ServiceID,
+		uuid service.ServiceUUID,
+		id service.ServiceName,
 		privatePorts map[string]*port_spec.PortSpec,
 	) (KubernetesObjectAttributes, error)
 }
@@ -119,33 +119,33 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForApiContainer()
 }
 
 func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForNetworkingSidecarContainer(
-	serviceGUIDSidecarAttachedTo service.ServiceGUID,
+	serviceUUIDSidecarAttachedTo service.ServiceUUID,
 ) (KubernetesObjectAttributes, error) {
 	panic("implement me")
 }
 
 func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServiceService(
-	serviceGUID service.ServiceGUID,
-	serviceID service.ServiceID,
+	serviceUUID service.ServiceUUID,
+	serviceName service.ServiceName,
 ) (
 	KubernetesObjectAttributes,
 	error,
 ) {
 	name, err := getCompositeKubernetesObjectName([]string{
 		userServicePrefix,
-		string(serviceGUID),
+		string(serviceUUID),
 	})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to get name for user service service.")
 	}
 
-	labels, err := provider.getLabelsForEnclaveObjectWithIDAndGUID(string(serviceID), string(serviceGUID))
+	labels, err := provider.getLabelsForEnclaveObjectWithIDAndGUID(string(serviceName), string(serviceUUID))
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"Failed to get labels for user service service with ID '%s' and GUID '%s'.",
-			string(serviceID),
-			string(serviceGUID),
+			"Failed to get labels for user service service with ID '%s' and UUID '%s'.",
+			string(serviceName),
+			string(serviceUUID),
 		)
 	}
 	labels[label_key_consts.KurtosisResourceTypeKubernetesLabelKey] = label_value_consts.UserServiceKurtosisResourceTypeKubernetesLabelValue
@@ -162,13 +162,13 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServiceSer
 }
 
 func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServicePod(
-	guid service.ServiceGUID,
-	id service.ServiceID,
+	uuid service.ServiceUUID,
+	id service.ServiceName,
 	privatePorts map[string]*port_spec.PortSpec,
 ) (KubernetesObjectAttributes, error) {
 	name, err := getCompositeKubernetesObjectName([]string{
 		userServicePrefix,
-		string(guid),
+		string(uuid),
 	})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to get name for user service pod")
@@ -179,13 +179,13 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServicePod
 		return nil, stacktrace.Propagate(err, "An error occurred serializing the following user service port specs to a string for storing in the ports label: %+v", privatePorts)
 	}
 
-	labels, err := provider.getLabelsForEnclaveObjectWithIDAndGUID(string(id), string(guid))
+	labels, err := provider.getLabelsForEnclaveObjectWithIDAndGUID(string(id), string(uuid))
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"Failed to get labels for user service pod with ID '%s' and GUID '%s'",
+			"Failed to get labels for user service pod with ID '%s' and UUID '%s'",
 			id,
-			guid,
+			uuid,
 		)
 	}
 	labels[label_key_consts.KurtosisResourceTypeKubernetesLabelKey] = label_value_consts.UserServiceKurtosisResourceTypeKubernetesLabelValue
@@ -218,23 +218,23 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) getLabelsForEncla
 	}, nil
 }
 
-func (provider *kubernetesEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveObjectWithGUID(guid string) (map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue, error) {
+func (provider *kubernetesEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveObjectWithUUID(uuid string) (map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue, error) {
 	labels, err := provider.getLabelsForEnclaveObject()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to get labels for enclave object with guid '%v'", guid)
+		return nil, stacktrace.Propagate(err, "Failed to get labels for enclave object with uuid '%v'", uuid)
 	}
-	guidLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(guid)
+	uuidLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(uuid)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes label value from GUID string '%v'", guid)
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes label value from UUID string '%v'", uuid)
 	}
-	labels[label_key_consts.GUIDKubernetesLabelKey] = guidLabelValue
+	labels[label_key_consts.GUIDKubernetesLabelKey] = uuidLabelValue
 	return labels, nil
 }
 
-func (provider *kubernetesEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveObjectWithIDAndGUID(id, guid string) (map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue, error) {
-	labels, err := provider.getLabelsForEnclaveObjectWithGUID(guid)
+func (provider *kubernetesEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveObjectWithIDAndGUID(id, uuid string) (map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue, error) {
+	labels, err := provider.getLabelsForEnclaveObjectWithUUID(uuid)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave object labels with GUID '%v'", guid)
+		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave object labels with GUID '%v'", uuid)
 	}
 	idLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(id)
 	if err != nil {

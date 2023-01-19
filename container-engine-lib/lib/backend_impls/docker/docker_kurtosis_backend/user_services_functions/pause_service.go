@@ -12,19 +12,19 @@ import (
 func PauseService(
 	ctx context.Context,
 	enclaveId enclave.EnclaveUUID,
-	serviceGuid service.ServiceGUID,
+	serviceUuid service.ServiceUUID,
 	dockerManager *docker_manager.DockerManager,
 ) error {
-	_, dockerResources, err := shared_helpers.GetSingleUserServiceObjAndResourcesNoMutex(ctx, enclaveId, serviceGuid, dockerManager)
+	_, dockerResources, err := shared_helpers.GetSingleUserServiceObjAndResourcesNoMutex(ctx, enclaveId, serviceUuid, dockerManager)
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed to get information about service '%v' from Kurtosis ", serviceGuid)
+		return stacktrace.Propagate(err, "Failed to get information about service '%v' from Kurtosis ", serviceUuid)
 	}
 	container := dockerResources.ServiceContainer
 	if container == nil {
-		return stacktrace.NewError("Cannot pause service '%v' as it doesn't have a container to pause", serviceGuid)
+		return stacktrace.NewError("Cannot pause service '%v' as it doesn't have a container to pause", serviceUuid)
 	}
 	if err = dockerManager.PauseContainer(ctx, container.GetId()); err != nil {
-		return stacktrace.Propagate(err, "Failed to pause container '%v' for service '%v' ", container.GetName(), serviceGuid)
+		return stacktrace.Propagate(err, "Failed to pause container '%v' for service '%v' ", container.GetName(), serviceUuid)
 	}
 	return nil
 }

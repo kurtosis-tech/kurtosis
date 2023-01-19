@@ -17,7 +17,7 @@ const (
 	testName              = "files-artifact-mounting"
 	isPartitioningEnabled = false
 
-	fileServerServiceId services.ServiceID = "file-server"
+	fileServerServiceId services.ServiceName = "file-server"
 
 	testFilesArtifactUrl = "https://kurtosis-public-access.s3.us-east-1.amazonaws.com/test-artifacts/static-fileserver-files.tgz"
 	testArtifactName     = "test-artifact-name"

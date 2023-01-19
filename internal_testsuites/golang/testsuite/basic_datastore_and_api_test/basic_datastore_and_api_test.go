@@ -14,8 +14,8 @@ const (
 	testName              = "basic-datastore-and-api"
 	isPartitioningEnabled = false
 
-	datastoreServiceId services.ServiceID = "datastore"
-	apiServiceId       services.ServiceID = "api"
+	datastoreServiceId services.ServiceName = "datastore"
+	apiServiceId       services.ServiceName = "api"
 
 	testPersonId     = "23"
 	testNumBooksRead = uint32(3)

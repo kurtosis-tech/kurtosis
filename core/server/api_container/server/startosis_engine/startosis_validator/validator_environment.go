@@ -8,15 +8,15 @@ import (
 type ValidatorEnvironment struct {
 	isNetworkPartitioningEnabled bool
 	requiredDockerImages         map[string]bool
-	serviceIDs                   map[service.ServiceID]bool
+	serviceNames                 map[service.ServiceName]bool
 	artifactNames                map[string]bool
 }
 
-func NewValidatorEnvironment(isNetworkPartitioningEnabled bool, serviceIDs map[service.ServiceID]bool, artifactNames map[string]bool) *ValidatorEnvironment {
+func NewValidatorEnvironment(isNetworkPartitioningEnabled bool, serviceNames map[service.ServiceName]bool, artifactNames map[string]bool) *ValidatorEnvironment {
 	return &ValidatorEnvironment{
 		isNetworkPartitioningEnabled: isNetworkPartitioningEnabled,
 		requiredDockerImages:         map[string]bool{},
-		serviceIDs:                   serviceIDs,
+		serviceNames:                 serviceNames,
 		artifactNames:                artifactNames,
 	}
 }
@@ -29,16 +29,16 @@ func (environment *ValidatorEnvironment) GetNumberOfContainerImages() uint32 {
 	return uint32(len(environment.requiredDockerImages))
 }
 
-func (environment *ValidatorEnvironment) AddServiceId(serviceId service.ServiceID) {
-	environment.serviceIDs[serviceId] = true
+func (environment *ValidatorEnvironment) AddServiceId(serviceId service.ServiceName) {
+	environment.serviceNames[serviceId] = true
 }
 
-func (environment *ValidatorEnvironment) RemoveServiceId(serviceId service.ServiceID) {
-	delete(environment.serviceIDs, serviceId)
+func (environment *ValidatorEnvironment) RemoveServiceId(serviceId service.ServiceName) {
+	delete(environment.serviceNames, serviceId)
 }
 
-func (environment *ValidatorEnvironment) DoesServiceIdExist(serviceId service.ServiceID) bool {
-	_, ok := environment.serviceIDs[serviceId]
+func (environment *ValidatorEnvironment) DoesServiceIdExist(serviceId service.ServiceName) bool {
+	_, ok := environment.serviceNames[serviceId]
 	return ok
 }
 

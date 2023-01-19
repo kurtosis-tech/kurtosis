@@ -24,7 +24,9 @@ const (
 	isEnclaveIdArgOptional  = false
 	isEnclaveIdArgGreedy    = false
 
-	serviceIdArgKey = "service-id"
+	serviceNameArgKey   = "service-name"
+	serviceNameTitleKey = "Service Name"
+	serviceUuidTitleKey = "Service UUID"
 
 	serviceImageArgKey = "image"
 
@@ -106,7 +108,7 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 			isEnclaveIdArgGreedy,
 		),
 		{
-			Key: serviceIdArgKey,
+			Key: serviceNameArgKey,
 		},
 		{
 			Key: serviceImageArgKey,
@@ -190,9 +192,9 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the enclave identifier value using key '%v'", enclaveIdentifierArgKey)
 	}
 
-	serviceId, err := args.GetNonGreedyArg(serviceIdArgKey)
+	serviceName, err := args.GetNonGreedyArg(serviceNameArgKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the service ID value using key '%v'", serviceIdArgKey)
+		return stacktrace.Propagate(err, "An error occurred getting the service name value using key '%v'", serviceNameArgKey)
 	}
 
 	image, err := args.GetNonGreedyArg(serviceImageArgKey)
@@ -255,7 +257,7 @@ func run(
 
 	// TODO Allow adding services to an already-repartitioned enclave
 	starlarkRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, fmt.Sprintf(`def run(plan):
-	plan.add_service(service_id = "%s", config = %s)`, serviceId, serviceConfigStarlark), "", false)
+	plan.add_service(service_id = "%s", config = %s)`, serviceName, serviceConfigStarlark), "", false)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error has occurred when running Starlark to add service")
 	}
@@ -263,12 +265,12 @@ func run(
 		return stacktrace.NewError("An error has occurred when adding service: %s\nThis is a bug in Kurtosis, please report.", starlarkRunResult.InterpretationError)
 	}
 	if len(starlarkRunResult.ValidationErrors) > 0 {
-		return stacktrace.NewError("An error occurred when validating add service '%v' to enclave '%v': %s", serviceId, enclaveIdentifier, starlarkRunResult.ValidationErrors)
+		return stacktrace.NewError("An error occurred when validating add service '%v' to enclave '%v': %s", serviceName, enclaveIdentifier, starlarkRunResult.ValidationErrors)
 	}
 	if starlarkRunResult.ExecutionError != nil {
-		return stacktrace.NewError("An error occurred adding service '%v' to enclave '%v': %s", serviceId, enclaveIdentifier, starlarkRunResult.ExecutionError)
+		return stacktrace.NewError("An error occurred adding service '%v' to enclave '%v': %s", serviceName, enclaveIdentifier, starlarkRunResult.ExecutionError)
 	}
-	serviceCtx, err := enclaveCtx.GetServiceContext(services.ServiceID(serviceId))
+	serviceCtx, err := enclaveCtx.GetServiceContext(serviceName)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error has occurred when getting service added using add command")
 	}
@@ -277,13 +279,15 @@ func run(
 	publicPorts := serviceCtx.GetPublicPorts()
 	publicIpAddr := serviceCtx.GetMaybePublicIPAddress()
 
-	fmt.Printf("Service ID: %v\n", serviceId)
+	fmt.Printf("Service ID: %v\n", serviceName)
 	if len(privatePorts) > 0 {
 		fmt.Println("Ports Bindings:")
 	} else {
 		fmt.Println("Port Bindings: <none defined>")
 	}
 	keyValuePrinter := output_printers.NewKeyValuePrinter()
+	keyValuePrinter.AddPair(serviceNameTitleKey, string(serviceCtx.GetServiceName()))
+	keyValuePrinter.AddPair(serviceUuidTitleKey, string(serviceCtx.GetServiceUUID()))
 	for portId, privatePortSpec := range privatePorts {
 		publicPortSpec, found := publicPorts[portId]
 		// With Kubernetes, it's possible for a private port not to have a corresponding public port

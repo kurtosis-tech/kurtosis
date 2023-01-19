@@ -1,4 +1,4 @@
-import { ServiceID } from "kurtosis-sdk"
+import { ServiceName } from "kurtosis-sdk"
 import log from "loglevel";
 import { Result, ok, err } from "neverthrow";
 import axios from "axios"
@@ -9,7 +9,7 @@ import {startFileServer} from "../../test_helpers/test_helpers";
 const TEST_NAME = "files-artifact-mounting"
 const IS_PARTITIONING_ENABLED = false
 
-const FILE_SERVER_SERVICE_ID: ServiceID = "file-server"
+const FILE_SERVER_SERVICE_ID: ServiceName = "file-server"
 
 const TEST_FILES_ARTIFACT_URL = "https://kurtosis-public-access.s3.us-east-1.amazonaws.com/test-artifacts/static-fileserver-files.tgz"
 const TEST_ARTIFACT_NAME = "test-artifact"

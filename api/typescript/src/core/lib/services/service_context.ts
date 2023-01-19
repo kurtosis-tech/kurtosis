@@ -2,7 +2,7 @@ import { err, ok, Result } from 'neverthrow';
 import { newExecCommandArgs, newPauseServiceArgs, newUnpauseServiceArgs } from '../constructor_calls';
 import type { ExecCommandArgs } from '../../kurtosis_core_rpc_api_bindings/api_container_service_pb';
 import type { PortSpec } from './port_spec';
-import type { ServiceID, ServiceGUID } from './service';
+import type { ServiceName, ServiceUUID } from './service';
 import { GenericApiContainerClient } from '../enclaves/generic_api_container_client';
 import {PauseServiceArgs, UnpauseServiceArgs} from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 
@@ -10,22 +10,22 @@ import {PauseServiceArgs, UnpauseServiceArgs} from "../../kurtosis_core_rpc_api_
 export class ServiceContext {
     constructor(
         private readonly client: GenericApiContainerClient,
-        private readonly serviceId: ServiceID,
-        private readonly serviceGuid: ServiceGUID,
+        private readonly serviceName: ServiceName,
+        private readonly serviceUuid: ServiceUUID,
         private readonly privateIpAddress: string,
         private readonly privatePorts: Map<string, PortSpec>,
         private readonly publicIpAddress: string,
         private readonly publicPorts: Map<string, PortSpec>,
     ) {}
 
-    // Docs available at https://docs.kurtosis.com/sdk/#getserviceid---serviceid
-    public getServiceID(): ServiceID { 
-        return this.serviceId;
+    // Docs available at https://docs.kurtosis.com/sdk/#getservicename---servicename
+    public getServiceName(): ServiceName {
+        return this.serviceName;
     }
 
-    // Docs available at https://docs.kurtosis.com/sdk/#getserviceguid---serviceguid
-    public getServiceGUID(): ServiceGUID {
-        return this.serviceGuid;
+    // Docs available at https://docs.kurtosis.com/sdk/#getserviceuuid---serviceuuid
+    public getServiceUUID(): ServiceUUID {
+        return this.serviceUuid;
     }
 
     // Docs available at https://docs.kurtosis.com/sdk/#getprivateipaddress---string
@@ -50,7 +50,7 @@ export class ServiceContext {
 
     // Docs available at https://docs.kurtosis.com/sdk/#execcommandliststring-command---int-exitcode-string-logs
     public async execCommand(command: string[]): Promise<Result<[number, string], Error>> {
-        const execCommandArgs: ExecCommandArgs = newExecCommandArgs(this.serviceId, command);
+        const execCommandArgs: ExecCommandArgs = newExecCommandArgs(this.serviceName, command);
 
         const execCommandResponseResult = await this.client.execCommand(execCommandArgs)
         if(execCommandResponseResult.isErr()){

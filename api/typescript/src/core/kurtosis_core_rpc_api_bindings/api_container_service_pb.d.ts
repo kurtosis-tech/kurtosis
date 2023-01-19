@@ -36,8 +36,8 @@ export namespace Port {
 }
 
 export class ServiceInfo extends jspb.Message {
-  getServiceGuid(): string;
-  setServiceGuid(value: string): ServiceInfo;
+  getServiceUuid(): string;
+  setServiceUuid(value: string): ServiceInfo;
 
   getPrivateIpAddr(): string;
   setPrivateIpAddr(value: string): ServiceInfo;
@@ -51,6 +51,12 @@ export class ServiceInfo extends jspb.Message {
   getMaybePublicPortsMap(): jspb.Map<string, Port>;
   clearMaybePublicPortsMap(): ServiceInfo;
 
+  getName(): string;
+  setName(value: string): ServiceInfo;
+
+  getShortenedUuid(): string;
+  setShortenedUuid(value: string): ServiceInfo;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ServiceInfo.AsObject;
   static toObject(includeInstance: boolean, msg: ServiceInfo): ServiceInfo.AsObject;
@@ -61,11 +67,13 @@ export class ServiceInfo extends jspb.Message {
 
 export namespace ServiceInfo {
   export type AsObject = {
-    serviceGuid: string,
+    serviceUuid: string,
     privateIpAddr: string,
     privatePortsMap: Array<[string, Port.AsObject]>,
     maybePublicIpAddr: string,
     maybePublicPortsMap: Array<[string, Port.AsObject]>,
+    name: string,
+    shortenedUuid: string,
   }
 }
 
@@ -566,8 +574,8 @@ export namespace StarlarkRunFinishedEvent {
 }
 
 export class StartServicesArgs extends jspb.Message {
-  getServiceIdsToConfigsMap(): jspb.Map<string, ServiceConfig>;
-  clearServiceIdsToConfigsMap(): StartServicesArgs;
+  getServiceNamesToConfigsMap(): jspb.Map<string, ServiceConfig>;
+  clearServiceNamesToConfigsMap(): StartServicesArgs;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StartServicesArgs.AsObject;
@@ -579,16 +587,16 @@ export class StartServicesArgs extends jspb.Message {
 
 export namespace StartServicesArgs {
   export type AsObject = {
-    serviceIdsToConfigsMap: Array<[string, ServiceConfig.AsObject]>,
+    serviceNamesToConfigsMap: Array<[string, ServiceConfig.AsObject]>,
   }
 }
 
 export class StartServicesResponse extends jspb.Message {
-  getSuccessfulServiceIdsToServiceInfoMap(): jspb.Map<string, ServiceInfo>;
-  clearSuccessfulServiceIdsToServiceInfoMap(): StartServicesResponse;
+  getSuccessfulServiceNameToServiceInfoMap(): jspb.Map<string, ServiceInfo>;
+  clearSuccessfulServiceNameToServiceInfoMap(): StartServicesResponse;
 
-  getFailedServiceIdsToErrorMap(): jspb.Map<string, string>;
-  clearFailedServiceIdsToErrorMap(): StartServicesResponse;
+  getFailedServiceNameToErrorMap(): jspb.Map<string, string>;
+  clearFailedServiceNameToErrorMap(): StartServicesResponse;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StartServicesResponse.AsObject;
@@ -600,14 +608,14 @@ export class StartServicesResponse extends jspb.Message {
 
 export namespace StartServicesResponse {
   export type AsObject = {
-    successfulServiceIdsToServiceInfoMap: Array<[string, ServiceInfo.AsObject]>,
-    failedServiceIdsToErrorMap: Array<[string, string]>,
+    successfulServiceNameToServiceInfoMap: Array<[string, ServiceInfo.AsObject]>,
+    failedServiceNameToErrorMap: Array<[string, string]>,
   }
 }
 
 export class GetServicesArgs extends jspb.Message {
-  getServiceIdsMap(): jspb.Map<string, boolean>;
-  clearServiceIdsMap(): GetServicesArgs;
+  getServiceIdentifiersMap(): jspb.Map<string, boolean>;
+  clearServiceIdentifiersMap(): GetServicesArgs;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): GetServicesArgs.AsObject;
@@ -619,7 +627,7 @@ export class GetServicesArgs extends jspb.Message {
 
 export namespace GetServicesArgs {
   export type AsObject = {
-    serviceIdsMap: Array<[string, boolean]>,
+    serviceIdentifiersMap: Array<[string, boolean]>,
   }
 }
 
@@ -642,8 +650,8 @@ export namespace GetServicesResponse {
 }
 
 export class RemoveServiceArgs extends jspb.Message {
-  getServiceId(): string;
-  setServiceId(value: string): RemoveServiceArgs;
+  getServiceIdentifier(): string;
+  setServiceIdentifier(value: string): RemoveServiceArgs;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RemoveServiceArgs.AsObject;
@@ -655,13 +663,13 @@ export class RemoveServiceArgs extends jspb.Message {
 
 export namespace RemoveServiceArgs {
   export type AsObject = {
-    serviceId: string,
+    serviceIdentifier: string,
   }
 }
 
 export class RemoveServiceResponse extends jspb.Message {
-  getServiceGuid(): string;
-  setServiceGuid(value: string): RemoveServiceResponse;
+  getServiceUuid(): string;
+  setServiceUuid(value: string): RemoveServiceResponse;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RemoveServiceResponse.AsObject;
@@ -673,7 +681,7 @@ export class RemoveServiceResponse extends jspb.Message {
 
 export namespace RemoveServiceResponse {
   export type AsObject = {
-    serviceGuid: string,
+    serviceUuid: string,
   }
 }
 
@@ -706,8 +714,8 @@ export namespace RepartitionArgs {
 }
 
 export class PartitionServices extends jspb.Message {
-  getServiceIdSetMap(): jspb.Map<string, boolean>;
-  clearServiceIdSetMap(): PartitionServices;
+  getServiceNameSetMap(): jspb.Map<string, boolean>;
+  clearServiceNameSetMap(): PartitionServices;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): PartitionServices.AsObject;
@@ -719,7 +727,7 @@ export class PartitionServices extends jspb.Message {
 
 export namespace PartitionServices {
   export type AsObject = {
-    serviceIdSetMap: Array<[string, boolean]>,
+    serviceNameSetMap: Array<[string, boolean]>,
   }
 }
 
@@ -760,8 +768,8 @@ export namespace PartitionConnectionInfo {
 }
 
 export class ExecCommandArgs extends jspb.Message {
-  getServiceId(): string;
-  setServiceId(value: string): ExecCommandArgs;
+  getServiceIdentifier(): string;
+  setServiceIdentifier(value: string): ExecCommandArgs;
 
   getCommandArgsList(): Array<string>;
   setCommandArgsList(value: Array<string>): ExecCommandArgs;
@@ -778,14 +786,14 @@ export class ExecCommandArgs extends jspb.Message {
 
 export namespace ExecCommandArgs {
   export type AsObject = {
-    serviceId: string,
+    serviceIdentifier: string,
     commandArgsList: Array<string>,
   }
 }
 
 export class PauseServiceArgs extends jspb.Message {
-  getServiceId(): string;
-  setServiceId(value: string): PauseServiceArgs;
+  getServiceIdentifier(): string;
+  setServiceIdentifier(value: string): PauseServiceArgs;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): PauseServiceArgs.AsObject;
@@ -797,13 +805,13 @@ export class PauseServiceArgs extends jspb.Message {
 
 export namespace PauseServiceArgs {
   export type AsObject = {
-    serviceId: string,
+    serviceIdentifier: string,
   }
 }
 
 export class UnpauseServiceArgs extends jspb.Message {
-  getServiceId(): string;
-  setServiceId(value: string): UnpauseServiceArgs;
+  getServiceIdentifier(): string;
+  setServiceIdentifier(value: string): UnpauseServiceArgs;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): UnpauseServiceArgs.AsObject;
@@ -815,7 +823,7 @@ export class UnpauseServiceArgs extends jspb.Message {
 
 export namespace UnpauseServiceArgs {
   export type AsObject = {
-    serviceId: string,
+    serviceIdentifier: string,
   }
 }
 
@@ -842,8 +850,8 @@ export namespace ExecCommandResponse {
 }
 
 export class WaitForHttpGetEndpointAvailabilityArgs extends jspb.Message {
-  getServiceId(): string;
-  setServiceId(value: string): WaitForHttpGetEndpointAvailabilityArgs;
+  getServiceIdentifier(): string;
+  setServiceIdentifier(value: string): WaitForHttpGetEndpointAvailabilityArgs;
 
   getPort(): number;
   setPort(value: number): WaitForHttpGetEndpointAvailabilityArgs;
@@ -873,7 +881,7 @@ export class WaitForHttpGetEndpointAvailabilityArgs extends jspb.Message {
 
 export namespace WaitForHttpGetEndpointAvailabilityArgs {
   export type AsObject = {
-    serviceId: string,
+    serviceIdentifier: string,
     port: number,
     path: string,
     initialDelayMilliseconds: number,
@@ -884,8 +892,8 @@ export namespace WaitForHttpGetEndpointAvailabilityArgs {
 }
 
 export class WaitForHttpPostEndpointAvailabilityArgs extends jspb.Message {
-  getServiceId(): string;
-  setServiceId(value: string): WaitForHttpPostEndpointAvailabilityArgs;
+  getServiceIdentifier(): string;
+  setServiceIdentifier(value: string): WaitForHttpPostEndpointAvailabilityArgs;
 
   getPort(): number;
   setPort(value: number): WaitForHttpPostEndpointAvailabilityArgs;
@@ -918,7 +926,7 @@ export class WaitForHttpPostEndpointAvailabilityArgs extends jspb.Message {
 
 export namespace WaitForHttpPostEndpointAvailabilityArgs {
   export type AsObject = {
-    serviceId: string,
+    serviceIdentifier: string,
     port: number,
     path: string,
     requestBody: string,
@@ -1050,8 +1058,8 @@ export namespace StoreWebFilesArtifactResponse {
 }
 
 export class StoreFilesArtifactFromServiceArgs extends jspb.Message {
-  getServiceId(): string;
-  setServiceId(value: string): StoreFilesArtifactFromServiceArgs;
+  getServiceIdentifier(): string;
+  setServiceIdentifier(value: string): StoreFilesArtifactFromServiceArgs;
 
   getSourcePath(): string;
   setSourcePath(value: string): StoreFilesArtifactFromServiceArgs;
@@ -1069,7 +1077,7 @@ export class StoreFilesArtifactFromServiceArgs extends jspb.Message {
 
 export namespace StoreFilesArtifactFromServiceArgs {
   export type AsObject = {
-    serviceId: string,
+    serviceIdentifier: string,
     sourcePath: string,
     name: string,
   }

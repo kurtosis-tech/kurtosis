@@ -20,7 +20,7 @@ func NewMockNetworkingSidecarWrapper() *MockNetworkingSidecarWrapper {
 	return &MockNetworkingSidecarWrapper{updateFunctionCallsPacketLossConfig: []map[string]*partition_topology.PartitionConnection{}}
 }
 
-func (sidecar MockNetworkingSidecarWrapper) GetServiceGUID() service.ServiceGUID {
+func (sidecar MockNetworkingSidecarWrapper) GetServiceUUID() service.ServiceUUID {
 	return ""
 }
 

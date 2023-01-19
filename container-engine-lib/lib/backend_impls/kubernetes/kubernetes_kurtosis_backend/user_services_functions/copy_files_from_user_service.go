@@ -20,7 +20,7 @@ const (
 func CopyFilesFromUserService(
 	ctx context.Context,
 	enclaveId enclave.EnclaveUUID,
-	serviceGuid service.ServiceGUID,
+	serviceUuid service.ServiceUUID,
 	srcPath string,
 	output io.Writer,
 	cliModeArgs *shared_helpers.CliModeArgs,
@@ -33,16 +33,16 @@ func CopyFilesFromUserService(
 		return stacktrace.Propagate(err, "An error occurred getting namespace name for enclave '%v'", enclaveId)
 	}
 
-	objectAndResources, err := shared_helpers.GetSingleUserServiceObjectsAndResources(ctx, enclaveId, serviceGuid, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
+	objectAndResources, err := shared_helpers.GetSingleUserServiceObjectsAndResources(ctx, enclaveId, serviceUuid, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting user service object & Kubernetes resources for service '%v' in enclave '%v'", serviceGuid, enclaveId)
+		return stacktrace.Propagate(err, "An error occurred getting user service object & Kubernetes resources for service '%v' in enclave '%v'", serviceUuid, enclaveId)
 	}
 	pod := objectAndResources.KubernetesResources.Pod
 	if pod == nil {
 		return stacktrace.NewError(
 			"Cannot copy path '%v' on service '%v' in enclave '%v' because no pod exists for the service",
 			srcPath,
-			serviceGuid,
+			serviceUuid,
 			enclaveId,
 		)
 	}
@@ -50,7 +50,7 @@ func CopyFilesFromUserService(
 		return stacktrace.NewError(
 			"Cannot copy path '%v' on service '%v' in enclave '%v' because the pod isn't running",
 			srcPath,
-			serviceGuid,
+			serviceUuid,
 			enclaveId,
 		)
 	}
@@ -84,7 +84,7 @@ func CopyFilesFromUserService(
 			"An error occurred running command '%v' on pod '%v' for service '%v' in namespace '%v'",
 			commandToRun,
 			pod.Name,
-			serviceGuid,
+			serviceUuid,
 			namespaceName,
 		)
 	}

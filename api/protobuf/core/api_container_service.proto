@@ -76,8 +76,8 @@ message Port {
 }
 
 message ServiceInfo {
-  // GUID of the service
-  string service_guid = 1;
+  // UUID of the service
+  string service_uuid = 1;
 
   // The IP address of the service inside the enclave
   string private_ip_addr = 2;
@@ -94,6 +94,12 @@ message ServiceInfo {
   //  corresponds to the ID that was passed in in StartServiceArgs
   // NOTE: Will be empty if the service isn't running, the service didn't define any ports, or the backend doesn't support reporting public service info
   map<string, Port> maybe_public_ports = 5;
+
+  // Name of the service
+  string name = 6;
+
+  // Shortened uuid of the service
+  string shortened_uuid = 7;
 }
 
 message ServiceConfig {
@@ -247,28 +253,28 @@ message StarlarkRunFinishedEvent {
 //                                        Start Service
 // ==============================================================================================
 message StartServicesArgs {
-  map<string, ServiceConfig> service_ids_to_configs = 1;
+  map<string, ServiceConfig> service_names_to_configs = 1;
 }
 
 message StartServicesResponse {
-  // A map of Service IDs to info describing that newly started service
-  map<string, ServiceInfo> successful_service_ids_to_service_info = 1;
+  // A map of Service Names to info describing that newly started service
+  map<string, ServiceInfo> successful_service_name_to_service_info = 1;
 
-  // A map of Service IDs that failed to start with the error causing the failure
-  map<string, string> failed_service_ids_to_error = 2;
+  // A map of Service Names that failed to start with the error causing the failure
+  map<string, string> failed_service_name_to_error = 2;
 }
 
 // ==============================================================================================
 //                                          Get Services
 // ==============================================================================================
 message GetServicesArgs {
-  // "Set" of IDs to fetch info for
+  // "Set" of identifiers to fetch info for
   // If empty, will fetch info for all services
-  map<string, bool> service_ids = 1;
+  map<string, bool> service_identifiers = 1;
 }
 
 message GetServicesResponse {
-  // "Set" of current service IDs in the enclave -> info about the service
+  // "Set" from identifiers -> info about the service
   map<string, ServiceInfo> service_info = 1;
 }
 
@@ -276,12 +282,12 @@ message GetServicesResponse {
 //                                        Remove Service
 // ==============================================================================================
 message RemoveServiceArgs {
-  string service_id = 1;
+  string service_identifier = 1;
 }
 
 message RemoveServiceResponse {
-  // The GUID of the service that was removed
-  string service_guid = 1;
+  // The UUID of the service that was removed
+  string service_uuid = 1;
 }
 
 // ==============================================================================================
@@ -300,8 +306,8 @@ message RepartitionArgs {
 }
 
 message PartitionServices {
-  // "Set" of service IDs in partition
-  map<string, bool> service_id_set = 1;
+  // "Set" of service names in partition
+  map<string, bool> service_name_set = 1;
 }
 
 message PartitionConnections {
@@ -317,8 +323,8 @@ message PartitionConnectionInfo {
 //                                          Exec Command
 // ==============================================================================================
 message ExecCommandArgs {
-  // The service ID of the container that the command should be executed in
-  string service_id = 1;
+  // The service identifier of the container that the command should be executed in
+  string service_identifier = 1;
 
   repeated string command_args = 2;
 }
@@ -327,13 +333,13 @@ message ExecCommandArgs {
 //                                          Pause/Unpause Service
 // ==============================================================================================
 message PauseServiceArgs {
-  // The service ID of the container that should be paused
-  string service_id = 1;
+  // The service identifier of the container that should be paused
+  string service_identifier = 1;
 }
 
 message UnpauseServiceArgs {
-  // The service ID of the container that should be unpaused
-  string service_id = 1;
+  // The service identifier of the container that should be unpaused
+  string service_identifier = 1;
 }
 
 message ExecCommandResponse {
@@ -347,8 +353,8 @@ message ExecCommandResponse {
 //                             Wait For HTTP Get Endpoint Availability
 // ==============================================================================================
 message WaitForHttpGetEndpointAvailabilityArgs {
-  //The ID of the service to check.
-  string service_id = 1;
+  //The identifier of the service to check.
+  string service_identifier = 1;
   //The port of the service to check. For instance 8080
   uint32 port = 2;
   //The path of the service to check. It mustn't start with the first slash. For instance `service/health`
@@ -367,8 +373,8 @@ message WaitForHttpGetEndpointAvailabilityArgs {
 //                           Wait For HTTP Post Endpoint Availability
 // ==============================================================================================
 message WaitForHttpPostEndpointAvailabilityArgs {
-  //The ID of the service to check.
-  string service_id = 1;
+  //The identifier of the service to check.
+  string service_identifier = 1;
   //The port of the service to check. For instance 8080
   uint32 port = 2;
   //The path of the service to check. It mustn't start with the first slash. For instance `service/health`
@@ -438,8 +444,8 @@ message StoreWebFilesArtifactResponse {
 // ==============================================================================================
 
 message StoreFilesArtifactFromServiceArgs {
-  // ID that will be used to identify the service where the source files will be copied from
-  string service_id = 1;
+  // Identifier that will be used to identify the service where the source files will be copied from
+  string service_identifier = 1;
 
   // The absolute source path where the source files will be copied from
   string source_path = 2;

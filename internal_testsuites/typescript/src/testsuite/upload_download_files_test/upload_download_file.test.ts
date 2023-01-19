@@ -4,7 +4,7 @@ import * as path from "path"
 import * as os from "os";
 import {createEnclave} from "../../test_helpers/enclave_setup";
 import {checkFileContents, startFileServer} from "../../test_helpers/test_helpers";
-import {ServiceID} from "kurtosis-sdk";
+import {ServiceName} from "kurtosis-sdk";
 
 const ARCHIVE_DIRECTORY_TEST_PATTERN   = "upload-test-typescript-"
 const ARCHIVE_SUBDIRECTORY_TEST_PATTERN     = "sub-folder-"
@@ -29,7 +29,7 @@ const ARCHIVE_ROOT_FILE_KEYWORD_PATTERN                 = "archiveRootFile"
 const FOLDER_PERMISSION = 0o755
 const FILE_PERMISSION   = 0o644
 
-const FILE_SERVER_SERVICE_ID : ServiceID = "file-server"
+const FILE_SERVER_SERVICE_ID : ServiceName = "file-server"
 
 jest.setTimeout(180000)
 

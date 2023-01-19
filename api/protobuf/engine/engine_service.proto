@@ -178,8 +178,8 @@ message CleanResponse {
 message GetServiceLogsArgs {
   // The identifier of the user service's Kurtosis Enclave
   string enclave_identifier = 1;
-  // "Set" of service GUIDs in the enclave
-  map<string, bool> service_guid_set = 2;
+  // "Set" of service UUIDs in the enclave
+  map<string, bool> service_uuid_set = 2;
   // If true, It will follow the container logs
   bool follow_logs = 3;
   // The conjunctive log lines filters, the first filter is applied over the found log lines, the second filter is applied over the filter one result and so on (like grep)
@@ -187,11 +187,11 @@ message GetServiceLogsArgs {
 }
 
 message GetServiceLogsResponse {
-  // The service log lines grouped by service GUIDs and ordered in forward direction (oldest log line is the first element)
-  map<string, LogLine> service_logs_by_service_guid = 1;
+  // The service log lines grouped by service UUIDs and ordered in forward direction (oldest log line is the first element)
+  map<string, LogLine> service_logs_by_service_uuid = 1;
   // A set of service GUIDs requested by the user that were not found in the logs database, could be related that users send
   // a wrong GUID or a right GUID for a service that has not sent any logs so far
-  map<string, bool> not_found_service_guid_set = 2;
+  map<string, bool> not_found_service_uuid_set = 2;
 }
 
 // TODO add timestamp as well, for when we do timestamp-handling on the client side

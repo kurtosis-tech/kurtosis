@@ -69,18 +69,22 @@ const (
 )
 
 // ==========================================================================================
-//                                        Interface
+//
+//	Interface
+//
 // ==========================================================================================
 // Extracted as interface for testing
 type NetworkingSidecarWrapper interface {
-	GetServiceGUID() service.ServiceGUID
+	GetServiceUUID() service.ServiceUUID
 	GetIPAddr() net.IP
 	InitializeTrafficControl(ctx context.Context) error
 	UpdateTrafficControl(ctx context.Context, partitionConnectionConfigPerIpAddress map[string]*partition_topology.PartitionConnection) error
 }
 
 // ==========================================================================================
-//                                      Implementation
+//
+//	Implementation
+//
 // ==========================================================================================
 type qdiscID string
 type classID string
@@ -121,8 +125,8 @@ func NewStandardNetworkingSidecarWrapper(
 	}, nil
 }
 
-func (sidecarWrapper *StandardNetworkingSidecarWrapper) GetServiceGUID() service.ServiceGUID {
-	return sidecarWrapper.networkingSidecar.GetServiceGUID()
+func (sidecarWrapper *StandardNetworkingSidecarWrapper) GetServiceUUID() service.ServiceUUID {
+	return sidecarWrapper.networkingSidecar.GetServiceUUID()
 }
 
 func (sidecarWrapper *StandardNetworkingSidecarWrapper) GetIPAddr() net.IP {
@@ -141,7 +145,7 @@ func (sidecarWrapper *StandardNetworkingSidecarWrapper) InitializeTrafficControl
 	cmdDescription := "tc init"
 
 	if err := sidecarWrapper.executeCmdInSidecar(ctx, initCmd, cmdDescription); err != nil {
-		return stacktrace.Propagate(err, "An error occurred executing cmd '%v' in networking sidecar with GUID '%v'", initCmd, sidecarWrapper.GetServiceGUID())
+		return stacktrace.Propagate(err, "An error occurred executing cmd '%v' in networking sidecar with GUID '%v'", initCmd, sidecarWrapper.GetServiceUUID())
 	}
 
 	sidecarWrapper.qdiscInUse = initialKurtosisQdiscId
@@ -212,7 +216,9 @@ func (sidecarWrapper *StandardNetworkingSidecarWrapper) UpdateTrafficControl(ctx
 }
 
 // ==========================================================================================
-//                                   Private helper functions
+//
+//	Private helper functions
+//
 // ==========================================================================================
 func getNextUnusedQdiscId(parentQdisc qdiscID, previousQdiscIdDecimalMajorNumber int) (qdiscID, int, error) {
 	//This func receives the most-recently-created qdisc ID major number (in decimal, i.e. base-10),
@@ -494,7 +500,7 @@ func (sidecarWrapper *StandardNetworkingSidecarWrapper) executeCmdInSidecar(ctx 
 		"Running %v command '%+v' in networking sidecar with service GUID '%v'...",
 		cmdDescription,
 		cmd,
-		sidecarWrapper.networkingSidecar.GetServiceGUID())
+		sidecarWrapper.networkingSidecar.GetServiceUUID())
 
 	if err := sidecarWrapper.execCmdExecutor.exec(ctx, cmd); err != nil {
 		return stacktrace.Propagate(
@@ -503,7 +509,7 @@ func (sidecarWrapper *StandardNetworkingSidecarWrapper) executeCmdInSidecar(ctx 
 			cmdDescription)
 	}
 
-	logrus.Infof("Successfully executed %v command against networking sidecar with GUID '%v'", cmdDescription, sidecarWrapper.GetServiceGUID())
+	logrus.Infof("Successfully executed %v command against networking sidecar with GUID '%v'", cmdDescription, sidecarWrapper.GetServiceUUID())
 
 	return nil
 }

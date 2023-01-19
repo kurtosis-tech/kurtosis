@@ -20,7 +20,7 @@ import (
 //
 // ==========================================================================================
 type NetworkingSidecarManager interface {
-	Add(ctx context.Context, serviceId service.ServiceGUID) (NetworkingSidecarWrapper, error)
+	Add(ctx context.Context, serviceId service.ServiceUUID) (NetworkingSidecarWrapper, error)
 	Remove(ctx context.Context, sidecar NetworkingSidecarWrapper) error
 }
 
@@ -47,22 +47,22 @@ func NewStandardNetworkingSidecarManager(kurtosisBackend backend_interface.Kurto
 // Adds a sidecar container attached to the given service ID
 func (manager *StandardNetworkingSidecarManager) Add(
 	ctx context.Context,
-	serviceGUID service.ServiceGUID,
+	serviceUUID service.ServiceUUID,
 ) (NetworkingSidecarWrapper, error) {
 
-	networkingSidecar, err := manager.kurtosisBackend.CreateNetworkingSidecar(ctx, manager.enclaveUuid, serviceGUID)
+	networkingSidecar, err := manager.kurtosisBackend.CreateNetworkingSidecar(ctx, manager.enclaveUuid, serviceUUID)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating networking sidecar for service with GUID '%v' in enclave with ID '%v'", serviceGUID, manager.enclaveUuid)
+		return nil, stacktrace.Propagate(err, "An error occurred creating networking sidecar for service with UUID '%v' in enclave with ID '%v'", serviceUUID, manager.enclaveUuid)
 	}
 
 	execCmdExecutor := newStandardSidecarExecCmdExecutor(
 		manager.kurtosisBackend,
-		networkingSidecar.GetServiceGUID(),
+		networkingSidecar.GetServiceUUID(),
 		networkingSidecar.GetEnclaveUUID())
 
 	networkingSidecarWrapper, err := NewStandardNetworkingSidecarWrapper(networkingSidecar, execCmdExecutor)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating networking sidecar wrapper for networking sidecar with service GUID '%v'", networkingSidecar.GetServiceGUID())
+		return nil, stacktrace.Propagate(err, "An error occurred creating networking sidecar wrapper for networking sidecar with service UUID '%v'", networkingSidecar.GetServiceUUID())
 	}
 
 	return networkingSidecarWrapper, nil
@@ -71,12 +71,12 @@ func (manager *StandardNetworkingSidecarManager) Add(
 func (manager *StandardNetworkingSidecarManager) Remove(
 	ctx context.Context,
 	networkingSidecarWrapper NetworkingSidecarWrapper) error {
-	networkingSidecarServiceGUID := networkingSidecarWrapper.GetServiceGUID()
+	networkingSidecarServiceUUID := networkingSidecarWrapper.GetServiceUUID()
 
 	filters := &networking_sidecar.NetworkingSidecarFilters{
 		EnclaveUUIDs: nil,
-		UserServiceGUIDs: map[service.ServiceGUID]bool{
-			networkingSidecarServiceGUID: true,
+		UserServiceUUIDs: map[service.ServiceUUID]bool{
+			networkingSidecarServiceUUID: true,
 		},
 		Statuses: nil,
 	}
@@ -86,11 +86,11 @@ func (manager *StandardNetworkingSidecarManager) Remove(
 		return stacktrace.Propagate(err, "An error occurred stopping networking sidecars using filter '%+v'", filters)
 	}
 	if len(erroredNetworkingSidecars) > 0 {
-		sidecarError, sidecarErrorFound := erroredNetworkingSidecars[networkingSidecarServiceGUID]
+		sidecarError, sidecarErrorFound := erroredNetworkingSidecars[networkingSidecarServiceUUID]
 		if !sidecarErrorFound {
-			return stacktrace.NewError("Unable to find error for networking sidecar with GUID '%v'. This is a bug in kurtosis", networkingSidecarServiceGUID)
+			return stacktrace.NewError("Unable to find error for networking sidecar with GUID '%v'. This is a bug in kurtosis", networkingSidecarServiceUUID)
 		}
-		return stacktrace.Propagate(sidecarError, "An error occurred stopping networking sidecar with GUID '%v'", networkingSidecarServiceGUID)
+		return stacktrace.Propagate(sidecarError, "An error occurred stopping networking sidecar with GUID '%v'", networkingSidecarServiceUUID)
 	}
 
 	return nil

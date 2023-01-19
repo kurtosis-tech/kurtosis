@@ -3,7 +3,7 @@ import * as google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty
 import { err, ok, Result } from 'neverthrow';
 import { Readable } from 'stream';
 
-import { ServiceGUID } from '../../../core/lib/services/service';
+import { ServiceUUID } from '../../../core/lib/services/service';
 import { LogLine } from '../../kurtosis_engine_rpc_api_bindings/engine_service_pb';
 import { NO_ERROR_ENCOUNTERED_BUT_RESPONSE_FALSY_MSG } from '../consts';
 
@@ -197,17 +197,16 @@ export class GrpcNodeEngineClient implements GenericEngineClient {
 
         const streamServiceLogsResponse: ClientReadableStream<GetServiceLogsResponse> = streamServiceLogsResponseResult.value;
 
-        const serviceLogsByGuid: Map<ServiceGUID, Array<ServiceLog>> = new Map<ServiceGUID, Array<ServiceLog>>();
+        const serviceLogsByGuid: Map<ServiceUUID, Array<ServiceLog>> = new Map<ServiceUUID, Array<ServiceLog>>();
 
         const serviceLogsReadable: Readable = this.createNewServiceLogsReadable(streamServiceLogsResponse);
 
         streamServiceLogsResponse.on(GRPC_STREAM_RESPONSE_DATA_EVENT_NAME, function (getServiceLogsResponse: GetServiceLogsResponse) {
+            const serviceLogsByServiceUuidMap: jspb.Map<string, LogLine> | undefined = getServiceLogsResponse.getServiceLogsByServiceUuidMap();
 
-            const serviceLogsByServiceGuidMap: jspb.Map<string, LogLine> | undefined = getServiceLogsResponse.getServiceLogsByServiceGuidMap();
-
-            if (serviceLogsByServiceGuidMap !== undefined) {
-                serviceLogsByServiceGuidMap.forEach(
-                    (ServiceLogLine, serviceGuidStr) => {
+            if (serviceLogsByServiceUuidMap !== undefined) {
+                serviceLogsByServiceUuidMap.forEach(
+                    (ServiceLogLine, serviceUuidStr) => {
                         const serviceLogs: Array<ServiceLog> = Array<ServiceLog>();
 
                         ServiceLogLine.getLineList().forEach((logLine:string) => {
@@ -215,20 +214,20 @@ export class GrpcNodeEngineClient implements GenericEngineClient {
                             serviceLogs.push(serviceLog)
                         })
 
-                        serviceLogsByGuid.set(serviceGuidStr, serviceLogs);
+                        serviceLogsByGuid.set(serviceUuidStr, serviceLogs);
                     }
                 )
             }
 
-            const notFoundServiceGuidsMap: jspb.Map<string, boolean> = getServiceLogsResponse.getNotFoundServiceGuidSetMap()
+            const notFoundServiceUuidsMap: jspb.Map<string, boolean> = getServiceLogsResponse.getNotFoundServiceUuidSetMap()
 
-            const notFoundServiceGuids: Set<ServiceGUID> = new Set<ServiceGUID>()
+            const notFoundServiceUuids: Set<ServiceUUID> = new Set<ServiceUUID>()
 
-            notFoundServiceGuidsMap.forEach((isGuidInMap: boolean, serviceGuidStr: string) => {
-                notFoundServiceGuids.add(serviceGuidStr)
+            notFoundServiceUuidsMap.forEach((isUuidInMap: boolean, serviceUuidStr: string) => {
+                notFoundServiceUuids.add(serviceUuidStr)
             })
 
-            const serviceLogsStreamContent: ServiceLogsStreamContent = new ServiceLogsStreamContent(serviceLogsByGuid, notFoundServiceGuids)
+            const serviceLogsStreamContent: ServiceLogsStreamContent = new ServiceLogsStreamContent(serviceLogsByGuid, notFoundServiceUuids)
 
             serviceLogsReadable.push(serviceLogsStreamContent);
         })

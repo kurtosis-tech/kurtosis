@@ -9,8 +9,8 @@ import {
     PartitionID,
     PortSpec,
     ServiceContext,
-    ServiceGUID,
-    ServiceID,
+    ServiceUUID,
+    ServiceName,
     ServiceLog,
     TransportProtocol
 } from "kurtosis-sdk";
@@ -115,7 +115,7 @@ class StartFileServerResponse {
     }
 }
 
-export async function addDatastoreService(serviceId: ServiceID, enclaveContext: EnclaveContext):
+export async function addDatastoreService(serviceName: ServiceName, enclaveContext: EnclaveContext):
     Promise<Result<{
         serviceContext: ServiceContext;
         client: datastoreApi.DatastoreServiceClientNode;
@@ -124,7 +124,7 @@ export async function addDatastoreService(serviceId: ServiceID, enclaveContext: 
 
     const containerConfig = getDatastoreContainerConfig();
 
-    const addServiceResult = await enclaveContext.addService(serviceId, containerConfig);
+    const addServiceResult = await enclaveContext.addService(serviceName, containerConfig);
     if (addServiceResult.isErr()) {
         log.error("An error occurred adding the datastore service");
         return err(addServiceResult.error);
@@ -162,7 +162,7 @@ export function createDatastoreClient(ipAddr: string, portNum: number): { client
     return {client, clientCloseFunction}
 }
 
-export async function addAPIService(serviceId: ServiceID, enclaveContext: EnclaveContext, datastoreIPInsideNetwork: string):
+export async function addAPIService(serviceName: ServiceName, enclaveContext: EnclaveContext, datastoreIPInsideNetwork: string):
     Promise<Result<{
         serviceContext: ServiceContext;
         client: serverApi.ExampleAPIServerServiceClientNode;
@@ -170,7 +170,7 @@ export async function addAPIService(serviceId: ServiceID, enclaveContext: Enclav
     }, Error>> {
 
     const addAPIServiceToPartitionResult = await addAPIServiceToPartition(
-        serviceId,
+        serviceName,
         enclaveContext,
         datastoreIPInsideNetwork,
         DEFAULT_PARTITION_ID
@@ -182,7 +182,7 @@ export async function addAPIService(serviceId: ServiceID, enclaveContext: Enclav
 }
 
 export async function addAPIServiceToPartition(
-    serviceId: ServiceID,
+    serviceName: ServiceName,
     enclaveContext: EnclaveContext,
     datastorePrivateIp: string,
     partitionId: PartitionID
@@ -204,7 +204,7 @@ export async function addAPIServiceToPartition(
 
     const containerConfig = getApiServiceContainerConfig(artifactName)
 
-    const addServiceToPartitionResult = await enclaveContext.addServiceToPartition(serviceId, partitionId, containerConfig)
+    const addServiceToPartitionResult = await enclaveContext.addServiceToPartition(serviceName, partitionId, containerConfig)
     if (addServiceToPartitionResult.isErr()) return err(addServiceToPartitionResult.error)
 
     const serviceContext = addServiceToPartitionResult.value;
@@ -266,16 +266,16 @@ export async function waitForHealthy(
 
 }
 
-export async function waitForGetAvailabilityStarlarkScript(enclaveContext: EnclaveContext, serviceId: string, portId: string, endpoint: string, interval: number, timeout: number) : Promise<Result<StarlarkRunResult, Error>> {
-    return enclaveContext.runStarlarkScriptBlocking(WAIT_FOR_GET_AVAILABILITY_STARLARK_SCRIPT, `{ "service_id": "${serviceId}", "port_id": "${portId}", "endpoint": "/${endpoint}", "interval": "${interval}ms", "timeout": "${timeout}ms"}`, false)
+export async function waitForGetAvailabilityStarlarkScript(enclaveContext: EnclaveContext, serviceName: string, portId: string, endpoint: string, interval: number, timeout: number) : Promise<Result<StarlarkRunResult, Error>> {
+    return enclaveContext.runStarlarkScriptBlocking(WAIT_FOR_GET_AVAILABILITY_STARLARK_SCRIPT, `{ "service_id": "${serviceName}", "port_id": "${portId}", "endpoint": "/${endpoint}", "interval": "${interval}ms", "timeout": "${timeout}ms"}`, false)
 }
 
-export async function startFileServer(fileServerServiceId: ServiceID, filesArtifactUuid: string, pathToCheckOnFileServer: string, enclaveCtx: EnclaveContext): Promise<Result<StartFileServerResponse, Error>> {
+export async function startFileServer(fileServerServiceName: ServiceName, filesArtifactUuid: string, pathToCheckOnFileServer: string, enclaveCtx: EnclaveContext): Promise<Result<StartFileServerResponse, Error>> {
     const filesArtifactsMountPoints = new Map<string, FilesArtifactUUID>()
     filesArtifactsMountPoints.set(USER_SERVICE_MOUNT_POINT_FOR_TEST_FILES_ARTIFACT, filesArtifactUuid)
 
     const fileServerContainerConfig = getFileServerContainerConfig(filesArtifactsMountPoints)
-    const addServiceResult = await enclaveCtx.addService(fileServerServiceId, fileServerContainerConfig)
+    const addServiceResult = await enclaveCtx.addService(fileServerServiceName, fileServerContainerConfig)
     if (addServiceResult.isErr()) {
         throw addServiceResult.error
     }
@@ -289,7 +289,7 @@ export async function startFileServer(fileServerServiceId: ServiceID, filesArtif
     const fileServerPublicIp = serviceContext.getMaybePublicIPAddress();
     const fileServerPublicPortNum = publicPort.number
 
-    const waitForHttpGetEndpointAvailabilityResult = await waitForGetAvailabilityStarlarkScript(enclaveCtx, fileServerServiceId, FILE_SERVER_PORT_ID, pathToCheckOnFileServer, WAIT_FOR_FILE_SERVER_INTERVAL_MILLISECONDS, WAIT_FOR_FILE_SERVER_TIMEOUT_MILLISECONDS)
+    const waitForHttpGetEndpointAvailabilityResult = await waitForGetAvailabilityStarlarkScript(enclaveCtx, fileServerServiceName, FILE_SERVER_PORT_ID, pathToCheckOnFileServer, WAIT_FOR_FILE_SERVER_INTERVAL_MILLISECONDS, WAIT_FOR_FILE_SERVER_TIMEOUT_MILLISECONDS)
 
     if (waitForHttpGetEndpointAvailabilityResult.isErr()) {
         log.error("An unexpected error has occurred getting endpoint availability using Starlark")
@@ -517,7 +517,7 @@ export async function validateDataStoreServiceIsHealthy(enclaveContext: EnclaveC
     return ok(null)
 }
 
-export function areEqualServiceGuidsSet(firstSet: Set<ServiceGUID>, secondSet: Set<ServiceGUID>): boolean {
+export function areEqualServiceUuidsSet(firstSet: Set<ServiceUUID>, secondSet: Set<ServiceUUID>): boolean {
     const haveEqualSize: boolean = firstSet.size === secondSet.size;
     const haveEqualContent: boolean = [...firstSet].every((x) => secondSet.has(x));
 
@@ -532,10 +532,10 @@ export function delay(ms: number) {
 
 export async function addServicesWithLogLines(
     enclaveContext: EnclaveContext,
-    logLinesByServiceID: Map<ServiceID, ServiceLog[]>,
-): Promise<Result<Map<ServiceID, ServiceContext>, Error>> {
+    logLinesByServiceID: Map<ServiceName, ServiceLog[]>,
+): Promise<Result<Map<ServiceName, ServiceContext>, Error>> {
 
-    const servicesAdded: Map<ServiceID, ServiceContext> = new Map<ServiceID, ServiceContext>();
+    const servicesAdded: Map<ServiceName, ServiceContext> = new Map<ServiceName, ServiceContext>();
 
     for (let [serviceId, logLines] of logLinesByServiceID) {
         const containerConf: ContainerConfig = getServiceWithLogLinesConfig(logLines);
@@ -556,17 +556,17 @@ export async function addServicesWithLogLines(
 export async function getLogsResponseAndEvaluateResponse(
     kurtosisCtx: KurtosisContext,
     enclaveUuid: EnclaveUUID,
-    serviceGuids: Set<ServiceGUID>,
-    expectedLogLinesByService: Map<ServiceGUID, ServiceLog[]>,
-    expectedNonExistenceServiceGuids: Set<ServiceGUID>,
+    serviceUuids: Set<ServiceUUID>,
+    expectedLogLinesByService: Map<ServiceUUID, ServiceLog[]>,
+    expectedNonExistenceServiceUuids: Set<ServiceUUID>,
     shouldFollowLogs: boolean,
     logLineFilter: LogLineFilter | undefined,
 ): Promise<Result<null, Error>> {
 
-    let receivedLogLinesByService: Map<ServiceGUID, Array<ServiceLog>> = new Map<ServiceGUID, Array<ServiceLog>>;
-    let receivedNotFoundServiceGuids: Set<ServiceGUID> = new Set<ServiceGUID>();
+    let receivedLogLinesByService: Map<ServiceUUID, Array<ServiceLog>> = new Map<ServiceUUID, Array<ServiceLog>>;
+    let receivedNotFoundServiceUuids: Set<ServiceUUID> = new Set<ServiceUUID>();
 
-    const streamUserServiceLogsPromise = await kurtosisCtx.getServiceLogs(enclaveUuid, serviceGuids, shouldFollowLogs, logLineFilter);
+    const streamUserServiceLogsPromise = await kurtosisCtx.getServiceLogs(enclaveUuid, serviceUuids, shouldFollowLogs, logLineFilter);
 
     if (streamUserServiceLogsPromise.isErr()) {
         return err(streamUserServiceLogsPromise.error);
@@ -581,13 +581,13 @@ export async function getLogsResponseAndEvaluateResponse(
 
     const receivedStreamContent: ReceivedStreamContent = await receivedStreamContentPromise;
     receivedLogLinesByService = receivedStreamContent.receivedLogLinesByService;
-    receivedNotFoundServiceGuids = receivedStreamContent.receivedNotFoundServiceGuids;
+    receivedNotFoundServiceUuids = receivedStreamContent.receivedNotFoundServiceUuids;
 
 
-    receivedLogLinesByService.forEach((receivedLogLines, serviceGuid) => {
-        const expectedLogLines = expectedLogLinesByService.get(serviceGuid);
+    receivedLogLinesByService.forEach((receivedLogLines, serviceUuid) => {
+        const expectedLogLines = expectedLogLinesByService.get(serviceUuid);
         if (expectedLogLines === undefined) {
-            return err(new Error(`No expected log lines for service with GUID '${serviceGuid}' was found in the expectedLogLinesByService map'${expectedLogLinesByService}'`))
+            return err(new Error(`No expected log lines for service with UUID '${serviceUuid}' was found in the expectedLogLinesByService map'${expectedLogLinesByService}'`))
         }
         if (expectedLogLines.length === receivedLogLines.length) {
             receivedLogLines.forEach((logLine: ServiceLog, logLineIndex: number) => {
@@ -600,8 +600,8 @@ export async function getLogsResponseAndEvaluateResponse(
         }
     })
 
-    if (!areEqualServiceGuidsSet(expectedNonExistenceServiceGuids, receivedNotFoundServiceGuids)) {
-        throw new Error(`Expected to receive a not found service GUIDs set equal to '${[...expectedNonExistenceServiceGuids.entries()]}' but a different set '${[...receivedNotFoundServiceGuids.entries()]}' was received instead`);
+    if (!areEqualServiceUuidsSet(expectedNonExistenceServiceUuids, receivedNotFoundServiceUuids)) {
+        throw new Error(`Expected to receive a not found service UUIDs set equal to '${[...expectedNonExistenceServiceUuids.entries()]}' but a different set '${[...receivedNotFoundServiceUuids.entries()]}' was received instead`);
     }
 
     return ok(null)

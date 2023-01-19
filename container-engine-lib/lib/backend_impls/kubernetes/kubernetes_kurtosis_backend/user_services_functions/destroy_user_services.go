@@ -16,7 +16,7 @@ func DestroyUserServices(
 	cliModeArgs *shared_helpers.CliModeArgs,
 	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs,
 	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
-	kubernetesManager *kubernetes_manager.KubernetesManager) (resultSuccessfulGuids map[service.ServiceGUID]bool, resultErroredGuids map[service.ServiceGUID]error, resultErr error) {
+	kubernetesManager *kubernetes_manager.KubernetesManager) (resultSuccessfulGuids map[service.ServiceUUID]bool, resultErroredGuids map[service.ServiceUUID]error, resultErr error) {
 	namespaceName, err := shared_helpers.GetEnclaveNamespaceName(ctx, enclaveId, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting namespace name for enclave '%v'", enclaveId)
@@ -32,15 +32,15 @@ func DestroyUserServices(
 		)
 	}
 
-	successfulGuids := map[service.ServiceGUID]bool{}
-	erroredGuids := map[service.ServiceGUID]error{}
-	for serviceGuid, serviceObjsAndResources := range allObjectsAndResources {
+	successfulGuids := map[service.ServiceUUID]bool{}
+	erroredGuids := map[service.ServiceUUID]error{}
+	for serviceUuid, serviceObjsAndResources := range allObjectsAndResources {
 		resources := serviceObjsAndResources.KubernetesResources
 
 		pod := resources.Pod
 		if pod != nil {
 			if err := kubernetesManager.RemovePod(ctx, pod); err != nil {
-				erroredGuids[serviceGuid] = stacktrace.Propagate(
+				erroredGuids[serviceUuid] = stacktrace.Propagate(
 					err,
 					"An error occurred removing Kubernetes pod '%v' in namespace '%v'",
 					pod.Name,

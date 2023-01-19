@@ -12,8 +12,8 @@ import (
 // Also partitioning in APIC is based on the private IP address this returns
 // TODO visit removing this  after partitioning is moved to container-engine-lib and data is stored in a database
 type ServiceRegistration struct {
-	id        ServiceID
-	guid      ServiceGUID
+	name      ServiceName
+	uuid      ServiceUUID
 	enclaveId enclave.EnclaveUUID
 
 	// The private IP is the IP of the service within the enclave, meaning other services can use this IP to communicate
@@ -21,16 +21,16 @@ type ServiceRegistration struct {
 	privateIp net.IP
 }
 
-func NewServiceRegistration(id ServiceID, guid ServiceGUID, enclaveId enclave.EnclaveUUID, privateIp net.IP) *ServiceRegistration {
-	return &ServiceRegistration{id: id, guid: guid, enclaveId: enclaveId, privateIp: privateIp}
+func NewServiceRegistration(name ServiceName, guid ServiceUUID, enclaveId enclave.EnclaveUUID, privateIp net.IP) *ServiceRegistration {
+	return &ServiceRegistration{name: name, uuid: guid, enclaveId: enclaveId, privateIp: privateIp}
 }
 
-func (registration *ServiceRegistration) GetID() ServiceID {
-	return registration.id
+func (registration *ServiceRegistration) GetName() ServiceName {
+	return registration.name
 }
 
-func (registration *ServiceRegistration) GetGUID() ServiceGUID {
-	return registration.guid
+func (registration *ServiceRegistration) GetUUID() ServiceUUID {
+	return registration.uuid
 }
 
 func (registration *ServiceRegistration) GetEnclaveID() enclave.EnclaveUUID {

@@ -292,7 +292,7 @@ func waitForGatewayReady(apiContainerHostMachineInfo *kurtosis_engine_rpc_api_bi
 	// Modifying
 	ctxWithTimeout, cancelFunc := context.WithTimeout(backgroundCtx, apiContainerGatewayHealthcheckTimeout)
 	defer cancelFunc()
-	getServicesHealthCheckParams := &kurtosis_core_rpc_api_bindings.GetServicesArgs{ServiceIds: nil}
+	getServicesHealthCheckParams := &kurtosis_core_rpc_api_bindings.GetServicesArgs{ServiceIdentifiers: nil}
 	_, err = apiContainerClient.GetServices(ctxWithTimeout, getServicesHealthCheckParams, grpc.WaitForReady(waitForGatewayGrpcReady))
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected to be to call `GetServices` and wait for server to be ready, instead a non-nil error was returned")

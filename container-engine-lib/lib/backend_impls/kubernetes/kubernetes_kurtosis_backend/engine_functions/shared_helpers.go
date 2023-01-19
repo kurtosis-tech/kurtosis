@@ -83,7 +83,7 @@ func getMatchingEngineObjectsAndKubernetesResources(
 	return resultEngineObjs, resultKubernetesResources, nil
 }
 
-// Get back any and all engine's Kubernetes resources matching the given GUIDs, where a nil or empty map == "match all GUIDs"
+// Get back any and all engine's Kubernetes resources matching the given UUIDs, where a nil or empty map == "match all UUIDs"
 func getMatchingEngineKubernetesResources(
 	ctx context.Context,
 	engineGuids map[engine.EngineGUID]bool,

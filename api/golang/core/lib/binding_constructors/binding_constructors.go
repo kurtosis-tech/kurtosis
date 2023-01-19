@@ -247,18 +247,12 @@ func NewStarlarkExecutionError(errorMessage string) *kurtosis_core_rpc_api_bindi
 //
 // ==============================================================================================
 
-func NewStartServicesArgs(serviceConfigs map[string]*kurtosis_core_rpc_api_bindings.ServiceConfig) *kurtosis_core_rpc_api_bindings.StartServicesArgs {
-	return &kurtosis_core_rpc_api_bindings.StartServicesArgs{
-		ServiceIdsToConfigs: serviceConfigs,
-	}
-}
-
 func NewStartServicesResponse(
 	successfulServicesInfo map[string]*kurtosis_core_rpc_api_bindings.ServiceInfo,
 	failedServicesErrors map[string]string) *kurtosis_core_rpc_api_bindings.StartServicesResponse {
 	return &kurtosis_core_rpc_api_bindings.StartServicesResponse{
-		SuccessfulServiceIdsToServiceInfo: successfulServicesInfo,
-		FailedServiceIdsToError:           failedServicesErrors,
+		SuccessfulServiceNameToServiceInfo: successfulServicesInfo,
+		FailedServiceNameToError:           failedServicesErrors,
 	}
 }
 
@@ -268,9 +262,9 @@ func NewStartServicesResponse(
 //
 // ==============================================================================================
 
-func NewGetServicesArgs(serviceIds map[string]bool) *kurtosis_core_rpc_api_bindings.GetServicesArgs {
+func NewGetServicesArgs(serviceIdentifiers map[string]bool) *kurtosis_core_rpc_api_bindings.GetServicesArgs {
 	return &kurtosis_core_rpc_api_bindings.GetServicesArgs{
-		ServiceIds: serviceIds,
+		ServiceIdentifiers: serviceIdentifiers,
 	}
 }
 
@@ -283,14 +277,18 @@ func NewGetServicesResponse(
 }
 
 func NewServiceInfo(
-	guid string,
+	uuid string,
+	name string,
+	shortenedUuid string,
 	privateIpAddr string,
 	privatePorts map[string]*kurtosis_core_rpc_api_bindings.Port,
 	maybePublicIpAddr string,
 	maybePublicPorts map[string]*kurtosis_core_rpc_api_bindings.Port,
 ) *kurtosis_core_rpc_api_bindings.ServiceInfo {
 	return &kurtosis_core_rpc_api_bindings.ServiceInfo{
-		ServiceGuid:       guid,
+		ServiceUuid:       uuid,
+		Name:              name,
+		ShortenedUuid:     shortenedUuid,
 		PrivateIpAddr:     privateIpAddr,
 		PrivatePorts:      privatePorts,
 		MaybePublicIpAddr: maybePublicIpAddr,
@@ -304,66 +302,9 @@ func NewServiceInfo(
 //
 // ==============================================================================================
 
-func NewRemoveServiceArgs(serviceId string) *kurtosis_core_rpc_api_bindings.RemoveServiceArgs {
-	return &kurtosis_core_rpc_api_bindings.RemoveServiceArgs{
-		ServiceId: serviceId,
-	}
-}
-
-func NewRemoveServiceResponse(serviceGuid string) *kurtosis_core_rpc_api_bindings.RemoveServiceResponse {
+func NewRemoveServiceResponse(serviceUuid string) *kurtosis_core_rpc_api_bindings.RemoveServiceResponse {
 	return &kurtosis_core_rpc_api_bindings.RemoveServiceResponse{
-		ServiceGuid: serviceGuid,
-	}
-}
-
-// ==============================================================================================
-//
-//	Repartition
-//
-// ==============================================================================================
-
-func NewRepartitionArgs(
-	partitionServices map[string]*kurtosis_core_rpc_api_bindings.PartitionServices,
-	partitionConnections map[string]*kurtosis_core_rpc_api_bindings.PartitionConnections,
-	defaultConnection *kurtosis_core_rpc_api_bindings.PartitionConnectionInfo) *kurtosis_core_rpc_api_bindings.RepartitionArgs {
-	return &kurtosis_core_rpc_api_bindings.RepartitionArgs{
-		PartitionServices:    partitionServices,
-		PartitionConnections: partitionConnections,
-		DefaultConnection:    defaultConnection,
-	}
-}
-
-func NewPartitionServices(serviceIdSet map[string]bool) *kurtosis_core_rpc_api_bindings.PartitionServices {
-	return &kurtosis_core_rpc_api_bindings.PartitionServices{
-		ServiceIdSet: serviceIdSet,
-	}
-}
-
-func NewPartitionConnections(connectionInfo map[string]*kurtosis_core_rpc_api_bindings.PartitionConnectionInfo) *kurtosis_core_rpc_api_bindings.PartitionConnections {
-	return &kurtosis_core_rpc_api_bindings.PartitionConnections{
-		ConnectionInfo: connectionInfo,
-	}
-}
-
-func NewPartitionConnectionInfo(packetLossPercentage float32) *kurtosis_core_rpc_api_bindings.PartitionConnectionInfo {
-	return &kurtosis_core_rpc_api_bindings.PartitionConnectionInfo{
-		PacketLossPercentage: packetLossPercentage,
-	}
-}
-
-// ==============================================================================================
-//                                          Pause/Unpause Service
-// ==============================================================================================
-
-func NewPauseServiceArgs(serviceId string) *kurtosis_core_rpc_api_bindings.PauseServiceArgs {
-	return &kurtosis_core_rpc_api_bindings.PauseServiceArgs{
-		ServiceId: serviceId,
-	}
-}
-
-func NewUnpauseServiceArgs(serviceId string) *kurtosis_core_rpc_api_bindings.UnpauseServiceArgs {
-	return &kurtosis_core_rpc_api_bindings.UnpauseServiceArgs{
-		ServiceId: serviceId,
+		ServiceUuid: serviceUuid,
 	}
 }
 
@@ -373,10 +314,10 @@ func NewUnpauseServiceArgs(serviceId string) *kurtosis_core_rpc_api_bindings.Unp
 //
 // ==============================================================================================
 
-func NewExecCommandArgs(serviceId string, commandArgs []string) *kurtosis_core_rpc_api_bindings.ExecCommandArgs {
+func NewExecCommandArgs(serviceIdentifier string, commandArgs []string) *kurtosis_core_rpc_api_bindings.ExecCommandArgs {
 	return &kurtosis_core_rpc_api_bindings.ExecCommandArgs{
-		ServiceId:   serviceId,
-		CommandArgs: commandArgs,
+		ServiceIdentifier: serviceIdentifier,
+		CommandArgs:       commandArgs,
 	}
 }
 

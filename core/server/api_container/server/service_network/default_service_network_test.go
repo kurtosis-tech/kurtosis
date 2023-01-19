@@ -36,7 +36,7 @@ const (
 
 	numServices = 10
 
-	enclaveId               = enclave.EnclaveUUID("test-enclave")
+	enclaveName             = enclave.EnclaveUUID("test-enclave")
 	partitioningEnabled     = true
 	fakeApiContainerVersion = "0.0.0"
 	apiContainerPort        = uint16(1234)
@@ -54,98 +54,98 @@ func TestStartService_Successful(t *testing.T) {
 
 	serviceInternalTestId := 1
 	servicePartitionId := testPartitionIdFromInt(serviceInternalTestId)
-	serviceId := testServiceIdFromInt(serviceInternalTestId)
-	serviceGuid := testServiceGuidFromInt(serviceInternalTestId)
+	serviceName := testServiceNameFromInt(serviceInternalTestId)
+	serviceUuid := testServiceUuidFromInt(serviceInternalTestId)
 	successfulServiceIp := testIpFromInt(serviceInternalTestId)
-	serviceRegistration := service.NewServiceRegistration(serviceId, serviceGuid, enclaveId, successfulServiceIp)
+	serviceRegistration := service.NewServiceRegistration(serviceName, serviceUuid, enclaveName, successfulServiceIp)
 	serviceObj := service.NewService(serviceRegistration, container_status.ContainerStatus_Running, map[string]*port_spec.PortSpec{}, successfulServiceIp, map[string]*port_spec.PortSpec{})
 	serviceConfig := services.NewServiceConfigBuilder(testContainerImageName).WithSubnetwork(string(servicePartitionId)).Build()
 
 	network := NewDefaultServiceNetwork(
-		enclaveId,
+		enclaveName,
 		ip,
 		apiContainerPort,
 		fakeApiContainerVersion,
 		partitioningEnabled,
 		backend,
 		unusedEnclaveDataDir,
-		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveId),
+		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveName),
 	)
 
 	// The service is registered before being started
 	backend.EXPECT().RegisterUserServices(
 		ctx,
-		enclaveId,
-		map[service.ServiceID]bool{
-			serviceId: true,
+		enclaveName,
+		map[service.ServiceName]bool{
+			serviceName: true,
 		},
 	).Times(1).Return(
-		map[service.ServiceID]*service.ServiceRegistration{
-			serviceId: serviceRegistration,
+		map[service.ServiceName]*service.ServiceRegistration{
+			serviceName: serviceRegistration,
 		},
-		map[service.ServiceID]error{},
+		map[service.ServiceName]error{},
 		nil,
 	)
 
 	// Then the service is started
 	backend.EXPECT().StartRegisteredUserServices(
 		ctx,
-		enclaveId,
-		mock.MatchedBy(func(services map[service.ServiceGUID]*service.ServiceConfig) bool {
+		enclaveName,
+		mock.MatchedBy(func(services map[service.ServiceUUID]*service.ServiceConfig) bool {
 			// Matcher function returning true iff the services map arg contains exactly the following key:
-			// {serviceId}
-			_, foundService := services[serviceGuid]
+			// {serviceName}
+			_, foundService := services[serviceUuid]
 			return len(services) == 1 && foundService
 		})).Times(1).Return(
-		map[service.ServiceGUID]*service.Service{
-			serviceGuid: serviceObj,
+		map[service.ServiceUUID]*service.Service{
+			serviceUuid: serviceObj,
 		},
-		map[service.ServiceGUID]error{},
+		map[service.ServiceUUID]error{},
 		nil)
 
 	// CreateNetworkingSidecar will be called for this service
-	backend.EXPECT().CreateNetworkingSidecar(ctx, enclaveId, serviceGuid).Times(1).Return(
-		lib_networking_sidecar.NewNetworkingSidecar(serviceGuid, enclaveId, container_status.ContainerStatus_Running),
+	backend.EXPECT().CreateNetworkingSidecar(ctx, enclaveName, serviceUuid).Times(1).Return(
+		lib_networking_sidecar.NewNetworkingSidecar(serviceUuid, enclaveName, container_status.ContainerStatus_Running),
 		nil)
 
 	// RunNetworkingSidecarExecCommands will be called for this service
 	backend.EXPECT().RunNetworkingSidecarExecCommands(
 		ctx,
-		enclaveId,
-		mock.MatchedBy(func(commands map[service.ServiceGUID][]string) bool {
+		enclaveName,
+		mock.MatchedBy(func(commands map[service.ServiceUUID][]string) bool {
 			// Matcher function returning true iff the commands map arg contains exactly the following key:
-			// {serviceGuid}
-			_, foundService := commands[serviceGuid]
+			// {serviceUuid}
+			_, foundService := commands[serviceUuid]
 			return len(commands) == 1 && foundService
 		})).Times(2).Return(
-		map[service.ServiceGUID]*exec_result.ExecResult{
-			serviceGuid: exec_result.NewExecResult(0, ""),
+		map[service.ServiceUUID]*exec_result.ExecResult{
+			serviceUuid: exec_result.NewExecResult(0, ""),
 		},
-		map[service.ServiceGUID]error{},
+		map[service.ServiceUUID]error{},
 		nil)
 
 	// DestroyUserServices is never being called as everything is successful for this test
 	backend.EXPECT().DestroyUserServices(
 		ctx,
-		enclaveId,
+		enclaveName,
 		mock.Anything).Maybe().Times(0)
 
-	startedService, err := network.StartService(ctx, serviceId, serviceConfig)
+	startedService, err := network.StartService(ctx, serviceName, serviceConfig)
 	require.Nil(t, err)
 	require.NotNil(t, startedService)
 
 	require.Equal(t, serviceRegistration, startedService.GetRegistration())
 
 	require.Len(t, network.registeredServiceInfo, 1)
-	require.Contains(t, network.registeredServiceInfo, serviceId)
+	require.Contains(t, network.registeredServiceInfo, serviceName)
 
 	require.Len(t, network.networkingSidecars, 1)
-	require.Contains(t, network.networkingSidecars, serviceId)
+	require.Contains(t, network.networkingSidecars, serviceName)
 
-	expectedPartitionsInTopolody := map[service_network_types.PartitionID]map[service.ServiceID]bool{
+	expectedPartitionsInTopolody := map[service_network_types.PartitionID]map[service.ServiceName]bool{
 		partition_topology.DefaultPartitionId: {},
 		servicePartitionId: {
-			serviceId: true,
+			serviceName: true,
 		},
 		// partitions with services that failed to start were removed from the topology
 	}
@@ -158,85 +158,85 @@ func TestStartService_FailedToStart(t *testing.T) {
 
 	serviceInternalTestId := 1
 	servicePartitionId := testPartitionIdFromInt(serviceInternalTestId)
-	serviceId := testServiceIdFromInt(serviceInternalTestId)
-	serviceGuid := testServiceGuidFromInt(serviceInternalTestId)
+	serviceName := testServiceNameFromInt(serviceInternalTestId)
+	serviceUuid := testServiceUuidFromInt(serviceInternalTestId)
 	serviceIp := testIpFromInt(serviceInternalTestId)
-	serviceRegistration := service.NewServiceRegistration(serviceId, serviceGuid, enclaveId, serviceIp)
+	serviceRegistration := service.NewServiceRegistration(serviceName, serviceUuid, enclaveName, serviceIp)
 	serviceConfig := services.NewServiceConfigBuilder(testContainerImageName).WithSubnetwork(string(servicePartitionId)).Build()
 
 	network := NewDefaultServiceNetwork(
-		enclaveId,
+		enclaveName,
 		ip,
 		apiContainerPort,
 		fakeApiContainerVersion,
 		partitioningEnabled,
 		backend,
 		unusedEnclaveDataDir,
-		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveId),
+		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveName),
 	)
 
 	// The service is registered before being started
 	backend.EXPECT().RegisterUserServices(
 		ctx,
-		enclaveId,
-		map[service.ServiceID]bool{
-			serviceId: true,
+		enclaveName,
+		map[service.ServiceName]bool{
+			serviceName: true,
 		},
 	).Times(1).Return(
-		map[service.ServiceID]*service.ServiceRegistration{
-			serviceId: serviceRegistration,
+		map[service.ServiceName]*service.ServiceRegistration{
+			serviceName: serviceRegistration,
 		},
-		map[service.ServiceID]error{},
+		map[service.ServiceName]error{},
 		nil,
 	)
 
 	// StartRegisteredUserServices will be called for this service
 	backend.EXPECT().StartRegisteredUserServices(
 		ctx,
-		enclaveId,
-		mock.MatchedBy(func(services map[service.ServiceGUID]*service.ServiceConfig) bool {
+		enclaveName,
+		mock.MatchedBy(func(services map[service.ServiceUUID]*service.ServiceConfig) bool {
 			// Matcher function returning true iff the services map arg contains exactly the following key:
-			// {serviceId}
-			_, foundService := services[serviceGuid]
+			// {serviceName}
+			_, foundService := services[serviceUuid]
 			return len(services) == 1 && foundService
 		})).Times(1).Return(
-		map[service.ServiceGUID]*service.Service{},
-		map[service.ServiceGUID]error{
-			serviceGuid: stacktrace.NewError("Failed starting service"),
+		map[service.ServiceUUID]*service.Service{},
+		map[service.ServiceUUID]error{
+			serviceUuid: stacktrace.NewError("Failed starting service"),
 		},
 		nil)
 
 	// CreateNetworkingSidecar will be called for this service
-	backend.EXPECT().CreateNetworkingSidecar(ctx, enclaveId, mock.Anything).Maybe().Times(0)
+	backend.EXPECT().CreateNetworkingSidecar(ctx, enclaveName, mock.Anything).Maybe().Times(0)
 
 	// RunNetworkingSidecarExecCommands will never be called
 	backend.EXPECT().RunNetworkingSidecarExecCommands(
 		ctx,
-		enclaveId,
+		enclaveName,
 		mock.Anything).Maybe().Times(0)
 
 	// DestroyUserServices is never being called as the service fails to start for this test
 	backend.EXPECT().DestroyUserServices(
 		ctx,
-		enclaveId,
+		enclaveName,
 		mock.Anything).Maybe().Times(0)
 
 	// Since the service fails to start, it is unregistered in a deferred function
 	backend.EXPECT().UnregisterUserServices(
 		ctx,
-		enclaveId,
-		map[service.ServiceGUID]bool{
-			serviceGuid: true,
+		enclaveName,
+		map[service.ServiceUUID]bool{
+			serviceUuid: true,
 		},
 	).Times(1).Return(
-		map[service.ServiceGUID]bool{
-			serviceGuid: true,
+		map[service.ServiceUUID]bool{
+			serviceUuid: true,
 		},
-		map[service.ServiceGUID]error{},
+		map[service.ServiceUUID]error{},
 		nil,
 	)
 
-	startedService, err := network.StartService(ctx, serviceId, serviceConfig)
+	startedService, err := network.StartService(ctx, serviceName, serviceConfig)
 	require.NotNil(t, err)
 	require.Nil(t, startedService)
 
@@ -244,7 +244,7 @@ func TestStartService_FailedToStart(t *testing.T) {
 
 	require.Empty(t, network.networkingSidecars)
 
-	expectedPartitionsInTopolody := map[service_network_types.PartitionID]map[service.ServiceID]bool{
+	expectedPartitionsInTopolody := map[service_network_types.PartitionID]map[service.ServiceName]bool{
 		partition_topology.DefaultPartitionId: {},
 	}
 	require.Equal(t, expectedPartitionsInTopolody, network.topology.GetPartitionServices())
@@ -256,98 +256,98 @@ func TestStartService_SidecarFailedToStart(t *testing.T) {
 
 	serviceInternalTestId := 1
 	servicePartitionId := testPartitionIdFromInt(serviceInternalTestId)
-	serviceId := testServiceIdFromInt(serviceInternalTestId)
-	serviceGuid := testServiceGuidFromInt(serviceInternalTestId)
+	serviceName := testServiceNameFromInt(serviceInternalTestId)
+	serviceUuid := testServiceUuidFromInt(serviceInternalTestId)
 	successfulServiceIp := testIpFromInt(serviceInternalTestId)
-	serviceRegistration := service.NewServiceRegistration(serviceId, serviceGuid, enclaveId, successfulServiceIp)
+	serviceRegistration := service.NewServiceRegistration(serviceName, serviceUuid, enclaveName, successfulServiceIp)
 	serviceObj := service.NewService(serviceRegistration, container_status.ContainerStatus_Running, map[string]*port_spec.PortSpec{}, successfulServiceIp, map[string]*port_spec.PortSpec{})
 	serviceConfig := services.NewServiceConfigBuilder(testContainerImageName).WithSubnetwork(string(servicePartitionId)).Build()
 
 	network := NewDefaultServiceNetwork(
-		enclaveId,
+		enclaveName,
 		ip,
 		apiContainerPort,
 		fakeApiContainerVersion,
 		partitioningEnabled,
 		backend,
 		unusedEnclaveDataDir,
-		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveId),
+		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveName),
 	)
 
 	// The service is registered before being started
 	backend.EXPECT().RegisterUserServices(
 		ctx,
-		enclaveId,
-		map[service.ServiceID]bool{
-			serviceId: true,
+		enclaveName,
+		map[service.ServiceName]bool{
+			serviceName: true,
 		},
 	).Times(1).Return(
-		map[service.ServiceID]*service.ServiceRegistration{
-			serviceId: serviceRegistration,
+		map[service.ServiceName]*service.ServiceRegistration{
+			serviceName: serviceRegistration,
 		},
-		map[service.ServiceID]error{},
+		map[service.ServiceName]error{},
 		nil,
 	)
 
 	// StartRegisteredUserServices will be called for this service
 	backend.EXPECT().StartRegisteredUserServices(
 		ctx,
-		enclaveId,
-		mock.MatchedBy(func(services map[service.ServiceGUID]*service.ServiceConfig) bool {
+		enclaveName,
+		mock.MatchedBy(func(services map[service.ServiceUUID]*service.ServiceConfig) bool {
 			// Matcher function returning true iff the services map arg contains exactly the following key:
-			// {serviceId}
-			_, foundService := services[serviceGuid]
+			// {serviceName}
+			_, foundService := services[serviceUuid]
 			return len(services) == 1 && foundService
 		})).Times(1).Return(
-		map[service.ServiceGUID]*service.Service{
-			serviceGuid: serviceObj,
+		map[service.ServiceUUID]*service.Service{
+			serviceUuid: serviceObj,
 		},
-		map[service.ServiceGUID]error{},
+		map[service.ServiceUUID]error{},
 		nil)
 
 	// CreateNetworkingSidecar will be called for this service
-	backend.EXPECT().CreateNetworkingSidecar(ctx, enclaveId, serviceGuid).Times(1).Return(
+	backend.EXPECT().CreateNetworkingSidecar(ctx, enclaveName, serviceUuid).Times(1).Return(
 		nil,
 		errors.New("failed creating sidecar"))
 
 	// RunNetworkingSidecarExecCommands will never be called
 	backend.EXPECT().RunNetworkingSidecarExecCommands(
 		ctx,
-		enclaveId,
+		enclaveName,
 		mock.Anything).Maybe().Times(0)
 
 	// DestroyUserServices is being called for sidecarFailedService only because the sidecar failed to be started
 	backend.EXPECT().DestroyUserServices(
 		ctx,
-		enclaveId,
+		enclaveName,
 		mock.MatchedBy(func(filters *service.ServiceFilters) bool {
 			// Matcher function returning true iff the filters map arg contains exactly the following key:
-			// {serviceGuid}
-			_, foundService := filters.GUIDs[serviceGuid]
-			return len(filters.Statuses) == 0 && len(filters.IDs) == 0 && len(filters.GUIDs) == 1 && foundService
+			// {serviceUuid}
+			_, foundService := filters.UUIDs[serviceUuid]
+			return len(filters.Statuses) == 0 && len(filters.Names) == 0 && len(filters.UUIDs) == 1 && foundService
 		})).Times(1).Return(
-		map[service.ServiceGUID]bool{
-			serviceGuid: true,
+		map[service.ServiceUUID]bool{
+			serviceUuid: true,
 		},
-		map[service.ServiceGUID]error{},
+		map[service.ServiceUUID]error{},
 		nil)
 
 	// Since the service sidecar fails to start, the service is destroyed and then unregistered
 	backend.EXPECT().UnregisterUserServices(
 		ctx,
-		enclaveId,
-		map[service.ServiceGUID]bool{
-			serviceGuid: true,
+		enclaveName,
+		map[service.ServiceUUID]bool{
+			serviceUuid: true,
 		},
 	).Times(1).Return(
-		map[service.ServiceGUID]bool{
-			serviceGuid: true,
+		map[service.ServiceUUID]bool{
+			serviceUuid: true,
 		},
-		map[service.ServiceGUID]error{},
+		map[service.ServiceUUID]error{},
 		nil,
 	)
 
-	startedService, err := network.StartService(ctx, serviceId, serviceConfig)
+	startedService, err := network.StartService(ctx, serviceName, serviceConfig)
 	require.NotNil(t, err)
 	require.Nil(t, startedService)
 
@@ -355,7 +355,7 @@ func TestStartService_SidecarFailedToStart(t *testing.T) {
 
 	require.Empty(t, network.networkingSidecars, 1)
 
-	expectedPartitionsInTopolody := map[service_network_types.PartitionID]map[service.ServiceID]bool{
+	expectedPartitionsInTopolody := map[service_network_types.PartitionID]map[service.ServiceName]bool{
 		partition_topology.DefaultPartitionId: {},
 	}
 	require.Equal(t, expectedPartitionsInTopolody, network.topology.GetPartitionServices())
@@ -368,41 +368,41 @@ func TestStartServices(t *testing.T) {
 	// One service will be started successfully
 	successfulServiceIndex := 1
 	successfulServicePartitionId := testPartitionIdFromInt(successfulServiceIndex)
-	successfulServiceId := testServiceIdFromInt(successfulServiceIndex)
-	successfulServiceGuid := testServiceGuidFromInt(successfulServiceIndex)
+	successfulServiceName := testServiceNameFromInt(successfulServiceIndex)
+	successfulServiceUuid := testServiceUuidFromInt(successfulServiceIndex)
 	successfulServiceIp := testIpFromInt(successfulServiceIndex)
-	successfulServiceRegistration := service.NewServiceRegistration(successfulServiceId, successfulServiceGuid, enclaveId, successfulServiceIp)
+	successfulServiceRegistration := service.NewServiceRegistration(successfulServiceName, successfulServiceUuid, enclaveName, successfulServiceIp)
 	successfulService := service.NewService(successfulServiceRegistration, container_status.ContainerStatus_Running, map[string]*port_spec.PortSpec{}, successfulServiceIp, map[string]*port_spec.PortSpec{})
 	successfulServiceConfig := services.NewServiceConfigBuilder(testContainerImageName).WithSubnetwork(string(successfulServicePartitionId)).Build()
 
 	// One service will fail to be started
 	failedServiceIndex := 2
 	failedServicePartitionId := testPartitionIdFromInt(failedServiceIndex)
-	failedServiceId := testServiceIdFromInt(failedServiceIndex)
-	failedServiceGuid := testServiceGuidFromInt(failedServiceIndex)
+	failedServiceName := testServiceNameFromInt(failedServiceIndex)
+	failedServiceUuid := testServiceUuidFromInt(failedServiceIndex)
 	failedServiceIp := testIpFromInt(failedServiceIndex)
-	failedServiceRegistration := service.NewServiceRegistration(failedServiceId, failedServiceGuid, enclaveId, failedServiceIp)
+	failedServiceRegistration := service.NewServiceRegistration(failedServiceName, failedServiceUuid, enclaveName, failedServiceIp)
 	failedServiceConfig := services.NewServiceConfigBuilder(testContainerImageName).WithSubnetwork(string(failedServicePartitionId)).Build()
 
 	// One service will be successfully started but its sidecar will fail to start
 	sidecarFailedServiceIndex := 3
 	sidecarFailedServicePartitionId := testPartitionIdFromInt(sidecarFailedServiceIndex)
-	sidecarFailedServiceId := testServiceIdFromInt(sidecarFailedServiceIndex)
-	sidecarFailedServiceGuid := testServiceGuidFromInt(sidecarFailedServiceIndex)
+	sidecarFailedServiceName := testServiceNameFromInt(sidecarFailedServiceIndex)
+	sidecarFailedServiceUuid := testServiceUuidFromInt(sidecarFailedServiceIndex)
 	sidecarFailedServiceIp := testIpFromInt(sidecarFailedServiceIndex)
-	sidecarFailedServiceRegistration := service.NewServiceRegistration(sidecarFailedServiceId, sidecarFailedServiceGuid, enclaveId, sidecarFailedServiceIp)
+	sidecarFailedServiceRegistration := service.NewServiceRegistration(sidecarFailedServiceName, sidecarFailedServiceUuid, enclaveName, sidecarFailedServiceIp)
 	sidecarFailedService := service.NewService(sidecarFailedServiceRegistration, container_status.ContainerStatus_Running, map[string]*port_spec.PortSpec{}, sidecarFailedServiceIp, map[string]*port_spec.PortSpec{})
 	sidecarFailedServiceConfig := services.NewServiceConfigBuilder(testContainerImageName).WithSubnetwork(string(sidecarFailedServicePartitionId)).Build()
 
 	network := NewDefaultServiceNetwork(
-		enclaveId,
+		enclaveName,
 		ip,
 		apiContainerPort,
 		fakeApiContainerVersion,
 		partitioningEnabled,
 		backend,
 		unusedEnclaveDataDir,
-		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveId),
+		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveName),
 	)
 
 	// Configure the mock to also be testing that the right functions are called along the way
@@ -410,180 +410,180 @@ func TestStartServices(t *testing.T) {
 	// The services are registered one by one before being started
 	backend.EXPECT().RegisterUserServices(
 		ctx,
-		enclaveId,
-		map[service.ServiceID]bool{
-			successfulServiceId: true,
+		enclaveName,
+		map[service.ServiceName]bool{
+			successfulServiceName: true,
 		},
 	).Times(1).Return(
-		map[service.ServiceID]*service.ServiceRegistration{
-			successfulServiceId: successfulServiceRegistration,
+		map[service.ServiceName]*service.ServiceRegistration{
+			successfulServiceName: successfulServiceRegistration,
 		},
-		map[service.ServiceID]error{},
+		map[service.ServiceName]error{},
 		nil,
 	)
 	backend.EXPECT().RegisterUserServices(
 		ctx,
-		enclaveId,
-		map[service.ServiceID]bool{
-			failedServiceId: true,
+		enclaveName,
+		map[service.ServiceName]bool{
+			failedServiceName: true,
 		},
 	).Times(1).Return(
-		map[service.ServiceID]*service.ServiceRegistration{
-			failedServiceId: failedServiceRegistration,
+		map[service.ServiceName]*service.ServiceRegistration{
+			failedServiceName: failedServiceRegistration,
 		},
-		map[service.ServiceID]error{},
+		map[service.ServiceName]error{},
 		nil,
 	)
 	backend.EXPECT().RegisterUserServices(
 		ctx,
-		enclaveId,
-		map[service.ServiceID]bool{
-			sidecarFailedServiceId: true,
+		enclaveName,
+		map[service.ServiceName]bool{
+			sidecarFailedServiceName: true,
 		},
 	).Times(1).Return(
-		map[service.ServiceID]*service.ServiceRegistration{
-			sidecarFailedServiceId: sidecarFailedServiceRegistration,
+		map[service.ServiceName]*service.ServiceRegistration{
+			sidecarFailedServiceName: sidecarFailedServiceRegistration,
 		},
-		map[service.ServiceID]error{},
+		map[service.ServiceName]error{},
 		nil,
 	)
 
 	// StartUserService will be called three times, with all the provided services
 	backend.EXPECT().StartRegisteredUserServices(
 		ctx,
-		enclaveId,
-		mock.MatchedBy(func(services map[service.ServiceGUID]*service.ServiceConfig) bool {
+		enclaveName,
+		mock.MatchedBy(func(services map[service.ServiceUUID]*service.ServiceConfig) bool {
 			// Matcher function returning true iff the services map arg contains exactly the following key:
-			// {successfulServiceId}
-			_, foundSuccessfulService := services[successfulServiceGuid]
+			// {successfulServiceName}
+			_, foundSuccessfulService := services[successfulServiceUuid]
 			return len(services) == 1 && foundSuccessfulService
 		})).Times(1).Return(
-		map[service.ServiceGUID]*service.Service{
-			successfulServiceGuid: successfulService,
+		map[service.ServiceUUID]*service.Service{
+			successfulServiceUuid: successfulService,
 		},
-		map[service.ServiceGUID]error{},
+		map[service.ServiceUUID]error{},
 		nil)
 	backend.EXPECT().StartRegisteredUserServices(
 		ctx,
-		enclaveId,
-		mock.MatchedBy(func(services map[service.ServiceGUID]*service.ServiceConfig) bool {
+		enclaveName,
+		mock.MatchedBy(func(services map[service.ServiceUUID]*service.ServiceConfig) bool {
 			// Matcher function returning true iff the services map arg contains exactly the following key:
-			// {failedServiceId}
-			_, foundFailedService := services[failedServiceGuid]
+			// {failedServiceName}
+			_, foundFailedService := services[failedServiceUuid]
 			return len(services) == 1 && foundFailedService
 		})).Times(1).Return(
-		map[service.ServiceGUID]*service.Service{},
-		map[service.ServiceGUID]error{
-			failedServiceGuid: stacktrace.NewError("Failed starting service"),
+		map[service.ServiceUUID]*service.Service{},
+		map[service.ServiceUUID]error{
+			failedServiceUuid: stacktrace.NewError("Failed starting service"),
 		},
 		nil)
 	backend.EXPECT().StartRegisteredUserServices(
 		ctx,
-		enclaveId,
-		mock.MatchedBy(func(services map[service.ServiceGUID]*service.ServiceConfig) bool {
+		enclaveName,
+		mock.MatchedBy(func(services map[service.ServiceUUID]*service.ServiceConfig) bool {
 			// Matcher function returning true iff the services map arg contains exactly the following key:
-			// {sidecarFailedServiceId}
-			_, foundSidecarFailedService := services[sidecarFailedServiceGuid]
+			// {sidecarFailedServiceName}
+			_, foundSidecarFailedService := services[sidecarFailedServiceUuid]
 			return len(services) == 1 && foundSidecarFailedService
 		})).Times(1).Return(
-		map[service.ServiceGUID]*service.Service{
-			sidecarFailedServiceGuid: sidecarFailedService,
+		map[service.ServiceUUID]*service.Service{
+			sidecarFailedServiceUuid: sidecarFailedService,
 		},
-		map[service.ServiceGUID]error{},
+		map[service.ServiceUUID]error{},
 		nil)
 
 	// CreateNetworkingSidecar will be called exactly twice with the 2 successfully started services
-	backend.EXPECT().CreateNetworkingSidecar(ctx, enclaveId, successfulServiceGuid).Times(1).Return(
-		lib_networking_sidecar.NewNetworkingSidecar(successfulServiceGuid, enclaveId, container_status.ContainerStatus_Running),
+	backend.EXPECT().CreateNetworkingSidecar(ctx, enclaveName, successfulServiceUuid).Times(1).Return(
+		lib_networking_sidecar.NewNetworkingSidecar(successfulServiceUuid, enclaveName, container_status.ContainerStatus_Running),
 		nil)
-	backend.EXPECT().CreateNetworkingSidecar(ctx, enclaveId, sidecarFailedServiceGuid).Times(1).Return(
+	backend.EXPECT().CreateNetworkingSidecar(ctx, enclaveName, sidecarFailedServiceUuid).Times(1).Return(
 		nil,
 		stacktrace.NewError("Failed starting sidecar for service"))
 
 	// RunNetworkingSidecarExecCommands will be called only once for the successfully started sidecar
 	backend.EXPECT().RunNetworkingSidecarExecCommands(
 		ctx,
-		enclaveId,
-		mock.MatchedBy(func(commands map[service.ServiceGUID][]string) bool {
+		enclaveName,
+		mock.MatchedBy(func(commands map[service.ServiceUUID][]string) bool {
 			// Matcher function returning true iff the commands map arg contains exactly the following key:
-			// {successfulServiceGuid}
-			_, foundSuccessfulService := commands[successfulServiceGuid]
+			// {successfulServiceUuid}
+			_, foundSuccessfulService := commands[successfulServiceUuid]
 			return len(commands) == 1 && foundSuccessfulService
 		})).Times(2).Return(
-		map[service.ServiceGUID]*exec_result.ExecResult{
-			successfulServiceGuid: exec_result.NewExecResult(0, ""),
+		map[service.ServiceUUID]*exec_result.ExecResult{
+			successfulServiceUuid: exec_result.NewExecResult(0, ""),
 		},
-		map[service.ServiceGUID]error{},
+		map[service.ServiceUUID]error{},
 		nil)
 
 	// DestroyUserServices is being called for sidecarFailedService only because the sidecar failed to be started
 	backend.EXPECT().DestroyUserServices(
 		ctx,
-		enclaveId,
+		enclaveName,
 		mock.MatchedBy(func(filters *service.ServiceFilters) bool {
 			// Matcher function returning true iff the filters map arg contains exactly the following key:
-			// {sidecarFailedServiceGuid}
-			_, foundSidecarFailedService := filters.GUIDs[sidecarFailedServiceGuid]
-			return len(filters.Statuses) == 0 && len(filters.IDs) == 0 && len(filters.GUIDs) == 1 && foundSidecarFailedService
+			// {sidecarFailedServiceUuid}
+			_, foundSidecarFailedService := filters.UUIDs[sidecarFailedServiceUuid]
+			return len(filters.Statuses) == 0 && len(filters.Names) == 0 && len(filters.UUIDs) == 1 && foundSidecarFailedService
 		})).Times(1).Return(
-		map[service.ServiceGUID]bool{
-			sidecarFailedServiceGuid: true,
+		map[service.ServiceUUID]bool{
+			sidecarFailedServiceUuid: true,
 		},
-		map[service.ServiceGUID]error{},
+		map[service.ServiceUUID]error{},
 		nil)
 
 	// Both failedService and sidecarFailedService are unregistered in the deferred functions
 	backend.EXPECT().UnregisterUserServices(
 		ctx,
-		enclaveId,
-		map[service.ServiceGUID]bool{
-			failedServiceGuid: true,
+		enclaveName,
+		map[service.ServiceUUID]bool{
+			failedServiceUuid: true,
 		},
 	).Times(1).Return(
-		map[service.ServiceGUID]bool{
-			failedServiceGuid: true,
+		map[service.ServiceUUID]bool{
+			failedServiceUuid: true,
 		},
-		map[service.ServiceGUID]error{},
+		map[service.ServiceUUID]error{},
 		nil,
 	)
 	backend.EXPECT().UnregisterUserServices(
 		ctx,
-		enclaveId,
-		map[service.ServiceGUID]bool{
-			sidecarFailedServiceGuid: true,
+		enclaveName,
+		map[service.ServiceUUID]bool{
+			sidecarFailedServiceUuid: true,
 		},
 	).Times(1).Return(
-		map[service.ServiceGUID]bool{
-			sidecarFailedServiceGuid: true,
+		map[service.ServiceUUID]bool{
+			sidecarFailedServiceUuid: true,
 		},
-		map[service.ServiceGUID]error{},
+		map[service.ServiceUUID]error{},
 		nil,
 	)
 
 	success, failure := network.StartServices(
 		ctx,
-		map[service.ServiceID]*kurtosis_core_rpc_api_bindings.ServiceConfig{
-			successfulServiceId:    successfulServiceConfig,
-			failedServiceId:        failedServiceConfig,
-			sidecarFailedServiceId: sidecarFailedServiceConfig,
+		map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig{
+			successfulServiceName:    successfulServiceConfig,
+			failedServiceName:        failedServiceConfig,
+			sidecarFailedServiceName: sidecarFailedServiceConfig,
 		},
 	)
 	require.Len(t, success, 1)
-	require.Contains(t, success, successfulServiceId)
+	require.Contains(t, success, successfulServiceName)
 	require.Len(t, failure, 2)
-	require.Contains(t, failure, failedServiceId)
-	require.Contains(t, failure, sidecarFailedServiceId)
+	require.Contains(t, failure, failedServiceName)
+	require.Contains(t, failure, sidecarFailedServiceName)
 
 	require.Len(t, network.registeredServiceInfo, 1)
-	require.Contains(t, network.registeredServiceInfo, successfulServiceId)
+	require.Contains(t, network.registeredServiceInfo, successfulServiceName)
 
 	require.Len(t, network.networkingSidecars, 1)
-	require.Contains(t, network.networkingSidecars, successfulServiceId)
+	require.Contains(t, network.networkingSidecars, successfulServiceName)
 
-	expectedPartitionsInTopolody := map[service_network_types.PartitionID]map[service.ServiceID]bool{
+	expectedPartitionsInTopolody := map[service_network_types.PartitionID]map[service.ServiceName]bool{
 		partition_topology.DefaultPartitionId: {},
 		successfulServicePartitionId: {
-			successfulServiceId: true,
+			successfulServiceName: true,
 		},
 		// partitions with services that failed to start were removed from the topology
 	}
@@ -595,14 +595,14 @@ func TestUpdateService(t *testing.T) {
 	backend := backend_interface.NewMockKurtosisBackend(t)
 
 	network := NewDefaultServiceNetwork(
-		enclaveId,
+		enclaveName,
 		ip,
 		apiContainerPort,
 		fakeApiContainerVersion,
 		partitioningEnabled,
 		backend,
 		unusedEnclaveDataDir,
-		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveId),
+		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveName),
 	)
 
 	partition0 := service_network_types.PartitionID("partition0")
@@ -612,74 +612,74 @@ func TestUpdateService(t *testing.T) {
 	// service that will be successfully moved from partition1 to partition2
 	successfulServiceIndex := 1
 	successfulService := service.NewServiceRegistration(
-		testServiceIdFromInt(successfulServiceIndex),
-		testServiceGuidFromInt(successfulServiceIndex),
-		enclaveId,
+		testServiceNameFromInt(successfulServiceIndex),
+		testServiceUuidFromInt(successfulServiceIndex),
+		enclaveName,
 		testIpFromInt(successfulServiceIndex))
 
 	// service that will be in partition0 from the start and be updated to partition0 (i.e. it will no-op)
 	serviceAlreadyInPartitionIndex := 2
 	serviceAlreadyInPartition := service.NewServiceRegistration(
-		testServiceIdFromInt(serviceAlreadyInPartitionIndex),
-		testServiceGuidFromInt(serviceAlreadyInPartitionIndex),
-		enclaveId,
+		testServiceNameFromInt(serviceAlreadyInPartitionIndex),
+		testServiceUuidFromInt(serviceAlreadyInPartitionIndex),
+		enclaveName,
 		testIpFromInt(serviceAlreadyInPartitionIndex))
 
 	// service that does not exist, and yet we will try to update it. It should fail
 	nonExistentServiceIndex := 3
 	nonExistentService := service.NewServiceRegistration(
-		testServiceIdFromInt(nonExistentServiceIndex),
-		testServiceGuidFromInt(nonExistentServiceIndex),
-		enclaveId,
+		testServiceNameFromInt(nonExistentServiceIndex),
+		testServiceUuidFromInt(nonExistentServiceIndex),
+		enclaveName,
 		testIpFromInt(nonExistentServiceIndex))
 
 	// service that will be moved from default partition to partition2
 	serviceToMoveOutOfDefaultPartitionIndex := 4
 	serviceToMoveOutOfDefaultPartition := service.NewServiceRegistration(
-		testServiceIdFromInt(serviceToMoveOutOfDefaultPartitionIndex),
-		testServiceGuidFromInt(serviceToMoveOutOfDefaultPartitionIndex),
-		enclaveId,
+		testServiceNameFromInt(serviceToMoveOutOfDefaultPartitionIndex),
+		testServiceUuidFromInt(serviceToMoveOutOfDefaultPartitionIndex),
+		enclaveName,
 		testIpFromInt(serviceToMoveOutOfDefaultPartitionIndex))
 
 	require.Nil(t, network.topology.CreateEmptyPartitionWithDefaultConnection(partition1))
 	require.Nil(t, network.topology.CreateEmptyPartitionWithDefaultConnection(partition0))
-	require.Nil(t, network.topology.AddService(successfulService.GetID(), partition1))
-	require.Nil(t, network.topology.AddService(serviceAlreadyInPartition.GetID(), partition0))
-	require.Nil(t, network.topology.AddService(serviceToMoveOutOfDefaultPartition.GetID(), partition_topology.DefaultPartitionId))
+	require.Nil(t, network.topology.AddService(successfulService.GetName(), partition1))
+	require.Nil(t, network.topology.AddService(serviceAlreadyInPartition.GetName(), partition0))
+	require.Nil(t, network.topology.AddService(serviceToMoveOutOfDefaultPartition.GetName(), partition_topology.DefaultPartitionId))
 
-	network.registeredServiceInfo[successfulService.GetID()] = successfulService
-	network.registeredServiceInfo[serviceAlreadyInPartition.GetID()] = serviceAlreadyInPartition
-	network.registeredServiceInfo[serviceToMoveOutOfDefaultPartition.GetID()] = serviceToMoveOutOfDefaultPartition
+	network.registeredServiceInfo[successfulService.GetName()] = successfulService
+	network.registeredServiceInfo[serviceAlreadyInPartition.GetName()] = serviceAlreadyInPartition
+	network.registeredServiceInfo[serviceToMoveOutOfDefaultPartition.GetName()] = serviceToMoveOutOfDefaultPartition
 	// nonExistentService don't get added here as it is supposed to be an unknown service
 
-	network.networkingSidecars[successfulService.GetID()] = networking_sidecar.NewMockNetworkingSidecarWrapper()
-	network.networkingSidecars[serviceAlreadyInPartition.GetID()] = networking_sidecar.NewMockNetworkingSidecarWrapper()
-	network.networkingSidecars[serviceToMoveOutOfDefaultPartition.GetID()] = networking_sidecar.NewMockNetworkingSidecarWrapper()
+	network.networkingSidecars[successfulService.GetName()] = networking_sidecar.NewMockNetworkingSidecarWrapper()
+	network.networkingSidecars[serviceAlreadyInPartition.GetName()] = networking_sidecar.NewMockNetworkingSidecarWrapper()
+	network.networkingSidecars[serviceToMoveOutOfDefaultPartition.GetName()] = networking_sidecar.NewMockNetworkingSidecarWrapper()
 
-	success, failure, err := network.UpdateService(ctx, map[service.ServiceID]*kurtosis_core_rpc_api_bindings.UpdateServiceConfig{
-		successfulService.GetID():                  binding_constructors.NewUpdateServiceConfig(string(partition2)),
-		serviceAlreadyInPartition.GetID():          binding_constructors.NewUpdateServiceConfig(string(partition0)),
-		nonExistentService.GetID():                 binding_constructors.NewUpdateServiceConfig(string(partition2)),
-		serviceToMoveOutOfDefaultPartition.GetID(): binding_constructors.NewUpdateServiceConfig(string(partition2)),
+	success, failure, err := network.UpdateService(ctx, map[service.ServiceName]*kurtosis_core_rpc_api_bindings.UpdateServiceConfig{
+		successfulService.GetName():                  binding_constructors.NewUpdateServiceConfig(string(partition2)),
+		serviceAlreadyInPartition.GetName():          binding_constructors.NewUpdateServiceConfig(string(partition0)),
+		nonExistentService.GetName():                 binding_constructors.NewUpdateServiceConfig(string(partition2)),
+		serviceToMoveOutOfDefaultPartition.GetName(): binding_constructors.NewUpdateServiceConfig(string(partition2)),
 	})
 	require.Nil(t, err)
 	require.Len(t, success, 3)
-	require.Contains(t, success, successfulService.GetID())
-	require.Contains(t, success, serviceAlreadyInPartition.GetID())
-	require.Contains(t, success, serviceToMoveOutOfDefaultPartition.GetID())
+	require.Contains(t, success, successfulService.GetName())
+	require.Contains(t, success, serviceAlreadyInPartition.GetName())
+	require.Contains(t, success, serviceToMoveOutOfDefaultPartition.GetName())
 
 	require.Len(t, failure, 1)
-	require.Contains(t, failure, nonExistentService.GetID())
+	require.Contains(t, failure, nonExistentService.GetName())
 
-	expectedPartitions := map[service_network_types.PartitionID]map[service.ServiceID]bool{
+	expectedPartitions := map[service_network_types.PartitionID]map[service.ServiceName]bool{
 		partition_topology.DefaultPartitionId: {},
 		partition0: {
-			serviceAlreadyInPartition.GetID(): true,
+			serviceAlreadyInPartition.GetName(): true,
 		},
 		partition1: {},
 		partition2: {
-			successfulService.GetID():                  true,
-			serviceToMoveOutOfDefaultPartition.GetID(): true,
+			successfulService.GetName():                  true,
+			serviceToMoveOutOfDefaultPartition.GetName(): true,
 		},
 	}
 	require.Equal(t, expectedPartitions, network.topology.GetPartitionServices())
@@ -690,14 +690,14 @@ func TestUpdateService_FullBatchFailureRollBack(t *testing.T) {
 	backend := backend_interface.NewMockKurtosisBackend(t)
 
 	network := NewDefaultServiceNetwork(
-		enclaveId,
+		enclaveName,
 		ip,
 		apiContainerPort,
 		fakeApiContainerVersion,
 		partitioningEnabled,
 		backend,
 		unusedEnclaveDataDir,
-		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveId),
+		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveName),
 	)
 
 	partition1 := service_network_types.PartitionID("partition1")
@@ -705,43 +705,43 @@ func TestUpdateService_FullBatchFailureRollBack(t *testing.T) {
 
 	failingServiceIndex := 1
 	failingService := service.NewServiceRegistration(
-		testServiceIdFromInt(failingServiceIndex),
-		testServiceGuidFromInt(failingServiceIndex),
-		enclaveId,
+		testServiceNameFromInt(failingServiceIndex),
+		testServiceUuidFromInt(failingServiceIndex),
+		enclaveName,
 		testIpFromInt(failingServiceIndex))
 	successfulServiceIndex := 2
 	successfulService := service.NewServiceRegistration(
-		testServiceIdFromInt(successfulServiceIndex),
-		testServiceGuidFromInt(successfulServiceIndex),
-		enclaveId,
+		testServiceNameFromInt(successfulServiceIndex),
+		testServiceUuidFromInt(successfulServiceIndex),
+		enclaveName,
 		testIpFromInt(successfulServiceIndex))
 
 	require.Nil(t, network.topology.CreateEmptyPartitionWithDefaultConnection(partition1))
-	require.Nil(t, network.topology.AddService(failingService.GetID(), partition1))
-	require.Nil(t, network.topology.AddService(successfulService.GetID(), partition1))
+	require.Nil(t, network.topology.AddService(failingService.GetName(), partition1))
+	require.Nil(t, network.topology.AddService(successfulService.GetName(), partition1))
 
-	network.registeredServiceInfo[failingService.GetID()] = failingService
-	network.registeredServiceInfo[successfulService.GetID()] = successfulService
+	network.registeredServiceInfo[failingService.GetName()] = failingService
+	network.registeredServiceInfo[successfulService.GetName()] = successfulService
 
 	// do not add sidecar for failingService so that it fails updating the connections
-	network.networkingSidecars[successfulService.GetID()] = networking_sidecar.NewMockNetworkingSidecarWrapper()
+	network.networkingSidecars[successfulService.GetName()] = networking_sidecar.NewMockNetworkingSidecarWrapper()
 
-	success, failure, err := network.UpdateService(ctx, map[service.ServiceID]*kurtosis_core_rpc_api_bindings.UpdateServiceConfig{
-		failingService.GetID():    binding_constructors.NewUpdateServiceConfig(string(partition2)),
-		successfulService.GetID(): binding_constructors.NewUpdateServiceConfig(string(partition2)),
+	success, failure, err := network.UpdateService(ctx, map[service.ServiceName]*kurtosis_core_rpc_api_bindings.UpdateServiceConfig{
+		failingService.GetName():    binding_constructors.NewUpdateServiceConfig(string(partition2)),
+		successfulService.GetName(): binding_constructors.NewUpdateServiceConfig(string(partition2)),
 	})
 	require.Contains(t, err.Error(), "Unable to update connections between the different partitions of the topology")
 
 	require.Nil(t, success)
 	require.Nil(t, failure)
 
-	expectedPartitions := map[service_network_types.PartitionID]map[service.ServiceID]bool{
+	expectedPartitions := map[service_network_types.PartitionID]map[service.ServiceName]bool{
 		partition_topology.DefaultPartitionId: {},
 		// partition2 was removed as it was a new partition that remained empty
 		// both services were left into partition1
 		partition1: {
-			failingService.GetID():    true,
-			successfulService.GetID(): true,
+			failingService.GetName():    true,
+			successfulService.GetName(): true,
 		},
 	}
 	require.Equal(t, expectedPartitions, network.topology.GetPartitionServices())
@@ -752,14 +752,14 @@ func TestSetDefaultConnection(t *testing.T) {
 	backend := backend_interface.NewMockKurtosisBackend(t)
 
 	network := NewDefaultServiceNetwork(
-		enclaveId,
+		enclaveName,
 		ip,
 		apiContainerPort,
 		fakeApiContainerVersion,
 		partitioningEnabled,
 		backend,
 		unusedEnclaveDataDir,
-		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveId),
+		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveName),
 	)
 
 	require.Nil(t, network.topology.CreateEmptyPartitionWithDefaultConnection("test-partition"))
@@ -777,14 +777,14 @@ func TestSetDefaultConnection_FailureRollbackDefaultConnection(t *testing.T) {
 	backend := backend_interface.NewMockKurtosisBackend(t)
 
 	network := NewDefaultServiceNetwork(
-		enclaveId,
+		enclaveName,
 		ip,
 		apiContainerPort,
 		fakeApiContainerVersion,
 		partitioningEnabled,
 		backend,
 		unusedEnclaveDataDir,
-		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveId),
+		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveName),
 	)
 
 	require.Nil(t, network.topology.CreateEmptyPartitionWithDefaultConnection("test-partition"))
@@ -803,14 +803,14 @@ func TestSetConnection(t *testing.T) {
 	backend := backend_interface.NewMockKurtosisBackend(t)
 
 	network := NewDefaultServiceNetwork(
-		enclaveId,
+		enclaveName,
 		ip,
 		apiContainerPort,
 		fakeApiContainerVersion,
 		partitioningEnabled,
 		backend,
 		unusedEnclaveDataDir,
-		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveId),
+		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveName),
 	)
 
 	partition1 := service_network_types.PartitionID("partition1")
@@ -818,27 +818,27 @@ func TestSetConnection(t *testing.T) {
 
 	service1Index := 1
 	service1 := service.NewServiceRegistration(
-		testServiceIdFromInt(service1Index),
-		testServiceGuidFromInt(service1Index),
-		enclaveId,
+		testServiceNameFromInt(service1Index),
+		testServiceUuidFromInt(service1Index),
+		enclaveName,
 		testIpFromInt(service1Index))
 	service2Index := 2
 	service2 := service.NewServiceRegistration(
-		testServiceIdFromInt(service2Index),
-		testServiceGuidFromInt(service2Index),
-		enclaveId,
+		testServiceNameFromInt(service2Index),
+		testServiceUuidFromInt(service2Index),
+		enclaveName,
 		testIpFromInt(service2Index))
 
 	require.Nil(t, network.topology.CreateEmptyPartitionWithDefaultConnection(partition1))
 	require.Nil(t, network.topology.CreateEmptyPartitionWithDefaultConnection(partition2))
-	require.Nil(t, network.topology.AddService(service1.GetID(), partition1))
-	require.Nil(t, network.topology.AddService(service2.GetID(), partition2))
+	require.Nil(t, network.topology.AddService(service1.GetName(), partition1))
+	require.Nil(t, network.topology.AddService(service2.GetName(), partition2))
 
-	network.registeredServiceInfo[service1.GetID()] = service1
-	network.registeredServiceInfo[service2.GetID()] = service2
+	network.registeredServiceInfo[service1.GetName()] = service1
+	network.registeredServiceInfo[service2.GetName()] = service2
 
-	network.networkingSidecars[service1.GetID()] = networking_sidecar.NewMockNetworkingSidecarWrapper()
-	network.networkingSidecars[service2.GetID()] = networking_sidecar.NewMockNetworkingSidecarWrapper()
+	network.networkingSidecars[service1.GetName()] = networking_sidecar.NewMockNetworkingSidecarWrapper()
+	network.networkingSidecars[service2.GetName()] = networking_sidecar.NewMockNetworkingSidecarWrapper()
 
 	connectionOverride := partition_topology.NewPartitionConnection(50)
 	err := network.SetConnection(ctx, partition1, partition2, connectionOverride)
@@ -855,14 +855,14 @@ func TestSetConnection_FailureRollsBackChanges(t *testing.T) {
 	backend := backend_interface.NewMockKurtosisBackend(t)
 
 	network := NewDefaultServiceNetwork(
-		enclaveId,
+		enclaveName,
 		ip,
 		apiContainerPort,
 		fakeApiContainerVersion,
 		partitioningEnabled,
 		backend,
 		unusedEnclaveDataDir,
-		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveId),
+		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveName),
 	)
 
 	partition1 := service_network_types.PartitionID("partition1")
@@ -870,24 +870,24 @@ func TestSetConnection_FailureRollsBackChanges(t *testing.T) {
 
 	service1Index := 1
 	service1 := service.NewServiceRegistration(
-		testServiceIdFromInt(service1Index),
-		testServiceGuidFromInt(service1Index),
-		enclaveId,
+		testServiceNameFromInt(service1Index),
+		testServiceUuidFromInt(service1Index),
+		enclaveName,
 		testIpFromInt(service1Index))
 	service2Index := 2
 	service2 := service.NewServiceRegistration(
-		testServiceIdFromInt(service2Index),
-		testServiceGuidFromInt(service2Index),
-		enclaveId,
+		testServiceNameFromInt(service2Index),
+		testServiceUuidFromInt(service2Index),
+		enclaveName,
 		testIpFromInt(service2Index))
 
 	require.Nil(t, network.topology.CreateEmptyPartitionWithDefaultConnection(partition1))
 	// don't create partition 2 as it will be created on the fly by SetConnection
-	require.Nil(t, network.topology.AddService(service1.GetID(), partition1))
-	require.Nil(t, network.topology.AddService(service2.GetID(), partition1))
+	require.Nil(t, network.topology.AddService(service1.GetName(), partition1))
+	require.Nil(t, network.topology.AddService(service2.GetName(), partition1))
 
-	network.registeredServiceInfo[service1.GetID()] = service1
-	network.registeredServiceInfo[service2.GetID()] = service2
+	network.registeredServiceInfo[service1.GetName()] = service1
+	network.registeredServiceInfo[service2.GetName()] = service2
 
 	// do not add any sidecar such that updating network traffic will throw an exception
 
@@ -905,14 +905,14 @@ func TestUnsetConnection(t *testing.T) {
 	backend := backend_interface.NewMockKurtosisBackend(t)
 
 	network := NewDefaultServiceNetwork(
-		enclaveId,
+		enclaveName,
 		ip,
 		apiContainerPort,
 		fakeApiContainerVersion,
 		partitioningEnabled,
 		backend,
 		unusedEnclaveDataDir,
-		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveId),
+		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveName),
 	)
 
 	partition1 := service_network_types.PartitionID("partition1")
@@ -920,29 +920,29 @@ func TestUnsetConnection(t *testing.T) {
 
 	service1Index := 1
 	service1 := service.NewServiceRegistration(
-		testServiceIdFromInt(service1Index),
-		testServiceGuidFromInt(service1Index),
-		enclaveId,
+		testServiceNameFromInt(service1Index),
+		testServiceUuidFromInt(service1Index),
+		enclaveName,
 		testIpFromInt(service1Index))
 	service2Index := 2
 	service2 := service.NewServiceRegistration(
-		testServiceIdFromInt(service2Index),
-		testServiceGuidFromInt(service2Index),
-		enclaveId,
+		testServiceNameFromInt(service2Index),
+		testServiceUuidFromInt(service2Index),
+		enclaveName,
 		testIpFromInt(service2Index))
 
 	connectionOverride := partition_topology.NewPartitionConnection(50)
 	require.Nil(t, network.topology.CreateEmptyPartitionWithDefaultConnection(partition1))
 	require.Nil(t, network.topology.CreateEmptyPartitionWithDefaultConnection(partition2))
 	require.Nil(t, network.topology.SetConnection(partition1, partition2, connectionOverride))
-	require.Nil(t, network.topology.AddService(service1.GetID(), partition1))
-	require.Nil(t, network.topology.AddService(service2.GetID(), partition2))
+	require.Nil(t, network.topology.AddService(service1.GetName(), partition1))
+	require.Nil(t, network.topology.AddService(service2.GetName(), partition2))
 
-	network.registeredServiceInfo[service1.GetID()] = service1
-	network.registeredServiceInfo[service2.GetID()] = service2
+	network.registeredServiceInfo[service1.GetName()] = service1
+	network.registeredServiceInfo[service2.GetName()] = service2
 
-	network.networkingSidecars[service1.GetID()] = networking_sidecar.NewMockNetworkingSidecarWrapper()
-	network.networkingSidecars[service2.GetID()] = networking_sidecar.NewMockNetworkingSidecarWrapper()
+	network.networkingSidecars[service1.GetName()] = networking_sidecar.NewMockNetworkingSidecarWrapper()
+	network.networkingSidecars[service2.GetName()] = networking_sidecar.NewMockNetworkingSidecarWrapper()
 
 	err := network.UnsetConnection(ctx, partition1, partition2)
 	require.Nil(t, err)
@@ -957,14 +957,14 @@ func TestUnsetConnection_FailureRollsBackChanges(t *testing.T) {
 	backend := backend_interface.NewMockKurtosisBackend(t)
 
 	network := NewDefaultServiceNetwork(
-		enclaveId,
+		enclaveName,
 		ip,
 		apiContainerPort,
 		fakeApiContainerVersion,
 		partitioningEnabled,
 		backend,
 		unusedEnclaveDataDir,
-		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveId),
+		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveName),
 	)
 
 	partition1 := service_network_types.PartitionID("partition1")
@@ -972,26 +972,26 @@ func TestUnsetConnection_FailureRollsBackChanges(t *testing.T) {
 
 	service1Index := 1
 	service1 := service.NewServiceRegistration(
-		testServiceIdFromInt(service1Index),
-		testServiceGuidFromInt(service1Index),
-		enclaveId,
+		testServiceNameFromInt(service1Index),
+		testServiceUuidFromInt(service1Index),
+		enclaveName,
 		testIpFromInt(service1Index))
 	service2Index := 2
 	service2 := service.NewServiceRegistration(
-		testServiceIdFromInt(service2Index),
-		testServiceGuidFromInt(service2Index),
-		enclaveId,
+		testServiceNameFromInt(service2Index),
+		testServiceUuidFromInt(service2Index),
+		enclaveName,
 		testIpFromInt(service2Index))
 
 	connectionOverride := partition_topology.NewPartitionConnection(50)
 	require.Nil(t, network.topology.CreateEmptyPartitionWithDefaultConnection(partition1))
 	require.Nil(t, network.topology.CreateEmptyPartitionWithDefaultConnection(partition2))
 	require.Nil(t, network.topology.SetConnection(partition1, partition2, connectionOverride))
-	require.Nil(t, network.topology.AddService(service1.GetID(), partition1))
-	require.Nil(t, network.topology.AddService(service2.GetID(), partition2))
+	require.Nil(t, network.topology.AddService(service1.GetName(), partition1))
+	require.Nil(t, network.topology.AddService(service2.GetName(), partition2))
 
-	network.registeredServiceInfo[service1.GetID()] = service1
-	network.registeredServiceInfo[service2.GetID()] = service2
+	network.registeredServiceInfo[service1.GetName()] = service1
+	network.registeredServiceInfo[service2.GetName()] = service2
 
 	// do not add any sidecar such that updating network traffic will throw an exception
 
@@ -1009,46 +1009,46 @@ func TestUpdateTrafficControl(t *testing.T) {
 
 	enclaveId := enclave.EnclaveUUID("test")
 
-	sidecars := map[service.ServiceID]networking_sidecar.NetworkingSidecarWrapper{}
-	registrations := map[service.ServiceID]*service.ServiceRegistration{}
-	mockSidecars := map[service.ServiceID]*networking_sidecar.MockNetworkingSidecarWrapper{}
+	sidecars := map[service.ServiceName]networking_sidecar.NetworkingSidecarWrapper{}
+	registrations := map[service.ServiceName]*service.ServiceRegistration{}
+	mockSidecars := map[service.ServiceName]*networking_sidecar.MockNetworkingSidecarWrapper{}
 	for i := 0; i < numServices; i++ {
-		serviceId := testServiceIdFromInt(i)
+		serviceName := testServiceNameFromInt(i)
 
 		sidecar := networking_sidecar.NewMockNetworkingSidecarWrapper()
-		sidecars[serviceId] = sidecar
-		mockSidecars[serviceId] = sidecar
+		sidecars[serviceName] = sidecar
+		mockSidecars[serviceName] = sidecar
 
 		ip := testIpFromInt(i)
-		serviceGuid := testServiceGuidFromInt(i)
-		registrations[serviceId] = service.NewServiceRegistration(
-			serviceId,
-			serviceGuid,
+		serviceUuid := testServiceUuidFromInt(i)
+		registrations[serviceName] = service.NewServiceRegistration(
+			serviceName,
+			serviceUuid,
 			enclaveId,
 			ip,
 		)
 	}
 
 	// Creates the pathological "line" of connections, where each service can only see the services adjacent
-	targetServicePacketLossConfigs := map[service.ServiceID]map[service.ServiceID]*partition_topology.PartitionConnection{}
+	targetServicePacketLossConfigs := map[service.ServiceName]map[service.ServiceName]*partition_topology.PartitionConnection{}
 	for i := 0; i < numServices; i++ {
-		serviceId := testServiceIdFromInt(i)
-		otherServicesPacketLossConfig := map[service.ServiceID]*partition_topology.PartitionConnection{}
+		serviceName := testServiceNameFromInt(i)
+		otherServicesPacketLossConfig := map[service.ServiceName]*partition_topology.PartitionConnection{}
 		for j := 0; j < numServices; j++ {
 			if j < i-1 || j > i+1 {
-				blockedServiceId := testServiceIdFromInt(j)
+				blockedServiceId := testServiceNameFromInt(j)
 				connectionConfig := partition_topology.NewPartitionConnection(packetLossConfigForBlockedPartition)
 				otherServicesPacketLossConfig[blockedServiceId] = &connectionConfig
 			}
 		}
-		targetServicePacketLossConfigs[serviceId] = otherServicesPacketLossConfig
+		targetServicePacketLossConfigs[serviceName] = otherServicesPacketLossConfig
 	}
 
 	require.Nil(t, updateTrafficControlConfiguration(ctx, targetServicePacketLossConfigs, registrations, sidecars))
 
 	// Verify that each service got told to block exactly the right things
 	for i := 0; i < numServices; i++ {
-		serviceId := testServiceIdFromInt(i)
+		serviceName := testServiceNameFromInt(i)
 
 		expected := map[string]*partition_topology.PartitionConnection{}
 		for j := 0; j < numServices; j++ {
@@ -1059,7 +1059,7 @@ func TestUpdateTrafficControl(t *testing.T) {
 			}
 		}
 
-		mockSidecar := mockSidecars[serviceId]
+		mockSidecar := mockSidecars[serviceName]
 		recordedPacketLossConfig := mockSidecar.GetRecordedUpdatePacketLossConfig()
 		require.Equal(t, 1, len(recordedPacketLossConfig), "Expected sidecar for service ID '%v' to have recorded exactly one call to update")
 
@@ -1073,18 +1073,17 @@ func testIpFromInt(i int) net.IP {
 	return []byte{1, 1, 1, byte(i)}
 }
 
-func testServiceIdFromInt(i int) service.ServiceID {
-	return service.ServiceID("service-" + strconv.Itoa(i))
+func testServiceNameFromInt(i int) service.ServiceName {
+	return service.ServiceName("service-" + strconv.Itoa(i))
 }
 
 func testPartitionIdFromInt(i int) service_network_types.PartitionID {
 	return service_network_types.PartitionID("partition-" + strconv.Itoa(i))
 }
 
-func testServiceGuidFromInt(i int) service.ServiceGUID {
-	return service.ServiceGUID(fmt.Sprintf(
-		"service-%v-%v",
-		i,
+func testServiceUuidFromInt(i int) service.ServiceUUID {
+	return service.ServiceUUID(fmt.Sprintf(
+		"massive-uuid-with-32-req-chars-%v",
 		i,
 	))
 }

@@ -24,7 +24,7 @@ const (
 // Functions required to do files artifacts expansion
 func doFilesArtifactExpansionAndGetUserServiceVolumes(
 	ctx context.Context,
-	serviceGuid service.ServiceGUID,
+	serviceUuid service.ServiceUUID,
 	objAttrsProvider object_attributes_provider.DockerEnclaveObjectAttributesProvider,
 	freeIpAddrProvider *free_ip_addr_tracker.FreeIpAddrTracker,
 	enclaveNetworkId string,
@@ -39,7 +39,7 @@ func doFilesArtifactExpansionAndGetUserServiceVolumes(
 	}
 	expanderMountpointsToVolumeNames, err := createFilesArtifactsExpansionVolumes(
 		ctx,
-		serviceGuid,
+		serviceUuid,
 		objAttrsProvider,
 		requestedExpanderMountpoints,
 		dockerManager,
@@ -66,7 +66,7 @@ func doFilesArtifactExpansionAndGetUserServiceVolumes(
 
 	if err := runFilesArtifactsExpander(
 		ctx,
-		serviceGuid,
+		serviceUuid,
 		objAttrsProvider,
 		freeIpAddrProvider,
 		expanderImage,
@@ -78,7 +78,7 @@ func doFilesArtifactExpansionAndGetUserServiceVolumes(
 		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred running files artifacts expander for service '%v'",
-			serviceGuid,
+			serviceUuid,
 		)
 	}
 
@@ -103,7 +103,7 @@ func doFilesArtifactExpansionAndGetUserServiceVolumes(
 // NOTE: It is the caller's responsibility to handle the volumes that get returned
 func runFilesArtifactsExpander(
 	ctx context.Context,
-	serviceGuid service.ServiceGUID,
+	serviceUuid service.ServiceUUID,
 	objAttrProvider object_attributes_provider.DockerEnclaveObjectAttributesProvider,
 	freeIpAddrProvider *free_ip_addr_tracker.FreeIpAddrTracker,
 	image string,
@@ -112,9 +112,9 @@ func runFilesArtifactsExpander(
 	mountpointsToVolumeNames map[string]string,
 	dockerManager *docker_manager.DockerManager,
 ) error {
-	containerAttrs, err := objAttrProvider.ForFilesArtifactsExpanderContainer(serviceGuid)
+	containerAttrs, err := objAttrProvider.ForFilesArtifactsExpanderContainer(serviceUuid)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while trying to get the files artifact expander container attributes for service '%v'", serviceGuid)
+		return stacktrace.Propagate(err, "An error occurred while trying to get the files artifact expander container attributes for service '%v'", serviceUuid)
 	}
 	containerName := containerAttrs.GetName().GetString()
 	containerLabels := map[string]string{}
@@ -156,7 +156,7 @@ func runFilesArtifactsExpander(
 			err,
 			"An error occurred creating files artifacts expander container '%v' for service '%v'",
 			containerName,
-			serviceGuid,
+			serviceUuid,
 		)
 	}
 	defer func() {
@@ -194,7 +194,7 @@ func runFilesArtifactsExpander(
 				"Files artifacts expander container '%v' for service '%v' finished with non-%v exit code '%v' so we tried "+
 					"to get the logs, but doing so failed with an error:\n%v",
 				containerName,
-				serviceGuid,
+				serviceUuid,
 				expanderContainerSuccessExitCode,
 				exitCode,
 				err,
@@ -203,7 +203,7 @@ func runFilesArtifactsExpander(
 		return stacktrace.NewError(
 			"Files artifacts expander container '%v' for service '%v' finished with non-%v exit code '%v' and logs:\n%v",
 			containerName,
-			serviceGuid,
+			serviceUuid,
 			expanderContainerSuccessExitCode,
 			exitCode,
 			containerLogsBlockStr,
@@ -261,7 +261,7 @@ func getFilesArtifactsExpanderContainerLogsBlockStr(
 // can use when starting
 func createFilesArtifactsExpansionVolumes(
 	ctx context.Context,
-	serviceGuid service.ServiceGUID,
+	serviceUuid service.ServiceUUID,
 	enclaveObjAttrsProvider object_attributes_provider.DockerEnclaveObjectAttributesProvider,
 	allMountpointsExpanderWants map[string]bool,
 	dockerManager *docker_manager.DockerManager,
@@ -269,9 +269,9 @@ func createFilesArtifactsExpansionVolumes(
 	shouldDeleteVolumes := true
 	result := map[string]string{}
 	for mountpointExpanderWants := range allMountpointsExpanderWants {
-		volumeAttrs, err := enclaveObjAttrsProvider.ForSingleFilesArtifactExpansionVolume(serviceGuid)
+		volumeAttrs, err := enclaveObjAttrsProvider.ForSingleFilesArtifactExpansionVolume(serviceUuid)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred creating files artifact expansion volume for service '%v'", serviceGuid)
+			return nil, stacktrace.Propagate(err, "An error occurred creating files artifact expansion volume for service '%v'", serviceUuid)
 		}
 		volumeNameStr := volumeAttrs.GetName().GetString()
 		volumeLabelsStrs := map[string]string{}
@@ -287,7 +287,7 @@ func createFilesArtifactsExpansionVolumes(
 				err,
 				"An error occurred creating files artifact expansion volume for service '%v' that's intended to be mounted "+
 					"on the expander container at path '%v'",
-				serviceGuid,
+				serviceUuid,
 				mountpointExpanderWants,
 			)
 		}

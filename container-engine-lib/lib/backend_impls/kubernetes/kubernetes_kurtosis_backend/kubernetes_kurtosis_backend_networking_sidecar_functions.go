@@ -11,22 +11,22 @@ import (
 
 // TODO: MIGRATE THIS FOLDER TO USE STRUCTURE OF USER_SERVICE_FUNCTIONS MODULE
 
-func (backend *KubernetesKurtosisBackend) CreateNetworkingSidecar(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceGuid service.ServiceGUID) (*networking_sidecar.NetworkingSidecar, error) {
+func (backend *KubernetesKurtosisBackend) CreateNetworkingSidecar(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID) (*networking_sidecar.NetworkingSidecar, error) {
 	return nil, stacktrace.NewError("Networking sidecars aren't implemented for Kubernetes yet")
 }
 
-func (backend *KubernetesKurtosisBackend) GetNetworkingSidecars(ctx context.Context, filters *networking_sidecar.NetworkingSidecarFilters) (map[service.ServiceGUID]*networking_sidecar.NetworkingSidecar, error) {
+func (backend *KubernetesKurtosisBackend) GetNetworkingSidecars(ctx context.Context, filters *networking_sidecar.NetworkingSidecarFilters) (map[service.ServiceUUID]*networking_sidecar.NetworkingSidecar, error) {
 	return nil, stacktrace.NewError("Networking sidecars aren't implemented for Kubernetes yet")
 }
 
-func (backend *KubernetesKurtosisBackend) RunNetworkingSidecarExecCommands(ctx context.Context, enclaveUuid enclave.EnclaveUUID, networkingSidecarsCommands map[service.ServiceGUID][]string) (successfulNetworkingSidecarExecResults map[service.ServiceGUID]*exec_result.ExecResult, erroredUserServiceGuids map[service.ServiceGUID]error, resultErr error) {
+func (backend *KubernetesKurtosisBackend) RunNetworkingSidecarExecCommands(ctx context.Context, enclaveUuid enclave.EnclaveUUID, networkingSidecarsCommands map[service.ServiceUUID][]string) (successfulNetworkingSidecarExecResults map[service.ServiceUUID]*exec_result.ExecResult, erroredUserServiceUuids map[service.ServiceUUID]error, resultErr error) {
 	return nil, nil, stacktrace.NewError("Networking sidecars aren't implemented for Kubernetes yet")
 }
 
-func (backend *KubernetesKurtosisBackend) StopNetworkingSidecars(ctx context.Context, filters *networking_sidecar.NetworkingSidecarFilters) (successfulUserServiceGuids map[service.ServiceGUID]bool, erroredUserServiceGuids map[service.ServiceGUID]error, resultErr error) {
+func (backend *KubernetesKurtosisBackend) StopNetworkingSidecars(ctx context.Context, filters *networking_sidecar.NetworkingSidecarFilters) (successfulUserServiceUuids map[service.ServiceUUID]bool, erroredUserServiceUuids map[service.ServiceUUID]error, resultErr error) {
 	return nil, nil, stacktrace.NewError("Networking sidecars aren't implemented for Kubernetes yet")
 }
 
-func (backend *KubernetesKurtosisBackend) DestroyNetworkingSidecars(ctx context.Context, filters *networking_sidecar.NetworkingSidecarFilters) (successfulUserServiceGuids map[service.ServiceGUID]bool, erroredUserServiceGuids map[service.ServiceGUID]error, resultErr error) {
+func (backend *KubernetesKurtosisBackend) DestroyNetworkingSidecars(ctx context.Context, filters *networking_sidecar.NetworkingSidecarFilters) (successfulUserServiceUuids map[service.ServiceUUID]bool, erroredUserServiceUuids map[service.ServiceUUID]error, resultErr error) {
 	return nil, nil, stacktrace.NewError("Networking sidecars aren't implemented for Kubernetes yet")
 }

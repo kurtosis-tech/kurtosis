@@ -10,8 +10,8 @@ const (
 	ServiceIdRegexp = "[a-zA-Z0-9-_]+"
 )
 
-type ServiceID string
-type ServiceGUID string
+type ServiceName string
+type ServiceUUID string
 
 // Service represents a ServiceRegistration that has had a container bonded
 // to it (in essence, Service is a "full" service where ServiceRegistration is a service stub)

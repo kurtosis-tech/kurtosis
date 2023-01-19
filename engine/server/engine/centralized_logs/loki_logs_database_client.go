@@ -145,10 +145,10 @@ func NewLokiLogsDatabaseClientWithDefaultHttpClient(logsDatabaseAddress string) 
 func (client *lokiLogsDatabaseClient) GetUserServiceLogs(
 	ctx context.Context,
 	enclaveID enclave.EnclaveUUID,
-	userServiceGUIDs map[service.ServiceGUID]bool,
+	userServiceGUIDs map[service.ServiceUUID]bool,
 	conjunctiveLogLineFilters ConjunctiveLogLineFilters,
 ) (
-	chan map[service.ServiceGUID][]LogLine,
+	chan map[service.ServiceUUID][]LogLine,
 	chan error,
 	func(),
 	error,
@@ -224,7 +224,7 @@ func (client *lokiLogsDatabaseClient) GetUserServiceLogs(
 	}
 
 	if lokiQueryRangeResponseObj.Status != lokiSuccessStatusInResponse {
-		return nil, nil, nil, stacktrace.NewError("The logs database return an error status when getting user service logs for service GUIDs '%+v'. Response was: \n%v", kurtosisGuids, lokiQueryRangeResponseObj)
+		return nil, nil, nil, stacktrace.NewError("The logs database return an error status when getting user service logs for service UUIDs '%+v'. Response was: \n%v", kurtosisGuids, lokiQueryRangeResponseObj)
 	}
 
 	if lokiQueryRangeResponseObj == nil || lokiQueryRangeResponseObj.Data == nil {
@@ -234,7 +234,7 @@ func (client *lokiLogsDatabaseClient) GetUserServiceLogs(
 	lokiStreams := lokiQueryRangeResponseObj.Data.Result
 
 	//this channel will return the user service log lines by service GUI
-	logsByKurtosisUserServiceGuidChan := make(chan map[service.ServiceGUID][]LogLine, logsByKurtosisUserServiceGuidChanBuffSize)
+	logsByKurtosisUserServiceGuidChan := make(chan map[service.ServiceUUID][]LogLine, logsByKurtosisUserServiceGuidChanBuffSize)
 	defer close(logsByKurtosisUserServiceGuidChan)
 
 	resultLogsByKurtosisUserServiceGuid, err := newUserServiceLogLinesByUserServiceGuidFromLokiStreams(lokiStreams)
@@ -253,10 +253,10 @@ func (client *lokiLogsDatabaseClient) GetUserServiceLogs(
 func (client *lokiLogsDatabaseClient) StreamUserServiceLogs(
 	ctx context.Context,
 	enclaveID enclave.EnclaveUUID,
-	userServiceGUIDs map[service.ServiceGUID]bool,
+	userServiceGUIDs map[service.ServiceUUID]bool,
 	conjunctiveLogLineFilters ConjunctiveLogLineFilters,
 ) (
-	chan map[service.ServiceGUID][]LogLine,
+	chan map[service.ServiceUUID][]LogLine,
 	chan error,
 	func(),
 	error,
@@ -275,7 +275,7 @@ func (client *lokiLogsDatabaseClient) StreamUserServiceLogs(
 	tailLogsEndpointURL, httpHeaderWithTenantID := client.getTailLogEndpointURLAndHeader(enclaveID, userServiceGUIDs, conjunctiveLogLineFilters)
 
 	//this channel will return the user service log lines by service GUI
-	logsByKurtosisUserServiceGuidChan := make(chan map[service.ServiceGUID][]LogLine, logsByKurtosisUserServiceGuidChanBuffSize)
+	logsByKurtosisUserServiceGuidChan := make(chan map[service.ServiceUUID][]LogLine, logsByKurtosisUserServiceGuidChanBuffSize)
 
 	//this channel return an error if the stream fails at some point
 	streamErrChan := make(chan error, errorChanBuffSize)
@@ -302,7 +302,7 @@ func (client *lokiLogsDatabaseClient) StreamUserServiceLogs(
 	return logsByKurtosisUserServiceGuidChan, streamErrChan, cancelCtxFunc, nil
 }
 
-func (client *lokiLogsDatabaseClient) FilterExistingServiceGuids(ctx context.Context, enclaveId enclave.EnclaveUUID, userServiceGuids map[service.ServiceGUID]bool) (map[service.ServiceGUID]bool, error) {
+func (client *lokiLogsDatabaseClient) FilterExistingServiceGuids(ctx context.Context, enclaveId enclave.EnclaveUUID, userServiceGuids map[service.ServiceUUID]bool) (map[service.ServiceUUID]bool, error) {
 	httpHeaderWithTenantID := http.Header{}
 	httpHeaderWithTenantID.Add(organizationIdHttpHeaderKey, string(enclaveId))
 
@@ -354,20 +354,20 @@ func (client *lokiLogsDatabaseClient) FilterExistingServiceGuids(ctx context.Con
 	}
 	err = json.Unmarshal(httpResponseBodyBytes, lokiLabelValuesResponseObj)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred reading the existing service GUIDs from the logs database")
+		return nil, stacktrace.Propagate(err, "An error occurred reading the existing service UUIDs from the logs database")
 	}
 	if lokiLabelValuesResponseObj.Status != lokiSuccessStatusInResponse {
-		return nil, stacktrace.NewError("The logs database returns an error status when fetching the existing service GUIDs. Response was: \n%v", lokiLabelValuesResponseObj)
+		return nil, stacktrace.NewError("The logs database returns an error status when fetching the existing service UUIDs. Response was: \n%v", lokiLabelValuesResponseObj)
 	}
 
-	existingServiceGuidsSet := make(map[service.ServiceGUID]bool, len(lokiLabelValuesResponseObj.Data))
-	for _, serviceGuid := range lokiLabelValuesResponseObj.Data {
-		existingServiceGuidsSet[service.ServiceGUID(serviceGuid)] = true
+	existingServiceGuidsSet := make(map[service.ServiceUUID]bool, len(lokiLabelValuesResponseObj.Data))
+	for _, serviceUuid := range lokiLabelValuesResponseObj.Data {
+		existingServiceGuidsSet[service.ServiceUUID(serviceUuid)] = true
 	}
-	filteredServiceGuidsSet := make(map[service.ServiceGUID]bool, len(lokiLabelValuesResponseObj.Data))
-	for serviceGuid := range userServiceGuids {
-		if _, found := existingServiceGuidsSet[serviceGuid]; found {
-			filteredServiceGuidsSet[serviceGuid] = true
+	filteredServiceGuidsSet := make(map[service.ServiceUUID]bool, len(lokiLabelValuesResponseObj.Data))
+	for serviceUuid := range userServiceGuids {
+		if _, found := existingServiceGuidsSet[serviceUuid]; found {
+			filteredServiceGuidsSet[serviceUuid] = true
 		}
 	}
 	return filteredServiceGuidsSet, nil
@@ -382,7 +382,7 @@ func runReadStreamResponseAndAddUserServiceLogLinesToUserServiceLogsChannel(
 	ctx context.Context,
 	cancelCtxFunc context.CancelFunc,
 	tailLogsWebsocketConn *websocket.Conn,
-	logsByKurtosisUserServiceGuidChan chan map[service.ServiceGUID][]LogLine,
+	logsByKurtosisUserServiceGuidChan chan map[service.ServiceUUID][]LogLine,
 	errChan chan error,
 ) {
 
@@ -514,7 +514,7 @@ func (client *lokiLogsDatabaseClient) doHttpRequest(
 
 func (client *lokiLogsDatabaseClient) getTailLogEndpointURLAndHeader(
 	enclaveID enclave.EnclaveUUID,
-	userServiceGuids map[service.ServiceGUID]bool,
+	userServiceGuids map[service.ServiceUUID]bool,
 	conjunctiveLogLineFilters ConjunctiveLogLineFilters,
 ) (url.URL, http.Header) {
 
@@ -654,13 +654,13 @@ func getTimeInNanoString(timeObj time.Time) string {
 	return timeNanoStr
 }
 
-func newUserServiceLogLinesByUserServiceGuidFromLokiStreams(lokiStreams []lokiStreamValue) (map[service.ServiceGUID][]LogLine, error) {
+func newUserServiceLogLinesByUserServiceGuidFromLokiStreams(lokiStreams []lokiStreamValue) (map[service.ServiceUUID][]LogLine, error) {
 
-	resultLogsByKurtosisUserServiceGuid := map[service.ServiceGUID][]LogLine{}
+	resultLogsByKurtosisUserServiceGuid := map[service.ServiceUUID][]LogLine{}
 
 	for _, queryRangeResult := range lokiStreams {
 		resultKurtosisGuidStr := queryRangeResult.Stream.KurtosisGUID
-		resultKurtosisGuid := service.ServiceGUID(resultKurtosisGuidStr)
+		resultKurtosisGuid := service.ServiceUUID(resultKurtosisGuidStr)
 		resultKurtosisGuidLogLines := make([]LogLine, len(queryRangeResult.Values))
 		for queryRangeIndex, queryRangeValue := range queryRangeResult.Values {
 			logLineObj, err := newLogLineFromStreamValue(queryRangeValue)

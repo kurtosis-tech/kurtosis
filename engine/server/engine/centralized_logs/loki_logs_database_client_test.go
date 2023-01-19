@@ -51,7 +51,7 @@ const (
 
 func TestGetUserServiceLogsWithoutFilter_ValidResponse(t *testing.T) {
 	enclaveId := enclave.EnclaveUUID(testEnclaveId)
-	userServiceGuids := map[service.ServiceGUID]bool{
+	userServiceGuids := map[service.ServiceUUID]bool{
 		testUserService1Guid: true,
 		testUserService2Guid: true,
 		testUserService3Guid: true,
@@ -135,7 +135,7 @@ func TestGetUserServiceLogsWithoutFilter_ValidResponse(t *testing.T) {
 
 	ctx := context.Background()
 
-	expectedUserServiceAmountLogLinesByUserServiceGuid := map[service.ServiceGUID]int{
+	expectedUserServiceAmountLogLinesByUserServiceGuid := map[service.ServiceUUID]int{
 		testUserService1Guid: 3,
 		testUserService2Guid: 4,
 		testUserService3Guid: 2,
@@ -147,7 +147,7 @@ func TestGetUserServiceLogsWithoutFilter_ValidResponse(t *testing.T) {
 	userServiceLogsByGuidChan, errChan, closeStreamFunc, err := logsDatabaseClient.GetUserServiceLogs(ctx, enclaveId, userServiceGuids, emptyLogPipeline)
 	defer closeStreamFunc()
 
-	require.NoError(t, err, "An error occurred getting user service logs for GUIDs '%+v' in enclave '%v'", userServiceGuids, enclaveId)
+	require.NoError(t, err, "An error occurred getting user service logs for UUIDs '%+v' in enclave '%v'", userServiceGuids, enclaveId)
 	require.NotNil(t, userServiceLogsByGuidChan, "Received a nil user service logs channel, but a non-nil value was expected")
 	require.Nil(t, errChan, "Received a not nil error channel, but a nil value was expected")
 
@@ -191,7 +191,7 @@ func TestGetUserServiceLogsWithoutFilter_ValidResponse(t *testing.T) {
 
 func TestGetUserServiceLogsWithFilter_ValidResponse(t *testing.T) {
 	enclaveId := enclave.EnclaveUUID(testEnclaveId)
-	userServiceGuids := map[service.ServiceGUID]bool{
+	userServiceGuids := map[service.ServiceUUID]bool{
 		testUserService1Guid: true,
 		testUserService2Guid: true,
 		testUserService3Guid: true,
@@ -223,7 +223,7 @@ func TestGetUserServiceLogsWithFilter_ValidResponse(t *testing.T) {
 
 	ctx := context.Background()
 
-	expectedUserServiceAmountLogLinesByUserServiceGuid := map[service.ServiceGUID]int{
+	expectedUserServiceAmountLogLinesByUserServiceGuid := map[service.ServiceUUID]int{
 		testUserService1Guid: 1,
 		testUserService2Guid: 1,
 		testUserService3Guid: 1,
@@ -239,7 +239,7 @@ func TestGetUserServiceLogsWithFilter_ValidResponse(t *testing.T) {
 	userServiceLogsByGuidChan, errChan, closeStreamFunc, err := logsDatabaseClient.GetUserServiceLogs(ctx, enclaveId, userServiceGuids, logPipeline)
 	defer closeStreamFunc()
 
-	require.NoError(t, err, "An error occurred getting user service logs for GUIDs '%+v' using log pipeline '%v' in enclave '%v'", userServiceGuids, logPipeline, enclaveId)
+	require.NoError(t, err, "An error occurred getting user service logs for UUIDs '%+v' using log pipeline '%v' in enclave '%v'", userServiceGuids, logPipeline, enclaveId)
 	require.NotNil(t, userServiceLogsByGuidChan, "Received a nil user service logs channel, but a non-nil value was expected")
 	require.Nil(t, errChan, "Received a not nil error channel, but a nil value was expected")
 
@@ -285,7 +285,7 @@ func TestNewUserServiceLogLinesByUserServiceGuidFromLokiStreamsReturnSuccessfull
 
 	expectedLogLines := []string{"kurtosis", "test", "running", "successfully"}
 	userServiceGuidStr := "stream-logs-test-service-1666785469"
-	userServiceGuid := service.ServiceGUID(userServiceGuidStr)
+	userServiceGuid := service.ServiceUUID(userServiceGuidStr)
 
 	expectedValuesInStream1 := [][]string{
 		{"1666785473000000000", "{\"container_id\":\"b0735bc50a76a0476928607aca13a4c73c814036bdbf8b989c2f3b458cc21eab\",\"container_name\":\"/ts-testsuite.stream-logs-test.1666785464--user-service--stream-logs-test-service-1666785469\",\"source\":\"stdout\",\"log\":\"kurtosis\",\"comKurtosistechGuid\":\"stream-logs-test-service-1666785469\",\"comKurtosistechContainerType\":\"user-service\",\"com.kurtosistech.enclave-id\":\"ts-testsuite.stream-logs-test.1666785464\"}"},
@@ -358,16 +358,16 @@ func TestFilterExistingServiceGuids_FilteringWorksAsExpected(t *testing.T) {
 	lokiDbClient := NewLokiLogsDatabaseClient(fakeLogsDatabaseAddress, mockHttpClient)
 
 	ctx := context.Background()
-	requestedServiceGuids := map[service.ServiceGUID]bool{
-		service.ServiceGUID(testUserService1Guid): true,
-		service.ServiceGUID(testUserService2Guid): true,
-		service.ServiceGUID(testUserService3Guid): true,
+	requestedServiceGuids := map[service.ServiceUUID]bool{
+		service.ServiceUUID(testUserService1Guid): true,
+		service.ServiceUUID(testUserService2Guid): true,
+		service.ServiceUUID(testUserService3Guid): true,
 	}
 	result, err := lokiDbClient.FilterExistingServiceGuids(ctx, testEnclaveId, requestedServiceGuids)
 	require.Nil(t, err)
-	require.Contains(t, result, service.ServiceGUID(testUserService1Guid))
-	require.Contains(t, result, service.ServiceGUID(testUserService2Guid))
-	require.NotContains(t, result, service.ServiceGUID(testUserService3Guid))
+	require.Contains(t, result, service.ServiceUUID(testUserService1Guid))
+	require.Contains(t, result, service.ServiceUUID(testUserService2Guid))
+	require.NotContains(t, result, service.ServiceUUID(testUserService3Guid))
 }
 
 func TestFilterExistingServiceGuids_LokiServerNotFound(t *testing.T) {
@@ -393,8 +393,8 @@ func TestFilterExistingServiceGuids_LokiServerNotFound(t *testing.T) {
 	lokiDbClient := NewLokiLogsDatabaseClient(fakeLogsDatabaseAddress, mockHttpClient)
 
 	ctx := context.Background()
-	requestedServiceGuids := map[service.ServiceGUID]bool{
-		service.ServiceGUID(testUserService1Guid): true,
+	requestedServiceGuids := map[service.ServiceUUID]bool{
+		service.ServiceUUID(testUserService1Guid): true,
 	}
 	result, err := lokiDbClient.FilterExistingServiceGuids(ctx, testEnclaveId, requestedServiceGuids)
 	require.Nil(t, result)
@@ -425,12 +425,12 @@ func TestFilterExistingServiceGuids_LokiServerReturnsErrorStatus(t *testing.T) {
 	lokiDbClient := NewLokiLogsDatabaseClient(fakeLogsDatabaseAddress, mockHttpClient)
 
 	ctx := context.Background()
-	requestedServiceGuids := map[service.ServiceGUID]bool{
-		service.ServiceGUID(testUserService1Guid): true,
+	requestedServiceGuids := map[service.ServiceUUID]bool{
+		service.ServiceUUID(testUserService1Guid): true,
 	}
 	result, err := lokiDbClient.FilterExistingServiceGuids(ctx, testEnclaveId, requestedServiceGuids)
 	require.Nil(t, result)
-	require.Contains(t, err.Error(), "The logs database returns an error status when fetching the existing service GUIDs. Response was: ")
+	require.Contains(t, err.Error(), "The logs database returns an error status when fetching the existing service UUIDs. Response was: ")
 }
 
 func TestFilterExistingServiceGuids_UnexpectedResponseObjectShape(t *testing.T) {
@@ -457,12 +457,12 @@ func TestFilterExistingServiceGuids_UnexpectedResponseObjectShape(t *testing.T) 
 	lokiDbClient := NewLokiLogsDatabaseClient(fakeLogsDatabaseAddress, mockHttpClient)
 
 	ctx := context.Background()
-	requestedServiceGuids := map[service.ServiceGUID]bool{
-		service.ServiceGUID(testUserService1Guid): true,
+	requestedServiceGuids := map[service.ServiceUUID]bool{
+		service.ServiceUUID(testUserService1Guid): true,
 	}
 	result, err := lokiDbClient.FilterExistingServiceGuids(ctx, testEnclaveId, requestedServiceGuids)
 	require.Nil(t, result)
-	require.Contains(t, err.Error(), "The logs database returns an error status when fetching the existing service GUIDs. Response was: ")
+	require.Contains(t, err.Error(), "The logs database returns an error status when fetching the existing service UUIDs. Response was: ")
 }
 
 // ====================================================================================================
@@ -470,7 +470,7 @@ func TestFilterExistingServiceGuids_UnexpectedResponseObjectShape(t *testing.T) 
 //	Private Helper Functions
 //
 // ====================================================================================================
-func newLokiStreamValueForTest(userServiceGuid service.ServiceGUID, expectedValues [][]string) lokiStreamValue {
+func newLokiStreamValueForTest(userServiceGuid service.ServiceUUID, expectedValues [][]string) lokiStreamValue {
 	newLokiStreamValue := lokiStreamValue{
 		Stream: struct {
 			KurtosisContainerType string `json:"comKurtosistechContainerType"`

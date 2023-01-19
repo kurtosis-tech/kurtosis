@@ -1,4 +1,4 @@
-import { ContainerConfig, ContainerConfigBuilder, FilesArtifactUUID, PortSpec, TransportProtocol, ServiceID } from "kurtosis-sdk"
+import { ContainerConfig, ContainerConfigBuilder, FilesArtifactUUID, PortSpec, TransportProtocol, ServiceName } from "kurtosis-sdk"
 import log from "loglevel";
 import { Result, ok, err } from "neverthrow";
 
@@ -8,7 +8,7 @@ const TEST_NAME = "destroy-enclave"
 const IS_PARTITIONING_ENABLED = false
 
 const FILE_SERVER_SERVICE_IMAGE = "flashspys/nginx-static"
-const FILE_SERVER_SERVICE_ID: ServiceID = "file-server"
+const FILE_SERVER_SERVICE_ID: ServiceName = "file-server"
 const FILE_SERVER_PORT_ID = "http"
 const FILE_SERVER_PRIVATE_PORT_NUM = 80
 

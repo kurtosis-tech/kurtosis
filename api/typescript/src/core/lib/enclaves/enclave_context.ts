@@ -27,7 +27,7 @@ import {
     newUploadFilesArtifactArgs,
 } from "../constructor_calls";
 import type { ContainerConfig, FilesArtifactUUID } from "../services/container_config";
-import type { ServiceID, ServiceGUID } from "../services/service";
+import type { ServiceName, ServiceUUID } from "../services/service";
 import { ServiceContext } from "../services/service_context";
 import { TransportProtocol, PortSpec } from "../services/port_spec";
 import type { GenericPathJoiner } from "./generic_path_joiner";
@@ -250,12 +250,12 @@ export class EnclaveContext {
 
     // Docs available at https://docs.kurtosis.com/sdk/#addserviceserviceid-serviceid--containerconfig-containerconfig---servicecontext-servicecontext
     public async addService(
-            serviceId: ServiceID,
+            serviceName: ServiceName,
             containerConfig: ContainerConfig
         ): Promise<Result<ServiceContext, Error>> {
-        const containerConfigs : Map<ServiceID, ContainerConfig> = new Map<ServiceID, ContainerConfig>();
-        containerConfigs.set(serviceId, containerConfig)
-        const resultAddServiceToPartition : Result<[Map<ServiceID, ServiceContext>, Map<ServiceID, Error>], Error> = await this.addServicesToPartition(
+        const containerConfigs : Map<ServiceName, ContainerConfig> = new Map<ServiceName, ContainerConfig>();
+        containerConfigs.set(serviceName, containerConfig)
+        const resultAddServiceToPartition : Result<[Map<ServiceName, ServiceContext>, Map<ServiceName, Error>], Error> = await this.addServicesToPartition(
             containerConfigs,
             DEFAULT_PARTITION_ID,
         );
@@ -263,26 +263,26 @@ export class EnclaveContext {
             return err(resultAddServiceToPartition.error);
         }
         const [successfulServices, failedService] = resultAddServiceToPartition.value
-        const serviceErr : Error | undefined = failedService.get(serviceId);
+        const serviceErr : Error | undefined = failedService.get(serviceName);
         if (serviceErr != undefined) {
-            return err(new Error(`An error occurred adding service '${serviceId}' to the enclave in the default partition:\n${serviceErr}`))
+            return err(new Error(`An error occurred adding service '${serviceName}' to the enclave in the default partition:\n${serviceErr}`))
         }
-        const serviceCtx : ServiceContext | undefined = successfulServices.get(serviceId);
+        const serviceCtx : ServiceContext | undefined = successfulServices.get(serviceName);
         if (serviceCtx == undefined){
-            return err(new Error(`An error occurred retrieving the service context of service with ID ${serviceId} from result of adding service to partition. This should not happen and is a bug in Kurtosis.`))
+            return err(new Error(`An error occurred retrieving the service context of service with name ${serviceName} from result of adding service to partition. This should not happen and is a bug in Kurtosis.`))
         }
         return ok(serviceCtx);
     }
 
     // Docs available at https://docs.kurtosis.com/sdk/#addservicetopartitionserviceid-serviceid-partitionid-partitionid-containerconfig-containerconfig---servicecontext-servicecontext
     public async addServiceToPartition(
-            serviceId: ServiceID,
+            serviceName: ServiceName,
             partitionId: PartitionID,
             containerConfig: ContainerConfig
         ): Promise<Result<ServiceContext, Error>> {
-        const containerConfigs : Map<ServiceID, ContainerConfig> = new Map<ServiceID, ContainerConfig>();
-        containerConfigs.set(serviceId, containerConfig)
-        const resultAddServiceToPartition : Result<[Map<ServiceID, ServiceContext>, Map<ServiceID, Error>], Error> = await this.addServicesToPartition(
+        const containerConfigs : Map<ServiceName, ContainerConfig> = new Map<ServiceName, ContainerConfig>();
+        containerConfigs.set(serviceName, containerConfig)
+        const resultAddServiceToPartition : Result<[Map<ServiceName, ServiceContext>, Map<ServiceName, Error>], Error> = await this.addServicesToPartition(
             containerConfigs,
             partitionId,
         );
@@ -290,33 +290,33 @@ export class EnclaveContext {
             return err(resultAddServiceToPartition.error);
         }
         const [successfulServices, failedService] = resultAddServiceToPartition.value
-        const serviceErr : Error | undefined = failedService.get(serviceId);
+        const serviceErr : Error | undefined = failedService.get(serviceName);
         if (serviceErr != undefined) {
-            return err(new Error(`An error occurred adding service '${serviceId}' to the enclave in the default partition:\n${serviceErr}`))
+            return err(new Error(`An error occurred adding service '${serviceName}' to the enclave in the default partition:\n${serviceErr}`))
         }
-        const serviceCtx : ServiceContext | undefined = successfulServices.get(serviceId);
+        const serviceCtx : ServiceContext | undefined = successfulServices.get(serviceName);
         if (serviceCtx == undefined){
-            return err(new Error(`An error occurred retrieving the service context of service with ID ${serviceId} from result of adding service to partition. This should not happen and is a bug in Kurtosis.`))
+            return err(new Error(`An error occurred retrieving the service context of service with ID ${serviceName} from result of adding service to partition. This should not happen and is a bug in Kurtosis.`))
         }
         return ok(serviceCtx);
     }
 
     // Docs available at https://docs.kurtosis.com/sdk/#addservicestopartitionmapserviceid-containerconfig-containerconfigs-partitionid-partitionid---mapserviceid-servicecontext-successfulservices-mapserviceid-error-failedservices
     public async addServicesToPartition(
-        containerConfigs: Map<ServiceID, ContainerConfig>,
+        containerConfigs: Map<ServiceName, ContainerConfig>,
         partitionID: PartitionID,
-    ): Promise<Result<[Map<ServiceID, ServiceContext>, Map<ServiceID, Error>], Error>> {
-        const failedServicesPool: Map<ServiceID, Error> = new Map<ServiceID, Error>();
-        const successfulServices: Map<ServiceID, ServiceContext> = new Map<ServiceID, ServiceContext>();
+    ): Promise<Result<[Map<ServiceName, ServiceContext>, Map<ServiceName, Error>], Error>> {
+        const failedServicesPool: Map<ServiceName, Error> = new Map<ServiceName, Error>();
+        const successfulServices: Map<ServiceName, ServiceContext> = new Map<ServiceName, ServiceContext>();
 
-        const serviceConfigs = new Map<ServiceID, ServiceConfig>();
-        for (const [serviceID, containerConfig] of containerConfigs.entries()) {
-            log.trace(`Creating files artifact ID str -> mount dirpaths map for service with Id '${serviceID}'...`);
+        const serviceConfigs = new Map<ServiceName, ServiceConfig>();
+        for (const [serviceName, containerConfig] of containerConfigs.entries()) {
+            log.trace(`Creating files artifact ID str -> mount dirpaths map for service with Id '${serviceName}'...`);
             const artifactIdStrToMountDirpath: Map<string, string> = new Map<string, string>();
             for (const [mountDirpath, filesArtifactId] of containerConfig.filesArtifactMountpoints) {
                 artifactIdStrToMountDirpath.set(mountDirpath, filesArtifactId);
             }
-            log.trace(`Successfully created files artifact ID str -> mount dirpaths map for service with Id '${serviceID}'`);
+            log.trace(`Successfully created files artifact ID str -> mount dirpaths map for service with Id '${serviceName}'`);
 
             const privatePorts = containerConfig.usedPorts;
             const privatePortsForApi: Map<string, Port> = new Map();
@@ -354,7 +354,7 @@ export class EnclaveContext {
                 containerConfig.privateIPAddrPlaceholder,
                 partitionID,
             )
-            serviceConfigs.set(serviceID, serviceConfig);
+            serviceConfigs.set(serviceName, serviceConfig);
         }
         log.trace("Starting new services with Kurtosis API...");
         const startServicesArgs: StartServicesArgs = newStartServicesArgs(serviceConfigs)
@@ -363,28 +363,28 @@ export class EnclaveContext {
             return err(startServicesResponseResult.error)
         }
         const startServicesResponse = startServicesResponseResult.value;
-        const successfulServicesInfo: jspb.Map<String, ServiceInfo> | undefined = startServicesResponse.getSuccessfulServiceIdsToServiceInfoMap();
+        const successfulServicesInfo: jspb.Map<String, ServiceInfo> | undefined = startServicesResponse.getSuccessfulServiceNameToServiceInfoMap();
         if (successfulServicesInfo === undefined) {
             return err(new Error("Expected StartServicesResponse to contain a field that does not exist."))
         }
         // defer-undo removes all successfully started services in case of errors in the future phases
-        const shouldRemoveServices: Map<ServiceID, boolean> = new Map<ServiceID, boolean>();
-        for (const [serviceIdStr, _] of successfulServicesInfo.entries()) {
-            shouldRemoveServices.set(<ServiceID>serviceIdStr, true);
+        const shouldRemoveServices: Map<ServiceName, boolean> = new Map<ServiceName, boolean>();
+        for (const [serviceNameStr, _] of successfulServicesInfo.entries()) {
+            shouldRemoveServices.set(<ServiceName>serviceNameStr, true);
         }
 
         try {
             // Add services that failed to start to failed services pool
-            const failedServices: jspb.Map<string, string> | undefined = startServicesResponse.getFailedServiceIdsToErrorMap();
+            const failedServices: jspb.Map<string, string> | undefined = startServicesResponse.getFailedServiceNameToErrorMap();
             if (failedServices === undefined) {
                 return err(new Error("Expected StartServicesResponse to contain a field that does not exist."))
             }
-            for (const [serviceIdStr, serviceErrStr] of failedServices.entries()) {
-                const serviceId: ServiceID = <ServiceID>serviceIdStr;
-                failedServicesPool.set(serviceId, new Error(serviceErrStr))
+            for (const [serviceNameStr, serviceErrStr] of failedServices.entries()) {
+                const serviceName: ServiceName = <ServiceName>serviceNameStr;
+                failedServicesPool.set(serviceName, new Error(serviceErrStr))
             }
-            for (const [serviceIdStr, serviceInfo] of successfulServicesInfo.entries()) {
-                const serviceId: ServiceID = <ServiceID>serviceIdStr;
+            for (const [serviceNameStr, serviceInfo] of successfulServicesInfo.entries()) {
+                const serviceName: ServiceName = <ServiceName>serviceNameStr;
                 const serviceCtxPrivatePorts: Map<string, PortSpec> = EnclaveContext.convertApiPortsToServiceContextPorts(
                     serviceInfo.getPrivatePortsMap(),
                 );
@@ -394,40 +394,40 @@ export class EnclaveContext {
 
                 const serviceContext: ServiceContext = new ServiceContext(
                     this.backend,
-                    serviceId,
-                    serviceInfo.getServiceGuid(),
+                    serviceName,
+                    serviceInfo.getServiceUuid(),
                     serviceInfo.getPrivateIpAddr(),
                     serviceCtxPrivatePorts,
                     serviceInfo.getMaybePublicIpAddr(),
                     serviceCtxPublicPorts,
                 );
-                successfulServices.set(serviceId, serviceContext)
-                log.trace(`Successfully started service with ID '${serviceId}' with Kurtosis API`);
+                successfulServices.set(serviceName, serviceContext)
+                log.trace(`Successfully started service with name '${serviceName}' with Kurtosis API`);
             }
             // Do not remove resources for successful services
-            for (const [serviceId, _] of successfulServices) {
-                shouldRemoveServices.delete(serviceId)
+            for (const [serviceName, _] of successfulServices) {
+                shouldRemoveServices.delete(serviceName)
             }
         } finally {
-            for (const[serviceId, _] of shouldRemoveServices) {
+            for (const[serviceName, _] of shouldRemoveServices) {
                 // Do a best effort attempt to remove resources for this object to clean up after it failed
                 // TODO: Migrate this to a bulk remove services call
-                const removeServiceArgs : RemoveServiceArgs = newRemoveServiceArgs(serviceId)
+                const removeServiceArgs : RemoveServiceArgs = newRemoveServiceArgs(serviceName)
                 const removeServiceResult = await this.backend.removeService(removeServiceArgs);
                 if (removeServiceResult.isErr()){
-                    const errMsg = `"Attempted to remove service '${serviceId}' to delete its resources after it failed to start, but the following error occurred " +
+                    const errMsg = `"Attempted to remove service '${serviceName}' to delete its resources after it failed to start, but the following error occurred " +
                     "while attempting to remove the service:\n ${removeServiceResult.error}`
-                    failedServicesPool.set(serviceId, new Error(errMsg))
+                    failedServicesPool.set(serviceName, new Error(errMsg))
                 }
             }
         }
         return ok([successfulServices, failedServicesPool])
     }
 
-    // Docs available at https://docs.kurtosis.com/sdk/#getservicecontextserviceid-serviceid---servicecontext-servicecontext
-    public async getServiceContext(serviceId: ServiceID): Promise<Result<ServiceContext, Error>> {
+    // Docs available at https://docs.kurtosis.com/sdk#getservicecontextstring-serviceidentifier---servicecontext-servicecontext
+    public async getServiceContext(serviceIdentifier: string): Promise<Result<ServiceContext, Error>> {
         const serviceArgMap = new Map<string, boolean>()
-        serviceArgMap.set(serviceId, true)
+        serviceArgMap.set(serviceIdentifier, true)
         const getServiceInfoArgs: GetServicesArgs = newGetServicesArgs(serviceArgMap);
 
         const getServicesResult = await this.backend.getServices(getServiceInfoArgs)
@@ -435,15 +435,15 @@ export class EnclaveContext {
             return err(getServicesResult.error)
         }
 
-        const serviceInfo = getServicesResult.value.getServiceInfoMap().get(serviceId)
+        const serviceInfo = getServicesResult.value.getServiceInfoMap().get(serviceIdentifier)
         if(!serviceInfo) {
             return err(new Error(
-                    "Failed to retrieve service information for service " + serviceId
+                    "Failed to retrieve service information for service " + serviceIdentifier
             ))
         }
         if (serviceInfo.getPrivateIpAddr() === "") {
             return err(new Error(
-                    "Kurtosis API reported an empty private IP address for service " + serviceId +  " - this should never happen, and is a bug with Kurtosis!",
+                    "Kurtosis API reported an empty private IP address for service " + serviceIdentifier +  " - this should never happen, and is a bug with Kurtosis!",
                 )
             );
         }
@@ -457,8 +457,8 @@ export class EnclaveContext {
 
         const serviceContext: ServiceContext = new ServiceContext(
             this.backend,
-            serviceId,
-            serviceInfo.getServiceGuid(),
+            serviceIdentifier,
+            serviceInfo.getServiceUuid(),
             serviceInfo.getPrivateIpAddr(),
             serviceCtxPrivatePorts,
             serviceInfo.getMaybePublicIpAddr(),
@@ -468,8 +468,8 @@ export class EnclaveContext {
         return ok(serviceContext);
     }
 
-    // Docs available at https://docs.kurtosis.com/sdk/#getservices---mapserviceid--serviceguid-serviceids
-    public async getServices(): Promise<Result<Map<ServiceID, ServiceGUID>, Error>> {
+    // Docs available at https://docs.kurtosis.com/sdk#getservices---mapservicename--serviceuuid-serviceidentifiers
+    public async getServices(): Promise<Result<Map<ServiceName, ServiceUUID>, Error>> {
         const getAllServicesArgMap: Map<string, boolean> = new Map<string,boolean>()
         const emptyGetServicesArg: GetServicesArgs = newGetServicesArgs(getAllServicesArgMap)
 
@@ -480,9 +480,9 @@ export class EnclaveContext {
 
         const getServicesResponse = getServicesResponseResult.value
 
-        const serviceInfos: Map<ServiceID, ServiceGUID> = new Map<ServiceID, ServiceGUID>()
+        const serviceInfos: Map<ServiceName, ServiceUUID> = new Map<ServiceName, ServiceUUID>()
         getServicesResponse.getServiceInfoMap().forEach((value: ServiceInfo, key: string) => {
-            serviceInfos.set(key, value.getServiceGuid())
+            serviceInfos.set(key, value.getServiceUuid())
         });
         return ok(serviceInfos)
     }

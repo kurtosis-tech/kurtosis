@@ -26,7 +26,7 @@ import {
     GetServicesResponse, StartServicesArgs,
     RenderTemplatesToFilesArtifactArgs, DownloadFilesArtifactArgs,
 } from '../kurtosis_core_rpc_api_bindings/api_container_service_pb';
-import { ServiceID } from './services/service';
+import { ServiceName } from './services/service';
 import TemplateAndData = RenderTemplatesToFilesArtifactArgs.TemplateAndData;
 
 // ==============================================================================================
@@ -94,11 +94,11 @@ export function newServiceConfig(
 // ==============================================================================================
 //                                        Start Service
 // ==============================================================================================
-export function newStartServicesArgs(serviceConfigs : Map<ServiceID, ServiceConfig>) : StartServicesArgs {
+export function newStartServicesArgs(serviceConfigs : Map<ServiceName, ServiceConfig>) : StartServicesArgs {
     const result : StartServicesArgs = new StartServicesArgs();
-    const serviceIdsToConfigs : jspb.Map<string, ServiceConfig> = result.getServiceIdsToConfigsMap();
-    for (const [serviceId, serviceConfig] of serviceConfigs) {
-        serviceIdsToConfigs.set(String(serviceId), serviceConfig);
+    const serviceNamesToConfig : jspb.Map<string, ServiceConfig> = result.getServiceNamesToConfigsMap();
+    for (const [serviceName, serviceConfig] of serviceConfigs) {
+        serviceNamesToConfig.set(String(serviceName), serviceConfig);
     }
     return result;
 }
@@ -106,11 +106,11 @@ export function newStartServicesArgs(serviceConfigs : Map<ServiceID, ServiceConf
 // ==============================================================================================
 //                                       Get Services
 // ==============================================================================================
-export function newGetServicesArgs(serviceIds: Map<string, boolean>): GetServicesArgs{
+export function newGetServicesArgs(serviceIdentifiers: Map<string, boolean>): GetServicesArgs{
     const result: GetServicesArgs = new GetServicesArgs();
-    const resultServiceIdMap: jspb.Map<string, boolean> = result.getServiceIdsMap()
-    for (const [serviceId, booleanVal] of serviceIds) {
-        resultServiceIdMap.set(serviceId, booleanVal);
+    const resultServiceIdentifiersMap: jspb.Map<string, boolean> = result.getServiceIdentifiersMap()
+    for (const [serviceName, booleanVal] of serviceIdentifiers) {
+        resultServiceIdentifiersMap.set(serviceName, booleanVal);
     }
 
     return result;
@@ -119,51 +119,26 @@ export function newGetServicesArgs(serviceIds: Map<string, boolean>): GetService
 export function newGetServicesResponse(serviceInfoMap: Map<string,ServiceInfo>): GetServicesResponse{
     const result: GetServicesResponse = new GetServicesResponse();
     const resultServiceMap: jspb.Map<string,ServiceInfo> = result.getServiceInfoMap()
-    for (const [serviceId, serviceInfo] of serviceInfoMap) {
-        resultServiceMap.set(serviceId, serviceInfo)
+    for (const [serviceName, serviceInfo] of serviceInfoMap) {
+        resultServiceMap.set(serviceName, serviceInfo)
     }
 
     return result
 }
-
-export function newServiceInfo(
-    serviceGuid: string,
-    privateIpAddr: string,
-    privatePorts: Map<string, Port>,
-    maybePublicIpAddr: string,
-    maybePublicPorts: Map<string, Port>,
-): ServiceInfo {
-    const result: ServiceInfo = new ServiceInfo();
-    result.setServiceGuid(serviceGuid)
-    result.setMaybePublicIpAddr(maybePublicIpAddr)
-    result.setPrivateIpAddr(privateIpAddr)
-
-    const privatePortsMap: jspb.Map<string, Port> = result.getPrivatePortsMap()
-    for (const [portName, privatePort] of privatePorts.entries()) {
-        privatePortsMap.set(portName, privatePort)
-    }
-    const maybePublicPortsMap: jspb.Map<string, Port> = result.getMaybePublicPortsMap()
-    for (const [portName, publicPort] of maybePublicPorts.entries()) {
-        maybePublicPortsMap.set(portName, publicPort)
-    }
-
-    return result
-}
-
 
 // ==============================================================================================
 //                                        Remove Service
 // ==============================================================================================
-export function newRemoveServiceArgs(serviceId: ServiceID): RemoveServiceArgs {
+export function newRemoveServiceArgs(serviceIdentifier: ServiceName): RemoveServiceArgs {
     const result: RemoveServiceArgs = new RemoveServiceArgs();
-    result.setServiceId(serviceId);
+    result.setServiceIdentifier(serviceIdentifier);
 
     return result;
 }
 
-export function newRemoveServiceResponse(serviceGuid: string): RemoveServiceResponse {
+export function newRemoveServiceResponse(setServiceUuid: string): RemoveServiceResponse {
     const result: RemoveServiceResponse = new RemoveServiceResponse();
-    result.setServiceGuid(serviceGuid)
+    result.setServiceUuid(setServiceUuid)
     return result
 }
 
@@ -189,11 +164,11 @@ export function newRepartitionArgs(
     return result;
 }
 
-export function newPartitionServices(serviceIdStrSet: Set<string>): PartitionServices{
+export function newPartitionServices(serviceNameSet: Set<string>): PartitionServices{
     const result: PartitionServices = new PartitionServices();
-    const partitionServicesMap: jspb.Map<string, boolean> = result.getServiceIdSetMap();
-    for (const serviceIdStr of serviceIdStrSet) {
-        partitionServicesMap.set(serviceIdStr, true);
+    const partitionServicesMap: jspb.Map<string, boolean> = result.getServiceNameSetMap();
+    for (const serviceNameStr of serviceNameSet) {
+        partitionServicesMap.set(serviceNameStr, true);
     }
 
     return result;
@@ -220,9 +195,9 @@ export function newPartitionConnectionInfo(packetLossPercentage: number): Partit
 // ==============================================================================================
 //                                          Exec Command
 // ==============================================================================================
-export function newExecCommandArgs(serviceId: ServiceID, command: string[]): ExecCommandArgs {
+export function newExecCommandArgs(setServiceIdentifier: ServiceName, command: string[]): ExecCommandArgs {
     const result: ExecCommandArgs = new ExecCommandArgs();
-    result.setServiceId(serviceId);
+    result.setServiceIdentifier(setServiceIdentifier);
     result.setCommandArgsList(command);
 
     return result;
@@ -231,16 +206,16 @@ export function newExecCommandArgs(serviceId: ServiceID, command: string[]): Exe
 // ==============================================================================================
 //                                          Pause/Unpause Service
 // ==============================================================================================
-export function newPauseServiceArgs(serviceId: ServiceID): PauseServiceArgs {
+export function newPauseServiceArgs(serviceIdentifier: string): PauseServiceArgs {
     const result: PauseServiceArgs = new PauseServiceArgs();
-    result.setServiceId(serviceId);
+    result.setServiceIdentifier(serviceIdentifier);
 
     return result;
 }
 
-export function newUnpauseServiceArgs(serviceId: ServiceID): UnpauseServiceArgs {
+export function newUnpauseServiceArgs(serviceIdentifier: string): UnpauseServiceArgs {
     const result: UnpauseServiceArgs = new UnpauseServiceArgs();
-    result.setServiceId(serviceId);
+    result.setServiceIdentifier(serviceIdentifier);
 
     return result;
 }
@@ -250,7 +225,7 @@ export function newUnpauseServiceArgs(serviceId: ServiceID): UnpauseServiceArgs 
 //                           Wait For Http Get Endpoint Availability
 // ==============================================================================================
 export function newWaitForHttpGetEndpointAvailabilityArgs(
-        serviceId: ServiceID,
+        serviceIdentifier: string,
         port: number, 
         path: string,
         initialDelayMilliseconds: number, 
@@ -258,7 +233,7 @@ export function newWaitForHttpGetEndpointAvailabilityArgs(
         retriesDelayMilliseconds: number, 
         bodyText: string): WaitForHttpGetEndpointAvailabilityArgs {
     const result: WaitForHttpGetEndpointAvailabilityArgs = new WaitForHttpGetEndpointAvailabilityArgs();
-    result.setServiceId(String(serviceId));
+    result.setServiceIdentifier(String(serviceIdentifier));
     result.setPort(port);
     result.setPath(path);
     result.setInitialDelayMilliseconds(initialDelayMilliseconds);
@@ -274,7 +249,7 @@ export function newWaitForHttpGetEndpointAvailabilityArgs(
 //                           Wait For Http Post Endpoint Availability
 // ==============================================================================================
 export function newWaitForHttpPostEndpointAvailabilityArgs(
-        serviceId: ServiceID,
+        serviceIdentifier: string,
         port: number, 
         path: string,
         requestBody: string,
@@ -283,7 +258,7 @@ export function newWaitForHttpPostEndpointAvailabilityArgs(
         retriesDelayMilliseconds: number, 
         bodyText: string): WaitForHttpPostEndpointAvailabilityArgs {
     const result: WaitForHttpPostEndpointAvailabilityArgs = new WaitForHttpPostEndpointAvailabilityArgs();
-    result.setServiceId(String(serviceId));
+    result.setServiceIdentifier(serviceIdentifier);
     result.setPort(port);
     result.setPath(path);
     result.setRequestBody(requestBody)
@@ -311,16 +286,6 @@ export function newStoreWebFilesArtifactArgs(url: string, name: string): StoreWe
 export function newDownloadFilesArtifactArgs(identifier: string): DownloadFilesArtifactArgs {
     const result: DownloadFilesArtifactArgs = new DownloadFilesArtifactArgs();
     result.setIdentifier(identifier);
-    return result;
-}
-
-// ==============================================================================================
-//                             Store Files Artifact From Service
-// ==============================================================================================
-export function newStoreFilesArtifactFromServiceArgs(serviceId: string, sourcePath: string): StoreFilesArtifactFromServiceArgs {
-    const result: StoreFilesArtifactFromServiceArgs = new StoreFilesArtifactFromServiceArgs();
-    result.setServiceId(serviceId)
-    result.setSourcePath(sourcePath)
     return result;
 }
 

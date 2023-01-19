@@ -18,31 +18,31 @@ func destroyUserServicesUnlocked(
 	ctx context.Context,
 	enclaveId enclave.EnclaveUUID,
 	filters *service.ServiceFilters,
-	serviceRegistrationsForEnclave map[service.ServiceGUID]*service.ServiceRegistration,
+	serviceRegistrationsForEnclave map[service.ServiceUUID]*service.ServiceRegistration,
 	enclaveFreeIpProvidersForEnclave *free_ip_addr_tracker.FreeIpAddrTracker,
 	dockerManager *docker_manager.DockerManager,
 ) (
-	resultSuccessfulGuids map[service.ServiceGUID]bool,
-	resultErroredGuids map[service.ServiceGUID]error,
+	resultSuccessfulUuids map[service.ServiceUUID]bool,
+	resultErroredUuids map[service.ServiceUUID]error,
 	resultErr error,
 ) {
 	// We filter registrations here because a registration is the canonical resource for a Kurtosis user service - no registration,
 	// no Kurtosis service - and not all registrations will have Docker resources
-	matchingRegistrations := map[service.ServiceGUID]*service.ServiceRegistration{}
-	for guid, registration := range serviceRegistrationsForEnclave {
-		if filters.GUIDs != nil && len(filters.GUIDs) > 0 {
-			if _, found := filters.GUIDs[registration.GetGUID()]; !found {
+	matchingRegistrations := map[service.ServiceUUID]*service.ServiceRegistration{}
+	for uuid, registration := range serviceRegistrationsForEnclave {
+		if filters.UUIDs != nil && len(filters.UUIDs) > 0 {
+			if _, found := filters.UUIDs[registration.GetUUID()]; !found {
 				continue
 			}
 		}
 
-		if filters.IDs != nil && len(filters.IDs) > 0 {
-			if _, found := filters.IDs[registration.GetID()]; !found {
+		if filters.Names != nil && len(filters.Names) > 0 {
+			if _, found := filters.Names[registration.GetName()]; !found {
 				continue
 			}
 		}
 
-		matchingRegistrations[guid] = registration
+		matchingRegistrations[uuid] = registration
 	}
 
 	// NOTE: This may end up with less results here than we have registrations, if the user registered but did not start a service,
@@ -65,21 +65,21 @@ func destroyUserServicesUnlocked(
 			len(allDockerResources),
 		)
 	}
-	for serviceGuid := range allServiceObjs {
-		if _, found := allDockerResources[serviceGuid]; !found {
+	for serviceUuid := range allServiceObjs {
+		if _, found := allDockerResources[serviceUuid]; !found {
 			return nil, nil, stacktrace.NewError(
 				"Have service object to remove '%v', which doesn't have corresponding Docker resources; this is a "+
 					"bug in Kurtosis",
-				serviceGuid,
+				serviceUuid,
 			)
 		}
 	}
 
-	registrationsToDeregister := map[service.ServiceGUID]*service.ServiceRegistration{}
+	registrationsToDeregister := map[service.ServiceUUID]*service.ServiceRegistration{}
 
 	// Find the registrations which don't have any Docker resources and immediately add them to the list of stuff to deregister
-	for guid, registration := range matchingRegistrations {
-		if _, doesRegistrationHaveResources := allDockerResources[guid]; doesRegistrationHaveResources {
+	for uuid, registration := range matchingRegistrations {
+		if _, doesRegistrationHaveResources := allDockerResources[uuid]; doesRegistrationHaveResources {
 			// We'll deregister registrations-with-resources if and only if we can successfully remove their resources
 			continue
 		}
@@ -89,11 +89,11 @@ func destroyUserServicesUnlocked(
 			continue
 		}
 
-		registrationsToDeregister[guid] = registration
+		registrationsToDeregister[uuid] = registration
 	}
 
 	// Now try removing all the registrations-with-resources
-	successfulResourceRemovalGuids, erroredResourceRemovalGuids, err := removeUserServiceDockerResources(
+	successfulResourceRemovalUuids, erroredResourceRemovalUuids, err := removeUserServiceDockerResources(
 		ctx,
 		allServiceObjs,
 		allDockerResources,
@@ -106,31 +106,31 @@ func destroyUserServicesUnlocked(
 		)
 	}
 
-	erroredGuids := map[service.ServiceGUID]error{}
-	for guid, err := range erroredResourceRemovalGuids {
-		erroredGuids[guid] = stacktrace.Propagate(
+	erroredUuids := map[service.ServiceUUID]error{}
+	for uuid, err := range erroredResourceRemovalUuids {
+		erroredUuids[uuid] = stacktrace.Propagate(
 			err,
 			"An error occurred destroying Docker resources for service '%v'",
-			guid,
+			uuid,
 		)
 	}
 
-	successfulGuids := map[service.ServiceGUID]bool{}
-	for guid := range successfulResourceRemovalGuids {
-		registrationsToDeregister[guid] = matchingRegistrations[guid]
-		successfulGuids[guid] = true
+	successfulUuids := map[service.ServiceUUID]bool{}
+	for uuid := range successfulResourceRemovalUuids {
+		registrationsToDeregister[uuid] = matchingRegistrations[uuid]
+		successfulUuids[uuid] = true
 	}
 
 	// Finalize deregistration
-	for guid, registration := range registrationsToDeregister {
+	for uuid, registration := range registrationsToDeregister {
 		ipAddr := registration.GetPrivateIP()
 		if err = enclaveFreeIpProvidersForEnclave.ReleaseIpAddr(ipAddr); err != nil {
 			logrus.Errorf("Error releasing IP address '%v'", ipAddr)
 		}
-		delete(serviceRegistrationsForEnclave, guid)
+		delete(serviceRegistrationsForEnclave, uuid)
 	}
 
-	return successfulGuids, erroredGuids, nil
+	return successfulUuids, erroredUuids, nil
 }
 
 /*
@@ -151,12 +151,12 @@ big of a deal since they'll be deleted when the enclave gets deleted.
 */
 func removeUserServiceDockerResources(
 	ctx context.Context,
-	serviceObjectsToRemove map[service.ServiceGUID]*service.Service,
-	resourcesToRemove map[service.ServiceGUID]*shared_helpers.UserServiceDockerResources,
+	serviceObjectsToRemove map[service.ServiceUUID]*service.Service,
+	resourcesToRemove map[service.ServiceUUID]*shared_helpers.UserServiceDockerResources,
 	dockerManager *docker_manager.DockerManager,
-) (map[service.ServiceGUID]bool, map[service.ServiceGUID]error, error) {
+) (map[service.ServiceUUID]bool, map[service.ServiceUUID]error, error) {
 
-	erroredGuids := map[service.ServiceGUID]error{}
+	erroredUuids := map[service.ServiceUUID]error{}
 
 	// Before deleting anything, verify we have the same keys in both maps
 	if len(serviceObjectsToRemove) != len(resourcesToRemove) {
@@ -166,20 +166,20 @@ func removeUserServiceDockerResources(
 			len(resourcesToRemove),
 		)
 	}
-	for serviceGuid := range serviceObjectsToRemove {
-		if _, found := resourcesToRemove[serviceGuid]; !found {
+	for serviceUuid := range serviceObjectsToRemove {
+		if _, found := resourcesToRemove[serviceUuid]; !found {
 			return nil, nil, stacktrace.NewError(
 				"Have service object to remove '%v', which doesn't have corresponding Docker resources; this is a "+
 					"bug in Kurtosis",
-				serviceGuid,
+				serviceUuid,
 			)
 		}
 	}
 
 	uncastedKurtosisObjectsToRemoveByContainerId := map[string]interface{}{}
-	for serviceGuid, resources := range resourcesToRemove {
+	for serviceUuid, resources := range resourcesToRemove {
 		// Safe to skip the is-found check because we verified the map keys are identical earlier
-		serviceObj := serviceObjectsToRemove[serviceGuid]
+		serviceObj := serviceObjectsToRemove[serviceUuid]
 
 		containerId := resources.ServiceContainer.GetId()
 		uncastedKurtosisObjectsToRemoveByContainerId[containerId] = serviceObj
@@ -197,32 +197,32 @@ func removeUserServiceDockerResources(
 		return nil
 	}
 
-	successfulContainerRemoveGuidStrs, erroredContainerRemoveGuidStrs, err := docker_operation_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
+	successfulContainerRemoveUuidStrs, erroredContainerRemoveUuidStrs, err := docker_operation_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
 		ctx,
 		uncastedKurtosisObjectsToRemoveByContainerId,
 		dockerManager,
-		extractServiceGUIDFromServiceObj,
+		extractServiceUUIDFromServiceObj,
 		dockerOperation,
 	)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred removing user service containers in parallel")
 	}
 
-	for guidStr, err := range erroredContainerRemoveGuidStrs {
-		erroredGuids[service.ServiceGUID(guidStr)] = stacktrace.Propagate(
+	for uuidStr, err := range erroredContainerRemoveUuidStrs {
+		erroredUuids[service.ServiceUUID(uuidStr)] = stacktrace.Propagate(
 			err,
 			"An error occurred destroying container for service '%v'",
-			guidStr,
+			uuidStr,
 		)
 	}
 
 	// TODO Parallelize if we need more perf (but we shouldn't, since removing volumes way faster than containers)
-	successfulVolumeRemovalGuids := map[service.ServiceGUID]bool{}
-	for serviceGuidStr := range successfulContainerRemoveGuidStrs {
-		serviceGuid := service.ServiceGUID(serviceGuidStr)
+	successfulVolumeRemovalUuids := map[service.ServiceUUID]bool{}
+	for serviceUuidStr := range successfulContainerRemoveUuidStrs {
+		serviceUuid := service.ServiceUUID(serviceUuidStr)
 
 		// Safe to skip the is-found check because we verified that the maps have the same keys earlier
-		resources := resourcesToRemove[serviceGuid]
+		resources := resourcesToRemove[serviceUuid]
 
 		failedVolumeErrStrs := []string{}
 		for _, volumeName := range resources.ExpanderVolumeNames {
@@ -255,26 +255,26 @@ func removeUserServiceDockerResources(
 		}
 
 		if len(failedVolumeErrStrs) > 0 {
-			erroredGuids[serviceGuid] = stacktrace.NewError(
+			erroredUuids[serviceUuid] = stacktrace.NewError(
 				"Errors occurred removing volumes for service '%v'\n"+
 					"ACTION REQUIRED: You will need to manually remove these volumes, else they will stay around until the enclave is destroyed!\n"+
 					"%v",
-				serviceGuid,
+				serviceUuid,
 				strings.Join(failedVolumeErrStrs, "\n\n"),
 			)
 			continue
 		}
-		successfulVolumeRemovalGuids[serviceGuid] = true
+		successfulVolumeRemovalUuids[serviceUuid] = true
 	}
 
-	successGuids := successfulVolumeRemovalGuids
-	return successGuids, erroredGuids, nil
+	successUuids := successfulVolumeRemovalUuids
+	return successUuids, erroredUuids, nil
 }
 
-func extractServiceGUIDFromServiceObj(uncastedObj interface{}) (string, error) {
+func extractServiceUUIDFromServiceObj(uncastedObj interface{}) (string, error) {
 	castedObj, ok := uncastedObj.(*service.Service)
 	if !ok {
 		return "", stacktrace.NewError("An error occurred downcasting the user service object")
 	}
-	return string(castedObj.GetRegistration().GetGUID()), nil
+	return string(castedObj.GetRegistration().GetUUID()), nil
 }

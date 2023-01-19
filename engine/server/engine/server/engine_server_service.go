@@ -147,13 +147,13 @@ func (service *EngineServerService) GetServiceLogs(
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while fetching uuid for enclave '%v'", enclaveIdentifier)
 	}
-	serviceGuidStrSet := args.GetServiceGuidSet()
-	requestedServiceGuids := make(map[user_service.ServiceGUID]bool, len(serviceGuidStrSet))
+	serviceGuidStrSet := args.GetServiceUuidSet()
+	requestedServiceGuids := make(map[user_service.ServiceUUID]bool, len(serviceGuidStrSet))
 	shouldFollowLogs := args.FollowLogs
 
 	for serviceGuidStr := range serviceGuidStrSet {
-		serviceGuid := user_service.ServiceGUID(serviceGuidStr)
-		requestedServiceGuids[serviceGuid] = true
+		serviceUuid := user_service.ServiceUUID(serviceGuidStr)
+		requestedServiceGuids[serviceUuid] = true
 	}
 
 	if service.logsDatabaseClient == nil {
@@ -161,14 +161,14 @@ func (service *EngineServerService) GetServiceLogs(
 	}
 
 	var (
-		serviceLogsByServiceGuidChan chan map[user_service.ServiceGUID][]centralized_logs.LogLine
+		serviceLogsByServiceGuidChan chan map[user_service.ServiceUUID][]centralized_logs.LogLine
 		errChan                      chan error
 		cancelStreamFunc             func()
 	)
 
 	notFoundServiceGuids, err := service.reportAnyMissingGuidsAndGetNotFoundGuidsList(enclaveUuid, requestedServiceGuids, stream)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred reporting missing user service GUIDs for enclave '%v' and requested service GUIDs '%+v'", enclaveUuid, requestedServiceGuids)
+		return stacktrace.Propagate(err, "An error occurred reporting missing user service UUIDs for enclave '%v' and requested service UUIDs '%+v'", enclaveUuid, requestedServiceGuids)
 	}
 
 	conjunctiveLogLineFilters, err := newConjunctiveLogLineFiltersGRPC(args.GetConjunctiveFilters())
@@ -179,12 +179,12 @@ func (service *EngineServerService) GetServiceLogs(
 	if shouldFollowLogs {
 		serviceLogsByServiceGuidChan, errChan, cancelStreamFunc, err = service.logsDatabaseClient.StreamUserServiceLogs(stream.Context(), enclaveUuid, requestedServiceGuids, conjunctiveLogLineFilters)
 		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred streaming service logs for GUIDs '%+v' in enclave with ID '%v'", requestedServiceGuids, enclaveUuid)
+			return stacktrace.Propagate(err, "An error occurred streaming service logs for UUIDs '%+v' in enclave with ID '%v'", requestedServiceGuids, enclaveUuid)
 		}
 	} else {
 		serviceLogsByServiceGuidChan, errChan, cancelStreamFunc, err = service.logsDatabaseClient.GetUserServiceLogs(stream.Context(), enclaveUuid, requestedServiceGuids, conjunctiveLogLineFilters)
 		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred streaming service logs for GUIDs '%+v' in enclave with ID '%v'", requestedServiceGuids, enclaveUuid)
+			return stacktrace.Propagate(err, "An error occurred streaming service logs for UUIDs '%+v' in enclave with ID '%v'", requestedServiceGuids, enclaveUuid)
 		}
 	}
 	defer cancelStreamFunc()
@@ -225,12 +225,12 @@ func (service *EngineServerService) GetServiceLogs(
 // ====================================================================================================
 func (service *EngineServerService) reportAnyMissingGuidsAndGetNotFoundGuidsList(
 	enclaveUuid enclave.EnclaveUUID,
-	requestedServiceGuids map[user_service.ServiceGUID]bool,
+	requestedServiceGuids map[user_service.ServiceUUID]bool,
 	stream kurtosis_engine_rpc_api_bindings.EngineService_GetServiceLogsServer,
 ) (map[string]bool, error) {
 	existingServiceGuids, err := service.logsDatabaseClient.FilterExistingServiceGuids(stream.Context(), enclaveUuid, requestedServiceGuids)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred retrieving the exhaustive list of service GUIDs from the log client for enclave '%v' and for the requested GUIDs '%+v'", enclaveUuid, requestedServiceGuids)
+		return nil, stacktrace.Propagate(err, "An error occurred retrieving the exhaustive list of service UUIDs from the log client for enclave '%v' and for the requested UUIDs '%+v'", enclaveUuid, requestedServiceGuids)
 	}
 
 	notFoundServiceGuids := getNotFoundServiceGuidsAndEmptyServiceLogsMap(requestedServiceGuids, existingServiceGuids)
@@ -240,7 +240,7 @@ func (service *EngineServerService) reportAnyMissingGuidsAndGetNotFoundGuidsList
 		return notFoundServiceGuids, nil
 	}
 
-	emptyServiceLogsByServiceGuid := map[user_service.ServiceGUID][]centralized_logs.LogLine{}
+	emptyServiceLogsByServiceGuid := map[user_service.ServiceUUID][]centralized_logs.LogLine{}
 
 	getServiceLogsResponse := newLogsResponse(requestedServiceGuids, emptyServiceLogsByServiceGuid, notFoundServiceGuids)
 	if err := stream.Send(getServiceLogsResponse); err != nil {
@@ -251,39 +251,39 @@ func (service *EngineServerService) reportAnyMissingGuidsAndGetNotFoundGuidsList
 }
 
 func newLogsResponse(
-	requestedServiceGuids map[user_service.ServiceGUID]bool,
-	serviceLogsByServiceGuid map[user_service.ServiceGUID][]centralized_logs.LogLine,
-	notFoundServiceGuids map[string]bool,
+	requestedServiceUuids map[user_service.ServiceUUID]bool,
+	serviceLogsByServiceUuid map[user_service.ServiceUUID][]centralized_logs.LogLine,
+	notFoundServiceUuids map[string]bool,
 ) *kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse {
-	serviceLogLinesByGuid := make(map[string]*kurtosis_engine_rpc_api_bindings.LogLine, len(serviceLogsByServiceGuid))
+	serviceLogLinesByUuid := make(map[string]*kurtosis_engine_rpc_api_bindings.LogLine, len(serviceLogsByServiceUuid))
 
-	for serviceGuid := range requestedServiceGuids {
-		serviceGuidStr := string(serviceGuid)
-		_, isInNotFoundGuidList := notFoundServiceGuids[serviceGuidStr]
-		serviceLogLines, found := serviceLogsByServiceGuid[serviceGuid]
+	for serviceUuid := range requestedServiceUuids {
+		serviceUuidStr := string(serviceUuid)
+		_, isInNotFoundUuidList := notFoundServiceUuids[serviceUuidStr]
+		serviceLogLines, found := serviceLogsByServiceUuid[serviceUuid]
 		// should continue in the not-found-GUID list
-		if !found && isInNotFoundGuidList {
+		if !found && isInNotFoundUuidList {
 			continue
 		}
 		// there is no new log lines but is a found GUID, so it has to be included in the service logs map
-		if !found && !isInNotFoundGuidList {
-			serviceLogLinesByGuid[serviceGuidStr] = &kurtosis_engine_rpc_api_bindings.LogLine{
+		if !found && !isInNotFoundUuidList {
+			serviceLogLinesByUuid[serviceUuidStr] = &kurtosis_engine_rpc_api_bindings.LogLine{
 				Line: nil,
 			}
 		}
 		//Remove the service's GUID from the initial not found list, if it was returned from the logs database
 		//This could happen because some services could send the first log line several minutes after the bootstrap
-		if found && isInNotFoundGuidList {
-			delete(notFoundServiceGuids, serviceGuidStr)
+		if found && isInNotFoundUuidList {
+			delete(notFoundServiceUuids, serviceUuidStr)
 		}
 
 		logLines := newRPCBindingsLogLineFromLogLines(serviceLogLines)
-		serviceLogLinesByGuid[serviceGuidStr] = logLines
+		serviceLogLinesByUuid[serviceUuidStr] = logLines
 	}
 
 	getServiceLogsResponse := &kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse{
-		ServiceLogsByServiceGuid: serviceLogLinesByGuid,
-		NotFoundServiceGuidSet:   notFoundServiceGuids,
+		ServiceLogsByServiceUuid: serviceLogLinesByUuid,
+		NotFoundServiceUuidSet:   notFoundServiceUuids,
 	}
 	return getServiceLogsResponse
 }
@@ -302,8 +302,8 @@ func newRPCBindingsLogLineFromLogLines(logLines []centralized_logs.LogLine) *kur
 }
 
 func getNotFoundServiceGuidsAndEmptyServiceLogsMap(
-	requestedServiceGuids map[user_service.ServiceGUID]bool,
-	existingServiceGuids map[user_service.ServiceGUID]bool,
+	requestedServiceGuids map[user_service.ServiceUUID]bool,
+	existingServiceGuids map[user_service.ServiceUUID]bool,
 ) map[string]bool {
 	notFoundServiceGuids := map[string]bool{}
 

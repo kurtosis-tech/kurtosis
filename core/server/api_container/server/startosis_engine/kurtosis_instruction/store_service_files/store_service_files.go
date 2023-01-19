@@ -36,7 +36,7 @@ type StoreServiceFilesInstruction struct {
 	position       *kurtosis_instruction.InstructionPosition
 	starlarkKwargs starlark.StringDict
 
-	serviceId    kurtosis_backend_service.ServiceID
+	serviceId    kurtosis_backend_service.ServiceName
 	src          string
 	artifactName string
 }
@@ -54,7 +54,7 @@ func GenerateStoreServiceFilesBuiltin(instructionsQueue *[]kurtosis_instruction.
 	}
 }
 
-func NewStoreServiceFilesInstruction(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceID, srcPath string, artifactName string, starlarkKwargs starlark.StringDict) *StoreServiceFilesInstruction {
+func NewStoreServiceFilesInstruction(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceName, srcPath string, artifactName string, starlarkKwargs starlark.StringDict) *StoreServiceFilesInstruction {
 	return &StoreServiceFilesInstruction{
 		serviceNetwork: serviceNetwork,
 		position:       position,
@@ -90,7 +90,7 @@ func (instruction *StoreServiceFilesInstruction) GetCanonicalInstruction() *kurt
 }
 
 func (instruction *StoreServiceFilesInstruction) Execute(ctx context.Context) (*string, error) {
-	artifactUuid, err := instruction.serviceNetwork.CopyFilesFromService(ctx, instruction.serviceId, instruction.src, instruction.artifactName)
+	artifactUuid, err := instruction.serviceNetwork.CopyFilesFromService(ctx, string(instruction.serviceId), instruction.src, instruction.artifactName)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to copy file '%v' from service '%v", instruction.src, instruction.serviceId)
 	}

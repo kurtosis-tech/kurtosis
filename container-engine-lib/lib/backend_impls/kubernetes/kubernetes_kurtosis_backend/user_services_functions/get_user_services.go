@@ -17,7 +17,7 @@ func GetUserServices(
 	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs,
 	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
-) (successfulUserServices map[service.ServiceGUID]*service.Service, resultError error) {
+) (successfulUserServices map[service.ServiceUUID]*service.Service, resultError error) {
 	allObjectsAndResources, err := shared_helpers.GetMatchingUserServiceObjectsAndKubernetesResources(ctx, enclaveId, filters, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
 	if err != nil {
 		return nil, stacktrace.Propagate(
@@ -27,7 +27,7 @@ func GetUserServices(
 			filters,
 		)
 	}
-	result := map[service.ServiceGUID]*service.Service{}
+	result := map[service.ServiceUUID]*service.Service{}
 	for guid, serviceObjsAndResources := range allObjectsAndResources {
 		serviceObj := serviceObjsAndResources.Service
 		if serviceObj == nil {

@@ -31,7 +31,7 @@ const (
 var testIntRuntimeValue = starlark.MakeInt(0)
 
 func TestReplaceIPAddressInString_MultipleOccurrencesOfSameStringReplaced(t *testing.T) {
-	ipAddresses := map[service.ServiceID]net.IP{
+	ipAddresses := map[service.ServiceName]net.IP{
 		testServiceDependence1ServiceId: net.ParseIP(testServiceDependence1IPAddress),
 	}
 	serviceNetwork := service_network.NewMockServiceNetwork(ipAddresses)
@@ -49,7 +49,7 @@ func TestReplaceFactInString(t *testing.T) {
 }
 
 func TestReplaceIPAddressInString_MultipleReplacesOfDifferentStrings(t *testing.T) {
-	ipAddresses := map[service.ServiceID]net.IP{
+	ipAddresses := map[service.ServiceName]net.IP{
 		testServiceDependence1ServiceId: net.ParseIP(testServiceDependence1IPAddress),
 		testServiceDependence2ServiceId: net.ParseIP(testServiceDependence2IPAddress),
 	}
@@ -63,7 +63,7 @@ func TestReplaceIPAddressInString_MultipleReplacesOfDifferentStrings(t *testing.
 }
 
 func TestReplaceIPAddressInString_ReplacementFailsForUnknownServiceId(t *testing.T) {
-	ipAddresses := map[service.ServiceID]net.IP{}
+	ipAddresses := map[service.ServiceName]net.IP{}
 	serviceNetwork := service_network.NewMockServiceNetwork(ipAddresses)
 	originalString := fmt.Sprintf("{{kurtosis:%v.ip_address}}", unknownServiceId)
 

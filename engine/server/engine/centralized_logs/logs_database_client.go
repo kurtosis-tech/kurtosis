@@ -14,10 +14,10 @@ type LogsDatabaseClient interface {
 	GetUserServiceLogs(
 		ctx context.Context,
 		enclaveID enclave.EnclaveUUID,
-		userServiceGuids map[service.ServiceGUID]bool,
+		userServiceGuids map[service.ServiceUUID]bool,
 		conjunctiveLogLineFilters ConjunctiveLogLineFilters,
 	) (
-		userServiceLogsByServiceGuidChan chan map[service.ServiceGUID][]LogLine,
+		userServiceLogsByServiceGuidChan chan map[service.ServiceUUID][]LogLine,
 		errChan chan error,
 		cancelStreamFunc func(),
 		err error,
@@ -25,10 +25,10 @@ type LogsDatabaseClient interface {
 	StreamUserServiceLogs(
 		ctx context.Context,
 		enclaveID enclave.EnclaveUUID,
-		userServiceGuids map[service.ServiceGUID]bool,
+		userServiceGuids map[service.ServiceUUID]bool,
 		conjunctiveLogLineFilters ConjunctiveLogLineFilters,
 	) (
-		userServiceLogsByServiceGuidChan chan map[service.ServiceGUID][]LogLine,
+		userServiceLogsByServiceGuidChan chan map[service.ServiceUUID][]LogLine,
 		errChan chan error,
 		cancelStreamFunc func(),
 		err error,
@@ -36,9 +36,9 @@ type LogsDatabaseClient interface {
 	FilterExistingServiceGuids(
 		ctx context.Context,
 		enclaveId enclave.EnclaveUUID,
-		userServiceGuids map[service.ServiceGUID]bool,
+		userServiceGuids map[service.ServiceUUID]bool,
 	) (
-		map[service.ServiceGUID]bool,
+		map[service.ServiceUUID]bool,
 		error,
 	)
 }

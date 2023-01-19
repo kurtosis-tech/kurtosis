@@ -23,26 +23,26 @@ func GetUserServiceLogs(
 	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs,
 	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
-) (successfulUserServiceLogs map[service.ServiceGUID]io.ReadCloser, erroredUserServiceGuids map[service.ServiceGUID]error, resultError error) {
+) (successfulUserServiceLogs map[service.ServiceUUID]io.ReadCloser, erroredUserServiceGuids map[service.ServiceUUID]error, resultError error) {
 	serviceObjectsAndResources, err := shared_helpers.GetMatchingUserServiceObjectsAndKubernetesResources(ctx, enclaveId, filters, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "Expected to be able to get user services and Kubernetes resources, instead a non nil error was returned")
 	}
-	userServiceLogs := map[service.ServiceGUID]io.ReadCloser{}
-	erredServiceLogs := map[service.ServiceGUID]error{}
+	userServiceLogs := map[service.ServiceUUID]io.ReadCloser{}
+	erredServiceLogs := map[service.ServiceUUID]error{}
 	shouldCloseLogStreams := true
 	for _, serviceObjectAndResource := range serviceObjectsAndResources {
-		serviceGuid := serviceObjectAndResource.Service.GetRegistration().GetGUID()
+		serviceUuid := serviceObjectAndResource.Service.GetRegistration().GetUUID()
 		servicePod := serviceObjectAndResource.KubernetesResources.Pod
 		if servicePod == nil {
-			erredServiceLogs[serviceGuid] = stacktrace.NewError("Expected to find a pod for Kurtosis service with GUID '%v', instead no pod was found", serviceGuid)
+			erredServiceLogs[serviceUuid] = stacktrace.NewError("Expected to find a pod for Kurtosis service with UUID '%v', instead no pod was found", serviceUuid)
 			continue
 		}
 		serviceNamespaceName := serviceObjectAndResource.KubernetesResources.Service.GetNamespace()
 		// Get logs
 		logReadCloser, err := kubernetesManager.GetContainerLogs(ctx, serviceNamespaceName, servicePod.Name, userServiceContainerName, shouldFollowLogs, shouldAddTimestampsToUserServiceLogs)
 		if err != nil {
-			erredServiceLogs[serviceGuid] = stacktrace.Propagate(err, "Expected to be able to call Kubernetes to get logs for service with GUID '%v', instead a non-nil error was returned", serviceGuid)
+			erredServiceLogs[serviceUuid] = stacktrace.Propagate(err, "Expected to be able to call Kubernetes to get logs for service with UUID '%v', instead a non-nil error was returned", serviceUuid)
 			continue
 		}
 		defer func() {
@@ -51,7 +51,7 @@ func GetUserServiceLogs(
 			}
 		}()
 
-		userServiceLogs[serviceGuid] = logReadCloser
+		userServiceLogs[serviceUuid] = logReadCloser
 	}
 
 	shouldCloseLogStreams = false

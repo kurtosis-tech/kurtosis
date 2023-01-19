@@ -28,11 +28,11 @@ const (
 
 // TODO: maybe change command to startlark.List once remove backward compatability support
 type ExecRecipe struct {
-	serviceId service.ServiceID
+	serviceId service.ServiceName
 	command   []string
 }
 
-func NewExecRecipe(serviceId service.ServiceID, command []string) *ExecRecipe {
+func NewExecRecipe(serviceId service.ServiceName, command []string) *ExecRecipe {
 	return &ExecRecipe{
 		serviceId: serviceId,
 		command:   command,
@@ -107,7 +107,7 @@ func (recipe *ExecRecipe) Execute(ctx context.Context, serviceNetwork service_ne
 		}
 		commandWithIPAddressAndRuntimeValue = append(commandWithIPAddressAndRuntimeValue, maybeSubCommandWithRuntimeValuesAndIPAddress)
 	}
-	exitCode, commandOutput, err := serviceNetwork.ExecCommand(ctx, recipe.serviceId, commandWithIPAddressAndRuntimeValue)
+	exitCode, commandOutput, err := serviceNetwork.ExecCommand(ctx, string(recipe.serviceId), commandWithIPAddressAndRuntimeValue)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to execute command '%v' on service '%v'", recipe.command, recipe.serviceId)
 	}
@@ -167,7 +167,7 @@ func MakeExecRequestRecipe(_ *starlark.Thread, builtin *starlark.Builtin, args s
 	if err != nil {
 		return nil, err
 	}
-	serviceId := service.ServiceID(serviceIdStr)
+	serviceId := service.ServiceName(serviceIdStr)
 	return NewExecRecipe(serviceId, commands), nil
 }
 

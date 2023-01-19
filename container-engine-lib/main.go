@@ -111,8 +111,8 @@ func runKurtosisBackendTesting() error {
 	logrus.Infof("Engine 1 info: %+v", engine)
 
 	/*engineFil := &engine_object.EngineFilters{
-		GUIDs: map[engine_object.EngineGUID]bool{
-			engine.GetGUID(): true,
+		UUIDs: map[engine_object.EngineGUID]bool{
+			engine.GetUUID(): true,
 		},
 		Statuses: map[container_status.ContainerStatus]bool{
 			container_status.ContainerStatus_Running: true,
@@ -126,29 +126,28 @@ func runKurtosisBackendTesting() error {
 	logrus.Infof("Errored stopped engines: %+v", erroredEngineGuids)
 	*/
 
+	serializedArgs2 := map[string]string{
+		"SERIALIZED_ARGS": `{"grpcListenPortNum":9810,"grpcProxyListenPortNum":9811,"logLevelStr":"debug","imageVersionTag":"1.29.0","metricsUserId":"552f","didUserAcceptSendingMetrics":false,"kurtosisBackendType":"docker","kurtosisBackendConfig":{}}`,
+	}
 
-		serializedArgs2 := map[string]string{
-			"SERIALIZED_ARGS": `{"grpcListenPortNum":9810,"grpcProxyListenPortNum":9811,"logLevelStr":"debug","imageVersionTag":"1.29.0","metricsUserId":"552f","didUserAcceptSendingMetrics":false,"kurtosisBackendType":"docker","kurtosisBackendConfig":{}}`,
-		}
+	engine2, err := backend.CreateEngine(
+		ctx,
+		"kurtosistech/kurtosis-engine-server",
+		"1.29.0",
+		9810,
+		9811,
+		serializedArgs2,
+	)
+	if err != nil {
+		return err
+	}
+	logrus.Infof("Engine 2 info: %+v", engine2)
 
-		engine2, err := backend.CreateEngine(
-			ctx,
-			"kurtosistech/kurtosis-engine-server",
-			"1.29.0",
-			9810,
-			9811,
-			serializedArgs2,
-		)
-		if err != nil {
-			return err
-		}
-		logrus.Infof("Engine 2 info: %+v", engine2)
-
-/*
+	/*
 		engineFil2 := &engine_object.EngineFilters{
-			GUIDs: map[engine_object.EngineGUID]bool{
-				engine.GetGUID(): true,
-				engine2.GetGUID(): true,
+			UUIDs: map[engine_object.EngineGUID]bool{
+				engine.GetUUID(): true,
+				engine2.GetUUID(): true,
 			},
 		}
 		destroyedEngineGuids, erroredDestroyedEngineGuids, err := backend.DestroyEngines(ctx, engineFil2)
@@ -170,14 +169,14 @@ func runKurtosisBackendTesting() error {
 			}
 			logrus.Infof("Enclave info: %+v", enclave)
 
-			userServiceID := service.ServiceID("user-service-test")
-			serviceIds := map[service.ServiceID]bool {
-				userServiceID: true,
+			userServiceName := service.ServiceName("user-service-test")
+			serviceNames := map[service.ServiceName]bool {
+				userServiceName: true,
 			}
 			successfulUserServiceRegistrations, erroredUserServiceRegistrations, err := backend.RegisterUserServices(
 				ctx,
 				enclaveID,
-				serviceIds,
+				serviceNames,
 			)
 			if err != nil {
 				return err
@@ -197,8 +196,8 @@ func runKurtosisBackendTesting() error {
 				0,
 			)
 
-			serviceToStart := map[service.ServiceGUID]*service.ServiceConfig{
-				successfulUserServiceRegistrations[userServiceID].GetGUID(): serviceConfig,
+			serviceToStart := map[service.ServiceUUID]*service.ServiceConfig{
+				successfulUserServiceRegistrations[userServiceName].GetUUID(): serviceConfig,
 			}
 
 			successfulUserServiceStarted, erroredUserServiceStarted, err := backend.StartUserServices(
@@ -222,7 +221,7 @@ func runKurtosisBackendTesting() error {
 
 	// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv Arbitrary logic goes here vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 	// enclaveId := enclave.EnclaveID("test")  // TODO Make this whatever you need
-	// serviceGuid := service.ServiceGUID("TODO")
+	// serviceUuid := service.ServiceUUID("TODO")
 	/*
 		results, err := backend.CreateFilesArtifactExpansion(ctx, "test", "TODO", "/foo/bar")
 		if err != nil {
@@ -232,7 +231,5 @@ func runKurtosisBackendTesting() error {
 
 	*/
 
-
 	return nil
 }
-

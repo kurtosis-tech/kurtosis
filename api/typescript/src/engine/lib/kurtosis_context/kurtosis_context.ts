@@ -3,7 +3,7 @@ import * as semver from "semver"
 import * as jspb from "google-protobuf";
 import {err, ok, Result} from "neverthrow";
 import { isNode as isExecutionEnvNode} from "browser-or-node";
-import {EnclaveContext, EnclaveUUID, ServiceGUID} from "../../../index";
+import {EnclaveContext, EnclaveUUID, ServiceUUID} from "../../../index";
 import { GenericEngineClient } from "./generic_engine_client";
 import { KURTOSIS_VERSION } from "../../../kurtosis_version/kurtosis_version";
 import { GrpcWebEngineClient } from "./grpc_web_engine_client";
@@ -246,26 +246,26 @@ export class KurtosisContext {
     }
 
     //The Readable object returned will be constantly streaming the service logs information using the ServiceLogsStreamContent
-    //which contains two methods, the `getServiceLogsByServiceGuids` will return a map containing the service logs lines grouped by the service's GUID
-    //and the `getNotFoundServiceGuids` will return set of not found (in the logs database) service GUIDs
+    //which contains two methods, the `getServiceLogsByServiceUuids` will return a map containing the service logs lines grouped by the service's UUID
+    //and the `getNotFoundServiceUuids` will return set of not found (in the logs database) service UUIDs
     //Example of how to read the stream:
     //
     //serviceLogsReadable.on('data', (serviceLogsStreamContent: serviceLogsStreamContent) => {
-    //      const serviceLogsByServiceGuids: Map<ServiceGUID, Array<ServiceLog>> = serviceLogsStreamContent.getServiceLogsByServiceGuids()
+    //      const serviceLogsByServiceUuids: Map<ServiceUUID, Array<ServiceLog>> = serviceLogsStreamContent.getServiceLogsByServiceUuids()
     //
-    //      const notFoundServiceGuids: Set<ServiceGUID> = serviceLogsStreamContent.getNotFoundServiceGuids()
+    //      const notFoundServiceUuids: Set<ServiceUUID> = serviceLogsStreamContent.getNotFoundServiceUuids()
     //
     //      //insert your code here
     //})
     //You can cancel receiving the stream from the service calling serviceLogsReadable.destroy()
-    // Docs available at https://docs.kurtosis.com/sdk#getservicelogsstring-enclaveidentifier-setserviceguid-serviceguids-boolean-shouldfollowlogs-loglinefilter-loglinefilter---servicelogsstreamcontent-servicelogsstreamcontent
-    public async getServiceLogs(enclaveIdentifier: string, serviceGUIDs: Set<ServiceGUID>, shouldFollowLogs: boolean, logLineFilter: LogLineFilter|undefined): Promise<Result<Readable, Error>> {
+    // Docs available at https://docs.kurtosis.com/sdk#getservicelogsstring-enclaveidentifier-setserviceuuid-serviceuuids-boolean-shouldfollowlogs-loglinefilter-loglinefilter---servicelogsstreamcontent-servicelogsstreamcontent
+    public async getServiceLogs(enclaveIdentifier: string, serviceUuids: Set<ServiceUUID>, shouldFollowLogs: boolean, logLineFilter: LogLineFilter|undefined): Promise<Result<Readable, Error>> {
         let getServiceLogsArgs: GetServiceLogsArgs;
 
         try {
-            getServiceLogsArgs = newGetServiceLogsArgs(enclaveIdentifier, serviceGUIDs, shouldFollowLogs, logLineFilter);
+            getServiceLogsArgs = newGetServiceLogsArgs(enclaveIdentifier, serviceUuids, shouldFollowLogs, logLineFilter);
         } catch(error) {
-            return err(new Error(`An error occurred getting the get service logs arguments for enclave ID '${enclaveIdentifier}', service GUIDs '${serviceGUIDs}', with should follow value '${shouldFollowLogs}' and log line filter '${logLineFilter}'. Error:\n${error}`));
+            return err(new Error(`An error occurred getting the get service logs arguments for enclave identifier '${enclaveIdentifier}', service UUIDs '${serviceUuids}', with should follow value '${shouldFollowLogs}' and log line filter '${logLineFilter}'. Error:\n${error}`));
         }
 
         const streamServiceLogsResult = await this.client.getServiceLogs(getServiceLogsArgs);

@@ -59,21 +59,21 @@ const (
 	jsonParsingModuleId   = "Unused module id"
 )
 
-func ParseServiceId(serviceIdRaw starlark.String) (service.ServiceID, *startosis_errors.InterpretationError) {
+func ParseServiceId(serviceIdRaw starlark.String) (service.ServiceName, *startosis_errors.InterpretationError) {
 	// TODO(gb): maybe prohibit certain characters for service ids
-	serviceId, interpretationErr := kurtosis_types.SafeCastToString(serviceIdRaw, serviceIdArgName)
+	serviceName, interpretationErr := kurtosis_types.SafeCastToString(serviceIdRaw, serviceIdArgName)
 	if interpretationErr != nil {
 		return "", interpretationErr
 	}
-	if len(serviceId) == 0 {
+	if len(serviceName) == 0 {
 		return "", startosis_errors.NewInterpretationError("Service ID cannot be empty")
 	}
-	return service.ServiceID(serviceId), nil
+	return service.ServiceName(serviceName), nil
 }
 
-//TODO: remove this method when we stop supporting struct for recipe defn
+// TODO: remove this method when we stop supporting struct for recipe defn
 func ParseHttpRequestRecipe(recipeConfig *starlarkstruct.Struct) (*recipe.HttpRequestRecipe, *startosis_errors.InterpretationError) {
-	serviceId, interpretationErr := extractStringValue(recipeConfig, serviceIdKey, requestArgName)
+	serviceName, interpretationErr := extractStringValue(recipeConfig, serviceIdKey, requestArgName)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
@@ -99,7 +99,7 @@ func ParseHttpRequestRecipe(recipeConfig *starlarkstruct.Struct) (*recipe.HttpRe
 	}
 
 	if method == getRequestMethod {
-		builtConfig := recipe.NewGetHttpRequestRecipe(service.ServiceID(serviceId), portId, endpoint, extractors)
+		builtConfig := recipe.NewGetHttpRequestRecipe(service.ServiceName(serviceName), portId, endpoint, extractors)
 		return builtConfig, nil
 	} else if method == postRequestMethod {
 		contentType, interpretationErr := extractStringValue(recipeConfig, contentTypeKey, defineFactArgName)
@@ -112,16 +112,16 @@ func ParseHttpRequestRecipe(recipeConfig *starlarkstruct.Struct) (*recipe.HttpRe
 			return nil, interpretationErr
 		}
 
-		builtConfig := recipe.NewPostHttpRequestRecipe(service.ServiceID(serviceId), portId, contentType, endpoint, body, extractors)
+		builtConfig := recipe.NewPostHttpRequestRecipe(service.ServiceName(serviceName), portId, contentType, endpoint, body, extractors)
 		return builtConfig, nil
 	} else {
 		return nil, startosis_errors.NewInterpretationError("Define fact HTTP method not recognized")
 	}
 }
 
-//TODO: remove this method when we stop supporting struct for recipe defn
+// TODO: remove this method when we stop supporting struct for recipe defn
 func ParseExecRecipe(recipeConfig *starlarkstruct.Struct) (*recipe.ExecRecipe, *startosis_errors.InterpretationError) {
-	serviceId, interpretationErr := extractStringValue(recipeConfig, serviceIdKey, execArgName)
+	serviceName, interpretationErr := extractStringValue(recipeConfig, serviceIdKey, execArgName)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
@@ -131,7 +131,7 @@ func ParseExecRecipe(recipeConfig *starlarkstruct.Struct) (*recipe.ExecRecipe, *
 		return nil, interpretationErr
 	}
 
-	return recipe.NewExecRecipe(service.ServiceID(serviceId), command), nil
+	return recipe.NewExecRecipe(service.ServiceName(serviceName), command), nil
 }
 
 func ParseServiceConfigArg(serviceConfig *starlarkstruct.Struct) (*kurtosis_core_rpc_api_bindings.ServiceConfig, *startosis_errors.InterpretationError) {
@@ -384,7 +384,7 @@ func parseFilesArtifactMountDirpaths(serviceConfig *starlarkstruct.Struct) (map[
 	return filesArtifactMountDirpathsArg, nil
 }
 
-//TODO: remove this method when we stop supporting struct for recipe defn
+// TODO: remove this method when we stop supporting struct for recipe defn
 func parseHttpRequestExtractors(recipe *starlarkstruct.Struct) (map[string]string, *startosis_errors.InterpretationError) {
 	_, err := recipe.Attr(httpRequestExtractorsKey)
 	//an error here means that no argument was found which is alright as this is an optional

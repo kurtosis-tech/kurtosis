@@ -154,25 +154,25 @@ func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackageBlocking(ctx context.C
 	return ReadStarlarkRunResponseLineBlocking(starlarkRunResponseLineChan), nil
 }
 
-// Docs available at https://docs.kurtosis.com/sdk/#getservicecontextserviceid-serviceid---servicecontext-servicecontext
-func (enclaveCtx *EnclaveContext) GetServiceContext(serviceId services.ServiceID) (*services.ServiceContext, error) {
-	serviceIdMapForArgs := map[string]bool{string(serviceId): true}
-	getServiceInfoArgs := binding_constructors.NewGetServicesArgs(serviceIdMapForArgs)
+// Docs available at https://docs.kurtosis.com/sdk#getservicecontextstring-serviceidentifier---servicecontext-servicecontext
+func (enclaveCtx *EnclaveContext) GetServiceContext(serviceIdentifier string) (*services.ServiceContext, error) {
+	serviceIdentifierMapForArgs := map[string]bool{serviceIdentifier: true}
+	getServiceInfoArgs := binding_constructors.NewGetServicesArgs(serviceIdentifierMapForArgs)
 	response, err := enclaveCtx.client.GetServices(context.Background(), getServiceInfoArgs)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred when trying to get info for service '%v'",
-			serviceId)
+			serviceIdentifier)
 	}
-	serviceInfo, found := response.GetServiceInfo()[string(serviceId)]
+	serviceInfo, found := response.GetServiceInfo()[serviceIdentifier]
 	if !found {
-		return nil, stacktrace.NewError("Failed to retrieve service information for service '%v'", string(serviceId))
+		return nil, stacktrace.NewError("Failed to retrieve service information for service '%v'", serviceIdentifier)
 	}
 	if serviceInfo.GetPrivateIpAddr() == "" {
 		return nil, stacktrace.NewError(
 			"Kurtosis API reported an empty private IP address for service '%v' - this should never happen, and is a bug with Kurtosis!",
-			serviceId)
+			serviceIdentifier)
 	}
 
 	serviceCtxPrivatePorts, err := convertApiPortsToServiceContextPorts(serviceInfo.GetPrivatePorts())
@@ -186,8 +186,8 @@ func (enclaveCtx *EnclaveContext) GetServiceContext(serviceId services.ServiceID
 
 	serviceContext := services.NewServiceContext(
 		enclaveCtx.client,
-		serviceId,
-		services.ServiceGUID(serviceInfo.ServiceGuid),
+		services.ServiceName(serviceIdentifier),
+		services.ServiceUUID(serviceInfo.ServiceUuid),
 		serviceInfo.GetPrivateIpAddr(),
 		serviceCtxPrivatePorts,
 		serviceInfo.GetMaybePublicIpAddr(),
@@ -197,19 +197,19 @@ func (enclaveCtx *EnclaveContext) GetServiceContext(serviceId services.ServiceID
 	return serviceContext, nil
 }
 
-// Docs available at https://docs.kurtosis.com/sdk/#getservices---mapserviceid--serviceguid-serviceids
-func (enclaveCtx *EnclaveContext) GetServices() (map[services.ServiceID]services.ServiceGUID, error) {
+// Docs available at https://docs.kurtosis.com/sdk#getservices---mapservicename--serviceuuid-serviceidentifiers
+func (enclaveCtx *EnclaveContext) GetServices() (map[services.ServiceName]services.ServiceUUID, error) {
 	getServicesArgs := binding_constructors.NewGetServicesArgs(map[string]bool{})
 	response, err := enclaveCtx.client.GetServices(context.Background(), getServicesArgs)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the service IDs in the enclave")
+		return nil, stacktrace.Propagate(err, "An error occurred getting the service Names in the enclave")
 	}
 
-	serviceInfos := make(map[services.ServiceID]services.ServiceGUID, len(response.GetServiceInfo()))
+	serviceInfos := make(map[services.ServiceName]services.ServiceUUID, len(response.GetServiceInfo()))
 	for serviceIdStr, responseServiceInfo := range response.GetServiceInfo() {
-		serviceId := services.ServiceID(serviceIdStr)
-		serviceGuid := services.ServiceGUID(responseServiceInfo.GetServiceGuid())
-		serviceInfos[serviceId] = serviceGuid
+		serviceName := services.ServiceName(serviceIdStr)
+		serviceUuid := services.ServiceUUID(responseServiceInfo.GetServiceUuid())
+		serviceInfos[serviceName] = serviceUuid
 	}
 	return serviceInfos, nil
 }

@@ -12,7 +12,7 @@ const (
 	testName              = "destroy-enclave"
 	isPartitioningEnabled = false
 
-	datastoreServiceId services.ServiceID = "datastore-service"
+	datastoreServiceId services.ServiceName = "datastore-service"
 )
 
 func TestDestroyEnclave(t *testing.T) {

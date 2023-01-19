@@ -18,8 +18,8 @@ func GetUserServiceLogs(
 	shouldFollowLogs bool,
 	dockerManager *docker_manager.DockerManager,
 ) (
-	map[service.ServiceGUID]io.ReadCloser,
-	map[service.ServiceGUID]error,
+	map[service.ServiceUUID]io.ReadCloser,
+	map[service.ServiceUUID]error,
 	error,
 ) {
 	_, allDockerResources, err := shared_helpers.GetMatchingUserServiceObjsAndDockerResourcesNoMutex(ctx, enclaveId, filters, dockerManager)
@@ -28,8 +28,8 @@ func GetUserServiceLogs(
 	}
 
 	//TODO use concurrency to improve perf
-	successfulUserServicesLogs := map[service.ServiceGUID]io.ReadCloser{}
-	erroredUserServices := map[service.ServiceGUID]error{}
+	successfulUserServicesLogs := map[service.ServiceUUID]io.ReadCloser{}
+	erroredUserServices := map[service.ServiceUUID]error{}
 	shouldCloseLogStreams := true
 	for guid, resourcesForService := range allDockerResources {
 		container := resourcesForService.ServiceContainer
@@ -40,7 +40,7 @@ func GetUserServiceLogs(
 
 		rawDockerLogStream, err := dockerManager.GetContainerLogs(ctx, container.GetId(), shouldFollowLogs)
 		if err != nil {
-			serviceError := stacktrace.Propagate(err, "An error occurred getting logs for container '%v' for user service with GUID '%v'", container.GetName(), guid)
+			serviceError := stacktrace.Propagate(err, "An error occurred getting logs for container '%v' for user service with UUID '%v'", container.GetName(), guid)
 			erroredUserServices[guid] = serviceError
 			continue
 		}

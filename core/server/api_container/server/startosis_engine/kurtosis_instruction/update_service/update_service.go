@@ -47,7 +47,7 @@ type UpdateServiceInstruction struct {
 	position       *kurtosis_instruction.InstructionPosition
 	starlarkKwargs starlark.StringDict
 
-	serviceId           kurtosis_backend_service.ServiceID
+	serviceId           kurtosis_backend_service.ServiceName
 	updateServiceConfig *kurtosis_core_rpc_api_bindings.UpdateServiceConfig
 }
 
@@ -61,7 +61,7 @@ func newEmptyUpdateServiceInstruction(serviceNetwork service_network.ServiceNetw
 	}
 }
 
-func NewUpdateServiceInstruction(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceID, updateServiceConfig *kurtosis_core_rpc_api_bindings.UpdateServiceConfig, starlarkKwargs starlark.StringDict) *UpdateServiceInstruction {
+func NewUpdateServiceInstruction(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceName, updateServiceConfig *kurtosis_core_rpc_api_bindings.UpdateServiceConfig, starlarkKwargs starlark.StringDict) *UpdateServiceInstruction {
 	return &UpdateServiceInstruction{
 		serviceNetwork:      serviceNetwork,
 		position:            position,
@@ -84,12 +84,12 @@ func (instruction *UpdateServiceInstruction) GetCanonicalInstruction() *kurtosis
 }
 
 func (instruction *UpdateServiceInstruction) Execute(ctx context.Context) (*string, error) {
-	service, err := instruction.serviceNetwork.GetService(ctx, instruction.serviceId)
+	service, err := instruction.serviceNetwork.GetService(ctx, string(instruction.serviceId))
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Updating service '%s' failed as it could not be retrieved from the enclave", instruction.serviceId)
 	}
 
-	updateServiceConfigMap := map[kurtosis_backend_service.ServiceID]*kurtosis_core_rpc_api_bindings.UpdateServiceConfig{
+	updateServiceConfigMap := map[kurtosis_backend_service.ServiceName]*kurtosis_core_rpc_api_bindings.UpdateServiceConfig{
 		instruction.serviceId: instruction.updateServiceConfig,
 	}
 
@@ -104,7 +104,7 @@ func (instruction *UpdateServiceInstruction) Execute(ctx context.Context) (*stri
 	if !found {
 		return nil, stacktrace.NewError("Service '%s' wasn't accounted as failed nor successfully updated. This is a product bug", instruction.serviceId)
 	}
-	instructionResult := fmt.Sprintf("Service '%s' with GUID '%s' updated", instruction.serviceId, service.GetRegistration().GetGUID())
+	instructionResult := fmt.Sprintf("Service '%s' with GUID '%s' updated", instruction.serviceId, service.GetRegistration().GetUUID())
 	return &instructionResult, nil
 }
 

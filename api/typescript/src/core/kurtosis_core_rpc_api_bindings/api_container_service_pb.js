@@ -1220,11 +1220,13 @@ proto.api_container_api.ServiceInfo.prototype.toObject = function(opt_includeIns
  */
 proto.api_container_api.ServiceInfo.toObject = function(includeInstance, msg) {
   var f, obj = {
-    serviceGuid: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    serviceUuid: jspb.Message.getFieldWithDefault(msg, 1, ""),
     privateIpAddr: jspb.Message.getFieldWithDefault(msg, 2, ""),
     privatePortsMap: (f = msg.getPrivatePortsMap()) ? f.toObject(includeInstance, proto.api_container_api.Port.toObject) : [],
     maybePublicIpAddr: jspb.Message.getFieldWithDefault(msg, 4, ""),
-    maybePublicPortsMap: (f = msg.getMaybePublicPortsMap()) ? f.toObject(includeInstance, proto.api_container_api.Port.toObject) : []
+    maybePublicPortsMap: (f = msg.getMaybePublicPortsMap()) ? f.toObject(includeInstance, proto.api_container_api.Port.toObject) : [],
+    name: jspb.Message.getFieldWithDefault(msg, 6, ""),
+    shortenedUuid: jspb.Message.getFieldWithDefault(msg, 7, "")
   };
 
   if (includeInstance) {
@@ -1263,7 +1265,7 @@ proto.api_container_api.ServiceInfo.deserializeBinaryFromReader = function(msg, 
     switch (field) {
     case 1:
       var value = /** @type {string} */ (reader.readString());
-      msg.setServiceGuid(value);
+      msg.setServiceUuid(value);
       break;
     case 2:
       var value = /** @type {string} */ (reader.readString());
@@ -1284,6 +1286,14 @@ proto.api_container_api.ServiceInfo.deserializeBinaryFromReader = function(msg, 
       reader.readMessage(value, function(message, reader) {
         jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.api_container_api.Port.deserializeBinaryFromReader, "", new proto.api_container_api.Port());
          });
+      break;
+    case 6:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setName(value);
+      break;
+    case 7:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setShortenedUuid(value);
       break;
     default:
       reader.skipField();
@@ -1314,7 +1324,7 @@ proto.api_container_api.ServiceInfo.prototype.serializeBinary = function() {
  */
 proto.api_container_api.ServiceInfo.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
-  f = message.getServiceGuid();
+  f = message.getServiceUuid();
   if (f.length > 0) {
     writer.writeString(
       1,
@@ -1343,14 +1353,28 @@ proto.api_container_api.ServiceInfo.serializeBinaryToWriter = function(message, 
   if (f && f.getLength() > 0) {
     f.serializeBinary(5, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.api_container_api.Port.serializeBinaryToWriter);
   }
+  f = message.getName();
+  if (f.length > 0) {
+    writer.writeString(
+      6,
+      f
+    );
+  }
+  f = message.getShortenedUuid();
+  if (f.length > 0) {
+    writer.writeString(
+      7,
+      f
+    );
+  }
 };
 
 
 /**
- * optional string service_guid = 1;
+ * optional string service_uuid = 1;
  * @return {string}
  */
-proto.api_container_api.ServiceInfo.prototype.getServiceGuid = function() {
+proto.api_container_api.ServiceInfo.prototype.getServiceUuid = function() {
   return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
 };
 
@@ -1359,7 +1383,7 @@ proto.api_container_api.ServiceInfo.prototype.getServiceGuid = function() {
  * @param {string} value
  * @return {!proto.api_container_api.ServiceInfo} returns this
  */
-proto.api_container_api.ServiceInfo.prototype.setServiceGuid = function(value) {
+proto.api_container_api.ServiceInfo.prototype.setServiceUuid = function(value) {
   return jspb.Message.setProto3StringField(this, 1, value);
 };
 
@@ -1442,6 +1466,42 @@ proto.api_container_api.ServiceInfo.prototype.getMaybePublicPortsMap = function(
 proto.api_container_api.ServiceInfo.prototype.clearMaybePublicPortsMap = function() {
   this.getMaybePublicPortsMap().clear();
   return this;};
+
+
+/**
+ * optional string name = 6;
+ * @return {string}
+ */
+proto.api_container_api.ServiceInfo.prototype.getName = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 6, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.api_container_api.ServiceInfo} returns this
+ */
+proto.api_container_api.ServiceInfo.prototype.setName = function(value) {
+  return jspb.Message.setProto3StringField(this, 6, value);
+};
+
+
+/**
+ * optional string shortened_uuid = 7;
+ * @return {string}
+ */
+proto.api_container_api.ServiceInfo.prototype.getShortenedUuid = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 7, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.api_container_api.ServiceInfo} returns this
+ */
+proto.api_container_api.ServiceInfo.prototype.setShortenedUuid = function(value) {
+  return jspb.Message.setProto3StringField(this, 7, value);
+};
 
 
 
@@ -4938,7 +4998,7 @@ proto.api_container_api.StartServicesArgs.prototype.toObject = function(opt_incl
  */
 proto.api_container_api.StartServicesArgs.toObject = function(includeInstance, msg) {
   var f, obj = {
-    serviceIdsToConfigsMap: (f = msg.getServiceIdsToConfigsMap()) ? f.toObject(includeInstance, proto.api_container_api.ServiceConfig.toObject) : []
+    serviceNamesToConfigsMap: (f = msg.getServiceNamesToConfigsMap()) ? f.toObject(includeInstance, proto.api_container_api.ServiceConfig.toObject) : []
   };
 
   if (includeInstance) {
@@ -4976,7 +5036,7 @@ proto.api_container_api.StartServicesArgs.deserializeBinaryFromReader = function
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = msg.getServiceIdsToConfigsMap();
+      var value = msg.getServiceNamesToConfigsMap();
       reader.readMessage(value, function(message, reader) {
         jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.api_container_api.ServiceConfig.deserializeBinaryFromReader, "", new proto.api_container_api.ServiceConfig());
          });
@@ -5010,7 +5070,7 @@ proto.api_container_api.StartServicesArgs.prototype.serializeBinary = function()
  */
 proto.api_container_api.StartServicesArgs.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
-  f = message.getServiceIdsToConfigsMap(true);
+  f = message.getServiceNamesToConfigsMap(true);
   if (f && f.getLength() > 0) {
     f.serializeBinary(1, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.api_container_api.ServiceConfig.serializeBinaryToWriter);
   }
@@ -5018,12 +5078,12 @@ proto.api_container_api.StartServicesArgs.serializeBinaryToWriter = function(mes
 
 
 /**
- * map<string, ServiceConfig> service_ids_to_configs = 1;
+ * map<string, ServiceConfig> service_names_to_configs = 1;
  * @param {boolean=} opt_noLazyCreate Do not create the map if
  * empty, instead returning `undefined`
  * @return {!jspb.Map<string,!proto.api_container_api.ServiceConfig>}
  */
-proto.api_container_api.StartServicesArgs.prototype.getServiceIdsToConfigsMap = function(opt_noLazyCreate) {
+proto.api_container_api.StartServicesArgs.prototype.getServiceNamesToConfigsMap = function(opt_noLazyCreate) {
   return /** @type {!jspb.Map<string,!proto.api_container_api.ServiceConfig>} */ (
       jspb.Message.getMapField(this, 1, opt_noLazyCreate,
       proto.api_container_api.ServiceConfig));
@@ -5034,8 +5094,8 @@ proto.api_container_api.StartServicesArgs.prototype.getServiceIdsToConfigsMap = 
  * Clears values from the map. The map will be non-null.
  * @return {!proto.api_container_api.StartServicesArgs} returns this
  */
-proto.api_container_api.StartServicesArgs.prototype.clearServiceIdsToConfigsMap = function() {
-  this.getServiceIdsToConfigsMap().clear();
+proto.api_container_api.StartServicesArgs.prototype.clearServiceNamesToConfigsMap = function() {
+  this.getServiceNamesToConfigsMap().clear();
   return this;};
 
 
@@ -5071,8 +5131,8 @@ proto.api_container_api.StartServicesResponse.prototype.toObject = function(opt_
  */
 proto.api_container_api.StartServicesResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-    successfulServiceIdsToServiceInfoMap: (f = msg.getSuccessfulServiceIdsToServiceInfoMap()) ? f.toObject(includeInstance, proto.api_container_api.ServiceInfo.toObject) : [],
-    failedServiceIdsToErrorMap: (f = msg.getFailedServiceIdsToErrorMap()) ? f.toObject(includeInstance, undefined) : []
+    successfulServiceNameToServiceInfoMap: (f = msg.getSuccessfulServiceNameToServiceInfoMap()) ? f.toObject(includeInstance, proto.api_container_api.ServiceInfo.toObject) : [],
+    failedServiceNameToErrorMap: (f = msg.getFailedServiceNameToErrorMap()) ? f.toObject(includeInstance, undefined) : []
   };
 
   if (includeInstance) {
@@ -5110,13 +5170,13 @@ proto.api_container_api.StartServicesResponse.deserializeBinaryFromReader = func
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = msg.getSuccessfulServiceIdsToServiceInfoMap();
+      var value = msg.getSuccessfulServiceNameToServiceInfoMap();
       reader.readMessage(value, function(message, reader) {
         jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.api_container_api.ServiceInfo.deserializeBinaryFromReader, "", new proto.api_container_api.ServiceInfo());
          });
       break;
     case 2:
-      var value = msg.getFailedServiceIdsToErrorMap();
+      var value = msg.getFailedServiceNameToErrorMap();
       reader.readMessage(value, function(message, reader) {
         jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readString, null, "", "");
          });
@@ -5150,11 +5210,11 @@ proto.api_container_api.StartServicesResponse.prototype.serializeBinary = functi
  */
 proto.api_container_api.StartServicesResponse.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
-  f = message.getSuccessfulServiceIdsToServiceInfoMap(true);
+  f = message.getSuccessfulServiceNameToServiceInfoMap(true);
   if (f && f.getLength() > 0) {
     f.serializeBinary(1, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.api_container_api.ServiceInfo.serializeBinaryToWriter);
   }
-  f = message.getFailedServiceIdsToErrorMap(true);
+  f = message.getFailedServiceNameToErrorMap(true);
   if (f && f.getLength() > 0) {
     f.serializeBinary(2, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeString);
   }
@@ -5162,12 +5222,12 @@ proto.api_container_api.StartServicesResponse.serializeBinaryToWriter = function
 
 
 /**
- * map<string, ServiceInfo> successful_service_ids_to_service_info = 1;
+ * map<string, ServiceInfo> successful_service_name_to_service_info = 1;
  * @param {boolean=} opt_noLazyCreate Do not create the map if
  * empty, instead returning `undefined`
  * @return {!jspb.Map<string,!proto.api_container_api.ServiceInfo>}
  */
-proto.api_container_api.StartServicesResponse.prototype.getSuccessfulServiceIdsToServiceInfoMap = function(opt_noLazyCreate) {
+proto.api_container_api.StartServicesResponse.prototype.getSuccessfulServiceNameToServiceInfoMap = function(opt_noLazyCreate) {
   return /** @type {!jspb.Map<string,!proto.api_container_api.ServiceInfo>} */ (
       jspb.Message.getMapField(this, 1, opt_noLazyCreate,
       proto.api_container_api.ServiceInfo));
@@ -5178,18 +5238,18 @@ proto.api_container_api.StartServicesResponse.prototype.getSuccessfulServiceIdsT
  * Clears values from the map. The map will be non-null.
  * @return {!proto.api_container_api.StartServicesResponse} returns this
  */
-proto.api_container_api.StartServicesResponse.prototype.clearSuccessfulServiceIdsToServiceInfoMap = function() {
-  this.getSuccessfulServiceIdsToServiceInfoMap().clear();
+proto.api_container_api.StartServicesResponse.prototype.clearSuccessfulServiceNameToServiceInfoMap = function() {
+  this.getSuccessfulServiceNameToServiceInfoMap().clear();
   return this;};
 
 
 /**
- * map<string, string> failed_service_ids_to_error = 2;
+ * map<string, string> failed_service_name_to_error = 2;
  * @param {boolean=} opt_noLazyCreate Do not create the map if
  * empty, instead returning `undefined`
  * @return {!jspb.Map<string,string>}
  */
-proto.api_container_api.StartServicesResponse.prototype.getFailedServiceIdsToErrorMap = function(opt_noLazyCreate) {
+proto.api_container_api.StartServicesResponse.prototype.getFailedServiceNameToErrorMap = function(opt_noLazyCreate) {
   return /** @type {!jspb.Map<string,string>} */ (
       jspb.Message.getMapField(this, 2, opt_noLazyCreate,
       null));
@@ -5200,8 +5260,8 @@ proto.api_container_api.StartServicesResponse.prototype.getFailedServiceIdsToErr
  * Clears values from the map. The map will be non-null.
  * @return {!proto.api_container_api.StartServicesResponse} returns this
  */
-proto.api_container_api.StartServicesResponse.prototype.clearFailedServiceIdsToErrorMap = function() {
-  this.getFailedServiceIdsToErrorMap().clear();
+proto.api_container_api.StartServicesResponse.prototype.clearFailedServiceNameToErrorMap = function() {
+  this.getFailedServiceNameToErrorMap().clear();
   return this;};
 
 
@@ -5237,7 +5297,7 @@ proto.api_container_api.GetServicesArgs.prototype.toObject = function(opt_includ
  */
 proto.api_container_api.GetServicesArgs.toObject = function(includeInstance, msg) {
   var f, obj = {
-    serviceIdsMap: (f = msg.getServiceIdsMap()) ? f.toObject(includeInstance, undefined) : []
+    serviceIdentifiersMap: (f = msg.getServiceIdentifiersMap()) ? f.toObject(includeInstance, undefined) : []
   };
 
   if (includeInstance) {
@@ -5275,7 +5335,7 @@ proto.api_container_api.GetServicesArgs.deserializeBinaryFromReader = function(m
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = msg.getServiceIdsMap();
+      var value = msg.getServiceIdentifiersMap();
       reader.readMessage(value, function(message, reader) {
         jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readBool, null, "", false);
          });
@@ -5309,7 +5369,7 @@ proto.api_container_api.GetServicesArgs.prototype.serializeBinary = function() {
  */
 proto.api_container_api.GetServicesArgs.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
-  f = message.getServiceIdsMap(true);
+  f = message.getServiceIdentifiersMap(true);
   if (f && f.getLength() > 0) {
     f.serializeBinary(1, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeBool);
   }
@@ -5317,12 +5377,12 @@ proto.api_container_api.GetServicesArgs.serializeBinaryToWriter = function(messa
 
 
 /**
- * map<string, bool> service_ids = 1;
+ * map<string, bool> service_identifiers = 1;
  * @param {boolean=} opt_noLazyCreate Do not create the map if
  * empty, instead returning `undefined`
  * @return {!jspb.Map<string,boolean>}
  */
-proto.api_container_api.GetServicesArgs.prototype.getServiceIdsMap = function(opt_noLazyCreate) {
+proto.api_container_api.GetServicesArgs.prototype.getServiceIdentifiersMap = function(opt_noLazyCreate) {
   return /** @type {!jspb.Map<string,boolean>} */ (
       jspb.Message.getMapField(this, 1, opt_noLazyCreate,
       null));
@@ -5333,8 +5393,8 @@ proto.api_container_api.GetServicesArgs.prototype.getServiceIdsMap = function(op
  * Clears values from the map. The map will be non-null.
  * @return {!proto.api_container_api.GetServicesArgs} returns this
  */
-proto.api_container_api.GetServicesArgs.prototype.clearServiceIdsMap = function() {
-  this.getServiceIdsMap().clear();
+proto.api_container_api.GetServicesArgs.prototype.clearServiceIdentifiersMap = function() {
+  this.getServiceIdentifiersMap().clear();
   return this;};
 
 
@@ -5503,7 +5563,7 @@ proto.api_container_api.RemoveServiceArgs.prototype.toObject = function(opt_incl
  */
 proto.api_container_api.RemoveServiceArgs.toObject = function(includeInstance, msg) {
   var f, obj = {
-    serviceId: jspb.Message.getFieldWithDefault(msg, 1, "")
+    serviceIdentifier: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -5542,7 +5602,7 @@ proto.api_container_api.RemoveServiceArgs.deserializeBinaryFromReader = function
     switch (field) {
     case 1:
       var value = /** @type {string} */ (reader.readString());
-      msg.setServiceId(value);
+      msg.setServiceIdentifier(value);
       break;
     default:
       reader.skipField();
@@ -5573,7 +5633,7 @@ proto.api_container_api.RemoveServiceArgs.prototype.serializeBinary = function()
  */
 proto.api_container_api.RemoveServiceArgs.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
-  f = message.getServiceId();
+  f = message.getServiceIdentifier();
   if (f.length > 0) {
     writer.writeString(
       1,
@@ -5584,10 +5644,10 @@ proto.api_container_api.RemoveServiceArgs.serializeBinaryToWriter = function(mes
 
 
 /**
- * optional string service_id = 1;
+ * optional string service_identifier = 1;
  * @return {string}
  */
-proto.api_container_api.RemoveServiceArgs.prototype.getServiceId = function() {
+proto.api_container_api.RemoveServiceArgs.prototype.getServiceIdentifier = function() {
   return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
 };
 
@@ -5596,7 +5656,7 @@ proto.api_container_api.RemoveServiceArgs.prototype.getServiceId = function() {
  * @param {string} value
  * @return {!proto.api_container_api.RemoveServiceArgs} returns this
  */
-proto.api_container_api.RemoveServiceArgs.prototype.setServiceId = function(value) {
+proto.api_container_api.RemoveServiceArgs.prototype.setServiceIdentifier = function(value) {
   return jspb.Message.setProto3StringField(this, 1, value);
 };
 
@@ -5633,7 +5693,7 @@ proto.api_container_api.RemoveServiceResponse.prototype.toObject = function(opt_
  */
 proto.api_container_api.RemoveServiceResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-    serviceGuid: jspb.Message.getFieldWithDefault(msg, 1, "")
+    serviceUuid: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -5672,7 +5732,7 @@ proto.api_container_api.RemoveServiceResponse.deserializeBinaryFromReader = func
     switch (field) {
     case 1:
       var value = /** @type {string} */ (reader.readString());
-      msg.setServiceGuid(value);
+      msg.setServiceUuid(value);
       break;
     default:
       reader.skipField();
@@ -5703,7 +5763,7 @@ proto.api_container_api.RemoveServiceResponse.prototype.serializeBinary = functi
  */
 proto.api_container_api.RemoveServiceResponse.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
-  f = message.getServiceGuid();
+  f = message.getServiceUuid();
   if (f.length > 0) {
     writer.writeString(
       1,
@@ -5714,10 +5774,10 @@ proto.api_container_api.RemoveServiceResponse.serializeBinaryToWriter = function
 
 
 /**
- * optional string service_guid = 1;
+ * optional string service_uuid = 1;
  * @return {string}
  */
-proto.api_container_api.RemoveServiceResponse.prototype.getServiceGuid = function() {
+proto.api_container_api.RemoveServiceResponse.prototype.getServiceUuid = function() {
   return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
 };
 
@@ -5726,7 +5786,7 @@ proto.api_container_api.RemoveServiceResponse.prototype.getServiceGuid = functio
  * @param {string} value
  * @return {!proto.api_container_api.RemoveServiceResponse} returns this
  */
-proto.api_container_api.RemoveServiceResponse.prototype.setServiceGuid = function(value) {
+proto.api_container_api.RemoveServiceResponse.prototype.setServiceUuid = function(value) {
   return jspb.Message.setProto3StringField(this, 1, value);
 };
 
@@ -5980,7 +6040,7 @@ proto.api_container_api.PartitionServices.prototype.toObject = function(opt_incl
  */
 proto.api_container_api.PartitionServices.toObject = function(includeInstance, msg) {
   var f, obj = {
-    serviceIdSetMap: (f = msg.getServiceIdSetMap()) ? f.toObject(includeInstance, undefined) : []
+    serviceNameSetMap: (f = msg.getServiceNameSetMap()) ? f.toObject(includeInstance, undefined) : []
   };
 
   if (includeInstance) {
@@ -6018,7 +6078,7 @@ proto.api_container_api.PartitionServices.deserializeBinaryFromReader = function
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = msg.getServiceIdSetMap();
+      var value = msg.getServiceNameSetMap();
       reader.readMessage(value, function(message, reader) {
         jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readBool, null, "", false);
          });
@@ -6052,7 +6112,7 @@ proto.api_container_api.PartitionServices.prototype.serializeBinary = function()
  */
 proto.api_container_api.PartitionServices.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
-  f = message.getServiceIdSetMap(true);
+  f = message.getServiceNameSetMap(true);
   if (f && f.getLength() > 0) {
     f.serializeBinary(1, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeBool);
   }
@@ -6060,12 +6120,12 @@ proto.api_container_api.PartitionServices.serializeBinaryToWriter = function(mes
 
 
 /**
- * map<string, bool> service_id_set = 1;
+ * map<string, bool> service_name_set = 1;
  * @param {boolean=} opt_noLazyCreate Do not create the map if
  * empty, instead returning `undefined`
  * @return {!jspb.Map<string,boolean>}
  */
-proto.api_container_api.PartitionServices.prototype.getServiceIdSetMap = function(opt_noLazyCreate) {
+proto.api_container_api.PartitionServices.prototype.getServiceNameSetMap = function(opt_noLazyCreate) {
   return /** @type {!jspb.Map<string,boolean>} */ (
       jspb.Message.getMapField(this, 1, opt_noLazyCreate,
       null));
@@ -6076,8 +6136,8 @@ proto.api_container_api.PartitionServices.prototype.getServiceIdSetMap = functio
  * Clears values from the map. The map will be non-null.
  * @return {!proto.api_container_api.PartitionServices} returns this
  */
-proto.api_container_api.PartitionServices.prototype.clearServiceIdSetMap = function() {
-  this.getServiceIdSetMap().clear();
+proto.api_container_api.PartitionServices.prototype.clearServiceNameSetMap = function() {
+  this.getServiceNameSetMap().clear();
   return this;};
 
 
@@ -6383,7 +6443,7 @@ proto.api_container_api.ExecCommandArgs.prototype.toObject = function(opt_includ
  */
 proto.api_container_api.ExecCommandArgs.toObject = function(includeInstance, msg) {
   var f, obj = {
-    serviceId: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    serviceIdentifier: jspb.Message.getFieldWithDefault(msg, 1, ""),
     commandArgsList: (f = jspb.Message.getRepeatedField(msg, 2)) == null ? undefined : f
   };
 
@@ -6423,7 +6483,7 @@ proto.api_container_api.ExecCommandArgs.deserializeBinaryFromReader = function(m
     switch (field) {
     case 1:
       var value = /** @type {string} */ (reader.readString());
-      msg.setServiceId(value);
+      msg.setServiceIdentifier(value);
       break;
     case 2:
       var value = /** @type {string} */ (reader.readString());
@@ -6458,7 +6518,7 @@ proto.api_container_api.ExecCommandArgs.prototype.serializeBinary = function() {
  */
 proto.api_container_api.ExecCommandArgs.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
-  f = message.getServiceId();
+  f = message.getServiceIdentifier();
   if (f.length > 0) {
     writer.writeString(
       1,
@@ -6476,10 +6536,10 @@ proto.api_container_api.ExecCommandArgs.serializeBinaryToWriter = function(messa
 
 
 /**
- * optional string service_id = 1;
+ * optional string service_identifier = 1;
  * @return {string}
  */
-proto.api_container_api.ExecCommandArgs.prototype.getServiceId = function() {
+proto.api_container_api.ExecCommandArgs.prototype.getServiceIdentifier = function() {
   return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
 };
 
@@ -6488,7 +6548,7 @@ proto.api_container_api.ExecCommandArgs.prototype.getServiceId = function() {
  * @param {string} value
  * @return {!proto.api_container_api.ExecCommandArgs} returns this
  */
-proto.api_container_api.ExecCommandArgs.prototype.setServiceId = function(value) {
+proto.api_container_api.ExecCommandArgs.prototype.setServiceIdentifier = function(value) {
   return jspb.Message.setProto3StringField(this, 1, value);
 };
 
@@ -6562,7 +6622,7 @@ proto.api_container_api.PauseServiceArgs.prototype.toObject = function(opt_inclu
  */
 proto.api_container_api.PauseServiceArgs.toObject = function(includeInstance, msg) {
   var f, obj = {
-    serviceId: jspb.Message.getFieldWithDefault(msg, 1, "")
+    serviceIdentifier: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -6601,7 +6661,7 @@ proto.api_container_api.PauseServiceArgs.deserializeBinaryFromReader = function(
     switch (field) {
     case 1:
       var value = /** @type {string} */ (reader.readString());
-      msg.setServiceId(value);
+      msg.setServiceIdentifier(value);
       break;
     default:
       reader.skipField();
@@ -6632,7 +6692,7 @@ proto.api_container_api.PauseServiceArgs.prototype.serializeBinary = function() 
  */
 proto.api_container_api.PauseServiceArgs.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
-  f = message.getServiceId();
+  f = message.getServiceIdentifier();
   if (f.length > 0) {
     writer.writeString(
       1,
@@ -6643,10 +6703,10 @@ proto.api_container_api.PauseServiceArgs.serializeBinaryToWriter = function(mess
 
 
 /**
- * optional string service_id = 1;
+ * optional string service_identifier = 1;
  * @return {string}
  */
-proto.api_container_api.PauseServiceArgs.prototype.getServiceId = function() {
+proto.api_container_api.PauseServiceArgs.prototype.getServiceIdentifier = function() {
   return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
 };
 
@@ -6655,7 +6715,7 @@ proto.api_container_api.PauseServiceArgs.prototype.getServiceId = function() {
  * @param {string} value
  * @return {!proto.api_container_api.PauseServiceArgs} returns this
  */
-proto.api_container_api.PauseServiceArgs.prototype.setServiceId = function(value) {
+proto.api_container_api.PauseServiceArgs.prototype.setServiceIdentifier = function(value) {
   return jspb.Message.setProto3StringField(this, 1, value);
 };
 
@@ -6692,7 +6752,7 @@ proto.api_container_api.UnpauseServiceArgs.prototype.toObject = function(opt_inc
  */
 proto.api_container_api.UnpauseServiceArgs.toObject = function(includeInstance, msg) {
   var f, obj = {
-    serviceId: jspb.Message.getFieldWithDefault(msg, 1, "")
+    serviceIdentifier: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -6731,7 +6791,7 @@ proto.api_container_api.UnpauseServiceArgs.deserializeBinaryFromReader = functio
     switch (field) {
     case 1:
       var value = /** @type {string} */ (reader.readString());
-      msg.setServiceId(value);
+      msg.setServiceIdentifier(value);
       break;
     default:
       reader.skipField();
@@ -6762,7 +6822,7 @@ proto.api_container_api.UnpauseServiceArgs.prototype.serializeBinary = function(
  */
 proto.api_container_api.UnpauseServiceArgs.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
-  f = message.getServiceId();
+  f = message.getServiceIdentifier();
   if (f.length > 0) {
     writer.writeString(
       1,
@@ -6773,10 +6833,10 @@ proto.api_container_api.UnpauseServiceArgs.serializeBinaryToWriter = function(me
 
 
 /**
- * optional string service_id = 1;
+ * optional string service_identifier = 1;
  * @return {string}
  */
-proto.api_container_api.UnpauseServiceArgs.prototype.getServiceId = function() {
+proto.api_container_api.UnpauseServiceArgs.prototype.getServiceIdentifier = function() {
   return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
 };
 
@@ -6785,7 +6845,7 @@ proto.api_container_api.UnpauseServiceArgs.prototype.getServiceId = function() {
  * @param {string} value
  * @return {!proto.api_container_api.UnpauseServiceArgs} returns this
  */
-proto.api_container_api.UnpauseServiceArgs.prototype.setServiceId = function(value) {
+proto.api_container_api.UnpauseServiceArgs.prototype.setServiceIdentifier = function(value) {
   return jspb.Message.setProto3StringField(this, 1, value);
 };
 
@@ -6982,7 +7042,7 @@ proto.api_container_api.WaitForHttpGetEndpointAvailabilityArgs.prototype.toObjec
  */
 proto.api_container_api.WaitForHttpGetEndpointAvailabilityArgs.toObject = function(includeInstance, msg) {
   var f, obj = {
-    serviceId: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    serviceIdentifier: jspb.Message.getFieldWithDefault(msg, 1, ""),
     port: jspb.Message.getFieldWithDefault(msg, 2, 0),
     path: jspb.Message.getFieldWithDefault(msg, 3, ""),
     initialDelayMilliseconds: jspb.Message.getFieldWithDefault(msg, 4, 0),
@@ -7027,7 +7087,7 @@ proto.api_container_api.WaitForHttpGetEndpointAvailabilityArgs.deserializeBinary
     switch (field) {
     case 1:
       var value = /** @type {string} */ (reader.readString());
-      msg.setServiceId(value);
+      msg.setServiceIdentifier(value);
       break;
     case 2:
       var value = /** @type {number} */ (reader.readUint32());
@@ -7082,7 +7142,7 @@ proto.api_container_api.WaitForHttpGetEndpointAvailabilityArgs.prototype.seriali
  */
 proto.api_container_api.WaitForHttpGetEndpointAvailabilityArgs.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
-  f = message.getServiceId();
+  f = message.getServiceIdentifier();
   if (f.length > 0) {
     writer.writeString(
       1,
@@ -7135,10 +7195,10 @@ proto.api_container_api.WaitForHttpGetEndpointAvailabilityArgs.serializeBinaryTo
 
 
 /**
- * optional string service_id = 1;
+ * optional string service_identifier = 1;
  * @return {string}
  */
-proto.api_container_api.WaitForHttpGetEndpointAvailabilityArgs.prototype.getServiceId = function() {
+proto.api_container_api.WaitForHttpGetEndpointAvailabilityArgs.prototype.getServiceIdentifier = function() {
   return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
 };
 
@@ -7147,7 +7207,7 @@ proto.api_container_api.WaitForHttpGetEndpointAvailabilityArgs.prototype.getServ
  * @param {string} value
  * @return {!proto.api_container_api.WaitForHttpGetEndpointAvailabilityArgs} returns this
  */
-proto.api_container_api.WaitForHttpGetEndpointAvailabilityArgs.prototype.setServiceId = function(value) {
+proto.api_container_api.WaitForHttpGetEndpointAvailabilityArgs.prototype.setServiceIdentifier = function(value) {
   return jspb.Message.setProto3StringField(this, 1, value);
 };
 
@@ -7292,7 +7352,7 @@ proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs.prototype.toObje
  */
 proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs.toObject = function(includeInstance, msg) {
   var f, obj = {
-    serviceId: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    serviceIdentifier: jspb.Message.getFieldWithDefault(msg, 1, ""),
     port: jspb.Message.getFieldWithDefault(msg, 2, 0),
     path: jspb.Message.getFieldWithDefault(msg, 3, ""),
     requestBody: jspb.Message.getFieldWithDefault(msg, 4, ""),
@@ -7338,7 +7398,7 @@ proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs.deserializeBinar
     switch (field) {
     case 1:
       var value = /** @type {string} */ (reader.readString());
-      msg.setServiceId(value);
+      msg.setServiceIdentifier(value);
       break;
     case 2:
       var value = /** @type {number} */ (reader.readUint32());
@@ -7397,7 +7457,7 @@ proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs.prototype.serial
  */
 proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
-  f = message.getServiceId();
+  f = message.getServiceIdentifier();
   if (f.length > 0) {
     writer.writeString(
       1,
@@ -7457,10 +7517,10 @@ proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs.serializeBinaryT
 
 
 /**
- * optional string service_id = 1;
+ * optional string service_identifier = 1;
  * @return {string}
  */
-proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs.prototype.getServiceId = function() {
+proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs.prototype.getServiceIdentifier = function() {
   return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
 };
 
@@ -7469,7 +7529,7 @@ proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs.prototype.getSer
  * @param {string} value
  * @return {!proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs} returns this
  */
-proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs.prototype.setServiceId = function(value) {
+proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs.prototype.setServiceIdentifier = function(value) {
   return jspb.Message.setProto3StringField(this, 1, value);
 };
 
@@ -8520,7 +8580,7 @@ proto.api_container_api.StoreFilesArtifactFromServiceArgs.prototype.toObject = f
  */
 proto.api_container_api.StoreFilesArtifactFromServiceArgs.toObject = function(includeInstance, msg) {
   var f, obj = {
-    serviceId: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    serviceIdentifier: jspb.Message.getFieldWithDefault(msg, 1, ""),
     sourcePath: jspb.Message.getFieldWithDefault(msg, 2, ""),
     name: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
@@ -8561,7 +8621,7 @@ proto.api_container_api.StoreFilesArtifactFromServiceArgs.deserializeBinaryFromR
     switch (field) {
     case 1:
       var value = /** @type {string} */ (reader.readString());
-      msg.setServiceId(value);
+      msg.setServiceIdentifier(value);
       break;
     case 2:
       var value = /** @type {string} */ (reader.readString());
@@ -8600,7 +8660,7 @@ proto.api_container_api.StoreFilesArtifactFromServiceArgs.prototype.serializeBin
  */
 proto.api_container_api.StoreFilesArtifactFromServiceArgs.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
-  f = message.getServiceId();
+  f = message.getServiceIdentifier();
   if (f.length > 0) {
     writer.writeString(
       1,
@@ -8625,10 +8685,10 @@ proto.api_container_api.StoreFilesArtifactFromServiceArgs.serializeBinaryToWrite
 
 
 /**
- * optional string service_id = 1;
+ * optional string service_identifier = 1;
  * @return {string}
  */
-proto.api_container_api.StoreFilesArtifactFromServiceArgs.prototype.getServiceId = function() {
+proto.api_container_api.StoreFilesArtifactFromServiceArgs.prototype.getServiceIdentifier = function() {
   return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
 };
 
@@ -8637,7 +8697,7 @@ proto.api_container_api.StoreFilesArtifactFromServiceArgs.prototype.getServiceId
  * @param {string} value
  * @return {!proto.api_container_api.StoreFilesArtifactFromServiceArgs} returns this
  */
-proto.api_container_api.StoreFilesArtifactFromServiceArgs.prototype.setServiceId = function(value) {
+proto.api_container_api.StoreFilesArtifactFromServiceArgs.prototype.setServiceIdentifier = function(value) {
   return jspb.Message.setProto3StringField(this, 1, value);
 };
 

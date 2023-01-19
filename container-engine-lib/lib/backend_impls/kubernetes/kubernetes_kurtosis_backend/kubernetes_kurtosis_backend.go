@@ -192,7 +192,7 @@ func (backend *KubernetesKurtosisBackend) DestroyEngines(
 	return successfulEngineGuids, erroredEngineGuids, nil
 }
 
-func (backend *KubernetesKurtosisBackend) RegisterUserServices(ctx context.Context, enclaveUuid enclave.EnclaveUUID, services map[service.ServiceID]bool) (map[service.ServiceID]*service.ServiceRegistration, map[service.ServiceID]error, error) {
+func (backend *KubernetesKurtosisBackend) RegisterUserServices(ctx context.Context, enclaveUuid enclave.EnclaveUUID, services map[service.ServiceName]bool) (map[service.ServiceName]*service.ServiceRegistration, map[service.ServiceName]error, error) {
 	successfullyRegisteredService, failedServices, err := user_services_functions.RegisterUserServices(
 		ctx,
 		enclaveUuid,
@@ -202,16 +202,16 @@ func (backend *KubernetesKurtosisBackend) RegisterUserServices(ctx context.Conte
 		backend.engineServerModeArgs,
 		backend.kubernetesManager)
 	if err != nil {
-		var serviceIds []service.ServiceID
+		var serviceIds []service.ServiceName
 		for serviceId := range services {
 			serviceIds = append(serviceIds, serviceId)
 		}
-		return nil, nil, stacktrace.Propagate(err, "Unexpected error registering services with IDs '%v' to enclave '%s'", serviceIds, enclaveUuid)
+		return nil, nil, stacktrace.Propagate(err, "Unexpected error registering services with Names '%v' to enclave '%s'", serviceIds, enclaveUuid)
 	}
 	return successfullyRegisteredService, failedServices, nil
 }
 
-func (backend *KubernetesKurtosisBackend) UnregisterUserServices(ctx context.Context, enclaveUuid enclave.EnclaveUUID, services map[service.ServiceGUID]bool) (map[service.ServiceGUID]bool, map[service.ServiceGUID]error, error) {
+func (backend *KubernetesKurtosisBackend) UnregisterUserServices(ctx context.Context, enclaveUuid enclave.EnclaveUUID, services map[service.ServiceUUID]bool) (map[service.ServiceUUID]bool, map[service.ServiceUUID]error, error) {
 	successfullyUnregisteredServices, failedServices, err := user_services_functions.UnregisterUserServices(
 		ctx,
 		enclaveUuid,
@@ -221,11 +221,11 @@ func (backend *KubernetesKurtosisBackend) UnregisterUserServices(ctx context.Con
 		backend.engineServerModeArgs,
 		backend.kubernetesManager)
 	if err != nil {
-		var serviceGuids []service.ServiceGUID
-		for serviceGuid := range services {
-			serviceGuids = append(serviceGuids, serviceGuid)
+		var serviceUuids []service.ServiceUUID
+		for serviceUuid := range services {
+			serviceUuids = append(serviceUuids, serviceUuid)
 		}
-		return nil, nil, stacktrace.Propagate(err, "Unexpected error unregistering services with GUIDs '%v' from enclave '%s'", serviceGuids, enclaveUuid)
+		return nil, nil, stacktrace.Propagate(err, "Unexpected error unregistering services with GUIDs '%v' from enclave '%s'", serviceUuids, enclaveUuid)
 	}
 	return successfullyUnregisteredServices, failedServices, nil
 }
@@ -233,10 +233,10 @@ func (backend *KubernetesKurtosisBackend) UnregisterUserServices(ctx context.Con
 func (backend *KubernetesKurtosisBackend) StartRegisteredUserServices(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,
-	services map[service.ServiceGUID]*service.ServiceConfig,
+	services map[service.ServiceUUID]*service.ServiceConfig,
 ) (
-	map[service.ServiceGUID]*service.Service,
-	map[service.ServiceGUID]error,
+	map[service.ServiceUUID]*service.Service,
+	map[service.ServiceUUID]error,
 	error,
 ) {
 	successfullyStartedServices, failedServices, err := user_services_functions.StartRegisteredUserServices(
@@ -248,11 +248,11 @@ func (backend *KubernetesKurtosisBackend) StartRegisteredUserServices(
 		backend.engineServerModeArgs,
 		backend.kubernetesManager)
 	if err != nil {
-		var serviceGuids []service.ServiceGUID
-		for serviceGuid := range services {
-			serviceGuids = append(serviceGuids, serviceGuid)
+		var serviceUuids []service.ServiceUUID
+		for serviceUuid := range services {
+			serviceUuids = append(serviceUuids, serviceUuid)
 		}
-		return nil, nil, stacktrace.Propagate(err, "Unexpected error starting services with GUIDs '%v' in enclave '%s'", serviceGuids, enclaveUuid)
+		return nil, nil, stacktrace.Propagate(err, "Unexpected error starting services with GUIDs '%v' in enclave '%s'", serviceUuids, enclaveUuid)
 	}
 	return successfullyStartedServices, failedServices, nil
 }
@@ -261,7 +261,7 @@ func (backend *KubernetesKurtosisBackend) GetUserServices(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,
 	filters *service.ServiceFilters,
-) (successfulUserServices map[service.ServiceGUID]*service.Service, resultError error) {
+) (successfulUserServices map[service.ServiceUUID]*service.Service, resultError error) {
 	return user_services_functions.GetUserServices(
 		ctx,
 		enclaveUuid,
@@ -277,7 +277,7 @@ func (backend *KubernetesKurtosisBackend) GetUserServiceLogs(
 	enclaveUuid enclave.EnclaveUUID,
 	filters *service.ServiceFilters,
 	shouldFollowLogs bool,
-) (successfulUserServiceLogs map[service.ServiceGUID]io.ReadCloser, erroredUserServiceGuids map[service.ServiceGUID]error, resultError error) {
+) (successfulUserServiceLogs map[service.ServiceUUID]io.ReadCloser, erroredUserServiceUuids map[service.ServiceUUID]error, resultError error) {
 	return user_services_functions.GetUserServiceLogs(
 		ctx,
 		enclaveUuid,
@@ -292,7 +292,7 @@ func (backend *KubernetesKurtosisBackend) GetUserServiceLogs(
 func (backend *KubernetesKurtosisBackend) PauseService(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,
-	serviceId service.ServiceGUID,
+	serviceId service.ServiceUUID,
 ) error {
 	return stacktrace.NewError("Cannot pause service '%v' in enclave '%v' because pausing is not supported by Kubernetes", serviceId, enclaveUuid)
 }
@@ -300,7 +300,7 @@ func (backend *KubernetesKurtosisBackend) PauseService(
 func (backend *KubernetesKurtosisBackend) UnpauseService(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,
-	serviceId service.ServiceGUID,
+	serviceId service.ServiceUUID,
 ) error {
 	return stacktrace.NewError("Cannot pause service '%v' in enclave '%v' because unpausing is not supported by Kubernetes", serviceId, enclaveUuid)
 }
@@ -309,10 +309,10 @@ func (backend *KubernetesKurtosisBackend) UnpauseService(
 func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommands(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,
-	userServiceCommands map[service.ServiceGUID][]string,
+	userServiceCommands map[service.ServiceUUID][]string,
 ) (
-	succesfulUserServiceExecResults map[service.ServiceGUID]*exec_result.ExecResult,
-	erroredUserServiceGuids map[service.ServiceGUID]error,
+	succesfulUserServiceExecResults map[service.ServiceUUID]*exec_result.ExecResult,
+	erroredUserServiceUuids map[service.ServiceUUID]error,
 	resultErr error,
 ) {
 	return user_services_functions.RunUserServiceExecCommands(
@@ -325,7 +325,7 @@ func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommands(
 		backend.kubernetesManager)
 }
 
-func (backend *KubernetesKurtosisBackend) GetConnectionWithUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceGUID service.ServiceGUID) (resultConn net.Conn, resultErr error) {
+func (backend *KubernetesKurtosisBackend) GetConnectionWithUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUUID service.ServiceUUID) (resultConn net.Conn, resultErr error) {
 	// See https://github.com/kubernetes/client-go/issues/912
 	/*
 		in := streams.NewIn(os.Stdin)
@@ -346,14 +346,14 @@ func (backend *KubernetesKurtosisBackend) GetConnectionWithUserService(ctx conte
 func (backend *KubernetesKurtosisBackend) CopyFilesFromUserService(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,
-	serviceGuid service.ServiceGUID,
+	serviceUuid service.ServiceUUID,
 	srcPath string,
 	output io.Writer,
 ) error {
 	return user_services_functions.CopyFilesFromUserService(
 		ctx,
 		enclaveUuid,
-		serviceGuid,
+		serviceUuid,
 		srcPath,
 		output,
 		backend.cliModeArgs,
@@ -362,7 +362,7 @@ func (backend *KubernetesKurtosisBackend) CopyFilesFromUserService(
 		backend.kubernetesManager)
 }
 
-func (backend *KubernetesKurtosisBackend) StopUserServices(ctx context.Context, enclaveUuid enclave.EnclaveUUID, filters *service.ServiceFilters) (resultSuccessfulGuids map[service.ServiceGUID]bool, resultErroredGuids map[service.ServiceGUID]error, resultErr error) {
+func (backend *KubernetesKurtosisBackend) StopUserServices(ctx context.Context, enclaveUuid enclave.EnclaveUUID, filters *service.ServiceFilters) (resultSuccessfulGuids map[service.ServiceUUID]bool, resultErroredGuids map[service.ServiceUUID]error, resultErr error) {
 	return user_services_functions.StopUserServices(
 		ctx,
 		enclaveUuid,
@@ -373,7 +373,7 @@ func (backend *KubernetesKurtosisBackend) StopUserServices(ctx context.Context, 
 		backend.kubernetesManager)
 }
 
-func (backend *KubernetesKurtosisBackend) DestroyUserServices(ctx context.Context, enclaveUuid enclave.EnclaveUUID, filters *service.ServiceFilters) (resultSuccessfulGuids map[service.ServiceGUID]bool, resultErroredGuids map[service.ServiceGUID]error, resultErr error) {
+func (backend *KubernetesKurtosisBackend) DestroyUserServices(ctx context.Context, enclaveUuid enclave.EnclaveUUID, filters *service.ServiceFilters) (resultSuccessfulGuids map[service.ServiceUUID]bool, resultErroredGuids map[service.ServiceUUID]error, resultErr error) {
 	return user_services_functions.DestroyUserServices(
 		ctx,
 		enclaveUuid,

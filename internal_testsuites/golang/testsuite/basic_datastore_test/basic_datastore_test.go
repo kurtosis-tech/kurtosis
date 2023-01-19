@@ -14,18 +14,18 @@ const (
 	testName              string = "basic-datastore"
 	isPartitioningEnabled bool   = false
 
-	datastoreServiceId services.ServiceID = "datastore"
-	testKey            string             = "test-key"
-	testValue          string             = "test-value"
+	datastoreServiceId services.ServiceName = "datastore"
+	testKey            string               = "test-key"
+	testValue          string               = "test-value"
 )
 
 func TestBasicDatastoreTest(t *testing.T) {
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
-	enclaveCtx, stopEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
+	enclaveCtx, _, _, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
 	require.NoError(t, err, "An error occurred creating an enclave")
-	defer stopEnclaveFunc()
+	//defer stopEnclaveFunc()
 
 	// ------------------------------------- TEST SETUP ----------------------------------------------
 	// TODO replace with datastore launcher inside the lib

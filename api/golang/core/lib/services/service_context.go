@@ -27,8 +27,8 @@ import (
 // Docs available at https://docs.kurtosis.com/sdk/#servicecontext
 type ServiceContext struct {
 	client      kurtosis_core_rpc_api_bindings.ApiContainerServiceClient
-	serviceId   ServiceID
-	serviceGuid ServiceGUID
+	serviceName ServiceName
+	serviceUuid ServiceUUID
 
 	// Network location inside the enclave
 	privateIpAddr string
@@ -41,8 +41,8 @@ type ServiceContext struct {
 
 func NewServiceContext(
 	client kurtosis_core_rpc_api_bindings.ApiContainerServiceClient,
-	serviceId ServiceID,
-	serviceGuid ServiceGUID,
+	serviceName ServiceName,
+	serviceUuid ServiceUUID,
 	privateIpAddr string,
 	privatePorts map[string]*PortSpec,
 	publicIpAddr string,
@@ -50,8 +50,8 @@ func NewServiceContext(
 ) *ServiceContext {
 	return &ServiceContext{
 		client:        client,
-		serviceId:     serviceId,
-		serviceGuid:   serviceGuid,
+		serviceName:   serviceName,
+		serviceUuid:   serviceUuid,
 		privateIpAddr: privateIpAddr,
 		privatePorts:  privatePorts,
 		publicIpAddr:  publicIpAddr,
@@ -59,14 +59,14 @@ func NewServiceContext(
 	}
 }
 
-// Docs available at https://docs.kurtosis.com/sdk/#getserviceid---serviceid
-func (service *ServiceContext) GetServiceID() ServiceID {
-	return service.serviceId
+// Docs available at https://docs.kurtosis.com/sdk/#getservicename---servicename
+func (service *ServiceContext) GetServiceName() ServiceName {
+	return service.serviceName
 }
 
-// Docs available at https://docs.kurtosis.com/sdk/#getserviceguid---serviceguid
-func (service *ServiceContext) GetServiceGUID() ServiceGUID {
-	return service.serviceGuid
+// Docs available at https://docs.kurtosis.com/sdk/#getserviceuuid---serviceuuid
+func (service *ServiceContext) GetServiceUUID() ServiceUUID {
+	return service.serviceUuid
 }
 
 // Docs available at https://docs.kurtosis.com/sdk/#getprivateipaddress---string
@@ -91,15 +91,15 @@ func (service *ServiceContext) GetPublicPorts() map[string]*PortSpec {
 
 // Docs available at https://docs.kurtosis.com/sdk/#execcommandliststring-command---int-exitcode-string-logs
 func (service *ServiceContext) ExecCommand(command []string) (int32, string, error) {
-	serviceId := service.serviceId
-	args := binding_constructors.NewExecCommandArgs(string(serviceId), command)
+	serviceName := service.serviceName
+	args := binding_constructors.NewExecCommandArgs(string(serviceName), command)
 	resp, err := service.client.ExecCommand(context.Background(), args)
 	if err != nil {
 		return 0, "", stacktrace.Propagate(
 			err,
 			"An error occurred executing command '%v' on service '%v'",
 			command,
-			serviceId)
+			serviceName)
 	}
 	return resp.ExitCode, resp.LogOutput, nil
 }

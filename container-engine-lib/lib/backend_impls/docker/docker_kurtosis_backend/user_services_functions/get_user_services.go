@@ -15,7 +15,7 @@ func GetUserServices(
 	filters *service.ServiceFilters,
 	dockerManager *docker_manager.DockerManager,
 ) (
-	map[service.ServiceGUID]*service.Service,
+	map[service.ServiceUUID]*service.Service,
 	error,
 ) {
 	userServices, _, err := shared_helpers.GetMatchingUserServiceObjsAndDockerResourcesNoMutex(ctx, enclaveId, filters, dockerManager)

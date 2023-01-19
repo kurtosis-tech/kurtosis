@@ -19,36 +19,36 @@ const (
 	partition2 service_network_types.PartitionID = "partition2"
 	partition3 service_network_types.PartitionID = "partition3"
 
-	service1 service.ServiceID = "service1"
-	service2 service.ServiceID = "service2"
-	service3 service.ServiceID = "service3"
+	service1 service.ServiceName = "service1"
+	service2 service.ServiceName = "service2"
+	service3 service.ServiceName = "service3"
 
 	// How many nodes in a "huge" network, for benchmarking
 	hugeNetworkNodeCount = 10000
 )
 
-var allTestServiceIds = map[service.ServiceID]bool{
+var allTestServiceNames = map[service.ServiceName]bool{
 	service1: true,
 	service2: true,
 	service3: true,
 }
 
-var emptyServiceSet = map[service.ServiceID]bool{}
+var emptyServiceSet = map[service.ServiceName]bool{}
 
-var serviceSetWithService1 = map[service.ServiceID]bool{
+var serviceSetWithService1 = map[service.ServiceName]bool{
 	service1: true,
 }
-var serviceSetWithService2 = map[service.ServiceID]bool{
+var serviceSetWithService2 = map[service.ServiceName]bool{
 	service2: true,
 }
-var serviceSetWithService3 = map[service.ServiceID]bool{
+var serviceSetWithService3 = map[service.ServiceName]bool{
 	service3: true,
 }
-var serviceSetWithService1And2 = map[service.ServiceID]bool{
+var serviceSetWithService1And2 = map[service.ServiceName]bool{
 	service1: true,
 	service2: true,
 }
-var serviceSetWithService2And3 = map[service.ServiceID]bool{
+var serviceSetWithService2And3 = map[service.ServiceName]bool{
 	service2: true,
 	service3: true,
 }
@@ -58,12 +58,12 @@ var serviceSetWithService2And3 = map[service.ServiceID]bool{
 //	Benchmarks (execute with `go test -run=^$ -bench=.`)
 //
 // ===========================================================================================
-func BenchmarkHugeNetworkSinglePartitionGetServicePacketLossConfigurationsByServiceID(b *testing.B) {
+func BenchmarkHugeNetworkSinglePartitionGetServicePacketLossConfigurationsByServiceName(b *testing.B) {
 	topology := getHugeTestTopology(b, "service-", ConnectionBlocked)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		if _, err := topology.GetServicePacketLossConfigurationsByServiceID(); err != nil {
+		if _, err := topology.GetServicePacketLossConfigurationsByServiceName(); err != nil {
 			b.Fatal(stacktrace.Propagate(err, "An error occurred getting the sevice packet loss configuration by service ID"))
 		}
 	}
@@ -72,19 +72,19 @@ func BenchmarkHugeNetworkSinglePartitionGetServicePacketLossConfigurationsByServ
 
 // 10k nodes, each in their own partition, partitioned into a line so each partition can only see the ones next to it
 func BenchmarkHugeNetworkPathologicalRepartition(b *testing.B) {
-	serviceIdPrefix := "service-"
+	serviceNamePrefix := "service-"
 	partitionIdPrefix := "partition-"
-	topology := getHugeTestTopology(b, serviceIdPrefix, ConnectionBlocked)
+	topology := getHugeTestTopology(b, serviceNamePrefix, ConnectionBlocked)
 
-	newPartitionServices := map[service_network_types.PartitionID]map[service.ServiceID]bool{}
+	newPartitionServices := map[service_network_types.PartitionID]map[service.ServiceName]bool{}
 	newPartitionConnections := map[service_network_types.PartitionConnectionID]PartitionConnection{}
 	for i := 0; i < hugeNetworkNodeCount; i++ {
 		partitionId := service_network_types.PartitionID(partitionIdPrefix + strconv.Itoa(i))
-		serviceId := service.ServiceID(serviceIdPrefix + strconv.Itoa(i))
-		serviceIdSet := map[service.ServiceID]bool{
-			serviceId: true,
+		serviceName := service.ServiceName(serviceNamePrefix + strconv.Itoa(i))
+		serviceNameSet := map[service.ServiceName]bool{
+			serviceName: true,
 		}
-		newPartitionServices[partitionId] = serviceIdSet
+		newPartitionServices[partitionId] = serviceNameSet
 
 		if i > 0 {
 			previousPartitionId := service_network_types.PartitionID(partitionIdPrefix + strconv.Itoa(i-1))
@@ -107,20 +107,20 @@ func BenchmarkHugeNetworkPathologicalRepartition(b *testing.B) {
 	}
 }
 
-func BenchmarkHugeNetworkPathologicalPartitioningGetServicePacketLossConfigurationsByServiceID(b *testing.B) {
-	serviceIdPrefix := "service-"
+func BenchmarkHugeNetworkPathologicalPartitioningGetServicePacketLossConfigurationsByServiceName(b *testing.B) {
+	serviceNamePrefix := "service-"
 	partitionIdPrefix := "partition-"
-	topology := getHugeTestTopology(b, serviceIdPrefix, ConnectionBlocked)
+	topology := getHugeTestTopology(b, serviceNamePrefix, ConnectionBlocked)
 
-	newPartitionServices := map[service_network_types.PartitionID]map[service.ServiceID]bool{}
+	newPartitionServices := map[service_network_types.PartitionID]map[service.ServiceName]bool{}
 	newPartitionConnections := map[service_network_types.PartitionConnectionID]PartitionConnection{}
 	for i := 0; i < hugeNetworkNodeCount; i++ {
 		partitionId := service_network_types.PartitionID(partitionIdPrefix + strconv.Itoa(i))
-		serviceId := service.ServiceID(serviceIdPrefix + strconv.Itoa(i))
-		serviceIdSet := map[service.ServiceID]bool{
-			serviceId: true,
+		serviceName := service.ServiceName(serviceNamePrefix + strconv.Itoa(i))
+		serviceNameSet := map[service.ServiceName]bool{
+			serviceName: true,
 		}
-		newPartitionServices[partitionId] = serviceIdSet
+		newPartitionServices[partitionId] = serviceNameSet
 
 		if i > 0 {
 			previousPartitionId := service_network_types.PartitionID(partitionIdPrefix + strconv.Itoa(i-1))
@@ -141,7 +141,7 @@ func BenchmarkHugeNetworkPathologicalPartitioningGetServicePacketLossConfigurati
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		if _, err := topology.GetServicePacketLossConfigurationsByServiceID(); err != nil {
+		if _, err := topology.GetServicePacketLossConfigurationsByServiceName(); err != nil {
 			b.Fatal(stacktrace.Propagate(err, "An error occurred getting the packet loss configuration map"))
 		}
 	}
@@ -154,8 +154,8 @@ func BenchmarkHugeNetworkPathologicalPartitioningGetServicePacketLossConfigurati
 // ===========================================================================================
 func TestAllServicesAreAlwaysInServicePacketLossConfigMap(t *testing.T) {
 	topology := get3NodeTestTopology(t, ConnectionBlocked)
-	servicePacketLossConfigMapBeforeRepartition := getServicePacketLossConfigurationsByServiceIDMap(t, topology)
-	require.Equal(t, len(servicePacketLossConfigMapBeforeRepartition), len(allTestServiceIds), "Service packet loss config map before repartition should contain all services")
+	servicePacketLossConfigMapBeforeRepartition := getServicePacketLossConfigurationsByServiceNameMap(t, topology)
+	require.Equal(t, len(servicePacketLossConfigMapBeforeRepartition), len(allTestServiceNames), "Service packet loss config map before repartition should contain all services")
 
 	repartition(
 		t,
@@ -166,13 +166,13 @@ func TestAllServicesAreAlwaysInServicePacketLossConfigMap(t *testing.T) {
 		map[service_network_types.PartitionConnectionID]PartitionConnection{},
 		ConnectionBlocked)
 
-	servicePacketLossConfigMapAfterRepartition := getServicePacketLossConfigurationsByServiceIDMap(t, topology)
-	require.Equal(t, len(servicePacketLossConfigMapAfterRepartition), len(allTestServiceIds), "Service packet loss config map after repartition should contain all services")
+	servicePacketLossConfigMapAfterRepartition := getServicePacketLossConfigurationsByServiceNameMap(t, topology)
+	require.Equal(t, len(servicePacketLossConfigMapAfterRepartition), len(allTestServiceNames), "Service packet loss config map after repartition should contain all services")
 }
 
 func TestServicesInSamePartitionAreNeverBlocked(t *testing.T) {
 	topology := get3NodeTestTopology(t, ConnectionBlocked)
-	servicePacketLossConfigMapBeforeRepartition := getServicePacketLossConfigurationsByServiceIDMap(t, topology)
+	servicePacketLossConfigMapBeforeRepartition := getServicePacketLossConfigurationsByServiceNameMap(t, topology)
 	for _, blockedServices := range servicePacketLossConfigMapBeforeRepartition {
 		require.Equal(t, len(blockedServices), 0, "No services should be blocked when all services are in the same partition")
 	}
@@ -186,7 +186,7 @@ func TestServicesInSamePartitionAreNeverBlocked(t *testing.T) {
 		map[service_network_types.PartitionConnectionID]PartitionConnection{},
 		ConnectionBlocked)
 
-	servicePacketLossConfigMapAfterRepartition := getServicePacketLossConfigurationsByServiceIDMap(t, topology)
+	servicePacketLossConfigMapAfterRepartition := getServicePacketLossConfigurationsByServiceNameMap(t, topology)
 
 	service1Blocks := getServicePacketLossConfigForService(t, service1, servicePacketLossConfigMapAfterRepartition)
 	require.Equal(t, len(service1Blocks), 1)
@@ -218,9 +218,9 @@ func TestDefaultConnectionSettingsWork(t *testing.T) {
 
 	expectedAmountOfServicesWithPacketLossConfig := 2
 
-	servicePacketLossConfigMapWithClosedDefaultConn := getServicePacketLossConfigurationsByServiceIDMap(t, topology)
-	for serviceId, otherServicesPacketLossConfig := range servicePacketLossConfigMapWithClosedDefaultConn {
-		_, foundItself := otherServicesPacketLossConfig[serviceId]
+	servicePacketLossConfigMapWithClosedDefaultConn := getServicePacketLossConfigurationsByServiceNameMap(t, topology)
+	for serviceName, otherServicesPacketLossConfig := range servicePacketLossConfigMapWithClosedDefaultConn {
+		_, foundItself := otherServicesPacketLossConfig[serviceName]
 		require.False(t, foundItself, "A service should never block itself")
 		require.Equal(t, expectedAmountOfServicesWithPacketLossConfig, len(otherServicesPacketLossConfig), "Expected to have 2 other services with packet loss configurations for this service")
 		for _, packetLossPercentage := range otherServicesPacketLossConfig {
@@ -238,7 +238,7 @@ func TestDefaultConnectionSettingsWork(t *testing.T) {
 		map[service_network_types.PartitionConnectionID]PartitionConnection{},
 		ConnectionAllowed)
 
-	servicePacketLossConfigMapWithOpenDefaultConn := getServicePacketLossConfigurationsByServiceIDMap(t, topology)
+	servicePacketLossConfigMapWithOpenDefaultConn := getServicePacketLossConfigurationsByServiceNameMap(t, topology)
 
 	for _, otherServicesPacketLossConfig := range servicePacketLossConfigMapWithOpenDefaultConn {
 		require.Equal(t, expectedAmountOfServicesWithPacketLossConfig, len(otherServicesPacketLossConfig), "All connections should be open now that the default connection is unblocked")
@@ -267,17 +267,17 @@ func TestExplicitConnectionBlocksWork(t *testing.T) {
 		},
 		ConnectionBlocked)
 
-	servicePacketLossConfigurationsByServiceIDMap := getServicePacketLossConfigurationsByServiceIDMap(t, topology)
+	servicePacketLossConfigurationsByServiceNameMap := getServicePacketLossConfigurationsByServiceNameMap(t, topology)
 
-	service1OtherServicesPacketLossConfig := getServicePacketLossConfigForService(t, service1, servicePacketLossConfigurationsByServiceIDMap)
+	service1OtherServicesPacketLossConfig := getServicePacketLossConfigForService(t, service1, servicePacketLossConfigurationsByServiceNameMap)
 	require.Equal(t, ConnectionBlocked.GetPacketLossPercentage(), service1OtherServicesPacketLossConfig[service3].GetPacketLossPercentage())
 	require.Equal(t, ConnectionAllowed.GetPacketLossPercentage(), service1OtherServicesPacketLossConfig[service2].GetPacketLossPercentage())
 
-	service2OtherServicesPacketLossConfig := getServicePacketLossConfigForService(t, service2, servicePacketLossConfigurationsByServiceIDMap)
+	service2OtherServicesPacketLossConfig := getServicePacketLossConfigForService(t, service2, servicePacketLossConfigurationsByServiceNameMap)
 	require.Equal(t, ConnectionAllowed.GetPacketLossPercentage(), service2OtherServicesPacketLossConfig[service1].GetPacketLossPercentage())
 	require.Equal(t, ConnectionAllowed.GetPacketLossPercentage(), service2OtherServicesPacketLossConfig[service3].GetPacketLossPercentage())
 
-	service3OtherServicesPacketLossConfig := getServicePacketLossConfigForService(t, service3, servicePacketLossConfigurationsByServiceIDMap)
+	service3OtherServicesPacketLossConfig := getServicePacketLossConfigForService(t, service3, servicePacketLossConfigurationsByServiceNameMap)
 	require.Equal(t, ConnectionBlocked.GetPacketLossPercentage(), service3OtherServicesPacketLossConfig[service1].GetPacketLossPercentage())
 	require.Equal(t, ConnectionAllowed.GetPacketLossPercentage(), service3OtherServicesPacketLossConfig[service2].GetPacketLossPercentage())
 }
@@ -286,21 +286,21 @@ func TestDuplicateServicesError(t *testing.T) {
 	topology := get3NodeTestTopology(t, ConnectionAllowed)
 
 	err := topology.Repartition(
-		map[service_network_types.PartitionID]map[service.ServiceID]bool{
+		map[service_network_types.PartitionID]map[service.ServiceName]bool{
 			partition1: serviceSetWithService1,
 			partition2: serviceSetWithService1And2, // Should cause error
 			partition3: serviceSetWithService3,
 		},
 		map[service_network_types.PartitionConnectionID]PartitionConnection{},
 		ConnectionAllowed)
-	require.Error(t, err, "Expected an error due to duplicate service IDs, but none was thrown")
+	require.Error(t, err, "Expected an error due to duplicate service Names, but none was thrown")
 }
 
 func TestUnknownServicesError(t *testing.T) {
 	topology := get3NodeTestTopology(t, ConnectionAllowed)
 
 	err := topology.Repartition(
-		map[service_network_types.PartitionID]map[service.ServiceID]bool{
+		map[service_network_types.PartitionID]map[service.ServiceName]bool{
 			partition1: {
 				service1:          true,
 				"unknown-service": true,
@@ -310,14 +310,14 @@ func TestUnknownServicesError(t *testing.T) {
 		},
 		map[service_network_types.PartitionConnectionID]PartitionConnection{},
 		ConnectionAllowed)
-	require.Error(t, err, "Expected an error due to unknown service IDs, but none was thrown")
+	require.Error(t, err, "Expected an error due to unknown service Names, but none was thrown")
 }
 
 func TestNotAllServicesAllocatedError(t *testing.T) {
 	topology := get3NodeTestTopology(t, ConnectionAllowed)
 
 	err := topology.Repartition(
-		map[service_network_types.PartitionID]map[service.ServiceID]bool{
+		map[service_network_types.PartitionID]map[service.ServiceName]bool{
 			partition1: emptyServiceSet,
 			partition2: serviceSetWithService2,
 			partition3: serviceSetWithService3,
@@ -331,7 +331,7 @@ func TestEmptyPartitionsError(t *testing.T) {
 	topology := get3NodeTestTopology(t, ConnectionAllowed)
 
 	err := topology.Repartition(
-		map[service_network_types.PartitionID]map[service.ServiceID]bool{},
+		map[service_network_types.PartitionID]map[service.ServiceName]bool{},
 		map[service_network_types.PartitionConnectionID]PartitionConnection{},
 		ConnectionAllowed)
 	require.Error(t, err, "Expected an error due to no partitions beign defined, but none was thrown")
@@ -341,7 +341,7 @@ func TestUnknownPartitionsError(t *testing.T) {
 	topology := get3NodeTestTopology(t, ConnectionAllowed)
 
 	firstPartErr := topology.Repartition(
-		map[service_network_types.PartitionID]map[service.ServiceID]bool{
+		map[service_network_types.PartitionID]map[service.ServiceName]bool{
 			partition1: serviceSetWithService1,
 			partition2: serviceSetWithService2And3,
 		},
@@ -353,7 +353,7 @@ func TestUnknownPartitionsError(t *testing.T) {
 	require.Error(t, firstPartErr, "Expected an error due to an unknown partition in the first slot, but none was thrown")
 
 	secondPartErr := topology.Repartition(
-		map[service_network_types.PartitionID]map[service.ServiceID]bool{
+		map[service_network_types.PartitionID]map[service.ServiceName]bool{
 			partition1: serviceSetWithService1,
 			partition2: serviceSetWithService2And3,
 		},
@@ -394,12 +394,12 @@ func TestRegularAddServiceFlow(t *testing.T) {
 		t.Fatal(stacktrace.Propagate(err, "An error occurred adding service 3 to the network"))
 	}
 
-	servicePacketLossConfigurationsByServiceIDMap := getServicePacketLossConfigurationsByServiceIDMap(t, topology)
+	servicePacketLossConfigurationsByServiceNameMap := getServicePacketLossConfigurationsByServiceNameMap(t, topology)
 
 	expectedAmountOfServicesWithPacketLossConfig := 2
 	// All services should be blocking each other, even though Service 3 came late to the party
-	for serviceId, otherServicesPacketLossConfig := range servicePacketLossConfigurationsByServiceIDMap {
-		_, foundItself := otherServicesPacketLossConfig[serviceId]
+	for serviceName, otherServicesPacketLossConfig := range servicePacketLossConfigurationsByServiceNameMap {
+		_, foundItself := otherServicesPacketLossConfig[serviceName]
 		require.False(t, foundItself, "A service should never block itself")
 		require.Equal(t, expectedAmountOfServicesWithPacketLossConfig, len(otherServicesPacketLossConfig), "Expected to have 2 other services with packet loss configurations for this service")
 	}
@@ -446,17 +446,17 @@ func TestRegularRemoveServiceFlow(t *testing.T) {
 
 	topology.RemoveService(service2)
 
-	servicePacketLossConfigurationsByServiceIDMap := getServicePacketLossConfigurationsByServiceIDMap(t, topology)
+	servicePacketLossConfigurationsByServiceNameMap := getServicePacketLossConfigurationsByServiceNameMap(t, topology)
 
-	require.Equal(t, len(servicePacketLossConfigurationsByServiceIDMap), 2, "Service paccket los configuration by service id map should only have 2 entries after we removed a service")
+	require.Equal(t, len(servicePacketLossConfigurationsByServiceNameMap), 2, "Service paccket los configuration by service id map should only have 2 entries after we removed a service")
 
 	expectedAmountOfServicesWithPacketLossConfig := 1
 
-	service1Blocks := getServicePacketLossConfigForService(t, service1, servicePacketLossConfigurationsByServiceIDMap)
+	service1Blocks := getServicePacketLossConfigForService(t, service1, servicePacketLossConfigurationsByServiceNameMap)
 	require.Equal(t, expectedAmountOfServicesWithPacketLossConfig, len(service1Blocks), "Network should have only one other node, so service1Blocks should be of size 1")
 	require.Equal(t, ConnectionBlocked.GetPacketLossPercentage(), service1Blocks[service3].GetPacketLossPercentage(), "Service 1 should be blocking the only other node in the network, Service 3")
 
-	service3Blocks := getServicePacketLossConfigForService(t, service3, servicePacketLossConfigurationsByServiceIDMap)
+	service3Blocks := getServicePacketLossConfigForService(t, service3, servicePacketLossConfigurationsByServiceNameMap)
 	require.Equal(t, expectedAmountOfServicesWithPacketLossConfig, len(service3Blocks), "Network should have only one other node, so service3Blocks should be of size 1")
 	require.Equal(t, ConnectionBlocked.GetPacketLossPercentage(), service3Blocks[service1].GetPacketLossPercentage(), "Service 3 should be blocking the only other node in the network, Service 1")
 }
@@ -479,12 +479,12 @@ func TestSetConnection(t *testing.T) {
 
 	require.Equal(t, ConnectionBlocked, topology.GetDefaultConnection())
 
-	require.Equal(t, map[service.ServiceID]service_network_types.PartitionID{
+	require.Equal(t, map[service.ServiceName]service_network_types.PartitionID{
 		"service1": "partition1",
 		"service2": "partition2",
 		"service3": "partition3",
 	}, topology.servicePartitions)
-	require.Equal(t, map[service_network_types.PartitionID]map[service.ServiceID]bool{
+	require.Equal(t, map[service_network_types.PartitionID]map[service.ServiceName]bool{
 		"partition1": {
 			"service1": true,
 		},
@@ -539,12 +539,12 @@ func TestUnsetConnection(t *testing.T) {
 
 	require.Equal(t, ConnectionBlocked, topology.GetDefaultConnection())
 
-	require.Equal(t, map[service.ServiceID]service_network_types.PartitionID{
+	require.Equal(t, map[service.ServiceName]service_network_types.PartitionID{
 		"service1": "partition1",
 		"service2": "partition2",
 		"service3": "partition3",
 	}, topology.servicePartitions)
-	require.Equal(t, map[service_network_types.PartitionID]map[service.ServiceID]bool{
+	require.Equal(t, map[service_network_types.PartitionID]map[service.ServiceName]bool{
 		"partition1": {
 			"service1": true,
 		},
@@ -648,12 +648,12 @@ func TestSetDefaultConnection(t *testing.T) {
 
 	require.Equal(t, newDefaultConnection, topology.GetDefaultConnection())
 
-	require.Equal(t, map[service.ServiceID]service_network_types.PartitionID{
+	require.Equal(t, map[service.ServiceName]service_network_types.PartitionID{
 		"service1": "partition1",
 		"service2": "partition2",
 		"service3": "partition3",
 	}, topology.servicePartitions)
-	require.Equal(t, map[service_network_types.PartitionID]map[service.ServiceID]bool{
+	require.Equal(t, map[service_network_types.PartitionID]map[service.ServiceName]bool{
 		"partition1": {
 			"service1": true,
 		},
@@ -686,12 +686,12 @@ func TestCreateEmptyPartitionWithDefaultConnection(t *testing.T) {
 
 	require.Equal(t, ConnectionBlocked, topology.GetDefaultConnection())
 
-	require.Equal(t, map[service.ServiceID]service_network_types.PartitionID{
+	require.Equal(t, map[service.ServiceName]service_network_types.PartitionID{
 		"service1": "partition1",
 		"service2": "partition2",
 		"service3": "partition3",
 	}, topology.servicePartitions)
-	require.Equal(t, map[service_network_types.PartitionID]map[service.ServiceID]bool{
+	require.Equal(t, map[service_network_types.PartitionID]map[service.ServiceName]bool{
 		"partition1": {
 			"service1": true,
 		},
@@ -732,7 +732,7 @@ func TestRemovePartition(t *testing.T) {
 		topology,
 		serviceSetWithService1,
 		serviceSetWithService2And3,
-		map[service.ServiceID]bool{},
+		map[service.ServiceName]bool{},
 		map[service_network_types.PartitionConnectionID]PartitionConnection{},
 		ConnectionBlocked)
 
@@ -741,12 +741,12 @@ func TestRemovePartition(t *testing.T) {
 
 	require.Equal(t, ConnectionBlocked, topology.GetDefaultConnection())
 
-	require.Equal(t, map[service.ServiceID]service_network_types.PartitionID{
+	require.Equal(t, map[service.ServiceName]service_network_types.PartitionID{
 		"service1": "partition1",
 		"service2": "partition2",
 		"service3": "partition2",
 	}, topology.servicePartitions)
-	require.Equal(t, map[service_network_types.PartitionID]map[service.ServiceID]bool{
+	require.Equal(t, map[service_network_types.PartitionID]map[service.ServiceName]bool{
 		"partition1": {
 			"service1": true,
 		},
@@ -777,12 +777,12 @@ func TestRemovePartition_NoopDoesNotExist(t *testing.T) {
 
 	require.Equal(t, ConnectionBlocked, topology.GetDefaultConnection())
 
-	require.Equal(t, map[service.ServiceID]service_network_types.PartitionID{
+	require.Equal(t, map[service.ServiceName]service_network_types.PartitionID{
 		"service1": "partition1",
 		"service2": "partition2",
 		"service3": "partition3",
 	}, topology.servicePartitions)
-	require.Equal(t, map[service_network_types.PartitionID]map[service.ServiceID]bool{
+	require.Equal(t, map[service_network_types.PartitionID]map[service.ServiceName]bool{
 		"partition1": {
 			"service1": true,
 		},
@@ -834,12 +834,12 @@ func get3NodeTestTopology(t *testing.T, defaultConnection PartitionConnection) *
 }
 
 // Used for benchmarking
-func getHugeTestTopology(t *testing.B, serviceIdPrefix string, defaultConnection PartitionConnection) *PartitionTopology {
+func getHugeTestTopology(t *testing.B, serviceNamePrefix string, defaultConnection PartitionConnection) *PartitionTopology {
 	topology := NewPartitionTopology(DefaultPartitionId, defaultConnection)
 
 	for i := 0; i < hugeNetworkNodeCount; i++ {
-		serviceId := service.ServiceID(serviceIdPrefix + strconv.Itoa(i))
-		if err := topology.AddService(serviceId, DefaultPartitionId); err != nil {
+		serviceName := service.ServiceName(serviceNamePrefix + strconv.Itoa(i))
+		if err := topology.AddService(serviceName, DefaultPartitionId); err != nil {
 			t.Fatal(stacktrace.Propagate(err, "An error occurred adding service 1"))
 		}
 	}
@@ -849,13 +849,13 @@ func getHugeTestTopology(t *testing.B, serviceIdPrefix string, defaultConnection
 func repartition(
 	t *testing.T,
 	topology *PartitionTopology,
-	partition1Services map[service.ServiceID]bool,
-	partition2Services map[service.ServiceID]bool,
-	partition3Services map[service.ServiceID]bool,
+	partition1Services map[service.ServiceName]bool,
+	partition2Services map[service.ServiceName]bool,
+	partition3Services map[service.ServiceName]bool,
 	connections map[service_network_types.PartitionConnectionID]PartitionConnection,
 	defaultConnection PartitionConnection) {
 	if err := topology.Repartition(
-		map[service_network_types.PartitionID]map[service.ServiceID]bool{
+		map[service_network_types.PartitionID]map[service.ServiceName]bool{
 			partition1: partition1Services,
 			partition2: partition2Services,
 			partition3: partition3Services,
@@ -866,22 +866,22 @@ func repartition(
 	}
 }
 
-func getServicePacketLossConfigurationsByServiceIDMap(t *testing.T, topology *PartitionTopology) map[service.ServiceID]map[service.ServiceID]*PartitionConnection {
-	servicePacketLossConfigurationByServiceID, err := topology.GetServicePacketLossConfigurationsByServiceID()
+func getServicePacketLossConfigurationsByServiceNameMap(t *testing.T, topology *PartitionTopology) map[service.ServiceName]map[service.ServiceName]*PartitionConnection {
+	servicePacketLossConfigurationByServiceName, err := topology.GetServicePacketLossConfigurationsByServiceName()
 	if err != nil {
 		t.Fatal(stacktrace.Propagate(err, "An error occurred getting service packet loss configuration by service id"))
 	}
-	return servicePacketLossConfigurationByServiceID
+	return servicePacketLossConfigurationByServiceName
 }
 
 func getServicePacketLossConfigForService(
 	t *testing.T,
-	serviceId service.ServiceID,
-	servicePacketLossConfigMap map[service.ServiceID]map[service.ServiceID]*PartitionConnection,
-) map[service.ServiceID]*PartitionConnection {
-	result, found := servicePacketLossConfigMap[serviceId]
+	serviceName service.ServiceName,
+	servicePacketLossConfigMap map[service.ServiceName]map[service.ServiceName]*PartitionConnection,
+) map[service.ServiceName]*PartitionConnection {
+	result, found := servicePacketLossConfigMap[serviceName]
 	if !found {
-		t.Fatal(stacktrace.NewError("Expected to find service '%v' in service packet loss config map but didn't", serviceId))
+		t.Fatal(stacktrace.NewError("Expected to find service '%v' in service packet loss config map but didn't", serviceName))
 	}
 	return result
 }

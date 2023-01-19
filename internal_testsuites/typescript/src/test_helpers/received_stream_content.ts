@@ -1,57 +1,57 @@
-import {ServiceGUID, ServiceLog, ServiceLogsStreamContent} from "kurtosis-sdk";
+import {ServiceUUID, ServiceLog, ServiceLogsStreamContent} from "kurtosis-sdk";
 import {Readable} from "stream";
 
 export class ReceivedStreamContent {
-    readonly receivedLogLinesByService: Map<ServiceGUID, Array<ServiceLog>>;
-    readonly receivedNotFoundServiceGuids: Set<ServiceGUID>;
+    readonly receivedLogLinesByService: Map<ServiceUUID, Array<ServiceLog>>;
+    readonly receivedNotFoundServiceUuids: Set<ServiceUUID>;
 
     constructor(
-        receivedLogLinesByService: Map<ServiceGUID, Array<ServiceLog>>,
-        receivedNotFoundServiceGuids: Set<ServiceGUID>,
+        receivedLogLinesByService: Map<ServiceUUID, Array<ServiceLog>>,
+        receivedNotFoundServiceUuids: Set<ServiceUUID>,
     ) {
         this.receivedLogLinesByService = receivedLogLinesByService;
-        this.receivedNotFoundServiceGuids = receivedNotFoundServiceGuids;
+        this.receivedNotFoundServiceUuids = receivedNotFoundServiceUuids;
     }
 }
 
 export function receiveExpectedLogLinesFromServiceLogsReadable(
     serviceLogsReadable: Readable,
-    expectedLogLinesByService: Map<ServiceGUID, ServiceLog[]>,
+    expectedLogLinesByService: Map<ServiceUUID, ServiceLog[]>,
 ): Promise<ReceivedStreamContent> {
     const receivedStreamContentPromise: Promise<ReceivedStreamContent> = new Promise<ReceivedStreamContent>((resolve, _unusedReject) => {
 
-        let receivedLogLinesByService: Map<ServiceGUID, Array<ServiceLog>> = new Map<ServiceGUID, Array<ServiceLog>>;
-        let receivedNotFoundServiceGuids: Set<ServiceGUID> = new Set<ServiceGUID>;
+        let receivedLogLinesByService: Map<ServiceUUID, Array<ServiceLog>> = new Map<ServiceUUID, Array<ServiceLog>>;
+        let receivedNotFoundServiceUuids: Set<ServiceUUID> = new Set<ServiceUUID>;
 
         let allExpectedLogLinesWhereReceived = false;
 
         serviceLogsReadable.on('data', (serviceLogsStreamContent: ServiceLogsStreamContent) => {
-            const serviceLogsByGuid: Map<ServiceGUID, Array<ServiceLog>> = serviceLogsStreamContent.getServiceLogsByServiceGuids();
-            receivedNotFoundServiceGuids = serviceLogsStreamContent.getNotFoundServiceGuids();
+            const serviceLogsByUuid: Map<ServiceUUID, Array<ServiceLog>> = serviceLogsStreamContent.getServiceLogsByServiceUuids();
+            receivedNotFoundServiceUuids = serviceLogsStreamContent.getNotFoundServiceUuids();
 
-            for (let [serviceGuid, serviceLogLines] of serviceLogsByGuid) {
+            for (let [serviceUuid, serviceLogLines] of serviceLogsByUuid) {
                 let receivedLogLines: ServiceLog[] = new Array<ServiceLog>;
-                if(receivedLogLinesByService.has(serviceGuid)){
-                    const userServiceLogLines: ServiceLog[] | undefined = receivedLogLinesByService.get(serviceGuid)
+                if(receivedLogLinesByService.has(serviceUuid)){
+                    const userServiceLogLines: ServiceLog[] | undefined = receivedLogLinesByService.get(serviceUuid)
                     if (userServiceLogLines !== undefined) {
                         receivedLogLines = userServiceLogLines.concat(serviceLogLines)
                     }
                 } else {
                     receivedLogLines = serviceLogLines;
                 }
-                receivedLogLinesByService.set(serviceGuid, receivedLogLines)
+                receivedLogLinesByService.set(serviceUuid, receivedLogLines)
             }
 
-            for (let [serviceGuid, expectedLogLines] of expectedLogLinesByService) {
-                if (expectedLogLines === undefined && !receivedLogLinesByService.has(serviceGuid)) {
+            for (let [serviceUuid, expectedLogLines] of expectedLogLinesByService) {
+                if (expectedLogLines === undefined && !receivedLogLinesByService.has(serviceUuid)) {
                     break;
                 }
 
-                if (expectedLogLines.length < 0 && !receivedLogLinesByService.has(serviceGuid)) {
+                if (expectedLogLines.length < 0 && !receivedLogLinesByService.has(serviceUuid)) {
                     break;
                 }
 
-                let receivedLogLines: ServiceLog[] | undefined = receivedLogLinesByService.get(serviceGuid);
+                let receivedLogLines: ServiceLog[] | undefined = receivedLogLinesByService.get(serviceUuid);
 
                 if (receivedLogLines === undefined) {
                     receivedLogLines = new Array<ServiceLog>;
@@ -66,7 +66,7 @@ export function receiveExpectedLogLinesFromServiceLogsReadable(
                 serviceLogsReadable.destroy()
                 const receivedStreamContent: ReceivedStreamContent = new ReceivedStreamContent(
                     receivedLogLinesByService,
-                    receivedNotFoundServiceGuids,
+                    receivedNotFoundServiceUuids,
                 )
                 resolve(receivedStreamContent)
             }

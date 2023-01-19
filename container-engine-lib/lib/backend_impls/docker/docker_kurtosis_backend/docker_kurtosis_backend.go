@@ -49,7 +49,7 @@ type DockerKurtosisBackend struct {
 	// Canonical store of the registrations being tracked by this *DockerKurtosisBackend instance
 	// NOTE: Unlike Kubernetes, Docker doesn't have a concrete object representing a service registration/IP address
 	//  allocation. We use this in-memory store to accomplish the same thing.
-	serviceRegistrations map[enclave.EnclaveUUID]map[service.ServiceGUID]*service.ServiceRegistration
+	serviceRegistrations map[enclave.EnclaveUUID]map[service.ServiceUUID]*service.ServiceRegistration
 
 	// Control concurrent access to serviceRegistrations
 	serviceRegistrationMutex *sync.Mutex
@@ -60,9 +60,9 @@ func NewDockerKurtosisBackend(
 	enclaveFreeIpProviders map[enclave.EnclaveUUID]*free_ip_addr_tracker.FreeIpAddrTracker,
 ) *DockerKurtosisBackend {
 	dockerNetworkAllocator := docker_network_allocator.NewDockerNetworkAllocator(dockerManager)
-	serviceRegistrations := map[enclave.EnclaveUUID]map[service.ServiceGUID]*service.ServiceRegistration{}
+	serviceRegistrations := map[enclave.EnclaveUUID]map[service.ServiceUUID]*service.ServiceRegistration{}
 	for enclaveUuid := range enclaveFreeIpProviders {
-		serviceRegistrations[enclaveUuid] = map[service.ServiceGUID]*service.ServiceRegistration{}
+		serviceRegistrations[enclaveUuid] = map[service.ServiceUUID]*service.ServiceRegistration{}
 	}
 	return &DockerKurtosisBackend{
 		dockerManager:            dockerManager,
@@ -119,8 +119,8 @@ func (backend *DockerKurtosisBackend) StopEngines(
 	ctx context.Context,
 	filters *engine.EngineFilters,
 ) (
-	resultSuccessfulEngineGuids map[engine.EngineGUID]bool,
-	resultErroredEngineGuids map[engine.EngineGUID]error,
+	resultSuccessfulEngineUuids map[engine.EngineGUID]bool,
+	resultErroredEngineUuids map[engine.EngineGUID]error,
 	resultErr error,
 ) {
 	return engine_functions.StopEngines(ctx, filters, backend.dockerManager)
@@ -130,14 +130,14 @@ func (backend *DockerKurtosisBackend) DestroyEngines(
 	ctx context.Context,
 	filters *engine.EngineFilters,
 ) (
-	resultSuccessfulEngineGuids map[engine.EngineGUID]bool,
-	resultErroredEngineGuids map[engine.EngineGUID]error,
+	resultSuccessfulEngineUuids map[engine.EngineGUID]bool,
+	resultErroredEngineUuids map[engine.EngineGUID]error,
 	resultErr error,
 ) {
 	return engine_functions.DestroyEngines(ctx, filters, backend.dockerManager)
 }
 
-func (backend *DockerKurtosisBackend) RegisterUserServices(_ context.Context, enclaveUuid enclave.EnclaveUUID, services map[service.ServiceID]bool) (map[service.ServiceID]*service.ServiceRegistration, map[service.ServiceID]error, error) {
+func (backend *DockerKurtosisBackend) RegisterUserServices(_ context.Context, enclaveUuid enclave.EnclaveUUID, services map[service.ServiceName]bool) (map[service.ServiceName]*service.ServiceRegistration, map[service.ServiceName]error, error) {
 	serviceRegistrationsForEnclave, found := backend.serviceRegistrations[enclaveUuid]
 	if !found {
 		return nil, nil, stacktrace.NewError(
@@ -164,7 +164,7 @@ func (backend *DockerKurtosisBackend) RegisterUserServices(_ context.Context, en
 	return registeredService, failedServices, nil
 }
 
-func (backend *DockerKurtosisBackend) UnregisterUserServices(_ context.Context, enclaveUuid enclave.EnclaveUUID, services map[service.ServiceGUID]bool) (map[service.ServiceGUID]bool, map[service.ServiceGUID]error, error) {
+func (backend *DockerKurtosisBackend) UnregisterUserServices(_ context.Context, enclaveUuid enclave.EnclaveUUID, services map[service.ServiceUUID]bool) (map[service.ServiceUUID]bool, map[service.ServiceUUID]error, error) {
 	serviceRegistrationsForEnclave, found := backend.serviceRegistrations[enclaveUuid]
 	if !found {
 		return nil, nil, stacktrace.NewError(
@@ -188,7 +188,7 @@ func (backend *DockerKurtosisBackend) UnregisterUserServices(_ context.Context, 
 	return servicesSuccessfullyUnregistered, failedServices, nil
 }
 
-func (backend *DockerKurtosisBackend) StartRegisteredUserServices(ctx context.Context, enclaveUuid enclave.EnclaveUUID, services map[service.ServiceGUID]*service.ServiceConfig) (map[service.ServiceGUID]*service.Service, map[service.ServiceGUID]error, error) {
+func (backend *DockerKurtosisBackend) StartRegisteredUserServices(ctx context.Context, enclaveUuid enclave.EnclaveUUID, services map[service.ServiceUUID]*service.ServiceConfig) (map[service.ServiceUUID]*service.Service, map[service.ServiceUUID]error, error) {
 	serviceRegistrationsForEnclave, found := backend.serviceRegistrations[enclaveUuid]
 	if !found {
 		return nil, nil, stacktrace.NewError(
@@ -244,7 +244,7 @@ func (backend *DockerKurtosisBackend) GetUserServices(
 	enclaveUuid enclave.EnclaveUUID,
 	filters *service.ServiceFilters,
 ) (
-	map[service.ServiceGUID]*service.Service,
+	map[service.ServiceUUID]*service.Service,
 	error,
 ) {
 	return user_service_functions.GetUserServices(ctx, enclaveUuid, filters, backend.dockerManager)
@@ -256,8 +256,8 @@ func (backend *DockerKurtosisBackend) GetUserServiceLogs(
 	filters *service.ServiceFilters,
 	shouldFollowLogs bool,
 ) (
-	map[service.ServiceGUID]io.ReadCloser,
-	map[service.ServiceGUID]error,
+	map[service.ServiceUUID]io.ReadCloser,
+	map[service.ServiceUUID]error,
 	error,
 ) {
 	return user_service_functions.GetUserServiceLogs(ctx, enclaveUuid, filters, shouldFollowLogs, backend.dockerManager)
@@ -266,17 +266,17 @@ func (backend *DockerKurtosisBackend) GetUserServiceLogs(
 func (backend *DockerKurtosisBackend) PauseService(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,
-	serviceGuid service.ServiceGUID,
+	serviceUuid service.ServiceUUID,
 ) error {
-	return user_service_functions.PauseService(ctx, enclaveUuid, serviceGuid, backend.dockerManager)
+	return user_service_functions.PauseService(ctx, enclaveUuid, serviceUuid, backend.dockerManager)
 }
 
 func (backend *DockerKurtosisBackend) UnpauseService(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,
-	serviceGuid service.ServiceGUID,
+	serviceUuid service.ServiceUUID,
 ) error {
-	return user_service_functions.UnpauseService(ctx, enclaveUuid, serviceGuid, backend.dockerManager)
+	return user_service_functions.UnpauseService(ctx, enclaveUuid, serviceUuid, backend.dockerManager)
 }
 
 // TODO Switch these to streaming so that huge command outputs don't blow up the API container memory
@@ -284,10 +284,10 @@ func (backend *DockerKurtosisBackend) UnpauseService(
 func (backend *DockerKurtosisBackend) RunUserServiceExecCommands(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,
-	userServiceCommands map[service.ServiceGUID][]string,
+	userServiceCommands map[service.ServiceUUID][]string,
 ) (
-	map[service.ServiceGUID]*exec_result.ExecResult,
-	map[service.ServiceGUID]error,
+	map[service.ServiceUUID]*exec_result.ExecResult,
+	map[service.ServiceUUID]error,
 	error,
 ) {
 	return user_service_functions.RunUserServiceExecCommands(ctx, enclaveUuid, userServiceCommands, backend.dockerManager)
@@ -296,23 +296,23 @@ func (backend *DockerKurtosisBackend) RunUserServiceExecCommands(
 func (backend *DockerKurtosisBackend) GetConnectionWithUserService(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,
-	serviceGuid service.ServiceGUID,
+	serviceUuid service.ServiceUUID,
 ) (
 	net.Conn,
 	error,
 ) {
-	return user_service_functions.GetConnectionWithUserService(ctx, enclaveUuid, serviceGuid, backend.dockerManager)
+	return user_service_functions.GetConnectionWithUserService(ctx, enclaveUuid, serviceUuid, backend.dockerManager)
 }
 
 // It returns io.ReadCloser which is a tar stream. It's up to the caller to close the reader.
 func (backend *DockerKurtosisBackend) CopyFilesFromUserService(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,
-	serviceGuid service.ServiceGUID,
+	serviceUuid service.ServiceUUID,
 	srcPathOnContainer string,
 	output io.Writer,
 ) error {
-	return user_service_functions.CopyFilesFromUserService(ctx, enclaveUuid, serviceGuid, srcPathOnContainer, output, backend.dockerManager)
+	return user_service_functions.CopyFilesFromUserService(ctx, enclaveUuid, serviceUuid, srcPathOnContainer, output, backend.dockerManager)
 }
 
 func (backend *DockerKurtosisBackend) StopUserServices(
@@ -320,8 +320,8 @@ func (backend *DockerKurtosisBackend) StopUserServices(
 	enclaveUuid enclave.EnclaveUUID,
 	filters *service.ServiceFilters,
 ) (
-	resultSuccessfulServiceGUIDs map[service.ServiceGUID]bool,
-	resultErroredServiceGUIDs map[service.ServiceGUID]error,
+	resultSuccessfulServiceUUIDs map[service.ServiceUUID]bool,
+	resultErroredServiceUUIDs map[service.ServiceUUID]error,
 	resultErr error,
 ) {
 	return user_service_functions.StopUserServices(ctx, enclaveUuid, filters, backend.dockerManager)
@@ -332,8 +332,8 @@ func (backend *DockerKurtosisBackend) DestroyUserServices(
 	enclaveUuid enclave.EnclaveUUID,
 	filters *service.ServiceFilters,
 ) (
-	resultSuccessfulGuids map[service.ServiceGUID]bool,
-	resultErroredGuids map[service.ServiceGUID]error,
+	resultSuccessfulUuids map[service.ServiceUUID]bool,
+	resultErroredUuids map[service.ServiceUUID]error,
 	resultErr error,
 ) {
 	serviceRegistrationsForEnclave, found := backend.serviceRegistrations[enclaveUuid]

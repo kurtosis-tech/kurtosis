@@ -2,26 +2,28 @@ package kurtosis_context
 
 import "github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 
-//This struct wrap the information returned by the user service logs GRPC stream
-type serviceLogsStreamContent struct{
-	serviceLogsByServiceGuids map[services.ServiceGUID][]*ServiceLog
-	notFoundServiceGuids map[services.ServiceGUID]bool
+// This struct wrap the information returned by the user service logs GRPC stream
+type serviceLogsStreamContent struct {
+	serviceLogsByServiceUuids map[services.ServiceUUID][]*ServiceLog
+	notFoundServiceUuids      map[services.ServiceUUID]bool
 }
 
 func newServiceLogsStreamContent(
-	serviceLogsByServiceGuids map[services.ServiceGUID][]*ServiceLog,
-	notFoundServiceGuids map[services.ServiceGUID]bool,
+	serviceLogsByServiceUuids map[services.ServiceUUID][]*ServiceLog,
+	notFoundServiceUuids map[services.ServiceUUID]bool,
 ) *serviceLogsStreamContent {
 	return &serviceLogsStreamContent{
-		serviceLogsByServiceGuids: serviceLogsByServiceGuids,
-		notFoundServiceGuids: notFoundServiceGuids,
+		serviceLogsByServiceUuids: serviceLogsByServiceUuids,
+		notFoundServiceUuids:      notFoundServiceUuids,
 	}
 }
 
-func (streamContent *serviceLogsStreamContent) GetServiceLogsByServiceGuids() map[services.ServiceGUID][]*ServiceLog {
-	return streamContent.serviceLogsByServiceGuids
+// Docs available at https://docs.kurtosis.com/sdk#getservicelogsbyserviceuuids----mapserviceuuid-arrayservicelog-servicelogsbyserviceuuids
+func (streamContent *serviceLogsStreamContent) GetServiceLogsByServiceUuids() map[services.ServiceUUID][]*ServiceLog {
+	return streamContent.serviceLogsByServiceUuids
 }
 
-func (streamContent *serviceLogsStreamContent) GetNotFoundServiceGuids() map[services.ServiceGUID]bool {
-	return streamContent.notFoundServiceGuids
+// Docs available at https://docs.kurtosis.com/sdk#getnotfoundserviceuuids---setserviceuuid-notfoundserviceuuids
+func (streamContent *serviceLogsStreamContent) GetNotFoundServiceUuids() map[services.ServiceUUID]bool {
+	return streamContent.notFoundServiceUuids
 }

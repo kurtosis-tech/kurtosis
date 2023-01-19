@@ -50,7 +50,7 @@ def run(plan, args):
 `
 )
 
-var serviceIds = []string{serviceId, serviceId2}
+var serviceNames = []string{serviceId, serviceId2}
 var starlarkScriptsToRun = []string{starlarkScriptWithEmptyPorts, starlarkScriptWithoutPorts}
 
 func TestAddServiceWithEmptyPortsAndWithoutPorts(t *testing.T) {
@@ -70,9 +70,9 @@ func TestAddServiceWithEmptyPortsAndWithoutPorts(t *testing.T) {
 		runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkScript, emptyArgs, defaultDryRun)
 		require.NoError(t, err, "Unexpected error executing starlark script")
 
-		expectedScriptOutput := `Adding service ` + serviceIds[starlarkScripIndex] + `.
-Service '` + serviceIds[starlarkScripIndex] + `' added with service GUID '[a-z-0-9]+'
-Service ` + serviceIds[starlarkScripIndex] + ` deployed successfully.
+		expectedScriptOutput := `Adding service ` + serviceNames[starlarkScripIndex] + `.
+Service '` + serviceNames[starlarkScripIndex] + `' added with service GUID '[a-z-0-9]+'
+Service ` + serviceNames[starlarkScripIndex] + ` deployed successfully.
 `
 		require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error.")
 		require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")

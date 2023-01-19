@@ -7,7 +7,7 @@ import (
 )
 
 func TestExecRecipe_String(t *testing.T) {
-	serviceId := service.ServiceID("serviceId")
+	serviceId := service.ServiceName("serviceId")
 	commands := []string{"echo", "run"}
 
 	expectedRecipeString := `ExecRecipe(service_id="serviceId", command="[\"echo\", \"run\"]")`

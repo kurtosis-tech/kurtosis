@@ -1,24 +1,26 @@
-import {ServiceGUID} from "../../../core/lib/services/service";
+import {ServiceUUID} from "../../../core/lib/services/service";
 import {ServiceLog} from "./service_log";
 
 //This struct wrap the information returned by the user service logs GRPC stream
 export class ServiceLogsStreamContent {
-    private readonly serviceLogsByServiceGuids: Map<ServiceGUID, Array<ServiceLog>>;
-    private readonly notFoundServiceGuids: Set<ServiceGUID>;
+    private readonly serviceLogsByServiceUuids: Map<ServiceUUID, Array<ServiceLog>>;
+    private readonly notFoundServiceUuids: Set<ServiceUUID>;
 
     constructor(
-        serviceLogsByServiceGuids: Map<ServiceGUID, Array<ServiceLog>>,
-        notFoundServiceGuids: Set<ServiceGUID>,
+        serviceLogsByServiceUuids: Map<ServiceUUID, Array<ServiceLog>>,
+        notFoundServiceUuids: Set<ServiceUUID>,
     ) {
-        this.serviceLogsByServiceGuids = serviceLogsByServiceGuids;
-        this.notFoundServiceGuids = notFoundServiceGuids;
+        this.serviceLogsByServiceUuids = serviceLogsByServiceUuids;
+        this.notFoundServiceUuids = notFoundServiceUuids;
     }
 
-    public getServiceLogsByServiceGuids(): Map<ServiceGUID, Array<ServiceLog>> {
-        return this.serviceLogsByServiceGuids;
+    // Docs available at https://docs.kurtosis.com/sdk#getservicelogsbyserviceuuids----mapserviceuuid-arrayservicelog-servicelogsbyserviceuuids
+    public getServiceLogsByServiceUuids(): Map<ServiceUUID, Array<ServiceLog>> {
+        return this.serviceLogsByServiceUuids;
     }
 
-    public getNotFoundServiceGuids(): Set<ServiceGUID> {
-        return this.notFoundServiceGuids;
+    // Docs available at https://docs.kurtosis.com/sdk#getnotfoundserviceuuids---setserviceuuid-notfoundserviceuuids
+    public getNotFoundServiceUuids(): Set<ServiceUUID> {
+        return this.notFoundServiceUuids;
     }
 }

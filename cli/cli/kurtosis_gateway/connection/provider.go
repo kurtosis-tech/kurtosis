@@ -91,14 +91,14 @@ func (provider *GatewayConnectionProvider) ForEnclaveApiContainer(enclaveInfo *k
 	return apiContainerConnection, nil
 }
 
-func (provider *GatewayConnectionProvider) ForUserService(enclaveId string, serviceGuid string, servicePortSpecs map[string]*port_spec.PortSpec) (GatewayConnectionToKurtosis, error) {
-	podPortforwardEndpoint, err := provider.getUserServicePodPortforwardEndpoint(enclaveId, serviceGuid)
+func (provider *GatewayConnectionProvider) ForUserService(enclaveId string, serviceUuid string, servicePortSpecs map[string]*port_spec.PortSpec) (GatewayConnectionToKurtosis, error) {
+	podPortforwardEndpoint, err := provider.getUserServicePodPortforwardEndpoint(enclaveId, serviceUuid)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to find an api endpoint for Kubernetes portforward to a Kurtosis user service with id '%v' in enclave '%v', instead a non-nil error was returned", enclaveId, serviceGuid)
+		return nil, stacktrace.Propagate(err, "Expected to be able to find an api endpoint for Kubernetes portforward to a Kurtosis user service with id '%v' in enclave '%v', instead a non-nil error was returned", enclaveId, serviceUuid)
 	}
 	userServiceConnection, err := newLocalPortToPodPortConnection(provider.config, podPortforwardEndpoint, servicePortSpecs)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to connect to user service with id '%v', instead a non-nil error was returned", serviceGuid)
+		return nil, stacktrace.Propagate(err, "Expected to be able to connect to user service with id '%v', instead a non-nil error was returned", serviceUuid)
 	}
 
 	return userServiceConnection, nil
@@ -165,13 +165,13 @@ func (provider *GatewayConnectionProvider) getApiContainerPodPortforwardEndpoint
 	return provider.kubernetesManager.GetPodPortforwardEndpointUrl(enclaveNamespaceName, apiContainerPodName), nil
 }
 
-func (provider *GatewayConnectionProvider) getUserServicePodPortforwardEndpoint(enclaveId string, serviceGuid string) (*url.URL, error) {
+func (provider *GatewayConnectionProvider) getUserServicePodPortforwardEndpoint(enclaveId string, serviceUuid string) (*url.URL, error) {
 	userServiceNamespaceName, err := provider.getEnclaveNamespaceNameForEnclaveId(enclaveId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to get a Kubernetes namespace corresponding to a Kurtosis enclave with id '%v', instead a non-nil error was returned", enclaveId)
 	}
 	userServiceLabels := map[string]string{
-		label_key_consts.GUIDKubernetesLabelKey.GetString():                 serviceGuid,
+		label_key_consts.GUIDKubernetesLabelKey.GetString():                 serviceUuid,
 		label_key_consts.KurtosisResourceTypeKubernetesLabelKey.GetString(): label_value_consts.UserServiceKurtosisResourceTypeKubernetesLabelValue.GetString(),
 		label_key_consts.AppIDKubernetesLabelKey.GetString():                label_value_consts.AppIDKubernetesLabelValue.GetString(),
 	}
@@ -180,7 +180,7 @@ func (provider *GatewayConnectionProvider) getUserServicePodPortforwardEndpoint(
 		return nil, stacktrace.Propagate(err, "Expected to be able to get running user service pods with labels '%+v' in namespace '%v', instead a non nil error was returned", runningUserServicePodNames, userServiceNamespaceName)
 	}
 	if len(runningUserServicePodNames) != 1 {
-		return nil, stacktrace.NewError("Expected to find exactly 1 running user service pod with guid '%v' in enclave '%v', instead found '%v'", serviceGuid, enclaveId, len(runningUserServicePodNames))
+		return nil, stacktrace.NewError("Expected to find exactly 1 running user service pod with guid '%v' in enclave '%v', instead found '%v'", serviceUuid, enclaveId, len(runningUserServicePodNames))
 	}
 	userServicePodName := runningUserServicePodNames[0]
 	return provider.kubernetesManager.GetPodPortforwardEndpointUrl(userServiceNamespaceName, userServicePodName), nil

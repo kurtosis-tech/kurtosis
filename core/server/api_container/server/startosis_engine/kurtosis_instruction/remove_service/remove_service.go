@@ -41,10 +41,10 @@ type RemoveServiceInstruction struct {
 	serviceNetwork service_network.ServiceNetwork
 
 	position  *kurtosis_instruction.InstructionPosition
-	serviceId kurtosis_backend_service.ServiceID
+	serviceId kurtosis_backend_service.ServiceName
 }
 
-func NewRemoveServiceInstruction(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceID) *RemoveServiceInstruction {
+func NewRemoveServiceInstruction(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceName) *RemoveServiceInstruction {
 	return &RemoveServiceInstruction{
 		serviceNetwork: serviceNetwork,
 		position:       position,
@@ -64,7 +64,7 @@ func (instruction *RemoveServiceInstruction) GetCanonicalInstruction() *kurtosis
 }
 
 func (instruction *RemoveServiceInstruction) Execute(ctx context.Context) (*string, error) {
-	serviceGUID, err := instruction.serviceNetwork.RemoveService(ctx, instruction.serviceId)
+	serviceGUID, err := instruction.serviceNetwork.RemoveService(ctx, string(instruction.serviceId))
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed removing service with unexpected error")
 	}
@@ -85,7 +85,7 @@ func (instruction *RemoveServiceInstruction) ValidateAndUpdateEnvironment(enviro
 	return nil
 }
 
-func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (service.ServiceID, *startosis_errors.InterpretationError) {
+func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (service.ServiceName, *startosis_errors.InterpretationError) {
 	var serviceIdArg starlark.String
 	if err := starlark.UnpackArgs(b.Name(), args, kwargs, serviceIdArgName, &serviceIdArg); err != nil {
 		return "", startosis_errors.WrapWithInterpretationError(err, "Failed parsing arguments for function '%s' (unparsed arguments were: '%v' '%v')", RemoveServiceBuiltinName, args, kwargs)

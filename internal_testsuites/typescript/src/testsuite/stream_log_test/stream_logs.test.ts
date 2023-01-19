@@ -3,8 +3,8 @@ import {
     KurtosisContext,
     LogLineFilter,
     ServiceContext,
-    ServiceGUID,
-    ServiceID,
+    ServiceUUID,
+    ServiceName,
     ServiceLog,
 } from "kurtosis-sdk";
 import log from "loglevel";
@@ -15,7 +15,7 @@ import {addServicesWithLogLines, getLogsResponseAndEvaluateResponse} from "../..
 const TEST_NAME = "stream-logs";
 const IS_PARTITIONING_ENABLED = false;
 
-const EXAMPLE_SERVICE_ID: ServiceID = "stream-logs";
+const EXAMPLE_SERVICE_ID: ServiceName = "stream-logs";
 
 const SHOULD_FOLLOW_LOGS = true;
 const SHOULD_NOT_FOLLOW_LOGS = false;
@@ -37,24 +37,24 @@ const DOES_CONTAIN_TEXT_FILTER = LogLineFilter.NewDoesContainTextLogLineFilter(L
 
 const EXAMPLE_SERVICE_LOG_LINES = [FIRST_LOG_LINE, SECOND_LOG_LINE, THIRD_LOG_LINE, LAST_LOG_LINE];
 
-const LOG_LINES_BY_SERVICE = new Map<ServiceID, ServiceLog[]>([
+const LOG_LINES_BY_SERVICE = new Map<ServiceName, ServiceLog[]>([
     [EXAMPLE_SERVICE_ID, EXAMPLE_SERVICE_LOG_LINES],
 ])
 
 class ServiceLogsRequestInfoAndExpectedResults {
     readonly requestedEnclaveUUID: EnclaveUUID;
-    readonly requestedServiceGuids: Set<ServiceGUID>;
+    readonly requestedServiceGuids: Set<ServiceUUID>;
     readonly requestedFollowLogs: boolean;
     readonly expectedLogLines: ServiceLog[];
-    readonly expectedNotFoundServiceGuids: Set<ServiceGUID>;
+    readonly expectedNotFoundServiceGuids: Set<ServiceUUID>;
     readonly logLineFilter: LogLineFilter | undefined;
 
     constructor(
         requestedEnclaveUUID: EnclaveUUID,
-        requestedServiceGuids: Set<ServiceGUID>,
+        requestedServiceGuids: Set<ServiceUUID>,
         requestedFollowLogs: boolean,
         expectedLogLines: ServiceLog[],
-        expectedNotFoundServiceGuids: Set<ServiceGUID>,
+        expectedNotFoundServiceGuids: Set<ServiceUUID>,
         logLineFilter: LogLineFilter | undefined
     ) {
         this.requestedEnclaveUUID = requestedEnclaveUUID;
@@ -89,13 +89,13 @@ async function TestStreamLogs() {
         }
         const kurtosisCtx = newKurtosisContextResult.value;
 
-        const serviceListResult: Result<Map<ServiceID, ServiceContext>, Error> = await addServicesWithLogLines(enclaveContext, LOG_LINES_BY_SERVICE);
+        const serviceListResult: Result<Map<ServiceName, ServiceContext>, Error> = await addServicesWithLogLines(enclaveContext, LOG_LINES_BY_SERVICE);
 
         if (serviceListResult.isErr()) {
             throw new Error(`An error occurred adding the services for the test. Error:\n${serviceListResult.error}`);
         }
 
-        const serviceList: Map<ServiceID, ServiceContext> = serviceListResult.value;
+        const serviceList: Map<ServiceName, ServiceContext> = serviceListResult.value;
 
         if (LOG_LINES_BY_SERVICE.size != serviceList.size) {
             throw new Error(`Expected number of added services '${LOG_LINES_BY_SERVICE.size}', but the actual number of added services is '${serviceList.size}'`);
@@ -105,10 +105,10 @@ async function TestStreamLogs() {
 
         const enclaveID: EnclaveUUID = enclaveContext.getEnclaveUuid();
 
-        const serviceGuids: Set<ServiceGUID> = new Set<ServiceGUID>();
+        const serviceGuids: Set<ServiceUUID> = new Set<ServiceUUID>();
 
         for (let [, serviceCtx] of serviceList) {
-            const serviceGuid = serviceCtx.getServiceGUID();
+            const serviceGuid = serviceCtx.getServiceUUID();
             serviceGuids.add(serviceGuid);
         }
 
@@ -126,7 +126,7 @@ async function TestStreamLogs() {
             const expectedNonExistenceServiceGuids = serviceLogsRequestInfoAndExpectedResults.expectedNotFoundServiceGuids;
             const filter = serviceLogsRequestInfoAndExpectedResults.logLineFilter;
 
-            let expectedLogLinesByService: Map<ServiceGUID, ServiceLog[]> = new Map<ServiceGUID, ServiceLog[]>;
+            let expectedLogLinesByService: Map<ServiceUUID, ServiceLog[]> = new Map<ServiceUUID, ServiceLog[]>;
             for (const userServiceGuid of requestedServiceGuids) {
                 expectedLogLinesByService.set(userServiceGuid, expectedLogLines);
             }
@@ -157,11 +157,11 @@ async function TestStreamLogs() {
 // ====================================================================================================
 function getServiceLogsRequestInfoAndExpectedResultsList(
     enclaveID: EnclaveUUID,
-    serviceGuids: Set<ServiceGUID>,
+    serviceGuids: Set<ServiceUUID>,
 ): Array<ServiceLogsRequestInfoAndExpectedResults> {
 
-    const emptyServiceGuids: Set<ServiceGUID> = new Set<ServiceGUID>();
-    const nonExistentServiceGuids: Set<ServiceGUID> = new Set<ServiceGUID>();
+    const emptyServiceGuids: Set<ServiceUUID> = new Set<ServiceUUID>();
+    const nonExistentServiceGuids: Set<ServiceUUID> = new Set<ServiceUUID>();
     nonExistentServiceGuids.add(NON_EXISTENT_SERVICE_GUID);
 
     const firstCallRequestInfoAndExpectedResults: ServiceLogsRequestInfoAndExpectedResults = new ServiceLogsRequestInfoAndExpectedResults(

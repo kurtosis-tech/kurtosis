@@ -18,11 +18,11 @@
 package services
 
 /*
-The identifier used for services within the enclave.
+The name used for services within the enclave.
 */
-type ServiceID string
+type ServiceName string
 
 /*
-The globally unique identifier used for services within the enclave.
+The universally unique identifier used for services within the enclave.
 */
-type ServiceGUID string
+type ServiceUUID string

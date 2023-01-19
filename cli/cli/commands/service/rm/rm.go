@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/enclave_id_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/service_identifier_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
@@ -21,7 +22,9 @@ const (
 	isEnclaveIdArgOptional  = false
 	isEnclaveIdArgGreedy    = false
 
-	serviceIdArgKey = "service-id"
+	serviceIdentifierArgKey        = "service-identifier"
+	isServiceIdentifierArgOptional = false
+	isServiceIdentifierArgGreedy   = false
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
@@ -46,9 +49,11 @@ var ServiceRmCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCom
 			isEnclaveIdArgOptional,
 			isEnclaveIdArgGreedy,
 		),
-		{
-			Key: serviceIdArgKey,
-		},
+		service_identifier_arg.NewServiceIdentifierArg(
+			serviceIdentifierArgKey,
+			isServiceIdentifierArgGreedy,
+			isServiceIdentifierArgOptional,
+		),
 	},
 	Flags:   []*flags.FlagConfig{},
 	RunFunc: run,
@@ -66,9 +71,9 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the enclave identifier value using key '%v'", enclaveIdentifierArgKey)
 	}
 
-	serviceId, err := args.GetNonGreedyArg(serviceIdArgKey)
+	serviceIdentifier, err := args.GetNonGreedyArg(serviceIdentifierArgKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the service ID value using key '%v'", serviceIdArgKey)
+		return stacktrace.Propagate(err, "An error occurred getting the service ID value using key '%v'", serviceIdentifierArgKey)
 	}
 
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
@@ -81,13 +86,20 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting an enclave context from enclave info for enclave '%v'", enclaveIdentifier)
 	}
 
-	if err := removeServiceStarlarkCommand(ctx, enclaveCtx, services.ServiceID(serviceId)); err != nil {
-		return stacktrace.Propagate(err, "An error occurred removing service '%v' from enclave '%v'", serviceId, enclaveIdentifier)
+	serviceContext, err := enclaveCtx.GetServiceContext(serviceIdentifier)
+	if err != nil {
+		return stacktrace.NewError("Couldn't validate whether the service exists for identifier '%v'", serviceIdentifier)
+	}
+
+	serviceName := serviceContext.GetServiceName()
+
+	if err := removeServiceStarlarkCommand(ctx, enclaveCtx, serviceName); err != nil {
+		return stacktrace.Propagate(err, "An error occurred removing service '%v' from enclave '%v'", serviceIdentifier, enclaveIdentifier)
 	}
 	return nil
 }
 
-func removeServiceStarlarkCommand(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, serviceId services.ServiceID) error {
+func removeServiceStarlarkCommand(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, serviceId services.ServiceName) error {
 	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkScript, fmt.Sprintf(`{"service_id": "%s"}`, serviceId), doNotDryRun)
 	if err != nil {
 		return stacktrace.Propagate(err, "An unexpected error occurred on Starlark for rendering template")

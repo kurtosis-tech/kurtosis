@@ -4,8 +4,8 @@ import {
     KurtosisContext,
     LogLineFilter,
     ServiceContext,
-    ServiceGUID,
-    ServiceID,
+    ServiceUUID,
+    ServiceName,
     ServiceLog,
 } from "kurtosis-sdk";
 import {err, ok, Result} from "neverthrow";
@@ -32,11 +32,11 @@ const LOG_LINE_2 = new ServiceLog("Starting feature 'network partitioning'");
 const LOG_LINE_3 = new ServiceLog("Starting feature 'network soft partitioning'");
 const LOG_LINE_4 = new ServiceLog("The data have being loaded");
 
-const EXPECTED_NON_EXISTENCE_SERVICE_GUIDS = new Set<ServiceGUID>;
+const EXPECTED_NON_EXISTENCE_SERVICE_GUIDS = new Set<ServiceUUID>;
 
 const SERVICE_1_LOG_LINES = [LOG_LINE_1, LOG_LINE_2, LOG_LINE_3, LOG_LINE_4];
 
-const LOG_LINES_BY_SERVICE = new Map<ServiceID, ServiceLog[]>([
+const LOG_LINES_BY_SERVICE = new Map<ServiceName, ServiceLog[]>([
     [SERVICE_1_SERVICE_ID, SERVICE_1_LOG_LINES],
 ])
 
@@ -102,13 +102,13 @@ async function TestSearchLogs() {
     try {
         // ------------------------------------- TEST SETUP ----------------------------------------------
 
-        const serviceListResult: Result<Map<ServiceID, ServiceContext>, Error> = await addServicesWithLogLines(enclaveContext, LOG_LINES_BY_SERVICE);
+        const serviceListResult: Result<Map<ServiceName, ServiceContext>, Error> = await addServicesWithLogLines(enclaveContext, LOG_LINES_BY_SERVICE);
 
         if (serviceListResult.isErr()) {
             throw new Error(`An error occurred adding the services for the test. Error:\n${serviceListResult.error}`);
         }
 
-        const serviceList: Map<ServiceID, ServiceContext> = serviceListResult.value;
+        const serviceList: Map<ServiceName, ServiceContext> = serviceListResult.value;
 
         if (LOG_LINES_BY_SERVICE.size != serviceList.size) {
             throw new Error(`Expected number of added services '${LOG_LINES_BY_SERVICE.size}', but the actual number of added services is '${serviceList.size}'`);
@@ -125,12 +125,12 @@ async function TestSearchLogs() {
 
         const enclaveUuid: EnclaveUUID = enclaveContext.getEnclaveUuid();
 
-        const userServiceGuids: Set<ServiceGUID> = new Set<ServiceGUID>();
+        const userServiceGuids: Set<ServiceUUID> = new Set<ServiceUUID>();
 
-        let serviceGuid: ServiceGUID = "";
+        let serviceGuid: ServiceUUID = "";
 
         for (let [, serviceCtx] of serviceList) {
-            serviceGuid = serviceCtx.getServiceGUID();
+            serviceGuid = serviceCtx.getServiceUUID();
             userServiceGuids.add(serviceGuid);
         }
 
@@ -165,18 +165,18 @@ async function TestSearchLogs() {
 async function executeGetLogsRequestAndEvaluateResult(
     kurtosisCtx: KurtosisContext,
     enclaveUuid: EnclaveUUID,
-    serviceGuid: ServiceGUID,
-    userServiceGuids: Set<ServiceGUID>,
+    serviceGuid: ServiceUUID,
+    userServiceGuids: Set<ServiceUUID>,
     logLineFilter: LogLineFilter,
     expectedLogLines: ServiceLog[],
     shouldFollowLogs: boolean,
 ): Promise<Result<null, Error>> {
 
-    const serviceGuids: Set<ServiceGUID> = new Set<ServiceGUID>([
+    const serviceGuids: Set<ServiceUUID> = new Set<ServiceUUID>([
         serviceGuid,
     ])
 
-    const expectedLogLinesByService = new Map<ServiceGUID, ServiceLog[]>([
+    const expectedLogLinesByService = new Map<ServiceUUID, ServiceLog[]>([
         [serviceGuid, expectedLogLines],
     ])
 

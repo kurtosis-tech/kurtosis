@@ -1,5 +1,5 @@
 import { UpsertArgs, ExistsArgs, GetArgs, ExistsResponse, GetResponse } from "example-datastore-server-api-lib";
-import { ServiceID } from "kurtosis-sdk"
+import { ServiceName } from "kurtosis-sdk"
 import * as grpc from "@grpc/grpc-js"
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
 import log from "loglevel"
@@ -10,7 +10,7 @@ import { addDatastoreService } from "../../test_helpers/test_helpers";
 
 const TEST_NAME = "basic-datastore";
 const IS_PARTITIONING_ENABLED = false;
-const DATASTORE_SERVICE_ID: ServiceID = "datastore";
+const DATASTORE_SERVICE_ID: ServiceName = "datastore";
 const TEST_KEY = "test-key"
 const TEST_VALUE = "test-value";
 

@@ -145,10 +145,10 @@ type datastoreConfig struct {
 func AddService(
 	ctx context.Context,
 	enclaveCtx *enclaves.EnclaveContext,
-	serviceID services.ServiceID,
+	serviceName services.ServiceName,
 	serviceConfigStarlark string) (*services.ServiceContext, error) {
 	starlarkRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, fmt.Sprintf(`def run(plan):
-	plan.add_service(service_id = "%s", config = %s)`, serviceID, serviceConfigStarlark), "", false)
+	plan.add_service(service_id = "%s", config = %s)`, serviceName, serviceConfigStarlark), "", false)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error has occurred when running Starlark to add service")
 	}
@@ -161,7 +161,7 @@ func AddService(
 	if starlarkRunResult.ExecutionError != nil {
 		return nil, stacktrace.NewError("An error has occurred when executing Starlark to add service: %s", starlarkRunResult.ExecutionError)
 	}
-	serviceContext, err := enclaveCtx.GetServiceContext(serviceID)
+	serviceContext, err := enclaveCtx.GetServiceContext(string(serviceName))
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error has occurred when getting service added by Starlark")
 	}
@@ -170,7 +170,7 @@ func AddService(
 
 func AddDatastoreService(
 	ctx context.Context,
-	serviceId services.ServiceID,
+	serviceId services.ServiceName,
 	enclaveCtx *enclaves.EnclaveContext,
 ) (
 	resultServiceCtx *services.ServiceContext,
@@ -208,8 +208,8 @@ func AddDatastoreService(
 	return serviceCtx, client, clientCloseFunc, nil
 }
 
-func ValidateDatastoreServiceHealthy(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, serviceId services.ServiceID, portId string) error {
-	serviceCtx, err := enclaveCtx.GetServiceContext(serviceId)
+func ValidateDatastoreServiceHealthy(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, serviceId services.ServiceName, portId string) error {
+	serviceCtx, err := enclaveCtx.GetServiceContext(string(serviceId))
 	if err != nil {
 		return stacktrace.Propagate(err, "Error retrieving service context for service '%s'", serviceId)
 	}
@@ -258,7 +258,7 @@ func ValidateDatastoreServiceHealthy(ctx context.Context, enclaveCtx *enclaves.E
 	return nil
 }
 
-func AddAPIService(ctx context.Context, serviceId services.ServiceID, enclaveCtx *enclaves.EnclaveContext, datastorePrivateIp string) (*services.ServiceContext, example_api_server_rpc_api_bindings.ExampleAPIServerServiceClient, func(), error) {
+func AddAPIService(ctx context.Context, serviceId services.ServiceName, enclaveCtx *enclaves.EnclaveContext, datastorePrivateIp string) (*services.ServiceContext, example_api_server_rpc_api_bindings.ExampleAPIServerServiceClient, func(), error) {
 	serviceCtx, client, clientCloseFunc, err := AddAPIServiceToPartition(ctx, serviceId, enclaveCtx, datastorePrivateIp, defaultPartitionId)
 	if err != nil {
 		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred adding API service to default partition")
@@ -266,7 +266,7 @@ func AddAPIService(ctx context.Context, serviceId services.ServiceID, enclaveCtx
 	return serviceCtx, client, clientCloseFunc, nil
 }
 
-func AddAPIServiceToPartition(ctx context.Context, serviceId services.ServiceID, enclaveCtx *enclaves.EnclaveContext, datastorePrivateIp string, partitionId enclaves.PartitionID) (*services.ServiceContext, example_api_server_rpc_api_bindings.ExampleAPIServerServiceClient, func(), error) {
+func AddAPIServiceToPartition(ctx context.Context, serviceId services.ServiceName, enclaveCtx *enclaves.EnclaveContext, datastorePrivateIp string, partitionId enclaves.PartitionID) (*services.ServiceContext, example_api_server_rpc_api_bindings.ExampleAPIServerServiceClient, func(), error) {
 	configFilepath, err := createApiConfigFile(datastorePrivateIp)
 	if err != nil {
 		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred creating the datastore config file")
@@ -350,7 +350,7 @@ func WaitForHealthy(ctx context.Context, client GrpcAvailabilityChecker, retries
 	return nil
 }
 
-func StartFileServer(ctx context.Context, fileServerServiceId services.ServiceID, filesArtifactUUID services.FilesArtifactUUID, pathToCheckOnFileServer string, enclaveCtx *enclaves.EnclaveContext) (string, uint16, error) {
+func StartFileServer(ctx context.Context, fileServerServiceId services.ServiceName, filesArtifactUUID services.FilesArtifactUUID, pathToCheckOnFileServer string, enclaveCtx *enclaves.EnclaveContext) (string, uint16, error) {
 	filesArtifactMountPoints := map[string]services.FilesArtifactUUID{
 		userServiceMountPointForTestFilesArtifact: filesArtifactUUID,
 	}
@@ -410,27 +410,27 @@ func GetLogsResponse(
 	timeout time.Duration,
 	kurtosisCtx *kurtosis_context.KurtosisContext,
 	enclaveIdentifier string,
-	serviceGuids map[services.ServiceGUID]bool,
-	expectedLogLinesByService map[services.ServiceGUID][]string,
+	serviceUuids map[services.ServiceUUID]bool,
+	expectedLogLinesByService map[services.ServiceUUID][]string,
 	shouldFollowLogs bool,
 	logLineFilter *kurtosis_context.LogLineFilter,
 ) (
 	error,
-	map[services.ServiceGUID][]string,
-	map[services.ServiceGUID]bool,
+	map[services.ServiceUUID][]string,
+	map[services.ServiceUUID]bool,
 ) {
 
 	if expectedLogLinesByService == nil {
 		return stacktrace.NewError("The 'expectedLogLinesByService' can't be nil because it is needed for handling the retry strategy"), nil, nil
 	}
 
-	receivedLogLinesByService := map[services.ServiceGUID][]string{}
-	receivedNotFoundServiceGuids := map[services.ServiceGUID]bool{}
+	receivedLogLinesByService := map[services.ServiceUUID][]string{}
+	receivedNotFoundServiceGuids := map[services.ServiceUUID]bool{}
 	var testEvaluationErr error
 
-	serviceLogsStreamContentChan, cancelStreamUserServiceLogsFunc, err := kurtosisCtx.GetServiceLogs(ctx, enclaveIdentifier, serviceGuids, shouldFollowLogs, logLineFilter)
+	serviceLogsStreamContentChan, cancelStreamUserServiceLogsFunc, err := kurtosisCtx.GetServiceLogs(ctx, enclaveIdentifier, serviceUuids, shouldFollowLogs, logLineFilter)
 	defer cancelStreamUserServiceLogsFunc()
-	require.NoError(t, err, "An error occurred getting user service logs from user services with GUIDs '%+v' in enclave '%v' and with follow logs value '%v'", serviceGuids, enclaveIdentifier, shouldFollowLogs)
+	require.NoError(t, err, "An error occurred getting user service logs from user services with UUIDs '%+v' in enclave '%v' and with follow logs value '%v'", serviceUuids, enclaveIdentifier, shouldFollowLogs)
 
 	shouldContinueInTheLoop := true
 
@@ -448,27 +448,27 @@ func GetLogsResponse(
 				break
 			}
 
-			serviceLogsByGuid := serviceLogsStreamContent.GetServiceLogsByServiceGuids()
-			receivedNotFoundServiceGuids = serviceLogsStreamContent.GetNotFoundServiceGuids()
+			serviceLogsByGuid := serviceLogsStreamContent.GetServiceLogsByServiceUuids()
+			receivedNotFoundServiceGuids = serviceLogsStreamContent.GetNotFoundServiceUuids()
 
-			for serviceGuid, serviceLogLines := range serviceLogsByGuid {
+			for serviceUuid, serviceLogLines := range serviceLogsByGuid {
 				receivedLogLines := []string{}
 				for _, serviceLogLine := range serviceLogLines {
 					receivedLogLines = append(receivedLogLines, serviceLogLine.GetContent())
 				}
-				if _, found := receivedLogLinesByService[serviceGuid]; found {
-					receivedLogLinesByService[serviceGuid] = append(receivedLogLinesByService[serviceGuid], receivedLogLines...)
+				if _, found := receivedLogLinesByService[serviceUuid]; found {
+					receivedLogLinesByService[serviceUuid] = append(receivedLogLinesByService[serviceUuid], receivedLogLines...)
 				} else {
-					receivedLogLinesByService[serviceGuid] = receivedLogLines
+					receivedLogLinesByService[serviceUuid] = receivedLogLines
 				}
 			}
 
-			for serviceGuid, expectedLogLines := range expectedLogLinesByService {
-				receivedLogLines, found := receivedLogLinesByService[serviceGuid]
+			for serviceUuid, expectedLogLines := range expectedLogLinesByService {
+				receivedLogLines, found := receivedLogLinesByService[serviceUuid]
 				if len(expectedLogLines) == noExpectedLogLines && !found {
 					receivedLogLines = []string{}
 				} else if !found {
-					return stacktrace.NewError("Expected to receive log lines for service with GUID '%v' but none was found in the received log lines by service map '%+v'", serviceGuid, receivedLogLinesByService), nil, nil
+					return stacktrace.NewError("Expected to receive log lines for service with UUID '%v' but none was found in the received log lines by service map '%+v'", serviceUuid, receivedLogLinesByService), nil, nil
 				}
 				if len(receivedLogLines) != len(expectedLogLines) {
 					break
@@ -488,11 +488,11 @@ func GetLogsResponse(
 func AddServicesWithLogLines(
 	ctx context.Context,
 	enclaveCtx *enclaves.EnclaveContext,
-	logLinesByServiceID map[services.ServiceID][]string,
-) (map[services.ServiceID]*services.ServiceContext, error) {
+	logLinesByServiceName map[services.ServiceName][]string,
+) (map[services.ServiceName]*services.ServiceContext, error) {
 
-	servicesAdded := make(map[services.ServiceID]*services.ServiceContext, len(logLinesByServiceID))
-	for serviceId, logLines := range logLinesByServiceID {
+	servicesAdded := make(map[services.ServiceName]*services.ServiceContext, len(logLinesByServiceName))
+	for serviceId, logLines := range logLinesByServiceName {
 		serviceConfigStarlark := getServiceWithLogLinesServiceConfigStarlark(logLines)
 		serviceCtx, err := AddService(ctx, enclaveCtx, serviceId, serviceConfigStarlark)
 		if err != nil {
@@ -622,7 +622,7 @@ func createDatastoreClient(ipAddr string, portNum uint16) (datastore_rpc_api_bin
 	return client, clientCloseFunc, nil
 }
 
-func waitForFileServerAvailability(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, serviceId services.ServiceID, portId string, endpoint string, initialDelayMilliseconds uint32, timeoutMilliseconds uint32) error {
+func waitForFileServerAvailability(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, serviceId services.ServiceName, portId string, endpoint string, initialDelayMilliseconds uint32, timeoutMilliseconds uint32) error {
 	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, waitForGetAvaliabilityStalarkScript, fmt.Sprintf(waitForGetAvaliabilityStalarkScriptParams, serviceId, portId, endpoint, initialDelayMilliseconds, timeoutMilliseconds), false)
 	if err != nil {
 		return stacktrace.Propagate(err, "An unexpected error has occurred getting endpoint availability using Starlark")

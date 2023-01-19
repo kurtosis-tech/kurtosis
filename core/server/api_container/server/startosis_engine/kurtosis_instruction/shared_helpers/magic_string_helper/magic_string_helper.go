@@ -46,7 +46,7 @@ var (
 	compiledRuntimeValueReplacementRegex = regexp.MustCompile(runtimeValueReplacementRegex)
 )
 
-func MakeWaitInterpretationReturnValue(serviceId service.ServiceID, factName string) starlark.String {
+func MakeWaitInterpretationReturnValue(serviceId service.ServiceName, factName string) starlark.String {
 	fact := starlark.String(fmt.Sprintf(FactReplacementPlaceholderFormat, serviceId, factName))
 	return fact
 }
@@ -59,7 +59,7 @@ func ReplaceIPAddressInString(originalString string, network service_network.Ser
 		if serviceIdMatchIndex == subExpNotFound {
 			return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", serviceIdSubgroupName, compiledRegex.String())
 		}
-		serviceId := service.ServiceID(match[serviceIdMatchIndex])
+		serviceId := service.ServiceName(match[serviceIdMatchIndex])
 		ipAddress, found := network.GetIPAddressForService(serviceId)
 		if !found {
 			return "", stacktrace.NewError("'%v' depends on the IP address of '%v' but we don't have any registrations for it", argNameForLogigng, serviceId)

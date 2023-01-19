@@ -32,12 +32,12 @@ import (
 )
 
 var (
-	testServiceNetwork   = service_network.NewMockServiceNetwork(map[service.ServiceID]net.IP{testServiceId: testServiceIpAddress})
+	testServiceNetwork   = service_network.NewMockServiceNetwork(map[service.ServiceName]net.IP{testServiceId: testServiceIpAddress})
 	testServiceIpAddress = net.ParseIP("127.0.0.1")
 )
 
 const (
-	testServiceId            = service.ServiceID("example-datastore-server")
+	testServiceId            = service.ServiceName("example-datastore-server")
 	testContainerImageName   = "kurtosistech/example-datastore-server"
 	emptyApplicationProtocol = ""
 	testArtifactName         = "test-artifact"
@@ -1626,7 +1626,7 @@ def run(plan):
 //                                                  TEST HELPERS
 // #####################################################################################################################
 
-func createSimpleAddServiceInstruction(t *testing.T, serviceId service.ServiceID, imageName string, portNumber uint32, lineNumber int32, colNumber int32, fileName string, entryPointArgs []string, cmdArgs []string, envVars map[string]string, privateIPAddressPlaceholder string, publicPortNumber uint32, runtimeValueStore *runtime_value_store.RuntimeValueStore) *add_service.AddServiceInstruction {
+func createSimpleAddServiceInstruction(t *testing.T, serviceId service.ServiceName, imageName string, portNumber uint32, lineNumber int32, colNumber int32, fileName string, entryPointArgs []string, cmdArgs []string, envVars map[string]string, privateIPAddressPlaceholder string, publicPortNumber uint32, runtimeValueStore *runtime_value_store.RuntimeValueStore) *add_service.AddServiceInstruction {
 	var privatePortsStarlarkArgs *starlark.Dict
 	if portNumber != 0 {
 		privatePortsStarlarkArgs = starlark.NewDict(1)

@@ -4,12 +4,12 @@
  */
 
 /*
-The identifier used for services within the enclave.
+The name used for services within the enclave.
 */
 
-export type ServiceID = string;
+export type ServiceName = string;
 
 /*
-The globally unique identifier used for services within the enclave.
+The universally unique identifier used for services within the enclave.
 */
-export type ServiceGUID = string;
+export type ServiceUUID = string;

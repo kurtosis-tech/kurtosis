@@ -180,16 +180,16 @@ func GetMatchingUserServiceObjectsAndKubernetesResources(
 	engineServerModeArgs *EngineServerModeArgs,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 ) (
-	map[service.ServiceGUID]*UserServiceObjectsAndKubernetesResources,
+	map[service.ServiceUUID]*UserServiceObjectsAndKubernetesResources,
 	error,
 ) {
-	allResources, err := GetUserServiceKubernetesResourcesMatchingGuids(ctx, enclaveId, filters.GUIDs, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
+	allResources, err := GetUserServiceKubernetesResourcesMatchingGuids(ctx, enclaveId, filters.UUIDs, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting user service Kubernetes resources matching GUIDs: %+v", filters.GUIDs)
+		return nil, stacktrace.Propagate(err, "An error occurred getting user service Kubernetes resources matching UUIDs: %+v", filters.UUIDs)
 	}
 
-	for serviceGuid, serviceResources := range allResources {
-		logrus.Tracef("Found resources for service '%v': %+v", serviceGuid, serviceResources)
+	for serviceUuid, serviceResources := range allResources {
+		logrus.Tracef("Found resources for service '%v': %+v", serviceUuid, serviceResources)
 	}
 
 	allObjectsAndResources, err := GetUserServiceObjectsFromKubernetesResources(enclaveId, allResources)
@@ -207,17 +207,17 @@ func GetMatchingUserServiceObjectsAndKubernetesResources(
 	}
 
 	// Filter the results down to the requested filters
-	results := map[service.ServiceGUID]*UserServiceObjectsAndKubernetesResources{}
-	for serviceGuid, objectsAndResources := range allObjectsAndResources {
-		if filters.GUIDs != nil && len(filters.GUIDs) > 0 {
-			if _, found := filters.GUIDs[serviceGuid]; !found {
+	results := map[service.ServiceUUID]*UserServiceObjectsAndKubernetesResources{}
+	for serviceUuid, objectsAndResources := range allObjectsAndResources {
+		if filters.UUIDs != nil && len(filters.UUIDs) > 0 {
+			if _, found := filters.UUIDs[serviceUuid]; !found {
 				continue
 			}
 		}
 
 		registration := objectsAndResources.ServiceRegistration
-		if filters.IDs != nil && len(filters.IDs) > 0 {
-			if _, found := filters.IDs[registration.GetID()]; !found {
+		if filters.Names != nil && len(filters.Names) > 0 {
+			if _, found := filters.Names[registration.GetName()]; !found {
 				continue
 			}
 		}
@@ -235,7 +235,7 @@ func GetMatchingUserServiceObjectsAndKubernetesResources(
 			}
 		}
 
-		results[serviceGuid] = objectsAndResources
+		results[serviceUuid] = objectsAndResources
 	}
 
 	return results, nil
@@ -244,13 +244,13 @@ func GetMatchingUserServiceObjectsAndKubernetesResources(
 func GetUserServiceKubernetesResourcesMatchingGuids(
 	ctx context.Context,
 	enclaveId enclave.EnclaveUUID,
-	serviceGuids map[service.ServiceGUID]bool,
+	serviceUuids map[service.ServiceUUID]bool,
 	cliModeArgs *CliModeArgs,
 	apiContainerModeArgs *ApiContainerModeArgs,
 	engineServerModeArgs *EngineServerModeArgs,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 ) (
-	map[service.ServiceGUID]*UserServiceKubernetesResources,
+	map[service.ServiceUUID]*UserServiceKubernetesResources,
 	error,
 ) {
 	namespaceName, err := GetEnclaveNamespaceName(ctx, enclaveId, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
@@ -260,8 +260,8 @@ func GetUserServiceKubernetesResourcesMatchingGuids(
 
 	// TODO switch to properly-typed KubernetesLabelValue object!!!
 	postFilterLabelValues := map[string]bool{}
-	for serviceGuid := range serviceGuids {
-		postFilterLabelValues[string(serviceGuid)] = true
+	for serviceUuid := range serviceUuids {
+		postFilterLabelValues[string(serviceUuid)] = true
 	}
 
 	kubernetesResourceSearchLabels := map[string]string{
@@ -270,7 +270,7 @@ func GetUserServiceKubernetesResourcesMatchingGuids(
 		label_key_consts.KurtosisResourceTypeKubernetesLabelKey.GetString(): label_value_consts.UserServiceKurtosisResourceTypeKubernetesLabelValue.GetString(),
 	}
 
-	results := map[service.ServiceGUID]*UserServiceKubernetesResources{}
+	results := map[service.ServiceUUID]*UserServiceKubernetesResources{}
 
 	// Get k8s services
 	matchingKubernetesServices, err := kubernetes_resource_collectors.CollectMatchingServices(
@@ -282,23 +282,23 @@ func GetUserServiceKubernetesResourcesMatchingGuids(
 		postFilterLabelValues,
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes services matching service GUIDs: %+v", serviceGuids)
+		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes services matching service UUIDs: %+v", serviceUuids)
 	}
 	for serviceGuidStr, kubernetesServicesForGuid := range matchingKubernetesServices {
 		logrus.Tracef("Found Kubernetes services for GUID '%v': %+v", serviceGuidStr, kubernetesServicesForGuid)
-		serviceGuid := service.ServiceGUID(serviceGuidStr)
+		serviceUuid := service.ServiceUUID(serviceGuidStr)
 
 		numServicesForGuid := len(kubernetesServicesForGuid)
 		if numServicesForGuid == 0 {
 			// This would indicate a bug in our service retrieval logic because we shouldn't even have a map entry if there's nothing matching it
-			return nil, stacktrace.NewError("Got entry of result services for service GUID '%v', but no Kubernetes services were returned; this is a bug in Kurtosis", serviceGuid)
+			return nil, stacktrace.NewError("Got entry of result services for service GUID '%v', but no Kubernetes services were returned; this is a bug in Kurtosis", serviceUuid)
 		}
 		if numServicesForGuid > 1 {
-			return nil, stacktrace.NewError("Found %v Kubernetes services associated with service GUID '%v'; this is a bug in Kurtosis", numServicesForGuid, serviceGuid)
+			return nil, stacktrace.NewError("Found %v Kubernetes services associated with service GUID '%v'; this is a bug in Kurtosis", numServicesForGuid, serviceUuid)
 		}
 		kubernetesService := kubernetesServicesForGuid[0]
 
-		resultObj, found := results[serviceGuid]
+		resultObj, found := results[serviceUuid]
 		if !found {
 			resultObj = &UserServiceKubernetesResources{
 				Service: nil,
@@ -306,7 +306,7 @@ func GetUserServiceKubernetesResourcesMatchingGuids(
 			}
 		}
 		resultObj.Service = kubernetesService
-		results[serviceGuid] = resultObj
+		results[serviceUuid] = resultObj
 	}
 
 	// Get k8s pods
@@ -319,23 +319,23 @@ func GetUserServiceKubernetesResourcesMatchingGuids(
 		postFilterLabelValues,
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes pods matching service GUIDs: %+v", serviceGuids)
+		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes pods matching service UUIDs: %+v", serviceUuids)
 	}
 	for serviceGuidStr, kubernetesPodsForGuid := range matchingKubernetesPods {
 		logrus.Tracef("Found Kubernetes pods for GUID '%v': %+v", serviceGuidStr, kubernetesPodsForGuid)
-		serviceGuid := service.ServiceGUID(serviceGuidStr)
+		serviceUuid := service.ServiceUUID(serviceGuidStr)
 
 		numPodsForGuid := len(kubernetesPodsForGuid)
 		if numPodsForGuid == 0 {
 			// This would indicate a bug in our pod retrieval logic because we shouldn't even have a map entry if there's nothing matching it
-			return nil, stacktrace.NewError("Got entry of result pods for service GUID '%v', but no Kubernetes pods were returned; this is a bug in Kurtosis", serviceGuid)
+			return nil, stacktrace.NewError("Got entry of result pods for service GUID '%v', but no Kubernetes pods were returned; this is a bug in Kurtosis", serviceUuid)
 		}
 		if numPodsForGuid > 1 {
-			return nil, stacktrace.NewError("Found %v Kubernetes pods associated with service GUID '%v'; this is a bug in Kurtosis", numPodsForGuid, serviceGuid)
+			return nil, stacktrace.NewError("Found %v Kubernetes pods associated with service GUID '%v'; this is a bug in Kurtosis", numPodsForGuid, serviceUuid)
 		}
 		kubernetesPod := kubernetesPodsForGuid[0]
 
-		resultObj, found := results[serviceGuid]
+		resultObj, found := results[serviceUuid]
 		if !found {
 			resultObj = &UserServiceKubernetesResources{
 				Service: nil,
@@ -343,7 +343,7 @@ func GetUserServiceKubernetesResourcesMatchingGuids(
 			}
 		}
 		resultObj.Pod = kubernetesPod
-		results[serviceGuid] = resultObj
+		results[serviceUuid] = resultObj
 	}
 
 	return results, nil
@@ -351,18 +351,18 @@ func GetUserServiceKubernetesResourcesMatchingGuids(
 
 func GetUserServiceObjectsFromKubernetesResources(
 	enclaveId enclave.EnclaveUUID,
-	allKubernetesResources map[service.ServiceGUID]*UserServiceKubernetesResources,
-) (map[service.ServiceGUID]*UserServiceObjectsAndKubernetesResources, error) {
-	results := map[service.ServiceGUID]*UserServiceObjectsAndKubernetesResources{}
-	for serviceGuid, resources := range allKubernetesResources {
-		results[serviceGuid] = &UserServiceObjectsAndKubernetesResources{
+	allKubernetesResources map[service.ServiceUUID]*UserServiceKubernetesResources,
+) (map[service.ServiceUUID]*UserServiceObjectsAndKubernetesResources, error) {
+	results := map[service.ServiceUUID]*UserServiceObjectsAndKubernetesResources{}
+	for serviceUuid, resources := range allKubernetesResources {
+		results[serviceUuid] = &UserServiceObjectsAndKubernetesResources{
 			ServiceRegistration: nil,
 			Service:             nil,
 			KubernetesResources: resources,
 		}
 	}
 
-	for serviceGuid, resultObj := range results {
+	for serviceUuid, resultObj := range results {
 		resourcesToParse := resultObj.KubernetesResources
 		kubernetesService := resourcesToParse.Service
 		kubernetesPod := resourcesToParse.Pod
@@ -370,7 +370,7 @@ func GetUserServiceObjectsFromKubernetesResources(
 		if kubernetesService == nil {
 			return nil, stacktrace.NewError(
 				"Service with GUID '%v' doesn't have a Kubernetes service; this indicates either a bug in Kurtosis or that the user manually deleted the Kubernetes service",
-				serviceGuid,
+				serviceUuid,
 			)
 		}
 
@@ -379,7 +379,7 @@ func GetUserServiceObjectsFromKubernetesResources(
 		if !found {
 			return nil, stacktrace.NewError("Expected to find label '%v' on the Kubernetes service but none was found", label_key_consts.IDKubernetesLabelKey.GetString())
 		}
-		serviceId := service.ServiceID(idLabelStr)
+		serviceId := service.ServiceName(idLabelStr)
 
 		serviceIpStr := kubernetesService.Spec.ClusterIP
 		privateIp := net.ParseIP(serviceIpStr)
@@ -387,7 +387,7 @@ func GetUserServiceObjectsFromKubernetesResources(
 			return nil, stacktrace.NewError("An error occurred parsing service private IP string '%v' to an IP address object", serviceIpStr)
 		}
 
-		serviceRegistrationObj := service.NewServiceRegistration(serviceId, serviceGuid, enclaveId, privateIp)
+		serviceRegistrationObj := service.NewServiceRegistration(serviceId, serviceUuid, enclaveId, privateIp)
 		resultObj.ServiceRegistration = serviceRegistrationObj
 
 		// A service with no ports annotation means that no pod has yet consumed the registration
@@ -440,32 +440,32 @@ func GetUserServiceObjectsFromKubernetesResources(
 func GetSingleUserServiceObjectsAndResources(
 	ctx context.Context,
 	enclaveId enclave.EnclaveUUID,
-	serviceGuid service.ServiceGUID,
+	serviceUuid service.ServiceUUID,
 	cliModeArgs *CliModeArgs,
 	apiContainerModeArgs *ApiContainerModeArgs,
 	engineServerModeArgs *EngineServerModeArgs,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 ) (*UserServiceObjectsAndKubernetesResources, error) {
 	searchFilters := &service.ServiceFilters{
-		IDs: nil,
-		GUIDs: map[service.ServiceGUID]bool{
-			serviceGuid: true,
+		Names: nil,
+		UUIDs: map[service.ServiceUUID]bool{
+			serviceUuid: true,
 		},
 		Statuses: nil,
 	}
 	searchResults, err := GetMatchingUserServiceObjectsAndKubernetesResources(ctx, enclaveId, searchFilters, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred finding services matching GUID '%v'", serviceGuid)
+		return nil, stacktrace.Propagate(err, "An error occurred finding services matching GUID '%v'", serviceUuid)
 	}
 	if len(searchResults) == 0 {
-		return nil, stacktrace.NewError("No services matched GUID '%v'", serviceGuid)
+		return nil, stacktrace.NewError("No services matched GUID '%v'", serviceUuid)
 	}
 	if len(searchResults) > 1 {
-		return nil, stacktrace.NewError("Expected one service to match GUID '%v' but found %v", serviceGuid, len(searchResults))
+		return nil, stacktrace.NewError("Expected one service to match GUID '%v' but found %v", serviceUuid, len(searchResults))
 	}
-	result, found := searchResults[serviceGuid]
+	result, found := searchResults[serviceUuid]
 	if !found {
-		return nil, stacktrace.NewError("Got results from searching for service with GUID '%v', but no results by the GUID we searched for; this is a bug in Kurtosis", serviceGuid)
+		return nil, stacktrace.NewError("Got results from searching for service with UUID '%v', but no results by the GUID we searched for; this is a bug in Kurtosis", serviceUuid)
 	}
 	return result, nil
 }
@@ -643,7 +643,7 @@ func WaitForPortAvailabilityUsingNetstat(
 	)
 }
 
-func GetMatchingUserServiceObjectsAndKubernetesResourcesByServiceID(
+func GetMatchingUserServiceObjectsAndKubernetesResourcesByServiceName(
 	ctx context.Context,
 	enclaveId enclave.EnclaveUUID,
 	filters *service.ServiceFilters,
@@ -652,19 +652,19 @@ func GetMatchingUserServiceObjectsAndKubernetesResourcesByServiceID(
 	engineServerModeArgs *EngineServerModeArgs,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 ) (
-	map[service.ServiceID]*UserServiceObjectsAndKubernetesResources,
+	map[service.ServiceName]*UserServiceObjectsAndKubernetesResources,
 	error,
 ) {
 	matchesByGUID, err := GetMatchingUserServiceObjectsAndKubernetesResources(ctx, enclaveId, filters, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while getting matching user service objects and Kubernetes resources by service ID")
 	}
-	matchesByServiceID := map[service.ServiceID]*UserServiceObjectsAndKubernetesResources{}
+	matchesByServiceName := map[service.ServiceName]*UserServiceObjectsAndKubernetesResources{}
 	for _, userServiceObjectsAndKubernetesResource := range matchesByGUID {
-		serviceID := userServiceObjectsAndKubernetesResource.ServiceRegistration.GetID()
-		matchesByServiceID[serviceID] = userServiceObjectsAndKubernetesResource
+		serviceName := userServiceObjectsAndKubernetesResource.ServiceRegistration.GetName()
+		matchesByServiceName[serviceName] = userServiceObjectsAndKubernetesResource
 	}
-	return matchesByServiceID, nil
+	return matchesByServiceName, nil
 }
 
 // ====================================================================================================

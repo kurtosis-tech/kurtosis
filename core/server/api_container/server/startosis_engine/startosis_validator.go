@@ -44,7 +44,7 @@ func (validator *StartosisValidator) Validate(ctx context.Context, instructions 
 			validationInProgressMsg, defaultCurrentStepNumber, defaultTotalStepsNumber)
 		environment := startosis_validator.NewValidatorEnvironment(
 			validator.serviceNetwork.IsNetworkPartitioningEnabled(),
-			validator.serviceNetwork.GetServiceIDs(),
+			validator.serviceNetwork.GetServiceNames(),
 			validator.fileArtifactStore.ListFiles())
 
 		isValidationFailure = isValidationFailure ||

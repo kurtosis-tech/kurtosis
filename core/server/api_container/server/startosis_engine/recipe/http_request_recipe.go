@@ -42,7 +42,7 @@ const (
 )
 
 type HttpRequestRecipe struct {
-	serviceId   service.ServiceID
+	serviceId   service.ServiceName
 	portId      string
 	contentType string
 	endpoint    string
@@ -51,7 +51,7 @@ type HttpRequestRecipe struct {
 	extractors  map[string]string
 }
 
-func NewPostHttpRequestRecipe(serviceId service.ServiceID, portId string, contentType string, endpoint string, body string, extractors map[string]string) *HttpRequestRecipe {
+func NewPostHttpRequestRecipe(serviceId service.ServiceName, portId string, contentType string, endpoint string, body string, extractors map[string]string) *HttpRequestRecipe {
 	return &HttpRequestRecipe{
 		serviceId:   serviceId,
 		portId:      portId,
@@ -63,7 +63,7 @@ func NewPostHttpRequestRecipe(serviceId service.ServiceID, portId string, conten
 	}
 }
 
-func NewGetHttpRequestRecipe(serviceId service.ServiceID, portId string, endpoint string, extractors map[string]string) *HttpRequestRecipe {
+func NewGetHttpRequestRecipe(serviceId service.ServiceName, portId string, endpoint string, extractors map[string]string) *HttpRequestRecipe {
 	return &HttpRequestRecipe{
 		serviceId:   serviceId,
 		portId:      portId,
@@ -194,7 +194,7 @@ func MakeGetHttpRequestRecipe(_ *starlark.Thread, builtin *starlark.Builtin, arg
 			return nil, err
 		}
 	}
-	recipe := NewGetHttpRequestRecipe(service.ServiceID(serviceId), portId, endpoint, extractedMap)
+	recipe := NewGetHttpRequestRecipe(service.ServiceName(serviceId), portId, endpoint, extractedMap)
 	return recipe, nil
 }
 
@@ -228,7 +228,7 @@ func MakePostHttpRequestRecipe(_ *starlark.Thread, builtin *starlark.Builtin, ar
 		}
 	}
 
-	recipe := NewPostHttpRequestRecipe(service.ServiceID(serviceId), portId, contentType, endpoint, body, extractedMap)
+	recipe := NewPostHttpRequestRecipe(service.ServiceName(serviceId), portId, contentType, endpoint, body, extractedMap)
 	return recipe, nil
 }
 
@@ -246,7 +246,7 @@ func (recipe *HttpRequestRecipe) Execute(ctx context.Context, serviceNetwork ser
 	}
 	response, err = serviceNetwork.HttpRequestService(
 		ctx,
-		recipe.serviceId,
+		string(recipe.serviceId),
 		recipe.portId,
 		recipe.method,
 		recipe.contentType,

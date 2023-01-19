@@ -36,7 +36,7 @@ const (
 	folderPermission = 0755
 	filePermission   = 0644
 
-	fileServerServiceId services.ServiceID = "file-server"
+	fileServerServiceId services.ServiceName = "file-server"
 
 	testArtifactName = "test-artifact"
 )

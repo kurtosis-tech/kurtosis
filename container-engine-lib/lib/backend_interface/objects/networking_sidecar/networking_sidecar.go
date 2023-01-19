@@ -7,17 +7,17 @@ import (
 )
 
 type NetworkingSidecar struct {
-	serviceGuid service.ServiceGUID
+	serviceUuid service.ServiceUUID
 	enclaveUuid enclave.EnclaveUUID
 	status      container_status.ContainerStatus
 }
 
-func NewNetworkingSidecar(serviceGuid service.ServiceGUID, enclaveUuid enclave.EnclaveUUID, status container_status.ContainerStatus) *NetworkingSidecar {
-	return &NetworkingSidecar{serviceGuid: serviceGuid, enclaveUuid: enclaveUuid, status: status}
+func NewNetworkingSidecar(serviceUuid service.ServiceUUID, enclaveUuid enclave.EnclaveUUID, status container_status.ContainerStatus) *NetworkingSidecar {
+	return &NetworkingSidecar{serviceUuid: serviceUuid, enclaveUuid: enclaveUuid, status: status}
 }
 
-func (sidecar *NetworkingSidecar) GetServiceGUID() service.ServiceGUID {
-	return sidecar.serviceGuid
+func (sidecar *NetworkingSidecar) GetServiceUUID() service.ServiceUUID {
+	return sidecar.serviceUuid
 }
 
 func (sidecar *NetworkingSidecar) GetEnclaveUUID() enclave.EnclaveUUID {

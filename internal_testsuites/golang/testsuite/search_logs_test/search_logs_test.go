@@ -25,7 +25,7 @@ const (
 	shouldFollowLogs    = true
 	shouldNotFollowLogs = false
 
-	service1ServiceID services.ServiceID = exampleServiceIdPrefix + "service-1"
+	service1ServiceName services.ServiceName = exampleServiceIdPrefix + "service-1"
 
 	firstFilterText     = "The data have being loaded"
 	secondFilterText    = "Starting feature"
@@ -41,7 +41,7 @@ const (
 )
 
 var (
-	expectedNonExistenceServiceGuids = map[services.ServiceGUID]bool{}
+	expectedNonExistenceServiceGuids = map[services.ServiceUUID]bool{}
 
 	service1LogLines = []string{
 		logLine1,
@@ -50,8 +50,8 @@ var (
 		logLine4,
 	}
 
-	logLinesByService = map[services.ServiceID][]string{
-		service1ServiceID: service1LogLines,
+	logLinesByService = map[services.ServiceName][]string{
+		service1ServiceName: service1LogLines,
 	}
 
 	doesContainTextFilterForFirstRequest  = kurtosis_context.NewDoesContainTextLogLineFilter(firstFilterText)
@@ -119,18 +119,18 @@ func TestSearchLogs(t *testing.T) {
 	// ------------------------------------- TEST RUN -------------------------------------------------
 	enclaveUuid := enclaveCtx.GetEnclaveUuid()
 
-	userServiceGuids := map[services.ServiceGUID]bool{}
+	userServiceGuids := map[services.ServiceUUID]bool{}
 	for _, serviceCtx := range serviceList {
-		serviceGuid := serviceCtx.GetServiceGUID()
-		userServiceGuids[serviceGuid] = true
+		serviceUuid := serviceCtx.GetServiceUUID()
+		userServiceGuids[serviceUuid] = true
 	}
 
-	expectedLogLinesByService := map[services.ServiceGUID][]string{}
+	expectedLogLinesByService := map[services.ServiceUUID][]string{}
 
 	for requestIndex, filter := range filtersByRequest {
 
-		for serviceGuid := range userServiceGuids {
-			expectedLogLinesByService[serviceGuid] = expectedLogLinesByRequest[requestIndex]
+		for serviceUuid := range userServiceGuids {
+			expectedLogLinesByService[serviceUuid] = expectedLogLinesByRequest[requestIndex]
 		}
 
 		shouldFollowLogsOption := shouldFollowLogsValueByRequest[requestIndex]
@@ -148,8 +148,8 @@ func TestSearchLogs(t *testing.T) {
 		)
 
 		require.NoError(t, testEvaluationErr)
-		for serviceGuid := range userServiceGuids {
-			require.Equal(t, expectedLogLinesByRequest[requestIndex], receivedLogLinesByService[serviceGuid])
+		for serviceUuid := range userServiceGuids {
+			require.Equal(t, expectedLogLinesByRequest[requestIndex], receivedLogLinesByService[serviceUuid])
 		}
 		require.Equal(t, expectedNonExistenceServiceGuids, receivedNotFoundServiceGuids)
 	}

@@ -13,7 +13,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/enclave_id_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/service_guid_arg"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/service_identifier_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
@@ -37,9 +37,9 @@ const (
 	isEnclaveIdArgOptional  = false
 	isEnclaveIdArgGreedy    = false
 
-	serviceGuidArgKey        = "service-guid"
-	isServiceGuidArgOptional = false
-	isServiceGuidArgGreedy   = false
+	serviceIdentifierArgKey        = "service-identifier"
+	isServiceIdentifierArgOptional = false
+	isServiceIdentifierArgGreedy   = false
 
 	shouldFollowLogsFlagKey  = "follow"
 	matchTextFilterFlagKey   = "match"
@@ -107,18 +107,19 @@ var ServiceLogsCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 		},
 	},
 	Args: []*args.ArgConfig{
-		//TODO disabling enclaveID validation and serviceGUID validation for allowing consuming logs from removed or stopped enclaves
-		//TODO we should enable them when #310 is ready: https://github.com/kurtosis-tech/kurtosis/issues/310
-		// Note from 2022-01-10 - We can do that once we start storing names in the DB
+		//TODO disabling enclaveID validation and serviceUUID validation for allowing consuming logs from removed or stopped enclaves
+		//TODO we should enable them when #879 is ready: https://github.com/kurtosis-tech/kurtosis/issues/879
 		enclave_id_arg.NewEnclaveIdentifierArgWithValidationDisabled(
 			enclaveIdentifierArgKey,
 			isEnclaveIdArgOptional,
 			isEnclaveIdArgGreedy,
 		),
-		service_guid_arg.NewServiceGUIDArgWithValidationDisabled(
-			serviceGuidArgKey,
-			isServiceGuidArgOptional,
-			isServiceGuidArgGreedy,
+		// TODO use the `NewServiceIdentifierArg` instead when we start storing identifiers in DB
+		// TODO we should fix this after https://github.com/kurtosis-tech/kurtosis/issues/879
+		service_identifier_arg.NewServiceUUIDArgWithValidationDisabled(
+			serviceIdentifierArgKey,
+			isServiceIdentifierArgOptional,
+			isServiceIdentifierArgGreedy,
 		),
 	},
 	RunFunc: run,
@@ -136,11 +137,10 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the enclave identifier using arg key '%v'", enclaveIdentifierArgKey)
 	}
 
-	serviceGuidStr, err := args.GetNonGreedyArg(serviceGuidArgKey)
+	serviceIdentifier, err := args.GetNonGreedyArg(serviceIdentifierArgKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the service GUID using arg key '%v'", serviceGuidArgKey)
+		return stacktrace.Propagate(err, "An error occurred getting the service identifier using arg key '%v'", serviceIdentifierArgKey)
 	}
-	serviceGuid := services.ServiceGUID(serviceGuidStr)
 
 	shouldFollowLogs, err := flags.GetBool(shouldFollowLogsFlagKey)
 	if err != nil {
@@ -167,15 +167,10 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred connecting to the local Kurtosis engine")
 	}
 
-	enclaveInfo, err := kurtosisCtx.GetEnclave(ctx, enclaveIdentifier)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while validating that enclave with identifier '%v' exists", enclaveIdentifier)
-	}
+	enclaveUuid, serviceUuid := getEnclaveAndServiceUuidForIdentifiers(kurtosisCtx, ctx, enclaveIdentifier, serviceIdentifier)
 
-	enclaveUuid := enclave.EnclaveUUID(enclaveInfo.EnclaveUuid)
-
-	userServiceGuids := map[services.ServiceGUID]bool{
-		serviceGuid: true,
+	userServiceUuids := map[services.ServiceUUID]bool{
+		serviceUuid: true,
 	}
 
 	clusterConfig, err := kurtosis_config_getter.GetKurtosisClusterConfig()
@@ -191,17 +186,17 @@ func run(
 	if clusterType == resolved_config.KurtosisClusterType_Kubernetes {
 		//These Kurtosis primitives came from the backend (container-engine-lib) and this is the reason
 		//why are different from the same defined earlier (which came from the Kurtosis SDK)
-		kurtosisBackendServiceGUID := service.ServiceGUID(serviceGuidStr)
+		kurtosisBackendServiceUUID := service.ServiceUUID(serviceIdentifier)
 
 		userServiceFilters := &service.ServiceFilters{
-			IDs: nil,
-			GUIDs: map[service.ServiceGUID]bool{
-				kurtosisBackendServiceGUID: true,
+			Names: nil,
+			UUIDs: map[service.ServiceUUID]bool{
+				kurtosisBackendServiceUUID: true,
 			},
 			Statuses: nil,
 		}
 
-		successfulUserServiceLogs, erroredUserServiceGuids, err := kurtosisBackend.GetUserServiceLogs(ctx, enclaveUuid, userServiceFilters, shouldFollowLogs)
+		successfulUserServiceLogs, erroredUserServiceUuids, err := kurtosisBackend.GetUserServiceLogs(ctx, enclaveUuid, userServiceFilters, shouldFollowLogs)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred getting user service logs using filters '%+v'", userServiceFilters)
 		}
@@ -213,17 +208,17 @@ func run(
 			}
 		}()
 
-		if len(erroredUserServiceGuids) > 0 {
-			err, found := erroredUserServiceGuids[kurtosisBackendServiceGUID]
+		if len(erroredUserServiceUuids) > 0 {
+			err, found := erroredUserServiceUuids[kurtosisBackendServiceUUID]
 			if !found {
-				return stacktrace.NewError("Expected to find an error for user service with GUID '%v' on user service error map '%+v' but was not found; this should never happen, and is a bug in Kurtosis", kurtosisBackendServiceGUID, erroredUserServiceGuids)
+				return stacktrace.NewError("Expected to find an error for user service with UUID '%v' on user service error map '%+v' but was not found; this should never happen, and is a bug in Kurtosis", kurtosisBackendServiceUUID, erroredUserServiceUuids)
 			}
-			return stacktrace.Propagate(err, "An error occurred getting user service logs for user service with GUID '%v'", kurtosisBackendServiceGUID)
+			return stacktrace.Propagate(err, "An error occurred getting user service logs for user service with UUID '%v'", kurtosisBackendServiceUUID)
 		}
 
-		userServiceReadCloserLog, found := successfulUserServiceLogs[kurtosisBackendServiceGUID]
+		userServiceReadCloserLog, found := successfulUserServiceLogs[kurtosisBackendServiceUUID]
 		if !found {
-			return stacktrace.NewError("Expected to find logs for user service with GUID '%v' on user service logs map '%+v' but was not found; this should never happen, and is a bug in Kurtosis", kurtosisBackendServiceGUID, userServiceReadCloserLog)
+			return stacktrace.NewError("Expected to find logs for user service with UUID '%v' on user service logs map '%+v' but was not found; this should never happen, and is a bug in Kurtosis", kurtosisBackendServiceUUID, userServiceReadCloserLog)
 		}
 
 		if _, err := io.Copy(out.GetOut(), userServiceReadCloserLog); err != nil {
@@ -239,9 +234,9 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the log line filter using these filter flag values '%s=%s', '%s=%s', '%s=%v'", matchTextFilterFlagKey, matchTextStr, matchRegexFilterFlagKey, matchRegexStr, invertMatchFilterFlagKey, invertMatch)
 	}
 
-	serviceLogsStreamContentChan, cancelStreamUserServiceLogsFunc, err := kurtosisCtx.GetServiceLogs(ctx, enclaveIdentifier, userServiceGuids, shouldFollowLogs, logLineFilter)
+	serviceLogsStreamContentChan, cancelStreamUserServiceLogsFunc, err := kurtosisCtx.GetServiceLogs(ctx, enclaveIdentifier, userServiceUuids, shouldFollowLogs, logLineFilter)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting user service logs from user services with GUIDs '%+v' in enclave '%v' and with follow logs value '%v'", userServiceGuids, enclaveIdentifier, shouldFollowLogs)
+		return stacktrace.Propagate(err, "An error occurred getting user service logs from user services with UUIDs '%+v' in enclave '%v' and with follow logs value '%v'", userServiceUuids, enclaveIdentifier, shouldFollowLogs)
 	}
 	defer cancelStreamUserServiceLogsFunc()
 
@@ -256,17 +251,17 @@ func run(
 				return nil
 			}
 
-			notFoundServiceGuids := serviceLogsStreamContent.GetNotFoundServiceGuids()
+			notFoundServiceUuids := serviceLogsStreamContent.GetNotFoundServiceUuids()
 
-			for notFoundServiceGuid := range notFoundServiceGuids {
-				logrus.Warnf("The Kurtosis centralized logs system does not contains any logs for the requested service GUID '%v'. This means that a service with that GUID either doesn't exist, or hasn't sent any logs. You can wait for further responses, or cancel the stream with Ctrl + C.", notFoundServiceGuid)
+			for notFoundServiceUuid := range notFoundServiceUuids {
+				logrus.Warnf("The Kurtosis centralized logs system does not contains any logs for the requested service UUID '%v'. This means that a service with that UUID either doesn't exist, or hasn't sent any logs. You can wait for further responses, or cancel the stream with Ctrl + C.", notFoundServiceUuid)
 			}
 
-			userServiceLogsByGuid := serviceLogsStreamContent.GetServiceLogsByServiceGuids()
+			userServiceLogsByUuid := serviceLogsStreamContent.GetServiceLogsByServiceUuids()
 
-			userServiceLogs, found := userServiceLogsByGuid[serviceGuid]
+			userServiceLogs, found := userServiceLogsByUuid[serviceUuid]
 			if !found {
-				return stacktrace.NewError("Expected to find logs for user service with GUID '%v' on user service logs map '%+v' but was not found; this should never happen, and is a bug in Kurtosis", serviceGuid, userServiceLogsByGuid)
+				return stacktrace.NewError("Expected to find logs for user service with UUID '%v' on user service logs map '%+v' but was not found; this should never happen, and is a bug in Kurtosis", serviceUuid, userServiceLogsByUuid)
 			}
 
 			for _, serviceLog := range userServiceLogs {
@@ -314,4 +309,22 @@ func getLogLineFilterFromFilterFlagValues(matchTextStr string, matchRegexStr str
 		"Something goes wrong during the log line filter definition using these filter flag values '%s=%s', '%s=%s' and '%s=%v', then it was not able to define it, this should never happens; this is a bug in Kurtosis",
 		matchTextFilterFlagKey, matchTextStr, matchRegexFilterFlagKey, matchRegexStr, invertMatchFilterFlagKey, invertMatch,
 	)
+}
+
+// This function works makes a best effort to get the most accurate enclave uuid and service uuid for the passed valeus
+// defaults to assuming the passed value are uuids
+func getEnclaveAndServiceUuidForIdentifiers(kurtosisCtx *kurtosis_context.KurtosisContext, ctx context.Context, enclaveIdentifier string, serviceIdentifier string) (enclave.EnclaveUUID, services.ServiceUUID) {
+	enclaveUuid := enclave.EnclaveUUID(enclaveIdentifier)
+	serviceUuid := services.ServiceUUID(serviceIdentifier)
+
+	enclaveCtx, err := kurtosisCtx.GetEnclaveContext(ctx, enclaveIdentifier)
+	if err == nil {
+		serviceCtx, err := enclaveCtx.GetServiceContext(serviceIdentifier)
+		if err == nil {
+			return enclaveUuid, serviceCtx.GetServiceUUID()
+		}
+		return enclaveUuid, serviceUuid
+	}
+
+	return enclaveUuid, serviceUuid
 }

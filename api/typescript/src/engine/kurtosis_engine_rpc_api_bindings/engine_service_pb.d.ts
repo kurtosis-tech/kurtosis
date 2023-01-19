@@ -274,8 +274,8 @@ export class GetServiceLogsArgs extends jspb.Message {
   getEnclaveIdentifier(): string;
   setEnclaveIdentifier(value: string): GetServiceLogsArgs;
 
-  getServiceGuidSetMap(): jspb.Map<string, boolean>;
-  clearServiceGuidSetMap(): GetServiceLogsArgs;
+  getServiceUuidSetMap(): jspb.Map<string, boolean>;
+  clearServiceUuidSetMap(): GetServiceLogsArgs;
 
   getFollowLogs(): boolean;
   setFollowLogs(value: boolean): GetServiceLogsArgs;
@@ -296,18 +296,18 @@ export class GetServiceLogsArgs extends jspb.Message {
 export namespace GetServiceLogsArgs {
   export type AsObject = {
     enclaveIdentifier: string,
-    serviceGuidSetMap: Array<[string, boolean]>,
+    serviceUuidSetMap: Array<[string, boolean]>,
     followLogs: boolean,
     conjunctiveFiltersList: Array<LogLineFilter.AsObject>,
   }
 }
 
 export class GetServiceLogsResponse extends jspb.Message {
-  getServiceLogsByServiceGuidMap(): jspb.Map<string, LogLine>;
-  clearServiceLogsByServiceGuidMap(): GetServiceLogsResponse;
+  getServiceLogsByServiceUuidMap(): jspb.Map<string, LogLine>;
+  clearServiceLogsByServiceUuidMap(): GetServiceLogsResponse;
 
-  getNotFoundServiceGuidSetMap(): jspb.Map<string, boolean>;
-  clearNotFoundServiceGuidSetMap(): GetServiceLogsResponse;
+  getNotFoundServiceUuidSetMap(): jspb.Map<string, boolean>;
+  clearNotFoundServiceUuidSetMap(): GetServiceLogsResponse;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): GetServiceLogsResponse.AsObject;
@@ -319,8 +319,8 @@ export class GetServiceLogsResponse extends jspb.Message {
 
 export namespace GetServiceLogsResponse {
   export type AsObject = {
-    serviceLogsByServiceGuidMap: Array<[string, LogLine.AsObject]>,
-    notFoundServiceGuidSetMap: Array<[string, boolean]>,
+    serviceLogsByServiceUuidMap: Array<[string, LogLine.AsObject]>,
+    notFoundServiceUuidSetMap: Array<[string, boolean]>,
   }
 }
 

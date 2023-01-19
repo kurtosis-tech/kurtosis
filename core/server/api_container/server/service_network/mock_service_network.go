@@ -16,10 +16,10 @@ const (
 )
 
 type MockServiceNetwork struct {
-	ipAddresses map[service.ServiceID]net.IP
+	ipAddresses map[service.ServiceName]net.IP
 }
 
-func NewMockServiceNetwork(ipAddresses map[service.ServiceID]net.IP) *MockServiceNetwork {
+func NewMockServiceNetwork(ipAddresses map[service.ServiceName]net.IP) *MockServiceNetwork {
 	return &MockServiceNetwork{ipAddresses: ipAddresses}
 }
 
@@ -29,7 +29,7 @@ func NewEmptyMockServiceNetwork() *MockServiceNetwork {
 	}
 }
 
-func (m *MockServiceNetwork) Repartition(ctx context.Context, newPartitionServices map[service_network_types.PartitionID]map[service.ServiceID]bool, newPartitionConnections map[service_network_types.PartitionConnectionID]partition_topology.PartitionConnection, newDefaultConnection partition_topology.PartitionConnection) error {
+func (m *MockServiceNetwork) Repartition(ctx context.Context, newPartitionServices map[service_network_types.PartitionID]map[service.ServiceName]bool, newPartitionConnections map[service_network_types.PartitionConnectionID]partition_topology.PartitionConnection, newDefaultConnection partition_topology.PartitionConnection) error {
 	//TODO implement me
 	panic(unimplementedMsg)
 }
@@ -51,7 +51,7 @@ func (m *MockServiceNetwork) SetDefaultConnection(ctx context.Context, connectio
 
 func (m *MockServiceNetwork) StartService(
 	ctx context.Context,
-	serviceId service.ServiceID,
+	serviceId service.ServiceName,
 	serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig,
 ) (
 	*service.Service,
@@ -63,62 +63,62 @@ func (m *MockServiceNetwork) StartService(
 
 func (m *MockServiceNetwork) StartServices(
 	ctx context.Context,
-	serviceConfigs map[service.ServiceID]*kurtosis_core_rpc_api_bindings.ServiceConfig,
+	serviceConfigs map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig,
 ) (
-	map[service.ServiceID]*service.Service,
-	map[service.ServiceID]error,
+	map[service.ServiceName]*service.Service,
+	map[service.ServiceName]error,
 ) {
 	//TODO implement me
 	panic(unimplementedMsg)
 }
 
-func (m *MockServiceNetwork) UpdateService(ctx context.Context, updateServiceConfigs map[service.ServiceID]*kurtosis_core_rpc_api_bindings.UpdateServiceConfig) (map[service.ServiceID]bool, map[service.ServiceID]error, error) {
+func (m *MockServiceNetwork) UpdateService(ctx context.Context, updateServiceConfigs map[service.ServiceName]*kurtosis_core_rpc_api_bindings.UpdateServiceConfig) (map[service.ServiceName]bool, map[service.ServiceName]error, error) {
 	//TODO implement me
 	panic(unimplementedMsg)
 }
 
-func (m *MockServiceNetwork) RemoveService(ctx context.Context, serviceId service.ServiceID) (service.ServiceGUID, error) {
+func (m *MockServiceNetwork) RemoveService(ctx context.Context, serviceIdentifier string) (service.ServiceUUID, error) {
 	//TODO implement me
 	panic(unimplementedMsg)
 }
 
-func (m *MockServiceNetwork) PauseService(ctx context.Context, serviceId service.ServiceID) error {
+func (m *MockServiceNetwork) PauseService(ctx context.Context, serviceIdentifier string) error {
 	//TODO implement me
 	panic(unimplementedMsg)
 }
 
-func (m *MockServiceNetwork) UnpauseService(ctx context.Context, serviceId service.ServiceID) error {
+func (m *MockServiceNetwork) UnpauseService(ctx context.Context, serviceIdentifier string) error {
 	//TODO implement me
 	panic(unimplementedMsg)
 }
 
-func (m *MockServiceNetwork) ExecCommand(ctx context.Context, serviceId service.ServiceID, command []string) (int32, string, error) {
+func (m *MockServiceNetwork) ExecCommand(ctx context.Context, serviceIdentifier string, command []string) (int32, string, error) {
 	//TODO implement me
 	panic(unimplementedMsg)
 }
 
-func (m *MockServiceNetwork) HttpRequestService(ctx context.Context, serviceId service.ServiceID, portId string, method string, contentType string, endpoint string, body string) (*http.Response, error) {
+func (m *MockServiceNetwork) HttpRequestService(ctx context.Context, serviceIdentifier string, portId string, method string, contentType string, endpoint string, body string) (*http.Response, error) {
 	//TODO implement me
 	panic(unimplementedMsg)
 }
 
-func (m *MockServiceNetwork) GetService(ctx context.Context, serviceId service.ServiceID) (*service.Service, error) {
+func (m *MockServiceNetwork) GetService(ctx context.Context, serviceIdentifier string) (*service.Service, error) {
 	//TODO implement me
 	panic(unimplementedMsg)
 }
 
-func (m *MockServiceNetwork) CopyFilesFromService(ctx context.Context, serviceId service.ServiceID, _ string, _ string) (enclave_data_directory.FilesArtifactUUID, error) {
+func (m *MockServiceNetwork) CopyFilesFromService(ctx context.Context, serviceIdentifier string, srcPath string, artifactName string) (enclave_data_directory.FilesArtifactUUID, error) {
 	//TODO implement me
 	panic(unimplementedMsg)
 }
 
-func (m *MockServiceNetwork) GetServiceIDs() map[service.ServiceID]bool {
+func (m *MockServiceNetwork) GetServiceNames() map[service.ServiceName]bool {
 	//TODO implement me
 	panic(unimplementedMsg)
 }
 
-func (m *MockServiceNetwork) GetIPAddressForService(serviceID service.ServiceID) (net.IP, bool) {
-	ipAddress, found := m.ipAddresses[serviceID]
+func (m *MockServiceNetwork) GetIPAddressForService(serviceName service.ServiceName) (net.IP, bool) {
+	ipAddress, found := m.ipAddresses[serviceName]
 	return ipAddress, found
 }
 

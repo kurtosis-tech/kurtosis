@@ -35,19 +35,19 @@ type DockerEnclaveObjectAttributesProvider interface {
 		privateGrpcProxyPortSpec *port_spec.PortSpec,
 	) (DockerObjectAttributes, error)
 	ForUserServiceContainer(
-		serviceId service.ServiceID,
-		serviceGuid service.ServiceGUID,
+		serviceId service.ServiceName,
+		serviceUuid service.ServiceUUID,
 		privateIpAddr net.IP,
 		privatePorts map[string]*port_spec.PortSpec,
 	) (DockerObjectAttributes, error)
 	ForNetworkingSidecarContainer(
-		serviceGUIDSidecarAttachedTo service.ServiceGUID,
+		serviceGUIDSidecarAttachedTo service.ServiceUUID,
 	) (DockerObjectAttributes, error)
 	ForFilesArtifactsExpanderContainer(
-		serviceGUID service.ServiceGUID,
+		serviceGUID service.ServiceUUID,
 	) (DockerObjectAttributes, error)
 	ForSingleFilesArtifactExpansionVolume(
-		serviceGUID service.ServiceGUID,
+		serviceGUID service.ServiceUUID,
 	) (DockerObjectAttributes, error)
 }
 
@@ -198,15 +198,15 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForApiContainer(
 }
 
 func (provider *dockerEnclaveObjectAttributesProviderImpl) ForUserServiceContainer(
-	serviceId service.ServiceID,
-	serviceGuid service.ServiceGUID,
+	serviceId service.ServiceName,
+	serviceUuid service.ServiceUUID,
 	privateIpAddr net.IP,
 	privatePorts map[string]*port_spec.PortSpec,
 ) (DockerObjectAttributes, error) {
 	name, err := provider.getNameForEnclaveObject(
 		[]string{
 			userServiceContainerNameFragment,
-			string(serviceGuid),
+			string(serviceUuid),
 		},
 	)
 	if err != nil {
@@ -228,11 +228,11 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForUserServiceContain
 	}
 
 	serviceIdStr := string(serviceId)
-	serviceGuidStr := string(serviceGuid)
+	serviceGuidStr := string(serviceUuid)
 
 	labels, err := provider.getLabelsForEnclaveObjectWithIDAndGUID(serviceIdStr, serviceGuidStr)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting labels for enclave object with GUID '%v'", serviceGuid)
+		return nil, stacktrace.Propagate(err, "An error occurred getting labels for enclave object with GUID '%v'", serviceUuid)
 	}
 	labels[label_key_consts.ContainerTypeDockerLabelKey] = label_value_consts.UserServiceContainerTypeDockerLabelValue
 	labels[label_key_consts.PortSpecsDockerLabelKey] = serializedPortsSpec
@@ -251,7 +251,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForUserServiceContain
 	return objectAttributes, nil
 }
 
-func (provider *dockerEnclaveObjectAttributesProviderImpl) ForNetworkingSidecarContainer(serviceGUIDSidecarAttachedTo service.ServiceGUID) (DockerObjectAttributes, error) {
+func (provider *dockerEnclaveObjectAttributesProviderImpl) ForNetworkingSidecarContainer(serviceGUIDSidecarAttachedTo service.ServiceUUID) (DockerObjectAttributes, error) {
 	name, err := provider.getNameForEnclaveObject(
 		[]string{
 			networkingSidecarContainerNameFragment,
@@ -283,7 +283,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForNetworkingSidecarC
 
 // In Docker we get one volume per artifact being expanded
 func (provider *dockerEnclaveObjectAttributesProviderImpl) ForSingleFilesArtifactExpansionVolume(
-	serviceGUID service.ServiceGUID,
+	serviceGUID service.ServiceUUID,
 ) (
 	DockerObjectAttributes,
 	error,
@@ -327,7 +327,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForSingleFilesArtifac
 // We'll have at most one files artifact expansion container per service, because the single container will handle
 // all expansion
 func (provider *dockerEnclaveObjectAttributesProviderImpl) ForFilesArtifactsExpanderContainer(
-	serviceGUID service.ServiceGUID,
+	serviceGUID service.ServiceUUID,
 ) (
 	DockerObjectAttributes,
 	error,

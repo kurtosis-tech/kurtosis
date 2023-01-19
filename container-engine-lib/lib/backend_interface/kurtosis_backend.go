@@ -184,14 +184,14 @@ type KurtosisBackend interface {
 					- As of 2022-05-15, Kurtosis services can never be restarted once stopped.
 	*/
 
-	// RegisterUserServices registers the services allocating them an IP address and a GUID. The service is not started!
+	// RegisterUserServices registers the services allocating them an IP address and a UUID. The service is not started!
 	RegisterUserServices(
 		ctx context.Context,
 		enclaveUuid enclave.EnclaveUUID,
-		services map[service.ServiceID]bool,
+		services map[service.ServiceName]bool,
 	) (
-		map[service.ServiceID]*service.ServiceRegistration, // "set" of user service IDs that were successfully registered
-		map[service.ServiceID]error, // "set" of user service IDs that errored when being registered, with the error
+		map[service.ServiceName]*service.ServiceRegistration, // "set" of user service Names that were successfully registered
+		map[service.ServiceName]error, // "set" of user service Names that errored when being registered, with the error
 		error,
 	)
 
@@ -199,10 +199,10 @@ type KurtosisBackend interface {
 	UnregisterUserServices(
 		ctx context.Context,
 		enclaveUuid enclave.EnclaveUUID,
-		services map[service.ServiceGUID]bool,
+		services map[service.ServiceUUID]bool,
 	) (
-		map[service.ServiceGUID]bool, // "set" of user service GUIDs that were successfully unregistered
-		map[service.ServiceGUID]error, // "set" of user service GUIDs that errored when being unregistered, with the error
+		map[service.ServiceUUID]bool, // "set" of user service UUIDs that were successfully unregistered
+		map[service.ServiceUUID]error, // "set" of user service UUIDs that errored when being unregistered, with the error
 		error,
 	)
 
@@ -210,20 +210,20 @@ type KurtosisBackend interface {
 	StartRegisteredUserServices(
 		ctx context.Context,
 		enclaveUuid enclave.EnclaveUUID,
-		services map[service.ServiceGUID]*service.ServiceConfig,
+		services map[service.ServiceUUID]*service.ServiceConfig,
 	) (
-		map[service.ServiceGUID]*service.Service, // "set" of user GUIDs that were successfully started
-		map[service.ServiceGUID]error, // "set" of user service GUIDs that errored when attempting to start, with the error
+		map[service.ServiceUUID]*service.Service, // "set" of user UUIDs that were successfully started
+		map[service.ServiceUUID]error, // "set" of user service UUIDs that errored when attempting to start, with the error
 		error, // represents an error with the function itself, rather than the user services
 	)
 
-	// Gets user services using the given filters, returning a map of matched user services identified by their GUID
+	// Gets user services using the given filters, returning a map of matched user services identified by their UUID
 	GetUserServices(
 		ctx context.Context,
 		enclaveUuid enclave.EnclaveUUID,
 		filters *service.ServiceFilters,
 	) (
-		map[service.ServiceGUID]*service.Service,
+		map[service.ServiceUUID]*service.Service,
 		error,
 	)
 
@@ -235,8 +235,8 @@ type KurtosisBackend interface {
 		filters *service.ServiceFilters,
 		shouldFollowLogs bool,
 	) (
-		successfulUserServiceLogs map[service.ServiceGUID]io.ReadCloser,
-		erroredUserServiceGuids map[service.ServiceGUID]error,
+		successfulUserServiceLogs map[service.ServiceUUID]io.ReadCloser,
+		erroredUserServiceUuids map[service.ServiceUUID]error,
 		resultError error,
 	)
 
@@ -244,7 +244,7 @@ type KurtosisBackend interface {
 	PauseService(
 		ctx context.Context,
 		enclaveUuid enclave.EnclaveUUID,
-		serviceId service.ServiceGUID,
+		serviceUUID service.ServiceUUID,
 	) (
 		resultErr error,
 	)
@@ -253,7 +253,7 @@ type KurtosisBackend interface {
 	UnpauseService(
 		ctx context.Context,
 		enclaveUuid enclave.EnclaveUUID,
-		serviceId service.ServiceGUID,
+		serviceUUID service.ServiceUUID,
 	) (
 		resultErr error,
 	)
@@ -262,10 +262,10 @@ type KurtosisBackend interface {
 	RunUserServiceExecCommands(
 		ctx context.Context,
 		enclaveUuid enclave.EnclaveUUID,
-		userServiceCommands map[service.ServiceGUID][]string,
+		userServiceCommands map[service.ServiceUUID][]string,
 	) (
-		succesfulUserServiceExecResults map[service.ServiceGUID]*exec_result.ExecResult,
-		erroredUserServiceGuids map[service.ServiceGUID]error,
+		succesfulUserServiceExecResults map[service.ServiceUUID]*exec_result.ExecResult,
+		erroredUserServiceUuids map[service.ServiceUUID]error,
 		resultErr error,
 	)
 
@@ -273,7 +273,7 @@ type KurtosisBackend interface {
 	GetConnectionWithUserService(
 		ctx context.Context,
 		enclaveUuid enclave.EnclaveUUID,
-		serviceGuid service.ServiceGUID,
+		serviceUuid service.ServiceUUID,
 	) (
 		resultConn net.Conn,
 		resultErr error,
@@ -283,7 +283,7 @@ type KurtosisBackend interface {
 	CopyFilesFromUserService(
 		ctx context.Context,
 		enclaveUuid enclave.EnclaveUUID,
-		serviceGuid service.ServiceGUID,
+		serviceUuid service.ServiceUUID,
 		srcPathOnService string,
 		output io.Writer,
 	) error
@@ -295,8 +295,8 @@ type KurtosisBackend interface {
 		enclaveUuid enclave.EnclaveUUID,
 		filters *service.ServiceFilters,
 	) (
-		successfulUserServiceGuids map[service.ServiceGUID]bool, // "set" of user service GUIDs that were successfully stopped
-		erroredUserServiceGuids map[service.ServiceGUID]error, // "set" of user service GUIDs that errored when stopping, with the error
+		successfulUserServiceUuids map[service.ServiceUUID]bool, // "set" of user service UUIDs that were successfully stopped
+		erroredUserServiceUuids map[service.ServiceUUID]error, // "set" of user service UUIDs that errored when stopping, with the error
 		resultErr error, // Represents an error with the function itself, rather than the user services
 	)
 
@@ -306,8 +306,8 @@ type KurtosisBackend interface {
 		enclaveUuid enclave.EnclaveUUID,
 		filters *service.ServiceFilters,
 	) (
-		successfulUserServiceGuids map[service.ServiceGUID]bool, // "set" of user service GUIDs that were successfully destroyed
-		erroredUserServiceGuids map[service.ServiceGUID]error, // "set" of user service GUIDs that errored when destroying, with the error
+		successfulUserServiceUuids map[service.ServiceUUID]bool, // "set" of user service UUIDs that were successfully destroyed
+		erroredUserServiceUuids map[service.ServiceUUID]error, // "set" of user service UUIDs that errored when destroying, with the error
 		resultErr error, // Represents an error with the function itself, rather than the user services
 	)
 
@@ -316,7 +316,7 @@ type KurtosisBackend interface {
 	CreateNetworkingSidecar(
 		ctx context.Context,
 		enclaveUuid enclave.EnclaveUUID,
-		serviceGuid service.ServiceGUID,
+		serviceUuid service.ServiceUUID,
 	) (
 		*networking_sidecar.NetworkingSidecar,
 		error,
@@ -327,18 +327,18 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		filters *networking_sidecar.NetworkingSidecarFilters,
 	) (
-		map[service.ServiceGUID]*networking_sidecar.NetworkingSidecar,
+		map[service.ServiceUUID]*networking_sidecar.NetworkingSidecar,
 		error,
 	)
 
-	//Executes many shell commands inside multiple networking sidecar instances indenfified by User Service GUIDs
+	//Executes many shell commands inside multiple networking sidecar instances indenfified by User Service UUIDs
 	RunNetworkingSidecarExecCommands(
 		ctx context.Context,
 		enclaveUuid enclave.EnclaveUUID,
-		networkingSidecarsCommands map[service.ServiceGUID][]string,
+		networkingSidecarsCommands map[service.ServiceUUID][]string,
 	) (
-		successfulNetworkingSidecarExecResults map[service.ServiceGUID]*exec_result.ExecResult,
-		erroredUserServiceGuids map[service.ServiceGUID]error,
+		successfulNetworkingSidecarExecResults map[service.ServiceUUID]*exec_result.ExecResult,
+		erroredUserServiceUuids map[service.ServiceUUID]error,
 		resultErr error,
 	)
 
@@ -347,8 +347,8 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		filters *networking_sidecar.NetworkingSidecarFilters,
 	) (
-		successfulUserServiceGuids map[service.ServiceGUID]bool,
-		erroredUserServiceGuids map[service.ServiceGUID]error,
+		successfulUserServiceUuids map[service.ServiceUUID]bool,
+		erroredUserServiceUuids map[service.ServiceUUID]error,
 		resultErr error,
 	)
 
@@ -357,8 +357,8 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		filters *networking_sidecar.NetworkingSidecarFilters,
 	) (
-		successfulUserServiceGuids map[service.ServiceGUID]bool,
-		erroredUserServiceGuids map[service.ServiceGUID]error,
+		successfulUserServiceUuids map[service.ServiceUUID]bool,
+		erroredUserServiceUuids map[service.ServiceUUID]error,
 		resultErr error,
 	)
 

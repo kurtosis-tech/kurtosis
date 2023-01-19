@@ -2,7 +2,6 @@ package user_service_functions
 
 import (
 	"context"
-	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_collector_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
@@ -15,11 +14,11 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/free_ip_addr_tracker"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/operation_parallelizer"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"strings"
 	"sync"
-	"time"
 )
 
 const (
@@ -28,20 +27,20 @@ const (
 
 func RegisterUserServices(
 	enclaveUuid enclave.EnclaveUUID,
-	servicesToRegister map[service.ServiceID]bool,
-	serviceRegistrationsForEnclave map[service.ServiceGUID]*service.ServiceRegistration,
+	servicesToRegister map[service.ServiceName]bool,
+	serviceRegistrationsForEnclave map[service.ServiceUUID]*service.ServiceRegistration,
 	freeIpProvidersForEnclave *free_ip_addr_tracker.FreeIpAddrTracker,
 	serviceRegistrationMutex *sync.Mutex,
 ) (
-	map[service.ServiceID]*service.ServiceRegistration,
-	map[service.ServiceID]error,
+	map[service.ServiceName]*service.ServiceRegistration,
+	map[service.ServiceName]error,
 	error,
 ) {
 	serviceRegistrationMutex.Lock()
 	defer serviceRegistrationMutex.Unlock()
 
-	successfulServicesPool := map[service.ServiceID]*service.ServiceRegistration{}
-	failedServicesPool := map[service.ServiceID]error{}
+	successfulServicesPool := map[service.ServiceName]*service.ServiceRegistration{}
+	failedServicesPool := map[service.ServiceName]error{}
 
 	// Check whether any services have been provided at all
 	if len(servicesToRegister) == 0 {
@@ -50,7 +49,7 @@ func RegisterUserServices(
 
 	successfulRegistrations, failedRegistrations, err := registerUserServices(enclaveUuid, servicesToRegister, serviceRegistrationsForEnclave, freeIpProvidersForEnclave)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred registering services with IDs '%v'", servicesToRegister)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred registering services with Names '%v'", servicesToRegister)
 	}
 	return successfulRegistrations, failedRegistrations, nil
 }
@@ -58,36 +57,36 @@ func RegisterUserServices(
 // UnregisterUserServices unregisters all services currently registered for this enclave.
 // If the service is not registered for this enclave, it no-ops and the service is returned as "successfully unregistered"
 func UnregisterUserServices(
-	serviceGUIDsToUnregister map[service.ServiceGUID]bool,
-	enclaveServiceRegistrations map[service.ServiceGUID]*service.ServiceRegistration,
+	serviceUUIDsToUnregister map[service.ServiceUUID]bool,
+	enclaveServiceRegistrations map[service.ServiceUUID]*service.ServiceRegistration,
 	freeIpAddrProviderForEnclave *free_ip_addr_tracker.FreeIpAddrTracker,
 	serviceRegistrationMutex *sync.Mutex,
 ) (
-	map[service.ServiceGUID]bool,
-	map[service.ServiceGUID]error,
+	map[service.ServiceUUID]bool,
+	map[service.ServiceUUID]error,
 ) {
 	serviceRegistrationMutex.Lock()
 	defer serviceRegistrationMutex.Unlock()
-	servicesSuccessfullyUnregistered := map[service.ServiceGUID]bool{}
-	servicesFailed := map[service.ServiceGUID]error{}
+	servicesSuccessfullyUnregistered := map[service.ServiceUUID]bool{}
+	servicesFailed := map[service.ServiceUUID]error{}
 
-	if len(serviceGUIDsToUnregister) == 0 {
+	if len(serviceUUIDsToUnregister) == 0 {
 		return servicesSuccessfullyUnregistered, servicesFailed
 	}
 
-	for serviceGuid := range serviceGUIDsToUnregister {
-		serviceRegistration, isServiceRegistered := enclaveServiceRegistrations[serviceGuid]
+	for serviceUuid := range serviceUUIDsToUnregister {
+		serviceRegistration, isServiceRegistered := enclaveServiceRegistrations[serviceUuid]
 		if !isServiceRegistered {
-			servicesSuccessfullyUnregistered[serviceGuid] = true
+			servicesSuccessfullyUnregistered[serviceUuid] = true
 			continue
 		}
 
 		serviceIpAddr := serviceRegistration.GetPrivateIP()
 		if err := freeIpAddrProviderForEnclave.ReleaseIpAddr(serviceIpAddr); err != nil {
-			servicesFailed[serviceGuid] = err
+			servicesFailed[serviceUuid] = err
 		} else {
-			delete(enclaveServiceRegistrations, serviceGuid)
-			servicesSuccessfullyUnregistered[serviceGuid] = true
+			delete(enclaveServiceRegistrations, serviceUuid)
+			servicesSuccessfullyUnregistered[serviceUuid] = true
 		}
 	}
 	return servicesSuccessfullyUnregistered, servicesFailed
@@ -96,53 +95,53 @@ func UnregisterUserServices(
 func StartUserServices(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,
-	services map[service.ServiceGUID]*service.ServiceConfig,
-	serviceRegistrations map[service.ServiceGUID]*service.ServiceRegistration,
+	services map[service.ServiceUUID]*service.ServiceConfig,
+	serviceRegistrations map[service.ServiceUUID]*service.ServiceRegistration,
 	logsCollector *logs_collector.LogsCollector,
 	logsCollectorAvailabilityChecker logs_collector_functions.LogsCollectorAvailabilityChecker,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 	freeIpProviderForEnclave *free_ip_addr_tracker.FreeIpAddrTracker,
 	dockerManager *docker_manager.DockerManager,
 ) (
-	map[service.ServiceGUID]*service.Service,
-	map[service.ServiceGUID]error,
+	map[service.ServiceUUID]*service.Service,
+	map[service.ServiceUUID]error,
 	error,
 ) {
-	successfulServicesPool := map[service.ServiceGUID]*service.Service{}
-	failedServicesPool := map[service.ServiceGUID]error{}
+	successfulServicesPool := map[service.ServiceUUID]*service.Service{}
+	failedServicesPool := map[service.ServiceUUID]error{}
 
-	serviceConfigsToStart := map[service.ServiceGUID]*service.ServiceConfig{}
-	for serviceGuid, serviceConfig := range services {
-		if _, found := serviceRegistrations[serviceGuid]; !found {
-			failedServicesPool[serviceGuid] = stacktrace.NewError("Attempted to start a service '%s' that is not registered to this enclave yet.", serviceGuid)
+	serviceConfigsToStart := map[service.ServiceUUID]*service.ServiceConfig{}
+	for serviceUuid, serviceConfig := range services {
+		if _, found := serviceRegistrations[serviceUuid]; !found {
+			failedServicesPool[serviceUuid] = stacktrace.NewError("Attempted to start a service '%s' that is not registered to this enclave yet.", serviceUuid)
 			continue
 		}
 		if serviceConfig.GetPrivateIPAddrPlaceholder() == "" {
-			failedServicesPool[serviceGuid] = stacktrace.NewError("Service with GUID '%v' has an empty private IP Address placeholder. Expect this to be of length greater than zero.", serviceGuid)
+			failedServicesPool[serviceUuid] = stacktrace.NewError("Service with UUID '%v' has an empty private IP Address placeholder. Expect this to be of length greater than zero.", serviceUuid)
 			continue
 		}
-		serviceConfigsToStart[serviceGuid] = serviceConfig
+		serviceConfigsToStart[serviceUuid] = serviceConfig
 	}
 
 	// If no services had successful registrations, return immediately
 	// This is to prevent an empty filter being used to query for matching objects and resources, returning all services
 	// and causing logic to break (eg. check for duplicate service GUIDs)
 	// Making this check allows us to eject early and maintain a guarantee that objects and resources returned
-	// are 1:1 with serviceGUIDs
+	// are 1:1 with serviceUUIDs
 	if len(serviceConfigsToStart) == 0 {
 		return successfulServicesPool, failedServicesPool, nil
 	}
 
 	//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
 	// Sanity check for port bindings on all services
-	for serviceGuid, serviceConfig := range serviceConfigsToStart {
+	for serviceUuid, serviceConfig := range serviceConfigsToStart {
 		publicPorts := serviceConfig.GetPublicPorts()
 		if publicPorts != nil && len(publicPorts) > 0 {
 			privatePorts := serviceConfig.GetPrivatePorts()
 			err := checkPrivateAndPublicPortsAreOneToOne(privatePorts, publicPorts)
 			if err != nil {
-				failedServicesPool[serviceGuid] = stacktrace.Propagate(err, "Private and public ports for service with GUID '%v' are not one to one.", serviceGuid)
-				delete(serviceConfigsToStart, serviceGuid)
+				failedServicesPool[serviceUuid] = stacktrace.Propagate(err, "Private and public ports for service with UUID '%v' are not one to one.", serviceUuid)
+				delete(serviceConfigsToStart, serviceUuid)
 			}
 		}
 	}
@@ -196,12 +195,12 @@ func StartUserServices(
 	}
 
 	// Add operations to their respective pools
-	for serviceGuid, successfullyStartedService := range successfulStarts {
-		successfulServicesPool[serviceGuid] = successfullyStartedService
+	for serviceUuid, successfullyStartedService := range successfulStarts {
+		successfulServicesPool[serviceUuid] = successfullyStartedService
 	}
 
-	for serviceGuid, serviceErr := range failedStarts {
-		failedServicesPool[serviceGuid] = serviceErr
+	for serviceUuid, serviceErr := range failedStarts {
+		failedServicesPool[serviceUuid] = serviceErr
 	}
 
 	logrus.Debugf("Started services '%v' succesfully while '%v' failed", successfulServicesPool, failedServicesPool)
@@ -216,31 +215,31 @@ func StartUserServices(
 func runStartServiceOperationsInParallel(
 	ctx context.Context,
 	enclaveNetworkId string,
-	serviceConfigs map[service.ServiceGUID]*service.ServiceConfig,
-	serviceRegistrations map[service.ServiceGUID]*service.ServiceRegistration,
+	serviceConfigs map[service.ServiceUUID]*service.ServiceConfig,
+	serviceRegistrations map[service.ServiceUUID]*service.ServiceRegistration,
 	enclaveObjAttrsProvider object_attributes_provider.DockerEnclaveObjectAttributesProvider,
 	freeIpAddrProvider *free_ip_addr_tracker.FreeIpAddrTracker,
 	dockerManager *docker_manager.DockerManager,
 	logsCollectorAddress logs_collector.LogsCollectorAddress,
 	logsCollectorLabels logs_collector_functions.LogsCollectorLabels,
 ) (
-	map[service.ServiceGUID]*service.Service,
-	map[service.ServiceGUID]error,
+	map[service.ServiceUUID]*service.Service,
+	map[service.ServiceUUID]error,
 	error,
 ) {
-	successfulServices := map[service.ServiceGUID]*service.Service{}
-	failedServices := map[service.ServiceGUID]error{}
+	successfulServices := map[service.ServiceUUID]*service.Service{}
+	failedServices := map[service.ServiceUUID]error{}
 
 	startServiceOperations := map[operation_parallelizer.OperationID]operation_parallelizer.Operation{}
-	for serviceGuid, config := range serviceConfigs {
-		serviceRegistration, found := serviceRegistrations[serviceGuid]
+	for serviceUuid, config := range serviceConfigs {
+		serviceRegistration, found := serviceRegistrations[serviceUuid]
 		if !found {
-			failedServices[serviceGuid] = stacktrace.NewError("Failed to get service registration for service GUID '%v' while creating start service operation. This should never happen. This is a Kurtosis bug.", serviceGuid)
+			failedServices[serviceUuid] = stacktrace.NewError("Failed to get service registration for service UUID '%v' while creating start service operation. This should never happen. This is a Kurtosis bug.", serviceUuid)
 			continue
 		}
-		startServiceOperations[operation_parallelizer.OperationID(serviceGuid)] = createStartServiceOperation(
+		startServiceOperations[operation_parallelizer.OperationID(serviceUuid)] = createStartServiceOperation(
 			ctx,
-			serviceGuid,
+			serviceUuid,
 			config,
 			serviceRegistration,
 			enclaveNetworkId,
@@ -254,20 +253,20 @@ func runStartServiceOperationsInParallel(
 
 	successfulServicesObjs, failedOperations := operation_parallelizer.RunOperationsInParallel(startServiceOperations)
 
-	for guid, data := range successfulServicesObjs {
-		serviceGuid := service.ServiceGUID(guid)
+	for uuid, data := range successfulServicesObjs {
+		serviceUuid := service.ServiceUUID(uuid)
 		serviceObj, ok := data.(*service.Service)
 		if !ok {
 			return nil, nil, stacktrace.NewError(
-				"An error occurred downcasting data returned from the start user service operation for service with GUID: '%v'. "+
-					"This is a Kurtosis bug. Make sure the desired type is actually being returned in the corresponding Operation.", serviceGuid)
+				"An error occurred downcasting data returned from the start user service operation for service with UUID: '%v'. "+
+					"This is a Kurtosis bug. Make sure the desired type is actually being returned in the corresponding Operation.", serviceUuid)
 		}
-		successfulServices[serviceGuid] = serviceObj
+		successfulServices[serviceUuid] = serviceObj
 	}
 
-	for guid, err := range failedOperations {
-		serviceGuid := service.ServiceGUID(guid)
-		failedServices[serviceGuid] = err
+	for uuid, err := range failedOperations {
+		serviceUuid := service.ServiceUUID(uuid)
+		failedServices[serviceUuid] = err
 	}
 
 	return successfulServices, failedServices, nil
@@ -275,7 +274,7 @@ func runStartServiceOperationsInParallel(
 
 func createStartServiceOperation(
 	ctx context.Context,
-	serviceGUID service.ServiceGUID,
+	serviceUUID service.ServiceUUID,
 	serviceConfig *service.ServiceConfig,
 	serviceRegistration *service.ServiceRegistration,
 	enclaveNetworkId string,
@@ -285,7 +284,7 @@ func createStartServiceOperation(
 	logsCollectorAddress logs_collector.LogsCollectorAddress,
 	logsCollectorLabels logs_collector_functions.LogsCollectorLabels,
 ) operation_parallelizer.Operation {
-	id := serviceRegistration.GetID()
+	id := serviceRegistration.GetName()
 	privateIpAddr := serviceRegistration.GetPrivateIP()
 
 	return func() (interface{}, error) {
@@ -317,7 +316,7 @@ func createStartServiceOperation(
 		if filesArtifactsExpansion != nil {
 			candidateVolumeMounts, err := doFilesArtifactExpansionAndGetUserServiceVolumes(
 				ctx,
-				serviceGUID,
+				serviceUUID,
 				enclaveObjAttrsProvider,
 				freeIpAddrProvider,
 				enclaveNetworkId,
@@ -345,12 +344,12 @@ func createStartServiceOperation(
 
 		containerAttrs, err := enclaveObjAttrsProvider.ForUserServiceContainer(
 			id,
-			serviceGUID,
+			serviceUUID,
 			privateIpAddr,
 			privatePorts,
 		)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred while trying to get the user service container attributes for user service with GUID '%v'", serviceGUID)
+			return nil, stacktrace.Propagate(err, "An error occurred while trying to get the user service container attributes for user service with UUID '%v'", serviceUUID)
 		}
 		containerName := containerAttrs.GetName()
 
@@ -429,7 +428,7 @@ func createStartServiceOperation(
 
 		containerId, hostMachinePortBindings, err := dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred starting the user service container for user service with GUID '%v'", serviceGUID)
+			return nil, stacktrace.Propagate(err, "An error occurred starting the user service container for user service with UUID '%v'", serviceUUID)
 		}
 		shouldKillContainer := true
 		defer func() {
@@ -488,26 +487,26 @@ func checkPrivateAndPublicPortsAreOneToOne(privatePorts map[string]*port_spec.Po
 	return nil
 }
 
-// Registers a user service for each given serviceID, allocating each an IP and ServiceGUID
+// Registers a user service for each given serviceName, allocating each an IP and ServiceUUID
 func registerUserServices(
 	enclaveUuid enclave.EnclaveUUID,
-	serviceIDs map[service.ServiceID]bool,
-	serviceRegistrationsForEnclave map[service.ServiceGUID]*service.ServiceRegistration,
-	freeIpAddrProvider *free_ip_addr_tracker.FreeIpAddrTracker) (map[service.ServiceID]*service.ServiceRegistration, map[service.ServiceID]error, error) {
-	successfulServicesPool := map[service.ServiceID]*service.ServiceRegistration{}
-	failedServicesPool := map[service.ServiceID]error{}
+	serviceNames map[service.ServiceName]bool,
+	serviceRegistrationsForEnclave map[service.ServiceUUID]*service.ServiceRegistration,
+	freeIpAddrProvider *free_ip_addr_tracker.FreeIpAddrTracker) (map[service.ServiceName]*service.ServiceRegistration, map[service.ServiceName]error, error) {
+	successfulServicesPool := map[service.ServiceName]*service.ServiceRegistration{}
+	failedServicesPool := map[service.ServiceName]error{}
 
-	// If no service IDs passed in, return empty maps
-	if len(serviceIDs) == 0 {
+	// If no service Names passed in, return empty maps
+	if len(serviceNames) == 0 {
 		return successfulServicesPool, failedServicesPool, nil
 	}
 
-	successfulRegistrations := map[service.ServiceID]*service.ServiceRegistration{}
-	failedRegistrations := map[service.ServiceID]error{}
-	for serviceID := range serviceIDs {
+	successfulRegistrations := map[service.ServiceName]*service.ServiceRegistration{}
+	failedRegistrations := map[service.ServiceName]error{}
+	for serviceName := range serviceNames {
 		ipAddr, err := freeIpAddrProvider.GetFreeIpAddr()
 		if err != nil {
-			failedRegistrations[serviceID] = stacktrace.Propagate(err, "An error occurred getting a free IP address to give to service '%v' in enclave '%v'", serviceID, enclaveUuid)
+			failedRegistrations[serviceName] = stacktrace.Propagate(err, "An error occurred getting a free IP address to give to service '%v' in enclave '%v'", serviceName, enclaveUuid)
 			continue
 		}
 		shouldFreeIp := true
@@ -519,38 +518,40 @@ func registerUserServices(
 			}
 		}()
 
-		guid := service.ServiceGUID(fmt.Sprintf(
-			"%v-%v",
-			serviceID,
-			time.Now().Unix(),
-		))
+		uuidStr, err := uuid_generator.GenerateUUIDString()
+		if err != nil {
+			failedRegistrations[serviceName] = stacktrace.Propagate(err, "An error occurred generating a UUID to use for the service UUID")
+			continue
+		}
+
+		serviceUuid := service.ServiceUUID(uuidStr)
 		registration := service.NewServiceRegistration(
-			serviceID,
-			guid,
+			serviceName,
+			serviceUuid,
 			enclaveUuid,
 			ipAddr,
 		)
 
-		serviceRegistrationsForEnclave[guid] = registration
+		serviceRegistrationsForEnclave[serviceUuid] = registration
 		shouldRemoveRegistration := true
 		defer func() {
 			if shouldRemoveRegistration {
-				delete(serviceRegistrationsForEnclave, guid)
+				delete(serviceRegistrationsForEnclave, serviceUuid)
 			}
 		}()
 
 		shouldFreeIp = false
 		shouldRemoveRegistration = false
-		successfulRegistrations[serviceID] = registration
+		successfulRegistrations[serviceName] = registration
 	}
 
 	// Add operations to their respective pools
-	for serviceID, serviceRegistration := range successfulRegistrations {
-		successfulServicesPool[serviceID] = serviceRegistration
+	for serviceName, serviceRegistration := range successfulRegistrations {
+		successfulServicesPool[serviceName] = serviceRegistration
 	}
 
-	for serviceID, serviceErr := range failedRegistrations {
-		failedServicesPool[serviceID] = serviceErr
+	for serviceName, serviceErr := range failedRegistrations {
+		failedServicesPool[serviceName] = serviceErr
 	}
 
 	return successfulRegistrations, failedRegistrations, nil

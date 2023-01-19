@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/enclave_id_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/service_identifier_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
@@ -22,8 +23,10 @@ const (
 	isEnclaveIdArgOptional  = false
 	isEnclaveIdArgGreedy    = false
 
-	serviceIdArgKey        = "service-id"
-	absoluteFilepathArgKey = "filepath"
+	serviceIdentifierArgKey        = "service-identifier"
+	isServiceIdentifierArgOptional = false
+	isServiceIdentifierArgGreedy   = false
+	absoluteFilepathArgKey         = "filepath"
 
 	nameFlagKey = "name"
 	defaultName = ""
@@ -72,9 +75,11 @@ var FilesStoreServiceCmd = &engine_consuming_kurtosis_command.EngineConsumingKur
 			isEnclaveIdArgOptional,
 			isEnclaveIdArgGreedy,
 		),
-		{
-			Key: serviceIdArgKey,
-		},
+		service_identifier_arg.NewServiceIdentifierArg(
+			serviceIdentifierArgKey,
+			isServiceIdentifierArgOptional,
+			isServiceIdentifierArgGreedy,
+		),
 		{
 			Key: absoluteFilepathArgKey,
 		},
@@ -84,21 +89,20 @@ var FilesStoreServiceCmd = &engine_consuming_kurtosis_command.EngineConsumingKur
 
 func run(
 	ctx context.Context,
-	kurtosisBackend backend_interface.KurtosisBackend,
-	engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
+	_ backend_interface.KurtosisBackend,
+	_ kurtosis_engine_rpc_api_bindings.EngineServiceClient,
 	flags *flags.ParsedFlags,
 	args *args.ParsedArgs,
 ) error {
 	enclaveIdentifier, err := args.GetNonGreedyArg(enclaveIdentifierArgKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the enclave ID using key '%v'", enclaveIdentifierArgKey)
+		return stacktrace.Propagate(err, "An error occurred getting the enclave identifier using key '%v'", enclaveIdentifierArgKey)
 	}
 
-	serviceIdStr, err := args.GetNonGreedyArg(serviceIdArgKey)
+	serviceIdentifier, err := args.GetNonGreedyArg(serviceIdentifierArgKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the service ID value using key '%v'", serviceIdArgKey)
+		return stacktrace.Propagate(err, "An error occurred getting the service identifier value using key '%v'", serviceIdentifierArgKey)
 	}
-	serviceId := services.ServiceID(serviceIdStr)
 
 	filepath, err := args.GetNonGreedyArg(absoluteFilepathArgKey)
 	if err != nil {
@@ -118,13 +122,19 @@ func run(
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the enclave context for enclave '%v'", enclaveIdentifier)
 	}
-	runResult, err := storeServiceFileStarlarkCommand(ctx, enclaveCtx, serviceId, filepath, enclaveIdentifier, artifactName)
+	serviceCtx, err := enclaveCtx.GetServiceContext(serviceIdentifier)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the service context for service with identifier '%v'", serviceIdentifier)
+	}
+	serviceName := serviceCtx.GetServiceName()
+
+	runResult, err := storeServiceFileStarlarkCommand(ctx, enclaveCtx, serviceName, filepath, enclaveIdentifier, artifactName)
 	if err != nil {
 		return stacktrace.Propagate(
 			err,
-			"An error occurred copying content from filepath '%v' in user service with ID '%v' to enclave '%v'",
+			"An error occurred copying content from filepath '%v' in user service with name '%v' to enclave '%v'",
 			filepath,
-			serviceId,
+			serviceName,
 			enclaveIdentifier,
 		)
 	}
@@ -132,7 +142,7 @@ func run(
 	return nil
 }
 
-func storeServiceFileStarlarkCommand(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, serviceId services.ServiceID, filePath string, enclaveIdentifier string, artifactName string) (*enclaves.StarlarkRunResult, error) {
+func storeServiceFileStarlarkCommand(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, serviceId services.ServiceName, filePath string, enclaveIdentifier string, artifactName string) (*enclaves.StarlarkRunResult, error) {
 	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkTemplate, fmt.Sprintf(`{"service_id": "%s", "src": "%s", "name": "%s"}`, serviceId, filePath, artifactName), false)
 	if err != nil {
 		return nil, stacktrace.Propagate(

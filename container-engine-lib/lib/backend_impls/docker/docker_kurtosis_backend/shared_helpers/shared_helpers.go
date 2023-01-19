@@ -300,11 +300,11 @@ func GetMatchingUserServiceObjsAndDockerResourcesNoMutex(
 	filters *service.ServiceFilters,
 	dockerManager *docker_manager.DockerManager,
 ) (
-	map[service.ServiceGUID]*service.Service,
-	map[service.ServiceGUID]*UserServiceDockerResources,
+	map[service.ServiceUUID]*service.Service,
+	map[service.ServiceUUID]*UserServiceDockerResources,
 	error,
 ) {
-	matchingDockerResources, err := getMatchingUserServiceDockerResources(ctx, enclaveId, filters.GUIDs, dockerManager)
+	matchingDockerResources, err := getMatchingUserServiceDockerResources(ctx, enclaveId, filters.UUIDs, dockerManager)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting matching user service resources")
 	}
@@ -314,17 +314,17 @@ func GetMatchingUserServiceObjsAndDockerResourcesNoMutex(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting Kurtosis service objects from user service Docker resources")
 	}
 
-	resultServiceObjs := map[service.ServiceGUID]*service.Service{}
-	resultDockerResources := map[service.ServiceGUID]*UserServiceDockerResources{}
-	for guid, serviceObj := range matchingServiceObjs {
-		if filters.GUIDs != nil && len(filters.GUIDs) > 0 {
-			if _, found := filters.GUIDs[serviceObj.GetRegistration().GetGUID()]; !found {
+	resultServiceObjs := map[service.ServiceUUID]*service.Service{}
+	resultDockerResources := map[service.ServiceUUID]*UserServiceDockerResources{}
+	for uuid, serviceObj := range matchingServiceObjs {
+		if filters.UUIDs != nil && len(filters.UUIDs) > 0 {
+			if _, found := filters.UUIDs[serviceObj.GetRegistration().GetUUID()]; !found {
 				continue
 			}
 		}
 
-		if filters.IDs != nil && len(filters.IDs) > 0 {
-			if _, found := filters.IDs[serviceObj.GetRegistration().GetID()]; !found {
+		if filters.Names != nil && len(filters.Names) > 0 {
+			if _, found := filters.Names[serviceObj.GetRegistration().GetName()]; !found {
 				continue
 			}
 		}
@@ -335,19 +335,19 @@ func GetMatchingUserServiceObjsAndDockerResourcesNoMutex(
 			}
 		}
 
-		dockerResources, found := matchingDockerResources[guid]
+		dockerResources, found := matchingDockerResources[uuid]
 		if !found {
-			// This should never happen; the Services map and the Docker resources maps should have the same GUIDs
+			// This should never happen; the Services map and the Docker resources maps should have the same UUIDs
 			return nil, nil, stacktrace.Propagate(
 				err,
-				"Needed to return Docker resources for service with GUID '%v', but none was "+
+				"Needed to return Docker resources for service with UUID '%v', but none was "+
 					"found; this is a bug in Kurtosis",
-				guid,
+				uuid,
 			)
 		}
 
-		resultServiceObjs[guid] = serviceObj
-		resultDockerResources[guid] = dockerResources
+		resultServiceObjs[uuid] = serviceObj
+		resultDockerResources[uuid] = dockerResources
 	}
 	return resultServiceObjs, resultDockerResources, nil
 }
@@ -356,7 +356,7 @@ func GetMatchingUserServiceObjsAndDockerResourcesNoMutex(
 func GetSingleUserServiceObjAndResourcesNoMutex(
 	ctx context.Context,
 	enclaveId enclave.EnclaveUUID,
-	userServiceGuid service.ServiceGUID,
+	userServiceUuid service.ServiceUUID,
 	dockerManager *docker_manager.DockerManager,
 ) (
 	*service.Service,
@@ -364,9 +364,9 @@ func GetSingleUserServiceObjAndResourcesNoMutex(
 	error,
 ) {
 	filters := &service.ServiceFilters{
-		IDs: nil,
-		GUIDs: map[service.ServiceGUID]bool{
-			userServiceGuid: true,
+		Names: nil,
+		UUIDs: map[service.ServiceUUID]bool{
+			userServiceUuid: true,
 		},
 		Statuses: nil,
 	}
@@ -376,10 +376,10 @@ func GetSingleUserServiceObjAndResourcesNoMutex(
 	}
 	numOfUserServices := len(userServices)
 	if numOfUserServices == 0 {
-		return nil, nil, stacktrace.NewError("No user service with GUID '%v' in enclave with ID '%v' was found", userServiceGuid, enclaveId)
+		return nil, nil, stacktrace.NewError("No user service with UUID '%v' in enclave with ID '%v' was found", userServiceUuid, enclaveId)
 	}
 	if numOfUserServices > 1 {
-		return nil, nil, stacktrace.NewError("Expected to find only one user service with GUID '%v' in enclave with ID '%v', but '%v' was found", userServiceGuid, enclaveId, numOfUserServices)
+		return nil, nil, stacktrace.NewError("Expected to find only one user service with UUID '%v' in enclave with ID '%v', but '%v' was found", userServiceUuid, enclaveId, numOfUserServices)
 	}
 
 	var resultService *service.Service
@@ -479,10 +479,10 @@ func GetEngineAndLogsComponentsNetwork(
 func getMatchingUserServiceDockerResources(
 	ctx context.Context,
 	enclaveId enclave.EnclaveUUID,
-	maybeGuidsToMatch map[service.ServiceGUID]bool,
+	maybeUuidsToMatch map[service.ServiceUUID]bool,
 	dockerManager *docker_manager.DockerManager,
-) (map[service.ServiceGUID]*UserServiceDockerResources, error) {
-	result := map[service.ServiceGUID]*UserServiceDockerResources{}
+) (map[service.ServiceUUID]*UserServiceDockerResources, error) {
+	result := map[service.ServiceUUID]*UserServiceDockerResources{}
 
 	// Grab services, INDEPENDENT OF volumes
 	userServiceContainerSearchLabels := map[string]string{
@@ -496,19 +496,19 @@ func getMatchingUserServiceDockerResources(
 	}
 
 	for _, container := range userServiceContainers {
-		serviceGuidStr, found := container.GetLabels()[label_key_consts.GUIDDockerLabelKey.GetString()]
+		serviceUuidStr, found := container.GetLabels()[label_key_consts.GUIDDockerLabelKey.GetString()]
 		if !found {
 			return nil, stacktrace.NewError("Found user service container '%v' that didn't have expected GUID label '%v'", container.GetId(), label_key_consts.GUIDDockerLabelKey.GetString())
 		}
-		serviceGuid := service.ServiceGUID(serviceGuidStr)
+		serviceUuid := service.ServiceUUID(serviceUuidStr)
 
-		if maybeGuidsToMatch != nil && len(maybeGuidsToMatch) > 0 {
-			if _, found := maybeGuidsToMatch[serviceGuid]; !found {
+		if maybeUuidsToMatch != nil && len(maybeUuidsToMatch) > 0 {
+			if _, found := maybeUuidsToMatch[serviceUuid]; !found {
 				continue
 			}
 		}
 
-		resourceObj, found := result[serviceGuid]
+		resourceObj, found := result[serviceUuid]
 		if !found {
 			resourceObj = &UserServiceDockerResources{
 				ServiceContainer:    nil,
@@ -516,7 +516,7 @@ func getMatchingUserServiceDockerResources(
 			}
 		}
 		resourceObj.ServiceContainer = container
-		result[serviceGuid] = resourceObj
+		result[serviceUuid] = resourceObj
 	}
 
 	// Grab volumes, INDEPENDENT OF whether there are any containers
@@ -531,19 +531,19 @@ func getMatchingUserServiceDockerResources(
 	}
 
 	for _, volume := range matchingFilesArtifactExpansionVolumes {
-		serviceGuidStr, found := volume.Labels[label_key_consts.UserServiceGUIDDockerLabelKey.GetString()]
+		serviceUuidStr, found := volume.Labels[label_key_consts.UserServiceGUIDDockerLabelKey.GetString()]
 		if !found {
 			return nil, stacktrace.NewError("Found files artifact expansion volume '%v' that didn't have expected service GUID label '%v'", volume.Name, label_key_consts.UserServiceGUIDDockerLabelKey.GetString())
 		}
-		serviceGuid := service.ServiceGUID(serviceGuidStr)
+		serviceUuid := service.ServiceUUID(serviceUuidStr)
 
-		if maybeGuidsToMatch != nil && len(maybeGuidsToMatch) > 0 {
-			if _, found := maybeGuidsToMatch[serviceGuid]; !found {
+		if maybeUuidsToMatch != nil && len(maybeUuidsToMatch) > 0 {
+			if _, found := maybeUuidsToMatch[serviceUuid]; !found {
 				continue
 			}
 		}
 
-		resourceObj, found := result[serviceGuid]
+		resourceObj, found := result[serviceUuid]
 		if !found {
 			resourceObj = &UserServiceDockerResources{
 				ServiceContainer:    nil,
@@ -551,7 +551,7 @@ func getMatchingUserServiceDockerResources(
 			}
 		}
 		resourceObj.ExpanderVolumeNames = append(resourceObj.ExpanderVolumeNames, volume.Name)
-		result[serviceGuid] = resourceObj
+		result[serviceUuid] = resourceObj
 	}
 
 	return result, nil
@@ -559,12 +559,12 @@ func getMatchingUserServiceDockerResources(
 
 func getUserServiceObjsFromDockerResources(
 	enclaveId enclave.EnclaveUUID,
-	allDockerResources map[service.ServiceGUID]*UserServiceDockerResources,
-) (map[service.ServiceGUID]*service.Service, error) {
-	result := map[service.ServiceGUID]*service.Service{}
+	allDockerResources map[service.ServiceUUID]*UserServiceDockerResources,
+) (map[service.ServiceUUID]*service.Service, error) {
+	result := map[service.ServiceUUID]*service.Service{}
 
 	// If we have an entry in the map, it means there's at least one Docker resource
-	for serviceGuid, resources := range allDockerResources {
+	for serviceUuid, resources := range allDockerResources {
 		container := resources.ServiceContainer
 
 		// If we don't have a container, we don't have the service ID label which means we can't actually construct a Service object
@@ -573,7 +573,7 @@ func getUserServiceObjsFromDockerResources(
 			return nil, stacktrace.NewError(
 				"Service '%v' has Docker resources but not a container; this indicates that there the service's "+
 					"container was deleted but errors occurred deleting the rest of the resources",
-				serviceGuid,
+				serviceUuid,
 			)
 		}
 		containerName := container.GetName()
@@ -583,7 +583,7 @@ func getUserServiceObjsFromDockerResources(
 		if !found {
 			return nil, stacktrace.NewError("Expected to find label '%v' on container '%v' but label was missing", label_key_consts.IDDockerLabelKey.GetString(), containerName)
 		}
-		serviceId := service.ServiceID(serviceIdStr)
+		serviceId := service.ServiceName(serviceIdStr)
 
 		privateIp, privatePorts, maybePublicIp, maybePublicPorts, err := GetIpAndPortInfoFromContainer(
 			containerName,
@@ -596,7 +596,7 @@ func getUserServiceObjsFromDockerResources(
 
 		registration := service.NewServiceRegistration(
 			serviceId,
-			serviceGuid,
+			serviceUuid,
 			enclaveId,
 			privateIp,
 		)
@@ -611,7 +611,7 @@ func getUserServiceObjsFromDockerResources(
 			serviceStatus = container_status.ContainerStatus_Running
 		}
 
-		result[serviceGuid] = service.NewService(
+		result[serviceUuid] = service.NewService(
 			registration,
 			serviceStatus,
 			privatePorts,

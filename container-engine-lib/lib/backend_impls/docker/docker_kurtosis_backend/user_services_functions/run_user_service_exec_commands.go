@@ -16,21 +16,21 @@ import (
 func RunUserServiceExecCommands(
 	ctx context.Context,
 	enclaveId enclave.EnclaveUUID,
-	userServiceCommands map[service.ServiceGUID][]string,
+	userServiceCommands map[service.ServiceUUID][]string,
 	dockerManager *docker_manager.DockerManager,
 ) (
-	map[service.ServiceGUID]*exec_result.ExecResult,
-	map[service.ServiceGUID]error,
+	map[service.ServiceUUID]*exec_result.ExecResult,
+	map[service.ServiceUUID]error,
 	error,
 ) {
-	userServiceGuids := map[service.ServiceGUID]bool{}
+	userServiceGuids := map[service.ServiceUUID]bool{}
 	for userServiceGuid := range userServiceCommands {
 		userServiceGuids[userServiceGuid] = true
 	}
 
 	filters := &service.ServiceFilters{
-		IDs:      nil,
-		GUIDs:    userServiceGuids,
+		Names:    nil,
+		UUIDs:    userServiceGuids,
 		Statuses: nil,
 	}
 	_, allDockerResources, err := shared_helpers.GetMatchingUserServiceObjsAndDockerResourcesNoMutex(ctx, enclaveId, filters, dockerManager)
@@ -39,8 +39,8 @@ func RunUserServiceExecCommands(
 	}
 
 	// TODO Parallelize to increase perf
-	succesfulUserServiceExecResults := map[service.ServiceGUID]*exec_result.ExecResult{}
-	erroredUserServiceGuids := map[service.ServiceGUID]error{}
+	succesfulUserServiceExecResults := map[service.ServiceUUID]*exec_result.ExecResult{}
+	erroredUserServiceGuids := map[service.ServiceUUID]error{}
 	for guid, commandArgs := range userServiceCommands {
 		dockerResources, found := allDockerResources[guid]
 		if !found {

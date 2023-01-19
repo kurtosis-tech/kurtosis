@@ -14,14 +14,14 @@ import (
 func CopyFilesFromUserService(
 	ctx context.Context,
 	enclaveId enclave.EnclaveUUID,
-	serviceGuid service.ServiceGUID,
+	serviceUuid service.ServiceUUID,
 	srcPathOnContainer string,
 	output io.Writer,
 	dockerManager *docker_manager.DockerManager,
 ) error {
-	_, serviceDockerResources, err := shared_helpers.GetSingleUserServiceObjAndResourcesNoMutex(ctx, enclaveId, serviceGuid, dockerManager)
+	_, serviceDockerResources, err := shared_helpers.GetSingleUserServiceObjAndResourcesNoMutex(ctx, enclaveId, serviceUuid, dockerManager)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting user service with GUID '%v' in enclave with ID '%v'", serviceGuid, enclaveId)
+		return stacktrace.Propagate(err, "An error occurred getting user service with UUID '%v' in enclave with ID '%v'", serviceUuid, enclaveId)
 	}
 	container := serviceDockerResources.ServiceContainer
 
@@ -32,7 +32,7 @@ func CopyFilesFromUserService(
 			"An error occurred copying content from sourcepath '%v' in container '%v' for user service '%v' in enclave '%v'",
 			srcPathOnContainer,
 			container.GetName(),
-			serviceGuid,
+			serviceUuid,
 			enclaveId,
 		)
 	}
@@ -43,7 +43,7 @@ func CopyFilesFromUserService(
 			err,
 			"An error occurred copying the bytes of TAR'd up files at '%v' on service '%v' to the output",
 			srcPathOnContainer,
-			serviceGuid,
+			serviceUuid,
 		)
 	}
 

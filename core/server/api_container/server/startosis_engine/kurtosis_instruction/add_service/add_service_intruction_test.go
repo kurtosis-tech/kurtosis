@@ -57,7 +57,7 @@ func TestAddServiceInstruction_GetCanonicalizedInstruction_WithStruct(t *testing
 }
 
 func TestAddServiceInstruction_EntryPointArgsAreReplaced(t *testing.T) {
-	ipAddresses := map[service.ServiceID]net.IP{
+	ipAddresses := map[service.ServiceName]net.IP{
 		"foo_service": net.ParseIP("172.17.3.13"),
 	}
 	serviceNetwork := service_network.NewMockServiceNetwork(ipAddresses)
