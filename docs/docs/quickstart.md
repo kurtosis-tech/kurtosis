@@ -145,7 +145,7 @@ Now inspect your enclave again:
 kurtosis enclave inspect "$ENCLAVE_ID"
 ```
 
-You should see a new service with the service ID `my-nginx` in your enclave:
+You should see a new service with the service name `my-nginx` in your enclave:
 
 ```
 Enclave ID:                           wandering-frog
@@ -168,12 +168,12 @@ Now paste the following but don't press ENTER yet:
 kurtosis service shell "$ENCLAVE_ID"
 ```
 
-If you have tab completion installed, press TAB. The service GUID of the NginX service will be completed (which in this case was `my-nginx-1669833787`, but yours will be different).
+If you have tab completion installed, press TAB. The service UUID & name of the NginX service will be completed (which in this case was `my-nginx-1669833787`, but yours will be different).
 
 If you don't have tab completion installed, paste in the service GUID of the NginX service from the `enclave inspect` output above (which was `my-nginx-1669833787`, but yours will be different).
 
 :::tip
-Like enclave IDs, [all service GUID arguments][cli-reference] can be tab-completed.
+Like enclave IDs, [all service UUID arguments][cli-reference] can be tab-completed.
 :::
 
 Press ENTER, and you'll be logged in to a shell on the container:
@@ -193,7 +193,7 @@ Now enter the following but don't press ENTER:
 kurtosis service logs -f "$ENCLAVE_ID"
 ```
 
-Once again, you can use tab completion to fill the service GUID if you have it enabled. If not, you'll need to copy-paste the service GUID as the last argument.
+Once again, you can use tab completion to fill the service UUID if you have it enabled. If not, you'll need to copy-paste the service UUID as the last argument.
 
 Press ENTER, and you'll see a live-updating stream of the service's logs:
 

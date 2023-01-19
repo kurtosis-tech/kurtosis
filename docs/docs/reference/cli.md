@@ -143,7 +143,7 @@ Note that this will only delete stopped enclaves. To delete a running enclave, p
 To add a service to an enclave, run:
 
 ```bash
-kurtosis service add $THE_ENCLAVE_IDENTIFIER $THE_SERVICE_ID $CONTAINER_IMAGE
+kurtosis service add $THE_ENCLAVE_IDENTIFIER $THE_SERVICE_IDENTIFIER $CONTAINER_IMAGE
 ```
 
 Much like `docker run`, this command has multiple options available to customize the service that's started:
@@ -162,10 +162,10 @@ kurtosis service add --entrypoint sh my-enclave test-service alpine -- -c "echo 
 To print the logs for a service, run:
 
 ```bash
-kurtosis service logs $THE_ENCLAVE_IDENTIFIER $THE_SERVICE_ID
+kurtosis service logs $THE_ENCLAVE_IDENTIFIER $THE_SERVICE_IDENTIFIER
 ```
 
-The service ID is printed upon inspecting an enclave.
+The service identifier(name or uuid) is printed upon inspecting an enclave.
 
 The following optional arguments can be used:
 1. `-f`, `-follow` can be added to continue following the logs, similar to `tail -f`.
@@ -180,14 +180,14 @@ Important: `--match` and `--regex-match` flags cannot be used at the same time. 
 You might need to get access to a shell on a given service container. To do so, run:
 
 ```bash
-kurtosis service shell $THE_ENCLAVE_ID $THE_SERVICE_ID
+kurtosis service shell $THE_ENCLAVE_ID $THE_SERVICE_IDENTIFIER
 ```
 
 ### Delete a service from an enclave
 Services can be deleted from an enclave like so:
 
 ```bash
-kurtosis service rm $THE_ENCLAVE_ID $THE_SERVICE_ID
+kurtosis service rm $THE_ENCLAVE_ID $THE_SERVICE_IDENTIFIER
 ```
 
 **NOTE:** To avoid destroying debugging information, Kurtosis will leave removed services inside the Docker engine. They will be stopped and won't show up in the list of active services in the enclave, but you'll still be able to access them (e.g. using `service logs`) by their service GUID (available via `enclave inspect`).

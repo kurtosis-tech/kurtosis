@@ -76,12 +76,12 @@ Destroys enclaves in the Kurtosis engine.
 **Returns**
 * `RemovedEnclaveUuids`: A set of the removed enclave Uuids.
 
-### `getServiceLogs(String enclaveIdentifier, Set<ServiceGUID> serviceGuids, Boolean shouldFollowLogs, LogLineFilter logLineFilter) -> ServiceLogsStreamContent serviceLogsStreamContent`
-Get and start a service container logs stream (showed in ascending order, with the oldest line first) from services identified by their GUID.
+### `getServiceLogs(String enclaveIdentifier, Set<ServiceUUID> serviceUuids, Boolean shouldFollowLogs, LogLineFilter logLineFilter) -> ServiceLogsStreamContent serviceLogsStreamContent`
+Get and start a service container logs stream (showed in ascending order, with the oldest line first) from services identified by their UUID.
 
 **Args**
 * `enclaveIdentifier`: Identifier of the services' enclave.
-* `serviceGuids`: A set of service GUIDs identifying the services from which logs should be retrieved.
+* `serviceUuids`: A set of service UUIDs identifying the services from which logs should be retrieved.
 * `shouldFollowLogs`: If it's true, the stream will constantly send the new log lines. if it's false, the stream will be closed after the last created log line is sent.
 * `logLineFilter`: The [filter][loglinefilter] that will be used for filtering the returned log lines
 
@@ -90,19 +90,19 @@ Get and start a service container logs stream (showed in ascending order, with t
 
 ServiceLogsStreamContent
 ------------------------
-This class is the representation of the content sent during a service logs stream communication. This wrapper includes the service's logs content and the not found service GUIDs.
+This class is the representation of the content sent during a service logs stream communication. This wrapper includes the service's logs content and the not found service UUIDs.
 
-### `getServiceLogsByServiceGuids() ->  Map<ServiceGUID, Array<ServiceLog>> serviceLogsByServiceGuids`
-Returns the user service logs content grouped by the service's GUID.
-
-**Returns**
-* `serviceLogsByServiceGuids`: A map containing a list of the [ServiceLog][servicelog] objects grouped by service GUID.
-
-### `getNotFoundServiceGuids() -> Set<ServiceGUID> notFoundServiceGuids`
-Returns the not found service GUIDs. The GUIDs may not be found either because they don't exist, or because the services haven't sent any logs.
+### `getServiceLogsByServiceUuids() ->  Map<ServiceUUID, Array<ServiceLog>> serviceLogsByServiceUuids`
+Returns the user service logs content grouped by the service's UUID.
 
 **Returns**
-* `notFoundServiceGuids`: A set of not found service GUIDs
+* `serviceLogsByServiceUuids`: A map containing a list of the [ServiceLog][servicelog] objects grouped by service UUID.
+
+### `getNotFoundServiceUuids() -> Set<ServiceUUID> notFoundServiceUuids`
+Returns the not found service UUIDs. The UUIDs may not be found either because they don't exist, or because the services haven't sent any logs.
+
+**Returns**
+* `notFoundServiceUuids`: A set of not found service UUIDs
 
 ServiceLog
 ----------
@@ -293,31 +293,23 @@ Start services in bulk in the enclave with the given service IDs, inside the par
 ### `addService(ServiceID serviceId,  ContainerConfig containerConfig) -> (ServiceContext serviceContext)`
 Convenience wrapper around [EnclaveContext.addServiceToPartition][enclavecontext_addservicetopartition], that adds the service to the default partition. Note that if the enclave has been repartitioned and the default partition doesn't exist anymore, this method will fail.
 
-### `getServiceContext(ServiceID serviceId) -> ServiceContext serviceContext`
-Gets relevant information about a service (identified by the given service ID) that is running in the enclave.
+### `getServiceContext(String serviceIdentifier) -> ServiceContext serviceContext`
+Gets relevant information about a service (identified by the given service identifier) that is running in the enclave.
 
 **Args**
 
-* `serviceId`: The ID of the service to pull the information from.
+* `serviceIdentifier`: The name, uuid or short name of the target service
 
 **Returns**
 
 The [ServiceContext][servicecontext] representation of a service running in a Docker container.
 
-### `removeService(ServiceID serviceId, uint64 containerStopTimeoutSeconds)`
-Stops the container with the given service ID and removes it from the enclave.
-
-**Args**
-
-* `serviceId`: The ID of the service to remove.
-* `containerStopTimeoutSeconds`: The number of seconds to wait for the container to gracefully stop before hard-killing it.
-
-### `getServices() -> Map<ServiceID,  ServiceGUID> serviceIds`
-Gets the IDs of the current services in the enclave.
+### `getServices() -> Map<ServiceName,  ServiceUUID> serviceIdentifiers`
+Gets the Name and UUID of the current services in the enclave.
 
 **Returns**
 
-* `serviceIds`: A map of objects containing a mapping of ID -> GUID for all the services inside the enclave
+* `serviceIdentifiers`: A map of objects containing a mapping of Name -> UUID for all the services inside the enclave
 
 ### `uploadFiles(String pathToUpload, String artifactName)`
 Takes a filepath or directory path that will be compressed and uploaded to the Kurtosis filestore for use with [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
@@ -494,20 +486,20 @@ ServiceContext
 --------------
 This Kurtosis-provided class is the lowest-level representation of a service running inside a Docker container. It is your handle for retrieving container information and manipulating the container.
 
-### `getServiceId() -> ServiceID`
-Gets the ID that Kurtosis uses to identify the service.
+### `getServiceName() -> ServiceName`
+Gets the Name that Kurtosis uses to identify the service.
 
 **Returns**
 
-The service's ID.
+The service's Name.
 
-### `getServiceGuid() -> ServiceGUID`
-Gets the GUID (Globally Unique Identifier) that Kurtosis creates and uses to identify the service.
-The differences with the ID is that this one is created by Kurtosis, users can't specify it, and this never can be repeated, every new execution of the same service will have a new GUID
+### `getServiceUuid() -> ServiceUUID`
+Gets the UUID (Universally Unique Identifier) that Kurtosis creates and uses to identify the service.
+The differences with the Name is that this one is created by Kurtosis, users can't specify it, and this never can be repeated, every new execution of the same service will have a new UUID
 
 **Returns**
 
-The service's GUID.
+The service's UUID.
 
 ### `getPrivateIpAddress() -> String`
 Gets the IP address where the service is reachable at from _inside_ the enclave that the container is running inside. This IP address is how other containers inside the enclave can connect to the service.
