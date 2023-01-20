@@ -27,7 +27,7 @@ const (
 
 	setupStarlarkScript = `
 def run(plan, args):
-	service_config = struct(
+	service_config = ServiceConfig(
 		image = "alpine:3.12.4",
 		entrypoint = ["sleep"],
 		cmd = ["30"]
@@ -106,7 +106,7 @@ func sliceToStarlarkString(slice []string) string {
 const (
 	setupStarlarkScriptWithStruct = `
 def run(plan, args):
-	service_config = struct(
+	service_config = ServiceConfig(
 		image = "alpine:3.12.4",
 		entrypoint = ["sleep"],
 		cmd = ["30"]

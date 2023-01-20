@@ -2,7 +2,6 @@ package startosis_engine
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
@@ -25,7 +24,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/mock_package_content_provider"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
-	"go.starlark.net/starlarkstruct"
 	"net"
 	"strings"
 	"testing"
@@ -1118,138 +1116,7 @@ def run(plan):
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 3)
 
-	template := "Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}. Am I Alive? {{.Alive}}"
-	templateData := map[string]interface{}{"Name": "Stranger", "Answer": 6, "Numbers": []int{1, 2, 3}, "UnixTimeStamp": 1257894000, "LargeFloat": 1231231243.43, "Alive": true}
-
-	templateDataAsJson, err := json.Marshal(templateData)
-	require.Nil(t, err)
-	templateAndData := binding_constructors.NewTemplateAndData(template, string(templateDataAsJson))
-	templateAndDataByDestFilepath := map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData{
-		"/foo/bar/test.txt": templateAndData,
-	}
-
-	templateAndDataValues := starlark.NewDict(1)
-	fooBarTestValuesValues := starlark.StringDict{}
-	fooBarTestValuesValues["template"] = starlark.String("Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}. Am I Alive? {{.Alive}}")
-
-	expectedData := starlark.NewDict(6)
-	err = expectedData.SetKey(starlark.String("Name"), starlark.String("Stranger"))
-	require.Nil(t, err)
-	err = expectedData.SetKey(starlark.String("Answer"), starlark.MakeInt(6))
-	require.Nil(t, err)
-	err = expectedData.SetKey(starlark.String("Numbers"), starlark.NewList([]starlark.Value{starlark.MakeInt(1), starlark.MakeInt(2), starlark.MakeInt(3)}))
-	require.Nil(t, err)
-	err = expectedData.SetKey(starlark.String("UnixTimeStamp"), starlark.MakeInt64(1257894000))
-	require.Nil(t, err)
-	err = expectedData.SetKey(starlark.String("LargeFloat"), starlark.Float(1231231243.43))
-	require.Nil(t, err)
-	err = expectedData.SetKey(starlark.String("Alive"), starlark.Bool(true))
-	require.Nil(t, err)
-	expectedData.Freeze()
-
-	fooBarTestValuesValues["data"] = expectedData
-	fooBarTestValuesValues.Freeze()
-	require.Nil(t, templateAndDataValues.SetKey(starlark.String("/foo/bar/test.txt"), starlarkstruct.FromStringDict(starlarkstruct.Default, fooBarTestValuesValues)))
-	templateAndDataValues.Freeze()
-
-	renderInstruction := render_templates.NewRenderTemplatesInstruction(
-		testServiceNetwork,
-		kurtosis_instruction.NewInstructionPosition(20, 39, startosis_constants.PackageIdPlaceholderForStandaloneScript),
-		templateAndDataByDestFilepath,
-		starlark.StringDict{
-			"config": templateAndDataValues,
-			"name":   starlark.String(testArtifactName),
-		},
-		testArtifactName,
-	)
-
-	require.Equal(t, renderInstruction, instructions[1])
-
-	expectedOutput := fmt.Sprintf(`Rendering template to disk!
-%v
-`, testArtifactName)
-	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutput)
-}
-
-// TODO remove this once `artifact_id` is deprecated
-func TestStartosisInterpreter_RenderTemplatesIsBackwardsCompatible(t *testing.T) {
-	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
-	defer packageContentProvider.RemoveAll()
-	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, runtimeValueStore)
-	script := `
-template_data = {
-			"Name" : "Stranger",
-			"Answer": 6,
-			"Numbers": [1, 2, 3],
-			"UnixTimeStamp": 1257894000,
-			"LargeFloat": 1231231243.43,
-			"Alive": True
-}
-
-data = {
-	"/foo/bar/test.txt" : struct(
-		template="Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}. Am I Alive? {{.Alive}}",
-		data=template_data
-	)
-}
-
-def run(plan):
-	plan.print("Rendering template to disk!")
-	artifact_name = plan.render_templates(config = data, artifact_id = "` + testArtifactName + `")
-	plan.print(artifact_name)
-`
-
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
-	require.Nil(t, interpretationError)
-	require.Len(t, instructions, 3)
-
-	template := "Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}. Am I Alive? {{.Alive}}"
-	templateData := map[string]interface{}{"Name": "Stranger", "Answer": 6, "Numbers": []int{1, 2, 3}, "UnixTimeStamp": 1257894000, "LargeFloat": 1231231243.43, "Alive": true}
-
-	templateDataAsJson, err := json.Marshal(templateData)
-	require.Nil(t, err)
-	templateAndData := binding_constructors.NewTemplateAndData(template, string(templateDataAsJson))
-	templateAndDataByDestFilepath := map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData{
-		"/foo/bar/test.txt": templateAndData,
-	}
-
-	templateAndDataValues := starlark.NewDict(1)
-	fooBarTestValuesValues := starlark.StringDict{}
-	fooBarTestValuesValues["template"] = starlark.String("Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}. Am I Alive? {{.Alive}}")
-
-	expectedData := starlark.NewDict(6)
-	err = expectedData.SetKey(starlark.String("Name"), starlark.String("Stranger"))
-	require.Nil(t, err)
-	err = expectedData.SetKey(starlark.String("Answer"), starlark.MakeInt(6))
-	require.Nil(t, err)
-	err = expectedData.SetKey(starlark.String("Numbers"), starlark.NewList([]starlark.Value{starlark.MakeInt(1), starlark.MakeInt(2), starlark.MakeInt(3)}))
-	require.Nil(t, err)
-	err = expectedData.SetKey(starlark.String("UnixTimeStamp"), starlark.MakeInt64(1257894000))
-	require.Nil(t, err)
-	err = expectedData.SetKey(starlark.String("LargeFloat"), starlark.Float(1231231243.43))
-	require.Nil(t, err)
-	err = expectedData.SetKey(starlark.String("Alive"), starlark.Bool(true))
-	require.Nil(t, err)
-	expectedData.Freeze()
-
-	fooBarTestValuesValues["data"] = expectedData
-	fooBarTestValuesValues.Freeze()
-	require.Nil(t, templateAndDataValues.SetKey(starlark.String("/foo/bar/test.txt"), starlarkstruct.FromStringDict(starlarkstruct.Default, fooBarTestValuesValues)))
-	templateAndDataValues.Freeze()
-
-	renderInstruction := render_templates.NewRenderTemplatesInstruction(
-		testServiceNetwork,
-		kurtosis_instruction.NewInstructionPosition(20, 39, startosis_constants.PackageIdPlaceholderForStandaloneScript),
-		templateAndDataByDestFilepath,
-		starlark.StringDict{
-			"config": templateAndDataValues,
-			"name":   starlark.String(testArtifactName),
-		},
-		testArtifactName,
-	)
-
-	require.Equal(t, renderInstruction, instructions[1])
+	assertInstructionTypeAndPosition(t, instructions[1], render_templates.RenderTemplatesBuiltinName, startosis_constants.PackageIdPlaceholderForStandaloneScript, 20, 39)
 
 	expectedOutput := fmt.Sprintf(`Rendering template to disk!
 %v
@@ -1756,4 +1623,11 @@ func validateScriptOutputFromPrintInstructions(t *testing.T, instructions []kurt
 		}
 	}
 	require.Equal(t, expectedOutput, scriptOutput.String())
+}
+
+func assertInstructionTypeAndPosition(t *testing.T, instruction kurtosis_instruction.KurtosisInstruction, expectedInstructionName string, filename string, expectedLine int32, expectedCol int32) {
+	canonicalInstruction := instruction.GetCanonicalInstruction()
+	require.Equal(t, expectedInstructionName, canonicalInstruction.GetInstructionName())
+	expectedPosition := binding_constructors.NewStarlarkInstructionPosition(filename, expectedLine, expectedCol)
+	require.Equal(t, expectedPosition, canonicalInstruction.GetPosition())
 }

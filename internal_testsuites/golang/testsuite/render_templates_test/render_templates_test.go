@@ -38,7 +38,7 @@ def run(plan):
 	
 	service = plan.add_service(
 		service_name = "file-server",
-		config = struct(
+		config = ServiceConfig(
 			image = "flashspys/nginx-static",
 			ports = {
 				"http": PortSpec(
@@ -88,7 +88,7 @@ def run(plan):
 	
 	service = plan.add_service(
 		service_name = "file-server",
-		config = struct(
+		config = ServiceConfig(
 			image = "flashspys/nginx-static",
 			ports = {
 				"http": PortSpec(
@@ -172,7 +172,7 @@ def run(plan):
 	
 	service = plan.add_service(
 		service_name = "file-server",
-		config = struct(
+		config = ServiceConfig(
 			image = "flashspys/nginx-static",
 			ports = {
 				"http": PortSpec(

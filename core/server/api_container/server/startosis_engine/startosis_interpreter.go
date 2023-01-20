@@ -114,8 +114,9 @@ func (interpreter *StartosisInterpreter) Interpret(_ context.Context, packageId 
 		if paramName, _ := runFunction.Param(planParamIndex); paramName != planParamName {
 			return "", nil, startosis_errors.NewInterpretationError(unexpectedArgNameError, planParamIndex, planParamName, paramName).ToAPIType()
 		}
-		kurtosisPlanInstructions := KurtosisPlanInstructions(&instructionsQueue, interpreter.moduleContentProvider, interpreter.serviceNetwork, interpreter.recipeExecutor)
-		planModule := plan_module.PlanModule(kurtosisPlanInstructions)
+		oldKurtosisPlanInstructions := OldKurtosisPlanInstructions(&instructionsQueue, interpreter.moduleContentProvider, interpreter.serviceNetwork, interpreter.recipeExecutor)
+		kurtosisPlanInstructions := KurtosisPlanInstructions(interpreter.serviceNetwork, interpreter.recipeExecutor)
+		planModule := plan_module.PlanModule(&instructionsQueue, oldKurtosisPlanInstructions, kurtosisPlanInstructions)
 		argsTuple = append(argsTuple, planModule)
 	}
 
