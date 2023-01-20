@@ -27,7 +27,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"io"
-	"math"
 	"path"
 )
 
@@ -256,6 +255,12 @@ func (enclaveCtx *EnclaveContext) DownloadFilesArtifact(ctx context.Context, art
 //	Private helper methods
 //
 // ====================================================================================================
+
+// convertApiPortsToServiceContextPorts returns a converted map where Port objects associated with strings in [apiPorts] are
+// properly converted to PortSpec objects.
+// Returns error if:
+// - Any protocol associated with a port in [apiPorts] is invalid (eg. not currently supported).
+// - Any port number associated with a port [apiPorts] is higher than the max port number.
 func convertApiPortsToServiceContextPorts(apiPorts map[string]*kurtosis_core_rpc_api_bindings.Port) (map[string]*services.PortSpec, error) {
 	result := map[string]*services.PortSpec{}
 	for portId, apiPortSpec := range apiPorts {
@@ -265,14 +270,13 @@ func convertApiPortsToServiceContextPorts(apiPorts map[string]*kurtosis_core_rpc
 			return nil, stacktrace.NewError("Received unrecognized protocol '%v' from the API", apiTransportProtocol)
 		}
 		portNumUint32 := apiPortSpec.GetNumber()
-		if portNumUint32 > math.MaxUint16 {
+		if portNumUint32 > services.MaxPortNum {
 			return nil, stacktrace.NewError(
-				"Received port num '%v' from the API which is higher than the max uint16 value '%v'; this is VERY weird because ports should be 16-bit numbers",
+				"Received port number '%v' from the API which is higher than the max allowed port number '%v'",
 				portNumUint32,
-				math.MaxUint16,
+				services.MaxPortNum,
 			)
 		}
-
 		portNumUint16 := uint16(portNumUint32)
 		apiMaybeApplicationProtocol := apiPortSpec.GetMaybeApplicationProtocol()
 		result[portId] = services.NewPortSpec(

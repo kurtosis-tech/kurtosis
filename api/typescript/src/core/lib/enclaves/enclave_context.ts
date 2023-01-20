@@ -29,7 +29,7 @@ import {
 import type { ContainerConfig, FilesArtifactUUID } from "../services/container_config";
 import type { ServiceName, ServiceUUID } from "../services/service";
 import { ServiceContext } from "../services/service_context";
-import { TransportProtocol, PortSpec } from "../services/port_spec";
+import { TransportProtocol, PortSpec, IsValidTransportProtocol, MAX_PORT_NUM } from "../services/port_spec";
 import type { GenericPathJoiner } from "./generic_path_joiner";
 import {GenericTgzArchiver} from "./generic_tgz_archiver";
 import {
@@ -385,12 +385,20 @@ export class EnclaveContext {
             }
             for (const [serviceNameStr, serviceInfo] of successfulServicesInfo.entries()) {
                 const serviceName: ServiceName = <ServiceName>serviceNameStr;
-                const serviceCtxPrivatePorts: Map<string, PortSpec> = EnclaveContext.convertApiPortsToServiceContextPorts(
+                const resultConvertServiceCtxPrivatePorts: Result<Map<string, PortSpec>,Error> = EnclaveContext.convertApiPortsToServiceContextPorts(
                     serviceInfo.getPrivatePortsMap(),
                 );
-                const serviceCtxPublicPorts: Map<string, PortSpec> = EnclaveContext.convertApiPortsToServiceContextPorts(
+                if (resultConvertServiceCtxPrivatePorts.isErr()){
+                    return err(resultConvertServiceCtxPrivatePorts.error);
+                }
+                const serviceCtxPrivatePorts: Map<string, PortSpec> = resultConvertServiceCtxPrivatePorts.value;
+                const resultConvertServiceCtxPublicPorts: Result<Map<string, PortSpec>,Error> = EnclaveContext.convertApiPortsToServiceContextPorts(
                     serviceInfo.getMaybePublicPortsMap(),
                 );
+                if (resultConvertServiceCtxPublicPorts.isErr()){
+                    return err(resultConvertServiceCtxPublicPorts.error);
+                }
+                const serviceCtxPublicPorts: Map<string, PortSpec> = resultConvertServiceCtxPublicPorts.value;
 
                 const serviceContext: ServiceContext = new ServiceContext(
                     this.backend,
@@ -448,12 +456,20 @@ export class EnclaveContext {
             );
         }
 
-        const serviceCtxPrivatePorts: Map<string, PortSpec> = EnclaveContext.convertApiPortsToServiceContextPorts(
+        const resultConvertServiceCtxPrivatePorts: Result<Map<string, PortSpec>,Error> = EnclaveContext.convertApiPortsToServiceContextPorts(
             serviceInfo.getPrivatePortsMap(),
         );
-        const serviceCtxPublicPorts: Map<string, PortSpec> = EnclaveContext.convertApiPortsToServiceContextPorts(
+        if (resultConvertServiceCtxPrivatePorts.isErr()){
+            return err(resultConvertServiceCtxPrivatePorts.error);
+        }
+        const serviceCtxPrivatePorts: Map<string, PortSpec> = resultConvertServiceCtxPrivatePorts.value;
+        const resultConvertServiceCtxPublicPorts: Result<Map<string, PortSpec>,Error> = EnclaveContext.convertApiPortsToServiceContextPorts(
             serviceInfo.getMaybePublicPortsMap(),
         );
+        if (resultConvertServiceCtxPublicPorts.isErr()){
+            return err(resultConvertServiceCtxPublicPorts.error);
+        }
+        const serviceCtxPublicPorts: Map<string, PortSpec> = resultConvertServiceCtxPublicPorts.value;
 
         const serviceContext: ServiceContext = new ServiceContext(
             this.backend,
@@ -528,15 +544,27 @@ export class EnclaveContext {
     // ====================================================================================================
     //                                       Private helper functions
     // ====================================================================================================
-    private static convertApiPortsToServiceContextPorts(apiPorts: jspb.Map<string, Port>): Map<string, PortSpec> {
+
+    // convertApiPortsToServiceContextPorts returns a converted map where Port objects associated with strings in [apiPorts] are
+    // properly converted to PortSpec objects.
+    // Returns error if:
+    // - Any protocol associated with a port in [apiPorts] is invalid (eg. not currently supported).
+    // - Any port number associated with a port [apiPorts] is higher than the max port number.
+    private static convertApiPortsToServiceContextPorts(apiPorts: jspb.Map<string, Port>): Result<Map<string, PortSpec>,Error> {
         const result: Map<string, PortSpec> = new Map();
         for (const [portId, apiPortSpec] of apiPorts.entries()) {
             const portProtocol: TransportProtocol = apiPortSpec.getTransportProtocol();
+            if (!IsValidTransportProtocol(portProtocol)){
+                return err(new Error("Received unrecognized protocol '"+ portProtocol + "' from the API"))
+            }
             const portNum: number = apiPortSpec.getNumber();
+            if (portNum > MAX_PORT_NUM){
+                return err(new Error("Received port number '"+ portNum +"' from the API which is higher than the max allowed port number + '"+ MAX_PORT_NUM + "'"))
+            }
             const portSpec = new PortSpec(portNum, portProtocol, apiPortSpec.getMaybeApplicationProtocol());
             result.set(portId, portSpec)
         }
-        return result;
+        return ok(result);
     }
 
     private async assembleRunStarlarkPackageArg(packageRootPath: string, serializedParams: string, dryRun: boolean,): Promise<Result<RunStarlarkPackageArgs, Error>> {

@@ -8,12 +8,14 @@ package services
 import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"math"
 )
 
 // Use a type alias here to make this a bit more user-friendly
 type TransportProtocol kurtosis_core_rpc_api_bindings.Port_TransportProtocol
 
 const (
+	MaxPortNum               = math.MaxUint16
 	TransportProtocol_TCP    = TransportProtocol(kurtosis_core_rpc_api_bindings.Port_TCP)
 	TransportProtocol_UDP    = TransportProtocol(kurtosis_core_rpc_api_bindings.Port_UDP)
 	emptyApplicationProtocol = ""
