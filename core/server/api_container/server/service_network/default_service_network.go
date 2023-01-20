@@ -53,6 +53,7 @@ const (
 
 	exactlyOneShortenedUuidMatch                      = 1
 	defaultValueForTargetIndexForShortenedUuidMatches = -1
+	maxConcurrentServiceStart                         = 4
 )
 
 // Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and port spec protos
@@ -87,7 +88,11 @@ type DefaultServiceNetwork struct {
 
 	topology *partition_topology.PartitionTopology
 
-	networkingSidecars map[service.ServiceName]networking_sidecar.NetworkingSidecarWrapper
+	// This is access in sub routine to start service in parallel. Hence, the lock right below
+	// TODO: refactor this into its own class, or even better merge it with network topology into a super class
+	//  that holds the complete description of the network in memory
+	networkingSidecars  map[service.ServiceName]networking_sidecar.NetworkingSidecarWrapper
+	networkSidecarsLock *sync.Mutex
 
 	networkingSidecarManager networking_sidecar.NetworkingSidecarManager
 
@@ -129,6 +134,7 @@ func NewDefaultServiceNetwork(
 		enclaveDataDir:             enclaveDataDir,
 		topology:                   networkTopology,
 		networkingSidecars:         map[service.ServiceName]networking_sidecar.NetworkingSidecarWrapper{},
+		networkSidecarsLock:        &sync.Mutex{},
 		networkingSidecarManager:   networkingSidecarManager,
 		registeredServiceInfo:      map[service.ServiceName]*service.ServiceRegistration{},
 		serviceUuidToServiceName:   map[service.ServiceUUID]service.ServiceName{},
@@ -364,6 +370,7 @@ func (network *DefaultServiceNetwork) StartServices(
 	failedServices := map[service.ServiceName]error{}
 
 	serviceSuccessfullyRegistered := map[service.ServiceName]*service.ServiceRegistration{}
+	servicesToStart := map[service.ServiceUUID]*kurtosis_core_rpc_api_bindings.ServiceConfig{}
 	for serviceName, serviceConfig := range serviceConfigs {
 		servicePartitionId := partition_topology.ParsePartitionId(serviceConfig.Subnetwork)
 		serviceRegistration, err := network.registerService(ctx, serviceName, servicePartitionId)
@@ -371,6 +378,7 @@ func (network *DefaultServiceNetwork) StartServices(
 			failedServices[serviceName] = stacktrace.Propagate(err, "Failed registering service with ID: '%s'", serviceName)
 		}
 		serviceSuccessfullyRegistered[serviceName] = serviceRegistration
+		servicesToStart[serviceRegistration.GetUUID()] = serviceConfig
 	}
 	defer func() {
 		if batchSuccessfullyStarted {
@@ -386,19 +394,18 @@ func (network *DefaultServiceNetwork) StartServices(
 		return map[service.ServiceName]*service.Service{}, failedServices, nil
 	}
 
+	startedServicesPerUuid, failedServicePerUuid := network.startRegisteredServices(ctx, servicesToStart)
 	for serviceName, serviceRegistration := range serviceSuccessfullyRegistered {
-		serviceConfig, found := serviceConfigs[serviceName]
-		if !found {
-			failedServices[serviceName] = stacktrace.NewError("Service '%s' was registered but could not be found in the initial map of service configs. This is a Kurtosis internal bug", serviceName)
-			continue
-		}
 		serviceUuid := serviceRegistration.GetUUID()
-		startedService, err := network.startRegisteredService(ctx, serviceUuid, serviceConfig)
-		if err != nil {
-			failedServices[serviceName] = stacktrace.Propagate(err, "Starting service '%s' (GUID: '%s') failed", serviceName, serviceUuid)
+		if serviceStartFailure, found := failedServicePerUuid[serviceUuid]; found {
+			failedServices[serviceName] = serviceStartFailure
 			continue
 		}
-		startedServices[serviceName] = startedService
+		if startedService, found := startedServicesPerUuid[serviceUuid]; found {
+			startedServices[serviceName] = startedService
+			continue
+		}
+		failedServices[serviceName] = stacktrace.NewError("State of the service is unknown: %s. This is a Kurtosis internal bug", serviceName)
 	}
 	defer func() {
 		if batchSuccessfullyStarted {
@@ -1148,21 +1155,21 @@ func (network *DefaultServiceNetwork) startRegisteredService(
 		if serviceStartedSuccessfully {
 			return
 		}
-		serviceToDestroyGuid := startedService.GetRegistration().GetUUID()
+		serviceToDestroyUuid := startedService.GetRegistration().GetUUID()
 		userServiceFilters := &service.ServiceFilters{
 			Names: nil,
 			UUIDs: map[service.ServiceUUID]bool{
-				serviceToDestroyGuid: true,
+				serviceToDestroyUuid: true,
 			},
 			Statuses: nil,
 		}
-		_, failedToDestroyGuids, err := network.kurtosisBackend.DestroyUserServices(context.Background(), network.enclaveUuid, userServiceFilters)
+		_, failedToDestroyUuids, err := network.kurtosisBackend.DestroyUserServices(context.Background(), network.enclaveUuid, userServiceFilters)
 		if err != nil {
-			logrus.Errorf("Attempted to destroy the services with GUIDs '%v' but had no success. You must manually destroy the services! The following error had occurred:\n'%v'", serviceToDestroyGuid, err)
+			logrus.Errorf("Attempted to destroy the services with UUIDs '%v' but had no success. You must manually destroy the services! The following error had occurred:\n'%v'", serviceToDestroyUuid, err)
 			return
 		}
-		if failedToDestroyErr, found := failedToDestroyGuids[serviceToDestroyGuid]; found {
-			logrus.Errorf("Attempted to destroy the services with GUIDs '%v' but had no success. You must manually destroy the services! The following error had occurred:\n'%v'", serviceToDestroyGuid, failedToDestroyErr)
+		if failedToDestroyErr, found := failedToDestroyUuids[serviceToDestroyUuid]; found {
+			logrus.Errorf("Attempted to destroy the services with UUIDs '%v' but had no success. You must manually destroy the services! The following error had occurred:\n'%v'", serviceToDestroyUuid, failedToDestroyErr)
 		}
 	}()
 
@@ -1185,7 +1192,7 @@ func (network *DefaultServiceNetwork) startRegisteredService(
 	return startedService, nil
 }
 
-// destroyService is the opposite of startService. It removes a started service from the enclave. Note that it does not
+// destroyService is the opposite of startRegisteredService. It removes a started service from the enclave. Note that it does not
 // take care of unregistering the service. For this, unregisterService should be called
 // Similar to unregisterService, it is expected that the service passed to destroyService has been properly started.
 // the function might fail if the service is half-started
@@ -1200,11 +1207,11 @@ func (network *DefaultServiceNetwork) destroyService(ctx context.Context, servic
 		},
 		Statuses: nil,
 	}
-	_, failedToDestroyGuids, err := network.kurtosisBackend.DestroyUserServices(context.Background(), network.enclaveUuid, userServiceFilters)
+	_, failedToDestroyUuids, err := network.kurtosisBackend.DestroyUserServices(context.Background(), network.enclaveUuid, userServiceFilters)
 	if err != nil {
 		errorResult = stacktrace.Propagate(err, "Attempted to destroy the services with UUID '%v' but had no success. You must manually destroy the services. Kurtosis will now try to remove its sidecar if it exists but might it fail as well.", serviceUuid)
 	}
-	if failedToDestroyErr, found := failedToDestroyGuids[serviceUuid]; found {
+	if failedToDestroyErr, found := failedToDestroyUuids[serviceUuid]; found {
 		errorResult = stacktrace.Propagate(failedToDestroyErr, "Attempted to destroy the services with UUID '%v' but had no success. You must manually destroy the services. Kurtosis will now try to remove its sidecar if it exists but might it fail as well.", serviceUuid)
 	}
 
@@ -1218,6 +1225,66 @@ func (network *DefaultServiceNetwork) destroyService(ctx context.Context, servic
 		}
 	}
 	return errorResult
+}
+
+// startRegisteredServices starts multiple services in parallel
+//
+// It iterates over all the services to start and kicks off a go subroutine for each of them.
+// The subroutine will block until it can write to concurrencyControlChan. concurrencyControlChan is a simple buffered
+// channel that can contain a max of 4 values. It's a common way in go to control concurrency to make sure no more than
+// X subroutine is running at the same time.
+//
+// Once the for loops has started all the subroutine, we use a WaitGroup for this method to block until all subroutines
+// have completed
+//
+// The subroutine accounts for its result populating the startedServices and failedServices maps (which are be accessed
+// behind a mutex as those are not concurrent maps) and finishes by release a permit from the WaitGroup
+func (network *DefaultServiceNetwork) startRegisteredServices(
+	ctx context.Context,
+	serviceConfigs map[service.ServiceUUID]*kurtosis_core_rpc_api_bindings.ServiceConfig,
+) (map[service.ServiceUUID]*service.Service, map[service.ServiceUUID]error) {
+	wg := sync.WaitGroup{}
+	wg.Add(len(serviceConfigs))
+
+	concurrencyControlChan := make(chan bool, maxConcurrentServiceStart)
+	defer close(concurrencyControlChan)
+
+	startedServices := map[service.ServiceUUID]*service.Service{}
+	failedServices := map[service.ServiceUUID]error{}
+	mapWriteMutex := sync.Mutex{}
+
+	// async kick off all the routines one by one
+	for serviceUuid, serviceConfig := range serviceConfigs {
+		serviceToStartUuid := serviceUuid
+		serviceToStartConfig := serviceConfig
+		go func() {
+			// The concurrencyControlChan will block if the buffer is currently full, i.e. if maxConcurrentServiceStart
+			// subroutines are already running in the backgroug
+			concurrencyControlChan <- true
+			defer func() {
+				// at the end, make sure the subroutine releases one permit from the WaitGroup, and make sure to
+				// also pop a value from the concurrencyControlChan to allow any potentially waiting subroutine to
+				// start
+				wg.Done()
+				<-concurrencyControlChan
+			}()
+			logrus.Debugf("Starting service '%s'", serviceToStartUuid)
+			startedService, err := network.startRegisteredService(ctx, serviceToStartUuid, serviceToStartConfig)
+			mapWriteMutex.Lock()
+			defer mapWriteMutex.Unlock()
+			if err != nil {
+				failedServices[serviceToStartUuid] = err
+				logrus.Debugf("Service '%s' could not start due to some errors", serviceToStartUuid)
+			} else {
+				startedServices[serviceToStartUuid] = startedService
+				logrus.Debugf("Service '%s' started successfully", serviceToStartUuid)
+			}
+		}()
+	}
+
+	// wait for all subroutines to complete and return
+	wg.Wait()
+	return startedServices, failedServices
 }
 
 // This method is not thread safe. Only call this from a method where there is a mutex lock on the network.
@@ -1349,9 +1416,13 @@ func (network *DefaultServiceNetwork) createSidecarAndAddToMap(ctx context.Conte
 		}
 	}()
 
+	network.networkSidecarsLock.Lock()
 	network.networkingSidecars[serviceName] = sidecar
 	shouldRemoveSidecarFromMap := true
+	network.networkSidecarsLock.Unlock()
 	defer func() {
+		network.networkSidecarsLock.Lock()
+		defer network.networkSidecarsLock.Unlock()
 		if shouldRemoveSidecarFromMap {
 			delete(network.networkingSidecars, serviceName)
 		}
