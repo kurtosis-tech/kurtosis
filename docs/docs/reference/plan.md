@@ -26,8 +26,8 @@ and the `lib/datastore.star` looks like
 ```py
 def create_datastore(plan):
     plan.add_service(
-        service_id = "datastore-service",
-        config = struct(
+        service_name = "datastore-service",
+        config = ServiceConfig(
             image = "kurtosistech/example-datastore-server"
         )
     )

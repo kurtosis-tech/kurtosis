@@ -47,11 +47,11 @@ The `add_service` instruction on the [`plan`][plan-reference] object adds a serv
 
 ```python
 service = plan.add_service(
-    # The service ID of the service being created.
-    # The service ID is a reference to the service, which can be used in the future to refer to the service.
-    # Service IDs are unique per enclave.
+    # The service name of the service being created.
+    # The service name is a reference to the service, which can be used in the future to refer to the service.
+    # Service names of active services are unique per enclave.
     # MANDATORY
-    service_id = "example-datastore-server-1",
+    service_name = "example-datastore-server-1",
 
     # The configuration for this service. See the 'ServiceConfig' section of 'Starlark Types' from the sidecar for more information.
     # MANDATORY
@@ -74,7 +74,7 @@ The value of the `ports` dictionary is an object with three properties, `number`
 Example:
 ```python
 dependency = plan.add_service(
-    service_id = "dependency",
+    service_name = "dependency",
     config = ServiceConfig(
         image = "dependency",
         ports = {
@@ -86,7 +86,7 @@ dependency = plan.add_service(
 dependency_http_port = dependency.ports["http"]
 
 plan.add_service(
-    service_id = "dependant",
+    service_name = "dependant",
     config = ServiceConfig(
         env_vars = {
             "DEPENDENCY_URL": "http://{}:{}".format(dependency.ip_address, dependency_http_port.number),
@@ -129,9 +129,9 @@ The `exec` instruction on the [`plan`][plan-reference] object executes commands 
 
 ```python
 exec_recipe = ExecRecipe(
-    # The service ID to execute the command on.
+    # The service name to execute the command on.
     # MANDATORY
-    service_id = "my_service",
+    service_name = "my_service",
 
     # The actual command to execute. 
     # Each item corresponds to one shell argument, so ["echo", "Hello world"] behaves as if you ran "echo" "Hello world" in the shell.
@@ -150,7 +150,7 @@ They can be chained to `assert` and `wait`:
 
 ```python
 exec_recipe = ExecRecipe(
-    service_id = "my_service",
+    service_name = "my_service",
     command = ["echo", "Hello, world"],
 )
 
@@ -215,9 +215,9 @@ The `remove_service` instruction on the [`plan`][plan-reference] object removes 
 
 ```python
 plan.remove_service(
-    # The service ID of the service to be removed.
+    # The service name of the service to be removed.
     # MANDATORY
-    service_id = "my_service",
+    service_name = "my_service",
 )
 ```
 
@@ -262,7 +262,7 @@ artifact_name = plan.render_templates(
 )
 ```
 
-The return value is a [future reference][future-references-reference] to the ID of the [files artifact][files-artifacts-reference] that was generated, which can be used with the `files` property of the service config of the `add_service` command.
+The return value is a [future reference][future-references-reference] to the name of the [files artifact][files-artifacts-reference] that was generated, which can be used with the `files` property of the service config of the `add_service` command.
 
 ### request
 
@@ -272,9 +272,9 @@ For GET requests:
 
 ```python
 get_request_recipe = GetHttpRequestRecipe(
-    # The service ID that is the server for the request
+    # The service name that is the server for the request
     # MANDATORY
-    service_id = "my_service",
+    service_name = "my_service",
 
     # The port ID that is the server port for the request
     # MANDATORY
@@ -303,9 +303,9 @@ plan.print(get_response["extract.extracted-field"]) # Prints the result of runni
 For POST requests:
 ```python
 post_request_recipe = PostHttpRequestRecipe(
-    # The service ID that is the server for the request
+    # The service name that is the server for the request
     # MANDATORY
-    service_id = "my_service",
+    service_name = "my_service",
 
     # The port ID that is the server port for the request
     # MANDATORY
@@ -389,9 +389,9 @@ See [ConnectionConfig][starlark-types-connection-config] for more information on
 
 ```python
 artifact_name = plan.store_service_files(
-    # The service ID of a preexisting service from which the file will be copied.
+    # The service name of a preexisting service from which the file will be copied.
     # MANDATORY
-    service_id = "example-service-id",
+    service_name = "example-service-name",
 
     # The path on the service's container that will be copied into a files artifact.
     # MANDATORY
@@ -399,11 +399,11 @@ artifact_name = plan.store_service_files(
 
     # The name to give the files artifact that will be produced.
     # MANDATORY
-    name = "my-favorite-artifact-id",
+    name = "my-favorite-artifact-name",
 )
 ```
 
-The return value is a [future reference][future-references-reference] to the ID of the [files artifact][files-artifacts-reference] that was generated, which can be used with the `files` property of the service config of the `add_service` command.
+The return value is a [future reference][future-references-reference] to the name of the [files artifact][files-artifacts-reference] that was generated, which can be used with the `files` property of the service config of the `add_service` command.
 
 ### update_service
 
@@ -411,10 +411,10 @@ The `update_service` instruction updates an existing service without restarting 
 
 ```python
 update_service(
-    # A Service ID designating a service that already exists inside the enclave
+    # A Service name designating a service that already exists inside the enclave
     # If it does not, a validation error will be thrown
     # MANDATORY
-    service_id = "example-datastore-server-1",
+    service_name = "example-datastore-server-1",
 
     # The changes to apply to this service. See the 'UpdateServiceConfig' section of 'Starlark Types' from the sidecar for more information.
     # MANDATORY
@@ -441,7 +441,7 @@ artifact_name = plan.upload_files(
 )
 ```
 
-The return value is a [future reference][future-references-reference] to the ID of the [files artifact][files-artifacts-reference] that was generated, which can be used with the `files` property of the service config of the `add_service` command.
+The return value is a [future reference][future-references-reference] to the name of the [files artifact][files-artifacts-reference] that was generated, which can be used with the `files` property of the service config of the `add_service` command.
 
 ### wait
 

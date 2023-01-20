@@ -31,9 +31,9 @@ or [wait][starlark-instructions-wait])
 
 ```python
 exec_recipe = ExecRecipe(
-    # The service ID to execute the command on.
+    # The service name to execute the command on.
     # MANDATORY
-    service_id = "my_service",
+    service_name = "my_service",
 
     # The actual command to execute. 
     # Each item corresponds to one shell argument, so ["echo", "Hello world"] behaves as if you ran "echo 'Hello World'" in the shell.
@@ -52,9 +52,9 @@ The `GetHttpRequestRecipe` can be used to make `GET` requests.
 
 ```python
 get_request_recipe = GetHttpRequestRecipe(
-    # The service ID that is the server for the request
+    # The service name that is the server for the request
     # MANDATORY
-    service_id = "my_service",
+    service_name = "my_service",
 
     # The port ID that is the server port for the request
     # MANDATORY
@@ -81,9 +81,9 @@ The `PostHttpRequestRecipe` can be used to make `POST` requests.
 
 ```python
 post_request_recipe = PostHttpRequestRecipe(
-    # The service ID that is the server for the request
+    # The service name that is the server for the request
     # MANDATORY
-    service_id = "my_service",
+    service_name = "my_service",
 
     # The port ID that is the server port for the request
     # MANDATORY

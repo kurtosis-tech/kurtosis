@@ -18,43 +18,43 @@ SECONDARY_SUBNETWORK = "secondary_subnetwork"
 
 def run(args):
     add_service(
-        service_id="cassandra_node_1",
-        config=struct(
+        service_name="cassandra_node_1",
+        config=ServiceConfig(
             ...
             subnetwork=MAIN_SUBNETWORK,
         ),
     )
     add_service(
-        service_id="cassandra_node_2",
-        config=struct(
+        service_name="cassandra_node_2",
+        config=ServiceConfig(
             ...
             subnetwork=MAIN_SUBNETWORK,
         ),
     )
     add_service(
-        service_id="cassandra_node_3",
-        config=struct(
+        service_name="cassandra_node_3",
+        config=ServiceConfig(
             ...
             subnetwork=MAIN_SUBNETWORK,
         ),
     )
     add_service(
-        service_id="app_service_1",
-        config=struct(
+        service_name="app_service_1",
+        config=ServiceConfig(
             ...
             subnetwork=MAIN_SUBNETWORK,
         ),
     )
     add_service(
-        service_id="app_service_2",
-        config=struct(
+        service_name="app_service_2",
+        config=ServiceConfig(
             ...
             subnetwork=MAIN_SUBNETWORK,
         ),
     )
     add_service(
-        service_id="single_port_proxy",
-        config=struct(
+        service_name="single_port_proxy",
+        config=ServiceConfig(
             ...
             subnetwork=MAIN_SUBNETWORK,
         ),
@@ -103,13 +103,13 @@ def run(args):
     # ...
 
     update_service(
-        service_id="cassandra_node_2",
+        service_name="cassandra_node_2",
         config=UpdateServiceConfig(
             subnetwork=SECONDARY_SUBNETWORK,
         ),
     )
     update_service(
-        service_id="app_service_2",
+        service_name="app_service_2",
         config=UpdateServiceConfig(
             subnetwork=SECONDARY_SUBNETWORK,
         ),

@@ -539,7 +539,7 @@ return `artifact_uuid` during interpretation time
 
 ### Fixes
 - Fixes a bug where we'd propagate a nil error
-- Adds validation for `service_id` in `store_files_from_service`
+- Adds validation for `service_name` in `store_files_from_service`
 - Fixes a bug where typescript (jest) unit tests do not correctly wait for grpc services to become available
 - Fixed a panic that would happen cause of a `nil` error being returned
 

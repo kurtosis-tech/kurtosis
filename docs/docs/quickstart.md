@@ -134,7 +134,7 @@ kurtosis service add "$ENCLAVE_ID" my-nginx nginx:latest --ports http=80
 You should see output similar to the following:
 
 ```
-Service ID: my-nginx
+Service Name: my-nginx
 Ports Bindings:
    http:   80/tcp -> 127.0.0.1:63614
 ```
@@ -272,7 +272,7 @@ Because the `--dry-run` flag was specified, Kurtosis will read the file and show
 INFO[2022-11-30T15:48:18-03:00] Creating a new enclave for Starlark to run inside...
 INFO[2022-11-30T15:48:20-03:00] Enclave 'long-water' created successfully
 
-> add_service service_id="my-nginx"
+> add_service service_name="my-nginx"
 
 Starlark code successfully executed. No output was returned
 INFO[2022-11-30T15:48:20-03:00] ===================================================
@@ -292,7 +292,7 @@ The output will look similar to the dry run, but the `add_service` instruction n
 INFO[2022-11-30T15:48:59-03:00] Creating a new enclave for Starlark to run inside...
 INFO[2022-11-30T15:49:02-03:00] Enclave 'cool-meadow' created successfully
 
-> add_service service_id="my-nginx"
+> add_service service_name="my-nginx"
 Service 'my-nginx' added with internal ID 'my-nginx-1669834142'
 
 Starlark code successfully executed. No output was returned
