@@ -249,7 +249,7 @@ Create a new Starlark file called `main.star` with the following contents:
 def run(plan, args):
     plan.add_service(
         "my-nginx",
-        config = struct(
+        config = ServiceConfig(
             image = "nginx:latest",
             ports = {
                 "http": PortSpec(number = 80),
@@ -328,7 +328,7 @@ Replace your `main.star` contents with the following:
 def run(plan, args):
     web_server = plan.add_service(
         "hello-world",
-        config = struct(
+        config = ServiceConfig(
             image = "httpd",
             ports = {
                 "http": PortSpec(number = 80),
@@ -367,18 +367,18 @@ def run(plan, args):
     """
 
     nginx_config_file_artifact = plan.render_templates(
-        name = "nginx-artifact"
+        name = "nginx-artifact",
         config = {
             "default.conf": struct(
                 template = nginx_conf_template,
                 data = nginx_conf_data,
             )
-        }
+        },
     )
 
     plan.add_service(
         "my-nginx",
-        config = struct(
+        config = ServiceConfig(
             image = "nginx:latest",
             ports = {
                 "http": PortSpec(number = 80),
@@ -502,7 +502,7 @@ nginx_conf_template = read_file("github.com/YOUR-GITHUB-USERNAME/my-kurtosis-pac
 def run(plan, args):
     rest_service = plan.add_service(
         "hello-world",
-        config = struct(
+        config = ServiceConfig(
             image = "vad1mo/hello-world-rest",
             ports = {
                 "http": PortSpec(number = 5050),
@@ -516,17 +516,18 @@ def run(plan, args):
     }
 
     nginx_config_file_artifact = plan.render_templates(
+        name = "nginx-artifact",
         config = {
             "default.conf": struct(
                 template = nginx_conf_template,
                 data = nginx_conf_data,
             )
-        }
+        },
     )
 
     plan.add_service(
         "my-nginx",
-        config = struct(
+        config = ServiceConfig(
             image = "nginx:latest",
             ports = {
                 "http": PortSpec(number = 80),
@@ -564,7 +565,7 @@ nginx_conf_template = read_file("github.com/YOUR-GITHUB-USERNAME/my-kurtosis-pac
 def run(plan, args):
     rest_service = plan.add_service(
         "hello-world",
-        config = struct(
+        config = ServiceConfig(
             image = "vad1mo/hello-world-rest",
             ports = {
                 "http": PortSpec(number = 5050),
@@ -578,12 +579,13 @@ def run(plan, args):
     }
 
     nginx_config_file_artifact = plan.render_templates(
+        name = "nginx-artifact",
         config = {
             "default.conf": struct(
                 template = nginx_conf_template,
                 data = nginx_conf_data,
             )
-        }
+        },
     )
 
     nginx_count = 1
@@ -593,7 +595,7 @@ def run(plan, args):
     for i in range(0, nginx_count):
         plan.add_service(
             "my-nginx-" + str(i),
-            config = struct(
+            config = ServiceConfig(
                 image = "nginx:latest",
                 ports = {
                     "http": PortSpec(number = 80),
