@@ -36,7 +36,7 @@ const (
 	folderPermission = 0755
 	filePermission   = 0644
 
-	fileServerServiceId services.ServiceName = "file-server"
+	fileServerServiceName services.ServiceName = "file-server"
 
 	testArtifactName = "test-artifact"
 )
@@ -58,7 +58,7 @@ func TestUploadAndDownloadFiles(t *testing.T) {
 	firstArchiveRootKeyword := fmt.Sprintf("%s%v", archiveRootFileKeywordPattern, 0)
 	firstArchiveRootFilename := filePathsMap[firstArchiveRootKeyword]
 
-	fileServerPublicIp, fileServerPublicPortNum, err := test_helpers.StartFileServer(ctx, fileServerServiceId, testArtifactName, firstArchiveRootFilename, enclaveCtx)
+	fileServerPublicIp, fileServerPublicPortNum, err := test_helpers.StartFileServer(ctx, fileServerServiceName, testArtifactName, firstArchiveRootFilename, enclaveCtx)
 	require.NoError(t, err)
 
 	err = testAllContents(filePathsMap, fileServerPublicIp, fileServerPublicPortNum)

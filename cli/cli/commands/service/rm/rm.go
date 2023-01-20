@@ -31,7 +31,7 @@ const (
 
 	starlarkScript = `
 def run(plan, args):
-	plan.remove_service(service_id=args.service_id)
+	plan.remove_service(service_name=args.service_name)
 `
 	doNotDryRun = false
 )
@@ -99,8 +99,8 @@ func run(
 	return nil
 }
 
-func removeServiceStarlarkCommand(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, serviceId services.ServiceName) error {
-	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkScript, fmt.Sprintf(`{"service_id": "%s"}`, serviceId), doNotDryRun)
+func removeServiceStarlarkCommand(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, serviceName services.ServiceName) error {
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkScript, fmt.Sprintf(`{"service_name": "%s"}`, serviceName), doNotDryRun)
 	if err != nil {
 		return stacktrace.Propagate(err, "An unexpected error occurred on Starlark for rendering template")
 	}

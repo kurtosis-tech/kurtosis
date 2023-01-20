@@ -22,20 +22,20 @@ const (
 	newlineChar     = "\n"
 
 	commandKey     = "command"
-	serviceIdKey   = "service_id"
+	serviceNameKey = "service_name"
 	ExecRecipeName = "ExecRecipe"
 )
 
 // TODO: maybe change command to startlark.List once remove backward compatability support
 type ExecRecipe struct {
-	serviceId service.ServiceName
-	command   []string
+	serviceName service.ServiceName
+	command     []string
 }
 
-func NewExecRecipe(serviceId service.ServiceName, command []string) *ExecRecipe {
+func NewExecRecipe(serviceName service.ServiceName, command []string) *ExecRecipe {
 	return &ExecRecipe{
-		serviceId: serviceId,
-		command:   command,
+		serviceName: serviceName,
+		command:     command,
 	}
 }
 
@@ -43,8 +43,8 @@ func NewExecRecipe(serviceId service.ServiceName, command []string) *ExecRecipe 
 func (recipe *ExecRecipe) String() string {
 	buffer := new(strings.Builder)
 	buffer.WriteString(ExecRecipeName + "(")
-	buffer.WriteString(serviceIdKey + "=")
-	buffer.WriteString(fmt.Sprintf("%q, ", recipe.serviceId))
+	buffer.WriteString(serviceNameKey + "=")
+	buffer.WriteString(fmt.Sprintf("%q, ", recipe.serviceName))
 	buffer.WriteString(commandKey + "=")
 
 	command := convertListToStarlarkList(recipe.command)
@@ -68,7 +68,7 @@ func (recipe *ExecRecipe) Freeze() {
 
 // Truth implements the starlark.Value interface
 func (recipe *ExecRecipe) Truth() starlark.Bool {
-	return recipe.serviceId != ""
+	return recipe.serviceName != ""
 }
 
 // Hash implements the starlark.Value interface
@@ -80,8 +80,8 @@ func (recipe *ExecRecipe) Hash() (uint32, error) {
 // Attr implements the starlark.HasAttrs interface.
 func (recipe *ExecRecipe) Attr(name string) (starlark.Value, error) {
 	switch name {
-	case serviceIdKey:
-		return starlark.String(recipe.serviceId), nil
+	case serviceNameKey:
+		return starlark.String(recipe.serviceName), nil
 	case commandKey:
 		return convertListToStarlarkList(recipe.command), nil
 	default:
@@ -91,7 +91,7 @@ func (recipe *ExecRecipe) Attr(name string) (starlark.Value, error) {
 
 // AttrNames implements the starlark.HasAttrs interface.
 func (recipe *ExecRecipe) AttrNames() []string {
-	return []string{serviceIdKey, commandKey}
+	return []string{serviceNameKey, commandKey}
 }
 
 func (recipe *ExecRecipe) Execute(ctx context.Context, serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) (map[string]starlark.Comparable, error) {
@@ -107,9 +107,9 @@ func (recipe *ExecRecipe) Execute(ctx context.Context, serviceNetwork service_ne
 		}
 		commandWithIPAddressAndRuntimeValue = append(commandWithIPAddressAndRuntimeValue, maybeSubCommandWithRuntimeValuesAndIPAddress)
 	}
-	exitCode, commandOutput, err := serviceNetwork.ExecCommand(ctx, string(recipe.serviceId), commandWithIPAddressAndRuntimeValue)
+	exitCode, commandOutput, err := serviceNetwork.ExecCommand(ctx, string(recipe.serviceName), commandWithIPAddressAndRuntimeValue)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to execute command '%v' on service '%v'", recipe.command, recipe.serviceId)
+		return nil, stacktrace.Propagate(err, "Failed to execute command '%v' on service '%v'", recipe.command, recipe.serviceName)
 	}
 	return map[string]starlark.Comparable{
 		execOutputKey:   starlark.String(commandOutput),
@@ -153,12 +153,12 @@ func (recipe *ExecRecipe) CreateStarlarkReturnValue(resultUuid string) (*starlar
 }
 
 func MakeExecRequestRecipe(_ *starlark.Thread, builtin *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
-	var serviceIdStr string
+	var serviceNameStr string
 	var unpackedCommandList *starlark.List
 
 	if err := starlark.UnpackArgs(builtin.Name(), args, kwargs,
 		commandKey, &unpackedCommandList,
-		serviceIdKey, &serviceIdStr,
+		serviceNameKey, &serviceNameStr,
 	); err != nil {
 		return nil, startosis_errors.NewInterpretationError("%v", err.Error())
 	}
@@ -167,8 +167,8 @@ func MakeExecRequestRecipe(_ *starlark.Thread, builtin *starlark.Builtin, args s
 	if err != nil {
 		return nil, err
 	}
-	serviceId := service.ServiceName(serviceIdStr)
-	return NewExecRecipe(serviceId, commands), nil
+	serviceName := service.ServiceName(serviceNameStr)
+	return NewExecRecipe(serviceName, commands), nil
 }
 
 func convertListToStarlarkList(inputList []string) *starlark.List {

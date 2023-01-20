@@ -37,7 +37,7 @@ def run(plan):
 	artifact_name = plan.render_templates(config = template_dict, name="rendered-artifact")
 	
 	service = plan.add_service(
-		service_id = "file-server",
+		service_name = "file-server",
 		config = struct(
 			image = "flashspys/nginx-static",
 			ports = {
@@ -53,7 +53,7 @@ def run(plan):
 	)
 	for filePath in template_dict:
 		get_recipe = GetHttpRequestRecipe(
-			service_id = "file-server",
+			service_name = "file-server",
 			port_id = "http",
 			endpoint = "/" + filePath,
 		)
@@ -87,7 +87,7 @@ def run(plan):
 	artifact_name = plan.render_templates(config = template_dict, artifact_id="rendered-artifact")
 	
 	service = plan.add_service(
-		service_id = "file-server",
+		service_name = "file-server",
 		config = struct(
 			image = "flashspys/nginx-static",
 			ports = {
@@ -103,7 +103,7 @@ def run(plan):
 	)
 	for filePath in template_dict:
 		get_recipe = struct(
-			service_id = "file-server",
+			service_name = "file-server",
 			method = "GET",
 			port_id = "http",
 			endpoint = "/" + filePath,
@@ -171,7 +171,7 @@ def run(plan):
 	artifact_name = plan.render_templates(config = template_dict, name="rendered-artifact")
 	
 	service = plan.add_service(
-		service_id = "file-server",
+		service_name = "file-server",
 		config = struct(
 			image = "flashspys/nginx-static",
 			ports = {
@@ -187,7 +187,7 @@ def run(plan):
 	)
 	for filePath in template_dict:
 		get_recipe = GetHttpRequestRecipe(
-			service_id = "file-server",
+			service_name = "file-server",
 			port_id = "http",
 			endpoint = "/" + filePath,
 		)

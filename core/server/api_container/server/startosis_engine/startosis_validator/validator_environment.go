@@ -29,16 +29,16 @@ func (environment *ValidatorEnvironment) GetNumberOfContainerImages() uint32 {
 	return uint32(len(environment.requiredDockerImages))
 }
 
-func (environment *ValidatorEnvironment) AddServiceId(serviceId service.ServiceName) {
-	environment.serviceNames[serviceId] = true
+func (environment *ValidatorEnvironment) AddServiceName(serviceName service.ServiceName) {
+	environment.serviceNames[serviceName] = true
 }
 
-func (environment *ValidatorEnvironment) RemoveServiceId(serviceId service.ServiceName) {
-	delete(environment.serviceNames, serviceId)
+func (environment *ValidatorEnvironment) RemoveServiceName(serviceName service.ServiceName) {
+	delete(environment.serviceNames, serviceName)
 }
 
-func (environment *ValidatorEnvironment) DoesServiceIdExist(serviceId service.ServiceName) bool {
-	_, ok := environment.serviceNames[serviceId]
+func (environment *ValidatorEnvironment) DoesServiceNameExist(serviceName service.ServiceName) bool {
+	_, ok := environment.serviceNames[serviceName]
 	return ok
 }
 

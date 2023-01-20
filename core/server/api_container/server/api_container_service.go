@@ -203,7 +203,7 @@ func (apicService ApiContainerService) RemoveService(ctx context.Context, args *
 	serviceUuid, err := apicService.serviceNetwork.RemoveService(ctx, serviceIdentifier)
 	if err != nil {
 		// TODO IP: Leaks internal information about the API container
-		return nil, stacktrace.Propagate(err, "An error occurred removing service with ID '%v'", serviceIdentifier)
+		return nil, stacktrace.Propagate(err, "An error occurred removing service with identifier '%v'", serviceIdentifier)
 	}
 	return binding_constructors.NewRemoveServiceResponse(string(serviceUuid)), nil
 }
@@ -434,7 +434,7 @@ func (apicService ApiContainerService) StoreFilesArtifactFromService(ctx context
 
 	filesArtifactId, err := apicService.serviceNetwork.CopyFilesFromService(ctx, serviceIdentifier, srcPath, name)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred copying source '%v' from service with ID '%v'", srcPath, serviceIdentifier)
+		return nil, stacktrace.Propagate(err, "An error occurred copying source '%v' from service with identifier '%v'", srcPath, serviceIdentifier)
 	}
 
 	response := &kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceResponse{Uuid: string(filesArtifactId)}

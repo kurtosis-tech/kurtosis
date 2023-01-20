@@ -14,18 +14,18 @@ const (
 	isPartitioningEnabled = false
 	defaultDryRun         = false
 
-	serviceId = "docker-getting-started-success"
-	emptyArgs = "{}"
+	serviceName = "docker-getting-started-success"
+	emptyArgs   = "{}"
 
 	starlarkScriptWithPortSpec_Success = `
 DOCKER_GETTING_STARTED_IMAGE = "docker/getting-started:latest"
-SERVICE_ID = "` + serviceId + `"
+SERVICE_NAME = "` + serviceName + `"
 
 spec = PortSpec(number = 5000, transport_protocol = "UDP")
 
 def run(plan):
     plan.add_service(
-        service_id = SERVICE_ID, 
+        service_name = SERVICE_NAME, 
         config = ServiceConfig(
             image = DOCKER_GETTING_STARTED_IMAGE, 
             ports = {
@@ -51,9 +51,9 @@ func TestAddServiceWithPortSpec_Success(t *testing.T) {
 	logrus.Infof("Test Output: %v", runResult)
 	require.NoError(t, err, "Unexpected error executing starlark script")
 
-	service, err := enclaveCtx.GetServiceContext(serviceId)
+	service, err := enclaveCtx.GetServiceContext(serviceName)
 	require.NoError(t, err, "Unexpected error occurred while getting service id")
-	require.NotNil(t, service, "Error occurred while fetching service with ID: '%v'. This may occur if service was not created")
+	require.NotNil(t, service, "Error occurred while fetching service with name: '%v'. This may occur if service was not created")
 
 	ports := service.GetPrivatePorts()
 	require.Equal(t, services.TransportProtocol_TCP, ports["port1"].GetTransportProtocol())

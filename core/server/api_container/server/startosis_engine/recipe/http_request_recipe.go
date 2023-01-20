@@ -30,7 +30,7 @@ const (
 	extractKeyPrefix = "extract"
 
 	portIdAttr      = "port_id"
-	serviceIdAttr   = "service_id"
+	serviceNameAttr = "service_name"
 	endpointAttr    = "endpoint"
 	methodAttr      = "method"
 	contentTypeAttr = "content_type"
@@ -42,7 +42,7 @@ const (
 )
 
 type HttpRequestRecipe struct {
-	serviceId   service.ServiceName
+	serviceName service.ServiceName
 	portId      string
 	contentType string
 	endpoint    string
@@ -51,9 +51,9 @@ type HttpRequestRecipe struct {
 	extractors  map[string]string
 }
 
-func NewPostHttpRequestRecipe(serviceId service.ServiceName, portId string, contentType string, endpoint string, body string, extractors map[string]string) *HttpRequestRecipe {
+func NewPostHttpRequestRecipe(serviceName service.ServiceName, portId string, contentType string, endpoint string, body string, extractors map[string]string) *HttpRequestRecipe {
 	return &HttpRequestRecipe{
-		serviceId:   serviceId,
+		serviceName: serviceName,
 		portId:      portId,
 		method:      postMethod,
 		contentType: contentType,
@@ -63,9 +63,9 @@ func NewPostHttpRequestRecipe(serviceId service.ServiceName, portId string, cont
 	}
 }
 
-func NewGetHttpRequestRecipe(serviceId service.ServiceName, portId string, endpoint string, extractors map[string]string) *HttpRequestRecipe {
+func NewGetHttpRequestRecipe(serviceName service.ServiceName, portId string, endpoint string, extractors map[string]string) *HttpRequestRecipe {
 	return &HttpRequestRecipe{
-		serviceId:   serviceId,
+		serviceName: serviceName,
 		portId:      portId,
 		method:      getMethod,
 		contentType: unusedContentType,
@@ -83,8 +83,8 @@ func (recipe *HttpRequestRecipe) String() string {
 	buffer.WriteString(instanceName + "(")
 	buffer.WriteString(portIdAttr + "=")
 	buffer.WriteString(fmt.Sprintf("%q, ", recipe.portId))
-	buffer.WriteString(serviceIdAttr + "=")
-	buffer.WriteString(fmt.Sprintf("%q, ", recipe.serviceId))
+	buffer.WriteString(serviceNameAttr + "=")
+	buffer.WriteString(fmt.Sprintf("%q, ", recipe.serviceName))
 	buffer.WriteString(endpointAttr + "=")
 	buffer.WriteString(fmt.Sprintf("%q, ", recipe.endpoint))
 
@@ -122,7 +122,7 @@ func (recipe *HttpRequestRecipe) Freeze() {
 
 // Truth implements the starlark.Value interface
 func (recipe *HttpRequestRecipe) Truth() starlark.Bool {
-	truth := recipe.portId != "" && recipe.serviceId != "" && recipe.endpoint != "" && recipe.method != ""
+	truth := recipe.portId != "" && recipe.serviceName != "" && recipe.endpoint != "" && recipe.method != ""
 	if recipe.method == postMethod {
 		truth = truth && recipe.body != "" && recipe.contentType != ""
 	}
@@ -148,8 +148,8 @@ func (recipe *HttpRequestRecipe) Attr(name string) (starlark.Value, error) {
 	switch name {
 	case portIdAttr:
 		return starlark.String(recipe.portId), nil
-	case serviceIdAttr:
-		return starlark.String(recipe.serviceId), nil
+	case serviceNameAttr:
+		return starlark.String(recipe.serviceName), nil
 	case extractKeyPrefix:
 		return convertMapToStarlarkDict(recipe.extractors)
 	case bodyKey:
@@ -167,17 +167,17 @@ func (recipe *HttpRequestRecipe) Attr(name string) (starlark.Value, error) {
 
 // AttrNames implements the starlark.HasAttrs interface.
 func (recipe *HttpRequestRecipe) AttrNames() []string {
-	return []string{portIdAttr, serviceIdAttr, extractKeyPrefix, endpointAttr, contentTypeAttr, methodAttr, bodyKey}
+	return []string{portIdAttr, serviceNameAttr, extractKeyPrefix, endpointAttr, contentTypeAttr, methodAttr, bodyKey}
 }
 
 func MakeGetHttpRequestRecipe(_ *starlark.Thread, builtin *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 	var portId string
 	var endpoint string
-	var serviceId string
+	var serviceName string
 	var maybeExtractField starlark.Value
 
 	if err := starlark.UnpackArgs(builtin.Name(), args, kwargs,
-		serviceIdAttr, &serviceId,
+		serviceNameAttr, &serviceName,
 		portIdAttr, &portId,
 		endpointAttr, &endpoint,
 		kurtosis_types.MakeOptional(extractKeyPrefix), &maybeExtractField,
@@ -194,21 +194,21 @@ func MakeGetHttpRequestRecipe(_ *starlark.Thread, builtin *starlark.Builtin, arg
 			return nil, err
 		}
 	}
-	recipe := NewGetHttpRequestRecipe(service.ServiceName(serviceId), portId, endpoint, extractedMap)
+	recipe := NewGetHttpRequestRecipe(service.ServiceName(serviceName), portId, endpoint, extractedMap)
 	return recipe, nil
 }
 
 func MakePostHttpRequestRecipe(_ *starlark.Thread, builtin *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 	var portId string
 	var endpoint string
-	var serviceId string
+	var serviceName string
 
 	var body string
 	var contentType string
 	var maybeExtractField starlark.Value
 
 	if err := starlark.UnpackArgs(builtin.Name(), args, kwargs,
-		serviceIdAttr, &serviceId,
+		serviceNameAttr, &serviceName,
 		portIdAttr, &portId,
 		endpointAttr, &endpoint,
 		bodyKey, &body,
@@ -228,7 +228,7 @@ func MakePostHttpRequestRecipe(_ *starlark.Thread, builtin *starlark.Builtin, ar
 		}
 	}
 
-	recipe := NewPostHttpRequestRecipe(service.ServiceName(serviceId), portId, contentType, endpoint, body, extractedMap)
+	recipe := NewPostHttpRequestRecipe(service.ServiceName(serviceName), portId, contentType, endpoint, body, extractedMap)
 	return recipe, nil
 }
 
@@ -246,7 +246,7 @@ func (recipe *HttpRequestRecipe) Execute(ctx context.Context, serviceNetwork ser
 	}
 	response, err = serviceNetwork.HttpRequestService(
 		ctx,
-		string(recipe.serviceId),
+		string(recipe.serviceName),
 		recipe.portId,
 		recipe.method,
 		recipe.contentType,

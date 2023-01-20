@@ -8,13 +8,11 @@ const TEST_NAME = "destroy-enclave"
 const IS_PARTITIONING_ENABLED = false
 
 const FILE_SERVER_SERVICE_IMAGE = "flashspys/nginx-static"
-const FILE_SERVER_SERVICE_ID: ServiceName = "file-server"
+const FILE_SERVER_SERVICE_NAME: ServiceName = "file-server"
 const FILE_SERVER_PORT_ID = "http"
 const FILE_SERVER_PRIVATE_PORT_NUM = 80
 
 const FILE_SERVER_PORT_SPEC = new PortSpec( FILE_SERVER_PRIVATE_PORT_NUM, TransportProtocol.TCP )
-
-const FILES_ARTIFACT_MOUNTPOINT  = "/static"
 
 jest.setTimeout(180000)
 
@@ -33,7 +31,7 @@ test("Test destroy enclave", async () => {
         // ------------------------------------- TEST SETUP ----------------------------------------------
         const fileServerContainerConfig = getFileServerContainerConfig()
 
-        const addServiceResult = await enclaveContext.addService(FILE_SERVER_SERVICE_ID, fileServerContainerConfig)
+        const addServiceResult = await enclaveContext.addService(FILE_SERVER_SERVICE_NAME, fileServerContainerConfig)
         if(addServiceResult.isErr()){ throw addServiceResult.error }
 
         const serviceContext = addServiceResult.value

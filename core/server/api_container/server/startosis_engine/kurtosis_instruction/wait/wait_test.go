@@ -27,7 +27,7 @@ func TestWaitInstruction_StringRepresentationWorks(t *testing.T) {
 	err := extractor.SetKey(starlark.String(testTargetKey), starlark.String(".value"))
 	require.Nil(t, err)
 	testRecipeConfig := starlarkstruct.FromStringDict(starlarkstruct.Default, starlark.StringDict{
-		"service_id":   starlark.String("web-server"),
+		"service_name": starlark.String("web-server"),
 		"port_id":      starlark.String("http-port"),
 		"endpoint":     starlark.String("/"),
 		"method":       starlark.String("POST"),
@@ -54,6 +54,6 @@ func TestWaitInstruction_StringRepresentationWorks(t *testing.T) {
 		starlark.String(testTargetValue),
 		starlarkKwargs,
 	)
-	expectedStr := `wait(assertion="==", interval?="5s", recipe=struct(body="post_output", content_type="text/plain", endpoint="/", extract={"key": ".value"}, method="POST", port_id="http-port", service_id="web-server"), target_value=0, timeout?="5s")`
+	expectedStr := `wait(assertion="==", interval?="5s", recipe=struct(body="post_output", content_type="text/plain", endpoint="/", extract={"key": ".value"}, method="POST", port_id="http-port", service_name="web-server"), target_value=0, timeout?="5s")`
 	require.Equal(t, expectedStr, getValueInstruction.String())
 }

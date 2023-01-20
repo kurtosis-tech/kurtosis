@@ -14,8 +14,8 @@ const (
 	defaultDryRun         = false
 	remotePackage         = "github.com/kurtosis-tech/datastore-army-package"
 	executeParams         = `{"num_datastores": 2}`
-	dataStoreService0Id   = "datastore-0"
-	dataStoreService1Id   = "datastore-1"
+	dataStoreService0Name = "datastore-0"
+	dataStoreService1Name = "datastore-1"
 	datastorePortId       = "grpc"
 )
 
@@ -42,15 +42,15 @@ func TestStartosisRemotePackage(t *testing.T) {
 	logrus.Infof("Checking that services are all healthy")
 	require.NoError(
 		t,
-		test_helpers.ValidateDatastoreServiceHealthy(context.Background(), enclaveCtx, dataStoreService0Id, datastorePortId),
+		test_helpers.ValidateDatastoreServiceHealthy(context.Background(), enclaveCtx, dataStoreService0Name, datastorePortId),
 		"Error validating datastore server '%s' is healthy",
-		dataStoreService0Id,
+		dataStoreService0Name,
 	)
 	require.NoError(
 		t,
-		test_helpers.ValidateDatastoreServiceHealthy(context.Background(), enclaveCtx, dataStoreService1Id, datastorePortId),
+		test_helpers.ValidateDatastoreServiceHealthy(context.Background(), enclaveCtx, dataStoreService1Name, datastorePortId),
 		"Error validating datastore server '%s' is healthy",
-		dataStoreService1Id,
+		dataStoreService1Name,
 	)
 	logrus.Infof("All services added via the package work as expected")
 }

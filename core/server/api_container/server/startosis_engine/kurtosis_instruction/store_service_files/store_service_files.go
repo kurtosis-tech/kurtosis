@@ -18,8 +18,8 @@ import (
 const (
 	StoreServiceFilesBuiltinName = "store_service_files"
 
-	serviceIdArgName = "service_id"
-	srcArgName       = "src"
+	serviceNameArgName = "service_name"
+	srcArgName         = "src"
 
 	// TODO Deprecate artifactIdArg in a future release
 	artifactIdArgName = "artifact_id?"
@@ -36,7 +36,7 @@ type StoreServiceFilesInstruction struct {
 	position       *kurtosis_instruction.InstructionPosition
 	starlarkKwargs starlark.StringDict
 
-	serviceId    kurtosis_backend_service.ServiceName
+	serviceName  kurtosis_backend_service.ServiceName
 	src          string
 	artifactName string
 }
@@ -54,11 +54,11 @@ func GenerateStoreServiceFilesBuiltin(instructionsQueue *[]kurtosis_instruction.
 	}
 }
 
-func NewStoreServiceFilesInstruction(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceName, srcPath string, artifactName string, starlarkKwargs starlark.StringDict) *StoreServiceFilesInstruction {
+func NewStoreServiceFilesInstruction(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition, serviceName kurtosis_backend_service.ServiceName, srcPath string, artifactName string, starlarkKwargs starlark.StringDict) *StoreServiceFilesInstruction {
 	return &StoreServiceFilesInstruction{
 		serviceNetwork: serviceNetwork,
 		position:       position,
-		serviceId:      serviceId,
+		serviceName:    serviceName,
 		src:            srcPath,
 		artifactName:   artifactName,
 		starlarkKwargs: starlarkKwargs,
@@ -69,7 +69,7 @@ func newEmptyStoreServiceFilesInstruction(serviceNetwork service_network.Service
 	return &StoreServiceFilesInstruction{
 		serviceNetwork: serviceNetwork,
 		position:       position,
-		serviceId:      "",
+		serviceName:    "",
 		src:            "",
 		artifactName:   "",
 		starlarkKwargs: starlark.StringDict{},
@@ -82,7 +82,7 @@ func (instruction *StoreServiceFilesInstruction) GetPositionInOriginalScript() *
 
 func (instruction *StoreServiceFilesInstruction) GetCanonicalInstruction() *kurtosis_core_rpc_api_bindings.StarlarkInstruction {
 	args := []*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg{
-		binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[serviceIdArgName]), serviceIdArgName, kurtosis_instruction.Representative),
+		binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[serviceNameArgName]), serviceNameArgName, kurtosis_instruction.Representative),
 		binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[srcArgName]), srcArgName, kurtosis_instruction.Representative),
 		binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[nonOptionalArtifactNameArgName]), nonOptionalArtifactNameArgName, kurtosis_instruction.Representative),
 	}
@@ -90,9 +90,9 @@ func (instruction *StoreServiceFilesInstruction) GetCanonicalInstruction() *kurt
 }
 
 func (instruction *StoreServiceFilesInstruction) Execute(ctx context.Context) (*string, error) {
-	artifactUuid, err := instruction.serviceNetwork.CopyFilesFromService(ctx, string(instruction.serviceId), instruction.src, instruction.artifactName)
+	artifactUuid, err := instruction.serviceNetwork.CopyFilesFromService(ctx, string(instruction.serviceName), instruction.src, instruction.artifactName)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to copy file '%v' from service '%v", instruction.src, instruction.serviceId)
+		return nil, stacktrace.Propagate(err, "Failed to copy file '%v' from service '%v", instruction.src, instruction.serviceName)
 	}
 	instructionResult := fmt.Sprintf("Files  with artifact name '%s' uploaded with artifact UUID '%s'", instruction.artifactName, artifactUuid)
 	return &instructionResult, nil
@@ -103,8 +103,8 @@ func (instruction *StoreServiceFilesInstruction) String() string {
 }
 
 func (instruction *StoreServiceFilesInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
-	if !environment.DoesServiceIdExist(instruction.serviceId) {
-		return startosis_errors.NewValidationError("There was an error validating '%v' with service ID '%v' that does not exist", StoreServiceFilesBuiltinName, instruction.serviceId)
+	if !environment.DoesServiceNameExist(instruction.serviceName) {
+		return startosis_errors.NewValidationError("There was an error validating '%v' with service name '%v' that does not exist", StoreServiceFilesBuiltinName, instruction.serviceName)
 	}
 	if environment.DoesArtifactNameExist(instruction.artifactName) {
 		return stacktrace.NewError("There was an error validating '%v' as artifact name '%v' already exists", StoreServiceFilesBuiltinName, instruction.artifactName)
@@ -114,11 +114,11 @@ func (instruction *StoreServiceFilesInstruction) ValidateAndUpdateEnvironment(en
 }
 
 func (instruction *StoreServiceFilesInstruction) parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) *startosis_errors.InterpretationError {
-	var serviceIdArg starlark.String
+	var serviceNameArg starlark.String
 	var srcPathArg starlark.String
 	var artifactIdArg = emptyStarlarkString
 	var artifactNameArg = emptyStarlarkString
-	if err := starlark.UnpackArgs(b.Name(), args, kwargs, serviceIdArgName, &serviceIdArg, srcArgName, &srcPathArg, artifactNameArgName, &artifactNameArg, artifactIdArgName, &artifactIdArg); err != nil {
+	if err := starlark.UnpackArgs(b.Name(), args, kwargs, serviceNameArgName, &serviceNameArg, srcArgName, &srcPathArg, artifactNameArgName, &artifactNameArg, artifactIdArgName, &artifactIdArg); err != nil {
 		return startosis_errors.WrapWithInterpretationError(err, "Failed parsing arguments for function '%s' (unparsed arguments were: '%v' '%v')", StoreServiceFilesBuiltinName, args, kwargs)
 	}
 
@@ -130,12 +130,12 @@ func (instruction *StoreServiceFilesInstruction) parseStartosisArgs(b *starlark.
 		artifactNameArg = artifactIdArg
 	}
 
-	instruction.starlarkKwargs[serviceIdArgName] = serviceIdArg
+	instruction.starlarkKwargs[serviceNameArgName] = serviceNameArg
 	instruction.starlarkKwargs[srcArgName] = srcPathArg
 	instruction.starlarkKwargs[nonOptionalArtifactNameArgName] = artifactNameArg
 	instruction.starlarkKwargs.Freeze()
 
-	serviceId, interpretationErr := kurtosis_instruction.ParseServiceId(serviceIdArg)
+	serviceName, interpretationErr := kurtosis_instruction.ParseServiceName(serviceNameArg)
 	if interpretationErr != nil {
 		return interpretationErr
 	}
@@ -150,7 +150,7 @@ func (instruction *StoreServiceFilesInstruction) parseStartosisArgs(b *starlark.
 		return interpretationErr
 	}
 
-	instruction.serviceId = serviceId
+	instruction.serviceName = serviceName
 	instruction.src = srcPath
 	instruction.artifactName = artifactName
 	return nil

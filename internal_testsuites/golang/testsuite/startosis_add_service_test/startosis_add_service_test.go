@@ -14,15 +14,15 @@ const (
 	defaultDryRun                    = false
 	emptyArgs                        = "{}"
 
-	serviceId  = "docker-getting-started"
-	serviceId2 = "docker-getting-started-2"
+	serviceName  = "docker-getting-started"
+	serviceName2 = "docker-getting-started-2"
 
 	starlarkScriptWithEmptyPorts = `
 DOCKER_GETTING_STARTED_IMAGE = "docker/getting-started:latest"
-SERVICE_ID = "` + serviceId + `"
+SERVICE_NAME = "` + serviceName + `"
 
 def run(plan):
-	plan.print("Adding service " + SERVICE_ID + ".")
+	plan.print("Adding service " + SERVICE_NAME + ".")
 	
 	config = ServiceConfig(
 		image = DOCKER_GETTING_STARTED_IMAGE,
@@ -30,27 +30,27 @@ def run(plan):
 		memory_allocation = 512,
 	)
 	
-	plan.add_service(service_id = SERVICE_ID, config = config)
-	plan.print("Service " + SERVICE_ID + " deployed successfully.")
+	plan.add_service(service_name = SERVICE_NAME, config = config)
+	plan.print("Service " + SERVICE_NAME + " deployed successfully.")
 `
 
 	starlarkScriptWithoutPorts = `
 DOCKER_GETTING_STARTED_IMAGE = "docker/getting-started:latest"
-SERVICE_ID = "` + serviceId2 + `"
+SERVICE_NAME = "` + serviceName2 + `"
 
 def run(plan, args):
-	plan.print("Adding service " + SERVICE_ID + ".")
+	plan.print("Adding service " + SERVICE_NAME + ".")
 	
 	config = ServiceConfig(
 		image = DOCKER_GETTING_STARTED_IMAGE,
 	)
 	
-	plan.add_service(service_id = SERVICE_ID, config = config)
-	plan.print("Service " + SERVICE_ID + " deployed successfully.")
+	plan.add_service(service_name = SERVICE_NAME, config = config)
+	plan.print("Service " + SERVICE_NAME + " deployed successfully.")
 `
 )
 
-var serviceNames = []string{serviceId, serviceId2}
+var serviceNames = []string{serviceName, serviceName2}
 var starlarkScriptsToRun = []string{starlarkScriptWithEmptyPorts, starlarkScriptWithoutPorts}
 
 func TestAddServiceWithEmptyPortsAndWithoutPorts(t *testing.T) {
@@ -71,7 +71,7 @@ func TestAddServiceWithEmptyPortsAndWithoutPorts(t *testing.T) {
 		require.NoError(t, err, "Unexpected error executing starlark script")
 
 		expectedScriptOutput := `Adding service ` + serviceNames[starlarkScripIndex] + `.
-Service '` + serviceNames[starlarkScripIndex] + `' added with service GUID '[a-z-0-9]+'
+Service '` + serviceNames[starlarkScripIndex] + `' added with service UUID '[a-z-0-9]+'
 Service ` + serviceNames[starlarkScripIndex] + ` deployed successfully.
 `
 		require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error.")

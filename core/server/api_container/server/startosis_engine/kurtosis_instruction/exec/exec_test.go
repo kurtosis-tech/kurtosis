@@ -20,7 +20,7 @@ func TestExecInstruction_StringRepresentationWorks(t *testing.T) {
 	execInstruction := newEmptyExecInstruction(emptyServiceNetwork, position, defaultRuntimeValueStore)
 	execInstruction.starlarkKwargs = starlark.StringDict{}
 	execRecipeStruct := starlarkstruct.FromStringDict(starlarkstruct.Default, starlark.StringDict{
-		"service_id": starlark.String("example-service-id"),
+		"service_name": starlark.String("example-service-id"),
 		"command": starlark.NewList([]starlark.Value{
 			starlark.String("mkdir"),
 			starlark.String("-p"),
@@ -29,7 +29,7 @@ func TestExecInstruction_StringRepresentationWorks(t *testing.T) {
 	})
 	execInstruction.starlarkKwargs[recipeArgName] = execRecipeStruct
 
-	expectedStr := `exec(recipe=struct(command=["mkdir", "-p", "/tmp/store"], service_id="example-service-id"))`
+	expectedStr := `exec(recipe=struct(command=["mkdir", "-p", "/tmp/store"], service_name="example-service-id"))`
 	require.Equal(t, expectedStr, execInstruction.String())
 
 	canonicalInstruction := binding_constructors.NewStarlarkInstruction(
@@ -37,7 +37,7 @@ func TestExecInstruction_StringRepresentationWorks(t *testing.T) {
 		ExecBuiltinName,
 		expectedStr,
 		[]*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg{
-			binding_constructors.NewStarlarkInstructionKwarg(`struct(command=["mkdir", "-p", "/tmp/store"], service_id="example-service-id")`, recipeArgName, true),
+			binding_constructors.NewStarlarkInstructionKwarg(`struct(command=["mkdir", "-p", "/tmp/store"], service_name="example-service-id")`, recipeArgName, true),
 		})
 	require.Equal(t, canonicalInstruction, execInstruction.GetCanonicalInstruction())
 }

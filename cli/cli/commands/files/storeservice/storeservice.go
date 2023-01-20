@@ -43,7 +43,7 @@ def run(plan, args):
 		name = args.name
 	plan.store_service_files(
 		name = name,
-		service_id = args.service_id,
+		service_name = args.service_name,
 		src = args.src
 	)
 `
@@ -142,39 +142,39 @@ func run(
 	return nil
 }
 
-func storeServiceFileStarlarkCommand(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, serviceId services.ServiceName, filePath string, enclaveIdentifier string, artifactName string) (*enclaves.StarlarkRunResult, error) {
-	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkTemplate, fmt.Sprintf(`{"service_id": "%s", "src": "%s", "name": "%s"}`, serviceId, filePath, artifactName), false)
+func storeServiceFileStarlarkCommand(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, serviceName services.ServiceName, filePath string, enclaveIdentifier string, artifactName string) (*enclaves.StarlarkRunResult, error) {
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkTemplate, fmt.Sprintf(`{"service_name": "%s", "src": "%s", "name": "%s"}`, serviceName, filePath, artifactName), false)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An unexpected error occurred running command for copying content from filepath '%v' in user service with ID '%v' to enclave '%v'. This is a bug in Kurtosis, please report.",
+			"An unexpected error occurred running command for copying content from filepath '%v' in user service with Name '%v' to enclave '%v'. This is a bug in Kurtosis, please report.",
 			filePath,
-			serviceId,
+			serviceName,
 			enclaveIdentifier)
 	}
 	if runResult.InterpretationError != nil {
 		return nil, stacktrace.NewError(
-			"An error occurred interpreting command for copying content from filepath '%v' in user service with ID '%v' to enclave '%v': %s\nThis is a bug in Kurtosis, please report.",
+			"An error occurred interpreting command for copying content from filepath '%v' in user service with name '%v' to enclave '%v': %s\nThis is a bug in Kurtosis, please report.",
 			filePath,
-			serviceId,
+			serviceName,
 			enclaveIdentifier,
 			runResult.InterpretationError.GetErrorMessage(),
 		)
 	}
 	if len(runResult.ValidationErrors) > 0 {
 		return nil, stacktrace.NewError(
-			"An error occurred validating command for copying content from filepath '%v' in user service with ID '%v' to enclave '%v': %v",
+			"An error occurred validating command for copying content from filepath '%v' in user service with name '%v' to enclave '%v': %v",
 			filePath,
-			serviceId,
+			serviceName,
 			enclaveIdentifier,
 			runResult.ValidationErrors,
 		)
 	}
 	if runResult.ExecutionError != nil {
 		return nil, stacktrace.NewError(
-			"An error occurred executing command for copying content from filepath '%v' in user service with ID '%v' to enclave '%v': %s",
+			"An error occurred executing command for copying content from filepath '%v' in user service with name '%v' to enclave '%v': %s",
 			filePath,
-			serviceId,
+			serviceName,
 			enclaveIdentifier,
 			runResult.ExecutionError.GetErrorMessage(),
 		)

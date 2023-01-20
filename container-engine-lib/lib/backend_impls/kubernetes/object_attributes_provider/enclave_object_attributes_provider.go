@@ -143,7 +143,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServiceSer
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"Failed to get labels for user service service with ID '%s' and UUID '%s'.",
+			"Failed to get labels for user service service with name '%s' and UUID '%s'.",
 			string(serviceName),
 			string(serviceUUID),
 		)

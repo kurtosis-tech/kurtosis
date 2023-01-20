@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	serviceIdArgName     = "service_id"
+	serviceIdArgName     = "service_name"
 	serviceConfigArgName = "config"
 	defineFactArgName    = "define_fact"
 	requestArgName       = "request"
@@ -30,7 +30,7 @@ const (
 	usedPortsKey          = "ports"
 	subnetworkKey         = "subnetwork"
 	// TODO remove this when we have the Portal as this is a temporary hack to meet the NEAR use case
-	serviceIdKey   = "service_id"
+	serviceNameKey = "service_name"
 	contentTypeKey = "content_type"
 	bodyKey        = "body"
 
@@ -59,21 +59,21 @@ const (
 	jsonParsingModuleId   = "Unused module id"
 )
 
-func ParseServiceId(serviceIdRaw starlark.String) (service.ServiceName, *startosis_errors.InterpretationError) {
+func ParseServiceName(serviceIdRaw starlark.String) (service.ServiceName, *startosis_errors.InterpretationError) {
 	// TODO(gb): maybe prohibit certain characters for service ids
 	serviceName, interpretationErr := kurtosis_types.SafeCastToString(serviceIdRaw, serviceIdArgName)
 	if interpretationErr != nil {
 		return "", interpretationErr
 	}
 	if len(serviceName) == 0 {
-		return "", startosis_errors.NewInterpretationError("Service ID cannot be empty")
+		return "", startosis_errors.NewInterpretationError("Service Name cannot be empty")
 	}
 	return service.ServiceName(serviceName), nil
 }
 
 // TODO: remove this method when we stop supporting struct for recipe defn
 func ParseHttpRequestRecipe(recipeConfig *starlarkstruct.Struct) (*recipe.HttpRequestRecipe, *startosis_errors.InterpretationError) {
-	serviceName, interpretationErr := extractStringValue(recipeConfig, serviceIdKey, requestArgName)
+	serviceName, interpretationErr := extractStringValue(recipeConfig, serviceNameKey, requestArgName)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
@@ -121,7 +121,7 @@ func ParseHttpRequestRecipe(recipeConfig *starlarkstruct.Struct) (*recipe.HttpRe
 
 // TODO: remove this method when we stop supporting struct for recipe defn
 func ParseExecRecipe(recipeConfig *starlarkstruct.Struct) (*recipe.ExecRecipe, *startosis_errors.InterpretationError) {
-	serviceName, interpretationErr := extractStringValue(recipeConfig, serviceIdKey, execArgName)
+	serviceName, interpretationErr := extractStringValue(recipeConfig, serviceNameKey, execArgName)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}

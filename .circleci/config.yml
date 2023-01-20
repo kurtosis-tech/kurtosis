@@ -73,8 +73,7 @@ abort_job_if_only_docs_changes: &abort_job_if_only_docs_changes
   run: |
     if git --no-pager diff --exit-code origin/master...HEAD -- . ':!docs'; then
       circleci-agent step halt
-    fi
-
+    fi 
 
 ##############
 # CircleCI
@@ -599,6 +598,10 @@ jobs:
   test_old_enclave_continuity:
     executor: ubuntu_vm
     steps:
+      # TODO remove this after v0.65.0 is out
+      # This exits the test_old_enclave_continuity immediately
+      # after a new version is out we remove these comments and this line
+      - run: circleci-agent step halt
       - checkout
 
       - <<: *abort_job_if_only_docs_changes

@@ -11,28 +11,28 @@ import (
 const (
 	builtinName = "test_builtin"
 
-	serviceIdArgName = "service_id"
-	serviceId        = starlark.String("datastore-server")
+	serviceNameArgName = "service_name"
+	serviceName        = starlark.String("datastore-server")
 
 	shouldStartArgName = "should_start"
 	shouldStart        = starlark.Bool(true)
 )
 
 func TestParseArguments_SingleRequiredArgument_FromArgs_Success(t *testing.T) {
-	argumentDefinitions := getArgumentDefinitionsWithServiceId()
+	argumentDefinitions := getArgumentDefinitionsWithServiceName()
 	args := starlark.Tuple{
-		serviceId,
+		serviceName,
 	}
 	var kwargs []starlark.Tuple
 
 	values, err := parseArguments(argumentDefinitions, builtinName, args, kwargs)
 	require.Nil(t, err)
 	require.Len(t, values, 1)
-	require.Equal(t, serviceId, values[0])
+	require.Equal(t, serviceName, values[0])
 }
 
 func TestParseArguments_SingleRequiredArgument_FromArgs_TypeMismatch(t *testing.T) {
-	argumentDefinitions := getArgumentDefinitionsWithServiceId()
+	argumentDefinitions := getArgumentDefinitionsWithServiceName()
 	args := starlark.Tuple{
 		starlark.MakeInt(10), // argument definition expects a starlark.String here
 	}
@@ -40,25 +40,25 @@ func TestParseArguments_SingleRequiredArgument_FromArgs_TypeMismatch(t *testing.
 
 	values, err := parseArguments(argumentDefinitions, builtinName, args, kwargs)
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "The following argument could not be parse because their type did not match the expected: [service_id]")
+	require.Contains(t, err.Error(), "The following argument could not be parse because their type did not match the expected: [service_name]")
 	require.Empty(t, values)
 }
 
 func TestParseArguments_SingleRequiredArgument_FromArgs_NoValueProvided(t *testing.T) {
-	argumentDefinitions := getArgumentDefinitionsWithServiceId()
-	args := starlark.Tuple{} // empty but service_id is a mandatory arg
+	argumentDefinitions := getArgumentDefinitionsWithServiceName()
+	args := starlark.Tuple{} // empty but service_name is a mandatory arg
 	var kwargs []starlark.Tuple
 
 	values, err := parseArguments(argumentDefinitions, builtinName, args, kwargs)
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "test_builtin: missing argument for service_id")
+	require.Contains(t, err.Error(), "test_builtin: missing argument for service_name")
 	require.Empty(t, values)
 }
 
 func TestParseArguments_SingleRequiredArgument_FromArgs_TooManyArgs(t *testing.T) {
-	argumentDefinitions := getArgumentDefinitionsWithServiceId()
+	argumentDefinitions := getArgumentDefinitionsWithServiceName()
 	args := starlark.Tuple{
-		serviceId,
+		serviceName,
 		starlark.MakeInt(10), // unexpected argument
 	}
 	var kwargs []starlark.Tuple
@@ -70,44 +70,44 @@ func TestParseArguments_SingleRequiredArgument_FromArgs_TooManyArgs(t *testing.T
 }
 
 func TestParseArguments_SingleRequiredArgument_FromKwargs_Success(t *testing.T) {
-	argumentDefinitions := getArgumentDefinitionsWithServiceId()
+	argumentDefinitions := getArgumentDefinitionsWithServiceName()
 	args := starlark.Tuple{}
 	kwargs := []starlark.Tuple{
 		[]starlark.Value{
-			starlark.String(serviceIdArgName),
-			serviceId,
+			starlark.String(serviceNameArgName),
+			serviceName,
 		},
 	}
 
 	values, err := parseArguments(argumentDefinitions, builtinName, args, kwargs)
 	require.Nil(t, err)
 	require.Len(t, values, 1)
-	require.Equal(t, serviceId, values[0])
+	require.Equal(t, serviceName, values[0])
 }
 
 func TestParseArguments_SingleRequiredArgument_FromKwargs_TypeMismatch(t *testing.T) {
-	argumentDefinitions := getArgumentDefinitionsWithServiceId()
+	argumentDefinitions := getArgumentDefinitionsWithServiceName()
 	args := starlark.Tuple{}
 	kwargs := []starlark.Tuple{
 		[]starlark.Value{
-			starlark.String(serviceIdArgName),
+			starlark.String(serviceNameArgName),
 			starlark.MakeInt(10), // argument definition expects a starlark.String here
 		},
 	}
 
 	values, err := parseArguments(argumentDefinitions, builtinName, args, kwargs)
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "The following argument could not be parse because their type did not match the expected: [service_id]")
+	require.Contains(t, err.Error(), "The following argument could not be parse because their type did not match the expected: [service_name]")
 	require.Empty(t, values)
 }
 
 func TestParseArguments_SingleRequiredArgument_FromKwargs_TooManyArgs(t *testing.T) {
-	argumentDefinitions := getArgumentDefinitionsWithServiceId()
+	argumentDefinitions := getArgumentDefinitionsWithServiceName()
 	args := starlark.Tuple{}
 	kwargs := []starlark.Tuple{
 		[]starlark.Value{
-			starlark.String(serviceIdArgName),
-			serviceId,
+			starlark.String(serviceNameArgName),
+			serviceName,
 		},
 		[]starlark.Value{
 			starlark.String("max_memory"), // unexpected argument here
@@ -122,9 +122,9 @@ func TestParseArguments_SingleRequiredArgument_FromKwargs_TooManyArgs(t *testing
 }
 
 func TestParseArguments_ArgumentWithOptional_FromArgsOnly_Success(t *testing.T) {
-	argumentDefinitions := getArgumentDefinitionsWithServiceIdAndShouldStart()
+	argumentDefinitions := getArgumentDefinitionsWithServiceNameAndShouldStart()
 	args := starlark.Tuple{
-		serviceId,
+		serviceName,
 		shouldStart,
 	}
 	var kwargs []starlark.Tuple
@@ -132,17 +132,17 @@ func TestParseArguments_ArgumentWithOptional_FromArgsOnly_Success(t *testing.T) 
 	values, err := parseArguments(argumentDefinitions, builtinName, args, kwargs)
 	require.Nil(t, err)
 	require.Len(t, values, 2)
-	require.Equal(t, serviceId, values[0])
+	require.Equal(t, serviceName, values[0])
 	require.Equal(t, shouldStart, values[1])
 }
 
 func TestParseArguments_ArgumentWithOptional_FromKwargsOnly_Success(t *testing.T) {
-	argumentDefinitions := getArgumentDefinitionsWithServiceIdAndShouldStart()
+	argumentDefinitions := getArgumentDefinitionsWithServiceNameAndShouldStart()
 	args := starlark.Tuple{}
 	kwargs := []starlark.Tuple{
 		[]starlark.Value{
-			starlark.String(serviceIdArgName),
-			serviceId,
+			starlark.String(serviceNameArgName),
+			serviceName,
 		},
 		[]starlark.Value{
 			starlark.String(shouldStartArgName),
@@ -153,14 +153,14 @@ func TestParseArguments_ArgumentWithOptional_FromKwargsOnly_Success(t *testing.T
 	values, err := parseArguments(argumentDefinitions, builtinName, args, kwargs)
 	require.Nil(t, err)
 	require.Len(t, values, 2)
-	require.Equal(t, serviceId, values[0])
+	require.Equal(t, serviceName, values[0])
 	require.Equal(t, shouldStart, values[1])
 }
 
 func TestParseArguments_ArgumentWithOptional_FromArgsAndKwargs_Success(t *testing.T) {
-	argumentDefinitions := getArgumentDefinitionsWithServiceIdAndShouldStart()
+	argumentDefinitions := getArgumentDefinitionsWithServiceNameAndShouldStart()
 	args := starlark.Tuple{
-		serviceId,
+		serviceName,
 	}
 	kwargs := []starlark.Tuple{
 		[]starlark.Value{
@@ -172,117 +172,117 @@ func TestParseArguments_ArgumentWithOptional_FromArgsAndKwargs_Success(t *testin
 	values, err := parseArguments(argumentDefinitions, builtinName, args, kwargs)
 	require.Nil(t, err)
 	require.Len(t, values, 2)
-	require.Equal(t, serviceId, values[0])
+	require.Equal(t, serviceName, values[0])
 	require.Equal(t, shouldStart, values[1])
 }
 
 func TestParseArguments_ArgumentWithOptional_FromArgsNoOptional_Success(t *testing.T) {
-	argumentDefinitions := getArgumentDefinitionsWithServiceIdAndShouldStart()
+	argumentDefinitions := getArgumentDefinitionsWithServiceNameAndShouldStart()
 	args := starlark.Tuple{
-		serviceId,
+		serviceName,
 	}
 	var kwargs []starlark.Tuple
 
 	values, err := parseArguments(argumentDefinitions, builtinName, args, kwargs)
 	require.Nil(t, err)
 	require.Len(t, values, 2)
-	require.Equal(t, serviceId, values[0])
+	require.Equal(t, serviceName, values[0])
 	require.Equal(t, starlark.Bool(false), values[1])
 }
 
 func TestParseArguments_ArgumentWithOptional_FromArgs_FailureTypeMismatch(t *testing.T) {
-	argumentDefinitions := getArgumentDefinitionsWithServiceIdAndShouldStart()
+	argumentDefinitions := getArgumentDefinitionsWithServiceNameAndShouldStart()
 	args := starlark.Tuple{
 		shouldStart,
-		serviceId,
+		serviceName,
 	}
 	var kwargs []starlark.Tuple
 
 	values, err := parseArguments(argumentDefinitions, builtinName, args, kwargs)
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "The following argument could not be parse because their type did not match the expected: [service_id should_start]")
+	require.Contains(t, err.Error(), "The following argument could not be parse because their type did not match the expected: [service_name should_start]")
 	require.Nil(t, values)
 }
 
 func TestExtractArgumentValue_Success(t *testing.T) {
-	argumentDefinitions := getArgumentDefinitionsWithServiceIdAndShouldStart()
+	argumentDefinitions := getArgumentDefinitionsWithServiceNameAndShouldStart()
 	values := []starlark.Value{
-		serviceId,
+		serviceName,
 		shouldStart,
 	}
 	argumentValuesSet := NewArgumentValuesSet(argumentDefinitions, values)
-	var serviceIdValue starlark.String
-	err := argumentValuesSet.ExtractArgumentValue(serviceIdArgName, &serviceIdValue)
+	var serviceNameValue starlark.String
+	err := argumentValuesSet.ExtractArgumentValue(serviceNameArgName, &serviceNameValue)
 	require.Nil(t, err)
-	require.Equal(t, serviceId, serviceIdValue)
+	require.Equal(t, serviceName, serviceNameValue)
 }
 
 func TestExtractArgumentValue_Failure_ArgumentNotFound(t *testing.T) {
-	argumentDefinitions := getArgumentDefinitionsWithServiceIdAndShouldStart()
+	argumentDefinitions := getArgumentDefinitionsWithServiceNameAndShouldStart()
 	values := []starlark.Value{
-		serviceId,
+		serviceName,
 		shouldStart,
 	}
 	argumentValuesSet := NewArgumentValuesSet(argumentDefinitions, values)
-	var serviceIdValue starlark.Int // expecting a string here
-	err := argumentValuesSet.ExtractArgumentValue("unknown_argument", &serviceIdValue)
+	var serviceNameValue starlark.Int // expecting a string here
+	err := argumentValuesSet.ExtractArgumentValue("unknown_argument", &serviceNameValue)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "Argument 'unknown_argument' could not be found in schema")
 }
 
 func TestExtractArgumentValue_Failure_TypeMismatch(t *testing.T) {
-	argumentDefinitions := getArgumentDefinitionsWithServiceIdAndShouldStart()
+	argumentDefinitions := getArgumentDefinitionsWithServiceNameAndShouldStart()
 	values := []starlark.Value{
-		serviceId,
+		serviceName,
 		shouldStart,
 	}
 	argumentValuesSet := NewArgumentValuesSet(argumentDefinitions, values)
-	var serviceIdValue starlark.Int // expecting a string here
-	err := argumentValuesSet.ExtractArgumentValue(serviceIdArgName, &serviceIdValue)
+	var serviceNameValue starlark.Int // expecting a string here
+	err := argumentValuesSet.ExtractArgumentValue(serviceNameArgName, &serviceNameValue)
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "Unable to extract value for argument 'service_id'. Types were not assignable (got 'starlark.Int', expecting 'starlark.String')")
+	require.Contains(t, err.Error(), "Unable to extract value for argument 'service_name'. Types were not assignable (got 'starlark.Int', expecting 'starlark.String')")
 }
 
 func TestExtractArgumentValueStatic_Success(t *testing.T) {
-	argumentDefinitions := getArgumentDefinitionsWithServiceIdAndShouldStart()
+	argumentDefinitions := getArgumentDefinitionsWithServiceNameAndShouldStart()
 	values := []starlark.Value{
-		serviceId,
+		serviceName,
 		shouldStart,
 	}
 	argumentValuesSet := NewArgumentValuesSet(argumentDefinitions, values)
-	value, err := ExtractArgumentValue[starlark.String](argumentValuesSet, serviceIdArgName)
+	value, err := ExtractArgumentValue[starlark.String](argumentValuesSet, serviceNameArgName)
 	require.Nil(t, err)
-	require.Equal(t, serviceId, value)
+	require.Equal(t, serviceName, value)
 }
 
 func TestExtractArgumentValueStatic_Failure_TypeMismatch(t *testing.T) {
-	argumentDefinitions := getArgumentDefinitionsWithServiceIdAndShouldStart()
+	argumentDefinitions := getArgumentDefinitionsWithServiceNameAndShouldStart()
 	values := []starlark.Value{
-		serviceId,
+		serviceName,
 		shouldStart,
 	}
 	argumentValuesSet := NewArgumentValuesSet(argumentDefinitions, values)
-	_, err := ExtractArgumentValue[starlark.Int](argumentValuesSet, serviceIdArgName)
+	_, err := ExtractArgumentValue[starlark.Int](argumentValuesSet, serviceNameArgName)
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "Unable to extract value for argument 'service_id'. Types were not assignable (got 'starlark.Int', expecting 'starlark.String')")
+	require.Contains(t, err.Error(), "Unable to extract value for argument 'service_name'. Types were not assignable (got 'starlark.Int', expecting 'starlark.String')")
 }
 
 func TestString(t *testing.T) {
-	argumentDefinitions := getArgumentDefinitionsWithServiceIdAndShouldStart()
+	argumentDefinitions := getArgumentDefinitionsWithServiceNameAndShouldStart()
 	values := []starlark.Value{
-		serviceId,
+		serviceName,
 		shouldStart,
 	}
 	argumentValuesSet := NewArgumentValuesSet(argumentDefinitions, values)
-	expectedString := fmt.Sprintf(`(service_id=%s, should_start=%s)`, serviceId.String(), shouldStart.String())
+	expectedString := fmt.Sprintf(`(service_name=%s, should_start=%s)`, serviceName.String(), shouldStart.String())
 	require.Equal(t, expectedString, argumentValuesSet.String())
 }
 
 // Private test helpers only below \\
-func getArgumentDefinitionsWithServiceId() []*BuiltinArgument {
+func getArgumentDefinitionsWithServiceName() []*BuiltinArgument {
 	return []*BuiltinArgument{
 		{
-			Name:              serviceIdArgName,
+			Name:              serviceNameArgName,
 			IsOptional:        false,
 			ZeroValueProvider: ZeroValueProvider[starlark.String],
 			Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
@@ -292,10 +292,10 @@ func getArgumentDefinitionsWithServiceId() []*BuiltinArgument {
 	}
 }
 
-func getArgumentDefinitionsWithServiceIdAndShouldStart() []*BuiltinArgument {
+func getArgumentDefinitionsWithServiceNameAndShouldStart() []*BuiltinArgument {
 	return []*BuiltinArgument{
 		{
-			Name:              serviceIdArgName,
+			Name:              serviceNameArgName,
 			IsOptional:        false,
 			ZeroValueProvider: ZeroValueProvider[starlark.String],
 			Validator: func(value starlark.Value) *startosis_errors.InterpretationError {

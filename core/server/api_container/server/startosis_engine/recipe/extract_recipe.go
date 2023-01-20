@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/itchyny/gojq"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
@@ -12,12 +11,6 @@ import (
 
 type ExtractRecipe struct {
 	fieldExtractor string
-}
-
-func NewExtractRecipe(fieldExtractor string) *ExtractRecipe {
-	return &ExtractRecipe{
-		fieldExtractor: fieldExtractor,
-	}
 }
 
 func (recipe *ExtractRecipe) Execute(input string) (map[string]starlark.Comparable, error) {
@@ -63,8 +56,4 @@ func (recipe *ExtractRecipe) Execute(input string) (map[string]starlark.Comparab
 		}
 	}
 	return nil, stacktrace.NewError("No field '%v' was found on input '%v'", recipe.fieldExtractor, input)
-}
-
-func CreateStarlarkReturnValueFromExtractRuntimeValue(resultUuid string) starlark.String {
-	return starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, "match"))
 }

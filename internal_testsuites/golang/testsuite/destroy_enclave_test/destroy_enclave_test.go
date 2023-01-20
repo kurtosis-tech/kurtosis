@@ -12,7 +12,7 @@ const (
 	testName              = "destroy-enclave"
 	isPartitioningEnabled = false
 
-	datastoreServiceId services.ServiceName = "datastore-service"
+	datastoreServiceName services.ServiceName = "datastore-service"
 )
 
 func TestDestroyEnclave(t *testing.T) {
@@ -29,7 +29,7 @@ func TestDestroyEnclave(t *testing.T) {
 	}()
 
 	// ------------------------------------- TEST SETUP ----------------------------------------------
-	_, _, _, err = test_helpers.AddDatastoreService(ctx, datastoreServiceId, enclaveCtx)
+	_, _, _, err = test_helpers.AddDatastoreService(ctx, datastoreServiceName, enclaveCtx)
 	require.NoError(t, err, "An error occurred adding the file server service")
 
 	err = destroyEnclaveFunc()

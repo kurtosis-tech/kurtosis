@@ -15,24 +15,23 @@ const (
 	unlimitedMatches = -1
 	singleMatch      = 1
 
-	serviceIdSubgroupName = "service_id"
-	allSubgroupName       = "all"
-	kurtosisNamespace     = "kurtosis"
+	serviceNameSubgroupName = "name"
+	allSubgroupName         = "all"
+	kurtosisNamespace       = "kurtosis"
 	// The placeholder format & regex should align
-	ipAddressReplacementRegex             = "(?P<" + allSubgroupName + ">\\{\\{" + kurtosisNamespace + ":(?P<" + serviceIdSubgroupName + ">" + service.ServiceIdRegexp + ")\\.ip_address\\}\\})"
+	ipAddressReplacementRegex             = "(?P<" + allSubgroupName + ">\\{\\{" + kurtosisNamespace + ":(?P<" + serviceNameSubgroupName + ">" + service.ServiceNameRegex + ")\\.ip_address\\}\\})"
 	IpAddressReplacementPlaceholderFormat = "{{" + kurtosisNamespace + ":%v.ip_address}}"
 
-	factNameArgName      = "fact_name"
-	factNameSubgroupName = "fact_name"
+	factNameArgName = "fact_name"
 
-	factReplacementRegex             = "(?P<" + allSubgroupName + ">\\{\\{" + kurtosisNamespace + ":(?P<" + serviceIdSubgroupName + ">" + service.ServiceIdRegexp + ")" + ":(?P<" + factNameArgName + ">" + service.ServiceIdRegexp + ")\\.fact\\}\\})"
+	factReplacementRegex             = "(?P<" + allSubgroupName + ">\\{\\{" + kurtosisNamespace + ":(?P<" + serviceNameSubgroupName + ">" + service.ServiceNameRegex + ")" + ":(?P<" + factNameArgName + ">" + service.ServiceNameRegex + ")\\.fact\\}\\})"
 	FactReplacementPlaceholderFormat = "{{" + kurtosisNamespace + ":%v:%v.fact}}"
 
 	runtimeValueSubgroupName      = "runtime_value"
 	runtimeValueFieldSubgroupName = "runtime_value_field"
 	runtimeValueKeyRegexp         = "[a-zA-Z0-9-_\\.]+"
 
-	runtimeValueReplacementRegex             = "(?P<" + allSubgroupName + ">\\{\\{" + kurtosisNamespace + ":(?P<" + runtimeValueSubgroupName + ">" + service.ServiceIdRegexp + ")" + ":(?P<" + runtimeValueFieldSubgroupName + ">" + runtimeValueKeyRegexp + ")\\.runtime_value\\}\\})"
+	runtimeValueReplacementRegex             = "(?P<" + allSubgroupName + ">\\{\\{" + kurtosisNamespace + ":(?P<" + runtimeValueSubgroupName + ">" + service.ServiceNameRegex + ")" + ":(?P<" + runtimeValueFieldSubgroupName + ">" + runtimeValueKeyRegexp + ")\\.runtime_value\\}\\})"
 	RuntimeValueReplacementPlaceholderFormat = "{{" + kurtosisNamespace + ":%v:%v.runtime_value}}"
 
 	subExpNotFound = -1
@@ -46,8 +45,8 @@ var (
 	compiledRuntimeValueReplacementRegex = regexp.MustCompile(runtimeValueReplacementRegex)
 )
 
-func MakeWaitInterpretationReturnValue(serviceId service.ServiceName, factName string) starlark.String {
-	fact := starlark.String(fmt.Sprintf(FactReplacementPlaceholderFormat, serviceId, factName))
+func MakeWaitInterpretationReturnValue(serviceName service.ServiceName, factName string) starlark.String {
+	fact := starlark.String(fmt.Sprintf(FactReplacementPlaceholderFormat, serviceName, factName))
 	return fact
 }
 
@@ -55,19 +54,19 @@ func ReplaceIPAddressInString(originalString string, network service_network.Ser
 	matches := compiledRegex.FindAllStringSubmatch(originalString, unlimitedMatches)
 	replacedString := originalString
 	for _, match := range matches {
-		serviceIdMatchIndex := compiledRegex.SubexpIndex(serviceIdSubgroupName)
-		if serviceIdMatchIndex == subExpNotFound {
-			return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", serviceIdSubgroupName, compiledRegex.String())
+		serviceNameMatchIndex := compiledRegex.SubexpIndex(serviceNameSubgroupName)
+		if serviceNameMatchIndex == subExpNotFound {
+			return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", serviceNameSubgroupName, compiledRegex.String())
 		}
-		serviceId := service.ServiceName(match[serviceIdMatchIndex])
-		ipAddress, found := network.GetIPAddressForService(serviceId)
+		serviceName := service.ServiceName(match[serviceNameMatchIndex])
+		ipAddress, found := network.GetIPAddressForService(serviceName)
 		if !found {
-			return "", stacktrace.NewError("'%v' depends on the IP address of '%v' but we don't have any registrations for it", argNameForLogigng, serviceId)
+			return "", stacktrace.NewError("'%v' depends on the IP address of '%v' but we don't have any registrations for it", argNameForLogigng, serviceName)
 		}
 		ipAddressStr := ipAddress.String()
 		allMatchIndex := compiledRegex.SubexpIndex(allSubgroupName)
 		if allMatchIndex == subExpNotFound {
-			return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", serviceIdSubgroupName, compiledRegex.String())
+			return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", serviceNameSubgroupName, compiledRegex.String())
 		}
 		allMatch := match[allMatchIndex]
 		replacedString = strings.Replace(replacedString, allMatch, ipAddressStr, singleMatch)
@@ -85,7 +84,7 @@ func ReplaceRuntimeValueInString(originalString string, recipeEngine *runtime_va
 		}
 		allMatchIndex := compiledRuntimeValueReplacementRegex.SubexpIndex(allSubgroupName)
 		if allMatchIndex == subExpNotFound {
-			return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", serviceIdSubgroupName, compiledFactReplacementRegex.String())
+			return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", serviceNameSubgroupName, compiledFactReplacementRegex.String())
 		}
 		allMatch := match[allMatchIndex]
 		switch value := selectedRuntimeValue.(type) {

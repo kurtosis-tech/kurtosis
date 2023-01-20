@@ -20,21 +20,21 @@ const (
 	defaultDryRun         = false
 	emptyArgs             = "{}"
 
-	serviceId           = "example-datastore-server-1"
+	serviceName         = "example-datastore-server-1"
 	portId              = "grpc"
 	publicPortNumberStr = "11323"
 	publicPortNumber    = uint16(11323)
 
 	starlarkScript = `
 DATASTORE_IMAGE = "kurtosistech/example-datastore-server"
-DATASTORE_SERVICE_ID = "` + serviceId + `"
+DATASTORE_SERVICE_NAME = "` + serviceName + `"
 DATASTORE_PORT_ID = "` + portId + `"
 DATASTORE_PORT_NUMBER = 1323
 DATASTORE_PUBLIC_PORT_NUMBER = ` + publicPortNumberStr + `
 DATASTORE_PORT_PROTOCOL = "TCP"
 
 def run(plan):
-	plan.print("Adding service " + DATASTORE_SERVICE_ID + ".")
+	plan.print("Adding service " + DATASTORE_SERVICE_NAME + ".")
 	
 	config = ServiceConfig(
 		image = DATASTORE_IMAGE,
@@ -46,8 +46,8 @@ def run(plan):
 		}
 	)
 	
-	plan.add_service(service_id = DATASTORE_SERVICE_ID, config = config)
-	plan.print("Service " + DATASTORE_SERVICE_ID + " deployed successfully.")
+	plan.add_service(service_name = DATASTORE_SERVICE_NAME, config = config)
+	plan.print("Service " + DATASTORE_SERVICE_NAME + " deployed successfully.")
 `
 )
 
@@ -67,7 +67,7 @@ func TestStartosis(t *testing.T) {
 	require.NoError(t, err, "Unexpected error executing Starlark script")
 
 	expectedScriptOutput := `Adding service example-datastore-server-1.
-Service 'example-datastore-server-1' added with service GUID '[a-z-0-9]+'
+Service 'example-datastore-server-1' added with service UUID '[a-z-0-9]+'
 Service example-datastore-server-1 deployed successfully.
 `
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
@@ -80,15 +80,15 @@ Service example-datastore-server-1 deployed successfully.
 	logrus.Infof("Checking that service is healthy")
 	require.NoError(
 		t,
-		test_helpers.ValidateDatastoreServiceHealthy(context.Background(), enclaveCtx, serviceId, portId),
+		test_helpers.ValidateDatastoreServiceHealthy(context.Background(), enclaveCtx, serviceName, portId),
 		"Error validating datastore server '%s' is healthy",
-		serviceId,
+		serviceName,
 	)
 	logrus.Infof("All services added via the module work as expected")
 
 	// Check that the right port got exposed
-	logrus.Infof("Checking the right port got exposed on " + serviceId)
-	serviceCtx, err := enclaveCtx.GetServiceContext(serviceId)
+	logrus.Infof("Checking the right port got exposed on " + serviceName)
+	serviceCtx, err := enclaveCtx.GetServiceContext(serviceName)
 	require.Nil(t, err, "Unexpected Error Creating Service Context")
 	exposedPort, found := serviceCtx.GetPublicPorts()[portId]
 	require.True(t, found)

@@ -93,7 +93,7 @@ const TEST_DATASTORE_VALUE = "test-value"
 const WAIT_FOR_GET_AVAILABILITY_STARLARK_SCRIPT = `
 def run(plan, args):
 	get_recipe = struct(
-		service_id = args.service_id,
+		service_name = args.service_name,
 		port_id = args.port_id,
 		endpoint = args.endpoint,
 		method = "GET",
@@ -267,7 +267,7 @@ export async function waitForHealthy(
 }
 
 export async function waitForGetAvailabilityStarlarkScript(enclaveContext: EnclaveContext, serviceName: string, portId: string, endpoint: string, interval: number, timeout: number) : Promise<Result<StarlarkRunResult, Error>> {
-    return enclaveContext.runStarlarkScriptBlocking(WAIT_FOR_GET_AVAILABILITY_STARLARK_SCRIPT, `{ "service_id": "${serviceName}", "port_id": "${portId}", "endpoint": "/${endpoint}", "interval": "${interval}ms", "timeout": "${timeout}ms"}`, false)
+    return enclaveContext.runStarlarkScriptBlocking(WAIT_FOR_GET_AVAILABILITY_STARLARK_SCRIPT, `{ "service_name": "${serviceName}", "port_id": "${portId}", "endpoint": "/${endpoint}", "interval": "${interval}ms", "timeout": "${timeout}ms"}`, false)
 }
 
 export async function startFileServer(fileServerServiceName: ServiceName, filesArtifactUuid: string, pathToCheckOnFileServer: string, enclaveCtx: EnclaveContext): Promise<Result<StartFileServerResponse, Error>> {
@@ -431,10 +431,10 @@ async function getFileContents(ipAddress: string, portNum: number, relativeFilep
     return ok(bodyStr)
 }
 
-export async function validateDataStoreServiceIsHealthy(enclaveContext: EnclaveContext, serviceId: string, portId: string): Promise<Result<null, Error>> {
-    const getServiceContextResult = await enclaveContext.getServiceContext(serviceId)
+export async function validateDataStoreServiceIsHealthy(enclaveContext: EnclaveContext, serviceName: string, portId: string): Promise<Result<null, Error>> {
+    const getServiceContextResult = await enclaveContext.getServiceContext(serviceName)
     if (getServiceContextResult.isErr()) {
-        log.error(`An error occurred getting the service context for service '${serviceId}'; this indicates that the module says it created a service that it actually didn't`)
+        log.error(`An error occurred getting the service context for service '${serviceName}'; this indicates that the module says it created a service that it actually didn't`)
         throw getServiceContextResult.error
     }
     const serviceContext = getServiceContextResult.value
@@ -442,7 +442,7 @@ export async function validateDataStoreServiceIsHealthy(enclaveContext: EnclaveC
     const publicPort: undefined | PortSpec = serviceContext.getPublicPorts().get(portId)
 
     if (publicPort === undefined) {
-        throw new Error(`Expected to find public port '${portId}' on datastore service '${serviceId}', but none was found`)
+        throw new Error(`Expected to find public port '${portId}' on datastore service '${serviceName}', but none was found`)
     }
 
     const {
@@ -453,7 +453,7 @@ export async function validateDataStoreServiceIsHealthy(enclaveContext: EnclaveC
     try {
         const waitForHealthyResult = await waitForHealthy(datastoreClient, WAIT_FOR_STARTUP_MAX_POLLS, MILLIS_BETWEEN_AVAILABILITY_RETRIES);
         if (waitForHealthyResult.isErr()) {
-            log.error(`An error occurred waiting for the datastore service '${serviceId}' to become available`);
+            log.error(`An error occurred waiting for the datastore service '${serviceName}' to become available`);
             throw waitForHealthyResult.error
         }
 
@@ -477,7 +477,7 @@ export async function validateDataStoreServiceIsHealthy(enclaveContext: EnclaveC
 
         const upsertResponseResult = await upsertResponseResultPromise;
         if (upsertResponseResult.isErr()) {
-            log.error(`An error occurred adding the test key to datastore service "${serviceId}"`)
+            log.error(`An error occurred adding the test key to datastore service "${serviceName}"`)
             throw upsertResponseResult.error
         }
 
@@ -500,14 +500,14 @@ export async function validateDataStoreServiceIsHealthy(enclaveContext: EnclaveC
 
         const getResponseResult = await getResponseResultPromise;
         if (getResponseResult.isErr()) {
-            log.error(`An error occurred getting the test key to datastore service "${serviceId}"`)
+            log.error(`An error occurred getting the test key to datastore service "${serviceName}"`)
             throw getResponseResult.error
         }
 
         const getResponse = getResponseResult.value;
         const actualValue = getResponse.getValue();
         if (actualValue !== TEST_DATASTORE_VALUE) {
-            log.error(`Datastore service "${serviceId}" is storing value "${actualValue}" for the test key, which doesn't match the expected value ""${TEST_DATASTORE_VALUE}`)
+            log.error(`Datastore service "${serviceName}" is storing value "${actualValue}" for the test key, which doesn't match the expected value ""${TEST_DATASTORE_VALUE}`)
         }
 
     } finally {
@@ -537,17 +537,17 @@ export async function addServicesWithLogLines(
 
     const servicesAdded: Map<ServiceName, ServiceContext> = new Map<ServiceName, ServiceContext>();
 
-    for (let [serviceId, logLines] of logLinesByServiceID) {
+    for (let [serviceName, logLines] of logLinesByServiceID) {
         const containerConf: ContainerConfig = getServiceWithLogLinesConfig(logLines);
-        const addServiceResult = await enclaveContext.addService(serviceId, containerConf);
+        const addServiceResult = await enclaveContext.addService(serviceName, containerConf);
 
         if (addServiceResult.isErr()) {
-            return err(new Error(`An error occurred adding service '${serviceId}'`));
+            return err(new Error(`An error occurred adding service '${serviceName}'`));
         }
 
         const serviceContext: ServiceContext = addServiceResult.value;
 
-        servicesAdded.set(serviceId, serviceContext)
+        servicesAdded.set(serviceName, serviceContext)
     }
 
     return ok(servicesAdded)

@@ -35,23 +35,23 @@ func TestUpdateService_Interpreter(t *testing.T) {
 		"datastore-service",
 		binding_constructors.NewUpdateServiceConfig("subnetwork_1"),
 		starlark.StringDict{
-			"service_id": starlark.String("datastore-service"),
-			"config":     kurtosis_types.NewUpdateServiceConfig("subnetwork_1"),
+			"service_name": starlark.String("datastore-service"),
+			"config":       kurtosis_types.NewUpdateServiceConfig("subnetwork_1"),
 		})
 	require.Equal(t, expectedInstruction, instructions[0])
 }
 
 func TestUpdateService_GetCanonicalizedInstruction(t *testing.T) {
-	serviceId := starlark.String("datastore-service")
+	serviceName := starlark.String("datastore-service")
 	updateServiceConfig := kurtosis_types.NewUpdateServiceConfig("subnetwork_1")
 	updateServiceInstruction := newEmptyUpdateServiceInstruction(
 		nil,
 		kurtosis_instruction.NewInstructionPosition(22, 26, "dummyFile"),
 	)
-	updateServiceInstruction.starlarkKwargs[serviceIdArgName] = serviceId
+	updateServiceInstruction.starlarkKwargs[serviceNameArgName] = serviceName
 	updateServiceInstruction.starlarkKwargs[updateServiceConfigArgName] = updateServiceConfig
 
-	expectedOutput := `update_service(config=UpdateServiceConfig(subnetwork="subnetwork_1"), service_id="datastore-service")`
+	expectedOutput := `update_service(config=UpdateServiceConfig(subnetwork="subnetwork_1"), service_name="datastore-service")`
 	require.Equal(t, expectedOutput, updateServiceInstruction.String())
 }
 
@@ -62,8 +62,8 @@ func TestUpdateService_SerializeAndParseAgain(t *testing.T) {
 		"datastore-service",
 		binding_constructors.NewUpdateServiceConfig("subnetwork_1"),
 		starlark.StringDict{
-			"service_id": starlark.String("datastore-service"),
-			"config":     kurtosis_types.NewUpdateServiceConfig("subnetwork_1"),
+			"service_name": starlark.String("datastore-service"),
+			"config":       kurtosis_types.NewUpdateServiceConfig("subnetwork_1"),
 		})
 
 	canonicalizedInstruction := initialInstruction.String()

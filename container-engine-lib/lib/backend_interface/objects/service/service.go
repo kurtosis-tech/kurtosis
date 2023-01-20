@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	ServiceIdRegexp = "[a-zA-Z0-9-_]+"
+	ServiceNameRegex = "[a-zA-Z0-9-_]+"
 )
 
 type ServiceName string

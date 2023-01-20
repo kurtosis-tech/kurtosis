@@ -87,14 +87,14 @@ const (
 	waitForGetAvaliabilityStalarkScript = `
 def run(plan, args):
 	get_recipe = struct(
-		service_id = args.service_id,
+		service_name = args.service_name,
 		port_id = args.port_id,
 		endpoint = args.endpoint,
 		method = "GET",
 	)
 	plan.wait(get_recipe, "code", "==", 200, args.interval, args.timeout)
 `
-	waitForGetAvaliabilityStalarkScriptParams = `{ "service_id": "%s", "port_id": "%s", "endpoint": "/%s", "interval": "%dms", "timeout": "%dms"}`
+	waitForGetAvaliabilityStalarkScriptParams = `{ "service_name": "%s", "port_id": "%s", "endpoint": "/%s", "interval": "%dms", "timeout": "%dms"}`
 
 	noExpectedLogLines = 0
 
@@ -148,7 +148,7 @@ func AddService(
 	serviceName services.ServiceName,
 	serviceConfigStarlark string) (*services.ServiceContext, error) {
 	starlarkRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, fmt.Sprintf(`def run(plan):
-	plan.add_service(service_id = "%s", config = %s)`, serviceName, serviceConfigStarlark), "", false)
+	plan.add_service(service_name = "%s", config = %s)`, serviceName, serviceConfigStarlark), "", false)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error has occurred when running Starlark to add service")
 	}
@@ -170,7 +170,7 @@ func AddService(
 
 func AddDatastoreService(
 	ctx context.Context,
-	serviceId services.ServiceName,
+	serviceName services.ServiceName,
 	enclaveCtx *enclaves.EnclaveContext,
 ) (
 	resultServiceCtx *services.ServiceContext,
@@ -180,7 +180,7 @@ func AddDatastoreService(
 ) {
 	serviceConfigStarlark := getDatastoreServiceConfigStarlark()
 
-	serviceCtx, err := AddService(ctx, enclaveCtx, serviceId, serviceConfigStarlark)
+	serviceCtx, err := AddService(ctx, enclaveCtx, serviceName, serviceConfigStarlark)
 	if err != nil {
 		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred adding the datastore service")
 	}
@@ -208,16 +208,16 @@ func AddDatastoreService(
 	return serviceCtx, client, clientCloseFunc, nil
 }
 
-func ValidateDatastoreServiceHealthy(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, serviceId services.ServiceName, portId string) error {
-	serviceCtx, err := enclaveCtx.GetServiceContext(string(serviceId))
+func ValidateDatastoreServiceHealthy(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, serviceName services.ServiceName, portId string) error {
+	serviceCtx, err := enclaveCtx.GetServiceContext(string(serviceName))
 	if err != nil {
-		return stacktrace.Propagate(err, "Error retrieving service context for service '%s'", serviceId)
+		return stacktrace.Propagate(err, "Error retrieving service context for service '%s'", serviceName)
 	}
 	ipAddr := serviceCtx.GetMaybePublicIPAddress()
 
 	publicPort, found := serviceCtx.GetPublicPorts()[portId]
 	if !found {
-		return stacktrace.Propagate(err, "No public port found for service '%s' and port ID '%s'", serviceId, portId)
+		return stacktrace.Propagate(err, "No public port found for service '%s' and port ID '%s'", serviceName, portId)
 	}
 
 	datastoreClient, datastoreClientConnCloseFunc, err := createDatastoreClient(
@@ -225,13 +225,13 @@ func ValidateDatastoreServiceHealthy(ctx context.Context, enclaveCtx *enclaves.E
 		publicPort.GetNumber(),
 	)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating a new datastore client for service with ID '%v' and IP address '%v'", serviceId, ipAddr)
+		return stacktrace.Propagate(err, "An error occurred creating a new datastore client for service with name '%v' and IP address '%v'", serviceName, ipAddr)
 	}
 	defer datastoreClientConnCloseFunc()
 
 	err = WaitForHealthy(context.Background(), datastoreClient, waitForStartupMaxRetries, waitForStartupTimeBetweenPolls)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred waiting for datastore service '%v' to become available", serviceId)
+		return stacktrace.Propagate(err, "An error occurred waiting for datastore service '%v' to become available", serviceName)
 	}
 
 	upsertArgs := &datastore_rpc_api_bindings.UpsertArgs{
@@ -240,7 +240,7 @@ func ValidateDatastoreServiceHealthy(ctx context.Context, enclaveCtx *enclaves.E
 	}
 	_, err = datastoreClient.Upsert(ctx, upsertArgs)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred adding the test key to datastore service '%v'", serviceId)
+		return stacktrace.Propagate(err, "An error occurred adding the test key to datastore service '%v'", serviceName)
 	}
 
 	getArgs := &datastore_rpc_api_bindings.GetArgs{
@@ -248,25 +248,25 @@ func ValidateDatastoreServiceHealthy(ctx context.Context, enclaveCtx *enclaves.E
 	}
 	getResponse, err := datastoreClient.Get(ctx, getArgs)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the test key from datastore service '%v'", serviceId)
+		return stacktrace.Propagate(err, "An error occurred getting the test key from datastore service '%v'", serviceName)
 	}
 
 	actualValue := getResponse.GetValue()
 	if testDatastoreValue != actualValue {
-		return stacktrace.NewError("Datastore service '%v' is storing value '%v' for the test key '%v', which doesn't match the expected value '%v'", serviceId, actualValue, testDatastoreKey, testDatastoreValue)
+		return stacktrace.NewError("Datastore service '%v' is storing value '%v' for the test key '%v', which doesn't match the expected value '%v'", serviceName, actualValue, testDatastoreKey, testDatastoreValue)
 	}
 	return nil
 }
 
-func AddAPIService(ctx context.Context, serviceId services.ServiceName, enclaveCtx *enclaves.EnclaveContext, datastorePrivateIp string) (*services.ServiceContext, example_api_server_rpc_api_bindings.ExampleAPIServerServiceClient, func(), error) {
-	serviceCtx, client, clientCloseFunc, err := AddAPIServiceToPartition(ctx, serviceId, enclaveCtx, datastorePrivateIp, defaultPartitionId)
+func AddAPIService(ctx context.Context, serviceName services.ServiceName, enclaveCtx *enclaves.EnclaveContext, datastorePrivateIp string) (*services.ServiceContext, example_api_server_rpc_api_bindings.ExampleAPIServerServiceClient, func(), error) {
+	serviceCtx, client, clientCloseFunc, err := AddAPIServiceToPartition(ctx, serviceName, enclaveCtx, datastorePrivateIp, defaultPartitionId)
 	if err != nil {
 		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred adding API service to default partition")
 	}
 	return serviceCtx, client, clientCloseFunc, nil
 }
 
-func AddAPIServiceToPartition(ctx context.Context, serviceId services.ServiceName, enclaveCtx *enclaves.EnclaveContext, datastorePrivateIp string, partitionId enclaves.PartitionID) (*services.ServiceContext, example_api_server_rpc_api_bindings.ExampleAPIServerServiceClient, func(), error) {
+func AddAPIServiceToPartition(ctx context.Context, serviceName services.ServiceName, enclaveCtx *enclaves.EnclaveContext, datastorePrivateIp string, partitionId enclaves.PartitionID) (*services.ServiceContext, example_api_server_rpc_api_bindings.ExampleAPIServerServiceClient, func(), error) {
 	configFilepath, err := createApiConfigFile(datastorePrivateIp)
 	if err != nil {
 		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred creating the datastore config file")
@@ -279,7 +279,7 @@ func AddAPIServiceToPartition(ctx context.Context, serviceId services.ServiceNam
 
 	serviceConfigStarlark := getApiServiceServiceConfigStarlark(artifactName, partitionId)
 
-	serviceCtx, err := AddService(ctx, enclaveCtx, serviceId, serviceConfigStarlark)
+	serviceCtx, err := AddService(ctx, enclaveCtx, serviceName, serviceConfigStarlark)
 	if err != nil {
 		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred adding the API service")
 	}
@@ -492,13 +492,13 @@ func AddServicesWithLogLines(
 ) (map[services.ServiceName]*services.ServiceContext, error) {
 
 	servicesAdded := make(map[services.ServiceName]*services.ServiceContext, len(logLinesByServiceName))
-	for serviceId, logLines := range logLinesByServiceName {
+	for serviceName, logLines := range logLinesByServiceName {
 		serviceConfigStarlark := getServiceWithLogLinesServiceConfigStarlark(logLines)
-		serviceCtx, err := AddService(ctx, enclaveCtx, serviceId, serviceConfigStarlark)
+		serviceCtx, err := AddService(ctx, enclaveCtx, serviceName, serviceConfigStarlark)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred adding service with ID %v", serviceId)
+			return nil, stacktrace.Propagate(err, "An error occurred adding service with name %v", serviceName)
 		}
-		servicesAdded[serviceId] = serviceCtx
+		servicesAdded[serviceName] = serviceCtx
 	}
 	return servicesAdded, nil
 }
@@ -622,8 +622,8 @@ func createDatastoreClient(ipAddr string, portNum uint16) (datastore_rpc_api_bin
 	return client, clientCloseFunc, nil
 }
 
-func waitForFileServerAvailability(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, serviceId services.ServiceName, portId string, endpoint string, initialDelayMilliseconds uint32, timeoutMilliseconds uint32) error {
-	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, waitForGetAvaliabilityStalarkScript, fmt.Sprintf(waitForGetAvaliabilityStalarkScriptParams, serviceId, portId, endpoint, initialDelayMilliseconds, timeoutMilliseconds), false)
+func waitForFileServerAvailability(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, serviceName services.ServiceName, portId string, endpoint string, initialDelayMilliseconds uint32, timeoutMilliseconds uint32) error {
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, waitForGetAvaliabilityStalarkScript, fmt.Sprintf(waitForGetAvaliabilityStalarkScriptParams, serviceName, portId, endpoint, initialDelayMilliseconds, timeoutMilliseconds), false)
 	if err != nil {
 		return stacktrace.Propagate(err, "An unexpected error has occurred getting endpoint availability using Starlark")
 	}

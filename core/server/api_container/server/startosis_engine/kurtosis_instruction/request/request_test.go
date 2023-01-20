@@ -18,7 +18,7 @@ func TestRequestInstruction_StringRepresentationWorks(t *testing.T) {
 	err := extractor.SetKey(starlark.String("key"), starlark.String(".value"))
 	require.Nil(t, err)
 	testRecipeConfig := starlarkstruct.FromStringDict(starlarkstruct.Default, starlark.StringDict{
-		"service_id":   starlark.String("web-server"),
+		"service_name": starlark.String("web-server"),
 		"port_id":      starlark.String("http-port"),
 		"endpoint":     starlark.String("/"),
 		"method":       starlark.String("POST"),
@@ -39,6 +39,6 @@ func TestRequestInstruction_StringRepresentationWorks(t *testing.T) {
 		testUuid,
 		starlarkKwargs,
 	)
-	expectedStr := `request(recipe=struct(body="post_output", content_type="text/plain", endpoint="/", extract={"key": ".value"}, method="POST", port_id="http-port", service_id="web-server"))`
+	expectedStr := `request(recipe=struct(body="post_output", content_type="text/plain", endpoint="/", extract={"key": ".value"}, method="POST", port_id="http-port", service_name="web-server"))`
 	require.Equal(t, expectedStr, getValueInstruction.String())
 }

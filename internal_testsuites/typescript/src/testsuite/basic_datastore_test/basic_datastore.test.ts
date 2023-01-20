@@ -10,7 +10,7 @@ import { addDatastoreService } from "../../test_helpers/test_helpers";
 
 const TEST_NAME = "basic-datastore";
 const IS_PARTITIONING_ENABLED = false;
-const DATASTORE_SERVICE_ID: ServiceName = "datastore";
+const DATASTORE_SERVICE_NAME: ServiceName = "datastore";
 const TEST_KEY = "test-key"
 const TEST_VALUE = "test-value";
 
@@ -30,7 +30,7 @@ test("Test basic datastore test", async () => {
 
         log.info("Adding datastore service...")
 
-        const addDatastoreServiceResult = await addDatastoreService(DATASTORE_SERVICE_ID, enclaveContext)
+        const addDatastoreServiceResult = await addDatastoreService(DATASTORE_SERVICE_NAME, enclaveContext)
 
         if(addDatastoreServiceResult.isErr()) { throw addDatastoreServiceResult.error }
 

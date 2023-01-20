@@ -1,11 +1,11 @@
 DATASTORE_IMAGE = "kurtosistech/example-datastore-server"
-DATASTORE_SERVICE_ID = "example-datastore-server-startosis"
+DATASTORE_SERVICE_NAME = "example-datastore-server-startosis"
 DATASTORE_PORT_ID = "grpc"
 DATASTORE_PORT_NUMBER = 1323
 DATASTORE_PORT_PROTOCOL = "TCP"
 
 def run(plan, args):
-    plan.print("Adding service " + DATASTORE_SERVICE_ID + ".")
+    plan.print("Adding service " + DATASTORE_SERVICE_NAME + ".")
 
     config = ServiceConfig(
         image = DATASTORE_IMAGE,
@@ -14,5 +14,5 @@ def run(plan, args):
         }
     )
 
-    plan.add_service(service_id = DATASTORE_SERVICE_ID, config = config)
-    plan.print("Service " + DATASTORE_SERVICE_ID + " deployed successfully.")
+    plan.add_service(service_name = DATASTORE_SERVICE_NAME, config = config)
+    plan.print("Service " + DATASTORE_SERVICE_NAME + " deployed successfully.")

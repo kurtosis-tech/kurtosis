@@ -17,7 +17,7 @@ const (
 	testName              = "files-artifact-mounting"
 	isPartitioningEnabled = false
 
-	fileServerServiceId services.ServiceName = "file-server"
+	fileServerServiceName services.ServiceName = "file-server"
 
 	testFilesArtifactUrl = "https://kurtosis-public-access.s3.us-east-1.amazonaws.com/test-artifacts/static-fileserver-files.tgz"
 	testArtifactName     = "test-artifact-name"
@@ -42,7 +42,7 @@ func TestStoreWebFiles(t *testing.T) {
 	// ------------------------------------- TEST SETUP ----------------------------------------------
 	filesArtifactUuid, err := enclaveCtx.StoreWebFiles(context.Background(), testFilesArtifactUrl, testArtifactName)
 	require.NoError(t, err, "An error occurred storing the files artifact")
-	fileServerPublicIp, fileServerPublicPortNum, err := test_helpers.StartFileServer(ctx, fileServerServiceId, filesArtifactUuid, file1Filename, enclaveCtx)
+	fileServerPublicIp, fileServerPublicPortNum, err := test_helpers.StartFileServer(ctx, fileServerServiceName, filesArtifactUuid, file1Filename, enclaveCtx)
 	require.NoError(t, err, "An error occurred waiting for the file server service to become available")
 	logrus.Infof("Added file server service with public IP '%v' and port '%v'", fileServerPublicIp, fileServerPublicPortNum)
 	// ------------------------------------- TEST RUN ----------------------------------------------

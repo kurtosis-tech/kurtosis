@@ -14,9 +14,9 @@ const (
 	testName              string = "basic-datastore"
 	isPartitioningEnabled bool   = false
 
-	datastoreServiceId services.ServiceName = "datastore"
-	testKey            string               = "test-key"
-	testValue          string               = "test-value"
+	datastoreServiceName services.ServiceName = "datastore"
+	testKey              string               = "test-key"
+	testValue            string               = "test-value"
 )
 
 func TestBasicDatastoreTest(t *testing.T) {
@@ -30,7 +30,7 @@ func TestBasicDatastoreTest(t *testing.T) {
 	// ------------------------------------- TEST SETUP ----------------------------------------------
 	// TODO replace with datastore launcher inside the lib
 	logrus.Infof("Adding datastore service...")
-	_, datastoreClient, clientCloseFunc, err := test_helpers.AddDatastoreService(ctx, datastoreServiceId, enclaveCtx)
+	_, datastoreClient, clientCloseFunc, err := test_helpers.AddDatastoreService(ctx, datastoreServiceName, enclaveCtx)
 	require.NoError(t, err, "An error occurred adding the datastore service to the enclave")
 	defer clientCloseFunc()
 	logrus.Infof("Added datastore service")

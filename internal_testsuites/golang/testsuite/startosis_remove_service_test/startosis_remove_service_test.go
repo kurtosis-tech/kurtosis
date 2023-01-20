@@ -14,18 +14,18 @@ const (
 	defaultDryRun         = false
 	emptyArgs             = "{}"
 
-	serviceId = "example-datastore-server-1"
-	portId    = "grpc"
+	serviceName = "example-datastore-server-1"
+	portId      = "grpc"
 
 	starlarkScript = `
 DATASTORE_IMAGE = "kurtosistech/example-datastore-server"
-DATASTORE_SERVICE_ID = "` + serviceId + `"
+DATASTORE_SERVICE_NAME = "` + serviceName + `"
 DATASTORE_PORT_ID = "` + portId + `"
 DATASTORE_PORT_NUMBER = 1323
 DATASTORE_PORT_PROTOCOL = "TCP"
 
 def run(plan):
-	plan.print("Adding service " + DATASTORE_SERVICE_ID + ".")
+	plan.print("Adding service " + DATASTORE_SERVICE_NAME + ".")
 	
 	config = ServiceConfig(
 		image = DATASTORE_IMAGE,
@@ -34,14 +34,14 @@ def run(plan):
 		}
 	)
 	
-	plan.add_service(service_id = DATASTORE_SERVICE_ID, config = config)
-	plan.print("Service " + DATASTORE_SERVICE_ID + " deployed successfully.")
+	plan.add_service(service_name = DATASTORE_SERVICE_NAME, config = config)
+	plan.print("Service " + DATASTORE_SERVICE_NAME + " deployed successfully.")
 `
 	// We remove the service we created through the script above with a different script
 	removeScript = `
-DATASTORE_SERVICE_ID = "` + serviceId + `"
+DATASTORE_SERVICE_NAME = "` + serviceName + `"
 def run(plan):
-	plan.remove_service(DATASTORE_SERVICE_ID)
+	plan.remove_service(DATASTORE_SERVICE_NAME)
 `
 )
 
@@ -65,7 +65,7 @@ func TestStartosis(t *testing.T) {
 	require.Nil(t, runResult.ExecutionError, "Unexpected execution error")
 
 	expectedScriptOutput := `Adding service example-datastore-server-1.
-Service 'example-datastore-server-1' added with service GUID '[a-z-0-9]+'
+Service 'example-datastore-server-1' added with service UUID '[a-z-0-9]+'
 Service example-datastore-server-1 deployed successfully.
 `
 	require.Regexp(t, expectedScriptOutput, string(runResult.RunOutput))
@@ -75,9 +75,9 @@ Service example-datastore-server-1 deployed successfully.
 	logrus.Infof("Checking that services are all healthy")
 	require.NoError(
 		t,
-		test_helpers.ValidateDatastoreServiceHealthy(context.Background(), enclaveCtx, serviceId, portId),
+		test_helpers.ValidateDatastoreServiceHealthy(context.Background(), enclaveCtx, serviceName, portId),
 		"Error validating datastore server '%s' is healthy",
-		serviceId,
+		serviceName,
 	)
 
 	logrus.Infof("Validated that all services are healthy")
@@ -90,15 +90,15 @@ Service example-datastore-server-1 deployed successfully.
 	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")
 	require.Nil(t, runResult.ExecutionError, "Unexpected execution error")
 
-	expectedScriptOutput = `Service 'example-datastore-server-1' with service GUID '[a-z-0-9]+' removed
+	expectedScriptOutput = `Service 'example-datastore-server-1' with service UUID '[a-z-0-9]+' removed
 `
 	require.Regexp(t, expectedScriptOutput, string(runResult.RunOutput))
 
 	require.Error(
 		t,
-		test_helpers.ValidateDatastoreServiceHealthy(context.Background(), enclaveCtx, serviceId, portId),
+		test_helpers.ValidateDatastoreServiceHealthy(context.Background(), enclaveCtx, serviceName, portId),
 		"Error validating datastore server '%s' is not healthy",
-		serviceId,
+		serviceName,
 	)
 
 	// Ensure that service listing is empty too

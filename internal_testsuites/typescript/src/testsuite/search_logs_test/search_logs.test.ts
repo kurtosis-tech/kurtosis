@@ -15,12 +15,12 @@ import {addServicesWithLogLines, delay, getLogsResponseAndEvaluateResponse} from
 const TEST_NAME = "search-logs";
 const IS_PARTITIONING_ENABLED = false;
 
-const EXAMPLE_SERVICE_ID_PREFIX = "search-logs-";
+const EXAMPLE_SERVICE_NAME_PREFIX = "search-logs-";
 
 const SHOULD_FOLLOW_LOGS = true;
 const SHOULD_NOT_FOLLOW_LOGS = false;
 
-const SERVICE_1_SERVICE_ID = EXAMPLE_SERVICE_ID_PREFIX + "service-1";
+const SERVICE_1_SERVICE_NAME = EXAMPLE_SERVICE_NAME_PREFIX + "service-1";
 
 const FIRST_FILTER_TEXT = "The data have being loaded";
 const SECOND_FILTER_TEXT = "Starting feature";
@@ -32,12 +32,12 @@ const LOG_LINE_2 = new ServiceLog("Starting feature 'network partitioning'");
 const LOG_LINE_3 = new ServiceLog("Starting feature 'network soft partitioning'");
 const LOG_LINE_4 = new ServiceLog("The data have being loaded");
 
-const EXPECTED_NON_EXISTENCE_SERVICE_GUIDS = new Set<ServiceUUID>;
+const EXPECTED_NON_EXISTENCE_SERVICE_UUIDS = new Set<ServiceUUID>;
 
 const SERVICE_1_LOG_LINES = [LOG_LINE_1, LOG_LINE_2, LOG_LINE_3, LOG_LINE_4];
 
 const LOG_LINES_BY_SERVICE = new Map<ServiceName, ServiceLog[]>([
-    [SERVICE_1_SERVICE_ID, SERVICE_1_LOG_LINES],
+    [SERVICE_1_SERVICE_NAME, SERVICE_1_LOG_LINES],
 ])
 
 const DOES_CONTAIN_TEXT_FILTER_FOR_FIRST_REQUEST = LogLineFilter.NewDoesContainTextLogLineFilter(FIRST_FILTER_TEXT);
@@ -125,13 +125,13 @@ async function TestSearchLogs() {
 
         const enclaveUuid: EnclaveUUID = enclaveContext.getEnclaveUuid();
 
-        const userServiceGuids: Set<ServiceUUID> = new Set<ServiceUUID>();
+        const userServiceUuids: Set<ServiceUUID> = new Set<ServiceUUID>();
 
-        let serviceGuid: ServiceUUID = "";
+        let serviceUuid: ServiceUUID = "";
 
         for (let [, serviceCtx] of serviceList) {
-            serviceGuid = serviceCtx.getServiceUUID();
-            userServiceGuids.add(serviceGuid);
+            serviceUuid = serviceCtx.getServiceUUID();
+            userServiceUuids.add(serviceUuid);
         }
 
         for (let i = 0; i < FILTERS_BY_REQUEST.length; i++) {
@@ -141,8 +141,8 @@ async function TestSearchLogs() {
             const executionResult = await executeGetLogsRequestAndEvaluateResult(
                 kurtosisContext,
                 enclaveUuid,
-                serviceGuid,
-                userServiceGuids,
+                serviceUuid,
+                userServiceUuids,
                 filter,
                 expectedLogLines,
                 shouldFollowLogsOption,
@@ -165,27 +165,27 @@ async function TestSearchLogs() {
 async function executeGetLogsRequestAndEvaluateResult(
     kurtosisCtx: KurtosisContext,
     enclaveUuid: EnclaveUUID,
-    serviceGuid: ServiceUUID,
-    userServiceGuids: Set<ServiceUUID>,
+    serviceUuid: ServiceUUID,
+    userServiceUuids: Set<ServiceUUID>,
     logLineFilter: LogLineFilter,
     expectedLogLines: ServiceLog[],
     shouldFollowLogs: boolean,
 ): Promise<Result<null, Error>> {
 
-    const serviceGuids: Set<ServiceUUID> = new Set<ServiceUUID>([
-        serviceGuid,
+    const serviceUuids: Set<ServiceUUID> = new Set<ServiceUUID>([
+        serviceUuid,
     ])
 
     const expectedLogLinesByService = new Map<ServiceUUID, ServiceLog[]>([
-        [serviceGuid, expectedLogLines],
+        [serviceUuid, expectedLogLines],
     ])
 
     const getLogsResponseResult = await getLogsResponseAndEvaluateResponse(
         kurtosisCtx,
         enclaveUuid,
-        serviceGuids,
+        serviceUuids,
         expectedLogLinesByService,
-        EXPECTED_NON_EXISTENCE_SERVICE_GUIDS,
+        EXPECTED_NON_EXISTENCE_SERVICE_UUIDS,
         shouldFollowLogs,
         logLineFilter,
     )

@@ -376,8 +376,8 @@ func (network *DefaultServiceNetwork) StartServices(
 
 	// Save the services currently running in enclave for later
 	currentlyRunningServicesInEnclave := map[service.ServiceName]bool{}
-	for serviceId := range network.registeredServiceInfo {
-		currentlyRunningServicesInEnclave[serviceId] = true
+	for serviceName := range network.registeredServiceInfo {
+		currentlyRunningServicesInEnclave[serviceName] = true
 	}
 
 	// We register all the services one by one
@@ -387,7 +387,7 @@ func (network *DefaultServiceNetwork) StartServices(
 		servicePartitionId := partition_topology.ParsePartitionId(serviceConfig.Subnetwork)
 		serviceRegistration, err := network.registerService(ctx, serviceName, servicePartitionId)
 		if err != nil {
-			failedServices[serviceName] = stacktrace.Propagate(err, "Failed registering service with ID: '%s'", serviceName)
+			failedServices[serviceName] = stacktrace.Propagate(err, "Failed registering service with name: '%s'", serviceName)
 		}
 		serviceSuccessfullyRegistered[serviceName] = serviceRegistration
 		servicesToStart[serviceRegistration.GetUUID()] = serviceConfig
@@ -604,10 +604,10 @@ func (network *DefaultServiceNetwork) RemoveService(
 		//	 b) all service's iptables get overwritten on the next Add/Repartition call
 		// If we ever do incremental iptables though, we'll need to fix all the other service's iptables here!
 		if err := network.networkingSidecarManager.Remove(ctx, sidecar); err != nil {
-			return "", stacktrace.Propagate(err, "An error occurred destroying the sidecar for service with ID '%v'", serviceName)
+			return "", stacktrace.Propagate(err, "An error occurred destroying the sidecar for service with name '%v'", serviceName)
 		}
 		delete(network.networkingSidecars, serviceName)
-		logrus.Debugf("Successfully removed sidecar attached to service with ID '%v'", serviceName)
+		logrus.Debugf("Successfully removed sidecar attached to service with name '%v'", serviceName)
 	}
 
 	return serviceUuid, nil
@@ -1016,7 +1016,7 @@ func (network *DefaultServiceNetwork) registerService(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error adding service '%s' to partition '%s' in network topology", serviceName, partitionId)
 	}
-	logrus.Debugf("Successfully added service with ID '%v' to topology", serviceName)
+	logrus.Debugf("Successfully added service with name '%v' to topology", serviceName)
 	// remove service from topology is something fails downstream
 	defer func() {
 		if serviceSuccessfullyRegistered {
@@ -1250,7 +1250,7 @@ func (network *DefaultServiceNetwork) destroyService(ctx context.Context, servic
 		delete(network.networkingSidecars, serviceName)
 		err = network.networkingSidecarManager.Remove(ctx, networkingSidecar)
 		if errorResult == nil && err != nil {
-			errorResult = stacktrace.Propagate(err, "Attempted to clean up the sidecar for service with ID '%s' but an error occurred.", serviceName)
+			errorResult = stacktrace.Propagate(err, "Attempted to clean up the sidecar for service with name '%s' but an error occurred.", serviceName)
 		}
 	}
 	return errorResult
@@ -1386,7 +1386,7 @@ func (network *DefaultServiceNetwork) addServiceToTopology(serviceName service.S
 	if err := network.topology.AddService(serviceName, partitionID); err != nil {
 		return stacktrace.Propagate(
 			err,
-			"An error occurred adding service with ID '%v' to partition '%v' in the topology",
+			"An error occurred adding service with name '%v' to partition '%v' in the topology",
 			serviceName,
 			partitionID,
 		)
@@ -1406,7 +1406,7 @@ func (network *DefaultServiceNetwork) moveServiceToPartitionInTopology(serviceNa
 	isOperationSuccessful := false
 	serviceCurrentPartition, found := network.topology.GetServicePartitions()[serviceName]
 	if !found {
-		return stacktrace.NewError("Service with ID '%s' not found in the topology", serviceName)
+		return stacktrace.NewError("Service with name '%s' not found in the topology", serviceName)
 	}
 	network.topology.RemoveService(serviceName)
 	defer func() {

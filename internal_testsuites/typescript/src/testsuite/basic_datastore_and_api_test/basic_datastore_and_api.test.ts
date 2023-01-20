@@ -10,8 +10,8 @@ import { addAPIService, addDatastoreService } from "../../test_helpers/test_help
 
 const TEST_NAME = "basic-datastore-and-api";
 const IS_PARTITIONING_ENABLED = false;
-const DATASTORE_SERVICE_ID = "datastore";
-const API_SERVICE_ID = "api";
+const DATASTORE_SERVICE_NAME = "datastore";
+const API_SERVICE_NAME = "api";
 const TEST_PERSON_ID = "23";
 const TEST_NUM_BOOKS_READ = 3;
 
@@ -30,7 +30,7 @@ test("Test basic data store and API", async () => {
 
         log.info("Adding datastore service...")
 
-        const addDatastoreServiceResult = await addDatastoreService(DATASTORE_SERVICE_ID, enclaveContext)
+        const addDatastoreServiceResult = await addDatastoreService(DATASTORE_SERVICE_NAME, enclaveContext)
 
         if(addDatastoreServiceResult.isErr()) { throw addDatastoreServiceResult.error }
 
@@ -48,7 +48,7 @@ test("Test basic data store and API", async () => {
                 serviceContext: ServiceContext;
                 client: apiServerApi.ExampleAPIServerServiceClientNode;
                 clientCloseFunction: () => void;
-            }, Error> = await addAPIService(API_SERVICE_ID, enclaveContext, datastoreServiceContext.getPrivateIPAddress())
+            }, Error> = await addAPIService(API_SERVICE_NAME, enclaveContext, datastoreServiceContext.getPrivateIPAddress())
             
             if(apiClientServiceResult.isErr()){ throw apiClientServiceResult.error }
 

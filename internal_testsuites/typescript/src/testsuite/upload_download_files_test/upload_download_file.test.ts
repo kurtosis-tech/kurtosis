@@ -29,7 +29,7 @@ const ARCHIVE_ROOT_FILE_KEYWORD_PATTERN                 = "archiveRootFile"
 const FOLDER_PERMISSION = 0o755
 const FILE_PERMISSION   = 0o644
 
-const FILE_SERVER_SERVICE_ID : ServiceName = "file-server"
+const FILE_SERVER_SERVICE_NAME : ServiceName = "file-server"
 
 jest.setTimeout(180000)
 
@@ -53,7 +53,7 @@ async function TestUploadAndDownloadFiles() {
         const firstArchiveRootKeyWord = `${ARCHIVE_ROOT_FILE_KEYWORD_PATTERN}0`
         const firstArchiveRootFilename = `${filePathsMap.get(firstArchiveRootKeyWord)}`
 
-        const startFileServerResult = await startFileServer(FILE_SERVER_SERVICE_ID, TEST_ARTIFACT_NAME, firstArchiveRootFilename, enclaveContext)
+        const startFileServerResult = await startFileServer(FILE_SERVER_SERVICE_NAME, TEST_ARTIFACT_NAME, firstArchiveRootFilename, enclaveContext)
         if (startFileServerResult.isErr()){throw startFileServerResult.error}
         const {fileServerPublicIp, fileServerPublicPortNum} = startFileServerResult.value
 

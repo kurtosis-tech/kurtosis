@@ -435,11 +435,11 @@ func TestParsePrivateIPAddressPlaceholder_FailureNonString(t *testing.T) {
 func TestParseHttpRequestRecipe_GetRequestWithoutExtractor(t *testing.T) {
 	inputDict := starlark.StringDict{}
 	expectedRecipe := recipe.NewGetHttpRequestRecipe(
-		"service_id",
+		"service_name",
 		"port_id",
 		"/",
 		map[string]string{})
-	inputDict["service_id"] = starlark.String("service_id")
+	inputDict["service_name"] = starlark.String("service_name")
 	inputDict["port_id"] = starlark.String("port_id")
 	inputDict["method"] = starlark.String("GET")
 	inputDict["endpoint"] = starlark.String("/")
@@ -452,9 +452,9 @@ func TestParseHttpRequestRecipe_GetRequestWithoutExtractor(t *testing.T) {
 func TestParseExecRecipe(t *testing.T) {
 	inputDict := starlark.StringDict{}
 	expectedRecipe := recipe.NewExecRecipe(
-		"service_id",
+		"service_name",
 		[]string{"cd", ".."})
-	inputDict["service_id"] = starlark.String("service_id")
+	inputDict["service_name"] = starlark.String("service_name")
 	inputDict["command"] = starlark.NewList([]starlark.Value{starlark.String("cd"), starlark.String("..")})
 	input := starlarkstruct.FromStringDict(starlarkstruct.Default, inputDict)
 	actualRecipe, err := ParseExecRecipe(input)
@@ -468,13 +468,13 @@ func TestParseHttpRequestRecipe_GetRequestWithExtractor(t *testing.T) {
 	require.Nil(t, err)
 	inputDict := starlark.StringDict{}
 	expectedRecipe := recipe.NewGetHttpRequestRecipe(
-		"service_id",
+		"service_name",
 		"port_id",
 		"/",
 		map[string]string{
 			"key": ".value",
 		})
-	inputDict["service_id"] = starlark.String("service_id")
+	inputDict["service_name"] = starlark.String("service_name")
 	inputDict["port_id"] = starlark.String("port_id")
 	inputDict["method"] = starlark.String("GET")
 	inputDict["endpoint"] = starlark.String("/")
@@ -488,13 +488,13 @@ func TestParseHttpRequestRecipe_GetRequestWithExtractor(t *testing.T) {
 func TestParseHttpRequestRecipe_PostRequestWithoutExtractor(t *testing.T) {
 	inputDict := starlark.StringDict{}
 	expectedRecipe := recipe.NewPostHttpRequestRecipe(
-		"service_id",
+		"service_name",
 		"port_id",
 		"content/json",
 		"/",
 		"body",
 		map[string]string{})
-	inputDict["service_id"] = starlark.String("service_id")
+	inputDict["service_name"] = starlark.String("service_name")
 	inputDict["port_id"] = starlark.String("port_id")
 	inputDict["method"] = starlark.String("POST")
 	inputDict["endpoint"] = starlark.String("/")
@@ -512,7 +512,7 @@ func TestParseHttpRequestRecipe_PostRequestWithExtractor(t *testing.T) {
 	require.Nil(t, err)
 	inputDict := starlark.StringDict{}
 	expectedRecipe := recipe.NewPostHttpRequestRecipe(
-		"service_id",
+		"service_name",
 		"port_id",
 		"content/json",
 		"/",
@@ -520,7 +520,7 @@ func TestParseHttpRequestRecipe_PostRequestWithExtractor(t *testing.T) {
 		map[string]string{
 			"key": ".value",
 		})
-	inputDict["service_id"] = starlark.String("service_id")
+	inputDict["service_name"] = starlark.String("service_name")
 	inputDict["port_id"] = starlark.String("port_id")
 	inputDict["method"] = starlark.String("POST")
 	inputDict["endpoint"] = starlark.String("/")

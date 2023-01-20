@@ -17,11 +17,11 @@ func TestStoreFilesFromService_StringRepresentationWorks(t *testing.T) {
 	testArtifactName := "test-artifact"
 	storeFileFromServiceInstruction := newEmptyStoreServiceFilesInstruction(emptyServiceNetwork, position)
 	storeFileFromServiceInstruction.starlarkKwargs = starlark.StringDict{}
-	storeFileFromServiceInstruction.starlarkKwargs[serviceIdArgName] = starlark.String("example-service-id")
+	storeFileFromServiceInstruction.starlarkKwargs[serviceNameArgName] = starlark.String("example-service-id")
 	storeFileFromServiceInstruction.starlarkKwargs[srcArgName] = starlark.String("/tmp/foo")
 	storeFileFromServiceInstruction.starlarkKwargs[nonOptionalArtifactNameArgName] = starlark.String(testArtifactName)
 
-	expectedStr := `store_service_files(name="` + testArtifactName + `", service_id="example-service-id", src="/tmp/foo")`
+	expectedStr := `store_service_files(name="` + testArtifactName + `", service_name="example-service-id", src="/tmp/foo")`
 	require.Equal(t, expectedStr, storeFileFromServiceInstruction.String())
 
 	canonicalInstruction := binding_constructors.NewStarlarkInstruction(
@@ -29,7 +29,7 @@ func TestStoreFilesFromService_StringRepresentationWorks(t *testing.T) {
 		StoreServiceFilesBuiltinName,
 		expectedStr,
 		[]*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg{
-			binding_constructors.NewStarlarkInstructionKwarg(`"example-service-id"`, serviceIdArgName, true),
+			binding_constructors.NewStarlarkInstructionKwarg(`"example-service-id"`, serviceNameArgName, true),
 			binding_constructors.NewStarlarkInstructionKwarg(`"/tmp/foo"`, srcArgName, true),
 			binding_constructors.NewStarlarkInstructionKwarg(`"`+testArtifactName+`"`, nonOptionalArtifactNameArgName, true),
 		})

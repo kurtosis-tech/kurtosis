@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	testServiceId            = "example-datastore-server-2"
+	testServiceName          = "example-datastore-server-2"
 	testContainerImageName   = "kurtosistech/example-datastore-server"
 	testSubnetwork           = "subnetwork_1"
 	testIpAddressPlaceholder = "<IP_ADDRESS>"
@@ -36,23 +36,23 @@ func TestAddServiceInstruction_GetCanonicalizedInstruction(t *testing.T) {
 		kurtosis_instruction.NewInstructionPosition(22, 26, "dummyFile"),
 		nil,
 	)
-	addServiceInstruction.starlarkKwargs[serviceIdArgName] = starlark.String(testServiceId)
+	addServiceInstruction.starlarkKwargs[serviceNameArgName] = starlark.String(testServiceName)
 	addServiceInstruction.starlarkKwargs[serviceConfigArgName] = newTestStarlarkServiceConfig(t)
 
-	expectedOutput := `add_service(config=ServiceConfig(image="kurtosistech/example-datastore-server", ports={"grpc": PortSpec(number=1234, transport_protocol="TCP", application_protocol="http")}, public_ports={"grpc": PortSpec(number=80, transport_protocol="TCP", application_protocol="http")}, files={"path/to/file/1": "file_1", "path/to/file/2": "file_2"}, entrypoint=["127.0.0.0", "1234"], cmd=["bash", "-c", "/apps/main.py", "1234"], env_vars={"VAR_1": "VALUE_1", "VAR_2": "VALUE_2"}, private_ip_address_placeholder="<IP_ADDRESS>", subnetwork="subnetwork_1", cpu_allocation=2000, memory_allocation=1024), service_id="example-datastore-server-2")`
+	expectedOutput := `add_service(config=ServiceConfig(image="kurtosistech/example-datastore-server", ports={"grpc": PortSpec(number=1234, transport_protocol="TCP", application_protocol="http")}, public_ports={"grpc": PortSpec(number=80, transport_protocol="TCP", application_protocol="http")}, files={"path/to/file/1": "file_1", "path/to/file/2": "file_2"}, entrypoint=["127.0.0.0", "1234"], cmd=["bash", "-c", "/apps/main.py", "1234"], env_vars={"VAR_1": "VALUE_1", "VAR_2": "VALUE_2"}, private_ip_address_placeholder="<IP_ADDRESS>", subnetwork="subnetwork_1", cpu_allocation=2000, memory_allocation=1024), service_name="example-datastore-server-2")`
 	require.Equal(t, expectedOutput, addServiceInstruction.String())
 }
 
-func TestAddServiceInstruction_GetCanonicalizedInstruction_WithStruct(t *testing.T) {
+func TestAddServiceInstruction_GetCanonicalizedInstruction_WithServiceId(t *testing.T) {
 	addServiceInstruction := newEmptyAddServiceInstruction(
 		nil,
 		kurtosis_instruction.NewInstructionPosition(22, 26, "dummyFile"),
 		nil,
 	)
-	addServiceInstruction.starlarkKwargs[serviceIdArgName] = starlark.String(testServiceId)
+	addServiceInstruction.starlarkKwargs[serviceNameArgName] = starlark.String(testServiceName)
 	addServiceInstruction.starlarkKwargs[serviceConfigArgName] = newTestStarlarkServiceConfigWithUnamedStruct(t)
 
-	expectedOutput := `add_service(config=struct(cmd=["bash", "-c", "/apps/main.py", "1234"], entrypoint=["127.0.0.0", "1234"], env_vars={"VAR_1": "VALUE_1", "VAR_2": "VALUE_2"}, files={"path/to/file/1": "file_1", "path/to/file/2": "file_2"}, image="kurtosistech/example-datastore-server", ports={"grpc": PortSpec(number=1234, transport_protocol="TCP", application_protocol="http")}, private_ip_address_placeholder="<IP_ADDRESS>", subnetwork="subnetwork_1"), service_id="example-datastore-server-2")`
+	expectedOutput := `add_service(config=struct(cmd=["bash", "-c", "/apps/main.py", "1234"], entrypoint=["127.0.0.0", "1234"], env_vars={"VAR_1": "VALUE_1", "VAR_2": "VALUE_2"}, files={"path/to/file/1": "file_1", "path/to/file/2": "file_2"}, image="kurtosistech/example-datastore-server", ports={"grpc": PortSpec(number=1234, transport_protocol="TCP", application_protocol="http")}, private_ip_address_placeholder="<IP_ADDRESS>", subnetwork="subnetwork_1"), service_name="example-datastore-server-2")`
 	require.Equal(t, expectedOutput, addServiceInstruction.String())
 }
 
@@ -117,13 +117,13 @@ func TestAddServiceInstruction_SerializeAndParseAgain(t *testing.T) {
 		testCpuAllocation,
 	)
 	starlarkArgs := starlark.StringDict{
-		serviceIdArgName:     starlark.String(testServiceId),
+		serviceNameArgName:   starlark.String(testServiceName),
 		serviceConfigArgName: newTestStarlarkServiceConfig(t),
 	}
 	initialInstruction := NewAddServiceInstruction(
 		nil,
 		kurtosis_instruction.NewInstructionPosition(1, 12, startosis_constants.PackageIdPlaceholderForStandaloneScript),
-		testServiceId,
+		testServiceName,
 		serviceConfigBuilder.Build(),
 		starlarkArgs,
 		nil)
@@ -167,13 +167,13 @@ func TestAddServiceInstruction_SerializeAndParseAgain_UnamedStruct(t *testing.T)
 		"subnetwork_1",
 	)
 	starlarkArgs := starlark.StringDict{
-		serviceIdArgName:     starlark.String(testServiceId),
+		serviceNameArgName:   starlark.String(testServiceName),
 		serviceConfigArgName: newTestStarlarkServiceConfigWithUnamedStruct(t),
 	}
 	initialInstruction := NewAddServiceInstruction(
 		nil,
 		kurtosis_instruction.NewInstructionPosition(1, 12, startosis_constants.PackageIdPlaceholderForStandaloneScript),
-		testServiceId,
+		testServiceName,
 		serviceConfigBuilder.Build(),
 		starlarkArgs,
 		nil)

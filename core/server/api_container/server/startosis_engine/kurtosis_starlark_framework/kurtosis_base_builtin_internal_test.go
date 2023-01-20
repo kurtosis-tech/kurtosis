@@ -12,8 +12,8 @@ import (
 const (
 	builtinName = "test_builtin"
 
-	serviceIdArgName = "service_id"
-	serviceId        = starlark.String("datastore-server")
+	serviceNameArgName = "service_name"
+	serviceName        = starlark.String("datastore-server")
 
 	shouldStartArgName = "should_start"
 	shouldStart        = starlark.Bool(true)
@@ -22,9 +22,9 @@ const (
 )
 
 func TestBasicFunctions(t *testing.T) {
-	argumentDefinitions := getArgumentDefinitionsWithServiceIdAndShouldStart()
+	argumentDefinitions := getArgumentDefinitionsWithServiceNameAndShouldStart()
 	values := []starlark.Value{
-		serviceId,
+		serviceName,
 		shouldStart,
 	}
 	arguments := builtin_argument.NewArgumentValuesSet(argumentDefinitions, values)
@@ -34,14 +34,14 @@ func TestBasicFunctions(t *testing.T) {
 	require.Equal(t, builtinName, kurtosisBaseBuiltinInternal.GetName())
 	require.Equal(t, position, kurtosisBaseBuiltinInternal.GetPosition())
 
-	expectedString := fmt.Sprintf(`%s(%s=%s, %s=%s)`, builtinName, serviceIdArgName, serviceId, shouldStartArgName, shouldStart)
+	expectedString := fmt.Sprintf(`%s(%s=%s, %s=%s)`, builtinName, serviceNameArgName, serviceName, shouldStartArgName, shouldStart)
 	require.Equal(t, expectedString, kurtosisBaseBuiltinInternal.String())
 }
 
-func getArgumentDefinitionsWithServiceIdAndShouldStart() []*builtin_argument.BuiltinArgument {
+func getArgumentDefinitionsWithServiceNameAndShouldStart() []*builtin_argument.BuiltinArgument {
 	return []*builtin_argument.BuiltinArgument{
 		{
-			Name:              serviceIdArgName,
+			Name:              serviceNameArgName,
 			IsOptional:        false,
 			ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
 			Validator: func(value starlark.Value) *startosis_errors.InterpretationError {

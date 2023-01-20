@@ -7,11 +7,11 @@ import (
 )
 
 func TestExecRecipe_String(t *testing.T) {
-	serviceId := service.ServiceName("serviceId")
+	serviceName := service.ServiceName("serviceName")
 	commands := []string{"echo", "run"}
 
-	expectedRecipeString := `ExecRecipe(service_id="serviceId", command="[\"echo\", \"run\"]")`
-	execRecipe := NewExecRecipe(serviceId, commands)
+	expectedRecipeString := `ExecRecipe(service_name="serviceName", command="[\"echo\", \"run\"]")`
+	execRecipe := NewExecRecipe(serviceName, commands)
 	execRecipeString := execRecipe.String()
 	require.Equal(t, expectedRecipeString, execRecipeString)
 }

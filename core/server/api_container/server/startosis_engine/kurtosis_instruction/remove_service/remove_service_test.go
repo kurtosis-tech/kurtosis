@@ -13,8 +13,8 @@ func TestRemoveService_GetCanonicalInstruction(t *testing.T) {
 	removeInstruction := NewRemoveServiceInstruction(
 		nil,
 		position,
-		"dummy-service-id")
-	expectedStr := `remove_service(service_id="dummy-service-id")`
+		"dummy-service-name")
+	expectedStr := `remove_service(service_name="dummy-service-name")`
 	require.Equal(t, expectedStr, removeInstruction.String())
 
 	canonicalInstruction := binding_constructors.NewStarlarkInstruction(
@@ -22,7 +22,7 @@ func TestRemoveService_GetCanonicalInstruction(t *testing.T) {
 		RemoveServiceBuiltinName,
 		expectedStr,
 		[]*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg{
-			binding_constructors.NewStarlarkInstructionKwarg(`"dummy-service-id"`, serviceIdArgName, true),
+			binding_constructors.NewStarlarkInstructionKwarg(`"dummy-service-name"`, serviceNameArgName, true),
 		})
 	require.Equal(t, canonicalInstruction, removeInstruction.GetCanonicalInstruction())
 }

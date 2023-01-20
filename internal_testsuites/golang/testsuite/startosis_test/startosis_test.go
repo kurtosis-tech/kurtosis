@@ -14,7 +14,7 @@ const (
 	defaultDryRun         = false
 	greetingsArg          = `{"greeting": "World!"}`
 
-	serviceId                     = "example-datastore-server-1"
+	serviceName                   = "example-datastore-server-1"
 	serviceIdForDependentService  = "example-datastore-server-2"
 	portId                        = "grpc"
 	fileToBeCreated               = "/tmp/foo"
@@ -26,7 +26,7 @@ const (
 
 	startosisScript = `
 DATASTORE_IMAGE = "kurtosistech/example-datastore-server"
-DATASTORE_SERVICE_ID = "` + serviceId + `"
+DATASTORE_SERVICE_NAME = "` + serviceName + `"
 DATASTORE_PORT_ID = "` + portId + `"
 DATASTORE_PORT_NUMBER = 1323
 DATASTORE_PORT_PROTOCOL = "TCP"
@@ -41,7 +41,7 @@ RENDER_RELATIVE_PATH = "` + renderedConfigRelativePath + `"
 
 def run(plan, args):
 	plan.print("Hello " + args.greeting) 
-	plan.print("Adding service " + DATASTORE_SERVICE_ID + ".")
+	plan.print("Adding service " + DATASTORE_SERVICE_NAME + ".")
 	
 	config = ServiceConfig(
 		image = DATASTORE_IMAGE,
@@ -50,14 +50,14 @@ def run(plan, args):
 		}
 	)
 	
-	plan.add_service(service_id = DATASTORE_SERVICE_ID, config = config)
-	plan.print("Service " + DATASTORE_SERVICE_ID + " deployed successfully.")
+	plan.add_service(service_name = DATASTORE_SERVICE_NAME, config = config)
+	plan.print("Service " + DATASTORE_SERVICE_NAME + " deployed successfully.")
 	plan.exec(ExecRecipe(
-		service_id = DATASTORE_SERVICE_ID,
+		service_name = DATASTORE_SERVICE_NAME,
 		command = ["touch", FILE_TO_BE_CREATED],
 	))
 	
-	artifact_name = plan.store_service_files(name = "stored-file", service_id = DATASTORE_SERVICE_ID, src = FILE_TO_BE_CREATED)
+	artifact_name = plan.store_service_files(name = "stored-file", service_name = DATASTORE_SERVICE_NAME, src = FILE_TO_BE_CREATED)
 	plan.print("Stored file at " + artifact_name)
 	
 	template_str = read_file(TEMPLATE_FILE_TO_RENDER)
@@ -86,13 +86,13 @@ def run(plan, args):
 			PATH_TO_MOUNT_RENDERED_CONFIG: rendered_artifact
 		}
 	)
-	plan.add_service(service_id = SERVICE_DEPENDENT_ON_DATASTORE_SERVICE, config = dependent_config)
+	plan.add_service(service_name = SERVICE_DEPENDENT_ON_DATASTORE_SERVICE, config = dependent_config)
 	plan.print("Deployed " + SERVICE_DEPENDENT_ON_DATASTORE_SERVICE + " successfully")
 `
 	// TODO remove this when `artifact_id` is deprecated
 	starlarkScriptWithOldSyntax = `
 DATASTORE_IMAGE = "kurtosistech/example-datastore-server"
-DATASTORE_SERVICE_ID = "` + serviceId + `"
+DATASTORE_SERVICE_NAME = "` + serviceName + `"
 DATASTORE_PORT_ID = "` + portId + `"
 DATASTORE_PORT_NUMBER = 1323
 DATASTORE_PORT_PROTOCOL = "TCP"
@@ -107,7 +107,7 @@ RENDER_RELATIVE_PATH = "` + renderedConfigRelativePath + `"
 
 def run(plan, args):
 	plan.print("Hello " + args.greeting) 
-	plan.print("Adding service " + DATASTORE_SERVICE_ID + ".")
+	plan.print("Adding service " + DATASTORE_SERVICE_NAME + ".")
 	
 	config = ServiceConfig(
 		image = DATASTORE_IMAGE,
@@ -116,14 +116,14 @@ def run(plan, args):
 		}
 	)
 	
-	plan.add_service(service_id = DATASTORE_SERVICE_ID, config = config)
-	plan.print("Service " + DATASTORE_SERVICE_ID + " deployed successfully.")
+	plan.add_service(service_name = DATASTORE_SERVICE_NAME, config = config)
+	plan.print("Service " + DATASTORE_SERVICE_NAME + " deployed successfully.")
 	plan.exec(struct(
-		service_id = DATASTORE_SERVICE_ID,
+		service_name = DATASTORE_SERVICE_NAME,
 		command = ["touch", FILE_TO_BE_CREATED],
 	))
 	
-	artifact_name = plan.store_service_files(artifact_id = "stored-file", service_id = DATASTORE_SERVICE_ID, src = FILE_TO_BE_CREATED)
+	artifact_name = plan.store_service_files(artifact_id = "stored-file", service_name = DATASTORE_SERVICE_NAME, src = FILE_TO_BE_CREATED)
 	plan.print("Stored file at " + artifact_name)
 	
 	template_str = read_file(TEMPLATE_FILE_TO_RENDER)
@@ -152,7 +152,7 @@ def run(plan, args):
 			PATH_TO_MOUNT_RENDERED_CONFIG: rendered_artifact
 		}
 	)
-	plan.add_service(service_id = SERVICE_DEPENDENT_ON_DATASTORE_SERVICE, config = dependent_config)
+	plan.add_service(service_name = SERVICE_DEPENDENT_ON_DATASTORE_SERVICE, config = dependent_config)
 	plan.print("Deployed " + SERVICE_DEPENDENT_ON_DATASTORE_SERVICE + " successfully")
 `
 )
@@ -178,14 +178,14 @@ func TestStartosis(t *testing.T) {
 
 	expectedScriptOutput := `Hello World!
 Adding service example-datastore-server-1.
-Service 'example-datastore-server-1' added with service GUID '[a-z-0-9]+'
+Service 'example-datastore-server-1' added with service UUID '[a-z-0-9]+'
 Service example-datastore-server-1 deployed successfully.
 Command returned with exit code '0' with no output
 Files  with artifact name 'stored-file' uploaded with artifact UUID '[a-f0-9]{32}'
 Stored file at stored-file
 Templates artifact name 'rendered-file' rendered with artifact UUID '[a-f0-9]{32}'
 Rendered file to rendered-file
-Service 'example-datastore-server-2' added with service GUID '[a-z-0-9]+'
+Service 'example-datastore-server-2' added with service UUID '[a-z-0-9]+'
 Deployed example-datastore-server-2 successfully
 `
 	require.Regexp(t, expectedScriptOutput, string(runResult.RunOutput))
@@ -195,9 +195,9 @@ Deployed example-datastore-server-2 successfully
 	logrus.Infof("Checking that services are all healthy")
 	require.NoError(
 		t,
-		test_helpers.ValidateDatastoreServiceHealthy(context.Background(), enclaveCtx, serviceId, portId),
+		test_helpers.ValidateDatastoreServiceHealthy(context.Background(), enclaveCtx, serviceName, portId),
 		"Error validating datastore server '%s' is healthy",
-		serviceId,
+		serviceName,
 	)
 	require.NoError(
 		t,
@@ -208,11 +208,11 @@ Deployed example-datastore-server-2 successfully
 	logrus.Infof("All services added via the module work as expected")
 
 	// Check that the file got created on the first service
-	logrus.Infof("Checking that the file got created on " + serviceId)
-	serviceCtx, err := enclaveCtx.GetServiceContext(serviceId)
+	logrus.Infof("Checking that the file got created on " + serviceName)
+	serviceCtx, err := enclaveCtx.GetServiceContext(serviceName)
 	require.Nil(t, err, "Unexpected Error Creating Service Context")
 	exitCode, _, err := serviceCtx.ExecCommand([]string{"ls", fileToBeCreated})
-	require.Nil(t, err, "Unexpected err running verification on created file on "+serviceId)
+	require.Nil(t, err, "Unexpected err running verification on created file on "+serviceName)
 	require.Equal(t, int32(0), exitCode)
 
 	// Check that the file got mounted on the second service
@@ -266,14 +266,14 @@ func TestStartosis_IsBackwardsCompatible(t *testing.T) {
 
 	expectedScriptOutput := `Hello World!
 Adding service example-datastore-server-1.
-Service 'example-datastore-server-1' added with service GUID '[a-z-0-9]+'
+Service 'example-datastore-server-1' added with service UUID '[a-z-0-9]+'
 Service example-datastore-server-1 deployed successfully.
 Command returned with exit code '0' with no output
 Files  with artifact name 'stored-file' uploaded with artifact UUID '[a-f0-9]{32}'
 Stored file at stored-file
 Templates artifact name 'rendered-file' rendered with artifact UUID '[a-f0-9]{32}'
 Rendered file to rendered-file
-Service 'example-datastore-server-2' added with service GUID '[a-z-0-9]+'
+Service 'example-datastore-server-2' added with service UUID '[a-z-0-9]+'
 Deployed example-datastore-server-2 successfully
 `
 	require.Regexp(t, expectedScriptOutput, string(runResult.RunOutput))
@@ -283,9 +283,9 @@ Deployed example-datastore-server-2 successfully
 	logrus.Infof("Checking that services are all healthy")
 	require.NoError(
 		t,
-		test_helpers.ValidateDatastoreServiceHealthy(context.Background(), enclaveCtx, serviceId, portId),
+		test_helpers.ValidateDatastoreServiceHealthy(context.Background(), enclaveCtx, serviceName, portId),
 		"Error validating datastore server '%s' is healthy",
-		serviceId,
+		serviceName,
 	)
 	require.NoError(
 		t,
@@ -296,11 +296,11 @@ Deployed example-datastore-server-2 successfully
 	logrus.Infof("All services added via the module work as expected")
 
 	// Check that the file got created on the first service
-	logrus.Infof("Checking that the file got created on " + serviceId)
-	serviceCtx, err := enclaveCtx.GetServiceContext(serviceId)
+	logrus.Infof("Checking that the file got created on " + serviceName)
+	serviceCtx, err := enclaveCtx.GetServiceContext(serviceName)
 	require.Nil(t, err, "Unexpected Error Creating Service Context")
 	exitCode, _, err := serviceCtx.ExecCommand([]string{"ls", fileToBeCreated})
-	require.Nil(t, err, "Unexpected err running verification on created file on "+serviceId)
+	require.Nil(t, err, "Unexpected err running verification on created file on "+serviceName)
 	require.Equal(t, int32(0), exitCode)
 
 	// Check that the file got mounted on the second service

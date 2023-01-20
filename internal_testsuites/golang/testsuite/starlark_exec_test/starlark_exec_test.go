@@ -32,12 +32,12 @@ def run(plan, args):
 		entrypoint = ["sleep"],
 		cmd = ["30"]
 	)
-	plan.add_service(service_id = "test", config = service_config)
+	plan.add_service(service_name = "test", config = service_config)
 `
 	testStarlarkScriptTemplate = `
 def run(plan, args):
 	exec_recipe = ExecRecipe(
-		service_id = "test",
+		service_name = "test",
 		command = %v,
 	)
 	exec_result = plan.exec(exec_recipe)
@@ -111,12 +111,12 @@ def run(plan, args):
 		entrypoint = ["sleep"],
 		cmd = ["30"]
 	)
-	plan.add_service(service_id = "test", config = service_config)
+	plan.add_service(service_name = "test", config = service_config)
 `
 	testStarlarkScriptTemplateWithStruct = `
 def run(plan, args):
 	exec_recipe = struct(
-		service_id = "test",
+		service_name = "test",
 		command = %v,
 	)
 	exec_result = plan.exec(exec_recipe)

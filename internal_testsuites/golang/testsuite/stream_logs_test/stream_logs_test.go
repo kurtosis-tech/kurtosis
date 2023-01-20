@@ -19,14 +19,14 @@ const (
 	testName              = "stream-logs"
 	isPartitioningEnabled = false
 
-	exampleServiceId services.ServiceName = "stream-logs"
+	exampleServiceName services.ServiceName = "stream-logs"
 
 	testTimeOut = 180 * time.Second
 
 	shouldFollowLogs    = true
 	shouldNotFollowLogs = false
 
-	nonExistentServiceGuid = "stream-logs-1667939326-non-existent"
+	nonExistentServiceUuid = "stream-logs-1667939326-non-existent"
 
 	firstLogLine  = "kurtosis"
 	secondLogLine = "test"
@@ -46,16 +46,16 @@ var (
 	}
 
 	logLinesByService = map[services.ServiceName][]string{
-		exampleServiceId: exampleServiceLogLines,
+		exampleServiceName: exampleServiceLogLines,
 	}
 )
 
 type serviceLogsRequestInfoAndExpectedResults struct {
 	requestedEnclaveIdentifier   string
-	requestedServiceGuids        map[services.ServiceUUID]bool
+	requestedServiceUuids        map[services.ServiceUUID]bool
 	requestedFollowLogs          bool
 	expectedLogLines             []string
-	expectedNotFoundServiceGuids map[services.ServiceUUID]bool
+	expectedNotFoundServiceUuids map[services.ServiceUUID]bool
 	logLineFilter                *kurtosis_context.LogLineFilter
 }
 
@@ -92,34 +92,34 @@ func TestStreamLogs(t *testing.T) {
 	for _, serviceLogsRequestInfoAndExpectedResultsObj := range serviceLogsRequestInfoAndExpectedResultsList {
 
 		requestedEnclaveIdentifier := serviceLogsRequestInfoAndExpectedResultsObj.requestedEnclaveIdentifier
-		requestedServiceGuids := serviceLogsRequestInfoAndExpectedResultsObj.requestedServiceGuids
+		requestedServiceUuids := serviceLogsRequestInfoAndExpectedResultsObj.requestedServiceUuids
 		requestedShouldFollowLogs := serviceLogsRequestInfoAndExpectedResultsObj.requestedFollowLogs
 		expectedLogLines := serviceLogsRequestInfoAndExpectedResultsObj.expectedLogLines
-		expectedNonExistenceServiceGuids := serviceLogsRequestInfoAndExpectedResultsObj.expectedNotFoundServiceGuids
+		expectedNonExistenceServiceUuids := serviceLogsRequestInfoAndExpectedResultsObj.expectedNotFoundServiceUuids
 		filter := serviceLogsRequestInfoAndExpectedResultsObj.logLineFilter
 
 		expectedLogLinesByService := map[services.ServiceUUID][]string{}
-		for userServiceGuid := range requestedServiceGuids {
-			expectedLogLinesByService[userServiceGuid] = expectedLogLines
+		for userServiceUuid := range requestedServiceUuids {
+			expectedLogLinesByService[userServiceUuid] = expectedLogLines
 		}
 
-		testEvaluationErr, receivedLogLinesByService, receivedNotFoundServiceGuids := test_helpers.GetLogsResponse(
+		testEvaluationErr, receivedLogLinesByService, receivedNotFoundServiceUuids := test_helpers.GetLogsResponse(
 			t,
 			ctx,
 			testTimeOut,
 			kurtosisCtx,
 			string(requestedEnclaveIdentifier),
-			requestedServiceGuids,
+			requestedServiceUuids,
 			expectedLogLinesByService,
 			requestedShouldFollowLogs,
 			filter,
 		)
 
 		require.NoError(t, testEvaluationErr)
-		for userServiceGuid := range requestedServiceGuids {
-			require.Equal(t, expectedLogLines, receivedLogLinesByService[userServiceGuid])
+		for userServiceUuid := range requestedServiceUuids {
+			require.Equal(t, expectedLogLines, receivedLogLinesByService[userServiceUuid])
 		}
-		require.Equal(t, expectedNonExistenceServiceGuids, receivedNotFoundServiceGuids)
+		require.Equal(t, expectedNonExistenceServiceUuids, receivedNotFoundServiceUuids)
 	}
 }
 
@@ -133,45 +133,45 @@ func getServiceLogsRequestInfoAndExpectedResultsList(
 	serviceUuids map[services.ServiceUUID]bool,
 ) []*serviceLogsRequestInfoAndExpectedResults {
 
-	emptyServiceGuids := map[services.ServiceUUID]bool{}
+	emptyServiceUuids := map[services.ServiceUUID]bool{}
 
-	nonExistentServiceGuids := map[services.ServiceUUID]bool{
-		nonExistentServiceGuid: true,
+	nonExistentServiceUuids := map[services.ServiceUUID]bool{
+		nonExistentServiceUuid: true,
 	}
 
 	firstCallRequestInfoAndExpectedResults := &serviceLogsRequestInfoAndExpectedResults{
 		requestedEnclaveIdentifier:   enclaveIdentifier,
-		requestedServiceGuids:        serviceUuids,
+		requestedServiceUuids:        serviceUuids,
 		requestedFollowLogs:          shouldFollowLogs,
 		expectedLogLines:             []string{lastLogLine},
-		expectedNotFoundServiceGuids: emptyServiceGuids,
+		expectedNotFoundServiceUuids: emptyServiceUuids,
 		logLineFilter:                doesContainTextFilter,
 	}
 
 	secondCallRequestInfoAndExpectedResults := &serviceLogsRequestInfoAndExpectedResults{
 		requestedEnclaveIdentifier:   enclaveIdentifier,
-		requestedServiceGuids:        serviceUuids,
+		requestedServiceUuids:        serviceUuids,
 		requestedFollowLogs:          shouldFollowLogs,
 		expectedLogLines:             []string{firstLogLine, secondLogLine, thirdLogLine, lastLogLine},
-		expectedNotFoundServiceGuids: emptyServiceGuids,
+		expectedNotFoundServiceUuids: emptyServiceUuids,
 		logLineFilter:                doNotFilterLogLines,
 	}
 
 	thirdCallRequestInfoAndExpectedResults := &serviceLogsRequestInfoAndExpectedResults{
 		requestedEnclaveIdentifier:   enclaveIdentifier,
-		requestedServiceGuids:        serviceUuids,
+		requestedServiceUuids:        serviceUuids,
 		requestedFollowLogs:          shouldNotFollowLogs,
 		expectedLogLines:             []string{firstLogLine, secondLogLine, thirdLogLine, lastLogLine},
-		expectedNotFoundServiceGuids: emptyServiceGuids,
+		expectedNotFoundServiceUuids: emptyServiceUuids,
 		logLineFilter:                doNotFilterLogLines,
 	}
 
 	fourthCallRequestInfoAndExpectedResults := &serviceLogsRequestInfoAndExpectedResults{
 		requestedEnclaveIdentifier:   enclaveIdentifier,
-		requestedServiceGuids:        nonExistentServiceGuids,
+		requestedServiceUuids:        nonExistentServiceUuids,
 		requestedFollowLogs:          shouldFollowLogs,
 		expectedLogLines:             []string{},
-		expectedNotFoundServiceGuids: nonExistentServiceGuids,
+		expectedNotFoundServiceUuids: nonExistentServiceUuids,
 		logLineFilter:                doNotFilterLogLines,
 	}
 

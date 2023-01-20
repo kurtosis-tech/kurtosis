@@ -18,16 +18,16 @@ const (
 	executeNoDryRun            = false
 	emptyArgs                  = "{}"
 
-	serviceId1  = "service_1"
-	serviceId2  = "service_2"
-	subnetwork1 = "subnetwork_1"
-	subnetwork2 = "subnetwork_2"
-	subnetwork3 = "subnetwork_3"
+	serviceName1 = "service_1"
+	serviceName2 = "service_2"
+	subnetwork1  = "subnetwork_1"
+	subnetwork2  = "subnetwork_2"
+	subnetwork3  = "subnetwork_3"
 
 	subnetworkInStarlarkScript = `DOCKER_GETTING_STARTED_IMAGE = "docker/getting-started:latest"
 
-SERVICE_ID_1 = "` + serviceId1 + `"
-SERVICE_ID_2 = "` + serviceId2 + `"
+SERVICE_NAME_1 = "` + serviceName1 + `"
+SERVICE_NAME_2 = "` + serviceName2 + `"
 
 SUBNETWORK_1 = "` + subnetwork1 + `"
 SUBNETWORK_2 = "` + subnetwork2 + `"
@@ -42,14 +42,14 @@ def run(plan, args):
 
 	# adding 2 services to play with, each in their own subnetwork
 	service_1 = plan.add_service(
-		service_id=SERVICE_ID_1, 
+		service_name=SERVICE_NAME_1, 
 		config=ServiceConfig(
 			image=DOCKER_GETTING_STARTED_IMAGE,
 			subnetwork=SUBNETWORK_1,
 		)
 	)
 	service_2 = plan.add_service(
-		service_id=SERVICE_ID_2, 
+		service_name=SERVICE_NAME_2, 
 		config=ServiceConfig(
 			image=DOCKER_GETTING_STARTED_IMAGE,
 			subnetwork=SUBNETWORK_2
@@ -58,7 +58,7 @@ def run(plan, args):
 
 	# Validate connection is indeed blocked
 	connection_result = plan.exec(recipe=ExecRecipe(
-		service_id=SERVICE_ID_2,
+		service_name=SERVICE_NAME_2,
 		command=["ping", "-W", "1", "-c", "1", service_1.ip_address],
 	))
 	plan.assert(connection_result["code"], "==", CONNECTION_FAILURE)
@@ -68,7 +68,7 @@ def run(plan, args):
 
 	# Connection now works
 	connection_result = plan.exec(recipe=ExecRecipe(
-		service_id=SERVICE_ID_2,
+		service_name=SERVICE_NAME_2,
 		command=["ping", "-W", "1", "-c", "1", service_1.ip_address],
 	))
 	plan.assert(connection_result["code"], "==", CONNECTION_SUCCESS)
@@ -78,18 +78,18 @@ def run(plan, args):
 
 	# Connection is back to BLOCKED
 	connection_result = plan.exec(recipe=ExecRecipe(
-		service_id=SERVICE_ID_2,
+		service_name=SERVICE_NAME_2,
 		command=["ping", "-W", "1", "-c", "1", service_1.ip_address],
 	))
 	plan.assert(connection_result["code"], "==", CONNECTION_FAILURE)
 
 	# Create a third subnetwork connected to SUBNETWORK_1 and add service2 to it
 	plan.set_connection((SUBNETWORK_3, SUBNETWORK_1), ConnectionConfig(packet_loss_percentage=0.0))
-	plan.update_service(SERVICE_ID_2, config=UpdateServiceConfig(subnetwork=SUBNETWORK_3))
+	plan.update_service(SERVICE_NAME_2, config=UpdateServiceConfig(subnetwork=SUBNETWORK_3))
 	
 	# Service 2 can now talk to Service 1 again!
 	connection_result = plan.exec(recipe=ExecRecipe(
-		service_id=SERVICE_ID_2,
+		service_name=SERVICE_NAME_2,
 		command=["ping", "-W", "1", "-c", "1", service_1.ip_address],
 	))
 	plan.assert(connection_result["code"], "==", CONNECTION_SUCCESS)
@@ -121,8 +121,8 @@ func TestAddServiceWithEmptyPortsAndWithoutPorts(t *testing.T) {
 // TODO: remove everything below this once we stop supporting this functionality
 const subnetworkInStarlarkScriptWithStruct = `DOCKER_GETTING_STARTED_IMAGE = "docker/getting-started:latest"
 
-SERVICE_ID_1 = "` + serviceId1 + `"
-SERVICE_ID_2 = "` + serviceId2 + `"
+SERVICE_NAME_1 = "` + serviceName1 + `"
+SERVICE_NAME_2 = "` + serviceName2 + `"
 
 SUBNETWORK_1 = "` + subnetwork1 + `"
 SUBNETWORK_2 = "` + subnetwork2 + `"
@@ -137,14 +137,14 @@ def run(plan, args):
 
 	# adding 2 services to play with, each in their own subnetwork
 	service_1 = plan.add_service(
-		service_id=SERVICE_ID_1,
+		service_name=SERVICE_NAME_1,
 		config=ServiceConfig(
 			image=DOCKER_GETTING_STARTED_IMAGE,
 			subnetwork=SUBNETWORK_1,
 		)
 	)
 	service_2 = plan.add_service(
-		service_id=SERVICE_ID_2,
+		service_name=SERVICE_NAME_2,
 		config=ServiceConfig(
 			image=DOCKER_GETTING_STARTED_IMAGE,
 			subnetwork=SUBNETWORK_2
@@ -153,7 +153,7 @@ def run(plan, args):
 
 	# Validate connection is indeed blocked
 	connection_result = plan.exec(recipe=struct(
-		service_id=SERVICE_ID_2,
+		service_name=SERVICE_NAME_2,
 		command=["ping", "-W", "1", "-c", "1", service_1.ip_address],
 	))
 	plan.assert(connection_result["code"], "==", CONNECTION_FAILURE)
@@ -163,7 +163,7 @@ def run(plan, args):
 
 	# Connection now works
 	connection_result = plan.exec(recipe=struct(
-		service_id=SERVICE_ID_2,
+		service_name=SERVICE_NAME_2,
 		command=["ping", "-W", "1", "-c", "1", service_1.ip_address],
 	))
 	plan.assert(connection_result["code"], "==", CONNECTION_SUCCESS)
@@ -173,18 +173,18 @@ def run(plan, args):
 
 	# Connection is back to BLOCKED
 	connection_result = plan.exec(recipe=struct(
-		service_id=SERVICE_ID_2,
+		service_name=SERVICE_NAME_2,
 		command=["ping", "-W", "1", "-c", "1", service_1.ip_address],
 	))
 	plan.assert(connection_result["code"], "==", CONNECTION_FAILURE)
 
 	# Create a third subnetwork connected to SUBNETWORK_1 and add service2 to it
 	plan.set_connection((SUBNETWORK_3, SUBNETWORK_1), ConnectionConfig(packet_loss_percentage=0.0))
-	plan.update_service(SERVICE_ID_2, config=UpdateServiceConfig(subnetwork=SUBNETWORK_3))
+	plan.update_service(SERVICE_NAME_2, config=UpdateServiceConfig(subnetwork=SUBNETWORK_3))
 
 	# Service 2 can now talk to Service 1 again!
 	connection_result = plan.exec(recipe=struct(
-		service_id=SERVICE_ID_2,
+		service_name=SERVICE_NAME_2,
 		command=["ping", "-W", "1", "-c", "1", service_1.ip_address],
 	))
 	plan.assert(connection_result["code"], "==", CONNECTION_SUCCESS)
