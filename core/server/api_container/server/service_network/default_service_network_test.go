@@ -614,7 +614,7 @@ func TestStartServices_FailureRollsBackTheEntireBatch(t *testing.T) {
 			// {successfulServiceUuid}
 			_, foundSuccessfulService := commands[successfulServiceUuid]
 			return len(commands) == 1 && foundSuccessfulService
-		})).Times(1).Return(
+		})).Times(2).Return(
 		map[service.ServiceUUID]*exec_result.ExecResult{
 			successfulServiceUuid: exec_result.NewExecResult(0, ""),
 		},
@@ -932,10 +932,11 @@ func TestSetDefaultConnection_FailureRollbackDefaultConnection(t *testing.T) {
 
 	require.Nil(t, network.topology.CreateEmptyPartitionWithDefaultConnection("test-partition"))
 	require.Nil(t, network.topology.AddService("test-service", "test-partition"))
-	// not add the sidecar such that it won't be able to update the networwing rule
+	// not add the sidecar such that it won't be able to update the networking rules
 
 	newDefaultConnection := partition_topology.NewPartitionConnection(50)
 	err := network.SetDefaultConnection(ctx, newDefaultConnection)
+	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "Unable to update connections between the different partitions of the topology")
 	// check connection was rolled back to ConnectionAllowed in the topology
 	require.Equal(t, network.topology.GetDefaultConnection(), partition_topology.ConnectionAllowed)
@@ -1173,7 +1174,7 @@ func TestUpdateTrafficControl(t *testing.T) {
 	}
 
 	// Creates the pathological "line" of connections, where each service can only see the services adjacent
-	targetServicePacketLossConfigs := map[service.ServiceName]map[service.ServiceName]*partition_topology.PartitionConnection{}
+	targetServiceConnectionConfigs := map[service.ServiceName]map[service.ServiceName]*partition_topology.PartitionConnection{}
 	for i := 0; i < numServices; i++ {
 		serviceName := testServiceNameFromInt(i)
 		otherServicesPacketLossConfig := map[service.ServiceName]*partition_topology.PartitionConnection{}
@@ -1184,10 +1185,12 @@ func TestUpdateTrafficControl(t *testing.T) {
 				otherServicesPacketLossConfig[blockedServiceId] = &connectionConfig
 			}
 		}
-		targetServicePacketLossConfigs[serviceName] = otherServicesPacketLossConfig
+		targetServiceConnectionConfigs[serviceName] = otherServicesPacketLossConfig
 	}
 
-	require.Nil(t, updateTrafficControlConfiguration(ctx, targetServicePacketLossConfigs, registrations, sidecars))
+	for serviceName, otherServiceConnectionConfig := range targetServiceConnectionConfigs {
+		require.Nil(t, updateTrafficControlConfiguration(ctx, serviceName, otherServiceConnectionConfig, registrations, sidecars))
+	}
 
 	// Verify that each service got told to block exactly the right things
 	for i := 0; i < numServices; i++ {

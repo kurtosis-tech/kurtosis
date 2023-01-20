@@ -51,17 +51,22 @@ const (
 
 	ensureCompressedFileIsLesserThanGRPCLimit = false
 
+	emptyCollectionLength                             = 0
 	exactlyOneShortenedUuidMatch                      = 1
 	defaultValueForTargetIndexForShortenedUuidMatches = -1
 	maxConcurrentServiceStart                         = 4
 )
 
-// Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and port spec protos
-var apiContainerPortProtoToPortSpecPortProto = map[kurtosis_core_rpc_api_bindings.Port_TransportProtocol]port_spec.TransportProtocol{
-	kurtosis_core_rpc_api_bindings.Port_TCP:  port_spec.TransportProtocol_TCP,
-	kurtosis_core_rpc_api_bindings.Port_SCTP: port_spec.TransportProtocol_SCTP,
-	kurtosis_core_rpc_api_bindings.Port_UDP:  port_spec.TransportProtocol_UDP,
-}
+var (
+	// Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and port spec protos
+	apiContainerPortProtoToPortSpecPortProto = map[kurtosis_core_rpc_api_bindings.Port_TransportProtocol]port_spec.TransportProtocol{
+		kurtosis_core_rpc_api_bindings.Port_TCP:  port_spec.TransportProtocol_TCP,
+		kurtosis_core_rpc_api_bindings.Port_SCTP: port_spec.TransportProtocol_SCTP,
+		kurtosis_core_rpc_api_bindings.Port_UDP:  port_spec.TransportProtocol_UDP,
+	}
+
+	emptyServiceNamesSetToUpdateAllConnections = map[service.ServiceName]bool{}
+)
 
 type storeFilesArtifactResult struct {
 	err               error
@@ -162,7 +167,7 @@ func (network *DefaultServiceNetwork) Repartition(
 		return stacktrace.Propagate(err, "An error occurred repartitioning the network topology")
 	}
 
-	if err := network.updateAllConnectionsFromTopology(ctx); err != nil {
+	if err := network.updateConnectionsFromTopology(ctx, emptyServiceNamesSetToUpdateAllConnections); err != nil {
 		return stacktrace.Propagate(err, "Unable to update connections between the different partitions of the topology")
 	}
 	return nil
@@ -233,7 +238,7 @@ func (network *DefaultServiceNetwork) SetConnection(
 		}
 	}()
 
-	if err = network.updateAllConnectionsFromTopology(ctx); err != nil {
+	if err = network.updateConnectionsFromTopology(ctx, emptyServiceNamesSetToUpdateAllConnections); err != nil {
 		return stacktrace.Propagate(err, "Unable to update connections between the different partitions of the topology")
 	}
 	isOperationSuccessful = true
@@ -284,7 +289,7 @@ func (network *DefaultServiceNetwork) UnsetConnection(
 		}
 	}()
 
-	if err = network.updateAllConnectionsFromTopology(ctx); err != nil {
+	if err = network.updateConnectionsFromTopology(ctx, emptyServiceNamesSetToUpdateAllConnections); err != nil {
 		return stacktrace.Propagate(err, "Unable to update connections between the different partitions of the topology")
 	}
 	isOperationSuccessful = true
@@ -313,7 +318,7 @@ func (network *DefaultServiceNetwork) SetDefaultConnection(
 		network.topology.SetDefaultConnection(previousDefaultConnection)
 	}()
 
-	if err := network.updateAllConnectionsFromTopology(ctx); err != nil {
+	if err := network.updateConnectionsFromTopology(ctx, emptyServiceNamesSetToUpdateAllConnections); err != nil {
 		return stacktrace.Propagate(err, "Unable to update connections between the different partitions of the topology")
 	}
 	isOperationSuccessful = true
@@ -369,6 +374,13 @@ func (network *DefaultServiceNetwork) StartServices(
 	startedServices := map[service.ServiceName]*service.Service{}
 	failedServices := map[service.ServiceName]error{}
 
+	// Save the services currently running in enclave for later
+	currentlyRunningServicesInEnclave := map[service.ServiceName]bool{}
+	for serviceId := range network.registeredServiceInfo {
+		currentlyRunningServicesInEnclave[serviceId] = true
+	}
+
+	// We register all the services one by one
 	serviceSuccessfullyRegistered := map[service.ServiceName]*service.ServiceRegistration{}
 	servicesToStart := map[service.ServiceUUID]*kurtosis_core_rpc_api_bindings.ServiceConfig{}
 	for serviceName, serviceConfig := range serviceConfigs {
@@ -394,7 +406,18 @@ func (network *DefaultServiceNetwork) StartServices(
 		return map[service.ServiceName]*service.Service{}, failedServices, nil
 	}
 
+	// We update the networking setup of the currently running services such that services starting won't be able
+	// to communicate to services they should not communicate with.
+	if network.isPartitioningEnabled && len(currentlyRunningServicesInEnclave) > 0 {
+		if err := network.updateConnectionsFromTopology(ctx, currentlyRunningServicesInEnclave); err != nil {
+			return nil, nil, stacktrace.Propagate(err, "Failure updating the network connections of the existing "+
+				"services prior to starting the new services. Starting the following services will be aborted: %v. "+
+				"Existing services in enclave: '%v'", serviceConfigs, currentlyRunningServicesInEnclave)
+		}
+	}
+
 	startedServicesPerUuid, failedServicePerUuid := network.startRegisteredServices(ctx, servicesToStart)
+
 	for serviceName, serviceRegistration := range serviceSuccessfullyRegistered {
 		serviceUuid := serviceRegistration.GetUUID()
 		if serviceStartFailure, found := failedServicePerUuid[serviceUuid]; found {
@@ -420,17 +443,6 @@ func (network *DefaultServiceNetwork) StartServices(
 	}()
 	if len(failedServices) > 0 {
 		return map[service.ServiceName]*service.Service{}, failedServices, nil
-	}
-
-	if network.isPartitioningEnabled {
-		// We apply all the configurations. We can't filter to source/target being a service started in this method call as we'd miss configurations between existing services.
-		// The updates completely replace the tables, and we can't lose partitioning between existing services
-
-		if err := network.updateAllConnectionsFromTopology(ctx); err != nil {
-			return nil, nil, stacktrace.Propagate(err, "Services successfully started but Kurtosis failed applying the network rules to the enclave. The entire batch of service will be rolled back")
-		}
-		logrus.Debugf("Successfully applied qdisc configurations")
-		// We don't need to undo the traffic control changes because in the worst case existing nodes have entries in their traffic control for IP addresses that don't resolve to any containers.
 	}
 
 	if len(startedServices) != len(serviceConfigs) {
@@ -532,7 +544,7 @@ func (network *DefaultServiceNetwork) UpdateService(
 		}
 	}()
 
-	if err := network.updateAllConnectionsFromTopology(ctx); err != nil {
+	if err := network.updateConnectionsFromTopology(ctx, emptyServiceNamesSetToUpdateAllConnections); err != nil {
 		// successfullyUpdatedService is still empty here, so all services will be rolled back to their previous partition
 		return nil, nil, stacktrace.Propagate(err, "Unable to update connections between the different partitions of the topology")
 	}
@@ -842,15 +854,36 @@ func (network *DefaultServiceNetwork) IsNetworkPartitioningEnabled() bool {
 // 									   Private helper methods
 // ====================================================================================================
 
-// updateAllConnectionsFromTopology reads the current topology and updates all connection according to it.
-func (network *DefaultServiceNetwork) updateAllConnectionsFromTopology(ctx context.Context) error {
-	availablePartitionConnectionConfigsPerServiceNames, err := network.topology.GetServicePacketLossConfigurationsByServiceName()
+// updateConnectionsFromTopology reads the current topology and updates the connections for the provided service names
+// according to it.
+// if serviceNames is empty, it updates the connection for all the services within the enclave
+func (network *DefaultServiceNetwork) updateConnectionsFromTopology(ctx context.Context, serviceNames map[service.ServiceName]bool) error {
+	servicePacketLossConfigurationsByServiceName, err := network.topology.GetServicePacketLossConfigurationsByServiceName()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the packet loss configuration by service ID "+
 			" to know what packet loss updates to apply")
 	}
-	if err = updateTrafficControlConfiguration(ctx, availablePartitionConnectionConfigsPerServiceNames, network.registeredServiceInfo, network.networkingSidecars); err != nil {
-		return stacktrace.Propagate(err, "An error occurred applying the traffic control configuration to partition off new nodes.")
+
+	var serviceNamesToUpdate map[service.ServiceName]bool
+	if len(serviceNames) == emptyCollectionLength {
+		// we add all the services currently stored in the topology to update everything
+		serviceNamesToUpdate = map[service.ServiceName]bool{}
+		for serviceName := range servicePacketLossConfigurationsByServiceName {
+			serviceNamesToUpdate[serviceName] = true
+		}
+	} else {
+		serviceNamesToUpdate = serviceNames
+	}
+
+	// TODO: probably worth running those updates in parallel for enclave with a lot of services
+	for serviceName := range serviceNamesToUpdate {
+		otherServiceConnectionConfig, found := servicePacketLossConfigurationsByServiceName[serviceName]
+		if !found {
+			return stacktrace.NewError("A service about to be updated could not be found in the connection config service map: '%s' (connection config service map was: '%v')", serviceName, servicePacketLossConfigurationsByServiceName)
+		}
+		if err = updateTrafficControlConfiguration(ctx, serviceName, otherServiceConnectionConfig, network.registeredServiceInfo, network.networkingSidecars); err != nil {
+			return stacktrace.Propagate(err, "An error occurred applying the traffic control configuration to partition off new nodes.")
+		}
 	}
 	return nil
 }
@@ -859,41 +892,37 @@ func (network *DefaultServiceNetwork) updateAllConnectionsFromTopology(ctx conte
 // NOTE: This is not thread-safe, so it must be within a function that locks mutex!
 func updateTrafficControlConfiguration(
 	ctx context.Context,
-	availablePartitionConnectionConfigsPerServiceNames map[service.ServiceName]map[service.ServiceName]*partition_topology.PartitionConnection,
+	serviceName service.ServiceName,
+	otherServiceConnectionConfigs map[service.ServiceName]*partition_topology.PartitionConnection,
 	registeredServices map[service.ServiceName]*service.ServiceRegistration,
-	networkingSidecars map[service.ServiceName]networking_sidecar.NetworkingSidecarWrapper) error {
-
-	// TODO PERF: Run the container updates in parallel, with the container being modified being the most important
-	// TODO: we need to roll back all services if one fails because upstream, when calling updateTrafficControlConfiguration, we throw the entire batch
-
-	for serviceName, partitionConnectionConfigBetweenServices := range availablePartitionConnectionConfigsPerServiceNames {
-		partitionConnectionConfigPerIpAddress := map[string]*partition_topology.PartitionConnection{}
-		for connectedServiceName, partitionConnectionConfig := range partitionConnectionConfigBetweenServices {
-			connectedService, found := registeredServices[connectedServiceName]
-			if !found {
-				return stacktrace.NewError(
-					"Service with ID '%v' needs to add packet loss configuration for service with ID '%v', but the latter "+
-						"doesn't have service registration info (i.e. an IP) associated with it",
-					serviceName,
-					connectedServiceName)
-			}
-
-			partitionConnectionConfigPerIpAddress[connectedService.GetPrivateIP().String()] = partitionConnectionConfig
-		}
-
-		sidecar, found := networkingSidecars[serviceName]
+	networkingSidecars map[service.ServiceName]networking_sidecar.NetworkingSidecarWrapper,
+) error {
+	partitionConnectionConfigPerIpAddress := map[string]*partition_topology.PartitionConnection{}
+	for connectedServiceName, partitionConnectionConfig := range otherServiceConnectionConfigs {
+		connectedService, found := registeredServices[connectedServiceName]
 		if !found {
 			return stacktrace.NewError(
-				"Need to update qdisc configuration of service with ID '%v', but the service doesn't have a sidecar",
-				serviceName)
+				"Service with name '%s' needs to update its connection configuration for service with name '%s', "+
+					"but the latter doesn't have service registration info (i.e. an IP) associated with it",
+				serviceName,
+				connectedServiceName)
 		}
 
-		if err := sidecar.UpdateTrafficControl(ctx, partitionConnectionConfigPerIpAddress); err != nil {
-			return stacktrace.Propagate(
-				err,
-				"An error occurred updating the qdisc configuration for service '%v'",
-				serviceName)
-		}
+		partitionConnectionConfigPerIpAddress[connectedService.GetPrivateIP().String()] = partitionConnectionConfig
+	}
+
+	sidecar, found := networkingSidecars[serviceName]
+	if !found {
+		return stacktrace.NewError(
+			"Need to update qdisc configuration of service with name '%v', but the service doesn't have a sidecar",
+			serviceName)
+	}
+
+	if err := sidecar.UpdateTrafficControl(ctx, partitionConnectionConfigPerIpAddress); err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred updating the qdisc configuration for service '%v'",
+			serviceName)
 	}
 	return nil
 }
@@ -1174,16 +1203,16 @@ func (network *DefaultServiceNetwork) startRegisteredService(
 	}()
 
 	// if partition is enabled, create a sidecar associated with this service
-	// TODO Fix race condition
-	// There is race condition here.
-	// 1. We first start the target services
-	// 2. Then we create the sidecars for the target services
-	// 3. Only then we block access between the target services & the rest of the world (both ways)
-	// Between 1 & 3 the target & others can speak to each other if they choose to (eg: run a port scan)
 	if network.isPartitioningEnabled {
-		err = network.createSidecarAndAddToMap(ctx, startedService)
-		if err != nil {
+		if err := network.createSidecarAndAddToMap(ctx, startedService); err != nil {
 			return nil, stacktrace.Propagate(err, "Error creating sidecar for service '%s'", serviceUuid)
+		}
+		serviceNameSet := map[service.ServiceName]bool{
+			startedService.GetRegistration().GetName(): true,
+		}
+		// update the connection for this service only
+		if err := network.updateConnectionsFromTopology(ctx, serviceNameSet); err != nil {
+			return nil, stacktrace.Propagate(err, "Error updating the networking rules for this service '%s' (UUID: '%s')", startedService.GetRegistration().GetName(), serviceUuid)
 		}
 		logrus.Debugf("Successfully created sidecars for service with ID '%v'", serviceUuid)
 	}
