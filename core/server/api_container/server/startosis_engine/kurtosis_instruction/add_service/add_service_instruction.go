@@ -17,7 +17,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
-	"go.starlark.net/starlarkstruct"
 )
 
 const (
@@ -196,27 +195,13 @@ func (instruction *AddServiceInstruction) makeAddServiceInterpretationReturnValu
 }
 
 func (instruction *AddServiceInstruction) parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) *startosis_errors.InterpretationError {
-	// TODO(gb): this now handles both serviceConfig being an unnamed struct or a fully fleshed ServiceConfig type
-	//  Remove code to handle struct once downstream code is migrated
 	var serviceNameArg starlark.String
-	var serviceConfigArgAsStruct *starlarkstruct.Struct
 	var serviceConfigArg *kurtosis_types.ServiceConfig
-	var isServiceConfigGenericStruct bool
 	if err := starlark.UnpackArgs(b.Name(), args, kwargs, serviceNameArgName, &serviceNameArg, serviceConfigArgName, &serviceConfigArg); err != nil {
-		if errParsingConfigAsStruct := starlark.UnpackArgs(b.Name(), args, kwargs, serviceNameArgName, &serviceNameArg, serviceConfigArgName, &serviceConfigArgAsStruct); errParsingConfigAsStruct != nil {
-			return startosis_errors.WrapWithInterpretationError(err, "Failed parsing arguments for function '%s' (unparsed arguments were: '%v' '%v')", AddServiceBuiltinName, args, kwargs)
-		}
-		isServiceConfigGenericStruct = true
-	} else {
-		isServiceConfigGenericStruct = false
+		return startosis_errors.WrapWithInterpretationError(err, "Failed parsing arguments for function '%s' (unparsed arguments were: '%v' '%v')", AddServiceBuiltinName, args, kwargs)
 	}
-
 	instruction.starlarkKwargs[serviceNameArgName] = serviceNameArg
-	if isServiceConfigGenericStruct {
-		instruction.starlarkKwargs[serviceConfigArgName] = serviceConfigArgAsStruct
-	} else {
-		instruction.starlarkKwargs[serviceConfigArgName] = serviceConfigArg
-	}
+	instruction.starlarkKwargs[serviceConfigArgName] = serviceConfigArg
 	instruction.starlarkKwargs.Freeze()
 
 	serviceName, interpretationErr := kurtosis_instruction.ParseServiceName(serviceNameArg)
@@ -225,11 +210,7 @@ func (instruction *AddServiceInstruction) parseStartosisArgs(b *starlark.Builtin
 	}
 
 	var serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig
-	if isServiceConfigGenericStruct {
-		serviceConfig, interpretationErr = kurtosis_instruction.ParseServiceConfigArg(serviceConfigArgAsStruct)
-	} else {
-		serviceConfig, interpretationErr = serviceConfigArg.ToKurtosisType()
-	}
+	serviceConfig, interpretationErr = serviceConfigArg.ToKurtosisType()
 	if interpretationErr != nil {
 		return interpretationErr
 	}

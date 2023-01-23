@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
@@ -14,39 +13,27 @@ import (
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkjson"
 	"go.starlark.net/starlarkstruct"
-	"math"
 	"reflect"
 )
 
 const (
-	serviceIdArgName     = "service_name"
-	serviceConfigArgName = "config"
-	defineFactArgName    = "define_fact"
-	requestArgName       = "request"
-	execArgName          = "exec"
-	subnetworksArgName   = "subnetworks"
+	serviceIdArgName   = "service_name"
+	defineFactArgName  = "define_fact"
+	requestArgName     = "request"
+	execArgName        = "exec"
+	subnetworksArgName = "subnetworks"
 
-	containerImageNameKey = "image"
-	usedPortsKey          = "ports"
-	subnetworkKey         = "subnetwork"
 	// TODO remove this when we have the Portal as this is a temporary hack to meet the NEAR use case
 	serviceNameKey = "service_name"
 	contentTypeKey = "content_type"
 	bodyKey        = "body"
 
-	publicPortsKey                 = "public_ports"
-	entryPointArgsKey              = "entrypoint"
-	cmdArgsKey                     = "cmd"
-	envVarArgsKey                  = "env_vars"
-	filesArtifactMountDirpathsKey  = "files"
-	portIdKey                      = "port_id"
-	requestEndpointKey             = "endpoint"
-	requestMethodEndpointKey       = "method"
-	privateIPAddressPlaceholderKey = "private_ip_address_placeholder"
+	portIdKey                = "port_id"
+	requestEndpointKey       = "endpoint"
+	requestMethodEndpointKey = "method"
 
 	httpRequestExtractorsKey = "extract"
 	commandArgName           = "command"
-	expectedExitCodeArgName  = "expected_exit_code"
 
 	templatesAndDataArgName = "config"
 	templateFieldKey        = "template"
@@ -134,81 +121,6 @@ func ParseExecRecipe(recipeConfig *starlarkstruct.Struct) (*recipe.ExecRecipe, *
 	return recipe.NewExecRecipe(service.ServiceName(serviceName), command), nil
 }
 
-func ParseServiceConfigArg(serviceConfig *starlarkstruct.Struct) (*kurtosis_core_rpc_api_bindings.ServiceConfig, *startosis_errors.InterpretationError) {
-	containerImageName, interpretationErr := extractStringValue(serviceConfig, containerImageNameKey, serviceConfigArgName)
-	if interpretationErr != nil {
-		return nil, interpretationErr
-	}
-
-	privatePorts, interpretationErr := parseServiceConfigPorts(serviceConfig, usedPortsKey)
-	if interpretationErr != nil {
-		return nil, interpretationErr
-	}
-
-	publicPorts, interpretationErr := parseServiceConfigPorts(serviceConfig, publicPortsKey)
-	if interpretationErr != nil {
-		return nil, interpretationErr
-	}
-
-	entryPointArgs, interpretationErr := parseEntryPointArgs(serviceConfig)
-	if interpretationErr != nil {
-		return nil, interpretationErr
-	}
-
-	cmdArgs, interpretationErr := parseCmdArgs(serviceConfig)
-	if interpretationErr != nil {
-		return nil, interpretationErr
-	}
-
-	envVars, interpretationErr := parseEnvVars(serviceConfig)
-	if interpretationErr != nil {
-		return nil, interpretationErr
-	}
-
-	filesArtifactMountDirpaths, interpretationErr := parseFilesArtifactMountDirpaths(serviceConfig)
-	if interpretationErr != nil {
-		return nil, interpretationErr
-	}
-
-	privateIPAddressPlaceholder, interpretationErr := parsePrivateIPAddressPlaceholder(serviceConfig)
-	if interpretationErr != nil {
-		return nil, interpretationErr
-	}
-
-	subnetwork, interpretationErr := parseServiceConfigSubnetwork(serviceConfig)
-	if interpretationErr != nil {
-		return nil, interpretationErr
-	}
-
-	builtConfig := services.NewServiceConfigBuilder(containerImageName).WithPrivatePorts(
-		privatePorts,
-	).WithEntryPointArgs(
-		entryPointArgs,
-	).WithCmdArgs(
-		cmdArgs,
-	).WithEnvVars(
-		envVars,
-	).WithFilesArtifactMountDirpaths(
-		filesArtifactMountDirpaths,
-	).WithPrivateIPAddressPlaceholder(
-		privateIPAddressPlaceholder,
-	).WithPublicPorts(
-		publicPorts,
-	).WithSubnetwork(
-		subnetwork,
-	).Build()
-
-	return builtConfig, nil
-}
-
-func ParseExpectedExitCode(expectedExitCodeRaw starlark.Int) (int32, *startosis_errors.InterpretationError) {
-	expectedExitCode, interpretationErr := safeCastToInt32(expectedExitCodeRaw, expectedExitCodeArgName)
-	if interpretationErr != nil {
-		return 0, interpretationErr
-	}
-	return expectedExitCode, nil
-}
-
 func ParseNonEmptyString(argName string, argValue starlark.Value) (string, *startosis_errors.InterpretationError) {
 	strArgValue, interpretationErr := kurtosis_types.SafeCastToString(argValue, argName)
 	if interpretationErr != nil {
@@ -286,103 +198,6 @@ func ParseSubnetworks(subnetworksTuple starlark.Tuple) (service_network_types.Pa
 	subnetwork2 := service_network_types.PartitionID(subnetworksStr[1])
 	return subnetwork1, subnetwork2, nil
 }
-func parseServiceConfigSubnetwork(serviceConfig *starlarkstruct.Struct) (string, *startosis_errors.InterpretationError) {
-	// subnetwork, if present, should be a simple string
-	_, err := serviceConfig.Attr(subnetworkKey)
-	if err != nil {
-		// subnetwork is optional, if it's not present -> return empty string
-		return "", nil
-	}
-	subnetwork, interpretationErr := extractStringValue(serviceConfig, subnetworkKey, serviceConfigArgName)
-	if interpretationErr != nil {
-		return "", interpretationErr
-	}
-	return subnetwork, nil
-}
-
-func parseServiceConfigPorts(serviceConfig *starlarkstruct.Struct, portsKey string) (map[string]*kurtosis_core_rpc_api_bindings.Port, *startosis_errors.InterpretationError) {
-	privatePortsRawArg, err := serviceConfig.Attr(portsKey)
-	if err != nil {
-		// not all services need to create ports, this being empty is okay
-		return map[string]*kurtosis_core_rpc_api_bindings.Port{}, nil
-	}
-	privatePortsArg, ok := privatePortsRawArg.(*starlark.Dict)
-	if !ok {
-		return nil, startosis_errors.NewInterpretationError("Argument `%s` is expected to be a dictionary", usedPortsKey)
-	}
-
-	var privatePorts = make(map[string]*kurtosis_core_rpc_api_bindings.Port)
-	for _, portNameRaw := range privatePortsArg.Keys() {
-		portDefinitionRaw, found, err := privatePortsArg.Get(portNameRaw)
-		if !found || err != nil {
-			return nil, startosis_errors.NewInterpretationError("Unable to find a value in a dict associated with a key that exists (key = '%s') - this is a product bug", portNameRaw)
-		}
-
-		portName, interpretationErr := kurtosis_types.SafeCastToString(portNameRaw, portsKey)
-		if interpretationErr != nil {
-			return nil, interpretationErr
-		}
-
-		portDefinition, ok := portDefinitionRaw.(*kurtosis_types.PortSpec)
-		if !ok {
-			return nil, startosis_errors.NewInterpretationError("Port definition `%s` is expected to be a PortSpec", portDefinitionRaw)
-		}
-		privatePorts[portName] = portDefinition.ToKurtosisType()
-	}
-	return privatePorts, nil
-}
-
-func parseEntryPointArgs(serviceConfig *starlarkstruct.Struct) ([]string, *startosis_errors.InterpretationError) {
-	_, err := serviceConfig.Attr(entryPointArgsKey)
-	//an error here means that no argument was found which is alright as this is an optional
-	if err != nil {
-		return nil, nil
-	}
-	entryPointArgs, interpretationErr := extractStringSliceValue(serviceConfig, entryPointArgsKey, serviceConfigArgName)
-	if interpretationErr != nil {
-		return nil, interpretationErr
-	}
-	return entryPointArgs, nil
-}
-
-func parseCmdArgs(serviceConfig *starlarkstruct.Struct) ([]string, *startosis_errors.InterpretationError) {
-	_, err := serviceConfig.Attr(cmdArgsKey)
-	//an error here means that no argument was found which is alright as this is an optional
-	if err != nil {
-		return nil, nil
-	}
-	entryPointArgs, interpretationErr := extractStringSliceValue(serviceConfig, cmdArgsKey, serviceConfigArgName)
-	if interpretationErr != nil {
-		return nil, interpretationErr
-	}
-	return entryPointArgs, nil
-}
-
-func parseEnvVars(serviceConfig *starlarkstruct.Struct) (map[string]string, *startosis_errors.InterpretationError) {
-	_, err := serviceConfig.Attr(envVarArgsKey)
-	//an error here means that no argument was found which is alright as this is an optional
-	if err != nil {
-		return map[string]string{}, nil
-	}
-	envVarArgs, interpretationErr := extractMapStringStringValue(serviceConfig, envVarArgsKey, serviceConfigArgName)
-	if interpretationErr != nil {
-		return nil, interpretationErr
-	}
-	return envVarArgs, nil
-}
-
-func parseFilesArtifactMountDirpaths(serviceConfig *starlarkstruct.Struct) (map[string]string, *startosis_errors.InterpretationError) {
-	_, err := serviceConfig.Attr(filesArtifactMountDirpathsKey)
-	//an error here means that no argument was found which is alright as this is an optional
-	if err != nil {
-		return map[string]string{}, nil
-	}
-	filesArtifactMountDirpathsArg, interpretationErr := extractMapStringStringValue(serviceConfig, filesArtifactMountDirpathsKey, serviceConfigArgName)
-	if interpretationErr != nil {
-		return nil, interpretationErr
-	}
-	return filesArtifactMountDirpathsArg, nil
-}
 
 // TODO: remove this method when we stop supporting struct for recipe defn
 func parseHttpRequestExtractors(recipe *starlarkstruct.Struct) (map[string]string, *startosis_errors.InterpretationError) {
@@ -398,19 +213,6 @@ func parseHttpRequestExtractors(recipe *starlarkstruct.Struct) (map[string]strin
 	return httpRequestExtractorsArg, nil
 }
 
-func parsePrivateIPAddressPlaceholder(serviceConfig *starlarkstruct.Struct) (string, *startosis_errors.InterpretationError) {
-	_, err := serviceConfig.Attr(privateIPAddressPlaceholderKey)
-	//an error here means that no argument was found which is alright as this is an optional
-	if err != nil {
-		return "", nil
-	}
-	privateIpAddressPlaceholder, interpretationErr := extractStringValue(serviceConfig, privateIPAddressPlaceholderKey, serviceConfigArgName)
-	if interpretationErr != nil {
-		return "", interpretationErr
-	}
-	return privateIpAddressPlaceholder, nil
-}
-
 func extractStringValue(structField *starlarkstruct.Struct, key string, argNameForLogging string) (string, *startosis_errors.InterpretationError) {
 	value, err := structField.Attr(key)
 	if err != nil {
@@ -421,18 +223,6 @@ func extractStringValue(structField *starlarkstruct.Struct, key string, argNameF
 		return "", startosis_errors.WrapWithInterpretationError(interpretationErr, "Error casting value '%s' as element of the struct object '%s'", key, argNameForLogging)
 	}
 	return stringValue, nil
-}
-
-func extractUint32Value(structField *starlarkstruct.Struct, key string, argNameForLogging string) (uint32, *startosis_errors.InterpretationError) {
-	value, err := structField.Attr(key)
-	if err != nil {
-		return 0, startosis_errors.NewInterpretationError("Missing value '%s' as element of the struct object '%s'", key, argNameForLogging)
-	}
-	uint32Value, interpretationErr := safeCastToUint32(value, key)
-	if interpretationErr != nil {
-		return 0, startosis_errors.WrapWithInterpretationError(interpretationErr, "Error casting value '%s' as element of the struct object '%s'", key, argNameForLogging)
-	}
-	return uint32Value, nil
 }
 
 func extractStringSliceValue(structField *starlarkstruct.Struct, key string, argNameForLogging string) ([]string, *startosis_errors.InterpretationError) {
@@ -457,36 +247,6 @@ func extractMapStringStringValue(structField *starlarkstruct.Struct, key string,
 		return nil, startosis_errors.WrapWithInterpretationError(interpretationErr, "Error casting value '%s' as element of the struct object '%s'", key, argNameForLogging)
 	}
 	return mapStringStringValue, nil
-}
-
-func safeCastToUint32(expectedValueString starlark.Value, argNameForLogging string) (uint32, *startosis_errors.InterpretationError) {
-	castValue, ok := expectedValueString.(starlark.Int)
-	if !ok {
-		return 0, startosis_errors.NewInterpretationError("Argument '%s' is expected to be an integer. Got %s", argNameForLogging, reflect.TypeOf(expectedValueString))
-	}
-
-	uint64Value, ok := castValue.Uint64()
-	if !ok || uint64Value != uint64(uint32(uint64Value)) {
-		// second clause if to safeguard against "overflow"
-		return 0, startosis_errors.NewInterpretationError("'%s' argument is expected to be a an integer greater than 0 and lower than %d", argNameForLogging, math.MaxUint32)
-	}
-	return uint32(uint64Value), nil
-
-}
-
-func safeCastToInt32(expectedValueString starlark.Value, argNameForLogging string) (int32, *startosis_errors.InterpretationError) {
-	castValue, ok := expectedValueString.(starlark.Int)
-	if !ok {
-		return 0, startosis_errors.NewInterpretationError("Argument '%s' is expected to be an integer. Got %s", argNameForLogging, reflect.TypeOf(expectedValueString))
-	}
-
-	int64Value, ok := castValue.Int64()
-	if !ok || int64Value != int64(int32(int64Value)) {
-		// second clause if to safeguard against "overflow"
-		return 0, startosis_errors.NewInterpretationError("'%s' argument is expected to be a an integer greater than %d and lower than %d", argNameForLogging, math.MinInt32, math.MaxInt32)
-	}
-	return int32(int64Value), nil
-
 }
 
 func encodeStarlarkObjectAsJSON(object starlark.Value, argNameForLogging string) (string, *startosis_errors.InterpretationError) {
