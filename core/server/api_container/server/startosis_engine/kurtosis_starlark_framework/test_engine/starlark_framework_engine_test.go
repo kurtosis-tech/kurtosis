@@ -20,7 +20,6 @@ import (
 var registeredBuiltin = []KurtosisPlanInstructionBaseTest{
 	renderTemplateTestCase1{},
 	renderTemplateTestCase2{},
-	renderTemplateTestCase3{},
 }
 
 func TestAllRegisteredBuiltins(t *testing.T) {

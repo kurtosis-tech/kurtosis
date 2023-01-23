@@ -21,7 +21,7 @@ func (test renderTemplateTestCase2) GetInstruction() (*kurtosis_plan_instruction
 func (test renderTemplateTestCase2) GetStarlarkCode() (string, error) {
 	artifactNameValue := "test-artifact"
 	configValue := `{"/fizz/buzz/test.txt": struct(data="{\"LastName\": \"Doe\"}", template="Hello {{.LastName}}"), "/foo/bar/test.txt": struct(data="{\"Name\": \"John\"}", template="Hello {{.Name}}")}`
-	return fmt.Sprintf(`%s(%s=%s, %s=%q, %s="")`, render_templates.RenderTemplatesBuiltinName, render_templates.TemplateAndDataByDestinationRelFilepathArg, configValue, render_templates.ArtifactNameArgName, artifactNameValue, render_templates.ArtifactIdArgName), nil
+	return fmt.Sprintf(`%s(%s=%s, %s=%q)`, render_templates.RenderTemplatesBuiltinName, render_templates.TemplateAndDataByDestinationRelFilepathArg, configValue, render_templates.ArtifactNameArgName, artifactNameValue), nil
 }
 
 func (test renderTemplateTestCase2) GetExpectedArguments() (starlark.StringDict, error) {

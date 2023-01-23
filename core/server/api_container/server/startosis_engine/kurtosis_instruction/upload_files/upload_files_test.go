@@ -16,7 +16,7 @@ func TestUploadFiles_StringRepresentation(t *testing.T) {
 	uploadInstruction := newEmptyUploadFilesInstruction(position, nil, nil)
 	uploadInstruction.starlarkKwargs = starlark.StringDict{}
 	uploadInstruction.starlarkKwargs[srcArgName] = starlark.String(filePath)
-	uploadInstruction.starlarkKwargs[nonOptionalArtifactNameArgName] = starlark.String(artifactName)
+	uploadInstruction.starlarkKwargs[artifactNameArgName] = starlark.String(artifactName)
 
 	expectedStr := `upload_files(name="` + artifactName + `", src="` + filePath + `")`
 	require.Equal(t, expectedStr, uploadInstruction.String())
@@ -27,7 +27,7 @@ func TestUploadFiles_StringRepresentation(t *testing.T) {
 		expectedStr,
 		[]*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg{
 			binding_constructors.NewStarlarkInstructionKwarg(`"`+filePath+`"`, srcArgName, true),
-			binding_constructors.NewStarlarkInstructionKwarg(`"`+artifactName+`"`, nonOptionalArtifactNameArgName, true),
+			binding_constructors.NewStarlarkInstructionKwarg(`"`+artifactName+`"`, artifactNameArgName, true),
 		})
 	require.Equal(t, canonicalInstruction, uploadInstruction.GetCanonicalInstruction())
 }

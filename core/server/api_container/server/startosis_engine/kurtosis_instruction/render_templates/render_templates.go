@@ -21,13 +21,7 @@ const (
 	RenderTemplatesBuiltinName = "render_templates"
 
 	TemplateAndDataByDestinationRelFilepathArg = "config"
-
-	// TODO Deprecate artifactIdArg in a future release
-	ArtifactIdArgName = "artifact_id"
-
-	ArtifactNameArgName = "name"
-
-	emptyStarlarkString = starlark.String("")
+	ArtifactNameArgName                        = "name"
 )
 
 func NewRenderTemplatesInstruction(serviceNetwork service_network.ServiceNetwork) *kurtosis_plan_instruction.KurtosisPlanInstruction {
@@ -44,13 +38,7 @@ func NewRenderTemplatesInstruction(serviceNetwork service_network.ServiceNetwork
 				},
 				{
 					Name:              ArtifactNameArgName,
-					IsOptional:        true,
-					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
-					Validator:         nil,
-				},
-				{
-					Name:              ArtifactIdArgName,
-					IsOptional:        true,
+					IsOptional:        false,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
 					Validator:         nil,
 				},
@@ -67,7 +55,6 @@ func NewRenderTemplatesInstruction(serviceNetwork service_network.ServiceNetwork
 
 		DefaultDisplayArguments: map[string]bool{
 			ArtifactNameArgName: true,
-			ArtifactIdArgName:   true,
 		},
 	}
 }
@@ -83,16 +70,6 @@ func (builtin *RenderTemplatesCapabilities) Interpret(arguments *builtin_argumen
 	artifactName, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, ArtifactNameArgName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to parse '%s'", ArtifactNameArgName)
-	}
-	artifactId, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, ArtifactIdArgName)
-	if err != nil {
-		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to parse '%s'", ArtifactIdArgName)
-	}
-	if artifactName == emptyStarlarkString && artifactId == emptyStarlarkString {
-		return nil, startosis_errors.NewInterpretationError("A name must be provided for the artifact using the '%v' argument", ArtifactIdArgName)
-	}
-	if artifactName == emptyStarlarkString {
-		artifactName = artifactId
 	}
 	builtin.artifactName = artifactName.GoString()
 

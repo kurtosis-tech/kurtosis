@@ -1017,46 +1017,6 @@ def run(plan):
 	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutput)
 }
 
-// TODO Remove this once `artifact_id` is deprecated
-func TestStartosisInterpreter_StoreFileFromServiceIsBackwardsCompatible(t *testing.T) {
-	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
-	defer packageContentProvider.RemoveAll()
-	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, runtimeValueStore)
-	script := `
-def run(plan):
-	plan.print("Storing file from service!")
-	artifact_name=plan.store_service_files(service_name="example-datastore-server", src="/foo/bar", artifact_id="` + testArtifactName + `")
-	plan.print(artifact_name)
-`
-
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
-	require.Nil(t, interpretationError)
-	require.Len(t, instructions, 3)
-
-	starlarkKwargs := starlark.StringDict{
-		"service_name": starlark.String("example-datastore-server"),
-		"src":          starlark.String("/foo/bar"),
-		"name":         starlark.String(testArtifactName),
-	}
-	starlarkKwargs.Freeze()
-	storeInstruction := store_service_files.NewStoreServiceFilesInstruction(
-		testServiceNetwork,
-		kurtosis_instruction.NewInstructionPosition(4, 40, startosis_constants.PackageIdPlaceholderForStandaloneScript),
-		"example-datastore-server",
-		"/foo/bar",
-		testArtifactName,
-		starlarkKwargs,
-	)
-
-	require.Equal(t, storeInstruction, instructions[1])
-
-	expectedOutput := fmt.Sprintf(`Storing file from service!
-%v
-`, testArtifactName)
-	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutput)
-}
-
 func TestStartosisInterpreter_ReadFileFromGithub(t *testing.T) {
 	src := "github.com/foo/bar/static_files/main.txt"
 	seed := map[string]string{
@@ -1230,40 +1190,6 @@ func TestStartosisInterpreter_UploadGetsInterpretedCorrectly(t *testing.T) {
 	script := `
 def run(plan):
 	plan.upload_files("` + filePath + `","` + testArtifactName + `")
-`
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
-	require.Nil(t, interpretationError)
-	require.Len(t, instructions, 1)
-	validateScriptOutputFromPrintInstructions(t, instructions, "")
-
-	starlarkKwargs := starlark.StringDict{
-		"name": starlark.String(testArtifactName),
-		"src":  starlark.String(filePath),
-	}
-	starlarkKwargs.Freeze()
-	expectedUploadInstruction := upload_files.NewUploadFilesInstruction(
-		kurtosis_instruction.NewInstructionPosition(3, 19, startosis_constants.PackageIdPlaceholderForStandaloneScript),
-		testServiceNetwork, packageContentProvider, filePath, filePathOnDisk, testArtifactName,
-		starlarkKwargs,
-	)
-
-	require.Equal(t, expectedUploadInstruction, instructions[0])
-}
-
-// TODO Remove this once `artifact_id` is deprecated
-func TestStartosisInterpreter_UploadFilesIsBackwardsCompatible(t *testing.T) {
-	filePath := "github.com/kurtosis/module/lib/lib.star"
-	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
-	defer packageContentProvider.RemoveAll()
-	err := packageContentProvider.AddFileContent(filePath, "fooBar")
-	require.Nil(t, err)
-	filePathOnDisk, err := packageContentProvider.GetOnDiskAbsoluteFilePath(filePath)
-	require.Nil(t, err)
-	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, runtimeValueStore)
-	script := `
-def run(plan):
-	plan.upload_files("` + filePath + `",artifact_id="` + testArtifactName + `")
 `
 	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 	require.Nil(t, interpretationError)
