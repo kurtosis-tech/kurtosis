@@ -1003,13 +1003,17 @@ func (network *DefaultServiceNetwork) registerService(
 		}
 	}()
 
+	serviceUuidStr := string(serviceRegistration.GetUUID())
+	shortenedServiceUuid := uuid_generator.ShortenedUUIDString(serviceUuidStr)
 	network.registeredServiceInfo[serviceName] = serviceRegistration
+	network.serviceUuidToServiceName[serviceRegistration.GetUUID()] = serviceRegistration.GetName()
+	network.serviceShortenedUuidToName[shortenedServiceUuid] = append(network.serviceShortenedUuidToName[shortenedServiceUuid], serviceRegistration.GetName())
 	// remove service from the registered service map is something fails downstream
 	defer func() {
 		if serviceSuccessfullyRegistered {
 			return
 		}
-		delete(network.registeredServiceInfo, serviceName)
+		network.cleanupInternalMapsUnlocked(serviceName)
 	}()
 
 	err = network.addServiceToTopology(serviceName, partitionId)
@@ -1049,7 +1053,7 @@ func (network *DefaultServiceNetwork) unregisterService(ctx context.Context, ser
 		return stacktrace.NewError("Unregistering a service that has not been properly registered should not happen: '%s'. This is a Kurtosis internal bug", serviceName)
 	}
 
-	delete(network.registeredServiceInfo, serviceName)
+	network.cleanupInternalMapsUnlocked(serviceName)
 	serviceUuid := serviceRegistration.GetUUID()
 	serviceToUnregister := map[service.ServiceUUID]bool{
 		serviceUuid: true,

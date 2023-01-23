@@ -3,7 +3,6 @@ package add
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	enclave_consts "github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/enclave"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
@@ -138,10 +137,9 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 
 	enclaveInfo := createdEnclaveResponse.GetEnclaveInfo()
-	createdEnclaveUUID := enclaves.EnclaveUUID(enclaveInfo.EnclaveUuid)
 	enclaveName = enclaveInfo.Name
 
-	defer output_printers.PrintEnclaveUUID(enclaveName, createdEnclaveUUID)
+	defer output_printers.PrintEnclaveName(enclaveName)
 
 	return nil
 }

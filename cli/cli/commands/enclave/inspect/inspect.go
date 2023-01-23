@@ -32,13 +32,16 @@ const (
 	isEnclaveIdArgOptional  = false
 	isEnclaveIdArgGreedy    = false
 
-	enclaveUUIDTitleName               = "Enclave UUID"
+	enclaveUUIDTitleName               = "UUID"
 	enclaveNameTitleName               = "Enclave Name"
 	enclaveStatusTitleName             = "Enclave Status"
 	enclaveCreationTimeTitleName       = "Creation Time"
 	apiContainerStatusTitleName        = "API Container Status"
 	apiContainerHostGrpcPortTitle      = "API Container Host GRPC Port"
 	apiContainerHostGrpcProxyPortTitle = "API Container Host GRPC Proxy Port"
+
+	fullUuidFlagKey        = "full-uuid"
+	fullUuidFlagKeyDefault = "false"
 
 	headerWidthChars = 100
 	headerPadChar    = "="
@@ -47,7 +50,7 @@ const (
 	engineClientCtxKey    = "engine-client"
 )
 
-var enclaveObjectPrintingFuncs = map[string]func(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo, isAPIContainerRunning bool) error{
+var enclaveObjectPrintingFuncs = map[string]func(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo, showFullUuid bool, isAPIContainerRunning bool) error{
 	"User Services": printUserServices,
 }
 
@@ -57,7 +60,14 @@ var EnclaveInspectCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtos
 	LongDescription:           "List information about the enclave's status and contents",
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
 	EngineClientContextKey:    engineClientCtxKey,
-	Flags:                     nil,
+	Flags: []*flags.FlagConfig{
+		{
+			Key:     fullUuidFlagKey,
+			Usage:   "If true then Kurtosis prints full uuids instead of shortened uuids. Default false.",
+			Type:    flags.FlagType_Bool,
+			Default: fullUuidFlagKeyDefault,
+		},
+	},
 	Args: []*args.ArgConfig{
 		enclave_id_arg.NewEnclaveIdentifierArg(
 			enclaveIdentifierArgKey,
@@ -73,12 +83,17 @@ func run(
 	ctx context.Context,
 	kurtosisBackend backend_interface.KurtosisBackend,
 	_ kurtosis_engine_rpc_api_bindings.EngineServiceClient,
-	_ *flags.ParsedFlags,
+	flags *flags.ParsedFlags,
 	args *args.ParsedArgs,
 ) error {
 	enclaveIdentifier, err := args.GetNonGreedyArg(enclaveIdentifierArgKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected a value for non-greedy enclave identifier arg '%v' but none was found; this is a bug with Kurtosis!", enclaveIdentifierArgKey)
+	}
+
+	showFullUuids, err := flags.GetBool(fullUuidFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", fullUuidFlagKey)
 	}
 
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
@@ -95,7 +110,11 @@ func run(
 	enclaveApiContainerStatus := enclaveInfo.ApiContainerStatus
 
 	keyValuePrinter := output_printers.NewKeyValuePrinter()
-	keyValuePrinter.AddPair(enclaveUUIDTitleName, enclaveInfo.GetEnclaveUuid())
+	if showFullUuids {
+		keyValuePrinter.AddPair(enclaveUUIDTitleName, enclaveInfo.GetEnclaveUuid())
+	} else {
+		keyValuePrinter.AddPair(enclaveUUIDTitleName, enclaveInfo.GetShortenedUuid())
+	}
 	keyValuePrinter.AddPair(enclaveNameTitleName, enclaveInfo.GetName())
 
 	enclaveContainersStatusStr, err := enclave_status_stringifier.EnclaveContainersStatusStringifier(enclaveContainersStatus)
@@ -156,7 +175,7 @@ func run(
 		padStr := strings.Repeat(headerPadChar, numPadChars)
 		fmt.Printf("%v %v %v\n", padStr, header, padStr)
 
-		if err := printingFunc(ctx, kurtosisBackend, enclaveInfo, isApiContainerRunning); err != nil {
+		if err := printingFunc(ctx, kurtosisBackend, enclaveInfo, showFullUuids, isApiContainerRunning); err != nil {
 			logrus.Error(err)
 			headersWithPrintErrs = append(headersWithPrintErrs, header)
 		}

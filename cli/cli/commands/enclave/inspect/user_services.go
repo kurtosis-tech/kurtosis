@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"google.golang.org/grpc"
 	"sort"
@@ -29,7 +30,7 @@ const (
 	defaultEmptyIPAddrForAPIC     = ""
 )
 
-func printUserServices(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo, isAPIContainerRunning bool) error {
+func printUserServices(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo, showFullUuids bool, isAPIContainerRunning bool) error {
 	enclaveUuidStr := enclaveInfo.GetEnclaveUuid()
 	enclaveId := enclave.EnclaveUUID(enclaveUuidStr)
 	userServiceFilters := &service.ServiceFilters{
@@ -62,6 +63,11 @@ func printUserServices(ctx context.Context, kurtosisBackend backend_interface.Ku
 	for _, userService := range sortedUserServices {
 		serviceIdStr := string(userService.GetRegistration().GetName())
 		uuidStr := string(userService.GetRegistration().GetUUID())
+		uuidToPrint := uuid_generator.ShortenedUUIDString(uuidStr)
+		if showFullUuids {
+			uuidToPrint = uuidStr
+		}
+
 		serviceStatusStr := userService.GetStatus().String()
 
 		// Look for public port and IP information in API container map
@@ -82,7 +88,7 @@ func printUserServices(ctx context.Context, kurtosisBackend backend_interface.Ku
 		firstPortBindingLine := portBindingLines[0]
 		additionalPortBindingLines := portBindingLines[1:]
 
-		if err := tablePrinter.AddRow(uuidStr, serviceIdStr, firstPortBindingLine, serviceStatusStr); err != nil {
+		if err := tablePrinter.AddRow(uuidToPrint, serviceIdStr, firstPortBindingLine, serviceStatusStr); err != nil {
 			return stacktrace.Propagate(
 				err,
 				"An error occurred adding row for user service with UUID '%v' to the table printer",

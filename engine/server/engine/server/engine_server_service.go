@@ -145,7 +145,8 @@ func (service *EngineServerService) GetServiceLogs(
 	enclaveIdentifier := args.GetEnclaveIdentifier()
 	enclaveUuid, err := service.enclaveManager.GetEnclaveUuidForEnclaveIdentifier(context.Background(), enclaveIdentifier)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while fetching uuid for enclave '%v'", enclaveIdentifier)
+		logrus.Errorf("An error occurred while fetching uuid for enclave '%v'. This could happen if the enclave has been deleted. Treating it as UUID", enclaveIdentifier)
+		enclaveUuid = enclave.EnclaveUUID(enclaveIdentifier)
 	}
 	serviceGuidStrSet := args.GetServiceUuidSet()
 	requestedServiceGuids := make(map[user_service.ServiceUUID]bool, len(serviceGuidStrSet))

@@ -194,7 +194,7 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the enclave context for enclave '%v'", userRequestedEnclaveIdentifier)
 	}
 	if isNewEnclave {
-		defer output_printers.PrintEnclaveUUID(enclaveCtx.GetEnclaveName(), enclaveCtx.GetEnclaveUuid())
+		defer output_printers.PrintEnclaveName(enclaveCtx.GetEnclaveName())
 	}
 
 	var responseLineChan <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine

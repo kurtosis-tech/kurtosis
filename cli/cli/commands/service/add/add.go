@@ -25,8 +25,8 @@ const (
 	isEnclaveIdArgGreedy    = false
 
 	serviceNameArgKey   = "service-name"
-	serviceNameTitleKey = "Service Name"
-	serviceUuidTitleKey = "Service UUID"
+	serviceNameTitleKey = "Name"
+	serviceUuidTitleKey = "UUID"
 
 	serviceImageArgKey = "image"
 

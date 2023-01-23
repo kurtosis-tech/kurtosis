@@ -23,13 +23,16 @@ import (
 )
 
 const (
-	enclaveUuidColumnHeader         = "EnclaveUUID"
+	enclaveUuidColumnHeader         = "UUID"
 	enclaveStatusColumnHeader       = "Status"
 	enclaveNameColumnHeader         = "Name"
 	enclaveCreationTimeColumnHeader = "Creation Time"
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
+
+	fullUuidFlagKey        = "full-uuid"
+	fullUuidFlagKeyDefault = "false"
 
 	emptyTimeForOldEnclaves = ""
 )
@@ -40,16 +43,23 @@ var EnclaveLsCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCom
 	LongDescription:           "Lists the enclaves running in the Kurtosis engine",
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
 	EngineClientContextKey:    engineClientCtxKey,
-	Flags:                     nil,
-	Args:                      nil,
-	RunFunc:                   run,
+	Flags: []*flags.FlagConfig{
+		{
+			Key:     fullUuidFlagKey,
+			Usage:   "If true then Kurtosis prints full uuids instead of shortened uuids. Default false.",
+			Type:    flags.FlagType_Bool,
+			Default: fullUuidFlagKeyDefault,
+		},
+	},
+	Args:    nil,
+	RunFunc: run,
 }
 
 func run(
 	ctx context.Context,
 	kurtosisBackend backend_interface.KurtosisBackend,
 	engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
-	_ *flags.ParsedFlags,
+	flags *flags.ParsedFlags,
 	_ *args.ParsedArgs,
 ) error {
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
@@ -62,6 +72,11 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting enclaves")
 	}
 
+	showFullUuids, err := flags.GetBool(fullUuidFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", fullUuidFlagKey)
+	}
+
 	tablePrinter := output_printers.NewTablePrinter(enclaveUuidColumnHeader, enclaveNameColumnHeader, enclaveStatusColumnHeader, enclaveCreationTimeColumnHeader)
 	orderedEnclaveInfoMaps, enclaveWithoutCreationTimeInfoMap := getOrderedEnclaveInfoMapAndEnclaveWithoutCreationTimeMap(enclaves.GetEnclavesByUuid())
 
@@ -69,13 +84,17 @@ func run(
 	//This is for retro-compatibility, for those old enclave did not track enclave's creation time
 	for _, enclaveInfo := range enclaveWithoutCreationTimeInfoMap {
 		enclaveUuid := enclaveInfo.GetEnclaveUuid()
+		uuidToPrint := enclaveInfo.GetShortenedUuid()
+		if showFullUuids {
+			uuidToPrint = enclaveUuid
+		}
 
 		enclaveStatus, err := enclave_status_stringifier.EnclaveContainersStatusStringifier(enclaveInfo.GetContainersStatus())
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred when stringify enclave containers status '%v'", enclaveInfo.GetContainersStatus())
 		}
 
-		if err := tablePrinter.AddRow(enclaveUuid, enclaveInfo.Name, enclaveStatus, emptyTimeForOldEnclaves); err != nil {
+		if err := tablePrinter.AddRow(uuidToPrint, enclaveInfo.Name, enclaveStatus, emptyTimeForOldEnclaves); err != nil {
 			return stacktrace.NewError("An error occurred adding row for enclave '%v' to the table printer", enclaveUuid)
 		}
 	}
@@ -84,6 +103,10 @@ func run(
 	for _, enclaveInfo := range orderedEnclaveInfoMaps {
 
 		enclaveUuid := enclaveInfo.GetEnclaveUuid()
+		uuidToPrint := enclaveInfo.GetShortenedUuid()
+		if showFullUuids {
+			uuidToPrint = enclaveUuid
+		}
 
 		enclaveStatus, err := enclave_status_stringifier.EnclaveContainersStatusStringifier(enclaveInfo.GetContainersStatus())
 		if err != nil {
@@ -93,7 +116,7 @@ func run(
 		enclaveCreationTime := enclaveInfo.CreationTime.AsTime().Local().Format(time.RFC1123)
 		enclaveName := enclaveInfo.GetName()
 
-		if err := tablePrinter.AddRow(enclaveUuid, enclaveName, enclaveStatus, enclaveCreationTime); err != nil {
+		if err := tablePrinter.AddRow(uuidToPrint, enclaveName, enclaveStatus, enclaveCreationTime); err != nil {
 			return stacktrace.NewError("An error occurred adding row for enclave '%v' to the table printer", enclaveUuid)
 		}
 	}

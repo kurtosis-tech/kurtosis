@@ -57,7 +57,7 @@ run_dump_kurtosis_enclaves: &run_dump_kurtosis_enclaves
 
     # We exclude "WARN" and "INFO" messages because otherwise they'll pollute the STDOUT grab
     # We can remove this tedious exclusion when https://github.com/kurtosis-tech/kurtosis/issues/399 is implemented
-    for enclave_uuid in $("${KURTOSIS_BINPATH}" enclave ls | grep -v "WARN" | grep -v "INFO" | grep -v "EnclaveUUID" | awk '{print $1}'); do
+    for enclave_uuid in $("${KURTOSIS_BINPATH}" enclave ls | grep -v "WARN" | grep -v "INFO" | grep -v "UUID" | awk '{print $1}'); do
       "${KURTOSIS_BINPATH}" enclave dump "${enclave_uuid}" "${output_dirname}/${enclave_uuid}"
     done
 

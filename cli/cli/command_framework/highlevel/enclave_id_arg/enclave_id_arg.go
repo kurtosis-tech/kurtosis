@@ -2,11 +2,18 @@ package enclave_id_arg
 
 import (
 	"context"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/stacktrace"
 	"sort"
+	"strings"
+)
+
+const (
+	validShortenedUuidOrNameMatches = 1
+	uuidDelimiter                   = ", "
 )
 
 // Prebuilt enclave identifier arg which has tab-completion and validation ready out-of-the-box
@@ -122,18 +129,36 @@ func getValidationFunc(argKey string, _ string, isGreedy bool) func(context.Cont
 			return stacktrace.Propagate(err, "An error occurred getting enclaves, which is necessary to check if the enclaves exist")
 		}
 
+		enclavesByShortenedUuid := enclaves.GetEnclavesByShortenedUuid()
+		enclavesByUuid := enclaves.GetEnclavesByUuid()
+		enclavesByName := enclaves.GetEnclavesByName()
+
 		for _, enclaveIdentifier := range enclaveIdentifiersToValidate {
-			if _, found := enclaves.GetEnclavesByUuid()[enclaveIdentifier]; found {
+			if _, found := enclavesByUuid[enclaveIdentifier]; found {
 				continue
 			}
-			if _, found := enclaves.GetEnclavesByName()[enclaveIdentifier]; found {
+			if matches, found := enclavesByShortenedUuid[enclaveIdentifier]; found {
+				if len(matches) > validShortenedUuidOrNameMatches {
+					return stacktrace.NewError("Found multiple matching uuids '%v' for shortened uuid '%v' which is ambiguous", enclaveInfosToUuidsStr(matches), enclaveIdentifier)
+				}
 				continue
 			}
-			if _, found := enclaves.GetEnclavesByShortenedUuid()[enclaveIdentifier]; found {
+			if matches, found := enclavesByName[enclaveIdentifier]; found {
+				if len(matches) > validShortenedUuidOrNameMatches {
+					return stacktrace.NewError("Found multiple matching uuids '%v' for name '%v' which is ambiguous", enclaveInfosToUuidsStr(matches), enclaveIdentifier)
+				}
 				continue
 			}
 			return stacktrace.NewError("No enclave found for identifier '%v'", enclaveIdentifier)
 		}
 		return nil
 	}
+}
+
+func enclaveInfosToUuidsStr(infos []*kurtosis_engine_rpc_api_bindings.EnclaveInfo) string {
+	var uuids []string
+	for _, info := range infos {
+		uuids = append(uuids, info.EnclaveUuid)
+	}
+	return strings.Join(uuids, uuidDelimiter)
 }

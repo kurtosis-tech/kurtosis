@@ -13,7 +13,9 @@ import (
 )
 
 const (
-	enclaveIdentifierArgKey = "enclave-identifier"
+	enclaveIdentifierArgKey         = "enclave-identifier"
+	validShortenedUuidOrNameMatches = 1
+	uuidDelimiter                   = ", "
 )
 
 func NewServiceIdentifierArg(
@@ -54,7 +56,7 @@ func NewServiceUUIDArgWithValidationDisabled(
 	}
 }
 
-func getServiceUuidsAndNamesForEnclave(ctx context.Context, enclaveIdentifier string) (map[services.ServiceUUID]bool, map[services.ServiceName]bool, error) {
+func getServiceUuidsAndNamesForEnclave(ctx context.Context, enclaveIdentifier string) (map[services.ServiceUUID]bool, map[services.ServiceName]services.ServiceUUID, error) {
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(
@@ -77,17 +79,13 @@ func getServiceUuidsAndNamesForEnclave(ctx context.Context, enclaveIdentifier st
 	}
 
 	serviceUuids := make(map[services.ServiceUUID]bool, len(serviceNames))
-	serviceNamesSet := make(map[services.ServiceName]bool, len(serviceNames))
+	serviceNamesToUuid := make(map[services.ServiceName]services.ServiceUUID)
 	for serviceName, serviceUuid := range serviceNames {
-		if _, ok := serviceUuids[serviceUuid]; !ok {
-			serviceUuids[serviceUuid] = true
-		}
-		if _, ok := serviceNamesSet[serviceName]; !ok {
-			serviceNamesSet[serviceName] = true
-		}
+		serviceUuids[serviceUuid] = true
+		serviceNamesToUuid[serviceName] = serviceUuid
 	}
 
-	return serviceUuids, serviceNamesSet, nil
+	return serviceUuids, serviceNamesToUuid, nil
 }
 
 func getOrderedServiceIdentifiersWithoutShortenedUuids(ctx context.Context, flags *flags.ParsedFlags, previousArgs *args.ParsedArgs) ([]string, error) {
@@ -122,27 +120,23 @@ func getOrderedServiceIdentifiersWithoutShortenedUuids(ctx context.Context, flag
 	return result, nil
 }
 
-func getServiceIdentifiersForValidation(ctx context.Context, _ *flags.ParsedFlags, previousArgs *args.ParsedArgs) (map[string]bool, error) {
+func getServiceIdentifiersForValidation(ctx context.Context, _ *flags.ParsedFlags, previousArgs *args.ParsedArgs) (map[services.ServiceUUID]bool, map[services.ServiceName]services.ServiceUUID, map[string][]services.ServiceUUID, error) {
 	enclaveIdentifier, err := previousArgs.GetNonGreedyArg(enclaveIdentifierArgKey)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave identifier using key '%v'", enclaveIdentifierArgKey)
+		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred getting the enclave identifier using key '%v'", enclaveIdentifierArgKey)
 	}
 
 	serviceUuids, serviceNames, err := getServiceUuidsAndNamesForEnclave(ctx, enclaveIdentifier)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the services retrieving for enclave identifier tab completion")
+		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred getting the services retrieving for enclave identifier tab completion")
 	}
 
-	serviceIdentifiersSet := make(map[string]bool)
-
-	for serviceName := range serviceNames {
-		serviceIdentifiersSet[string(serviceName)] = true
-	}
+	shortenedUuidsToUuids := make(map[string][]services.ServiceUUID)
 	for serviceUuid := range serviceUuids {
-		serviceIdentifiersSet[string(serviceUuid)] = true
-		serviceIdentifiersSet[uuid_generator.ShortenedUUIDString(string(serviceUuid))] = true
+		shortenedUuid := uuid_generator.ShortenedUUIDString(string(serviceUuid))
+		shortenedUuidsToUuids[shortenedUuid] = append(shortenedUuidsToUuids[shortenedUuid], serviceUuid)
 	}
-	return serviceIdentifiersSet, nil
+	return serviceUuids, serviceNames, shortenedUuidsToUuids, nil
 }
 
 func getValidationFunc(
@@ -165,21 +159,40 @@ func getValidationFunc(
 			serviceIdentifiersToValidate = []string{serviceUuid}
 		}
 
-		knownServiceIdentifiers, err := getServiceIdentifiersForValidation(ctx, flags, args)
+		serviceUuids, serviceNames, shortenedUuidsToUuids, err := getServiceIdentifiersForValidation(ctx, flags, args)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred while getting the services for the enclave")
 		}
 
-		var erroredServiceIdentifiers []string
 		for _, serviceIdentifierToValidate := range serviceIdentifiersToValidate {
-			if _, found := knownServiceIdentifiers[serviceIdentifierToValidate]; !found {
-				erroredServiceIdentifiers = append(erroredServiceIdentifiers, serviceIdentifierToValidate)
-			}
-		}
+			maybeServiceUuid := services.ServiceUUID(serviceIdentifierToValidate)
+			maybeServiceName := services.ServiceName(serviceIdentifierToValidate)
+			maybeShortenedUuid := serviceIdentifierToValidate
 
-		if len(erroredServiceIdentifiers) > 0 {
-			return stacktrace.NewError("One or more service identifiers do not exist in the enclave: '%s'", strings.Join(erroredServiceIdentifiers, ", "))
+			if _, found := serviceUuids[maybeServiceUuid]; found {
+				continue
+			}
+
+			if matches, found := shortenedUuidsToUuids[maybeShortenedUuid]; found {
+				if len(matches) > validShortenedUuidOrNameMatches {
+					return stacktrace.NewError("Found multiple matching uuids '%v' for shortened uuid '%v' which is ambiguous", serviceUuidsToString(matches), maybeShortenedUuid)
+				}
+				continue
+			}
+			if _, found := serviceNames[maybeServiceName]; found {
+				continue
+			}
+
+			return stacktrace.NewError("No service found for identifier '%v'", serviceIdentifierToValidate)
 		}
 		return nil
 	}
+}
+
+func serviceUuidsToString(serviceUuids []services.ServiceUUID) string {
+	var uuids []string
+	for _, uuid := range serviceUuids {
+		uuids = append(uuids, string(uuid))
+	}
+	return strings.Join(uuids, uuidDelimiter)
 }

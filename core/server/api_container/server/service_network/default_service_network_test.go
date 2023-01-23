@@ -18,6 +18,7 @@ import (
 	lib_networking_sidecar "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/networking_sidecar"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
@@ -58,6 +59,7 @@ func TestStartService_Successful(t *testing.T) {
 	servicePartitionId := testPartitionIdFromInt(serviceInternalTestId)
 	serviceName := testServiceNameFromInt(serviceInternalTestId)
 	serviceUuid := testServiceUuidFromInt(serviceInternalTestId)
+	shortenedUuid := uuid_generator.ShortenedUUIDString(string(serviceUuid))
 	successfulServiceIp := testIpFromInt(serviceInternalTestId)
 	serviceRegistration := service.NewServiceRegistration(serviceName, serviceUuid, enclaveName, successfulServiceIp)
 	serviceObj := service.NewService(serviceRegistration, container_status.ContainerStatus_Running, map[string]*port_spec.PortSpec{}, successfulServiceIp, map[string]*port_spec.PortSpec{})
@@ -140,6 +142,10 @@ func TestStartService_Successful(t *testing.T) {
 
 	require.Len(t, network.registeredServiceInfo, 1)
 	require.Contains(t, network.registeredServiceInfo, serviceName)
+	require.Len(t, network.serviceShortenedUuidToName, 1)
+	require.Contains(t, network.serviceShortenedUuidToName, shortenedUuid)
+	require.Len(t, network.serviceUuidToServiceName, 1)
+	require.Contains(t, network.serviceUuidToServiceName, serviceUuid)
 
 	require.Len(t, network.networkingSidecars, 1)
 	require.Contains(t, network.networkingSidecars, serviceName)
@@ -243,6 +249,8 @@ func TestStartService_FailedToStart(t *testing.T) {
 	require.Nil(t, startedService)
 
 	require.Empty(t, network.registeredServiceInfo)
+	require.Empty(t, network.serviceShortenedUuidToName)
+	require.Empty(t, network.serviceUuidToServiceName)
 
 	require.Empty(t, network.networkingSidecars)
 
@@ -354,6 +362,8 @@ func TestStartService_SidecarFailedToStart(t *testing.T) {
 	require.Nil(t, startedService)
 
 	require.Empty(t, network.registeredServiceInfo)
+	require.Empty(t, network.serviceShortenedUuidToName)
+	require.Empty(t, network.serviceUuidToServiceName)
 
 	require.Empty(t, network.networkingSidecars, 1)
 
@@ -371,9 +381,10 @@ func TestStartServices_Success(t *testing.T) {
 	successfulServiceIndex := 1
 	successfulServicePartitionId := testPartitionIdFromInt(successfulServiceIndex)
 	successfulServiceId := testServiceNameFromInt(successfulServiceIndex)
-	successfulServiceGuid := testServiceUuidFromInt(successfulServiceIndex)
+	successfulServiceUuid := testServiceUuidFromInt(successfulServiceIndex)
+	shortenedSuccessfulServiceUuid := uuid_generator.ShortenedUUIDString(string(successfulServiceUuid))
 	successfulServiceIp := testIpFromInt(successfulServiceIndex)
-	successfulServiceRegistration := service.NewServiceRegistration(successfulServiceId, successfulServiceGuid, enclaveName, successfulServiceIp)
+	successfulServiceRegistration := service.NewServiceRegistration(successfulServiceId, successfulServiceUuid, enclaveName, successfulServiceIp)
 	successfulService := service.NewService(successfulServiceRegistration, container_status.ContainerStatus_Running, map[string]*port_spec.PortSpec{}, successfulServiceIp, map[string]*port_spec.PortSpec{})
 	successfulServiceConfig := services.NewServiceConfigBuilder(testContainerImageName).WithSubnetwork(string(successfulServicePartitionId)).Build()
 
@@ -412,18 +423,18 @@ func TestStartServices_Success(t *testing.T) {
 		mock.MatchedBy(func(services map[service.ServiceUUID]*service.ServiceConfig) bool {
 			// Matcher function returning true iff the services map arg contains exactly the following key:
 			// {successfulServiceId}
-			_, foundSuccessfulService := services[successfulServiceGuid]
+			_, foundSuccessfulService := services[successfulServiceUuid]
 			return len(services) == 1 && foundSuccessfulService
 		})).Times(1).Return(
 		map[service.ServiceUUID]*service.Service{
-			successfulServiceGuid: successfulService,
+			successfulServiceUuid: successfulService,
 		},
 		map[service.ServiceUUID]error{},
 		nil)
 
 	// CreateNetworkingSidecar will be called exactly twice with the 2 successfully started services
-	backend.EXPECT().CreateNetworkingSidecar(ctx, enclaveName, successfulServiceGuid).Times(1).Return(
-		lib_networking_sidecar.NewNetworkingSidecar(successfulServiceGuid, enclaveName, container_status.ContainerStatus_Running),
+	backend.EXPECT().CreateNetworkingSidecar(ctx, enclaveName, successfulServiceUuid).Times(1).Return(
+		lib_networking_sidecar.NewNetworkingSidecar(successfulServiceUuid, enclaveName, container_status.ContainerStatus_Running),
 		nil)
 
 	// RunNetworkingSidecarExecCommands will be called only once for the successfully started sidecar
@@ -433,11 +444,11 @@ func TestStartServices_Success(t *testing.T) {
 		mock.MatchedBy(func(commands map[service.ServiceUUID][]string) bool {
 			// Matcher function returning true iff the commands map arg contains exactly the following key:
 			// {successfulServiceGuid}
-			_, foundSuccessfulService := commands[successfulServiceGuid]
+			_, foundSuccessfulService := commands[successfulServiceUuid]
 			return len(commands) == 1 && foundSuccessfulService
 		})).Times(2).Return(
 		map[service.ServiceUUID]*exec_result.ExecResult{
-			successfulServiceGuid: exec_result.NewExecResult(0, ""),
+			successfulServiceUuid: exec_result.NewExecResult(0, ""),
 		},
 		map[service.ServiceUUID]error{},
 		nil)
@@ -455,6 +466,11 @@ func TestStartServices_Success(t *testing.T) {
 
 	require.Len(t, network.registeredServiceInfo, 1)
 	require.Contains(t, network.registeredServiceInfo, successfulServiceId)
+
+	require.Len(t, network.serviceShortenedUuidToName, 1)
+	require.Contains(t, network.serviceShortenedUuidToName, shortenedSuccessfulServiceUuid)
+	require.Len(t, network.serviceUuidToServiceName, 1)
+	require.Contains(t, network.serviceUuidToServiceName, successfulServiceUuid)
 
 	require.Len(t, network.networkingSidecars, 1)
 	require.Contains(t, network.networkingSidecars, successfulServiceId)
@@ -726,6 +742,8 @@ func TestStartServices_FailureRollsBackTheEntireBatch(t *testing.T) {
 	require.Contains(t, failure, sidecarFailedServiceName)
 
 	require.Empty(t, network.registeredServiceInfo)
+	require.Empty(t, network.serviceUuidToServiceName)
+	require.Empty(t, network.serviceShortenedUuidToName)
 
 	require.Empty(t, network.networkingSidecars)
 
