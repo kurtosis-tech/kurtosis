@@ -44,33 +44,51 @@ func NewServiceConfigBuilder(containerImageName string) *ServiceConfigBuilder {
 	}
 }
 
+// NewServiceConfigBuilderFromServiceConfig returns a builder from the already built serviceConfig object
+// This is useful to create a variant of a serviceConfig without having to copy all values manually
+func NewServiceConfigBuilderFromServiceConfig(serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig) *ServiceConfigBuilder {
+	return &ServiceConfigBuilder{
+		containerImageName:         serviceConfig.ContainerImageName,
+		privatePorts:               copyPortsMap(serviceConfig.PrivatePorts),
+		publicPorts:                copyPortsMap(serviceConfig.PublicPorts),
+		entrypointArgs:             copySlice(serviceConfig.EntrypointArgs),
+		cmdArgs:                    copySlice(serviceConfig.CmdArgs),
+		envVars:                    copyMap(serviceConfig.EnvVars),
+		filesArtifactMountDirpaths: copyMap(serviceConfig.FilesArtifactMountpoints),
+		cpuAllocationMillicpus:     serviceConfig.CpuAllocationMillicpus,
+		memoryAllocationMegabytes:  serviceConfig.MemoryAllocationMegabytes,
+		privateIPAddrPlaceholder:   serviceConfig.PrivateIpAddrPlaceholder,
+		subnetwork:                 *serviceConfig.Subnetwork,
+	}
+}
+
 func (builder *ServiceConfigBuilder) WithPrivatePorts(privatePorts map[string]*kurtosis_core_rpc_api_bindings.Port) *ServiceConfigBuilder {
-	builder.privatePorts = privatePorts
+	builder.privatePorts = copyPortsMap(privatePorts)
 	return builder
 }
 
 func (builder *ServiceConfigBuilder) WithPublicPorts(publicPorts map[string]*kurtosis_core_rpc_api_bindings.Port) *ServiceConfigBuilder {
-	builder.publicPorts = publicPorts
+	builder.publicPorts = copyPortsMap(publicPorts)
 	return builder
 }
 
 func (builder *ServiceConfigBuilder) WithEntryPointArgs(entryPointArgs []string) *ServiceConfigBuilder {
-	builder.entrypointArgs = entryPointArgs
+	builder.entrypointArgs = copySlice(entryPointArgs)
 	return builder
 }
 
 func (builder *ServiceConfigBuilder) WithCmdArgs(cmdArgs []string) *ServiceConfigBuilder {
-	builder.cmdArgs = cmdArgs
+	builder.cmdArgs = copySlice(cmdArgs)
 	return builder
 }
 
 func (builder *ServiceConfigBuilder) WithEnvVars(envVars map[string]string) *ServiceConfigBuilder {
-	builder.envVars = envVars
+	builder.envVars = copyMap(envVars)
 	return builder
 }
 
 func (builder *ServiceConfigBuilder) WithFilesArtifactMountDirpaths(filesArtifactMountDirpaths map[string]string) *ServiceConfigBuilder {
-	builder.filesArtifactMountDirpaths = filesArtifactMountDirpaths
+	builder.filesArtifactMountDirpaths = copyMap(filesArtifactMountDirpaths)
 	return builder
 }
 
@@ -113,6 +131,28 @@ func (builder *ServiceConfigBuilder) Build() *kurtosis_core_rpc_api_bindings.Ser
 		builder.privateIPAddrPlaceholder,
 		builder.subnetwork,
 	)
+}
+
+func copyPortsMap(ports map[string]*kurtosis_core_rpc_api_bindings.Port) map[string]*kurtosis_core_rpc_api_bindings.Port {
+	newPorts := make(map[string]*kurtosis_core_rpc_api_bindings.Port, len(ports))
+	for name, port := range ports {
+		newPorts[name] = binding_constructors.NewPort(port.Number, port.TransportProtocol, port.MaybeApplicationProtocol)
+	}
+	return newPorts
+}
+
+func copySlice(value []string) []string {
+	newSlice := make([]string, len(value))
+	copy(newSlice, value)
+	return newSlice
+}
+
+func copyMap(keyValue map[string]string) map[string]string {
+	newMap := make(map[string]string, len(keyValue))
+	for key, value := range keyValue {
+		newMap[key] = value
+	}
+	return newMap
 }
 
 func portToStarlark(port *kurtosis_core_rpc_api_bindings.Port) string {

@@ -37,6 +37,7 @@ import (
 func KurtosisPlanInstructions(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) []*kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return []*kurtosis_plan_instruction.KurtosisPlanInstruction{
 		render_templates.NewRenderTemplatesInstruction(serviceNetwork),
+		add_service.NewAddServices(serviceNetwork, runtimeValueStore),
 	}
 }
 

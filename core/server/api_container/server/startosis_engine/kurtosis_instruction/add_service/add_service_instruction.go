@@ -7,10 +7,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	kurtosis_backend_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
@@ -35,7 +33,7 @@ func GenerateAddServiceBuiltin(instructionsQueue *[]kurtosis_instruction.Kurtosi
 			return nil, interpretationError
 		}
 		*instructionsQueue = append(*instructionsQueue, addServiceInstruction)
-		returnValue, interpretationError := addServiceInstruction.makeAddServiceInterpretationReturnValue()
+		returnValue, interpretationError := makeAddServiceInterpretationReturnValue(addServiceInstruction.serviceName, addServiceInstruction.serviceConfig)
 		if interpretationError != nil {
 			return nil, interpretationError
 		}
@@ -89,109 +87,28 @@ func (instruction *AddServiceInstruction) GetCanonicalInstruction() *kurtosis_co
 }
 
 func (instruction *AddServiceInstruction) Execute(ctx context.Context) (*string, error) {
-	serviceNameStr, err := magic_string_helper.ReplaceRuntimeValueInString(string(instruction.serviceName), instruction.runtimeValueStore)
+	replacedServiceName, replacedServiceConfig, err := replaceMagicStrings(instruction.serviceNetwork, instruction.runtimeValueStore, instruction.serviceName, instruction.serviceConfig)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error occurred while replacing facts in service id for '%v'", instruction.serviceName)
-	}
-	instruction.serviceName = kurtosis_backend_service.ServiceName(serviceNameStr)
-	err = instruction.replaceMagicStrings()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred replacing IP Address with actual values in add service instruction for service '%v'", instruction.serviceName)
+		return nil, stacktrace.Propagate(err, "An error occurred replacing a magic string in '%s' instruction arguments. Execution cannot proceed", AddServiceBuiltinName)
 	}
 
-	startedService, err := instruction.serviceNetwork.StartService(ctx, instruction.serviceName, instruction.serviceConfig)
+	startedService, err := instruction.serviceNetwork.StartService(ctx, replacedServiceName, replacedServiceConfig)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed adding service '%s' to enclave with an unexpected error", instruction.serviceName)
+		return nil, stacktrace.Propagate(err, "Failed adding service '%s' to enclave with an unexpected error", replacedServiceName)
 	}
-	instructionResult := fmt.Sprintf("Service '%s' added with service UUID '%s'", instruction.serviceName, startedService.GetRegistration().GetUUID())
+	instructionResult := fmt.Sprintf("Service '%s' added with service UUID '%s'", replacedServiceName, startedService.GetRegistration().GetUUID())
 	return &instructionResult, nil
 }
 
 func (instruction *AddServiceInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
-	if partition_topology.ParsePartitionId(instruction.serviceConfig.Subnetwork) != partition_topology.DefaultPartitionId {
-		if !environment.IsNetworkPartitioningEnabled() {
-			return startosis_errors.NewValidationError("Service was about to be started inside subnetwork '%s' but the Kurtosis enclave was started with subnetwork capabilities disabled. Make sure to run the Starlark script with subnetwork enabled.", *instruction.serviceConfig.Subnetwork)
-		}
+	if err := validateSingleService(environment, instruction.serviceName, instruction.serviceConfig); err != nil {
+		return err
 	}
-	if environment.DoesServiceNameExist(instruction.serviceName) {
-		return startosis_errors.NewValidationError("There was an error validating '%v' as service name '%v' already exists", AddServiceBuiltinName, instruction.serviceName)
-	}
-	for _, artifactName := range instruction.serviceConfig.FilesArtifactMountpoints {
-		if !environment.DoesArtifactNameExist(artifactName) {
-			return startosis_errors.NewValidationError("There was an error validating '%v' as artifact name '%v' does not exist", AddServiceBuiltinName, artifactName)
-		}
-	}
-	environment.AddServiceName(instruction.serviceName)
-	environment.AppendRequiredContainerImage(instruction.serviceConfig.ContainerImageName)
 	return nil
 }
 
 func (instruction *AddServiceInstruction) String() string {
 	return shared_helpers.CanonicalizeInstruction(AddServiceBuiltinName, kurtosis_instruction.NoArgs, instruction.starlarkKwargs)
-}
-
-func (instruction *AddServiceInstruction) replaceMagicStrings() error {
-	serviceNameStr := string(instruction.serviceName)
-	entryPointArgs := instruction.serviceConfig.EntrypointArgs
-	for index, entryPointArg := range entryPointArgs {
-		entryPointArgWithIPAddressReplaced, err := magic_string_helper.ReplaceIPAddressInString(entryPointArg, instruction.serviceNetwork, serviceNameStr)
-		if err != nil {
-			return stacktrace.Propagate(err, "Error occurred while replacing IP address in entry point args for '%v'", entryPointArg)
-		}
-		entryPointArgWithIPAddressAndRuntimeValueReplaced, err := magic_string_helper.ReplaceRuntimeValueInString(entryPointArgWithIPAddressReplaced, instruction.runtimeValueStore)
-		if err != nil {
-			return stacktrace.Propagate(err, "Error occurred while replacing runtime value in entry point args for '%v'", entryPointArg)
-		}
-		entryPointArgs[index] = entryPointArgWithIPAddressAndRuntimeValueReplaced
-	}
-
-	cmdArgs := instruction.serviceConfig.CmdArgs
-	for index, cmdArg := range cmdArgs {
-		cmdArgWithIPAddressReplaced, err := magic_string_helper.ReplaceIPAddressInString(cmdArg, instruction.serviceNetwork, serviceNameStr)
-		if err != nil {
-			return stacktrace.Propagate(err, "Error occurred while replacing IP address in command args for '%v'", cmdArg)
-		}
-		cmdArgWithIPAddressAndRuntimeValueReplaced, err := magic_string_helper.ReplaceRuntimeValueInString(cmdArgWithIPAddressReplaced, instruction.runtimeValueStore)
-		if err != nil {
-			return stacktrace.Propagate(err, "Error occurred while replacing runtime value in command args for '%v'", cmdArg)
-		}
-		cmdArgs[index] = cmdArgWithIPAddressAndRuntimeValueReplaced
-	}
-
-	envVars := instruction.serviceConfig.EnvVars
-	for envVarName, envVarValue := range envVars {
-		envVarValueWithIPAddressReplaced, err := magic_string_helper.ReplaceIPAddressInString(envVarValue, instruction.serviceNetwork, serviceNameStr)
-		if err != nil {
-			return stacktrace.Propagate(err, "Error occurred while replacing IP address in env vars for '%v'", envVarValue)
-		}
-		envVarValueWithIPAddressAndRuntimeValueReplaced, err := magic_string_helper.ReplaceRuntimeValueInString(envVarValueWithIPAddressReplaced, instruction.runtimeValueStore)
-		if err != nil {
-			return stacktrace.Propagate(err, "Error occurred while replacing runtime value in command args for '%v'", envVars)
-		}
-		envVars[envVarName] = envVarValueWithIPAddressAndRuntimeValueReplaced
-	}
-
-	return nil
-}
-
-func (instruction *AddServiceInstruction) makeAddServiceInterpretationReturnValue() (*kurtosis_types.Service, *startosis_errors.InterpretationError) {
-	ports := instruction.serviceConfig.GetPrivatePorts()
-	portSpecsDict := starlark.NewDict(len(ports))
-	for portId, port := range ports {
-		number := port.GetNumber()
-		transportProtocol := port.GetTransportProtocol()
-		maybeApplicationProtocol := port.GetMaybeApplicationProtocol()
-
-		portSpec := kurtosis_types.NewPortSpec(number, transportProtocol, maybeApplicationProtocol)
-		if err := portSpecsDict.SetKey(starlark.String(portId), portSpec); err != nil {
-			return nil, startosis_errors.NewInterpretationError("An error occurred while creating a port spec for values "+
-				"(number: '%v', transport_protocol: '%v', application_protocol: '%v') the add instruction return value",
-				number, transportProtocol, maybeApplicationProtocol)
-		}
-	}
-	ipAddress := starlark.String(fmt.Sprintf(magic_string_helper.IpAddressReplacementPlaceholderFormat, instruction.serviceName))
-	returnValue := kurtosis_types.NewService(ipAddress, portSpecsDict)
-	return returnValue, nil
 }
 
 func (instruction *AddServiceInstruction) parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) *startosis_errors.InterpretationError {

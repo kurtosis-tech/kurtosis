@@ -68,7 +68,7 @@ func TestAddServiceWithEmptyPortsAndWithoutPorts(t *testing.T) {
 		logrus.Debugf("Starlark script content: \n%v", starlarkScript)
 
 		runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkScript, emptyArgs, defaultDryRun)
-		require.NoError(t, err, "Unexpected error executing starlark script")
+		require.NoError(t, err, "Unexpected error executing Starlark script")
 
 		expectedScriptOutput := `Adding service ` + serviceNames[starlarkScripIndex] + `.
 Service '` + serviceNames[starlarkScripIndex] + `' added with service UUID '[a-z-0-9]+'

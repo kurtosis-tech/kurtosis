@@ -4,15 +4,12 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
-	"net"
 	"testing"
 )
 
@@ -40,36 +37,6 @@ func TestAddServiceInstruction_GetCanonicalizedInstruction(t *testing.T) {
 
 	expectedOutput := `add_service(config=ServiceConfig(image="kurtosistech/example-datastore-server", ports={"grpc": PortSpec(number=1234, transport_protocol="TCP", application_protocol="http")}, public_ports={"grpc": PortSpec(number=80, transport_protocol="TCP", application_protocol="http")}, files={"path/to/file/1": "file_1", "path/to/file/2": "file_2"}, entrypoint=["127.0.0.0", "1234"], cmd=["bash", "-c", "/apps/main.py", "1234"], env_vars={"VAR_1": "VALUE_1", "VAR_2": "VALUE_2"}, private_ip_address_placeholder="<IP_ADDRESS>", subnetwork="subnetwork_1", cpu_allocation=2000, memory_allocation=1024), service_name="example-datastore-server-2")`
 	require.Equal(t, expectedOutput, addServiceInstruction.String())
-}
-
-func TestAddServiceInstruction_EntryPointArgsAreReplaced(t *testing.T) {
-	ipAddresses := map[service.ServiceName]net.IP{
-		"foo_service": net.ParseIP("172.17.3.13"),
-	}
-	serviceNetwork := service_network.NewMockServiceNetwork(ipAddresses)
-	addServiceInstruction := NewAddServiceInstruction(
-		serviceNetwork,
-		kurtosis_instruction.NewInstructionPosition(22, 26, "dummyFile"),
-		"example-datastore-server-2",
-		services.NewServiceConfigBuilder(
-			testContainerImageName,
-		).WithPrivatePorts(
-			map[string]*kurtosis_core_rpc_api_bindings.Port{
-				"grpc": {
-					Number:            1323,
-					TransportProtocol: kurtosis_core_rpc_api_bindings.Port_TCP,
-				},
-			},
-		).WithEntryPointArgs(
-			[]string{"-- {{kurtosis:foo_service.ip_address}}"},
-		).Build(),
-		starlark.StringDict{}, // Unused
-		nil,
-	)
-
-	err := addServiceInstruction.replaceMagicStrings()
-	require.Nil(t, err)
-	require.Equal(t, "-- 172.17.3.13", addServiceInstruction.serviceConfig.EntrypointArgs[0])
 }
 
 func TestAddServiceInstruction_SerializeAndParseAgain(t *testing.T) {

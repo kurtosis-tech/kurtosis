@@ -18,6 +18,7 @@ import (
 )
 
 var registeredBuiltin = []KurtosisPlanInstructionBaseTest{
+	&addServicesTestCase{},
 	renderTemplateTestCase1{},
 	renderTemplateTestCase2{},
 }
