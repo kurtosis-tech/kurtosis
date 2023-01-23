@@ -100,5 +100,8 @@ func (connectionConfig *ConnectionConfig) AttrNames() []string {
 
 func (connectionConfig *ConnectionConfig) ToKurtosisType() partition_topology.PartitionConnection {
 	//TODO: in the next pr will be hooking up starlark
-	return partition_topology.NewPartitionConnection(float32(connectionConfig.packetLossPercentage), partition_topology.ConnectionWithNoPacketDelay)
+	return partition_topology.NewPartitionConnection(
+		partition_topology.NewPacketLoss(float32(connectionConfig.packetLossPercentage)),
+		partition_topology.ConnectionWithNoPacketDelay,
+	)
 }

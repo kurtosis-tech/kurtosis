@@ -14,7 +14,8 @@ import (
 	"testing"
 )
 
-var connectionWithSomeConstantLatency = NewPartitionConnection(0, NewPacketDelay(500))
+var connectionWithSomeConstantLatency = NewPartitionConnection(ConnectionWithNoPacketLoss, NewPacketDelay(500))
+var connectionWithSoftPacketLoss = NewPacketLoss(50)
 
 const (
 	partition1 service_network_types.PartitionID = "partition1"
@@ -498,7 +499,7 @@ func TestSetConnection(t *testing.T) {
 		map[service_network_types.PartitionConnectionID]PartitionConnection{},
 		ConnectionBlocked)
 
-	connectionOverride := NewPartitionConnection(55, ConnectionWithNoPacketDelay)
+	connectionOverride := NewPartitionConnection(connectionWithSoftPacketLoss, ConnectionWithNoPacketDelay)
 	err := topology.SetConnection(partition1, partition2, connectionOverride)
 	require.Nil(t, err)
 
@@ -539,14 +540,14 @@ func TestSetConnection_FailureUnknownPartition(t *testing.T) {
 		map[service_network_types.PartitionConnectionID]PartitionConnection{},
 		ConnectionBlocked)
 
-	connectionOverride := NewPartitionConnection(55, ConnectionWithNoPacketDelay)
+	connectionOverride := NewPartitionConnection(connectionWithSoftPacketLoss, ConnectionWithNoPacketDelay)
 	err := topology.SetConnection(partition1, "unknownPartition", connectionOverride)
 	require.Contains(t, err.Error(), "About to set a connection between 'partition1' and 'unknownPartition' but 'unknownPartition' does not exist")
 }
 
 func TestUnsetConnection(t *testing.T) {
 	topology := get3NodeTestTopology(t, ConnectionBlocked)
-	connectionOverride := NewPartitionConnection(55, ConnectionWithNoPacketDelay)
+	connectionOverride := NewPartitionConnection(ConnectionWithEntirePacketLoss, ConnectionWithNoPacketDelay)
 
 	repartition(
 		t,
@@ -587,7 +588,7 @@ func TestUnsetConnection(t *testing.T) {
 
 func TestUnsetConnection_FailurePartitionNotFound(t *testing.T) {
 	topology := get3NodeTestTopology(t, ConnectionBlocked)
-	connectionOverride := NewPartitionConnection(55, ConnectionWithNoPacketDelay)
+	connectionOverride := NewPartitionConnection(ConnectionWithEntirePacketLoss, ConnectionWithNoPacketDelay)
 
 	repartition(
 		t,
@@ -607,7 +608,7 @@ func TestUnsetConnection_FailurePartitionNotFound(t *testing.T) {
 func TestGetConnection(t *testing.T) {
 	topology := get3NodeTestTopology(t, ConnectionBlocked)
 
-	connectionOverride := NewPartitionConnection(50, ConnectionWithNoPacketDelay)
+	connectionOverride := NewPartitionConnection(ConnectionWithEntirePacketLoss, ConnectionWithNoPacketDelay)
 	repartition(
 		t,
 		topology,
@@ -638,7 +639,7 @@ func TestGetConnection(t *testing.T) {
 func TestGetConnection_FailurePartitionNotFound(t *testing.T) {
 	topology := get3NodeTestTopology(t, ConnectionBlocked)
 
-	connectionOverride := NewPartitionConnection(50, ConnectionWithNoPacketDelay)
+	connectionOverride := NewPartitionConnection(ConnectionWithEntirePacketLoss, ConnectionWithNoPacketDelay)
 	repartition(
 		t,
 		topology,
@@ -668,7 +669,7 @@ func TestSetDefaultConnection(t *testing.T) {
 		map[service_network_types.PartitionConnectionID]PartitionConnection{},
 		ConnectionBlocked)
 
-	newDefaultConnection := NewPartitionConnection(50, ConnectionWithNoPacketDelay)
+	newDefaultConnection := NewPartitionConnection(ConnectionWithEntirePacketLoss, ConnectionWithNoPacketDelay)
 	topology.SetDefaultConnection(newDefaultConnection)
 
 	require.Equal(t, newDefaultConnection, topology.GetDefaultConnection())

@@ -14,7 +14,9 @@ import (
 )
 
 var (
-	thread = shared_helpers.NewStarlarkThread("test-set-connection")
+	thread                                             = shared_helpers.NewStarlarkThread("test-set-connection")
+	packetConnectionPercentageValueForSoftPartition    = partition_topology.NewPacketLoss(50)
+	packetConnectionPercentageValueForBlockedPartition = partition_topology.NewPacketLoss(100)
 )
 
 func TestSetConnection_Interpreter(t *testing.T) {
@@ -34,7 +36,7 @@ func TestSetConnection_Interpreter(t *testing.T) {
 		kurtosis_instruction.NewInstructionPosition(1, 15, startosis_constants.PackageIdPlaceholderForStandaloneScript),
 		&subnetwork1,
 		&subnetwork2,
-		partition_topology.NewPartitionConnection(50, partition_topology.ConnectionWithNoPacketDelay),
+		partition_topology.NewPartitionConnection(packetConnectionPercentageValueForSoftPartition, partition_topology.ConnectionWithNoPacketDelay),
 		starlark.StringDict{
 			"config": kurtosis_types.NewConnectionConfig(50),
 			"subnetworks": starlark.Tuple([]starlark.Value{
@@ -60,7 +62,7 @@ func TestSetConnection_Interpreter_SetDefaultConnection(t *testing.T) {
 		kurtosis_instruction.NewInstructionPosition(1, 15, startosis_constants.PackageIdPlaceholderForStandaloneScript),
 		nil,
 		nil,
-		partition_topology.NewPartitionConnection(50, partition_topology.ConnectionWithNoPacketDelay),
+		partition_topology.NewPartitionConnection(packetConnectionPercentageValueForSoftPartition, partition_topology.ConnectionWithNoPacketDelay),
 		starlark.StringDict{
 			"config": kurtosis_types.NewConnectionConfig(50),
 		})
@@ -82,7 +84,7 @@ func TestSetConnection_Interpreter_SetDefaultConnection_PreBuiltConnections(t *t
 		kurtosis_instruction.NewInstructionPosition(1, 15, startosis_constants.PackageIdPlaceholderForStandaloneScript),
 		nil,
 		nil,
-		partition_topology.NewPartitionConnection(100, partition_topology.ConnectionWithNoPacketDelay),
+		partition_topology.NewPartitionConnection(packetConnectionPercentageValueForBlockedPartition, partition_topology.ConnectionWithNoPacketDelay),
 		starlark.StringDict{
 			"config": kurtosis_types.NewConnectionConfig(100),
 		})
@@ -129,7 +131,7 @@ func TestSetConnection_SerializeAndParseAgain(t *testing.T) {
 		kurtosis_instruction.NewInstructionPosition(1, 15, startosis_constants.PackageIdPlaceholderForStandaloneScript),
 		&subnetwork1,
 		&subnetwork2,
-		partition_topology.NewPartitionConnection(50, partition_topology.ConnectionWithNoPacketDelay),
+		partition_topology.NewPartitionConnection(packetConnectionPercentageValueForSoftPartition, partition_topology.ConnectionWithNoPacketDelay),
 		starlark.StringDict{
 			"config": kurtosis_types.NewConnectionConfig(50),
 			"subnetworks": starlark.Tuple([]starlark.Value{
@@ -157,7 +159,7 @@ func TestSetConnection_SerializeAndParseAgain_DefaultConnection(t *testing.T) {
 		kurtosis_instruction.NewInstructionPosition(1, 15, startosis_constants.PackageIdPlaceholderForStandaloneScript),
 		nil,
 		nil,
-		partition_topology.NewPartitionConnection(50, partition_topology.ConnectionWithNoPacketDelay),
+		partition_topology.NewPartitionConnection(packetConnectionPercentageValueForSoftPartition, partition_topology.ConnectionWithNoPacketDelay),
 		starlark.StringDict{
 			"config": kurtosis_types.NewConnectionConfig(50),
 		})

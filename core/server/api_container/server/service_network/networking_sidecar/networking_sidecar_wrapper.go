@@ -59,14 +59,11 @@ const (
 	rootClassBClassID              = classID(rootQdiscID) + "2"
 	fullRateValue                  = "100%"
 	maxFilterPriority              = "1"
-	percentageSign                 = "%"
 	firstClassIdDecimalMinorNumber = 1
 
 	concatenateCommandsOperator = "&&"
 
 	firstCommandIndex = 0
-
-	unblockedPartitionConnectionPacketLossPercentageValue float32 = 0
 )
 
 // ==========================================================================================
@@ -164,8 +161,8 @@ func (sidecarWrapper *StandardNetworkingSidecarWrapper) UpdateTrafficControl(ctx
 
 	var isAnyPartitionBlocked bool
 	for _, connectionConfig := range partitionConnectionConfigPerIpAddress {
-		packetLossPercentage := connectionConfig.GetPacketLossPercentage()
-		if packetLossPercentage > unblockedPartitionConnectionPacketLossPercentageValue {
+		packetLoss := connectionConfig.GetPacketLossPercentage()
+		if packetLoss.IsSet() {
 			isAnyPartitionBlocked = true
 		}
 	}
@@ -373,14 +370,12 @@ func generateTcAddQdiscBCmd() []string {
 
 // This method generates the command for packet loss and packet delay
 func generateTCAddNetemQdiscWithPacketConnectionCmd(parentClassId classID, qdiscId qdiscID, connectionConfig *partition_topology.PartitionConnection) []string {
-	packetLossPercentage := connectionConfig.GetPacketLossPercentage()
+	packetLoss := connectionConfig.GetPacketLossPercentage()
 	packetDelay := connectionConfig.GetPacketDelay()
-
-	packetLossPercentageStr := fmt.Sprintf("%v%v", packetLossPercentage, percentageSign)
 
 	resultCmd := generateTcAddQdiscCmd(parentClassId, qdiscId, tcQdiscTypeNetem)
 	resultCmd = append(resultCmd, tcQdiscTypeNetemOptionLoss)
-	resultCmd = append(resultCmd, packetLossPercentageStr)
+	resultCmd = append(resultCmd, packetLoss.GetTcCommand())
 
 	if packetDelay.IsSet() {
 		resultCmd = append(resultCmd, tcQdiscTypeNetemOptionDelay)

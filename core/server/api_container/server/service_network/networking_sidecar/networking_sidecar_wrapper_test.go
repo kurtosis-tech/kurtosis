@@ -19,10 +19,6 @@ import (
 )
 
 const (
-	PacketConnectionPercentageValueForUnblockedPartitions float32 = 0
-	PacketConnectionPercentageValueForBlockedPartitions   float32 = 100
-	PacketConnectionPercentageValueForSoftPartition       float32 = 25
-
 	testServiceGUID            = "test"
 	testEnclaveID              = "kt2022-03-17t16.33.01.495"
 	testContainerStatusRunning = container_status.ContainerStatus_Running
@@ -130,6 +126,10 @@ var (
 	qdiscBChildrenClassId                 = []classID{classID("3:1"), classID("3:2"), classID("3:3"), classID("3:4")}
 	qdiscBChildrenClassDecimalMinorNumber = []int{1, 2, 3, 4}
 	connectionWithNoLatency               = partition_topology.ConnectionWithNoPacketDelay
+
+	packetConnectionPercentageValueForUnblockedPartition = partition_topology.NewPacketLoss(0)
+	packetConnectionPercentageValueForSoftPartition      = partition_topology.NewPacketLoss(25)
+	packetConnectionPercentageValueForBlockedPartition   = partition_topology.NewPacketLoss(100)
 )
 
 func TestInitializeTrafficControl(t *testing.T) {
@@ -408,7 +408,7 @@ func TestConcurrencySafety(t *testing.T) {
 		iByte := byte(i)
 		ip := net.IP{iByte, iByte, iByte, iByte}
 		allUserServicePacketConnectionConfigurations := map[string]*partition_topology.PartitionConnection{}
-		connectionConfig := partition_topology.NewPartitionConnection(PacketConnectionPercentageValueForBlockedPartitions, connectionWithNoLatency)
+		connectionConfig := partition_topology.NewPartitionConnection(packetConnectionPercentageValueForBlockedPartition, connectionWithNoLatency)
 		allUserServicePacketConnectionConfigurations[ip.String()] = &connectionConfig
 		go func() {
 			err := sidecar.UpdateTrafficControl(ctx, allUserServicePacketConnectionConfigurations)
@@ -445,7 +445,7 @@ func getAllUserServicePacketConnectionConfigurationsSoftPartitionWithConstantDel
 	allUserServicePacketConnectionConfigurations := map[string]*partition_topology.PartitionConnection{}
 	packetDelay := partition_topology.NewPacketDelay(500)
 	for _, ip := range allUserServiceTestIPAddresses {
-		connectionConfig := partition_topology.NewPartitionConnection(PacketConnectionPercentageValueForSoftPartition, packetDelay)
+		connectionConfig := partition_topology.NewPartitionConnection(packetConnectionPercentageValueForSoftPartition, packetDelay)
 		allUserServicePacketConnectionConfigurations[ip.String()] = &connectionConfig
 	}
 	return allUserServicePacketConnectionConfigurations
@@ -454,7 +454,7 @@ func getAllUserServicePacketConnectionConfigurationsSoftPartitionWithConstantDel
 func getAllUserServicePacketConnectionConfigurationsForSoftPartition() map[string]*partition_topology.PartitionConnection {
 	allUserServicePacketConnectionConfigurations := map[string]*partition_topology.PartitionConnection{}
 	for _, ip := range allUserServiceTestIPAddresses {
-		connectionConfig := partition_topology.NewPartitionConnection(PacketConnectionPercentageValueForSoftPartition, connectionWithNoLatency)
+		connectionConfig := partition_topology.NewPartitionConnection(packetConnectionPercentageValueForSoftPartition, connectionWithNoLatency)
 		allUserServicePacketConnectionConfigurations[ip.String()] = &connectionConfig
 	}
 	return allUserServicePacketConnectionConfigurations
@@ -463,7 +463,7 @@ func getAllUserServicePacketConnectionConfigurationsForSoftPartition() map[strin
 func getAllUserServicePacketConnectionConfigurationsForBlockedPartition() map[string]*partition_topology.PartitionConnection {
 	allUserServicePacketConnectionConfigurations := map[string]*partition_topology.PartitionConnection{}
 	for _, ip := range allUserServiceTestIPAddresses {
-		connectionConfig := partition_topology.NewPartitionConnection(PacketConnectionPercentageValueForBlockedPartitions, connectionWithNoLatency)
+		connectionConfig := partition_topology.NewPartitionConnection(packetConnectionPercentageValueForBlockedPartition, connectionWithNoLatency)
 		allUserServicePacketConnectionConfigurations[ip.String()] = &connectionConfig
 	}
 	return allUserServicePacketConnectionConfigurations
@@ -472,7 +472,7 @@ func getAllUserServicePacketConnectionConfigurationsForBlockedPartition() map[st
 func getAllUserServicePacketConnectionConfigurationsForUnblockedPartition() map[string]*partition_topology.PartitionConnection {
 	allUserServicePacketConnectionConfigurations := map[string]*partition_topology.PartitionConnection{}
 	for _, ip := range allUserServiceTestIPAddresses {
-		connectionConfig := partition_topology.NewPartitionConnection(PacketConnectionPercentageValueForUnblockedPartitions, connectionWithNoLatency)
+		connectionConfig := partition_topology.NewPartitionConnection(packetConnectionPercentageValueForUnblockedPartition, connectionWithNoLatency)
 		allUserServicePacketConnectionConfigurations[ip.String()] = &connectionConfig
 	}
 	return allUserServicePacketConnectionConfigurations

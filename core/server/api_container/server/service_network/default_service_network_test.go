@@ -33,8 +33,6 @@ import (
 )
 
 const (
-	packetLossConfigForBlockedPartition = float32(100)
-
 	numServices = 10
 
 	enclaveName             = enclave.EnclaveUUID("test-enclave")
@@ -48,7 +46,9 @@ var (
 	ip                   = testIpFromInt(0)
 	unusedEnclaveDataDir *enclave_data_directory.EnclaveDataDirectory
 
-	connectionWithSomeConstantDelay = partition_topology.NewPacketDelay(500)
+	connectionWithSomeConstantDelay     = partition_topology.NewPacketDelay(500)
+	connectionWithSomePacketLoss        = partition_topology.NewPacketLoss(50.0)
+	packetLossConfigForBlockedPartition = partition_topology.NewPacketLoss(100)
 )
 
 func TestStartService_Successful(t *testing.T) {
@@ -929,7 +929,7 @@ func TestSetDefaultConnection(t *testing.T) {
 	require.Nil(t, network.topology.AddService("test-service", "test-partition"))
 	network.networkingSidecars["test-service"] = networking_sidecar.NewMockNetworkingSidecarWrapper()
 
-	newDefaultConnection := partition_topology.NewPartitionConnection(50, partition_topology.ConnectionWithNoPacketDelay)
+	newDefaultConnection := partition_topology.NewPartitionConnection(connectionWithSomePacketLoss, partition_topology.ConnectionWithNoPacketDelay)
 	err := network.SetDefaultConnection(ctx, newDefaultConnection)
 	require.Nil(t, err)
 	require.Equal(t, network.topology.GetDefaultConnection(), newDefaultConnection)
@@ -954,7 +954,7 @@ func TestSetDefaultConnection_FailureRollbackDefaultConnection(t *testing.T) {
 	require.Nil(t, network.topology.AddService("test-service", "test-partition"))
 	// not add the sidecar such that it won't be able to update the networking rules
 
-	newDefaultConnection := partition_topology.NewPartitionConnection(50, partition_topology.ConnectionWithNoPacketDelay)
+	newDefaultConnection := partition_topology.NewPartitionConnection(connectionWithSomePacketLoss, partition_topology.ConnectionWithNoPacketDelay)
 	err := network.SetDefaultConnection(ctx, newDefaultConnection)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "Unable to update connections between the different partitions of the topology")
@@ -1004,7 +1004,7 @@ func TestSetConnection(t *testing.T) {
 	network.networkingSidecars[service1.GetName()] = networking_sidecar.NewMockNetworkingSidecarWrapper()
 	network.networkingSidecars[service2.GetName()] = networking_sidecar.NewMockNetworkingSidecarWrapper()
 
-	connectionOverride := partition_topology.NewPartitionConnection(50, connectionWithSomeConstantDelay)
+	connectionOverride := partition_topology.NewPartitionConnection(connectionWithSomePacketLoss, connectionWithSomeConstantDelay)
 	err := network.SetConnection(ctx, partition1, partition2, connectionOverride)
 	require.Nil(t, err)
 
@@ -1055,7 +1055,7 @@ func TestSetConnection_FailureRollsBackChanges(t *testing.T) {
 
 	// do not add any sidecar such that updating network traffic will throw an exception
 
-	connectionOverride := partition_topology.NewPartitionConnection(50, partition_topology.ConnectionWithNoPacketDelay)
+	connectionOverride := partition_topology.NewPartitionConnection(connectionWithSomePacketLoss, partition_topology.ConnectionWithNoPacketDelay)
 	err := network.SetConnection(ctx, partition1, partition2, connectionOverride)
 	require.Contains(t, err.Error(), "Unable to update connections between the different partitions of the topology")
 
@@ -1095,7 +1095,7 @@ func TestUnsetConnection(t *testing.T) {
 		enclaveName,
 		testIpFromInt(service2Index))
 
-	connectionOverride := partition_topology.NewPartitionConnection(50, connectionWithSomeConstantDelay)
+	connectionOverride := partition_topology.NewPartitionConnection(connectionWithSomePacketLoss, connectionWithSomeConstantDelay)
 	require.Nil(t, network.topology.CreateEmptyPartitionWithDefaultConnection(partition1))
 	require.Nil(t, network.topology.CreateEmptyPartitionWithDefaultConnection(partition2))
 	require.Nil(t, network.topology.SetConnection(partition1, partition2, connectionOverride))
@@ -1147,7 +1147,7 @@ func TestUnsetConnection_FailureRollsBackChanges(t *testing.T) {
 		enclaveName,
 		testIpFromInt(service2Index))
 
-	connectionOverride := partition_topology.NewPartitionConnection(50, partition_topology.ConnectionWithNoPacketDelay)
+	connectionOverride := partition_topology.NewPartitionConnection(connectionWithSomePacketLoss, partition_topology.ConnectionWithNoPacketDelay)
 	require.Nil(t, network.topology.CreateEmptyPartitionWithDefaultConnection(partition1))
 	require.Nil(t, network.topology.CreateEmptyPartitionWithDefaultConnection(partition2))
 	require.Nil(t, network.topology.SetConnection(partition1, partition2, connectionOverride))
