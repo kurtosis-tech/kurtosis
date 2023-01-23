@@ -37,6 +37,7 @@ func NewConnectionConfig(packetLossPercentage starlark.Float) *ConnectionConfig 
 
 func MakeConnectionConfig(_ *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 	var packetLossPercentage starlark.Float
+
 	if err := starlark.UnpackArgs(b.Name(), args, kwargs, packetLossPercentageAttr, &packetLossPercentage); err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Cannot construct '%s' from the provided arguments. Expecting a single argument '%s'", ConnectionConfigTypeName, packetLossPercentageAttr)
 	}
@@ -98,7 +99,6 @@ func (connectionConfig *ConnectionConfig) AttrNames() []string {
 }
 
 func (connectionConfig *ConnectionConfig) ToKurtosisType() partition_topology.PartitionConnection {
-	return partition_topology.NewPartitionConnection(
-		float32(connectionConfig.packetLossPercentage),
-	)
+	//TODO: in the next pr will be hooking up starlark
+	return partition_topology.NewPartitionConnection(float32(connectionConfig.packetLossPercentage), partition_topology.ConnectionWithNoPacketDelay)
 }

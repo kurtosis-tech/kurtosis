@@ -46,6 +46,8 @@ const (
 var (
 	ip                   = testIpFromInt(0)
 	unusedEnclaveDataDir *enclave_data_directory.EnclaveDataDirectory
+
+	connectionWithSomeConstantDelay = partition_topology.NewPacketDelay(500)
 )
 
 func TestStartService_Successful(t *testing.T) {
@@ -909,7 +911,7 @@ func TestSetDefaultConnection(t *testing.T) {
 	require.Nil(t, network.topology.AddService("test-service", "test-partition"))
 	network.networkingSidecars["test-service"] = networking_sidecar.NewMockNetworkingSidecarWrapper()
 
-	newDefaultConnection := partition_topology.NewPartitionConnection(50)
+	newDefaultConnection := partition_topology.NewPartitionConnection(50, partition_topology.ConnectionWithNoPacketDelay)
 	err := network.SetDefaultConnection(ctx, newDefaultConnection)
 	require.Nil(t, err)
 	require.Equal(t, network.topology.GetDefaultConnection(), newDefaultConnection)
@@ -934,7 +936,7 @@ func TestSetDefaultConnection_FailureRollbackDefaultConnection(t *testing.T) {
 	require.Nil(t, network.topology.AddService("test-service", "test-partition"))
 	// not add the sidecar such that it won't be able to update the networking rules
 
-	newDefaultConnection := partition_topology.NewPartitionConnection(50)
+	newDefaultConnection := partition_topology.NewPartitionConnection(50, partition_topology.ConnectionWithNoPacketDelay)
 	err := network.SetDefaultConnection(ctx, newDefaultConnection)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "Unable to update connections between the different partitions of the topology")
@@ -984,7 +986,7 @@ func TestSetConnection(t *testing.T) {
 	network.networkingSidecars[service1.GetName()] = networking_sidecar.NewMockNetworkingSidecarWrapper()
 	network.networkingSidecars[service2.GetName()] = networking_sidecar.NewMockNetworkingSidecarWrapper()
 
-	connectionOverride := partition_topology.NewPartitionConnection(50)
+	connectionOverride := partition_topology.NewPartitionConnection(50, connectionWithSomeConstantDelay)
 	err := network.SetConnection(ctx, partition1, partition2, connectionOverride)
 	require.Nil(t, err)
 
@@ -1035,7 +1037,7 @@ func TestSetConnection_FailureRollsBackChanges(t *testing.T) {
 
 	// do not add any sidecar such that updating network traffic will throw an exception
 
-	connectionOverride := partition_topology.NewPartitionConnection(50)
+	connectionOverride := partition_topology.NewPartitionConnection(50, partition_topology.ConnectionWithNoPacketDelay)
 	err := network.SetConnection(ctx, partition1, partition2, connectionOverride)
 	require.Contains(t, err.Error(), "Unable to update connections between the different partitions of the topology")
 
@@ -1075,7 +1077,7 @@ func TestUnsetConnection(t *testing.T) {
 		enclaveName,
 		testIpFromInt(service2Index))
 
-	connectionOverride := partition_topology.NewPartitionConnection(50)
+	connectionOverride := partition_topology.NewPartitionConnection(50, connectionWithSomeConstantDelay)
 	require.Nil(t, network.topology.CreateEmptyPartitionWithDefaultConnection(partition1))
 	require.Nil(t, network.topology.CreateEmptyPartitionWithDefaultConnection(partition2))
 	require.Nil(t, network.topology.SetConnection(partition1, partition2, connectionOverride))
@@ -1127,7 +1129,7 @@ func TestUnsetConnection_FailureRollsBackChanges(t *testing.T) {
 		enclaveName,
 		testIpFromInt(service2Index))
 
-	connectionOverride := partition_topology.NewPartitionConnection(50)
+	connectionOverride := partition_topology.NewPartitionConnection(50, partition_topology.ConnectionWithNoPacketDelay)
 	require.Nil(t, network.topology.CreateEmptyPartitionWithDefaultConnection(partition1))
 	require.Nil(t, network.topology.CreateEmptyPartitionWithDefaultConnection(partition2))
 	require.Nil(t, network.topology.SetConnection(partition1, partition2, connectionOverride))
@@ -1177,15 +1179,22 @@ func TestUpdateTrafficControl(t *testing.T) {
 	targetServiceConnectionConfigs := map[service.ServiceName]map[service.ServiceName]*partition_topology.PartitionConnection{}
 	for i := 0; i < numServices; i++ {
 		serviceName := testServiceNameFromInt(i)
-		otherServicesPacketLossConfig := map[service.ServiceName]*partition_topology.PartitionConnection{}
+		partitionConnectionBetweenServices := map[service.ServiceName]*partition_topology.PartitionConnection{}
 		for j := 0; j < numServices; j++ {
 			if j < i-1 || j > i+1 {
+				// For even numbered services, we expect to see a constant delay
+				partitionDelay := partition_topology.ConnectionWithNoPacketDelay
+
+				if j%2 == 0 {
+					partitionDelay = connectionWithSomeConstantDelay
+				}
+
 				blockedServiceId := testServiceNameFromInt(j)
-				connectionConfig := partition_topology.NewPartitionConnection(packetLossConfigForBlockedPartition)
-				otherServicesPacketLossConfig[blockedServiceId] = &connectionConfig
+				connectionConfig := partition_topology.NewPartitionConnection(packetLossConfigForBlockedPartition, partitionDelay)
+				partitionConnectionBetweenServices[blockedServiceId] = &connectionConfig
 			}
 		}
-		targetServiceConnectionConfigs[serviceName] = otherServicesPacketLossConfig
+		targetServiceConnectionConfigs[serviceName] = partitionConnectionBetweenServices
 	}
 
 	for serviceName, otherServiceConnectionConfig := range targetServiceConnectionConfigs {
@@ -1199,19 +1208,25 @@ func TestUpdateTrafficControl(t *testing.T) {
 		expected := map[string]*partition_topology.PartitionConnection{}
 		for j := 0; j < numServices; j++ {
 			if j < i-1 || j > i+1 {
+				// For even numbered services, we expect to see a constant delay
+				partitionDelay := partition_topology.ConnectionWithNoPacketDelay
+
+				if j%2 == 0 {
+					partitionDelay = connectionWithSomeConstantDelay
+				}
+
 				ip := testIpFromInt(j)
-				connectionConfig := partition_topology.NewPartitionConnection(packetLossConfigForBlockedPartition)
+				connectionConfig := partition_topology.NewPartitionConnection(packetLossConfigForBlockedPartition, partitionDelay)
 				expected[ip.String()] = &connectionConfig
 			}
 		}
 
 		mockSidecar := mockSidecars[serviceName]
-		recordedPacketLossConfig := mockSidecar.GetRecordedUpdatePacketLossConfig()
-		require.Equal(t, 1, len(recordedPacketLossConfig), "Expected sidecar for service ID '%v' to have recorded exactly one call to update")
+		recordedPacketConnectionConfig := mockSidecar.GetRecordedUpdatedPacketConnectionConfig()
+		require.Equal(t, 1, len(recordedPacketConnectionConfig), "Expected sidecar for service ID '%v' to have recorded exactly one call to update")
 
-		actualPacketLossConfigForService := recordedPacketLossConfig[0]
-
-		require.Equal(t, expected, actualPacketLossConfigForService)
+		actualPacketConnectionConfigForService := recordedPacketConnectionConfig[0]
+		require.Equal(t, expected, actualPacketConnectionConfigForService)
 	}
 }
 

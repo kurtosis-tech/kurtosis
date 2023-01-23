@@ -233,13 +233,16 @@ func (apicService ApiContainerService) Repartition(ctx context.Context, args *ku
 					partitionAId,
 					partitionBId)
 			}
-			partitionConnection := partition_topology.NewPartitionConnection(connectionInfo.PacketLossPercentage)
+
+			//TODO: We will be removing Repartition method completely from sdks (golang and typescript) so not needed in PartitionInfo
+			partitionConnection := partition_topology.NewPartitionConnection(connectionInfo.PacketLossPercentage, partition_topology.ConnectionWithNoPacketDelay)
 			partitionConnections[partitionConnectionId] = partitionConnection
 		}
 	}
 
 	defaultConnectionInfo := args.DefaultConnection
-	defaultConnection := partition_topology.NewPartitionConnection(defaultConnectionInfo.PacketLossPercentage)
+	//TODO: We will be removing Repartition method completely from sdks (golang and typescript) so not needed in PartitionInfo
+	defaultConnection := partition_topology.NewPartitionConnection(defaultConnectionInfo.PacketLossPercentage, partition_topology.ConnectionWithNoPacketDelay)
 
 	if err := apicService.serviceNetwork.Repartition(
 		ctx,

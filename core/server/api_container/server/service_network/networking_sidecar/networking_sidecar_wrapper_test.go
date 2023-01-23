@@ -19,9 +19,9 @@ import (
 )
 
 const (
-	packetLossPercentageValueForUnblockedPartitions float32 = 0
-	packetLossPercentageValueForBlockedPartitions   float32 = 100
-	packetLossPercentageValueForSoftPartition       float32 = 25
+	PacketConnectionPercentageValueForUnblockedPartitions float32 = 0
+	PacketConnectionPercentageValueForBlockedPartitions   float32 = 100
+	PacketConnectionPercentageValueForSoftPartition       float32 = 25
 
 	testServiceGUID            = "test"
 	testEnclaveID              = "kt2022-03-17t16.33.01.495"
@@ -70,6 +70,37 @@ const (
 		" dev eth1 parent 1:2 handle 3: htb && tc qdisc add dev eth1 parent 1:1 handle 2: htb && tc qdisc add dev " +
 		"eth1 parent 1:2 handle 3: htb"
 
+	expectedCommandsForExecutingSoftPartitionWithDelayInQdiscA = "tc qdisc del dev eth1 parent 1:1 handle 2: htb && " +
+		"tc qdisc add dev eth1 parent 1:1 handle 2: htb && tc class add dev eth1 parent 2: classid 2:1 htb rate 100% && " +
+		"tc filter add dev eth1 parent 2: protocol ip prio 1 u32 flowid 2:1 match ip dst 1.1.1.1 && " +
+		"tc qdisc add dev eth1 parent 2:1 handle 4: netem loss 25% delay 500ms && " +
+		"tc class add dev eth1 parent 2: classid 2:2 htb rate 100% && " +
+		"tc filter add dev eth1 parent 2: protocol ip prio 1 u32 flowid 2:2 match ip dst 2.2.2.2 && " +
+		"tc qdisc add dev eth1 parent 2:2 handle 6: netem loss 25% delay 500ms && " +
+		"tc class add dev eth1 parent 2: classid 2:3 htb rate 100% && " +
+		"tc filter add dev eth1 parent 2: protocol ip prio 1 u32 flowid 2:3 match ip dst 3.3.3.3 && " +
+		"tc qdisc add dev eth1 parent 2:3 handle 8: netem loss 25% delay 500ms && " +
+		"tc class add dev eth1 parent 2: classid 2:4 htb rate 100% && " +
+		"tc filter add dev eth1 parent 2: protocol ip prio 1 u32 flowid 2:4 match ip dst 4.4.4.4 && " +
+		"tc qdisc add dev eth1 parent 2:4 handle a: netem loss 25% delay 500ms && " +
+		"tc filter replace dev eth1 parent 1: handle 1:0 basic flowid 1:1"
+
+	expectedCommandsForExecutingSoftPartitionWithDelayInQdiscB = "tc qdisc del dev eth1 parent 1:2 handle 3: htb && " +
+		"tc qdisc add dev eth1 parent 1:2 handle 3: htb && " +
+		"tc class add dev eth1 parent 3: classid 3:1 htb rate 100% && " +
+		"tc filter add dev eth1 parent 3: protocol ip prio 1 u32 flowid 3:1 match ip dst 1.1.1.1 && " +
+		"tc qdisc add dev eth1 parent 3:1 handle 5: netem loss 25% delay 500ms && " +
+		"tc class add dev eth1 parent 3: classid 3:2 htb rate 100% && " +
+		"tc filter add dev eth1 parent 3: protocol ip prio 1 u32 flowid 3:2 match ip dst 2.2.2.2 && " +
+		"tc qdisc add dev eth1 parent 3:2 handle 7: netem loss 25% delay 500ms && " +
+		"tc class add dev eth1 parent 3: classid 3:3 htb rate 100% && " +
+		"tc filter add dev eth1 parent 3: protocol ip prio 1 u32 flowid 3:3 match ip dst 3.3.3.3 && " +
+		"tc qdisc add dev eth1 parent 3:3 handle 9: netem loss 25% delay 500ms && " +
+		"tc class add dev eth1 parent 3: classid 3:4 htb rate 100% && " +
+		"tc filter add dev eth1 parent 3: protocol ip prio 1 u32 flowid 3:4 match ip dst 4.4.4.4 && " +
+		"tc qdisc add dev eth1 parent 3:4 handle b: netem loss 25% delay 500ms && " +
+		"tc filter replace dev eth1 parent 1: handle 1:0 basic flowid 1:2"
+
 	stringSeparatorInCommand = " "
 )
 
@@ -98,6 +129,7 @@ var (
 	qdiscAChildrenClassDecimalMinorNumber = []int{1, 2, 3, 4}
 	qdiscBChildrenClassId                 = []classID{classID("3:1"), classID("3:2"), classID("3:3"), classID("3:4")}
 	qdiscBChildrenClassDecimalMinorNumber = []int{1, 2, 3, 4}
+	connectionWithNoLatency               = partition_topology.ConnectionWithNoPacketDelay
 )
 
 func TestInitializeTrafficControl(t *testing.T) {
@@ -133,9 +165,9 @@ func TestUpdateTrafficControl_CreateBlockedPartitionAndThenUnblockIt(t *testing.
 	sidecar.qdiscInUse = initialKurtosisQdiscId
 
 	//Blocking partition
-	allUserServicePacketLossConfigurationsForBlockedPartition := getAllUserServicePacketLossConfigurationsForBlockedPartition()
+	allUserServicePacketConnectionConfigurationsForBlockedPartition := getAllUserServicePacketConnectionConfigurationsForBlockedPartition()
 
-	err := sidecar.UpdateTrafficControl(ctx, allUserServicePacketLossConfigurationsForBlockedPartition)
+	err := sidecar.UpdateTrafficControl(ctx, allUserServicePacketConnectionConfigurationsForBlockedPartition)
 	require.NoError(t, err, "An error occurred updating qdisc configuration for blocked partition")
 	require.Equal(t, 1, len(execCmdExecutor.commands))
 
@@ -143,9 +175,9 @@ func TestUpdateTrafficControl_CreateBlockedPartitionAndThenUnblockIt(t *testing.
 	require.Equal(t, expectedCommandsForExecutingBlockedPartitionInQdiscB, actualFirstExecutedMergedCmd)
 
 	//Unblocking partition
-	allUserServicePacketLossConfigurationsForUnblockedPartition := getAllUserServicePacketLossConfigurationsForUnblockedPartition()
+	allUserServicePacketConnectionConfigurationsForUnblockedPartition := getAllUserServicePacketConnectionConfigurationsForUnblockedPartition()
 
-	err = sidecar.UpdateTrafficControl(ctx, allUserServicePacketLossConfigurationsForUnblockedPartition)
+	err = sidecar.UpdateTrafficControl(ctx, allUserServicePacketConnectionConfigurationsForUnblockedPartition)
 	require.NoError(t, err, "An error occurred updating qdisc configuration for unblocked partition")
 	require.Equal(t, initialKurtosisQdiscId, sidecar.qdiscInUse)
 	require.Equal(t, 2, len(execCmdExecutor.commands))
@@ -162,9 +194,9 @@ func TestUpdateTrafficControl_CreateSoftPartitionAndThenUnblockIt(t *testing.T) 
 	sidecar.qdiscInUse = initialKurtosisQdiscId
 
 	//Soft partition
-	allUserServicePacketLossConfigurations := getAllUserServicePacketLossConfigurationsForSoftPartition()
+	allUserServicePacketConnectionConfigurations := getAllUserServicePacketConnectionConfigurationsForSoftPartition()
 
-	err := sidecar.UpdateTrafficControl(ctx, allUserServicePacketLossConfigurations)
+	err := sidecar.UpdateTrafficControl(ctx, allUserServicePacketConnectionConfigurations)
 	require.NoError(t, err, "An error occurred updating qdisc configuration for soft partition")
 	require.Equal(t, 1, len(execCmdExecutor.commands))
 
@@ -172,9 +204,9 @@ func TestUpdateTrafficControl_CreateSoftPartitionAndThenUnblockIt(t *testing.T) 
 	require.Equal(t, expectedCommandsForExecutingSoftPartitionInQdiscB, actualFirstExecutedMergedCmd)
 
 	//Unblocking partition
-	allUserServicePacketLossConfigurationsForUnblockedPartition := getAllUserServicePacketLossConfigurationsForUnblockedPartition()
+	allUserServicePacketConnectionConfigurationsForUnblockedPartition := getAllUserServicePacketConnectionConfigurationsForUnblockedPartition()
 
-	err = sidecar.UpdateTrafficControl(ctx, allUserServicePacketLossConfigurationsForUnblockedPartition)
+	err = sidecar.UpdateTrafficControl(ctx, allUserServicePacketConnectionConfigurationsForUnblockedPartition)
 	require.NoError(t, err, "An error occurred updating qdisc configuration for unblocked partition")
 	require.Equal(t, initialKurtosisQdiscId, sidecar.qdiscInUse)
 	require.Equal(t, 2, len(execCmdExecutor.commands))
@@ -191,9 +223,9 @@ func TestUpdateTrafficControl_CreateBlockedPartitionAndThenSoftPartition(t *test
 	sidecar.qdiscInUse = initialKurtosisQdiscId
 
 	//Blocking partition
-	allUserServicePacketLossConfigurationsForBlockedPartition := getAllUserServicePacketLossConfigurationsForBlockedPartition()
+	allUserServicePacketConnectionConfigurationsForBlockedPartition := getAllUserServicePacketConnectionConfigurationsForBlockedPartition()
 
-	err := sidecar.UpdateTrafficControl(ctx, allUserServicePacketLossConfigurationsForBlockedPartition)
+	err := sidecar.UpdateTrafficControl(ctx, allUserServicePacketConnectionConfigurationsForBlockedPartition)
 	require.Equal(t, qdiscBID, sidecar.qdiscInUse)
 	require.NoError(t, err, "An error occurred updating qdisc configuration for blocked partition")
 	require.Equal(t, 1, len(execCmdExecutor.commands))
@@ -202,9 +234,69 @@ func TestUpdateTrafficControl_CreateBlockedPartitionAndThenSoftPartition(t *test
 	require.Equal(t, expectedCommandsForExecutingBlockedPartitionInQdiscB, actualFirstExecutedMergedCmd)
 
 	//Unblocking partition
-	allUserServicePacketLossConfigurationsForSoftPartition := getAllUserServicePacketLossConfigurationsForSoftPartition()
+	allUserServicePacketConnectionConfigurationsForSoftPartition := getAllUserServicePacketConnectionConfigurationsForSoftPartition()
 
-	err = sidecar.UpdateTrafficControl(context.Background(), allUserServicePacketLossConfigurationsForSoftPartition)
+	err = sidecar.UpdateTrafficControl(context.Background(), allUserServicePacketConnectionConfigurationsForSoftPartition)
+	require.NoError(t, err, "An error occurred updating qdisc configuration for soft partition")
+	require.Equal(t, qdiscAID, sidecar.qdiscInUse)
+	require.Equal(t, 2, len(execCmdExecutor.commands))
+
+	actualSecondExecutedMergedCmd := mergeCommandsInOneLine(execCmdExecutor.commands[1])
+	require.Equal(t, expectedCommandsForExecutingSoftPartitionInQdiscA, actualSecondExecutedMergedCmd)
+}
+
+func TestUpdateTrafficControl_CreateBlockedPartitionAndThenWithSoftPartitionWithDelay(t *testing.T) {
+	//Initial state
+	ctx := context.Background()
+	sidecar, execCmdExecutor := createNewStandardNetworkingSidecarAndMockedExecCmdExecutor(t)
+	require.Empty(t, sidecar.qdiscInUse)
+	sidecar.qdiscInUse = initialKurtosisQdiscId
+
+	//Blocking partition
+	allUserServicePacketConnectionConfigurationsForBlockedPartition := getAllUserServicePacketConnectionConfigurationsForBlockedPartition()
+
+	err := sidecar.UpdateTrafficControl(ctx, allUserServicePacketConnectionConfigurationsForBlockedPartition)
+	require.Equal(t, qdiscBID, sidecar.qdiscInUse)
+	require.NoError(t, err, "An error occurred updating qdisc configuration for blocked partition")
+	require.Equal(t, 1, len(execCmdExecutor.commands))
+
+	actualFirstExecutedMergedCmd := mergeCommandsInOneLine(execCmdExecutor.commands[0])
+	require.Equal(t, expectedCommandsForExecutingBlockedPartitionInQdiscB, actualFirstExecutedMergedCmd)
+
+	//Unblocking partition
+	allUserServicePacketConnectionConfigurationsForSoftPartitionWithDelay := getAllUserServicePacketConnectionConfigurationsSoftPartitionWithConstantDelay()
+
+	err = sidecar.UpdateTrafficControl(context.Background(), allUserServicePacketConnectionConfigurationsForSoftPartitionWithDelay)
+	require.NoError(t, err, "An error occurred updating qdisc configuration for soft partition")
+	require.Equal(t, qdiscAID, sidecar.qdiscInUse)
+	require.Equal(t, 2, len(execCmdExecutor.commands))
+
+	actualSecondExecutedMergedCmd := mergeCommandsInOneLine(execCmdExecutor.commands[1])
+	require.Equal(t, expectedCommandsForExecutingSoftPartitionWithDelayInQdiscA, actualSecondExecutedMergedCmd)
+}
+
+func TestUpdateTrafficControl_CreateWithSoftPartitionWithDelayAndThenSoftPartitionWithoutDelay(t *testing.T) {
+	//Initial state
+	ctx := context.Background()
+	sidecar, execCmdExecutor := createNewStandardNetworkingSidecarAndMockedExecCmdExecutor(t)
+	require.Empty(t, sidecar.qdiscInUse)
+	sidecar.qdiscInUse = initialKurtosisQdiscId
+
+	//Blocking partition
+	allUserServicePacketConnectionConfigurationsForSoftPartitionWithDelay := getAllUserServicePacketConnectionConfigurationsSoftPartitionWithConstantDelay()
+
+	err := sidecar.UpdateTrafficControl(ctx, allUserServicePacketConnectionConfigurationsForSoftPartitionWithDelay)
+	require.Equal(t, qdiscBID, sidecar.qdiscInUse)
+	require.NoError(t, err, "An error occurred updating qdisc configuration for blocked partition")
+	require.Equal(t, 1, len(execCmdExecutor.commands))
+
+	actualFirstExecutedMergedCmd := mergeCommandsInOneLine(execCmdExecutor.commands[0])
+	require.Equal(t, expectedCommandsForExecutingSoftPartitionWithDelayInQdiscB, actualFirstExecutedMergedCmd)
+
+	//Unblocking partition
+	allUserServicePacketConnectionConfigurationsForSoftPartition := getAllUserServicePacketConnectionConfigurationsForSoftPartition()
+
+	err = sidecar.UpdateTrafficControl(context.Background(), allUserServicePacketConnectionConfigurationsForSoftPartition)
 	require.NoError(t, err, "An error occurred updating qdisc configuration for soft partition")
 	require.Equal(t, qdiscAID, sidecar.qdiscInUse)
 	require.Equal(t, 2, len(execCmdExecutor.commands))
@@ -220,8 +312,8 @@ func TestUpdateTrafficControl_UndefinedQdiscInUseError(t *testing.T) {
 	require.Empty(t, sidecar.qdiscInUse)
 
 	//Execution
-	allUserServicePacketLossConfigurationsForBlockedPartition := getAllUserServicePacketLossConfigurationsForBlockedPartition()
-	err := sidecar.UpdateTrafficControl(ctx, allUserServicePacketLossConfigurationsForBlockedPartition)
+	allUserServicePacketConnectionConfigurationsForBlockedPartition := getAllUserServicePacketConnectionConfigurationsForBlockedPartition()
+	err := sidecar.UpdateTrafficControl(ctx, allUserServicePacketConnectionConfigurationsForBlockedPartition)
 	require.Error(t, err, "Expected undefined qdisc id in use error")
 }
 
@@ -233,8 +325,8 @@ func TestUpdateTrafficControl_UnrecognizedPrimaryQdiscIdError(t *testing.T) {
 	sidecar.qdiscInUse = "1:"
 
 	//Execution
-	allUserServicePacketLossConfigurationsForBlockedPartition := getAllUserServicePacketLossConfigurationsForBlockedPartition()
-	err := sidecar.UpdateTrafficControl(ctx, allUserServicePacketLossConfigurationsForBlockedPartition)
+	allUserServicePacketConnectionConfigurationsForBlockedPartition := getAllUserServicePacketConnectionConfigurationsForBlockedPartition()
+	err := sidecar.UpdateTrafficControl(ctx, allUserServicePacketConnectionConfigurationsForBlockedPartition)
 	require.Error(t, err, "Expected unrecognized primary qdisc id error")
 }
 
@@ -315,11 +407,11 @@ func TestConcurrencySafety(t *testing.T) {
 	for i := 0; i < numProcesses; i++ {
 		iByte := byte(i)
 		ip := net.IP{iByte, iByte, iByte, iByte}
-		allUserServicePacketLossConfigurations := map[string]*partition_topology.PartitionConnection{}
-		connectionConfig := partition_topology.NewPartitionConnection(packetLossPercentageValueForBlockedPartitions)
-		allUserServicePacketLossConfigurations[ip.String()] = &connectionConfig
+		allUserServicePacketConnectionConfigurations := map[string]*partition_topology.PartitionConnection{}
+		connectionConfig := partition_topology.NewPartitionConnection(PacketConnectionPercentageValueForBlockedPartitions, connectionWithNoLatency)
+		allUserServicePacketConnectionConfigurations[ip.String()] = &connectionConfig
 		go func() {
-			err := sidecar.UpdateTrafficControl(ctx, allUserServicePacketLossConfigurations)
+			err := sidecar.UpdateTrafficControl(ctx, allUserServicePacketConnectionConfigurations)
 			require.NoErrorf(t, err, "An error occurred updating traffic control")
 		}()
 		time.Sleep(5 * time.Millisecond) // Make sure they enter the sidecar in proper order
@@ -349,31 +441,41 @@ func TestConcurrencySafety(t *testing.T) {
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================
-func getAllUserServicePacketLossConfigurationsForSoftPartition() map[string]*partition_topology.PartitionConnection {
-	allUserServicePacketLossConfigurations := map[string]*partition_topology.PartitionConnection{}
+func getAllUserServicePacketConnectionConfigurationsSoftPartitionWithConstantDelay() map[string]*partition_topology.PartitionConnection {
+	allUserServicePacketConnectionConfigurations := map[string]*partition_topology.PartitionConnection{}
+	packetDelay := partition_topology.NewPacketDelay(500)
 	for _, ip := range allUserServiceTestIPAddresses {
-		connectionConfig := partition_topology.NewPartitionConnection(packetLossPercentageValueForSoftPartition)
-		allUserServicePacketLossConfigurations[ip.String()] = &connectionConfig
+		connectionConfig := partition_topology.NewPartitionConnection(PacketConnectionPercentageValueForSoftPartition, packetDelay)
+		allUserServicePacketConnectionConfigurations[ip.String()] = &connectionConfig
 	}
-	return allUserServicePacketLossConfigurations
+	return allUserServicePacketConnectionConfigurations
 }
 
-func getAllUserServicePacketLossConfigurationsForBlockedPartition() map[string]*partition_topology.PartitionConnection {
-	allUserServicePacketLossConfigurations := map[string]*partition_topology.PartitionConnection{}
+func getAllUserServicePacketConnectionConfigurationsForSoftPartition() map[string]*partition_topology.PartitionConnection {
+	allUserServicePacketConnectionConfigurations := map[string]*partition_topology.PartitionConnection{}
 	for _, ip := range allUserServiceTestIPAddresses {
-		connectionConfig := partition_topology.NewPartitionConnection(packetLossPercentageValueForBlockedPartitions)
-		allUserServicePacketLossConfigurations[ip.String()] = &connectionConfig
+		connectionConfig := partition_topology.NewPartitionConnection(PacketConnectionPercentageValueForSoftPartition, connectionWithNoLatency)
+		allUserServicePacketConnectionConfigurations[ip.String()] = &connectionConfig
 	}
-	return allUserServicePacketLossConfigurations
+	return allUserServicePacketConnectionConfigurations
 }
 
-func getAllUserServicePacketLossConfigurationsForUnblockedPartition() map[string]*partition_topology.PartitionConnection {
-	allUserServicePacketLossConfigurations := map[string]*partition_topology.PartitionConnection{}
+func getAllUserServicePacketConnectionConfigurationsForBlockedPartition() map[string]*partition_topology.PartitionConnection {
+	allUserServicePacketConnectionConfigurations := map[string]*partition_topology.PartitionConnection{}
 	for _, ip := range allUserServiceTestIPAddresses {
-		connectionConfig := partition_topology.NewPartitionConnection(packetLossPercentageValueForUnblockedPartitions)
-		allUserServicePacketLossConfigurations[ip.String()] = &connectionConfig
+		connectionConfig := partition_topology.NewPartitionConnection(PacketConnectionPercentageValueForBlockedPartitions, connectionWithNoLatency)
+		allUserServicePacketConnectionConfigurations[ip.String()] = &connectionConfig
 	}
-	return allUserServicePacketLossConfigurations
+	return allUserServicePacketConnectionConfigurations
+}
+
+func getAllUserServicePacketConnectionConfigurationsForUnblockedPartition() map[string]*partition_topology.PartitionConnection {
+	allUserServicePacketConnectionConfigurations := map[string]*partition_topology.PartitionConnection{}
+	for _, ip := range allUserServiceTestIPAddresses {
+		connectionConfig := partition_topology.NewPartitionConnection(PacketConnectionPercentageValueForUnblockedPartitions, connectionWithNoLatency)
+		allUserServicePacketConnectionConfigurations[ip.String()] = &connectionConfig
+	}
+	return allUserServicePacketConnectionConfigurations
 }
 
 func createNewStandardNetworkingSidecarAndMockedExecCmdExecutor(t *testing.T) (*StandardNetworkingSidecarWrapper, *mockSidecarExecCmdExecutor) {

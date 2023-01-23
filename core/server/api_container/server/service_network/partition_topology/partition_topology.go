@@ -332,10 +332,10 @@ func (topology *PartitionTopology) GetServicePartitions() map[service.ServiceNam
 	return topology.servicePartitions
 }
 
-// GetServicePacketLossConfigurationsByServiceName this method returns a partition config map
+// GetServicePartitionConnectionConfigByServiceName this method returns a partition config map
 // containing information a structure similar to adjacency graph hashmap data structure between services
 // where nodes are services, and edges are partition connection object
-func (topology *PartitionTopology) GetServicePacketLossConfigurationsByServiceName() (map[service.ServiceName]map[service.ServiceName]*PartitionConnection, error) {
+func (topology *PartitionTopology) GetServicePartitionConnectionConfigByServiceName() (map[service.ServiceName]map[service.ServiceName]*PartitionConnection, error) {
 	topology.lock.RLock()
 	defer topology.lock.RUnlock()
 	result := map[service.ServiceName]map[service.ServiceName]*PartitionConnection{}

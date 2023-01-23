@@ -34,7 +34,7 @@ func TestSetConnection_Interpreter(t *testing.T) {
 		kurtosis_instruction.NewInstructionPosition(1, 15, startosis_constants.PackageIdPlaceholderForStandaloneScript),
 		&subnetwork1,
 		&subnetwork2,
-		partition_topology.NewPartitionConnection(50),
+		partition_topology.NewPartitionConnection(50, partition_topology.ConnectionWithNoPacketDelay),
 		starlark.StringDict{
 			"config": kurtosis_types.NewConnectionConfig(50),
 			"subnetworks": starlark.Tuple([]starlark.Value{
@@ -60,7 +60,7 @@ func TestSetConnection_Interpreter_SetDefaultConnection(t *testing.T) {
 		kurtosis_instruction.NewInstructionPosition(1, 15, startosis_constants.PackageIdPlaceholderForStandaloneScript),
 		nil,
 		nil,
-		partition_topology.NewPartitionConnection(50),
+		partition_topology.NewPartitionConnection(50, partition_topology.ConnectionWithNoPacketDelay),
 		starlark.StringDict{
 			"config": kurtosis_types.NewConnectionConfig(50),
 		})
@@ -82,7 +82,7 @@ func TestSetConnection_Interpreter_SetDefaultConnection_PreBuiltConnections(t *t
 		kurtosis_instruction.NewInstructionPosition(1, 15, startosis_constants.PackageIdPlaceholderForStandaloneScript),
 		nil,
 		nil,
-		partition_topology.NewPartitionConnection(100),
+		partition_topology.NewPartitionConnection(100, partition_topology.ConnectionWithNoPacketDelay),
 		starlark.StringDict{
 			"config": kurtosis_types.NewConnectionConfig(100),
 		})
@@ -129,7 +129,7 @@ func TestSetConnection_SerializeAndParseAgain(t *testing.T) {
 		kurtosis_instruction.NewInstructionPosition(1, 15, startosis_constants.PackageIdPlaceholderForStandaloneScript),
 		&subnetwork1,
 		&subnetwork2,
-		partition_topology.NewPartitionConnection(50),
+		partition_topology.NewPartitionConnection(50, partition_topology.ConnectionWithNoPacketDelay),
 		starlark.StringDict{
 			"config": kurtosis_types.NewConnectionConfig(50),
 			"subnetworks": starlark.Tuple([]starlark.Value{
@@ -157,7 +157,7 @@ func TestSetConnection_SerializeAndParseAgain_DefaultConnection(t *testing.T) {
 		kurtosis_instruction.NewInstructionPosition(1, 15, startosis_constants.PackageIdPlaceholderForStandaloneScript),
 		nil,
 		nil,
-		partition_topology.NewPartitionConnection(50),
+		partition_topology.NewPartitionConnection(50, partition_topology.ConnectionWithNoPacketDelay),
 		starlark.StringDict{
 			"config": kurtosis_types.NewConnectionConfig(50),
 		})

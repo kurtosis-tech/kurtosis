@@ -858,7 +858,7 @@ func (network *DefaultServiceNetwork) IsNetworkPartitioningEnabled() bool {
 // according to it.
 // if serviceNames is empty, it updates the connection for all the services within the enclave
 func (network *DefaultServiceNetwork) updateConnectionsFromTopology(ctx context.Context, serviceNames map[service.ServiceName]bool) error {
-	servicePacketLossConfigurationsByServiceName, err := network.topology.GetServicePacketLossConfigurationsByServiceName()
+	availablePartitionConnectionConfigsPerServiceNames, err := network.topology.GetServicePartitionConnectionConfigByServiceName()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the packet loss configuration by service ID "+
 			" to know what packet loss updates to apply")
@@ -868,7 +868,7 @@ func (network *DefaultServiceNetwork) updateConnectionsFromTopology(ctx context.
 	if len(serviceNames) == emptyCollectionLength {
 		// we add all the services currently stored in the topology to update everything
 		serviceNamesToUpdate = map[service.ServiceName]bool{}
-		for serviceName := range servicePacketLossConfigurationsByServiceName {
+		for serviceName := range availablePartitionConnectionConfigsPerServiceNames {
 			serviceNamesToUpdate[serviceName] = true
 		}
 	} else {
@@ -877,9 +877,9 @@ func (network *DefaultServiceNetwork) updateConnectionsFromTopology(ctx context.
 
 	// TODO: probably worth running those updates in parallel for enclave with a lot of services
 	for serviceName := range serviceNamesToUpdate {
-		otherServiceConnectionConfig, found := servicePacketLossConfigurationsByServiceName[serviceName]
+		otherServiceConnectionConfig, found := availablePartitionConnectionConfigsPerServiceNames[serviceName]
 		if !found {
-			return stacktrace.NewError("A service about to be updated could not be found in the connection config service map: '%s' (connection config service map was: '%v')", serviceName, servicePacketLossConfigurationsByServiceName)
+			return stacktrace.NewError("A service about to be updated could not be found in the connection config service map: '%s' (connection config service map was: '%v')", serviceName, availablePartitionConnectionConfigsPerServiceNames)
 		}
 		if err = updateTrafficControlConfiguration(ctx, serviceName, otherServiceConnectionConfig, network.registeredServiceInfo, network.networkingSidecars); err != nil {
 			return stacktrace.Propagate(err, "An error occurred applying the traffic control configuration to partition off new nodes.")

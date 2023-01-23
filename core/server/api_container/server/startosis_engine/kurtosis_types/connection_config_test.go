@@ -116,6 +116,6 @@ func TestConnectionConfig_MakeWithKwargs_FailureWrongArg(t *testing.T) {
 
 func TestConnectionConfig_ToKurtosisType(t *testing.T) {
 	connectionConfig := NewConnectionConfig(50)
-	expectedKurtosisType := partition_topology.NewPartitionConnection(50)
+	expectedKurtosisType := partition_topology.NewPartitionConnection(50, partition_topology.ConnectionWithNoPacketDelay)
 	require.Equal(t, expectedKurtosisType, connectionConfig.ToKurtosisType())
 }

@@ -18,30 +18,31 @@ import (
 )
 
 const (
-	tcCommand                  = "tc"
-	tcAddCommand               = "add"
-	tcReplaceCommand           = "replace"
-	tcDeleteCommand            = "del"
-	tcQdiscCommand             = "qdisc"
-	tcQdiscTypeHtb             = "htb"
-	tcQdiscTypeNetem           = "netem"
-	tcQdiscTypeNetemOptionLoss = "loss"
-	tcClassCommand             = "class"
-	tcFilterCommand            = "filter"
-	tcFilterProtocolCommand    = "protocol"
-	tcFilterIPCommand          = "ip"
-	tcFilterPrioCommand        = "prio"
-	tcFilterFlowIDCommand      = "flowid"
-	tcFilterMatchCommand       = "match"
-	tcFilterBasicTypeCommand   = "basic"
-	tcFilterIPMatchTypeCommand = "ip"
-	tcFilterIPDestCommand      = "dst"
-	tcU32FilterTypeCommand     = "u32"
-	tcDeviceCommand            = "dev"
-	tcHandleCommand            = "handle"
-	tcParentCommand            = "parent"
-	tcClassIDCommand           = "classid"
-	tcRateCommand              = "rate"
+	tcCommand                   = "tc"
+	tcAddCommand                = "add"
+	tcReplaceCommand            = "replace"
+	tcDeleteCommand             = "del"
+	tcQdiscCommand              = "qdisc"
+	tcQdiscTypeHtb              = "htb"
+	tcQdiscTypeNetem            = "netem"
+	tcQdiscTypeNetemOptionLoss  = "loss"
+	tcQdiscTypeNetemOptionDelay = "delay"
+	tcClassCommand              = "class"
+	tcFilterCommand             = "filter"
+	tcFilterProtocolCommand     = "protocol"
+	tcFilterIPCommand           = "ip"
+	tcFilterPrioCommand         = "prio"
+	tcFilterFlowIDCommand       = "flowid"
+	tcFilterMatchCommand        = "match"
+	tcFilterBasicTypeCommand    = "basic"
+	tcFilterIPMatchTypeCommand  = "ip"
+	tcFilterIPDestCommand       = "dst"
+	tcU32FilterTypeCommand      = "u32"
+	tcDeviceCommand             = "dev"
+	tcHandleCommand             = "handle"
+	tcParentCommand             = "parent"
+	tcClassIDCommand            = "classid"
+	tcRateCommand               = "rate"
 
 	rootQdiscName                 = "root"
 	defaultDockerNetworkInterface = "eth1"
@@ -276,7 +277,6 @@ func generateTcUpdateCmd(backgroundQdisc qdiscID, backgroundQdiscClass classID, 
 	classIdDecimalMinorNumber := firstClassIdDecimalMinorNumber
 	previousQdiscIdDecimalMajorNumber := lastUsedQdiscIdDecimalMajorNumber
 	for ipAddress, connectionConfig := range partitionConnectionConfigPerIpAddress {
-		packetLossPercentage := connectionConfig.GetPacketLossPercentage()
 		classId := newClassId(parentQdisc, classIdDecimalMinorNumber)
 		classIdDecimalMinorNumber++
 		qdiscId, decimalMajorNumber, err := getNextUnusedQdiscId(parentQdisc, previousQdiscIdDecimalMajorNumber)
@@ -288,7 +288,7 @@ func generateTcUpdateCmd(backgroundQdisc qdiscID, backgroundQdiscClass classID, 
 		//pointing to this class, and a netem qdisc (which is a child of the class) with the packet loss configuration
 		commandList = append(commandList, generateTcAddClassCmd(parentQdisc, classId))
 		commandList = append(commandList, generateTCAddFilterByIpCmd(parentQdisc, classId, ipAddress))
-		commandList = append(commandList, generateTCAddNetemQdiscWithPacketLossCmd(classId, qdiscId, packetLossPercentage))
+		commandList = append(commandList, generateTCAddNetemQdiscWithPacketConnectionCmd(classId, qdiscId, connectionConfig))
 	}
 
 	commandList = append(commandList, generateTCReplaceRootFilterCmd(backgroundQdiscClass)) //swapping the root filter pointer
@@ -371,13 +371,21 @@ func generateTcAddQdiscBCmd() []string {
 	return generateTcAddQdiscCmd(rootClassBClassID, qdiscBID, tcQdiscTypeHtb)
 }
 
-func generateTCAddNetemQdiscWithPacketLossCmd(parentClassId classID, qdiscId qdiscID, packetLossPercentage float32) []string {
+// This method generates the command for packet loss and packet delay
+func generateTCAddNetemQdiscWithPacketConnectionCmd(parentClassId classID, qdiscId qdiscID, connectionConfig *partition_topology.PartitionConnection) []string {
+	packetLossPercentage := connectionConfig.GetPacketLossPercentage()
+	packetDelay := connectionConfig.GetPacketDelay()
 
 	packetLossPercentageStr := fmt.Sprintf("%v%v", packetLossPercentage, percentageSign)
 
 	resultCmd := generateTcAddQdiscCmd(parentClassId, qdiscId, tcQdiscTypeNetem)
 	resultCmd = append(resultCmd, tcQdiscTypeNetemOptionLoss)
 	resultCmd = append(resultCmd, packetLossPercentageStr)
+
+	if packetDelay.IsSet() {
+		resultCmd = append(resultCmd, tcQdiscTypeNetemOptionDelay)
+		resultCmd = append(resultCmd, packetDelay.GetTcCommand())
+	}
 
 	return resultCmd
 }
