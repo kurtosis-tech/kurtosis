@@ -151,7 +151,7 @@ export class EnclaveContext {
 
     // Docs available at https://docs.kurtosis.com/sdk/#getenclavename---string
     public getEnclaveName(): string {
-        return this.backend.getEnclaveUuid();
+        return this.backend.getEnclaveName();
     }
 
     // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkscriptstring-serializedstarlarkscript-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
