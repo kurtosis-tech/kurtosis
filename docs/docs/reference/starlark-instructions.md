@@ -101,7 +101,7 @@ The `add_services` instruction on the [`plan`][plan-reference] object adds multi
 
 The main advantage compared to calling [add_service][add-service] multiple times is that one call to `add_services` 
 will add multiple services at once. Currently, it can process up to 4 services concurrently, therefore reducing the
-total time by a factor close to 4.
+total time by a factor of nearly 4.
 
 Similar to `add_service`, it takes a map of service names to service configuration objects as input and returns a map 
 of service names to service objects.
@@ -120,8 +120,8 @@ all_services = plan.add_services(
 
 :::caution
 
-`add_services` will succeed if and only if all services are successfully added. If one fails, the entire batch of
-services will be rolled back the instruction will return an execution error.
+`add_services` will succeed if and only if all services are successfully added. If any one fails, the entire batch of
+services will be rolled back and the instruction will return an execution error.
 
 :::
 
