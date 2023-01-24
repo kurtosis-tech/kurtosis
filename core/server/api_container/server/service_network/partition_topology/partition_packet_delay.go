@@ -16,9 +16,9 @@ type PacketDelay struct {
 	avgDelayMs uint32
 }
 
-func NewPacketDelay(packetDelayInMs uint32) PacketDelay {
+func NewPacketDelay(avgDelayMs uint32) PacketDelay {
 	return PacketDelay{
-		avgDelayMs: packetDelayInMs,
+		avgDelayMs: avgDelayMs,
 	}
 }
 

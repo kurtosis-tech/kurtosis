@@ -14,9 +14,10 @@ import (
 )
 
 var (
-	thread                                             = shared_helpers.NewStarlarkThread("test-set-connection")
-	packetConnectionPercentageValueForSoftPartition    = partition_topology.NewPacketLoss(50)
-	packetConnectionPercentageValueForBlockedPartition = partition_topology.NewPacketLoss(100)
+	thread                                               = shared_helpers.NewStarlarkThread("test-set-connection")
+	packetConnectionPercentageValueForUnblockedPartition = partition_topology.NewPacketLoss(0)
+	packetConnectionPercentageValueForSoftPartition      = partition_topology.NewPacketLoss(50)
+	packetConnectionPercentageValueForBlockedPartition   = partition_topology.NewPacketLoss(100)
 )
 
 func TestSetConnection_Interpreter(t *testing.T) {
@@ -38,7 +39,76 @@ func TestSetConnection_Interpreter(t *testing.T) {
 		&subnetwork2,
 		partition_topology.NewPartitionConnection(packetConnectionPercentageValueForSoftPartition, partition_topology.ConnectionWithNoPacketDelay),
 		starlark.StringDict{
-			"config": kurtosis_types.NewConnectionConfig(50),
+			"config": kurtosis_types.NewConnectionConfig(50, kurtosis_types.NoPacketDelay),
+			"subnetworks": starlark.Tuple([]starlark.Value{
+				starlark.String("subnetwork1"),
+				starlark.String("subnetwork2"),
+			}),
+		})
+	require.Equal(t, expectedInstruction, instructions[0])
+}
+
+func TestSetConnection_InterpreterWithNamedArgs(t *testing.T) {
+	var instructions []kurtosis_instruction.KurtosisInstruction
+	starlarkInstruction := `set_connection(("subnetwork1", "subnetwork2"), 
+	ConnectionConfig(
+		packet_delay=PacketDelay(delay_ms=100), 
+		packet_loss_percentage=50.0
+	)
+)`
+	_, err := starlark.ExecFile(thread, startosis_constants.PackageIdPlaceholderForStandaloneScript, starlarkInstruction, starlark.StringDict{
+		kurtosis_types.ConnectionConfigTypeName: starlark.NewBuiltin(kurtosis_types.ConnectionConfigTypeName, kurtosis_types.MakeConnectionConfig),
+		kurtosis_types.PacketDelayName:          starlark.NewBuiltin(kurtosis_types.PacketDelayName, kurtosis_types.MakePacketDelay),
+		SetConnectionBuiltinName:                starlark.NewBuiltin(SetConnectionBuiltinName, GenerateSetConnectionBuiltin(&instructions, nil)),
+	})
+	require.Nil(t, err)
+
+	require.Len(t, instructions, 1)
+	subnetwork1 := service_network_types.PartitionID("subnetwork1")
+	subnetwork2 := service_network_types.PartitionID("subnetwork2")
+	expectedInstruction := NewSetConnectionInstruction(
+		nil,
+		kurtosis_instruction.NewInstructionPosition(1, 15, startosis_constants.PackageIdPlaceholderForStandaloneScript),
+		&subnetwork1,
+		&subnetwork2,
+		partition_topology.NewPartitionConnection(
+			packetConnectionPercentageValueForSoftPartition,
+			partition_topology.NewPacketDelay(100),
+		),
+		starlark.StringDict{
+			"config": kurtosis_types.NewConnectionConfig(50, kurtosis_types.NewPacketDelay(100)),
+			"subnetworks": starlark.Tuple([]starlark.Value{
+				starlark.String("subnetwork1"),
+				starlark.String("subnetwork2"),
+			}),
+		})
+	require.Equal(t, expectedInstruction, instructions[0])
+}
+
+func TestSetConnection_InterpreterWithDefaultNamedArgs(t *testing.T) {
+	var instructions []kurtosis_instruction.KurtosisInstruction
+	starlarkInstruction := `set_connection(("subnetwork1", "subnetwork2"), ConnectionConfig())`
+	_, err := starlark.ExecFile(thread, startosis_constants.PackageIdPlaceholderForStandaloneScript, starlarkInstruction, starlark.StringDict{
+		kurtosis_types.ConnectionConfigTypeName: starlark.NewBuiltin(kurtosis_types.ConnectionConfigTypeName, kurtosis_types.MakeConnectionConfig),
+		kurtosis_types.PacketDelayName:          starlark.NewBuiltin(kurtosis_types.PacketDelayName, kurtosis_types.MakePacketDelay),
+		SetConnectionBuiltinName:                starlark.NewBuiltin(SetConnectionBuiltinName, GenerateSetConnectionBuiltin(&instructions, nil)),
+	})
+	require.Nil(t, err)
+
+	require.Len(t, instructions, 1)
+	subnetwork1 := service_network_types.PartitionID("subnetwork1")
+	subnetwork2 := service_network_types.PartitionID("subnetwork2")
+	expectedInstruction := NewSetConnectionInstruction(
+		nil,
+		kurtosis_instruction.NewInstructionPosition(1, 15, startosis_constants.PackageIdPlaceholderForStandaloneScript),
+		&subnetwork1,
+		&subnetwork2,
+		partition_topology.NewPartitionConnection(
+			packetConnectionPercentageValueForUnblockedPartition,
+			partition_topology.NewPacketDelay(0),
+		),
+		starlark.StringDict{
+			"config": kurtosis_types.NewConnectionConfig(0, kurtosis_types.NewPacketDelay(0)),
 			"subnetworks": starlark.Tuple([]starlark.Value{
 				starlark.String("subnetwork1"),
 				starlark.String("subnetwork2"),
@@ -64,7 +134,7 @@ func TestSetConnection_Interpreter_SetDefaultConnection(t *testing.T) {
 		nil,
 		partition_topology.NewPartitionConnection(packetConnectionPercentageValueForSoftPartition, partition_topology.ConnectionWithNoPacketDelay),
 		starlark.StringDict{
-			"config": kurtosis_types.NewConnectionConfig(50),
+			"config": kurtosis_types.NewConnectionConfig(50, kurtosis_types.NoPacketDelay),
 		})
 	require.Equal(t, expectedInstruction, instructions[0])
 }
@@ -86,7 +156,7 @@ func TestSetConnection_Interpreter_SetDefaultConnection_PreBuiltConnections(t *t
 		nil,
 		partition_topology.NewPartitionConnection(packetConnectionPercentageValueForBlockedPartition, partition_topology.ConnectionWithNoPacketDelay),
 		starlark.StringDict{
-			"config": kurtosis_types.NewConnectionConfig(100),
+			"config": kurtosis_types.NewConnectionConfig(100, kurtosis_types.NoPacketDelay),
 		})
 	require.Equal(t, expectedInstruction, instructions[0])
 }
@@ -95,7 +165,7 @@ func TestSetConnection_GetCanonicalizedInstruction(t *testing.T) {
 	subnetwork1 := "subnetwork1"
 	subnetwork2 := "subnetwork2"
 
-	connectionConfig := kurtosis_types.NewConnectionConfig(50)
+	connectionConfig := kurtosis_types.NewConnectionConfig(50, kurtosis_types.NoPacketDelay)
 	subnetworks := starlark.Tuple([]starlark.Value{
 		starlark.String(subnetwork1),
 		starlark.String(subnetwork2),
@@ -107,19 +177,19 @@ func TestSetConnection_GetCanonicalizedInstruction(t *testing.T) {
 	setConnectionInstruction.starlarkKwargs[subnetworksArgName] = subnetworks
 	setConnectionInstruction.starlarkKwargs[connectionConfigArgName] = connectionConfig
 
-	expectedOutput := `set_connection(config=ConnectionConfig(packet_loss_percentage=50.0), subnetworks=("subnetwork1", "subnetwork2"))`
+	expectedOutput := `set_connection(config=ConnectionConfig(packet_loss_percentage=50.0, packet_delay=PacketDelay(delay_ms=0)), subnetworks=("subnetwork1", "subnetwork2"))`
 	require.Equal(t, expectedOutput, setConnectionInstruction.String())
 }
 
 func TestSetConnection_GetCanonicalizedInstruction_NoSubnetworks(t *testing.T) {
-	connectionConfig := kurtosis_types.NewConnectionConfig(50)
+	connectionConfig := kurtosis_types.NewConnectionConfig(50, kurtosis_types.NoPacketDelay)
 	setConnectionInstruction := newEmptySetConnectionInstruction(
 		nil,
 		kurtosis_instruction.NewInstructionPosition(22, 26, "dummyFile"),
 	)
 	setConnectionInstruction.starlarkKwargs[connectionConfigArgName] = connectionConfig
 
-	expectedOutput := `set_connection(config=ConnectionConfig(packet_loss_percentage=50.0))`
+	expectedOutput := `set_connection(config=ConnectionConfig(packet_loss_percentage=50.0, packet_delay=PacketDelay(delay_ms=0)))`
 	require.Equal(t, expectedOutput, setConnectionInstruction.String())
 }
 
@@ -133,7 +203,7 @@ func TestSetConnection_SerializeAndParseAgain(t *testing.T) {
 		&subnetwork2,
 		partition_topology.NewPartitionConnection(packetConnectionPercentageValueForSoftPartition, partition_topology.ConnectionWithNoPacketDelay),
 		starlark.StringDict{
-			"config": kurtosis_types.NewConnectionConfig(50),
+			"config": kurtosis_types.NewConnectionConfig(50, kurtosis_types.NoPacketDelay),
 			"subnetworks": starlark.Tuple([]starlark.Value{
 				starlark.String("subnetwork1"),
 				starlark.String("subnetwork2"),
@@ -145,6 +215,7 @@ func TestSetConnection_SerializeAndParseAgain(t *testing.T) {
 	var instructions []kurtosis_instruction.KurtosisInstruction
 	_, err := starlark.ExecFile(thread, startosis_constants.PackageIdPlaceholderForStandaloneScript, canonicalizedInstruction, starlark.StringDict{
 		kurtosis_types.ConnectionConfigTypeName: starlark.NewBuiltin(kurtosis_types.ConnectionConfigTypeName, kurtosis_types.MakeConnectionConfig),
+		kurtosis_types.PacketDelayName:          starlark.NewBuiltin(kurtosis_types.PacketDelayName, kurtosis_types.MakePacketDelay),
 		SetConnectionBuiltinName:                starlark.NewBuiltin(SetConnectionBuiltinName, GenerateSetConnectionBuiltin(&instructions, nil)),
 	})
 	require.Nil(t, err)
@@ -161,7 +232,7 @@ func TestSetConnection_SerializeAndParseAgain_DefaultConnection(t *testing.T) {
 		nil,
 		partition_topology.NewPartitionConnection(packetConnectionPercentageValueForSoftPartition, partition_topology.ConnectionWithNoPacketDelay),
 		starlark.StringDict{
-			"config": kurtosis_types.NewConnectionConfig(50),
+			"config": kurtosis_types.NewConnectionConfig(50, kurtosis_types.NoPacketDelay),
 		})
 
 	canonicalizedInstruction := initialInstruction.String()
@@ -169,6 +240,7 @@ func TestSetConnection_SerializeAndParseAgain_DefaultConnection(t *testing.T) {
 	var instructions []kurtosis_instruction.KurtosisInstruction
 	_, err := starlark.ExecFile(thread, startosis_constants.PackageIdPlaceholderForStandaloneScript, canonicalizedInstruction, starlark.StringDict{
 		kurtosis_types.ConnectionConfigTypeName: starlark.NewBuiltin(kurtosis_types.ConnectionConfigTypeName, kurtosis_types.MakeConnectionConfig),
+		kurtosis_types.PacketDelayName:          starlark.NewBuiltin(kurtosis_types.PacketDelayName, kurtosis_types.MakePacketDelay),
 		SetConnectionBuiltinName:                starlark.NewBuiltin(SetConnectionBuiltinName, GenerateSetConnectionBuiltin(&instructions, nil)),
 	})
 	require.Nil(t, err)

@@ -14,9 +14,18 @@ The `ConnectionConfig` is used to configure a connection between two [subnetwork
 
 ```python
 connection_config = ConnectionConfig(
-    # The percentage of packets that will be dropped between the two designated subnetworks
-    # MANDATORY
+    # Percentage of packet lost each way between subnetworks 
+    # OPTIONAL
+    # DEFAULT: 0.0
     packet_loss_percentage = 50.0,
+
+    # Amount of delay added to packets each way between subnetworks
+    # OPTIONAL
+    # DEFAULT: 0
+    packet_delay = PacketDelay(
+        # Delay in ms
+        delay_ms = 500 
+    ) 
 )
 ```
 
@@ -116,6 +125,20 @@ post_request_recipe = PostHttpRequestRecipe(
 Make sure that the endpoint returns valid JSON response for both POST and GET requests.
 
 :::
+
+### PacketDelay
+
+The `PacketDelay` can be used in conjuction with [`ConnectionConfig`][connection-config] to introduce latency between two [`subnetworks`][subnetworks-reference]. See [`set_connection`][starlark-instructions-set-connection] instruction to learn more about its usage.
+
+```python
+
+delay  = PacketDelay(
+    # Non-Negative Integer
+    # Amount of delay added to outgoing packets from the subnetwork
+    # MANDATORY
+    delay_ms = 1000
+)
+```
 
 ### PortSpec
 
@@ -244,11 +267,11 @@ Kurtosis provides "pre-built" values for types that will be broadly used. Those 
 
 #### `ALLOWED`
 
-`kurtosis.connection.ALLOWED` is equivalent to [ConnectionConfig][connection-config] with `packet_loss_percentage` set to `0`. It represents a [ConnectionConfig][connection-config] that _allows_ all connection between two subnetworks.
+`kurtosis.connection.ALLOWED` is equivalent to [ConnectionConfig][connection-config] with `packet_loss_percentage` set to `0` and `packet_delay` set to `PacketDelay(delay_ms=0)`. It represents a [ConnectionConfig][connection-config] that _allows_ all connection between two subnetworks with no delay and packet loss.
 
 #### `BLOCKED`
 
-`kurtosis.connection.BLOCKED` is equivalent to [ConnectionConfig][connection-config] with `packet_loss_percentage` set to `100`. It represents a [ConnectionConfig][connection-config] that _blocks_ all connection between two subnetworks.
+`kurtosis.connection.BLOCKED` is equivalent to [ConnectionConfig][connection-config] with `packet_loss_percentage` set to `100` and `packet_delay` set to `PacketDelay(delay_ms=0)`. It represents a [ConnectionConfig][connection-config] that _blocks_ all connection between two subnetworks.
 
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->
 [connection-config]: #connectionconfig

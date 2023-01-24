@@ -88,5 +88,6 @@ func KurtosisTypeConstructors() []*starlark.Builtin {
 		starlark.NewBuiltin(kurtosis_types.PortSpecTypeName, kurtosis_types.MakePortSpec),
 		starlark.NewBuiltin(kurtosis_types.ServiceConfigTypeName, kurtosis_types.MakeServiceConfig),
 		starlark.NewBuiltin(kurtosis_types.UpdateServiceConfigTypeName, kurtosis_types.MakeUpdateServiceConfig),
+		starlark.NewBuiltin(kurtosis_types.PacketDelayName, kurtosis_types.MakePacketDelay),
 	}
 }

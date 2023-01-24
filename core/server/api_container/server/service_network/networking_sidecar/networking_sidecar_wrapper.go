@@ -159,15 +159,21 @@ func (sidecarWrapper *StandardNetworkingSidecarWrapper) UpdateTrafficControl(ctx
 		return stacktrace.NewError("Cannot update tc qdiscs because they haven't yet been initialized")
 	}
 
-	var isAnyPartitionBlocked bool
+	// if this variable is true, set delay as 0 ms and packet loss to 0%
+	shouldResetToDefaultNetworkSettings := false
+
+	// if at least one connection has either packet delay or packet loss set, run the tc update statement
+	// else re-initialize the q discs
 	for _, connectionConfig := range partitionConnectionConfigPerIpAddress {
 		packetLoss := connectionConfig.GetPacketLossPercentage()
-		if packetLoss.IsSet() {
-			isAnyPartitionBlocked = true
+		packetDelay := connectionConfig.GetPacketDelay()
+		if packetLoss.IsSet() || packetDelay.IsSet() {
+			shouldResetToDefaultNetworkSettings = true
+			break
 		}
 	}
 
-	if isAnyPartitionBlocked && len(partitionConnectionConfigPerIpAddress) > 0 {
+	if shouldResetToDefaultNetworkSettings {
 		primaryQdisc := sidecarWrapper.qdiscInUse
 		var backgroundQdisc qdiscID
 		var backgroundQdiscClass classID
@@ -196,8 +202,8 @@ func (sidecarWrapper *StandardNetworkingSidecarWrapper) UpdateTrafficControl(ctx
 		}
 
 		sidecarWrapper.qdiscInUse = backgroundQdisc
-	} else if !isAnyPartitionBlocked {
-		//if isAnyPartitionBlocked == false means the tc qdisc config has to be re-initialized (e.g.: when an unblocked partition is configured).
+	} else if !shouldResetToDefaultNetworkSettings {
+		//if shouldResetToDefaultNetworkSettings == false means the tc qdisc config has to be re-initialized (e.g.: when an unblocked partition with no delay is configured).
 		//This is going to be done deleting and recreating qdiscA and qdiscB
 		reInitQdiscAAndQdiscBCmd := generateTcReInitQdiscAAndQdiscBCmd()
 

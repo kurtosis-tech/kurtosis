@@ -380,7 +380,9 @@ response = request(
 
 ### set_connection
 
-Kurtosis uses a *default connection* to configure networking for any created subnetwork. The `set_connection` can be used for two purposes:
+Kurtosis uses a *default connection* to configure networking for any created subnetwork.
+
+The `set_connection` can be used for two purposes:
 
 1. Used with the `subnetworks` argument, it will override the default connection between the two specified [subnetworks][subnetworks-reference].
 ```python
@@ -412,6 +414,28 @@ set_connection(
 ```
 
 See [ConnectionConfig][starlark-types-connection-config] for more information on the mandatory `config` argument.
+
+:::important
+
+Say we are overriding a connection between two subnetworks, as shown below:
+
+```python
+
+connection_config = ConnectionConfig(
+    packet_delay = PacketDelay(
+        delay_ms = 500
+    )
+)
+
+set_connection(
+    subnetworks = ("subnetworkA", "subnetworkB"),
+    config = connection_config
+)
+
+```
+If serviceA is in subnetworkA and serviceB is in subnetworkB, the effective latency for a TCP request between serviceA and serviceB will be 1000ms = 500ms x 2. This is because the latency is applied to both the request (serviceA -> serviceB) and the response (serviceB -> serviceA)
+:::
+
 
 ### store_service_files
 
