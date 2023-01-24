@@ -10,11 +10,13 @@ type KurtosisPlanInstructionBaseTest interface {
 	GetId() string
 
 	// GetInstruction should return the instruction this test is testing
-	GetInstruction() (*kurtosis_plan_instruction.KurtosisPlanInstruction, error)
+	GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction
 
 	// GetStarlarkCode should return the serialized starlark code matching the argument dict from GetExpectedArguments
-	GetStarlarkCode() (string, error)
+	GetStarlarkCode() string
 
-	// GetExpectedArguments should return the argument dict matching the Starlark code from GetStarlarkCode
-	GetExpectedArguments() (starlark.StringDict, error)
+	// Assert is called after the Starlark code returned by GetStarlarkCode has been sent to the interpreter
+	// The interpretationResult argument corresponds to the object returns by the interpreter
+	// The executionResult argument corresponds to the execution result string
+	Assert(interpretationResult starlark.Value, executionResult *string)
 }

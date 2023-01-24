@@ -1,6 +1,8 @@
 package test_engine
 
 import (
+	"context"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
@@ -17,16 +19,14 @@ import (
 	"testing"
 )
 
-var registeredBuiltin = []KurtosisPlanInstructionBaseTest{
-	&addServicesTestCase{},
-	renderTemplateTestCase1{},
-	renderTemplateTestCase2{},
-}
+const (
+	resultStarlarkVar = "result"
+)
 
 func TestAllRegisteredBuiltins(t *testing.T) {
-	for _, builtin := range registeredBuiltin {
-		testsAllKurtosisPlanInstructions(t, builtin)
-	}
+	testsAllKurtosisPlanInstructions(t, newAddServicesTestCase(t))
+	testsAllKurtosisPlanInstructions(t, newRenderTemplateTestCase1(t))
+	testsAllKurtosisPlanInstructions(t, newRenderTemplateTestCase2(t))
 }
 
 func testsAllKurtosisPlanInstructions(t *testing.T, builtin KurtosisPlanInstructionBaseTest) {
@@ -36,32 +36,22 @@ func testsAllKurtosisPlanInstructions(t *testing.T, builtin KurtosisPlanInstruct
 
 	predeclared := getBasePredeclaredDict()
 	// Add the KurtosisPlanInstruction that is being tested
-	instructionFromBuiltin, err := builtin.GetInstruction()
-	require.Nilf(t, err, "Error retrieving instruction from builtin '%s'", testId)
+	instructionFromBuiltin := builtin.GetInstruction()
 	instructionWrapper := kurtosis_plan_instruction.NewKurtosisPlanInstructionWrapper(instructionFromBuiltin, &instructionQueue)
 	predeclared[instructionWrapper.GetName()] = starlark.NewBuiltin(add_service.AddServiceBuiltinName, instructionWrapper.CreateBuiltin())
 
-	starlarkCode, err := builtin.GetStarlarkCode()
-	require.Nilf(t, err, "Error retrieving Starlark code from builtin '%s'", testId)
-	_, err = starlark.ExecFile(thread, startosis_constants.PackageIdPlaceholderForStandaloneScript, starlarkCode, predeclared)
+	starlarkCode := builtin.GetStarlarkCode()
+	globals, err := starlark.ExecFile(thread, startosis_constants.PackageIdPlaceholderForStandaloneScript, codeToExecute(starlarkCode), predeclared)
 	require.Nil(t, err, "Error interpreting Starlark code for instruction '%s'", testId)
+	interpretationResult := extractResultValue(t, globals)
 
 	instruction, ok := instructionQueue[0].(*kurtosis_plan_instruction.KurtosisPlanInstructionInternal)
 	require.True(t, ok, "Builtin expected to be a KurtosisPlanInstructionInternal, but was '%s'", reflect.TypeOf(instruction))
 
-	// check arguments matches the expected
-	expectedArguments, err := builtin.GetExpectedArguments()
-	require.Nilf(t, err, "Error retrieving expected argument from builtin '%s'", testId)
-	for _, expectedArgumentName := range expectedArguments.Keys() {
-		expectedArgumentValue, found := expectedArguments[expectedArgumentName]
-		require.True(t, found, "Unexpected error happened iterating over the argument map - key '%s' was supposed to exist in the Starlark dictionary '%v'", expectedArgumentName, expectedArguments)
-
-		var actualValue starlark.Value
-		extractionErr := instruction.GetArguments().ExtractArgumentValue(expectedArgumentName, &actualValue)
-		require.Nil(t, extractionErr, "Argument '%s' was supposed to exist in the actual arguments values set, but was not. Actual arguments were: '%s'", expectedArgumentName, instruction.GetArguments().String())
-
-		require.Equal(t, expectedArgumentValue, actualValue, "Argument value did not match the expected for test '%s'", testId)
-	}
+	// execute the instruction and run custom builtin assertions
+	executionResult, err := instruction.Execute(context.Background())
+	require.Nil(t, err, "Builtin execution threw an error: \n%v", err)
+	builtin.Assert(interpretationResult, executionResult)
 
 	// check serializing the obtained instruction falls back to the initial one
 	serializedInstruction := instruction.String()
@@ -84,4 +74,14 @@ func getBasePredeclaredDict() starlark.StringDict {
 		predeclared[kurtosisTypeConstructors.Name()] = kurtosisTypeConstructors
 	}
 	return predeclared
+}
+
+func codeToExecute(builtinStarlarkCode string) string {
+	return fmt.Sprintf("%s = %s", resultStarlarkVar, builtinStarlarkCode)
+}
+
+func extractResultValue(t *testing.T, globals starlark.StringDict) starlark.Value {
+	value, found := globals[resultStarlarkVar]
+	require.True(t, found, "Result variable could not be found in dictionary of global variables")
+	return value
 }

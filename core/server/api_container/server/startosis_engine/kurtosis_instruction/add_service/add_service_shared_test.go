@@ -17,7 +17,7 @@ func TestAddServiceShared_EntryPointArgsWithIpAddressAndRuntimeValueAreReplaced(
 	ipAddresses := map[service.ServiceName]net.IP{
 		"foo_service": net.ParseIP("172.17.3.13"),
 	}
-	serviceNetwork := service_network.NewMockServiceNetwork(ipAddresses)
+	serviceNetwork := service_network.NewMockServiceNetworkCustom(ipAddresses)
 
 	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
 	stringValueUuid, err := runtimeValueStore.CreateValue()
@@ -45,7 +45,7 @@ func TestAddServiceShared_CmdArgsWithIpAddressAndRuntimeValueAreReplaced(t *test
 	ipAddresses := map[service.ServiceName]net.IP{
 		"foo_service": net.ParseIP("172.17.3.13"),
 	}
-	serviceNetwork := service_network.NewMockServiceNetwork(ipAddresses)
+	serviceNetwork := service_network.NewMockServiceNetworkCustom(ipAddresses)
 
 	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
 	stringValueUuid, err := runtimeValueStore.CreateValue()
@@ -73,7 +73,7 @@ func TestAddServiceShared_EnvVarsWithIpAddressAndRuntimeValueAreReplaced(t *test
 	ipAddresses := map[service.ServiceName]net.IP{
 		"foo_service": net.ParseIP("172.17.3.13"),
 	}
-	serviceNetwork := service_network.NewMockServiceNetwork(ipAddresses)
+	serviceNetwork := service_network.NewMockServiceNetworkCustom(ipAddresses)
 
 	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
 	stringValueUuid, err := runtimeValueStore.CreateValue()

@@ -30,7 +30,7 @@ import (
 )
 
 var (
-	testServiceNetwork   = service_network.NewMockServiceNetwork(map[service.ServiceName]net.IP{testServiceName: testServiceIpAddress})
+	testServiceNetwork   = service_network.NewMockServiceNetworkCustom(map[service.ServiceName]net.IP{testServiceName: testServiceIpAddress})
 	testServiceIpAddress = net.ParseIP("127.0.0.1")
 )
 

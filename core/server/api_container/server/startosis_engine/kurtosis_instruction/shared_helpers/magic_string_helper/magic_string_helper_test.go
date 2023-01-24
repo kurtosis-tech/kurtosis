@@ -34,7 +34,7 @@ func TestReplaceIPAddressInString_MultipleOccurrencesOfSameStringReplaced(t *tes
 	ipAddresses := map[service.ServiceName]net.IP{
 		testServiceDependence1ServiceId: net.ParseIP(testServiceDependence1IPAddress),
 	}
-	serviceNetwork := service_network.NewMockServiceNetwork(ipAddresses)
+	serviceNetwork := service_network.NewMockServiceNetworkCustom(ipAddresses)
 	originalString := fmt.Sprintf("{{kurtosis:%v.ip_address}} something in the middle {{kurtosis:%v.ip_address}}", testServiceDependence1ServiceId, testServiceDependence1ServiceId)
 
 	expectedString := fmt.Sprintf("%v something in the middle %v", testServiceDependence1IPAddress, testServiceDependence1IPAddress)
@@ -53,7 +53,7 @@ func TestReplaceIPAddressInString_MultipleReplacesOfDifferentStrings(t *testing.
 		testServiceDependence1ServiceId: net.ParseIP(testServiceDependence1IPAddress),
 		testServiceDependence2ServiceId: net.ParseIP(testServiceDependence2IPAddress),
 	}
-	serviceNetwork := service_network.NewMockServiceNetwork(ipAddresses)
+	serviceNetwork := service_network.NewMockServiceNetworkCustom(ipAddresses)
 	originalString := fmt.Sprintf("{{kurtosis:%v.ip_address}} {{kurtosis:%v.ip_address}} {{kurtosis:%v.ip_address}}", testServiceDependence1ServiceId, testServiceDependence2ServiceId, testServiceDependence1ServiceId)
 
 	expectedString := fmt.Sprintf("%v %v %v", testServiceDependence1IPAddress, testServiceDependence2IPAddress, testServiceDependence1IPAddress)
@@ -64,7 +64,7 @@ func TestReplaceIPAddressInString_MultipleReplacesOfDifferentStrings(t *testing.
 
 func TestReplaceIPAddressInString_ReplacementFailsForUnknownServiceId(t *testing.T) {
 	ipAddresses := map[service.ServiceName]net.IP{}
-	serviceNetwork := service_network.NewMockServiceNetwork(ipAddresses)
+	serviceNetwork := service_network.NewMockServiceNetworkCustom(ipAddresses)
 	originalString := fmt.Sprintf("{{kurtosis:%v.ip_address}}", unknownServiceId)
 
 	expectedErr := fmt.Sprintf("'%v' depends on the IP address of '%v' but we don't have any registrations for it", testServiceId, unknownServiceId)
