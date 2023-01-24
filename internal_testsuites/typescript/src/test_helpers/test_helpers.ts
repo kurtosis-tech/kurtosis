@@ -92,11 +92,10 @@ const TEST_DATASTORE_VALUE = "test-value"
 
 const WAIT_FOR_GET_AVAILABILITY_STARLARK_SCRIPT = `
 def run(plan, args):
-	get_recipe = struct(
+	get_recipe = GetHttpRequestRecipe(
 		service_name = args.service_name,
 		port_id = args.port_id,
 		endpoint = args.endpoint,
-		method = "GET",
 	)
 	plan.wait(get_recipe, "code", "==", 200, args.interval, args.timeout)
 `

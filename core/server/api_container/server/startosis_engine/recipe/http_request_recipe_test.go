@@ -60,7 +60,7 @@ func TestGetHttpRequestRecipe_String(t *testing.T) {
 	require.Nil(t, err, "Unexpected error occurred")
 
 	getHttpRequestRecipeWithExtractorsString := getHttpRequestRecipeWithExtractors.String()
-	expectedStringOutputWithExtractors := `GetHttpRequestRecipe(port_id="portId", service_name="web-server", endpoint="?input=output", extract="{\"field\": \".input.*\"}")`
+	expectedStringOutputWithExtractors := `GetHttpRequestRecipe(port_id="portId", service_name="web-server", endpoint="?input=output", extract={"field": ".input.*"})`
 	require.NotNil(t, expectedStringOutputWithExtractors, getHttpRequestRecipeWithExtractorsString)
 }
 
@@ -129,7 +129,7 @@ func TestPostHttpRequestRecipe_String(t *testing.T) {
 	require.Nil(t, err, "Unexpected error occurred")
 
 	postHttpRequestRecipeWithExtractorsString := postHttpRequestRecipeWithExtractors.String()
-	expectedStringOutputWithExtractors := `PostHttpRequestRecipe(port_id="portId", service_name="web-server", endpoint="?input=output", body="body", content_type="content-type", extract="{\"field\": \".input.*\"}")`
+	expectedStringOutputWithExtractors := `PostHttpRequestRecipe(port_id="portId", service_name="web-server", endpoint="?input=output", body="body", content_type="content-type", extract={"field": ".input.*"})`
 	require.NotNil(t, expectedStringOutputWithExtractors, postHttpRequestRecipeWithExtractorsString)
 }
 

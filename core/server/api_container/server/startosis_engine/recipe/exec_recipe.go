@@ -49,7 +49,7 @@ func (recipe *ExecRecipe) String() string {
 
 	command := convertListToStarlarkList(recipe.command)
 	if command.Len() > 0 {
-		buffer.WriteString(fmt.Sprintf("%q)", command))
+		buffer.WriteString(fmt.Sprintf("%v)", command))
 	} else {
 		buffer.WriteString(fmt.Sprintf("%q)", ""))
 	}

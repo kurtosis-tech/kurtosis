@@ -14,7 +14,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
-	"go.starlark.net/starlarkstruct"
 )
 
 const (
@@ -98,21 +97,10 @@ func (instruction *ExecInstruction) ValidateAndUpdateEnvironment(environment *st
 }
 
 func (instruction *ExecInstruction) parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple, runtimeValueStore *runtime_value_store.RuntimeValueStore) *startosis_errors.InterpretationError {
-
-	var recipeConfigStruct *starlarkstruct.Struct
 	var recipeConfigExecRecipe *recipe.ExecRecipe
 
 	if err := starlark.UnpackArgs(b.Name(), args, kwargs, recipeArgName, &recipeConfigExecRecipe); err != nil {
-		//TODO: remove this and throw error when we stop supporting structs
-		if errWithStruct := starlark.UnpackArgs(b.Name(), args, kwargs, recipeArgName, &recipeConfigStruct); errWithStruct != nil {
-			return startosis_errors.NewInterpretationError(fmt.Sprintf("Error occurred while parsing recipe: %v", err.Error()))
-		}
-
-		var errorWhileParsingStruct *startosis_errors.InterpretationError
-		recipeConfigExecRecipe, errorWhileParsingStruct = kurtosis_instruction.ParseExecRecipe(recipeConfigStruct)
-		if errorWhileParsingStruct != nil {
-			return errorWhileParsingStruct
-		}
+		return startosis_errors.NewInterpretationError(fmt.Sprintf("Error occurred while parsing recipe: %v", err.Error()))
 	}
 
 	instruction.starlarkKwargs = starlark.StringDict{

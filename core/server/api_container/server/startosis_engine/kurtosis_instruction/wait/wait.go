@@ -16,7 +16,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
-	"go.starlark.net/starlarkstruct"
 	"time"
 )
 
@@ -205,12 +204,8 @@ func (instruction *WaitInstruction) parseStartosisArgs(b *starlark.Builtin, args
 	if !ok {
 		instruction.recipe, ok = recipeConfigArg.(*recipe.ExecRecipe)
 		if !ok {
-			// TODO: remove this after 2 or 3 weeks?
-			err := ensureBackwardCompatibleForWait(instruction, recipeConfigArg)
-			if err != nil {
-				return startosis_errors.NewInterpretationError("There was no valid recipe found for '%v' "+
-					"(Expected ExecRecipe or PostHttpRequestRecipe or GetHttpRequestRecipe type)", recipeConfigArg)
-			}
+			return startosis_errors.NewInterpretationError("There was no valid recipe found for '%v' "+
+				"(Expected ExecRecipe or PostHttpRequestRecipe or GetHttpRequestRecipe)", recipeConfigArg)
 		}
 	}
 
@@ -244,20 +239,4 @@ func (instruction *WaitInstruction) parseStartosisArgs(b *starlark.Builtin, args
 		return startosis_errors.NewInterpretationError("'%v' assertion requires list, got '%v'", assertionArg, targetArg.Type())
 	}
 	return nil
-}
-
-// TODO: remove this code after we stop using this -- maybe in 2 or 3 weeks?
-func ensureBackwardCompatibleForWait(instruction *WaitInstruction, recipeConfigArg starlark.Value) *startosis_errors.InterpretationError {
-	var err *startosis_errors.InterpretationError
-	recipeConfigStruct, ok := recipeConfigArg.(*starlarkstruct.Struct)
-	if !ok {
-		return startosis_errors.NewInterpretationError("Error occurred while parsing starlark value to starlark struct %v", recipeConfigArg)
-	}
-
-	instruction.recipe, err = kurtosis_instruction.ParseHttpRequestRecipe(recipeConfigStruct)
-	if err != nil {
-		instruction.recipe, err = kurtosis_instruction.ParseExecRecipe(recipeConfigStruct)
-	}
-
-	return err
 }

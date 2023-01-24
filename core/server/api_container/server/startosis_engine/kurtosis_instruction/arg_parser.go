@@ -8,7 +8,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/recipe"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkjson"
@@ -17,38 +16,20 @@ import (
 )
 
 const (
-	serviceIdArgName   = "service_name"
-	defineFactArgName  = "define_fact"
-	requestArgName     = "request"
-	execArgName        = "exec"
-	subnetworksArgName = "subnetworks"
-
-	// TODO remove this when we have the Portal as this is a temporary hack to meet the NEAR use case
-	serviceNameKey = "service_name"
-	contentTypeKey = "content_type"
-	bodyKey        = "body"
-
-	portIdKey                = "port_id"
-	requestEndpointKey       = "endpoint"
-	requestMethodEndpointKey = "method"
-
+	serviceNameArgName       = "service_name"
+	requestArgName           = "request"
+	subnetworksArgName       = "subnetworks"
 	httpRequestExtractorsKey = "extract"
-	commandArgName           = "command"
-
-	templatesAndDataArgName = "config"
-	templateFieldKey        = "template"
-	templateDataFieldKey    = "data"
-
-	getRequestMethod  = "GET"
-	postRequestMethod = "POST"
-
-	jsonParsingThreadName = "Unused thread name"
-	jsonParsingModuleId   = "Unused module id"
+	templatesAndDataArgName  = "config"
+	templateFieldKey         = "template"
+	templateDataFieldKey     = "data"
+	jsonParsingThreadName    = "Unused thread name"
+	jsonParsingModuleId      = "Unused module id"
 )
 
 func ParseServiceName(serviceIdRaw starlark.String) (service.ServiceName, *startosis_errors.InterpretationError) {
 	// TODO(gb): maybe prohibit certain characters for service ids
-	serviceName, interpretationErr := kurtosis_types.SafeCastToString(serviceIdRaw, serviceIdArgName)
+	serviceName, interpretationErr := kurtosis_types.SafeCastToString(serviceIdRaw, serviceNameArgName)
 	if interpretationErr != nil {
 		return "", interpretationErr
 	}
@@ -56,69 +37,6 @@ func ParseServiceName(serviceIdRaw starlark.String) (service.ServiceName, *start
 		return "", startosis_errors.NewInterpretationError("Service Name cannot be empty")
 	}
 	return service.ServiceName(serviceName), nil
-}
-
-// TODO: remove this method when we stop supporting struct for recipe defn
-func ParseHttpRequestRecipe(recipeConfig *starlarkstruct.Struct) (*recipe.HttpRequestRecipe, *startosis_errors.InterpretationError) {
-	serviceName, interpretationErr := extractStringValue(recipeConfig, serviceNameKey, requestArgName)
-	if interpretationErr != nil {
-		return nil, interpretationErr
-	}
-
-	portId, interpretationErr := extractStringValue(recipeConfig, portIdKey, requestArgName)
-	if interpretationErr != nil {
-		return nil, interpretationErr
-	}
-
-	endpoint, interpretationErr := extractStringValue(recipeConfig, requestEndpointKey, requestArgName)
-	if interpretationErr != nil {
-		return nil, interpretationErr
-	}
-
-	method, interpretationErr := extractStringValue(recipeConfig, requestMethodEndpointKey, requestArgName)
-	if interpretationErr != nil {
-		return nil, interpretationErr
-	}
-
-	extractors, interpretationErr := parseHttpRequestExtractors(recipeConfig)
-	if interpretationErr != nil {
-		return nil, interpretationErr
-	}
-
-	if method == getRequestMethod {
-		builtConfig := recipe.NewGetHttpRequestRecipe(service.ServiceName(serviceName), portId, endpoint, extractors)
-		return builtConfig, nil
-	} else if method == postRequestMethod {
-		contentType, interpretationErr := extractStringValue(recipeConfig, contentTypeKey, defineFactArgName)
-		if interpretationErr != nil {
-			return nil, interpretationErr
-		}
-
-		body, interpretationErr := extractStringValue(recipeConfig, bodyKey, defineFactArgName)
-		if interpretationErr != nil {
-			return nil, interpretationErr
-		}
-
-		builtConfig := recipe.NewPostHttpRequestRecipe(service.ServiceName(serviceName), portId, contentType, endpoint, body, extractors)
-		return builtConfig, nil
-	} else {
-		return nil, startosis_errors.NewInterpretationError("Define fact HTTP method not recognized")
-	}
-}
-
-// TODO: remove this method when we stop supporting struct for recipe defn
-func ParseExecRecipe(recipeConfig *starlarkstruct.Struct) (*recipe.ExecRecipe, *startosis_errors.InterpretationError) {
-	serviceName, interpretationErr := extractStringValue(recipeConfig, serviceNameKey, execArgName)
-	if interpretationErr != nil {
-		return nil, interpretationErr
-	}
-
-	command, interpretationErr := extractStringSliceValue(recipeConfig, commandArgName, execArgName)
-	if interpretationErr != nil {
-		return nil, interpretationErr
-	}
-
-	return recipe.NewExecRecipe(service.ServiceName(serviceName), command), nil
 }
 
 func ParseNonEmptyString(argName string, argValue starlark.Value) (string, *startosis_errors.InterpretationError) {
@@ -197,20 +115,6 @@ func ParseSubnetworks(subnetworksTuple starlark.Tuple) (service_network_types.Pa
 	subnetwork1 := service_network_types.PartitionID(subnetworksStr[0])
 	subnetwork2 := service_network_types.PartitionID(subnetworksStr[1])
 	return subnetwork1, subnetwork2, nil
-}
-
-// TODO: remove this method when we stop supporting struct for recipe defn
-func parseHttpRequestExtractors(recipe *starlarkstruct.Struct) (map[string]string, *startosis_errors.InterpretationError) {
-	_, err := recipe.Attr(httpRequestExtractorsKey)
-	//an error here means that no argument was found which is alright as this is an optional
-	if err != nil {
-		return map[string]string{}, nil
-	}
-	httpRequestExtractorsArg, interpretationErr := extractMapStringStringValue(recipe, httpRequestExtractorsKey, requestArgName)
-	if interpretationErr != nil {
-		return nil, interpretationErr
-	}
-	return httpRequestExtractorsArg, nil
 }
 
 func extractStringValue(structField *starlarkstruct.Struct, key string, argNameForLogging string) (string, *startosis_errors.InterpretationError) {

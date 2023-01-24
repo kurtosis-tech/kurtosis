@@ -14,7 +14,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
-	"go.starlark.net/starlarkstruct"
 )
 
 const (
@@ -53,20 +52,7 @@ type RequestInstruction struct {
 
 	runtimeValueStore *runtime_value_store.RuntimeValueStore
 	httpRequestRecipe *recipe.HttpRequestRecipe
-	recipeConfigArg   *starlarkstruct.Struct
 	resultUuid        string
-}
-
-func NewRequestInstruction(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition, runtimeValueStore *runtime_value_store.RuntimeValueStore, httpRequestRecipe *recipe.HttpRequestRecipe, recipeConfigArg *starlarkstruct.Struct, resultUuid string, starlarkKwargs starlark.StringDict) *RequestInstruction {
-	return &RequestInstruction{
-		serviceNetwork:    serviceNetwork,
-		position:          position,
-		runtimeValueStore: runtimeValueStore,
-		httpRequestRecipe: httpRequestRecipe,
-		recipeConfigArg:   recipeConfigArg,
-		resultUuid:        resultUuid,
-		starlarkKwargs:    starlarkKwargs,
-	}
 }
 
 func newEmptyGetValueInstruction(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition, recipeExecutor *runtime_value_store.RuntimeValueStore) *RequestInstruction {
@@ -75,7 +61,6 @@ func newEmptyGetValueInstruction(serviceNetwork service_network.ServiceNetwork, 
 		position:          position,
 		runtimeValueStore: recipeExecutor,
 		httpRequestRecipe: nil,
-		recipeConfigArg:   nil,
 		resultUuid:        "",
 		starlarkKwargs:    nil,
 	}
@@ -112,21 +97,10 @@ func (instruction *RequestInstruction) ValidateAndUpdateEnvironment(environment 
 }
 
 func (instruction *RequestInstruction) parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) *startosis_errors.InterpretationError {
-
-	var recipeConfigStruct *starlarkstruct.Struct
 	var recipeConfigHttpRecipe *recipe.HttpRequestRecipe
 
 	if err := starlark.UnpackArgs(b.Name(), args, kwargs, recipeArgName, &recipeConfigHttpRecipe); err != nil {
-		//TODO: remove this and throw error when we stop supporting structs
-		if errWithStruct := starlark.UnpackArgs(b.Name(), args, kwargs, recipeArgName, &recipeConfigStruct); errWithStruct != nil {
-			return startosis_errors.NewInterpretationError(fmt.Sprintf("Error occurred while parsing recipe: %v", err.Error()))
-		}
-
-		var errorWhileParsingStruct *startosis_errors.InterpretationError
-		recipeConfigHttpRecipe, errorWhileParsingStruct = kurtosis_instruction.ParseHttpRequestRecipe(recipeConfigStruct)
-		if errorWhileParsingStruct != nil {
-			return errorWhileParsingStruct
-		}
+		return startosis_errors.NewInterpretationError(fmt.Sprintf("Error occurred while parsing recipe: %v", err.Error()))
 	}
 
 	instruction.starlarkKwargs = starlark.StringDict{

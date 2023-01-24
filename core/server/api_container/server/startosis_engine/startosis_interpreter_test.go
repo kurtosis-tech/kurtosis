@@ -93,31 +93,6 @@ def run(plan):
 	require.NotEmpty(t, instructions)
 }
 
-// TODO: Remove this test once we stop supporting this.
-func TestStartosisInterpreter_DefineFactAndWait_BackwardCompatible(t *testing.T) {
-	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
-	defer packageContentProvider.RemoveAll()
-	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, runtimeValueStore)
-	script := `
-def run(plan):
-	get_recipe = struct(
-		service_name = "web-server",
-		port_id = "http-port",
-		endpoint = "?input=output",
-		method = "GET",
-		extract = {
-			"input": ".query.input"
-		}
-	)
-	response = plan.wait(get_recipe, "code", "==", 200, timeout="5m", interval="5s")
-	plan.print(response["body"])
-`
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
-	require.Nil(t, interpretationError)
-	require.NotEmpty(t, instructions)
-}
-
 func TestStartosisInterpreter_ScriptFailingSingleError(t *testing.T) {
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
@@ -588,31 +563,6 @@ def run(plan):
 	require.Len(t, instructions, 2)
 }
 
-// TODO: remove once we stop supporting this functionality
-func TestStartosisInterpreter_RequestInstruction_BackwardCompatible(t *testing.T) {
-	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
-	defer packageContentProvider.RemoveAll()
-	startosisInterpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, runtime_value_store.NewRuntimeValueStore())
-	interpreter := startosisInterpreter
-	script := `
-def run(plan):
-	get_recipe = struct(
-		service_name = "web-server",
-		port_id = "http-port",
-		endpoint = "?input=output",
-		method = "GET",
-		extract = {
-			"input": ".query.input"
-		}
-	)
-	response = plan.request(get_recipe)
-	plan.print(response["code"])`
-
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
-	require.Nil(t, interpretationError)
-	require.Len(t, instructions, 2)
-}
-
 func TestStartosisInterpreter_ImportingAValidModuleThatPreviouslyFailedToLoadSucceeds(t *testing.T) {
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
@@ -890,27 +840,6 @@ func TestStartosisInterpreter_ValidExecScript(t *testing.T) {
 def run(plan):
 	plan.print("Executing mkdir!")
 	recipe = ExecRecipe(
-		service_name = "example-datastore-server",
-		command = ["mkdir", "/tmp/foo"]
-	)
-	plan.exec(recipe = recipe)
-`
-
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
-	require.Nil(t, interpretationError)
-	require.Len(t, instructions, 2)
-}
-
-// TODO: remove this once wes top supporting this functionality
-func TestStartosisInterpreter_ValidExecScript_BackwardCompatible(t *testing.T) {
-	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
-	defer packageContentProvider.RemoveAll()
-	testRuntimeValueStore := runtime_value_store.NewRuntimeValueStore()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, testRuntimeValueStore)
-	script := `
-def run(plan):
-	plan.print("Executing mkdir!")
-	recipe = struct(
 		service_name = "example-datastore-server",
 		command = ["mkdir", "/tmp/foo"]
 	)
