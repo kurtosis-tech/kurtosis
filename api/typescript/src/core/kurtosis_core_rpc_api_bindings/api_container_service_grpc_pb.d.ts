@@ -12,6 +12,7 @@ interface IApiContainerServiceService extends grpc.ServiceDefinition<grpc.Untype
   runStarlarkPackage: grpc.MethodDefinition<api_container_service_pb.RunStarlarkPackageArgs, api_container_service_pb.StarlarkRunResponseLine>;
   startServices: grpc.MethodDefinition<api_container_service_pb.StartServicesArgs, api_container_service_pb.StartServicesResponse>;
   getServices: grpc.MethodDefinition<api_container_service_pb.GetServicesArgs, api_container_service_pb.GetServicesResponse>;
+  getExistingAndHistoricalServiceIdentifiers: grpc.MethodDefinition<google_protobuf_empty_pb.Empty, api_container_service_pb.GetExistingAndHistoricalServiceIdentifiersResponse>;
   removeService: grpc.MethodDefinition<api_container_service_pb.RemoveServiceArgs, api_container_service_pb.RemoveServiceResponse>;
   repartition: grpc.MethodDefinition<api_container_service_pb.RepartitionArgs, google_protobuf_empty_pb.Empty>;
   execCommand: grpc.MethodDefinition<api_container_service_pb.ExecCommandArgs, api_container_service_pb.ExecCommandResponse>;
@@ -33,6 +34,7 @@ export interface IApiContainerServiceServer extends grpc.UntypedServiceImplement
   runStarlarkPackage: grpc.handleServerStreamingCall<api_container_service_pb.RunStarlarkPackageArgs, api_container_service_pb.StarlarkRunResponseLine>;
   startServices: grpc.handleUnaryCall<api_container_service_pb.StartServicesArgs, api_container_service_pb.StartServicesResponse>;
   getServices: grpc.handleUnaryCall<api_container_service_pb.GetServicesArgs, api_container_service_pb.GetServicesResponse>;
+  getExistingAndHistoricalServiceIdentifiers: grpc.handleUnaryCall<google_protobuf_empty_pb.Empty, api_container_service_pb.GetExistingAndHistoricalServiceIdentifiersResponse>;
   removeService: grpc.handleUnaryCall<api_container_service_pb.RemoveServiceArgs, api_container_service_pb.RemoveServiceResponse>;
   repartition: grpc.handleUnaryCall<api_container_service_pb.RepartitionArgs, google_protobuf_empty_pb.Empty>;
   execCommand: grpc.handleUnaryCall<api_container_service_pb.ExecCommandArgs, api_container_service_pb.ExecCommandResponse>;
@@ -59,6 +61,9 @@ export class ApiContainerServiceClient extends grpc.Client {
   getServices(argument: api_container_service_pb.GetServicesArgs, callback: grpc.requestCallback<api_container_service_pb.GetServicesResponse>): grpc.ClientUnaryCall;
   getServices(argument: api_container_service_pb.GetServicesArgs, metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.GetServicesResponse>): grpc.ClientUnaryCall;
   getServices(argument: api_container_service_pb.GetServicesArgs, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.GetServicesResponse>): grpc.ClientUnaryCall;
+  getExistingAndHistoricalServiceIdentifiers(argument: google_protobuf_empty_pb.Empty, callback: grpc.requestCallback<api_container_service_pb.GetExistingAndHistoricalServiceIdentifiersResponse>): grpc.ClientUnaryCall;
+  getExistingAndHistoricalServiceIdentifiers(argument: google_protobuf_empty_pb.Empty, metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.GetExistingAndHistoricalServiceIdentifiersResponse>): grpc.ClientUnaryCall;
+  getExistingAndHistoricalServiceIdentifiers(argument: google_protobuf_empty_pb.Empty, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.GetExistingAndHistoricalServiceIdentifiersResponse>): grpc.ClientUnaryCall;
   removeService(argument: api_container_service_pb.RemoveServiceArgs, callback: grpc.requestCallback<api_container_service_pb.RemoveServiceResponse>): grpc.ClientUnaryCall;
   removeService(argument: api_container_service_pb.RemoveServiceArgs, metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.RemoveServiceResponse>): grpc.ClientUnaryCall;
   removeService(argument: api_container_service_pb.RemoveServiceArgs, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.RemoveServiceResponse>): grpc.ClientUnaryCall;

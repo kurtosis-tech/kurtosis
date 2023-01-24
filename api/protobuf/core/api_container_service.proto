@@ -20,6 +20,9 @@ service ApiContainerService {
   // Returns the IDs of the current services in the enclave
   rpc GetServices(GetServicesArgs) returns (GetServicesResponse) {};
 
+  // Returns information about all existing & historical services
+  rpc GetExistingAndHistoricalServiceIdentifiers(google.protobuf.Empty) returns (GetExistingAndHistoricalServiceIdentifiersResponse) {}
+
   // Instructs the API container to remove the given service
   rpc RemoveService(RemoveServiceArgs) returns (RemoveServiceResponse) {};
 
@@ -276,6 +279,26 @@ message GetServicesArgs {
 message GetServicesResponse {
   // "Set" from identifiers -> info about the service
   map<string, ServiceInfo> service_info = 1;
+}
+
+// ==============================================================================================
+//                                            Get Historical Services
+// ==============================================================================================
+
+// An service identifier is a collection of uuid, name and shortened uuid
+message ServiceIdentifiers {
+  // UUID of the service
+  string service_uuid = 1;
+
+  // Name of the service
+  string name = 2;
+
+  // The shortened uuid of the service
+  string shortened_uuid = 3;
+}
+
+message GetExistingAndHistoricalServiceIdentifiersResponse {
+  repeated ServiceIdentifiers allIdentifiers = 1;
 }
 
 // ==============================================================================================

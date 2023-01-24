@@ -198,6 +198,52 @@ export namespace GetEnclavesResponse {
   }
 }
 
+export class EnclaveIdentifiers extends jspb.Message {
+  getEnclaveUuid(): string;
+  setEnclaveUuid(value: string): EnclaveIdentifiers;
+
+  getName(): string;
+  setName(value: string): EnclaveIdentifiers;
+
+  getShortenedUuid(): string;
+  setShortenedUuid(value: string): EnclaveIdentifiers;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): EnclaveIdentifiers.AsObject;
+  static toObject(includeInstance: boolean, msg: EnclaveIdentifiers): EnclaveIdentifiers.AsObject;
+  static serializeBinaryToWriter(message: EnclaveIdentifiers, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): EnclaveIdentifiers;
+  static deserializeBinaryFromReader(message: EnclaveIdentifiers, reader: jspb.BinaryReader): EnclaveIdentifiers;
+}
+
+export namespace EnclaveIdentifiers {
+  export type AsObject = {
+    enclaveUuid: string,
+    name: string,
+    shortenedUuid: string,
+  }
+}
+
+export class GetExistingAndHistoricalEnclaveIdentifiersResponse extends jspb.Message {
+  getAllidentifiersList(): Array<EnclaveIdentifiers>;
+  setAllidentifiersList(value: Array<EnclaveIdentifiers>): GetExistingAndHistoricalEnclaveIdentifiersResponse;
+  clearAllidentifiersList(): GetExistingAndHistoricalEnclaveIdentifiersResponse;
+  addAllidentifiers(value?: EnclaveIdentifiers, index?: number): EnclaveIdentifiers;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): GetExistingAndHistoricalEnclaveIdentifiersResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: GetExistingAndHistoricalEnclaveIdentifiersResponse): GetExistingAndHistoricalEnclaveIdentifiersResponse.AsObject;
+  static serializeBinaryToWriter(message: GetExistingAndHistoricalEnclaveIdentifiersResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): GetExistingAndHistoricalEnclaveIdentifiersResponse;
+  static deserializeBinaryFromReader(message: GetExistingAndHistoricalEnclaveIdentifiersResponse, reader: jspb.BinaryReader): GetExistingAndHistoricalEnclaveIdentifiersResponse;
+}
+
+export namespace GetExistingAndHistoricalEnclaveIdentifiersResponse {
+  export type AsObject = {
+    allidentifiersList: Array<EnclaveIdentifiers.AsObject>,
+  }
+}
+
 export class StopEnclaveArgs extends jspb.Message {
   getEnclaveIdentifier(): string;
   setEnclaveIdentifier(value: string): StopEnclaveArgs;

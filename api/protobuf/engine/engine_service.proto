@@ -18,6 +18,8 @@ service EngineService {
   rpc CreateEnclave(CreateEnclaveArgs) returns (CreateEnclaveResponse) {};
   // Returns information about the existing enclaves
   rpc GetEnclaves(google.protobuf.Empty) returns (GetEnclavesResponse) {};
+  // Returns information about all existing & historical enclaves
+  rpc GetExistingAndHistoricalEnclaveIdentifiers(google.protobuf.Empty) returns (GetExistingAndHistoricalEnclaveIdentifiersResponse) {}
   // Stops all containers in an enclave
   rpc StopEnclave(StopEnclaveArgs) returns (google.protobuf.Empty) {};
   // Destroys an enclave, removing all artifacts associated with it
@@ -139,6 +141,26 @@ message EnclaveInfo {
 message GetEnclavesResponse {
   // Mapping of enclave_uuid -> info_about_enclave
   map<string, EnclaveInfo> enclave_info = 1;
+}
+
+// ==============================================================================================
+//                                            Get Historical Enclaves
+// ==============================================================================================
+
+// An enclave identifier is a collection of uuid, name and shortened uuid
+message EnclaveIdentifiers {
+  // UUID of the enclave
+  string enclave_uuid = 1;
+
+  // Name of the enclave
+  string name = 2;
+
+  // The shortened uuid of the enclave
+  string shortened_uuid = 3;
+}
+
+message GetExistingAndHistoricalEnclaveIdentifiersResponse {
+    repeated EnclaveIdentifiers allIdentifiers = 1;
 }
 
 // ==============================================================================================

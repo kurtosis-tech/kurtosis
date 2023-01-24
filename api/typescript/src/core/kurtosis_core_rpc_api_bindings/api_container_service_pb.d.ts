@@ -649,6 +649,52 @@ export namespace GetServicesResponse {
   }
 }
 
+export class ServiceIdentifiers extends jspb.Message {
+  getServiceUuid(): string;
+  setServiceUuid(value: string): ServiceIdentifiers;
+
+  getName(): string;
+  setName(value: string): ServiceIdentifiers;
+
+  getShortenedUuid(): string;
+  setShortenedUuid(value: string): ServiceIdentifiers;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ServiceIdentifiers.AsObject;
+  static toObject(includeInstance: boolean, msg: ServiceIdentifiers): ServiceIdentifiers.AsObject;
+  static serializeBinaryToWriter(message: ServiceIdentifiers, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ServiceIdentifiers;
+  static deserializeBinaryFromReader(message: ServiceIdentifiers, reader: jspb.BinaryReader): ServiceIdentifiers;
+}
+
+export namespace ServiceIdentifiers {
+  export type AsObject = {
+    serviceUuid: string,
+    name: string,
+    shortenedUuid: string,
+  }
+}
+
+export class GetExistingAndHistoricalServiceIdentifiersResponse extends jspb.Message {
+  getAllidentifiersList(): Array<ServiceIdentifiers>;
+  setAllidentifiersList(value: Array<ServiceIdentifiers>): GetExistingAndHistoricalServiceIdentifiersResponse;
+  clearAllidentifiersList(): GetExistingAndHistoricalServiceIdentifiersResponse;
+  addAllidentifiers(value?: ServiceIdentifiers, index?: number): ServiceIdentifiers;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): GetExistingAndHistoricalServiceIdentifiersResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: GetExistingAndHistoricalServiceIdentifiersResponse): GetExistingAndHistoricalServiceIdentifiersResponse.AsObject;
+  static serializeBinaryToWriter(message: GetExistingAndHistoricalServiceIdentifiersResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): GetExistingAndHistoricalServiceIdentifiersResponse;
+  static deserializeBinaryFromReader(message: GetExistingAndHistoricalServiceIdentifiersResponse, reader: jspb.BinaryReader): GetExistingAndHistoricalServiceIdentifiersResponse;
+}
+
+export namespace GetExistingAndHistoricalServiceIdentifiersResponse {
+  export type AsObject = {
+    allidentifiersList: Array<ServiceIdentifiers.AsObject>,
+  }
+}
+
 export class RemoveServiceArgs extends jspb.Message {
   getServiceIdentifier(): string;
   setServiceIdentifier(value: string): RemoveServiceArgs;

@@ -88,6 +88,35 @@ Get and start a service container logs stream (showed in ascending order, with t
 **Returns**
 * `serviceLogsStreamContent`: The [ServiceLogsStreamContent][servicelogsstreamcontent] object which wrap all the information coming from the logs stream.
 
+### `getHistoricalAndExistingEnclaveIdentifiers() -> EnclaveIdentifiers enclaveIdentifiers`
+
+Get all (active & deleted) historical identifiers (name, uuid, shortened uuid) for the currently
+running Kurtosis engine.
+
+**Returns**
+* `enclaveIdentifiers` The [EnclaveIdentifiers][enclave-identifiers] which provides user-friendly ways to lookup enclave identifier information.
+
+EnclaveIdentifiers
+-------------------
+This class is a representation of identifiers of enclaves.
+
+### `getEnclaveUuidForIdentifier(string identifier) -> EnclaveUUID enclaveUuid, Error`
+Returns the UUID that matches the given identifier. If there are no matches it returns
+an error instead.
+
+**Args**
+* `identifier`: A enclave identifier string
+
+**Returns**
+* `enclaveUuid`: The UUID for the enclave identified by the `identifier`.
+
+### `getOrderedListOfNamesAndUuids() -> []String nameAndUuids`
+Returns an ordered list of names and uuids for all the enclaves registered with the currently
+running Kurtosis engine. This is useful if users want to enumerate all enclave names & uuids for the engine, say for an autocomplete like function.
+
+**Returns**
+* `nameAndUuids`: This list is a concatenation of sorted names followed by sorted uuids.
+
 ServiceLogsStreamContent
 ------------------------
 This class is the representation of the content sent during a service logs stream communication. This wrapper includes the service's logs content and the not found service UUIDs.
@@ -336,6 +365,34 @@ Downloads a files-containing `.tgz` from the given URL to the Kurtosis engine, s
 **Returns**
 
 * `uuid`: A unique ID as a string identifying the downloaded, which can be used in [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
+
+### `getHistoricalAndExistingServiceIdentifiers() -> ServiceIdentifiers serviceIdentifiers`
+
+Get all (active & deleted) historical identifiers (name, uuid, shortened uuid) for services for the enclave represented by the [EnclaveContext][enclavecontext].
+
+**Returns**
+* `serviceIdentifiers` The [ServiceIdentifiers][service-identifiers] which provides user-friendly ways to lookup service identifier information.
+
+ServiceIdentifiers
+-------------------
+This class is a representation of service identifiers for a given enclave.
+
+### `getServiceUuidForIdentifier(string identifier) -> ServiceUUID serviceUUID, Error`
+Returns the UUID that matches the given identifier. If there are no matches it returns
+an error instead.
+
+**Args**
+* `identifier`: A service identifier string
+
+**Returns**
+* `enclaveUuid`: The UUID for the service identified by the `identifier`.
+
+### `getOrderedListOfNamesAndUuids() -> []String nameAndUuids`
+Returns an ordered list of names and uuids for all the services in the enclave. This is useful
+if users want to enumerate all service names & uuids for the enclave, say for an autocomplete like function.
+
+**Returns**
+* `nameAndUuids`: This list is a concatenation of sorted names followed by sorted uuids.
 
 ModuleContext
 -------------
@@ -604,3 +661,5 @@ the `Float64` method on the `json.Number` first, so above would look like `{{pri
 
 [enclaveinfo]: #enclaveinfo
 [enclaves]: #enclaves
+[enclave-identifiers]: #enclaveidentifiers
+[service-identifiers]: #serviceidentifiers

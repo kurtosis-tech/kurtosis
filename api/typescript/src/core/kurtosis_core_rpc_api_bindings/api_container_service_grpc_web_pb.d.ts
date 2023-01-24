@@ -33,6 +33,13 @@ export class ApiContainerServiceClient {
                response: api_container_service_pb.GetServicesResponse) => void
   ): grpcWeb.ClientReadableStream<api_container_service_pb.GetServicesResponse>;
 
+  getExistingAndHistoricalServiceIdentifiers(
+    request: google_protobuf_empty_pb.Empty,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: api_container_service_pb.GetExistingAndHistoricalServiceIdentifiersResponse) => void
+  ): grpcWeb.ClientReadableStream<api_container_service_pb.GetExistingAndHistoricalServiceIdentifiersResponse>;
+
   removeService(
     request: api_container_service_pb.RemoveServiceArgs,
     metadata: grpcWeb.Metadata | undefined,
@@ -143,6 +150,11 @@ export class ApiContainerServicePromiseClient {
     request: api_container_service_pb.GetServicesArgs,
     metadata?: grpcWeb.Metadata
   ): Promise<api_container_service_pb.GetServicesResponse>;
+
+  getExistingAndHistoricalServiceIdentifiers(
+    request: google_protobuf_empty_pb.Empty,
+    metadata?: grpcWeb.Metadata
+  ): Promise<api_container_service_pb.GetExistingAndHistoricalServiceIdentifiersResponse>;
 
   removeService(
     request: api_container_service_pb.RemoveServiceArgs,

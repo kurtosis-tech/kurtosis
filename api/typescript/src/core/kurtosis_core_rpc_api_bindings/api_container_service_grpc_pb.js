@@ -49,6 +49,17 @@ function deserialize_api_container_api_ExecCommandResponse(buffer_arg) {
   return api_container_service_pb.ExecCommandResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_api_container_api_GetExistingAndHistoricalServiceIdentifiersResponse(arg) {
+  if (!(arg instanceof api_container_service_pb.GetExistingAndHistoricalServiceIdentifiersResponse)) {
+    throw new Error('Expected argument of type api_container_api.GetExistingAndHistoricalServiceIdentifiersResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_GetExistingAndHistoricalServiceIdentifiersResponse(buffer_arg) {
+  return api_container_service_pb.GetExistingAndHistoricalServiceIdentifiersResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_api_container_api_GetServicesArgs(arg) {
   if (!(arg instanceof api_container_service_pb.GetServicesArgs)) {
     throw new Error('Expected argument of type api_container_api.GetServicesArgs');
@@ -351,6 +362,18 @@ getServices: {
     requestDeserialize: deserialize_api_container_api_GetServicesArgs,
     responseSerialize: serialize_api_container_api_GetServicesResponse,
     responseDeserialize: deserialize_api_container_api_GetServicesResponse,
+  },
+  // Returns information about all existing & historical services
+getExistingAndHistoricalServiceIdentifiers: {
+    path: '/api_container_api.ApiContainerService/GetExistingAndHistoricalServiceIdentifiers',
+    requestStream: false,
+    responseStream: false,
+    requestType: google_protobuf_empty_pb.Empty,
+    responseType: api_container_service_pb.GetExistingAndHistoricalServiceIdentifiersResponse,
+    requestSerialize: serialize_google_protobuf_Empty,
+    requestDeserialize: deserialize_google_protobuf_Empty,
+    responseSerialize: serialize_api_container_api_GetExistingAndHistoricalServiceIdentifiersResponse,
+    responseDeserialize: deserialize_api_container_api_GetExistingAndHistoricalServiceIdentifiersResponse,
   },
   // Instructs the API container to remove the given service
 removeService: {

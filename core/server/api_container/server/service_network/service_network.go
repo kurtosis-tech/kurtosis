@@ -80,6 +80,8 @@ type ServiceNetwork interface {
 
 	GetServiceNames() map[service.ServiceName]bool
 
+	GetExistingAndHistoricalServiceIdentifiers() []*kurtosis_core_rpc_api_bindings.ServiceIdentifiers
+
 	GetIPAddressForService(serviceName service.ServiceName) (net.IP, bool)
 
 	RenderTemplates(templatesAndDataByDestinationRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, artifactName string) (enclave_data_directory.FilesArtifactUUID, error)

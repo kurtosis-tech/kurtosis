@@ -379,6 +379,11 @@ func (apicService ApiContainerService) GetServices(ctx context.Context, args *ku
 	return resp, nil
 }
 
+func (apicService ApiContainerService) GetExistingAndHistoricalServiceIdentifiers(_ context.Context, _ *emptypb.Empty) (*kurtosis_core_rpc_api_bindings.GetExistingAndHistoricalServiceIdentifiersResponse, error) {
+	allIdentifiers := apicService.serviceNetwork.GetExistingAndHistoricalServiceIdentifiers()
+	return &kurtosis_core_rpc_api_bindings.GetExistingAndHistoricalServiceIdentifiersResponse{AllIdentifiers: allIdentifiers}, nil
+}
+
 func (apicService ApiContainerService) UploadFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.UploadFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse, error) {
 
 	filesArtifactUuid, err := apicService.serviceNetwork.UploadFilesArtifact(args.Data, args.Name)

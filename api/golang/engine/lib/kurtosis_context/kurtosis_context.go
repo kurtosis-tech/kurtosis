@@ -267,6 +267,16 @@ func (kurtosisCtx *KurtosisContext) GetServiceLogs(
 	return serviceLogsStreamContentChan, cancelCtxFunc, nil
 }
 
+// Docs available at https://docs.kurtosis.com/sdk#gethistoricalenclaveidentifiers---enclaveidentifiers-enclaveidentifiers
+func (kurtosisCtx *KurtosisContext) GetExistingAndHistoricalEnclaveIdentifiers(ctx context.Context) (*EnclaveIdentifiers, error) {
+	historicalEnclaveIdentifiers, err := kurtosisCtx.client.GetExistingAndHistoricalEnclaveIdentifiers(ctx, &emptypb.Empty{})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while fetching existing and historical enclave identifiers")
+	}
+
+	return newEnclaveIdentifiers(historicalEnclaveIdentifiers.AllIdentifiers), nil
+}
+
 // ====================================================================================================
 //
 //	Private helper methods

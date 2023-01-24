@@ -151,6 +151,20 @@ func (service *EngineGatewayServiceServer) GetEnclaves(ctx context.Context, in *
 	return remoteEngineResponse, nil
 }
 
+func (service *EngineGatewayServiceServer) GetExistingAndHistoricalEnclaveIdentifiers(ctx context.Context, args *emptypb.Empty) (*kurtosis_engine_rpc_api_bindings.GetExistingAndHistoricalEnclaveIdentifiersResponse, error) {
+	remoteEngineClient, err := service.engineClientSupplier.GetEngineClient()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Expected to be able to get a client for a live Kurtosis engine, instead a non nil error was returned")
+	}
+
+	response, err := remoteEngineClient.GetExistingAndHistoricalEnclaveIdentifiers(ctx, args)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred calling remote engine to get historical identifiers enclave")
+	}
+
+	return response, nil
+}
+
 func (service *EngineGatewayServiceServer) StopEnclave(ctx context.Context, args *kurtosis_engine_rpc_api_bindings.StopEnclaveArgs) (*emptypb.Empty, error) {
 	remoteEngineClient, err := service.engineClientSupplier.GetEngineClient()
 	if err != nil {

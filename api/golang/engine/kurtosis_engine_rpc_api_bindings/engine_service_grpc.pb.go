@@ -32,6 +32,8 @@ type EngineServiceClient interface {
 	CreateEnclave(ctx context.Context, in *CreateEnclaveArgs, opts ...grpc.CallOption) (*CreateEnclaveResponse, error)
 	// Returns information about the existing enclaves
 	GetEnclaves(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetEnclavesResponse, error)
+	// Returns information about all existing & historical enclaves
+	GetExistingAndHistoricalEnclaveIdentifiers(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetExistingAndHistoricalEnclaveIdentifiersResponse, error)
 	// Stops all containers in an enclave
 	StopEnclave(ctx context.Context, in *StopEnclaveArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Destroys an enclave, removing all artifacts associated with it
@@ -71,6 +73,15 @@ func (c *engineServiceClient) CreateEnclave(ctx context.Context, in *CreateEncla
 func (c *engineServiceClient) GetEnclaves(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetEnclavesResponse, error) {
 	out := new(GetEnclavesResponse)
 	err := c.cc.Invoke(ctx, "/engine_api.EngineService/GetEnclaves", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *engineServiceClient) GetExistingAndHistoricalEnclaveIdentifiers(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetExistingAndHistoricalEnclaveIdentifiersResponse, error) {
+	out := new(GetExistingAndHistoricalEnclaveIdentifiersResponse)
+	err := c.cc.Invoke(ctx, "/engine_api.EngineService/GetExistingAndHistoricalEnclaveIdentifiers", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -149,6 +160,8 @@ type EngineServiceServer interface {
 	CreateEnclave(context.Context, *CreateEnclaveArgs) (*CreateEnclaveResponse, error)
 	// Returns information about the existing enclaves
 	GetEnclaves(context.Context, *emptypb.Empty) (*GetEnclavesResponse, error)
+	// Returns information about all existing & historical enclaves
+	GetExistingAndHistoricalEnclaveIdentifiers(context.Context, *emptypb.Empty) (*GetExistingAndHistoricalEnclaveIdentifiersResponse, error)
 	// Stops all containers in an enclave
 	StopEnclave(context.Context, *StopEnclaveArgs) (*emptypb.Empty, error)
 	// Destroys an enclave, removing all artifacts associated with it
@@ -171,6 +184,9 @@ func (UnimplementedEngineServiceServer) CreateEnclave(context.Context, *CreateEn
 }
 func (UnimplementedEngineServiceServer) GetEnclaves(context.Context, *emptypb.Empty) (*GetEnclavesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetEnclaves not implemented")
+}
+func (UnimplementedEngineServiceServer) GetExistingAndHistoricalEnclaveIdentifiers(context.Context, *emptypb.Empty) (*GetExistingAndHistoricalEnclaveIdentifiersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetExistingAndHistoricalEnclaveIdentifiers not implemented")
 }
 func (UnimplementedEngineServiceServer) StopEnclave(context.Context, *StopEnclaveArgs) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StopEnclave not implemented")
@@ -246,6 +262,24 @@ func _EngineService_GetEnclaves_Handler(srv interface{}, ctx context.Context, de
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(EngineServiceServer).GetEnclaves(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _EngineService_GetExistingAndHistoricalEnclaveIdentifiers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EngineServiceServer).GetExistingAndHistoricalEnclaveIdentifiers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/engine_api.EngineService/GetExistingAndHistoricalEnclaveIdentifiers",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EngineServiceServer).GetExistingAndHistoricalEnclaveIdentifiers(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -343,6 +377,10 @@ var EngineService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetEnclaves",
 			Handler:    _EngineService_GetEnclaves_Handler,
+		},
+		{
+			MethodName: "GetExistingAndHistoricalEnclaveIdentifiers",
+			Handler:    _EngineService_GetExistingAndHistoricalEnclaveIdentifiers_Handler,
 		},
 		{
 			MethodName: "StopEnclave",

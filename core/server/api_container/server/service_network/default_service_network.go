@@ -51,10 +51,9 @@ const (
 
 	ensureCompressedFileIsLesserThanGRPCLimit = false
 
-	emptyCollectionLength                             = 0
-	exactlyOneShortenedUuidMatch                      = 1
-	defaultValueForTargetIndexForShortenedUuidMatches = -1
-	maxConcurrentServiceStart                         = 4
+	emptyCollectionLength        = 0
+	exactlyOneShortenedUuidMatch = 1
+	maxConcurrentServiceStart    = 4
 )
 
 var (
@@ -105,13 +104,8 @@ type DefaultServiceNetwork struct {
 	// this because the API container is the only client that modifies service state
 	registeredServiceInfo map[service.ServiceName]*service.ServiceRegistration
 
-	// This map, maps from a uuid to a ServiceName as our service registration is keyed by this.
-	// This is point in time unique, a service that is removed, will have its naming removed
-	serviceUuidToServiceName map[service.ServiceUUID]service.ServiceName
-
-	// This map, maps from a uuid to a ServiceName as our service registration is keyed by this.
-	// This is a map -> array as there can be multiple matches
-	serviceShortenedUuidToName map[string][]service.ServiceName
+	// This contains all service identifiers ever successfully created, this is append only
+	allExistingAndHistoricalIdentifiers []*kurtosis_core_rpc_api_bindings.ServiceIdentifiers
 }
 
 func NewDefaultServiceNetwork(
@@ -129,21 +123,20 @@ func NewDefaultServiceNetwork(
 		partition_topology.ConnectionAllowed,
 	)
 	return &DefaultServiceNetwork{
-		enclaveUuid:                enclaveUuid,
-		apiContainerIpAddress:      apiContainerIpAddr,
-		apiContainerGrpcPortNum:    apiContainerGrpcPortNum,
-		apiContainerVersion:        apiContainerVersion,
-		mutex:                      &sync.Mutex{},
-		isPartitioningEnabled:      isPartitioningEnabled,
-		kurtosisBackend:            kurtosisBackend,
-		enclaveDataDir:             enclaveDataDir,
-		topology:                   networkTopology,
-		networkingSidecars:         map[service.ServiceName]networking_sidecar.NetworkingSidecarWrapper{},
-		networkSidecarsLock:        &sync.Mutex{},
-		networkingSidecarManager:   networkingSidecarManager,
-		registeredServiceInfo:      map[service.ServiceName]*service.ServiceRegistration{},
-		serviceUuidToServiceName:   map[service.ServiceUUID]service.ServiceName{},
-		serviceShortenedUuidToName: map[string][]service.ServiceName{},
+		enclaveUuid:                         enclaveUuid,
+		apiContainerIpAddress:               apiContainerIpAddr,
+		apiContainerGrpcPortNum:             apiContainerGrpcPortNum,
+		apiContainerVersion:                 apiContainerVersion,
+		mutex:                               &sync.Mutex{},
+		isPartitioningEnabled:               isPartitioningEnabled,
+		kurtosisBackend:                     kurtosisBackend,
+		enclaveDataDir:                      enclaveDataDir,
+		topology:                            networkTopology,
+		networkingSidecars:                  map[service.ServiceName]networking_sidecar.NetworkingSidecarWrapper{},
+		networkSidecarsLock:                 &sync.Mutex{},
+		networkingSidecarManager:            networkingSidecarManager,
+		registeredServiceInfo:               map[service.ServiceName]*service.ServiceRegistration{},
+		allExistingAndHistoricalIdentifiers: []*kurtosis_core_rpc_api_bindings.ServiceIdentifiers{},
 	}
 }
 
@@ -455,6 +448,17 @@ func (network *DefaultServiceNetwork) StartServices(
 			result = append(result, serviceName)
 		}
 		return nil, nil, stacktrace.NewError("This is a Kurtosis internal bug. The batch of services being started does not fit the number of services that were requested. (service started: '%v', requested: '%v')", result, requested)
+	}
+
+	for _, service := range startedServices {
+		serviceNameStr := string(service.GetRegistration().GetName())
+		serviceUuidStr := string(service.GetRegistration().GetUUID())
+		shortenedUuidStr := uuid_generator.ShortenedUUIDString(serviceUuidStr)
+		network.allExistingAndHistoricalIdentifiers = append(network.allExistingAndHistoricalIdentifiers, &kurtosis_core_rpc_api_bindings.ServiceIdentifiers{
+			ServiceUuid:   serviceUuidStr,
+			Name:          serviceNameStr,
+			ShortenedUuid: shortenedUuidStr,
+		})
 	}
 
 	batchSuccessfullyStarted = true
@@ -850,6 +854,10 @@ func (network *DefaultServiceNetwork) IsNetworkPartitioningEnabled() bool {
 	return network.isPartitioningEnabled
 }
 
+func (network *DefaultServiceNetwork) GetExistingAndHistoricalServiceIdentifiers() []*kurtosis_core_rpc_api_bindings.ServiceIdentifiers {
+	return network.allExistingAndHistoricalIdentifiers
+}
+
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================
@@ -1003,11 +1011,7 @@ func (network *DefaultServiceNetwork) registerService(
 		}
 	}()
 
-	serviceUuidStr := string(serviceRegistration.GetUUID())
-	shortenedServiceUuid := uuid_generator.ShortenedUUIDString(serviceUuidStr)
 	network.registeredServiceInfo[serviceName] = serviceRegistration
-	network.serviceUuidToServiceName[serviceRegistration.GetUUID()] = serviceRegistration.GetName()
-	network.serviceShortenedUuidToName[shortenedServiceUuid] = append(network.serviceShortenedUuidToName[shortenedServiceUuid], serviceRegistration.GetName())
 	// remove service from the registered service map is something fails downstream
 	defer func() {
 		if serviceSuccessfullyRegistered {
@@ -1547,41 +1551,32 @@ func (network *DefaultServiceNetwork) uploadFilesArtifactUnlocked(data []byte, a
 
 // This isn't thread safe and must be called from a thread safe context
 func (network *DefaultServiceNetwork) cleanupInternalMapsUnlocked(serviceName service.ServiceName) {
-	registration, found := network.registeredServiceInfo[serviceName]
+	_, found := network.registeredServiceInfo[serviceName]
 	if !found {
 		return
 	}
-	uuid := registration.GetUUID()
-	shortenedUuid := uuid_generator.ShortenedUUIDString(string(uuid))
 	delete(network.registeredServiceInfo, serviceName)
-	delete(network.serviceUuidToServiceName, uuid)
-	if serviceNames, found := network.serviceShortenedUuidToName[shortenedUuid]; found {
-		if len(serviceNames) == exactlyOneShortenedUuidMatch {
-			delete(network.serviceShortenedUuidToName, shortenedUuid)
-			return
-		} else if len(serviceNames) > exactlyOneShortenedUuidMatch {
-			targetIndex := defaultValueForTargetIndexForShortenedUuidMatches
-			for index, targetServiceName := range serviceNames {
-				if targetServiceName == serviceName {
-					targetIndex = index
-				}
-			}
-			if targetIndex != defaultValueForTargetIndexForShortenedUuidMatches {
-				network.serviceShortenedUuidToName[shortenedUuid] = append(serviceNames[0:targetIndex], serviceNames[targetIndex+1:]...)
-			}
-		}
-	}
 }
 
 // This isn't thread safe and must be called from a thread safe context
 func (network *DefaultServiceNetwork) getServiceNameForIdentifierUnlocked(serviceIdentifier string) (service.ServiceName, error) {
 	maybeServiceUuid := service.ServiceUUID(serviceIdentifier)
-	if serviceName, found := network.serviceUuidToServiceName[maybeServiceUuid]; found {
+	serviceUuidToServiceName := map[service.ServiceUUID]service.ServiceName{}
+	serviceShortenedUuidToServiceName := map[string][]service.ServiceName{}
+
+	for serviceName, registration := range network.registeredServiceInfo {
+		serviceUuid := registration.GetUUID()
+		serviceShortenedUuid := uuid_generator.ShortenedUUIDString(string(serviceUuid))
+		serviceUuidToServiceName[serviceUuid] = serviceName
+		serviceShortenedUuidToServiceName[serviceShortenedUuid] = append(serviceShortenedUuidToServiceName[serviceShortenedUuid], serviceName)
+	}
+
+	if serviceName, found := serviceUuidToServiceName[maybeServiceUuid]; found {
 		return serviceName, nil
 	}
 
 	maybeShortenedUuid := serviceIdentifier
-	if serviceNames, found := network.serviceShortenedUuidToName[maybeShortenedUuid]; found {
+	if serviceNames, found := serviceShortenedUuidToServiceName[maybeShortenedUuid]; found {
 		if len(serviceNames) == exactlyOneShortenedUuidMatch {
 			return serviceNames[0], nil
 		} else {

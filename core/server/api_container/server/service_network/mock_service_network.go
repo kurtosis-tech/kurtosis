@@ -134,3 +134,7 @@ func (m *MockServiceNetwork) UploadFilesArtifact(_ []byte, _ string) (enclave_da
 func (m *MockServiceNetwork) IsNetworkPartitioningEnabled() bool {
 	panic(unimplementedMsg)
 }
+
+func (m *MockServiceNetwork) GetExistingAndHistoricalServiceIdentifiers() []*kurtosis_core_rpc_api_bindings.ServiceIdentifiers {
+	panic(unimplementedMsg)
+}

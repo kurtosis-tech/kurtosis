@@ -31,14 +31,14 @@ func NewServiceIdentifierArg(
 		IsOptional:            isOptional,
 		DefaultValue:          "",
 		IsGreedy:              isGreedy,
-		ArgCompletionProvider: args.NewManualCompletionsProvider(getOrderedServiceIdentifiersWithoutShortenedUuids),
+		ArgCompletionProvider: args.NewManualCompletionsProvider(getCompletionsOfActiveServices),
 		ValidationFunc:        validate,
 	}
 }
 
 // TODO we added this constructor for allowing 'service logs' command to disable the validation for consuming logs from removed or stopped enclaves
 // TODO after https://github.com/kurtosis-tech/kurtosis/issues/879 is done
-func NewServiceUUIDArgWithValidationDisabled(
+func NewHistoricalServiceIdentifierArgWithValidationDisabled(
 	argKey string,
 	isOptional bool,
 	isGreedy bool,
@@ -51,7 +51,7 @@ func NewServiceUUIDArgWithValidationDisabled(
 		IsOptional:            isOptional,
 		DefaultValue:          "",
 		IsGreedy:              isGreedy,
-		ArgCompletionProvider: args.NewManualCompletionsProvider(getOrderedServiceIdentifiersWithoutShortenedUuids),
+		ArgCompletionProvider: args.NewManualCompletionsProvider(getCompletionsForExistingAndHistoricalServices),
 		ValidationFunc:        noValidationFunc,
 	}
 }
@@ -88,7 +88,34 @@ func getServiceUuidsAndNamesForEnclave(ctx context.Context, enclaveIdentifier st
 	return serviceUuids, serviceNamesToUuid, nil
 }
 
-func getOrderedServiceIdentifiersWithoutShortenedUuids(ctx context.Context, flags *flags.ParsedFlags, previousArgs *args.ParsedArgs) ([]string, error) {
+func getCompletionsForExistingAndHistoricalServices(ctx context.Context, _ *flags.ParsedFlags, previousArgs *args.ParsedArgs) ([]string, error) {
+	enclaveIdentifier, err := previousArgs.GetNonGreedyArg(enclaveIdentifierArgKey)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave identifier using key '%v'", enclaveIdentifierArgKey)
+	}
+
+	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred connecting to the Kurtosis engine for retrieving the service UUIDs & names for tab completion",
+		)
+	}
+
+	enclaveContext, err := kurtosisCtx.GetEnclaveContext(ctx, enclaveIdentifier)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while fetching enclave for identifier '%v'", enclaveIdentifier)
+	}
+
+	serviceIdentifiers, err := enclaveContext.GetExistingAndHistoricalIdentifiers(ctx)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while fetching services for enclave '%v'", enclaveContext.GetEnclaveName())
+	}
+
+	return serviceIdentifiers.GetOrderedListOfNamesAndUuids(), nil
+}
+
+func getCompletionsOfActiveServices(ctx context.Context, flags *flags.ParsedFlags, previousArgs *args.ParsedArgs) ([]string, error) {
 	enclaveIdentifier, err := previousArgs.GetNonGreedyArg(enclaveIdentifierArgKey)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave identifier using key '%v'", enclaveIdentifierArgKey)

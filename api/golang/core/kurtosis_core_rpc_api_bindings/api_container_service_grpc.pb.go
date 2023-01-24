@@ -31,6 +31,8 @@ type ApiContainerServiceClient interface {
 	StartServices(ctx context.Context, in *StartServicesArgs, opts ...grpc.CallOption) (*StartServicesResponse, error)
 	// Returns the IDs of the current services in the enclave
 	GetServices(ctx context.Context, in *GetServicesArgs, opts ...grpc.CallOption) (*GetServicesResponse, error)
+	// Returns information about all existing & historical services
+	GetExistingAndHistoricalServiceIdentifiers(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetExistingAndHistoricalServiceIdentifiersResponse, error)
 	// Instructs the API container to remove the given service
 	RemoveService(ctx context.Context, in *RemoveServiceArgs, opts ...grpc.CallOption) (*RemoveServiceResponse, error)
 	// Instructs the API container to repartition the enclave
@@ -142,6 +144,15 @@ func (c *apiContainerServiceClient) StartServices(ctx context.Context, in *Start
 func (c *apiContainerServiceClient) GetServices(ctx context.Context, in *GetServicesArgs, opts ...grpc.CallOption) (*GetServicesResponse, error) {
 	out := new(GetServicesResponse)
 	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/GetServices", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *apiContainerServiceClient) GetExistingAndHistoricalServiceIdentifiers(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetExistingAndHistoricalServiceIdentifiersResponse, error) {
+	out := new(GetExistingAndHistoricalServiceIdentifiersResponse)
+	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/GetExistingAndHistoricalServiceIdentifiers", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -268,6 +279,8 @@ type ApiContainerServiceServer interface {
 	StartServices(context.Context, *StartServicesArgs) (*StartServicesResponse, error)
 	// Returns the IDs of the current services in the enclave
 	GetServices(context.Context, *GetServicesArgs) (*GetServicesResponse, error)
+	// Returns information about all existing & historical services
+	GetExistingAndHistoricalServiceIdentifiers(context.Context, *emptypb.Empty) (*GetExistingAndHistoricalServiceIdentifiersResponse, error)
 	// Instructs the API container to remove the given service
 	RemoveService(context.Context, *RemoveServiceArgs) (*RemoveServiceResponse, error)
 	// Instructs the API container to repartition the enclave
@@ -310,6 +323,9 @@ func (UnimplementedApiContainerServiceServer) StartServices(context.Context, *St
 }
 func (UnimplementedApiContainerServiceServer) GetServices(context.Context, *GetServicesArgs) (*GetServicesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetServices not implemented")
+}
+func (UnimplementedApiContainerServiceServer) GetExistingAndHistoricalServiceIdentifiers(context.Context, *emptypb.Empty) (*GetExistingAndHistoricalServiceIdentifiersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetExistingAndHistoricalServiceIdentifiers not implemented")
 }
 func (UnimplementedApiContainerServiceServer) RemoveService(context.Context, *RemoveServiceArgs) (*RemoveServiceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveService not implemented")
@@ -433,6 +449,24 @@ func _ApiContainerService_GetServices_Handler(srv interface{}, ctx context.Conte
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ApiContainerServiceServer).GetServices(ctx, req.(*GetServicesArgs))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ApiContainerService_GetExistingAndHistoricalServiceIdentifiers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApiContainerServiceServer).GetExistingAndHistoricalServiceIdentifiers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api_container_api.ApiContainerService/GetExistingAndHistoricalServiceIdentifiers",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApiContainerServiceServer).GetExistingAndHistoricalServiceIdentifiers(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -667,6 +701,10 @@ var ApiContainerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetServices",
 			Handler:    _ApiContainerService_GetServices_Handler,
+		},
+		{
+			MethodName: "GetExistingAndHistoricalServiceIdentifiers",
+			Handler:    _ApiContainerService_GetExistingAndHistoricalServiceIdentifiers_Handler,
 		},
 		{
 			MethodName: "RemoveService",

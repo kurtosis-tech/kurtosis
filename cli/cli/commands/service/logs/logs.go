@@ -109,14 +109,14 @@ var ServiceLogsCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 	Args: []*args.ArgConfig{
 		//TODO disabling enclaveID validation and serviceUUID validation for allowing consuming logs from removed or stopped enclaves
 		//TODO we should enable them when #879 is ready: https://github.com/kurtosis-tech/kurtosis/issues/879
-		enclave_id_arg.NewEnclaveIdentifierArgWithValidationDisabled(
+		enclave_id_arg.NewHistoricalEnclaveIdentifiersArgWithValidationDisabled(
 			enclaveIdentifierArgKey,
 			isEnclaveIdArgOptional,
 			isEnclaveIdArgGreedy,
 		),
 		// TODO use the `NewServiceIdentifierArg` instead when we start storing identifiers in DB
 		// TODO we should fix this after https://github.com/kurtosis-tech/kurtosis/issues/879
-		service_identifier_arg.NewServiceUUIDArgWithValidationDisabled(
+		service_identifier_arg.NewHistoricalServiceIdentifierArgWithValidationDisabled(
 			serviceIdentifierArgKey,
 			isServiceIdentifierArgOptional,
 			isServiceIdentifierArgGreedy,
@@ -313,18 +313,46 @@ func getLogLineFilterFromFilterFlagValues(matchTextStr string, matchRegexStr str
 
 // This function works makes a best effort to get the most accurate enclave uuid and service uuid for the passed valeus
 // defaults to assuming the passed value are uuids
+// this function will be a lot cleaner after the object ids are stored in a database
+// https://github.com/kurtosis-tech/kurtosis/issues/343
 func getEnclaveAndServiceUuidForIdentifiers(kurtosisCtx *kurtosis_context.KurtosisContext, ctx context.Context, enclaveIdentifier string, serviceIdentifier string) (enclave.EnclaveUUID, services.ServiceUUID) {
 	enclaveUuid := enclave.EnclaveUUID(enclaveIdentifier)
 	serviceUuid := services.ServiceUUID(serviceIdentifier)
-
-	enclaveCtx, err := kurtosisCtx.GetEnclaveContext(ctx, enclaveIdentifier)
+	// check if we can can find the UUID in the historical enclave identifiers
+	historicalEnclaveIdentifiers, err := kurtosisCtx.GetExistingAndHistoricalEnclaveIdentifiers(ctx)
 	if err == nil {
-		serviceCtx, err := enclaveCtx.GetServiceContext(serviceIdentifier)
+		enclaveUuidFromHistoricalValues, err := historicalEnclaveIdentifiers.GetEnclaveUuidForIdentifier(enclaveIdentifier)
 		if err == nil {
-			return enclaveUuid, serviceCtx.GetServiceUUID()
+			// set the enclaveUuid to the one from the historical identifiers in case there is a match
+			enclaveUuid = enclave.EnclaveUUID(enclaveUuidFromHistoricalValues)
 		}
+	}
+
+	// we need to get the enclave context to get the historical service identifiers for the enclave
+	// we also need it to get the `ServiceContext`
+	enclaveCtx, err := kurtosisCtx.GetEnclaveContext(ctx, enclaveIdentifier)
+	if err != nil {
+		// we couldn't get the enclaveCtx we go with service id passed as the serviceUuid
+		// for the enclave either we got it from the historical values or we return what was passed to the function
 		return enclaveUuid, serviceUuid
 	}
 
+	// we see if we can get historical identifiers
+	serviceIdentifiers, err := enclaveCtx.GetExistingAndHistoricalIdentifiers(ctx)
+	if err == nil {
+		// if we can find a match for the service in the historical values, we return that
+		serviceUuidFromHistoricalServices, err := serviceIdentifiers.GetServiceUuidForIdentifier(serviceIdentifier)
+		if err == nil {
+			return enclaveUuid, serviceUuidFromHistoricalServices
+		}
+	}
+
+	// otherwise we see if we can find the service in the currently running services
+	serviceCtx, err := enclaveCtx.GetServiceContext(serviceIdentifier)
+	if err == nil {
+		return enclaveUuid, serviceCtx.GetServiceUUID()
+	}
+
+	// we return the best matches so far for enclave and service uuids
 	return enclaveUuid, serviceUuid
 }

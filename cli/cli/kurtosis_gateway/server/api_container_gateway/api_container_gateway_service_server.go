@@ -145,6 +145,17 @@ func (service *ApiContainerGatewayServiceServer) GetServices(ctx context.Context
 	return remoteApiContainerResponse, nil
 }
 
+func (service *ApiContainerGatewayServiceServer) GetExistingAndHistoricalServiceIdentifiers(ctx context.Context, args *emptypb.Empty) (*kurtosis_core_rpc_api_bindings.GetExistingAndHistoricalServiceIdentifiersResponse, error) {
+	service.mutex.Lock()
+	defer service.mutex.Unlock()
+	remoteApiContainerResponse, err := service.remoteApiContainerClient.GetExistingAndHistoricalServiceIdentifiers(ctx, args)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
+	}
+
+	return remoteApiContainerResponse, nil
+}
+
 func (service *ApiContainerGatewayServiceServer) RemoveService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RemoveServiceArgs) (*kurtosis_core_rpc_api_bindings.RemoveServiceResponse, error) {
 	service.mutex.Lock()
 	defer service.mutex.Unlock()

@@ -97,6 +97,12 @@ func (service *EngineServerService) GetEnclaves(ctx context.Context, _ *emptypb.
 	return response, nil
 }
 
+func (service *EngineServerService) GetExistingAndHistoricalEnclaveIdentifiers(_ context.Context, _ *emptypb.Empty) (*kurtosis_engine_rpc_api_bindings.GetExistingAndHistoricalEnclaveIdentifiersResponse, error) {
+	allIdentifiers := service.enclaveManager.GetExistingAndHistoricalEnclaveIdentifiers()
+	response := &kurtosis_engine_rpc_api_bindings.GetExistingAndHistoricalEnclaveIdentifiersResponse{AllIdentifiers: allIdentifiers}
+	return response, nil
+}
+
 func (service *EngineServerService) StopEnclave(ctx context.Context, args *kurtosis_engine_rpc_api_bindings.StopEnclaveArgs) (*emptypb.Empty, error) {
 	enclaveIdentifier := args.EnclaveIdentifier
 

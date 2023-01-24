@@ -83,6 +83,17 @@ function deserialize_engine_api_GetEngineInfoResponse(buffer_arg) {
   return engine_service_pb.GetEngineInfoResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_engine_api_GetExistingAndHistoricalEnclaveIdentifiersResponse(arg) {
+  if (!(arg instanceof engine_service_pb.GetExistingAndHistoricalEnclaveIdentifiersResponse)) {
+    throw new Error('Expected argument of type engine_api.GetExistingAndHistoricalEnclaveIdentifiersResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_engine_api_GetExistingAndHistoricalEnclaveIdentifiersResponse(buffer_arg) {
+  return engine_service_pb.GetExistingAndHistoricalEnclaveIdentifiersResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_engine_api_GetServiceLogsArgs(arg) {
   if (!(arg instanceof engine_service_pb.GetServiceLogsArgs)) {
     throw new Error('Expected argument of type engine_api.GetServiceLogsArgs');
@@ -167,6 +178,18 @@ getEnclaves: {
     requestDeserialize: deserialize_google_protobuf_Empty,
     responseSerialize: serialize_engine_api_GetEnclavesResponse,
     responseDeserialize: deserialize_engine_api_GetEnclavesResponse,
+  },
+  // Returns information about all existing & historical enclaves
+getExistingAndHistoricalEnclaveIdentifiers: {
+    path: '/engine_api.EngineService/GetExistingAndHistoricalEnclaveIdentifiers',
+    requestStream: false,
+    responseStream: false,
+    requestType: google_protobuf_empty_pb.Empty,
+    responseType: engine_service_pb.GetExistingAndHistoricalEnclaveIdentifiersResponse,
+    requestSerialize: serialize_google_protobuf_Empty,
+    requestDeserialize: deserialize_google_protobuf_Empty,
+    responseSerialize: serialize_engine_api_GetExistingAndHistoricalEnclaveIdentifiersResponse,
+    responseDeserialize: deserialize_engine_api_GetExistingAndHistoricalEnclaveIdentifiersResponse,
   },
   // Stops all containers in an enclave
 stopEnclave: {

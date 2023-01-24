@@ -42,7 +42,7 @@ func NewEnclaveIdentifierArg(
 
 // TODO we added this constructor for allowing 'service logs' command to disable the validation for consuming logs from removed or stopped enclaves
 // TODO after https://github.com/kurtosis-tech/kurtosis/issues/879
-func NewEnclaveIdentifierArgWithValidationDisabled(
+func NewHistoricalEnclaveIdentifiersArgWithValidationDisabled(
 	argKey string,
 	isOptional bool,
 	isGreedy bool,
@@ -56,7 +56,7 @@ func NewEnclaveIdentifierArgWithValidationDisabled(
 		DefaultValue:          "",
 		IsGreedy:              isGreedy,
 		ValidationFunc:        noValidationFunc,
-		ArgCompletionProvider: args.NewManualCompletionsProvider(getCompletions),
+		ArgCompletionProvider: args.NewManualCompletionsProvider(getExistingAndHistoricalCompletions),
 	}
 }
 
@@ -66,7 +66,7 @@ func getCompletions(ctx context.Context, flags *flags.ParsedFlags, previousArgs 
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred connecting to the Kurtosis engine for retrieving the enclave UUIDs for tab completion",
+			"An error occurred connecting to the Kurtosis engine for retrieving the enclave UUIDs and names for tab completion",
 		)
 	}
 
@@ -99,6 +99,27 @@ func getCompletions(ctx context.Context, flags *flags.ParsedFlags, previousArgs 
 	//  and remove enclave UUIDs that are already set so that we don't repeat any
 
 	return result, nil
+}
+
+// Make best-effort attempt to get enclave UUIDs
+func getExistingAndHistoricalCompletions(ctx context.Context, _ *flags.ParsedFlags, _ *args.ParsedArgs) ([]string, error) {
+	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred connecting to the Kurtosis engine for retrieving the enclave UUIDs and names for tab completion",
+		)
+	}
+
+	enclaveIdentifiers, err := kurtosisCtx.GetExistingAndHistoricalEnclaveIdentifiers(ctx)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred getting the enclave identifiers",
+		)
+	}
+
+	return enclaveIdentifiers.GetOrderedListOfNamesAndUuids(), nil
 }
 
 // Create a validation function using the previously-created

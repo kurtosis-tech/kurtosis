@@ -26,6 +26,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"io"
 	"path"
 )
@@ -248,6 +249,15 @@ func (enclaveCtx *EnclaveContext) DownloadFilesArtifact(ctx context.Context, art
 		return nil, stacktrace.Propagate(err, "An error occurred downloading files artifact '%v'", artifactIdentifier)
 	}
 	return response.Data, nil
+}
+
+// Docs available at https://docs.kurtosis.com/sdk#gethistoricalserviceidentifiers---serviceidentifiers-serviceidentifiers
+func (enclaveCtx *EnclaveContext) GetExistingAndHistoricalIdentifiers(ctx context.Context) (*services.ServiceIdentifiers, error) {
+	response, err := enclaveCtx.client.GetExistingAndHistoricalServiceIdentifiers(ctx, &emptypb.Empty{})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while fetching existing and historical identifiers")
+	}
+	return services.NewServiceIdentifiers(enclaveCtx.enclaveName, response.AllIdentifiers), nil
 }
 
 // ====================================================================================================

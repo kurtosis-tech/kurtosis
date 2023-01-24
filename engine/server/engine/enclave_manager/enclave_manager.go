@@ -29,8 +29,7 @@ const (
 
 	getRandomEnclaveIdRetries = uint16(5)
 
-	validNumberOfUuidMatches                     = 1
-	defaultValueForTargetIndexInShortenedUuidArr = -1
+	validNumberOfUuidMatches = 1
 
 	// This is a massive hack to make our containers pick up eth1 as the networking interface
 	// TODO remove this when https://github.com/kurtosis-tech/kurtosis/pull/849 is fixed
@@ -66,6 +65,11 @@ type EnclaveManager struct {
 	kurtosisBackend                           backend_interface.KurtosisBackend
 	apiContainerKurtosisBackendConfigSupplier api_container_launcher.KurtosisBackendConfigSupplier
 	enclaveIdGenerator                        *enclaveNameGenerator
+
+	// this is a stop gap solution, this would be stored and retrieved from the DB in the future
+	// we go with the GRPC type as it is just used by the engine server service
+	// this is an append only list
+	allExistingAndHistoricalIdentifiers []*kurtosis_engine_rpc_api_bindings.EnclaveIdentifiers
 }
 
 func NewEnclaveManager(
@@ -78,6 +82,7 @@ func NewEnclaveManager(
 		kurtosisBackend: kurtosisBackend,
 		apiContainerKurtosisBackendConfigSupplier: apiContainerKurtosisBackendConfigSupplier,
 		enclaveIdGenerator:                        enclaveIdGenerator,
+		allExistingAndHistoricalIdentifiers:       []*kurtosis_engine_rpc_api_bindings.EnclaveIdentifiers{},
 	}
 }
 
@@ -193,12 +198,14 @@ func (manager *EnclaveManager) CreateEnclave(
 	}
 
 	creationTimestamp := getEnclaveCreationTimestamp(newEnclave)
-	newEnclaveUuidStr := string(newEnclave.GetUUID())
+	newEnclaveUuid := newEnclave.GetUUID()
+	newEnclaveUuidStr := string(newEnclaveUuid)
+	shortenedUuid := uuid_generator.ShortenedUUIDString(newEnclaveUuidStr)
 
 	result := &kurtosis_engine_rpc_api_bindings.EnclaveInfo{
 		EnclaveUuid:        newEnclaveUuidStr,
 		Name:               newEnclave.GetName(),
-		ShortenedUuid:      uuid_generator.ShortenedUUIDString(newEnclaveUuidStr),
+		ShortenedUuid:      shortenedUuid,
 		ContainersStatus:   kurtosis_engine_rpc_api_bindings.EnclaveContainersStatus_EnclaveContainersStatus_RUNNING,
 		ApiContainerStatus: kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING,
 		ApiContainerInfo: &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerInfo{
@@ -210,6 +217,13 @@ func (manager *EnclaveManager) CreateEnclave(
 		ApiContainerHostMachineInfo: apiContainerHostMachineInfo,
 		CreationTime:                creationTimestamp,
 	}
+
+	enclaveIdentifier := &kurtosis_engine_rpc_api_bindings.EnclaveIdentifiers{
+		EnclaveUuid:   newEnclaveUuidStr,
+		Name:          enclaveName,
+		ShortenedUuid: shortenedUuid,
+	}
+	manager.allExistingAndHistoricalIdentifiers = append(manager.allExistingAndHistoricalIdentifiers, enclaveIdentifier)
 
 	// Everything started successfully, so the responsibility of deleting the enclave is now transferred to the caller
 	shouldDestroyEnclave = false
@@ -344,6 +358,13 @@ func (manager *EnclaveManager) GetEnclaveUuidForEnclaveIdentifier(ctx context.Co
 	defer manager.mutex.Unlock()
 
 	return manager.getEnclaveUuidForIdentifierUnlocked(ctx, enclaveIdentifier)
+}
+
+func (manager *EnclaveManager) GetExistingAndHistoricalEnclaveIdentifiers() []*kurtosis_engine_rpc_api_bindings.EnclaveIdentifiers {
+	manager.mutex.Lock()
+	defer manager.mutex.Unlock()
+
+	return manager.allExistingAndHistoricalIdentifiers
 }
 
 // ====================================================================================================
