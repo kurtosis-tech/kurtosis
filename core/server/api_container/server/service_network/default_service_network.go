@@ -421,7 +421,11 @@ func (network *DefaultServiceNetwork) StartServices(
 			startedServices[serviceName] = startedService
 			continue
 		}
-		failedServices[serviceName] = stacktrace.NewError("State of the service is unknown: %s. This is a Kurtosis internal bug", serviceName)
+		if len(failedServicePerUuid) == 0 {
+			// it is expected that if a service failed to be started, Kurtosis did not even try to start the others
+			// and stopped midway. However, if failedServicePerUuid is empty, this is an internal bug
+			failedServices[serviceName] = stacktrace.NewError("State of the service is unknown: %s. This is a Kurtosis internal bug", serviceName)
+		}
 	}
 	defer func() {
 		if batchSuccessfullyStarted {
@@ -1281,7 +1285,6 @@ func (network *DefaultServiceNetwork) startRegisteredServices(
 	serviceConfigs map[service.ServiceUUID]*kurtosis_core_rpc_api_bindings.ServiceConfig,
 ) (map[service.ServiceUUID]*service.Service, map[service.ServiceUUID]error) {
 	wg := sync.WaitGroup{}
-	wg.Add(len(serviceConfigs))
 
 	concurrencyControlChan := make(chan bool, maxConcurrentServiceStart)
 	defer close(concurrencyControlChan)
@@ -1294,10 +1297,17 @@ func (network *DefaultServiceNetwork) startRegisteredServices(
 	for serviceUuid, serviceConfig := range serviceConfigs {
 		serviceToStartUuid := serviceUuid
 		serviceToStartConfig := serviceConfig
+
+		if len(failedServices) > 0 {
+			// stop scheduling more service start
+			// as one already failed, the full batch will be reverted anyway so no need to continue any further
+			break
+		}
+		// The concurrencyControlChan will block if the buffer is currently full, i.e. if maxConcurrentServiceStart
+		// subroutines are already running in the background
+		concurrencyControlChan <- true
+		wg.Add(1)
 		go func() {
-			// The concurrencyControlChan will block if the buffer is currently full, i.e. if maxConcurrentServiceStart
-			// subroutines are already running in the backgroug
-			concurrencyControlChan <- true
 			defer func() {
 				// at the end, make sure the subroutine releases one permit from the WaitGroup, and make sure to
 				// also pop a value from the concurrencyControlChan to allow any potentially waiting subroutine to
