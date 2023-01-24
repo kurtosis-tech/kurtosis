@@ -53,7 +53,7 @@ service = plan.add_service(
     # MANDATORY
     service_name = "example-datastore-server-1",
 
-    # The configuration for this service. See the 'ServiceConfig' section of 'Starlark Types' from the sidecar for more information.
+    # The configuration for this service. See the 'ServiceConfig' section of 'Starlark Types' from the sidebar for more information.
     # MANDATORY
     config = service_config,
 )
@@ -94,6 +94,36 @@ plan.add_service(
     ),
 )
 ```
+
+### add_services
+
+The `add_services` instruction on the [`plan`][plan-reference] object adds multiple services all at once.
+
+The main advantage compared to calling [add_service][add-service] multiple times is that one call to `add_services` 
+will add multiple services at once. Currently, it can process up to 4 services concurrently, therefore reducing the
+total time by a factor close to 4.
+
+Similar to `add_service`, it takes a map of service names to service configuration objects as input and returns a map 
+of service names to service objects.
+
+```python
+all_services = plan.add_services(
+    # A map of service_name -> ServiceConfig for all services that needs to be added.
+    # See the 'ServiceConfig' section of 'Starlark Types' from the sidebar for more information on this type.
+    # MANDATORY
+    configs = {
+        "example-datastore-server-1": datastore_server_config_1,
+        "example-datastore-server-2": datastore_server_config_2,
+    }
+)
+```
+
+:::caution
+
+`add_services` will succeed if and only if all services are successfully added. If one fails, the entire batch of
+services will be rolled back the instruction will return an execution error.
+
+:::
 
 ### assert
 
@@ -500,6 +530,7 @@ in Kurtosis Starlark by default
 
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->
 [set-connection]: #set_connection
+[add-service]: #add_service
 
 [files-artifacts-reference]: ./files-artifacts.md
 [future-references-reference]: ./future-references.md
