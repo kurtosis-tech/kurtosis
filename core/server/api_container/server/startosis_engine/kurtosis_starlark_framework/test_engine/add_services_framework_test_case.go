@@ -10,6 +10,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
@@ -49,15 +50,12 @@ func (t *addServicesTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtos
 			require.Contains(t, configs, service1)
 			require.Contains(t, configs, service2)
 
-			// somehow the ServiceConfig we get back from the interpreter has empty cmd args and empty entry point args
-			// whereas the builder by default set them to nil. Not entire sure what's going on there but this will
-			// go away once we replace ServiceConfig with a framework-defined type
-			expectedServiceConfig1 := services.NewServiceConfigBuilder("test-image-1").WithCmdArgs([]string{}).WithEntryPointArgs([]string{}).WithSubnetwork("my-subnetwork").Build()
+			expectedServiceConfig1 := services.NewServiceConfigBuilder("test-image-1").WithSubnetwork("my-subnetwork").Build()
 			actualServiceConfig1 := services.NewServiceConfigBuilderFromServiceConfig(configs[service1]).Build()
-			require.Equal(t, expectedServiceConfig1, actualServiceConfig1)
+			assert.Equal(t, expectedServiceConfig1, actualServiceConfig1)
 			actualServiceConfig2 := services.NewServiceConfigBuilderFromServiceConfig(configs[service2]).Build()
-			expectedServiceConfig2 := services.NewServiceConfigBuilder("test-image-2").WithCmdArgs([]string{}).WithEntryPointArgs([]string{}).WithCpuAllocationMillicpus(1000).WithMemoryAllocationMegabytes(2048).Build()
-			require.Equal(t, expectedServiceConfig2, actualServiceConfig2)
+			expectedServiceConfig2 := services.NewServiceConfigBuilder("test-image-2").WithCpuAllocationMillicpus(1000).WithMemoryAllocationMegabytes(2048).Build()
+			assert.Equal(t, expectedServiceConfig2, actualServiceConfig2)
 			return true
 		}),
 	).Times(1).Return(

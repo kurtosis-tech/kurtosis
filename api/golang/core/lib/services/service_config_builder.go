@@ -134,6 +134,9 @@ func (builder *ServiceConfigBuilder) Build() *kurtosis_core_rpc_api_bindings.Ser
 }
 
 func copyPortsMap(ports map[string]*kurtosis_core_rpc_api_bindings.Port) map[string]*kurtosis_core_rpc_api_bindings.Port {
+	if ports == nil {
+		return nil
+	}
 	newPorts := make(map[string]*kurtosis_core_rpc_api_bindings.Port, len(ports))
 	for name, port := range ports {
 		newPorts[name] = binding_constructors.NewPort(port.Number, port.TransportProtocol, port.MaybeApplicationProtocol)
@@ -142,12 +145,18 @@ func copyPortsMap(ports map[string]*kurtosis_core_rpc_api_bindings.Port) map[str
 }
 
 func copySlice(value []string) []string {
+	if value == nil {
+		return nil
+	}
 	newSlice := make([]string, len(value))
 	copy(newSlice, value)
 	return newSlice
 }
 
 func copyMap(keyValue map[string]string) map[string]string {
+	if keyValue == nil {
+		return nil
+	}
 	newMap := make(map[string]string, len(keyValue))
 	for key, value := range keyValue {
 		newMap[key] = value
