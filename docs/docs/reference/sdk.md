@@ -88,10 +88,9 @@ Get and start a service container logs stream (showed in ascending order, with t
 **Returns**
 * `serviceLogsStreamContent`: The [ServiceLogsStreamContent][servicelogsstreamcontent] object which wrap all the information coming from the logs stream.
 
-### `getHistoricalAndExistingEnclaveIdentifiers() -> EnclaveIdentifiers enclaveIdentifiers`
+### `getExistingAndHistoricalEnclaveIdentifiers() -> EnclaveIdentifiers enclaveIdentifiers`
 
-Get all (active & deleted) historical identifiers (name, uuid, shortened uuid) for the currently
-running Kurtosis engine.
+Get all (active & deleted) identifiers (name, uuid, shortened uuid) for enclaves for the currently running Kurtosis engine.
 
 **Returns**
 * `enclaveIdentifiers` The [EnclaveIdentifiers][enclave-identifiers] which provides user-friendly ways to lookup enclave identifier information.
@@ -366,9 +365,9 @@ Downloads a files-containing `.tgz` from the given URL to the Kurtosis engine, s
 
 * `uuid`: A unique ID as a string identifying the downloaded, which can be used in [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
 
-### `getHistoricalAndExistingServiceIdentifiers() -> ServiceIdentifiers serviceIdentifiers`
+### `getExistingAndHistoricalServiceIdentifiers() -> ServiceIdentifiers serviceIdentifiers`
 
-Get all (active & deleted) historical identifiers (name, uuid, shortened uuid) for services for the enclave represented by the [EnclaveContext][enclavecontext].
+Get all (active & deleted) identifiers (name, uuid, shortened uuid) for services for the enclave represented by the [EnclaveContext][enclavecontext].
 
 **Returns**
 * `serviceIdentifiers` The [ServiceIdentifiers][service-identifiers] which provides user-friendly ways to lookup service identifier information.

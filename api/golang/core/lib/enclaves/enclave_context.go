@@ -251,8 +251,8 @@ func (enclaveCtx *EnclaveContext) DownloadFilesArtifact(ctx context.Context, art
 	return response.Data, nil
 }
 
-// Docs available at https://docs.kurtosis.com/sdk#gethistoricalserviceidentifiers---serviceidentifiers-serviceidentifiers
-func (enclaveCtx *EnclaveContext) GetExistingAndHistoricalIdentifiers(ctx context.Context) (*services.ServiceIdentifiers, error) {
+// Docs available at https://docs.kurtosis.com/sdk#getexistingandhistoricalserviceidentifiers---serviceidentifiers-serviceidentifiers
+func (enclaveCtx *EnclaveContext) GetExistingAndHistoricalServiceIdentifiers(ctx context.Context) (*services.ServiceIdentifiers, error) {
 	response, err := enclaveCtx.client.GetExistingAndHistoricalServiceIdentifiers(ctx, &emptypb.Empty{})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while fetching existing and historical identifiers")

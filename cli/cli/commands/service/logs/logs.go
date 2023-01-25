@@ -338,7 +338,7 @@ func getEnclaveAndServiceUuidForIdentifiers(kurtosisCtx *kurtosis_context.Kurtos
 	}
 
 	// we see if we can get historical identifiers
-	serviceIdentifiers, err := enclaveCtx.GetExistingAndHistoricalIdentifiers(ctx)
+	serviceIdentifiers, err := enclaveCtx.GetExistingAndHistoricalServiceIdentifiers(ctx)
 	if err == nil {
 		// if we can find a match for the service in the historical values, we return that
 		serviceUuidFromHistoricalServices, err := serviceIdentifiers.GetServiceUuidForIdentifier(serviceIdentifier)

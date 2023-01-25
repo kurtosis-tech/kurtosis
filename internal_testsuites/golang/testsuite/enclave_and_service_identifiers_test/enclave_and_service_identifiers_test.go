@@ -92,7 +92,7 @@ func TestIdentifiers(t *testing.T) {
 	_, err = enclaveIdentifiers.GetEnclaveUuidForIdentifier(invalidEnclaveName)
 	require.Error(t, err)
 
-	serviceIdentifiers, err := enclaveCtx.GetExistingAndHistoricalIdentifiers(ctx)
+	serviceIdentifiers, err := enclaveCtx.GetExistingAndHistoricalServiceIdentifiers(ctx)
 	require.Nil(t, err)
 
 	serviceUuidResult, err := serviceIdentifiers.GetServiceUuidForIdentifier(serviceUuidStr)
@@ -124,7 +124,7 @@ func TestIdentifiers(t *testing.T) {
 	require.Nil(t, result.InterpretationError)
 	require.Empty(t, result.ValidationErrors)
 
-	serviceIdentifiersAfterDeletion, err := enclaveCtx.GetExistingAndHistoricalIdentifiers(ctx)
+	serviceIdentifiersAfterDeletion, err := enclaveCtx.GetExistingAndHistoricalServiceIdentifiers(ctx)
 	require.Nil(t, err)
 
 	serviceUuidResult, err = serviceIdentifiersAfterDeletion.GetServiceUuidForIdentifier(serviceUuidStr)
@@ -154,7 +154,7 @@ func TestIdentifiers(t *testing.T) {
 	time.Sleep(secondsToSleepForK8SToDestroyEnclave)
 
 	// this should now fail as service identifiers are stored in memory & the enclave is destroyed
-	_, err = enclaveCtx.GetExistingAndHistoricalIdentifiers(ctx)
+	_, err = enclaveCtx.GetExistingAndHistoricalServiceIdentifiers(ctx)
 	require.Error(t, err)
 
 	enclaveIdentifiersAfterStop, err := kurtosisCtx.GetExistingAndHistoricalEnclaveIdentifiers(ctx)

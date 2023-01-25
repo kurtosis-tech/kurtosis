@@ -107,7 +107,7 @@ func getCompletionsForExistingAndHistoricalServices(ctx context.Context, _ *flag
 		return nil, stacktrace.Propagate(err, "An error occurred while fetching enclave for identifier '%v'", enclaveIdentifier)
 	}
 
-	serviceIdentifiers, err := enclaveContext.GetExistingAndHistoricalIdentifiers(ctx)
+	serviceIdentifiers, err := enclaveContext.GetExistingAndHistoricalServiceIdentifiers(ctx)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while fetching services for enclave '%v'", enclaveContext.GetEnclaveName())
 	}
