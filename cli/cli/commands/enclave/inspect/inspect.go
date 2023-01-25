@@ -40,7 +40,7 @@ const (
 	apiContainerHostGrpcPortTitle      = "API Container Host GRPC Port"
 	apiContainerHostGrpcProxyPortTitle = "API Container Host GRPC Proxy Port"
 
-	fullUuidFlagKey        = "full-uuid"
+	fullUuidsFlagKey       = "full-uuids"
 	fullUuidFlagKeyDefault = "false"
 
 	headerWidthChars = 100
@@ -62,8 +62,8 @@ var EnclaveInspectCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtos
 	EngineClientContextKey:    engineClientCtxKey,
 	Flags: []*flags.FlagConfig{
 		{
-			Key:     fullUuidFlagKey,
-			Usage:   "If true then Kurtosis prints full uuids instead of shortened uuids. Default false.",
+			Key:     fullUuidsFlagKey,
+			Usage:   "If true then Kurtosis prints full UUIDs instead of shortened UUIDs. Default false.",
 			Type:    flags.FlagType_Bool,
 			Default: fullUuidFlagKeyDefault,
 		},
@@ -91,9 +91,9 @@ func run(
 		return stacktrace.Propagate(err, "Expected a value for non-greedy enclave identifier arg '%v' but none was found; this is a bug with Kurtosis!", enclaveIdentifierArgKey)
 	}
 
-	showFullUuids, err := flags.GetBool(fullUuidFlagKey)
+	showFullUuids, err := flags.GetBool(fullUuidsFlagKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", fullUuidFlagKey)
+		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", fullUuidsFlagKey)
 	}
 
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()

@@ -31,7 +31,7 @@ const (
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
 
-	fullUuidFlagKey        = "full-uuid"
+	fullUuidsFlagKey       = "full-uuids"
 	fullUuidFlagKeyDefault = "false"
 
 	emptyTimeForOldEnclaves = ""
@@ -45,8 +45,8 @@ var EnclaveLsCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCom
 	EngineClientContextKey:    engineClientCtxKey,
 	Flags: []*flags.FlagConfig{
 		{
-			Key:     fullUuidFlagKey,
-			Usage:   "If true then Kurtosis prints full uuids instead of shortened uuids. Default false.",
+			Key:     fullUuidsFlagKey,
+			Usage:   "If true then Kurtosis prints full UUIDs instead of shortened UUIDs. Default false.",
 			Type:    flags.FlagType_Bool,
 			Default: fullUuidFlagKeyDefault,
 		},
@@ -72,9 +72,9 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting enclaves")
 	}
 
-	showFullUuids, err := flags.GetBool(fullUuidFlagKey)
+	showFullUuids, err := flags.GetBool(fullUuidsFlagKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", fullUuidFlagKey)
+		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", fullUuidsFlagKey)
 	}
 
 	tablePrinter := output_printers.NewTablePrinter(enclaveUuidColumnHeader, enclaveNameColumnHeader, enclaveStatusColumnHeader, enclaveCreationTimeColumnHeader)

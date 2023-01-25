@@ -28,7 +28,7 @@ UUID   Name   Ports   Status
 ```
 
 Notice how Kurtosis shows the shortened UUID by default. All CLI commands show
-shortened UUIDs by default; if you want to see full UUIDs you can use the `--full-UUIDs` flag with the command. Rerunning the above command with `--full-UUID` you'd get
+shortened UUIDs by default; if you want to see full UUIDs you can use the `--full-uuids` flag with the command. Rerunning the above command with `--full-uuids` you'd get
 
 ```
 UUID:                                 edfdbf5766f64a649efca11f51ebb4c1
@@ -50,7 +50,7 @@ Usage:
   kurtosis enclave inspect [flags] enclave-identifier
 
 Flags:
-      --full-UUID   If true then Kurtosis prints full UUIDs instead of shortened UUIDs. Default false.
+      --full-uuids   If true then Kurtosis prints full UUIDs instead of shortened UUIDs. Default false.
   -h, --help        help for inspect
 
 Global Flags:
