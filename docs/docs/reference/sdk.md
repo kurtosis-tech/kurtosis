@@ -31,7 +31,7 @@ Creates a new Kurtosis enclave using the given parameters.
 Gets the [EnclaveContext][enclavecontext] object for the given enclave ID.
 
 **Args**
-* `enclaveIdentifier`: The identifier(uuid, shortened uuid, name) of the enclave.
+* `enclaveIdentifier`: The [identifier][identifier] of the enclave.
 
 **Returns**
 * `enclaveContext`: The [EnclaveContext][enclavecontext] representation of the enclave.
@@ -46,26 +46,26 @@ Gets the enclaves that the Kurtosis engine knows about.
 Gets information about the enclave for the given identifier
 
 **Args**
-* `enclaveIdentifier`: The identifier of the enclave.
+* `enclaveIdentifier`: The [identifier][identifier] of the enclave.
 
 **Returns**
 * `enclaves`: The [EnclaveInfo][enclaveinfo] object representing the enclave
 
 ### `stopEnclave(String enclaveIdentifier)`
-Stops the enclave with the given identifier, but doesn't destroy the enclave objects (containers, networks, etc.) so they can be further examined.
+Stops the enclave with the given [identifier][identifier], but doesn't destroy the enclave objects (containers, networks, etc.) so they can be further examined.
 
 **NOTE:** Any [EnclaveContext][enclavecontext] objects representing the stopped enclave will become unusable.
 
 **Args**
-* `enclaveIdentifier`: Identifier of the enclave to stop.
+* `enclaveIdentifier`: [Identifier][identifier] of the enclave to stop.
 
 ### `destroyEnclave(String enclaveIdentifier)`
-Stops the enclave with the given identifier and destroys the enclave objects (containers, networks, etc.).
+Stops the enclave with the given [identifier][identifier] and destroys the enclave objects (containers, networks, etc.).
 
 **NOTE:** Any [EnclaveContext][enclavecontext] objects representing the stopped enclave will become unusable.
 
 **Args**
-* `enclaveId`: Identifier of the enclave to destroy.
+* `enclaveIdentifier`: [Identifier][identifier] of the enclave to destroy.
 
 ### `clean(boolean shouldCleanAll) -> Set<EnclaveUUID> RemovedEnclaveUuids`
 Destroys enclaves in the Kurtosis engine.
@@ -80,7 +80,7 @@ Destroys enclaves in the Kurtosis engine.
 Get and start a service container logs stream (showed in ascending order, with the oldest line first) from services identified by their UUID.
 
 **Args**
-* `enclaveIdentifier`: Identifier of the services' enclave.
+* `enclaveIdentifier`: [Identifier][identifier] of the services' enclave.
 * `serviceUuids`: A set of service UUIDs identifying the services from which logs should be retrieved.
 * `shouldFollowLogs`: If it's true, the stream will constantly send the new log lines. if it's false, the stream will be closed after the last created log line is sent.
 * `logLineFilter`: The [filter][loglinefilter] that will be used for filtering the returned log lines
@@ -90,7 +90,8 @@ Get and start a service container logs stream (showed in ascending order, with t
 
 ### `getExistingAndHistoricalEnclaveIdentifiers() -> EnclaveIdentifiers enclaveIdentifiers`
 
-Get all (active & deleted) identifiers (name, uuid, shortened uuid) for enclaves for the currently running Kurtosis engine.
+Get all (active & deleted) historical [identifiers][identifier] for the currently
+running Kurtosis engine.
 
 **Returns**
 * `enclaveIdentifiers` The [EnclaveIdentifiers][enclave-identifiers] which provides user-friendly ways to lookup enclave identifier information.
@@ -110,11 +111,11 @@ an error instead.
 * `enclaveUuid`: The UUID for the enclave identified by the `identifier`.
 
 ### `getOrderedListOfNamesAndUuids() -> []String nameAndUuids`
-Returns an ordered list of names and uuids for all the enclaves registered with the currently
-running Kurtosis engine. This is useful if users want to enumerate all enclave names & uuids for the engine, say for an autocomplete like function.
+Returns an ordered list of names and UUIDs for all the enclaves registered with the currently
+running Kurtosis engine. This is useful if users want to enumerate all enclave names & UUIDs for the engine, say for an autocomplete like function.
 
 **Returns**
-* `nameAndUuids`: This list is a concatenation of sorted names followed by sorted uuids.
+* `nameAndUuids`: This list is a concatenation of sorted names followed by sorted UUIDs.
 
 ServiceLogsStreamContent
 ------------------------
@@ -184,11 +185,11 @@ Returns a LogLineFilter type which must be used for filtering the log lines that
 Enclaves
 --------
 
-This Kurtosis provided class is a collection of various different [EnclaveInfo][enclaveinfo] objects, by uuid, shortened uuid, and name.
+This Kurtosis provided class is a collection of various different [EnclaveInfo][enclaveinfo] objects, by UUID, shortened UUID, and name.
 
 ### Map<String, EnclaveInfo> `enclavesByUuid`
 
-A map from uuids to the enclave info for the enclave with the given uuid.
+A map from UUIDs to the enclave info for the enclave with the given UUID.
 
 ### Map<String, EnclaveInfo> `enclavesByName`
 
@@ -196,7 +197,7 @@ A map from names to the enclave info for the enclave with the given name
 
 ### Map<String, EnclaveInfo[]> `enclavesByShortenedUuid`
 
-A map from shortened uuid (first 12 characters of uuid) to the enclave infos of the enclaves it matches too.
+A map from shortened UUID (first 12 characters of UUID) to the enclave infos of the enclaves it matches too.
 
 EnclaveInfo
 -----------
@@ -322,11 +323,11 @@ Start services in bulk in the enclave with the given service IDs, inside the par
 Convenience wrapper around [EnclaveContext.addServiceToPartition][enclavecontext_addservicetopartition], that adds the service to the default partition. Note that if the enclave has been repartitioned and the default partition doesn't exist anymore, this method will fail.
 
 ### `getServiceContext(String serviceIdentifier) -> ServiceContext serviceContext`
-Gets relevant information about a service (identified by the given service identifier) that is running in the enclave.
+Gets relevant information about a service (identified by the given service [identifier][identifier]) that is running in the enclave.
 
 **Args**
 
-* `serviceIdentifier`: The name, uuid or short name of the target service
+* `serviceIdentifier`: The [identifier(name, UUID or short name)][identifier] of the target service
 
 **Returns**
 
@@ -351,7 +352,7 @@ If a directory is specified, the contents of the directory will be uploaded to t
 
 **Returns**
 
-* `uuid`: A unique ID as a string identifying the uploaded files, which can be used in [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
+* `UUID`: A unique ID as a string identifying the uploaded files, which can be used in [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
 
 ### `storeWebFiles(String urlToDownload, String artifactName)`
 Downloads a files-containing `.tgz` from the given URL to the Kurtosis engine, so that the files inside can be mounted inside a service's filespace at creation time via [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
@@ -363,11 +364,11 @@ Downloads a files-containing `.tgz` from the given URL to the Kurtosis engine, s
 
 **Returns**
 
-* `uuid`: A unique ID as a string identifying the downloaded, which can be used in [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
+* `UUID`: A unique ID as a string identifying the downloaded, which can be used in [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
 
 ### `getExistingAndHistoricalServiceIdentifiers() -> ServiceIdentifiers serviceIdentifiers`
 
-Get all (active & deleted) identifiers (name, uuid, shortened uuid) for services for the enclave represented by the [EnclaveContext][enclavecontext].
+Get all (active & deleted) historical [identifiers][identifier] for services for the enclave represented by the [EnclaveContext][enclavecontext].
 
 **Returns**
 * `serviceIdentifiers` The [ServiceIdentifiers][service-identifiers] which provides user-friendly ways to lookup service identifier information.
@@ -387,11 +388,11 @@ an error instead.
 * `enclaveUuid`: The UUID for the service identified by the `identifier`.
 
 ### `getOrderedListOfNamesAndUuids() -> []String nameAndUuids`
-Returns an ordered list of names and uuids for all the services in the enclave. This is useful
-if users want to enumerate all service names & uuids for the enclave, say for an autocomplete like function.
+Returns an ordered list of names and UUIDs for all the services in the enclave. This is useful
+if users want to enumerate all service names & UUIDs for the enclave, say for an autocomplete like function.
 
 **Returns**
-* `nameAndUuids`: This list is a concatenation of sorted names followed by sorted uuids.
+* `nameAndUuids`: This list is a concatenation of sorted names followed by sorted UUIDs.
 
 ModuleContext
 -------------
@@ -660,5 +661,7 @@ the `Float64` method on the `json.Number` first, so above would look like `{{pri
 
 [enclaveinfo]: #enclaveinfo
 [enclaves]: #enclaves
+
+[identifier]: ../reference/resource-identifier.md
 [enclave-identifiers]: #enclaveidentifiers
 [service-identifiers]: #serviceidentifiers
