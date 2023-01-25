@@ -25,6 +25,8 @@ const (
 
 func TestAllRegisteredBuiltins(t *testing.T) {
 	testsAllKurtosisPlanInstructions(t, newAddServicesTestCase(t))
+	testsAllKurtosisPlanInstructions(t, newSetConnectionTestCase(t))
+	testsAllKurtosisPlanInstructions(t, newSetConnectionDefaultTestCase(t))
 	testsAllKurtosisPlanInstructions(t, newRenderTemplateTestCase1(t))
 	testsAllKurtosisPlanInstructions(t, newRenderTemplateTestCase2(t))
 }

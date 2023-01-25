@@ -38,7 +38,7 @@ CONNECTION_FAILURE = 1
 
 def run(plan, args):
 	# block all connections by default
-	plan.set_connection(kurtosis.connection.BLOCKED)
+	plan.set_connection(config=kurtosis.connection.BLOCKED)
 
 	# adding 2 services to play with, each in their own subnetwork
 	service_1 = plan.add_service(
@@ -64,7 +64,7 @@ def run(plan, args):
 	plan.assert(connection_result["code"], "==", CONNECTION_FAILURE)
 
 	# Allow connection between 1 and 2
-	plan.set_connection((SUBNETWORK_1, SUBNETWORK_2), kurtosis.connection.ALLOWED)
+	plan.set_connection(subnetworks=(SUBNETWORK_1, SUBNETWORK_2), config=kurtosis.connection.ALLOWED)
 
 	# Connection now works
 	connection_result = plan.exec(recipe=ExecRecipe(
@@ -84,7 +84,7 @@ def run(plan, args):
 	plan.assert(connection_result["code"], "==", CONNECTION_FAILURE)
 
 	# Create a third subnetwork connected to SUBNETWORK_1 and add service2 to it
-	plan.set_connection((SUBNETWORK_3, SUBNETWORK_1), ConnectionConfig(packet_loss_percentage=0.0))
+	plan.set_connection((SUBNETWORK_3, SUBNETWORK_1), config=ConnectionConfig(packet_loss_percentage=0.0))
 	plan.update_service(SERVICE_NAME_2, config=UpdateServiceConfig(subnetwork=SUBNETWORK_3))
 	
 	# Service 2 can now talk to Service 1 again!

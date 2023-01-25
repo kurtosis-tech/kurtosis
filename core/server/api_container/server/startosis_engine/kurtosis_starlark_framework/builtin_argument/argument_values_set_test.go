@@ -187,7 +187,7 @@ func TestParseArguments_ArgumentWithOptional_FromArgsNoOptional_Success(t *testi
 	require.Nil(t, err)
 	require.Len(t, values, 2)
 	require.Equal(t, serviceName, values[0])
-	require.Equal(t, starlark.Bool(false), values[1])
+	require.Equal(t, nil, values[1])
 }
 
 func TestParseArguments_ArgumentWithOptional_FromArgs_FailureTypeMismatch(t *testing.T) {
@@ -202,6 +202,28 @@ func TestParseArguments_ArgumentWithOptional_FromArgs_FailureTypeMismatch(t *tes
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "The following argument could not be parse because their type did not match the expected: [service_name should_start]")
 	require.Nil(t, values)
+}
+
+func TestIsSet_AllArgumentsSet(t *testing.T) {
+	argumentDefinitions := getArgumentDefinitionsWithServiceNameAndShouldStart()
+	values := []starlark.Value{
+		serviceName,
+		shouldStart,
+	}
+	argumentValuesSet := NewArgumentValuesSet(argumentDefinitions, values)
+	require.True(t, argumentValuesSet.IsSet(serviceNameArgName))
+	require.True(t, argumentValuesSet.IsSet(shouldStartArgName))
+}
+
+func TestIsSet_MissingOneArgument(t *testing.T) {
+	argumentDefinitions := getArgumentDefinitionsWithServiceNameAndShouldStart()
+	values := []starlark.Value{
+		serviceName,
+		nil,
+	}
+	argumentValuesSet := NewArgumentValuesSet(argumentDefinitions, values)
+	require.True(t, argumentValuesSet.IsSet(serviceNameArgName))
+	require.False(t, argumentValuesSet.IsSet(shouldStartArgName))
 }
 
 func TestExtractArgumentValue_Success(t *testing.T) {

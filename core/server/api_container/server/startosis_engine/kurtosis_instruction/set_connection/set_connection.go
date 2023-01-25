@@ -3,166 +3,149 @@ package set_connection
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
+	"reflect"
 )
 
 const (
 	SetConnectionBuiltinName = "set_connection"
 
-	subnetworksArgName      = "subnetworks"
-	connectionConfigArgName = "config"
+	SubnetworksArgName      = "subnetworks"
+	ConnectionConfigArgName = "config"
 )
 
-func GenerateSetConnectionBuiltin(
-	instructionsQueue *[]kurtosis_instruction.KurtosisInstruction,
-	serviceNetwork service_network.ServiceNetwork,
-) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
-	// TODO: Force returning an InterpretationError rather than a normal error
-	return func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
-		instructionPosition := shared_helpers.GetCallerPositionFromThread(thread)
-		newInstruction := newEmptySetConnectionInstruction(serviceNetwork, instructionPosition)
-		if interpretationError := newInstruction.parseStartosisArgs(b, args, kwargs); interpretationError != nil {
-			return nil, interpretationError
-		}
-		*instructionsQueue = append(*instructionsQueue, newInstruction)
-		return starlark.None, nil
+func NewSetConnection(serviceNetwork service_network.ServiceNetwork) *kurtosis_plan_instruction.KurtosisPlanInstruction {
+	return &kurtosis_plan_instruction.KurtosisPlanInstruction{
+		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
+			Name: SetConnectionBuiltinName,
+
+			Arguments: []*builtin_argument.BuiltinArgument{
+				{
+					Name:              SubnetworksArgName,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Tuple],
+					Validator:         validateSubnetworks,
+				},
+				{
+					Name:              ConnectionConfigArgName,
+					IsOptional:        false,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*kurtosis_types.ConnectionConfig],
+					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+						// we just try to convert the configs here to validate their shape, to avoid code duplication
+						// with Interpret
+						if _, err := validateAndConvertConfig(value); err != nil {
+							return err
+						}
+						return nil
+					},
+				},
+			},
+		},
+
+		Capabilities: func() kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities {
+			return &SetConnectionCapabilities{
+				serviceNetwork: serviceNetwork,
+
+				optionalSubnetwork1: nil, // populated at interpretation time
+				optionalSubnetwork2: nil, // populated at interpretation time
+				connectionConfig:    nil, // populated at interpretation time
+			}
+		},
+
+		DefaultDisplayArguments: map[string]bool{
+			SubnetworksArgName:      true,
+			ConnectionConfigArgName: true,
+		},
 	}
 }
 
-type SetConnectionInstruction struct {
+type SetConnectionCapabilities struct {
 	serviceNetwork service_network.ServiceNetwork
 
-	position       *kurtosis_instruction.InstructionPosition
-	starlarkKwargs starlark.StringDict
-
 	// both are optional but one cannot go without the other. If one is set, the other should be set.
-	// There's a XOR check in parseStartosisArgs to ensure this
+	// There's a XOR check in Interpret to ensure this
 	optionalSubnetwork1 *service_network_types.PartitionID
 	optionalSubnetwork2 *service_network_types.PartitionID
 
-	connectionConfig partition_topology.PartitionConnection
+	connectionConfig *partition_topology.PartitionConnection
 }
 
-func NewSetConnectionInstruction(
-	serviceNetwork service_network.ServiceNetwork,
-	position *kurtosis_instruction.InstructionPosition,
-	optionalSubnetwork1 *service_network_types.PartitionID,
-	optionalSubnetwork2 *service_network_types.PartitionID,
-	connectionConfig partition_topology.PartitionConnection,
-	starlarkKwargs starlark.StringDict,
-) *SetConnectionInstruction {
-	return &SetConnectionInstruction{
-		serviceNetwork:      serviceNetwork,
-		position:            position,
-		starlarkKwargs:      starlarkKwargs,
-		optionalSubnetwork1: optionalSubnetwork1,
-		optionalSubnetwork2: optionalSubnetwork2,
-		connectionConfig:    connectionConfig,
+func (builtin *SetConnectionCapabilities) Interpret(arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
+	connectionConfig, err := builtin_argument.ExtractArgumentValue[*kurtosis_types.ConnectionConfig](arguments, ConnectionConfigArgName)
+	if err != nil {
+		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ConnectionConfigArgName)
 	}
-}
+	builtin.connectionConfig = connectionConfig.ToKurtosisType()
 
-func newEmptySetConnectionInstruction(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition) *SetConnectionInstruction {
-	return &SetConnectionInstruction{
-		serviceNetwork:      serviceNetwork,
-		position:            position,
-		starlarkKwargs:      starlark.StringDict{},
-		optionalSubnetwork1: nil,
-		optionalSubnetwork2: nil,
-		connectionConfig:    partition_topology.ConnectionAllowed,
+	if !arguments.IsSet(SubnetworksArgName) {
+		return starlark.None, nil
 	}
-}
-
-func (instruction *SetConnectionInstruction) GetPositionInOriginalScript() *kurtosis_instruction.InstructionPosition {
-	return instruction.position
-}
-
-func (instruction *SetConnectionInstruction) GetCanonicalInstruction() *kurtosis_core_rpc_api_bindings.StarlarkInstruction {
-	var args []*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg
-	if instruction.optionalSubnetwork1 == nil {
-		args = []*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg{
-			binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[connectionConfigArgName]), connectionConfigArgName, kurtosis_instruction.Representative),
-		}
-	} else {
-		args = []*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg{
-			binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[subnetworksArgName]), subnetworksArgName, kurtosis_instruction.Representative),
-			binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[connectionConfigArgName]), connectionConfigArgName, kurtosis_instruction.Representative),
-		}
+	subnetworks, err := builtin_argument.ExtractArgumentValue[starlark.Tuple](arguments, SubnetworksArgName)
+	if err != nil {
+		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", SubnetworksArgName)
 	}
-	return binding_constructors.NewStarlarkInstruction(instruction.position.ToAPIType(), SetConnectionBuiltinName, instruction.String(), args)
-}
-
-func (instruction *SetConnectionInstruction) Execute(ctx context.Context) (*string, error) {
-	var instructionResult string
-	if instruction.optionalSubnetwork1 == nil {
-		// if optionalSubnetwork1 is nil, optionalSubnetwork2 is nil as well and the default connection is being set
-		if err := instruction.serviceNetwork.SetDefaultConnection(ctx, instruction.connectionConfig); err != nil {
-			return nil, stacktrace.Propagate(err, "Failed setting default connection to %+v", instruction.connectionConfig)
-		}
-		instructionResult = "Configured default subnetwork connection"
-	} else {
-		subnetwork1 := *instruction.optionalSubnetwork1
-		subnetwork2 := *instruction.optionalSubnetwork2
-		if err := instruction.serviceNetwork.SetConnection(ctx, subnetwork1, subnetwork2, instruction.connectionConfig); err != nil {
-			return nil, stacktrace.Propagate(err, "Failed setting connection between subnetwork '%s' and subnetwork '%s' with connection config %+v", subnetwork1, subnetwork2, instruction.connectionConfig)
-		}
-		instructionResult = fmt.Sprintf("Configured subnetwork connection between '%s' and '%s'", subnetwork1, subnetwork2)
+	subnetwork1, subnetwork2, interpretationErr := kurtosis_instruction.ParseSubnetworks(subnetworks)
+	if interpretationErr != nil {
+		return nil, interpretationErr
 	}
-	return &instructionResult, nil
+	builtin.optionalSubnetwork1 = &subnetwork1
+	builtin.optionalSubnetwork2 = &subnetwork2
+	return starlark.None, nil
 }
 
-func (instruction *SetConnectionInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
-	if !environment.IsNetworkPartitioningEnabled() {
+func (builtin *SetConnectionCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
+	if !validatorEnvironment.IsNetworkPartitioningEnabled() {
 		return startosis_errors.NewValidationError("Setting connection between two subnetworks cannot be performed because the Kurtosis enclave was started with subnetwork capabilities disabled. Make sure to run the Starlark script with subnetwork enabled.")
 	}
 	return nil
 }
 
-func (instruction *SetConnectionInstruction) String() string {
-	return shared_helpers.CanonicalizeInstruction(SetConnectionBuiltinName, kurtosis_instruction.NoArgs, instruction.starlarkKwargs)
+func (builtin *SetConnectionCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
+	var instructionResult string
+	if builtin.optionalSubnetwork1 == nil {
+		// if optionalSubnetwork1 is nil, optionalSubnetwork2 is nil as well and the default connection is being set
+		if err := builtin.serviceNetwork.SetDefaultConnection(ctx, *builtin.connectionConfig); err != nil {
+			return "", stacktrace.Propagate(err, "Failed setting default connection to %+v", builtin.connectionConfig)
+		}
+		instructionResult = "Configured default subnetwork connection"
+	} else {
+		subnetwork1 := *builtin.optionalSubnetwork1
+		subnetwork2 := *builtin.optionalSubnetwork2
+		if err := builtin.serviceNetwork.SetConnection(ctx, subnetwork1, subnetwork2, *builtin.connectionConfig); err != nil {
+			return "", stacktrace.Propagate(err, "Failed setting connection between subnetwork '%s' and subnetwork '%s' with connection config %+v", subnetwork1, subnetwork2, builtin.connectionConfig)
+		}
+		instructionResult = fmt.Sprintf("Configured subnetwork connection between '%s' and '%s'", subnetwork1, subnetwork2)
+	}
+	return instructionResult, nil
 }
 
-func (instruction *SetConnectionInstruction) parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) *startosis_errors.InterpretationError {
-	var subnetworks starlark.Tuple
-	var starlarkConnectionConfig *kurtosis_types.ConnectionConfig
-	if len(args)+len(kwargs) == 1 {
-		if err := starlark.UnpackArgs(b.Name(), args, kwargs, connectionConfigArgName, &starlarkConnectionConfig); err != nil {
-			return startosis_errors.WrapWithInterpretationError(err, "Failed parsing arguments for function '%s' (unparsed arguments were: '%v' '%v')", SetConnectionBuiltinName, args, kwargs)
-		}
-		instruction.starlarkKwargs[connectionConfigArgName] = starlarkConnectionConfig
-	} else {
-		if err := starlark.UnpackArgs(b.Name(), args, kwargs, subnetworksArgName, &subnetworks, connectionConfigArgName, &starlarkConnectionConfig); err != nil {
-			return startosis_errors.WrapWithInterpretationError(err, "Failed parsing arguments for function '%s' (unparsed arguments were: '%v' '%v')", SetConnectionBuiltinName, args, kwargs)
-		}
-		instruction.starlarkKwargs[subnetworksArgName] = subnetworks
-		instruction.starlarkKwargs[connectionConfigArgName] = starlarkConnectionConfig
+func validateSubnetworks(value starlark.Value) *startosis_errors.InterpretationError {
+	subnetworks, ok := value.(starlark.Tuple)
+	if !ok {
+		return startosis_errors.NewInterpretationError("'%s' argument should be a 'starlark.Tuple', got '%s'", SubnetworksArgName, reflect.TypeOf(value))
 	}
-	instruction.starlarkKwargs.Freeze()
-
-	if subnetworks != nil {
-		subnetwork1, subnetwork2, interpretationErr := kurtosis_instruction.ParseSubnetworks(subnetworks)
-		if interpretationErr != nil {
-			return interpretationErr
-		}
-		instruction.optionalSubnetwork1 = &subnetwork1
-		instruction.optionalSubnetwork2 = &subnetwork2
-
-		// this is a XOR. We need either the 2 to be nil, or none.
-		if (instruction.optionalSubnetwork1 == nil) != (instruction.optionalSubnetwork2 == nil) {
-			return startosis_errors.NewInterpretationError("One of subnetwork1 subnetwork2 was nil but not the other. This is a Kurtosis bug ('%v', '%v')", instruction.optionalSubnetwork1, instruction.optionalSubnetwork2)
-		}
+	_, _, interpretationErr := kurtosis_instruction.ParseSubnetworks(subnetworks)
+	if interpretationErr != nil {
+		return interpretationErr
 	}
-
-	instruction.connectionConfig = starlarkConnectionConfig.ToKurtosisType()
 	return nil
+}
+
+func validateAndConvertConfig(rawConfig starlark.Value) (*partition_topology.PartitionConnection, *startosis_errors.InterpretationError) {
+	starlarkConnectionConfig, ok := rawConfig.(*kurtosis_types.ConnectionConfig)
+	if !ok {
+		return nil, startosis_errors.NewInterpretationError("The '%s' argument is not a ConnectionConfig (was '%s').", ConnectionConfigArgName, reflect.TypeOf(rawConfig))
+	}
+	return starlarkConnectionConfig.ToKurtosisType(), nil
 }

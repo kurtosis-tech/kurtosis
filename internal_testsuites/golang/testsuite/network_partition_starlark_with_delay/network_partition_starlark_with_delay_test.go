@@ -35,7 +35,7 @@ CONNECTION_SUCCESS = 0
 CONNECTION_FAILURE = 1
 
 def run(plan, args):
-	plan.set_connection(kurtosis.connection.ALLOWED)
+	plan.set_connection(config=kurtosis.connection.ALLOWED)
 
 	# adding 2 services to play with, each in their own subnetwork
 	service_1 = plan.add_service(
@@ -79,7 +79,7 @@ def run(plan, args):
 	plan.assert(res["output"], "<", "1")
 
 	delay = PacketDelay(750)
-	plan.set_connection(ConnectionConfig(packet_delay=delay))
+	plan.set_connection(config=ConnectionConfig(packet_delay=delay))
 	
 	recipe=ExecRecipe(
 		service_name=SERVICE_ID_2,

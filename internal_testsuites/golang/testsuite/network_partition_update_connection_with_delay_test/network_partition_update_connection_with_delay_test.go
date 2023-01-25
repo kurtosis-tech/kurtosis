@@ -38,7 +38,7 @@ CONNECTION_SUCCESS = 0
 CONNECTION_FAILURE = 1
 
 def run(plan, args):
-	plan.set_connection(kurtosis.connection.BLOCKED)
+	plan.set_connection(config=kurtosis.connection.BLOCKED)
 	
 	service_1 = plan.add_service(
 		service_name=SERVICE_ID_1, 
@@ -68,7 +68,7 @@ def run(plan, args):
 	
 	# unblock connection with some delay 
 	delay = PacketDelay(100)
-	plan.set_connection((SUBNETWORK_1, SUBNETWORK_2), ConnectionConfig(packet_delay=delay))
+	plan.set_connection((SUBNETWORK_1, SUBNETWORK_2), config=ConnectionConfig(packet_delay=delay))
 
 	recipe=ExecRecipe(
 		service_name=SERVICE_ID_2,
@@ -88,7 +88,7 @@ def run(plan, args):
 
 	# update the service into new subnetwork with higher latency
 	higher_delay = PacketDelay(750)
-	plan.set_connection((SUBNETWORK_1, SUBNETWORK_3), ConnectionConfig(packet_delay=higher_delay))
+	plan.set_connection((SUBNETWORK_1, SUBNETWORK_3), config=ConnectionConfig(packet_delay=higher_delay))
 	plan.update_service(SERVICE_ID_2, config=UpdateServiceConfig(subnetwork=SUBNETWORK_3))
 	recipe=ExecRecipe(
 		service_name=SERVICE_ID_2,

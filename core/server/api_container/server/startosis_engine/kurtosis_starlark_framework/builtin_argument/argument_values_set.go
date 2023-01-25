@@ -39,6 +39,8 @@ func CreateNewArgumentValuesSet(builtinName string, argumentsDefinition []*Built
 	}, nil
 }
 
+// ExtractArgumentValue is a static generic wrapper around ArgumentValuesSet#ExtractArgumentValue to avoid the pain
+// of creating an empty pointer to store the value to.
 func ExtractArgumentValue[ArgumentValueType starlark.Value](arguments *ArgumentValuesSet, argumentName string) (ArgumentValueType, error) {
 	var val ArgumentValueType
 	if err := arguments.ExtractArgumentValue(argumentName, &val); err != nil {
@@ -51,18 +53,31 @@ func (arguments *ArgumentValuesSet) GetDefinition() []*BuiltinArgument {
 	return arguments.argumentsDefinition
 }
 
-func (arguments *ArgumentValuesSet) ExtractArgumentValue(argumentName string, argumentValuePointer interface{}) error {
-	found := false
-	argumentIdx := 0
-	for idx, argumentDefinition := range arguments.argumentsDefinition {
-		if argumentDefinition.Name == argumentName {
-			found = true
-			argumentIdx = idx
-			break
-		}
+// IsSet returns whether an optional argument as been set or not. If the argument is mandatory, it will return true.
+func (arguments *ArgumentValuesSet) IsSet(argumentName string) bool {
+	argumentIdx, found := getArgumentIndex(arguments, argumentName)
+	if !found {
+		return false
 	}
+	argumentDefinition := arguments.argumentsDefinition[argumentIdx]
+	if argumentDefinition.IsOptional && arguments.values[argumentIdx] == nil {
+		return false
+	}
+	return true
+}
+
+// ExtractArgumentValue compute the value associated with the argumentName and store it in the argumentValuePointer
+// It throws an exception if the argument is optional and unset in this ArgumentValuesSet
+//
+// See the static ExtractArgumentValue function above as an alternative to this function.
+func (arguments *ArgumentValuesSet) ExtractArgumentValue(argumentName string, argumentValuePointer interface{}) error {
+	argumentIdx, found := getArgumentIndex(arguments, argumentName)
 	if !found {
 		return fmt.Errorf("Argument '%s' could not be found in schema", argumentName)
+	}
+
+	if !arguments.IsSet(argumentName) {
+		return fmt.Errorf("Argument '%s' should be set to extract its value", argumentName)
 	}
 
 	pointerValue := reflect.ValueOf(argumentValuePointer)
@@ -78,10 +93,14 @@ func (arguments *ArgumentValuesSet) ExtractArgumentValue(argumentName string, ar
 }
 
 func (arguments *ArgumentValuesSet) String() string {
-	serializedArguments := make([]string, len(arguments.argumentsDefinition))
+	var serializedArguments []string
 	for idx, argument := range arguments.argumentsDefinition {
+		if !arguments.IsSet(argument.Name) {
+			continue
+		}
 		value := arguments.values[idx]
-		serializedArguments[idx] = fmt.Sprintf("%s=%s", argument.Name, shared_helpers.CanonicalizeArgValue(value))
+		serializedArgument := fmt.Sprintf("%s=%s", argument.Name, shared_helpers.CanonicalizeArgValue(value))
+		serializedArguments = append(serializedArguments, serializedArgument)
 	}
 	return fmt.Sprintf("(%s)", strings.Join(serializedArguments, ", "))
 }
@@ -95,7 +114,6 @@ func parseArguments(argumentDefinitions []*BuiltinArgument, builtinName string, 
 		} else {
 			pairs = append(pairs, argumentDefinition.Name)
 		}
-		storedValues[idx] = argumentDefinition.ZeroValueProvider()
 		pairs = append(pairs, &storedValues[idx])
 	}
 	if err := starlark.UnpackArgs(builtinName, args, kwargs, pairs...); err != nil {
@@ -104,6 +122,9 @@ func parseArguments(argumentDefinitions []*BuiltinArgument, builtinName string, 
 	// validate each type matches the expected before returning
 	var invalidArgs []string
 	for idx, argumentDefinition := range argumentDefinitions {
+		if argumentDefinition.IsOptional && storedValues[idx] == nil {
+			continue
+		}
 		if !reflect.TypeOf(storedValues[idx]).AssignableTo(reflect.TypeOf(argumentDefinition.ZeroValueProvider())) {
 			invalidArgs = append(invalidArgs, argumentDefinition.Name)
 		}
@@ -112,6 +133,19 @@ func parseArguments(argumentDefinitions []*BuiltinArgument, builtinName string, 
 		return nil, fmt.Errorf("The following argument could not be parse because their type did not match the expected: %v", invalidArgs)
 	}
 	return storedValues, nil
+}
+
+func getArgumentIndex(arguments *ArgumentValuesSet, argumentName string) (int, bool) {
+	found := false
+	argumentIdx := -1
+	for idx, argumentDefinition := range arguments.argumentsDefinition {
+		if argumentDefinition.Name == argumentName {
+			found = true
+			argumentIdx = idx
+			break
+		}
+	}
+	return argumentIdx, found
 }
 
 func makeOptional(name string) string {

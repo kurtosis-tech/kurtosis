@@ -115,9 +115,10 @@ func (connectionConfig *ConnectionConfig) AttrNames() []string {
 	return []string{packetLossPercentageAttr, packetDelayAttr}
 }
 
-func (connectionConfig *ConnectionConfig) ToKurtosisType() partition_topology.PartitionConnection {
-	return partition_topology.NewPartitionConnection(
+func (connectionConfig *ConnectionConfig) ToKurtosisType() *partition_topology.PartitionConnection {
+	partitionConnection := partition_topology.NewPartitionConnection(
 		partition_topology.NewPacketLoss(float32(connectionConfig.packetLossPercentage)),
 		connectionConfig.packetDelay.ToKurtosisType(),
 	)
+	return &partitionConnection
 }

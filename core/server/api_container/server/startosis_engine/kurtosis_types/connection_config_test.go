@@ -180,5 +180,5 @@ func TestConnectionConfig_ToKurtosisType(t *testing.T) {
 	connectionConfig := NewConnectionConfig(50, NoPacketDelay)
 	expectedKurtosisType := partition_topology.NewPartitionConnection(
 		partition_topology.NewPacketLoss(50), partition_topology.ConnectionWithNoPacketDelay)
-	require.Equal(t, expectedKurtosisType, connectionConfig.ToKurtosisType())
+	require.Equal(t, expectedKurtosisType, *connectionConfig.ToKurtosisType())
 }
