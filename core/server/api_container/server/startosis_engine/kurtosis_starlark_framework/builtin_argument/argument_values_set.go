@@ -125,6 +125,10 @@ func parseArguments(argumentDefinitions []*BuiltinArgument, builtinName string, 
 		if argumentDefinition.IsOptional && storedValues[idx] == nil {
 			continue
 		}
+		if reflect.TypeOf(argumentDefinition.ZeroValueProvider()) == nil {
+			// it means the type is an interface, we are not able to validate its concrete type at this step
+			continue
+		}
 		if !reflect.TypeOf(storedValues[idx]).AssignableTo(reflect.TypeOf(argumentDefinition.ZeroValueProvider())) {
 			invalidArgs = append(invalidArgs, argumentDefinition.Name)
 		}

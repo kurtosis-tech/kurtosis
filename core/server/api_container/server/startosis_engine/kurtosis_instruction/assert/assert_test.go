@@ -1,38 +1,85 @@
 package assert
 
 import (
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
 	"testing"
 )
 
-const (
-	testRuntimeValue = "{{runtime-value}}"
-	testAssertion    = "=="
-)
+func TestAssert_StringsEqual(t *testing.T) {
+	currentValue := starlark.String("Hello")
+	assertion := "=="
+	targetValue := starlark.String("Hello")
+	require.Nil(t, Assert(currentValue, assertion, targetValue))
+}
 
-var (
-	testTarget             = starlark.MakeInt(0)
-	emptyRuntimeValueStore *runtime_value_store.RuntimeValueStore
-)
+func TestAssert_StringsNonEqual(t *testing.T) {
+	currentValue := starlark.String("Hello")
+	assertion := "=="
+	targetValue := starlark.String("World")
+	require.NotNil(t, Assert(currentValue, assertion, targetValue))
+}
 
-func TestAssertInstruction_StringRepresentationWorks(t *testing.T) {
-	starlarkKwargs := starlark.StringDict{
-		"value":        starlark.String(testRuntimeValue),
-		"assertion":    starlark.String(testAssertion),
-		"target_value": testTarget,
-	}
-	starlarkKwargs.Freeze()
-	assertInstruction := NewAssertInstruction(
-		kurtosis_instruction.NewInstructionPosition(1, 1, "dummyFile"),
-		emptyRuntimeValueStore,
-		testRuntimeValue,
-		testAssertion,
-		testTarget,
-		starlarkKwargs,
-	)
-	expectedStr := `assert(assertion="==", target_value=0, value="{{runtime-value}}")`
-	require.Equal(t, expectedStr, assertInstruction.String())
+func TestAssert_IntsLt(t *testing.T) {
+	currentValue := starlark.MakeInt(1)
+	assertion := "<"
+	targetValue := starlark.MakeInt(5)
+	require.Nil(t, Assert(currentValue, assertion, targetValue))
+}
+
+func TestAssert_IntsGtFalse(t *testing.T) {
+	currentValue := starlark.MakeInt(1)
+	assertion := ">"
+	targetValue := starlark.MakeInt(5)
+	require.NotNil(t, Assert(currentValue, assertion, targetValue))
+}
+
+func TestAssert_ListIn(t *testing.T) {
+	currentValue := starlark.String("Hello")
+	assertion := "IN"
+	targetValue := starlark.NewList([]starlark.Value{
+		starlark.String("Hello"),
+		starlark.String("World"),
+	})
+	require.Nil(t, Assert(currentValue, assertion, targetValue))
+}
+
+func TestAssert_ListInFalse(t *testing.T) {
+	currentValue := starlark.String("Kurtosis")
+	assertion := "IN"
+	targetValue := starlark.NewList([]starlark.Value{
+		starlark.String("Hello"),
+		starlark.String("World"),
+	})
+	require.NotNil(t, Assert(currentValue, assertion, targetValue))
+}
+
+func TestAssert_ListNotIn(t *testing.T) {
+	currentValue := starlark.String("Kurtosis")
+	assertion := "NOT_IN"
+	targetValue := starlark.NewList([]starlark.Value{
+		starlark.String("Hello"),
+		starlark.String("World"),
+	})
+	require.Nil(t, Assert(currentValue, assertion, targetValue))
+}
+
+func TestAssert_ListNotInFalse(t *testing.T) {
+	currentValue := starlark.String("Hello")
+	assertion := "NOT_IN"
+	targetValue := starlark.NewList([]starlark.Value{
+		starlark.String("Hello"),
+		starlark.String("World"),
+	})
+	require.NotNil(t, Assert(currentValue, assertion, targetValue))
+}
+
+func TestAssert_InvalidToken(t *testing.T) {
+	currentValue := starlark.String("Hello")
+	assertion := "INVALID"
+	targetValue := starlark.NewList([]starlark.Value{
+		starlark.String("Hello"),
+		starlark.String("World"),
+	})
+	require.NotNil(t, Assert(currentValue, assertion, targetValue))
 }
