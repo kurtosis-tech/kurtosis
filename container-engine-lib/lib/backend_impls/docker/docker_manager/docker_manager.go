@@ -16,6 +16,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/docker/go-connections/nat"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
 	docker_manager_types "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/concurrent_writer"
 	"github.com/kurtosis-tech/stacktrace"
@@ -99,6 +100,8 @@ const (
 	millicpusToNanoCPUsFactor = 1_000_000
 
 	minMemoryLimit = 6
+
+	successfulExitCode = 0
 )
 
 /*
@@ -498,6 +501,12 @@ func (manager DockerManager) CreateAndStartContainer(
 		}
 	}()
 
+	//Check if the container dies because sometimes users starts containers with a wrong configuration and these quickly dies
+	didContainerStartSuccessfully, err := manager.didContainerStartSuccessfully(ctx, containerId, dockerImage)
+	if err != nil {
+		return "", nil, stacktrace.Propagate(err, "An error occurred checking if container '%v' is running", containerId)
+	}
+
 	if isInteractiveMode {
 		/*
 			Two notes:
@@ -528,7 +537,7 @@ func (manager DockerManager) CreateAndStartContainer(
 	logrus.Tracef("Published ports set: %+v", publishedPortsSet)
 
 	// If the user wanted their ports exposed, Docker will have auto-assigned the ports to ports in the ephemeral range
-	//  on the host. We need to look up what those ports are so we can return report them back to the user.
+	// on the host. We need to look up what those ports are, so we can return report them back to the user.
 	resultHostPortBindings := map[nat.Port]*nat.PortBinding{}
 	numPublishedPorts := len(publishedPortsSet)
 	if numPublishedPorts > 0 {
@@ -589,14 +598,19 @@ func (manager DockerManager) CreateAndStartContainer(
 
 		// Final verification that all published ports get a host machine port bindings
 		if len(resultHostPortBindings) != numPublishedPorts {
-			return "", nil, stacktrace.NewError(
-				"%v ports were to be published to the host machine, but container '%v' never got host machine port bindings on interface %v for all published ports even after %v checks with %v between checks",
-				numPublishedPorts,
-				containerId,
-				expectedHostIp,
-				maxNumHostPortBindingChecks,
-				timeBetweenHostPortBindingChecks,
-			)
+
+			if !didContainerStartSuccessfully {
+				//Then, if the container is running, show the error related to the ports problem
+				return "", nil, stacktrace.NewError(
+					"%v ports were to be published to the host machine, but container '%v' never got host machine port"+
+						" bindings on interface %v for all published ports even after %v checks with %v between checks.",
+					numPublishedPorts,
+					containerId,
+					expectedHostIp,
+					maxNumHostPortBindingChecks,
+					timeBetweenHostPortBindingChecks,
+				)
+			}
 		}
 	}
 
@@ -1372,6 +1386,44 @@ func (manager DockerManager) getContainersByFilterArgs(ctx context.Context, filt
 	}
 
 	return containers, nil
+}
+
+// didContainerStartSuccessfully there are 4 return cases:
+// 1- sometime goes wrong during the method's execution, for example an error calling manager.InspectContainer
+// 2- the container is running which will return true and nil
+// 2- the container runs successfully and exited with 0, in this case this method will also return true and nil
+// 3- the container dies, in this case this method will return false and the error with the container logs
+func (manager DockerManager) didContainerStartSuccessfully(ctx context.Context, containerId string, dockerImage string) (bool, error) {
+
+	containerJson, err := manager.InspectContainer(ctx, containerId)
+	if err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred getting container JSON info for container with ID '%v'", containerId)
+	}
+	containerState := containerJson.State
+	containerStatus, err := getContainerStatusByDockerContainerState(containerState.Status)
+	if err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred getting ContainerStatus from Docker container state '%v'", containerState.Status)
+	}
+
+	//check if the container run successfully, could be those cases were the container execute a small task, like configuration and then exits
+	if containerStatus == docker_manager_types.ContainerStatus_Exited && containerState.ExitCode == successfulExitCode {
+		return true, nil
+	}
+
+	isContainerRunning, found := consts.IsContainerRunningDeterminer[containerStatus]
+	if !found {
+		// This should never happen because we enforce completeness in a unit test
+		return false, stacktrace.NewError("No is-running designation found for API container status '%v'; this is a bug in Kurtosis!", containerStatus.String())
+	}
+
+	if !isContainerRunning {
+		containerLogs := manager.getFailedContainerLogsOrErrorString(ctx, containerId)
+		containerLogsHeader := "\n--------------------- CONTAINER LOGS -----------------------\n"
+		containerLogsFooter := "\n------------------- END CONTAINER LOGS --------------------"
+		return false, stacktrace.NewError("Container '%v' (with image '%v') die with a non zero exit code rapidly after it was started. This likely indicates a misconfiguration with how the container was started. Container should either exit gracefully or keep running for Kurtosis to consider it in a good state; logs are below:%v%v%v", containerId, dockerImage, containerLogsHeader, containerLogs, containerLogsFooter)
+	}
+
+	return true, nil
 }
 
 func newContainersListFromDockerContainersList(dockerContainers []types.Container) ([]*docker_manager_types.Container, error) {
