@@ -1015,13 +1015,7 @@ def run(plan):
 	require.Len(t, instructions, 3)
 	require.Nil(t, interpretationError)
 
-	removeInstruction := remove_service.NewRemoveServiceInstruction(
-		testServiceNetwork,
-		kurtosis_instruction.NewInstructionPosition(5, 21, startosis_constants.PackageIdPlaceholderForStandaloneScript),
-		"example-datastore-server",
-	)
-
-	require.Equal(t, removeInstruction, instructions[1])
+	assertInstructionTypeAndPosition(t, instructions[1], remove_service.RemoveServiceBuiltinName, startosis_constants.PackageIdPlaceholderForStandaloneScript, 5, 21)
 
 	expectedOutput := `Starting Startosis script!
 The service example-datastore-server has been removed

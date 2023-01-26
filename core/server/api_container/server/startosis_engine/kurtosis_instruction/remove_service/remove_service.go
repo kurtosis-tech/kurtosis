@@ -3,104 +3,84 @@ package remove_service
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
-	kurtosis_backend_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
 )
 
 const (
 	RemoveServiceBuiltinName = "remove_service"
 
-	serviceNameArgName = "service_name"
+	ServiceNameArgName = "service_name"
 )
 
-func GenerateRemoveServiceBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, serviceNetwork service_network.ServiceNetwork) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
-	// TODO: Force returning an InterpretationError rather than a normal error
-	return func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
-		serviceName, interpretationError := parseStartosisArgs(b, args, kwargs)
-		if interpretationError != nil {
-			return nil, interpretationError
-		}
-		instructionPosition := shared_helpers.GetCallerPositionFromThread(thread)
-		removeServiceInstruction := NewRemoveServiceInstruction(serviceNetwork, instructionPosition, serviceName)
-		*instructionsQueue = append(*instructionsQueue, removeServiceInstruction)
-		return starlark.None, nil
+func NewRemoveService(serviceNetwork service_network.ServiceNetwork) *kurtosis_plan_instruction.KurtosisPlanInstruction {
+	return &kurtosis_plan_instruction.KurtosisPlanInstruction{
+		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
+			Name: RemoveServiceBuiltinName,
+
+			Arguments: []*builtin_argument.BuiltinArgument{
+				{
+					Name:              ServiceNameArgName,
+					IsOptional:        false,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
+					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+						// TODO: when #903 is merged, validate service name are non emtpy string
+						return nil
+					},
+				},
+			},
+		},
+
+		Capabilities: func() kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities {
+			return &RemoveServiceCapabilities{
+				serviceNetwork: serviceNetwork,
+
+				serviceName: "", // populated at interpretation time
+			}
+		},
+
+		DefaultDisplayArguments: map[string]bool{
+			ServiceNameArgName: true,
+		},
 	}
 }
 
-type RemoveServiceInstruction struct {
+type RemoveServiceCapabilities struct {
 	serviceNetwork service_network.ServiceNetwork
 
-	position    *kurtosis_instruction.InstructionPosition
-	serviceName kurtosis_backend_service.ServiceName
+	serviceName service.ServiceName
 }
 
-func NewRemoveServiceInstruction(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition, serviceName kurtosis_backend_service.ServiceName) *RemoveServiceInstruction {
-	return &RemoveServiceInstruction{
-		serviceNetwork: serviceNetwork,
-		position:       position,
-		serviceName:    serviceName,
-	}
-}
-
-func (instruction *RemoveServiceInstruction) GetPositionInOriginalScript() *kurtosis_instruction.InstructionPosition {
-	return instruction.position
-}
-
-func (instruction *RemoveServiceInstruction) GetCanonicalInstruction() *kurtosis_core_rpc_api_bindings.StarlarkInstruction {
-	args := []*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg{
-		binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(starlark.String(instruction.serviceName)), serviceNameArgName, kurtosis_instruction.Representative),
-	}
-	return binding_constructors.NewStarlarkInstruction(instruction.position.ToAPIType(), RemoveServiceBuiltinName, instruction.String(), args)
-}
-
-func (instruction *RemoveServiceInstruction) Execute(ctx context.Context) (*string, error) {
-	serviceUUID, err := instruction.serviceNetwork.RemoveService(ctx, string(instruction.serviceName))
+func (builtin *RemoveServiceCapabilities) Interpret(arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
+	serviceName, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, ServiceNameArgName)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed removing service with unexpected error")
+		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ServiceNameArgName)
 	}
-	logrus.Infof("Successfully removed service '%v' with guid '%v'", instruction.serviceName, serviceUUID)
-	instructionResult := fmt.Sprintf("Service '%s' with service UUID '%s' removed", instruction.serviceName, serviceUUID)
-	return &instructionResult, nil
+
+	builtin.serviceName = service.ServiceName(serviceName.GoString())
+	return starlark.None, nil
 }
 
-func (instruction *RemoveServiceInstruction) String() string {
-	return shared_helpers.CanonicalizeInstruction(RemoveServiceBuiltinName, kurtosis_instruction.NoArgs, instruction.getKwargs())
-}
-
-func (instruction *RemoveServiceInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
-	if !environment.DoesServiceNameExist(instruction.serviceName) {
-		return startosis_errors.NewValidationError("There was an error validating '%v' as service name '%v' doesn't exist", RemoveServiceBuiltinName, instruction.serviceName)
+func (builtin *RemoveServiceCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
+	if !validatorEnvironment.DoesServiceNameExist(builtin.serviceName) {
+		return startosis_errors.NewValidationError("There was an error validating '%v' as service name '%v' doesn't exist", RemoveServiceBuiltinName, builtin.serviceName)
 	}
-	environment.RemoveServiceName(instruction.serviceName)
+	validatorEnvironment.RemoveServiceName(builtin.serviceName)
 	return nil
 }
 
-func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (service.ServiceName, *startosis_errors.InterpretationError) {
-	var serviceNameArg starlark.String
-	if err := starlark.UnpackArgs(b.Name(), args, kwargs, serviceNameArgName, &serviceNameArg); err != nil {
-		return "", startosis_errors.WrapWithInterpretationError(err, "Failed parsing arguments for function '%s' (unparsed arguments were: '%v' '%v')", RemoveServiceBuiltinName, args, kwargs)
+func (builtin *RemoveServiceCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
+	serviceUUID, err := builtin.serviceNetwork.RemoveService(ctx, string(builtin.serviceName))
+	if err != nil {
+		return "", stacktrace.Propagate(err, "Failed removing service with unexpected error")
 	}
-
-	serviceName, interpretationErr := kurtosis_instruction.ParseServiceName(serviceNameArg)
-	if interpretationErr != nil {
-		return "", interpretationErr
-	}
-
-	return serviceName, nil
-}
-
-func (instruction *RemoveServiceInstruction) getKwargs() starlark.StringDict {
-	return starlark.StringDict{
-		serviceNameArgName: starlark.String(instruction.serviceName),
-	}
+	instructionResult := fmt.Sprintf("Service '%s' with service UUID '%s' removed", builtin.serviceName, serviceUUID)
+	return instructionResult, nil
 }
