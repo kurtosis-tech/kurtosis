@@ -1,5 +1,46 @@
 # Changelog
 
+## [0.65.0](https://github.com/kurtosis-tech/kurtosis/compare/0.64.2...0.65.0) (2023-01-26)
+
+
+### ⚠ BREAKING CHANGES
+
+* Remove the backward compatibility support for recipes in favour of pre-defined kurtosis types. ([#920](https://github.com/kurtosis-tech/kurtosis/issues/920))
+* This removes backwards compatibility for artifact_id in favor of artifact_name
+* Remove support for unnamed `struct` as `add_service` `config` argument. All `add_service` instructions should now use a proper `ServiceConfig` object as their second argument. ([#778](https://github.com/kurtosis-tech/kurtosis/issues/778))
+* service_name in Starlark has been renamed service_id to for instructions add_service, remove_service, store_service_files and update_service. This also applies to the exec, post and get recipes. Users of these instructions and recipes will have to service_id rename to service_name for each named usage of service_id to service_name. If you only have positional usage then & go unaffected.
+
+### Features
+
+* `add_services` now fails as soon as one service from the batch fails ([#934](https://github.com/kurtosis-tech/kurtosis/issues/934)) ([ae2fc27](https://github.com/kurtosis-tech/kurtosis/commit/ae2fc2720c7e9368523e8599ed933ff442ee2763)), closes [#933](https://github.com/kurtosis-tech/kurtosis/issues/933)
+* Add `add_services` instruction to start services in bulk ([#912](https://github.com/kurtosis-tech/kurtosis/issues/912)) ([e3c3124](https://github.com/kurtosis-tech/kurtosis/commit/e3c3124e54ec5448b13842cd276b349e349bcb0e)), closes [#802](https://github.com/kurtosis-tech/kurtosis/issues/802)
+* added a `--full-uuid` flag that prints uuids fully otherwise prints short uuids ([#898](https://github.com/kurtosis-tech/kurtosis/issues/898)) ([9b10342](https://github.com/kurtosis-tech/kurtosis/commit/9b103429bd0a61dc57d102fac618dfdbf11f07d3)), closes [#896](https://github.com/kurtosis-tech/kurtosis/issues/896)
+* added default issue template ([#869](https://github.com/kurtosis-tech/kurtosis/issues/869)) ([8f141e3](https://github.com/kurtosis-tech/kurtosis/commit/8f141e3489f949f55f3e73539cf511eec7f0cdc7))
+* added packet latency functionality ([#888](https://github.com/kurtosis-tech/kurtosis/issues/888)) ([6d28b54](https://github.com/kurtosis-tech/kurtosis/commit/6d28b5456c5a80e7804ac4ec23d1b04638f8147b))
+* added the ability for users to introduce delay between subnetworks ([#897](https://github.com/kurtosis-tech/kurtosis/issues/897)) ([3c5c841](https://github.com/kurtosis-tech/kurtosis/commit/3c5c8418c2e7eee6d35de736970143585b142f0a))
+* Remove the backward compatibility support for recipes in favour of pre-defined kurtosis types. ([#920](https://github.com/kurtosis-tech/kurtosis/issues/920)) ([d29455c](https://github.com/kurtosis-tech/kurtosis/commit/d29455c1eaa86ceec39f74f4c096ab7fccd485ca))
+* support historical identifiers for enclaves & services for logs ([#900](https://github.com/kurtosis-tech/kurtosis/issues/900)) ([4db5f1e](https://github.com/kurtosis-tech/kurtosis/commit/4db5f1edbdc0999bd59a89397b7a7dc0ca0c30bc))
+* Support uuids, names and shortened uuids for enclaves ([#827](https://github.com/kurtosis-tech/kurtosis/issues/827)) ([60f32bf](https://github.com/kurtosis-tech/kurtosis/commit/60f32bf60d8f7205b2b1b4c57a8984a40dcfb664)), closes [#310](https://github.com/kurtosis-tech/kurtosis/issues/310)
+
+
+### Bug Fixes
+
+* align convertApiPortsToServiceContextPorts functionality across golang and typescript ([#819](https://github.com/kurtosis-tech/kurtosis/issues/819)) ([e7f3425](https://github.com/kurtosis-tech/kurtosis/commit/e7f34259277861cde4653085565455e3b7a35f4d)), closes [#18](https://github.com/kurtosis-tech/kurtosis/issues/18)
+* Fix instructions syntax in the quickstart documentation ([#892](https://github.com/kurtosis-tech/kurtosis/issues/892)) ([70d93fd](https://github.com/kurtosis-tech/kurtosis/commit/70d93fd45c05feaef2a480ea540b48912984565c))
+* Fix magic string replacement in ServiceConfig ([#942](https://github.com/kurtosis-tech/kurtosis/issues/942)) ([8aeb8fe](https://github.com/kurtosis-tech/kurtosis/commit/8aeb8fed432b300f3d49ea8e29379ce63416710e))
+* minor corrections in `add_services` docs ([#924](https://github.com/kurtosis-tech/kurtosis/issues/924)) ([0c780ce](https://github.com/kurtosis-tech/kurtosis/commit/0c780ce53d401fa0d0a59aaf0eb63ea1ba5034dc))
+* Only publish via CI on master ([#905](https://github.com/kurtosis-tech/kurtosis/issues/905)) ([42fe3be](https://github.com/kurtosis-tech/kurtosis/commit/42fe3be946783a99f444f710951f11cbca4f9d30))
+* rename --full-uuid to --full-uuids ([#941](https://github.com/kurtosis-tech/kurtosis/issues/941)) ([7578296](https://github.com/kurtosis-tech/kurtosis/commit/7578296040c6fd038d501267ebea0cde0f2a3ada))
+* rename SDK call and correct docs around fetching of historical identifiers ([#932](https://github.com/kurtosis-tech/kurtosis/issues/932)) ([ff8d515](https://github.com/kurtosis-tech/kurtosis/commit/ff8d5155ac0147a99b977576146f3711897284d3))
+* return enclave name instead of enclave uuid for enclave_context in typescript ([#921](https://github.com/kurtosis-tech/kurtosis/issues/921)) ([537475e](https://github.com/kurtosis-tech/kurtosis/commit/537475e1f8ef72bbe39fbe4e763b9c42221630ad))
+
+
+### Code Refactoring
+
+* remove backwards compatibility for artifact_id ([#915](https://github.com/kurtosis-tech/kurtosis/issues/915)) ([7fcfefc](https://github.com/kurtosis-tech/kurtosis/commit/7fcfefcf6a2ab9f0b7f7040a682999240f07e48a)), closes [#829](https://github.com/kurtosis-tech/kurtosis/issues/829)
+* Remove support for unnamed `struct` as `add_service` `config` argument. All `add_service` instructions should now use a proper `ServiceConfig` object as their second argument. ([#778](https://github.com/kurtosis-tech/kurtosis/issues/778)) ([b402e36](https://github.com/kurtosis-tech/kurtosis/commit/b402e36f6582db55f0d68875db221aaeddcaab19))
+* rename `service_id` in Starlark to `service_name` ([#890](https://github.com/kurtosis-tech/kurtosis/issues/890)) ([a27d9d4](https://github.com/kurtosis-tech/kurtosis/commit/a27d9d4c69b1b519770cadc8884b16d65477164d)), closes [#861](https://github.com/kurtosis-tech/kurtosis/issues/861)
+
 ## [0.64.2](https://github.com/kurtosis-tech/kurtosis/compare/0.64.1...0.64.2) (2023-01-17)
 
 
