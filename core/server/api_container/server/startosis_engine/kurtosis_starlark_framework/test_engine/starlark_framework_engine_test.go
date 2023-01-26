@@ -32,6 +32,7 @@ func TestAllRegisteredBuiltins(t *testing.T) {
 	testsAllKurtosisPlanInstructions(t, newSetConnectionDefaultTestCase(t))
 	testsAllKurtosisPlanInstructions(t, newRenderTemplateTestCase1(t))
 	testsAllKurtosisPlanInstructions(t, newRenderTemplateTestCase2(t))
+	testsAllKurtosisPlanInstructions(t, newRequestTestCase(t))
 }
 
 func testsAllKurtosisPlanInstructions(t *testing.T, builtin KurtosisPlanInstructionBaseTest) {

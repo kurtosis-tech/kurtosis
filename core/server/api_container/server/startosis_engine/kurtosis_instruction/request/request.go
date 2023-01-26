@@ -2,12 +2,10 @@ package request
 
 import (
 	"context"
-	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/recipe"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
@@ -19,94 +17,79 @@ import (
 const (
 	RequestBuiltinName = "request"
 
-	recipeArgName = "recipe"
+	RecipeArgName = "recipe"
 )
 
-func GenerateRequestBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, recipeExecutor *runtime_value_store.RuntimeValueStore, serviceNetwork service_network.ServiceNetwork) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
-	// TODO: Force returning an InterpretationError rather than a normal error
-	return func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
-		position := shared_helpers.GetCallerPositionFromThread(thread)
-		instruction := newEmptyGetValueInstruction(serviceNetwork, position, recipeExecutor)
-		if interpretationError := instruction.parseStartosisArgs(b, args, kwargs); interpretationError != nil {
-			return nil, interpretationError
-		}
-		resultUuid, err := recipeExecutor.CreateValue()
-		if err != nil {
-			return nil, startosis_errors.NewInterpretationError("An error occurred while generating uuid for future reference for %v instruction", RequestBuiltinName)
-		}
-		instruction.resultUuid = resultUuid
-		returnValue, interpretationErr := instruction.httpRequestRecipe.CreateStarlarkReturnValue(instruction.resultUuid)
-		if interpretationErr != nil {
-			return nil, startosis_errors.NewInterpretationError("An error occurred while creating return value for %v instruction", RequestBuiltinName)
-		}
-		*instructionsQueue = append(*instructionsQueue, instruction)
-		return returnValue, nil
+func NewRequest(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) *kurtosis_plan_instruction.KurtosisPlanInstruction {
+	return &kurtosis_plan_instruction.KurtosisPlanInstruction{
+		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
+			Name: RequestBuiltinName,
+
+			Arguments: []*builtin_argument.BuiltinArgument{
+				{
+					Name:              RecipeArgName,
+					IsOptional:        false,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*recipe.HttpRequestRecipe],
+					Validator:         nil,
+				},
+			},
+		},
+
+		Capabilities: func() kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities {
+			return &RequestCapabilities{
+				serviceNetwork:    serviceNetwork,
+				runtimeValueStore: runtimeValueStore,
+
+				httpRequestRecipe: nil, // populated at interpretation time
+				resultUuid:        "",  // populated at interpretation time
+			}
+		},
+
+		DefaultDisplayArguments: map[string]bool{
+			RecipeArgName: true,
+		},
 	}
 }
 
-type RequestInstruction struct {
-	serviceNetwork service_network.ServiceNetwork
-
-	position       *kurtosis_instruction.InstructionPosition
-	starlarkKwargs starlark.StringDict
-
+type RequestCapabilities struct {
+	serviceNetwork    service_network.ServiceNetwork
 	runtimeValueStore *runtime_value_store.RuntimeValueStore
+
 	httpRequestRecipe *recipe.HttpRequestRecipe
 	resultUuid        string
 }
 
-func newEmptyGetValueInstruction(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition, recipeExecutor *runtime_value_store.RuntimeValueStore) *RequestInstruction {
-	return &RequestInstruction{
-		serviceNetwork:    serviceNetwork,
-		position:          position,
-		runtimeValueStore: recipeExecutor,
-		httpRequestRecipe: nil,
-		resultUuid:        "",
-		starlarkKwargs:    nil,
-	}
-}
-
-func (instruction *RequestInstruction) GetPositionInOriginalScript() *kurtosis_instruction.InstructionPosition {
-	return instruction.position
-}
-
-func (instruction *RequestInstruction) GetCanonicalInstruction() *kurtosis_core_rpc_api_bindings.StarlarkInstruction {
-	args := []*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg{
-		binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[recipeArgName]), recipeArgName, kurtosis_instruction.Representative),
-	}
-	return binding_constructors.NewStarlarkInstruction(instruction.position.ToAPIType(), RequestBuiltinName, instruction.String(), args)
-
-}
-
-func (instruction *RequestInstruction) Execute(ctx context.Context) (*string, error) {
-	result, err := instruction.httpRequestRecipe.Execute(ctx, instruction.serviceNetwork, instruction.runtimeValueStore)
+func (builtin *RequestCapabilities) Interpret(arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
+	httpRequestRecipe, err := builtin_argument.ExtractArgumentValue[*recipe.HttpRequestRecipe](arguments, RecipeArgName)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error executing http recipe")
+		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", RecipeArgName)
 	}
-	instruction.runtimeValueStore.SetValue(instruction.resultUuid, result)
-	instructionResult := instruction.httpRequestRecipe.ResultMapToString(result)
-	return &instructionResult, err
+
+	resultUuid, err := builtin.runtimeValueStore.CreateValue()
+	if err != nil {
+		return nil, startosis_errors.NewInterpretationError("An error occurred while generating uuid for future reference for %v instruction", RequestBuiltinName)
+	}
+
+	builtin.httpRequestRecipe = httpRequestRecipe
+	builtin.resultUuid = resultUuid
+
+	returnValue, interpretationErr := builtin.httpRequestRecipe.CreateStarlarkReturnValue(builtin.resultUuid)
+	if interpretationErr != nil {
+		return nil, startosis_errors.NewInterpretationError("An error occurred while creating return value for %v instruction", RequestBuiltinName)
+	}
+	return returnValue, nil
 }
 
-func (instruction *RequestInstruction) String() string {
-	return shared_helpers.CanonicalizeInstruction(RequestBuiltinName, kurtosis_instruction.NoArgs, instruction.starlarkKwargs)
-}
-
-func (instruction *RequestInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
+func (builtin *RequestCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, _ *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
 	return nil
 }
 
-func (instruction *RequestInstruction) parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) *startosis_errors.InterpretationError {
-	var recipeConfigHttpRecipe *recipe.HttpRequestRecipe
-
-	if err := starlark.UnpackArgs(b.Name(), args, kwargs, recipeArgName, &recipeConfigHttpRecipe); err != nil {
-		return startosis_errors.NewInterpretationError(fmt.Sprintf("Error occurred while parsing recipe: %v", err.Error()))
+func (builtin *RequestCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
+	result, err := builtin.httpRequestRecipe.Execute(ctx, builtin.serviceNetwork, builtin.runtimeValueStore)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "Error executing http recipe")
 	}
-
-	instruction.starlarkKwargs = starlark.StringDict{
-		recipeArgName: recipeConfigHttpRecipe,
-	}
-	instruction.starlarkKwargs.Freeze()
-	instruction.httpRequestRecipe = recipeConfigHttpRecipe
-	return nil
+	builtin.runtimeValueStore.SetValue(builtin.resultUuid, result)
+	instructionResult := builtin.httpRequestRecipe.ResultMapToString(result)
+	return instructionResult, err
 }
