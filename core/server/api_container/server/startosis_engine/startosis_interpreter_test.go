@@ -4,9 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/print_builtin"
@@ -17,7 +15,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/render_templates"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/store_service_files"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/upload_files"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
@@ -35,18 +32,9 @@ var (
 )
 
 const (
-	testServiceName          = service.ServiceName("example-datastore-server")
-	testContainerImageName   = "kurtosistech/example-datastore-server"
-	emptyApplicationProtocol = ""
-	testArtifactName         = "test-artifact"
-)
-
-var (
-	defaultEntryPointArgs              []string          = nil
-	defaultCmdArgs                     []string          = nil
-	defaultEnvVars                     map[string]string = nil
-	defaultPrivateIPAddressPlaceholder                   = ""
-	defaultPublicPortNumber                              = uint32(0)
+	testServiceName        = service.ServiceName("example-datastore-server")
+	testContainerImageName = "kurtosistech/example-datastore-server"
+	testArtifactName       = "test-artifact"
 )
 
 func TestStartosisInterpreter_SimplePrintScript(t *testing.T) {
@@ -197,8 +185,7 @@ def run(plan):
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 6)
 
-	addServiceInstruction := createSimpleAddServiceInstruction(t, testServiceName, testContainerImageName, 1323, 15, 38, startosis_constants.PackageIdPlaceholderForStandaloneScript, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, privateIPAddressPlaceholder, defaultPublicPortNumber, runtimeValueStore)
-	require.Equal(t, addServiceInstruction, instructions[2])
+	assertInstructionTypeAndPosition(t, instructions[2], add_service.AddServiceBuiltinName, startosis_constants.PackageIdPlaceholderForStandaloneScript, 15, 38)
 
 	expectedOutput := `Starting Startosis script!
 Adding service example-datastore-server
@@ -384,13 +371,9 @@ def run(plan):
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 8)
 
-	addServiceInstruction0 := createSimpleAddServiceInstruction(t, "example-datastore-server-0", testContainerImageName, 1323, 19, 19, startosis_constants.PackageIdPlaceholderForStandaloneScript, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder, defaultPublicPortNumber, runtimeValueStore)
-	addServiceInstruction1 := createSimpleAddServiceInstruction(t, "example-datastore-server-1", testContainerImageName, 1324, 19, 19, startosis_constants.PackageIdPlaceholderForStandaloneScript, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder, defaultPublicPortNumber, runtimeValueStore)
-	addServiceInstruction2 := createSimpleAddServiceInstruction(t, "example-datastore-server-2", testContainerImageName, 1325, 19, 19, startosis_constants.PackageIdPlaceholderForStandaloneScript, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder, defaultPublicPortNumber, runtimeValueStore)
-
-	require.Equal(t, addServiceInstruction0, instructions[2])
-	require.Equal(t, addServiceInstruction1, instructions[4])
-	require.Equal(t, addServiceInstruction2, instructions[6])
+	assertInstructionTypeAndPosition(t, instructions[2], add_service.AddServiceBuiltinName, startosis_constants.PackageIdPlaceholderForStandaloneScript, 19, 19)
+	assertInstructionTypeAndPosition(t, instructions[4], add_service.AddServiceBuiltinName, startosis_constants.PackageIdPlaceholderForStandaloneScript, 19, 19)
+	assertInstructionTypeAndPosition(t, instructions[6], add_service.AddServiceBuiltinName, startosis_constants.PackageIdPlaceholderForStandaloneScript, 19, 19)
 
 	expectedOutput := `Starting Startosis script!
 Adding service example-datastore-server-0
@@ -620,9 +603,7 @@ def run(plan):
 	require.Len(t, instructions, 3)
 	require.Nil(t, interpretationError)
 
-	addServiceInstruction := createSimpleAddServiceInstruction(t, "example-datastore-server", testContainerImageName, 1323, 6, 18, startosis_constants.PackageIdPlaceholderForStandaloneScript, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder, defaultPublicPortNumber, runtimeValueStore)
-
-	require.Equal(t, addServiceInstruction, instructions[2])
+	assertInstructionTypeAndPosition(t, instructions[2], add_service.AddServiceBuiltinName, startosis_constants.PackageIdPlaceholderForStandaloneScript, 6, 18)
 
 	expectedOutput := `Starting Startosis script!
 Adding service example-datastore-server
@@ -670,13 +651,9 @@ def run(plan):
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 8)
 
-	addServiceInstruction0 := createSimpleAddServiceInstruction(t, "example-datastore-server-0", testContainerImageName, 1323, 18, 25, moduleBar, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder, defaultPublicPortNumber, runtimeValueStore)
-	addServiceInstruction1 := createSimpleAddServiceInstruction(t, "example-datastore-server-1", testContainerImageName, 1324, 18, 25, moduleBar, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder, defaultPublicPortNumber, runtimeValueStore)
-	addServiceInstruction2 := createSimpleAddServiceInstruction(t, "example-datastore-server-2", testContainerImageName, 1325, 18, 25, moduleBar, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder, defaultPublicPortNumber, runtimeValueStore)
-
-	require.Equal(t, addServiceInstruction0, instructions[2])
-	require.Equal(t, addServiceInstruction1, instructions[4])
-	require.Equal(t, addServiceInstruction2, instructions[6])
+	assertInstructionTypeAndPosition(t, instructions[2], add_service.AddServiceBuiltinName, moduleBar, 18, 25)
+	assertInstructionTypeAndPosition(t, instructions[4], add_service.AddServiceBuiltinName, moduleBar, 18, 25)
+	assertInstructionTypeAndPosition(t, instructions[6], add_service.AddServiceBuiltinName, moduleBar, 18, 25)
 
 	expectedOutput := `Starting Startosis script!
 Adding service example-datastore-server-0
@@ -739,7 +716,6 @@ def run(plan):
 	deployer.deploy_service(plan)
 	plan.print("Starting Startosis script!")
 `
-	addServiceInstructionFromScriptA := createSimpleAddServiceInstruction(t, "example-datastore-server", testContainerImageName, 1323, 12, 18, moduleBar, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder, defaultPublicPortNumber, runtimeValueStore)
 
 	expectedOutputFromScriptA := `Constructing config
 Adding service example-datastore-server
@@ -747,9 +723,9 @@ Starting Startosis script!
 `
 
 	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, scriptA, startosis_constants.EmptyInputArgs)
-	require.Len(t, instructions, 4)
 	require.Nil(t, interpretationError)
-	require.Equal(t, addServiceInstructionFromScriptA, instructions[2])
+	require.Len(t, instructions, 4)
+	assertInstructionTypeAndPosition(t, instructions[2], add_service.AddServiceBuiltinName, moduleBar, 12, 18)
 	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutputFromScriptA)
 
 	scriptB := `
@@ -767,7 +743,6 @@ def run(plan):
 	)
 	plan.add_service(service_name = service_name, config = config)
 `
-	addServiceInstructionFromScriptB := createSimpleAddServiceInstruction(t, "example-datastore-server", testContainerImageName, 1323, 14, 18, startosis_constants.PackageIdPlaceholderForStandaloneScript, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder, defaultPublicPortNumber, runtimeValueStore)
 	expectedOutputFromScriptB := `Starting Startosis script!
 Adding service example-datastore-server
 `
@@ -775,60 +750,8 @@ Adding service example-datastore-server
 	_, instructions, interpretationError = interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, scriptB, startosis_constants.EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 3)
-	require.Equal(t, addServiceInstructionFromScriptB, instructions[2])
+	assertInstructionTypeAndPosition(t, instructions[2], add_service.AddServiceBuiltinName, startosis_constants.PackageIdPlaceholderForStandaloneScript, 14, 18)
 	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutputFromScriptB)
-}
-
-func TestStartosisInterpreter_AddServiceWithEnvVarsCmdArgsAndEntryPointArgs(t *testing.T) {
-	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
-	defer packageContentProvider.RemoveAll()
-	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, runtimeValueStore)
-	script := `
-def run(plan):
-	plan.print("Starting Startosis script!")
-	service_name = "example-datastore-server"
-	plan.print("Adding service " + service_name)
-	store_config = ServiceConfig(
-		image = "kurtosistech/example-datastore-server",
-		ports = {
-			"grpc": PortSpec(number = 1323, transport_protocol = "TCP")
-		}
-	)
-	datastore_service = plan.add_service(service_name = service_name, config = store_config)
-	client_service_name = "example-datastore-client"
-	plan.print("Adding service " + client_service_name)
-	client_config = ServiceConfig(
-		image = "kurtosistech/example-datastore-client",
-		ports = {
-			"grpc": PortSpec(number = 1337, transport_protocol = "TCP")
-		},
-		entrypoint = ["--store-port " + str(datastore_service.ports["grpc"].number), "--store-ip " + datastore_service.ip_address],
-		cmd = ["ping", datastore_service.ip_address],
-		env_vars = {"STORE_IP": datastore_service.ip_address}
-	)
-	plan.add_service(service_name = client_service_name, config = client_config)
-`
-
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
-	require.Nil(t, interpretationError)
-	require.Len(t, instructions, 5)
-
-	dataSourceAddServiceInstruction := createSimpleAddServiceInstruction(t, "example-datastore-server", testContainerImageName, 1323, 12, 38, startosis_constants.PackageIdPlaceholderForStandaloneScript, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder, defaultPublicPortNumber, runtimeValueStore)
-
-	entryPointArgs := []string{"--store-port 1323", "--store-ip {{kurtosis:example-datastore-server.ip_address}}"}
-	cmdArgs := []string{"ping", "{{kurtosis:example-datastore-server.ip_address}}"}
-	envVars := map[string]string{"STORE_IP": "{{kurtosis:example-datastore-server.ip_address}}"}
-	clientAddServiceInstruction := createSimpleAddServiceInstruction(t, "example-datastore-client", "kurtosistech/example-datastore-client", 1337, 24, 18, startosis_constants.PackageIdPlaceholderForStandaloneScript, entryPointArgs, cmdArgs, envVars, defaultPrivateIPAddressPlaceholder, defaultPublicPortNumber, runtimeValueStore)
-
-	require.Equal(t, dataSourceAddServiceInstruction, instructions[2])
-	require.Equal(t, clientAddServiceInstruction, instructions[4])
-
-	expectedOutput := `Starting Startosis script!
-Adding service example-datastore-server
-Adding service example-datastore-client
-`
-	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutput)
 }
 
 func TestStartosisInterpreter_ValidExecScript(t *testing.T) {
@@ -1154,83 +1077,6 @@ def run(plan):
 	require.NotNil(t, interpretationError)
 }
 
-func TestStartosisInterpreter_NoPortsIsOkayForAddServiceInstruction(t *testing.T) {
-	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
-	defer packageContentProvider.RemoveAll()
-	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, runtimeValueStore)
-	script := `
-def run(plan):
-	plan.print("Starting Startosis script!")
-	
-	service_name = "%v"
-	plan.print("Adding service " + service_name)
-
-	config = ServiceConfig(
-		image = "` + testContainerImageName + `",
-	)
-	datastore_service = plan.add_service(service_name = service_name, config = config)
-	plan.print("The datastore service ip address is " + datastore_service.ip_address)`
-
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, fmt.Sprintf(script, testServiceName), startosis_constants.EmptyInputArgs)
-	require.Nil(t, interpretationError)
-	require.Equal(t, 4, len(instructions))
-
-	addServiceInstruction := createSimpleAddServiceInstruction(t, testServiceName, testContainerImageName, 0, 11, 38, startosis_constants.PackageIdPlaceholderForStandaloneScript, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, defaultPrivateIPAddressPlaceholder, defaultPublicPortNumber, runtimeValueStore)
-	require.Equal(t, instructions[2], addServiceInstruction)
-
-	expectedOutput := `Starting Startosis script!
-Adding service example-datastore-server
-The datastore service ip address is %v
-`
-	validateScriptOutputFromPrintInstructions(t, instructions, fmt.Sprintf(expectedOutput, testServiceIpAddress.String()))
-}
-
-func TestStartosisInterpreter_AddServiceInstructionWithPublicPort(t *testing.T) {
-	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
-	defer packageContentProvider.RemoveAll()
-	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, runtimeValueStore)
-	privateIPAddressPlaceholder := "MAGICAL_PLACEHOLDER_TO_REPLACE"
-	script := `
-def run(plan):
-	plan.print("Starting Startosis script!")
-	
-	service_name = "%v"
-	plan.print("Adding service " + service_name)
-	
-	config = ServiceConfig(
-		image = "` + testContainerImageName + `",
-		ports = {
-			"grpc": PortSpec(number = 1323, transport_protocol = "TCP")
-		},
-		private_ip_address_placeholder = "` + privateIPAddressPlaceholder + `",
-		public_ports = {
-			"grpc": PortSpec(number = 11323, transport_protocol = "TCP")
-		}
-	)
-	datastore_service = plan.add_service(service_name = service_name, config = config)
-	plan.print("The grpc port is " + str(datastore_service.ports["grpc"].number))
-	plan.print("The grpc transport protocol is " + datastore_service.ports["grpc"].transport_protocol)
-	plan.print("The datastore service ip address is " + datastore_service.ip_address)
-`
-
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, fmt.Sprintf(script, testServiceName), startosis_constants.EmptyInputArgs)
-	require.Nil(t, interpretationError)
-	require.Len(t, instructions, 6)
-
-	addServiceInstruction := createSimpleAddServiceInstruction(t, testServiceName, testContainerImageName, 1323, 18, 38, startosis_constants.PackageIdPlaceholderForStandaloneScript, defaultEntryPointArgs, defaultCmdArgs, defaultEnvVars, privateIPAddressPlaceholder, 11323, runtimeValueStore)
-	require.Equal(t, addServiceInstruction, instructions[2])
-
-	expectedOutput := `Starting Startosis script!
-Adding service example-datastore-server
-The grpc port is 1323
-The grpc transport protocol is TCP
-The datastore service ip address is %v
-`
-	validateScriptOutputFromPrintInstructions(t, instructions, fmt.Sprintf(expectedOutput, testServiceIpAddress))
-}
-
 func TestStartosisInterpreter_RunWithoutArgsNoArgsPassed(t *testing.T) {
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
@@ -1345,125 +1191,10 @@ def run(plan):
 }
 
 // #####################################################################################################################
-//                                                  TEST HELPERS
+//
+//	TEST HELPERS
+//
 // #####################################################################################################################
-
-func createSimpleAddServiceInstruction(t *testing.T, serviceName service.ServiceName, imageName string, portNumber uint32, lineNumber int32, colNumber int32, fileName string, entryPointArgs []string, cmdArgs []string, envVars map[string]string, privateIPAddressPlaceholder string, publicPortNumber uint32, runtimeValueStore *runtime_value_store.RuntimeValueStore) *add_service.AddServiceInstruction {
-	var privatePortsStarlarkArgs *starlark.Dict
-	if portNumber != 0 {
-		privatePortsStarlarkArgs = starlark.NewDict(1)
-		require.Nil(t, privatePortsStarlarkArgs.SetKey(
-			starlark.String("grpc"),
-			kurtosis_types.NewPortSpec(portNumber, kurtosis_core_rpc_api_bindings.Port_TCP, emptyApplicationProtocol)))
-	}
-
-	var publicPortsStarlarkArgs *starlark.Dict
-	if publicPortNumber != defaultPublicPortNumber {
-		publicPortsStarlarkArgs = starlark.NewDict(1)
-		require.Nil(t, publicPortsStarlarkArgs.SetKey(
-			starlark.String("grpc"),
-			kurtosis_types.NewPortSpec(publicPortNumber, kurtosis_core_rpc_api_bindings.Port_TCP, emptyApplicationProtocol)))
-	}
-
-	var entryPointStarlarkArgs *starlark.List
-	if entryPointArgs != nil {
-		entryPointArgsValues := make([]starlark.Value, 0)
-		for _, entryPointArg := range entryPointArgs {
-			entryPointArgsValues = append(entryPointArgsValues, starlark.String(entryPointArg))
-		}
-		entryPointStarlarkArgs = starlark.NewList(entryPointArgsValues)
-	}
-
-	var cmdStarlarkArgs *starlark.List
-	if cmdArgs != nil {
-		cmdArgsValues := make([]starlark.Value, 0)
-		for _, cmdArg := range cmdArgs {
-			cmdArgsValues = append(cmdArgsValues, starlark.String(cmdArg))
-		}
-		cmdStarlarkArgs = starlark.NewList(cmdArgsValues)
-	}
-
-	var envVarsStarlarkArgs *starlark.Dict
-	if envVars != nil {
-		envVarsStarlarkArgs = starlark.NewDict(len(envVars))
-		for key, value := range envVars {
-			require.Nil(t, envVarsStarlarkArgs.SetKey(starlark.String(key), starlark.String(value)))
-		}
-	}
-
-	var privateIPAddressPlaceholderStarlarkStarlarkArgMaybe *starlark.String
-	if privateIPAddressPlaceholder != "" {
-		privateIPAddressPlaceholderStarlarkArg := starlark.String(privateIPAddressPlaceholder)
-		privateIPAddressPlaceholderStarlarkStarlarkArgMaybe = &privateIPAddressPlaceholderStarlarkArg
-	}
-
-	serviceConfig := kurtosis_types.NewServiceConfig(
-		starlark.String(imageName),
-		privatePortsStarlarkArgs,
-		publicPortsStarlarkArgs,
-		nil,
-		entryPointStarlarkArgs,
-		cmdStarlarkArgs,
-		envVarsStarlarkArgs,
-		privateIPAddressPlaceholderStarlarkStarlarkArgMaybe,
-		nil,
-		nil,
-		nil,
-	)
-
-	serviceConfigBuilder := services.NewServiceConfigBuilder(
-		imageName,
-	)
-
-	if portNumber != 0 {
-		serviceConfigBuilder.WithPrivatePorts(
-			map[string]*kurtosis_core_rpc_api_bindings.Port{
-				"grpc": {
-					Number:            portNumber,
-					TransportProtocol: kurtosis_core_rpc_api_bindings.Port_TCP,
-				},
-			},
-		)
-	}
-
-	if publicPortNumber != defaultPublicPortNumber {
-		serviceConfigBuilder.WithPublicPorts(
-			map[string]*kurtosis_core_rpc_api_bindings.Port{
-				"grpc": {
-					Number:            publicPortNumber,
-					TransportProtocol: kurtosis_core_rpc_api_bindings.Port_TCP,
-				},
-			},
-		)
-	}
-
-	if entryPointArgs != nil {
-		serviceConfigBuilder.WithEntryPointArgs(entryPointArgs)
-	}
-	if cmdArgs != nil {
-		serviceConfigBuilder.WithCmdArgs(cmdArgs)
-	}
-	if envVars != nil {
-		serviceConfigBuilder.WithEnvVars(envVars)
-	}
-
-	if privateIPAddressPlaceholder != "" {
-		serviceConfigBuilder.WithPrivateIPAddressPlaceholder(privateIPAddressPlaceholder)
-	}
-
-	return add_service.NewAddServiceInstruction(
-		testServiceNetwork,
-		kurtosis_instruction.NewInstructionPosition(lineNumber, colNumber, fileName),
-		serviceName,
-		serviceConfigBuilder.Build(),
-		starlark.StringDict{
-			"service_name": starlark.String(serviceName),
-			"config":       serviceConfig,
-		},
-		runtimeValueStore,
-	)
-}
-
 func validateScriptOutputFromPrintInstructions(t *testing.T, instructions []kurtosis_instruction.KurtosisInstruction, expectedOutput string) {
 	scriptOutput := strings.Builder{}
 	for _, instruction := range instructions {

@@ -13,6 +13,10 @@ import (
 	"testing"
 )
 
+const (
+	testContainerImageName = "kurtosistech/example-datastore-server"
+)
+
 func TestAddServiceShared_EntryPointArgsWithIpAddressAndRuntimeValueAreReplaced(t *testing.T) {
 	ipAddresses := map[service.ServiceName]net.IP{
 		"foo_service": net.ParseIP("172.17.3.13"),

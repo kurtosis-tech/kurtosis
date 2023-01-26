@@ -53,7 +53,7 @@ func (m *MockServiceNetworkCustom) SetDefaultConnection(ctx context.Context, con
 
 func (m *MockServiceNetworkCustom) StartService(
 	ctx context.Context,
-	serviceId service.ServiceName,
+	serviceName service.ServiceName,
 	serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig,
 ) (
 	*service.Service,

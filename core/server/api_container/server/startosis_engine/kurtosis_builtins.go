@@ -36,15 +36,15 @@ import (
 // Examples: add_service, exec, wait, etc.
 func KurtosisPlanInstructions(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) []*kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return []*kurtosis_plan_instruction.KurtosisPlanInstruction{
-		render_templates.NewRenderTemplatesInstruction(serviceNetwork),
+		add_service.NewAddService(serviceNetwork, runtimeValueStore),
 		add_service.NewAddServices(serviceNetwork, runtimeValueStore),
+		render_templates.NewRenderTemplatesInstruction(serviceNetwork),
 		set_connection.NewSetConnection(serviceNetwork),
 	}
 }
 
 func OldKurtosisPlanInstructions(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, packageContentProvider startosis_packages.PackageContentProvider, serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) []*starlark.Builtin {
 	return []*starlark.Builtin{
-		starlark.NewBuiltin(add_service.AddServiceBuiltinName, add_service.GenerateAddServiceBuiltin(instructionsQueue, serviceNetwork, runtimeValueStore)),
 		starlark.NewBuiltin(assert.AssertBuiltinName, assert.GenerateAssertBuiltin(instructionsQueue, runtimeValueStore, serviceNetwork)),
 		starlark.NewBuiltin(exec.ExecBuiltinName, exec.GenerateExecBuiltin(instructionsQueue, serviceNetwork, runtimeValueStore)),
 		starlark.NewBuiltin(kurtosis_print.PrintBuiltinName, kurtosis_print.GeneratePrintBuiltin(instructionsQueue, runtimeValueStore, serviceNetwork)),
