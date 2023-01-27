@@ -13,6 +13,9 @@ const (
 	tempProviderFilePattern = "mock_module_content_provider_*"
 )
 
+// MockPackageContentProvider is mock for PackageContentProvider interface
+//
+// TODO: use the mockery-generated mock: startosis_package.MockPackageContentProvider
 type MockPackageContentProvider struct {
 	starlarkPackages map[string]string
 }

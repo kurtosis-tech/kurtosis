@@ -6,7 +6,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
@@ -24,20 +23,22 @@ const (
 )
 
 func TestAllRegisteredBuiltins(t *testing.T) {
-	testsAllKurtosisPlanInstructions(t, newAddServiceTestCase(t))
-	testsAllKurtosisPlanInstructions(t, newAddServicesTestCase(t))
-	testsAllKurtosisPlanInstructions(t, newAssertTestCase(t))
-	testsAllKurtosisPlanInstructions(t, newExecTestCase(t))
-	testsAllKurtosisPlanInstructions(t, newSetConnectionTestCase(t))
-	testsAllKurtosisPlanInstructions(t, newSetConnectionDefaultTestCase(t))
-	testsAllKurtosisPlanInstructions(t, newRemoveServiceTestCase(t))
-	testsAllKurtosisPlanInstructions(t, newRenderTemplateTestCase1(t))
-	testsAllKurtosisPlanInstructions(t, newRenderTemplateTestCase2(t))
-	testsAllKurtosisPlanInstructions(t, newRequestTestCase(t))
-	testsAllKurtosisPlanInstructions(t, newStoreServiceFilesTestCase(t))
+	testKurtosisPlanInstruction(t, newAddServiceTestCase(t))
+	testKurtosisPlanInstruction(t, newAddServicesTestCase(t))
+	testKurtosisPlanInstruction(t, newAssertTestCase(t))
+	testKurtosisPlanInstruction(t, newExecTestCase(t))
+	testKurtosisPlanInstruction(t, newSetConnectionTestCase(t))
+	testKurtosisPlanInstruction(t, newSetConnectionDefaultTestCase(t))
+	testKurtosisPlanInstruction(t, newRemoveServiceTestCase(t))
+	testKurtosisPlanInstruction(t, newRenderTemplateTestCase1(t))
+	testKurtosisPlanInstruction(t, newRenderTemplateTestCase2(t))
+	testKurtosisPlanInstruction(t, newRequestTestCase(t))
+	testKurtosisPlanInstruction(t, newStoreServiceFilesTestCase(t))
+
+	testKurtosisHelper(t, newReadFileTestCase(t))
 }
 
-func testsAllKurtosisPlanInstructions(t *testing.T, builtin KurtosisPlanInstructionBaseTest) {
+func testKurtosisPlanInstruction(t *testing.T, builtin KurtosisPlanInstructionBaseTest) {
 	testId := builtin.GetId()
 	var instructionQueue []kurtosis_instruction.KurtosisInstruction
 	thread := shared_helpers.NewStarlarkThread("framework-testing-engine")
@@ -46,7 +47,7 @@ func testsAllKurtosisPlanInstructions(t *testing.T, builtin KurtosisPlanInstruct
 	// Add the KurtosisPlanInstruction that is being tested
 	instructionFromBuiltin := builtin.GetInstruction()
 	instructionWrapper := kurtosis_plan_instruction.NewKurtosisPlanInstructionWrapper(instructionFromBuiltin, &instructionQueue)
-	predeclared[instructionWrapper.GetName()] = starlark.NewBuiltin(add_service.AddServiceBuiltinName, instructionWrapper.CreateBuiltin())
+	predeclared[instructionWrapper.GetName()] = starlark.NewBuiltin(instructionWrapper.GetName(), instructionWrapper.CreateBuiltin())
 
 	starlarkCode := builtin.GetStarlarkCode()
 	globals, err := starlark.ExecFile(thread, startosis_constants.PackageIdPlaceholderForStandaloneScript, codeToExecute(starlarkCode), predeclared)
@@ -64,6 +65,23 @@ func testsAllKurtosisPlanInstructions(t *testing.T, builtin KurtosisPlanInstruct
 	// check serializing the obtained instruction falls back to the initial one
 	serializedInstruction := instruction.String()
 	require.Equal(t, starlarkCode, serializedInstruction)
+}
+
+func testKurtosisHelper(t *testing.T, builtin KurtosisHelperBaseTest) {
+	testId := builtin.GetId()
+	thread := shared_helpers.NewStarlarkThread("framework-testing-engine")
+
+	predeclared := getBasePredeclaredDict()
+	// Add the KurtosisPlanInstruction that is being tested
+	helper := builtin.GetHelper()
+	predeclared[helper.GetName()] = starlark.NewBuiltin(helper.GetName(), helper.CreateBuiltin())
+
+	starlarkCode := builtin.GetStarlarkCode()
+	globals, err := starlark.ExecFile(thread, startosis_constants.PackageIdPlaceholderForStandaloneScript, codeToExecute(starlarkCode), predeclared)
+	require.Nil(t, err, "Error interpreting Starlark code for builtin '%s'", testId)
+	result := extractResultValue(t, globals)
+
+	builtin.Assert(result)
 }
 
 func getBasePredeclaredDict() starlark.StringDict {

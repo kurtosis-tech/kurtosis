@@ -5,6 +5,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
+	"reflect"
 	"testing"
 )
 
@@ -40,7 +41,8 @@ func TestParseArguments_SingleRequiredArgument_FromArgs_TypeMismatch(t *testing.
 
 	values, err := parseArguments(argumentDefinitions, builtinName, args, kwargs)
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "The following argument could not be parse because their type did not match the expected: [service_name]")
+	require.Contains(t, err.Error(), "The following argument(s) could not be parsed or did not pass validation:")
+	require.Contains(t, err.Error(), "the argument 'service_name' could not be parsed because their type did not match the expected")
 	require.Empty(t, values)
 }
 
@@ -97,7 +99,25 @@ func TestParseArguments_SingleRequiredArgument_FromKwargs_TypeMismatch(t *testin
 
 	values, err := parseArguments(argumentDefinitions, builtinName, args, kwargs)
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "The following argument could not be parse because their type did not match the expected: [service_name]")
+	require.Contains(t, err.Error(), "The following argument(s) could not be parsed or did not pass validation:")
+	require.Contains(t, err.Error(), "the argument 'service_name' could not be parsed because their type did not match the expected")
+	require.Empty(t, values)
+}
+
+func TestParseArguments_SingleRequiredArgument_FromKwargs_FailsValidation(t *testing.T) {
+	argumentDefinitions := getArgumentDefinitionsWithServiceName()
+	args := starlark.Tuple{}
+	kwargs := []starlark.Tuple{
+		[]starlark.Value{
+			starlark.String(serviceNameArgName),
+			starlark.String(""), // empty string for service_name will fail validation
+		},
+	}
+
+	values, err := parseArguments(argumentDefinitions, builtinName, args, kwargs)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "The following argument(s) could not be parsed or did not pass validation:")
+	require.Contains(t, err.Error(), "the argument 'service_name' did not pass validation. Error was: \n'service_name' should not be empty")
 	require.Empty(t, values)
 }
 
@@ -193,14 +213,16 @@ func TestParseArguments_ArgumentWithOptional_FromArgsNoOptional_Success(t *testi
 func TestParseArguments_ArgumentWithOptional_FromArgs_FailureTypeMismatch(t *testing.T) {
 	argumentDefinitions := getArgumentDefinitionsWithServiceNameAndShouldStart()
 	args := starlark.Tuple{
-		shouldStart,
+		shouldStart, // serviceName should come first
 		serviceName,
 	}
 	var kwargs []starlark.Tuple
 
 	values, err := parseArguments(argumentDefinitions, builtinName, args, kwargs)
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "The following argument could not be parse because their type did not match the expected: [service_name should_start]")
+	require.Contains(t, err.Error(), "The following argument(s) could not be parsed or did not pass validation:")
+	require.Contains(t, err.Error(), "the argument 'service_name' could not be parsed because their type did not match the expected")
+	require.Contains(t, err.Error(), "the argument 'should_start' could not be parsed because their type did not match the expected")
 	require.Nil(t, values)
 }
 
@@ -300,7 +322,7 @@ func TestString(t *testing.T) {
 	require.Equal(t, expectedString, argumentValuesSet.String())
 }
 
-// Private test helpers only below \\
+// --- Private test helpers only below --- \\
 func getArgumentDefinitionsWithServiceName() []*BuiltinArgument {
 	return []*BuiltinArgument{
 		{
@@ -308,7 +330,14 @@ func getArgumentDefinitionsWithServiceName() []*BuiltinArgument {
 			IsOptional:        false,
 			ZeroValueProvider: ZeroValueProvider[starlark.String],
 			Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-				panic("should not be called")
+				valueStr, ok := value.(starlark.String)
+				if !ok {
+					return startosis_errors.NewInterpretationError("For '%s', expected 'starlark.String', got '%s'", serviceNameArgName, reflect.TypeOf(value))
+				}
+				if len(valueStr.GoString()) == 0 {
+					return startosis_errors.NewInterpretationError("'%s' should not be empty", serviceNameArgName)
+				}
+				return nil
 			},
 		},
 	}
@@ -321,7 +350,7 @@ func getArgumentDefinitionsWithServiceNameAndShouldStart() []*BuiltinArgument {
 			IsOptional:        false,
 			ZeroValueProvider: ZeroValueProvider[starlark.String],
 			Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-				panic("should not be called")
+				return nil
 			},
 		},
 		{
@@ -329,7 +358,7 @@ func getArgumentDefinitionsWithServiceNameAndShouldStart() []*BuiltinArgument {
 			IsOptional:        true,
 			ZeroValueProvider: ZeroValueProvider[starlark.Bool],
 			Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-				panic("should not be called")
+				return nil
 			},
 		},
 	}

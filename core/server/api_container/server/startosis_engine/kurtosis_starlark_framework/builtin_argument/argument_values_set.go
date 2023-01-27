@@ -120,21 +120,31 @@ func parseArguments(argumentDefinitions []*BuiltinArgument, builtinName string, 
 		return nil, err
 	}
 	// validate each type matches the expected before returning
-	var invalidArgs []string
+	invalidArgs := map[string]error{}
 	for idx, argumentDefinition := range argumentDefinitions {
-		if argumentDefinition.IsOptional && storedValues[idx] == nil {
+		argName := argumentDefinition.Name
+		argValue := storedValues[idx]
+		if argumentDefinition.IsOptional && argValue == nil {
 			continue
 		}
 		if reflect.TypeOf(argumentDefinition.ZeroValueProvider()) == nil {
 			// it means the type is an interface, we are not able to validate its concrete type at this step
 			continue
 		}
-		if !reflect.TypeOf(storedValues[idx]).AssignableTo(reflect.TypeOf(argumentDefinition.ZeroValueProvider())) {
-			invalidArgs = append(invalidArgs, argumentDefinition.Name)
+		if !reflect.TypeOf(argValue).AssignableTo(reflect.TypeOf(argumentDefinition.ZeroValueProvider())) {
+			invalidArgs[argName] = fmt.Errorf("the argument '%s' could not be parsed because their type did not match the expected", argName)
+			continue
+		}
+		if argumentDefinition.Validator != nil {
+			if interpretationErr := argumentDefinition.Validator(argValue); interpretationErr != nil {
+				// TODO: probably worth making parseArguments return an interpretationError to avoid conversion here
+				invalidArgs[argName] = fmt.Errorf("the argument '%s' did not pass validation. Error was: \n%v", argName, interpretationErr.Error())
+				continue
+			}
 		}
 	}
 	if len(invalidArgs) > 0 {
-		return nil, fmt.Errorf("The following argument could not be parse because their type did not match the expected: %v", invalidArgs)
+		return nil, fmt.Errorf("The following argument(s) could not be parsed or did not pass validation: \n%v", invalidArgs)
 	}
 	return storedValues, nil
 }

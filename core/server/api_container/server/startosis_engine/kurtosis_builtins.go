@@ -66,10 +66,11 @@ func OldKurtosisPlanInstructions(instructionsQueue *[]kurtosis_instruction.Kurto
 //
 // Example: read_file, import_package, etc.
 func KurtosisHelpers(recursiveInterpret func(moduleId string, scriptContent string) (starlark.StringDict, error), packageContentProvider startosis_packages.PackageContentProvider, packageGlobalCache map[string]*startosis_packages.ModuleCacheEntry) []*starlark.Builtin {
+	read_file.NewReadFileHelper(packageContentProvider)
 	return []*starlark.Builtin{
 		starlark.NewBuiltin(import_module.ImportModuleBuiltinName, import_module.GenerateImportBuiltin(recursiveInterpret, packageContentProvider, packageGlobalCache)),
 		starlark.NewBuiltin(print_builtin.PrintBuiltinName, print_builtin.GeneratePrintBuiltin()),
-		starlark.NewBuiltin(read_file.ReadFileBuiltinName, read_file.GenerateReadFileBuiltin(packageContentProvider)),
+		starlark.NewBuiltin(read_file.ReadFileBuiltinName, read_file.NewReadFileHelper(packageContentProvider).CreateBuiltin()),
 	}
 }
 
