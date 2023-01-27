@@ -66,6 +66,7 @@ See [here][files-artifacts-reference] for more details on files artifacts.
 :::
 
 The `add_service` function returns a `service` object that contains service information in the form of [future references][future-references-reference] that can be used later in the script. The `service` struct has:
+- A `hostname` property representing [a future reference][future-references-reference] to the service's hostname.
 - An `ip_address` property representing [a future reference][future-references-reference] to the service's IP address.
 - A `ports` dictionary containing [future reference][future-references-reference] information about each port that the service is listening on.
 
