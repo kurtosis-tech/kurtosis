@@ -46,6 +46,7 @@ func KurtosisPlanInstructions(serviceNetwork service_network.ServiceNetwork, run
 		request.NewRequest(serviceNetwork, runtimeValueStore),
 		set_connection.NewSetConnection(serviceNetwork),
 		store_service_files.NewStoreServiceFiles(serviceNetwork),
+		wait.NewWait(serviceNetwork, runtimeValueStore),
 	}
 }
 
@@ -54,7 +55,6 @@ func OldKurtosisPlanInstructions(instructionsQueue *[]kurtosis_instruction.Kurto
 		starlark.NewBuiltin(kurtosis_print.PrintBuiltinName, kurtosis_print.GeneratePrintBuiltin(instructionsQueue, runtimeValueStore, serviceNetwork)),
 		starlark.NewBuiltin(update_service.UpdateServiceBuiltinName, update_service.GenerateUpdateServiceBuiltin(instructionsQueue, serviceNetwork)),
 		starlark.NewBuiltin(upload_files.UploadFilesBuiltinName, upload_files.GenerateUploadFilesBuiltin(instructionsQueue, packageContentProvider, serviceNetwork)),
-		starlark.NewBuiltin(wait.WaitBuiltinName, wait.GenerateWaitBuiltin(instructionsQueue, runtimeValueStore, serviceNetwork)),
 	}
 }
 

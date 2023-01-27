@@ -24,8 +24,8 @@ const (
 	AssertionArgName    = "assertion"
 	TargetArgName       = "target_value"
 
-	inCollectionToken    = "IN"
-	notInCollectionToken = "NOT_IN"
+	InCollectionAssertionToken    = "IN"
+	NotInCollectionAssertionToken = "NOT_IN"
 
 	expectedValuesSeparator = ", "
 )
@@ -55,7 +55,7 @@ func NewAssert(runtimeValueStore *runtime_value_store.RuntimeValueStore) *kurtos
 					Name:              AssertionArgName,
 					IsOptional:        false,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
-					Validator:         validateAssertionToken,
+					Validator:         ValidateAssertionToken,
 				},
 				{
 					Name:              TargetArgName,
@@ -110,7 +110,7 @@ func (builtin *AssertCapabilities) Interpret(arguments *builtin_argument.Argumen
 	builtin.runtimeValue = runtimeValue.GoString()
 	builtin.target = target
 
-	if _, ok := builtin.target.(starlark.Iterable); (builtin.assertion == inCollectionToken || builtin.assertion == notInCollectionToken) && !ok {
+	if _, ok := builtin.target.(starlark.Iterable); (builtin.assertion == InCollectionAssertionToken || builtin.assertion == NotInCollectionAssertionToken) && !ok {
 		return nil, startosis_errors.NewInterpretationError("'%v' assertion requires an iterable for target values, got '%v'", builtin.assertion, builtin.target.Type())
 	}
 	return starlark.None, nil
@@ -143,7 +143,7 @@ func (builtin *AssertCapabilities) Execute(_ context.Context, _ *builtin_argumen
 }
 
 // Assert verifies whether the currentValue matches the targetValue w.r.t. the assertion operator
-// TODO: This is used by both assert and wait. Refactor it to a better place
+// TODO: This and ValidateAssertionToken below are used by both assert and wait. Refactor it to a better place
 func Assert(currentValue starlark.Comparable, assertion string, targetValue starlark.Comparable) error {
 	if comparisonToken, found := StringTokenToComparisonStarlarkToken[assertion]; found {
 		if currentValue.Type() != targetValue.Type() {
@@ -157,7 +157,7 @@ func Assert(currentValue starlark.Comparable, assertion string, targetValue star
 			return stacktrace.NewError("Assertion failed '%v' '%v' '%v'", currentValue, assertion, targetValue)
 		}
 		return nil
-	} else if assertion == inCollectionToken || assertion == notInCollectionToken {
+	} else if assertion == InCollectionAssertionToken || assertion == NotInCollectionAssertionToken {
 		iterableTarget, ok := targetValue.(starlark.Iterable)
 		if !ok {
 			return stacktrace.NewError("Assertion failed, expected an iterable object but got '%v'", targetValue.Type())
@@ -169,14 +169,14 @@ func Assert(currentValue starlark.Comparable, assertion string, targetValue star
 		currentValuePresentInIterable := false
 		for idx := 0; iterator.Next(&item); idx++ {
 			if item == currentValue {
-				if assertion == inCollectionToken {
+				if assertion == InCollectionAssertionToken {
 					return nil
 				}
 				currentValuePresentInIterable = true
 				break
 			}
 		}
-		if assertion == notInCollectionToken && !currentValuePresentInIterable {
+		if assertion == NotInCollectionAssertionToken && !currentValuePresentInIterable {
 			return nil
 		}
 		return stacktrace.NewError("Assertion failed '%v' '%v' '%v'", currentValue, assertion, targetValue)
@@ -184,7 +184,7 @@ func Assert(currentValue starlark.Comparable, assertion string, targetValue star
 	return stacktrace.NewError("The '%s' token '%s' seems invalid. This is a Kurtosis bug as it should have been validated earlier", AssertionArgName, assertion)
 }
 
-func validateAssertionToken(value starlark.Value) *startosis_errors.InterpretationError {
+func ValidateAssertionToken(value starlark.Value) *startosis_errors.InterpretationError {
 	strValue, ok := value.(starlark.String)
 	if !ok {
 		return startosis_errors.NewInterpretationError("'%s' argument should be a 'starlark.String', got '%s'", AssertionArgName, reflect.TypeOf(value))
@@ -193,8 +193,8 @@ func validateAssertionToken(value starlark.Value) *startosis_errors.Interpretati
 	for stringComparisonToken := range StringTokenToComparisonStarlarkToken {
 		validTokens = append(validTokens, stringComparisonToken)
 	}
-	validTokens = append(validTokens, inCollectionToken)
-	validTokens = append(validTokens, notInCollectionToken)
+	validTokens = append(validTokens, InCollectionAssertionToken)
+	validTokens = append(validTokens, NotInCollectionAssertionToken)
 	found := false
 	for _, validToken := range validTokens {
 		if validToken == strValue.GoString() {

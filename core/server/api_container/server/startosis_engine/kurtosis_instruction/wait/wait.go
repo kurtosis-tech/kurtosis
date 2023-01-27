@@ -4,12 +4,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/cenkalti/backoff/v4"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/assert"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/recipe"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
@@ -22,131 +21,215 @@ import (
 const (
 	WaitBuiltinName = "wait"
 
-	recipeArgName           = "recipe"
-	valueFieldArgName       = "field"
-	assertionArgName        = "assertion"
-	targetArgName           = "target_value"
-	optionalIntervalArgName = "interval?"
-	optionalTimeoutArgName  = "timeout?"
-	emptyOptionalField      = ""
+	RecipeArgName     = "recipe"
+	ValueFieldArgName = "field"
+	AssertionArgName  = "assertion"
+	TargetArgName     = "target_value"
+	IntervalArgName   = "interval"
+	TimeoutArgName    = "timeout"
 
 	defaultInterval = 1 * time.Second
 	defaultTimeout  = 15 * time.Minute
 )
 
-func GenerateWaitBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, recipeExecutor *runtime_value_store.RuntimeValueStore, serviceNetwork service_network.ServiceNetwork) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
-	// TODO: Force returning an InterpretationError rather than a normal error
-	return func(thread *starlark.Thread, builtin *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
-		instructionPosition := shared_helpers.GetCallerPositionFromThread(thread)
-		waitInstruction := newEmptyWaitInstructionInstruction(serviceNetwork, instructionPosition, recipeExecutor)
-		if interpretationError := waitInstruction.parseStartosisArgs(builtin, args, kwargs); interpretationError != nil {
-			return nil, interpretationError
-		}
-		resultUuid, err := recipeExecutor.CreateValue()
-		if err != nil {
-			return nil, startosis_errors.NewInterpretationError("An error occurred while generating uuid for future reference for %v instruction", WaitBuiltinName)
-		}
-		waitInstruction.resultUuid = resultUuid
-		returnValue, interpretationErr := waitInstruction.recipe.CreateStarlarkReturnValue(waitInstruction.resultUuid)
-		if interpretationErr != nil {
-			return nil, startosis_errors.NewInterpretationError("An error occurred while creating return value for %v instruction", WaitBuiltinName)
-		}
-		*instructionsQueue = append(*instructionsQueue, waitInstruction)
-		return returnValue, nil
+func NewWait(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) *kurtosis_plan_instruction.KurtosisPlanInstruction {
+	return &kurtosis_plan_instruction.KurtosisPlanInstruction{
+		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
+			Name: WaitBuiltinName,
+
+			Arguments: []*builtin_argument.BuiltinArgument{
+				{
+					Name:              RecipeArgName,
+					IsOptional:        false,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Value],
+					Validator:         nil,
+				},
+				{
+					Name:              ValueFieldArgName,
+					IsOptional:        false,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
+					Validator:         nil,
+				},
+				{
+					Name:              AssertionArgName,
+					IsOptional:        false,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
+					Validator:         assert.ValidateAssertionToken,
+				},
+				{
+					Name:              TargetArgName,
+					IsOptional:        false,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Comparable],
+					Validator:         nil,
+				},
+				{
+					Name:              IntervalArgName,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
+					Validator:         nil,
+				},
+				{
+					Name:              TimeoutArgName,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
+					Validator:         nil,
+				},
+			},
+		},
+
+		Capabilities: func() kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities {
+			return &WaitCapabilities{
+				serviceNetwork:    serviceNetwork,
+				runtimeValueStore: runtimeValueStore,
+
+				recipe:     nil, // populated at interpretation time
+				valueField: "",  // populated at interpretation time
+				assertion:  "",  // populated at interpretation time
+				target:     nil, // populated at interpretation time
+				backoff:    nil, // populated at interpretation time
+				timeout:    0,   // populated at interpretation time
+				resultUuid: "",  // populated at interpretation time
+			}
+		},
+
+		DefaultDisplayArguments: map[string]bool{
+			RecipeArgName:     true,
+			ValueFieldArgName: true,
+			AssertionArgName:  true,
+			TargetArgName:     true,
+			IntervalArgName:   false,
+			TimeoutArgName:    false,
+		},
 	}
 }
 
-type WaitInstruction struct {
-	serviceNetwork service_network.ServiceNetwork
-
-	position       *kurtosis_instruction.InstructionPosition
-	starlarkKwargs starlark.StringDict
-
+type WaitCapabilities struct {
+	serviceNetwork    service_network.ServiceNetwork
 	runtimeValueStore *runtime_value_store.RuntimeValueStore
-	recipe            recipe.Recipe
-	resultUuid        string
-	targetKey         string
-	assertion         string
-	target            starlark.Comparable
-	backoff           backoff.BackOff
-	timeout           time.Duration
+
+	recipe     recipe.Recipe
+	valueField string
+	assertion  string
+	target     starlark.Comparable
+	backoff    backoff.BackOff
+	timeout    time.Duration
+
+	resultUuid string
 }
 
-func newEmptyWaitInstructionInstruction(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition, runtimeValueStore *runtime_value_store.RuntimeValueStore) *WaitInstruction {
-	return &WaitInstruction{
-		serviceNetwork:    serviceNetwork,
-		position:          position,
-		runtimeValueStore: runtimeValueStore,
-		recipe:            nil,
-		resultUuid:        "",
-		starlarkKwargs:    nil,
-		targetKey:         "",
-		assertion:         "",
-		target:            nil,
-		backoff:           nil,
-		timeout:           defaultTimeout,
+func (builtin *WaitCapabilities) Interpret(arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
+	var genericRecipe recipe.Recipe
+	httpRecipe, err := builtin_argument.ExtractArgumentValue[*recipe.HttpRequestRecipe](arguments, RecipeArgName)
+	if err != nil {
+		execRecipe, err := builtin_argument.ExtractArgumentValue[*recipe.ExecRecipe](arguments, RecipeArgName)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", RecipeArgName)
+		}
+		genericRecipe = execRecipe
+	} else {
+		genericRecipe = httpRecipe
 	}
-}
 
-func newWaitInstructionInstructionForTest(serviceNetwork service_network.ServiceNetwork, position *kurtosis_instruction.InstructionPosition, runtimeValueStore *runtime_value_store.RuntimeValueStore, recipe recipe.Recipe, resultUuid string, targetKey string, assertion string, target starlark.Comparable, starlarkKwargs starlark.StringDict) *WaitInstruction {
-	return &WaitInstruction{
-		serviceNetwork:    serviceNetwork,
-		position:          position,
-		runtimeValueStore: runtimeValueStore,
-		recipe:            recipe,
-		resultUuid:        resultUuid,
-		starlarkKwargs:    starlarkKwargs,
-		targetKey:         targetKey,
-		assertion:         assertion,
-		target:            target,
-		backoff:           nil,
-		timeout:           defaultTimeout,
+	valueField, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, ValueFieldArgName)
+	if err != nil {
+		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ValueFieldArgName)
 	}
-}
 
-func (instruction *WaitInstruction) GetPositionInOriginalScript() *kurtosis_instruction.InstructionPosition {
-	return instruction.position
-}
-
-func (instruction *WaitInstruction) GetCanonicalInstruction() *kurtosis_core_rpc_api_bindings.StarlarkInstruction {
-	args := []*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg{
-		binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[recipeArgName]), recipeArgName, kurtosis_instruction.Representative),
-		binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[valueFieldArgName]), valueFieldArgName, kurtosis_instruction.Representative),
-		binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[assertionArgName]), assertionArgName, kurtosis_instruction.Representative),
-		binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[targetArgName]), targetArgName, kurtosis_instruction.Representative),
-		binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[optionalIntervalArgName]), optionalIntervalArgName, kurtosis_instruction.NotRepresentative),
-		binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(instruction.starlarkKwargs[optionalTimeoutArgName]), optionalTimeoutArgName, kurtosis_instruction.NotRepresentative),
+	assertion, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, AssertionArgName)
+	if err != nil {
+		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", AssertionArgName)
 	}
-	return binding_constructors.NewStarlarkInstruction(instruction.position.ToAPIType(), WaitBuiltinName, instruction.String(), args)
+
+	target, err := builtin_argument.ExtractArgumentValue[starlark.Comparable](arguments, TargetArgName)
+	if err != nil {
+		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", TargetArgName)
+	}
+
+	var waitBackoff backoff.BackOff
+	if arguments.IsSet(IntervalArgName) {
+		interval, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, IntervalArgName)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", IntervalArgName)
+		}
+		parsedDuration, parseErr := time.ParseDuration(interval.GoString())
+		if parseErr != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(parseErr, "An error occurred when parsing interval '%v'", interval.GoString())
+		}
+		waitBackoff = backoff.NewConstantBackOff(parsedDuration)
+	} else {
+		waitBackoff = backoff.NewConstantBackOff(defaultInterval)
+	}
+
+	var timeout time.Duration
+	if arguments.IsSet(TimeoutArgName) {
+		starlarkTimeout, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, TimeoutArgName)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", TimeoutArgName)
+		}
+		parsedTimeout, parseErr := time.ParseDuration(starlarkTimeout.GoString())
+		if parseErr != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(parseErr, "An error occurred when parsing interval '%v'", starlarkTimeout.GoString())
+		}
+		timeout = parsedTimeout
+	} else {
+		timeout = defaultTimeout
+	}
+
+	resultUuid, err := builtin.runtimeValueStore.CreateValue()
+	if err != nil {
+		return nil, startosis_errors.NewInterpretationError("An error occurred while generating uuid for future reference for %v instruction", WaitBuiltinName)
+	}
+
+	returnValue, interpretationErr := genericRecipe.CreateStarlarkReturnValue(resultUuid)
+	if interpretationErr != nil {
+		return nil, startosis_errors.NewInterpretationError("An error occurred while creating return value for %v instruction", WaitBuiltinName)
+	}
+
+	if _, ok := builtin.target.(starlark.Iterable); (builtin.assertion == assert.InCollectionAssertionToken || builtin.assertion == assert.NotInCollectionAssertionToken) && !ok {
+		return nil, startosis_errors.NewInterpretationError("'%v' assertion requires an iterable for target values, got '%v'", builtin.assertion, builtin.target.Type())
+	}
+
+	builtin.recipe = genericRecipe
+	builtin.valueField = valueField.GoString()
+	builtin.assertion = assertion.GoString()
+	builtin.target = target
+	builtin.backoff = waitBackoff
+	builtin.timeout = timeout
+	builtin.resultUuid = resultUuid
+
+	return returnValue, nil
 }
 
-func (instruction *WaitInstruction) Execute(ctx context.Context) (*string, error) {
-	var (
-		requestErr error
-		assertErr  error
-	)
+func (builtin *WaitCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
+	// TODO(vcolombo): Add validation step here
+	return nil
+}
+
+func (builtin *WaitCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
+	var requestErr error
+	var assertErr error
 	tries := 0
 	timedOut := false
 	lastResult := map[string]starlark.Comparable{}
 	startTime := time.Now()
 	for {
 		tries += 1
-		backoffDuration := instruction.backoff.NextBackOff()
-		if backoffDuration == backoff.Stop || time.Since(startTime) > instruction.timeout {
+		backoffDuration := builtin.backoff.NextBackOff()
+		if backoffDuration == backoff.Stop || time.Since(startTime) > builtin.timeout {
 			timedOut = true
 			break
 		}
-		lastResult, requestErr = instruction.recipe.Execute(ctx, instruction.serviceNetwork, instruction.runtimeValueStore)
+		lastResult, requestErr = builtin.recipe.Execute(ctx, builtin.serviceNetwork, builtin.runtimeValueStore)
 		if requestErr != nil {
 			time.Sleep(backoffDuration)
 			continue
 		}
-		instruction.runtimeValueStore.SetValue(instruction.resultUuid, lastResult)
-		value, found := lastResult[instruction.targetKey]
+		builtin.runtimeValueStore.SetValue(builtin.resultUuid, lastResult)
+		value, found := lastResult[builtin.valueField]
 		if !found {
-			return nil, stacktrace.NewError("Error grabbing value from key '%v'", instruction.targetKey)
+			return "", stacktrace.NewError("Error extracting value from key '%v'", builtin.valueField)
 		}
-		assertErr = assert.Assert(value, instruction.assertion, instruction.target)
+		assertErr = assert.Assert(value, builtin.assertion, builtin.target)
 		if assertErr != nil {
 			time.Sleep(backoffDuration)
 			continue
@@ -154,89 +237,14 @@ func (instruction *WaitInstruction) Execute(ctx context.Context) (*string, error
 		break
 	}
 	if timedOut {
-		return nil, stacktrace.NewError("Wait timed-out waiting for the assertion to become valid. Waited for '%v'. Last assertion error was: \n%v", time.Since(startTime), assertErr)
+		return "", stacktrace.NewError("Wait timed-out waiting for the assertion to become valid. Waited for '%v'. Last assertion error was: \n%v", time.Since(startTime), assertErr)
 	}
 	if requestErr != nil {
-		return nil, stacktrace.Propagate(requestErr, "Error executing HTTP recipe")
+		return "", stacktrace.Propagate(requestErr, "Error executing HTTP recipe on '%v'", WaitBuiltinName)
 	}
 	if assertErr != nil {
-		return nil, stacktrace.Propagate(assertErr, "Error asserting HTTP recipe on '%v'", WaitBuiltinName)
+		return "", stacktrace.Propagate(assertErr, "Error asserting HTTP recipe on '%v'", WaitBuiltinName)
 	}
-	instructionResult := fmt.Sprintf("Wait took %d tries (%v in total). Assertion passed with following:\n%s", tries, time.Since(startTime), instruction.recipe.ResultMapToString(lastResult))
-	return &instructionResult, nil
-}
-
-func (instruction *WaitInstruction) String() string {
-	return shared_helpers.CanonicalizeInstruction(WaitBuiltinName, kurtosis_instruction.NoArgs, instruction.starlarkKwargs)
-}
-
-func (instruction *WaitInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
-	// TODO(vcolombo): Add validation step here
-	return nil
-}
-
-func (instruction *WaitInstruction) parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) *startosis_errors.InterpretationError {
-	var (
-		recipeConfigArg  starlark.Value
-		valueFieldArg    starlark.String
-		assertionArg     starlark.String
-		targetArg        starlark.Comparable
-		optionalInterval starlark.String = emptyOptionalField
-		optionalTimeout  starlark.String = emptyOptionalField
-	)
-
-	if err := starlark.UnpackArgs(b.Name(), args, kwargs, recipeArgName, &recipeConfigArg, valueFieldArgName, &valueFieldArg, assertionArgName, &assertionArg, targetArgName, &targetArg, optionalIntervalArgName, &optionalInterval, optionalTimeoutArgName, &optionalTimeout); err != nil {
-		return startosis_errors.NewInterpretationError(err.Error())
-	}
-
-	instruction.starlarkKwargs = starlark.StringDict{
-		recipeArgName:           recipeConfigArg,
-		valueFieldArgName:       valueFieldArg,
-		assertionArgName:        assertionArg,
-		targetArgName:           targetArg,
-		optionalIntervalArgName: optionalInterval,
-		optionalTimeoutArgName:  optionalTimeout,
-	}
-	instruction.starlarkKwargs.Freeze()
-
-	var ok bool
-	instruction.recipe, ok = recipeConfigArg.(*recipe.HttpRequestRecipe)
-	if !ok {
-		instruction.recipe, ok = recipeConfigArg.(*recipe.ExecRecipe)
-		if !ok {
-			return startosis_errors.NewInterpretationError("There was no valid recipe found for '%v' "+
-				"(Expected ExecRecipe or PostHttpRequestRecipe or GetHttpRequestRecipe)", recipeConfigArg)
-		}
-	}
-
-	instruction.assertion = string(assertionArg)
-	instruction.target = targetArg
-	instruction.targetKey = string(valueFieldArg)
-	if optionalInterval != emptyOptionalField {
-		interval, parseErr := time.ParseDuration(optionalInterval.GoString())
-		if parseErr != nil {
-			return startosis_errors.WrapWithInterpretationError(parseErr, "An error occurred when parsing interval '%v'", optionalInterval.GoString())
-		}
-		instruction.backoff = backoff.NewConstantBackOff(interval)
-	} else {
-		instruction.backoff = backoff.NewConstantBackOff(defaultInterval)
-	}
-
-	if optionalTimeout != emptyOptionalField {
-		timeout, parseErr := time.ParseDuration(optionalTimeout.GoString())
-		if parseErr != nil {
-			return startosis_errors.NewInterpretationError("An error occurred when parsing timeout '%v'", optionalTimeout)
-		}
-		instruction.timeout = timeout
-	} else {
-		instruction.timeout = defaultTimeout
-	}
-
-	if _, found := assert.StringTokenToComparisonStarlarkToken[instruction.assertion]; !found && instruction.assertion != "IN" && instruction.assertion != "NOT_IN" {
-		return startosis_errors.NewInterpretationError("'%v' is not a valid assertion", assertionArg)
-	}
-	if _, ok := instruction.target.(*starlark.List); (instruction.assertion == "IN" || instruction.assertion == "NOT_IN") && !ok {
-		return startosis_errors.NewInterpretationError("'%v' assertion requires list, got '%v'", assertionArg, targetArg.Type())
-	}
-	return nil
+	instructionResult := fmt.Sprintf("Wait took %d tries (%v in total). Assertion passed with following:\n%s", tries, time.Since(startTime), builtin.recipe.ResultMapToString(lastResult))
+	return instructionResult, nil
 }
