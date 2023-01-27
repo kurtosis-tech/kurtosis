@@ -583,7 +583,7 @@ func getUserServiceObjsFromDockerResources(
 		if !found {
 			return nil, stacktrace.NewError("Expected to find label '%v' on container '%v' but label was missing", label_key_consts.IDDockerLabelKey.GetString(), containerName)
 		}
-		serviceId := service.ServiceName(serviceIdStr)
+		serviceName := service.ServiceName(serviceIdStr)
 
 		privateIp, privatePorts, maybePublicIp, maybePublicPorts, err := GetIpAndPortInfoFromContainer(
 			containerName,
@@ -595,10 +595,11 @@ func getUserServiceObjsFromDockerResources(
 		}
 
 		registration := service.NewServiceRegistration(
-			serviceId,
+			serviceName,
 			serviceUuid,
 			enclaveId,
 			privateIp,
+			string(serviceName), // in Docker, hostname = serviceName because we're setting the "alias" of the container to serviceName
 		)
 
 		containerStatus := container.GetStatus()

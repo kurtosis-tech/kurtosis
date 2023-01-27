@@ -12,8 +12,6 @@ import (
 
 	mock "github.com/stretchr/testify/mock"
 
-	net "net"
-
 	partition_topology "github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
 
 	service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
@@ -172,52 +170,6 @@ func (_c *MockServiceNetwork_GetExistingAndHistoricalServiceIdentifiers_Call) Re
 	return _c
 }
 
-// GetIPAddressForService provides a mock function with given fields: serviceName
-func (_m *MockServiceNetwork) GetIPAddressForService(serviceName service.ServiceName) (net.IP, bool) {
-	ret := _m.Called(serviceName)
-
-	var r0 net.IP
-	if rf, ok := ret.Get(0).(func(service.ServiceName) net.IP); ok {
-		r0 = rf(serviceName)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(net.IP)
-		}
-	}
-
-	var r1 bool
-	if rf, ok := ret.Get(1).(func(service.ServiceName) bool); ok {
-		r1 = rf(serviceName)
-	} else {
-		r1 = ret.Get(1).(bool)
-	}
-
-	return r0, r1
-}
-
-// MockServiceNetwork_GetIPAddressForService_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetIPAddressForService'
-type MockServiceNetwork_GetIPAddressForService_Call struct {
-	*mock.Call
-}
-
-// GetIPAddressForService is a helper method to define mock.On call
-//   - serviceName service.ServiceName
-func (_e *MockServiceNetwork_Expecter) GetIPAddressForService(serviceName interface{}) *MockServiceNetwork_GetIPAddressForService_Call {
-	return &MockServiceNetwork_GetIPAddressForService_Call{Call: _e.mock.On("GetIPAddressForService", serviceName)}
-}
-
-func (_c *MockServiceNetwork_GetIPAddressForService_Call) Run(run func(serviceName service.ServiceName)) *MockServiceNetwork_GetIPAddressForService_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(service.ServiceName))
-	})
-	return _c
-}
-
-func (_c *MockServiceNetwork_GetIPAddressForService_Call) Return(_a0 net.IP, _a1 bool) *MockServiceNetwork_GetIPAddressForService_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
 // GetService provides a mock function with given fields: ctx, serviceIdentifier
 func (_m *MockServiceNetwork) GetService(ctx context.Context, serviceIdentifier string) (*service.Service, error) {
 	ret := _m.Called(ctx, serviceIdentifier)
@@ -300,6 +252,52 @@ func (_c *MockServiceNetwork_GetServiceNames_Call) Run(run func()) *MockServiceN
 
 func (_c *MockServiceNetwork_GetServiceNames_Call) Return(_a0 map[service.ServiceName]bool) *MockServiceNetwork_GetServiceNames_Call {
 	_c.Call.Return(_a0)
+	return _c
+}
+
+// GetServiceRegistration provides a mock function with given fields: serviceName
+func (_m *MockServiceNetwork) GetServiceRegistration(serviceName service.ServiceName) (*service.ServiceRegistration, bool) {
+	ret := _m.Called(serviceName)
+
+	var r0 *service.ServiceRegistration
+	if rf, ok := ret.Get(0).(func(service.ServiceName) *service.ServiceRegistration); ok {
+		r0 = rf(serviceName)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*service.ServiceRegistration)
+		}
+	}
+
+	var r1 bool
+	if rf, ok := ret.Get(1).(func(service.ServiceName) bool); ok {
+		r1 = rf(serviceName)
+	} else {
+		r1 = ret.Get(1).(bool)
+	}
+
+	return r0, r1
+}
+
+// MockServiceNetwork_GetServiceRegistration_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetServiceRegistration'
+type MockServiceNetwork_GetServiceRegistration_Call struct {
+	*mock.Call
+}
+
+// GetServiceRegistration is a helper method to define mock.On call
+//   - serviceName service.ServiceName
+func (_e *MockServiceNetwork_Expecter) GetServiceRegistration(serviceName interface{}) *MockServiceNetwork_GetServiceRegistration_Call {
+	return &MockServiceNetwork_GetServiceRegistration_Call{Call: _e.mock.On("GetServiceRegistration", serviceName)}
+}
+
+func (_c *MockServiceNetwork_GetServiceRegistration_Call) Run(run func(serviceName service.ServiceName)) *MockServiceNetwork_GetServiceRegistration_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(service.ServiceName))
+	})
+	return _c
+}
+
+func (_c *MockServiceNetwork_GetServiceRegistration_Call) Return(_a0 *service.ServiceRegistration, _a1 bool) *MockServiceNetwork_GetServiceRegistration_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }
 

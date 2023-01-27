@@ -11,7 +11,7 @@ import (
 const (
 	addServicesTestName = "add-services-test"
 
-	starlarkScript = `
+	addServicesScript = `
 DOCKER_GETTING_STARTED_IMAGE = "docker/getting-started:latest"
 SERVICE_NAME_PREFIX = "service-"
 NUM_SERVICES = 4
@@ -42,9 +42,9 @@ func TestAddServices(t *testing.T) {
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
 	logrus.Infof("Executing Starlark script...")
-	logrus.Debugf("Starlark script content: \n%v", starlarkScript)
+	logrus.Debugf("Starlark script content: \n%v", addServicesScript)
 
-	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkScript, emptyArgs, defaultDryRun)
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, addServicesScript, emptyArgs, defaultDryRun)
 	require.NoError(t, err, "Unexpected error executing Starlark script")
 
 	expectedScriptOutput := `Adding 4 services to enclave

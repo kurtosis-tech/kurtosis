@@ -19,10 +19,22 @@ type ServiceRegistration struct {
 	// The private IP is the IP of the service within the enclave, meaning other services can use this IP to communicate
 	// with the service
 	privateIp net.IP
+
+	// The hostname differs whether Kurtosis is using a Kubernetes backend of a Docker backend.
+	// In Docker, we set the serviceName as the hostname, whereas in Kubernetes the hostname is automatically assigned
+	// to the "Kubernetes Service Name", which is something like user-services-<SERVICE_UUID>
+	// TODO: for consistency we should probably set the hostname to user-services-<SERVICE_UUID> in docker as well
+	hostname string
 }
 
-func NewServiceRegistration(name ServiceName, guid ServiceUUID, enclaveId enclave.EnclaveUUID, privateIp net.IP) *ServiceRegistration {
-	return &ServiceRegistration{name: name, uuid: guid, enclaveId: enclaveId, privateIp: privateIp}
+func NewServiceRegistration(name ServiceName, guid ServiceUUID, enclaveId enclave.EnclaveUUID, privateIp net.IP, hostname string) *ServiceRegistration {
+	return &ServiceRegistration{
+		name:      name,
+		uuid:      guid,
+		enclaveId: enclaveId,
+		privateIp: privateIp,
+		hostname:  hostname,
+	}
 }
 
 func (registration *ServiceRegistration) GetName() ServiceName {
@@ -39,4 +51,8 @@ func (registration *ServiceRegistration) GetEnclaveID() enclave.EnclaveUUID {
 
 func (registration *ServiceRegistration) GetPrivateIP() net.IP {
 	return registration.privateIp
+}
+
+func (registration *ServiceRegistration) GetHostname() string {
+	return registration.hostname
 }

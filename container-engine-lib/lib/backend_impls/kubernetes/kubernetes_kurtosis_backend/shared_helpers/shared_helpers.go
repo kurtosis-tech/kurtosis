@@ -387,7 +387,13 @@ func GetUserServiceObjectsFromKubernetesResources(
 			return nil, stacktrace.NewError("An error occurred parsing service private IP string '%v' to an IP address object", serviceIpStr)
 		}
 
-		serviceRegistrationObj := service.NewServiceRegistration(serviceId, serviceUuid, enclaveId, privateIp)
+		serviceRegistrationObj := service.NewServiceRegistration(
+			serviceId,
+			serviceUuid,
+			enclaveId,
+			privateIp,
+			kubernetesService.GetName(), // Kubernetes automatically set hostname = Kubernetes Service Name
+		)
 		resultObj.ServiceRegistration = serviceRegistrationObj
 
 		// A service with no ports annotation means that no pod has yet consumed the registration

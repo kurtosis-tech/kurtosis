@@ -77,7 +77,7 @@ func (t *addServiceTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtosi
 			return true
 		}),
 	).Times(1).Return(
-		service.NewService(service.NewServiceRegistration(addService_serviceName, addService_serviceUuid, addService_enclaveUuid, nil), container_status.ContainerStatus_Running, nil, nil, nil),
+		service.NewService(service.NewServiceRegistration(addService_serviceName, addService_serviceUuid, addService_enclaveUuid, nil, string(addService_serviceName)), container_status.ContainerStatus_Running, nil, nil, nil),
 		nil,
 	)
 
@@ -93,7 +93,7 @@ func (t *addServiceTestCase) Assert(interpretationResult starlark.Value, executi
 	serviceObj, ok := interpretationResult.(*kurtosis_types.Service)
 	require.True(t, ok, "interpretation result should be a dictionary")
 	require.NotNil(t, serviceObj)
-	expectedServiceObj := `Service(ip_address="{{kurtosis:service-1.ip_address}}", ports={"grpc": PortSpec(number=1234, transport_protocol="TCP", application_protocol="http")})`
+	expectedServiceObj := `Service(hostname = "{{kurtosis:service-1.hostname}}", ip_address = "{{kurtosis:service-1.ip_address}}", ports = {"grpc": PortSpec(number=1234, transport_protocol="TCP", application_protocol="http")})`
 	require.Equal(t, expectedServiceObj, serviceObj.String())
 
 	require.Equal(t, *executionResult, "Service 'service-1' added with service UUID 'service-1-uuid'")

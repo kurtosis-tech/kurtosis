@@ -530,6 +530,7 @@ func registerUserServices(
 			serviceUuid,
 			enclaveUuid,
 			ipAddr,
+			string(serviceName), // in Docker, hostname = serviceName because we're setting the "alias" of the container to serviceName
 		)
 
 		serviceRegistrationsForEnclave[serviceUuid] = registration

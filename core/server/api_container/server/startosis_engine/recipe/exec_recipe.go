@@ -97,11 +97,11 @@ func (recipe *ExecRecipe) AttrNames() []string {
 func (recipe *ExecRecipe) Execute(ctx context.Context, serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) (map[string]starlark.Comparable, error) {
 	var commandWithIPAddressAndRuntimeValue []string
 	for _, subCommand := range recipe.command {
-		maybeSubCommandWithIPAddress, err := magic_string_helper.ReplaceIPAddressInString(subCommand, serviceNetwork, commandKey)
+		maybeSubCommandWithIPAddressAndHostname, err := magic_string_helper.ReplaceIPAddressAndHostnameInString(subCommand, serviceNetwork, commandKey)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred while replacing IP address in the command of the exec recipe")
 		}
-		maybeSubCommandWithRuntimeValuesAndIPAddress, err := magic_string_helper.ReplaceRuntimeValueInString(maybeSubCommandWithIPAddress, runtimeValueStore)
+		maybeSubCommandWithRuntimeValuesAndIPAddress, err := magic_string_helper.ReplaceRuntimeValueInString(maybeSubCommandWithIPAddressAndHostname, runtimeValueStore)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred while replacing runtime values in the command of the exec recipe")
 		}

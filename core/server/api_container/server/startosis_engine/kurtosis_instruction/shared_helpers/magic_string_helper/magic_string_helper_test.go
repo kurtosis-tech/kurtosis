@@ -38,7 +38,7 @@ func TestReplaceIPAddressInString_MultipleOccurrencesOfSameStringReplaced(t *tes
 	originalString := fmt.Sprintf("{{kurtosis:%v.ip_address}} something in the middle {{kurtosis:%v.ip_address}}", testServiceDependence1ServiceId, testServiceDependence1ServiceId)
 
 	expectedString := fmt.Sprintf("%v something in the middle %v", testServiceDependence1IPAddress, testServiceDependence1IPAddress)
-	replacedString, err := ReplaceIPAddressInString(originalString, serviceNetwork, testServiceId)
+	replacedString, err := ReplaceIPAddressAndHostnameInString(originalString, serviceNetwork, testServiceId)
 	require.Nil(t, err)
 	require.Equal(t, expectedString, replacedString)
 }
@@ -57,7 +57,7 @@ func TestReplaceIPAddressInString_MultipleReplacesOfDifferentStrings(t *testing.
 	originalString := fmt.Sprintf("{{kurtosis:%v.ip_address}} {{kurtosis:%v.ip_address}} {{kurtosis:%v.ip_address}}", testServiceDependence1ServiceId, testServiceDependence2ServiceId, testServiceDependence1ServiceId)
 
 	expectedString := fmt.Sprintf("%v %v %v", testServiceDependence1IPAddress, testServiceDependence2IPAddress, testServiceDependence1IPAddress)
-	replacedString, err := ReplaceIPAddressInString(originalString, serviceNetwork, testServiceId)
+	replacedString, err := ReplaceIPAddressAndHostnameInString(originalString, serviceNetwork, testServiceId)
 	require.Nil(t, err)
 	require.Equal(t, expectedString, replacedString)
 }
@@ -67,8 +67,8 @@ func TestReplaceIPAddressInString_ReplacementFailsForUnknownServiceId(t *testing
 	serviceNetwork := service_network.NewMockServiceNetworkCustom(ipAddresses)
 	originalString := fmt.Sprintf("{{kurtosis:%v.ip_address}}", unknownServiceId)
 
-	expectedErr := fmt.Sprintf("'%v' depends on the IP address of '%v' but we don't have any registrations for it", testServiceId, unknownServiceId)
-	_, err := ReplaceIPAddressInString(originalString, serviceNetwork, testServiceId)
+	expectedErr := fmt.Sprintf("'%v' depends on the hostname and IP address of '%v' but we don't have any registrations for it", testServiceId, unknownServiceId)
+	_, err := ReplaceIPAddressAndHostnameInString(originalString, serviceNetwork, testServiceId)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), expectedErr)
 }

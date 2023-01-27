@@ -60,8 +60,8 @@ func (t *addServicesTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtos
 		}),
 	).Times(1).Return(
 		map[service.ServiceName]*service.Service{
-			service1: service.NewService(service.NewServiceRegistration(service1, serviceUuid1, enclaveUuid, nil), container_status.ContainerStatus_Running, nil, nil, nil),
-			service2: service.NewService(service.NewServiceRegistration(service2, serviceUuid2, enclaveUuid, nil), container_status.ContainerStatus_Running, nil, nil, nil),
+			service1: service.NewService(service.NewServiceRegistration(service1, serviceUuid1, enclaveUuid, nil, string(service1)), container_status.ContainerStatus_Running, nil, nil, nil),
+			service2: service.NewService(service.NewServiceRegistration(service2, serviceUuid2, enclaveUuid, nil, string(service2)), container_status.ContainerStatus_Running, nil, nil, nil),
 		},
 		map[service.ServiceName]error{},
 		nil,

@@ -59,7 +59,7 @@ def run(plan, args):
 	# Validate connection is indeed blocked
 	connection_result = plan.exec(recipe=ExecRecipe(
 		service_name=SERVICE_NAME_2,
-		command=["ping", "-W", "1", "-c", "1", service_1.ip_address],
+		command=["ping", "-W", "1", "-c", "1", service_1.hostname],
 	))
 	plan.assert(connection_result["code"], "==", CONNECTION_FAILURE)
 
@@ -79,7 +79,7 @@ def run(plan, args):
 	# Connection is back to BLOCKED
 	connection_result = plan.exec(recipe=ExecRecipe(
 		service_name=SERVICE_NAME_2,
-		command=["ping", "-W", "1", "-c", "1", service_1.ip_address],
+		command=["ping", "-W", "1", "-c", "1", service_1.hostname],
 	))
 	plan.assert(connection_result["code"], "==", CONNECTION_FAILURE)
 

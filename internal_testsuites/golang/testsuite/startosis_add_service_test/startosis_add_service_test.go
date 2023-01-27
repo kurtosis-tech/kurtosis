@@ -9,82 +9,99 @@ import (
 )
 
 const (
-	addServiceWithEmptyPortsTestName = "add-service-empty-ports"
+	addServiceWithEmptyPortsTestName = "two-service-connection-test"
 	isPartitioningEnabled            = false
 	defaultDryRun                    = false
 	emptyArgs                        = "{}"
 
-	serviceName  = "docker-getting-started"
-	serviceName2 = "docker-getting-started-2"
+	serviceName  = "datastore-1"
+	serviceName2 = "datastore-2"
 
-	starlarkScriptWithEmptyPorts = `
-DOCKER_GETTING_STARTED_IMAGE = "docker/getting-started:latest"
+	addServiceAndTestConnectionScript = `
+CONTAINER_IMAGE = "kurtosistech/example-datastore-server"
 SERVICE_NAME = "` + serviceName + `"
+SERVICE_NAME_2 = "` + serviceName2 + `"
+GRPC_PORT = 1323
+SUCCESS_CODE = 0
 
 def run(plan):
-	plan.print("Adding service " + SERVICE_NAME + ".")
+	plan.print("Adding services " + SERVICE_NAME + " and " + SERVICE_NAME_2)
 	
 	config = ServiceConfig(
-		image = DOCKER_GETTING_STARTED_IMAGE,
-		cpu_allocation = 500,
-		memory_allocation = 512,
+		image = CONTAINER_IMAGE,
+		cpu_allocation=500,
+		memory_allocation=256,
+		ports = {
+			"grpc": PortSpec(number = GRPC_PORT, transport_protocol = "TCP")
+		}
 	)
-	
-	plan.add_service(service_name = SERVICE_NAME, config = config)
-	plan.print("Service " + SERVICE_NAME + " deployed successfully.")
-`
+	datastore_1 = plan.add_service(service_name = SERVICE_NAME, config = config)
+	datastore_2 = plan.add_service(service_name = SERVICE_NAME_2, config = config)
 
-	starlarkScriptWithoutPorts = `
-DOCKER_GETTING_STARTED_IMAGE = "docker/getting-started:latest"
-SERVICE_NAME = "` + serviceName2 + `"
-
-def run(plan, args):
-	plan.print("Adding service " + SERVICE_NAME + ".")
+	test_hostname_cmd = "nc -zv {0} {1}".format(datastore_1.hostname, GRPC_PORT)
+	connection_result = plan.exec(recipe=ExecRecipe(
+		service_name=SERVICE_NAME_2,
+		command=["sh", "-c", test_hostname_cmd],
+	))
+	plan.assert(connection_result["code"], "==", SUCCESS_CODE)
 	
-	config = ServiceConfig(
-		image = DOCKER_GETTING_STARTED_IMAGE,
-	)
-	
-	plan.add_service(service_name = SERVICE_NAME, config = config)
-	plan.print("Service " + SERVICE_NAME + " deployed successfully.")
+	test_ip_address_cmd = "nc -zv {0} {1}".format(datastore_1.ip_address, GRPC_PORT) 
+	connection_result = plan.exec(recipe=ExecRecipe(
+		service_name=SERVICE_NAME_2,
+		command=["sh", "-c", test_ip_address_cmd],
+	))
+	plan.assert(connection_result["code"], "==", SUCCESS_CODE)
 `
 )
 
-var serviceNames = []string{serviceName, serviceName2}
-var starlarkScriptsToRun = []string{starlarkScriptWithEmptyPorts, starlarkScriptWithoutPorts}
-
-func TestAddServiceWithEmptyPortsAndWithoutPorts(t *testing.T) {
+func TestAddTwoServicesAndTestConnection(t *testing.T) {
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
-	enclaveCtx, destroyEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, addServiceWithEmptyPortsTestName, isPartitioningEnabled)
+	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, addServiceWithEmptyPortsTestName, isPartitioningEnabled)
 	require.NoError(t, err, "An error occurred creating an enclave")
-	defer destroyEnclaveFunc()
+	defer func() {
+		destroyErr := destroyEnclaveFunc()
+		if destroyErr != nil {
+			logrus.Errorf("Error destroying enclave at the end of integration test '%s'",
+				addServiceWithEmptyPortsTestName)
+		}
+	}()
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
 
-	for starlarkScripIndex, starlarkScript := range starlarkScriptsToRun {
-		logrus.Infof("Executing Starlark script...")
-		logrus.Debugf("Starlark script content: \n%v", starlarkScript)
+	logrus.Infof("Executing Starlark script...")
+	logrus.Debugf("Starlark script contents: \n%v", addServiceAndTestConnectionScript)
 
-		runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkScript, emptyArgs, defaultDryRun)
-		require.NoError(t, err, "Unexpected error executing Starlark script")
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, addServiceAndTestConnectionScript, emptyArgs, defaultDryRun)
+	require.NoError(t, err, "Unexpected error executing Starlark script")
 
-		expectedScriptOutput := `Adding service ` + serviceNames[starlarkScripIndex] + `.
-Service '` + serviceNames[starlarkScripIndex] + `' added with service UUID '[a-z-0-9]+'
-Service ` + serviceNames[starlarkScripIndex] + ` deployed successfully.
+	expectedScriptOutput := `Adding services ` + serviceName + ` and ` + serviceName2 + `
+Service '` + serviceName + `' added with service UUID '[a-z-0-9]+'
+Service '` + serviceName2 + `' added with service UUID '[a-z-0-9]+'
+Command returned with exit code '0' and the following output:
+--------------------
+[a-z-0-9]+ \([0-9\.]+:1323\) open
+
+--------------------
+Assertion succeeded. Value is '0'.
+Command returned with exit code '0' and the following output:
+--------------------
+[0-9\.]+ \([0-9\.]+:1323\) open
+
+--------------------
+Assertion succeeded. Value is '0'.
 `
-		require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error.")
-		require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")
-		require.Nil(t, runResult.ExecutionError, "Unexpected execution error")
-		require.Regexp(t, expectedScriptOutput, string(runResult.RunOutput))
-		logrus.Infof("Successfully ran Starlark script")
+	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error.")
+	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")
+	require.Nil(t, runResult.ExecutionError, "Unexpected execution error")
+	require.Regexp(t, expectedScriptOutput, string(runResult.RunOutput))
+	logrus.Infof("Successfully ran Starlark script")
 
-		// Ensure that the service is listed
-		expectedNumberOfServices := starlarkScripIndex + 1
-		serviceInfos, err := enclaveCtx.GetServices()
-		require.Nil(t, err)
-		actualNumberOfServices := len(serviceInfos)
-		require.Equal(t, expectedNumberOfServices, actualNumberOfServices)
-	}
+	// Ensure that the service is listed
+	expectedNumberOfServices := 2
+	serviceInfos, err := enclaveCtx.GetServices()
+	require.Nil(t, err)
+	actualNumberOfServices := len(serviceInfos)
+	require.Equal(t, expectedNumberOfServices, actualNumberOfServices)
 }

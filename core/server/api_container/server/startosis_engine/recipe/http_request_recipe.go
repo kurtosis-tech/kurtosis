@@ -236,11 +236,11 @@ func (recipe *HttpRequestRecipe) Execute(ctx context.Context, serviceNetwork ser
 	var response *http.Response
 	var err error
 	logrus.Debugf("Running HTTP request recipe '%v'", recipe)
-	maybeRecipeBodyWithIPAddress, err := magic_string_helper.ReplaceIPAddressInString(recipe.body, serviceNetwork, bodyKey)
+	maybeRecipeBodyWithIPAddressAndHostname, err := magic_string_helper.ReplaceIPAddressAndHostnameInString(recipe.body, serviceNetwork, bodyKey)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while replacing IP address in the body of the http recipe")
 	}
-	maybeRecipeBodyWithIPAddressAndRuntimeValue, err := magic_string_helper.ReplaceRuntimeValueInString(maybeRecipeBodyWithIPAddress, runtimeValueStore)
+	maybeRecipeBodyWithIPAddressAndRuntimeValue, err := magic_string_helper.ReplaceRuntimeValueInString(maybeRecipeBodyWithIPAddressAndHostname, runtimeValueStore)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while replacing runtime values in the body of the http recipe")
 	}

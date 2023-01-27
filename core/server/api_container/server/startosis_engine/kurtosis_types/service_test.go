@@ -8,6 +8,7 @@ import (
 )
 
 const (
+	hostnameTestValue       = starlark.String("datastore-1")
 	ipAddressTestValue      = starlark.String("{{kurtosis:service_name.ip_address}}")
 	testInvalidAttr         = "invalid-test-attr"
 	httpApplicationProtocol = "http"
@@ -16,14 +17,14 @@ const (
 func TestService_StringRepresentation(t *testing.T) {
 	service, err := createTestServiceType()
 	require.Nil(t, err)
-	expectedStr := `Service(ip_address="{{kurtosis:service_name.ip_address}}", ports={"grpc": PortSpec(number=123, transport_protocol="TCP", application_protocol="")})`
+	expectedStr := `Service(hostname = "datastore-1", ip_address = "{{kurtosis:service_name.ip_address}}", ports = {"grpc": PortSpec(number=123, transport_protocol="TCP", application_protocol="")})`
 	require.Equal(t, expectedStr, service.String())
 }
 
 func TestService_StringRepresentationWithApplicationProtocol(t *testing.T) {
 	service, err := createTestServiceTypeWithApplicationProtocol()
 	require.Nil(t, err)
-	expectedStr := `Service(ip_address="{{kurtosis:service_name.ip_address}}", ports={"grpc": PortSpec(number=123, transport_protocol="TCP", application_protocol="http")})`
+	expectedStr := `Service(hostname = "datastore-1", ip_address = "{{kurtosis:service_name.ip_address}}", ports = {"grpc": PortSpec(number=123, transport_protocol="TCP", application_protocol="http")})`
 	require.Equal(t, expectedStr, service.String())
 }
 
@@ -36,23 +37,15 @@ func TestService_ServiceType(t *testing.T) {
 func TestService_Freeze(t *testing.T) {
 	service, err := createTestServiceType()
 	require.Nil(t, err)
-	// just checking it doesn't panic as it's a no-op
+	// just checking it doesn't panic
 	require.NotPanics(t, service.Freeze)
 }
 
 func TestService_TruthValidService(t *testing.T) {
 	service, err := createTestServiceType()
 	require.Nil(t, err)
-	// just checking it doesn't panic as it's a no-op
+	// starlarkstruct.Struct Truth() function always return true
 	require.Equal(t, starlark.Bool(true), service.Truth())
-}
-
-func TestService_TruthFalsyService(t *testing.T) {
-	service := Service{
-		ipAddress: "",
-		ports:     nil,
-	}
-	require.Equal(t, starlark.Bool(false), service.Truth())
 }
 
 func TestService_HashThrowsError(t *testing.T) {
@@ -83,7 +76,7 @@ func TestService_TestAttrNames(t *testing.T) {
 	service, err := createTestServiceType()
 	require.Nil(t, err)
 	attrNames := service.AttrNames()
-	require.Equal(t, []string{ipAddressAttr, portsAttr}, attrNames)
+	require.Equal(t, []string{hostnameAttr, ipAddressAttr, portsAttr}, attrNames)
 }
 
 func createTestServiceType() (*Service, error) {
@@ -92,7 +85,7 @@ func createTestServiceType() (*Service, error) {
 	if err != nil {
 		return nil, err
 	}
-	service := NewService(ipAddressTestValue, ports)
+	service := NewService(hostnameTestValue, ipAddressTestValue, ports)
 	return service, nil
 }
 
@@ -102,6 +95,6 @@ func createTestServiceTypeWithApplicationProtocol() (*Service, error) {
 	if err != nil {
 		return nil, err
 	}
-	service := NewService(ipAddressTestValue, ports)
+	service := NewService(hostnameTestValue, ipAddressTestValue, ports)
 	return service, nil
 }

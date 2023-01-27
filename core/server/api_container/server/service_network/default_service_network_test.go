@@ -59,7 +59,7 @@ func TestStartService_Successful(t *testing.T) {
 	serviceName := testServiceNameFromInt(serviceInternalTestId)
 	serviceUuid := testServiceUuidFromInt(serviceInternalTestId)
 	successfulServiceIp := testIpFromInt(serviceInternalTestId)
-	serviceRegistration := service.NewServiceRegistration(serviceName, serviceUuid, enclaveName, successfulServiceIp)
+	serviceRegistration := service.NewServiceRegistration(serviceName, serviceUuid, enclaveName, successfulServiceIp, string(serviceName))
 	serviceObj := service.NewService(serviceRegistration, container_status.ContainerStatus_Running, map[string]*port_spec.PortSpec{}, successfulServiceIp, map[string]*port_spec.PortSpec{})
 	serviceConfig := services.NewServiceConfigBuilder(testContainerImageName).WithSubnetwork(string(servicePartitionId)).Build()
 
@@ -164,7 +164,7 @@ func TestStartService_FailedToStart(t *testing.T) {
 	serviceName := testServiceNameFromInt(serviceInternalTestId)
 	serviceUuid := testServiceUuidFromInt(serviceInternalTestId)
 	serviceIp := testIpFromInt(serviceInternalTestId)
-	serviceRegistration := service.NewServiceRegistration(serviceName, serviceUuid, enclaveName, serviceIp)
+	serviceRegistration := service.NewServiceRegistration(serviceName, serviceUuid, enclaveName, serviceIp, string(serviceName))
 	serviceConfig := services.NewServiceConfigBuilder(testContainerImageName).WithSubnetwork(string(servicePartitionId)).Build()
 
 	network := NewDefaultServiceNetwork(
@@ -263,7 +263,7 @@ func TestStartService_SidecarFailedToStart(t *testing.T) {
 	serviceName := testServiceNameFromInt(serviceInternalTestId)
 	serviceUuid := testServiceUuidFromInt(serviceInternalTestId)
 	successfulServiceIp := testIpFromInt(serviceInternalTestId)
-	serviceRegistration := service.NewServiceRegistration(serviceName, serviceUuid, enclaveName, successfulServiceIp)
+	serviceRegistration := service.NewServiceRegistration(serviceName, serviceUuid, enclaveName, successfulServiceIp, string(serviceName))
 	serviceObj := service.NewService(serviceRegistration, container_status.ContainerStatus_Running, map[string]*port_spec.PortSpec{}, successfulServiceIp, map[string]*port_spec.PortSpec{})
 	serviceConfig := services.NewServiceConfigBuilder(testContainerImageName).WithSubnetwork(string(servicePartitionId)).Build()
 
@@ -373,10 +373,10 @@ func TestStartServices_Success(t *testing.T) {
 	// One service will be started successfully
 	successfulServiceIndex := 1
 	successfulServicePartitionId := testPartitionIdFromInt(successfulServiceIndex)
-	successfulServiceId := testServiceNameFromInt(successfulServiceIndex)
+	successfulServiceName := testServiceNameFromInt(successfulServiceIndex)
 	successfulServiceUuid := testServiceUuidFromInt(successfulServiceIndex)
 	successfulServiceIp := testIpFromInt(successfulServiceIndex)
-	successfulServiceRegistration := service.NewServiceRegistration(successfulServiceId, successfulServiceUuid, enclaveName, successfulServiceIp)
+	successfulServiceRegistration := service.NewServiceRegistration(successfulServiceName, successfulServiceUuid, enclaveName, successfulServiceIp, string(successfulServiceName))
 	successfulService := service.NewService(successfulServiceRegistration, container_status.ContainerStatus_Running, map[string]*port_spec.PortSpec{}, successfulServiceIp, map[string]*port_spec.PortSpec{})
 	successfulServiceConfig := services.NewServiceConfigBuilder(testContainerImageName).WithSubnetwork(string(successfulServicePartitionId)).Build()
 
@@ -398,11 +398,11 @@ func TestStartServices_Success(t *testing.T) {
 		ctx,
 		enclaveName,
 		map[service.ServiceName]bool{
-			successfulServiceId: true,
+			successfulServiceName: true,
 		},
 	).Times(1).Return(
 		map[service.ServiceName]*service.ServiceRegistration{
-			successfulServiceId: successfulServiceRegistration,
+			successfulServiceName: successfulServiceRegistration,
 		},
 		map[service.ServiceName]error{},
 		nil,
@@ -448,26 +448,26 @@ func TestStartServices_Success(t *testing.T) {
 	success, failure, err := network.StartServices(
 		ctx,
 		map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig{
-			successfulServiceId: successfulServiceConfig,
+			successfulServiceName: successfulServiceConfig,
 		},
 	)
 	require.Nil(t, err)
 	require.Len(t, success, 1)
-	require.Contains(t, success, successfulServiceId)
+	require.Contains(t, success, successfulServiceName)
 	require.Empty(t, failure)
 
 	require.Len(t, network.registeredServiceInfo, 1)
-	require.Contains(t, network.registeredServiceInfo, successfulServiceId)
+	require.Contains(t, network.registeredServiceInfo, successfulServiceName)
 
 	require.Len(t, network.allExistingAndHistoricalIdentifiers, 1)
 
 	require.Len(t, network.networkingSidecars, 1)
-	require.Contains(t, network.networkingSidecars, successfulServiceId)
+	require.Contains(t, network.networkingSidecars, successfulServiceName)
 
 	expectedPartitionsInTopolody := map[service_network_types.PartitionID]map[service.ServiceName]bool{
 		partition_topology.DefaultPartitionId: {},
 		successfulServicePartitionId: {
-			successfulServiceId: true,
+			successfulServiceName: true,
 		},
 	}
 	require.Equal(t, expectedPartitionsInTopolody, network.topology.GetPartitionServices())
@@ -483,7 +483,7 @@ func TestStartServices_FailureRollsBackTheEntireBatch(t *testing.T) {
 	successfulServiceName := testServiceNameFromInt(successfulServiceIndex)
 	successfulServiceUuid := testServiceUuidFromInt(successfulServiceIndex)
 	successfulServiceIp := testIpFromInt(successfulServiceIndex)
-	successfulServiceRegistration := service.NewServiceRegistration(successfulServiceName, successfulServiceUuid, enclaveName, successfulServiceIp)
+	successfulServiceRegistration := service.NewServiceRegistration(successfulServiceName, successfulServiceUuid, enclaveName, successfulServiceIp, string(successfulServiceName))
 	successfulService := service.NewService(successfulServiceRegistration, container_status.ContainerStatus_Running, map[string]*port_spec.PortSpec{}, successfulServiceIp, map[string]*port_spec.PortSpec{})
 	successfulServiceConfig := services.NewServiceConfigBuilder(testContainerImageName).WithSubnetwork(string(successfulServicePartitionId)).Build()
 
@@ -493,7 +493,7 @@ func TestStartServices_FailureRollsBackTheEntireBatch(t *testing.T) {
 	failedServiceName := testServiceNameFromInt(failedServiceIndex)
 	failedServiceUuid := testServiceUuidFromInt(failedServiceIndex)
 	failedServiceIp := testIpFromInt(failedServiceIndex)
-	failedServiceRegistration := service.NewServiceRegistration(failedServiceName, failedServiceUuid, enclaveName, failedServiceIp)
+	failedServiceRegistration := service.NewServiceRegistration(failedServiceName, failedServiceUuid, enclaveName, failedServiceIp, string(failedServiceName))
 	failedServiceConfig := services.NewServiceConfigBuilder(testContainerImageName).WithSubnetwork(string(failedServicePartitionId)).Build()
 
 	// One service will be successfully started but its sidecar will fail to start
@@ -502,7 +502,7 @@ func TestStartServices_FailureRollsBackTheEntireBatch(t *testing.T) {
 	sidecarFailedServiceName := testServiceNameFromInt(sidecarFailedServiceIndex)
 	sidecarFailedServiceUuid := testServiceUuidFromInt(sidecarFailedServiceIndex)
 	sidecarFailedServiceIp := testIpFromInt(sidecarFailedServiceIndex)
-	sidecarFailedServiceRegistration := service.NewServiceRegistration(sidecarFailedServiceName, sidecarFailedServiceUuid, enclaveName, sidecarFailedServiceIp)
+	sidecarFailedServiceRegistration := service.NewServiceRegistration(sidecarFailedServiceName, sidecarFailedServiceUuid, enclaveName, sidecarFailedServiceIp, string(sidecarFailedServiceName))
 	sidecarFailedService := service.NewService(sidecarFailedServiceRegistration, container_status.ContainerStatus_Running, map[string]*port_spec.PortSpec{}, sidecarFailedServiceIp, map[string]*port_spec.PortSpec{})
 	sidecarFailedServiceConfig := services.NewServiceConfigBuilder(testContainerImageName).WithSubnetwork(string(sidecarFailedServicePartitionId)).Build()
 
@@ -766,7 +766,8 @@ func TestUpdateService(t *testing.T) {
 		testServiceNameFromInt(successfulServiceIndex),
 		testServiceUuidFromInt(successfulServiceIndex),
 		enclaveName,
-		testIpFromInt(successfulServiceIndex))
+		testIpFromInt(successfulServiceIndex),
+		testServiceHostnameFromInt(successfulServiceIndex))
 
 	// service that will be in partition0 from the start and be updated to partition0 (i.e. it will no-op)
 	serviceAlreadyInPartitionIndex := 2
@@ -774,7 +775,8 @@ func TestUpdateService(t *testing.T) {
 		testServiceNameFromInt(serviceAlreadyInPartitionIndex),
 		testServiceUuidFromInt(serviceAlreadyInPartitionIndex),
 		enclaveName,
-		testIpFromInt(serviceAlreadyInPartitionIndex))
+		testIpFromInt(serviceAlreadyInPartitionIndex),
+		testServiceHostnameFromInt(serviceAlreadyInPartitionIndex))
 
 	// service that does not exist, and yet we will try to update it. It should fail
 	nonExistentServiceIndex := 3
@@ -782,7 +784,8 @@ func TestUpdateService(t *testing.T) {
 		testServiceNameFromInt(nonExistentServiceIndex),
 		testServiceUuidFromInt(nonExistentServiceIndex),
 		enclaveName,
-		testIpFromInt(nonExistentServiceIndex))
+		testIpFromInt(nonExistentServiceIndex),
+		testServiceHostnameFromInt(nonExistentServiceIndex))
 
 	// service that will be moved from default partition to partition2
 	serviceToMoveOutOfDefaultPartitionIndex := 4
@@ -790,7 +793,8 @@ func TestUpdateService(t *testing.T) {
 		testServiceNameFromInt(serviceToMoveOutOfDefaultPartitionIndex),
 		testServiceUuidFromInt(serviceToMoveOutOfDefaultPartitionIndex),
 		enclaveName,
-		testIpFromInt(serviceToMoveOutOfDefaultPartitionIndex))
+		testIpFromInt(serviceToMoveOutOfDefaultPartitionIndex),
+		testServiceHostnameFromInt(serviceToMoveOutOfDefaultPartitionIndex))
 
 	require.Nil(t, network.topology.CreateEmptyPartitionWithDefaultConnection(partition1))
 	require.Nil(t, network.topology.CreateEmptyPartitionWithDefaultConnection(partition0))
@@ -859,13 +863,15 @@ func TestUpdateService_FullBatchFailureRollBack(t *testing.T) {
 		testServiceNameFromInt(failingServiceIndex),
 		testServiceUuidFromInt(failingServiceIndex),
 		enclaveName,
-		testIpFromInt(failingServiceIndex))
+		testIpFromInt(failingServiceIndex),
+		testServiceHostnameFromInt(failingServiceIndex))
 	successfulServiceIndex := 2
 	successfulService := service.NewServiceRegistration(
 		testServiceNameFromInt(successfulServiceIndex),
 		testServiceUuidFromInt(successfulServiceIndex),
 		enclaveName,
-		testIpFromInt(successfulServiceIndex))
+		testIpFromInt(successfulServiceIndex),
+		testServiceHostnameFromInt(successfulServiceIndex))
 
 	require.Nil(t, network.topology.CreateEmptyPartitionWithDefaultConnection(partition1))
 	require.Nil(t, network.topology.AddService(failingService.GetName(), partition1))
@@ -973,13 +979,15 @@ func TestSetConnection(t *testing.T) {
 		testServiceNameFromInt(service1Index),
 		testServiceUuidFromInt(service1Index),
 		enclaveName,
-		testIpFromInt(service1Index))
+		testIpFromInt(service1Index),
+		testServiceHostnameFromInt(service1Index))
 	service2Index := 2
 	service2 := service.NewServiceRegistration(
 		testServiceNameFromInt(service2Index),
 		testServiceUuidFromInt(service2Index),
 		enclaveName,
-		testIpFromInt(service2Index))
+		testIpFromInt(service2Index),
+		testServiceHostnameFromInt(service2Index))
 
 	require.Nil(t, network.topology.CreateEmptyPartitionWithDefaultConnection(partition1))
 	require.Nil(t, network.topology.CreateEmptyPartitionWithDefaultConnection(partition2))
@@ -1025,13 +1033,15 @@ func TestSetConnection_FailureRollsBackChanges(t *testing.T) {
 		testServiceNameFromInt(service1Index),
 		testServiceUuidFromInt(service1Index),
 		enclaveName,
-		testIpFromInt(service1Index))
+		testIpFromInt(service1Index),
+		testServiceHostnameFromInt(service1Index))
 	service2Index := 2
 	service2 := service.NewServiceRegistration(
 		testServiceNameFromInt(service2Index),
 		testServiceUuidFromInt(service2Index),
 		enclaveName,
-		testIpFromInt(service2Index))
+		testIpFromInt(service2Index),
+		testServiceHostnameFromInt(service2Index))
 
 	require.Nil(t, network.topology.CreateEmptyPartitionWithDefaultConnection(partition1))
 	// don't create partition 2 as it will be created on the fly by SetConnection
@@ -1075,13 +1085,15 @@ func TestUnsetConnection(t *testing.T) {
 		testServiceNameFromInt(service1Index),
 		testServiceUuidFromInt(service1Index),
 		enclaveName,
-		testIpFromInt(service1Index))
+		testIpFromInt(service1Index),
+		testServiceHostnameFromInt(service1Index))
 	service2Index := 2
 	service2 := service.NewServiceRegistration(
 		testServiceNameFromInt(service2Index),
 		testServiceUuidFromInt(service2Index),
 		enclaveName,
-		testIpFromInt(service2Index))
+		testIpFromInt(service2Index),
+		testServiceHostnameFromInt(service2Index))
 
 	connectionOverride := partition_topology.NewPartitionConnection(connectionWithSomePacketLoss, connectionWithSomeConstantDelay)
 	require.Nil(t, network.topology.CreateEmptyPartitionWithDefaultConnection(partition1))
@@ -1127,13 +1139,15 @@ func TestUnsetConnection_FailureRollsBackChanges(t *testing.T) {
 		testServiceNameFromInt(service1Index),
 		testServiceUuidFromInt(service1Index),
 		enclaveName,
-		testIpFromInt(service1Index))
+		testIpFromInt(service1Index),
+		testServiceHostnameFromInt(service1Index))
 	service2Index := 2
 	service2 := service.NewServiceRegistration(
 		testServiceNameFromInt(service2Index),
 		testServiceUuidFromInt(service2Index),
 		enclaveName,
-		testIpFromInt(service2Index))
+		testIpFromInt(service2Index),
+		testServiceHostnameFromInt(service2Index))
 
 	connectionOverride := partition_topology.NewPartitionConnection(connectionWithSomePacketLoss, partition_topology.ConnectionWithNoPacketDelay)
 	require.Nil(t, network.topology.CreateEmptyPartitionWithDefaultConnection(partition1))
@@ -1178,6 +1192,7 @@ func TestUpdateTrafficControl(t *testing.T) {
 			serviceUuid,
 			enclaveId,
 			ip,
+			string(serviceName),
 		)
 	}
 
@@ -1242,6 +1257,10 @@ func testIpFromInt(i int) net.IP {
 
 func testServiceNameFromInt(i int) service.ServiceName {
 	return service.ServiceName("service-" + strconv.Itoa(i))
+}
+
+func testServiceHostnameFromInt(i int) string {
+	return "service-" + strconv.Itoa(i)
 }
 
 func testPartitionIdFromInt(i int) service_network_types.PartitionID {

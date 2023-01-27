@@ -7,7 +7,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
-	"net"
 	"net/http"
 )
 
@@ -82,7 +81,7 @@ type ServiceNetwork interface {
 
 	GetExistingAndHistoricalServiceIdentifiers() []*kurtosis_core_rpc_api_bindings.ServiceIdentifiers
 
-	GetIPAddressForService(serviceName service.ServiceName) (net.IP, bool)
+	GetServiceRegistration(serviceName service.ServiceName) (*service.ServiceRegistration, bool)
 
 	RenderTemplates(templatesAndDataByDestinationRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, artifactName string) (enclave_data_directory.FilesArtifactUUID, error)
 

@@ -98,11 +98,11 @@ func (builtin *RenderTemplatesCapabilities) Execute(_ context.Context, _ *builti
 	for relFilePath := range builtin.templatesAndDataByDestRelFilepath {
 		templateStr := builtin.templatesAndDataByDestRelFilepath[relFilePath].Template
 		dataAsJson := builtin.templatesAndDataByDestRelFilepath[relFilePath].DataAsJson
-		dataAsJsonMaybeIPAddressReplaced, err := magic_string_helper.ReplaceIPAddressInString(dataAsJson, builtin.serviceNetwork, TemplateAndDataByDestinationRelFilepathArg)
+		dataAsJsonMaybeIPAddressAndHostnameReplaced, err := magic_string_helper.ReplaceIPAddressAndHostnameInString(dataAsJson, builtin.serviceNetwork, TemplateAndDataByDestinationRelFilepathArg)
 		if err != nil {
 			return "", stacktrace.Propagate(err, "An error occurred while replacing IP address with place holder in the render_template instruction for target '%v'", relFilePath)
 		}
-		builtin.templatesAndDataByDestRelFilepath[relFilePath] = binding_constructors.NewTemplateAndData(templateStr, dataAsJsonMaybeIPAddressReplaced)
+		builtin.templatesAndDataByDestRelFilepath[relFilePath] = binding_constructors.NewTemplateAndData(templateStr, dataAsJsonMaybeIPAddressAndHostnameReplaced)
 	}
 
 	artifactUUID, err := builtin.serviceNetwork.RenderTemplates(builtin.templatesAndDataByDestRelFilepath, builtin.artifactName)

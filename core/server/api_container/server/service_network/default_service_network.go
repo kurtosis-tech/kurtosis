@@ -828,14 +828,14 @@ func (network *DefaultServiceNetwork) CopyFilesFromService(ctx context.Context, 
 	return filesArtifactUuid, nil
 }
 
-func (network *DefaultServiceNetwork) GetIPAddressForService(serviceName service.ServiceName) (net.IP, bool) {
+func (network *DefaultServiceNetwork) GetServiceRegistration(serviceName service.ServiceName) (*service.ServiceRegistration, bool) {
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 	registration, found := network.registeredServiceInfo[serviceName]
 	if !found {
 		return nil, false
 	}
-	return registration.GetPrivateIP(), true
+	return registration, true
 }
 
 func (network *DefaultServiceNetwork) RenderTemplates(templatesAndDataByDestinationRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, artifactName string) (enclave_data_directory.FilesArtifactUUID, error) {

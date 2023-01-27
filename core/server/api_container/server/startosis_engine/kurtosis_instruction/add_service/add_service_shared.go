@@ -32,7 +32,8 @@ func makeAddServiceInterpretationReturnValue(serviceName service.ServiceName, se
 		}
 	}
 	ipAddress := starlark.String(fmt.Sprintf(magic_string_helper.IpAddressReplacementPlaceholderFormat, serviceName))
-	returnValue := kurtosis_types.NewService(ipAddress, portSpecsDict)
+	hostname := starlark.String(fmt.Sprintf(magic_string_helper.HostnameReplacementPlaceholderFormat, serviceName))
+	returnValue := kurtosis_types.NewService(hostname, ipAddress, portSpecsDict)
 	return returnValue, nil
 }
 
@@ -77,15 +78,15 @@ func replaceMagicStrings(
 	if serviceConfig.EntrypointArgs != nil {
 		newEntryPointArgs := make([]string, len(serviceConfig.EntrypointArgs))
 		for index, entryPointArg := range serviceConfig.EntrypointArgs {
-			entryPointArgWithIPAddressReplaced, err := magic_string_helper.ReplaceIPAddressInString(entryPointArg, serviceNetwork, serviceNameStr)
+			entryPointArgWithIPAddressAndHostnameReplaced, err := magic_string_helper.ReplaceIPAddressAndHostnameInString(entryPointArg, serviceNetwork, serviceNameStr)
 			if err != nil {
 				return "", nil, stacktrace.Propagate(err, "Error occurred while replacing IP address in entry point args for '%v'", entryPointArg)
 			}
-			entryPointArgWithIPAddressAndRuntimeValueReplaced, err := magic_string_helper.ReplaceRuntimeValueInString(entryPointArgWithIPAddressReplaced, runtimeValueStore)
+			entryPointArgWithIPAddressHostnameAndAndRuntimeValueReplaced, err := magic_string_helper.ReplaceRuntimeValueInString(entryPointArgWithIPAddressAndHostnameReplaced, runtimeValueStore)
 			if err != nil {
 				return "", nil, stacktrace.Propagate(err, "Error occurred while replacing runtime value in entry point args for '%v'", entryPointArg)
 			}
-			newEntryPointArgs[index] = entryPointArgWithIPAddressAndRuntimeValueReplaced
+			newEntryPointArgs[index] = entryPointArgWithIPAddressHostnameAndAndRuntimeValueReplaced
 		}
 		serviceConfigBuilder.WithEntryPointArgs(newEntryPointArgs)
 	}
@@ -93,15 +94,15 @@ func replaceMagicStrings(
 	if serviceConfig.CmdArgs != nil {
 		newCmdArgs := make([]string, len(serviceConfig.CmdArgs))
 		for index, cmdArg := range serviceConfig.CmdArgs {
-			cmdArgWithIPAddressReplaced, err := magic_string_helper.ReplaceIPAddressInString(cmdArg, serviceNetwork, serviceNameStr)
+			cmdArgWithIPAddressAndHostnameReplaced, err := magic_string_helper.ReplaceIPAddressAndHostnameInString(cmdArg, serviceNetwork, serviceNameStr)
 			if err != nil {
 				return "", nil, stacktrace.Propagate(err, "Error occurred while replacing IP address in command args for '%v'", cmdArg)
 			}
-			cmdArgWithIPAddressAndRuntimeValueReplaced, err := magic_string_helper.ReplaceRuntimeValueInString(cmdArgWithIPAddressReplaced, runtimeValueStore)
+			cmdArgWithIPAddressAndHostnameAndRuntimeValueReplaced, err := magic_string_helper.ReplaceRuntimeValueInString(cmdArgWithIPAddressAndHostnameReplaced, runtimeValueStore)
 			if err != nil {
 				return "", nil, stacktrace.Propagate(err, "Error occurred while replacing runtime value in command args for '%v'", cmdArg)
 			}
-			newCmdArgs[index] = cmdArgWithIPAddressAndRuntimeValueReplaced
+			newCmdArgs[index] = cmdArgWithIPAddressAndHostnameAndRuntimeValueReplaced
 		}
 		serviceConfigBuilder.WithCmdArgs(newCmdArgs)
 	}
@@ -109,15 +110,15 @@ func replaceMagicStrings(
 	if serviceConfig.EnvVars != nil {
 		newEnvVars := make(map[string]string, len(serviceConfig.EnvVars))
 		for envVarName, envVarValue := range serviceConfig.EnvVars {
-			envVarValueWithIPAddressReplaced, err := magic_string_helper.ReplaceIPAddressInString(envVarValue, serviceNetwork, serviceNameStr)
+			envVarValueWithIPAddressAndHostnameReplaced, err := magic_string_helper.ReplaceIPAddressAndHostnameInString(envVarValue, serviceNetwork, serviceNameStr)
 			if err != nil {
 				return "", nil, stacktrace.Propagate(err, "Error occurred while replacing IP address in env vars for '%v'", envVarValue)
 			}
-			envVarValueWithIPAddressAndRuntimeValueReplaced, err := magic_string_helper.ReplaceRuntimeValueInString(envVarValueWithIPAddressReplaced, runtimeValueStore)
+			envVarValueWithIPAddressAndHostnameAndRuntimeValueReplaced, err := magic_string_helper.ReplaceRuntimeValueInString(envVarValueWithIPAddressAndHostnameReplaced, runtimeValueStore)
 			if err != nil {
 				return "", nil, stacktrace.Propagate(err, "Error occurred while replacing runtime value in command args for '%s': '%s'", envVarName, envVarValue)
 			}
-			newEnvVars[envVarName] = envVarValueWithIPAddressAndRuntimeValueReplaced
+			newEnvVars[envVarName] = envVarValueWithIPAddressAndHostnameAndRuntimeValueReplaced
 		}
 		serviceConfigBuilder.WithEnvVars(newEnvVars)
 	}

@@ -2,74 +2,47 @@ package kurtosis_types
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"go.starlark.net/starlark"
+	"go.starlark.net/starlarkstruct"
 	"strings"
 )
 
 const (
 	serviceTypeName = "Service"
-	ipAddressAttr   = "ip_address"
-	portsAttr       = "ports"
+
+	hostnameAttr  = "hostname"
+	ipAddressAttr = "ip_address"
+	portsAttr     = "ports"
 )
 
+// Service is just a wrapper around a regular starlarkstruct.Struct
+// It naturally inherits all its function making it a valid starlark.Value
 type Service struct {
-	ipAddress starlark.String
-	ports     *starlark.Dict
+	*starlarkstruct.Struct
 }
 
-func NewService(ipAddress starlark.String, ports *starlark.Dict) *Service {
+func NewService(hostname starlark.String, ipAddress starlark.String, ports *starlark.Dict) *Service {
+	structDict := starlark.StringDict{
+		hostnameAttr:  hostname,
+		ipAddressAttr: ipAddress,
+		portsAttr:     ports,
+	}
 	return &Service{
-		ipAddress: ipAddress,
-		ports:     ports,
+		Struct: starlarkstruct.FromStringDict(starlark.String(serviceTypeName), structDict),
 	}
 }
 
-// String the starlark.Value interface
-func (rv *Service) String() string {
-	buffer := new(strings.Builder)
-	buffer.WriteString(serviceTypeName + "(")
-	buffer.WriteString(ipAddressAttr + "=")
-	buffer.WriteString(fmt.Sprintf("%v, ", rv.ipAddress))
-	buffer.WriteString(portsAttr + "=")
-	buffer.WriteString(fmt.Sprintf("%v)", rv.ports.String()))
-	return buffer.String()
+// String manually overrides the default starlarkstruct.Struct String() function because it is wrong when
+// we provide a custom constructor, which we do here
+//
+// See https://github.com/google/starlark-go/issues/448 for more details
+func (service *Service) String() string {
+	oldInvalid := fmt.Sprintf("\"%s\"(", serviceTypeName)
+	newValid := fmt.Sprintf("%s(", serviceTypeName)
+	return strings.Replace(service.Struct.String(), oldInvalid, newValid, 1)
 }
 
-// Type implements the starlark.Value interface
-func (rv *Service) Type() string {
+// Type Needs to be overridden as the default for starlarkstruct.Struct always return "struct", which is dumb
+func (service *Service) Type() string {
 	return serviceTypeName
-}
-
-// Freeze implements the starlark.Value interface
-func (rv *Service) Freeze() {
-	// this is a no-op its already immutable
-}
-
-// Truth implements the starlark.Value interface
-func (rv *Service) Truth() starlark.Bool {
-	return rv.ipAddress != "" && rv.ports != nil
-}
-
-// Hash implements the starlark.Value interface
-// This shouldn't be hashed, users should use a portId instead
-func (rv *Service) Hash() (uint32, error) {
-	return 0, startosis_errors.NewInterpretationError("unhashable type: '%v'", serviceTypeName)
-}
-
-// Attr implements the starlark.HasAttrs interface.
-func (rv *Service) Attr(name string) (starlark.Value, error) {
-	switch name {
-	case ipAddressAttr:
-		return rv.ipAddress, nil
-	case portsAttr:
-		return rv.ports, nil
-	default:
-		return nil, startosis_errors.NewInterpretationError("'%v' has no attribute '%v'", serviceTypeName, name)
-	}
-}
-
-// AttrNames implements the starlark.HasAttrs interface.
-func (rv *Service) AttrNames() []string {
-	return []string{ipAddressAttr, portsAttr}
 }

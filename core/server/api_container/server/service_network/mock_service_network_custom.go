@@ -2,6 +2,7 @@ package service_network
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
@@ -12,22 +13,31 @@ import (
 )
 
 const (
+	mockEnclaveUuid   = "enclave-uuid"
+	serviceUuidSuffix = "uuid"
+
 	unimplementedMsg = "Method is unimplemented!!!"
 )
 
 // MockServiceNetworkCustom is a manual mock for ServiceNetwork interface
 // TODO: migrate to use the mockery-generated mock MockServiceNetwork
 type MockServiceNetworkCustom struct {
-	ipAddresses map[service.ServiceName]net.IP
+	serviceRegistrations map[service.ServiceName]*service.ServiceRegistration
 }
 
 func NewMockServiceNetworkCustom(ipAddresses map[service.ServiceName]net.IP) *MockServiceNetworkCustom {
-	return &MockServiceNetworkCustom{ipAddresses: ipAddresses}
+	serviceRegistrations := map[service.ServiceName]*service.ServiceRegistration{}
+	for serviceName, ipAddress := range ipAddresses {
+		serviceRegistrations[serviceName] = generateMockServiceRegistration(serviceName, ipAddress)
+	}
+	return &MockServiceNetworkCustom{
+		serviceRegistrations: serviceRegistrations,
+	}
 }
 
 func NewEmptyMockServiceNetwork() *MockServiceNetworkCustom {
 	return &MockServiceNetworkCustom{
-		ipAddresses: nil,
+		serviceRegistrations: nil,
 	}
 }
 
@@ -120,9 +130,9 @@ func (m *MockServiceNetworkCustom) GetServiceNames() map[service.ServiceName]boo
 	panic(unimplementedMsg)
 }
 
-func (m *MockServiceNetworkCustom) GetIPAddressForService(serviceName service.ServiceName) (net.IP, bool) {
-	ipAddress, found := m.ipAddresses[serviceName]
-	return ipAddress, found
+func (m *MockServiceNetworkCustom) GetServiceRegistration(serviceName service.ServiceName) (*service.ServiceRegistration, bool) {
+	serviceRegistration, found := m.serviceRegistrations[serviceName]
+	return serviceRegistration, found
 }
 
 func (m *MockServiceNetworkCustom) RenderTemplates(_ map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, _ string) (enclave_data_directory.FilesArtifactUUID, error) {
@@ -139,4 +149,14 @@ func (m *MockServiceNetworkCustom) IsNetworkPartitioningEnabled() bool {
 
 func (m *MockServiceNetworkCustom) GetExistingAndHistoricalServiceIdentifiers() []*kurtosis_core_rpc_api_bindings.ServiceIdentifiers {
 	panic(unimplementedMsg)
+}
+
+func generateMockServiceRegistration(serviceName service.ServiceName, ipAddress net.IP) *service.ServiceRegistration {
+	return service.NewServiceRegistration(
+		serviceName,
+		service.ServiceUUID(fmt.Sprintf("%s-%s", serviceName, serviceUuidSuffix)),
+		mockEnclaveUuid,
+		ipAddress,
+		string(serviceName),
+	)
 }
