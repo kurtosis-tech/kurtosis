@@ -46,8 +46,8 @@ The process for installing tab completion is specific to each shell:
             ```
         1. Add the following to your `~/.bash_profile`:
             ```bash
-            export BASH_COMPLETION_COMPAT_DIR="/usr/local/etc/bash_completion.d"
-            [[ -r "/usr/local/etc/profile.d/bash_completion.sh" ]] && . "/usr/local/etc/profile.d/bash_completion.sh"
+            export BREW_PREFIX="$(brew --prefix)"
+            [[ -r "${BREW_PREFIX}/etc/profile.d/bash_completion.sh" ]] && source "${BREW_PREFIX}/etc/profile.d/bash_completion.sh"
             ```
         1. Reload your shell
         1. Verify that you now have the completion installed:
