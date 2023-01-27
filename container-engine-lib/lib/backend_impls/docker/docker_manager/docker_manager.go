@@ -101,6 +101,13 @@ const (
 
 	minMemoryLimit = 6
 
+	containerIsNotRunningErrMsg = "is not running"
+
+	cannotKillContainerErrMsg = "cannot kill container"
+
+	defaultKillContainerMaxRetries         = uint8(3)
+	defaultKillContainerTimeBetweenRetries = 10 * time.Millisecond
+
 	successfulExitCode = 0
 )
 
@@ -681,15 +688,20 @@ Args:
 	context: The context that the kill runs in
 	containerId: ID of Docker container to kill
 */
-func (manager DockerManager) KillContainer(context context.Context, containerId string) error {
-	err := manager.dockerClient.ContainerKill(context, containerId, dockerKillSignal)
-	if err != nil {
-		// For some stupid reason, ContainerKill throws an error if the container isn't running (even though
-		//  ContainerStop does not)
-		if strings.Contains(err.Error(), "is not running") {
-			return nil
-		}
-		return stacktrace.Propagate(err, "An error occurred killing container with ID '%v'", containerId)
+func (manager DockerManager) KillContainer(ctx context.Context, containerId string) error {
+	if err := manager.killContainerWithRetriesWhenErrorResponseFromDeamon(
+		ctx,
+		containerId,
+		defaultKillContainerMaxRetries,
+		defaultKillContainerTimeBetweenRetries,
+	); err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred killing container '%v', even after %v retries with '%v' in between retries",
+			containerId,
+			defaultKillContainerMaxRetries,
+			defaultKillContainerTimeBetweenRetries,
+		)
 	}
 	return nil
 }
@@ -1337,6 +1349,39 @@ func (manager *DockerManager) getContainerCfg(
 		Shell:           nil,
 	}
 	return nodeConfigPtr, nil
+}
+
+func (manager DockerManager) killContainerWithRetriesWhenErrorResponseFromDeamon(
+	ctx context.Context,
+	containerId string,
+	maxRetries uint8,
+	timeBetweenRetries time.Duration,
+) error {
+
+	var err error
+
+	for i := uint8(0); i < maxRetries; i++ {
+		if err = manager.dockerClient.ContainerKill(ctx, containerId, dockerKillSignal); err != nil {
+
+			errMsg := strings.ToLower(err.Error())
+
+			// For some stupid reason, ContainerKill throws an error if the container isn't running (even though
+			//  ContainerStop does not)
+			if strings.Contains(errMsg, containerIsNotRunningErrMsg) {
+				return nil
+			}
+
+			//Container wasn't killed, waits and retry
+			if strings.Contains(errMsg, cannotKillContainerErrMsg) {
+				time.Sleep(timeBetweenRetries)
+				continue
+			}
+			break
+		}
+		return nil
+	}
+
+	return stacktrace.Propagate(err, "An error occurred killing container with ID '%v'", containerId)
 }
 
 // Takes in a PortMap (as reported by Docker container inspect) and returns a map of the used ports -> host port binding on the expected interface
