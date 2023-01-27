@@ -7,7 +7,7 @@ script_dirpath="$(cd "$(dirname "${BASH_SOURCE[0]}")"; pwd)"
 api_dirpath="$(dirname "${script_dirpath}")"
 
 # ================================ CONSTANTS =======================================================
-GENERATOR_SCRIPT_FILENAME="generate-protobuf-bindings.sh"  # Must be on the PATH
+GENERATOR_SCRIPT_FILENAME="${script_dirpath}/protobuf-bindings-generator.sh"
 API_DIRNAME="api"
 PROTOBUF_DIRNAME="protobuf"
 GOLANG_DIRNAME="golang"
