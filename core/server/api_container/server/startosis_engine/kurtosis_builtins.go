@@ -34,7 +34,7 @@ import (
 // can have an effect at both interpretation and execution time.
 //
 // Examples: add_service, exec, wait, etc.
-func KurtosisPlanInstructions(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) []*kurtosis_plan_instruction.KurtosisPlanInstruction {
+func KurtosisPlanInstructions(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore, packageContentProvider startosis_packages.PackageContentProvider) []*kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return []*kurtosis_plan_instruction.KurtosisPlanInstruction{
 		add_service.NewAddService(serviceNetwork, runtimeValueStore),
 		add_service.NewAddServices(serviceNetwork, runtimeValueStore),
@@ -46,6 +46,7 @@ func KurtosisPlanInstructions(serviceNetwork service_network.ServiceNetwork, run
 		request.NewRequest(serviceNetwork, runtimeValueStore),
 		set_connection.NewSetConnection(serviceNetwork),
 		store_service_files.NewStoreServiceFiles(serviceNetwork),
+		upload_files.NewUploadFiles(serviceNetwork, packageContentProvider),
 		wait.NewWait(serviceNetwork, runtimeValueStore),
 	}
 }
@@ -54,7 +55,6 @@ func OldKurtosisPlanInstructions(instructionsQueue *[]kurtosis_instruction.Kurto
 	return []*starlark.Builtin{
 		starlark.NewBuiltin(kurtosis_print.PrintBuiltinName, kurtosis_print.GeneratePrintBuiltin(instructionsQueue, runtimeValueStore, serviceNetwork)),
 		starlark.NewBuiltin(update_service.UpdateServiceBuiltinName, update_service.GenerateUpdateServiceBuiltin(instructionsQueue, serviceNetwork)),
-		starlark.NewBuiltin(upload_files.UploadFilesBuiltinName, upload_files.GenerateUploadFilesBuiltin(instructionsQueue, packageContentProvider, serviceNetwork)),
 	}
 }
 

@@ -14,13 +14,11 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/remove_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/render_templates"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/store_service_files"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/upload_files"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/mock_package_content_provider"
 	"github.com/stretchr/testify/require"
-	"go.starlark.net/starlark"
 	"net"
 	"strings"
 	"testing"
@@ -967,39 +965,6 @@ def run(plan):
 The service example-datastore-server has been removed
 `
 	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutput)
-}
-
-func TestStartosisInterpreter_UploadGetsInterpretedCorrectly(t *testing.T) {
-	filePath := "github.com/kurtosis/module/lib/lib.star"
-	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
-	defer packageContentProvider.RemoveAll()
-	err := packageContentProvider.AddFileContent(filePath, "fooBar")
-	require.Nil(t, err)
-	filePathOnDisk, err := packageContentProvider.GetOnDiskAbsoluteFilePath(filePath)
-	require.Nil(t, err)
-	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, runtimeValueStore)
-	script := `
-def run(plan):
-	plan.upload_files("` + filePath + `","` + testArtifactName + `")
-`
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
-	require.Nil(t, interpretationError)
-	require.Len(t, instructions, 1)
-	validateScriptOutputFromPrintInstructions(t, instructions, "")
-
-	starlarkKwargs := starlark.StringDict{
-		"name": starlark.String(testArtifactName),
-		"src":  starlark.String(filePath),
-	}
-	starlarkKwargs.Freeze()
-	expectedUploadInstruction := upload_files.NewUploadFilesInstruction(
-		kurtosis_instruction.NewInstructionPosition(3, 19, startosis_constants.PackageIdPlaceholderForStandaloneScript),
-		testServiceNetwork, packageContentProvider, filePath, filePathOnDisk, testArtifactName,
-		starlarkKwargs,
-	)
-
-	require.Equal(t, expectedUploadInstruction, instructions[0])
 }
 
 func TestStartosisInterpreter_NoPanicIfUploadIsPassedAPathNotOnDisk(t *testing.T) {
