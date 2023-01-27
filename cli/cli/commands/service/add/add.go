@@ -14,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"strconv"
 	"strings"
@@ -74,6 +75,9 @@ const (
 	transportProtocolSpecForHelp        = "TRANSPORT_PROTOCOL"
 	portNumberSpecForHelp               = "PORT_NUMBER"
 	portIdSpecForHelp                   = "PORT_ID"
+
+	fullUuidsFlagKey       = "full-uuids"
+	fullUuidFlagKeyDefault = "false"
 )
 
 var (
@@ -176,6 +180,12 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 			Type:    flags.FlagType_String,
 			Default: privateIPAddressPlaceholderDefault,
 		},
+		{
+			Key:     fullUuidsFlagKey,
+			Usage:   "If true then Kurtosis prints full UUIDs instead of shortened UUIDs. Default false.",
+			Type:    flags.FlagType_Bool,
+			Default: fullUuidFlagKeyDefault,
+		},
 	},
 	RunFunc: run,
 }
@@ -230,6 +240,11 @@ func run(
 	privateIPAddressPlaceholder, err := flags.GetString(privateIPAddressPlaceholderKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the private IP address place holder using key '%v'", privateIPAddressPlaceholderKey)
+	}
+
+	showFullUuids, err := flags.GetBool(fullUuidsFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", fullUuidsFlagKey)
 	}
 
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
@@ -287,7 +302,14 @@ func run(
 	}
 	keyValuePrinter := output_printers.NewKeyValuePrinter()
 	keyValuePrinter.AddPair(serviceNameTitleKey, string(serviceCtx.GetServiceName()))
-	keyValuePrinter.AddPair(serviceUuidTitleKey, string(serviceCtx.GetServiceUUID()))
+	serviceUuidStr := string(serviceCtx.GetServiceUUID())
+	if showFullUuids {
+		keyValuePrinter.AddPair(serviceUuidTitleKey, serviceUuidStr)
+	} else {
+		shortenedUuidStr := uuid_generator.ShortenedUUIDString(serviceUuidStr)
+		keyValuePrinter.AddPair(serviceUuidTitleKey, shortenedUuidStr)
+	}
+
 	for portId, privatePortSpec := range privatePorts {
 		publicPortSpec, found := publicPorts[portId]
 		// With Kubernetes, it's possible for a private port not to have a corresponding public port
