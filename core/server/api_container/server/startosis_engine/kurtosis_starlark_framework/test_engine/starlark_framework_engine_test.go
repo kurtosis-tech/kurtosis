@@ -35,6 +35,7 @@ func TestAllRegisteredBuiltins(t *testing.T) {
 	testKurtosisPlanInstruction(t, newRenderTemplateTestCase2(t))
 	testKurtosisPlanInstruction(t, newRequestTestCase(t))
 	testKurtosisPlanInstruction(t, newStoreServiceFilesTestCase(t))
+	testKurtosisPlanInstruction(t, newUpdateServiceTestCase(t))
 	testKurtosisPlanInstruction(t, newUploadFilesTestCase(t))
 	testKurtosisPlanInstruction(t, newWaitTestCase(t))
 
