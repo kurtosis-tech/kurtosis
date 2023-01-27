@@ -64,10 +64,10 @@ Kurtosis subcommands (e.g. `enclave` and `add` above) can be tab-completed as we
 You'll see an output similar to the following:
 
 ```
-INFO[2022-11-30T15:39:52-03:00] Creating new enclave...
-INFO[2022-11-30T15:40:02-03:00] =======================================================
-INFO[2022-11-30T15:40:02-03:00] ||          Created enclave: wandering-frog          ||
-INFO[2022-11-30T15:40:02-03:00] =======================================================
+INFO[2023-01-26T15:10:22Z] Creating new enclave...                      
+INFO[2023-01-26T15:10:32Z] ==================================================== 
+INFO[2023-01-26T15:10:32Z] ||          Created enclave: patient-sun          || 
+INFO[2023-01-26T15:10:32Z] ==================================================== 
 ```
 
 Now, type the following but don't press ENTER yet:
@@ -76,7 +76,7 @@ Now, type the following but don't press ENTER yet:
 kurtosis enclave inspect
 ```
 
-If [you have tab completion installed][installing-tab-complete], you can now press TAB to tab-complete your enclave's ID (which will be different than `wandering-frog`).
+If [you have tab completion installed][installing-tab-complete], you can now press TAB to tab-complete your enclave's name (which will be different than `patient-sun`).
 
 If you don't have tab completion installed, you'll need to paste the enclave ID from the `Created enclave:` line outputted above (yours will be different than `wandering-frog`).
 
@@ -87,20 +87,21 @@ If you don't have tab completion installed, you'll need to paste the enclave ID 
 Press ENTER, and you should receive an output like so:
 
 ```
-Enclave ID:                           wandering-frog
+UUID:                                 edf4c085912d
+Enclave Name:                         patient-sun
 Enclave Status:                       RUNNING
-Creation Time:                        Wed, 30 Nov 2022 15:39:52 -03
+Creation Time:                        Thu, 26 Jan 2023 15:10:24 GMT
 API Container Status:                 RUNNING
-API Container Host GRPC Port:         127.0.0.1:63593
-API Container Host GRPC Proxy Port:   127.0.0.1:63594
+API Container Host GRPC Port:         127.0.0.1:55529
+API Container Host GRPC Proxy Port:   127.0.0.1:55530
 
 ========================================== User Services ==========================================
-GUID   ID   Ports   Status
+UUID   Name   Ports   Status
 ```
 
 `kurtosis enclave inspect` is the way to investigate an enclave.
 
-If you ever forget your enclave ID or don't feel like using tab completion, you can always run the following:
+If you ever forget your enclave name or don't feel like using tab completion, you can always run the following:
 
 ```bash
 kurtosis enclave ls
@@ -109,14 +110,14 @@ kurtosis enclave ls
 This will print all the enclaves inside your Kurtosis cluster:
 
 ```
-EnclaveID        Status    Creation Time
-wandering-frog   RUNNING   Wed, 30 Nov 2022 15:39:52 -03
+UUID           Name                                       Status    Creation Time
+edf4c085912d   patient-sun                                RUNNING   Thu, 26 Jan 2023 15:10:24 GMT
 ```
 
-Now run the following to store your enclave ID in a variable, replacing `YOUR_ENCLAVE_ID_HERE` with your enclave's ID.
+Now run the following to store your enclave ID in a variable, replacing `YOUR_ENCLAVE_NAME_HERE` with your enclave's name.
 
 ```bash
-ENCLAVE_ID="YOUR_ENCLAVE_ID_HERE"
+ENCLAVE_IDENTIFIER="YOUR_ENCLAVE_NAME_HERE"
 ```
 
 We'll use this variable so that you can continue to copy-and-paste code blocks in the next section.
@@ -128,36 +129,38 @@ Distributed applications are composed of [services][services-explanation]. Here 
 Enter this command:
 
 ```bash
-kurtosis service add "$ENCLAVE_ID" my-nginx nginx:latest --ports http=80
+kurtosis service add "$ENCLAVE_IDENTIFIER" my-nginx nginx:latest --ports http=80
 ```
 
 You should see output similar to the following:
 
 ```
-Service Name: my-nginx
 Ports Bindings:
-   http:   80/tcp -> 127.0.0.1:63614
+Name:      my-nginx
+UUID:      ad28326bf014
+   http:   80/tcp -> 127.0.0.1:55571
 ```
 
 Now inspect your enclave again:
 
 ```bash
-kurtosis enclave inspect "$ENCLAVE_ID"
+kurtosis enclave inspect "$ENCLAVE_IDENTIFIER"
 ```
 
 You should see a new service with the service name `my-nginx` in your enclave:
 
 ```
-Enclave ID:                           wandering-frog
+UUID:                                 edf4c085912d
+Enclave Name:                         patient-sun
 Enclave Status:                       RUNNING
-Creation Time:                        Wed, 30 Nov 2022 15:39:52 -03
+Creation Time:                        Thu, 26 Jan 2023 15:10:24 GMT
 API Container Status:                 RUNNING
-API Container Host GRPC Port:         127.0.0.1:63593
-API Container Host GRPC Proxy Port:   127.0.0.1:63594
+API Container Host GRPC Port:         127.0.0.1:55529
+API Container Host GRPC Proxy Port:   127.0.0.1:55530
 
 ========================================== User Services ==========================================
-GUID                  ID         Ports                             Status
-my-nginx-1669833787   my-nginx   http: 80/tcp -> 127.0.0.1:63614   RUNNING
+UUID           Name       Ports                             Status
+ad28326bf014   my-nginx   http: 80/tcp -> 127.0.0.1:55571   RUNNING
 ```
 
 Kurtosis binds all service ports to ephemeral ports on your local machine. Copy the `127.0.0.1:XXXXX` address into your browser (yours will be different), and you should see a welcome message from your NginX service running inside the enclave you created.
@@ -165,22 +168,22 @@ Kurtosis binds all service ports to ephemeral ports on your local machine. Copy 
 Now paste the following but don't press ENTER yet:
 
 ```bash
-kurtosis service shell "$ENCLAVE_ID"
+kurtosis service shell "$ENCLAVE_IDENTIFIER"
 ```
 
-If you have tab completion installed, press TAB. The service UUID & name of the NginX service will be completed (which in this case was `my-nginx-1669833787`, but yours will be different).
+If you have tab completion installed, press TAB. The service UUID & name of the NginX service will be completed (which in this case was `my-nginx`, but yours will be different).
 
-If you don't have tab completion installed, paste in the service GUID of the NginX service from the `enclave inspect` output above (which was `my-nginx-1669833787`, but yours will be different).
+If you don't have tab completion installed, paste in the service name of the NginX service from the `enclave inspect` output above (which was `my-nginx`, but yours will be different).
 
 :::tip
-Like enclave IDs, [all service UUID arguments][cli-reference] can be tab-completed.
+Like enclave names, [all service UUID arguments][cli-reference] can be tab-completed.
 :::
 
 Press ENTER, and you'll be logged in to a shell on the container:
 
 ```
 Found bash on container; creating bash shell...
-root@f046da8acc11:/#
+root@89f8447e9f62:/#
 ```
 
 Kurtosis will try to give you a `bash` shell, but will drop down to `sh` if `bash` doesn't exist on the container.
@@ -190,7 +193,7 @@ Feel free to explore, and enter `exit` or press Ctrl-D when you're done.
 Now enter the following but don't press ENTER:
 
 ```bash
-kurtosis service logs -f "$ENCLAVE_ID"
+kurtosis service logs -f "$ENCLAVE_IDENTIFIER"
 ```
 
 Once again, you can use tab completion to fill the service UUID if you have it enabled. If not, you'll need to copy-paste the service UUID as the last argument.
@@ -206,21 +209,16 @@ Press ENTER, and you'll see a live-updating stream of the service's logs:
 /docker-entrypoint.sh: Launching /docker-entrypoint.d/20-envsubst-on-templates.sh
 /docker-entrypoint.sh: Launching /docker-entrypoint.d/30-tune-worker-processes.sh
 /docker-entrypoint.sh: Configuration complete; ready for start up
-2022/11/30 18:43:09 [notice] 1#1: using the "epoll" event method
-2022/11/30 18:43:09 [notice] 1#1: nginx/1.23.2
-2022/11/30 18:43:09 [notice] 1#1: built by gcc 10.2.1 20210110 (Debian 10.2.1-6)
-2022/11/30 18:43:09 [notice] 1#1: OS: Linux 5.10.104-linuxkit
-2022/11/30 18:43:09 [notice] 1#1: getrlimit(RLIMIT_NOFILE): 1048576:1048576
-2022/11/30 18:43:09 [notice] 1#1: start worker processes
-2022/11/30 18:43:09 [notice] 1#1: start worker process 30
-2022/11/30 18:43:09 [notice] 1#1: start worker process 31
-2022/11/30 18:43:09 [notice] 1#1: start worker process 32
-2022/11/30 18:43:09 [notice] 1#1: start worker process 33
-2022/11/30 18:43:09 [notice] 1#1: start worker process 34
-2022/11/30 18:43:09 [notice] 1#1: start worker process 35
-172.17.0.1 - - [30/Nov/2022:18:43:53 +0000] "GET / HTTP/1.1" 200 615 "-" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36" "-"
-172.17.0.1 - - [30/Nov/2022:18:43:53 +0000] "GET /favicon.ico HTTP/1.1" 404 555 "http://127.0.0.1:63614/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36" "-"
-2022/11/30 18:43:53 [error] 30#30: *1 open() "/usr/share/nginx/html/favicon.ico" failed (2: No such file or directory), client: 172.17.0.1, server: localhost, request: "GET /favicon.ico HTTP/1.1", host: "127.0.0.1:63614", referrer: "http://127.0.0.1:63614/"
+2023/01/26 15:14:42 [notice] 1#1: using the "epoll" event method
+2023/01/26 15:14:42 [notice] 1#1: nginx/1.23.3
+2023/01/26 15:14:42 [notice] 1#1: built by gcc 10.2.1 20210110 (Debian 10.2.1-6) 
+2023/01/26 15:14:42 [notice] 1#1: OS: Linux 5.15.49-linuxkit
+2023/01/26 15:14:42 [notice] 1#1: getrlimit(RLIMIT_NOFILE): 1048576:1048576
+2023/01/26 15:14:42 [notice] 1#1: start worker processes
+2023/01/26 15:14:42 [notice] 1#1: start worker process 29
+2023/01/26 15:14:42 [notice] 1#1: start worker process 30
+2023/01/26 15:14:42 [notice] 1#1: start worker process 31
+2023/01/26 15:14:42 [notice] 1#1: start worker process 32
 ```
 
 You can reload your browser window showing the NginX welcome page to see new log entries appear. When you're satisfied, press Ctrl-C to end the stream.
@@ -228,7 +226,7 @@ You can reload your browser window showing the NginX welcome page to see new log
 Lastly, run:
 
 ```bash
-kurtosis enclave dump "$ENCLAVE_ID" enclave-output
+kurtosis enclave dump "$ENCLAVE_IDENTIFIER" enclave-output
 ```
 
 Kurtosis will dump a snapshot of the enclave's logs and container specs to the `enclave-output` directory. This can be useful for quickly sharing debugging information with your coworkers.
@@ -269,15 +267,15 @@ kurtosis run main.star --dry-run
 Because the `--dry-run` flag was specified, Kurtosis will read the file and show the instructions it would execute without executing them:
 
 ```
-INFO[2022-11-30T15:48:18-03:00] Creating a new enclave for Starlark to run inside...
-INFO[2022-11-30T15:48:20-03:00] Enclave 'long-water' created successfully
+INFO[2023-01-26T17:47:34Z] Creating a new enclave for Starlark to run inside... 
+INFO[2023-01-26T17:47:37Z] Enclave 'winter-night' created successfully  
 
-> add_service service_name="my-nginx"
+> add_service service_name="my-nginx" config=ServiceConfig(image="nginx:latest", ports={"http": PortSpec(number=80, transport_protocol="TCP", application_protocol="")})
 
-Starlark code successfully executed. No output was returned
-INFO[2022-11-30T15:48:20-03:00] ===================================================
-INFO[2022-11-30T15:48:20-03:00] ||          Created enclave: long-water          ||
-INFO[2022-11-30T15:48:20-03:00] ===================================================
+Starlark code successfully run in dry-run mode. No output was returned.
+INFO[2023-01-26T17:47:38Z] ===================================================== 
+INFO[2023-01-26T17:47:38Z] ||          Created enclave: winter-night          || 
+INFO[2023-01-26T17:47:38Z] =====================================================
 ```
 
 Remove the `--dry-run` flag and execute the script:
@@ -289,31 +287,32 @@ kurtosis run main.star
 The output will look similar to the dry run, but the `add_service` instruction now returns information about the service it started:
 
 ```
-INFO[2022-11-30T15:48:59-03:00] Creating a new enclave for Starlark to run inside...
-INFO[2022-11-30T15:49:02-03:00] Enclave 'cool-meadow' created successfully
+INFO[2023-01-26T17:47:01Z] Creating a new enclave for Starlark to run inside... 
+INFO[2023-01-26T17:47:06Z] Enclave 'muddy-grass' created successfully   
 
-> add_service service_name="my-nginx"
-Service 'my-nginx' added with internal ID 'my-nginx-1669834142'
+> add_service service_name="my-nginx" config=ServiceConfig(image="nginx:latest", ports={"http": PortSpec(number=80, transport_protocol="TCP", application_protocol="")})
+Service 'my-nginx' added with service UUID '490ac1e94356470a9da925e6c44722df'
 
-Starlark code successfully executed. No output was returned
-INFO[2022-11-30T15:49:04-03:00] ====================================================
-INFO[2022-11-30T15:49:04-03:00] ||          Created enclave: cool-meadow          ||
-INFO[2022-11-30T15:49:04-03:00] ====================================================
+Starlark code successfully run. No output was returned.
+INFO[2023-01-26T17:47:08Z] ==================================================== 
+INFO[2023-01-26T17:47:08Z] ||          Created enclave: muddy-grass          || 
+INFO[2023-01-26T17:47:08Z] ==================================================== 
 ```
 
 Inspecting the enclave will now print the service inside:
 
 ```
-Enclave ID:                           cool-meadow
+UUID:                                 edf501e234a1
+Enclave Name:                         muddy-grass
 Enclave Status:                       RUNNING
-Creation Time:                        Wed, 30 Nov 2022 15:48:59 -03
+Creation Time:                        Thu, 26 Jan 2023 17:47:01 GMT
 API Container Status:                 RUNNING
-API Container Host GRPC Port:         127.0.0.1:63678
-API Container Host GRPC Proxy Port:   127.0.0.1:63679
+API Container Host GRPC Port:         127.0.0.1:57301
+API Container Host GRPC Proxy Port:   127.0.0.1:57302
 
 ========================================== User Services ==========================================
-GUID                  ID         Ports                             Status
-my-nginx-1669834142   my-nginx   http: 80/tcp -> 127.0.0.1:63684   RUNNING
+UUID           Name       Ports                             Status
+490ac1e94356   my-nginx   http: 80/tcp -> 127.0.0.1:57307   RUNNING
 ```
 
 Just like the service added via the CLI, the same Kurtosis debugging tools are available for enclaves created via Starlark.
@@ -399,17 +398,18 @@ kurtosis run main.star
 Now inspect the enclave that got created. You'll see that two services, `my-nginx` and `hello-world`, have been added now:
 
 ```
-Enclave ID:                           late-bird
+UUID:                                 edf351b63ba6
+Enclave Name:                         shy-surf
 Enclave Status:                       RUNNING
-Creation Time:                        Wed, 30 Nov 2022 15:54:38 -03
+Creation Time:                        Thu, 26 Jan 2023 17:49:59 GMT
 API Container Status:                 RUNNING
-API Container Host GRPC Port:         127.0.0.1:63729
-API Container Host GRPC Proxy Port:   127.0.0.1:63730
+API Container Host GRPC Port:         127.0.0.1:57336
+API Container Host GRPC Proxy Port:   127.0.0.1:57337
 
 ========================================== User Services ==========================================
-GUID                     ID            Ports                               Status
-hello-world-1669834480   hello-world   http: 5050/tcp -> 127.0.0.1:63735   RUNNING
-my-nginx-1669834483      my-nginx      http: 80/tcp -> 127.0.0.1:63749     RUNNING
+UUID           Name          Ports                             Status
+049a95f55a93   hello-world   http: 80/tcp -> 127.0.0.1:57357   RUNNING
+a1b43c21f0e7   my-nginx      http: 80/tcp -> 127.0.0.1:57361   RUNNING
 ```
 
 Now in your browser open the `my-nginx` endpoint with the `/sample` URL path (e.g. `http://127.0.0.1:63749/sample`, though your URL will be different). You'll see the `hello-world` service responding through the NginX proxy that we've configured:
@@ -433,11 +433,13 @@ Interlude
 We've started a few enclaves at this point, and `kurtosis enclave ls` will display something like the following:
 
 ```
-EnclaveID        Status    Creation Time
-wandering-frog   RUNNING   Wed, 30 Nov 2022 15:39:52 -03
-long-water       RUNNING   Wed, 30 Nov 2022 15:48:18 -03
-cool-meadow      RUNNING   Wed, 30 Nov 2022 15:48:59 -03
-late-bird        RUNNING   Wed, 30 Nov 2022 15:54:38 -03
+UUID           Name              Status    Creation Time
+edffa85eb3b1   twilight-shadow   RUNNING   Thu, 26 Jan 2023 15:33:10 GMT
+edf78299bbbd   patient-field     RUNNING   Thu, 26 Jan 2023 16:50:12 GMT
+edf1abc0bfc4   dry-thunder       RUNNING   Thu, 26 Jan 2023 16:50:22 GMT
+edf501e234a1   muddy-grass       RUNNING   Thu, 26 Jan 2023 17:47:01 GMT
+edf705c22be4   winter-night      RUNNING   Thu, 26 Jan 2023 17:47:34 GMT
+edf351b63ba6   shy-surf          RUNNING   Thu, 26 Jan 2023 17:49:59 GMT
 ```
 
 Enclaves themselves have very little overhead and are cheap to create, but the services inside the enclaves will naturally consume resources. Clean up your Kurtosis cluster now:
@@ -616,19 +618,20 @@ kurtosis run . '{"nginx_count": 3}'
 After execution, inspecting the enclave will reveal that three NginX services have been started:
 
 ```
-Enclave ID:                           quiet-morning
+UUID:                                 edf011afc46c
+Enclave Name:                         purple-smoke
 Enclave Status:                       RUNNING
-Creation Time:                        Wed, 30 Nov 2022 16:02:41 -03
+Creation Time:                        Thu, 26 Jan 2023 17:53:28 GMT
 API Container Status:                 RUNNING
-API Container Host GRPC Port:         127.0.0.1:63802
-API Container Host GRPC Proxy Port:   127.0.0.1:63803
+API Container Host GRPC Port:         127.0.0.1:57429
+API Container Host GRPC Proxy Port:   127.0.0.1:57430
 
 ========================================== User Services ==========================================
-GUID                     ID            Ports                               Status
-hello-world-1669834964   hello-world   http: 5050/tcp -> 127.0.0.1:63808   RUNNING
-my-nginx-0-1669834966    my-nginx-0    http: 80/tcp -> 127.0.0.1:63812     RUNNING
-my-nginx-1-1669834970    my-nginx-1    http: 80/tcp -> 127.0.0.1:63816     RUNNING
-my-nginx-2-1669834975    my-nginx-2    http: 80/tcp -> 127.0.0.1:63820     RUNNING
+UUID           Name          Ports                               Status
+0925dff98df7   hello-world   http: 5050/tcp -> 127.0.0.1:57437   RUNNING
+3cf9f9fdd5e6   my-nginx-2    http: 80/tcp -> 127.0.0.1:57451     RUNNING
+60ef364bb7c5   my-nginx-1    http: 80/tcp -> 127.0.0.1:57447     RUNNING
+8ccb57e0e778   my-nginx-0    http: 80/tcp -> 127.0.0.1:57441     RUNNING
 ```
 
 Each one of these NginX services works identically.
