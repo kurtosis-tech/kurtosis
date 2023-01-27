@@ -830,45 +830,6 @@ def run(plan):
 	require.Equal(t, expectedError, interpretationError)
 }
 
-func TestStartosisInterpreter_StoreFileFromService(t *testing.T) {
-	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
-	defer packageContentProvider.RemoveAll()
-	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, runtimeValueStore)
-	script := `
-def run(plan):
-	plan.print("Storing file from service!")
-	artifact_name=plan.store_service_files(service_name="example-datastore-server", src="/foo/bar", name="` + testArtifactName + `")
-	plan.print(artifact_name)
-`
-
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
-	require.Nil(t, interpretationError)
-	require.Len(t, instructions, 3)
-
-	starlarkKwargs := starlark.StringDict{
-		"service_name": starlark.String("example-datastore-server"),
-		"src":          starlark.String("/foo/bar"),
-		"name":         starlark.String(testArtifactName),
-	}
-	starlarkKwargs.Freeze()
-	storeInstruction := store_service_files.NewStoreServiceFilesInstruction(
-		testServiceNetwork,
-		kurtosis_instruction.NewInstructionPosition(4, 40, startosis_constants.PackageIdPlaceholderForStandaloneScript),
-		"example-datastore-server",
-		"/foo/bar",
-		testArtifactName,
-		starlarkKwargs,
-	)
-
-	require.Equal(t, storeInstruction, instructions[1])
-
-	expectedOutput := fmt.Sprintf(`Storing file from service!
-%v
-`, testArtifactName)
-	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutput)
-}
-
 func TestStartosisInterpreter_ReadFileFromGithub(t *testing.T) {
 	src := "github.com/foo/bar/static_files/main.txt"
 	seed := map[string]string{
@@ -974,22 +935,7 @@ def run(plan):
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 4)
 
-	starlarkKwargs := starlark.StringDict{
-		"name":         starlark.String(testArtifactName),
-		"service_name": starlark.String("example-datastore-server"),
-		"src":          starlark.String("/foo/bar"),
-	}
-	starlarkKwargs.Freeze()
-	storeInstruction := store_service_files.NewStoreServiceFilesInstruction(
-		testServiceNetwork,
-		kurtosis_instruction.NewInstructionPosition(4, 40, storeFileDefinitionPath),
-		"example-datastore-server",
-		"/foo/bar",
-		testArtifactName,
-		starlarkKwargs,
-	)
-
-	require.Equal(t, storeInstruction, instructions[2])
+	assertInstructionTypeAndPosition(t, instructions[2], store_service_files.StoreServiceFilesBuiltinName, storeFileDefinitionPath, 4, 40)
 
 	expectedOutput := fmt.Sprintf(`In the module that calls store.star
 In the store files instruction
