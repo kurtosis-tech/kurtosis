@@ -17,7 +17,10 @@ import type {
 } from "../../kurtosis_engine_rpc_api_bindings/engine_service_pb";
 import {NO_ERROR_ENCOUNTERED_BUT_RESPONSE_FALSY_MSG} from "../consts";
 import * as jspb from "google-protobuf";
-import {LogLine} from "../../kurtosis_engine_rpc_api_bindings/engine_service_pb";
+import {
+    GetExistingAndHistoricalEnclaveIdentifiersResponse,
+    LogLine
+} from "../../kurtosis_engine_rpc_api_bindings/engine_service_pb";
 import {ServiceUUID} from "../../../core/lib/services/service";
 import {Readable} from "stream";
 import {ServiceLog} from "./service_log";
@@ -243,6 +246,30 @@ export class GrpcWebEngineClient implements GenericEngineClient {
         })
 
         return ok(serviceLogsReadable);
+    }
+
+    public async getExistingAndHistoricalEnclaveIdentifiers(): Promise<Result<GetExistingAndHistoricalEnclaveIdentifiersResponse, Error>>{
+        const emptyArg: google_protobuf_empty_pb.Empty = new google_protobuf_empty_pb.Empty()
+        const getExistingAndHistoricalEnclaveIdentifiersPromise: Promise<Result<GetExistingAndHistoricalEnclaveIdentifiersResponse, Error>> = new Promise((resolve, _unusedReject) => {
+            this.client.getExistingAndHistoricalEnclaveIdentifiers(emptyArg, {}, (error: grpc_web.RpcError | null, response?: GetExistingAndHistoricalEnclaveIdentifiersResponse) => {
+                if (error === null) {
+                    if (!response) {
+                        resolve(err(new Error(NO_ERROR_ENCOUNTERED_BUT_RESPONSE_FALSY_MSG)));
+                    } else {
+                        resolve(ok(response!));
+                    }
+                } else {
+                    resolve(err(error));
+                }
+            })
+        });
+
+        const getExistingAndHistoricalEnclaveIdentifiersResult: Result<GetExistingAndHistoricalEnclaveIdentifiersResponse, Error> = await getExistingAndHistoricalEnclaveIdentifiersPromise;
+        if (getExistingAndHistoricalEnclaveIdentifiersResult.isErr()) {
+            return err(getExistingAndHistoricalEnclaveIdentifiersResult.error)
+        }
+
+        return ok(getExistingAndHistoricalEnclaveIdentifiersResult.value);
     }
 
     private createNewServiceLogsReadable(streamServiceLogsResponse: grpc_web.ClientReadableStream<GetServiceLogsResponse>): Readable {

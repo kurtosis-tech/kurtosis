@@ -42,6 +42,7 @@ import * as path from "path";
 import {parseKurtosisYaml} from "./kurtosis_yaml";
 import {Readable} from "stream";
 import {readStreamContentUntilClosed, StarlarkRunResult} from "./starlark_run_blocking";
+import {ServiceIdentifiers} from "../services/service_identifiers";
 
 export type EnclaveUUID = string;
 export type PartitionID = string;
@@ -539,6 +540,17 @@ export class EnclaveContext {
         }
         const downloadFilesArtifactResponse = downloadFilesArtifactResponseResult.value;
         return ok(downloadFilesArtifactResponse.getData_asU8())
+    }
+
+    // Docs available at https://docs.kurtosis.com/sdk#getexistingandhistoricalserviceidentifiers---serviceidentifiers-serviceidentifiers
+    public async getExistingAndHistoricalServiceIdentifiers(): Promise<Result<ServiceIdentifiers, Error>> {
+        const getExistingAndHistoricalServiceIdentifiersResponseResult = await this.backend.getExistingAndHistoricalServiceIdentifiers()
+        if (getExistingAndHistoricalServiceIdentifiersResponseResult.isErr()) {
+            return err(getExistingAndHistoricalServiceIdentifiersResponseResult.error);
+        }
+
+        const getExistingAndHistoricalIdentifiersValue = getExistingAndHistoricalServiceIdentifiersResponseResult.value
+        return ok(new ServiceIdentifiers(getExistingAndHistoricalIdentifiersValue.getAllidentifiersList()))
     }
 
     // ====================================================================================================

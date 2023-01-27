@@ -4,7 +4,10 @@ import { err, ok, Result } from 'neverthrow';
 import { Readable } from 'stream';
 
 import { ServiceUUID } from '../../../core/lib/services/service';
-import { LogLine } from '../../kurtosis_engine_rpc_api_bindings/engine_service_pb';
+import {
+    GetExistingAndHistoricalEnclaveIdentifiersResponse,
+    LogLine
+} from '../../kurtosis_engine_rpc_api_bindings/engine_service_pb';
 import { NO_ERROR_ENCOUNTERED_BUT_RESPONSE_FALSY_MSG } from '../consts';
 
 import type {EngineServiceClient as EngineServiceClientNode} from "../../kurtosis_engine_rpc_api_bindings/engine_service_grpc_pb";
@@ -24,7 +27,6 @@ import type {
 import type {ClientReadableStream, ServiceError} from "@grpc/grpc-js";
 import {ServiceLogsStreamContent} from "./service_logs_stream_content";
 import {ServiceLog} from "./service_log";
-
 const GRPC_STREAM_RESPONSE_DATA_EVENT_NAME = 'data'
 const GRPC_STREAM_RESPONSE_ERROR_EVENT_NAME = 'error'
 const GRPC_STREAM_RESPONSE_END_EVENT_NAME = 'end'
@@ -248,6 +250,30 @@ export class GrpcNodeEngineClient implements GenericEngineClient {
         })
 
         return ok(serviceLogsReadable);
+    }
+
+    public async getExistingAndHistoricalEnclaveIdentifiers(): Promise<Result<GetExistingAndHistoricalEnclaveIdentifiersResponse, Error>>{
+        const emptyArg: google_protobuf_empty_pb.Empty = new google_protobuf_empty_pb.Empty()
+        const getExistingAndHistoricalEnclaveIdentifiersPromise: Promise<Result<GetExistingAndHistoricalEnclaveIdentifiersResponse, Error>> = new Promise((resolve, _unusedReject) => {
+            this.client.getExistingAndHistoricalEnclaveIdentifiers(emptyArg, (error: ServiceError | null, response?: GetExistingAndHistoricalEnclaveIdentifiersResponse) => {
+                if (error === null) {
+                    if (!response) {
+                        resolve(err(new Error(NO_ERROR_ENCOUNTERED_BUT_RESPONSE_FALSY_MSG)));
+                    } else {
+                        resolve(ok(response!));
+                    }
+                } else {
+                    resolve(err(error));
+                }
+            })
+        });
+
+        const getExistingAndHistoricalEnclaveIdentifiersResult: Result<GetExistingAndHistoricalEnclaveIdentifiersResponse, Error> = await getExistingAndHistoricalEnclaveIdentifiersPromise;
+        if (getExistingAndHistoricalEnclaveIdentifiersResult.isErr()) {
+            return err(getExistingAndHistoricalEnclaveIdentifiersResult.error)
+        }
+
+        return ok(getExistingAndHistoricalEnclaveIdentifiersResult.value);
     }
 
     private createNewServiceLogsReadable(streamServiceLogsResponse: ClientReadableStream<GetServiceLogsResponse>): Readable {

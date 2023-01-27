@@ -1,6 +1,5 @@
 import log from "loglevel"
 import * as semver from "semver"
-import * as jspb from "google-protobuf";
 import {err, ok, Result} from "neverthrow";
 import { isNode as isExecutionEnvNode} from "browser-or-node";
 import {EnclaveContext, EnclaveUUID, ServiceUUID} from "../../../index";
@@ -39,6 +38,7 @@ import {
     StarlarkInterpretationError, StarlarkValidationError
 } from "../../../core/kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import {Enclaves} from "./enclaves";
+import {EnclaveIdentifiers} from "./enclave_identifiers";
 
 const LOCAL_HOSTNAME: string = "localhost";
 
@@ -276,6 +276,17 @@ export class KurtosisContext {
         const serviceLogsReadable: Readable = streamServiceLogsResult.value;
 
         return ok(serviceLogsReadable)
+    }
+
+    public async getExistingAndHistoricalEnclaveIdentifiers(): Promise<Result<EnclaveIdentifiers, Error>> {
+        const getExistingAndHistoricalEnclaveIdentifiersResponseResult = await this.client.getExistingAndHistoricalEnclaveIdentifiers();
+        if (getExistingAndHistoricalEnclaveIdentifiersResponseResult.isErr()) {
+            return err(getExistingAndHistoricalEnclaveIdentifiersResponseResult.error);
+        }
+
+        const getExistingAndHistoricalEnclaveIdentifiersValue = getExistingAndHistoricalEnclaveIdentifiersResponseResult.value
+
+        return ok(new EnclaveIdentifiers(getExistingAndHistoricalEnclaveIdentifiersValue.getAllidentifiersList()))
     }
 
     // ====================================================================================================

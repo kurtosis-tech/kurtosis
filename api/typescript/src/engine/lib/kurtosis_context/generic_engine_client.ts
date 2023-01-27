@@ -8,7 +8,7 @@ import {
     GetEnclavesResponse,
     GetEngineInfoResponse,
     StopEnclaveArgs,
-    GetServiceLogsArgs,
+    GetServiceLogsArgs, GetExistingAndHistoricalEnclaveIdentifiersResponse,
 } from "../../kurtosis_engine_rpc_api_bindings/engine_service_pb";
 import {Readable} from "stream";
 
@@ -20,4 +20,5 @@ export interface GenericEngineClient {
     destroyEnclave(destroyEnclaveArgs: DestroyEnclaveArgs): Promise<Result<null, Error>>
     clean(cleanArgs: CleanArgs): Promise<Result<CleanResponse, Error>>
     getServiceLogs(getServiceLogsArgs: GetServiceLogsArgs): Promise<Result<Readable, Error>>
+    getExistingAndHistoricalEnclaveIdentifiers(): Promise<Result<GetExistingAndHistoricalEnclaveIdentifiersResponse, Error>>
 }

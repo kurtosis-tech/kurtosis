@@ -17,17 +17,14 @@ import {
     UploadFilesArtifactResponse,
     StoreWebFilesArtifactResponse,
     StoreWebFilesArtifactArgs,
-    StoreFilesArtifactFromServiceArgs,
-    StoreFilesArtifactFromServiceResponse,
     GetServicesArgs,
     RemoveServiceResponse,
-    RenderTemplatesToFilesArtifactArgs,
-    RenderTemplatesToFilesArtifactResponse,
     RunStarlarkScriptArgs,
     RunStarlarkPackageArgs,
     StarlarkRunResponseLine,
     DownloadFilesArtifactArgs,
     DownloadFilesArtifactResponse,
+    GetExistingAndHistoricalServiceIdentifiersResponse,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import { ApiContainerServiceClient as ApiContainerServiceClientWeb } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb";
 import { GenericApiContainerClient } from "./generic_api_container_client";
@@ -327,6 +324,30 @@ export class GrpcWebApiContainerClient implements GenericApiContainerClient {
 
         const downloadFilesArtifactResponse = downloadFilesArtifactResponseResult.value;
         return ok(downloadFilesArtifactResponse)
+    }
+
+    public async getExistingAndHistoricalServiceIdentifiers(): Promise<Result<GetExistingAndHistoricalServiceIdentifiersResponse, Error>>{
+        const emptyArg: google_protobuf_empty_pb.Empty = new google_protobuf_empty_pb.Empty()
+        const getExistingAndHistoricalServiceIdentifiersPromise: Promise<Result<GetExistingAndHistoricalServiceIdentifiersResponse, Error>> = new Promise((resolve, _unusedReject) => {
+            this.client.getExistingAndHistoricalServiceIdentifiers(emptyArg, {},(error: grpc_web.RpcError | null, response?: GetExistingAndHistoricalServiceIdentifiersResponse) => {
+                if (error === null) {
+                    if (!response) {
+                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
+                    } else {
+                        resolve(ok(response!));
+                    }
+                } else {
+                    resolve(err(error));
+                }
+            })
+        });
+
+        const getExistingAndHistoricalServiceIdentifiersResult: Result<GetExistingAndHistoricalServiceIdentifiersResponse, Error> = await getExistingAndHistoricalServiceIdentifiersPromise;
+        if (getExistingAndHistoricalServiceIdentifiersResult.isErr()) {
+            return err(getExistingAndHistoricalServiceIdentifiersResult.error)
+        }
+
+        return ok(getExistingAndHistoricalServiceIdentifiersResult.value);
     }
 
     private forwardStarlarkRunResponseLinesStreamToReadable(incomingStream: grpc_web.ClientReadableStream<StarlarkRunResponseLine>): Readable {
