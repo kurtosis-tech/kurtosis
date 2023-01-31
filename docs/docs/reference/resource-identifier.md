@@ -60,9 +60,11 @@ Global Flags:
 Resource Identifiers are supported for the following resources inside of Kurtosis
 
 - [Files Artifacts][files-artifacts]
-- Services
-- Enclaves
+- [Services][services]
+- [Enclaves][enclaves]
 
 <!------------------ ONLY LINKS BELOW HERE -------------------->
 [uuidv4]: https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random)
 [files-artifacts]: ./files-artifacts.md
+[services]: ./glossary.md#user-service
+[enclaves]: ./glossary.md#enclave
