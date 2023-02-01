@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.65.1](https://github.com/kurtosis-tech/kurtosis/compare/0.65.0...0.65.1) (2023-02-01)
+
+
+### Features
+
+* Add `hostname` attribute to the `service` object returned by the `add_service` instruction ([#844](https://github.com/kurtosis-tech/kurtosis/issues/844)) ([50e786c](https://github.com/kurtosis-tech/kurtosis/commit/50e786c29ee6b424dd20988a13f97d1896260c88)), closes [#745](https://github.com/kurtosis-tech/kurtosis/issues/745)
+* add typescript SDK for historical service & enclave identifiers ([#923](https://github.com/kurtosis-tech/kurtosis/issues/923)) ([0fc8705](https://github.com/kurtosis-tech/kurtosis/commit/0fc870546a8381f0346b880d93555c3be352f946))
+* print shortened uuid by default for add service ([#957](https://github.com/kurtosis-tech/kurtosis/issues/957)) ([057ba5c](https://github.com/kurtosis-tech/kurtosis/commit/057ba5c725fcc62ae5173cf85cc8d1d4fa5fe68d))
+
+
+### Bug Fixes
+
+* (docs) update links to "enclave" and "services" in the Resource Identifier page in the docs ([#977](https://github.com/kurtosis-tech/kurtosis/issues/977)) ([a7cc76d](https://github.com/kurtosis-tech/kurtosis/commit/a7cc76de0a64f4a29b500009328dde0dc8fa2813))
+* add M1 support to Bash completion instructions ([#961](https://github.com/kurtosis-tech/kurtosis/issues/961)) ([de41684](https://github.com/kurtosis-tech/kurtosis/commit/de416848a33c44789d42d71a5d3d8e54d1a5e81d))
+* support shorter uuids from previous versions of Kurtosis ([#985](https://github.com/kurtosis-tech/kurtosis/issues/985)) ([3f8b6fc](https://github.com/kurtosis-tech/kurtosis/commit/3f8b6fc712d6b9fdf899f8d03c741d5efdf9fbc6))
+
 ## [0.65.0](https://github.com/kurtosis-tech/kurtosis/compare/0.64.2...0.65.0) (2023-01-26)
 
 
