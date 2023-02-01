@@ -1,10 +1,9 @@
 package uuid_generator
 
 import (
-	"fmt"
 	"github.com/google/uuid"
 	"github.com/kurtosis-tech/stacktrace"
-	"regexp"
+	"github.com/sirupsen/logrus"
 	"strings"
 )
 
@@ -14,10 +13,6 @@ const (
 
 	// Length of shortened uuid
 	shortenedUuidLength = 12
-)
-
-var (
-	shortenedUuidRegex = regexp.MustCompile(fmt.Sprintf("[a-f0-9]{%v}", shortenedUuidLength))
 )
 
 // Generates a UUID with the dashes removed
@@ -37,10 +32,13 @@ func IsUUID(maybeUuid string) bool {
 	return err == nil
 }
 
+// ShortenedUUIDString returns at most the first 12 characters of the uuid
+// Though a valid uuid is 12 characters, we need to support older shorter uuids for backwards compatibility
 func ShortenedUUIDString(fullUUID string) string {
-	return fullUUID[:shortenedUuidLength]
-}
-
-func ISShortenedUUID(maybeShortenedUuid string) bool {
-	return shortenedUuidRegex.MatchString(maybeShortenedUuid)
+	lengthToTrim := shortenedUuidLength
+	if lengthToTrim > len(fullUUID) {
+		logrus.Warnf("Encountered a uuid '%v' that is shorter than expected", fullUUID)
+		lengthToTrim = len(fullUUID)
+	}
+	return fullUUID[:lengthToTrim]
 }

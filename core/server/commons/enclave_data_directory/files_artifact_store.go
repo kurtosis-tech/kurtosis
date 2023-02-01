@@ -54,26 +54,22 @@ func (store FilesArtifactStore) GetFile(artifactIdentifier string) (*EnclaveData
 	store.mutex.RLock()
 	defer store.mutex.RUnlock()
 
-	if uuid_generator.IsUUID(artifactIdentifier) {
-		filesArtifactUuid := FilesArtifactUUID(artifactIdentifier)
-		file, err := store.getFileUnlocked(filesArtifactUuid)
-		if err == nil {
-			return file, nil
-		}
+	filesArtifactUuid := FilesArtifactUUID(artifactIdentifier)
+	file, err := store.getFileUnlocked(filesArtifactUuid)
+	if err == nil {
+		return file, nil
 	}
 
-	if uuid_generator.ISShortenedUUID(artifactIdentifier) {
-		filesArtifactUuids, found := store.shortenedUuidToFullUuid[artifactIdentifier]
-		if found {
-			if len(filesArtifactUuids) > maxAllowedMatchesAgainstShortenedUuid {
-				return nil, stacktrace.NewError("Tried using the shortened uuid '%v' to get file but found multiple matches '%v'. Use a complete uuid to be specific about what to get.", artifactIdentifier, filesArtifactUuids)
-			}
-			filesArtifactUuid := filesArtifactUuids[0]
-			return store.getFileUnlocked(filesArtifactUuid)
+	filesArtifactUuids, found := store.shortenedUuidToFullUuid[artifactIdentifier]
+	if found {
+		if len(filesArtifactUuids) > maxAllowedMatchesAgainstShortenedUuid {
+			return nil, stacktrace.NewError("Tried using the shortened uuid '%v' to get file but found multiple matches '%v'. Use a complete uuid to be specific about what to get.", artifactIdentifier, filesArtifactUuids)
 		}
+		filesArtifactUuid := filesArtifactUuids[0]
+		return store.getFileUnlocked(filesArtifactUuid)
 	}
 
-	filesArtifactUuid, found := store.artifactNameToArtifactUuid[artifactIdentifier]
+	filesArtifactUuid, found = store.artifactNameToArtifactUuid[artifactIdentifier]
 	if found {
 		return store.getFileUnlocked(filesArtifactUuid)
 	}
@@ -87,26 +83,22 @@ func (store FilesArtifactStore) RemoveFile(artifactIdentifier string) error {
 	defer store.mutex.Unlock()
 	var filesArtifactUuid FilesArtifactUUID
 
-	if uuid_generator.IsUUID(artifactIdentifier) {
-		filesArtifactUuid = FilesArtifactUUID(artifactIdentifier)
-		err := store.removeFileUnlocked(filesArtifactUuid)
-		if err == nil {
-			return nil
-		}
+	filesArtifactUuid = FilesArtifactUUID(artifactIdentifier)
+	err := store.removeFileUnlocked(filesArtifactUuid)
+	if err == nil {
+		return nil
 	}
 
-	if uuid_generator.ISShortenedUUID(artifactIdentifier) {
-		filesArtifactUuids, found := store.shortenedUuidToFullUuid[artifactIdentifier]
-		if found {
-			if len(filesArtifactUuids) > maxAllowedMatchesAgainstShortenedUuid {
-				return stacktrace.NewError("Tried using the shortened uuid '%v' to remove file but found multiple matches '%v'. Use a complete uuid to be specific about what to delete.", artifactIdentifier, filesArtifactUuids)
-			}
-			filesArtifactUuid = filesArtifactUuids[0]
-			return store.removeFileUnlocked(filesArtifactUuid)
+	filesArtifactUuids, found := store.shortenedUuidToFullUuid[artifactIdentifier]
+	if found {
+		if len(filesArtifactUuids) > maxAllowedMatchesAgainstShortenedUuid {
+			return stacktrace.NewError("Tried using the shortened uuid '%v' to remove file but found multiple matches '%v'. Use a complete uuid to be specific about what to delete.", artifactIdentifier, filesArtifactUuids)
 		}
+		filesArtifactUuid = filesArtifactUuids[0]
+		return store.removeFileUnlocked(filesArtifactUuid)
 	}
 
-	filesArtifactUuid, found := store.artifactNameToArtifactUuid[artifactIdentifier]
+	filesArtifactUuid, found = store.artifactNameToArtifactUuid[artifactIdentifier]
 	if found {
 		return store.removeFileUnlocked(filesArtifactUuid)
 	}

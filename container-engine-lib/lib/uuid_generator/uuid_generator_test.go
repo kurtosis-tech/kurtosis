@@ -11,6 +11,10 @@ func TestGenerateUUIDString(t *testing.T) {
 	require.Len(t, uuid, 32)
 	require.True(t, IsUUID(uuid))
 	shortenedUuid := ShortenedUUIDString(uuid)
-	require.Len(t, shortenedUuid, 12)
-	require.True(t, ISShortenedUUID(shortenedUuid))
+	require.Len(t, shortenedUuid, shortenedUuidLength)
+}
+
+func TestUUIDBackwardsCompatibility(t *testing.T) {
+	oldUuid := "short-uuid"
+	require.Equal(t, oldUuid, ShortenedUUIDString(oldUuid))
 }
