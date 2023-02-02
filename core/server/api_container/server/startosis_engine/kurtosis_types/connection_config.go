@@ -10,9 +10,10 @@ import (
 )
 
 const (
-	ConnectionConfigTypeName = "ConnectionConfig"
-	packetLossPercentageAttr = "packet_loss_percentage"
-	packetDelayAttr          = "packet_delay"
+	ConnectionConfigTypeName    = "ConnectionConfig"
+	packetLossPercentageAttr    = "packet_loss_percentage"
+	packetDelayAttr             = "packet_delay"
+	packetDelayDistributionAttr = "packet_delay_distribution"
 )
 
 var (

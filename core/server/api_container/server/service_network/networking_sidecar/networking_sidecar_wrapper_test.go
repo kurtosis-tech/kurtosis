@@ -69,48 +69,79 @@ const (
 	expectedCommandsForExecutingSoftPartitionWithDelayInQdiscA = "tc qdisc del dev eth1 parent 1:1 handle 2: htb && " +
 		"tc qdisc add dev eth1 parent 1:1 handle 2: htb && tc class add dev eth1 parent 2: classid 2:1 htb rate 100% && " +
 		"tc filter add dev eth1 parent 2: protocol ip prio 1 u32 flowid 2:1 match ip dst 1.1.1.1 && " +
-		"tc qdisc add dev eth1 parent 2:1 handle 4: netem loss 25% delay 500ms && " +
+		"tc qdisc add dev eth1 parent 2:1 handle 4: netem loss 25% delay 500ms 0ms 0% && " +
 		"tc class add dev eth1 parent 2: classid 2:2 htb rate 100% && " +
 		"tc filter add dev eth1 parent 2: protocol ip prio 1 u32 flowid 2:2 match ip dst 2.2.2.2 && " +
-		"tc qdisc add dev eth1 parent 2:2 handle 6: netem loss 25% delay 500ms && " +
+		"tc qdisc add dev eth1 parent 2:2 handle 6: netem loss 25% delay 500ms 0ms 0% && " +
 		"tc class add dev eth1 parent 2: classid 2:3 htb rate 100% && " +
 		"tc filter add dev eth1 parent 2: protocol ip prio 1 u32 flowid 2:3 match ip dst 3.3.3.3 && " +
-		"tc qdisc add dev eth1 parent 2:3 handle 8: netem loss 25% delay 500ms && " +
+		"tc qdisc add dev eth1 parent 2:3 handle 8: netem loss 25% delay 500ms 0ms 0% && " +
 		"tc class add dev eth1 parent 2: classid 2:4 htb rate 100% && " +
 		"tc filter add dev eth1 parent 2: protocol ip prio 1 u32 flowid 2:4 match ip dst 4.4.4.4 && " +
-		"tc qdisc add dev eth1 parent 2:4 handle a: netem loss 25% delay 500ms && " +
+		"tc qdisc add dev eth1 parent 2:4 handle a: netem loss 25% delay 500ms 0ms 0% && " +
 		"tc filter replace dev eth1 parent 1: handle 1:0 basic flowid 1:1"
 
 	expectedCommandsForExecutingSoftPartitionWithDelayInQdiscB = "tc qdisc del dev eth1 parent 1:2 handle 3: htb && " +
 		"tc qdisc add dev eth1 parent 1:2 handle 3: htb && " +
 		"tc class add dev eth1 parent 3: classid 3:1 htb rate 100% && " +
 		"tc filter add dev eth1 parent 3: protocol ip prio 1 u32 flowid 3:1 match ip dst 1.1.1.1 && " +
-		"tc qdisc add dev eth1 parent 3:1 handle 5: netem loss 25% delay 500ms && " +
+		"tc qdisc add dev eth1 parent 3:1 handle 5: netem loss 25% delay 500ms 0ms 0% && " +
 		"tc class add dev eth1 parent 3: classid 3:2 htb rate 100% && " +
 		"tc filter add dev eth1 parent 3: protocol ip prio 1 u32 flowid 3:2 match ip dst 2.2.2.2 && " +
-		"tc qdisc add dev eth1 parent 3:2 handle 7: netem loss 25% delay 500ms && " +
+		"tc qdisc add dev eth1 parent 3:2 handle 7: netem loss 25% delay 500ms 0ms 0% && " +
 		"tc class add dev eth1 parent 3: classid 3:3 htb rate 100% && " +
 		"tc filter add dev eth1 parent 3: protocol ip prio 1 u32 flowid 3:3 match ip dst 3.3.3.3 && " +
-		"tc qdisc add dev eth1 parent 3:3 handle 9: netem loss 25% delay 500ms && " +
+		"tc qdisc add dev eth1 parent 3:3 handle 9: netem loss 25% delay 500ms 0ms 0% && " +
 		"tc class add dev eth1 parent 3: classid 3:4 htb rate 100% && " +
 		"tc filter add dev eth1 parent 3: protocol ip prio 1 u32 flowid 3:4 match ip dst 4.4.4.4 && " +
-		"tc qdisc add dev eth1 parent 3:4 handle b: netem loss 25% delay 500ms && " +
+		"tc qdisc add dev eth1 parent 3:4 handle b: netem loss 25% delay 500ms 0ms 0% && " +
+		"tc filter replace dev eth1 parent 1: handle 1:0 basic flowid 1:2"
+
+	expectedCommandsForExecutingSoftPartitionWithDelayDistributionInQdiscA = "tc qdisc del dev eth1 parent 1:1 handle 2: htb && " +
+		"tc qdisc add dev eth1 parent 1:1 handle 2: htb && tc class add dev eth1 parent 2: classid 2:1 htb rate 100% && " +
+		"tc filter add dev eth1 parent 2: protocol ip prio 1 u32 flowid 2:1 match ip dst 1.1.1.1 && " +
+		"tc qdisc add dev eth1 parent 2:1 handle 4: netem loss 25% delay 500ms 10ms 20.5% && " +
+		"tc class add dev eth1 parent 2: classid 2:2 htb rate 100% && " +
+		"tc filter add dev eth1 parent 2: protocol ip prio 1 u32 flowid 2:2 match ip dst 2.2.2.2 && " +
+		"tc qdisc add dev eth1 parent 2:2 handle 6: netem loss 25% delay 500ms 10ms 20.5% && " +
+		"tc class add dev eth1 parent 2: classid 2:3 htb rate 100% && " +
+		"tc filter add dev eth1 parent 2: protocol ip prio 1 u32 flowid 2:3 match ip dst 3.3.3.3 && " +
+		"tc qdisc add dev eth1 parent 2:3 handle 8: netem loss 25% delay 500ms 10ms 20.5% && " +
+		"tc class add dev eth1 parent 2: classid 2:4 htb rate 100% && " +
+		"tc filter add dev eth1 parent 2: protocol ip prio 1 u32 flowid 2:4 match ip dst 4.4.4.4 && " +
+		"tc qdisc add dev eth1 parent 2:4 handle a: netem loss 25% delay 500ms 10ms 20.5% && " +
+		"tc filter replace dev eth1 parent 1: handle 1:0 basic flowid 1:1"
+
+	expectedCommandsForExecutingSoftPartitionWithDelayDistributionInQdiscB = "tc qdisc del dev eth1 parent 1:2 handle 3: htb && " +
+		"tc qdisc add dev eth1 parent 1:2 handle 3: htb && " +
+		"tc class add dev eth1 parent 3: classid 3:1 htb rate 100% && " +
+		"tc filter add dev eth1 parent 3: protocol ip prio 1 u32 flowid 3:1 match ip dst 1.1.1.1 && " +
+		"tc qdisc add dev eth1 parent 3:1 handle 5: netem loss 25% delay 500ms 10ms 20.5% && " +
+		"tc class add dev eth1 parent 3: classid 3:2 htb rate 100% && " +
+		"tc filter add dev eth1 parent 3: protocol ip prio 1 u32 flowid 3:2 match ip dst 2.2.2.2 && " +
+		"tc qdisc add dev eth1 parent 3:2 handle 7: netem loss 25% delay 500ms 10ms 20.5% && " +
+		"tc class add dev eth1 parent 3: classid 3:3 htb rate 100% && " +
+		"tc filter add dev eth1 parent 3: protocol ip prio 1 u32 flowid 3:3 match ip dst 3.3.3.3 && " +
+		"tc qdisc add dev eth1 parent 3:3 handle 9: netem loss 25% delay 500ms 10ms 20.5% && " +
+		"tc class add dev eth1 parent 3: classid 3:4 htb rate 100% && " +
+		"tc filter add dev eth1 parent 3: protocol ip prio 1 u32 flowid 3:4 match ip dst 4.4.4.4 && " +
+		"tc qdisc add dev eth1 parent 3:4 handle b: netem loss 25% delay 500ms 10ms 20.5% && " +
 		"tc filter replace dev eth1 parent 1: handle 1:0 basic flowid 1:2"
 
 	expectedCommandsForNoPacketLossButConstantDelay = "tc qdisc del dev eth1 parent 1:2 handle 3: htb && " +
 		"tc qdisc add dev eth1 parent 1:2 handle 3: htb && " +
 		"tc class add dev eth1 parent 3: classid 3:1 htb rate 100% && " +
 		"tc filter add dev eth1 parent 3: protocol ip prio 1 u32 flowid 3:1 match ip dst 1.1.1.1 && " +
-		"tc qdisc add dev eth1 parent 3:1 handle 5: netem loss 0% delay 500ms && " +
+		"tc qdisc add dev eth1 parent 3:1 handle 5: netem loss 0% delay 500ms 0ms 0% && " +
 		"tc class add dev eth1 parent 3: classid 3:2 htb rate 100% && " +
 		"tc filter add dev eth1 parent 3: protocol ip prio 1 u32 flowid 3:2 match ip dst 2.2.2.2 && " +
-		"tc qdisc add dev eth1 parent 3:2 handle 7: netem loss 0% delay 500ms && " +
+		"tc qdisc add dev eth1 parent 3:2 handle 7: netem loss 0% delay 500ms 0ms 0% && " +
 		"tc class add dev eth1 parent 3: classid 3:3 htb rate 100% && " +
 		"tc filter add dev eth1 parent 3: protocol ip prio 1 u32 flowid 3:3 match ip dst 3.3.3.3 && " +
-		"tc qdisc add dev eth1 parent 3:3 handle 9: netem loss 0% delay 500ms && " +
+		"tc qdisc add dev eth1 parent 3:3 handle 9: netem loss 0% delay 500ms 0ms 0% && " +
 		"tc class add dev eth1 parent 3: classid 3:4 htb rate 100% && " +
 		"tc filter add dev eth1 parent 3: protocol ip prio 1 u32 flowid 3:4 match ip dst 4.4.4.4 && " +
-		"tc qdisc add dev eth1 parent 3:4 handle b: netem loss 0% delay 500ms && " +
+		"tc qdisc add dev eth1 parent 3:4 handle b: netem loss 0% delay 500ms 0ms 0% && " +
 		"tc filter replace dev eth1 parent 1: handle 1:0 basic flowid 1:2"
 
 	stringSeparatorInCommand = " "
@@ -376,6 +407,66 @@ func TestUpdateTrafficControl_CreateWithSoftPartitionWithDelayAndThenSoftPartiti
 	require.Equal(t, expectedCommandsForExecutingSoftPartitionInQdiscA, actualSecondExecutedMergedCmd)
 }
 
+func TestUpdateTrafficControl_CreateWithSoftPartitionWithDelayAndThenSoftPartitionWitDelayDistribution(t *testing.T) {
+	//Initial state
+	ctx := context.Background()
+	sidecar, execCmdExecutor := createNewStandardNetworkingSidecarAndMockedExecCmdExecutor(t)
+	require.Empty(t, sidecar.qdiscInUse)
+	sidecar.qdiscInUse = initialKurtosisQdiscId
+
+	//Blocking partition
+	allUserServicePacketConnectionConfigurationsForSoftPartitionWithDelay := getAllUserServicePacketConnectionConfigurationsSoftPartitionWithConstantDelay()
+
+	err := sidecar.UpdateTrafficControl(ctx, allUserServicePacketConnectionConfigurationsForSoftPartitionWithDelay)
+	require.Equal(t, qdiscBID, sidecar.qdiscInUse)
+	require.NoError(t, err, "An error occurred updating qdisc configuration for blocked partition")
+	require.Equal(t, 1, len(execCmdExecutor.commands))
+
+	actualFirstExecutedMergedCmd := mergeCommandsInOneLine(execCmdExecutor.commands[0])
+	require.Equal(t, expectedCommandsForExecutingSoftPartitionWithDelayInQdiscB, actualFirstExecutedMergedCmd)
+
+	//Unblocking partition
+	allUserServicePacketConnectionConfigurationsForSoftPartitionWithDelayDistribution := getAllUserServicePacketConnectionConfigurationsSoftPartitionWithDistribution()
+
+	err = sidecar.UpdateTrafficControl(context.Background(), allUserServicePacketConnectionConfigurationsForSoftPartitionWithDelayDistribution)
+	require.NoError(t, err, "An error occurred updating qdisc configuration for soft partition")
+	require.Equal(t, qdiscAID, sidecar.qdiscInUse)
+	require.Equal(t, 2, len(execCmdExecutor.commands))
+
+	actualSecondExecutedMergedCmd := mergeCommandsInOneLine(execCmdExecutor.commands[1])
+	require.Equal(t, expectedCommandsForExecutingSoftPartitionWithDelayDistributionInQdiscA, actualSecondExecutedMergedCmd)
+}
+
+func TestUpdateTrafficControl_CreateWithSoftPartitionWithDelayDistributionAndThenSoftPartitionWithDelay(t *testing.T) {
+	//Initial state
+	ctx := context.Background()
+	sidecar, execCmdExecutor := createNewStandardNetworkingSidecarAndMockedExecCmdExecutor(t)
+	require.Empty(t, sidecar.qdiscInUse)
+	sidecar.qdiscInUse = initialKurtosisQdiscId
+
+	//Blocking partition
+	allUserServicePacketConnectionConfigurationsForSoftPartitionWithDelayDistribution := getAllUserServicePacketConnectionConfigurationsSoftPartitionWithDistribution()
+
+	err := sidecar.UpdateTrafficControl(ctx, allUserServicePacketConnectionConfigurationsForSoftPartitionWithDelayDistribution)
+	require.Equal(t, qdiscBID, sidecar.qdiscInUse)
+	require.NoError(t, err, "An error occurred updating qdisc configuration for blocked partition")
+	require.Equal(t, 1, len(execCmdExecutor.commands))
+
+	actualFirstExecutedMergedCmd := mergeCommandsInOneLine(execCmdExecutor.commands[0])
+	require.Equal(t, expectedCommandsForExecutingSoftPartitionWithDelayDistributionInQdiscB, actualFirstExecutedMergedCmd)
+
+	//Unblocking partition
+	allUserServicePacketConnectionConfigurationsForSoftPartitionWithDelay := getAllUserServicePacketConnectionConfigurationsSoftPartitionWithConstantDelay()
+
+	err = sidecar.UpdateTrafficControl(context.Background(), allUserServicePacketConnectionConfigurationsForSoftPartitionWithDelay)
+	require.NoError(t, err, "An error occurred updating qdisc configuration for soft partition")
+	require.Equal(t, qdiscAID, sidecar.qdiscInUse)
+	require.Equal(t, 2, len(execCmdExecutor.commands))
+
+	actualSecondExecutedMergedCmd := mergeCommandsInOneLine(execCmdExecutor.commands[1])
+	require.Equal(t, expectedCommandsForExecutingSoftPartitionWithDelayInQdiscA, actualSecondExecutedMergedCmd)
+}
+
 func TestUpdateTrafficControl_UndefinedQdiscInUseError(t *testing.T) {
 	//Initial state
 	ctx := context.Background()
@@ -512,9 +603,19 @@ func TestConcurrencySafety(t *testing.T) {
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================
+func getAllUserServicePacketConnectionConfigurationsSoftPartitionWithDistribution() map[string]*partition_topology.PartitionConnection {
+	allUserServicePacketConnectionConfigurations := map[string]*partition_topology.PartitionConnection{}
+	packetDelay := partition_topology.NewNormalPacketDelayDistribution(500, 10, 20.5)
+	for _, ip := range allUserServiceTestIPAddresses {
+		connectionConfig := partition_topology.NewPartitionConnection(packetConnectionPercentageValueForSoftPartition, packetDelay)
+		allUserServicePacketConnectionConfigurations[ip.String()] = &connectionConfig
+	}
+	return allUserServicePacketConnectionConfigurations
+}
+
 func getAllUserServicePacketConnectionConfigurationsSoftPartitionWithConstantDelay() map[string]*partition_topology.PartitionConnection {
 	allUserServicePacketConnectionConfigurations := map[string]*partition_topology.PartitionConnection{}
-	packetDelay := partition_topology.NewPacketDelay(500)
+	packetDelay := partition_topology.NewUniformPacketDelayDistribution(500)
 	for _, ip := range allUserServiceTestIPAddresses {
 		connectionConfig := partition_topology.NewPartitionConnection(packetConnectionPercentageValueForSoftPartition, packetDelay)
 		allUserServicePacketConnectionConfigurations[ip.String()] = &connectionConfig
@@ -551,7 +652,7 @@ func getAllUserServicePacketConnectionConfigurationsForUnblockedPartition() map[
 
 func getAllUserServicePacketConnectionConfigurationsForUnblockedPartitionWithDelay() map[string]*partition_topology.PartitionConnection {
 	allUserServicePacketConnectionConfigurations := map[string]*partition_topology.PartitionConnection{}
-	packetDelay := partition_topology.NewPacketDelay(500)
+	packetDelay := partition_topology.NewUniformPacketDelayDistribution(500)
 
 	for _, ip := range allUserServiceTestIPAddresses {
 		connectionConfig := partition_topology.NewPartitionConnection(packetConnectionPercentageValueForUnblockedPartition, packetDelay)

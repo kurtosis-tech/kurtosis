@@ -14,7 +14,7 @@ import (
 	"testing"
 )
 
-var connectionWithSomeConstantLatency = NewPartitionConnection(ConnectionWithNoPacketLoss, NewPacketDelay(500))
+var connectionWithSomeConstantLatency = NewPartitionConnection(ConnectionWithNoPacketLoss, NewUniformPacketDelayDistribution(500))
 var connectionWithSoftPacketLoss = NewPacketLoss(50)
 
 const (

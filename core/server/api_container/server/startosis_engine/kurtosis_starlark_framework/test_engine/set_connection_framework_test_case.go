@@ -43,7 +43,7 @@ func (t *setConnectionTestCase) GetInstruction() *kurtosis_plan_instruction.Kurt
 		mock.MatchedBy(func(actualPartitionConnection partition_topology.PartitionConnection) bool {
 			expectedPartitionConnection := partition_topology.NewPartitionConnection(
 				partition_topology.NewPacketLoss(50),
-				partition_topology.NewPacketDelay(100))
+				partition_topology.NewUniformPacketDelayDistribution(100))
 			assert.Equal(t, expectedPartitionConnection, actualPartitionConnection)
 			return true
 		}),

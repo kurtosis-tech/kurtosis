@@ -1,8 +1,8 @@
 package partition_topology
 
 type PartitionConnection struct {
-	packetLoss  PacketLoss
-	packetDelay PacketDelay
+	packetLoss              PacketLoss
+	packetDelayDistribution PacketDelayDistribution
 }
 
 var (
@@ -10,10 +10,10 @@ var (
 	ConnectionBlocked = NewPartitionConnection(ConnectionWithEntirePacketLoss, ConnectionWithNoPacketDelay)
 )
 
-func NewPartitionConnection(packetLoss PacketLoss, packetDelay PacketDelay) PartitionConnection {
+func NewPartitionConnection(packetLoss PacketLoss, packetDelay PacketDelayDistribution) PartitionConnection {
 	return PartitionConnection{
-		packetLoss:  packetLoss,
-		packetDelay: packetDelay,
+		packetLoss:              packetLoss,
+		packetDelayDistribution: packetDelay,
 	}
 }
 
@@ -21,6 +21,6 @@ func (partitionConnection *PartitionConnection) GetPacketLossPercentage() Packet
 	return partitionConnection.packetLoss
 }
 
-func (partitionConnection *PartitionConnection) GetPacketDelay() PacketDelay {
-	return partitionConnection.packetDelay
+func (partitionConnection *PartitionConnection) GetPacketDelay() PacketDelayDistribution {
+	return partitionConnection.packetDelayDistribution
 }

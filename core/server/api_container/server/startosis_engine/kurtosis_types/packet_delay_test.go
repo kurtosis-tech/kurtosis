@@ -77,6 +77,6 @@ func TestPacketDelay_String(t *testing.T) {
 func TestPacketDelay_ToKurtosisType(t *testing.T) {
 	packetDelay := NewPacketDelay(100)
 	actual := packetDelay.ToKurtosisType()
-	expected := partition_topology.NewPacketDelay(100)
+	expected := partition_topology.NewUniformPacketDelayDistribution(100)
 	require.Equal(t, expected, actual)
 }

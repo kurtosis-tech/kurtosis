@@ -45,7 +45,7 @@ var (
 	ip                   = testIpFromInt(0)
 	unusedEnclaveDataDir *enclave_data_directory.EnclaveDataDirectory
 
-	connectionWithSomeConstantDelay     = partition_topology.NewPacketDelay(500)
+	connectionWithSomeConstantDelay     = partition_topology.NewUniformPacketDelayDistribution(500)
 	connectionWithSomePacketLoss        = partition_topology.NewPacketLoss(50.0)
 	packetLossConfigForBlockedPartition = partition_topology.NewPacketLoss(100)
 )

@@ -82,6 +82,6 @@ func (ps *PacketDelay) AttrNames() []string {
 	return []string{delayInMsAttr}
 }
 
-func (ps *PacketDelay) ToKurtosisType() partition_topology.PacketDelay {
-	return partition_topology.NewPacketDelay(ps.avgDelayMs)
+func (ps *PacketDelay) ToKurtosisType() partition_topology.PacketDelayDistribution {
+	return partition_topology.NewUniformPacketDelayDistribution(ps.avgDelayMs)
 }
