@@ -15,37 +15,30 @@ const (
 type LogsCollectorAddress string
 
 type LogsCollector struct {
-	status      container_status.ContainerStatus
+	status container_status.ContainerStatus
 
 	// This information will be nil if the logs database container isn't running
-	maybePrivateIpAddr net.IP
-	privateTcpPort     *port_spec.PortSpec
-	privateHttpPort    *port_spec.PortSpec
+	privateTcpPort  *port_spec.PortSpec
+	privateHttpPort *port_spec.PortSpec
 
-	// Public (i.e. external to Kurtosis) information about the logs collector container
-	// This information will be nil if the logs collector isn't running
-	maybePublicIpAddr net.IP
-	publicTcpPort     *port_spec.PortSpec
-	publicHttpPort    *port_spec.PortSpec
+	// bridge network ip address
+	maybeEnclaveNetworkIpAddress net.IP
+	maybeBridgeNetworkIpAddress  net.IP
 }
 
 func NewLogsCollector(
 	status container_status.ContainerStatus,
-	maybePrivateIpAddr net.IP,
+	maybeEnclaveNetworkIpAddress net.IP,
+	maybeBridgeNetworkIpAddress net.IP,
 	privateTcpPort *port_spec.PortSpec,
 	privateHttpPort *port_spec.PortSpec,
-	maybePublicIpAddr net.IP,
-	publicTcpPort *port_spec.PortSpec,
-	publicHttpPort *port_spec.PortSpec,
 ) *LogsCollector {
 	return &LogsCollector{
-		status:             status,
-		maybePrivateIpAddr: maybePrivateIpAddr,
-		privateTcpPort:     privateTcpPort,
-		privateHttpPort:    privateHttpPort,
-		maybePublicIpAddr:  maybePublicIpAddr,
-		publicTcpPort:      publicTcpPort,
-		publicHttpPort:     publicHttpPort,
+		status:                       status,
+		maybeEnclaveNetworkIpAddress: maybeEnclaveNetworkIpAddress,
+		maybeBridgeNetworkIpAddress:  maybeBridgeNetworkIpAddress,
+		privateTcpPort:               privateTcpPort,
+		privateHttpPort:              privateHttpPort,
 	}
 }
 
@@ -53,8 +46,12 @@ func (logsCollector *LogsCollector) GetStatus() container_status.ContainerStatus
 	return logsCollector.status
 }
 
-func (logsCollector *LogsCollector) GetMaybePrivateIpAddr() net.IP {
-	return logsCollector.maybePrivateIpAddr
+func (logsCollector *LogsCollector) GetEnclaveNetworkIpAddress() net.IP {
+	return logsCollector.maybeEnclaveNetworkIpAddress
+}
+
+func (LogsCollector *LogsCollector) GetBridgeNetworkIpAddress() net.IP {
+	return LogsCollector.maybeBridgeNetworkIpAddress
 }
 
 func (logsCollector *LogsCollector) GetPrivateTcpPort() *port_spec.PortSpec {
@@ -65,28 +62,16 @@ func (logsCollector *LogsCollector) GetPrivateHttpPort() *port_spec.PortSpec {
 	return logsCollector.privateHttpPort
 }
 
-func (logsCollector *LogsCollector) GetPublicTcpPort() *port_spec.PortSpec {
-	return logsCollector.publicTcpPort
-}
-
-func (logsCollector *LogsCollector) GetMaybePublicIpAddr() net.IP {
-	return logsCollector.maybePublicIpAddr
-}
-
-func (logsCollector *LogsCollector) GetPublicHttpPort() *port_spec.PortSpec {
-	return logsCollector.publicHttpPort
-}
-
-func (logsCollector *LogsCollector) GetPublicTcpAddress() (LogsCollectorAddress, error) {
-	if logsCollector.maybePublicIpAddr == nil {
-		return "", stacktrace.NewError("It is impossible to return the logs collector public TCP address because the value of its public IP address is nil")
+func (logsCollector *LogsCollector) GetEnclaveNetworkTcpAddress() (LogsCollectorAddress, error) {
+	if logsCollector.maybeEnclaveNetworkIpAddress == nil {
+		return "", stacktrace.NewError("It is impossible to return the logs collector private TCP address because the value of its private IP address is nil")
 	}
 
-	if logsCollector.publicTcpPort == nil {
-		return "", stacktrace.NewError("It is impossible to return the logs collector public TCP address because the value of its public TCP port spec is nil")
+	if logsCollector.privateTcpPort == nil {
+		return "", stacktrace.NewError("It is impossible to return the logs collector private TCP address because the value of its private TCP port spec is nil")
 	}
 
-	logsCollectorAddressStr := fmt.Sprintf("%v%v%v", logsCollector.maybePublicIpAddr, ipAndPortSeparator, logsCollector.publicTcpPort.GetNumber())
+	logsCollectorAddressStr := fmt.Sprintf("%v%v%v", logsCollector.maybeEnclaveNetworkIpAddress, ipAndPortSeparator, logsCollector.privateTcpPort.GetNumber())
 	logsCollectorAddress := LogsCollectorAddress(logsCollectorAddressStr)
 
 	return logsCollectorAddress, nil

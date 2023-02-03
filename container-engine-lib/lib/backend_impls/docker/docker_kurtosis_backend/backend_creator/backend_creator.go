@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_collector_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
@@ -46,11 +47,11 @@ func GetLocalDockerKurtosisBackend(
 			return nil, stacktrace.Propagate(err, "An error occurred opening local database")
 		}
 		ctx := optionalApiContainerModeArgs.Context
-		enclaveId := optionalApiContainerModeArgs.EnclaveID
+		enclaveUuid := optionalApiContainerModeArgs.EnclaveID
 
 		enclaveNetworkSearchLabels := map[string]string{
 			label_key_consts.AppIDDockerLabelKey.GetString(): label_value_consts.AppIDDockerLabelValue.GetString(),
-			label_key_consts.IDDockerLabelKey.GetString():    string(enclaveId),
+			label_key_consts.IDDockerLabelKey.GetString():    string(enclaveUuid),
 		}
 		matchingNetworks, err := dockerManager.GetNetworksByLabels(ctx, enclaveNetworkSearchLabels)
 		if err != nil {
@@ -58,23 +59,29 @@ func GetLocalDockerKurtosisBackend(
 				err,
 				"An error occurred getting Docker networks matching enclave ID '%v', which is necessary for the API "+
 					"container to get the network CIDR and its own IP address",
-				enclaveId,
+				enclaveUuid,
 			)
 		}
 		if len(matchingNetworks) == 0 {
-			return nil, stacktrace.NewError("Didn't find any Docker networks matching enclave '%v'; this is a bug in Kurtosis", enclaveId)
+			return nil, stacktrace.NewError("Didn't find any Docker networks matching enclave '%v'; this is a bug in Kurtosis", enclaveUuid)
 		}
 		if len(matchingNetworks) > 1 {
-			return nil, stacktrace.NewError("Found more than one Docker network matching enclave '%v'; this is a bug in Kurtosis", enclaveId)
+			return nil, stacktrace.NewError("Found more than one Docker network matching enclave '%v'; this is a bug in Kurtosis", enclaveUuid)
 		}
 		network := matchingNetworks[0]
 		networkIp := network.GetIpAndMask().IP
 		apiContainerIp := optionalApiContainerModeArgs.APIContainerIP
 
+		logsCollectorObj, err := logs_collector_functions.GetLogsCollectorForEnclave(ctx, enclaveUuid, dockerManager)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred while getting the logs collector object for enclave '%v'; This is a bug in Kurtosis", enclaveUuid)
+		}
+
 		alreadyTakenIps := map[string]bool{
 			networkIp.String():      true,
 			network.GetGatewayIp():  true,
 			apiContainerIp.String(): true,
+			logsCollectorObj.GetEnclaveNetworkIpAddress().String(): true,
 		}
 
 		freeIpAddrProvider, err := free_ip_addr_tracker.GetOrCreateNewFreeIpAddrTracker(
@@ -86,7 +93,7 @@ func GetLocalDockerKurtosisBackend(
 			return nil, stacktrace.Propagate(err, "An error occurred creating IP tracker")
 		}
 
-		enclaveFreeIpAddrTrackers[enclaveId] = freeIpAddrProvider
+		enclaveFreeIpAddrTrackers[enclaveUuid] = freeIpAddrProvider
 	}
 
 	dockerKurtosisBackend := docker_kurtosis_backend.NewDockerKurtosisBackend(dockerManager, enclaveFreeIpAddrTrackers)

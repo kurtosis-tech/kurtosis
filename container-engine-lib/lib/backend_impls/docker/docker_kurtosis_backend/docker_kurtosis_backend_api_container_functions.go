@@ -36,7 +36,7 @@ const (
 func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	ctx context.Context,
 	image string,
-	enclaveId enclave.EnclaveUUID,
+	enclaveUuid enclave.EnclaveUUID,
 	grpcPortNum uint16,
 	grpcProxyPortNum uint16,
 	// The dirpath on the API container where the enclave data volume should be mounted
@@ -47,33 +47,39 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	// Verify no API container already exists in the enclave
 	apiContainersInEnclaveFilters := &api_container.APIContainerFilters{
 		EnclaveIDs: map[enclave.EnclaveUUID]bool{
-			enclaveId: true,
+			enclaveUuid: true,
 		},
 		Statuses: nil,
 	}
 	preexistingApiContainersInEnclave, err := backend.GetAPIContainers(ctx, apiContainersInEnclaveFilters)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred checking if API containers already exist in enclave '%v'", enclaveId)
+		return nil, stacktrace.Propagate(err, "An error occurred checking if API containers already exist in enclave '%v'", enclaveUuid)
 	}
 	if len(preexistingApiContainersInEnclave) > 0 {
-		return nil, stacktrace.NewError("Found existing API container(s) in enclave '%v'; cannot start a new one", enclaveId)
+		return nil, stacktrace.NewError("Found existing API container(s) in enclave '%v'; cannot start a new one", enclaveUuid)
 	}
 
-	enclaveDataVolumeName, err := backend.getEnclaveDataVolumeByEnclaveUuid(ctx, enclaveId)
+	enclaveDataVolumeName, err := backend.getEnclaveDataVolumeByEnclaveUuid(ctx, enclaveUuid)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave data volume for enclave '%v'", enclaveId)
+		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave data volume for enclave '%v'", enclaveUuid)
 	}
 
 	// Get the Docker network ID where we'll start the new API container
-	enclaveNetwork, err := backend.getEnclaveNetworkByEnclaveUuid(ctx, enclaveId)
+	enclaveNetwork, err := backend.getEnclaveNetworkByEnclaveUuid(ctx, enclaveUuid)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting enclave network by enclave ID '%v'", enclaveId)
+		return nil, stacktrace.Propagate(err, "An error occurred getting enclave network by enclave UUID '%v'", enclaveUuid)
+	}
+
+	enclaveLogsCollector, err := backend.GetLogsCollectorForEnclave(ctx, enclaveUuid)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while getting the logs collector for enclave '%v; This is a bug in Kurtosis'", enclaveUuid)
 	}
 
 	networkCidr := enclaveNetwork.GetIpAndMask()
 	alreadyTakenIps := map[string]bool{
-		networkCidr.IP.String():       true,
-		enclaveNetwork.GetGatewayIp(): true,
+		networkCidr.IP.String():                                    true,
+		enclaveNetwork.GetGatewayIp():                              true,
+		enclaveLogsCollector.GetEnclaveNetworkIpAddress().String(): true,
 	}
 
 	freeIpAddrProvider := lib.NewFreeIpAddrTracker(
@@ -122,9 +128,9 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		)
 	}
 
-	enclaveObjAttrProvider, err := backend.objAttrsProvider.ForEnclave(enclaveId)
+	enclaveObjAttrProvider, err := backend.objAttrsProvider.ForEnclave(enclaveUuid)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Couldn't get an object attribute provider for enclave '%v'", enclaveId)
+		return nil, stacktrace.Propagate(err, "Couldn't get an object attribute provider for enclave '%v'", enclaveUuid)
 	}
 
 	apiContainerAttrs, err := enclaveObjAttrProvider.ForApiContainer(
@@ -364,7 +370,7 @@ func (backend *DockerKurtosisBackend) getMatchingApiContainers(ctx context.Conte
 	apiContainerSearchLabels := map[string]string{
 		label_key_consts.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),
 		label_key_consts.ContainerTypeDockerLabelKey.GetString(): label_value_consts.APIContainerContainerTypeDockerLabelValue.GetString(),
-		// NOTE: we do NOT use the enclave ID label here, and instead do postfiltering, because Docker has no way to do disjunctive search!
+		// NOTE: we do NOT use the enclave UUID label here, and instead do postfiltering, because Docker has no way to do disjunctive search!
 	}
 	allApiContainers, err := backend.dockerManager.GetContainersByLabels(ctx, apiContainerSearchLabels, consts.ShouldFetchAllContainersWhenRetrievingContainers)
 	if err != nil {
@@ -412,7 +418,7 @@ func getApiContainerObjectFromContainerInfo(
 ) (*api_container.APIContainer, error) {
 	enclaveId, found := labels[label_key_consts.EnclaveUUIDDockerLabelKey.GetString()]
 	if !found {
-		return nil, stacktrace.NewError("Expected the API container's enclave ID to be found under label '%v' but the label wasn't present", label_key_consts.EnclaveUUIDDockerLabelKey.GetString())
+		return nil, stacktrace.NewError("Expected the API container's enclave UUID to be found under label '%v' but the label wasn't present", label_key_consts.EnclaveUUIDDockerLabelKey.GetString())
 	}
 
 	privateIpAddrStr, found := labels[label_key_consts.PrivateIPDockerLabelKey.GetString()]

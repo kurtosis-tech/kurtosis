@@ -1,8 +1,6 @@
 package fluentbit
 
 import (
-	"github.com/docker/go-connections/nat"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
@@ -48,37 +46,7 @@ func (fluent *fluentbitContainerConfigProvider) GetPrivateHttpPortSpec() (*port_
 	return privateHttpPortSpec, nil
 }
 
-func (fluent *fluentbitContainerConfigProvider) GetContainerArgs(
-	containerName string,
-	containerLabels map[string]string,
-	volumeName string,
-	networkId string,
-) (*docker_manager.CreateAndStartContainerArgs, error) {
-
-	privateTcpPortSpec, err := fluent.GetPrivateTcpPortSpec()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the Fluentbit server's private TCP port spec")
-	}
-
-	privateTcpDockerPort, err := shared_helpers.TransformPortSpecToDockerPort(privateTcpPortSpec)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred transforming the private TCP port spec to a Docker port")
-	}
-
-	privateHttpPortSpec, err := fluent.GetPrivateHttpPortSpec()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the Fluentbit server's private HTTP port spec")
-	}
-
-	privateHttpDockerPort, err := shared_helpers.TransformPortSpecToDockerPort(privateHttpPortSpec)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred transforming the private HTTP port spec to a Docker port")
-	}
-
-	usedPorts := map[nat.Port]docker_manager.PortPublishSpec{
-		privateTcpDockerPort:  docker_manager.NewManualPublishingSpec(fluent.tcpPortNumber),
-		privateHttpDockerPort: docker_manager.NewManualPublishingSpec(fluent.httpPortNumber),
-	}
+func (fluent *fluentbitContainerConfigProvider) GetContainerArgs(containerName string, containerLabels map[string]string, volumeName string, networkId string) (*docker_manager.CreateAndStartContainerArgs, error) {
 
 	volumeMounts := map[string]string{
 		volumeName: configDirpathInContainer,
@@ -90,8 +58,6 @@ func (fluent *fluentbitContainerConfigProvider) GetContainerArgs(
 		networkId,
 	).WithLabels(
 		containerLabels,
-	).WithUsedPorts(
-		usedPorts,
 	).WithVolumeMounts(
 		volumeMounts,
 	).Build()

@@ -2,15 +2,15 @@ package logs_collector_functions
 
 import (
 	"context"
-	"github.com/docker/go-connections/nat"
+	docker_types "github.com/docker/docker/api/types"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_port_spec_serializer"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
@@ -19,10 +19,6 @@ import (
 
 const (
 	shouldShowStoppedLogsCollectorContainers = true
-
-	//This port number was used when whe run the logs collector without publishing the TCP port
-	//now we need to check for this, in order to know if the logs collector does not bind
-	oldLogsCollectorTCPPortNumber = 24224
 )
 
 func getLogsCollectorPrivatePorts(containerLabels map[string]string) (
@@ -38,7 +34,7 @@ func getLogsCollectorPrivatePorts(containerLabels map[string]string) (
 
 	portSpecs, err := docker_port_spec_serializer.DeserializePortSpecs(serializedPortSpecs)
 	if err != nil {
-		return nil, nil,  stacktrace.Propagate(err, "Couldn't deserialize port spec string '%v'", serializedPortSpecs)
+		return nil, nil, stacktrace.Propagate(err, "Couldn't deserialize port spec string '%v'", serializedPortSpecs)
 	}
 
 	tcpPortSpec, foundTcpPort := portSpecs[logsCollectorTcpPortId]
@@ -54,24 +50,22 @@ func getLogsCollectorPrivatePorts(containerLabels map[string]string) (
 	return tcpPortSpec, httpPortSpec, nil
 }
 
-
 func getLogsCollectorObjectFromContainerInfo(
 	ctx context.Context,
 	containerId string,
 	labels map[string]string,
 	containerStatus types.ContainerStatus,
-	allHostMachinePortBindings map[nat.Port]*nat.PortBinding,
+	enclaveNetworkId *types.Network,
 	dockerManager *docker_manager.DockerManager,
 ) (*logs_collector.LogsCollector, error) {
 
 	var (
-		logsCollectorStatus container_status.ContainerStatus
-		privateIpAddr net.IP
-		publicIpAddr net.IP
-		publicTcpPortSpec *port_spec.PortSpec
-		publicHttpPortSpec *port_spec.PortSpec
-		privateIpAddrStr string
-		err error
+		logsCollectorStatus     container_status.ContainerStatus
+		privateIpAddr           net.IP
+		bridgeNetworkIpAddr     net.IP
+		enclaveNetworkIpAddress string
+		bridgeNetworkIpAddress  string
+		err                     error
 	)
 
 	privateTcpPortSpec, privateHttpPortSpec, err := getLogsCollectorPrivatePorts(labels)
@@ -88,35 +82,23 @@ func getLogsCollectorObjectFromContainerInfo(
 	if isContainerRunning {
 		logsCollectorStatus = container_status.ContainerStatus_Running
 
-		privateIpAddrStr, err = dockerManager.GetContainerIP(ctx, consts.NameOfNetworkToStartEngineAndLogServiceContainersIn, containerId)
+		enclaveNetworkIpAddress, err = dockerManager.GetContainerIP(ctx, enclaveNetworkId.GetName(), containerId)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting the private IP address of container '%v' in network '%v'", containerId, consts.NameOfNetworkToStartEngineAndLogServiceContainersIn)
+			return nil, stacktrace.Propagate(err, "An error occurred getting the ip address of container '%v' in network '%v'", containerId, enclaveNetworkId)
 		}
-		privateIpAddr = net.ParseIP(privateIpAddrStr)
+		privateIpAddr = net.ParseIP(enclaveNetworkIpAddress)
 		if privateIpAddr == nil {
-			return nil, stacktrace.NewError("Couldn't parse private IP address string '%v' to an IP", privateIpAddrStr)
+			return nil, stacktrace.NewError("Couldn't parse '%v' network ip address string '%v' to an IP", enclaveNetworkId, enclaveNetworkIpAddress)
 		}
 
-		// TODO Remove this after 2022-12-27, when we're confident nobody will have the old port
-		//checking for old port spec because old logs collectors container (older than engine v.0.50.3) do not publish the TCP port
-		isPrivateTCPPortFromOldLogsCollectorContainers, err := isLogsCollectorPortSpecFromOlbLogsCollectorContainers(privateTcpPortSpec, allHostMachinePortBindings)
+		bridgeNetworkIpAddress, err = dockerManager.GetContainerIP(ctx, consts.NameOfNetworkToStartEngineAndLogServiceContainersIn, containerId)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred cheking if logs collector private TCP port spec '%+v' corresponds to and old version", privateTcpPortSpec)
+			return nil, stacktrace.Propagate(err, "An error occurred while getting the '%v' network ip address of container '%v' in network", consts.NameOfNetworkToStartEngineAndLogServiceContainersIn, containerId)
 		}
-
-		if !isPrivateTCPPortFromOldLogsCollectorContainers {
-			_, publicTcpPortSpec, err = shared_helpers.GetPublicPortBindingFromPrivatePortSpec(privateTcpPortSpec, allHostMachinePortBindings)
-			if err != nil {
-				return nil,
-					stacktrace.Propagate(err, "The logs collector is running, but an error occurred getting the public port spec for the TCP private port spec '%+v'", privateTcpPortSpec)
-			}
+		bridgeNetworkIpAddr = net.ParseIP(bridgeNetworkIpAddress)
+		if bridgeNetworkIpAddr == nil {
+			return nil, stacktrace.Propagate(err, "Couldn't parse '%v' network ip address string '%v' to ip", consts.NameOfNetworkToStartEngineAndLogServiceContainersIn, bridgeNetworkIpAddress)
 		}
-
-		publicIpAddr, publicHttpPortSpec, err = shared_helpers.GetPublicPortBindingFromPrivatePortSpec(privateHttpPortSpec, allHostMachinePortBindings)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "The logs collector is running, but an error occurred getting the public port spec for the HTTP private port spec '%+v'", privateHttpPortSpec)
-		}
-
 	} else {
 		logsCollectorStatus = container_status.ContainerStatus_Stopped
 	}
@@ -124,37 +106,19 @@ func getLogsCollectorObjectFromContainerInfo(
 	logsCollectorObj := logs_collector.NewLogsCollector(
 		logsCollectorStatus,
 		privateIpAddr,
+		bridgeNetworkIpAddr,
 		privateTcpPortSpec,
 		privateHttpPortSpec,
-		publicIpAddr,
-		publicTcpPortSpec,
-		publicHttpPortSpec,
 	)
 
 	return logsCollectorObj, nil
 }
 
-func isLogsCollectorPortSpecFromOlbLogsCollectorContainers(
-	privatePortSpec *port_spec.PortSpec,
-	allHostMachinePortBindings map[nat.Port]*nat.PortBinding,
-) (bool, error) {
-	// Convert port spec protocol -> Docker protocol string
-	dockerPort, err := shared_helpers.GetDockerPortFromPortSpec(privatePortSpec)
-	if err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred checking if this private TCP port spec '%+v' corresponds to an old version of the logs collector container", privatePortSpec)
-	}
-
-	_, found := allHostMachinePortBindings[dockerPort]
-	if !found && privatePortSpec.GetNumber() == oldLogsCollectorTCPPortNumber {
-		return true, nil
-	}
-	return false, nil
-}
-
-func getAllLogsCollectorContainers(ctx context.Context, dockerManager *docker_manager.DockerManager) ([]*types.Container, error) {
+func getLogsCollectorForTheGivenEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, dockerManager *docker_manager.DockerManager) ([]*types.Container, error) {
 	logsCollectorContainerSearchLabels := map[string]string{
 		label_key_consts.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),
 		label_key_consts.ContainerTypeDockerLabelKey.GetString(): label_value_consts.LogsCollectorTypeDockerLabelValue.GetString(),
+		label_key_consts.EnclaveUUIDDockerLabelKey.GetString():   string(enclaveUuid),
 	}
 
 	matchingLogsCollectorContainers, err := dockerManager.GetContainersByLabels(ctx, logsCollectorContainerSearchLabels, shouldShowStoppedLogsCollectorContainers)
@@ -164,16 +128,18 @@ func getAllLogsCollectorContainers(ctx context.Context, dockerManager *docker_ma
 	return matchingLogsCollectorContainers, nil
 }
 
-//If nothing is found returns nil
+// If nothing is found returns nil
 func getLogsCollectorObjectAndContainerId(
 	ctx context.Context,
+	enclaveUuid enclave.EnclaveUUID,
+	enclaveNetworkId *types.Network,
 	dockerManager *docker_manager.DockerManager,
 ) (
 	resultMaybeLogsCollector *logs_collector.LogsCollector,
 	resultMaybeContainerId string,
 	resultErr error,
 ) {
-	allLogsCollectorContainers, err := getAllLogsCollectorContainers(ctx, dockerManager)
+	allLogsCollectorContainers, err := getLogsCollectorForTheGivenEnclave(ctx, enclaveUuid, dockerManager)
 	if err != nil {
 		return nil, "", stacktrace.Propagate(err, "An error occurred getting all logs collector containers")
 	}
@@ -194,7 +160,7 @@ func getLogsCollectorObjectAndContainerId(
 		logsCollectorContainerID,
 		logsCollectorContainer.GetLabels(),
 		logsCollectorContainer.GetStatus(),
-		hostMachinePortBindings,
+		enclaveNetworkId,
 		dockerManager,
 	)
 	if err != nil {
@@ -202,4 +168,35 @@ func getLogsCollectorObjectAndContainerId(
 	}
 
 	return logsCollectorObject, logsCollectorContainerID, nil
+}
+
+// if nothing is found we return empty volume name
+func getEnclaveLogsCollectorVolumeName(
+	ctx context.Context,
+	dockerManager *docker_manager.DockerManager,
+	enclaveUuid enclave.EnclaveUUID,
+) (string, error) {
+
+	var volumes []*docker_types.Volume
+
+	searchLabels := map[string]string{
+		label_key_consts.AppIDDockerLabelKey.GetString():       label_value_consts.AppIDDockerLabelValue.GetString(),
+		label_key_consts.VolumeTypeDockerLabelKey.GetString():  label_value_consts.LogsCollectorVolumeTypeDockerLabelValue.GetString(),
+		label_key_consts.EnclaveUUIDDockerLabelKey.GetString(): string(enclaveUuid),
+	}
+
+	volumes, err := dockerManager.GetVolumesByLabels(ctx, searchLabels)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred getting the volumes for enclave '%v' by labels '%+v'", enclaveUuid, searchLabels)
+	}
+
+	if len(volumes) == 0 {
+		return "", nil
+	}
+
+	if len(volumes) > 1 {
+		return "", stacktrace.NewError("Attempted to get logs collector volume name for enclave '%v' but got more than one matches", enclaveUuid)
+	}
+
+	return volumes[0].Name, nil
 }

@@ -382,18 +382,15 @@ type KurtosisBackend interface {
 
 	// Create a new Logs Collector for sending container's logs to the logs database server
 	//The logs collector requires that the logs database to be up before
-	CreateLogsCollector(
-		ctx context.Context,
-		logsCollectorTcpPortNumber uint16,
-		logsCollectorHttpPortNumber uint16,
-	) (
-		*logs_collector.LogsCollector,
-		error,
-	)
+	CreateLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, logsCollectorHttpPortNumber uint16, logsCollectorTcpPortNumber uint16) (*logs_collector.LogsCollector, error)
 
 	// Gets the logs collector, if nothing is found returns nil
-	GetLogsCollector(ctx context.Context) (*logs_collector.LogsCollector, error)
+	GetLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID) (*logs_collector.LogsCollector, error)
 
 	// Destroy the logs collector
-	DestroyLogsCollector(ctx context.Context) error
+	DestroyLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID) error
+
+	// Destroy the centralized logs collector
+	// TODO(centralized-logs-collector-deprecation) remove this once we know people are on > 0.66.0
+	DestroyDeprecatedCentralizedLogsCollectorContainerAndVolume(ctx context.Context) error
 }

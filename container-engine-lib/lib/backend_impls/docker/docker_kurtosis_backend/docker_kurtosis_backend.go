@@ -208,7 +208,7 @@ func (backend *DockerKurtosisBackend) StartRegisteredUserServices(ctx context.Co
 		)
 	}
 
-	logsCollector, err := backend.GetLogsCollector(ctx)
+	logsCollector, err := backend.GetLogsCollectorForEnclave(ctx, enclaveUuid)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs collector")
 	}
@@ -216,12 +216,12 @@ func (backend *DockerKurtosisBackend) StartRegisteredUserServices(ctx context.Co
 		return nil, nil, stacktrace.NewError("The user services can't be started because no logs collector is running for sending the logs to")
 	}
 
-	privateIpAddr := logsCollector.GetMaybePrivateIpAddr()
-	if privateIpAddr == nil {
-		return nil, nil, stacktrace.NewError("Expected the logs collector has private IP address but this is nil")
+	logsCollectorIpAddressInEnclaveNetwork := logsCollector.GetEnclaveNetworkIpAddress()
+	if logsCollectorIpAddressInEnclaveNetwork == nil {
+		return nil, nil, stacktrace.NewError("Expected the logs collector has ip address in enclave network but this is nil")
 	}
 
-	logsCollectorAvailabilityChecker := fluentbit.NewFluentbitAvailabilityChecker(privateIpAddr, logsCollector.GetPrivateHttpPort().GetNumber())
+	logsCollectorAvailabilityChecker := fluentbit.NewFluentbitAvailabilityChecker(logsCollectorIpAddressInEnclaveNetwork, logsCollector.GetPrivateHttpPort().GetNumber())
 
 	successfullyStartedService, failedService, err := user_service_functions.StartUserServices(
 		ctx,
@@ -424,8 +424,9 @@ func (backend *DockerKurtosisBackend) DestroyLogsDatabase(
 	return nil
 }
 
-func (backend *DockerKurtosisBackend) CreateLogsCollector(
+func (backend *DockerKurtosisBackend) CreateLogsCollectorForEnclave(
 	ctx context.Context,
+	enclaveUuid enclave.EnclaveUUID,
 	logsCollectorTcpPortNumber uint16,
 	logsCollectorHttpPortNumber uint16,
 ) (
@@ -446,8 +447,9 @@ func (backend *DockerKurtosisBackend) CreateLogsCollector(
 	//Declaring the implementation
 	logsCollectorContainer := fluentbit.NewFluentbitLogsCollectorContainer()
 
-	logsCollector, err := logs_collector_functions.CreateLogsCollector(
+	logsCollector, err := logs_collector_functions.CreateLogsCollectorForEnclave(
 		ctx,
+		enclaveUuid,
 		logsCollectorTcpPortNumber,
 		logsCollectorHttpPortNumber,
 		logsCollectorContainer,
@@ -463,14 +465,10 @@ func (backend *DockerKurtosisBackend) CreateLogsCollector(
 }
 
 // If nothing is found returns nil
-func (backend *DockerKurtosisBackend) GetLogsCollector(
-	ctx context.Context,
-) (
-	resultMaybeLogsCollector *logs_collector.LogsCollector,
-	resultErr error,
-) {
-	maybeLogsCollector, err := logs_collector_functions.GetLogsCollector(
+func (backend *DockerKurtosisBackend) GetLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID) (resultMaybeLogsCollector *logs_collector.LogsCollector, resultErr error) {
+	maybeLogsCollector, err := logs_collector_functions.GetLogsCollectorForEnclave(
 		ctx,
+		enclaveUuid,
 		backend.dockerManager,
 	)
 	if err != nil {
@@ -480,17 +478,22 @@ func (backend *DockerKurtosisBackend) GetLogsCollector(
 	return maybeLogsCollector, nil
 }
 
-func (backend *DockerKurtosisBackend) DestroyLogsCollector(
-	ctx context.Context,
-) error {
+func (backend *DockerKurtosisBackend) DestroyLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID) error {
 
-	if err := logs_collector_functions.DestroyLogsCollector(
-		ctx,
-		backend.dockerManager,
-	); err != nil {
+	if err := logs_collector_functions.DestroyLogsCollector(ctx, enclaveUuid, backend.dockerManager); err != nil {
 		return stacktrace.Propagate(err, "An error occurred destroying the logs collector")
 	}
 
+	return nil
+}
+
+// DestroyDeprecatedCentralizedLogsCollector Destroy the deprecated centralized logs collector
+// It doesn't complain if it couldn't find the centralized logs collector
+// TODO(centralized-logs-collector-deprecation) remove this once we know people are on > 0.66.0
+func (backend *DockerKurtosisBackend) DestroyDeprecatedCentralizedLogsCollectorContainerAndVolume(ctx context.Context) error {
+	if err := logs_collector_functions.DestroyDeprecatedCentralizedLogsCollector(ctx, backend.dockerManager); err != nil {
+		return stacktrace.Propagate(err, "An error occurred while destroying the deprecated centralized logs collector")
+	}
 	return nil
 }
 

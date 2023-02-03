@@ -70,24 +70,24 @@ type UserServiceDockerResources struct {
 	ExpanderVolumeNames []string
 }
 
-func GetEnclaveNetworkByEnclaveId(ctx context.Context, enclaveId enclave.EnclaveUUID, dockerManager *docker_manager.DockerManager) (*types.Network, error) {
+func GetEnclaveNetworkByEnclaveUuid(ctx context.Context, enclaveUuid enclave.EnclaveUUID, dockerManager *docker_manager.DockerManager) (*types.Network, error) {
 	networkSearchLabels := map[string]string{
 		label_key_consts.AppIDDockerLabelKey.GetString():       label_value_consts.AppIDDockerLabelValue.GetString(),
-		label_key_consts.EnclaveUUIDDockerLabelKey.GetString(): string(enclaveId),
+		label_key_consts.EnclaveUUIDDockerLabelKey.GetString(): string(enclaveUuid),
 	}
 
 	enclaveNetworksFound, err := dockerManager.GetNetworksByLabels(ctx, networkSearchLabels)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting Docker networks by enclave ID '%v'", enclaveId)
+		return nil, stacktrace.Propagate(err, "An error occurred getting Docker networks by enclave ID '%v'", enclaveUuid)
 	}
 	numMatchingNetworks := len(enclaveNetworksFound)
 	if numMatchingNetworks == 0 {
-		return nil, stacktrace.NewError("No network was found for enclave with ID '%v'", enclaveId)
+		return nil, stacktrace.NewError("No network was found for enclave with ID '%v'", enclaveUuid)
 	}
 	if numMatchingNetworks > 1 {
 		return nil, stacktrace.NewError(
 			"Expected exactly one network matching enclave ID '%v', but got %v",
-			enclaveId,
+			enclaveUuid,
 			numMatchingNetworks,
 		)
 	}

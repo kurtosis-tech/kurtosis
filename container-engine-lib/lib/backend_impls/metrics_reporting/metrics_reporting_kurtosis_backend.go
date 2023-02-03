@@ -492,16 +492,9 @@ func (backend *MetricsReportingKurtosisBackend) DestroyLogsDatabase(
 	return nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) CreateLogsCollector(
-	ctx context.Context,
-	logsCollectorTcpPortNumber uint16,
-	logsCollectorHttpPortNumber uint16,
-) (
-	*logs_collector.LogsCollector,
-	error,
-) {
+func (backend *MetricsReportingKurtosisBackend) CreateLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, logsCollectorHttpPortNumber uint16, logsCollectorTcpPortNumber uint16) (*logs_collector.LogsCollector, error) {
 
-	logsCollector, err := backend.underlying.CreateLogsCollector(ctx, logsCollectorTcpPortNumber, logsCollectorHttpPortNumber)
+	logsCollector, err := backend.underlying.CreateLogsCollectorForEnclave(ctx, enclaveUuid, logsCollectorHttpPortNumber, logsCollectorTcpPortNumber)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the logs collector with TCP port number '%v' and HTTP port number '%v'", logsCollectorTcpPortNumber, logsCollectorHttpPortNumber)
 	}
@@ -510,13 +503,8 @@ func (backend *MetricsReportingKurtosisBackend) CreateLogsCollector(
 }
 
 // if nothing is found returns nil
-func (backend *MetricsReportingKurtosisBackend) GetLogsCollector(
-	ctx context.Context,
-) (
-	resultMaybeLogsCollector *logs_collector.LogsCollector,
-	resultErr error,
-) {
-	maybeLogsCollector, err := backend.underlying.GetLogsCollector(ctx)
+func (backend *MetricsReportingKurtosisBackend) GetLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID) (resultMaybeLogsCollector *logs_collector.LogsCollector, resultErr error) {
+	maybeLogsCollector, err := backend.underlying.GetLogsCollectorForEnclave(ctx, enclaveUuid)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the logs collector")
 	}
@@ -524,13 +512,18 @@ func (backend *MetricsReportingKurtosisBackend) GetLogsCollector(
 	return maybeLogsCollector, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) DestroyLogsCollector(
-	ctx context.Context,
-) error {
+func (backend *MetricsReportingKurtosisBackend) DestroyLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID) error {
 
-	if err := backend.underlying.DestroyLogsCollector(ctx); err != nil {
+	if err := backend.underlying.DestroyLogsCollectorForEnclave(ctx, enclaveUuid); err != nil {
 		return stacktrace.Propagate(err, "An error occurred destroying the logs collector")
 	}
 
+	return nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) DestroyDeprecatedCentralizedLogsCollectorContainerAndVolume(ctx context.Context) error {
+	if err := backend.underlying.DestroyDeprecatedCentralizedLogsCollectorContainerAndVolume(ctx); err != nil {
+		return stacktrace.Propagate(err, "An error occurred while destroying deprecated logs collector")
+	}
 	return nil
 }

@@ -172,7 +172,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 }
 
 // We could potentially try to restart the engine ourselves here, but the case where the server isn't responding is very
-//  unusual and very bad so we'd rather fail loudly
+// unusual and very bad so we'd rather fail loudly
 func (guarantor *engineExistenceGuarantor) VisitContainerRunningButServerNotResponding() error {
 	remediationCmd := fmt.Sprintf(
 		"%v %v %v && %v %v %v",
@@ -244,7 +244,9 @@ func (guarantor *engineExistenceGuarantor) VisitRunning() error {
 }
 
 // ====================================================================================================
-//                                      Private Helper Functions
+//
+//	Private Helper Functions
+//
 // ====================================================================================================
 func (guarantor *engineExistenceGuarantor) getRunningAndCLIEngineVersions() (*semver.Version, *semver.Version, error) {
 	if guarantor.maybeCurrentlyRunningEngineVersionTag == "" {
@@ -266,19 +268,11 @@ func (guarantor *engineExistenceGuarantor) getRunningAndCLIEngineVersions() (*se
 
 func (guarantor *engineExistenceGuarantor) ensureCentralizedLogsComponentsAreRunning(ctx context.Context, shouldForceContainerRestart bool) error {
 
-	logsCollector, err := guarantor.kurtosisBackend.GetLogsCollector(ctx)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the logs collector")
-	}
-	isThereLogsCollector := logsCollector != nil
-	isThereNotRunningLogsCollector := isThereLogsCollector && logsCollector.GetStatus() != container_status.ContainerStatus_Running
-
-	//Destroy the logs collector if caller requested it or if the container is not running
-	if shouldForceContainerRestart || isThereNotRunningLogsCollector {
-		if err = guarantor.kurtosisBackend.DestroyLogsCollector(ctx); err != nil {
-			return stacktrace.Propagate(err, "An error occurred destroying the logs database")
-		}
-		isThereLogsCollector = false
+	// TODO(centralized-logs-collector-deprecation) remove this code in the future when people don't have centralized logs collector running
+	// we remove the now deprecated centralized logs collector container & volume
+	if err := guarantor.kurtosisBackend.DestroyDeprecatedCentralizedLogsCollectorContainerAndVolume(ctx); err != nil {
+		logrus.Debugf("Attempted to remove deprecated centralized logs collector container and volume but failed with error:\n%v", err)
+		logrus.Debugf("Users will have to remove the container & volume themselves using `docker container rm --force kurtosis-logs-collector && docker volume rm kurtosis-logs-collector-vol --force`")
 	}
 
 	logsDatabase, err := guarantor.kurtosisBackend.GetLogsDatabase(ctx)
@@ -299,12 +293,6 @@ func (guarantor *engineExistenceGuarantor) ensureCentralizedLogsComponentsAreRun
 	if !isThereLogsDatabase {
 		if _, err := guarantor.kurtosisBackend.CreateLogsDatabase(ctx, defaultHttpLogsDatabasePortNum); err != nil {
 			return stacktrace.Propagate(err, "An error occurred creating the logs database with HTTP port number '%v'", defaultHttpLogsDatabasePortNum)
-		}
-	}
-
-	if !isThereLogsCollector {
-		if _, err := guarantor.kurtosisBackend.CreateLogsCollector(ctx, defaultTcpLogsCollectorPortNum, defaultHttpLogsCollectorPortNum); err != nil {
-			return stacktrace.Propagate(err, "An error occurred creating the logs collector with TCP port number '%v' and HTTP port number '%v'", defaultTcpLogsCollectorPortNum, defaultHttpLogsCollectorPortNum)
 		}
 	}
 

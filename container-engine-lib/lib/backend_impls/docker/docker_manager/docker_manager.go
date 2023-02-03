@@ -889,6 +889,7 @@ func (manager DockerManager) RunExecCommand(context context.Context, containerId
 /*
 ConnectContainerToNetwork
 Connects the container with the given container ID to the network with the given network ID, using the given IP address
+If the IP address passed is nil then we get a random ip address
 */
 func (manager DockerManager) ConnectContainerToNetwork(ctx context.Context, networkId string, containerId string, staticIpAddr net.IP, alias string) (err error) {
 	logrus.Tracef(
@@ -897,8 +898,13 @@ func (manager DockerManager) ConnectContainerToNetwork(ctx context.Context, netw
 		networkId,
 		staticIpAddr.String())
 
+	staticIpAddressStr := ""
+	if staticIpAddr != nil {
+		staticIpAddressStr = staticIpAddr.String()
+	}
+
 	ipamConfig := &network.EndpointIPAMConfig{
-		IPv4Address:  staticIpAddr.String(),
+		IPv4Address:  staticIpAddressStr,
 		IPv6Address:  "",
 		LinkLocalIPs: nil,
 	}
@@ -957,6 +963,24 @@ func (manager DockerManager) GetContainerIdsByName(ctx context.Context, nameStr 
 		result = append(result, containerObj.GetId())
 	}
 	return result, nil
+}
+
+// TODO(centralized-logs-collector-deprecation) remove this entire function after enough people are on > 0.66.0
+func (manager DockerManager) GetContainerIdByExactName(ctx context.Context, nameStr string) (string, error) {
+	filterArg := filters.Arg(containerNameSearchFilterKey, nameStr)
+	nameFilterList := filters.NewArgs(filterArg)
+	// TODO Make the "should show stopped containers" flag configurable????
+	matchingContainers, err := manager.getContainersByFilterArgs(ctx, nameFilterList, false)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred getting the containers with name '%v'", nameStr)
+	}
+	for _, containerObj := range matchingContainers {
+		if containerObj.GetName() == nameStr {
+			return containerObj.GetId(), nil
+		}
+	}
+	return "", nil
+
 }
 
 func (manager DockerManager) GetContainersByLabels(ctx context.Context, labels map[string]string, shouldShowStoppedContainers bool) ([]*docker_manager_types.Container, error) {

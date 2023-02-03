@@ -22,6 +22,9 @@ const (
 	networkingSidecarContainerNameFragment = "networking-sidecar"
 	artifactExpansionVolumeNameFragment    = "files-artifact-expansion"
 	artifactsExpanderContainerNameFragment = "files-artifacts-expander"
+	logsCollectorFragment                  = "kurtosis-logs-collector"
+	// The collector is per enclave so this is a suffix
+	logsCollectorVolumeFragment = logsCollectorFragment + "-vol"
 )
 
 type DockerEnclaveObjectAttributesProvider interface {
@@ -49,6 +52,8 @@ type DockerEnclaveObjectAttributesProvider interface {
 	ForSingleFilesArtifactExpansionVolume(
 		serviceGUID service.ServiceUUID,
 	) (DockerObjectAttributes, error)
+	ForLogsCollector(tcpPortId string, tcpPortSpec *port_spec.PortSpec, httpPortId string, httpPortSpec *port_spec.PortSpec) (DockerObjectAttributes, error)
+	ForLogsCollectorVolume() (DockerObjectAttributes, error)
 }
 
 // Private so it can't be instantiated
@@ -358,6 +363,52 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForFilesArtifactsExpa
 	}
 	labels[label_key_consts.UserServiceGUIDDockerLabelKey] = serviceGuidLabelValue
 	labels[label_key_consts.ContainerTypeDockerLabelKey] = label_value_consts.FilesArtifactExpanderContainerTypeDockerLabelValue
+
+	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while creating the ObjectAttributesImpl with the name '%s' and labels '%+v'", name, labels)
+	}
+
+	return objectAttributes, nil
+}
+
+func (provider *dockerEnclaveObjectAttributesProviderImpl) ForLogsCollector(tcpPortId string, tcpPortSpec *port_spec.PortSpec, httpPortId string, httpPortSpec *port_spec.PortSpec) (DockerObjectAttributes, error) {
+	name, err := provider.getNameForEnclaveObject([]string{logsCollectorFragment})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the name for the logs collector object")
+	}
+
+	labels := provider.getLabelsForEnclaveObject()
+
+	usedPorts := map[string]*port_spec.PortSpec{
+		tcpPortId:  tcpPortSpec,
+		httpPortId: httpPortSpec,
+	}
+	serializedPortsSpec, err := docker_port_spec_serializer.SerializePortSpecs(usedPorts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred serializing the following logs-collector-server-ports to a string for storing in the ports label: %+v", usedPorts)
+	}
+
+	labels[label_key_consts.ContainerTypeDockerLabelKey] = label_value_consts.LogsCollectorTypeDockerLabelValue
+	labels[label_key_consts.PortSpecsDockerLabelKey] = serializedPortsSpec
+
+	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while creating the ObjectAttributesImpl with the name '%s' and labels '%+v'", name, labels)
+	}
+
+	return objectAttributes, nil
+}
+
+func (provider *dockerEnclaveObjectAttributesProviderImpl) ForLogsCollectorVolume() (DockerObjectAttributes, error) {
+	name, err := provider.getNameForEnclaveObject([]string{logsCollectorVolumeFragment})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the name for the logs collector volume object")
+	}
+
+	labels := provider.getLabelsForEnclaveObject()
+
+	labels[label_key_consts.VolumeTypeDockerLabelKey] = label_value_consts.LogsCollectorVolumeTypeDockerLabelValue
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
 	if err != nil {

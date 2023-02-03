@@ -147,7 +147,7 @@ func StartUserServices(
 	}
 	//TODO END huge hack to temporarily enable static ports for NEAR
 
-	enclaveNetwork, err := shared_helpers.GetEnclaveNetworkByEnclaveId(ctx, enclaveUuid, dockerManager)
+	enclaveNetwork, err := shared_helpers.GetEnclaveNetworkByEnclaveUuid(ctx, enclaveUuid, dockerManager)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting enclave network by enclave ID '%v'", enclaveUuid)
 	}
@@ -168,7 +168,7 @@ func StartUserServices(
 
 	//We use the public TCP address because the logging driver connection link is from the Docker demon to the logs collector container
 	//so the direction is from the host machine to the container inside the Docker cluster
-	logsCollectorServiceAddress, err := logsCollector.GetPublicTcpAddress()
+	logsCollectorServiceAddress, err := logsCollector.GetEnclaveNetworkTcpAddress()
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the private TCP address")
 	}

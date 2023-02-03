@@ -403,19 +403,23 @@ func (backend *KubernetesKurtosisBackend) DestroyLogsDatabase(
 	return stacktrace.NewError("Destroying the logs database isn't yet implemented on Kubernetes")
 }
 
-func (backend *KubernetesKurtosisBackend) CreateLogsCollector(ctx context.Context, logsCollectorTcpPortNumber uint16, logsCollectorHttpPortNumber uint16) (*logs_collector.LogsCollector, error) {
+func (backend *KubernetesKurtosisBackend) CreateLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, logsCollectorHttpPortNumber uint16, logsCollectorTcpPortNumber uint16) (*logs_collector.LogsCollector, error) {
 	// TODO IMPLEMENT
 	return nil, stacktrace.NewError("Creating the logs collector isn't yet implemented on Kubernetes")
 }
 
-func (backend *KubernetesKurtosisBackend) GetLogsCollector(ctx context.Context) (*logs_collector.LogsCollector, error) {
+func (backend *KubernetesKurtosisBackend) GetLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID) (*logs_collector.LogsCollector, error) {
 	// TODO IMPLEMENT
 	return nil, stacktrace.NewError("Getting the logs collector isn't yet implemented on Kubernetes")
 }
 
-func (backend *KubernetesKurtosisBackend) DestroyLogsCollector(ctx context.Context) error {
+func (backend *KubernetesKurtosisBackend) DestroyLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID) error {
 	// TODO IMPLEMENT
 	return stacktrace.NewError("Destroying the logs collector isn't yet implemented on Kubernetes")
+}
+
+func (backend *KubernetesKurtosisBackend) DestroyDeprecatedCentralizedLogsCollectorContainerAndVolume(ctx context.Context) error {
+	return stacktrace.NewError("Destroying the centralized logs collector isn't a Kubernetes Feature")
 }
 
 // ====================================================================================================
