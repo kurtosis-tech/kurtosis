@@ -42,6 +42,11 @@ const sidebars = {
         },
         {
             type: 'link',
+            label: 'Examples',
+            href: 'https://github.com/kurtosis-tech/examples',
+        },
+        {
+            type: 'link',
             label: 'Kurtosis-Managed Packages',
             href: 'https://github.com/kurtosis-tech?q=package+in%3Aname&type=all&language=&sort=',
         },
