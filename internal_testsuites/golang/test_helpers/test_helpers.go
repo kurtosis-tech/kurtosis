@@ -106,6 +106,8 @@ def run(plan, args):
 	emptyApplicationProtocol       = ""
 
 	artifactNamePrefix = "artifact-uploaded-via-helper-%v"
+
+	defaultParallelism = 4
 )
 
 var (
@@ -147,7 +149,7 @@ func AddService(
 	serviceName services.ServiceName,
 	serviceConfigStarlark string) (*services.ServiceContext, error) {
 	starlarkRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, fmt.Sprintf(`def run(plan):
-	plan.add_service(service_name = "%s", config = %s)`, serviceName, serviceConfigStarlark), "", false)
+	plan.add_service(service_name = "%s", config = %s)`, serviceName, serviceConfigStarlark), "", false, defaultParallelism)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error has occurred when running Starlark to add service")
 	}
@@ -306,6 +308,10 @@ func AddAPIServiceToPartition(ctx context.Context, serviceName services.ServiceN
 	return serviceCtx, client, clientCloseFunc, nil
 }
 
+func RunScriptWithDefaultConfig(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, script string) (*enclaves.StarlarkRunResult, error) {
+	return enclaveCtx.RunStarlarkScriptBlocking(ctx, script, emptyParams, defaultDryRun, defaultParallelism)
+}
+
 func SetupSimpleEnclaveAndRunScript(t *testing.T, ctx context.Context, testName string, script string) *enclaves.StarlarkRunResult {
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
@@ -317,7 +323,7 @@ func SetupSimpleEnclaveAndRunScript(t *testing.T, ctx context.Context, testName 
 	logrus.Infof("Executing Startosis script...")
 	logrus.Debugf("Startosis script content: \n%v", script)
 
-	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, script, emptyParams, defaultDryRun)
+	runResult, err := RunScriptWithDefaultConfig(ctx, enclaveCtx, script)
 	require.NoError(t, err, "Unexpected error executing startosis script")
 
 	return runResult
@@ -622,7 +628,7 @@ func createDatastoreClient(ipAddr string, portNum uint16) (datastore_rpc_api_bin
 }
 
 func waitForFileServerAvailability(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, serviceName services.ServiceName, portId string, endpoint string, initialDelayMilliseconds uint32, timeoutMilliseconds uint32) error {
-	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, waitForGetAvaliabilityStalarkScript, fmt.Sprintf(waitForGetAvaliabilityStalarkScriptParams, serviceName, portId, endpoint, initialDelayMilliseconds, timeoutMilliseconds), false)
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, waitForGetAvaliabilityStalarkScript, fmt.Sprintf(waitForGetAvaliabilityStalarkScriptParams, serviceName, portId, endpoint, initialDelayMilliseconds, timeoutMilliseconds), false, defaultParallelism)
 	if err != nil {
 		return stacktrace.Propagate(err, "An unexpected error has occurred getting endpoint availability using Starlark")
 	}

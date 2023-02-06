@@ -58,6 +58,7 @@ func (t *addServicesTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtos
 			assert.Equal(t, expectedServiceConfig2, actualServiceConfig2)
 			return true
 		}),
+		mock.Anything,
 	).Times(1).Return(
 		map[service.ServiceName]*service.Service{
 			service1: service.NewService(service.NewServiceRegistration(service1, serviceUuid1, enclaveUuid, nil, string(service1)), container_status.ContainerStatus_Running, nil, nil, nil),

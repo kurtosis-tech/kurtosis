@@ -110,7 +110,7 @@ func TestNetworkParitionWithSomeDelay(t *testing.T) {
 	defer destroyEnclaveFunc()
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
-	result, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, subnetworkInStarlarkScript, emptyArgs, executeNoDryRun)
+	result, err := test_helpers.RunScriptWithDefaultConfig(ctx, enclaveCtx, subnetworkInStarlarkScript)
 	require.Nil(t, err, "Unexpected error happened executing Starlark script")
 
 	require.Nil(t, result.InterpretationError)

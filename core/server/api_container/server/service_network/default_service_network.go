@@ -53,7 +53,8 @@ const (
 
 	emptyCollectionLength        = 0
 	exactlyOneShortenedUuidMatch = 1
-	maxConcurrentServiceStart    = 4
+
+	singleServiceStartupBatch = 1
 )
 
 var (
@@ -330,7 +331,7 @@ func (network *DefaultServiceNetwork) StartService(
 	serviceConfigMap := map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig{
 		serviceName: serviceConfig,
 	}
-	startedServices, serviceFailed, err := network.StartServices(ctx, serviceConfigMap)
+	startedServices, serviceFailed, err := network.StartServices(ctx, serviceConfigMap, singleServiceStartupBatch)
 	if err != nil {
 		return nil, err
 	}
@@ -356,6 +357,7 @@ func (network *DefaultServiceNetwork) StartService(
 func (network *DefaultServiceNetwork) StartServices(
 	ctx context.Context,
 	serviceConfigs map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig,
+	batchSize int,
 ) (
 	map[service.ServiceName]*service.Service,
 	map[service.ServiceName]error,
@@ -409,7 +411,7 @@ func (network *DefaultServiceNetwork) StartServices(
 		}
 	}
 
-	startedServicesPerUuid, failedServicePerUuid := network.startRegisteredServices(ctx, servicesToStart)
+	startedServicesPerUuid, failedServicePerUuid := network.startRegisteredServices(ctx, servicesToStart, batchSize)
 
 	for serviceName, serviceRegistration := range serviceSuccessfullyRegistered {
 		serviceUuid := serviceRegistration.GetUUID()
@@ -1283,10 +1285,11 @@ func (network *DefaultServiceNetwork) destroyService(ctx context.Context, servic
 func (network *DefaultServiceNetwork) startRegisteredServices(
 	ctx context.Context,
 	serviceConfigs map[service.ServiceUUID]*kurtosis_core_rpc_api_bindings.ServiceConfig,
+	batchSize int,
 ) (map[service.ServiceUUID]*service.Service, map[service.ServiceUUID]error) {
 	wg := sync.WaitGroup{}
 
-	concurrencyControlChan := make(chan bool, maxConcurrentServiceStart)
+	concurrencyControlChan := make(chan bool, batchSize)
 	defer close(concurrencyControlChan)
 
 	startedServices := map[service.ServiceUUID]*service.Service{}

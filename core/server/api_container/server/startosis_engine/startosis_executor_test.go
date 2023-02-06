@@ -21,6 +21,7 @@ const (
 	executeForReal = false
 
 	noScriptOutputObject = ""
+	noParallelism        = 1
 )
 
 var (
@@ -138,7 +139,7 @@ func createMockInstruction(t *testing.T, instructionName string, executeSuccessf
 func executeSynchronously(t *testing.T, executor *StartosisExecutor, dryRun bool, instructions []kurtosis_instruction.KurtosisInstruction) (string, []*kurtosis_core_rpc_api_bindings.StarlarkInstruction, *kurtosis_core_rpc_api_bindings.StarlarkExecutionError) {
 	scriptOutput := strings.Builder{}
 	var serializedInstructions []*kurtosis_core_rpc_api_bindings.StarlarkInstruction
-	executionResponseLines := executor.Execute(context.Background(), dryRun, instructions, noScriptOutputObject)
+	executionResponseLines := executor.Execute(context.Background(), dryRun, noParallelism, instructions, noScriptOutputObject)
 	for executionResponseLine := range executionResponseLines {
 		if executionResponseLine.GetError() != nil {
 			return scriptOutput.String(), serializedInstructions, executionResponseLine.GetError().GetExecutionError()

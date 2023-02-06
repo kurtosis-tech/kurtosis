@@ -31,7 +31,7 @@ func NewStartosisRunner(interpreter *StartosisInterpreter, validator *StartosisV
 	}
 }
 
-func (runner *StartosisRunner) Run(ctx context.Context, dryRun bool, moduleId string, serializedStartosis string, serializedParams string) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+func (runner *StartosisRunner) Run(ctx context.Context, dryRun bool, parallelism int, moduleId string, serializedStartosis string, serializedParams string) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
 	// TODO(gb): add metric tracking maybe?
 	starlarkRunResponseLines := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 
@@ -69,7 +69,7 @@ func (runner *StartosisRunner) Run(ctx context.Context, dryRun bool, moduleId st
 			startingExecutionMsg, defaultCurrentStepNumber, totalNumberOfInstructions)
 		starlarkRunResponseLines <- progressInfo
 
-		executionResponseLinesChan := runner.startosisExecutor.Execute(ctx, dryRun, instructionsList, serializedScriptOutput)
+		executionResponseLinesChan := runner.startosisExecutor.Execute(ctx, dryRun, parallelism, instructionsList, serializedScriptOutput)
 		if isRunFinished := forwardKurtosisResponseLineChannelUntilSourceIsClosed(executionResponseLinesChan, starlarkRunResponseLines); !isRunFinished {
 			logrus.Warnf("Execution finished but no 'RunFinishedEvent' was received through the stream. This is unexpected as every execution should be terminal.")
 		}

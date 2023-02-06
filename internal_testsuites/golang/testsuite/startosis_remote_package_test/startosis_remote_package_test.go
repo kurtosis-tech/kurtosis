@@ -17,6 +17,7 @@ const (
 	dataStoreService0Name = "datastore-0"
 	dataStoreService1Name = "datastore-1"
 	datastorePortId       = "grpc"
+	defaultParallelism    = 4
 )
 
 func TestStartosisRemotePackage(t *testing.T) {
@@ -30,7 +31,7 @@ func TestStartosisRemotePackage(t *testing.T) {
 	// ------------------------------------- TEST RUN ----------------------------------------------
 	logrus.Debugf("Executing Starlark Package: '%v'", remotePackage)
 
-	runResult, err := enclaveCtx.RunStarlarkRemotePackageBlocking(ctx, remotePackage, executeParams, defaultDryRun)
+	runResult, err := enclaveCtx.RunStarlarkRemotePackageBlocking(ctx, remotePackage, executeParams, defaultDryRun, defaultParallelism)
 	require.NoError(t, err, "Unexpected error executing starlark package")
 
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error. This test requires you to be online for the read_file command to run")

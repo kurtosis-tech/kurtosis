@@ -47,6 +47,7 @@ def run(plan, args):
 		src = args.src
 	)
 `
+	noParallelism = 1
 )
 
 var FilesStoreServiceCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -143,7 +144,7 @@ func run(
 }
 
 func storeServiceFileStarlarkCommand(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, serviceName services.ServiceName, filePath string, enclaveIdentifier string, artifactName string) (*enclaves.StarlarkRunResult, error) {
-	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkTemplate, fmt.Sprintf(`{"service_name": "%s", "src": "%s", "name": "%s"}`, serviceName, filePath, artifactName), false)
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkTemplate, fmt.Sprintf(`{"service_name": "%s", "src": "%s", "name": "%s"}`, serviceName, filePath, artifactName), false, noParallelism)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,

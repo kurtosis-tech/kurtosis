@@ -57,6 +57,8 @@ const (
 	isScript    = true
 	isNotScript = false
 	isNotRemote = false
+
+	defaultParallelism = 4
 )
 
 // Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and port spec protos
@@ -99,6 +101,7 @@ func NewApiContainerService(
 func (apicService ApiContainerService) RunStarlarkScript(args *kurtosis_core_rpc_api_bindings.RunStarlarkScriptArgs, stream kurtosis_core_rpc_api_bindings.ApiContainerService_RunStarlarkScriptServer) error {
 	serializedStarlarkScript := args.GetSerializedScript()
 	serializedParams := args.GetSerializedParams()
+	parallelism := int(args.GetParallelism())
 	dryRun := shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun)
 
 	if err := apicService.metricsClient.TrackKurtosisRun(startosis_constants.PackageIdPlaceholderForStandaloneScript, isNotRemote, dryRun, isScript); err != nil {
@@ -106,7 +109,7 @@ func (apicService ApiContainerService) RunStarlarkScript(args *kurtosis_core_rpc
 		logrus.Errorf("An error occurred tracking kurtosis run event\n%v", err)
 	}
 
-	apicService.runStarlark(dryRun, startosis_constants.PackageIdPlaceholderForStandaloneScript, serializedStarlarkScript, serializedParams, stream)
+	apicService.runStarlark(parallelism, dryRun, startosis_constants.PackageIdPlaceholderForStandaloneScript, serializedStarlarkScript, serializedParams, stream)
 	return nil
 }
 
@@ -114,6 +117,7 @@ func (apicService ApiContainerService) RunStarlarkPackage(args *kurtosis_core_rp
 	packageId := args.GetPackageId()
 	isRemote := args.GetRemote()
 	moduleContentIfLocal := args.GetLocal()
+	parallelism := int(args.GetParallelism())
 	serializedParams := args.SerializedParams
 	dryRun := shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun)
 
@@ -129,7 +133,7 @@ func (apicService ApiContainerService) RunStarlarkPackage(args *kurtosis_core_rp
 		}
 		return nil
 	}
-	apicService.runStarlark(dryRun, packageId, scriptWithRunFunction, serializedParams, stream)
+	apicService.runStarlark(parallelism, dryRun, packageId, scriptWithRunFunction, serializedParams, stream)
 	return nil
 }
 
@@ -142,7 +146,7 @@ func (apicService ApiContainerService) StartServices(ctx context.Context, args *
 		serviceNamesToAPIConfigs[kurtosis_backend_service.ServiceName(serviceNameStr)] = apiServiceConfig
 	}
 
-	successfulServices, failedServices, err := apicService.serviceNetwork.StartServices(ctx, serviceNamesToAPIConfigs)
+	successfulServices, failedServices, err := apicService.serviceNetwork.StartServices(ctx, serviceNamesToAPIConfigs, defaultParallelism)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "None of the services '%v' mentioned in the request were able to start due to an unexpected error", serviceNamesToAPIConfigs)
 	}
@@ -667,8 +671,8 @@ func (apicService ApiContainerService) runStarlarkPackageSetup(packageId string,
 	return string(mainScriptToExecute), nil
 }
 
-func (apicService ApiContainerService) runStarlark(dryRun bool, packageId string, serializedStarlark string, serializedParams string, stream grpc.ServerStream) {
-	responseLineStream := apicService.startosisRunner.Run(stream.Context(), dryRun, packageId, serializedStarlark, serializedParams)
+func (apicService ApiContainerService) runStarlark(parallelism int, dryRun bool, packageId string, serializedStarlark string, serializedParams string, stream grpc.ServerStream) {
+	responseLineStream := apicService.startosisRunner.Run(stream.Context(), dryRun, parallelism, packageId, serializedStarlark, serializedParams)
 	for {
 		select {
 		case <-stream.Context().Done():

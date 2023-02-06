@@ -62,7 +62,7 @@ func TestStartosis(t *testing.T) {
 	logrus.Infof("Executing Startosis script...")
 	logrus.Debugf("Startosis script content: \n%v", startosisScript)
 
-	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, startosisScript, emptyParams, defaultDryRun)
+	runResult, err := test_helpers.RunScriptWithDefaultConfig(ctx, enclaveCtx, startosisScript)
 	require.NoError(t, err, "Unexpected error executing startosis script")
 
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error. This test requires you to be online for the upload_file command to run")

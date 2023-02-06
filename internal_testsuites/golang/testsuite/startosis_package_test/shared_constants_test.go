@@ -4,4 +4,5 @@ const (
 	isPartitioningEnabled = false
 	emptyRunParams        = "{}"
 	defaultDryRun         = false
+	defaultParallelism    = 4
 )

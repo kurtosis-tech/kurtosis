@@ -71,7 +71,7 @@ func TestRenderTemplates(t *testing.T) {
 	defer destroyEnclaveFunc()
 
 	// -------------------------------------- SCRIPT RUN -----------------------------------------------
-	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkScript, noStarlarkParams, doNotDryRun)
+	runResult, err := test_helpers.RunScriptWithDefaultConfig(ctx, enclaveCtx, starlarkScript)
 	require.NoError(t, err, "An unexpected error occurred while running Starlark script")
 	require.Empty(t, runResult.InterpretationError, "An unexpected error occurred while interpreting Starlark script")
 	require.Empty(t, runResult.ValidationErrors, "An unexpected error occurred while validating Starlark script")

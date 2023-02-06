@@ -62,7 +62,7 @@ func testKurtosisPlanInstruction(t *testing.T, builtin KurtosisPlanInstructionBa
 	require.True(t, ok, "Builtin expected to be a KurtosisPlanInstructionInternal, but was '%s'", reflect.TypeOf(instruction))
 
 	// execute the instruction and run custom builtin assertions
-	executionResult, err := instruction.Execute(context.Background())
+	executionResult, err := instruction.Execute(context.WithValue(context.Background(), "PARALLELISM", 1))
 	require.Nil(t, err, "Builtin execution threw an error: \n%v", err)
 	builtin.Assert(interpretationResult, executionResult)
 

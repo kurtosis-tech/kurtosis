@@ -12,6 +12,7 @@ const (
 	testName              = "module"
 	isPartitioningEnabled = false
 	defaultDryRun         = false
+	defaultParallelism    = 4
 	greetingsArg          = `{"greeting": "World!"}`
 
 	serviceName                   = "example-datastore-server-1"
@@ -103,7 +104,7 @@ func TestStartosis(t *testing.T) {
 	logrus.Infof("Executing Startosis script...")
 	logrus.Debugf("Startosis script content: \n%v", startosisScript)
 
-	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, startosisScript, greetingsArg, defaultDryRun)
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, startosisScript, greetingsArg, defaultDryRun, defaultParallelism)
 	require.NoError(t, err, "Unexpected error executing startosis script")
 
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error. This test requires you to be online for the read_file command to run")

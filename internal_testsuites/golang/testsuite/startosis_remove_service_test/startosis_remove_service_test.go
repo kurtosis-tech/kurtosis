@@ -57,7 +57,7 @@ func TestStartosis(t *testing.T) {
 	logrus.Infof("Executing Starlark script to first add the datastore service...")
 	logrus.Debugf("Starlark script content: \n%v", starlarkScript)
 
-	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkScript, emptyArgs, defaultDryRun)
+	runResult, err := test_helpers.RunScriptWithDefaultConfig(ctx, enclaveCtx, starlarkScript)
 	require.NoError(t, err, "Unexpected error executing Starlark script")
 
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
@@ -83,7 +83,7 @@ Service example-datastore-server-1 deployed successfully.
 	logrus.Infof("Validated that all services are healthy")
 
 	// we run the remove script and see if things still work
-	runResult, err = enclaveCtx.RunStarlarkScriptBlocking(ctx, removeScript, emptyArgs, defaultDryRun)
+	runResult, err = test_helpers.RunScriptWithDefaultConfig(ctx, enclaveCtx, removeScript)
 	require.NoError(t, err, "Unexpected error executing remove script")
 
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")

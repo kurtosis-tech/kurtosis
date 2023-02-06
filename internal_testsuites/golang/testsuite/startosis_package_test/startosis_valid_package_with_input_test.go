@@ -34,7 +34,7 @@ func TestStartosisPackage_ValidPackageWithInput(t *testing.T) {
 	logrus.Infof("Startosis package path: \n%v", packageDirpath)
 
 	params := `{"greetings": "bonjour!"}`
-	runResult, err := enclaveCtx.RunStarlarkPackageBlocking(ctx, packageDirpath, params, defaultDryRun)
+	runResult, err := enclaveCtx.RunStarlarkPackageBlocking(ctx, packageDirpath, params, defaultDryRun, defaultParallelism)
 	require.NoError(t, err, "Unexpected error executing starlark package")
 
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
@@ -68,7 +68,7 @@ func TestStartosisPackage_ValidPackageWithInput_MissingKeyInParams(t *testing.T)
 	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
 
 	params := `{"hello": "world"}` // expecting key 'greetings' here
-	runResult, err := enclaveCtx.RunStarlarkPackageBlocking(ctx, moduleDirpath, params, defaultDryRun)
+	runResult, err := enclaveCtx.RunStarlarkPackageBlocking(ctx, moduleDirpath, params, defaultDryRun, defaultParallelism)
 	require.NoError(t, err, "Unexpected error executing startosis module")
 
 	require.NotNil(t, runResult.InterpretationError, "Unexpected interpretation error")

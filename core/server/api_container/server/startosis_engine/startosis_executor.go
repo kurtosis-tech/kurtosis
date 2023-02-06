@@ -10,7 +10,8 @@ import (
 )
 
 const (
-	progressMsg = "Execution in progress"
+	progressMsg      = "Execution in progress"
+	ParallelismParam = "PARALLELISM"
 )
 
 type StartosisExecutor struct {
@@ -34,10 +35,10 @@ func NewStartosisExecutor() *StartosisExecutor {
 // - A regular KurtosisInstruction that was successfully executed
 // - A KurtosisExecutionError if the execution failed
 // - A ProgressInfo to update the current "state" of the execution
-func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, instructions []kurtosis_instruction.KurtosisInstruction, serializedScriptOutput string) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, parallelism int, instructions []kurtosis_instruction.KurtosisInstruction, serializedScriptOutput string) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
 	executor.mutex.Lock()
 	starlarkRunResponseLineStream := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
-
+	ctxWithParallelism := context.WithValue(ctx, ParallelismParam, parallelism)
 	go func() {
 		defer func() {
 			executor.mutex.Unlock()
@@ -55,7 +56,7 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, ins
 			starlarkRunResponseLineStream <- canonicalInstruction
 
 			if !dryRun {
-				instructionOutput, err := instruction.Execute(ctx)
+				instructionOutput, err := instruction.Execute(ctxWithParallelism)
 				if err != nil {
 					propagatedError := stacktrace.Propagate(err, "An error occurred executing instruction (number %d): \n%v", instructionNumber, instruction.String())
 					serializedError := binding_constructors.NewStarlarkExecutionError(propagatedError.Error())

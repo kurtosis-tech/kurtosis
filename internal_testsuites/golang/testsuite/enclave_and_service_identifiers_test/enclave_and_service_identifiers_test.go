@@ -118,7 +118,7 @@ func TestIdentifiers(t *testing.T) {
 
 	// remove service and identifier look up should work but context lookup not
 
-	result, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, removalScript, emptySerializedParams, isNotDryRun)
+	result, err := test_helpers.RunScriptWithDefaultConfig(ctx, enclaveCtx, removalScript)
 	require.NoError(t, err)
 	require.Nil(t, result.ExecutionError)
 	require.Nil(t, result.InterpretationError)

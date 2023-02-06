@@ -73,7 +73,7 @@ func TestAddTwoServicesAndTestConnection(t *testing.T) {
 	logrus.Infof("Executing Starlark script...")
 	logrus.Debugf("Starlark script contents: \n%v", addServiceAndTestConnectionScript)
 
-	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, addServiceAndTestConnectionScript, emptyArgs, defaultDryRun)
+	runResult, err := test_helpers.RunScriptWithDefaultConfig(ctx, enclaveCtx, addServiceAndTestConnectionScript)
 	require.NoError(t, err, "Unexpected error executing Starlark script")
 
 	expectedScriptOutput := `Adding services ` + serviceName + ` and ` + serviceName2 + `

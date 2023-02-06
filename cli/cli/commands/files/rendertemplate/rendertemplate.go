@@ -51,7 +51,8 @@ def run(plan, args):
 		}
 	)
 `
-	doNotDryRun = false
+	doNotDryRun   = false
+	noParallelism = 1
 )
 
 var RenderTemplateCommand = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -210,7 +211,7 @@ func renderTemplateStarlarkCommand(ctx context.Context, enclaveCtx *enclaves.Enc
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error has occurred when parsing input params to render template Starlark command")
 	}
-	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkTemplate, fmt.Sprintf(`{"file_name": "%s", "template": "%s", "template_data": %s, "name": "%s"}`, destRelFilepath, templateFileContents, string(templateDataBytes), artifactName), doNotDryRun)
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkTemplate, fmt.Sprintf(`{"file_name": "%s", "template": "%s", "template_data": %s, "name": "%s"}`, destRelFilepath, templateFileContents, string(templateDataBytes), artifactName), doNotDryRun, noParallelism)
 	if runResult.ExecutionError != nil {
 		return "", stacktrace.NewError("An error occurred during Starlark script execution for rendering template: %s", runResult.ExecutionError.GetErrorMessage())
 	}

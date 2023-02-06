@@ -183,6 +183,11 @@ export class RunStarlarkScriptArgs extends jspb.Message {
   hasDryRun(): boolean;
   clearDryRun(): RunStarlarkScriptArgs;
 
+  getParallelism(): number;
+  setParallelism(value: number): RunStarlarkScriptArgs;
+  hasParallelism(): boolean;
+  clearParallelism(): RunStarlarkScriptArgs;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RunStarlarkScriptArgs.AsObject;
   static toObject(includeInstance: boolean, msg: RunStarlarkScriptArgs): RunStarlarkScriptArgs.AsObject;
@@ -196,11 +201,17 @@ export namespace RunStarlarkScriptArgs {
     serializedScript: string,
     serializedParams: string,
     dryRun?: boolean,
+    parallelism?: number,
   }
 
   export enum DryRunCase { 
     _DRY_RUN_NOT_SET = 0,
     DRY_RUN = 3,
+  }
+
+  export enum ParallelismCase { 
+    _PARALLELISM_NOT_SET = 0,
+    PARALLELISM = 4,
   }
 }
 
@@ -224,6 +235,11 @@ export class RunStarlarkPackageArgs extends jspb.Message {
   hasDryRun(): boolean;
   clearDryRun(): RunStarlarkPackageArgs;
 
+  getParallelism(): number;
+  setParallelism(value: number): RunStarlarkPackageArgs;
+  hasParallelism(): boolean;
+  clearParallelism(): RunStarlarkPackageArgs;
+
   getStarlarkPackageContentCase(): RunStarlarkPackageArgs.StarlarkPackageContentCase;
 
   serializeBinary(): Uint8Array;
@@ -241,6 +257,7 @@ export namespace RunStarlarkPackageArgs {
     remote: boolean,
     serializedParams: string,
     dryRun?: boolean,
+    parallelism?: number,
   }
 
   export enum StarlarkPackageContentCase { 
@@ -252,6 +269,11 @@ export namespace RunStarlarkPackageArgs {
   export enum DryRunCase { 
     _DRY_RUN_NOT_SET = 0,
     DRY_RUN = 6,
+  }
+
+  export enum ParallelismCase { 
+    _PARALLELISM_NOT_SET = 0,
+    PARALLELISM = 7,
   }
 }
 

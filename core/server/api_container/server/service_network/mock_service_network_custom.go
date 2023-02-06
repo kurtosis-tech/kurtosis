@@ -76,6 +76,7 @@ func (m *MockServiceNetworkCustom) StartService(
 func (m *MockServiceNetworkCustom) StartServices(
 	ctx context.Context,
 	serviceConfigs map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig,
+	batchSize int,
 ) (
 	map[service.ServiceName]*service.Service,
 	map[service.ServiceName]error,

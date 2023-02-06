@@ -63,7 +63,7 @@ func TestStartosis(t *testing.T) {
 	logrus.Infof("Executing Startosis script...")
 	logrus.Debugf("Startosis script content: \n%v", starlarkScript)
 
-	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkScript, emptyArgs, defaultDryRun)
+	runResult, err := test_helpers.RunScriptWithDefaultConfig(ctx, enclaveCtx, starlarkScript)
 	require.NoError(t, err, "Unexpected error executing Starlark script")
 
 	expectedScriptOutput := `Adding service example-datastore-server-1.

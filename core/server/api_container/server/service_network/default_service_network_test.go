@@ -450,6 +450,7 @@ func TestStartServices_Success(t *testing.T) {
 		map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig{
 			successfulServiceName: successfulServiceConfig,
 		},
+		2,
 	)
 	require.Nil(t, err)
 	require.Len(t, success, 1)
@@ -723,6 +724,7 @@ func TestStartServices_FailureRollsBackTheEntireBatch(t *testing.T) {
 			failedServiceName:        failedServiceConfig,
 			sidecarFailedServiceName: sidecarFailedServiceConfig,
 		},
+		2,
 	)
 	require.Nil(t, err)
 	require.Empty(t, success) // as the full batch failed, the successful service should have been destroyed

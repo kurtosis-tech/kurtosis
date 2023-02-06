@@ -157,6 +157,9 @@ message RunStarlarkScriptArgs {
 
   // Defaults to false
   optional bool dry_run = 3;
+
+  // Defaults to 4
+  optional int32 parallelism = 4;
 }
 
 message RunStarlarkPackageArgs {
@@ -173,6 +176,9 @@ message RunStarlarkPackageArgs {
 
   // Defaults to false
   optional bool dry_run = 6;
+
+  // Defaults to 4
+  optional int32 parallelism = 7;
 }
 
 // ==============================================================================================

@@ -74,7 +74,7 @@ func TestStarlarkExec(t *testing.T) {
 	// -------------------------------------- TEST SETUP -----------------------------------------------
 	logrus.Infof("Executing Starlark setup script...")
 
-	setupRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, setupStarlarkScript, emptyParams, defaultDryRun)
+	setupRunResult, err := test_helpers.RunScriptWithDefaultConfig(ctx, enclaveCtx, setupStarlarkScript)
 	require.NoError(t, err, "Unexpected error executing Starlark script")
 	require.Nil(t, setupRunResult.InterpretationError, "Unexpected interpretation error")
 	require.Empty(t, setupRunResult.ValidationErrors, "Unexpected validation error")
@@ -84,7 +84,7 @@ func TestStarlarkExec(t *testing.T) {
 
 	for testIndex, testStarlarkScript := range testStarlarkScripts {
 		logrus.Infof("Executing Starlark test script %d:\n%s", testIndex, testStarlarkScript)
-		runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, testStarlarkScript, emptyParams, defaultDryRun)
+		runResult, err := test_helpers.RunScriptWithDefaultConfig(ctx, enclaveCtx, testStarlarkScript)
 		require.NoError(t, err, "Unexpected error executing Starlark script")
 		require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
 		require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")

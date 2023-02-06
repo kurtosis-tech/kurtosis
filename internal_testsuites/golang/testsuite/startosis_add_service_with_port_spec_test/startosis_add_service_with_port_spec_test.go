@@ -47,7 +47,7 @@ func TestAddServiceWithPortSpec_Success(t *testing.T) {
 	defer destroyEnclaveFunc()
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
-	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkScriptWithPortSpec_Success, emptyArgs, defaultDryRun)
+	runResult, err := test_helpers.RunScriptWithDefaultConfig(ctx, enclaveCtx, starlarkScriptWithPortSpec_Success)
 	logrus.Infof("Test Output: %v", runResult)
 	require.NoError(t, err, "Unexpected error executing starlark script")
 

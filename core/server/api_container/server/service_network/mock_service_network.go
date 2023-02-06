@@ -683,13 +683,13 @@ func (_c *MockServiceNetwork_StartService_Call) Return(_a0 *service.Service, _a1
 	return _c
 }
 
-// StartServices provides a mock function with given fields: ctx, serviceConfigs
-func (_m *MockServiceNetwork) StartServices(ctx context.Context, serviceConfigs map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig) (map[service.ServiceName]*service.Service, map[service.ServiceName]error, error) {
-	ret := _m.Called(ctx, serviceConfigs)
+// StartServices provides a mock function with given fields: ctx, serviceConfigs, batchSize
+func (_m *MockServiceNetwork) StartServices(ctx context.Context, serviceConfigs map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig, batchSize int) (map[service.ServiceName]*service.Service, map[service.ServiceName]error, error) {
+	ret := _m.Called(ctx, serviceConfigs, batchSize)
 
 	var r0 map[service.ServiceName]*service.Service
-	if rf, ok := ret.Get(0).(func(context.Context, map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig) map[service.ServiceName]*service.Service); ok {
-		r0 = rf(ctx, serviceConfigs)
+	if rf, ok := ret.Get(0).(func(context.Context, map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig, int) map[service.ServiceName]*service.Service); ok {
+		r0 = rf(ctx, serviceConfigs, batchSize)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(map[service.ServiceName]*service.Service)
@@ -697,8 +697,8 @@ func (_m *MockServiceNetwork) StartServices(ctx context.Context, serviceConfigs 
 	}
 
 	var r1 map[service.ServiceName]error
-	if rf, ok := ret.Get(1).(func(context.Context, map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig) map[service.ServiceName]error); ok {
-		r1 = rf(ctx, serviceConfigs)
+	if rf, ok := ret.Get(1).(func(context.Context, map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig, int) map[service.ServiceName]error); ok {
+		r1 = rf(ctx, serviceConfigs, batchSize)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(map[service.ServiceName]error)
@@ -706,8 +706,8 @@ func (_m *MockServiceNetwork) StartServices(ctx context.Context, serviceConfigs 
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig) error); ok {
-		r2 = rf(ctx, serviceConfigs)
+	if rf, ok := ret.Get(2).(func(context.Context, map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig, int) error); ok {
+		r2 = rf(ctx, serviceConfigs, batchSize)
 	} else {
 		r2 = ret.Error(2)
 	}
@@ -723,13 +723,14 @@ type MockServiceNetwork_StartServices_Call struct {
 // StartServices is a helper method to define mock.On call
 //   - ctx context.Context
 //   - serviceConfigs map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig
-func (_e *MockServiceNetwork_Expecter) StartServices(ctx interface{}, serviceConfigs interface{}) *MockServiceNetwork_StartServices_Call {
-	return &MockServiceNetwork_StartServices_Call{Call: _e.mock.On("StartServices", ctx, serviceConfigs)}
+//   - batchSize int
+func (_e *MockServiceNetwork_Expecter) StartServices(ctx interface{}, serviceConfigs interface{}, batchSize interface{}) *MockServiceNetwork_StartServices_Call {
+	return &MockServiceNetwork_StartServices_Call{Call: _e.mock.On("StartServices", ctx, serviceConfigs, batchSize)}
 }
 
-func (_c *MockServiceNetwork_StartServices_Call) Run(run func(ctx context.Context, serviceConfigs map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig)) *MockServiceNetwork_StartServices_Call {
+func (_c *MockServiceNetwork_StartServices_Call) Run(run func(ctx context.Context, serviceConfigs map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig, batchSize int)) *MockServiceNetwork_StartServices_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig))
+		run(args[0].(context.Context), args[1].(map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig), args[2].(int))
 	})
 	return _c
 }

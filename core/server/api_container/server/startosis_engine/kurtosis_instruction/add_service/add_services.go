@@ -22,7 +22,8 @@ import (
 const (
 	AddServicesBuiltinName = "add_services"
 
-	ConfigsArgName = "configs"
+	ConfigsArgName   = "configs"
+	ParallelismParam = "PARALLELISM"
 )
 
 func NewAddServices(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) *kurtosis_plan_instruction.KurtosisPlanInstruction {
@@ -100,6 +101,10 @@ func (builtin *AddServicesCapabilities) Validate(_ *builtin_argument.ArgumentVal
 
 func (builtin *AddServicesCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
 	renderedServiceConfigs := make(map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig, len(builtin.serviceConfigs))
+	parallelism, ok := ctx.Value(ParallelismParam).(int)
+	if !ok {
+		return "", stacktrace.NewError("An error occurred when getting parallelism level from execution context")
+	}
 	for serviceName, serviceConfig := range builtin.serviceConfigs {
 		renderedServiceName, renderedServiceConfig, err := replaceMagicStrings(builtin.serviceNetwork, builtin.runtimeValueStore, serviceName, serviceConfig)
 		if err != nil {
@@ -108,7 +113,7 @@ func (builtin *AddServicesCapabilities) Execute(ctx context.Context, _ *builtin_
 		renderedServiceConfigs[renderedServiceName] = renderedServiceConfig
 	}
 
-	startedServices, failedServices, err := builtin.serviceNetwork.StartServices(ctx, renderedServiceConfigs)
+	startedServices, failedServices, err := builtin.serviceNetwork.StartServices(ctx, renderedServiceConfigs, parallelism)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Unexpected error occurred starting a batch of services")
 	}

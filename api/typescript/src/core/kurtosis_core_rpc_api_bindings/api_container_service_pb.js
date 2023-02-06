@@ -2235,7 +2235,8 @@ proto.api_container_api.RunStarlarkScriptArgs.toObject = function(includeInstanc
   var f, obj = {
     serializedScript: jspb.Message.getFieldWithDefault(msg, 1, ""),
     serializedParams: jspb.Message.getFieldWithDefault(msg, 2, ""),
-    dryRun: jspb.Message.getBooleanFieldWithDefault(msg, 3, false)
+    dryRun: jspb.Message.getBooleanFieldWithDefault(msg, 3, false),
+    parallelism: jspb.Message.getFieldWithDefault(msg, 4, 0)
   };
 
   if (includeInstance) {
@@ -2284,6 +2285,10 @@ proto.api_container_api.RunStarlarkScriptArgs.deserializeBinaryFromReader = func
       var value = /** @type {boolean} */ (reader.readBool());
       msg.setDryRun(value);
       break;
+    case 4:
+      var value = /** @type {number} */ (reader.readInt32());
+      msg.setParallelism(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -2331,6 +2336,13 @@ proto.api_container_api.RunStarlarkScriptArgs.serializeBinaryToWriter = function
   if (f != null) {
     writer.writeBool(
       3,
+      f
+    );
+  }
+  f = /** @type {number} */ (jspb.Message.getField(message, 4));
+  if (f != null) {
+    writer.writeInt32(
+      4,
       f
     );
   }
@@ -2409,6 +2421,42 @@ proto.api_container_api.RunStarlarkScriptArgs.prototype.hasDryRun = function() {
 };
 
 
+/**
+ * optional int32 parallelism = 4;
+ * @return {number}
+ */
+proto.api_container_api.RunStarlarkScriptArgs.prototype.getParallelism = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 4, 0));
+};
+
+
+/**
+ * @param {number} value
+ * @return {!proto.api_container_api.RunStarlarkScriptArgs} returns this
+ */
+proto.api_container_api.RunStarlarkScriptArgs.prototype.setParallelism = function(value) {
+  return jspb.Message.setField(this, 4, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.api_container_api.RunStarlarkScriptArgs} returns this
+ */
+proto.api_container_api.RunStarlarkScriptArgs.prototype.clearParallelism = function() {
+  return jspb.Message.setField(this, 4, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.RunStarlarkScriptArgs.prototype.hasParallelism = function() {
+  return jspb.Message.getField(this, 4) != null;
+};
+
+
 
 /**
  * Oneof group definitions for this message. Each group defines the field
@@ -2471,7 +2519,8 @@ proto.api_container_api.RunStarlarkPackageArgs.toObject = function(includeInstan
     local: msg.getLocal_asB64(),
     remote: jspb.Message.getBooleanFieldWithDefault(msg, 4, false),
     serializedParams: jspb.Message.getFieldWithDefault(msg, 5, ""),
-    dryRun: jspb.Message.getBooleanFieldWithDefault(msg, 6, false)
+    dryRun: jspb.Message.getBooleanFieldWithDefault(msg, 6, false),
+    parallelism: jspb.Message.getFieldWithDefault(msg, 7, 0)
   };
 
   if (includeInstance) {
@@ -2527,6 +2576,10 @@ proto.api_container_api.RunStarlarkPackageArgs.deserializeBinaryFromReader = fun
     case 6:
       var value = /** @type {boolean} */ (reader.readBool());
       msg.setDryRun(value);
+      break;
+    case 7:
+      var value = /** @type {number} */ (reader.readInt32());
+      msg.setParallelism(value);
       break;
     default:
       reader.skipField();
@@ -2589,6 +2642,13 @@ proto.api_container_api.RunStarlarkPackageArgs.serializeBinaryToWriter = functio
   if (f != null) {
     writer.writeBool(
       6,
+      f
+    );
+  }
+  f = /** @type {number} */ (jspb.Message.getField(message, 7));
+  if (f != null) {
+    writer.writeInt32(
+      7,
       f
     );
   }
@@ -2760,6 +2820,42 @@ proto.api_container_api.RunStarlarkPackageArgs.prototype.clearDryRun = function(
  */
 proto.api_container_api.RunStarlarkPackageArgs.prototype.hasDryRun = function() {
   return jspb.Message.getField(this, 6) != null;
+};
+
+
+/**
+ * optional int32 parallelism = 7;
+ * @return {number}
+ */
+proto.api_container_api.RunStarlarkPackageArgs.prototype.getParallelism = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 7, 0));
+};
+
+
+/**
+ * @param {number} value
+ * @return {!proto.api_container_api.RunStarlarkPackageArgs} returns this
+ */
+proto.api_container_api.RunStarlarkPackageArgs.prototype.setParallelism = function(value) {
+  return jspb.Message.setField(this, 7, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.api_container_api.RunStarlarkPackageArgs} returns this
+ */
+proto.api_container_api.RunStarlarkPackageArgs.prototype.clearParallelism = function() {
+  return jspb.Message.setField(this, 7, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.RunStarlarkPackageArgs.prototype.hasParallelism = function() {
+  return jspb.Message.getField(this, 7) != null;
 };
 
 
