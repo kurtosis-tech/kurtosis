@@ -67,15 +67,31 @@ def run(plan, args):
 	plan.assert(res["code"], "==", 1)
 	
 	# unblock connection with some delay 
-	delay = PacketDelay(100)
-	plan.set_connection((SUBNETWORK_1, SUBNETWORK_2), config=ConnectionConfig(packet_delay=delay))
+	delay = PacketDelay(750)
+	
+	# minimum delay should ideally be 140*2 = 280
+	# maximum delay should ideally be 160*2 = 320
+	normal_delay_distribution = NormalPacketDelayDistribution(mean_ms=150, std_dev_ms=10, correlation=2.0)
+
+    # this should pick normal delay distribution instead of delay
+	plan.set_connection(
+		(SUBNETWORK_1, SUBNETWORK_2), 
+		config=ConnectionConfig(
+			packet_delay_distribution=normal_delay_distribution
+		)
+	)
 
 	recipe=ExecRecipe(
 		service_name=SERVICE_ID_2,
 		command=["/bin/sh", "-c", service_one_cmd],
 	)
 	res = plan.exec(recipe)
-	plan.assert(res["output"], "<", "500")
+
+	# given a buffer of 55ms to handle outliers
+	# minimum latency observed (280-55 = 225)
+	# maximum latency observed (280+55 = 375)
+	plan.assert(res["output"], "<", "375")
+	plan.assert(res["output"], ">", "225")
 
 	# remove connection, should block the connection again
 	plan.remove_connection((SUBNETWORK_1, SUBNETWORK_2))
@@ -86,9 +102,7 @@ def run(plan, args):
 	res = plan.exec(recipe)
 	plan.assert(res["code"], "==", 1)
 
-	# update the service into new subnetwork with higher latency
-	higher_delay = PacketDelay(750)
-	plan.set_connection((SUBNETWORK_1, SUBNETWORK_3), config=ConnectionConfig(packet_delay=higher_delay))
+	plan.set_connection((SUBNETWORK_1, SUBNETWORK_3), config=ConnectionConfig(packet_delay=delay))
 	plan.update_service(SERVICE_ID_2, config=UpdateServiceConfig(subnetwork=SUBNETWORK_3))
 	recipe=ExecRecipe(
 		service_name=SERVICE_ID_2,
@@ -116,7 +130,7 @@ func TestNetworkPartitionWithSomeDelay(t *testing.T) {
 	require.Nil(t, result.InterpretationError)
 	require.Empty(t, result.ValidationErrors)
 	require.Nil(t, result.ExecutionError)
-	require.Len(t, result.Instructions, 16)
+	require.Len(t, result.Instructions, 17)
 
 	require.Contains(t, result.RunOutput, "Test successfully executed")
 }

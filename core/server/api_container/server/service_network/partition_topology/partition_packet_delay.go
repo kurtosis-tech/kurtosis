@@ -34,9 +34,9 @@ func NewNormalPacketDelayDistribution(avgDelayMs uint32, jitter uint32, correlat
 	}
 }
 
-// IsSet This method checks whether we need to set delay, default value is 0
+// IsSet This method checks whether we require to set packet delay using tc command
 func (packetDelay *PacketDelayDistribution) IsSet() bool {
-	return packetDelay.avgDelayMs != 0
+	return packetDelay.avgDelayMs != 0 || packetDelay.jitter != 0 || packetDelay.correlation != 0
 }
 
 func (packetDelay *PacketDelayDistribution) GetTcCommand() string {

@@ -97,6 +97,28 @@ def run(plan, args):
 	# have not found a way to convert output to int
 	res = plan.exec(recipe)
 	plan.assert(res["output"], ">", "1499")
+    
+	uniform_delay_distribution = UniformPacketDelayDistribution(ms=350)	
+	plan.set_connection(config=ConnectionConfig(packet_delay_distribution=uniform_delay_distribution))
+
+	recipe=ExecRecipe(
+		service_name=SERVICE_ID_2,
+		command=["/bin/sh", "-c", service_one_cmd],
+	)
+	res = plan.exec(recipe)
+	plan.assert(res["output"], "<", "1")
+
+	recipe=ExecRecipe(
+		service_name=SERVICE_ID_2,
+		command=["/bin/sh", "-c", service_three_cmd],
+	)
+	
+	# this is doing string comparison
+	# have not found a way to convert output to int
+	# the overall should be greater than 350*2, but
+	# added some buffer to handle 50ms outliers
+	res = plan.exec(recipe)
+	plan.assert(res["output"], ">", "649")
 	plan.print("Test successfully executed")
 `
 )
@@ -116,7 +138,7 @@ func TestNetworkParitionWithSomeDelay(t *testing.T) {
 	require.Nil(t, result.InterpretationError)
 	require.Empty(t, result.ValidationErrors)
 	require.Nil(t, result.ExecutionError)
-	require.Len(t, result.Instructions, 14)
+	require.Len(t, result.Instructions, 19)
 
 	require.Contains(t, result.RunOutput, "Test successfully executed")
 }

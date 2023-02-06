@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
 	"strings"
@@ -20,42 +21,67 @@ var (
 	PreBuiltConnectionConfigs = &starlarkstruct.Module{
 		Name: "connection",
 		Members: starlark.StringDict{
-			"BLOCKED": NewConnectionConfig(100, NoPacketDelay),
-			"ALLOWED": NewConnectionConfig(0, NoPacketDelay),
+			"BLOCKED": NewConnectionConfig(100, nil, NoPacketDelay),
+			"ALLOWED": NewConnectionConfig(0, nil, NoPacketDelay),
 		},
 	}
 )
 
 // ConnectionConfig A starlark.Value that represents a connection config between 2 subnetworks
 type ConnectionConfig struct {
-	packetLossPercentage starlark.Float
-	packetDelay          *PacketDelay
+	packetDelayDistribution PacketDelayDistributionInterface
+	packetLossPercentage    starlark.Float
+	packetDelay             *PacketDelay
 }
 
-func NewConnectionConfig(packetLossPercentage starlark.Float, packetDelay *PacketDelay) *ConnectionConfig {
+func NewConnectionConfig(packetLossPercentage starlark.Float, packetDelayDistribution PacketDelayDistributionInterface, packetDelay *PacketDelay) *ConnectionConfig {
 	return &ConnectionConfig{
-		packetLossPercentage: packetLossPercentage,
-		packetDelay:          packetDelay,
+		packetDelayDistribution: packetDelayDistribution,
+		packetLossPercentage:    packetLossPercentage,
+		packetDelay:             packetDelay,
 	}
 }
 
 func MakeConnectionConfig(_ *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 	var packetLossPercentage starlark.Float
-	var packetDelay *PacketDelay
+	var maybePacketDelay *PacketDelay
+	var maybeNormalPacketDelayDistribution *NormalPacketDelayDistribution
+	var maybeUniformPacketDelayDistribution *UniformPacketDelayDistribution
 
-	if err := starlark.UnpackArgs(b.Name(), args, kwargs, MakeOptional(packetLossPercentageAttr), &packetLossPercentage, MakeOptional(packetDelayAttr), &packetDelay); err != nil {
-		return nil, startosis_errors.WrapWithInterpretationError(err, "Cannot construct '%s' from the provided arguments. Expecting a single argument '%s'", ConnectionConfigTypeName, packetLossPercentageAttr)
+	if err := starlark.UnpackArgs(b.Name(), args, kwargs,
+		MakeOptional(packetLossPercentageAttr), &packetLossPercentage,
+		MakeOptional(packetDelayAttr), &maybePacketDelay,
+		MakeOptional(packetDelayDistributionAttr), &maybeNormalPacketDelayDistribution); err != nil {
+
+		if err = starlark.UnpackArgs(b.Name(), args, kwargs,
+			MakeOptional(packetLossPercentageAttr), &packetLossPercentage,
+			MakeOptional(packetDelayAttr), &maybePacketDelay,
+			MakeOptional(packetDelayDistributionAttr), &maybeUniformPacketDelayDistribution); err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Cannot construct '%s' from the provided arguments", ConnectionConfigTypeName)
+		}
 	}
+
 	if packetLossPercentage < 0 || packetLossPercentage > 100 {
 		return nil, startosis_errors.NewInterpretationError("Invalid attribute. '%s' in '%s' should be greater than 0 and lower than 100. Got '%v'", packetLossPercentageAttr, ConnectionConfigTypeName, packetLossPercentage)
 	}
 
-	// if packetLossPercentage is not set, intrepreter will automatically default it to 0
-	// which matches to no packet loss
-	if packetDelay != nil {
-		return NewConnectionConfig(packetLossPercentage, packetDelay), nil
+	var maybePacketPacketDelayDistribution PacketDelayDistributionInterface
+	if maybeNormalPacketDelayDistribution != nil {
+		maybePacketPacketDelayDistribution = maybeNormalPacketDelayDistribution
+	} else if maybeUniformPacketDelayDistribution != nil {
+		maybePacketPacketDelayDistribution = maybeUniformPacketDelayDistribution
 	}
-	return NewConnectionConfig(packetLossPercentage, NoPacketDelay), nil
+
+	if maybePacketDelay != nil && maybePacketPacketDelayDistribution != nil {
+		return nil, startosis_errors.NewInterpretationError("%q can only have either %q or %q set exclusively. Note: %q field will be deprecated in a upcoming release", ConnectionConfigTypeName, packetDelayDistributionAttr, packetDelayAttr, packetDelayAttr)
+	}
+
+	//TODO: remove this once we stop supporting it.
+	if maybePacketDelay == nil {
+		maybePacketDelay = NoPacketDelay
+	}
+
+	return NewConnectionConfig(packetLossPercentage, maybePacketPacketDelayDistribution, maybePacketDelay), nil
 }
 
 // String the starlark.Value interface
@@ -63,9 +89,15 @@ func (connectionConfig *ConnectionConfig) String() string {
 	buffer := new(strings.Builder)
 	buffer.WriteString(ConnectionConfigTypeName + "(")
 	buffer.WriteString(packetLossPercentageAttr + "=")
-	buffer.WriteString(fmt.Sprintf("%v, ", connectionConfig.packetLossPercentage))
-	buffer.WriteString(packetDelayAttr + "=")
-	buffer.WriteString(fmt.Sprintf("%v)", connectionConfig.packetDelay))
+	buffer.WriteString(fmt.Sprintf("%v", connectionConfig.packetLossPercentage))
+	if connectionConfig.packetDelayDistribution != nil {
+		buffer.WriteString(fmt.Sprintf(", %v=", packetDelayDistributionAttr))
+		buffer.WriteString(fmt.Sprintf("%v", connectionConfig.packetDelayDistribution))
+	} else {
+		buffer.WriteString(fmt.Sprintf(", %v=", packetDelayAttr))
+		buffer.WriteString(fmt.Sprintf("%v", connectionConfig.packetDelay))
+	}
+	buffer.WriteString(")")
 	return buffer.String()
 }
 
@@ -106,6 +138,11 @@ func (connectionConfig *ConnectionConfig) Attr(name string) (starlark.Value, err
 		return connectionConfig.packetLossPercentage, nil
 	case packetDelayAttr:
 		return connectionConfig.packetDelay, nil
+	case packetDelayDistributionAttr:
+		if connectionConfig.packetDelayDistribution != nil {
+			return connectionConfig.packetDelayDistribution.(starlark.Value), nil
+		}
+		return nil, nil
 	default:
 		return nil, startosis_errors.NewInterpretationError("'%s' has no attribute '%s'", ConnectionConfigTypeName, name)
 	}
@@ -113,13 +150,23 @@ func (connectionConfig *ConnectionConfig) Attr(name string) (starlark.Value, err
 
 // AttrNames implements the starlark.HasAttrs interface.
 func (connectionConfig *ConnectionConfig) AttrNames() []string {
-	return []string{packetLossPercentageAttr, packetDelayAttr}
+	return []string{packetLossPercentageAttr, packetDelayAttr, packetDelayDistributionAttr}
 }
 
 func (connectionConfig *ConnectionConfig) ToKurtosisType() *partition_topology.PartitionConnection {
+	var packetDelayDistribution *partition_topology.PacketDelayDistribution
+	if connectionConfig.packetDelayDistribution != nil {
+		packetDelayDistributionKType := connectionConfig.packetDelayDistribution.ToKurtosisType()
+		packetDelayDistribution = &packetDelayDistributionKType
+	} else {
+		logrus.Warnf("%q field will be deprecated in an upcoming release. Please use %q field instead to set delay between subnetworks", packetDelayAttr, packetDelayDistributionAttr)
+		packetDelayDistributionKType := connectionConfig.packetDelay.ToKurtosisType()
+		packetDelayDistribution = &packetDelayDistributionKType
+	}
+
 	partitionConnection := partition_topology.NewPartitionConnection(
 		partition_topology.NewPacketLoss(float32(connectionConfig.packetLossPercentage)),
-		connectionConfig.packetDelay.ToKurtosisType(),
+		*packetDelayDistribution,
 	)
 	return &partitionConnection
 }

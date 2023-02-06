@@ -90,5 +90,7 @@ func KurtosisTypeConstructors() []*starlark.Builtin {
 		starlark.NewBuiltin(kurtosis_types.ServiceConfigTypeName, kurtosis_types.MakeServiceConfig),
 		starlark.NewBuiltin(kurtosis_types.UpdateServiceConfigTypeName, kurtosis_types.MakeUpdateServiceConfig),
 		starlark.NewBuiltin(kurtosis_types.PacketDelayName, kurtosis_types.MakePacketDelay),
+		starlark.NewBuiltin(kurtosis_types.UniformPacketDelayDistributionName, kurtosis_types.MakeUniformPacketDelayDistribution),
+		starlark.NewBuiltin(kurtosis_types.NormalPacketDelayDistributionName, kurtosis_types.MakeNormalPacketDelayDistribution),
 	}
 }
