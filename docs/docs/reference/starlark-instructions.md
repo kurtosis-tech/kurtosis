@@ -382,7 +382,6 @@ response = request(
 ### set_connection
 
 Kurtosis uses a *default connection* to configure networking for any created subnetwork.
-
 The `set_connection` can be used for two purposes:
 
 1. Used with the `subnetworks` argument, it will override the default connection between the two specified [subnetworks][subnetworks-reference].
@@ -423,8 +422,8 @@ Say we are overriding a connection between two subnetworks, as shown below:
 ```python
 
 connection_config = ConnectionConfig(
-    packet_delay = PacketDelay(
-        delay_ms = 500
+    packet_delay_distribution = UniformPacketDelayDistribution(
+        ms = 500
     )
 )
 

@@ -20,11 +20,10 @@ connection_config = ConnectionConfig(
     packet_loss_percentage = 50.0,
 
     # Amount of delay added to packets each way between subnetworks
-    # OPTIONAL
-    # DEFAULT: 0
-    packet_delay = PacketDelay(
+    # OPTIONAL: Valid value are UniformPacketDelayDistribution or NormalPacketDelayDistribution
+    packet_delay_distribution = UniformPacketDelayDistribution(
         # Delay in ms
-        delay_ms = 500 
+        ms = 500 
     ) 
 )
 ```
@@ -126,18 +125,48 @@ Make sure that the endpoint returns valid JSON response for both POST and GET re
 
 :::
 
-### PacketDelay
+### PacketDelayDistribution
 
-The `PacketDelay` can be used in conjuction with [`ConnectionConfig`][connection-config] to introduce latency between two [`subnetworks`][subnetworks-reference]. See [`set_connection`][starlark-instructions-set-connection] instruction to learn more about its usage.
+The `PacketDelayDistribution` can be used in conjuction with [`ConnectionConfig`][connection-config] to introduce latency between two [`subnetworks`][subnetworks-reference]. See [`set_connection`][starlark-instructions-set-connection] instruction to learn more about its usage.
+
+#### UniformPacketDelayDistribution
+
+The `UniformPacketDelayDistribution` creates a packet delay distribution with constant delay in `ms`
 
 ```python
 
-delay  = PacketDelay(
+delay  = UniformPacketDelayDistribution(
     # Non-Negative Integer
-    # Amount of delay added to outgoing packets from the subnetwork
+    # Amount of constant delay added to outgoing packets from the subnetwork
     # MANDATORY
-    delay_ms = 1000
+    ms = 1000
 )
+```
+
+#### NormalPacketDelayDistribution
+
+The `NormalPacketDelayDistribution` can be used to create packet delays that are distributed according to a normal distribution.
+
+```python
+
+delay  = NormalPacketDelayDistribution(
+    # Non-Negative Integer
+    # Amount of mean delay added to outgoing packets from the subnetwork
+    # MANDATORY
+    mean_ms = 1000
+
+    # Non-Negative Integer
+    # Amount of variance (jitter) added to outgoing packets from the subnetwork
+    # MANDATORY
+    std_dev_ms = 10
+    
+    # Non-Negative Float
+    # Percentage of correlation observed among packets. It means that the delay observed in next packet
+    # will exhibit a corrlation factor of 10.0% with the previous packet. 
+    # OPTIONAL
+    # DEFAULT = 0.0
+    correlation = 10.0
+)   
 ```
 
 ### PortSpec
