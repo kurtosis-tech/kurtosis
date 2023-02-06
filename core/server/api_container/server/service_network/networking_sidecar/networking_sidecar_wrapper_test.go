@@ -23,126 +23,126 @@ const (
 	testEnclaveID              = "kt2022-03-17t16.33.01.495"
 	testContainerStatusRunning = container_status.ContainerStatus_Running
 
-	expectedCommandsForExecutingInitTrafficControl = "tc qdisc add dev eth1 root handle 1: htb && tc class add dev" +
-		" eth1 parent 1: classid 1:1 htb rate 100% && tc class add dev eth1 parent 1: classid 1:2 htb rate 100% &&" +
-		" tc filter add dev eth1 parent 1: handle 1:0 basic flowid 1:1 && tc qdisc add dev eth1 parent 1:1 handle" +
-		" 2: htb && tc qdisc add dev eth1 parent 1:2 handle 3: htb"
+	expectedCommandsForExecutingInitTrafficControl = "tc qdisc add dev eth0 root handle 1: htb && tc class add dev" +
+		" eth0 parent 1: classid 1:1 htb rate 100% && tc class add dev eth0 parent 1: classid 1:2 htb rate 100% &&" +
+		" tc filter add dev eth0 parent 1: handle 1:0 basic flowid 1:1 && tc qdisc add dev eth0 parent 1:1 handle" +
+		" 2: htb && tc qdisc add dev eth0 parent 1:2 handle 3: htb"
 
-	expectedCommandsForExecutingBlockedPartitionInQdiscB = "tc qdisc del dev eth1 parent 1:2 handle 3: htb && tc qdisc " +
-		"add dev eth1 parent 1:2 handle 3: htb && tc class add dev eth1 parent 3: classid 3:1 htb rate 100% && tc " +
-		"filter add dev eth1 parent 3: protocol ip prio 1 u32 flowid 3:1 match ip dst 1.1.1.1 && tc qdisc add dev " +
-		"eth1 parent 3:1 handle 5: netem loss 100% && tc class add dev eth1 parent 3: classid 3:2 htb rate 100% && " +
-		"tc filter add dev eth1 parent 3: protocol ip prio 1 u32 flowid 3:2 match ip dst 2.2.2.2 && tc qdisc add " +
-		"dev eth1 parent 3:2 handle 7: netem loss 100% && tc class add dev eth1 parent 3: classid 3:3 htb rate 100%" +
-		" && tc filter add dev eth1 parent 3: protocol ip prio 1 u32 flowid 3:3 match ip dst 3.3.3.3 && tc qdisc add" +
-		" dev eth1 parent 3:3 handle 9: netem loss 100% && tc class add dev eth1 parent 3: classid 3:4 htb rate 100%" +
-		" && tc filter add dev eth1 parent 3: protocol ip prio 1 u32 flowid 3:4 match ip dst 4.4.4.4 && tc qdisc add" +
-		" dev eth1 parent 3:4 handle b: netem loss 100% && tc filter replace dev eth1 parent 1: handle 1:0 basic" +
+	expectedCommandsForExecutingBlockedPartitionInQdiscB = "tc qdisc del dev eth0 parent 1:2 handle 3: htb && tc qdisc " +
+		"add dev eth0 parent 1:2 handle 3: htb && tc class add dev eth0 parent 3: classid 3:1 htb rate 100% && tc " +
+		"filter add dev eth0 parent 3: protocol ip prio 1 u32 flowid 3:1 match ip dst 1.1.1.1 && tc qdisc add dev " +
+		"eth0 parent 3:1 handle 5: netem loss 100% && tc class add dev eth0 parent 3: classid 3:2 htb rate 100% && " +
+		"tc filter add dev eth0 parent 3: protocol ip prio 1 u32 flowid 3:2 match ip dst 2.2.2.2 && tc qdisc add " +
+		"dev eth0 parent 3:2 handle 7: netem loss 100% && tc class add dev eth0 parent 3: classid 3:3 htb rate 100%" +
+		" && tc filter add dev eth0 parent 3: protocol ip prio 1 u32 flowid 3:3 match ip dst 3.3.3.3 && tc qdisc add" +
+		" dev eth0 parent 3:3 handle 9: netem loss 100% && tc class add dev eth0 parent 3: classid 3:4 htb rate 100%" +
+		" && tc filter add dev eth0 parent 3: protocol ip prio 1 u32 flowid 3:4 match ip dst 4.4.4.4 && tc qdisc add" +
+		" dev eth0 parent 3:4 handle b: netem loss 100% && tc filter replace dev eth0 parent 1: handle 1:0 basic" +
 		" flowid 1:2"
 
-	expectedCommandsForExecutingSoftPartitionInQdiscA = "tc qdisc del dev eth1 parent 1:1 handle 2: htb && tc qdisc " +
-		"add dev eth1 parent 1:1 handle 2: htb && tc class add dev eth1 parent 2: classid 2:1 htb rate 100% && tc " +
-		"filter add dev eth1 parent 2: protocol ip prio 1 u32 flowid 2:1 match ip dst 1.1.1.1 && tc qdisc add dev " +
-		"eth1 parent 2:1 handle 4: netem loss 25% && tc class add dev eth1 parent 2: classid 2:2 htb rate 100% && " +
-		"tc filter add dev eth1 parent 2: protocol ip prio 1 u32 flowid 2:2 match ip dst 2.2.2.2 && tc qdisc add dev" +
-		" eth1 parent 2:2 handle 6: netem loss 25% && tc class add dev eth1 parent 2: classid 2:3 htb rate 100% && tc" +
-		" filter add dev eth1 parent 2: protocol ip prio 1 u32 flowid 2:3 match ip dst 3.3.3.3 && tc qdisc add dev " +
-		"eth1 parent 2:3 handle 8: netem loss 25% && tc class add dev eth1 parent 2: classid 2:4 htb rate 100% && tc " +
-		"filter add dev eth1 parent 2: protocol ip prio 1 u32 flowid 2:4 match ip dst 4.4.4.4 && tc qdisc add dev eth1" +
-		" parent 2:4 handle a: netem loss 25% && tc filter replace dev eth1 parent 1: handle 1:0 basic flowid 1:1"
+	expectedCommandsForExecutingSoftPartitionInQdiscA = "tc qdisc del dev eth0 parent 1:1 handle 2: htb && tc qdisc " +
+		"add dev eth0 parent 1:1 handle 2: htb && tc class add dev eth0 parent 2: classid 2:1 htb rate 100% && tc " +
+		"filter add dev eth0 parent 2: protocol ip prio 1 u32 flowid 2:1 match ip dst 1.1.1.1 && tc qdisc add dev " +
+		"eth0 parent 2:1 handle 4: netem loss 25% && tc class add dev eth0 parent 2: classid 2:2 htb rate 100% && " +
+		"tc filter add dev eth0 parent 2: protocol ip prio 1 u32 flowid 2:2 match ip dst 2.2.2.2 && tc qdisc add dev" +
+		" eth0 parent 2:2 handle 6: netem loss 25% && tc class add dev eth0 parent 2: classid 2:3 htb rate 100% && tc" +
+		" filter add dev eth0 parent 2: protocol ip prio 1 u32 flowid 2:3 match ip dst 3.3.3.3 && tc qdisc add dev " +
+		"eth0 parent 2:3 handle 8: netem loss 25% && tc class add dev eth0 parent 2: classid 2:4 htb rate 100% && tc " +
+		"filter add dev eth0 parent 2: protocol ip prio 1 u32 flowid 2:4 match ip dst 4.4.4.4 && tc qdisc add dev eth0" +
+		" parent 2:4 handle a: netem loss 25% && tc filter replace dev eth0 parent 1: handle 1:0 basic flowid 1:1"
 
-	expectedCommandsForExecutingSoftPartitionInQdiscB = "tc qdisc del dev eth1 parent 1:2 handle 3: htb && tc qdisc add dev" +
-		" eth1 parent 1:2 handle 3: htb && tc class add dev eth1 parent 3: classid 3:1 htb rate 100% && tc filter add" +
-		" dev eth1 parent 3: protocol ip prio 1 u32 flowid 3:1 match ip dst 1.1.1.1 && tc qdisc add dev eth1 parent" +
-		" 3:1 handle 5: netem loss 25% && tc class add dev eth1 parent 3: classid 3:2 htb rate 100% && tc filter add" +
-		" dev eth1 parent 3: protocol ip prio 1 u32 flowid 3:2 match ip dst 2.2.2.2 && tc qdisc add dev eth1 parent" +
-		" 3:2 handle 7: netem loss 25% && tc class add dev eth1 parent 3: classid 3:3 htb rate 100% && tc filter add" +
-		" dev eth1 parent 3: protocol ip prio 1 u32 flowid 3:3 match ip dst 3.3.3.3 && tc qdisc add dev eth1 parent " +
-		"3:3 handle 9: netem loss 25% && tc class add dev eth1 parent 3: classid 3:4 htb rate 100% && tc filter add " +
-		"dev eth1 parent 3: protocol ip prio 1 u32 flowid 3:4 match ip dst 4.4.4.4 && tc qdisc add dev eth1 parent 3:4" +
-		" handle b: netem loss 25% && tc filter replace dev eth1 parent 1: handle 1:0 basic flowid 1:2"
+	expectedCommandsForExecutingSoftPartitionInQdiscB = "tc qdisc del dev eth0 parent 1:2 handle 3: htb && tc qdisc add dev" +
+		" eth0 parent 1:2 handle 3: htb && tc class add dev eth0 parent 3: classid 3:1 htb rate 100% && tc filter add" +
+		" dev eth0 parent 3: protocol ip prio 1 u32 flowid 3:1 match ip dst 1.1.1.1 && tc qdisc add dev eth0 parent" +
+		" 3:1 handle 5: netem loss 25% && tc class add dev eth0 parent 3: classid 3:2 htb rate 100% && tc filter add" +
+		" dev eth0 parent 3: protocol ip prio 1 u32 flowid 3:2 match ip dst 2.2.2.2 && tc qdisc add dev eth0 parent" +
+		" 3:2 handle 7: netem loss 25% && tc class add dev eth0 parent 3: classid 3:3 htb rate 100% && tc filter add" +
+		" dev eth0 parent 3: protocol ip prio 1 u32 flowid 3:3 match ip dst 3.3.3.3 && tc qdisc add dev eth0 parent " +
+		"3:3 handle 9: netem loss 25% && tc class add dev eth0 parent 3: classid 3:4 htb rate 100% && tc filter add " +
+		"dev eth0 parent 3: protocol ip prio 1 u32 flowid 3:4 match ip dst 4.4.4.4 && tc qdisc add dev eth0 parent 3:4" +
+		" handle b: netem loss 25% && tc filter replace dev eth0 parent 1: handle 1:0 basic flowid 1:2"
 
-	expectedCommandsForExecutingUnblockedPartition = "tc qdisc del dev eth1 parent 1:1 handle 2: htb && tc qdisc del" +
-		" dev eth1 parent 1:2 handle 3: htb && tc qdisc add dev eth1 parent 1:1 handle 2: htb && tc qdisc add dev " +
-		"eth1 parent 1:2 handle 3: htb"
+	expectedCommandsForExecutingUnblockedPartition = "tc qdisc del dev eth0 parent 1:1 handle 2: htb && tc qdisc del" +
+		" dev eth0 parent 1:2 handle 3: htb && tc qdisc add dev eth0 parent 1:1 handle 2: htb && tc qdisc add dev " +
+		"eth0 parent 1:2 handle 3: htb"
 
-	expectedCommandsForExecutingSoftPartitionWithDelayInQdiscA = "tc qdisc del dev eth1 parent 1:1 handle 2: htb && " +
-		"tc qdisc add dev eth1 parent 1:1 handle 2: htb && tc class add dev eth1 parent 2: classid 2:1 htb rate 100% && " +
-		"tc filter add dev eth1 parent 2: protocol ip prio 1 u32 flowid 2:1 match ip dst 1.1.1.1 && " +
-		"tc qdisc add dev eth1 parent 2:1 handle 4: netem loss 25% delay 500ms 0ms 0% && " +
-		"tc class add dev eth1 parent 2: classid 2:2 htb rate 100% && " +
-		"tc filter add dev eth1 parent 2: protocol ip prio 1 u32 flowid 2:2 match ip dst 2.2.2.2 && " +
-		"tc qdisc add dev eth1 parent 2:2 handle 6: netem loss 25% delay 500ms 0ms 0% && " +
-		"tc class add dev eth1 parent 2: classid 2:3 htb rate 100% && " +
-		"tc filter add dev eth1 parent 2: protocol ip prio 1 u32 flowid 2:3 match ip dst 3.3.3.3 && " +
-		"tc qdisc add dev eth1 parent 2:3 handle 8: netem loss 25% delay 500ms 0ms 0% && " +
-		"tc class add dev eth1 parent 2: classid 2:4 htb rate 100% && " +
-		"tc filter add dev eth1 parent 2: protocol ip prio 1 u32 flowid 2:4 match ip dst 4.4.4.4 && " +
-		"tc qdisc add dev eth1 parent 2:4 handle a: netem loss 25% delay 500ms 0ms 0% && " +
-		"tc filter replace dev eth1 parent 1: handle 1:0 basic flowid 1:1"
+	expectedCommandsForExecutingSoftPartitionWithDelayInQdiscA = "tc qdisc del dev eth0 parent 1:1 handle 2: htb && " +
+		"tc qdisc add dev eth0 parent 1:1 handle 2: htb && tc class add dev eth0 parent 2: classid 2:1 htb rate 100% && " +
+		"tc filter add dev eth0 parent 2: protocol ip prio 1 u32 flowid 2:1 match ip dst 1.1.1.1 && " +
+		"tc qdisc add dev eth0 parent 2:1 handle 4: netem loss 25% delay 500ms 0ms 0% && " +
+		"tc class add dev eth0 parent 2: classid 2:2 htb rate 100% && " +
+		"tc filter add dev eth0 parent 2: protocol ip prio 1 u32 flowid 2:2 match ip dst 2.2.2.2 && " +
+		"tc qdisc add dev eth0 parent 2:2 handle 6: netem loss 25% delay 500ms 0ms 0% && " +
+		"tc class add dev eth0 parent 2: classid 2:3 htb rate 100% && " +
+		"tc filter add dev eth0 parent 2: protocol ip prio 1 u32 flowid 2:3 match ip dst 3.3.3.3 && " +
+		"tc qdisc add dev eth0 parent 2:3 handle 8: netem loss 25% delay 500ms 0ms 0% && " +
+		"tc class add dev eth0 parent 2: classid 2:4 htb rate 100% && " +
+		"tc filter add dev eth0 parent 2: protocol ip prio 1 u32 flowid 2:4 match ip dst 4.4.4.4 && " +
+		"tc qdisc add dev eth0 parent 2:4 handle a: netem loss 25% delay 500ms 0ms 0% && " +
+		"tc filter replace dev eth0 parent 1: handle 1:0 basic flowid 1:1"
 
-	expectedCommandsForExecutingSoftPartitionWithDelayInQdiscB = "tc qdisc del dev eth1 parent 1:2 handle 3: htb && " +
-		"tc qdisc add dev eth1 parent 1:2 handle 3: htb && " +
-		"tc class add dev eth1 parent 3: classid 3:1 htb rate 100% && " +
-		"tc filter add dev eth1 parent 3: protocol ip prio 1 u32 flowid 3:1 match ip dst 1.1.1.1 && " +
-		"tc qdisc add dev eth1 parent 3:1 handle 5: netem loss 25% delay 500ms 0ms 0% && " +
-		"tc class add dev eth1 parent 3: classid 3:2 htb rate 100% && " +
-		"tc filter add dev eth1 parent 3: protocol ip prio 1 u32 flowid 3:2 match ip dst 2.2.2.2 && " +
-		"tc qdisc add dev eth1 parent 3:2 handle 7: netem loss 25% delay 500ms 0ms 0% && " +
-		"tc class add dev eth1 parent 3: classid 3:3 htb rate 100% && " +
-		"tc filter add dev eth1 parent 3: protocol ip prio 1 u32 flowid 3:3 match ip dst 3.3.3.3 && " +
-		"tc qdisc add dev eth1 parent 3:3 handle 9: netem loss 25% delay 500ms 0ms 0% && " +
-		"tc class add dev eth1 parent 3: classid 3:4 htb rate 100% && " +
-		"tc filter add dev eth1 parent 3: protocol ip prio 1 u32 flowid 3:4 match ip dst 4.4.4.4 && " +
-		"tc qdisc add dev eth1 parent 3:4 handle b: netem loss 25% delay 500ms 0ms 0% && " +
-		"tc filter replace dev eth1 parent 1: handle 1:0 basic flowid 1:2"
+	expectedCommandsForExecutingSoftPartitionWithDelayInQdiscB = "tc qdisc del dev eth0 parent 1:2 handle 3: htb && " +
+		"tc qdisc add dev eth0 parent 1:2 handle 3: htb && " +
+		"tc class add dev eth0 parent 3: classid 3:1 htb rate 100% && " +
+		"tc filter add dev eth0 parent 3: protocol ip prio 1 u32 flowid 3:1 match ip dst 1.1.1.1 && " +
+		"tc qdisc add dev eth0 parent 3:1 handle 5: netem loss 25% delay 500ms 0ms 0% && " +
+		"tc class add dev eth0 parent 3: classid 3:2 htb rate 100% && " +
+		"tc filter add dev eth0 parent 3: protocol ip prio 1 u32 flowid 3:2 match ip dst 2.2.2.2 && " +
+		"tc qdisc add dev eth0 parent 3:2 handle 7: netem loss 25% delay 500ms 0ms 0% && " +
+		"tc class add dev eth0 parent 3: classid 3:3 htb rate 100% && " +
+		"tc filter add dev eth0 parent 3: protocol ip prio 1 u32 flowid 3:3 match ip dst 3.3.3.3 && " +
+		"tc qdisc add dev eth0 parent 3:3 handle 9: netem loss 25% delay 500ms 0ms 0% && " +
+		"tc class add dev eth0 parent 3: classid 3:4 htb rate 100% && " +
+		"tc filter add dev eth0 parent 3: protocol ip prio 1 u32 flowid 3:4 match ip dst 4.4.4.4 && " +
+		"tc qdisc add dev eth0 parent 3:4 handle b: netem loss 25% delay 500ms 0ms 0% && " +
+		"tc filter replace dev eth0 parent 1: handle 1:0 basic flowid 1:2"
 
-	expectedCommandsForExecutingSoftPartitionWithDelayDistributionInQdiscA = "tc qdisc del dev eth1 parent 1:1 handle 2: htb && " +
-		"tc qdisc add dev eth1 parent 1:1 handle 2: htb && tc class add dev eth1 parent 2: classid 2:1 htb rate 100% && " +
-		"tc filter add dev eth1 parent 2: protocol ip prio 1 u32 flowid 2:1 match ip dst 1.1.1.1 && " +
-		"tc qdisc add dev eth1 parent 2:1 handle 4: netem loss 25% delay 500ms 10ms 20.5% && " +
-		"tc class add dev eth1 parent 2: classid 2:2 htb rate 100% && " +
-		"tc filter add dev eth1 parent 2: protocol ip prio 1 u32 flowid 2:2 match ip dst 2.2.2.2 && " +
-		"tc qdisc add dev eth1 parent 2:2 handle 6: netem loss 25% delay 500ms 10ms 20.5% && " +
-		"tc class add dev eth1 parent 2: classid 2:3 htb rate 100% && " +
-		"tc filter add dev eth1 parent 2: protocol ip prio 1 u32 flowid 2:3 match ip dst 3.3.3.3 && " +
-		"tc qdisc add dev eth1 parent 2:3 handle 8: netem loss 25% delay 500ms 10ms 20.5% && " +
-		"tc class add dev eth1 parent 2: classid 2:4 htb rate 100% && " +
-		"tc filter add dev eth1 parent 2: protocol ip prio 1 u32 flowid 2:4 match ip dst 4.4.4.4 && " +
-		"tc qdisc add dev eth1 parent 2:4 handle a: netem loss 25% delay 500ms 10ms 20.5% && " +
-		"tc filter replace dev eth1 parent 1: handle 1:0 basic flowid 1:1"
+	expectedCommandsForExecutingSoftPartitionWithDelayDistributionInQdiscA = "tc qdisc del dev eth0 parent 1:1 handle 2: htb && " +
+		"tc qdisc add dev eth0 parent 1:1 handle 2: htb && tc class add dev eth0 parent 2: classid 2:1 htb rate 100% && " +
+		"tc filter add dev eth0 parent 2: protocol ip prio 1 u32 flowid 2:1 match ip dst 1.1.1.1 && " +
+		"tc qdisc add dev eth0 parent 2:1 handle 4: netem loss 25% delay 500ms 10ms 20.5% && " +
+		"tc class add dev eth0 parent 2: classid 2:2 htb rate 100% && " +
+		"tc filter add dev eth0 parent 2: protocol ip prio 1 u32 flowid 2:2 match ip dst 2.2.2.2 && " +
+		"tc qdisc add dev eth0 parent 2:2 handle 6: netem loss 25% delay 500ms 10ms 20.5% && " +
+		"tc class add dev eth0 parent 2: classid 2:3 htb rate 100% && " +
+		"tc filter add dev eth0 parent 2: protocol ip prio 1 u32 flowid 2:3 match ip dst 3.3.3.3 && " +
+		"tc qdisc add dev eth0 parent 2:3 handle 8: netem loss 25% delay 500ms 10ms 20.5% && " +
+		"tc class add dev eth0 parent 2: classid 2:4 htb rate 100% && " +
+		"tc filter add dev eth0 parent 2: protocol ip prio 1 u32 flowid 2:4 match ip dst 4.4.4.4 && " +
+		"tc qdisc add dev eth0 parent 2:4 handle a: netem loss 25% delay 500ms 10ms 20.5% && " +
+		"tc filter replace dev eth0 parent 1: handle 1:0 basic flowid 1:1"
 
-	expectedCommandsForExecutingSoftPartitionWithDelayDistributionInQdiscB = "tc qdisc del dev eth1 parent 1:2 handle 3: htb && " +
-		"tc qdisc add dev eth1 parent 1:2 handle 3: htb && " +
-		"tc class add dev eth1 parent 3: classid 3:1 htb rate 100% && " +
-		"tc filter add dev eth1 parent 3: protocol ip prio 1 u32 flowid 3:1 match ip dst 1.1.1.1 && " +
-		"tc qdisc add dev eth1 parent 3:1 handle 5: netem loss 25% delay 500ms 10ms 20.5% && " +
-		"tc class add dev eth1 parent 3: classid 3:2 htb rate 100% && " +
-		"tc filter add dev eth1 parent 3: protocol ip prio 1 u32 flowid 3:2 match ip dst 2.2.2.2 && " +
-		"tc qdisc add dev eth1 parent 3:2 handle 7: netem loss 25% delay 500ms 10ms 20.5% && " +
-		"tc class add dev eth1 parent 3: classid 3:3 htb rate 100% && " +
-		"tc filter add dev eth1 parent 3: protocol ip prio 1 u32 flowid 3:3 match ip dst 3.3.3.3 && " +
-		"tc qdisc add dev eth1 parent 3:3 handle 9: netem loss 25% delay 500ms 10ms 20.5% && " +
-		"tc class add dev eth1 parent 3: classid 3:4 htb rate 100% && " +
-		"tc filter add dev eth1 parent 3: protocol ip prio 1 u32 flowid 3:4 match ip dst 4.4.4.4 && " +
-		"tc qdisc add dev eth1 parent 3:4 handle b: netem loss 25% delay 500ms 10ms 20.5% && " +
-		"tc filter replace dev eth1 parent 1: handle 1:0 basic flowid 1:2"
+	expectedCommandsForExecutingSoftPartitionWithDelayDistributionInQdiscB = "tc qdisc del dev eth0 parent 1:2 handle 3: htb && " +
+		"tc qdisc add dev eth0 parent 1:2 handle 3: htb && " +
+		"tc class add dev eth0 parent 3: classid 3:1 htb rate 100% && " +
+		"tc filter add dev eth0 parent 3: protocol ip prio 1 u32 flowid 3:1 match ip dst 1.1.1.1 && " +
+		"tc qdisc add dev eth0 parent 3:1 handle 5: netem loss 25% delay 500ms 10ms 20.5% && " +
+		"tc class add dev eth0 parent 3: classid 3:2 htb rate 100% && " +
+		"tc filter add dev eth0 parent 3: protocol ip prio 1 u32 flowid 3:2 match ip dst 2.2.2.2 && " +
+		"tc qdisc add dev eth0 parent 3:2 handle 7: netem loss 25% delay 500ms 10ms 20.5% && " +
+		"tc class add dev eth0 parent 3: classid 3:3 htb rate 100% && " +
+		"tc filter add dev eth0 parent 3: protocol ip prio 1 u32 flowid 3:3 match ip dst 3.3.3.3 && " +
+		"tc qdisc add dev eth0 parent 3:3 handle 9: netem loss 25% delay 500ms 10ms 20.5% && " +
+		"tc class add dev eth0 parent 3: classid 3:4 htb rate 100% && " +
+		"tc filter add dev eth0 parent 3: protocol ip prio 1 u32 flowid 3:4 match ip dst 4.4.4.4 && " +
+		"tc qdisc add dev eth0 parent 3:4 handle b: netem loss 25% delay 500ms 10ms 20.5% && " +
+		"tc filter replace dev eth0 parent 1: handle 1:0 basic flowid 1:2"
 
-	expectedCommandsForNoPacketLossButConstantDelay = "tc qdisc del dev eth1 parent 1:2 handle 3: htb && " +
-		"tc qdisc add dev eth1 parent 1:2 handle 3: htb && " +
-		"tc class add dev eth1 parent 3: classid 3:1 htb rate 100% && " +
-		"tc filter add dev eth1 parent 3: protocol ip prio 1 u32 flowid 3:1 match ip dst 1.1.1.1 && " +
-		"tc qdisc add dev eth1 parent 3:1 handle 5: netem loss 0% delay 500ms 0ms 0% && " +
-		"tc class add dev eth1 parent 3: classid 3:2 htb rate 100% && " +
-		"tc filter add dev eth1 parent 3: protocol ip prio 1 u32 flowid 3:2 match ip dst 2.2.2.2 && " +
-		"tc qdisc add dev eth1 parent 3:2 handle 7: netem loss 0% delay 500ms 0ms 0% && " +
-		"tc class add dev eth1 parent 3: classid 3:3 htb rate 100% && " +
-		"tc filter add dev eth1 parent 3: protocol ip prio 1 u32 flowid 3:3 match ip dst 3.3.3.3 && " +
-		"tc qdisc add dev eth1 parent 3:3 handle 9: netem loss 0% delay 500ms 0ms 0% && " +
-		"tc class add dev eth1 parent 3: classid 3:4 htb rate 100% && " +
-		"tc filter add dev eth1 parent 3: protocol ip prio 1 u32 flowid 3:4 match ip dst 4.4.4.4 && " +
-		"tc qdisc add dev eth1 parent 3:4 handle b: netem loss 0% delay 500ms 0ms 0% && " +
-		"tc filter replace dev eth1 parent 1: handle 1:0 basic flowid 1:2"
+	expectedCommandsForNoPacketLossButConstantDelay = "tc qdisc del dev eth0 parent 1:2 handle 3: htb && " +
+		"tc qdisc add dev eth0 parent 1:2 handle 3: htb && " +
+		"tc class add dev eth0 parent 3: classid 3:1 htb rate 100% && " +
+		"tc filter add dev eth0 parent 3: protocol ip prio 1 u32 flowid 3:1 match ip dst 1.1.1.1 && " +
+		"tc qdisc add dev eth0 parent 3:1 handle 5: netem loss 0% delay 500ms 0ms 0% && " +
+		"tc class add dev eth0 parent 3: classid 3:2 htb rate 100% && " +
+		"tc filter add dev eth0 parent 3: protocol ip prio 1 u32 flowid 3:2 match ip dst 2.2.2.2 && " +
+		"tc qdisc add dev eth0 parent 3:2 handle 7: netem loss 0% delay 500ms 0ms 0% && " +
+		"tc class add dev eth0 parent 3: classid 3:3 htb rate 100% && " +
+		"tc filter add dev eth0 parent 3: protocol ip prio 1 u32 flowid 3:3 match ip dst 3.3.3.3 && " +
+		"tc qdisc add dev eth0 parent 3:3 handle 9: netem loss 0% delay 500ms 0ms 0% && " +
+		"tc class add dev eth0 parent 3: classid 3:4 htb rate 100% && " +
+		"tc filter add dev eth0 parent 3: protocol ip prio 1 u32 flowid 3:4 match ip dst 4.4.4.4 && " +
+		"tc qdisc add dev eth0 parent 3:4 handle b: netem loss 0% delay 500ms 0ms 0% && " +
+		"tc filter replace dev eth0 parent 1: handle 1:0 basic flowid 1:2"
 
 	stringSeparatorInCommand = " "
 )
@@ -601,7 +601,9 @@ func TestConcurrencySafety(t *testing.T) {
 }
 
 // ====================================================================================================
-// 									   Private helper methods
+//
+//	Private helper methods
+//
 // ====================================================================================================
 func getAllUserServicePacketConnectionConfigurationsSoftPartitionWithDistribution() map[string]*partition_topology.PartitionConnection {
 	allUserServicePacketConnectionConfigurations := map[string]*partition_topology.PartitionConnection{}

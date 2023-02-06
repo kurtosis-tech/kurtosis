@@ -19,6 +19,8 @@ const (
 	shouldFollowContainerLogsWhenExpanderHasError = false
 
 	expanderContainerSuccessExitCode = 0
+
+	skipAddingToBridgeNetwork = true
 )
 
 // Functions required to do files artifacts expansion
@@ -149,6 +151,8 @@ func runFilesArtifactsExpander(
 		volumeMounts,
 	).WithLabels(
 		containerLabels,
+	).WithSkipAddingToBridgeNetworkIfStaticIpIsSet(
+		skipAddingToBridgeNetwork,
 	).Build()
 	containerId, _, err := dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
 	if err != nil {

@@ -21,7 +21,7 @@ import (
 
 const (
 	networkingSidecarImageName = "kurtosistech/iproute2"
-	succesfulExecCmdExitCode   = 0
+	skipAddingToBridgeNetwork  = true
 )
 
 // TODO: MIGRATE THIS FOLDER TO USE STRUCTURE OF USER_SERVICE_FUNCTIONS MODULE
@@ -110,6 +110,8 @@ func (backend *DockerKurtosisBackend) CreateNetworkingSidecar(
 		sidecarContainerCommand,
 	).WithLabels(
 		containerLabels,
+	).WithSkipAddingToBridgeNetworkIfStaticIpIsSet(
+		skipAddingToBridgeNetwork,
 	).Build()
 
 	// Best-effort pull attempt

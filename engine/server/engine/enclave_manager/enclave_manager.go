@@ -30,11 +30,6 @@ const (
 	getRandomEnclaveIdRetries = uint16(5)
 
 	validNumberOfUuidMatches = 1
-
-	// This is a massive hack to make our containers pick up eth1 as the networking interface
-	// TODO remove this when https://github.com/kurtosis-tech/kurtosis/pull/849 is fixed
-	enclavePrefix       = "edf"
-	enclavePrefixLength = 3
 )
 
 // TODO Move this to the KurtosisBackend to calculate!!
@@ -107,9 +102,7 @@ func (manager *EnclaveManager) CreateEnclave(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while creating UUID for enclave with supplied name '%v'", enclaveName)
 	}
-	// This is a massive hack to make our containers pick up eth1 as the networking interface
-	// TODO remove this when https://github.com/kurtosis-tech/kurtosis/pull/849 is fixed
-	enclaveUuid := enclave.EnclaveUUID(fmt.Sprintf("%s%s", enclavePrefix, uuid[enclavePrefixLength:]))
+	enclaveUuid := enclave.EnclaveUUID(uuid)
 
 	allCurrentEnclaves, err := manager.kurtosisBackend.GetEnclaves(setupCtx, getAllEnclavesFilter())
 	if err != nil {

@@ -45,7 +45,7 @@ const (
 	tcRateCommand               = "rate"
 
 	rootQdiscName                 = "root"
-	defaultDockerNetworkInterface = "eth1"
+	defaultDockerNetworkInterface = "eth0"
 
 	rootQdiscID                       qdiscID = "1:"
 	qdiscAID                          qdiscID = "2:"

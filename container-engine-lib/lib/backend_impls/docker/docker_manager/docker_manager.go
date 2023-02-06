@@ -32,7 +32,8 @@ import (
 const (
 	// We use a bridge network because, as of 2020-08-01, we're only running locally; however, this may need to change
 	//  at some point in the future
-	dockerNetworkDriver = "bridge"
+	dockerNetworkDriver      = "bridge"
+	bridgeNetworkNetworkName = "bridge"
 
 	// Per https://docs.docker.com/engine/reference/commandline/kill/ , this seems to mean "the default
 	//  kill signal"
@@ -109,6 +110,8 @@ const (
 	defaultKillContainerTimeBetweenRetries = 10 * time.Millisecond
 
 	successfulExitCode = 0
+
+	emptyNetworkAlias = ""
 )
 
 /*
@@ -159,7 +162,7 @@ Returns:
 
 	id: The Docker-managed ID of the network
 */
-func (manager DockerManager) CreateNetwork(context context.Context, name string, subnetMask string, gatewayIP net.IP, labels map[string]string) (id string, err error) {
+func (manager *DockerManager) CreateNetwork(context context.Context, name string, subnetMask string, gatewayIP net.IP, labels map[string]string) (id string, err error) {
 	ipamConfig := []network.IPAMConfig{{
 		Subnet:     subnetMask,
 		IPRange:    "",
@@ -191,7 +194,7 @@ func (manager DockerManager) CreateNetwork(context context.Context, name string,
 	return resp.ID, nil
 }
 
-func (manager DockerManager) ListNetworks(ctx context.Context) ([]types.NetworkResource, error) {
+func (manager *DockerManager) ListNetworks(ctx context.Context) ([]types.NetworkResource, error) {
 	networks, err := manager.dockerClient.NetworkList(ctx, types.NetworkListOptions{
 		Filters: filters.Args{},
 	})
@@ -209,7 +212,7 @@ GetNetworksByName
 Returns Network list matching the given name (if any).
 */
 // TODO Combine with GetNetworksByLabel using a search filter builder
-func (manager DockerManager) GetNetworksByName(ctx context.Context, name string) ([]*docker_manager_types.Network, error) {
+func (manager *DockerManager) GetNetworksByName(ctx context.Context, name string) ([]*docker_manager_types.Network, error) {
 	nameSearchArgs := filters.NewArgs(filters.KeyValuePair{
 		Key:   networkNameSearchFilterKey,
 		Value: name,
@@ -231,7 +234,7 @@ func (manager DockerManager) GetNetworksByName(ctx context.Context, name string)
 GetNetworksByLabels
 Gets networks matching the given labels
 */
-func (manager DockerManager) GetNetworksByLabels(ctx context.Context, labels map[string]string) ([]*docker_manager_types.Network, error) {
+func (manager *DockerManager) GetNetworksByLabels(ctx context.Context, labels map[string]string) ([]*docker_manager_types.Network, error) {
 	labelsSearchArgs := getLabelsFilterArgs(networkLabelSearchFilterKey, labels)
 	dockerNetworks, err := manager.getNetworksByFilterArgs(ctx, labelsSearchArgs)
 	if err != nil {
@@ -246,7 +249,7 @@ func (manager DockerManager) GetNetworksByLabels(ctx context.Context, labels map
 	return networks, nil
 }
 
-func (manager DockerManager) GetContainerIdsConnectedToNetwork(context context.Context, networkId string) ([]string, error) {
+func (manager *DockerManager) GetContainerIdsConnectedToNetwork(context context.Context, networkId string) ([]string, error) {
 	inspectResponse, err := manager.dockerClient.NetworkInspect(context, networkId, types.NetworkInspectOptions{
 		Scope:   "",
 		Verbose: false,
@@ -274,7 +277,7 @@ Args:
 	context: The Context that this request is running in (useful for cancellation)
 	networkId: ID of Docker network to remove
 */
-func (manager DockerManager) RemoveNetwork(context context.Context, networkId string) error {
+func (manager *DockerManager) RemoveNetwork(context context.Context, networkId string) error {
 	if err := manager.dockerClient.NetworkRemove(context, networkId); err != nil {
 		return stacktrace.Propagate(err, "An error occurred removing the Docker network with ID %v", networkId)
 	}
@@ -292,7 +295,7 @@ Args:
 		even give volumes IDs - this name is all there is)
 	labels: Labels to attach to the volume object
 */
-func (manager DockerManager) CreateVolume(context context.Context, volumeName string, labels map[string]string) error {
+func (manager *DockerManager) CreateVolume(context context.Context, volumeName string, labels map[string]string) error {
 	volumeConfig := volume.VolumeCreateBody{
 		Driver:     "",
 		DriverOpts: nil,
@@ -398,7 +401,7 @@ Returns:
 	hostMachinePortBindings: For every port in the args' "usedPorts" object that has publishing turned on, an entry
 		will be generated in this map with the binding on the host machine where the port can be found
 */
-func (manager DockerManager) CreateAndStartContainer(
+func (manager *DockerManager) CreateAndStartContainer(
 	ctx context.Context,
 	args *CreateAndStartContainerArgs,
 ) (string, map[nat.Port]*nat.PortBinding, error) {
@@ -464,7 +467,26 @@ func (manager DockerManager) CreateAndStartContainer(
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "Failed to configure host to container mappings from service.")
 	}
-	containerCreateResp, err := manager.dockerClient.ContainerCreate(ctx, containerConfigPtr, containerHostConfigPtr, nil, nil, args.name)
+
+	// note a nil network config would connect to bridge network by default
+	var networkConfig *network.NetworkingConfig
+	if args.staticIp != nil && args.skipAddingToBridgeNetworkIfStaticIpIsSet {
+		targetNetworkEndPointSettings := getEndpointSettingsForIpAddress(args.staticIp.String(), args.alias)
+		endpointSettingsByNetworkId := map[string]*network.EndpointSettings{}
+		endpointSettingsByNetworkId[args.networkId] = targetNetworkEndPointSettings
+		networkConfig = &network.NetworkingConfig{
+			EndpointsConfig: endpointSettingsByNetworkId,
+		}
+	}
+
+	// This function dockerClient.ContainerCreate adds the container to the bridge network if the networkConfig is nil or if its empty
+	// Ideally we'd start with an empty network config, add the target network if its supplied and add the bridge network if the person needs it
+	// This logic breaks at two places
+	// If a person doesn't need either of them, and we pass a nil(or empty) we get the bridge network for free
+	// While starting the enclave, adding both bridge & enclave network to the networkConfig just fails
+	// I tried creating the container with networkConfig - nil & args.NetworkMode set to none but that stopped me from adding the container to a network
+	// using manager.ConnectContainerToNetwork
+	containerCreateResp, err := manager.dockerClient.ContainerCreate(ctx, containerConfigPtr, containerHostConfigPtr, networkConfig, nil, args.name)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "Could not create Docker container '%v' from image '%v'", args.name, dockerImage)
 	}
@@ -478,9 +500,10 @@ func (manager DockerManager) CreateAndStartContainer(
 	}
 	logrus.Debugf("Created container with ID '%v' from image '%v'", containerId, dockerImage)
 
-	// If the user doesn't provide an IP, the Docker network will auto-assign one
-	if args.staticIp != nil {
-		if err := manager.ConnectContainerToNetwork(ctx, args.networkId, containerId, args.staticIp, args.alias); err != nil {
+	// static ip is provided and the user wants the connection to bridge network to happen
+	// in the container start the bridge network got connected and now we connect to target network
+	if args.staticIp != nil && !args.skipAddingToBridgeNetworkIfStaticIpIsSet {
+		if err = manager.ConnectContainerToNetwork(ctx, args.networkId, containerId, args.staticIp, args.alias); err != nil {
 			return "", nil, stacktrace.Propagate(err, "Failed to connect container %s to network.", containerId)
 		}
 	}
@@ -632,7 +655,7 @@ NOTE: Yes, it's a testament to how poorly-designed the Docker API is that we nee
 
 	everywhere else in the Docker API uses network ID
 */
-func (manager DockerManager) GetContainerIP(ctx context.Context, networkName string, containerId string) (string, error) {
+func (manager *DockerManager) GetContainerIP(ctx context.Context, networkName string, containerId string) (string, error) {
 	resp, err := manager.dockerClient.ContainerInspect(ctx, containerId)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred inspecting container with ID '%v'", containerId)
@@ -645,7 +668,7 @@ func (manager DockerManager) GetContainerIP(ctx context.Context, networkName str
 	return networkInfo.IPAddress, nil
 }
 
-func (manager DockerManager) AttachToContainer(ctx context.Context, containerId string) (types.HijackedResponse, error) {
+func (manager *DockerManager) AttachToContainer(ctx context.Context, containerId string) (types.HijackedResponse, error) {
 	attachOpts := types.ContainerAttachOptions{
 		Stream:     true,
 		Stdin:      true,
@@ -671,7 +694,7 @@ Args:
 	containerId: ID of Docker container to stop
 	timeout: How long to wait for container stoppage before throwing an error
 */
-func (manager DockerManager) StopContainer(context context.Context, containerId string, timeout time.Duration) error {
+func (manager *DockerManager) StopContainer(context context.Context, containerId string, timeout time.Duration) error {
 	err := manager.dockerClient.ContainerStop(context, containerId, &timeout)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred stopping container with ID '%v'", containerId)
@@ -688,7 +711,7 @@ Args:
 	context: The context that the kill runs in
 	containerId: ID of Docker container to kill
 */
-func (manager DockerManager) KillContainer(ctx context.Context, containerId string) error {
+func (manager *DockerManager) KillContainer(ctx context.Context, containerId string) error {
 	if err := manager.killContainerWithRetriesWhenErrorResponseFromDeamon(
 		ctx,
 		containerId,
@@ -741,7 +764,7 @@ Returns:
 	exitCode: The exit code of the container if it stopped
 	err: The error if an error occurred waiting for exit
 */
-func (manager DockerManager) WaitForExit(context context.Context, containerId string) (exitCode int64, err error) {
+func (manager *DockerManager) WaitForExit(context context.Context, containerId string) (exitCode int64, err error) {
 	statusChannel, errChannel := manager.dockerClient.ContainerWait(context, containerId, container.WaitConditionNotRunning)
 
 	// Blocks until one of the channels returns
@@ -763,7 +786,7 @@ NOTE: These logs have STDOUT and STDERR multiplexed together, and the 'stdcopy' 
 
 	demultiplex them per https://github.com/moby/moby/issues/32794
 */
-func (manager DockerManager) GetContainerLogs(
+func (manager *DockerManager) GetContainerLogs(
 	ctx context.Context,
 	containerId string,
 	shouldFollowLogs bool,
@@ -789,7 +812,7 @@ func (manager DockerManager) GetContainerLogs(
 PauseContainer
 Pauses all processes running in the given container, but does not shut it down.
 */
-func (manager DockerManager) PauseContainer(context context.Context, containerId string) error {
+func (manager *DockerManager) PauseContainer(context context.Context, containerId string) error {
 	err := manager.dockerClient.ContainerPause(context, containerId)
 	if err != nil {
 		return stacktrace.Propagate(err, "Docker client failed to pause container '%v'", containerId)
@@ -801,7 +824,7 @@ func (manager DockerManager) PauseContainer(context context.Context, containerId
 UnpauseContainer
 Unpauses all processes running in the given container.
 */
-func (manager DockerManager) UnpauseContainer(context context.Context, containerId string) error {
+func (manager *DockerManager) UnpauseContainer(context context.Context, containerId string) error {
 	err := manager.dockerClient.ContainerUnpause(context, containerId)
 	if err != nil {
 		return stacktrace.Propagate(err, "Docker client failed to unpause container '%v'", containerId)
@@ -813,7 +836,7 @@ func (manager DockerManager) UnpauseContainer(context context.Context, container
 RunExecCommand
 Executes the given command inside the container with the given ID, blocking until the command completes
 */
-func (manager DockerManager) RunExecCommand(context context.Context, containerId string, command []string, logOutput io.Writer) (int32, error) {
+func (manager *DockerManager) RunExecCommand(context context.Context, containerId string, command []string, logOutput io.Writer) (int32, error) {
 	dockerClient := manager.dockerClient
 	execConfig := types.ExecConfig{
 		User:         "",
@@ -891,7 +914,7 @@ ConnectContainerToNetwork
 Connects the container with the given container ID to the network with the given network ID, using the given IP address
 If the IP address passed is nil then we get a random ip address
 */
-func (manager DockerManager) ConnectContainerToNetwork(ctx context.Context, networkId string, containerId string, staticIpAddr net.IP, alias string) (err error) {
+func (manager *DockerManager) ConnectContainerToNetwork(ctx context.Context, networkId string, containerId string, staticIpAddr net.IP, alias string) (err error) {
 	logrus.Tracef(
 		"Connecting container ID %v to network ID %v using static IP %v",
 		containerId,
@@ -903,31 +926,7 @@ func (manager DockerManager) ConnectContainerToNetwork(ctx context.Context, netw
 		staticIpAddressStr = staticIpAddr.String()
 	}
 
-	ipamConfig := &network.EndpointIPAMConfig{
-		IPv4Address:  staticIpAddressStr,
-		IPv6Address:  "",
-		LinkLocalIPs: nil,
-	}
-
-	config := &network.EndpointSettings{
-		IPAMConfig:          ipamConfig,
-		Links:               nil,
-		Aliases:             nil,
-		NetworkID:           "",
-		EndpointID:          "",
-		Gateway:             "",
-		IPAddress:           "",
-		IPPrefixLen:         0,
-		IPv6Gateway:         "",
-		GlobalIPv6Address:   "",
-		GlobalIPv6PrefixLen: 0,
-		MacAddress:          "",
-		DriverOpts:          nil,
-	}
-
-	if alias != "" {
-		config.Aliases = []string{alias}
-	}
+	config := getEndpointSettingsForIpAddress(staticIpAddressStr, alias)
 
 	err = manager.dockerClient.NetworkConnect(
 		ctx,
@@ -942,7 +941,7 @@ func (manager DockerManager) ConnectContainerToNetwork(ctx context.Context, netw
 	return nil
 }
 
-func (manager DockerManager) DisconnectContainerFromNetwork(ctx context.Context, containerId string, networkId string) error {
+func (manager *DockerManager) DisconnectContainerFromNetwork(ctx context.Context, containerId string, networkId string) error {
 	if err := manager.dockerClient.NetworkDisconnect(ctx, networkId, containerId, true); err != nil {
 		return stacktrace.Propagate(err, "An error occurred disconnecting container '%v' from network '%v'", containerId, networkId)
 	}
@@ -950,7 +949,7 @@ func (manager DockerManager) DisconnectContainerFromNetwork(ctx context.Context,
 }
 
 // TODO Refactor this to be GetContainersByName - no need to be so specific now that we have the Container type we can return
-func (manager DockerManager) GetContainerIdsByName(ctx context.Context, nameStr string) ([]string, error) {
+func (manager *DockerManager) GetContainerIdsByName(ctx context.Context, nameStr string) ([]string, error) {
 	filterArg := filters.Arg(containerNameSearchFilterKey, nameStr)
 	nameFilterList := filters.NewArgs(filterArg)
 	// TODO Make the "should show stopped containers" flag configurable????
@@ -966,7 +965,7 @@ func (manager DockerManager) GetContainerIdsByName(ctx context.Context, nameStr 
 }
 
 // TODO(centralized-logs-collector-deprecation) remove this entire function after enough people are on > 0.66.0
-func (manager DockerManager) GetContainerIdByExactName(ctx context.Context, nameStr string) (string, error) {
+func (manager *DockerManager) GetContainerIdByExactName(ctx context.Context, nameStr string) (string, error) {
 	filterArg := filters.Arg(containerNameSearchFilterKey, nameStr)
 	nameFilterList := filters.NewArgs(filterArg)
 	// TODO Make the "should show stopped containers" flag configurable????
@@ -983,7 +982,7 @@ func (manager DockerManager) GetContainerIdByExactName(ctx context.Context, name
 
 }
 
-func (manager DockerManager) GetContainersByLabels(ctx context.Context, labels map[string]string, shouldShowStoppedContainers bool) ([]*docker_manager_types.Container, error) {
+func (manager *DockerManager) GetContainersByLabels(ctx context.Context, labels map[string]string, shouldShowStoppedContainers bool) ([]*docker_manager_types.Container, error) {
 	labelsFilterList := getLabelsFilterArgs(containerLabelSearchFilterKey, labels)
 	result, err := manager.getContainersByFilterArgs(ctx, labelsFilterList, shouldShowStoppedContainers)
 	if err != nil {
@@ -992,7 +991,7 @@ func (manager DockerManager) GetContainersByLabels(ctx context.Context, labels m
 	return result, nil
 }
 
-func (manager DockerManager) FetchImage(ctx context.Context, dockerImage string) error {
+func (manager *DockerManager) FetchImage(ctx context.Context, dockerImage string) error {
 	// if the image name doesn't have version information we concatenate `:latest`
 	// this behavior is similar to CreateAndStartContainer above
 	// this allows us to be deterministic in our behaviour
@@ -1018,7 +1017,7 @@ func (manager DockerManager) FetchImage(ctx context.Context, dockerImage string)
 	return nil
 }
 
-func (manager DockerManager) PullImage(context context.Context, imageName string) (err error) {
+func (manager *DockerManager) PullImage(context context.Context, imageName string) (err error) {
 	logrus.Infof("Pulling image '%s'...", imageName)
 	out, err := manager.dockerClient.ImagePull(context, imageName, types.ImagePullOptions{
 		All:           false,
@@ -1037,7 +1036,7 @@ func (manager DockerManager) PullImage(context context.Context, imageName string
 	return nil
 }
 
-func (manager DockerManager) CreateContainerExec(context context.Context, containerId string, cmd []string) (*types.HijackedResponse, error) {
+func (manager *DockerManager) CreateContainerExec(context context.Context, containerId string, cmd []string) (*types.HijackedResponse, error) {
 	config := types.ExecConfig{
 		User:         "",
 		Privileged:   false,
@@ -1077,7 +1076,7 @@ func (manager DockerManager) CreateContainerExec(context context.Context, contai
 
 // CopyFromContainer returns a io.ReadCloser representing the bytes of the TAR'd files at srcPath
 // The caller must close the result
-func (manager DockerManager) CopyFromContainer(ctx context.Context, containerId string, srcPath string) (io.ReadCloser, error) {
+func (manager *DockerManager) CopyFromContainer(ctx context.Context, containerId string, srcPath string) (io.ReadCloser, error) {
 
 	tarStreamReadCloser, _, err := manager.dockerClient.CopyFromContainer(
 		ctx,
@@ -1095,7 +1094,7 @@ func (manager DockerManager) CopyFromContainer(ctx context.Context, containerId 
 //	INSTANCE HELPER FUNCTIONS
 //
 // =================================================================================================================
-func (manager DockerManager) isImageAvailableLocally(ctx context.Context, imageName string) (bool, error) {
+func (manager *DockerManager) isImageAvailableLocally(ctx context.Context, imageName string) (bool, error) {
 	referenceArg := filters.Arg("reference", imageName)
 	filters := filters.NewArgs(referenceArg)
 	images, err := manager.dockerClient.ImageList(
@@ -1375,7 +1374,7 @@ func (manager *DockerManager) getContainerCfg(
 	return nodeConfigPtr, nil
 }
 
-func (manager DockerManager) killContainerWithRetriesWhenErrorResponseFromDeamon(
+func (manager *DockerManager) killContainerWithRetriesWhenErrorResponseFromDeamon(
 	ctx context.Context,
 	containerId string,
 	maxRetries uint8,
@@ -1434,7 +1433,7 @@ func getHostPortBindingsOnExpectedInterface(hostPortBindingsOnAllInterfaces nat.
 	return result
 }
 
-func (manager DockerManager) getContainersByFilterArgs(ctx context.Context, filterArgs filters.Args, shouldShowStoppedContainers bool) ([]*docker_manager_types.Container, error) {
+func (manager *DockerManager) getContainersByFilterArgs(ctx context.Context, filterArgs filters.Args, shouldShowStoppedContainers bool) ([]*docker_manager_types.Container, error) {
 	opts := types.ContainerListOptions{
 		Quiet:   false,
 		Size:    false,
@@ -1462,7 +1461,7 @@ func (manager DockerManager) getContainersByFilterArgs(ctx context.Context, filt
 // 2- the container is running which will return true and nil
 // 2- the container runs successfully and exited with 0, in this case this method will also return true and nil
 // 3- the container dies, in this case this method will return false and the error with the container logs
-func (manager DockerManager) didContainerStartSuccessfully(ctx context.Context, containerId string, dockerImage string) (bool, error) {
+func (manager *DockerManager) didContainerStartSuccessfully(ctx context.Context, containerId string, dockerImage string) (bool, error) {
 
 	containerJson, err := manager.InspectContainer(ctx, containerId)
 	if err != nil {
@@ -1622,7 +1621,7 @@ func newNetworkFromDockerNetwork(dockerNetwork types.NetworkResource) (*docker_m
 	return networkWrapper, nil
 }
 
-func (manager DockerManager) getFailedContainerLogsOrErrorString(ctx context.Context, containerId string) string {
+func (manager *DockerManager) getFailedContainerLogsOrErrorString(ctx context.Context, containerId string) string {
 
 	var containerLogs string
 
@@ -1663,4 +1662,35 @@ func convertMegabytesToBytes(value uint64) uint64 {
 // In Docker 1 CPU = 1000 millicpus = 1000000000 NanoCPUs
 func convertMillicpusToNanoCPUs(value uint64) uint64 {
 	return value * millicpusToNanoCPUsFactor
+}
+
+func getEndpointSettingsForIpAddress(ipAddress string, alias string) *network.EndpointSettings {
+	ipamConfig := &network.EndpointIPAMConfig{
+		IPv4Address:  ipAddress,
+		IPv6Address:  "",
+		LinkLocalIPs: nil,
+	}
+
+	config := &network.EndpointSettings{
+		IPAMConfig:          ipamConfig,
+		Links:               nil,
+		NetworkID:           "",
+		EndpointID:          "",
+		Gateway:             "",
+		IPAddress:           "",
+		Aliases:             nil,
+		IPPrefixLen:         0,
+		IPv6Gateway:         "",
+		GlobalIPv6Address:   "",
+		GlobalIPv6PrefixLen: 0,
+		MacAddress:          "",
+		DriverOpts:          nil,
+	}
+
+	if alias != emptyNetworkAlias {
+		// docker treats [""] differently from []
+		config.Aliases = []string{alias}
+	}
+
+	return config
 }

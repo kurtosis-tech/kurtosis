@@ -22,7 +22,8 @@ import (
 )
 
 const (
-	unlimitedReplacements = -1
+	unlimitedReplacements                = -1
+	skipAddingUserServiceToBridgeNetwork = true
 )
 
 func RegisterUserServices(
@@ -407,6 +408,8 @@ func createStartServiceOperation(
 			memoryAllocationMegabytes,
 		).WithLoggingDriver(
 			fluentdLoggingDriverCnfg,
+		).WithSkipAddingToBridgeNetworkIfStaticIpIsSet(
+			skipAddingUserServiceToBridgeNetwork,
 		)
 
 		if entrypointArgs != nil {
