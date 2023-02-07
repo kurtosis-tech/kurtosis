@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.66.0](https://github.com/kurtosis-tech/kurtosis/compare/0.65.1...0.66.0) (2023-02-07)
+
+
+### ⚠ BREAKING CHANGES
+
+* We now create a logs collector per enclave instead of per engine. Any enclaves using the old logs collector will not have any new logs published. Any historical enclaves using the old logs collector cannot have services added either.
+
+### Features
+
+* Added an 'Examples' link to [the examples repo](https://github.com/kurtosis-tech/examples) in the sidebar ([6dbfb89](https://github.com/kurtosis-tech/kurtosis/commit/6dbfb89aecd4e35b799ca161be406432f1d6baf5))
+* Configurable parallelism for Starlark ([#996](https://github.com/kurtosis-tech/kurtosis/issues/996)) ([46e2c74](https://github.com/kurtosis-tech/kurtosis/commit/46e2c74b903fa144de96ea76f390312656cb889f))
+* packet delays can be configured as a distribution between subnetworks using UniformPacketDelayDistribution and NormalPacketDelayDistribution ([#988](https://github.com/kurtosis-tech/kurtosis/issues/988)) ([73dacf4](https://github.com/kurtosis-tech/kurtosis/commit/73dacf463fbbc9f584e6987ba1d3e8a92bc1f5e4))
+
+
+### Bug Fixes
+
+* remove non determinism around bridge network for user-services by removing access to bridge network ([#991](https://github.com/kurtosis-tech/kurtosis/issues/991)) ([43d4710](https://github.com/kurtosis-tech/kurtosis/commit/43d47109c4c444a5e429344e309df7c5c7300e75))
+* removes the 'edf' prefix from enclave uuids ([43d4710](https://github.com/kurtosis-tech/kurtosis/commit/43d47109c4c444a5e429344e309df7c5c7300e75))
+
+
+### Code Refactoring
+
+* create logs collector per enclave ([#989](https://github.com/kurtosis-tech/kurtosis/issues/989)) ([bc5e894](https://github.com/kurtosis-tech/kurtosis/commit/bc5e894428d2b58c2e695ca4c7c7c8fa1176867e))
+
 ## [0.65.1](https://github.com/kurtosis-tech/kurtosis/compare/0.65.0...0.65.1) (2023-02-01)
 
 
