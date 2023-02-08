@@ -9,7 +9,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
@@ -148,9 +147,22 @@ func runMain() error {
 				args.KurtosisBackendType_Kubernetes.String(),
 			)
 		}
-		kurtosisBackend, err = lib.GetApiContainerKubernetesKurtosisBackend(ctx)
+		pluginPath := backend_interface.GetPluginPathForApiContainer(backend_interface.KubernetesPluginName)
+		plugin, err := backend_interface.OpenBackendPlugin(pluginPath)
 		if err != nil {
-			return stacktrace.Propagate(err, "Failed to get a Kubernetes backend")
+			return stacktrace.Propagate(
+				err,
+				"An error occurred loading a Kurtosis Kubernetes backend plugin on path '%s'",
+				pluginPath,
+			)
+		}
+		kurtosisBackend, err = plugin.GetApiContainerBackend(ctx)
+		if err != nil {
+			return stacktrace.Propagate(
+				err,
+				"An error occurred casting a Kurtosis Kubernetes backend loaded from plugin on path '%s'",
+				pluginPath,
+			)
 		}
 	default:
 		return stacktrace.NewError("Backend type '%v' was not recognized by API container.", serverArgs.KurtosisBackendType.String())

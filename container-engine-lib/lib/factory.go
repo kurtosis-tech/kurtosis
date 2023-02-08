@@ -11,35 +11,8 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 	"os"
-	"path/filepath"
 )
-
-func GetCLIKubernetesKurtosisBackend(ctx context.Context) (backend_interface.KurtosisBackend, error) {
-	kubeConfigFileFilepath := filepath.Join(
-		os.Getenv("HOME"), ".kube", "config",
-	)
-	kubernetesConfig, err := clientcmd.BuildConfigFromFlags("", kubeConfigFileFilepath)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating kubernetes configuration from flags in file '%v'", kubeConfigFileFilepath)
-	}
-
-	backendSupplier := func(_ context.Context, kubernetesManager *kubernetes_manager.KubernetesManager) (*kubernetes_kurtosis_backend.KubernetesKurtosisBackend, error) {
-		return kubernetes_kurtosis_backend.NewCLIModeKubernetesKurtosisBackend(kubernetesManager), nil
-	}
-
-	wrappedBackend, err := getWrappedKubernetesKurtosisBackend(
-		ctx,
-		kubernetesConfig,
-		backendSupplier,
-	)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred wrapping the CLI Kubernetes backend")
-	}
-
-	return wrappedBackend, nil
-}
 
 func GetEngineServerKubernetesKurtosisBackend(
 	ctx context.Context,

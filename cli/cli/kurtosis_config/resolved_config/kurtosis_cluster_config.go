@@ -3,7 +3,6 @@ package resolved_config
 import (
 	"context"
 	v2 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v2"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/engine_server_launcher"
@@ -71,7 +70,9 @@ func (clusterConfig *KurtosisClusterConfig) GetClusterType() KurtosisClusterType
 }
 
 // ====================================================================================================
-//                                      Private Helpers
+//
+//	Private Helpers
+//
 // ====================================================================================================
 func getSuppliers(clusterId string, clusterType KurtosisClusterType, kubernetesConfig *v2.KubernetesClusterConfigV2) (
 	kurtosisBackendSupplier,
@@ -132,7 +133,16 @@ func getSuppliers(clusterId string, clusterType KurtosisClusterType, kubernetesC
 		}
 
 		backendSupplier = func(ctx context.Context) (backend_interface.KurtosisBackend, error) {
-			backend, err := lib.GetCLIKubernetesKurtosisBackend(ctx)
+			pluginPath := backend_interface.GetPluginPathForCLI(backend_interface.KubernetesPluginName)
+			plugin, err := backend_interface.OpenBackendPlugin(pluginPath)
+			if err != nil {
+				return nil, stacktrace.Propagate(
+					err,
+					"An error occurred loading a Kurtosis Kubernetes backend plugin on path '%s'",
+					pluginPath,
+				)
+			}
+			backend, err := plugin.GetCLIBackend(ctx)
 			if err != nil {
 				return nil, stacktrace.Propagate(
 					err,

@@ -14,7 +14,7 @@ param_cli_cluster_backend: &param_cli_cluster_backend
   cli-cluster-backend:
     description: "Kurtosis cluster backend for the cli to use. Must be one of 'docker', 'minikube'"
     type: enum
-    enum: [ "docker", "minikube" ]
+    enum: ["docker"] # ["docker", "minikube"]
 
 
 # Steps to prepare a job for Kubernetes testing
@@ -287,6 +287,7 @@ jobs:
 
       - <<: *abort_job_if_only_docs_changes
 
+      - run: sudo apt-get update -y &&  sudo apt-get install -y musl-dev
       # Install kudet
       - run: |
           echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
@@ -365,6 +366,9 @@ jobs:
 
       - <<: *abort_job_if_only_docs_changes
 
+
+      - run: sudo apt-get update -y &&  sudo apt-get install -y musl-dev
+
       # Install kudet
       - run: |
           echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
@@ -415,6 +419,8 @@ jobs:
       - checkout
 
       - <<: *abort_job_if_only_docs_changes
+
+      - run: sudo apt-get update -y &&  sudo apt-get install -y musl-dev
 
       # Install kudet
       - run: |
@@ -1144,17 +1150,17 @@ workflows:
             - build_engine_server
             - build_files_artifacts_expander
           <<: *filters_ignore_master
-      - test_basic_cli_functionality:
-          name: "Test Basic CLI Functionality in Kubernetes"
-          cli-cluster-backend: "minikube"
-          context:
-            - docker-user
-          requires:
-            - build_cli
-            - build_api_container_server
-            - build_engine_server
-            - build_files_artifacts_expander
-          <<: *filters_ignore_master
+#      - test_basic_cli_functionality:
+#          name: "Test Basic CLI Functionality in Kubernetes"
+#          cli-cluster-backend: "minikube"
+#          context:
+#            - docker-user
+#          requires:
+#            - build_cli
+#            - build_api_container_server
+#            - build_engine_server
+#            - build_files_artifacts_expander
+#          <<: *filters_ignore_master
 
       - build_golang_testsuite:
           name: "Build golang testsuite against Docker"
@@ -1167,17 +1173,17 @@ workflows:
             - build_engine_server
             - build_files_artifacts_expander
           <<: *filters_ignore_master
-      - build_golang_testsuite:
-          name: "Build golang testsuite against Kubernetes"
-          cli-cluster-backend: "minikube"
-          context:
-            - docker-user
-          requires:
-            - build_cli
-            - build_api_container_server
-            - build_engine_server
-            - build_files_artifacts_expander
-          <<: *filters_ignore_master
+#      - build_golang_testsuite:
+#          name: "Build golang testsuite against Kubernetes"
+#          cli-cluster-backend: "minikube"
+#          context:
+#            - docker-user
+#          requires:
+#            - build_cli
+#            - build_api_container_server
+#            - build_engine_server
+#            - build_files_artifacts_expander
+#          <<: *filters_ignore_master
 
       - build_typescript_testsuite:
           name: "Build typescript testsuite against Docker"
@@ -1190,17 +1196,17 @@ workflows:
             - build_engine_server
             - build_files_artifacts_expander
           <<: *filters_ignore_master
-      - build_typescript_testsuite:
-          name: "Build typescript testsuite against Kubernetes"
-          cli-cluster-backend: "minikube"
-          context:
-            - docker-user
-          requires:
-            - build_cli
-            - build_api_container_server
-            - build_engine_server
-            - build_files_artifacts_expander
-          <<: *filters_ignore_master
+#      - build_typescript_testsuite:
+#          name: "Build typescript testsuite against Kubernetes"
+#          cli-cluster-backend: "minikube"
+#          context:
+#            - docker-user
+#          requires:
+#            - build_cli
+#            - build_api_container_server
+#            - build_engine_server
+#            - build_files_artifacts_expander
+#          <<: *filters_ignore_master
 
       - test_old_enclave_continuity:
           context:

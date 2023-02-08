@@ -16,6 +16,20 @@ builds:
     goarch:
       - amd64
       - arm64
+#  - id: cli-extensible
+#    env:
+#      # We need to set this tobe a dynamically linked binary in order to support plugins
+#      # TODO: remove this step once CLI doesn't require KurtosisBackend
+#      - CGO_ENABLED=1
+#    main: .
+#    binary: "{{ .Env.CLI_BINARY_FILENAME }}-ext"
+#    goos:
+#      - linux
+#      - darwin
+#    goarch:
+#      - 386
+#      - amd64
+#      - arm64
 
 # In order for releasing-to-Github to work, we have to create these archives
 archives:

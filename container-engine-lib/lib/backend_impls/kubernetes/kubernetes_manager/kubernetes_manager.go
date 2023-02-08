@@ -119,8 +119,8 @@ func (manager *KubernetesManager) CreateService(ctx context.Context, namespace s
 		Annotations:                serviceAnnotations,
 		OwnerReferences:            nil,
 		Finalizers:                 nil,
-		ZZZ_DeprecatedClusterName:  "",
 		ManagedFields:              nil,
+		ZZZ_DeprecatedClusterName:  "",
 	}
 
 	// Figure out selector api
@@ -395,8 +395,8 @@ func (manager *KubernetesManager) CreateNamespace(
 			Annotations:                namespaceAnnotations,
 			OwnerReferences:            nil,
 			Finalizers:                 nil,
-			ZZZ_DeprecatedClusterName:  "",
 			ManagedFields:              nil,
+			ZZZ_DeprecatedClusterName:  "",
 		},
 		Spec: apiv1.NamespaceSpec{
 			Finalizers: nil,
@@ -513,8 +513,8 @@ func (manager *KubernetesManager) CreateServiceAccount(ctx context.Context, name
 			Annotations:                nil,
 			OwnerReferences:            nil,
 			Finalizers:                 nil,
-			ZZZ_DeprecatedClusterName:  "",
 			ManagedFields:              nil,
+			ZZZ_DeprecatedClusterName:  "",
 		},
 		Secrets:                      nil,
 		ImagePullSecrets:             nil,
@@ -618,8 +618,8 @@ func (manager *KubernetesManager) CreateRole(ctx context.Context, name string, n
 			Annotations:                nil,
 			OwnerReferences:            nil,
 			Finalizers:                 nil,
-			ZZZ_DeprecatedClusterName:  "",
 			ManagedFields:              nil,
+			ZZZ_DeprecatedClusterName:  "",
 		},
 		Rules: rules,
 	}
@@ -722,8 +722,8 @@ func (manager *KubernetesManager) CreateRoleBindings(ctx context.Context, name s
 			Annotations:                nil,
 			OwnerReferences:            nil,
 			Finalizers:                 nil,
-			ZZZ_DeprecatedClusterName:  "",
 			ManagedFields:              nil,
+			ZZZ_DeprecatedClusterName:  "",
 		},
 		Subjects: subjects,
 		RoleRef:  roleRef,
@@ -827,8 +827,8 @@ func (manager *KubernetesManager) CreateClusterRoles(ctx context.Context, name s
 			Annotations:                nil,
 			OwnerReferences:            nil,
 			Finalizers:                 nil,
-			ZZZ_DeprecatedClusterName:  "",
 			ManagedFields:              nil,
+			ZZZ_DeprecatedClusterName:  "",
 		},
 		Rules:           rules,
 		AggregationRule: nil,
@@ -931,8 +931,8 @@ func (manager *KubernetesManager) CreateClusterRoleBindings(ctx context.Context,
 			Annotations:                nil,
 			OwnerReferences:            nil,
 			Finalizers:                 nil,
-			ZZZ_DeprecatedClusterName:  "",
 			ManagedFields:              nil,
+			ZZZ_DeprecatedClusterName:  "",
 		},
 		Subjects: subjects,
 		RoleRef:  roleRef,
@@ -1040,8 +1040,8 @@ func (manager *KubernetesManager) CreatePod(
 		Annotations:                podAnnotations,
 		OwnerReferences:            nil,
 		Finalizers:                 nil,
-		ZZZ_DeprecatedClusterName:  "",
 		ManagedFields:              nil,
+		ZZZ_DeprecatedClusterName:  "",
 	}
 	podSpec := apiv1.PodSpec{
 		Volumes:             podVolumes,
@@ -1158,7 +1158,8 @@ func (manager *KubernetesManager) GetPod(ctx context.Context, namespace string, 
 
 // GetContainerLogs gets the logs for a given container running inside the given pod in the give namespace
 // TODO We could upgrade this to get the logs of many containers at once just like kubectl does, see:
-//  https://github.com/kubernetes/kubectl/blob/master/pkg/cmd/logs/logs.go#L345
+//
+//	https://github.com/kubernetes/kubectl/blob/master/pkg/cmd/logs/logs.go#L345
 func (manager *KubernetesManager) GetContainerLogs(
 	ctx context.Context,
 	namespaceName string,

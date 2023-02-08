@@ -43,11 +43,12 @@ type EngineManager struct {
 }
 
 // TODO It's really weird that we have a context getting passed in to a constructor, but we have to do this
-//  because we're currently creating the KurtosisBackend right here. The right way to fix this is have the
-//  engine manager use the currently-set cluster information to:
-//  1) check if it's Kubernetes or Docker
-//  2) if it's Docker, try to start an engine in case one doesn't exist
-//  3) if it's Kubernets, if creating the EngienClient fails then print the "you need to start a gateway" command
+//
+//	because we're currently creating the KurtosisBackend right here. The right way to fix this is have the
+//	engine manager use the currently-set cluster information to:
+//	1) check if it's Kubernetes or Docker
+//	2) if it's Docker, try to start an engine in case one doesn't exist
+//	3) if it's Kubernets, if creating the EngienClient fails then print the "you need to start a gateway" command
 func NewEngineManager(ctx context.Context) (*EngineManager, error) {
 	clusterSettingStore := kurtosis_cluster_setting.GetKurtosisClusterSettingStore()
 
@@ -76,7 +77,7 @@ func NewEngineManager(ctx context.Context) (*EngineManager, error) {
 
 	kurtosisBackend, err := clusterConfig.GetKurtosisBackend(ctx)
 	if err != nil {
-		return nil, stacktrace.NewError("An error occurred getting the Kurtosis backend for cluster '%v'", clusterName)
+		return nil, stacktrace.Propagate(err, "An error occurred getting the Kurtosis backend for cluster '%v'", clusterName)
 	}
 	engineBackendConfigSupplier := clusterConfig.GetEngineBackendConfigSupplier()
 
@@ -89,17 +90,18 @@ func NewEngineManager(ctx context.Context) (*EngineManager, error) {
 }
 
 // TODO This is a huge hack, that's only here temporarily because we have commands that use KurtosisBackend directly (they
-//  should not), and EngineConsumingKurtosisCommand therefore needs to provide them with a KurtosisBackend. Once all our
-//  commands only access the Kurtosis APIs, we can remove this.
+//
+//	should not), and EngineConsumingKurtosisCommand therefore needs to provide them with a KurtosisBackend. Once all our
+//	commands only access the Kurtosis APIs, we can remove this.
 func (manager *EngineManager) GetKurtosisBackend() backend_interface.KurtosisBackend {
 	return manager.kurtosisBackend
 }
 
 /*
 Returns:
-	- The engine status
-	- The host machine port bindings (not present if the engine is stopped)
-	- The engine version (only present if the engine is running)
+  - The engine status
+  - The host machine port bindings (not present if the engine is stopped)
+  - The engine version (only present if the engine is running)
 */
 func (manager *EngineManager) GetEngineStatus(
 	ctx context.Context,
@@ -234,7 +236,9 @@ func (manager *EngineManager) StopEngineIdempotently(ctx context.Context) error 
 }
 
 // ====================================================================================================
-//                                       Private Helper Functions
+//
+//	Private Helper Functions
+//
 // ====================================================================================================
 func (manager *EngineManager) startEngineWithGuarantor(ctx context.Context, currentStatus EngineStatus, engineGuarantor *engineExistenceGuarantor) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
 	if err := currentStatus.Accept(engineGuarantor); err != nil {
