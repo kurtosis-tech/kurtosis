@@ -32,7 +32,7 @@ if you'd prefer not to send metrics.
 
 Step Three: Start The Engine
 ----------------------------
-You'll need the Kurtosis engine to be running to interact with Kurtosis, both via the [CLI](../reference/cli.md) and the [SDK](../reference/sdk.md). Add `kurtosis engine start` in your CI config file after the CLI installation commands so that your Kurtosis commands work.
+You'll need the Kurtosis engine to be running to interact with Kurtosis, both via the [CLI](../reference/cli/cli.md) and the [SDK](../reference/sdk.md). Add `kurtosis engine start` in your CI config file after the CLI installation commands so that your Kurtosis commands work.
 
 Step Four: Run Your Custom Logic
 ---------------------------------

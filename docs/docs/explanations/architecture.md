@@ -61,7 +61,7 @@ For a reference list of the available Starlark instructions, [see here][starlark
 
 <!-------------- ONLY LINKS BELOW HERE --------------------->
 [installation]: ../guides/installing-the-cli.md
-[cli-usage]: ../reference/cli.md
+[cli-usage]: ../reference/cli/cli.md
 [reusable-environment-definitions]: ./reusable-environment-definitions.md
 [what-is-kurtosis]: ./what-is-kurtosis.md
 [starlark-explanation]: ./starlark.md

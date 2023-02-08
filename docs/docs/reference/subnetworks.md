@@ -38,5 +38,4 @@ This functionality must be enabled manually per enclave using the CLI. When runn
 [update-service]: ./starlark-instructions.md#update_service
 [set-connection]: ./starlark-instructions.md#set_connection
 [remove-connection]: ./starlark-instructions.md#remove_connection
-
 [networking-failure-guide]: ../guides/simulating-networking-failure.md

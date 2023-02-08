@@ -5,7 +5,7 @@ slug: /install
 sidebar_position: 1
 ---
 
-Interacting with Kurtosis is done via [a CLI](../reference/cli.md). The instructions below will walk you through installing it.
+Interacting with Kurtosis is done via [a CLI](../reference/cli/cli.md). The instructions below will walk you through installing it.
 
 :::tip
 Kurtosis supports tab completion, and we strongly recommend [installing it][installing-tab-completion] after you install the CLI.

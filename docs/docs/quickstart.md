@@ -731,7 +731,7 @@ These are just the basics of Kurtosis. To dive deeper, you can now:
 [locators-reference]: ./reference/locators.md
 [plan-reference]: ./reference/plan.md
 [reusable-environment-definitions-reference]: ./explanations/reusable-environment-definitions.md
-[cli-reference]: ./reference/cli.md
+[cli-reference]: ./reference/cli/cli.md
 [kurtosis-managed-packages]: https://github.com/kurtosis-tech?q=in%3Aname+package&type=all&language=&sort=
 [wild-kurtosis-packages]: https://github.com/search?q=filename%3Akurtosis.yml&type=code
 [architecture-explanation]: ./explanations/architecture.md
