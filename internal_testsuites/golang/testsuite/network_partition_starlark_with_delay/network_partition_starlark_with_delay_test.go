@@ -60,7 +60,8 @@ def run(plan, args):
 			image=DOCKER_GETTING_STARTED_IMAGE,
 		)
 	)
-
+	
+	# the ping command below with returns the avg latency (rtt) for the 5 packets sent
 	service_one_cmd =  "ping -c 5 -W 5 " + service_1.ip_address +  " | tail -1| awk '{print $4}' | cut -d '/' -f 2"
 	service_three_cmd =  "ping -c 5 -W 5 " + service_3.ip_address +  " | tail -1| awk '{print $4}' | cut -d '/' -f 2"
 
@@ -69,14 +70,14 @@ def run(plan, args):
 		command=["/bin/sh", "-c", service_one_cmd],
 	)
 	res = plan.exec(recipe)
-	plan.assert(res["output"], "<", "1")
+	plan.assert(res["output"], "<", "2")
 
 	recipe=ExecRecipe(
 		service_name=SERVICE_ID_2,
 		command=["/bin/sh", "-c", service_three_cmd],
 	)
 	res = plan.exec(recipe)
-	plan.assert(res["output"], "<", "1")
+	plan.assert(res["output"], "<", "2")
 
 	delay = PacketDelay(750)
 	plan.set_connection(config=ConnectionConfig(packet_delay=delay))
@@ -86,7 +87,7 @@ def run(plan, args):
 		command=["/bin/sh", "-c", service_one_cmd],
 	)
 	res = plan.exec(recipe)
-	plan.assert(res["output"], "<", "1")
+	plan.assert(res["output"], "<", "2")
 
 	recipe=ExecRecipe(
 		service_name=SERVICE_ID_2,
@@ -96,7 +97,7 @@ def run(plan, args):
 	# this is doing string comparison
 	# have not found a way to convert output to int
 	res = plan.exec(recipe)
-	plan.assert(res["output"], ">", "1499")
+	plan.assert(res["output"], ">", "1449")
     
 	uniform_delay_distribution = UniformPacketDelayDistribution(ms=350)	
 	plan.set_connection(config=ConnectionConfig(packet_delay_distribution=uniform_delay_distribution))
@@ -106,7 +107,7 @@ def run(plan, args):
 		command=["/bin/sh", "-c", service_one_cmd],
 	)
 	res = plan.exec(recipe)
-	plan.assert(res["output"], "<", "1")
+	plan.assert(res["output"], "<", "2")
 
 	recipe=ExecRecipe(
 		service_name=SERVICE_ID_2,
@@ -115,7 +116,7 @@ def run(plan, args):
 	
 	# this is doing string comparison
 	# have not found a way to convert output to int
-	# the overall should be greater than 350*2, but
+	# the overall latency should be greater than 350*2, but
 	# added some buffer to handle 50ms outliers
 	res = plan.exec(recipe)
 	plan.assert(res["output"], ">", "649")

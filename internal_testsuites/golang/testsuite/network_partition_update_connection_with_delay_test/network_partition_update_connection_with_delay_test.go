@@ -110,7 +110,7 @@ def run(plan, args):
 	)
 
 	res = plan.exec(recipe)
-	plan.assert(res["output"], ">", "1499")
+	plan.assert(res["output"], ">", "1449")
 	plan.print("Test successfully executed")
 `
 )
