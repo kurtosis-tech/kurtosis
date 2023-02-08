@@ -17,11 +17,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	bolt "go.etcd.io/bbolt"
 	"net"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -33,16 +31,6 @@ const (
 	hostMachinePortNumStrParsingBits = 16
 
 	netstatSuccessExitCode = 0
-
-	// TODO(vcolombo): Find a better place to place this to make it accessible everywhere we need the DB
-	databaseFilePath              = "kurtosis.db"
-	readWritePermissionToDatabase = 0666
-)
-
-var (
-	openDatabaseOnce  sync.Once
-	databaseInstance  *bolt.DB
-	databaseOpenError error
 )
 
 // !!!WARNING!!!
@@ -621,23 +609,4 @@ func getUserServiceObjsFromDockerResources(
 		)
 	}
 	return result, nil
-}
-
-func GetLocalDatabase() (*bolt.DB, error) {
-	openDatabaseOnce.Do(func() {
-		databaseInstance, databaseOpenError = bolt.Open(databaseFilePath, readWritePermissionToDatabase, &bolt.Options{
-			Timeout:         0,
-			NoGrowSync:      false,
-			NoFreelistSync:  false,
-			FreelistType:    "",
-			ReadOnly:        false,
-			MmapFlags:       0,
-			InitialMmapSize: 0,
-			PageSize:        0,
-			NoSync:          false,
-			OpenFile:        nil,
-			Mlock:           false,
-		})
-	})
-	return databaseInstance, databaseOpenError
 }

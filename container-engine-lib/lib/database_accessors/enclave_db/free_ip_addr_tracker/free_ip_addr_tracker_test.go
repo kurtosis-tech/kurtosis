@@ -6,27 +6,23 @@
 package free_ip_addr_tracker
 
 import (
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/test_helpers"
 	"github.com/stretchr/testify/require"
-	bolt "go.etcd.io/bbolt"
 	"net"
-	"os"
 	"testing"
 )
 
 func TestGetIp(t *testing.T) {
-	file, err := os.CreateTemp("/tmp", "*.db")
-	defer os.Remove(file.Name())
+	enclaveDb, cleaningFunction, err := test_helpers.CreateEnclaveDbForTesting()
 	require.Nil(t, err)
-	db, err := bolt.Open(file.Name(), 0666, nil)
-	defer db.Close()
-	require.Nil(t, err)
+	defer cleaningFunction()
 	subnetMask := "1.2.3.4/16"
 	_, parsedSubnetMask, err := net.ParseCIDR(subnetMask)
 	require.Nil(t, err)
 	addrTracker, err := GetOrCreateNewFreeIpAddrTracker(parsedSubnetMask, map[string]bool{
 		"1.2.0.2": true,
 		"1.2.0.3": true,
-	}, db)
+	}, enclaveDb)
 	require.Nil(t, err)
 
 	ip, err := addrTracker.GetFreeIpAddr()
@@ -43,16 +39,13 @@ func TestGetIp(t *testing.T) {
 }
 
 func TestReleaseIp(t *testing.T) {
-	file, err := os.CreateTemp("/tmp", "*.db")
-	defer os.Remove(file.Name())
+	enclaveDb, cleaningFunction, err := test_helpers.CreateEnclaveDbForTesting()
 	require.Nil(t, err)
-	db, err := bolt.Open(file.Name(), 0666, nil)
-	defer db.Close()
-	require.Nil(t, err)
+	defer cleaningFunction()
 	subnetMask := "1.2.3.4/16"
 	_, parsedSubnetMask, err := net.ParseCIDR(subnetMask)
 	require.Nil(t, err)
-	addrTracker, err := GetOrCreateNewFreeIpAddrTracker(parsedSubnetMask, map[string]bool{}, db)
+	addrTracker, err := GetOrCreateNewFreeIpAddrTracker(parsedSubnetMask, map[string]bool{}, enclaveDb)
 	require.Nil(t, err)
 
 	ip, err := addrTracker.GetFreeIpAddr()
@@ -72,26 +65,23 @@ func TestReleaseIp(t *testing.T) {
 }
 
 func TestIpTrackerDiskPersistence(t *testing.T) {
-	file, err := os.CreateTemp("/tmp", "*.db")
-	defer os.Remove(file.Name())
+	enclaveDb, cleaningFunction, err := test_helpers.CreateEnclaveDbForTesting()
 	require.Nil(t, err)
-	db, err := bolt.Open(file.Name(), 0666, nil)
-	defer db.Close()
-	require.Nil(t, err)
+	defer cleaningFunction()
 	subnetMask := "1.2.3.4/16"
 	_, parsedSubnetMask, err := net.ParseCIDR(subnetMask)
 	require.Nil(t, err)
 	addrTracker, err := GetOrCreateNewFreeIpAddrTracker(parsedSubnetMask, map[string]bool{
 		"1.2.0.2": true,
 		"1.2.0.3": true,
-	}, db)
+	}, enclaveDb)
 	require.Nil(t, err)
 
 	ip, err := addrTracker.GetFreeIpAddr()
 	require.Nil(t, err)
 	require.Equal(t, "1.2.0.1", ip.String())
 
-	addrTracker2, err := GetOrCreateNewFreeIpAddrTracker(parsedSubnetMask, map[string]bool{}, db)
+	addrTracker2, err := GetOrCreateNewFreeIpAddrTracker(parsedSubnetMask, map[string]bool{}, enclaveDb)
 	require.Nil(t, err)
 
 	ip2, err := addrTracker2.GetFreeIpAddr()

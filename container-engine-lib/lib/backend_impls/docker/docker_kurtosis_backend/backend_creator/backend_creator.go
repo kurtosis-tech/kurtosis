@@ -5,14 +5,14 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_collector_functions"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/metrics_reporting"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/free_ip_addr_tracker"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/free_ip_addr_tracker"
 	"github.com/kurtosis-tech/stacktrace"
 	"net"
 )
@@ -42,7 +42,7 @@ func GetLocalDockerKurtosisBackend(
 	// so we can create the free IP address trackers
 	enclaveFreeIpAddrTrackers := map[enclave.EnclaveUUID]*free_ip_addr_tracker.FreeIpAddrTracker{}
 	if optionalApiContainerModeArgs != nil {
-		db, err := shared_helpers.GetLocalDatabase()
+		enclaveDb, err := enclave_db.GetOrCreateEnclaveDatabase()
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred opening local database")
 		}
@@ -87,7 +87,7 @@ func GetLocalDockerKurtosisBackend(
 		freeIpAddrProvider, err := free_ip_addr_tracker.GetOrCreateNewFreeIpAddrTracker(
 			network.GetIpAndMask(),
 			alreadyTakenIps,
-			db,
+			enclaveDb,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating IP tracker")
