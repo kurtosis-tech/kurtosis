@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.66.3](https://github.com/kurtosis-tech/kurtosis/compare/0.66.2...0.66.3) (2023-02-09)
+
+
+### Features
+
+* add the ability to run non master branch packages ([#1019](https://github.com/kurtosis-tech/kurtosis/issues/1019)) ([245c63a](https://github.com/kurtosis-tech/kurtosis/commit/245c63a9ebba21f5ee6f4b17cc500932c3e5d911)), closes [#422](https://github.com/kurtosis-tech/kurtosis/issues/422)
+
 ## [0.66.2](https://github.com/kurtosis-tech/kurtosis/compare/0.66.1...0.66.2) (2023-02-09)
 
 
