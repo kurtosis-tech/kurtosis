@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.66.2](https://github.com/kurtosis-tech/kurtosis/compare/0.66.1...0.66.2) (2023-02-09)
+
+
+### Bug Fixes
+
+* Add musl-dev dependency to publish tasks ([#1031](https://github.com/kurtosis-tech/kurtosis/issues/1031)) ([ce50380](https://github.com/kurtosis-tech/kurtosis/commit/ce503807fbb51c6d1bbb368f8868e4fca0d17d97))
+
 ## [0.66.1](https://github.com/kurtosis-tech/kurtosis/compare/0.66.0...0.66.1) (2023-02-09)
 
 
