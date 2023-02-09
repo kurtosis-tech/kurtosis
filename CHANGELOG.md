@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.66.1](https://github.com/kurtosis-tech/kurtosis/compare/0.66.0...0.66.1) (2023-02-09)
+
+
+### Bug Fixes
+
+* explode cli docs for improve readability ([#1015](https://github.com/kurtosis-tech/kurtosis/issues/1015)) ([4c60e45](https://github.com/kurtosis-tech/kurtosis/commit/4c60e4573cc0cf744e38f295156c7a7b0411a36e))
+* Keep the file-artifact-expander container if something goes wrong ([#1026](https://github.com/kurtosis-tech/kurtosis/issues/1026)) ([be394dc](https://github.com/kurtosis-tech/kurtosis/commit/be394dc9d2dc624a8a85ff6b94e3c1666f424383))
+
 ## [0.66.0](https://github.com/kurtosis-tech/kurtosis/compare/0.65.1...0.66.0) (2023-02-07)
 
 
