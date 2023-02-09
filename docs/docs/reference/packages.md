@@ -81,6 +81,11 @@ kurtosis run /path/to/runnable/package/root/kurtosis.yml
 kurtosis run github.com/some-author/some-package
 ```
 
+:::tip
+If you want to run a non-master branch, tag or commit use the following syntax
+`kurtosis run github.com/package-author/package-repo@tag-branch-commit`
+:::
+
 All these will call the `run(plan)` function of the package's `main.star`.
 
 ### Arguments

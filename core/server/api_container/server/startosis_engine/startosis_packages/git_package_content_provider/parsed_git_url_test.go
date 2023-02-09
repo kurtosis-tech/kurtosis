@@ -7,10 +7,12 @@ import (
 )
 
 const (
-	testModuleAuthor = "kurtosis-tech"
-	testModuleName   = "sample-startosis-load"
-	testFileName     = "sample.star"
-	githubSampleURL  = "github.com/" + testModuleAuthor + "/" + testModuleName + "/" + testFileName
+	testModuleAuthor                                       = "kurtosis-tech"
+	testModuleName                                         = "sample-startosis-load"
+	testFileName                                           = "sample.star"
+	githubSampleURL                                        = "github.com/" + testModuleAuthor + "/" + testModuleName + "/" + testFileName
+	githubSampleUrlWithTag                                 = githubSampleURL + "@5.33.2"
+	githubSampleUrlWithBranchContainingVersioningDelimiter = githubSampleURL + "@my@favorite-branch"
 )
 
 func TestParsedGitURL_SimpleParse(t *testing.T) {
@@ -23,6 +25,7 @@ func TestParsedGitURL_SimpleParse(t *testing.T) {
 		fmt.Sprintf("https://github.com/%v/%v.git", testModuleAuthor, testModuleName),
 		fmt.Sprintf("%v/%v", testModuleAuthor, testModuleName),
 		fmt.Sprintf("%v/%v/%v", testModuleAuthor, testModuleName, testFileName),
+		emptyTagBranchOrCommit,
 	)
 
 	require.Equal(t, expectedParsedURL, parsedURL)
@@ -85,4 +88,34 @@ func TestParsedGitURL_ParsingGetsRidOfAnyPathEscapes(t *testing.T) {
 	require.NotNil(t, err)
 	expectedErrorMsg := fmt.Sprintf("Error parsing the URL of module: '%s'. The path should contain at least 2 subpaths got '[passwd]'", escapedURLWithStartosisFile)
 	require.Contains(t, err.Error(), expectedErrorMsg)
+}
+
+func TestParsedGitURL_WorksWithVersioningInformation(t *testing.T) {
+	parsedURL, err := parseGitURL(githubSampleUrlWithTag)
+	require.Nil(t, err)
+
+	expectedParsedURL := newParsedGitURL(
+		testModuleAuthor,
+		testModuleName,
+		fmt.Sprintf("https://github.com/%v/%v.git", testModuleAuthor, testModuleName),
+		fmt.Sprintf("%v/%v", testModuleAuthor, testModuleName),
+		fmt.Sprintf("%v/%v/%v", testModuleAuthor, testModuleName, testFileName),
+		"5.33.2",
+	)
+
+	require.Equal(t, expectedParsedURL, parsedURL)
+
+	parsedURL, err = parseGitURL(githubSampleUrlWithBranchContainingVersioningDelimiter)
+	require.Nil(t, err)
+
+	expectedParsedURL = newParsedGitURL(
+		testModuleAuthor,
+		testModuleName,
+		fmt.Sprintf("https://github.com/%v/%v.git", testModuleAuthor, testModuleName),
+		fmt.Sprintf("%v/%v", testModuleAuthor, testModuleName),
+		fmt.Sprintf("%v/%v/%v", testModuleAuthor, testModuleName, testFileName),
+		"my@favorite-branch",
+	)
+
+	require.Equal(t, expectedParsedURL, parsedURL)
 }

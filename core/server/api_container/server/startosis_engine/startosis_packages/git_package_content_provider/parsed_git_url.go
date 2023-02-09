@@ -15,6 +15,9 @@ const (
 	// for a valid GitURl we need it to look like github.com/author/moduleName
 	// the last two are the minimum requirements for a valid Startosis URL
 	minimumSubPathsForValidGitURL = 2
+
+	tagBranchOrCommitDelimiter = "@"
+	emptyTagBranchOrCommit     = ""
 )
 
 // ParsedGitURL an object representing a parsed moduleURL
@@ -30,15 +33,20 @@ type ParsedGitURL struct {
 	// relativeFilePath the full path of the file relative to the module store relativeRepoPath/path/to/file.star
 	// empty if there is no file
 	relativeFilePath string
+
+	// if the URL contains an @ then we treat anything after that as a tag, branch or commit
+	// in that order
+	tagBranchOrCommit string
 }
 
-func newParsedGitURL(moduleAuthor, moduleName, gitURL, relativeRepoPath, relativeFilePath string) *ParsedGitURL {
+func newParsedGitURL(moduleAuthor, moduleName, gitURL, relativeRepoPath, relativeFilePath string, tagBranchOrCommit string) *ParsedGitURL {
 	return &ParsedGitURL{
-		moduleAuthor:     moduleAuthor,
-		moduleName:       moduleName,
-		gitURL:           gitURL,
-		relativeRepoPath: relativeRepoPath,
-		relativeFilePath: relativeFilePath,
+		moduleAuthor:      moduleAuthor,
+		moduleName:        moduleName,
+		gitURL:            gitURL,
+		relativeRepoPath:  relativeRepoPath,
+		relativeFilePath:  relativeFilePath,
+		tagBranchOrCommit: tagBranchOrCommit,
 	}
 }
 
@@ -65,7 +73,9 @@ func parseGitURL(packageURL string) (*ParsedGitURL, *startosis_errors.Interpreta
 		return nil, startosis_errors.NewInterpretationError("Error parsing the URL of module. We only support modules on Github for now but got '%v'", packageURL)
 	}
 
-	splitURLPath := cleanPathAndSplit(parsedURL.Path)
+	pathWithoutVersion, maybeTagBranchOrCommit := parseOutTagBranchOrCommit(parsedURL.Path)
+
+	splitURLPath := cleanPathAndSplit(pathWithoutVersion)
 
 	if len(splitURLPath) < minimumSubPathsForValidGitURL {
 		return nil, startosis_errors.NewInterpretationError("Error parsing the URL of module: '%v'. The path should contain at least %d subpaths got '%v'", packageURL, minimumSubPathsForValidGitURL, splitURLPath)
@@ -87,6 +97,7 @@ func parseGitURL(packageURL string) (*ParsedGitURL, *startosis_errors.Interpreta
 		gitURL,
 		relativeModulePath,
 		relativeFilePath,
+		maybeTagBranchOrCommit,
 	)
 
 	return parsedGitURL, nil
@@ -103,4 +114,11 @@ func cleanPathAndSplit(urlPath string) []string {
 		}
 	}
 	return sliceWithoutEmptyStrings
+}
+
+// parseOutTagBranchOrCommit splits the string around "@"
+func parseOutTagBranchOrCommit(input string) (string, string) {
+	cleanInput := path.Clean(input)
+	pathWithoutVersion, maybeTagBranchOrCommit, _ := strings.Cut(cleanInput, tagBranchOrCommitDelimiter)
+	return pathWithoutVersion, maybeTagBranchOrCommit
 }

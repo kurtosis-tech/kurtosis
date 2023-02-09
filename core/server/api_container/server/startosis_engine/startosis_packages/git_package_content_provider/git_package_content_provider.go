@@ -2,6 +2,7 @@ package git_package_content_provider
 
 import (
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/mholt/archiver"
 	"io"
@@ -18,6 +19,13 @@ const (
 
 	onlyOneReplacement      = 1
 	replacedWithEmptyString = ""
+
+	isNotBareClone = false
+
+	// this doesn't get us the entire history, speeding us up
+	defaultDepth = 1
+	// this gets us the entire history - useful for fetching commits on a repo
+	depthAssumingBranchTagsCommitsAreSpecified = 0
 )
 
 type GitPackageContentProvider struct {
@@ -143,14 +151,20 @@ func (provider *GitPackageContentProvider) atomicClone(parsedURL *ParsedGitURL) 
 	}
 	defer os.RemoveAll(tempRepoDirPath)
 	gitClonePath := path.Join(tempRepoDirPath, parsedURL.relativeRepoPath)
-	_, err = git.PlainClone(gitClonePath, false, &git.CloneOptions{
+
+	depth := defaultDepth
+	if parsedURL.tagBranchOrCommit != emptyTagBranchOrCommit {
+		depth = depthAssumingBranchTagsCommitsAreSpecified
+	}
+
+	repo, err := git.PlainClone(gitClonePath, isNotBareClone, &git.CloneOptions{
 		URL:               parsedURL.gitURL,
 		Auth:              nil,
 		RemoteName:        "",
 		ReferenceName:     "",
 		SingleBranch:      false,
 		NoCheckout:        false,
-		Depth:             0,
+		Depth:             depth,
 		RecurseSubmodules: 0,
 		Progress:          io.Discard,
 		Tags:              0,
@@ -160,6 +174,42 @@ func (provider *GitPackageContentProvider) atomicClone(parsedURL *ParsedGitURL) 
 	if err != nil {
 		// TODO remove public repository from error after we support private repositories
 		return startosis_errors.WrapWithInterpretationError(err, "Error in cloning git repository '%s' to '%s'. Make sure that '%v' exists and is a public repository.", parsedURL.gitURL, gitClonePath, parsedURL.gitURL)
+	}
+
+	if parsedURL.tagBranchOrCommit != emptyTagBranchOrCommit {
+		referenceTagOrBranch, found, referenceErr := getReferenceName(repo, parsedURL)
+		if err != nil {
+			return referenceErr
+		}
+
+		checkoutOptions := &git.CheckoutOptions{
+			Hash:   plumbing.Hash{},
+			Branch: "",
+			Create: false,
+			Force:  false,
+			Keep:   false,
+		}
+		if found {
+			// if we have a tag or branch we set it
+			checkoutOptions.Branch = referenceTagOrBranch
+		} else {
+			maybeHash := plumbing.NewHash(parsedURL.tagBranchOrCommit)
+			// check whether the hash is a valid hash
+			_, err = repo.CommitObject(maybeHash)
+			if err != nil {
+				return startosis_errors.NewInterpretationError("Tried using the passed version '%v' as commit as we couldn't find a tag/branch for it in the repo '%v' but failed", parsedURL.tagBranchOrCommit, parsedURL.gitURL)
+			}
+			checkoutOptions.Hash = maybeHash
+		}
+
+		workTree, err := repo.Worktree()
+		if err != nil {
+			return startosis_errors.NewInterpretationError("Tried getting worktree for cloned repo '%v' but failed", parsedURL.gitURL)
+		}
+
+		if err := workTree.Checkout(checkoutOptions); err != nil {
+			return startosis_errors.NewInterpretationError("Tried checking out '%v' on repository '%v' but failed", parsedURL.tagBranchOrCommit, parsedURL.gitURL)
+		}
 	}
 
 	// Then we move it into the target directory
@@ -178,4 +228,40 @@ func (provider *GitPackageContentProvider) atomicClone(parsedURL *ParsedGitURL) 
 		return startosis_errors.NewInterpretationError("Cloning the package '%s' failed. An error occurred while moving package at temporary destination '%s' to final destination '%s'", parsedURL.gitURL, gitClonePath, packagePath)
 	}
 	return nil
+}
+
+func getReferenceName(repo *git.Repository, parsedURL *ParsedGitURL) (plumbing.ReferenceName, bool, *startosis_errors.InterpretationError) {
+	tag, err := repo.Tag(parsedURL.tagBranchOrCommit)
+	if err == nil {
+		return tag.Name(), true, nil
+	}
+	if err != nil && err != git.ErrTagNotFound {
+		return "", false, startosis_errors.NewInterpretationError("An error occurred while checking whether '%v' is a tag and exists in '%v'", parsedURL.tagBranchOrCommit, parsedURL.gitURL)
+	}
+
+	// for branches there is repo.Branch() but that doesn't work with remote branches
+	refs, err := repo.References()
+	if err != nil {
+		return "", false, startosis_errors.NewInterpretationError("An error occurred while fetching references for repository '%v'", parsedURL.gitURL)
+	}
+
+	var branchReference *plumbing.Reference
+	err = refs.ForEach(func(r *plumbing.Reference) error {
+		if r.Name() == plumbing.NewRemoteReferenceName(git.DefaultRemoteName, parsedURL.tagBranchOrCommit) {
+			branchReference = r
+			return nil
+		}
+		return nil
+	})
+
+	// checking the error even though the above can't ever error
+	if err != nil {
+		return "", false, startosis_errors.NewInterpretationError("An error occurred while iterating through references in repository '%v'; This is a bug in Kurtosis", parsedURL.gitURL)
+	}
+
+	if branchReference != nil {
+		return branchReference.Name(), true, nil
+	}
+
+	return "", false, nil
 }

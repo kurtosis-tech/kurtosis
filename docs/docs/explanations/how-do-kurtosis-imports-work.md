@@ -108,6 +108,10 @@ kurtosis run github.com/some-author/some-package
 
 Kurtosis will clone the package from GitHub, run the `main.star`, and use the `kurtosis.yml` to resolve any imports. This method always uses the version on GitHub.
 
+:::tip
+If you want to run a non-master branch, tag or commit use the following syntax
+`kurtosis run github.com/package-author/package-repo@tag-branch-commit`
+:::
 
 :::tip
 When you're developing locally, before your package has been pushed to GitHub, the package `name` can be anything you like - e.g. `github.com/test/test`. The only thing that is important for correctly resolving local file imports is that your `read_file`/`import_module` locators also are prefixed with `github.com/test/test`.

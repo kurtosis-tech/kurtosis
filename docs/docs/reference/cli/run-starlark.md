@@ -26,6 +26,11 @@ A [runnable Kurtosis package](../packages.md) published to GitHub can be run lik
 kurtosis run github.com/package-author/package-repo
 ```
 
+:::tip
+If you want to run a non-master branch, tag or commit use the following syntax
+`kurtosis run github.com/package-author/package-repo@tag-branch-commit`
+:::
+
 Arguments can be provided to a Kurtosis package (either local or from GitHub) by passing a JSON-serialized object with args argument, which is the second positional argument you pass to `kurtosis run` like:
 
 ```bash

@@ -665,6 +665,11 @@ Your package is now published, and available to anyone using Kurtosis. To use it
 kurtosis run github.com/YOUR-GITHUB-USERNAME/my-kurtosis-package
 ```
 
+:::tip
+If you want to run a non-master branch, tag or commit use the following syntax
+`kurtosis run github.com/package-author/package-repo@tag-branch-commit`
+:::
+
 Starlark code is composable, meaning you can import Starlark inside other Starlark (in keeping with [the properties of a reusable environment definition][reusable-environment-definitions-reference]). 
 
 To see this in action, create a new `new-kurtosis-package` directory outside of your `my-kurtosis-package` directory:

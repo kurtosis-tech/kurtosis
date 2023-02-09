@@ -28,6 +28,101 @@ func TestGitPackageProvider_SucceedsForValidPackage(t *testing.T) {
 	require.Equal(t, "a = \"World!\"\n", contents)
 }
 
+func TestGitPackageProvider_SucceedsForValidPackageWithExplicitMasterSet(t *testing.T) {
+	packageDir, err := os.MkdirTemp("", packagesDirRelPath)
+	require.Nil(t, err)
+	defer os.RemoveAll(packageDir)
+	packageTmpDir, err := os.MkdirTemp("", packagesTmpDirRelPath)
+	require.Nil(t, err)
+	defer os.RemoveAll(packageTmpDir)
+
+	provider := NewGitPackageContentProvider(packageDir, packageTmpDir)
+
+	sampleStartosisModule := "github.com/kurtosis-tech/sample-startosis-load/sample.star@master"
+	contents, err := provider.GetModuleContents(sampleStartosisModule)
+	require.Nil(t, err)
+	require.Equal(t, "a = \"World!\"\n", contents)
+}
+
+func TestGitPackageProvider_SucceedsForValidPackageWithBranch(t *testing.T) {
+	packageDir, err := os.MkdirTemp("", packagesDirRelPath)
+	require.Nil(t, err)
+	defer os.RemoveAll(packageDir)
+	packageTmpDir, err := os.MkdirTemp("", packagesTmpDirRelPath)
+	require.Nil(t, err)
+	defer os.RemoveAll(packageTmpDir)
+
+	provider := NewGitPackageContentProvider(packageDir, packageTmpDir)
+
+	sampleStartosisModule := "github.com/kurtosis-tech/sample-startosis-load/sample.star@test-branch"
+	contents, err := provider.GetModuleContents(sampleStartosisModule)
+	require.Nil(t, err)
+	require.Equal(t, "a = \"Maybe!\"\n", contents)
+}
+
+func TestGitPackageProvider_FailsForInvalidBranch(t *testing.T) {
+	packageDir, err := os.MkdirTemp("", packagesDirRelPath)
+	require.Nil(t, err)
+	defer os.RemoveAll(packageDir)
+	packageTmpDir, err := os.MkdirTemp("", packagesTmpDirRelPath)
+	require.Nil(t, err)
+	defer os.RemoveAll(packageTmpDir)
+
+	provider := NewGitPackageContentProvider(packageDir, packageTmpDir)
+
+	sampleStartosisModule := "github.com/kurtosis-tech/sample-startosis-load/sample.star@non-existent-branch"
+	_, err = provider.GetModuleContents(sampleStartosisModule)
+	require.NotNil(t, err)
+}
+
+func TestGitPackageProvider_SucceedsForValidPackageWithTag(t *testing.T) {
+	packageDir, err := os.MkdirTemp("", packagesDirRelPath)
+	require.Nil(t, err)
+	defer os.RemoveAll(packageDir)
+	packageTmpDir, err := os.MkdirTemp("", packagesTmpDirRelPath)
+	require.Nil(t, err)
+	defer os.RemoveAll(packageTmpDir)
+
+	provider := NewGitPackageContentProvider(packageDir, packageTmpDir)
+
+	sampleStartosisModule := "github.com/kurtosis-tech/sample-startosis-load/sample.star@0.1.0"
+	contents, err := provider.GetModuleContents(sampleStartosisModule)
+	require.Nil(t, err)
+	require.Equal(t, "a = \"World!\"\n", contents)
+}
+
+func TestGitPackageProvider_SucceedsForValidPackageWithCommit(t *testing.T) {
+	packageDir, err := os.MkdirTemp("", packagesDirRelPath)
+	require.Nil(t, err)
+	defer os.RemoveAll(packageDir)
+	packageTmpDir, err := os.MkdirTemp("", packagesTmpDirRelPath)
+	require.Nil(t, err)
+	defer os.RemoveAll(packageTmpDir)
+
+	provider := NewGitPackageContentProvider(packageDir, packageTmpDir)
+
+	sampleStartosisModule := "github.com/kurtosis-tech/sample-startosis-load/sample.star@758f55f902416e94f7a956e9a14938e39833df55"
+	contents, err := provider.GetModuleContents(sampleStartosisModule)
+	require.Nil(t, err)
+	require.Equal(t, "a = \"Hello!\"\n", contents)
+}
+
+func TestGitPackageProvider_SucceedsForValidPackageWithCommitOnABranch(t *testing.T) {
+	packageDir, err := os.MkdirTemp("", packagesDirRelPath)
+	require.Nil(t, err)
+	defer os.RemoveAll(packageDir)
+	packageTmpDir, err := os.MkdirTemp("", packagesTmpDirRelPath)
+	require.Nil(t, err)
+	defer os.RemoveAll(packageTmpDir)
+
+	provider := NewGitPackageContentProvider(packageDir, packageTmpDir)
+
+	sampleStartosisModule := "github.com/kurtosis-tech/sample-startosis-load/sample.star@507eecb57dff8e054f83640ba5953507d83a81c5"
+	contents, err := provider.GetModuleContents(sampleStartosisModule)
+	require.Nil(t, err)
+	require.Equal(t, "a = \"Test!\"\n", contents)
+}
+
 func TestGitPackageProvider_SucceedsForNonStarlarkFile(t *testing.T) {
 	packageDir, err := os.MkdirTemp("", packagesDirRelPath)
 	require.Nil(t, err)
