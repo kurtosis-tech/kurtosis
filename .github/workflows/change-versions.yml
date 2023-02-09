@@ -20,3 +20,5 @@ jobs:
           api/scripts/update-package-versions.sh "$(cat version.txt)"
           api/scripts/update-own-version-constants.sh "$(cat version.txt)"
       - uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          token: "${{ secrets.RELEASER_TOKEN }}"
