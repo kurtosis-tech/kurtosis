@@ -114,6 +114,7 @@ func runFilesArtifactsExpander(
 	mountpointsToVolumeNames map[string]string,
 	dockerManager *docker_manager.DockerManager,
 ) error {
+	fileArtifactExpansionSuccessful := false
 	containerAttrs, err := objAttrProvider.ForFilesArtifactsExpanderContainer(serviceUuid)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while trying to get the files artifact expander container attributes for service '%v'", serviceUuid)
@@ -134,6 +135,9 @@ func runFilesArtifactsExpander(
 		return stacktrace.Propagate(err, "Couldn't get a free IP to give the expander container '%v'", containerName)
 	}
 	defer func() {
+		if !fileArtifactExpansionSuccessful {
+			return
+		}
 		if err = freeIpAddrProvider.ReleaseIpAddr(ipAddr); err != nil {
 			logrus.Errorf("Error releasing IP address '%v'", ipAddr)
 		}
@@ -164,6 +168,9 @@ func runFilesArtifactsExpander(
 		)
 	}
 	defer func() {
+		if !fileArtifactExpansionSuccessful {
+			return
+		}
 		// We destroy the expander container, rather than leaving it around, so that we clean up the resource we created
 		// in this function (meaning the caller doesn't have to do it)
 		// We can do this because if an error occurs, we'll capture the logs of the container in the error we return
@@ -213,7 +220,7 @@ func runFilesArtifactsExpander(
 			containerLogsBlockStr,
 		)
 	}
-
+	fileArtifactExpansionSuccessful = true
 	return nil
 }
 
