@@ -4,17 +4,19 @@ import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/kurtosis_config_getter"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_gateway/connection"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_gateway/run/engine_gateway"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/spf13/cobra"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"os"
 	"path"
+	"plugin"
 )
 
 const (
-	emptyConfigMasterUrl = ""
+	emptyConfigMasterUrl       = ""
+	runEngineGatewaySymbolName = "RunEngineGateway"
 )
 
 // GatewayCmd Suppressing exhaustruct requirement because this struct has ~40 properties
@@ -49,14 +51,18 @@ func run(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred creating Kubernetes configuration from flags in file '%v'", kubeConfigPath)
 	}
 
-	connectionProvider, err := connection.NewGatewayConnectionProvider(cmd.Context(), kubernetesConfig)
+	pluginPath := backend_interface.GetPluginPathForCLI(backend_interface.KubernetesPluginName)
+	pluginFile, err := plugin.Open(pluginPath)
 	if err != nil {
-		return stacktrace.Propagate(err, "Expected to be able to instantiate a gateway connection provider, instead a non-nil error was returned")
+		return stacktrace.Propagate(err, "An error occurred opening Kubernetes plugin on path '%s'", pluginPath)
 	}
-
-	if err := engine_gateway.RunEngineGatewayUntilInterrupted(kurtosisBackend, connectionProvider); err != nil {
-		return stacktrace.Propagate(err, "An error occurred running the engine gateway server.")
+	runEngineGatewaySymbol, err := pluginFile.Lookup(runEngineGatewaySymbolName)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred looking up symbol '%s'  from Kubernetes plugin (path '%s')", runEngineGatewaySymbol, pluginPath)
 	}
-
-	return nil
+	runEngineGateway, ok := runEngineGatewaySymbol.(func(ctx context.Context, kubernetesConfig *rest.Config, kurtosisBackend backend_interface.KurtosisBackend) error)
+	if !ok {
+		return stacktrace.NewError("An error occurred when parsing gateway function from plugin")
+	}
+	return runEngineGateway(cmd.Context(), kubernetesConfig, kurtosisBackend)
 }
