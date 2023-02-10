@@ -1,26 +1,27 @@
 package startosis_packages
 
 import (
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"go.starlark.net/starlarkstruct"
 )
 
 // ModuleCacheEntry The module cache entry
 type ModuleCacheEntry struct {
-	module *starlarkstruct.Module
-	err    error
+	module            *starlarkstruct.Module
+	interpretationErr *startosis_errors.InterpretationError
 }
 
-func NewPackageCacheEntry(module *starlarkstruct.Module, err error) *ModuleCacheEntry {
+func NewModuleCacheEntry(module *starlarkstruct.Module, interpretationErr *startosis_errors.InterpretationError) *ModuleCacheEntry {
 	return &ModuleCacheEntry{
-		module: module,
-		err:    err,
+		module:            module,
+		interpretationErr: interpretationErr,
 	}
 }
 
-func (packageCacheEntry *ModuleCacheEntry) GetModule() *starlarkstruct.Module {
-	return packageCacheEntry.module
+func (moduleCacheEntry *ModuleCacheEntry) GetModule() *starlarkstruct.Module {
+	return moduleCacheEntry.module
 }
 
-func (packageCacheEntry *ModuleCacheEntry) GetError() error {
-	return packageCacheEntry.err
+func (moduleCacheEntry *ModuleCacheEntry) GetError() *startosis_errors.InterpretationError {
+	return moduleCacheEntry.interpretationErr
 }

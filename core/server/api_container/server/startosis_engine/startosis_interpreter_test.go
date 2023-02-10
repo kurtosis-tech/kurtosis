@@ -476,8 +476,7 @@ b = "Hello " + module_bar.a
 	require.Nil(t, packageContentProvider.BulkAddFileContent(seedModules))
 	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
 	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, runtimeValueStore)
-	script := `
-module_doo = import_module("` + moduleDooLoadsModuleBar + `")
+	script := `module_doo = import_module("` + moduleDooLoadsModuleBar + `")
 def run(plan):
 	plan.print(module_doo.b)
 `
@@ -486,9 +485,9 @@ def run(plan):
 	require.Empty(t, instructions) // No kurtosis instruction
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
 		[]startosis_errors.CallFrame{
-			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(startosis_constants.PackageIdPlaceholderForStandaloneScript, 2, 27)),
-			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(moduleDooLoadsModuleBar, 1, 27)),
 			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(moduleBarLoadsModuleDoo, 1, 27)),
+			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(moduleDooLoadsModuleBar, 1, 27)),
+			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(startosis_constants.PackageIdPlaceholderForStandaloneScript, 1, 27)),
 		},
 		"Evaluation error: There's a cycle in the import_module calls",
 	).ToAPIType()
@@ -510,7 +509,7 @@ def run(plan):
 	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 	require.Empty(t, instructions) // No kurtosis instruction
 
-	errorMsg := `Evaluation error: An error occurred while loading the package '` + nonExistentModule + `'
+	errorMsg := `Evaluation error: An error occurred while loading the module '` + nonExistentModule + `'
 	Caused by: Package '` + nonExistentModule + `' not found`
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
 		[]startosis_errors.CallFrame{

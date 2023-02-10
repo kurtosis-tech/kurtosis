@@ -1,7 +1,9 @@
 package import_module
 
 import (
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"go.starlark.net/starlark"
@@ -11,11 +13,11 @@ import (
 const (
 	ImportModuleBuiltinName = "import_module"
 
-	moduleFileArgName = "module_file"
+	ModuleFileArgName = "module_file"
 )
 
 /*
-	GenerateImportBuiltin returns a sequential (not parallel) implementation of an equivalent or `load` in Starlark
+	NewImportModule returns a sequential (not parallel) implementation of an equivalent or `load` in Starlark
 	This function returns a starlarkstruct.Module object that can then me used to get variables and call functions from the loaded module.
 
 How does the returned function work?
@@ -29,68 +31,91 @@ How does the returned function work?
 9. We now return the contents of the module and any interpretation errors
 This function is recursive in the sense, to load a module that loads modules we call the same function
 */
-func GenerateImportBuiltin(recursiveInterpret func(moduleId string, scriptContent string) (starlark.StringDict, error), packageContentProvider startosis_packages.PackageContentProvider, moduleGlobalCache map[string]*startosis_packages.ModuleCacheEntry) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
-	return func(_ *starlark.Thread, _ *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
-		fileInPackage, interpretationError := parseStartosisArgs(args, kwargs)
-		if interpretationError != nil {
-			return nil, interpretationError
-		}
+func NewImportModule(
+	recursiveInterpret func(moduleId string, scriptContent string) (starlark.StringDict, *startosis_errors.InterpretationError),
+	packageContentProvider startosis_packages.PackageContentProvider,
+	moduleGlobalCache map[string]*startosis_packages.ModuleCacheEntry,
+) *kurtosis_helper.KurtosisHelper {
+	return &kurtosis_helper.KurtosisHelper{
+		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
+			Name: ImportModuleBuiltinName,
+			Arguments: []*builtin_argument.BuiltinArgument{
+				{
+					Name:              ModuleFileArgName,
+					IsOptional:        false,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
+					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+						return builtin_argument.NonEmptyString(value, ModuleFileArgName)
+					},
+				},
+			},
+		},
 
-		var loadInProgress *startosis_packages.ModuleCacheEntry
-		cacheEntry, found := moduleGlobalCache[fileInPackage]
-		if found && cacheEntry == loadInProgress {
-			return nil, startosis_errors.NewInterpretationError("There's a cycle in the import_module calls")
-		}
-		if found {
-			return cacheEntry.GetModule(), cacheEntry.GetError()
-		}
-
-		moduleGlobalCache[fileInPackage] = loadInProgress
-		shouldUnsetLoadInProgress := true
-		defer func() {
-			if shouldUnsetLoadInProgress {
-				delete(moduleGlobalCache, fileInPackage)
-			}
-		}()
-
-		// Load it.
-		contents, interpretationError := packageContentProvider.GetModuleContents(fileInPackage)
-		if interpretationError != nil {
-			return nil, startosis_errors.WrapWithInterpretationError(interpretationError, "An error occurred while loading the package '%v'", fileInPackage)
-		}
-
-		globalVariables, err := recursiveInterpret(fileInPackage, contents)
-		// the above error goes unchecked as it needs to be persisted to the cache and then returned to the parent loader
-
-		// Update the cache.
-		var newModule *starlarkstruct.Module
-		if err == nil {
-			newModule = &starlarkstruct.Module{
-				Name:    fileInPackage,
-				Members: globalVariables,
-			}
-		}
-		cacheEntry = startosis_packages.NewPackageCacheEntry(newModule, err)
-		moduleGlobalCache[fileInPackage] = cacheEntry
-
-		shouldUnsetLoadInProgress = false
-		return cacheEntry.GetModule(), cacheEntry.GetError()
-		// this error isn't propagated as it is returned to the interpreter & persisted in the cache
+		Capabilities: &importModuleCapabilities{
+			packageContentProvider: packageContentProvider,
+			recursiveInterpret:     recursiveInterpret,
+			moduleGlobalCache:      moduleGlobalCache,
+		},
 	}
 }
 
-func parseStartosisArgs(args starlark.Tuple, kwargs []starlark.Tuple) (string, *startosis_errors.InterpretationError) {
-	var moduleFileArg starlark.String
-	if err := starlark.UnpackArgs(ImportModuleBuiltinName, args, kwargs, moduleFileArgName, &moduleFileArg); err != nil {
-		return "", explicitInterpretationError(err)
+type importModuleCapabilities struct {
+	packageContentProvider startosis_packages.PackageContentProvider
+	recursiveInterpret     func(moduleId string, scriptContent string) (starlark.StringDict, *startosis_errors.InterpretationError)
+	moduleGlobalCache      map[string]*startosis_packages.ModuleCacheEntry
+}
+
+func (builtin *importModuleCapabilities) Interpret(arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
+	moduleInPackageStarlarkStr, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, ModuleFileArgName)
+	if err != nil {
+		return nil, explicitInterpretationError(err)
+	}
+	moduleInPackage := moduleInPackageStarlarkStr.GoString()
+
+	var loadInProgress *startosis_packages.ModuleCacheEntry
+	cacheEntry, found := builtin.moduleGlobalCache[moduleInPackage]
+	if found && cacheEntry == loadInProgress {
+		return nil, startosis_errors.NewInterpretationError("There's a cycle in the import_module calls")
+	}
+	if found {
+		return cacheEntry.GetModule(), cacheEntry.GetError()
 	}
 
-	moduleFilePath, interpretationErr := kurtosis_instruction.ParseNonEmptyString(moduleFileArgName, moduleFileArg)
-	if interpretationErr != nil {
-		return "", explicitInterpretationError(interpretationErr)
+	builtin.moduleGlobalCache[moduleInPackage] = loadInProgress
+	shouldUnsetLoadInProgress := true
+	defer func() {
+		if shouldUnsetLoadInProgress {
+			delete(builtin.moduleGlobalCache, moduleInPackage)
+		}
+	}()
+
+	// Load it.
+	contents, interpretationError := builtin.packageContentProvider.GetModuleContents(moduleInPackage)
+	if interpretationError != nil {
+		return nil, startosis_errors.WrapWithInterpretationError(interpretationError, "An error occurred while loading the module '%v'", moduleInPackage)
 	}
 
-	return moduleFilePath, nil
+	globalVariables, interpretationErr := builtin.recursiveInterpret(moduleInPackage, contents)
+	// the above error goes unchecked as it needs to be persisted to the cache and then returned to the parent loader
+
+	// Update the cache.
+	if interpretationErr == nil {
+		newModule := &starlarkstruct.Module{
+			Name:    moduleInPackage,
+			Members: globalVariables,
+		}
+		cacheEntry = startosis_packages.NewModuleCacheEntry(newModule, nil)
+	} else {
+		cacheEntry = startosis_packages.NewModuleCacheEntry(nil, interpretationErr)
+	}
+	builtin.moduleGlobalCache[moduleInPackage] = cacheEntry
+
+	shouldUnsetLoadInProgress = false
+	if cacheEntry.GetError() != nil {
+		return nil, cacheEntry.GetError()
+	}
+	return cacheEntry.GetModule(), nil
+	// this error isn't propagated as it is returned to the interpreter & persisted in the cache
 }
 
 func explicitInterpretationError(err error) *startosis_errors.InterpretationError {

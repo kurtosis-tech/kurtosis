@@ -23,6 +23,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/recipe"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"go.starlark.net/starlark"
 )
@@ -65,10 +66,10 @@ func OldKurtosisPlanInstructions(instructionsQueue *[]kurtosis_instruction.Kurto
 // Kurtosis enclave.
 //
 // Example: read_file, import_package, etc.
-func KurtosisHelpers(recursiveInterpret func(moduleId string, scriptContent string) (starlark.StringDict, error), packageContentProvider startosis_packages.PackageContentProvider, packageGlobalCache map[string]*startosis_packages.ModuleCacheEntry) []*starlark.Builtin {
+func KurtosisHelpers(recursiveInterpret func(moduleId string, scriptContent string) (starlark.StringDict, *startosis_errors.InterpretationError), packageContentProvider startosis_packages.PackageContentProvider, packageGlobalCache map[string]*startosis_packages.ModuleCacheEntry) []*starlark.Builtin {
 	read_file.NewReadFileHelper(packageContentProvider)
 	return []*starlark.Builtin{
-		starlark.NewBuiltin(import_module.ImportModuleBuiltinName, import_module.GenerateImportBuiltin(recursiveInterpret, packageContentProvider, packageGlobalCache)),
+		starlark.NewBuiltin(import_module.ImportModuleBuiltinName, import_module.NewImportModule(recursiveInterpret, packageContentProvider, packageGlobalCache).CreateBuiltin()),
 		starlark.NewBuiltin(print_builtin.PrintBuiltinName, print_builtin.GeneratePrintBuiltin()),
 		starlark.NewBuiltin(read_file.ReadFileBuiltinName, read_file.NewReadFileHelper(packageContentProvider).CreateBuiltin()),
 	}

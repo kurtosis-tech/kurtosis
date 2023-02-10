@@ -40,6 +40,7 @@ func TestAllRegisteredBuiltins(t *testing.T) {
 	testKurtosisPlanInstruction(t, newWaitTestCase(t))
 
 	testKurtosisHelper(t, newReadFileTestCase(t))
+	testKurtosisHelper(t, newImportModuleTestCase(t))
 }
 
 func testKurtosisPlanInstruction(t *testing.T, builtin KurtosisPlanInstructionBaseTest) {

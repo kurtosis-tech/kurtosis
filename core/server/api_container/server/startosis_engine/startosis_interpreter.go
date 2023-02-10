@@ -2,6 +2,7 @@ package startosis_engine
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins"
@@ -20,6 +21,7 @@ import (
 	"go.starlark.net/starlarkjson"
 	"go.starlark.net/starlarkstruct"
 	"go.starlark.net/syntax"
+	"strings"
 	"sync"
 )
 
@@ -27,6 +29,7 @@ const (
 	starlarkGoThreadName = "Startosis interpreter thread"
 
 	multipleInterpretationErrorMsg = "Multiple errors caught interpreting the Starlark script. Listing each of them below."
+	evaluationErrorPrefix          = "Evaluation error: "
 
 	skipImportInstructionInStacktraceValue = "import_module"
 
@@ -80,16 +83,9 @@ func (interpreter *StartosisInterpreter) Interpret(_ context.Context, packageId 
 	defer interpreter.mutex.Unlock()
 	var instructionsQueue []kurtosis_instruction.KurtosisInstruction
 
-	thread := &starlark.Thread{
-		Name:       starlarkGoThreadName,
-		Print:      makePrintFunction(),
-		Load:       makeLoadFunction(),
-		OnMaxSteps: nil,
-	}
-
-	globalVariables, err := interpreter.interpretInternal(thread, packageId, serializedStarlark, &instructionsQueue)
-	if err != nil {
-		return startosis_constants.NoOutputObject, nil, generateInterpretationError(err).ToAPIType()
+	globalVariables, interpretationErr := interpreter.interpretInternal(packageId, serializedStarlark, &instructionsQueue)
+	if interpretationErr != nil {
+		return startosis_constants.NoOutputObject, nil, interpretationErr.ToAPIType()
 	}
 
 	logrus.Debugf("Successfully interpreted Starlark code into instruction queue: \n%s", instructionsQueue)
@@ -103,6 +99,8 @@ func (interpreter *StartosisInterpreter) Interpret(_ context.Context, packageId 
 	if !ok {
 		return missingRunFunctionReturnValue(packageId)
 	}
+
+	runFunctionExecutionThread := newStarlarkThread(starlarkGoThreadName)
 
 	if runFunction.NumParams() > maximumParamsAllowedForRunFunction {
 		return "", nil, startosis_errors.NewInterpretationError("The 'run' entrypoint function can have at most '%v' argument got '%v'", maximumParamsAllowedForRunFunction, runFunction.NumParams()).ToAPIType()
@@ -125,14 +123,14 @@ func (interpreter *StartosisInterpreter) Interpret(_ context.Context, packageId 
 			return "", nil, startosis_errors.NewInterpretationError(unexpectedArgNameError, argsParamIndex, argsParamName, paramName).ToAPIType()
 		}
 		// run function has an argument so we parse input args
-		inputArgs, interpretationError := interpreter.parseInputArgs(thread, serializedJsonParams)
+		inputArgs, interpretationError := interpreter.parseInputArgs(runFunctionExecutionThread, serializedJsonParams)
 		if interpretationError != nil {
 			return "", nil, interpretationError.ToAPIType()
 		}
 		argsTuple = append(argsTuple, inputArgs)
 	}
 
-	outputObject, err := starlark.Call(thread, runFunction, argsTuple, noKwargs)
+	outputObject, err := starlark.Call(runFunctionExecutionThread, runFunction, argsTuple, noKwargs)
 	if err != nil {
 		return "", nil, generateInterpretationError(err).ToAPIType()
 	}
@@ -140,7 +138,7 @@ func (interpreter *StartosisInterpreter) Interpret(_ context.Context, packageId 
 	// Serialize and return the output object. It might contain magic strings that should be resolved post-execution
 	if outputObject != starlark.None {
 		logrus.Debugf("Starlark output object was: '%s'", outputObject)
-		serializedOutputObject, interpretationError := package_io.SerializeOutputObject(thread, outputObject)
+		serializedOutputObject, interpretationError := package_io.SerializeOutputObject(runFunctionExecutionThread, outputObject)
 		if interpretationError != nil {
 			return startosis_constants.NoOutputObject, nil, interpretationError.ToAPIType()
 		}
@@ -149,20 +147,28 @@ func (interpreter *StartosisInterpreter) Interpret(_ context.Context, packageId 
 	return startosis_constants.NoOutputObject, instructionsQueue, nil
 }
 
-func (interpreter *StartosisInterpreter) interpretInternal(thread *starlark.Thread, packageId string, serializedStarlark string, instructionsQueue *[]kurtosis_instruction.KurtosisInstruction) (starlark.StringDict, error) {
-	predeclared := interpreter.buildBindings(thread, instructionsQueue)
+func (interpreter *StartosisInterpreter) interpretInternal(packageId string, serializedStarlark string, instructionsQueue *[]kurtosis_instruction.KurtosisInstruction) (starlark.StringDict, *startosis_errors.InterpretationError) {
+	// We spin up a new thread for every call to interpreterInternal such that the stacktrace provided by the Starlark
+	// Go interpreter is relative to each individual thread, and we don't keep accumulating stacktrace entries from the
+	// previous calls inside the same thread
+	thread := newStarlarkThread(packageId)
+	predeclared := interpreter.buildBindings(instructionsQueue)
 
 	globalVariables, err := starlark.ExecFile(thread, packageId, serializedStarlark, *predeclared)
 	if err != nil {
-		return nil, err
+		return nil, generateInterpretationError(err)
 	}
 
 	return globalVariables, nil
 }
 
-func (interpreter *StartosisInterpreter) buildBindings(thread *starlark.Thread, instructionsQueue *[]kurtosis_instruction.KurtosisInstruction) *starlark.StringDict {
-	recursiveInterpretForModuleLoading := func(moduleId string, serializedStartosis string) (starlark.StringDict, error) {
-		return interpreter.interpretInternal(thread, moduleId, serializedStartosis, instructionsQueue)
+func (interpreter *StartosisInterpreter) buildBindings(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction) *starlark.StringDict {
+	recursiveInterpretForModuleLoading := func(moduleId string, serializedStartosis string) (starlark.StringDict, *startosis_errors.InterpretationError) {
+		result, err := interpreter.interpretInternal(moduleId, serializedStartosis, instructionsQueue)
+		if err != nil {
+			return nil, err
+		}
+		return result, nil
 	}
 
 	predeclared := starlark.StringDict{
@@ -247,11 +253,14 @@ func generateInterpretationError(err error) *startosis_errors.InterpretationErro
 			}
 			stacktrace = append(stacktrace, *startosis_errors.NewCallFrame(callStack.Name, startosis_errors.NewScriptPosition(callStack.Pos.Filename(), callStack.Pos.Line, callStack.Pos.Col)))
 		}
-		return startosis_errors.NewInterpretationErrorWithCustomMsg(
-			stacktrace,
-			"Evaluation error: %s",
-			slError.Unwrap().Error(),
-		)
+		var errorMsg string
+		// no need to add the evaluation error prefix if the wrapped error already has it
+		if strings.HasPrefix(slError.Unwrap().Error(), evaluationErrorPrefix) {
+			errorMsg = slError.Unwrap().Error()
+		} else {
+			errorMsg = fmt.Sprintf("%s%s", evaluationErrorPrefix, slError.Unwrap().Error())
+		}
+		return startosis_errors.NewInterpretationErrorWithCustomMsg(stacktrace, errorMsg)
 	case *startosis_errors.InterpretationError:
 		// If it's already an interpretation error -> nothing to convert
 		return slError
@@ -264,4 +273,13 @@ func missingRunFunctionReturnValue(packageId string) (string, []kurtosis_instruc
 		return "", nil, startosis_errors.NewInterpretationError("No 'run' function found in the script; a 'run' entrypoint function with the signature `run(args)` or `run()` is required in any Kurtosis script").ToAPIType()
 	}
 	return "", nil, startosis_errors.NewInterpretationError("No 'run' function found in file '%v/main.star'; a 'run' entrypoint function with the signature `run(args)` or `run()` is required in the main.star file of any Kurtosis package", packageId).ToAPIType()
+}
+
+func newStarlarkThread(threadName string) *starlark.Thread {
+	return &starlark.Thread{
+		Name:       threadName,
+		Print:      makePrintFunction(),
+		Load:       makeLoadFunction(),
+		OnMaxSteps: nil,
+	}
 }

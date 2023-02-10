@@ -18,7 +18,7 @@ const (
 func NewReadFileHelper(packageContentProvider startosis_packages.PackageContentProvider) *kurtosis_helper.KurtosisHelper {
 	return &kurtosis_helper.KurtosisHelper{
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
-			Name: "read_file",
+			Name: ReadFileBuiltinName,
 			Arguments: []*builtin_argument.BuiltinArgument{
 				{
 					Name:              SrcArgName,
