@@ -170,3 +170,17 @@ func TestGetAbsolutePathOnDisk_WorksForPureDirectories(t *testing.T) {
 	require.Nil(t, err, "This test depends on your internet working and the kurtosis-tech/datastore-army-package existing")
 	require.Equal(t, path.Join(packageDir, "kurtosis-tech", "datastore-army-package", "src/helpers.star"), pathOnDisk)
 }
+
+func Test_getPathToPackageRoot(t *testing.T) {
+	githubUrlWithKurtosisPackageInSubfolder := "github.com/sample/sample-package/folder/subpackage"
+	parsedGitUrl, err := parseGitURL(githubUrlWithKurtosisPackageInSubfolder)
+	require.Nil(t, err, "Unexpected error occurred while parsing git url")
+	actual := getPathToPackageRoot(parsedGitUrl)
+	require.Equal(t, "sample/sample-package/folder/subpackage", actual)
+
+	githubUrlWithRootKurtosisPackage := "github.com/sample/sample-package"
+	parsedGitUrl, err = parseGitURL(githubUrlWithRootKurtosisPackage)
+	require.Nil(t, err, "Unexpected error occurred while parsing git url")
+	actual = getPathToPackageRoot(parsedGitUrl)
+	require.Equal(t, "sample/sample-package", actual)
+}

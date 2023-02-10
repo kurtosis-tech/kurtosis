@@ -660,12 +660,12 @@ func (apicService ApiContainerService) runStarlarkPackageSetup(packageId string,
 
 	pathToMainFile := path.Join(packageRootPathOnDisk, startosis_constants.MainFileName)
 	if _, err := os.Stat(pathToMainFile); err != nil {
-		return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred while verifying that '%v' exists on root of package '%v' at '%v'", startosis_constants.MainFileName, packageId, pathToMainFile)
+		return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred while verifying that '%v' exists in the package '%v' at '%v'", startosis_constants.MainFileName, packageId, pathToMainFile)
 	}
 
 	mainScriptToExecute, err := os.ReadFile(pathToMainFile)
 	if err != nil {
-		return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred while reading '%v' at the root of package '%v' at '%v'", startosis_constants.MainFileName, packageId, pathToMainFile)
+		return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred while reading '%v' in the package '%v' at '%v'", startosis_constants.MainFileName, packageId, pathToMainFile)
 	}
 
 	return string(mainScriptToExecute), nil

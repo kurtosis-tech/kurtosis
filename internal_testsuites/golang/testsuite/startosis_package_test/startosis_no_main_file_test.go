@@ -20,9 +20,12 @@ func TestStartosisPackage_NoMainFile(t *testing.T) {
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
-	enclaveCtx, destroyEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, invalidCaseMainStarMissingTestName, isPartitioningEnabled)
+	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, invalidCaseMainStarMissingTestName, isPartitioningEnabled)
 	require.NoError(t, err, "An error occurred creating an enclave")
-	defer destroyEnclaveFunc()
+	defer func() {
+		err = destroyEnclaveFunc()
+		require.Nil(t, err, "Unexpected Error Occurred")
+	}()
 
 	currentWorkingDirectory, err := os.Getwd()
 	require.Nil(t, err)
@@ -33,11 +36,12 @@ func TestStartosisPackage_NoMainFile(t *testing.T) {
 
 	logrus.Infof("Starlark package path: \n%v", packageDirpath)
 
-	expectedErrorContents := "An error occurred while verifying that 'main.star' exists on root of package"
+	expectedErrorContents := `An error occurred while verifying that 'main.star' exists in the package 'github.com/sample/sample-kurtosis-package' at '/kurtosis-data/startosis-packages/sample/sample-kurtosis-package/main.star'
+	Caused by: stat /kurtosis-data/startosis-packages/sample/sample-kurtosis-package/main.star: no such file or directory`
 	runResult, err := enclaveCtx.RunStarlarkPackageBlocking(ctx, packageDirpath, emptyRunParams, defaultDryRun, defaultParallelism)
 	require.Nil(t, err, "Unexpected error executing package")
 	require.NotNil(t, runResult.InterpretationError)
-	require.Contains(t, runResult.InterpretationError.GetErrorMessage(), expectedErrorContents)
+	require.Equal(t, runResult.InterpretationError.GetErrorMessage(), expectedErrorContents)
 	require.Empty(t, runResult.ValidationErrors)
 	require.Nil(t, runResult.ExecutionError)
 	require.Empty(t, string(runResult.RunOutput))

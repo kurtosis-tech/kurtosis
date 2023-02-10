@@ -17,10 +17,10 @@ const (
 	temporaryArchiveFilePattern = "temp-module-archive-*.tgz"
 	defaultTmpDir               = ""
 
-	onlyOneReplacement      = 1
-	replacedWithEmptyString = ""
-
-	isNotBareClone = false
+	onlyOneReplacement       = 1
+	replacedWithEmptyString  = ""
+	relativeFilePathNotFound = ""
+	isNotBareClone           = false
 
 	// this doesn't get us the entire history, speeding us up
 	defaultDepth = 1
@@ -46,13 +46,14 @@ func (provider *GitPackageContentProvider) ClonePackage(moduleId string) (string
 		return "", interpretationError
 	}
 
-	moduleAbsolutePathOnDisk := path.Join(provider.packagesDir, parsedURL.relativeRepoPath)
+	relPackagePathToPackagesDir := getPathToPackageRoot(parsedURL)
+	packageAbsolutePathOnDisk := path.Join(provider.packagesDir, relPackagePathToPackagesDir)
 
 	interpretationError = provider.atomicClone(parsedURL)
 	if interpretationError != nil {
 		return "", interpretationError
 	}
-	return moduleAbsolutePathOnDisk, nil
+	return packageAbsolutePathOnDisk, nil
 }
 
 func (provider *GitPackageContentProvider) GetOnDiskAbsoluteFilePath(fileInsidePackageUrl string) (string, *startosis_errors.InterpretationError) {
@@ -106,18 +107,20 @@ func (provider *GitPackageContentProvider) StorePackageContents(packageId string
 	if interpretationError != nil {
 		return "", interpretationError
 	}
-	packagePathOnDisk := path.Join(provider.packagesDir, parsedPackageId.relativeRepoPath)
+
+	relPackagePathToPackagesDir := getPathToPackageRoot(parsedPackageId)
+	packageAbsolutePathOnDisk := path.Join(provider.packagesDir, relPackagePathToPackagesDir)
 
 	if overwriteExisting {
-		err := os.RemoveAll(packagePathOnDisk)
+		err := os.RemoveAll(packageAbsolutePathOnDisk)
 		if err != nil {
-			return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred while removing the existing module '%v' from disk at '%v'", packageId, packagePathOnDisk)
+			return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred while removing the existing package '%v' from disk at '%v'", packageId, packageAbsolutePathOnDisk)
 		}
 	}
 
-	_, err := os.Stat(packagePathOnDisk)
+	_, err := os.Stat(packageAbsolutePathOnDisk)
 	if err == nil {
-		return "", startosis_errors.NewInterpretationError("Module '%v' already exists on disk, not overwriting", packagePathOnDisk)
+		return "", startosis_errors.NewInterpretationError("Package '%v' already exists on disk, not overwriting", packageAbsolutePathOnDisk)
 	}
 
 	tempFile, err := os.CreateTemp(defaultTmpDir, temporaryArchiveFilePattern)
@@ -133,12 +136,12 @@ func (provider *GitPackageContentProvider) StorePackageContents(packageId string
 	if bytesWritten != len(moduleTar) {
 		return "", startosis_errors.NewInterpretationError("Expected to write '%v' bytes but wrote '%v'", len(moduleTar), bytesWritten)
 	}
-	err = archiver.Unarchive(tempFile.Name(), packagePathOnDisk)
+	err = archiver.Unarchive(tempFile.Name(), packageAbsolutePathOnDisk)
 	if err != nil {
-		return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred while unarchiving '%v' to '%v'", tempFile.Name(), packagePathOnDisk)
+		return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred while unarchiving '%v' to '%v'", tempFile.Name(), packageAbsolutePathOnDisk)
 	}
 
-	return packagePathOnDisk, nil
+	return packageAbsolutePathOnDisk, nil
 }
 
 // atomicClone This first clones to a temporary directory and then moves it
@@ -228,6 +231,16 @@ func (provider *GitPackageContentProvider) atomicClone(parsedURL *ParsedGitURL) 
 		return startosis_errors.NewInterpretationError("Cloning the package '%s' failed. An error occurred while moving package at temporary destination '%s' to final destination '%s'", parsedURL.gitURL, gitClonePath, packagePath)
 	}
 	return nil
+}
+
+// methods checks whether the root of the package is same as repository root
+// or it is a sub-folder under it
+func getPathToPackageRoot(parsedPackagePath *ParsedGitURL) string {
+	packagePathOnDisk := parsedPackagePath.relativeRepoPath
+	if parsedPackagePath.relativeFilePath != relativeFilePathNotFound {
+		packagePathOnDisk = parsedPackagePath.relativeFilePath
+	}
+	return packagePathOnDisk
 }
 
 func getReferenceName(repo *git.Repository, parsedURL *ParsedGitURL) (plumbing.ReferenceName, bool, *startosis_errors.InterpretationError) {
