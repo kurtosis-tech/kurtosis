@@ -9,7 +9,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/api_container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/kurtosis/core/launcher/api_container_launcher"
 	"github.com/kurtosis-tech/stacktrace"
@@ -42,13 +41,6 @@ var isContainerRunningDeterminer = map[types.ContainerStatus]bool{
 	types.ContainerStatus_Dead:       false,
 	types.ContainerStatus_Created:    false,
 	types.ContainerStatus_Exited:     false,
-}
-
-// Unfortunately, Docker doesn't have constants for the protocols it supports declared
-var objAttrsSchemaPortProtosToDockerPortProtos = map[port_spec.TransportProtocol]string{
-	port_spec.TransportProtocol_TCP:  "tcp",
-	port_spec.TransportProtocol_SCTP: "sctp",
-	port_spec.TransportProtocol_UDP:  "udp",
 }
 
 // Manages Kurtosis enclaves, and creates new ones in response to running tasks
