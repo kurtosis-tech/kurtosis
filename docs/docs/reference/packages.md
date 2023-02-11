@@ -17,34 +17,36 @@ A Kurtosis package is a:
 
 Kurtosis packages are [the system by which Starlark scripts can include external resources][how-do-kurtosis-imports-work-explanation].
 
-Note that, when developing locally, a Kurtosis package's `name` in the `kurtosis.yml` can be whatever you like (the GitHub repo need not even exist).
+Note that, when developing locally, the GitHub repo referred to in the package name does not need to exist.
 
 Kurtosis packages are shared simply by pushing to GitHub (e.g. [these are the packages we administer][kurtosis-managed-packages]).
 
-For example, a directory structure like so:
+For example, suppose there is a repo called `package-repo` by the author `package-author` whose internal directory structure looks like so:
 
 ```
 /
-    kurtosis.yml
-    main.star
-    helpers/
-        helpers.star
+    package-repo
+        my-package
+            kurtosis.yml
+            main.star
+            helpers
+                helpers.star
 ```
 
 whose `kurtosis.yml` file looked like so:
 
 ```yaml
-name: github.com/me/my-package
+name: github.com/package-author/package-repo/my-package
 ```
 
-would be called `github.com/me/my-package`. It should get pushed to the `my-package` repo owned by the `me` user on GitHub.
+The package would be called `github.com/package-author/package-repo/my-package`. It should get pushed to the `package-repo` repo owned by the `package-author` user on GitHub.
 
 Packages are referenced indirectly, as the [locators][locators] used to specify external resources in a Starlark script will contain the package name where the resource lives.
 
 For example:
 
 ```python
-helpers = import_module("github.com/me/my-package/helpers/helpers.star")
+helpers = import_module("github.com/package-author/package-repo/my-package/helpers/helpers.star")
 ```
 
 would be used to import the `helpers.star` file into a Starlark script.
@@ -78,7 +80,7 @@ kurtosis run /path/to/runnable/package/root/kurtosis.yml
 
 ```bash
 # OPTION 3: Pass in a remote package name to run from GitHub
-kurtosis run github.com/some-author/some-package
+kurtosis run github.com/package-author/package-repo/path/to/directory-with-kurtosis.yml
 ```
 
 :::tip
@@ -99,7 +101,7 @@ def run(plan, args):
 To pass parameters to the `run(plan, args)` function, a JSON object should be passed as the second positional argument after the script or package path:
 
 ```
-kurtosis run github.com/me/my-package '{"name": "Joseph"}'
+kurtosis run github.com/package-author/package-repo/path/to/directory-with-kurtosis.yml '{"name": "Joseph"}'
 ```
 
 <!-------------------- ONLY LINKS BELOW HERE -------------------------->

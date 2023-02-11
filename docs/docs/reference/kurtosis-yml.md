@@ -13,15 +13,24 @@ The `kurtosis.yml` file is a manifest file necessary to turn a directory into [a
 
 ```yaml
 # The locator naming this package.
-name: github.com/packageAuthor/packageRepoName
+name: github.com/package-author/package-repo/path/to/directory-with-kurtosis.yml
 ```
 
-<!-- TODO delete this when packages can live in subdirectories -->
-:::caution
-Only packages at the root of the repo are currently supported (i.e. where the `kurtosis.yml` is at the root of the repo). Packages in subdirectories will be supported soon.
-:::
+Example usage:
 
-If you're only running the package locally, the `packageAuthor` and `packageRepoName` in the `name` field can be anything. In other words, when running a package locally, the GitHub repository does not in fact need to exist. Once pushed to Github though, `packageAuthor` and `packageRepoName` must match the Github repo's author and name.
+if kurtosis.yaml is in the repository root:
+```yaml
+name: github.com/author/package-repo
+```
+
+if kurtosis.yaml is in a directory other than repository root:
+```yaml
+name: github.com/author/package-repo/path/to/directory-with-kurtosis.yml
+```
+
+:::info
+The key take away is that `/path/to/directory-with-kurtosis.yml` only needs to be provided if `kurtosis.yml` is not present in the repository's root.
+:::
 
 <!----------------------- ONLY LINKS BELOW HERE ----------------------------->
 [package]: ./packages.md

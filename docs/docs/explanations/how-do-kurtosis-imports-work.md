@@ -68,10 +68,15 @@ Kurtosis code needs to be easy to share, so we modelled our packaging system off
 
 In Kurtosis, a directory that has [a `kurtosis.yml` file][kurtosis-yml-reference] is the package root of a [Kurtosis package][packages-reference], and all the contents of that directory will be part of the package. Any Starlark script inside the package will have the ability to use external files (e.g. via `read_file` or `import_module`) by specifying [the locator][locators-reference] of the file.
 
-Each package will be named with the `name` key inside the `kurtosis.yml` file. Package names follow the format `github.com/AUTHOR/REPO` as specified in [the `kurtosis.yml` documentation][kurtosis-yml-reference]. This package name is used to determine whether a file being imported is is local (meaning "found inside the package") or remote (meaning "found from the internet"). The logic for resolving a `read_file`/`import_module` is as follows:
+Each package will be named with the `name` key inside the `kurtosis.yml` file. Package names follow the format `github.com/package-author/package-repo/path/to/directory-with-kurtosis.yml` as specified in [the `kurtosis.yml` documentation][kurtosis-yml-reference]. This package name is used to determine whether a file being imported is local (meaning "found inside the package") or remote (meaning "found from the internet"). The logic for resolving a `read_file`/`import_module` is as follows:
 
-- If the package name in the `kurtosis.yml` is a prefix of the [locator][locators-reference] used in `read_file`/`import_module`, then the file is assumed to be local inside the package. The package name in the locator (`github.com/AUTHOR/REPO`) references the package root (which is the directory where the `kurtosis.yml` lives), and each subpath appended to the package name will traverse down in the repo.
-- If the package name is not a prefix of the [locator][locators-reference] used in `read_file`/`import_module`, then the file is assumed to be remote. Kurtosis will look at the `github.com/AUTHOR/REPO` prefix of the locator, clone it from GitHub, and use the file inside.
+- If the package name in the `kurtosis.yml` is a prefix of the [locator][locators-reference] used in `read_file`/`import_module`, then the file is assumed to be local inside the package. The package name in the locator (`github.com/package-author/package-repo/path/to/directory-with-kurtosis.yml`) references the package root (which is the directory where the `kurtosis.yml` lives), and each subpath appended to the package name will traverse down in the repo.
+
+- If the package name is not a prefix of the [locator][locators-reference] used in `read_file`/`import_module`, then the file is assumed to be remote. Kurtosis will look at the `github.com/package-author/package-repo` prefix of the locator, clone the repository from GitHub, and use the file inside the package i.e a directory that contains kurtosis.yml. 
+
+:::info
+Since `kurtosis.yml` can live in any directory, users have the ability to create multiple packages per repo (sibling packages). We do not currently support a package importing a sibling package (i.e. if `foo` and `bar` packages are subdirectories of `repo`, then `bar` cannot import files from `foo`). Please let us know if you need this functionality.
+:::
 
 Kurtosis does not allow referencing local files outside the package (i.e. in a directory above the package root with the `kurtosis.yml` file). This is to ensure that all files used in the package get pushed to GitHub when the package is published.
 
@@ -100,10 +105,16 @@ In both cases, Kurtosis will run the `main.star` in the package root and resolve
 Not all packages have a `main.star` file, meaning not all packages are runnable; some packages are simply libraries intended to be imported in other packages.
 :::
 
-The third way is to run a runnable package by its package name:
+The third way is to run a runnable package by its package name (can be found in the kurtosis.yml from the directory):
 
 ```
-kurtosis run github.com/some-author/some-package
+# if kurtosis.yml is in repository root
+kurtosis run github.com/package-author/package-repo
+```
+
+```
+# if kurtosis.yml is in any other directory
+kurtosis run github.com/package-author/package-repo/path/to/directory-with-kurtosis.yml
 ```
 
 Kurtosis will clone the package from GitHub, run the `main.star`, and use the `kurtosis.yml` to resolve any imports. This method always uses the version on GitHub.
@@ -113,14 +124,15 @@ If you want to run a non-master branch, tag or commit use the following syntax
 `kurtosis run github.com/package-author/package-repo@tag-branch-commit`
 :::
 
+<!-- 
+  It seems to me that we are suggesting users to use arbitrary name, only to change later; my worry is that it
+  could lead to import errors! With introduction of sub-packages, this could lead to even more confusion. If the users'
+  want to do this for quick testing, they can but we should not suggest it.
+-->
 :::tip
 When you're developing locally, before your package has been pushed to GitHub, the package `name` can be anything you like - e.g. `github.com/test/test`. The only thing that is important for correctly resolving local file imports is that your `read_file`/`import_module` locators also are prefixed with `github.com/test/test`.
 
 Once you push to GitHub, however, your package `name` will need to match the author and repo. If they don't, your package will be broken when another user depends on your package because Kurtosis will go looking for a `github.com/test/test` package that likely doesn't exist.
-:::
-
-:::caution
-Kurtosis currently only allows `kurtosis.yml` files at the root of the repo, meaning that a package name is always `github.com/AUTHOR/REPO`. In the future, we will support packages living in subdirectories of the repo, and the package name will then look like `github.com/AUTHOR/REPO/subdir/other-subdir`.
 :::
 
 <!---------------------- ONLY LINKS BELOW HERE ---------------------------->
