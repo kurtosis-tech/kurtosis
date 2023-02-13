@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.66.4](https://github.com/kurtosis-tech/kurtosis/compare/0.66.3...0.66.4) (2023-02-11)
+
+
+### Features
+
+* allow starlark to run subpackages in a repository  ([#995](https://github.com/kurtosis-tech/kurtosis/issues/995)) ([f4ab6e4](https://github.com/kurtosis-tech/kurtosis/commit/f4ab6e4f2885daca4a20b557d52ae46b292842f4))
+* kurtosis package in subfolder can be run locally or remotely ([f4ab6e4](https://github.com/kurtosis-tech/kurtosis/commit/f4ab6e4f2885daca4a20b557d52ae46b292842f4))
+
 ## [0.66.3](https://github.com/kurtosis-tech/kurtosis/compare/0.66.2...0.66.3) (2023-02-09)
 
 
