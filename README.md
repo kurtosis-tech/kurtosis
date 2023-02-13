@@ -21,6 +21,109 @@ Kurtosis is designed to optimize environment management and control across the d
 
 ## To start using Kurtosis
 
+### Pre Requisite
+
+Make sure Docker must be installed and running on your machine:
+```bash
+docker version
+```
+
+If you don't, follow the instructions from [Docker docs](https://docs.docker.com/get-docker/).
+
+### Installing
+
+On MacOS:
+```bash
+brew install kurtosis-tech/tap/kurtosis-cli
+```
+
+On Linux (apt):
+```bash
+echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+sudo apt update
+sudo apt install kurtosis-cli
+```
+
+On Linux (yum):
+```bash
+echo '[kurtosis]
+name=Kurtosis
+baseurl=https://yum.fury.io/kurtosis-tech/
+enabled=1
+gpgcheck=0' | sudo tee /etc/yum.repos.d/kurtosis.repo
+sudo yum install kurtosis-cli
+```
+
+### Running
+
+First of all we can create a simple Starlark script to spin up multiple replicas of `httpd`:
+```python
+cat > script.star << EOF
+def run(plan, args):
+    configs = {}
+    for i in range(args.replica_count):
+       plan.add_service(
+          "httpd-replica-"+str(i),
+          config = ServiceConfig(
+              image = "httpd",
+              ports = {
+                  "http": PortSpec(number = 8080),
+              },
+          ),
+      )
+EOF
+```
+
+Running the script gives us an enclave with three services:
+
+```bash
+kurtosis run script.star '{"replica_count": 3}'
+```
+```console
+WARN[2023-02-10T13:32:32-03:00] You are running an old version of the Kurtosis CLI; we suggest you to update it to the latest version, '0.66.3'
+WARN[2023-02-10T13:32:32-03:00] You can manually upgrade the CLI tool following these instructions: https://docs.kurtosis.com/install#upgrading
+INFO[2023-02-10T13:32:32-03:00] Creating a new enclave for Starlark to run inside...
+INFO[2023-02-10T13:32:37-03:00] Enclave 'misty-bird' created successfully
+
+> add_service service_name="httpd-replica-0" config=ServiceConfig(image="httpd", ports={"http": PortSpec(number=8080, transport_protocol="TCP", application_protocol="")})
+Service 'httpd-replica-0' added with service UUID 'a05405bfe100475fa52883c71bd899e6'
+
+> add_service service_name="httpd-replica-1" config=ServiceConfig(image="httpd", ports={"http": PortSpec(number=8080, transport_protocol="TCP", application_protocol="")})
+Service 'httpd-replica-1' added with service UUID 'cc871310223c4bc7a539a6c93a8e33ea'
+
+> add_service service_name="httpd-replica-2" config=ServiceConfig(image="httpd", ports={"http": PortSpec(number=8080, transport_protocol="TCP", application_protocol="")})
+Service 'httpd-replica-2' added with service UUID 'dcfd1fb7a94e4e8e8a55c715f7f09b04'
+Starlark code successfully run. No output was returned.
+INFO[2023-02-10T13:32:53-03:00] ===================================================
+INFO[2023-02-10T13:32:53-03:00] ||          Created enclave: misty-bird          ||
+INFO[2023-02-10T13:32:53-03:00] ===================================================
+```
+
+That can be inspected by running
+
+```console
+kurtosis enclave inspect misty-bird
+```
+```console
+WARN[2023-02-10T13:33:19-03:00] You are running an old version of the Kurtosis CLI; we suggest you to update it to the latest version, '0.66.3'
+WARN[2023-02-10T13:33:19-03:00] You can manually upgrade the CLI tool following these instructions: https://docs.kurtosis.com/install#upgrading
+UUID:                                 eeb28363fc53
+Enclave Name:                         misty-bird
+Enclave Status:                       RUNNING
+Creation Time:                        Fri, 10 Feb 2023 13:32:32 -03
+API Container Status:                 RUNNING
+API Container Host GRPC Port:         127.0.0.1:63747
+API Container Host GRPC Proxy Port:   127.0.0.1:63748
+
+========================================== User Services ==========================================
+UUID           Name              Ports                               Status
+a05405bfe100   httpd-replica-0   http: 8080/tcp -> 127.0.0.1:63768   RUNNING
+cc871310223c   httpd-replica-1   http: 8080/tcp -> 127.0.0.1:63772   RUNNING
+dcfd1fb7a94e   httpd-replica-2   http: 8080/tcp -> 127.0.0.1:63781   RUNNING
+```
+
+### More examples
+
 See our documentation on https://docs.kurtosis.com.
 
 ## To start contributing to Kurtosis
@@ -44,14 +147,72 @@ This repository is structured as a monorepo, containing the following projects:
 
 To build Kurtosis, you must the following dependencies installed:
 
-- Bash
+- Bash (5 or above) + Git
+
+On MacOS:
+```bash
+# Install modern version of bash, the one that ships on MacOS is too old
+brew install bash
+# Allow it as shell
+echo "${BREW_PREFIX}/bin/bash" | sudo tee -a /etc/shells
+# Optional: make bash your default shell
+chsh -s "${BREW_PREFIX}/bin/bash"
+# Install modern version of git, the one that ships on MacOS is too old
+brew install git
+```
 - Docker
+  
+On MacOS:
+```bash
+brew install docker
+```
+
 - Go (1.18 or above)
-- Node (16.14 or above)
-- Yarn
-- Protobuf binaries to generate bindings:
-  * Go Protobuf compiler binaries (installable via OS package manager/Brew): `protoc-gen-go`, `protoc-gen-go-grpc`, `protoc-gen-grpc-web`
-  * Typescript Protobuf compiler binaries (installable via `npm install -g`: `ts-protoc-gen`, `grpc-tools`
+
+On MacOS:
+```bash
+brew install go@1.18
+```
+
+- Goreleaser
+
+On MacOS:
+```bash
+brew install goreleaser/tap/goreleaser
+```
+
+- Node (16.14 or above) and Yarn
+
+On MacOS, using `NVM`:
+```bash
+brew install nvm
+mkdir ~/.nvm
+nvm install 16.14.0
+npm install -g yarn
+```
+- Go and Typescript protobuf compiler binaries
+
+On MacOS:
+```bash
+brew install protoc-gen-go
+brew install protoc-gen-go-grpc
+brew install protoc-gen-grpc-web
+npm install -g ts-protoc-gen
+npm install -g grpc-tools
+```
+- Musl
+
+On MacOS:
+```bash
+brew install filosottile/musl-cross/musl-cross
+```
+
+- [Kudet](https://github.com/kurtosis-tech/kudet) (Kurtosis CLI helper)
+
+On MacOS:
+```bash
+brew install kurtosis-tech/tap/kudet
+```
 
 ## Unit Test Instructions
 
