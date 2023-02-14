@@ -21,9 +21,8 @@ import (
 )
 
 const (
-	waitForEngineResponseTimeout   = 5 * time.Second
-	defaultClusterName             = resolved_config.DefaultDockerClusterName
-	defaultHttpLogsDatabasePortNum = uint16(9714)
+	waitForEngineResponseTimeout = 5 * time.Second
+	defaultClusterName           = resolved_config.DefaultDockerClusterName
 )
 
 type EngineManager struct {

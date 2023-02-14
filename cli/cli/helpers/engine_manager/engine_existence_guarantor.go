@@ -9,7 +9,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/metrics_user_id_store"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/engine_server_launcher"
 	"github.com/kurtosis-tech/kurtosis/kurtosis_version"
 	"github.com/kurtosis-tech/stacktrace"
@@ -19,9 +18,6 @@ import (
 const (
 	// If set to empty, then we'll use whichever default version the launcher provides
 	defaultEngineImageVersionTag = ""
-
-	shouldForceLogsComponentsContainersRestartWhenEngineContainerIsRunning = false
-	shouldForceLogsComponentsContainersRestartWhenEngineContainerIsStopped = true
 )
 
 var engineRestartCmd = fmt.Sprintf(
@@ -122,16 +118,6 @@ func (guarantor *engineExistenceGuarantor) getPostVisitingHostMachineIpAndPort()
 func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 	logrus.Infof("No Kurtosis engine was found; attempting to start one...")
 
-	//TODO this condition is a temporary hack, we should removed it when the centralized logs in Kubernetes Kurtosis Backend is implemented
-	if guarantor.kurtosisClusterType == resolved_config.KurtosisClusterType_Docker {
-		logrus.Infof("Starting the centralized logs components...")
-		ctx := context.Background()
-		if err := guarantor.ensureCentralizedLogsComponentsAreRunning(ctx, shouldForceLogsComponentsContainersRestartWhenEngineContainerIsStopped); err != nil {
-			return stacktrace.Propagate(err, "An error occurred starting the centralized logs components")
-		}
-		logrus.Infof("Centralized logs components started")
-	}
-
 	metricsUserIdStore := metrics_user_id_store.GetMetricsUserIDStore()
 	metricsUserId, err := metricsUserIdStore.GetUserID()
 	if err != nil {
@@ -193,11 +179,11 @@ func (guarantor *engineExistenceGuarantor) VisitContainerRunningButServerNotResp
 
 func (guarantor *engineExistenceGuarantor) VisitRunning() error {
 
-	//TODO this condition is a temporary hack, we should removed it when the centralized logs in Kubernetes Kurtosis Backend is implemented
+	//TODO(centralized-logs-infra-deprecation) remove this code in the future when people don't have centralized logs infra running
 	if guarantor.kurtosisClusterType == resolved_config.KurtosisClusterType_Docker {
 		ctx := context.Background()
-		if err := guarantor.ensureCentralizedLogsComponentsAreRunning(ctx, shouldForceLogsComponentsContainersRestartWhenEngineContainerIsRunning); err != nil {
-			return stacktrace.Propagate(err, "An error occurred ensuring that the centralized logs components are running")
+		if err := guarantor.ensureDestroyDeprecatedCentralizedLogsResources(ctx); err != nil {
+			return stacktrace.Propagate(err, "An error occurred removing the old and deprecated centralized logs resources")
 		}
 	}
 
@@ -266,34 +252,14 @@ func (guarantor *engineExistenceGuarantor) getRunningAndCLIEngineVersions() (*se
 	return runningEngineSemver, launcherEngineSemver, nil
 }
 
-func (guarantor *engineExistenceGuarantor) ensureCentralizedLogsComponentsAreRunning(ctx context.Context, shouldForceContainerRestart bool) error {
+// TODO(centralized-logs-infra-deprecation) remove this code in the future when people don't have centralized logs infra running
+func (guarantor *engineExistenceGuarantor) ensureDestroyDeprecatedCentralizedLogsResources(ctx context.Context) error {
 
 	// TODO(centralized-logs-collector-deprecation) remove this code in the future when people don't have centralized logs collector running
 	// we remove the now deprecated centralized logs collector container & volume
 	if err := guarantor.kurtosisBackend.DestroyDeprecatedCentralizedLogsCollectorContainerAndVolume(ctx); err != nil {
 		logrus.Debugf("Attempted to remove deprecated centralized logs collector container and volume but failed with error:\n%v", err)
 		logrus.Debugf("Users will have to remove the container & volume themselves using `docker container rm --force kurtosis-logs-collector && docker volume rm kurtosis-logs-collector-vol --force`")
-	}
-
-	logsDatabase, err := guarantor.kurtosisBackend.GetLogsDatabase(ctx)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the logs database")
-	}
-	isThereLogsDatabase := logsDatabase != nil
-	isThereNotRunningLogsDatabase := isThereLogsDatabase && logsDatabase.GetStatus() != container_status.ContainerStatus_Running
-
-	//Destroy the logs database if caller requested it or if the container is not running
-	if shouldForceContainerRestart || isThereNotRunningLogsDatabase {
-		if err = guarantor.kurtosisBackend.DestroyLogsDatabase(ctx); err != nil {
-			return stacktrace.Propagate(err, "An error occurred destroying the logs database")
-		}
-		isThereLogsDatabase = false
-	}
-
-	if !isThereLogsDatabase {
-		if _, err := guarantor.kurtosisBackend.CreateLogsDatabase(ctx, defaultHttpLogsDatabasePortNum); err != nil {
-			return stacktrace.Propagate(err, "An error occurred creating the logs database with HTTP port number '%v'", defaultHttpLogsDatabasePortNum)
-		}
 	}
 
 	return nil
