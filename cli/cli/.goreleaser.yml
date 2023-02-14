@@ -16,26 +16,22 @@ builds:
     goarch:
       - amd64
       - arm64
-#  - id: cli-extensible
-#    env:
-#      # We need to set this tobe a dynamically linked binary in order to support plugins
-#      # TODO: remove this step once CLI doesn't require KurtosisBackend
-#      - CGO_ENABLED=1
-#    main: .
-#    binary: "{{ .Env.CLI_BINARY_FILENAME }}-ext"
-#    goos:
-#      - linux
-#      - darwin
-#    goarch:
-#      - 386
-#      - amd64
-#      - arm64
+    overrides:
+      - goos: linux
+        goarch: amd64
+        env:
+          - CGO_ENABLED=1
+          - CC="x86_64-linux-musl-gcc"
+          - CXX="x86_64-linux-musl-g++"
+        ldflags:
+          - -linkmode external -extldflags "-static"
 
 # In order for releasing-to-Github to work, we have to create these archives
 archives:
   - id: cli
     builds:
-      - cli
+      - cli-linux
+      - cli-darwin
     # Kurtosis is a private repo so we don't want to package any files except the binaries, but GoReleaser by default packages the README, LICENSE, and changelog
     # Worse, setting this to be emptylist won't work because GoReleaser takes emptylist to mean "package the defaults" per:
     #  https://github.com/goreleaser/goreleaser/blob/73641c71ac0d9f78e2409b0cea1bf5b42111b933/internal/pipe/archive/archive.go#L61
@@ -53,7 +49,7 @@ nfpms:
     description: "Install the Kurtosis CLI"
     vendor: Kurtosis Technologies Inc.
     builds:
-      - cli
+      - cli-linux
     formats:
       - deb
       - rpm
@@ -64,7 +60,7 @@ nfpms:
     description: "Install the Kurtosis CLI"
     vendor: Kurtosis Technologies Inc.
     builds:
-      - cli
+      - cli-linux
     formats:
       - apk
     maintainer: Kurtosis Technologies Inc. <hello@kurtosistech.com>
