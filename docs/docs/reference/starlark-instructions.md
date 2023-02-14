@@ -307,7 +307,7 @@ get_request_recipe = GetHttpRequestRecipe(
     # MANDATORY
     service_name = "my_service",
 
-    # The port ID that is the server port for the request
+    # The user-defined ID that was assigned to the port in the service's ports map.
     # MANDATORY
     port_id = "my_port",
 
@@ -338,7 +338,7 @@ post_request_recipe = PostHttpRequestRecipe(
     # MANDATORY
     service_name = "my_service",
 
-    # The port ID that is the server port for the request
+    # The user-defined ID that was assigned to the port in the service's ports map.
     # MANDATORY
     port_id = "my_port",
 
