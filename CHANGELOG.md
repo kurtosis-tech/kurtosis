@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.66.5](https://github.com/kurtosis-tech/kurtosis/compare/0.66.4...0.66.5) (2023-02-14)
+
+
+### Features
+
+* Make Linux CLI binary support plugins ([#1047](https://github.com/kurtosis-tech/kurtosis/issues/1047)) ([b24d68e](https://github.com/kurtosis-tech/kurtosis/commit/b24d68e1409981c2db0e0ecbd21b64eaecb50dc9))
+
 ## [0.66.4](https://github.com/kurtosis-tech/kurtosis/compare/0.66.3...0.66.4) (2023-02-11)
 
 
