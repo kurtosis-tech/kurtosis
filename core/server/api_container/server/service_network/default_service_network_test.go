@@ -18,6 +18,7 @@ import (
 	lib_networking_sidecar "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/networking_sidecar"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
@@ -26,7 +27,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	bolt "go.etcd.io/bbolt"
 	"net"
+	"os"
 	"strconv"
 	"testing"
 )
@@ -63,7 +66,15 @@ func TestStartService_Successful(t *testing.T) {
 	serviceObj := service.NewService(serviceRegistration, container_status.ContainerStatus_Running, map[string]*port_spec.PortSpec{}, successfulServiceIp, map[string]*port_spec.PortSpec{})
 	serviceConfig := services.NewServiceConfigBuilder(testContainerImageName).WithSubnetwork(string(servicePartitionId)).Build()
 
-	network := NewDefaultServiceNetwork(
+	file, err := os.CreateTemp("/tmp", "*.db")
+	defer os.Remove(file.Name())
+	require.Nil(t, err)
+	db, err := bolt.Open(file.Name(), 0666, nil)
+	require.Nil(t, err)
+	defer db.Close()
+	enclaveDb := &enclave_db.EnclaveDB{DB: db}
+
+	network, err := NewDefaultServiceNetwork(
 		enclaveName,
 		ip,
 		apiContainerPort,
@@ -72,7 +83,9 @@ func TestStartService_Successful(t *testing.T) {
 		backend,
 		unusedEnclaveDataDir,
 		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveName),
+		enclaveDb,
 	)
+	require.Nil(t, err)
 
 	// The service is registered before being started
 	backend.EXPECT().RegisterUserServices(
@@ -152,7 +165,9 @@ func TestStartService_Successful(t *testing.T) {
 		},
 		// partitions with services that failed to start were removed from the topology
 	}
-	require.Equal(t, expectedPartitionsInTopolody, network.topology.GetPartitionServices())
+	partitionServices, err := network.topology.GetPartitionServices()
+	require.Nil(t, err)
+	require.Equal(t, expectedPartitionsInTopolody, partitionServices)
 }
 
 func TestStartService_FailedToStart(t *testing.T) {
@@ -167,7 +182,15 @@ func TestStartService_FailedToStart(t *testing.T) {
 	serviceRegistration := service.NewServiceRegistration(serviceName, serviceUuid, enclaveName, serviceIp, string(serviceName))
 	serviceConfig := services.NewServiceConfigBuilder(testContainerImageName).WithSubnetwork(string(servicePartitionId)).Build()
 
-	network := NewDefaultServiceNetwork(
+	file, err := os.CreateTemp("/tmp", "*.db")
+	defer os.Remove(file.Name())
+	require.Nil(t, err)
+	db, err := bolt.Open(file.Name(), 0666, nil)
+	require.Nil(t, err)
+	defer db.Close()
+	enclaveDb := &enclave_db.EnclaveDB{DB: db}
+
+	network, err := NewDefaultServiceNetwork(
 		enclaveName,
 		ip,
 		apiContainerPort,
@@ -176,7 +199,9 @@ func TestStartService_FailedToStart(t *testing.T) {
 		backend,
 		unusedEnclaveDataDir,
 		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveName),
+		enclaveDb,
 	)
+	require.Nil(t, err)
 
 	// The service is registered before being started
 	backend.EXPECT().RegisterUserServices(
@@ -251,7 +276,9 @@ func TestStartService_FailedToStart(t *testing.T) {
 	expectedPartitionsInTopolody := map[service_network_types.PartitionID]map[service.ServiceName]bool{
 		partition_topology.DefaultPartitionId: {},
 	}
-	require.Equal(t, expectedPartitionsInTopolody, network.topology.GetPartitionServices())
+	partitionServices, err := network.topology.GetPartitionServices()
+	require.Nil(t, err)
+	require.Equal(t, expectedPartitionsInTopolody, partitionServices)
 }
 
 func TestStartService_SidecarFailedToStart(t *testing.T) {
@@ -267,7 +294,15 @@ func TestStartService_SidecarFailedToStart(t *testing.T) {
 	serviceObj := service.NewService(serviceRegistration, container_status.ContainerStatus_Running, map[string]*port_spec.PortSpec{}, successfulServiceIp, map[string]*port_spec.PortSpec{})
 	serviceConfig := services.NewServiceConfigBuilder(testContainerImageName).WithSubnetwork(string(servicePartitionId)).Build()
 
-	network := NewDefaultServiceNetwork(
+	file, err := os.CreateTemp("/tmp", "*.db")
+	defer os.Remove(file.Name())
+	require.Nil(t, err)
+	db, err := bolt.Open(file.Name(), 0666, nil)
+	require.Nil(t, err)
+	defer db.Close()
+	enclaveDb := &enclave_db.EnclaveDB{DB: db}
+
+	network, err := NewDefaultServiceNetwork(
 		enclaveName,
 		ip,
 		apiContainerPort,
@@ -276,7 +311,9 @@ func TestStartService_SidecarFailedToStart(t *testing.T) {
 		backend,
 		unusedEnclaveDataDir,
 		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveName),
+		enclaveDb,
 	)
+	require.Nil(t, err)
 
 	// The service is registered before being started
 	backend.EXPECT().RegisterUserServices(
@@ -363,7 +400,9 @@ func TestStartService_SidecarFailedToStart(t *testing.T) {
 	expectedPartitionsInTopolody := map[service_network_types.PartitionID]map[service.ServiceName]bool{
 		partition_topology.DefaultPartitionId: {},
 	}
-	require.Equal(t, expectedPartitionsInTopolody, network.topology.GetPartitionServices())
+	partitionServices, err := network.topology.GetPartitionServices()
+	require.Nil(t, err)
+	require.Equal(t, expectedPartitionsInTopolody, partitionServices)
 }
 
 func TestStartServices_Success(t *testing.T) {
@@ -380,7 +419,15 @@ func TestStartServices_Success(t *testing.T) {
 	successfulService := service.NewService(successfulServiceRegistration, container_status.ContainerStatus_Running, map[string]*port_spec.PortSpec{}, successfulServiceIp, map[string]*port_spec.PortSpec{})
 	successfulServiceConfig := services.NewServiceConfigBuilder(testContainerImageName).WithSubnetwork(string(successfulServicePartitionId)).Build()
 
-	network := NewDefaultServiceNetwork(
+	file, err := os.CreateTemp("/tmp", "*.db")
+	defer os.Remove(file.Name())
+	require.Nil(t, err)
+	db, err := bolt.Open(file.Name(), 0666, nil)
+	require.Nil(t, err)
+	defer db.Close()
+	enclaveDb := &enclave_db.EnclaveDB{DB: db}
+
+	network, err := NewDefaultServiceNetwork(
 		enclaveName,
 		ip,
 		apiContainerPort,
@@ -389,7 +436,9 @@ func TestStartServices_Success(t *testing.T) {
 		backend,
 		unusedEnclaveDataDir,
 		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveName),
+		enclaveDb,
 	)
+	require.Nil(t, err)
 
 	// Configure the mock to also be testing that the right functions are called along the way
 
@@ -471,7 +520,9 @@ func TestStartServices_Success(t *testing.T) {
 			successfulServiceName: true,
 		},
 	}
-	require.Equal(t, expectedPartitionsInTopolody, network.topology.GetPartitionServices())
+	partitionServices, err := network.topology.GetPartitionServices()
+	require.Nil(t, err)
+	require.Equal(t, expectedPartitionsInTopolody, partitionServices)
 }
 
 func TestStartServices_FailureRollsBackTheEntireBatch(t *testing.T) {
@@ -507,7 +558,15 @@ func TestStartServices_FailureRollsBackTheEntireBatch(t *testing.T) {
 	sidecarFailedService := service.NewService(sidecarFailedServiceRegistration, container_status.ContainerStatus_Running, map[string]*port_spec.PortSpec{}, sidecarFailedServiceIp, map[string]*port_spec.PortSpec{})
 	sidecarFailedServiceConfig := services.NewServiceConfigBuilder(testContainerImageName).WithSubnetwork(string(sidecarFailedServicePartitionId)).Build()
 
-	network := NewDefaultServiceNetwork(
+	file, err := os.CreateTemp("/tmp", "*.db")
+	defer os.Remove(file.Name())
+	require.Nil(t, err)
+	db, err := bolt.Open(file.Name(), 0666, nil)
+	require.Nil(t, err)
+	defer db.Close()
+	enclaveDb := &enclave_db.EnclaveDB{DB: db}
+
+	network, err := NewDefaultServiceNetwork(
 		enclaveName,
 		ip,
 		apiContainerPort,
@@ -516,7 +575,9 @@ func TestStartServices_FailureRollsBackTheEntireBatch(t *testing.T) {
 		backend,
 		unusedEnclaveDataDir,
 		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveName),
+		enclaveDb,
 	)
+	require.Nil(t, err)
 
 	// Configure the mock to also be testing that the right functions are called along the way
 
@@ -740,14 +801,24 @@ func TestStartServices_FailureRollsBackTheEntireBatch(t *testing.T) {
 	expectedPartitionsInTopolody := map[service_network_types.PartitionID]map[service.ServiceName]bool{
 		partition_topology.DefaultPartitionId: {},
 	}
-	require.Equal(t, expectedPartitionsInTopolody, network.topology.GetPartitionServices())
+	partitionServices, err := network.topology.GetPartitionServices()
+	require.Nil(t, err)
+	require.Equal(t, expectedPartitionsInTopolody, partitionServices)
 }
 
 func TestUpdateService(t *testing.T) {
 	ctx := context.Background()
 	backend := backend_interface.NewMockKurtosisBackend(t)
 
-	network := NewDefaultServiceNetwork(
+	file, err := os.CreateTemp("/tmp", "*.db")
+	defer os.Remove(file.Name())
+	require.Nil(t, err)
+	db, err := bolt.Open(file.Name(), 0666, nil)
+	require.Nil(t, err)
+	defer db.Close()
+	enclaveDb := &enclave_db.EnclaveDB{DB: db}
+
+	network, err := NewDefaultServiceNetwork(
 		enclaveName,
 		ip,
 		apiContainerPort,
@@ -756,7 +827,9 @@ func TestUpdateService(t *testing.T) {
 		backend,
 		unusedEnclaveDataDir,
 		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveName),
+		enclaveDb,
 	)
+	require.Nil(t, err)
 
 	partition0 := service_network_types.PartitionID("partition0")
 	partition1 := service_network_types.PartitionID("partition1")
@@ -839,14 +912,24 @@ func TestUpdateService(t *testing.T) {
 			serviceToMoveOutOfDefaultPartition.GetName(): true,
 		},
 	}
-	require.Equal(t, expectedPartitions, network.topology.GetPartitionServices())
+	partitionServices, err := network.topology.GetPartitionServices()
+	require.Nil(t, err)
+	require.Equal(t, expectedPartitions, partitionServices)
 }
 
 func TestUpdateService_FullBatchFailureRollBack(t *testing.T) {
 	ctx := context.Background()
 	backend := backend_interface.NewMockKurtosisBackend(t)
 
-	network := NewDefaultServiceNetwork(
+	file, err := os.CreateTemp("/tmp", "*.db")
+	defer os.Remove(file.Name())
+	require.Nil(t, err)
+	db, err := bolt.Open(file.Name(), 0666, nil)
+	require.Nil(t, err)
+	defer db.Close()
+	enclaveDb := &enclave_db.EnclaveDB{DB: db}
+
+	network, err := NewDefaultServiceNetwork(
 		enclaveName,
 		ip,
 		apiContainerPort,
@@ -855,7 +938,9 @@ func TestUpdateService_FullBatchFailureRollBack(t *testing.T) {
 		backend,
 		unusedEnclaveDataDir,
 		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveName),
+		enclaveDb,
 	)
+	require.Nil(t, err)
 
 	partition1 := service_network_types.PartitionID("partition1")
 	partition2 := service_network_types.PartitionID("partition2")
@@ -903,14 +988,24 @@ func TestUpdateService_FullBatchFailureRollBack(t *testing.T) {
 			successfulService.GetName(): true,
 		},
 	}
-	require.Equal(t, expectedPartitions, network.topology.GetPartitionServices())
+	partitionServices, err := network.topology.GetPartitionServices()
+	require.Nil(t, err)
+	require.Equal(t, expectedPartitions, partitionServices)
 }
 
 func TestSetDefaultConnection(t *testing.T) {
 	ctx := context.Background()
 	backend := backend_interface.NewMockKurtosisBackend(t)
 
-	network := NewDefaultServiceNetwork(
+	file, err := os.CreateTemp("/tmp", "*.db")
+	defer os.Remove(file.Name())
+	require.Nil(t, err)
+	db, err := bolt.Open(file.Name(), 0666, nil)
+	require.Nil(t, err)
+	defer db.Close()
+	enclaveDb := &enclave_db.EnclaveDB{DB: db}
+
+	network, err := NewDefaultServiceNetwork(
 		enclaveName,
 		ip,
 		apiContainerPort,
@@ -919,14 +1014,16 @@ func TestSetDefaultConnection(t *testing.T) {
 		backend,
 		unusedEnclaveDataDir,
 		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveName),
+		enclaveDb,
 	)
+	require.Nil(t, err)
 
 	require.Nil(t, network.topology.CreateEmptyPartitionWithDefaultConnection("test-partition"))
 	require.Nil(t, network.topology.AddService("test-service", "test-partition"))
 	network.networkingSidecars["test-service"] = networking_sidecar.NewMockNetworkingSidecarWrapper()
 
 	newDefaultConnection := partition_topology.NewPartitionConnection(connectionWithSomePacketLoss, partition_topology.ConnectionWithNoPacketDelay)
-	err := network.SetDefaultConnection(ctx, newDefaultConnection)
+	err = network.SetDefaultConnection(ctx, newDefaultConnection)
 	require.Nil(t, err)
 	require.Equal(t, network.topology.GetDefaultConnection(), newDefaultConnection)
 }
@@ -935,7 +1032,15 @@ func TestSetDefaultConnection_FailureRollbackDefaultConnection(t *testing.T) {
 	ctx := context.Background()
 	backend := backend_interface.NewMockKurtosisBackend(t)
 
-	network := NewDefaultServiceNetwork(
+	file, err := os.CreateTemp("/tmp", "*.db")
+	defer os.Remove(file.Name())
+	require.Nil(t, err)
+	db, err := bolt.Open(file.Name(), 0666, nil)
+	require.Nil(t, err)
+	defer db.Close()
+	enclaveDb := &enclave_db.EnclaveDB{DB: db}
+
+	network, err := NewDefaultServiceNetwork(
 		enclaveName,
 		ip,
 		apiContainerPort,
@@ -944,14 +1049,16 @@ func TestSetDefaultConnection_FailureRollbackDefaultConnection(t *testing.T) {
 		backend,
 		unusedEnclaveDataDir,
 		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveName),
+		enclaveDb,
 	)
+	require.Nil(t, err)
 
 	require.Nil(t, network.topology.CreateEmptyPartitionWithDefaultConnection("test-partition"))
 	require.Nil(t, network.topology.AddService("test-service", "test-partition"))
 	// not add the sidecar such that it won't be able to update the networking rules
 
 	newDefaultConnection := partition_topology.NewPartitionConnection(connectionWithSomePacketLoss, partition_topology.ConnectionWithNoPacketDelay)
-	err := network.SetDefaultConnection(ctx, newDefaultConnection)
+	err = network.SetDefaultConnection(ctx, newDefaultConnection)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "Unable to update connections between the different partitions of the topology")
 	// check connection was rolled back to ConnectionAllowed in the topology
@@ -962,7 +1069,15 @@ func TestSetConnection(t *testing.T) {
 	ctx := context.Background()
 	backend := backend_interface.NewMockKurtosisBackend(t)
 
-	network := NewDefaultServiceNetwork(
+	file, err := os.CreateTemp("/tmp", "*.db")
+	defer os.Remove(file.Name())
+	require.Nil(t, err)
+	db, err := bolt.Open(file.Name(), 0666, nil)
+	require.Nil(t, err)
+	defer db.Close()
+	enclaveDb := &enclave_db.EnclaveDB{DB: db}
+
+	network, err := NewDefaultServiceNetwork(
 		enclaveName,
 		ip,
 		apiContainerPort,
@@ -971,7 +1086,9 @@ func TestSetConnection(t *testing.T) {
 		backend,
 		unusedEnclaveDataDir,
 		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveName),
+		enclaveDb,
 	)
+	require.Nil(t, err)
 
 	partition1 := service_network_types.PartitionID("partition1")
 	partition2 := service_network_types.PartitionID("partition2")
@@ -1003,7 +1120,7 @@ func TestSetConnection(t *testing.T) {
 	network.networkingSidecars[service2.GetName()] = networking_sidecar.NewMockNetworkingSidecarWrapper()
 
 	connectionOverride := partition_topology.NewPartitionConnection(connectionWithSomePacketLoss, connectionWithSomeConstantDelay)
-	err := network.SetConnection(ctx, partition1, partition2, connectionOverride)
+	err = network.SetConnection(ctx, partition1, partition2, connectionOverride)
 	require.Nil(t, err)
 
 	// check that connection override was successfully set to connectionOverride
@@ -1016,7 +1133,15 @@ func TestSetConnection_FailureRollsBackChanges(t *testing.T) {
 	ctx := context.Background()
 	backend := backend_interface.NewMockKurtosisBackend(t)
 
-	network := NewDefaultServiceNetwork(
+	file, err := os.CreateTemp("/tmp", "*.db")
+	defer os.Remove(file.Name())
+	require.Nil(t, err)
+	db, err := bolt.Open(file.Name(), 0666, nil)
+	require.Nil(t, err)
+	defer db.Close()
+	enclaveDb := &enclave_db.EnclaveDB{DB: db}
+
+	network, err := NewDefaultServiceNetwork(
 		enclaveName,
 		ip,
 		apiContainerPort,
@@ -1025,7 +1150,9 @@ func TestSetConnection_FailureRollsBackChanges(t *testing.T) {
 		backend,
 		unusedEnclaveDataDir,
 		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveName),
+		enclaveDb,
 	)
+	require.Nil(t, err)
 
 	partition1 := service_network_types.PartitionID("partition1")
 	partition2 := service_network_types.PartitionID("partition2")
@@ -1056,19 +1183,27 @@ func TestSetConnection_FailureRollsBackChanges(t *testing.T) {
 	// do not add any sidecar such that updating network traffic will throw an exception
 
 	connectionOverride := partition_topology.NewPartitionConnection(connectionWithSomePacketLoss, partition_topology.ConnectionWithNoPacketDelay)
-	err := network.SetConnection(ctx, partition1, partition2, connectionOverride)
+	err = network.SetConnection(ctx, partition1, partition2, connectionOverride)
 	require.Contains(t, err.Error(), "Unable to update connections between the different partitions of the topology")
 
-	// check that partition2 was successfully cleaned up
-	require.NotContains(t, network.topology.GetPartitionServices(), partition2)
-
+	partitionServices, err := network.topology.GetPartitionServices()
+	require.Nil(t, err)
+	require.NotContains(t, partitionServices, partition2)
 }
 
 func TestUnsetConnection(t *testing.T) {
 	ctx := context.Background()
 	backend := backend_interface.NewMockKurtosisBackend(t)
 
-	network := NewDefaultServiceNetwork(
+	file, err := os.CreateTemp("/tmp", "*.db")
+	defer os.Remove(file.Name())
+	require.Nil(t, err)
+	db, err := bolt.Open(file.Name(), 0666, nil)
+	require.Nil(t, err)
+	defer db.Close()
+	enclaveDb := &enclave_db.EnclaveDB{DB: db}
+
+	network, err := NewDefaultServiceNetwork(
 		enclaveName,
 		ip,
 		apiContainerPort,
@@ -1077,7 +1212,9 @@ func TestUnsetConnection(t *testing.T) {
 		backend,
 		unusedEnclaveDataDir,
 		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveName),
+		enclaveDb,
 	)
+	require.Nil(t, err)
 
 	partition1 := service_network_types.PartitionID("partition1")
 	partition2 := service_network_types.PartitionID("partition2")
@@ -1110,7 +1247,7 @@ func TestUnsetConnection(t *testing.T) {
 	network.networkingSidecars[service1.GetName()] = networking_sidecar.NewMockNetworkingSidecarWrapper()
 	network.networkingSidecars[service2.GetName()] = networking_sidecar.NewMockNetworkingSidecarWrapper()
 
-	err := network.UnsetConnection(ctx, partition1, partition2)
+	err = network.UnsetConnection(ctx, partition1, partition2)
 	require.Nil(t, err)
 	// test connection was successfully unset back to default
 	_, currentConnectionOverride, err := network.topology.GetPartitionConnection(partition1, partition2)
@@ -1122,7 +1259,15 @@ func TestUnsetConnection_FailureRollsBackChanges(t *testing.T) {
 	ctx := context.Background()
 	backend := backend_interface.NewMockKurtosisBackend(t)
 
-	network := NewDefaultServiceNetwork(
+	file, err := os.CreateTemp("/tmp", "*.db")
+	defer os.Remove(file.Name())
+	require.Nil(t, err)
+	db, err := bolt.Open(file.Name(), 0666, nil)
+	require.Nil(t, err)
+	defer db.Close()
+	enclaveDb := &enclave_db.EnclaveDB{DB: db}
+
+	network, err := NewDefaultServiceNetwork(
 		enclaveName,
 		ip,
 		apiContainerPort,
@@ -1131,7 +1276,9 @@ func TestUnsetConnection_FailureRollsBackChanges(t *testing.T) {
 		backend,
 		unusedEnclaveDataDir,
 		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveName),
+		enclaveDb,
 	)
+	require.Nil(t, err)
 
 	partition1 := service_network_types.PartitionID("partition1")
 	partition2 := service_network_types.PartitionID("partition2")
@@ -1163,7 +1310,7 @@ func TestUnsetConnection_FailureRollsBackChanges(t *testing.T) {
 
 	// do not add any sidecar such that updating network traffic will throw an exception
 
-	err := network.UnsetConnection(ctx, partition1, partition2)
+	err = network.UnsetConnection(ctx, partition1, partition2)
 	require.Contains(t, err.Error(), "Unable to update connections between the different partitions of the topology")
 
 	// check that connection was rolled back to the previous override

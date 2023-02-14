@@ -1,5 +1,8 @@
 package consts
 
+const emptyJsonSet = "{}"
+
 var (
-	EmptyValueForKeySet = []byte{}
+	EmptyValueForKeySet  = []byte{}
+	EmptyValueForJsonSet = []byte(emptyJsonSet)
 )

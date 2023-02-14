@@ -18,6 +18,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/files_artifacts_expansion"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/kurtosis/core/files_artifacts_expander/args"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/networking_sidecar"
@@ -118,11 +119,16 @@ func NewDefaultServiceNetwork(
 	kurtosisBackend backend_interface.KurtosisBackend,
 	enclaveDataDir *enclave_data_directory.EnclaveDataDirectory,
 	networkingSidecarManager networking_sidecar.NetworkingSidecarManager,
-) *DefaultServiceNetwork {
-	networkTopology := partition_topology.NewPartitionTopology(
+	enclaveDb *enclave_db.EnclaveDB,
+) (*DefaultServiceNetwork, error) {
+	networkTopology, err := partition_topology.NewPartitionTopology(
 		partition_topology.DefaultPartitionId,
 		partition_topology.ConnectionAllowed,
+		enclaveDb,
 	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while creating the partition topology")
+	}
 	return &DefaultServiceNetwork{
 		enclaveUuid:                         enclaveUuid,
 		apiContainerIpAddress:               apiContainerIpAddr,
@@ -138,7 +144,7 @@ func NewDefaultServiceNetwork(
 		networkingSidecarManager:            networkingSidecarManager,
 		registeredServiceInfo:               map[service.ServiceName]*service.ServiceRegistration{},
 		allExistingAndHistoricalIdentifiers: []*kurtosis_core_rpc_api_bindings.ServiceIdentifiers{},
-	}
+	}, nil
 }
 
 /*
@@ -181,7 +187,10 @@ func (network *DefaultServiceNetwork) SetConnection(
 		return stacktrace.NewError("Cannot set connection; partitioning is not enabled")
 	}
 
-	currentPartitions := network.topology.GetPartitionServices()
+	currentPartitions, err := network.topology.GetPartitionServices()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while getting all partitions")
+	}
 	createdPartitionToRemoveIfFailure := map[service_network_types.PartitionID]bool{}
 	for _, partition := range []service_network_types.PartitionID{partition1, partition2} {
 		if _, found := currentPartitions[partition]; !found {
@@ -252,7 +261,10 @@ func (network *DefaultServiceNetwork) UnsetConnection(
 		return stacktrace.NewError("Cannot unset connection; partitioning is not enabled")
 	}
 
-	currentPartitions := network.topology.GetPartitionServices()
+	currentPartitions, err := network.topology.GetPartitionServices()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while getting all partitions")
+	}
 	for _, partition := range []service_network_types.PartitionID{partition1, partition2} {
 		if _, found := currentPartitions[partition]; !found {
 			logrus.Warnf("Unsetting connection between '%s' and '%s' but '%s' isn't registered as a partition yet. This will no-op",
@@ -504,7 +516,17 @@ func (network *DefaultServiceNetwork) UpdateService(
 			continue
 		}
 
-		if _, found = network.topology.GetPartitionServices()[newServicePartition]; !found {
+		partitionServices, err := network.topology.GetPartitionServices()
+		if err != nil {
+			failedServicesPool[serviceName] = stacktrace.Propagate(
+				err,
+				"Cannot update service '%v' as we tried to fetch existing partitions and failed",
+				serviceName,
+			)
+			continue
+		}
+
+		if _, found = partitionServices[newServicePartition]; !found {
 			logrus.Debugf("Partition with ID '%s' does not exist in current topology. Creating it to be able to "+
 				"add service '%s' to it when it's created", newServicePartition, serviceName)
 			if err := network.topology.CreateEmptyPartitionWithDefaultConnection(newServicePartition); err != nil {
@@ -544,8 +566,13 @@ func (network *DefaultServiceNetwork) UpdateService(
 			}
 		}
 		// finally, after all updates and roll-back have been performed, check for potentially empty partitions and remove them to keep the topology clean
+		partitionServices, err := network.topology.GetPartitionServices()
+		if err != nil {
+			logrus.Errorf("Tried getting partition services to cleanup any empty partitions but failed.")
+			return
+		}
 		for partitionID := range partitionCreatedDuringThisOperation {
-			servicesInPartition, found := network.topology.GetPartitionServices()[partitionID]
+			servicesInPartition, found := partitionServices[partitionID]
 			if found && len(servicesInPartition) == 0 {
 				if err := network.topology.RemovePartition(partitionID); err != nil {
 					logrus.Errorf("Partition '%s' was left empty after a service update. It failed to be removes", partitionID)
@@ -586,7 +613,10 @@ func (network *DefaultServiceNetwork) RemoveService(
 	}
 	serviceUuid := serviceToRemove.GetUUID()
 
-	network.topology.RemoveService(serviceName)
+	err = network.topology.RemoveService(serviceName)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred while removing service '%v' from the network topology", serviceName)
+	}
 
 	network.cleanupInternalMapsUnlocked(serviceName)
 
@@ -958,7 +988,12 @@ func (network *DefaultServiceNetwork) registerService(
 ) {
 	serviceSuccessfullyRegistered := false
 
-	if _, found := network.topology.GetPartitionServices()[partitionId]; !found {
+	partitionServices, err := network.topology.GetPartitionServices()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while getting partition services")
+	}
+
+	if _, found := partitionServices[partitionId]; !found {
 		logrus.Debugf("Paritition with ID '%s' does not exist in current topology. Creating it to be able to "+
 			"add service '%s' to it when it's created", partitionId, serviceName)
 
@@ -1036,7 +1071,10 @@ func (network *DefaultServiceNetwork) registerService(
 		if serviceSuccessfullyRegistered {
 			return
 		}
-		network.topology.RemoveService(serviceName)
+		err = network.topology.RemoveService(serviceName)
+		if err != nil {
+			logrus.Errorf("An error occurred while removing service '%v' from the partition toplogy", serviceName)
+		}
 	}()
 	serviceSuccessfullyRegistered = true
 	return serviceRegistration, nil
@@ -1048,9 +1086,16 @@ func (network *DefaultServiceNetwork) registerService(
 // half-registered, but it's worth calling out that this method with throw if called with such a service
 func (network *DefaultServiceNetwork) unregisterService(ctx context.Context, serviceName service.ServiceName) error {
 	partitionId, partitionFound := network.topology.GetServicePartitions()[serviceName]
-	network.topology.RemoveService(serviceName)
+	err := network.topology.RemoveService(serviceName)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while removing service '%v' from the network topology", serviceName)
+	}
+	partitionServices, err := network.topology.GetPartitionServices()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while getting partition services")
+	}
 	if partitionFound && partitionId != partition_topology.DefaultPartitionId {
-		if len(network.topology.GetPartitionServices()[partitionId]) == 0 {
+		if len(partitionServices[partitionId]) == 0 {
 			if err := network.topology.RemovePartition(partitionId); err != nil {
 				logrus.Warnf("Error removing partition '%s' as it was empty after removing service '%s'. "+
 					"This is not critical but is unexpected. Error was: '%v'", partitionId, serviceName, err)
@@ -1415,7 +1460,10 @@ func (network *DefaultServiceNetwork) addServiceToTopology(serviceName service.S
 	shouldRemoveFromTopology := true
 	defer func() {
 		if shouldRemoveFromTopology {
-			network.topology.RemoveService(serviceName)
+			err := network.topology.RemoveService(serviceName)
+			if err != nil {
+				logrus.Errorf("An error occurred while removing service '%v' from the partition toplogy", serviceName)
+			}
 		}
 	}()
 
@@ -1429,7 +1477,10 @@ func (network *DefaultServiceNetwork) moveServiceToPartitionInTopology(serviceNa
 	if !found {
 		return stacktrace.NewError("Service with name '%s' not found in the topology", serviceName)
 	}
-	network.topology.RemoveService(serviceName)
+	err := network.topology.RemoveService(serviceName)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while removing service '%v' from the network topology", serviceName)
+	}
 	defer func() {
 		if isOperationSuccessful {
 			return

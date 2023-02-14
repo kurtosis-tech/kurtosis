@@ -12,6 +12,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/kurtosis-tech/kurtosis/core/launcher/args"
 	"github.com/kurtosis-tech/kurtosis/core/launcher/args/kurtosis_backend_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server"
@@ -123,6 +124,11 @@ func runMain() error {
 		return stacktrace.Propagate(err, "An error occurred while creating the Git module content provider")
 	}
 
+	enclaveDb, err := enclave_db.GetOrCreateEnclaveDatabase()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while getting the enclave db")
+	}
+
 	// TODO Extract into own function
 	var kurtosisBackend backend_interface.KurtosisBackend
 	switch serverArgs.KurtosisBackendType {
@@ -168,7 +174,7 @@ func runMain() error {
 		return stacktrace.NewError("Backend type '%v' was not recognized by API container.", serverArgs.KurtosisBackendType.String())
 	}
 
-	serviceNetwork, err := createServiceNetwork(kurtosisBackend, enclaveDataDir, serverArgs, ownIpAddress)
+	serviceNetwork, err := createServiceNetwork(kurtosisBackend, enclaveDataDir, serverArgs, ownIpAddress, enclaveDb)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the service network")
 	}
@@ -232,33 +238,18 @@ func createServiceNetwork(
 	enclaveDataDir *enclave_data_directory.EnclaveDataDirectory,
 	args *args.APIContainerArgs,
 	ownIpAddress net.IP,
+	enclaveDb *enclave_db.EnclaveDB,
 ) (service_network.ServiceNetwork, error) {
 	enclaveIdStr := args.EnclaveUUID
 	enclaveUuid := enclave.EnclaveUUID(enclaveIdStr)
 
-	/*
-		filesArtifactStore, err := enclaveDataDir.GetFilesArtifactStore()
-		if err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred getting the files artifact store")
-		}
-	*/
-
 	isPartitioningEnabled := args.IsPartitioningEnabled
-
-	/*
-		filesArtifactExpander := files_artifact_expander.NewFilesArtifactExpander(
-			kurtosisBackend,
-			enclaveObjAttrsProvider,
-			enclaveUuid,
-			filesArtifactStore,
-		)
-	*/
 
 	networkingSidecarManager := networking_sidecar.NewStandardNetworkingSidecarManager(
 		kurtosisBackend,
 		enclaveUuid)
 
-	serviceNetwork := service_network.NewDefaultServiceNetwork(
+	serviceNetwork, err := service_network.NewDefaultServiceNetwork(
 		enclaveUuid,
 		ownIpAddress,
 		args.GrpcListenPortNum,
@@ -267,7 +258,12 @@ func createServiceNetwork(
 		kurtosisBackend,
 		enclaveDataDir,
 		networkingSidecarManager,
+		enclaveDb,
 	)
+
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while creating the default service network")
+	}
 	return serviceNetwork, nil
 }
 
