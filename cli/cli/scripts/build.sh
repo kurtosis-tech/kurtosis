@@ -80,7 +80,7 @@ fi
     if "${should_publish_arg}"; then
         goreleaser_verb_and_flags="release --rm-dist"
     else
-        goreleaser_verb_and_flags="build --rm-dist --snapshot"
+        goreleaser_verb_and_flags="release --rm-dist --snapshot"
     fi
     if ! goreleaser ${goreleaser_verb_and_flags}; then
         echo "Error: Couldn't build the CLI binary for the current OS/arch" >&2

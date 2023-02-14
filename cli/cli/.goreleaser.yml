@@ -30,8 +30,7 @@ builds:
 archives:
   - id: cli
     builds:
-      - cli-linux
-      - cli-darwin
+      - cli
     # Kurtosis is a private repo so we don't want to package any files except the binaries, but GoReleaser by default packages the README, LICENSE, and changelog
     # Worse, setting this to be emptylist won't work because GoReleaser takes emptylist to mean "package the defaults" per:
     #  https://github.com/goreleaser/goreleaser/blob/73641c71ac0d9f78e2409b0cea1bf5b42111b933/internal/pipe/archive/archive.go#L61
@@ -49,7 +48,7 @@ nfpms:
     description: "Install the Kurtosis CLI"
     vendor: Kurtosis Technologies Inc.
     builds:
-      - cli-linux
+      - cli
     formats:
       - deb
       - rpm
@@ -60,7 +59,7 @@ nfpms:
     description: "Install the Kurtosis CLI"
     vendor: Kurtosis Technologies Inc.
     builds:
-      - cli-linux
+      - cli
     formats:
       - apk
     maintainer: Kurtosis Technologies Inc. <hello@kurtosistech.com>
