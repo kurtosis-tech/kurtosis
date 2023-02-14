@@ -1,0 +1,1279 @@
+##############
+# Yaml Anchors
+##############
+# Don't run cli jobs on  master branches
+filters_ignore_master: &filters_ignore_master
+  filters:
+    branches:
+      ignore:
+        - master
+
+
+# cli cluster param used to run test suites against docker/kubernetes tests
+param_cli_cluster_backend: &param_cli_cluster_backend
+  cli-cluster-backend:
+    description: "Kurtosis cluster backend for the cli to use. Must be one of 'docker', 'minikube'"
+    type: enum
+    enum: ["docker"] # ["docker", "minikube"]
+
+
+# Steps to prepare a job for Kubernetes testing
+steps_prepare_testing_k8s: &steps_prepare_testing_k8s
+  steps:
+    - run: |
+        curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube_latest_amd64.deb
+        sudo dpkg -i minikube_latest_amd64.deb
+        minikube start --vm-driver=docker --kubernetes-version=v1.19.0
+    - run:
+        name: Check status
+        command: |
+          minikube status
+    - run: "${KURTOSIS_BINPATH} cluster set minikube"
+    - run: |
+        eval $(minikube docker-env)
+        docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.core-server-image-filename >>"
+        docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.engine-server-image-filename >>"
+        docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.file-artifacts-expander-image-filename >>"
+    - run: "${KURTOSIS_BINPATH} engine start --cli-log-level trace"
+    - run:
+        command: "${KURTOSIS_BINPATH} gateway"
+        background: true
+
+# Steps to prepare a job for Kubernetes testing
+steps_prepare_testing_docker: &steps_prepare_testing_docker
+  steps:
+    - run: |
+        docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.core-server-image-filename >>"
+        docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.engine-server-image-filename >>"
+        docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.file-artifacts-expander-image-filename >>"
+    - run: "${KURTOSIS_BINPATH} engine start --cli-log-level trace"
+
+# Run steps to dump kurtosis enclaves from docker
+run_dump_kurtosis_enclaves: &run_dump_kurtosis_enclaves
+  run: |
+    cd /tmp
+    output_dirname="enclave-dumps"
+    mkdir "${output_dirname}"
+
+    # We exclude "WARN" and "INFO" messages because otherwise they'll pollute the STDOUT grab
+    # We can remove this tedious exclusion when https://github.com/kurtosis-tech/kurtosis/issues/399 is implemented
+    for enclave_uuid in $("${KURTOSIS_BINPATH}" enclave ls | grep -v "WARN" | grep -v "INFO" | grep -v "UUID" | awk '{print $1}'); do
+      "${KURTOSIS_BINPATH}" enclave dump "${enclave_uuid}" "${output_dirname}/${enclave_uuid}"
+    done
+
+    # Verify that we actually dumped enclaves by ensuring the number of dumped enclaves is greater than 0 (if not, it's a bug in this dumping logic)
+    num_dumped_enclaves="$(find "${output_dirname}" -mindepth 1 -maxdepth 1 -type d | wc -l)"
+    [ "${num_dumped_enclaves}" -gt 0 ]
+
+    zip -r "${output_dirname}.zip" "${output_dirname}"
+
+# If the only changes are to the docs, we can optimize and skip any code-building/code-testing
+# `git diff --exit-code` returns 0 exit code if no changes, and 1 if changes
+abort_job_if_only_docs_changes: &abort_job_if_only_docs_changes
+  run: |
+    if git --no-pager diff --exit-code origin/master...HEAD -- . ':!docs'; then
+      circleci-agent step halt
+    fi 
+
+##############
+# CircleCI
+##############
+version: 2.1
+
+orbs:
+  npm-publisher: uraway/npm-publisher@0.2.0
+  kurtosis-docs-checker: kurtosis-tech/docs-checker@0.2.3
+
+executors:
+  ubuntu_vm:
+    machine:
+      image: ubuntu-2004:202201-02
+
+parameters:
+  go-version:
+    type: string
+    default: "1.18"
+  container-engine-lib-build-cache-key-prefix:
+    type: string
+    default: "go-mod-v1"   # Can bump this version to bust the cache
+  # To upgrade the Docker Engine version, see which versions are supported at: https://circleci.com/docs/2.0/building-docker-images/#docker-version
+  docker-engine-version:
+    type: string
+    default: 20.10.7
+  api-go-version:
+    type: string
+    default: "1.15.13"
+  # Separate (and newer) than the API version because we want lots of people to be able to use the Kurtosis API and the API doesn't need to be
+  # the same version as the server
+  server-go-version:
+    type: string
+    default: "1.18"
+  api-node-version:
+    type: string
+    default: 16.13.0
+  source-repo-name:
+    type: string
+    default: kurtosis-sdk
+  core-server-build-cache-key-prefix:
+    type: string
+    default: "core-server-go-mod-v1"   # Can bump this version to bust the cache
+  engine-server-build-cache-key-prefix:
+    type: string
+    default: "engine-server-go-mod-v1"   # Can bump this version to bust the cache
+  cli-go-version:
+    type: string
+    default: "1.18"
+  workspace-with-cli-binary-and-images-mountpoint:
+    type: string
+    default: "/tmp/workspace"
+  # The dirpath where CLI dist subdirectories are found, relative to the workspace root
+  cli-dist-home-relative-dirpath:
+    type: string
+    default: "cli/cli/dist"
+  # The filepath where the Linux AMD 64 CLI binary can be found, relative to the cli-dist-home-relative-dirpath
+  cli-linux-amd-64-binary-relative-filepath:
+    type: string
+    default: "cli_linux_amd64_v1/kurtosis"
+  # The key that the CLI build cache will get
+  # We can bump the version here if we ever need to bust the cache
+  cli-build-cache-key-prefix:
+    type: string
+    default: "cli-go-mod-v1"
+  generate-kurtosis-version-script-path:
+    type: string
+    default: "scripts/generate-kurtosis-version.sh"
+  core-server-image-filename:
+    type: string
+    default: "core-server-image.tgz"
+  file-artifacts-expander-image-filename:
+    type: string
+    default: "file-artifacts-expander-image.tgz"
+  engine-server-image-filename:
+    type: string
+    default: "engine-server-image.tgz"
+  startosis-test-script-file-relative-path:
+    type: string
+    default: "internal_testsuites/starlark/ci_tests/startosis_simple_script.star"
+  rendertemplate-cli-test-template-relative-path:
+    type: string
+    default: "internal_testsuites/resources/render_template_cli_test/template.txt"
+  rendertemplate-cli-test-data-json-relative-path:
+    type: string
+    default: "internal_testsuites/resources/render_template_cli_test/data.json"
+
+
+
+
+# NOTE: Because CircleCI jobs run on separate machines from each other, we duplicate steps (like checkout) between jobs. This is because doing the "correct" DRY
+#  refactoring of, "one job for checkout, one job for build Docker image, etc." would require a) persisting files between jobs and b) persisting Docker images between
+#  jobs. Both are annoying (saving/loading workspaces require re-downloading the workspace over the network, and there doesn't seem to be a good way to do Docker
+#  images), so we run everything inside a single job.
+# See also: https://discuss.circleci.com/t/can-docker-images-be-preserved-between-jobs-in-a-workflow-without-a-manual-load-save/23388/12
+jobs:
+  # -- build jobs ------------------------------------------
+  build_container_engine_lib:
+    docker:
+      - image: "cimg/go:<< pipeline.parameters.go-version >>"
+
+    # Done on 2022-05-15, when the job was 1m30s and CircleCI insights showed that we were maxing out the 'medium' class CPUs
+    resource_class: large
+
+    steps:
+      - checkout
+
+      - <<: *abort_job_if_only_docs_changes
+
+      # Cache our dependencies
+      - restore_cache:
+          keys:
+            - << pipeline.parameters.container-engine-lib-build-cache-key-prefix >>-{{ checksum "container-engine-lib/go.sum" }}
+
+      - run: |
+          git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
+          go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
+          container-engine-lib/scripts/build.sh
+      - save_cache:
+          key: << pipeline.parameters.container-engine-lib-build-cache-key-prefix >>-{{ checksum "container-engine-lib/go.sum" }}
+          paths:
+            - "/home/circleci/go/pkg/mod"  # Go module cache on the cimg/go image, as reported by "go env GOMODCACHE"
+            - "/home/circleci/.cache/go-build"  # Go build cache on the cimg/go image, as reported by "go env GOCACHE"
+
+  build_kurtosis_api_golang:
+    docker:
+      - image: "cimg/go:<< pipeline.parameters.api-go-version>>"
+    steps:
+      - checkout
+
+      - <<: *abort_job_if_only_docs_changes
+
+      # !!!!!!!!!! NOTE: We should NOT use our private Go repos here, because this API code will get published publicly !!!!!!!!
+      - run: api/golang/scripts/build.sh
+
+  build_kurtosis_api_typescript:
+    docker:
+      - image: "cimg/node:<< pipeline.parameters.api-node-version>>"
+    steps:
+      - checkout
+
+      - <<: *abort_job_if_only_docs_changes
+
+      - run: api/typescript/scripts/build.sh
+
+  build_files_artifacts_expander:
+    docker:
+      - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
+    steps:
+      - checkout
+
+      - <<: *abort_job_if_only_docs_changes
+
+      # Install kudet
+      - run: |
+          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+          sudo apt update
+          sudo apt install kudet
+
+      # Generate Kurtosis Version
+      - run: "<<pipeline.parameters.generate-kurtosis-version-script-path>>"
+
+
+      - setup_remote_docker:
+          version: "<< pipeline.parameters.docker-engine-version>>"
+      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
+
+      # Doesn't actually read any private repos so doesn't need the magic Go-private-repo Git config stuff
+      - run: |
+          core/files_artifacts_expander/scripts/build.sh
+          source core/files_artifacts_expander/scripts/_constants.env
+          version_to_publish="$(kudet get-docker-tag)"
+          image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
+          echo "Version that will be persisted to workspace: ${version_to_publish}"
+          docker save -o << pipeline.parameters.file-artifacts-expander-image-filename >> "${image_name_with_version}"          
+
+      - persist_to_workspace:
+          root: .
+          paths:
+            - "<< pipeline.parameters.file-artifacts-expander-image-filename >>"
+
+  build_core_launcher:
+    docker:
+      - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
+    steps:
+      - checkout
+
+      - <<: *abort_job_if_only_docs_changes
+
+      # Install Kudet
+      - run: |
+          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+          sudo apt update
+          sudo apt install kudet
+
+      # Generate Kurtosis Version
+      - run: "<<pipeline.parameters.generate-kurtosis-version-script-path>>"
+
+      # The 'git config' and 'go env' steps are to allow Go to read modules from our private Github repos
+      # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
+      - run: |
+          git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
+          go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
+          core/launcher/scripts/build.sh
+
+  build_api_container_server:
+    docker:
+      - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
+    steps:
+      - checkout
+
+      - <<: *abort_job_if_only_docs_changes
+
+      - run: sudo apt-get update -y &&  sudo apt-get install -y musl-dev
+      # Install kudet
+      - run: |
+          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+          sudo apt update
+          sudo apt install kudet
+
+      # Install proto compiler. To compile startosis proto files on the fly, the APIC needs `protoc`
+      - run: |
+          sudo apt update
+          sudo apt install protobuf-compiler
+
+      # Generate Kurtosis Version
+      - run: "<<pipeline.parameters.generate-kurtosis-version-script-path>>"
+
+      - setup_remote_docker:
+          version: "<< pipeline.parameters.docker-engine-version>>"
+      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
+
+      # Cache our dependencies
+      - restore_cache:
+          keys:
+            - << pipeline.parameters.core-server-build-cache-key-prefix>>-{{ checksum "core/server/go.sum" }}
+
+      # The 'git config' and 'go env' steps are to allow Go to read modules from our private Github repos
+      # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
+      - run: |
+          git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
+          go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
+          core/server/scripts/build.sh
+          source core/server/scripts/_constants.env
+          version_to_publish="$(kudet get-docker-tag)"
+          image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
+          echo "Version that will be persisted to workspace: ${version_to_publish}"
+          docker save -o << pipeline.parameters.core-server-image-filename >> "${image_name_with_version}"          
+
+      - save_cache:
+          key: << pipeline.parameters.core-server-build-cache-key-prefix>>-{{ checksum "core/server/go.sum" }}
+          paths:
+            - "/home/circleci/go/pkg/mod"  # Go module cache on the cimg/go image, as reported by "go env GOMODCACHE"
+            - "/home/circleci/.cache/go-build"  # Go build cache on the cimg/go image, as reported by "go env GOCACHE"
+
+      - persist_to_workspace:
+          root: .
+          paths:
+            - "<< pipeline.parameters.core-server-image-filename >>"
+
+  build_engine_launcher:
+    docker:
+      - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
+    steps:
+      - checkout
+
+      - <<: *abort_job_if_only_docs_changes
+
+      # Install Kudet
+      - run: |
+          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+          sudo apt update
+          sudo apt install kudet
+
+      # Generate Kurtosis Version
+      - run: "<<pipeline.parameters.generate-kurtosis-version-script-path>>"
+
+      # The 'git config' and 'go env' steps are to allow Go to read modules from our private Github repos
+      # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
+      - run: |
+          git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
+          go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
+          engine/launcher/scripts/build.sh
+
+  build_engine_server:
+    docker:
+      - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
+    steps:
+      - checkout
+
+      - <<: *abort_job_if_only_docs_changes
+
+      - run: sudo apt-get update -y &&  sudo apt-get install -y musl-dev
+
+      # Install kudet
+      - run: |
+          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+          sudo apt update
+          sudo apt install kudet
+
+      # Generate Kurtosis Version
+      - run: "<<pipeline.parameters.generate-kurtosis-version-script-path>>"
+
+      - setup_remote_docker:
+          version: "<< pipeline.parameters.docker-engine-version>>"
+      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
+
+      # Cache our dependencies
+      - restore_cache:
+          keys:
+            - << pipeline.parameters.engine-server-build-cache-key-prefix>>-{{ checksum "engine/server/go.sum" }}
+
+      # The 'git config' and 'go env' steps are to allow Go to read modules from our private Github repos
+      # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
+      - run: |
+          git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
+          go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
+          engine/server/scripts/build.sh
+          source engine/server/scripts/_constants.env
+          version_to_publish="$(kudet get-docker-tag)"
+          image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
+          echo "Version that will be persisted to workspace: ${version_to_publish}"
+          docker save -o << pipeline.parameters.engine-server-image-filename >> "${image_name_with_version}"          
+          
+
+      - save_cache:
+          key: << pipeline.parameters.engine-server-build-cache-key-prefix>>-{{ checksum "engine/server/go.sum" }}
+          paths:
+            - "/home/circleci/go/pkg/mod"  # Go module cache on the cimg/go image, as reported by "go env GOMODCACHE"
+            - "/home/circleci/.cache/go-build"  # Go build cache on the cimg/go image, as reported by "go env GOCACHE"
+
+      - persist_to_workspace:
+          root: .
+          paths:
+            - "<< pipeline.parameters.engine-server-image-filename >>"
+
+  build_cli:
+    docker:
+      - image: "cimg/go:<< pipeline.parameters.cli-go-version >>"
+    resource_class: large
+    steps:
+      - checkout
+
+      - <<: *abort_job_if_only_docs_changes
+
+      - run: sudo apt-get update -y &&  sudo apt-get install -y musl-dev
+
+      # Install kudet
+      - run: |
+          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+          sudo apt update
+          sudo apt install kudet
+
+      # Generate Kurtosis Version
+      - run: "<<pipeline.parameters.generate-kurtosis-version-script-path>>"
+
+      # Install goreleaser
+      - run: |
+          echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | sudo tee /etc/apt/sources.list.d/goreleaser.list
+          sudo apt update
+          sudo apt install goreleaser
+
+      # Cache our dependencies
+      - restore_cache:
+          keys:
+            - << pipeline.parameters.cli-build-cache-key-prefix >>-{{ checksum "cli/cli/go.sum" }}
+
+      - run: |
+          git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
+          go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
+          cli/cli/scripts/build.sh true
+
+      - save_cache:
+          key: << pipeline.parameters.cli-build-cache-key-prefix >>-{{ checksum "cli/cli/go.sum" }}
+          paths:
+            - "/go/pkg/mod"   # Go module cache for the Goreleaser image, as reported by "go env GOMODCACHE"
+            - "/root/.cache/go-build"    # Go build cache for the Goreleaser image, as reported by "go env GOCACHE"
+
+      - persist_to_workspace:
+          root: .
+          paths:
+            - "./<< pipeline.parameters.cli-dist-home-relative-dirpath >>"
+            - "./<< pipeline.parameters.startosis-test-script-file-relative-path >>"
+
+  build_golang_testsuite:
+    executor: ubuntu_vm
+    parameters:
+      <<: *param_cli_cluster_backend
+    steps:
+      - checkout
+
+      - <<: *abort_job_if_only_docs_changes
+
+      - attach_workspace:
+          at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
+      # We call Kurtosis a bunch later, so add it to the PATH so we can call it easily
+      - run: |
+          echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
+      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
+      #Run config init to avoid metrics consent prompt when execute engine start command,
+      #We do not send metrics from CI to not dirty the metrics data
+      - run: "${KURTOSIS_BINPATH} config init dont-send-metrics"
+      - when:
+          condition:
+            equal: [ "minikube", << parameters.cli-cluster-backend >> ]
+          <<: *steps_prepare_testing_k8s
+
+      - when:
+          condition:
+            equal: [ "docker", << parameters.cli-cluster-backend >> ]
+          <<: *steps_prepare_testing_docker
+
+      # Run the testsuite for kubernetes and docker, but don't fail the job immediately so that we can upload the enclave dump
+      - when:
+          condition:
+            equal: [ "minikube", << parameters.cli-cluster-backend >> ]
+          steps:
+            - run: |
+                if ! ./internal_testsuites/golang/scripts/test.sh minikube; then
+                  touch /tmp/testsuite-failed
+                fi
+
+
+
+      - when:
+          condition:
+            equal: [ "docker", << parameters.cli-cluster-backend >> ]
+          steps:
+            - run: |
+                if ! ./internal_testsuites/golang/scripts/test.sh; then
+                  touch /tmp/testsuite-failed
+                fi
+
+      # TODO TODO TODO DELETE THIS HACK!!!!! 
+      # As of 2022-11-18, 'enclave dump' in Kubernetes in CircleCI (but not locally) takes 30s to run per enclave, and "suceeds"
+      # but without dumping anything! To avoid our CI runs getting an extra 15 minutes added on, we're only dumping enclaves in Docker
+      - when:
+          condition:
+            equal: [ "docker", << parameters.cli-cluster-backend >> ]
+          steps:
+            <<: *run_dump_kurtosis_enclaves
+
+      # TODO UNCOMMENT THIS WHEN WE FIX THE BUG ABOVE!!!
+      # Dump enclave data so we can debug any issues that arise
+      # - <<: *run_dump_kurtosis_enclaves
+      
+      - store_artifacts:
+          path: /tmp/enclave-dumps.zip
+          destination: enclave-dumps.zip
+
+      # Finally, fail the job if the testsuite failed
+      - run: "! [ -f /tmp/testsuite-failed ]"
+
+  build_typescript_testsuite:
+    executor: ubuntu_vm
+    parameters:
+      <<: *param_cli_cluster_backend
+    steps:
+      - checkout
+
+      - <<: *abort_job_if_only_docs_changes
+
+      - attach_workspace:
+          at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
+      # We call Kurtosis a bunch later, so add it to the PATH so we can call it easily
+      - run: |
+          echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
+      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
+
+      #Run install Yarn because TypeScript tests are managed with Yarn package manager
+      - run: npm install -g yarn
+
+      #Run config init to avoid metrics consent prompt when execute engine start command,
+      #We do not send metrics from CI to not dirty the metrics data
+      - run: "${KURTOSIS_BINPATH} config init dont-send-metrics"
+      - when:
+          condition:
+            equal: [ "minikube", << parameters.cli-cluster-backend >> ]
+          <<: *steps_prepare_testing_k8s
+
+      - when:
+          condition:
+            equal: [ "docker", << parameters.cli-cluster-backend >> ]
+          <<: *steps_prepare_testing_docker
+
+      # Run the testsuite for either docker or kubernetes, but don't fail the job immediately so that we can upload the enclave dump
+      - when:
+          condition:
+            equal: [ "minikube", << parameters.cli-cluster-backend >> ]
+          steps:
+            - run: |
+                if ! ./internal_testsuites/typescript/scripts/test.sh minikube; then
+                   touch /tmp/testsuite-failed
+                fi
+      - when:
+          condition:
+            equal: [ "docker", << parameters.cli-cluster-backend >> ]
+          steps:
+            - run: |
+                if ! ./internal_testsuites/typescript/scripts/test.sh; then
+                   touch /tmp/testsuite-failed
+                 fi
+
+      # TODO TODO TODO DELETE THIS HACK!!!!! 
+      # As of 2022-11-18, 'enclave dump' in Kubernetes in CircleCI (but not locally) takes 30s to run per enclave, and "suceeds"
+      # but without dumping anything! To avoid our CI runs getting an extra 15 minutes added on, we're only dumping enclaves in Docker
+      - when:
+          condition:
+            equal: [ "docker", << parameters.cli-cluster-backend >> ]
+          steps:
+            <<: *run_dump_kurtosis_enclaves
+
+      # TODO UNCOMMENT THIS WHEN WE FIX THE BUG ABOVE!!!
+      # Dump enclave data so we can debug any issues that arise
+      # - <<: *run_dump_kurtosis_enclaves
+      
+      - store_artifacts:
+          path: /tmp/enclave-dumps.zip
+          destination: enclave-dumps.zip
+      - store_artifacts:
+          path: /tmp/enclave-dumps.zip
+          destination: enclave-dumps.zip
+
+      # Finally, fail the job if the testsuite failed
+      - run: "! [ -f /tmp/testsuite-failed ]"
+
+  test_old_enclave_continuity:
+    executor: ubuntu_vm
+    steps:
+      - checkout
+
+      - <<: *abort_job_if_only_docs_changes
+
+      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
+
+      # Set up Kurtosis
+      - attach_workspace:
+          at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
+      - run: |
+          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+          sudo apt update
+          sudo apt install kurtosis-cli
+      # We don't send metrics to avoid polluting our logs
+      - run: kurtosis config init dont-send-metrics
+
+      # Start up an enclave with some services inside
+      - run: kurtosis enclave add --id=running-old-enclave
+      - run: kurtosis enclave add --id=stopped-old-enclave
+      - run: kurtosis service add running-old-enclave test-datastore-one kurtosistech/example-datastore-server
+      - run: kurtosis service add stopped-old-enclave test-datastore-two kurtosistech/example-datastore-server
+      - run: kurtosis enclave stop stopped-old-enclave
+      - run: kurtosis engine stop
+
+      - run: |
+          echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
+          docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.core-server-image-filename >>"
+          docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.engine-server-image-filename >>"
+          docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.file-artifacts-expander-image-filename >>"          
+
+      # Make sure we can still interact with the old enclaves
+      - run: "${KURTOSIS_BINPATH} enclave ls"
+      - run: "${KURTOSIS_BINPATH} enclave inspect running-old-enclave"
+      - run: "${KURTOSIS_BINPATH} service add running-old-enclave test-service httpd --ports http=80"
+      - run: "${KURTOSIS_BINPATH} enclave stop running-old-enclave"
+      - run: "${KURTOSIS_BINPATH} enclave inspect stopped-old-enclave"
+
+      # Ensure enclaves still work
+      - run: "${KURTOSIS_BINPATH} clean -a"
+      - run: "${KURTOSIS_BINPATH} engine stop"
+
+      # Ensure everything got cleaned up successfully
+      - run:
+          name: "Verify only the engine container remains after the clean"
+          command: |
+            if ! [ "$(docker container ls -a | tail -n+2 | wc -l)" -eq 1 ]; then
+              docker container ls -a
+              false
+            fi
+      - run:
+          name: "Verify Kurtosis cleaned up all its volumes"
+          command: |
+            if ! [ $(docker volume ls | grep -v kurtosis-logs-collector-vol | grep -v kurtosis-logs-db-vol | tail -n+2 | wc -l ) -eq 0 ]; then
+              docker volume ls
+              false
+            fi
+      - run:
+          name: "Verify Kurtosis cleaned up all its networks"
+          command: |
+            builtin_network_ids=(
+              "$(docker network ls --quiet --filter "name=host")"
+              "$(docker network ls --quiet --filter "name=bridge")"
+              "$(docker network ls --quiet --filter "name=none")"
+            )
+            if ! [ $(docker network ls | grep -v -f <(printf "%s\n" "${builtin_network_ids[@]}") | tail -n+2 | wc -l) -eq 0 ]; then
+              docker network ls
+              false
+            fi
+
+  test_basic_cli_functionality:
+    executor: ubuntu_vm
+    parameters:
+      <<: *param_cli_cluster_backend
+    steps:
+      - checkout
+
+      - <<: *abort_job_if_only_docs_changes
+
+      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
+
+      # Set up Kurtosis
+      - attach_workspace:
+          at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
+
+      - run: |
+          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+          sudo apt update
+          sudo apt install kurtosis-cli
+      # We don't send metrics to avoid polluting our logs
+      - run: kurtosis config init dont-send-metrics
+      - run: |
+          echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
+
+      # When backend is 'minikube' install minikube and start a Kurtosis gateway
+      - when:
+          condition:
+            equal: [ "minikube", << parameters.cli-cluster-backend >> ]
+          <<: *steps_prepare_testing_k8s
+
+      - when:
+          condition:
+            equal: [ "docker", << parameters.cli-cluster-backend >> ]
+          <<: *steps_prepare_testing_docker
+
+      # Basic service add & rm
+      - run: |
+          ${KURTOSIS_BINPATH} enclave new --id test-enclave
+      - run: "${KURTOSIS_BINPATH} service add test-enclave test1 httpd --ports http=80"
+      - run: "${KURTOSIS_BINPATH} service rm test-enclave test1"
+      - run: "${KURTOSIS_BINPATH} service add test-enclave test1 httpd --ports http=80"
+      - run: "${KURTOSIS_BINPATH} service add test-enclave test2 httpd --ports http=80"
+
+      # File commands
+      - run: "${KURTOSIS_BINPATH} files rendertemplate test-enclave << pipeline.parameters.rendertemplate-cli-test-template-relative-path >> << pipeline.parameters.rendertemplate-cli-test-data-json-relative-path >> ./rendered --name rendered-file"
+      - run: "${KURTOSIS_BINPATH} files download test-enclave rendered-file ."
+      - run: "${KURTOSIS_BINPATH} files storeservice test-enclave test1 /usr/local/apache2/conf/httpd.conf --name stored-file"
+      - run: "${KURTOSIS_BINPATH} files download test-enclave stored-file ."
+
+      # Module inside an enclave
+      - run: "${KURTOSIS_BINPATH} enclave ls"
+      - run: "${KURTOSIS_BINPATH} enclave inspect test-enclave"
+
+      # Execute simple startosis script in new enclave
+      - run: "${KURTOSIS_BINPATH} run --enclave-identifier test-enclave << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.startosis-test-script-file-relative-path >>"
+
+      # Execute github starlark module
+      - run: "${KURTOSIS_BINPATH} run --enclave-identifier test-datastore github.com/kurtosis-tech/datastore-army-package '{\"num_datastores\": 2}'"
+        
+
+      - run: "${KURTOSIS_BINPATH} enclave stop test-enclave"
+      - run: "${KURTOSIS_BINPATH} enclave stop test-datastore"
+      - run: "${KURTOSIS_BINPATH} enclave inspect test-enclave"   # Ensure we can still inspect stopped enclaves
+      - run: "${KURTOSIS_BINPATH} clean -a"
+      - run: "${KURTOSIS_BINPATH} engine stop"
+
+      # Ensure Kubernetes resources clean up successfully
+      - when:
+          condition:
+            equal: [ "minikube", << parameters.cli-cluster-backend >> ]
+          steps:
+            - run:
+                name: "Verify no kurtosis pods are running after clean and stopping the engine"
+                command: |
+                  kurtosis_pods=$(minikube kubectl -- get pods --all-namespaces --selector=kurtosistech.com/app-id=kurtosis)
+                  if ! [ $(echo "${kurtosis_pods}" |  grep -f <(printf "%s\n" "Running") | wc -l) -eq 0 ]; then
+                    echo "${kurtosis_pods}"
+                    false
+                  fi
+
+      # Ensure Docker resources cleaned up successfully
+      - when:
+          condition:
+            equal: [ "docker", << parameters.cli-cluster-backend >> ]
+          steps:
+            - run:
+                name: "Verify only the engine container remains after the clean"
+                command: |
+                  if ! [ "$(docker container ls -a | tail -n+2 | wc -l)" -eq 1 ]; then
+                    docker container ls -a
+                    false
+                  fi
+            - run:
+                name: "Verify Kurtosis cleaned up all its volumes"
+                command: |
+                  if ! [ $(docker volume ls | grep -v kurtosis-logs-collector-vol | grep -v kurtosis-logs-db-vol | tail -n+2 | wc -l) -eq 0 ]; then
+                    docker volume ls
+                    false
+                  fi
+            - run:
+                name: "Verify Kurtosis cleaned up all its networks"
+                command: |
+                  builtin_network_ids=(
+                     "$(docker network ls --quiet --filter "name=host")"
+                    "$(docker network ls --quiet --filter "name=bridge")"
+                    "$(docker network ls --quiet --filter "name=none")"
+                  )
+                  if ! [ $(docker network ls | grep -v -f <(printf "%s\n" "${builtin_network_ids[@]}") | tail -n+2 | wc -l) -eq 0 ]; then
+                    docker network ls
+                    false
+                  fi
+
+  test_config_init_edge_cases:
+    executor: ubuntu_vm
+    steps:
+      - checkout
+
+      - <<: *abort_job_if_only_docs_changes
+
+      - attach_workspace:
+          at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
+      - run: |
+          echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
+      - run: |
+          function test_config_init_is_required() {
+            if ${KURTOSIS_BINPATH} engine start --cli-log-level trace; then
+              echo "Error: Expected an attempt to use the Kurtosis CLI in a non-interactive terminal without init'ing the config first to fail but it succeeded" >&2
+              return 1
+            fi
+          }
+
+          function test_double_config_init_without_force_fails() {
+            "${KURTOSIS_BINPATH}" config init dont-send-metrics
+
+            if "${KURTOSIS_BINPATH}" config init dont-send-metrics; then
+              echo "Error: Expected init'ing the config twice in a non-interactive terminal to throw an error but none was thrown" >&2
+              return 1
+            fi
+          }
+
+          function test_double_config_init_with_force_succeeds() {
+            "${KURTOSIS_BINPATH}" config init dont-send-metrics
+
+            if ! "${KURTOSIS_BINPATH}" config init -f dont-send-metrics; then
+              echo "Error: Expected a forced config init in a non-interactive terminal to succeed but it failed" >&2
+              return 1
+            fi
+          }
+
+          all_tests_succeeded="true"
+          for test_func in test_config_init_is_required test_double_config_init_without_force_fails test_double_config_init_with_force_succeeds; do
+            # Reset test state
+            rm -f "$("${KURTOSIS_BINPATH}" config path)"
+
+            if ! "${test_func}"; then
+              echo "Error: Expected test function '${test_func}' to succeed but it failed" >&2
+              all_tests_succeeded="false"
+            fi
+          done
+
+          "${all_tests_succeeded}"
+  # -- End build jobs ---------------------------------------
+
+  # -- Publish jobs --------------------------------------------
+  publish_kurtosis_api_source:
+    docker:
+      - image: cimg/base:2021.10
+    steps:
+      # Install Kudet
+      - run: |
+          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+          sudo apt update
+          sudo apt install kudet
+      - checkout
+      - run: |
+          cd /tmp/
+          git clone https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/kurtosis-tech/<< pipeline.parameters.source-repo-name >>.git
+      - run: |
+          dest_api_dirpath="/tmp/<< pipeline.parameters.source-repo-name >>/api"
+          rm -rf "${dest_api_dirpath}"
+          cp -r api "${dest_api_dirpath}"
+      # Now, swap Go module names to match the new repo we're pushing the code to
+      - run: |
+          cd /tmp/<< pipeline.parameters.source-repo-name >>/api
+          # We need to consider the .proto files as well, b/c they (frustratingly) contain the Go module name
+          for pattern in "*.go" "go.mod" "*.proto"; do
+            sed -i 's,github.com/kurtosis-tech/kurtosis,github.com/kurtosis-tech/<< pipeline.parameters.source-repo-name >>,g' $(find . -type f -name "${pattern}")
+          done
+      # Push the code up to the remote
+      - run: |
+          version="$(kudet get-docker-tag)"
+          cd /tmp/<< pipeline.parameters.source-repo-name >>
+          git config --global user.name "${KURTOSISBOT_GITHUB_USERNAME}"
+          git config --global user.email "${KURTOSISBOT_GITHUB_EMAIL}"
+          git add .
+          git commit -m "Committing ${version} files"
+          git push origin master
+          git tag "${version}"
+          git tag "v${version}"
+          git push --tags
+
+  publish_kurtosis_api_typescript:
+    docker:
+      - image: "cimg/node:<< pipeline.parameters.api-node-version>>"
+    steps:
+      - checkout
+      - run: api/typescript/scripts/build.sh
+      - npm-publisher/publish-from-package-version:
+          package-path: api/typescript
+          publish-token-variable: NPMJS_AUTH_TOKEN
+
+  publish_files_artifacts_expander_image:
+    docker:
+      - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
+    steps:
+      # Install Kudet
+      - run: |
+          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+          sudo apt update
+          sudo apt install kudet
+      - checkout
+
+      - setup_remote_docker:
+          version: "<< pipeline.parameters.docker-engine-version>>"
+      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
+
+      # Doesn't actually use any Kurtosis private repos so doesn't need the Go-private-repo Git config magic
+      - run: core/files_artifacts_expander/scripts/build.sh
+      - run: |
+          set -euo pipefail
+          source core/files_artifacts_expander/scripts/_constants.env
+          version_to_publish="$(kudet get-docker-tag)"
+          echo "Version that will be published: ${version_to_publish}"
+          image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
+          image_name_no_version="${IMAGE_ORG_AND_REPO}:latest"
+          docker tag "${image_name_with_version}" "${image_name_no_version}"
+          docker push "${image_name_with_version}"
+          docker push "${image_name_no_version}"
+
+  publish_api_container_server_image:
+    docker:
+      - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
+    steps:
+      - run: sudo apt-get update -y &&  sudo apt-get install -y musl-dev
+
+      # Install Kudet
+      - run: |
+          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+          sudo apt update
+          sudo apt install kudet
+
+      # Install proto compiler. To compile startosis proto files on the fly, the APIC needs `protoc`
+      - run: |
+          sudo apt update
+          sudo apt install protobuf-compiler
+
+      - checkout
+
+      - setup_remote_docker:
+          version: "<< pipeline.parameters.docker-engine-version>>"
+      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
+
+      # The 'git config' and 'go env' steps are to allow Go to read modules from our private Github repos
+      # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
+      - run: |
+          git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
+          go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
+          core/server/scripts/build.sh
+      - run: |
+          set -euo pipefail
+          source core/server/scripts/_constants.env
+          version_to_publish="$(kudet get-docker-tag)"
+          echo "Version that will be published: ${version_to_publish}"
+          image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
+          image_name_no_version="${IMAGE_ORG_AND_REPO}:latest"
+          docker tag "${image_name_with_version}" "${image_name_no_version}"
+          docker push "${image_name_with_version}"
+          docker push "${image_name_no_version}"
+
+  publish_engine_server_image:
+    docker:
+      - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
+    steps:
+      - run: sudo apt-get update -y &&  sudo apt-get install -y musl-dev
+
+      # Install Kudet
+      - run: |
+          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+          sudo apt update
+          sudo apt install kudet
+
+      - checkout
+
+      # Generate Kurtosis Version
+      - run: |
+          tag="$(git describe --tag)"
+          "<<pipeline.parameters.generate-kurtosis-version-script-path>>" $tag
+
+
+      - setup_remote_docker:
+          version: "<< pipeline.parameters.docker-engine-version>>"
+      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
+
+      # The 'git config' and 'go env' steps are to allow Go to read modules from our private Github repos
+      # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
+      - run: |
+          git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
+          go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
+          engine/server/scripts/build.sh
+
+      - run: |
+          set -euo pipefail
+          source engine/server/scripts/_constants.env
+          version_to_publish="$(kudet get-docker-tag)"
+          echo "Version that will be published: ${version_to_publish}"
+          image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
+          image_name_no_version="${IMAGE_ORG_AND_REPO}:latest"
+          docker tag "${image_name_with_version}" "${image_name_no_version}"
+          docker push "${image_name_with_version}"
+          docker push "${image_name_no_version}"
+
+  push_cli_artifacts:
+    docker:
+      - image: "cimg/go:<< pipeline.parameters.cli-go-version >>"
+    steps:
+      # Install goreleaser
+      - run: |
+          echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | sudo tee /etc/apt/sources.list.d/goreleaser.list
+          sudo apt update
+          sudo apt install goreleaser
+      # Install Kudet
+      - run: |
+          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+          sudo apt update
+          sudo apt install kudet
+      - checkout
+
+      # Generate Kurtosis Version
+      - run: |
+          tag="$(git describe --tag)"
+          "<<pipeline.parameters.generate-kurtosis-version-script-path>>" $tag
+
+      # Cache our dependencies
+      - restore_cache:
+          keys:
+            - << pipeline.parameters.cli-build-cache-key-prefix >>-{{ checksum "cli/cli/go.sum" }}
+
+      # The 'git config' and 'go env' steps are to allow Go to read modules from our private Github repos
+      # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
+      - run: |
+          git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
+          go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
+          cli/cli/scripts/build.sh true true
+
+      - save_cache:
+          key: << pipeline.parameters.cli-build-cache-key-prefix >>-{{ checksum "cli/cli/go.sum" }}
+          paths:
+            - "/go/pkg/mod"   # Go module cache for the Goreleaser image, as reported by "go env GOMODCACHE"
+            - "/root/.cache/go-build"    # Go build cache for the Goreleaser image, as reported by "go env GOCACHE"
+
+  # -- End publishing jobs -------------------------------------
+
+workflows:
+  build:
+    jobs:
+      # -- build jobs ------------------------------------------
+      - kurtosis-docs-checker/check-docs:
+          should-check-changelog: false
+          markdown-link-check-config-json: |
+            {
+                "replacementPatterns": [
+                    {
+                        "pattern": "^../kurtosis/",
+                        "replacement": "https://kurtosis-tech.github.io/kurtosis/"
+                    }
+                ],
+                "ignorePatterns": [
+                    {
+                        "pattern": "https://github.com/kurtosis-tech/kurtosis-internal-docs/.*"
+                    },
+                    {
+                        "pattern": "https://github.com/kurtosis-tech/docs"
+                    },
+                    {
+                        "pattern": "https://github.com/kurtosis-tech/kurtosis"
+                    },
+                    {
+                        "pattern": "https://www.notion.so/kurtosistech.*"
+                    },
+                    {
+                        "pattern": "https://github.com/kurtosis-tech/style-guide"
+                    }
+                ]
+            }
+          filters:
+            branches:
+              ignore:
+                - master
+      - build_container_engine_lib:
+          context:
+            # This pulls in KurtosisBot's Github token, so that we can read from our private repos
+            - github-user
+          filters:
+            branches:
+              ignore:
+                - master
+
+      - build_kurtosis_api_golang:
+          # NOTE: Do NOT add our private Github user here; the API must be publicly-accessible so must build without them
+          context: []
+          filters:
+            branches:
+              ignore:
+                - master
+      - build_kurtosis_api_typescript:
+          filters:
+            branches:
+              ignore:
+                - master
+      - build_files_artifacts_expander:
+          context:
+            - docker-user
+          filters:
+            branches:
+              ignore:
+                - master
+      - build_core_launcher:
+          context:
+            # This pulls in KurtosisBot's Github token, so that we can read from our private repos
+            - github-user
+          filters:
+            branches:
+              ignore:
+                - master
+      - build_api_container_server:
+          context:
+            # This pulls in KurtosisBot's Github token, so that we can read from our private repos
+            - github-user
+            - docker-user
+          filters:
+            branches:
+              ignore:
+                - master
+
+      - build_engine_launcher:
+          context:
+            # This pulls in KurtosisBot's Github token, so that we can read from our private repos
+            - github-user
+          filters:
+            branches:
+              ignore:
+                - master
+      - build_engine_server:
+          context:
+            # This pulls in KurtosisBot's Github token, so that we can read from our private repos
+            - github-user
+            - docker-user
+          filters:
+            branches:
+              ignore:
+                - master
+
+      - build_cli:
+          context:
+            - github-user
+          <<: *filters_ignore_master
+      - test_basic_cli_functionality:
+          name: "Test Basic CLI Functionality in Docker"
+          cli-cluster-backend: "docker"
+          context:
+            - docker-user
+          requires:
+            - build_cli
+            - build_api_container_server
+            - build_engine_server
+            - build_files_artifacts_expander
+          <<: *filters_ignore_master
+#      - test_basic_cli_functionality:
+#          name: "Test Basic CLI Functionality in Kubernetes"
+#          cli-cluster-backend: "minikube"
+#          context:
+#            - docker-user
+#          requires:
+#            - build_cli
+#            - build_api_container_server
+#            - build_engine_server
+#            - build_files_artifacts_expander
+#          <<: *filters_ignore_master
+
+      - build_golang_testsuite:
+          name: "Build golang testsuite against Docker"
+          cli-cluster-backend: "docker"
+          context:
+            - docker-user
+          requires:
+            - build_cli
+            - build_api_container_server
+            - build_engine_server
+            - build_files_artifacts_expander
+          <<: *filters_ignore_master
+#      - build_golang_testsuite:
+#          name: "Build golang testsuite against Kubernetes"
+#          cli-cluster-backend: "minikube"
+#          context:
+#            - docker-user
+#          requires:
+#            - build_cli
+#            - build_api_container_server
+#            - build_engine_server
+#            - build_files_artifacts_expander
+#          <<: *filters_ignore_master
+
+      - build_typescript_testsuite:
+          name: "Build typescript testsuite against Docker"
+          cli-cluster-backend: "docker"
+          context:
+            - docker-user
+          requires:
+            - build_cli
+            - build_api_container_server
+            - build_engine_server
+            - build_files_artifacts_expander
+          <<: *filters_ignore_master
+#      - build_typescript_testsuite:
+#          name: "Build typescript testsuite against Kubernetes"
+#          cli-cluster-backend: "minikube"
+#          context:
+#            - docker-user
+#          requires:
+#            - build_cli
+#            - build_api_container_server
+#            - build_engine_server
+#            - build_files_artifacts_expander
+#          <<: *filters_ignore_master
+
+      - test_old_enclave_continuity:
+          context:
+            - docker-user
+          requires:
+            - build_cli
+            - build_api_container_server
+            - build_engine_server
+            - build_files_artifacts_expander
+          <<: *filters_ignore_master
+      - test_config_init_edge_cases:
+          requires:
+            - build_cli
+          <<: *filters_ignore_master
+
+      # -- Artifact-publishing jobs --------------------------------
+      - publish_kurtosis_api_source:
+          context:
+            - github-user
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+      - publish_kurtosis_api_typescript:
+          context:
+            - npmjs-user
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+      - publish_files_artifacts_expander_image:
+          context:
+            - docker-user
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+      - publish_api_container_server_image:
+          context:
+            - github-user
+            - docker-user
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+
+      - publish_engine_server_image:
+          context:
+            - github-user
+            - docker-user
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+
+      - push_cli_artifacts:
+          context:
+            - github-user
+            - gemfury-publisher
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+
+      # -- End artifact-publishing jobs ----------------------------

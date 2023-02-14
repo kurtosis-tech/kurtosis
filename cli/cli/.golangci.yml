@@ -1,0 +1,34 @@
+run:
+  skip-files:
+    # skipping this one as there is a disclaimer about not knowing why this works
+    - "commands/service/shell/shell.go"
+
+issues:
+  exclude-rules:
+    - path: "lib/backend_impls/kubernetes/object_attributes_provider/engine_object_attributes_provider.go"
+      text: "field `kubernetesConfig` is unused (unused)"
+    - path: "kurtosis_gateway/connection/connection.go"
+      text: "field `remotePortNumberToPortSpecIdMap` is unused (unused)"
+    - path: "command_framework/lowlevel/args/parsed_args.go"
+      text: "ineffectual assignment to inputIdx"
+    - path: "kurtosis_gateway/server/engine_gateway/engine_gateway_service_server.go"
+      text: "`kubernetesConfig`"
+    - path: "kurtosis_gateway/connection/connection.go"
+      text: "field `remotePortNumberToPortSpecIdMap`"
+
+linters-settings:
+  staticcheck:
+    checks:
+      - all
+      - '-SA1019' # disable the rule SA1019 - ioutils replaced with os
+      - '-SA1029' # disables a check that doesn't allow passing built in values to context.WithValue, its more annoyying than useful
+  gosimple:
+    checks:
+      - all
+      - '-S1009' # disable S1009 - should omit nil check; len() for map[interface]interface{}
+
+linters:
+  enable:
+    - exhaustruct
+  max-issues-per-linter: 0
+  sort-results: true
