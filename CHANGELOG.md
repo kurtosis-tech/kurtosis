@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.66.6](https://github.com/kurtosis-tech/kurtosis/compare/0.66.5...0.66.6) (2023-02-14)
+
+
+### Bug Fixes
+
+* Fix broken release of CLI ([#1066](https://github.com/kurtosis-tech/kurtosis/issues/1066)) ([68fc458](https://github.com/kurtosis-tech/kurtosis/commit/68fc458d984929bf5a489942e111bf0970ab2ac0))
+
 ## [0.66.5](https://github.com/kurtosis-tech/kurtosis/compare/0.66.4...0.66.5) (2023-02-14)
 
 
