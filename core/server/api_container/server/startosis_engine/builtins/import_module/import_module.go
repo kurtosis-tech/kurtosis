@@ -92,7 +92,7 @@ func (builtin *importModuleCapabilities) Interpret(arguments *builtin_argument.A
 	// Load it.
 	contents, interpretationError := builtin.packageContentProvider.GetModuleContents(moduleInPackage)
 	if interpretationError != nil {
-		return nil, startosis_errors.WrapWithInterpretationError(interpretationError, "An error occurred while loading the module '%v'", moduleInPackage)
+		return nil, startosis_errors.WrapWithInterpretationError(interpretationError, "An error occurred while loading the package '%v'", moduleInPackage)
 	}
 
 	globalVariables, interpretationErr := builtin.recursiveInterpret(moduleInPackage, contents)

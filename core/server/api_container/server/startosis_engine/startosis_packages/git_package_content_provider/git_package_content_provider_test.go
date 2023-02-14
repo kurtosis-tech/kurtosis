@@ -1,6 +1,7 @@
 package git_package_content_provider
 
 import (
+	"fmt"
 	"github.com/stretchr/testify/require"
 	"os"
 	"path"
@@ -85,7 +86,7 @@ func TestGitPackageProvider_SucceedsForValidPackageWithTag(t *testing.T) {
 
 	provider := NewGitPackageContentProvider(packageDir, packageTmpDir)
 
-	sampleStartosisModule := "github.com/kurtosis-tech/sample-startosis-load/sample.star@0.1.0"
+	sampleStartosisModule := "github.com/kurtosis-tech/sample-startosis-load/sample.star@0.1.1"
 	contents, err := provider.GetModuleContents(sampleStartosisModule)
 	require.Nil(t, err)
 	require.Equal(t, "a = \"World!\"\n", contents)
@@ -101,10 +102,10 @@ func TestGitPackageProvider_SucceedsForValidPackageWithCommit(t *testing.T) {
 
 	provider := NewGitPackageContentProvider(packageDir, packageTmpDir)
 
-	sampleStartosisModule := "github.com/kurtosis-tech/sample-startosis-load/sample.star@758f55f902416e94f7a956e9a14938e39833df55"
+	sampleStartosisModule := "github.com/kurtosis-tech/sample-startosis-load/sample.star@ec9062828e1a687a5db7dfa750f754f88119e4c0"
 	contents, err := provider.GetModuleContents(sampleStartosisModule)
 	require.Nil(t, err)
-	require.Equal(t, "a = \"Hello!\"\n", contents)
+	require.Equal(t, "a = \"World!\"\n", contents)
 }
 
 func TestGitPackageProvider_SucceedsForValidPackageWithCommitOnABranch(t *testing.T) {
@@ -117,10 +118,10 @@ func TestGitPackageProvider_SucceedsForValidPackageWithCommitOnABranch(t *testin
 
 	provider := NewGitPackageContentProvider(packageDir, packageTmpDir)
 
-	sampleStartosisModule := "github.com/kurtosis-tech/sample-startosis-load/sample.star@507eecb57dff8e054f83640ba5953507d83a81c5"
+	sampleStartosisModule := "github.com/kurtosis-tech/sample-startosis-load/sample.star@df88baf51caffbe7e8f66c0e54715f680f4482b2"
 	contents, err := provider.GetModuleContents(sampleStartosisModule)
 	require.Nil(t, err)
-	require.Equal(t, "a = \"Test!\"\n", contents)
+	require.Equal(t, "a = \"Maybe!\"\n", contents)
 }
 
 func TestGitPackageProvider_SucceedsForNonStarlarkFile(t *testing.T) {
@@ -133,7 +134,7 @@ func TestGitPackageProvider_SucceedsForNonStarlarkFile(t *testing.T) {
 
 	provider := NewGitPackageContentProvider(packageDir, packageTmpDir)
 
-	sampleStarlarkPackage := "github.com/kurtosis-tech/eth2-merge-kurtosis-module/kurtosis-module/static_files/prometheus-config/prometheus.yml.tmpl"
+	sampleStarlarkPackage := "github.com/kurtosis-tech/eth2-package/static_files/prometheus-config/prometheus.yml.tmpl"
 	contents, err := provider.GetModuleContents(sampleStarlarkPackage)
 	require.Nil(t, err)
 	require.NotEmpty(t, contents)
@@ -183,4 +184,72 @@ func Test_getPathToPackageRoot(t *testing.T) {
 	require.Nil(t, err, "Unexpected error occurred while parsing git url")
 	actual = getPathToPackageRoot(parsedGitUrl)
 	require.Equal(t, "sample/sample-package", actual)
+}
+
+func Test_checkIfKurtosisYamlExistsInThePathProvided_somewhereInTheMiddle(t *testing.T) {
+	mockStatMethod := func(filePath string) (os.FileInfo, error) {
+		filePathAndMockReturnMap := map[string]error{
+			"/root/kurtosis.yml":                os.ErrNotExist,
+			"/root/subdir/kurtosis.yml":         os.ErrNotExist,
+			"/root/subdir/subdir1/kurtosis.yml": nil,
+		}
+
+		return nil, filePathAndMockReturnMap[filePath]
+	}
+
+	filePath := "/root/subdir/subdir1/folder/some_file.txt"
+	actual, err := checkIfKurtosisYamlExistsInThePathProvidedInternal(filePath, mockStatMethod)
+	require.Nil(t, err)
+	require.Equal(t, "/root/subdir/subdir1/kurtosis.yml", actual)
+}
+
+func Test_checkIfKurtosisYamlExistsInThePathProvided_packageIsSameAsWhereTheFileIs(t *testing.T) {
+	mockStatMethod := func(filePath string) (os.FileInfo, error) {
+		filePathAndMockReturnMap := map[string]error{
+			"/root/kurtosis.yml":                os.ErrNotExist,
+			"/root/subdir/kurtosis.yml":         nil,
+			"/root/subdir/subdir1/kurtosis.yml": os.ErrNotExist,
+		}
+
+		return nil, filePathAndMockReturnMap[filePath]
+	}
+
+	filePath := "/root/subdir/some_file.txt"
+	actual, err := checkIfKurtosisYamlExistsInThePathProvidedInternal(filePath, mockStatMethod)
+	require.Nil(t, err)
+	require.Equal(t, "/root/subdir/kurtosis.yml", actual)
+}
+
+func Test_checkIfKurtosisYamlExistsInThePathProvided_fileNotFound(t *testing.T) {
+	mockStatMethod := func(filePath string) (os.FileInfo, error) {
+		filePathAndMockReturnMap := map[string]error{
+			"/root/kurtosis.yml":                os.ErrNotExist,
+			"/root/subdir/kurtosis.yml":         os.ErrNotExist,
+			"/root/subdir/subdir1/kurtosis.yml": os.ErrNotExist,
+		}
+
+		return nil, filePathAndMockReturnMap[filePath]
+	}
+
+	filePath := "/root/subdir/some_file.txt"
+	actual, err := checkIfKurtosisYamlExistsInThePathProvidedInternal(filePath, mockStatMethod)
+	require.Nil(t, err)
+	require.Equal(t, filePathToKurtosisYamlNotFound, actual)
+}
+
+func Test_checkIfKurtosisYamlExistsInThePathProvided_unknownErrorOccurred(t *testing.T) {
+	mockStatMethod := func(filePath string) (os.FileInfo, error) {
+		filePathAndMockReturnMap := map[string]error{
+			"/root/kurtosis.yml":                os.ErrNotExist,
+			"/root/subdir/kurtosis.yml":         os.ErrClosed,
+			"/root/subdir/subdir1/kurtosis.yml": os.ErrNotExist,
+		}
+
+		return nil, filePathAndMockReturnMap[filePath]
+	}
+
+	filePath := "/root/subdir/some_file.txt"
+	_, err := checkIfKurtosisYamlExistsInThePathProvidedInternal(filePath, mockStatMethod)
+	require.NotNil(t, err)
+	require.ErrorContains(t, err, fmt.Sprintf("An error occurred while locating kurtosis.yml in the path of '%v'", filePath))
 }

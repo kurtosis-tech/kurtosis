@@ -1,10 +1,13 @@
 package git_package_content_provider
 
 import (
+	"errors"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/mholt/archiver"
+	"github.com/sirupsen/logrus"
 	"io"
 	"os"
 	"path"
@@ -26,6 +29,8 @@ const (
 	defaultDepth = 1
 	// this gets us the entire history - useful for fetching commits on a repo
 	depthAssumingBranchTagsCommitsAreSpecified = 0
+	howImportWorksLink                         = "https://docs.kurtosis.com/explanations/how-do-kurtosis-imports-work"
+	filePathToKurtosisYamlNotFound             = ""
 )
 
 type GitPackageContentProvider struct {
@@ -93,9 +98,18 @@ func (provider *GitPackageContentProvider) GetModuleContents(fileInsideModuleUrl
 		return "", interpretationError
 	}
 
-	// Load the file content from its absolute path
-	contents, err := os.ReadFile(pathToFile)
+	maybeKurtosisYamlPath, err := checkIfKurtosisYamlExistsInThePathProvided(pathToFile)
 	if err != nil {
+		return "", startosis_errors.WrapWithInterpretationError(err, "Error occurred while importing or reading module '%v'", fileInsideModuleUrl)
+	}
+
+	if maybeKurtosisYamlPath == filePathToKurtosisYamlNotFound {
+		return "", startosis_errors.NewInterpretationError("kurtosis.yml is not found in the path of '%v'; files can only be imported or read from kurtosis packages. For more information, go to: %v", fileInsideModuleUrl, howImportWorksLink)
+	}
+
+	// Load the file content from its absolute path
+	contents, errWhileReadingFile := os.ReadFile(pathToFile)
+	if errWhileReadingFile != nil {
 		return "", startosis_errors.WrapWithInterpretationError(err, "Loading module content for module '%s' failed. An error occurred in reading contents of the file '%v'", fileInsideModuleUrl, pathToFile)
 	}
 
@@ -277,4 +291,27 @@ func getReferenceName(repo *git.Repository, parsedURL *ParsedGitURL) (plumbing.R
 	}
 
 	return "", false, nil
+}
+
+func checkIfKurtosisYamlExistsInThePathProvided(absPathToFile string) (string, *startosis_errors.InterpretationError) {
+	return checkIfKurtosisYamlExistsInThePathProvidedInternal(absPathToFile, os.Stat)
+}
+
+func checkIfKurtosisYamlExistsInThePathProvidedInternal(absPathToFile string, stat func(string) (os.FileInfo, error)) (string, *startosis_errors.InterpretationError) {
+	removeTrailingPathSeparator := strings.Trim(absPathToFile, string(os.PathSeparator))
+	dirs := strings.Split(removeTrailingPathSeparator, string(os.PathSeparator))
+	logrus.Debugf("Found directories: %v", dirs)
+
+	maybePackageRootPath := "/"
+	for _, dir := range dirs[:len(dirs)-1] {
+		maybePackageRootPath = path.Join(maybePackageRootPath, dir)
+		pathToKurtosisYaml := path.Join(maybePackageRootPath, startosis_constants.KurtosisYamlName)
+		if _, err := stat(pathToKurtosisYaml); err == nil {
+			logrus.Debugf("Found root path: %v", maybePackageRootPath)
+			return pathToKurtosisYaml, nil
+		} else if !errors.Is(err, os.ErrNotExist) {
+			return filePathToKurtosisYamlNotFound, startosis_errors.WrapWithInterpretationError(err, "An error occurred while locating kurtosis.yml in the path of '%v'", absPathToFile)
+		}
+	}
+	return filePathToKurtosisYamlNotFound, nil
 }
