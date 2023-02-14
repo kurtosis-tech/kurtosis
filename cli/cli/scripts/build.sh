@@ -14,19 +14,27 @@ root_dirpath="$(dirname "$(dirname "${cli_module_dirpath}")")"
 source "${script_dirpath}/_constants.sh"
 
 DEFAULT_SHOULD_PUBLISH_ARG="false"
+DEFAULT_SHOULD_BUILD_ALL_ARG="false"
 
 # ==================================================================================================
 #                                       Arg Parsing & Validation
 # ==================================================================================================
 show_helptext_and_exit() {
-    echo "Usage: $(basename "${0}") [should_publish_arg]"
+    echo "Usage: $(basename "${0}") [should_build_all_arg] [should_publish_arg]"
     echo ""
-    echo "  should_publish_arg  Whether the build artifacts should be published (default: ${DEFAULT_SHOULD_PUBLISH_ARG})"
+    echo "  should_build_all_arg  Whether the build artifacts for all pair of OS/arch (default: ${DEFAULT_SHOULD_BUILD_ALL_ARG})"
+    echo "  should_publish_arg    Whether the build artifacts should be published (default: ${DEFAULT_SHOULD_PUBLISH_ARG})"
     echo ""
     exit 1  # Exit with an error so that if this is accidentally called by CI, the script will fail
 }
 
-should_publish_arg="${1:-"${DEFAULT_SHOULD_PUBLISH_ARG}"}"
+should_build_all_arg="${1:-"${DEFAULT_SHOULD_BUILD_ALL_ARG}"}"
+if [ "${should_build_all_arg}" != "true" ] && [ "${should_build_all_arg}" != "false" ]; then
+    echo "Error: Invalid should-build-all arg '${should_build_all_arg}'" >&2
+    show_helptext_and_exit
+fi
+
+should_publish_arg="${2:-"${DEFAULT_SHOULD_PUBLISH_ARG}"}"
 if [ "${should_publish_arg}" != "true" ] && [ "${should_publish_arg}" != "false" ]; then
     echo "Error: Invalid should-publish arg '${should_publish_arg}'" >&2
     show_helptext_and_exit
@@ -79,8 +87,10 @@ fi
     fi
     if "${should_publish_arg}"; then
         goreleaser_verb_and_flags="release --rm-dist"
-    else
+    elif "${should_build_all_arg}" ; then
         goreleaser_verb_and_flags="release --rm-dist --snapshot"
+    else
+        goreleaser_verb_and_flags="build --rm-dist --snapshot --single-target"
     fi
     if ! goreleaser ${goreleaser_verb_and_flags}; then
         echo "Error: Couldn't build the CLI binary for the current OS/arch" >&2
