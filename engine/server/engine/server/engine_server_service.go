@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	user_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/logline"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
 	"github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/stacktrace"
@@ -154,13 +155,13 @@ func (service *EngineServerService) GetServiceLogs(
 		logrus.Errorf("An error occurred while fetching uuid for enclave '%v'. This could happen if the enclave has been deleted. Treating it as UUID", enclaveIdentifier)
 		enclaveUuid = enclave.EnclaveUUID(enclaveIdentifier)
 	}
-	serviceGuidStrSet := args.GetServiceUuidSet()
-	requestedServiceGuids := make(map[user_service.ServiceUUID]bool, len(serviceGuidStrSet))
+	serviceUuidStrSet := args.GetServiceUuidSet()
+	requestedServiceUuids := make(map[user_service.ServiceUUID]bool, len(serviceUuidStrSet))
 	shouldFollowLogs := args.FollowLogs
 
-	for serviceGuidStr := range serviceGuidStrSet {
-		serviceUuid := user_service.ServiceUUID(serviceGuidStr)
-		requestedServiceGuids[serviceUuid] = true
+	for serviceUuidStr := range serviceUuidStrSet {
+		serviceUuid := user_service.ServiceUUID(serviceUuidStr)
+		requestedServiceUuids[serviceUuid] = true
 	}
 
 	if service.logsDatabaseClient == nil {
@@ -168,58 +169,65 @@ func (service *EngineServerService) GetServiceLogs(
 	}
 
 	var (
-		serviceLogsByServiceGuidChan chan map[user_service.ServiceUUID][]centralized_logs.LogLine
+		serviceLogsByServiceUuidChan chan map[user_service.ServiceUUID][]logline.LogLine
 		errChan                      chan error
-		cancelStreamFunc             func()
+		cancelCtxFunc                func()
 	)
 
-	notFoundServiceGuids, err := service.reportAnyMissingGuidsAndGetNotFoundGuidsList(enclaveUuid, requestedServiceGuids, stream)
+	notFoundServiceUuids, err := service.reportAnyMissingUuidsAndGetNotFoundUuidsList(enclaveUuid, requestedServiceUuids, stream)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred reporting missing user service UUIDs for enclave '%v' and requested service UUIDs '%+v'", enclaveUuid, requestedServiceGuids)
+		return stacktrace.Propagate(err, "An error occurred reporting missing user service UUIDs for enclave '%v' and requested service UUIDs '%+v'", enclaveUuid, requestedServiceUuids)
 	}
 
-	conjunctiveLogLineFilters, err := newConjunctiveLogLineFiltersGRPC(args.GetConjunctiveFilters())
+	conjunctiveLogLineFilters, err := newConjunctiveLogLineFiltersFromGRPCLogLineFilters(args.GetConjunctiveFilters())
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the conjunctive log line filters from the GRPC's conjunctive log line filters '%+v'", args.GetConjunctiveFilters())
 	}
 
-	if shouldFollowLogs {
-		serviceLogsByServiceGuidChan, errChan, cancelStreamFunc, err = service.logsDatabaseClient.StreamUserServiceLogs(stream.Context(), enclaveUuid, requestedServiceGuids, conjunctiveLogLineFilters)
-		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred streaming service logs for UUIDs '%+v' in enclave with ID '%v'", requestedServiceGuids, enclaveUuid)
-		}
-	} else {
-		serviceLogsByServiceGuidChan, errChan, cancelStreamFunc, err = service.logsDatabaseClient.GetUserServiceLogs(stream.Context(), enclaveUuid, requestedServiceGuids, conjunctiveLogLineFilters)
-		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred streaming service logs for UUIDs '%+v' in enclave with ID '%v'", requestedServiceGuids, enclaveUuid)
-		}
+	serviceLogsByServiceUuidChan, errChan, cancelCtxFunc, err = service.logsDatabaseClient.StreamUserServiceLogs(stream.Context(), enclaveUuid, requestedServiceUuids, conjunctiveLogLineFilters, shouldFollowLogs)
+	if err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred streaming service logs for UUIDs '%+v' in enclave with ID '%v' using filters '%v+' "+
+				"and with should follow logs value as '%v'",
+			requestedServiceUuids,
+			enclaveUuid,
+			conjunctiveLogLineFilters,
+			shouldFollowLogs,
+		)
 	}
-	defer cancelStreamFunc()
+	defer func() {
+		if cancelCtxFunc != nil {
+			cancelCtxFunc()
+		}
+	}()
 
 	for {
 		select {
 		//stream case
-		case serviceLogsByServiceGuid, isChanOpen := <-serviceLogsByServiceGuidChan:
+		case serviceLogsByServiceUuid, isChanOpen := <-serviceLogsByServiceUuidChan:
 			//If the channel is closed means that the logs database client won't continue sending streams
 			if !isChanOpen {
-				break
+				logrus.Debug("Exiting the stream loop after receiving a close signal from the service logs by service UUID channel")
+				return nil
 			}
 
-			getServiceLogsResponse := newLogsResponse(requestedServiceGuids, serviceLogsByServiceGuid, notFoundServiceGuids)
+			getServiceLogsResponse := newLogsResponse(requestedServiceUuids, serviceLogsByServiceUuid, notFoundServiceUuids)
 			if err := stream.Send(getServiceLogsResponse); err != nil {
 				return stacktrace.Propagate(err, "An error occurred sending the stream logs for service logs response '%+v'", getServiceLogsResponse)
-			}
-			if !shouldFollowLogs {
-				logrus.Debug("User requested to not follow the logs, so the logs stream is closed after sending all the logs created at this point")
-				return nil
 			}
 		//client cancel ctx case
 		case <-stream.Context().Done():
 			logrus.Debug("The user service logs stream has done")
 			return nil
 		//error from logs database case
-		case err := <-errChan:
-			return stacktrace.Propagate(err, "An error occurred streaming user service logs")
+		case err, isChanOpen := <-errChan:
+			if isChanOpen {
+				logrus.Debug("Exiting the stream because and error from the logs database client was received through the error chan")
+				return stacktrace.Propagate(err, "An error occurred streaming user service logs")
+			}
+			logrus.Debug("Exiting the stream loop after receiving a close signal from the error chan")
+			return nil
 		}
 	}
 
@@ -230,36 +238,36 @@ func (service *EngineServerService) GetServiceLogs(
 //	Private Helper Functions
 //
 // ====================================================================================================
-func (service *EngineServerService) reportAnyMissingGuidsAndGetNotFoundGuidsList(
+func (service *EngineServerService) reportAnyMissingUuidsAndGetNotFoundUuidsList(
 	enclaveUuid enclave.EnclaveUUID,
-	requestedServiceGuids map[user_service.ServiceUUID]bool,
+	requestedServiceUuids map[user_service.ServiceUUID]bool,
 	stream kurtosis_engine_rpc_api_bindings.EngineService_GetServiceLogsServer,
 ) (map[string]bool, error) {
-	existingServiceGuids, err := service.logsDatabaseClient.FilterExistingServiceGuids(stream.Context(), enclaveUuid, requestedServiceGuids)
+	existingServiceUuids, err := service.logsDatabaseClient.FilterExistingServiceUuids(stream.Context(), enclaveUuid, requestedServiceUuids)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred retrieving the exhaustive list of service UUIDs from the log client for enclave '%v' and for the requested UUIDs '%+v'", enclaveUuid, requestedServiceGuids)
+		return nil, stacktrace.Propagate(err, "An error occurred retrieving the exhaustive list of service UUIDs from the log client for enclave '%v' and for the requested UUIDs '%+v'", enclaveUuid, requestedServiceUuids)
 	}
 
-	notFoundServiceGuids := getNotFoundServiceGuidsAndEmptyServiceLogsMap(requestedServiceGuids, existingServiceGuids)
+	notFoundServiceUuids := getNotFoundServiceUuidsAndEmptyServiceLogsMap(requestedServiceUuids, existingServiceUuids)
 
-	if len(notFoundServiceGuids) == 0 {
+	if len(notFoundServiceUuids) == 0 {
 		//there is nothing to report
-		return notFoundServiceGuids, nil
+		return notFoundServiceUuids, nil
 	}
 
-	emptyServiceLogsByServiceGuid := map[user_service.ServiceUUID][]centralized_logs.LogLine{}
+	emptyServiceLogsByServiceUuid := map[user_service.ServiceUUID][]logline.LogLine{}
 
-	getServiceLogsResponse := newLogsResponse(requestedServiceGuids, emptyServiceLogsByServiceGuid, notFoundServiceGuids)
+	getServiceLogsResponse := newLogsResponse(requestedServiceUuids, emptyServiceLogsByServiceUuid, notFoundServiceUuids)
 	if err := stream.Send(getServiceLogsResponse); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred sending the stream logs for service logs response '%+v'", getServiceLogsResponse)
 	}
 
-	return notFoundServiceGuids, nil
+	return notFoundServiceUuids, nil
 }
 
 func newLogsResponse(
 	requestedServiceUuids map[user_service.ServiceUUID]bool,
-	serviceLogsByServiceUuid map[user_service.ServiceUUID][]centralized_logs.LogLine,
+	serviceLogsByServiceUuid map[user_service.ServiceUUID][]logline.LogLine,
 	notFoundServiceUuids map[string]bool,
 ) *kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse {
 	serviceLogLinesByUuid := make(map[string]*kurtosis_engine_rpc_api_bindings.LogLine, len(serviceLogsByServiceUuid))
@@ -268,17 +276,17 @@ func newLogsResponse(
 		serviceUuidStr := string(serviceUuid)
 		_, isInNotFoundUuidList := notFoundServiceUuids[serviceUuidStr]
 		serviceLogLines, found := serviceLogsByServiceUuid[serviceUuid]
-		// should continue in the not-found-GUID list
+		// should continue in the not-found-UUID list
 		if !found && isInNotFoundUuidList {
 			continue
 		}
-		// there is no new log lines but is a found GUID, so it has to be included in the service logs map
+		// there is no new log lines but is a found UUID, so it has to be included in the service logs map
 		if !found && !isInNotFoundUuidList {
 			serviceLogLinesByUuid[serviceUuidStr] = &kurtosis_engine_rpc_api_bindings.LogLine{
 				Line: nil,
 			}
 		}
-		//Remove the service's GUID from the initial not found list, if it was returned from the logs database
+		//Remove the service's UUID from the initial not found list, if it was returned from the logs database
 		//This could happen because some services could send the first log line several minutes after the bootstrap
 		if found && isInNotFoundUuidList {
 			delete(notFoundServiceUuids, serviceUuidStr)
@@ -295,7 +303,7 @@ func newLogsResponse(
 	return getServiceLogsResponse
 }
 
-func newRPCBindingsLogLineFromLogLines(logLines []centralized_logs.LogLine) *kurtosis_engine_rpc_api_bindings.LogLine {
+func newRPCBindingsLogLineFromLogLines(logLines []logline.LogLine) *kurtosis_engine_rpc_api_bindings.LogLine {
 
 	logLinesStr := make([]string, len(logLines))
 
@@ -308,47 +316,45 @@ func newRPCBindingsLogLineFromLogLines(logLines []centralized_logs.LogLine) *kur
 	return rpcBindingsLogLines
 }
 
-func getNotFoundServiceGuidsAndEmptyServiceLogsMap(
-	requestedServiceGuids map[user_service.ServiceUUID]bool,
-	existingServiceGuids map[user_service.ServiceUUID]bool,
+func getNotFoundServiceUuidsAndEmptyServiceLogsMap(
+	requestedServiceUuids map[user_service.ServiceUUID]bool,
+	existingServiceUuids map[user_service.ServiceUUID]bool,
 ) map[string]bool {
-	notFoundServiceGuids := map[string]bool{}
+	notFoundServiceUuids := map[string]bool{}
 
-	for requestedServiceGuid := range requestedServiceGuids {
-		if _, found := existingServiceGuids[requestedServiceGuid]; !found {
-			requestedServiceGuidStr := string(requestedServiceGuid)
-			notFoundServiceGuids[requestedServiceGuidStr] = true
+	for requestedServiceUuid := range requestedServiceUuids {
+		if _, found := existingServiceUuids[requestedServiceUuid]; !found {
+			requestedServiceUuidStr := string(requestedServiceUuid)
+			notFoundServiceUuids[requestedServiceUuidStr] = true
 		}
 	}
 
-	return notFoundServiceGuids
+	return notFoundServiceUuids
 }
 
-func newConjunctiveLogLineFiltersGRPC(
-	logLineFilters []*kurtosis_engine_rpc_api_bindings.LogLineFilter,
-) (centralized_logs.ConjunctiveLogLineFilters, error) {
-	var lokiLogLineFilters []centralized_logs.LokiLineFilter
+func newConjunctiveLogLineFiltersFromGRPCLogLineFilters(
+	grpcLogLineFilters []*kurtosis_engine_rpc_api_bindings.LogLineFilter,
+) (logline.ConjunctiveLogLineFilters, error) {
+	var conjunctiveLogLineFilters logline.ConjunctiveLogLineFilters
 
-	for _, logLineFilter := range logLineFilters {
-		var lokiLogLineFilter *centralized_logs.LokiLineFilter
-		operator := logLineFilter.GetOperator()
-		filterTextPattern := logLineFilter.GetTextPattern()
+	for _, grpcLogLineFilter := range grpcLogLineFilters {
+		var logLineFilter *logline.LogLineFilter
+		operator := grpcLogLineFilter.GetOperator()
+		filterTextPattern := grpcLogLineFilter.GetTextPattern()
 		switch operator {
 		case kurtosis_engine_rpc_api_bindings.LogLineOperator_LogLineOperator_DOES_CONTAIN_TEXT:
-			lokiLogLineFilter = centralized_logs.NewDoesContainTextLokiLineFilter(filterTextPattern)
+			logLineFilter = logline.NewDoesContainTextLogLineFilter(filterTextPattern)
 		case kurtosis_engine_rpc_api_bindings.LogLineOperator_LogLineOperator_DOES_NOT_CONTAIN_TEXT:
-			lokiLogLineFilter = centralized_logs.NewDoesNotContainTextLokiLineFilter(filterTextPattern)
+			logLineFilter = logline.NewDoesNotContainTextLogLineFilter(filterTextPattern)
 		case kurtosis_engine_rpc_api_bindings.LogLineOperator_LogLineOperator_DOES_CONTAIN_MATCH_REGEX:
-			lokiLogLineFilter = centralized_logs.NewDoesContainMatchRegexLokiLineFilter(filterTextPattern)
+			logLineFilter = logline.NewDoesContainMatchRegexLogLineFilter(filterTextPattern)
 		case kurtosis_engine_rpc_api_bindings.LogLineOperator_LogLineOperator_DOES_NOT_CONTAIN_MATCH_REGEX:
-			lokiLogLineFilter = centralized_logs.NewDoesNotContainMatchRegexLokiLineFilter(filterTextPattern)
+			logLineFilter = logline.NewDoesNotContainMatchRegexLogLineFilter(filterTextPattern)
 		default:
-			return nil, stacktrace.NewError("Unrecognized log line filter operator '%v' in filter '%v'; this is a bug in Kurtosis", operator, logLineFilter)
+			return nil, stacktrace.NewError("Unrecognized log line filter operator '%v' in GRPC filter '%v'; this is a bug in Kurtosis", operator, grpcLogLineFilter)
 		}
-		lokiLogLineFilters = append(lokiLogLineFilters, *lokiLogLineFilter)
+		conjunctiveLogLineFilters = append(conjunctiveLogLineFilters, *logLineFilter)
 	}
 
-	logPipeline := centralized_logs.NewLokiLogPipeline(lokiLogLineFilters)
-
-	return logPipeline, nil
+	return conjunctiveLogLineFilters, nil
 }

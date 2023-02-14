@@ -1,4 +1,4 @@
-package centralized_logs
+package loki
 
 import (
 	"context"
@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/logline"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -38,7 +39,7 @@ const (
 
 	//We use this header because we are using the Loki multi-tenancy feature to split logs by the EnclaveUUID
 	//Read more about it here: https://grafana.com/docs/loki/latest/operations/multi-tenancy/
-	//tenantID = enclaveID
+	//tenantID = enclaveUUID
 	organizationIdHttpHeaderKey = "X-Scope-OrgID"
 
 	startTimeQueryParamKey    = "start"
@@ -76,7 +77,7 @@ const (
 	//It' for using in it the "start" query param
 	maxRetentionPeriodHoursStartTime = -maxRetentionPeriodHours
 
-	logsByKurtosisUserServiceGuidChanBuffSize = 5
+	logsByKurtosisUserServiceUuidChanBuffSize = 5
 	errorChanBuffSize                         = 2
 
 	lokiEqualOperator        = "="
@@ -120,6 +121,7 @@ type lokiLogsDatabaseClient struct {
 	logsDatabaseAddress string
 	httpClient          httpClient
 }
+
 type lokiStreamValue struct {
 	Stream struct {
 		KurtosisContainerType string `json:"comKurtosistechContainerType"`
@@ -142,169 +144,53 @@ func NewLokiLogsDatabaseClientWithDefaultHttpClient(logsDatabaseAddress string) 
 	return &lokiLogsDatabaseClient{logsDatabaseAddress: logsDatabaseAddress, httpClient: httpClientObj}
 }
 
-func (client *lokiLogsDatabaseClient) GetUserServiceLogs(
-	ctx context.Context,
-	enclaveID enclave.EnclaveUUID,
-	userServiceGUIDs map[service.ServiceUUID]bool,
-	conjunctiveLogLineFilters ConjunctiveLogLineFilters,
-) (
-	chan map[service.ServiceUUID][]LogLine,
-	chan error,
-	func(),
-	error,
-) {
-
-	httpHeaderWithTenantID := http.Header{}
-	httpHeaderWithTenantID.Add(organizationIdHttpHeaderKey, string(enclaveID))
-
-	kurtosisGuids := []string{}
-	for userServiceGuid := range userServiceGUIDs {
-		kurtosisGuids = append(kurtosisGuids, string(userServiceGuid))
-	}
-
-	maxRetentionLogsTimeParamValue := getMaxRetentionLogsTimeParamValue()
-
-	userServiceContainerTypeDockerValue := label_value_consts.UserServiceContainerTypeDockerLabelValue.GetString()
-
-	queryParamValue := getQueryParamValue(userServiceContainerTypeDockerValue, kurtosisGuids, conjunctiveLogLineFilters)
-
-	getLogsPath := baseLokiApiPath + queryRangeEndpointSubpath
-
-	queryRangeEndpointUrl := createUrl(httpScheme, client.logsDatabaseAddress, getLogsPath)
-
-	queryRangeEndpointQuery := queryRangeEndpointUrl.Query()
-
-	queryRangeEndpointQuery.Set(startTimeQueryParamKey, maxRetentionLogsTimeParamValue)
-	queryRangeEndpointQuery.Set(queryLogsQueryParamKey, queryParamValue)
-	queryRangeEndpointQuery.Set(entriesLimitQueryParamKey, defaultEntriesLimit)
-	queryRangeEndpointQuery.Set(directionQueryParamKey, defaultDirection)
-
-	queryRangeEndpointUrl.RawQuery = queryRangeEndpointQuery.Encode()
-
-	httpRequest := &http.Request{
-		Method:           http.MethodGet,
-		URL:              queryRangeEndpointUrl,
-		Proto:            "",
-		ProtoMajor:       0,
-		ProtoMinor:       0,
-		Header:           httpHeaderWithTenantID,
-		Body:             nil,
-		GetBody:          nil,
-		ContentLength:    0,
-		TransferEncoding: nil,
-		Close:            false,
-		Host:             "",
-		Form:             nil,
-		PostForm:         nil,
-		MultipartForm:    nil,
-		Trailer:          nil,
-		RemoteAddr:       "",
-		RequestURI:       "",
-		TLS:              nil,
-		Cancel:           nil,
-		Response:         nil,
-	}
-
-	ctxWithCancel, cancelCtxFunc := context.WithCancel(ctx)
-	defer cancelCtxFunc()
-
-	httpRequestWithContext := httpRequest.WithContext(ctxWithCancel)
-
-	httpResponseBodyBytes, err := client.doHttpRequestWithRetries(httpRequestWithContext)
-	if err != nil {
-		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred doing HTTP request '%+v'", httpRequestWithContext)
-	}
-
-	lokiQueryRangeResponseObj := &lokiQueryRangeResponse{
-		Status: "",
-		Data:   nil,
-	}
-	if err = json.Unmarshal(httpResponseBodyBytes, lokiQueryRangeResponseObj); err != nil {
-		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred unmarshalling the Loki query range response")
-	}
-
-	if lokiQueryRangeResponseObj.Status != lokiSuccessStatusInResponse {
-		return nil, nil, nil, stacktrace.NewError("The logs database return an error status when getting user service logs for service UUIDs '%+v'. Response was: \n%v", kurtosisGuids, lokiQueryRangeResponseObj)
-	}
-
-	if lokiQueryRangeResponseObj == nil || lokiQueryRangeResponseObj.Data == nil {
-		return nil, nil, nil, stacktrace.Propagate(err, "The response body's schema payload received '%+v' by calling the Loki's query range endpoint is not what was expected; this is a bug in Kurtosis", lokiQueryRangeResponseObj)
-	}
-
-	lokiStreams := lokiQueryRangeResponseObj.Data.Result
-
-	//this channel will return the user service log lines by service GUI
-	logsByKurtosisUserServiceGuidChan := make(chan map[service.ServiceUUID][]LogLine, logsByKurtosisUserServiceGuidChanBuffSize)
-	defer close(logsByKurtosisUserServiceGuidChan)
-
-	resultLogsByKurtosisUserServiceGuid, err := newUserServiceLogLinesByUserServiceGuidFromLokiStreams(lokiStreams)
-	if err != nil {
-		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred getting user service log lines from loki streams '%+v'", lokiStreams)
-	}
-
-	logsByKurtosisUserServiceGuidChan <- resultLogsByKurtosisUserServiceGuid
-
-	//this channel is not used in the sync loki request, but it's returned just to implement the contract
-	var streamErrChan chan error
-
-	return logsByKurtosisUserServiceGuidChan, streamErrChan, cancelCtxFunc, nil
-}
-
 func (client *lokiLogsDatabaseClient) StreamUserServiceLogs(
 	ctx context.Context,
-	enclaveID enclave.EnclaveUUID,
-	userServiceGUIDs map[service.ServiceUUID]bool,
-	conjunctiveLogLineFilters ConjunctiveLogLineFilters,
+	enclaveUuid enclave.EnclaveUUID,
+	userServiceUuids map[service.ServiceUUID]bool,
+	conjunctiveLogLineFilters logline.ConjunctiveLogLineFilters,
+	shouldFollowLogs bool,
 ) (
-	chan map[service.ServiceUUID][]LogLine,
+	chan map[service.ServiceUUID][]logline.LogLine,
 	chan error,
-	func(),
+	context.CancelFunc,
 	error,
 ) {
 
-	websocketDeadlineTime := getWebsocketDeadlineTime()
-
-	ctxWithDeadline, cancelCtxFunc := context.WithDeadline(ctx, websocketDeadlineTime)
-	shouldCancelCtx := true
-	defer func() {
-		if shouldCancelCtx {
-			cancelCtxFunc()
-		}
-	}()
-
-	tailLogsEndpointURL, httpHeaderWithTenantID := client.getTailLogEndpointURLAndHeader(enclaveID, userServiceGUIDs, conjunctiveLogLineFilters)
-
-	//this channel will return the user service log lines by service GUI
-	logsByKurtosisUserServiceGuidChan := make(chan map[service.ServiceUUID][]LogLine, logsByKurtosisUserServiceGuidChanBuffSize)
-
-	//this channel return an error if the stream fails at some point
-	streamErrChan := make(chan error, errorChanBuffSize)
-
-	tailLogsWebsocketConn, tailLogsHttpResponse, err := websocket.DefaultDialer.DialContext(ctxWithDeadline, tailLogsEndpointURL.String(), httpHeaderWithTenantID)
-	if err != nil {
-		errMsg := fmt.Sprintf("An error occurred calling the logs-database-tail-logs-endpoint with URL '%v' using headers '%+v'", tailLogsEndpointURL.String(), httpHeaderWithTenantID)
-		if tailLogsHttpResponse != nil {
-			errMsg = fmt.Sprintf("%v; the '%v' status code was received from the server", errMsg, tailLogsHttpResponse.StatusCode)
-		}
-		return nil, nil, nil, stacktrace.Propagate(err, errMsg)
-	}
-
-	go runReadStreamResponseAndAddUserServiceLogLinesToUserServiceLogsChannel(
-		ctx,
-		cancelCtxFunc,
-		tailLogsWebsocketConn,
-		logsByKurtosisUserServiceGuidChan,
-		streamErrChan,
+	var (
+		serviceLogsByServiceUuidChan chan map[service.ServiceUUID][]logline.LogLine
+		errChan                      chan error
+		cancelCtxFunc                func()
+		err                          error
 	)
 
-	//We need to cancel the websocket connection only if something fails because we need the connection open after returning
-	shouldCancelCtx = false
-	return logsByKurtosisUserServiceGuidChan, streamErrChan, cancelCtxFunc, nil
+	lokiFilterLogsPipeline, err := newLokiLogFiltersPipelineFromConjunctiveLogLineFilters(conjunctiveLogLineFilters)
+	if err != nil {
+		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred creating a new Loki filters log pipeline from these conjunctive log lines filters '%+v'", conjunctiveLogLineFilters)
+	}
+
+	if shouldFollowLogs {
+		serviceLogsByServiceUuidChan, errChan, cancelCtxFunc, err = client.streamUserServiceLogs(ctx, enclaveUuid, userServiceUuids, lokiFilterLogsPipeline)
+		if err != nil {
+			return nil, nil, nil, stacktrace.Propagate(err, "An error occurred streaming service logs for UUIDs '%+v' in enclave with ID '%v'", userServiceUuids, enclaveUuid)
+		}
+	} else {
+		serviceLogsByServiceUuidChan, cancelCtxFunc, err = client.getUserServiceLogs(ctx, enclaveUuid, userServiceUuids, lokiFilterLogsPipeline)
+		if err != nil {
+			return nil, nil, nil, stacktrace.Propagate(err, "An error occurred streaming service logs for UUIDs '%+v' in enclave with ID '%v'", userServiceUuids, enclaveUuid)
+		}
+	}
+
+	return serviceLogsByServiceUuidChan, errChan, cancelCtxFunc, nil
 }
 
-func (client *lokiLogsDatabaseClient) FilterExistingServiceGuids(ctx context.Context, enclaveId enclave.EnclaveUUID, userServiceGuids map[service.ServiceUUID]bool) (map[service.ServiceUUID]bool, error) {
+func (client *lokiLogsDatabaseClient) FilterExistingServiceUuids(
+	ctx context.Context,
+	enclaveUuid enclave.EnclaveUUID,
+	userServiceUuids map[service.ServiceUUID]bool,
+) (map[service.ServiceUUID]bool, error) {
 	httpHeaderWithTenantID := http.Header{}
-	httpHeaderWithTenantID.Add(organizationIdHttpHeaderKey, string(enclaveId))
+	httpHeaderWithTenantID.Add(organizationIdHttpHeaderKey, string(enclaveUuid))
 
 	getLogsPath := fmt.Sprintf(baseLokiApiPath+queryListLabelValuesWithinRangeEndpoint, kurtosisGuidLokiTagKey)
 
@@ -312,7 +198,7 @@ func (client *lokiLogsDatabaseClient) FilterExistingServiceGuids(ctx context.Con
 
 	queryRangeEndpointQuery := queryRangeEndpointUrl.Query()
 
-	startTimeQueryParamValue := getStartTimeForFilteringExistingServiceGuidsParamValue()
+	startTimeQueryParamValue := getStartTimeForFilteringExistingServiceUuidsParamValue()
 
 	queryRangeEndpointQuery.Set(startTimeQueryParamKey, startTimeQueryParamValue)
 
@@ -360,17 +246,17 @@ func (client *lokiLogsDatabaseClient) FilterExistingServiceGuids(ctx context.Con
 		return nil, stacktrace.NewError("The logs database returns an error status when fetching the existing service UUIDs. Response was: \n%v", lokiLabelValuesResponseObj)
 	}
 
-	existingServiceGuidsSet := make(map[service.ServiceUUID]bool, len(lokiLabelValuesResponseObj.Data))
+	existingServiceUuidsSet := make(map[service.ServiceUUID]bool, len(lokiLabelValuesResponseObj.Data))
 	for _, serviceUuid := range lokiLabelValuesResponseObj.Data {
-		existingServiceGuidsSet[service.ServiceUUID(serviceUuid)] = true
+		existingServiceUuidsSet[service.ServiceUUID(serviceUuid)] = true
 	}
-	filteredServiceGuidsSet := make(map[service.ServiceUUID]bool, len(lokiLabelValuesResponseObj.Data))
-	for serviceUuid := range userServiceGuids {
-		if _, found := existingServiceGuidsSet[serviceUuid]; found {
-			filteredServiceGuidsSet[serviceUuid] = true
+	filteredServiceUuidsSet := make(map[service.ServiceUUID]bool, len(lokiLabelValuesResponseObj.Data))
+	for serviceUuid := range userServiceUuids {
+		if _, found := existingServiceUuidsSet[serviceUuid]; found {
+			filteredServiceUuidsSet[serviceUuid] = true
 		}
 	}
-	return filteredServiceGuidsSet, nil
+	return filteredServiceUuidsSet, nil
 }
 
 // ====================================================================================================
@@ -378,11 +264,167 @@ func (client *lokiLogsDatabaseClient) FilterExistingServiceGuids(ctx context.Con
 //	Private helper functions
 //
 // ====================================================================================================
+func (client *lokiLogsDatabaseClient) getUserServiceLogs(
+	ctx context.Context,
+	enclaveUuid enclave.EnclaveUUID,
+	userServiceUuids map[service.ServiceUUID]bool,
+	lokiFilterLogsPipeline *lokiLogPipeline,
+) (
+	chan map[service.ServiceUUID][]logline.LogLine,
+	context.CancelFunc,
+	error,
+) {
+
+	httpHeaderWithTenantID := http.Header{}
+	httpHeaderWithTenantID.Add(organizationIdHttpHeaderKey, string(enclaveUuid))
+
+	kurtosisUuids := []string{}
+	for userServiceUuid := range userServiceUuids {
+		kurtosisUuids = append(kurtosisUuids, string(userServiceUuid))
+	}
+
+	maxRetentionLogsTimeParamValue := getMaxRetentionLogsTimeParamValue()
+
+	userServiceContainerTypeDockerValue := label_value_consts.UserServiceContainerTypeDockerLabelValue.GetString()
+
+	queryParamValue := getQueryParamValue(userServiceContainerTypeDockerValue, kurtosisUuids, lokiFilterLogsPipeline)
+
+	getLogsPath := baseLokiApiPath + queryRangeEndpointSubpath
+
+	queryRangeEndpointUrl := createUrl(httpScheme, client.logsDatabaseAddress, getLogsPath)
+
+	queryRangeEndpointQuery := queryRangeEndpointUrl.Query()
+
+	queryRangeEndpointQuery.Set(startTimeQueryParamKey, maxRetentionLogsTimeParamValue)
+	queryRangeEndpointQuery.Set(queryLogsQueryParamKey, queryParamValue)
+	queryRangeEndpointQuery.Set(entriesLimitQueryParamKey, defaultEntriesLimit)
+	queryRangeEndpointQuery.Set(directionQueryParamKey, defaultDirection)
+
+	queryRangeEndpointUrl.RawQuery = queryRangeEndpointQuery.Encode()
+
+	httpRequest := &http.Request{
+		Method:           http.MethodGet,
+		URL:              queryRangeEndpointUrl,
+		Proto:            "",
+		ProtoMajor:       0,
+		ProtoMinor:       0,
+		Header:           httpHeaderWithTenantID,
+		Body:             nil,
+		GetBody:          nil,
+		ContentLength:    0,
+		TransferEncoding: nil,
+		Close:            false,
+		Host:             "",
+		Form:             nil,
+		PostForm:         nil,
+		MultipartForm:    nil,
+		Trailer:          nil,
+		RemoteAddr:       "",
+		RequestURI:       "",
+		TLS:              nil,
+		Cancel:           nil,
+		Response:         nil,
+	}
+
+	ctxWithCancel, cancelCtxFunc := context.WithCancel(ctx)
+	defer cancelCtxFunc()
+
+	httpRequestWithContext := httpRequest.WithContext(ctxWithCancel)
+
+	httpResponseBodyBytes, err := client.doHttpRequestWithRetries(httpRequestWithContext)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred doing HTTP request '%+v'", httpRequestWithContext)
+	}
+
+	lokiQueryRangeResponseObj := &lokiQueryRangeResponse{
+		Status: "",
+		Data:   nil,
+	}
+	if err = json.Unmarshal(httpResponseBodyBytes, lokiQueryRangeResponseObj); err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred unmarshalling the Loki query range response")
+	}
+
+	if lokiQueryRangeResponseObj.Status != lokiSuccessStatusInResponse {
+		return nil, nil, stacktrace.NewError("The logs database return an error status when getting user service logs for service UUIDs '%+v'. Response was: \n%v", kurtosisUuids, lokiQueryRangeResponseObj)
+	}
+
+	if lokiQueryRangeResponseObj == nil || lokiQueryRangeResponseObj.Data == nil {
+		return nil, nil, stacktrace.Propagate(err, "The response body's schema payload received '%+v' by calling the Loki's query range endpoint is not what was expected; this is a bug in Kurtosis", lokiQueryRangeResponseObj)
+	}
+
+	lokiStreams := lokiQueryRangeResponseObj.Data.Result
+
+	//this channel will return the user service log lines by service GUI
+	logsByKurtosisUserServiceUuidChan := make(chan map[service.ServiceUUID][]logline.LogLine, logsByKurtosisUserServiceUuidChanBuffSize)
+	defer close(logsByKurtosisUserServiceUuidChan)
+
+	resultLogsByKurtosisUserServiceUuid, err := newUserServiceLogLinesByUserServiceUuidFromLokiStreams(lokiStreams)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user service log lines from loki streams '%+v'", lokiStreams)
+	}
+
+	logsByKurtosisUserServiceUuidChan <- resultLogsByKurtosisUserServiceUuid
+
+	return logsByKurtosisUserServiceUuidChan, cancelCtxFunc, nil
+}
+
+func (client *lokiLogsDatabaseClient) streamUserServiceLogs(
+	ctx context.Context,
+	enclaveUuid enclave.EnclaveUUID,
+	userServiceUuids map[service.ServiceUUID]bool,
+	lokiFilterLogsPipeline *lokiLogPipeline,
+) (
+	chan map[service.ServiceUUID][]logline.LogLine,
+	chan error,
+	context.CancelFunc,
+	error,
+) {
+
+	websocketDeadlineTime := getWebsocketDeadlineTime()
+
+	ctxWithDeadline, cancelCtxFunc := context.WithDeadline(ctx, websocketDeadlineTime)
+	shouldCancelCtx := true
+	defer func() {
+		if shouldCancelCtx {
+			cancelCtxFunc()
+		}
+	}()
+
+	tailLogsEndpointURL, httpHeaderWithTenantID := client.getTailLogEndpointURLAndHeader(enclaveUuid, userServiceUuids, lokiFilterLogsPipeline)
+
+	//this channel will return the user service log lines by service UUID
+	logsByKurtosisUserServiceUuidChan := make(chan map[service.ServiceUUID][]logline.LogLine, logsByKurtosisUserServiceUuidChanBuffSize)
+
+	//this channel return an error if the stream fails at some point
+	streamErrChan := make(chan error, errorChanBuffSize)
+
+	tailLogsWebsocketConn, tailLogsHttpResponse, err := websocket.DefaultDialer.DialContext(ctxWithDeadline, tailLogsEndpointURL.String(), httpHeaderWithTenantID)
+	if err != nil {
+		errMsg := fmt.Sprintf("An error occurred calling the logs-database-tail-logs-endpoint with URL '%v' using headers '%+v'", tailLogsEndpointURL.String(), httpHeaderWithTenantID)
+		if tailLogsHttpResponse != nil {
+			errMsg = fmt.Sprintf("%v; the '%v' status code was received from the server", errMsg, tailLogsHttpResponse.StatusCode)
+		}
+		return nil, nil, nil, stacktrace.Propagate(err, errMsg)
+	}
+
+	go runReadStreamResponseAndAddUserServiceLogLinesToUserServiceLogsChannel(
+		ctx,
+		cancelCtxFunc,
+		tailLogsWebsocketConn,
+		logsByKurtosisUserServiceUuidChan,
+		streamErrChan,
+	)
+
+	//We need to cancel the websocket connection only if something fails because we need the connection open after returning
+	shouldCancelCtx = false
+	return logsByKurtosisUserServiceUuidChan, streamErrChan, cancelCtxFunc, nil
+}
+
 func runReadStreamResponseAndAddUserServiceLogLinesToUserServiceLogsChannel(
 	ctx context.Context,
 	cancelCtxFunc context.CancelFunc,
 	tailLogsWebsocketConn *websocket.Conn,
-	logsByKurtosisUserServiceGuidChan chan map[service.ServiceUUID][]LogLine,
+	logsByKurtosisUserServiceUuidChan chan map[service.ServiceUUID][]logline.LogLine,
 	errChan chan error,
 ) {
 
@@ -391,7 +433,7 @@ func runReadStreamResponseAndAddUserServiceLogLinesToUserServiceLogsChannel(
 		if err := tailLogsWebsocketConn.Close(); err != nil {
 			logrus.Warnf("We tried to close the tail logs websocket connection, but doing so threw an error:\n%v", err)
 		}
-		close(logsByKurtosisUserServiceGuidChan)
+		close(logsByKurtosisUserServiceUuidChan)
 		close(errChan)
 		cancelCtxFunc()
 	}()
@@ -435,12 +477,12 @@ func runReadStreamResponseAndAddUserServiceLogLinesToUserServiceLogsChannel(
 		}
 
 		//Does the reading
-		resultLogsByKurtosisUserServiceGuid, err := newUserServiceLogLinesByUserServiceGuidFromLokiStreams(streamResponse.Streams)
+		resultLogsByKurtosisUserServiceUuid, err := newUserServiceLogLinesByUserServiceUuidFromLokiStreams(streamResponse.Streams)
 		if err != nil {
 			errChan <- stacktrace.Propagate(err, "An error occurred getting user service log lines from loki streams '%+v'", streamResponse.Streams)
 			return
 		}
-		logsByKurtosisUserServiceGuidChan <- resultLogsByKurtosisUserServiceGuid
+		logsByKurtosisUserServiceUuidChan <- resultLogsByKurtosisUserServiceUuid
 	}
 }
 
@@ -513,21 +555,21 @@ func (client *lokiLogsDatabaseClient) doHttpRequest(
 }
 
 func (client *lokiLogsDatabaseClient) getTailLogEndpointURLAndHeader(
-	enclaveID enclave.EnclaveUUID,
-	userServiceGuids map[service.ServiceUUID]bool,
-	conjunctiveLogLineFilters ConjunctiveLogLineFilters,
+	enclaveUuid enclave.EnclaveUUID,
+	userServiceUuids map[service.ServiceUUID]bool,
+	lokiFilterLogsPipeline *lokiLogPipeline,
 ) (url.URL, http.Header) {
 
-	kurtosisGuids := []string{}
-	for userServiceGuid := range userServiceGuids {
-		kurtosisGuids = append(kurtosisGuids, string(userServiceGuid))
+	kurtosisUuids := []string{}
+	for userServiceUuid := range userServiceUuids {
+		kurtosisUuids = append(kurtosisUuids, string(userServiceUuid))
 	}
 
 	maxRetentionLogsTimeForTailingLogsParamValue := getStartTimeForStreamingLogsParamValue()
 
 	userServiceContainerTypeDockerValue := label_value_consts.UserServiceContainerTypeDockerLabelValue.GetString()
 
-	queryParamValue := getQueryParamValue(userServiceContainerTypeDockerValue, kurtosisGuids, conjunctiveLogLineFilters)
+	queryParamValue := getQueryParamValue(userServiceContainerTypeDockerValue, kurtosisUuids, lokiFilterLogsPipeline)
 
 	tailLogsPath := baseLokiApiPath + tailEndpointSubpath
 
@@ -543,7 +585,7 @@ func (client *lokiLogsDatabaseClient) getTailLogEndpointURLAndHeader(
 	tailLogsEndpointUrl.RawQuery = tailLogsEndpointQuery.Encode()
 
 	httpHeaderWithTenantID := http.Header{}
-	httpHeaderWithTenantID.Add(organizationIdHttpHeaderKey, string(enclaveID))
+	httpHeaderWithTenantID.Add(organizationIdHttpHeaderKey, string(enclaveUuid))
 
 	return tailLogsEndpointUrl, httpHeaderWithTenantID
 }
@@ -559,7 +601,7 @@ func getMaxRetentionLogsTimeParamValue() string {
 func getQueryParamValue(
 	kurtosisContainerType string,
 	kurtosisGuids []string,
-	conjunctiveLogLineFilters ConjunctiveLogLineFilters,
+	lokiFilterLogsPipeline *lokiLogPipeline,
 ) string {
 	kurtosisGuidParaValues := getKurtosisGuidParamValues(kurtosisGuids)
 
@@ -581,8 +623,8 @@ func getQueryParamValue(
 	)
 
 	var queryParamValue string
-	if conjunctiveLogLineFilters != nil {
-		queryParamValue = fmt.Sprintf("%s %s", streamSelectorInQuery, conjunctiveLogLineFilters.GetConjunctiveLogLineFiltersString())
+	if lokiFilterLogsPipeline != nil {
+		queryParamValue = fmt.Sprintf("%s %s", streamSelectorInQuery, lokiFilterLogsPipeline.GetConjunctiveLogLineFiltersString())
 	} else {
 		queryParamValue = streamSelectorInQuery
 	}
@@ -641,7 +683,7 @@ func getStartTimeForStreamingLogsParamValue() string {
 
 // Because the logs can be consumed from several days before the current date
 // we have to set the start time from the max retention period time
-func getStartTimeForFilteringExistingServiceGuidsParamValue() string {
+func getStartTimeForFilteringExistingServiceUuidsParamValue() string {
 	now := time.Now()
 	startTime := now.Add(maxRetentionPeriodHoursStartTime)
 	startTimeNanoStr := getTimeInNanoString(startTime)
@@ -654,36 +696,36 @@ func getTimeInNanoString(timeObj time.Time) string {
 	return timeNanoStr
 }
 
-func newUserServiceLogLinesByUserServiceGuidFromLokiStreams(lokiStreams []lokiStreamValue) (map[service.ServiceUUID][]LogLine, error) {
+func newUserServiceLogLinesByUserServiceUuidFromLokiStreams(lokiStreams []lokiStreamValue) (map[service.ServiceUUID][]logline.LogLine, error) {
 
-	resultLogsByKurtosisUserServiceGuid := map[service.ServiceUUID][]LogLine{}
+	resultLogsByKurtosisUserServiceUuid := map[service.ServiceUUID][]logline.LogLine{}
 
 	for _, queryRangeResult := range lokiStreams {
-		resultKurtosisGuidStr := queryRangeResult.Stream.KurtosisGUID
-		resultKurtosisGuid := service.ServiceUUID(resultKurtosisGuidStr)
-		resultKurtosisGuidLogLines := make([]LogLine, len(queryRangeResult.Values))
+		resultKurtosisUuidStr := queryRangeResult.Stream.KurtosisGUID
+		resultKurtosisUuid := service.ServiceUUID(resultKurtosisUuidStr)
+		resultKurtosisUuidLogLines := make([]logline.LogLine, len(queryRangeResult.Values))
 		for queryRangeIndex, queryRangeValue := range queryRangeResult.Values {
 			logLineObj, err := newLogLineFromStreamValue(queryRangeValue)
 			if err != nil {
 				return nil, stacktrace.Propagate(err, "An error occurred getting log line string from stream value '%+v'", queryRangeValue)
 			}
-			resultKurtosisGuidLogLines[queryRangeIndex] = *logLineObj
+			resultKurtosisUuidLogLines[queryRangeIndex] = *logLineObj
 		}
 
-		userServiceLogLines, found := resultLogsByKurtosisUserServiceGuid[resultKurtosisGuid]
+		userServiceLogLines, found := resultLogsByKurtosisUserServiceUuid[resultKurtosisUuid]
 		if found {
-			userServiceLogLines = append(userServiceLogLines, resultKurtosisGuidLogLines...)
+			userServiceLogLines = append(userServiceLogLines, resultKurtosisUuidLogLines...)
 		} else {
-			userServiceLogLines = resultKurtosisGuidLogLines
+			userServiceLogLines = resultKurtosisUuidLogLines
 		}
 
-		resultLogsByKurtosisUserServiceGuid[resultKurtosisGuid] = userServiceLogLines
+		resultLogsByKurtosisUserServiceUuid[resultKurtosisUuid] = userServiceLogLines
 	}
 
-	return resultLogsByKurtosisUserServiceGuid, nil
+	return resultLogsByKurtosisUserServiceUuid, nil
 }
 
-func newLogLineFromStreamValue(streamValue []string) (*LogLine, error) {
+func newLogLineFromStreamValue(streamValue []string) (*logline.LogLine, error) {
 	if len(streamValue) > streamValueNumOfItems {
 		return nil, stacktrace.NewError("The stream value '%+v' should contains only 2 items but '%v' items were found, this should never happen; this is a bug in Kurtosis", streamValue, len(streamValue))
 	}
@@ -698,7 +740,7 @@ func newLogLineFromStreamValue(streamValue []string) (*LogLine, error) {
 		return nil, stacktrace.Propagate(err, "An error occurred unmarshalling Loki log line '%+v'", lokiLogLine)
 	}
 
-	newLogLineObj := newLogLine(lokiLogLine.Log)
+	newLogLineObj := logline.NewLogLine(lokiLogLine.Log)
 
 	return newLogLineObj, nil
 }
@@ -707,4 +749,34 @@ func getWebsocketDeadlineTime() time.Time {
 	now := time.Now()
 	deadlineTime := now.Add(maxAllowedWebsocketConnectionDurationOnServerSide)
 	return deadlineTime
+}
+
+func newLokiLogFiltersPipelineFromConjunctiveLogLineFilters(
+	conjunctiveLogLineFilters logline.ConjunctiveLogLineFilters,
+) (*lokiLogPipeline, error) {
+
+	var lokiLogLineFilters []LokiLineFilter
+
+	for _, logLineFilter := range conjunctiveLogLineFilters {
+		var lokiLogLineFilter *LokiLineFilter
+		operator := logLineFilter.GetOperator()
+		filterTextPattern := logLineFilter.GetTextPattern()
+		switch operator {
+		case logline.LogLineOperator_DoesContainText:
+			lokiLogLineFilter = NewDoesContainTextLokiLineFilter(filterTextPattern)
+		case logline.LogLineOperator_DoesNotContainText:
+			lokiLogLineFilter = NewDoesNotContainTextLokiLineFilter(filterTextPattern)
+		case logline.LogLineOperator_DoesContainMatchRegex:
+			lokiLogLineFilter = NewDoesContainMatchRegexLokiLineFilter(filterTextPattern)
+		case logline.LogLineOperator_DoesNotContainMatchRegex:
+			lokiLogLineFilter = NewDoesNotContainMatchRegexLokiLineFilter(filterTextPattern)
+		default:
+			return nil, stacktrace.NewError("Unrecognized log line filter operator '%v' in filter '%v'; this is a bug in Kurtosis", operator, logLineFilter)
+		}
+		lokiLogLineFilters = append(lokiLogLineFilters, *lokiLogLineFilter)
+	}
+
+	logPipeline := NewLokiLogPipeline(lokiLogLineFilters)
+
+	return logPipeline, nil
 }

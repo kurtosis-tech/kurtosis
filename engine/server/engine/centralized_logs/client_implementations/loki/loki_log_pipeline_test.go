@@ -1,4 +1,4 @@
-package centralized_logs
+package loki
 
 import (
 	"fmt"

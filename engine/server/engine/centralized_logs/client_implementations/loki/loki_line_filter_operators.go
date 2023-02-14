@@ -1,4 +1,4 @@
-package centralized_logs
+package loki
 
 //We weren't able to use github.com/dmarkham/enumer enum system here because we can't do this "LokiLineFilterOperator_|="
 

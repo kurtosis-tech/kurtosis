@@ -4,39 +4,27 @@ import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/logline"
 )
 
-type ConjunctiveLogLineFilters interface {
-	GetConjunctiveLogLineFiltersString() string
-}
-
 type LogsDatabaseClient interface {
-	GetUserServiceLogs(
-		ctx context.Context,
-		enclaveID enclave.EnclaveUUID,
-		userServiceGuids map[service.ServiceUUID]bool,
-		conjunctiveLogLineFilters ConjunctiveLogLineFilters,
-	) (
-		userServiceLogsByServiceGuidChan chan map[service.ServiceUUID][]LogLine,
-		errChan chan error,
-		cancelStreamFunc func(),
-		err error,
-	)
 	StreamUserServiceLogs(
 		ctx context.Context,
-		enclaveID enclave.EnclaveUUID,
-		userServiceGuids map[service.ServiceUUID]bool,
-		conjunctiveLogLineFilters ConjunctiveLogLineFilters,
+		enclaveUuid enclave.EnclaveUUID,
+		userServiceUuids map[service.ServiceUUID]bool,
+		conjunctiveLogLineFilters logline.ConjunctiveLogLineFilters,
+		shouldFollowLogs bool,
 	) (
-		userServiceLogsByServiceGuidChan chan map[service.ServiceUUID][]LogLine,
+		userServiceLogsByServiceUuidChan chan map[service.ServiceUUID][]logline.LogLine,
 		errChan chan error,
-		cancelStreamFunc func(),
+		cancelFunc context.CancelFunc,
 		err error,
 	)
-	FilterExistingServiceGuids(
+
+	FilterExistingServiceUuids(
 		ctx context.Context,
-		enclaveId enclave.EnclaveUUID,
-		userServiceGuids map[service.ServiceUUID]bool,
+		enclaveUuid enclave.EnclaveUUID,
+		userServiceUuids map[service.ServiceUUID]bool,
 	) (
 		map[service.ServiceUUID]bool,
 		error,

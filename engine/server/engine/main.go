@@ -11,11 +11,10 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/core/launcher/api_container_launcher"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args/kurtosis_backend_config"
-	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/kurtosis_backend"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/server"
 	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
@@ -139,34 +138,8 @@ func runMain() error {
 		}
 	}()
 
-	var logsDatabaseClient centralized_logs.LogsDatabaseClient
-
-	//TODO this is a hack until we completely finish the centralized logs for Kubernetes Backend
-	//TODO Create the logs database client depending on the Kurtosis Backend type (momentarily)
-	//TODO Then should be only one way, the one which uses the Loki's server
-	if serverArgs.KurtosisBackendType == args.KurtosisBackendType_Docker {
-
-		logsDatabase, err := kurtosisBackend.GetLogsDatabase(ctx)
-		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred getting the logs database")
-		}
-
-		if logsDatabase == nil || logsDatabase.GetStatus() == container_status.ContainerStatus_Stopped {
-			return stacktrace.NewError("The engine server cannot be run because the logs database container is not running")
-		}
-
-		if logsDatabase.GetMaybePrivateIpAddr() == nil {
-			return stacktrace.NewError("The engine server cannot be run because the private IP address of the logs database is nil")
-		}
-
-		privateLogsDatabaseAddress := fmt.Sprintf("%v:%v", logsDatabase.GetMaybePrivateIpAddr(), logsDatabase.GetPrivateHttpPort().GetNumber())
-
-		logsDatabaseClient = centralized_logs.NewLokiLogsDatabaseClientWithDefaultHttpClient(privateLogsDatabaseAddress)
-
-	} else {
-		//The centralized-logs component is not implemented for Kubernetes yet
-		logsDatabaseClient = nil
-	}
+	//TODO probably we could move Loki files and kubernetes logs client files to subfolders inside an impl package
+	logsDatabaseClient := kurtosis_backend.NewKurtosisBackendLogsDatabaseClient(kurtosisBackend)
 
 	engineServerService := server.NewEngineServerService(serverArgs.ImageVersionTag, enclaveManager, metricsClient, serverArgs.MetricsUserID, serverArgs.DidUserAcceptSendingMetrics, logsDatabaseClient)
 

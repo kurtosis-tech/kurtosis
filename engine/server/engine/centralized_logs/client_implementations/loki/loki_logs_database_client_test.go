@@ -1,11 +1,12 @@
-package centralized_logs
+package loki
 
 import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/mocks"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/loki/mocks"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/logline"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -20,10 +21,10 @@ import (
 const (
 	fakeLogsDatabaseAddress = "1.2.3.4:8080"
 
-	testEnclaveId        = "test-enclave"
-	testUserService1Guid = "test-user-service-1"
-	testUserService2Guid = "test-user-service-2"
-	testUserService3Guid = "test-user-service-3"
+	testEnclaveUuid      = "test-enclave"
+	testUserService1Uuid = "test-user-service-1"
+	testUserService2Uuid = "test-user-service-2"
+	testUserService3Uuid = "test-user-service-3"
 
 	filterText = "first"
 
@@ -47,14 +48,16 @@ const (
 	userServiceContainerType = "user-service"
 
 	testTimeOut = 30 * time.Second
+
+	doNotFollowLogs = false
 )
 
-func TestGetUserServiceLogsWithoutFilter_ValidResponse(t *testing.T) {
-	enclaveId := enclave.EnclaveUUID(testEnclaveId)
+func TestStreamUserServiceLogsWithoutFilter_ValidResponse(t *testing.T) {
+	enclaveId := enclave.EnclaveUUID(testEnclaveUuid)
 	userServiceGuids := map[service.ServiceUUID]bool{
-		testUserService1Guid: true,
-		testUserService2Guid: true,
-		testUserService3Guid: true,
+		testUserService1Uuid: true,
+		testUserService2Uuid: true,
+		testUserService3Uuid: true,
 	}
 	mockHttpClient := mocks.NewMockHttpClient(t)
 	mockHttpClient.EXPECT().Do(mock.Anything).Run(func(request *http.Request) {
@@ -136,15 +139,14 @@ func TestGetUserServiceLogsWithoutFilter_ValidResponse(t *testing.T) {
 	ctx := context.Background()
 
 	expectedUserServiceAmountLogLinesByUserServiceGuid := map[service.ServiceUUID]int{
-		testUserService1Guid: 3,
-		testUserService2Guid: 4,
-		testUserService3Guid: 2,
+		testUserService1Uuid: 3,
+		testUserService2Uuid: 4,
+		testUserService3Uuid: 2,
 	}
 
-	var emptyLokiLineFilters []LokiLineFilter
-	emptyLogPipeline := NewLokiLogPipeline(emptyLokiLineFilters)
+	emptyLogLinesFilter := []logline.LogLineFilter{}
 
-	userServiceLogsByGuidChan, errChan, closeStreamFunc, err := logsDatabaseClient.GetUserServiceLogs(ctx, enclaveId, userServiceGuids, emptyLogPipeline)
+	userServiceLogsByGuidChan, errChan, closeStreamFunc, err := logsDatabaseClient.StreamUserServiceLogs(ctx, enclaveId, userServiceGuids, emptyLogLinesFilter, doNotFollowLogs)
 	defer closeStreamFunc()
 
 	require.NoError(t, err, "An error occurred getting user service logs for UUIDs '%+v' in enclave '%v'", userServiceGuids, enclaveId)
@@ -189,12 +191,12 @@ func TestGetUserServiceLogsWithoutFilter_ValidResponse(t *testing.T) {
 
 }
 
-func TestGetUserServiceLogsWithFilter_ValidResponse(t *testing.T) {
-	enclaveId := enclave.EnclaveUUID(testEnclaveId)
+func TestStreamUserServiceLogsWithFilter_ValidResponse(t *testing.T) {
+	enclaveId := enclave.EnclaveUUID(testEnclaveUuid)
 	userServiceGuids := map[service.ServiceUUID]bool{
-		testUserService1Guid: true,
-		testUserService2Guid: true,
-		testUserService3Guid: true,
+		testUserService1Uuid: true,
+		testUserService2Uuid: true,
+		testUserService3Uuid: true,
 	}
 	mockHttpClient := mocks.NewMockHttpClient(t)
 	mockHttpClient.EXPECT().Do(mock.Anything).Run(func(request *http.Request) {
@@ -224,22 +226,21 @@ func TestGetUserServiceLogsWithFilter_ValidResponse(t *testing.T) {
 	ctx := context.Background()
 
 	expectedUserServiceAmountLogLinesByUserServiceGuid := map[service.ServiceUUID]int{
-		testUserService1Guid: 1,
-		testUserService2Guid: 1,
-		testUserService3Guid: 1,
+		testUserService1Uuid: 1,
+		testUserService2Uuid: 1,
+		testUserService3Uuid: 1,
 	}
 
-	lokiLineFilter := NewDoesContainTextLokiLineFilter(filterText)
+	logLinesFilter := logline.NewDoesContainTextLogLineFilter(filterText)
 
-	lokiLineFilters := []LokiLineFilter{
-		*lokiLineFilter,
+	logLinesFilters := []logline.LogLineFilter{
+		*logLinesFilter,
 	}
-	logPipeline := NewLokiLogPipeline(lokiLineFilters)
 
-	userServiceLogsByGuidChan, errChan, closeStreamFunc, err := logsDatabaseClient.GetUserServiceLogs(ctx, enclaveId, userServiceGuids, logPipeline)
+	userServiceLogsByGuidChan, errChan, closeStreamFunc, err := logsDatabaseClient.StreamUserServiceLogs(ctx, enclaveId, userServiceGuids, logLinesFilters, doNotFollowLogs)
 	defer closeStreamFunc()
 
-	require.NoError(t, err, "An error occurred getting user service logs for UUIDs '%+v' using log pipeline '%v' in enclave '%v'", userServiceGuids, logPipeline, enclaveId)
+	require.NoError(t, err, "An error occurred getting user service logs for UUIDs '%+v' using log line filters '%v' in enclave '%v'", userServiceGuids, logLinesFilters, enclaveId)
 	require.NotNil(t, userServiceLogsByGuidChan, "Received a nil user service logs channel, but a non-nil value was expected")
 	require.Nil(t, errChan, "Received a not nil error channel, but a nil value was expected")
 
@@ -315,7 +316,7 @@ func TestNewUserServiceLogLinesByUserServiceGuidFromLokiStreamsReturnSuccessfull
 		lokiStreams4,
 	}
 
-	resultLogsByKurtosisUserServiceGuid, err := newUserServiceLogLinesByUserServiceGuidFromLokiStreams(lokiStreams)
+	resultLogsByKurtosisUserServiceGuid, err := newUserServiceLogLinesByUserServiceUuidFromLokiStreams(lokiStreams)
 	require.NoError(t, err)
 	require.NotNil(t, resultLogsByKurtosisUserServiceGuid)
 	require.Equal(t, len(lokiStreams), len(resultLogsByKurtosisUserServiceGuid[userServiceGuid]))
@@ -329,7 +330,7 @@ func TestNewUserServiceLogLinesByUserServiceGuidFromLokiStreamsReturnSuccessfull
 func TestFilterExistingServiceGuids_FilteringWorksAsExpected(t *testing.T) {
 	mockHttpClient := mocks.NewMockHttpClient(t)
 
-	jsonResponse := `{"status": "` + lokiSuccessStatusInResponse + `", "data": ["` + testUserService1Guid + `", "` + testUserService2Guid + `"]}`
+	jsonResponse := `{"status": "` + lokiSuccessStatusInResponse + `", "data": ["` + testUserService1Uuid + `", "` + testUserService2Uuid + `"]}`
 	mockHttpClient.EXPECT().Do(mock.MatchedBy(func(req *http.Request) bool {
 		expectedQueryPrefix := startTimeQueryParamKey + "="
 		expectedPath := fmt.Sprintf(baseLokiApiPath+queryListLabelValuesWithinRangeEndpoint, kurtosisGuidLokiTagKey)
@@ -359,15 +360,15 @@ func TestFilterExistingServiceGuids_FilteringWorksAsExpected(t *testing.T) {
 
 	ctx := context.Background()
 	requestedServiceGuids := map[service.ServiceUUID]bool{
-		service.ServiceUUID(testUserService1Guid): true,
-		service.ServiceUUID(testUserService2Guid): true,
-		service.ServiceUUID(testUserService3Guid): true,
+		service.ServiceUUID(testUserService1Uuid): true,
+		service.ServiceUUID(testUserService2Uuid): true,
+		service.ServiceUUID(testUserService3Uuid): true,
 	}
-	result, err := lokiDbClient.FilterExistingServiceGuids(ctx, testEnclaveId, requestedServiceGuids)
+	result, err := lokiDbClient.FilterExistingServiceUuids(ctx, testEnclaveUuid, requestedServiceGuids)
 	require.Nil(t, err)
-	require.Contains(t, result, service.ServiceUUID(testUserService1Guid))
-	require.Contains(t, result, service.ServiceUUID(testUserService2Guid))
-	require.NotContains(t, result, service.ServiceUUID(testUserService3Guid))
+	require.Contains(t, result, service.ServiceUUID(testUserService1Uuid))
+	require.Contains(t, result, service.ServiceUUID(testUserService2Uuid))
+	require.NotContains(t, result, service.ServiceUUID(testUserService3Uuid))
 }
 
 func TestFilterExistingServiceGuids_LokiServerNotFound(t *testing.T) {
@@ -394,9 +395,9 @@ func TestFilterExistingServiceGuids_LokiServerNotFound(t *testing.T) {
 
 	ctx := context.Background()
 	requestedServiceGuids := map[service.ServiceUUID]bool{
-		service.ServiceUUID(testUserService1Guid): true,
+		service.ServiceUUID(testUserService1Uuid): true,
 	}
-	result, err := lokiDbClient.FilterExistingServiceGuids(ctx, testEnclaveId, requestedServiceGuids)
+	result, err := lokiDbClient.FilterExistingServiceUuids(ctx, testEnclaveUuid, requestedServiceGuids)
 	require.Nil(t, result)
 	require.Contains(t, err.Error(), "An error occurred doing HTTP request ")
 }
@@ -426,9 +427,9 @@ func TestFilterExistingServiceGuids_LokiServerReturnsErrorStatus(t *testing.T) {
 
 	ctx := context.Background()
 	requestedServiceGuids := map[service.ServiceUUID]bool{
-		service.ServiceUUID(testUserService1Guid): true,
+		service.ServiceUUID(testUserService1Uuid): true,
 	}
-	result, err := lokiDbClient.FilterExistingServiceGuids(ctx, testEnclaveId, requestedServiceGuids)
+	result, err := lokiDbClient.FilterExistingServiceUuids(ctx, testEnclaveUuid, requestedServiceGuids)
 	require.Nil(t, result)
 	require.Contains(t, err.Error(), "The logs database returns an error status when fetching the existing service UUIDs. Response was: ")
 }
@@ -458,9 +459,9 @@ func TestFilterExistingServiceGuids_UnexpectedResponseObjectShape(t *testing.T) 
 
 	ctx := context.Background()
 	requestedServiceGuids := map[service.ServiceUUID]bool{
-		service.ServiceUUID(testUserService1Guid): true,
+		service.ServiceUUID(testUserService1Uuid): true,
 	}
-	result, err := lokiDbClient.FilterExistingServiceGuids(ctx, testEnclaveId, requestedServiceGuids)
+	result, err := lokiDbClient.FilterExistingServiceUuids(ctx, testEnclaveUuid, requestedServiceGuids)
 	require.Nil(t, result)
 	require.Contains(t, err.Error(), "The logs database returns an error status when fetching the existing service UUIDs. Response was: ")
 }

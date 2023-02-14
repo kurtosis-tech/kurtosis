@@ -182,7 +182,8 @@ func run(
 
 	//Print logs for Kubernetes cluster
 	//TODO HUGE HACK!
-	//TODO this is momentarily used here until we implement centralized logs for Kubernetes
+	//TODO this is momentarily used here until we implement the GetServiceLogs method in the Kurtosis engine's gateway
+	//TODO related ticket: https://github.com/kurtosis-tech/kurtosis/issues/1069
 	if clusterType == resolved_config.KurtosisClusterType_Kubernetes {
 		//These Kurtosis primitives came from the backend (container-engine-lib) and this is the reason
 		//why are different from the same defined earlier (which came from the Kurtosis SDK)

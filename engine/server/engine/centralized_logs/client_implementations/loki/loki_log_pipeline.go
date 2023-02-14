@@ -1,4 +1,4 @@
-package centralized_logs
+package loki
 
 import (
 	"strings"
@@ -16,7 +16,7 @@ func NewLokiLogPipeline(lineFilters []LokiLineFilter) *lokiLogPipeline {
 	return &lokiLogPipeline{lineFilters: lineFilters}
 }
 
-func (logPipeline *lokiLogPipeline) GetConjunctiveLogLineFiltersString() string{
+func (logPipeline *lokiLogPipeline) GetConjunctiveLogLineFiltersString() string {
 	var lineFiltersStr []string
 	for _, lineFilter := range logPipeline.lineFilters {
 		lineFiltersStr = append(lineFiltersStr, lineFilter.String())
