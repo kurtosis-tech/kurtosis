@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.66.7](https://github.com/kurtosis-tech/kurtosis/compare/0.66.6...0.66.7) (2023-02-14)
+
+
+### Features
+
+* Only build current OS/arch CLI when invoked locally ([#1014](https://github.com/kurtosis-tech/kurtosis/issues/1014)) ([971e9b3](https://github.com/kurtosis-tech/kurtosis/commit/971e9b30a500020a0b80149ca6d7a8ddde6dcc78))
+* persist partition services to BoltDB ([#1012](https://github.com/kurtosis-tech/kurtosis/issues/1012)) ([21aa6e4](https://github.com/kurtosis-tech/kurtosis/commit/21aa6e4b407888720542743a2afd65996fc031b5))
+* tracks whether a metric is coming from a ci environment ([#1067](https://github.com/kurtosis-tech/kurtosis/issues/1067)) ([3263c42](https://github.com/kurtosis-tech/kurtosis/commit/3263c42bb61fc88f4947eaf1c45e0c4a70b7f5a7))
+
+
+### Bug Fixes
+
+* removed delay in the 'service logs' CLI command. This command can no longer return results from enclaves that have been removed. This was done to fix a performance regression with the logs collector system we were using. ([#1051](https://github.com/kurtosis-tech/kurtosis/issues/1051)) ([521531d](https://github.com/kurtosis-tech/kurtosis/commit/521531d09a49ea064362fec262a0225a9e71ed4f))
+
 ## [0.66.6](https://github.com/kurtosis-tech/kurtosis/compare/0.66.5...0.66.6) (2023-02-14)
 
 
