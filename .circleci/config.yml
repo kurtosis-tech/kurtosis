@@ -1039,7 +1039,6 @@ workflows:
     jobs:
       # -- build jobs ------------------------------------------
       - kurtosis-docs-checker/check-docs:
-          <<: *abort_job_if_only_docs_changes
           should-check-changelog: false
           markdown-link-check-config-json: |
             {
@@ -1071,6 +1070,7 @@ workflows:
             branches:
               ignore:
                 - main
+          <<: *abort_job_if_only_docs_changes
       - build_container_engine_lib:
           context:
             # This pulls in KurtosisBot's Github token, so that we can read from our private repos
