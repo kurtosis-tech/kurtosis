@@ -1126,7 +1126,7 @@ workflows:
           filters:
             branches:
               ignore:
-                - master
+                - main
 
       - build_cli:
           context:
@@ -1153,7 +1153,7 @@ workflows:
 #            - build_api_container_server
 #            - build_engine_server
 #            - build_files_artifacts_expander
-#          <<: *filters_ignore_master
+#          <<: *filters_ignore_main
 
       - build_golang_testsuite:
           name: "Build golang testsuite against Docker"
@@ -1176,7 +1176,7 @@ workflows:
 #            - build_api_container_server
 #            - build_engine_server
 #            - build_files_artifacts_expander
-#          <<: *filters_ignore_master
+#          <<: *filters_ignore_main
 
       - build_typescript_testsuite:
           name: "Build typescript testsuite against Docker"
@@ -1199,7 +1199,7 @@ workflows:
 #            - build_api_container_server
 #            - build_engine_server
 #            - build_files_artifacts_expander
-#          <<: *filters_ignore_master
+#          <<: *filters_ignore_main
 
       - test_old_enclave_continuity:
           context:
