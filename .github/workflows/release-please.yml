@@ -21,3 +21,4 @@ jobs:
           # Our CI, Docker Images, Kurtosis-SDK bumps all depend on
           # non v tags
           include-v-in-tag: false
+          release-as: 0.66.8
