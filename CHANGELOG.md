@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.66.9](https://github.com/kurtosis-tech/kurtosis/compare/0.66.8...0.66.9) (2023-02-15)
+
+
+### Bug Fixes
+
+* Fix release process ([#3](https://github.com/kurtosis-tech/kurtosis/issues/3)) ([8a618d9](https://github.com/kurtosis-tech/kurtosis/commit/8a618d94bebe0553f744ab90b6e4c8fe2f8f7fdb))
+
 ## 0.66.8 (2023-02-15)
 
 
