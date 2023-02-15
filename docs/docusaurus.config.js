@@ -78,6 +78,11 @@ const config = {
             position: 'right',
             label: 'Report Docs Issue',
           },
+          {
+            href: 'https://github.com/kurtosis-tech/kurtosis/tree/main/docs',
+            position: 'left',
+            label: 'Docs for historical releases',
+          },
         ],
       },
       footer: {
