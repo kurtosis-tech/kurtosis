@@ -1,12 +1,12 @@
 ##############
 # Yaml Anchors
 ##############
-# Don't run cli jobs on  main branches
-filters_ignore_main: &filters_ignore_main
+# Don't run cli jobs on  master branches
+filters_ignore_master: &filters_ignore_master
   filters:
     branches:
       ignore:
-        - main
+        - master
 
 
 # cli cluster param used to run test suites against docker/kubernetes tests
@@ -71,7 +71,7 @@ run_dump_kurtosis_enclaves: &run_dump_kurtosis_enclaves
 # `git diff --exit-code` returns 0 exit code if no changes, and 1 if changes
 abort_job_if_only_docs_changes: &abort_job_if_only_docs_changes
   run: |
-    if git --no-pager diff --exit-code origin/main...HEAD -- . ':!docs'; then
+    if git --no-pager diff --exit-code origin/master...HEAD -- . ':!docs'; then
       circleci-agent step halt
     fi 
 
@@ -475,7 +475,7 @@ jobs:
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
       #Run config init to avoid metrics consent prompt when execute engine start command,
       #We do not send metrics from CI to not dirty the metrics data
-      - run: "${KURTOSIS_BINPATH} config init dont-send-metrics"
+      - run: "${KURTOSIS_BINPATH} analytics disable"
       - when:
           condition:
             equal: [ "minikube", << parameters.cli-cluster-backend >> ]
@@ -548,7 +548,7 @@ jobs:
 
       #Run config init to avoid metrics consent prompt when execute engine start command,
       #We do not send metrics from CI to not dirty the metrics data
-      - run: "${KURTOSIS_BINPATH} config init dont-send-metrics"
+      - run: "${KURTOSIS_BINPATH} analytics disable"
       - when:
           condition:
             equal: [ "minikube", << parameters.cli-cluster-backend >> ]
@@ -692,9 +692,9 @@ jobs:
           sudo apt update
           sudo apt install kurtosis-cli
       # We don't send metrics to avoid polluting our logs
-      - run: kurtosis config init dont-send-metrics
       - run: |
           echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
+      - run: "${KURTOSIS_BINPATH} analytics disable"
 
       # When backend is 'minikube' install minikube and start a Kurtosis gateway
       - when:
@@ -802,37 +802,31 @@ jobs:
               return 1
             fi
           }
-
           function test_double_config_init_without_force_fails() {
             "${KURTOSIS_BINPATH}" config init dont-send-metrics
-
             if "${KURTOSIS_BINPATH}" config init dont-send-metrics; then
               echo "Error: Expected init'ing the config twice in a non-interactive terminal to throw an error but none was thrown" >&2
               return 1
             fi
           }
-
           function test_double_config_init_with_force_succeeds() {
             "${KURTOSIS_BINPATH}" config init dont-send-metrics
-
             if ! "${KURTOSIS_BINPATH}" config init -f dont-send-metrics; then
               echo "Error: Expected a forced config init in a non-interactive terminal to succeed but it failed" >&2
               return 1
             fi
           }
-
           all_tests_succeeded="true"
           for test_func in test_config_init_is_required test_double_config_init_without_force_fails test_double_config_init_with_force_succeeds; do
             # Reset test state
             rm -f "$("${KURTOSIS_BINPATH}" config path)"
-
             if ! "${test_func}"; then
               echo "Error: Expected test function '${test_func}' to succeed but it failed" >&2
               all_tests_succeeded="false"
             fi
           done
+          "${all_tests_succeeded}"                  
 
-          "${all_tests_succeeded}"
   # -- End build jobs ---------------------------------------
 
   # -- Publish jobs --------------------------------------------
@@ -1069,7 +1063,7 @@ workflows:
           filters:
             branches:
               ignore:
-                - main
+                - master
       - build_container_engine_lib:
           context:
             # This pulls in KurtosisBot's Github token, so that we can read from our private repos
@@ -1077,7 +1071,7 @@ workflows:
           filters:
             branches:
               ignore:
-                - main
+                - master
 
       - build_kurtosis_api_golang:
           # NOTE: Do NOT add our private Github user here; the API must be publicly-accessible so must build without them
@@ -1085,19 +1079,19 @@ workflows:
           filters:
             branches:
               ignore:
-                - main
+                - master
       - build_kurtosis_api_typescript:
           filters:
             branches:
               ignore:
-                - main
+                - master
       - build_files_artifacts_expander:
           context:
             - docker-user
           filters:
             branches:
               ignore:
-                - main
+                - master
       - build_core_launcher:
           context:
             # This pulls in KurtosisBot's Github token, so that we can read from our private repos
@@ -1105,7 +1099,7 @@ workflows:
           filters:
             branches:
               ignore:
-                - main
+                - master
       - build_api_container_server:
           context:
             # This pulls in KurtosisBot's Github token, so that we can read from our private repos
@@ -1114,7 +1108,7 @@ workflows:
           filters:
             branches:
               ignore:
-                - main
+                - master
 
       - build_engine_launcher:
           context:
@@ -1123,7 +1117,7 @@ workflows:
           filters:
             branches:
               ignore:
-                - main
+                - master
       - build_engine_server:
           context:
             # This pulls in KurtosisBot's Github token, so that we can read from our private repos
@@ -1132,12 +1126,12 @@ workflows:
           filters:
             branches:
               ignore:
-                - main
+                - master
 
       - build_cli:
           context:
             - github-user
-          <<: *filters_ignore_main
+          <<: *filters_ignore_master
       - test_basic_cli_functionality:
           name: "Test Basic CLI Functionality in Docker"
           cli-cluster-backend: "docker"
@@ -1148,7 +1142,7 @@ workflows:
             - build_api_container_server
             - build_engine_server
             - build_files_artifacts_expander
-          <<: *filters_ignore_main
+          <<: *filters_ignore_master
 #      - test_basic_cli_functionality:
 #          name: "Test Basic CLI Functionality in Kubernetes"
 #          cli-cluster-backend: "minikube"
@@ -1159,7 +1153,7 @@ workflows:
 #            - build_api_container_server
 #            - build_engine_server
 #            - build_files_artifacts_expander
-#          <<: *filters_ignore_main
+#          <<: *filters_ignore_master
 
       - build_golang_testsuite:
           name: "Build golang testsuite against Docker"
@@ -1171,7 +1165,7 @@ workflows:
             - build_api_container_server
             - build_engine_server
             - build_files_artifacts_expander
-          <<: *filters_ignore_main
+          <<: *filters_ignore_master
 #      - build_golang_testsuite:
 #          name: "Build golang testsuite against Kubernetes"
 #          cli-cluster-backend: "minikube"
@@ -1182,7 +1176,7 @@ workflows:
 #            - build_api_container_server
 #            - build_engine_server
 #            - build_files_artifacts_expander
-#          <<: *filters_ignore_main
+#          <<: *filters_ignore_master
 
       - build_typescript_testsuite:
           name: "Build typescript testsuite against Docker"
@@ -1194,7 +1188,7 @@ workflows:
             - build_api_container_server
             - build_engine_server
             - build_files_artifacts_expander
-          <<: *filters_ignore_main
+          <<: *filters_ignore_master
 #      - build_typescript_testsuite:
 #          name: "Build typescript testsuite against Kubernetes"
 #          cli-cluster-backend: "minikube"
@@ -1205,7 +1199,7 @@ workflows:
 #            - build_api_container_server
 #            - build_engine_server
 #            - build_files_artifacts_expander
-#          <<: *filters_ignore_main
+#          <<: *filters_ignore_master
 
       - test_old_enclave_continuity:
           context:
@@ -1215,11 +1209,12 @@ workflows:
             - build_api_container_server
             - build_engine_server
             - build_files_artifacts_expander
-          <<: *filters_ignore_main
+          <<: *filters_ignore_master
+
       - test_config_init_edge_cases:
           requires:
             - build_cli
-          <<: *filters_ignore_main
+          <<: *filters_ignore_master
 
       # -- Artifact-publishing jobs --------------------------------
       - publish_kurtosis_api_source:
