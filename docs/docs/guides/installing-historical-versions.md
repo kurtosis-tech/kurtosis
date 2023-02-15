@@ -82,3 +82,11 @@ sudo yum install kurtosis-cli-<version>
 </details>
 
 <details>
+<summary>deb, rpm, and apk</summary>
+
+Download the appropriate artifact from [the release artifacts page][release-artifacts].
+</details>
+
+<!-------------------------- ONLY LINKS BELOW HERE ---------------------------->
+[release-artifacts]: https://github.com/kurtosis-tech/kurtosis-cli-release-artifacts/releases
+
