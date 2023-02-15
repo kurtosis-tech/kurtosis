@@ -1,0 +1,515 @@
+syntax = "proto3";
+package api_container_api;
+
+// NOTE: It sucks that we have this Go-specific logic inside this file (which should be language-agnostic). However, the Protobuf team have
+// taken a hard stance on this being the way it should be done, so we have to do it this way.
+option go_package = "github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings";
+
+import "google/protobuf/empty.proto";
+
+service ApiContainerService {
+  // Executes a Starlark script on the user's behalf
+  rpc RunStarlarkScript(RunStarlarkScriptArgs) returns (stream StarlarkRunResponseLine) {};
+
+  // Executes a Starlark script on the user's behalf
+  rpc RunStarlarkPackage(RunStarlarkPackageArgs) returns (stream StarlarkRunResponseLine) {};
+
+  // Start services by creating containers for them
+  rpc StartServices(StartServicesArgs) returns (StartServicesResponse) {};
+
+  // Returns the IDs of the current services in the enclave
+  rpc GetServices(GetServicesArgs) returns (GetServicesResponse) {};
+
+  // Returns information about all existing & historical services
+  rpc GetExistingAndHistoricalServiceIdentifiers(google.protobuf.Empty) returns (GetExistingAndHistoricalServiceIdentifiersResponse) {}
+
+  // Instructs the API container to remove the given service
+  rpc RemoveService(RemoveServiceArgs) returns (RemoveServiceResponse) {};
+
+  // Instructs the API container to repartition the enclave
+  rpc Repartition(RepartitionArgs) returns (google.protobuf.Empty) {};
+
+  // Executes the given command inside a running container
+  rpc ExecCommand(ExecCommandArgs) returns (ExecCommandResponse) {};
+
+  // Pauses all processes running in the service container
+  rpc PauseService(PauseServiceArgs) returns (google.protobuf.Empty) {};
+
+  // Unpauses all paused processes running in the service container
+  rpc UnpauseService(UnpauseServiceArgs) returns (google.protobuf.Empty) {};
+
+  // Block until the given HTTP endpoint returns available, calling it through a HTTP Get request
+  rpc WaitForHttpGetEndpointAvailability(WaitForHttpGetEndpointAvailabilityArgs) returns (google.protobuf.Empty) {};
+
+  // Block until the given HTTP endpoint returns available, calling it through a HTTP Post request
+  rpc WaitForHttpPostEndpointAvailability(WaitForHttpPostEndpointAvailabilityArgs) returns (google.protobuf.Empty) {};
+
+  // Uploads a files artifact to the Kurtosis File System
+  rpc UploadFilesArtifact(UploadFilesArtifactArgs) returns (UploadFilesArtifactResponse) {};
+
+  // TODO Make this a server-side streaming method so the client can download large files
+  // Downloads a files artifact from the Kurtosis File System
+  rpc DownloadFilesArtifact(DownloadFilesArtifactArgs) returns (DownloadFilesArtifactResponse) {};
+
+  // Tells the API container to download a files artifact from the web to the Kurtosis File System
+  rpc StoreWebFilesArtifact(StoreWebFilesArtifactArgs) returns (StoreWebFilesArtifactResponse) {};
+
+  // Tells the API container to copy a files artifact from a service to the Kurtosis File System
+  rpc StoreFilesArtifactFromService(StoreFilesArtifactFromServiceArgs) returns (StoreFilesArtifactFromServiceResponse) {}
+
+  // Renders the templates and their data to a files artifact in the Kurtosis File System
+  rpc RenderTemplatesToFilesArtifact(RenderTemplatesToFilesArtifactArgs) returns (RenderTemplatesToFilesArtifactResponse) {}
+}
+
+// ==============================================================================================
+//                           Shared Objects (Used By Multiple Endpoints)
+// ==============================================================================================
+message Port {
+  enum TransportProtocol {
+    TCP = 0;
+    SCTP = 1;
+    UDP = 2;
+  }
+
+  uint32 number = 1;
+
+  // The protocol that the port is listening on
+  TransportProtocol transport_protocol = 2;
+  string maybe_application_protocol = 3;
+}
+
+message ServiceInfo {
+  // UUID of the service
+  string service_uuid = 1;
+
+  // The IP address of the service inside the enclave
+  string private_ip_addr = 2;
+
+  // The ports on which the service is reachable inside the enclave, specified in user_specified_port_id -> port_info
+  // Will be exactly what was passed in at the time of starting the service
+  map<string, Port> private_ports = 3;
+
+  // Public IP address *outside* the enclave where the service is reachable
+  // NOTE: Will be empty if the service isn't running, the service didn't define any ports, or the backend doesn't support reporting public service info
+  string maybe_public_ip_addr = 4;
+
+  // Mapping defining the ports that the service can be reached at *outside* the enclave, in the user_defined_port_id -> port_info where user_defined_port_id
+  //  corresponds to the ID that was passed in in StartServiceArgs
+  // NOTE: Will be empty if the service isn't running, the service didn't define any ports, or the backend doesn't support reporting public service info
+  map<string, Port> maybe_public_ports = 5;
+
+  // Name of the service
+  string name = 6;
+
+  // Shortened uuid of the service
+  string shortened_uuid = 7;
+}
+
+message ServiceConfig {
+  string container_image_name = 1;
+
+  // Definition of the ports *inside* the enclave that the container should have exposed, specified as user_friendly_port_id -> port_definition
+  map<string, Port> private_ports = 2;
+
+  //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+  map<string, Port> public_ports = 3;
+
+  // Corresponds to a Dockerfile's ENTRYPOINT directive; leave blank to do no overriding
+  repeated string entrypoint_args = 4;
+
+  // Corresponds to a Dockerfile's CMD directive; leave blank to do no overriding
+  repeated string cmd_args = 5;
+
+  // Containers environment variables that should be set in the service's container
+  map<string, string> env_vars = 6;
+
+  // Mapping of files_artifact_uuid -> filepath_on_container_to_mount_artifact_contents
+  map<string, string> files_artifact_mountpoints = 7;
+
+  // Corresponds to `millicpus`, 1000 millicpu = 1 CPU in both Docker and Kubernetes
+  uint64 cpu_allocation_millicpus = 8;
+
+  // Corresponds to available memory in megabytes in both Docker and Kubernetes
+  uint64 memory_allocation_megabytes = 9;
+
+  // The private IP address placeholder string used in entrypoint_args, cmd_args & env_vars that will be replaced with the private IP address inside the container
+  string private_ip_addr_placeholder = 10;
+
+  // The subnetwork the service should be part of. If unset, the service will be placed in the 'default' subnetwork
+  optional string subnetwork = 11;
+}
+
+// Subset of ServiceConfig attributes containing only the fields that are "live-updatable"
+// This will eventually get removed in favour of ServiceConfig when all attributes become "live-updatable"
+message UpdateServiceConfig {
+  // The name of the subnetwork the service will be moved to. If the subnetwork does not exist, it will be created.
+  // If it is set to "" the service will be moved to the default subnetwork
+  optional string subnetwork = 1;
+}
+
+// ==============================================================================================
+//                               Execute Starlark Arguments
+// ==============================================================================================
+message RunStarlarkScriptArgs {
+  string serialized_script = 1;
+
+  string serialized_params = 2;
+
+  // Defaults to false
+  optional bool dry_run = 3;
+
+  // Defaults to 4
+  optional int32 parallelism = 4;
+}
+
+message RunStarlarkPackageArgs {
+  string package_id = 1;
+
+  // Serialized parameters data for the Starlark package main function
+  // This should be a valid JSON string
+  oneof starlark_package_content {
+    bytes local = 3; // the payload of the local module
+    bool remote = 4; // just a flag to indicate the module must be cloned inside the API
+  }
+
+  string serialized_params = 5;
+
+  // Defaults to false
+  optional bool dry_run = 6;
+
+  // Defaults to 4
+  optional int32 parallelism = 7;
+}
+
+// ==============================================================================================
+//                               Starlark Execution Response
+// ==============================================================================================
+message StarlarkRunResponseLine {
+  oneof run_response_line {
+    StarlarkInstruction instruction = 1;
+    StarlarkError error = 2;
+    StarlarkRunProgress progress_info = 3;
+    StarlarkInstructionResult instruction_result = 4;
+    StarlarkRunFinishedEvent run_finished_event = 5;
+  }
+}
+
+message StarlarkInstruction {
+  StarlarkInstructionPosition position = 1;
+
+  string instruction_name = 2;
+
+  repeated StarlarkInstructionArg arguments = 3;
+
+  string executable_instruction = 4;
+}
+
+message StarlarkInstructionResult {
+  string serialized_instruction_result = 1;
+}
+
+message StarlarkInstructionArg {
+  string serialized_arg_value = 1;
+
+  optional string arg_name = 2;
+
+  bool is_representative = 3;
+}
+
+message StarlarkInstructionPosition {
+  string filename = 1;
+
+  int32 line = 2;
+
+  int32 column = 3;
+}
+
+message StarlarkError {
+  oneof error {
+    StarlarkInterpretationError interpretation_error = 1;
+    StarlarkValidationError validation_error = 2;
+    StarlarkExecutionError execution_error = 3;
+  }
+}
+
+message StarlarkInterpretationError {
+  string error_message = 1;
+}
+
+message StarlarkValidationError {
+  string error_message = 1;
+}
+
+message StarlarkExecutionError {
+  string error_message = 1;
+}
+
+message StarlarkRunProgress {
+  repeated string current_step_info = 1;
+
+  uint32 total_steps = 2;
+
+  uint32 current_step_number = 3;
+}
+
+message StarlarkRunFinishedEvent {
+  bool isRunSuccessful = 1;
+
+  optional string serialized_output = 2;
+}
+
+// ==============================================================================================
+//                                        Start Service
+// ==============================================================================================
+message StartServicesArgs {
+  map<string, ServiceConfig> service_names_to_configs = 1;
+}
+
+message StartServicesResponse {
+  // A map of Service Names to info describing that newly started service
+  map<string, ServiceInfo> successful_service_name_to_service_info = 1;
+
+  // A map of Service Names that failed to start with the error causing the failure
+  map<string, string> failed_service_name_to_error = 2;
+}
+
+// ==============================================================================================
+//                                          Get Services
+// ==============================================================================================
+message GetServicesArgs {
+  // "Set" of identifiers to fetch info for
+  // If empty, will fetch info for all services
+  map<string, bool> service_identifiers = 1;
+}
+
+message GetServicesResponse {
+  // "Set" from identifiers -> info about the service
+  map<string, ServiceInfo> service_info = 1;
+}
+
+// ==============================================================================================
+//                                            Get Historical Services
+// ==============================================================================================
+
+// An service identifier is a collection of uuid, name and shortened uuid
+message ServiceIdentifiers {
+  // UUID of the service
+  string service_uuid = 1;
+
+  // Name of the service
+  string name = 2;
+
+  // The shortened uuid of the service
+  string shortened_uuid = 3;
+}
+
+message GetExistingAndHistoricalServiceIdentifiersResponse {
+  repeated ServiceIdentifiers allIdentifiers = 1;
+}
+
+// ==============================================================================================
+//                                        Remove Service
+// ==============================================================================================
+message RemoveServiceArgs {
+  string service_identifier = 1;
+}
+
+message RemoveServiceResponse {
+  // The UUID of the service that was removed
+  string service_uuid = 1;
+}
+
+// ==============================================================================================
+//                                          Repartition
+// ==============================================================================================
+message RepartitionArgs {
+  // Definition of partitionId -> services that should be inside the partition after repartitioning
+  map<string, PartitionServices> partition_services = 1;
+
+  // Definition of partitionIdA -> partitionIdB -> information defining the connection between A <-> B
+  map<string, PartitionConnections> partition_connections = 2;
+
+  // Information about the default inter-partition connection to set up if one is not defined in the
+  //  partition connections map
+  PartitionConnectionInfo default_connection = 3;
+}
+
+message PartitionServices {
+  // "Set" of service names in partition
+  map<string, bool> service_name_set = 1;
+}
+
+message PartitionConnections {
+  map<string, PartitionConnectionInfo> connection_info = 1;
+}
+
+message PartitionConnectionInfo {
+  // Percentage value of packet loss in a partition connection
+  float packet_loss_percentage = 1;
+}
+
+// ==============================================================================================
+//                                          Exec Command
+// ==============================================================================================
+message ExecCommandArgs {
+  // The service identifier of the container that the command should be executed in
+  string service_identifier = 1;
+
+  repeated string command_args = 2;
+}
+
+// ==============================================================================================
+//                                          Pause/Unpause Service
+// ==============================================================================================
+message PauseServiceArgs {
+  // The service identifier of the container that should be paused
+  string service_identifier = 1;
+}
+
+message UnpauseServiceArgs {
+  // The service identifier of the container that should be unpaused
+  string service_identifier = 1;
+}
+
+message ExecCommandResponse {
+  int32 exit_code = 1;
+
+  // Assumes UTF-8 encoding
+  string log_output = 2;
+}
+
+// ==============================================================================================
+//                             Wait For HTTP Get Endpoint Availability
+// ==============================================================================================
+message WaitForHttpGetEndpointAvailabilityArgs {
+  //The identifier of the service to check.
+  string service_identifier = 1;
+  //The port of the service to check. For instance 8080
+  uint32 port = 2;
+  //The path of the service to check. It mustn't start with the first slash. For instance `service/health`
+  string path = 3;
+  //The number of milliseconds to wait until executing the first HTTP call
+  uint32 initial_delay_milliseconds = 4;
+  //Max number of HTTP call attempts that this will execute until giving up and returning an error
+  uint32 retries = 5;
+  //Number of milliseconds to wait between retries
+  uint32 retries_delay_milliseconds = 6;
+  //If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
+  string body_text = 7;
+}
+
+// ==============================================================================================
+//                           Wait For HTTP Post Endpoint Availability
+// ==============================================================================================
+message WaitForHttpPostEndpointAvailabilityArgs {
+  //The identifier of the service to check.
+  string service_identifier = 1;
+  //The port of the service to check. For instance 8080
+  uint32 port = 2;
+  //The path of the service to check. It mustn't start with the first slash. For instance `service/health`
+  string path = 3;
+  //The content of the request body.
+  string request_body = 4;
+  //The number of milliseconds to wait until executing the first HTTP call
+  uint32 initial_delay_milliseconds = 5;
+  //Max number of HTTP call attempts that this will execute until giving up and returning an error
+  uint32 retries = 6;
+  //Number of milliseconds to wait between retries
+  uint32 retries_delay_milliseconds = 7;
+  //If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
+  string body_text = 8;
+}
+
+// ==============================================================================================
+//                                          Upload Files Artifact
+// ==============================================================================================
+message UploadFilesArtifactArgs {
+  // Bytes of the files artifact to store
+  bytes data = 1;
+
+  // Name of the files artifact
+  string name = 2;
+}
+
+message UploadFilesArtifactResponse {
+  // UUID of the files artifact, for use when referencing it in the future
+  string uuid = 1;
+}
+
+
+// ==============================================================================================
+//                                          Download Files Artifact
+// ==============================================================================================
+message DownloadFilesArtifactArgs {
+  // Files identifier to get bytes for
+  string identifier = 1;
+}
+
+message DownloadFilesArtifactResponse {
+  // Contents of the requested files artifact
+  bytes data = 1;
+}
+
+
+// ==============================================================================================
+//                                        Store Web Files Artifact
+// ==============================================================================================
+message StoreWebFilesArtifactArgs {
+  // URL to download the artifact from
+  string url = 1;
+
+  // The name of the files artifact
+  string name = 2;
+}
+
+message StoreWebFilesArtifactResponse {
+  // UUID of the files artifact, for use when referencing it in the future
+  string uuid = 1;
+}
+
+
+// ==============================================================================================
+//                               Store Files Artifact From Service
+// ==============================================================================================
+
+message StoreFilesArtifactFromServiceArgs {
+  // Identifier that will be used to identify the service where the source files will be copied from
+  string service_identifier = 1;
+
+  // The absolute source path where the source files will be copied from
+  string source_path = 2;
+
+  // The name of the files artifact
+  string name = 3;
+}
+
+message StoreFilesArtifactFromServiceResponse {
+  // UUID of the files artifact, for use when referencing it in the future
+  string uuid = 1;
+}
+
+// ==============================================================================================
+//                               Render Templates To Files Artifact
+// ==============================================================================================
+
+message RenderTemplatesToFilesArtifactArgs {
+  // An object representing the template and the data that needs to be inserted
+  message TemplateAndData {
+    // A string representation of the template file
+    string template = 1;
+
+    // A json string representation of the data to be written to template
+    string data_as_json = 2;
+  }
+
+  // A map of template and its data by the path of the file relative to the root of the files artifact it will be rendered into.
+  map <string, TemplateAndData> templates_and_data_by_destination_rel_filepath = 1;
+
+  // Name of the files artifact
+  string name = 2;
+}
+
+message RenderTemplatesToFilesArtifactResponse {
+  // UUID of the files artifact, for use when referencing it in the future
+  string uuid = 1;
+}

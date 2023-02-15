@@ -1,0 +1,21 @@
+{
+  "scripts": {
+    "build": "tsc",
+    "test": "jest --maxWorkers 2 ./build"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.0.0",
+    "@types/node": "^16.11.11",
+    "@types/utf8": "^3.0.0",
+    "axios": "^0.24.0",
+    "example-api-server-api-lib": "^0.3.4",
+    "example-datastore-server-api-lib": "^0.4.4",
+    "jest": "^27.3.1",
+    "kurtosis-sdk": "../../api/typescript",
+    "loglevel": "^1.8.0",
+    "neverthrow": "^4.3.1",
+    "ts-jest": "^28.0.8",
+    "typescript": "^4.5.2",
+    "utf8": "^3.0.0"
+  }
+}

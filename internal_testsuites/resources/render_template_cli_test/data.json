@@ -1,0 +1,8 @@
+{
+  "Name" : "Stranger",
+  "Answer": 6,
+  "Numbers": [1, 2, 3],
+  "UnixTimeStamp": 1257894000,
+  "LargeFloat": 1231231243.43,
+  "Alive": true
+}

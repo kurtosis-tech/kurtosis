@@ -1,0 +1,236 @@
+syntax = "proto3";
+package engine_api;
+// NOTE: It sucks that we have this Go-specific logic inside this file (which should be language-agnostic). However, the Protobuf team have
+// taken a hard stance on this being the way it should be done, so we have to do it this way.
+option go_package = "github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+service EngineService {
+  // Endpoint for getting information about the engine, which is also what we use to verify that the engine has become available
+  rpc GetEngineInfo(google.protobuf.Empty) returns (GetEngineInfoResponse) {};
+
+  // ==============================================================================================
+  //                                   Enclave Management
+  // ==============================================================================================
+  // Creates a new Kurtosis Enclave
+  rpc CreateEnclave(CreateEnclaveArgs) returns (CreateEnclaveResponse) {};
+  // Returns information about the existing enclaves
+  rpc GetEnclaves(google.protobuf.Empty) returns (GetEnclavesResponse) {};
+  // Returns information about all existing & historical enclaves
+  rpc GetExistingAndHistoricalEnclaveIdentifiers(google.protobuf.Empty) returns (GetExistingAndHistoricalEnclaveIdentifiersResponse) {}
+  // Stops all containers in an enclave
+  rpc StopEnclave(StopEnclaveArgs) returns (google.protobuf.Empty) {};
+  // Destroys an enclave, removing all artifacts associated with it
+  rpc DestroyEnclave(DestroyEnclaveArgs) returns (google.protobuf.Empty) {};
+  // Gets rid of old enclaves
+  rpc Clean(CleanArgs) returns (CleanResponse) {};
+  // Get service logs
+  rpc GetServiceLogs(GetServiceLogsArgs) returns (stream GetServiceLogsResponse) {};
+}
+
+// ==============================================================================================
+//                                        Get Engine Info
+// ==============================================================================================
+message GetEngineInfoResponse {
+  // Version of the engine server
+  string engine_version = 1;
+}
+
+// ==============================================================================================
+//                                        Create Enclave
+// ==============================================================================================
+message CreateEnclaveArgs {
+  // The name of the new Kurtosis Enclave
+  string enclave_name = 1;
+  // The image tag of the API container that should be used inside the enclave
+  // If blank, will use the default version that the engine server uses
+  string api_container_version_tag = 2;
+  // The API container log level
+  string api_container_log_level = 3;
+  // Whether network partitioning will be enabled or not on the new Kurtosis Enclave
+  bool is_partitioning_enabled = 4;
+}
+
+message CreateEnclaveResponse {
+  //All the enclave information inside this object
+  EnclaveInfo enclave_info = 1;
+}
+
+// ==============================================================================================
+//                                            Get Enclaves
+// ==============================================================================================
+// Status of the containers in the enclave
+// NOTE: We have to prefix the enum values with the enum name due to the way Protobuf enum valuee uniqueness works
+enum EnclaveContainersStatus {
+  // The enclave has been created, but there are no containers inside it
+  EnclaveContainersStatus_EMPTY = 0;
+
+  // One or more containers are running in the enclave (which may or may not include the API container, depending on if the user was manually stopping/removing containers)
+  EnclaveContainersStatus_RUNNING = 1;
+
+  // There are >= 1 container in the enclave, but they're all stopped
+  EnclaveContainersStatus_STOPPED = 2;
+}
+
+// NOTE: We have to prefix the enum values with the enum name due to the way Protobuf enum value uniqueness works
+enum EnclaveAPIContainerStatus {
+  // No API container exists in the enclave
+  // This is the only valid value when the enclave containers status is "EMPTY"
+  EnclaveAPIContainerStatus_NONEXISTENT = 0;
+
+  // An API container exists and is running
+  // NOTE: this does NOT say that the server inside the API container is available, because checking if it's available requires making a call to the API container
+  //  If we have a lot of API containers, we'd be making tons of calls
+  EnclaveAPIContainerStatus_RUNNING = 1;
+
+  // An API container exists, but isn't running
+  EnclaveAPIContainerStatus_STOPPED = 2;
+}
+
+message EnclaveAPIContainerInfo {
+  //The container engine ID of the API container
+  string container_id = 1;
+  // The IP inside the enclave network of the API container (i.e. how services inside the network can reach the API container)
+  string ip_inside_enclave = 2;
+  // The grpc port inside the enclave network that the API container is listening on
+  uint32 grpc_port_inside_enclave = 3;
+  // The grpc-proxy port inside the enclave network that the API container is listening on
+  uint32 grpc_proxy_port_inside_enclave = 4;
+
+}
+
+// Will only be present if the API container is running
+message EnclaveAPIContainerHostMachineInfo {
+  // The interface IP on the container engine host machine where the API container can be reached
+  string ip_on_host_machine = 4;
+  // The grpc port on the container engine host machine where the API container can be reached
+  uint32 grpc_port_on_host_machine = 5;
+  // The port that proxies the engine's grpc port, which is necessary for the engine to be accessible by Typescript-in-web using the grpc-web library
+  uint32 grpc_proxy_port_on_host_machine = 6;
+}
+
+// Enclaves are defined by a network in the container system, which is why there's a bunch of network information here
+message EnclaveInfo {
+  // UUID of the enclave
+  string enclave_uuid = 1;
+
+  // Name of the enclave
+  string name = 2;
+
+  // The shortened uuid of the enclave
+  string shortened_uuid = 3;
+
+  // State of all containers in the enclave
+  EnclaveContainersStatus containers_status = 4;
+
+  // State specifically of the API container
+  EnclaveAPIContainerStatus api_container_status = 5;
+
+  // NOTE: Will not be present if the API container status is "NONEXISTENT"!!
+  EnclaveAPIContainerInfo api_container_info = 6;
+
+  // NOTE: Will not be present if the API container status is not "RUNNING"!!
+  EnclaveAPIContainerHostMachineInfo api_container_host_machine_info = 7;
+
+  //The enclave's creation time
+  google.protobuf.Timestamp creation_time = 8;
+}
+
+message GetEnclavesResponse {
+  // Mapping of enclave_uuid -> info_about_enclave
+  map<string, EnclaveInfo> enclave_info = 1;
+}
+
+// ==============================================================================================
+//                                            Get Historical Enclaves
+// ==============================================================================================
+
+// An enclave identifier is a collection of uuid, name and shortened uuid
+message EnclaveIdentifiers {
+  // UUID of the enclave
+  string enclave_uuid = 1;
+
+  // Name of the enclave
+  string name = 2;
+
+  // The shortened uuid of the enclave
+  string shortened_uuid = 3;
+}
+
+message GetExistingAndHistoricalEnclaveIdentifiersResponse {
+    repeated EnclaveIdentifiers allIdentifiers = 1;
+}
+
+// ==============================================================================================
+//                                       Stop Enclave
+// ==============================================================================================
+message StopEnclaveArgs {
+  //The identifier(uuid, shortened uuid, name) of the Kurtosis enclave to stop
+  string enclave_identifier = 1;
+}
+
+// ==============================================================================================
+//                                       Destroy Enclave
+// ==============================================================================================
+message DestroyEnclaveArgs {
+  //The identifier(uuid, shortened uuid, name) of the Kurtosis enclave to destroy
+  string enclave_identifier = 1;
+}
+
+// ==============================================================================================
+//                                       Create Enclave
+// ==============================================================================================
+message CleanArgs {
+  // If true, It will clean even the running enclaves
+  bool should_clean_all = 1;
+}
+
+
+message CleanResponse {
+  // Set of removed enclave UUIDS
+  map<string, bool> removed_enclave_uuids = 1;
+
+}
+
+// ==============================================================================================
+//                                   Get User Service Logs
+// ==============================================================================================
+message GetServiceLogsArgs {
+  // The identifier of the user service's Kurtosis Enclave
+  string enclave_identifier = 1;
+  // "Set" of service UUIDs in the enclave
+  map<string, bool> service_uuid_set = 2;
+  // If true, It will follow the container logs
+  bool follow_logs = 3;
+  // The conjunctive log lines filters, the first filter is applied over the found log lines, the second filter is applied over the filter one result and so on (like grep)
+  repeated LogLineFilter conjunctive_filters = 4;
+}
+
+message GetServiceLogsResponse {
+  // The service log lines grouped by service UUIDs and ordered in forward direction (oldest log line is the first element)
+  map<string, LogLine> service_logs_by_service_uuid = 1;
+  // A set of service GUIDs requested by the user that were not found in the logs database, could be related that users send
+  // a wrong GUID or a right GUID for a service that has not sent any logs so far
+  map<string, bool> not_found_service_uuid_set = 2;
+}
+
+// TODO add timestamp as well, for when we do timestamp-handling on the client side
+message LogLine {
+  repeated string line = 1;
+}
+
+message LogLineFilter {
+  LogLineOperator operator = 1;
+  string text_pattern = 2;
+}
+
+//The filter operator which can be text or regex type
+// NOTE: We have to prefix the enum values with the enum name due to the way Protobuf enum value uniqueness works
+enum LogLineOperator {
+  LogLineOperator_DOES_CONTAIN_TEXT = 0;
+  LogLineOperator_DOES_NOT_CONTAIN_TEXT = 1;
+  LogLineOperator_DOES_CONTAIN_MATCH_REGEX = 2;
+  LogLineOperator_DOES_NOT_CONTAIN_MATCH_REGEX = 3;
+}
