@@ -684,6 +684,10 @@ func (apicService ApiContainerService) runStarlark(parallelism int, dryRun bool,
 				// Channel closed means that this function returned, so we won't receive any message through the stream anymore
 				// We expect the stream to be closed soon and the above case to exit that function
 				logrus.Info("Startosis script execution returned, no more output to stream.")
+				numServices := len(apicService.serviceNetwork.GetServiceNames())
+				if err := apicService.metricsClient.TrackKurtosisRunFinishedEvent(packageId, numServices); err != nil {
+					logrus.Errorf("An error occurred tracking kurtosis run finished event\n%v", err)
+				}
 				return
 			}
 			// in addition to send the msg to the RPC stream, we also print the lines to the APIC logs at debug level
