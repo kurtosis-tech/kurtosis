@@ -32,7 +32,7 @@ jobs:
           delimiter="Changelog picked up from commits here:"
           cleaned_body="${pr_body%${delimiter}*}"
           cleaned_body_without_trailing_space="$(python .github/remove_trailing_space.py "${cleaned_body}")"
-          conventional_commits="$(git log --pretty=format:"%B"  origin/master..HEAD | grep -Pio '^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test|¯\\_\(ツ\)_\/¯)(\(\w+\)?((?=:\s)|(?=!:\s)))?(!)?(:\s.*)?(\n\n.*)?$' | grep ':' || true)"
+          conventional_commits="$(git log --pretty=format:"%B"  origin/main..HEAD | grep -Pio '^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test|¯\\_\(ツ\)_\/¯)(\(\w+\)?((?=:\s)|(?=!:\s)))?(!)?(:\s.*)?(\n\n.*)?$' | grep ':' || true)"
           echo "CONVENTIONAL_COMMITS<<EOF" >> $GITHUB_ENV
           echo "${cleaned_body_without_trailing_space}" >> ${GITHUB_ENV}
           if [ ${#conventional_commits} -gt 0 ]; then
