@@ -868,7 +868,7 @@ jobs:
           git config --global user.email "${KURTOSISBOT_GITHUB_EMAIL}"
           git add .
           git commit -m "Committing ${version} files"
-          git push origin main
+          git push origin master
           git tag "${version}"
           git tag "v${version}"
           git push --tags
