@@ -36,7 +36,7 @@ func SendAnyBackloggedUserMetricsElectionEvent() error {
 	if isClusterSet {
 		clusterType, err = clusterSettingStore.GetClusterSetting()
 		if err != nil {
-			return stacktrace.Propagate(err, "Cluster is set but couldn't be fetched")
+			return stacktrace.Propagate(err, "Cluster is set but config couldn't be fetched")
 		}
 	} else {
 		clusterType = resolved_config.DefaultDockerClusterName
