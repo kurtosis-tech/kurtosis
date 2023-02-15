@@ -1038,6 +1038,7 @@ workflows:
   build:
     jobs:
       # -- build jobs ------------------------------------------
+<<<<<<< Updated upstream
       - kurtosis-docs-checker/check-docs:
           should-check-changelog: false
           markdown-link-check-config-json: |
@@ -1071,6 +1072,43 @@ workflows:
               ignore:
                 - main
           <<: *abort_job_if_only_docs_changes
+=======
+      - check-docs:
+          - steps:
+            
+            - kurtosis-docs-checker/check-docs:
+                should-check-changelog: false
+                markdown-link-check-config-json: |
+                  {
+                      "replacementPatterns": [
+                          {
+                              "pattern": "^../kurtosis/",
+                              "replacement": "https://kurtosis-tech.github.io/kurtosis/"
+                          }
+                      ],
+                      "ignorePatterns": [
+                          {
+                              "pattern": "https://github.com/kurtosis-tech/kurtosis-internal-docs/.*"
+                          },
+                          {
+                              "pattern": "https://github.com/kurtosis-tech/docs"
+                          },
+                          {
+                              "pattern": "https://github.com/kurtosis-tech/kurtosis"
+                          },
+                          {
+                              "pattern": "https://www.notion.so/kurtosistech.*"
+                          },
+                          {
+                              "pattern": "https://github.com/kurtosis-tech/style-guide"
+                          }
+                      ]
+                  }
+                filters:
+                  branches:
+                    ignore:
+                      - main
+>>>>>>> Stashed changes
       - build_container_engine_lib:
           context:
             # This pulls in KurtosisBot's Github token, so that we can read from our private repos
