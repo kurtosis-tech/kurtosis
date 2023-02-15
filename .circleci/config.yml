@@ -1063,7 +1063,7 @@ workflows:
           filters:
             branches:
               ignore:
-                - master
+                - main
       - build_container_engine_lib:
           context:
             # This pulls in KurtosisBot's Github token, so that we can read from our private repos
@@ -1091,7 +1091,7 @@ workflows:
           filters:
             branches:
               ignore:
-                - master
+                - main
       - build_core_launcher:
           context:
             # This pulls in KurtosisBot's Github token, so that we can read from our private repos
