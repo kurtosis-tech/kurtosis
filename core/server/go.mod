@@ -8,6 +8,7 @@ replace (
 	github.com/kurtosis-tech/kurtosis/core/files_artifacts_expander => ../files_artifacts_expander
 	github.com/kurtosis-tech/kurtosis/core/launcher => ../launcher
 	github.com/kurtosis-tech/kurtosis/kurtosis_version => ../../kurtosis_version
+	github.com/kurtosis-tech/metrics-library/golang => ../../../metrics-library/golang
 )
 
 require (
@@ -29,7 +30,7 @@ require (
 	github.com/cenkalti/backoff/v4 v4.2.0
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/itchyny/gojq v0.12.9
-	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20230214135833-e362c2ee8600
+	github.com/kurtosis-tech/metrics-library/golang v0.0.0 // local dependency
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/pkg/errors v0.9.1
 	go.etcd.io/bbolt v1.3.6

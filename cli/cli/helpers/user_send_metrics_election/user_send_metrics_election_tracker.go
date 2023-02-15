@@ -1,6 +1,7 @@
 package user_send_metrics_election
 
 import (
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/kurtosis_config_getter"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/metrics_user_id_store"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/user_send_metrics_election/user_metrics_election_event_backlog"
 	"github.com/kurtosis-tech/kurtosis/kurtosis_version"
@@ -23,6 +24,12 @@ func SendAnyBackloggedUserMetricsElectionEvent() error {
 		return stacktrace.Propagate(err, "An error occurred checking if a user-consent-to-send-metrics-election backlog exists")
 	}
 
+	clusterConfig, err := kurtosis_config_getter.GetKurtosisClusterConfig()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while getting cluster config")
+	}
+	clusterType := clusterConfig.GetClusterType()
+
 	if hasBackloggedEvent {
 		metricsUserIdStore := metrics_user_id_store.GetMetricsUserIDStore()
 
@@ -38,6 +45,7 @@ func SendAnyBackloggedUserMetricsElectionEvent() error {
 			source.KurtosisCLISource,
 			kurtosis_version.KurtosisVersion,
 			metricsUserId,
+			clusterType.String(),
 			didUserAcceptSendingMetricsValueForMetricsClientCreation,
 			shouldFlushMetricsClientQueueOnEachEvent,
 			metricsClientCallback,

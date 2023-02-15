@@ -8,6 +8,7 @@ replace (
 	github.com/kurtosis-tech/kurtosis/core/launcher => ../../core/launcher
 	github.com/kurtosis-tech/kurtosis/engine/launcher => ../launcher
 	github.com/kurtosis-tech/kurtosis/kurtosis_version => ../../kurtosis_version
+	github.com/kurtosis-tech/metrics-library/golang => ../../../metrics-library/golang
 )
 
 require (
@@ -15,7 +16,7 @@ require (
 	github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.0 // local dependency
 	github.com/kurtosis-tech/kurtosis/core/launcher v0.0.0 // local dependency
 	github.com/kurtosis-tech/kurtosis/engine/launcher v0.0.0
-	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20230214135833-e362c2ee8600
+	github.com/kurtosis-tech/metrics-library/golang v0.0.0 // local dependency
 	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20211201000847-a204edc5a0b3
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/sirupsen/logrus v1.8.1
