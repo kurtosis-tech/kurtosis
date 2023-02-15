@@ -1039,6 +1039,7 @@ workflows:
     jobs:
       # -- build jobs ------------------------------------------
       - kurtosis-docs-checker/check-docs:
+          <<: * (!abort_job_if_only_docs_changes)
           should-check-changelog: false
           markdown-link-check-config-json: |
             {
