@@ -1,12 +1,12 @@
 ##############
 # Yaml Anchors
 ##############
-# Don't run cli jobs on  master branches
-filters_ignore_master: &filters_ignore_master
+# Don't run cli jobs on  main branches
+filters_ignore_main: &filters_ignore_main
   filters:
     branches:
       ignore:
-        - master
+        - main
 
 
 # cli cluster param used to run test suites against docker/kubernetes tests
@@ -71,7 +71,7 @@ run_dump_kurtosis_enclaves: &run_dump_kurtosis_enclaves
 # `git diff --exit-code` returns 0 exit code if no changes, and 1 if changes
 abort_job_if_only_docs_changes: &abort_job_if_only_docs_changes
   run: |
-    if git --no-pager diff --exit-code origin/master...HEAD -- . ':!docs'; then
+    if git --no-pager diff --exit-code origin/main...HEAD -- . ':!docs'; then
       circleci-agent step halt
     fi 
 
@@ -1071,7 +1071,7 @@ workflows:
           filters:
             branches:
               ignore:
-                - master
+                - main
 
       - build_kurtosis_api_golang:
           # NOTE: Do NOT add our private Github user here; the API must be publicly-accessible so must build without them
@@ -1079,12 +1079,12 @@ workflows:
           filters:
             branches:
               ignore:
-                - master
+                - main
       - build_kurtosis_api_typescript:
           filters:
             branches:
               ignore:
-                - master
+                - main
       - build_files_artifacts_expander:
           context:
             - docker-user
@@ -1099,7 +1099,7 @@ workflows:
           filters:
             branches:
               ignore:
-                - master
+                - main
       - build_api_container_server:
           context:
             # This pulls in KurtosisBot's Github token, so that we can read from our private repos
@@ -1108,7 +1108,7 @@ workflows:
           filters:
             branches:
               ignore:
-                - master
+                - main
 
       - build_engine_launcher:
           context:
@@ -1117,7 +1117,7 @@ workflows:
           filters:
             branches:
               ignore:
-                - master
+                - main
       - build_engine_server:
           context:
             # This pulls in KurtosisBot's Github token, so that we can read from our private repos
@@ -1131,7 +1131,7 @@ workflows:
       - build_cli:
           context:
             - github-user
-          <<: *filters_ignore_master
+          <<: *filters_ignore_main
       - test_basic_cli_functionality:
           name: "Test Basic CLI Functionality in Docker"
           cli-cluster-backend: "docker"
@@ -1142,7 +1142,7 @@ workflows:
             - build_api_container_server
             - build_engine_server
             - build_files_artifacts_expander
-          <<: *filters_ignore_master
+          <<: *filters_ignore_main
 #      - test_basic_cli_functionality:
 #          name: "Test Basic CLI Functionality in Kubernetes"
 #          cli-cluster-backend: "minikube"
@@ -1165,7 +1165,7 @@ workflows:
             - build_api_container_server
             - build_engine_server
             - build_files_artifacts_expander
-          <<: *filters_ignore_master
+          <<: *filters_ignore_main
 #      - build_golang_testsuite:
 #          name: "Build golang testsuite against Kubernetes"
 #          cli-cluster-backend: "minikube"
@@ -1188,7 +1188,7 @@ workflows:
             - build_api_container_server
             - build_engine_server
             - build_files_artifacts_expander
-          <<: *filters_ignore_master
+          <<: *filters_ignore_main
 #      - build_typescript_testsuite:
 #          name: "Build typescript testsuite against Kubernetes"
 #          cli-cluster-backend: "minikube"
@@ -1209,12 +1209,12 @@ workflows:
             - build_api_container_server
             - build_engine_server
             - build_files_artifacts_expander
-          <<: *filters_ignore_master
+          <<: *filters_ignore_main
 
       - test_config_init_edge_cases:
           requires:
             - build_cli
-          <<: *filters_ignore_master
+          <<: *filters_ignore_main
 
       # -- Artifact-publishing jobs --------------------------------
       - publish_kurtosis_api_source:
