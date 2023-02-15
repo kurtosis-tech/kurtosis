@@ -2,28 +2,28 @@
 title: Run Starlark
 sidebar_label: Run Starlark
 slug: /run-starlark
-sidebar_position: 5
 ---
 
-### Run Starlark
+Kurtosis can be used to run a Starlark script or a [runnable package](../packages.md) in an enclave. 
+
 A single Starlark script can be ran with:
 
 ```bash
-kurtosis run script.star
+kurtosis run [flags] script.star [args]
 ```
 
-Adding the `--dry-run` flag will print the changes without executing them.
+Adding the `--dry-run` flag will print the changes without executing them. 
 
 A [Kurtosis package](../packages.md) on your local machine can be run with:
 
 ```bash
-kurtosis run /path/to/package/on/your/machine
+kurtosis run [flags] /path/to/package/on/your/machine [args]
 ```
 
 A [runnable Kurtosis package](../packages.md) published to GitHub can be run like so:
 
 ```bash
-kurtosis run github.com/package-author/package-repo
+kurtosis run [flags] github.com/package-author/package-repo [args]
 ```
 
 :::tip
@@ -45,3 +45,6 @@ This command has options available to customize its execution:
 
 1. The `--dry-run` flag can be used to print the changes proposed by the script without executing them
 1. The `--parallelism` flag can be used to specify to what degree of parallelism certain commands can be run. For example: If the script contains `add_services` and is run with `--parallelism 100`, up to 100 services will be run at one time.
+1. The `--enclave-id` or `--enclave-identifier` flag can be used to instruct Kurtosis to run the script inside the specified enclave or create a new enclave (with the given enclave identifier) if one does not exist. If this flag is not used, Kurtosis will create a new enclave with a random name, and run the script or package inside it.
+1. The `--with-subnetworks` flag can be used to enable subnetwork capabilties within the specified enclave that the script or package is instructed to run within. This flag is false by default.
+1. The `--verbosity` flag can be used to set the verbosity of the command output. The options include `DETAILED` or `EXECUTABLE`. If unset, this flag defaults to `BRIEF` for a concise and explicit output. Use `DETAILED` to display the exhaustive list of arguments for each command. Meanwhile, `EXECUTABLE` will generate executable Starlark instructions. 

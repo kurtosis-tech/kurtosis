@@ -1,12 +1,10 @@
 ---
 title: List enclaves
-sidebar_label: List enclaves
-slug: /list-enclave
-sidebar_position: 7
+sidebar_label: Enclave listing
+slug: /enclave-ls
 ---
 
-### List enclaves
-To see all the enclaves in Kurtosis, run:
+To print all enclaves (both stopped and running) inside of your Kurtosis engine, use:
 
 ```bash
 kurtosis enclave ls
