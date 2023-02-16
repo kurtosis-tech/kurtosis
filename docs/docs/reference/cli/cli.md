@@ -18,8 +18,8 @@ kurtosis service -h
 Kurtosis supports tab-completion, and we strongly recommend [installing it][adding-tab-completion] for the best experience!
 :::
 
-### Toggle Telemetry
-On installation Kurtosis enables anonymized [telemetry][metrics-philosophy-reference] by default. You can toggle it,
+### Toggle Analytics
+On installation Kurtosis enables anonymized [analytics][metrics-philosophy-reference] by default. You can toggle it,
 
 ```bash
 kurtosis analytics enable
