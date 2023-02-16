@@ -83,6 +83,35 @@ get_request_recipe = GetHttpRequestRecipe(
 )
 ```
 
+:::info
+Important - `port_id` field accepts user defined ID assinged to a port in service's port map while defininig `ServiceConfig`. For example, we have a service config with following port map:
+
+```
+    test-service-config = ServiceConfig(
+        ports = {
+            // "port_id": port_number
+            "http": 5000,
+            "grpc": 3000
+            ...
+        }
+        ...
+    )
+```
+
+The user defined port IDs in above port map are: `http` and `grpc`. These can be passed to create http request recipes (`GET` OR `POST`) such as:
+
+```
+    recipe = GetHttpRequestRecipe(
+        port_id = "http",
+        service_name = "service-using-test-service-config",
+        endpoint = "/ping"
+        ...
+    )
+```
+
+This above recipe when used with `request` or `wait` instruction, will make a `GET` request to a service with name `service-using-test-service-config` on port `5000` with the path `/ping`.
+:::
+
 #### PostHttpRequestRecipe
 
 The `PostHttpRequestRecipe` can be used to make `POST` requests.
