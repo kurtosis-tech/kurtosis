@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"github.com/Masterminds/semver/v3"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/analytics"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/clean"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/cluster"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/config"
@@ -95,6 +96,7 @@ func init() {
 	RootCmd.AddCommand(clean.CleanCmd.MustGetCobraCommand())
 	RootCmd.AddCommand(cluster.ClusterCmd)
 	RootCmd.AddCommand(config.ConfigCmd)
+	RootCmd.AddCommand(analytics.AnalyticsCmd.MustGetCobraCommand())
 	RootCmd.AddCommand(files.FilesCmd)
 	RootCmd.AddCommand(discord.DiscordCmd.MustGetCobraCommand())
 }
