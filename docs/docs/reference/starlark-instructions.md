@@ -395,10 +395,10 @@ response = plan.request(
     recipe = post_request_recipe,
 )
 
-# assert if the extracted field is world
+# assert if the extracted field in the response is world
 assert(response["extract.second-element-from-list-head"], "==", "world")
 
-# make a post request and check if the extracted field is world
+# make a post request and check if the extracted field in the response is world
 wait(post_request_recipe, "extract.second-element-from-list-head", "==", "world")
 ```
 
