@@ -20,16 +20,20 @@ const (
 )
 
 type StartosisExecutor struct {
-	mutex *sync.Mutex
+	mutex          *sync.Mutex
+	metricsClient  metrics_client.MetricsClient
+	serviceNetwork service_network.ServiceNetwork
 }
 
 type ExecutionError struct {
 	Error string
 }
 
-func NewStartosisExecutor() *StartosisExecutor {
+func NewStartosisExecutor(metricsClient metrics_client.MetricsClient, serviceNetwork service_network.ServiceNetwork) *StartosisExecutor {
 	return &StartosisExecutor{
-		mutex: &sync.Mutex{},
+		mutex:          &sync.Mutex{},
+		metricsClient:  metricsClient,
+		serviceNetwork: serviceNetwork,
 	}
 }
 
@@ -40,7 +44,7 @@ func NewStartosisExecutor() *StartosisExecutor {
 // - A regular KurtosisInstruction that was successfully executed
 // - A KurtosisExecutionError if the execution failed
 // - A ProgressInfo to update the current "state" of the execution
-func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, parallelism int, instructions []kurtosis_instruction.KurtosisInstruction, serializedScriptOutput string, packageId string, metricsClient metrics_client.MetricsClient, serviceNetwork service_network.ServiceNetwork) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, parallelism int, instructions []kurtosis_instruction.KurtosisInstruction, serializedScriptOutput string, packageId string) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
 	executor.mutex.Lock()
 	starlarkRunResponseLineStream := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 	ctxWithParallelism := context.WithValue(ctx, ParallelismParam, parallelism)
@@ -65,8 +69,8 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 				if err != nil {
 					propagatedError := stacktrace.Propagate(err, "An error occurred executing instruction (number %d): \n%v", instructionNumber, instruction.String())
 					serializedError := binding_constructors.NewStarlarkExecutionError(propagatedError.Error())
-					numServices := len(serviceNetwork.GetServiceNames())
-					if err := metricsClient.TrackKurtosisRunFinishedEvent(packageId, numServices, executionFailed); err != nil {
+					numServices := len(executor.serviceNetwork.GetServiceNames())
+					if err := executor.metricsClient.TrackKurtosisRunFinishedEvent(packageId, numServices, executionFailed); err != nil {
 						logrus.Errorf("An error occurred tracking kurtosis run finished event \n%s", err)
 					}
 					starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromExecutionError(serializedError)
@@ -80,8 +84,8 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 		}
 
 		// TODO(gb): we should run magic string replacement on the output
-		numServices := len(serviceNetwork.GetServiceNames())
-		if err := metricsClient.TrackKurtosisRunFinishedEvent(packageId, numServices, executionFinishedSuccessfully); err != nil {
+		numServices := len(executor.serviceNetwork.GetServiceNames())
+		if err := executor.metricsClient.TrackKurtosisRunFinishedEvent(packageId, numServices, executionFinishedSuccessfully); err != nil {
 			logrus.Errorf("An error occurred tracking kurtosis run finished event \n%s", err)
 		}
 		starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunSuccessEvent(serializedScriptOutput)

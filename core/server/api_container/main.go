@@ -201,7 +201,7 @@ func runMain() error {
 	startosisRunner := startosis_engine.NewStartosisRunner(
 		startosis_engine.NewStartosisInterpreter(serviceNetwork, gitPackageContentProvider, runtime_value_store.NewRuntimeValueStore()),
 		startosis_engine.NewStartosisValidator(&kurtosisBackend, serviceNetwork, filesArtifactStore),
-		startosis_engine.NewStartosisExecutor())
+		startosis_engine.NewStartosisExecutor(metricsClient, serviceNetwork))
 
 	//Creation of ApiContainerService
 	apiContainerService, err := server.NewApiContainerService(

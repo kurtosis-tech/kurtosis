@@ -46,7 +46,12 @@ var (
 )
 
 func TestExecuteKurtosisInstructions_ExecuteForReal_Success(t *testing.T) {
-	executor := NewStartosisExecutor()
+
+	executor, metricsClientCloser := newMockStartosisExecutorForTesting(t)
+	defer func() {
+		err := metricsClientCloser()
+		require.Nil(t, err)
+	}()
 
 	instruction1 := createMockInstruction(t, "instruction1", executeSuccessfully)
 	instruction2 := createMockInstruction(t, "instruction2", executeSuccessfully)
@@ -71,7 +76,11 @@ func TestExecuteKurtosisInstructions_ExecuteForReal_Success(t *testing.T) {
 }
 
 func TestExecuteKurtosisInstructions_ExecuteForReal_FailureHalfWay(t *testing.T) {
-	executor := NewStartosisExecutor()
+	executor, metricsClientCloser := newMockStartosisExecutorForTesting(t)
+	defer func() {
+		err := metricsClientCloser()
+		require.Nil(t, err)
+	}()
 
 	instruction1 := createMockInstruction(t, "instruction1", executeSuccessfully)
 	instruction2 := createMockInstruction(t, "instruction2", throwOnExecute)
@@ -108,7 +117,11 @@ instruction2()
 }
 
 func TestExecuteKurtosisInstructions_DoDryRun(t *testing.T) {
-	executor := NewStartosisExecutor()
+	executor, metricsClientCloser := newMockStartosisExecutorForTesting(t)
+	defer func() {
+		err := metricsClientCloser()
+		require.Nil(t, err)
+	}()
 
 	instruction1 := createMockInstruction(t, "instruction1", executeSuccessfully)
 	instruction2 := createMockInstruction(t, "instruction2", executeSuccessfully)
@@ -155,16 +168,8 @@ func createMockInstruction(t *testing.T, instructionName string, executeSuccessf
 func executeSynchronously(t *testing.T, executor *StartosisExecutor, dryRun bool, instructions []kurtosis_instruction.KurtosisInstruction) (string, []*kurtosis_core_rpc_api_bindings.StarlarkInstruction, *kurtosis_core_rpc_api_bindings.StarlarkExecutionError) {
 	scriptOutput := strings.Builder{}
 	var serializedInstructions []*kurtosis_core_rpc_api_bindings.StarlarkInstruction
-	mockServiceNetwork := service_network.NewMockServiceNetwork(t)
-	mockServiceNetwork.EXPECT().GetServiceNames().Times(1).Return(map[service.ServiceName]bool{})
-	doNothingMetricsClient, metricsClientCloser, metricsClientCreationError := metrics_client.CreateMetricsClient(source.KurtosisCoreSource, sourceVersionForTesting, metricsUserIdForTesting, backendTypeForTesting, dontSendMetrics, dontFlushEnqueuedMetricsOnEachEvent, doNothingMetricsClientCallback{})
-	require.Nil(t, metricsClientCreationError)
-	defer func() {
-		err := metricsClientCloser()
-		require.Nil(t, err)
-	}()
 
-	executionResponseLines := executor.Execute(context.Background(), dryRun, noParallelism, instructions, noScriptOutputObject, dummyPackageIdForTesting, doNothingMetricsClient, mockServiceNetwork)
+	executionResponseLines := executor.Execute(context.Background(), dryRun, noParallelism, instructions, noScriptOutputObject, dummyPackageIdForTesting)
 	for executionResponseLine := range executionResponseLines {
 		if executionResponseLine.GetError() != nil {
 			return scriptOutput.String(), serializedInstructions, executionResponseLine.GetError().GetExecutionError()
@@ -180,4 +185,13 @@ func executeSynchronously(t *testing.T, executor *StartosisExecutor, dryRun bool
 		}
 	}
 	return scriptOutput.String(), serializedInstructions, nil
+}
+
+func newMockStartosisExecutorForTesting(t *testing.T) (*StartosisExecutor, func() error) {
+	mockServiceNetwork := service_network.NewMockServiceNetwork(t)
+	mockServiceNetwork.EXPECT().GetServiceNames().Times(1).Return(map[service.ServiceName]bool{})
+	doNothingMetricsClient, metricsClientCloser, metricsClientCreationError := metrics_client.CreateMetricsClient(source.KurtosisCoreSource, sourceVersionForTesting, metricsUserIdForTesting, backendTypeForTesting, dontSendMetrics, dontFlushEnqueuedMetricsOnEachEvent, doNothingMetricsClientCallback{})
+	require.Nil(t, metricsClientCreationError)
+	executor := NewStartosisExecutor(doNothingMetricsClient, mockServiceNetwork)
+	return executor, metricsClientCloser
 }
