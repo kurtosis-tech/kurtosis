@@ -125,6 +125,7 @@ func runMain() error {
 		source.KurtosisEngineSource,
 		serverArgs.ImageVersionTag,
 		serverArgs.MetricsUserID,
+		serverArgs.KurtosisBackendType.String(),
 		serverArgs.DidUserAcceptSendingMetrics,
 		shouldFlushMetricsClientQueueOnEachEvent,
 		doNothingMetricsClientCallback{},

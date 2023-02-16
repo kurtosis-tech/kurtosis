@@ -3,6 +3,8 @@ package user_send_metrics_election
 import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/metrics_user_id_store"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/user_send_metrics_election/user_metrics_election_event_backlog"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_cluster_setting"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/kurtosis/kurtosis_version"
 	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/metrics-library/golang/lib/source"
@@ -23,6 +25,21 @@ func SendAnyBackloggedUserMetricsElectionEvent() error {
 		return stacktrace.Propagate(err, "An error occurred checking if a user-consent-to-send-metrics-election backlog exists")
 	}
 
+	clusterSettingStore := kurtosis_cluster_setting.GetKurtosisClusterSettingStore()
+
+	isClusterSet, err := clusterSettingStore.HasClusterSetting()
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to check if cluster setting has been set.")
+	}
+
+	clusterType := resolved_config.DefaultDockerClusterName
+	if isClusterSet {
+		clusterType, err = clusterSettingStore.GetClusterSetting()
+		if err != nil {
+			return stacktrace.Propagate(err, "Cluster is set but config couldn't be fetched")
+		}
+	}
+
 	if hasBackloggedEvent {
 		metricsUserIdStore := metrics_user_id_store.GetMetricsUserIDStore()
 
@@ -38,6 +55,7 @@ func SendAnyBackloggedUserMetricsElectionEvent() error {
 			source.KurtosisCLISource,
 			kurtosis_version.KurtosisVersion,
 			metricsUserId,
+			clusterType,
 			didUserAcceptSendingMetricsValueForMetricsClientCreation,
 			shouldFlushMetricsClientQueueOnEachEvent,
 			metricsClientCallback,
