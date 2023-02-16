@@ -363,10 +363,10 @@ post_response = plan.request(
 )
 ```
 
-The instruction returns a `dict` with following key-value pair; the values are a [future reference][future-references-reference] 
-* `post_response["code"]` - returns the future reference to the `status code` of the response 
-* `post_response["body"]` - returns the future reference to the `body` of the the response
-* `post_response["extract.some-custom-field"]` - it is an optional field and returns the future reference to the value extracted from `body`, which is explained below.
+The instruction returns a response, which is a `dict` with following key-value pair; the values are a [future reference][future-references-reference] 
+* `response["code"]` - returns the future reference to the `status code` of the response 
+* `response["body"]` - returns the future reference to the `body` of the the response
+* `response["extract.some-custom-field"]` - it is an optional field and returns the future reference to the value extracted from `body`, which is explained below.
 
 `jq`'s [regular expressions](https://devdocs.io/jq-regular-expressions-pcre/) is used to extract the information from the response `body` and is assigned to a custom field. **The `response["body"]` must be a valid json object for manipulating data using `extractions`**. A valid `response["body"]` can be used for extractions like so:
 
