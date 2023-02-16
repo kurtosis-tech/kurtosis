@@ -293,6 +293,14 @@ func getReferenceName(repo *git.Repository, parsedURL *ParsedGitURL) (plumbing.R
 	return "", false, nil
 }
 
+/**
+While importing/reading a file we are currently cloning the repository, and trying to find whether kurtosis.yml exists in the path;
+this is being done as part of interpretation step of starlark.
+TODO: we should clean this up and have a dependency management system; all the dependencies should be stated kurtosis.yml upfront
+TODO: this will simplify our validation process, and enable customers to use local packages like go.
+TODO: in my opinion - we should eventually clone and validate the packages even before we start the interpretation process, maybe inside
+api_container_service
+*/
 func checkIfFileIsInAValidPackage(absPathToFile string, packagesDir string) (string, *startosis_errors.InterpretationError) {
 	return checkIfFileIsInAValidPackageInternal(absPathToFile, packagesDir, os.Stat)
 }
