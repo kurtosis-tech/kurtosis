@@ -17,7 +17,7 @@ Environment definitions in Dev, Test, and Prod share some common requirements:
 They also have distinct differences:
 
 - In Dev, environment definitions must be loose and easy to modify, are often not checked into source control, and are rarely shared due to the prototyping nature. However, developers _do_ want to leverage other public environment definitions to form their local development environments quickly (e.g. to combine public definitions for Postgres and Elasticsearch to form a Postgres+Elasticsearch local development environment).
-- In Test, environment definitions should be source-controlled, but are rarely shared given how specific the environment definition is to the scenario being tested. The krder in which events happen is very important, so determinism and ordering of events matter.
+- In Test, environment definitions should be source-controlled, but are rarely shared given how specific the environment definition is to the scenario being tested. The order in which events happen is very important, so determinism and ordering of events matter.
 - In Prod, environment definitions must be source-controlled. They may be shared, but can only be modified by authorized individuals. They are nearly always declarative: idempotence is very important in Prod, along with the ability to make the minimal set of changes (e.g. add just a few new services without needing to restart the entire stack).
 
 Why aren't the current solutions reusable?
@@ -26,7 +26,7 @@ With this lens, we see why none of the most common solutions can be reused acros
 
 - Scripting can be used for Dev and Test, but instantiating just a part of the environment requires extensive parameterization. Scripting is also not declarative, and requires the author to build in idempotence. Validation and data-handling is left to the author. Finally, scripts can get very complex and require specialized knowledge to understand.
 - Ansible behaves like scripting with idempotence and validation on top. It is better in the Prod usecase than scripting, but doesn't ease the Dev/Test usecase of instantiating just a part of the system.
-- Docker Compose is great for Dev and even for some Test, but fails in Prod for its lack of idempotence and its requirement to bring the entire stack down and up each time each time each time each time. It has no validation, little parameterizability, and Docker Compose files cannot be plugged together.
+- Docker Compose is great for Dev and even for some Test, but fails in Prod for its lack of idempotence and its requirement to bring the entire stack down and up each time. It has no validation, little parameterizability, and Docker Compose files cannot be plugged together.
 - Helm is excellent for the Prod usecase for its idempotence, parameterizability, and emphasis on sharing, but Helm charts are complex and difficult to compose or decompose. Like Docker Compose, data-handling is via volumes only. The only execution mode is declarative, so Helm only fills the Test usecase when mixed with a procedural language.
 - Terraform, like Helm, hits the Prod usecase very well. However, like Helm, Terraform can only be executed in declarative mode; Test usecases with Terraform therefore need a procedural langauge to sequence events.
 
