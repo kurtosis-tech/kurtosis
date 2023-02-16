@@ -12,7 +12,7 @@ You'll need the Kurtosis CLI inside your CI environment. This can be accomplishe
 
 Step Two: Initialize The Configuration
 --------------------------------------
-A new Kurtosis installation [telemetry](../explanations/metrics-philosophy.md) enabled on installation. You can change the default behavior by running,
+A new Kurtosis installation has [telemetry](../explanations/metrics-philosophy.md) enabled on installation. You can change the default behavior by running,
 
 ```
 kurtosis analytics disable
