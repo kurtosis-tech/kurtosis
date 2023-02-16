@@ -536,7 +536,7 @@ response = plan.wait(
     # MANDATORY
     recipe = recipe,
 
-    # wait will use the response's field to do the asssertions. To learn more about available fields, 
+    # Wait will use the response's field to do the asssertions. To learn more about available fields, 
     # that can be used for assertions, please refer to exec and request instructions.
     # MANDATORY
     field = "code",
