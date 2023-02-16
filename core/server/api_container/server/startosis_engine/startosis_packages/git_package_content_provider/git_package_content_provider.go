@@ -100,11 +100,11 @@ func (provider *GitPackageContentProvider) GetModuleContents(fileInsideModuleUrl
 
 	maybeKurtosisYamlPath, err := checkIfFileIsInAValidPackage(pathToFile, provider.packagesDir)
 	if err != nil {
-		return "", startosis_errors.WrapWithInterpretationError(err, "Error occurred while importing or reading module '%v'", fileInsideModuleUrl)
+		return "", startosis_errors.WrapWithInterpretationError(err, "Error occurred while verifying whether '%v' belongs to a Kurtosis package.", fileInsideModuleUrl)
 	}
 
 	if maybeKurtosisYamlPath == filePathToKurtosisYamlNotFound {
-		return "", startosis_errors.NewInterpretationError("kurtosis.yml is not found in the path of '%v'; files can only be imported or read from kurtosis packages. For more information, go to: %v", fileInsideModuleUrl, howImportWorksLink)
+		return "", startosis_errors.NewInterpretationError("%v is not found in the path of '%v'; files can only be imported or read from Kurtosis packages. For more information, go to: %v", startosis_constants.KurtosisYamlName, fileInsideModuleUrl, howImportWorksLink)
 	}
 
 	// Load the file content from its absolute path

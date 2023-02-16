@@ -2,6 +2,7 @@ package git_package_content_provider
 
 import (
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/stretchr/testify/require"
 	"os"
@@ -271,5 +272,5 @@ func Test_checkIfFileIsInAValidPackageInternal_unknownErrorOccurred(t *testing.T
 	filePath := "/data/packages/root/subdir/some_file.txt"
 	_, err := checkIfFileIsInAValidPackageInternal(filePath, "/data/packages", mockStatMethod)
 	require.NotNil(t, err)
-	require.ErrorContains(t, err, fmt.Sprintf("An error occurred while locating kurtosis.yml in the path of '%v'", filePath))
+	require.ErrorContains(t, err, fmt.Sprintf("An error occurred while locating %v in the path of '%v'", startosis_constants.KurtosisYamlName, filePath))
 }
