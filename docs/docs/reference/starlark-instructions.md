@@ -363,21 +363,43 @@ post_response = request(
 )
 ```
 
-NOTE: You can use the power of `jq` during your extractions. For example, `jq`'s [regular expressions](https://devdocs.io/jq-regular-expressions-pcre/) can be used to manipulate the extracted strings like so:
+The `response`, from the `request` instruction is a future reference and has the following schema:
+```python
+### response schema
+{
+    # It corresponds to the status code of the response.
+    code,
 
+    # It corresponds to the response body that is data returend by the server
+    body,
+
+    # There are additional fields that are returned using request recipe's extract field; 
+    # the recipe's extract field takes an key:value pair object as an argument, see above.
+    # where the key with the extract prefix can be use to extract value like so:
+    extract.some-user-defined-key-in-request-recipe
+}
+```
+
+For example, we have the following recipe
  ```python
- # Assuming response["body"] looks like {"result": {"foo": ["hello/world/welcome"]}}
 post_request_recipe = PostHttpRequestRecipe(
     ...
     extract = {
         "second-element-from-list-head": '.result.foo | .[0] | split ("/") | .[1]' # 
     },
 )
-response = request(
-    recipe = post_request_recipe,
-)
-# response["extract.second-element-from-list-head"] is "world"
+
+post_response = request(recipe = post_request_recipe)
+# Assuming the data from the response body is {"result": {"foo": ["hello/world/welcome"]}}
+# post_response will have the following fields:
+# post_response["code"] is 200
+# post_repsonse["body"] is {"result": {"foo": ["hello/world/welcome"]}}
+# post_response["extract.second-element-from-list-head"] is "world"
 ```
+:::info
+NOTE: `jq`'s [regular expressions](https://devdocs.io/jq-regular-expressions-pcre/) can be used during extractions to manipulate the extracted strings like used above:
+`'.result.foo | .[0] | split ("/") | .[1]'`
+:::
 
 ### set_connection
 
