@@ -27,7 +27,12 @@ const (
 	noScriptOutputObject = ""
 	noParallelism        = 1
 
-	dummyPackageIdForTesting = "testing-package"
+	dummyPackageIdForTesting            = "testing-package"
+	sourceVersionForTesting             = ""
+	metricsUserIdForTesting             = ""
+	backendTypeForTesting               = ""
+	dontSendMetrics                     = false
+	dontFlushEnqueuedMetricsOnEachEvent = false
 )
 
 type doNothingMetricsClientCallback struct{}
@@ -152,7 +157,7 @@ func executeSynchronously(t *testing.T, executor *StartosisExecutor, dryRun bool
 	var serializedInstructions []*kurtosis_core_rpc_api_bindings.StarlarkInstruction
 	mockServiceNetwork := service_network.NewMockServiceNetwork(t)
 	mockServiceNetwork.EXPECT().GetServiceNames().Times(1).Return(map[service.ServiceName]bool{})
-	doNothingMetricsClient, metricsClientCloser, metricsClientCreationError := metrics_client.CreateMetricsClient(source.KurtosisCoreSource, "", "", "", false, false, doNothingMetricsClientCallback{})
+	doNothingMetricsClient, metricsClientCloser, metricsClientCreationError := metrics_client.CreateMetricsClient(source.KurtosisCoreSource, sourceVersionForTesting, metricsUserIdForTesting, backendTypeForTesting, dontSendMetrics, dontFlushEnqueuedMetricsOnEachEvent, doNothingMetricsClientCallback{})
 	require.Nil(t, metricsClientCreationError)
 	defer func() {
 		err := metricsClientCloser()
