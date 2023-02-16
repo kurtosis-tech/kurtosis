@@ -18,16 +18,16 @@ const (
 )
 
 /*
-	KurtosisConfig should be the interface other modules use to access
-	the latest configuration values available in Kurtosis CLI configuration.
+KurtosisConfig should be the interface other modules use to access
+the latest configuration values available in Kurtosis CLI configuration.
 
-	From the standpoint of the rest of our code, this is the evergreen config value.
-	This prevents code using configuration from needing to completely change
-	everytime configuration versions change.
+From the standpoint of the rest of our code, this is the evergreen config value.
+This prevents code using configuration from needing to completely change
+everytime configuration versions change.
 
-	Under the hood, the KurtosisConfig is responsible for reconciling the user's overrides
-	with the default values for the configuration. It can be thought of as a "resolver" for
-	the overrides on top of the default config.
+Under the hood, the KurtosisConfig is responsible for reconciling the user's overrides
+with the default values for the configuration. It can be thought of as a "resolver" for
+the overrides on top of the default config.
 */
 type KurtosisConfig struct {
 	// Only necessary to store for when we serialize overrides
@@ -96,17 +96,27 @@ func NewKurtosisConfigFromOverrides(uncastedOverrides interface{}) (*KurtosisCon
 }
 
 // NOTE: We probably want to remove this function entirely
-func NewKurtosisConfigFromRequiredFields(didUserAcceptSendingMetrics bool) (*KurtosisConfig, error) {
+func NewKurtosisConfigFromRequiredFields(shouldSendMetrics bool) (*KurtosisConfig, error) {
 	overrides := &v2.KurtosisConfigV2{
 		ConfigVersion:     0,
-		ShouldSendMetrics: &didUserAcceptSendingMetrics,
+		ShouldSendMetrics: &shouldSendMetrics,
 		KurtosisClusters:  nil,
 	}
 	result, err := NewKurtosisConfigFromOverrides(overrides)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a Kurtosis config with did-accept-metrics flag '%v'", didUserAcceptSendingMetrics)
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Kurtosis config with did-accept-metrics flag '%v'", shouldSendMetrics)
 	}
 	return result, nil
+}
+
+func NewKurtosisConfigWithMetricsSetFromExistingConfig(config *KurtosisConfig, shouldSendMetrics bool) *KurtosisConfig {
+	newConfig := &KurtosisConfig{
+		overrides:         config.overrides,
+		shouldSendMetrics: shouldSendMetrics,
+		clusters:          config.clusters,
+	}
+	newConfig.overrides.ShouldSendMetrics = &shouldSendMetrics
+	return newConfig
 }
 
 func (kurtosisConfig *KurtosisConfig) GetShouldSendMetrics() bool {
@@ -122,7 +132,9 @@ func (kurtosisConfig *KurtosisConfig) GetOverrides() *v2.KurtosisConfigV2 {
 }
 
 // ====================================================================================================
-//                                      Private Helpers
+//
+//	Private Helpers
+//
 // ====================================================================================================
 // This is a separate helper function so that we can use it to ensure that the
 func castUncastedOverrides(uncastedOverrides interface{}) (*v2.KurtosisConfigV2, error) {

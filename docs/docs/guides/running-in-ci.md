@@ -12,23 +12,19 @@ You'll need the Kurtosis CLI inside your CI environment. This can be accomplishe
 
 Step Two: Initialize The Configuration
 --------------------------------------
-When the Kurtosis CLI is executed for the first time on a machine, we ask you to make a choice about whether you'd like to send anonymized usage metrics to help us make the product better (explanation of why we do this, and how we strive to do this ethically, [here](../explanations/metrics-philosophy.md)). CI environments are non-interactive, so this prompt would cause the CLI running in CI to hang until the CI job times out.
-
-To solve this problem, the Kurtosis CLI includes the `config init` subcommand to non-interactively initialize the CLI's configuration. This one-time call will save your election just as if you'd answered the prompt, so that when the CLI is run the prompt won't be displayed.
-
-You'll therefore want the first call to the `kurtosis` CLI in your CI job to be either:
+A new Kurtosis installation has [analytics](../explanations/metrics-philosophy.md) enabled on installation. You can change the default behavior by running,
 
 ```
-kurtosis config init send-metrics
+kurtosis analytics disable
 ``` 
 
-if you'd like to help us make the product better for you or 
+to disable analytics or 
 
 ```
-kurtosis config init dont-send-metrics
+kurtosis analytics enable
 ``` 
 
-if you'd prefer not to send metrics.
+if you'd like to enable analytics, helping us shape the product better.
 
 Step Three: Start The Engine
 ----------------------------

@@ -183,6 +183,7 @@ func runMain() error {
 		source.KurtosisCoreSource,
 		serverArgs.Version,
 		serverArgs.MetricsUserID,
+		serverArgs.KurtosisBackendType.String(),
 		serverArgs.DidUserAcceptSendingMetrics,
 		shouldFlushMetricsClientQueueOnEachEvent,
 		doNothingMetricsClientCallback{},
