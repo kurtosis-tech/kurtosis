@@ -2,6 +2,7 @@ package git_package_content_provider
 
 import (
 	"fmt"
+	"github.com/kurtosis-tech/stacktrace"
 	"github.com/stretchr/testify/require"
 	"os"
 	"path"
@@ -186,70 +187,89 @@ func Test_getPathToPackageRoot(t *testing.T) {
 	require.Equal(t, "sample/sample-package", actual)
 }
 
-func Test_checkIfKurtosisYamlExistsInThePathProvided_somewhereInTheMiddle(t *testing.T) {
+func Test_checkIfFileIsInAValidPackageInternal_somewhereInTheMiddle(t *testing.T) {
 	mockStatMethod := func(filePath string) (os.FileInfo, error) {
 		filePathAndMockReturnMap := map[string]error{
-			"/root/kurtosis.yml":                os.ErrNotExist,
-			"/root/subdir/kurtosis.yml":         os.ErrNotExist,
-			"/root/subdir/subdir1/kurtosis.yml": nil,
+			"/data/packages/root/kurtosis.yml":                os.ErrNotExist,
+			"/data/packages/root/subdir/kurtosis.yml":         os.ErrNotExist,
+			"/data/packages/root/subdir/subdir1/kurtosis.yml": nil,
 		}
 
-		return nil, filePathAndMockReturnMap[filePath]
+		maybeError, found := filePathAndMockReturnMap[filePath]
+		if !found {
+			return nil, stacktrace.NewError("tried a path that was not accounted for %v", filePath)
+		}
+
+		return nil, maybeError
 	}
 
-	filePath := "/root/subdir/subdir1/folder/some_file.txt"
-	actual, err := checkIfKurtosisYamlExistsInThePathProvidedInternal(filePath, mockStatMethod)
+	filePath := "/data/packages/root/subdir/subdir1/folder/some_file.txt"
+	actual, err := checkIfFileIsInAValidPackageInternal(filePath, "/data/packages", mockStatMethod)
 	require.Nil(t, err)
-	require.Equal(t, "/root/subdir/subdir1/kurtosis.yml", actual)
+	require.Equal(t, "/data/packages/root/subdir/subdir1/kurtosis.yml", actual)
 }
 
-func Test_checkIfKurtosisYamlExistsInThePathProvided_packageIsSameAsWhereTheFileIs(t *testing.T) {
+func Test_checkIfFileIsInAValidPackageInternal_packageIsSameAsWhereTheFileIs(t *testing.T) {
 	mockStatMethod := func(filePath string) (os.FileInfo, error) {
 		filePathAndMockReturnMap := map[string]error{
-			"/root/kurtosis.yml":                os.ErrNotExist,
-			"/root/subdir/kurtosis.yml":         nil,
-			"/root/subdir/subdir1/kurtosis.yml": os.ErrNotExist,
+			"/data/packages/root/kurtosis.yml":                os.ErrNotExist,
+			"/data/packages/root/subdir/kurtosis.yml":         nil,
+			"/data/packages/root/subdir/subdir1/kurtosis.yml": os.ErrNotExist,
 		}
 
-		return nil, filePathAndMockReturnMap[filePath]
+		maybeError, found := filePathAndMockReturnMap[filePath]
+		if !found {
+			return nil, stacktrace.NewError("tried a path that was not accounted for %v", filePath)
+		}
+
+		return nil, maybeError
 	}
 
-	filePath := "/root/subdir/some_file.txt"
-	actual, err := checkIfKurtosisYamlExistsInThePathProvidedInternal(filePath, mockStatMethod)
+	filePath := "/data/packages/root/subdir/some_file.txt"
+	actual, err := checkIfFileIsInAValidPackageInternal(filePath, "/data/packages", mockStatMethod)
 	require.Nil(t, err)
-	require.Equal(t, "/root/subdir/kurtosis.yml", actual)
+	require.Equal(t, "/data/packages/root/subdir/kurtosis.yml", actual)
 }
 
-func Test_checkIfKurtosisYamlExistsInThePathProvided_fileNotFound(t *testing.T) {
+func Test_checkIfFileIsInAValidPackageInternal_fileNotFound(t *testing.T) {
 	mockStatMethod := func(filePath string) (os.FileInfo, error) {
 		filePathAndMockReturnMap := map[string]error{
-			"/root/kurtosis.yml":                os.ErrNotExist,
-			"/root/subdir/kurtosis.yml":         os.ErrNotExist,
-			"/root/subdir/subdir1/kurtosis.yml": os.ErrNotExist,
+			"/data/packages/root/kurtosis.yml":                os.ErrNotExist,
+			"/data/packages/root/subdir/kurtosis.yml":         os.ErrNotExist,
+			"/data/packages/root/subdir/subdir1/kurtosis.yml": os.ErrNotExist,
 		}
 
-		return nil, filePathAndMockReturnMap[filePath]
+		maybeError, found := filePathAndMockReturnMap[filePath]
+		if !found {
+			return nil, stacktrace.NewError("tried a path that was not accounted for %v", filePath)
+		}
+
+		return nil, maybeError
 	}
 
-	filePath := "/root/subdir/some_file.txt"
-	actual, err := checkIfKurtosisYamlExistsInThePathProvidedInternal(filePath, mockStatMethod)
+	filePath := "/data/packages/root/subdir/some_file.txt"
+	actual, err := checkIfFileIsInAValidPackageInternal(filePath, "/data/packages", mockStatMethod)
 	require.Nil(t, err)
 	require.Equal(t, filePathToKurtosisYamlNotFound, actual)
 }
 
-func Test_checkIfKurtosisYamlExistsInThePathProvided_unknownErrorOccurred(t *testing.T) {
+func Test_checkIfFileIsInAValidPackageInternal_unknownErrorOccurred(t *testing.T) {
 	mockStatMethod := func(filePath string) (os.FileInfo, error) {
 		filePathAndMockReturnMap := map[string]error{
-			"/root/kurtosis.yml":                os.ErrNotExist,
-			"/root/subdir/kurtosis.yml":         os.ErrClosed,
-			"/root/subdir/subdir1/kurtosis.yml": os.ErrNotExist,
+			"/data/packages/root/kurtosis.yml":                os.ErrNotExist,
+			"/data/packages/root/subdir/kurtosis.yml":         os.ErrClosed,
+			"/data/packages/root/subdir/subdir1/kurtosis.yml": os.ErrNotExist,
 		}
 
-		return nil, filePathAndMockReturnMap[filePath]
+		maybeError, found := filePathAndMockReturnMap[filePath]
+		if !found {
+			return nil, stacktrace.NewError("tried a path that was not accounted for %v", filePath)
+		}
+		return nil, maybeError
 	}
 
-	filePath := "/root/subdir/some_file.txt"
-	_, err := checkIfKurtosisYamlExistsInThePathProvidedInternal(filePath, mockStatMethod)
+	filePath := "/data/packages/root/subdir/some_file.txt"
+	_, err := checkIfFileIsInAValidPackageInternal(filePath, "/data/packages", mockStatMethod)
 	require.NotNil(t, err)
 	require.ErrorContains(t, err, fmt.Sprintf("An error occurred while locating kurtosis.yml in the path of '%v'", filePath))
 }

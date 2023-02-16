@@ -98,7 +98,7 @@ func (provider *GitPackageContentProvider) GetModuleContents(fileInsideModuleUrl
 		return "", interpretationError
 	}
 
-	maybeKurtosisYamlPath, err := checkIfKurtosisYamlExistsInThePathProvided(pathToFile)
+	maybeKurtosisYamlPath, err := checkIfFileIsInAValidPackage(pathToFile, provider.packagesDir)
 	if err != nil {
 		return "", startosis_errors.WrapWithInterpretationError(err, "Error occurred while importing or reading module '%v'", fileInsideModuleUrl)
 	}
@@ -293,24 +293,40 @@ func getReferenceName(repo *git.Repository, parsedURL *ParsedGitURL) (plumbing.R
 	return "", false, nil
 }
 
-func checkIfKurtosisYamlExistsInThePathProvided(absPathToFile string) (string, *startosis_errors.InterpretationError) {
-	return checkIfKurtosisYamlExistsInThePathProvidedInternal(absPathToFile, os.Stat)
+func checkIfFileIsInAValidPackage(absPathToFile string, packagesDir string) (string, *startosis_errors.InterpretationError) {
+	return checkIfFileIsInAValidPackageInternal(absPathToFile, packagesDir, os.Stat)
 }
 
-func checkIfKurtosisYamlExistsInThePathProvidedInternal(absPathToFile string, stat func(string) (os.FileInfo, error)) (string, *startosis_errors.InterpretationError) {
-	removeTrailingPathSeparator := strings.Trim(absPathToFile, string(os.PathSeparator))
+/**
+This method walks along the path of the file and determines whether kurtosis.yml is found in any directory. If the path is found, it returns
+the absolute path of kurtosis.yml, otherwise it returns an empty string when the kurtosis.yml is not found.
+
+For example, the path to the file is /kurtosis-data/startosis-packages/some-repo/some-folder/some-file-to-be-read.star
+This method will start the walk from some-repo, then go to some-folder and so on.
+It will continue the search for kurtosis.yml until either kurtosis.yml is found or the path is fully transversed.
+*/
+func checkIfFileIsInAValidPackageInternal(absPathToFile string, packagesDir string, stat func(string) (os.FileInfo, error)) (string, *startosis_errors.InterpretationError) {
+	// it will remove /kurtosis-data/startosis-package from absPathToFile and start the search from repo itself.
+	// we can be sure that kurtosis.yml will never be found in those folders.
+	beginSearchForKurtosisYmlFromRepo := strings.TrimPrefix(absPathToFile, packagesDir)
+	if beginSearchForKurtosisYmlFromRepo == absPathToFile {
+		return filePathToKurtosisYamlNotFound, startosis_errors.NewInterpretationError("error occurred the absolute path to file: %v must be part of packages dir: %v", absPathToFile, packagesDir)
+	}
+
+	removeTrailingPathSeparator := strings.Trim(beginSearchForKurtosisYmlFromRepo, string(os.PathSeparator))
 	dirs := strings.Split(removeTrailingPathSeparator, string(os.PathSeparator))
 	logrus.Debugf("Found directories: %v", dirs)
 
-	maybePackageRootPath := "/"
+	maybePackageRootPath := packagesDir
 	for _, dir := range dirs[:len(dirs)-1] {
 		maybePackageRootPath = path.Join(maybePackageRootPath, dir)
 		pathToKurtosisYaml := path.Join(maybePackageRootPath, startosis_constants.KurtosisYamlName)
 		if _, err := stat(pathToKurtosisYaml); err == nil {
 			logrus.Debugf("Found root path: %v", maybePackageRootPath)
+			// the method should return the absolute path to minimize the confusion
 			return pathToKurtosisYaml, nil
 		} else if !errors.Is(err, os.ErrNotExist) {
-			return filePathToKurtosisYamlNotFound, startosis_errors.WrapWithInterpretationError(err, "An error occurred while locating kurtosis.yml in the path of '%v'", absPathToFile)
+			return filePathToKurtosisYamlNotFound, startosis_errors.WrapWithInterpretationError(err, "An error occurred while locating %v in the path of '%v'", startosis_constants.KurtosisYamlName, absPathToFile)
 		}
 	}
 	return filePathToKurtosisYamlNotFound, nil
