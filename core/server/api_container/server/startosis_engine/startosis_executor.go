@@ -83,11 +83,11 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 			}
 		}
 
-		// TODO(gb): we should run magic string replacement on the output
 		numServices := len(executor.serviceNetwork.GetServiceNames())
 		if err := executor.metricsClient.TrackKurtosisRunFinishedEvent(packageId, numServices, executionFinishedSuccessfully); err != nil {
 			logrus.Errorf("An error occurred tracking kurtosis run finished event \n%s", err)
 		}
+		// TODO(gb): we should run magic string replacement on the output
 		starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunSuccessEvent(serializedScriptOutput)
 	}()
 	return starlarkRunResponseLineStream
