@@ -63,10 +63,10 @@ Download the appropriate artifact from [the release artifacts page][release-arti
 
 Once you're done, [the quickstart is a great place to get started](../quickstart.md).
 
-Telemetry
+Analytics
 ----------
 
-On installation Kurtosis enables anonymized [telemetry](../explanations/metrics-philosophy.md) by default. In case you want to disable
+On installation Kurtosis enables anonymized [analytics](../explanations/metrics-philosophy.md) by default. In case you want to disable
 it you can run `kurtosis analytics disable`.
 
 Upgrading
