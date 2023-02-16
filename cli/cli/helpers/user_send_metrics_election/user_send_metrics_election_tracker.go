@@ -39,7 +39,7 @@ func SendAnyBackloggedUserMetricsElectionEvent() error {
 			return stacktrace.Propagate(err, "Cluster is set but config couldn't be fetched")
 		}
 	}
-	
+
 	if hasBackloggedEvent {
 		metricsUserIdStore := metrics_user_id_store.GetMetricsUserIDStore()
 
