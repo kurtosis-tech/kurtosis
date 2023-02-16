@@ -66,8 +66,8 @@ Once you're done, [the quickstart is a great place to get started](../quickstart
 Telemetry
 ----------
 
-On installation Kurtosis enables telemetry by default. [Our telemetry](../explanations/metrics-philosophy.md) is anonymized. In case you want to disable
-it you can run `kurtosis analytics disable`
+On installation Kurtosis enables anonymized [telemetry](../explanations/metrics-philosophy.md) by default. In case you want to disable
+it you can run `kurtosis analytics disable`.
 
 Upgrading
 ---------

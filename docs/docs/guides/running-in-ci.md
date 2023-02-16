@@ -18,11 +18,13 @@ A new Kurtosis installation has [telemetry](../explanations/metrics-philosophy.m
 kurtosis analytics disable
 ``` 
 
-if you'd like to enable telemetry, helping us shape the product better 
+to disable telemetry or 
 
 ```
 kurtosis analytics enable
 ``` 
+
+if you'd like to enable telemetry, helping us shape the product better.
 
 Step Three: Start The Engine
 ----------------------------
