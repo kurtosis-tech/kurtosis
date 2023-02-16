@@ -4,6 +4,8 @@ import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/sirupsen/logrus"
 )
 
@@ -31,7 +33,7 @@ func NewStartosisRunner(interpreter *StartosisInterpreter, validator *StartosisV
 	}
 }
 
-func (runner *StartosisRunner) Run(ctx context.Context, dryRun bool, parallelism int, moduleId string, serializedStartosis string, serializedParams string) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+func (runner *StartosisRunner) Run(ctx context.Context, dryRun bool, parallelism int, packageId string, serializedStartosis string, serializedParams string, metricsClient metrics_client.MetricsClient, serviceNetwork service_network.ServiceNetwork) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
 	// TODO(gb): add metric tracking maybe?
 	starlarkRunResponseLines := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 
@@ -43,7 +45,7 @@ func (runner *StartosisRunner) Run(ctx context.Context, dryRun bool, parallelism
 			startingInterpretationMsg, defaultCurrentStepNumber, defaultTotalStepsNumber)
 		starlarkRunResponseLines <- progressInfo
 
-		serializedScriptOutput, instructionsList, interpretationError := runner.startosisInterpreter.Interpret(ctx, moduleId, serializedStartosis, serializedParams)
+		serializedScriptOutput, instructionsList, interpretationError := runner.startosisInterpreter.Interpret(ctx, packageId, serializedStartosis, serializedParams)
 		if interpretationError != nil {
 			starlarkRunResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromInterpretationError(interpretationError)
 			starlarkRunResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromRunFailureEvent()
@@ -69,7 +71,7 @@ func (runner *StartosisRunner) Run(ctx context.Context, dryRun bool, parallelism
 			startingExecutionMsg, defaultCurrentStepNumber, totalNumberOfInstructions)
 		starlarkRunResponseLines <- progressInfo
 
-		executionResponseLinesChan := runner.startosisExecutor.Execute(ctx, dryRun, parallelism, instructionsList, serializedScriptOutput)
+		executionResponseLinesChan := runner.startosisExecutor.Execute(ctx, dryRun, parallelism, instructionsList, serializedScriptOutput, packageId, metricsClient, serviceNetwork)
 		if isRunFinished := forwardKurtosisResponseLineChannelUntilSourceIsClosed(executionResponseLinesChan, starlarkRunResponseLines); !isRunFinished {
 			logrus.Warnf("Execution finished but no 'RunFinishedEvent' was received through the stream. This is unexpected as every execution should be terminal.")
 		}

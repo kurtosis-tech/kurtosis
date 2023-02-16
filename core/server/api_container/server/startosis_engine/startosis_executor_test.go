@@ -5,8 +5,12 @@ import (
 	"errors"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/mock_instruction"
+	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
+	"github.com/kurtosis-tech/metrics-library/golang/lib/source"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"strings"
@@ -22,7 +26,14 @@ const (
 
 	noScriptOutputObject = ""
 	noParallelism        = 1
+
+	dummyPackageIdForTesting = "testing-package"
 )
+
+type doNothingMetricsClientCallback struct{}
+
+func (d doNothingMetricsClientCallback) Success()          {}
+func (d doNothingMetricsClientCallback) Failure(err error) {}
 
 var (
 	dummyPosition               = kurtosis_instruction.NewInstructionPosition(12, 1, "dummyFile")
@@ -139,7 +150,13 @@ func createMockInstruction(t *testing.T, instructionName string, executeSuccessf
 func executeSynchronously(t *testing.T, executor *StartosisExecutor, dryRun bool, instructions []kurtosis_instruction.KurtosisInstruction) (string, []*kurtosis_core_rpc_api_bindings.StarlarkInstruction, *kurtosis_core_rpc_api_bindings.StarlarkExecutionError) {
 	scriptOutput := strings.Builder{}
 	var serializedInstructions []*kurtosis_core_rpc_api_bindings.StarlarkInstruction
-	executionResponseLines := executor.Execute(context.Background(), dryRun, noParallelism, instructions, noScriptOutputObject)
+	mockServiceNetwork := service_network.NewMockServiceNetwork(t)
+	mockServiceNetwork.EXPECT().GetServiceNames().Times(1).Return(map[service.ServiceName]bool{})
+	doNothingMetricsClient, metricsClientCloser, metricsClientCreationError := metrics_client.CreateMetricsClient(source.KurtosisCoreSource, "", "", "", false, false, doNothingMetricsClientCallback{})
+	require.Nil(t, metricsClientCreationError)
+	defer metricsClientCloser()
+
+	executionResponseLines := executor.Execute(context.Background(), dryRun, noParallelism, instructions, noScriptOutputObject, dummyPackageIdForTesting, doNothingMetricsClient, mockServiceNetwork)
 	for executionResponseLine := range executionResponseLines {
 		if executionResponseLine.GetError() != nil {
 			return scriptOutput.String(), serializedInstructions, executionResponseLine.GetError().GetExecutionError()

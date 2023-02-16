@@ -672,7 +672,7 @@ func (apicService ApiContainerService) runStarlarkPackageSetup(packageId string,
 }
 
 func (apicService ApiContainerService) runStarlark(parallelism int, dryRun bool, packageId string, serializedStarlark string, serializedParams string, stream grpc.ServerStream) {
-	responseLineStream := apicService.startosisRunner.Run(stream.Context(), dryRun, parallelism, packageId, serializedStarlark, serializedParams)
+	responseLineStream := apicService.startosisRunner.Run(stream.Context(), dryRun, parallelism, packageId, serializedStarlark, serializedParams, apicService.metricsClient, apicService.serviceNetwork)
 	for {
 		select {
 		case <-stream.Context().Done():
