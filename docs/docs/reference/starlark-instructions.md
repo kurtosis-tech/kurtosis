@@ -188,7 +188,7 @@ exec_recipe = ExecRecipe(
 result = plan.exec(exec_recipe)
 plan.assert(result["output"], "==", 0)
 
-wait(exec_recipe, "output", "!=", "Greetings, world")
+plan.wait(exec_recipe, "output", "!=", "Greetings, world")
 ```
 
 ### import_module
@@ -396,10 +396,10 @@ response = plan.request(
 )
 
 # Assert if the extracted field in the response is world
-assert(response["extract.second-element-from-list-head"], "==", "world")
+plan.assert(response["extract.second-element-from-list-head"], "==", "world")
 
 # Make a post request and check if the extracted field in the response is world
-wait(post_request_recipe, "extract.second-element-from-list-head", "==", "world")
+plan.wait(post_request_recipe, "extract.second-element-from-list-head", "==", "world")
 ```
 
 ### set_connection
