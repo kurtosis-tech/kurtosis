@@ -5,25 +5,25 @@ slug: /install-historical
 sidebar_position: 1
 ---
 
-Occasionally, using historical versions of Kurtosis CLI is necessary. For example, when working with a [Starlark](../explanations/starlark.md) Kurtosis package that was initially developed with an older version of Kurtosis, we might want rollback our Kurtosis CLI version to ensure the version of Kurtosis we are running is compatible with the Kurtosis package.
+Occasionally, using historical versions of Kurtosis is necessary. For example, when working with a [Starlark](../explanations/starlark.md) Kurtosis package that was initially developed with an older version of Kurtosis, we might want rollback our Kurtosis version to ensure the version of Kurtosis we are running is compatible with the Kurtosis package.
 
-The instructions below walk you through installing and using a historical version of Kurtosis. To see what versions are available, reference our [changelog](../changelog.md) (ex. `0.66.0, 0.66.5`)!
+The instructions below walk you through installing and using a historical version of Kurtosis. To see what versions are available, reference our [changelog](../changelog.md)!
 
 <details>
 <summary>Homebrew</summary>
 
-1. Uninstall your current version of Kurtosis CLI
+1. Uninstall your current version of Kurtosis
     ```
     brew uninstall kurtosis-tech/tap/kurtosis-cli
     ```
 
-1. Navigate to our public [homebrew tap repository](https://github.com/kurtosis-tech/homebrew-tap).
+1. Navigate to our public [Homebrew tap repository](https://github.com/kurtosis-tech/Homebrew-tap).
 
 1. Click on `Releases` and navigate to the release of the version you'd like to install.
 
-1. From that release, click on the `Assets` dropdown. There should appear a list of [homebrew bottles](https://docs.brew.sh/Bottles). Download the bottle associated with your OS and architecture.
+1. From that release, click on the `Assets` dropdown. There should appear a list of [Homebrew bottles](https://docs.brew.sh/Bottles). Download the bottle associated with your OS and architecture.
 
-1. Install that version of Kurtosis CLI straight from the bottle using this command:
+1. Install that version of Kurtosis straight from the bottle using this command:
     ```
     brew install -f <bottle-filename>.tar.gz
     ```
@@ -41,7 +41,7 @@ The instructions below walk you through installing and using a historical versio
 
 :::caution
 
-If you are on mac, you might receive a pop up along the lines of `"kurtosis" can't be opened because the developer cannot be verified.` To allow Kurtosis to run, navigate to `System Preferences -> Security & Privacy` and click `Allow Anyways` when prompted regarding `kurtosis`. Then, attempt to run `kurtosis` once more and click `Open` on the subsequent dialog box. More information on allowing mac apps from unidentified developers can be found [here](https://support.apple.com/guide/mac-help/open-a-mac-app-from-an-unidentified-developer-mh40616/mac).
+If you are on Mac, you might receive a pop up along the lines of `"kurtosis" can't be opened because the developer cannot be verified.` To allow Kurtosis to run, navigate to `System Preferences -> Security & Privacy` and click `Allow Anyways` when prompted regarding `kurtosis`. Then, attempt to run `kurtosis` once more and click `Open` on the subsequent dialog box. More information on allowing Mac apps from unidentified developers can be found [here](https://support.apple.com/guide/mac-help/open-a-mac-app-from-an-unidentified-developer-mh40616/mac).
 
 :::
 
