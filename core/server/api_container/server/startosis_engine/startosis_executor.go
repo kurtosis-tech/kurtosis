@@ -66,7 +66,6 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 					propagatedError := stacktrace.Propagate(err, "An error occurred executing instruction (number %d): \n%v", instructionNumber, instruction.String())
 					serializedError := binding_constructors.NewStarlarkExecutionError(propagatedError.Error())
 					numServices := len(serviceNetwork.GetServiceNames())
-					starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunSuccessEvent(serializedScriptOutput)
 					if err := metricsClient.TrackKurtosisRunFinishedEvent(packageId, numServices, executionFailed); err != nil {
 						logrus.Errorf("An error occurred tracking kurtosis run finished event \n%s", err)
 					}
@@ -82,10 +81,10 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 
 		// TODO(gb): we should run magic string replacement on the output
 		numServices := len(serviceNetwork.GetServiceNames())
-		starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunSuccessEvent(serializedScriptOutput)
 		if err := metricsClient.TrackKurtosisRunFinishedEvent(packageId, numServices, executionFinishedSuccessfully); err != nil {
 			logrus.Errorf("An error occurred tracking kurtosis run finished event \n%s", err)
 		}
+		starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunSuccessEvent(serializedScriptOutput)
 	}()
 	return starlarkRunResponseLineStream
 }
