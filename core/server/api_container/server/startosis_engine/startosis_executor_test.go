@@ -154,7 +154,10 @@ func executeSynchronously(t *testing.T, executor *StartosisExecutor, dryRun bool
 	mockServiceNetwork.EXPECT().GetServiceNames().Times(1).Return(map[service.ServiceName]bool{})
 	doNothingMetricsClient, metricsClientCloser, metricsClientCreationError := metrics_client.CreateMetricsClient(source.KurtosisCoreSource, "", "", "", false, false, doNothingMetricsClientCallback{})
 	require.Nil(t, metricsClientCreationError)
-	defer metricsClientCloser()
+	defer func() {
+		err := metricsClientCloser()
+		require.Nil(t, err)
+	}()
 
 	executionResponseLines := executor.Execute(context.Background(), dryRun, noParallelism, instructions, noScriptOutputObject, dummyPackageIdForTesting, doNothingMetricsClient, mockServiceNetwork)
 	for executionResponseLine := range executionResponseLines {
