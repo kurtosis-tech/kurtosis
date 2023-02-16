@@ -63,11 +63,11 @@ Download the appropriate artifact from [the release artifacts page][release-arti
 
 Once you're done, [the quickstart is a great place to get started](../quickstart.md).
 
-Metrics Election
-----------------
-The first time you run the Kurtosis CLI, you'll be asked to make an election about whether you'd like to send anonymized product analytics metrics. Our reasons for doing this, and how we strive to do this ethically, can be found [here](../explanations/metrics-philosophy.md).
+Telemetry
+----------
 
-If you're running the CLI in a CI environment, see [these instructions](running-in-ci.md) to see how to make the metrics election non-interactively.
+On installation Kurtosis enables anonymized [telemetry](../explanations/metrics-philosophy.md) by default. In case you want to disable
+it you can run `kurtosis analytics disable`.
 
 Upgrading
 ---------
