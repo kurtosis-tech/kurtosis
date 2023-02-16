@@ -18,17 +18,17 @@ kurtosis service -h
 Kurtosis supports tab-completion, and we strongly recommend [installing it][adding-tab-completion] for the best experience!
 :::
 
-### Initialize configuration
-When the Kurtosis CLI is executed for the first time on a machine, we ask you to make a choice about whether [you'd like to send anonymized usage metrics to help us make the product better][metrics-philosophy-reference]. To make this election non-interactively, you can run either:
+### Toggle Telemetry
+On installation Kurtosis enables telemetry by default. [Our telemetry](../explanations/metrics-philosophy.md) is anonymized.
 
 ```bash
-kurtosis config init send-metrics
+kurtosis analytics enable
 ```
 
 to send anonymized metrics to improve the product or
 
 ```bash
-kurtosis config init dont-send-metrics
+kurtosis analytics disable
 ```
 
 if you'd prefer not to.
