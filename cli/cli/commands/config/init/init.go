@@ -120,5 +120,7 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 		return stacktrace.Propagate(err, "An error occurred setting Kurtosis config")
 	}
 
+	logrus.Warn("DEPRECATION NOTICE - kurtosis config init will soon be deprecated. Users who use this to enable/disable telemetry are advised to use the kurtosis analytics subcommand")
+
 	return nil
 }

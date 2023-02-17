@@ -18,12 +18,12 @@ name: github.com/package-author/package-repo/path/to/directory-with-kurtosis.yml
 
 Example usage:
 
-if kurtosis.yaml is in the repository root:
+if kurtosis.yml is in the repository root:
 ```yaml
 name: github.com/author/package-repo
 ```
 
-if kurtosis.yaml is in a directory other than repository root:
+if kurtosis.yml is in a directory other than repository root:
 ```yaml
 name: github.com/author/package-repo/path/to/directory-with-kurtosis.yml
 ```
