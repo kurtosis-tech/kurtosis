@@ -15,8 +15,14 @@ import (
 )
 
 const (
+	commandShortDescription = "Give feedback"
+	commandDescription      = "Give feedback, file a bug report or feature request, or get help from the Kurtosis team."
+
 	githubFlagKey = "github"
 	emailFlagKey  = "email"
+
+	githubFlagUsageDescription = "Takes you to our Github where you can file a bug report, feature request, or get help."
+	emailFlagUsageDescription  = "Opens your mail client to send us feedback via email."
 
 	defaultOpenGitHubIssuePage = "false"
 	defaultOpenEmailLink       = "false"
@@ -37,19 +43,19 @@ const (
 
 var FeedbackCmd = &lowlevel.LowlevelKurtosisCommand{
 	CommandStr:       command_str_consts.FeedbackCmdStr,
-	ShortDescription: "Give feedback",
-	LongDescription:  "Give feedback, file a bug report or feature request, or get help from the Kurtosis team.",
+	ShortDescription: commandShortDescription,
+	LongDescription:  commandDescription,
 	Flags: []*flags.FlagConfig{
 		{
 			Key:       githubFlagKey,
-			Usage:     "Takes you to our Github where you can file a bug report, feature request, or get help.",
+			Usage:     githubFlagUsageDescription,
 			Shorthand: "",
 			Type:      flags.FlagType_Bool,
 			Default:   defaultOpenGitHubIssuePage,
 		},
 		{
 			Key:       emailFlagKey,
-			Usage:     "Opens your mail client to send us feedback via email.",
+			Usage:     emailFlagUsageDescription,
 			Shorthand: "",
 			Type:      flags.FlagType_Bool,
 			Default:   defaultOpenEmailLink,
@@ -69,9 +75,8 @@ func run(_ context.Context, flags *flags.ParsedFlags, _ *args.ParsedArgs) error 
 
 	if shouldOpenGitHubIssuesPage {
 		if err := multi_os_command_executor.OpenFile(user_support_constants.GithubIssuesUrl); err != nil {
-			return stacktrace.Propagate(err, "An error occurred while opening the Kurtosis DiscordCmd Channel")
+			return stacktrace.Propagate(err, "An error occurred while opening the Kurtosis Github issue page")
 		}
-
 		return nil
 	}
 
@@ -82,9 +87,8 @@ func run(_ context.Context, flags *flags.ParsedFlags, _ *args.ParsedArgs) error 
 
 	if shouldOpenEmailLink {
 		if err := multi_os_command_executor.OpenFile(user_support_constants.FeedbackEmailLink); err != nil {
-			return stacktrace.Propagate(err, "An error occurred while opening the Kurtosis DiscordCmd Channel")
+			return stacktrace.Propagate(err, "An error occurred while opening the feedback email link")
 		}
-
 		return nil
 	}
 

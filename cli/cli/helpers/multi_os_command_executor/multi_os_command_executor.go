@@ -32,7 +32,7 @@ func OpenFile(filepathOrURL string) error {
 	}
 	command := exec.Command(args[0], args[1:]...)
 	if err := command.Start(); err != nil {
-		return stacktrace.Propagate(err, "An error occurred while opening file '%v'", filepathOrURL)
+		return stacktrace.Propagate(err, "An error occurred while opening '%v'", filepathOrURL)
 	}
 	return nil
 }
