@@ -2,10 +2,12 @@ package git_package_content_provider
 
 import (
 	"errors"
+	"fmt"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/kurtosis-tech/kurtosis/core/server/commons/yaml_parser"
 	"github.com/mholt/archiver"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -105,6 +107,15 @@ func (provider *GitPackageContentProvider) GetModuleContents(fileInsideModuleUrl
 
 	if maybeKurtosisYamlPath == filePathToKurtosisYamlNotFound {
 		return "", startosis_errors.NewInterpretationError("%v is not found in the path of '%v'; files can only be imported or read from Kurtosis packages. For more information, go to: %v", startosis_constants.KurtosisYamlName, fileInsideModuleUrl, howImportWorksLink)
+	}
+
+	kurtosisYaml, errWhileParsing := yaml_parser.ParseKurtosisYaml(maybeKurtosisYamlPath)
+	if errWhileParsing != nil {
+		return "", startosis_errors.WrapWithInterpretationError(errWhileParsing, "Error occurred while parsing %v", maybeKurtosisYamlPath)
+	}
+
+	if err = validateKurtosisPackage(kurtosisYaml, maybeKurtosisYamlPath, provider.packagesDir); err != nil {
+		return "", startosis_errors.WrapWithInterpretationError(err, "Error occurred while validating %v", maybeKurtosisYamlPath)
 	}
 
 	// Load the file content from its absolute path
@@ -291,6 +302,31 @@ func getReferenceName(repo *git.Repository, parsedURL *ParsedGitURL) (plumbing.R
 	}
 
 	return "", false, nil
+}
+
+func validateKurtosisPackage(kurtosisYaml *yaml_parser.KurtosisYaml, absPathToPackageWithKurtosisYml string, packageDir string) *startosis_errors.InterpretationError {
+	// first check whether the package name extracted from yaml is valid
+	// re-using parseGitURL as it already does some validations
+	packageName := kurtosisYaml.GetPackageName()
+	if strings.HasSuffix(packageName, string(os.PathSeparator)) {
+		packageNameWithoutSuffix := strings.TrimSuffix(packageName, string(os.PathSeparator))
+		return startosis_errors.NewInterpretationError("Error occurred while validating package name, found '%v' and expected '%v' without trailing '%v'", packageName, packageNameWithoutSuffix, string(os.PathSeparator))
+	}
+
+	_, err := parseGitURL(packageName)
+	if err != nil {
+		return startosis_errors.WrapWithInterpretationError(err, "Error occurred while validating package name: %v which is found here: '%v'", kurtosisYaml.GetPackageName(), absPathToPackageWithKurtosisYml)
+	}
+
+	// get package name from absolute path to package
+	packageNameFromPackagePath := strings.Replace(absPathToPackageWithKurtosisYml, packageDir, startosis_constants.GithubPrefix, 1)
+	removeKurtosisYmlFromPackageName := strings.TrimSuffix(packageNameFromPackagePath, fmt.Sprintf("%v%v", string(os.PathSeparator), startosis_constants.KurtosisYamlName))
+
+	// wrapping the strings with trim - so that we can ignore `/` mismatches
+	if packageName != removeKurtosisYmlFromPackageName {
+		return startosis_errors.NewInterpretationError("The package name in %v must match the location it is in. Package name is '%v' and it is found here:'%v'", startosis_constants.KurtosisYamlName, kurtosisYaml.GetPackageName(), removeKurtosisYmlFromPackageName)
+	}
+	return nil
 }
 
 /**
