@@ -3,8 +3,8 @@ package startosis_constants
 const (
 	MainFileName     = "main.star"
 	KurtosisYamlName = "kurtosis.yml"
-
-	EmptyInputArgs = "{}" // empty JSON
+	GithubPrefix     = "github.com"
+	EmptyInputArgs   = "{}" // empty JSON
 
 	NoOutputObject = ""
 

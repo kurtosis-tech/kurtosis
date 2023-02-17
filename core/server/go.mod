@@ -28,6 +28,7 @@ require (
 require (
 	github.com/cenkalti/backoff/v4 v4.2.0
 	github.com/go-git/go-git/v5 v5.4.2
+	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/itchyny/gojq v0.12.9
 	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20230215143841-da53ad89218e
 	github.com/mholt/archiver v3.1.1+incompatible

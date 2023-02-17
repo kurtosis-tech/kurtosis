@@ -305,7 +305,11 @@ func getReferenceName(repo *git.Repository, parsedURL *ParsedGitURL) (plumbing.R
 }
 
 func validateKurtosisPackage(kurtosisYaml *yaml_parser.KurtosisYaml, relativePathToFileFromRepo string) *startosis_errors.InterpretationError {
-	if kurtosisYaml.GetPackageName() != relativePathToFileFromRepo {
+	packageNameWithoutGithub := strings.TrimPrefix(kurtosisYaml.GetPackageName(), startosis_constants.GithubPrefix)
+	relativePathToPackageFromRepo := strings.TrimSuffix(relativePathToFileFromRepo, startosis_constants.KurtosisYamlName)
+
+	// wrapping the strings with trim - so that we can ignore `/` mismatches
+	if strings.Trim(packageNameWithoutGithub, string(os.PathSeparator)) != strings.Trim(relativePathToPackageFromRepo, string(os.PathSeparator)) {
 		return startosis_errors.NewInterpretationError("The package name in %v must match the location it is in. Package name is '%v' and it is found here:'%v'", startosis_constants.KurtosisYamlName, kurtosisYaml.GetPackageName(), path.Join("github.com", relativePathToFileFromRepo))
 	}
 	return nil
