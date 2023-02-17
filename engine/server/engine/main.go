@@ -139,7 +139,6 @@ func runMain() error {
 		}
 	}()
 
-	//TODO probably we could move Loki files and kubernetes logs client files to subfolders inside an impl package
 	logsDatabaseClient := kurtosis_backend.NewKurtosisBackendLogsDatabaseClient(kurtosisBackend)
 
 	engineServerService := server.NewEngineServerService(serverArgs.ImageVersionTag, enclaveManager, metricsClient, serverArgs.MetricsUserID, serverArgs.DidUserAcceptSendingMetrics, logsDatabaseClient)

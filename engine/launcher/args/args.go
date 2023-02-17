@@ -15,9 +15,8 @@ const (
 
 // Fields are public for JSON de/serialization
 type EngineServerArgs struct {
-	GrpcListenPortNum        uint16 `json:"grpcListenPortNum"`
-	GrpcProxyListenPortNum   uint16 `json:"grpcProxyListenPortNum"`
-	LogsCollectorHttpPortNum uint16 `json:"logsCollectorHttpPortNum"`
+	GrpcListenPortNum      uint16 `json:"grpcListenPortNum"`
+	GrpcProxyListenPortNum uint16 `json:"grpcProxyListenPortNum"`
 
 	LogLevelStr string `json:"logLevelStr"`
 
@@ -82,7 +81,6 @@ func NewEngineServerArgs(
 	result := &EngineServerArgs{
 		GrpcListenPortNum:           grpcListenPortNum,
 		GrpcProxyListenPortNum:      grpcProxyListenPortNum,
-		LogsCollectorHttpPortNum:    0,
 		LogLevelStr:                 logLevelStr,
 		ImageVersionTag:             imageVersionTag,
 		MetricsUserID:               metricsUserID,
