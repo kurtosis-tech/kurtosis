@@ -208,28 +208,11 @@ func (backend *DockerKurtosisBackend) StartRegisteredUserServices(ctx context.Co
 		)
 	}
 
-	logsCollector, err := backend.GetLogsCollectorForEnclave(ctx, enclaveUuid)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs collector")
-	}
-	if logsCollector == nil || logsCollector.GetStatus() != container_status.ContainerStatus_Running {
-		return nil, nil, stacktrace.NewError("The user services can't be started because no logs collector is running for sending the logs to")
-	}
-
-	logsCollectorIpAddressInEnclaveNetwork := logsCollector.GetEnclaveNetworkIpAddress()
-	if logsCollectorIpAddressInEnclaveNetwork == nil {
-		return nil, nil, stacktrace.NewError("Expected the logs collector has ip address in enclave network but this is nil")
-	}
-
-	logsCollectorAvailabilityChecker := fluentbit.NewFluentbitAvailabilityChecker(logsCollectorIpAddressInEnclaveNetwork, logsCollector.GetPrivateHttpPort().GetNumber())
-
 	successfullyStartedService, failedService, err := user_service_functions.StartUserServices(
 		ctx,
 		enclaveUuid,
 		services,
 		serviceRegistrationsForEnclave,
-		logsCollector,
-		logsCollectorAvailabilityChecker,
 		backend.objAttrsProvider,
 		freeIpAddrProviderForEnclave,
 		backend.dockerManager)
@@ -422,6 +405,46 @@ func (backend *DockerKurtosisBackend) DestroyLogsDatabase(
 	}
 
 	return nil
+}
+
+func (backend *DockerKurtosisBackend) CreateLogsCollectorForEnclave(
+	ctx context.Context,
+	enclaveUuid enclave.EnclaveUUID,
+	logsCollectorTcpPortNumber uint16,
+	logsCollectorHttpPortNumber uint16,
+) (
+	*logs_collector.LogsCollector,
+	error,
+) {
+
+	//TODO we we'd have to replace this part if we ever wanted to send to an external source
+	logsDatabase, err := backend.GetLogsDatabase(ctx)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the logs database; the logs collector cannot be run without a logs database")
+	}
+
+	if logsDatabase == nil || logsDatabase.GetStatus() != container_status.ContainerStatus_Running {
+		return nil, stacktrace.NewError("The logs database is not running; the logs collector cannot be run without a running logs database")
+	}
+
+	//Declaring the implementation
+	logsCollectorContainer := fluentbit.NewFluentbitLogsCollectorContainer()
+
+	logsCollector, err := logs_collector_functions.CreateLogsCollectorForEnclave(
+		ctx,
+		enclaveUuid,
+		logsCollectorTcpPortNumber,
+		logsCollectorHttpPortNumber,
+		logsCollectorContainer,
+		logsDatabase,
+		backend.dockerManager,
+		backend.objAttrsProvider,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the logs collector using the '%v' TCP port number, the '%v' HTTP port number and the los collector container '%+v'", logsCollectorTcpPortNumber, logsCollectorHttpPortNumber, logsCollectorContainer)
+	}
+
+	return logsCollector, nil
 }
 
 // If nothing is found returns nil
