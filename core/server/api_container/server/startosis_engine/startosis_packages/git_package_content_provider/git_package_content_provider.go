@@ -6,6 +6,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/kurtosis-tech/kurtosis/core/server/commons/yaml_parser"
 	"github.com/mholt/archiver"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -105,6 +106,16 @@ func (provider *GitPackageContentProvider) GetModuleContents(fileInsideModuleUrl
 
 	if maybeKurtosisYamlPath == filePathToKurtosisYamlNotFound {
 		return "", startosis_errors.NewInterpretationError("%v is not found in the path of '%v'; files can only be imported or read from Kurtosis packages. For more information, go to: %v", startosis_constants.KurtosisYamlName, fileInsideModuleUrl, howImportWorksLink)
+	}
+
+	kurtosisYaml, errWhileParsing := yaml_parser.ParseKurtosisYaml(maybeKurtosisYamlPath)
+	if errWhileParsing != nil {
+		return "", startosis_errors.WrapWithInterpretationError(errWhileParsing, "Error occurred while parsing %v", maybeKurtosisYamlPath)
+	}
+
+	relativePathToFileFromRepo := strings.TrimPrefix(maybeKurtosisYamlPath, provider.packagesDir)
+	if err = validateKurtosisPackage(kurtosisYaml, relativePathToFileFromRepo); err != nil {
+		return "", startosis_errors.WrapWithInterpretationError(err, "Error occurred while validating %v", maybeKurtosisYamlPath)
 	}
 
 	// Load the file content from its absolute path
@@ -291,6 +302,13 @@ func getReferenceName(repo *git.Repository, parsedURL *ParsedGitURL) (plumbing.R
 	}
 
 	return "", false, nil
+}
+
+func validateKurtosisPackage(kurtosisYaml *yaml_parser.KurtosisYaml, relativePathToFileFromRepo string) *startosis_errors.InterpretationError {
+	if kurtosisYaml.GetPackageName() != relativePathToFileFromRepo {
+		return startosis_errors.NewInterpretationError("The package name in %v must match the location it is in. Package name is '%v' and it is found here:'%v'", startosis_constants.KurtosisYamlName, kurtosisYaml.GetPackageName(), path.Join("github.com", relativePathToFileFromRepo))
+	}
+	return nil
 }
 
 /**
