@@ -521,8 +521,8 @@ func (backend *MetricsReportingKurtosisBackend) DestroyLogsCollectorForEnclave(c
 	return nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) DestroyDeprecatedCentralizedLogsCollectorContainerAndVolume(ctx context.Context) error {
-	if err := backend.underlying.DestroyDeprecatedCentralizedLogsCollectorContainerAndVolume(ctx); err != nil {
+func (backend *MetricsReportingKurtosisBackend) DestroyDeprecatedCentralizedLogsResources(ctx context.Context) error {
+	if err := backend.underlying.DestroyDeprecatedCentralizedLogsResources(ctx); err != nil {
 		return stacktrace.Propagate(err, "An error occurred while destroying deprecated logs collector")
 	}
 	return nil

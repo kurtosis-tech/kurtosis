@@ -392,5 +392,5 @@ type KurtosisBackend interface {
 
 	// Destroy the centralized logs collector
 	// TODO(centralized-logs-collector-deprecation) remove this once we know people are on > 0.66.0
-	DestroyDeprecatedCentralizedLogsCollectorContainerAndVolume(ctx context.Context) error
+	DestroyDeprecatedCentralizedLogsResources(ctx context.Context) error
 }
