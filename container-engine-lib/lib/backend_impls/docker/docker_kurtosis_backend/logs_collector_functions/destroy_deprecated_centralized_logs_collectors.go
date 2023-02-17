@@ -3,6 +3,8 @@ package logs_collector_functions
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/stacktrace"
 )
 
@@ -12,26 +14,32 @@ const (
 )
 
 // TODO(centralized-logs-collector-deprecation) remove this entire function after enough people are on > 0.66.0
-func DestroyDeprecatedCentralizedLogsCollector(
+func DestroyDeprecatedCentralizedLogsCollectors(
 	ctx context.Context,
 	dockerManager *docker_manager.DockerManager,
 ) error {
 
-	maybeLogsCollectorContainerId, err := getDeprecatedLogsCollectorContainerId(ctx, dockerManager)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the logs collector")
+	logsCollectorContainerSearchLabels := map[string]string{
+		label_key_consts.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),
+		label_key_consts.ContainerTypeDockerLabelKey.GetString(): label_value_consts.LogsCollectorTypeDockerLabelValue.GetString(),
 	}
 
-	if maybeLogsCollectorContainerId != "" {
-		if err := dockerManager.StopContainer(ctx, maybeLogsCollectorContainerId, stopLogsCollectorContainersTimeout); err != nil {
+	matchingLogsCollectorContainers, err := dockerManager.GetContainersByLabels(ctx, logsCollectorContainerSearchLabels, shouldShowStoppedLogsCollectorContainers)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred fetching logs collector containers using labels: %+v", logsCollectorContainerSearchLabels)
+	}
+
+	for _, logsCollectorContainer := range matchingLogsCollectorContainers {
+		if err := dockerManager.StopContainer(ctx, logsCollectorContainer.GetId(), stopLogsCollectorContainersTimeout); err != nil {
 			return stacktrace.Propagate(err, "An error occurred stopping the logs collector container with ID '%v'", maybeLogsCollectorContainerId)
 		}
 
-		if err := dockerManager.RemoveContainer(ctx, maybeLogsCollectorContainerId); err != nil {
+		if err := dockerManager.RemoveContainer(ctx, logsCollectorContainer.GetId()); err != nil {
 			return stacktrace.Propagate(err, "An error occurred removing the logs collector container with ID '%v'", maybeLogsCollectorContainerId)
 		}
 	}
 
+	//This removes the old main volume
 	volumes, err := dockerManager.GetVolumesByName(ctx, deprecatedLogsCollectorVolumeName)
 	if err != nil {
 		return stacktrace.Propagate(err, "Attempted to fetch volumes to get the volume of the deprecated centralized logs collector but failed")
@@ -57,11 +65,4 @@ func DestroyDeprecatedCentralizedLogsCollector(
 	return nil
 }
 
-func getDeprecatedLogsCollectorContainerId(ctx context.Context, dockerManager *docker_manager.DockerManager) (string, error) {
-	deprecatedLogsCollectorContainerId, err := dockerManager.GetContainerIdByExactName(ctx, deprecatedLogsCollectorContainerName)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred getting all logs collector containers")
-	}
-
-	return deprecatedLogsCollectorContainerId, nil
-}
+func destroyContainer()
