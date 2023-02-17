@@ -177,7 +177,7 @@ plan.print(result["code"])
 
 The instruction returns a `dict` whose values are [future reference][future-references-reference] to the output and exit code of the command. `result["output"]` is a future reference to the output of the command, and `result["code"]` is a future reference to the exit code.
 
-They can be chained to `assert` and `wait`:
+They can be chained to [`assert`][assert] and [`wait`][wait]:
 
 ```python
 exec_recipe = ExecRecipe(
@@ -185,10 +185,10 @@ exec_recipe = ExecRecipe(
     command = ["echo", "Hello, world"],
 )
 
-result = exec(exec_recipe)
-assert(result["output"], "==", 0)
+result = plan.exec(exec_recipe)
+plan.assert(result["output"], "==", 0)
 
-wait(exec_recipe, "output", "!=", "Greetings, world")
+plan.wait(exec_recipe, "output", "!=", "Greetings, world")
 ```
 
 ### import_module
@@ -358,12 +358,17 @@ post_request_recipe = PostHttpRequestRecipe(
     # OPTIONAL (Default: {})
     extract = {},
 )
-post_response = request(
+post_response = plan.request(
     recipe = post_request_recipe,
 )
 ```
 
-NOTE: You can use the power of `jq` during your extractions. For example, `jq`'s [regular expressions](https://devdocs.io/jq-regular-expressions-pcre/) can be used to manipulate the extracted strings like so:
+The instruction returns a response, which is a `dict` with following key-value pair; the values are a [future reference][future-references-reference] 
+* `response["code"]` - returns the future reference to the `status code` of the response 
+* `response["body"]` - returns the future reference to the `body` of the the response
+* `response["extract.some-custom-field"]` - it is an optional field and returns the future reference to the value extracted from `body`, which is explained below.
+
+`jq`'s [regular expressions](https://devdocs.io/jq-regular-expressions-pcre/) is used to extract the information from the response `body` and is assigned to a custom field. **The `response["body"]` must be a valid json object for manipulating data using `extractions`**. A valid `response["body"]` can be used for extractions like so:
 
  ```python
  # Assuming response["body"] looks like {"result": {"foo": ["hello/world/welcome"]}}
@@ -373,10 +378,28 @@ post_request_recipe = PostHttpRequestRecipe(
         "second-element-from-list-head": '.result.foo | .[0] | split ("/") | .[1]' # 
     },
 )
-response = request(
+response = plan.request(
     recipe = post_request_recipe,
 )
 # response["extract.second-element-from-list-head"] is "world"
+# response["body"] is {"result": {"foo": ["hello/world/welcome"]}}
+# response["code"] is 200
+``` 
+
+NOTE: In the above example, `response` also has a custom field `extract.second-element-from-list-head` and the value is `world` which is extracted from the `response[body]`.
+
+These fields can be used in conjuction with [`assert`][assert] and [`wait`][wait] instructions, like so:
+```python
+# Following the example above, response["extract.second-element-from-list-head"] is world
+response = plan.request(
+    recipe = post_request_recipe,
+)
+
+# Assert if the extracted field in the response is world
+plan.assert(response["extract.second-element-from-list-head"], "==", "world")
+
+# Make a post request and check if the extracted field in the response is world
+plan.wait(post_request_recipe, "extract.second-element-from-list-head", "==", "world")
 ```
 
 ### set_connection
@@ -513,7 +536,8 @@ response = plan.wait(
     # MANDATORY
     recipe = recipe,
 
-    # The field of the recipe's result that will be asserted
+    # Wait will use the response's field to do the asssertions. To learn more about available fields, 
+    # that can be used for assertions, please refer to exec and request instructions.
     # MANDATORY
     field = "code",
 
@@ -555,6 +579,8 @@ in Kurtosis Starlark by default
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->
 [set-connection]: #set_connection
 [add-service]: #add_service
+[wait]: #wait
+[assert]: #assert
 
 [files-artifacts-reference]: ./files-artifacts.md
 [future-references-reference]: ./future-references.md

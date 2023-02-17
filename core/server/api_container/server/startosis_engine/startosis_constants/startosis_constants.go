@@ -1,7 +1,8 @@
 package startosis_constants
 
 const (
-	MainFileName = "main.star"
+	MainFileName     = "main.star"
+	KurtosisYamlName = "kurtosis.yml"
 
 	EmptyInputArgs = "{}" // empty JSON
 
