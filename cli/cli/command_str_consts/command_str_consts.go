@@ -30,6 +30,7 @@ const (
 	EngineStatusCmdStr      = "status"
 	EngineStopCmdStr        = "stop"
 	EngineRestartCmdStr     = "restart"
+	FeedbackCmdStr          = "feedback"
 	FilesCmdStr             = "files"
 	FilesUploadCmdStr       = "upload"
 	FilesDownloadCmdStr     = "download"

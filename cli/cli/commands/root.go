@@ -16,6 +16,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/discord"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/enclave"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/engine"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/feedback"
 	files "github.com/kurtosis-tech/kurtosis/cli/cli/commands/files"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/gateway"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/run"
@@ -99,6 +100,7 @@ func init() {
 	RootCmd.AddCommand(analytics.AnalyticsCmd.MustGetCobraCommand())
 	RootCmd.AddCommand(files.FilesCmd)
 	RootCmd.AddCommand(discord.DiscordCmd.MustGetCobraCommand())
+	RootCmd.AddCommand(feedback.FeedbackCmd.MustGetCobraCommand())
 }
 
 // ====================================================================================================
