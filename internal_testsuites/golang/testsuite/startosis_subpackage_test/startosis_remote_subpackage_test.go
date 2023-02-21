@@ -10,7 +10,7 @@ import (
 
 const (
 	remoteTestName = "subpackage-remote"
-	remotePackage  = "github.com/kurtosis-tech/examples/simple-subpackage-example"
+	remotePackage  = "github.com/kurtosis-tech/examples/quickstart"
 	emptyParams    = "{}"
 )
 
@@ -35,5 +35,5 @@ func TestStarlarkRemotePackage(t *testing.T) {
 	require.Empty(t, runResult.ExecutionError, "Unexpected execution error")
 	require.Equal(t, "Hello world!\n", string(runResult.RunOutput))
 
-	logrus.Infof("Successfully ran Starlark Package")
+	logrus.Infof("")
 }
