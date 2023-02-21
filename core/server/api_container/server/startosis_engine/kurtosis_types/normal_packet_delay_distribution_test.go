@@ -93,7 +93,7 @@ func TestMakeNormalPacketDelayDistribution_NoNamedArgs(t *testing.T) {
 
 func TestMakeNormalPacketDelayDistribution_WithNotRecognizedAttr(t *testing.T) {
 	input := starlark.Tuple([]starlark.Value{
-		starlark.String(packetDelayAttr), starlark.MakeInt(100),
+		starlark.String(portApplicationProtocolAttr), starlark.MakeInt(100),
 	})
 
 	kwargs := []starlark.Tuple{
@@ -104,7 +104,7 @@ func TestMakeNormalPacketDelayDistribution_WithNotRecognizedAttr(t *testing.T) {
 
 	_, err := MakeNormalPacketDelayDistribution(nil, builtin, noArgs, kwargs)
 	require.NotNil(t, err)
-	require.ErrorContains(t, err, `unexpected keyword argument "packet_delay"`)
+	require.ErrorContains(t, err, `unexpected keyword argument "application_protocol"`)
 }
 
 func TestNormalPacketDelayDistribution_Attr(t *testing.T) {

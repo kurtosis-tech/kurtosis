@@ -655,7 +655,7 @@ This makes your directory a Git repo associated with the new GitHub repo you jus
 Now commit and push your changes:
 
 ```bash
-git add . && git commit -m "Initial commit" && git push origin master
+git add . && git commit -m "Initial commit" && git push origin main
 ```
 
 Your package is now published, and available to anyone using Kurtosis. To use it, anyone can run the following, replacing `YOUR-GITHUB-USERNAME` with your GitHub username:
@@ -666,7 +666,7 @@ kurtosis run github.com/YOUR-GITHUB-USERNAME/my-kurtosis-package
 ```
 
 :::tip
-If you want to run a non-master branch, tag or commit use the following syntax
+If you want to run a non-main branch, tag or commit use the following syntax
 `kurtosis run github.com/package-author/package-repo@tag-branch-commit`
 :::
 

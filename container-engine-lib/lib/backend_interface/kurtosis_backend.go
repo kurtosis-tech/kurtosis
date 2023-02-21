@@ -150,38 +150,31 @@ type KurtosisBackend interface {
 	)
 
 	/*
-		<<<<<<< HEAD
-					                           KURTOSIS SERVICE STATE DIAGRAM
-				                                .-----------------DestroyServices--------------------.
-				                               /                                                      \
-					  StartServices--> RUNNING ---StopServices---> STOPPED ---DestroyServices---> DESTROYED
-		=======
-				KURTOSIS SERVICE STATE DIAGRAM
+		KURTOSIS SERVICE STATE DIAGRAM
 
-					                                |
-					                        RegisterUserServices
-					                                |
-					                                V
-					                            REGISTERED
-					                                |
-					                    StartRegisteredUserServices
-					                                |
-					                                V
-					            .--------------- STARTED
-					            |                   |
-					            |           StopUserService
-					            |                   |
-					            |                   V
-					    DestroyUserServices      STOPPED
-					            |                   |
-					            |           DestroyUserServices
-					            |                   |
-					            |                   V
-					            '-------------> DESTROYED
-		>>>>>>> master
+			                                |
+			                        RegisterUserServices
+			                                |
+			                                V
+			                            REGISTERED
+			                                |
+			                    StartRegisteredUserServices
+			                                |
+			                                V
+			            .--------------- STARTED
+			            |                   |
+			            |           StopUserService
+			            |                   |
+			            |                   V
+			    DestroyUserServices      STOPPED
+			            |                   |
+			            |           DestroyUserServices
+			            |                   |
+			            |                   V
+			            '-------------> DESTROYED
 
-					- Note the above state diagram doesn't account for PauseService or UnpauseService
-					- As of 2022-05-15, Kurtosis services can never be restarted once stopped.
+			- Note the above state diagram doesn't account for PauseService or UnpauseService
+			- As of 2022-05-15, Kurtosis services can never be restarted once stopped.
 	*/
 
 	// RegisterUserServices registers the services allocating them an IP address and a UUID. The service is not started!
