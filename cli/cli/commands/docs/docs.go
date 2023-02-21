@@ -18,7 +18,7 @@ const (
 	windowsOSName = "windows"
 )
 
-var DiscordCmd = &lowlevel.LowlevelKurtosisCommand{
+var DocsCmd = &lowlevel.LowlevelKurtosisCommand{
 	CommandStr:               command_str_consts.DocsCmdStr,
 	ShortDescription:         "Opens the Kurtosis Documentation Page",
 	LongDescription:          "Opens the Kurtosis Documentation Page",
