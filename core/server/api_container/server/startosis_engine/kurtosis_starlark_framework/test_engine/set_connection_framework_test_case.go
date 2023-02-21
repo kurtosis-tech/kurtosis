@@ -55,7 +55,7 @@ func (t *setConnectionTestCase) GetInstruction() *kurtosis_plan_instruction.Kurt
 }
 
 func (t *setConnectionTestCase) GetStarlarkCode() string {
-	connectionConfig := "ConnectionConfig(packet_loss_percentage=50.0, packet_delay=PacketDelay(delay_ms=100))"
+	connectionConfig := "ConnectionConfig(packet_loss_percentage=50.0, packet_delay_distribution=UniformPacketDelayDistribution(ms=100))"
 	subnetworks := fmt.Sprintf(`(%q, %q)`, setConnection_subnetwork1, setConnection_subnetwork2)
 	return fmt.Sprintf("%s(%s=%s, %s=%s)", set_connection.SetConnectionBuiltinName, set_connection.SubnetworksArgName, subnetworks, set_connection.ConnectionConfigArgName, connectionConfig)
 }
