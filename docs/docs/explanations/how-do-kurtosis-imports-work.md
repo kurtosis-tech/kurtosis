@@ -60,7 +60,7 @@ Remote file imports in any language are always handled through a packaging syste
 
 Of all the languages, we have been most impressed by [Go's packaging system (which Go calls "modules")](https://go.dev/blog/using-go-modules). In Go:
 
-- Modules are easy to create by adding a `go.mod` manifest file to a directory ([example](https://github.com/kurtosis-tech/kurtosis-sdk/blob/master/api/golang/go.mod))
+- Modules are easy to create by adding a `go.mod` manifest file to a directory ([example](https://github.com/kurtosis-tech/kurtosis-sdk/blob/main/api/golang/go.mod))
 - Dependencies are easy to declare in the `go.mod` file
 - Modules are published to the world simply by pushing up to GitHub
 
@@ -120,7 +120,7 @@ kurtosis run github.com/package-author/package-repo/path/to/directory-with-kurto
 Kurtosis will clone the package from GitHub, run the `main.star`, and use the `kurtosis.yml` to resolve any imports. This method always uses the version on GitHub.
 
 :::tip
-If you want to run a non-master branch, tag or commit use the following syntax
+If you want to run a non-main branch, tag or commit use the following syntax
 `kurtosis run github.com/package-author/package-repo@tag-branch-commit`
 :::
 

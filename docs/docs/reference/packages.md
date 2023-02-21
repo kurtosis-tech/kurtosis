@@ -84,7 +84,7 @@ kurtosis run github.com/package-author/package-repo/path/to/directory-with-kurto
 ```
 
 :::tip
-If you want to run a non-master branch, tag or commit use the following syntax
+If you want to run a non-main branch, tag or commit use the following syntax
 `kurtosis run github.com/package-author/package-repo@tag-branch-commit`
 :::
 
