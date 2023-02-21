@@ -41,7 +41,7 @@ func TestGitPackageProvider_SucceedsForValidPackageWithExplicitMasterSet(t *test
 
 	provider := NewGitPackageContentProvider(packageDir, packageTmpDir)
 
-	sampleStartosisModule := "github.com/kurtosis-tech/sample-startosis-load/sample.star@master"
+	sampleStartosisModule := "github.com/kurtosis-tech/sample-startosis-load/sample.star@main"
 	contents, err := provider.GetModuleContents(sampleStartosisModule)
 	require.Nil(t, err)
 	require.Equal(t, "a = \"World!\"\n", contents)
