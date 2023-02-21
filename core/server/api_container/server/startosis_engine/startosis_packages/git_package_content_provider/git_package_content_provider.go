@@ -67,7 +67,7 @@ func (provider *GitPackageContentProvider) GetOnDiskAbsoluteFilePath(fileInsideP
 		return "", interpretationError
 	}
 	if parsedURL.relativeFilePath == "" {
-		return "", startosis_errors.NewInterpretationError("The relative path to file is empty for '%v'", fileInsidePackageUrl)
+		return "", startosis_errors.NewInterpretationError("Path to import '%v' needs to point to a specific file but didn't. Users can only read or import specific files and not entire packages.", fileInsidePackageUrl)
 	}
 	pathToFile := path.Join(provider.packagesDir, parsedURL.relativeFilePath)
 	packagePath := path.Join(provider.packagesDir, parsedURL.relativeRepoPath)
@@ -293,7 +293,8 @@ func getReferenceName(repo *git.Repository, parsedURL *ParsedGitURL) (plumbing.R
 	return "", false, nil
 }
 
-/**
+/*
+*
 While importing/reading a file we are currently cloning the repository, and trying to find whether kurtosis.yml exists in the path;
 this is being done as part of interpretation step of starlark.
 TODO: we should clean this up and have a dependency management system; all the dependencies should be stated kurtosis.yml upfront
@@ -305,7 +306,8 @@ func checkIfFileIsInAValidPackage(absPathToFile string, packagesDir string) (str
 	return checkIfFileIsInAValidPackageInternal(absPathToFile, packagesDir, os.Stat)
 }
 
-/**
+/*
+*
 This method walks along the path of the file and determines whether kurtosis.yml is found in any directory. If the path is found, it returns
 the absolute path of kurtosis.yml, otherwise it returns an empty string when the kurtosis.yml is not found.
 
