@@ -2,7 +2,6 @@ package git_package_content_provider
 
 import (
 	"errors"
-	"fmt"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
@@ -33,6 +32,8 @@ const (
 	depthAssumingBranchTagsCommitsAreSpecified = 0
 	howImportWorksLink                         = "https://docs.kurtosis.com/explanations/how-do-kurtosis-imports-work"
 	filePathToKurtosisYamlNotFound             = ""
+	replaceCountPackageDirWithGithubConstant   = 1
+	osPathSeparatorString                      = string(os.PathSeparator)
 )
 
 type GitPackageContentProvider struct {
@@ -305,26 +306,25 @@ func getReferenceName(repo *git.Repository, parsedURL *ParsedGitURL) (plumbing.R
 }
 
 func validateKurtosisPackage(kurtosisYaml *yaml_parser.KurtosisYaml, absPathToPackageWithKurtosisYml string, packageDir string) *startosis_errors.InterpretationError {
-	// first check whether the package name extracted from yaml is valid
-	// re-using parseGitURL as it already does some validations
+	// get package name from absolute path to package
+	packageNameFromAbsPackagePath := strings.Replace(absPathToPackageWithKurtosisYml, packageDir, startosis_constants.GithubDomainPrefix, replaceCountPackageDirWithGithubConstant)
 	packageName := kurtosisYaml.GetPackageName()
-	if strings.HasSuffix(packageName, string(os.PathSeparator)) {
-		packageNameWithoutSuffix := strings.TrimSuffix(packageName, string(os.PathSeparator))
-		return startosis_errors.NewInterpretationError("Error occurred while validating package name, found '%v' and expected '%v' without trailing '%v'", packageName, packageNameWithoutSuffix, string(os.PathSeparator))
+
+	if strings.HasSuffix(packageName, osPathSeparatorString) {
+		return startosis_errors.NewInterpretationError("Kurtosis package name cannot have trailing %q; package name: %v and kurtosis.yml is found at: %v", osPathSeparatorString, packageName, packageNameFromAbsPackagePath)
 	}
 
+	// re-using parseGitURL with packageName found from kurtosis.yml as it already does some validations
 	_, err := parseGitURL(packageName)
 	if err != nil {
-		return startosis_errors.WrapWithInterpretationError(err, "Error occurred while validating package name: %v which is found here: '%v'", kurtosisYaml.GetPackageName(), absPathToPackageWithKurtosisYml)
+		return startosis_errors.WrapWithInterpretationError(err, "Error occurred while validating package name: %v which is found in kurtosis.yml at: '%v'", kurtosisYaml.GetPackageName(), packageNameFromAbsPackagePath)
 	}
 
-	// get package name from absolute path to package
-	packageNameFromPackagePath := strings.Replace(absPathToPackageWithKurtosisYml, packageDir, startosis_constants.GithubPrefix, 1)
-	removeKurtosisYmlFromPackageName := strings.TrimSuffix(packageNameFromPackagePath, fmt.Sprintf("%v%v", string(os.PathSeparator), startosis_constants.KurtosisYamlName))
+	removeKurtosisYmlFromPackageName := path.Dir(packageNameFromAbsPackagePath)
 
 	// wrapping the strings with trim - so that we can ignore `/` mismatches
 	if packageName != removeKurtosisYmlFromPackageName {
-		return startosis_errors.NewInterpretationError("The package name in %v must match the location it is in. Package name is '%v' and it is found here:'%v'", startosis_constants.KurtosisYamlName, kurtosisYaml.GetPackageName(), removeKurtosisYmlFromPackageName)
+		return startosis_errors.NewInterpretationError("The package name in %v must match the location it is in. Package name is '%v' and kurtosis.yml is found here: '%v'", startosis_constants.KurtosisYamlName, kurtosisYaml.GetPackageName(), removeKurtosisYmlFromPackageName)
 	}
 	return nil
 }
@@ -357,8 +357,8 @@ func checkIfFileIsInAValidPackageInternal(absPathToFile string, packagesDir stri
 		return filePathToKurtosisYamlNotFound, startosis_errors.NewInterpretationError("Absolute path to file: %v must start with following prefix %v", absPathToFile, packagesDir)
 	}
 
-	removeTrailingPathSeparator := strings.Trim(beginSearchForKurtosisYmlFromRepo, string(os.PathSeparator))
-	dirs := strings.Split(removeTrailingPathSeparator, string(os.PathSeparator))
+	removeTrailingPathSeparator := strings.Trim(beginSearchForKurtosisYmlFromRepo, osPathSeparatorString)
+	dirs := strings.Split(removeTrailingPathSeparator, osPathSeparatorString)
 	logrus.Debugf("Found directories: %v", dirs)
 
 	maybePackageRootPath := packagesDir

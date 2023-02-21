@@ -7,18 +7,20 @@ import (
 	"testing"
 )
 
-var sampleCorrectYaml = []byte(`name: github.com/test/test`)
-var sampleInCorrectYaml = []byte(`incorrect_name: github.com/test/test`)
+var (
+	kurtosisYmlPath     = "/root/kurtosis.yml"
+	sampleCorrectYaml   = []byte(`name: github.com/test-author/test-repo`)
+	sampleInCorrectYaml = []byte(`incorrect_name_key: github.com/test/test`)
+)
 
 func Test_parseKurtosisYamlInternal_Success(t *testing.T) {
 	mockRead := func(filename string) ([]byte, error) {
 		return sampleCorrectYaml, nil
 	}
 
-	path := "/root/kurtosis.yml"
-	actual, err := parseKurtosisYamlInternal(path, mockRead)
+	actual, err := parseKurtosisYamlInternal(kurtosisYmlPath, mockRead)
 	require.Nil(t, err)
-	require.Equal(t, "github.com/test/test", actual.GetPackageName())
+	require.Equal(t, "github.com/test-author/test-repo", actual.GetPackageName())
 }
 
 func Test_parseKurtosisYamlInternal_FailureWhileReading(t *testing.T) {
@@ -26,10 +28,9 @@ func Test_parseKurtosisYamlInternal_FailureWhileReading(t *testing.T) {
 		return nil, io.ErrClosedPipe
 	}
 
-	path := "/root/kurtosis.yml"
-	_, err := parseKurtosisYamlInternal(path, mockRead)
+	_, err := parseKurtosisYamlInternal(kurtosisYmlPath, mockRead)
 	require.NotNil(t, err)
-	require.ErrorContains(t, err, fmt.Sprintf("Error occurred while reading the contents of %v", path))
+	require.ErrorContains(t, err, fmt.Sprintf("Error occurred while reading the contents of %v", kurtosisYmlPath))
 }
 
 func Test_parseKurtosisYamlInternal_IncorrectYaml(t *testing.T) {
@@ -37,8 +38,7 @@ func Test_parseKurtosisYamlInternal_IncorrectYaml(t *testing.T) {
 		return sampleInCorrectYaml, nil
 	}
 
-	path := "/root/kurtosis.yml"
-	_, err := parseKurtosisYamlInternal(path, mockRead)
+	actual, err := parseKurtosisYamlInternal(kurtosisYmlPath, mockRead)
 	require.Nil(t, err)
-	require.Equal(t, "", "")
+	require.Equal(t, "", actual.GetPackageName())
 }
