@@ -29,6 +29,7 @@ var DocsCmd = &lowlevel.LowlevelKurtosisCommand{
 	PostValidationAndRunFunc: nil,
 }
 
+// TODO refactor this to use the multi_os_command_executor after https://github.com/kurtosis-tech/kurtosis/pull/28/files is merged
 func run(_ context.Context, _ *flags.ParsedFlags, _ *args.ParsedArgs) error {
 	var args []string
 	switch runtime.GOOS {
