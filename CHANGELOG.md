@@ -5,11 +5,7 @@
 
 ### ⚠ BREAKING CHANGES
 
-* Breaking Changes 2023-02-21 ([#26](https://github.com/kurtosis-tech/kurtosis/issues/26))
-
-### Features
-
-* Breaking Changes 2023-02-21 ([#26](https://github.com/kurtosis-tech/kurtosis/issues/26)) ([82d5b56](https://github.com/kurtosis-tech/kurtosis/commit/82d5b5624acfe20af2bb6ddf20cb27682a049d06))
+* This is a breaking change where we are deprecating PacketDelay to introduce latency in favour of PacketDelayDistribution. Instead of using packet delay, use UniformPacketDelayDistribution for constant delays or NormalPacketDelayDistribution for normally distributed latencies
 
 ## [0.66.11](https://github.com/kurtosis-tech/kurtosis/compare/0.66.10...0.66.11) (2023-02-21)
 
