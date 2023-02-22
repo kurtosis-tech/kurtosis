@@ -67,7 +67,7 @@ def run(plan, args):
 	plan.assert(res["code"], "==", 1)
 	
 	# unblock connection with some delay 
-	delay = PacketDelay(750)
+	delay = UniformPacketDelayDistribution(ms=750)
 	
 	# minimum delay should ideally be 140*2 = 280
 	# maximum delay should ideally be 160*2 = 320
@@ -102,7 +102,7 @@ def run(plan, args):
 	res = plan.exec(recipe)
 	plan.assert(res["code"], "==", 1)
 
-	plan.set_connection((SUBNETWORK_1, SUBNETWORK_3), config=ConnectionConfig(packet_delay=delay))
+	plan.set_connection((SUBNETWORK_1, SUBNETWORK_3), config=ConnectionConfig(packet_delay_distribution=delay))
 	plan.update_service(SERVICE_ID_2, config=UpdateServiceConfig(subnetwork=SUBNETWORK_3))
 	recipe=ExecRecipe(
 		service_name=SERVICE_ID_2,
