@@ -9,7 +9,7 @@ Kurtosis can be used to run a Starlark script or a [runnable package](../package
 A single Starlark script can be ran with:
 
 ```bash
-kurtosis run script.star [args]
+kurtosis run script.star
 ```
 
 Adding the `--dry-run` flag will print the changes without executing them. 
@@ -17,13 +17,13 @@ Adding the `--dry-run` flag will print the changes without executing them.
 A [Kurtosis package](../packages.md) on your local machine can be run with:
 
 ```bash
-kurtosis run /path/to/package/on/your/machine [args]
+kurtosis run /path/to/package/on/your/machine
 ```
 
 A [runnable Kurtosis package](../packages.md) published to GitHub can be run like so:
 
 ```bash
-kurtosis run github.com/package-author/package-repo [args]
+kurtosis run github.com/package-author/package-repo
 ```
 
 :::tip
