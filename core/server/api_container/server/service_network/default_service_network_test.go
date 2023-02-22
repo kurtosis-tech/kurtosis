@@ -1423,10 +1423,7 @@ func Test_generateUniqueNameForFileArtifact_MaxRetriesOver(t *testing.T) {
 
 func Test_generateUniqueNameForFileArtifact_Found(t *testing.T) {
 	mockedCheckFileNameExistMethod := func(artifactName string) bool {
-		if artifactName == "unique-name" {
-			return true
-		}
-		return false
+		return artifactName == "unique-name"
 	}
 
 	timesCalled := 0
