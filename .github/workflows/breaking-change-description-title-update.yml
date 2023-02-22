@@ -15,7 +15,7 @@ concurrency:
 jobs:
   update_pr:
     # we want this to only run on breaking-release PRs
-    if: !contains(github.head_ref, 'release-please') && contains(github.head_ref, 'breaking-release')
+    if: contains(github.head_ref, 'release-please') != true && contains(github.head_ref, 'breaking-release')
     runs-on: ubuntu-latest
     steps:
       - uses: 8BitJonny/gh-get-current-pr@2.2.0
