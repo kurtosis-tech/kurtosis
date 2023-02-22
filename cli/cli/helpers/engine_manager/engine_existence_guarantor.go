@@ -18,6 +18,8 @@ import (
 const (
 	// If set to empty, then we'll use whichever default version the launcher provides
 	defaultEngineImageVersionTag = ""
+
+	removeDeprecatedCentralizedLogsDockerCommands = "docker container rm --force kurtosis-logs-db && docker volume rm kurtosis-logs-db-vol --force && docker rm --force $(docker ps --format '{{.Names}}' | grep kurtosis-logs-collector) && docker volume rm --force $(docker volume ls --format '{{.Name}}' | grep kurtosis-logs-collector-vol)"
 )
 
 var engineRestartCmd = fmt.Sprintf(
@@ -158,7 +160,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 }
 
 // We could potentially try to restart the engine ourselves here, but the case where the server isn't responding is very
-// unusual and very bad so we'd rather fail loudly
+// unusual and very bad, so we'd rather fail loudly
 func (guarantor *engineExistenceGuarantor) VisitContainerRunningButServerNotResponding() error {
 	remediationCmd := fmt.Sprintf(
 		"%v %v %v && %v %v %v",
@@ -200,7 +202,7 @@ func (guarantor *engineExistenceGuarantor) VisitRunning() error {
 	runningEngineMajorVersion := runningEngineSemver.Major()
 	runningEngineMinorVersion := runningEngineSemver.Minor()
 	doApiVersionsMatch := cliEngineMajorVersion == runningEngineMajorVersion && cliEngineMinorVersion == runningEngineMinorVersion
-	// If the major.minor versions don't match, there's an API break that could cause the CLI to fail so we force the user to
+	// If the major.minor versions don't match, there's an API break that could cause the CLI to fail, so we force the user to
 	//  restart their engine server
 	if !doApiVersionsMatch {
 		logrus.Errorf(
@@ -259,7 +261,7 @@ func (guarantor *engineExistenceGuarantor) ensureDestroyDeprecatedCentralizedLog
 	// we remove all centralized logs containers & volumes
 	if err := guarantor.kurtosisBackend.DestroyDeprecatedCentralizedLogsResources(ctx); err != nil {
 		logrus.Debugf("Attempted to remove deprecated centralized logs resources but failed with error:\n%v", err)
-		logrus.Debugf("Users will have to remove the containers & volumes themselves using `docker container rm --force kurtosis-logs-collector && docker volume rm kurtosis-logs-collector-vol --force`")
+		logrus.Debugf("Users will have to remove the containers & volumes themselves using `%v`", removeDeprecatedCentralizedLogsDockerCommands)
 	}
 
 	return nil
