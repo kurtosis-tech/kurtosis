@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	shouldFlushMetricsClientQueueOnEachEvent          = true
+	shouldFlushMetricsClientQueueOnEachEvent          = false
 	defaultSendingUserMetricsIfConfigurationIsntFound = true
 )
 
