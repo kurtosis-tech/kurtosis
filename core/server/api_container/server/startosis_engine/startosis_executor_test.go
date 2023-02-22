@@ -24,11 +24,6 @@ const (
 	noParallelism        = 1
 )
 
-type doNothingMetricsClientCallback struct{}
-
-func (d doNothingMetricsClientCallback) Success()          {}
-func (d doNothingMetricsClientCallback) Failure(err error) {}
-
 var (
 	dummyPosition               = kurtosis_instruction.NewInstructionPosition(12, 1, "dummyFile")
 	noInstructionArgsForTesting []*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg
