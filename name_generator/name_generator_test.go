@@ -6,8 +6,8 @@ import (
 )
 
 func TestRandomNameGenerator_GetNameGenerator(t *testing.T) {
-	nameGenerator := GetNameGenerator()
-	nameGenerator2 := GetNameGenerator()
+	nameGenerator := getNameGenerator()
+	nameGenerator2 := getNameGenerator()
 	// testing the memory address equality
 	require.True(t, nameGenerator == nameGenerator2)
 }
