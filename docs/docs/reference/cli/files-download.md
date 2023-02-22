@@ -1,13 +1,16 @@
 ---
-title: Download files from an enclave
-sidebar_label: Files download
+title: files download
+sidebar_label: files download
 slug: /files-download
 ---
 
-To download a files artifact using a resource identifier identifier (e.g. name, uuid, shortened uuid) from an enclave to the host machine, use:
+To download a [files artifact](../files-artifacts.md) using a resource identifier (e.g. name, UUID, shortened UUID) from an enclave to the host machine, use:
 
 ```bash
-kurtosis files download  [flags] $THE_ENCLAVE_IDENTIFIER $THE_ARTIFACT_IDENTIFIER $FILE_DESTINATION_PATH
+kurtosis files download $THE_ENCLAVE_IDENTIFIER $THE_ARTIFACT_IDENTIFIER $FILE_DESTINATION_PATH
 ```
+where `$THE_ENCLAVE_IDENTIFIER` and the `$THE_ARTIFACT_IDENTIFIER` are [resource identifiers](../resource-identifier.md) for the enclave and file artifact, respectively. 
 
-The file downloaded will not be extracted by default. If you would prefer the file be extracted upon download, pass in the `--no-extract` flag.
+:::tip
+The file downloaded will be extracted by default. If you would prefer the file not to be extracted upon download, pass in the `--no-extract` flag.
+:::

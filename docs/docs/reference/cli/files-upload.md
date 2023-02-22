@@ -1,10 +1,9 @@
 ---
-title: Upload files to an enclave
-sidebar_label: Files upload
+title: files upload
+sidebar_label: files upload
 slug: /files-upload
 ---
 
-### Upload files to an enclave
 Files can be stored as a [files artifact][files-artifacts] inside an enclave by uploading them:
 
 ```bash

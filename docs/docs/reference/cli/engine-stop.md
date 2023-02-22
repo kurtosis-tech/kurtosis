@@ -1,6 +1,6 @@
 ---
-title: Stopping the engine
-sidebar_label: Engine stop
+title: engine stop
+sidebar_label: engine stop
 slug: /engine-stop
 ---
 

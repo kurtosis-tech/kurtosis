@@ -1,6 +1,6 @@
 ---
-title: Adding an enclave
-sidebar_label: Enclave add
+title: enclave add
+sidebar_label: enclave add
 slug: /enclave-add
 ---
 

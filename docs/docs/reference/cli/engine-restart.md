@@ -1,6 +1,6 @@
 ---
-title: Restarting the engine
-sidebar_label: Engine restart
+title: engine restart
+sidebar_label: engine restart
 slug: /engine-restart
 ---
 

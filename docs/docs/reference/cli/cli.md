@@ -1,6 +1,6 @@
 ---
-title: Getting started
-sidebar_label: Getting started
+title: Getting Started
+sidebar_label: Getting Started
 slug: /cli
 sidebar_position: 1
 ---
@@ -19,22 +19,22 @@ Kurtosis supports tab-completion, and we strongly recommend [installing it][addi
 :::
 
 ### Toggle Analytics
-On installation Kurtosis enables anonymized [analytics][metrics-philosophy-reference] by default. You can toggle it,
+On installation Kurtosis enables anonymized [analytics][metrics-philosophy-reference] by default. You can toggle this functionality simply by running:
 
 ```bash
 kurtosis analytics enable
 ```
 
-to send anonymized metrics to improve the product or
+to enable the sending of anonymized metrics to improve the product, or:
 
 ```bash
 kurtosis analytics disable
 ```
 
-if you'd prefer not to.
+if you would prefer not to.
 
 ### Configuration file path
-To locate where the Kurtosis configuration file is on your machine, simply use
+To locate where the Kurtosis configuration file is on your machine, simply use:
 
 ```bash
 kurtosis config path

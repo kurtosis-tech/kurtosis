@@ -1,6 +1,6 @@
 ---
-title: View a service's logs
-sidebar_label: Service logs
+title: service logs
+sidebar_label: service logs
 slug: /service-logs
 ---
 
@@ -10,7 +10,7 @@ To print the logs for a service, run:
 kurtosis service logs $THE_ENCLAVE_IDENTIFIER $THE_SERVICE_IDENTIFIER
 ```
 
-The service identifier(name or uuid) is printed upon inspecting an enclave.
+where `$THE_ENCLAVE_IDENTIFIER` and the `$THE_SERVICE_IDENTIFIER` are [resource identifiers](../resource-identifier.md) for the enclave and service, respectively. The service identifier (name or UUID) is printed upon inspecting an enclave. 
 
 The following optional arguments can be used:
 1. `-f`, `-follow` can be added to continue following the logs, similar to `tail -f`.

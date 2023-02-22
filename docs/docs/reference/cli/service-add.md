@@ -1,6 +1,6 @@
 ---
-title: Add a service to an enclave
-sidebar_label: Service add
+title: service add
+sidebar_label: service add
 slug: /service-add
 ---
 
@@ -9,6 +9,8 @@ To add a service to an enclave, run:
 ```bash
 kurtosis service add $THE_ENCLAVE_IDENTIFIER $THE_SERVICE_IDENTIFIER $CONTAINER_IMAGE
 ```
+
+where `$THE_ENCLAVE_IDENTIFIER` and the `$THE_SERVICE_IDENTIFIER` are [resource identifiers](../resource-identifier.md) for the enclave and service, respectively. 
 
 Much like `docker run`, this command has multiple options available to customize the service that's started:
 

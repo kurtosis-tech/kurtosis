@@ -1,6 +1,6 @@
 ---
-title: Print engine status
-sidebar_label: Engine status
+title: engine status
+sidebar_label: engine status
 slug: /engine-status
 ---
 

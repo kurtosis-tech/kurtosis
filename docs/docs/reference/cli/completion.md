@@ -1,6 +1,6 @@
 ---
-title: Completion
-sidebar_label: Completion
+title: completion
+sidebar_label: completion
 slug: /completion
 ---
 
@@ -16,4 +16,4 @@ Where the available commands are as follows:
 * `powershell`: Generates the autocompletion script for powershell
 * `zsh`: Generates the autocompletion script for zsh
 
-Additional instructions can be found [here](../../guides/adding-tab-completion.md) in the guides section.
+Instructions for how to install tab completion on your shell can be found [here](../../guides/adding-tab-completion.md) in our Guides section.
