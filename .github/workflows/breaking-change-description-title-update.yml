@@ -37,6 +37,7 @@ jobs:
           title="$(python .github/breaking_change_title.py "${conventional_commits}")"
           echo "CONVENTIONAL_TITLE=${title}" >> $GITHUB_ENV
           remaining_commits="$(python .github/breaking_change_description.py "${conventional_commits}")"
+          echo "$remaining_commits"
           echo "MODIFIED_BODY<<EOF" >> $GITHUB_ENV
           echo "${cleaned_body_without_trailing_space}" >> ${GITHUB_ENV}
           if [ ${#remaining_commits} -gt 0 ]; then
