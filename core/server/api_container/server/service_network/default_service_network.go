@@ -55,7 +55,10 @@ const (
 	emptyCollectionLength        = 0
 	exactlyOneShortenedUuidMatch = 1
 
-	singleServiceStartupBatch  = 1
+	singleServiceStartupBatch = 1
+
+	// TODO: this is something we can take a look in detail
+	// but we with random numbers as suffix, we should always be able to have some unique name available
 	maxFileArtifactNameRetries = 5
 )
 
@@ -910,7 +913,7 @@ func (network *DefaultServiceNetwork) GenerateUniqueFileArtifactName() (string, 
 		return ""
 	}
 
-	return generateUniqueNameForFileArtifact(filesArtifactStore.CheckIfArtifactExists, generateNameClosure, maxFileArtifactNameRetries)
+	return generateUniqueNameForFileArtifact(filesArtifactStore, generateNameClosure, maxFileArtifactNameRetries), nil
 }
 
 // ====================================================================================================
@@ -1782,21 +1785,26 @@ func renderTemplateToFile(templateAsAString string, templateData interface{}, de
 }
 
 // generateUniqueNameForFileArtifact - this method returns unique file artifact name after x max retries
-func generateUniqueNameForFileArtifact(
-	checkIfFileArtifactNameExists func(artifactName string) bool,
-	generateNatureThemeName func() string,
-	maxRetry int) (string, error) {
+func generateUniqueNameForFileArtifact(fileArtifactStore *enclave_data_directory.FilesArtifactStore, generateNatureThemeName func() string, maxRetry int) string {
+	var maybeUniqueName string
 
-	maybeUniqueName := generateNatureThemeName()
-
-	for !checkIfFileArtifactNameExists(maybeUniqueName) && maxRetry > 0 {
+	// try to find unique nature theme random generator
+	for maxRetry >= 0 {
 		maybeUniqueName = generateNatureThemeName()
 		maxRetry = maxRetry - 1
+
+		if !fileArtifactStore.CheckIfArtifactNameExists(maybeUniqueName) {
+			return maybeUniqueName
+		}
 	}
 
-	if maxRetry == 0 {
-		return "", stacktrace.NewError("Generating a new random name for file artifact has executed all the retries set without success, the last name generated '%v' in use", maybeUniqueName)
+	// if unique name not found, append a random number after the last found random name
+	additionalSuffix := 1
+	maybeUniqueNameWithRandomNumber := fmt.Sprintf("%v-%v", maybeUniqueName, additionalSuffix)
+	for fileArtifactStore.CheckIfArtifactNameExists(maybeUniqueNameWithRandomNumber) {
+		additionalSuffix = additionalSuffix + 1
+		maybeUniqueNameWithRandomNumber = fmt.Sprintf("%v-%v", maybeUniqueName, additionalSuffix)
 	}
 
-	return maybeUniqueName, nil
+	return maybeUniqueNameWithRandomNumber
 }

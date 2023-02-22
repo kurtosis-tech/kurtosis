@@ -116,9 +116,11 @@ func (store FilesArtifactStore) ListFiles() map[string]bool {
 	return artifactNameSet
 }
 
-// CheckIfArtifactExists
-// TODO: add necessary mutexes to avoid race conditions in next PR
-func (store FilesArtifactStore) CheckIfArtifactExists(artifactName string) bool {
+// CheckIfArtifactNameExists - It checks whether the FileArtifact with a name exists or not
+func (store FilesArtifactStore) CheckIfArtifactNameExists(artifactName string) bool {
+	store.mutex.RLock()
+	defer store.mutex.RUnlock()
+
 	_, found := store.artifactNameToArtifactUuid[artifactName]
 	return found
 }
@@ -199,4 +201,19 @@ func (store FilesArtifactStore) removeFileUnlocked(filesArtifactUuid FilesArtifa
 	}
 
 	return nil
+}
+
+// method needed for testing
+func NewFilesArtifactStoreForTesting(
+	absoluteDirpath string,
+	dirpathRelativeToDataDirRoot string,
+	artifactNameToArtifactUuid map[string]FilesArtifactUUID,
+	shortenedUuidToFullUuid map[string][]FilesArtifactUUID,
+) *FilesArtifactStore {
+	return &FilesArtifactStore{
+		fileCache:                  newFileCache(absoluteDirpath, dirpathRelativeToDataDirRoot),
+		mutex:                      &sync.RWMutex{},
+		artifactNameToArtifactUuid: artifactNameToArtifactUuid,
+		shortenedUuidToFullUuid:    shortenedUuidToFullUuid,
+	}
 }
