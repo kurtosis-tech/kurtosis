@@ -296,6 +296,17 @@ func (manager *EnclaveManager) Clean(ctx context.Context, shouldCleanAll bool) (
 		return nil, stacktrace.Propagate(err, "An error occurred while cleaning enclaves with shouldCleanAll set to '%v'", shouldCleanAll)
 	}
 
+	if len(removalErrors) > 0 {
+		logrus.Errorf("Errors occurred removing the following enclaves")
+		var removalErrorStrings []string
+		for _, err = range removalErrors {
+			logrus.Errorf("Error '%v'", err.Error())
+			removalErrorStrings = append(removalErrorStrings, err.Error())
+		}
+		joinedRemovalErrors := strings.Join(removalErrorStrings, errorDelimiter)
+		return nil, stacktrace.NewError("Following errors occurred while removing some enclaves '%v'", joinedRemovalErrors)
+	}
+
 	if len(successfullyRemovedArtifactIds) > 0 {
 		artifactIDs := map[string]bool{}
 		logrus.Infof("Successfully removed the enclaves")
@@ -307,16 +318,6 @@ func (manager *EnclaveManager) Clean(ctx context.Context, shouldCleanAll bool) (
 		resultSuccessfullyRemovedArtifactsIds[enclavesCleaningPhaseTitle] = artifactIDs
 	}
 
-	if len(removalErrors) > 0 {
-		logrus.Errorf("Errors occurred removing the following enclaves")
-		var removalErrorStrings []string
-		for _, err = range removalErrors {
-			logrus.Errorf("Error '%v'", err.Error())
-			removalErrorStrings = append(removalErrorStrings, err.Error())
-		}
-		joinedRemovalErrors := strings.Join(removalErrorStrings, errorDelimiter)
-		return nil, stacktrace.NewError("Following errors occurred while removing some enclaves '%v'", joinedRemovalErrors)
-	}
 	return resultSuccessfullyRemovedArtifactsIds[enclavesCleaningPhaseTitle], nil
 }
 
