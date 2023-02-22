@@ -258,7 +258,7 @@ func (guarantor *engineExistenceGuarantor) ensureDestroyDeprecatedCentralizedLog
 	// TODO(centralized-logs-resources-deprecation) remove this code in the future when people don't have any centralized logs collector and logs database running
 	// we remove all centralized logs containers & volumes
 	if err := guarantor.kurtosisBackend.DestroyDeprecatedCentralizedLogsResources(ctx); err != nil {
-		logrus.Debugf("Attempted to remove deprecated centralized logs containers and volumes but failed with error:\n%v", err)
+		logrus.Debugf("Attempted to remove deprecated centralized logs resources but failed with error:\n%v", err)
 		logrus.Debugf("Users will have to remove the containers & volumes themselves using `docker container rm --force kurtosis-logs-collector && docker volume rm kurtosis-logs-collector-vol --force`")
 	}
 

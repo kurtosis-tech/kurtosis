@@ -9,11 +9,10 @@ import (
 )
 
 const (
-	deprecatedLogsCollectorVolumeName    = "kurtosis-logs-collector-vol"
-	deprecatedLogsCollectorContainerName = "kurtosis-logs-collector"
+	deprecatedLogsCollectorVolumeNameSuffix = "kurtosis-logs-collector-vol"
 )
 
-// TODO(centralized-logs-collector-deprecation) remove this entire function after enough people are on > 0.66.0
+// TODO(centralized-logs-collectors-deprecation) remove this entire function after enough people are on > 0.68.0
 func DestroyDeprecatedCentralizedLogsCollectors(
 	ctx context.Context,
 	dockerManager *docker_manager.DockerManager,
@@ -31,38 +30,24 @@ func DestroyDeprecatedCentralizedLogsCollectors(
 
 	for _, logsCollectorContainer := range matchingLogsCollectorContainers {
 		if err := dockerManager.StopContainer(ctx, logsCollectorContainer.GetId(), stopLogsCollectorContainersTimeout); err != nil {
-			return stacktrace.Propagate(err, "An error occurred stopping the logs collector container with ID '%v'", maybeLogsCollectorContainerId)
+			return stacktrace.Propagate(err, "An error occurred stopping the logs collector container with ID '%v'", logsCollectorContainer.GetId())
 		}
 
 		if err := dockerManager.RemoveContainer(ctx, logsCollectorContainer.GetId()); err != nil {
-			return stacktrace.Propagate(err, "An error occurred removing the logs collector container with ID '%v'", maybeLogsCollectorContainerId)
+			return stacktrace.Propagate(err, "An error occurred removing the logs collector container with ID '%v'", logsCollectorContainer.GetId())
 		}
 	}
 
-	//This removes the old main volume
-	volumes, err := dockerManager.GetVolumesByName(ctx, deprecatedLogsCollectorVolumeName)
+	volumes, err := dockerManager.GetVolumesByName(ctx, deprecatedLogsCollectorVolumeNameSuffix)
 	if err != nil {
-		return stacktrace.Propagate(err, "Attempted to fetch volumes to get the volume of the deprecated centralized logs collector but failed")
+		return stacktrace.Propagate(err, "Attempted to fetch volumes to get the volumes of the deprecated centralized logs collectors but failed")
 	}
 
-	foundExactMatch := false
 	for _, volumeName := range volumes {
-		if volumeName == deprecatedLogsCollectorVolumeName {
-			foundExactMatch = true
-			break
+		if err := dockerManager.RemoveVolume(ctx, volumeName); err != nil {
+			return stacktrace.Propagate(err, "An error occurred removing the deprecated centralized logs collector volume with volume name '%v'", volumeName)
 		}
-	}
-
-	// we found some matching volumes; but they weren't the old volume
-	if !foundExactMatch {
-		return nil
-	}
-
-	if err := dockerManager.RemoveVolume(ctx, deprecatedLogsCollectorVolumeName); err != nil {
-		return stacktrace.Propagate(err, "An error occurred removing the deprecated centralized logs collector volume with volume name '%v'", deprecatedLogsCollectorVolumeName)
 	}
 
 	return nil
 }
-
-func destroyContainer()
