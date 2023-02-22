@@ -1,4 +1,4 @@
-name: "Update Pull Request Description with conventional commits"
+name: "Update Breaking Change With Conventional Commits"
 on:
   pull_request:
     types:
