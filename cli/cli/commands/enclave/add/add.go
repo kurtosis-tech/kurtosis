@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/logrus_log_levels"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/metrics_client_factory"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -123,6 +124,21 @@ func run(cmd *cobra.Command, args []string) error {
 	// TODO deprecate ids
 	if enclaveIdStr != autogenerateEnclaveIdKeyword && enclaveName == autogenerateEnclaveNameKeyword {
 		enclaveName = enclaveIdStr
+	}
+
+	metricsClient, metricsClientCloser, err := metrics_client_factory.GetMetricsClient()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while creating metrics client, the metrics will not be recorded")
+	}
+	defer func() {
+		err = metricsClientCloser()
+		if err != nil {
+			logrus.Warnf("An error occurred while closing the metrics client\n%s", err)
+		}
+	}()
+
+	if err = metricsClient.TrackCreateEnclave(enclaveName); err != nil {
+		logrus.Error("An error occurred while logging the create enclave event")
 	}
 
 	createEnclaveArgs := &kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs{

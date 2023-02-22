@@ -18,6 +18,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/user_support_constants"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
+	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"os"
@@ -65,6 +66,9 @@ const (
 	engineClientCtxKey    = "engine-client"
 
 	kurtosisYMLFilePath = "kurtosis.yml"
+
+	runFailed    = false
+	runSucceeded = true
 )
 
 var (
@@ -201,24 +205,28 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the verbosity using flag key '%s'", verbosityFlagKey)
 	}
 
+	metricsClient, metricsClientCloser, err := metrics_client_factory.GetMetricsClient()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while creating the metrics client")
+	}
+	defer func() {
+		err = metricsClientCloser()
+		if err != nil {
+			logrus.Warnf("An error occurred while closing the metrics client\n%s", err)
+		}
+	}()
+
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred connecting to the local Kurtosis engine")
 	}
 
-	enclaveCtx, isNewEnclave, err := getOrCreateEnclaveContext(ctx, userRequestedEnclaveIdentifier, kurtosisCtx, isPartitioningEnabled)
+	enclaveCtx, isNewEnclave, err := getOrCreateEnclaveContext(ctx, userRequestedEnclaveIdentifier, kurtosisCtx, isPartitioningEnabled, metricsClient)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the enclave context for enclave '%v'", userRequestedEnclaveIdentifier)
 	}
 	if isNewEnclave {
 		defer output_printers.PrintEnclaveName(enclaveCtx.GetEnclaveName())
-	}
-
-	metricsClient, metricsClientCloser, metricsClientCreationError := metrics_client_factory.GetMetricsClient()
-	if metricsClientCreationError != nil {
-		logrus.Error("An error occurred while creating metrics client, the metrics will not be recorded")
-	} else {
-		defer metricsClientCloser()
 	}
 
 	var responseLineChan <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine
@@ -254,18 +262,34 @@ func run(
 		return stacktrace.Propagate(errRunningKurtosis, "An error starting the Kurtosis code execution '%v'", starlarkScriptOrPackagePath)
 	}
 
-	if metricsClientCreationError == nil {
-		if err := metricsClient.TrackKurtosisRun(starlarkScriptOrPackagePath, isRemotePackage, dryRun, isStandAloneScript); err != nil {
-			//We don't want to interrupt users flow if something fails when tracking metrics
-			logrus.Errorf("An error occurred tracking kurtosis run event\n%v", err)
-		}
+	if err := metricsClient.TrackKurtosisRun(starlarkScriptOrPackagePath, isRemotePackage, dryRun, isStandAloneScript); err != nil {
+		//We don't want to interrupt users flow if something fails when tracking metrics
+		logrus.Warnf("An error occurred tracking kurtosis run event\n%v", err)
 	}
 
 	errRunningKurtosis = readAndPrintResponseLinesUntilClosed(responseLineChan, cancelFunc, verbosity, dryRun)
 	if errRunningKurtosis != nil {
+		servicesInEnclaveForMetrics, servicesInEnclaveForMetricsError := enclaveCtx.GetServices()
+		if servicesInEnclaveForMetricsError != nil {
+			logrus.Warnf("Tried getting number of services in the enclave to log metrics but failed")
+		} else {
+			if err := metricsClient.TrackKurtosisRunFinishedEvent(starlarkScriptOrPackagePath, len(servicesInEnclaveForMetrics), runFailed); err != nil {
+				logrus.Warnf("An error occurred tracking kurtosis run finished event\n%v", err)
+			}
+		}
+
 		return stacktrace.Propagate(errRunningKurtosis, "Error executing Kurtosis code")
 	}
-	
+
+	servicesInEnclaveForMetrics, servicesInEnclaveForMetricsError := enclaveCtx.GetServices()
+	if servicesInEnclaveForMetricsError != nil {
+		logrus.Error("Tried getting number of services in the enclave to log metrics but failed")
+	} else {
+		if err := metricsClient.TrackKurtosisRunFinishedEvent(starlarkScriptOrPackagePath, len(servicesInEnclaveForMetrics), runSucceeded); err != nil {
+			logrus.Warnf("An error occurred tracking kurtosis run finished event\n%v", err)
+		}
+	}
+
 	return nil
 }
 
@@ -340,6 +364,7 @@ func getOrCreateEnclaveContext(
 	enclaveIdentifierOrName string,
 	kurtosisContext *kurtosis_context.KurtosisContext,
 	isPartitioningEnabled bool,
+	metricsClient metrics_client.MetricsClient,
 ) (*enclaves.EnclaveContext, bool, error) {
 
 	if enclaveIdentifierOrName != autogenerateEnclaveIdentifierKeyword {
@@ -356,6 +381,9 @@ func getOrCreateEnclaveContext(
 	enclaveContext, err := kurtosisContext.CreateEnclave(ctx, enclaveIdentifierOrName, isPartitioningEnabled)
 	if err != nil {
 		return nil, false, stacktrace.Propagate(err, fmt.Sprintf("Unable to create new enclave with name '%s'", enclaveIdentifierOrName))
+	}
+	if err = metricsClient.TrackCreateEnclave(enclaveIdentifierOrName); err != nil {
+		logrus.Error("An error occurred while logging the create enclave event")
 	}
 	logrus.Infof("Enclave '%v' created successfully", enclaveContext.GetEnclaveName())
 	return enclaveContext, isNewEnclaveFlagWhenCreated, nil

@@ -25,7 +25,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
-	"github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -76,8 +75,6 @@ type ApiContainerService struct {
 
 	startosisRunner *startosis_engine.StartosisRunner
 
-	metricsClient client.MetricsClient
-
 	startosisModuleContentProvider startosis_packages.PackageContentProvider
 }
 
@@ -85,14 +82,12 @@ func NewApiContainerService(
 	filesArtifactStore *enclave_data_directory.FilesArtifactStore,
 	serviceNetwork service_network.ServiceNetwork,
 	startosisRunner *startosis_engine.StartosisRunner,
-	metricsClient client.MetricsClient,
 	startosisModuleContentProvider startosis_packages.PackageContentProvider,
 ) (*ApiContainerService, error) {
 	service := &ApiContainerService{
 		filesArtifactStore:             filesArtifactStore,
 		serviceNetwork:                 serviceNetwork,
 		startosisRunner:                startosisRunner,
-		metricsClient:                  metricsClient,
 		startosisModuleContentProvider: startosisModuleContentProvider,
 	}
 
