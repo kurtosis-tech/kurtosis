@@ -14,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/metrics_client_factory"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/user_support_constants"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
@@ -213,11 +214,19 @@ func run(
 		defer output_printers.PrintEnclaveName(enclaveCtx.GetEnclaveName())
 	}
 
+	metricsClient, metricsClientCloser, metricsClientCreationError := metrics_client_factory.GetMetricsClient()
+	if metricsClientCreationError != nil {
+		logrus.Error("An error occurred while creating metrics client, the metrics will not be recorded")
+	} else {
+		defer metricsClientCloser()
+	}
+
 	var responseLineChan <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine
 	var cancelFunc context.CancelFunc
 	var errRunningKurtosis error
 
 	isRemotePackage := strings.HasPrefix(starlarkScriptOrPackagePath, githubDomainPrefix)
+	isStandAloneScript := false
 	if isRemotePackage {
 		responseLineChan, cancelFunc, errRunningKurtosis = executeRemotePackage(ctx, enclaveCtx, starlarkScriptOrPackagePath, serializedJsonArgs, dryRun, castedParallelism)
 	} else {
@@ -227,6 +236,7 @@ func run(
 		}
 
 		if isStandaloneScript(fileOrDir, kurtosisYMLFilePath) {
+			isStandAloneScript = true
 			if !strings.HasSuffix(starlarkScriptOrPackagePath, starlarkExtension) {
 				return stacktrace.NewError("Expected a script with a '%s' extension but got file '%v' with a different extension", starlarkExtension, starlarkScriptOrPackagePath)
 			}
@@ -244,10 +254,18 @@ func run(
 		return stacktrace.Propagate(errRunningKurtosis, "An error starting the Kurtosis code execution '%v'", starlarkScriptOrPackagePath)
 	}
 
+	if metricsClientCreationError == nil {
+		if err := metricsClient.TrackKurtosisRun(starlarkScriptOrPackagePath, isRemotePackage, dryRun, isStandAloneScript); err != nil {
+			//We don't want to interrupt users flow if something fails when tracking metrics
+			logrus.Errorf("An error occurred tracking kurtosis run event\n%v", err)
+		}
+	}
+
 	errRunningKurtosis = readAndPrintResponseLinesUntilClosed(responseLineChan, cancelFunc, verbosity, dryRun)
 	if errRunningKurtosis != nil {
 		return stacktrace.Propagate(errRunningKurtosis, "Error executing Kurtosis code")
 	}
+	
 	return nil
 }
 

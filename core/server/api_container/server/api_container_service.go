@@ -105,11 +105,6 @@ func (apicService ApiContainerService) RunStarlarkScript(args *kurtosis_core_rpc
 	parallelism := int(args.GetParallelism())
 	dryRun := shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun)
 
-	if err := apicService.metricsClient.TrackKurtosisRun(startosis_constants.PackageIdPlaceholderForStandaloneScript, isNotRemote, dryRun, isScript); err != nil {
-		//We don't want to interrupt users flow if something fails when tracking metrics
-		logrus.Errorf("An error occurred tracking kurtosis run event\n%v", err)
-	}
-
 	apicService.runStarlark(parallelism, dryRun, startosis_constants.PackageIdPlaceholderForStandaloneScript, serializedStarlarkScript, serializedParams, stream)
 	return nil
 }
@@ -121,11 +116,6 @@ func (apicService ApiContainerService) RunStarlarkPackage(args *kurtosis_core_rp
 	parallelism := int(args.GetParallelism())
 	serializedParams := args.SerializedParams
 	dryRun := shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun)
-
-	if err := apicService.metricsClient.TrackKurtosisRun(packageId, isRemote, dryRun, isNotScript); err != nil {
-		//We don't want to interrupt users flow if something fails when tracking metrics
-		logrus.Errorf("An error occurred tracking kurtosis run event\n%v", err)
-	}
 
 	scriptWithRunFunction, interpretationError := apicService.runStarlarkPackageSetup(packageId, isRemote, moduleContentIfLocal)
 	if interpretationError != nil {
