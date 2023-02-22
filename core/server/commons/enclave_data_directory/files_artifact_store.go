@@ -116,6 +116,13 @@ func (store FilesArtifactStore) ListFiles() map[string]bool {
 	return artifactNameSet
 }
 
+// CheckIfArtifactExists
+// TODO: add necessary mutexes to avoid race conditions in next PR
+func (store FilesArtifactStore) CheckIfArtifactExists(artifactName string) bool {
+	_, found := store.artifactNameToArtifactUuid[artifactName]
+	return found
+}
+
 // storeFilesToArtifactUuidUnlocked this is an non thread method to be used from thread safe contexts
 func (store FilesArtifactStore) storeFilesToArtifactUuidUnlocked(reader io.Reader) (FilesArtifactUUID, error) {
 	filesArtifactUuid, err := NewFilesArtifactUUID()

@@ -55,7 +55,8 @@ const (
 	emptyCollectionLength        = 0
 	exactlyOneShortenedUuidMatch = 1
 
-	singleServiceStartupBatch = 1
+	singleServiceStartupBatch  = 1
+	maxFileArtifactNameRetries = 5
 )
 
 var (
@@ -892,6 +893,24 @@ func (network *DefaultServiceNetwork) IsNetworkPartitioningEnabled() bool {
 
 func (network *DefaultServiceNetwork) GetExistingAndHistoricalServiceIdentifiers() []*kurtosis_core_rpc_api_bindings.ServiceIdentifiers {
 	return network.allExistingAndHistoricalIdentifiers
+}
+
+// GenerateUniqueFileArtifactName
+// TODO: It is not wired with the flow, in next PR it will be called from Interpret methods
+// TODO: from starlark instructions like upload_file, render_templates
+// and will return unique artifact name after 5 retries, same as enclave id generator
+func (network *DefaultServiceNetwork) GenerateUniqueFileArtifactName() (string, error) {
+	filesArtifactStore, err := network.enclaveDataDir.GetFilesArtifactStore()
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred while getting files artifact store")
+	}
+
+	// TODO: this will be removed in the next PR and actual name generator method will be passed in
+	generateNameClosure := func() string {
+		return ""
+	}
+
+	return generateUniqueNameForFileArtifact(filesArtifactStore.CheckIfArtifactExists, generateNameClosure, maxFileArtifactNameRetries)
 }
 
 // ====================================================================================================
@@ -1760,4 +1779,24 @@ func renderTemplateToFile(templateAsAString string, templateData interface{}, de
 		return stacktrace.Propagate(err, "An error occurred while writing the rendered template to destination '%v'", destinationFilepath)
 	}
 	return nil
+}
+
+// generateUniqueNameForFileArtifact - this method returns unique file artifact name after x max retries
+func generateUniqueNameForFileArtifact(
+	checkIfFileArtifactNameExists func(artifactName string) bool,
+	generateNatureThemeName func() string,
+	maxRetry int) (string, error) {
+
+	maybeUniqueName := generateNatureThemeName()
+
+	for !checkIfFileArtifactNameExists(maybeUniqueName) && maxRetry > 0 {
+		maybeUniqueName = generateNatureThemeName()
+		maxRetry = maxRetry - 1
+	}
+
+	if maxRetry == 0 {
+		return "", stacktrace.NewError("Generating a new random name for file artifact has executed all the retries set without success, the last name generated '%v' in use", maybeUniqueName)
+	}
+
+	return maybeUniqueName, nil
 }

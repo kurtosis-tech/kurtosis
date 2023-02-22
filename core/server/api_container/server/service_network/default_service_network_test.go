@@ -1400,6 +1400,49 @@ func TestUpdateTrafficControl(t *testing.T) {
 	}
 }
 
+func Test_generateUniqueNameForFileArtifact_MaxRetriesOver(t *testing.T) {
+	mockedCheckFileNameExistMethod := func(artifactName string) bool {
+		return false
+	}
+
+	timesCalled := 0
+	// this method should be call 4 time (maxRetries + 1)
+	mockedGenerateNameMethod := func() string {
+		timesCalled = timesCalled + 1
+		if timesCalled == 4 {
+			return "last-adjective-noun"
+		}
+		return "adjective-noun"
+	}
+
+	_, err := generateUniqueNameForFileArtifact(mockedCheckFileNameExistMethod, mockedGenerateNameMethod, 3)
+
+	require.NotNil(t, err)
+	require.ErrorContains(t, err, "Generating a new random name for file artifact has executed all the retries set without success, the last name generated 'last-adjective-noun' in use\n")
+}
+
+func Test_generateUniqueNameForFileArtifact_Found(t *testing.T) {
+	mockedCheckFileNameExistMethod := func(artifactName string) bool {
+		if artifactName == "unique-name" {
+			return true
+		}
+		return false
+	}
+
+	timesCalled := 0
+	mockedGenerateNameMethod := func() string {
+		timesCalled = timesCalled + 1
+		if timesCalled == 3 {
+			return "unique-name"
+		}
+		return "non-unique-name"
+	}
+
+	actual, err := generateUniqueNameForFileArtifact(mockedCheckFileNameExistMethod, mockedGenerateNameMethod, 3)
+	require.Nil(t, err)
+	require.Equal(t, "unique-name", actual)
+}
+
 func testIpFromInt(i int) net.IP {
 	return []byte{1, 1, 1, byte(i)}
 }
