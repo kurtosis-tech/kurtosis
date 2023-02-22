@@ -37,6 +37,7 @@ func run(_ context.Context, _ *flags.ParsedFlags, _ *args.ParsedArgs) error {
 		args = []string{"xdg-open", user_support_constants.DocumentationUrl}
 	case macOSName:
 		args = []string{"open", user_support_constants.DocumentationUrl}
+	// TODO remove windows if we choose not to support it
 	case windowsOSName:
 		args = []string{"rundll32", "url.dll,FileProtocolHandler", user_support_constants.DocumentationUrl}
 	default:
