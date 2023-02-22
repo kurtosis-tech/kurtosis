@@ -44,7 +44,7 @@ func run(_ context.Context, _ *flags.ParsedFlags, _ *args.ParsedArgs) error {
 	}
 	command := exec.Command(args[0], args[1:]...)
 	if err := command.Start(); err != nil {
-		return stacktrace.Propagate(err, "An error occurred while opening the Docs page '%v'", user_support_constants.DocumentationUrl)
+		return stacktrace.Propagate(err, "An error occurred while opening the docs page '%v'", user_support_constants.DocumentationUrl)
 	}
 	return nil
 }
