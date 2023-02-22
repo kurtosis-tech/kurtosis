@@ -60,7 +60,7 @@ func run(
 
 	metricsClient, metricsClientCloser, err := metrics_client_factory.GetMetricsClient()
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while creating metrics client, the metrics will not be recorded")
+		return stacktrace.Propagate(err, "An error occurred while creating metrics client")
 	}
 	defer func() {
 		err = metricsClientCloser()

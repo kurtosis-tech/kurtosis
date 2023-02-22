@@ -167,7 +167,7 @@ func destroyEnclave(
 
 	metricsClient, metricsClientCloser, err := metrics_client_factory.GetMetricsClient()
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while creating metrics client, the metrics will not be recorded")
+		return stacktrace.Propagate(err, "An error occurred while creating metrics client")
 	}
 	defer func() {
 		err = metricsClientCloser()
@@ -177,7 +177,7 @@ func destroyEnclave(
 	}()
 
 	if err = metricsClient.TrackDestroyEnclave(enclaveIdentifier); err != nil {
-		logrus.Error("An error occurred while logging the destory enclave event")
+		logrus.Error("An error occurred while logging the destroy enclave event")
 	}
 
 	if err = kurtosisContext.DestroyEnclave(ctx, enclaveIdentifier); err != nil {
