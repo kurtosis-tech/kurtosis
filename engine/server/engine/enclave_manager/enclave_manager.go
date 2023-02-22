@@ -2,7 +2,6 @@ package enclave_manager
 
 import (
 	"context"
-	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
@@ -303,14 +302,16 @@ func (manager *EnclaveManager) Clean(ctx context.Context, shouldCleanAll bool) (
 		sort.Strings(successfullyRemovedArtifactIds)
 		for _, successfulArtifactId := range successfullyRemovedArtifactIds {
 			artifactIDs[successfulArtifactId] = true
-			fmt.Fprintln(logrus.StandardLogger().Out, successfulArtifactId)
+			logrus.Infof("Enclave Uuid '%v'", successfulArtifactId)
 		}
 		resultSuccessfullyRemovedArtifactsIds[enclavesCleaningPhaseTitle] = artifactIDs
 	}
 
 	if len(removalErrors) > 0 {
+		logrus.Errorf("Errors occurred removing the following enclaves")
 		var removalErrorStrings []string
-		for _, err := range removalErrors {
+		for _, err = range removalErrors {
+			logrus.Errorf("Error '%v'", err.Error())
 			removalErrorStrings = append(removalErrorStrings, err.Error())
 		}
 		joinedRemovalErrors := strings.Join(removalErrorStrings, errorDelimiter)
