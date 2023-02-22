@@ -60,7 +60,7 @@ Serve the `build` directory. This is useful to verifying the production build lo
 $ yarn serve
 ```
 
-When your PR merges into `master`, the documentation will automatically be rebuilt and republished to [our docs page][kurtosis-docs].
+When your PR merges into `main`, the documentation will automatically be rebuilt and republished to [our docs page][kurtosis-docs].
 
 <!------ ONLY LINKS BELOW HERE ------------>
 [kurtosis-docs]: https://docs.kurtosis.com

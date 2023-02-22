@@ -67,5 +67,5 @@ Naturally, if your job fails you'll want to see what was going on inside of Kurt
 
 Example
 -------
-- [CircleCI](https://github.com/kurtosis-tech/eth2-package/blob/master/.circleci/config.yml#L19)
+- [CircleCI](https://github.com/kurtosis-tech/eth2-package/blob/main/.circleci/config.yml#L19)
 - More CI examples coming soon...

@@ -1,4 +1,4 @@
-name: "Update Pull Request Description with conventional commits"
+name: "Update Breaking Change With Conventional Commits"
 on:
   pull_request:
     types:
@@ -9,13 +9,13 @@ on:
 
 # cancel redundant builds
 concurrency:
-  group: "update-pr-${{ github.head_ref }}"
+  group: "update-breaking-change-${{ github.head_ref }}"
   cancel-in-progress: true
 
 jobs:
   update_pr:
-    # we don't want this to run on breaking change PRs or release please PRs
-    if: contains(github.head_ref, 'release-please') != true && contains(github.head_ref, 'breaking-release') != true
+    # we want this to only run on breaking-release PRs
+    if: contains(github.head_ref, 'release-please') != true && contains(github.head_ref, 'breaking-release') == true
     runs-on: ubuntu-latest
     steps:
       - uses: 8BitJonny/gh-get-current-pr@2.2.0
@@ -34,13 +34,16 @@ jobs:
           cleaned_body="${pr_body%${delimiter}*}"
           cleaned_body_without_trailing_space="$(python .github/remove_trailing_space.py "${cleaned_body}")"
           conventional_commits="$(git log --pretty=format:"%B"  origin/main..HEAD | grep -Pio '^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test|¯\\_\(ツ\)_\/¯)(\(\w+\)?((?=:\s)|(?=!:\s)))?(!)?(:\s.*)?(\n\n.*)?$' | grep ':' || true)"
-          echo "CONVENTIONAL_COMMITS<<EOF" >> $GITHUB_ENV
+          title="$(python .github/breaking_change_title.py "${conventional_commits}")"
+          echo "CONVENTIONAL_TITLE=${title}" >> $GITHUB_ENV
+          remaining_commits="$(python .github/breaking_change_description.py "${conventional_commits}")"
+          echo "MODIFIED_BODY<<EOF" >> $GITHUB_ENV
           echo "${cleaned_body_without_trailing_space}" >> ${GITHUB_ENV}
-          if [ ${#conventional_commits} -gt 0 ]; then
+          if [ ${#remaining_commits} -gt 0 ]; then
             echo "" >> ${GITHUB_ENV}
             echo "${delimiter}" >> ${GITHUB_ENV}
             echo "" >> ${GITHUB_ENV}
-            echo "${conventional_commits}" >> $GITHUB_ENV
+            echo "${remaining_commits}" >> $GITHUB_ENV
           fi
           echo 'EOF'>> $GITHUB_ENV
       - uses: tzkhan/pr-update-action@v2
@@ -49,6 +52,8 @@ jobs:
           # added this though it isn't used
           base-branch-regex: '[a-z\d-_.\\/]+'
           body-template: |
-            ${{ env.CONVENTIONAL_COMMITS }}
+            ${{ env.MODIFIED_BODY }}
           body-update-action: 'replace'
           body-uppercase-base-match: false
+          title-update-action: 'replace'
+          title-template: ${{ env.CONVENTIONAL_TITLE }}
