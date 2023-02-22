@@ -6,7 +6,8 @@ def description():
     line = sys.argv[1]
     split_line = line.split("\n")
     if len(split_line) > 2:
-        return split_line[1]
+        split_line=split_line[:-1]
+        return "\n".join(split_line)
     return ""
 
 
