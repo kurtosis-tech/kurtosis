@@ -357,7 +357,7 @@ func Test_validateKurtosisPackage(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := validateKurtosisPackage(tt.args.kurtosisYaml, tt.args.absPathToPackageWithKurtosisYml, tt.args.packagesDir)
+			err := validateKurtosisPackageInternal(tt.args.kurtosisYaml, tt.args.absPathToPackageWithKurtosisYml, tt.args.packagesDir)
 			if tt.want == nil {
 				require.Nil(t, err)
 			} else {
