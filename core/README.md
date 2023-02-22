@@ -44,4 +44,4 @@ docker stop $(docker ps -a --quiet --filter ancestor="IMAGENAME" --format="{{.ID
 
 ### Testing the API Container Server
 
-Use this [guide](https://github.com/kurtosis-tech/kurtosis-internal-docs/blob/master/testing-grpc-services.md) to test the API Container server.
+Use this [guide](https://github.com/kurtosis-tech/kurtosis-internal-docs/blob/main/testing-grpc-services.md) to test the API Container server.
