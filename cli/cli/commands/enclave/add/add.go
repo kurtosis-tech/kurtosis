@@ -138,7 +138,7 @@ func run(cmd *cobra.Command, args []string) error {
 	}()
 
 	if err = metricsClient.TrackCreateEnclave(enclaveName); err != nil {
-		logrus.Error("An error occurred while logging the create enclave event")
+		logrus.Warn("An error occurred while logging the create enclave event")
 	}
 
 	createEnclaveArgs := &kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs{

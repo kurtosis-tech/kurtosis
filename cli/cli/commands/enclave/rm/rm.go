@@ -168,7 +168,7 @@ func destroyEnclave(
 	}
 
 	if err = metricsClient.TrackDestroyEnclave(enclaveIdentifier); err != nil {
-		logrus.Error("An error occurred while logging the destroy enclave event")
+		logrus.Warnf("An error occurred while logging the destroy enclave event for enclave '%v'", enclaveIdentifier)
 	}
 
 	if err = kurtosisContext.DestroyEnclave(ctx, enclaveIdentifier); err != nil {

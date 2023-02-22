@@ -253,17 +253,17 @@ func run(
 
 	if err := metricsClient.TrackKurtosisRun(starlarkScriptOrPackagePath, isRemotePackage, dryRun, isStandAloneScript); err != nil {
 		//We don't want to interrupt users flow if something fails when tracking metrics
-		logrus.Warnf("An error occurred tracking kurtosis run event\n%v", err)
+		logrus.Warn("An error occurred tracking kurtosis run event")
 	}
 
 	errRunningKurtosis = readAndPrintResponseLinesUntilClosed(responseLineChan, cancelFunc, verbosity, dryRun)
 	if errRunningKurtosis != nil {
 		servicesInEnclaveForMetrics, servicesInEnclaveForMetricsError := enclaveCtx.GetServices()
 		if servicesInEnclaveForMetricsError != nil {
-			logrus.Warnf("Tried getting number of services in the enclave to log metrics but failed")
+			logrus.Warn("Tried getting number of services in the enclave to log metrics but failed")
 		} else {
 			if err := metricsClient.TrackKurtosisRunFinishedEvent(starlarkScriptOrPackagePath, len(servicesInEnclaveForMetrics), runFailed); err != nil {
-				logrus.Warnf("An error occurred tracking kurtosis run finished event\n%v", err)
+				logrus.Warn("An error occurred tracking kurtosis run finished event")
 			}
 		}
 
@@ -275,7 +275,7 @@ func run(
 		logrus.Error("Tried getting number of services in the enclave to log metrics but failed")
 	} else {
 		if err := metricsClient.TrackKurtosisRunFinishedEvent(starlarkScriptOrPackagePath, len(servicesInEnclaveForMetrics), runSucceeded); err != nil {
-			logrus.Warnf("An error occurred tracking kurtosis run finished event\n%v", err)
+			logrus.Warn("An error occurred tracking kurtosis run finished event")
 		}
 	}
 
