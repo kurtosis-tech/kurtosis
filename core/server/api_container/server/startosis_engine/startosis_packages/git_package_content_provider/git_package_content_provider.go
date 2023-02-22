@@ -293,8 +293,7 @@ func getReferenceName(repo *git.Repository, parsedURL *ParsedGitURL) (plumbing.R
 	return "", false, nil
 }
 
-/*
-*
+/**
 While importing/reading a file we are currently cloning the repository, and trying to find whether kurtosis.yml exists in the path;
 this is being done as part of interpretation step of starlark.
 TODO: we should clean this up and have a dependency management system; all the dependencies should be stated kurtosis.yml upfront
@@ -306,8 +305,7 @@ func checkIfFileIsInAValidPackage(absPathToFile string, packagesDir string) (str
 	return checkIfFileIsInAValidPackageInternal(absPathToFile, packagesDir, os.Stat)
 }
 
-/*
-*
+/**
 This method walks along the path of the file and determines whether kurtosis.yml is found in any directory. If the path is found, it returns
 the absolute path of kurtosis.yml, otherwise it returns an empty string when the kurtosis.yml is not found.
 
