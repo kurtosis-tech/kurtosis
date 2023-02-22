@@ -11,8 +11,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/metrics_client_factory"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
+	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"sort"
@@ -61,6 +61,7 @@ func run(
 	ctx context.Context,
 	_ backend_interface.KurtosisBackend,
 	_ kurtosis_engine_rpc_api_bindings.EngineServiceClient,
+	metricsClient metrics_client.MetricsClient,
 	flags *flags.ParsedFlags,
 	args *args.ParsedArgs,
 ) error {
@@ -90,7 +91,7 @@ func run(
 
 	enclaveDestructionErrorStrs := []string{}
 	for _, enclaveId := range enclaveIdsToDestroy {
-		if err := destroyEnclave(ctx, kurtosisCtx, enclaveId, shouldForceRemove); err != nil {
+		if err := destroyEnclave(ctx, kurtosisCtx, enclaveId, shouldForceRemove, metricsClient); err != nil {
 			enclaveDestructionErrorStrs = append(
 				enclaveDestructionErrorStrs,
 				fmt.Sprintf(
@@ -139,6 +140,7 @@ func destroyEnclave(
 	kurtosisContext *kurtosis_context.KurtosisContext,
 	enclaveIdentifier string,
 	shouldForceRemove bool,
+	metricsClient metrics_client.MetricsClient,
 ) error {
 	enclaveInfo, err := kurtosisContext.GetEnclave(ctx, enclaveIdentifier)
 	if err != nil {
@@ -164,17 +166,6 @@ func destroyEnclave(
 			shouldForceRemoveFlagKey,
 		)
 	}
-
-	metricsClient, metricsClientCloser, err := metrics_client_factory.GetMetricsClient()
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while creating metrics client")
-	}
-	defer func() {
-		err = metricsClientCloser()
-		if err != nil {
-			logrus.Warnf("An error occurred while closing the metrics client\n%s", err)
-		}
-	}()
 
 	if err = metricsClient.TrackDestroyEnclave(enclaveIdentifier); err != nil {
 		logrus.Error("An error occurred while logging the destroy enclave event")

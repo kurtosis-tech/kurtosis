@@ -14,7 +14,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/metrics_client_factory"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/user_support_constants"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
@@ -158,6 +157,7 @@ func run(
 	ctx context.Context,
 	_ backend_interface.KurtosisBackend,
 	_ kurtosis_engine_rpc_api_bindings.EngineServiceClient,
+	metricsClient metrics_client.MetricsClient,
 	flags *flags.ParsedFlags,
 	args *args.ParsedArgs,
 ) error {
@@ -204,17 +204,6 @@ func run(
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the verbosity using flag key '%s'", verbosityFlagKey)
 	}
-
-	metricsClient, metricsClientCloser, err := metrics_client_factory.GetMetricsClient()
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while creating the metrics client")
-	}
-	defer func() {
-		err = metricsClientCloser()
-		if err != nil {
-			logrus.Warnf("An error occurred while closing the metrics client\n%s", err)
-		}
-	}()
 
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	if err != nil {

@@ -16,6 +16,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/enclave_status_stringifier"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
+	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/stacktrace"
 	"sort"
 	"strings"
@@ -59,6 +60,7 @@ func run(
 	ctx context.Context,
 	kurtosisBackend backend_interface.KurtosisBackend,
 	engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
+	_ metrics_client.MetricsClient,
 	flags *flags.ParsedFlags,
 	_ *args.ParsedArgs,
 ) error {

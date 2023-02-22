@@ -9,8 +9,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/metrics_client_factory"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
+	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"strings"
@@ -50,6 +50,7 @@ func run(
 	ctx context.Context,
 	kurtosisBackend backend_interface.KurtosisBackend,
 	engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
+	metricsClient metrics_client.MetricsClient,
 	_ *flags.ParsedFlags,
 	args *args.ParsedArgs,
 ) error {
@@ -57,17 +58,6 @@ func run(
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the enclave identifiers arg using key '%v'", enclaveIdentifiersArgKey)
 	}
-
-	metricsClient, metricsClientCloser, err := metrics_client_factory.GetMetricsClient()
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while creating metrics client")
-	}
-	defer func() {
-		err = metricsClientCloser()
-		if err != nil {
-			logrus.Warnf("An error occurred while closing the metrics client\n%s", err)
-		}
-	}()
 
 	logrus.Info("Stopping enclaves...")
 	stopEnclaveErrorStrs := []string{}
