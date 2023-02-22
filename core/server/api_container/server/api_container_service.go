@@ -52,13 +52,8 @@ const (
 	// Overwrite existing module with new module, this allows user to iterate on an enclave with a
 	// given module
 	doOverwriteExistingModule = true
-
-	isScript    = true
-	isNotScript = false
-	isNotRemote = false
-
-	defaultParallelism = 4
-	packageDocLink     = "https://docs.kurtosis.com/reference/packages"
+	defaultParallelism        = 4
+	packageDocLink            = "https://docs.kurtosis.com/reference/packages"
 )
 
 // Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and port spec protos
