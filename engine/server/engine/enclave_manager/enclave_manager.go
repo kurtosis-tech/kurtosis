@@ -29,6 +29,8 @@ const (
 	getRandomEnclaveIdRetries = uint16(5)
 
 	validNumberOfUuidMatches = 1
+
+	errorDelimiter = ", "
 )
 
 // TODO Move this to the KurtosisBackend to calculate!!
@@ -290,51 +292,30 @@ func (manager *EnclaveManager) Clean(ctx context.Context, shouldCleanAll bool) (
 	// TODO: Refactor with kurtosis backend
 	resultSuccessfullyRemovedArtifactsIds := map[string]map[string]bool{}
 
-	// Map of cleaning_phase_title -> (successfully_destroyed_object_id, object_destruction_errors, clean_error)
-	cleaningPhaseFunctions := map[string]func() ([]string, []error, error){
-		enclavesCleaningPhaseTitle: func() ([]string, []error, error) {
-			return manager.cleanEnclaves(ctx, shouldCleanAll)
-		},
+	successfullyRemovedArtifactIds, removalErrors, err := manager.cleanEnclaves(ctx, shouldCleanAll)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while cleaning enclaves with shouldCleanAll set to '%v'", shouldCleanAll)
 	}
 
-	phasesWithErrors := []string{}
-	for phaseTitle, cleaningFunc := range cleaningPhaseFunctions {
-		logrus.Infof("Cleaning %v...", phaseTitle)
-		successfullyRemovedArtifactIds, removalErrors, err := cleaningFunc()
-		if err != nil {
-			logrus.Errorf("Errors occurred cleaning %v:\n%v", phaseTitle, err)
-			phasesWithErrors = append(phasesWithErrors, phaseTitle)
-			continue
+	if len(successfullyRemovedArtifactIds) > 0 {
+		artifactIDs := map[string]bool{}
+		logrus.Infof("Successfully removed the enclaves")
+		sort.Strings(successfullyRemovedArtifactIds)
+		for _, successfulArtifactId := range successfullyRemovedArtifactIds {
+			artifactIDs[successfulArtifactId] = true
+			fmt.Fprintln(logrus.StandardLogger().Out, successfulArtifactId)
 		}
-
-		if len(successfullyRemovedArtifactIds) > 0 {
-			artifactIDs := map[string]bool{}
-			logrus.Infof("Successfully removed the following %v:", phaseTitle)
-			sort.Strings(successfullyRemovedArtifactIds)
-			for _, successfulArtifactId := range successfullyRemovedArtifactIds {
-				artifactIDs[successfulArtifactId] = true
-				fmt.Fprintln(logrus.StandardLogger().Out, successfulArtifactId)
-			}
-			resultSuccessfullyRemovedArtifactsIds[phaseTitle] = artifactIDs
-		}
-
-		if len(removalErrors) > 0 {
-			logrus.Errorf("Errors occurred removing the following %v:", phaseTitle)
-			for _, err := range removalErrors {
-				fmt.Fprintln(logrus.StandardLogger().Out, "")
-				fmt.Fprintln(logrus.StandardLogger().Out, err.Error())
-			}
-			phasesWithErrors = append(phasesWithErrors, phaseTitle)
-			continue
-		}
-		logrus.Infof("Successfully cleaned %v", phaseTitle)
+		resultSuccessfullyRemovedArtifactsIds[enclavesCleaningPhaseTitle] = artifactIDs
 	}
 
-	if len(phasesWithErrors) > 0 {
-		errorStr := "Errors occurred cleaning " + strings.Join(phasesWithErrors, ", ")
-		return nil, stacktrace.NewError(errorStr)
+	if len(removalErrors) > 0 {
+		var removalErrorStrings []string
+		for _, err := range removalErrors {
+			removalErrorStrings = append(removalErrorStrings, err.Error())
+		}
+		joinedRemovalErrors := strings.Join(removalErrorStrings, errorDelimiter)
+		return nil, stacktrace.NewError("Following errors occurred while removing some enclaves '%v'", joinedRemovalErrors)
 	}
-
 	return resultSuccessfullyRemovedArtifactsIds[enclavesCleaningPhaseTitle], nil
 }
 
