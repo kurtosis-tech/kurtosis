@@ -5,9 +5,15 @@ import (
 	"testing"
 )
 
-func Test_getNouns_orderShouldRemainSame(t *testing.T) {
-	firstCall := getNouns()
-	secondCall := getNouns()
+// check for duplicates for nouns and adjectives
+func Test_noDuplicatesInNouns(t *testing.T) {
+	nounsHash := map[string]bool{}
+	for _, noun := range NOUNS {
+		_, found := nounsHash[noun]
+		require.False(t, found, "Duplicate Error: found %v twice in NOUNS", noun)
+		nounsHash[noun] = true
+	}
 
-	require.Equal(t, firstCall, secondCall)
+	// this will only be called if there are no duplicates
+	require.True(t, true)
 }
