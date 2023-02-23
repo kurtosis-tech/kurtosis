@@ -289,7 +289,7 @@ func (manager *EnclaveManager) Clean(ctx context.Context, shouldCleanAll bool) (
 	manager.mutex.Lock()
 	defer manager.mutex.Unlock()
 	// TODO: Refactor with kurtosis backend
-	resultSuccessfullyRemovedArtifactsIds := map[string]map[string]bool{}
+	resultSuccessfullyRemovedArtifactsIds := map[string]bool{}
 
 	successfullyRemovedArtifactIds, removalErrors, err := manager.cleanEnclaves(ctx, shouldCleanAll)
 	if err != nil {
@@ -308,17 +308,15 @@ func (manager *EnclaveManager) Clean(ctx context.Context, shouldCleanAll bool) (
 	}
 
 	if len(successfullyRemovedArtifactIds) > 0 {
-		artifactIDs := map[string]bool{}
 		logrus.Infof("Successfully removed the enclaves")
 		sort.Strings(successfullyRemovedArtifactIds)
 		for _, successfulArtifactId := range successfullyRemovedArtifactIds {
-			artifactIDs[successfulArtifactId] = true
+			resultSuccessfullyRemovedArtifactsIds[successfulArtifactId] = true
 			logrus.Infof("Enclave Uuid '%v'", successfulArtifactId)
 		}
-		resultSuccessfullyRemovedArtifactsIds[enclavesCleaningPhaseTitle] = artifactIDs
 	}
 
-	return resultSuccessfullyRemovedArtifactsIds[enclavesCleaningPhaseTitle], nil
+	return resultSuccessfullyRemovedArtifactsIds, nil
 }
 
 func (manager *EnclaveManager) GetEnclaveUuidForEnclaveIdentifier(ctx context.Context, enclaveIdentifier string) (enclave.EnclaveUUID, error) {
