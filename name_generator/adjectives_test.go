@@ -7,13 +7,17 @@ import (
 
 // check for duplicates for nouns and adjectives
 func Test_noDuplicatesInAdjectives(t *testing.T) {
-	adjectivesHash := map[string]bool{}
-	for _, adj := range ADJECTIVES {
-		_, found := adjectivesHash[adj]
-		require.False(t, found, "Duplicate Error: found %v twice in ADJECTIVES", adj)
-		adjectivesHash[adj] = true
+	var duplicateArr []string
+	adjectivesHash := map[string]int{}
+
+	for _, adj := range NOUNS {
+		freq, found := adjectivesHash[adj]
+		if found && freq == 1 {
+			duplicateArr = append(duplicateArr, adj)
+		}
+
+		adjectivesHash[adj] = adjectivesHash[adj] + 1
 	}
 
-	// this will only be called if there are no duplicates
-	require.True(t, true)
+	require.Len(t, duplicateArr, 0, "Duplicate Error: found %v twice in ADJECTIVES", duplicateArr)
 }
