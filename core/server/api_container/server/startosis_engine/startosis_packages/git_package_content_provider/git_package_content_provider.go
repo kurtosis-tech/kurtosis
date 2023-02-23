@@ -70,7 +70,7 @@ func (provider *GitPackageContentProvider) GetOnDiskAbsoluteFilePath(fileInsideP
 		return "", interpretationError
 	}
 	if parsedURL.relativeFilePath == "" {
-		return "", startosis_errors.NewInterpretationError("The relative path to file is empty for '%v'", fileInsidePackageUrl)
+		return "", startosis_errors.NewInterpretationError("The path '%v' needs to point to a specific file but it didn't. Users can only read or import specific files and not entire packages.", fileInsidePackageUrl)
 	}
 	pathToFile := path.Join(provider.packagesDir, parsedURL.relativeFilePath)
 	packagePath := path.Join(provider.packagesDir, parsedURL.relativeRepoPath)
