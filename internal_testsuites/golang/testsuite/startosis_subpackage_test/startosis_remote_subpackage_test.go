@@ -12,6 +12,7 @@ const (
 	remoteTestName = "subpackage-remote"
 	remotePackage  = "github.com/kurtosis-tech/examples/simple-api/kurtosis-package"
 	emptyParams    = "{}"
+	expectedOutput = ""
 )
 
 func TestStarlarkRemotePackage(t *testing.T) {
@@ -33,5 +34,7 @@ func TestStarlarkRemotePackage(t *testing.T) {
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
 	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")
 	require.Empty(t, runResult.ExecutionError, "Unexpected execution error")
-	require.Equal(t, "", string(runResult.RunOutput))
+
+	runOutputString := string(runResult.RunOutput)
+	require.Equal(t, expectedOutput, runOutputString)
 }
