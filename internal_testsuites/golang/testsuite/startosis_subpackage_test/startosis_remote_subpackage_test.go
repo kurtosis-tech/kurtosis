@@ -14,6 +14,9 @@ const (
 	remotePackage        = "github.com/kurtosis-tech/examples/quickstart"
 	emptyParams          = "{}"
 	expectedOutputLength = 3
+
+	expectedArtifactName = "nginx-artifact"
+	expectedServiceName  = "my-nginx-0"
 )
 
 func TestStarlarkRemotePackage(t *testing.T) {
@@ -40,6 +43,6 @@ func TestStarlarkRemotePackage(t *testing.T) {
 	runOutputList := strings.Split(runOutputTrimmedString, "\n")
 
 	require.Equal(t, expectedOutputLength, len(runOutputList))
-	require.Contains(t, runOutputTrimmedString, "nginx-artifact")
-	require.Contains(t, runOutputTrimmedString, "my-nginx-0")
+	require.Contains(t, runOutputTrimmedString, expectedArtifactName)
+	require.Contains(t, runOutputTrimmedString, expectedServiceName)
 }
