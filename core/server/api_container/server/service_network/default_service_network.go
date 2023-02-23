@@ -1806,5 +1806,6 @@ func generateUniqueNameForFileArtifact(fileArtifactStore *enclave_data_directory
 		maybeUniqueNameWithRandomNumber = fmt.Sprintf("%v-%v", maybeUniqueName, additionalSuffix)
 	}
 
+	logrus.Warnf("Cannot find unique name generator, therefore using a name with a number %v", maybeUniqueNameWithRandomNumber)
 	return maybeUniqueNameWithRandomNumber
 }
