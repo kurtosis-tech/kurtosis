@@ -24,7 +24,7 @@ func (parser *KurtosisYaml) GetPackageName() string {
 func parseKurtosisYamlInternal(absPathToKurtosisYaml string, read func(filename string) ([]byte, error)) (*KurtosisYaml, error) {
 	kurtosisYamlContent, err := read(absPathToKurtosisYaml)
 	if err != nil {
-		return nil, stacktrace.NewError("Error occurred while reading the contents of %v", absPathToKurtosisYaml)
+		return nil, stacktrace.Propagate(err, "Error occurred while reading the contents of %v", absPathToKurtosisYaml)
 	}
 
 	var kurtosisYaml KurtosisYaml

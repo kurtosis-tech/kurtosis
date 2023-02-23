@@ -70,7 +70,7 @@ func (provider *GitPackageContentProvider) ClonePackage(packageId string) (strin
 			startosis_constants.KurtosisYamlName, packageId, startosis_constants.KurtosisYamlName, packageDocLink)
 	}
 
-	if interpretationError = validateKurtosisYaml(packageAbsolutePathOnDisk, provider.packagesDir); interpretationError != nil {
+	if interpretationError = validateKurtosisYaml(pathToKurtosisYaml, provider.packagesDir); interpretationError != nil {
 		return "", interpretationError
 	}
 	return packageAbsolutePathOnDisk, nil
@@ -317,22 +317,22 @@ func validateKurtosisYamlExistsAndIsValid(fileInsidePackageUrl string, packagesD
 	return validateKurtosisYaml(maybeKurtosisYamlPath, packagesDir)
 }
 
-func validateKurtosisYaml(absPathToPackageWithKurtosisYml string, packageDir string) *startosis_errors.InterpretationError {
-	kurtosisYaml, errWhileParsing := yaml_parser.ParseKurtosisYaml(absPathToPackageWithKurtosisYml)
+func validateKurtosisYaml(absPathToKurtosisYmlInThePackage string, packageDir string) *startosis_errors.InterpretationError {
+	kurtosisYaml, errWhileParsing := yaml_parser.ParseKurtosisYaml(absPathToKurtosisYmlInThePackage)
 	if errWhileParsing != nil {
-		return startosis_errors.WrapWithInterpretationError(errWhileParsing, "Error occurred while parsing %v", absPathToPackageWithKurtosisYml)
+		return startosis_errors.WrapWithInterpretationError(errWhileParsing, "Error occurred while parsing %v", absPathToKurtosisYmlInThePackage)
 	}
 
-	if err := validateKurtosisPackageInternal(kurtosisYaml, absPathToPackageWithKurtosisYml, packageDir); err != nil {
-		return startosis_errors.WrapWithInterpretationError(err, "Error occurred while validating %v", absPathToPackageWithKurtosisYml)
+	if err := validateKurtosisPackageInternal(kurtosisYaml, absPathToKurtosisYmlInThePackage, packageDir); err != nil {
+		return startosis_errors.WrapWithInterpretationError(err, "Error occurred while validating %v", absPathToKurtosisYmlInThePackage)
 	}
 
 	return nil
 }
 
-func validateKurtosisPackageInternal(kurtosisYaml *yaml_parser.KurtosisYaml, absPathToPackageWithKurtosisYml string, packageDir string) *startosis_errors.InterpretationError {
+func validateKurtosisPackageInternal(kurtosisYaml *yaml_parser.KurtosisYaml, absPathToKurtosisYmlInThePackage string, packageDir string) *startosis_errors.InterpretationError {
 	// get package name from absolute path to package
-	packageNameFromAbsPackagePath := strings.Replace(absPathToPackageWithKurtosisYml, packageDir, startosis_constants.GithubDomainPrefix, replaceCountPackageDirWithGithubConstant)
+	packageNameFromAbsPackagePath := strings.Replace(absPathToKurtosisYmlInThePackage, packageDir, startosis_constants.GithubDomainPrefix, replaceCountPackageDirWithGithubConstant)
 	packageName := kurtosisYaml.GetPackageName()
 
 	if strings.HasSuffix(packageName, osPathSeparatorString) {
