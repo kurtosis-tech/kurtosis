@@ -91,7 +91,10 @@ func run(
 
 	enclaveDestructionErrorStrs := []string{}
 	for _, enclaveId := range enclaveIdsToDestroy {
-		if err := destroyEnclave(ctx, kurtosisCtx, enclaveId, shouldForceRemove, metricsClient); err != nil {
+		if err = metricsClient.TrackDestroyEnclave(enclaveId); err != nil {
+			logrus.Warnf("An error occurred while logging the destroy enclave event for enclave '%v'", enclaveId)
+		}
+		if err := destroyEnclave(ctx, kurtosisCtx, enclaveId, shouldForceRemove); err != nil {
 			enclaveDestructionErrorStrs = append(
 				enclaveDestructionErrorStrs,
 				fmt.Sprintf(
@@ -140,7 +143,6 @@ func destroyEnclave(
 	kurtosisContext *kurtosis_context.KurtosisContext,
 	enclaveIdentifier string,
 	shouldForceRemove bool,
-	metricsClient metrics_client.MetricsClient,
 ) error {
 	enclaveInfo, err := kurtosisContext.GetEnclave(ctx, enclaveIdentifier)
 	if err != nil {
@@ -165,10 +167,6 @@ func destroyEnclave(
 			enclaveStatus,
 			shouldForceRemoveFlagKey,
 		)
-	}
-
-	if err = metricsClient.TrackDestroyEnclave(enclaveIdentifier); err != nil {
-		logrus.Warnf("An error occurred while logging the destroy enclave event for enclave '%v'", enclaveIdentifier)
 	}
 
 	if err = kurtosisContext.DestroyEnclave(ctx, enclaveIdentifier); err != nil {

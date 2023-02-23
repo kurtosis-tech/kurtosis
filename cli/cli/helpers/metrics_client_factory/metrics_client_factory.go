@@ -12,14 +12,9 @@ import (
 )
 
 const (
-	shouldFlushMetricsClientQueueOnEachEvent          = false
-	defaultSendingUserMetricsIfConfigurationIsntFound = true
+	shouldFlushMetricsClientQueueOnEachEvent           = false
+	defaultSendingUserMetricsIfConfigurationIsNotFound = true
 )
-
-type doNothingMetricsClientCallback struct{}
-
-func (d doNothingMetricsClientCallback) Success()          {}
-func (d doNothingMetricsClientCallback) Failure(err error) {}
 
 func GetMetricsClient() (metrics_client.MetricsClient, func() error, error) {
 
@@ -49,7 +44,7 @@ func GetMetricsClient() (metrics_client.MetricsClient, func() error, error) {
 		}
 		sendUserMetrics = kurtosisConfig.GetShouldSendMetrics()
 	} else {
-		sendUserMetrics = defaultSendingUserMetricsIfConfigurationIsntFound
+		sendUserMetrics = defaultSendingUserMetricsIfConfigurationIsNotFound
 	}
 
 	metricsUserIdStore := metrics_user_id_store.GetMetricsUserIDStore()
@@ -65,7 +60,7 @@ func GetMetricsClient() (metrics_client.MetricsClient, func() error, error) {
 		clusterType,
 		sendUserMetrics,
 		shouldFlushMetricsClientQueueOnEachEvent,
-		doNothingMetricsClientCallback{},
+		newDoNothingMetricsClientCallback(),
 	)
 
 	if err != nil {
