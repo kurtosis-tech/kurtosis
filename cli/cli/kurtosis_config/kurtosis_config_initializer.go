@@ -2,6 +2,7 @@ package kurtosis_config
 
 import (
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/interactive_terminal_decider"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/user_send_metrics_election"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/user_send_metrics_election/user_metrics_election_event_backlog"
@@ -9,10 +10,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/user_support_constants"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-)
-
-const (
-	sendMetricsByDefault = true
 )
 
 func initInteractiveConfig() (*resolved_config.KurtosisConfig, error) {
@@ -29,7 +26,7 @@ func initInteractiveConfig() (*resolved_config.KurtosisConfig, error) {
 	printMetricsPreface()
 
 	userMetricsElectionEventBacklog := user_metrics_election_event_backlog.GetUserMetricsElectionEventBacklog()
-	if err := userMetricsElectionEventBacklog.Set(sendMetricsByDefault); err != nil {
+	if err := userMetricsElectionEventBacklog.Set(defaults.SendMetricsByDefault); err != nil {
 		//We don't want to interrupt users flow if something fails when tracking metrics
 		logrus.Debugf("An error occurred creating user-consent-to-send-metrics election file\n%v", err)
 	}
@@ -39,9 +36,9 @@ func initInteractiveConfig() (*resolved_config.KurtosisConfig, error) {
 		logrus.Debugf("An error occurred tracking user-consent-to-send-metrics election\n%v", err)
 	}
 
-	kurtosisConfig, err := resolved_config.NewKurtosisConfigFromRequiredFields(sendMetricsByDefault)
+	kurtosisConfig, err := resolved_config.NewKurtosisConfigFromRequiredFields(defaults.SendMetricsByDefault)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to initialize Kurtosis configuration from user input %t.", sendMetricsByDefault)
+		return nil, stacktrace.Propagate(err, "Failed to initialize Kurtosis configuration from user input %t.", defaults.SendMetricsByDefault)
 	}
 	return kurtosisConfig, nil
 }
