@@ -6,6 +6,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/kurtosis-tech/kurtosis/core/server/commons/yaml_parser"
 	"github.com/mholt/archiver"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -31,6 +32,8 @@ const (
 	depthAssumingBranchTagsCommitsAreSpecified = 0
 	howImportWorksLink                         = "https://docs.kurtosis.com/explanations/how-do-kurtosis-imports-work"
 	filePathToKurtosisYamlNotFound             = ""
+	replaceCountPackageDirWithGithubConstant   = 1
+	osPathSeparatorString                      = string(os.PathSeparator)
 )
 
 type GitPackageContentProvider struct {
@@ -105,6 +108,15 @@ func (provider *GitPackageContentProvider) GetModuleContents(fileInsideModuleUrl
 
 	if maybeKurtosisYamlPath == filePathToKurtosisYamlNotFound {
 		return "", startosis_errors.NewInterpretationError("%v is not found in the path of '%v'; files can only be imported or read from Kurtosis packages. For more information, go to: %v", startosis_constants.KurtosisYamlName, fileInsideModuleUrl, howImportWorksLink)
+	}
+
+	kurtosisYaml, errWhileParsing := yaml_parser.ParseKurtosisYaml(maybeKurtosisYamlPath)
+	if errWhileParsing != nil {
+		return "", startosis_errors.WrapWithInterpretationError(errWhileParsing, "Error occurred while parsing %v", maybeKurtosisYamlPath)
+	}
+
+	if err = validateKurtosisPackage(kurtosisYaml, maybeKurtosisYamlPath, provider.packagesDir); err != nil {
+		return "", startosis_errors.WrapWithInterpretationError(err, "Error occurred while validating %v", maybeKurtosisYamlPath)
 	}
 
 	// Load the file content from its absolute path
@@ -293,6 +305,30 @@ func getReferenceName(repo *git.Repository, parsedURL *ParsedGitURL) (plumbing.R
 	return "", false, nil
 }
 
+func validateKurtosisPackage(kurtosisYaml *yaml_parser.KurtosisYaml, absPathToPackageWithKurtosisYml string, packageDir string) *startosis_errors.InterpretationError {
+	// get package name from absolute path to package
+	packageNameFromAbsPackagePath := strings.Replace(absPathToPackageWithKurtosisYml, packageDir, startosis_constants.GithubDomainPrefix, replaceCountPackageDirWithGithubConstant)
+	packageName := kurtosisYaml.GetPackageName()
+
+	if strings.HasSuffix(packageName, osPathSeparatorString) {
+		return startosis_errors.NewInterpretationError("Kurtosis package name cannot have trailing %q; package name: %v and kurtosis.yml is found at: %v", osPathSeparatorString, packageName, packageNameFromAbsPackagePath)
+	}
+
+	// re-using parseGitURL with packageName found from kurtosis.yml as it already does some validations
+	_, err := parseGitURL(packageName)
+	if err != nil {
+		return startosis_errors.WrapWithInterpretationError(err, "Error occurred while validating package name: %v which is found in kurtosis.yml at: '%v'", kurtosisYaml.GetPackageName(), packageNameFromAbsPackagePath)
+	}
+
+	removeKurtosisYmlFromPackageName := path.Dir(packageNameFromAbsPackagePath)
+
+	// wrapping the strings with trim - so that we can ignore `/` mismatches
+	if packageName != removeKurtosisYmlFromPackageName {
+		return startosis_errors.NewInterpretationError("The package name in %v must match the location it is in. Package name is '%v' and kurtosis.yml is found here: '%v'", startosis_constants.KurtosisYamlName, kurtosisYaml.GetPackageName(), removeKurtosisYmlFromPackageName)
+	}
+	return nil
+}
+
 /**
 While importing/reading a file we are currently cloning the repository, and trying to find whether kurtosis.yml exists in the path;
 this is being done as part of interpretation step of starlark.
@@ -321,8 +357,8 @@ func checkIfFileIsInAValidPackageInternal(absPathToFile string, packagesDir stri
 		return filePathToKurtosisYamlNotFound, startosis_errors.NewInterpretationError("Absolute path to file: %v must start with following prefix %v", absPathToFile, packagesDir)
 	}
 
-	removeTrailingPathSeparator := strings.Trim(beginSearchForKurtosisYmlFromRepo, string(os.PathSeparator))
-	dirs := strings.Split(removeTrailingPathSeparator, string(os.PathSeparator))
+	removeTrailingPathSeparator := strings.Trim(beginSearchForKurtosisYmlFromRepo, osPathSeparatorString)
+	dirs := strings.Split(removeTrailingPathSeparator, osPathSeparatorString)
 	logrus.Debugf("Found directories: %v", dirs)
 
 	maybePackageRootPath := packagesDir

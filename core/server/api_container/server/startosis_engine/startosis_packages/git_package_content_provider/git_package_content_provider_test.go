@@ -3,6 +3,8 @@ package git_package_content_provider
 import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/kurtosis-tech/kurtosis/core/server/commons/yaml_parser"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/stretchr/testify/require"
 	"os"
@@ -284,4 +286,83 @@ func Test_checkIfFileIsInAValidPackageInternal_prefixMismatchError(t *testing.T)
 	_, err := checkIfFileIsInAValidPackageInternal(filePath, "/data/packages", mockStatMethod)
 	require.NotNil(t, err)
 	require.EqualError(t, err, fmt.Sprintf("Absolute path to file: %v must start with following prefix %v", filePath, "/data/packages"))
+}
+
+func Test_validateKurtosisPackage(t *testing.T) {
+	type args struct {
+		kurtosisYaml                    *yaml_parser.KurtosisYaml
+		absPathToPackageWithKurtosisYml string
+		packagesDir                     string
+	}
+	tests := []struct {
+		name string
+		args args
+		want *startosis_errors.InterpretationError
+	}{
+		{
+			name: "failure - mismatch package name and path (incorrect package name)",
+			args: args{
+				kurtosisYaml: &yaml_parser.KurtosisYaml{
+					PackageName: "github.com/author/repo/packageIncorrect",
+				},
+				absPathToPackageWithKurtosisYml: "/root/folder/author/repo/package/kurtosis.yml",
+				packagesDir:                     "/root/folder",
+			},
+			want: startosis_errors.NewInterpretationError("The package name in %v must match the location it is in. Package name is '%v' and kurtosis.yml is found here: '%v'", startosis_constants.KurtosisYamlName, "github.com/author/repo/packageIncorrect", "github.com/author/repo/package"),
+		},
+		{
+			name: "failure - mismatch package name and path (different location)",
+			args: args{
+				kurtosisYaml: &yaml_parser.KurtosisYaml{
+					PackageName: "github.com/author/repo",
+				},
+				absPathToPackageWithKurtosisYml: "/root/folder/author/repo/subfolder/kurtosis.yml",
+				packagesDir:                     "/root/folder",
+			},
+			want: startosis_errors.NewInterpretationError("The package name in %v must match the location it is in. Package name is '%v' and kurtosis.yml is found here: '%v'", startosis_constants.KurtosisYamlName, "github.com/author/repo", "github.com/author/repo/subfolder"),
+		},
+		{
+			name: "failure - contains a trailing '/'",
+			args: args{
+				kurtosisYaml: &yaml_parser.KurtosisYaml{
+					PackageName: "github.com/author/repo/subfolder/",
+				},
+				absPathToPackageWithKurtosisYml: "/root/folder/author/repo/subfolder/kurtosis.yml",
+				packagesDir:                     "/root/folder",
+			},
+			want: startosis_errors.NewInterpretationError("Kurtosis package name cannot have trailing \"/\"; package name: %v and kurtosis.yml is found at: %v", "github.com/author/repo/subfolder/", "github.com/author/repo/subfolder/kurtosis.yml"),
+		},
+		{
+			name: "success - kurtosis.yml found in repo folder",
+			args: args{
+				kurtosisYaml: &yaml_parser.KurtosisYaml{
+					PackageName: "github.com/author/repo",
+				},
+				absPathToPackageWithKurtosisYml: "/root/folder/author/repo/kurtosis.yml",
+				packagesDir:                     "/root/folder",
+			},
+			want: nil,
+		},
+		{
+			name: "success - kurtosis.yml found in sub folder folder",
+			args: args{
+				kurtosisYaml: &yaml_parser.KurtosisYaml{
+					PackageName: "github.com/author/repo/subfolder",
+				},
+				absPathToPackageWithKurtosisYml: "/root/folder/author/repo/subfolder/kurtosis.yml",
+				packagesDir:                     "/root/folder",
+			},
+			want: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := validateKurtosisPackage(tt.args.kurtosisYaml, tt.args.absPathToPackageWithKurtosisYml, tt.args.packagesDir)
+			if tt.want == nil {
+				require.Nil(t, err)
+			} else {
+				require.EqualError(t, err, tt.want.Error())
+			}
+		})
+	}
 }

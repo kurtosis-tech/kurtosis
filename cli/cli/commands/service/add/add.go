@@ -15,6 +15,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
+	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/stacktrace"
 	"strconv"
 	"strings"
@@ -196,6 +197,7 @@ func run(
 	ctx context.Context,
 	_ backend_interface.KurtosisBackend,
 	_ kurtosis_engine_rpc_api_bindings.EngineServiceClient,
+	_ metrics_client.MetricsClient,
 	flags *flags.ParsedFlags,
 	args *args.ParsedArgs,
 ) error {

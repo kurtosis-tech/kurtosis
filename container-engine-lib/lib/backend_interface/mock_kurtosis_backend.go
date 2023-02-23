@@ -435,8 +435,8 @@ func (_c *MockKurtosisBackend_DestroyAPIContainers_Call) Return(successfulApiCon
 	return _c
 }
 
-// DestroyDeprecatedCentralizedLogsCollector provides a mock function with given fields: ctx
-func (_m *MockKurtosisBackend) DestroyDeprecatedCentralizedLogsCollectorContainerAndVolume(ctx context.Context) error {
+// DestroyDeprecatedCentralizedLogsResources provides a mock function with given fields: ctx
+func (_m *MockKurtosisBackend) DestroyDeprecatedCentralizedLogsResources(ctx context.Context) error {
 	ret := _m.Called(ctx)
 
 	var r0 error
@@ -449,25 +449,25 @@ func (_m *MockKurtosisBackend) DestroyDeprecatedCentralizedLogsCollectorContaine
 	return r0
 }
 
-// MockKurtosisBackend_DestroyDeprecatedCentralizedLogsCollector_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DestroyDeprecatedCentralizedLogsCollectorContainerAndVolume'
-type MockKurtosisBackend_DestroyDeprecatedCentralizedLogsCollector_Call struct {
+// MockKurtosisBackend_DestroyDeprecatedCentralizedLogsResources_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DestroyDeprecatedCentralizedLogsResources'
+type MockKurtosisBackend_DestroyDeprecatedCentralizedLogsResources_Call struct {
 	*mock.Call
 }
 
-// DestroyDeprecatedCentralizedLogsCollector is a helper method to define mock.On call
+// DestroyDeprecatedCentralizedLogsResources is a helper method to define mock.On call
 //   - ctx context.Context
-func (_e *MockKurtosisBackend_Expecter) DestroyDeprecatedCentralizedLogsCollector(ctx interface{}) *MockKurtosisBackend_DestroyDeprecatedCentralizedLogsCollector_Call {
-	return &MockKurtosisBackend_DestroyDeprecatedCentralizedLogsCollector_Call{Call: _e.mock.On("DestroyDeprecatedCentralizedLogsCollectorContainerAndVolume", ctx)}
+func (_e *MockKurtosisBackend_Expecter) DestroyDeprecatedCentralizedLogsResources(ctx interface{}) *MockKurtosisBackend_DestroyDeprecatedCentralizedLogsResources_Call {
+	return &MockKurtosisBackend_DestroyDeprecatedCentralizedLogsResources_Call{Call: _e.mock.On("DestroyDeprecatedCentralizedLogsResources", ctx)}
 }
 
-func (_c *MockKurtosisBackend_DestroyDeprecatedCentralizedLogsCollector_Call) Run(run func(ctx context.Context)) *MockKurtosisBackend_DestroyDeprecatedCentralizedLogsCollector_Call {
+func (_c *MockKurtosisBackend_DestroyDeprecatedCentralizedLogsResources_Call) Run(run func(ctx context.Context)) *MockKurtosisBackend_DestroyDeprecatedCentralizedLogsResources_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context))
 	})
 	return _c
 }
 
-func (_c *MockKurtosisBackend_DestroyDeprecatedCentralizedLogsCollector_Call) Return(_a0 error) *MockKurtosisBackend_DestroyDeprecatedCentralizedLogsCollector_Call {
+func (_c *MockKurtosisBackend_DestroyDeprecatedCentralizedLogsResources_Call) Return(_a0 error) *MockKurtosisBackend_DestroyDeprecatedCentralizedLogsResources_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
