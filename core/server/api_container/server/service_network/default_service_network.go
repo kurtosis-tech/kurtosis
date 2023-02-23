@@ -56,10 +56,6 @@ const (
 	exactlyOneShortenedUuidMatch = 1
 
 	singleServiceStartupBatch = 1
-
-	// TODO: this is something we can take a look in detail
-	// but we with random numbers as suffix, we should always be able to have some unique name available
-	maxFileArtifactNameRetries = 5
 )
 
 var (
@@ -898,22 +894,16 @@ func (network *DefaultServiceNetwork) GetExistingAndHistoricalServiceIdentifiers
 	return network.allExistingAndHistoricalIdentifiers
 }
 
-// GenerateUniqueFileArtifactName
+// GetUniqueNameForFileArtifact
 // TODO: It is not wired with the flow, in next PR it will be called from Interpret methods
 //  from starlark instructions like upload_file, render_templates
 // and will return unique artifact name after 5 retries, same as enclave id generator
-func (network *DefaultServiceNetwork) GenerateUniqueFileArtifactName() (string, error) {
+func (network *DefaultServiceNetwork) GetUniqueNameForFileArtifact() (string, error) {
 	filesArtifactStore, err := network.enclaveDataDir.GetFilesArtifactStore()
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while getting files artifact store")
 	}
-
-	// TODO: this will be removed in the next PR and actual name generator method will be passed in
-	generateNameClosure := func() string {
-		return ""
-	}
-
-	return generateUniqueNameForFileArtifact(filesArtifactStore, generateNameClosure, maxFileArtifactNameRetries), nil
+	return filesArtifactStore.GenerateUniqueNameForFileArtifact(), nil
 }
 
 // ====================================================================================================
@@ -1782,30 +1772,4 @@ func renderTemplateToFile(templateAsAString string, templateData interface{}, de
 		return stacktrace.Propagate(err, "An error occurred while writing the rendered template to destination '%v'", destinationFilepath)
 	}
 	return nil
-}
-
-// generateUniqueNameForFileArtifact - this method returns unique file artifact name after x max retries
-func generateUniqueNameForFileArtifact(fileArtifactStore *enclave_data_directory.FilesArtifactStore, generateNatureThemeName func() string, maxRetry int) string {
-	var maybeUniqueName string
-
-	// try to find unique nature theme random generator
-	for maxRetry >= 0 {
-		maybeUniqueName = generateNatureThemeName()
-		maxRetry = maxRetry - 1
-
-		if !fileArtifactStore.CheckIfArtifactNameExists(maybeUniqueName) {
-			return maybeUniqueName
-		}
-	}
-
-	// if unique name not found, append a random number after the last found random name
-	additionalSuffix := 1
-	maybeUniqueNameWithRandomNumber := fmt.Sprintf("%v-%v", maybeUniqueName, additionalSuffix)
-	for fileArtifactStore.CheckIfArtifactNameExists(maybeUniqueNameWithRandomNumber) {
-		additionalSuffix = additionalSuffix + 1
-		maybeUniqueNameWithRandomNumber = fmt.Sprintf("%v-%v", maybeUniqueName, additionalSuffix)
-	}
-
-	logrus.Warnf("Cannot find unique name generator, therefore using a name with a number %v", maybeUniqueNameWithRandomNumber)
-	return maybeUniqueNameWithRandomNumber
 }

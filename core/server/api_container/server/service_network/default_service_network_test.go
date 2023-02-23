@@ -1400,47 +1400,6 @@ func TestUpdateTrafficControl(t *testing.T) {
 	}
 }
 
-func Test_generateUniqueNameForFileArtifact_MaxRetriesOver(t *testing.T) {
-	timesCalled := 0
-	// this method should be call 4 time (maxRetries + 1)
-	mockedGenerateNameMethod := func() string {
-		timesCalled = timesCalled + 1
-		if timesCalled == 4 {
-			return "last-noun"
-		}
-		return "adjective-noun"
-	}
-
-	artifactIdToUUIDMap := map[string]enclave_data_directory.FilesArtifactUUID{
-		"adjective-noun": enclave_data_directory.FilesArtifactUUID("a"),
-		"last-noun":      enclave_data_directory.FilesArtifactUUID("b"),
-		"last-noun-1":    enclave_data_directory.FilesArtifactUUID("b"),
-	}
-
-	fileArtifactStore := enclave_data_directory.NewFilesArtifactStoreForTesting("/", "/", artifactIdToUUIDMap, nil)
-	actual := generateUniqueNameForFileArtifact(fileArtifactStore, mockedGenerateNameMethod, 3)
-	require.Equal(t, "last-noun-2", actual)
-}
-
-func Test_generateUniqueNameForFileArtifact_Found(t *testing.T) {
-	timesCalled := 0
-	mockedGenerateNameMethod := func() string {
-		timesCalled = timesCalled + 1
-		if timesCalled == 4 {
-			return "unique-name"
-		}
-		return "non-unique-name"
-	}
-
-	artifactIdToUUIDMap := map[string]enclave_data_directory.FilesArtifactUUID{
-		"non-unique-name": enclave_data_directory.FilesArtifactUUID("a"),
-	}
-
-	fileArtifactStore := enclave_data_directory.NewFilesArtifactStoreForTesting("/", "/", artifactIdToUUIDMap, nil)
-	actual := generateUniqueNameForFileArtifact(fileArtifactStore, mockedGenerateNameMethod, 3)
-	require.Equal(t, "unique-name", actual)
-}
-
 func testIpFromInt(i int) net.IP {
 	return []byte{1, 1, 1, byte(i)}
 }

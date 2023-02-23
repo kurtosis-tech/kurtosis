@@ -6,8 +6,10 @@
 package enclave_data_directory
 
 import (
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"io"
 	"strings"
 	"sync"
@@ -16,21 +18,48 @@ import (
 const (
 	artifactExtension                     = "tgz"
 	maxAllowedMatchesAgainstShortenedUuid = 1
+	// TODO: this is something we can take a look in detail
+	// but we with random numbers as suffix, we should always be able to have some unique name available
+	maxFileArtifactNameRetries = 5
 )
 
 type FilesArtifactStore struct {
-	fileCache                  *FileCache
-	mutex                      *sync.RWMutex
-	artifactNameToArtifactUuid map[string]FilesArtifactUUID
-	shortenedUuidToFullUuid    map[string][]FilesArtifactUUID
+	fileCache                       *FileCache
+	mutex                           *sync.RWMutex
+	artifactNameToArtifactUuid      map[string]FilesArtifactUUID
+	shortenedUuidToFullUuid         map[string][]FilesArtifactUUID
+	maxRetriesToGetFileArtifactName int
+	generateNatureThemeName         func() string
 }
 
 func newFilesArtifactStore(absoluteDirpath string, dirpathRelativeToDataDirRoot string) *FilesArtifactStore {
 	return &FilesArtifactStore{
-		fileCache:                  newFileCache(absoluteDirpath, dirpathRelativeToDataDirRoot),
-		mutex:                      &sync.RWMutex{},
-		artifactNameToArtifactUuid: make(map[string]FilesArtifactUUID),
-		shortenedUuidToFullUuid:    make(map[string][]FilesArtifactUUID),
+		fileCache:                       newFileCache(absoluteDirpath, dirpathRelativeToDataDirRoot),
+		mutex:                           &sync.RWMutex{},
+		artifactNameToArtifactUuid:      make(map[string]FilesArtifactUUID),
+		shortenedUuidToFullUuid:         make(map[string][]FilesArtifactUUID),
+		maxRetriesToGetFileArtifactName: maxFileArtifactNameRetries,
+		//TODO: in next pr will assign this to name-generator method
+		generateNatureThemeName: nil,
+	}
+}
+
+// method needed for testing
+func NewFilesArtifactStoreForTesting(
+	absoluteDirpath string,
+	dirpathRelativeToDataDirRoot string,
+	artifactNameToArtifactUuid map[string]FilesArtifactUUID,
+	shortenedUuidToFullUuid map[string][]FilesArtifactUUID,
+	maxRetry int,
+	nameGeneratorMock func() string,
+) *FilesArtifactStore {
+	return &FilesArtifactStore{
+		fileCache:                       newFileCache(absoluteDirpath, dirpathRelativeToDataDirRoot),
+		mutex:                           &sync.RWMutex{},
+		artifactNameToArtifactUuid:      artifactNameToArtifactUuid,
+		shortenedUuidToFullUuid:         shortenedUuidToFullUuid,
+		maxRetriesToGetFileArtifactName: maxRetry,
+		generateNatureThemeName:         nameGeneratorMock,
 	}
 }
 
@@ -125,6 +154,29 @@ func (store FilesArtifactStore) CheckIfArtifactNameExists(artifactName string) b
 	return found
 }
 
+func (store FilesArtifactStore) GenerateUniqueNameForFileArtifact() string {
+	var maybeUniqueName string
+
+	// try to find unique nature theme random generator
+	for i := 0; i <= store.maxRetriesToGetFileArtifactName; i++ {
+		maybeUniqueName = store.generateNatureThemeName()
+		if !store.CheckIfArtifactNameExists(maybeUniqueName) {
+			return maybeUniqueName
+		}
+	}
+
+	// if unique name not found, append a random number after the last found random name
+	additionalSuffix := 1
+	maybeUniqueNameWithRandomNumber := fmt.Sprintf("%v-%v", maybeUniqueName, additionalSuffix)
+	for store.CheckIfArtifactNameExists(maybeUniqueNameWithRandomNumber) {
+		additionalSuffix = additionalSuffix + 1
+		maybeUniqueNameWithRandomNumber = fmt.Sprintf("%v-%v", maybeUniqueName, additionalSuffix)
+	}
+
+	logrus.Warnf("Cannot find unique name generator, therefore using a name with a number %v", maybeUniqueNameWithRandomNumber)
+	return maybeUniqueNameWithRandomNumber
+}
+
 // storeFilesToArtifactUuidUnlocked this is an non thread method to be used from thread safe contexts
 func (store FilesArtifactStore) storeFilesToArtifactUuidUnlocked(reader io.Reader) (FilesArtifactUUID, error) {
 	filesArtifactUuid, err := NewFilesArtifactUUID()
@@ -201,19 +253,4 @@ func (store FilesArtifactStore) removeFileUnlocked(filesArtifactUuid FilesArtifa
 	}
 
 	return nil
-}
-
-// method needed for testing
-func NewFilesArtifactStoreForTesting(
-	absoluteDirpath string,
-	dirpathRelativeToDataDirRoot string,
-	artifactNameToArtifactUuid map[string]FilesArtifactUUID,
-	shortenedUuidToFullUuid map[string][]FilesArtifactUUID,
-) *FilesArtifactStore {
-	return &FilesArtifactStore{
-		fileCache:                  newFileCache(absoluteDirpath, dirpathRelativeToDataDirRoot),
-		mutex:                      &sync.RWMutex{},
-		artifactNameToArtifactUuid: artifactNameToArtifactUuid,
-		shortenedUuidToFullUuid:    shortenedUuidToFullUuid,
-	}
 }
