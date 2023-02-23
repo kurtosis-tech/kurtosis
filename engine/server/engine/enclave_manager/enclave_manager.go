@@ -2,7 +2,6 @@ package enclave_manager
 
 import (
 	"context"
-	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
@@ -24,11 +23,11 @@ const (
 
 	apiContainerListenGrpcProxyPortNumInsideNetwork = uint16(7444)
 
-	enclavesCleaningPhaseTitle = "enclaves"
-
 	getRandomEnclaveIdRetries = uint16(5)
 
 	validNumberOfUuidMatches = 1
+
+	errorDelimiter = ", "
 )
 
 // TODO Move this to the KurtosisBackend to calculate!!
@@ -288,54 +287,34 @@ func (manager *EnclaveManager) Clean(ctx context.Context, shouldCleanAll bool) (
 	manager.mutex.Lock()
 	defer manager.mutex.Unlock()
 	// TODO: Refactor with kurtosis backend
-	resultSuccessfullyRemovedArtifactsIds := map[string]map[string]bool{}
+	resultSuccessfullyRemovedArtifactsIds := map[string]bool{}
 
-	// Map of cleaning_phase_title -> (successfully_destroyed_object_id, object_destruction_errors, clean_error)
-	cleaningPhaseFunctions := map[string]func() ([]string, []error, error){
-		enclavesCleaningPhaseTitle: func() ([]string, []error, error) {
-			return manager.cleanEnclaves(ctx, shouldCleanAll)
-		},
+	successfullyRemovedArtifactIds, removalErrors, err := manager.cleanEnclaves(ctx, shouldCleanAll)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while cleaning enclaves with shouldCleanAll set to '%v'", shouldCleanAll)
 	}
 
-	phasesWithErrors := []string{}
-	for phaseTitle, cleaningFunc := range cleaningPhaseFunctions {
-		logrus.Infof("Cleaning %v...", phaseTitle)
-		successfullyRemovedArtifactIds, removalErrors, err := cleaningFunc()
-		if err != nil {
-			logrus.Errorf("Errors occurred cleaning %v:\n%v", phaseTitle, err)
-			phasesWithErrors = append(phasesWithErrors, phaseTitle)
-			continue
+	if len(removalErrors) > 0 {
+		logrus.Errorf("Errors occurred removing the following enclaves")
+		var removalErrorStrings []string
+		for _, err = range removalErrors {
+			logrus.Errorf("Error '%v'", err.Error())
+			removalErrorStrings = append(removalErrorStrings, err.Error())
 		}
-
-		if len(successfullyRemovedArtifactIds) > 0 {
-			artifactIDs := map[string]bool{}
-			logrus.Infof("Successfully removed the following %v:", phaseTitle)
-			sort.Strings(successfullyRemovedArtifactIds)
-			for _, successfulArtifactId := range successfullyRemovedArtifactIds {
-				artifactIDs[successfulArtifactId] = true
-				fmt.Fprintln(logrus.StandardLogger().Out, successfulArtifactId)
-			}
-			resultSuccessfullyRemovedArtifactsIds[phaseTitle] = artifactIDs
-		}
-
-		if len(removalErrors) > 0 {
-			logrus.Errorf("Errors occurred removing the following %v:", phaseTitle)
-			for _, err := range removalErrors {
-				fmt.Fprintln(logrus.StandardLogger().Out, "")
-				fmt.Fprintln(logrus.StandardLogger().Out, err.Error())
-			}
-			phasesWithErrors = append(phasesWithErrors, phaseTitle)
-			continue
-		}
-		logrus.Infof("Successfully cleaned %v", phaseTitle)
+		joinedRemovalErrors := strings.Join(removalErrorStrings, errorDelimiter)
+		return nil, stacktrace.NewError("Following errors occurred while removing some enclaves '%v'", joinedRemovalErrors)
 	}
 
-	if len(phasesWithErrors) > 0 {
-		errorStr := "Errors occurred cleaning " + strings.Join(phasesWithErrors, ", ")
-		return nil, stacktrace.NewError(errorStr)
+	if len(successfullyRemovedArtifactIds) > 0 {
+		logrus.Infof("Successfully removed the enclaves")
+		sort.Strings(successfullyRemovedArtifactIds)
+		for _, successfulArtifactId := range successfullyRemovedArtifactIds {
+			resultSuccessfullyRemovedArtifactsIds[successfulArtifactId] = true
+			logrus.Infof("Enclave Uuid '%v'", successfulArtifactId)
+		}
 	}
 
-	return resultSuccessfullyRemovedArtifactsIds[enclavesCleaningPhaseTitle], nil
+	return resultSuccessfullyRemovedArtifactsIds, nil
 }
 
 func (manager *EnclaveManager) GetEnclaveUuidForEnclaveIdentifier(ctx context.Context, enclaveIdentifier string) (enclave.EnclaveUUID, error) {
