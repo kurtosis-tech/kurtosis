@@ -5,14 +5,15 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
+	"strings"
 	"testing"
 )
 
 const (
-	remoteTestName = "subpackage-remote"
-	remotePackage  = "github.com/kurtosis-tech/examples/simple-api/kurtosis-package"
-	emptyParams    = "{}"
-	expectedOutput = ""
+	remoteTestName       = "subpackage-remote"
+	remotePackage        = "github.com/kurtosis-tech/examples/quickstart"
+	emptyParams          = "{}"
+	expectedOutputLength = 3
 )
 
 func TestStarlarkRemotePackage(t *testing.T) {
@@ -35,6 +36,10 @@ func TestStarlarkRemotePackage(t *testing.T) {
 	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")
 	require.Empty(t, runResult.ExecutionError, "Unexpected execution error")
 
-	runOutputString := string(runResult.RunOutput)
-	require.Equal(t, expectedOutput, runOutputString)
+	runOutputTrimmedString := strings.Trim(string(runResult.RunOutput), "\n")
+	runOutputList := strings.Split(runOutputTrimmedString, "\n")
+
+	require.Equal(t, expectedOutputLength, len(runOutputList))
+	require.Contains(t, runOutputTrimmedString, "nginx-artifact")
+	require.Contains(t, runOutputTrimmedString, "my-nginx-0")
 }
