@@ -713,7 +713,7 @@ jobs:
 
       # Basic service add & rm
       - run: |
-          ${KURTOSIS_BINPATH} enclave new --id test-enclave
+          ${KURTOSIS_BINPATH} enclave add --name test-enclave
       - run: "${KURTOSIS_BINPATH} service add test-enclave test1 httpd --ports http=80"
       - run: "${KURTOSIS_BINPATH} service rm test-enclave test1"
       - run: "${KURTOSIS_BINPATH} service add test-enclave test1 httpd --ports http=80"
