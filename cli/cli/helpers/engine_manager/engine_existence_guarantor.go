@@ -261,6 +261,4 @@ func (guarantor *engineExistenceGuarantor) ensureDestroyDeprecatedCentralizedLog
 		logrus.Errorf("Attempted to remove deprecated centralized logs resources but failed with error:\n%v", err)
 		logrus.Errorf("Users will have to remove the containers & volumes themselves using `%v`", removeDeprecatedCentralizedLogsDockerCommands)
 	}
-
-	return
 }
