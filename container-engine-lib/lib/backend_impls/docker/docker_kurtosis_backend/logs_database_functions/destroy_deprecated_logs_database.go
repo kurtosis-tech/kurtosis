@@ -16,6 +16,7 @@ func DestroyDeprecatedCentralizedLogsDatabase(
 	dockerManager *docker_manager.DockerManager,
 ) error {
 
+	//It stops and removes the container
 	if err := DestroyLogsDatabase(ctx, dockerManager); err != nil {
 		return stacktrace.Propagate(err, "An error occurred while destroying the deprecated centralized logs database")
 	}

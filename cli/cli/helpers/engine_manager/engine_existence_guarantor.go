@@ -184,9 +184,7 @@ func (guarantor *engineExistenceGuarantor) VisitRunning() error {
 	//TODO(centralized-logs-infra-deprecation) remove this code in the future when people don't have centralized logs infra running
 	if guarantor.kurtosisClusterType == resolved_config.KurtosisClusterType_Docker {
 		ctx := context.Background()
-		if err := guarantor.ensureDestroyDeprecatedCentralizedLogsResources(ctx); err != nil {
-			return stacktrace.Propagate(err, "An error occurred removing the old and deprecated centralized logs resources")
-		}
+		guarantor.ensureDestroyDeprecatedCentralizedLogsResources(ctx)
 	}
 
 	guarantor.postVisitingHostMachineIpAndPort = guarantor.preVisitingMaybeHostMachineIpAndPort
@@ -255,14 +253,14 @@ func (guarantor *engineExistenceGuarantor) getRunningAndCLIEngineVersions() (*se
 }
 
 // TODO(centralized-logs-infra-deprecation) remove this code in the future when people don't have centralized logs infra running
-func (guarantor *engineExistenceGuarantor) ensureDestroyDeprecatedCentralizedLogsResources(ctx context.Context) error {
+func (guarantor *engineExistenceGuarantor) ensureDestroyDeprecatedCentralizedLogsResources(ctx context.Context) {
 
 	// TODO(centralized-logs-resources-deprecation) remove this code in the future when people don't have any centralized logs collector and logs database running
 	// we remove all centralized logs containers & volumes
 	if err := guarantor.kurtosisBackend.DestroyDeprecatedCentralizedLogsResources(ctx); err != nil {
-		logrus.Debugf("Attempted to remove deprecated centralized logs resources but failed with error:\n%v", err)
-		logrus.Debugf("Users will have to remove the containers & volumes themselves using `%v`", removeDeprecatedCentralizedLogsDockerCommands)
+		logrus.Errorf("Attempted to remove deprecated centralized logs resources but failed with error:\n%v", err)
+		logrus.Errorf("Users will have to remove the containers & volumes themselves using `%v`", removeDeprecatedCentralizedLogsDockerCommands)
 	}
 
-	return nil
+	return
 }
