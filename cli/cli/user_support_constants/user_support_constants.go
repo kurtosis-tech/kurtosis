@@ -18,6 +18,9 @@ const (
 	UpgradeCLIInstructionsPage   = DocumentationUrl + "/install#upgrading"
 	GoogleRe2SyntaxDocumentation = "https://github.com/google/re2/wiki/Syntax"
 	MetricsPhilosophyDocs        = DocumentationUrl + "/explanations/metrics-philosophy"
+	HowImportWorksLink           = "https://docs.kurtosis.com/explanations/how-do-kurtosis-imports-work"
+	PackageDocLink               = "https://docs.kurtosis.com/reference/packages"
+
 	//    If you add new URLs above, make sure to add them to the urlsToValidateInTest below!!!
 	// WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
 )
@@ -33,4 +36,6 @@ var urlsToValidateInTest = []string{
 	UpgradeCLIInstructionsPage,
 	GoogleRe2SyntaxDocumentation,
 	MetricsPhilosophyDocs,
+	HowImportWorksLink,
+	PackageDocLink,
 }
