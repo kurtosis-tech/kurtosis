@@ -429,7 +429,7 @@ func createStartServiceOperation(
 			logrus.Warnf("Failed to pull the latest version of user service container image '%v'; you may be running an out-of-date version", containerImageName)
 		}
 
-		containerId, hostMachinePortBindings, err := dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
+		containerId, hostMachinePortBindings, err := dockerManager.CreateAndStartContainer(ctx, false, createAndStartArgs)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred starting the user service container for user service with UUID '%v'", serviceUUID)
 		}

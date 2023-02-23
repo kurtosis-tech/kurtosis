@@ -30,13 +30,14 @@ type APIContainerModeArgs struct {
 // ONLY the API container should pass in the extra API container args, which will unlock extra API container functionality
 func GetLocalDockerKurtosisBackend(
 	optionalApiContainerModeArgs *APIContainerModeArgs,
+	loadDockerWorkerNodeClients bool,
 ) (backend_interface.KurtosisBackend, error) {
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker client connected to the local environment")
 	}
 
-	dockerManager := docker_manager.NewDockerManager(dockerClient)
+	dockerManager := docker_manager.NewDockerManager(dockerClient, loadDockerWorkerNodeClients)
 
 	// If running within the API container context, detect the network that the API container is running inside
 	// so we can create the free IP address trackers
@@ -77,11 +78,15 @@ func GetLocalDockerKurtosisBackend(
 			return nil, stacktrace.Propagate(err, "An error occurred while getting the logs collector object for enclave '%v'; This is a bug in Kurtosis", enclaveUuid)
 		}
 
+		logCollectorIpNext := make(net.IP, len(logsCollectorObj.GetEnclaveNetworkIpAddress()))
+		copy(logCollectorIpNext, logsCollectorObj.GetEnclaveNetworkIpAddress())
+		logCollectorIpNext[len(logCollectorIpNext)-1] += 1
 		alreadyTakenIps := map[string]bool{
 			networkIp.String():      true,
 			network.GetGatewayIp():  true,
 			apiContainerIp.String(): true,
 			logsCollectorObj.GetEnclaveNetworkIpAddress().String(): true,
+			logCollectorIpNext.String():                            true,
 		}
 
 		freeIpAddrProvider, err := free_ip_addr_tracker.GetOrCreateNewFreeIpAddrTracker(

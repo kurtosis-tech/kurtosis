@@ -74,12 +74,12 @@ func (lokiContainer *lokiLogsDatabaseContainer) CreateAndStart(
 	//https://docs.docker.com/engine/reference/commandline/volume_create/
 	if err := dockerManager.CreateVolume(ctx, volumeName, volumeLabelStrs); err != nil {
 		return "", nil, nil,
-		stacktrace.Propagate(
-			err,
-			"An error occurred creating logs database volume with name '%v' and labels '%+v'",
-			volumeName,
-			volumeLabelStrs,
-		)
+			stacktrace.Propagate(
+				err,
+				"An error occurred creating logs database volume with name '%v' and labels '%+v'",
+				volumeName,
+				volumeLabelStrs,
+			)
 	}
 	//We do not defer undo volume creation because the volume could already exist from previous executions
 	//for this reason the logs database volume creation has to be idempotent, we ALWAYS want to create it if it doesn't exist, no matter what
@@ -97,7 +97,7 @@ func (lokiContainer *lokiLogsDatabaseContainer) CreateAndStart(
 			)
 	}
 
-	containerId, _, err := dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
+	containerId, _, err := dockerManager.CreateAndStartContainer(ctx, true, createAndStartArgs)
 	if err != nil {
 		return "", nil, nil, stacktrace.Propagate(err, "An error occurred starting the logs database container with these args '%+v'", createAndStartArgs)
 	}

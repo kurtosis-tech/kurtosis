@@ -158,7 +158,7 @@ func runFilesArtifactsExpander(
 	).WithSkipAddingToBridgeNetworkIfStaticIpIsSet(
 		skipAddingToBridgeNetwork,
 	).Build()
-	containerId, _, err := dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
+	containerId, _, err := dockerManager.CreateAndStartContainer(ctx, false, createAndStartArgs)
 	if err != nil {
 		return stacktrace.Propagate(
 			err,

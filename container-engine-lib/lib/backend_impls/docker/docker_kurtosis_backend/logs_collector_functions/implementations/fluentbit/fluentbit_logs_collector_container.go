@@ -116,7 +116,7 @@ func (fluentbitContainer *fluentbitLogsCollectorContainer) CreateAndStart(
 			)
 	}
 
-	containerId, hostMachinePortBindings, err := dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
+	containerId, hostMachinePortBindings, err := dockerManager.CreateAndStartContainer(ctx, true, createAndStartArgs)
 	if err != nil {
 		return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred starting the logs collector container with these args '%+v'", createAndStartArgs)
 	}

@@ -76,10 +76,14 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	}
 
 	networkCidr := enclaveNetwork.GetIpAndMask()
+	logCollectorIpNext := make(net.IP, len(enclaveLogsCollector.GetEnclaveNetworkIpAddress()))
+	copy(logCollectorIpNext, enclaveLogsCollector.GetEnclaveNetworkIpAddress())
+	logCollectorIpNext[len(logCollectorIpNext)-1] += 1
 	alreadyTakenIps := map[string]bool{
 		networkCidr.IP.String():                                    true,
 		enclaveNetwork.GetGatewayIp():                              true,
 		enclaveLogsCollector.GetEnclaveNetworkIpAddress().String(): true,
+		logCollectorIpNext.String():                                true,
 	}
 
 	freeIpAddrProvider := lib.NewFreeIpAddrTracker(
@@ -194,7 +198,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		logrus.Warnf("Failed to pull the latest version of API container image '%v'; you may be running an out-of-date version", image)
 	}
 
-	containerId, hostMachinePortBindings, err := backend.dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
+	containerId, hostMachinePortBindings, err := backend.dockerManager.CreateAndStartContainer(ctx, true, createAndStartArgs)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred starting the API container")
 	}

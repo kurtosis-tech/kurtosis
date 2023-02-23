@@ -24,6 +24,7 @@ import (
 	"io"
 	"io/ioutil"
 	"math"
+	"math/rand"
 	"net"
 	"strings"
 	"time"
@@ -32,7 +33,7 @@ import (
 const (
 	// We use a bridge network because, as of 2020-08-01, we're only running locally; however, this may need to change
 	//  at some point in the future
-	dockerNetworkDriver      = "bridge"
+	dockerNetworkDriver      = "overlay"
 	bridgeNetworkNetworkName = "bridge"
 
 	// Per https://docs.docker.com/engine/reference/commandline/kill/ , this seems to mean "the default
@@ -112,6 +113,8 @@ const (
 	successfulExitCode = 0
 
 	emptyNetworkAlias = ""
+
+	managerNodeId = "manager"
 )
 
 /*
@@ -129,7 +132,9 @@ A handle to interacting with the Docker environment running a test.
 */
 type DockerManager struct {
 	// The underlying Docker client that will be used to modify the Docker environment
-	dockerClient *client.Client
+	dockerManagerNodeClient *client.Client
+
+	dockerWorkerNodeClients map[string]*client.Client
 }
 
 /*
@@ -138,12 +143,52 @@ Creates a new Docker manager for manipulating the Docker engine using the given 
 
 Args:
 
-	dockerClient: The Docker client that will be used when interacting with the underlying Docker engine the Docker engine.
+	dockerManagerNodeClient: The Docker client that will be used when interacting with the underlying Docker engine the Docker engine.
 */
-func NewDockerManager(dockerClient *client.Client) *DockerManager {
-	return &DockerManager{
-		dockerClient: dockerClient,
+func NewDockerManager(dockerManagerNodeClient *client.Client, loadDockerWorkerNodeClients bool) *DockerManager {
+	var dockerWorkerNodeClients map[string]*client.Client
+	var err error
+	if loadDockerWorkerNodeClients {
+		dockerWorkerNodeClients, err = loadWorkerNodesClients(dockerManagerNodeClient)
+		if err != nil {
+			logrus.Errorf("No worker node will be used as discovering them threw this error: \n%v", err)
+		}
 	}
+	return &DockerManager{
+		dockerManagerNodeClient: dockerManagerNodeClient,
+		dockerWorkerNodeClients: dockerWorkerNodeClients,
+	}
+}
+
+func loadWorkerNodesClients(dockerManagerNodeClient *client.Client) (map[string]*client.Client, error) {
+	ctx := context.Background()
+	_, err := dockerManagerNodeClient.SwarmInspect(ctx)
+	if err != nil {
+		logrus.Errorf("Error loading worker nodes from manager node. Only the manager node will be used")
+	}
+	nodes, err := dockerManagerNodeClient.NodeList(ctx, types.NodeListOptions{
+		Filters: filters.NewArgs(filters.Arg("role", "worker")),
+	})
+	if err != nil {
+		return map[string]*client.Client{}, err
+	}
+	clients := map[string]*client.Client{}
+	for _, node := range nodes {
+		nodeAddr := node.Status.Addr
+		nodeId := node.ID
+		nodeClient, err := client.NewClientWithOpts(
+			client.WithHost(nodeAddr),
+			client.WithAPIVersionNegotiation())
+		if err != nil {
+			logrus.Errorf("Skipping client '%s' as instanciating a client threw an error:\n%v", nodeId, err)
+		}
+
+		if _, err := nodeClient.Ping(ctx); err != nil {
+			logrus.Errorf("Skipping client '%s' as the server could not be reached:\n%v", nodeId, err)
+		}
+		clients[nodeId] = nodeClient
+	}
+	return clients, nil
 }
 
 /*
@@ -163,14 +208,14 @@ Returns:
 	id: The Docker-managed ID of the network
 */
 func (manager *DockerManager) CreateNetwork(context context.Context, name string, subnetMask string, gatewayIP net.IP, labels map[string]string) (id string, err error) {
+	logrus.Debugf("Creating network '%s' with subnet '%s' and gateway '%s'", name, subnetMask, gatewayIP.String())
 	ipamConfig := []network.IPAMConfig{{
 		Subnet:     subnetMask,
 		IPRange:    "",
 		Gateway:    gatewayIP.String(),
 		AuxAddress: nil,
 	}}
-
-	resp, err := manager.dockerClient.NetworkCreate(context, name, types.NetworkCreate{
+	resp, err := manager.dockerManagerNodeClient.NetworkCreate(context, name, types.NetworkCreate{
 		CheckDuplicate: false,
 		Driver:         dockerNetworkDriver,
 		Scope:          "",
@@ -181,7 +226,7 @@ func (manager *DockerManager) CreateNetwork(context context.Context, name string
 			Config:  ipamConfig,
 		},
 		Internal:   false,
-		Attachable: false,
+		Attachable: true,
 		Ingress:    false,
 		ConfigOnly: false,
 		ConfigFrom: nil,
@@ -195,7 +240,7 @@ func (manager *DockerManager) CreateNetwork(context context.Context, name string
 }
 
 func (manager *DockerManager) ListNetworks(ctx context.Context) ([]types.NetworkResource, error) {
-	networks, err := manager.dockerClient.NetworkList(ctx, types.NetworkListOptions{
+	networks, err := manager.dockerManagerNodeClient.NetworkList(ctx, types.NetworkListOptions{
 		Filters: filters.Args{},
 	})
 	if err != nil {
@@ -249,8 +294,9 @@ func (manager *DockerManager) GetNetworksByLabels(ctx context.Context, labels ma
 	return networks, nil
 }
 
+// TODO: This will not work anymore. But it doesn't seem to be used anywhere... So maybe we can just remove it
 func (manager *DockerManager) GetContainerIdsConnectedToNetwork(context context.Context, networkId string) ([]string, error) {
-	inspectResponse, err := manager.dockerClient.NetworkInspect(context, networkId, types.NetworkInspectOptions{
+	inspectResponse, err := manager.dockerManagerNodeClient.NetworkInspect(context, networkId, types.NetworkInspectOptions{
 		Scope:   "",
 		Verbose: false,
 	})
@@ -278,7 +324,7 @@ Args:
 	networkId: ID of Docker network to remove
 */
 func (manager *DockerManager) RemoveNetwork(context context.Context, networkId string) error {
-	if err := manager.dockerClient.NetworkRemove(context, networkId); err != nil {
+	if err := manager.dockerManagerNodeClient.NetworkRemove(context, networkId); err != nil {
 		return stacktrace.Propagate(err, "An error occurred removing the Docker network with ID %v", networkId)
 	}
 	return nil
@@ -287,6 +333,7 @@ func (manager *DockerManager) RemoveNetwork(context context.Context, networkId s
 /*
 CreateVolume
 Creates a Docker volume identified by the given name.
+TODO: should be changed to CreateVolumeForContainer providing the container ID or something
 
 Args:
 
@@ -310,12 +357,22 @@ func (manager *DockerManager) CreateVolume(context context.Context, volumeName s
 		so *this path is only a path inside the Docker VM* (meaning we can't use it to read/write files). AFAICT, the only way
 		to read/write data to a volume is to mount it in a container. ~ ktoday, 2020-07-01
 	*/
-	_, err := manager.dockerClient.VolumeCreate(context, volumeConfig)
+	_, err := manager.dockerManagerNodeClient.VolumeCreate(context, volumeConfig)
 	if err != nil {
 		return stacktrace.Propagate(err, "Could not create Docker volume for test controller")
 	}
 
 	return nil
+}
+
+func (manager *DockerManager) getAllDockerClients() []*client.Client {
+	clients := []*client.Client{
+		manager.dockerManagerNodeClient,
+	}
+	for _, workerClient := range manager.dockerWorkerNodeClients {
+		clients = append(clients, workerClient)
+	}
+	return clients
 }
 
 /*
@@ -336,14 +393,17 @@ func (manager *DockerManager) GetVolumesByName(ctx context.Context, volumeName s
 		Value: volumeName,
 	}
 	filterArgs := filters.NewArgs(nameFilter)
-	resp, err := manager.dockerClient.VolumeList(ctx, filterArgs)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred finding volumes with name matching '%v'", volumeName)
-	}
 
 	respNames := []string{}
-	for _, foundVolume := range resp.Volumes {
-		respNames = append(respNames, foundVolume.Name)
+	for _, dockerClient := range manager.getAllDockerClients() {
+		resp, err := dockerClient.VolumeList(ctx, filterArgs)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred finding volumes with name matching '%v'", volumeName)
+		}
+
+		for _, foundVolume := range resp.Volumes {
+			respNames = append(respNames, foundVolume.Name)
+		}
 	}
 	return respNames, nil
 }
@@ -354,22 +414,24 @@ Gets the volumes matching the given labels
 */
 func (manager *DockerManager) GetVolumesByLabels(ctx context.Context, labels map[string]string) ([]*types.Volume, error) {
 	labelsFilterArgs := getLabelsFilterArgs(volumeLabelSearchFilterKey, labels)
-	resp, err := manager.dockerClient.VolumeList(ctx, labelsFilterArgs)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred finding volumes with labels '%+v'", labels)
-	}
+	var result []*types.Volume
+	for _, dockerClient := range manager.getAllDockerClients() {
+		resp, err := dockerClient.VolumeList(ctx, labelsFilterArgs)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred finding volumes with labels '%+v'", labels)
+		}
 
-	result := []*types.Volume{}
-	if resp.Volumes != nil {
-		result = resp.Volumes
+		if resp.Volumes != nil {
+			result = append(result, resp.Volumes...)
+		}
 	}
-
 	return result, nil
 }
 
 /*
 RemoveVolume
 Removes a Docker volume identified by the given name, deleting it permanently
+TODO: should be changed to RemoveVolumeForContainer providing the container ID or something
 
 Args:
 
@@ -377,18 +439,37 @@ Args:
 	volumeName: The unique identifier used by Docker to identify the volume that will get removed
 */
 func (manager *DockerManager) RemoveVolume(ctx context.Context, volumeName string) error {
-	if err := manager.dockerClient.VolumeRemove(ctx, volumeName, shouldForceVolumeRemoval); err != nil {
+	if err := manager.dockerManagerNodeClient.VolumeRemove(ctx, volumeName, shouldForceVolumeRemoval); err != nil {
 		return stacktrace.Propagate(err, "An error occurred removing volume '%v'", volumeName)
 	}
 	return nil
 }
 
 func (manager *DockerManager) InspectContainer(ctx context.Context, containerId string) (types.ContainerJSON, error) {
-	result, err := manager.dockerClient.ContainerInspect(ctx, containerId)
+	dockerClient, err := manager.getDockerClientForContainer(containerId)
+	if err != nil {
+		return types.ContainerJSON{}, stacktrace.Propagate(err, "An error occurred inspecting container with ID '%v'", containerId)
+	}
+	result, err := dockerClient.ContainerInspect(ctx, containerId)
 	if err != nil {
 		return types.ContainerJSON{}, stacktrace.Propagate(err, "An error occurred inspecting container '%v'", containerId)
 	}
 	return result, nil
+}
+
+func (manager *DockerManager) getRandomClient(onManagerNode bool) (string, *client.Client) {
+	if onManagerNode || len(manager.dockerWorkerNodeClients) == 0 {
+		return managerNodeId, manager.dockerManagerNodeClient
+	}
+	randomNodeIdx := rand.Intn(len(manager.dockerWorkerNodeClients))
+	idx := 0
+	for workerNodeId, workerNodeClient := range manager.dockerWorkerNodeClients {
+		if idx == randomNodeIdx {
+			return workerNodeId, workerNodeClient
+		}
+		idx++
+	}
+	return managerNodeId, manager.dockerManagerNodeClient // throw an error here as something went dramatically wrong
 }
 
 /*
@@ -403,8 +484,10 @@ Returns:
 */
 func (manager *DockerManager) CreateAndStartContainer(
 	ctx context.Context,
+	onManagerNode bool,
 	args *CreateAndStartContainerArgs,
 ) (string, map[nat.Port]*nat.PortBinding, error) {
+	dockerClientId, dockerClient := manager.getRandomClient(onManagerNode)
 
 	// If the user passed in a Docker image that doesn't have a tag separator (indicating no tag was specified), manually append
 	//  the Docker default tag so that when we search for the image we're searching for a very specific image
@@ -418,10 +501,7 @@ func (manager *DockerManager) CreateAndStartContainer(
 		return "", nil, stacktrace.Propagate(err, "An error occurred fetching image '%v'", dockerImage)
 	}
 
-	idFilterArgs := filters.NewArgs(filters.KeyValuePair{
-		Key:   networkIdSearchFilterKey,
-		Value: args.networkId,
-	})
+	idFilterArgs := filters.NewArgs(filters.Arg(networkIdSearchFilterKey, args.networkId))
 	networks, err := manager.getNetworksByFilterArgs(ctx, idFilterArgs)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "An error occurred checking for the existence of network with ID %v", args.networkId)
@@ -441,7 +521,7 @@ func (manager *DockerManager) CreateAndStartContainer(
 	for port := range args.usedPorts {
 		usedPortsSet[port] = struct{}{}
 	}
-
+	logrus.Debugf("Exposed Ports are: %v", usedPortsSet)
 	containerConfigPtr, err := manager.getContainerCfg(
 		dockerImage,
 		isInteractiveMode,
@@ -454,6 +534,7 @@ func (manager *DockerManager) CreateAndStartContainer(
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "Failed to configure container from service.")
 	}
+	logrus.Debugf("Used Ports are: %v", args.usedPorts)
 	containerHostConfigPtr, err := manager.getContainerHostConfig(
 		args.addedCapabilities,
 		args.networkMode,
@@ -471,6 +552,7 @@ func (manager *DockerManager) CreateAndStartContainer(
 	// note a nil network config would connect to bridge network by default
 	var networkConfig *network.NetworkingConfig
 	if args.staticIp != nil && args.skipAddingToBridgeNetworkIfStaticIpIsSet {
+		logrus.Debugf("Container created with static IP address: '%s'", args.staticIp.String())
 		targetNetworkEndPointSettings := getEndpointSettingsForIpAddress(args.staticIp.String(), args.alias)
 		endpointSettingsByNetworkId := map[string]*network.EndpointSettings{}
 		endpointSettingsByNetworkId[args.networkId] = targetNetworkEndPointSettings
@@ -479,14 +561,14 @@ func (manager *DockerManager) CreateAndStartContainer(
 		}
 	}
 
-	// This function dockerClient.ContainerCreate adds the container to the bridge network if the networkConfig is nil or if its empty
+	// This function dockerManagerNodeClient.ContainerCreate adds the container to the bridge network if the networkConfig is nil or if its empty
 	// Ideally we'd start with an empty network config, add the target network if its supplied and add the bridge network if the person needs it
 	// This logic breaks at two places
 	// If a person doesn't need either of them, and we pass a nil(or empty) we get the bridge network for free
 	// While starting the enclave, adding both bridge & enclave network to the networkConfig just fails
 	// I tried creating the container with networkConfig - nil & args.NetworkMode set to none but that stopped me from adding the container to a network
 	// using manager.ConnectContainerToNetwork
-	containerCreateResp, err := manager.dockerClient.ContainerCreate(ctx, containerConfigPtr, containerHostConfigPtr, networkConfig, nil, args.name)
+	containerCreateResp, err := dockerClient.ContainerCreate(ctx, containerConfigPtr, containerHostConfigPtr, networkConfig, nil, args.name)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "Could not create Docker container '%v' from image '%v'", args.name, dockerImage)
 	}
@@ -498,29 +580,28 @@ func (manager *DockerManager) CreateAndStartContainer(
 			dockerImage,
 		)
 	}
-	logrus.Debugf("Created container with ID '%v' from image '%v'", containerId, dockerImage)
+	logrus.Debugf("Created container with ID '%v' on node '%s' from image '%v'", containerId, dockerClientId, dockerImage)
 
 	// static ip is provided and the user wants the connection to bridge network to happen
-	// in the container start the bridge network got connected and now we connect to target network
+	// in the container start the bridge network got connected, and now we connect to target network
 	if args.staticIp != nil && !args.skipAddingToBridgeNetworkIfStaticIpIsSet {
 		if err = manager.ConnectContainerToNetwork(ctx, args.networkId, containerId, args.staticIp, args.alias); err != nil {
 			return "", nil, stacktrace.Propagate(err, "Failed to connect container %s to network.", containerId)
 		}
 	}
-	// TODO defer a disconnct-from-network if this function doesn't succeed??
+	// TODO defer a disconnect-from-network if this function doesn't succeed??
 
 	options := types.ContainerStartOptions{
 		CheckpointID:  "",
 		CheckpointDir: "",
 	}
-	if err = manager.dockerClient.ContainerStart(ctx, containerId, options); err != nil {
+	if err = dockerClient.ContainerStart(ctx, containerId, options); err != nil {
 		containerLogs := manager.getFailedContainerLogsOrErrorString(ctx, containerId)
 		containerLogsHeader := "\n--------------------- CONTAINER LOGS -----------------------\n"
 		containerLogsFooter := "\n------------------- END CONTAINER LOGS --------------------"
 		return "", nil, stacktrace.Propagate(err, "Could not start Docker container from image '%v'; logs are below:%v%v%v", dockerImage, containerLogsHeader, containerLogs, containerLogsFooter)
 	}
-
-	functionFinishedSuccessfully := false
+	functionFinishedSuccessfully := true
 	defer func() {
 		if !functionFinishedSuccessfully {
 			if err := manager.KillContainer(ctx, containerId); err != nil {
@@ -548,7 +629,7 @@ func (manager *DockerManager) CreateAndStartContainer(
 			Height: args.interactiveModeTtySize.Height,
 			Width:  args.interactiveModeTtySize.Width,
 		}
-		if err := manager.dockerClient.ContainerResize(ctx, containerId, resizeOpts); err != nil {
+		if err := dockerClient.ContainerResize(ctx, containerId, resizeOpts); err != nil {
 			return "", nil, stacktrace.Propagate(
 				err,
 				"An error occurred resizing the new container's TTY size to height %v and width %v to match the user's terminal",
@@ -575,7 +656,7 @@ func (manager *DockerManager) CreateAndStartContainer(
 		//  from Docker
 		for i := 0; i < maxNumHostPortBindingChecks; i++ {
 			logrus.Tracef("Trying to get host machine port bindings (%v previous attempts)...", i)
-			containerInspectResp, err := manager.dockerClient.ContainerInspect(ctx, containerId)
+			containerInspectResp, err := dockerClient.ContainerInspect(ctx, containerId)
 			if err != nil {
 				return "", nil, stacktrace.Propagate(
 					err,
@@ -648,6 +729,26 @@ func (manager *DockerManager) CreateAndStartContainer(
 	return containerId, resultHostPortBindings, nil
 }
 
+func (manager *DockerManager) getDockerClientForContainer(containerId string) (*client.Client, error) {
+	allDockerClients := manager.getAllDockerClients()
+	for _, dockerClient := range allDockerClients {
+		containers, err := dockerClient.ContainerList(context.Background(), types.ContainerListOptions{
+			All:     true,
+			Filters: filters.NewArgs(filters.Arg("id", containerId)),
+		})
+		if err != nil {
+			return nil, err
+		}
+		if len(containers) == 1 {
+			return dockerClient, nil
+		}
+		if len(containers) > 1 {
+			return nil, stacktrace.NewError("More than on container matches ID '%s'", containerId)
+		}
+	}
+	return nil, stacktrace.NewError("No contain seem to match ID '%s'", containerId)
+}
+
 /*
 GetContainerIP
 Gets the container's IP on a given network
@@ -656,7 +757,12 @@ NOTE: Yes, it's a testament to how poorly-designed the Docker API is that we nee
 	everywhere else in the Docker API uses network ID
 */
 func (manager *DockerManager) GetContainerIP(ctx context.Context, networkName string, containerId string) (string, error) {
-	resp, err := manager.dockerClient.ContainerInspect(ctx, containerId)
+	dockerClient, err := manager.getDockerClientForContainer(containerId)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred inspecting container with ID '%v'", containerId)
+	}
+
+	resp, err := dockerClient.ContainerInspect(ctx, containerId)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred inspecting container with ID '%v'", containerId)
 	}
@@ -669,6 +775,10 @@ func (manager *DockerManager) GetContainerIP(ctx context.Context, networkName st
 }
 
 func (manager *DockerManager) AttachToContainer(ctx context.Context, containerId string) (types.HijackedResponse, error) {
+	dockerClient, err := manager.getDockerClientForContainer(containerId)
+	if err != nil {
+		return types.HijackedResponse{}, stacktrace.Propagate(err, "An error occurred attaching to container '%v'", containerId)
+	}
 	attachOpts := types.ContainerAttachOptions{
 		Stream:     true,
 		Stdin:      true,
@@ -677,7 +787,7 @@ func (manager *DockerManager) AttachToContainer(ctx context.Context, containerId
 		DetachKeys: "",
 		Logs:       false,
 	}
-	hijackedResponse, err := manager.dockerClient.ContainerAttach(ctx, containerId, attachOpts)
+	hijackedResponse, err := dockerClient.ContainerAttach(ctx, containerId, attachOpts)
 	if err != nil {
 		return types.HijackedResponse{}, stacktrace.Propagate(err, "An error occurred attaching to container '%v'", containerId)
 	}
@@ -695,8 +805,11 @@ Args:
 	timeout: How long to wait for container stoppage before throwing an error
 */
 func (manager *DockerManager) StopContainer(context context.Context, containerId string, timeout time.Duration) error {
-	err := manager.dockerClient.ContainerStop(context, containerId, &timeout)
+	dockerClient, err := manager.getDockerClientForContainer(containerId)
 	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred stopping container with ID '%v'", containerId)
+	}
+	if err = dockerClient.ContainerStop(context, containerId, &timeout); err != nil {
 		return stacktrace.Propagate(err, "An error occurred stopping container with ID '%v'", containerId)
 	}
 	return nil
@@ -712,7 +825,7 @@ Args:
 	containerId: ID of Docker container to kill
 */
 func (manager *DockerManager) KillContainer(ctx context.Context, containerId string) error {
-	if err := manager.killContainerWithRetriesWhenErrorResponseFromDeamon(
+	if err := manager.killContainerWithRetriesWhenErrorResponseFromDaemon(
 		ctx,
 		containerId,
 		defaultKillContainerMaxRetries,
@@ -739,12 +852,16 @@ Args:
 	containerId: ID of Docker container to remove
 */
 func (manager *DockerManager) RemoveContainer(ctx context.Context, containerId string) error {
+	dockerClient, err := manager.getDockerClientForContainer(containerId)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred removing container with ID '%v'", containerId)
+	}
 	removeOpts := types.ContainerRemoveOptions{
 		RemoveVolumes: shouldRemoveAnonymousVolumesWhenRemovingContainers,
 		RemoveLinks:   shouldRemoveLinksWhenRemovingContainers,
 		Force:         shouldKillContainersWhenRemovingContainers,
 	}
-	if err := manager.dockerClient.ContainerRemove(ctx, containerId, removeOpts); err != nil {
+	if err := dockerClient.ContainerRemove(ctx, containerId, removeOpts); err != nil {
 		return stacktrace.Propagate(err, "An error occurred removing container with ID '%v'", containerId)
 	}
 	return nil
@@ -765,7 +882,11 @@ Returns:
 	err: The error if an error occurred waiting for exit
 */
 func (manager *DockerManager) WaitForExit(context context.Context, containerId string) (exitCode int64, err error) {
-	statusChannel, errChannel := manager.dockerClient.ContainerWait(context, containerId, container.WaitConditionNotRunning)
+	dockerClient, err := manager.getDockerClientForContainer(containerId)
+	if err != nil {
+		return 0, stacktrace.Propagate(err, "An error occurred waiting for container with ID '%v' to exit", containerId)
+	}
+	statusChannel, errChannel := dockerClient.ContainerWait(context, containerId, container.WaitConditionNotRunning)
 
 	// Blocks until one of the channels returns
 	select {
@@ -791,6 +912,10 @@ func (manager *DockerManager) GetContainerLogs(
 	containerId string,
 	shouldFollowLogs bool,
 ) (io.ReadCloser, error) {
+	dockerClient, err := manager.getDockerClientForContainer(containerId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred retrieving container logs for container with ID '%v'", containerId)
+	}
 	containerLogOpts := types.ContainerLogsOptions{
 		ShowStdout: true,
 		ShowStderr: true,
@@ -801,7 +926,7 @@ func (manager *DockerManager) GetContainerLogs(
 		Tail:       "",
 		Details:    false,
 	}
-	readCloser, err := manager.dockerClient.ContainerLogs(ctx, containerId, containerLogOpts)
+	readCloser, err := dockerClient.ContainerLogs(ctx, containerId, containerLogOpts)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting logs for container ID '%v'", containerId)
 	}
@@ -813,8 +938,11 @@ PauseContainer
 Pauses all processes running in the given container, but does not shut it down.
 */
 func (manager *DockerManager) PauseContainer(context context.Context, containerId string) error {
-	err := manager.dockerClient.ContainerPause(context, containerId)
+	dockerClient, err := manager.getDockerClientForContainer(containerId)
 	if err != nil {
+		return stacktrace.Propagate(err, "Docker client failed to pause container '%v'", containerId)
+	}
+	if err = dockerClient.ContainerPause(context, containerId); err != nil {
 		return stacktrace.Propagate(err, "Docker client failed to pause container '%v'", containerId)
 	}
 	return nil
@@ -825,7 +953,11 @@ UnpauseContainer
 Unpauses all processes running in the given container.
 */
 func (manager *DockerManager) UnpauseContainer(context context.Context, containerId string) error {
-	err := manager.dockerClient.ContainerUnpause(context, containerId)
+	dockerClient, err := manager.getDockerClientForContainer(containerId)
+	if err != nil {
+		return stacktrace.Propagate(err, "Docker client failed to unpause container '%v'", containerId)
+	}
+	err = dockerClient.ContainerUnpause(context, containerId)
 	if err != nil {
 		return stacktrace.Propagate(err, "Docker client failed to unpause container '%v'", containerId)
 	}
@@ -837,7 +969,10 @@ RunExecCommand
 Executes the given command inside the container with the given ID, blocking until the command completes
 */
 func (manager *DockerManager) RunExecCommand(context context.Context, containerId string, command []string, logOutput io.Writer) (int32, error) {
-	dockerClient := manager.dockerClient
+	dockerClient, err := manager.getDockerClientForContainer(containerId)
+	if err != nil {
+		return 0, stacktrace.Propagate(err, "An error occurred creating the exec process for container '%v'", containerId)
+	}
 	execConfig := types.ExecConfig{
 		User:         "",
 		Privileged:   false,
@@ -915,11 +1050,16 @@ Connects the container with the given container ID to the network with the given
 If the IP address passed is nil then we get a random ip address
 */
 func (manager *DockerManager) ConnectContainerToNetwork(ctx context.Context, networkId string, containerId string, staticIpAddr net.IP, alias string) (err error) {
-	logrus.Tracef(
+	dockerClient, err := manager.getDockerClientForContainer(containerId)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred disconnecting container '%v' from network '%v'", containerId, networkId)
+	}
+	logrus.Debugf(
 		"Connecting container ID %v to network ID %v using static IP %v",
 		containerId,
 		networkId,
-		staticIpAddr.String())
+		staticIpAddr.String(),
+	)
 
 	staticIpAddressStr := ""
 	if staticIpAddr != nil {
@@ -928,7 +1068,7 @@ func (manager *DockerManager) ConnectContainerToNetwork(ctx context.Context, net
 
 	config := getEndpointSettingsForIpAddress(staticIpAddressStr, alias)
 
-	err = manager.dockerClient.NetworkConnect(
+	err = dockerClient.NetworkConnect(
 		ctx,
 		networkId,
 		containerId,
@@ -942,7 +1082,11 @@ func (manager *DockerManager) ConnectContainerToNetwork(ctx context.Context, net
 }
 
 func (manager *DockerManager) DisconnectContainerFromNetwork(ctx context.Context, containerId string, networkId string) error {
-	if err := manager.dockerClient.NetworkDisconnect(ctx, networkId, containerId, true); err != nil {
+	dockerClient, err := manager.getDockerClientForContainer(containerId)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred disconnecting container '%v' from network '%v'", containerId, networkId)
+	}
+	if err := dockerClient.NetworkDisconnect(ctx, networkId, containerId, true); err != nil {
 		return stacktrace.Propagate(err, "An error occurred disconnecting container '%v' from network '%v'", containerId, networkId)
 	}
 	return nil
@@ -1019,24 +1163,30 @@ func (manager *DockerManager) FetchImage(ctx context.Context, dockerImage string
 
 func (manager *DockerManager) PullImage(context context.Context, imageName string) (err error) {
 	logrus.Infof("Pulling image '%s'...", imageName)
-	out, err := manager.dockerClient.ImagePull(context, imageName, types.ImagePullOptions{
-		All:           false,
-		RegistryAuth:  "",
-		PrivilegeFunc: nil,
-		Platform:      "",
-	})
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to pull image %s", imageName)
-	}
-	defer out.Close()
-	_, err = io.Copy(ioutil.Discard, out)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred discarding the output")
+	for _, dockerClient := range manager.getAllDockerClients() {
+		out, err := dockerClient.ImagePull(context, imageName, types.ImagePullOptions{
+			All:           false,
+			RegistryAuth:  "",
+			PrivilegeFunc: nil,
+			Platform:      "",
+		})
+		if err != nil {
+			return stacktrace.Propagate(err, "Failed to pull image %s", imageName)
+		}
+		defer out.Close()
+		_, err = io.Copy(ioutil.Discard, out)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred discarding the output")
+		}
 	}
 	return nil
 }
 
 func (manager *DockerManager) CreateContainerExec(context context.Context, containerId string, cmd []string) (*types.HijackedResponse, error) {
+	dockerClient, err := manager.getDockerClientForContainer(containerId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "an error occurred while creating the ContainerExec in container with ID '%v'", containerId)
+	}
 	config := types.ExecConfig{
 		User:         "",
 		Privileged:   false,
@@ -1051,7 +1201,7 @@ func (manager *DockerManager) CreateContainerExec(context context.Context, conta
 		Cmd:          cmd,
 	}
 
-	response, err := manager.dockerClient.ContainerExecCreate(context, containerId, config)
+	response, err := dockerClient.ContainerExecCreate(context, containerId, config)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "an error occurred while creating the ContainerExec in container with ID '%v'", containerId)
 	}
@@ -1066,7 +1216,7 @@ func (manager *DockerManager) CreateContainerExec(context context.Context, conta
 		Tty:    true,
 	}
 
-	hijackedResponse, err := manager.dockerClient.ContainerExecAttach(context, execID, execStartCheck)
+	hijackedResponse, err := dockerClient.ContainerExecAttach(context, execID, execStartCheck)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "There was an error while attaching connection to the execution process with ID '%v' in container with ID '%v'", execID, containerId)
 	}
@@ -1077,8 +1227,11 @@ func (manager *DockerManager) CreateContainerExec(context context.Context, conta
 // CopyFromContainer returns a io.ReadCloser representing the bytes of the TAR'd files at srcPath
 // The caller must close the result
 func (manager *DockerManager) CopyFromContainer(ctx context.Context, containerId string, srcPath string) (io.ReadCloser, error) {
-
-	tarStreamReadCloser, _, err := manager.dockerClient.CopyFromContainer(
+	dockerClient, err := manager.getDockerClientForContainer(containerId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred copying content '%v' from container with ID '%v'", srcPath, containerId)
+	}
+	tarStreamReadCloser, _, err := dockerClient.CopyFromContainer(
 		ctx,
 		containerId,
 		srcPath)
@@ -1097,33 +1250,38 @@ func (manager *DockerManager) CopyFromContainer(ctx context.Context, containerId
 func (manager *DockerManager) isImageAvailableLocally(ctx context.Context, imageName string) (bool, error) {
 	referenceArg := filters.Arg("reference", imageName)
 	filters := filters.NewArgs(referenceArg)
-	images, err := manager.dockerClient.ImageList(
-		ctx,
-		types.ImageListOptions{
-			All:     true,
-			Filters: filters,
-		})
-	if err != nil {
-		return false, stacktrace.Propagate(err, "Failed to list images.")
+	for _, dockerClient := range manager.getAllDockerClients() {
+		images, err := dockerClient.ImageList(
+			ctx,
+			types.ImageListOptions{
+				All:     true,
+				Filters: filters,
+			})
+		if err != nil {
+			return false, stacktrace.Propagate(err, "Failed to list images.")
+		}
+		numMatchingImages := len(images)
+		if numMatchingImages > 1 {
+			return false, stacktrace.NewError(
+				"Searching for Docker images matching image name '%v' returned %v images; "+
+					"this indicates a bug because the image name being searched should only reference 0 or 1 images. Images matched:\n%+v",
+				imageName,
+				numMatchingImages,
+				images,
+			)
+		}
+		if numMatchingImages <= 0 {
+			return false, nil
+		}
 	}
-	numMatchingImages := len(images)
-	if numMatchingImages > 1 {
-		return false, stacktrace.NewError(
-			"Searching for Docker images matching image name '%v' returned %v images; "+
-				"this indicates a bug because the image name being searched should only reference 0 or 1 images. Images matched:\n%+v",
-			imageName,
-			numMatchingImages,
-			images,
-		)
-	}
-	return numMatchingImages > 0, nil
+	return true, nil
 }
 
 func (manager *DockerManager) getNetworksByFilterArgs(ctx context.Context, args filters.Args) ([]types.NetworkResource, error) {
 	// NOTE: Even though this returns a `NetworkResource` object which has a Containers field on it, this is a lie!!
 	// For whatever insane reason, Docker doesn't fill this field out when NetworkList is used and there doesn't seem to
 	// be a way to get it to do so. Instead we'd have to do an InspectNetwork call.
-	networks, err := manager.dockerClient.NetworkList(
+	networks, err := manager.dockerManagerNodeClient.NetworkList(
 		ctx,
 		types.NetworkListOptions{
 			Filters: args,
@@ -1374,17 +1532,20 @@ func (manager *DockerManager) getContainerCfg(
 	return nodeConfigPtr, nil
 }
 
-func (manager *DockerManager) killContainerWithRetriesWhenErrorResponseFromDeamon(
+func (manager *DockerManager) killContainerWithRetriesWhenErrorResponseFromDaemon(
 	ctx context.Context,
 	containerId string,
 	maxRetries uint8,
 	timeBetweenRetries time.Duration,
 ) error {
-
 	var err error
+	dockerClient, err := manager.getDockerClientForContainer(containerId)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred killing container with ID '%v'", containerId)
+	}
 
 	for i := uint8(0); i < maxRetries; i++ {
-		if err = manager.dockerClient.ContainerKill(ctx, containerId, dockerKillSignal); err != nil {
+		if err = dockerClient.ContainerKill(ctx, containerId, dockerKillSignal); err != nil {
 
 			errMsg := strings.ToLower(err.Error())
 
@@ -1444,16 +1605,19 @@ func (manager *DockerManager) getContainersByFilterArgs(ctx context.Context, fil
 		Limit:   0,
 		Filters: filterArgs,
 	}
-	dockerContainers, err := manager.dockerClient.ContainerList(ctx, opts)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the docker containers with filter args '%+v'", filterArgs)
+	var result []*docker_manager_types.Container
+	for _, dockerClient := range manager.getAllDockerClients() {
+		dockerContainers, err := dockerClient.ContainerList(ctx, opts)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting the docker containers with filter args '%+v'", filterArgs)
+		}
+		containers, err := newContainersListFromDockerContainersList(dockerContainers)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred creating new containers list from Docker containers list")
+		}
+		result = append(result, containers...)
 	}
-	containers, err := newContainersListFromDockerContainersList(dockerContainers)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating new containers list from Docker containers list")
-	}
-
-	return containers, nil
+	return result, nil
 }
 
 // didContainerStartSuccessfully there are 4 return cases:
@@ -1462,7 +1626,6 @@ func (manager *DockerManager) getContainersByFilterArgs(ctx context.Context, fil
 // 2- the container runs successfully and exited with 0, in this case this method will also return true and nil
 // 3- the container dies, in this case this method will return false and the error with the container logs
 func (manager *DockerManager) didContainerStartSuccessfully(ctx context.Context, containerId string, dockerImage string) (bool, error) {
-
 	containerJson, err := manager.InspectContainer(ctx, containerId)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred getting container JSON info for container with ID '%v'", containerId)

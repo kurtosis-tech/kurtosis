@@ -88,7 +88,7 @@ func runKubernetesManagerTesting() error {
 func runKurtosisBackendTesting() error {
 	ctx := context.Background()
 
-	backend, err := backend_creator.GetLocalDockerKurtosisBackend(nil)
+	backend, err := backend_creator.GetLocalDockerKurtosisBackend(nil, true)
 	if err != nil {
 		return err
 	}

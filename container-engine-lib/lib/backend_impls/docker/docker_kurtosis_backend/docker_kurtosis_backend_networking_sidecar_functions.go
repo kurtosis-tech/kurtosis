@@ -119,7 +119,7 @@ func (backend *DockerKurtosisBackend) CreateNetworkingSidecar(
 		logrus.Warnf("Failed to pull the latest version of networking sidecar container image '%v'; you may be running an out-of-date version", networkingSidecarImageName)
 	}
 
-	containerId, _, err := backend.dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
+	containerId, _, err := backend.dockerManager.CreateAndStartContainer(ctx, false, createAndStartArgs)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred starting the networking sidecar container")
 	}

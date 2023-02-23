@@ -78,10 +78,10 @@ func NewEnclaveManager(
 //	is only used by the EngineServerService so we might as well return the object that EngineServerService wants
 func (manager *EnclaveManager) CreateEnclave(
 	setupCtx context.Context,
-	// If blank, will use the default
+// If blank, will use the default
 	apiContainerImageVersionTag string,
 	apiContainerLogLevel logrus.Level,
-	//If blank, will use a random one
+//If blank, will use a random one
 	enclaveName string,
 	isPartitioningEnabled bool,
 	metricsUserID string,
@@ -116,28 +116,27 @@ func (manager *EnclaveManager) CreateEnclave(
 		return nil, stacktrace.Propagate(err, "An error occurred validating enclave name '%v'", enclaveName)
 	}
 
-	teardownCtx := context.Background() // Separate context for tearing stuff down in case the input context is cancelled
 	// Create Enclave with kurtosisBackend
 	newEnclave, err := manager.kurtosisBackend.CreateEnclave(setupCtx, enclaveUuid, enclaveName, isPartitioningEnabled)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating enclave with name `%v` and uuid '%v'", enclaveName, enclaveUuid)
 	}
-	shouldDestroyEnclave := true
-	defer func() {
-		if shouldDestroyEnclave {
-			_, destroyEnclaveErrs, err := manager.kurtosisBackend.DestroyEnclaves(teardownCtx, getEnclaveByEnclaveIdFilter(enclaveUuid))
-			manualActionRequiredStrFmt := "ACTION REQUIRED: You'll need to manually destroy the enclave '%v'!!!!!!"
-			if err != nil {
-				logrus.Errorf("Expected to be able to call the backend and destroy enclave '%v', but an error occurred:\n%v", enclaveUuid, err)
-				logrus.Errorf(manualActionRequiredStrFmt, enclaveUuid)
-				return
-			}
-			for enclaveUuid, err := range destroyEnclaveErrs {
-				logrus.Errorf("Expected to be able to cleanup the enclave '%v', but an error was thrown:\n%v", enclaveUuid, err)
-				logrus.Errorf(manualActionRequiredStrFmt, enclaveUuid)
-			}
-		}
-	}()
+	//shouldDestroyEnclave := true
+	//defer func() {
+	//	if shouldDestroyEnclave {
+	//		_, destroyEnclaveErrs, err := manager.kurtosisBackend.DestroyEnclaves(teardownCtx, getEnclaveByEnclaveIdFilter(enclaveUuid))
+	//		manualActionRequiredStrFmt := "ACTION REQUIRED: You'll need to manually destroy the enclave '%v'!!!!!!"
+	//		if err != nil {
+	//			logrus.Errorf("Expected to be able to call the backend and destroy enclave '%v', but an error occurred:\n%v", enclaveUuid, err)
+	//			logrus.Errorf(manualActionRequiredStrFmt, enclaveUuid)
+	//			return
+	//		}
+	//		for enclaveUuid, err := range destroyEnclaveErrs {
+	//			logrus.Errorf("Expected to be able to cleanup the enclave '%v', but an error was thrown:\n%v", enclaveUuid, err)
+	//			logrus.Errorf(manualActionRequiredStrFmt, enclaveUuid)
+	//		}
+	//	}
+	//}()
 
 	apiContainer, err := manager.launchApiContainer(setupCtx,
 		apiContainerImageVersionTag,
@@ -153,22 +152,22 @@ func (manager *EnclaveManager) CreateEnclave(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred launching the API container")
 	}
-	shouldStopApiContainer := true
-	defer func() {
-		if shouldStopApiContainer {
-			_, destroyApiContainerErrs, err := manager.kurtosisBackend.DestroyAPIContainers(teardownCtx, getApiContainerByEnclaveIdFilter(enclaveUuid))
-			manualActionRequiredStrFmt := "ACTION REQUIRED: You'll need to manually destroy the API Container for enclave '%v'!!!!!!"
-			if err != nil {
-				logrus.Errorf("Expected to be able to call the backend and destroy the API container for enclave '%v', but an error was thrown:\n%v", enclaveUuid, err)
-				logrus.Errorf(manualActionRequiredStrFmt, enclaveUuid)
-				return
-			}
-			for enclaveUuid, err := range destroyApiContainerErrs {
-				logrus.Errorf("Expected to be able to cleanup the API Container in enclave '%v', but an error was thrown:\n%v", enclaveUuid, err)
-				logrus.Errorf(manualActionRequiredStrFmt, enclaveUuid)
-			}
-		}
-	}()
+	//shouldStopApiContainer := true
+	//defer func() {
+	//	if shouldStopApiContainer {
+	//		_, destroyApiContainerErrs, err := manager.kurtosisBackend.DestroyAPIContainers(teardownCtx, getApiContainerByEnclaveIdFilter(enclaveUuid))
+	//		manualActionRequiredStrFmt := "ACTION REQUIRED: You'll need to manually destroy the API Container for enclave '%v'!!!!!!"
+	//		if err != nil {
+	//			logrus.Errorf("Expected to be able to call the backend and destroy the API container for enclave '%v', but an error was thrown:\n%v", enclaveUuid, err)
+	//			logrus.Errorf(manualActionRequiredStrFmt, enclaveUuid)
+	//			return
+	//		}
+	//		for enclaveUuid, err := range destroyApiContainerErrs {
+	//			logrus.Errorf("Expected to be able to cleanup the API Container in enclave '%v', but an error was thrown:\n%v", enclaveUuid, err)
+	//			logrus.Errorf(manualActionRequiredStrFmt, enclaveUuid)
+	//		}
+	//	}
+	//}()
 
 	var apiContainerHostMachineInfo *kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo
 	if apiContainer.GetPublicIPAddress() != nil &&
@@ -211,8 +210,8 @@ func (manager *EnclaveManager) CreateEnclave(
 	manager.allExistingAndHistoricalIdentifiers = append(manager.allExistingAndHistoricalIdentifiers, enclaveIdentifier)
 
 	// Everything started successfully, so the responsibility of deleting the enclave is now transferred to the caller
-	shouldDestroyEnclave = false
-	shouldStopApiContainer = false
+	//shouldDestroyEnclave = false
+	//shouldStopApiContainer = false
 	return result, nil
 }
 

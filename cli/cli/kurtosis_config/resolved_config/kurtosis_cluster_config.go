@@ -91,7 +91,7 @@ func getSuppliers(clusterId string, clusterType KurtosisClusterType, kubernetesC
 			)
 		}
 		backendSupplier = func(_ context.Context) (backend_interface.KurtosisBackend, error) {
-			backend, err := backend_creator.GetLocalDockerKurtosisBackend(dockerBackendApiContainerModeArgs)
+			backend, err := backend_creator.GetLocalDockerKurtosisBackend(dockerBackendApiContainerModeArgs, false)
 			if err != nil {
 				return nil, stacktrace.Propagate(err, "An error occurred creating the Docker Kurtosis backend")
 			}
