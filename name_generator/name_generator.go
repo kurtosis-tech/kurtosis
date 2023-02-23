@@ -19,9 +19,9 @@ type generatorArgs struct {
 	nouns      []string
 }
 
-// getNameGenerator we use once to seen random generator once
+// getNameGenerator we use once to seed random generator, this is described in the doc below
 // https://stackoverflow.com/questions/12321133/how-to-properly-seed-random-number-generator
-// has interesting read about maybe using crypto/rand in future if need be
+// this method is responsible for creating randomNameGenerator struct and reuses it for frequent requests
 func getNameGenerator() *randomNameGenerator {
 	once.Do(func() {
 		seed := time.Now().UTC().UnixNano()

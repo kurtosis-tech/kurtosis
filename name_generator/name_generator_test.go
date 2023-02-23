@@ -19,7 +19,6 @@ func TestRandomNameGenerator_GenerateName(t *testing.T) {
 	}
 
 	nameGenerator := getNameGenerator()
-
 	actual := nameGenerator.generateName(args)
 	potentialCandidates := map[string]bool{
 		"test_adj-noun":     true,
