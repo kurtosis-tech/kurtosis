@@ -23,8 +23,6 @@ const (
 
 	apiContainerListenGrpcProxyPortNumInsideNetwork = uint16(7444)
 
-	enclavesCleaningPhaseTitle = "enclaves"
-
 	getRandomEnclaveIdRetries = uint16(5)
 
 	validNumberOfUuidMatches = 1
