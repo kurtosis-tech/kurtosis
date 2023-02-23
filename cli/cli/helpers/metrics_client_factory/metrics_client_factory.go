@@ -1,6 +1,7 @@
 package metrics_client_factory
 
 import (
+	"github.com/kurtosis-tech/kurtosis/cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/metrics_user_id_store"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_cluster_setting"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config"
@@ -12,8 +13,7 @@ import (
 )
 
 const (
-	shouldFlushMetricsClientQueueOnEachEvent           = false
-	defaultSendingUserMetricsIfConfigurationIsNotFound = true
+	shouldFlushMetricsClientQueueOnEachEvent = false
 )
 
 func GetMetricsClient() (metrics_client.MetricsClient, func() error, error) {
@@ -44,7 +44,7 @@ func GetMetricsClient() (metrics_client.MetricsClient, func() error, error) {
 		}
 		sendUserMetrics = kurtosisConfig.GetShouldSendMetrics()
 	} else {
-		sendUserMetrics = defaultSendingUserMetricsIfConfigurationIsNotFound
+		sendUserMetrics = defaults.SendMetricsByDefault
 	}
 
 	metricsUserIdStore := metrics_user_id_store.GetMetricsUserIDStore()
