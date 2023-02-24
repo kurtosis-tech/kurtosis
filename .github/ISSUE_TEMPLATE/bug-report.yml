@@ -23,8 +23,8 @@ body:
       label: (Optional) What is your metrics user ID?
       placeholder: e.g. 07d1472497dg44593e5520436603ca4c3423423bd608bec371f9343dxcf4b
       description: |
-        "(Optional) To print your metrics user ID, run `kurtosis analytics id`. This information will help us debug and fix issues quicker."
-        "Read more about our metrics philosophy at https://docs.kurtosis.com/explanations/metrics-philosophy."
+        (Optional) To print your metrics user ID, run `kurtosis analytics id`. This information will help us debug and fix issues quicker.
+        Read more about our metrics philosophy at https://docs.kurtosis.com/explanations/metrics-philosophy.
     validations:
       required: false
   - type: dropdown
