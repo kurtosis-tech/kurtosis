@@ -9,6 +9,7 @@ body:
     attributes:
       value: |
         Thank you for taking the time to help us improve our documentation. We value your feedback.
+        Please make sure to update the title of this Docs Issue to concisely describe the issue.
   - type: input
     id: url-link
     attributes:
