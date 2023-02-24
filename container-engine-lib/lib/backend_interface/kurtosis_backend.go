@@ -380,10 +380,10 @@ type KurtosisBackend interface {
 	// Gets the logs collector, if nothing is found returns nil
 	GetLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID) (*logs_collector.LogsCollector, error)
 
-	// Destroy the logs collector
+	// Destroy the logs collector for enclave with UUID
 	DestroyLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID) error
 
-	// Destroy the centralized logs collector
-	// TODO(centralized-logs-collector-deprecation) remove this once we know people are on > 0.66.0
-	DestroyDeprecatedCentralizedLogsCollectorContainerAndVolume(ctx context.Context) error
+	// Destroy the centralized logs resources
+	// TODO(centralized-logs-resources-deprecation) remove this once we know people are on > 0.68.0
+	DestroyDeprecatedCentralizedLogsResources(ctx context.Context) error
 }

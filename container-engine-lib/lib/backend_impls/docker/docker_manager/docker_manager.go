@@ -964,24 +964,6 @@ func (manager *DockerManager) GetContainerIdsByName(ctx context.Context, nameStr
 	return result, nil
 }
 
-// TODO(centralized-logs-collector-deprecation) remove this entire function after enough people are on > 0.66.0
-func (manager *DockerManager) GetContainerIdByExactName(ctx context.Context, nameStr string) (string, error) {
-	filterArg := filters.Arg(containerNameSearchFilterKey, nameStr)
-	nameFilterList := filters.NewArgs(filterArg)
-	// TODO Make the "should show stopped containers" flag configurable????
-	matchingContainers, err := manager.getContainersByFilterArgs(ctx, nameFilterList, false)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred getting the containers with name '%v'", nameStr)
-	}
-	for _, containerObj := range matchingContainers {
-		if containerObj.GetName() == nameStr {
-			return containerObj.GetId(), nil
-		}
-	}
-	return "", nil
-
-}
-
 func (manager *DockerManager) GetContainersByLabels(ctx context.Context, labels map[string]string, shouldShowStoppedContainers bool) ([]*docker_manager_types.Container, error) {
 	labelsFilterList := getLabelsFilterArgs(containerLabelSearchFilterKey, labels)
 	result, err := manager.getContainersByFilterArgs(ctx, labelsFilterList, shouldShowStoppedContainers)

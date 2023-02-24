@@ -17,8 +17,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/kurtosis_backend"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/server"
-	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
-	"github.com/kurtosis-tech/metrics-library/golang/lib/source"
 	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -36,8 +34,6 @@ const (
 
 	grpcServerStopGracePeriod = 5 * time.Second
 
-	shouldFlushMetricsClientQueueOnEachEvent = false
-
 	forceColors   = true
 	fullTimestamp = true
 
@@ -50,11 +46,6 @@ const (
 //
 //	because this isn't the API container
 var apiContainerModeArgsForKurtosisBackend *backend_creator.APIContainerModeArgs = nil
-
-type doNothingMetricsClientCallback struct{}
-
-func (d doNothingMetricsClientCallback) Success()          {}
-func (d doNothingMetricsClientCallback) Failure(err error) {}
 
 func main() {
 	// This allows the filename & function to be reported
@@ -121,28 +112,9 @@ func runMain() error {
 		return stacktrace.Propagate(err, "Failed to create an enclave manager for backend type '%v' and config '%+v'", serverArgs.KurtosisBackendType, backendConfig)
 	}
 
-	metricsClient, metricsClientCloseFunc, err := metrics_client.CreateMetricsClient(
-		source.KurtosisEngineSource,
-		serverArgs.ImageVersionTag,
-		serverArgs.MetricsUserID,
-		serverArgs.KurtosisBackendType.String(),
-		serverArgs.DidUserAcceptSendingMetrics,
-		shouldFlushMetricsClientQueueOnEachEvent,
-		doNothingMetricsClientCallback{},
-	)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating the metrics client")
-	}
-	defer func() {
-		if err := metricsClientCloseFunc(); err != nil {
-			logrus.Warnf("We tried to close the metrics client, but doing so threw an error:\n%v", err)
-		}
-	}()
-
-	//TODO probably we could move Loki files and kubernetes logs client files to subfolders inside an impl package
 	logsDatabaseClient := kurtosis_backend.NewKurtosisBackendLogsDatabaseClient(kurtosisBackend)
 
-	engineServerService := server.NewEngineServerService(serverArgs.ImageVersionTag, enclaveManager, metricsClient, serverArgs.MetricsUserID, serverArgs.DidUserAcceptSendingMetrics, logsDatabaseClient)
+	engineServerService := server.NewEngineServerService(serverArgs.ImageVersionTag, enclaveManager, serverArgs.MetricsUserID, serverArgs.DidUserAcceptSendingMetrics, logsDatabaseClient)
 
 	engineServerServiceRegistrationFunc := func(grpcServer *grpc.Server) {
 		kurtosis_engine_rpc_api_bindings.RegisterEngineServiceServer(grpcServer, engineServerService)

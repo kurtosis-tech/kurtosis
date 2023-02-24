@@ -5,13 +5,18 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
+	"strings"
 	"testing"
 )
 
 const (
-	remoteTestName = "subpackage-remote"
-	remotePackage  = "github.com/kurtosis-tech/examples/simple-subpackage-example"
-	emptyParams    = "{}"
+	remoteTestName       = "subpackage-remote"
+	remotePackage        = "github.com/kurtosis-tech/examples/quickstart"
+	emptyParams          = "{}"
+	expectedOutputLength = 3
+
+	expectedArtifactName = "nginx-artifact"
+	expectedServiceName  = "my-nginx-0"
 )
 
 func TestStarlarkRemotePackage(t *testing.T) {
@@ -33,7 +38,11 @@ func TestStarlarkRemotePackage(t *testing.T) {
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
 	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")
 	require.Empty(t, runResult.ExecutionError, "Unexpected execution error")
-	require.Equal(t, "Hello world!\n", string(runResult.RunOutput))
 
-	logrus.Infof("Successfully ran Starlark Package")
+	runOutputTrimmedString := strings.Trim(string(runResult.RunOutput), "\n")
+	runOutputList := strings.Split(runOutputTrimmedString, "\n")
+
+	require.Equal(t, expectedOutputLength, len(runOutputList))
+	require.Contains(t, runOutputTrimmedString, expectedArtifactName)
+	require.Contains(t, runOutputTrimmedString, expectedServiceName)
 }

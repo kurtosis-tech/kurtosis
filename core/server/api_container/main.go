@@ -21,8 +21,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
-	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
-	"github.com/kurtosis-tech/metrics-library/golang/lib/source"
 	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -41,8 +39,6 @@ const (
 
 	grpcServerStopGracePeriod = 5 * time.Second
 
-	shouldFlushMetricsClientQueueOnEachEvent = false
-
 	forceColors   = true
 	fullTimestamp = true
 
@@ -50,11 +46,6 @@ const (
 	functionPathSeparator     = "."
 	emptyFunctionName         = ""
 )
-
-type doNothingMetricsClientCallback struct{}
-
-func (d doNothingMetricsClientCallback) Success()          {}
-func (d doNothingMetricsClientCallback) Failure(err error) {}
 
 func main() {
 	// This allows the filename & function to be reported
@@ -179,36 +170,17 @@ func runMain() error {
 		return stacktrace.Propagate(err, "An error occurred creating the service network")
 	}
 
-	metricsClient, closeClientFunc, err := metrics_client.CreateMetricsClient(
-		source.KurtosisCoreSource,
-		serverArgs.Version,
-		serverArgs.MetricsUserID,
-		serverArgs.KurtosisBackendType.String(),
-		serverArgs.DidUserAcceptSendingMetrics,
-		shouldFlushMetricsClientQueueOnEachEvent,
-		doNothingMetricsClientCallback{},
-	)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating the metrics client")
-	}
-	defer func() {
-		if err := closeClientFunc(); err != nil {
-			logrus.Warnf("We tried to close the metrics client, but doing so threw an error:\n%v", err)
-		}
-	}()
-
 	// TODO: Consolidate Interpreter, Validator and Executor into a single interface
 	startosisRunner := startosis_engine.NewStartosisRunner(
 		startosis_engine.NewStartosisInterpreter(serviceNetwork, gitPackageContentProvider, runtime_value_store.NewRuntimeValueStore()),
 		startosis_engine.NewStartosisValidator(&kurtosisBackend, serviceNetwork, filesArtifactStore),
-		startosis_engine.NewStartosisExecutor(metricsClient, serviceNetwork))
+		startosis_engine.NewStartosisExecutor())
 
 	//Creation of ApiContainerService
 	apiContainerService, err := server.NewApiContainerService(
 		filesArtifactStore,
 		serviceNetwork,
 		startosisRunner,
-		metricsClient,
 		gitPackageContentProvider,
 	)
 	if err != nil {

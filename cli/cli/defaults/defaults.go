@@ -12,6 +12,8 @@ import (
 const (
 	// If this version is passed to the engine, the engine will use its default version
 	DefaultAPIContainerVersion = ""
+	// TODO perhaps move this to the metrics library
+	SendMetricsByDefault = true
 )
 
 var DefaultApiContainerLogLevel = logrus.DebugLevel
