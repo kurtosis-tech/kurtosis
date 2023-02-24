@@ -6,7 +6,7 @@ slug: /feedback
 
 Your feedback is valuable and helps us improve Kurtosis. We thank you in advance for taking the time to share your suggestions and concerns with us.
 
-From the CLI, you can easily view the different ways you can get in touch with us by running:
+You can easily view the different ways you can get in touch with us by running:
 
 ```bash
 kurtosis feedback
