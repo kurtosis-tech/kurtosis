@@ -152,6 +152,10 @@ func (m *MockServiceNetworkCustom) GetExistingAndHistoricalServiceIdentifiers() 
 	panic(unimplementedMsg)
 }
 
+func (m *MockServiceNetworkCustom) GetUniqueNameForFileArtifact() (string, error) {
+	panic(unimplementedMsg)
+}
+
 func generateMockServiceRegistration(serviceName service.ServiceName, ipAddress net.IP) *service.ServiceRegistration {
 	return service.NewServiceRegistration(
 		serviceName,

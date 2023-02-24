@@ -8,6 +8,7 @@ package enclave_data_directory
 import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
+	"github.com/kurtosis-tech/kurtosis/name_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -40,7 +41,7 @@ func newFilesArtifactStore(absoluteDirpath string, dirpathRelativeToDataDirRoot 
 		shortenedUuidToFullUuid:         make(map[string][]FilesArtifactUUID),
 		maxRetriesToGetFileArtifactName: maxFileArtifactNameRetriesDefault,
 		//TODO: in next pr will assign this to name-generator method
-		generateNatureThemeName: nil,
+		generateNatureThemeName: name_generator.GenerateNatureThemeNameForFileArtifacts,
 	}
 }
 
