@@ -13,7 +13,8 @@ body:
     attributes:
       label: Background and Motivation
       placeholder: Please share with us your use case and what you were trying to accomplish with Kurtosis. 
-      description: Context helps our team build more robust solutions for users like yourself.
+      description: |
+        Context helps our team build more robust solutions for users like yourself.
     validations:
       required: true
   - type: textarea
@@ -22,7 +23,7 @@ body:
       label: Current Behavior
       placeholder: Share with us what happens today.
       description: |
-      Consider adding code examples, screenshots, or references. Doing so helps our team better understand what is happening.
+        Consider adding code examples, screenshots, or references. Doing so helps our team better understand what is happening.
     validations:
       required: true
   - type: textarea
@@ -31,7 +32,7 @@ body:
       label: Desired Behavior
       placeholder: Share with us what you would like have happen instead.
       description: |
-      Consider adding code examples, screenshots, or references. Doing so helps our team better understand the desired end state of your request.
+        Consider adding code examples, screenshots, or references. Doing so helps our team better understand the desired end state of your request.
     validations:
       required: true
   - type: dropdown
@@ -44,7 +45,7 @@ body:
       - Painful, the lack of this feature makes using Kurtosis frictionful.
       - Nice to have, this feature would make using Kurtosis more enjoyable.
       description: |
-      This information helps us with prioritization.
+        This information helps us with prioritization.
     validations:
       required: true
   - type: textarea
