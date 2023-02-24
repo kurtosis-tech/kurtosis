@@ -19,7 +19,7 @@ const (
 
 	// We hardcode this because the algorithm for finding slots for variable-sized networks is MUCH more complex
 	// This will give 4096 IPs per address; if this isn't enough we can up it in the future
-	networkWidthBits = uint32(12)
+	networkWidthBits = uint32(16)
 
 	// Docker returns an error with this text when we try to create a network with a CIDR mask
 	//  that overlaps with a preexisting network

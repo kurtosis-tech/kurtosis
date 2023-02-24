@@ -18,7 +18,7 @@ import (
 
 const (
 	// TODO This should come from the same logic that builds the server image!!!!!
-	containerImage = "kurtosistech/engine"
+	containerImage = "registry.digitalocean.com/kurtosis-hub/kurtosistech/engine"
 )
 
 type EngineServerLauncher struct {

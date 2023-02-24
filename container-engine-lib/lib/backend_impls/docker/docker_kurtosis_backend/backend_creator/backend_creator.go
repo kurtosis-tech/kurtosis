@@ -78,15 +78,18 @@ func GetLocalDockerKurtosisBackend(
 			return nil, stacktrace.Propagate(err, "An error occurred while getting the logs collector object for enclave '%v'; This is a bug in Kurtosis", enclaveUuid)
 		}
 
-		logCollectorIpNext := make(net.IP, len(logsCollectorObj.GetEnclaveNetworkIpAddress()))
-		copy(logCollectorIpNext, logsCollectorObj.GetEnclaveNetworkIpAddress())
-		logCollectorIpNext[len(logCollectorIpNext)-1] += 1
 		alreadyTakenIps := map[string]bool{
 			networkIp.String():      true,
 			network.GetGatewayIp():  true,
 			apiContainerIp.String(): true,
 			logsCollectorObj.GetEnclaveNetworkIpAddress().String(): true,
-			logCollectorIpNext.String():                            true,
+		}
+		// book first 100 IPs because of overlay network endpoints
+		for i := 1; i < 100; i++ {
+			nextIp := make(net.IP, len(logsCollectorObj.GetEnclaveNetworkIpAddress()))
+			copy(nextIp, logsCollectorObj.GetEnclaveNetworkIpAddress())
+			nextIp[len(nextIp)-1] += byte(i)
+			alreadyTakenIps[nextIp.String()] = true
 		}
 
 		freeIpAddrProvider, err := free_ip_addr_tracker.GetOrCreateNewFreeIpAddrTracker(

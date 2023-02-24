@@ -76,14 +76,17 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	}
 
 	networkCidr := enclaveNetwork.GetIpAndMask()
-	logCollectorIpNext := make(net.IP, len(enclaveLogsCollector.GetEnclaveNetworkIpAddress()))
-	copy(logCollectorIpNext, enclaveLogsCollector.GetEnclaveNetworkIpAddress())
-	logCollectorIpNext[len(logCollectorIpNext)-1] += 1
 	alreadyTakenIps := map[string]bool{
 		networkCidr.IP.String():                                    true,
 		enclaveNetwork.GetGatewayIp():                              true,
 		enclaveLogsCollector.GetEnclaveNetworkIpAddress().String(): true,
-		logCollectorIpNext.String():                                true,
+	}
+	// book first 100 IP because of overlay network endpoints
+	for i := 1; i < 100; i++ {
+		nextIp := make(net.IP, len(enclaveLogsCollector.GetEnclaveNetworkIpAddress()))
+		copy(nextIp, enclaveLogsCollector.GetEnclaveNetworkIpAddress())
+		nextIp[len(nextIp)-1] += byte(i)
+		alreadyTakenIps[nextIp.String()] = true
 	}
 
 	freeIpAddrProvider := lib.NewFreeIpAddrTracker(

@@ -154,6 +154,7 @@ func NewDockerManager(dockerManagerNodeClient *client.Client, loadDockerWorkerNo
 			logrus.Errorf("No worker node will be used as discovering them threw this error: \n%v", err)
 		}
 	}
+	logrus.Infof("Connected to docker client and discovered %d worker nodes", len(dockerWorkerNodeClients))
 	return &DockerManager{
 		dockerManagerNodeClient: dockerManagerNodeClient,
 		dockerWorkerNodeClients: dockerWorkerNodeClients,
@@ -177,10 +178,11 @@ func loadWorkerNodesClients(dockerManagerNodeClient *client.Client) (map[string]
 		nodeAddr := node.Status.Addr
 		nodeId := node.ID
 		nodeClient, err := client.NewClientWithOpts(
-			client.WithHost(nodeAddr),
+			client.WithHost(fmt.Sprintf("tcp://%s:2375", nodeAddr)),
 			client.WithAPIVersionNegotiation())
-		if err != nil {
+		if err != nil || nodeClient == nil {
 			logrus.Errorf("Skipping client '%s' as instanciating a client threw an error:\n%v", nodeId, err)
+			continue
 		}
 
 		if _, err := nodeClient.Ping(ctx); err != nil {
@@ -233,6 +235,20 @@ func (manager *DockerManager) CreateNetwork(context context.Context, name string
 		Options:    nil,
 		Labels:     labels,
 	})
+	for workerId, dockerClient := range manager.dockerWorkerNodeClients {
+		logrus.Debugf("starting getting-started on node '%s' to initiate the network", workerId)
+		containerName := fmt.Sprintf("%s-init", name)
+		gettingStartedContainer, err := dockerClient.ContainerCreate(context, &container.Config{
+			Image: "docker/getting-started",
+		}, nil, nil, nil, containerName)
+		if err != nil {
+			return "", stacktrace.Propagate(err, "error seeding the network '%s'", workerId)
+		}
+		err = dockerClient.ContainerStart(context, gettingStartedContainer.ID, types.ContainerStartOptions{})
+		if err != nil {
+			return "", stacktrace.Propagate(err, "error seeding the network '%s'", workerId)
+		}
+	}
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Failed to create network %s with subnet %s", name, subnetMask)
 	}
