@@ -6,15 +6,15 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thank you for taking the time to fill out this bug report. We value your feedback.
-        Please make sure to update the title of this Bug Report t to concisely describe the issue.
+        Thank you for taking the time to fill out this Bug Report. We value your feedback.
+        Please make sure to update the title of this Bug Report to concisely describe the issue.
   - type: input
     id: version
     attributes:
-      label: What version of Kurtosis were you running when you encountered this bug?
+      label: What version of the Kurtosis CLI were you running when you encountered this bug?
       placeholder: e.g. 0.67.0
       description: |
-        To view the current version of Kurtosis you are using, run `kurtosis version`
+        To view the current version of the Kurtosis CLI you are using, run `kurtosis version`
     validations:
       required: true
   - type: dropdown
