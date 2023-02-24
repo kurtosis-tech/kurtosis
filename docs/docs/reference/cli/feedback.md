@@ -13,6 +13,6 @@ kurtosis feedback
 ```
 
 This command will print out links to our:
-- [Github](https://github.com/kurtosis-tech/kurtosis/issues/new/choose) where you bug reports and feature requests can be filed as Github Issues.
-- [Feedback email](mailto:feedback@kurtosistech.com) where you can email us with suggestions, comments, or questions about Kurtosis.
+- [Github](https://github.com/kurtosis-tech/kurtosis/issues/new/choose) for filing bug reports and feature requests as Github Issues.
+- [Feedback email](mailto:feedback@kurtosistech.com) for sending us suggestions, comments, or questions about Kurtosis via email.
 - [Calendly link](https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding) to schedule a dedicated 1:1 onboarding session with us to help you get started.
