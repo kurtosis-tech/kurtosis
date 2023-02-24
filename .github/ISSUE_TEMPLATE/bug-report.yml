@@ -33,25 +33,25 @@ body:
   - type: textarea
     id: description
     attributes:
-      label: Description
-      placeholder: Share with us what happens today.
-      description: |
-        Consider attaching log files and/or screenshots. Doing so helps our team better understand what is happening.
-        You can export logs from your enclave using the command `kurtosis enclave dump $THE_ENCLAVE_IDENTIFIER $OUTPUT_DIRECTORY`
-    validations:
-      required: true
-  - type: textarea
-    id: repro-steps
-    attributes:
-      label: Steps to reproduce
+      label: Description & steps to reproduce
       placeholder: |
+        Share with us what happens today.
         1. With this package or service ...
         2. When running this command '...'
         3. See error ...
       description: |
-        Please provide the steps needed to reproduce this error. Doing so helps our team debug and fix bugs quicker.
+        Please provide a description of the bug and consider sharing any screenshots or relevant context that may help our team debug the issue.
     validations:
       required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      placeholder: Copy-paste relevant log outputs here.
+      description: |
+        Consider copy-pasting any relevant log outputs here. Doing so helps our team better understand what is happening. Logs can be exported from your enclave using the command `kurtosis enclave dump $THE_ENCLAVE_IDENTIFIER $OUTPUT_DIRECTORY`
+    validations:
+      required: false
   - type: textarea
     id: desired-behavior
     attributes:
@@ -61,10 +61,3 @@ body:
         Consider adding code examples, screenshots, or references. This helps our team better understand the desired end state of your request.
     validations:
       required: true
-  - type: textarea
-    id: additional-context
-    attributes:
-      label: Additional context?
-      placeholder: Please share any additional context, comments, or even another way for us to get in touch.
-    validations:
-      required: false
