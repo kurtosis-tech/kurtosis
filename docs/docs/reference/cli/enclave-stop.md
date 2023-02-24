@@ -4,7 +4,6 @@ sidebar_label: enclave stop
 slug: /enclave-stop
 ---
 
-### Stopping an enclave
 To stop a particular enclave, use:
 
 ```bash
