@@ -30,7 +30,7 @@ func NewExec(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *r
 			Arguments: []*builtin_argument.BuiltinArgument{
 				{
 					Name:              ServiceNameArgName,
-					IsOptional:        true, //TODO make it not-optinal when we remove recipe.service_name, issue pending: https://github.com/kurtosis-tech/kurtosis-private/issues/1128
+					IsOptional:        true, //TODO make it non-optional when we remove recipe.service_name, issue pending: https://github.com/kurtosis-tech/kurtosis-private/issues/1128
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						return builtin_argument.NonEmptyString(value, ServiceNameArgName)

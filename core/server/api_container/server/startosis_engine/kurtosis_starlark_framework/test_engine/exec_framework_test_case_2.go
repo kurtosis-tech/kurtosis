@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	execTextCase1ServiceName = service.ServiceName("my-service")
+	execTextCase2ServiceName = service.ServiceName("my-service-for-test-case-2")
 
 	wrongServiceName = service.ServiceName("wrong-test-service")
 )
@@ -43,7 +43,7 @@ func (t execTestCase2) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanI
 
 	serviceNetwork.EXPECT().ExecCommand(
 		mock.Anything,
-		string(execTextCase1ServiceName),
+		string(execTextCase2ServiceName),
 		[]string{"mkdir", "-p", "/tmp/store"},
 	).Times(1).Return(
 		int32(0),
@@ -56,7 +56,7 @@ func (t execTestCase2) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanI
 
 func (t execTestCase2) GetStarlarkCode() string {
 	recipe := fmt.Sprintf(`ExecRecipe(service_name=%q, command=["mkdir", "-p", "/tmp/store"])`, wrongServiceName)
-	return fmt.Sprintf("%s(%s=%q, %s=%s)", exec.ExecBuiltinName, exec.ServiceNameArgName, execTextCase1ServiceName, exec.RecipeArgName, recipe)
+	return fmt.Sprintf("%s(%s=%q, %s=%s)", exec.ExecBuiltinName, exec.ServiceNameArgName, execTextCase2ServiceName, exec.RecipeArgName, recipe)
 }
 
 func (t execTestCase2) Assert(interpretationResult starlark.Value, executionResult *string) {

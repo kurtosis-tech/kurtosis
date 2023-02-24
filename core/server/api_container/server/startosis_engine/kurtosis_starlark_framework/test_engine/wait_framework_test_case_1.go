@@ -17,27 +17,27 @@ import (
 )
 
 const (
-	wait_assertion   = "=="
-	wait_interval    = "1s"
-	wait_targetValue = "200"
-	wait_timeout     = "5s"
-	wait_valueField  = "code"
+	waitAssertion   = "=="
+	waitInterval    = "1s"
+	waitTargetValue = "200"
+	waitTimeout     = "5s"
+	waitValueField  = "code"
 
-	wait_recipe_portId      = "http-port"
-	wait_recipe_serviceName = service.ServiceName("web-server")
-	wait_recipe_method      = "POST"
-	wait_recipe_endpoint    = "/"
-	wait_recipe_body        = "{}"
-	wait_recipe_contentType = "application/json"
+	waitRecipePortId      = "http-port"
+	waitRecipeServiceName = service.ServiceName("web-server")
+	waitRecipeMethod      = "POST"
+	waitRecipeEndpoint    = "/"
+	waitRecipeBody        = "{}"
+	waitRecipeContentType = "application/json"
 
-	wait_recipe_responseBody = `{"value": "Hello world!"}`
+	waitRecipeResponseBody = `{"value": "Hello world!"}`
 )
 
 type waitTestCase struct {
 	*testing.T
 }
 
-func newWaitTestCase(t *testing.T) *waitTestCase {
+func newWaitTestCase1(t *testing.T) *waitTestCase {
 	return &waitTestCase{
 		T: t,
 	}
@@ -53,12 +53,12 @@ func (t *waitTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanI
 
 	serviceNetwork.EXPECT().HttpRequestService(
 		mock.Anything,
-		string(wait_recipe_serviceName),
-		wait_recipe_portId,
-		wait_recipe_method,
-		wait_recipe_contentType,
-		wait_recipe_endpoint,
-		wait_recipe_body,
+		string(waitRecipeServiceName),
+		waitRecipePortId,
+		waitRecipeMethod,
+		waitRecipeContentType,
+		waitRecipeEndpoint,
+		waitRecipeBody,
 	).Times(1).Return(
 		&http.Response{
 			Status:           "200 OK",
@@ -67,7 +67,7 @@ func (t *waitTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanI
 			ProtoMajor:       1,
 			ProtoMinor:       0,
 			Header:           nil,
-			Body:             io.NopCloser(strings.NewReader(wait_recipe_responseBody)),
+			Body:             io.NopCloser(strings.NewReader(waitRecipeResponseBody)),
 			ContentLength:    -1,
 			TransferEncoding: nil,
 			Close:            false,
@@ -83,8 +83,8 @@ func (t *waitTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanI
 }
 
 func (t *waitTestCase) GetStarlarkCode() string {
-	recipeStr := fmt.Sprintf(`PostHttpRequestRecipe(port_id=%q, service_name=%q, endpoint=%q, body=%q, content_type=%q, extract={"key": ".value"})`, wait_recipe_portId, wait_recipe_serviceName, wait_recipe_endpoint, wait_recipe_body, wait_recipe_contentType)
-	return fmt.Sprintf("%s(%s=%s, %s=%q, %s=%q, %s=%s, %s=%q, %s=%q)", wait.WaitBuiltinName, wait.RecipeArgName, recipeStr, wait.ValueFieldArgName, wait_valueField, wait.AssertionArgName, wait_assertion, wait.TargetArgName, wait_targetValue, wait.IntervalArgName, wait_interval, wait.TimeoutArgName, wait_timeout)
+	recipeStr := fmt.Sprintf(`PostHttpRequestRecipe(port_id=%q, service_name=%q, endpoint=%q, body=%q, content_type=%q, extract={"key": ".value"})`, waitRecipePortId, waitRecipeServiceName, waitRecipeEndpoint, waitRecipeBody, waitRecipeContentType)
+	return fmt.Sprintf("%s(%s=%s, %s=%q, %s=%q, %s=%s, %s=%q, %s=%q)", wait.WaitBuiltinName, wait.RecipeArgName, recipeStr, wait.ValueFieldArgName, waitValueField, wait.AssertionArgName, waitAssertion, wait.TargetArgName, waitTargetValue, wait.IntervalArgName, waitInterval, wait.TimeoutArgName, waitTimeout)
 }
 
 func (t *waitTestCase) Assert(interpretationResult starlark.Value, executionResult *string) {

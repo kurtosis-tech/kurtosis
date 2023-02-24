@@ -42,7 +42,7 @@ const (
 )
 
 type HttpRequestRecipe struct {
-	serviceName service.ServiceName
+	serviceName service.ServiceName //TODO we will deprecate this soon, more here: https://app.zenhub.com/workspaces/engineering-636cff9fc978ceb2aac05a1d/issues/gh/kurtosis-tech/kurtosis-private/1128
 	portId      string
 	contentType string
 	endpoint    string
@@ -249,9 +249,16 @@ func (recipe *HttpRequestRecipe) Execute(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while replacing runtime values in the body of the http recipe")
 	}
+
+	//TODO this will be removed when we deprecate the service_name field, more here: https://app.zenhub.com/workspaces/engineering-636cff9fc978ceb2aac05a1d/issues/gh/kurtosis-tech/kurtosis-private/1128
+	serviceNameStr := string(recipe.serviceName)
+	if serviceName != emptyServiceName {
+		serviceNameStr = string(serviceName)
+	}
+
 	response, err = serviceNetwork.HttpRequestService(
 		ctx,
-		string(recipe.serviceName),
+		serviceNameStr,
 		recipe.portId,
 		recipe.method,
 		recipe.contentType,

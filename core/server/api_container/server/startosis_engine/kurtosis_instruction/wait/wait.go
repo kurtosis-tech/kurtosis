@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/cenkalti/backoff/v4"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/assert"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
@@ -21,12 +22,13 @@ import (
 const (
 	WaitBuiltinName = "wait"
 
-	RecipeArgName     = "recipe"
-	ValueFieldArgName = "field"
-	AssertionArgName  = "assertion"
-	TargetArgName     = "target_value"
-	IntervalArgName   = "interval"
-	TimeoutArgName    = "timeout"
+	ServiceNameArgName = "service_name"
+	RecipeArgName      = "recipe"
+	ValueFieldArgName  = "field"
+	AssertionArgName   = "assertion"
+	TargetArgName      = "target_value"
+	IntervalArgName    = "interval"
+	TimeoutArgName     = "timeout"
 
 	defaultInterval = 1 * time.Second
 	defaultTimeout  = 15 * time.Minute
@@ -38,6 +40,14 @@ func NewWait(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *r
 			Name: WaitBuiltinName,
 
 			Arguments: []*builtin_argument.BuiltinArgument{
+				{
+					Name:              ServiceNameArgName,
+					IsOptional:        true, //TODO make it non-optional when we remove recipe.service_name, issue pending: https://github.com/kurtosis-tech/kurtosis-private/issues/1128
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
+					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+						return builtin_argument.NonEmptyString(value, ServiceNameArgName)
+					},
+				},
 				{
 					Name:              RecipeArgName,
 					IsOptional:        false,
@@ -107,17 +117,28 @@ type WaitCapabilities struct {
 	serviceNetwork    service_network.ServiceNetwork
 	runtimeValueStore *runtime_value_store.RuntimeValueStore
 
-	recipe     recipe.Recipe
-	valueField string
-	assertion  string
-	target     starlark.Comparable
-	backoff    backoff.BackOff
-	timeout    time.Duration
+	serviceName service.ServiceName
+	recipe      recipe.Recipe
+	valueField  string
+	assertion   string
+	target      starlark.Comparable
+	backoff     backoff.BackOff
+	timeout     time.Duration
 
 	resultUuid string
 }
 
 func (builtin *WaitCapabilities) Interpret(arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
+	var serviceName service.ServiceName
+
+	if arguments.IsSet(ServiceNameArgName) {
+		serviceNameArgumentValue, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, ServiceNameArgName)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ServiceNameArgName)
+		}
+		serviceName = service.ServiceName(serviceNameArgumentValue.GoString())
+	}
+
 	var genericRecipe recipe.Recipe
 	httpRecipe, err := builtin_argument.ExtractArgumentValue[*recipe.HttpRequestRecipe](arguments, RecipeArgName)
 	if err != nil {
@@ -189,6 +210,7 @@ func (builtin *WaitCapabilities) Interpret(arguments *builtin_argument.ArgumentV
 		return nil, startosis_errors.NewInterpretationError("'%v' assertion requires an iterable for target values, got '%v'", builtin.assertion, builtin.target.Type())
 	}
 
+	builtin.serviceName = serviceName
 	builtin.recipe = genericRecipe
 	builtin.valueField = valueField.GoString()
 	builtin.assertion = assertion.GoString()
@@ -219,7 +241,7 @@ func (builtin *WaitCapabilities) Execute(ctx context.Context, _ *builtin_argumen
 			timedOut = true
 			break
 		}
-		lastResult, requestErr = builtin.recipe.Execute(ctx, builtin.serviceNetwork, builtin.runtimeValueStore, "") //TODO add the real service name
+		lastResult, requestErr = builtin.recipe.Execute(ctx, builtin.serviceNetwork, builtin.runtimeValueStore, builtin.serviceName)
 		if requestErr != nil {
 			time.Sleep(backoffDuration)
 			continue

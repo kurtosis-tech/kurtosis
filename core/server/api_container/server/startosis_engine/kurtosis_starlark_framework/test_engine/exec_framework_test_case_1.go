@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	exec_serviceName = service.ServiceName("test-service")
+	execServiceName = service.ServiceName("test-service")
 )
 
 type execTestCase1 struct {
@@ -37,7 +37,7 @@ func (t execTestCase1) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanI
 
 	serviceNetwork.EXPECT().ExecCommand(
 		mock.Anything,
-		string(exec_serviceName),
+		string(execServiceName),
 		[]string{"mkdir", "-p", "/tmp/store"},
 	).Times(1).Return(
 		int32(0),
@@ -49,7 +49,7 @@ func (t execTestCase1) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanI
 }
 
 func (t execTestCase1) GetStarlarkCode() string {
-	recipe := fmt.Sprintf(`ExecRecipe(service_name=%q, command=["mkdir", "-p", "/tmp/store"])`, exec_serviceName)
+	recipe := fmt.Sprintf(`ExecRecipe(service_name=%q, command=["mkdir", "-p", "/tmp/store"])`, execServiceName)
 	return fmt.Sprintf("%s(%s=%s)", exec.ExecBuiltinName, exec.RecipeArgName, recipe)
 }
 

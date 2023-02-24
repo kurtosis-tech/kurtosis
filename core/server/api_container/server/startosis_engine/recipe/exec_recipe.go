@@ -24,13 +24,11 @@ const (
 	commandKey     = "command"
 	serviceNameKey = "service_name"
 	ExecRecipeName = "ExecRecipe"
-
-	emptyServiceName = service.ServiceName("")
 )
 
 // TODO: maybe change command to startlark.List once remove backward compatability support
 type ExecRecipe struct {
-	serviceName service.ServiceName
+	serviceName service.ServiceName //TODO we will deprecate this soon, more here: https://app.zenhub.com/workspaces/engineering-636cff9fc978ceb2aac05a1d/issues/gh/kurtosis-tech/kurtosis-private/1128
 	command     []string
 }
 
