@@ -24,6 +24,8 @@ const (
 	commandKey     = "command"
 	serviceNameKey = "service_name"
 	ExecRecipeName = "ExecRecipe"
+
+	emptyServiceName = service.ServiceName("")
 )
 
 // TODO: maybe change command to startlark.List once remove backward compatability support
@@ -112,7 +114,14 @@ func (recipe *ExecRecipe) Execute(
 		}
 		commandWithIPAddressAndRuntimeValue = append(commandWithIPAddressAndRuntimeValue, maybeSubCommandWithRuntimeValuesAndIPAddress)
 	}
-	exitCode, commandOutput, err := serviceNetwork.ExecCommand(ctx, string(serviceName), commandWithIPAddressAndRuntimeValue)
+
+	//TODO this will be removed when we deprecate the service_name field, more here: https://app.zenhub.com/workspaces/engineering-636cff9fc978ceb2aac05a1d/issues/gh/kurtosis-tech/kurtosis-private/1128
+	serviceNameStr := string(recipe.serviceName)
+	if serviceName != emptyServiceName {
+		serviceNameStr = string(serviceName)
+	}
+
+	exitCode, commandOutput, err := serviceNetwork.ExecCommand(ctx, serviceNameStr, commandWithIPAddressAndRuntimeValue)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to execute command '%v' on service '%v'", recipe.command, recipe.serviceName)
 	}
