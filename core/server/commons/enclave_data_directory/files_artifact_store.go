@@ -20,7 +20,7 @@ const (
 	maxAllowedMatchesAgainstShortenedUuid = 1
 	// TODO: this is something we can take a look in detail
 	// but we with random numbers as suffix, we should always be able to have some unique name available
-	maxFileArtifactNameRetries = 5
+	maxFileArtifactNameRetriesDefault = 5
 )
 
 type FilesArtifactStore struct {
@@ -38,7 +38,7 @@ func newFilesArtifactStore(absoluteDirpath string, dirpathRelativeToDataDirRoot 
 		mutex:                           &sync.RWMutex{},
 		artifactNameToArtifactUuid:      make(map[string]FilesArtifactUUID),
 		shortenedUuidToFullUuid:         make(map[string][]FilesArtifactUUID),
-		maxRetriesToGetFileArtifactName: maxFileArtifactNameRetries,
+		maxRetriesToGetFileArtifactName: maxFileArtifactNameRetriesDefault,
 		//TODO: in next pr will assign this to name-generator method
 		generateNatureThemeName: nil,
 	}
@@ -147,8 +147,6 @@ func (store FilesArtifactStore) ListFiles() map[string]bool {
 
 // CheckIfArtifactNameExists - It checks whether the FileArtifact with a name exists or not
 func (store FilesArtifactStore) CheckIfArtifactNameExists(artifactName string) bool {
-	store.mutex.RLock()
-	defer store.mutex.RUnlock()
 
 	_, found := store.artifactNameToArtifactUuid[artifactName]
 	return found
@@ -157,21 +155,29 @@ func (store FilesArtifactStore) CheckIfArtifactNameExists(artifactName string) b
 func (store FilesArtifactStore) GenerateUniqueNameForFileArtifact() string {
 	var maybeUniqueName string
 
+	store.mutex.RLock()
 	// try to find unique nature theme random generator
 	for i := 0; i <= store.maxRetriesToGetFileArtifactName; i++ {
 		maybeUniqueName = store.generateNatureThemeName()
-		if !store.CheckIfArtifactNameExists(maybeUniqueName) {
+		_, found := store.artifactNameToArtifactUuid[maybeUniqueName]
+		if !found {
 			return maybeUniqueName
 		}
 	}
+	store.mutex.RUnlock()
 
 	// if unique name not found, append a random number after the last found random name
 	additionalSuffix := 1
 	maybeUniqueNameWithRandomNumber := fmt.Sprintf("%v-%v", maybeUniqueName, additionalSuffix)
-	for store.CheckIfArtifactNameExists(maybeUniqueNameWithRandomNumber) {
+
+	store.mutex.RLock()
+	_, found := store.artifactNameToArtifactUuid[maybeUniqueNameWithRandomNumber]
+	for found {
 		additionalSuffix = additionalSuffix + 1
 		maybeUniqueNameWithRandomNumber = fmt.Sprintf("%v-%v", maybeUniqueName, additionalSuffix)
+		_, found = store.artifactNameToArtifactUuid[maybeUniqueNameWithRandomNumber]
 	}
+	store.mutex.RUnlock()
 
 	logrus.Warnf("Cannot find unique name generator, therefore using a name with a number %v", maybeUniqueNameWithRandomNumber)
 	return maybeUniqueNameWithRandomNumber
