@@ -19,7 +19,7 @@ body:
   - type: textarea
     id: description
     attributes:
-      label: Description of the issue:
+      label: Description of the issue
       placeholder: What is the issue you found in our documentation?
       description: |
         Consider adding screenshots or the exact part of the documentation language that you're filing this issue on.
