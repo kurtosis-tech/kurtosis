@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thank you for taking the time to fill out this feature request form. We value your feedback.
+        Thank you for taking the time to fill out this Feature Request form. We value your feedback.
         Please make sure to update the title of this Feature Request to concisely describe the request.
   - type: textarea
     id: background-and-motivation
