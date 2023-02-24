@@ -43,7 +43,7 @@ body:
   - type: textarea
     id: repro-steps
     attributes:
-      label: Steps to Reproduce
+      label: Steps to reproduce
       placeholder: |
         1. With this package or service ...
         2. When running this command '...'
@@ -55,7 +55,7 @@ body:
   - type: textarea
     id: desired-behavior
     attributes:
-      label: Desired Behavior
+      label: Desired behavior
       placeholder: Share with us what should happen instead.
       description: |
         Consider adding code examples, screenshots, or references. This helps our team better understand the desired end state of your request.
@@ -64,7 +64,7 @@ body:
   - type: textarea
     id: additional-context
     attributes:
-      label: Additional Context?
+      label: Additional context?
       placeholder: Please share any additional context, comments, or even another way for us to get in touch.
     validations:
       required: false
