@@ -232,7 +232,12 @@ func MakePostHttpRequestRecipe(_ *starlark.Thread, builtin *starlark.Builtin, ar
 	return recipe, nil
 }
 
-func (recipe *HttpRequestRecipe) Execute(ctx context.Context, serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) (map[string]starlark.Comparable, error) {
+func (recipe *HttpRequestRecipe) Execute(
+	ctx context.Context,
+	serviceNetwork service_network.ServiceNetwork,
+	runtimeValueStore *runtime_value_store.RuntimeValueStore,
+	serviceName service.ServiceName,
+) (map[string]starlark.Comparable, error) {
 	var response *http.Response
 	var err error
 	logrus.Debugf("Running HTTP request recipe '%v'", recipe)

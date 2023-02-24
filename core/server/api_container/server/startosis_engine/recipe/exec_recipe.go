@@ -94,7 +94,12 @@ func (recipe *ExecRecipe) AttrNames() []string {
 	return []string{serviceNameKey, commandKey}
 }
 
-func (recipe *ExecRecipe) Execute(ctx context.Context, serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) (map[string]starlark.Comparable, error) {
+func (recipe *ExecRecipe) Execute(
+	ctx context.Context,
+	serviceNetwork service_network.ServiceNetwork,
+	runtimeValueStore *runtime_value_store.RuntimeValueStore,
+	serviceName service.ServiceName,
+) (map[string]starlark.Comparable, error) {
 	var commandWithIPAddressAndRuntimeValue []string
 	for _, subCommand := range recipe.command {
 		maybeSubCommandWithIPAddressAndHostname, err := magic_string_helper.ReplaceIPAddressAndHostnameInString(subCommand, serviceNetwork, commandKey)
@@ -107,7 +112,7 @@ func (recipe *ExecRecipe) Execute(ctx context.Context, serviceNetwork service_ne
 		}
 		commandWithIPAddressAndRuntimeValue = append(commandWithIPAddressAndRuntimeValue, maybeSubCommandWithRuntimeValuesAndIPAddress)
 	}
-	exitCode, commandOutput, err := serviceNetwork.ExecCommand(ctx, string(recipe.serviceName), commandWithIPAddressAndRuntimeValue)
+	exitCode, commandOutput, err := serviceNetwork.ExecCommand(ctx, string(serviceName), commandWithIPAddressAndRuntimeValue)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to execute command '%v' on service '%v'", recipe.command, recipe.serviceName)
 	}

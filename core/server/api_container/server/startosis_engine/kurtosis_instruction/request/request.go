@@ -85,7 +85,7 @@ func (builtin *RequestCapabilities) Validate(_ *builtin_argument.ArgumentValuesS
 }
 
 func (builtin *RequestCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
-	result, err := builtin.httpRequestRecipe.Execute(ctx, builtin.serviceNetwork, builtin.runtimeValueStore)
+	result, err := builtin.httpRequestRecipe.Execute(ctx, builtin.serviceNetwork, builtin.runtimeValueStore, "") //TODO add the real service name here
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Error executing http recipe")
 	}

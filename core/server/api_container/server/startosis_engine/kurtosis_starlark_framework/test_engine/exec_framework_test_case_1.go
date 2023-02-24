@@ -17,21 +17,21 @@ const (
 	exec_serviceName = service.ServiceName("test-service")
 )
 
-type execTestCase struct {
+type execTestCase1 struct {
 	*testing.T
 }
 
-func newExecTestCase(t *testing.T) *execTestCase {
-	return &execTestCase{
+func newExecTestCase1(t *testing.T) *execTestCase1 {
+	return &execTestCase1{
 		T: t,
 	}
 }
 
-func (t execTestCase) GetId() string {
+func (t execTestCase1) GetId() string {
 	return exec.ExecBuiltinName
 }
 
-func (t execTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
+func (t execTestCase1) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	serviceNetwork := service_network.NewMockServiceNetwork(t)
 	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
 
@@ -48,12 +48,12 @@ func (t execTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanIn
 	return exec.NewExec(serviceNetwork, runtimeValueStore)
 }
 
-func (t execTestCase) GetStarlarkCode() string {
+func (t execTestCase1) GetStarlarkCode() string {
 	recipe := fmt.Sprintf(`ExecRecipe(service_name=%q, command=["mkdir", "-p", "/tmp/store"])`, exec_serviceName)
 	return fmt.Sprintf("%s(%s=%s)", exec.ExecBuiltinName, exec.RecipeArgName, recipe)
 }
 
-func (t execTestCase) Assert(interpretationResult starlark.Value, executionResult *string) {
+func (t execTestCase1) Assert(interpretationResult starlark.Value, executionResult *string) {
 	expectedInterpretationResultMap := `{"code": "{{kurtosis:[0-9a-f]{32}:code.runtime_value}}", "output": "{{kurtosis:[0-9a-f]{32}:output.runtime_value}}"}`
 	require.Regexp(t, expectedInterpretationResultMap, interpretationResult.String())
 

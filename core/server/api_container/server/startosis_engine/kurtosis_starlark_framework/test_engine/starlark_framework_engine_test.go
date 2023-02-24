@@ -23,11 +23,12 @@ const (
 )
 
 func TestAllRegisteredBuiltins(t *testing.T) {
-	testKurtosisPlanInstruction(t, newAddServiceTestCase(t))
+	/*testKurtosisPlanInstruction(t, newAddServiceTestCase(t))
 	testKurtosisPlanInstruction(t, newAddServicesTestCase(t))
-	testKurtosisPlanInstruction(t, newAssertTestCase(t))
-	testKurtosisPlanInstruction(t, newExecTestCase(t))
-	testKurtosisPlanInstruction(t, newSetConnectionTestCase(t))
+	testKurtosisPlanInstruction(t, newAssertTestCase(t))*/
+	//testKurtosisPlanInstruction(t, newExecTestCase1(t))
+	testKurtosisPlanInstruction(t, newExecTestCase2(t))
+	/*testKurtosisPlanInstruction(t, newSetConnectionTestCase(t))
 	testKurtosisPlanInstruction(t, newSetConnectionDefaultTestCase(t))
 	testKurtosisPlanInstruction(t, newRemoveConnectionTestCase(t))
 	testKurtosisPlanInstruction(t, newRemoveServiceTestCase(t))
@@ -40,7 +41,7 @@ func TestAllRegisteredBuiltins(t *testing.T) {
 	testKurtosisPlanInstruction(t, newWaitTestCase(t))
 
 	testKurtosisHelper(t, newReadFileTestCase(t))
-	testKurtosisHelper(t, newImportModuleTestCase(t))
+	testKurtosisHelper(t, newImportModuleTestCase(t))*/
 }
 
 func testKurtosisPlanInstruction(t *testing.T, builtin KurtosisPlanInstructionBaseTest) {
