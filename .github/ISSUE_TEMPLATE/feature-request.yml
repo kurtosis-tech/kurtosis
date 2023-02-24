@@ -39,7 +39,7 @@ body:
     id: priority
     attributes:
       label: How important is this feature or improvement to you?
-      multiple: true
+      multiple: false
       options:
       - Critical, Kurtosis is unusable for us without it.
       - Painful, the lack of this feature makes using Kurtosis frictionful.
