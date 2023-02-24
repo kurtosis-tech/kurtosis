@@ -12,7 +12,7 @@ body:
     id: version
     attributes:
       label: What version of the Kurtosis CLI were you running when you encountered this bug?
-      placeholder: e.g. 0.67.0
+      placeholder: e.g. 1.2.0
       description: |
         To view the current version of the Kurtosis CLI you are using, run `kurtosis version`
     validations:
