@@ -48,6 +48,7 @@ body:
     attributes:
       label: Relevant log output
       placeholder: Copy-paste relevant log outputs here.
+      render: true
       description: |
         Consider copy-pasting any relevant log outputs here. Doing so helps our team better understand what is happening. Logs can be exported from your enclave using the command `kurtosis enclave dump $THE_ENCLAVE_IDENTIFIER $OUTPUT_DIRECTORY`
     validations:
