@@ -23,7 +23,7 @@ const (
 	printMetricsId         = "id"
 	enableDisableDelimiter = "|"
 
-	enableDisableStatus = enableSendingMetrics + enableDisableDelimiter + disableSendingMetrics
+	enableDisableStatus = enableSendingMetrics + enableDisableDelimiter + disableSendingMetrics + enableDisableDelimiter + printMetricsId
 )
 
 var validMetricsSendingToggleValue = map[string]bool{
@@ -80,6 +80,7 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 			return stacktrace.Propagate(err, "An error occurred while getting the users metrics id")
 		}
 		out.PrintOutLn(metricsUserId)
+		return nil
 	}
 
 	kurtosisConfigStore := kurtosis_config.GetKurtosisConfigStore()
