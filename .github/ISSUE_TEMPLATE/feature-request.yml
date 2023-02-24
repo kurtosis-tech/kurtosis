@@ -48,10 +48,3 @@ body:
         This information helps us with prioritization.
     validations:
       required: true
-  - type: textarea
-    id: additional-context
-    attributes:
-      label: Additional context?
-      placeholder: Please share any additional context, comments, or even another way for us to get in touch.
-    validations:
-      required: false
