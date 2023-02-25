@@ -1,11 +1,10 @@
 package enclave_manager
 
 import (
-	"github.com/goombaio/namegenerator"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/kurtosis-tech/stacktrace"
+	"github.com/kurtosis-tech/kurtosis/name_generator"
 	"sync"
-	"time"
 )
 
 const (
@@ -20,16 +19,15 @@ var (
 )
 
 type enclaveNameGenerator struct {
-	generator namegenerator.Generator
+	generateNatureThemeName func() string
 }
 
 func GetEnclaveNameGenerator() *enclaveNameGenerator {
-	// NOTE: We use a 'once' to initialize the enclaveNameGenerator because it contains a seed,
-	// and we don't ever want multiple enclaveNameGenerator instances in existence
+	// NOTE: Do not think we still need multiple instances of this struct; though
+	// open not having once here as well.
 	once.Do(func() {
-		seed := time.Now().UTC().UnixNano()
-		nameGenerator := namegenerator.NewNameGenerator(seed)
-		currentEnclaveNameGenerator = &enclaveNameGenerator{generator: nameGenerator}
+		currentEnclaveNameGenerator = &enclaveNameGenerator{
+			generateNatureThemeName: name_generator.GenerateNatureThemeNameForEngine}
 	})
 	return currentEnclaveNameGenerator
 }
@@ -37,33 +35,28 @@ func GetEnclaveNameGenerator() *enclaveNameGenerator {
 func (enclaveIdGenerator *enclaveNameGenerator) GetRandomEnclaveNameWithRetries(
 	allCurrentEnclaves map[enclave.EnclaveUUID]*enclave.Enclave,
 	retries uint16,
-) (string, error) {
+) string {
 	retriesLeft := retries - 1
 
-	randomEnclaveName := enclaveIdGenerator.generator.Generate()
-
-	validationError := validateEnclaveName(randomEnclaveName)
-	if validationError != nil {
-		if retries > 0 {
-			return enclaveIdGenerator.GetRandomEnclaveNameWithRetries(allCurrentEnclaves, retriesLeft)
-		}
-		return autogenerateEnclaveNameKeyword, stacktrace.Propagate(
-			validationError,
-			"Generating a new random enclave ID has executed all the retries set without success, the last random enclave ID generated '%v' is not valid",
-			randomEnclaveName,
-		)
-	}
-
+	randomEnclaveName := enclaveIdGenerator.generateNatureThemeName()
 	isIdInUse := isEnclaveNameInUse(randomEnclaveName, allCurrentEnclaves)
-	if isIdInUse {
-		if retries > 0 {
-			return enclaveIdGenerator.GetRandomEnclaveNameWithRetries(allCurrentEnclaves, retriesLeft)
-		}
-		return autogenerateEnclaveNameKeyword, stacktrace.NewError(
-			"Generating a new random enclave ID has executed all the retries set without success, the last random enclave ID generated '%v' in in use",
-			randomEnclaveName,
-		)
+
+	// if the id is unique, return the enclave name
+	if !isIdInUse {
+		return randomEnclaveName
 	}
 
-	return randomEnclaveName, nil
+	// recursive call until no retries are left
+	if retries > 0 {
+		return enclaveIdGenerator.GetRandomEnclaveNameWithRetries(allCurrentEnclaves, retriesLeft)
+	}
+
+	// if no retry is left, then use the last nature theme name with NUMBER at the end
+	number := 1
+	randomEnclaveNameWithNumber := fmt.Sprintf("%v-%v", randomEnclaveName, number)
+	for isEnclaveNameInUse(randomEnclaveNameWithNumber, allCurrentEnclaves) {
+		number = number + 1
+		randomEnclaveNameWithNumber = fmt.Sprintf("%v-%v", randomEnclaveName, number)
+	}
+	return randomEnclaveNameWithNumber
 }

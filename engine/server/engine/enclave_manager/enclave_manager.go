@@ -101,10 +101,7 @@ func (manager *EnclaveManager) CreateEnclave(
 	}
 
 	if enclaveName == autogenerateEnclaveNameKeyword {
-		enclaveName, err = manager.enclaveIdGenerator.GetRandomEnclaveNameWithRetries(allCurrentEnclaves, getRandomEnclaveIdRetries)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting a new random enclave name using all current enclaves '%+v' and '%v' retries", allCurrentEnclaves, getRandomEnclaveIdRetries)
-		}
+		enclaveName = manager.enclaveIdGenerator.GetRandomEnclaveNameWithRetries(allCurrentEnclaves, getRandomEnclaveIdRetries)
 	}
 
 	if isEnclaveNameInUse(enclaveName, allCurrentEnclaves) {
