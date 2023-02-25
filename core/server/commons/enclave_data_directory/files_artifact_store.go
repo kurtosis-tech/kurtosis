@@ -40,8 +40,7 @@ func newFilesArtifactStore(absoluteDirpath string, dirpathRelativeToDataDirRoot 
 		artifactNameToArtifactUuid:      make(map[string]FilesArtifactUUID),
 		shortenedUuidToFullUuid:         make(map[string][]FilesArtifactUUID),
 		maxRetriesToGetFileArtifactName: maxFileArtifactNameRetriesDefault,
-		//TODO: in next pr will assign this to name-generator method
-		generateNatureThemeName: name_generator.GenerateNatureThemeNameForFileArtifacts,
+		generateNatureThemeName:         name_generator.GenerateNatureThemeNameForFileArtifacts,
 	}
 }
 

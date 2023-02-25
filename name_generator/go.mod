@@ -1,4 +1,4 @@
-module github.com/kurtosis-tech/kurtosis/name-generator
+module github.com/kurtosis-tech/kurtosis/name_generator
 
 go 1.18
 

@@ -966,20 +966,20 @@ The service example-datastore-server has been removed
 	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutput)
 }
 
-//func TestStartosisInterpreter_NoPanicIfUploadIsPassedAPathNotOnDisk(t *testing.T) {
-//	filePath := "github.com/kurtosis/module/lib/lib.star"
-//	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
-//	defer packageContentProvider.RemoveAll()
-//	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
-//	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, runtimeValueStore)
-//	script := `
-//def run(plan):
-//	plan.upload_files("` + filePath + `")
-//`
-//	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
-//	require.Nil(t, instructions)
-//	require.NotNil(t, interpretationError)
-//}
+func TestStartosisInterpreter_NoPanicIfUploadIsPassedAPathNotOnDisk(t *testing.T) {
+	filePath := "github.com/kurtosis/module/lib/lib.star"
+	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
+	defer packageContentProvider.RemoveAll()
+	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
+	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, runtimeValueStore)
+	script := `
+def run(plan):
+	plan.upload_files("` + filePath + `")
+`
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
+	require.Nil(t, instructions)
+	require.NotNil(t, interpretationError)
+}
 
 func TestStartosisInterpreter_RunWithoutArgsNoArgsPassed(t *testing.T) {
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
