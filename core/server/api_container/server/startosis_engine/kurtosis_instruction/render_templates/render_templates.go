@@ -93,8 +93,8 @@ func (builtin *RenderTemplatesCapabilities) Interpret(arguments *builtin_argumen
 	return starlark.String(builtin.artifactName), nil
 }
 
-func (builtin *RenderTemplatesCapabilities) Validate(argumentSet *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
-	if argumentSet.IsSet(ArtifactNameArgName) && validatorEnvironment.DoesArtifactNameExist(builtin.artifactName) {
+func (builtin *RenderTemplatesCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
+	if validatorEnvironment.DoesArtifactNameExist(builtin.artifactName) {
 		return startosis_errors.NewValidationError("There was an error validating '%v' as artifact name '%v' already exists", RenderTemplatesBuiltinName, builtin.artifactName)
 	}
 	validatorEnvironment.AddArtifactName(builtin.artifactName)

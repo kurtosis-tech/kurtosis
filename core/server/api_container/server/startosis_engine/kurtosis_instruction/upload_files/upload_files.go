@@ -103,8 +103,8 @@ func (builtin *UploadFilesCapabilities) Interpret(arguments *builtin_argument.Ar
 	return starlark.String(builtin.artifactName), nil
 }
 
-func (builtin *UploadFilesCapabilities) Validate(argumentSet *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
-	if argumentSet.IsSet(ArtifactNameArgName) && validatorEnvironment.DoesArtifactNameExist(builtin.artifactName) {
+func (builtin *UploadFilesCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
+	if validatorEnvironment.DoesArtifactNameExist(builtin.artifactName) {
 		return startosis_errors.NewValidationError("There was an error validating '%v' as artifact name '%v' already exists", UploadFilesBuiltinName, builtin.artifactName)
 	}
 	validatorEnvironment.AddArtifactName(builtin.artifactName)

@@ -105,11 +105,11 @@ func (builtin *StoreServiceFilesCapabilities) Interpret(arguments *builtin_argum
 	return starlark.String(builtin.artifactName), nil
 }
 
-func (builtin *StoreServiceFilesCapabilities) Validate(argumentSet *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
+func (builtin *StoreServiceFilesCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
 	if !validatorEnvironment.DoesServiceNameExist(builtin.serviceName) {
 		return startosis_errors.NewValidationError("There was an error validating '%v' with service name '%v' that does not exist", StoreServiceFilesBuiltinName, builtin.serviceName)
 	}
-	if argumentSet.IsSet(ArtifactNameArgName) && validatorEnvironment.DoesArtifactNameExist(builtin.artifactName) {
+	if validatorEnvironment.DoesArtifactNameExist(builtin.artifactName) {
 		return startosis_errors.NewValidationError("There was an error validating '%v' as artifact name '%v' already exists", StoreServiceFilesBuiltinName, builtin.artifactName)
 	}
 	validatorEnvironment.AddArtifactName(builtin.artifactName)
