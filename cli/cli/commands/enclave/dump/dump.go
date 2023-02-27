@@ -87,7 +87,7 @@ func run(
 
 	if enclaveOutputDirpath == defaultEnclaveDumpDir {
 		enclaveName := enclaveInfo.GetName()
-		enclaveOutputDirpath = fmt.Sprintf("%s%s%s", enclaveUuid, enclaveDumpSeparator, enclaveName)
+		enclaveOutputDirpath = fmt.Sprintf("%s%s%s", enclaveName, enclaveDumpSeparator, enclaveUuid)
 	}
 
 	if err := kurtosisBackend.DumpEnclave(ctx, enclave.EnclaveUUID(enclaveUuid), enclaveOutputDirpath); err != nil {

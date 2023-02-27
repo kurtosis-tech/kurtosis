@@ -439,8 +439,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) getNameForEnclaveObje
 	return name, nil
 }
 
-// Gets the name of the service container
-// Gets the name for an enclave object, making sure to put the enclave ID first and join using the standardized separator
+// Gets the name of the service container (service_name--service_uuid)
 func (provider *dockerEnclaveObjectAttributesProviderImpl) getNameForUserServiceContainer(elems []string) (*docker_object_name.DockerObjectName, error) {
 	nameStr := strings.Join(
 		elems,
