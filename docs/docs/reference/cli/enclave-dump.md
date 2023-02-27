@@ -13,5 +13,8 @@ where the `$THE_ENCLAVE_IDENTIFIER` is the [resource identifier](../resource-ide
 
 You will get the container logs & configuration in the output directory for further analysis & sharing.
 
+If you don't specify the `$OUTPUT_DIRECTORY` Kurtosis will dump it to a directory with a name following the `ENCLAVE_NAME--ENCLAVE_UUID` scheme in the
+current working directory.
+
 <!-------------------- ONLY LINKS BELOW THIS POINT ----------------------->
 [packages-reference]: ../packages.md
