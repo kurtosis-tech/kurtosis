@@ -29,6 +29,7 @@ const (
 
 	defaultEnclaveDumpDir = ""
 	enclaveDumpSeparator  = "--"
+	outputDirIsOptional   = true
 )
 
 var EnclaveDumpCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -49,6 +50,7 @@ var EnclaveDumpCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 		{
 			Key:          outputDirpathArg,
 			DefaultValue: defaultEnclaveDumpDir,
+			IsOptional:   outputDirIsOptional,
 		},
 	},
 	RunFunc: run,
