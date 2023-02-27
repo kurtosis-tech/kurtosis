@@ -42,7 +42,8 @@ const (
 )
 
 type HttpRequestRecipe struct {
-	serviceName service.ServiceName //TODO we will deprecate this soon, more here: https://app.zenhub.com/workspaces/engineering-636cff9fc978ceb2aac05a1d/issues/gh/kurtosis-tech/kurtosis-private/1128
+	// Deprecated: we will deprecate this soon, more here: https://app.zenhub.com/workspaces/engineering-636cff9fc978ceb2aac05a1d/issues/gh/kurtosis-tech/kurtosis-private/1128
+	serviceName service.ServiceName //TODO deprecate
 	portId      string
 	contentType string
 	endpoint    string
@@ -250,10 +251,14 @@ func (recipe *HttpRequestRecipe) Execute(
 		return nil, stacktrace.Propagate(err, "An error occurred while replacing runtime values in the body of the http recipe")
 	}
 
-	//TODO this will be removed (only the parameter will be accepted) when we deprecate the service_name field, more here: https://app.zenhub.com/workspaces/engineering-636cff9fc978ceb2aac05a1d/issues/gh/kurtosis-tech/kurtosis-private/1128
-	serviceNameStr := string(recipe.serviceName)
+	var serviceNameStr string
 	if serviceName != emptyServiceName {
 		serviceNameStr = string(serviceName)
+	} else if recipe.serviceName != emptyServiceName { //TODO this will be removed when we deprecate the service_name field, more here: https://app.zenhub.com/workspaces/engineering-636cff9fc978ceb2aac05a1d/issues/gh/kurtosis-tech/kurtosis-private/1128
+		serviceNameStr = string(recipe.serviceName)
+		logrus.Warnf("The http_request_recipe.service_name field will be deprecated soon, users will have to pass the service name value direclty to the 'exec', 'request' and 'wait' instructions")
+	} else {
+		return nil, stacktrace.NewError("The service name parameter can't be an empty string")
 	}
 
 	response, err = serviceNetwork.HttpRequestService(

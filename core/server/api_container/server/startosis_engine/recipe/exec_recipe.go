@@ -28,7 +28,8 @@ const (
 
 // TODO: maybe change command to startlark.List once remove backward compatability support
 type ExecRecipe struct {
-	serviceName service.ServiceName //TODO we will deprecate this soon, more here: https://app.zenhub.com/workspaces/engineering-636cff9fc978ceb2aac05a1d/issues/gh/kurtosis-tech/kurtosis-private/1128
+	// Deprecated: we will deprecate this soon, more here: https://app.zenhub.com/workspaces/engineering-636cff9fc978ceb2aac05a1d/issues/gh/kurtosis-tech/kurtosis-private/1128
+	serviceName service.ServiceName //TODO deprecate
 	command     []string
 }
 
@@ -113,10 +114,14 @@ func (recipe *ExecRecipe) Execute(
 		commandWithIPAddressAndRuntimeValue = append(commandWithIPAddressAndRuntimeValue, maybeSubCommandWithRuntimeValuesAndIPAddress)
 	}
 
-	//TODO this will be removed when we deprecate the service_name field, more here: https://app.zenhub.com/workspaces/engineering-636cff9fc978ceb2aac05a1d/issues/gh/kurtosis-tech/kurtosis-private/1128
-	serviceNameStr := string(recipe.serviceName)
+	var serviceNameStr string
 	if serviceName != emptyServiceName {
 		serviceNameStr = string(serviceName)
+	} else if recipe.serviceName != emptyServiceName { //TODO this will be removed when we deprecate the service_name field, more here: https://app.zenhub.com/workspaces/engineering-636cff9fc978ceb2aac05a1d/issues/gh/kurtosis-tech/kurtosis-private/1128
+		serviceNameStr = string(recipe.serviceName)
+		logrus.Warnf("The exec.service_name field will be deprecated soon, users will have to pass the service name value direclty to the 'exec', 'request' and 'wait' instructions")
+	} else {
+		return nil, stacktrace.NewError("The service name parameter can't be an empty string")
 	}
 
 	exitCode, commandOutput, err := serviceNetwork.ExecCommand(ctx, serviceNameStr, commandWithIPAddressAndRuntimeValue)
