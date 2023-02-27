@@ -81,6 +81,10 @@ func (t *requestTestCase1) GetStarlarkCode() string {
 	return fmt.Sprintf("%s(%s=%s)", request.RequestBuiltinName, request.RecipeArgName, recipe)
 }
 
+func (t *requestTestCase1) GetStarlarkCodeForAssertion() string {
+	return ""
+}
+
 func (t *requestTestCase1) Assert(interpretationResult starlark.Value, executionResult *string) {
 	expectedInterpretationResultMap := `{"body": "{{kurtosis:[0-9a-f]{32}:body.runtime_value}}", "code": "{{kurtosis:[0-9a-f]{32}:code.runtime_value}}", "extract.key": "{{kurtosis:[0-9a-f]{32}:extract.key.runtime_value}}"}`
 	require.Regexp(t, expectedInterpretationResultMap, interpretationResult.String())

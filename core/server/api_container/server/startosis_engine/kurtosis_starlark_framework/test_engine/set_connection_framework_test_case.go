@@ -60,6 +60,10 @@ func (t *setConnectionTestCase) GetStarlarkCode() string {
 	return fmt.Sprintf("%s(%s=%s, %s=%s)", set_connection.SetConnectionBuiltinName, set_connection.SubnetworksArgName, subnetworks, set_connection.ConnectionConfigArgName, connectionConfig)
 }
 
+func (t *setConnectionTestCase) GetStarlarkCodeForAssertion() string {
+	return ""
+}
+
 func (t *setConnectionTestCase) Assert(interpretationResult starlark.Value, executionResult *string) {
 	require.Equal(t, starlark.None, interpretationResult)
 	require.Equal(t, "Configured subnetwork connection between 'subnetwork_1' and 'subnetwork_2'", *executionResult)

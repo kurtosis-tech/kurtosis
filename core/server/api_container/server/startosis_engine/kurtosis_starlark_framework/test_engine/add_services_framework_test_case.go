@@ -77,6 +77,10 @@ func (t *addServicesTestCase) GetStarlarkCode() string {
 	return fmt.Sprintf(`%s(%s={"service-1": %s, "service-2": %s})`, add_service.AddServicesBuiltinName, add_service.ConfigsArgName, serviceConfig1, serviceConfig2)
 }
 
+func (t *addServicesTestCase) GetStarlarkCodeForAssertion() string {
+	return ""
+}
+
 func (t *addServicesTestCase) Assert(interpretationResult starlark.Value, executionResult *string) {
 	resultDict, ok := interpretationResult.(*starlark.Dict)
 	require.True(t, ok, "interpretation result should be a dictionary")

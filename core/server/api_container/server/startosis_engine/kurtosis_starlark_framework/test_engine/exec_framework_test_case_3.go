@@ -14,30 +14,34 @@ import (
 )
 
 const (
-	execServiceName = service.ServiceName("test-service")
+	execTextCase3ServiceName = service.ServiceName("my-service-for-test-case-2")
 )
 
-type execTestCase1 struct {
+//For a short period (until we deprecate recipe.service_name) the exec instruction will have a
+//dynamic first parameter which will accept the current 'recipe' argument and a new 'service_name' argument
+//In the execTestCase1 we test the current behaviour, it means receiving an 'recipe' as the first argument
+//In this test case we test that 'service_name' is also accepted as the first parameter, and it is used in the exec call
+type execTestCase3 struct {
 	*testing.T
 }
 
-func newExecTestCase1(t *testing.T) *execTestCase1 {
-	return &execTestCase1{
+func newExecTestCase3(t *testing.T) *execTestCase3 {
+	return &execTestCase3{
 		T: t,
 	}
 }
 
-func (t execTestCase1) GetId() string {
+func (t execTestCase3) GetId() string {
 	return exec.ExecBuiltinName
 }
 
-func (t execTestCase1) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
+func (t execTestCase3) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	serviceNetwork := service_network.NewMockServiceNetwork(t)
 	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
 
 	serviceNetwork.EXPECT().ExecCommand(
 		mock.Anything,
-		string(execServiceName),
+		string(execTextCase3ServiceName),
 		[]string{"mkdir", "-p", "/tmp/store"},
 	).Times(1).Return(
 		int32(0),
@@ -48,17 +52,16 @@ func (t execTestCase1) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanI
 	return exec.NewExec(serviceNetwork, runtimeValueStore)
 }
 
-func (t execTestCase1) GetStarlarkCode() string {
-	recipe := fmt.Sprintf(`ExecRecipe(service_name=%q, command=["mkdir", "-p", "/tmp/store"])`, execServiceName)
-	return fmt.Sprintf("%s(%s=%s)", exec.ExecBuiltinName, exec.RecipeArgName, recipe)
+func (t execTestCase3) GetStarlarkCode() string {
+	recipe := fmt.Sprintf(`ExecRecipe(command=["mkdir", "-p", "/tmp/store"])`)
+	return fmt.Sprintf("%s(%s=%s, %s=%q)", exec.ExecBuiltinName, exec.RecipeArgName, recipe, exec.ServiceNameArgName, execTextCase3ServiceName)
 }
 
-func (t *execTestCase1) GetStarlarkCodeForAssertion() string {
+func (t *execTestCase3) GetStarlarkCodeForAssertion() string {
 	return ""
 }
 
-//TODO we should change the assert when we deprecate the recipe.service_name more here: https://app.zenhub.com/workspaces/engineering-636cff9fc978ceb2aac05a1d/issues/gh/kurtosis-tech/kurtosis-private/1128
-func (t execTestCase1) Assert(interpretationResult starlark.Value, executionResult *string) {
+func (t execTestCase3) Assert(interpretationResult starlark.Value, executionResult *string) {
 	expectedInterpretationResultMap := `{"code": "{{kurtosis:[0-9a-f]{32}:code.runtime_value}}", "output": "{{kurtosis:[0-9a-f]{32}:output.runtime_value}}"}`
 	require.Regexp(t, expectedInterpretationResultMap, interpretationResult.String())
 

@@ -14,13 +14,11 @@ import (
 )
 
 const (
-	execTextCase2ServiceName = service.ServiceName("my-service-for-test-case-2")
+	execTextCase2ServiceName = service.ServiceName("my-service-for-test-case-3")
 )
 
-//For a short period (until we deprecate recipe.service_name) the exec instruction will have a
-//dynamic first parameter which will accept the current 'recipe' argument and a new 'service_name' argument
-//In the execTestCase1 we test the current behaviour, it means receiving an 'recipe' as the first argument
-//In this test case we test that 'service_name' is also accepted as the first parameter, and it is used in the exec call
+//This test case is for testing positional arguments retro-compatibility for those script
+//that are using the recipe value as the first positional argument
 type execTestCase2 struct {
 	*testing.T
 }
@@ -53,8 +51,13 @@ func (t execTestCase2) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanI
 }
 
 func (t execTestCase2) GetStarlarkCode() string {
-	recipe := fmt.Sprintf(`ExecRecipe(command=["mkdir", "-p", "/tmp/store"])`)
-	return fmt.Sprintf("%s(%s=%q, %s=%s)", exec.ExecBuiltinName, exec.ServiceNameArgName, execTextCase2ServiceName, exec.RecipeArgName, recipe)
+	recipe := fmt.Sprintf(`ExecRecipe(service_name=%q, command=["mkdir", "-p", "/tmp/store"])`, execTextCase2ServiceName)
+	return fmt.Sprintf("%s(%s)", exec.ExecBuiltinName, recipe)
+}
+
+func (t *execTestCase2) GetStarlarkCodeForAssertion() string {
+	recipe := fmt.Sprintf(`ExecRecipe(service_name=%q, command=["mkdir", "-p", "/tmp/store"])`, execTextCase2ServiceName)
+	return fmt.Sprintf("%s(%s=%s)", exec.ExecBuiltinName, exec.RecipeArgName, recipe)
 }
 
 func (t execTestCase2) Assert(interpretationResult starlark.Value, executionResult *string) {

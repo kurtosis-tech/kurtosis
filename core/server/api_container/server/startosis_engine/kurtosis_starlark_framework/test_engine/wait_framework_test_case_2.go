@@ -79,6 +79,10 @@ func (t *waitTestCase2) GetStarlarkCode() string {
 	return fmt.Sprintf("%s(%s=%q, %s=%s, %s=%q, %s=%q, %s=%s, %s=%q, %s=%q)", wait.WaitBuiltinName, wait.ServiceNameArgName, waitServiceName, wait.RecipeArgName, recipeStr, wait.ValueFieldArgName, waitValueField, wait.AssertionArgName, waitAssertion, wait.TargetArgName, waitTargetValue, wait.IntervalArgName, waitInterval, wait.TimeoutArgName, waitTimeout)
 }
 
+func (t *waitTestCase2) GetStarlarkCodeForAssertion() string {
+	return ""
+}
+
 func (t *waitTestCase2) Assert(interpretationResult starlark.Value, executionResult *string) {
 	expectedInterpretationResult := `{"body": "{{kurtosis:[0-9a-f]{32}:body.runtime_value}}", "code": "{{kurtosis:[0-9a-f]{32}:code.runtime_value}}", "extract.key": "{{kurtosis:[0-9a-f]{32}:extract.key.runtime_value}}"}`
 	require.Regexp(t, expectedInterpretationResult, interpretationResult.String())

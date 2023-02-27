@@ -63,6 +63,10 @@ func (t *importModuleTestCase) GetStarlarkCode() string {
 	return fmt.Sprintf("%s(%s=%q)", import_module.ImportModuleBuiltinName, import_module.ModuleFileArgName, importModule_moduleToLoad)
 }
 
+func (t *importModuleTestCase) GetStarlarkCodeForAssertion() string {
+	return ""
+}
+
 func (t *importModuleTestCase) Assert(result starlark.Value) {
 	loadedModule, ok := result.(*starlarkstruct.Module)
 	require.True(t, ok, "object returned was not a starlark module")

@@ -28,6 +28,7 @@ func TestAllRegisteredBuiltins(t *testing.T) {
 	testKurtosisPlanInstruction(t, newAssertTestCase(t))
 	testKurtosisPlanInstruction(t, newExecTestCase1(t))
 	testKurtosisPlanInstruction(t, newExecTestCase2(t))
+	testKurtosisPlanInstruction(t, newExecTestCase3(t))
 	testKurtosisPlanInstruction(t, newSetConnectionTestCase(t))
 	testKurtosisPlanInstruction(t, newSetConnectionDefaultTestCase(t))
 	testKurtosisPlanInstruction(t, newRemoveConnectionTestCase(t))
@@ -72,7 +73,13 @@ func testKurtosisPlanInstruction(t *testing.T, builtin KurtosisPlanInstructionBa
 
 	// check serializing the obtained instruction falls back to the initial one
 	serializedInstruction := instruction.String()
-	require.Equal(t, starlarkCode, serializedInstruction)
+
+	starlarkCodeForAssertion := builtin.GetStarlarkCodeForAssertion()
+	if starlarkCodeForAssertion == "" {
+		starlarkCodeForAssertion = starlarkCode
+	}
+
+	require.Equal(t, starlarkCodeForAssertion, serializedInstruction)
 }
 
 func testKurtosisHelper(t *testing.T, builtin KurtosisHelperBaseTest) {

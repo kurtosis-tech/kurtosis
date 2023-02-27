@@ -57,6 +57,10 @@ func (t renderTemplateTestCase1) GetStarlarkCode() string {
 	return fmt.Sprintf(`%s(%s=%s, %s=%q)`, render_templates.RenderTemplatesBuiltinName, render_templates.TemplateAndDataByDestinationRelFilepathArg, configValue, render_templates.ArtifactNameArgName, renderTemplate_SingleTemplate_ArtifactName)
 }
 
+func (t *renderTemplateTestCase1) GetStarlarkCodeForAssertion() string {
+	return ""
+}
+
 func (t renderTemplateTestCase1) Assert(interpretationResult starlark.Value, executionResult *string) {
 	require.Equal(t, starlark.String(renderTemplate_SingleTemplate_ArtifactName), interpretationResult)
 	require.Equal(t, "Templates artifact name 'test-artifact' rendered with artifact UUID 'test-artifact-uuid'", *executionResult)

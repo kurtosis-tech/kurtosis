@@ -51,6 +51,10 @@ func (t removeServiceTestCase) GetStarlarkCode() string {
 	return fmt.Sprintf("%s(%s=%q)", remove_service.RemoveServiceBuiltinName, remove_service.ServiceNameArgName, removeService_serviceName)
 }
 
+func (t *removeServiceTestCase) GetStarlarkCodeForAssertion() string {
+	return ""
+}
+
 func (t removeServiceTestCase) Assert(interpretationResult starlark.Value, executionResult *string) {
 	require.Equal(t, starlark.None, interpretationResult)
 
