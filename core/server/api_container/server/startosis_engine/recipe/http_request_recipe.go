@@ -183,10 +183,10 @@ func MakeGetHttpRequestRecipe(_ *starlark.Thread, builtin *starlark.Builtin, arg
 	var maybeExtractField starlark.Value
 
 	if err := starlark.UnpackArgs(builtin.Name(), args, kwargs,
-		MakeOptional(serviceNameAttr), &serviceName,
 		portIdAttr, &portId,
 		endpointAttr, &endpoint,
 		kurtosis_types.MakeOptional(extractKeyPrefix), &maybeExtractField,
+		MakeOptional(serviceNameAttr), &serviceName,
 	); err != nil {
 		return nil, startosis_errors.NewInterpretationError(err.Error())
 	}
@@ -214,12 +214,12 @@ func MakePostHttpRequestRecipe(_ *starlark.Thread, builtin *starlark.Builtin, ar
 	var maybeExtractField starlark.Value
 
 	if err := starlark.UnpackArgs(builtin.Name(), args, kwargs,
-		MakeOptional(serviceNameAttr), &serviceName,
 		portIdAttr, &portId,
 		endpointAttr, &endpoint,
 		bodyKey, &body,
 		contentTypeAttr, &contentType,
 		kurtosis_types.MakeOptional(extractKeyPrefix), &maybeExtractField,
+		MakeOptional(serviceNameAttr), &serviceName,
 	); err != nil {
 		return nil, startosis_errors.NewInterpretationError("%v", err.Error())
 	}

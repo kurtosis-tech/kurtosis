@@ -53,7 +53,7 @@ func (t execTestCase3) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanI
 }
 
 func (t execTestCase3) GetStarlarkCode() string {
-	recipe := fmt.Sprint(`ExecRecipe(command=["mkdir", "-p", "/tmp/store"])`)
+	recipe := `ExecRecipe(command=["mkdir", "-p", "/tmp/store"])`
 	return fmt.Sprintf("%s(%s=%s, %s=%q)", exec.ExecBuiltinName, exec.RecipeArgName, recipe, exec.ServiceNameArgName, execTextCase3ServiceName)
 }
 
