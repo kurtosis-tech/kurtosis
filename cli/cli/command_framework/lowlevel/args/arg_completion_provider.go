@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	shellDirectiveForManualCompletionProvider          = cobra.ShellCompDirectiveNoFileComp & cobra.ShellCompDirectiveKeepOrder
+	shellDirectiveForManualCompletionProvider          = cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveKeepOrder
 	shellDirectiveForShellProvideDefaultFileCompletion = cobra.ShellCompDirectiveDefault
 	defaultShellDirective                              = cobra.ShellCompDirectiveDefault
 	noShellDirectiveDefined                            = 999999
