@@ -160,10 +160,6 @@ The `exec` instruction on the [`plan`][plan-reference] object executes commands 
 
 ```python
 exec_recipe = ExecRecipe(
-    # The service name to execute the command on.
-    # MANDATORY
-    service_name = "my_service",
-
     # The actual command to execute. 
     # Each item corresponds to one shell argument, so ["echo", "Hello world"] behaves as if you ran "echo" "Hello world" in the shell.
     # MANDATORY
