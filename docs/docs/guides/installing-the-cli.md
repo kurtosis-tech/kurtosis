@@ -62,7 +62,7 @@ Download the appropriate artifact from [the release artifacts page][release-arti
 </details>
 
 :::info
-Kurtosis CLI cannot be installed on Windows. Windows users are encouraged to use [Windows Subsystem for Linux (WSL)][windows-susbsystem-for-linux] to use Kurtosis.
+Kurtosis CLI cannot be installed directly on Windows. Windows users are encouraged to use [Windows Subsystem for Linux (WSL)][windows-susbsystem-for-linux] to use Kurtosis.
 :::
 
 Once you're done, [the quickstart is a great place to get started][quickstart].
