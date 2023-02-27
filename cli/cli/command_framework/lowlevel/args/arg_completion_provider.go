@@ -8,10 +8,10 @@ import (
 )
 
 const (
-	shellDirectiveForManualCompletionProvider = cobra.ShellCompDirectiveNoFileComp
+	shellDirectiveForManualCompletionProvider          = cobra.ShellCompDirectiveNoFileComp & cobra.ShellCompDirectiveKeepOrder
 	shellDirectiveForShellProvideDefaultFileCompletion = cobra.ShellCompDirectiveDefault
-	defaultShellDirective = cobra.ShellCompDirectiveDefault
-	noShellDirectiveDefined = 999999
+	defaultShellDirective                              = cobra.ShellCompDirectiveDefault
+	noShellDirectiveDefined                            = 999999
 )
 
 var (
@@ -34,7 +34,7 @@ func (impl *argCompletionProviderImpl) RunCompletionFunction(
 	ctx context.Context,
 	flags *flags.ParsedFlags,
 	previousArgs *ParsedArgs,
-)([]string, cobra.ShellCompDirective, error) {
+) ([]string, cobra.ShellCompDirective, error) {
 
 	if impl.customCompletionFunc != noCustomCompletionFuncDefined {
 		completionFunc := *impl.customCompletionFunc
@@ -49,21 +49,21 @@ func (impl *argCompletionProviderImpl) RunCompletionFunction(
 	return nil, defaultShellDirective, stacktrace.NewError("The custom completion func and the shell completion directive are not defined, this should never happens; this is a bug in Kurtosis")
 }
 
-//Receive a custom completion function which should generate the completions list for the argument and return it
+// Receive a custom completion function which should generate the completions list for the argument and return it
 func NewManualCompletionsProvider(
 	customCompletionFunc func(ctx context.Context, flags *flags.ParsedFlags, previousArgs *ParsedArgs) ([]string, error),
 ) argCompletionProvider {
 	newManualCompletionProvider := &argCompletionProviderImpl{
-		customCompletionFunc: &customCompletionFunc,
+		customCompletionFunc:     &customCompletionFunc,
 		shellCompletionDirective: noShellDirectiveDefined,
 	}
 	return newManualCompletionProvider
 }
 
-//This argument completion provider enables the default shell file completion functionality for the argument
+// This argument completion provider enables the default shell file completion functionality for the argument
 func NewDefaultShellFileCompletionProvider() argCompletionProvider {
 	newDefaultShellFileCompletionProvider := &argCompletionProviderImpl{
-		customCompletionFunc: noCustomCompletionFuncDefined,
+		customCompletionFunc:     noCustomCompletionFuncDefined,
 		shellCompletionDirective: shellDirectiveForShellProvideDefaultFileCompletion,
 	}
 	return newDefaultShellFileCompletionProvider
