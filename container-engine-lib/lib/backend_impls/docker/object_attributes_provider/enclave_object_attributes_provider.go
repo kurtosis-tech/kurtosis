@@ -18,7 +18,6 @@ import (
 
 const (
 	apiContainerNameSuffix                 = "kurtosis-api"
-	userServiceContainerNameFragment       = "user-service"
 	networkingSidecarContainerNameFragment = "networking-sidecar"
 	artifactExpansionVolumeNameFragment    = "files-artifact-expansion"
 	artifactsExpanderContainerNameFragment = "files-artifacts-expander"
@@ -203,14 +202,14 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForApiContainer(
 }
 
 func (provider *dockerEnclaveObjectAttributesProviderImpl) ForUserServiceContainer(
-	serviceId service.ServiceName,
+	serviceName service.ServiceName,
 	serviceUuid service.ServiceUUID,
 	privateIpAddr net.IP,
 	privatePorts map[string]*port_spec.PortSpec,
 ) (DockerObjectAttributes, error) {
-	name, err := provider.getNameForEnclaveObject(
+	name, err := provider.getNameForUserServiceContainer(
 		[]string{
-			userServiceContainerNameFragment,
+			string(serviceName),
 			string(serviceUuid),
 		},
 	)
@@ -232,7 +231,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForUserServiceContain
 		)
 	}
 
-	serviceIdStr := string(serviceId)
+	serviceIdStr := string(serviceName)
 	serviceGuidStr := string(serviceUuid)
 
 	labels, err := provider.getLabelsForEnclaveObjectWithIDAndGUID(serviceIdStr, serviceGuidStr)
@@ -431,6 +430,20 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) getNameForEnclaveObje
 	toJoin = append(toJoin, elems...)
 	nameStr := strings.Join(
 		toJoin,
+		objectNameElementSeparator,
+	)
+	name, err := docker_object_name.CreateNewDockerObjectName(nameStr)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating Docker object name from string '%v'", nameStr)
+	}
+	return name, nil
+}
+
+// Gets the name of the service container
+// Gets the name for an enclave object, making sure to put the enclave ID first and join using the standardized separator
+func (provider *dockerEnclaveObjectAttributesProviderImpl) getNameForUserServiceContainer(elems []string) (*docker_object_name.DockerObjectName, error) {
+	nameStr := strings.Join(
+		elems,
 		objectNameElementSeparator,
 	)
 	name, err := docker_object_name.CreateNewDockerObjectName(nameStr)
