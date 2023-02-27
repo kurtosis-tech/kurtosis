@@ -771,7 +771,8 @@ def run(plan):
 	require.Len(t, instructions, 2)
 }
 
-func TestStartosisInterpreter_InvalidExecRecipeMissingRequiredServiceName(t *testing.T) {
+//TODO remove this when whe deprecate the service_name field in
+func TestStartosisInterpreter_ValidExecRecipeWithoutServiceName(t *testing.T) {
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
 	testRuntimeValueStore := runtime_value_store.NewRuntimeValueStore()
@@ -787,16 +788,7 @@ def run(plan):
 
 	_, _, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 
-	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
-		[]startosis_errors.CallFrame{
-			*startosis_errors.NewCallFrame("run", startosis_errors.NewScriptPosition(startosis_constants.PackageIdPlaceholderForStandaloneScript, 4, 21)),
-			*startosis_errors.NewCallFrame("ExecRecipe", startosis_errors.NewScriptPosition(startosis_constants.PackageIdPlaceholderForStandaloneScript, 0, 0)),
-		},
-		"Evaluation error: ExecRecipe: missing argument for service_name",
-	).ToAPIType()
-
-	require.NotNil(t, interpretationError)
-	require.Equal(t, expectedError, interpretationError)
+	require.Nil(t, interpretationError)
 }
 
 func TestStartosisInterpreter_InvalidExecRecipeMissingRequiredCommand(t *testing.T) {
