@@ -92,13 +92,14 @@ func NewWait(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *r
 				serviceNetwork:    serviceNetwork,
 				runtimeValueStore: runtimeValueStore,
 
-				recipe:     nil, // populated at interpretation time
-				valueField: "",  // populated at interpretation time
-				assertion:  "",  // populated at interpretation time
-				target:     nil, // populated at interpretation time
-				backoff:    nil, // populated at interpretation time
-				timeout:    0,   // populated at interpretation time
-				resultUuid: "",  // populated at interpretation time
+				serviceName: "",  // populated at interpretation time
+				recipe:      nil, // populated at interpretation time
+				valueField:  "",  // populated at interpretation time
+				assertion:   "",  // populated at interpretation time
+				target:      nil, // populated at interpretation time
+				backoff:     nil, // populated at interpretation time
+				timeout:     0,   // populated at interpretation time
+				resultUuid:  "",  // populated at interpretation time
 			}
 		},
 

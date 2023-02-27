@@ -49,8 +49,9 @@ func NewExec(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *r
 				serviceNetwork:    serviceNetwork,
 				runtimeValueStore: runtimeValueStore,
 
-				execRecipe: nil, // will be populated at interpretation time
-				resultUuid: "",  // will be populated at interpretation time
+				serviceName: "",  // will be populated at interpretation time
+				execRecipe:  nil, // will be populated at interpretation time
+				resultUuid:  "",  // will be populated at interpretation time
 			}
 		},
 

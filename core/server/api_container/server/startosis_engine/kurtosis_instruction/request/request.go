@@ -50,6 +50,7 @@ func NewRequest(serviceNetwork service_network.ServiceNetwork, runtimeValueStore
 				serviceNetwork:    serviceNetwork,
 				runtimeValueStore: runtimeValueStore,
 
+				serviceName:       "",  // will be populated at interpretation time
 				httpRequestRecipe: nil, // populated at interpretation time
 				resultUuid:        "",  // populated at interpretation time
 			}
