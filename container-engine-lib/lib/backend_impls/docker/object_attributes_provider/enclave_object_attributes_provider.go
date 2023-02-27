@@ -208,10 +208,8 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForUserServiceContain
 	privatePorts map[string]*port_spec.PortSpec,
 ) (DockerObjectAttributes, error) {
 	name, err := provider.getNameForUserServiceContainer(
-		[]string{
-			string(serviceName),
-			string(serviceUuid),
-		},
+		serviceName,
+		serviceUuid,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the user service Docker container name object")
@@ -440,9 +438,11 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) getNameForEnclaveObje
 }
 
 // Gets the name of the service container (service_name--service_uuid)
-func (provider *dockerEnclaveObjectAttributesProviderImpl) getNameForUserServiceContainer(elems []string) (*docker_object_name.DockerObjectName, error) {
+func (provider *dockerEnclaveObjectAttributesProviderImpl) getNameForUserServiceContainer(serviceName service.ServiceName, serviceUuid service.ServiceUUID) (*docker_object_name.DockerObjectName, error) {
 	nameStr := strings.Join(
-		elems,
+		[]string{
+			string(serviceName), string(serviceUuid),
+		},
 		objectNameElementSeparator,
 	)
 	name, err := docker_object_name.CreateNewDockerObjectName(nameStr)
