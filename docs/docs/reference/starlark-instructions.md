@@ -208,7 +208,7 @@ NOTE: We chose not to use the normal Starlark `load` primitive due to its lack o
 
 ### print
 
-`print` on the [`plan`][plan-reference] object will add an instruction to the plan to print the string. When the `print` instruction is executed during the [Execution Phase][multi-phase-runs], [future references][future-references-reference] will be replaced with their execution-time values.
+`print` on the [`plan`][plan-reference] object will add an instruction to the plan to print the string. When the `print` instruction is executed during the [Execution Phase][multi-phase-runs-reference], [future references][future-references-reference] will be replaced with their execution-time values.
 
 ```
 plan.print("Any string here")

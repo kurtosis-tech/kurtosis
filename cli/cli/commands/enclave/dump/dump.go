@@ -2,6 +2,7 @@ package dump
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/enclave_id_arg"
@@ -25,6 +26,10 @@ const (
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
+
+	defaultEnclaveDumpDir = ""
+	enclaveDumpSeparator  = "--"
+	outputDirIsOptional   = true
 )
 
 var EnclaveDumpCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -43,7 +48,9 @@ var EnclaveDumpCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 		),
 		// TODO Create a NewFilepathArg that has filepath tab-completion & validation set up
 		{
-			Key: outputDirpathArg,
+			Key:          outputDirpathArg,
+			DefaultValue: defaultEnclaveDumpDir,
+			IsOptional:   outputDirIsOptional,
 		},
 	},
 	RunFunc: run,
@@ -77,6 +84,11 @@ func run(
 	}
 
 	enclaveUuid := enclaveInfo.GetEnclaveUuid()
+
+	if enclaveOutputDirpath == defaultEnclaveDumpDir {
+		enclaveName := enclaveInfo.GetName()
+		enclaveOutputDirpath = fmt.Sprintf("%s%s%s", enclaveName, enclaveDumpSeparator, enclaveUuid)
+	}
 
 	if err := kurtosisBackend.DumpEnclave(ctx, enclave.EnclaveUUID(enclaveUuid), enclaveOutputDirpath); err != nil {
 		return stacktrace.Propagate(err, "An error occurred dumping enclave '%v' to '%v'", enclaveIdentifier, enclaveOutputDirpath)

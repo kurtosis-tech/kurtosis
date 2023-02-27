@@ -18,7 +18,6 @@ import (
 
 const (
 	apiContainerNameSuffix                 = "kurtosis-api"
-	userServiceContainerNameFragment       = "user-service"
 	networkingSidecarContainerNameFragment = "networking-sidecar"
 	artifactExpansionVolumeNameFragment    = "files-artifact-expansion"
 	artifactsExpanderContainerNameFragment = "files-artifacts-expander"
@@ -38,19 +37,19 @@ type DockerEnclaveObjectAttributesProvider interface {
 		privateGrpcProxyPortSpec *port_spec.PortSpec,
 	) (DockerObjectAttributes, error)
 	ForUserServiceContainer(
-		serviceId service.ServiceName,
+		serviceName service.ServiceName,
 		serviceUuid service.ServiceUUID,
 		privateIpAddr net.IP,
 		privatePorts map[string]*port_spec.PortSpec,
 	) (DockerObjectAttributes, error)
 	ForNetworkingSidecarContainer(
-		serviceGUIDSidecarAttachedTo service.ServiceUUID,
+		serviceUUIDSidecarAttachedTo service.ServiceUUID,
 	) (DockerObjectAttributes, error)
 	ForFilesArtifactsExpanderContainer(
-		serviceGUID service.ServiceUUID,
+		serviceUUID service.ServiceUUID,
 	) (DockerObjectAttributes, error)
 	ForSingleFilesArtifactExpansionVolume(
-		serviceGUID service.ServiceUUID,
+		serviceUUID service.ServiceUUID,
 	) (DockerObjectAttributes, error)
 	ForLogsCollector(tcpPortId string, tcpPortSpec *port_spec.PortSpec, httpPortId string, httpPortSpec *port_spec.PortSpec) (DockerObjectAttributes, error)
 	ForLogsCollectorVolume() (DockerObjectAttributes, error)
@@ -203,16 +202,14 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForApiContainer(
 }
 
 func (provider *dockerEnclaveObjectAttributesProviderImpl) ForUserServiceContainer(
-	serviceId service.ServiceName,
+	serviceName service.ServiceName,
 	serviceUuid service.ServiceUUID,
 	privateIpAddr net.IP,
 	privatePorts map[string]*port_spec.PortSpec,
 ) (DockerObjectAttributes, error) {
-	name, err := provider.getNameForEnclaveObject(
-		[]string{
-			userServiceContainerNameFragment,
-			string(serviceUuid),
-		},
+	name, err := provider.getNameForUserServiceContainer(
+		serviceName,
+		serviceUuid,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the user service Docker container name object")
@@ -232,12 +229,12 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForUserServiceContain
 		)
 	}
 
-	serviceIdStr := string(serviceId)
-	serviceGuidStr := string(serviceUuid)
+	serviceNameStr := string(serviceName)
+	serviceUuidStr := string(serviceUuid)
 
-	labels, err := provider.getLabelsForEnclaveObjectWithIDAndGUID(serviceIdStr, serviceGuidStr)
+	labels, err := provider.getLabelsForEnclaveObjectWithIDAndGUID(serviceNameStr, serviceUuidStr)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting labels for enclave object with GUID '%v'", serviceUuid)
+		return nil, stacktrace.Propagate(err, "An error occurred getting labels for enclave object with UUID '%v'", serviceUuid)
 	}
 	labels[label_key_consts.ContainerTypeDockerLabelKey] = label_value_consts.UserServiceContainerTypeDockerLabelValue
 	labels[label_key_consts.PortSpecsDockerLabelKey] = serializedPortsSpec
@@ -256,20 +253,20 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForUserServiceContain
 	return objectAttributes, nil
 }
 
-func (provider *dockerEnclaveObjectAttributesProviderImpl) ForNetworkingSidecarContainer(serviceGUIDSidecarAttachedTo service.ServiceUUID) (DockerObjectAttributes, error) {
+func (provider *dockerEnclaveObjectAttributesProviderImpl) ForNetworkingSidecarContainer(serviceUUIDSidecarAttachedTo service.ServiceUUID) (DockerObjectAttributes, error) {
 	name, err := provider.getNameForEnclaveObject(
 		[]string{
 			networkingSidecarContainerNameFragment,
-			string(serviceGUIDSidecarAttachedTo),
+			string(serviceUUIDSidecarAttachedTo),
 		},
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the networking sidecar Docker container name object")
 	}
 
-	labels, err := provider.getLabelsForEnclaveObjectWithGUID(string(serviceGUIDSidecarAttachedTo))
+	labels, err := provider.getLabelsForEnclaveObjectWithGUID(string(serviceUUIDSidecarAttachedTo))
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting labels for enclave object with GUID '%v'", serviceGUIDSidecarAttachedTo)
+		return nil, stacktrace.Propagate(err, "An error occurred getting labels for enclave object with UUID '%v'", serviceUUIDSidecarAttachedTo)
 	}
 	labels[label_key_consts.ContainerTypeDockerLabelKey] = label_value_consts.NetworkingSidecarContainerTypeDockerLabelValue
 
@@ -288,16 +285,16 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForNetworkingSidecarC
 
 // In Docker we get one volume per artifact being expanded
 func (provider *dockerEnclaveObjectAttributesProviderImpl) ForSingleFilesArtifactExpansionVolume(
-	serviceGUID service.ServiceUUID,
+	serviceUUID service.ServiceUUID,
 ) (
 	DockerObjectAttributes,
 	error,
 ) {
-	serviceGuidStr := string(serviceGUID)
+	serviceUuidStr := string(serviceUUID)
 
 	guidStr, err := uuid_generator.GenerateUUIDString()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred generating a UUID for the files artifact expnasion volume for service '%v'", serviceGuidStr)
+		return nil, stacktrace.Propagate(err, "An error occurred generating a UUID for the files artifact expnasion volume for service '%v'", serviceUuidStr)
 	}
 
 	name, err := provider.getNameForEnclaveObject([]string{
@@ -305,19 +302,19 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForSingleFilesArtifac
 		guidStr,
 	})
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the files artifact expansion volume name object using GUID '%v' and service GUID '%v'", guidStr, serviceGuidStr)
+		return nil, stacktrace.Propagate(err, "An error occurred creating the files artifact expansion volume name object using GUID '%v' and service GUID '%v'", guidStr, serviceUuidStr)
 	}
 
 	labels, err := provider.getLabelsForEnclaveObjectWithGUID(guidStr)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting labels for files artifact expansion volume with GUID '%v'", guidStr)
+		return nil, stacktrace.Propagate(err, "An error occurred getting labels for files artifact expansion volume with UUID '%v'", guidStr)
 	}
 
-	serviceGuidLabelValue, err := docker_label_value.CreateNewDockerLabelValue(serviceGuidStr)
+	serviceUuidLabelValue, err := docker_label_value.CreateNewDockerLabelValue(serviceUuidStr)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker label value from service GUID string '%v'", serviceGuidStr)
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker label value from service GUID string '%v'", serviceUuidStr)
 	}
-	labels[label_key_consts.UserServiceGUIDDockerLabelKey] = serviceGuidLabelValue
+	labels[label_key_consts.UserServiceGUIDDockerLabelKey] = serviceUuidLabelValue
 	labels[label_key_consts.VolumeTypeDockerLabelKey] = label_value_consts.FilesArtifactExpansionVolumeTypeDockerLabelValue
 	// TODO Create a KurtosisResourceDockerLabelKey object, like Kubernetes, and apply the "user-service" label here?
 
@@ -332,16 +329,16 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForSingleFilesArtifac
 // We'll have at most one files artifact expansion container per service, because the single container will handle
 // all expansion
 func (provider *dockerEnclaveObjectAttributesProviderImpl) ForFilesArtifactsExpanderContainer(
-	serviceGUID service.ServiceUUID,
+	serviceUUID service.ServiceUUID,
 ) (
 	DockerObjectAttributes,
 	error,
 ) {
-	serviceGuidStr := string(serviceGUID)
+	serviceUuidStr := string(serviceUUID)
 
 	guidStr, err := uuid_generator.GenerateUUIDString()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred generating a UUID for the files artifacts expander container for service '%v'", serviceGuidStr)
+		return nil, stacktrace.Propagate(err, "An error occurred generating a UUID for the files artifacts expander container for service '%v'", serviceUuidStr)
 	}
 
 	name, err := provider.getNameForEnclaveObject([]string{
@@ -349,19 +346,19 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForFilesArtifactsExpa
 		guidStr,
 	})
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the files artifacts expander container name with GUID '%v'", guidStr)
+		return nil, stacktrace.Propagate(err, "An error occurred creating the files artifacts expander container name with UUID '%v'", guidStr)
 	}
 
 	labels, err := provider.getLabelsForEnclaveObjectWithGUID(guidStr)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting labels for files artifacts expander container with GUID '%v'", guidStr)
+		return nil, stacktrace.Propagate(err, "An error occurred getting labels for files artifacts expander container with UUID '%v'", guidStr)
 	}
 
-	serviceGuidLabelValue, err := docker_label_value.CreateNewDockerLabelValue(serviceGuidStr)
+	serviceUuidLabelValue, err := docker_label_value.CreateNewDockerLabelValue(serviceUuidStr)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker label value from service GUID string '%v'", serviceGuidStr)
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker label value from service GUID string '%v'", serviceUuidStr)
 	}
-	labels[label_key_consts.UserServiceGUIDDockerLabelKey] = serviceGuidLabelValue
+	labels[label_key_consts.UserServiceGUIDDockerLabelKey] = serviceUuidLabelValue
 	labels[label_key_consts.ContainerTypeDockerLabelKey] = label_value_consts.FilesArtifactExpanderContainerTypeDockerLabelValue
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
@@ -440,6 +437,21 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) getNameForEnclaveObje
 	return name, nil
 }
 
+// Gets the name of the service container (service_name--service_uuid)
+func (provider *dockerEnclaveObjectAttributesProviderImpl) getNameForUserServiceContainer(serviceName service.ServiceName, serviceUuid service.ServiceUUID) (*docker_object_name.DockerObjectName, error) {
+	nameStr := strings.Join(
+		[]string{
+			string(serviceName), string(serviceUuid),
+		},
+		objectNameElementSeparator,
+	)
+	name, err := docker_object_name.CreateNewDockerObjectName(nameStr)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating Docker object name from string '%v'", nameStr)
+	}
+	return name, nil
+}
+
 func (provider *dockerEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveObject() map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue {
 	return map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue{
 		label_key_consts.EnclaveUUIDDockerLabelKey: provider.enclaveId,
@@ -459,7 +471,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveOb
 func (provider *dockerEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveObjectWithIDAndGUID(id, guid string) (map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue, error) {
 	labels, err := provider.getLabelsForEnclaveObjectWithGUID(guid)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave object labels with GUID '%v'", guid)
+		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave object labels with UUID '%v'", guid)
 	}
 	idLabelValue, err := docker_label_value.CreateNewDockerLabelValue(id)
 	if err != nil {

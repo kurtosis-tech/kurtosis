@@ -30,7 +30,7 @@ func Test_parseKurtosisYamlInternal_FailureWhileReading(t *testing.T) {
 
 	_, err := parseKurtosisYamlInternal(kurtosisYmlPath, mockRead)
 	require.NotNil(t, err)
-	require.ErrorContains(t, err, fmt.Sprintf("Error occurred while reading the contents of %v", kurtosisYmlPath))
+	require.ErrorContains(t, err, fmt.Sprintf("Error occurred while reading the contents of '%v'", kurtosisYmlPath))
 }
 
 func Test_parseKurtosisYamlInternal_IncorrectYaml(t *testing.T) {
