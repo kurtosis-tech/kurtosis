@@ -1,6 +1,6 @@
 ---
 title: Getting Started
-sidebar_label: Getting Started
+sidebar_label: CLI
 slug: /cli
 sidebar_position: 1
 ---
