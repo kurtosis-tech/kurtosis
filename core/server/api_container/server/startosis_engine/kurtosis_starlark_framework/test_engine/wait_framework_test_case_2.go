@@ -17,8 +17,7 @@ import (
 )
 
 const (
-	waitServiceName            = service.ServiceName("web-server")
-	wrongWaitRecipeServiceName = service.ServiceName("wrong-web-server")
+	waitServiceName = service.ServiceName("web-server")
 )
 
 //For a short period (until we deprecate recipe.service_name) the wait instruction will have a
@@ -76,7 +75,7 @@ func (t *waitTestCase2) GetInstruction() *kurtosis_plan_instruction.KurtosisPlan
 }
 
 func (t *waitTestCase2) GetStarlarkCode() string {
-	recipeStr := fmt.Sprintf(`PostHttpRequestRecipe(port_id=%q, service_name=%q, endpoint=%q, body=%q, content_type=%q, extract={"key": ".value"})`, waitRecipePortId, wrongWaitRecipeServiceName, waitRecipeEndpoint, waitRecipeBody, waitRecipeContentType)
+	recipeStr := fmt.Sprintf(`PostHttpRequestRecipe(port_id=%q, endpoint=%q, body=%q, content_type=%q, extract={"key": ".value"})`, waitRecipePortId, waitRecipeEndpoint, waitRecipeBody, waitRecipeContentType)
 	return fmt.Sprintf("%s(%s=%q, %s=%s, %s=%q, %s=%q, %s=%s, %s=%q, %s=%q)", wait.WaitBuiltinName, wait.ServiceNameArgName, waitServiceName, wait.RecipeArgName, recipeStr, wait.ValueFieldArgName, waitValueField, wait.AssertionArgName, waitAssertion, wait.TargetArgName, waitTargetValue, wait.IntervalArgName, waitInterval, wait.TimeoutArgName, waitTimeout)
 }
 

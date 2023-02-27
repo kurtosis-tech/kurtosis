@@ -84,8 +84,13 @@ func (recipe *HttpRequestRecipe) String() string {
 	buffer.WriteString(instanceName + "(")
 	buffer.WriteString(portIdAttr + "=")
 	buffer.WriteString(fmt.Sprintf("%q, ", recipe.portId))
-	buffer.WriteString(serviceNameAttr + "=")
-	buffer.WriteString(fmt.Sprintf("%q, ", recipe.serviceName))
+
+	//TODO  remove this check when we deprecate the service_name field
+	if recipe.serviceName != "" {
+		buffer.WriteString(serviceNameAttr + "=")
+		buffer.WriteString(fmt.Sprintf("%q, ", recipe.serviceName))
+	}
+
 	buffer.WriteString(endpointAttr + "=")
 	buffer.WriteString(fmt.Sprintf("%q, ", recipe.endpoint))
 
@@ -178,7 +183,7 @@ func MakeGetHttpRequestRecipe(_ *starlark.Thread, builtin *starlark.Builtin, arg
 	var maybeExtractField starlark.Value
 
 	if err := starlark.UnpackArgs(builtin.Name(), args, kwargs,
-		serviceNameAttr, &serviceName,
+		MakeOptional(serviceNameAttr), &serviceName,
 		portIdAttr, &portId,
 		endpointAttr, &endpoint,
 		kurtosis_types.MakeOptional(extractKeyPrefix), &maybeExtractField,
@@ -209,7 +214,7 @@ func MakePostHttpRequestRecipe(_ *starlark.Thread, builtin *starlark.Builtin, ar
 	var maybeExtractField starlark.Value
 
 	if err := starlark.UnpackArgs(builtin.Name(), args, kwargs,
-		serviceNameAttr, &serviceName,
+		MakeOptional(serviceNameAttr), &serviceName,
 		portIdAttr, &portId,
 		endpointAttr, &endpoint,
 		bodyKey, &body,

@@ -15,8 +15,6 @@ import (
 
 const (
 	execTextCase2ServiceName = service.ServiceName("my-service-for-test-case-2")
-
-	wrongServiceName = service.ServiceName("wrong-test-service")
 )
 
 //For a short period (until we deprecate recipe.service_name) the exec instruction will have a
@@ -55,7 +53,7 @@ func (t execTestCase2) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanI
 }
 
 func (t execTestCase2) GetStarlarkCode() string {
-	recipe := fmt.Sprintf(`ExecRecipe(service_name=%q, command=["mkdir", "-p", "/tmp/store"])`, wrongServiceName)
+	recipe := fmt.Sprintf(`ExecRecipe(command=["mkdir", "-p", "/tmp/store"])`)
 	return fmt.Sprintf("%s(%s=%q, %s=%s)", exec.ExecBuiltinName, exec.ServiceNameArgName, execTextCase2ServiceName, exec.RecipeArgName, recipe)
 }
 

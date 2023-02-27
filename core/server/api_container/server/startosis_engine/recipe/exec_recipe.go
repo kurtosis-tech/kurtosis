@@ -44,8 +44,11 @@ func NewExecRecipe(serviceName service.ServiceName, command []string) *ExecRecip
 func (recipe *ExecRecipe) String() string {
 	buffer := new(strings.Builder)
 	buffer.WriteString(ExecRecipeName + "(")
-	buffer.WriteString(serviceNameKey + "=")
-	buffer.WriteString(fmt.Sprintf("%q, ", recipe.serviceName))
+	//TODO  remove this check when we deprecate the service_name field
+	if recipe.serviceName != "" {
+		buffer.WriteString(serviceNameKey + "=")
+		buffer.WriteString(fmt.Sprintf("%q, ", recipe.serviceName))
+	}
 	buffer.WriteString(commandKey + "=")
 
 	command := convertListToStarlarkList(recipe.command)
@@ -175,7 +178,7 @@ func MakeExecRequestRecipe(_ *starlark.Thread, builtin *starlark.Builtin, args s
 
 	if err := starlark.UnpackArgs(builtin.Name(), args, kwargs,
 		commandKey, &unpackedCommandList,
-		serviceNameKey, &serviceNameStr,
+		MakeOptional(serviceNameKey), &serviceNameStr,
 	); err != nil {
 		return nil, startosis_errors.NewInterpretationError("%v", err.Error())
 	}

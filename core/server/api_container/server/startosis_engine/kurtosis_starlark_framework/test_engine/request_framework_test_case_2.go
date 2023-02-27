@@ -2,7 +2,6 @@ package test_engine
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/request"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
@@ -14,10 +13,6 @@ import (
 	"net/http"
 	"strings"
 	"testing"
-)
-
-const (
-	wrongRequestRecipeServiceName = service.ServiceName("wrong-web-server")
 )
 
 //For a short period (until we deprecate recipe.service_name) the request instruction will have a
@@ -75,7 +70,7 @@ func (t *requestTestCase2) GetInstruction() *kurtosis_plan_instruction.KurtosisP
 }
 
 func (t *requestTestCase2) GetStarlarkCode() string {
-	recipe := fmt.Sprintf(`GetHttpRequestRecipe(port_id=%q, service_name=%q, endpoint=%q, extract={"key": ".value"})`, requestPortId, wrongRequestRecipeServiceName, requestEndpoint)
+	recipe := fmt.Sprintf(`GetHttpRequestRecipe(port_id=%q, endpoint=%q, extract={"key": ".value"})`, requestPortId, requestEndpoint)
 	return fmt.Sprintf("%s(%s=%q, %s=%s)", request.RequestBuiltinName, request.ServiceNameArgName, requestServiceName, request.RecipeArgName, recipe)
 }
 
