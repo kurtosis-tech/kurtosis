@@ -20,8 +20,6 @@ import (
 
 const (
 	resultStarlarkVar = "result"
-
-	parallelismKey = "PARALLELISM"
 )
 
 func TestAllRegisteredBuiltins(t *testing.T) {
@@ -36,7 +34,8 @@ func TestAllRegisteredBuiltins(t *testing.T) {
 	testKurtosisPlanInstruction(t, newRemoveServiceTestCase(t))
 	testKurtosisPlanInstruction(t, newRenderTemplateTestCase1(t))
 	testKurtosisPlanInstruction(t, newRenderTemplateTestCase2(t))
-	testKurtosisPlanInstruction(t, newRequestTestCase(t))
+	testKurtosisPlanInstruction(t, newRequestTestCase1(t))
+	testKurtosisPlanInstruction(t, newRequestTestCase2(t))
 	testKurtosisPlanInstruction(t, newStoreServiceFilesTestCase(t))
 	testKurtosisPlanInstruction(t, newUpdateServiceTestCase(t))
 	testKurtosisPlanInstruction(t, newUploadFilesTestCase(t))

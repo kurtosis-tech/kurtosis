@@ -198,7 +198,7 @@ func (builtin *WaitCapabilities) Interpret(arguments *builtin_argument.ArgumentV
 
 	resultUuid, err := builtin.runtimeValueStore.CreateValue()
 	if err != nil {
-		return nil, startosis_errors.NewInterpretationError("An error occurred while generating uuid for future reference for %v instruction", WaitBuiltinName)
+		return nil, startosis_errors.NewInterpretationError("An error occurred while generating UUID for future reference for %v instruction", WaitBuiltinName)
 	}
 
 	returnValue, interpretationErr := genericRecipe.CreateStarlarkReturnValue(resultUuid)

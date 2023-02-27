@@ -250,7 +250,7 @@ func (recipe *HttpRequestRecipe) Execute(
 		return nil, stacktrace.Propagate(err, "An error occurred while replacing runtime values in the body of the http recipe")
 	}
 
-	//TODO this will be removed when we deprecate the service_name field, more here: https://app.zenhub.com/workspaces/engineering-636cff9fc978ceb2aac05a1d/issues/gh/kurtosis-tech/kurtosis-private/1128
+	//TODO this will be removed (only the parameter will be accepted) when we deprecate the service_name field, more here: https://app.zenhub.com/workspaces/engineering-636cff9fc978ceb2aac05a1d/issues/gh/kurtosis-tech/kurtosis-private/1128
 	serviceNameStr := string(recipe.serviceName)
 	if serviceName != emptyServiceName {
 		serviceNameStr = string(serviceName)

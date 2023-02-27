@@ -2,6 +2,7 @@ package request
 
 import (
 	"context"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
@@ -17,7 +18,8 @@ import (
 const (
 	RequestBuiltinName = "request"
 
-	RecipeArgName = "recipe"
+	ServiceNameArgName = "service_name"
+	RecipeArgName      = "recipe"
 )
 
 func NewRequest(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) *kurtosis_plan_instruction.KurtosisPlanInstruction {
@@ -26,6 +28,14 @@ func NewRequest(serviceNetwork service_network.ServiceNetwork, runtimeValueStore
 			Name: RequestBuiltinName,
 
 			Arguments: []*builtin_argument.BuiltinArgument{
+				{
+					Name:              ServiceNameArgName,
+					IsOptional:        true, //TODO make it non-optional when we remove recipe.service_name, issue pending: https://github.com/kurtosis-tech/kurtosis-private/issues/1128
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
+					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+						return builtin_argument.NonEmptyString(value, ServiceNameArgName)
+					},
+				},
 				{
 					Name:              RecipeArgName,
 					IsOptional:        false,
@@ -55,11 +65,22 @@ type RequestCapabilities struct {
 	serviceNetwork    service_network.ServiceNetwork
 	runtimeValueStore *runtime_value_store.RuntimeValueStore
 
+	serviceName       service.ServiceName
 	httpRequestRecipe *recipe.HttpRequestRecipe
 	resultUuid        string
 }
 
 func (builtin *RequestCapabilities) Interpret(arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
+	var serviceName service.ServiceName
+
+	if arguments.IsSet(ServiceNameArgName) {
+		serviceNameArgumentValue, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, ServiceNameArgName)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ServiceNameArgName)
+		}
+		serviceName = service.ServiceName(serviceNameArgumentValue.GoString())
+	}
+
 	httpRequestRecipe, err := builtin_argument.ExtractArgumentValue[*recipe.HttpRequestRecipe](arguments, RecipeArgName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", RecipeArgName)
@@ -67,9 +88,10 @@ func (builtin *RequestCapabilities) Interpret(arguments *builtin_argument.Argume
 
 	resultUuid, err := builtin.runtimeValueStore.CreateValue()
 	if err != nil {
-		return nil, startosis_errors.NewInterpretationError("An error occurred while generating uuid for future reference for %v instruction", RequestBuiltinName)
+		return nil, startosis_errors.NewInterpretationError("An error occurred while generating UUID for future reference for %v instruction", RequestBuiltinName)
 	}
 
+	builtin.serviceName = serviceName
 	builtin.httpRequestRecipe = httpRequestRecipe
 	builtin.resultUuid = resultUuid
 
@@ -85,7 +107,7 @@ func (builtin *RequestCapabilities) Validate(_ *builtin_argument.ArgumentValuesS
 }
 
 func (builtin *RequestCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
-	result, err := builtin.httpRequestRecipe.Execute(ctx, builtin.serviceNetwork, builtin.runtimeValueStore, "") //TODO add the real service name here
+	result, err := builtin.httpRequestRecipe.Execute(ctx, builtin.serviceNetwork, builtin.runtimeValueStore, builtin.serviceName)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Error executing http recipe")
 	}

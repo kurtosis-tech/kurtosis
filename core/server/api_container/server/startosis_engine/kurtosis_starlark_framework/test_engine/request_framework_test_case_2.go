@@ -17,42 +17,40 @@ import (
 )
 
 const (
-	request_serviceName = service.ServiceName("web-server")
-	request_portId      = "port_id"
-	request_method      = "GET"
-	request_contentType = ""
-	request_endpoint    = "/"
-	request_body        = ""
-
-	request_responseBody = `{"value": "Hello World!"}`
+	wrongRequestRecipeServiceName = service.ServiceName("wrong-web-server")
 )
 
-type requestTestCase struct {
+//For a short period (until we deprecate recipe.service_name) the request instruction will have a
+//dynamic first parameter which will accept the current 'recipe' argument and a new 'service_name' argument
+//In the requestTestCase1 we test the current behaviour, it means receiving an 'recipe' as the first argument
+//In this test case we test that 'service_name' is also accepted as the first parameter, and it is used
+//in the serviceNetwork.HttpRequestService call
+type requestTestCase2 struct {
 	*testing.T
 }
 
-func newRequestTestCase(t *testing.T) *requestTestCase {
-	return &requestTestCase{
+func newRequestTestCase2(t *testing.T) *requestTestCase2 {
+	return &requestTestCase2{
 		T: t,
 	}
 }
 
-func (t *requestTestCase) GetId() string {
+func (t *requestTestCase2) GetId() string {
 	return request.RequestBuiltinName
 }
 
-func (t *requestTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
+func (t *requestTestCase2) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	serviceNetwork := service_network.NewMockServiceNetwork(t)
 	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
 
 	serviceNetwork.EXPECT().HttpRequestService(
 		mock.Anything,
-		string(request_serviceName),
-		request_portId,
-		request_method,
-		request_contentType,
-		request_endpoint,
-		request_body,
+		string(requestServiceName),
+		requestPortId,
+		requestMethod,
+		requestContentType,
+		requestEndpoint,
+		requestBody,
 	).Times(1).Return(
 		&http.Response{
 			Status:           "200 OK",
@@ -61,7 +59,7 @@ func (t *requestTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPl
 			ProtoMajor:       1,
 			ProtoMinor:       0,
 			Header:           nil,
-			Body:             io.NopCloser(strings.NewReader(request_responseBody)),
+			Body:             io.NopCloser(strings.NewReader(requestResponseBody)),
 			ContentLength:    -1,
 			TransferEncoding: nil,
 			Close:            false,
@@ -76,12 +74,12 @@ func (t *requestTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPl
 	return request.NewRequest(serviceNetwork, runtimeValueStore)
 }
 
-func (t *requestTestCase) GetStarlarkCode() string {
-	recipe := fmt.Sprintf(`GetHttpRequestRecipe(port_id=%q, service_name=%q, endpoint=%q, extract={"key": ".value"})`, request_portId, request_serviceName, request_endpoint)
-	return fmt.Sprintf("%s(%s=%s)", request.RequestBuiltinName, request.RecipeArgName, recipe)
+func (t *requestTestCase2) GetStarlarkCode() string {
+	recipe := fmt.Sprintf(`GetHttpRequestRecipe(port_id=%q, service_name=%q, endpoint=%q, extract={"key": ".value"})`, requestPortId, wrongRequestRecipeServiceName, requestEndpoint)
+	return fmt.Sprintf("%s(%s=%q, %s=%s)", request.RequestBuiltinName, request.ServiceNameArgName, requestServiceName, request.RecipeArgName, recipe)
 }
 
-func (t *requestTestCase) Assert(interpretationResult starlark.Value, executionResult *string) {
+func (t *requestTestCase2) Assert(interpretationResult starlark.Value, executionResult *string) {
 	expectedInterpretationResultMap := `{"body": "{{kurtosis:[0-9a-f]{32}:body.runtime_value}}", "code": "{{kurtosis:[0-9a-f]{32}:code.runtime_value}}", "extract.key": "{{kurtosis:[0-9a-f]{32}:extract.key.runtime_value}}"}`
 	require.Regexp(t, expectedInterpretationResultMap, interpretationResult.String())
 
