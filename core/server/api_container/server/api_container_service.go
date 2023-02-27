@@ -52,8 +52,8 @@ const (
 	// Overwrite existing module with new module, this allows user to iterate on an enclave with a
 	// given module
 	doOverwriteExistingModule = true
-	defaultParallelism        = 4
-	packageDocLink            = "https://docs.kurtosis.com/reference/packages"
+
+	defaultParallelism = 4
 )
 
 // Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and port spec protos
@@ -637,12 +637,6 @@ func (apicService ApiContainerService) runStarlarkPackageSetup(packageId string,
 	}
 	if interpretationError != nil {
 		return "", interpretationError
-	}
-
-	pathToKurtosisYaml := path.Join(packageRootPathOnDisk, startosis_constants.KurtosisYamlName)
-	if _, err := os.Stat(pathToKurtosisYaml); err != nil {
-		return "", startosis_errors.WrapWithInterpretationError(err, "Couldn't find a '%v' in the root of the package: '%v'. Packages are expected to have a '%v' at root; for more information have a look at %v",
-			startosis_constants.KurtosisYamlName, packageId, startosis_constants.KurtosisYamlName, packageDocLink)
 	}
 
 	pathToMainFile := path.Join(packageRootPathOnDisk, startosis_constants.MainFileName)
