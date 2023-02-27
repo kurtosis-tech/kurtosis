@@ -35,9 +35,8 @@ type EnclaveDataDirectory struct {
 var (
 	// NOTE: This will be initialized exactly once (singleton pattern)
 	currentFilesArtifactStore *FilesArtifactStore
-	once sync.Once
+	once                      sync.Once
 )
-
 
 func NewEnclaveDataDirectory(absMountDirpath string) *EnclaveDataDirectory {
 	return &EnclaveDataDirectory{absMountDirpath: absMountDirpath}
