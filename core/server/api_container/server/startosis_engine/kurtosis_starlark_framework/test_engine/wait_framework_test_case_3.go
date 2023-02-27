@@ -17,43 +17,35 @@ import (
 )
 
 const (
-	waitAssertion   = "=="
-	waitInterval    = "1s"
-	waitTargetValue = "200"
-	waitTimeout     = "5s"
-	waitValueField  = "code"
-
-	waitRecipePortId      = "http-port"
-	waitRecipeServiceName = service.ServiceName("web-server")
-	waitRecipeMethod      = "POST"
-	waitRecipeEndpoint    = "/"
-	waitRecipeBody        = "{}"
-	waitRecipeContentType = "application/json"
-
-	waitRecipeResponseBody = `{"value": "Hello world!"}`
+	waitServiceName = service.ServiceName("web-server")
 )
 
-type waitTestCase1 struct {
+//For a short period (until we deprecate recipe.service_name) the wait instruction will have a
+//dynamic first parameter which will accept the current 'recipe' argument and a new 'service_name' argument
+//In the waitTestCase1 we test the current behaviour, it means receiving an 'recipe' as the first argument
+//In this test case we test that 'service_name' is also accepted as the first parameter, and it is used
+//in the serviceNetwork.HttpRequestService call
+type waitTestCase3 struct {
 	*testing.T
 }
 
-func newWaitTestCase1(t *testing.T) *waitTestCase1 {
-	return &waitTestCase1{
+func newWaitTestCase3(t *testing.T) *waitTestCase3 {
+	return &waitTestCase3{
 		T: t,
 	}
 }
 
-func (t *waitTestCase1) GetId() string {
+func (t *waitTestCase3) GetId() string {
 	return wait.WaitBuiltinName
 }
 
-func (t *waitTestCase1) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
+func (t *waitTestCase3) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	serviceNetwork := service_network.NewMockServiceNetwork(t)
 	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
 
 	serviceNetwork.EXPECT().HttpRequestService(
 		mock.Anything,
-		string(waitRecipeServiceName),
+		string(waitServiceName),
 		waitRecipePortId,
 		waitRecipeMethod,
 		waitRecipeContentType,
@@ -82,16 +74,16 @@ func (t *waitTestCase1) GetInstruction() *kurtosis_plan_instruction.KurtosisPlan
 	return wait.NewWait(serviceNetwork, runtimeValueStore)
 }
 
-func (t *waitTestCase1) GetStarlarkCode() string {
-	recipeStr := fmt.Sprintf(`PostHttpRequestRecipe(port_id=%q, service_name=%q, endpoint=%q, body=%q, content_type=%q, extract={"key": ".value"})`, waitRecipePortId, waitRecipeServiceName, waitRecipeEndpoint, waitRecipeBody, waitRecipeContentType)
-	return fmt.Sprintf("%s(%s=%s, %s=%q, %s=%q, %s=%s, %s=%q, %s=%q)", wait.WaitBuiltinName, wait.RecipeArgName, recipeStr, wait.ValueFieldArgName, waitValueField, wait.AssertionArgName, waitAssertion, wait.TargetArgName, waitTargetValue, wait.IntervalArgName, waitInterval, wait.TimeoutArgName, waitTimeout)
+func (t *waitTestCase3) GetStarlarkCode() string {
+	recipeStr := fmt.Sprintf(`PostHttpRequestRecipe(port_id=%q, endpoint=%q, body=%q, content_type=%q, extract={"key": ".value"})`, waitRecipePortId, waitRecipeEndpoint, waitRecipeBody, waitRecipeContentType)
+	return fmt.Sprintf("%s(%s=%s, %s=%q, %s=%q, %s=%s, %s=%q, %s=%q, %s=%q)", wait.WaitBuiltinName, wait.RecipeArgName, recipeStr, wait.ValueFieldArgName, waitValueField, wait.AssertionArgName, waitAssertion, wait.TargetArgName, waitTargetValue, wait.IntervalArgName, waitInterval, wait.TimeoutArgName, waitTimeout, wait.ServiceNameArgName, waitServiceName)
 }
 
-func (t *waitTestCase1) GetStarlarkCodeForAssertion() string {
+func (t *waitTestCase3) GetStarlarkCodeForAssertion() string {
 	return ""
 }
 
-func (t *waitTestCase1) Assert(interpretationResult starlark.Value, executionResult *string) {
+func (t *waitTestCase3) Assert(interpretationResult starlark.Value, executionResult *string) {
 	expectedInterpretationResult := `{"body": "{{kurtosis:[0-9a-f]{32}:body.runtime_value}}", "code": "{{kurtosis:[0-9a-f]{32}:code.runtime_value}}", "extract.key": "{{kurtosis:[0-9a-f]{32}:extract.key.runtime_value}}"}`
 	require.Regexp(t, expectedInterpretationResult, interpretationResult.String())
 

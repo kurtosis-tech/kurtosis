@@ -18,9 +18,8 @@ import (
 const (
 	ExecBuiltinName = "exec"
 
+	RecipeArgName      = "recipe"
 	ServiceNameArgName = "service_name"
-
-	RecipeArgName = "recipe"
 )
 
 func NewExec(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) *kurtosis_plan_instruction.KurtosisPlanInstruction {

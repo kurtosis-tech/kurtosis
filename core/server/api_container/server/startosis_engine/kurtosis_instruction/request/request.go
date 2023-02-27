@@ -18,8 +18,8 @@ import (
 const (
 	RequestBuiltinName = "request"
 
-	ServiceNameArgName = "service_name"
 	RecipeArgName      = "recipe"
+	ServiceNameArgName = "service_name"
 )
 
 func NewRequest(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) *kurtosis_plan_instruction.KurtosisPlanInstruction {
@@ -29,18 +29,18 @@ func NewRequest(serviceNetwork service_network.ServiceNetwork, runtimeValueStore
 
 			Arguments: []*builtin_argument.BuiltinArgument{
 				{
+					Name:              RecipeArgName,
+					IsOptional:        false,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*recipe.HttpRequestRecipe],
+					Validator:         nil,
+				},
+				{
 					Name:              ServiceNameArgName,
 					IsOptional:        true, //TODO make it non-optional when we remove recipe.service_name, issue pending: https://github.com/kurtosis-tech/kurtosis-private/issues/1128
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						return builtin_argument.NonEmptyString(value, ServiceNameArgName)
 					},
-				},
-				{
-					Name:              RecipeArgName,
-					IsOptional:        false,
-					ZeroValueProvider: builtin_argument.ZeroValueProvider[*recipe.HttpRequestRecipe],
-					Validator:         nil,
 				},
 			},
 		},

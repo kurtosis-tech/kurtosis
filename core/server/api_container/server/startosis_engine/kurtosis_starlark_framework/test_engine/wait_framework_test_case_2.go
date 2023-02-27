@@ -2,7 +2,6 @@ package test_engine
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/wait"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
@@ -16,15 +15,8 @@ import (
 	"testing"
 )
 
-const (
-	waitServiceName = service.ServiceName("web-server")
-)
-
-//For a short period (until we deprecate recipe.service_name) the wait instruction will have a
-//dynamic first parameter which will accept the current 'recipe' argument and a new 'service_name' argument
-//In the waitTestCase1 we test the current behaviour, it means receiving an 'recipe' as the first argument
-//In this test case we test that 'service_name' is also accepted as the first parameter, and it is used
-//in the serviceNetwork.HttpRequestService call
+//This test case is for testing positional arguments retro-compatibility for those script
+//that are using the recipe value as the first positional argument
 type waitTestCase2 struct {
 	*testing.T
 }
@@ -45,7 +37,7 @@ func (t *waitTestCase2) GetInstruction() *kurtosis_plan_instruction.KurtosisPlan
 
 	serviceNetwork.EXPECT().HttpRequestService(
 		mock.Anything,
-		string(waitServiceName),
+		string(waitRecipeServiceName),
 		waitRecipePortId,
 		waitRecipeMethod,
 		waitRecipeContentType,
@@ -75,12 +67,13 @@ func (t *waitTestCase2) GetInstruction() *kurtosis_plan_instruction.KurtosisPlan
 }
 
 func (t *waitTestCase2) GetStarlarkCode() string {
-	recipeStr := fmt.Sprintf(`PostHttpRequestRecipe(port_id=%q, endpoint=%q, body=%q, content_type=%q, extract={"key": ".value"})`, waitRecipePortId, waitRecipeEndpoint, waitRecipeBody, waitRecipeContentType)
-	return fmt.Sprintf("%s(%s=%q, %s=%s, %s=%q, %s=%q, %s=%s, %s=%q, %s=%q)", wait.WaitBuiltinName, wait.ServiceNameArgName, waitServiceName, wait.RecipeArgName, recipeStr, wait.ValueFieldArgName, waitValueField, wait.AssertionArgName, waitAssertion, wait.TargetArgName, waitTargetValue, wait.IntervalArgName, waitInterval, wait.TimeoutArgName, waitTimeout)
+	recipeStr := fmt.Sprintf(`PostHttpRequestRecipe(port_id=%q, service_name=%q, endpoint=%q, body=%q, content_type=%q, extract={"key": ".value"})`, waitRecipePortId, waitRecipeServiceName, waitRecipeEndpoint, waitRecipeBody, waitRecipeContentType)
+	return fmt.Sprintf("%s(%s, %q, %q, %s, %q, %q)", wait.WaitBuiltinName, recipeStr, waitValueField, waitAssertion, waitTargetValue, waitInterval, waitTimeout)
 }
 
 func (t *waitTestCase2) GetStarlarkCodeForAssertion() string {
-	return ""
+	recipeStr := fmt.Sprintf(`PostHttpRequestRecipe(port_id=%q, service_name=%q, endpoint=%q, body=%q, content_type=%q, extract={"key": ".value"})`, waitRecipePortId, waitRecipeServiceName, waitRecipeEndpoint, waitRecipeBody, waitRecipeContentType)
+	return fmt.Sprintf("%s(%s=%s, %s=%q, %s=%q, %s=%s, %s=%q, %s=%q)", wait.WaitBuiltinName, wait.RecipeArgName, recipeStr, wait.ValueFieldArgName, waitValueField, wait.AssertionArgName, waitAssertion, wait.TargetArgName, waitTargetValue, wait.IntervalArgName, waitInterval, wait.TimeoutArgName, waitTimeout)
 }
 
 func (t *waitTestCase2) Assert(interpretationResult starlark.Value, executionResult *string) {
