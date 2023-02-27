@@ -36,8 +36,7 @@ func NewAddService(serviceNetwork service_network.ServiceNetwork, runtimeValueSt
 					IsOptional:        false,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-						// TODO: when #903 is merged, validate service name are non emtpy string
-						return nil
+						return builtin_argument.NonEmptyString(value, ServiceNameArgName)
 					},
 				},
 				{

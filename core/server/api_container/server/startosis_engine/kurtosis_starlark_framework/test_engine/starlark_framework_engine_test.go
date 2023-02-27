@@ -42,6 +42,8 @@ func TestAllRegisteredBuiltins(t *testing.T) {
 
 	testKurtosisHelper(t, newReadFileTestCase(t))
 	testKurtosisHelper(t, newImportModuleTestCase(t))
+
+	testKurtosisTypeConstructor(t, newUpdateServiceConfigTestCase(t))
 }
 
 func testKurtosisPlanInstruction(t *testing.T, builtin KurtosisPlanInstructionBaseTest) {
@@ -88,6 +90,23 @@ func testKurtosisHelper(t *testing.T, builtin KurtosisHelperBaseTest) {
 	result := extractResultValue(t, globals)
 
 	builtin.Assert(result)
+}
+
+func testKurtosisTypeConstructor(t *testing.T, builtin KurtosisTypeConstructorBaseTest) {
+	testId := builtin.GetId()
+	thread := newStarlarkThread("framework-testing-engine")
+
+	predeclared := getBasePredeclaredDict()
+
+	starlarkCode := builtin.GetStarlarkCode()
+	globals, err := starlark.ExecFile(thread, startosis_constants.PackageIdPlaceholderForStandaloneScript, codeToExecute(starlarkCode), predeclared)
+	require.Nil(t, err, "Error interpreting Starlark code for builtin '%s'", testId)
+	result := extractResultValue(t, globals)
+
+	builtin.Assert(result)
+
+	serializedType := result.String()
+	require.Equal(t, starlarkCode, serializedType)
 }
 
 func getBasePredeclaredDict() starlark.StringDict {
