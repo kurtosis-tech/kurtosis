@@ -142,3 +142,44 @@ func getTestFileStore(t *testing.T) *FilesArtifactStore {
 	require.Nil(t, err)
 	return fileStore
 }
+
+func Test_generateUniqueNameForFileArtifact_MaxRetriesOver(t *testing.T) {
+	timesCalled := 0
+	// this method should be call 4 time (maxRetries + 1)
+	mockedGenerateNameMethod := func() string {
+		timesCalled = timesCalled + 1
+		if timesCalled == 4 {
+			return "last-noun"
+		}
+		return "adjective-noun"
+	}
+
+	artifactIdToUUIDMap := map[string]FilesArtifactUUID{
+		"adjective-noun": FilesArtifactUUID("a"),
+		"last-noun":      FilesArtifactUUID("b"),
+		"last-noun-1":    FilesArtifactUUID("b"),
+	}
+
+	fileArtifactStoreUnderTest := NewFilesArtifactStoreForTesting("/", "/", artifactIdToUUIDMap, nil, 3, mockedGenerateNameMethod)
+	actual := fileArtifactStoreUnderTest.GenerateUniqueNameForFileArtifact()
+	require.Equal(t, "last-noun-2", actual)
+}
+
+func Test_generateUniqueNameForFileArtifact_Found(t *testing.T) {
+	timesCalled := 0
+	mockedGenerateNameMethod := func() string {
+		timesCalled = timesCalled + 1
+		if timesCalled == 4 {
+			return "unique-name"
+		}
+		return "non-unique-name"
+	}
+
+	artifactIdToUUIDMap := map[string]FilesArtifactUUID{
+		"non-unique-name": FilesArtifactUUID("a"),
+	}
+
+	fileArtifactStoreUnderTest := NewFilesArtifactStoreForTesting("/", "/", artifactIdToUUIDMap, nil, 3, mockedGenerateNameMethod)
+	actual := fileArtifactStoreUnderTest.GenerateUniqueNameForFileArtifact()
+	require.Equal(t, "unique-name", actual)
+}
