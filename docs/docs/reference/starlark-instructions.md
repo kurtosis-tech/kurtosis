@@ -165,7 +165,7 @@ exec_recipe = ExecRecipe(
     # MANDATORY
     command = ["echo", "Hello, world"],
 )
-result = plan.exec(exec_recipe)
+result = plan.exec(exec_recipe, "my-service-name")
 
 plan.print(result["output"])
 plan.print(result["code"])

@@ -39,7 +39,7 @@ func NewUploadFiles(serviceNetwork service_network.ServiceNetwork, packageConten
 				},
 				{
 					Name:              ArtifactNameArgName,
-					IsOptional:        false,
+					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
 					Validator:         nil,
 				},
@@ -74,14 +74,23 @@ type UploadFilesCapabilities struct {
 }
 
 func (builtin *UploadFilesCapabilities) Interpret(arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
+	if !arguments.IsSet(ArtifactNameArgName) {
+		natureThemeName, err := builtin.serviceNetwork.GetUniqueNameForFileArtifact()
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to auto generate name '%s' argument", ArtifactNameArgName)
+		}
+		builtin.artifactName = natureThemeName
+	} else {
+		artifactName, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, ArtifactNameArgName)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ArtifactNameArgName)
+		}
+		builtin.artifactName = artifactName.GoString()
+	}
+
 	src, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, SrcArgName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", SrcArgName)
-	}
-
-	artifactName, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, ArtifactNameArgName)
-	if err != nil {
-		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ArtifactNameArgName)
 	}
 
 	pathOnDisk, interpretationErr := builtin.packageContentProvider.GetOnDiskAbsoluteFilePath(src.GoString())
@@ -89,7 +98,6 @@ func (builtin *UploadFilesCapabilities) Interpret(arguments *builtin_argument.Ar
 		return nil, interpretationErr
 	}
 
-	builtin.artifactName = artifactName.GoString()
 	builtin.src = src.GoString()
 	builtin.pathOnDisk = pathOnDisk
 	return starlark.String(builtin.artifactName), nil

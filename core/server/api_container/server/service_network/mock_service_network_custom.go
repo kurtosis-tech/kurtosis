@@ -16,7 +16,8 @@ const (
 	mockEnclaveUuid   = "enclave-uuid"
 	serviceUuidSuffix = "uuid"
 
-	unimplementedMsg = "Method is unimplemented!!!"
+	mockFileArtifactName = "mock-artifact-id"
+	unimplementedMsg     = "Method is unimplemented!!!"
 )
 
 // MockServiceNetworkCustom is a manual mock for ServiceNetwork interface
@@ -150,6 +151,10 @@ func (m *MockServiceNetworkCustom) IsNetworkPartitioningEnabled() bool {
 
 func (m *MockServiceNetworkCustom) GetExistingAndHistoricalServiceIdentifiers() []*kurtosis_core_rpc_api_bindings.ServiceIdentifiers {
 	panic(unimplementedMsg)
+}
+
+func (m *MockServiceNetworkCustom) GetUniqueNameForFileArtifact() (string, error) {
+	return mockFileArtifactName, nil
 }
 
 func generateMockServiceRegistration(serviceName service.ServiceName, ipAddress net.IP) *service.ServiceRegistration {
