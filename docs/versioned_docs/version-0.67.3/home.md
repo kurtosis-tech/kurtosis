@@ -21,6 +21,6 @@ Container management and container orchestration systems like Docker and Kuberne
 
 Kurtosis is designed to optimize **environment** management and control across the development cycle - operating at one level of abstraction higher than existing tools, giving developers the environments and the ability to manipulate them as needed at each stage.
 
-![Why Kurtosis](../static/img/home/kurtosis-utility.png)
+![Why Kurtosis](../../static/img/home/kurtosis-utility.png)
 
 With Kurtosis, developers can build with local sandbox environments that demonstrate how their code will work when integrated with the rest of the system. In addition, advanced end-to-end testing workflows are available to teams using the manipulation tooling in the Kurtosis engine runtime which allow them to do end-to-end testing like fault-tolerance, regression, and performance tests.
