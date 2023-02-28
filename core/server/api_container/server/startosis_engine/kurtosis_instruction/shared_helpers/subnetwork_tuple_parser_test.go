@@ -34,7 +34,7 @@ func TestParseSubnetworks_TooManySubnetworks(t *testing.T) {
 		starlark.String(expectedPartition3),
 	})
 	partition1, partition2, err := ParseSubnetworks(argName, subnetworks)
-	require.Contains(t, err.Error(), "Subnetworks tuple should contain exactly 2 subnetwork names. 3 was/were provided")
+	require.Contains(t, err.Error(), "Subnetworks tuple should contain exactly 2 subnetwork names. 3 were provided")
 	require.Empty(t, partition1)
 	require.Empty(t, partition2)
 }
@@ -45,7 +45,7 @@ func TestParseSubnetworks_TooFewSubnetworks(t *testing.T) {
 		starlark.String(expectedPartition1),
 	})
 	partition1, partition2, err := ParseSubnetworks(argName, subnetworks)
-	require.Contains(t, err.Error(), "Subnetworks tuple should contain exactly 2 subnetwork names. 1 was/were provided")
+	require.Contains(t, err.Error(), "Subnetworks tuple should contain exactly 2 subnetwork names. 1 was provided")
 	require.Empty(t, partition1)
 	require.Empty(t, partition2)
 }
