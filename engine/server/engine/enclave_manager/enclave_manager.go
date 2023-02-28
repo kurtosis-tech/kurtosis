@@ -10,6 +10,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/kurtosis/core/launcher/api_container_launcher"
+	"github.com/kurtosis-tech/kurtosis/name_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -50,7 +51,6 @@ type EnclaveManager struct {
 
 	kurtosisBackend                           backend_interface.KurtosisBackend
 	apiContainerKurtosisBackendConfigSupplier api_container_launcher.KurtosisBackendConfigSupplier
-	enclaveIdGenerator                        *enclaveNameGenerator
 
 	// this is a stop gap solution, this would be stored and retrieved from the DB in the future
 	// we go with the GRPC type as it is just used by the engine server service
@@ -61,13 +61,11 @@ type EnclaveManager struct {
 func NewEnclaveManager(
 	kurtosisBackend backend_interface.KurtosisBackend,
 	apiContainerKurtosisBackendConfigSupplier api_container_launcher.KurtosisBackendConfigSupplier,
-	enclaveIdGenerator *enclaveNameGenerator,
 ) *EnclaveManager {
 	return &EnclaveManager{
 		mutex:           &sync.Mutex{},
 		kurtosisBackend: kurtosisBackend,
 		apiContainerKurtosisBackendConfigSupplier: apiContainerKurtosisBackendConfigSupplier,
-		enclaveIdGenerator:                        enclaveIdGenerator,
 		allExistingAndHistoricalIdentifiers:       []*kurtosis_engine_rpc_api_bindings.EnclaveIdentifiers{},
 	}
 }
@@ -101,7 +99,7 @@ func (manager *EnclaveManager) CreateEnclave(
 	}
 
 	if enclaveName == autogenerateEnclaveNameKeyword {
-		enclaveName = manager.enclaveIdGenerator.GetRandomEnclaveNameWithRetries(allCurrentEnclaves, getRandomEnclaveIdRetries)
+		enclaveName = GetRandomEnclaveNameWithRetries(name_generator.GenerateNatureThemeNameForEnclave, allCurrentEnclaves, getRandomEnclaveIdRetries)
 	}
 
 	if isEnclaveNameInUse(enclaveName, allCurrentEnclaves) {

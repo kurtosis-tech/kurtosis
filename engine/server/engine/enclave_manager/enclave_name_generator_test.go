@@ -6,12 +6,20 @@ import (
 	"testing"
 )
 
+const (
+	uniqueNameFoundOnLastTry        = "unique-name"
+	nonUniqueName                   = "non-unique-name"
+	nameAlreadyExists1              = "name-exists"
+	nameAlreadyExists2              = "name-exists-1"
+	expectedUniqueNameWithRandomNum = "name-exists-2"
+)
+
 func TestGetRandomEnclaveIdWithRetriesSuccess(t *testing.T) {
 	retries := uint16(3)
 
 	currentEnclavePresent := map[enclave.EnclaveUUID]*enclave.Enclave{
-		"123": enclave.NewEnclave("123", "name-exists", enclave.EnclaveStatus_Empty, nil),
-		"456": enclave.NewEnclave("456", "not-unique", enclave.EnclaveStatus_Empty, nil),
+		"123": enclave.NewEnclave("123", nonUniqueName, enclave.EnclaveStatus_Empty, nil),
+		"456": enclave.NewEnclave("456", nameAlreadyExists1, enclave.EnclaveStatus_Empty, nil),
 	}
 
 	timesCalled := 0
@@ -19,29 +27,28 @@ func TestGetRandomEnclaveIdWithRetriesSuccess(t *testing.T) {
 		timesCalled++
 		// found unique on the last try
 		if timesCalled == 4 {
-			return "unique-name"
+			return uniqueNameFoundOnLastTry
 		}
 
-		if timesCalled%2 == 0 {
-			return "name-exists"
+		if timesCalled == 2 {
+			return nonUniqueName
 		}
 
-		return "not-unique"
+		return nameAlreadyExists1
 	}
 
-	enclaveIdGeneratorObj := enclaveNameGenerator{generateNatureThemeName: mockNatureThemeName}
-	randomEnclaveId := enclaveIdGeneratorObj.GetRandomEnclaveNameWithRetries(currentEnclavePresent, retries)
+	randomEnclaveId := GetRandomEnclaveNameWithRetries(mockNatureThemeName, currentEnclavePresent, retries)
 	require.NotEmpty(t, randomEnclaveId)
-	require.Equal(t, "unique-name", randomEnclaveId)
+	require.Equal(t, uniqueNameFoundOnLastTry, randomEnclaveId)
 }
 
 func TestGetRandomEnclaveIdWithRetriesUniqueNameNotFound(t *testing.T) {
 	retries := uint16(3)
 
 	currentEnclavePresent := map[enclave.EnclaveUUID]*enclave.Enclave{
-		"123": enclave.NewEnclave("123", "name-exists", enclave.EnclaveStatus_Empty, nil),
-		"456": enclave.NewEnclave("456", "last-name", enclave.EnclaveStatus_Empty, nil),
-		"789": enclave.NewEnclave("789", "last-name-1", enclave.EnclaveStatus_Empty, nil),
+		"123": enclave.NewEnclave("123", nonUniqueName, enclave.EnclaveStatus_Empty, nil),
+		"456": enclave.NewEnclave("456", nameAlreadyExists1, enclave.EnclaveStatus_Empty, nil),
+		"789": enclave.NewEnclave("789", nameAlreadyExists2, enclave.EnclaveStatus_Empty, nil),
 	}
 
 	timesCalled := 0
@@ -49,14 +56,13 @@ func TestGetRandomEnclaveIdWithRetriesUniqueNameNotFound(t *testing.T) {
 		timesCalled++
 
 		if timesCalled == 4 {
-			return "last-name"
+			return nameAlreadyExists1
 		}
 
-		return "name-exists"
+		return nonUniqueName
 	}
 
-	enclaveIdGeneratorObj := enclaveNameGenerator{generateNatureThemeName: mockNatureThemeName}
-	randomEnclaveId := enclaveIdGeneratorObj.GetRandomEnclaveNameWithRetries(currentEnclavePresent, retries)
+	randomEnclaveId := GetRandomEnclaveNameWithRetries(mockNatureThemeName, currentEnclavePresent, retries)
 	require.NotEmpty(t, randomEnclaveId)
-	require.Equal(t, "last-name-2", randomEnclaveId)
+	require.Equal(t, expectedUniqueNameWithRandomNum, randomEnclaveId)
 }

@@ -14,13 +14,13 @@ func GenerateNatureThemeNameForFileArtifacts() string {
 	return natureThemeName
 }
 
-// GenerateNatureThemeNameForEngine - generates nature theme name for file artifacts
+// GenerateNatureThemeNameForEnclave - generates nature theme name for file artifacts
 // This method hides the complexities of dealing with singleton pattern; the consumers do not
 // need to worry about creating a struct etc. They can just expect to get a pseudo-random nature theme
-func GenerateNatureThemeNameForEngine() string {
+func GenerateNatureThemeNameForEnclave() string {
 	args := generatorArgs{
 		adjectives: ADJECTIVES,
-		nouns:      ENGINE_NOUNS,
+		nouns:      ENCLAVE_NOUNS,
 	}
 
 	nameGenerator := getNameGenerator()

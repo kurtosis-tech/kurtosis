@@ -37,8 +37,8 @@ func Test_noDuplicatesInAdjectives(t *testing.T) {
 // check for duplicates for nouns
 func Test_noDuplicatesInNouns(t *testing.T) {
 	// Engine Nouns
-	duplicateArr := checkIfDuplicateExistsInArray(ENGINE_NOUNS)
-	require.Len(t, duplicateArr, 0, "Duplicate Error: found %v multiple times in ENGINE_NOUNS with len: %v", duplicateArr, len(duplicateArr))
+	duplicateArr := checkIfDuplicateExistsInArray(ENCLAVE_NOUNS)
+	require.Len(t, duplicateArr, 0, "Duplicate Error: found %v multiple times in ENCLAVE_NOUNS with len: %v", duplicateArr, len(duplicateArr))
 
 	// File Artifact Nouns
 	duplicateArr = checkIfDuplicateExistsInArray(FILE_ARTIFACT_NOUNS)

@@ -1,7 +1,7 @@
 package name_generator
 
 // places
-var ENGINE_NOUNS = []string{
+var ENCLAVE_NOUNS = []string{
 	"canyon",
 	"island",
 	"knoll",
@@ -75,6 +75,8 @@ var ENGINE_NOUNS = []string{
 	"sand",
 }
 
+// objects + animals
+// TODO: (though animals will be eventually moved auto-generated into service name )
 var FILE_ARTIFACT_NOUNS = []string{
 	"fern",
 	"night",
