@@ -33,7 +33,7 @@ require (
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/pkg/errors v0.9.1
 	go.etcd.io/bbolt v1.3.6
-	go.starlark.net v0.0.0-20220928063852-5fccb4daaf6d
+	go.starlark.net v0.0.0-20230224151120-c52844e64a10
 )
 
 require (

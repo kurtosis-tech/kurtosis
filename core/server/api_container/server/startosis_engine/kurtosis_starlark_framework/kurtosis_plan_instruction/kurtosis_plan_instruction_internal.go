@@ -4,8 +4,6 @@ import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
@@ -44,15 +42,15 @@ func (builtin *KurtosisPlanInstructionInternal) GetCanonicalInstruction() *kurto
 		if _, found := builtin.defaultDisplayArguments[name]; found {
 			shouldBeDisplayed = true
 		}
-		args[idx] = binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(value), name, shouldBeDisplayed)
+		args[idx] = binding_constructors.NewStarlarkInstructionKwarg(builtin_argument.StringifyArgumentValue(value), name, shouldBeDisplayed)
 	}
 	return binding_constructors.NewStarlarkInstruction(builtin.GetPosition().ToAPIType(), builtin.GetName(), builtin.String(), args)
 }
 
 // GetPositionInOriginalScript is here to implement the KurtosisInstruction interface. Remove it when it's not needed anymore
-func (builtin *KurtosisPlanInstructionInternal) GetPositionInOriginalScript() *kurtosis_instruction.InstructionPosition {
+func (builtin *KurtosisPlanInstructionInternal) GetPositionInOriginalScript() *kurtosis_starlark_framework.KurtosisBuiltinPosition {
 	position := builtin.GetPosition().ToAPIType()
-	return kurtosis_instruction.NewInstructionPosition(position.GetLine(), position.GetColumn(), position.GetFilename())
+	return kurtosis_starlark_framework.NewKurtosisBuiltinPosition(position.GetFilename(), position.GetLine(), position.GetColumn())
 }
 
 // ValidateAndUpdateEnvironment is here to ease transition to the new framework and to implement the KurtosisInstruction interface.
