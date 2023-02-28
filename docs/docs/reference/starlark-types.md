@@ -271,6 +271,8 @@ config = ServiceConfig(
 )
 ```
 The `ports` dictionary argument accepts a key value pair, where `key` is a user defined unique port identifier and `value` is a [PortSpec][port-spec] object.
+  
+The `files` dictionary argument accepts a key value pair, where `key` is the path where the contents of the artifact will be mounted to and `value` is a file artifact name. (see [upload_files][starlark-instructions-upload-files], [render_templates][starlark-instructions-render-templates] and [store_service_files][starlark-instructions-store-service-files] to learn more about on how to create file artifacts)
 
 For more info about the `subnetwork` argument, see [Kurtosis subnetworks][subnetworks-reference].
 
@@ -316,3 +318,7 @@ Kurtosis provides "pre-built" values for types that will be broadly used. Those 
 [starlark-instructions-request]: ./starlark-instructions.md#request
 [starlark-instructions-wait]: ./starlark-instructions.md#wait
 [starlark-instructions-exec]: ./starlark-instructions.md#exec
+[starlark-instructions-upload-files]: ./starlark-instructions.md#upload_files
+[starlark-instructions-store-service-files]: ./starlark-instructions.md#store_service_files
+[starlark-instructions-render-templates]: ./starlark-instructions.md#render_templates
+
