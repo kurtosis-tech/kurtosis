@@ -38,9 +38,12 @@ The ExecRecipe can be used to run the `command` on the service (see [exec][starl
 or [wait][starlark-instructions-wait])
 
 :::caution
+
 The `service_name` field will be deprecated soon, ExecRecipe will contain only the `command` field and 
 the `service_name` will have to be passed as the first argument in the `exec`, `request` and `wait` 
 instructions where this type is currently used
+
+:::
 
 ```python
 exec_recipe = ExecRecipe(
@@ -64,8 +67,11 @@ The `HttpRequestRecipe` is used to make `HTTP` requests to an endpoint. Currentl
 The `GetHttpRequestRecipe` can be used to make `GET` requests.
 
 :::caution
+
 The `service_name` field will be deprecated soon, this argument will have to be passed as the first argument 
 in the `request` and `wait` instructions where this type is currently used
+
+:::
 
 ```python
 get_request_recipe = GetHttpRequestRecipe(
@@ -96,8 +102,11 @@ get_request_recipe = GetHttpRequestRecipe(
 The `PostHttpRequestRecipe` can be used to make `POST` requests.
 
 :::caution
+
 The `service_name` field will be deprecated soon, this argument will have to be passed as the first argument
 in the `request` and `wait` instructions where this type is currently used
+
+:::
 
 ```python
 post_request_recipe = PostHttpRequestRecipe(
