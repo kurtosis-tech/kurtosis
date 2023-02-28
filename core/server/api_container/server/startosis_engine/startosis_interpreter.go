@@ -281,5 +281,6 @@ func newStarlarkThread(threadName string) *starlark.Thread {
 		Print:      makePrintFunction(),
 		Load:       makeLoadFunction(),
 		OnMaxSteps: nil,
+		Steps:      0,
 	}
 }

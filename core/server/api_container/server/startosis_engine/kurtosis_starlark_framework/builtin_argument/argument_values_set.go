@@ -2,7 +2,6 @@ package builtin_argument
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"go.starlark.net/starlark"
 	"reflect"
@@ -99,7 +98,7 @@ func (arguments *ArgumentValuesSet) String() string {
 			continue
 		}
 		value := arguments.values[idx]
-		serializedArgument := fmt.Sprintf("%s=%s", argument.Name, shared_helpers.CanonicalizeArgValue(value))
+		serializedArgument := fmt.Sprintf("%s=%s", argument.Name, StringifyArgumentValue(value))
 		serializedArguments = append(serializedArguments, serializedArgument)
 	}
 	return fmt.Sprintf("(%s)", strings.Join(serializedArguments, ", "))
