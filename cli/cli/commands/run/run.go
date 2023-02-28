@@ -17,6 +17,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/user_support_constants"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
+	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"os"
@@ -64,6 +65,9 @@ const (
 	engineClientCtxKey    = "engine-client"
 
 	kurtosisYMLFilePath = "kurtosis.yml"
+
+	runFailed    = false
+	runSucceeded = true
 )
 
 var (
@@ -153,6 +157,7 @@ func run(
 	ctx context.Context,
 	_ backend_interface.KurtosisBackend,
 	_ kurtosis_engine_rpc_api_bindings.EngineServiceClient,
+	metricsClient metrics_client.MetricsClient,
 	flags *flags.ParsedFlags,
 	args *args.ParsedArgs,
 ) error {
@@ -205,7 +210,7 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred connecting to the local Kurtosis engine")
 	}
 
-	enclaveCtx, isNewEnclave, err := getOrCreateEnclaveContext(ctx, userRequestedEnclaveIdentifier, kurtosisCtx, isPartitioningEnabled)
+	enclaveCtx, isNewEnclave, err := getOrCreateEnclaveContext(ctx, userRequestedEnclaveIdentifier, kurtosisCtx, isPartitioningEnabled, metricsClient)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the enclave context for enclave '%v'", userRequestedEnclaveIdentifier)
 	}
@@ -218,6 +223,7 @@ func run(
 	var errRunningKurtosis error
 
 	isRemotePackage := strings.HasPrefix(starlarkScriptOrPackagePath, githubDomainPrefix)
+	isStandAloneScript := false
 	if isRemotePackage {
 		responseLineChan, cancelFunc, errRunningKurtosis = executeRemotePackage(ctx, enclaveCtx, starlarkScriptOrPackagePath, serializedJsonArgs, dryRun, castedParallelism)
 	} else {
@@ -227,6 +233,7 @@ func run(
 		}
 
 		if isStandaloneScript(fileOrDir, kurtosisYMLFilePath) {
+			isStandAloneScript = true
 			if !strings.HasSuffix(starlarkScriptOrPackagePath, starlarkExtension) {
 				return stacktrace.NewError("Expected a script with a '%s' extension but got file '%v' with a different extension", starlarkExtension, starlarkScriptOrPackagePath)
 			}
@@ -244,10 +251,34 @@ func run(
 		return stacktrace.Propagate(errRunningKurtosis, "An error starting the Kurtosis code execution '%v'", starlarkScriptOrPackagePath)
 	}
 
+	if err := metricsClient.TrackKurtosisRun(starlarkScriptOrPackagePath, isRemotePackage, dryRun, isStandAloneScript); err != nil {
+		//We don't want to interrupt users flow if something fails when tracking metrics
+		logrus.Warn("An error occurred tracking kurtosis run event")
+	}
+
 	errRunningKurtosis = readAndPrintResponseLinesUntilClosed(responseLineChan, cancelFunc, verbosity, dryRun)
 	if errRunningKurtosis != nil {
+		servicesInEnclaveForMetrics, servicesInEnclaveForMetricsError := enclaveCtx.GetServices()
+		if servicesInEnclaveForMetricsError != nil {
+			logrus.Warn("Tried getting number of services in the enclave to log metrics but failed")
+		} else {
+			if err := metricsClient.TrackKurtosisRunFinishedEvent(starlarkScriptOrPackagePath, len(servicesInEnclaveForMetrics), runFailed); err != nil {
+				logrus.Warn("An error occurred tracking kurtosis run finished event")
+			}
+		}
+
 		return stacktrace.Propagate(errRunningKurtosis, "Error executing Kurtosis code")
 	}
+
+	servicesInEnclaveForMetrics, servicesInEnclaveForMetricsError := enclaveCtx.GetServices()
+	if servicesInEnclaveForMetricsError != nil {
+		logrus.Error("Tried getting number of services in the enclave to log metrics but failed")
+	} else {
+		if err := metricsClient.TrackKurtosisRunFinishedEvent(starlarkScriptOrPackagePath, len(servicesInEnclaveForMetrics), runSucceeded); err != nil {
+			logrus.Warn("An error occurred tracking kurtosis run finished event")
+		}
+	}
+
 	return nil
 }
 
@@ -322,6 +353,7 @@ func getOrCreateEnclaveContext(
 	enclaveIdentifierOrName string,
 	kurtosisContext *kurtosis_context.KurtosisContext,
 	isPartitioningEnabled bool,
+	metricsClient metrics_client.MetricsClient,
 ) (*enclaves.EnclaveContext, bool, error) {
 
 	if enclaveIdentifierOrName != autogenerateEnclaveIdentifierKeyword {
@@ -338,6 +370,9 @@ func getOrCreateEnclaveContext(
 	enclaveContext, err := kurtosisContext.CreateEnclave(ctx, enclaveIdentifierOrName, isPartitioningEnabled)
 	if err != nil {
 		return nil, false, stacktrace.Propagate(err, fmt.Sprintf("Unable to create new enclave with name '%s'", enclaveIdentifierOrName))
+	}
+	if err = metricsClient.TrackCreateEnclave(enclaveIdentifierOrName); err != nil {
+		logrus.Error("An error occurred while logging the create enclave event")
 	}
 	logrus.Infof("Enclave '%v' created successfully", enclaveContext.GetEnclaveName())
 	return enclaveContext, isNewEnclaveFlagWhenCreated, nil

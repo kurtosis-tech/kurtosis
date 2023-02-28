@@ -79,8 +79,8 @@ def run(plan, args):
 	res = plan.exec(recipe)
 	plan.assert(res["output"], "<", "2")
 
-	delay = PacketDelay(750)
-	plan.set_connection(config=ConnectionConfig(packet_delay=delay))
+	delay = UniformPacketDelayDistribution(750)
+	plan.set_connection(config=ConnectionConfig(packet_delay_distribution=delay))
 	
 	recipe=ExecRecipe(
 		service_name=SERVICE_ID_2,

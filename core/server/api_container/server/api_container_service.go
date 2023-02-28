@@ -25,7 +25,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
-	"github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -54,12 +53,7 @@ const (
 	// given module
 	doOverwriteExistingModule = true
 
-	isScript    = true
-	isNotScript = false
-	isNotRemote = false
-
 	defaultParallelism = 4
-	packageDocLink     = "https://docs.kurtosis.com/reference/packages"
 )
 
 // Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and port spec protos
@@ -76,8 +70,6 @@ type ApiContainerService struct {
 
 	startosisRunner *startosis_engine.StartosisRunner
 
-	metricsClient client.MetricsClient
-
 	startosisModuleContentProvider startosis_packages.PackageContentProvider
 }
 
@@ -85,14 +77,12 @@ func NewApiContainerService(
 	filesArtifactStore *enclave_data_directory.FilesArtifactStore,
 	serviceNetwork service_network.ServiceNetwork,
 	startosisRunner *startosis_engine.StartosisRunner,
-	metricsClient client.MetricsClient,
 	startosisModuleContentProvider startosis_packages.PackageContentProvider,
 ) (*ApiContainerService, error) {
 	service := &ApiContainerService{
 		filesArtifactStore:             filesArtifactStore,
 		serviceNetwork:                 serviceNetwork,
 		startosisRunner:                startosisRunner,
-		metricsClient:                  metricsClient,
 		startosisModuleContentProvider: startosisModuleContentProvider,
 	}
 
@@ -105,11 +95,6 @@ func (apicService ApiContainerService) RunStarlarkScript(args *kurtosis_core_rpc
 	parallelism := int(args.GetParallelism())
 	dryRun := shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun)
 
-	if err := apicService.metricsClient.TrackKurtosisRun(startosis_constants.PackageIdPlaceholderForStandaloneScript, isNotRemote, dryRun, isScript); err != nil {
-		//We don't want to interrupt users flow if something fails when tracking metrics
-		logrus.Errorf("An error occurred tracking kurtosis run event\n%v", err)
-	}
-
 	apicService.runStarlark(parallelism, dryRun, startosis_constants.PackageIdPlaceholderForStandaloneScript, serializedStarlarkScript, serializedParams, stream)
 	return nil
 }
@@ -121,11 +106,6 @@ func (apicService ApiContainerService) RunStarlarkPackage(args *kurtosis_core_rp
 	parallelism := int(args.GetParallelism())
 	serializedParams := args.SerializedParams
 	dryRun := shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun)
-
-	if err := apicService.metricsClient.TrackKurtosisRun(packageId, isRemote, dryRun, isNotScript); err != nil {
-		//We don't want to interrupt users flow if something fails when tracking metrics
-		logrus.Errorf("An error occurred tracking kurtosis run event\n%v", err)
-	}
 
 	scriptWithRunFunction, interpretationError := apicService.runStarlarkPackageSetup(packageId, isRemote, moduleContentIfLocal)
 	if interpretationError != nil {
@@ -657,12 +637,6 @@ func (apicService ApiContainerService) runStarlarkPackageSetup(packageId string,
 	}
 	if interpretationError != nil {
 		return "", interpretationError
-	}
-
-	pathToKurtosisYaml := path.Join(packageRootPathOnDisk, startosis_constants.KurtosisYamlName)
-	if _, err := os.Stat(pathToKurtosisYaml); err != nil {
-		return "", startosis_errors.WrapWithInterpretationError(err, "Couldn't find a '%v' in the root of the package: '%v'. Packages are expected to have a '%v' at root; for more information have a look at %v",
-			startosis_constants.KurtosisYamlName, packageId, startosis_constants.KurtosisYamlName, packageDocLink)
 	}
 
 	pathToMainFile := path.Join(packageRootPathOnDisk, startosis_constants.MainFileName)

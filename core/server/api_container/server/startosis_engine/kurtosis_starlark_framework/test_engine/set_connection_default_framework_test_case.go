@@ -35,7 +35,7 @@ func (t setConnectionDefaultTestCase) GetInstruction() *kurtosis_plan_instructio
 		mock.MatchedBy(func(actualPartitionConnection partition_topology.PartitionConnection) bool {
 			expectedPartitionConnection := partition_topology.NewPartitionConnection(
 				partition_topology.NewPacketLoss(50),
-				partition_topology.NewUniformPacketDelayDistribution(100))
+				partition_topology.NewNormalPacketDelayDistribution(100, 10, 10.0))
 			assert.Equal(t, expectedPartitionConnection, actualPartitionConnection)
 			return true
 		}),
@@ -47,7 +47,7 @@ func (t setConnectionDefaultTestCase) GetInstruction() *kurtosis_plan_instructio
 }
 
 func (t setConnectionDefaultTestCase) GetStarlarkCode() string {
-	connectionConfig := "ConnectionConfig(packet_loss_percentage=50.0, packet_delay=PacketDelay(delay_ms=100))"
+	connectionConfig := "ConnectionConfig(packet_loss_percentage=50.0, packet_delay_distribution=NormalPacketDelayDistribution(mean_ms=100, std_dev_ms=10, correlation=10.0))"
 	return fmt.Sprintf("%s(%s=%s)", set_connection.SetConnectionBuiltinName, set_connection.ConnectionConfigArgName, connectionConfig)
 }
 

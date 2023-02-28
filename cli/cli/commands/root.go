@@ -14,8 +14,10 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/cluster"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/config"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/discord"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/docs"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/enclave"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/engine"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/files"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/feedback"
 	files "github.com/kurtosis-tech/kurtosis/cli/cli/commands/files"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/gateway"
@@ -88,19 +90,20 @@ func init() {
 		"Sets the level that the CLI will log at ("+strings.Join(logrus_log_levels.GetAcceptableLogLevelStrs(), "|")+")",
 	)
 
-	RootCmd.AddCommand(enclave.EnclaveCmd)
-	RootCmd.AddCommand(service.ServiceCmd)
-	RootCmd.AddCommand(run.StarlarkRunCmd.MustGetCobraCommand())
-	RootCmd.AddCommand(engine.EngineCmd)
-	RootCmd.AddCommand(version.VersionCmd)
-	RootCmd.AddCommand(gateway.GatewayCmd)
+	RootCmd.AddCommand(analytics.AnalyticsCmd.MustGetCobraCommand())
 	RootCmd.AddCommand(clean.CleanCmd.MustGetCobraCommand())
 	RootCmd.AddCommand(cluster.ClusterCmd)
 	RootCmd.AddCommand(config.ConfigCmd)
-	RootCmd.AddCommand(analytics.AnalyticsCmd.MustGetCobraCommand())
-	RootCmd.AddCommand(files.FilesCmd)
 	RootCmd.AddCommand(discord.DiscordCmd.MustGetCobraCommand())
+	RootCmd.AddCommand(docs.DocsCmd.MustGetCobraCommand())
+	RootCmd.AddCommand(enclave.EnclaveCmd)
+	RootCmd.AddCommand(engine.EngineCmd)
 	RootCmd.AddCommand(feedback.FeedbackCmd.MustGetCobraCommand())
+	RootCmd.AddCommand(files.FilesCmd)
+	RootCmd.AddCommand(gateway.GatewayCmd)
+	RootCmd.AddCommand(run.StarlarkRunCmd.MustGetCobraCommand())
+	RootCmd.AddCommand(service.ServiceCmd)
+	RootCmd.AddCommand(version.VersionCmd)
 }
 
 // ====================================================================================================

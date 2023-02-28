@@ -19,16 +19,16 @@ references a file inside a GitHub repo called `package-repo`, owned by `package-
 Locators are used for identifying resources that will be used inside a Starlark script - namely by [`import_module`](./starlark-instructions.md#import_module) and [`read_file`](./starlark-instructions.md#read_file).
 
 :::caution
-A GitHub URL is **not** a valid locator, because GitHub adds extra `/blob/master` paths to the URL that don't reflect the file's path in the repo. For example, a GitHub URL of:
+A GitHub URL is **not** a valid locator, because GitHub adds extra `/blob/main` paths to the URL that don't reflect the file's path in the repo. For example, a GitHub URL of:
 
 ```
-https://github.com/kurtosis-tech/kurtosis/blob/master/starlark/test.star
+https://github.com/kurtosis-tech/kurtosis/blob/main/starlark/test.star
 ```
 
-would be the following as a Kurtosis locator (dropping the `/blob/master` part):
+would be the following as a Kurtosis locator (dropping the `https://` and `/blob/main` part):
 
 ```
-https://github.com/kurtosis-tech/kurtosis/starlark/test.star
+github.com/kurtosis-tech/kurtosis/starlark/test.star
 ```
 :::
 

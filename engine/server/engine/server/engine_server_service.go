@@ -8,7 +8,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/logline"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
-	"github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -19,8 +18,6 @@ type EngineServerService struct {
 	imageVersionTag string
 
 	enclaveManager *enclave_manager.EnclaveManager
-
-	metricsClient client.MetricsClient
 
 	//The protected user ID for metrics analytics purpose
 	metricsUserID string
@@ -35,7 +32,6 @@ type EngineServerService struct {
 func NewEngineServerService(
 	imageVersionTag string,
 	enclaveManager *enclave_manager.EnclaveManager,
-	metricsClient client.MetricsClient,
 	metricsUserId string,
 	didUserAcceptSendingMetrics bool,
 	logsDatabaseClient centralized_logs.LogsDatabaseClient,
@@ -43,7 +39,6 @@ func NewEngineServerService(
 	service := &EngineServerService{
 		imageVersionTag:             imageVersionTag,
 		enclaveManager:              enclaveManager,
-		metricsClient:               metricsClient,
 		metricsUserID:               metricsUserId,
 		didUserAcceptSendingMetrics: didUserAcceptSendingMetrics,
 		logsDatabaseClient:          logsDatabaseClient,
@@ -59,11 +54,6 @@ func (service *EngineServerService) GetEngineInfo(ctx context.Context, empty *em
 }
 
 func (service *EngineServerService) CreateEnclave(ctx context.Context, args *kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs) (*kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse, error) {
-	if err := service.metricsClient.TrackCreateEnclave(args.EnclaveName); err != nil {
-		//We don't want to interrupt users flow if something fails when tracking metrics
-		logrus.Errorf("An error occurred tracking create enclave event\n%v", err)
-	}
-
 	apiContainerLogLevel, err := logrus.ParseLevel(args.ApiContainerLogLevel)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred parsing the log level string '%v':", args.ApiContainerLogLevel)
@@ -107,11 +97,6 @@ func (service *EngineServerService) GetExistingAndHistoricalEnclaveIdentifiers(_
 func (service *EngineServerService) StopEnclave(ctx context.Context, args *kurtosis_engine_rpc_api_bindings.StopEnclaveArgs) (*emptypb.Empty, error) {
 	enclaveIdentifier := args.EnclaveIdentifier
 
-	if err := service.metricsClient.TrackStopEnclave(enclaveIdentifier); err != nil {
-		//We don't want to interrupt user's flow if something fails when tracking metrics
-		logrus.Errorf("An error occurred tracking stop enclave event\n%v", err)
-	}
-
 	if err := service.enclaveManager.StopEnclave(ctx, enclaveIdentifier); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred stopping enclave '%v'", enclaveIdentifier)
 	}
@@ -121,11 +106,6 @@ func (service *EngineServerService) StopEnclave(ctx context.Context, args *kurto
 
 func (service *EngineServerService) DestroyEnclave(ctx context.Context, args *kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs) (*emptypb.Empty, error) {
 	enclaveIdentifier := args.EnclaveIdentifier
-
-	if err := service.metricsClient.TrackDestroyEnclave(enclaveIdentifier); err != nil {
-		//We don't want to interrupt user's flow if something fails when tracking metrics
-		logrus.Errorf("An error occurred tracking destroy enclave event\n%v", err)
-	}
 
 	if err := service.enclaveManager.DestroyEnclave(ctx, enclaveIdentifier); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred destroying enclave with identifier '%v':", args.EnclaveIdentifier)

@@ -894,6 +894,15 @@ func (network *DefaultServiceNetwork) GetExistingAndHistoricalServiceIdentifiers
 	return network.allExistingAndHistoricalIdentifiers
 }
 
+// GetUniqueNameForFileArtifact : this will return unique artifact name after 5 retries, same as enclave id generator
+func (network *DefaultServiceNetwork) GetUniqueNameForFileArtifact() (string, error) {
+	filesArtifactStore, err := network.enclaveDataDir.GetFilesArtifactStore()
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred while getting files artifact store")
+	}
+	return filesArtifactStore.GenerateUniqueNameForFileArtifact(), nil
+}
+
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================

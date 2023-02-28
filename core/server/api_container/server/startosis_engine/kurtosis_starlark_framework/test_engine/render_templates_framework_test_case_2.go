@@ -24,6 +24,7 @@ const (
 	renderTemplate_MultipleTemplates_2_filePath = "/foo/bar/test.txt"
 	renderTemplate_MultipleTemplates_2_data     = `{"Name": "John"}`
 	renderTemplate_MultipleTemplates_2_template = "Hello {{.Name}}"
+	mockedFileArtifactName                      = "nature-theme-name-mocked"
 )
 
 type renderTemplateTestCase2 struct {
@@ -42,8 +43,13 @@ func newRenderTemplateTestCase2(t *testing.T) *renderTemplateTestCase2 {
 		renderTemplate_MultipleTemplates_1_filePath: binding_constructors.NewTemplateAndData(renderTemplate_MultipleTemplates_1_template, data1WithDoubleQuote),
 		renderTemplate_MultipleTemplates_2_filePath: binding_constructors.NewTemplateAndData(renderTemplate_MultipleTemplates_2_template, data2WithDoubleQuote),
 	}
-	serviceNetwork.EXPECT().RenderTemplates(templatesAndData, renderTemplate_MultipleTemplates_artifactName).Times(1).Return(renderTemplate_MultipleTemplates_fileArtifactUuid, nil)
 
+	serviceNetwork.EXPECT().GetUniqueNameForFileArtifact().Times(1).Return(
+		mockedFileArtifactName,
+		nil,
+	)
+
+	serviceNetwork.EXPECT().RenderTemplates(templatesAndData, mockedFileArtifactName).Times(1).Return(renderTemplate_MultipleTemplates_fileArtifactUuid, nil)
 	return &renderTemplateTestCase2{
 		T:              t,
 		serviceNetwork: serviceNetwork,
@@ -60,12 +66,12 @@ func (t renderTemplateTestCase2) GetInstruction() *kurtosis_plan_instruction.Kur
 
 func (t renderTemplateTestCase2) GetStarlarkCode() string {
 	configValue := `{"/fizz/buzz/test.txt": struct(data="{\"LastName\": \"Doe\"}", template="Hello {{.LastName}}"), "/foo/bar/test.txt": struct(data="{\"Name\": \"John\"}", template="Hello {{.Name}}")}`
-	return fmt.Sprintf(`%s(%s=%s, %s=%q)`, render_templates.RenderTemplatesBuiltinName, render_templates.TemplateAndDataByDestinationRelFilepathArg, configValue, render_templates.ArtifactNameArgName, renderTemplate_MultipleTemplates_artifactName)
+	return fmt.Sprintf(`%s(%s=%s)`, render_templates.RenderTemplatesBuiltinName, render_templates.TemplateAndDataByDestinationRelFilepathArg, configValue)
 }
 
 func (t renderTemplateTestCase2) Assert(interpretationResult starlark.Value, executionResult *string) {
-	require.Equal(t, starlark.String(renderTemplate_MultipleTemplates_artifactName), interpretationResult)
-	require.Equal(t, "Templates artifact name 'test-artifact' rendered with artifact UUID 'test-artifact-uuid'", *executionResult)
+	require.Equal(t, starlark.String(mockedFileArtifactName), interpretationResult)
+	require.Equal(t, fmt.Sprintf("Templates artifact name '%v' rendered with artifact UUID 'test-artifact-uuid'", mockedFileArtifactName), *executionResult)
 
 	// no need to check for the mocked method as we set `.Times(1)` when we declared it
 }

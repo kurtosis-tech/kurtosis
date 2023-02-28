@@ -16,12 +16,15 @@ const (
 	StarlarkPackagesReferenceURL = DocumentationUrl + "/reference/packages"
 	StarlarkLocatorsReferenceURL = DocumentationUrl + "/reference/locators"
 	UpgradeCLIInstructionsPage   = DocumentationUrl + "/install#upgrading"
-	GoogleRe2SyntaxDocumentation = "https://github.com/google/re2/wiki/Syntax"
 	MetricsPhilosophyDocs        = DocumentationUrl + "/explanations/metrics-philosophy"
+	HowImportWorksLink           = DocumentationUrl + "/explanations/how-do-kurtosis-imports-work"
+	PackageDocLink               = DocumentationUrl + "/reference/packages"
+	GoogleRe2SyntaxDocumentation = "https://github.com/google/re2/wiki/Syntax"
 	KurtosisDiscordUrl           = "https://discord.com/channels/783719264308953108/783719264308953111"
 	KurtosisOnBoardCalendlyUrl   = "https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding"
 	FeedbackEmail                = "feedback@" + Domain
 	FeedbackEmailLink            = "mailto:" + FeedbackEmail
+
 	//    If you add new URLs above, make sure to add them to the urlsToValidateInTest below!!!
 	// WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
 )
@@ -39,4 +42,6 @@ var urlsToValidateInTest = []string{
 	MetricsPhilosophyDocs,
 	KurtosisDiscordUrl,
 	KurtosisOnBoardCalendlyUrl,
+	HowImportWorksLink,
+	PackageDocLink,
 }

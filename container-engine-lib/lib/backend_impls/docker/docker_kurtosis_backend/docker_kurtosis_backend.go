@@ -208,28 +208,11 @@ func (backend *DockerKurtosisBackend) StartRegisteredUserServices(ctx context.Co
 		)
 	}
 
-	logsCollector, err := backend.GetLogsCollectorForEnclave(ctx, enclaveUuid)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs collector")
-	}
-	if logsCollector == nil || logsCollector.GetStatus() != container_status.ContainerStatus_Running {
-		return nil, nil, stacktrace.NewError("The user services can't be started because no logs collector is running for sending the logs to")
-	}
-
-	logsCollectorIpAddressInEnclaveNetwork := logsCollector.GetEnclaveNetworkIpAddress()
-	if logsCollectorIpAddressInEnclaveNetwork == nil {
-		return nil, nil, stacktrace.NewError("Expected the logs collector has ip address in enclave network but this is nil")
-	}
-
-	logsCollectorAvailabilityChecker := fluentbit.NewFluentbitAvailabilityChecker(logsCollectorIpAddressInEnclaveNetwork, logsCollector.GetPrivateHttpPort().GetNumber())
-
 	successfullyStartedService, failedService, err := user_service_functions.StartUserServices(
 		ctx,
 		enclaveUuid,
 		services,
 		serviceRegistrationsForEnclave,
-		logsCollector,
-		logsCollectorAvailabilityChecker,
 		backend.objAttrsProvider,
 		freeIpAddrProviderForEnclave,
 		backend.dockerManager)
@@ -487,11 +470,16 @@ func (backend *DockerKurtosisBackend) DestroyLogsCollectorForEnclave(ctx context
 	return nil
 }
 
-// DestroyDeprecatedCentralizedLogsCollector Destroy the deprecated centralized logs collector
-// It doesn't complain if it couldn't find the centralized logs collector
-// TODO(centralized-logs-collector-deprecation) remove this once we know people are on > 0.66.0
-func (backend *DockerKurtosisBackend) DestroyDeprecatedCentralizedLogsCollectorContainerAndVolume(ctx context.Context) error {
-	if err := logs_collector_functions.DestroyDeprecatedCentralizedLogsCollector(ctx, backend.dockerManager); err != nil {
+// DestroyDeprecatedCentralizedLogsResources Destroy the deprecated centralized logs resources (containers and volumes)
+// It doesn't complain if it couldn't find the centralized logs resources
+// TODO(centralized-logs-resources-deprecation) remove this once we know people are on > 0.68.0
+func (backend *DockerKurtosisBackend) DestroyDeprecatedCentralizedLogsResources(ctx context.Context) error {
+
+	if err := logs_database_functions.DestroyDeprecatedCentralizedLogsDatabase(ctx, backend.dockerManager); err != nil {
+		return stacktrace.Propagate(err, "An error occurred while destroying the deprecated centralized logs database")
+	}
+
+	if err := logs_collector_functions.DestroyDeprecatedCentralizedLogsCollectors(ctx, backend.dockerManager); err != nil {
 		return stacktrace.Propagate(err, "An error occurred while destroying the deprecated centralized logs collector")
 	}
 	return nil

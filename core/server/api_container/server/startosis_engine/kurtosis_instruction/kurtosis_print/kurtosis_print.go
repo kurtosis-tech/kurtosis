@@ -9,6 +9,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
@@ -28,6 +31,8 @@ const (
 
 	endArgName = "end"
 	defaultEnd = end("")
+
+	argsSeparator = ", "
 )
 
 func GeneratePrintBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, recipeExecutor *runtime_value_store.RuntimeValueStore, serviceNetwork service_network.ServiceNetwork) func(thread *starlark.Thread, builtin *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
@@ -44,7 +49,7 @@ func GeneratePrintBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInst
 }
 
 type PrintInstruction struct {
-	position       *kurtosis_instruction.InstructionPosition
+	position       *kurtosis_starlark_framework.KurtosisBuiltinPosition
 	args           []starlark.Value
 	separator      separator
 	end            end
@@ -52,7 +57,7 @@ type PrintInstruction struct {
 	serviceNetwork service_network.ServiceNetwork
 }
 
-func NewPrintInstruction(position *kurtosis_instruction.InstructionPosition, args []starlark.Value, separatorStr separator, endStr end, recipeExecutor *runtime_value_store.RuntimeValueStore, serviceNetwork service_network.ServiceNetwork) *PrintInstruction {
+func NewPrintInstruction(position *kurtosis_starlark_framework.KurtosisBuiltinPosition, args []starlark.Value, separatorStr separator, endStr end, recipeExecutor *runtime_value_store.RuntimeValueStore, serviceNetwork service_network.ServiceNetwork) *PrintInstruction {
 	return &PrintInstruction{
 		position:       position,
 		args:           args,
@@ -63,17 +68,17 @@ func NewPrintInstruction(position *kurtosis_instruction.InstructionPosition, arg
 	}
 }
 
-func (instruction *PrintInstruction) GetPositionInOriginalScript() *kurtosis_instruction.InstructionPosition {
+func (instruction *PrintInstruction) GetPositionInOriginalScript() *kurtosis_starlark_framework.KurtosisBuiltinPosition {
 	return instruction.position
 }
 
 func (instruction *PrintInstruction) GetCanonicalInstruction() *kurtosis_core_rpc_api_bindings.StarlarkInstruction {
 	args := make([]*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg, len(instruction.args))
 	for idx, arg := range instruction.args {
-		args[idx] = binding_constructors.NewStarlarkInstructionArg(shared_helpers.CanonicalizeArgValue(arg), kurtosis_instruction.Representative)
+		args[idx] = binding_constructors.NewStarlarkInstructionArg(builtin_argument.StringifyArgumentValue(arg), kurtosis_instruction.Representative)
 	}
-	args = append(args, binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(starlark.String(instruction.separator)), separatorArgName, kurtosis_instruction.NotRepresentative))
-	args = append(args, binding_constructors.NewStarlarkInstructionKwarg(shared_helpers.CanonicalizeArgValue(starlark.String(instruction.end)), endArgName, kurtosis_instruction.NotRepresentative))
+	args = append(args, binding_constructors.NewStarlarkInstructionKwarg(builtin_argument.StringifyArgumentValue(starlark.String(instruction.separator)), separatorArgName, kurtosis_instruction.NotRepresentative))
+	args = append(args, binding_constructors.NewStarlarkInstructionKwarg(builtin_argument.StringifyArgumentValue(starlark.String(instruction.end)), endArgName, kurtosis_instruction.NotRepresentative))
 	return binding_constructors.NewStarlarkInstruction(instruction.position.ToAPIType(), PrintBuiltinName, instruction.String(), args)
 }
 
@@ -105,7 +110,13 @@ func (instruction *PrintInstruction) Execute(_ context.Context) (*string, error)
 }
 
 func (instruction *PrintInstruction) String() string {
-	return shared_helpers.CanonicalizeInstruction(PrintBuiltinName, instruction.args, instruction.getKwargs())
+	var stringifiedArguments []string
+	for _, arg := range instruction.args {
+		stringifiedArguments = append(stringifiedArguments, builtin_argument.StringifyArgumentValue(arg))
+	}
+	stringifiedArguments = append(stringifiedArguments, fmt.Sprintf("%s=%q", endArgName, instruction.end))
+	stringifiedArguments = append(stringifiedArguments, fmt.Sprintf("%s=%q", separatorArgName, instruction.separator))
+	return fmt.Sprintf("%s(%s)", PrintBuiltinName, strings.Join(stringifiedArguments, argsSeparator))
 }
 
 func (instruction *PrintInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
@@ -131,13 +142,13 @@ func parseStartosisArg(b *starlark.Builtin, args starlark.Tuple, kwargs []starla
 	for _, kwarg := range kwargs {
 		switch kwarg.Index(0) {
 		case starlark.String(separatorArgName):
-			separatorKwargStr, interpretationError := kurtosis_instruction.ParseNonEmptyString(separatorArgName, kwarg.Index(1))
+			separatorKwargStr, interpretationError := toNonEmptyString(separatorArgName, kwarg.Index(1))
 			if interpretationError != nil {
 				return nil, "", "", interpretationError
 			}
 			separatorKwarg = separator(separatorKwargStr)
 		case starlark.String(endArgName):
-			endKwargStr, interpretationError := kurtosis_instruction.ParseNonEmptyString(endArgName, kwarg.Index(1))
+			endKwargStr, interpretationError := toNonEmptyString(endArgName, kwarg.Index(1))
 			if interpretationError != nil {
 				return nil, "", "", interpretationError
 			}
@@ -150,13 +161,13 @@ func parseStartosisArg(b *starlark.Builtin, args starlark.Tuple, kwargs []starla
 	return argsList, separatorKwarg, endKwarg, nil
 }
 
-func (instruction *PrintInstruction) getKwargs() starlark.StringDict {
-	nonDefaultKwargs := starlark.StringDict{}
-	if instruction.separator != defaultSeparator {
-		nonDefaultKwargs[separatorArgName] = starlark.String(instruction.separator)
+func toNonEmptyString(argName string, argValue starlark.Value) (string, *startosis_errors.InterpretationError) {
+	strArgValue, interpretationErr := kurtosis_types.SafeCastToString(argValue, argName)
+	if interpretationErr != nil {
+		return "", interpretationErr
 	}
-	if instruction.end != defaultEnd {
-		nonDefaultKwargs[endArgName] = starlark.String(instruction.end)
+	if len(strArgValue) == 0 {
+		return "", startosis_errors.NewInterpretationError("Expected non empty string for argument '%s'", argName)
 	}
-	return nonDefaultKwargs
+	return strArgValue, nil
 }

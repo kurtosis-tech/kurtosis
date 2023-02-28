@@ -509,7 +509,7 @@ def run(plan):
 	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 	require.Empty(t, instructions) // No kurtosis instruction
 
-	errorMsg := `Evaluation error: An error occurred while loading the package '` + nonExistentModule + `'
+	errorMsg := `Evaluation error: An error occurred while loading the module '` + nonExistentModule + `'
 	Caused by: Package '` + nonExistentModule + `' not found`
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
 		[]startosis_errors.CallFrame{
