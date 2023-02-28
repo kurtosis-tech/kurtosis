@@ -12,8 +12,12 @@ func ParseSubnetworks(subnetworkArgName string, subnetworksTuple starlark.Tuple)
 	if interpretationErr != nil {
 		return "", "", interpretationErr
 	}
-	if len(subnetworksStr) != 2 {
-		return "", "", startosis_errors.NewInterpretationError("Subnetworks tuple should contain exactly 2 subnetwork names. %d was/were provided", len(subnetworksStr))
+
+	errorMsgTemplate := "Subnetworks tuple should contain exactly 2 subnetwork names. %d %s provided"
+	if len(subnetworksStr) < 2 {
+		return "", "", startosis_errors.NewInterpretationError(errorMsgTemplate, len(subnetworksStr), "was")
+	} else if len(subnetworksStr) > 2 {
+		return "", "", startosis_errors.NewInterpretationError(errorMsgTemplate, len(subnetworksStr), "were")
 	}
 	subnetwork1 := service_network_types.PartitionID(subnetworksStr[0])
 	subnetwork2 := service_network_types.PartitionID(subnetworksStr[1])
