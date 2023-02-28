@@ -39,18 +39,13 @@ or [wait][starlark-instructions-wait])
 
 :::caution
 
-The `service_name` field will be deprecated soon, ExecRecipe will contain only the `command` field and 
-the `service_name` will have to be passed as the first argument in the `exec`, `request` and `wait` 
-instructions where this type is currently used
+The `ExecRecipe.service_name` field is still accepted but it's deprecated, so we suggest users to pass
+this value as an argument in the `exec`, `request` and `wait` instructions where this type is currently used
 
 :::
 
 ```python
 exec_recipe = ExecRecipe(
-    # The service name to execute the command on.
-    # MANDATORY
-    service_name = "my_service",
-
     # The actual command to execute. 
     # Each item corresponds to one shell argument, so ["echo", "Hello world"] behaves as if you ran "echo 'Hello World'" in the shell.
     # MANDATORY
@@ -68,16 +63,13 @@ The `GetHttpRequestRecipe` can be used to make `GET` requests.
 
 :::caution
 
-The `service_name` field will be deprecated soon, this argument will have to be passed as the first argument 
-in the `request` and `wait` instructions where this type is currently used
+The `GetHttpRequestRecipe.service_name` field is still accepted but it's deprecated, so we suggest users to pass
+this value as an argument in the `exec`, `request` and `wait` instructions where this type is currently used
 
 :::
 
 ```python
 get_request_recipe = GetHttpRequestRecipe(
-    # The service name that is the server for the request
-    service_name = "my_service",
-
     # The port ID that is the server port for the request
     # MANDATORY
     port_id = "my_port",
@@ -103,16 +95,13 @@ The `PostHttpRequestRecipe` can be used to make `POST` requests.
 
 :::caution
 
-The `service_name` field will be deprecated soon, this argument will have to be passed as the first argument
-in the `request` and `wait` instructions where this type is currently used
+The `PostHttpRequestRecipe.service_name` field is still accepted but it's deprecated, so we suggest users to pass
+this value as an argument in the `exec`, `request` and `wait` instructions where this type is currently used
 
 :::
 
 ```python
 post_request_recipe = PostHttpRequestRecipe(
-    # The service name that is the server for the request
-    service_name = "my_service",
-
     # The port ID that is the server port for the request
     # MANDATORY
     port_id = "my_port",
@@ -137,6 +126,7 @@ post_request_recipe = PostHttpRequestRecipe(
     extract = {
         "extractfield" : ".name.id"
     }
+)
 ```
 
 :::caution
