@@ -224,8 +224,8 @@ config = ServiceConfig(
     # For more info on what a files artifact is, see below
     # OPTIONAL (Default: {})
     files = {
-        "path/to/file/1": "files_artifact_1",
-        "path/to/file/2": "files_artifact_2",
+        "path/to/file/1": files_artifact_1,
+        "path/to/file/2": files_artifact_2,
     },
 
     # The ENTRYPOINT statement hardcoded in a container image's Dockerfile might not be suitable for your needs.
@@ -270,7 +270,6 @@ config = ServiceConfig(
     subnetwork = "service_subnetwork",
 )
 ```
-
 The `ports` dictionary argument accepts a key value pair, where `key` is a user defined unique port identifier and `value` is a [PortSpec][port-spec] object.
 
 For more info about the `subnetwork` argument, see [Kurtosis subnetworks][subnetworks-reference].
