@@ -48,7 +48,7 @@ func NewRenderTemplatesInstruction(serviceNetwork service_network.ServiceNetwork
 				},
 				{
 					Name:              ArtifactNameArgName,
-					IsOptional:        false,
+					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
 					Validator:         nil,
 				},
@@ -77,11 +77,19 @@ type RenderTemplatesCapabilities struct {
 }
 
 func (builtin *RenderTemplatesCapabilities) Interpret(arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
-	artifactName, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, ArtifactNameArgName)
-	if err != nil {
-		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to parse '%s'", ArtifactNameArgName)
+	if !arguments.IsSet(ArtifactNameArgName) {
+		natureThemeName, err := builtin.serviceNetwork.GetUniqueNameForFileArtifact()
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to auto generate name '%s' argument", ArtifactNameArgName)
+		}
+		builtin.artifactName = natureThemeName
+	} else {
+		artifactName, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, ArtifactNameArgName)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to parse '%s'", ArtifactNameArgName)
+		}
+		builtin.artifactName = artifactName.GoString()
 	}
-	builtin.artifactName = artifactName.GoString()
 
 	config, err := builtin_argument.ExtractArgumentValue[*starlark.Dict](arguments, TemplateAndDataByDestinationRelFilepathArg)
 	if err != nil {
@@ -92,15 +100,14 @@ func (builtin *RenderTemplatesCapabilities) Interpret(arguments *builtin_argumen
 		return nil, interpretationErr
 	}
 	builtin.templatesAndDataByDestRelFilepath = templatesAndDataByDestRelFilepath
-	return artifactName, nil
+	return starlark.String(builtin.artifactName), nil
 }
 
 func (builtin *RenderTemplatesCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
-	artifactName := builtin.artifactName
-	if validatorEnvironment.DoesArtifactNameExist(artifactName) {
-		return startosis_errors.NewValidationError("There was an error validating '%v' as artifact name '%v' already exists", RenderTemplatesBuiltinName, artifactName)
+	if validatorEnvironment.DoesArtifactNameExist(builtin.artifactName) {
+		return startosis_errors.NewValidationError("There was an error validating '%v' as artifact name '%v' already exists", RenderTemplatesBuiltinName, builtin.artifactName)
 	}
-	validatorEnvironment.AddArtifactName(artifactName)
+	validatorEnvironment.AddArtifactName(builtin.artifactName)
 	return nil
 }
 

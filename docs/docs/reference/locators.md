@@ -25,10 +25,10 @@ A GitHub URL is **not** a valid locator, because GitHub adds extra `/blob/main` 
 https://github.com/kurtosis-tech/kurtosis/blob/main/starlark/test.star
 ```
 
-would be the following as a Kurtosis locator (dropping the `/blob/main` part):
+would be the following as a Kurtosis locator (dropping the `https://` and `/blob/main` part):
 
 ```
-https://github.com/kurtosis-tech/kurtosis/starlark/test.star
+github.com/kurtosis-tech/kurtosis/starlark/test.star
 ```
 :::
 

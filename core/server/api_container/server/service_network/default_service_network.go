@@ -894,10 +894,7 @@ func (network *DefaultServiceNetwork) GetExistingAndHistoricalServiceIdentifiers
 	return network.allExistingAndHistoricalIdentifiers
 }
 
-// GetUniqueNameForFileArtifact
-// TODO: It is not wired with the flow, in next PR it will be called from Interpret methods
-//  from starlark instructions like upload_file, render_templates
-// and will return unique artifact name after 5 retries, same as enclave id generator
+// GetUniqueNameForFileArtifact : this will return unique artifact name after 5 retries, same as enclave id generator
 func (network *DefaultServiceNetwork) GetUniqueNameForFileArtifact() (string, error) {
 	filesArtifactStore, err := network.enclaveDataDir.GetFilesArtifactStore()
 	if err != nil {
