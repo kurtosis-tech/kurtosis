@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	apiContainerNameSuffix                 = "kurtosis-api"
+	apiContainerNamePrefix                 = "kurtosis-api"
 	networkingSidecarContainerNameFragment = "networking-sidecar"
 	artifactExpansionVolumeNameFragment    = "files-artifact-expansion"
 	artifactsExpanderContainerNameFragment = "files-artifacts-expander"
@@ -158,7 +158,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForApiContainer(
 ) (DockerObjectAttributes, error) {
 	name, err := provider.getNameForEnclaveObject(
 		[]string{
-			apiContainerNameSuffix,
+			apiContainerNamePrefix,
 		},
 	)
 	if err != nil {
@@ -422,12 +422,9 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForLogsCollectorVolum
 // ====================================================================================================
 // Gets the name for an enclave object, making sure to put the enclave ID first and join using the standardized separator
 func (provider *dockerEnclaveObjectAttributesProviderImpl) getNameForEnclaveObject(elems []string) (*docker_object_name.DockerObjectName, error) {
-	toJoin := []string{
-		provider.enclaveId.GetString(),
-	}
-	toJoin = append(toJoin, elems...)
+	elems = append(elems, provider.enclaveId.GetString())
 	nameStr := strings.Join(
-		toJoin,
+		elems,
 		objectNameElementSeparator,
 	)
 	name, err := docker_object_name.CreateNewDockerObjectName(nameStr)

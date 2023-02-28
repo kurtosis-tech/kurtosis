@@ -6,7 +6,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/stretchr/testify/require"
@@ -39,8 +38,10 @@ func TestAllRegisteredBuiltins(t *testing.T) {
 	testKurtosisPlanInstruction(t, newRequestTestCase2(t))
 	testKurtosisPlanInstruction(t, newRequestTestCase3(t))
 	testKurtosisPlanInstruction(t, newStoreServiceFilesTestCase(t))
+	testKurtosisPlanInstruction(t, newStoreServiceFilesWithoutNameTestCase(t))
 	testKurtosisPlanInstruction(t, newUpdateServiceTestCase(t))
 	testKurtosisPlanInstruction(t, newUploadFilesTestCase(t))
+	testKurtosisPlanInstruction(t, newUploadFilesWithoutNameTestCase(t))
 	testKurtosisPlanInstruction(t, newWaitTestCase1(t))
 	testKurtosisPlanInstruction(t, newWaitTestCase2(t))
 	testKurtosisPlanInstruction(t, newWaitTestCase3(t))
@@ -52,7 +53,7 @@ func TestAllRegisteredBuiltins(t *testing.T) {
 func testKurtosisPlanInstruction(t *testing.T, builtin KurtosisPlanInstructionBaseTest) {
 	testId := builtin.GetId()
 	var instructionQueue []kurtosis_instruction.KurtosisInstruction
-	thread := shared_helpers.NewStarlarkThread("framework-testing-engine")
+	thread := newStarlarkThread("framework-testing-engine")
 
 	predeclared := getBasePredeclaredDict()
 	// Add the KurtosisPlanInstruction that is being tested
@@ -86,7 +87,7 @@ func testKurtosisPlanInstruction(t *testing.T, builtin KurtosisPlanInstructionBa
 
 func testKurtosisHelper(t *testing.T, builtin KurtosisHelperBaseTest) {
 	testId := builtin.GetId()
-	thread := shared_helpers.NewStarlarkThread("framework-testing-engine")
+	thread := newStarlarkThread("framework-testing-engine")
 
 	predeclared := getBasePredeclaredDict()
 	// Add the KurtosisPlanInstruction that is being tested
@@ -127,4 +128,14 @@ func extractResultValue(t *testing.T, globals starlark.StringDict) starlark.Valu
 	value, found := globals[resultStarlarkVar]
 	require.True(t, found, "Result variable could not be found in dictionary of global variables")
 	return value
+}
+
+func newStarlarkThread(name string) *starlark.Thread {
+	return &starlark.Thread{
+		Name:       name,
+		Print:      nil,
+		Load:       nil,
+		OnMaxSteps: nil,
+		Steps:      0,
+	}
 }

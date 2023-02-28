@@ -3,14 +3,14 @@ package kurtosis_print
 import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
 	"testing"
 )
 
 func TestPrintInstruction_StringRepresentation(t *testing.T) {
-	position := kurtosis_instruction.NewInstructionPosition(1, 1, "dummyFile")
+	position := kurtosis_starlark_framework.NewKurtosisBuiltinPosition("dummyFile", 1, 1)
 	instruction := NewPrintInstruction(
 		position,
 		[]starlark.Value{
