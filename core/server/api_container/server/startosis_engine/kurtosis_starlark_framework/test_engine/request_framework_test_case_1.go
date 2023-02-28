@@ -17,12 +17,12 @@ import (
 )
 
 const (
-	requestServiceName = service.ServiceName("web-server")
-	requestPortId      = "port_id"
-	requestMethod      = "GET"
-	requestContentType = ""
-	requestEndpoint    = "/"
-	requestBody        = ""
+	requestTestCase1ServiceName = service.ServiceName("web-server")
+	requestPortId               = "port_id"
+	requestMethod               = "GET"
+	requestContentType          = ""
+	requestEndpoint             = "/"
+	requestBody                 = ""
 
 	requestResponseBody = `{"value": "Hello World!"}`
 )
@@ -47,7 +47,7 @@ func (t *requestTestCase1) GetInstruction() *kurtosis_plan_instruction.KurtosisP
 
 	serviceNetwork.EXPECT().HttpRequestService(
 		mock.Anything,
-		string(requestServiceName),
+		string(requestTestCase1ServiceName),
 		requestPortId,
 		requestMethod,
 		requestContentType,
@@ -77,7 +77,7 @@ func (t *requestTestCase1) GetInstruction() *kurtosis_plan_instruction.KurtosisP
 }
 
 func (t *requestTestCase1) GetStarlarkCode() string {
-	recipe := fmt.Sprintf(`GetHttpRequestRecipe(port_id=%q, service_name=%q, endpoint=%q, extract={"key": ".value"})`, requestPortId, requestServiceName, requestEndpoint)
+	recipe := fmt.Sprintf(`GetHttpRequestRecipe(port_id=%q, service_name=%q, endpoint=%q, extract={"key": ".value"})`, requestPortId, requestTestCase1ServiceName, requestEndpoint)
 	return fmt.Sprintf("%s(%s=%s)", request.RequestBuiltinName, request.RecipeArgName, recipe)
 }
 

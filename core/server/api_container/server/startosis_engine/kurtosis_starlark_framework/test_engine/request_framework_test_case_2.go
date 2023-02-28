@@ -37,7 +37,7 @@ func (t *requestTestCase2) GetInstruction() *kurtosis_plan_instruction.KurtosisP
 
 	serviceNetwork.EXPECT().HttpRequestService(
 		mock.Anything,
-		string(requestServiceName),
+		string(requestTestCase1ServiceName),
 		requestPortId,
 		requestMethod,
 		requestContentType,
@@ -67,12 +67,12 @@ func (t *requestTestCase2) GetInstruction() *kurtosis_plan_instruction.KurtosisP
 }
 
 func (t *requestTestCase2) GetStarlarkCode() string {
-	recipe := fmt.Sprintf(`GetHttpRequestRecipe(port_id=%q, service_name=%q, endpoint=%q, extract={"key": ".value"})`, requestPortId, requestServiceName, requestEndpoint)
+	recipe := fmt.Sprintf(`GetHttpRequestRecipe(port_id=%q, service_name=%q, endpoint=%q, extract={"key": ".value"})`, requestPortId, requestTestCase1ServiceName, requestEndpoint)
 	return fmt.Sprintf("%s(%s)", request.RequestBuiltinName, recipe)
 }
 
 func (t *requestTestCase2) GetStarlarkCodeForAssertion() string {
-	recipe := fmt.Sprintf(`GetHttpRequestRecipe(port_id=%q, service_name=%q, endpoint=%q, extract={"key": ".value"})`, requestPortId, requestServiceName, requestEndpoint)
+	recipe := fmt.Sprintf(`GetHttpRequestRecipe(port_id=%q, service_name=%q, endpoint=%q, extract={"key": ".value"})`, requestPortId, requestTestCase1ServiceName, requestEndpoint)
 	return fmt.Sprintf("%s(%s=%s)", request.RequestBuiltinName, request.RecipeArgName, recipe)
 }
 
