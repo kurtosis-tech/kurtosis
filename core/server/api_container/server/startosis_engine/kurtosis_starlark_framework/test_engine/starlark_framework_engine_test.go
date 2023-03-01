@@ -13,7 +13,6 @@ import (
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkjson"
 	"go.starlark.net/starlarkstruct"
-	"reflect"
 	"testing"
 )
 
@@ -42,6 +41,8 @@ func TestAllRegisteredBuiltins(t *testing.T) {
 
 	testKurtosisHelper(t, newReadFileTestCase(t))
 	testKurtosisHelper(t, newImportModuleTestCase(t))
+
+	testKurtosisTypeConstructor(t, newUpdateServiceConfigTestCase(t))
 }
 
 func testKurtosisPlanInstruction(t *testing.T, builtin KurtosisPlanInstructionBaseTest) {
@@ -60,16 +61,16 @@ func testKurtosisPlanInstruction(t *testing.T, builtin KurtosisPlanInstructionBa
 	require.Nil(t, err, "Error interpreting Starlark code for instruction '%s'", testId)
 	interpretationResult := extractResultValue(t, globals)
 
-	instruction, ok := instructionQueue[0].(*kurtosis_plan_instruction.KurtosisPlanInstructionInternal)
-	require.True(t, ok, "Builtin expected to be a KurtosisPlanInstructionInternal, but was '%s'", reflect.TypeOf(instruction))
+	require.Len(t, instructionQueue, 1)
+	instructionToExecute := instructionQueue[0]
 
 	// execute the instruction and run custom builtin assertions
-	executionResult, err := instruction.Execute(context.WithValue(context.Background(), "PARALLELISM", 1))
+	executionResult, err := instructionToExecute.Execute(context.WithValue(context.Background(), "PARALLELISM", 1))
 	require.Nil(t, err, "Builtin execution threw an error: \n%v", err)
 	builtin.Assert(interpretationResult, executionResult)
 
 	// check serializing the obtained instruction falls back to the initial one
-	serializedInstruction := instruction.String()
+	serializedInstruction := instructionToExecute.String()
 	require.Equal(t, starlarkCode, serializedInstruction)
 }
 
@@ -88,6 +89,23 @@ func testKurtosisHelper(t *testing.T, builtin KurtosisHelperBaseTest) {
 	result := extractResultValue(t, globals)
 
 	builtin.Assert(result)
+}
+
+func testKurtosisTypeConstructor(t *testing.T, builtin KurtosisTypeConstructorBaseTest) {
+	testId := builtin.GetId()
+	thread := newStarlarkThread("framework-testing-engine")
+
+	predeclared := getBasePredeclaredDict()
+
+	starlarkCode := builtin.GetStarlarkCode()
+	globals, err := starlark.ExecFile(thread, startosis_constants.PackageIdPlaceholderForStandaloneScript, codeToExecute(starlarkCode), predeclared)
+	require.Nil(t, err, "Error interpreting Starlark code for builtin '%s'", testId)
+	result := extractResultValue(t, globals)
+
+	builtin.Assert(result)
+
+	serializedType := result.String()
+	require.Equal(t, starlarkCode, serializedType)
 }
 
 func getBasePredeclaredDict() starlark.StringDict {
