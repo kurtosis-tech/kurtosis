@@ -507,7 +507,6 @@ func (network *DefaultServiceNetwork) UpdateService(
 		if err != nil {
 			failedServicesPool[serviceName] = stacktrace.Propagate(err, "An error occurred while fetching partition service mapping for service '%v'", serviceName)
 			continue
-
 		}
 		previousServicePartition, found := servicePartitions[serviceName]
 		if !found {
@@ -561,6 +560,7 @@ func (network *DefaultServiceNetwork) UpdateService(
 			servicePartitions, err := network.topology.GetServicePartitions()
 			if err != nil {
 				logrus.Errorf("An error happened updating service '%s' and it needed to be moved back to partition '%s', but an error happened during this operation. Error was:\n%v", serviceName, partitionIDToRollbackTo, err)
+				return
 			}
 
 			currentPartitionId, found := servicePartitions[serviceName]
