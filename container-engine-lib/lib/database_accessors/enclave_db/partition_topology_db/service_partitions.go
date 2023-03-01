@@ -37,7 +37,7 @@ func (sp *ServicePartitionsBucket) DoesServiceExist(serviceName service.ServiceN
 		return nil
 	})
 	if err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred while fetching information from the underlying bucket")
+		return false, stacktrace.Propagate(err, "An error occurred while verifying whether the '%s' service exists in the '%v' bucket", serviceName, servicePartitionsBucketName)
 	}
 	return partitionExists, nil
 }
