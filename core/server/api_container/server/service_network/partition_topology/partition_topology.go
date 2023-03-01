@@ -339,7 +339,7 @@ func (topology *PartitionTopology) AddService(serviceName service.ServiceName, p
 			serviceName,
 			partitionId)
 	}
-	err = topology.servicePartitions.AddPartitionToService(serviceName, partition.PartitionID(serviceName))
+	err = topology.servicePartitions.AddPartitionToService(serviceName, partition.PartitionID(partitionId))
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while adding partition '%v' to service '%v'", partitionId, serviceName)
 	}
