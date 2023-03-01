@@ -311,7 +311,7 @@ func (topology *PartitionTopology) AddService(serviceName service.ServiceName, p
 	defer topology.lock.Unlock()
 	exists, err := topology.servicePartitions.DoesServiceExist(serviceName)
 	if err != nil {
-		return stacktrace.NewError("Cannot assign service to '%v' to partition '%v'; as we couldn't verify whether the service already exists in some partition")
+		return stacktrace.NewError("Cannot assign service to '%v' to partition '%v'; as we couldn't verify whether the service already exists in some partition", serviceName, partitionId)
 	}
 	if exists {
 		existingPartition, err := topology.servicePartitions.GetPartitionForService(serviceName)
@@ -364,7 +364,7 @@ func (topology *PartitionTopology) RemoveService(serviceName service.ServiceName
 	}
 	err = topology.servicePartitions.RemoveService(serviceName)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while removing service '%v' from underlying service partition store")
+		return stacktrace.Propagate(err, "An error occurred while removing service '%v' from underlying service partition store", serviceName)
 	}
 
 	services, err := topology.partitionServices.GetServicesForPartition(partitionId)

@@ -536,11 +536,14 @@ func TestSetConnection(t *testing.T) {
 
 	require.Equal(t, ConnectionBlocked, topology.GetDefaultConnection())
 
+	currentServicePartitions, err := topology.servicePartitions.GetAllServicePartitions()
+	require.Nil(t, err)
 	require.Equal(t, map[service.ServiceName]service_network_types.PartitionID{
 		"service1": "partition1",
 		"service2": "partition2",
 		"service3": "partition3",
-	}, topology.servicePartitions)
+	}, currentServicePartitions)
+
 	partitionServices, err := topology.GetPartitionServices()
 	require.Nil(t, err)
 	require.Equal(t, map[service_network_types.PartitionID]map[service.ServiceName]bool{
