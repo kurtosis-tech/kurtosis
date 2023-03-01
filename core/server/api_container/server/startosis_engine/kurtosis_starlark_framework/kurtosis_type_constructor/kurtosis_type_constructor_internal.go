@@ -6,20 +6,20 @@ import (
 	"go.starlark.net/starlark"
 )
 
-type KurtosisTypeConstructorInternal struct {
+type kurtosisTypeConstructorInternal struct {
 	*kurtosis_starlark_framework.KurtosisBaseBuiltinInternal
 
 	Instantiate
 }
 
-func newKurtosisTypeConstructorInternal(internalBuiltin *kurtosis_starlark_framework.KurtosisBaseBuiltinInternal, instantiate Instantiate) *KurtosisTypeConstructorInternal {
-	return &KurtosisTypeConstructorInternal{
+func newKurtosisTypeConstructorInternal(internalBuiltin *kurtosis_starlark_framework.KurtosisBaseBuiltinInternal, instantiate Instantiate) *kurtosisTypeConstructorInternal {
+	return &kurtosisTypeConstructorInternal{
 		KurtosisBaseBuiltinInternal: internalBuiltin,
 		Instantiate:                 instantiate,
 	}
 }
 
-func (builtin *KurtosisTypeConstructorInternal) generateTypeInstance() (starlark.Value, *startosis_errors.InterpretationError) {
+func (builtin *kurtosisTypeConstructorInternal) generateTypeInstance() (starlark.Value, *startosis_errors.InterpretationError) {
 	kurtosisType, interpretationErr := builtin.Instantiate(builtin.GetArguments())
 	if interpretationErr != nil {
 		return nil, interpretationErr

@@ -13,7 +13,6 @@ import (
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkjson"
 	"go.starlark.net/starlarkstruct"
-	"reflect"
 	"testing"
 )
 
@@ -62,16 +61,16 @@ func testKurtosisPlanInstruction(t *testing.T, builtin KurtosisPlanInstructionBa
 	require.Nil(t, err, "Error interpreting Starlark code for instruction '%s'", testId)
 	interpretationResult := extractResultValue(t, globals)
 
-	instruction, ok := instructionQueue[0].(*kurtosis_plan_instruction.KurtosisPlanInstructionInternal)
-	require.True(t, ok, "Builtin expected to be a KurtosisPlanInstructionInternal, but was '%s'", reflect.TypeOf(instruction))
+	require.Len(t, instructionQueue, 1)
+	instructionToExecute := instructionQueue[0]
 
 	// execute the instruction and run custom builtin assertions
-	executionResult, err := instruction.Execute(context.WithValue(context.Background(), "PARALLELISM", 1))
+	executionResult, err := instructionToExecute.Execute(context.WithValue(context.Background(), "PARALLELISM", 1))
 	require.Nil(t, err, "Builtin execution threw an error: \n%v", err)
 	builtin.Assert(interpretationResult, executionResult)
 
 	// check serializing the obtained instruction falls back to the initial one
-	serializedInstruction := instruction.String()
+	serializedInstruction := instructionToExecute.String()
 	require.Equal(t, starlarkCode, serializedInstruction)
 }
 

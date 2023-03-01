@@ -19,9 +19,9 @@ type KurtosisValueTypeDefault struct {
 }
 
 func CreateKurtosisStarlarkTypeDefault(name string, arguments *builtin_argument.ArgumentValuesSet) (*KurtosisValueTypeDefault, *startosis_errors.InterpretationError) {
-	underlyingStruct, err := structFromKurtosisStarlarkType(name, arguments)
-	if err != nil {
-		return nil, err
+	underlyingStruct, interpretationErr := structFromKurtosisStarlarkType(name, arguments)
+	if interpretationErr != nil {
+		return nil, interpretationErr
 	}
 	return &KurtosisValueTypeDefault{
 		KurtosisValueType: underlyingStruct,
@@ -70,5 +70,6 @@ func structFromKurtosisStarlarkType(name string, arguments *builtin_argument.Arg
 		}
 		structDict[attrName] = attrValue
 	}
-	return starlarkstruct.FromStringDict(starlark.String(name), structDict), nil
+	starlarkStruct := starlarkstruct.FromStringDict(starlark.String(name), structDict)
+	return starlarkStruct, nil
 }
