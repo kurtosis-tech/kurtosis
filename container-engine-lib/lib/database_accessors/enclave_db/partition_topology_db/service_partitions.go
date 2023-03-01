@@ -1,7 +1,6 @@
 package partition_topology_db
 
 import (
-	"encoding/json"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/partition"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
@@ -50,10 +49,7 @@ func (sp *ServicePartitionsBucket) GetPartitionForService(service service.Servic
 		if values == nil {
 			return nil
 		}
-		err := json.Unmarshal(values, &partitionForService)
-		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred while converting the services stored '%s' against partition '%s' in bolt to a usable Go type; This is a bug in Kurtosis", values, service)
-		}
+		partitionForService = partition.PartitionID(values)
 		return nil
 	})
 	if err != nil {
@@ -88,7 +84,7 @@ func (sp *ServicePartitionsBucket) RepartitionBucket(newPartitioning map[service
 
 func (sp *ServicePartitionsBucket) RemoveService(serviceName service.ServiceName) error {
 	err := sp.db.Update(func(tx *bolt.Tx) error {
-		err := tx.Bucket(partitionServicesBucketName).Delete([]byte(serviceName))
+		err := tx.Bucket(servicePartitionsBucketName).Delete([]byte(serviceName))
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred while removing '%v' from store", serviceName)
 		}
@@ -101,11 +97,7 @@ func (sp *ServicePartitionsBucket) GetAllServicePartitions() (map[service.Servic
 	result := map[service.ServiceName]partition.PartitionID{}
 	err := sp.db.View(func(tx *bolt.Tx) error {
 		err := tx.Bucket(servicePartitionsBucketName).ForEach(func(k, v []byte) error {
-			var partitionForService partition.PartitionID
-			err := json.Unmarshal(v, &partitionForService)
-			if err != nil {
-				return stacktrace.Propagate(err, "An error occurred while converting the partitions stored '%s' against service '%s' in bolt to a usable Go type; This is a bug in Kurtosis", v, k)
-			}
+			partitionForService := partition.PartitionID(v)
 			result[service.ServiceName(k)] = partitionForService
 			return nil
 		})
