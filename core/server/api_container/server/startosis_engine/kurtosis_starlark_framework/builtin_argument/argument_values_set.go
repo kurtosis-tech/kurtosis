@@ -30,7 +30,7 @@ func NewArgumentValuesSet(argumentsDefinition []*BuiltinArgument, values []starl
 func CreateNewArgumentValuesSet(builtinName string, argumentsDefinition []*BuiltinArgument, args starlark.Tuple, kwargs []starlark.Tuple) (*ArgumentValuesSet, *startosis_errors.InterpretationError) {
 	argumentValues, err := parseArguments(argumentsDefinition, builtinName, args, kwargs)
 	if err != nil {
-		return nil, startosis_errors.WrapWithInterpretationError(err, "Error creating argument values set as arguments couldn't be parsed")
+		return nil, startosis_errors.WrapWithInterpretationError(err, "Cannot construct '%s' from the provided arguments.", builtinName)
 	}
 	return &ArgumentValuesSet{
 		argumentsDefinition: argumentsDefinition,

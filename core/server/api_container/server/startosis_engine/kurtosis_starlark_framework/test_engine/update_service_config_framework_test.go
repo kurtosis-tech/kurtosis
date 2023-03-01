@@ -10,10 +10,6 @@ import (
 	"testing"
 )
 
-const (
-	updateServiceConfig_subnetwork = "test-subnetwork"
-)
-
 type updateServiceConfigTestCase struct {
 	*testing.T
 }
@@ -33,7 +29,7 @@ func (t *updateServiceConfigTestCase) GetTypeConstructor() *kurtosis_type_constr
 }
 
 func (t *updateServiceConfigTestCase) GetStarlarkCode() string {
-	return fmt.Sprintf("%s(%s=%q)", update_service_config.UpdateServiceConfigTypeName, update_service_config.SubnetworkAttr, updateServiceConfig_subnetwork)
+	return fmt.Sprintf("%s(%s=%q)", update_service_config.UpdateServiceConfigTypeName, update_service_config.SubnetworkAttr, TestSubnetwork)
 }
 
 func (t *updateServiceConfigTestCase) Assert(typeValue starlark.Value) {
@@ -42,6 +38,6 @@ func (t *updateServiceConfigTestCase) Assert(typeValue starlark.Value) {
 	updateServiceConfig, err := updateServiceConfigStarlark.ToKurtosisType()
 	require.Nil(t, err)
 
-	expectedUpdateServiceConfig := binding_constructors.NewUpdateServiceConfig(updateServiceConfig_subnetwork)
+	expectedUpdateServiceConfig := binding_constructors.NewUpdateServiceConfig(string(TestSubnetwork))
 	require.Equal(t, expectedUpdateServiceConfig, updateServiceConfig)
 }

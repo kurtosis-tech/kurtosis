@@ -16,3 +16,18 @@ func NonEmptyString(value starlark.Value, argNameForLogging string) *startosis_e
 	}
 	return nil
 }
+
+func Uint64InRange(value starlark.Value, argNameForLogging string, min uint64, max uint64) *startosis_errors.InterpretationError {
+	valueInt, ok := value.(starlark.Int)
+	if !ok {
+		return startosis_errors.NewInterpretationError("Value for '%s' was expected to be an integer between %d and %d, but it was '%s'", argNameForLogging, min, max, reflect.TypeOf(value))
+	}
+	valueUint64, ok := valueInt.Uint64()
+	if !ok {
+		return startosis_errors.NewInterpretationError("Value for '%s' was expected to be an integer between %d and %d, but it was %v", argNameForLogging, min, max, valueInt)
+	}
+	if valueUint64 < min || valueUint64 > max {
+		return startosis_errors.NewInterpretationError("Value for '%s' was expected to be an integer between %d and %d, but it was %v", argNameForLogging, min, max, valueUint64)
+	}
+	return nil
+}
