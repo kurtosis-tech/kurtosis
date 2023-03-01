@@ -164,8 +164,7 @@ func (topology *PartitionTopology) Repartition(
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while repartitioning the underlying bucket")
 	}
-	// TODO(gyani) add a repartition bucket like call
-	err = topology.servicePartitions.RepartitionBucket(newServicePartitionsCopy)
+	err = topology.servicePartitions.ReplaceBucketContents(newServicePartitionsCopy)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while repartitioning the service partition bucket")
 	}

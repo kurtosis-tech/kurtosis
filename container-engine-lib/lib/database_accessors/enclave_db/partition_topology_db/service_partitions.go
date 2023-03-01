@@ -58,7 +58,7 @@ func (sp *ServicePartitionsBucket) GetPartitionForService(service service.Servic
 	return partitionForService, nil
 }
 
-func (sp *ServicePartitionsBucket) RepartitionBucket(newPartitioning map[service.ServiceName]partition.PartitionID) error {
+func (sp *ServicePartitionsBucket) ReplaceBucketContents(newPartitioning map[service.ServiceName]partition.PartitionID) error {
 	err := sp.db.Update(func(tx *bolt.Tx) error {
 		err := tx.DeleteBucket(servicePartitionsBucketName)
 		if err != nil {
@@ -77,7 +77,7 @@ func (sp *ServicePartitionsBucket) RepartitionBucket(newPartitioning map[service
 		return nil
 	})
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while repartitioning the bucket")
+		return stacktrace.Propagate(err, "An error occurred while replacing bucket contents")
 	}
 	return nil
 }
