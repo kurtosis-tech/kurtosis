@@ -17,9 +17,20 @@ type ServicePartitionsBucket struct {
 	db *enclave_db.EnclaveDB
 }
 
-func (ps *ServicePartitionsBucket) DoesServiceExist(serviceName service.ServiceName) (bool, error) {
+func (sp *ServicePartitionsBucket) AddPartitionToService(serviceName service.ServiceName, partitionId partition.PartitionID) error {
+	err := sp.db.Update(func(tx *bolt.Tx) error {
+		err := tx.Bucket(servicePartitionsBucketName).Put([]byte(serviceName), []byte(partitionId))
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred while adding partition '%v' for service '%v'", partitionId, serviceName)
+		}
+		return nil
+	})
+	return err
+}
+
+func (sp *ServicePartitionsBucket) DoesServiceExist(serviceName service.ServiceName) (bool, error) {
 	partitionExists := false
-	err := ps.db.View(func(tx *bolt.Tx) error {
+	err := sp.db.View(func(tx *bolt.Tx) error {
 		values := tx.Bucket(servicePartitionsBucketName).Get([]byte(serviceName))
 		if values != nil {
 			partitionExists = true
@@ -32,35 +43,70 @@ func (ps *ServicePartitionsBucket) DoesServiceExist(serviceName service.ServiceN
 	return partitionExists, nil
 }
 
-func (ps *ServicePartitionsBucket) GetPartitionForService(service service.ServiceName) (map[service.ServiceName]bool, error) {
-	result := map[partition.PartitionID]bool{}
-	err := ps.db.View(func(tx *bolt.Tx) error {
-		values := tx.Bucket(partitionServicesBucketName).Get([]byte(partitionId))
+func (sp *ServicePartitionsBucket) GetPartitionForService(service service.ServiceName) (partition.PartitionID, error) {
+	var partitionForService partition.PartitionID
+	err := sp.db.View(func(tx *bolt.Tx) error {
+		values := tx.Bucket(servicePartitionsBucketName).Get([]byte(service))
 		if values == nil {
 			return nil
 		}
-		err := json.Unmarshal(values, &result)
+		err := json.Unmarshal(values, &partitionForService)
 		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred while converting the services stored '%s' against partition '%s' in bolt to a usable Go type; This is a bug in Kurtosis", values, partitionId)
+			return stacktrace.Propagate(err, "An error occurred while converting the services stored '%s' against partition '%s' in bolt to a usable Go type; This is a bug in Kurtosis", values, service)
 		}
 		return nil
 	})
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while getting all services for partition '%v'", partitionId)
+		return "", stacktrace.Propagate(err, "An error occurred while getting all services for partition '%v'", service)
 	}
-	return result, nil
+	return partitionForService, nil
 }
 
-func (ps *ServicePartitionsBucket) GetAllServices() (map[service.ServiceName]map[partition.PartitionID]bool, error) {
-	result := map[service.ServiceName]map[partition.PartitionID]bool{}
-	err := ps.db.View(func(tx *bolt.Tx) error {
+func (sp *ServicePartitionsBucket) RepartitionBucket(newPartitioning map[service.ServiceName]partition.PartitionID) error {
+	err := sp.db.Update(func(tx *bolt.Tx) error {
+		err := tx.DeleteBucket(servicePartitionsBucketName)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred deleting the bucket")
+		}
+		bucket, err := tx.CreateBucket(servicePartitionsBucketName)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred recreating the bucket")
+		}
+		for serviceName, partitionForService := range newPartitioning {
+			err = bucket.Put([]byte(serviceName), []byte(partitionForService))
+			if err != nil {
+				return stacktrace.Propagate(err, "An error occurred while storing partition for service '%v'", serviceName)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while repartitioning the bucket")
+	}
+	return nil
+}
+
+func (sp *ServicePartitionsBucket) RemoveService(serviceName service.ServiceName) error {
+	err := sp.db.Update(func(tx *bolt.Tx) error {
+		err := tx.Bucket(partitionServicesBucketName).Delete([]byte(serviceName))
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred while removing '%v' from store", serviceName)
+		}
+		return nil
+	})
+	return err
+}
+
+func (sp *ServicePartitionsBucket) GetAllServicePartitions() (map[service.ServiceName]partition.PartitionID, error) {
+	result := map[service.ServiceName]partition.PartitionID{}
+	err := sp.db.View(func(tx *bolt.Tx) error {
 		err := tx.Bucket(servicePartitionsBucketName).ForEach(func(k, v []byte) error {
-			partitionForServices := map[partition.PartitionID]bool{}
-			err := json.Unmarshal(v, &partitionForServices)
+			var partitionForService partition.PartitionID
+			err := json.Unmarshal(v, &partitionForService)
 			if err != nil {
 				return stacktrace.Propagate(err, "An error occurred while converting the partitions stored '%s' against service '%s' in bolt to a usable Go type; This is a bug in Kurtosis", v, k)
 			}
-			result[service.ServiceName(k)] = partitionForServices
+			result[service.ServiceName(k)] = partitionForService
 			return nil
 		})
 		return err
