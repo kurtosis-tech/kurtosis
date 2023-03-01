@@ -2,7 +2,6 @@ package test_engine
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/request"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
@@ -17,7 +16,6 @@ import (
 )
 
 const (
-	request_serviceName = service.ServiceName("web-server")
 	request_portId      = "port_id"
 	request_method      = "GET"
 	request_contentType = ""
@@ -47,7 +45,7 @@ func (t *requestTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPl
 
 	serviceNetwork.EXPECT().HttpRequestService(
 		mock.Anything,
-		string(request_serviceName),
+		string(TestServiceName),
 		request_portId,
 		request_method,
 		request_contentType,
@@ -77,7 +75,7 @@ func (t *requestTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPl
 }
 
 func (t *requestTestCase) GetStarlarkCode() string {
-	recipe := fmt.Sprintf(`GetHttpRequestRecipe(port_id=%q, service_name=%q, endpoint=%q, extract={"key": ".value"})`, request_portId, request_serviceName, request_endpoint)
+	recipe := fmt.Sprintf(`GetHttpRequestRecipe(port_id=%q, service_name=%q, endpoint=%q, extract={"key": ".value"})`, request_portId, TestServiceName, request_endpoint)
 	return fmt.Sprintf("%s(%s=%s)", request.RequestBuiltinName, request.RecipeArgName, recipe)
 }
 

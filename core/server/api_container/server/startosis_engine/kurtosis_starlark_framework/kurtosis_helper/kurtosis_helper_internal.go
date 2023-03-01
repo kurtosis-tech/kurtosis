@@ -6,20 +6,20 @@ import (
 	"go.starlark.net/starlark"
 )
 
-type KurtosisHelperInternal struct {
+type kurtosisHelperInternal struct {
 	*kurtosis_starlark_framework.KurtosisBaseBuiltinInternal
 
 	capabilities KurtosisHelperCapabilities
 }
 
-func newKurtosisHelperInternal(wrappedBuiltin *kurtosis_starlark_framework.KurtosisBaseBuiltinInternal, capabilities KurtosisHelperCapabilities) *KurtosisHelperInternal {
-	return &KurtosisHelperInternal{
+func newKurtosisHelperInternal(wrappedBuiltin *kurtosis_starlark_framework.KurtosisBaseBuiltinInternal, capabilities KurtosisHelperCapabilities) *kurtosisHelperInternal {
+	return &kurtosisHelperInternal{
 		KurtosisBaseBuiltinInternal: wrappedBuiltin,
 
 		capabilities: capabilities,
 	}
 }
 
-func (builtin *KurtosisHelperInternal) interpret() (starlark.Value, *startosis_errors.InterpretationError) {
+func (builtin *kurtosisHelperInternal) interpret() (starlark.Value, *startosis_errors.InterpretationError) {
 	return builtin.capabilities.Interpret(builtin.GetArguments())
 }
