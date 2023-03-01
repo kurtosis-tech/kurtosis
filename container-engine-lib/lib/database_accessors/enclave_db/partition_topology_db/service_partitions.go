@@ -53,7 +53,7 @@ func (sp *ServicePartitionsBucket) GetPartitionForService(service service.Servic
 		return nil
 	})
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred while getting all services for partition '%v'", service)
+		return "", stacktrace.Propagate(err, "An error occurred while getting all partition for service '%v'", service)
 	}
 	return partitionForService, nil
 }
@@ -104,7 +104,7 @@ func (sp *ServicePartitionsBucket) GetAllServicePartitions() (map[service.Servic
 		return err
 	})
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while getting all partitions & associated services")
+		return nil, stacktrace.Propagate(err, "An error occurred while getting all services & associated partitions")
 	}
 	return result, nil
 }
@@ -115,7 +115,7 @@ func GetOrCreateServicePartitionsBucket(db *enclave_db.EnclaveDB) (*ServiceParti
 		_, err := tx.CreateBucket(servicePartitionsBucketName)
 		if err != nil {
 			bucketExists = true
-			return stacktrace.Propagate(err, "An error occurred while creating partition services database bucket")
+			return stacktrace.Propagate(err, "An error occurred while creating services partitions database bucket")
 		}
 		return nil
 	})
