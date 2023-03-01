@@ -505,7 +505,7 @@ func (network *DefaultServiceNetwork) UpdateService(
 
 		servicePartitions, err := network.topology.GetServicePartitions()
 		if err != nil {
-			failedServicesPool[serviceName] = stacktrace.Propagate(err, "An error occurred while fetching partition service mapping for service '%v'", serviceName)
+			failedServicesPool[serviceName] = stacktrace.Propagate(err, "An error occurred while fetching service partitions mapping for service '%v'", serviceName)
 			continue
 		}
 		previousServicePartition, found := servicePartitions[serviceName]
