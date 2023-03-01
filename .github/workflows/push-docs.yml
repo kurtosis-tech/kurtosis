@@ -31,3 +31,5 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: ${{ secrets.CLOUDFLARE_PROJECT_NAME }}
           directory: docs/build/
+          # as we publish on tag we want to tell CF that the branch is still main so that it can deploy to production
+          branch: main

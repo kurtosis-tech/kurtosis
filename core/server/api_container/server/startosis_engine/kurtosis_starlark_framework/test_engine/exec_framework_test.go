@@ -2,7 +2,6 @@ package test_engine
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/exec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
@@ -11,10 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
 	"testing"
-)
-
-const (
-	exec_serviceName = service.ServiceName("test-service")
 )
 
 type execTestCase struct {
@@ -37,7 +32,7 @@ func (t execTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanIn
 
 	serviceNetwork.EXPECT().ExecCommand(
 		mock.Anything,
-		string(exec_serviceName),
+		string(TestServiceName),
 		[]string{"mkdir", "-p", "/tmp/store"},
 	).Times(1).Return(
 		int32(0),
@@ -49,7 +44,7 @@ func (t execTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanIn
 }
 
 func (t execTestCase) GetStarlarkCode() string {
-	recipe := fmt.Sprintf(`ExecRecipe(service_name=%q, command=["mkdir", "-p", "/tmp/store"])`, exec_serviceName)
+	recipe := fmt.Sprintf(`ExecRecipe(service_name=%q, command=["mkdir", "-p", "/tmp/store"])`, TestServiceName)
 	return fmt.Sprintf("%s(%s=%s)", exec.ExecBuiltinName, exec.RecipeArgName, recipe)
 }
 
