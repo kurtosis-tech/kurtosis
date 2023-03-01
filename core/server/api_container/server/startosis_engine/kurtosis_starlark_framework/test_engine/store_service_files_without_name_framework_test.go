@@ -35,11 +35,11 @@ func (t *storeServiceFilesWithoutNameTestCase) GetInstruction() *kurtosis_plan_i
 
 	serviceNetwork.EXPECT().CopyFilesFromService(
 		mock.Anything,
-		string(serviceName),
-		src,
+		string(TestServiceName),
+		TestSrcPath,
 		mockedFileArtifactName,
 	).Times(1).Return(
-		fileArtifactUuid,
+		TestArtifactUuid,
 		nil,
 	)
 
@@ -47,12 +47,12 @@ func (t *storeServiceFilesWithoutNameTestCase) GetInstruction() *kurtosis_plan_i
 }
 
 func (t *storeServiceFilesWithoutNameTestCase) GetStarlarkCode() string {
-	return fmt.Sprintf("%s(%s=%q, %s=%q)", store_service_files.StoreServiceFilesBuiltinName, store_service_files.ServiceNameArgName, serviceName, store_service_files.SrcArgName, src)
+	return fmt.Sprintf("%s(%s=%q, %s=%q)", store_service_files.StoreServiceFilesBuiltinName, store_service_files.ServiceNameArgName, TestServiceName, store_service_files.SrcArgName, TestSrcPath)
 }
 
 func (t *storeServiceFilesWithoutNameTestCase) Assert(interpretationResult starlark.Value, executionResult *string) {
 	require.Equal(t, starlark.String(mockedFileArtifactName), interpretationResult)
 
-	expectedExecutionResult := fmt.Sprintf("Files  with artifact name '%s' uploaded with artifact UUID '%s'", mockedFileArtifactName, fileArtifactUuid)
+	expectedExecutionResult := fmt.Sprintf("Files  with artifact name '%s' uploaded with artifact UUID '%s'", mockedFileArtifactName, TestArtifactUuid)
 	require.Equal(t, expectedExecutionResult, *executionResult)
 }

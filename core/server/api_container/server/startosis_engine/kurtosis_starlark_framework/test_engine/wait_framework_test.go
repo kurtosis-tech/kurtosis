@@ -2,7 +2,6 @@ package test_engine
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/wait"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
@@ -24,7 +23,6 @@ const (
 	wait_valueField  = "code"
 
 	wait_recipe_portId      = "http-port"
-	wait_recipe_serviceName = service.ServiceName("web-server")
 	wait_recipe_method      = "POST"
 	wait_recipe_endpoint    = "/"
 	wait_recipe_body        = "{}"
@@ -53,7 +51,7 @@ func (t *waitTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanI
 
 	serviceNetwork.EXPECT().HttpRequestService(
 		mock.Anything,
-		string(wait_recipe_serviceName),
+		string(TestServiceName),
 		wait_recipe_portId,
 		wait_recipe_method,
 		wait_recipe_contentType,
@@ -83,7 +81,7 @@ func (t *waitTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanI
 }
 
 func (t *waitTestCase) GetStarlarkCode() string {
-	recipeStr := fmt.Sprintf(`PostHttpRequestRecipe(port_id=%q, service_name=%q, endpoint=%q, body=%q, content_type=%q, extract={"key": ".value"})`, wait_recipe_portId, wait_recipe_serviceName, wait_recipe_endpoint, wait_recipe_body, wait_recipe_contentType)
+	recipeStr := fmt.Sprintf(`PostHttpRequestRecipe(port_id=%q, service_name=%q, endpoint=%q, body=%q, content_type=%q, extract={"key": ".value"})`, wait_recipe_portId, TestServiceName, wait_recipe_endpoint, wait_recipe_body, wait_recipe_contentType)
 	return fmt.Sprintf("%s(%s=%s, %s=%q, %s=%q, %s=%s, %s=%q, %s=%q)", wait.WaitBuiltinName, wait.RecipeArgName, recipeStr, wait.ValueFieldArgName, wait_valueField, wait.AssertionArgName, wait_assertion, wait.TargetArgName, wait_targetValue, wait.IntervalArgName, wait_interval, wait.TimeoutArgName, wait_timeout)
 }
 
