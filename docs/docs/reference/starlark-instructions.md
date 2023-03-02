@@ -160,7 +160,7 @@ The `exec` instruction on the [`plan`][plan-reference] object executes commands 
 
 :::caution
 
-The previous `exec` method signature `exec(recipe=recipe)` is also accepted but will be deprecated soon, we suggest users to use this new one.
+The previous `exec` instruction signature `exec(recipe=recipe)` is also accepted but will be deprecated soon, we suggest users to use this new one.
 
 :::
 
@@ -316,7 +316,7 @@ For GET requests:
 
 :::caution
 
-The previous `request` method signature `request(recipe=recipe)` is also accepted but will be deprecated soon, we suggest users to use this new one.
+The previous `request` instruction signature `request(recipe=recipe)` is also accepted but will be deprecated soon, we suggest users to use this new one.
 
 :::
 
@@ -550,7 +550,7 @@ If it succedes, it returns a [future references][future-references-reference] wi
 
 :::caution
 
-The previous `wait` method signature `wait(recipe=recipe, field="code", assertion = "==", target_value = 200, interval = "1s", timeout = "5m")` is also accepted but will be deprecated soon, we suggest users to use this new one.
+The previous `wait` instruction signature `wait(recipe=recipe, field="code", assertion = "==", target_value = 200, interval = "1s", timeout = "5m")` is also accepted but will be deprecated soon, we suggest users to use this new one.
 
 :::
 
