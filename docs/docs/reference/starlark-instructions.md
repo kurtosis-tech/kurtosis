@@ -126,6 +126,8 @@ services will be rolled back and the instruction will return an execution error.
 
 :::
 
+The number of services being added concurrently is tunable by the `--parallelism` flag of the run command (see more on the [run](./cli/run-starlark.md) reference).
+
 ### assert
 
 The `assert` on the [`plan`][plan-reference] object instruction fails the Starlark script or package with an execution error if the assertion defined fails.
