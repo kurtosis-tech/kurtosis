@@ -301,7 +301,8 @@ artifact_name = plan.render_templates(
     },
 
     # The name to give the files artifact that will be produced.
-    # MANDATORY
+    # If not specified, it will be auto-generated.
+    # OPTIONAL
     name = "my-artifact",
 )
 ```
@@ -495,7 +496,8 @@ artifact_name = plan.store_service_files(
     src = "/tmp/foo",
 
     # The name to give the files artifact that will be produced.
-    # MANDATORY
+    # If not specified, it will be auto-generated.
+    # OPTIONAL
     name = "my-favorite-artifact-name",
 )
 ```
@@ -533,7 +535,8 @@ artifact_name = plan.upload_files(
     src = "github.com/foo/bar/static/example.txt",
 
     # The name to give the files artifact that will be produced.
-    # MANDATORY
+    # If not specified, it will be auto-generated.
+    # OPTIONAL
     name = "my-artifact",
 )
 ```
