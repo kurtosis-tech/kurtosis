@@ -51,6 +51,10 @@ func (t uploadFilesWithoutNameTestCase) GetStarlarkCode() string {
 	return fmt.Sprintf("%s(%s=%q)", upload_files.UploadFilesBuiltinName, upload_files.SrcArgName, TestSrcPath)
 }
 
+func (t *uploadFilesWithoutNameTestCase) GetStarlarkCodeForAssertion() string {
+	return ""
+}
+
 func (t *uploadFilesWithoutNameTestCase) Assert(interpretationResult starlark.Value, executionResult *string) {
 	require.Equal(t, starlark.String(mockedFileArtifactName), interpretationResult)
 

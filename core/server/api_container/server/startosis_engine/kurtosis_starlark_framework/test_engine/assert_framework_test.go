@@ -49,6 +49,10 @@ func (t assertTestCase) GetStarlarkCode() string {
 	return fmt.Sprintf("%s(%s=%q, %s=%q, %s=%q)", assert.AssertBuiltinName, assert.RuntimeValueArgName, runtimeValue, assert.AssertionArgName, assertion, assert.TargetArgName, targetValue)
 }
 
+func (t *assertTestCase) GetStarlarkCodeForAssertion() string {
+	return ""
+}
+
 func (t assertTestCase) Assert(interpretationResult starlark.Value, executionResult *string) {
 	require.Equal(t, starlark.None, interpretationResult)
 	expectedExecutionResult := fmt.Sprintf(`Assertion succeeded. Value is '%q'.`, runtimeValueValue)

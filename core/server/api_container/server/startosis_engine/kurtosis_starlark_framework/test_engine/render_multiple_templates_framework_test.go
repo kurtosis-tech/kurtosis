@@ -65,6 +65,10 @@ func (t renderMultipleTemplatesTestCase) GetStarlarkCode() string {
 	return fmt.Sprintf(`%s(%s=%s)`, render_templates.RenderTemplatesBuiltinName, render_templates.TemplateAndDataByDestinationRelFilepathArg, configValue)
 }
 
+func (t *renderMultipleTemplatesTestCase) GetStarlarkCodeForAssertion() string {
+	return ""
+}
+
 func (t renderMultipleTemplatesTestCase) Assert(interpretationResult starlark.Value, executionResult *string) {
 	require.Equal(t, starlark.String(mockedFileArtifactName), interpretationResult)
 
