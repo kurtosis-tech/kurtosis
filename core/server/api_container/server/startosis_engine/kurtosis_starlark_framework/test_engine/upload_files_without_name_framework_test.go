@@ -29,7 +29,7 @@ func (t *uploadFilesWithoutNameTestCase) GetId() string {
 func (t *uploadFilesWithoutNameTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	serviceNetwork := service_network.NewMockServiceNetwork(t)
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
-	require.Nil(t, packageContentProvider.AddFileContent(uploadFiles_src, "Hello World!"))
+	require.Nil(t, packageContentProvider.AddFileContent(TestSrcPath, "Hello World!"))
 
 	serviceNetwork.EXPECT().GetUniqueNameForFileArtifact().Times(1).Return(
 		mockedFileArtifactName,
@@ -40,7 +40,7 @@ func (t *uploadFilesWithoutNameTestCase) GetInstruction() *kurtosis_plan_instruc
 		mock.Anything, // data gets written to disk and compressed to it's a bit tricky to replicate here.
 		mockedFileArtifactName,
 	).Times(1).Return(
-		uploadFiles_fileArtifactUuid,
+		TestArtifactUuid,
 		nil,
 	)
 
@@ -48,12 +48,16 @@ func (t *uploadFilesWithoutNameTestCase) GetInstruction() *kurtosis_plan_instruc
 }
 
 func (t uploadFilesWithoutNameTestCase) GetStarlarkCode() string {
-	return fmt.Sprintf("%s(%s=%q)", upload_files.UploadFilesBuiltinName, upload_files.SrcArgName, uploadFiles_src)
+	return fmt.Sprintf("%s(%s=%q)", upload_files.UploadFilesBuiltinName, upload_files.SrcArgName, TestSrcPath)
+}
+
+func (t *uploadFilesWithoutNameTestCase) GetStarlarkCodeForAssertion() string {
+	return ""
 }
 
 func (t *uploadFilesWithoutNameTestCase) Assert(interpretationResult starlark.Value, executionResult *string) {
 	require.Equal(t, starlark.String(mockedFileArtifactName), interpretationResult)
 
-	expectedExecutionResult := fmt.Sprintf("Files  with artifact name '%s' uploaded with artifact UUID '%s'", mockedFileArtifactName, uploadFiles_fileArtifactUuid)
+	expectedExecutionResult := fmt.Sprintf("Files  with artifact name '%s' uploaded with artifact UUID '%s'", mockedFileArtifactName, TestArtifactUuid)
 	require.Equal(t, expectedExecutionResult, *executionResult)
 }
