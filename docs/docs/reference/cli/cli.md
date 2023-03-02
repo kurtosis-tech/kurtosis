@@ -5,7 +5,7 @@ slug: /cli
 sidebar_position: 1
 ---
 
-This section will go through the most common Kurtosis CLI commands and some useful tips on getting started. If you have not already done so, the CLI can be installed by following the instructions [here][installing-the-cli]. 
+This section will go through the most common Kurtosis CLI commands and some useful tips on getting started. If you have not already done so, the CLI can be installed by following the instructions [here][installing-the-cli].
 
 :::tip
 The `kurtosis` command, and all of its subcommands, will print helptext when passed the `-h` or `--help` flag. You can use this at any time to see information on the command you're trying to run. For example:
@@ -20,7 +20,6 @@ Kurtosis supports tab-completion, and we strongly recommend [installing it][addi
 
 ### Toggle Analytics
 On installation Kurtosis enables anonymized [analytics][metrics-philosophy-reference] by default. You can toggle this functionality simply by running:
-We identify every user's machines with a hash value of the `unique machine id of most host OS's`, which we call the `user's analytics ID`, and this allow us to analyze the user experience flow.
 
 ```bash
 kurtosis analytics enable
@@ -33,13 +32,6 @@ kurtosis analytics disable
 ```
 
 if you would prefer not to.
-
-```bash
-kurtosis analytics id
-```
-
-if you want to see your  `user's analytics ID`
-
 
 ### Configuration file path
 To locate where the Kurtosis configuration file is on your machine, simply use:
