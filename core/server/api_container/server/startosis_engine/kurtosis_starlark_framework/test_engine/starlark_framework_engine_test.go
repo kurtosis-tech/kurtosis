@@ -83,7 +83,7 @@ func testKurtosisPlanInstruction(t *testing.T, builtin KurtosisPlanInstructionBa
 		starlarkCodeForAssertion = starlarkCode
 	}
 
-	require.Equal(t, starlarkCode, serializedInstruction)
+	require.Equal(t, starlarkCodeForAssertion, serializedInstruction)
 }
 
 func testKurtosisHelper(t *testing.T, builtin KurtosisHelperBaseTest) {
