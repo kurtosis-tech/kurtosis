@@ -103,6 +103,9 @@ func (sp *ServicePartitionsBucket) GetAllServicePartitions() (map[service.Servic
 	getAllServicePartitionsFunc := func(tx *bolt.Tx) error {
 		iterateThroughBucketAndPopulateResult := func(serviceName, partitionId []byte) error {
 			partitionForService := partition.PartitionID(partitionId)
+			if oldPartitionForService, found := result[service.ServiceName(serviceName)]; found {
+				return stacktrace.NewError("The service '%s' has more than one mappings, found mapping for partition '%v' & '%v'; This should never happen this is a bug in Kurtosis", serviceName, oldPartitionForService, partitionForService)
+			}
 			result[service.ServiceName(serviceName)] = partitionForService
 			return nil
 		}
