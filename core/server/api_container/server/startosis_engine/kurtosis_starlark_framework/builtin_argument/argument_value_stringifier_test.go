@@ -1,4 +1,4 @@
-package shared_helpers
+package builtin_argument
 
 import (
 	"fmt"
@@ -10,73 +10,52 @@ import (
 	"time"
 )
 
-func TestCanonicalizeInstruction(t *testing.T) {
-	args := []starlark.Value{
-		starlark.String("foo"),
-		starlark.NewList([]starlark.Value{starlark.String("bar")}),
-	}
-
-	kwarg1 := starlark.String("serviceA")
-	kwarg2Dict := starlark.StringDict{}
-	kwarg2Dict["hello"] = starlark.String("world")
-	kwarg2Dict["bonjour"] = starlark.MakeInt(42)
-	kwarg2 := starlarkstruct.FromStringDict(starlarkstruct.Default, kwarg2Dict)
-	kwargs := map[string]starlark.Value{
-		"kwarg1": kwarg1,
-		"kwarg2": kwarg2,
-	}
-
-	singleLineResult := CanonicalizeInstruction("my_instruction", args, kwargs)
-	expectedSingleLineResult := `my_instruction("foo", ["bar"], kwarg1="serviceA", kwarg2=struct(bonjour=42, hello="world"))`
-	require.Equal(t, expectedSingleLineResult, singleLineResult)
-}
-
 func TestCanonicalizeArgValue_None(t *testing.T) {
 	input := starlark.None
 
-	singleLineResult := CanonicalizeArgValue(input)
+	singleLineResult := StringifyArgumentValue(input)
 	require.Equal(t, `None`, singleLineResult)
 }
 
 func TestCanonicalizeArgValue_Bool(t *testing.T) {
 	input := starlark.Bool(true)
 
-	singleLineResult := CanonicalizeArgValue(input)
+	singleLineResult := StringifyArgumentValue(input)
 	require.Equal(t, `True`, singleLineResult)
 }
 
 func TestCanonicalizeArgValue_String(t *testing.T) {
 	input := starlark.String("Hello")
 
-	singleLineResult := CanonicalizeArgValue(input)
+	singleLineResult := StringifyArgumentValue(input)
 	require.Equal(t, `"Hello"`, singleLineResult) // notice the quotes here
 }
 
 func TestCanonicalizeArgValue_Bytes(t *testing.T) {
 	input := starlark.Bytes("Hello")
 
-	singleLineResult := CanonicalizeArgValue(input)
+	singleLineResult := StringifyArgumentValue(input)
 	require.Equal(t, `b"Hello"`, singleLineResult)
 }
 
 func TestCanonicalizeArgValue_Int64(t *testing.T) {
 	input := starlark.MakeInt64(1234)
 
-	singleLineResult := CanonicalizeArgValue(input)
+	singleLineResult := StringifyArgumentValue(input)
 	require.Equal(t, `1234`, singleLineResult)
 }
 
 func TestCanonicalizeArgValue_Int(t *testing.T) {
 	input := starlark.MakeInt(1234)
 
-	singleLineResult := CanonicalizeArgValue(input)
+	singleLineResult := StringifyArgumentValue(input)
 	require.Equal(t, `1234`, singleLineResult)
 }
 
 func TestCanonicalizeArgValue_Float(t *testing.T) {
 	input := starlark.Float(3.14159)
 
-	singleLineResult := CanonicalizeArgValue(input)
+	singleLineResult := StringifyArgumentValue(input)
 	require.Equal(t, `3.14159`, singleLineResult)
 }
 
@@ -87,7 +66,7 @@ func TestCanonicalizeArgValue_Time(t *testing.T) {
 	starlarkTime := starlarktime.Time(goTime)
 	expectedResult := fmt.Sprintf("time.from_timestamp(%d)", goTime.Unix())
 
-	singleLineResult := CanonicalizeArgValue(starlarkTime)
+	singleLineResult := StringifyArgumentValue(starlarkTime)
 	require.Equal(t, expectedResult, singleLineResult)
 }
 
@@ -97,7 +76,7 @@ func TestCanonicalizeArgValue_Duration(t *testing.T) {
 	starlarkDuration := starlarktime.Duration(goDuration)
 	expectedResult := fmt.Sprintf("time.parse_duration(%s)", goDuration.String())
 
-	singleLineResult := CanonicalizeArgValue(starlarkDuration)
+	singleLineResult := StringifyArgumentValue(starlarkDuration)
 	require.Equal(t, expectedResult, singleLineResult)
 }
 
@@ -108,7 +87,7 @@ func TestCanonicalizeArgValue_List(t *testing.T) {
 		starlark.MakeInt(42),
 	})
 
-	singleLineResult := CanonicalizeArgValue(input)
+	singleLineResult := StringifyArgumentValue(input)
 	expectedSingleLineResult := `["Hello", "World", 42]`
 	require.Equal(t, expectedSingleLineResult, singleLineResult)
 
@@ -120,7 +99,7 @@ func TestCanonicalizeArgValue_Set(t *testing.T) {
 	require.Nil(t, input.Insert(starlark.String("World")))
 	require.Nil(t, input.Insert(starlark.MakeInt(42)))
 
-	singleLineResult := CanonicalizeArgValue(input)
+	singleLineResult := StringifyArgumentValue(input)
 	expectedSingleLineResult := `{"Hello", "World", 42}`
 	require.Equal(t, expectedSingleLineResult, singleLineResult)
 }
@@ -131,7 +110,7 @@ func TestCanonicalizeArgValue_Tuple(t *testing.T) {
 		starlark.String("World (hey!)"),
 		starlark.MakeInt(42),
 	}
-	singleLineResult := CanonicalizeArgValue(input)
+	singleLineResult := StringifyArgumentValue(input)
 	expectedSingleLineResult := `("Hello", "World (hey!)", 42)`
 	require.Equal(t, expectedSingleLineResult, singleLineResult)
 }
@@ -142,7 +121,7 @@ func TestCanonicalizeArgValue_SimpleMap(t *testing.T) {
 	require.Nil(t, input.SetKey(starlark.String("bonjour"), starlark.MakeInt(1)))
 	require.Nil(t, input.SetKey(starlark.MakeInt(42), starlark.String("{{bonjour}}")))
 
-	singleLineResult := CanonicalizeArgValue(input)
+	singleLineResult := StringifyArgumentValue(input)
 	expectedSingleLineResult := `{"bonjour": 1, "hello": "world", 42: "{{bonjour}}"}`
 	require.Equal(t, expectedSingleLineResult, singleLineResult)
 }
@@ -155,7 +134,7 @@ func TestCanonicalizeArgValue_ComplexMap(t *testing.T) {
 	require.Nil(t, input.SetKey(starlark.String("nested_map"), nestedMap))
 	require.Nil(t, input.SetKey(starlark.String("nested_list"), nestedList))
 
-	singleLineResult := CanonicalizeArgValue(input)
+	singleLineResult := StringifyArgumentValue(input)
 	expectedSingleLineResult := `{"nested_list": ["Hello", 42], "nested_map": {"hello": "world"}}`
 	require.Equal(t, expectedSingleLineResult, singleLineResult)
 }
@@ -166,7 +145,7 @@ func TestCanonicalizeArgValue_SimpleStruct(t *testing.T) {
 	inputDict["bonjour"] = starlark.MakeInt(42)
 	input := starlarkstruct.FromStringDict(starlarkstruct.Default, inputDict)
 
-	singleLineResult := CanonicalizeArgValue(input)
+	singleLineResult := StringifyArgumentValue(input)
 	expectedSingleLineResult := `struct(bonjour=42, hello="world")`
 	require.Equal(t, expectedSingleLineResult, singleLineResult)
 }
@@ -185,7 +164,7 @@ func TestCanonicalizeArgValue_ComplexStruct_MultiLine(t *testing.T) {
 	inputDict["nested_struct"] = starlarkstruct.FromStringDict(starlarkstruct.Default, nestedStruct)
 	input := starlarkstruct.FromStringDict(starlarkstruct.Default, inputDict)
 
-	singleLineResult := CanonicalizeArgValue(input)
+	singleLineResult := StringifyArgumentValue(input)
 	expectedSingleLineResult := `struct(nested_list=["Hello", 42], nested_map={"hello": "world"}, nested_struct=struct(bonjour=42))`
 	require.Equal(t, expectedSingleLineResult, singleLineResult)
 }
