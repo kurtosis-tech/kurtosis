@@ -115,14 +115,14 @@ func (sp *ServicePartitionsBucket) GetAllServicePartitions() (map[service.Servic
 }
 
 func GetOrCreateServicePartitionsBucket(db *enclave_db.EnclaveDB) (*ServicePartitionsBucket, error) {
-	err := db.Update(func(tx *bolt.Tx) error {
+	createOrReplaceBucketFunc := func(tx *bolt.Tx) error {
 		_, err := tx.CreateBucket(servicePartitionsBucketName)
 		if err != nil && !errors.Is(err, bolt.ErrBucketExists) {
 			return stacktrace.Propagate(err, "An error occurred while creating services partitions database bucket")
 		}
 		return nil
-	})
-	if err != nil {
+	}
+	if err := db.Update(createOrReplaceBucketFunc); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while building service partitions")
 	}
 	// Bucket does exist, skipping population step
