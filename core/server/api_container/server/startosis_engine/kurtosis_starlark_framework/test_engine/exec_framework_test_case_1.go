@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	execServiceName = service.ServiceName("test-service")
+	execTextCase1ServiceName = service.ServiceName("my-service-for-test-case-2")
 )
 
 type execTestCase1 struct {
@@ -37,7 +37,7 @@ func (t execTestCase1) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanI
 
 	serviceNetwork.EXPECT().ExecCommand(
 		mock.Anything,
-		string(execServiceName),
+		string(execTextCase1ServiceName),
 		[]string{"mkdir", "-p", "/tmp/store"},
 	).Times(1).Return(
 		int32(0),
@@ -49,15 +49,14 @@ func (t execTestCase1) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanI
 }
 
 func (t execTestCase1) GetStarlarkCode() string {
-	recipe := fmt.Sprintf(`ExecRecipe(service_name=%q, command=["mkdir", "-p", "/tmp/store"])`, execServiceName)
-	return fmt.Sprintf("%s(%s=%s)", exec.ExecBuiltinName, exec.RecipeArgName, recipe)
+	recipe := `ExecRecipe(command=["mkdir", "-p", "/tmp/store"])`
+	return fmt.Sprintf("%s(%s=%s, %s=%q)", exec.ExecBuiltinName, exec.RecipeArgName, recipe, exec.ServiceNameArgName, execTextCase1ServiceName)
 }
 
 func (t *execTestCase1) GetStarlarkCodeForAssertion() string {
 	return ""
 }
 
-//TODO we should change the assert when we deprecate the recipe.service_name more here: https://app.zenhub.com/workspaces/engineering-636cff9fc978ceb2aac05a1d/issues/gh/kurtosis-tech/kurtosis-private/1128
 func (t execTestCase1) Assert(interpretationResult starlark.Value, executionResult *string) {
 	expectedInterpretationResultMap := `{"code": "{{kurtosis:[0-9a-f]{32}:code.runtime_value}}", "output": "{{kurtosis:[0-9a-f]{32}:output.runtime_value}}"}`
 	require.Regexp(t, expectedInterpretationResultMap, interpretationResult.String())

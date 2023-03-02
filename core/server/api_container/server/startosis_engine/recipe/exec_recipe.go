@@ -64,7 +64,7 @@ func (recipe *ExecRecipe) Freeze() {
 
 // Truth implements the starlark.Value interface
 func (recipe *ExecRecipe) Truth() starlark.Bool {
-	return recipe.serviceName != ""
+	return len(recipe.command) != 0
 }
 
 // Hash implements the starlark.Value interface
@@ -107,19 +107,14 @@ func (recipe *ExecRecipe) Execute(
 		commandWithIPAddressAndRuntimeValue = append(commandWithIPAddressAndRuntimeValue, maybeSubCommandWithRuntimeValuesAndIPAddress)
 	}
 
-	var serviceNameStr string
-	if serviceName != emptyServiceName {
-		serviceNameStr = string(serviceName)
-	} else if recipe.serviceName != emptyServiceName { //TODO this will be removed when we deprecate the service_name field, more here: https://app.zenhub.com/workspaces/engineering-636cff9fc978ceb2aac05a1d/issues/gh/kurtosis-tech/kurtosis-private/1128
-		serviceNameStr = string(recipe.serviceName)
-		logrus.Warnf("The exec.service_name field will be deprecated soon, users will have to pass the service name value direclty to the 'exec', 'request' and 'wait' instructions")
-	} else {
+	serviceNameStr := string(serviceName)
+	if serviceNameStr == "" {
 		return nil, stacktrace.NewError("The service name parameter can't be an empty string")
 	}
 
 	exitCode, commandOutput, err := serviceNetwork.ExecCommand(ctx, serviceNameStr, commandWithIPAddressAndRuntimeValue)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to execute command '%v' on service '%v'", recipe.command, recipe.serviceName)
+		return nil, stacktrace.Propagate(err, "Failed to execute command '%v' on service '%v'", recipe.command, serviceName)
 	}
 	return map[string]starlark.Comparable{
 		execOutputKey:   starlark.String(commandOutput),
@@ -163,12 +158,10 @@ func (recipe *ExecRecipe) CreateStarlarkReturnValue(resultUuid string) (*starlar
 }
 
 func MakeExecRequestRecipe(_ *starlark.Thread, builtin *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
-	var serviceNameStr string
 	var unpackedCommandList *starlark.List
 
 	if err := starlark.UnpackArgs(builtin.Name(), args, kwargs,
 		commandKey, &unpackedCommandList,
-		MakeOptional(serviceNameKey), &serviceNameStr,
 	); err != nil {
 		return nil, startosis_errors.NewInterpretationError("%v", err.Error())
 	}
@@ -177,8 +170,8 @@ func MakeExecRequestRecipe(_ *starlark.Thread, builtin *starlark.Builtin, args s
 	if err != nil {
 		return nil, err
 	}
-	serviceName := service.ServiceName(serviceNameStr)
-	return NewExecRecipe(serviceName, commands), nil
+
+	return NewExecRecipe(commands), nil
 }
 
 func convertListToStarlarkList(inputList []string) *starlark.List {
