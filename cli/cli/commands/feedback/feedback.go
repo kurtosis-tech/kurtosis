@@ -110,21 +110,8 @@ func run(_ context.Context, flags *flags.ParsedFlags, _ *args.ParsedArgs) error 
 		return stacktrace.Propagate(err, "Expected a boolean flag with key '%v' but none was found; this is an error in Kurtosis!", emailFlagKey)
 	}
 
-	body := fmt.Sprintf(
-		"Thanks for sending us feedback, we value your thoughts.\n\n"+
-			"We've prefilled some information about your Kurtosis CLI instance. "+
-			"While it is optional to send this information to us, this metadata can be help our"+
-			" team debug issues and turn around deliver fixes/improvements faster.\n"+
-			"CLI version: %v\nMetrics User ID: %v", kurtosis_version.KurtosisVersion, metricsUserId)
-
-	feedbackEmailLink := fmt.Sprintf(
-		"%s?body=%v",
-		user_support_constants.FeedbackEmailLink,
-		body,
-	)
-
 	if shouldOpenEmailLink {
-		if err := multi_os_command_executor.OpenFile(feedbackEmailLink); err != nil {
+		if err := multi_os_command_executor.OpenFile(user_support_constants.FeedbackEmailLink); err != nil {
 			return stacktrace.Propagate(err, "An error occurred while opening the feedback email link")
 		}
 		return nil
@@ -147,7 +134,7 @@ func run(_ context.Context, flags *flags.ParsedFlags, _ *args.ParsedArgs) error 
 	fmt.Printf(
 		feedbackMsg,
 		termlink.ColorLink(githubLinkText, gitHubIssueURL, greenColorStr),
-		termlink.ColorLink(emailLinkText, feedbackEmailLink, greenColorStr),
+		termlink.ColorLink(emailLinkText, user_support_constants.FeedbackEmailLink, greenColorStr),
 		termlink.ColorLink(onboardingLinkText, user_support_constants.KurtosisOnBoardCalendlyUrl, greenColorStr),
 	)
 	return nil
