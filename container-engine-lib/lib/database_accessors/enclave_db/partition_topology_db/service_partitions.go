@@ -25,10 +25,7 @@ func newServicePartitions(db *enclave_db.EnclaveDB) *ServicePartitionsBucket {
 
 func (sp *ServicePartitionsBucket) AddPartitionToService(serviceName service.ServiceName, partitionId partition.PartitionID) error {
 	addPartitionToServiceFunc := func(tx *bolt.Tx) error {
-		if err := tx.Bucket(servicePartitionsBucketName).Put([]byte(serviceName), []byte(partitionId)); err != nil {
-			return err
-		}
-		return nil
+		return tx.Bucket(servicePartitionsBucketName).Put([]byte(serviceName), []byte(partitionId))
 	}
 	if err := sp.db.Update(addPartitionToServiceFunc); err != nil {
 		return stacktrace.Propagate(err, "An error occurred while adding partition '%v' for service '%v'", partitionId, serviceName)
