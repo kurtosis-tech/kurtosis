@@ -15,6 +15,12 @@ type KurtosisPlanInstructionBaseTest interface {
 	// GetStarlarkCode should return the serialized starlark code matching the argument dict from GetExpectedArguments
 	GetStarlarkCode() string
 
+	// GetStarlarkCodeForAssertion sometimes, for instance when testing positional args, we need a starlark
+	//code for execution (which will be provided by GetStarlarkCode) and another version for assertion
+	//this method provide the second one,
+	//this can be used only if having different scripts (one for execution and another for assertion) is needed, otherwise this should return an empty string
+	GetStarlarkCodeForAssertion() string
+
 	// Assert is called after the Starlark code returned by GetStarlarkCode has been sent to the interpreter
 	// The interpretationResult argument corresponds to the object returns by the interpreter
 	// The executionResult argument corresponds to the execution result string

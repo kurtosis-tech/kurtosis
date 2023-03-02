@@ -61,6 +61,10 @@ func (t *updateServiceTestCase) GetStarlarkCode() string {
 	return fmt.Sprintf("%s(%s=%q, %s=%s)", update_service.UpdateServiceBuiltinName, update_service.ServiceNameArgName, TestServiceName, update_service.UpdateServiceConfigArgName, updateServiceConfig)
 }
 
+func (t *updateServiceTestCase) GetStarlarkCodeForAssertion() string {
+	return ""
+}
+
 func (t *updateServiceTestCase) Assert(interpretationResult starlark.Value, executionResult *string) {
 	require.Equal(t, starlark.None, interpretationResult)
 

@@ -41,6 +41,10 @@ func (t *removeConnectionTestCase) GetStarlarkCode() string {
 	return fmt.Sprintf("%s(%s=%s)", remove_connection.RemoveConnectionBuiltinName, remove_connection.SubnetworksArgName, subnetworks)
 }
 
+func (t *removeConnectionTestCase) GetStarlarkCodeForAssertion() string {
+	return ""
+}
+
 func (t *removeConnectionTestCase) Assert(interpretationResult starlark.Value, executionResult *string) {
 	require.Equal(t, starlark.None, interpretationResult)
 

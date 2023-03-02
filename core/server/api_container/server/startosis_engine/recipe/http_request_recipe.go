@@ -42,7 +42,8 @@ const (
 )
 
 type HttpRequestRecipe struct {
-	serviceName service.ServiceName
+	// Deprecated: we will deprecate this soon, more here: https://app.zenhub.com/workspaces/engineering-636cff9fc978ceb2aac05a1d/issues/gh/kurtosis-tech/kurtosis-private/1128
+	serviceName service.ServiceName //TODO deprecate
 	portId      string
 	contentType string
 	endpoint    string
@@ -83,8 +84,13 @@ func (recipe *HttpRequestRecipe) String() string {
 	buffer.WriteString(instanceName + "(")
 	buffer.WriteString(portIdAttr + "=")
 	buffer.WriteString(fmt.Sprintf("%q, ", recipe.portId))
-	buffer.WriteString(serviceNameAttr + "=")
-	buffer.WriteString(fmt.Sprintf("%q, ", recipe.serviceName))
+
+	//TODO  remove this check when we deprecate the service_name field
+	if recipe.serviceName != "" {
+		buffer.WriteString(serviceNameAttr + "=")
+		buffer.WriteString(fmt.Sprintf("%q, ", recipe.serviceName))
+	}
+
 	buffer.WriteString(endpointAttr + "=")
 	buffer.WriteString(fmt.Sprintf("%q, ", recipe.endpoint))
 
@@ -177,10 +183,10 @@ func MakeGetHttpRequestRecipe(_ *starlark.Thread, builtin *starlark.Builtin, arg
 	var maybeExtractField starlark.Value
 
 	if err := starlark.UnpackArgs(builtin.Name(), args, kwargs,
-		serviceNameAttr, &serviceName,
 		portIdAttr, &portId,
 		endpointAttr, &endpoint,
 		kurtosis_types.MakeOptional(extractKeyPrefix), &maybeExtractField,
+		MakeOptional(serviceNameAttr), &serviceName,
 	); err != nil {
 		return nil, startosis_errors.NewInterpretationError(err.Error())
 	}
@@ -208,12 +214,12 @@ func MakePostHttpRequestRecipe(_ *starlark.Thread, builtin *starlark.Builtin, ar
 	var maybeExtractField starlark.Value
 
 	if err := starlark.UnpackArgs(builtin.Name(), args, kwargs,
-		serviceNameAttr, &serviceName,
 		portIdAttr, &portId,
 		endpointAttr, &endpoint,
 		bodyKey, &body,
 		contentTypeAttr, &contentType,
 		kurtosis_types.MakeOptional(extractKeyPrefix), &maybeExtractField,
+		MakeOptional(serviceNameAttr), &serviceName,
 	); err != nil {
 		return nil, startosis_errors.NewInterpretationError("%v", err.Error())
 	}
@@ -232,7 +238,12 @@ func MakePostHttpRequestRecipe(_ *starlark.Thread, builtin *starlark.Builtin, ar
 	return recipe, nil
 }
 
-func (recipe *HttpRequestRecipe) Execute(ctx context.Context, serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) (map[string]starlark.Comparable, error) {
+func (recipe *HttpRequestRecipe) Execute(
+	ctx context.Context,
+	serviceNetwork service_network.ServiceNetwork,
+	runtimeValueStore *runtime_value_store.RuntimeValueStore,
+	serviceName service.ServiceName,
+) (map[string]starlark.Comparable, error) {
 	var response *http.Response
 	var err error
 	logrus.Debugf("Running HTTP request recipe '%v'", recipe)
@@ -244,9 +255,20 @@ func (recipe *HttpRequestRecipe) Execute(ctx context.Context, serviceNetwork ser
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while replacing runtime values in the body of the http recipe")
 	}
+
+	var serviceNameStr string
+	if serviceName != emptyServiceName {
+		serviceNameStr = string(serviceName)
+	} else if recipe.serviceName != emptyServiceName { //TODO this will be removed when we deprecate the service_name field, more here: https://app.zenhub.com/workspaces/engineering-636cff9fc978ceb2aac05a1d/issues/gh/kurtosis-tech/kurtosis-private/1128
+		serviceNameStr = string(recipe.serviceName)
+		logrus.Warnf("The http_request_recipe.service_name field will be deprecated soon, users will have to pass the service name value direclty to the 'exec', 'request' and 'wait' instructions")
+	} else {
+		return nil, stacktrace.NewError("The service name parameter can't be an empty string")
+	}
+
 	response, err = serviceNetwork.HttpRequestService(
 		ctx,
-		string(recipe.serviceName),
+		serviceNameStr,
 		recipe.portId,
 		recipe.method,
 		recipe.contentType,

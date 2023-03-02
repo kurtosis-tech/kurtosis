@@ -45,6 +45,10 @@ func (t *storeServiceFilesTestCase) GetStarlarkCode() string {
 	return fmt.Sprintf("%s(%s=%q, %s=%q, %s=%q)", store_service_files.StoreServiceFilesBuiltinName, store_service_files.ServiceNameArgName, TestServiceName, store_service_files.SrcArgName, TestSrcPath, store_service_files.ArtifactNameArgName, TestArtifactName)
 }
 
+func (t *storeServiceFilesTestCase) GetStarlarkCodeForAssertion() string {
+	return ""
+}
+
 func (t *storeServiceFilesTestCase) Assert(interpretationResult starlark.Value, executionResult *string) {
 	require.Equal(t, starlark.String(TestArtifactName), interpretationResult)
 
