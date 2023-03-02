@@ -23,13 +23,12 @@ const (
 	waitTimeout     = "5s"
 	waitValueField  = "code"
 
-	waitRecipePortId      = "http-port"
-	waitRecipeServiceName = service.ServiceName("web-server")
-	waitRecipeMethod      = "POST"
-	waitRecipeEndpoint    = "/"
-	waitRecipeBody        = "{}"
-	waitRecipeContentType = "application/json"
-
+	waitRecipePortId       = "http-port"
+	waitRecipeServiceName  = service.ServiceName("web-server")
+	waitRecipeMethod       = "POST"
+	waitRecipeEndpoint     = "/"
+	waitRecipeBody         = "{}"
+	waitRecipeContentType  = "application/json"
 	waitRecipeResponseBody = `{"value": "Hello world!"}`
 )
 

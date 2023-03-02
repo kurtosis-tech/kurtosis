@@ -2,6 +2,7 @@ package enclave_manager
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
@@ -10,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/kurtosis/core/launcher/api_container_launcher"
+	"github.com/kurtosis-tech/kurtosis/name_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -50,7 +52,6 @@ type EnclaveManager struct {
 
 	kurtosisBackend                           backend_interface.KurtosisBackend
 	apiContainerKurtosisBackendConfigSupplier api_container_launcher.KurtosisBackendConfigSupplier
-	enclaveIdGenerator                        *enclaveNameGenerator
 
 	// this is a stop gap solution, this would be stored and retrieved from the DB in the future
 	// we go with the GRPC type as it is just used by the engine server service
@@ -61,13 +62,11 @@ type EnclaveManager struct {
 func NewEnclaveManager(
 	kurtosisBackend backend_interface.KurtosisBackend,
 	apiContainerKurtosisBackendConfigSupplier api_container_launcher.KurtosisBackendConfigSupplier,
-	enclaveIdGenerator *enclaveNameGenerator,
 ) *EnclaveManager {
 	return &EnclaveManager{
 		mutex:           &sync.Mutex{},
 		kurtosisBackend: kurtosisBackend,
 		apiContainerKurtosisBackendConfigSupplier: apiContainerKurtosisBackendConfigSupplier,
-		enclaveIdGenerator:                        enclaveIdGenerator,
 		allExistingAndHistoricalIdentifiers:       []*kurtosis_engine_rpc_api_bindings.EnclaveIdentifiers{},
 	}
 }
@@ -101,10 +100,7 @@ func (manager *EnclaveManager) CreateEnclave(
 	}
 
 	if enclaveName == autogenerateEnclaveNameKeyword {
-		enclaveName, err = manager.enclaveIdGenerator.GetRandomEnclaveNameWithRetries(allCurrentEnclaves, getRandomEnclaveIdRetries)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting a new random enclave name using all current enclaves '%+v' and '%v' retries", allCurrentEnclaves, getRandomEnclaveIdRetries)
-		}
+		enclaveName = GetRandomEnclaveNameWithRetries(name_generator.GenerateNatureThemeNameForEnclave, allCurrentEnclaves, getRandomEnclaveIdRetries)
 	}
 
 	if isEnclaveNameInUse(enclaveName, allCurrentEnclaves) {
@@ -297,12 +293,13 @@ func (manager *EnclaveManager) Clean(ctx context.Context, shouldCleanAll bool) (
 	if len(removalErrors) > 0 {
 		logrus.Errorf("Errors occurred removing the following enclaves")
 		var removalErrorStrings []string
-		for _, err = range removalErrors {
+		for idx, err := range removalErrors {
 			logrus.Errorf("Error '%v'", err.Error())
-			removalErrorStrings = append(removalErrorStrings, err.Error())
+			indexedResultErrStr := fmt.Sprintf(">>>>>>>>>>>>>>>>> ERROR %v <<<<<<<<<<<<<<<<<\n%v", idx, err.Error())
+			removalErrorStrings = append(removalErrorStrings, indexedResultErrStr)
 		}
 		joinedRemovalErrors := strings.Join(removalErrorStrings, errorDelimiter)
-		return nil, stacktrace.NewError("Following errors occurred while removing some enclaves '%v'", joinedRemovalErrors)
+		return nil, stacktrace.NewError("Following errors occurred while removing some enclaves :\n%v", joinedRemovalErrors)
 	}
 
 	if len(successfullyRemovedArtifactIds) > 0 {

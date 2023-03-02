@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/set_connection"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
 	"github.com/stretchr/testify/assert"
@@ -12,11 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
 	"testing"
-)
-
-const (
-	setConnection_subnetwork1 = service_network_types.PartitionID("subnetwork_1")
-	setConnection_subnetwork2 = service_network_types.PartitionID("subnetwork_2")
 )
 
 type setConnectionTestCase struct {
@@ -38,8 +32,8 @@ func (t *setConnectionTestCase) GetInstruction() *kurtosis_plan_instruction.Kurt
 
 	serviceNetwork.EXPECT().SetConnection(
 		mock.Anything,
-		setConnection_subnetwork1,
-		setConnection_subnetwork2,
+		TestSubnetwork,
+		TestSubnetwork2,
 		mock.MatchedBy(func(actualPartitionConnection partition_topology.PartitionConnection) bool {
 			expectedPartitionConnection := partition_topology.NewPartitionConnection(
 				partition_topology.NewPacketLoss(50),
@@ -56,7 +50,7 @@ func (t *setConnectionTestCase) GetInstruction() *kurtosis_plan_instruction.Kurt
 
 func (t *setConnectionTestCase) GetStarlarkCode() string {
 	connectionConfig := "ConnectionConfig(packet_loss_percentage=50.0, packet_delay_distribution=UniformPacketDelayDistribution(ms=100))"
-	subnetworks := fmt.Sprintf(`(%q, %q)`, setConnection_subnetwork1, setConnection_subnetwork2)
+	subnetworks := fmt.Sprintf(`(%q, %q)`, TestSubnetwork, TestSubnetwork2)
 	return fmt.Sprintf("%s(%s=%s, %s=%s)", set_connection.SetConnectionBuiltinName, set_connection.SubnetworksArgName, subnetworks, set_connection.ConnectionConfigArgName, connectionConfig)
 }
 
@@ -66,5 +60,7 @@ func (t *setConnectionTestCase) GetStarlarkCodeForAssertion() string {
 
 func (t *setConnectionTestCase) Assert(interpretationResult starlark.Value, executionResult *string) {
 	require.Equal(t, starlark.None, interpretationResult)
-	require.Equal(t, "Configured subnetwork connection between 'subnetwork_1' and 'subnetwork_2'", *executionResult)
+
+	expectedExecutionResult := fmt.Sprintf("Configured subnetwork connection between '%s' and '%s'", TestSubnetwork, TestSubnetwork2)
+	require.Equal(t, expectedExecutionResult, *executionResult)
 }

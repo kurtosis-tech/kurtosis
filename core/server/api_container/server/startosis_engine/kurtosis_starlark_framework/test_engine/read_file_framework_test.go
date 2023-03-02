@@ -10,10 +10,6 @@ import (
 	"testing"
 )
 
-const (
-	readFileTestCase_fileToRead = "github.com/kurtosis-tech/package/test.txt"
-)
-
 type readFileTestCase struct {
 	*testing.T
 
@@ -22,7 +18,7 @@ type readFileTestCase struct {
 
 func newReadFileTestCase(t *testing.T) *readFileTestCase {
 	packageContentProvider := startosis_packages.NewMockPackageContentProvider(t)
-	packageContentProvider.EXPECT().GetModuleContents(readFileTestCase_fileToRead).Return("Hello World!", nil)
+	packageContentProvider.EXPECT().GetModuleContents(TestModuleFileName).Return("Hello World!", nil)
 	return &readFileTestCase{
 		T:                      t,
 		packageContentProvider: packageContentProvider,
@@ -38,7 +34,7 @@ func (t *readFileTestCase) GetHelper() *kurtosis_helper.KurtosisHelper {
 }
 
 func (t *readFileTestCase) GetStarlarkCode() string {
-	return fmt.Sprintf(`%s(%s=%q)`, read_file.ReadFileBuiltinName, read_file.SrcArgName, readFileTestCase_fileToRead)
+	return fmt.Sprintf(`%s(%s=%q)`, read_file.ReadFileBuiltinName, read_file.SrcArgName, TestModuleFileName)
 }
 
 func (t *readFileTestCase) GetStarlarkCodeForAssertion() string {
@@ -46,6 +42,6 @@ func (t *readFileTestCase) GetStarlarkCodeForAssertion() string {
 }
 
 func (t *readFileTestCase) Assert(result starlark.Value) {
-	t.packageContentProvider.AssertCalled(t, "GetModuleContents", readFileTestCase_fileToRead)
+	t.packageContentProvider.AssertCalled(t, "GetModuleContents", TestModuleFileName)
 	require.Equal(t, result, starlark.String("Hello World!"))
 }

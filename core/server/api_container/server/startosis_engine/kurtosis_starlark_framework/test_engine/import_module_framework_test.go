@@ -13,14 +13,12 @@ import (
 )
 
 const (
-	importModule_moduleToLoad = "github.com/kurtosistech/test-package/helpers.star"
-
 	importModule_moduleConstKey = "CONST_STR"
 )
 
 var (
 	importModule_mockStarlarkModule = &starlarkstruct.Module{
-		Name: importModule_moduleToLoad,
+		Name: TestModuleFileName,
 		Members: starlark.StringDict{
 			importModule_moduleConstKey: starlark.String("Hello World!"),
 		},
@@ -51,7 +49,7 @@ func (t *importModuleTestCase) GetId() string {
 
 func (t *importModuleTestCase) GetHelper() *kurtosis_helper.KurtosisHelper {
 	packageContentProvider := startosis_packages.NewMockPackageContentProvider(t)
-	packageContentProvider.EXPECT().GetModuleContents(importModule_moduleToLoad).Return("Hello World!", nil)
+	packageContentProvider.EXPECT().GetModuleContents(TestModuleFileName).Return("Hello World!", nil)
 
 	recursiveInterpret := func(moduleId string, scriptContent string) (starlark.StringDict, *startosis_errors.InterpretationError) {
 		return importModule_mockStarlarkModule.Members, nil
@@ -60,7 +58,7 @@ func (t *importModuleTestCase) GetHelper() *kurtosis_helper.KurtosisHelper {
 }
 
 func (t *importModuleTestCase) GetStarlarkCode() string {
-	return fmt.Sprintf("%s(%s=%q)", import_module.ImportModuleBuiltinName, import_module.ModuleFileArgName, importModule_moduleToLoad)
+	return fmt.Sprintf("%s(%s=%q)", import_module.ImportModuleBuiltinName, import_module.ModuleFileArgName, TestModuleFileName)
 }
 
 func (t *importModuleTestCase) GetStarlarkCodeForAssertion() string {
@@ -70,7 +68,7 @@ func (t *importModuleTestCase) GetStarlarkCodeForAssertion() string {
 func (t *importModuleTestCase) Assert(result starlark.Value) {
 	loadedModule, ok := result.(*starlarkstruct.Module)
 	require.True(t, ok, "object returned was not a starlark module")
-	require.Equal(t, loadedModule.Name, importModule_moduleToLoad)
+	require.Equal(t, loadedModule.Name, TestModuleFileName)
 	require.Len(t, loadedModule.Members, 1)
 	require.Contains(t, loadedModule.Members, importModule_moduleConstKey)
 }
