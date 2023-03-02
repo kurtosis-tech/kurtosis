@@ -160,12 +160,10 @@ func (topology *PartitionTopology) Repartition(
 		newPartitionConnectionOverridesCopy[partitionConnectionId] = connection
 	}
 
-	err = topology.partitionServices.RepartitionBucket(newPartitionServicesCopy)
-	if err != nil {
+	if err = topology.partitionServices.RepartitionBucket(newPartitionServicesCopy); err != nil {
 		return stacktrace.Propagate(err, "An error occurred while repartitioning the underlying bucket")
 	}
-	err = topology.servicePartitions.ReplaceBucketContents(newServicePartitionsCopy)
-	if err != nil {
+	if err = topology.servicePartitions.ReplaceBucketContents(newServicePartitionsCopy); err != nil {
 		return stacktrace.Propagate(err, "An error occurred while repartitioning the service partition bucket")
 	}
 	topology.partitionConnectionOverrides = newPartitionConnectionOverridesCopy
@@ -361,8 +359,8 @@ func (topology *PartitionTopology) RemoveService(serviceName service.ServiceName
 	if partitionId == partitionNotFoundForService {
 		return nil
 	}
-	err = topology.servicePartitions.RemoveService(serviceName)
-	if err != nil {
+
+	if err = topology.servicePartitions.RemoveService(serviceName); err != nil {
 		return stacktrace.Propagate(err, "An error occurred while removing service '%v' from underlying service partition store", serviceName)
 	}
 
@@ -373,8 +371,7 @@ func (topology *PartitionTopology) RemoveService(serviceName service.ServiceName
 	if len(services) == 0 {
 		return nil
 	}
-	err = topology.partitionServices.RemoveServiceFromPartition(serviceName, partitionId)
-	if err != nil {
+	if err = topology.partitionServices.RemoveServiceFromPartition(serviceName, partitionId); err != nil {
 		return stacktrace.Propagate(err, "An error occurred while removing service '%v' from partition '%v'", serviceName, partitionId)
 	}
 	return nil
