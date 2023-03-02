@@ -215,10 +215,10 @@ func (enclaveCtx *EnclaveContext) GetServices() (map[services.ServiceName]servic
 }
 
 // Docs available at https://docs.kurtosis.com/sdk#uploadfilesstring-pathtoupload-string-artifactname
-func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string, artifactName string) (services.FilesArtifactUUID, error) {
+func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string, artifactName string) (services.FilesArtifactUUID, services.FileArtifactName, error) {
 	content, err := shared_utils.CompressPath(pathToUpload, ensureCompressedFileIsLesserThanGRPCLimit)
 	if err != nil {
-		return "", stacktrace.Propagate(err,
+		return "", "", stacktrace.Propagate(err,
 			"There was an error compressing the file '%v' before upload",
 			pathToUpload)
 	}
@@ -226,9 +226,9 @@ func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string, artifactName 
 	args := binding_constructors.NewUploadFilesArtifactArgs(content, artifactName)
 	response, err := enclaveCtx.client.UploadFilesArtifact(context.Background(), args)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error was encountered while uploading data to the API Container.")
+		return "", "", stacktrace.Propagate(err, "An error was encountered while uploading data to the API Container.")
 	}
-	return services.FilesArtifactUUID(response.Uuid), nil
+	return services.FilesArtifactUUID(response.Uuid), services.FileArtifactName(response.GetName()), nil
 }
 
 // Docs available at https://docs.kurtosis.com/sdk#storewebfilesstring-urltodownload-string-artifactname
