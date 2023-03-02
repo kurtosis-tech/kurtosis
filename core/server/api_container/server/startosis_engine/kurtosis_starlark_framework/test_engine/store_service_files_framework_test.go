@@ -52,6 +52,6 @@ func (t *storeServiceFilesTestCase) GetStarlarkCodeForAssertion() string {
 func (t *storeServiceFilesTestCase) Assert(interpretationResult starlark.Value, executionResult *string) {
 	require.Equal(t, starlark.String(TestArtifactName), interpretationResult)
 
-	expectedExecutionResult := fmt.Sprintf("Files  with artifact name '%s' uploaded with artifact UUID '%s'", TestArtifactName, TestArtifactUuid)
+	expectedExecutionResult := fmt.Sprintf("Files with artifact name '%s' uploaded with artifact UUID '%s'", TestArtifactName, TestArtifactUuid)
 	require.Equal(t, expectedExecutionResult, *executionResult)
 }
