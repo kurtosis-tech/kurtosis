@@ -42,7 +42,7 @@ func TestParseArguments_SingleRequiredArgument_FromArgs_TypeMismatch(t *testing.
 	values, err := parseArguments(argumentDefinitions, builtinName, args, kwargs)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "The following argument(s) could not be parsed or did not pass validation:")
-	require.Contains(t, err.Error(), "the argument 'service_name' could not be parsed because their type did not match the expected")
+	require.Contains(t, err.Error(), `{"service_name":"type expected: 'starlark.String', was 'starlark.Int'"}`)
 	require.Empty(t, values)
 }
 
@@ -100,7 +100,7 @@ func TestParseArguments_SingleRequiredArgument_FromKwargs_TypeMismatch(t *testin
 	values, err := parseArguments(argumentDefinitions, builtinName, args, kwargs)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "The following argument(s) could not be parsed or did not pass validation:")
-	require.Contains(t, err.Error(), "the argument 'service_name' could not be parsed because their type did not match the expected")
+	require.Contains(t, err.Error(), `{"service_name":"type expected: 'starlark.String', was 'starlark.Int'"}`)
 	require.Empty(t, values)
 }
 
@@ -117,7 +117,7 @@ func TestParseArguments_SingleRequiredArgument_FromKwargs_FailsValidation(t *tes
 	values, err := parseArguments(argumentDefinitions, builtinName, args, kwargs)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "The following argument(s) could not be parsed or did not pass validation:")
-	require.Contains(t, err.Error(), "the argument 'service_name' did not pass validation. Error was: \n'service_name' should not be empty")
+	require.Contains(t, err.Error(), `{"service_name":"'service_name' should not be empty"}`)
 	require.Empty(t, values)
 }
 
@@ -221,8 +221,8 @@ func TestParseArguments_ArgumentWithOptional_FromArgs_FailureTypeMismatch(t *tes
 	values, err := parseArguments(argumentDefinitions, builtinName, args, kwargs)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "The following argument(s) could not be parsed or did not pass validation:")
-	require.Contains(t, err.Error(), "the argument 'service_name' could not be parsed because their type did not match the expected")
-	require.Contains(t, err.Error(), "the argument 'should_start' could not be parsed because their type did not match the expected")
+	require.Contains(t, err.Error(), `"service_name":"type expected: 'starlark.String', was 'starlark.Bool'"`)
+	require.Contains(t, err.Error(), `"should_start":"type expected: 'starlark.Bool', was 'starlark.String'"`)
 	require.Nil(t, values)
 }
 

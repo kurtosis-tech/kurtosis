@@ -2,6 +2,7 @@ package kurtosis_types
 
 import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/port_spec"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
 	"testing"
@@ -36,7 +37,7 @@ func TestMakeUniformPacketDelayDistribution_NoNamedArgs(t *testing.T) {
 
 func TestMakeUniformPacketDelayDistribution_WithNotRecognizedAttr(t *testing.T) {
 	input := starlark.Tuple([]starlark.Value{
-		starlark.String(portApplicationProtocolAttr), starlark.MakeInt(100),
+		starlark.String(port_spec.PortApplicationProtocolAttr), starlark.MakeInt(100),
 	})
 
 	kwargs := []starlark.Tuple{
