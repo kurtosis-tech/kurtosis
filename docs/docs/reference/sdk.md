@@ -340,7 +340,7 @@ Gets the Name and UUID of the current services in the enclave.
 
 * `serviceIdentifiers`: A map of objects containing a mapping of Name -> UUID for all the services inside the enclave
 
-### `uploadFiles(String pathToUpload, String artifactName)`
+### `uploadFiles(String pathToUpload, String artifactName) -> FileArtifaceUUID, FileArtifactName, Error`
 Takes a filepath or directory path that will be compressed and uploaded to the Kurtosis filestore for use with [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
 
 If a directory is specified, the contents of the directory will be uploaded to the archive without additional nesting. Empty directories cannot be uploaded.
@@ -352,7 +352,8 @@ If a directory is specified, the contents of the directory will be uploaded to t
 
 **Returns**
 
-* `UUID`: A unique ID as a string identifying the uploaded files, which can be used in [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
+* `FileArtifactUUID`: A unique ID as a string identifying the uploaded files, which can be used in [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
+* `FileArtifactName`: The name of the file-artifact, it is auto-generated if `artitfactName` is an empty string.
 
 ### `storeWebFiles(String urlToDownload, String artifactName)`
 Downloads a files-containing `.tgz` from the given URL to the Kurtosis engine, so that the files inside can be mounted inside a service's filespace at creation time via [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].

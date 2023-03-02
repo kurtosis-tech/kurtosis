@@ -2478,6 +2478,7 @@ type UploadFilesArtifactResponse struct {
 
 	// UUID of the files artifact, for use when referencing it in the future
 	Uuid string `protobuf:"bytes,1,opt,name=uuid,proto3" json:"uuid,omitempty"`
+	// UUID of the files artifact, for use when referencing it in the future
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 }
 

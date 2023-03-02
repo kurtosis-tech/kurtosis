@@ -228,7 +228,7 @@ func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string, artifactName 
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "An error was encountered while uploading data to the API Container.")
 	}
-	return services.FilesArtifactUUID(response.Uuid), services.FileArtifactName(response.GetName()), nil
+	return services.FilesArtifactUUID(response.GetUuid()), services.FileArtifactName(response.GetName()), nil
 }
 
 // Docs available at https://docs.kurtosis.com/sdk#storewebfilesstring-urltodownload-string-artifactname
