@@ -28,15 +28,12 @@ const (
 
 // TODO: maybe change command to startlark.List once remove backward compatability support
 type ExecRecipe struct {
-	// Deprecated: we will deprecate this soon, more here: https://app.zenhub.com/workspaces/engineering-636cff9fc978ceb2aac05a1d/issues/gh/kurtosis-tech/kurtosis-private/1128
-	serviceName service.ServiceName //TODO deprecate
-	command     []string
+	command []string
 }
 
-func NewExecRecipe(serviceName service.ServiceName, command []string) *ExecRecipe {
+func NewExecRecipe(command []string) *ExecRecipe {
 	return &ExecRecipe{
-		serviceName: serviceName,
-		command:     command,
+		command: command,
 	}
 }
 
@@ -44,11 +41,6 @@ func NewExecRecipe(serviceName service.ServiceName, command []string) *ExecRecip
 func (recipe *ExecRecipe) String() string {
 	buffer := new(strings.Builder)
 	buffer.WriteString(ExecRecipeName + "(")
-	//TODO  remove this check when we deprecate the service_name field
-	if recipe.serviceName != "" {
-		buffer.WriteString(serviceNameKey + "=")
-		buffer.WriteString(fmt.Sprintf("%q, ", recipe.serviceName))
-	}
 	buffer.WriteString(commandKey + "=")
 
 	command := convertListToStarlarkList(recipe.command)
@@ -84,8 +76,6 @@ func (recipe *ExecRecipe) Hash() (uint32, error) {
 // Attr implements the starlark.HasAttrs interface.
 func (recipe *ExecRecipe) Attr(name string) (starlark.Value, error) {
 	switch name {
-	case serviceNameKey:
-		return starlark.String(recipe.serviceName), nil
 	case commandKey:
 		return convertListToStarlarkList(recipe.command), nil
 	default:
