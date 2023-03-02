@@ -160,7 +160,7 @@ The `exec` instruction on the [`plan`][plan-reference] object executes commands 
 
 :::caution
 
-The previous `exec` instruction signature `exec(recipe=recipe)` is also accepted but will be deprecated soon, we suggest users to use this new one.
+The previous `ExecRecipe` type `ExecRecipe(service_name = "my_service", command = ["echo", "Hello, world"])` is also accepted but will be deprecated soon, we suggest users to use this new one where the `service_name` argument is passed in via the `exec` instruction signature instead.
 
 :::
 
@@ -317,7 +317,7 @@ For GET requests:
 
 :::caution
 
-The previous `request` instruction signature `request(recipe=recipe)` is also accepted but will be deprecated soon, we suggest users to use this new one.
+The previous `GetHttpRequestRecipe` type `GetHttpRequestRecipe(service_name = "my_service", port_id = "my_port", endpoint = "/endpoint?input=data", extract = {"extracted-field": ".name.id", })` is also accepted but will be deprecated soon, we suggest users to use this new one where the `service_name` argument is passed in via the `request` instruction signature instead.
 
 :::
 
@@ -553,7 +553,7 @@ If it succedes, it returns a [future references][future-references-reference] wi
 
 :::caution
 
-The previous `wait` instruction signature `wait(recipe=recipe, field="code", assertion = "==", target_value = 200, interval = "1s", timeout = "5m")` is also accepted but will be deprecated soon, we suggest users to use this new one.
+The previous `GetHttpRequestRecipe` type `GetHttpRequestRecipe(service_name = "my_service", port_id = "my_port", endpoint = "/endpoint?input=data", extract = {"extracted-field": ".name.id", })` is also accepted but will be deprecated soon, we suggest users to use this new one where the `service_name` argument is passed in via the `wait` instruction signature instead.
 
 :::
 
