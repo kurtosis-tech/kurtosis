@@ -16,6 +16,12 @@ type ServicePartitionsBucket struct {
 	db *enclave_db.EnclaveDB
 }
 
+func newServicePartitions(db *enclave_db.EnclaveDB) *ServicePartitionsBucket {
+	return &ServicePartitionsBucket{
+		db,
+	}
+}
+
 func (sp *ServicePartitionsBucket) AddPartitionToService(serviceName service.ServiceName, partitionId partition.PartitionID) error {
 	err := sp.db.Update(func(tx *bolt.Tx) error {
 		err := tx.Bucket(servicePartitionsBucketName).Put([]byte(serviceName), []byte(partitionId))
@@ -123,7 +129,5 @@ func GetOrCreateServicePartitionsBucket(db *enclave_db.EnclaveDB) (*ServiceParti
 		return nil, stacktrace.Propagate(err, "An error occurred while building service partitions")
 	}
 	// Bucket does exist, skipping population step
-	return &ServicePartitionsBucket{
-		db,
-	}, nil
+	return newServicePartitions(db), nil
 }
