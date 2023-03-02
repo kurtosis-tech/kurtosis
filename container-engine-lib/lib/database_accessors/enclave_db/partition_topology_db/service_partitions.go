@@ -1,6 +1,7 @@
 package partition_topology_db
 
 import (
+	"errors"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/partition"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
@@ -24,8 +25,7 @@ func newServicePartitions(db *enclave_db.EnclaveDB) *ServicePartitionsBucket {
 
 func (sp *ServicePartitionsBucket) AddPartitionToService(serviceName service.ServiceName, partitionId partition.PartitionID) error {
 	err := sp.db.Update(func(tx *bolt.Tx) error {
-		err := tx.Bucket(servicePartitionsBucketName).Put([]byte(serviceName), []byte(partitionId))
-		if err != nil {
+		if err := tx.Bucket(servicePartitionsBucketName).Put([]byte(serviceName), []byte(partitionId)); err != nil {
 			return stacktrace.Propagate(err, "An error occurred while adding partition '%v' for service '%v'", partitionId, serviceName)
 		}
 		return nil
@@ -116,16 +116,14 @@ func (sp *ServicePartitionsBucket) GetAllServicePartitions() (map[service.Servic
 }
 
 func GetOrCreateServicePartitionsBucket(db *enclave_db.EnclaveDB) (*ServicePartitionsBucket, error) {
-	bucketExists := false
 	err := db.Update(func(tx *bolt.Tx) error {
 		_, err := tx.CreateBucket(servicePartitionsBucketName)
-		if err != nil {
-			bucketExists = true
+		if err != nil && !errors.Is(err, bolt.ErrBucketExists) {
 			return stacktrace.Propagate(err, "An error occurred while creating services partitions database bucket")
 		}
 		return nil
 	})
-	if err != nil && !bucketExists {
+	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while building service partitions")
 	}
 	// Bucket does exist, skipping population step
