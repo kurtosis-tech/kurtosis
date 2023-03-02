@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/partition"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/kurtosis-tech/stacktrace"
 	bolt "go.etcd.io/bbolt"
@@ -24,12 +25,8 @@ func newPartitionConnectionBucket(db *enclave_db.EnclaveDB) *PartitionConnection
 }
 
 type PartitionConnectionID struct {
-	lexicalFirst  partition.PartitionID
-	lexicalSecond partition.PartitionID
-}
-
-func (pc *PartitionConnectionID) String() string {
-	return string(pc.lexicalFirst + pc.lexicalSecond)
+	LexicalFirst  partition.PartitionID `json:"lexical_first"`
+	LexicalSecond partition.PartitionID `json:"lexical_second"`
 }
 
 type delayDistribution struct {
@@ -41,6 +38,30 @@ type delayDistribution struct {
 type PartitionConnection struct {
 	PacketLoss              float32           `json:"packet_loss"`
 	PacketDelayDistribution delayDistribution `json:"delay_distribution"`
+}
+
+// get all
+// remove
+// add
+// get
+
+func (pc *PartitionConnectionBucket) GetAllPartitionConnections() (map[PartitionConnectionID]PartitionConnection, error) {
+	result := map[PartitionConnectionID]PartitionConnection{}
+	getAllServicePartitionsFunc := func(tx *bolt.Tx) error {
+		iterateThroughBucketAndPopulateResult := func(connectionId, connection []byte) error {
+			partitionForService := partition.PartitionID(partitionId)
+			if oldPartitionForService, found := result[service.ServiceName(serviceName)]; found {
+				return stacktrace.NewError("The service '%s' has more than one mappings, found mapping for partition '%v' & '%v'; This should never happen this is a bug in Kurtosis", serviceName, oldPartitionForService, partitionForService)
+			}
+			result[service.ServiceName(serviceName)] = partitionForService
+			return nil
+		}
+		return tx.Bucket(servicePartitionsBucketName).ForEach(iterateThroughBucketAndPopulateResult)
+	}
+	if err := sp.db.Update(getAllServicePartitionsFunc); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while getting all services & associated partitions")
+	}
+	return result, nil
 }
 
 func (pc *PartitionConnectionBucket) ReplaceBucketContents(newConnections map[PartitionConnectionID]PartitionConnection) error {
