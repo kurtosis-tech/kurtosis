@@ -48,6 +48,8 @@ func TestAllRegisteredBuiltins(t *testing.T) {
 	testKurtosisHelper(t, newReadFileTestCase(t))
 	testKurtosisHelper(t, newImportModuleTestCase(t))
 
+	testKurtosisTypeConstructor(t, newServiceConfigMinimalTestCase(t))
+	testKurtosisTypeConstructor(t, newServiceConfigFullTestCase(t))
 	testKurtosisTypeConstructor(t, newUpdateServiceConfigTestCase(t))
 }
 
@@ -110,8 +112,9 @@ func testKurtosisTypeConstructor(t *testing.T, builtin KurtosisTypeConstructorBa
 	predeclared := getBasePredeclaredDict()
 
 	starlarkCode := builtin.GetStarlarkCode()
-	globals, err := starlark.ExecFile(thread, startosis_constants.PackageIdPlaceholderForStandaloneScript, codeToExecute(starlarkCode), predeclared)
-	require.Nil(t, err, "Error interpreting Starlark code for builtin '%s'", testId)
+	starlarkCodeToExecute := codeToExecute(starlarkCode)
+	globals, err := starlark.ExecFile(thread, startosis_constants.PackageIdPlaceholderForStandaloneScript, starlarkCodeToExecute, predeclared)
+	require.Nil(t, err, "Error interpreting Starlark code for builtin '%s'. Code was: \n%v", testId, starlarkCodeToExecute)
 	result := extractResultValue(t, globals)
 
 	builtin.Assert(result)
