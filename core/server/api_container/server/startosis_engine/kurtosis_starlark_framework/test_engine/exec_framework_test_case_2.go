@@ -2,7 +2,6 @@ package test_engine
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/exec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
@@ -13,12 +12,7 @@ import (
 	"testing"
 )
 
-const (
-	execTextCase2ServiceName = service.ServiceName("my-service-for-test-case-3")
-)
-
-//This test case is for testing positional arguments retro-compatibility for those script
-//that are using the recipe value as the first positional argument
+//This test case is for testing positional arguments
 type execTestCase2 struct {
 	*testing.T
 }
@@ -39,7 +33,7 @@ func (t execTestCase2) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanI
 
 	serviceNetwork.EXPECT().ExecCommand(
 		mock.Anything,
-		string(execTextCase2ServiceName),
+		string(execTextCaseServiceName),
 		[]string{"mkdir", "-p", "/tmp/store"},
 	).Times(1).Return(
 		int32(0),
@@ -51,13 +45,13 @@ func (t execTestCase2) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanI
 }
 
 func (t execTestCase2) GetStarlarkCode() string {
-	recipe := fmt.Sprintf(`ExecRecipe(service_name=%q, command=["mkdir", "-p", "/tmp/store"])`, execTextCase2ServiceName)
-	return fmt.Sprintf("%s(%q, %s)", exec.ExecBuiltinName, execTextCase2ServiceName, recipe)
+	recipe := fmt.Sprintf(`ExecRecipe(service_name=%q, command=["mkdir", "-p", "/tmp/store"])`, execTextCaseServiceName)
+	return fmt.Sprintf("%s(%q, %s)", exec.ExecBuiltinName, execTextCaseServiceName, recipe)
 }
 
 func (t *execTestCase2) GetStarlarkCodeForAssertion() string {
-	recipe := fmt.Sprintf(`ExecRecipe(service_name=%q, command=["mkdir", "-p", "/tmp/store"])`, execTextCase2ServiceName)
-	return fmt.Sprintf("%s(%s=%s, %s=%q)", exec.ExecBuiltinName, exec.RecipeArgName, recipe, exec.ServiceNameArgName, execTextCase1ServiceName)
+	recipe := fmt.Sprintf(`ExecRecipe(service_name=%q, command=["mkdir", "-p", "/tmp/store"])`, execTextCaseServiceName)
+	return fmt.Sprintf("%s(%s=%s, %s=%q)", exec.ExecBuiltinName, exec.RecipeArgName, recipe, exec.ServiceNameArgName, execTextCaseServiceName)
 }
 
 func (t execTestCase2) Assert(interpretationResult starlark.Value, executionResult *string) {
