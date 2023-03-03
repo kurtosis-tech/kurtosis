@@ -116,7 +116,7 @@ Adding service example-datastore-server-1.
 Service 'example-datastore-server-1' added with service UUID '[a-z-0-9]+'
 Service example-datastore-server-1 deployed successfully.
 Command returned with exit code '0' with no output
-Files  with artifact name 'stored-file' uploaded with artifact UUID '[a-f0-9]{32}'
+Files with artifact name 'stored-file' uploaded with artifact UUID '[a-f0-9]{32}'
 Stored file at stored-file
 Templates artifact name 'rendered-file' rendered with artifact UUID '[a-f0-9]{32}'
 Rendered file to rendered-file
