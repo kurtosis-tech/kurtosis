@@ -78,7 +78,7 @@ func NewWait(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *r
 				},
 				{
 					Name:              ServiceNameArgName,
-					IsOptional:        true, //TODO make it non-optional when we remove recipe.service_name, issue pending: https://github.com/kurtosis-tech/kurtosis-private/issues/1128
+					IsOptional:        false,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						return builtin_argument.NonEmptyString(value, ServiceNameArgName)
@@ -130,15 +130,12 @@ type WaitCapabilities struct {
 }
 
 func (builtin *WaitCapabilities) Interpret(arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
-	var serviceName service.ServiceName
 
-	if arguments.IsSet(ServiceNameArgName) {
-		serviceNameArgumentValue, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, ServiceNameArgName)
-		if err != nil {
-			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ServiceNameArgName)
-		}
-		serviceName = service.ServiceName(serviceNameArgumentValue.GoString())
+	serviceNameArgumentValue, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, ServiceNameArgName)
+	if err != nil {
+		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ServiceNameArgName)
 	}
+	serviceName := service.ServiceName(serviceNameArgumentValue.GoString())
 
 	var genericRecipe recipe.Recipe
 	httpRecipe, err := builtin_argument.ExtractArgumentValue[*recipe.HttpRequestRecipe](arguments, RecipeArgName)
