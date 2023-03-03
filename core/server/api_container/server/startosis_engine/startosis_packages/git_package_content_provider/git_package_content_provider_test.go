@@ -207,7 +207,7 @@ func Test_checkIfFileIsInAValidPackageInternal_somewhereInTheMiddle(t *testing.T
 	}
 
 	filePath := "/data/packages/root/subdir/subdir1/folder/some_file.txt"
-	actual, err := checkIfFileIsInAValidPackageInternal(filePath, "/data/packages", mockStatMethod)
+	actual, err := getKurtosisYamlPathForFileUrlInternal(filePath, "/data/packages", mockStatMethod)
 	require.Nil(t, err)
 	require.Equal(t, "/data/packages/root/subdir/subdir1/kurtosis.yml", actual)
 }
@@ -229,7 +229,7 @@ func Test_checkIfFileIsInAValidPackageInternal_packageIsSameAsWhereTheFileIs(t *
 	}
 
 	filePath := "/data/packages/root/subdir/some_file.txt"
-	actual, err := checkIfFileIsInAValidPackageInternal(filePath, "/data/packages", mockStatMethod)
+	actual, err := getKurtosisYamlPathForFileUrlInternal(filePath, "/data/packages", mockStatMethod)
 	require.Nil(t, err)
 	require.Equal(t, "/data/packages/root/subdir/kurtosis.yml", actual)
 }
@@ -251,7 +251,7 @@ func Test_checkIfFileIsInAValidPackageInternal_fileNotFound(t *testing.T) {
 	}
 
 	filePath := "/data/packages/root/subdir/some_file.txt"
-	actual, err := checkIfFileIsInAValidPackageInternal(filePath, "/data/packages", mockStatMethod)
+	actual, err := getKurtosisYamlPathForFileUrlInternal(filePath, "/data/packages", mockStatMethod)
 	require.Nil(t, err)
 	require.Equal(t, filePathToKurtosisYamlNotFound, actual)
 }
@@ -272,7 +272,7 @@ func Test_checkIfFileIsInAValidPackageInternal_unknownErrorOccurred(t *testing.T
 	}
 
 	filePath := "/data/packages/root/subdir/some_file.txt"
-	_, err := checkIfFileIsInAValidPackageInternal(filePath, "/data/packages", mockStatMethod)
+	_, err := getKurtosisYamlPathForFileUrlInternal(filePath, "/data/packages", mockStatMethod)
 	require.NotNil(t, err)
 	require.ErrorContains(t, err, fmt.Sprintf("An error occurred while locating %v in the path of '%v'", startosis_constants.KurtosisYamlName, filePath))
 }
@@ -283,12 +283,12 @@ func Test_checkIfFileIsInAValidPackageInternal_prefixMismatchError(t *testing.T)
 	}
 
 	filePath := "/packages/root/subdir/some_file.txt"
-	_, err := checkIfFileIsInAValidPackageInternal(filePath, "/data/packages", mockStatMethod)
+	_, err := getKurtosisYamlPathForFileUrlInternal(filePath, "/data/packages", mockStatMethod)
 	require.NotNil(t, err)
 	require.EqualError(t, err, fmt.Sprintf("Absolute path to file: %v must start with following prefix %v", filePath, "/data/packages"))
 }
 
-func Test_validateKurtosisPackage(t *testing.T) {
+func Test_validatePackageNameMatchesKurtosisYamlLocation(t *testing.T) {
 	type args struct {
 		kurtosisYaml                    *yaml_parser.KurtosisYaml
 		absPathToPackageWithKurtosisYml string
@@ -357,7 +357,7 @@ func Test_validateKurtosisPackage(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := validateKurtosisPackage(tt.args.kurtosisYaml, tt.args.absPathToPackageWithKurtosisYml, tt.args.packagesDir)
+			err := validatePackageNameMatchesKurtosisYamlLocation(tt.args.kurtosisYaml, tt.args.absPathToPackageWithKurtosisYml, tt.args.packagesDir)
 			if tt.want == nil {
 				require.Nil(t, err)
 			} else {

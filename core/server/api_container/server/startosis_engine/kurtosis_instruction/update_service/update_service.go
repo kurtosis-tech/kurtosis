@@ -10,11 +10,12 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/update_service_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
+	"reflect"
 )
 
 const (
@@ -34,13 +35,22 @@ func NewUpdateService(serviceNetwork service_network.ServiceNetwork) *kurtosis_p
 					Name:              ServiceNameArgName,
 					IsOptional:        false,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
-					Validator:         nil,
+					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+						return builtin_argument.NonEmptyString(value, ServiceNameArgName)
+					},
 				},
 				{
 					Name:              UpdateServiceConfigArgName,
 					IsOptional:        false,
-					ZeroValueProvider: builtin_argument.ZeroValueProvider[*kurtosis_types.UpdateServiceConfig],
-					Validator:         nil,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*update_service_config.UpdateServiceConfig],
+					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+						// we just try to convert the configs here to validate their shape, to avoid code duplication
+						// with Interpret
+						if _, err := validateAndConvertConfig(value); err != nil {
+							return err
+						}
+						return nil
+					},
 				},
 			},
 		},
@@ -74,13 +84,17 @@ func (builtin *UpdateServiceCapabilities) Interpret(arguments *builtin_argument.
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ServiceNameArgName)
 	}
 
-	updateServiceConfig, err := builtin_argument.ExtractArgumentValue[*kurtosis_types.UpdateServiceConfig](arguments, UpdateServiceConfigArgName)
+	updateServiceConfig, err := builtin_argument.ExtractArgumentValue[*update_service_config.UpdateServiceConfig](arguments, UpdateServiceConfigArgName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", UpdateServiceConfigArgName)
 	}
+	apiUpdateServiceConfig, interpretationErr := validateAndConvertConfig(updateServiceConfig)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
 
 	builtin.serviceName = service.ServiceName(serviceName.GoString())
-	builtin.updateServiceConfig = updateServiceConfig.ToKurtosisType()
+	builtin.updateServiceConfig = apiUpdateServiceConfig
 	return starlark.None, nil
 }
 
@@ -119,4 +133,16 @@ func (builtin *UpdateServiceCapabilities) Execute(ctx context.Context, _ *builti
 	}
 	instructionResult := fmt.Sprintf("Service '%s' with UUID '%s' updated", builtin.serviceName, runningService.GetRegistration().GetUUID())
 	return instructionResult, nil
+}
+
+func validateAndConvertConfig(rawConfig starlark.Value) (*kurtosis_core_rpc_api_bindings.UpdateServiceConfig, *startosis_errors.InterpretationError) {
+	config, ok := rawConfig.(*update_service_config.UpdateServiceConfig)
+	if !ok {
+		return nil, startosis_errors.NewInterpretationError("The '%s' argument is not an UpdateServiceConfig (was '%s').", UpdateServiceConfigArgName, reflect.TypeOf(rawConfig))
+	}
+	apiUpdateServiceConfig, interpretationErr := config.ToKurtosisType()
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	return apiUpdateServiceConfig, nil
 }

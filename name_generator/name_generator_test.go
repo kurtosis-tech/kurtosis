@@ -30,34 +30,35 @@ func TestRandomNameGenerator_GenerateName(t *testing.T) {
 
 // check for duplicates for adjectives
 func Test_noDuplicatesInAdjectives(t *testing.T) {
-	var duplicateArr []string
-	adjectivesHash := map[string]int{}
-
-	for _, adj := range NOUNS {
-		freq, found := adjectivesHash[adj]
-		if found && freq == 1 {
-			duplicateArr = append(duplicateArr, adj)
-		}
-
-		adjectivesHash[adj] = adjectivesHash[adj] + 1
-	}
-
+	duplicateArr := checkIfDuplicateExistsInArray(ADJECTIVES)
 	require.Len(t, duplicateArr, 0, "Duplicate Error: found %v multiple times in ADJECTIVES", duplicateArr)
 }
 
 // check for duplicates for nouns
 func Test_noDuplicatesInNouns(t *testing.T) {
-	var duplicateArr []string
-	nounsHash := map[string]int{}
+	// Engine Nouns
+	duplicateArr := checkIfDuplicateExistsInArray(ENCLAVE_NOUNS)
+	require.Len(t, duplicateArr, 0, "Duplicate Error: found %v multiple times in ENCLAVE_NOUNS with len: %v", duplicateArr, len(duplicateArr))
 
-	for _, noun := range NOUNS {
-		freq, found := nounsHash[noun]
+	// File Artifact Nouns
+	duplicateArr = checkIfDuplicateExistsInArray(FILE_ARTIFACT_NOUNS)
+	require.Len(t, duplicateArr, 0, "Duplicate Error: found %v multiple times in FILE_ARTIFACT_NOUNS with len: %v", duplicateArr, len(duplicateArr))
+}
+
+// return an array containing duplicates
+// if empty array is returned that means no duplicates exists
+func checkIfDuplicateExistsInArray(arrayUnderTest []string) []string {
+	var duplicateArr []string
+	frequencyMap := map[string]int{}
+
+	for _, noun := range arrayUnderTest {
+		freq, found := frequencyMap[noun]
 		if found && freq == 1 {
 			duplicateArr = append(duplicateArr, noun)
 		}
 
-		nounsHash[noun] = nounsHash[noun] + 1
+		frequencyMap[noun] = frequencyMap[noun] + 1
 	}
 
-	require.Len(t, duplicateArr, 0, "Duplicate Error: found %v multiple times in NOUNS", duplicateArr)
+	return duplicateArr
 }

@@ -61,12 +61,16 @@ sudo yum install kurtosis-cli
 Download the appropriate artifact from [the release artifacts page][release-artifacts].
 </details>
 
-Once you're done, [the quickstart is a great place to get started](../quickstart.md).
+:::info
+Kurtosis CLI cannot be installed directly on Windows. Windows users are encouraged to use [Windows Subsystem for Linux (WSL)][windows-susbsystem-for-linux] to use Kurtosis.
+:::
+
+Once you're done, [the quickstart is a great place to get started][quickstart].
 
 Analytics
 ----------
 
-On installation Kurtosis enables anonymized [analytics](../explanations/metrics-philosophy.md) by default. In case you want to disable
+On installation Kurtosis enables anonymized [analytics][metrics-philosophy] by default. In case you want to disable
 it you can run `kurtosis analytics disable`.
 
 Upgrading
@@ -113,6 +117,10 @@ Download the appropriate artifact from [the release artifacts page][release-arti
 </details>
 
 <!-------------------------- ONLY LINKS BELOW HERE ---------------------------->
-[installing-tab-completion]: ./adding-tab-completion.md
-[release-artifacts]: https://github.com/kurtosis-tech/kurtosis-cli-release-artifacts/releases
 [cli-changelog]: ../changelog.md
+[metrics-philosophy]: ../explanations/metrics-philosophy.md
+[quickstart]: ../quickstart.md
+[installing-tab-completion]: ./adding-tab-completion.md
+
+[release-artifacts]: https://github.com/kurtosis-tech/kurtosis-cli-release-artifacts/releases
+[windows-susbsystem-for-linux]: https://learn.microsoft.com/en-us/windows/wsl/
