@@ -45,12 +45,12 @@ func (t execTestCase2) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanI
 }
 
 func (t execTestCase2) GetStarlarkCode() string {
-	recipe := fmt.Sprintf(`ExecRecipe(service_name=%q, command=["mkdir", "-p", "/tmp/store"])`, execTextCaseServiceName)
-	return fmt.Sprintf("%s(%q, %s)", exec.ExecBuiltinName, execTextCaseServiceName, recipe)
+	recipe := `ExecRecipe(command=["mkdir", "-p", "/tmp/store"])`
+	return fmt.Sprintf("%s(%s, %q)", exec.ExecBuiltinName, recipe, execTextCaseServiceName)
 }
 
 func (t *execTestCase2) GetStarlarkCodeForAssertion() string {
-	recipe := fmt.Sprintf(`ExecRecipe(service_name=%q, command=["mkdir", "-p", "/tmp/store"])`, execTextCaseServiceName)
+	recipe := `ExecRecipe(command=["mkdir", "-p", "/tmp/store"])`
 	return fmt.Sprintf("%s(%s=%s, %s=%q)", exec.ExecBuiltinName, exec.RecipeArgName, recipe, exec.ServiceNameArgName, execTextCaseServiceName)
 }
 
