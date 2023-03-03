@@ -760,7 +760,7 @@ def run(plan):
 	recipe = ExecRecipe(
 		command = ["mkdir", "/tmp/foo"]
 	)
-	plan.exec(recipe = recipe)
+	plan.exec(recipe = recipe, service_name = "web-server")
 `
 
 	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
