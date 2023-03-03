@@ -64,14 +64,13 @@ func TestStartosisInterpreter_DefineFactAndWait(t *testing.T) {
 	script := `
 def run(plan):
 	get_recipe = GetHttpRequestRecipe(
-		service_name = "web-server",
 		port_id = "http-port",
 		endpoint = "?input=output",
 		extract = {
 			"input": ".query.input"
 		}
 	)
-	response = plan.wait(get_recipe, "code", "==",  200, timeout="5m", interval="5s")
+	response = plan.wait(get_recipe, "code", "==",  200, timeout="5m", interval="5s",service_name = "web-server")
 	plan.print(response["body"])
 `
 	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
@@ -528,14 +527,13 @@ func TestStartosisInterpreter_RequestInstruction(t *testing.T) {
 	script := `
 def run(plan):
 	get_recipe = GetHttpRequestRecipe(
-		service_name = "web-server",
 		port_id = "http-port",
 		endpoint = "?input=output",
 		extract = {
 			"input": ".query.input"
 		}
 	)
-	response = plan.request(get_recipe)
+	response = plan.request(get_recipe, service_name = "web-server")
 	plan.print(response["code"])`
 
 	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
@@ -760,35 +758,14 @@ func TestStartosisInterpreter_ValidExecScript(t *testing.T) {
 def run(plan):
 	plan.print("Executing mkdir!")
 	recipe = ExecRecipe(
-		service_name = "example-datastore-server",
 		command = ["mkdir", "/tmp/foo"]
 	)
-	plan.exec(recipe = recipe)
+	plan.exec(recipe = recipe, service_name = "web-server")
 `
 
 	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 2)
-}
-
-//TODO remove this when whe deprecate the service_name field in
-func TestStartosisInterpreter_ValidExecRecipeWithoutServiceName(t *testing.T) {
-	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
-	defer packageContentProvider.RemoveAll()
-	testRuntimeValueStore := runtime_value_store.NewRuntimeValueStore()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, testRuntimeValueStore)
-	script := `
-def run(plan):
-	plan.print("Executing mkdir!")
-	recipe = ExecRecipe(
-		command = ["mkdir", "/tmp/foo"]
-	)
-	plan.exec(recipe = recipe)
-`
-
-	_, _, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
-
-	require.Nil(t, interpretationError)
 }
 
 func TestStartosisInterpreter_InvalidExecRecipeMissingRequiredCommand(t *testing.T) {
@@ -799,9 +776,7 @@ func TestStartosisInterpreter_InvalidExecRecipeMissingRequiredCommand(t *testing
 	script := `
 def run(plan):
 	plan.print("Executing mkdir!")
-	recipe = ExecRecipe(
-		service_name="example-datastore-server"
-	)
+	recipe = ExecRecipe()
 	plan.exec(recipe = recipe)
 `
 

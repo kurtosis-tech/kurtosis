@@ -160,12 +160,6 @@ plan.assert(
 
 The `exec` instruction on the [`plan`][plan-reference] object executes commands on a given service as if they were running in a shell on the container.
 
-:::caution
-
-The previous `ExecRecipe` type `ExecRecipe(service_name = "my_service", command = ["echo", "Hello, world"])` is also accepted but will be deprecated soon, we suggest users to use this new one where the `service_name` argument is passed in via the `exec` instruction signature instead.
-
-:::
-
 ```python
 exec_recipe = ExecRecipe(
     # The actual command to execute. 
@@ -182,7 +176,7 @@ result = plan.exec(
 
     # A Service name designating a service that already exists inside the enclave
     # If it does not, a validation error will be thrown
-    # OPTIONAL
+    # MANDATORY
     service_name = "my-service",
 )
 
@@ -317,12 +311,6 @@ The `request` instruction on the [`plan`][plan-reference] object executes either
 
 For GET requests:
 
-:::caution
-
-The previous `GetHttpRequestRecipe` type `GetHttpRequestRecipe(service_name = "my_service", port_id = "my_port", endpoint = "/endpoint?input=data", extract = {"extracted-field": ".name.id", })` is also accepted but will be deprecated soon, we suggest users to use this new one where the `service_name` argument is passed in via the `request` instruction signature instead.
-
-:::
-
 ```python
 get_request_recipe = GetHttpRequestRecipe(
     # The port ID that is the server port for the request
@@ -349,7 +337,7 @@ get_response = plan.request(
     
     # A Service name designating a service that already exists inside the enclave
     # If it does not, a validation error will be thrown
-    # OPTIONAL
+    # MANDATORY
     service_name = "my_service",
 )
 plan.print(get_response["body"]) # Prints the body of the request
@@ -551,13 +539,8 @@ The `wait` instruction on the [`plan`][plan-reference] object fails the Starlark
 
 To learn more about the accepted recipe types, please checkout [ExecRecipe][starlark-types-exec-recipe], [GetHttpRequestRecipe][starlark-types-get-http-recipe] or [PostHttpRequestRecipe][starlark-types-post-http-recipe].
 
-If it succedes, it returns a [future references][future-references-reference] with the last recipe run.
+If it succeeds, it returns a [future references][future-references-reference] with the last recipe run.
 
-:::caution
-
-The previous `GetHttpRequestRecipe` type `GetHttpRequestRecipe(service_name = "my_service", port_id = "my_port", endpoint = "/endpoint?input=data", extract = {"extracted-field": ".name.id", })` is also accepted but will be deprecated soon, we suggest users to use this new one where the `service_name` argument is passed in via the `wait` instruction signature instead.
-
-:::
 
 ```python
 # This fails in runtime if response["code"] != 200 for each request in a 5 minute time span
@@ -594,7 +577,7 @@ response = plan.wait(
 
     # A Service name designating a service that already exists inside the enclave
     # If it does not, a validation error will be thrown
-    # OPTIONAL
+    # MANDATORY
     service_name = "example-datastore-server-1",
 )
 # If this point of the code is reached, the assertion has passed therefore the print statement will print "200"

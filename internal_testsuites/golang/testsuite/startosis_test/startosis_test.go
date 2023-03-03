@@ -53,10 +53,12 @@ def run(plan, args):
 	
 	plan.add_service(service_name = DATASTORE_SERVICE_NAME, config = config)
 	plan.print("Service " + DATASTORE_SERVICE_NAME + " deployed successfully.")
-	plan.exec(ExecRecipe(
+	plan.exec(
+		recipe = ExecRecipe(
+			command = ["touch", FILE_TO_BE_CREATED],
+		),
 		service_name = DATASTORE_SERVICE_NAME,
-		command = ["touch", FILE_TO_BE_CREATED],
-	))
+	)
 	
 	artifact_name = plan.store_service_files(name = "stored-file", service_name = DATASTORE_SERVICE_NAME, src = FILE_TO_BE_CREATED)
 	plan.print("Stored file at " + artifact_name)
