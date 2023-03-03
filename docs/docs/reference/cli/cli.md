@@ -5,7 +5,7 @@ slug: /cli
 sidebar_position: 1
 ---
 
-This section will go through the most common Kurtosis CLI commands and some useful tips on getting started. If you have not already done so, the CLI can be installed by following the instructions [here][installing-the-cli]. 
+This section will go through the most common Kurtosis CLI commands and some useful tips on getting started. If you have not already done so, the CLI can be installed by following the instructions [here][installing-the-cli].
 
 :::tip
 The `kurtosis` command, and all of its subcommands, will print helptext when passed the `-h` or `--help` flag. You can use this at any time to see information on the command you're trying to run. For example:

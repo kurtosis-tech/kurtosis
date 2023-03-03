@@ -37,12 +37,15 @@ See [kurtosis.connection][connection-config-prebuilt] for pre-built [ConnectionC
 The ExecRecipe can be used to run the `command` on the service (see [exec][starlark-instructions-exec]
 or [wait][starlark-instructions-wait])
 
+:::caution
+
+The `ExecRecipe.service_name` field is still accepted but it's deprecated, so we suggest users to pass
+this value as an argument in the `exec`, `request` and `wait` instructions where this type is currently used
+
+:::
+
 ```python
 exec_recipe = ExecRecipe(
-    # The service name to execute the command on.
-    # MANDATORY
-    service_name = "my_service",
-
     # The actual command to execute. 
     # Each item corresponds to one shell argument, so ["echo", "Hello world"] behaves as if you ran "echo 'Hello World'" in the shell.
     # MANDATORY
@@ -58,12 +61,15 @@ The `HttpRequestRecipe` is used to make `HTTP` requests to an endpoint. Currentl
 
 The `GetHttpRequestRecipe` can be used to make `GET` requests.
 
+:::caution
+
+The `GetHttpRequestRecipe.service_name` field is still accepted but it's deprecated, so we suggest users to pass
+this value as an argument in the `exec`, `request` and `wait` instructions where this type is currently used
+
+:::
+
 ```python
 get_request_recipe = GetHttpRequestRecipe(
-    # The service name that is the server for the request
-    # MANDATORY
-    service_name = "my_service",
-
     # The port ID that is the server port for the request
     # MANDATORY
     port_id = "my_port",
@@ -116,12 +122,15 @@ This above recipe when used with `request` or `wait` instruction, will make a `G
 
 The `PostHttpRequestRecipe` can be used to make `POST` requests.
 
+:::caution
+
+The `PostHttpRequestRecipe.service_name` field is still accepted but it's deprecated, so we suggest users to pass
+this value as an argument in the `exec`, `request` and `wait` instructions where this type is currently used
+
+:::
+
 ```python
 post_request_recipe = PostHttpRequestRecipe(
-    # The service name that is the server for the request
-    # MANDATORY
-    service_name = "my_service",
-
     # The port ID that is the server port for the request
     # MANDATORY
     port_id = "my_port",
@@ -146,6 +155,7 @@ post_request_recipe = PostHttpRequestRecipe(
     extract = {
         "extractfield" : ".name.id"
     }
+)
 ```
 
 :::caution

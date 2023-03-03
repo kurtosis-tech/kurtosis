@@ -37,6 +37,10 @@ func (t *readFileTestCase) GetStarlarkCode() string {
 	return fmt.Sprintf(`%s(%s=%q)`, read_file.ReadFileBuiltinName, read_file.SrcArgName, TestModuleFileName)
 }
 
+func (t *readFileTestCase) GetStarlarkCodeForAssertion() string {
+	return ""
+}
+
 func (t *readFileTestCase) Assert(result starlark.Value) {
 	t.packageContentProvider.AssertCalled(t, "GetModuleContents", TestModuleFileName)
 	require.Equal(t, result, starlark.String("Hello World!"))

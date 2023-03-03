@@ -160,18 +160,31 @@ plan.assert(
 
 The `exec` instruction on the [`plan`][plan-reference] object executes commands on a given service as if they were running in a shell on the container.
 
+:::caution
+
+The previous `ExecRecipe` type `ExecRecipe(service_name = "my_service", command = ["echo", "Hello, world"])` is also accepted but will be deprecated soon, we suggest users to use this new one where the `service_name` argument is passed in via the `exec` instruction signature instead.
+
+:::
+
 ```python
 exec_recipe = ExecRecipe(
-    # The service name to execute the command on.
-    # MANDATORY
-    service_name = "my_service",
-
     # The actual command to execute. 
     # Each item corresponds to one shell argument, so ["echo", "Hello world"] behaves as if you ran "echo" "Hello world" in the shell.
     # MANDATORY
     command = ["echo", "Hello, world"],
 )
-result = plan.exec(exec_recipe)
+
+result = plan.exec(
+    # The recipe that will be run until assert passes.
+    # Valid values are of the following types: (ExecRecipe)
+    # MANDATORY
+    recipe = exec_recipe,
+
+    # A Service name designating a service that already exists inside the enclave
+    # If it does not, a validation error will be thrown
+    # OPTIONAL
+    service_name = "my-service",
+)
 
 plan.print(result["output"])
 plan.print(result["code"])
@@ -304,12 +317,14 @@ The `request` instruction on the [`plan`][plan-reference] object executes either
 
 For GET requests:
 
+:::caution
+
+The previous `GetHttpRequestRecipe` type `GetHttpRequestRecipe(service_name = "my_service", port_id = "my_port", endpoint = "/endpoint?input=data", extract = {"extracted-field": ".name.id", })` is also accepted but will be deprecated soon, we suggest users to use this new one where the `service_name` argument is passed in via the `request` instruction signature instead.
+
+:::
+
 ```python
 get_request_recipe = GetHttpRequestRecipe(
-    # The service name that is the server for the request
-    # MANDATORY
-    service_name = "my_service",
-
     # The port ID that is the server port for the request
     # MANDATORY
     port_id = "my_port",
@@ -327,7 +342,15 @@ get_request_recipe = GetHttpRequestRecipe(
     },
 )
 get_response = plan.request(
+    # The recipe that will be run until assert passes.
+    # Valid values are of the following types: (GetHttpRequestRecipe, PostHttpRequestRecipe)
+    # MANDATORY
     recipe = get_request_recipe,
+    
+    # A Service name designating a service that already exists inside the enclave
+    # If it does not, a validation error will be thrown
+    # OPTIONAL
+    service_name = "my_service",
 )
 plan.print(get_response["body"]) # Prints the body of the request
 plan.print(get_response["code"]) # Prints the result code of the request (e.g. 200, 500)
@@ -337,10 +360,6 @@ plan.print(get_response["extract.extracted-field"]) # Prints the result of runni
 For POST requests:
 ```python
 post_request_recipe = PostHttpRequestRecipe(
-    # The service name that is the server for the request
-    # MANDATORY
-    service_name = "my_service",
-
     # The port ID that is the server port for the request
     # MANDATORY
     port_id = "my_port",
@@ -363,6 +382,7 @@ post_request_recipe = PostHttpRequestRecipe(
 )
 post_response = plan.request(
     recipe = post_request_recipe,
+    service_name = "my_service",
 )
 ```
 
@@ -533,6 +553,12 @@ To learn more about the accepted recipe types, please checkout [ExecRecipe][star
 
 If it succedes, it returns a [future references][future-references-reference] with the last recipe run.
 
+:::caution
+
+The previous `GetHttpRequestRecipe` type `GetHttpRequestRecipe(service_name = "my_service", port_id = "my_port", endpoint = "/endpoint?input=data", extract = {"extracted-field": ".name.id", })` is also accepted but will be deprecated soon, we suggest users to use this new one where the `service_name` argument is passed in via the `wait` instruction signature instead.
+
+:::
+
 ```python
 # This fails in runtime if response["code"] != 200 for each request in a 5 minute time span
 response = plan.wait(
@@ -565,6 +591,11 @@ response = plan.wait(
     # Follows Go "time.Duration" format https://pkg.go.dev/time#ParseDuration
     # OPTIONAL (Default: "15m")
     timeout = "5m",
+
+    # A Service name designating a service that already exists inside the enclave
+    # If it does not, a validation error will be thrown
+    # OPTIONAL
+    service_name = "example-datastore-server-1",
 )
 # If this point of the code is reached, the assertion has passed therefore the print statement will print "200"
 plan.print(response["code"])

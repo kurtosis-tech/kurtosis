@@ -35,15 +35,10 @@ const (
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
 
-	starlarkTemplate = `
-CURRENT_TIME_STR = str(time.now().unix)
-ARTIFACT_NAME = "cli-rendered-artifact-" + CURRENT_TIME_STR
+	starlarkTemplateWithArtifactName = `
 def run(plan, args):
-	name = ARTIFACT_NAME
-	if args.name != "":
-		name = args.name
 	plan.render_templates(
-		name = name,
+		name = args.name,
 		config = {
 			args.file_name: struct(
 				template = args.template,
@@ -52,6 +47,19 @@ def run(plan, args):
 		}
 	)
 `
+
+	starlarkTemplateWithoutArtifactName = `
+def run(plan, args):
+	plan.render_templates(
+		config = {
+			args.file_name: struct(
+				template = args.template,
+				data = args.template_data,
+			),
+		}
+	)
+`
+
 	doNotDryRun   = false
 	noParallelism = 1
 )
@@ -209,11 +217,16 @@ func validateDestRelFilePathArg(ctx context.Context, flags *flags.ParsedFlags, a
 }
 
 func renderTemplateStarlarkCommand(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, destRelFilepath string, templateFileContents string, templateData interface{}, artifactName string) (string, error) {
+	template := starlarkTemplateWithArtifactName
+	if artifactName == defaultName {
+		template = starlarkTemplateWithoutArtifactName
+	}
+
 	templateDataBytes, err := json.Marshal(templateData)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error has occurred when parsing input params to render template Starlark command")
 	}
-	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkTemplate, fmt.Sprintf(`{"file_name": "%s", "template": "%s", "template_data": %s, "name": "%s"}`, destRelFilepath, templateFileContents, string(templateDataBytes), artifactName), doNotDryRun, noParallelism)
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, template, fmt.Sprintf(`{"file_name": "%s", "template": "%s", "template_data": %s, "name": "%s"}`, destRelFilepath, templateFileContents, string(templateDataBytes), artifactName), doNotDryRun, noParallelism)
 	if runResult.ExecutionError != nil {
 		return "", stacktrace.NewError("An error occurred during Starlark script execution for rendering template: %s", runResult.ExecutionError.GetErrorMessage())
 	}

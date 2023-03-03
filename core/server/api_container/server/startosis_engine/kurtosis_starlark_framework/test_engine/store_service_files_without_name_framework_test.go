@@ -50,9 +50,13 @@ func (t *storeServiceFilesWithoutNameTestCase) GetStarlarkCode() string {
 	return fmt.Sprintf("%s(%s=%q, %s=%q)", store_service_files.StoreServiceFilesBuiltinName, store_service_files.ServiceNameArgName, TestServiceName, store_service_files.SrcArgName, TestSrcPath)
 }
 
+func (t *storeServiceFilesWithoutNameTestCase) GetStarlarkCodeForAssertion() string {
+	return ""
+}
+
 func (t *storeServiceFilesWithoutNameTestCase) Assert(interpretationResult starlark.Value, executionResult *string) {
 	require.Equal(t, starlark.String(mockedFileArtifactName), interpretationResult)
 
-	expectedExecutionResult := fmt.Sprintf("Files  with artifact name '%s' uploaded with artifact UUID '%s'", mockedFileArtifactName, TestArtifactUuid)
+	expectedExecutionResult := fmt.Sprintf("Files with artifact name '%s' uploaded with artifact UUID '%s'", mockedFileArtifactName, TestArtifactUuid)
 	require.Equal(t, expectedExecutionResult, *executionResult)
 }
