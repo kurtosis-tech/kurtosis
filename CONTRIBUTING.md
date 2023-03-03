@@ -2,17 +2,25 @@
 
 Thank you for investing your time in contributing to our project! In this guide you will get an overview of the contribution workflow.
 
-### Issues
+### Bugs
 
-If you spot an issue, [search if an issue already exists](https://github.com/kurtosis-tech/kurtosis/issues?q=is%3Aissue+is%3Aopen+label%3Abug). If a related issue doesn't exist, you can open a new issue using the [bug report template](https://github.com/kurtosis-tech/kurtosis/issues/new?assignees=&labels=&template=bug-report.md&title=). 
+If you spot a bug, [search if an issue already exists](https://github.com/kurtosis-tech/kurtosis/issues?q=is%3Aissue+is%3Aopen+label%3Abug). If a related issue doesn't exist, you can open a new issue using the [bug report template](https://github.com/kurtosis-tech/kurtosis/issues/new?assignees=&labels=bug&template=bug-report.yml&title=%5Bbug%5D%3A+). 
 
-### Feature Request
+### Feature Requests
 
-If you have a feature request, search if a thread already exists in [Github Discussions](https://github.com/kurtosis-tech/kurtosis/discussions/categories/ideas). If a related discussion doesn't exist, you can open a [new discussion](https://github.com/kurtosis-tech/kurtosis/discussions/new?category=ideas). 
+If you have a feature request, search if a [feature requests already exists](https://github.com/kurtosis-tech/kurtosis/issues?q=is%3Aopen+is%3Aissue+label%3A%22feature+request%22). If a related feature request doesn't exist, you can open a [feature request](https://github.com/kurtosis-tech/kurtosis/issues/new?assignees=&labels=feature+request&template=feature-request.yml&title=%5BFR%5D%3A+). 
 
-### Questions
+### Documentation
 
-If you have a question around how Kurtosis works, search if you can find the answer in the [docs](https://docs.kurtosis.com). If you can't find your answer in the docs, ask a question [here](https://github.com/kurtosis-tech/kurtosis/discussions/categories/q-a). 
+If you notice an issue in our docs (e.g. typo, grammar, conflicting information), search if there is already an issue open for it. Otherwise, please file a [docs issue report](https://github.com/kurtosis-tech/kurtosis/issues/new?assignees=leeederek&labels=docs&template=docs-issue.yml&title=%5BDocs%5D%3A+) and we will address it as soon as we can.
+
+
+### Questions, help, or feedback
+
+If you have a question around how Kurtosis works and the [docs](https://docs.kurtosis.com) aren't enough, we're more than happy to help via the following ways:
+- Chat to us in our [Discord server](https://discord.gg/Es7QHbY4)
+- Email us at [feedback@kurtosistech.com](mailto:feedback@kurtosistech.com)
+- Get dedicated help in a [1:1 session with us](https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding)
 
 ### Pull Request
 
