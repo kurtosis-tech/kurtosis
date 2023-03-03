@@ -37,7 +37,6 @@ See [kurtosis.connection][connection-config-prebuilt] for pre-built [ConnectionC
 The ExecRecipe can be used to run the `command` on the service (see [exec][starlark-instructions-exec]
 or [wait][starlark-instructions-wait])
 
-
 ```python
 exec_recipe = ExecRecipe(
     # The actual command to execute. 
@@ -108,7 +107,6 @@ This above recipe when used with `request` or `wait` instruction, will make a `G
 #### PostHttpRequestRecipe
 
 The `PostHttpRequestRecipe` can be used to make `POST` requests.
-
 
 ```python
 post_request_recipe = PostHttpRequestRecipe(

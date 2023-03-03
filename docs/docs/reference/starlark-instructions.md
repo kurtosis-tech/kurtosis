@@ -309,7 +309,6 @@ The `request` instruction on the [`plan`][plan-reference] object executes either
 
 For GET requests:
 
-
 ```python
 get_request_recipe = GetHttpRequestRecipe(
     # The port ID that is the server port for the request

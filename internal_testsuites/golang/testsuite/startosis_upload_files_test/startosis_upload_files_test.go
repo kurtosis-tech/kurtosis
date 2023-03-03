@@ -70,7 +70,7 @@ func TestStartosis(t *testing.T) {
 	require.Nil(t, runResult.ExecutionError, "Unexpected execution error")
 
 	expectedScriptOutput := `Adding service example-datastore-server-1.
-Files  with artifact name 'test-artifact' uploaded with artifact UUID '[a-f0-9]{32}'
+Files with artifact name 'test-artifact' uploaded with artifact UUID '[a-f0-9]{32}'
 Uploaded test-artifact
 Service 'example-datastore-server-1' added with service UUID '[a-z-0-9]+'
 `

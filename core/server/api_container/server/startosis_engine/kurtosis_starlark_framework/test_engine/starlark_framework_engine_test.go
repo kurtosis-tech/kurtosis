@@ -33,17 +33,13 @@ func TestAllRegisteredBuiltins(t *testing.T) {
 	testKurtosisPlanInstruction(t, newRemoveServiceTestCase(t))
 	testKurtosisPlanInstruction(t, newRenderSingleTemplateTestCase(t))
 	testKurtosisPlanInstruction(t, newRenderMultipleTemplatesTestCase(t))
-	testKurtosisPlanInstruction(t, newRequestTestCase1(t))
-	testKurtosisPlanInstruction(t, newRequestTestCase2(t))
-	testKurtosisPlanInstruction(t, newRequestTestCase3(t))
+	testKurtosisPlanInstruction(t, newRequestTestCase(t))
 	testKurtosisPlanInstruction(t, newStoreServiceFilesTestCase(t))
 	testKurtosisPlanInstruction(t, newStoreServiceFilesWithoutNameTestCase(t))
 	testKurtosisPlanInstruction(t, newUpdateServiceTestCase(t))
 	testKurtosisPlanInstruction(t, newUploadFilesTestCase(t))
 	testKurtosisPlanInstruction(t, newUploadFilesWithoutNameTestCase(t))
-	testKurtosisPlanInstruction(t, newWaitTestCase1(t))
-	testKurtosisPlanInstruction(t, newWaitTestCase2(t))
-	testKurtosisPlanInstruction(t, newWaitTestCase3(t))
+	testKurtosisPlanInstruction(t, newWaitTestCase(t))
 
 	testKurtosisHelper(t, newReadFileTestCase(t))
 	testKurtosisHelper(t, newImportModuleTestCase(t))
@@ -83,7 +79,7 @@ func testKurtosisPlanInstruction(t *testing.T, builtin KurtosisPlanInstructionBa
 		starlarkCodeForAssertion = starlarkCode
 	}
 
-	require.Equal(t, starlarkCode, serializedInstruction)
+	require.Equal(t, starlarkCodeForAssertion, serializedInstruction)
 }
 
 func testKurtosisHelper(t *testing.T, builtin KurtosisHelperBaseTest) {
