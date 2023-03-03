@@ -104,6 +104,10 @@ func (t *addServiceTestCase) GetStarlarkCode() string {
 	return fmt.Sprintf(`%s(%s=%q, %s=%s)`, add_service.AddServiceBuiltinName, add_service.ServiceNameArgName, TestServiceName, add_service.ServiceConfigArgName, serviceConfig)
 }
 
+func (t *addServiceTestCase) GetStarlarkCodeForAssertion() string {
+	return ""
+}
+
 func (t *addServiceTestCase) Assert(interpretationResult starlark.Value, executionResult *string) {
 	serviceObj, ok := interpretationResult.(*kurtosis_types.Service)
 	require.True(t, ok, "interpretation result should be a dictionary")

@@ -51,6 +51,10 @@ func (t setConnectionDefaultTestCase) GetStarlarkCode() string {
 	return fmt.Sprintf("%s(%s=%s)", set_connection.SetConnectionBuiltinName, set_connection.ConnectionConfigArgName, connectionConfig)
 }
 
+func (t *setConnectionDefaultTestCase) GetStarlarkCodeForAssertion() string {
+	return ""
+}
+
 func (t setConnectionDefaultTestCase) Assert(interpretationResult starlark.Value, executionResult *string) {
 	require.Equal(t, starlark.None, interpretationResult)
 	require.Equal(t, "Configured default subnetwork connection", *executionResult)
