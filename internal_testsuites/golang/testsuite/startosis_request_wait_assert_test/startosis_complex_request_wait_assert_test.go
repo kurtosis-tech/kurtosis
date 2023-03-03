@@ -54,10 +54,9 @@ def run(plan):
 	plan.assert(post_response["code"], "==", 200)
 	plan.assert(post_response["extract.my-body"], "==", "bar")
 	exec_recipe = ExecRecipe(
-		service_name = "web-server",
 		command = ["echo", "hello", post_response["extract.my-body"]]
 	)
-	exec_result = plan.wait(exec_recipe, "code", "==", 0)
+	exec_result = plan.wait(exec_recipe, "code", "==", 0, "web-server")
 	plan.assert(exec_result["output"], "==", "hello bar\n")
 `
 )
