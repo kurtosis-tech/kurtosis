@@ -96,7 +96,7 @@ def run(plan, args):
 	recipe = ExecRecipe(
 		command=["ping", "-c", "1", "-W", "1", service_1.ip_address],
 	)
-	res = plan.exec(recipe, service_name=SERVICE_ID_2)
+	res = plan.exec(recipe, SERVICE_ID_2)
 	plan.assert(res["code"], "==", 1)
 
 	plan.set_connection((SUBNETWORK_1, SUBNETWORK_3), config=ConnectionConfig(packet_delay_distribution=delay))
@@ -105,7 +105,7 @@ def run(plan, args):
 		command=["/bin/sh", "-c", service_one_cmd],
 	)
 
-	res = plan.exec(recipe, service_name=SERVICE_ID_2)
+	res = plan.exec(recipe, SERVICE_ID_2)
 	plan.assert(res["output"], ">", "1449")
 	plan.print("Test successfully executed")
 `

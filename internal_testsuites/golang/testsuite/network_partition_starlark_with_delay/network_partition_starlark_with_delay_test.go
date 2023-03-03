@@ -74,7 +74,7 @@ def run(plan, args):
 	recipe = ExecRecipe(
 		command=["/bin/sh", "-c", service_three_cmd],
 	)
-	res = plan.exec(recipe, service_name=SERVICE_ID_2)
+	res = plan.exec(recipe, SERVICE_ID_2)
 	plan.assert(res["output"], "<", "2")
 
 	delay = UniformPacketDelayDistribution(750)
@@ -83,7 +83,7 @@ def run(plan, args):
 	recipe = ExecRecipe(
 		command=["/bin/sh", "-c", service_one_cmd],
 	)
-	res = plan.exec(recipe, service_name=SERVICE_ID_2)
+	res = plan.exec(recipe, SERVICE_ID_2)
 	plan.assert(res["output"], "<", "2")
 
 	recipe = ExecRecipe(
@@ -112,7 +112,7 @@ def run(plan, args):
 	# have not found a way to convert output to int
 	# the overall latency should be greater than 350*2, but
 	# added some buffer to handle 50ms outliers
-	res = plan.exec(recipe, service_name=SERVICE_ID_2)
+	res = plan.exec(recipe, SERVICE_ID_2)
 	plan.assert(res["output"], ">", "649")
 	plan.print("Test successfully executed")
 `
