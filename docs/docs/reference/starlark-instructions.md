@@ -126,7 +126,7 @@ services will be rolled back and the instruction will return an execution error.
 
 :::
 
-The number of services being added concurrently is tunable by the `--parallelism` flag of the run command (see more on the [run](./cli/run-starlark.md) reference).
+The number of services being added concurrently is tunable by the `--parallelism` flag of the run command (see more on the [`run`](./cli/run-starlark.md) reference).
 
 ### assert
 
