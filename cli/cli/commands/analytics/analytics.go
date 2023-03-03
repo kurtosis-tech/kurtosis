@@ -7,8 +7,10 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/metrics_user_id_store"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/out"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/user_support_constants"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -18,14 +20,16 @@ const (
 	//Valid accept sending metrics inputs
 	enableSendingMetrics   = "enable"
 	disableSendingMetrics  = "disable"
+	printMetricsId         = "id"
 	enableDisableDelimiter = "|"
 
-	enableDisableStatus = enableSendingMetrics + enableDisableDelimiter + disableSendingMetrics
+	enableDisableStatus = enableSendingMetrics + enableDisableDelimiter + disableSendingMetrics + enableDisableDelimiter + printMetricsId
 )
 
 var validMetricsSendingToggleValue = map[string]bool{
 	enableSendingMetrics:  true,
 	disableSendingMetrics: true,
+	printMetricsId:        true,
 }
 
 var AnalyticsCmd = &lowlevel.LowlevelKurtosisCommand{
@@ -53,10 +57,13 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 
 	// We get validation for free by virtue of the KurtosisCommand framework
 	var didUserAcceptSendingMetrics bool
+	justPrintMetricsId := false
 	if didUserAcceptSendingMetricsStr == enableSendingMetrics {
 		didUserAcceptSendingMetrics = true
 	} else if didUserAcceptSendingMetricsStr == disableSendingMetrics {
 		didUserAcceptSendingMetrics = false
+	} else if didUserAcceptSendingMetricsStr == printMetricsId {
+		justPrintMetricsId = true
 	} else {
 		// If this happens, there's something wrong with the validation being done via KurtosisCommand
 		return stacktrace.NewError(
@@ -64,6 +71,16 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 			enableDisableStatus,
 			didUserAcceptSendingMetricsStr,
 		)
+	}
+
+	if justPrintMetricsId {
+		metricsUserIdStore := metrics_user_id_store.GetMetricsUserIDStore()
+		metricsUserId, err := metricsUserIdStore.GetUserID()
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred while getting the users metrics id")
+		}
+		out.PrintOutLn(metricsUserId)
+		return nil
 	}
 
 	kurtosisConfigStore := kurtosis_config.GetKurtosisConfigStore()
