@@ -536,11 +536,14 @@ func TestSetConnection(t *testing.T) {
 
 	require.Equal(t, ConnectionBlocked, topology.GetDefaultConnection())
 
+	currentServicePartitions, err := topology.GetServicePartitions()
+	require.Nil(t, err)
 	require.Equal(t, map[service.ServiceName]service_network_types.PartitionID{
 		"service1": "partition1",
 		"service2": "partition2",
 		"service3": "partition3",
-	}, topology.servicePartitions)
+	}, currentServicePartitions)
+
 	partitionServices, err := topology.GetPartitionServices()
 	require.Nil(t, err)
 	require.Equal(t, map[service_network_types.PartitionID]map[service.ServiceName]bool{
@@ -601,11 +604,13 @@ func TestUnsetConnection(t *testing.T) {
 
 	require.Equal(t, ConnectionBlocked, topology.GetDefaultConnection())
 
+	currentServicePartitions, err := topology.GetServicePartitions()
+	require.Nil(t, err)
 	require.Equal(t, map[service.ServiceName]service_network_types.PartitionID{
 		"service1": "partition1",
 		"service2": "partition2",
 		"service3": "partition3",
-	}, topology.servicePartitions)
+	}, currentServicePartitions)
 	partitionServices, err := topology.GetPartitionServices()
 	require.Nil(t, err)
 	require.Equal(t, map[service_network_types.PartitionID]map[service.ServiceName]bool{
@@ -717,11 +722,13 @@ func TestSetDefaultConnection(t *testing.T) {
 
 	require.Equal(t, newDefaultConnection, topology.GetDefaultConnection())
 
+	currentServicePartitions, err := topology.GetServicePartitions()
+	require.Nil(t, err)
 	require.Equal(t, map[service.ServiceName]service_network_types.PartitionID{
 		"service1": "partition1",
 		"service2": "partition2",
 		"service3": "partition3",
-	}, topology.servicePartitions)
+	}, currentServicePartitions)
 	partitionServices, err := topology.GetPartitionServices()
 	require.Nil(t, err)
 	require.Equal(t, map[service_network_types.PartitionID]map[service.ServiceName]bool{
@@ -758,11 +765,13 @@ func TestCreateEmptyPartitionWithDefaultConnection(t *testing.T) {
 
 	require.Equal(t, ConnectionBlocked, topology.GetDefaultConnection())
 
+	currentServicePartitions, err := topology.GetServicePartitions()
+	require.Nil(t, err)
 	require.Equal(t, map[service.ServiceName]service_network_types.PartitionID{
 		"service1": "partition1",
 		"service2": "partition2",
 		"service3": "partition3",
-	}, topology.servicePartitions)
+	}, currentServicePartitions)
 	partitionServices, err := topology.GetPartitionServices()
 	require.Nil(t, err)
 	require.Equal(t, map[service_network_types.PartitionID]map[service.ServiceName]bool{
@@ -818,11 +827,13 @@ func TestRemovePartition(t *testing.T) {
 
 	require.Equal(t, ConnectionBlocked, topology.GetDefaultConnection())
 
+	currentServicePartitions, err := topology.GetServicePartitions()
+	require.Nil(t, err)
 	require.Equal(t, map[service.ServiceName]service_network_types.PartitionID{
 		"service1": "partition1",
 		"service2": "partition2",
 		"service3": "partition2",
-	}, topology.servicePartitions)
+	}, currentServicePartitions)
 	partitionServices, err := topology.GetPartitionServices()
 	require.Nil(t, err)
 	require.Equal(t, map[service_network_types.PartitionID]map[service.ServiceName]bool{
@@ -857,11 +868,13 @@ func TestRemovePartition_NoopDoesNotExist(t *testing.T) {
 
 	require.Equal(t, ConnectionBlocked, topology.GetDefaultConnection())
 
+	currentServicePartitions, err := topology.GetServicePartitions()
+	require.Nil(t, err)
 	require.Equal(t, map[service.ServiceName]service_network_types.PartitionID{
 		"service1": "partition1",
 		"service2": "partition2",
 		"service3": "partition3",
-	}, topology.servicePartitions)
+	}, currentServicePartitions)
 	partitionServices, err := topology.GetPartitionServices()
 	require.Nil(t, err)
 	require.Equal(t, map[service_network_types.PartitionID]map[service.ServiceName]bool{

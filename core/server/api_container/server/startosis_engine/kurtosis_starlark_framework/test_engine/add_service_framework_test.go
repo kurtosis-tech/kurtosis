@@ -19,12 +19,6 @@ import (
 	"testing"
 )
 
-const (
-	addService_enclaveUuid = "test-enclave"
-	addService_serviceName = service.ServiceName("service-1")
-	addService_serviceUuid = service.ServiceUUID("service-1-uuid")
-)
-
 type addServiceTestCase struct {
 	*testing.T
 }
@@ -45,39 +39,37 @@ func (t *addServiceTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtosi
 
 	serviceNetwork.EXPECT().StartService(
 		mock.Anything,
-		service1,
+		TestServiceName,
 		mock.MatchedBy(func(serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig) bool {
 			expectedServiceConfig := services.NewServiceConfigBuilder(
-				"kurtosistech/example-datastore-server",
+				TestContainerImageName,
 			).WithPrivatePorts(map[string]*kurtosis_core_rpc_api_bindings.Port{
-				"grpc": binding_constructors.NewPort(1234, kurtosis_core_rpc_api_bindings.Port_TCP, "http"),
+				TestPrivatePortId: binding_constructors.NewPort(TestPrivatePortNumber, TestPrivatePortProtocol, TestPublicApplicationProtocol),
 			}).WithPublicPorts(map[string]*kurtosis_core_rpc_api_bindings.Port{
-				"grpc": binding_constructors.NewPort(80, kurtosis_core_rpc_api_bindings.Port_TCP, "http"),
+				TestPublicPortId: binding_constructors.NewPort(TestPublicPortNumber, TestPublicPortProtocol, TestPublicApplicationProtocol),
 			}).WithFilesArtifactMountDirpaths(map[string]string{
-				"path/to/file/1": "file_1",
-				"path/to/file/2": "file_2",
+				TestFilesArtifactPath1: TestFilesArtifactName1,
 			}).WithCmdArgs(
-				[]string{"bash", "-c", "/apps/main.py", "1234"},
+				TestCmdSlice,
 			).WithEntryPointArgs(
-				[]string{"127.0.0.0", "1234"},
+				TestEntryPointSlice,
 			).WithEnvVars(map[string]string{
-				"VAR_1": "VALUE_1",
-				"VAR_2": "VALUE_2",
+				TestEnvVarName1: TestEnvVarValue1,
 			}).WithPrivateIPAddressPlaceholder(
-				"<IP_ADDRESS>",
+				TestPrivateIPAddressPlaceholder,
 			).WithSubnetwork(
-				"subnetwork_1",
+				string(TestSubnetwork),
 			).WithCpuAllocationMillicpus(
-				2000,
+				TestCpuAllocation,
 			).WithMemoryAllocationMegabytes(
-				1024,
+				TestMemoryAllocation,
 			).Build()
 			actualServiceConfig := services.NewServiceConfigBuilderFromServiceConfig(serviceConfig).Build()
 			assert.Equal(t, expectedServiceConfig, actualServiceConfig)
 			return true
 		}),
 	).Times(1).Return(
-		service.NewService(service.NewServiceRegistration(addService_serviceName, addService_serviceUuid, addService_enclaveUuid, nil, string(addService_serviceName)), container_status.ContainerStatus_Running, nil, nil, nil),
+		service.NewService(service.NewServiceRegistration(TestServiceName, TestServiceUuid, TestEnclaveUuid, nil, string(TestServiceName)), container_status.ContainerStatus_Running, nil, nil, nil),
 		nil,
 	)
 
@@ -85,16 +77,44 @@ func (t *addServiceTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtosi
 }
 
 func (t *addServiceTestCase) GetStarlarkCode() string {
-	serviceConfig := `ServiceConfig(image="kurtosistech/example-datastore-server", ports={"grpc": PortSpec(number=1234, transport_protocol="TCP", application_protocol="http")}, public_ports={"grpc": PortSpec(number=80, transport_protocol="TCP", application_protocol="http")}, files={"path/to/file/1": "file_1", "path/to/file/2": "file_2"}, entrypoint=["127.0.0.0", "1234"], cmd=["bash", "-c", "/apps/main.py", "1234"], env_vars={"VAR_1": "VALUE_1", "VAR_2": "VALUE_2"}, private_ip_address_placeholder="<IP_ADDRESS>", subnetwork="subnetwork_1", cpu_allocation=2000, memory_allocation=1024)`
-	return fmt.Sprintf(`%s(%s=%q, %s=%s)`, add_service.AddServiceBuiltinName, add_service.ServiceNameArgName, addService_serviceName, add_service.ServiceConfigArgName, serviceConfig)
+	serviceConfigStarlarkStrTemplate := "ServiceConfig(" +
+		"image=%q, " +
+		"ports={%q: PortSpec(number=%d, transport_protocol=%q, application_protocol=%q)}, " +
+		"public_ports={%q: PortSpec(number=%d, transport_protocol=%q, application_protocol=%q)}, " +
+		"files={%q: %q}, " +
+		"entrypoint=[%q, %q], " +
+		"cmd=[%q, %q, %q], " +
+		"env_vars={%q: %q}, " +
+		"private_ip_address_placeholder=%q, " +
+		"subnetwork=%q, " +
+		"cpu_allocation=%d, " +
+		"memory_allocation=%d)"
+	serviceConfig := fmt.Sprintf(serviceConfigStarlarkStrTemplate,
+		TestContainerImageName,
+		TestPrivatePortId, TestPrivatePortNumber, TestPrivatePortProtocolStr, TestPrivateApplicationProtocol,
+		TestPublicPortId, TestPublicPortNumber, TestPublicPortProtocolStr, TestPublicApplicationProtocol,
+		TestFilesArtifactPath1, TestFilesArtifactName1,
+		TestEntryPointSlice[0], TestEntryPointSlice[1],
+		TestCmdSlice[0], TestCmdSlice[1], TestCmdSlice[2],
+		TestEnvVarName1, TestEnvVarValue1,
+		TestPrivateIPAddressPlaceholder,
+		TestSubnetwork,
+		TestCpuAllocation,
+		TestMemoryAllocation)
+	return fmt.Sprintf(`%s(%s=%q, %s=%s)`, add_service.AddServiceBuiltinName, add_service.ServiceNameArgName, TestServiceName, add_service.ServiceConfigArgName, serviceConfig)
+}
+
+func (t *addServiceTestCase) GetStarlarkCodeForAssertion() string {
+	return ""
 }
 
 func (t *addServiceTestCase) Assert(interpretationResult starlark.Value, executionResult *string) {
 	serviceObj, ok := interpretationResult.(*kurtosis_types.Service)
 	require.True(t, ok, "interpretation result should be a dictionary")
 	require.NotNil(t, serviceObj)
-	expectedServiceObj := `Service(hostname = "{{kurtosis:service-1.hostname}}", ip_address = "{{kurtosis:service-1.ip_address}}", ports = {"grpc": PortSpec(number=1234, transport_protocol="TCP", application_protocol="http")})`
+	expectedServiceObj := fmt.Sprintf(`Service(hostname = "{{kurtosis:%s.hostname}}", ip_address = "{{kurtosis:%s.ip_address}}", ports = {%q: PortSpec(number=%d, transport_protocol=%q, application_protocol=%q)})`, TestServiceName, TestServiceName, TestPrivatePortId, TestPrivatePortNumber, TestPrivatePortProtocolStr, TestPrivateApplicationProtocol)
 	require.Equal(t, expectedServiceObj, serviceObj.String())
 
-	require.Equal(t, *executionResult, "Service 'service-1' added with service UUID 'service-1-uuid'")
+	expectedExecutionResult := fmt.Sprintf("Service '%s' added with service UUID '%s'", TestServiceName, TestServiceUuid)
+	require.Equal(t, expectedExecutionResult, *executionResult)
 }

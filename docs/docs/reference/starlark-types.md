@@ -37,12 +37,15 @@ See [kurtosis.connection][connection-config-prebuilt] for pre-built [ConnectionC
 The ExecRecipe can be used to run the `command` on the service (see [exec][starlark-instructions-exec]
 or [wait][starlark-instructions-wait])
 
+:::caution
+
+The `ExecRecipe.service_name` field is still accepted but it's deprecated, so we suggest users to pass
+this value as an argument in the `exec`, `request` and `wait` instructions where this type is currently used
+
+:::
+
 ```python
 exec_recipe = ExecRecipe(
-    # The service name to execute the command on.
-    # MANDATORY
-    service_name = "my_service",
-
     # The actual command to execute. 
     # Each item corresponds to one shell argument, so ["echo", "Hello world"] behaves as if you ran "echo 'Hello World'" in the shell.
     # MANDATORY
@@ -58,12 +61,15 @@ The `HttpRequestRecipe` is used to make `HTTP` requests to an endpoint. Currentl
 
 The `GetHttpRequestRecipe` can be used to make `GET` requests.
 
+:::caution
+
+The `GetHttpRequestRecipe.service_name` field is still accepted but it's deprecated, so we suggest users to pass
+this value as an argument in the `exec`, `request` and `wait` instructions where this type is currently used
+
+:::
+
 ```python
 get_request_recipe = GetHttpRequestRecipe(
-    # The service name that is the server for the request
-    # MANDATORY
-    service_name = "my_service",
-
     # The port ID that is the server port for the request
     # MANDATORY
     port_id = "my_port",
@@ -83,16 +89,48 @@ get_request_recipe = GetHttpRequestRecipe(
 )
 ```
 
+:::info
+Important - `port_id` field accepts user defined ID assinged to a port in service's port map while defininig `ServiceConfig`. For example, we have a service config with following port map:
+
+```
+    test-service-config = ServiceConfig(
+        ports = {
+            // "port_id": port_number
+            "http": 5000,
+            "grpc": 3000
+            ...
+        }
+        ...
+    )
+```
+
+The user defined port IDs in above port map are: `http` and `grpc`. These can be passed to create http request recipes (`GET` OR `POST`) such as:
+
+```
+    recipe = GetHttpRequestRecipe(
+        port_id = "http",
+        service_name = "service-using-test-service-config",
+        endpoint = "/ping"
+        ...
+    )
+```
+
+This above recipe when used with `request` or `wait` instruction, will make a `GET` request to a service with name `service-using-test-service-config` on port `5000` with the path `/ping`.
+:::
+
 #### PostHttpRequestRecipe
 
 The `PostHttpRequestRecipe` can be used to make `POST` requests.
 
+:::caution
+
+The `PostHttpRequestRecipe.service_name` field is still accepted but it's deprecated, so we suggest users to pass
+this value as an argument in the `exec`, `request` and `wait` instructions where this type is currently used
+
+:::
+
 ```python
 post_request_recipe = PostHttpRequestRecipe(
-    # The service name that is the server for the request
-    # MANDATORY
-    service_name = "my_service",
-
     # The port ID that is the server port for the request
     # MANDATORY
     port_id = "my_port",
@@ -117,6 +155,7 @@ post_request_recipe = PostHttpRequestRecipe(
     extract = {
         "extractfield" : ".name.id"
     }
+)
 ```
 
 :::caution
@@ -224,8 +263,8 @@ config = ServiceConfig(
     # For more info on what a files artifact is, see below
     # OPTIONAL (Default: {})
     files = {
-        "path/to/file/1": "files_artifact_1",
-        "path/to/file/2": "files_artifact_2",
+        "path/to/file/1": files_artifact_1,
+        "path/to/file/2": files_artifact_2,
     },
 
     # The ENTRYPOINT statement hardcoded in a container image's Dockerfile might not be suitable for your needs.
@@ -270,8 +309,9 @@ config = ServiceConfig(
     subnetwork = "service_subnetwork",
 )
 ```
-
 The `ports` dictionary argument accepts a key value pair, where `key` is a user defined unique port identifier and `value` is a [PortSpec][port-spec] object.
+  
+The `files` dictionary argument accepts a key value pair, where `key` is the path where the contents of the artifact will be mounted to and `value` is a file artifact name. (see [upload_files][starlark-instructions-upload-files], [render_templates][starlark-instructions-render-templates] and [store_service_files][starlark-instructions-store-service-files] to learn more about on how to create file artifacts)
 
 For more info about the `subnetwork` argument, see [Kurtosis subnetworks][subnetworks-reference].
 
@@ -317,3 +357,7 @@ Kurtosis provides "pre-built" values for types that will be broadly used. Those 
 [starlark-instructions-request]: ./starlark-instructions.md#request
 [starlark-instructions-wait]: ./starlark-instructions.md#wait
 [starlark-instructions-exec]: ./starlark-instructions.md#exec
+[starlark-instructions-upload-files]: ./starlark-instructions.md#upload_files
+[starlark-instructions-store-service-files]: ./starlark-instructions.md#store_service_files
+[starlark-instructions-render-templates]: ./starlark-instructions.md#render_templates
+
