@@ -199,7 +199,7 @@ func (kurtosisCtx *KurtosisContext) DestroyEnclave(ctx context.Context, enclaveI
 	return nil
 }
 
-// Docs available at https://docs.kurtosis.com/sdk#cleanboolean-shouldcleanall---setenclaveid-removedenclaveids
+// Docs available at https://docs.kurtosis.com/sdk#cleanboolean-shouldcleanall---enclavenameanduuid-removedenclavenameanduuids
 func (kurtosisCtx *KurtosisContext) Clean(ctx context.Context, shouldCleanAll bool) ([]*kurtosis_engine_rpc_api_bindings.EnclaveNameAndUuid, error) {
 	cleanArgs := &kurtosis_engine_rpc_api_bindings.CleanArgs{
 		ShouldCleanAll: shouldCleanAll,

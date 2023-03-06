@@ -228,7 +228,7 @@ export class KurtosisContext {
         return ok(null)
     }
 
-    // Docs available at https://docs.kurtosis.com/sdk#cleanboolean-shouldcleanall---setenclaveid-removedenclaveids
+    // Docs available at https://docs.kurtosis.com/sdk#cleanboolean-shouldcleanall---enclavenameanduuid-removedenclavenameanduuids
     public async clean(shouldCleanAll: boolean): Promise<Result<EnclaveNameAndUuid[], Error>>{
         const cleanArgs: CleanArgs = newCleanArgs(shouldCleanAll);
         const cleanResponseResult = await this.client.clean(cleanArgs)
