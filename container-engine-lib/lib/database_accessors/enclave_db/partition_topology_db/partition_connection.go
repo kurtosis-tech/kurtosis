@@ -39,9 +39,6 @@ type PartitionConnection struct {
 	PacketDelayDistribution DelayDistribution `json:"delay_distribution"`
 }
 
-// remove
-// get
-
 func (pc *PartitionConnectionBucket) GetPartitionConnection(connectionId PartitionConnectionID) (PartitionConnection, error) {
 	var connection PartitionConnection
 	getPartitionConnection := func(tx *bolt.Tx) error {
@@ -137,6 +134,10 @@ func (pc *PartitionConnectionBucket) ReplaceBucketContents(newConnections map[Pa
 	if err := pc.db.Update(deleteAndReplaceBucketFunc); err != nil {
 		return stacktrace.Propagate(err, "An error occurred while replacing the existing service partition configuration with new configuration")
 	}
+	return nil
+}
+
+func (pc *PartitionConnectionBucket) RemovePartitionConnection(connectionId PartitionConnectionID) error {
 	return nil
 }
 
