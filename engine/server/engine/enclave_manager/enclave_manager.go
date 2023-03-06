@@ -29,7 +29,8 @@ const (
 
 	validNumberOfUuidMatches = 1
 
-	errorDelimiter = ", "
+	errorDelimiter                  = ", "
+	enclaveUuidEnclaveNameDelimiter = "\t"
 )
 
 // TODO Move this to the KurtosisBackend to calculate!!
@@ -305,9 +306,11 @@ func (manager *EnclaveManager) Clean(ctx context.Context, shouldCleanAll bool) (
 	if len(successfullyRemovedArtifactIds) > 0 {
 		logrus.Infof("Successfully removed the enclaves")
 		sort.Strings(successfullyRemovedArtifactIds)
-		for _, successfulArtifactId := range successfullyRemovedArtifactIds {
-			resultSuccessfullyRemovedArtifactsIds[successfulArtifactId] = true
-			logrus.Infof("Enclave Uuid '%v'", successfulArtifactId)
+		for _, successfullyRemovedEnclaveUuid := range successfullyRemovedArtifactIds {
+			enclaveNameForUuid := manager.getEnclaveNameForEnclaveUuidUnlocked(successfullyRemovedEnclaveUuid)
+			enclaveUuidAndName := fmt.Sprintf("%v%v%v", successfullyRemovedEnclaveUuid, enclaveUuidEnclaveNameDelimiter, enclaveNameForUuid)
+			resultSuccessfullyRemovedArtifactsIds[enclaveUuidAndName] = true
+			logrus.Infof("Enclave Uuid '%v'", successfullyRemovedEnclaveUuid)
 		}
 	}
 
@@ -612,6 +615,16 @@ func (manager *EnclaveManager) getEnclaveUuidForIdentifierUnlocked(ctx context.C
 	}
 
 	return "", stacktrace.NewError("Couldn't find enclave uuid for identifier '%v'", enclaveIdentifier)
+}
+
+// only call this from a thread safe context
+func (manager *EnclaveManager) getEnclaveNameForEnclaveUuidUnlocked(enclaveUuid string) string {
+	for _, identifier := range manager.allExistingAndHistoricalIdentifiers {
+		if identifier.EnclaveUuid == enclaveUuid {
+			return identifier.Name
+		}
+	}
+	return ""
 }
 
 // Returns nil if apiContainerMap is empty
