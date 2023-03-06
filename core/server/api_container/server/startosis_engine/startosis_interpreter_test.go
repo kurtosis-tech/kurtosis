@@ -70,7 +70,7 @@ def run(plan):
 			"input": ".query.input"
 		}
 	)
-	response = plan.wait(get_recipe, "code", "==",  200, timeout="5m", interval="5s", service_name = "web-server")
+	response = plan.wait(get_recipe, "code", "==",  200, timeout="5m", interval="5s", service_name="web-server")
 	plan.print(response["body"])
 `
 	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
