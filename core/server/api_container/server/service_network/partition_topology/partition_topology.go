@@ -457,7 +457,7 @@ func (topology *PartitionTopology) GetPartitionConnection(partition1 service_net
 	if err != nil {
 		return false, ConnectionAllowed, stacktrace.Propagate(err, "An error occurred while getting the partition connection with id '%v'", partitionConnectionId)
 	}
-	if currentPartitionConnection == partition_topology_db.DefaultPartitionConnection {
+	if currentPartitionConnection == partition_topology_db.EmptyPartitionConnection {
 		// TODO rework this, the empty value isn't the default value
 		return true, topology.GetDefaultConnection(), nil
 	}
