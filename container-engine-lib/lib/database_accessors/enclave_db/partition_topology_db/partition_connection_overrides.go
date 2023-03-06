@@ -46,7 +46,7 @@ func (pc *PartitionConnectionOverridesBucket) GetPartitionConnection(connectionI
 	getPartitionConnection := func(tx *bolt.Tx) error {
 		jsonifiedPartitionConnectionId, err := json.Marshal(connectionId)
 		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred while converting partition connection '%v' to json", connection)
+			return stacktrace.Propagate(err, "An error occurred while converting partition connection id '%v' to json", connectionId)
 		}
 		values := tx.Bucket(partitionConnectionOverridesBucketName).Get(jsonifiedPartitionConnectionId)
 		if values == nil {
@@ -61,6 +61,25 @@ func (pc *PartitionConnectionOverridesBucket) GetPartitionConnection(connectionI
 		return EmptyPartitionConnection, stacktrace.Propagate(err, "An error occurred while fetching connection for connection id '%v'", connectionId)
 	}
 	return connection, nil
+}
+
+func (pc *PartitionConnectionOverridesBucket) DoesPartitionConnectionExist(connectionId PartitionConnectionID) (bool, error) {
+	var exists bool
+	getPartitionConnection := func(tx *bolt.Tx) error {
+		jsonifiedPartitionConnectionId, err := json.Marshal(connectionId)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred while converting partition connection id '%v' to json", connectionId)
+		}
+		if values := tx.Bucket(partitionConnectionOverridesBucketName).Get(jsonifiedPartitionConnectionId); values == nil {
+			return nil
+		}
+		exists = true
+		return nil
+	}
+	if err := pc.db.View(getPartitionConnection); err != nil {
+		return exists, stacktrace.Propagate(err, "An error occurred while verifying whether connection with id exists '%v'", connectionId)
+	}
+	return exists, nil
 }
 
 func (pc *PartitionConnectionOverridesBucket) AddPartitionConnection(connectionId PartitionConnectionID, connection PartitionConnection) error {
@@ -81,7 +100,7 @@ func (pc *PartitionConnectionOverridesBucket) AddPartitionConnection(connectionI
 	return nil
 }
 
-func (pc *PartitionConnectionOverridesBucket) GetAllPartitionConnections() (map[PartitionConnectionID]PartitionConnection, error) {
+func (pc *PartitionConnectionOverridesBucket) GetAllPartitionConnectionOverrides() (map[PartitionConnectionID]PartitionConnection, error) {
 	result := map[PartitionConnectionID]PartitionConnection{}
 	getAllServicePartitionsFunc := func(tx *bolt.Tx) error {
 		iterateThroughBucketAndPopulateResult := func(connectionId, connection []byte) error {

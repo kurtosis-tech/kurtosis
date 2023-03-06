@@ -46,7 +46,7 @@ func TestPartitionConnection_AddAndGetAll(t *testing.T) {
 	err = partitionConnections.AddPartitionConnection(testConnectionIdA, testConnectionA)
 	require.Nil(t, err)
 
-	allConnections, err := partitionConnections.GetAllPartitionConnections()
+	allConnections, err := partitionConnections.GetAllPartitionConnectionOverrides()
 	require.Nil(t, err)
 	expectedConnections := map[PartitionConnectionID]PartitionConnection{testConnectionIdA: testConnectionA}
 	require.Equal(t, len(expectedConnections), len(allConnections))
@@ -67,7 +67,7 @@ func TestPartitionConnection_ReplaceBucketContents(t *testing.T) {
 	err = partitionConnections.ReplaceBucketContents(replacedConnections)
 	require.Nil(t, err)
 
-	allConnections, err := partitionConnections.GetAllPartitionConnections()
+	allConnections, err := partitionConnections.GetAllPartitionConnectionOverrides()
 	require.Nil(t, err)
 	require.Equal(t, replacedConnections, allConnections)
 }
@@ -100,7 +100,7 @@ func TestPartitionConnection_DeleteConnection(t *testing.T) {
 	err = partitionConnections.RemovePartitionConnection(testConnectionIdA)
 	require.Nil(t, err)
 
-	allConnections, err := partitionConnections.GetAllPartitionConnections()
+	allConnections, err := partitionConnections.GetAllPartitionConnectionOverrides()
 	require.Nil(t, err)
 	require.Empty(t, allConnections)
 }

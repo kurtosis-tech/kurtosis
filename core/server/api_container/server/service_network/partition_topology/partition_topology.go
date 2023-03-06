@@ -244,7 +244,7 @@ func (topology *PartitionTopology) RemovePartition(partitionId service_network_t
 	}
 
 	// update partition connections dropping all potential entries referencing the deleted partition
-	allPartitionConnections, err := topology.partitionConnectionOverrides.GetAllPartitionConnections()
+	allPartitionConnections, err := topology.partitionConnectionOverrides.GetAllPartitionConnectionOverrides()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while getting all partition connections")
 	}
@@ -453,13 +453,17 @@ func (topology *PartitionTopology) GetPartitionConnection(partition1 service_net
 
 	partitionConnectionIdServiceNetworkType := service_network_types.NewPartitionConnectionID(partition1, partition2)
 	partitionConnectionId := partition_topology_db.PartitionConnectionID{LexicalFirst: partition.PartitionID(partitionConnectionIdServiceNetworkType.GetFirst()), LexicalSecond: partition.PartitionID(partitionConnectionIdServiceNetworkType.GetSecond())}
+	exists, err = topology.partitionConnectionOverrides.DoesPartitionConnectionExist(partitionConnectionId)
+	if err != nil {
+		return false, ConnectionAllowed, stacktrace.Propagate(err, "An error occurred while verifying whether partition connection override exists")
+	}
+	if !exists {
+		return true, topology.GetDefaultConnection(), nil
+	}
+
 	currentPartitionConnection, err := topology.partitionConnectionOverrides.GetPartitionConnection(partitionConnectionId)
 	if err != nil {
 		return false, ConnectionAllowed, stacktrace.Propagate(err, "An error occurred while getting the partition connection with id '%v'", partitionConnectionId)
-	}
-	if currentPartitionConnection == partition_topology_db.EmptyPartitionConnection {
-		// TODO rework this, the empty value isn't the default value
-		return true, topology.GetDefaultConnection(), nil
 	}
 
 	partitionConnectionTyped := NewPartitionConnection(NewPacketLoss(currentPartitionConnection.PacketLoss), NewNormalPacketDelayDistribution(currentPartitionConnection.PacketDelayDistribution.AvgDelayMs, currentPartitionConnection.PacketDelayDistribution.Jitter, currentPartitionConnection.PacketDelayDistribution.Correlation))
@@ -541,6 +545,15 @@ func (topology *PartitionTopology) getPartitionConnectionUnlocked(
 	// clean this all up
 	partitionConnectionIdServiceNetworkType := service_network_types.NewPartitionConnectionID(a, b)
 	partitionConnectionId := partition_topology_db.PartitionConnectionID{LexicalFirst: partition.PartitionID(partitionConnectionIdServiceNetworkType.GetFirst()), LexicalSecond: partition.PartitionID(partitionConnectionIdServiceNetworkType.GetSecond())}
+
+	exists, err = topology.partitionConnectionOverrides.DoesPartitionConnectionExist(partitionConnectionId)
+	if err != nil {
+		return ConnectionAllowed, stacktrace.Propagate(err, "An error occurred while verifying whether partition connection override exists")
+	}
+	if !exists {
+		return topology.GetDefaultConnection(), nil
+	}
+
 	currentPartitionConnection, err := topology.partitionConnectionOverrides.GetPartitionConnection(partitionConnectionId)
 	if err != nil {
 		return ConnectionAllowed, stacktrace.Propagate(err, "An error occurred while getting the partition connection with id '%v'", partitionConnectionId)
