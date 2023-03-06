@@ -28,7 +28,7 @@ type PartitionConnectionID struct {
 	LexicalSecond partition.PartitionID `json:"lexical_second"`
 }
 
-type delayDistribution struct {
+type DelayDistribution struct {
 	AvgDelayMs  uint32  `json:"avg_delay"`
 	Jitter      uint32  `json:"jitter"`
 	Correlation float32 `json:"correlation"`
@@ -36,13 +36,35 @@ type delayDistribution struct {
 
 type PartitionConnection struct {
 	PacketLoss              float32           `json:"packet_loss"`
-	PacketDelayDistribution delayDistribution `json:"delay_distribution"`
+	PacketDelayDistribution DelayDistribution `json:"delay_distribution"`
 }
 
 // remove
 // get
 
-func (sp *ServicePartitionsBucket) AddPartitionConnection(connectionId PartitionConnectionID, connection PartitionConnection) error {
+func (pc *PartitionConnectionBucket) GetPartitionConnection(connectionId PartitionConnectionID) (PartitionConnection, error) {
+	var connection PartitionConnection
+	getPartitionConnection := func(tx *bolt.Tx) error {
+		jsonifiedPartitionConnectionId, err := json.Marshal(connectionId)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred while converting partition connection '%v' to json", connection)
+		}
+		values := tx.Bucket(partitionConnectionsBucketName).Get(jsonifiedPartitionConnectionId)
+		if values == nil {
+			return nil
+		}
+		if err = json.Unmarshal(values, &connection); err != nil {
+			return stacktrace.Propagate(err, "An error occurred while converting connection to internal type")
+		}
+		return nil
+	}
+	if err := pc.db.View(getPartitionConnection); err != nil {
+		return PartitionConnection{}, stacktrace.Propagate(err, "An error occurred while fetching connection for connection id '%v'", connectionId)
+	}
+	return connection, nil
+}
+
+func (pc *PartitionConnectionBucket) AddPartitionConnection(connectionId PartitionConnectionID, connection PartitionConnection) error {
 	addPartitionToServiceFunc := func(tx *bolt.Tx) error {
 		jsonifiedPartitionConnection, err := json.Marshal(connection)
 		if err != nil {
@@ -52,12 +74,9 @@ func (sp *ServicePartitionsBucket) AddPartitionConnection(connectionId Partition
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred while converting partition connection id '%v' to json", connectionId)
 		}
-		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred while converting connection to internal type")
-		}
-		return tx.Bucket(servicePartitionsBucketName).Put(jsonifiedPartitionConnection, jsonifiedConnectionId)
+		return tx.Bucket(partitionConnectionsBucketName).Put(jsonifiedConnectionId, jsonifiedPartitionConnection)
 	}
-	if err := sp.db.Update(addPartitionToServiceFunc); err != nil {
+	if err := pc.db.Update(addPartitionToServiceFunc); err != nil {
 		return stacktrace.Propagate(err, "An error occurred while adding partition connection '%v' with id '%v'", connection, connectionId)
 	}
 	return nil
@@ -82,7 +101,7 @@ func (pc *PartitionConnectionBucket) GetAllPartitionConnections() (map[Partition
 			result[connectionIdUnmarshalled] = connectionUnmarshalled
 			return nil
 		}
-		return tx.Bucket(servicePartitionsBucketName).ForEach(iterateThroughBucketAndPopulateResult)
+		return tx.Bucket(partitionConnectionsBucketName).ForEach(iterateThroughBucketAndPopulateResult)
 	}
 	if err := pc.db.View(getAllServicePartitionsFunc); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while getting all services & associated partitions")
@@ -121,7 +140,7 @@ func (pc *PartitionConnectionBucket) ReplaceBucketContents(newConnections map[Pa
 	return nil
 }
 
-func GetPartitionConnectionBucket(db *enclave_db.EnclaveDB) (*PartitionConnectionBucket, error) {
+func GetOrCreatePartitionConnectionBucket(db *enclave_db.EnclaveDB) (*PartitionConnectionBucket, error) {
 	createOrReplaceBucketFunc := func(tx *bolt.Tx) error {
 		_, err := tx.CreateBucket(partitionConnectionsBucketName)
 		if err != nil && !errors.Is(err, bolt.ErrBucketExists) {
