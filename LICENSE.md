@@ -8,13 +8,11 @@ The Licensed Work is (c) 2023 Kurtosis Technologies, Inc.
 Additional Use Grant: You may make use of the Licensed Work, provided that
 you may not use the Licensed Work for an Environment Orchestration Service.
 
-                      An “Environment Orchestration Service” is a commercial offering that
+                      An “Environment Orchestration Service” is any offering that
                       allows third parties (other than your employees and
-                      contractors) to access the functionality of the
-                      Licensed Work by creating distributed system environments whose components are
-                      controlled by such third parties.
+                      contractors) to create distributed system environments.
 
-Change Date:          2027-03-06
+Change Date:          2027-03-07
 
 Change License:       AGPLv3 (GNU Affero General Public License Version 3)
 
