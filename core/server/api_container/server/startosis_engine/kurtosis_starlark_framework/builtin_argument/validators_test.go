@@ -47,3 +47,23 @@ func TestUint64InRange_Valid(t *testing.T) {
 	err := Uint64InRange(value, "test_uint", 6, math.MaxUint64)
 	require.Nil(t, err)
 }
+
+func TestFloatInRange_WrongType(t *testing.T) {
+	value := starlark.String("25")
+	err := FloatInRange(value, "test_uint", 6, math.MaxUint64)
+	require.NotNil(t, err)
+	require.Equal(t, "Value for 'test_uint' was expected to be a float between 6.000000 and 18446744073709551616.000000, but it was 'starlark.String'", err.Error())
+}
+
+func TestFloatInRange_OutOfRange(t *testing.T) {
+	value := starlark.Float(2.75)
+	err := FloatInRange(value, "test_uint", 6, math.MaxUint64)
+	require.NotNil(t, err)
+	require.Equal(t, "Value for 'test_uint' was expected to be a float between 6.000000 and 18446744073709551616.000000, but it was 2.75", err.Error())
+}
+
+func TestFloatInRange_Valid(t *testing.T) {
+	value := starlark.Float(27.5)
+	err := FloatInRange(value, "test_uint", 6, math.MaxUint64)
+	require.Nil(t, err)
+}

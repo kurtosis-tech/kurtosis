@@ -131,7 +131,10 @@ func parseArguments(argumentDefinitions []*BuiltinArgument, builtinName string, 
 			continue
 		}
 		if !reflect.TypeOf(argValue).AssignableTo(reflect.TypeOf(argumentDefinition.ZeroValueProvider())) {
-			invalidArgs[argName] = fmt.Errorf("the argument '%s' could not be parsed because their type did not match the expected", argName)
+			invalidArgs[argName] = fmt.Errorf("the argument '%s' could not be parsed because their type ('%s') did not match the expected ('%s')",
+				argName,
+				reflect.TypeOf(argValue),
+				reflect.TypeOf(argumentDefinition.ZeroValueProvider()))
 			continue
 		}
 		if argumentDefinition.Validator != nil {
