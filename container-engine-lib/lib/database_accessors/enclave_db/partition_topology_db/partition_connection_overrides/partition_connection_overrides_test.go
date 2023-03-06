@@ -43,7 +43,7 @@ func TestPartitionConnection_AddAndGetAll(t *testing.T) {
 	partitionConnections, err := GetOrCreatePartitionConnectionBucket(enclaveDb)
 	require.Nil(t, err)
 
-	err = partitionConnections.AddPartitionConnection(testConnectionIdA, testConnectionA)
+	err = partitionConnections.AddPartitionConnectionOverride(testConnectionIdA, testConnectionA)
 	require.Nil(t, err)
 
 	allConnections, err := partitionConnections.GetAllPartitionConnectionOverrides()
@@ -60,7 +60,7 @@ func TestPartitionConnection_ReplaceBucketContents(t *testing.T) {
 	partitionConnections, err := GetOrCreatePartitionConnectionBucket(enclaveDb)
 	require.Nil(t, err)
 
-	err = partitionConnections.AddPartitionConnection(testConnectionIdA, testConnectionA)
+	err = partitionConnections.AddPartitionConnectionOverride(testConnectionIdA, testConnectionA)
 	require.Nil(t, err)
 
 	replacedConnections := map[PartitionConnectionID]PartitionConnection{testConnectionIdB: testConnectionB}
@@ -79,10 +79,10 @@ func TestPartitionConnection_GetPartitionConnection(t *testing.T) {
 	partitionConnections, err := GetOrCreatePartitionConnectionBucket(enclaveDb)
 	require.Nil(t, err)
 
-	err = partitionConnections.AddPartitionConnection(testConnectionIdA, testConnectionA)
+	err = partitionConnections.AddPartitionConnectionOverride(testConnectionIdA, testConnectionA)
 	require.Nil(t, err)
 
-	connection, err := partitionConnections.GetPartitionConnection(testConnectionIdA)
+	connection, err := partitionConnections.GetPartitionConnectionOverride(testConnectionIdA)
 	require.Nil(t, err)
 	require.Equal(t, testConnectionA, connection)
 }
@@ -94,10 +94,10 @@ func TestPartitionConnection_DeleteConnection(t *testing.T) {
 	partitionConnections, err := GetOrCreatePartitionConnectionBucket(enclaveDb)
 	require.Nil(t, err)
 
-	err = partitionConnections.AddPartitionConnection(testConnectionIdA, testConnectionA)
+	err = partitionConnections.AddPartitionConnectionOverride(testConnectionIdA, testConnectionA)
 	require.Nil(t, err)
 
-	err = partitionConnections.RemovePartitionConnection(testConnectionIdA)
+	err = partitionConnections.RemovePartitionConnectionOverride(testConnectionIdA)
 	require.Nil(t, err)
 
 	allConnections, err := partitionConnections.GetAllPartitionConnectionOverrides()

@@ -252,7 +252,7 @@ func (topology *PartitionTopology) RemovePartition(partitionId service_network_t
 	}
 	for partitionConnectionId := range allPartitionConnections {
 		if partitionConnectionId.LexicalFirst == partition.PartitionID(partitionId) || partitionConnectionId.LexicalSecond == partition.PartitionID(partitionId) {
-			if err = topology.partitionConnectionOverrides.RemovePartitionConnection(partitionConnectionId); err != nil {
+			if err = topology.partitionConnectionOverrides.RemovePartitionConnectionOverride(partitionConnectionId); err != nil {
 				return stacktrace.Propagate(err, "An error occurred while removing partition connection with id '%v'", partitionConnectionId)
 			}
 		}
@@ -307,7 +307,7 @@ func (topology *PartitionTopology) SetConnection(partition1 service_network_type
 			Correlation: connection.packetDelayDistribution.correlation,
 		},
 	}
-	if err = topology.partitionConnectionOverrides.AddPartitionConnection(partitionConnectionId, partitionConnection); err != nil {
+	if err = topology.partitionConnectionOverrides.AddPartitionConnectionOverride(partitionConnectionId, partitionConnection); err != nil {
 		return stacktrace.Propagate(err, "An error occurred while adding partition with id '%v' to bucket", partitionConnectionId)
 	}
 	return nil
@@ -336,7 +336,7 @@ func (topology *PartitionTopology) UnsetConnection(partition1 service_network_ty
 		return stacktrace.NewError("About to unset a connection between '%s' and '%s' but '%s' does not exist", partition1, partition2, partition2)
 	}
 	partitionConnectionId := partition_connection_overrides.PartitionConnectionID{LexicalFirst: partition.PartitionID(partition1), LexicalSecond: partition.PartitionID(partition2)}
-	if err = topology.partitionConnectionOverrides.RemovePartitionConnection(partitionConnectionId); err != nil {
+	if err = topology.partitionConnectionOverrides.RemovePartitionConnectionOverride(partitionConnectionId); err != nil {
 		return stacktrace.Propagate(err, "An error occurred while removing partition connection with id '%v'", partitionConnectionId)
 	}
 
@@ -455,7 +455,7 @@ func (topology *PartitionTopology) GetPartitionConnection(partition1 service_net
 
 	partitionConnectionIdServiceNetworkType := service_network_types.NewPartitionConnectionID(partition1, partition2)
 	partitionConnectionId := partition_connection_overrides.PartitionConnectionID{LexicalFirst: partition.PartitionID(partitionConnectionIdServiceNetworkType.GetFirst()), LexicalSecond: partition.PartitionID(partitionConnectionIdServiceNetworkType.GetSecond())}
-	exists, err = topology.partitionConnectionOverrides.DoesPartitionConnectionExist(partitionConnectionId)
+	exists, err = topology.partitionConnectionOverrides.DoesPartitionConnectionOverrideExist(partitionConnectionId)
 	if err != nil {
 		return false, ConnectionAllowed, stacktrace.Propagate(err, "An error occurred while verifying whether partition connection override exists")
 	}
@@ -463,7 +463,7 @@ func (topology *PartitionTopology) GetPartitionConnection(partition1 service_net
 		return true, topology.GetDefaultConnection(), nil
 	}
 
-	currentPartitionConnection, err := topology.partitionConnectionOverrides.GetPartitionConnection(partitionConnectionId)
+	currentPartitionConnection, err := topology.partitionConnectionOverrides.GetPartitionConnectionOverride(partitionConnectionId)
 	if err != nil {
 		return false, ConnectionAllowed, stacktrace.Propagate(err, "An error occurred while getting the partition connection with id '%v'", partitionConnectionId)
 	}
@@ -548,7 +548,7 @@ func (topology *PartitionTopology) getPartitionConnectionUnlocked(
 	partitionConnectionIdServiceNetworkType := service_network_types.NewPartitionConnectionID(a, b)
 	partitionConnectionId := partition_connection_overrides.PartitionConnectionID{LexicalFirst: partition.PartitionID(partitionConnectionIdServiceNetworkType.GetFirst()), LexicalSecond: partition.PartitionID(partitionConnectionIdServiceNetworkType.GetSecond())}
 
-	exists, err = topology.partitionConnectionOverrides.DoesPartitionConnectionExist(partitionConnectionId)
+	exists, err = topology.partitionConnectionOverrides.DoesPartitionConnectionOverrideExist(partitionConnectionId)
 	if err != nil {
 		return ConnectionAllowed, stacktrace.Propagate(err, "An error occurred while verifying whether partition connection override exists")
 	}
@@ -556,7 +556,7 @@ func (topology *PartitionTopology) getPartitionConnectionUnlocked(
 		return topology.GetDefaultConnection(), nil
 	}
 
-	currentPartitionConnection, err := topology.partitionConnectionOverrides.GetPartitionConnection(partitionConnectionId)
+	currentPartitionConnection, err := topology.partitionConnectionOverrides.GetPartitionConnectionOverride(partitionConnectionId)
 	if err != nil {
 		return ConnectionAllowed, stacktrace.Propagate(err, "An error occurred while getting the partition connection with id '%v'", partitionConnectionId)
 	}

@@ -3,7 +3,6 @@ package partition_connection_overrides
 import (
 	"encoding/json"
 	"errors"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/partition"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/kurtosis-tech/stacktrace"
 	bolt "go.etcd.io/bbolt"
@@ -23,25 +22,7 @@ func newPartitionConnectionOverridesBucket(db *enclave_db.EnclaveDB) *PartitionC
 	}
 }
 
-type PartitionConnectionID struct {
-	LexicalFirst  partition.PartitionID `json:"lexical_first"`
-	LexicalSecond partition.PartitionID `json:"lexical_second"`
-}
-
-type DelayDistribution struct {
-	AvgDelayMs  uint32  `json:"avg_delay"`
-	Jitter      uint32  `json:"jitter"`
-	Correlation float32 `json:"correlation"`
-}
-
-var EmptyPartitionConnection PartitionConnection
-
-type PartitionConnection struct {
-	PacketLoss              float32           `json:"packet_loss"`
-	PacketDelayDistribution DelayDistribution `json:"delay_distribution"`
-}
-
-func (pc *PartitionConnectionOverridesBucket) GetPartitionConnection(connectionId PartitionConnectionID) (PartitionConnection, error) {
+func (pc *PartitionConnectionOverridesBucket) GetPartitionConnectionOverride(connectionId PartitionConnectionID) (PartitionConnection, error) {
 	var connection PartitionConnection
 	getPartitionConnection := func(tx *bolt.Tx) error {
 		jsonifiedPartitionConnectionId, err := json.Marshal(connectionId)
@@ -53,7 +34,7 @@ func (pc *PartitionConnectionOverridesBucket) GetPartitionConnection(connectionI
 			return nil
 		}
 		if err = json.Unmarshal(values, &connection); err != nil {
-			return stacktrace.Propagate(err, "An error occurred while converting connection to internal type")
+			return stacktrace.Propagate(err, "An error occurred while converting partition connection '%v' from bytes to Golang type; This is a bug in Kurtosis", values)
 		}
 		return nil
 	}
@@ -63,7 +44,7 @@ func (pc *PartitionConnectionOverridesBucket) GetPartitionConnection(connectionI
 	return connection, nil
 }
 
-func (pc *PartitionConnectionOverridesBucket) DoesPartitionConnectionExist(connectionId PartitionConnectionID) (bool, error) {
+func (pc *PartitionConnectionOverridesBucket) DoesPartitionConnectionOverrideExist(connectionId PartitionConnectionID) (bool, error) {
 	var exists bool
 	getPartitionConnection := func(tx *bolt.Tx) error {
 		jsonifiedPartitionConnectionId, err := json.Marshal(connectionId)
@@ -82,7 +63,7 @@ func (pc *PartitionConnectionOverridesBucket) DoesPartitionConnectionExist(conne
 	return exists, nil
 }
 
-func (pc *PartitionConnectionOverridesBucket) AddPartitionConnection(connectionId PartitionConnectionID, connection PartitionConnection) error {
+func (pc *PartitionConnectionOverridesBucket) AddPartitionConnectionOverride(connectionId PartitionConnectionID, connection PartitionConnection) error {
 	addPartitionToServiceFunc := func(tx *bolt.Tx) error {
 		jsonifiedPartitionConnection, err := json.Marshal(connection)
 		if err != nil {
@@ -95,7 +76,7 @@ func (pc *PartitionConnectionOverridesBucket) AddPartitionConnection(connectionI
 		return tx.Bucket(partitionConnectionOverridesBucketName).Put(jsonifiedConnectionId, jsonifiedPartitionConnection)
 	}
 	if err := pc.db.Update(addPartitionToServiceFunc); err != nil {
-		return stacktrace.Propagate(err, "An error occurred while adding partition connection '%v' with id '%v'", connection, connectionId)
+		return stacktrace.Propagate(err, "An error occurred while adding partition connection '%v' with id '%v' to bucket", connection, connectionId)
 	}
 	return nil
 }
@@ -103,18 +84,16 @@ func (pc *PartitionConnectionOverridesBucket) AddPartitionConnection(connectionI
 func (pc *PartitionConnectionOverridesBucket) GetAllPartitionConnectionOverrides() (map[PartitionConnectionID]PartitionConnection, error) {
 	result := map[PartitionConnectionID]PartitionConnection{}
 	getAllServicePartitionsFunc := func(tx *bolt.Tx) error {
-		iterateThroughBucketAndPopulateResult := func(connectionId, connection []byte) error {
+		iterateThroughBucketAndPopulateResult := func(connectionIdBytes, connectionBytes []byte) error {
 			var connectionIdUnmarshalled PartitionConnectionID
-			err := json.Unmarshal(connectionId, &connectionIdUnmarshalled)
-			// TODO rework these errors before PR
+			err := json.Unmarshal(connectionIdBytes, &connectionIdUnmarshalled)
 			if err != nil {
-				return stacktrace.Propagate(err, "An error occurred while converting connection id to internal type")
+				return stacktrace.Propagate(err, "An error occurred while converting connectionBytes id in bucket '%v' to Golang Type; this is a bug in Kurtosis", connectionIdBytes)
 			}
 			var connectionUnmarshalled PartitionConnection
-			err = json.Unmarshal(connection, &connectionUnmarshalled)
-			// TODO rework these errors before PR
+			err = json.Unmarshal(connectionBytes, &connectionUnmarshalled)
 			if err != nil {
-				return stacktrace.Propagate(err, "An error occurred while converting connection to internal type")
+				return stacktrace.Propagate(err, "An error occurred while converting connectionBytes in bucket '%v' to Golang Type' this is a bug in Kurtosis", connectionBytes)
 			}
 			result[connectionIdUnmarshalled] = connectionUnmarshalled
 			return nil
@@ -153,12 +132,12 @@ func (pc *PartitionConnectionOverridesBucket) ReplaceBucketContents(newConnectio
 		return nil
 	}
 	if err := pc.db.Update(deleteAndReplaceBucketFunc); err != nil {
-		return stacktrace.Propagate(err, "An error occurred while replacing the existing service partition configuration with new configuration")
+		return stacktrace.Propagate(err, "An error occurred while replacing the existing partition connection bucket with new contents")
 	}
 	return nil
 }
 
-func (pc *PartitionConnectionOverridesBucket) RemovePartitionConnection(connectionId PartitionConnectionID) error {
+func (pc *PartitionConnectionOverridesBucket) RemovePartitionConnectionOverride(connectionId PartitionConnectionID) error {
 	removeServiceFromBucketFunc := func(tx *bolt.Tx) error {
 		jsonifiedConnectionId, err := json.Marshal(connectionId)
 		if err != nil {
@@ -177,12 +156,12 @@ func GetOrCreatePartitionConnectionBucket(db *enclave_db.EnclaveDB) (*PartitionC
 	createOrReplaceBucketFunc := func(tx *bolt.Tx) error {
 		_, err := tx.CreateBucket(partitionConnectionOverridesBucketName)
 		if err != nil && !errors.Is(err, bolt.ErrBucketExists) {
-			return stacktrace.Propagate(err, "An error occurred while creating services partitions database bucket")
+			return stacktrace.Propagate(err, "An error occurred while creating partition connections bucket")
 		}
 		return nil
 	}
 	if err := db.Update(createOrReplaceBucketFunc); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while building service partitions")
+		return nil, stacktrace.Propagate(err, "An error occurred while building partition connections")
 	}
 
 	return newPartitionConnectionOverridesBucket(
