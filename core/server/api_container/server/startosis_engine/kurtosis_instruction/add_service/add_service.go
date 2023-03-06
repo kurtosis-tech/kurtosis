@@ -16,6 +16,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
 	"reflect"
 	"time"
@@ -156,21 +157,45 @@ func (builtin *AddServiceCapabilities) Execute(ctx context.Context, _ *builtin_a
 		//TODO prepare default value for: interval and timeOut and for the others optional fields
 
 		//TODO END replace all these
-		
-		if err := shared_helpers.ExecuteServiceAssertionWithRecipe(
+
+		startTime := time.Now()
+		valueField := "code"
+		assertion := "=="
+		lastResult, tries, err := shared_helpers.ExecuteServiceAssertionWithRecipe(
 			ctx,
 			builtin.serviceNetwork,
 			builtin.runtimeValueStore,
 			replacedServiceName,
 			recipe,
-			"code",
-			"==",
+			valueField,
+			assertion,
 			target,
 			interval,
 			timeout,
-		); err != nil {
-			return "", stacktrace.Propagate(err, "An error occurred checking if service '%v' with UUID '%v' is ready.", replacedServiceName, serviceUUID)
+		)
+		if err != nil {
+			return "", stacktrace.Propagate(
+				err,
+				"An error occurred checking if service '%v' with UUID '%v' is ready, using "+
+					"recipe '%+v', value field '%v', assertion '%v', target '%v', interval '%s' and time-out '%s'.",
+				replacedServiceName,
+				serviceUUID,
+				recipe,
+				valueField,
+				assertion,
+				target,
+				interval,
+				timeout,
+			)
 		}
+		logrus.Debugf("Checking if service with UUID '%v' is ready took %d tries (%v in total). "+
+			"Assertion passed with following:\n%s",
+			serviceUUID,
+			tries,
+			time.Since(startTime),
+			recipe.ResultMapToString(lastResult),
+		)
+
 	}
 
 	return instructionResult, nil

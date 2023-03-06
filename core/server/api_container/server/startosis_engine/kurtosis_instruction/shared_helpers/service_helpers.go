@@ -24,7 +24,7 @@ func ExecuteServiceAssertionWithRecipe(
 	target starlark.Comparable,
 	interval time.Duration,
 	timeout time.Duration,
-) error {
+) (map[string]starlark.Comparable, int, error) {
 	var requestErr error
 	var assertErr error
 	tries := 0
@@ -48,7 +48,7 @@ func ExecuteServiceAssertionWithRecipe(
 		}
 		value, found := lastResult[valueField]
 		if !found {
-			return stacktrace.NewError("Error extracting value from key '%v'", valueField)
+			return lastResult, tries, stacktrace.NewError("Error extracting value from key '%v'", valueField)
 		}
 		assertErr = assert.Assert(value, assertion, target)
 		if assertErr != nil {
@@ -58,14 +58,14 @@ func ExecuteServiceAssertionWithRecipe(
 		break
 	}
 	if timedOut {
-		return stacktrace.NewError("Wait timed-out waiting for the assertion to become valid on service '%v'. Waited for '%v'. Last assertion error was: \n%v", serviceName, time.Since(startTime), assertErr)
+		return lastResult, tries, stacktrace.NewError("Wait timed-out waiting for the assertion to become valid on service '%v'. Waited for '%v'. Last assertion error was: \n%v", serviceName, time.Since(startTime), assertErr)
 	}
 	if requestErr != nil {
-		return stacktrace.Propagate(requestErr, "Error executing HTTP recipe on service '%v'", serviceName)
+		return lastResult, tries, stacktrace.Propagate(requestErr, "Error executing HTTP recipe on service '%v'", serviceName)
 	}
 	if assertErr != nil {
-		return stacktrace.Propagate(assertErr, "Error asserting HTTP recipe on service '%v'", serviceName)
+		return lastResult, tries, stacktrace.Propagate(assertErr, "Error asserting HTTP recipe on service '%v'", serviceName)
 	}
 
-	return nil
+	return lastResult, tries, nil
 }
