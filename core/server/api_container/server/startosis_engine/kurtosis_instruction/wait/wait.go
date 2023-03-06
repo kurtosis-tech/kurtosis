@@ -244,7 +244,7 @@ func (builtin *WaitCapabilities) Execute(ctx context.Context, _ *builtin_argumen
 			time.Sleep(backoffDuration)
 			continue
 		}
-		builtin.runtimeValueStore.SetValue(builtin.resultUuid, lastResult)
+
 		value, found := lastResult[builtin.valueField]
 		if !found {
 			return "", stacktrace.NewError("Error extracting value from key '%v'", builtin.valueField)
@@ -256,6 +256,7 @@ func (builtin *WaitCapabilities) Execute(ctx context.Context, _ *builtin_argumen
 		}
 		break
 	}
+	builtin.runtimeValueStore.SetValue(builtin.resultUuid, lastResult)
 	if timedOut {
 		return "", stacktrace.NewError("Wait timed-out waiting for the assertion to become valid. Waited for '%v'. Last assertion error was: \n%v", time.Since(startTime), assertErr)
 	}

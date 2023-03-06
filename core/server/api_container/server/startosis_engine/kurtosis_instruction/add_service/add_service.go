@@ -3,19 +3,23 @@ package add_service
 import (
 	"context"
 	"fmt"
+	"github.com/cenkalti/backoff/v4"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/assert"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/recipe"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
 	"reflect"
+	"time"
 )
 
 const (
@@ -122,7 +126,16 @@ func (builtin *AddServiceCapabilities) Execute(ctx context.Context, _ *builtin_a
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Unexpected error occurred starting service '%s'", replacedServiceName)
 	}
-	instructionResult := fmt.Sprintf("Service '%s' added with service UUID '%s'", replacedServiceName, startedService.GetRegistration().GetUUID())
+
+	serviceUUID := startedService.GetRegistration().GetUUID()
+
+	instructionResult := fmt.Sprintf("Service '%s' added with service UUID '%s'", replacedServiceName, serviceUUID)
+
+	//TODO run an example
+	if err := executeReadyCheck(); err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred checking if service '%v' with UUID '%v' is ready.", replacedServiceName, serviceUUID)
+	}
+
 	return instructionResult, nil
 }
 
@@ -136,4 +149,59 @@ func validateAndConvertConfig(rawConfig starlark.Value) (*kurtosis_core_rpc_api_
 		return nil, interpretationErr
 	}
 	return apiServiceConfig, nil
+}
+
+//TODO move to a shared helpers because wait is using it
+func executeReadyCheck(
+	ctx context.Context,
+	serviceNetwork service_network.ServiceNetwork,
+	runtimeValueStore *runtime_value_store.RuntimeValueStore,
+	serviceName service.ServiceName,
+	recipe recipe.Recipe,
+	valueField string,
+	assertion string,
+	target starlark.Comparable,
+	backoffObj backoff.BackOff,
+	timeout time.Duration,
+) error {
+	var requestErr error
+	var assertErr error
+	tries := 0
+	timedOut := false
+	lastResult := map[string]starlark.Comparable{}
+	startTime := time.Now()
+	for {
+		tries += 1
+		backoffDuration := backoffObj.NextBackOff()
+		if backoffDuration == backoff.Stop || time.Since(startTime) > timeout {
+			timedOut = true
+			break
+		}
+		lastResult, requestErr = recipe.Execute(ctx, serviceNetwork, runtimeValueStore, serviceName)
+		if requestErr != nil {
+			time.Sleep(backoffDuration)
+			continue
+		}
+		value, found := lastResult[valueField]
+		if !found {
+			return stacktrace.NewError("Error extracting value from key '%v'", valueField)
+		}
+		assertErr = assert.Assert(value, assertion, target)
+		if assertErr != nil {
+			time.Sleep(backoffDuration)
+			continue
+		}
+		break
+	}
+	if timedOut {
+		return stacktrace.NewError("Wait timed-out waiting for the assertion to become valid on service '%v'. Waited for '%v'. Last assertion error was: \n%v", serviceName, time.Since(startTime), assertErr)
+	}
+	if requestErr != nil {
+		return stacktrace.Propagate(requestErr, "Error executing HTTP recipe on service '%v'", serviceName)
+	}
+	if assertErr != nil {
+		return stacktrace.Propagate(assertErr, "Error asserting HTTP recipe on service '%v'", serviceName)
+	}
+
+	return nil
 }
