@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = Function('return this')();
+var global = (function() {
+  if (this) { return this; }
+  if (typeof window !== 'undefined') { return window; }
+  if (typeof global !== 'undefined') { return global; }
+  if (typeof self !== 'undefined') { return self; }
+  return Function('return this')();
+}.call(null));
 
 var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb.js');
 goog.object.extend(proto, google_protobuf_empty_pb);
@@ -2615,7 +2621,7 @@ proto.engine_api.CleanResponse.prototype.toObject = function(opt_includeInstance
  */
 proto.engine_api.CleanResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-    removedEnclaveUuidsMap: (f = msg.getRemovedEnclaveUuidsMap()) ? f.toObject(includeInstance, undefined) : []
+    removedEnclaveUuidsWithNameMap: (f = msg.getRemovedEnclaveUuidsWithNameMap()) ? f.toObject(includeInstance, undefined) : []
   };
 
   if (includeInstance) {
@@ -2653,7 +2659,7 @@ proto.engine_api.CleanResponse.deserializeBinaryFromReader = function(msg, reade
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = msg.getRemovedEnclaveUuidsMap();
+      var value = msg.getRemovedEnclaveUuidsWithNameMap();
       reader.readMessage(value, function(message, reader) {
         jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readBool, null, "", false);
          });
@@ -2687,7 +2693,7 @@ proto.engine_api.CleanResponse.prototype.serializeBinary = function() {
  */
 proto.engine_api.CleanResponse.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
-  f = message.getRemovedEnclaveUuidsMap(true);
+  f = message.getRemovedEnclaveUuidsWithNameMap(true);
   if (f && f.getLength() > 0) {
     f.serializeBinary(1, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeBool);
   }
@@ -2695,12 +2701,12 @@ proto.engine_api.CleanResponse.serializeBinaryToWriter = function(message, write
 
 
 /**
- * map<string, bool> removed_enclave_uuids = 1;
+ * map<string, bool> removed_enclave_uuids_with_name = 1;
  * @param {boolean=} opt_noLazyCreate Do not create the map if
  * empty, instead returning `undefined`
  * @return {!jspb.Map<string,boolean>}
  */
-proto.engine_api.CleanResponse.prototype.getRemovedEnclaveUuidsMap = function(opt_noLazyCreate) {
+proto.engine_api.CleanResponse.prototype.getRemovedEnclaveUuidsWithNameMap = function(opt_noLazyCreate) {
   return /** @type {!jspb.Map<string,boolean>} */ (
       jspb.Message.getMapField(this, 1, opt_noLazyCreate,
       null));
@@ -2711,8 +2717,8 @@ proto.engine_api.CleanResponse.prototype.getRemovedEnclaveUuidsMap = function(op
  * Clears values from the map. The map will be non-null.
  * @return {!proto.engine_api.CleanResponse} returns this
  */
-proto.engine_api.CleanResponse.prototype.clearRemovedEnclaveUuidsMap = function() {
-  this.getRemovedEnclaveUuidsMap().clear();
+proto.engine_api.CleanResponse.prototype.clearRemovedEnclaveUuidsWithNameMap = function() {
+  this.getRemovedEnclaveUuidsWithNameMap().clear();
   return this;};
 
 
