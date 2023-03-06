@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/partition"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/kurtosis-tech/stacktrace"
 	bolt "go.etcd.io/bbolt"
@@ -40,7 +39,6 @@ type PartitionConnection struct {
 	PacketDelayDistribution delayDistribution `json:"delay_distribution"`
 }
 
-// get all
 // remove
 // add
 // get
@@ -49,16 +47,24 @@ func (pc *PartitionConnectionBucket) GetAllPartitionConnections() (map[Partition
 	result := map[PartitionConnectionID]PartitionConnection{}
 	getAllServicePartitionsFunc := func(tx *bolt.Tx) error {
 		iterateThroughBucketAndPopulateResult := func(connectionId, connection []byte) error {
-			partitionForService := partition.PartitionID(partitionId)
-			if oldPartitionForService, found := result[service.ServiceName(serviceName)]; found {
-				return stacktrace.NewError("The service '%s' has more than one mappings, found mapping for partition '%v' & '%v'; This should never happen this is a bug in Kurtosis", serviceName, oldPartitionForService, partitionForService)
+			var connectionIdUnmarshalled PartitionConnectionID
+			err := json.Unmarshal(connectionId, &connectionIdUnmarshalled)
+			// TODO rework these errors before PR
+			if err != nil {
+				return stacktrace.Propagate(err, "An error occurred while converting connection id to internal type")
 			}
-			result[service.ServiceName(serviceName)] = partitionForService
+			var connectionUnmarshalled PartitionConnection
+			err = json.Unmarshal(connection, &connectionUnmarshalled)
+			// TODO rework these errors before PR
+			if err != nil {
+				return stacktrace.Propagate(err, "An error occurred while converting connection to internal type")
+			}
+			result[connectionIdUnmarshalled] = connectionUnmarshalled
 			return nil
 		}
 		return tx.Bucket(servicePartitionsBucketName).ForEach(iterateThroughBucketAndPopulateResult)
 	}
-	if err := sp.db.Update(getAllServicePartitionsFunc); err != nil {
+	if err := pc.db.View(getAllServicePartitionsFunc); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while getting all services & associated partitions")
 	}
 	return result, nil
@@ -79,7 +85,11 @@ func (pc *PartitionConnectionBucket) ReplaceBucketContents(newConnections map[Pa
 			if err != nil {
 				return stacktrace.Propagate(err, "An error occurred while converting partition connection '%v' to json", connection)
 			}
-			if err = bucket.Put([]byte(partitionConnectionId.String()), jsonifiedPartitionConnection); err != nil {
+			jsonifiedConnectionId, err := json.Marshal(partitionConnectionId)
+			if err != nil {
+				return stacktrace.Propagate(err, "An error occurred while converting partition connection id '%v' to json", partitionConnectionId)
+			}
+			if err = bucket.Put(jsonifiedConnectionId, jsonifiedPartitionConnection); err != nil {
 				return stacktrace.Propagate(err, "An error occurred while storing connection with id '%v' and values '%v'", partitionConnectionId, jsonifiedPartitionConnection)
 			}
 		}
