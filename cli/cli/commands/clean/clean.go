@@ -161,8 +161,8 @@ func cleanEnclaves(ctx context.Context, engineClient kurtosis_engine_rpc_api_bin
 	}
 
 	successfullyDestroyedEnclaveIds := []string{}
-	for enclaveId := range cleanResp.RemovedEnclaveUuids {
-		successfullyDestroyedEnclaveIds = append(successfullyDestroyedEnclaveIds, enclaveId)
+	for enclaveUuidWithName := range cleanResp.RemovedEnclaveUuidsWithName {
+		successfullyDestroyedEnclaveIds = append(successfullyDestroyedEnclaveIds, enclaveUuidWithName)
 	}
 	return successfullyDestroyedEnclaveIds, nil, nil
 }

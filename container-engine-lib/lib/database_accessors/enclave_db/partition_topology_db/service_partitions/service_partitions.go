@@ -1,4 +1,4 @@
-package partition_topology_db
+package service_partitions
 
 import (
 	"errors"
@@ -111,7 +111,7 @@ func (sp *ServicePartitionsBucket) GetAllServicePartitions() (map[service.Servic
 		}
 		return tx.Bucket(servicePartitionsBucketName).ForEach(iterateThroughBucketAndPopulateResult)
 	}
-	if err := sp.db.Update(getAllServicePartitionsFunc); err != nil {
+	if err := sp.db.View(getAllServicePartitionsFunc); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while getting all services & associated partitions")
 	}
 	return result, nil
