@@ -54,6 +54,8 @@ func NewAddServices(serviceNetwork service_network.ServiceNetwork, runtimeValueS
 				runtimeValueStore: runtimeValueStore,
 
 				serviceConfigs: nil, // populated at interpretation time
+
+				resultUuids: map[service.ServiceName]string{}, // populated at interpretation time
 			}
 		},
 
