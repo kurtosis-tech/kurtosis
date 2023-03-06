@@ -9,8 +9,10 @@ root_dirpath="$(dirname "${script_dirpath}")"
 # ==================================================================================================
 #                                             Constants
 # ==================================================================================================
-PACKAGE_JSON_FILEPATH="typescript/package.json"
-REPLACE_PATTERN="\"version\": \"%s\""
+PACKAGE_JSON_FILEPATH="LICENSE.md"
+REPLACE_PATTERN_VERSION="Licensed Work:        Kurtosis %s"
+REPLACE_PATTERN_YEAR="%s Kurtosis Technologies, Inc."
+REPLACE_PATTERN_CHANGE_DATE="Change Date:          %s"
 
 # ==================================================================================================
 #                                       Arg Parsing & Validation
@@ -30,11 +32,25 @@ if [ -z "${new_version}" ]; then
     show_helptext_and_exit
 fi
 
+current_year=$(date +"%Y")
+
+license_change_date=$(date -v +4y +"%Y-%m-%d")
+
 # ==================================================================================================
 #                                             Main Logic
 # ==================================================================================================
 to_update_abs_filepath="${root_dirpath}/${PACKAGE_JSON_FILEPATH}"
-if ! $(kudet update-version-in-file "${to_update_abs_filepath}" "${REPLACE_PATTERN}" "${new_version}"); then
-    echo "Error: An error occurred setting new version '${new_version}' in constants file '${constant_file_abs_filepath}' using pattern '${replace_pattern}'" >&2
+if ! $(kudet update-version-in-file "${to_update_abs_filepath}" "${REPLACE_PATTERN_VERSION}" "${new_version}"); then
+    echo "Error: An error occurred setting new version '${new_version}' in constants file '${constant_file_abs_filepath}' using pattern '${REPLACE_PATTERN_VERSION}'" >&2
+    exit 1
+fi
+
+if ! $(kudet update-version-in-file "${to_update_abs_filepath}" "${REPLACE_PATTERN_YEAR}" "${current_year}"); then
+    echo "Error: An error occurred setting year '${current_year}' in constants file '${constant_file_abs_filepath}' using pattern '${REPLACE_PATTERN_YEAR}'" >&2
+    exit 1
+fi
+
+if ! $(kudet update-version-in-file "${to_update_abs_filepath}" "${REPLACE_PATTERN_CHANGE_DATE}" "${license_change_date}"); then
+    echo "Error: An error occurred setting change date '${license_change_date}' in constants file '${constant_file_abs_filepath}' using pattern '${REPLACE_PATTERN_CHANGE_DATE}'" >&2
     exit 1
 fi
