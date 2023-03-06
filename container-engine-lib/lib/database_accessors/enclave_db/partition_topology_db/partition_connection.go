@@ -40,8 +40,28 @@ type PartitionConnection struct {
 }
 
 // remove
-// add
 // get
+
+func (sp *ServicePartitionsBucket) AddPartitionConnection(connectionId PartitionConnectionID, connection PartitionConnection) error {
+	addPartitionToServiceFunc := func(tx *bolt.Tx) error {
+		jsonifiedPartitionConnection, err := json.Marshal(connection)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred while converting partition connection '%v' to json", connection)
+		}
+		jsonifiedConnectionId, err := json.Marshal(connectionId)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred while converting partition connection id '%v' to json", connectionId)
+		}
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred while converting connection to internal type")
+		}
+		return tx.Bucket(servicePartitionsBucketName).Put(jsonifiedPartitionConnection, jsonifiedConnectionId)
+	}
+	if err := sp.db.Update(addPartitionToServiceFunc); err != nil {
+		return stacktrace.Propagate(err, "An error occurred while adding partition connection '%v' with id '%v'", connection, connectionId)
+	}
+	return nil
+}
 
 func (pc *PartitionConnectionBucket) GetAllPartitionConnections() (map[PartitionConnectionID]PartitionConnection, error) {
 	result := map[PartitionConnectionID]PartitionConnection{}
