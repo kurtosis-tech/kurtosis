@@ -3,11 +3,10 @@ package add_service
 import (
 	"context"
 	"fmt"
-	"github.com/cenkalti/backoff/v4"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/assert"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
@@ -131,9 +130,47 @@ func (builtin *AddServiceCapabilities) Execute(ctx context.Context, _ *builtin_a
 
 	instructionResult := fmt.Sprintf("Service '%s' added with service UUID '%s'", replacedServiceName, serviceUUID)
 
-	//TODO run an example
-	if err := executeReadyCheck(); err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred checking if service '%v' with UUID '%v' is ready.", replacedServiceName, serviceUUID)
+	//TODO replace all these
+	if replacedServiceName == "web-server-leo" { //TODO replace if it contains a recipe
+
+		extractors := map[string]string{
+			"exploded-slash": ".query.input | split(\"/\") | .[1]",
+		}
+
+		recipe := recipe.NewGetHttpRequestRecipe("http-port", "?input=foo/bar", extractors)
+
+		intervalStr := "10s"
+		interval, parseErr := time.ParseDuration("10s")
+		if parseErr != nil {
+			return "", startosis_errors.WrapWithInterpretationError(parseErr, "An error occurred when parsing interval '%v'", intervalStr)
+		}
+
+		timeoutStr := "10s"
+		timeout, parseErr := time.ParseDuration("200s")
+		if parseErr != nil {
+			return "", startosis_errors.WrapWithInterpretationError(parseErr, "An error occurred when parsing timeout '%v'", timeoutStr)
+		}
+
+		target := starlark.MakeInt(200)
+
+		//TODO prepare default value for: interval and timeOut and for the others optional fields
+
+		//TODO END replace all these
+		
+		if err := shared_helpers.ExecuteServiceAssertionWithRecipe(
+			ctx,
+			builtin.serviceNetwork,
+			builtin.runtimeValueStore,
+			replacedServiceName,
+			recipe,
+			"code",
+			"==",
+			target,
+			interval,
+			timeout,
+		); err != nil {
+			return "", stacktrace.Propagate(err, "An error occurred checking if service '%v' with UUID '%v' is ready.", replacedServiceName, serviceUUID)
+		}
 	}
 
 	return instructionResult, nil
@@ -149,59 +186,4 @@ func validateAndConvertConfig(rawConfig starlark.Value) (*kurtosis_core_rpc_api_
 		return nil, interpretationErr
 	}
 	return apiServiceConfig, nil
-}
-
-//TODO move to a shared helpers because wait is using it
-func executeReadyCheck(
-	ctx context.Context,
-	serviceNetwork service_network.ServiceNetwork,
-	runtimeValueStore *runtime_value_store.RuntimeValueStore,
-	serviceName service.ServiceName,
-	recipe recipe.Recipe,
-	valueField string,
-	assertion string,
-	target starlark.Comparable,
-	backoffObj backoff.BackOff,
-	timeout time.Duration,
-) error {
-	var requestErr error
-	var assertErr error
-	tries := 0
-	timedOut := false
-	lastResult := map[string]starlark.Comparable{}
-	startTime := time.Now()
-	for {
-		tries += 1
-		backoffDuration := backoffObj.NextBackOff()
-		if backoffDuration == backoff.Stop || time.Since(startTime) > timeout {
-			timedOut = true
-			break
-		}
-		lastResult, requestErr = recipe.Execute(ctx, serviceNetwork, runtimeValueStore, serviceName)
-		if requestErr != nil {
-			time.Sleep(backoffDuration)
-			continue
-		}
-		value, found := lastResult[valueField]
-		if !found {
-			return stacktrace.NewError("Error extracting value from key '%v'", valueField)
-		}
-		assertErr = assert.Assert(value, assertion, target)
-		if assertErr != nil {
-			time.Sleep(backoffDuration)
-			continue
-		}
-		break
-	}
-	if timedOut {
-		return stacktrace.NewError("Wait timed-out waiting for the assertion to become valid on service '%v'. Waited for '%v'. Last assertion error was: \n%v", serviceName, time.Since(startTime), assertErr)
-	}
-	if requestErr != nil {
-		return stacktrace.Propagate(requestErr, "Error executing HTTP recipe on service '%v'", serviceName)
-	}
-	if assertErr != nil {
-		return stacktrace.Propagate(assertErr, "Error asserting HTTP recipe on service '%v'", serviceName)
-	}
-
-	return nil
 }
