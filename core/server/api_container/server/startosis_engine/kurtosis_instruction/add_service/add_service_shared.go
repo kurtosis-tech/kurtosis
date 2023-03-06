@@ -23,7 +23,7 @@ const (
 
 func fillAddServiceReturnValueWithRuntimeValues(service *service.Service, resultUuid string, runtimeValueStore *runtime_value_store.RuntimeValueStore) {
 	runtimeValueStore.SetValue(resultUuid, map[string]starlark.Comparable{
-		ipAddressRuntimeValue: starlark.String(service.GetRegistration().GetPrivateIP()),
+		ipAddressRuntimeValue: starlark.String(service.GetRegistration().GetPrivateIP().String()),
 		hostnameRuntimeValue:  starlark.String(service.GetRegistration().GetHostname()),
 	})
 }
