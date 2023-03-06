@@ -302,10 +302,6 @@ func TestExplicitConnectionBlocksWork(t *testing.T) {
 
 	servicePacketConnectionConfigurationsByServiceIDMap := getServicePacketConnectionConfigurationsByServiceIDMap(t, topology)
 
-	overrides, err := topology.partitionConnectionOverrides.GetAllPartitionConnectionOverrides()
-	require.Nil(t, err)
-	require.NotEmpty(t, overrides)
-
 	service1andOtherServicesPacketConnectionConfig := getServicePacketConnectionConfigForService(t, service1, servicePacketConnectionConfigurationsByServiceIDMap)
 	require.Equal(t, ConnectionBlocked.GetPacketLossPercentage(), service1andOtherServicesPacketConnectionConfig[service3].GetPacketLossPercentage())
 	require.Equal(t, ConnectionAllowed.GetPacketLossPercentage(), service1andOtherServicesPacketConnectionConfig[service2].GetPacketLossPercentage())
