@@ -1,4 +1,4 @@
-package partition_topology_db
+package service_partitions
 
 import (
 	"errors"

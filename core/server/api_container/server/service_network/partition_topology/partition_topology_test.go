@@ -9,7 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/partition"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/partition_topology_db"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/partition_topology_db/partition_connection_overrides"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -564,7 +564,7 @@ func TestSetConnection(t *testing.T) {
 		},
 	}, partitionServices)
 
-	expectedConnectionOverrides := map[partition_topology_db.PartitionConnectionID]partition_topology_db.PartitionConnection{
+	expectedConnectionOverrides := map[partition_connection_overrides.PartitionConnectionID]partition_connection_overrides.PartitionConnection{
 		getDbNativePartitionConnectionIdFromPartitionIds(partition1, partition2): getDbNativeConnectionOverrideFromConnection(connectionOverride),
 	}
 	allConnectionOverrides, err := topology.partitionConnectionOverrides.GetAllPartitionConnectionOverrides()
@@ -1025,10 +1025,10 @@ func getServicePacketConnectionConfigForService(
 	return result
 }
 
-func getDbNativeConnectionOverrideFromConnection(connection PartitionConnection) partition_topology_db.PartitionConnection {
-	return partition_topology_db.PartitionConnection{
+func getDbNativeConnectionOverrideFromConnection(connection PartitionConnection) partition_connection_overrides.PartitionConnection {
+	return partition_connection_overrides.PartitionConnection{
 		PacketLoss: connection.packetLoss.packetLossPercentage,
-		PacketDelayDistribution: partition_topology_db.DelayDistribution{
+		PacketDelayDistribution: partition_connection_overrides.DelayDistribution{
 			AvgDelayMs:  connection.packetDelayDistribution.avgDelayMs,
 			Jitter:      connection.packetDelayDistribution.jitter,
 			Correlation: connection.packetDelayDistribution.correlation,
@@ -1036,8 +1036,8 @@ func getDbNativeConnectionOverrideFromConnection(connection PartitionConnection)
 	}
 }
 
-func getDbNativePartitionConnectionIdFromPartitionIds(partitionId1, partitionId2 service_network_types.PartitionID) partition_topology_db.PartitionConnectionID {
-	return partition_topology_db.PartitionConnectionID{
+func getDbNativePartitionConnectionIdFromPartitionIds(partitionId1, partitionId2 service_network_types.PartitionID) partition_connection_overrides.PartitionConnectionID {
+	return partition_connection_overrides.PartitionConnectionID{
 		LexicalFirst:  partition.PartitionID(partitionId1),
 		LexicalSecond: partition.PartitionID(partitionId2),
 	}

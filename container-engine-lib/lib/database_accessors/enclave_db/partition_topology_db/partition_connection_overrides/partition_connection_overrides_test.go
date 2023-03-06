@@ -1,4 +1,4 @@
-package partition_topology_db
+package partition_connection_overrides
 
 import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/test_helpers"
