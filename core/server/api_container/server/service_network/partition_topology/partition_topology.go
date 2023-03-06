@@ -49,16 +49,16 @@ func NewPartitionTopology(defaultPartition service_network_types.PartitionID, de
 		return nil, stacktrace.Propagate(err, "An error occurred while creating the service partitions bucket")
 	}
 
-	partitionConnectionBucket, err := partition_connection_overrides.GetOrCreatePartitionConnectionBucket(enclaveDb)
+	partitionConnectionOverridesBucket, err := partition_connection_overrides.GetOrCreatePartitionConnectionBucket(enclaveDb)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while creating the partition connections bucket")
+		return nil, stacktrace.Propagate(err, "An error occurred while creating the partition connection overrides bucket")
 	}
 
 	return &PartitionTopology{
 		lock:                         &sync.RWMutex{},
 		servicePartitions:            servicePartitionsBucket,
 		partitionServices:            partitionServicesBucket,
-		partitionConnectionOverrides: partitionConnectionBucket,
+		partitionConnectionOverrides: partitionConnectionOverridesBucket,
 		defaultConnection:            defaultConnection,
 	}, nil
 }
@@ -248,7 +248,7 @@ func (topology *PartitionTopology) RemovePartition(partitionId service_network_t
 	// update partition connections dropping all potential entries referencing the deleted partition
 	allPartitionConnections, err := topology.partitionConnectionOverrides.GetAllPartitionConnectionOverrides()
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while getting all partition connections")
+		return stacktrace.Propagate(err, "An error occurred while getting all partition connection overrides")
 	}
 	for partitionConnectionId := range allPartitionConnections {
 		if partitionConnectionId.LexicalFirst == partition.PartitionID(partitionId) || partitionConnectionId.LexicalSecond == partition.PartitionID(partitionId) {
