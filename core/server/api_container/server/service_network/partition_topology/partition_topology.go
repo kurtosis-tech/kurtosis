@@ -30,7 +30,7 @@ type PartitionTopology struct {
 	servicePartitions *partition_topology_db.ServicePartitionsBucket
 
 	// By default, connection between 2 partitions is set to defaultConnection. This map contains overrides
-	partitionConnectionOverrides *partition_topology_db.PartitionConnectionBucket
+	partitionConnectionOverrides *partition_topology_db.PartitionConnectionOverridesBucket
 
 	// A service can be a part of exactly one partition at a time
 	partitionServices *partition_topology_db.PartitionServicesBucket
@@ -458,6 +458,7 @@ func (topology *PartitionTopology) GetPartitionConnection(partition1 service_net
 		return false, ConnectionAllowed, stacktrace.Propagate(err, "An error occurred while getting the partition connection with id '%v'", partitionConnectionId)
 	}
 	if currentPartitionConnection == partition_topology_db.DefaultPartitionConnection {
+		// TODO rework this, the empty value isn't the default value
 		return true, topology.GetDefaultConnection(), nil
 	}
 
@@ -544,10 +545,6 @@ func (topology *PartitionTopology) getPartitionConnectionUnlocked(
 	if err != nil {
 		return ConnectionAllowed, stacktrace.Propagate(err, "An error occurred while getting the partition connection with id '%v'", partitionConnectionId)
 	}
-	if currentPartitionConnection == partition_topology_db.DefaultPartitionConnection {
-		return topology.GetDefaultConnection(), nil
-	}
-
 	partitionConnectionTyped := NewPartitionConnection(NewPacketLoss(currentPartitionConnection.PacketLoss), NewNormalPacketDelayDistribution(currentPartitionConnection.PacketDelayDistribution.AvgDelayMs, currentPartitionConnection.PacketDelayDistribution.Jitter, currentPartitionConnection.PacketDelayDistribution.Correlation))
 	return partitionConnectionTyped, nil
 
