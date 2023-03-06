@@ -287,8 +287,7 @@ func (topology *PartitionTopology) SetConnection(partition1 service_network_type
 		return stacktrace.NewError("About to set a connection between '%s' and '%s' but '%s' does not exist", partition1, partition2, partition2)
 	}
 
-	partitionConnectionId := service_network_types.NewPartitionConnectionID(partition1, partition2)
-	partitionConnectionIdDbType := partitionConnectionIdDbTypeFromPartitionConnectionId(*partitionConnectionId)
+	partitionConnectionIdDbType := partitionConnectionIdDbTypeFromPartitionIds(partition1, partition2)
 	partitionConnectionDbType := partitionConnectionDbTypeFromPartitionConnection(connection)
 	if err = topology.partitionConnectionOverrides.AddPartitionConnectionOverride(partitionConnectionIdDbType, partitionConnectionDbType); err != nil {
 		return stacktrace.Propagate(err, "An error occurred while adding partition with id '%v' to bucket", partitionConnectionIdDbType)
@@ -318,8 +317,7 @@ func (topology *PartitionTopology) UnsetConnection(partition1 service_network_ty
 	if !exists {
 		return stacktrace.NewError("About to unset a connection between '%s' and '%s' but '%s' does not exist", partition1, partition2, partition2)
 	}
-	partitionConnectionId := service_network_types.NewPartitionConnectionID(partition1, partition2)
-	partitionConnectionIdDbType := partitionConnectionIdDbTypeFromPartitionConnectionId(*partitionConnectionId)
+	partitionConnectionIdDbType := partitionConnectionIdDbTypeFromPartitionIds(partition1, partition2)
 	if err = topology.partitionConnectionOverrides.RemovePartitionConnectionOverride(partitionConnectionIdDbType); err != nil {
 		return stacktrace.Propagate(err, "An error occurred while removing partition connection with id '%v'", partitionConnectionIdDbType)
 	}
@@ -437,8 +435,7 @@ func (topology *PartitionTopology) GetPartitionConnection(partition1 service_net
 		return false, ConnectionAllowed, stacktrace.NewError("About to get a connection between '%s' and '%s' but '%s' does not exist", partition1, partition2, partition2)
 	}
 
-	partitionConnectionId := service_network_types.NewPartitionConnectionID(partition1, partition1)
-	partitionConnectionIdDbType := partitionConnectionIdDbTypeFromPartitionConnectionId(*partitionConnectionId)
+	partitionConnectionIdDbType := partitionConnectionIdDbTypeFromPartitionIds(partition1, partition2)
 	exists, err = topology.partitionConnectionOverrides.DoesPartitionConnectionOverrideExist(partitionConnectionIdDbType)
 	if err != nil {
 		return false, ConnectionAllowed, stacktrace.Propagate(err, "An error occurred while verifying whether partition connection override with id '%v' exists", partitionConnectionIdDbType)
@@ -528,8 +525,7 @@ func (topology *PartitionTopology) getPartitionConnectionUnlocked(
 		return ConnectionAllowed, stacktrace.NewError("Unrecognized partition '%v'", b)
 	}
 
-	partitionConnectionId := service_network_types.NewPartitionConnectionID(a, b)
-	partitionConnectionIdDbType := partitionConnectionIdDbTypeFromPartitionConnectionId(*partitionConnectionId)
+	partitionConnectionIdDbType := partitionConnectionIdDbTypeFromPartitionIds(a, b)
 
 	exists, err = topology.partitionConnectionOverrides.DoesPartitionConnectionOverrideExist(partitionConnectionIdDbType)
 	if err != nil {
@@ -587,4 +583,8 @@ func partitionConnectionIdDbTypeFromPartitionConnectionId(connectionId service_n
 		LexicalFirst:  partition.PartitionID(connectionId.GetFirst()),
 		LexicalSecond: partition.PartitionID(connectionId.GetSecond()),
 	}
+}
+
+func partitionConnectionIdDbTypeFromPartitionIds(a, b service_network_types.PartitionID) partition_connection_overrides.PartitionConnectionID {
+	return partitionConnectionIdDbTypeFromPartitionConnectionId(*service_network_types.NewPartitionConnectionID(a, b))
 }
