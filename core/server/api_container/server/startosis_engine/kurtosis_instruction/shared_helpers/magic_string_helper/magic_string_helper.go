@@ -2,7 +2,6 @@ package magic_string_helper
 
 import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
@@ -17,9 +16,6 @@ const (
 	serviceNameSubgroupName = "name"
 	allSubgroupName         = "all"
 	kurtosisNamespace       = "kurtosis"
-	// The placeholder format & regex should align
-	ipAddressReplacementRegex = "(?P<" + allSubgroupName + ">\\{\\{" + kurtosisNamespace + ":(?P<" + serviceNameSubgroupName + ">" + service.ServiceNameRegex + ")\\.ip_address\\}\\})"
-	hostnameReplacementRegex  = "(?P<" + allSubgroupName + ">\\{\\{" + kurtosisNamespace + ":(?P<" + serviceNameSubgroupName + ">" + service.ServiceNameRegex + ")\\.hostname\\}\\})"
 
 	runtimeValueSubgroupName      = "runtime_value"
 	runtimeValueFieldSubgroupName = "runtime_value_field"
@@ -33,40 +29,7 @@ const (
 
 // The compiled regular expression to do IP address replacements
 // Treat this as a constant
-var (
-	compiledIpAddressReplacementRegex    = regexp.MustCompile(ipAddressReplacementRegex)
-	compiledHostnameReplacementRegex     = regexp.MustCompile(hostnameReplacementRegex)
-	compiledRuntimeValueReplacementRegex = regexp.MustCompile(runtimeValueReplacementRegex)
-)
-
-func ReplaceIPAddressAndHostnameInString(originalString string, network service_network.ServiceNetwork, argNameForLogging string) (string, error) {
-	stringWithIpAddressReplaced, err := replaceRegexpMatchesWithString(
-		compiledIpAddressReplacementRegex,
-		originalString,
-		argNameForLogging,
-		network,
-		func(serviceRegistration *service.ServiceRegistration) string {
-			return serviceRegistration.GetPrivateIP().String()
-		},
-	)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred replacing the IP address")
-	}
-
-	stringWithIpAddressAndHostnameReplaced, err := replaceRegexpMatchesWithString(
-		compiledHostnameReplacementRegex,
-		stringWithIpAddressReplaced,
-		argNameForLogging,
-		network,
-		func(serviceRegistration *service.ServiceRegistration) string {
-			return serviceRegistration.GetHostname()
-		},
-	)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred replacing the hostname")
-	}
-	return stringWithIpAddressAndHostnameReplaced, nil
-}
+var compiledRuntimeValueReplacementRegex = regexp.MustCompile(runtimeValueReplacementRegex)
 
 func ReplaceRuntimeValueInString(originalString string, recipeEngine *runtime_value_store.RuntimeValueStore) (string, error) {
 	matches := compiledRuntimeValueReplacementRegex.FindAllStringSubmatch(originalString, unlimitedMatches)
@@ -119,28 +82,4 @@ func getRuntimeValueFromRegexMatch(match []string, runtimeValueStore *runtime_va
 		return nil, stacktrace.NewError("An error happened getting runtime value field '%v' '%v'", match[runtimeValueMatchIndex], match[runtimeValueFieldMatchIndex])
 	}
 	return selectedRuntimeValue, nil
-}
-
-func replaceRegexpMatchesWithString(regexpToReplace *regexp.Regexp, originalString string, argNameForLogigng string, network service_network.ServiceNetwork, stringExtractor func(serviceRegistration *service.ServiceRegistration) string) (string, error) {
-	matches := regexpToReplace.FindAllStringSubmatch(originalString, unlimitedMatches)
-	replacedString := originalString
-	for _, match := range matches {
-		serviceNameMatchIndex := compiledIpAddressReplacementRegex.SubexpIndex(serviceNameSubgroupName)
-		if serviceNameMatchIndex == subExpNotFound {
-			return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", serviceNameSubgroupName, regexpToReplace.String())
-		}
-		serviceName := service.ServiceName(match[serviceNameMatchIndex])
-		serviceRegistration, found := network.GetServiceRegistration(serviceName)
-		if !found {
-			return "", stacktrace.NewError("'%v' depends on the hostname and IP address of '%v' but we don't have any registrations for it", argNameForLogigng, serviceName)
-		}
-		stringToInject := stringExtractor(serviceRegistration)
-		allMatchIndex := regexpToReplace.SubexpIndex(allSubgroupName)
-		if allMatchIndex == subExpNotFound {
-			return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", serviceNameSubgroupName, regexpToReplace.String())
-		}
-		allMatch := match[allMatchIndex]
-		replacedString = strings.Replace(replacedString, allMatch, stringToInject, singleMatch)
-	}
-	return replacedString, nil
 }
