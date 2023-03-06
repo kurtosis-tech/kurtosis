@@ -21,6 +21,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/wait"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/connection_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/packet_delay_distribution"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/update_service_config"
@@ -89,7 +90,7 @@ func KurtosisTypeConstructors() []*starlark.Builtin {
 		starlark.NewBuiltin(recipe.ExecRecipeName, recipe.MakeExecRequestRecipe),
 		starlark.NewBuiltin(recipe.GetHttpRecipeTypeName, recipe.MakeGetHttpRequestRecipe),
 		starlark.NewBuiltin(recipe.PostHttpRecipeTypeName, recipe.MakePostHttpRequestRecipe),
-		starlark.NewBuiltin(kurtosis_types.ConnectionConfigTypeName, kurtosis_types.MakeConnectionConfig),
+		starlark.NewBuiltin(connection_config.ConnectionConfigTypeName, connection_config.NewConnectionConfigType().CreateBuiltin()),
 		starlark.NewBuiltin(kurtosis_types.PortSpecTypeName, kurtosis_types.MakePortSpec),
 		starlark.NewBuiltin(packet_delay_distribution.NormalPacketDelayDistributionTypeName, packet_delay_distribution.NewNormalPacketDelayDistributionType().CreateBuiltin()),
 		starlark.NewBuiltin(packet_delay_distribution.UniformPacketDelayDistributionTypeName, packet_delay_distribution.NewUniformPacketDelayDistributionType().CreateBuiltin()),
