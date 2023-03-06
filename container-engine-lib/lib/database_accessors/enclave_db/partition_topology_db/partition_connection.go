@@ -34,6 +34,8 @@ type DelayDistribution struct {
 	Correlation float32 `json:"correlation"`
 }
 
+var DefaultPartitionConnection PartitionConnection
+
 type PartitionConnection struct {
 	PacketLoss              float32           `json:"packet_loss"`
 	PacketDelayDistribution DelayDistribution `json:"delay_distribution"`
@@ -56,7 +58,7 @@ func (pc *PartitionConnectionBucket) GetPartitionConnection(connectionId Partiti
 		return nil
 	}
 	if err := pc.db.View(getPartitionConnection); err != nil {
-		return PartitionConnection{}, stacktrace.Propagate(err, "An error occurred while fetching connection for connection id '%v'", connectionId)
+		return DefaultPartitionConnection, stacktrace.Propagate(err, "An error occurred while fetching connection for connection id '%v'", connectionId)
 	}
 	return connection, nil
 }
