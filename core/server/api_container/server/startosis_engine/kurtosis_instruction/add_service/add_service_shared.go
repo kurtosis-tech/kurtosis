@@ -16,7 +16,19 @@ import (
 	"go.starlark.net/starlark"
 )
 
-func makeAddServiceInterpretationReturnValue(serviceName service.ServiceName, serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig) (*kurtosis_types.Service, *startosis_errors.InterpretationError) {
+const (
+	ipAddressRuntimeValue = "ip_address"
+	hostnameRuntimeValue  = "hostname"
+)
+
+func fillAddServiceReturnValueWithRuntimeValues(service *service.Service, resultUuid string, runtimeValueStore *runtime_value_store.RuntimeValueStore) {
+	runtimeValueStore.SetValue(resultUuid, map[string]starlark.Comparable{
+		ipAddressRuntimeValue: starlark.String(service.GetRegistration().GetPrivateIP()),
+		hostnameRuntimeValue:  starlark.String(service.GetRegistration().GetHostname()),
+	})
+}
+
+func makeAddServiceInterpretationReturnValue(serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig, resultUuid string) (*kurtosis_types.Service, *startosis_errors.InterpretationError) {
 	ports := serviceConfig.GetPrivatePorts()
 	portSpecsDict := starlark.NewDict(len(ports))
 	for portId, port := range ports {
@@ -31,8 +43,8 @@ func makeAddServiceInterpretationReturnValue(serviceName service.ServiceName, se
 				number, transportProtocol, maybeApplicationProtocol)
 		}
 	}
-	ipAddress := starlark.String(fmt.Sprintf(magic_string_helper.IpAddressReplacementPlaceholderFormat, serviceName))
-	hostname := starlark.String(fmt.Sprintf(magic_string_helper.HostnameReplacementPlaceholderFormat, serviceName))
+	ipAddress := starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, ipAddressRuntimeValue))
+	hostname := starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, hostnameRuntimeValue))
 	returnValue := kurtosis_types.NewService(hostname, ipAddress, portSpecsDict)
 	return returnValue, nil
 }

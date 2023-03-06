@@ -70,6 +70,8 @@ type AddServicesCapabilities struct {
 	runtimeValueStore *runtime_value_store.RuntimeValueStore
 
 	serviceConfigs map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig
+
+	resultUuids map[service.ServiceName]string
 }
 
 func (builtin *AddServicesCapabilities) Interpret(arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -83,10 +85,11 @@ func (builtin *AddServicesCapabilities) Interpret(arguments *builtin_argument.Ar
 	}
 	builtin.serviceConfigs = serviceConfigs
 
-	returnValue, interpretationErr := makeAddServicesInterpretationReturnValue(builtin.serviceConfigs)
+	resultUuids, returnValue, interpretationErr := makeAddServicesInterpretationReturnValue(builtin.serviceConfigs, builtin.runtimeValueStore)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
+	builtin.resultUuids = resultUuids
 	return returnValue, nil
 }
 
@@ -130,6 +133,7 @@ func (builtin *AddServicesCapabilities) Execute(ctx context.Context, _ *builtin_
 	instructionResult := strings.Builder{}
 	instructionResult.WriteString(fmt.Sprintf("Successfully added the following '%d' services:", len(startedServices)))
 	for serviceName, serviceObj := range startedServices {
+		fillAddServiceReturnValueWithRuntimeValues(serviceObj, builtin.resultUuids[serviceName], builtin.runtimeValueStore)
 		instructionResult.WriteString(fmt.Sprintf("\n  Service '%s' added with UUID '%s'", serviceName, serviceObj.GetRegistration().GetUUID()))
 
 	}
@@ -168,17 +172,23 @@ func validateAndConvertConfigs(configs starlark.Value) (map[service.ServiceName]
 	return convertedServiceConfigs, nil
 }
 
-func makeAddServicesInterpretationReturnValue(serviceConfigs map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig) (*starlark.Dict, *startosis_errors.InterpretationError) {
+func makeAddServicesInterpretationReturnValue(serviceConfigs map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig, runtimeValueStore *runtime_value_store.RuntimeValueStore) (map[service.ServiceName]string, *starlark.Dict, *startosis_errors.InterpretationError) {
 	servicesObjectDict := starlark.NewDict(len(serviceConfigs))
+	resultUuids := map[service.ServiceName]string{}
+	var err error
 	for serviceName, serviceConfig := range serviceConfigs {
 		serviceNameStr := starlark.String(serviceName)
-		serviceObject, interpretationErr := makeAddServiceInterpretationReturnValue(serviceName, serviceConfig)
+		resultUuids[serviceName], err = runtimeValueStore.CreateValue()
+		if err != nil {
+			return nil, nil, startosis_errors.WrapWithInterpretationError(err, "Unable to create runtime value to hold '%v' command return values", AddServicesBuiltinName)
+		}
+		serviceObject, interpretationErr := makeAddServiceInterpretationReturnValue(serviceConfig, resultUuids[serviceName])
 		if interpretationErr != nil {
-			return nil, interpretationErr
+			return nil, nil, interpretationErr
 		}
 		if err := servicesObjectDict.SetKey(serviceNameStr, serviceObject); err != nil {
-			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to generate the object that should be returned by the '%s' builtin", AddServicesBuiltinName)
+			return nil, nil, startosis_errors.WrapWithInterpretationError(err, "Unable to generate the object that should be returned by the '%s' builtin", AddServicesBuiltinName)
 		}
 	}
-	return servicesObjectDict, nil
+	return resultUuids, servicesObjectDict, nil
 }

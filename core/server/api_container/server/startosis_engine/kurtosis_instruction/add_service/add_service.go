@@ -78,6 +78,8 @@ type AddServiceCapabilities struct {
 
 	serviceName   service.ServiceName
 	serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig
+
+	resultUuid string
 }
 
 func (builtin *AddServiceCapabilities) Interpret(arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -97,8 +99,11 @@ func (builtin *AddServiceCapabilities) Interpret(arguments *builtin_argument.Arg
 
 	builtin.serviceName = service.ServiceName(serviceName.GoString())
 	builtin.serviceConfig = apiServiceConfig
-
-	returnValue, interpretationErr := makeAddServiceInterpretationReturnValue(builtin.serviceName, builtin.serviceConfig)
+	builtin.resultUuid, err = builtin.runtimeValueStore.CreateValue()
+	if err != nil {
+		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to create runtime value to hold '%v' command return values", AddServiceBuiltinName)
+	}
+	returnValue, interpretationErr := makeAddServiceInterpretationReturnValue(builtin.serviceConfig, builtin.resultUuid)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
@@ -122,6 +127,7 @@ func (builtin *AddServiceCapabilities) Execute(ctx context.Context, _ *builtin_a
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Unexpected error occurred starting service '%s'", replacedServiceName)
 	}
+	fillAddServiceReturnValueWithRuntimeValues(startedService, builtin.resultUuid, builtin.runtimeValueStore)
 	instructionResult := fmt.Sprintf("Service '%s' added with service UUID '%s'", replacedServiceName, startedService.GetRegistration().GetUUID())
 	return instructionResult, nil
 }
