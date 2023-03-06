@@ -138,6 +138,17 @@ func (pc *PartitionConnectionBucket) ReplaceBucketContents(newConnections map[Pa
 }
 
 func (pc *PartitionConnectionBucket) RemovePartitionConnection(connectionId PartitionConnectionID) error {
+	removeServiceFromBucketFunc := func(tx *bolt.Tx) error {
+		jsonifiedConnectionId, err := json.Marshal(connectionId)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred while converting partition connection id '%v' to json", connectionId)
+		}
+
+		return tx.Bucket(partitionConnectionsBucketName).Delete(jsonifiedConnectionId)
+	}
+	if err := pc.db.Update(removeServiceFromBucketFunc); err != nil {
+		return stacktrace.Propagate(err, "An error occurred while removing '%v' from bucket", connectionId)
+	}
 	return nil
 }
 

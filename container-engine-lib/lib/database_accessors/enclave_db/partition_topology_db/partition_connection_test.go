@@ -86,3 +86,21 @@ func TestPartitionConnection_GetPartitionConnection(t *testing.T) {
 	require.Nil(t, err)
 	require.Equal(t, testConnectionA, connection)
 }
+
+func TestPartitionConnection_DeleteConnection(t *testing.T) {
+	enclaveDb, cleaningFunction, err := test_helpers.CreateEnclaveDbForTesting()
+	require.Nil(t, err)
+	defer cleaningFunction()
+	partitionConnections, err := GetOrCreatePartitionConnectionBucket(enclaveDb)
+	require.Nil(t, err)
+
+	err = partitionConnections.AddPartitionConnection(testConnectionIdA, testConnectionA)
+	require.Nil(t, err)
+
+	err = partitionConnections.RemovePartitionConnection(testConnectionIdA)
+	require.Nil(t, err)
+
+	allConnections, err := partitionConnections.GetAllPartitionConnections()
+	require.Nil(t, err)
+	require.Empty(t, allConnections)
+}
