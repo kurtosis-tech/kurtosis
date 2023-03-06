@@ -1,4 +1,4 @@
-package partition_topology_db
+package service_partitions
 
 import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/partition"

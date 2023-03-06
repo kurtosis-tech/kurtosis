@@ -1,4 +1,4 @@
-package partition_topology_db
+package partition_services
 
 import (
 	"encoding/json"
