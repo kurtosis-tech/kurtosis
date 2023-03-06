@@ -40,7 +40,7 @@ func TestPartitionConnection_AddAndGetAll(t *testing.T) {
 	enclaveDb, cleaningFunction, err := test_helpers.CreateEnclaveDbForTesting()
 	require.Nil(t, err)
 	defer cleaningFunction()
-	partitionConnections, err := GetOrCreatePartitionConnectionBucket(enclaveDb)
+	partitionConnections, err := GetOrCreatePartitionConnectionOverrideBucket(enclaveDb)
 	require.Nil(t, err)
 
 	err = partitionConnections.AddPartitionConnectionOverride(testConnectionIdA, testConnectionA)
@@ -57,7 +57,7 @@ func TestPartitionConnection_ReplaceBucketContents(t *testing.T) {
 	enclaveDb, cleaningFunction, err := test_helpers.CreateEnclaveDbForTesting()
 	require.Nil(t, err)
 	defer cleaningFunction()
-	partitionConnections, err := GetOrCreatePartitionConnectionBucket(enclaveDb)
+	partitionConnections, err := GetOrCreatePartitionConnectionOverrideBucket(enclaveDb)
 	require.Nil(t, err)
 
 	err = partitionConnections.AddPartitionConnectionOverride(testConnectionIdA, testConnectionA)
@@ -76,7 +76,7 @@ func TestPartitionConnection_GetPartitionConnection(t *testing.T) {
 	enclaveDb, cleaningFunction, err := test_helpers.CreateEnclaveDbForTesting()
 	require.Nil(t, err)
 	defer cleaningFunction()
-	partitionConnections, err := GetOrCreatePartitionConnectionBucket(enclaveDb)
+	partitionConnections, err := GetOrCreatePartitionConnectionOverrideBucket(enclaveDb)
 	require.Nil(t, err)
 
 	err = partitionConnections.AddPartitionConnectionOverride(testConnectionIdA, testConnectionA)
@@ -91,7 +91,7 @@ func TestPartitionConnection_DeleteConnection(t *testing.T) {
 	enclaveDb, cleaningFunction, err := test_helpers.CreateEnclaveDbForTesting()
 	require.Nil(t, err)
 	defer cleaningFunction()
-	partitionConnections, err := GetOrCreatePartitionConnectionBucket(enclaveDb)
+	partitionConnections, err := GetOrCreatePartitionConnectionOverrideBucket(enclaveDb)
 	require.Nil(t, err)
 
 	err = partitionConnections.AddPartitionConnectionOverride(testConnectionIdA, testConnectionA)

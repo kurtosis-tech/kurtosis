@@ -49,7 +49,7 @@ func NewPartitionTopology(defaultPartition service_network_types.PartitionID, de
 		return nil, stacktrace.Propagate(err, "An error occurred while creating the service partitions bucket")
 	}
 
-	partitionConnectionOverridesBucket, err := partition_connection_overrides.GetOrCreatePartitionConnectionBucket(enclaveDb)
+	partitionConnectionOverridesBucket, err := partition_connection_overrides.GetOrCreatePartitionConnectionOverrideBucket(enclaveDb)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while creating the partition connection overrides bucket")
 	}
@@ -243,7 +243,7 @@ func (topology *PartitionTopology) RemovePartition(partitionId service_network_t
 	for partitionConnectionId := range allPartitionConnections {
 		if partitionConnectionId.LexicalFirst == partition.PartitionID(partitionId) || partitionConnectionId.LexicalSecond == partition.PartitionID(partitionId) {
 			if err = topology.partitionConnectionOverrides.RemovePartitionConnectionOverride(partitionConnectionId); err != nil {
-				return stacktrace.Propagate(err, "An error occurred while removing partition connection with id '%v'", partitionConnectionId)
+				return stacktrace.Propagate(err, "An error occurred while removing partition connection with ID '%v'", partitionConnectionId)
 			}
 		}
 	}
@@ -585,6 +585,6 @@ func partitionConnectionIdDbTypeFromPartitionConnectionId(connectionId service_n
 	}
 }
 
-func partitionConnectionIdDbTypeFromPartitionIds(a, b service_network_types.PartitionID) partition_connection_overrides.PartitionConnectionID {
-	return partitionConnectionIdDbTypeFromPartitionConnectionId(*service_network_types.NewPartitionConnectionID(a, b))
+func partitionConnectionIdDbTypeFromPartitionIds(partitionId1, partitionId2 service_network_types.PartitionID) partition_connection_overrides.PartitionConnectionID {
+	return partitionConnectionIdDbTypeFromPartitionConnectionId(*service_network_types.NewPartitionConnectionID(partitionId1, partitionId2))
 }
