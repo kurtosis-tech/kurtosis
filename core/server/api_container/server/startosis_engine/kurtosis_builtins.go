@@ -45,7 +45,7 @@ func KurtosisPlanInstructions(serviceNetwork service_network.ServiceNetwork, run
 		exec.NewExec(serviceNetwork, runtimeValueStore),
 		remove_connection.NewRemoveConnection(serviceNetwork),
 		remove_service.NewRemoveService(serviceNetwork),
-		render_templates.NewRenderTemplatesInstruction(serviceNetwork),
+		render_templates.NewRenderTemplatesInstruction(serviceNetwork, runtimeValueStore),
 		request.NewRequest(serviceNetwork, runtimeValueStore),
 		set_connection.NewSetConnection(serviceNetwork),
 		store_service_files.NewStoreServiceFiles(serviceNetwork),

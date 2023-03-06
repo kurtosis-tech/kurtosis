@@ -98,11 +98,7 @@ func (instruction *PrintInstruction) Execute(_ context.Context) (*string, error)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Error replacing runtime value '%v'", serializedArgs[idx])
 		}
-		maybeSerializedArgsWithIPAddressAndHostname, err := magic_string_helper.ReplaceIPAddressAndHostnameInString(maybeSerializedArgsWithRuntimeValue, instruction.serviceNetwork, PrintBuiltinName)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Error replacing IP address value '%v'", serializedArgs[idx])
-		}
-		serializedArgs[idx] = maybeSerializedArgsWithIPAddressAndHostname
+		serializedArgs[idx] = maybeSerializedArgsWithRuntimeValue
 	}
 	instructionOutput := fmt.Sprintf("%s%s", strings.Join(serializedArgs, string(instruction.separator)), instruction.end)
 

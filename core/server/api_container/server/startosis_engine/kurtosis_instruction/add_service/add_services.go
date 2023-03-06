@@ -111,7 +111,7 @@ func (builtin *AddServicesCapabilities) Execute(ctx context.Context, _ *builtin_
 		return "", stacktrace.NewError("An error occurred when getting parallelism level from execution context")
 	}
 	for serviceName, serviceConfig := range builtin.serviceConfigs {
-		renderedServiceName, renderedServiceConfig, err := replaceMagicStrings(builtin.serviceNetwork, builtin.runtimeValueStore, serviceName, serviceConfig)
+		renderedServiceName, renderedServiceConfig, err := replaceMagicStrings(builtin.runtimeValueStore, serviceName, serviceConfig)
 		if err != nil {
 			return "", stacktrace.Propagate(err, "An error occurred replacing a magic string in '%s' instruction arguments for service: '%s'. Execution cannot proceed", AddServicesBuiltinName, serviceName)
 		}
