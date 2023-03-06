@@ -6,7 +6,6 @@
 package partition_topology
 
 import (
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/partition"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/partition_topology_db/partition_connection_overrides"
@@ -564,8 +563,9 @@ func TestSetConnection(t *testing.T) {
 		},
 	}, partitionServices)
 
+	partitionConnectionId := service_network_types.NewPartitionConnectionID(partition1, partition2)
 	expectedConnectionOverrides := map[partition_connection_overrides.PartitionConnectionID]partition_connection_overrides.PartitionConnection{
-		getDbNativePartitionConnectionIdFromPartitionIds(partition1, partition2): getDbNativeConnectionOverrideFromConnection(connectionOverride),
+		partitionConnectionIdDbTypeFromPartitionConnectionId(*partitionConnectionId): partitionConnectionDbTypeFromPartitionConnection(connectionOverride),
 	}
 	allConnectionOverrides, err := topology.partitionConnectionOverrides.GetAllPartitionConnectionOverrides()
 	require.Nil(t, err)
@@ -1023,22 +1023,4 @@ func getServicePacketConnectionConfigForService(
 		t.Fatal(stacktrace.NewError("Expected to find service '%v' in service packet loss config map but didn't", serviceName))
 	}
 	return result
-}
-
-func getDbNativeConnectionOverrideFromConnection(connection PartitionConnection) partition_connection_overrides.PartitionConnection {
-	return partition_connection_overrides.PartitionConnection{
-		PacketLoss: connection.packetLoss.packetLossPercentage,
-		PacketDelayDistribution: partition_connection_overrides.DelayDistribution{
-			AvgDelayMs:  connection.packetDelayDistribution.avgDelayMs,
-			Jitter:      connection.packetDelayDistribution.jitter,
-			Correlation: connection.packetDelayDistribution.correlation,
-		},
-	}
-}
-
-func getDbNativePartitionConnectionIdFromPartitionIds(partitionId1, partitionId2 service_network_types.PartitionID) partition_connection_overrides.PartitionConnectionID {
-	return partition_connection_overrides.PartitionConnectionID{
-		LexicalFirst:  partition.PartitionID(partitionId1),
-		LexicalSecond: partition.PartitionID(partitionId2),
-	}
 }

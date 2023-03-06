@@ -164,19 +164,9 @@ func (topology *PartitionTopology) Repartition(
 	}
 	newPartitionConnectionOverridesCopy := map[partition_connection_overrides.PartitionConnectionID]partition_connection_overrides.PartitionConnection{}
 	for partitionConnectionId, partitionConnection := range newPartitionConnectionOverrides {
-		connectionId := partition_connection_overrides.PartitionConnectionID{
-			LexicalFirst:  partition.PartitionID(partitionConnectionId.GetFirst()),
-			LexicalSecond: partition.PartitionID(partitionConnectionId.GetSecond()),
-		}
-		connection := partition_connection_overrides.PartitionConnection{
-			PacketLoss: partitionConnection.packetLoss.packetLossPercentage,
-			PacketDelayDistribution: partition_connection_overrides.DelayDistribution{
-				AvgDelayMs:  partitionConnection.GetPacketDelay().avgDelayMs,
-				Jitter:      partitionConnection.GetPacketDelay().jitter,
-				Correlation: partitionConnection.GetPacketDelay().correlation,
-			},
-		}
-		newPartitionConnectionOverridesCopy[connectionId] = connection
+		connectionIdDbType := partitionConnectionIdDbTypeFromPartitionConnectionId(partitionConnectionId)
+		connectionDbType := partitionConnectionDbTypeFromPartitionConnection(partitionConnection)
+		newPartitionConnectionOverridesCopy[connectionIdDbType] = connectionDbType
 	}
 
 	if err = topology.partitionServices.RepartitionBucket(newPartitionServicesCopy); err != nil {
@@ -297,18 +287,11 @@ func (topology *PartitionTopology) SetConnection(partition1 service_network_type
 		return stacktrace.NewError("About to set a connection between '%s' and '%s' but '%s' does not exist", partition1, partition2, partition2)
 	}
 
-	partitionConnectionId := partition_connection_overrides.PartitionConnectionID{LexicalFirst: partition.PartitionID(partition1), LexicalSecond: partition.PartitionID(partition2)}
-	// TODO rename these types better
-	partitionConnection := partition_connection_overrides.PartitionConnection{
-		PacketLoss: connection.packetLoss.packetLossPercentage,
-		PacketDelayDistribution: partition_connection_overrides.DelayDistribution{
-			AvgDelayMs:  connection.packetDelayDistribution.avgDelayMs,
-			Jitter:      connection.packetDelayDistribution.jitter,
-			Correlation: connection.packetDelayDistribution.correlation,
-		},
-	}
-	if err = topology.partitionConnectionOverrides.AddPartitionConnectionOverride(partitionConnectionId, partitionConnection); err != nil {
-		return stacktrace.Propagate(err, "An error occurred while adding partition with id '%v' to bucket", partitionConnectionId)
+	partitionConnectionId := service_network_types.NewPartitionConnectionID(partition1, partition2)
+	partitionConnectionIdDbType := partitionConnectionIdDbTypeFromPartitionConnectionId(*partitionConnectionId)
+	partitionConnectionDbType := partitionConnectionDbTypeFromPartitionConnection(connection)
+	if err = topology.partitionConnectionOverrides.AddPartitionConnectionOverride(partitionConnectionIdDbType, partitionConnectionDbType); err != nil {
+		return stacktrace.Propagate(err, "An error occurred while adding partition with id '%v' to bucket", partitionConnectionIdDbType)
 	}
 	return nil
 }
@@ -463,13 +446,13 @@ func (topology *PartitionTopology) GetPartitionConnection(partition1 service_net
 		return true, topology.GetDefaultConnection(), nil
 	}
 
-	currentPartitionConnection, err := topology.partitionConnectionOverrides.GetPartitionConnectionOverride(partitionConnectionId)
+	currentPartitionConnectionDbType, err := topology.partitionConnectionOverrides.GetPartitionConnectionOverride(partitionConnectionId)
 	if err != nil {
 		return false, ConnectionAllowed, stacktrace.Propagate(err, "An error occurred while getting the partition connection with id '%v'", partitionConnectionId)
 	}
 
-	partitionConnectionTyped := NewPartitionConnection(NewPacketLoss(currentPartitionConnection.PacketLoss), NewNormalPacketDelayDistribution(currentPartitionConnection.PacketDelayDistribution.AvgDelayMs, currentPartitionConnection.PacketDelayDistribution.Jitter, currentPartitionConnection.PacketDelayDistribution.Correlation))
-	return false, partitionConnectionTyped, nil
+	partitionConnection := newPartitionConnectionFromDbType(currentPartitionConnectionDbType)
+	return false, partitionConnection, nil
 }
 
 func (topology *PartitionTopology) GetServicePartitions() (map[service.ServiceName]service_network_types.PartitionID, error) {
@@ -556,12 +539,12 @@ func (topology *PartitionTopology) getPartitionConnectionUnlocked(
 		return topology.GetDefaultConnection(), nil
 	}
 
-	currentPartitionConnection, err := topology.partitionConnectionOverrides.GetPartitionConnectionOverride(partitionConnectionId)
+	currentPartitionConnectionDbType, err := topology.partitionConnectionOverrides.GetPartitionConnectionOverride(partitionConnectionId)
 	if err != nil {
 		return ConnectionAllowed, stacktrace.Propagate(err, "An error occurred while getting the partition connection with id '%v'", partitionConnectionId)
 	}
-	partitionConnectionTyped := NewPartitionConnection(NewPacketLoss(currentPartitionConnection.PacketLoss), NewNormalPacketDelayDistribution(currentPartitionConnection.PacketDelayDistribution.AvgDelayMs, currentPartitionConnection.PacketDelayDistribution.Jitter, currentPartitionConnection.PacketDelayDistribution.Correlation))
-	return partitionConnectionTyped, nil
+	partitionConnection := newPartitionConnectionFromDbType(currentPartitionConnectionDbType)
+	return partitionConnection, nil
 
 }
 
@@ -586,4 +569,22 @@ func copyServiceSet(serviceSet map[service.ServiceName]bool) map[service.Service
 		newServiceSet[serviceUuid] = true
 	}
 	return newServiceSet
+}
+
+func partitionConnectionDbTypeFromPartitionConnection(connection PartitionConnection) partition_connection_overrides.PartitionConnection {
+	return partition_connection_overrides.PartitionConnection{
+		PacketLoss: connection.packetLoss.packetLossPercentage,
+		PacketDelayDistribution: partition_connection_overrides.DelayDistribution{
+			AvgDelayMs:  connection.packetDelayDistribution.avgDelayMs,
+			Jitter:      connection.packetDelayDistribution.jitter,
+			Correlation: connection.packetDelayDistribution.correlation,
+		},
+	}
+}
+
+func partitionConnectionIdDbTypeFromPartitionConnectionId(connectionId service_network_types.PartitionConnectionID) partition_connection_overrides.PartitionConnectionID {
+	return partition_connection_overrides.PartitionConnectionID{
+		LexicalFirst:  partition.PartitionID(connectionId.GetFirst()),
+		LexicalSecond: partition.PartitionID(connectionId.GetSecond()),
+	}
 }
