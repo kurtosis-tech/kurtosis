@@ -48,10 +48,13 @@ func TestAllRegisteredBuiltins(t *testing.T) {
 	testKurtosisHelper(t, newReadFileTestCase(t))
 	testKurtosisHelper(t, newImportModuleTestCase(t))
 
-	testKurtosisTypeConstructor(t, newServiceConfigMinimalTestCase(t))
-	testKurtosisTypeConstructor(t, newServiceConfigFullTestCase(t))
+	testKurtosisTypeConstructor(t, newNormalPacketDelayDistributionFullTestCase(t))
+	testKurtosisTypeConstructor(t, newNormalPacketDelayDistributionMinimalTestCase(t))
 	testKurtosisTypeConstructor(t, newPortSpecFullTestCase(t))
 	testKurtosisTypeConstructor(t, newPortSpecMinimalTestCase(t))
+	testKurtosisTypeConstructor(t, newServiceConfigMinimalTestCase(t))
+	testKurtosisTypeConstructor(t, newServiceConfigFullTestCase(t))
+	testKurtosisTypeConstructor(t, newUniformPacketDelayDistributionTestCase(t))
 	testKurtosisTypeConstructor(t, newUpdateServiceConfigTestCase(t))
 }
 

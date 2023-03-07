@@ -82,11 +82,15 @@ type SetConnectionCapabilities struct {
 }
 
 func (builtin *SetConnectionCapabilities) Interpret(arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
-	connectionConfig, err := builtin_argument.ExtractArgumentValue[*kurtosis_types.ConnectionConfig](arguments, ConnectionConfigArgName)
+	connectionConfigStarlark, err := builtin_argument.ExtractArgumentValue[*kurtosis_types.ConnectionConfig](arguments, ConnectionConfigArgName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ConnectionConfigArgName)
 	}
-	builtin.connectionConfig = connectionConfig.ToKurtosisType()
+	connectionConfig, interpretationErr := connectionConfigStarlark.ToKurtosisType()
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	builtin.connectionConfig = connectionConfig
 
 	if !arguments.IsSet(SubnetworksArgName) {
 		return starlark.None, nil
@@ -147,5 +151,9 @@ func validateAndConvertConfig(rawConfig starlark.Value) (*partition_topology.Par
 	if !ok {
 		return nil, startosis_errors.NewInterpretationError("The '%s' argument is not a ConnectionConfig (was '%s').", ConnectionConfigArgName, reflect.TypeOf(rawConfig))
 	}
-	return starlarkConnectionConfig.ToKurtosisType(), nil
+	apiConnectionConfig, interpretationErr := starlarkConnectionConfig.ToKurtosisType()
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	return apiConnectionConfig, nil
 }
