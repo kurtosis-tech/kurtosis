@@ -67,14 +67,14 @@ Stops the enclave with the given [identifier][identifier] and destroys the encla
 **Args**
 * `enclaveIdentifier`: [Identifier][identifier] of the enclave to destroy.
 
-### `clean(boolean shouldCleanAll) -> Set<EnclaveUUID> RemovedEnclaveUuids`
+### `clean(boolean shouldCleanAll) -> []EnclaveNameAndUuid RemovedEnclaveNameAndUuids`
 Destroys enclaves in the Kurtosis engine.
 
 **Args**
 * `shouldCleanAll`: If set to true, destroys running enclaves in addition to stopped ones.
 
 **Returns**
-* `RemovedEnclaveUuids`: A set of the removed enclave Uuids.
+* `RemovedEnclaveNameAndUuids`: A list of enclave uuids and names that were removed succesfully
 
 ### `getServiceLogs(String enclaveIdentifier, Set<ServiceUUID> serviceUuids, Boolean shouldFollowLogs, LogLineFilter logLineFilter) -> ServiceLogsStreamContent serviceLogsStreamContent`
 Get and start a service container logs stream (showed in ascending order, with the oldest line first) from services identified by their UUID.

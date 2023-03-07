@@ -194,7 +194,7 @@ message EnclaveNameAndUuid {
 
 message CleanResponse {
   // removed enclave name and uuids
-  repeated  EnclaveNameAndUuid removed_enclave_name_and_uuid = 1;
+  repeated  EnclaveNameAndUuid removed_enclave_name_and_uuids = 1;
 }
 
 // ==============================================================================================
