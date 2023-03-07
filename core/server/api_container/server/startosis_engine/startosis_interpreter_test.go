@@ -1070,8 +1070,9 @@ def run(plan):
 func validateScriptOutputFromPrintInstructions(t *testing.T, instructions []kurtosis_instruction.KurtosisInstruction, expectedOutput string) {
 	scriptOutput := strings.Builder{}
 	for _, instruction := range instructions {
-		switch instruction.(type) {
-		case *kurtosis_print.PrintInstruction:
+
+		switch instruction.GetCanonicalInstruction().InstructionName {
+		case kurtosis_print.PrintBuiltinName:
 			instructionOutput, err := instruction.Execute(context.Background())
 			require.Nil(t, err, "Error running the print statements")
 			if instructionOutput != nil {
