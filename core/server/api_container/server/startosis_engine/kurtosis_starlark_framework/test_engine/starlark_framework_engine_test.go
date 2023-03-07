@@ -47,6 +47,8 @@ func TestAllRegisteredBuiltins(t *testing.T) {
 
 	testKurtosisTypeConstructor(t, newServiceConfigMinimalTestCase(t))
 	testKurtosisTypeConstructor(t, newServiceConfigFullTestCase(t))
+	testKurtosisTypeConstructor(t, newPortSpecFullTestCase(t))
+	testKurtosisTypeConstructor(t, newPortSpecMinimalTestCase(t))
 	testKurtosisTypeConstructor(t, newUpdateServiceConfigTestCase(t))
 }
 
@@ -132,8 +134,8 @@ func getBasePredeclaredDict() starlark.StringDict {
 		builtins.KurtosisModuleName: builtins.KurtosisModule(),
 	}
 	// Add all Kurtosis types
-	for _, kurtosisTypeConstructors := range startosis_engine.KurtosisTypeConstructors() {
-		predeclared[kurtosisTypeConstructors.Name()] = kurtosisTypeConstructors
+	for _, kurtosisTypeConstructor := range startosis_engine.KurtosisTypeConstructors() {
+		predeclared[kurtosisTypeConstructor.Name()] = kurtosisTypeConstructor
 	}
 	return predeclared
 }

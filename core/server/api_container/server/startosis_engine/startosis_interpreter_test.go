@@ -289,12 +289,13 @@ def run(plan):
 
 	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 	require.Empty(t, instructions)
-	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
+	expectedError := startosis_errors.NewInterpretationErrorWithCauseAndCustomMsg(
+		startosis_errors.NewInterpretationError(`The following argument(s) could not be parsed or did not pass validation: {"transport_protocol":"Invalid argument value for 'transport_protocol': 'TCPK'. Valid values are TCP, SCTP, UDP"}`),
 		[]startosis_errors.CallFrame{
 			*startosis_errors.NewCallFrame("run", startosis_errors.NewScriptPosition(startosis_constants.PackageIdPlaceholderForStandaloneScript, 11, 20)),
 			*startosis_errors.NewCallFrame("PortSpec", startosis_errors.NewScriptPosition("<builtin>", 0, 0)),
 		},
-		"Evaluation error: Port protocol should be one of TCP, SCTP, UDP",
+		"Evaluation error: Cannot construct 'PortSpec' from the provided arguments.",
 	).ToAPIType()
 	require.Equal(t, expectedError, interpretationError)
 }
@@ -314,21 +315,21 @@ def run(plan):
 	config = ServiceConfig(
 		image = "` + testContainerImageName + `",
 		ports = {
-			"grpc": PortSpec(number = "1234", protocol = "TCP") # port number should be an int
+			"grpc": PortSpec(number = "1234", transport_protocol = "TCP") # port number should be an int
 		}
 	)
 	plan.add_service(service_name = service_name, config = config)
 `
-	expectedErrorStr := `Evaluation error: Cannot construct a PortSpec from the provided arguments. Error was: 
-PortSpec: for parameter "number": got string, want int`
+
 	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 	require.Empty(t, instructions)
-	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
+	expectedError := startosis_errors.NewInterpretationErrorWithCauseAndCustomMsg(
+		startosis_errors.NewInterpretationError(`The following argument(s) could not be parsed or did not pass validation: {"number":"type expected: 'starlark.Int', was 'starlark.String'"}`),
 		[]startosis_errors.CallFrame{
 			*startosis_errors.NewCallFrame("run", startosis_errors.NewScriptPosition(startosis_constants.PackageIdPlaceholderForStandaloneScript, 11, 20)),
 			*startosis_errors.NewCallFrame("PortSpec", startosis_errors.NewScriptPosition("<builtin>", 0, 0)),
 		},
-		expectedErrorStr,
+		"Evaluation error: Cannot construct 'PortSpec' from the provided arguments.",
 	).ToAPIType()
 	require.Equal(t, expectedError, interpretationError)
 }
