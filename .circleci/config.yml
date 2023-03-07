@@ -1060,7 +1060,7 @@ workflows:
                     },
                     {
                         "pattern": "^@site.*"
-                    },
+                    }
                 ]
             }
           filters:
