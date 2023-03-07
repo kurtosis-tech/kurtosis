@@ -201,7 +201,7 @@ exec_recipe = ExecRecipe(
 )
 
 result = plan.exec(exec_recipe)
-plan.assert(result["output"], "==", 0)
+plan.assert(result["code"], "==", 0)
 
 plan.wait(exec_recipe, "output", "!=", "Greetings, world")
 ```
