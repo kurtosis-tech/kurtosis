@@ -152,7 +152,10 @@ func (interpreter *StartosisInterpreter) interpretInternal(packageId string, ser
 	// Go interpreter is relative to each individual thread, and we don't keep accumulating stacktrace entries from the
 	// previous calls inside the same thread
 	thread := newStarlarkThread(packageId)
-	predeclared := interpreter.buildBindings(instructionsQueue)
+	predeclared, interpretationErr := interpreter.buildBindings(instructionsQueue)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
 
 	globalVariables, err := starlark.ExecFile(thread, packageId, serializedStarlark, *predeclared)
 	if err != nil {
@@ -162,13 +165,18 @@ func (interpreter *StartosisInterpreter) interpretInternal(packageId string, ser
 	return globalVariables, nil
 }
 
-func (interpreter *StartosisInterpreter) buildBindings(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction) *starlark.StringDict {
+func (interpreter *StartosisInterpreter) buildBindings(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction) (*starlark.StringDict, *startosis_errors.InterpretationError) {
 	recursiveInterpretForModuleLoading := func(moduleId string, serializedStartosis string) (starlark.StringDict, *startosis_errors.InterpretationError) {
 		result, err := interpreter.interpretInternal(moduleId, serializedStartosis, instructionsQueue)
 		if err != nil {
 			return nil, err
 		}
 		return result, nil
+	}
+
+	kurtosisModule, interpretationErr := builtins.KurtosisModule()
+	if interpretationErr != nil {
+		return nil, interpretationErr
 	}
 
 	predeclared := starlark.StringDict{
@@ -178,7 +186,7 @@ func (interpreter *StartosisInterpreter) buildBindings(instructionsQueue *[]kurt
 		time.Module.Name:                  time.Module,
 
 		// Kurtosis pre-built module containing Kurtosis constant types
-		builtins.KurtosisModuleName: builtins.KurtosisModule(),
+		builtins.KurtosisModuleName: kurtosisModule,
 	}
 
 	// Add all Kurtosis helpers
@@ -190,7 +198,7 @@ func (interpreter *StartosisInterpreter) buildBindings(instructionsQueue *[]kurt
 	for _, kurtosisTypeConstructors := range KurtosisTypeConstructors() {
 		predeclared[kurtosisTypeConstructors.Name()] = kurtosisTypeConstructors
 	}
-	return &predeclared
+	return &predeclared, nil
 }
 
 // This method handles the different cases a Startosis module can be executed.
@@ -281,5 +289,6 @@ func newStarlarkThread(threadName string) *starlark.Thread {
 		Print:      makePrintFunction(),
 		Load:       makeLoadFunction(),
 		OnMaxSteps: nil,
+		Steps:      0,
 	}
 }

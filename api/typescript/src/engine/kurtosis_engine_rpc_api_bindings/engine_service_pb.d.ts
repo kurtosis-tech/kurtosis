@@ -298,9 +298,33 @@ export namespace CleanArgs {
   }
 }
 
+export class EnclaveNameAndUuid extends jspb.Message {
+  getName(): string;
+  setName(value: string): EnclaveNameAndUuid;
+
+  getUuid(): string;
+  setUuid(value: string): EnclaveNameAndUuid;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): EnclaveNameAndUuid.AsObject;
+  static toObject(includeInstance: boolean, msg: EnclaveNameAndUuid): EnclaveNameAndUuid.AsObject;
+  static serializeBinaryToWriter(message: EnclaveNameAndUuid, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): EnclaveNameAndUuid;
+  static deserializeBinaryFromReader(message: EnclaveNameAndUuid, reader: jspb.BinaryReader): EnclaveNameAndUuid;
+}
+
+export namespace EnclaveNameAndUuid {
+  export type AsObject = {
+    name: string,
+    uuid: string,
+  }
+}
+
 export class CleanResponse extends jspb.Message {
-  getRemovedEnclaveUuidsMap(): jspb.Map<string, boolean>;
-  clearRemovedEnclaveUuidsMap(): CleanResponse;
+  getRemovedEnclaveNameAndUuidsList(): Array<EnclaveNameAndUuid>;
+  setRemovedEnclaveNameAndUuidsList(value: Array<EnclaveNameAndUuid>): CleanResponse;
+  clearRemovedEnclaveNameAndUuidsList(): CleanResponse;
+  addRemovedEnclaveNameAndUuids(value?: EnclaveNameAndUuid, index?: number): EnclaveNameAndUuid;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): CleanResponse.AsObject;
@@ -312,7 +336,7 @@ export class CleanResponse extends jspb.Message {
 
 export namespace CleanResponse {
   export type AsObject = {
-    removedEnclaveUuidsMap: Array<[string, boolean]>,
+    removedEnclaveNameAndUuidsList: Array<EnclaveNameAndUuid.AsObject>,
   }
 }
 

@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/mock_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"strings"
@@ -25,7 +26,7 @@ const (
 )
 
 var (
-	dummyPosition               = kurtosis_instruction.NewInstructionPosition(12, 1, "dummyFile")
+	dummyPosition               = kurtosis_starlark_framework.NewKurtosisBuiltinPosition("dummyFile", 12, 1)
 	noInstructionArgsForTesting []*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg
 )
 
