@@ -17,6 +17,10 @@ jobs:
           sudo apt update
           sudo apt install kudet
         name: Install Kudet
+      - run: |
+          sudo apt install jq
+          sudo apt install nodejs npm
+      - name: Setup NPM and JQ for docs releases
       - name: Change versions
         run: | 
           api/scripts/update-package-versions.sh "$(cat version.txt)"
@@ -26,11 +30,13 @@ jobs:
         run: |
           version="$(cat version.txt)"
           cd docs/
+          npm install
           if [-f "versions.json" ]; then
-            cat versions.json | jq 'del(.[] | select(. == "6.66.0"))' | tee versions.json
-            rm -rf "versioned_docs/version-$(version)"
-            rm -rf "versioned_sidebars/version-$(version)-sidebars.json"
+            cat versions.json | jq 'del(.[] | select(. == "$version"))' | tee versions.json
+            rm -rf "versioned_docs/version-$version"
+            rm -rf "versioned_sidebars/version-$version-sidebars.json"
           fi
+          npm run docusaurus docs:version $(version)
       - uses: stefanzweifel/git-auto-commit-action@v4
         with:
           token: "${{ secrets.RELEASER_TOKEN }}"
