@@ -121,6 +121,6 @@ func (builtin *StoreServiceFilesCapabilities) Execute(ctx context.Context, _ *bu
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Failed to copy file '%v' from service '%v", builtin.src, builtin.serviceName)
 	}
-	instructionResult := fmt.Sprintf("Files  with artifact name '%s' uploaded with artifact UUID '%s'", builtin.artifactName, artifactUuid)
+	instructionResult := fmt.Sprintf("Files with artifact name '%s' uploaded with artifact UUID '%s'", builtin.artifactName, artifactUuid)
 	return instructionResult, nil
 }

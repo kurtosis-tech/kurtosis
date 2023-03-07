@@ -290,12 +290,13 @@ def run(plan):
 
 	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 	require.Empty(t, instructions)
-	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
+	expectedError := startosis_errors.NewInterpretationErrorWithCauseAndCustomMsg(
+		startosis_errors.NewInterpretationError(`The following argument(s) could not be parsed or did not pass validation: {"transport_protocol":"Invalid argument value for 'transport_protocol': 'TCPK'. Valid values are TCP, SCTP, UDP"}`),
 		[]startosis_errors.CallFrame{
 			*startosis_errors.NewCallFrame("run", startosis_errors.NewScriptPosition(startosis_constants.PackageIdPlaceholderForStandaloneScript, 11, 20)),
 			*startosis_errors.NewCallFrame("PortSpec", startosis_errors.NewScriptPosition("<builtin>", 0, 0)),
 		},
-		"Evaluation error: Port protocol should be one of TCP, SCTP, UDP",
+		"Evaluation error: Cannot construct 'PortSpec' from the provided arguments.",
 	).ToAPIType()
 	require.Equal(t, expectedError, interpretationError)
 }
@@ -315,21 +316,21 @@ def run(plan):
 	config = ServiceConfig(
 		image = "` + testContainerImageName + `",
 		ports = {
-			"grpc": PortSpec(number = "1234", protocol = "TCP") # port number should be an int
+			"grpc": PortSpec(number = "1234", transport_protocol = "TCP") # port number should be an int
 		}
 	)
 	plan.add_service(service_name = service_name, config = config)
 `
-	expectedErrorStr := `Evaluation error: Cannot construct a PortSpec from the provided arguments. Error was: 
-PortSpec: for parameter "number": got string, want int`
+
 	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 	require.Empty(t, instructions)
-	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
+	expectedError := startosis_errors.NewInterpretationErrorWithCauseAndCustomMsg(
+		startosis_errors.NewInterpretationError(`The following argument(s) could not be parsed or did not pass validation: {"number":"the argument 'number' could not be parsed because their type ('starlark.String') did not match the expected ('starlark.Int')"}`),
 		[]startosis_errors.CallFrame{
 			*startosis_errors.NewCallFrame("run", startosis_errors.NewScriptPosition(startosis_constants.PackageIdPlaceholderForStandaloneScript, 11, 20)),
 			*startosis_errors.NewCallFrame("PortSpec", startosis_errors.NewScriptPosition("<builtin>", 0, 0)),
 		},
-		expectedErrorStr,
+		"Evaluation error: Cannot construct 'PortSpec' from the provided arguments.",
 	).ToAPIType()
 	require.Equal(t, expectedError, interpretationError)
 }
@@ -771,7 +772,8 @@ def run(plan):
 	require.Len(t, instructions, 2)
 }
 
-func TestStartosisInterpreter_InvalidExecRecipeMissingRequiredServiceName(t *testing.T) {
+// TODO remove this when we deprecate the service_name field in
+func TestStartosisInterpreter_ValidExecRecipeWithoutServiceName(t *testing.T) {
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
 	testRuntimeValueStore := runtime_value_store.NewRuntimeValueStore()
@@ -787,16 +789,7 @@ def run(plan):
 
 	_, _, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 
-	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
-		[]startosis_errors.CallFrame{
-			*startosis_errors.NewCallFrame("run", startosis_errors.NewScriptPosition(startosis_constants.PackageIdPlaceholderForStandaloneScript, 4, 21)),
-			*startosis_errors.NewCallFrame("ExecRecipe", startosis_errors.NewScriptPosition(startosis_constants.PackageIdPlaceholderForStandaloneScript, 0, 0)),
-		},
-		"Evaluation error: ExecRecipe: missing argument for service_name",
-	).ToAPIType()
-
-	require.NotNil(t, interpretationError)
-	require.Equal(t, expectedError, interpretationError)
+	require.Nil(t, interpretationError)
 }
 
 func TestStartosisInterpreter_InvalidExecRecipeMissingRequiredCommand(t *testing.T) {

@@ -276,6 +276,9 @@ func TestStartService_FailedToStart(t *testing.T) {
 	expectedPartitionsInTopolody := map[service_network_types.PartitionID]map[service.ServiceName]bool{
 		partition_topology.DefaultPartitionId: {},
 	}
+	sp, err := network.topology.GetServicePartitions()
+	require.Nil(t, err)
+	require.Empty(t, sp)
 	partitionServices, err := network.topology.GetPartitionServices()
 	require.Nil(t, err)
 	require.Equal(t, expectedPartitionsInTopolody, partitionServices)

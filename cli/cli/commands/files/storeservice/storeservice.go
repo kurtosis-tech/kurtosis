@@ -35,17 +35,20 @@ const (
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
 
-	starlarkTemplate = `
-CURRENT_TIME_STR = str(time.now().unix)
-ARTIFACT_NAME = "cli-stored-artifact-" + CURRENT_TIME_STR
+	starlarkTemplateWithArtifactName = `
 def run(plan, args):
-	name = ARTIFACT_NAME
-	if args.name != "":
-		name = args.name
 	plan.store_service_files(
-		name = name,
+		src = args.src,
+		name = args.name,
 		service_name = args.service_name,
-		src = args.src
+	)
+`
+
+	starlarkTemplateWithoutArtifactName = `
+def run(plan, args):
+	plan.store_service_files(
+		src = args.src,
+		service_name = args.service_name,
 	)
 `
 	noParallelism = 1
@@ -146,7 +149,12 @@ func run(
 }
 
 func storeServiceFileStarlarkCommand(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, serviceName services.ServiceName, filePath string, enclaveIdentifier string, artifactName string) (*enclaves.StarlarkRunResult, error) {
-	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkTemplate, fmt.Sprintf(`{"service_name": "%s", "src": "%s", "name": "%s"}`, serviceName, filePath, artifactName), false, noParallelism)
+	template := starlarkTemplateWithArtifactName
+	if artifactName == defaultName {
+		template = starlarkTemplateWithoutArtifactName
+	}
+
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, template, fmt.Sprintf(`{"service_name": "%s", "src": "%s", "name": "%s"}`, serviceName, filePath, artifactName), false, noParallelism)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,

@@ -9,7 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
@@ -36,14 +36,13 @@ func NewAddService(serviceNetwork service_network.ServiceNetwork, runtimeValueSt
 					IsOptional:        false,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-						// TODO: when #903 is merged, validate service name are non emtpy string
-						return nil
+						return builtin_argument.NonEmptyString(value, ServiceNameArgName)
 					},
 				},
 				{
 					Name:              ServiceConfigArgName,
 					IsOptional:        false,
-					ZeroValueProvider: builtin_argument.ZeroValueProvider[*kurtosis_types.ServiceConfig],
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*service_config.ServiceConfig],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						// we just try to convert the configs here to validate their shape, to avoid code duplication
 						// with Interpret
@@ -87,7 +86,7 @@ func (builtin *AddServiceCapabilities) Interpret(arguments *builtin_argument.Arg
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ServiceNameArgName)
 	}
 
-	serviceConfig, err := builtin_argument.ExtractArgumentValue[*kurtosis_types.ServiceConfig](arguments, ServiceConfigArgName)
+	serviceConfig, err := builtin_argument.ExtractArgumentValue[*service_config.ServiceConfig](arguments, ServiceConfigArgName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ServiceConfigArgName)
 	}
@@ -128,7 +127,7 @@ func (builtin *AddServiceCapabilities) Execute(ctx context.Context, _ *builtin_a
 }
 
 func validateAndConvertConfig(rawConfig starlark.Value) (*kurtosis_core_rpc_api_bindings.ServiceConfig, *startosis_errors.InterpretationError) {
-	config, ok := rawConfig.(*kurtosis_types.ServiceConfig)
+	config, ok := rawConfig.(*service_config.ServiceConfig)
 	if !ok {
 		return nil, startosis_errors.NewInterpretationError("The '%s' argument is not a ServiceConfig (was '%s').", ConfigsArgName, reflect.TypeOf(rawConfig))
 	}
