@@ -102,10 +102,9 @@ func (packetDelayDistribution *NormalPacketDelayDistribution) ToKurtosisType() (
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
+
 	var correlation float32
-	if !found {
-		correlation = 0
-	} else {
+	if found {
 		correlation = float32(correlationStarlark)
 	}
 

@@ -25,7 +25,32 @@ func TestNonEmptyString_Valid(t *testing.T) {
 	value := starlark.String("datastore-1")
 	err := NonEmptyString(value, "service_name")
 	require.Nil(t, err)
+}
 
+func TestStringValues_Valid(t *testing.T) {
+	value := starlark.String("TCP")
+	err := StringValues(value, "port_protocol", []string{"TCP", "UDP"})
+	require.Nil(t, err)
+}
+
+func TestStringValues_Invalid(t *testing.T) {
+	value := starlark.String("BLAH")
+	err := StringValues(value, "port_protocol", []string{"TCP", "UDP"})
+	require.NotNil(t, err)
+	require.Equal(t, "Invalid argument value for 'port_protocol': 'BLAH'. Valid values are TCP, UDP", err.Error())
+}
+
+func TestStringRegexp_Valid(t *testing.T) {
+	value := starlark.String("hello")
+	err := StringRegexp(value, "port_protocol", "^[a-z]*$")
+	require.Nil(t, err)
+}
+
+func TestStringRegexp_Invalid(t *testing.T) {
+	value := starlark.String("HELLO")
+	err := StringRegexp(value, "port_protocol", "^[a-z]*$")
+	require.NotNil(t, err)
+	require.Equal(t, "Argument 'port_protocol' must match regexp: '^[a-z]*$'. Its value was 'HELLO'", err.Error())
 }
 
 func TestUint64InRange_WrongType(t *testing.T) {
