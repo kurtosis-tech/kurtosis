@@ -772,7 +772,7 @@ def run(plan):
 	require.Len(t, instructions, 2)
 }
 
-// TODO remove this when whe deprecate the service_name field in
+// TODO remove this when we deprecate the service_name field in
 func TestStartosisInterpreter_ValidExecRecipeWithoutServiceName(t *testing.T) {
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
