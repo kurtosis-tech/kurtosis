@@ -48,6 +48,9 @@ func TestAllRegisteredBuiltins(t *testing.T) {
 	testKurtosisHelper(t, newReadFileTestCase(t))
 	testKurtosisHelper(t, newImportModuleTestCase(t))
 
+	testKurtosisTypeConstructor(t, newConnectionConfigFullTestCase(t))
+	testKurtosisTypeConstructor(t, newConnectionConfigWithPacketDelayTestCase(t))
+	testKurtosisTypeConstructor(t, newConnectionConfigWithPacketLossTestCase(t))
 	testKurtosisTypeConstructor(t, newNormalPacketDelayDistributionFullTestCase(t))
 	testKurtosisTypeConstructor(t, newNormalPacketDelayDistributionMinimalTestCase(t))
 	testKurtosisTypeConstructor(t, newPortSpecFullTestCase(t))
@@ -63,7 +66,7 @@ func testKurtosisPlanInstruction(t *testing.T, builtin KurtosisPlanInstructionBa
 	var instructionQueue []kurtosis_instruction.KurtosisInstruction
 	thread := newStarlarkThread("framework-testing-engine")
 
-	predeclared := getBasePredeclaredDict()
+	predeclared := getBasePredeclaredDict(t)
 	// Add the KurtosisPlanInstruction that is being tested
 	instructionFromBuiltin := builtin.GetInstruction()
 	instructionWrapper := kurtosis_plan_instruction.NewKurtosisPlanInstructionWrapper(instructionFromBuiltin, &instructionQueue)
@@ -97,7 +100,7 @@ func testKurtosisHelper(t *testing.T, builtin KurtosisHelperBaseTest) {
 	testId := builtin.GetId()
 	thread := newStarlarkThread("framework-testing-engine")
 
-	predeclared := getBasePredeclaredDict()
+	predeclared := getBasePredeclaredDict(t)
 	// Add the KurtosisPlanInstruction that is being tested
 	helper := builtin.GetHelper()
 	predeclared[helper.GetName()] = starlark.NewBuiltin(helper.GetName(), helper.CreateBuiltin())
@@ -114,7 +117,7 @@ func testKurtosisTypeConstructor(t *testing.T, builtin KurtosisTypeConstructorBa
 	testId := builtin.GetId()
 	thread := newStarlarkThread("framework-testing-engine")
 
-	predeclared := getBasePredeclaredDict()
+	predeclared := getBasePredeclaredDict(t)
 
 	starlarkCode := builtin.GetStarlarkCode()
 	starlarkCodeToExecute := codeToExecute(starlarkCode)
@@ -128,7 +131,9 @@ func testKurtosisTypeConstructor(t *testing.T, builtin KurtosisTypeConstructorBa
 	require.Equal(t, starlarkCode, serializedType)
 }
 
-func getBasePredeclaredDict() starlark.StringDict {
+func getBasePredeclaredDict(t *testing.T) starlark.StringDict {
+	kurtosisModule, err := builtins.KurtosisModule()
+	require.Nil(t, err)
 	// TODO: refactor this with the one we have in the interpreter
 	predeclared := starlark.StringDict{
 		// go-starlark add-ons
@@ -137,7 +142,7 @@ func getBasePredeclaredDict() starlark.StringDict {
 		time.Module.Name:                  time.Module,
 
 		// Kurtosis pre-built module containing Kurtosis constant types
-		builtins.KurtosisModuleName: builtins.KurtosisModule(),
+		builtins.KurtosisModuleName: kurtosisModule,
 	}
 	// Add all Kurtosis types
 	for _, kurtosisTypeConstructor := range startosis_engine.KurtosisTypeConstructors() {
