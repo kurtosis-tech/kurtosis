@@ -78,6 +78,11 @@ const config = {
             position: 'right',
             label: 'Report Docs Issue',
           },
+          {
+            type: 'docsVersionDropdown',
+            position: 'left',
+            dropdownActiveClassDisabled: true,
+          },
         ],
       },
       footer: {
