@@ -8,7 +8,7 @@ If you spot a bug, [search if an issue already exists](https://github.com/kurtos
 
 ### Feature Requests
 
-If you have a feature request, search if a [feature requests already exists](https://github.com/kurtosis-tech/kurtosis/issues?q=is%3Aopen+is%3Aissue+label%3A%22feature+request%22). If a related feature request doesn't exist, you can open a [feature request](https://github.com/kurtosis-tech/kurtosis/issues/new?assignees=&labels=feature+request&template=feature-request.yml&title=%5BFR%5D%3A+). 
+If you have a feature request, search if a similar [feature request already exists](https://github.com/kurtosis-tech/kurtosis/issues?q=is%3Aopen+is%3Aissue+label%3A%22feature+request%22). If a related feature request doesn't exist, you can open a [feature request](https://github.com/kurtosis-tech/kurtosis/issues/new?assignees=&labels=feature+request&template=feature-request.yml&title=%5BFR%5D%3A+). 
 
 ### Documentation
 
