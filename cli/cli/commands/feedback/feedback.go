@@ -14,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/kurtosis_version"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/savioxavier/termlink"
+	"net/url"
 )
 
 const (
@@ -44,6 +45,11 @@ const (
 * If you need help getting started, %v
 `
 	greenColorStr = "green"
+
+	userMsgArgKey          = "message"
+	userMsgArgDefaultValue = "default-message-value"
+	userMsgArgIsOptional   = true
+	userMsgArgIsNotGreedy  = false
 )
 
 var FeedbackCmd = &lowlevel.LowlevelKurtosisCommand{
@@ -73,56 +79,84 @@ var FeedbackCmd = &lowlevel.LowlevelKurtosisCommand{
 			Default:   defaultOpenCalendlyLink,
 		},
 	},
-	Args:                     nil,
+	Args: []*args.ArgConfig{
+		{
+			Key:            userMsgArgKey,
+			DefaultValue:   userMsgArgDefaultValue,
+			IsOptional:     userMsgArgIsOptional,
+			IsGreedy:       userMsgArgIsNotGreedy,
+			ValidationFunc: validateUserMsgArg,
+		},
+	},
 	PreValidationAndRunFunc:  nil,
 	RunFunc:                  run,
 	PostValidationAndRunFunc: nil,
 }
 
-func run(_ context.Context, flags *flags.ParsedFlags, _ *args.ParsedArgs) error {
+func run(_ context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error {
+	isGithubFlagActivated := false
+	isEmailFlagActivated := false
+	isCalendlyFlagActivated := false
+	doesUserFillMsg := true
+
+	// Args parsing and validation
+	userMsg, err := args.GetNonGreedyArg(userMsgArgKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the user message argument using flag key '%v'", userMsgArgKey)
+	}
+	if userMsg == userMsgArgDefaultValue {
+		doesUserFillMsg = false
+		userMsg = ""
+	}
+	userEncodedMsg := &url.URL{Path: userMsg}
+
 	metricsUserIdStore := metrics_user_id_store.GetMetricsUserIDStore()
 	metricsUserId, err := metricsUserIdStore.GetUserID()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting metrics user id")
 	}
 
-	shouldOpenGitHubIssuesPage, err := flags.GetBool(githubFlagKey)
+	isEmailFlagActivated, err = flags.GetBool(emailFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a boolean flag with key '%v' but none was found; this is an error in Kurtosis!", emailFlagKey)
+	}
+
+	emailLink := fmt.Sprintf("%s?body=%s", user_support_constants.FeedbackEmailLink, userEncodedMsg)
+
+	isGithubFlagActivated, err = flags.GetBool(githubFlagKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected a boolean flag with key '%v' but none was found; this is an error in Kurtosis!", githubFlagKey)
 	}
 
 	gitHubIssueURL := fmt.Sprintf(
-		"%s?version=%v&metrics-user-id=%v",
+		"%s?version=%v&metrics-user-id=%v&description=%s&background-and-motivation=%s",
 		user_support_constants.GithubIssuesUrl,
 		kurtosis_version.KurtosisVersion,
 		metricsUserId,
+		userEncodedMsg,
+		userEncodedMsg,
 	)
 
-	if shouldOpenGitHubIssuesPage {
+	isCalendlyFlagActivated, err = flags.GetBool(calendlyFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a boolean flag with key '%v' but none was found; this is an error in Kurtosis!", calendlyFlagKey)
+	}
+
+	if isEmailFlagActivated || (doesUserFillMsg && !isGithubFlagActivated) {
+		if err := multi_os_command_executor.OpenFile(emailLink); err != nil {
+			return stacktrace.Propagate(err, "An error occurred while opening the feedback email link")
+		}
+		return nil
+	}
+
+	if isGithubFlagActivated {
 		if err := multi_os_command_executor.OpenFile(gitHubIssueURL); err != nil {
 			return stacktrace.Propagate(err, "An error occurred while opening the Kurtosis Github issue page")
 		}
 		return nil
 	}
 
-	shouldOpenEmailLink, err := flags.GetBool(emailFlagKey)
-	if err != nil {
-		return stacktrace.Propagate(err, "Expected a boolean flag with key '%v' but none was found; this is an error in Kurtosis!", emailFlagKey)
-	}
-
-	if shouldOpenEmailLink {
-		if err := multi_os_command_executor.OpenFile(user_support_constants.FeedbackEmailLink); err != nil {
-			return stacktrace.Propagate(err, "An error occurred while opening the feedback email link")
-		}
-		return nil
-	}
-
-	shouldOpenCalendlyLink, err := flags.GetBool(calendlyFlagKey)
-	if err != nil {
-		return stacktrace.Propagate(err, "Expected a boolean flag with key '%v' but none was found; this is an error in Kurtosis!", calendlyFlagKey)
-	}
-
-	if shouldOpenCalendlyLink {
+	if isCalendlyFlagActivated {
 		if err := multi_os_command_executor.OpenFile(user_support_constants.KurtosisOnBoardCalendlyUrl); err != nil {
 			return stacktrace.Propagate(err, "An error occurred while opening the Calendly email link")
 		}
@@ -134,8 +168,20 @@ func run(_ context.Context, flags *flags.ParsedFlags, _ *args.ParsedArgs) error 
 	fmt.Printf(
 		feedbackMsg,
 		termlink.ColorLink(githubLinkText, gitHubIssueURL, greenColorStr),
-		termlink.ColorLink(emailLinkText, user_support_constants.FeedbackEmailLink, greenColorStr),
+		termlink.ColorLink(emailLinkText, emailLink, greenColorStr),
 		termlink.ColorLink(onboardingLinkText, user_support_constants.KurtosisOnBoardCalendlyUrl, greenColorStr),
 	)
+	return nil
+}
+
+func validateUserMsgArg(_ context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error {
+	userMsgArg, err := args.GetNonGreedyArg(userMsgArgKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the user message arguments using flag key '%v'", userMsgArgKey)
+	}
+
+	if userMsgArg == "" {
+		return stacktrace.Propagate(err, "Error validating the user message argument, it can be an empty string")
+	}
 	return nil
 }
