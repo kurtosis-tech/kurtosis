@@ -299,8 +299,8 @@ export namespace CleanArgs {
 }
 
 export class CleanResponse extends jspb.Message {
-  getRemovedEnclaveUuidsMap(): jspb.Map<string, boolean>;
-  clearRemovedEnclaveUuidsMap(): CleanResponse;
+  getRemovedEnclaveUuidsWithNameMap(): jspb.Map<string, boolean>;
+  clearRemovedEnclaveUuidsWithNameMap(): CleanResponse;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): CleanResponse.AsObject;
@@ -312,7 +312,7 @@ export class CleanResponse extends jspb.Message {
 
 export namespace CleanResponse {
   export type AsObject = {
-    removedEnclaveUuidsMap: Array<[string, boolean]>,
+    removedEnclaveUuidsWithNameMap: Array<[string, boolean]>,
   }
 }
 

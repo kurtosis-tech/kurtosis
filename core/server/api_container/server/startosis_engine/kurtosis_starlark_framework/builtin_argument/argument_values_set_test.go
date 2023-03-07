@@ -117,7 +117,7 @@ func TestParseArguments_SingleRequiredArgument_FromKwargs_FailsValidation(t *tes
 	values, err := parseArguments(argumentDefinitions, builtinName, args, kwargs)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "The following argument(s) could not be parsed or did not pass validation:")
-	require.Contains(t, err.Error(), "the argument 'service_name' did not pass validation. Error was: \n'service_name' should not be empty")
+	require.Contains(t, err.Error(), `{"service_name":"'service_name' should not be empty"}`)
 	require.Empty(t, values)
 }
 

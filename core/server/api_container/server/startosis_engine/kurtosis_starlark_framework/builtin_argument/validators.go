@@ -4,6 +4,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"go.starlark.net/starlark"
 	"reflect"
+	"regexp"
+	"strings"
 )
 
 func NonEmptyString(value starlark.Value, argNameForLogging string) *startosis_errors.InterpretationError {
@@ -45,4 +47,35 @@ func FloatInRange(value starlark.Value, argNameForLogging string, min float64, m
 		return startosis_errors.NewInterpretationError("Value for '%s' was expected to be a float between %f and %f, but it was %v", argNameForLogging, min, max, valueFloat)
 	}
 	return nil
+}
+
+func StringValues(value starlark.Value, argNameForLogging string, acceptableValues []string) *startosis_errors.InterpretationError {
+	valueStr, ok := value.(starlark.String)
+	if !ok {
+		return startosis_errors.NewInterpretationError("Value for '%s' was expected to be a starlark.String but was '%s'", argNameForLogging, reflect.TypeOf(value))
+	}
+	for _, acceptableValue := range acceptableValues {
+		if acceptableValue == valueStr.GoString() {
+			return nil
+		}
+	}
+	return startosis_errors.NewInterpretationError("Invalid argument value for '%s': '%s'. Valid values are %s", argNameForLogging, valueStr.GoString(), strings.Join(acceptableValues, ", "))
+}
+
+func StringRegexp(value starlark.Value, argNameForLogging string, mustMatchRegexpStr string) *startosis_errors.InterpretationError {
+	mustMatchRegexp := regexp.MustCompile(mustMatchRegexpStr)
+	valueStr, ok := value.(starlark.String)
+	if !ok {
+		return startosis_errors.NewInterpretationError("Value for '%s' was expected to be a starlark.String but was '%s'", argNameForLogging, reflect.TypeOf(value))
+	}
+	doesMatch := mustMatchRegexp.MatchString(valueStr.GoString())
+	if doesMatch {
+		return nil
+	}
+	return startosis_errors.NewInterpretationError(
+		"Argument '%s' must match regexp: '%v'. Its value was '%s'",
+		argNameForLogging,
+		mustMatchRegexpStr,
+		valueStr.GoString(),
+	)
 }
