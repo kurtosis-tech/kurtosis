@@ -22,6 +22,15 @@ jobs:
           api/scripts/update-package-versions.sh "$(cat version.txt)"
           api/scripts/update-own-version-constants.sh "$(cat version.txt)"
           scripts/update-license-version.sh "$(cat version.txt)"
+      - name: Cut a New Docs version
+        run: |
+          version="$(cat version.txt)"
+          cd docs/
+          if [-f "versions.json" ]; then
+            cat versions.json | jq 'del(.[] | select(. == "6.66.0"))' | tee versions.json
+            rm -rf "versioned_docs/version-$(version)"
+            rm -rf "versioned_sidebars/version-$(version)-sidebars.json"
+          fi
       - uses: stefanzweifel/git-auto-commit-action@v4
         with:
           token: "${{ secrets.RELEASER_TOKEN }}"
