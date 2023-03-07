@@ -29,8 +29,7 @@ const (
 
 	validNumberOfUuidMatches = 1
 
-	errorDelimiter                  = ", "
-	enclaveUuidEnclaveNameDelimiter = "\t"
+	errorDelimiter = ", "
 )
 
 // TODO Move this to the KurtosisBackend to calculate!!
@@ -280,11 +279,11 @@ func (manager *EnclaveManager) DestroyEnclave(ctx context.Context, enclaveIdenti
 	return destructionErr
 }
 
-func (manager *EnclaveManager) Clean(ctx context.Context, shouldCleanAll bool) (map[string]bool, error) {
+func (manager *EnclaveManager) Clean(ctx context.Context, shouldCleanAll bool) ([]*kurtosis_engine_rpc_api_bindings.EnclaveNameAndUuid, error) {
 	manager.mutex.Lock()
 	defer manager.mutex.Unlock()
 	// TODO: Refactor with kurtosis backend
-	resultSuccessfullyRemovedArtifactsIds := map[string]bool{}
+	var resultEnclaveNameAndUuids []*kurtosis_engine_rpc_api_bindings.EnclaveNameAndUuid
 
 	successfullyRemovedArtifactIds, removalErrors, err := manager.cleanEnclaves(ctx, shouldCleanAll)
 	if err != nil {
@@ -307,14 +306,17 @@ func (manager *EnclaveManager) Clean(ctx context.Context, shouldCleanAll bool) (
 		logrus.Infof("Successfully removed the enclaves")
 		sort.Strings(successfullyRemovedArtifactIds)
 		for _, successfullyRemovedEnclaveUuid := range successfullyRemovedArtifactIds {
-			enclaveNameForUuid := manager.getEnclaveNameForEnclaveUuidUnlocked(successfullyRemovedEnclaveUuid)
-			enclaveUuidAndName := fmt.Sprintf("%v%v%v", successfullyRemovedEnclaveUuid, enclaveUuidEnclaveNameDelimiter, enclaveNameForUuid)
-			resultSuccessfullyRemovedArtifactsIds[enclaveUuidAndName] = true
+			enclaveName := manager.getEnclaveNameForEnclaveUuidUnlocked(successfullyRemovedEnclaveUuid)
+			nameAndUuid := &kurtosis_engine_rpc_api_bindings.EnclaveNameAndUuid{
+				Name: enclaveName,
+				Uuid: successfullyRemovedEnclaveUuid,
+			}
+			resultEnclaveNameAndUuids = append(resultEnclaveNameAndUuids, nameAndUuid)
 			logrus.Infof("Enclave Uuid '%v'", successfullyRemovedEnclaveUuid)
 		}
 	}
 
-	return resultSuccessfullyRemovedArtifactsIds, nil
+	return resultEnclaveNameAndUuids, nil
 }
 
 func (manager *EnclaveManager) GetEnclaveUuidForEnclaveIdentifier(ctx context.Context, enclaveIdentifier string) (enclave.EnclaveUUID, error) {

@@ -21,7 +21,7 @@ import {
     GetEnclavesResponse,
     GetEngineInfoResponse,
     StopEnclaveArgs,
-    GetServiceLogsArgs,
+    GetServiceLogsArgs, EnclaveNameAndUuid,
 } from "../../kurtosis_engine_rpc_api_bindings/engine_service_pb";
 import {
     newCleanArgs,
@@ -228,8 +228,8 @@ export class KurtosisContext {
         return ok(null)
     }
 
-    // Docs available at https://docs.kurtosis.com/sdk#cleanboolean-shouldcleanall---setenclaveid-removedenclaveids
-    public async clean(shouldCleanAll: boolean): Promise<Result<Set<string>, Error>>{
+    // Docs available at https://docs.kurtosis.com/sdk#cleanboolean-shouldcleanall---enclavenameanduuid-removedenclavenameanduuids
+    public async clean(shouldCleanAll: boolean): Promise<Result<EnclaveNameAndUuid[], Error>>{
         const cleanArgs: CleanArgs = newCleanArgs(shouldCleanAll);
         const cleanResponseResult = await this.client.clean(cleanArgs)
         if(cleanResponseResult.isErr()){
@@ -237,12 +237,8 @@ export class KurtosisContext {
         }
 
         const cleanResponse: CleanResponse = cleanResponseResult.value
-        const result: Set<string> = new Set();
-        for (let enclaveUuid of cleanResponse.getRemovedEnclaveUuidsWithNameMap().keys()) {
-            result.add(enclaveUuid);
-        }
 
-        return ok(result)
+        return ok(cleanResponse.getRemovedEnclaveNameAndUuidsList())
     }
 
     //The Readable object returned will be constantly streaming the service logs information using the ServiceLogsStreamContent
