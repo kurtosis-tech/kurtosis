@@ -190,7 +190,6 @@ jobs:
 
       - run: |
           git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
-          go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
           container-engine-lib/scripts/build.sh
       - save_cache:
           key: << pipeline.parameters.container-engine-lib-build-cache-key-prefix >>-{{ checksum "container-engine-lib/go.sum" }}
@@ -276,7 +275,6 @@ jobs:
       # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
       - run: |
           git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
-          go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
           core/launcher/scripts/build.sh
 
   build_api_container_server:
@@ -315,7 +313,6 @@ jobs:
       # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
       - run: |
           git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
-          go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
           core/server/scripts/build.sh
           source core/server/scripts/_constants.env
           version_to_publish="$(kudet get-docker-tag)"
@@ -355,7 +352,6 @@ jobs:
       # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
       - run: |
           git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
-          go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
           engine/launcher/scripts/build.sh
 
   build_engine_server:
@@ -390,7 +386,6 @@ jobs:
       # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
       - run: |
           git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
-          go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
           engine/server/scripts/build.sh
           source engine/server/scripts/_constants.env
           version_to_publish="$(kudet get-docker-tag)"
@@ -443,7 +438,6 @@ jobs:
 
       - run: |
           git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
-          go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
           cli/cli/scripts/build.sh true
 
       - save_cache:
@@ -932,7 +926,6 @@ jobs:
       # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
       - run: |
           git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
-          go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
           core/server/scripts/build.sh
       - run: |
           set -euo pipefail
@@ -973,7 +966,6 @@ jobs:
       # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
       - run: |
           git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
-          go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
           engine/server/scripts/build.sh
 
       - run: |
@@ -1017,7 +1009,6 @@ jobs:
       # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
       - run: |
           git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
-          go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
           cli/cli/scripts/build.sh true true
 
       - save_cache:
