@@ -32,7 +32,7 @@ jobs:
           cd docs/
           npm install
           if [-f "versions.json" ]; then
-            cat versions.json | jq 'del(.[] | select(. == "$version"))' | tee versions.json
+            cat versions.json | jq 'del(.[] | select(. == "'"$version"'"))' | tee versions.json
             rm -rf "versioned_docs/version-$version"
             rm -rf "versioned_sidebars/version-$version-sidebars.json"
           fi
