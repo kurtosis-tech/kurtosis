@@ -2,22 +2,24 @@ package kurtosis_types
 
 import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/port_spec"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
 	"testing"
 )
 
 const (
-	hostnameTestValue       = starlark.String("datastore-1")
-	ipAddressTestValue      = starlark.String("{{kurtosis:service_name.ip_address}}")
-	testInvalidAttr         = "invalid-test-attr"
-	httpApplicationProtocol = "http"
+	hostnameTestValue        = starlark.String("datastore-1")
+	ipAddressTestValue       = starlark.String("{{kurtosis:service_name.ip_address}}")
+	testInvalidAttr          = "invalid-test-attr"
+	httpApplicationProtocol  = "http"
+	emptyApplicationProtocol = ""
 )
 
 func TestService_StringRepresentation(t *testing.T) {
 	service, err := createTestServiceType()
 	require.Nil(t, err)
-	expectedStr := `Service(hostname = "datastore-1", ip_address = "{{kurtosis:service_name.ip_address}}", ports = {"grpc": PortSpec(number=123, transport_protocol="TCP", application_protocol="")})`
+	expectedStr := `Service(hostname = "datastore-1", ip_address = "{{kurtosis:service_name.ip_address}}", ports = {"grpc": PortSpec(number=123, transport_protocol="TCP")})`
 	require.Equal(t, expectedStr, service.String())
 }
 
@@ -81,8 +83,11 @@ func TestService_TestAttrNames(t *testing.T) {
 
 func createTestServiceType() (*Service, error) {
 	ports := starlark.NewDict(1)
-	err := ports.SetKey(starlark.String("grpc"), NewPortSpec(123, kurtosis_core_rpc_api_bindings.Port_TCP, emptyApplicationProtocol))
+	portSpec, err := port_spec.CreatePortSpec(123, kurtosis_core_rpc_api_bindings.Port_TCP, emptyApplicationProtocol)
 	if err != nil {
+		return nil, err
+	}
+	if err := ports.SetKey(starlark.String("grpc"), portSpec); err != nil {
 		return nil, err
 	}
 	service := NewService(hostnameTestValue, ipAddressTestValue, ports)
@@ -91,8 +96,11 @@ func createTestServiceType() (*Service, error) {
 
 func createTestServiceTypeWithApplicationProtocol() (*Service, error) {
 	ports := starlark.NewDict(1)
-	err := ports.SetKey(starlark.String("grpc"), NewPortSpec(123, kurtosis_core_rpc_api_bindings.Port_TCP, httpApplicationProtocol))
+	portSpec, err := port_spec.CreatePortSpec(123, kurtosis_core_rpc_api_bindings.Port_TCP, httpApplicationProtocol)
 	if err != nil {
+		return nil, err
+	}
+	if err := ports.SetKey(starlark.String("grpc"), portSpec); err != nil {
 		return nil, err
 	}
 	service := NewService(hostnameTestValue, ipAddressTestValue, ports)
