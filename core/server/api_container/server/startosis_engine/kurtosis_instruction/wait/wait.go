@@ -187,7 +187,7 @@ func (builtin *WaitCapabilities) Interpret(arguments *builtin_argument.ArgumentV
 		}
 		parsedTimeout, parseErr := time.ParseDuration(starlarkTimeout.GoString())
 		if parseErr != nil {
-			return nil, startosis_errors.WrapWithInterpretationError(parseErr, "An error occurred when parsing interval '%v'", starlarkTimeout.GoString())
+			return nil, startosis_errors.WrapWithInterpretationError(parseErr, "An error occurred when parsing timeout '%v'", starlarkTimeout.GoString())
 		}
 		timeout = parsedTimeout
 	} else {

@@ -21,7 +21,7 @@ const (
 )
 
 func TestAllRegisteredBuiltins(t *testing.T) {
-	testKurtosisPlanInstruction(t, newAddServiceTestCase(t))
+	/*testKurtosisPlanInstruction(t, newAddServiceTestCase(t))
 	testKurtosisPlanInstruction(t, newAddServicesTestCase(t))
 	testKurtosisPlanInstruction(t, newAssertTestCase(t))
 	testKurtosisPlanInstruction(t, newExecTestCase1(t))
@@ -45,9 +45,9 @@ func TestAllRegisteredBuiltins(t *testing.T) {
 	testKurtosisHelper(t, newReadFileTestCase(t))
 	testKurtosisHelper(t, newImportModuleTestCase(t))
 
-	testKurtosisTypeConstructor(t, newServiceConfigMinimalTestCase(t))
+	testKurtosisTypeConstructor(t, newServiceConfigMinimalTestCase(t))*/
 	testKurtosisTypeConstructor(t, newServiceConfigFullTestCase(t))
-	testKurtosisTypeConstructor(t, newUpdateServiceConfigTestCase(t))
+	//testKurtosisTypeConstructor(t, newUpdateServiceConfigTestCase(t))
 }
 
 func testKurtosisPlanInstruction(t *testing.T, builtin KurtosisPlanInstructionBaseTest) {

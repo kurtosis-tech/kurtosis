@@ -11,7 +11,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/recipe"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
@@ -80,8 +79,9 @@ type AddServiceCapabilities struct {
 	serviceNetwork    service_network.ServiceNetwork
 	runtimeValueStore *runtime_value_store.RuntimeValueStore
 
-	serviceName   service.ServiceName
-	serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig
+	serviceName     service.ServiceName
+	serviceConfig   *kurtosis_core_rpc_api_bindings.ServiceConfig
+	readyConditions *service_config.ReadyConditions
 }
 
 func (builtin *AddServiceCapabilities) Interpret(arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -99,8 +99,14 @@ func (builtin *AddServiceCapabilities) Interpret(arguments *builtin_argument.Arg
 		return nil, interpretationErr
 	}
 
+	readyConditions, interpretationErr := serviceConfig.GetReadyConditions()
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
 	builtin.serviceName = service.ServiceName(serviceName.GoString())
 	builtin.serviceConfig = apiServiceConfig
+	builtin.readyConditions = readyConditions
 
 	returnValue, interpretationErr := makeAddServiceInterpretationReturnValue(builtin.serviceName, builtin.serviceConfig)
 	if interpretationErr != nil {
@@ -131,72 +137,51 @@ func (builtin *AddServiceCapabilities) Execute(ctx context.Context, _ *builtin_a
 
 	instructionResult := fmt.Sprintf("Service '%s' added with service UUID '%s'", replacedServiceName, serviceUUID)
 
-	//TODO replace all these
-	if replacedServiceName == "web-server-leo" { //TODO replace if it contains a recipe
+	readyConditions := builtin.readyConditions
+	recipe := readyConditions.GetRecipe()
+	field := readyConditions.GetField()
+	assertion := readyConditions.GetAssertion()
+	target := readyConditions.GetTarget()
+	interval := readyConditions.GetInterval()
+	timeout := readyConditions.GetTimeout()
 
-		extractors := map[string]string{
-			"exploded-slash": ".query.input | split(\"/\") | .[1]",
-		}
+	startTime := time.Now()
 
-		recipe := recipe.NewGetHttpRequestRecipe("http-port", "?input=foo/bar", extractors)
+	lastResult, tries, err := shared_helpers.ExecuteServiceAssertionWithRecipe(
+		ctx,
+		builtin.serviceNetwork,
+		builtin.runtimeValueStore,
+		replacedServiceName,
+		recipe,
+		field,
+		assertion,
+		target,
+		interval,
+		timeout,
 
-		intervalStr := "10s"
-		interval, parseErr := time.ParseDuration("10s")
-		if parseErr != nil {
-			return "", startosis_errors.WrapWithInterpretationError(parseErr, "An error occurred when parsing interval '%v'", intervalStr)
-		}
-
-		timeoutStr := "10s"
-		timeout, parseErr := time.ParseDuration("200s")
-		if parseErr != nil {
-			return "", startosis_errors.WrapWithInterpretationError(parseErr, "An error occurred when parsing timeout '%v'", timeoutStr)
-		}
-
-		target := starlark.MakeInt(200)
-
-		//TODO prepare default value for: interval and timeOut and for the others optional fields
-
-		//TODO END replace all these
-
-		startTime := time.Now()
-		valueField := "code"
-		assertion := "=="
-		lastResult, tries, err := shared_helpers.ExecuteServiceAssertionWithRecipe(
-			ctx,
-			builtin.serviceNetwork,
-			builtin.runtimeValueStore,
+	)
+	if err != nil {
+		return "", stacktrace.Propagate(
+			err,
+			"An error occurred checking if service '%v' with UUID '%v' is ready, using "+
+				"recipe '%+v', value field '%v', assertion '%v', target '%v', interval '%s' and time-out '%s'.",
 			replacedServiceName,
+			serviceUUID,
 			recipe,
-			valueField,
+			field,
 			assertion,
 			target,
 			interval,
 			timeout,
 		)
-		if err != nil {
-			return "", stacktrace.Propagate(
-				err,
-				"An error occurred checking if service '%v' with UUID '%v' is ready, using "+
-					"recipe '%+v', value field '%v', assertion '%v', target '%v', interval '%s' and time-out '%s'.",
-				replacedServiceName,
-				serviceUUID,
-				recipe,
-				valueField,
-				assertion,
-				target,
-				interval,
-				timeout,
-			)
-		}
-		logrus.Debugf("Checking if service with UUID '%v' is ready took %d tries (%v in total). "+
-			"Assertion passed with following:\n%s",
-			serviceUUID,
-			tries,
-			time.Since(startTime),
-			recipe.ResultMapToString(lastResult),
-		)
-
 	}
+	logrus.Debugf("Checking if service with UUID '%v' is ready took %d tries (%v in total). "+
+		"Assertion passed with following:\n%s",
+		serviceUUID,
+		tries,
+		time.Since(startTime),
+		recipe.ResultMapToString(lastResult),
+	)
 
 	return instructionResult, nil
 }
