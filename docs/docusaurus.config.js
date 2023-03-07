@@ -74,14 +74,14 @@ const config = {
             activeBasePath: '/sdk'
           },
           {
+            type: 'docsVersionDropdown',
+            position: 'right',
+            dropdownActiveClassDisabled: true,
+          },
+          {
             href: 'https://github.com/kurtosis-tech/kurtosis/issues/new/',
             position: 'right',
             label: 'Report Docs Issue',
-          },
-          {
-            type: 'docsVersionDropdown',
-            position: 'left',
-            dropdownActiveClassDisabled: true,
           },
         ],
       },
