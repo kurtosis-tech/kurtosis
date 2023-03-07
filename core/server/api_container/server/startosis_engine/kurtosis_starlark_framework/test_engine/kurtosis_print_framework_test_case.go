@@ -46,3 +46,7 @@ func (t *printTestCase) Assert(interpretationResult starlark.Value, executionRes
 	expectedExecutionResult := "24.675432"
 	require.Equal(t, &expectedExecutionResult, executionResult)
 }
+
+func (t *printTestCase) GetStarlarkCodeForAssertion() string {
+	return ""
+}
