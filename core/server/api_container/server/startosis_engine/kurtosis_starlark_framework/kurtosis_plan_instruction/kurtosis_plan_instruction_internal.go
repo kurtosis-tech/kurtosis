@@ -11,7 +11,7 @@ import (
 	"go.starlark.net/starlark"
 )
 
-type KurtosisPlanInstructionInternal struct {
+type kurtosisPlanInstructionInternal struct {
 	*kurtosis_starlark_framework.KurtosisBaseBuiltinInternal
 
 	capabilities KurtosisPlanInstructionCapabilities
@@ -19,8 +19,8 @@ type KurtosisPlanInstructionInternal struct {
 	defaultDisplayArguments map[string]bool
 }
 
-func newKurtosisPlanInstructionInternal(internalBuiltin *kurtosis_starlark_framework.KurtosisBaseBuiltinInternal, capabilities KurtosisPlanInstructionCapabilities, defaultDisplayArguments map[string]bool) *KurtosisPlanInstructionInternal {
-	return &KurtosisPlanInstructionInternal{
+func newKurtosisPlanInstructionInternal(internalBuiltin *kurtosis_starlark_framework.KurtosisBaseBuiltinInternal, capabilities KurtosisPlanInstructionCapabilities, defaultDisplayArguments map[string]bool) *kurtosisPlanInstructionInternal {
+	return &kurtosisPlanInstructionInternal{
 		KurtosisBaseBuiltinInternal: internalBuiltin,
 
 		capabilities: capabilities,
@@ -29,7 +29,7 @@ func newKurtosisPlanInstructionInternal(internalBuiltin *kurtosis_starlark_frame
 	}
 }
 
-func (builtin *KurtosisPlanInstructionInternal) GetCanonicalInstruction() *kurtosis_core_rpc_api_bindings.StarlarkInstruction {
+func (builtin *kurtosisPlanInstructionInternal) GetCanonicalInstruction() *kurtosis_core_rpc_api_bindings.StarlarkInstruction {
 	args := make([]*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg, len(builtin.GetArguments().GetDefinition()))
 	for idx, argument := range builtin.GetArguments().GetDefinition() {
 		name := argument.Name
@@ -48,14 +48,14 @@ func (builtin *KurtosisPlanInstructionInternal) GetCanonicalInstruction() *kurto
 }
 
 // GetPositionInOriginalScript is here to implement the KurtosisInstruction interface. Remove it when it's not needed anymore
-func (builtin *KurtosisPlanInstructionInternal) GetPositionInOriginalScript() *kurtosis_starlark_framework.KurtosisBuiltinPosition {
+func (builtin *kurtosisPlanInstructionInternal) GetPositionInOriginalScript() *kurtosis_starlark_framework.KurtosisBuiltinPosition {
 	position := builtin.GetPosition().ToAPIType()
 	return kurtosis_starlark_framework.NewKurtosisBuiltinPosition(position.GetFilename(), position.GetLine(), position.GetColumn())
 }
 
 // ValidateAndUpdateEnvironment is here to ease transition to the new framework and to implement the KurtosisInstruction interface.
 // Remove it when it's not needed anymore
-func (builtin *KurtosisPlanInstructionInternal) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
+func (builtin *kurtosisPlanInstructionInternal) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
 	validationErr := builtin.Validate(environment)
 	if validationErr != nil {
 		return validationErr
@@ -63,11 +63,11 @@ func (builtin *KurtosisPlanInstructionInternal) ValidateAndUpdateEnvironment(env
 	return nil
 }
 
-func (builtin *KurtosisPlanInstructionInternal) Validate(validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
+func (builtin *kurtosisPlanInstructionInternal) Validate(validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
 	return builtin.capabilities.Validate(builtin.GetArguments(), validatorEnvironment)
 }
 
-func (builtin *KurtosisPlanInstructionInternal) Execute(ctx context.Context) (*string, error) {
+func (builtin *kurtosisPlanInstructionInternal) Execute(ctx context.Context) (*string, error) {
 	result, err := builtin.capabilities.Execute(ctx, builtin.GetArguments())
 	if err != nil {
 		return nil, err
@@ -75,7 +75,7 @@ func (builtin *KurtosisPlanInstructionInternal) Execute(ctx context.Context) (*s
 	return &result, nil
 }
 
-func (builtin *KurtosisPlanInstructionInternal) interpret() (starlark.Value, *startosis_errors.InterpretationError) {
+func (builtin *kurtosisPlanInstructionInternal) interpret() (starlark.Value, *startosis_errors.InterpretationError) {
 	result, interpretationErr := builtin.capabilities.Interpret(builtin.GetArguments())
 	if interpretationErr != nil {
 		return nil, interpretationErr

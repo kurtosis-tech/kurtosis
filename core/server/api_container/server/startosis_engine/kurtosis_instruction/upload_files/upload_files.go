@@ -120,6 +120,6 @@ func (builtin *UploadFilesCapabilities) Execute(_ context.Context, _ *builtin_ar
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while uploading the compressed contents\n'%v'", compressedData)
 	}
-	instructionResult := fmt.Sprintf("Files  with artifact name '%s' uploaded with artifact UUID '%s'", builtin.artifactName, filesArtifactUuid)
+	instructionResult := fmt.Sprintf("Files with artifact name '%s' uploaded with artifact UUID '%s'", builtin.artifactName, filesArtifactUuid)
 	return instructionResult, nil
 }

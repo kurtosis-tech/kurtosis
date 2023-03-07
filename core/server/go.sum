@@ -196,8 +196,6 @@ github.com/yuin/goldmark v1.3.5/go.mod h1:mwnBkeHKe2W/ZEtQ+71ViKU8L12m81fl3OWwC1
 go.etcd.io/bbolt v1.3.6 h1:/ecaJf0sk1l4l6V4awd65v2C3ILy7MSj+s/x1ADCIMU=
 go.etcd.io/bbolt v1.3.6/go.mod h1:qXsaaIqmgQH0T+OPdb99Bf+PKfBBQVAdyD6TY9G8XM4=
 go.opentelemetry.io/proto/otlp v0.7.0/go.mod h1:PqfVotwruBrMGOCsRd/89rSnXhoiJIqeYNgFYFoEGnI=
-go.starlark.net v0.0.0-20220928063852-5fccb4daaf6d h1:aF+anaRVZu22kdETjLavnIn/cvD+arhmik6vMU3joW4=
-go.starlark.net v0.0.0-20220928063852-5fccb4daaf6d/go.mod h1:kIVgS18CjmEC3PqMd5kaJSGEifyV/CeB9x506ZJ1Vbk=
 go.starlark.net v0.0.0-20230224151120-c52844e64a10 h1:lVljOiU1EFbXp5KnE9TBYNoV4zHQxkr4g9QbR9U6e04=
 go.starlark.net v0.0.0-20230224151120-c52844e64a10/go.mod h1:jxU+3+j+71eXOW14274+SmmuW82qJzl6iZSeqEtTGds=
 golang.org/x/crypto v0.0.0-20190219172222-a4c6cb3142f2/go.mod h1:6SG95UA2DQfeDnfUPMdvaQW0Q7yPrPDi9nlGo2tz2b4=

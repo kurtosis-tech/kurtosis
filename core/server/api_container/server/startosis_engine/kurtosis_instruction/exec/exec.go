@@ -2,6 +2,7 @@ package exec
 
 import (
 	"context"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
@@ -17,20 +18,28 @@ import (
 const (
 	ExecBuiltinName = "exec"
 
-	RecipeArgName = "recipe"
+	RecipeArgName      = "recipe"
+	ServiceNameArgName = "service_name"
 )
 
 func NewExec(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return &kurtosis_plan_instruction.KurtosisPlanInstruction{
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
 			Name: ExecBuiltinName,
-
 			Arguments: []*builtin_argument.BuiltinArgument{
 				{
 					Name:              RecipeArgName,
 					IsOptional:        false,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[*recipe.ExecRecipe],
 					Validator:         nil,
+				},
+				{
+					Name:              ServiceNameArgName,
+					IsOptional:        true, //TODO make it non-optional when we remove recipe.service_name, issue pending: https://github.com/kurtosis-tech/kurtosis-private/issues/1128
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
+					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+						return builtin_argument.NonEmptyString(value, ServiceNameArgName)
+					},
 				},
 			},
 		},
@@ -40,8 +49,9 @@ func NewExec(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *r
 				serviceNetwork:    serviceNetwork,
 				runtimeValueStore: runtimeValueStore,
 
-				execRecipe: nil, // will be populated at interpretation time
-				resultUuid: "",  // will be populated at interpretation time
+				serviceName: "",  // will be populated at interpretation time
+				execRecipe:  nil, // will be populated at interpretation time
+				resultUuid:  "",  // will be populated at interpretation time
 			}
 		},
 
@@ -55,11 +65,22 @@ type ExecCapabilities struct {
 	serviceNetwork    service_network.ServiceNetwork
 	runtimeValueStore *runtime_value_store.RuntimeValueStore
 
-	execRecipe *recipe.ExecRecipe
-	resultUuid string
+	serviceName service.ServiceName
+	execRecipe  *recipe.ExecRecipe
+	resultUuid  string
 }
 
 func (builtin *ExecCapabilities) Interpret(arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
+	var serviceName service.ServiceName
+
+	if arguments.IsSet(ServiceNameArgName) {
+		serviceNameArgumentValue, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, ServiceNameArgName)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ServiceNameArgName)
+		}
+		serviceName = service.ServiceName(serviceNameArgumentValue.GoString())
+	}
+
 	execRecipe, err := builtin_argument.ExtractArgumentValue[*recipe.ExecRecipe](arguments, RecipeArgName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", RecipeArgName)
@@ -67,9 +88,10 @@ func (builtin *ExecCapabilities) Interpret(arguments *builtin_argument.ArgumentV
 
 	resultUuid, err := builtin.runtimeValueStore.CreateValue()
 	if err != nil {
-		return nil, startosis_errors.NewInterpretationError("An error occurred while generating uuid for future reference for %v instruction", ExecBuiltinName)
+		return nil, startosis_errors.NewInterpretationError("An error occurred while generating UUID for future reference for %v instruction", ExecBuiltinName)
 	}
 
+	builtin.serviceName = serviceName
 	builtin.execRecipe = execRecipe
 	builtin.resultUuid = resultUuid
 
@@ -86,7 +108,7 @@ func (builtin *ExecCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet,
 }
 
 func (builtin *ExecCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
-	result, err := builtin.execRecipe.Execute(ctx, builtin.serviceNetwork, builtin.runtimeValueStore)
+	result, err := builtin.execRecipe.Execute(ctx, builtin.serviceNetwork, builtin.runtimeValueStore, builtin.serviceName)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Error executing exec recipe")
 	}
