@@ -42,7 +42,7 @@ func TestParseArguments_SingleRequiredArgument_FromArgs_TypeMismatch(t *testing.
 	values, err := parseArguments(argumentDefinitions, builtinName, args, kwargs)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "The following argument(s) could not be parsed or did not pass validation:")
-	require.Contains(t, err.Error(), `{"service_name":"type expected: 'starlark.String', was 'starlark.Int'"}`)
+	require.Contains(t, err.Error(), "the argument 'service_name' could not be parsed because their type ('starlark.Int') did not match the expected ('starlark.String')")
 	require.Empty(t, values)
 }
 
@@ -100,7 +100,7 @@ func TestParseArguments_SingleRequiredArgument_FromKwargs_TypeMismatch(t *testin
 	values, err := parseArguments(argumentDefinitions, builtinName, args, kwargs)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "The following argument(s) could not be parsed or did not pass validation:")
-	require.Contains(t, err.Error(), `{"service_name":"type expected: 'starlark.String', was 'starlark.Int'"}`)
+	require.Contains(t, err.Error(), "the argument 'service_name' could not be parsed because their type ('starlark.Int') did not match the expected ('starlark.String')")
 	require.Empty(t, values)
 }
 
@@ -221,8 +221,8 @@ func TestParseArguments_ArgumentWithOptional_FromArgs_FailureTypeMismatch(t *tes
 	values, err := parseArguments(argumentDefinitions, builtinName, args, kwargs)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "The following argument(s) could not be parsed or did not pass validation:")
-	require.Contains(t, err.Error(), `"service_name":"type expected: 'starlark.String', was 'starlark.Bool'"`)
-	require.Contains(t, err.Error(), `"should_start":"type expected: 'starlark.Bool', was 'starlark.String'"`)
+	require.Contains(t, err.Error(), "the argument 'service_name' could not be parsed because their type ('starlark.Bool') did not match the expected ('starlark.String')")
+	require.Contains(t, err.Error(), "the argument 'should_start' could not be parsed because their type ('starlark.String') did not match the expected ('starlark.Bool')")
 	require.Nil(t, values)
 }
 

@@ -3,6 +3,7 @@ package kurtosis_types
 import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/packet_delay_distribution"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
@@ -27,11 +28,11 @@ var (
 
 // ConnectionConfig A starlark.Value that represents a connection config between 2 subnetworks
 type ConnectionConfig struct {
-	packetDelayDistribution PacketDelayDistributionInterface
+	packetDelayDistribution packet_delay_distribution.PacketDelayDistribution
 	packetLossPercentage    starlark.Float
 }
 
-func NewConnectionConfig(packetLossPercentage starlark.Float, packetDelayDistribution PacketDelayDistributionInterface) *ConnectionConfig {
+func NewConnectionConfig(packetLossPercentage starlark.Float, packetDelayDistribution packet_delay_distribution.PacketDelayDistribution) *ConnectionConfig {
 	return &ConnectionConfig{
 		packetDelayDistribution: packetDelayDistribution,
 		packetLossPercentage:    packetLossPercentage,
@@ -40,8 +41,8 @@ func NewConnectionConfig(packetLossPercentage starlark.Float, packetDelayDistrib
 
 func MakeConnectionConfig(_ *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 	var packetLossPercentage starlark.Float
-	var maybeNormalPacketDelayDistribution *NormalPacketDelayDistribution
-	var maybeUniformPacketDelayDistribution *UniformPacketDelayDistribution
+	var maybeNormalPacketDelayDistribution *packet_delay_distribution.NormalPacketDelayDistribution
+	var maybeUniformPacketDelayDistribution *packet_delay_distribution.UniformPacketDelayDistribution
 
 	if err := starlark.UnpackArgs(b.Name(), args, kwargs,
 		MakeOptional(packetLossPercentageAttr), &packetLossPercentage,
@@ -58,7 +59,7 @@ func MakeConnectionConfig(_ *starlark.Thread, b *starlark.Builtin, args starlark
 		return nil, startosis_errors.NewInterpretationError("Invalid attribute. '%s' in '%s' should be greater than 0 and lower than 100. Got '%v'", packetLossPercentageAttr, ConnectionConfigTypeName, packetLossPercentage)
 	}
 
-	var maybePacketPacketDelayDistribution PacketDelayDistributionInterface
+	var maybePacketPacketDelayDistribution packet_delay_distribution.PacketDelayDistribution
 	if maybeNormalPacketDelayDistribution != nil {
 		maybePacketPacketDelayDistribution = maybeNormalPacketDelayDistribution
 	} else if maybeUniformPacketDelayDistribution != nil {
@@ -129,19 +130,21 @@ func (connectionConfig *ConnectionConfig) AttrNames() []string {
 	return []string{packetLossPercentageAttr, packetDelayDistributionAttr}
 }
 
-func (connectionConfig *ConnectionConfig) ToKurtosisType() *partition_topology.PartitionConnection {
-	var packetDelayDistribution *partition_topology.PacketDelayDistribution
+func (connectionConfig *ConnectionConfig) ToKurtosisType() (*partition_topology.PartitionConnection, *startosis_errors.InterpretationError) {
+	var packetDelayDistribution partition_topology.PacketDelayDistribution
 	if connectionConfig.packetDelayDistribution != nil {
-		packetDelayDistributionKType := connectionConfig.packetDelayDistribution.ToKurtosisType()
-		packetDelayDistribution = &packetDelayDistributionKType
+		packetDelayDistributionPtr, interpretationErr := connectionConfig.packetDelayDistribution.ToKurtosisType()
+		if interpretationErr != nil {
+			return nil, interpretationErr
+		}
+		packetDelayDistribution = *packetDelayDistributionPtr
 	} else {
-		packetDelayDistributionKType := partition_topology.NewUniformPacketDelayDistribution(0)
-		packetDelayDistribution = &packetDelayDistributionKType
+		packetDelayDistribution = partition_topology.NewUniformPacketDelayDistribution(0)
 	}
 
 	partitionConnection := partition_topology.NewPartitionConnection(
 		partition_topology.NewPacketLoss(float32(connectionConfig.packetLossPercentage)),
-		*packetDelayDistribution,
+		packetDelayDistribution,
 	)
-	return &partitionConnection
+	return &partitionConnection, nil
 }

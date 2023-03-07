@@ -324,7 +324,7 @@ def run(plan):
 	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 	require.Empty(t, instructions)
 	expectedError := startosis_errors.NewInterpretationErrorWithCauseAndCustomMsg(
-		startosis_errors.NewInterpretationError(`The following argument(s) could not be parsed or did not pass validation: {"number":"type expected: 'starlark.Int', was 'starlark.String'"}`),
+		startosis_errors.NewInterpretationError(`The following argument(s) could not be parsed or did not pass validation: {"number":"the argument 'number' could not be parsed because their type ('starlark.String') did not match the expected ('starlark.Int')"}`),
 		[]startosis_errors.CallFrame{
 			*startosis_errors.NewCallFrame("run", startosis_errors.NewScriptPosition(startosis_constants.PackageIdPlaceholderForStandaloneScript, 11, 20)),
 			*startosis_errors.NewCallFrame("PortSpec", startosis_errors.NewScriptPosition("<builtin>", 0, 0)),
