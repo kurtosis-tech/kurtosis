@@ -1057,7 +1057,10 @@ workflows:
                     },
                     {
                         "pattern": "https://github.com/kurtosis-tech/style-guide"
-                    }
+                    },
+                    {
+                        "pattern": "^@site"
+                    },
                 ]
             }
           filters:
