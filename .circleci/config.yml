@@ -1065,9 +1065,6 @@ workflows:
               ignore:
                 - main
       - build_container_engine_lib:
-          context:
-            # This pulls in KurtosisBot's Github token, so that we can read from our private repos
-            - github-user
           filters:
             branches:
               ignore:
@@ -1093,17 +1090,12 @@ workflows:
               ignore:
                 - main
       - build_core_launcher:
-          context:
-            # This pulls in KurtosisBot's Github token, so that we can read from our private repos
-            - github-user
           filters:
             branches:
               ignore:
                 - main
       - build_api_container_server:
           context:
-            # This pulls in KurtosisBot's Github token, so that we can read from our private repos
-            - github-user
             - docker-user
           filters:
             branches:
@@ -1111,17 +1103,12 @@ workflows:
                 - main
 
       - build_engine_launcher:
-          context:
-            # This pulls in KurtosisBot's Github token, so that we can read from our private repos
-            - github-user
           filters:
             branches:
               ignore:
                 - main
       - build_engine_server:
           context:
-            # This pulls in KurtosisBot's Github token, so that we can read from our private repos
-            - github-user
             - docker-user
           filters:
             branches:
@@ -1130,7 +1117,6 @@ workflows:
 
       - build_cli:
           context:
-            - github-user
           <<: *filters_ignore_main
       - test_basic_cli_functionality:
           name: "Test Basic CLI Functionality in Docker"
@@ -1143,17 +1129,6 @@ workflows:
             - build_engine_server
             - build_files_artifacts_expander
           <<: *filters_ignore_main
-#      - test_basic_cli_functionality:
-#          name: "Test Basic CLI Functionality in Kubernetes"
-#          cli-cluster-backend: "minikube"
-#          context:
-#            - docker-user
-#          requires:
-#            - build_cli
-#            - build_api_container_server
-#            - build_engine_server
-#            - build_files_artifacts_expander
-#          <<: *filters_ignore_main
 
       - build_golang_testsuite:
           name: "Build golang testsuite against Docker"
@@ -1166,17 +1141,6 @@ workflows:
             - build_engine_server
             - build_files_artifacts_expander
           <<: *filters_ignore_main
-#      - build_golang_testsuite:
-#          name: "Build golang testsuite against Kubernetes"
-#          cli-cluster-backend: "minikube"
-#          context:
-#            - docker-user
-#          requires:
-#            - build_cli
-#            - build_api_container_server
-#            - build_engine_server
-#            - build_files_artifacts_expander
-#          <<: *filters_ignore_main
 
       - build_typescript_testsuite:
           name: "Build typescript testsuite against Docker"
@@ -1189,17 +1153,6 @@ workflows:
             - build_engine_server
             - build_files_artifacts_expander
           <<: *filters_ignore_main
-#      - build_typescript_testsuite:
-#          name: "Build typescript testsuite against Kubernetes"
-#          cli-cluster-backend: "minikube"
-#          context:
-#            - docker-user
-#          requires:
-#            - build_cli
-#            - build_api_container_server
-#            - build_engine_server
-#            - build_files_artifacts_expander
-#          <<: *filters_ignore_main
 
       - test_old_enclave_continuity:
           context:
@@ -1243,7 +1196,6 @@ workflows:
               only: /^[0-9]+\.[0-9]+\.[0-9]+$/
       - publish_api_container_server_image:
           context:
-            - github-user
             - docker-user
           filters:
             branches:
@@ -1253,7 +1205,6 @@ workflows:
 
       - publish_engine_server_image:
           context:
-            - github-user
             - docker-user
           filters:
             branches:
@@ -1263,7 +1214,6 @@ workflows:
 
       - push_cli_artifacts:
           context:
-            - github-user
             - gemfury-publisher
           filters:
             branches:
