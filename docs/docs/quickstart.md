@@ -720,7 +720,7 @@ These are just the basics of Kurtosis. To dive deeper, you can now:
 - [Search GitHub for Kurtosis packages in the wild][wild-kurtosis-packages]
 
 :::info
-Get a personalized on-boarding session with us [here](https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding). 
+Get a personalized onboarding session with us [here](https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding). 
 :::
 
 <!-- TODO add link to how-to guide on how to use Kurtosis in Go/TS tests -->
