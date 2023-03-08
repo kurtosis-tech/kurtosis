@@ -3,11 +3,11 @@
 
 ----
 
-[Kurtosis](https://www.kurtosis.com) is a distributed application development platform.
+[Kurtosis](https://www.kurtosis.com) is a development platform for distributed applications that aims to provide a consistent experience across all stages of distributed app software delivery.
 
 Use cases for Kurtosis include:
 
-- Running a distributed app locally, without knowing how to set up the distributed app
+- Running a third-party distributed app, without knowing how to set it up
 - Local prototyping & development on distributed apps
 - Writing integration and end-to-end distributed app tests (e.g. happy path & sad path tests, load tests, performance tests, etc.)
 - Running integration/E2E distributed app tests
@@ -15,12 +15,18 @@ Use cases for Kurtosis include:
 
 ## Why Kurtosis?
 
-Docker and Kubernetes are each great at serving developers in different parts of the development cycle: Docker for dev/test, Kubernetes for prod. However, the separation between the two entails different distributed app definitions, and different tooling.
+Docker and Kubernetes are each great at serving developers in different parts of the development cycle: Docker for development/testing, Kubernetes for production. However, the separation between the two entails different distributed app definitions, and different tooling. In dev/test, this means Docker Compose and Docker observability tooling. In production, this means Helm definitions and manually-configured observability tools like Istio, Datadog, or Honeycomb.
 
-- In dev/test, this means Docker Compose and Docker observability tooling
-- In prod, this means Helm definitions and manually-configured observability tools like Istio, Datadog, or Honeycomb
+Kurtosis aims at one level of abstraction higher. Developers can define their distributed applications in Kurtosis, and Kurtosis will handle:
 
-Kurtosis aims at one level of abstraction higher. Developers can define their distributed apps in Kurtosis, and Kurtosis will handle rendering them down to Docker or Kubernetes, with a consistent observability experience.
+- Running on Docker or Kubernetes
+- Reproduceability
+- Safety
+- Port-forwarding & local development hookups
+- Observability
+- Sharing
+
+If we succeed in our vision, you will be able to use the same distributed application definition from local dev all the way to prod.
 
 ---
 
