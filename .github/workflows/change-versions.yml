@@ -33,7 +33,7 @@ jobs:
           git restore .
           git clean -fd .
           npm install
-          npm run docusaurus docs:version $(version)
+          npm run docusaurus docs:version $version
       - uses: stefanzweifel/git-auto-commit-action@v4
         with:
           token: "${{ secrets.RELEASER_TOKEN }}"
