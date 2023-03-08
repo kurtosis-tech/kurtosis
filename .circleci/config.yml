@@ -189,8 +189,6 @@ jobs:
             - << pipeline.parameters.container-engine-lib-build-cache-key-prefix >>-{{ checksum "container-engine-lib/go.sum" }}
 
       - run: |
-          git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
-          go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
           container-engine-lib/scripts/build.sh
       - save_cache:
           key: << pipeline.parameters.container-engine-lib-build-cache-key-prefix >>-{{ checksum "container-engine-lib/go.sum" }}
@@ -1116,7 +1114,6 @@ workflows:
                 - main
 
       - build_cli:
-          context:
           <<: *filters_ignore_main
       - test_basic_cli_functionality:
           name: "Test Basic CLI Functionality in Docker"
