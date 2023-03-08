@@ -74,7 +74,7 @@ const config = {
             activeBasePath: '/sdk'
           },
           {
-            href: 'https://github.com/kurtosis-tech/docs/issues/new',
+            href: 'https://github.com/kurtosis-tech/kurtosis/issues/new/',
             position: 'right',
             label: 'Report Docs Issue',
           },

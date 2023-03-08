@@ -6,11 +6,11 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/connection_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
@@ -40,7 +40,7 @@ func NewSetConnection(serviceNetwork service_network.ServiceNetwork) *kurtosis_p
 				{
 					Name:              ConnectionConfigArgName,
 					IsOptional:        false,
-					ZeroValueProvider: builtin_argument.ZeroValueProvider[*kurtosis_types.ConnectionConfig],
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*connection_config.ConnectionConfig],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						// we just try to convert the configs here to validate their shape, to avoid code duplication
 						// with Interpret
@@ -82,11 +82,15 @@ type SetConnectionCapabilities struct {
 }
 
 func (builtin *SetConnectionCapabilities) Interpret(arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
-	connectionConfig, err := builtin_argument.ExtractArgumentValue[*kurtosis_types.ConnectionConfig](arguments, ConnectionConfigArgName)
+	connectionConfigStarlark, err := builtin_argument.ExtractArgumentValue[*connection_config.ConnectionConfig](arguments, ConnectionConfigArgName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ConnectionConfigArgName)
 	}
-	builtin.connectionConfig = connectionConfig.ToKurtosisType()
+	connectionConfig, interpretationErr := connectionConfigStarlark.ToKurtosisType()
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	builtin.connectionConfig = connectionConfig
 
 	if !arguments.IsSet(SubnetworksArgName) {
 		return starlark.None, nil
@@ -95,7 +99,7 @@ func (builtin *SetConnectionCapabilities) Interpret(arguments *builtin_argument.
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", SubnetworksArgName)
 	}
-	subnetwork1, subnetwork2, interpretationErr := kurtosis_instruction.ParseSubnetworks(subnetworks)
+	subnetwork1, subnetwork2, interpretationErr := shared_helpers.ParseSubnetworks(SubnetworksArgName, subnetworks)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
@@ -135,7 +139,7 @@ func validateSubnetworks(value starlark.Value) *startosis_errors.InterpretationE
 	if !ok {
 		return startosis_errors.NewInterpretationError("'%s' argument should be a 'starlark.Tuple', got '%s'", SubnetworksArgName, reflect.TypeOf(value))
 	}
-	_, _, interpretationErr := kurtosis_instruction.ParseSubnetworks(subnetworks)
+	_, _, interpretationErr := shared_helpers.ParseSubnetworks(SubnetworksArgName, subnetworks)
 	if interpretationErr != nil {
 		return interpretationErr
 	}
@@ -143,9 +147,13 @@ func validateSubnetworks(value starlark.Value) *startosis_errors.InterpretationE
 }
 
 func validateAndConvertConfig(rawConfig starlark.Value) (*partition_topology.PartitionConnection, *startosis_errors.InterpretationError) {
-	starlarkConnectionConfig, ok := rawConfig.(*kurtosis_types.ConnectionConfig)
+	starlarkConnectionConfig, ok := rawConfig.(*connection_config.ConnectionConfig)
 	if !ok {
 		return nil, startosis_errors.NewInterpretationError("The '%s' argument is not a ConnectionConfig (was '%s').", ConnectionConfigArgName, reflect.TypeOf(rawConfig))
 	}
-	return starlarkConnectionConfig.ToKurtosisType(), nil
+	apiConnectionConfig, interpretationErr := starlarkConnectionConfig.ToKurtosisType()
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	return apiConnectionConfig, nil
 }

@@ -14,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
+	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 )
@@ -34,17 +35,20 @@ const (
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
 
-	starlarkTemplate = `
-CURRENT_TIME_STR = str(time.now().unix)
-ARTIFACT_NAME = "cli-stored-artifact-" + CURRENT_TIME_STR
+	starlarkTemplateWithArtifactName = `
 def run(plan, args):
-	name = ARTIFACT_NAME
-	if args.name != "":
-		name = args.name
 	plan.store_service_files(
-		name = name,
+		src = args.src,
+		name = args.name,
 		service_name = args.service_name,
-		src = args.src
+	)
+`
+
+	starlarkTemplateWithoutArtifactName = `
+def run(plan, args):
+	plan.store_service_files(
+		src = args.src,
+		service_name = args.service_name,
 	)
 `
 	noParallelism = 1
@@ -92,6 +96,7 @@ func run(
 	ctx context.Context,
 	_ backend_interface.KurtosisBackend,
 	_ kurtosis_engine_rpc_api_bindings.EngineServiceClient,
+	_ metrics_client.MetricsClient,
 	flags *flags.ParsedFlags,
 	args *args.ParsedArgs,
 ) error {
@@ -144,7 +149,12 @@ func run(
 }
 
 func storeServiceFileStarlarkCommand(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, serviceName services.ServiceName, filePath string, enclaveIdentifier string, artifactName string) (*enclaves.StarlarkRunResult, error) {
-	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkTemplate, fmt.Sprintf(`{"service_name": "%s", "src": "%s", "name": "%s"}`, serviceName, filePath, artifactName), false, noParallelism)
+	template := starlarkTemplateWithArtifactName
+	if artifactName == defaultName {
+		template = starlarkTemplateWithoutArtifactName
+	}
+
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, template, fmt.Sprintf(`{"service_name": "%s", "src": "%s", "name": "%s"}`, serviceName, filePath, artifactName), false, noParallelism)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,

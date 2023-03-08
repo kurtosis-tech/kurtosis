@@ -6,7 +6,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/stretchr/testify/require"
@@ -14,7 +13,6 @@ import (
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkjson"
 	"go.starlark.net/starlarkstruct"
-	"reflect"
 	"testing"
 )
 
@@ -26,29 +24,50 @@ func TestAllRegisteredBuiltins(t *testing.T) {
 	testKurtosisPlanInstruction(t, newAddServiceTestCase(t))
 	testKurtosisPlanInstruction(t, newAddServicesTestCase(t))
 	testKurtosisPlanInstruction(t, newAssertTestCase(t))
-	testKurtosisPlanInstruction(t, newExecTestCase(t))
+	testKurtosisPlanInstruction(t, newExecTestCase1(t))
+	testKurtosisPlanInstruction(t, newExecTestCase2(t))
+	testKurtosisPlanInstruction(t, newExecTestCase3(t))
 	testKurtosisPlanInstruction(t, newSetConnectionTestCase(t))
 	testKurtosisPlanInstruction(t, newSetConnectionDefaultTestCase(t))
+	testKurtosisPlanInstruction(t, newPrintTestCase(t))
 	testKurtosisPlanInstruction(t, newRemoveConnectionTestCase(t))
 	testKurtosisPlanInstruction(t, newRemoveServiceTestCase(t))
-	testKurtosisPlanInstruction(t, newRenderTemplateTestCase1(t))
-	testKurtosisPlanInstruction(t, newRenderTemplateTestCase2(t))
-	testKurtosisPlanInstruction(t, newRequestTestCase(t))
+	testKurtosisPlanInstruction(t, newRenderSingleTemplateTestCase(t))
+	testKurtosisPlanInstruction(t, newRenderMultipleTemplatesTestCase(t))
+	testKurtosisPlanInstruction(t, newRequestTestCase1(t))
+	testKurtosisPlanInstruction(t, newRequestTestCase2(t))
+	testKurtosisPlanInstruction(t, newRequestTestCase3(t))
 	testKurtosisPlanInstruction(t, newStoreServiceFilesTestCase(t))
+	testKurtosisPlanInstruction(t, newStoreServiceFilesWithoutNameTestCase(t))
 	testKurtosisPlanInstruction(t, newUpdateServiceTestCase(t))
 	testKurtosisPlanInstruction(t, newUploadFilesTestCase(t))
-	testKurtosisPlanInstruction(t, newWaitTestCase(t))
+	testKurtosisPlanInstruction(t, newUploadFilesWithoutNameTestCase(t))
+	testKurtosisPlanInstruction(t, newWaitTestCase1(t))
+	testKurtosisPlanInstruction(t, newWaitTestCase2(t))
+	testKurtosisPlanInstruction(t, newWaitTestCase3(t))
 
 	testKurtosisHelper(t, newReadFileTestCase(t))
 	testKurtosisHelper(t, newImportModuleTestCase(t))
+
+	testKurtosisTypeConstructor(t, newConnectionConfigFullTestCase(t))
+	testKurtosisTypeConstructor(t, newConnectionConfigWithPacketDelayTestCase(t))
+	testKurtosisTypeConstructor(t, newConnectionConfigWithPacketLossTestCase(t))
+	testKurtosisTypeConstructor(t, newNormalPacketDelayDistributionFullTestCase(t))
+	testKurtosisTypeConstructor(t, newNormalPacketDelayDistributionMinimalTestCase(t))
+	testKurtosisTypeConstructor(t, newPortSpecFullTestCase(t))
+	testKurtosisTypeConstructor(t, newPortSpecMinimalTestCase(t))
+	testKurtosisTypeConstructor(t, newServiceConfigMinimalTestCase(t))
+	testKurtosisTypeConstructor(t, newServiceConfigFullTestCase(t))
+	testKurtosisTypeConstructor(t, newUniformPacketDelayDistributionTestCase(t))
+	testKurtosisTypeConstructor(t, newUpdateServiceConfigTestCase(t))
 }
 
 func testKurtosisPlanInstruction(t *testing.T, builtin KurtosisPlanInstructionBaseTest) {
 	testId := builtin.GetId()
 	var instructionQueue []kurtosis_instruction.KurtosisInstruction
-	thread := shared_helpers.NewStarlarkThread("framework-testing-engine")
+	thread := newStarlarkThread("framework-testing-engine")
 
-	predeclared := getBasePredeclaredDict()
+	predeclared := getBasePredeclaredDict(t)
 	// Add the KurtosisPlanInstruction that is being tested
 	instructionFromBuiltin := builtin.GetInstruction()
 	instructionWrapper := kurtosis_plan_instruction.NewKurtosisPlanInstructionWrapper(instructionFromBuiltin, &instructionQueue)
@@ -59,24 +78,30 @@ func testKurtosisPlanInstruction(t *testing.T, builtin KurtosisPlanInstructionBa
 	require.Nil(t, err, "Error interpreting Starlark code for instruction '%s'", testId)
 	interpretationResult := extractResultValue(t, globals)
 
-	instruction, ok := instructionQueue[0].(*kurtosis_plan_instruction.KurtosisPlanInstructionInternal)
-	require.True(t, ok, "Builtin expected to be a KurtosisPlanInstructionInternal, but was '%s'", reflect.TypeOf(instruction))
+	require.Len(t, instructionQueue, 1)
+	instructionToExecute := instructionQueue[0]
 
 	// execute the instruction and run custom builtin assertions
-	executionResult, err := instruction.Execute(context.WithValue(context.Background(), "PARALLELISM", 1))
+	executionResult, err := instructionToExecute.Execute(context.WithValue(context.Background(), "PARALLELISM", 1))
 	require.Nil(t, err, "Builtin execution threw an error: \n%v", err)
 	builtin.Assert(interpretationResult, executionResult)
 
 	// check serializing the obtained instruction falls back to the initial one
-	serializedInstruction := instruction.String()
-	require.Equal(t, starlarkCode, serializedInstruction)
+	serializedInstruction := instructionToExecute.String()
+
+	starlarkCodeForAssertion := builtin.GetStarlarkCodeForAssertion()
+	if starlarkCodeForAssertion == "" {
+		starlarkCodeForAssertion = starlarkCode
+	}
+
+	require.Equal(t, starlarkCodeForAssertion, serializedInstruction)
 }
 
 func testKurtosisHelper(t *testing.T, builtin KurtosisHelperBaseTest) {
 	testId := builtin.GetId()
-	thread := shared_helpers.NewStarlarkThread("framework-testing-engine")
+	thread := newStarlarkThread("framework-testing-engine")
 
-	predeclared := getBasePredeclaredDict()
+	predeclared := getBasePredeclaredDict(t)
 	// Add the KurtosisPlanInstruction that is being tested
 	helper := builtin.GetHelper()
 	predeclared[helper.GetName()] = starlark.NewBuiltin(helper.GetName(), helper.CreateBuiltin())
@@ -89,7 +114,27 @@ func testKurtosisHelper(t *testing.T, builtin KurtosisHelperBaseTest) {
 	builtin.Assert(result)
 }
 
-func getBasePredeclaredDict() starlark.StringDict {
+func testKurtosisTypeConstructor(t *testing.T, builtin KurtosisTypeConstructorBaseTest) {
+	testId := builtin.GetId()
+	thread := newStarlarkThread("framework-testing-engine")
+
+	predeclared := getBasePredeclaredDict(t)
+
+	starlarkCode := builtin.GetStarlarkCode()
+	starlarkCodeToExecute := codeToExecute(starlarkCode)
+	globals, err := starlark.ExecFile(thread, startosis_constants.PackageIdPlaceholderForStandaloneScript, starlarkCodeToExecute, predeclared)
+	require.Nil(t, err, "Error interpreting Starlark code for builtin '%s'. Code was: \n%v", testId, starlarkCodeToExecute)
+	result := extractResultValue(t, globals)
+
+	builtin.Assert(result)
+
+	serializedType := result.String()
+	require.Equal(t, starlarkCode, serializedType)
+}
+
+func getBasePredeclaredDict(t *testing.T) starlark.StringDict {
+	kurtosisModule, err := builtins.KurtosisModule()
+	require.Nil(t, err)
 	// TODO: refactor this with the one we have in the interpreter
 	predeclared := starlark.StringDict{
 		// go-starlark add-ons
@@ -98,11 +143,11 @@ func getBasePredeclaredDict() starlark.StringDict {
 		time.Module.Name:                  time.Module,
 
 		// Kurtosis pre-built module containing Kurtosis constant types
-		builtins.KurtosisModuleName: builtins.KurtosisModule(),
+		builtins.KurtosisModuleName: kurtosisModule,
 	}
 	// Add all Kurtosis types
-	for _, kurtosisTypeConstructors := range startosis_engine.KurtosisTypeConstructors() {
-		predeclared[kurtosisTypeConstructors.Name()] = kurtosisTypeConstructors
+	for _, kurtosisTypeConstructor := range startosis_engine.KurtosisTypeConstructors() {
+		predeclared[kurtosisTypeConstructor.Name()] = kurtosisTypeConstructor
 	}
 	return predeclared
 }
@@ -115,4 +160,14 @@ func extractResultValue(t *testing.T, globals starlark.StringDict) starlark.Valu
 	value, found := globals[resultStarlarkVar]
 	require.True(t, found, "Result variable could not be found in dictionary of global variables")
 	return value
+}
+
+func newStarlarkThread(name string) *starlark.Thread {
+	return &starlark.Thread{
+		Name:       name,
+		Print:      nil,
+		Load:       nil,
+		OnMaxSteps: nil,
+		Steps:      0,
+	}
 }

@@ -2,7 +2,6 @@ package upload
 
 import (
 	"context"
-	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/enclave_id_arg"
@@ -11,10 +10,10 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
+	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"os"
-	"time"
 )
 
 const (
@@ -29,8 +28,6 @@ const (
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
-
-	artifactNamePrefix = "cli-uploaded-artifact-%v"
 )
 
 var FilesUploadCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -64,8 +61,9 @@ var FilesUploadCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 
 func run(
 	ctx context.Context,
-	kurtosisBackend backend_interface.KurtosisBackend,
-	engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
+	_ backend_interface.KurtosisBackend,
+	_ kurtosis_engine_rpc_api_bindings.EngineServiceClient,
+	_ metrics_client.MetricsClient,
 	flags *flags.ParsedFlags,
 	args *args.ParsedArgs,
 ) error {
@@ -91,19 +89,16 @@ func run(
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the name to be given to the produced artifact")
 	}
-	if artifactName == defaultName {
-		artifactName = fmt.Sprintf(artifactNamePrefix, time.Now().Unix())
-	}
 
-	filesArtifactUuid, err := enclaveCtx.UploadFiles(path, artifactName)
+	filesArtifactUuid, fileArtifactName, err := enclaveCtx.UploadFiles(path, artifactName)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred uploading files at path '%v' to enclave '%v'", path, enclaveIdentifier)
 	}
-	logrus.Infof("Files package '%v' uploaded with UUID: %v", artifactName, filesArtifactUuid)
+	logrus.Infof("Files package '%v' uploaded with UUID: %v", fileArtifactName, filesArtifactUuid)
 	return nil
 }
 
-func validatePathArg(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error {
+func validatePathArg(_ context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error {
 	path, err := args.GetNonGreedyArg(pathArgKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the path to validate using key '%v'", pathArgKey)

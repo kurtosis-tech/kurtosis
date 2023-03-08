@@ -2,6 +2,7 @@ package git_package_content_provider
 
 import (
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"net/url"
 	"path"
@@ -9,7 +10,6 @@ import (
 )
 
 const (
-	githubDomain     = "github.com"
 	httpsSchema      = "https"
 	urlPathSeparator = "/"
 	// for a valid GitURl we need it to look like github.com/author/moduleName
@@ -69,7 +69,7 @@ func parseGitURL(packageURL string) (*ParsedGitURL, *startosis_errors.Interpreta
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Error parsing the URL with scheme for module '%v'", packageURLPrefixedWithHttps)
 	}
-	if parsedURL.Host != githubDomain {
+	if parsedURL.Host != startosis_constants.GithubDomainPrefix {
 		return nil, startosis_errors.NewInterpretationError("Error parsing the URL of module. We only support modules on Github for now but got '%v'", packageURL)
 	}
 
@@ -83,7 +83,7 @@ func parseGitURL(packageURL string) (*ParsedGitURL, *startosis_errors.Interpreta
 
 	moduleAuthor := splitURLPath[0]
 	moduleName := splitURLPath[1]
-	gitURL := fmt.Sprintf("%v://%v/%v/%v.git", httpsSchema, githubDomain, moduleAuthor, moduleName)
+	gitURL := fmt.Sprintf("%v://%v/%v/%v.git", httpsSchema, startosis_constants.GithubDomainPrefix, moduleAuthor, moduleName)
 	relativeModulePath := path.Join(moduleAuthor, moduleName)
 
 	relativeFilePath := ""

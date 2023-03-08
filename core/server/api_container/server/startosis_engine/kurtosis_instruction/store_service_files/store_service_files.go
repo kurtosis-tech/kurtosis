@@ -42,7 +42,7 @@ func NewStoreServiceFiles(serviceNetwork service_network.ServiceNetwork) *kurtos
 				},
 				{
 					Name:              ArtifactNameArgName,
-					IsOptional:        false,
+					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
 					Validator:         nil,
 				},
@@ -76,6 +76,20 @@ type StoreServiceFilesCapabilities struct {
 }
 
 func (builtin *StoreServiceFilesCapabilities) Interpret(arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
+	if !arguments.IsSet(ArtifactNameArgName) {
+		natureThemeName, err := builtin.serviceNetwork.GetUniqueNameForFileArtifact()
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to auto generate name '%s' argument", ArtifactNameArgName)
+		}
+		builtin.artifactName = natureThemeName
+	} else {
+		artifactName, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, ArtifactNameArgName)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ArtifactNameArgName)
+		}
+		builtin.artifactName = artifactName.GoString()
+	}
+
 	serviceName, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, ServiceNameArgName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ServiceNameArgName)
@@ -86,15 +100,8 @@ func (builtin *StoreServiceFilesCapabilities) Interpret(arguments *builtin_argum
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", SrcArgName)
 	}
 
-	artifactName, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, ArtifactNameArgName)
-	if err != nil {
-		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ArtifactNameArgName)
-	}
-
 	builtin.serviceName = kurtosis_backend_service.ServiceName(serviceName.GoString())
 	builtin.src = src.GoString()
-	builtin.artifactName = artifactName.GoString()
-
 	return starlark.String(builtin.artifactName), nil
 }
 
@@ -114,6 +121,6 @@ func (builtin *StoreServiceFilesCapabilities) Execute(ctx context.Context, _ *bu
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Failed to copy file '%v' from service '%v", builtin.src, builtin.serviceName)
 	}
-	instructionResult := fmt.Sprintf("Files  with artifact name '%s' uploaded with artifact UUID '%s'", builtin.artifactName, artifactUuid)
+	instructionResult := fmt.Sprintf("Files with artifact name '%s' uploaded with artifact UUID '%s'", builtin.artifactName, artifactUuid)
 	return instructionResult, nil
 }

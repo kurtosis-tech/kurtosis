@@ -28,7 +28,8 @@ const (
 
 // TODO: maybe change command to startlark.List once remove backward compatability support
 type ExecRecipe struct {
-	serviceName service.ServiceName
+	// Deprecated: we will deprecate this soon, more here: https://app.zenhub.com/workspaces/engineering-636cff9fc978ceb2aac05a1d/issues/gh/kurtosis-tech/kurtosis-private/1128
+	serviceName service.ServiceName //TODO deprecate
 	command     []string
 }
 
@@ -43,8 +44,11 @@ func NewExecRecipe(serviceName service.ServiceName, command []string) *ExecRecip
 func (recipe *ExecRecipe) String() string {
 	buffer := new(strings.Builder)
 	buffer.WriteString(ExecRecipeName + "(")
-	buffer.WriteString(serviceNameKey + "=")
-	buffer.WriteString(fmt.Sprintf("%q, ", recipe.serviceName))
+	//TODO  remove this check when we deprecate the service_name field
+	if recipe.serviceName != "" {
+		buffer.WriteString(serviceNameKey + "=")
+		buffer.WriteString(fmt.Sprintf("%q, ", recipe.serviceName))
+	}
 	buffer.WriteString(commandKey + "=")
 
 	command := convertListToStarlarkList(recipe.command)
@@ -94,7 +98,12 @@ func (recipe *ExecRecipe) AttrNames() []string {
 	return []string{serviceNameKey, commandKey}
 }
 
-func (recipe *ExecRecipe) Execute(ctx context.Context, serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) (map[string]starlark.Comparable, error) {
+func (recipe *ExecRecipe) Execute(
+	ctx context.Context,
+	serviceNetwork service_network.ServiceNetwork,
+	runtimeValueStore *runtime_value_store.RuntimeValueStore,
+	serviceName service.ServiceName,
+) (map[string]starlark.Comparable, error) {
 	var commandWithIPAddressAndRuntimeValue []string
 	for _, subCommand := range recipe.command {
 		maybeSubCommandWithIPAddressAndHostname, err := magic_string_helper.ReplaceIPAddressAndHostnameInString(subCommand, serviceNetwork, commandKey)
@@ -107,7 +116,18 @@ func (recipe *ExecRecipe) Execute(ctx context.Context, serviceNetwork service_ne
 		}
 		commandWithIPAddressAndRuntimeValue = append(commandWithIPAddressAndRuntimeValue, maybeSubCommandWithRuntimeValuesAndIPAddress)
 	}
-	exitCode, commandOutput, err := serviceNetwork.ExecCommand(ctx, string(recipe.serviceName), commandWithIPAddressAndRuntimeValue)
+
+	var serviceNameStr string
+	if serviceName != emptyServiceName {
+		serviceNameStr = string(serviceName)
+	} else if recipe.serviceName != emptyServiceName { //TODO this will be removed when we deprecate the service_name field, more here: https://app.zenhub.com/workspaces/engineering-636cff9fc978ceb2aac05a1d/issues/gh/kurtosis-tech/kurtosis-private/1128
+		serviceNameStr = string(recipe.serviceName)
+		logrus.Warnf("The exec.service_name field will be deprecated soon, users will have to pass the service name value direclty to the 'exec', 'request' and 'wait' instructions")
+	} else {
+		return nil, stacktrace.NewError("The service name parameter can't be an empty string")
+	}
+
+	exitCode, commandOutput, err := serviceNetwork.ExecCommand(ctx, serviceNameStr, commandWithIPAddressAndRuntimeValue)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to execute command '%v' on service '%v'", recipe.command, recipe.serviceName)
 	}
@@ -158,7 +178,7 @@ func MakeExecRequestRecipe(_ *starlark.Thread, builtin *starlark.Builtin, args s
 
 	if err := starlark.UnpackArgs(builtin.Name(), args, kwargs,
 		commandKey, &unpackedCommandList,
-		serviceNameKey, &serviceNameStr,
+		MakeOptional(serviceNameKey), &serviceNameStr,
 	); err != nil {
 		return nil, startosis_errors.NewInterpretationError("%v", err.Error())
 	}

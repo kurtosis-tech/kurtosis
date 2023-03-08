@@ -3,6 +3,7 @@ package builtin_argument
 import (
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
+	"math"
 	"testing"
 )
 
@@ -24,5 +25,70 @@ func TestNonEmptyString_Valid(t *testing.T) {
 	value := starlark.String("datastore-1")
 	err := NonEmptyString(value, "service_name")
 	require.Nil(t, err)
+}
 
+func TestStringValues_Valid(t *testing.T) {
+	value := starlark.String("TCP")
+	err := StringValues(value, "port_protocol", []string{"TCP", "UDP"})
+	require.Nil(t, err)
+}
+
+func TestStringValues_Invalid(t *testing.T) {
+	value := starlark.String("BLAH")
+	err := StringValues(value, "port_protocol", []string{"TCP", "UDP"})
+	require.NotNil(t, err)
+	require.Equal(t, "Invalid argument value for 'port_protocol': 'BLAH'. Valid values are TCP, UDP", err.Error())
+}
+
+func TestStringRegexp_Valid(t *testing.T) {
+	value := starlark.String("hello")
+	err := StringRegexp(value, "port_protocol", "^[a-z]*$")
+	require.Nil(t, err)
+}
+
+func TestStringRegexp_Invalid(t *testing.T) {
+	value := starlark.String("HELLO")
+	err := StringRegexp(value, "port_protocol", "^[a-z]*$")
+	require.NotNil(t, err)
+	require.Equal(t, "Argument 'port_protocol' must match regexp: '^[a-z]*$'. Its value was 'HELLO'", err.Error())
+}
+
+func TestUint64InRange_WrongType(t *testing.T) {
+	value := starlark.String("25")
+	err := Uint64InRange(value, "test_uint", 6, math.MaxUint64)
+	require.NotNil(t, err)
+	require.Equal(t, "Value for 'test_uint' was expected to be an integer between 6 and 18446744073709551615, but it was 'starlark.String'", err.Error())
+}
+
+func TestUint64InRange_OutOfRange(t *testing.T) {
+	value := starlark.MakeInt(2)
+	err := Uint64InRange(value, "test_uint", 6, math.MaxUint64)
+	require.NotNil(t, err)
+	require.Equal(t, "Value for 'test_uint' was expected to be an integer between 6 and 18446744073709551615, but it was 2", err.Error())
+}
+
+func TestUint64InRange_Valid(t *testing.T) {
+	value := starlark.MakeInt(25)
+	err := Uint64InRange(value, "test_uint", 6, math.MaxUint64)
+	require.Nil(t, err)
+}
+
+func TestFloatInRange_WrongType(t *testing.T) {
+	value := starlark.String("25")
+	err := FloatInRange(value, "test_uint", 6, math.MaxUint64)
+	require.NotNil(t, err)
+	require.Equal(t, "Value for 'test_uint' was expected to be a float between 6.000000 and 18446744073709551616.000000, but it was 'starlark.String'", err.Error())
+}
+
+func TestFloatInRange_OutOfRange(t *testing.T) {
+	value := starlark.Float(2.75)
+	err := FloatInRange(value, "test_uint", 6, math.MaxUint64)
+	require.NotNil(t, err)
+	require.Equal(t, "Value for 'test_uint' was expected to be a float between 6.000000 and 18446744073709551616.000000, but it was 2.75", err.Error())
+}
+
+func TestFloatInRange_Valid(t *testing.T) {
+	value := starlark.Float(27.5)
+	err := FloatInRange(value, "test_uint", 6, math.MaxUint64)
+	require.Nil(t, err)
 }

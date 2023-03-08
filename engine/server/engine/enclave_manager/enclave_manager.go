@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/kurtosis/core/launcher/api_container_launcher"
+	"github.com/kurtosis-tech/kurtosis/name_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -24,11 +25,11 @@ const (
 
 	apiContainerListenGrpcProxyPortNumInsideNetwork = uint16(7444)
 
-	enclavesCleaningPhaseTitle = "enclaves"
-
 	getRandomEnclaveIdRetries = uint16(5)
 
 	validNumberOfUuidMatches = 1
+
+	errorDelimiter = ", "
 )
 
 // TODO Move this to the KurtosisBackend to calculate!!
@@ -51,7 +52,6 @@ type EnclaveManager struct {
 
 	kurtosisBackend                           backend_interface.KurtosisBackend
 	apiContainerKurtosisBackendConfigSupplier api_container_launcher.KurtosisBackendConfigSupplier
-	enclaveIdGenerator                        *enclaveNameGenerator
 
 	// this is a stop gap solution, this would be stored and retrieved from the DB in the future
 	// we go with the GRPC type as it is just used by the engine server service
@@ -62,13 +62,11 @@ type EnclaveManager struct {
 func NewEnclaveManager(
 	kurtosisBackend backend_interface.KurtosisBackend,
 	apiContainerKurtosisBackendConfigSupplier api_container_launcher.KurtosisBackendConfigSupplier,
-	enclaveIdGenerator *enclaveNameGenerator,
 ) *EnclaveManager {
 	return &EnclaveManager{
 		mutex:           &sync.Mutex{},
 		kurtosisBackend: kurtosisBackend,
 		apiContainerKurtosisBackendConfigSupplier: apiContainerKurtosisBackendConfigSupplier,
-		enclaveIdGenerator:                        enclaveIdGenerator,
 		allExistingAndHistoricalIdentifiers:       []*kurtosis_engine_rpc_api_bindings.EnclaveIdentifiers{},
 	}
 }
@@ -102,10 +100,7 @@ func (manager *EnclaveManager) CreateEnclave(
 	}
 
 	if enclaveName == autogenerateEnclaveNameKeyword {
-		enclaveName, err = manager.enclaveIdGenerator.GetRandomEnclaveNameWithRetries(allCurrentEnclaves, getRandomEnclaveIdRetries)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting a new random enclave name using all current enclaves '%+v' and '%v' retries", allCurrentEnclaves, getRandomEnclaveIdRetries)
-		}
+		enclaveName = GetRandomEnclaveNameWithRetries(name_generator.GenerateNatureThemeNameForEnclave, allCurrentEnclaves, getRandomEnclaveIdRetries)
 	}
 
 	if isEnclaveNameInUse(enclaveName, allCurrentEnclaves) {
@@ -284,58 +279,44 @@ func (manager *EnclaveManager) DestroyEnclave(ctx context.Context, enclaveIdenti
 	return destructionErr
 }
 
-func (manager *EnclaveManager) Clean(ctx context.Context, shouldCleanAll bool) (map[string]bool, error) {
+func (manager *EnclaveManager) Clean(ctx context.Context, shouldCleanAll bool) ([]*kurtosis_engine_rpc_api_bindings.EnclaveNameAndUuid, error) {
 	manager.mutex.Lock()
 	defer manager.mutex.Unlock()
 	// TODO: Refactor with kurtosis backend
-	resultSuccessfullyRemovedArtifactsIds := map[string]map[string]bool{}
+	var resultEnclaveNameAndUuids []*kurtosis_engine_rpc_api_bindings.EnclaveNameAndUuid
 
-	// Map of cleaning_phase_title -> (successfully_destroyed_object_id, object_destruction_errors, clean_error)
-	cleaningPhaseFunctions := map[string]func() ([]string, []error, error){
-		enclavesCleaningPhaseTitle: func() ([]string, []error, error) {
-			return manager.cleanEnclaves(ctx, shouldCleanAll)
-		},
+	successfullyRemovedArtifactIds, removalErrors, err := manager.cleanEnclaves(ctx, shouldCleanAll)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while cleaning enclaves with shouldCleanAll set to '%v'", shouldCleanAll)
 	}
 
-	phasesWithErrors := []string{}
-	for phaseTitle, cleaningFunc := range cleaningPhaseFunctions {
-		logrus.Infof("Cleaning %v...", phaseTitle)
-		successfullyRemovedArtifactIds, removalErrors, err := cleaningFunc()
-		if err != nil {
-			logrus.Errorf("Errors occurred cleaning %v:\n%v", phaseTitle, err)
-			phasesWithErrors = append(phasesWithErrors, phaseTitle)
-			continue
+	if len(removalErrors) > 0 {
+		logrus.Errorf("Errors occurred removing the following enclaves")
+		var removalErrorStrings []string
+		for idx, err := range removalErrors {
+			logrus.Errorf("Error '%v'", err.Error())
+			indexedResultErrStr := fmt.Sprintf(">>>>>>>>>>>>>>>>> ERROR %v <<<<<<<<<<<<<<<<<\n%v", idx, err.Error())
+			removalErrorStrings = append(removalErrorStrings, indexedResultErrStr)
 		}
+		joinedRemovalErrors := strings.Join(removalErrorStrings, errorDelimiter)
+		return nil, stacktrace.NewError("Following errors occurred while removing some enclaves :\n%v", joinedRemovalErrors)
+	}
 
-		if len(successfullyRemovedArtifactIds) > 0 {
-			artifactIDs := map[string]bool{}
-			logrus.Infof("Successfully removed the following %v:", phaseTitle)
-			sort.Strings(successfullyRemovedArtifactIds)
-			for _, successfulArtifactId := range successfullyRemovedArtifactIds {
-				artifactIDs[successfulArtifactId] = true
-				fmt.Fprintln(logrus.StandardLogger().Out, successfulArtifactId)
+	if len(successfullyRemovedArtifactIds) > 0 {
+		logrus.Infof("Successfully removed the enclaves")
+		sort.Strings(successfullyRemovedArtifactIds)
+		for _, successfullyRemovedEnclaveUuid := range successfullyRemovedArtifactIds {
+			enclaveName := manager.getEnclaveNameForEnclaveUuidUnlocked(successfullyRemovedEnclaveUuid)
+			nameAndUuid := &kurtosis_engine_rpc_api_bindings.EnclaveNameAndUuid{
+				Name: enclaveName,
+				Uuid: successfullyRemovedEnclaveUuid,
 			}
-			resultSuccessfullyRemovedArtifactsIds[phaseTitle] = artifactIDs
+			resultEnclaveNameAndUuids = append(resultEnclaveNameAndUuids, nameAndUuid)
+			logrus.Infof("Enclave Uuid '%v'", successfullyRemovedEnclaveUuid)
 		}
-
-		if len(removalErrors) > 0 {
-			logrus.Errorf("Errors occurred removing the following %v:", phaseTitle)
-			for _, err := range removalErrors {
-				fmt.Fprintln(logrus.StandardLogger().Out, "")
-				fmt.Fprintln(logrus.StandardLogger().Out, err.Error())
-			}
-			phasesWithErrors = append(phasesWithErrors, phaseTitle)
-			continue
-		}
-		logrus.Infof("Successfully cleaned %v", phaseTitle)
 	}
 
-	if len(phasesWithErrors) > 0 {
-		errorStr := "Errors occurred cleaning " + strings.Join(phasesWithErrors, ", ")
-		return nil, stacktrace.NewError(errorStr)
-	}
-
-	return resultSuccessfullyRemovedArtifactsIds[enclavesCleaningPhaseTitle], nil
+	return resultEnclaveNameAndUuids, nil
 }
 
 func (manager *EnclaveManager) GetEnclaveUuidForEnclaveIdentifier(ctx context.Context, enclaveIdentifier string) (enclave.EnclaveUUID, error) {
@@ -636,6 +617,16 @@ func (manager *EnclaveManager) getEnclaveUuidForIdentifierUnlocked(ctx context.C
 	}
 
 	return "", stacktrace.NewError("Couldn't find enclave uuid for identifier '%v'", enclaveIdentifier)
+}
+
+// only call this from a thread safe context
+func (manager *EnclaveManager) getEnclaveNameForEnclaveUuidUnlocked(enclaveUuid string) string {
+	for _, identifier := range manager.allExistingAndHistoricalIdentifiers {
+		if identifier.EnclaveUuid == enclaveUuid {
+			return identifier.Name
+		}
+	}
+	return ""
 }
 
 // Returns nil if apiContainerMap is empty

@@ -6,8 +6,11 @@
 package enclave_data_directory
 
 import (
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
+	"github.com/kurtosis-tech/kurtosis/name_generator"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"io"
 	"strings"
 	"sync"
@@ -16,21 +19,47 @@ import (
 const (
 	artifactExtension                     = "tgz"
 	maxAllowedMatchesAgainstShortenedUuid = 1
+	// TODO: this is something we can take a look in detail
+	// but we with random numbers as suffix, we should always be able to have some unique name available
+	maxFileArtifactNameRetriesDefault = 5
 )
 
 type FilesArtifactStore struct {
-	fileCache                  *FileCache
-	mutex                      *sync.RWMutex
-	artifactNameToArtifactUuid map[string]FilesArtifactUUID
-	shortenedUuidToFullUuid    map[string][]FilesArtifactUUID
+	fileCache                       *FileCache
+	mutex                           *sync.RWMutex
+	artifactNameToArtifactUuid      map[string]FilesArtifactUUID
+	shortenedUuidToFullUuid         map[string][]FilesArtifactUUID
+	maxRetriesToGetFileArtifactName int
+	generateNatureThemeName         func() string
 }
 
 func newFilesArtifactStore(absoluteDirpath string, dirpathRelativeToDataDirRoot string) *FilesArtifactStore {
 	return &FilesArtifactStore{
-		fileCache:                  newFileCache(absoluteDirpath, dirpathRelativeToDataDirRoot),
-		mutex:                      &sync.RWMutex{},
-		artifactNameToArtifactUuid: make(map[string]FilesArtifactUUID),
-		shortenedUuidToFullUuid:    make(map[string][]FilesArtifactUUID),
+		fileCache:                       newFileCache(absoluteDirpath, dirpathRelativeToDataDirRoot),
+		mutex:                           &sync.RWMutex{},
+		artifactNameToArtifactUuid:      make(map[string]FilesArtifactUUID),
+		shortenedUuidToFullUuid:         make(map[string][]FilesArtifactUUID),
+		maxRetriesToGetFileArtifactName: maxFileArtifactNameRetriesDefault,
+		generateNatureThemeName:         name_generator.GenerateNatureThemeNameForFileArtifacts,
+	}
+}
+
+// method needed for testing
+func NewFilesArtifactStoreForTesting(
+	absoluteDirpath string,
+	dirpathRelativeToDataDirRoot string,
+	artifactNameToArtifactUuid map[string]FilesArtifactUUID,
+	shortenedUuidToFullUuid map[string][]FilesArtifactUUID,
+	maxRetry int,
+	nameGeneratorMock func() string,
+) *FilesArtifactStore {
+	return &FilesArtifactStore{
+		fileCache:                       newFileCache(absoluteDirpath, dirpathRelativeToDataDirRoot),
+		mutex:                           &sync.RWMutex{},
+		artifactNameToArtifactUuid:      artifactNameToArtifactUuid,
+		shortenedUuidToFullUuid:         shortenedUuidToFullUuid,
+		maxRetriesToGetFileArtifactName: maxRetry,
+		generateNatureThemeName:         nameGeneratorMock,
 	}
 }
 
@@ -114,6 +143,43 @@ func (store FilesArtifactStore) ListFiles() map[string]bool {
 		artifactNameSet[artifactName] = true
 	}
 	return artifactNameSet
+}
+
+// CheckIfArtifactNameExists - It checks whether the FileArtifact with a name exists or not
+func (store FilesArtifactStore) CheckIfArtifactNameExists(artifactName string) bool {
+
+	_, found := store.artifactNameToArtifactUuid[artifactName]
+	return found
+}
+
+func (store FilesArtifactStore) GenerateUniqueNameForFileArtifact() string {
+	var maybeUniqueName string
+
+	store.mutex.RLock()
+	defer store.mutex.RUnlock()
+
+	// try to find unique nature theme random generator
+	for i := 0; i <= store.maxRetriesToGetFileArtifactName; i++ {
+		maybeUniqueName = store.generateNatureThemeName()
+		_, found := store.artifactNameToArtifactUuid[maybeUniqueName]
+		if !found {
+			return maybeUniqueName
+		}
+	}
+
+	// if unique name not found, append a random number after the last found random name
+	additionalSuffix := 1
+	maybeUniqueNameWithRandomNumber := fmt.Sprintf("%v-%v", maybeUniqueName, additionalSuffix)
+
+	_, found := store.artifactNameToArtifactUuid[maybeUniqueNameWithRandomNumber]
+	for found {
+		additionalSuffix = additionalSuffix + 1
+		maybeUniqueNameWithRandomNumber = fmt.Sprintf("%v-%v", maybeUniqueName, additionalSuffix)
+		_, found = store.artifactNameToArtifactUuid[maybeUniqueNameWithRandomNumber]
+	}
+
+	logrus.Warnf("Cannot find unique name generator, therefore using a name with a number %v", maybeUniqueNameWithRandomNumber)
+	return maybeUniqueNameWithRandomNumber
 }
 
 // storeFilesToArtifactUuidUnlocked this is an non thread method to be used from thread safe contexts

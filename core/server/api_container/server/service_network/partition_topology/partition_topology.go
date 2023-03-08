@@ -9,7 +9,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/partition"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/partition_topology_db"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/partition_topology_db/partition_connection_overrides"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/partition_topology_db/partition_services"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/partition_topology_db/service_partitions"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/stacktrace"
 	"strings"
@@ -17,7 +19,8 @@ import (
 )
 
 const (
-	DefaultPartitionId = service_network_types.PartitionID("default")
+	DefaultPartitionId          = service_network_types.PartitionID("default")
+	partitionNotFoundForService = ""
 )
 
 // Stores the partition topology of the network, and exposes an API for modifying it
@@ -26,26 +29,36 @@ type PartitionTopology struct {
 
 	defaultConnection PartitionConnection
 
-	servicePartitions map[service.ServiceName]service_network_types.PartitionID
+	servicePartitions *service_partitions.ServicePartitionsBucket
 
 	// By default, connection between 2 partitions is set to defaultConnection. This map contains overrides
-	partitionConnectionOverrides map[service_network_types.PartitionConnectionID]PartitionConnection
+	partitionConnectionOverrides *partition_connection_overrides.PartitionConnectionOverridesBucket
 
 	// A service can be a part of exactly one partition at a time
-	partitionServices *partition_topology_db.PartitionServicesBucket
+	partitionServices *partition_services.PartitionServicesBucket
 }
 
 func NewPartitionTopology(defaultPartition service_network_types.PartitionID, defaultConnection PartitionConnection, enclaveDb *enclave_db.EnclaveDB) (*PartitionTopology, error) {
-	partitionServicesBucket, err := partition_topology_db.GetOrCreatePartitionServicesBucket(enclaveDb, partition.PartitionID(defaultPartition))
+	partitionServicesBucket, err := partition_services.GetOrCreatePartitionServicesBucket(enclaveDb, partition.PartitionID(defaultPartition))
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while getting the partition services bucket")
 	}
 
+	servicePartitionsBucket, err := service_partitions.GetOrCreateServicePartitionsBucket(enclaveDb)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while creating the service partitions bucket")
+	}
+
+	partitionConnectionOverridesBucket, err := partition_connection_overrides.GetOrCreatePartitionConnectionOverrideBucket(enclaveDb)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while creating the partition connection overrides bucket")
+	}
+
 	return &PartitionTopology{
 		lock:                         &sync.RWMutex{},
-		servicePartitions:            map[service.ServiceName]service_network_types.PartitionID{},
+		servicePartitions:            servicePartitionsBucket,
 		partitionServices:            partitionServicesBucket,
-		partitionConnectionOverrides: map[service_network_types.PartitionConnectionID]PartitionConnection{},
+		partitionConnectionOverrides: partitionConnectionOverridesBucket,
 		defaultConnection:            defaultConnection,
 	}, nil
 }
@@ -78,7 +91,11 @@ func (topology *PartitionTopology) Repartition(
 	// Validate that each existing service in the testnet gets exactly one partition allocation
 	allServicesInNetwork := map[service.ServiceName]bool{}
 	servicesNeedingAllocation := map[service.ServiceName]bool{}
-	for serviceId := range topology.servicePartitions {
+	allServicesWithPartitions, err := topology.servicePartitions.GetAllServicePartitions()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while getting existing services & partitions")
+	}
+	for serviceId := range allServicesWithPartitions {
 		allServicesInNetwork[serviceId] = true
 		servicesNeedingAllocation[serviceId] = true
 	}
@@ -138,24 +155,29 @@ func (topology *PartitionTopology) Repartition(
 
 	// Defensive copies
 	newPartitionServicesCopy := map[partition.PartitionID]map[service.ServiceName]bool{}
-	newServicePartitionsCopy := map[service.ServiceName]service_network_types.PartitionID{}
+	newServicePartitionsCopy := map[service.ServiceName]partition.PartitionID{}
 	for partitionId, servicesForPartition := range newPartitionServices {
 		newPartitionServicesCopy[partition.PartitionID(partitionId)] = copyServiceSet(servicesForPartition)
 		for serviceId := range servicesForPartition {
-			newServicePartitionsCopy[serviceId] = partitionId
+			newServicePartitionsCopy[serviceId] = partition.PartitionID(partitionId)
 		}
 	}
-	newPartitionConnectionOverridesCopy := map[service_network_types.PartitionConnectionID]PartitionConnection{}
-	for partitionConnectionId, connection := range newPartitionConnectionOverrides {
-		newPartitionConnectionOverridesCopy[partitionConnectionId] = connection
+	newPartitionConnectionOverridesCopy := map[partition_connection_overrides.PartitionConnectionID]partition_connection_overrides.PartitionConnection{}
+	for partitionConnectionId, partitionConnection := range newPartitionConnectionOverrides {
+		connectionIdDbType := partitionConnectionIdDbTypeFromPartitionConnectionId(partitionConnectionId)
+		connectionDbType := partitionConnectionDbTypeFromPartitionConnection(partitionConnection)
+		newPartitionConnectionOverridesCopy[connectionIdDbType] = connectionDbType
 	}
 
-	err := topology.partitionServices.RepartitionBucket(newPartitionServicesCopy)
-	if err != nil {
+	if err = topology.partitionServices.RepartitionBucket(newPartitionServicesCopy); err != nil {
 		return stacktrace.Propagate(err, "An error occurred while repartitioning the underlying bucket")
 	}
-	topology.servicePartitions = newServicePartitionsCopy
-	topology.partitionConnectionOverrides = newPartitionConnectionOverridesCopy
+	if err = topology.servicePartitions.ReplaceBucketContents(newServicePartitionsCopy); err != nil {
+		return stacktrace.Propagate(err, "An error occurred while repartitioning the service partition bucket")
+	}
+	if err = topology.partitionConnectionOverrides.ReplaceBucketContents(newPartitionConnectionOverridesCopy); err != nil {
+		return stacktrace.Propagate(err, "An error occurred while repartitioning the partition connections bucket")
+	}
 	topology.defaultConnection = newDefaultConnection
 	return nil
 }
@@ -214,10 +236,15 @@ func (topology *PartitionTopology) RemovePartition(partitionId service_network_t
 	}
 
 	// update partition connections dropping all potential entries referencing the deleted partition
-	for partitionConnectionId := range topology.partitionConnectionOverrides {
-		if partitionConnectionId.GetFirst() == partitionId || partitionConnectionId.GetSecond() == partitionId {
-			// drop this partition connection
-			delete(topology.partitionConnectionOverrides, partitionConnectionId)
+	allPartitionConnections, err := topology.partitionConnectionOverrides.GetAllPartitionConnectionOverrides()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while getting all partition connection overrides")
+	}
+	for partitionConnectionId := range allPartitionConnections {
+		if partitionConnectionId.LexicalFirst == partition.PartitionID(partitionId) || partitionConnectionId.LexicalSecond == partition.PartitionID(partitionId) {
+			if err = topology.partitionConnectionOverrides.RemovePartitionConnectionOverride(partitionConnectionId); err != nil {
+				return stacktrace.Propagate(err, "An error occurred while removing partition connection with ID '%v'", partitionConnectionId)
+			}
 		}
 	}
 	return nil
@@ -260,8 +287,11 @@ func (topology *PartitionTopology) SetConnection(partition1 service_network_type
 		return stacktrace.NewError("About to set a connection between '%s' and '%s' but '%s' does not exist", partition1, partition2, partition2)
 	}
 
-	partitionConnectionId := service_network_types.NewPartitionConnectionID(partition1, partition2)
-	topology.partitionConnectionOverrides[*partitionConnectionId] = connection
+	partitionConnectionIdDbType := partitionConnectionIdDbTypeFromPartitionIds(partition1, partition2)
+	partitionConnectionDbType := partitionConnectionDbTypeFromPartitionConnection(connection)
+	if err = topology.partitionConnectionOverrides.AddPartitionConnectionOverride(partitionConnectionIdDbType, partitionConnectionDbType); err != nil {
+		return stacktrace.Propagate(err, "An error occurred while adding partition with id '%v' to bucket", partitionConnectionIdDbType)
+	}
 	return nil
 }
 
@@ -287,15 +317,26 @@ func (topology *PartitionTopology) UnsetConnection(partition1 service_network_ty
 	if !exists {
 		return stacktrace.NewError("About to unset a connection between '%s' and '%s' but '%s' does not exist", partition1, partition2, partition2)
 	}
-	partitionConnectionId := service_network_types.NewPartitionConnectionID(partition1, partition2)
-	delete(topology.partitionConnectionOverrides, *partitionConnectionId)
+	partitionConnectionIdDbType := partitionConnectionIdDbTypeFromPartitionIds(partition1, partition2)
+	if err = topology.partitionConnectionOverrides.RemovePartitionConnectionOverride(partitionConnectionIdDbType); err != nil {
+		return stacktrace.Propagate(err, "An error occurred while removing partition connection with id '%v'", partitionConnectionIdDbType)
+	}
+
 	return nil
 }
 
 func (topology *PartitionTopology) AddService(serviceName service.ServiceName, partitionId service_network_types.PartitionID) error {
 	topology.lock.Lock()
 	defer topology.lock.Unlock()
-	if existingPartition, found := topology.servicePartitions[serviceName]; found {
+	exists, err := topology.servicePartitions.DoesServiceExist(serviceName)
+	if err != nil {
+		return stacktrace.NewError("Cannot assign service to '%v' to partition '%v'; as we couldn't verify whether the service already exists in some partition", serviceName, partitionId)
+	}
+	if exists {
+		existingPartition, err := topology.servicePartitions.GetPartitionForService(serviceName)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred while fetching partition for service '%v'", serviceName)
+		}
 		return stacktrace.NewError(
 			"Cannot add service '%v' to partition '%v' because the service is already assigned to partition '%v'",
 			serviceName,
@@ -303,7 +344,7 @@ func (topology *PartitionTopology) AddService(serviceName service.ServiceName, p
 			existingPartition)
 	}
 
-	exists, err := topology.partitionServices.DoesPartitionExist(partition.PartitionID(partitionId))
+	exists, err = topology.partitionServices.DoesPartitionExist(partition.PartitionID(partitionId))
 	if err != nil {
 		return stacktrace.NewError(
 			"Cannot assign service '%v' to partition '%v'; the partition doesn't exist",
@@ -317,7 +358,10 @@ func (topology *PartitionTopology) AddService(serviceName service.ServiceName, p
 			serviceName,
 			partitionId)
 	}
-	topology.servicePartitions[serviceName] = partitionId
+	err = topology.servicePartitions.AddPartitionToService(serviceName, partition.PartitionID(partitionId))
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while adding partition '%v' to service '%v'", partitionId, serviceName)
+	}
 	err = topology.partitionServices.AddServiceToPartition(partition.PartitionID(partitionId), serviceName)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while adding service '%v' to partition '%v'", serviceName, partitionId)
@@ -330,21 +374,26 @@ func (topology *PartitionTopology) AddService(serviceName service.ServiceName, p
 func (topology *PartitionTopology) RemoveService(serviceName service.ServiceName) error {
 	topology.lock.Lock()
 	defer topology.lock.Unlock()
-	partitionId, found := topology.servicePartitions[serviceName]
-	if !found {
+	partitionId, err := topology.servicePartitions.GetPartitionForService(serviceName)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while fetching the partition for service '%v'", serviceName)
+	}
+	if partitionId == partitionNotFoundForService {
 		return nil
 	}
-	delete(topology.servicePartitions, serviceName)
 
-	services, err := topology.partitionServices.GetServicesForPartition(partition.PartitionID(partitionId))
+	if err = topology.servicePartitions.RemoveService(serviceName); err != nil {
+		return stacktrace.Propagate(err, "An error occurred while removing service '%v' from underlying service partition store", serviceName)
+	}
+
+	services, err := topology.partitionServices.GetServicesForPartition(partitionId)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while getting services for partition '%v'", partitionId)
 	}
 	if len(services) == 0 {
 		return nil
 	}
-	err = topology.partitionServices.RemoveServiceFromPartition(serviceName, partition.PartitionID(partitionId))
-	if err != nil {
+	if err = topology.partitionServices.RemoveServiceFromPartition(serviceName, partitionId); err != nil {
 		return stacktrace.Propagate(err, "An error occurred while removing service '%v' from partition '%v'", serviceName, partitionId)
 	}
 	return nil
@@ -386,18 +435,36 @@ func (topology *PartitionTopology) GetPartitionConnection(partition1 service_net
 		return false, ConnectionAllowed, stacktrace.NewError("About to get a connection between '%s' and '%s' but '%s' does not exist", partition1, partition2, partition2)
 	}
 
-	partitionConnectionId := service_network_types.NewPartitionConnectionID(partition1, partition2)
-	currentPartitionConnection, found := topology.partitionConnectionOverrides[*partitionConnectionId]
-	if !found {
+	partitionConnectionIdDbType := partitionConnectionIdDbTypeFromPartitionIds(partition1, partition2)
+	exists, err = topology.partitionConnectionOverrides.DoesPartitionConnectionOverrideExist(partitionConnectionIdDbType)
+	if err != nil {
+		return false, ConnectionAllowed, stacktrace.Propagate(err, "An error occurred while verifying whether partition connection override with id '%v' exists", partitionConnectionIdDbType)
+	}
+	if !exists {
 		return true, topology.GetDefaultConnection(), nil
 	}
-	return false, currentPartitionConnection, nil
+
+	currentPartitionConnectionDbType, err := topology.partitionConnectionOverrides.GetPartitionConnectionOverride(partitionConnectionIdDbType)
+	if err != nil {
+		return false, ConnectionAllowed, stacktrace.Propagate(err, "An error occurred while getting the partition connection with id '%v'", partitionConnectionIdDbType)
+	}
+
+	partitionConnection := newPartitionConnectionFromDbType(currentPartitionConnectionDbType)
+	return false, partitionConnection, nil
 }
 
-func (topology *PartitionTopology) GetServicePartitions() map[service.ServiceName]service_network_types.PartitionID {
+func (topology *PartitionTopology) GetServicePartitions() (map[service.ServiceName]service_network_types.PartitionID, error) {
 	topology.lock.RLock()
 	defer topology.lock.RUnlock()
-	return topology.servicePartitions
+	allServicePartitions, err := topology.servicePartitions.GetAllServicePartitions()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while fetching service partition mappings")
+	}
+	result := map[service.ServiceName]service_network_types.PartitionID{}
+	for serviceName, partitionId := range allServicePartitions {
+		result[serviceName] = service_network_types.PartitionID(partitionId)
+	}
+	return result, nil
 }
 
 // GetServicePartitionConnectionConfigByServiceName this method returns a partition config map
@@ -458,12 +525,23 @@ func (topology *PartitionTopology) getPartitionConnectionUnlocked(
 		return ConnectionAllowed, stacktrace.NewError("Unrecognized partition '%v'", b)
 	}
 
-	connectionId := service_network_types.NewPartitionConnectionID(a, b)
-	connection, found := topology.partitionConnectionOverrides[*connectionId]
-	if !found {
-		return topology.defaultConnection, nil
+	partitionConnectionIdDbType := partitionConnectionIdDbTypeFromPartitionIds(a, b)
+
+	exists, err = topology.partitionConnectionOverrides.DoesPartitionConnectionOverrideExist(partitionConnectionIdDbType)
+	if err != nil {
+		return ConnectionAllowed, stacktrace.Propagate(err, "An error occurred while verifying whether partition connection override with id '%v' exists", partitionConnectionIdDbType)
 	}
-	return connection, nil
+	if !exists {
+		return topology.GetDefaultConnection(), nil
+	}
+
+	currentPartitionConnectionDbType, err := topology.partitionConnectionOverrides.GetPartitionConnectionOverride(partitionConnectionIdDbType)
+	if err != nil {
+		return ConnectionAllowed, stacktrace.Propagate(err, "An error occurred while getting the partition connection with id '%v'", partitionConnectionIdDbType)
+	}
+	partitionConnection := newPartitionConnectionFromDbType(currentPartitionConnectionDbType)
+	return partitionConnection, nil
+
 }
 
 func serviceIdSetToCommaStr(serviceSet map[service.ServiceName]bool) string {
@@ -487,4 +565,26 @@ func copyServiceSet(serviceSet map[service.ServiceName]bool) map[service.Service
 		newServiceSet[serviceUuid] = true
 	}
 	return newServiceSet
+}
+
+func partitionConnectionDbTypeFromPartitionConnection(connection PartitionConnection) partition_connection_overrides.PartitionConnection {
+	return partition_connection_overrides.PartitionConnection{
+		PacketLoss: connection.packetLoss.packetLossPercentage,
+		PacketDelayDistribution: partition_connection_overrides.DelayDistribution{
+			AvgDelayMs:  connection.packetDelayDistribution.avgDelayMs,
+			Jitter:      connection.packetDelayDistribution.jitter,
+			Correlation: connection.packetDelayDistribution.correlation,
+		},
+	}
+}
+
+func partitionConnectionIdDbTypeFromPartitionConnectionId(connectionId service_network_types.PartitionConnectionID) partition_connection_overrides.PartitionConnectionID {
+	return partition_connection_overrides.PartitionConnectionID{
+		LexicalFirst:  partition.PartitionID(connectionId.GetFirst()),
+		LexicalSecond: partition.PartitionID(connectionId.GetSecond()),
+	}
+}
+
+func partitionConnectionIdDbTypeFromPartitionIds(partitionId1, partitionId2 service_network_types.PartitionID) partition_connection_overrides.PartitionConnectionID {
+	return partitionConnectionIdDbTypeFromPartitionConnectionId(*service_network_types.NewPartitionConnectionID(partitionId1, partitionId2))
 }

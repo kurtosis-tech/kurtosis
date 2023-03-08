@@ -150,38 +150,31 @@ type KurtosisBackend interface {
 	)
 
 	/*
-		<<<<<<< HEAD
-					                           KURTOSIS SERVICE STATE DIAGRAM
-				                                .-----------------DestroyServices--------------------.
-				                               /                                                      \
-					  StartServices--> RUNNING ---StopServices---> STOPPED ---DestroyServices---> DESTROYED
-		=======
-				KURTOSIS SERVICE STATE DIAGRAM
+		KURTOSIS SERVICE STATE DIAGRAM
 
-					                                |
-					                        RegisterUserServices
-					                                |
-					                                V
-					                            REGISTERED
-					                                |
-					                    StartRegisteredUserServices
-					                                |
-					                                V
-					            .--------------- STARTED
-					            |                   |
-					            |           StopUserService
-					            |                   |
-					            |                   V
-					    DestroyUserServices      STOPPED
-					            |                   |
-					            |           DestroyUserServices
-					            |                   |
-					            |                   V
-					            '-------------> DESTROYED
-		>>>>>>> master
+			                                |
+			                        RegisterUserServices
+			                                |
+			                                V
+			                            REGISTERED
+			                                |
+			                    StartRegisteredUserServices
+			                                |
+			                                V
+			            .--------------- STARTED
+			            |                   |
+			            |           StopUserService
+			            |                   |
+			            |                   V
+			    DestroyUserServices      STOPPED
+			            |                   |
+			            |           DestroyUserServices
+			            |                   |
+			            |                   V
+			            '-------------> DESTROYED
 
-					- Note the above state diagram doesn't account for PauseService or UnpauseService
-					- As of 2022-05-15, Kurtosis services can never be restarted once stopped.
+			- Note the above state diagram doesn't account for PauseService or UnpauseService
+			- As of 2022-05-15, Kurtosis services can never be restarted once stopped.
 	*/
 
 	// RegisterUserServices registers the services allocating them an IP address and a UUID. The service is not started!
@@ -387,10 +380,10 @@ type KurtosisBackend interface {
 	// Gets the logs collector, if nothing is found returns nil
 	GetLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID) (*logs_collector.LogsCollector, error)
 
-	// Destroy the logs collector
+	// Destroy the logs collector for enclave with UUID
 	DestroyLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID) error
 
-	// Destroy the centralized logs collector
-	// TODO(centralized-logs-collector-deprecation) remove this once we know people are on > 0.66.0
-	DestroyDeprecatedCentralizedLogsCollectorContainerAndVolume(ctx context.Context) error
+	// Destroy the centralized logs resources
+	// TODO(centralized-logs-resources-deprecation) remove this once we know people are on > 0.68.0
+	DestroyDeprecatedCentralizedLogsResources(ctx context.Context) error
 }

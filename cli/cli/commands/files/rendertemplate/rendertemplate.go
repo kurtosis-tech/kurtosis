@@ -13,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
+	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"os"
@@ -34,15 +35,10 @@ const (
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
 
-	starlarkTemplate = `
-CURRENT_TIME_STR = str(time.now().unix)
-ARTIFACT_NAME = "cli-rendered-artifact-" + CURRENT_TIME_STR
+	starlarkTemplateWithArtifactName = `
 def run(plan, args):
-	name = ARTIFACT_NAME
-	if args.name != "":
-		name = args.name
 	plan.render_templates(
-		name = name,
+		name = args.name,
 		config = {
 			args.file_name: struct(
 				template = args.template,
@@ -51,6 +47,19 @@ def run(plan, args):
 		}
 	)
 `
+
+	starlarkTemplateWithoutArtifactName = `
+def run(plan, args):
+	plan.render_templates(
+		config = {
+			args.file_name: struct(
+				template = args.template,
+				data = args.template_data,
+			),
+		}
+	)
+`
+
 	doNotDryRun   = false
 	noParallelism = 1
 )
@@ -96,6 +105,7 @@ func run(
 	ctx context.Context,
 	kurtosisBackend backend_interface.KurtosisBackend,
 	engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
+	_ metrics_client.MetricsClient,
 	flags *flags.ParsedFlags,
 	args *args.ParsedArgs,
 ) error {
@@ -207,11 +217,16 @@ func validateDestRelFilePathArg(ctx context.Context, flags *flags.ParsedFlags, a
 }
 
 func renderTemplateStarlarkCommand(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, destRelFilepath string, templateFileContents string, templateData interface{}, artifactName string) (string, error) {
+	template := starlarkTemplateWithArtifactName
+	if artifactName == defaultName {
+		template = starlarkTemplateWithoutArtifactName
+	}
+
 	templateDataBytes, err := json.Marshal(templateData)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error has occurred when parsing input params to render template Starlark command")
 	}
-	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkTemplate, fmt.Sprintf(`{"file_name": "%s", "template": "%s", "template_data": %s, "name": "%s"}`, destRelFilepath, templateFileContents, string(templateDataBytes), artifactName), doNotDryRun, noParallelism)
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, template, fmt.Sprintf(`{"file_name": "%s", "template": "%s", "template_data": %s, "name": "%s"}`, destRelFilepath, templateFileContents, string(templateDataBytes), artifactName), doNotDryRun, noParallelism)
 	if runResult.ExecutionError != nil {
 		return "", stacktrace.NewError("An error occurred during Starlark script execution for rendering template: %s", runResult.ExecutionError.GetErrorMessage())
 	}

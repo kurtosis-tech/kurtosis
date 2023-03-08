@@ -9,9 +9,7 @@ const (
 	// WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
 	//    If you add new URLs below, make sure to add them to the urlsToValidateInTest below!!!
 	Domain                       = "kurtosis.com"
-	InfoEmail                    = "inquiries@" + Domain
 	DocumentationUrl             = "https://docs." + Domain
-	SupportEmail                 = "support@" + Domain
 	DiscordUrl                   = "https://discord.gg/6Jjp9c89z9"
 	GithubIssuesUrl              = "https://github.com/kurtosis-tech/kurtosis-sdk"
 	CLICommandsReferenceURL      = DocumentationUrl + "/cli"
@@ -19,6 +17,10 @@ const (
 	StarlarkLocatorsReferenceURL = DocumentationUrl + "/reference/locators"
 	UpgradeCLIInstructionsPage   = DocumentationUrl + "/install#upgrading"
 	GoogleRe2SyntaxDocumentation = "https://github.com/google/re2/wiki/Syntax"
+	MetricsPhilosophyDocs        = DocumentationUrl + "/explanations/metrics-philosophy"
+	HowImportWorksLink           = "https://docs.kurtosis.com/explanations/how-do-kurtosis-imports-work"
+	PackageDocLink               = "https://docs.kurtosis.com/reference/packages"
+
 	//    If you add new URLs above, make sure to add them to the urlsToValidateInTest below!!!
 	// WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
 )
@@ -33,4 +35,7 @@ var urlsToValidateInTest = []string{
 	StarlarkLocatorsReferenceURL,
 	UpgradeCLIInstructionsPage,
 	GoogleRe2SyntaxDocumentation,
+	MetricsPhilosophyDocs,
+	HowImportWorksLink,
+	PackageDocLink,
 }

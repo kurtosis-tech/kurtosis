@@ -36,7 +36,7 @@ FILE_TO_BE_CREATED = "` + fileToBeCreated + `"
 SERVICE_DEPENDENT_ON_DATASTORE_SERVICE = "` + serviceIdForDependentService + `"
 PATH_TO_MOUNT_ON_DEPENDENT_SERVICE =  "` + pathToCheckOnDependentService + `"
 
-TEMPLATE_FILE_TO_RENDER="github.com/kurtosis-tech/eth2-merge-kurtosis-module/kurtosis-module/static_files/prometheus-config/prometheus.yml.tmpl"
+TEMPLATE_FILE_TO_RENDER="github.com/kurtosis-tech/eth2-package/static_files/prometheus-config/prometheus.yml.tmpl"
 PATH_TO_MOUNT_RENDERED_CONFIG="` + renderedConfigMountPath + `"
 RENDER_RELATIVE_PATH = "` + renderedConfigRelativePath + `"
 
@@ -116,7 +116,7 @@ Adding service example-datastore-server-1.
 Service 'example-datastore-server-1' added with service UUID '[a-z-0-9]+'
 Service example-datastore-server-1 deployed successfully.
 Command returned with exit code '0' with no output
-Files  with artifact name 'stored-file' uploaded with artifact UUID '[a-f0-9]{32}'
+Files with artifact name 'stored-file' uploaded with artifact UUID '[a-f0-9]{32}'
 Stored file at stored-file
 Templates artifact name 'rendered-file' rendered with artifact UUID '[a-f0-9]{32}'
 Rendered file to rendered-file

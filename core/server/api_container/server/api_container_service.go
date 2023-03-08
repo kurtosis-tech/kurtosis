@@ -25,7 +25,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
-	"github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -54,10 +53,6 @@ const (
 	// given module
 	doOverwriteExistingModule = true
 
-	isScript    = true
-	isNotScript = false
-	isNotRemote = false
-
 	defaultParallelism = 4
 )
 
@@ -75,8 +70,6 @@ type ApiContainerService struct {
 
 	startosisRunner *startosis_engine.StartosisRunner
 
-	metricsClient client.MetricsClient
-
 	startosisModuleContentProvider startosis_packages.PackageContentProvider
 }
 
@@ -84,14 +77,12 @@ func NewApiContainerService(
 	filesArtifactStore *enclave_data_directory.FilesArtifactStore,
 	serviceNetwork service_network.ServiceNetwork,
 	startosisRunner *startosis_engine.StartosisRunner,
-	metricsClient client.MetricsClient,
 	startosisModuleContentProvider startosis_packages.PackageContentProvider,
 ) (*ApiContainerService, error) {
 	service := &ApiContainerService{
 		filesArtifactStore:             filesArtifactStore,
 		serviceNetwork:                 serviceNetwork,
 		startosisRunner:                startosisRunner,
-		metricsClient:                  metricsClient,
 		startosisModuleContentProvider: startosisModuleContentProvider,
 	}
 
@@ -104,11 +95,6 @@ func (apicService ApiContainerService) RunStarlarkScript(args *kurtosis_core_rpc
 	parallelism := int(args.GetParallelism())
 	dryRun := shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun)
 
-	if err := apicService.metricsClient.TrackKurtosisRun(startosis_constants.PackageIdPlaceholderForStandaloneScript, isNotRemote, dryRun, isScript); err != nil {
-		//We don't want to interrupt users flow if something fails when tracking metrics
-		logrus.Errorf("An error occurred tracking kurtosis run event\n%v", err)
-	}
-
 	apicService.runStarlark(parallelism, dryRun, startosis_constants.PackageIdPlaceholderForStandaloneScript, serializedStarlarkScript, serializedParams, stream)
 	return nil
 }
@@ -120,11 +106,6 @@ func (apicService ApiContainerService) RunStarlarkPackage(args *kurtosis_core_rp
 	parallelism := int(args.GetParallelism())
 	serializedParams := args.SerializedParams
 	dryRun := shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun)
-
-	if err := apicService.metricsClient.TrackKurtosisRun(packageId, isRemote, dryRun, isNotScript); err != nil {
-		//We don't want to interrupt users flow if something fails when tracking metrics
-		logrus.Errorf("An error occurred tracking kurtosis run event\n%v", err)
-	}
 
 	scriptWithRunFunction, interpretationError := apicService.runStarlarkPackageSetup(packageId, isRemote, moduleContentIfLocal)
 	if interpretationError != nil {
@@ -388,14 +369,18 @@ func (apicService ApiContainerService) GetExistingAndHistoricalServiceIdentifier
 	return &kurtosis_core_rpc_api_bindings.GetExistingAndHistoricalServiceIdentifiersResponse{AllIdentifiers: allIdentifiers}, nil
 }
 
-func (apicService ApiContainerService) UploadFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.UploadFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse, error) {
+func (apicService ApiContainerService) UploadFilesArtifact(_ context.Context, args *kurtosis_core_rpc_api_bindings.UploadFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse, error) {
+	maybeArtifactName := args.GetName()
+	if maybeArtifactName == "" {
+		maybeArtifactName = apicService.filesArtifactStore.GenerateUniqueNameForFileArtifact()
+	}
 
-	filesArtifactUuid, err := apicService.serviceNetwork.UploadFilesArtifact(args.Data, args.Name)
+	filesArtifactUuid, err := apicService.serviceNetwork.UploadFilesArtifact(args.Data, maybeArtifactName)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while trying to upload the file")
 	}
 
-	response := &kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse{Uuid: string(filesArtifactUuid)}
+	response := &kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse{Uuid: string(filesArtifactUuid), Name: maybeArtifactName}
 	return response, nil
 }
 

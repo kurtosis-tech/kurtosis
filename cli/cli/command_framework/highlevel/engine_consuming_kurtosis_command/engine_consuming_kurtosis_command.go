@@ -8,14 +8,18 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/engine_manager"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/metrics_client_factory"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
+	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
 const (
-	engineClientCloseFuncCtxKey = "engine-client-close-func"
+	engineClientCloseFuncCtxKey     = "engine-client-close-func"
+	metricsClientKey                = "metrics-client-key"
+	metricsClientClosingFunctionKey = "metrics-client-closing-func"
 )
 
 // This is a convenience KurtosisCommand for commands that interact with the engine
@@ -45,11 +49,12 @@ type EngineConsumingKurtosisCommand struct {
 
 	RunFunc func(
 		ctx context.Context,
-	// TODO This is a hack that's only here temporarily because we have commands that use KurtosisBackend directly (they
-	//  should not), and EngineConsumingKurtosisCommand therefore needs to provide them with a KurtosisBackend. Once all our
-	//  commands only access the Kurtosis APIs, we can remove this.
+		// TODO This is a hack that's only here temporarily because we have commands that use KurtosisBackend directly (they
+		//  should not), and EngineConsumingKurtosisCommand therefore needs to provide them with a KurtosisBackend. Once all our
+		//  commands only access the Kurtosis APIs, we can remove this.
 		kurtosisBackend backend_interface.KurtosisBackend,
 		engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
+		client metrics_client.MetricsClient,
 		flags *flags.ParsedFlags,
 		args *args.ParsedArgs,
 	) error
@@ -83,6 +88,42 @@ func (cmd *EngineConsumingKurtosisCommand) MustGetCobraCommand() *cobra.Command 
 		))
 	}
 
+	if cmd.KurtosisBackendContextKey == metricsClientClosingFunctionKey {
+		panic(stacktrace.NewError(
+			"Kurtosis backend context key '%v' on command '%v' is equal to metrics client close function context key '%v'; this is a bug in Kurtosis!",
+			cmd.KurtosisBackendContextKey,
+			cmd.CommandStr,
+			metricsClientClosingFunctionKey,
+		))
+	}
+
+	if cmd.EngineClientContextKey == metricsClientClosingFunctionKey {
+		panic(stacktrace.NewError(
+			"Engine client context key '%v' on command '%v' is equal to metrics client close function context key '%v'; this is a bug in Kurtosis!",
+			cmd.EngineClientContextKey,
+			cmd.CommandStr,
+			metricsClientClosingFunctionKey,
+		))
+	}
+
+	if cmd.KurtosisBackendContextKey == metricsClientKey {
+		panic(stacktrace.NewError(
+			"Kurtosis backend context key '%v' on command '%v' is equal to metrics client context key '%v'; this is a bug in Kurtosis!",
+			cmd.KurtosisBackendContextKey,
+			cmd.CommandStr,
+			metricsClientKey,
+		))
+	}
+
+	if cmd.EngineClientContextKey == metricsClientKey {
+		panic(stacktrace.NewError(
+			"Engine client context key '%v' on command '%v' is equal to metrics client context key '%v'; this is a bug in Kurtosis!",
+			cmd.EngineClientContextKey,
+			cmd.CommandStr,
+			metricsClientKey,
+		))
+	}
+
 	lowlevelCmd := &lowlevel.LowlevelKurtosisCommand{
 		CommandStr:               cmd.CommandStr,
 		ShortDescription:         cmd.ShortDescription,
@@ -101,6 +142,11 @@ func (cmd *EngineConsumingKurtosisCommand) getSetupFunc() func(context.Context) 
 	return func(ctx context.Context) (context.Context, error) {
 		result := ctx
 
+		metricsClient, metricsClientCloser, err := metrics_client_factory.GetMetricsClient()
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred while creating metrics client")
+		}
+
 		engineManager, err := engine_manager.NewEngineManager(ctx)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting an engine manager.")
@@ -118,6 +164,8 @@ func (cmd *EngineConsumingKurtosisCommand) getSetupFunc() func(context.Context) 
 		result = context.WithValue(result, cmd.EngineClientContextKey, engineClient)
 		result = context.WithValue(result, engineClientCloseFuncCtxKey, closeClientFunc)
 		result = context.WithValue(result, cmd.KurtosisBackendContextKey, kurtosisBackend)
+		result = context.WithValue(result, metricsClientKey, metricsClient)
+		result = context.WithValue(result, metricsClientClosingFunctionKey, metricsClientCloser)
 
 		return result, nil
 	}
@@ -145,7 +193,16 @@ func (cmd *EngineConsumingKurtosisCommand) getRunFunc() func(context.Context, *f
 			return stacktrace.NewError("Found an object that should be the Kurtosis backend stored in the context under key '%v', but this object wasn't of the correct type", cmd.KurtosisBackendContextKey)
 		}
 
-		if err := cmd.RunFunc(ctx, kurtosisBackend, engineClient, flags, args); err != nil {
+		uncastedMetricsClient := ctx.Value(metricsClientKey)
+		if uncastedMetricsClient == nil {
+			return stacktrace.NewError("Expected Metrics Client to have been stored in the context under key '%v', but none was found; this is a bug in Kurtosis", metricsClientKey)
+		}
+		metricsClient, ok := uncastedMetricsClient.(metrics_client.MetricsClient)
+		if !ok {
+			return stacktrace.NewError("Found an object that should be the metrics client stored in the context under key '%v', but this object wasn't of the correct type", metricsClientKey)
+		}
+
+		if err := cmd.RunFunc(ctx, kurtosisBackend, engineClient, metricsClient, flags, args); err != nil {
 			return stacktrace.Propagate(
 				err,
 				"An error occurred calling the run function for command '%v'",
@@ -173,6 +230,23 @@ func (cmd *EngineConsumingKurtosisCommand) getTeardownFunc() func(ctx context.Co
 			logrus.Errorf(
 				"Expected to find an engine client close function during teardown at context key '%v', but none was found; this is a bug in Kurtosis!",
 				engineClientCloseFuncCtxKey,
+			)
+		}
+
+		uncastedMetricsClientCloser := ctx.Value(metricsClientClosingFunctionKey)
+		if uncastedMetricsClientCloser != nil {
+			metricsClientCloser, ok := uncastedMetricsClientCloser.(func() error)
+			if ok {
+				if err := metricsClientCloser(); err != nil {
+					logrus.Warnf("An error occurred while closing the metrics client\n%s", err)
+				}
+			} else {
+				logrus.Errorf("Expected the object at context key '%v' to be a metrics client close function, but it wasn't; this is a bug in Kurtosis!", metricsClientClosingFunctionKey)
+			}
+		} else {
+			logrus.Errorf(
+				"Expected to metrics client close function during teardown at context key '%v', but none was found; this is a bug in Kurtosis!",
+				metricsClientClosingFunctionKey,
 			)
 		}
 	}

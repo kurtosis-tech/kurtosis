@@ -1,14 +1,14 @@
 ---
-title: CLI
+title: Getting Started
 sidebar_label: CLI
 slug: /cli
 sidebar_position: 1
 ---
 
-The [Kurtosis CLI][installing-the-cli] is the main way to interact with Kurtosis. This document will present some common CLI workflows.
+This section will go through the most common Kurtosis CLI commands and some useful tips on getting started. If you have not already done so, the CLI can be installed by following the instructions [here][installing-the-cli].
 
 :::tip
-The `kurtosis` command, and all of its subcommands, will print helptext when passed the `-h` flag. You can use this at any time to see information on the command you're trying to run. For example:
+The `kurtosis` command, and all of its subcommands, will print helptext when passed the `-h` or `--help` flag. You can use this at any time to see information on the command you're trying to run. For example:
 ```
 kurtosis service -h
 ```
@@ -18,20 +18,28 @@ kurtosis service -h
 Kurtosis supports tab-completion, and we strongly recommend [installing it][adding-tab-completion] for the best experience!
 :::
 
-### Initialize configuration
-When the Kurtosis CLI is executed for the first time on a machine, we ask you to make a choice about whether [you'd like to send anonymized usage metrics to help us make the product better][metrics-philosophy-reference]. To make this election non-interactively, you can run either:
+### Toggle Analytics
+On installation Kurtosis enables anonymized [analytics][metrics-philosophy-reference] by default. You can toggle this functionality simply by running:
 
 ```bash
-kurtosis config init send-metrics
+kurtosis analytics enable
 ```
 
-to send anonymized metrics to improve the product or
+to enable the sending of anonymized metrics to improve the product, or:
 
 ```bash
-kurtosis config init dont-send-metrics
+kurtosis analytics disable
 ```
 
-if you'd prefer not to.
+if you would prefer not to.
+
+### Configuration file path
+To locate where the Kurtosis configuration file is on your machine, simply use:
+
+```bash
+kurtosis config path
+```
+to print out the file path of the `kurtosis-config.yml` file.
 
 ### Get the CLI version
 The CLI version can be printed with the following:

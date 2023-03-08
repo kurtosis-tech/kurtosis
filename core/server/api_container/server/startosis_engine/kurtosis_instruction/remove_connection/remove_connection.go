@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
@@ -64,7 +64,7 @@ func (builtin *RemoveConnectionCapabilities) Interpret(arguments *builtin_argume
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", SubnetworksArgName)
 	}
-	subnetwork1, subnetwork2, interpretationErr := kurtosis_instruction.ParseSubnetworks(subnetworks)
+	subnetwork1, subnetwork2, interpretationErr := shared_helpers.ParseSubnetworks(SubnetworksArgName, subnetworks)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
@@ -93,7 +93,7 @@ func validateSubnetworks(value starlark.Value) *startosis_errors.InterpretationE
 	if !ok {
 		return startosis_errors.NewInterpretationError("'%s' argument should be a 'starlark.Tuple', got '%s'", SubnetworksArgName, reflect.TypeOf(value))
 	}
-	_, _, interpretationErr := kurtosis_instruction.ParseSubnetworks(subnetworks)
+	_, _, interpretationErr := shared_helpers.ParseSubnetworks(SubnetworksArgName, subnetworks)
 	if interpretationErr != nil {
 		return interpretationErr
 	}

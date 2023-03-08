@@ -13,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
+	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"sort"
@@ -30,6 +31,10 @@ const (
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
+	uuidAndNameDelimiter  = "\t"
+
+	// this prefix converts the returned guid into a docker name that the user is more used to
+	kurtosisEngineGuidPrefix = "kurtosis-engine--"
 )
 
 var CleanCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -58,6 +63,7 @@ func run(
 	ctx context.Context,
 	kurtosisBackend backend_interface.KurtosisBackend,
 	engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
+	_ metrics_client.MetricsClient,
 	flags *flags.ParsedFlags,
 	args *args.ParsedArgs,
 ) error {
@@ -134,9 +140,9 @@ func cleanStoppedEngineContainers(ctx context.Context, kurtosisBackend backend_i
 		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying engines using filters '%+v'", engineFilters)
 	}
 
-	successfulEngineGuidStrs := []string{}
+	successfulEngineContainerNames := []string{}
 	for engineGuid := range successfulEngineGuids {
-		successfulEngineGuidStrs = append(successfulEngineGuidStrs, string(engineGuid))
+		successfulEngineContainerNames = append(successfulEngineContainerNames, kurtosisEngineGuidPrefix+string(engineGuid))
 	}
 
 	removeEngineErrors := []error{}
@@ -148,7 +154,7 @@ func cleanStoppedEngineContainers(ctx context.Context, kurtosisBackend backend_i
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred cleaning stopped Kurtosis engine containers")
 	}
-	return successfulEngineGuidStrs, removeEngineErrors, nil
+	return successfulEngineContainerNames, removeEngineErrors, nil
 }
 
 func cleanEnclaves(ctx context.Context, engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient, shouldCleanAll bool) ([]string, []error, error) {
@@ -158,9 +164,13 @@ func cleanEnclaves(ctx context.Context, engineClient kurtosis_engine_rpc_api_bin
 		return nil, nil, stacktrace.Propagate(err, "An error occurred while calling clean")
 	}
 
-	successfullyDestroyedEnclaveIds := []string{}
-	for enclaveId := range cleanResp.RemovedEnclaveUuids {
-		successfullyDestroyedEnclaveIds = append(successfullyDestroyedEnclaveIds, enclaveId)
+	successfullyDestroyedEnclaveUuidsAndNames := []string{}
+	for _, enclaveUuidWithName := range cleanResp.RemovedEnclaveNameAndUuids {
+		successfullyDestroyedEnclaveUuidsAndNames = append(successfullyDestroyedEnclaveUuidsAndNames, formattedUuidAndName(enclaveUuidWithName))
 	}
-	return successfullyDestroyedEnclaveIds, nil, nil
+	return successfullyDestroyedEnclaveUuidsAndNames, nil, nil
+}
+
+func formattedUuidAndName(enclaveUuidWithName *kurtosis_engine_rpc_api_bindings.EnclaveNameAndUuid) string {
+	return fmt.Sprintf("%v%v%v", enclaveUuidWithName.Uuid, uuidAndNameDelimiter, enclaveUuidWithName.Name)
 }

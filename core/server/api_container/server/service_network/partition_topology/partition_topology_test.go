@@ -8,6 +8,7 @@ package partition_topology
 import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/partition_topology_db/partition_connection_overrides"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -536,11 +537,14 @@ func TestSetConnection(t *testing.T) {
 
 	require.Equal(t, ConnectionBlocked, topology.GetDefaultConnection())
 
+	currentServicePartitions, err := topology.GetServicePartitions()
+	require.Nil(t, err)
 	require.Equal(t, map[service.ServiceName]service_network_types.PartitionID{
 		"service1": "partition1",
 		"service2": "partition2",
 		"service3": "partition3",
-	}, topology.servicePartitions)
+	}, currentServicePartitions)
+
 	partitionServices, err := topology.GetPartitionServices()
 	require.Nil(t, err)
 	require.Equal(t, map[service_network_types.PartitionID]map[service.ServiceName]bool{
@@ -555,10 +559,13 @@ func TestSetConnection(t *testing.T) {
 		},
 	}, partitionServices)
 
-	expectedConnectionOverrides := map[service_network_types.PartitionConnectionID]PartitionConnection{
-		*service_network_types.NewPartitionConnectionID(partition1, partition2): connectionOverride,
+	partitionConnectionId := service_network_types.NewPartitionConnectionID(partition1, partition2)
+	expectedConnectionOverrides := map[partition_connection_overrides.PartitionConnectionID]partition_connection_overrides.PartitionConnection{
+		partitionConnectionIdDbTypeFromPartitionConnectionId(*partitionConnectionId): partitionConnectionDbTypeFromPartitionConnection(connectionOverride),
 	}
-	require.Equal(t, expectedConnectionOverrides, topology.partitionConnectionOverrides)
+	allConnectionOverrides, err := topology.partitionConnectionOverrides.GetAllPartitionConnectionOverrides()
+	require.Nil(t, err)
+	require.Equal(t, expectedConnectionOverrides, allConnectionOverrides)
 }
 
 func TestSetConnection_FailureUnknownPartition(t *testing.T) {
@@ -601,11 +608,13 @@ func TestUnsetConnection(t *testing.T) {
 
 	require.Equal(t, ConnectionBlocked, topology.GetDefaultConnection())
 
+	currentServicePartitions, err := topology.GetServicePartitions()
+	require.Nil(t, err)
 	require.Equal(t, map[service.ServiceName]service_network_types.PartitionID{
 		"service1": "partition1",
 		"service2": "partition2",
 		"service3": "partition3",
-	}, topology.servicePartitions)
+	}, currentServicePartitions)
 	partitionServices, err := topology.GetPartitionServices()
 	require.Nil(t, err)
 	require.Equal(t, map[service_network_types.PartitionID]map[service.ServiceName]bool{
@@ -620,8 +629,9 @@ func TestUnsetConnection(t *testing.T) {
 		},
 	}, partitionServices)
 
-	noConnectionOverride := map[service_network_types.PartitionConnectionID]PartitionConnection{}
-	require.Equal(t, noConnectionOverride, topology.partitionConnectionOverrides)
+	overrides, err := topology.partitionConnectionOverrides.GetAllPartitionConnectionOverrides()
+	require.Nil(t, err)
+	require.Empty(t, overrides)
 }
 
 func TestUnsetConnection_FailurePartitionNotFound(t *testing.T) {
@@ -717,11 +727,13 @@ func TestSetDefaultConnection(t *testing.T) {
 
 	require.Equal(t, newDefaultConnection, topology.GetDefaultConnection())
 
+	currentServicePartitions, err := topology.GetServicePartitions()
+	require.Nil(t, err)
 	require.Equal(t, map[service.ServiceName]service_network_types.PartitionID{
 		"service1": "partition1",
 		"service2": "partition2",
 		"service3": "partition3",
-	}, topology.servicePartitions)
+	}, currentServicePartitions)
 	partitionServices, err := topology.GetPartitionServices()
 	require.Nil(t, err)
 	require.Equal(t, map[service_network_types.PartitionID]map[service.ServiceName]bool{
@@ -735,8 +747,9 @@ func TestSetDefaultConnection(t *testing.T) {
 			"service3": true,
 		},
 	}, partitionServices)
-	noConnectionOverride := map[service_network_types.PartitionConnectionID]PartitionConnection{}
-	require.Equal(t, noConnectionOverride, topology.partitionConnectionOverrides)
+	overrides, err := topology.partitionConnectionOverrides.GetAllPartitionConnectionOverrides()
+	require.Nil(t, err)
+	require.Empty(t, overrides)
 }
 
 func TestCreateEmptyPartitionWithDefaultConnection(t *testing.T) {
@@ -758,11 +771,13 @@ func TestCreateEmptyPartitionWithDefaultConnection(t *testing.T) {
 
 	require.Equal(t, ConnectionBlocked, topology.GetDefaultConnection())
 
+	currentServicePartitions, err := topology.GetServicePartitions()
+	require.Nil(t, err)
 	require.Equal(t, map[service.ServiceName]service_network_types.PartitionID{
 		"service1": "partition1",
 		"service2": "partition2",
 		"service3": "partition3",
-	}, topology.servicePartitions)
+	}, currentServicePartitions)
 	partitionServices, err := topology.GetPartitionServices()
 	require.Nil(t, err)
 	require.Equal(t, map[service_network_types.PartitionID]map[service.ServiceName]bool{
@@ -778,8 +793,9 @@ func TestCreateEmptyPartitionWithDefaultConnection(t *testing.T) {
 		"partition4": {},
 	}, partitionServices)
 
-	noConnectionOverride := map[service_network_types.PartitionConnectionID]PartitionConnection{}
-	require.Equal(t, noConnectionOverride, topology.partitionConnectionOverrides)
+	overrides, err := topology.partitionConnectionOverrides.GetAllPartitionConnectionOverrides()
+	require.Nil(t, err)
+	require.Empty(t, overrides)
 }
 
 func TestCreateEmptyPartitionWithDefaultConnection_FailurePartitionAlreadyExists(t *testing.T) {
@@ -818,11 +834,13 @@ func TestRemovePartition(t *testing.T) {
 
 	require.Equal(t, ConnectionBlocked, topology.GetDefaultConnection())
 
+	currentServicePartitions, err := topology.GetServicePartitions()
+	require.Nil(t, err)
 	require.Equal(t, map[service.ServiceName]service_network_types.PartitionID{
 		"service1": "partition1",
 		"service2": "partition2",
 		"service3": "partition2",
-	}, topology.servicePartitions)
+	}, currentServicePartitions)
 	partitionServices, err := topology.GetPartitionServices()
 	require.Nil(t, err)
 	require.Equal(t, map[service_network_types.PartitionID]map[service.ServiceName]bool{
@@ -835,8 +853,9 @@ func TestRemovePartition(t *testing.T) {
 		},
 	}, partitionServices)
 
-	noConnectionOverride := map[service_network_types.PartitionConnectionID]PartitionConnection{}
-	require.Equal(t, noConnectionOverride, topology.partitionConnectionOverrides)
+	overrides, err := topology.partitionConnectionOverrides.GetAllPartitionConnectionOverrides()
+	require.Nil(t, err)
+	require.Empty(t, overrides)
 }
 
 func TestRemovePartition_NoopDoesNotExist(t *testing.T) {
@@ -857,11 +876,13 @@ func TestRemovePartition_NoopDoesNotExist(t *testing.T) {
 
 	require.Equal(t, ConnectionBlocked, topology.GetDefaultConnection())
 
+	currentServicePartitions, err := topology.GetServicePartitions()
+	require.Nil(t, err)
 	require.Equal(t, map[service.ServiceName]service_network_types.PartitionID{
 		"service1": "partition1",
 		"service2": "partition2",
 		"service3": "partition3",
-	}, topology.servicePartitions)
+	}, currentServicePartitions)
 	partitionServices, err := topology.GetPartitionServices()
 	require.Nil(t, err)
 	require.Equal(t, map[service_network_types.PartitionID]map[service.ServiceName]bool{
@@ -876,8 +897,9 @@ func TestRemovePartition_NoopDoesNotExist(t *testing.T) {
 		},
 	}, partitionServices)
 
-	noConnectionOverride := map[service_network_types.PartitionConnectionID]PartitionConnection{}
-	require.Equal(t, noConnectionOverride, topology.partitionConnectionOverrides)
+	overrides, err := topology.partitionConnectionOverrides.GetAllPartitionConnectionOverrides()
+	require.Nil(t, err)
+	require.Empty(t, overrides)
 }
 
 func TestRemovePartition_FailureRemovingDefaultDisallowed(t *testing.T) {
