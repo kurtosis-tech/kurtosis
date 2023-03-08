@@ -54,7 +54,7 @@ func ReplaceRuntimeValueInString(originalString string, recipeEngine *runtime_va
 	return replacedString, nil
 }
 
-func GetRuntimeValueFromString(originalString string, runtimeValueStore *runtime_value_store.RuntimeValueStore) (starlark.Comparable, error) {
+func GetOrReplaceRuntimeValueFromString(originalString string, runtimeValueStore *runtime_value_store.RuntimeValueStore) (starlark.Comparable, error) {
 	matches := compiledRuntimeValueReplacementRegex.FindAllStringSubmatch(originalString, unlimitedMatches)
 	if len(matches) == 1 && len(matches[0][0]) == len(originalString) {
 		return getRuntimeValueFromRegexMatch(matches[0], runtimeValueStore)

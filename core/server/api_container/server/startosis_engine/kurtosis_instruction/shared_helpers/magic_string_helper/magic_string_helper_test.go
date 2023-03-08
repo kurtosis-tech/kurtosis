@@ -16,7 +16,7 @@ const (
 
 var testIntRuntimeValue = starlark.MakeInt(0)
 
-func TestGetRuntimeValueFromString_BasicFetch(t *testing.T) {
+func TestGetOrReplaceRuntimeValueFromString_BasicFetch(t *testing.T) {
 	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
 	stringValueUuid, err := runtimeValueStore.CreateValue()
 	require.Nil(t, err)
@@ -24,15 +24,15 @@ func TestGetRuntimeValueFromString_BasicFetch(t *testing.T) {
 	intValueUuid, err := runtimeValueStore.CreateValue()
 	require.Nil(t, err)
 	runtimeValueStore.SetValue(intValueUuid, map[string]starlark.Comparable{testRuntimeValueField: testIntRuntimeValue})
-	fetchedStringValue, err := GetRuntimeValueFromString(fmt.Sprintf(RuntimeValueReplacementPlaceholderFormat, stringValueUuid, testRuntimeValueField), runtimeValueStore)
+	fetchedStringValue, err := GetOrReplaceRuntimeValueFromString(fmt.Sprintf(RuntimeValueReplacementPlaceholderFormat, stringValueUuid, testRuntimeValueField), runtimeValueStore)
 	require.Nil(t, err)
 	require.Equal(t, fetchedStringValue, testStringRuntimeValue)
-	fetchedIntValue, err := GetRuntimeValueFromString(fmt.Sprintf(RuntimeValueReplacementPlaceholderFormat, intValueUuid, testRuntimeValueField), runtimeValueStore)
+	fetchedIntValue, err := GetOrReplaceRuntimeValueFromString(fmt.Sprintf(RuntimeValueReplacementPlaceholderFormat, intValueUuid, testRuntimeValueField), runtimeValueStore)
 	require.Nil(t, err)
 	require.Equal(t, fetchedIntValue, testIntRuntimeValue)
 }
 
-func TestGetRuntimeValueFromString_Interpolated(t *testing.T) {
+func TestGetOrReplaceRuntimeValueFromString_Interpolated(t *testing.T) {
 	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
 	stringValueUuid, err := runtimeValueStore.CreateValue()
 	require.Nil(t, err)
@@ -43,7 +43,23 @@ func TestGetRuntimeValueFromString_Interpolated(t *testing.T) {
 	stringRuntimeValue := fmt.Sprintf(RuntimeValueReplacementPlaceholderFormat, stringValueUuid, testRuntimeValueField)
 	intRuntimeValue := fmt.Sprintf(RuntimeValueReplacementPlaceholderFormat, intValueUuid, testRuntimeValueField)
 	interpolatedString := fmt.Sprintf("%v is not %v", stringRuntimeValue, intRuntimeValue)
-	resolvedInterpolatedString, err := GetRuntimeValueFromString(interpolatedString, runtimeValueStore)
+	resolvedInterpolatedString, err := GetOrReplaceRuntimeValueFromString(interpolatedString, runtimeValueStore)
 	require.Nil(t, err)
 	require.Equal(t, resolvedInterpolatedString, testExpectedInterpolatedString)
+}
+
+func TestReplaceRuntimeValueFromString(t *testing.T) {
+	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
+	stringValueUuid, err := runtimeValueStore.CreateValue()
+	require.Nil(t, err)
+	runtimeValueStore.SetValue(stringValueUuid, map[string]starlark.Comparable{testRuntimeValueField: testStringRuntimeValue})
+	intValueUuid, err := runtimeValueStore.CreateValue()
+	require.Nil(t, err)
+	runtimeValueStore.SetValue(intValueUuid, map[string]starlark.Comparable{testRuntimeValueField: testIntRuntimeValue})
+	stringRuntimeValue := fmt.Sprintf(RuntimeValueReplacementPlaceholderFormat, stringValueUuid, testRuntimeValueField)
+	intRuntimeValue := fmt.Sprintf(RuntimeValueReplacementPlaceholderFormat, intValueUuid, testRuntimeValueField)
+	interpolatedString := fmt.Sprintf("%v is not %v", stringRuntimeValue, intRuntimeValue)
+	resolvedInterpolatedString, err := ReplaceRuntimeValueInString(interpolatedString, runtimeValueStore)
+	require.Nil(t, err)
+	require.Equal(t, resolvedInterpolatedString, testExpectedInterpolatedString.GoString())
 }
