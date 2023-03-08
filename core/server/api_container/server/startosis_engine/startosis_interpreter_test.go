@@ -176,12 +176,11 @@ def run(plan):
 	datastore_service = plan.add_service(service_name = service_name, config = config)
 	plan.print("The grpc port is " + str(datastore_service.ports["grpc"].number))
 	plan.print("The grpc transport protocol is " + datastore_service.ports["grpc"].transport_protocol)
-	plan.print("The datastore service ip address is " + datastore_service.ip_address)
 `
 
 	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, fmt.Sprintf(script, testServiceName), startosis_constants.EmptyInputArgs)
 	require.Nil(t, interpretationError)
-	require.Len(t, instructions, 6)
+	require.Len(t, instructions, 5)
 
 	assertInstructionTypeAndPosition(t, instructions[2], add_service.AddServiceBuiltinName, startosis_constants.PackageIdPlaceholderForStandaloneScript, 15, 38)
 
@@ -189,9 +188,8 @@ def run(plan):
 Adding service example-datastore-server
 The grpc port is 1323
 The grpc transport protocol is TCP
-The datastore service ip address is %v
 `
-	validateScriptOutputFromPrintInstructions(t, instructions, fmt.Sprintf(expectedOutput, testServiceIpAddress))
+	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutput)
 }
 
 func TestStartosisInterpreter_ValidSimpleScriptWithApplicationProtocol(t *testing.T) {
@@ -1095,8 +1093,9 @@ def run(plan):
 func validateScriptOutputFromPrintInstructions(t *testing.T, instructions []kurtosis_instruction.KurtosisInstruction, expectedOutput string) {
 	scriptOutput := strings.Builder{}
 	for _, instruction := range instructions {
-		switch instruction.(type) {
-		case *kurtosis_print.PrintInstruction:
+
+		switch instruction.GetCanonicalInstruction().InstructionName {
+		case kurtosis_print.PrintBuiltinName:
 			instructionOutput, err := instruction.Execute(context.Background())
 			require.Nil(t, err, "Error running the print statements")
 			if instructionOutput != nil {

@@ -34,7 +34,7 @@ fi
 
 current_year=$(date +"%Y")
 
-license_change_date=$(date -v +4y +"%Y-%m-%d")
+license_change_date=$(date -d "+4 years" +"%Y-%m-%d")
 
 # ==================================================================================================
 #                                             Main Logic
