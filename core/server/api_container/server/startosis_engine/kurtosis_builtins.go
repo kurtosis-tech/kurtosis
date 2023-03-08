@@ -5,7 +5,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/import_module"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/print_builtin"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/read_file"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/assert"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/exec"
@@ -45,21 +44,16 @@ func KurtosisPlanInstructions(serviceNetwork service_network.ServiceNetwork, run
 		add_service.NewAddServices(serviceNetwork, runtimeValueStore),
 		assert.NewAssert(runtimeValueStore),
 		exec.NewExec(serviceNetwork, runtimeValueStore),
+		kurtosis_print.NewPrint(serviceNetwork, runtimeValueStore),
 		remove_connection.NewRemoveConnection(serviceNetwork),
 		remove_service.NewRemoveService(serviceNetwork),
-		render_templates.NewRenderTemplatesInstruction(serviceNetwork),
+		render_templates.NewRenderTemplatesInstruction(serviceNetwork, runtimeValueStore),
 		request.NewRequest(serviceNetwork, runtimeValueStore),
 		set_connection.NewSetConnection(serviceNetwork),
 		store_service_files.NewStoreServiceFiles(serviceNetwork),
 		update_service.NewUpdateService(serviceNetwork),
 		upload_files.NewUploadFiles(serviceNetwork, packageContentProvider),
 		wait.NewWait(serviceNetwork, runtimeValueStore),
-	}
-}
-
-func OldKurtosisPlanInstructions(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, packageContentProvider startosis_packages.PackageContentProvider, serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) []*starlark.Builtin {
-	return []*starlark.Builtin{
-		starlark.NewBuiltin(kurtosis_print.PrintBuiltinName, kurtosis_print.GeneratePrintBuiltin(instructionsQueue, runtimeValueStore, serviceNetwork)),
 	}
 }
 

@@ -4,12 +4,10 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
-	"net"
 	"testing"
 )
 
@@ -17,12 +15,7 @@ const (
 	testContainerImageName = "kurtosistech/example-datastore-server"
 )
 
-func TestAddServiceShared_EntryPointArgsWithIpAddressAndRuntimeValueAreReplaced(t *testing.T) {
-	ipAddresses := map[service.ServiceName]net.IP{
-		"foo_service": net.ParseIP("172.17.3.13"),
-	}
-	serviceNetwork := service_network.NewMockServiceNetworkCustom(ipAddresses)
-
+func TestAddServiceShared_EntryPointArgsRuntimeValueAreReplaced(t *testing.T) {
 	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
 	stringValueUuid, err := runtimeValueStore.CreateValue()
 	require.Nil(t, err, "error creating a runtime value UUID")
@@ -36,21 +29,16 @@ func TestAddServiceShared_EntryPointArgsWithIpAddressAndRuntimeValueAreReplaced(
 	serviceConfig := services.NewServiceConfigBuilder(
 		testContainerImageName,
 	).WithEntryPointArgs(
-		[]string{"-- {{kurtosis:foo_service.ip_address}} " + runtimeValue},
+		[]string{"-- " + runtimeValue},
 	).Build()
 
-	replacedServiceName, replacedServiceConfig, err := replaceMagicStrings(serviceNetwork, runtimeValueStore, serviceName, serviceConfig)
+	replacedServiceName, replacedServiceConfig, err := replaceMagicStrings(runtimeValueStore, serviceName, serviceConfig)
 	require.Nil(t, err)
 	require.Equal(t, serviceName, replacedServiceName)
-	require.Equal(t, "-- 172.17.3.13 8765", replacedServiceConfig.EntrypointArgs[0])
+	require.Equal(t, "-- 8765", replacedServiceConfig.EntrypointArgs[0])
 }
 
-func TestAddServiceShared_CmdArgsWithIpAddressAndRuntimeValueAreReplaced(t *testing.T) {
-	ipAddresses := map[service.ServiceName]net.IP{
-		"foo_service": net.ParseIP("172.17.3.13"),
-	}
-	serviceNetwork := service_network.NewMockServiceNetworkCustom(ipAddresses)
-
+func TestAddServiceShared_CmdArgsRuntimeValueAreReplaced(t *testing.T) {
 	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
 	stringValueUuid, err := runtimeValueStore.CreateValue()
 	require.Nil(t, err, "error creating a runtime value UUID")
@@ -64,21 +52,16 @@ func TestAddServiceShared_CmdArgsWithIpAddressAndRuntimeValueAreReplaced(t *test
 	serviceConfig := services.NewServiceConfigBuilder(
 		testContainerImageName,
 	).WithCmdArgs(
-		[]string{"bash", "-c", "ping {{kurtosis:foo_service.ip_address}} && sleep " + runtimeValue},
+		[]string{"bash", "-c", "sleep " + runtimeValue},
 	).Build()
 
-	replacedServiceName, replacedServiceConfig, err := replaceMagicStrings(serviceNetwork, runtimeValueStore, serviceName, serviceConfig)
+	replacedServiceName, replacedServiceConfig, err := replaceMagicStrings(runtimeValueStore, serviceName, serviceConfig)
 	require.Nil(t, err)
 	require.Equal(t, serviceName, replacedServiceName)
-	require.Equal(t, "ping 172.17.3.13 && sleep 999999", replacedServiceConfig.CmdArgs[2])
+	require.Equal(t, "sleep 999999", replacedServiceConfig.CmdArgs[2])
 }
 
-func TestAddServiceShared_EnvVarsWithIpAddressAndRuntimeValueAreReplaced(t *testing.T) {
-	ipAddresses := map[service.ServiceName]net.IP{
-		"foo_service": net.ParseIP("172.17.3.13"),
-	}
-	serviceNetwork := service_network.NewMockServiceNetworkCustom(ipAddresses)
-
+func TestAddServiceShared_EnvVarsWithRuntimeValueAreReplaced(t *testing.T) {
 	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
 	stringValueUuid, err := runtimeValueStore.CreateValue()
 	require.Nil(t, err, "error creating a runtime value UUID")
@@ -92,16 +75,14 @@ func TestAddServiceShared_EnvVarsWithIpAddressAndRuntimeValueAreReplaced(t *test
 	serviceConfig := services.NewServiceConfigBuilder(
 		testContainerImageName,
 	).WithEnvVars(map[string]string{
-		"IP_ADDRESS": "{{kurtosis:foo_service.ip_address}}",
-		"PORT":       runtimeValue,
+		"PORT": runtimeValue,
 	}).Build()
 
-	replacedServiceName, replacedServiceConfig, err := replaceMagicStrings(serviceNetwork, runtimeValueStore, serviceName, serviceConfig)
+	replacedServiceName, replacedServiceConfig, err := replaceMagicStrings(runtimeValueStore, serviceName, serviceConfig)
 	require.Nil(t, err)
 	require.Equal(t, serviceName, replacedServiceName)
 	expectedEnvVars := map[string]string{
-		"IP_ADDRESS": "172.17.3.13",
-		"PORT":       "8765",
+		"PORT": "8765",
 	}
 	require.Equal(t, expectedEnvVars, replacedServiceConfig.EnvVars)
 }
@@ -121,7 +102,7 @@ func TestAddServiceShared_ServiceNameWithRuntimeValuesAreReplaced(t *testing.T) 
 		testContainerImageName,
 	).Build()
 
-	replacedServiceName, _, err := replaceMagicStrings(nil, runtimeValueStore, serviceName, serviceConfig)
+	replacedServiceName, _, err := replaceMagicStrings(runtimeValueStore, serviceName, serviceConfig)
 	require.Nil(t, err)
 	require.Equal(t, service.ServiceName("database-1"), replacedServiceName)
 }
