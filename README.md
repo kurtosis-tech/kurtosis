@@ -291,6 +291,13 @@ $ alias kurtosis="$(pwd)/cli/cli/scripts/launch_cli.sh"
 $ kurtosis enclave add
 ```
 
+## Questions, help, or feedback
+
+If you have feedback for us or a question around how Kurtosis works and the [docs](https://docs.kurtosis.com) aren't enough, we're more than happy to help and chat about your use case via the following ways:
+- Get help in our [Discord server](https://discord.gg/Es7QHbY4)
+- Email us at [feedback@kurtosistech.com](mailto:feedback@kurtosistech.com)
+- Schedule a 1:1 session with us [here](https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding)
+
 <!-------- ONLY LINKS BELOW THIS POINT -------->
 [enclave]: https://docs.kurtosis.com/explanations/architecture#enclaves
 [docs]: https://docs.kurtosis.com
