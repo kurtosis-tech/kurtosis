@@ -189,8 +189,6 @@ jobs:
             - << pipeline.parameters.container-engine-lib-build-cache-key-prefix >>-{{ checksum "container-engine-lib/go.sum" }}
 
       - run: |
-          git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
-          go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
           container-engine-lib/scripts/build.sh
       - save_cache:
           key: << pipeline.parameters.container-engine-lib-build-cache-key-prefix >>-{{ checksum "container-engine-lib/go.sum" }}
@@ -241,7 +239,6 @@ jobs:
           version: "<< pipeline.parameters.docker-engine-version>>"
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
-      # Doesn't actually read any private repos so doesn't need the magic Go-private-repo Git config stuff
       - run: |
           core/files_artifacts_expander/scripts/build.sh
           source core/files_artifacts_expander/scripts/_constants.env
@@ -272,11 +269,7 @@ jobs:
       # Generate Kurtosis Version
       - run: "<<pipeline.parameters.generate-kurtosis-version-script-path>>"
 
-      # The 'git config' and 'go env' steps are to allow Go to read modules from our private Github repos
-      # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
       - run: |
-          git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
-          go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
           core/launcher/scripts/build.sh
 
   build_api_container_server:
@@ -311,11 +304,7 @@ jobs:
           keys:
             - << pipeline.parameters.core-server-build-cache-key-prefix>>-{{ checksum "core/server/go.sum" }}
 
-      # The 'git config' and 'go env' steps are to allow Go to read modules from our private Github repos
-      # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
       - run: |
-          git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
-          go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
           core/server/scripts/build.sh
           source core/server/scripts/_constants.env
           version_to_publish="$(kudet get-docker-tag)"
@@ -351,11 +340,7 @@ jobs:
       # Generate Kurtosis Version
       - run: "<<pipeline.parameters.generate-kurtosis-version-script-path>>"
 
-      # The 'git config' and 'go env' steps are to allow Go to read modules from our private Github repos
-      # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
       - run: |
-          git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
-          go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
           engine/launcher/scripts/build.sh
 
   build_engine_server:
@@ -386,11 +371,7 @@ jobs:
           keys:
             - << pipeline.parameters.engine-server-build-cache-key-prefix>>-{{ checksum "engine/server/go.sum" }}
 
-      # The 'git config' and 'go env' steps are to allow Go to read modules from our private Github repos
-      # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
       - run: |
-          git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
-          go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
           engine/server/scripts/build.sh
           source engine/server/scripts/_constants.env
           version_to_publish="$(kudet get-docker-tag)"
@@ -442,8 +423,6 @@ jobs:
             - << pipeline.parameters.cli-build-cache-key-prefix >>-{{ checksum "cli/cli/go.sum" }}
 
       - run: |
-          git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
-          go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
           cli/cli/scripts/build.sh true
 
       - save_cache:
@@ -892,7 +871,6 @@ jobs:
           version: "<< pipeline.parameters.docker-engine-version>>"
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
-      # Doesn't actually use any Kurtosis private repos so doesn't need the Go-private-repo Git config magic
       - run: core/files_artifacts_expander/scripts/build.sh
       - run: |
           set -euo pipefail
@@ -928,11 +906,7 @@ jobs:
           version: "<< pipeline.parameters.docker-engine-version>>"
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
-      # The 'git config' and 'go env' steps are to allow Go to read modules from our private Github repos
-      # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
       - run: |
-          git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
-          go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
           core/server/scripts/build.sh
       - run: |
           set -euo pipefail
@@ -969,11 +943,7 @@ jobs:
           version: "<< pipeline.parameters.docker-engine-version>>"
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
-      # The 'git config' and 'go env' steps are to allow Go to read modules from our private Github repos
-      # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
       - run: |
-          git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
-          go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
           engine/server/scripts/build.sh
 
       - run: |
@@ -1013,11 +983,7 @@ jobs:
           keys:
             - << pipeline.parameters.cli-build-cache-key-prefix >>-{{ checksum "cli/cli/go.sum" }}
 
-      # The 'git config' and 'go env' steps are to allow Go to read modules from our private Github repos
-      # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
       - run: |
-          git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
-          go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
           cli/cli/scripts/build.sh true true
 
       - save_cache:
@@ -1068,9 +1034,6 @@ workflows:
               ignore:
                 - main
       - build_container_engine_lib:
-          context:
-            # This pulls in KurtosisBot's Github token, so that we can read from our private repos
-            - github-user
           filters:
             branches:
               ignore:
@@ -1096,17 +1059,12 @@ workflows:
               ignore:
                 - main
       - build_core_launcher:
-          context:
-            # This pulls in KurtosisBot's Github token, so that we can read from our private repos
-            - github-user
           filters:
             branches:
               ignore:
                 - main
       - build_api_container_server:
           context:
-            # This pulls in KurtosisBot's Github token, so that we can read from our private repos
-            - github-user
             - docker-user
           filters:
             branches:
@@ -1114,17 +1072,12 @@ workflows:
                 - main
 
       - build_engine_launcher:
-          context:
-            # This pulls in KurtosisBot's Github token, so that we can read from our private repos
-            - github-user
           filters:
             branches:
               ignore:
                 - main
       - build_engine_server:
           context:
-            # This pulls in KurtosisBot's Github token, so that we can read from our private repos
-            - github-user
             - docker-user
           filters:
             branches:
@@ -1132,8 +1085,6 @@ workflows:
                 - main
 
       - build_cli:
-          context:
-            - github-user
           <<: *filters_ignore_main
       - test_basic_cli_functionality:
           name: "Test Basic CLI Functionality in Docker"
@@ -1146,17 +1097,6 @@ workflows:
             - build_engine_server
             - build_files_artifacts_expander
           <<: *filters_ignore_main
-#      - test_basic_cli_functionality:
-#          name: "Test Basic CLI Functionality in Kubernetes"
-#          cli-cluster-backend: "minikube"
-#          context:
-#            - docker-user
-#          requires:
-#            - build_cli
-#            - build_api_container_server
-#            - build_engine_server
-#            - build_files_artifacts_expander
-#          <<: *filters_ignore_main
 
       - build_golang_testsuite:
           name: "Build golang testsuite against Docker"
@@ -1169,17 +1109,6 @@ workflows:
             - build_engine_server
             - build_files_artifacts_expander
           <<: *filters_ignore_main
-#      - build_golang_testsuite:
-#          name: "Build golang testsuite against Kubernetes"
-#          cli-cluster-backend: "minikube"
-#          context:
-#            - docker-user
-#          requires:
-#            - build_cli
-#            - build_api_container_server
-#            - build_engine_server
-#            - build_files_artifacts_expander
-#          <<: *filters_ignore_main
 
       - build_typescript_testsuite:
           name: "Build typescript testsuite against Docker"
@@ -1192,17 +1121,6 @@ workflows:
             - build_engine_server
             - build_files_artifacts_expander
           <<: *filters_ignore_main
-#      - build_typescript_testsuite:
-#          name: "Build typescript testsuite against Kubernetes"
-#          cli-cluster-backend: "minikube"
-#          context:
-#            - docker-user
-#          requires:
-#            - build_cli
-#            - build_api_container_server
-#            - build_engine_server
-#            - build_files_artifacts_expander
-#          <<: *filters_ignore_main
 
       - test_old_enclave_continuity:
           context:
@@ -1246,7 +1164,6 @@ workflows:
               only: /^[0-9]+\.[0-9]+\.[0-9]+$/
       - publish_api_container_server_image:
           context:
-            - github-user
             - docker-user
           filters:
             branches:
@@ -1256,7 +1173,6 @@ workflows:
 
       - publish_engine_server_image:
           context:
-            - github-user
             - docker-user
           filters:
             branches:
@@ -1266,7 +1182,6 @@ workflows:
 
       - push_cli_artifacts:
           context:
-            - github-user
             - gemfury-publisher
           filters:
             branches:
