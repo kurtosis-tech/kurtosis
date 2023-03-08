@@ -4,7 +4,7 @@ sidebar_label: Quickstart
 slug: /quickstart
 ---
 
-These instructions will give you a brief quickstart of Kurtosis and should take 15 minutes. Get a personalized on-boarding session with us [here](https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding). 
+These instructions will give you a brief quickstart of Kurtosis and should take 15 minutes. If you prefer, schedule a personalized onboarding session with us [here](https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding). 
 
 :::tip
 All code blocks can be copied by hovering over the code block and clicking the clipboard icon that appears on the right.
