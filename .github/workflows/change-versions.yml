@@ -30,7 +30,7 @@ jobs:
           version="$(cat version.txt)"
           cd docs/
           # revert any other docs changes made in this release please pr so far
-          git restore .
+          git checkout main -- .
           git clean -fd .
           npm install
           npm run docusaurus docs:version $version
