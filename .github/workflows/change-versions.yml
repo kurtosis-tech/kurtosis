@@ -12,6 +12,7 @@ jobs:
       - uses: actions/checkout@v3
         with:
           token: "${{ secrets.RELEASER_TOKEN }}"
+          fetch-depth: 0
       - run: |
           echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
           sudo apt update
@@ -24,16 +25,16 @@ jobs:
           scripts/update-license-version.sh "$(cat version.txt)"
       - run: |
           sudo apt install nodejs npm
-      - name: Setup NPM for cutting new version of docs
+        name: Setup NPM for cutting new version of docs
       - name: Cut a New Docs version
         run: |
           version="$(cat version.txt)"
-          cd docs/
           # revert any other docs changes made in this release please pr so far
-          git restore .
-          git clean -fd .
+          git rm -r docs/
+          git checkout origin/main -- docs/
+          cd docs/
           npm install
-          npm run docusaurus docs:version $(version)
+          npm run docusaurus docs:version $version
       - uses: stefanzweifel/git-auto-commit-action@v4
         with:
           token: "${{ secrets.RELEASER_TOKEN }}"
