@@ -67,14 +67,14 @@ Stops the enclave with the given [identifier][identifier] and destroys the encla
 **Args**
 * `enclaveIdentifier`: [Identifier][identifier] of the enclave to destroy.
 
-### `clean(boolean shouldCleanAll) -> Set<EnclaveUUID> RemovedEnclaveUuids`
+### `clean(boolean shouldCleanAll) -> []EnclaveNameAndUuid RemovedEnclaveNameAndUuids`
 Destroys enclaves in the Kurtosis engine.
 
 **Args**
 * `shouldCleanAll`: If set to true, destroys running enclaves in addition to stopped ones.
 
 **Returns**
-* `RemovedEnclaveUuids`: A set of the removed enclave Uuids.
+* `RemovedEnclaveNameAndUuids`: A list of enclave uuids and names that were removed succesfully
 
 ### `getServiceLogs(String enclaveIdentifier, Set<ServiceUUID> serviceUuids, Boolean shouldFollowLogs, LogLineFilter logLineFilter) -> ServiceLogsStreamContent serviceLogsStreamContent`
 Get and start a service container logs stream (showed in ascending order, with the oldest line first) from services identified by their UUID.
@@ -340,7 +340,7 @@ Gets the Name and UUID of the current services in the enclave.
 
 * `serviceIdentifiers`: A map of objects containing a mapping of Name -> UUID for all the services inside the enclave
 
-### `uploadFiles(String pathToUpload, String artifactName)`
+### `uploadFiles(String pathToUpload, String artifactName) -> FileArtifaceUUID, FileArtifactName, Error`
 Takes a filepath or directory path that will be compressed and uploaded to the Kurtosis filestore for use with [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
 
 If a directory is specified, the contents of the directory will be uploaded to the archive without additional nesting. Empty directories cannot be uploaded.
@@ -352,7 +352,8 @@ If a directory is specified, the contents of the directory will be uploaded to t
 
 **Returns**
 
-* `UUID`: A unique ID as a string identifying the uploaded files, which can be used in [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
+* `FileArtifactUUID`: A unique ID as a string identifying the uploaded files, which can be used in [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
+* `FileArtifactName`: The name of the file-artifact, it is auto-generated if `artitfactName` is an empty string.
 
 ### `storeWebFiles(String urlToDownload, String artifactName)`
 Downloads a files-containing `.tgz` from the given URL to the Kurtosis engine, so that the files inside can be mounted inside a service's filespace at creation time via [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].

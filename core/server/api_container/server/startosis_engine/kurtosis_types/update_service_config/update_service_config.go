@@ -32,11 +32,11 @@ func NewUpdateServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstru
 			},
 		},
 
-		Instantiate: Instantiate,
+		Instantiate: instantiate,
 	}
 }
 
-func Instantiate(arguments *builtin_argument.ArgumentValuesSet) (kurtosis_type_constructor.KurtosisValueType, *startosis_errors.InterpretationError) {
+func instantiate(arguments *builtin_argument.ArgumentValuesSet) (kurtosis_type_constructor.KurtosisValueType, *startosis_errors.InterpretationError) {
 	kurtosisValueType, err := kurtosis_type_constructor.CreateKurtosisStarlarkTypeDefault(UpdateServiceConfigTypeName, arguments)
 	if err != nil {
 		return nil, err

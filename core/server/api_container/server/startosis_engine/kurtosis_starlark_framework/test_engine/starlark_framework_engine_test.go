@@ -29,6 +29,7 @@ func TestAllRegisteredBuiltins(t *testing.T) {
 	testKurtosisPlanInstruction(t, newExecTestCase3(t))
 	testKurtosisPlanInstruction(t, newSetConnectionTestCase(t))
 	testKurtosisPlanInstruction(t, newSetConnectionDefaultTestCase(t))
+	testKurtosisPlanInstruction(t, newPrintTestCase(t))
 	testKurtosisPlanInstruction(t, newRemoveConnectionTestCase(t))
 	testKurtosisPlanInstruction(t, newRemoveServiceTestCase(t))
 	testKurtosisPlanInstruction(t, newRenderSingleTemplateTestCase(t))
@@ -48,6 +49,16 @@ func TestAllRegisteredBuiltins(t *testing.T) {
 	testKurtosisHelper(t, newReadFileTestCase(t))
 	testKurtosisHelper(t, newImportModuleTestCase(t))
 
+	testKurtosisTypeConstructor(t, newConnectionConfigFullTestCase(t))
+	testKurtosisTypeConstructor(t, newConnectionConfigWithPacketDelayTestCase(t))
+	testKurtosisTypeConstructor(t, newConnectionConfigWithPacketLossTestCase(t))
+	testKurtosisTypeConstructor(t, newNormalPacketDelayDistributionFullTestCase(t))
+	testKurtosisTypeConstructor(t, newNormalPacketDelayDistributionMinimalTestCase(t))
+	testKurtosisTypeConstructor(t, newPortSpecFullTestCase(t))
+	testKurtosisTypeConstructor(t, newPortSpecMinimalTestCase(t))
+	testKurtosisTypeConstructor(t, newServiceConfigMinimalTestCase(t))
+	testKurtosisTypeConstructor(t, newServiceConfigFullTestCase(t))
+	testKurtosisTypeConstructor(t, newUniformPacketDelayDistributionTestCase(t))
 	testKurtosisTypeConstructor(t, newUpdateServiceConfigTestCase(t))
 }
 
@@ -56,7 +67,7 @@ func testKurtosisPlanInstruction(t *testing.T, builtin KurtosisPlanInstructionBa
 	var instructionQueue []kurtosis_instruction.KurtosisInstruction
 	thread := newStarlarkThread("framework-testing-engine")
 
-	predeclared := getBasePredeclaredDict()
+	predeclared := getBasePredeclaredDict(t)
 	// Add the KurtosisPlanInstruction that is being tested
 	instructionFromBuiltin := builtin.GetInstruction()
 	instructionWrapper := kurtosis_plan_instruction.NewKurtosisPlanInstructionWrapper(instructionFromBuiltin, &instructionQueue)
@@ -90,7 +101,7 @@ func testKurtosisHelper(t *testing.T, builtin KurtosisHelperBaseTest) {
 	testId := builtin.GetId()
 	thread := newStarlarkThread("framework-testing-engine")
 
-	predeclared := getBasePredeclaredDict()
+	predeclared := getBasePredeclaredDict(t)
 	// Add the KurtosisPlanInstruction that is being tested
 	helper := builtin.GetHelper()
 	predeclared[helper.GetName()] = starlark.NewBuiltin(helper.GetName(), helper.CreateBuiltin())
@@ -107,11 +118,12 @@ func testKurtosisTypeConstructor(t *testing.T, builtin KurtosisTypeConstructorBa
 	testId := builtin.GetId()
 	thread := newStarlarkThread("framework-testing-engine")
 
-	predeclared := getBasePredeclaredDict()
+	predeclared := getBasePredeclaredDict(t)
 
 	starlarkCode := builtin.GetStarlarkCode()
-	globals, err := starlark.ExecFile(thread, startosis_constants.PackageIdPlaceholderForStandaloneScript, codeToExecute(starlarkCode), predeclared)
-	require.Nil(t, err, "Error interpreting Starlark code for builtin '%s'", testId)
+	starlarkCodeToExecute := codeToExecute(starlarkCode)
+	globals, err := starlark.ExecFile(thread, startosis_constants.PackageIdPlaceholderForStandaloneScript, starlarkCodeToExecute, predeclared)
+	require.Nil(t, err, "Error interpreting Starlark code for builtin '%s'. Code was: \n%v", testId, starlarkCodeToExecute)
 	result := extractResultValue(t, globals)
 
 	builtin.Assert(result)
@@ -120,7 +132,9 @@ func testKurtosisTypeConstructor(t *testing.T, builtin KurtosisTypeConstructorBa
 	require.Equal(t, starlarkCode, serializedType)
 }
 
-func getBasePredeclaredDict() starlark.StringDict {
+func getBasePredeclaredDict(t *testing.T) starlark.StringDict {
+	kurtosisModule, err := builtins.KurtosisModule()
+	require.Nil(t, err)
 	// TODO: refactor this with the one we have in the interpreter
 	predeclared := starlark.StringDict{
 		// go-starlark add-ons
@@ -129,11 +143,11 @@ func getBasePredeclaredDict() starlark.StringDict {
 		time.Module.Name:                  time.Module,
 
 		// Kurtosis pre-built module containing Kurtosis constant types
-		builtins.KurtosisModuleName: builtins.KurtosisModule(),
+		builtins.KurtosisModuleName: kurtosisModule,
 	}
 	// Add all Kurtosis types
-	for _, kurtosisTypeConstructors := range startosis_engine.KurtosisTypeConstructors() {
-		predeclared[kurtosisTypeConstructors.Name()] = kurtosisTypeConstructors
+	for _, kurtosisTypeConstructor := range startosis_engine.KurtosisTypeConstructors() {
+		predeclared[kurtosisTypeConstructor.Name()] = kurtosisTypeConstructor
 	}
 	return predeclared
 }

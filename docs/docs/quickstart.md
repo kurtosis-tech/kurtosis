@@ -412,7 +412,7 @@ UUID           Name          Ports                             Status
 a1b43c21f0e7   my-nginx      http: 80/tcp -> 127.0.0.1:57361   RUNNING
 ```
 
-Now in your browser open the `my-nginx` endpoint with the `/sample` URL path (e.g. `http://127.0.0.1:63749/sample`, though your URL will be different). You'll see the `hello-world` service responding through the NginX proxy that we've configured:
+Now in your browser open the `my-nginx` endpoint with the `/sample` URL path (e.g. `http://127.0.0.1:57361/sample`, though your URL will be different). You'll see the `hello-world` service responding through the NginX proxy that we've configured:
 
 ```
 It works!

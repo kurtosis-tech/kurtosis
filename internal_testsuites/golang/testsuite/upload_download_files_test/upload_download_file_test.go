@@ -52,8 +52,9 @@ func TestUploadAndDownloadFiles(t *testing.T) {
 
 	pathToUpload := filePathsMap[diskDirKeyword]
 	require.NotEmptyf(t, pathToUpload, "Failed to store uploadable path in path map.")
-	artifactUuid, err := enclaveCtx.UploadFiles(filePathsMap[diskDirKeyword], testArtifactName)
+	artifactUuid, artifactName, err := enclaveCtx.UploadFiles(filePathsMap[diskDirKeyword], testArtifactName)
 	require.NoError(t, err)
+	require.Equal(t, string(artifactName), testArtifactName)
 
 	firstArchiveRootKeyword := fmt.Sprintf("%s%v", archiveRootFileKeywordPattern, 0)
 	firstArchiveRootFilename := filePathsMap[firstArchiveRootKeyword]
