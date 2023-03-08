@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/render_templates"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
 	"testing"
@@ -44,7 +45,7 @@ func (t renderSingleTemplateTestCase) GetId() string {
 }
 
 func (t renderSingleTemplateTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
-	return render_templates.NewRenderTemplatesInstruction(t.serviceNetwork)
+	return render_templates.NewRenderTemplatesInstruction(t.serviceNetwork, runtime_value_store.NewRuntimeValueStore())
 }
 
 func (t renderSingleTemplateTestCase) GetStarlarkCode() string {
