@@ -94,17 +94,13 @@ func (recipe *ExecRecipe) Execute(
 	runtimeValueStore *runtime_value_store.RuntimeValueStore,
 	serviceName service.ServiceName,
 ) (map[string]starlark.Comparable, error) {
-	var commandWithIPAddressAndRuntimeValue []string
+	var commandWithRuntimeValue []string
 	for _, subCommand := range recipe.command {
-		maybeSubCommandWithIPAddressAndHostname, err := magic_string_helper.ReplaceIPAddressAndHostnameInString(subCommand, serviceNetwork, commandKey)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred while replacing IP address in the command of the exec recipe")
-		}
-		maybeSubCommandWithRuntimeValuesAndIPAddress, err := magic_string_helper.ReplaceRuntimeValueInString(maybeSubCommandWithIPAddressAndHostname, runtimeValueStore)
+		maybeSubCommandWithRuntimeValues, err := magic_string_helper.ReplaceRuntimeValueInString(subCommand, runtimeValueStore)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred while replacing runtime values in the command of the exec recipe")
 		}
-		commandWithIPAddressAndRuntimeValue = append(commandWithIPAddressAndRuntimeValue, maybeSubCommandWithRuntimeValuesAndIPAddress)
+		commandWithRuntimeValue = append(commandWithRuntimeValue, maybeSubCommandWithRuntimeValues)
 	}
 
 	serviceNameStr := string(serviceName)
@@ -112,7 +108,7 @@ func (recipe *ExecRecipe) Execute(
 		return nil, stacktrace.NewError("The service name parameter can't be an empty string")
 	}
 
-	exitCode, commandOutput, err := serviceNetwork.ExecCommand(ctx, serviceNameStr, commandWithIPAddressAndRuntimeValue)
+	exitCode, commandOutput, err := serviceNetwork.ExecCommand(ctx, serviceNameStr, commandWithRuntimeValue)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to execute command '%v' on service '%v'", recipe.command, serviceName)
 	}
