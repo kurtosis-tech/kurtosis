@@ -1,0 +1,21 @@
+on:
+  push:
+    branches: [main]
+  tags-ignore:
+    - '*/v/*'
+jobs:
+  tag_golang_package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: get-version
+        run: export CURRENT_VERSION="$(cat version.txt)"
+      - name: tag-golang-package
+        uses: pkgdeps/git-tag-action@v2
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_repo: ${{ github.repository }}
+          version: ${{ env.CURRENT_VERSION }}
+          git_commit_sha: ${{ github.sha }}
+          git_tag_prefix: "golang/v"
