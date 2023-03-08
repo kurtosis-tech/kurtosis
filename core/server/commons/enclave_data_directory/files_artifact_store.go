@@ -8,6 +8,7 @@ package enclave_data_directory
 import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
+	"github.com/kurtosis-tech/kurtosis/name_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -39,8 +40,7 @@ func newFilesArtifactStore(absoluteDirpath string, dirpathRelativeToDataDirRoot 
 		artifactNameToArtifactUuid:      make(map[string]FilesArtifactUUID),
 		shortenedUuidToFullUuid:         make(map[string][]FilesArtifactUUID),
 		maxRetriesToGetFileArtifactName: maxFileArtifactNameRetriesDefault,
-		//TODO: in next pr will assign this to name-generator method
-		generateNatureThemeName: nil,
+		generateNatureThemeName:         name_generator.GenerateNatureThemeNameForFileArtifacts,
 	}
 }
 
@@ -156,6 +156,8 @@ func (store FilesArtifactStore) GenerateUniqueNameForFileArtifact() string {
 	var maybeUniqueName string
 
 	store.mutex.RLock()
+	defer store.mutex.RUnlock()
+
 	// try to find unique nature theme random generator
 	for i := 0; i <= store.maxRetriesToGetFileArtifactName; i++ {
 		maybeUniqueName = store.generateNatureThemeName()
@@ -164,20 +166,17 @@ func (store FilesArtifactStore) GenerateUniqueNameForFileArtifact() string {
 			return maybeUniqueName
 		}
 	}
-	store.mutex.RUnlock()
 
 	// if unique name not found, append a random number after the last found random name
 	additionalSuffix := 1
 	maybeUniqueNameWithRandomNumber := fmt.Sprintf("%v-%v", maybeUniqueName, additionalSuffix)
 
-	store.mutex.RLock()
 	_, found := store.artifactNameToArtifactUuid[maybeUniqueNameWithRandomNumber]
 	for found {
 		additionalSuffix = additionalSuffix + 1
 		maybeUniqueNameWithRandomNumber = fmt.Sprintf("%v-%v", maybeUniqueName, additionalSuffix)
 		_, found = store.artifactNameToArtifactUuid[maybeUniqueNameWithRandomNumber]
 	}
-	store.mutex.RUnlock()
 
 	logrus.Warnf("Cannot find unique name generator, therefore using a name with a number %v", maybeUniqueNameWithRandomNumber)
 	return maybeUniqueNameWithRandomNumber

@@ -503,7 +503,12 @@ func (network *DefaultServiceNetwork) UpdateService(
 			continue
 		}
 
-		previousServicePartition, found := network.topology.GetServicePartitions()[serviceName]
+		servicePartitions, err := network.topology.GetServicePartitions()
+		if err != nil {
+			failedServicesPool[serviceName] = stacktrace.Propagate(err, "An error occurred while fetching service partitions mapping for service '%v'", serviceName)
+			continue
+		}
+		previousServicePartition, found := servicePartitions[serviceName]
 		if !found {
 			failedServicesPool[serviceName] = stacktrace.NewError("Error updating service '%s' as this service does not exist", serviceName)
 			continue
@@ -551,7 +556,14 @@ func (network *DefaultServiceNetwork) UpdateService(
 			if _, found := successfullyUpdatedService[serviceName]; found {
 				continue
 			}
-			currentPartitionId, found := network.topology.GetServicePartitions()[serviceName]
+
+			servicePartitions, err := network.topology.GetServicePartitions()
+			if err != nil {
+				logrus.Errorf("An error happened updating service '%s' and it needed to be moved back to partition '%s', but an error happened during this operation. Error was:\n%v", serviceName, partitionIDToRollbackTo, err)
+				return
+			}
+
+			currentPartitionId, found := servicePartitions[serviceName]
 			if !found {
 				// service does not exist, nothing to roll back
 				continue
@@ -894,10 +906,7 @@ func (network *DefaultServiceNetwork) GetExistingAndHistoricalServiceIdentifiers
 	return network.allExistingAndHistoricalIdentifiers
 }
 
-// GetUniqueNameForFileArtifact
-// TODO: It is not wired with the flow, in next PR it will be called from Interpret methods
-//  from starlark instructions like upload_file, render_templates
-// and will return unique artifact name after 5 retries, same as enclave id generator
+// GetUniqueNameForFileArtifact : this will return unique artifact name after 5 retries, same as enclave id generator
 func (network *DefaultServiceNetwork) GetUniqueNameForFileArtifact() (string, error) {
 	filesArtifactStore, err := network.enclaveDataDir.GetFilesArtifactStore()
 	if err != nil {
@@ -1097,8 +1106,12 @@ func (network *DefaultServiceNetwork) registerService(
 // As registerService rolls back things if a failure happens halfway, we should never end up with a service
 // half-registered, but it's worth calling out that this method with throw if called with such a service
 func (network *DefaultServiceNetwork) unregisterService(ctx context.Context, serviceName service.ServiceName) error {
-	partitionId, partitionFound := network.topology.GetServicePartitions()[serviceName]
-	err := network.topology.RemoveService(serviceName)
+	servicePartitions, err := network.topology.GetServicePartitions()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while fetching service partitions mapping")
+	}
+	partitionId, partitionFound := servicePartitions[serviceName]
+	err = network.topology.RemoveService(serviceName)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while removing service '%v' from the network topology", serviceName)
 	}
@@ -1485,11 +1498,15 @@ func (network *DefaultServiceNetwork) addServiceToTopology(serviceName service.S
 
 func (network *DefaultServiceNetwork) moveServiceToPartitionInTopology(serviceName service.ServiceName, partitionID service_network_types.PartitionID) error {
 	isOperationSuccessful := false
-	serviceCurrentPartition, found := network.topology.GetServicePartitions()[serviceName]
+	servicePartitions, err := network.topology.GetServicePartitions()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while fetching service partitions mapping")
+	}
+	serviceCurrentPartition, found := servicePartitions[serviceName]
 	if !found {
 		return stacktrace.NewError("Service with name '%s' not found in the topology", serviceName)
 	}
-	err := network.topology.RemoveService(serviceName)
+	err = network.topology.RemoveService(serviceName)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while removing service '%v' from the network topology", serviceName)
 	}
