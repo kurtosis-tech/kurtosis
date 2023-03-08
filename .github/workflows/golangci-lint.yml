@@ -29,11 +29,6 @@ jobs:
           sudo apt install kudet
       # Generate versions
       - run: scripts/generate-kurtosis-version.sh
-      - name: Configure git for private modules
-        env:
-          RELEASER_TOKEN: ${{ secrets.RELEASER_TOKEN }}
-        run:  git config --global url."https://${RELEASER_TOKEN}@github.com/".insteadOf "https://github.com/"
-      - run:  go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
       - name: lint-container-engine-lib
         uses: golangci/golangci-lint-action@v3
         with:
