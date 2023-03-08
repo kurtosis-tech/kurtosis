@@ -22,6 +22,18 @@ jobs:
           api/scripts/update-package-versions.sh "$(cat version.txt)"
           api/scripts/update-own-version-constants.sh "$(cat version.txt)"
           scripts/update-license-version.sh "$(cat version.txt)"
+      - run: |
+          sudo apt install nodejs npm
+      - name: Setup NPM for cutting new version of docs
+      - name: Cut a New Docs version
+        run: |
+          version="$(cat version.txt)"
+          cd docs/
+          # revert any other docs changes made in this release please pr so far
+          git restore .
+          git clean -fd .
+          npm install
+          npm run docusaurus docs:version $(version)
       - uses: stefanzweifel/git-auto-commit-action@v4
         with:
           token: "${{ secrets.RELEASER_TOKEN }}"
