@@ -30,6 +30,11 @@ const config = {
         docs: {
           sidebarPath: require.resolve('./sidebars.js'),
           routeBasePath: '/',
+          versions: {
+            current: {
+              label: 'main',
+            }
+          }
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
