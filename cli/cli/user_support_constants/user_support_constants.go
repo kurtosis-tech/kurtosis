@@ -34,7 +34,7 @@ const (
 var urlsToValidateInTest = []string{
 	DocumentationUrl,
 	DiscordUrl,
-	//GithubIssuesUrl, //TODO uncomment this when we publish the repo
+	GithubIssuesUrl,
 	CLICommandsReferenceURL,
 	StarlarkPackagesReferenceURL,
 	StarlarkLocatorsReferenceURL,
