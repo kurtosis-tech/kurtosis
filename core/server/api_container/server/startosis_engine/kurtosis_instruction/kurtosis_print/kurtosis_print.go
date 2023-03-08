@@ -84,9 +84,5 @@ func (builtin *PrintCapabilities) Execute(_ context.Context, _ *builtin_argument
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Error replacing runtime value '%v'", serializedMsg)
 	}
-	maybeSerializedArgsWithIPAddressAndHostname, err := magic_string_helper.ReplaceIPAddressAndHostnameInString(maybeSerializedArgsWithRuntimeValue, builtin.serviceNetwork, PrintBuiltinName)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "Error replacing IP address value '%v'", serializedMsg)
-	}
-	return maybeSerializedArgsWithIPAddressAndHostname, nil
+	return maybeSerializedArgsWithRuntimeValue, nil
 }

@@ -247,11 +247,7 @@ func (recipe *HttpRequestRecipe) Execute(
 	var response *http.Response
 	var err error
 	logrus.Debugf("Running HTTP request recipe '%v'", recipe)
-	maybeRecipeBodyWithIPAddressAndHostname, err := magic_string_helper.ReplaceIPAddressAndHostnameInString(recipe.body, serviceNetwork, bodyKey)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while replacing IP address in the body of the http recipe")
-	}
-	maybeRecipeBodyWithIPAddressAndRuntimeValue, err := magic_string_helper.ReplaceRuntimeValueInString(maybeRecipeBodyWithIPAddressAndHostname, runtimeValueStore)
+	recipeBodyWithRuntimeValue, err := magic_string_helper.ReplaceRuntimeValueInString(recipe.body, runtimeValueStore)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while replacing runtime values in the body of the http recipe")
 	}
@@ -273,7 +269,7 @@ func (recipe *HttpRequestRecipe) Execute(
 		recipe.method,
 		recipe.contentType,
 		recipe.endpoint,
-		maybeRecipeBodyWithIPAddressAndRuntimeValue,
+		recipeBodyWithRuntimeValue,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred when running HTTP request recipe")
