@@ -12,6 +12,7 @@ jobs:
       - uses: actions/checkout@v3
         with:
           token: "${{ secrets.RELEASER_TOKEN }}"
+          fetch-depth: 0
       - run: |
           echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
           sudo apt update
