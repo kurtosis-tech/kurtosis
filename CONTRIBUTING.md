@@ -17,7 +17,7 @@ If you notice an issue in our docs (e.g. typo, grammar, conflicting information)
 
 ### Questions, help, or feedback
 
-If you have a question around how Kurtosis works and the [docs](https://docs.kurtosis.com) aren't enough, we're more than happy to help via the following ways:
+If you have a question around how Kurtosis works and the [docs](https://docs.kurtosis.com) aren't enough, we're more than happy to help and chat about your use case via the following ways:
 - Get help in our [Discord server](https://discord.gg/Es7QHbY4)
 - Email us at [feedback@kurtosistech.com](mailto:feedback@kurtosistech.com)
 - Schedule dedicated help in a [1:1 session with us](https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding)
