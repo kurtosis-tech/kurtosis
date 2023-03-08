@@ -8,7 +8,6 @@ require (
 	github.com/docker/go-connections v0.4.0
 	github.com/gammazero/workerpool v1.1.2
 	github.com/google/uuid v1.3.0
-	github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-1f73d028840d
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.4
