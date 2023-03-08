@@ -3,7 +3,6 @@ package docker_kurtosis_backend
 import (
 	"context"
 	"github.com/docker/go-connections/nat"
-	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
@@ -16,6 +15,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/network_helpers"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
@@ -76,21 +76,10 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		enclaveNetwork.GetGatewayIp(): true,
 	}
 
-	freeIpAddrProvider := lib.NewFreeIpAddrTracker(
-		logrus.StandardLogger(),
-		networkCidr,
-		alreadyTakenIps,
-	)
-	ipAddr, err := freeIpAddrProvider.GetFreeIpAddr()
+	ipAddr, err := network_helpers.GetFreeIpAddrFromSubnet(alreadyTakenIps, networkCidr)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting an IP address for the API container")
 	}
-	shouldFreeIpAddr := true
-	defer func() {
-		if shouldFreeIpAddr {
-			freeIpAddrProvider.ReleaseIpAddr(ipAddr)
-		}
-	}()
 
 	// Set the own-IP environment variable
 	if _, found := customEnvVars[ownIpAddressEnvVar]; found {
