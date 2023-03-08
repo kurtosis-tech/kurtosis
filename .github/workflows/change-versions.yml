@@ -29,10 +29,10 @@ jobs:
       - name: Cut a New Docs version
         run: |
           version="$(cat version.txt)"
-          cd docs/
           # revert any other docs changes made in this release please pr so far
-          git checkout origin/main -- .
-          git clean -fd .
+          git rm -r docs/
+          git checkout origin/main -- docs/
+          cd docs/
           npm install
           npm run docusaurus docs:version $version
       - uses: stefanzweifel/git-auto-commit-action@v4
