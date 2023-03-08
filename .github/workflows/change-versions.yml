@@ -24,7 +24,7 @@ jobs:
           scripts/update-license-version.sh "$(cat version.txt)"
       - run: |
           sudo apt install nodejs npm
-      - name: Setup NPM for cutting new version of docs
+        name: Setup NPM for cutting new version of docs
       - name: Cut a New Docs version
         run: |
           version="$(cat version.txt)"
