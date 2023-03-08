@@ -1183,6 +1183,7 @@ workflows:
       - push_cli_artifacts:
           context:
             - gemfury-publisher
+            - github-user
           filters:
             branches:
               ignore: /.*/
