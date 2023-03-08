@@ -26,5 +26,5 @@ Kurtosis is designed to optimize **environment** management and control across t
 With Kurtosis, developers can build with local sandbox environments that demonstrate how their code will work when integrated with the rest of the system. In addition, advanced end-to-end testing workflows are available to teams using the manipulation tooling in the Kurtosis engine runtime which allow them to do end-to-end testing like fault-tolerance, regression, and performance tests.
 
 :::info
-To schedule a live on-boarding session with us, go [here.](https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding)
+To schedule a live onboarding session with us, go [here].(https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding)
 :::
