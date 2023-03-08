@@ -26,9 +26,7 @@ type EngineServiceClient interface {
 	// Endpoint for getting information about the engine, which is also what we use to verify that the engine has become available
 	GetEngineInfo(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetEngineInfoResponse, error)
 	// ==============================================================================================
-	//
-	//	Enclave Management
-	//
+	//                                   Enclave Management
 	// ==============================================================================================
 	// Creates a new Kurtosis Enclave
 	CreateEnclave(ctx context.Context, in *CreateEnclaveArgs, opts ...grpc.CallOption) (*CreateEnclaveResponse, error)
@@ -156,9 +154,7 @@ type EngineServiceServer interface {
 	// Endpoint for getting information about the engine, which is also what we use to verify that the engine has become available
 	GetEngineInfo(context.Context, *emptypb.Empty) (*GetEngineInfoResponse, error)
 	// ==============================================================================================
-	//
-	//	Enclave Management
-	//
+	//                                   Enclave Management
 	// ==============================================================================================
 	// Creates a new Kurtosis Enclave
 	CreateEnclave(context.Context, *CreateEnclaveArgs) (*CreateEnclaveResponse, error)

@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/port_spec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
@@ -35,7 +36,10 @@ func makeAddServiceInterpretationReturnValue(serviceConfig *kurtosis_core_rpc_ap
 		transportProtocol := port.GetTransportProtocol()
 		maybeApplicationProtocol := port.GetMaybeApplicationProtocol()
 
-		portSpec := kurtosis_types.NewPortSpec(number, transportProtocol, maybeApplicationProtocol)
+		portSpec, interpretationErr := port_spec.CreatePortSpec(number, transportProtocol, maybeApplicationProtocol)
+		if interpretationErr != nil {
+			return nil, interpretationErr
+		}
 		if err := portSpecsDict.SetKey(starlark.String(portId), portSpec); err != nil {
 			return nil, startosis_errors.NewInterpretationError("An error occurred while creating a port spec for values "+
 				"(number: '%v', transport_protocol: '%v', application_protocol: '%v') the add instruction return value",

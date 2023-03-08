@@ -369,14 +369,18 @@ func (apicService ApiContainerService) GetExistingAndHistoricalServiceIdentifier
 	return &kurtosis_core_rpc_api_bindings.GetExistingAndHistoricalServiceIdentifiersResponse{AllIdentifiers: allIdentifiers}, nil
 }
 
-func (apicService ApiContainerService) UploadFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.UploadFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse, error) {
+func (apicService ApiContainerService) UploadFilesArtifact(_ context.Context, args *kurtosis_core_rpc_api_bindings.UploadFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse, error) {
+	maybeArtifactName := args.GetName()
+	if maybeArtifactName == "" {
+		maybeArtifactName = apicService.filesArtifactStore.GenerateUniqueNameForFileArtifact()
+	}
 
-	filesArtifactUuid, err := apicService.serviceNetwork.UploadFilesArtifact(args.Data, args.Name)
+	filesArtifactUuid, err := apicService.serviceNetwork.UploadFilesArtifact(args.Data, maybeArtifactName)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while trying to upload the file")
 	}
 
-	response := &kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse{Uuid: string(filesArtifactUuid)}
+	response := &kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse{Uuid: string(filesArtifactUuid), Name: maybeArtifactName}
 	return response, nil
 }
 
