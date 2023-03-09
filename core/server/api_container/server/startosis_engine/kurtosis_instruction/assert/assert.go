@@ -121,7 +121,7 @@ func (builtin *AssertCapabilities) Validate(_ *builtin_argument.ArgumentValuesSe
 }
 
 func (builtin *AssertCapabilities) Execute(_ context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
-	currentValue, err := magic_string_helper.GetRuntimeValueFromString(builtin.runtimeValue, builtin.runtimeValueStore)
+	currentValue, err := magic_string_helper.GetOrReplaceRuntimeValueFromString(builtin.runtimeValue, builtin.runtimeValueStore)
 	if err != nil {
 		return "", err
 	}
@@ -129,7 +129,7 @@ func (builtin *AssertCapabilities) Execute(_ context.Context, _ *builtin_argumen
 	targetStr, ok := builtin.target.(starlark.String)
 	if ok {
 		// target ws a string. Apply runtime value replacement in case it contains one
-		targetWithReplacedRuntimeValuesMaybe, err = magic_string_helper.GetRuntimeValueFromString(targetStr.GoString(), builtin.runtimeValueStore)
+		targetWithReplacedRuntimeValuesMaybe, err = magic_string_helper.GetOrReplaceRuntimeValueFromString(targetStr.GoString(), builtin.runtimeValueStore)
 		if err != nil {
 			return "", err
 		}

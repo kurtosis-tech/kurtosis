@@ -3,8 +3,8 @@ name: Deploy documentation
 
 on:
   push:
-    tags:
-      - '[0-9]+.[0-9]+.[0-9]+'
+    branches:
+      - 'main'
 
 jobs:
   publish:

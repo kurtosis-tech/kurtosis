@@ -30,6 +30,11 @@ const config = {
         docs: {
           sidebarPath: require.resolve('./sidebars.js'),
           routeBasePath: '/',
+          versions: {
+            current: {
+              label: 'main',
+            }
+          }
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
@@ -72,6 +77,11 @@ const config = {
             position: 'left',
             label: 'SDK',
             activeBasePath: '/sdk'
+          },
+          {
+            type: 'docsVersionDropdown',
+            position: 'right',
+            dropdownActiveClassDisabled: true,
           },
           {
             href: 'https://github.com/kurtosis-tech/kurtosis/issues/new/',
