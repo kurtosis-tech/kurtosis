@@ -1,3 +1,4 @@
+name: "Tag API Golang Releases"
 on:
   push:
     tags:
