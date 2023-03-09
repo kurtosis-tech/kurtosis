@@ -83,7 +83,7 @@ brews:
     ids:
       - cli
     tap:
-      owner: tedim52
+      owner: kurtosis-tech
       name: homebrew-tap
     commit_author:
       name: kurtosisbot
@@ -109,7 +109,7 @@ brews:
     ids:
       - cli
     tap:
-      owner: tedim52
+      owner: kurtosis-tech
       name: homebrew-tap
     commit_author:
       name: kurtosisbot
