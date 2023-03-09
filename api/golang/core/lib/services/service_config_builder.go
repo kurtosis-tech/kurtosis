@@ -8,6 +8,7 @@ import (
 )
 
 type FilesArtifactUUID string
+type FileArtifactName string
 
 const (
 	defaultSubnetwork               = "default"

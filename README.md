@@ -80,8 +80,6 @@ Running the script gives us an enclave with three services:
 kurtosis run script.star '{"replica_count": 3}'
 ```
 ```console
-WARN[2023-02-10T13:32:32-03:00] You are running an old version of the Kurtosis CLI; we suggest you to update it to the latest version, '0.66.3'
-WARN[2023-02-10T13:32:32-03:00] You can manually upgrade the CLI tool following these instructions: https://docs.kurtosis.com/install#upgrading
 INFO[2023-02-10T13:32:32-03:00] Creating a new enclave for Starlark to run inside...
 INFO[2023-02-10T13:32:37-03:00] Enclave 'misty-bird' created successfully
 
@@ -105,8 +103,6 @@ That can be inspected by running
 kurtosis enclave inspect misty-bird
 ```
 ```console
-WARN[2023-02-10T13:33:19-03:00] You are running an old version of the Kurtosis CLI; we suggest you to update it to the latest version, '0.66.3'
-WARN[2023-02-10T13:33:19-03:00] You can manually upgrade the CLI tool following these instructions: https://docs.kurtosis.com/install#upgrading
 UUID:                                 eeb28363fc53
 Enclave Name:                         misty-bird
 Enclave Status:                       RUNNING
@@ -290,6 +286,13 @@ If you want tab completion on the recently built CLI, you can alias it to `kurto
 $ alias kurtosis="$(pwd)/cli/cli/scripts/launch_cli.sh"
 $ kurtosis enclave add
 ```
+
+## Questions, help, or feedback
+
+If you have feedback for us or a question around how Kurtosis works and the [docs](https://docs.kurtosis.com) aren't enough, we're more than happy to help and chat about your use case via the following ways:
+- Get help in our [Discord server](https://discord.gg/Es7QHbY4)
+- Email us at [feedback@kurtosistech.com](mailto:feedback@kurtosistech.com)
+- Schedule a 1:1 session with us [here](https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding)
 
 <!-------- ONLY LINKS BELOW THIS POINT -------->
 [enclave]: https://docs.kurtosis.com/explanations/architecture#enclaves

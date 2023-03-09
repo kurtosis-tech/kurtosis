@@ -13,13 +13,9 @@ const (
 
 func PlanModule(
 	instructionsQueue *[]kurtosis_instruction.KurtosisInstruction,
-	oldKurtosisInstructions []*starlark.Builtin,
 	kurtosisPlanInstructions []*kurtosis_plan_instruction.KurtosisPlanInstruction,
 ) *starlarkstruct.Module {
 	moduleBuiltins := starlark.StringDict{}
-	for _, oldInstruction := range oldKurtosisInstructions {
-		moduleBuiltins[oldInstruction.Name()] = oldInstruction
-	}
 	for _, planInstruction := range kurtosisPlanInstructions {
 		wrappedPlanInstruction := kurtosis_plan_instruction.NewKurtosisPlanInstructionWrapper(planInstruction, instructionsQueue)
 		moduleBuiltins[planInstruction.GetName()] = starlark.NewBuiltin(planInstruction.GetName(), wrappedPlanInstruction.CreateBuiltin())

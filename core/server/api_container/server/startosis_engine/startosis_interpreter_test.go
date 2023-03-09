@@ -175,12 +175,11 @@ def run(plan):
 	datastore_service = plan.add_service(service_name = service_name, config = config)
 	plan.print("The grpc port is " + str(datastore_service.ports["grpc"].number))
 	plan.print("The grpc transport protocol is " + datastore_service.ports["grpc"].transport_protocol)
-	plan.print("The datastore service ip address is " + datastore_service.ip_address)
 `
 
 	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, fmt.Sprintf(script, testServiceName), startosis_constants.EmptyInputArgs)
 	require.Nil(t, interpretationError)
-	require.Len(t, instructions, 6)
+	require.Len(t, instructions, 5)
 
 	assertInstructionTypeAndPosition(t, instructions[2], add_service.AddServiceBuiltinName, startosis_constants.PackageIdPlaceholderForStandaloneScript, 15, 38)
 
@@ -188,9 +187,8 @@ def run(plan):
 Adding service example-datastore-server
 The grpc port is 1323
 The grpc transport protocol is TCP
-The datastore service ip address is %v
 `
-	validateScriptOutputFromPrintInstructions(t, instructions, fmt.Sprintf(expectedOutput, testServiceIpAddress))
+	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutput)
 }
 
 func TestStartosisInterpreter_ValidSimpleScriptWithApplicationProtocol(t *testing.T) {
@@ -289,12 +287,13 @@ def run(plan):
 
 	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 	require.Empty(t, instructions)
-	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
+	expectedError := startosis_errors.NewInterpretationErrorWithCauseAndCustomMsg(
+		startosis_errors.NewInterpretationError(`The following argument(s) could not be parsed or did not pass validation: {"transport_protocol":"Invalid argument value for 'transport_protocol': 'TCPK'. Valid values are TCP, SCTP, UDP"}`),
 		[]startosis_errors.CallFrame{
 			*startosis_errors.NewCallFrame("run", startosis_errors.NewScriptPosition(startosis_constants.PackageIdPlaceholderForStandaloneScript, 11, 20)),
 			*startosis_errors.NewCallFrame("PortSpec", startosis_errors.NewScriptPosition("<builtin>", 0, 0)),
 		},
-		"Evaluation error: Port protocol should be one of TCP, SCTP, UDP",
+		"Evaluation error: Cannot construct 'PortSpec' from the provided arguments.",
 	).ToAPIType()
 	require.Equal(t, expectedError, interpretationError)
 }
@@ -314,21 +313,21 @@ def run(plan):
 	config = ServiceConfig(
 		image = "` + testContainerImageName + `",
 		ports = {
-			"grpc": PortSpec(number = "1234", protocol = "TCP") # port number should be an int
+			"grpc": PortSpec(number = "1234", transport_protocol = "TCP") # port number should be an int
 		}
 	)
 	plan.add_service(service_name = service_name, config = config)
 `
-	expectedErrorStr := `Evaluation error: Cannot construct a PortSpec from the provided arguments. Error was: 
-PortSpec: for parameter "number": got string, want int`
+
 	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 	require.Empty(t, instructions)
-	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
+	expectedError := startosis_errors.NewInterpretationErrorWithCauseAndCustomMsg(
+		startosis_errors.NewInterpretationError(`The following argument(s) could not be parsed or did not pass validation: {"number":"the argument 'number' could not be parsed because their type ('starlark.String') did not match the expected ('starlark.Int')"}`),
 		[]startosis_errors.CallFrame{
 			*startosis_errors.NewCallFrame("run", startosis_errors.NewScriptPosition(startosis_constants.PackageIdPlaceholderForStandaloneScript, 11, 20)),
 			*startosis_errors.NewCallFrame("PortSpec", startosis_errors.NewScriptPosition("<builtin>", 0, 0)),
 		},
-		expectedErrorStr,
+		"Evaluation error: Cannot construct 'PortSpec' from the provided arguments.",
 	).ToAPIType()
 	require.Equal(t, expectedError, interpretationError)
 }
@@ -768,6 +767,26 @@ def run(plan):
 	require.Len(t, instructions, 2)
 }
 
+// TODO remove this when we deprecate the service_name field in
+func TestStartosisInterpreter_ValidExecRecipeWithoutServiceName(t *testing.T) {
+	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
+	defer packageContentProvider.RemoveAll()
+	testRuntimeValueStore := runtime_value_store.NewRuntimeValueStore()
+	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, testRuntimeValueStore)
+	script := `
+def run(plan):
+	plan.print("Executing mkdir!")
+	recipe = ExecRecipe(
+		command = ["mkdir", "/tmp/foo"]
+	)
+	plan.exec(recipe = recipe)
+`
+
+	_, _, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
+
+	require.Nil(t, interpretationError)
+}
+
 func TestStartosisInterpreter_InvalidExecRecipeMissingRequiredCommand(t *testing.T) {
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
@@ -1069,8 +1088,9 @@ def run(plan):
 func validateScriptOutputFromPrintInstructions(t *testing.T, instructions []kurtosis_instruction.KurtosisInstruction, expectedOutput string) {
 	scriptOutput := strings.Builder{}
 	for _, instruction := range instructions {
-		switch instruction.(type) {
-		case *kurtosis_print.PrintInstruction:
+
+		switch instruction.GetCanonicalInstruction().InstructionName {
+		case kurtosis_print.PrintBuiltinName:
 			instructionOutput, err := instruction.Execute(context.Background())
 			require.Nil(t, err, "Error running the print statements")
 			if instructionOutput != nil {

@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/port_spec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"go.starlark.net/starlark"
 	"math"
@@ -295,9 +296,13 @@ func convertPortMapEntry(attrNameForLogging string, key starlark.Value, value st
 	if !ok {
 		return "", nil, startosis_errors.NewInterpretationError("Unable to convert key of '%s' dictionary '%v' to string", attrNameForLogging, dictForLogging)
 	}
-	valuePortSpec, ok := value.(*kurtosis_types.PortSpec)
+	valuePortSpec, ok := value.(*port_spec.PortSpec)
 	if !ok {
 		return "", nil, startosis_errors.NewInterpretationError("Unable to convert value of '%s' dictionary '%v' to a port object", attrNameForLogging, dictForLogging)
 	}
-	return keyStr.GoString(), valuePortSpec.ToKurtosisType(), nil
+	apiPortSpec, interpretationErr := valuePortSpec.ToKurtosisType()
+	if interpretationErr != nil {
+		return "", nil, interpretationErr
+	}
+	return keyStr.GoString(), apiPortSpec, nil
 }

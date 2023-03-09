@@ -39,8 +39,9 @@ require github.com/bazelbuild/buildtools v0.0.0-20221110131218-762712d8ce3f
 
 require (
 	github.com/briandowns/spinner v1.20.0
-	github.com/fatih/color v1.7.0
+	github.com/fatih/color v1.13.0
 	github.com/mholt/archiver v3.1.1+incompatible
+	github.com/savioxavier/termlink v1.2.1
 )
 
 require (
@@ -63,8 +64,8 @@ require (
 	github.com/imdario/mergo v0.3.11 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-1f73d028840d // indirect
-	github.com/mattn/go-colorable v0.1.2 // indirect
+	github.com/jwalton/go-supportscolor v1.1.0 // indirect
+	github.com/mattn/go-colorable v0.1.9 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/nwaples/rardecode v1.1.3 // indirect

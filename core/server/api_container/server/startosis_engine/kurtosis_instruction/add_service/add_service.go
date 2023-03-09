@@ -65,6 +65,8 @@ func NewAddService(serviceNetwork service_network.ServiceNetwork, runtimeValueSt
 
 				serviceName:   "",  // populated at interpretation time
 				serviceConfig: nil, // populated at interpretation time
+
+				resultUuid: "", // populated at interpretation time
 			}
 		},
 
@@ -82,6 +84,8 @@ type AddServiceCapabilities struct {
 	serviceName     service.ServiceName
 	serviceConfig   *kurtosis_core_rpc_api_bindings.ServiceConfig
 	readyConditions *service_config.ReadyConditions
+
+	resultUuid string
 }
 
 func (builtin *AddServiceCapabilities) Interpret(arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -107,8 +111,12 @@ func (builtin *AddServiceCapabilities) Interpret(arguments *builtin_argument.Arg
 	builtin.serviceName = service.ServiceName(serviceName.GoString())
 	builtin.serviceConfig = apiServiceConfig
 	builtin.readyConditions = readyConditions
+	builtin.resultUuid, err = builtin.runtimeValueStore.CreateValue()
+	if err != nil {
+		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to create runtime value to hold '%v' command return values", AddServiceBuiltinName)
+	}
 
-	returnValue, interpretationErr := makeAddServiceInterpretationReturnValue(builtin.serviceName, builtin.serviceConfig)
+	returnValue, interpretationErr := makeAddServiceInterpretationReturnValue(builtin.serviceConfig, builtin.resultUuid)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
@@ -124,7 +132,7 @@ func (builtin *AddServiceCapabilities) Validate(_ *builtin_argument.ArgumentValu
 }
 
 func (builtin *AddServiceCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
-	replacedServiceName, replacedServiceConfig, err := replaceMagicStrings(builtin.serviceNetwork, builtin.runtimeValueStore, builtin.serviceName, builtin.serviceConfig)
+	replacedServiceName, replacedServiceConfig, err := replaceMagicStrings(builtin.runtimeValueStore, builtin.serviceName, builtin.serviceConfig)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred replace a magic string in '%s' instruction arguments for service '%s'. Execution cannot proceed", AddServiceBuiltinName, builtin.serviceName)
 	}
@@ -132,10 +140,6 @@ func (builtin *AddServiceCapabilities) Execute(ctx context.Context, _ *builtin_a
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Unexpected error occurred starting service '%s'", replacedServiceName)
 	}
-
-	serviceUUID := startedService.GetRegistration().GetUUID()
-
-	instructionResult := fmt.Sprintf("Service '%s' added with service UUID '%s'", replacedServiceName, serviceUUID)
 
 	readyConditions := builtin.readyConditions
 	recipe := readyConditions.GetRecipe()
@@ -158,15 +162,13 @@ func (builtin *AddServiceCapabilities) Execute(ctx context.Context, _ *builtin_a
 		target,
 		interval,
 		timeout,
-
 	)
 	if err != nil {
 		return "", stacktrace.Propagate(
 			err,
-			"An error occurred checking if service '%v' with UUID '%v' is ready, using "+
+			"An error occurred checking if service '%v' is ready, using "+
 				"recipe '%+v', value field '%v', assertion '%v', target '%v', interval '%s' and time-out '%s'.",
 			replacedServiceName,
-			serviceUUID,
 			recipe,
 			field,
 			assertion,
@@ -175,14 +177,16 @@ func (builtin *AddServiceCapabilities) Execute(ctx context.Context, _ *builtin_a
 			timeout,
 		)
 	}
-	logrus.Debugf("Checking if service with UUID '%v' is ready took %d tries (%v in total). "+
+	logrus.Debugf("Checking if service '%v' is ready took %d tries (%v in total). "+
 		"Assertion passed with following:\n%s",
-		serviceUUID,
+		replacedServiceName,
 		tries,
 		time.Since(startTime),
 		recipe.ResultMapToString(lastResult),
 	)
 
+	fillAddServiceReturnValueWithRuntimeValues(startedService, builtin.resultUuid, builtin.runtimeValueStore)
+	instructionResult := fmt.Sprintf("Service '%s' added with service UUID '%s'", replacedServiceName, startedService.GetRegistration().GetUUID())
 	return instructionResult, nil
 }
 
