@@ -8,5 +8,5 @@ const createEnclaveTitle = "Created enclave:"
 
 func PrintEnclaveName(enclaveName string) {
 	createdEnclaveMsg := fmt.Sprintf("%v %v", createEnclaveTitle, enclaveName)
-	GetSpotlightMessagePrinter().Print(createdEnclaveMsg)
+	GetSpotlightMessagePrinter().PrintWithLogger(createdEnclaveMsg)
 }
