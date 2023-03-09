@@ -105,7 +105,7 @@ brews:
       The kurtosis CLI is installed with tab completion support. For more details visit https://docs.kurtosis.com/.
 
   # creates a versioned brew formula, enabling installation of specific versions of kurtosis cli
-  - name: kurtosis-cli@{{ .Major }}.{{ .Minor }}.{{ .Patch }}
+  - name: kurtosis-cli@{{ .Tag }}
     ids:
       - cli
     tap:
