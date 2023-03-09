@@ -1,8 +1,10 @@
 package builtin_argument
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
 	"reflect"
 	"strings"
@@ -131,19 +133,26 @@ func parseArguments(argumentDefinitions []*BuiltinArgument, builtinName string, 
 			continue
 		}
 		if !reflect.TypeOf(argValue).AssignableTo(reflect.TypeOf(argumentDefinition.ZeroValueProvider())) {
-			invalidArgs[argName] = fmt.Errorf("the argument '%s' could not be parsed because their type did not match the expected", argName)
+			invalidArgs[argName] = fmt.Errorf("the argument '%s' could not be parsed because their type ('%s') did not match the expected ('%s')",
+				argName,
+				reflect.TypeOf(argValue),
+				reflect.TypeOf(argumentDefinition.ZeroValueProvider()))
 			continue
 		}
 		if argumentDefinition.Validator != nil {
 			if interpretationErr := argumentDefinition.Validator(argValue); interpretationErr != nil {
 				// TODO: probably worth making parseArguments return an interpretationError to avoid conversion here
-				invalidArgs[argName] = fmt.Errorf("the argument '%s' did not pass validation. Error was: \n%v", argName, interpretationErr.Error())
+				invalidArgs[argName] = fmt.Errorf(interpretationErr.Error())
 				continue
 			}
 		}
 	}
 	if len(invalidArgs) > 0 {
-		return nil, fmt.Errorf("The following argument(s) could not be parsed or did not pass validation: \n%v", invalidArgs)
+		serializedErrors, err := serializeErrorsMap(invalidArgs)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Some errors happened parsing the arguments, but those errors could not be serialized. This is a Kurtosis internal bug. Error was: %v", err)
+		}
+		return nil, fmt.Errorf("The following argument(s) could not be parsed or did not pass validation: %s", serializedErrors)
 	}
 	return storedValues, nil
 }
@@ -163,4 +172,16 @@ func getArgumentIndex(arguments *ArgumentValuesSet, argumentName string) (int, b
 
 func makeOptional(name string) string {
 	return fmt.Sprintf("%s?", name)
+}
+
+func serializeErrorsMap(errors map[string]error) (string, error) {
+	errorsStr := map[string]string{}
+	for key, err := range errors {
+		errorsStr[key] = err.Error()
+	}
+	serializedErrors, err := json.Marshal(errorsStr)
+	if err != nil {
+		return "", err
+	}
+	return string(serializedErrors), nil
 }

@@ -434,6 +434,9 @@ message UploadFilesArtifactArgs {
 message UploadFilesArtifactResponse {
   // UUID of the files artifact, for use when referencing it in the future
   string uuid = 1;
+
+  // UUID of the files artifact, for use when referencing it in the future
+  string name = 2;
 }
 
 
