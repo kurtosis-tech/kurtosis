@@ -108,7 +108,18 @@ func run(_ context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) err
 		doesUserFillMsg = false
 		userMsg = ""
 	}
-	userEncodedMsg := &url.URL{Path: userMsg}
+	userEncodedMsg := &url.URL{
+		Path:        userMsg,
+		Scheme:      "",
+		Opaque:      "",
+		User:        nil,
+		Host:        "",
+		RawPath:     "",
+		ForceQuery:  false,
+		RawQuery:    "",
+		Fragment:    "",
+		RawFragment: "",
+	}
 
 	metricsUserIdStore := metrics_user_id_store.GetMetricsUserIDStore()
 	metricsUserId, err := metricsUserIdStore.GetUserID()
