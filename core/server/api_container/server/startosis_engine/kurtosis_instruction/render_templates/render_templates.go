@@ -12,6 +12,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
@@ -34,7 +35,7 @@ const (
 	jsonParsingModuleId     = "Unused module id"
 )
 
-func NewRenderTemplatesInstruction(serviceNetwork service_network.ServiceNetwork) *kurtosis_plan_instruction.KurtosisPlanInstruction {
+func NewRenderTemplatesInstruction(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return &kurtosis_plan_instruction.KurtosisPlanInstruction{
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
 			Name: RenderTemplatesBuiltinName,
@@ -57,7 +58,9 @@ func NewRenderTemplatesInstruction(serviceNetwork service_network.ServiceNetwork
 
 		Capabilities: func() kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities {
 			return &RenderTemplatesCapabilities{
-				serviceNetwork:                    serviceNetwork,
+				serviceNetwork:    serviceNetwork,
+				runtimeValueStore: runtimeValueStore,
+
 				artifactName:                      "",  // will be populated at interpretation time
 				templatesAndDataByDestRelFilepath: nil, // will be populated at interpretation time
 			}
@@ -74,6 +77,8 @@ type RenderTemplatesCapabilities struct {
 
 	artifactName                      string
 	templatesAndDataByDestRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData
+
+	runtimeValueStore *runtime_value_store.RuntimeValueStore
 }
 
 func (builtin *RenderTemplatesCapabilities) Interpret(arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -115,11 +120,11 @@ func (builtin *RenderTemplatesCapabilities) Execute(_ context.Context, _ *builti
 	for relFilePath := range builtin.templatesAndDataByDestRelFilepath {
 		templateStr := builtin.templatesAndDataByDestRelFilepath[relFilePath].Template
 		dataAsJson := builtin.templatesAndDataByDestRelFilepath[relFilePath].DataAsJson
-		dataAsJsonMaybeIPAddressAndHostnameReplaced, err := magic_string_helper.ReplaceIPAddressAndHostnameInString(dataAsJson, builtin.serviceNetwork, TemplateAndDataByDestinationRelFilepathArg)
+		dataAsJsonWithRuntimeValueReplaced, err := magic_string_helper.ReplaceRuntimeValueInString(dataAsJson, builtin.runtimeValueStore)
 		if err != nil {
 			return "", stacktrace.Propagate(err, "An error occurred while replacing IP address with place holder in the render_template instruction for target '%v'", relFilePath)
 		}
-		builtin.templatesAndDataByDestRelFilepath[relFilePath] = binding_constructors.NewTemplateAndData(templateStr, dataAsJsonMaybeIPAddressAndHostnameReplaced)
+		builtin.templatesAndDataByDestRelFilepath[relFilePath] = binding_constructors.NewTemplateAndData(templateStr, dataAsJsonWithRuntimeValueReplaced)
 	}
 
 	artifactUUID, err := builtin.serviceNetwork.RenderTemplates(builtin.templatesAndDataByDestRelFilepath, builtin.artifactName)

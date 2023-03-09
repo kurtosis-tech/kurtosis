@@ -20,7 +20,7 @@ Use cases for Kurtosis include:
 
 Docker and Kubernetes are each great at serving developers in different parts of the development cycle: Docker for development/testing, Kubernetes for production. However, the separation between the two entails different distributed app definitions, and different tooling. In dev/test, this means Docker Compose and Docker observability tooling. In production, this means Helm definitions and manually-configured observability tools like Istio, Datadog, or Honeycomb.
 
-![Why Kurtosis](../static/img/home/kurtosis-utility.png)
+![Why Kurtosis](@site/static/img/home/kurtosis-utility.png)
 
 Kurtosis aims at one level of abstraction higher. Developers can define their distributed applications in Kurtosis, and Kurtosis will handle:
 
