@@ -90,8 +90,7 @@ brews:
     commit_msg_template: "Automated formula update for the CLI, version {{ .Tag }}"
     homepage: "https://www.kurtosistech.com"
     description: "CLI for managing Kurtosis environments."
-    # One day, we'll probably want to put a license
-    # license: SOME-SPDX-LICENSE
+    license: "BSL"
 
     # NOTE: Goreleaser *should* automatically detect the binaries packaged inside the archives being installed by the Homebrew formula, but it doesn't due to:
     #  https://github.com/goreleaser/goreleaser/issues/2488
@@ -116,8 +115,7 @@ brews:
     commit_msg_template: "Automated formula created for the CLI, version {{ .Tag }}"
     homepage: "https://www.kurtosistech.com"
     description: "CLI for managing Kurtosis environments."
-    # One day, we'll probably want to put a license
-    # license: SOME-SPDX-LICENSE
+    license: "BSL"
 
     # NOTE: Goreleaser *should* automatically detect the binaries packaged inside the archives being installed by the Homebrew formula, but it doesn't due to:
     #  https://github.com/goreleaser/goreleaser/issues/2488
