@@ -273,7 +273,7 @@ func AddAPIServiceToPartition(ctx context.Context, serviceName services.ServiceN
 		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred creating the datastore config file")
 	}
 	artifactName := fmt.Sprintf(artifactNamePrefix, time.Now().Unix())
-	_, err = enclaveCtx.UploadFiles(configFilepath, artifactName)
+	_, _, err = enclaveCtx.UploadFiles(configFilepath, artifactName)
 	if err != nil {
 		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred uploading the datastore config file")
 	}
