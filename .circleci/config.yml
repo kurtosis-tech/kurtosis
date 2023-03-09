@@ -896,8 +896,8 @@ jobs:
 
       # Generate Kurtosis Version
       - run: |
-          tag="$(git describe --tag)"
-          "<<pipeline.parameters.generate-kurtosis-version-script-path>>" $tag
+          version="$(cat version.txt)"
+          "<<pipeline.parameters.generate-kurtosis-version-script-path>>" $version
 
 
       - setup_remote_docker:
@@ -936,8 +936,8 @@ jobs:
 
       # Generate Kurtosis Version
       - run: |
-          tag="$(git describe --tag)"
-          "<<pipeline.parameters.generate-kurtosis-version-script-path>>" $tag
+          version="$(cat version.txt)"
+          "<<pipeline.parameters.generate-kurtosis-version-script-path>>" $version
 
       # Cache our dependencies
       - restore_cache:
