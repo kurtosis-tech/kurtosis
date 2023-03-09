@@ -1,0 +1,21 @@
+name: "Tag API Golang Releases"
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+jobs:
+  tag_golang_package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: Get current version
+        run: echo "CURRENT_VERSION=$(cat version.txt)" >> $GITHUB_ENV
+      - name: Tag golang package
+        uses: pkgdeps/git-tag-action@v2
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_repo: ${{ github.repository }}
+          version: ${{ env.CURRENT_VERSION }}
+          git_commit_sha: ${{ github.sha }}
+          git_tag_prefix: "api/golang/v"

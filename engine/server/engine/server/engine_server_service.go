@@ -115,12 +115,12 @@ func (service *EngineServerService) DestroyEnclave(ctx context.Context, args *ku
 }
 
 func (service *EngineServerService) Clean(ctx context.Context, args *kurtosis_engine_rpc_api_bindings.CleanArgs) (*kurtosis_engine_rpc_api_bindings.CleanResponse, error) {
-	enclaveUuids, err := service.enclaveManager.Clean(ctx, args.ShouldCleanAll)
+	removedEnclaveUuidsAndNames, err := service.enclaveManager.Clean(ctx, args.ShouldCleanAll)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while cleaning enclaves")
 	}
 
-	response := &kurtosis_engine_rpc_api_bindings.CleanResponse{RemovedEnclaveUuids: enclaveUuids}
+	response := &kurtosis_engine_rpc_api_bindings.CleanResponse{RemovedEnclaveNameAndUuids: removedEnclaveUuidsAndNames}
 	return response, nil
 }
 

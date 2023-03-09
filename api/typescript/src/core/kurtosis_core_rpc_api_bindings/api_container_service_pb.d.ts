@@ -1033,6 +1033,9 @@ export class UploadFilesArtifactResponse extends jspb.Message {
   getUuid(): string;
   setUuid(value: string): UploadFilesArtifactResponse;
 
+  getName(): string;
+  setName(value: string): UploadFilesArtifactResponse;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): UploadFilesArtifactResponse.AsObject;
   static toObject(includeInstance: boolean, msg: UploadFilesArtifactResponse): UploadFilesArtifactResponse.AsObject;
@@ -1044,6 +1047,7 @@ export class UploadFilesArtifactResponse extends jspb.Message {
 export namespace UploadFilesArtifactResponse {
   export type AsObject = {
     uuid: string,
+    name: string,
   }
 }
 
