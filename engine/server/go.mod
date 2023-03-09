@@ -38,7 +38,6 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/uuid v1.3.0 // indirect
-	github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-1f73d028840d // indirect
 	github.com/kurtosis-tech/kurtosis/kurtosis_version v0.0.0 // indirect; indirect Locally generated on build
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.1 // indirect
@@ -52,9 +51,6 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-require (
-	github.com/goombaio/namegenerator v0.0.0-20181006234301-989e774b106e
-	github.com/gorilla/websocket v1.4.2
-)
+require github.com/gorilla/websocket v1.4.2
 
 require github.com/stretchr/objx v0.5.0 // indirect
