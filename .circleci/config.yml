@@ -960,6 +960,7 @@ workflows:
     jobs:
       # -- build jobs ------------------------------------------
       - kurtosis-docs-checker/check-docs:
+          dir-to-exclude: "docs/*"
           should-check-changelog: false
           markdown-link-check-config-json: |
             {
@@ -977,17 +978,8 @@ workflows:
                         "pattern": "https://github.com/kurtosis-tech/docs"
                     },
                     {
-                        "pattern": "https://github.com/kurtosis-tech/kurtosis"
-                    },
-                    {
                         "pattern": "https://www.notion.so/kurtosistech.*"
                     },
-                    {
-                        "pattern": "https://github.com/kurtosis-tech/style-guide"
-                    },
-                    {
-                        "pattern": "^@site.*"
-                    }
                 ]
             }
           filters:
