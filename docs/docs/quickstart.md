@@ -22,7 +22,7 @@ docker images
 which will list the most recently created images on your machine.
 
 :::tip
-Having and using a DockerHub account is *optional* for this quickstart. However, if at any point in this quickstart you see the following error message:
+Having and using a DockerHub account is *optional* for this quickstart. However, while very unlikely, if at any point in this quickstart you see the following error message:
 ```
 Error response from daemon: toomanyrequests: You have reached your pull rate limit. You may increase the limit by authenticating and upgrading: https://www.docker.com/increase-rate-limit
 ```
@@ -30,7 +30,7 @@ then you will need to login to your DockerHub account by running:
 ```
 docker login
 ```
-The reason this happens is because [DockerHub restricts downloads from users who aren't logged in](https://www.docker.com/blog/what-you-need-to-know-about-upcoming-docker-hub-rate-limiting/) to 100 images downloaded per 6 hours. If applicable, you can create a DockerHub account [here](https://hub.docker.com/signup).
+The reason this happens is because [DockerHub restricts downloads from users who aren't logged in](https://www.docker.com/blog/what-you-need-to-know-about-upcoming-docker-hub-rate-limiting/) to 100 images downloaded per 6 hours. If applicable, you can create a DockerHub account [here](https://hub.docker.com/signup). 
 :::
 
 ### Install the Kurtosis CLI
