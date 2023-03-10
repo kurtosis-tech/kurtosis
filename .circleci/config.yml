@@ -82,7 +82,7 @@ version: 2.1
 
 orbs:
   npm-publisher: uraway/npm-publisher@0.2.0
-  kurtosis-docs-checker: kurtosis-tech/docs-checker@0.2.3
+  kurtosis-docs-checker: kurtosis-tech/docs-checker@0.2.4
 
 executors:
   ubuntu_vm:
@@ -960,6 +960,7 @@ workflows:
     jobs:
       # -- build jobs ------------------------------------------
       - kurtosis-docs-checker/check-docs:
+          dir-to-exclude: '"./docs/*"'
           should-check-changelog: false
           markdown-link-check-config-json: |
             {
@@ -977,16 +978,7 @@ workflows:
                         "pattern": "https://github.com/kurtosis-tech/docs"
                     },
                     {
-                        "pattern": "https://github.com/kurtosis-tech/kurtosis"
-                    },
-                    {
                         "pattern": "https://www.notion.so/kurtosistech.*"
-                    },
-                    {
-                        "pattern": "https://github.com/kurtosis-tech/style-guide"
-                    },
-                    {
-                        "pattern": "^@site.*"
                     }
                 ]
             }
