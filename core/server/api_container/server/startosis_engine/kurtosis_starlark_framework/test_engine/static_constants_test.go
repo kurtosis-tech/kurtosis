@@ -66,4 +66,11 @@ var (
 	TestCpuAllocation = uint64(2000)
 
 	TestMemoryAllocation = uint64(1024)
+
+	TestReadyConditionsRecipeEndpoint = "/endpoint?input=data"
+	TestReadyConditionsField          = "code"
+	TestReadyConditionsAssertion      = "=="
+	TestReadyConditionsTarget         = "200"
+
+	TestGetRequestMethod = "GET"
 )

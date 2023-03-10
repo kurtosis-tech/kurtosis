@@ -141,33 +141,22 @@ func (builtin *AddServiceCapabilities) Execute(ctx context.Context, _ *builtin_a
 		return "", stacktrace.Propagate(err, "Unexpected error occurred starting service '%s'", replacedServiceName)
 	}
 
+	//check for service readiness
 	readyConditions := builtin.readyConditions
-	recipe := readyConditions.GetRecipe()
-	field := readyConditions.GetField()
-	assertion := readyConditions.GetAssertion()
-	target := readyConditions.GetTarget()
-	interval := readyConditions.GetInterval()
-	timeout := readyConditions.GetTimeout()
+	if readyConditions != nil {
+		recipe := readyConditions.GetRecipe()
+		field := readyConditions.GetField()
+		assertion := readyConditions.GetAssertion()
+		target := readyConditions.GetTarget()
+		interval := readyConditions.GetInterval()
+		timeout := readyConditions.GetTimeout()
 
-	startTime := time.Now()
+		startTime := time.Now()
 
-	lastResult, tries, err := shared_helpers.ExecuteServiceAssertionWithRecipe(
-		ctx,
-		builtin.serviceNetwork,
-		builtin.runtimeValueStore,
-		replacedServiceName,
-		recipe,
-		field,
-		assertion,
-		target,
-		interval,
-		timeout,
-	)
-	if err != nil {
-		return "", stacktrace.Propagate(
-			err,
-			"An error occurred checking if service '%v' is ready, using "+
-				"recipe '%+v', value field '%v', assertion '%v', target '%v', interval '%s' and time-out '%s'.",
+		lastResult, tries, err := shared_helpers.ExecuteServiceAssertionWithRecipe(
+			ctx,
+			builtin.serviceNetwork,
+			builtin.runtimeValueStore,
 			replacedServiceName,
 			recipe,
 			field,
@@ -176,14 +165,28 @@ func (builtin *AddServiceCapabilities) Execute(ctx context.Context, _ *builtin_a
 			interval,
 			timeout,
 		)
+		if err != nil {
+			return "", stacktrace.Propagate(
+				err,
+				"An error occurred checking if service '%v' is ready, using "+
+					"recipe '%+v', value field '%v', assertion '%v', target '%v', interval '%s' and time-out '%s'.",
+				replacedServiceName,
+				recipe,
+				field,
+				assertion,
+				target,
+				interval,
+				timeout,
+			)
+		}
+		logrus.Debugf("Checking if service '%v' is ready took %d tries (%v in total). "+
+			"Assertion passed with following:\n%s",
+			replacedServiceName,
+			tries,
+			time.Since(startTime),
+			recipe.ResultMapToString(lastResult),
+		)
 	}
-	logrus.Debugf("Checking if service '%v' is ready took %d tries (%v in total). "+
-		"Assertion passed with following:\n%s",
-		replacedServiceName,
-		tries,
-		time.Since(startTime),
-		recipe.ResultMapToString(lastResult),
-	)
 
 	fillAddServiceReturnValueWithRuntimeValues(startedService, builtin.resultUuid, builtin.runtimeValueStore)
 	instructionResult := fmt.Sprintf("Service '%s' added with service UUID '%s'", replacedServiceName, startedService.GetRegistration().GetUUID())

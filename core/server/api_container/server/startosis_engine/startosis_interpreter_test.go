@@ -767,26 +767,6 @@ def run(plan):
 	require.Len(t, instructions, 2)
 }
 
-// TODO remove this when we deprecate the service_name field in
-func TestStartosisInterpreter_ValidExecRecipeWithoutServiceName(t *testing.T) {
-	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
-	defer packageContentProvider.RemoveAll()
-	testRuntimeValueStore := runtime_value_store.NewRuntimeValueStore()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, testRuntimeValueStore)
-	script := `
-def run(plan):
-	plan.print("Executing mkdir!")
-	recipe = ExecRecipe(
-		command = ["mkdir", "/tmp/foo"]
-	)
-	plan.exec(recipe = recipe)
-`
-
-	_, _, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
-
-	require.Nil(t, interpretationError)
-}
-
 func TestStartosisInterpreter_InvalidExecRecipeMissingRequiredCommand(t *testing.T) {
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()

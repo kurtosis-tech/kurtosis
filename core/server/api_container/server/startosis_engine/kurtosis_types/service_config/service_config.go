@@ -115,7 +115,7 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 				{
 					Name:              ReadyConditionsAttr,
 					IsOptional:        true,
-					ZeroValueProvider: builtin_argument.ZeroValueProvider[ReadyConditions],
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*ReadyConditions],
 					Validator:         nil,
 				},
 			},

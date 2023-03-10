@@ -16,6 +16,9 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
+	"io"
+	"net/http"
+	"strings"
 	"testing"
 )
 
@@ -73,6 +76,31 @@ func (t *addServiceTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtosi
 		nil,
 	)
 
+	serviceNetwork.EXPECT().HttpRequestService(
+		mock.Anything,
+		string(TestServiceName),
+		TestPrivatePortId,
+		TestGetRequestMethod,
+		"",
+		TestReadyConditionsRecipeEndpoint,
+		"",
+	).Times(1).Return(&http.Response{
+		Status:           "200 OK",
+		StatusCode:       200,
+		Proto:            "HTTP/1.1",
+		ProtoMajor:       1,
+		ProtoMinor:       1,
+		Header:           http.Header{},
+		Request:          &http.Request{Method: TestGetRequestMethod},
+		Close:            true,
+		ContentLength:    -1,
+		Body:             io.NopCloser(strings.NewReader("{}")),
+		Trailer:          nil,
+		TransferEncoding: nil,
+		Uncompressed:     true,
+		TLS:              nil,
+	}, nil)
+
 	return add_service.NewAddService(serviceNetwork, runtimeValueStore)
 }
 
@@ -88,7 +116,13 @@ func (t *addServiceTestCase) GetStarlarkCode() string {
 		"private_ip_address_placeholder=%q, " +
 		"subnetwork=%q, " +
 		"cpu_allocation=%d, " +
-		"memory_allocation=%d)"
+		"memory_allocation=%d, " +
+		"ready_conditions=ReadyConditions(" +
+		"recipe=GetHttpRequestRecipe(port_id=%q, endpoint=%q, extract={})," +
+		" field=%q," +
+		" assertion=%q," +
+		" target_value=%s" +
+		"))"
 	serviceConfig := fmt.Sprintf(serviceConfigStarlarkStrTemplate,
 		TestContainerImageName,
 		TestPrivatePortId, TestPrivatePortNumber, TestPrivatePortProtocolStr, TestPrivateApplicationProtocol,
@@ -100,7 +134,13 @@ func (t *addServiceTestCase) GetStarlarkCode() string {
 		TestPrivateIPAddressPlaceholder,
 		TestSubnetwork,
 		TestCpuAllocation,
-		TestMemoryAllocation)
+		TestMemoryAllocation,
+		TestPrivatePortId,
+		TestReadyConditionsRecipeEndpoint,
+		TestReadyConditionsField,
+		TestReadyConditionsAssertion,
+		TestReadyConditionsTarget,
+	)
 	return fmt.Sprintf(`%s(%s=%q, %s=%s)`, add_service.AddServiceBuiltinName, add_service.ServiceNameArgName, TestServiceName, add_service.ServiceConfigArgName, serviceConfig)
 }
 

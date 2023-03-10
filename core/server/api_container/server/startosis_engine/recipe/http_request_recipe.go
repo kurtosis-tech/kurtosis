@@ -101,7 +101,7 @@ func (recipe *HttpRequestRecipe) String() string {
 	if extractors.Len() > 0 {
 		buffer.WriteString(fmt.Sprintf("%v)", extractors))
 	} else {
-		buffer.WriteString(fmt.Sprintf("%q)", ""))
+		buffer.WriteString(fmt.Sprintf("%s)", "{}"))
 	}
 	return buffer.String()
 }
