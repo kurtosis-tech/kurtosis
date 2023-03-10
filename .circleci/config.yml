@@ -979,7 +979,7 @@ workflows:
                     },
                     {
                         "pattern": "https://www.notion.so/kurtosistech.*"
-                    },
+                    }
                 ]
             }
           filters:
