@@ -49,7 +49,7 @@ The process for installing tab completion is specific to each shell:
             export BREW_PREFIX="$(brew --prefix)"
             [[ -r "${BREW_PREFIX}/etc/profile.d/bash_completion.sh" ]] && source "${BREW_PREFIX}/etc/profile.d/bash_completion.sh"
             ```
-        1. Reload your shell
+        1. Close and re-open your terminal window to reload your shell.
         1. Verify that you now have the completion installed:
             ```bash
             type _init_completion
@@ -77,7 +77,7 @@ The process for installing tab completion is specific to each shell:
         # Add tab-completion to Kurtosis alias
         complete -F __start_kurtosis kt
         ```
-1. Reload your shell
+1. Close and re-open your terminal window to reload your shell and apply the changes.
 
 </details>
 
@@ -95,8 +95,8 @@ The process for installing tab completion is specific to each shell:
     # Add tab-completion to Kurtosis alias
     compdef __start_kurtosis kt
     ```
-1. Reload your shell
-1. If you get an error like `complete:13: command not found: compdef`, add the following to the top of your `~/.zshrc` and reload your shell again:
+1. Close and re-open your terminal window to reload your shell and apply the changes.
+1. If you get an error like `complete:13: command not found: compdef`, add the following to the top of your `~/.zshrc` and close and re-open your terminal window to reload your shell:
     ```zsh
     autoload -Uz compinit
     compinit
@@ -112,7 +112,7 @@ The process for installing tab completion is specific to each shell:
     # Add Kurtosis tab-completion
     kurtosis completion fish | source
     ```
-1. Reload your shell
+1. Close and re-open your terminal window to reload your shell and apply the changes.
 
 </details>
 
@@ -138,3 +138,7 @@ tab completion code (specific to the shell) and then sourcing that code into the
    ```
 
 </details>
+
+:::tip
+If you arrived in this guide from the Quickstart, you can go back to the Quickstart using the sidebar on the left or by clicking [here](../quickstart.md).
+:::

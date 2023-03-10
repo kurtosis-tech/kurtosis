@@ -12,36 +12,84 @@ All code blocks can be copied by hovering over the code block and clicking the c
 
 Set Up Prerequisites
 ------------------------------
-### Install Docker
-Verify that you have the Docker daemon installed and running on your local machine:
+### Install and Start Docker
+If you don't have Docker installed, please install Docker using [the installation instructions](https://docs.docker.com/get-docker/) _specific to your machine_ (MacOS, Linux, or Windows). If you already have Docker installed, please start it.
 
+To verify that you have the Docker daemon installed and running on your local machine, run:
 ```
-docker image ls
+docker images
 ```
+which will list the most recently created images on your machine.
 
-- If you don't have Docker installed, do so by following [the installation instructions](https://docs.docker.com/get-docker/)
-- If Docker is installed but not running, start it
-
-:::caution
-[DockerHub restricts downloads from users who aren't logged in](https://www.docker.com/blog/what-you-need-to-know-about-upcoming-docker-hub-rate-limiting/) to 100 images downloaded per 6 hours, so if at any point in this tutorial you see the following error message:
-
+:::tip
+Having and using a DockerHub account is *optional* for this quickstart. However, if at any point in this quickstart you see the following error message:
 ```
 Error response from daemon: toomanyrequests: You have reached your pull rate limit. You may increase the limit by authenticating and upgrading: https://www.docker.com/increase-rate-limit
 ```
-
-you can fix it by creating a DockerHub account (if you don't have one already) and registering it with your local Docker engine like so:
-
+then you will need to login to your DockerHub account by running:
 ```
 docker login
 ```
+The reason this happens is because [DockerHub restricts downloads from users who aren't logged in](https://www.docker.com/blog/what-you-need-to-know-about-upcoming-docker-hub-rate-limiting/) to 100 images downloaded per 6 hours. If applicable, you can create a DockerHub account [here](https://hub.docker.com/signup).
 :::
 
 ### Install the Kurtosis CLI
-Follow the steps [on this installation page](./guides/installing-the-cli.md) to install the CLI, or upgrade it to latest if it's already installed.
-
 :::tip
-We strongly recommend [installing tab completion][installing-tab-complete]; you'll find it very useful!
+Kurtosis supports tab completion, and we strongly recommend [installing it][installing-tab-completion] after you finish installing the CLI.
 :::
+
+There are a few ways to install the CLI and the below section will guide you through each of those ways. Once you're done installing the CLI, the [quickstart][quickstart] is a great place to get started.
+
+<details><summary>MacOS (Homebrew)</summary>
+
+To install on MacOS (Homebrew):
+
+```
+brew install kurtosis-tech/tap/kurtosis-cli
+```
+
+NOTE: Homebrew might warn you that your Xcode is outdated or missing entirely. [This is a Homebrew requirement](https://docs.brew.sh/Installation), and has nothing to do with Kurtosis (which ships as prebuilt binaries). To install or update your Xcode, run:
+
+```
+xcode-select --install
+```
+
+</details>
+
+<details><summary>apt</summary>
+
+To install on Ubuntu OS using apt:
+
+```
+echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+sudo apt update
+sudo apt install kurtosis-cli
+```
+</details>
+
+<details><summary>yum</summary>
+
+To install on RPM-based Linux systems:
+
+```
+echo '[kurtosis]
+name=Kurtosis
+baseurl=https://yum.fury.io/kurtosis-tech/
+enabled=1
+gpgcheck=0' | sudo tee /etc/yum.repos.d/kurtosis.repo
+sudo yum install kurtosis-cli
+```
+</details>
+
+<details><summary>deb, rpm, and apk</summary>
+
+Download the appropriate artifact from [the release artifacts page][release-artifacts].
+</details>
+
+:::info
+The Kurtosis CLI cannot be installed directly on Windows. Windows users are encouraged to use [Windows Subsystem for Linux (WSL)][windows-susbsystem-for-linux] to use Kurtosis.
+:::
+
 
 Create An Enclave
 ---------------------------
