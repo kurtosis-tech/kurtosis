@@ -35,7 +35,7 @@ jobs:
           cd docs/
           npm install
           npm run docusaurus docs:version $version
-          cp
+          cp ../CHANGELOG.md versioned_docs/version-$version/
       - uses: stefanzweifel/git-auto-commit-action@v4
         with:
           token: "${{ secrets.RELEASER_TOKEN }}"
