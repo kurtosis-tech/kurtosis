@@ -6,7 +6,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
@@ -15,10 +14,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
 	"reflect"
-	"time"
 )
 
 const (
@@ -49,7 +46,7 @@ func NewAddService(serviceNetwork service_network.ServiceNetwork, runtimeValueSt
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						// we just try to convert the configs here to validate their shape, to avoid code duplication
 						// with Interpret
-						if _, err := validateAndConvertConfig(value); err != nil {
+						if _, _, err := validateAndConvertConfigAndReadyConditions(value); err != nil {
 							return err
 						}
 						return nil
@@ -98,12 +95,7 @@ func (builtin *AddServiceCapabilities) Interpret(arguments *builtin_argument.Arg
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ServiceConfigArgName)
 	}
-	apiServiceConfig, interpretationErr := validateAndConvertConfig(serviceConfig)
-	if interpretationErr != nil {
-		return nil, interpretationErr
-	}
-
-	readyConditions, interpretationErr := serviceConfig.GetReadyConditions()
+	apiServiceConfig, readyConditions, interpretationErr := validateAndConvertConfigAndReadyConditions(serviceConfig)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
@@ -141,51 +133,14 @@ func (builtin *AddServiceCapabilities) Execute(ctx context.Context, _ *builtin_a
 		return "", stacktrace.Propagate(err, "Unexpected error occurred starting service '%s'", replacedServiceName)
 	}
 
-	//check for service readiness
-	readyConditions := builtin.readyConditions
-	if readyConditions != nil {
-		recipe := readyConditions.GetRecipe()
-		field := readyConditions.GetField()
-		assertion := readyConditions.GetAssertion()
-		target := readyConditions.GetTarget()
-		interval := readyConditions.GetInterval()
-		timeout := readyConditions.GetTimeout()
-
-		startTime := time.Now()
-
-		lastResult, tries, err := shared_helpers.ExecuteServiceAssertionWithRecipe(
-			ctx,
-			builtin.serviceNetwork,
-			builtin.runtimeValueStore,
-			replacedServiceName,
-			recipe,
-			field,
-			assertion,
-			target,
-			interval,
-			timeout,
-		)
-		if err != nil {
-			return "", stacktrace.Propagate(
-				err,
-				"An error occurred checking if service '%v' is ready, using "+
-					"recipe '%+v', value field '%v', assertion '%v', target '%v', interval '%s' and time-out '%s'.",
-				replacedServiceName,
-				recipe,
-				field,
-				assertion,
-				target,
-				interval,
-				timeout,
-			)
-		}
-		logrus.Debugf("Checking if service '%v' is ready took %d tries (%v in total). "+
-			"Assertion passed with following:\n%s",
-			replacedServiceName,
-			tries,
-			time.Since(startTime),
-			recipe.ResultMapToString(lastResult),
-		)
+	if err := runServiceReadinessCheck(
+		ctx,
+		builtin.serviceNetwork,
+		builtin.runtimeValueStore,
+		replacedServiceName,
+		builtin.readyConditions,
+	); err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred while checking if service '%v' is ready", replacedServiceName)
 	}
 
 	fillAddServiceReturnValueWithRuntimeValues(startedService, builtin.resultUuid, builtin.runtimeValueStore)
@@ -193,14 +148,22 @@ func (builtin *AddServiceCapabilities) Execute(ctx context.Context, _ *builtin_a
 	return instructionResult, nil
 }
 
-func validateAndConvertConfig(rawConfig starlark.Value) (*kurtosis_core_rpc_api_bindings.ServiceConfig, *startosis_errors.InterpretationError) {
+func validateAndConvertConfigAndReadyConditions(
+	rawConfig starlark.Value,
+) (*kurtosis_core_rpc_api_bindings.ServiceConfig, *service_config.ReadyConditions, *startosis_errors.InterpretationError) {
 	config, ok := rawConfig.(*service_config.ServiceConfig)
 	if !ok {
-		return nil, startosis_errors.NewInterpretationError("The '%s' argument is not a ServiceConfig (was '%s').", ConfigsArgName, reflect.TypeOf(rawConfig))
+		return nil, nil, startosis_errors.NewInterpretationError("The '%s' argument is not a ServiceConfig (was '%s').", ConfigsArgName, reflect.TypeOf(rawConfig))
 	}
 	apiServiceConfig, interpretationErr := config.ToKurtosisType()
 	if interpretationErr != nil {
-		return nil, interpretationErr
+		return nil, nil, interpretationErr
 	}
-	return apiServiceConfig, nil
+
+	readyConditions, interpretationErr := config.GetReadyConditions()
+	if interpretationErr != nil {
+		return nil, nil, interpretationErr
+	}
+
+	return apiServiceConfig, readyConditions, nil
 }
