@@ -960,7 +960,7 @@ workflows:
     jobs:
       # -- build jobs ------------------------------------------
       - kurtosis-docs-checker/check-docs:
-          dir-to-exclude: '"docs/*"'
+          dir-to-exclude: '"docs/.*"'
           should-check-changelog: false
           markdown-link-check-config-json: |
             {
