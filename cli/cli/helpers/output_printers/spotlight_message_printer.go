@@ -26,7 +26,7 @@ var (
 	once                           sync.Once
 )
 
-type spotlightMessagePrinter struct {}
+type spotlightMessagePrinter struct{}
 
 // Prints a centered spotlight message
 func GetSpotlightMessagePrinter() *spotlightMessagePrinter {
@@ -38,21 +38,38 @@ func GetSpotlightMessagePrinter() *spotlightMessagePrinter {
 	return currentSpotlightMessagePrinter
 }
 
-func (printer *spotlightMessagePrinter) Print(message string)  {
+func (printer *spotlightMessagePrinter) Print(message string) {
+	frame, formattedMsgLine := printer.getFrameAndFormattedMsgLine(message)
+	fmt.Println(frame)
+	fmt.Println(formattedMsgLine)
+	fmt.Println(frame)
+}
+
+func (printer *spotlightMessagePrinter) PrintWithLogger(message string) {
+	frame, formattedMsgLine := printer.getFrameAndFormattedMsgLine(message)
+	logrus.Infof(frame)
+	logrus.Infof(formattedMsgLine)
+	logrus.Infof(frame)
+}
+
+// ====================================================================================================
+//
+//	Private Helper Functions
+//
+// ====================================================================================================
+func (printer *spotlightMessagePrinter) getFrameAndFormattedMsgLine(message string) (string, string) {
 	columnWidth := printer.calculateColumnWidth(message)
 
 	marginStr := strings.Repeat(spaceUnicodeChar, marginWidth)
 	frameStr := strings.Repeat(frameChar, columnWidth)
 	messageLineStr := fmt.Sprintf("%s%s%s%s%s", borderChars, marginStr, message, marginStr, borderChars)
 
-	logrus.Infof(frameStr)
-	logrus.Infof(messageLineStr)
-	logrus.Infof(frameStr)
+	return frameStr, messageLineStr
 }
 
 func (printer *spotlightMessagePrinter) calculateColumnWidth(message string) int {
 
-	bordersAndMarginWidth := borderWidth* amountOfBorders + marginWidth* amountOfMargins
+	bordersAndMarginWidth := borderWidth*amountOfBorders + marginWidth*amountOfMargins
 
 	messageWidth := utf8.RuneCountInString(message)
 
