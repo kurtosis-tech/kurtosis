@@ -108,7 +108,7 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 		return stacktrace.Propagate(err, "An error occurred setting analytics configuration")
 	}
 
-	logrus.Infof("Analytics tracking is now %v", didUserAcceptSendingMetricsStr)
+	logrus.Infof("Analytics tracking is now %vd", didUserAcceptSendingMetricsStr)
 
 	return nil
 }
