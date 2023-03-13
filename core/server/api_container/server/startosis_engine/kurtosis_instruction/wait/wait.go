@@ -249,6 +249,8 @@ func (builtin *WaitCapabilities) Execute(ctx context.Context, _ *builtin_argumen
 		)
 	}
 
+	builtin.runtimeValueStore.SetValue(builtin.resultUuid, lastResult)
+
 	instructionResult := fmt.Sprintf(
 		"Wait took %d tries (%v in total). Assertion passed with following:\n%s",
 		tries,
