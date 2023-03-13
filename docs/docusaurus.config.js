@@ -91,7 +91,7 @@ const config = {
           {
             href: 'https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding',
             position: 'right',
-            label: 'Schedule a personalized on-boarding session with us.',
+            label: 'Schedule a live session with us',
           },
         ],
       },
