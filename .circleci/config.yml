@@ -239,7 +239,7 @@ jobs:
       - run: |
           core/files_artifacts_expander/scripts/build.sh
           source core/files_artifacts_expander/scripts/_constants.env
-          version_to_publish="$(kudet get-docker-tag)"
+          version_to_publish="$(./scripts/get-docker-tag.sh)"
           image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
           echo "Version that will be persisted to workspace: ${version_to_publish}"
           docker save -o << pipeline.parameters.file-artifacts-expander-image-filename >> "${image_name_with_version}"          
@@ -304,7 +304,7 @@ jobs:
       - run: |
           core/server/scripts/build.sh
           source core/server/scripts/_constants.env
-          version_to_publish="$(kudet get-docker-tag)"
+          version_to_publish="$(./scripts/get-docker-tag.sh)"
           image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
           echo "Version that will be persisted to workspace: ${version_to_publish}"
           docker save -o << pipeline.parameters.core-server-image-filename >> "${image_name_with_version}"          
@@ -371,7 +371,7 @@ jobs:
       - run: |
           engine/server/scripts/build.sh
           source engine/server/scripts/_constants.env
-          version_to_publish="$(kudet get-docker-tag)"
+          version_to_publish="$(./scripts/get-docker-tag.sh)"
           image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
           echo "Version that will be persisted to workspace: ${version_to_publish}"
           docker save -o << pipeline.parameters.engine-server-image-filename >> "${image_name_with_version}"          

@@ -37,7 +37,7 @@ if [ -z "${new_version}" ]; then
         echo "Error: Couldn't cd to the root of this repo, '${root_dirpath}', which is required to get the Git tag" >&2
         show_helptext_and_exit
     fi
-    if ! new_version="$(kudet get-docker-tag)"; then
+    if ! new_version="$(./scripts/get-docker-tag.sh)"; then
         echo "Error: No new version provided and couldn't generate one" >&2
         show_helptext_and_exit
     fi
