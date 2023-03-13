@@ -30,6 +30,11 @@ const config = {
         docs: {
           sidebarPath: require.resolve('./sidebars.js'),
           routeBasePath: '/',
+          versions: {
+            current: {
+              label: 'main',
+            }
+          }
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
@@ -74,9 +79,19 @@ const config = {
             activeBasePath: '/sdk'
           },
           {
+            type: 'docsVersionDropdown',
+            position: 'right',
+            dropdownActiveClassDisabled: true,
+          },
+          {
             href: 'https://github.com/kurtosis-tech/kurtosis/issues/new/',
             position: 'right',
             label: 'Report Docs Issue',
+          },
+          {
+            href: 'https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding',
+            position: 'right',
+            label: 'Schedule a personalized on-boarding session with us.',
           },
         ],
       },

@@ -16,7 +16,7 @@ The instructions below walk you through installing and using a historical versio
     ```
     brew uninstall kurtosis-tech/tap/kurtosis-cli
     ```
-
+   
 2. Install an earlier version of Kurtosis (eg. `0.68.6`)
    ```
    brew install kurtosis-tech/tap/kurtosis-cli@<version>

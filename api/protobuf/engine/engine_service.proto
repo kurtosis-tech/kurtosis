@@ -187,11 +187,14 @@ message CleanArgs {
   bool should_clean_all = 1;
 }
 
+message EnclaveNameAndUuid {
+  string name = 1;
+  string uuid = 2;
+}
 
 message CleanResponse {
-  // Set of removed enclave UUIDS
-  map<string, bool> removed_enclave_uuids = 1;
-
+  // removed enclave name and uuids
+  repeated  EnclaveNameAndUuid removed_enclave_name_and_uuids = 1;
 }
 
 // ==============================================================================================
