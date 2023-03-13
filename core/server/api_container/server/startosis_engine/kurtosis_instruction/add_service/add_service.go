@@ -63,7 +63,8 @@ func NewAddService(serviceNetwork service_network.ServiceNetwork, runtimeValueSt
 				serviceName:   "",  // populated at interpretation time
 				serviceConfig: nil, // populated at interpretation time
 
-				resultUuid: "", // populated at interpretation time
+				resultUuid:      "",  // populated at interpretation time
+				readyConditions: nil, // populated at interpretation time
 			}
 		},
 
