@@ -3,36 +3,49 @@
 
 ----
 
-[Kurtosis](https://www.kurtosis.com) is a platform for orchestrating distributed system environments, allowing easy creation and manipulation of stage-appropriate deployments across the early stages of the development cycle (prototyping, testing).
+[Kurtosis](https://www.kurtosis.com) is a development platform for distributed applications that aims to provide a consistent experience across all stages of distributed app software delivery.
 
 Use cases for Kurtosis include:
 
-- Enable individual developers to prototype on personal development environments without bothering with environment setup and configuration
-- Enable development teams to run automated end-to-end tests for distributed systems, including fault tolerance tests in servers and networks, load testing, performance testing, etc.
-- Enable developers to easily debug failing distributed systems during development
+- Running a third-party distributed app, without knowing how to set it up
+- Local prototyping & development on distributed apps
+- Writing integration and end-to-end distributed app tests (e.g. happy path & sad path tests, load tests, performance tests, etc.)
+- Running integration/E2E distributed app tests
+- Debugging distributed apps during development
 
 ## Why Kurtosis?
 
-Container management and container orchestration systems like Docker and Kubernetes are each great at serving developers in different parts of the development cycle (development for Docker, production for Kubernetes). These, and other distributed system deployment tools, are low-level, stage-specific tools that require teams of DevOps engineers to manage.
+Docker and Kubernetes are each great at serving developers in different parts of the development cycle: Docker for development/testing, Kubernetes for production. However, the separation between the two entails different distributed app definitions, and different tooling. In dev/test, this means Docker Compose and Docker observability tooling. In production, this means Helm definitions and manually-configured observability tools like Istio, Datadog, or Honeycomb.
 
-Kurtosis is designed to optimize environment management and control across the development cycle - operating at one level of abstraction higher than existing tools, giving developers the environments and the ability to manipulate them as needed at each stage.
+Kurtosis aims at one level of abstraction higher. Developers can define their distributed applications in Kurtosis, and Kurtosis will handle:
+
+- Running on Docker or Kubernetes
+- Reproduceability
+- Safety
+- Port-forwarding & local development hookups
+- Observability
+- Sharing
+
+If we succeed in our vision, you will be able to use the same distributed application definition from local dev all the way to prod.
 
 ---
 
 ## To start using Kurtosis
 
-### Pre Requisite
+### Prerequisites
 
-Make sure Docker must be installed and running on your machine:
+Docker must be installed and running on your machine:
+
 ```bash
 docker version
 ```
 
-If you don't, follow the instructions from [Docker docs](https://docs.docker.com/get-docker/).
+If it's not, follow the instructions from the [Docker docs](https://docs.docker.com/get-docker/).
 
-### Installing
+### Installing Kurtosis
 
 On MacOS:
+
 ```bash
 brew install kurtosis-tech/tap/kurtosis-cli
 ```
@@ -56,7 +69,8 @@ sudo yum install kurtosis-cli
 
 ### Running
 
-First of all we can create a simple Starlark script to spin up multiple replicas of `httpd`:
+First of all we can create [a simple Starlark script][starlark-explanation] to spin up multiple replicas of `httpd`:
+
 ```python
 cat > script.star << EOF
 def run(plan, args):
@@ -80,8 +94,6 @@ Running the script gives us an enclave with three services:
 kurtosis run script.star '{"replica_count": 3}'
 ```
 ```console
-WARN[2023-02-10T13:32:32-03:00] You are running an old version of the Kurtosis CLI; we suggest you to update it to the latest version, '0.66.3'
-WARN[2023-02-10T13:32:32-03:00] You can manually upgrade the CLI tool following these instructions: https://docs.kurtosis.com/install#upgrading
 INFO[2023-02-10T13:32:32-03:00] Creating a new enclave for Starlark to run inside...
 INFO[2023-02-10T13:32:37-03:00] Enclave 'misty-bird' created successfully
 
@@ -105,8 +117,6 @@ That can be inspected by running
 kurtosis enclave inspect misty-bird
 ```
 ```console
-WARN[2023-02-10T13:33:19-03:00] You are running an old version of the Kurtosis CLI; we suggest you to update it to the latest version, '0.66.3'
-WARN[2023-02-10T13:33:19-03:00] You can manually upgrade the CLI tool following these instructions: https://docs.kurtosis.com/install#upgrading
 UUID:                                 eeb28363fc53
 Enclave Name:                         misty-bird
 Enclave Status:                       RUNNING
@@ -291,7 +301,15 @@ $ alias kurtosis="$(pwd)/cli/cli/scripts/launch_cli.sh"
 $ kurtosis enclave add
 ```
 
+## Questions, help, or feedback
+
+If you have feedback for us or a question around how Kurtosis works and the [docs](https://docs.kurtosis.com) aren't enough, we're more than happy to help and chat about your use case via the following ways:
+- Get help in our [Discord server](https://discord.gg/Es7QHbY4)
+- Email us at [feedback@kurtosistech.com](mailto:feedback@kurtosistech.com)
+- Schedule a 1:1 session with us [here](https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding)
+
 <!-------- ONLY LINKS BELOW THIS POINT -------->
 [enclave]: https://docs.kurtosis.com/explanations/architecture#enclaves
 [docs]: https://docs.kurtosis.com
+[starlark-explanation]: https://docs.kurtosis.com/explanations/starlark
 

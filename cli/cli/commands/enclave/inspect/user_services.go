@@ -121,7 +121,7 @@ func getSortedUserServiceSliceFromUserServiceMap(userServices map[service.Servic
 	sort.Slice(userServicesResult, func(i, j int) bool {
 		firstService := userServicesResult[i]
 		secondService := userServicesResult[j]
-		return firstService.GetRegistration().GetUUID() < secondService.GetRegistration().GetUUID()
+		return firstService.GetRegistration().GetName() < secondService.GetRegistration().GetName()
 	})
 
 	return userServicesResult

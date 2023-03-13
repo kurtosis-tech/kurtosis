@@ -82,7 +82,7 @@ version: 2.1
 
 orbs:
   npm-publisher: uraway/npm-publisher@0.2.0
-  kurtosis-docs-checker: kurtosis-tech/docs-checker@0.2.3
+  kurtosis-docs-checker: kurtosis-tech/docs-checker@0.2.4
 
 executors:
   ubuntu_vm:
@@ -111,9 +111,6 @@ parameters:
   api-node-version:
     type: string
     default: 16.13.0
-  source-repo-name:
-    type: string
-    default: kurtosis-sdk
   core-server-build-cache-key-prefix:
     type: string
     default: "core-server-go-mod-v1"   # Can bump this version to bust the cache
@@ -809,42 +806,6 @@ jobs:
   # -- End build jobs ---------------------------------------
 
   # -- Publish jobs --------------------------------------------
-  publish_kurtosis_api_source:
-    docker:
-      - image: cimg/base:2021.10
-    steps:
-      # Install Kudet
-      - run: |
-          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
-          sudo apt update
-          sudo apt install kudet
-      - checkout
-      - run: |
-          cd /tmp/
-          git clone https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/kurtosis-tech/<< pipeline.parameters.source-repo-name >>.git
-      - run: |
-          dest_api_dirpath="/tmp/<< pipeline.parameters.source-repo-name >>/api"
-          rm -rf "${dest_api_dirpath}"
-          cp -r api "${dest_api_dirpath}"
-      # Now, swap Go module names to match the new repo we're pushing the code to
-      - run: |
-          cd /tmp/<< pipeline.parameters.source-repo-name >>/api
-          # We need to consider the .proto files as well, b/c they (frustratingly) contain the Go module name
-          for pattern in "*.go" "go.mod" "*.proto"; do
-            sed -i 's,github.com/kurtosis-tech/kurtosis,github.com/kurtosis-tech/<< pipeline.parameters.source-repo-name >>,g' $(find . -type f -name "${pattern}")
-          done
-      # Push the code up to the remote
-      - run: |
-          version="$(kudet get-docker-tag)"
-          cd /tmp/<< pipeline.parameters.source-repo-name >>
-          git config --global user.name "${KURTOSISBOT_GITHUB_USERNAME}"
-          git config --global user.email "${KURTOSISBOT_GITHUB_EMAIL}"
-          git add .
-          git commit -m "Committing ${version} files"
-          git push origin main
-          git tag "${version}"
-          git tag "v${version}"
-          git push --tags
 
   publish_kurtosis_api_typescript:
     docker:
@@ -935,8 +896,8 @@ jobs:
 
       # Generate Kurtosis Version
       - run: |
-          tag="$(git describe --tag)"
-          "<<pipeline.parameters.generate-kurtosis-version-script-path>>" $tag
+          version="$(cat version.txt)"
+          "<<pipeline.parameters.generate-kurtosis-version-script-path>>" $version
 
 
       - setup_remote_docker:
@@ -975,8 +936,8 @@ jobs:
 
       # Generate Kurtosis Version
       - run: |
-          tag="$(git describe --tag)"
-          "<<pipeline.parameters.generate-kurtosis-version-script-path>>" $tag
+          version="$(cat version.txt)"
+          "<<pipeline.parameters.generate-kurtosis-version-script-path>>" $version
 
       # Cache our dependencies
       - restore_cache:
@@ -999,6 +960,7 @@ workflows:
     jobs:
       # -- build jobs ------------------------------------------
       - kurtosis-docs-checker/check-docs:
+          dir-to-exclude: '"./docs/*"'
           should-check-changelog: false
           markdown-link-check-config-json: |
             {
@@ -1016,16 +978,7 @@ workflows:
                         "pattern": "https://github.com/kurtosis-tech/docs"
                     },
                     {
-                        "pattern": "https://github.com/kurtosis-tech/kurtosis"
-                    },
-                    {
                         "pattern": "https://www.notion.so/kurtosistech.*"
-                    },
-                    {
-                        "pattern": "https://github.com/kurtosis-tech/style-guide"
-                    },
-                    {
-                        "pattern": "^@site.*"
                     }
                 ]
             }
@@ -1138,14 +1091,6 @@ workflows:
           <<: *filters_ignore_main
 
       # -- Artifact-publishing jobs --------------------------------
-      - publish_kurtosis_api_source:
-          context:
-            - github-user
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
       - publish_kurtosis_api_typescript:
           context:
             - npmjs-user
