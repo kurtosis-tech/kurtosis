@@ -336,6 +336,7 @@ func (network *DefaultServiceNetwork) StartService(
 	ctx context.Context,
 	serviceName service.ServiceName,
 	serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig,
+	serviceReadinessCheckFunc ServiceReadinessCheckFunc,
 ) (
 	*service.Service,
 	error,
@@ -343,7 +344,12 @@ func (network *DefaultServiceNetwork) StartService(
 	serviceConfigMap := map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig{
 		serviceName: serviceConfig,
 	}
-	startedServices, serviceFailed, err := network.StartServices(ctx, serviceConfigMap, singleServiceStartupBatch)
+
+	servicesReadinessCheckFuncs := map[service.ServiceName]ServiceReadinessCheckFunc{
+		serviceName: serviceReadinessCheckFunc,
+	}
+
+	startedServices, serviceFailed, err := network.StartServices(ctx, serviceConfigMap, singleServiceStartupBatch, servicesReadinessCheckFuncs)
 	if err != nil {
 		return nil, err
 	}
@@ -370,6 +376,7 @@ func (network *DefaultServiceNetwork) StartServices(
 	ctx context.Context,
 	serviceConfigs map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig,
 	batchSize int,
+	servicesReadinessCheckFuncs map[service.ServiceName]ServiceReadinessCheckFunc,
 ) (
 	map[service.ServiceName]*service.Service,
 	map[service.ServiceName]error,
@@ -390,6 +397,7 @@ func (network *DefaultServiceNetwork) StartServices(
 	// We register all the services one by one
 	serviceSuccessfullyRegistered := map[service.ServiceName]*service.ServiceRegistration{}
 	servicesToStart := map[service.ServiceUUID]*kurtosis_core_rpc_api_bindings.ServiceConfig{}
+	servicesReadinessCheckFuncsByUuid := map[service.ServiceUUID]ServiceReadinessCheckFunc{}
 	for serviceName, serviceConfig := range serviceConfigs {
 		servicePartitionId := partition_topology.ParsePartitionId(serviceConfig.Subnetwork)
 		serviceRegistration, err := network.registerService(ctx, serviceName, servicePartitionId)
@@ -398,6 +406,10 @@ func (network *DefaultServiceNetwork) StartServices(
 		}
 		serviceSuccessfullyRegistered[serviceName] = serviceRegistration
 		servicesToStart[serviceRegistration.GetUUID()] = serviceConfig
+
+		if servicesReadinessCheckFuncs != nil {
+			servicesReadinessCheckFuncsByUuid[serviceRegistration.GetUUID()] = servicesReadinessCheckFuncs[serviceName]
+		}
 	}
 	defer func() {
 		if batchSuccessfullyStarted {
@@ -423,7 +435,7 @@ func (network *DefaultServiceNetwork) StartServices(
 		}
 	}
 
-	startedServicesPerUuid, failedServicePerUuid := network.startRegisteredServices(ctx, servicesToStart, batchSize)
+	startedServicesPerUuid, failedServicePerUuid := network.startRegisteredServices(ctx, servicesToStart, batchSize, servicesReadinessCheckFuncsByUuid)
 
 	for serviceName, serviceRegistration := range serviceSuccessfullyRegistered {
 		serviceUuid := serviceRegistration.GetUUID()
@@ -1157,10 +1169,12 @@ func (network *DefaultServiceNetwork) unregisterService(ctx context.Context, ser
 // - converting files artifacts mountpoints to FilesArtifactsExpansion's'
 // - passing down other data (eg. container image name, args, etc.)
 // If network partitioning is enabled, it also takes care of starting the sidecar corresponding to this service
+// If serviceReadinessCheckFunc != nil the function will be executed to check the service readiness
 func (network *DefaultServiceNetwork) startRegisteredService(
 	ctx context.Context,
 	serviceUuid service.ServiceUUID,
 	serviceConfigApi *kurtosis_core_rpc_api_bindings.ServiceConfig,
+	serviceReadinessCheckFunc ServiceReadinessCheckFunc,
 ) (
 	*service.Service,
 	error,
@@ -1301,6 +1315,12 @@ func (network *DefaultServiceNetwork) startRegisteredService(
 		logrus.Debugf("Successfully created sidecars for service with ID '%v'", serviceUuid)
 	}
 
+	if serviceReadinessCheckFunc != nil {
+		if err := serviceReadinessCheckFunc(); err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred while checking readiness for service with UUID '%v'", serviceUuid)
+		}
+	}
+
 	serviceStartedSuccessfully = true
 	return startedService, nil
 }
@@ -1356,6 +1376,7 @@ func (network *DefaultServiceNetwork) startRegisteredServices(
 	ctx context.Context,
 	serviceConfigs map[service.ServiceUUID]*kurtosis_core_rpc_api_bindings.ServiceConfig,
 	batchSize int,
+	servicesReadinessCheckFuncs map[service.ServiceUUID]ServiceReadinessCheckFunc,
 ) (map[service.ServiceUUID]*service.Service, map[service.ServiceUUID]error) {
 	wg := sync.WaitGroup{}
 
@@ -1370,6 +1391,11 @@ func (network *DefaultServiceNetwork) startRegisteredServices(
 	for serviceUuid, serviceConfig := range serviceConfigs {
 		serviceToStartUuid := serviceUuid
 		serviceToStartConfig := serviceConfig
+
+		var readinessCheckFunc func() error
+		if servicesReadinessCheckFuncs != nil {
+			readinessCheckFunc = servicesReadinessCheckFuncs[serviceUuid]
+		}
 
 		if len(failedServices) > 0 {
 			// stop scheduling more service start
@@ -1389,7 +1415,7 @@ func (network *DefaultServiceNetwork) startRegisteredServices(
 				<-concurrencyControlChan
 			}()
 			logrus.Debugf("Starting service '%s'", serviceToStartUuid)
-			startedService, err := network.startRegisteredService(ctx, serviceToStartUuid, serviceToStartConfig)
+			startedService, err := network.startRegisteredService(ctx, serviceToStartUuid, serviceToStartConfig, readinessCheckFunc)
 			mapWriteMutex.Lock()
 			defer mapWriteMutex.Unlock()
 			if err != nil {

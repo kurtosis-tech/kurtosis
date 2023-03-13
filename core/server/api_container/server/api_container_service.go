@@ -127,7 +127,9 @@ func (apicService ApiContainerService) StartServices(ctx context.Context, args *
 		serviceNamesToAPIConfigs[kurtosis_backend_service.ServiceName(serviceNameStr)] = apiServiceConfig
 	}
 
-	successfulServices, failedServices, err := apicService.serviceNetwork.StartServices(ctx, serviceNamesToAPIConfigs, defaultParallelism)
+	noServicesReadinessCheckFuncs := map[kurtosis_backend_service.ServiceName]service_network.ServiceReadinessCheckFunc{}
+
+	successfulServices, failedServices, err := apicService.serviceNetwork.StartServices(ctx, serviceNamesToAPIConfigs, defaultParallelism, noServicesReadinessCheckFuncs)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "None of the services '%v' mentioned in the request were able to start due to an unexpected error", serviceNamesToAPIConfigs)
 	}
