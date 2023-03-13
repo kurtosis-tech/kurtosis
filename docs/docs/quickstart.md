@@ -4,7 +4,7 @@ sidebar_label: Quickstart
 slug: /quickstart
 ---
 
-These instructions will give you a brief quickstart of Kurtosis. They should take 15 minutes.
+These instructions will give you a brief quickstart of Kurtosis and should take 15 minutes. If you prefer, schedule a personalized onboarding session with us [here](https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding). 
 
 :::tip
 All code blocks can be copied by hovering over the code block and clicking the clipboard icon that appears on the right.
@@ -718,6 +718,10 @@ These are just the basics of Kurtosis. To dive deeper, you can now:
 - Explore [the catalog of Starlark instructions][starlark-instructions-reference]
 - Explore [Kurtosis-provided packages being used in production][kurtosis-managed-packages]
 - [Search GitHub for Kurtosis packages in the wild][wild-kurtosis-packages]
+
+:::info
+Get a personalized onboarding session with us [here](https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding). 
+:::
 
 <!-- TODO add link to how-to guide on how to use Kurtosis in Go/TS tests -->
 
