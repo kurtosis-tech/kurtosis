@@ -51,6 +51,7 @@ func (t *addServicesTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtos
 			return true
 		}),
 		mock.Anything,
+		mock.AnythingOfType("map[service.ServiceName]service_network.ServiceReadinessCheckFunc"),
 	).Times(1).Return(
 		map[service.ServiceName]*service.Service{
 			TestServiceName:  service.NewService(service.NewServiceRegistration(TestServiceName, TestServiceUuid, TestEnclaveUuid, nil, string(TestServiceName)), container_status.ContainerStatus_Running, nil, nil, nil),
