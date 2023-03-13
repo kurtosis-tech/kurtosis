@@ -88,6 +88,11 @@ const config = {
             position: 'right',
             label: 'Report Docs Issue',
           },
+          {
+            href: 'https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding',
+            position: 'right',
+            label: 'Schedule a personalized on-boarding session with us.',
+          },
         ],
       },
       footer: {
