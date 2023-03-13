@@ -4,7 +4,7 @@ go 1.18
 
 replace (
 	github.com/kurtosis-tech/kurtosis/api/golang => ../../api/golang
-	github.com/kurtosis-tech/kurtosis/container-engine-lib => ../../container-engine-lib
+	github.com/kurtosis-tech/kurtosis/libs/container-engine-lib => ./../../libs/container-engine-lib
 	github.com/kurtosis-tech/kurtosis/engine/launcher => ../../engine/launcher
 	github.com/kurtosis-tech/kurtosis/kurtosis_version => ../../kurtosis_version
 )
@@ -17,7 +17,7 @@ require (
 	github.com/docker/distribution v2.7.1+incompatible
 	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/kurtosis-tech/kurtosis/api/golang v0.0.0 // local dependency
-	github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.0 // local dependency
+	github.com/kurtosis-tech/kurtosis/libs/container-engine-lib v0.0.0 // local dependency
 	github.com/kurtosis-tech/kurtosis/engine/launcher v0.0.0 // local dependency
 	github.com/kurtosis-tech/kurtosis/kurtosis_version v0.0.0 // Local dependency generated during build
 	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20230221115618-70c305416224

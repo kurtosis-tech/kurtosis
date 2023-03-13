@@ -2,8 +2,8 @@ package startosis_validator
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/kurtosis-tech/kurtosis/libs/container-engine-lib/lib/backend_interface"
 	"github.com/sirupsen/logrus"
 	"sync"
 )

@@ -1,7 +1,7 @@
 package runtime_value_store
 
 import (
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
+	"github.com/kurtosis-tech/kurtosis/libs/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
 )

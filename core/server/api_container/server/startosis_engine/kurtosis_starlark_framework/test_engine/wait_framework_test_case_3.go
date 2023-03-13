@@ -2,11 +2,11 @@ package test_engine
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/wait"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
+	"github.com/kurtosis-tech/kurtosis/libs/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
@@ -20,11 +20,11 @@ const (
 	waitServiceName = service.ServiceName("web-server")
 )
 
-//For a short period (until we deprecate recipe.service_name) the wait instruction will have a
-//dynamic first parameter which will accept the current 'recipe' argument and a new 'service_name' argument
-//In the waitTestCase1 we test the current behaviour, it means receiving an 'recipe' as the first argument
-//In this test case we test that 'service_name' is also accepted as the first parameter, and it is used
-//in the serviceNetwork.HttpRequestService call
+// For a short period (until we deprecate recipe.service_name) the wait instruction will have a
+// dynamic first parameter which will accept the current 'recipe' argument and a new 'service_name' argument
+// In the waitTestCase1 we test the current behaviour, it means receiving an 'recipe' as the first argument
+// In this test case we test that 'service_name' is also accepted as the first parameter, and it is used
+// in the serviceNetwork.HttpRequestService call
 type waitTestCase3 struct {
 	*testing.T
 }

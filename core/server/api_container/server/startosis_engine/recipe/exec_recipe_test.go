@@ -1,7 +1,7 @@
 package recipe
 
 import (
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/libs/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/stretchr/testify/require"
 	"testing"
 )

@@ -9,7 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/metrics_client_factory"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/kurtosis/libs/container-engine-lib/lib/backend_interface"
 	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -49,9 +49,9 @@ type EngineConsumingKurtosisCommand struct {
 
 	RunFunc func(
 		ctx context.Context,
-		// TODO This is a hack that's only here temporarily because we have commands that use KurtosisBackend directly (they
-		//  should not), and EngineConsumingKurtosisCommand therefore needs to provide them with a KurtosisBackend. Once all our
-		//  commands only access the Kurtosis APIs, we can remove this.
+	// TODO This is a hack that's only here temporarily because we have commands that use KurtosisBackend directly (they
+	//  should not), and EngineConsumingKurtosisCommand therefore needs to provide them with a KurtosisBackend. Once all our
+	//  commands only access the Kurtosis APIs, we can remove this.
 		kurtosisBackend backend_interface.KurtosisBackend,
 		engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
 		client metrics_client.MetricsClient,

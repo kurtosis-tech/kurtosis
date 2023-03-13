@@ -4,20 +4,20 @@ go 1.18
 
 replace (
 	github.com/kurtosis-tech/kurtosis/api/golang => ../../api/golang
-	github.com/kurtosis-tech/kurtosis/container-engine-lib => ../../container-engine-lib
 	github.com/kurtosis-tech/kurtosis/core/files_artifacts_expander => ../files_artifacts_expander
 	github.com/kurtosis-tech/kurtosis/core/launcher => ../launcher
 	github.com/kurtosis-tech/kurtosis/kurtosis_version => ../../kurtosis_version
-	github.com/kurtosis-tech/kurtosis/name_generator => ../../name_generator
+	github.com/kurtosis-tech/kurtosis/libs/container-engine-lib => ./../../libs/container-engine-lib
+	github.com/kurtosis-tech/kurtosis/libs/name-generator => ../../libs/name-generator
 )
 
 require (
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/kurtosis-tech/kurtosis/api/golang v0.0.0 // Local dependency
-	github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.0 // Local dependency
 	github.com/kurtosis-tech/kurtosis/core/files_artifacts_expander v0.0.0 // Local dependency
 	github.com/kurtosis-tech/kurtosis/core/launcher v0.0.0 // Local dependency
-	github.com/kurtosis-tech/kurtosis/name_generator v0.0.0 // Local dependency
+	github.com/kurtosis-tech/kurtosis/libs/container-engine-lib v0.0.0 // Local dependency
+	github.com/kurtosis-tech/kurtosis/libs/name-generator v0.0.0 // Local dependency
 	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20211201000847-a204edc5a0b3
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/sirupsen/logrus v1.8.1

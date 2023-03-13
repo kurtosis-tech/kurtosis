@@ -12,8 +12,7 @@ root_dirpath="$(dirname "${script_dirpath}")"
 # ==================================================================================================
 BUILD_SCRIPT_RELATIVE_FILEPATHS=(
     "scripts/generate-kurtosis-version.sh"
-    "container-engine-lib/scripts/build.sh"
-    "name_generator/scripts/build.sh"
+    "libs/scripts/build.sh"
     "api/scripts/build.sh"
     "core/scripts/build.sh"
     "engine/scripts/build.sh"

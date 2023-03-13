@@ -7,8 +7,8 @@ package enclave_data_directory
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
-	"github.com/kurtosis-tech/kurtosis/name_generator"
+	"github.com/kurtosis-tech/kurtosis/libs/container-engine-lib/lib/uuid_generator"
+	"github.com/kurtosis-tech/kurtosis/libs/name-generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"

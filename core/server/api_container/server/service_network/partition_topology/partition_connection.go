@@ -1,6 +1,6 @@
 package partition_topology
 
-import "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/partition_topology_db/partition_connection_overrides"
+import "github.com/kurtosis-tech/kurtosis/libs/container-engine-lib/lib/database_accessors/enclave_db/partition_topology_db/partition_connection_overrides"
 
 type PartitionConnection struct {
 	packetLoss              PacketLoss
