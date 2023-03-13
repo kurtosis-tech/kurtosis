@@ -222,12 +222,6 @@ jobs:
 
       - <<: *abort_job_if_only_docs_changes
 
-      # Install kudet
-      - run: |
-          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
-          sudo apt update
-          sudo apt install kudet
-
       # Generate Kurtosis Version
       - run: "<<pipeline.parameters.generate-kurtosis-version-script-path>>"
 
@@ -257,12 +251,6 @@ jobs:
 
       - <<: *abort_job_if_only_docs_changes
 
-      # Install Kudet
-      - run: |
-          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
-          sudo apt update
-          sudo apt install kudet
-
       # Generate Kurtosis Version
       - run: "<<pipeline.parameters.generate-kurtosis-version-script-path>>"
 
@@ -278,11 +266,6 @@ jobs:
       - <<: *abort_job_if_only_docs_changes
 
       - run: sudo apt-get update -y &&  sudo apt-get install -y musl-dev
-      # Install kudet
-      - run: |
-          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
-          sudo apt update
-          sudo apt install kudet
 
       # Install proto compiler. To compile startosis proto files on the fly, the APIC needs `protoc`
       - run: |
@@ -328,12 +311,6 @@ jobs:
 
       - <<: *abort_job_if_only_docs_changes
 
-      # Install Kudet
-      - run: |
-          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
-          sudo apt update
-          sudo apt install kudet
-
       # Generate Kurtosis Version
       - run: "<<pipeline.parameters.generate-kurtosis-version-script-path>>"
 
@@ -349,12 +326,6 @@ jobs:
       - <<: *abort_job_if_only_docs_changes
 
       - run: sudo apt-get update -y &&  sudo apt-get install -y musl-dev
-
-      # Install kudet
-      - run: |
-          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
-          sudo apt update
-          sudo apt install kudet
 
       # Generate Kurtosis Version
       - run: "<<pipeline.parameters.generate-kurtosis-version-script-path>>"
@@ -398,12 +369,6 @@ jobs:
       - <<: *abort_job_if_only_docs_changes
 
       - run: sudo apt-get update -y &&  sudo apt-get install -y musl-dev
-
-      # Install kudet
-      - run: |
-          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
-          sudo apt update
-          sudo apt install kudet
 
       # Generate Kurtosis Version
       - run: "<<pipeline.parameters.generate-kurtosis-version-script-path>>"
@@ -821,11 +786,6 @@ jobs:
     docker:
       - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
     steps:
-      # Install Kudet
-      - run: |
-          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
-          sudo apt update
-          sudo apt install kudet
       - checkout
 
       - setup_remote_docker:
@@ -849,12 +809,6 @@ jobs:
       - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
     steps:
       - run: sudo apt-get update -y &&  sudo apt-get install -y musl-dev
-
-      # Install Kudet
-      - run: |
-          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
-          sudo apt update
-          sudo apt install kudet
 
       # Install proto compiler. To compile startosis proto files on the fly, the APIC needs `protoc`
       - run: |
@@ -921,11 +875,6 @@ jobs:
           echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | sudo tee /etc/apt/sources.list.d/goreleaser.list
           sudo apt update
           sudo apt install goreleaser
-      # Install Kudet
-      - run: |
-          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
-          sudo apt update
-          sudo apt install kudet
       - checkout
 
       # Generate Kurtosis Version

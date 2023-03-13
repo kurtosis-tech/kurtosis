@@ -21,7 +21,7 @@ KURTOSIS_VERSION_PACKAGE_GOSUM_PATH="go.sum"
 show_helptext_and_exit() {
     echo "Usage: $(basename "${0}") new_version"
     echo ""
-    echo "  new_version     The version to be generate the version constants with, otherwise uses 'kudet get-docker-tag'"
+    echo "  new_version     The version to be generate the version constants with, otherwise uses 'get-docker-tag.sh'"
     echo ""
     exit 1
 }
