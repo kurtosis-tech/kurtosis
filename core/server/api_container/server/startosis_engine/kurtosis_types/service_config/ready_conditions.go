@@ -79,6 +79,12 @@ func instantiateReadyConditions(arguments *builtin_argument.ArgumentValuesSet) (
 	}
 	return &ReadyConditions{
 		KurtosisValueTypeDefault: kurtosisValueType,
+		recipe:                   nil,
+		field:                    "",
+		assertion:                "",
+		target:                   starlark.String(""),
+		interval:                 defaultInterval,
+		timeout:                  defaultTimeout,
 	}, nil
 }
 
