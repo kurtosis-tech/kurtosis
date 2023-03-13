@@ -24,8 +24,6 @@ Docker and Kubernetes are each great at serving developers in different parts of
 
 Kurtosis aims at one level of abstraction higher. Developers can define their distributed applications in Kurtosis, and Kurtosis will handle:
 
-With Kurtosis, developers can build with local sandbox environments that demonstrate how their code will work when integrated with the rest of the system. In addition, advanced end-to-end testing workflows are available to teams using the manipulation tooling in the Kurtosis engine runtime which allow them to do end-to-end testing like fault-tolerance, regression, and performance tests.
-
 - Running on Docker or Kubernetes
 - Reproduceability
 - Safety
@@ -34,7 +32,3 @@ With Kurtosis, developers can build with local sandbox environments that demonst
 - Sharing
 
 If we succeed in our vision, you will be able to use the same distributed application definition from local dev all the way to prod.
-
-:::info
-If you have questions, need help, or simply want to learn more, schedule a live session with us, go [here](https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding).
-:::
