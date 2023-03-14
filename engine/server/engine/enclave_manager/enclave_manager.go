@@ -293,7 +293,7 @@ func (manager *EnclaveManager) Clean(ctx context.Context, shouldCleanAll bool) (
 		return nil, stacktrace.Propagate(err, "Tried retrieving existing enclaves but failed")
 	}
 
-	successfullyRemovedArtifactIds, removalErrors, err := manager.cleanEnclaves(ctx, shouldCleanAll)
+	successfullyRemovedEnclaveUuidStrs, removalErrors, err := manager.cleanEnclaves(ctx, shouldCleanAll)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while cleaning enclaves with shouldCleanAll set to '%v'", shouldCleanAll)
 	}
@@ -310,10 +310,10 @@ func (manager *EnclaveManager) Clean(ctx context.Context, shouldCleanAll bool) (
 		return nil, stacktrace.NewError("Following errors occurred while removing some enclaves :\n%v", joinedRemovalErrors)
 	}
 
-	if len(successfullyRemovedArtifactIds) > 0 {
+	if len(successfullyRemovedEnclaveUuidStrs) > 0 {
 		logrus.Infof("Successfully removed the enclaves")
-		sort.Strings(successfullyRemovedArtifactIds)
-		for _, successfullyRemovedEnclaveUuidStr := range successfullyRemovedArtifactIds {
+		sort.Strings(successfullyRemovedEnclaveUuidStrs)
+		for _, successfullyRemovedEnclaveUuidStr := range successfullyRemovedEnclaveUuidStrs {
 			nameAndUuid := &kurtosis_engine_rpc_api_bindings.EnclaveNameAndUuid{
 				Uuid: successfullyRemovedEnclaveUuidStr,
 				Name: enclaveNameNotFound,
