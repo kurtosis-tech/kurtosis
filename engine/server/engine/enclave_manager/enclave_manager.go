@@ -31,7 +31,7 @@ const (
 
 	errorDelimiter = ", "
 
-	nameNotFound = "Name Not Found"
+	enclaveNameNotFound = "Name Not Found"
 )
 
 // TODO Move this to the KurtosisBackend to calculate!!
@@ -316,7 +316,7 @@ func (manager *EnclaveManager) Clean(ctx context.Context, shouldCleanAll bool) (
 		for _, successfullyRemovedEnclaveUuidStr := range successfullyRemovedArtifactIds {
 			nameAndUuid := &kurtosis_engine_rpc_api_bindings.EnclaveNameAndUuid{
 				Uuid: successfullyRemovedEnclaveUuidStr,
-				Name: nameNotFound,
+				Name: enclaveNameNotFound,
 			}
 			// this should always be found; but we don't want to error if it isn't
 			// we just use the default not found that we set above if we can't find the name
