@@ -1,0 +1,55 @@
+syntax = "proto3";
+package context_config_store;
+
+// Regenerate with the following command ran from repo root
+//    protoc -I=context-config-store/api/protobuf/ --go_out=context-config-store/api/golang/ --go_opt=module=github.com/kurtosis-tech/kurtosis/context-config-store/api/golang context-config-store/api/protobuf/context_config.proto
+
+// NOTE: It sucks that we have this Go-specific logic inside this file (which should be language-agnostic). However, the Protobuf team have
+// taken a hard stance on this being the way it should be done, so we have to do it this way.
+option go_package = "github.com/kurtosis-tech/kurtosis/context-config-store/api/golang";
+
+message KurtosisContextConfig {
+  ContextUuid currentContext = 1;
+
+  repeated KurtosisContext contexts = 2;
+}
+
+message KurtosisContext {
+  ContextUuid uuid = 1;
+
+  string name = 2 ;
+
+  oneof kurtosis_context_info {
+    // WARNING: when adding more sub-types here, update the corresponding visitor in kurtosis_context_visitor to
+    // trigger compile time breaks in consumers
+    LocalOnlyContextV0 local_only_context_v0 = 3;
+    RemoteContextV0 remote_context_v0 = 4;
+  }
+}
+
+message ContextUuid {
+  string value = 1;
+}
+
+message LocalOnlyContextV0 {
+}
+
+message RemoteContextV0 {
+  string host = 1;
+
+  uint32 remote_portal_port = 2;
+
+  uint32 kurtosis_backend_port = 3;
+
+  uint32 tunnel_port = 4;
+
+  optional TlsConfig tls_config = 5;
+}
+
+message TlsConfig {
+  bytes certificate_authority = 1;
+
+  bytes client_certificate = 2;
+
+  bytes client_key = 3;
+}
