@@ -16,7 +16,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/enclave/inspect"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/out"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/user_support_constants"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
@@ -244,18 +243,18 @@ func run(
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the enclave context for enclave '%v'", userRequestedEnclaveIdentifier)
 	}
-	if isNewEnclave {
-		defer output_printers.PrintEnclaveName(enclaveCtx.GetEnclaveName())
-	}
 
 	if showEnclaveInspect {
-		output_printers.GetSpotlightMessagePrinter().PrintWithLogger("Current Enclave State")
 		defer func() {
-			out.PrintOutLn("")
+			output_printers.GetSpotlightMessagePrinter().PrintWithLogger("Current Enclave State")
 			if err = inspect.PrintEnclaveInspect(ctx, kurtosisBackend, kurtosisCtx, enclaveCtx.GetEnclaveName(), showFullUuids); err != nil {
 				logrus.Errorf("An error occurred while printing enclave status and contents:\n%s", err)
 			}
 		}()
+	}
+
+	if isNewEnclave {
+		defer output_printers.PrintEnclaveName(enclaveCtx.GetEnclaveName())
 	}
 
 	var responseLineChan <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine
