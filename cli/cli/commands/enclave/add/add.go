@@ -21,14 +21,14 @@ import (
 )
 
 const (
-	apiContainerVersionFlagKey   = "api-container-version"
-	apiContainerLogLevelFlagKey  = "api-container-log-level"
-	isPartitioningEnabledFlagKey = "with-partitioning"
+	apiContainerVersionFlagKey  = "api-container-version"
+	apiContainerLogLevelFlagKey = "api-container-log-level"
+	isSubnetworksEnabledFlagKey = "with-subnetworks"
 	// TODO(deprecation) remove enclave ids in favor of names
 	enclaveIdFlagKey   = "id"
 	enclaveNameFlagKey = "name"
 
-	defaultIsPartitioningEnabled = "false"
+	defaultIsSubnetworksEnabled = "false"
 
 	// Signifies that an enclave ID should be auto-generated
 	autogenerateEnclaveIdKeyword = ""
@@ -66,11 +66,11 @@ var EnclaveAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 			Default:   defaults.DefaultAPIContainerVersion,
 			Usage:     "The version of the Kurtosis API container that should be started inside the enclave (blank tells the engine to use the default version)",
 		}, {
-			Key:       isPartitioningEnabledFlagKey,
+			Key:       isSubnetworksEnabledFlagKey,
 			Shorthand: "p",
 			Type:      flags.FlagType_Bool,
-			Default:   defaultIsPartitioningEnabled,
-			Usage:     "Enable network partitioning functionality (repartitioning won't work if this is set to false)",
+			Default:   defaultIsSubnetworksEnabled,
+			Usage:     "If set to true then the enclave that gets created will have subnetwork capabilities",
 		}, {
 			Key:       enclaveIdFlagKey,
 			Shorthand: "i",
@@ -110,9 +110,9 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred while getting the API Container Version using flag with key '%v'; this is a bug in Kurtosis", apiContainerVersionFlagKey)
 	}
 
-	isPartitioningEnabled, err := flags.GetBool(isPartitioningEnabledFlagKey)
+	isPartitioningEnabled, err := flags.GetBool(isSubnetworksEnabledFlagKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while getting is partitioning enabled flag using key '%v'; this is a bug in Kurtosis", isPartitioningEnabledFlagKey)
+		return stacktrace.Propagate(err, "An error occurred getting the is-subnetwork-enabled setting using flag key '%v'; this is a bug in Kurtosis", isSubnetworksEnabledFlagKey)
 	}
 
 	kurtosisLogLevelStr, err := flags.GetString(apiContainerLogLevelFlagKey)
