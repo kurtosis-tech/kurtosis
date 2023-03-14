@@ -142,28 +142,8 @@ func PrintEnclaveInspect(ctx context.Context, kurtosisBackend backend_interface.
 		keyValuePrinter.AddPair(enclaveCreationTimeTitleName, enclaveCreationTimeStr)
 	}
 
-	enclaveApiContainerStatusStr, err := enclave_status_stringifier.EnclaveAPIContainersStatusStringifier(enclaveApiContainerStatus)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred when stringify enclave API containers status")
-	}
-	keyValuePrinter.AddPair(apiContainerStatusTitleName, enclaveApiContainerStatusStr)
-
 	isApiContainerRunning := enclaveApiContainerStatus == kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING
-	if isApiContainerRunning {
-		apiContainerHostInfo := enclaveInfo.GetApiContainerHostMachineInfo()
-		apiContainerHostGrpcPortInfoStr := fmt.Sprintf(
-			"%v:%v",
-			apiContainerHostInfo.GetIpOnHostMachine(),
-			apiContainerHostInfo.GetGrpcPortOnHostMachine(),
-		)
-		apiContainerHostGrpcProxyPortInfoStr := fmt.Sprintf(
-			"%v:%v",
-			apiContainerHostInfo.GetIpOnHostMachine(),
-			apiContainerHostInfo.GetGrpcProxyPortOnHostMachine(),
-		)
-		keyValuePrinter.AddPair(apiContainerHostGrpcPortTitle, apiContainerHostGrpcPortInfoStr)
-		keyValuePrinter.AddPair(apiContainerHostGrpcProxyPortTitle, apiContainerHostGrpcProxyPortInfoStr)
-	}
+
 	keyValuePrinter.Print()
 	out.PrintOutLn("")
 
