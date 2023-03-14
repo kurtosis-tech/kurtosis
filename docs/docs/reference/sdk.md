@@ -115,7 +115,7 @@ Returns an ordered list of names for all the enclaves registered with the engine
 if users want to enumerate all enclave names, say for an autocomplete like function.
 
 **Returns**
-* `enclaveNames`: This list a sorted list of enclave names
+* `enclaveNames`: This is a sorted list of enclave names
 
 ServiceLogsStreamContent
 ------------------------
