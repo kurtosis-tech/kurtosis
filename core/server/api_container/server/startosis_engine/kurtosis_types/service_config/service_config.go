@@ -275,22 +275,6 @@ func (config *ServiceConfig) ToKurtosisType() (*kurtosis_core_rpc_api_bindings.S
 	return builder.Build(), nil
 }
 
-func (config *ServiceConfig) GetReadyConditions() (*ReadyConditions, *startosis_errors.InterpretationError) {
-	readyConditions, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*ReadyConditions](config.KurtosisValueTypeDefault, ReadyConditionsAttr)
-	if interpretationErr != nil {
-		return nil, interpretationErr
-	}
-	if !found {
-		return nil, nil
-	}
-
-	if interpretationErr = readyConditions.ValidateAndFillReadyConditions(); interpretationErr != nil {
-		return nil, interpretationErr
-	}
-
-	return readyConditions, nil
-}
-
 func convertPortMapEntry(attrNameForLogging string, key starlark.Value, value starlark.Value, dictForLogging *starlark.Dict) (string, *kurtosis_core_rpc_api_bindings.Port, *startosis_errors.InterpretationError) {
 	keyStr, ok := key.(starlark.String)
 	if !ok {
