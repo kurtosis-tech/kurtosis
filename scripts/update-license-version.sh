@@ -10,9 +10,9 @@ root_dirpath="$(dirname "${script_dirpath}")"
 #                                             Constants
 # ==================================================================================================
 PACKAGE_JSON_FILEPATH="LICENSE.md"
-REPLACE_PATTERN_VERSION="Licensed Work:        Kurtosis %s"
-REPLACE_PATTERN_YEAR="%s Kurtosis Technologies, Inc."
-REPLACE_PATTERN_CHANGE_DATE="Change Date:          %s"
+REPLACE_PATTERN_VERSION="[0-9]+.[0-9]+.[0-9]+"
+REPLACE_PATTERN_YEAR="[0-9]{4} (Kurtosis Technologies, Inc.)"
+REPLACE_PATTERN_CHANGE_DATE="(Change Date:          ).+$"
 
 # ==================================================================================================
 #                                       Arg Parsing & Validation
@@ -40,17 +40,17 @@ license_change_date=$(date -d "+4 years" +"%Y-%m-%d")
 #                                             Main Logic
 # ==================================================================================================
 to_update_abs_filepath="${root_dirpath}/${PACKAGE_JSON_FILEPATH}"
-if ! $(kudet update-version-in-file "${to_update_abs_filepath}" "${REPLACE_PATTERN_VERSION}" "${new_version}"); then
+if ! sed -i -r "s/${REPLACE_PATTERN_VERSION}/${new_version}/g" "${to_update_abs_filepath}"; then
     echo "Error: An error occurred setting new version '${new_version}' in constants file '${constant_file_abs_filepath}' using pattern '${REPLACE_PATTERN_VERSION}'" >&2
     exit 1
 fi
 
-if ! $(kudet update-version-in-file "${to_update_abs_filepath}" "${REPLACE_PATTERN_YEAR}" "${current_year}"); then
+if ! sed -i -r "s/${REPLACE_PATTERN_YEAR}/${current_year} \1/g" "${to_update_abs_filepath}"; then
     echo "Error: An error occurred setting year '${current_year}' in constants file '${constant_file_abs_filepath}' using pattern '${REPLACE_PATTERN_YEAR}'" >&2
     exit 1
 fi
 
-if ! $(kudet update-version-in-file "${to_update_abs_filepath}" "${REPLACE_PATTERN_CHANGE_DATE}" "${license_change_date}"); then
+if ! sed -i -r "s/${REPLACE_PATTERN_CHANGE_DATE}/\1${license_change_date}/g" "${to_update_abs_filepath}"; then
     echo "Error: An error occurred setting change date '${license_change_date}' in constants file '${constant_file_abs_filepath}' using pattern '${REPLACE_PATTERN_CHANGE_DATE}'" >&2
     exit 1
 fi

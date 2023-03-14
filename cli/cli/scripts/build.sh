@@ -48,8 +48,8 @@ if ! cd "${root_dirpath}"; then
   echo "Error: Couldn't cd to the git root dirpath '${server_root_dirpath}'" >&2
   exit 1
 fi
-if ! version="$(kudet get-docker-tag)"; then
-    echo "Error: Couldn't get the version using kudet get-docker-tag" >&2
+if ! version="$(./scripts/get-docker-tag.sh)"; then
+    echo "Error: Couldn't get the version using get-docker-tag.sh" >&2
     exit 1
 fi
 
