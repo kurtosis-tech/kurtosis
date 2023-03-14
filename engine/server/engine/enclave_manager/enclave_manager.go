@@ -287,6 +287,7 @@ func (manager *EnclaveManager) Clean(ctx context.Context, shouldCleanAll bool) (
 	// TODO: Refactor with kurtosis backend
 	var resultEnclaveNameAndUuids []*kurtosis_engine_rpc_api_bindings.EnclaveNameAndUuid
 
+	// we prefetch the enclaves before deletion so that we have metadata
 	enclavesForUuidNameMapping, err := manager.getEnclavesWithoutMutex(ctx)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Tried retrieving existing enclaves but failed")
