@@ -59,21 +59,9 @@ func (identifiers *ServiceIdentifiers) GetServiceUuidForIdentifier(identifier st
 	return "", stacktrace.NewError("No matching uuid for identifier '%s'", identifier)
 }
 
-func (identifiers *ServiceIdentifiers) GetOrderedListOfNamesAndUuids() []string {
+func (identifiers *ServiceIdentifiers) GetOrderedListOfNames() []string {
 	var serviceNames []string
-	var serviceUuids []string
-
-	for name := range identifiers.serviceNameToUuids {
-		serviceNames = append(serviceNames, string(name))
-	}
-
-	for uuid := range identifiers.serviceUuids {
-		serviceUuids = append(serviceUuids, string(uuid))
-	}
-
 	sort.Strings(serviceNames)
-	sort.Strings(serviceUuids)
 
-	result := append(serviceNames, serviceUuids...)
-	return result
+	return serviceNames
 }

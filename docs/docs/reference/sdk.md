@@ -110,12 +110,12 @@ an error instead.
 **Returns**
 * `enclaveUuid`: The UUID for the enclave identified by the `identifier`.
 
-### `getOrderedListOfNamesAndUuids() -> []String nameAndUuids`
-Returns an ordered list of names and UUIDs for all the enclaves registered with the currently
-running Kurtosis engine. This is useful if users want to enumerate all enclave names & UUIDs for the engine, say for an autocomplete like function.
+### `getOrderedListOfNames() -> []String enclaveNames`
+Returns an ordered list of names for all the enclaves registered with the engine. This is useful
+if users want to enumerate all enclave names, say for an autocomplete like function.
 
 **Returns**
-* `nameAndUuids`: This list is a concatenation of sorted names followed by sorted UUIDs.
+* `enclaveNames`: This list a sorted list of enclave names
 
 ServiceLogsStreamContent
 ------------------------
@@ -388,12 +388,12 @@ an error instead.
 **Returns**
 * `enclaveUuid`: The UUID for the service identified by the `identifier`.
 
-### `getOrderedListOfNamesAndUuids() -> []String nameAndUuids`
-Returns an ordered list of names and UUIDs for all the services in the enclave. This is useful
-if users want to enumerate all service names & UUIDs for the enclave, say for an autocomplete like function.
+### `getOrderedListOfNames() -> []String serviceNames`
+Returns an ordered list of names for all the services in the enclave. This is useful
+if users want to enumerate all service names, say for an autocomplete like function.
 
 **Returns**
-* `nameAndUuids`: This list is a concatenation of sorted names followed by sorted UUIDs.
+* `serviceNames`: This is a sorted list of service names
 
 ModuleContext
 -------------

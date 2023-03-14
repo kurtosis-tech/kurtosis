@@ -75,7 +75,7 @@ func TestEnclaveIdentifiers_OrderedNamesAndUuids(t *testing.T) {
 		firstUuid,
 	}
 
-	require.Equal(t, expectedOrder, testEnclaveIdentifiers.GetOrderedListOfNamesAndUuids())
+	require.Equal(t, expectedOrder, testEnclaveIdentifiers.GetOrderedListOfNames())
 }
 
 func TestEnclaveIdentifiers_GetUuidForIdentifierFailureModes(t *testing.T) {

@@ -54,21 +54,13 @@ func (identifiers *EnclaveIdentifiers) GetEnclaveUuidForIdentifier(identifier st
 	return "", stacktrace.NewError("No matching uuid for identifier '%s'", identifier)
 }
 
-func (identifiers *EnclaveIdentifiers) GetOrderedListOfNamesAndUuids() []string {
+func (identifiers *EnclaveIdentifiers) GetOrderedListOfNames() []string {
 	var enclaveNames []string
-	var enclaveUuids []string
 
 	for name := range identifiers.enclaveNameToUuids {
 		enclaveNames = append(enclaveNames, name)
 	}
 
-	for uuid := range identifiers.enclaveUuids {
-		enclaveUuids = append(enclaveUuids, string(uuid))
-	}
-
 	sort.Strings(enclaveNames)
-	sort.Strings(enclaveUuids)
-
-	result := append(enclaveNames, enclaveUuids...)
-	return result
+	return enclaveNames
 }

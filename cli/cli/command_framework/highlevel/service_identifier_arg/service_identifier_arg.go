@@ -112,7 +112,7 @@ func getCompletionsForExistingAndHistoricalServices(ctx context.Context, _ *flag
 		return nil, stacktrace.Propagate(err, "An error occurred while fetching services for enclave '%v'", enclaveContext.GetEnclaveName())
 	}
 
-	return serviceIdentifiers.GetOrderedListOfNamesAndUuids(), nil
+	return serviceIdentifiers.GetOrderedListOfNames(), nil
 }
 
 func getCompletionsOfActiveServices(ctx context.Context, flags *flags.ParsedFlags, previousArgs *args.ParsedArgs) ([]string, error) {
@@ -121,7 +121,7 @@ func getCompletionsOfActiveServices(ctx context.Context, flags *flags.ParsedFlag
 		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave identifier using key '%v'", enclaveIdentifierArgKey)
 	}
 
-	serviceUuids, serviceNames, err := getServiceUuidsAndNamesForEnclave(ctx, enclaveIdentifier)
+	_, serviceNames, err := getServiceUuidsAndNamesForEnclave(ctx, enclaveIdentifier)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the services retrieving for enclave identifier tab completion")
 	}
@@ -132,19 +132,7 @@ func getCompletionsOfActiveServices(ctx context.Context, flags *flags.ParsedFlag
 	}
 	sort.Strings(serviceNamesList)
 
-	serviceUuidsList := []string{}
-	for serviceUuid := range serviceUuids {
-		serviceUuidsList = append(serviceUuidsList, string(serviceUuid))
-	}
-	sort.Strings(serviceUuidsList)
-
-	result := []string{}
-	// result is the concatenation of the sorted names list followed by sorted uuids
-	// we want names to show up first in completion
-	result = append(result, serviceNamesList...)
-	result = append(result, serviceUuidsList...)
-
-	return result, nil
+	return serviceNamesList, nil
 }
 
 func getServiceIdentifiersForValidation(ctx context.Context, _ *flags.ParsedFlags, previousArgs *args.ParsedArgs) (map[services.ServiceUUID]bool, map[services.ServiceName]services.ServiceUUID, map[string][]services.ServiceUUID, error) {
