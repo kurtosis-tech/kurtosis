@@ -2,7 +2,7 @@
 title: Installing Historical Versions of Kurtosis CLI
 sidebar_label: Installing Historical Versions
 slug: /install-historical
-sidebar_position: 1
+sidebar_position: 2
 ---
 
 Occasionally, using historical versions of Kurtosis is necessary. For example, when working with a [Starlark](../explanations/starlark.md) Kurtosis package that was initially developed with an older version of Kurtosis, we might want rollback our Kurtosis version to ensure the version of Kurtosis we are running is compatible with the Kurtosis package.
