@@ -16,6 +16,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/enclave/inspect"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/out"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/user_support_constants"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
@@ -289,6 +290,7 @@ func run(
 		}
 	}
 
+	out.PrintOutLn("")
 	if err = inspect.PrintEnclaveInspect(ctx, kurtosisBackend, kurtosisCtx, enclaveCtx.GetEnclaveName(), false); err != nil {
 		// this error is already wrapped up
 		return err
