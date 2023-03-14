@@ -62,7 +62,7 @@ func TestEnclaveIdentifiers_GetUuidForIdentifier(t *testing.T) {
 	}
 }
 
-func TestEnclaveIdentifiers_OrderedNamesAndUuids(t *testing.T) {
+func TestEnclaveIdentifiers_OrderedNames(t *testing.T) {
 	testEnclaveIdentifiers := newEnclaveIdentifiers(combinedEnclaveIdentifiers)
 	require.NotNil(t, testEnclaveIdentifiers)
 
@@ -70,9 +70,6 @@ func TestEnclaveIdentifiers_OrderedNamesAndUuids(t *testing.T) {
 		firstEnclaveName,
 		thirdEnclaveName,
 		secondEnclaveName,
-		secondUuid,
-		thirdUuid,
-		firstUuid,
 	}
 
 	require.Equal(t, expectedOrder, testEnclaveIdentifiers.GetOrderedListOfNames())

@@ -61,7 +61,9 @@ func (identifiers *ServiceIdentifiers) GetServiceUuidForIdentifier(identifier st
 
 func (identifiers *ServiceIdentifiers) GetOrderedListOfNames() []string {
 	var serviceNames []string
+	for name := range identifiers.serviceNameToUuids {
+		serviceNames = append(serviceNames, string(name))
+	}
 	sort.Strings(serviceNames)
-
 	return serviceNames
 }
