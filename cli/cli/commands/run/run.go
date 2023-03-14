@@ -47,6 +47,9 @@ const (
 	fullUuidsFlagKey       = "full-uuids"
 	fullUuidFlagKeyDefault = "false"
 
+	showEnclaveInspectFlagKey = "show-enclave-inspect"
+	showEnclaveInspectDefault = "true"
+
 	enclaveIdentifierFlagKey = "enclave-identifier"
 	// Signifies that an enclave ID should be auto-generated
 	autogenerateEnclaveIdentifierKeyword = ""
@@ -140,6 +143,12 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			Default:   defaultVerbosity,
 		},
 		{
+			Key:     showEnclaveInspectFlagKey,
+			Usage:   "If true then Kurtosis runs enclave inspect immediately after running the Starlark Package. Default true",
+			Type:    flags.FlagType_Bool,
+			Default: showEnclaveInspectDefault,
+		},
+		{
 			Key:     fullUuidsFlagKey,
 			Usage:   "If true then Kurtosis prints full UUIDs instead of shortened UUIDs. Default false.",
 			Type:    flags.FlagType_Bool,
@@ -214,6 +223,16 @@ func run(
 	verbosity, err := parseVerbosityFlag(flags)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the verbosity using flag key '%s'", verbosityFlagKey)
+	}
+
+	showFullUuids, err := flags.GetBool(fullUuidsFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", fullUuidsFlagKey)
+	}
+
+	showEnclaveInspect, err := flags.GetBool(showEnclaveInspectFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", showEnclaveInspectFlagKey)
 	}
 
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
@@ -291,9 +310,11 @@ func run(
 	}
 
 	out.PrintOutLn("")
-	if err = inspect.PrintEnclaveInspect(ctx, kurtosisBackend, kurtosisCtx, enclaveCtx.GetEnclaveName(), false); err != nil {
-		// this error is already wrapped up
-		return err
+	if showEnclaveInspect {
+		if err = inspect.PrintEnclaveInspect(ctx, kurtosisBackend, kurtosisCtx, enclaveCtx.GetEnclaveName(), showFullUuids); err != nil {
+			// this error is already wrapped up
+			return err
+		}
 	}
 
 	return nil
