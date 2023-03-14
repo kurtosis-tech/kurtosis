@@ -14,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/enclave/inspect"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/user_support_constants"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
@@ -41,6 +42,9 @@ const (
 
 	dryRunFlagKey = "dry-run"
 	defaultDryRun = "false"
+
+	fullUuidsFlagKey       = "full-uuids"
+	fullUuidFlagKeyDefault = "false"
 
 	enclaveIdentifierFlagKey = "enclave-identifier"
 	// Signifies that an enclave ID should be auto-generated
@@ -134,6 +138,12 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			Shorthand: "v",
 			Default:   defaultVerbosity,
 		},
+		{
+			Key:     fullUuidsFlagKey,
+			Usage:   "If true then Kurtosis prints full UUIDs instead of shortened UUIDs. Default false.",
+			Type:    flags.FlagType_Bool,
+			Default: fullUuidFlagKeyDefault,
+		},
 	},
 	Args: []*args.ArgConfig{
 		// TODO add a `Usage` description here when ArgConfig supports it
@@ -155,7 +165,7 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 
 func run(
 	ctx context.Context,
-	_ backend_interface.KurtosisBackend,
+	kurtosisBackend backend_interface.KurtosisBackend,
 	_ kurtosis_engine_rpc_api_bindings.EngineServiceClient,
 	metricsClient metrics_client.MetricsClient,
 	flags *flags.ParsedFlags,
@@ -277,6 +287,11 @@ func run(
 		if err := metricsClient.TrackKurtosisRunFinishedEvent(starlarkScriptOrPackagePath, len(servicesInEnclaveForMetrics), runSucceeded); err != nil {
 			logrus.Warn("An error occurred tracking kurtosis run finished event")
 		}
+	}
+
+	if err = inspect.PrintEnclaveInspect(ctx, kurtosisBackend, kurtosisCtx, userRequestedEnclaveIdentifier, false); err != nil {
+		// this error is already wrapped up
+		return err
 	}
 
 	return nil
