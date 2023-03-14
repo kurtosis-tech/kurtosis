@@ -248,6 +248,16 @@ func run(
 		defer output_printers.PrintEnclaveName(enclaveCtx.GetEnclaveName())
 	}
 
+	if showEnclaveInspect {
+		output_printers.GetSpotlightMessagePrinter().PrintWithLogger("Current Enclave State")
+		defer func() {
+			out.PrintOutLn("")
+			if err = inspect.PrintEnclaveInspect(ctx, kurtosisBackend, kurtosisCtx, enclaveCtx.GetEnclaveName(), showFullUuids); err != nil {
+				logrus.Errorf("An error occurred while printing enclave status and contents:\n%s", err)
+			}
+		}()
+	}
+
 	var responseLineChan <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine
 	var cancelFunc context.CancelFunc
 	var errRunningKurtosis error
@@ -306,14 +316,6 @@ func run(
 	} else {
 		if err := metricsClient.TrackKurtosisRunFinishedEvent(starlarkScriptOrPackagePath, len(servicesInEnclaveForMetrics), runSucceeded); err != nil {
 			logrus.Warn("An error occurred tracking kurtosis run finished event")
-		}
-	}
-
-	out.PrintOutLn("")
-	if showEnclaveInspect {
-		if err = inspect.PrintEnclaveInspect(ctx, kurtosisBackend, kurtosisCtx, enclaveCtx.GetEnclaveName(), showFullUuids); err != nil {
-			// this error is already wrapped up
-			return err
 		}
 	}
 
