@@ -28,7 +28,7 @@ const (
 	enclaveIdFlagKey   = "id"
 	enclaveNameFlagKey = "name"
 
-	defaultIsPartitioningEnabled = "false"
+	defaultIsSubnetworksEnabled = "false"
 
 	// Signifies that an enclave ID should be auto-generated
 	autogenerateEnclaveIdKeyword = ""
@@ -69,8 +69,8 @@ var EnclaveAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 			Key:       isSubnetworksEnabledFlagKey,
 			Shorthand: "p",
 			Type:      flags.FlagType_Bool,
-			Default:   defaultIsPartitioningEnabled,
-			Usage:     "Enable network partitioning functionality (repartitioning won't work if this is set to false)",
+			Default:   defaultIsSubnetworksEnabled,
+			Usage:     "If set to true then the enclave that gets created will have subnetwork capabilities (default false)",
 		}, {
 			Key:       enclaveIdFlagKey,
 			Shorthand: "i",
@@ -112,7 +112,7 @@ func run(
 
 	isPartitioningEnabled, err := flags.GetBool(isSubnetworksEnabledFlagKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while getting is partitioning enabled flag using key '%v'; this is a bug in Kurtosis", isSubnetworksEnabledFlagKey)
+		return stacktrace.Propagate(err, "An error occurred getting the is-subnetwork-enabled setting using flag key '%v'; this is a bug in Kurtosis", isSubnetworksEnabledFlagKey)
 	}
 
 	kurtosisLogLevelStr, err := flags.GetString(apiContainerLogLevelFlagKey)
