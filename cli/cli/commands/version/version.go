@@ -1,9 +1,11 @@
 package version
 
 import (
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/out"
 	"github.com/kurtosis-tech/kurtosis/kurtosis_version"
+	lsp_cli "github.com/kurtosis-tech/vscode-kurtosis/starlark-lsp/pkg/document"
 	"github.com/spf13/cobra"
 )
 
@@ -20,6 +22,8 @@ func init() {
 }
 
 func run(cmd *cobra.Command, args []string) error {
+	documentMap := lsp_cli.DocumentMap{}
+	fmt.Println(documentMap)
 	out.PrintOutLn(kurtosis_version.KurtosisVersion)
 	return nil
 }

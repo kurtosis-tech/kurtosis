@@ -7,7 +7,7 @@ builds:
   - id: cli
     env:
       # We need to set this to get a statically-linked binary, else we'll get a dynamically-linked binary that won't be able to be run anywhere
-      - CGO_ENABLED=0
+      - CGO_ENABLED=1
     main: .
     binary: "{{ .Env.CLI_BINARY_FILENAME }}"
     goos:
