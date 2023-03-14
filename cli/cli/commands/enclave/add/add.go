@@ -70,7 +70,7 @@ var EnclaveAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 			Shorthand: "p",
 			Type:      flags.FlagType_Bool,
 			Default:   defaultIsSubnetworksEnabled,
-			Usage:     "If set to true then the enclave that gets created will have subnetwork capabilities (default false)",
+			Usage:     "If set to true then the enclave that gets created will have subnetwork capabilities",
 		}, {
 			Key:       enclaveIdFlagKey,
 			Shorthand: "i",
