@@ -239,18 +239,22 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred connecting to the local Kurtosis engine")
 	}
 
-	enclaveCtx, _, err := getOrCreateEnclaveContext(ctx, userRequestedEnclaveIdentifier, kurtosisCtx, isPartitioningEnabled, metricsClient)
+	enclaveCtx, isNewEnclave, err := getOrCreateEnclaveContext(ctx, userRequestedEnclaveIdentifier, kurtosisCtx, isPartitioningEnabled, metricsClient)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the enclave context for enclave '%v'", userRequestedEnclaveIdentifier)
 	}
 
 	if showEnclaveInspect {
 		defer func() {
-			output_printers.GetSpotlightMessagePrinter().PrintWithLogger("State of Enclave")
+			output_printers.GetSpotlightMessagePrinter().PrintWithLogger("Current Enclave State")
 			if err = inspect.PrintEnclaveInspect(ctx, kurtosisBackend, kurtosisCtx, enclaveCtx.GetEnclaveName(), showFullUuids); err != nil {
 				logrus.Errorf("An error occurred while printing enclave status and contents:\n%s", err)
 			}
 		}()
+	}
+
+	if isNewEnclave {
+		defer output_printers.PrintEnclaveName(enclaveCtx.GetEnclaveName())
 	}
 
 	var responseLineChan <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine
