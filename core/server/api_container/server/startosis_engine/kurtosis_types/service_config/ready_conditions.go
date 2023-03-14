@@ -111,14 +111,15 @@ func (readyConditions *ReadyConditions) ValidateAndFillReadyConditions() *starto
 
 	httpRecipe, found, interpretationErr = kurtosis_type_constructor.ExtractAttrValue[*recipe.HttpRequestRecipe](readyConditions.KurtosisValueTypeDefault, RecipeAttr)
 	genericRecipe = httpRecipe
-	if interpretationErr != nil || !found {
+	if !found {
+		return startosis_errors.NewInterpretationError("Required attribute '%s' could not be found on type '%s'",
+			RecipeAttr, ReadyConditionsTypeName)
+	}
+	//TODO we should rework the recipe types to inherit a single common type, this will avoid the double parsing here.
+	if interpretationErr != nil {
 		execRecipe, found, interpretationErr = kurtosis_type_constructor.ExtractAttrValue[*recipe.ExecRecipe](readyConditions.KurtosisValueTypeDefault, RecipeAttr)
 		if interpretationErr != nil {
 			return interpretationErr
-		}
-		if !found {
-			return startosis_errors.NewInterpretationError("Required attribute '%s' could not be found on type '%s'",
-				RecipeAttr, ReadyConditionsTypeName)
 		}
 		genericRecipe = execRecipe
 	}
