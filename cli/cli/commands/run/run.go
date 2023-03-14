@@ -289,7 +289,7 @@ func run(
 		}
 	}
 
-	if err = inspect.PrintEnclaveInspect(ctx, kurtosisBackend, kurtosisCtx, userRequestedEnclaveIdentifier, false); err != nil {
+	if err = inspect.PrintEnclaveInspect(ctx, kurtosisBackend, kurtosisCtx, enclaveCtx.GetEnclaveName(), false); err != nil {
 		// this error is already wrapped up
 		return err
 	}
