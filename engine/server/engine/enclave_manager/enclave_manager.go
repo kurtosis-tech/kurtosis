@@ -30,6 +30,8 @@ const (
 	validNumberOfUuidMatches = 1
 
 	errorDelimiter = ", "
+
+	nameNotFound = "Name Not Found"
 )
 
 // TODO Move this to the KurtosisBackend to calculate!!
@@ -285,6 +287,11 @@ func (manager *EnclaveManager) Clean(ctx context.Context, shouldCleanAll bool) (
 	// TODO: Refactor with kurtosis backend
 	var resultEnclaveNameAndUuids []*kurtosis_engine_rpc_api_bindings.EnclaveNameAndUuid
 
+	enclavesForUuidNameMapping, err := manager.getEnclavesWithoutMutex(ctx)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Tried retrieving existing enclaves but failed")
+	}
+
 	successfullyRemovedArtifactIds, removalErrors, err := manager.cleanEnclaves(ctx, shouldCleanAll)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while cleaning enclaves with shouldCleanAll set to '%v'", shouldCleanAll)
@@ -305,14 +312,19 @@ func (manager *EnclaveManager) Clean(ctx context.Context, shouldCleanAll bool) (
 	if len(successfullyRemovedArtifactIds) > 0 {
 		logrus.Infof("Successfully removed the enclaves")
 		sort.Strings(successfullyRemovedArtifactIds)
-		for _, successfullyRemovedEnclaveUuid := range successfullyRemovedArtifactIds {
-			enclaveName := manager.getEnclaveNameForEnclaveUuidUnlocked(successfullyRemovedEnclaveUuid)
+		for _, successfullyRemovedEnclaveUuidStr := range successfullyRemovedArtifactIds {
 			nameAndUuid := &kurtosis_engine_rpc_api_bindings.EnclaveNameAndUuid{
-				Name: enclaveName,
-				Uuid: successfullyRemovedEnclaveUuid,
+				Uuid: successfullyRemovedEnclaveUuidStr,
+				Name: nameNotFound,
+			}
+			// this should always be found; but we don't want to error if it isn't
+			// we just use the default not found that we set above if we can't find the name
+			enclave, found := enclavesForUuidNameMapping[enclave.EnclaveUUID(successfullyRemovedEnclaveUuidStr)]
+			if found {
+				nameAndUuid.Name = enclave.GetName()
 			}
 			resultEnclaveNameAndUuids = append(resultEnclaveNameAndUuids, nameAndUuid)
-			logrus.Infof("Enclave Uuid '%v'", successfullyRemovedEnclaveUuid)
+			logrus.Infof("Enclave Uuid '%v'", successfullyRemovedEnclaveUuidStr)
 		}
 	}
 
