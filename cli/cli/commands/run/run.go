@@ -246,7 +246,6 @@ func run(
 
 	if showEnclaveInspect {
 		defer func() {
-			output_printers.GetSpotlightMessagePrinter().PrintWithLogger("Current Enclave State")
 			if err = inspect.PrintEnclaveInspect(ctx, kurtosisBackend, kurtosisCtx, enclaveCtx.GetEnclaveName(), showFullUuids); err != nil {
 				logrus.Errorf("An error occurred while printing enclave status and contents:\n%s", err)
 			}
