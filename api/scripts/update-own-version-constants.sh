@@ -9,12 +9,11 @@ root_dirpath="$(dirname "${script_dirpath}")"
 # ==================================================================================================
 #                                             Constants
 # ==================================================================================================
-API_SUPPORTED_LANGS_REL_FILEPATH="supported-languages.txt"
 
 # Relative to root of repo
 declare -A REL_FILEPATH_UPDATE_PATTERNS
-REL_FILEPATH_UPDATE_PATTERNS["golang/kurtosis_version/kurtosis_version.go"]="KurtosisVersion = \"%s\""
-REL_FILEPATH_UPDATE_PATTERNS["typescript/src/kurtosis_version/kurtosis_version.ts"]="KURTOSIS_VERSION: string = \"%s\""
+REL_FILEPATH_UPDATE_PATTERNS["golang/kurtosis_version/kurtosis_version.go"]="(KurtosisVersion = \")[0-9]+.[0-9]+.[0-9]+(\")"
+REL_FILEPATH_UPDATE_PATTERNS["typescript/src/kurtosis_version/kurtosis_version.ts"]="(KURTOSIS_VERSION: string = \")[0-9]+.[0-9]+.[0-9]+(\")"
 
 # ==================================================================================================
 #                                       Arg Parsing & Validation
@@ -43,7 +42,7 @@ echo "Updating own-version constants..."
 for rel_filepath in "${!REL_FILEPATH_UPDATE_PATTERNS[@]}"; do
     replace_pattern="${REL_FILEPATH_UPDATE_PATTERNS["${rel_filepath}"]}"
     constant_file_abs_filepath="${root_dirpath}/${rel_filepath}"
-    if ! $(kudet update-version-in-file "${constant_file_abs_filepath}" "${replace_pattern}" "${new_version}"); then
+    if ! sed -i -r "s/${replace_pattern}/\1${new_version}\2/g" "${constant_file_abs_filepath}"; then
         echo "Error: An error occurred setting new version '${new_version}' in constants file '${constant_file_abs_filepath}' using pattern '${replace_pattern}'" >&2
         exit 1
     fi
