@@ -3,36 +3,49 @@
 
 ----
 
-[Kurtosis](https://www.kurtosis.com) is a platform for orchestrating distributed system environments, allowing easy creation and manipulation of stage-appropriate deployments across the early stages of the development cycle (prototyping, testing).
+[Kurtosis](https://www.kurtosis.com) is a development platform for distributed applications that aims to provide a consistent experience across all stages of distributed app software delivery.
 
 Use cases for Kurtosis include:
 
-- Enable individual developers to prototype on personal development environments without bothering with environment setup and configuration
-- Enable development teams to run automated end-to-end tests for distributed systems, including fault tolerance tests in servers and networks, load testing, performance testing, etc.
-- Enable developers to easily debug failing distributed systems during development
+- Running a third-party distributed app, without knowing how to set it up
+- Local prototyping & development on distributed apps
+- Writing integration and end-to-end distributed app tests (e.g. happy path & sad path tests, load tests, performance tests, etc.)
+- Running integration/E2E distributed app tests
+- Debugging distributed apps during development
 
 ## Why Kurtosis?
 
-Container management and container orchestration systems like Docker and Kubernetes are each great at serving developers in different parts of the development cycle (development for Docker, production for Kubernetes). These, and other distributed system deployment tools, are low-level, stage-specific tools that require teams of DevOps engineers to manage.
+Docker and Kubernetes are each great at serving developers in different parts of the development cycle: Docker for development/testing, Kubernetes for production. However, the separation between the two entails different distributed app definitions, and different tooling. In dev/test, this means Docker Compose and Docker observability tooling. In production, this means Helm definitions and manually-configured observability tools like Istio, Datadog, or Honeycomb.
 
-Kurtosis is designed to optimize environment management and control across the development cycle - operating at one level of abstraction higher than existing tools, giving developers the environments and the ability to manipulate them as needed at each stage.
+Kurtosis aims at one level of abstraction higher. Developers can define their distributed applications in Kurtosis, and Kurtosis will handle:
+
+- Running on Docker or Kubernetes
+- Reproduceability
+- Safety
+- Port-forwarding & local development hookups
+- Observability
+- Sharing
+
+If we succeed in our vision, you will be able to use the same distributed application definition from local dev all the way to prod.
 
 ---
 
 ## To start using Kurtosis
 
-### Pre Requisite
+### Prerequisites
 
-Make sure Docker must be installed and running on your machine:
+Docker must be installed and running on your machine:
+
 ```bash
 docker version
 ```
 
-If you don't, follow the instructions from [Docker docs](https://docs.docker.com/get-docker/).
+If it's not, follow the instructions from the [Docker docs](https://docs.docker.com/get-docker/).
 
-### Installing
+### Installing Kurtosis
 
 On MacOS:
+
 ```bash
 brew install kurtosis-tech/tap/kurtosis-cli
 ```
@@ -56,7 +69,8 @@ sudo yum install kurtosis-cli
 
 ### Running
 
-First of all we can create a simple Starlark script to spin up multiple replicas of `httpd`:
+First of all we can create [a simple Starlark script][starlark-explanation] to spin up multiple replicas of `httpd`:
+
 ```python
 cat > script.star << EOF
 def run(plan, args):
@@ -203,13 +217,6 @@ On MacOS:
 brew install filosottile/musl-cross/musl-cross
 ```
 
-- [Kudet](https://github.com/kurtosis-tech/kudet) (Kurtosis CLI helper)
-
-On MacOS:
-```bash
-brew install kurtosis-tech/tap/kudet
-```
-
 ## Unit Test Instructions
 
 For all Go modules, run `go test ./...` on the module folder. For example:
@@ -297,4 +304,5 @@ If you have feedback for us or a question around how Kurtosis works and the [doc
 <!-------- ONLY LINKS BELOW THIS POINT -------->
 [enclave]: https://docs.kurtosis.com/explanations/architecture#enclaves
 [docs]: https://docs.kurtosis.com
+[starlark-explanation]: https://docs.kurtosis.com/explanations/starlark
 

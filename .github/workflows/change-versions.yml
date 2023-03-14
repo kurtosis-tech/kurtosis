@@ -12,12 +12,6 @@ jobs:
       - uses: actions/checkout@v3
         with:
           token: "${{ secrets.RELEASER_TOKEN }}"
-          fetch-depth: 0
-      - run: |
-          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
-          sudo apt update
-          sudo apt install kudet
-        name: Install Kudet
       - name: Change versions
         run: | 
           api/scripts/update-package-versions.sh "$(cat version.txt)"
@@ -35,6 +29,7 @@ jobs:
           cd docs/
           npm install
           npm run docusaurus docs:version $version
+          cp ../CHANGELOG.md versioned_docs/version-$version/changelog.md
       - uses: stefanzweifel/git-auto-commit-action@v4
         with:
           token: "${{ secrets.RELEASER_TOKEN }}"
