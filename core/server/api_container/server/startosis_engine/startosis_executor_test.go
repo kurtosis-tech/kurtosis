@@ -77,7 +77,7 @@ func TestExecuteKurtosisInstructions_ExecuteForReal_FailureHalfWay(t *testing.T)
 	instruction3.AssertNumberOfCalls(t, "GetCanonicalInstruction", 0)
 	instruction3.AssertNumberOfCalls(t, "Execute", 0)
 
-	expectedErrorMsgPrefix := `An error occurred executing instruction (number 2): 
+	expectedErrorMsgPrefix := `An error occurred executing instruction (number 2) at dummyFile[12:1]:
 instruction2()
  --- at`
 	expectedLowLevelErrorMessage := "expected error for test"
