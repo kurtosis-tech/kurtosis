@@ -37,7 +37,6 @@ builds:
         goarch: arm64
         flags:
           - -tags=osusergo
-          - -mod=vendor
         env:
           - CGO_ENABLED=1
           - CC="o64h-clang"
@@ -45,7 +44,6 @@ builds:
       - goos: darwin
         flags:
           - -tags=osusergo
-          - -mod=vendor
         goarch: amd64
         env:
           - CGO_ENABLED=1
