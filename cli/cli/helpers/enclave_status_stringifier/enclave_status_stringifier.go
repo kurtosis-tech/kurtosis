@@ -23,16 +23,3 @@ func EnclaveContainersStatusStringifier(enclaveStatus kurtosis_engine_rpc_api_bi
 		return "", stacktrace.NewError("Unrecognized enclave status '%v'; this is a bug in Kurtosis", enclaveStatus)
 	}
 }
-
-func EnclaveAPIContainersStatusStringifier(enclaveStatus kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus) (string, error) {
-	switch enclaveStatus {
-	case kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING:
-		return colorizeRunning("RUNNING"), nil
-	case kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_NONEXISTENT:
-		return "NONEXISTENT", nil
-	case kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_STOPPED:
-		return colorizeStopped("STOPPED"), nil
-	default:
-		return "", stacktrace.NewError("Unrecognized enclave API status '%v'; this is a bug in Kurtosis", enclaveStatus)
-	}
-}
