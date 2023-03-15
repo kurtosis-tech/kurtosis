@@ -29,6 +29,9 @@ const (
 	missingPortPlaceholder        = "<none>"
 	linkDelimeter                 = "://"
 	defaultEmptyIPAddrForAPIC     = ""
+
+	statusRunning = "RUNNING"
+	statusStopped = "STOPPED"
 )
 
 var (
@@ -227,9 +230,9 @@ func getUserServiceInfoMapFromAPIContainer(ctx context.Context, enclaveInfo *kur
 
 func colorizeServiceStatus(serviceStatus string) string {
 	switch serviceStatus {
-	case "RUNNING":
+	case statusRunning:
 		return colorizeRunning(serviceStatus)
-	case "STOPPED":
+	case statusStopped:
 		return colorizeStopped(serviceStatus)
 	default:
 		return serviceStatus
