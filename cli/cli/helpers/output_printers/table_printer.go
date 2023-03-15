@@ -1,6 +1,7 @@
 package output_printers
 
 import (
+	"github.com/fatih/color"
 	"github.com/kurtosis-tech/stacktrace"
 )
 
@@ -11,6 +12,10 @@ type TablePrinter struct {
 
 	dataRows [][]string
 }
+
+var (
+	noColorForPadding = color.New(color.Reset).SprintfFunc()
+)
 
 // Prints columns of output, each with a header
 func NewTablePrinter(columnHeaders ...string) *TablePrinter {
@@ -34,6 +39,10 @@ func (printer *TablePrinter) AddRow(data ...string) error {
 			numDataElems,
 			numColHeaders,
 		)
+	}
+
+	for index, _ := range data {
+		data[index] = noColorForPadding(data[index])
 	}
 
 	printer.dataRows = append(printer.dataRows, data)
