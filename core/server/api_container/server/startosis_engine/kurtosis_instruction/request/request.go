@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/recipe"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
@@ -112,7 +113,7 @@ func (builtin *RequestCapabilities) Interpret(arguments *builtin_argument.Argume
 		if err != nil {
 			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%v' argument", acceptableCodes)
 		}
-		acceptableCodes, err = starlarkListToSlice(acceptableCodesValue)
+		acceptableCodes, err = kurtosis_types.SafeCastToIntegerSlice(acceptableCodesValue)
 		if err != nil {
 			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to parse '%v' argument", acceptableCodes)
 		}
@@ -162,21 +163,4 @@ func (builtin *RequestCapabilities) Execute(ctx context.Context, _ *builtin_argu
 	builtin.runtimeValueStore.SetValue(builtin.resultUuid, result)
 	instructionResult := builtin.httpRequestRecipe.ResultMapToString(result)
 	return instructionResult, err
-}
-
-func starlarkListToSlice(starlarkList *starlark.List) ([]int, error) {
-	slice := []int{}
-	for i := 0; i < starlarkList.Len(); i++ {
-		value := starlarkList.Index(i)
-		starlarkCastedValue, ok := value.(starlark.Int)
-		if !ok {
-			return nil, stacktrace.NewError("An error occurred when casting element '%v' from slice '%v' to integer", value, starlarkList)
-		}
-		castedValue, ok := starlarkCastedValue.Int64()
-		if !ok {
-			return nil, stacktrace.NewError("An error occurred when casting element '%v' to Go integer", castedValue)
-		}
-		slice = append(slice, int(castedValue))
-	}
-	return slice, nil
 }
