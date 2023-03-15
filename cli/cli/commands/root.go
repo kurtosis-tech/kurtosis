@@ -383,5 +383,7 @@ func shouldPesterUsersAboutVersions() bool {
 		return true
 	}
 
+	// no error occurred and the last time we bothered the user was not frequencyToPesterUsers duration before
+	// we don't have to bother the user
 	return false
 }
