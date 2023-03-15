@@ -5,55 +5,62 @@ slug: /upgrade
 sidebar_position: 2
 ---
 
+<!---------- START IMPORTS ------------>
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+<!---------- END IMPORTS ------------>
+
 The instructions in this guide assume you already have Kurtosis installed, and will walk you through upgrading to the latest version of Kurtosis. 
 
 If you're looking to install Kurtosis, [see here][install-guide].
 
-Step One: Verify Breaking Changes
-=================================
+I. Check breaking changes
+---------------------------------
 You can check the version of the CLI you're running with `kurtosis version`. Before upgrading to the latest version, check [the changelog to see if there are any breaking changes][cli-changelog] before proceeding with the steps below to upgrade. 
 
-Step Two: Upgrade The CLI
-=========================
+II. Upgrade the CLI
+-------------------------
 
-<details>
-<summary>Homebrew (MacOS)</summary>
+<Tabs groupId="install-methods">
+<TabItem value="homebrew" label="brew (MacOS)">
 
 ```bash
 brew update && brew upgrade kurtosis-tech/tap/kurtosis-cli
 ```
-</details>
 
-<details>
-<summary>apt (Ubuntu)</summary>
+</TabItem>
+<TabItem value="apt" label="apt (Ubuntu)">
 
 ```bash
 apt install --only-upgrade kurtosis-cli
 ```
-</details>
 
-<details>
-<summary>yum (RHEL)</summary>
+</TabItem>
+<TabItem value="yum" label="yum (RHEL)">
 
 ```bash
 yum upgrade kurtosis-cli
 ```
-</details>
 
-<details>
-<summary>deb, rpm, and apk</summary>
+</TabItem>
+<TabItem value="other-linux" label="deb, rpm, and apk">
 
 Download the appropriate artifact from [the release artifacts page][release-artifacts].
-</details>
 
-<details><summary>Windows</summary>
+</TabItem>
+
+<TabItem value="windows" label="Windows">
 
 The Kurtosis CLI cannot be installed directly on Windows. Windows users are encouraged to use [Windows Subsystem for Linux (WSL)][windows-susbsystem-for-linux] to use Kurtosis.
 
-</details>
+</TabItem>
 
-Step Three: Restart Engine If Necessary
-=======================================
+</Tabs>
+
+III. Restart the engine
+-----------------------
 If you upgraded the CLI through a minor version (the `Y` in a `X.Y.Z` version), you may need to restart your Kurtosis engine after the upgrade. 
 
 If this is needed, the Kurtosis CLI will prompt you with an error like so:

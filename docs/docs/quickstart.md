@@ -5,14 +5,14 @@ slug: /quickstart
 ---
 
 Introduction
-============
+------------
 Welcome to the [Kurtosis][homepage] quickstart!
 
 If you arrived here by chance and you're curious as to what Kurtosis _is_, [see here][what-is-kurtosis-explanation].
 
-If you're ready to get going, this guide will give you basic Kurtosis competency by building a Kurtosis package step by step.
+If you're ready to get going, this guide will take ~15 minutes and will give you basic Kurtosis competency by walking you through building a Kurtosis package.
 
-You need to [have Kurtosis installed][installing-kurtosis-guide] (or [upgraded to latest][upgrading-kurtosis-guide] if you installed it in the past), but you do not need any other knowledge.
+You need to [have Kurtosis installed][installing-kurtosis-guide] (or [upgraded to latest][upgrading-kurtosis-guide] if you already have it), but you do not need any other knowledge.
 
 :::tip
 If you get stuck at any point during this quickstart, there are many, many options available:
@@ -27,7 +27,7 @@ If you get stuck at any point during this quickstart, there are many, many optio
 :::
 
 Hello, World
-============
+------------
 First, create and `cd` into a directory to hold the project you'll be working on:
 
 ```bash
@@ -76,7 +76,7 @@ In this section, we created a `.star` file that prints `Hello, world`. `.star` c
 When you ran the Starlark, you got `Created enclave: quickstart`. An [enclave][enclaves-explanation] is a Kurtosis primitive that can best be thought of as an ephemeral house for a distributed application. The distributed apps that you define with Starlark will run inside enclaves. Enclaves are intended to be easy to create, easy to destroy, cheap to run, and isolated from each other, so use enclaves liberally!
 
 Run Postgres
-==============
+--------------
 The heart of any application is the database. To introduce you to Kurtosis, we'll start by launching a Postgres server using Kurtosis.
 
 Replace the contents of your `main.star` file with the following contents:
@@ -151,7 +151,7 @@ Note that Kurtosis did not execute anything until _after_ interpretation and val
 We call this approach [multi-phase runs][multi-phase-runs-reference]. While it has powerful benefits, the major gotcha for new Kurtosis users is that _you cannot reference execution-time values like IP address in Starlark_ because they simply don't exist at interpretation time. We'll see how to work around this limitation later.
 
 Add some data
-=============
+-------------
 A database without data is a fancy heater, so let's add some. 
 
 Our two options for seeding a Postgres database are:
@@ -361,7 +361,7 @@ This ability to modularize your distributed application logic using only a Githu
 
 
 Add an API
-==========
+----------
 Databases don't come alone, however. In this section we'll add a [PostgREST API][postgrest] in front of the database and see how Kurtosis handles inter-service dependencies.
 
 Replace the contents of your `main.star` with this:
@@ -618,7 +618,7 @@ postgrest = plan.add_service(
 ...Kurtosis simply swapped in the correct execution-time values when it came time to start the PostgREST container. While future references take some getting used to, we've found the feedback loop speedup to be very worth it.
 
 Modifying data
-==============
+--------------
 Now that we have an API, we should be able to interact with the data.
 
 Inspect your enclave once more:
@@ -811,7 +811,7 @@ def run(plan, args):
 ```
 
 Publishing
-==========
+----------
 Congratulations - you've written your very first distributed application in Kurtosis! Now it's time to share it with the world.
 
 The Kurtosis packaging system uses Github as its package repository, just like Go modules. Also like Go modules, Kurtosis packages need their name to match their location on Github.
@@ -857,7 +857,7 @@ Testing
 -->
 
 Conclusion
-==========
+----------
 In this tutorial you have:
 
 - Started a Postgres database
