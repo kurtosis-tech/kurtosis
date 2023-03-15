@@ -32,7 +32,7 @@ const config = {
           routeBasePath: '/',
           versions: {
             current: {
-              label: 'main',
+              label: 'Upcoming Release',
             }
           }
         },
