@@ -40,7 +40,7 @@ def run(plan, args):
 		service_name = "test",
 		command = %v,
 	)
-	exec_result = plan.exec(exec_recipe)
+	exec_result = plan.exec(exec_recipe, accepted_codes=[0, 1])
 	plan.assert(exec_result["code"], "==", %d)
 	plan.assert(exec_result["output"], "==", "%s")
 `
