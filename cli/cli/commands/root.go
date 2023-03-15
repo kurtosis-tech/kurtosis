@@ -362,10 +362,11 @@ func shouldPesterUsersAboutVersions() bool {
 	if os.IsNotExist(err) {
 		_, err = os.Create(lastPesteredUsersAboutVersionsFile)
 		if err != nil {
-			logrus.Errorf("Tried creating a file to figure out if a user needs  to be pestered but failed")
+			logrus.Errorf("Tried creating a file to figure out if a user needs  to be pestered but failed with error '%s'", err)
 		}
 		return true
-	} else {
+	}
+	if err != nil {
 		logrus.Errorf("Tried checking last pestered file but failed with error '%s'\n", err)
 		return true
 	}
