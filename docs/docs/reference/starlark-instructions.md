@@ -469,13 +469,13 @@ Say we are overriding a connection between two subnetworks, as shown below:
 
 connection_config = ConnectionConfig(
     packet_delay_distribution = UniformPacketDelayDistribution(
-        ms = 500
+        ms = 500,
     )
 )
 
 set_connection(
     subnetworks = ("subnetworkA", "subnetworkB"),
-    config = connection_config
+    config = connection_config,
 )
 
 ```

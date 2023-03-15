@@ -23,7 +23,7 @@ connection_config = ConnectionConfig(
     # OPTIONAL: Valid value are UniformPacketDelayDistribution or NormalPacketDelayDistribution
     packet_delay_distribution = UniformPacketDelayDistribution(
         # Delay in ms
-        ms = 500 
+        ms = 500,
     ) 
 )
 ```
@@ -110,7 +110,7 @@ The user defined port IDs in above port map are: `http` and `grpc`. These can be
     recipe = GetHttpRequestRecipe(
         port_id = "http",
         service_name = "service-using-test-service-config",
-        endpoint = "/ping"
+        endpoint = "/ping",
         ...
     )
 ```
@@ -178,7 +178,7 @@ delay  = UniformPacketDelayDistribution(
     # Non-Negative Integer
     # Amount of constant delay added to outgoing packets from the subnetwork
     # MANDATORY
-    ms = 1000
+    ms = 1000,
 )
 ```
 
@@ -192,19 +192,19 @@ delay  = NormalPacketDelayDistribution(
     # Non-Negative Integer
     # Amount of mean delay added to outgoing packets from the subnetwork
     # MANDATORY
-    mean_ms = 1000
+    mean_ms = 1000,
 
     # Non-Negative Integer
     # Amount of variance (jitter) added to outgoing packets from the subnetwork
     # MANDATORY
-    std_dev_ms = 10
+    std_dev_ms = 10,
     
     # Non-Negative Float
     # Percentage of correlation observed among packets. It means that the delay observed in next packet
     # will exhibit a corrlation factor of 10.0% with the previous packet. 
     # OPTIONAL
     # DEFAULT = 0.0
-    correlation = 10.0
+    correlation = 10.0,
 )   
 ```
 
@@ -224,7 +224,7 @@ port_spec = PortSpec(
 
     # Application protocol for the port
     # Optional
-    application_protocol = "http"
+    application_protocol = "http",
 )
 ```
 The above constructor returns a `PortSpec` object that contains port information in the form of a [future reference][future-references-reference] and can be used with
@@ -255,7 +255,7 @@ config = ServiceConfig(
 
             # Application protocol for the port
             # Optional
-            application_protocol = "http"
+            application_protocol = "http",
         ),
     },
 
@@ -324,7 +324,7 @@ update_service_config = UpdateServiceConfig(
     # The subnetwork to which the service will be moved.
     # "default" can be used to move the service to the default subnetwork
     # MANDATORY
-    subnetwork = "subnetwork_1"
+    subnetwork = "subnetwork_1",
 )
 ```
 
