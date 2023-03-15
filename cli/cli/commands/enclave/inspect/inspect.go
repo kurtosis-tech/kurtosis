@@ -34,8 +34,8 @@ const (
 	isEnclaveIdArgGreedy    = false
 
 	enclaveUUIDTitleName         = "UUID"
-	enclaveNameTitleName         = "Enclave Name"
-	enclaveStatusTitleName       = "Enclave Status"
+	enclaveNameTitleName         = "Name"
+	enclaveStatusTitleName       = "Status"
 	enclaveCreationTimeTitleName = "Creation Time"
 
 	fullUuidsFlagKey       = "full-uuids"
@@ -117,12 +117,13 @@ func PrintEnclaveInspect(ctx context.Context, kurtosisBackend backend_interface.
 	enclaveApiContainerStatus := enclaveInfo.ApiContainerStatus
 
 	keyValuePrinter := output_printers.NewKeyValuePrinter()
+	keyValuePrinter.AddPair(enclaveNameTitleName, enclaveInfo.GetName())
+
 	if showFullUuids {
 		keyValuePrinter.AddPair(enclaveUUIDTitleName, enclaveInfo.GetEnclaveUuid())
 	} else {
 		keyValuePrinter.AddPair(enclaveUUIDTitleName, enclaveInfo.GetShortenedUuid())
 	}
-	keyValuePrinter.AddPair(enclaveNameTitleName, enclaveInfo.GetName())
 
 	enclaveContainersStatusStr, err := enclave_status_stringifier.EnclaveContainersStatusStringifier(enclaveContainersStatus)
 	if err != nil {
