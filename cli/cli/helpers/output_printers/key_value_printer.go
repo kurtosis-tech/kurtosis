@@ -1,5 +1,7 @@
 package output_printers
 
+import "github.com/fatih/color"
+
 type KeyValuePrinter struct {
 	tabWriter   *kurtosisTabWriter
 	forPrinting [][]string
@@ -13,7 +15,7 @@ func NewKeyValuePrinter() *KeyValuePrinter {
 }
 
 func (printer *KeyValuePrinter) AddPair(key string, value string) {
-	printer.forPrinting = append(printer.forPrinting, []string{key + ":", value})
+	printer.forPrinting = append(printer.forPrinting, []string{makeInputStrBold(key) + ":", value})
 }
 
 func (printer *KeyValuePrinter) Print() {
@@ -21,4 +23,8 @@ func (printer *KeyValuePrinter) Print() {
 		printer.tabWriter.writeElems(keyValuePairForPrinting...)
 	}
 	printer.tabWriter.flush()
+}
+
+func makeInputStrBold(inputStr string) string {
+	return color.New(color.Bold).SprintFunc()(inputStr)
 }

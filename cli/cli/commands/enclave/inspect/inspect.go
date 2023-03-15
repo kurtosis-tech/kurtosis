@@ -33,13 +33,10 @@ const (
 	isEnclaveIdArgOptional  = false
 	isEnclaveIdArgGreedy    = false
 
-	enclaveUUIDTitleName               = "UUID"
-	enclaveNameTitleName               = "Enclave Name"
-	enclaveStatusTitleName             = "Enclave Status"
-	enclaveCreationTimeTitleName       = "Creation Time"
-	apiContainerStatusTitleName        = "API Container Status"
-	apiContainerHostGrpcPortTitle      = "API Container Host GRPC Port"
-	apiContainerHostGrpcProxyPortTitle = "API Container Host GRPC Proxy Port"
+	enclaveUUIDTitleName         = "UUID"
+	enclaveNameTitleName         = "Name"
+	enclaveStatusTitleName       = "Status"
+	enclaveCreationTimeTitleName = "Creation Time"
 
 	fullUuidsFlagKey       = "full-uuids"
 	fullUuidFlagKeyDefault = "false"
@@ -120,12 +117,13 @@ func PrintEnclaveInspect(ctx context.Context, kurtosisBackend backend_interface.
 	enclaveApiContainerStatus := enclaveInfo.ApiContainerStatus
 
 	keyValuePrinter := output_printers.NewKeyValuePrinter()
+	keyValuePrinter.AddPair(enclaveNameTitleName, enclaveInfo.GetName())
+
 	if showFullUuids {
 		keyValuePrinter.AddPair(enclaveUUIDTitleName, enclaveInfo.GetEnclaveUuid())
 	} else {
 		keyValuePrinter.AddPair(enclaveUUIDTitleName, enclaveInfo.GetShortenedUuid())
 	}
-	keyValuePrinter.AddPair(enclaveNameTitleName, enclaveInfo.GetName())
 
 	enclaveContainersStatusStr, err := enclave_status_stringifier.EnclaveContainersStatusStringifier(enclaveContainersStatus)
 	if err != nil {
@@ -142,28 +140,8 @@ func PrintEnclaveInspect(ctx context.Context, kurtosisBackend backend_interface.
 		keyValuePrinter.AddPair(enclaveCreationTimeTitleName, enclaveCreationTimeStr)
 	}
 
-	enclaveApiContainerStatusStr, err := enclave_status_stringifier.EnclaveAPIContainersStatusStringifier(enclaveApiContainerStatus)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred when stringify enclave API containers status")
-	}
-	keyValuePrinter.AddPair(apiContainerStatusTitleName, enclaveApiContainerStatusStr)
-
 	isApiContainerRunning := enclaveApiContainerStatus == kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING
-	if isApiContainerRunning {
-		apiContainerHostInfo := enclaveInfo.GetApiContainerHostMachineInfo()
-		apiContainerHostGrpcPortInfoStr := fmt.Sprintf(
-			"%v:%v",
-			apiContainerHostInfo.GetIpOnHostMachine(),
-			apiContainerHostInfo.GetGrpcPortOnHostMachine(),
-		)
-		apiContainerHostGrpcProxyPortInfoStr := fmt.Sprintf(
-			"%v:%v",
-			apiContainerHostInfo.GetIpOnHostMachine(),
-			apiContainerHostInfo.GetGrpcProxyPortOnHostMachine(),
-		)
-		keyValuePrinter.AddPair(apiContainerHostGrpcPortTitle, apiContainerHostGrpcPortInfoStr)
-		keyValuePrinter.AddPair(apiContainerHostGrpcProxyPortTitle, apiContainerHostGrpcProxyPortInfoStr)
-	}
+
 	keyValuePrinter.Print()
 	out.PrintOutLn("")
 
