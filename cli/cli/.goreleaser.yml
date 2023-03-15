@@ -15,7 +15,7 @@ builds:
 #      - darwin
     goarch:
       - amd64
-      - arm64
+#      - arm64
     overrides:
       - goos: linux
         goarch: amd64
@@ -25,14 +25,14 @@ builds:
           - CXX="x86_64-linux-musl-g++"
         ldflags:
           - -linkmode external -extldflags "-static"
-      - goos: linux
-        goarch: arm64
-        env:
-          - CGO_ENABLED=1
-          - CC=aarch64-linux-gnu-gcc
-          - CXX=aarch64-linux-gnu-g++
-        ldflags:
-          - -linkmode external -extldflags "-static"
+#      - goos: linux
+#        goarch: arm64
+#        env:
+#          - CGO_ENABLED=1
+#          - CC=aarch64-linux-gnu-gcc
+#          - CXX=aarch64-linux-gnu-g++
+#        ldflags:
+#          - -linkmode external -extldflags "-static"
 #      - goos: darwin
 #        goarch: arm64
 #        flags:
