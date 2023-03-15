@@ -353,7 +353,7 @@ func getLatestCLIReleaseVersionFromCacheFile(filepath string) (string, error) {
 func shouldPesterUsersAboutVersions() bool {
 	lastPesteredUsersAboutVersionsFile, err := host_machine_directories.GetLastPesteredUserAboutOldVersionsFilepath()
 	if err != nil {
-		logrus.Errorf("An error occurred while getting the file that stores information about when a user was last pestered about versions")
+		logrus.Debugf("Tried getting the path to the %s file but failed with error \n'%s'", host_machine_directories.LastPesteredUserAboutOldVersionFilename, err)
 		return true
 	}
 
@@ -362,21 +362,23 @@ func shouldPesterUsersAboutVersions() bool {
 	if os.IsNotExist(err) {
 		_, err = os.Create(lastPesteredUsersAboutVersionsFile)
 		if err != nil {
-			logrus.Errorf("Tried creating a file to figure out if a user needs  to be pestered but failed with error '%s'", err)
+			logrus.Debugf("Tried creating the %s file at '%s' but failed with error \n'%s'", host_machine_directories.LastPesteredUserAboutOldVersionFilename, lastPesteredUsersAboutVersionsFile, err)
 		}
 		return true
 	}
+
 	if err != nil {
-		logrus.Errorf("Tried checking last pestered file but failed with error '%s'\n", err)
+		logrus.Debugf("Tried checking if %s at '%s' exists but failed with error '%s'\n", host_machine_directories.LastPesteredUserAboutOldVersionFilename, lastPesteredUsersAboutVersionsFile, err)
 		return true
 	}
 
 	now := time.Now()
 
 	if now.After(fileStatus.ModTime().Add(frequencyToPesterUsers)) {
+		// we touch the file again so that the modification time changes
 		_, err = os.Create(lastPesteredUsersAboutVersionsFile)
 		if err != nil {
-			logrus.Errorf("Tried creating a file to figure out if a user needs  to be pestered but failed")
+			logrus.Debugf("Tried creating the %s file at '%s' but failed with error \n'%s'", host_machine_directories.LastPesteredUserAboutOldVersionFilename, lastPesteredUsersAboutVersionsFile, err)
 		}
 		return true
 	}

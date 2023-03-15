@@ -19,7 +19,7 @@ const (
 
 	userSendMetricsElection = "user-send-metrics-election"
 
-	lastPesteredUserAboutOldVersion = "last-pestered-user-about-old-version"
+	LastPesteredUserAboutOldVersionFilename = "last-pestered-user-about-old-version"
 
 	// ------------ Names of dirs inside Kurtosis directory --------------
 	engineDataDirname = "engine-data"
@@ -87,7 +87,7 @@ func GetLatestCLIReleaseVersionCacheFilepath() (string, error) {
 }
 
 func GetLastPesteredUserAboutOldVersionsFilepath() (string, error) {
-	xdgRelFilepath := getRelativeFilepathForXDG(lastPesteredUserAboutOldVersion)
+	xdgRelFilepath := getRelativeFilepathForXDG(LastPesteredUserAboutOldVersionFilename)
 	lastPesteredUserForOldVersionsFilePath, err := xdg.CacheFile(xdgRelFilepath)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred getting the last pestered user about old version file path using '%v'", xdgRelFilepath)
