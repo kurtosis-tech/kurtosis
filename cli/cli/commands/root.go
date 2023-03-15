@@ -350,40 +350,43 @@ func getLatestCLIReleaseVersionFromCacheFile(filepath string) (string, error) {
 	return latestReleaseVersion, nil
 }
 
+// if the check ever fails we just return true and check for versions anyway
 func shouldPesterUsersAboutVersions() bool {
-	lastPesteredUsersAboutVersionsFile, err := host_machine_directories.GetLastPesteredUserAboutOldVersionsFilepath()
+	lastPesteredUsersAboutVersionsFilepath, err := host_machine_directories.GetLastPesteredUserAboutOldVersionsFilepath()
 	if err != nil {
 		logrus.Debugf("Tried getting the path to the %s file but failed with error \n'%s'", host_machine_directories.LastPesteredUserAboutOldVersionFilename, err)
 		return true
 	}
 
-	fileStatus, err := os.Stat(lastPesteredUsersAboutVersionsFile)
+	fileStatus, err := os.Stat(lastPesteredUsersAboutVersionsFilepath)
 
 	if os.IsNotExist(err) {
-		_, err = os.Create(lastPesteredUsersAboutVersionsFile)
-		if err != nil {
-			logrus.Debugf("Tried creating the %s file at '%s' but failed with error \n'%s'", host_machine_directories.LastPesteredUserAboutOldVersionFilename, lastPesteredUsersAboutVersionsFile, err)
-		}
+		createOrChangeModificationTimeOfLastPesteredUserFile(lastPesteredUsersAboutVersionsFilepath, host_machine_directories.LastPesteredUserAboutOldVersionFilename)
 		return true
 	}
 
 	if err != nil {
-		logrus.Debugf("Tried checking if %s at '%s' exists but failed with error '%s'\n", host_machine_directories.LastPesteredUserAboutOldVersionFilename, lastPesteredUsersAboutVersionsFile, err)
+		logrus.Debugf("Tried checking if %s at '%s' exists but failed with error '%s'\n", host_machine_directories.LastPesteredUserAboutOldVersionFilename, lastPesteredUsersAboutVersionsFilepath, err)
 		return true
 	}
 
 	now := time.Now()
 
 	if now.After(fileStatus.ModTime().Add(frequencyToPesterUsers)) {
-		// we touch the file again so that the modification time changes
-		_, err = os.Create(lastPesteredUsersAboutVersionsFile)
-		if err != nil {
-			logrus.Debugf("Tried creating the %s file at '%s' but failed with error \n'%s'", host_machine_directories.LastPesteredUserAboutOldVersionFilename, lastPesteredUsersAboutVersionsFile, err)
-		}
+		createOrChangeModificationTimeOfLastPesteredUserFile(lastPesteredUsersAboutVersionsFilepath, host_machine_directories.LastPesteredUserAboutOldVersionFilename)
 		return true
 	}
 
 	// no error occurred and the last time we bothered the user was not frequencyToPesterUsers duration before
 	// we don't have to bother the user
 	return false
+}
+
+// this file is an empty file, if we run Create on it again we don't lose anything but we do change the modification time
+// the modification time is what we care about
+func createOrChangeModificationTimeOfLastPesteredUserFile(lastPesteredUsersAboutVersionsFilepath, fileNameForLogging string) {
+	_, err := os.Create(lastPesteredUsersAboutVersionsFilepath)
+	if err != nil {
+		logrus.Debugf("Tried creating the %s file at '%s' but failed with error \n'%s'", fileNameForLogging, lastPesteredUsersAboutVersionsFilepath, err)
+	}
 }
