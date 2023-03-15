@@ -373,6 +373,7 @@ func shouldPesterUsersAboutVersions() bool {
 	now := time.Now()
 
 	if now.After(fileStatus.ModTime().Add(frequencyToPesterUsersAboutVersions)) {
+		// we touch it again so that the timer restarts
 		createOrChangeModificationTimeOfLastPesteredUserFile(lastPesteredUsersAboutVersionsFilepath, host_machine_directories.LastPesteredUserAboutOldVersionFilename)
 		return true
 	}
