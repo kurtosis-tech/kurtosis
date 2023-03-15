@@ -69,17 +69,21 @@ INFO[2023-03-15T01:37:38-03:00] ================================================
 Congratulations - you've written your first Kurtosis code!
 
 ### Review
-(We'll use these "Review" sections to explain what happened in the section. If you just want the action, feel free to skip them.)
+:::info
+We'll use these "Review" sections to explain what happened in the section. If you just want the action, feel free to skip them.
+:::
 
 In this section, we created a `.star` file that prints `Hello, world`. `.star` corresponds to [the Starlark language developed at Google][starlark-github-repo], a dialect of Python for configuring the [Bazel build system][bazel-github]. [Kurtosis uses Starlark for the same purpose of configuring builds][starlark-explanation], except that we're building distributed systems rather than binaries or JARs.
 
-When you ran the Starlark, you got `Created enclave: quickstart`. An [enclave][enclaves-explanation] is a Kurtosis primitive that can best be thought of as an ephemeral house for a distributed application. The distributed apps that you define with Starlark will run inside enclaves. Enclaves are intended to be easy to create, easy to destroy, cheap to run, and isolated from each other, so use enclaves liberally!
+When you ran the Starlark, you got `Created enclave: quickstart`. An [enclave][enclaves-explanation] is a Kurtosis primitive that can be thought of as an ephemeral house for a distributed application. The distributed applications that you define with Starlark will run inside enclaves. 
+
+Enclaves are intended to be easy to create, easy to destroy, cheap to run, and isolated from each other. Use enclaves liberally!
 
 Run Postgres
 --------------
 The heart of any application is the database. To introduce you to Kurtosis, we'll start by launching a Postgres server using Kurtosis.
 
-Replace the contents of your `main.star` file with the following contents:
+Replace the contents of your `main.star` file with the following:
 
 ```python
 POSTGRES_PORT_ID = "postgres"
@@ -111,7 +115,9 @@ You're almost ready to run, but you still have the `quickstart` enclave hanging 
 kurtosis clean -a && kurtosis run --enclave-identifier quickstart main.star
 ```
 
-(This clean-and-run process will be your dev loop for the rest of the quickstart.)
+:::info
+This clean-and-run process will be your dev loop for the rest of the quickstart.
+:::
 
 Now if you [inspect][kurtosis-enclave-inspect-reference] the `quickstart` enclave...
 
