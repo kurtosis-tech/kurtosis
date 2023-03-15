@@ -6,14 +6,14 @@ slug: /quickstart
 
 Introduction
 ============
-Welcome to the [Kurtosis](TODO) quickstart!
+Welcome to the [Kurtosis][homepage] quickstart!
 
-If arrived here by chance and you're curious as to what Kurtosis _is_, [see here](TODO).
+If arrived here by chance and you're curious as to what Kurtosis _is_, [see here][what-is-kurtosis-explanation].
 
 If you're ready to get going:
 
 1. This guide will give you basic Kurtosis competency by building a Kurtosis package, step by step.
-1. You need to [have Kurtosis installed](TODO) (or [upgraded to latest](TODO) if you installed it in the past), but you do not need any other knowledge.
+1. You need to [have Kurtosis installed][installing-kurtosis-guide] (or [upgraded to latest][upgrading-kurtosis-guide] if you installed it in the past), but you do not need any other knowledge.
 
 :::tip
 If you get stuck at any point during this quickstart, there are many, many options available:
@@ -22,7 +22,7 @@ If you get stuck at any point during this quickstart, there are many, many optio
 - The `kurtosis discord` command will open up our Discord
 - `kurtosis feedback --github` will take you to opening a Github issue
 - `kurtosis feedback --email` will open an email to us
-- `kurtosis feedback --calendly` will open a booking link for a personal session with [Kevin](TODO)
+- `kurtosis feedback --calendly` will open a booking link for a personal session with [our cofounder Kevin][kevin-linked]
 
 **Don't suffer in silence - we want to hear from you!**
 :::
@@ -46,7 +46,7 @@ def run(plan, args):
     plan.print("Hello, world")
 ```
 
-Finally, [run](TODO) the script.
+Finally, [run][kurtosis-run-reference] the script.
 
 ```bash
 kurtosis run --enclave-identifier quickstart main.star
@@ -72,9 +72,9 @@ Congratulations - you've written your first Kurtosis code!
 ### Review
 (We'll use these "Review" sections to explain what happened in the section. If you just want the action, feel free to skip them.)
 
-In this section, we created a `.star` file that prints `Hello, world`. `.star` corresponds to [the Starlark language developed at Google](https://github.com/bazelbuild/starlark), a dialect of Python for configuring the [Bazel build system](TODO). [Kurtosis uses Starlark for the same purpose of configuring builds](https://docs.kurtosis.com/explanations/starlark), except that we're building distributed systems rather than binaries or JARs.
+In this section, we created a `.star` file that prints `Hello, world`. `.star` corresponds to [the Starlark language developed at Google][starlark-github-repo], a dialect of Python for configuring the [Bazel build system][bazel-github]. [Kurtosis uses Starlark for the same purpose of configuring builds][starlark-explanation], except that we're building distributed systems rather than binaries or JARs.
 
-When you ran the Starlark, you got `Created enclave: quickstart`. An [enclave](TODO) is a Kurtosis primitive that can best be thought of as an ephemeral house for a distributed application. The distributed apps that you define with Starlark will run inside enclaves. Enclaves are intended to be easy to create, easy to destroy, cheap to run, and isolated from each other, so use enclaves liberally!
+When you ran the Starlark, you got `Created enclave: quickstart`. An [enclave][enclaves-explanation] is a Kurtosis primitive that can best be thought of as an ephemeral house for a distributed application. The distributed apps that you define with Starlark will run inside enclaves. Enclaves are intended to be easy to create, easy to destroy, cheap to run, and isolated from each other, so use enclaves liberally!
 
 Run Postgres
 ==============
@@ -106,22 +106,22 @@ def run(plan, args):
     )
 ```
 
-Now, [run](TODO KURTOSIS RUN) the file you just created:
+You're almost ready to run, but you still have the `quickstart` enclave hanging around from the previous section. [Blow it away][kurtosis-clean-reference] and rerun:
 
 ```bash
-kurtosis run --enclave-identifier quickstart main.star
+kurtosis clean -a && kurtosis run --enclave-identifier quickstart main.star
 ```
 
-Kurtosis will create an [enclave](TODO LINK) called `quickstart` and the Starlark code will run inside.
+(This clean-and-run process will be your dev loop for the rest of the quickstart.)
 
-Now if you [inspect](TODO TODO) the `quickstart` enclave...
+Now if you [inspect][kurtosis-enclave-inspect-reference] the `quickstart` enclave...
 
 ```bash
 kurtosis enclave inspect quickstart
 ```
 
 :::tip
-[Kurtosis supports tab-completion](TODO) - even for dynamic values like the enclave name.
+[Kurtosis supports tab-completion][installing-tab-complete-guide] - even for dynamic values like the enclave name.
 :::
 
 ...you'll see that a Postgres instance has been started:
@@ -149,7 +149,7 @@ So what actually happened?
 
 Note that Kurtosis did not execute anything until _after_ interpretation and validation completed. You can think of interpretation and validation like Kurtosis' "compilation" for your distributed system: we can catch many errors before any containers run, which shortens the dev loop and reduces the resource burden on your machine.
 
-We call this approach [multi-phase execution](TODO). While it has powerful benefits, the major gotcha for new Kurtosis users is that _you cannot reference execution-time values like IP address in Starlark_ because they simply don't exist at interpretation time. We'll see how to work around this limitation later.
+We call this approach [multi-phase runs][multi-phase-runs-reference]. While it has powerful benefits, the major gotcha for new Kurtosis users is that _you cannot reference execution-time values like IP address in Starlark_ because they simply don't exist at interpretation time. We'll see how to work around this limitation later.
 
 Add some data
 =============
@@ -229,13 +229,13 @@ Next to your `main.star`, add a file called `kurtosis.yml` with the following co
 echo 'name: "github.com/YOUR-GITHUB-USERNAME/kurtosis-quickstart"' > kurtosis.yml
 ```
 
-You're almost ready to run, but you still have the `quickstart` enclave hanging around from the previous section. [Blow it away](TODO KURTOSIS CLEAN) and rerun:
+Rerun:
 
 ```bash
 kurtosis clean -a && kurtosis run --enclave-identifier quickstart .
 ```
 
-(This will be your dev loop for the rest of the quickstart.)
+(Note that the final argument is now `.` and not `main.star`)
 
 The output should also look more interesting as our plan has grown bigger:
 
@@ -338,11 +338,11 @@ Kurtosis' first-class data primitive is called a [files artifact](TDOO). Each fi
 
 But where did the data come from? 
 
-There are many ways to create files artifacts in an enclave. The simplest is to upload files from your local machine using [the `kurtosis files upload` command](TODO TODO). A more advanced way is to upload files using [the `upload_files` Starlark instruction](https://docs.kurtosis.com/reference/starlark-instructions#upload_files) on the plan.
+There are many ways to create files artifacts in an enclave. The simplest is to upload files from your local machine using [the `kurtosis files upload` command][kurtosis-files-upload-reference]. A more advanced way is to upload files using [the `upload_files` Starlark instruction][upload-files-reference] on the plan.
 
 However, you never downloaded the seed data on your local machine. We didn't need you to, because we leveraged one of the most powerful features of Kurtosis: composability. 
 
-Kurtosis has [a built-in packaging/dependency system](TODO TODO) that allows Starlark code to depend on other Starlark code via Github repositories. When you created the `kurtosis.yml` file, you linked your code into the packaging system: you told Kurtosis that your code is a part of a Kurtosis package, which allowed your code to consume external Starlark code.
+Kurtosis has [a built-in packaging/dependency system][how-do-imports-work-explanation] that allows Starlark code to depend on other Starlark code via Github repositories. When you created the `kurtosis.yml` file, you linked your code into the packaging system: you told Kurtosis that your code is a part of a Kurtosis package, which allowed your code to consume external Starlark code.
 
 This line at the top of your `main.star`...
 
@@ -350,20 +350,20 @@ This line at the top of your `main.star`...
 data_package_module = import_module("github.com/kurtosis-tech/examples/data-package/main.star")
 ```
 
-...created a dependency on [the external Kurtosis package living here](https://github.com/kurtosis-tech/examples/tree/main/data-package). Your code then called that dependency code here...
+...created a dependency on [the external Kurtosis package living here][data-package-example]. Your code then called that dependency code here...
 
 ```python
 data_package_module_result = data_package_module.run(plan, struct())
 ```
 
-...which in turn ran [the code in the `main.star` of that external Kurtosis package](https://github.com/kurtosis-tech/examples/blob/main/data-package/main.star). That package happens to contain [the seed data](https://github.com/kurtosis-tech/examples/blob/main/data-package/dvd-rental-data.tar), and it uses the `upload_data` Starlark instruction on the plan to make the seed data available via a files artifact. From there, all we needed to do was mount it on the `postgres` service.
+...which in turn ran [the code in the `main.star` of that external Kurtosis package][data-package-example-main.star]. That package happens to contain [the seed data][data-package-example-seed-tar], and it uses the `upload_data` Starlark instruction on the plan to make the seed data available via a files artifact. From there, all we needed to do was mount it on the `postgres` service.
 
-This ability to modularize your distributed application logic using only a Github repo is one of Kurtosis' most loved features. We won't dive into all the usecases now, but [the examples repo](https://github.com/kurtosis-tech/examples) can serve as a good source of inspiration.
+This ability to modularize your distributed application logic using only a Github repo is one of Kurtosis' most loved features. We won't dive into all the usecases now, but [the examples repo][examples-repo] can serve as a good source of inspiration.
 
 
 Add an API
 ==========
-Databases don't come alone, however. In this section we'll add a [PostgREST API](https://postgrest.org/en/stable/) in front of the database and see how Kurtosis handles inter-service dependencies.
+Databases don't come alone, however. In this section we'll add a [PostgREST API][postgrest] in front of the database and see how Kurtosis handles inter-service dependencies.
 
 Replace the contents of your `main.star` with this:
 
@@ -453,7 +453,6 @@ def run(plan, args):
         field = "code",
         assertion = "==",
         target_value = 200,
-        # TODO replace with postgrest.name when we can support it!!
         timeout = "5s",
     )
 ```
@@ -589,7 +588,7 @@ In this section, we declared a new PostgREST service with a dependency on the Po
 
 Yet... PostgREST needs to know the IP address or hostname of the Postgres service, and we said earlier that Starlark (interpretation) can never know execution values. How can this be?
 
-Answer: execution-time values are represented at interpretation time as [future references](TODO) - special Starlark strings like `{{kurtosis:6670e781977d41409f9eb2833977e9df:ip_address.runtime_value}}` that Kurtosis will replace at execution time with the actual value. In this case, the `postgres_url` variable here...
+Answer: execution-time values are represented at interpretation time as [future references][future-references-reference] - special Starlark strings like `{{kurtosis:6670e781977d41409f9eb2833977e9df:ip_address.runtime_value}}` that Kurtosis will replace at execution time with the actual value. In this case, the `postgres_url` variable here...
 
 ```python
 postgres_url = "postgresql://{}:{}@{}:{}/{}".format(
@@ -745,7 +744,6 @@ def run(plan, args):
         field = "code",
         assertion = "==",
         target_value = 200,
-        # TODO replace with postgrest.name when we can support it!!
         timeout = "5s",
     )
 
@@ -793,7 +791,7 @@ curl -XGET "http://127.0.0.1:59992/actor?or=(last_name.eq.Buscemi,last_name.eq.B
 ### Review
 How did this work?
 
-Mechanically, [the `request` Starlark instruction](TODO) is being used create a JSON string that's getting shoved at PostgREST, which writes it to the database:
+Mechanically, [the `request` Starlark instruction][request-reference] is being used create a JSON string that's getting shoved at PostgREST, which writes it to the database:
 
 ```python
 plan.request(
@@ -869,66 +867,103 @@ In this tutorial you have:
 - Inserted & queried data via the API
 - Parameterized data insertion
 - Published your package
+- Consumed your package directly from Github
 
 Along the way you've learned about several Kurtosis concepts:
 
-- [The CLI](TODO)
-- [Enclaves](TODO)
-- [Starlark](TODO)
-- [Multi-phase execution](TODO)
-- The [plan](TODO)
-- [Files artifacts](TODO)
-- [Kurtosis packages](TODO)
-- [Future references](TODO)
+- [The CLI][cli-reference]
+- [Enclaves][enclaves-explanation]
+- [Starlark][starlark-explanation]
+- [Multi-phase runs][multi-phase-runs-reference]
+- The [plan][plan-reference]
+- [Files artifacts][files-artifacts-reference]
+- [Kurtosis packages][packages-reference]
+- [Future references][future-references-reference]
 
-Now that you've reached the end, we'd love to hear from you: what worked for you, and what didn't? You can file issues and feature requests on Github...
+Now that you've reached the end, we'd love to hear from you - what went well for you, and what didn't? You can file issues and feature requests on Github...
 
 ```bash
 kurtosis feedback --github
 ```
 
-...you can email us via the CLI...
+...or you can email us via the CLI...
 
 ```bash
 kurtosis feedback --email
 ```
 
-...and you can even schedule a personal session with [Kevin](https://www.linkedin.com/in/kevintoday/) via:
+...and you can even schedule a personal session with [our cofounder Kevin][kevin-linked] via:
 
 ```bash
 kurtosis feedback --calendly
 ```
 
-We use all feedback to fuel our product development efforts, so please don't hesitate to get in touch!
+We use all feedback to fuel product development, so please don't hesitate to get in touch!
 
 Finally, if liked what you saw and want to dive deeper into Kurtosis, you can:
 
 - [Star us on Github](https://github.com/kurtosis-tech/kurtosis) (this helps a lot!)
 - [Join our Discord](https://discord.com/channels/783719264308953108/783719264308953111) (also available with the `kurtosis discord` CLI command)
 - [Reach out to us on Twitter](https://twitter.com/KurtosisTech)
-- [Read about the architecture](TODO)
-- [Explore the full catalog of Starlark commands](TODO)
+- [Read about the architecture][architecture-explanation]
+- [Explore the full catalog of Starlark commands][starlark-instructions-reference]
+- [Explore the various CLI commands][cli-reference]
 - Explore [Kurtosis-provided packages being used in production][kurtosis-managed-packages]
 - [Search GitHub for Kurtosis packages in the wild][wild-kurtosis-packages]
 
 
+<!-- !!!!!!!!!!!!!!!!!!!!!!!!!!! ONLY LINKS BELOW HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! -->
 
+<!--------------------------- Guides ------------------------------------>
+[installing-kurtosis-guide]: ./guides/installing-the-cli.md
+[upgrading-kurtosis-guide]: ./guides/upgrading-the-cli.md
+[installing-tab-complete-guide]: ./guides/adding-tab-completion.md
 
+<!--------------------------- Explanations ------------------------------------>
+[architecture-explanation]: ./explanations/architecture.md
+[enclaves-explanation]: ./explanations/architecture.md#enclaves
+[services-explanation]: ./explanations/architecture.md#services
+[starlark-explanation]: ./explanations/starlark.md
+[reusable-environment-definitions-explanation]: ./explanations/reusable-environment-definitions.md
+[what-is-kurtosis-explanation]: ./explanations/what-is-kurtosis.md
+[how-do-imports-work-explanation]: ./explanations/how-do-kurtosis-imports-work.md
 
-- Environments as a first-class concept - easy to create, access, and destroy
-- Two ways of manipulating the contents of an environment, [through the CLI][cli-reference] and [through Starlark][starlark-instructions-reference]
-- Referencing external resources in Starlark
-- Publishing & consuming environment definitions through the concept of [Kurtosis packages][packages-reference]
-- Parameterizing environment definitions through the concept of [runnable package][runnable-packages-reference]
+<!--------------------------- Reference ------------------------------------>
+<!-- CLI Commands Reference -->
+[cli-reference]: ./reference/cli/cli.md
+[kurtosis-run-reference]: ./reference/cli/run-starlark.md
+[kurtosis-clean-reference]: ./reference/cli/clean.md
+[kurtosis-clean-reference]: ./reference/cli/clean.md
+[kurtosis-enclave-inspect-reference]: ./reference/cli/enclave-inspect.md
+[kurtosis-files-upload-reference]: ./reference/cli/files-upload.md
 
-These are just the basics of Kurtosis. To dive deeper, you can now:
+<!-- SL Instructions Reference-->
+[starlark-instructions-reference]: ./reference/starlark-instructions.md
+[upload-files-reference]: ./reference/starlark-instructions.md#upload_files
+[request-reference]: ./reference/starlark-instructions.md#request
 
-- Learn more about [the architecture of Kurtosis][architecture-explanation]
-- Explore [the catalog of Starlark instructions][starlark-instructions-reference]
-- Explore [Kurtosis-provided packages being used in production][kurtosis-managed-packages]
-- [Search GitHub for Kurtosis packages in the wild][wild-kurtosis-packages]
+<!-- Reference -->
+[multi-phase-runs-reference]: ./reference/multi-phase-runs.md
+[kurtosis-yml-reference]: ./reference/kurtosis-yml.md
+[packages-reference]: ./reference/packages.md
+[runnable-packages-reference]: ./reference/packages.md#runnable-packages
+[locators-reference]: ./reference/locators.md
+[plan-reference]: ./reference/plan.md
+[future-references-reference]: ./reference/future-references.md
+[files-artifacts-reference]: ./reference/files-artifacts.md
 
-:::info
-Get a personalized onboarding session with us [here](https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding).
-:::
+<!--------------------------- Other ------------------------------------>
+<!-- Examples repo -->
+[examples-repo]: https://github.com/kurtosis-tech/examples
+[data-package-example]: https://github.com/kurtosis-tech/examples/tree/main/data-package
+[data-package-example-main.star]: https://github.com/kurtosis-tech/examples/blob/main/data-package/main.star
+[data-package-example-seed-tar]: https://github.com/kurtosis-tech/examples/blob/main/data-package/dvd-rental-data.tar
 
+<!-- Misc -->
+[homepage]: https://kurtosis.com
+[kevin-linked]: https://www.linkedin.com/in/kevintoday/
+[kurtosis-managed-packages]: https://github.com/kurtosis-tech?q=in%3Aname+package&type=all&language=&sort=
+[wild-kurtosis-packages]: https://github.com/search?q=filename%3Akurtosis.yml&type=code
+[bazel-github]: https://github.com/bazelbuild/bazel/
+[starlark-github-repo]: https://github.com/bazelbuild/starlark
+[postgrest]: https://postgrest.org/en/stable/
