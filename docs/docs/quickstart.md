@@ -327,7 +327,7 @@ Feel free to explore the Postgres container. When you're done run either `exit` 
 ### Review
 So what did we just do?
 
-Kurtosis' first-class data primitive is called a [files artifact](TDOO). Each files artifact is a TGZ of arbitrary files, living inside the enclave. So long as a files artifact exists, Kurtosis knows how to mount its contents on a service. We used this feature to mount the seed data into the Postgres instance via the `ServiceConfig.files` option:
+Kurtosis' first-class data primitive is called a [files artifact][files-artifacts-reference]. Each files artifact is a TGZ of arbitrary files, living inside the enclave. So long as a files artifact exists, Kurtosis knows how to mount its contents on a service. We used this feature to mount the seed data into the Postgres instance via the `ServiceConfig.files` option:
 
 ```python
     postgres = plan.add_service(
