@@ -15,7 +15,7 @@ builds:
 #      - darwin
     goarch:
       - amd64
-#      - arm64
+      - arm64
     overrides:
       - goos: linux
         goarch: amd64
