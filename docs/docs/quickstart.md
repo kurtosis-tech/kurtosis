@@ -4,9 +4,18 @@ sidebar_label: Quickstart
 slug: /quickstart
 --
 
-- Welcome to Kurtosis quickstart
+Introduction
+============
+Welcome to the Kurtosis quickstart!
 
-- Explain what we're going to do today
+If arrived here by chance and you're curious as to what Kurtosis _is_, [see here](TODO).
+
+If you're ready to get going, here's what you need to know:
+
+1. This guide will give you basic Kurtosis competency by building a Kurtosis package, step by step.
+1. You need to [have Kurtosis and its prerequisites installed](TODO), but you do not need any other knowledge.
+1. 
+
 
 - Explain how they can get help
     - `kurtosis docs`
@@ -166,7 +175,7 @@ def run(plan, args):
 Next to your `main.star`, add a file called `kurtosis.yml` with the following contents:
 
 ```bash
-echo 'name: "github.com/ME/kurtosis-quickstart"' > kurtosis.yml
+echo 'name: "github.com/YOUR-GITHUB-USERNAME/kurtosis-quickstart"' > kurtosis.yml
 ```
 
 You're almost ready to run, but you still have the `quickstart` enclave hanging around from the previous section. [Blow it away](TODO KURTOSIS CLEAN) and rerun:
@@ -731,158 +740,108 @@ curl -XGET "http://127.0.0.1:59992/actor?or=(last_name.eq.Buscemi,last_name.eq.B
 ```
 
 ### Review
-Here we saw how [the `request` Starlark instruction](TODO)
+How did this work?
 
-
-
-- Mention that you could extract the data-loading and querying out
-
-- why did we make this a separate function?
-
-
-Parameterization
-================
-
-
-Once again, we see that Kurtosis is making the container ports available to our local machine. In the output above, the `http` port of the `postgrest` service is being made available on `http://127.0.0.1:59887`. 
-
-
-Earlier we touched on port bindings, and  promised to come back to port bindings earlier. Kurtosis automatically binds 
-
-the `http` port of the `postgrest` service
-
-- Run it
-- Oops, it's going to fail!
-- We can see that it didn't actually come up
-- Use `kurtosis service logs` to pull the logs
-- See error
-- Correct the error:
-```python
-data_package_module = import_module("github.com/kurtosis-tech/examples/data-package/main.star")
-
-POSTGRES_PORT_ID = "postgres"
-POSTGRES_DB = "app_db"
-POSTGRES_USER = "app_user"
-POSTGRES_PASSWORD = "password"
-
-def run(plan, args):
-    # Make data available for use in Kurtosis
-    data_package_module_result = data_package_module.run(plan, struct())
-
-    # Add a Postgres server
-    postgres = plan.add_service(
-        "postgres",
-        ServiceConfig(
-            image = "postgres:15.2-alpine",
-            ports = {
-                POSTGRES_PORT_ID: PortSpec(5432, application_protocol = "postgresql"),
-            },
-            env_vars = {
-                "POSTGRES_DB": POSTGRES_DB,
-                "POSTGRES_USER": POSTGRES_USER,
-                "POSTGRES_PASSWORD": POSTGRES_PASSWORD,
-            },
-            files = {
-                SEED_DATA_DIRPATH: data_package_module_result.files_artifact,
-            }
-        ),
-    )
-
-    # Wait for Postgres to become available
-    postgres_flags = ["-U", POSTGRES_USER,"-d", POSTGRES_DB]
-    plan.wait(
-        service_name = "postgres",
-        recipe = ExecRecipe(command = ["psql"] + postgres_flags + ["-c", "\\l"]),
-        field = "code",
-        assertion = "==",
-        value = 0,
-    )
-
-    # Load the data into Postgres
-    plan.exec(
-        service_name = "postgres",
-        recipe = ExecRecipe(command = ["pg_restore"] + postgres_flags + [
-            "--no-owner", 
-            "--role=" + POSTGRES_USER, 
-            SEED_DATA_DIRPATH + "/" + data_package_module_result.tar_filename,
-        ]),
-    )
-
-
-    # Add PostgREST
-    postgres_url = "postgresql://{}:{}@{}:{}/{}".format(
-        POSTGRES_USER,
-        POSTGRES_PASSWORD,
-        postgres.hostname,
-        postgres.ports[POSTGRES_PORT_ID].number,
-        POSTGRES_DB,
-    )
-    postgrest = plan.add_service(
-        image = "postgrest",
-        config = ServiceConfig(
-            image = "postgrest/postgrest:v10.2.0.20230209",
-            env_vars = {
-                "PGRST_DB_URI": postgres_url,
-                "PGRST_DB_ANON_ROLE": POSTGRES_USER,
-            },
-            ports = {POSTGREST_PORT_ID: PortSpec(3000, application_protocol = "http")},
-        )
-    )
-
-    # Wait for PostgREST to become available
-    plan.wait(
-        # TODO replace with postgrest.name when we can support it!!
-        service_name = "postgrest",
-        recipe = GetHttpRequestRecipe(
-            port_id = POSTGREST_PORT_ID,
-            endpoint = "/actor?limit=1",
-        ),
-        field = "code",
-        assertion = "==",
-        target_value = 200,
-    )
-```
-- Run it again
-- Notice:
-    - How the API port is bound
-    - How the application protocol makes it clickable
-- Have them cmd-click to open in their browser
-- Should see the list of tables
-
-Adding our own data & parameterizing
-====================================
-- Now have them make a curl request
-    - POST in Kevin Bacon 
-- Now have them search for Kevin Bacon
-    - Get him out
-- Add in the steps for creating Kevin Bacon
-- We can do better: parameterizing
-- Show them how to pass in parameters to a package
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-The final point to explain has to do with multi-phase execution. Earlier we said that Starlark code can never use execution-time values, yet here we use two of them: the name of the files artifact containing the seed data, and the response code from checking if the Postgres is available:
+Mechanically, [the `request` Starlark instruction](TODO) is being used create a JSON string that's getting shoved at PostgREST, which writes it to the database:
 
 ```python
-plan.wait(
-    service_name = "postgres",
-    recipe = ExecRecipe(command = ["psql"] + postgres_flags + ["-c", "\\l"]),
-    field = "code",
-    assertion = "==",
-    target_value = 0,
-    timeout = "5s",
+plan.request(
+    service_name = "postgrest",
+    recipe = PostHttpRequestRecipe(
+        port_id = POSTGREST_PORT_ID,
+        endpoint = "/actor",
+        content_type = "application/json",
+        body = json.encode(data),
+    )
 )
 ```
 
-In order to use execution-time values, Kurtosis has the concept of [future references](https://docs.kurtosis.com/reference/future-references). These are simply strings that Kurtosis recognizes as special, and replaces with the actual value at execution time.
+At a higher level, Kurtosis automatically deserialized the `[{"first_name":"Kevin", "last_name": "Bacon"}, {"first_name":"Steve", "last_name":"Buscemi"}]` string passed in to `kurtosis run` and fed it as the `args` object to the `run` function in `main.star`:
+
+```python
+def run(plan, args):
+```
+
+Publishing
+==========
+Congratulations - you've written your very first distributed application in Kurtosis! Now it's time to share it with the world.
+
+The Kurtosis packaging system uses Github as its package repository, just like Go modules. Also like Go modules, Kurtosis packages need their name to match their location on Github.
+
+Update the `name` key of the `kurtosis.yml` file to replace `YOUR-GITHUB-USERNAME` with your Github username:
+
+```yaml
+# You'll need to update this
+name: "github.com/YOUR-GITHUB-USERNAME/kurtosis-quickstart"
+```
+
+Create a new repository on Github, owned by you, named `kurtosis-quickstart` by clicking [here](https://github.com/new).
+
+Hook your Starlark up to the Github repository (replacing `YOUR-GITHUB-USERNAME` with your Github username):
+
+```bash
+git init -b main && git remote add origin https://github.com/YOUR-GITHUB-USERNAME/kurtosis-quickstart.git
+```
+
+Finally, commit and push your changes:
+
+```bash
+git add . && git commit -m "Initial commit" && git push origin main
+```
+
+Now that your package is live, any Kurtosis user can run it without the code being checked out at all:
+
+```bash
+kurtosis clean -a && kurtosis run --enclave-identifier quickstart github.com/mieubrisse/kurtosis-quickstart
+```
+
+(Parameterization will still work, of course.)
+
+### Review
+Publishing a Kurtosis package is as simple as verifying the `name` key in `kurtosis.yml` matches and pushing it to Github. That package will then be available to every `kurtosis run`, as well as every Starlark script via the `import_module` composition flow.
+
+<!-- TODO TODO TDOO
+Testing
+=======
+- Use the package in some Starlark tests
+- Show how we can use the `insert_data` function independently, to operate on an existing environment
+- Show the `enclave dump` usecase - very useful for test logs!!!
+-->
+
+Conclusion
+==========
+In this tutorial you have:
+
+- Started a Postgres database
+- Seeded it by importing a third-party Starlark package
+- Added an API server
+- Inserted & queried data via the API
+- Parameterized data insertion
+- Published your package
+
+Along the way you've learned about several Kurtosis concepts:
+
+- Starlark
+- Enclaves
+- Multi-phase execution
+- Files artifacts
+- Kurtosis packages
+- Future references
+
+- Environments as a first-class concept - easy to create, access, and destroy
+- Two ways of manipulating the contents of an environment, [through the CLI][cli-reference] and [through Starlark][starlark-instructions-reference]
+- Referencing external resources in Starlark
+- Publishing & consuming environment definitions through the concept of [Kurtosis packages][packages-reference]
+- Parameterizing environment definitions through the concept of [runnable package][runnable-packages-reference]
+
+These are just the basics of Kurtosis. To dive deeper, you can now:
+
+- Learn more about [the architecture of Kurtosis][architecture-explanation]
+- Explore [the catalog of Starlark instructions][starlark-instructions-reference]
+- Explore [Kurtosis-provided packages being used in production][kurtosis-managed-packages]
+- [Search GitHub for Kurtosis packages in the wild][wild-kurtosis-packages]
+
+:::info
+Get a personalized onboarding session with us [here](https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding).
+:::
+
