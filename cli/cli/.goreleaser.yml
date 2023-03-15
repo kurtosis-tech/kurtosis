@@ -35,11 +35,17 @@ builds:
           - -linkmode external -extldflags "-static"
       - goos: darwin
         goarch: arm64
+        flags:
+          - -tags=osusergo
+          - -mod=vendor
         env:
           - CGO_ENABLED=1
           - CC="o64h-clang"
           - CXX="o64h-clang++"
       - goos: darwin
+        flags:
+          - -tags=osusergo
+          - -mod=vendor
         goarch: amd64
         env:
           - CGO_ENABLED=1
