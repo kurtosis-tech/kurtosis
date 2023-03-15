@@ -58,6 +58,8 @@ const (
 	latestCLIReleaseCacheFileContentVersionIndex    = 1
 	latestCLIReleaseCacheFileCreationDateTimeFormat = time.RFC3339
 
+	frequencyToPesterUsers = 1 * time.Hour
+
 	getLatestCLIReleaseCacheFilePermissions os.FileMode = 0644
 
 	optionalSemverPrefix = "v"
@@ -152,7 +154,8 @@ func checkCLIVersion(cmd *cobra.Command) {
 		logrus.Warningf("You can manually upgrade the CLI tool following these instructions: %v", user_support_constants.UpgradeCLIInstructionsPage)
 		return
 	}
-	if !isLatestVersion {
+
+	if !isLatestVersion && shouldPesterUsersAboutVersions() {
 		logrus.Warningf("You are running an old version of the Kurtosis CLI; we suggest you to update it to the latest version, '%v'", latestVersion)
 		logrus.Warningf("You can manually upgrade the CLI tool following these instructions: %v", user_support_constants.UpgradeCLIInstructionsPage)
 	}
@@ -341,4 +344,37 @@ func getLatestCLIReleaseVersionFromCacheFile(filepath string) (string, error) {
 	}
 
 	return latestReleaseVersion, nil
+}
+
+func shouldPesterUsersAboutVersions() bool {
+	lastPesteredUsersAboutVersionsFile, err := host_machine_directories.GetLastPesteredUserAboutOldVersionsFilepath()
+	if err != nil {
+		logrus.Errorf("An error occurred while getting the file that stores information about when a user was last pestered about versions")
+		return true
+	}
+
+	fileStatus, err := os.Stat(lastPesteredUsersAboutVersionsFile)
+
+	if os.IsNotExist(err) {
+		_, err = os.Create(lastPesteredUsersAboutVersionsFile)
+		if err != nil {
+			logrus.Errorf("Tried creating a file to figure out if a user needs  to be pestered but failed")
+		}
+		return true
+	} else {
+		logrus.Errorf("Tried checking last pestered file but failed with error '%s'\n", err)
+		return true
+	}
+
+	now := time.Now()
+
+	if now.After(fileStatus.ModTime().Add(frequencyToPesterUsers)) {
+		_, err = os.Create(lastPesteredUsersAboutVersionsFile)
+		if err != nil {
+			logrus.Errorf("Tried creating a file to figure out if a user needs  to be pestered but failed")
+		}
+		return true
+	}
+
+	return false
 }
