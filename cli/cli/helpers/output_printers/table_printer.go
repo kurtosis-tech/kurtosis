@@ -19,7 +19,7 @@ var (
 
 // Prints columns of output, each with a header
 func NewTablePrinter(columnHeaders ...string) *TablePrinter {
-	for index, _ := range columnHeaders {
+	for index := range columnHeaders {
 		columnHeaders[index] = makeInputStrBold(columnHeaders[index])
 	}
 	return &TablePrinter{
@@ -41,7 +41,7 @@ func (printer *TablePrinter) AddRow(data ...string) error {
 		)
 	}
 
-	for index, _ := range data {
+	for index := range data {
 		data[index] = noColorForPadding(data[index])
 	}
 
