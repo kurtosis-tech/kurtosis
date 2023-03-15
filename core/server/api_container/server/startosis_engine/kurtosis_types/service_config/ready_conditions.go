@@ -113,7 +113,7 @@ func (readyConditions *ReadyConditions) GetRecipe() (recipe.Recipe, *startosis_e
 	}
 	//TODO we should rework the recipe types to inherit a single common type, this will avoid the double parsing here.
 	if interpretationErr != nil {
-		execRecipe, found, interpretationErr = kurtosis_type_constructor.ExtractAttrValue[*recipe.ExecRecipe](readyConditions.KurtosisValueTypeDefault, RecipeAttr)
+		execRecipe, _, interpretationErr = kurtosis_type_constructor.ExtractAttrValue[*recipe.ExecRecipe](readyConditions.KurtosisValueTypeDefault, RecipeAttr)
 		if interpretationErr != nil {
 			return nil, interpretationErr
 		}
