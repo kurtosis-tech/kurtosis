@@ -10,11 +10,21 @@ Welcome to the Kurtosis quickstart!
 
 If arrived here by chance and you're curious as to what Kurtosis _is_, [see here](TODO).
 
-If you're ready to get going, here's what you need to know:
+If you're ready to get going:
 
 1. This guide will give you basic Kurtosis competency by building a Kurtosis package, step by step.
 1. You need to [have Kurtosis and its prerequisites installed](TODO), but you do not need any other knowledge.
-1. 
+
+:::tip
+If you get stuck, there are many, many options available:
+- Every single Kurtosis command accepts a `-h` flag to print helptext
+- The `kurtosis discord` command will open up our Discord
+- The `kurtosis feedback --github` command will open up our Github issues
+- `kurtosis feedback --email` will open your email client
+- `kurtosis feedback --calendly` will open a 
+**We want your feedback very badly!**
+:::
+
 
 
 - Explain how they can get help
@@ -821,12 +831,42 @@ In this tutorial you have:
 
 Along the way you've learned about several Kurtosis concepts:
 
-- Starlark
-- Enclaves
-- Multi-phase execution
-- Files artifacts
-- Kurtosis packages
-- Future references
+- [The CLI](TODO)
+- [Enclaves](TODO)
+- [Starlark](TODO)
+- [Multi-phase execution](TODO)
+- The [plan](TODO)
+- [Files artifacts](TODO)
+- [Kurtosis packages](TODO)
+- [Future references](TODO)
+
+Now that you've reached the end, we'd love to get your feedback - what worked for you, and what didn't? You can email us via the CLI with:
+
+```bash
+kurtosis feedback --email
+```
+
+and you can even schedule an e-meeting with [Kevin](https://www.linkedin.com/in/kevintoday/) via:
+
+```bash
+kurtosis feedback --calendly
+```
+
+We use all feedback to fuel our product development efforts, so please don't hesitate to get in touch!
+
+Finally, if liked what you saw and want to dive deeper into Kurtosis, you can:
+
+- [Star us on Github](https://github.com/kurtosis-tech/kurtosis) (this helps a lot!)
+- [Join our Discord](https://discord.com/channels/783719264308953108/783719264308953111) (also available with the `kurtosis discord` CLI command)
+- [Reach out to us on Twitter](https://twitter.com/KurtosisTech)
+- [Read about the architecture](TODO)
+- [Explore the full catalog of Starlark commands](TODO)
+- Explore [Kurtosis-provided packages being used in production][kurtosis-managed-packages]
+- [Search GitHub for Kurtosis packages in the wild][wild-kurtosis-packages]
+
+
+
+
 
 - Environments as a first-class concept - easy to create, access, and destroy
 - Two ways of manipulating the contents of an environment, [through the CLI][cli-reference] and [through Starlark][starlark-instructions-reference]
