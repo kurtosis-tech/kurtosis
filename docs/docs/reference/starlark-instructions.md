@@ -115,7 +115,7 @@ all_services = plan.add_services(
     configs = {
         "example-datastore-server-1": datastore_server_config_1,
         "example-datastore-server-2": datastore_server_config_2,
-    }
+    },
 )
 ```
 
@@ -398,7 +398,7 @@ The instruction returns a response, which is a `dict` with following key-value p
 post_request_recipe = PostHttpRequestRecipe(
     ...
     extract = {
-        "second-element-from-list-head": '.result.foo | .[0] | split ("/") | .[1]' # 
+        "second-element-from-list-head": '.result.foo | .[0] | split ("/") | .[1]',
     },
 )
 response = plan.request(
