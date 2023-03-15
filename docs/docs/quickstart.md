@@ -169,7 +169,7 @@ Both are possible in Kurtosis, but for this tutorial we'll do the second one usi
 
 Normally seeding a database would require downloading the seed data to your machine, starting Postgres, and writing a pile of Bash to copy the seed data to the Postgres server and run a `pg_restore`. If you forgot to check if the database is available, you may get flakes when you try to use the seeding logic in a test. 
 
-You could try Docker Compose to volume-moun the data TAR into the Postgres server, but you'd still need to handle Postgres availability and sequencing the `pg_restore` afterwards.
+You could try Docker Compose to volume-mount the data TAR into the Postgres server, but you'd still need to handle Postgres availability and sequencing the `pg_restore` afterwards.
 
 By contrast, Kurtosis Starlark scripts can use data as a first-class primitive and sequence tasks such as `pg_restore` into the plan. 
 
@@ -669,13 +669,13 @@ You can paste the URL from your output into your browser (or Cmd+click it in iTe
 Now make a request to insert a row into the database (replacing the `http://127.0.0.1:59992` portion of the URL with the correct URL from your `enclave inspect` output)...
 
 ```bash
-curl -XPOST -H "content-type: application/json" http://127.0.0.1:59992/actor --data '{"first_name": "Kevin", "last_name": "Bacon"}'
+curl -XPOST -H "content-type: application/json" http://127.0.0.1:<YOUR_URL>/actor --data '{"first_name": "Kevin", "last_name": "Bacon"}'
 ```
 
 ...and then query for it (again replacing `http://127.0.0.1:59992` with your correct URL)...
 
 ```bash
-curl -XGET "http://127.0.0.1:59992/actor?first_name=eq.Kevin&last_name=eq.Bacon"
+curl -XGET "http://127.0.0.1:<YOUR_URL>/actor?first_name=eq.Kevin&last_name=eq.Bacon"
 ```
 
 ...to get it back:
@@ -800,7 +800,7 @@ kurtosis clean -a && kurtosis run --enclave-identifier quickstart . '[{"first_na
 Using the new `http` URL on the `postgrest` service in the output, query for the rows you just added (replacing `http://127.0.0.1:59992` with your URL)...
 
 ```bash
-curl -XGET "http://127.0.0.1:59992/actor?or=(last_name.eq.Buscemi,last_name.eq.Bacon)"
+curl -XGET "http://127.0.0.1:<YOUR_URL>/actor?or=(last_name.eq.Buscemi,last_name.eq.Bacon)"
 ```
 
 ...to yield:
@@ -863,7 +863,7 @@ git add . && git commit -m "Initial commit" && git push origin main
 Now that your package is live, any Kurtosis user can run it using their CLI without even cloning your repo:
 
 ```bash
-kurtosis clean -a && kurtosis run --enclave-identifier quickstart github.com/mieubrisse/kurtosis-quickstart
+kurtosis clean -a && kurtosis run --enclave-identifier quickstart github.com/YOUR-GITHUB-USERNAME/kurtosis-quickstart
 ```
 
 (Parameterization will still work, of course.)
