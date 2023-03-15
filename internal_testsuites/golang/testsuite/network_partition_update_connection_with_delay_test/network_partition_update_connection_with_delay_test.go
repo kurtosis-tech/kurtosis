@@ -128,7 +128,7 @@ func TestNetworkPartitionWithSomeDelay(t *testing.T) {
 	require.Nil(t, result.InterpretationError)
 	require.Empty(t, result.ValidationErrors)
 	require.Nil(t, result.ExecutionError)
-	require.Len(t, result.Instructions, 17)
+	require.Len(t, result.Instructions, 15)
 
 	require.Contains(t, result.RunOutput, "Test successfully executed")
 }

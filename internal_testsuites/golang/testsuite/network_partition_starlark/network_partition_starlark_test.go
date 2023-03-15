@@ -110,7 +110,7 @@ func TestAddServiceWithEmptyPortsAndWithoutPorts(t *testing.T) {
 	require.Nil(t, result.InterpretationError)
 	require.Empty(t, result.ValidationErrors)
 	require.Nil(t, result.ExecutionError)
-	require.Len(t, result.Instructions, 16)
+	require.Len(t, result.Instructions, 13)
 
 	require.Contains(t, result.RunOutput, "Test successfully executed")
 }
