@@ -63,8 +63,7 @@ def run(plan, args):
 		service_name=SERVICE_ID_2,
 		command=["ping", "-c", "1", "-W", "1", service_1.ip_address],
 	)
-	res = plan.exec(recipe)
-	plan.assert(res["code"], "==", 1)
+	res = plan.exec(recipe, acceptable_codes = [1])
 	
 	# unblock connection with some delay 
 	delay = UniformPacketDelayDistribution(ms=750)

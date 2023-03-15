@@ -60,8 +60,7 @@ def run(plan, args):
 	connection_result = plan.exec(recipe=ExecRecipe(
 		service_name=SERVICE_NAME_2,
 		command=["ping", "-W", "1", "-c", "1", service_1.hostname],
-	))
-	plan.assert(connection_result["code"], "==", CONNECTION_FAILURE)
+	), acceptable_codes = [CONNECTION_FAILURE])
 
 	# Allow connection between 1 and 2
 	plan.set_connection(subnetworks=(SUBNETWORK_1, SUBNETWORK_2), config=kurtosis.connection.ALLOWED)
