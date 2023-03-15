@@ -21,7 +21,7 @@ KURTOSIS_VERSION_PACKAGE_GOSUM_PATH="go.sum"
 show_helptext_and_exit() {
     echo "Usage: $(basename "${0}") new_version"
     echo ""
-    echo "  new_version     The version to be generate the version constants with, otherwise uses 'kudet get-docker-tag'"
+    echo "  new_version     The version to be generate the version constants with, otherwise uses 'get-docker-tag.sh'"
     echo ""
     exit 1
 }
@@ -37,7 +37,7 @@ if [ -z "${new_version}" ]; then
         echo "Error: Couldn't cd to the root of this repo, '${root_dirpath}', which is required to get the Git tag" >&2
         show_helptext_and_exit
     fi
-    if ! new_version="$(kudet get-docker-tag)"; then
+    if ! new_version="$(./scripts/get-docker-tag.sh)"; then
         echo "Error: No new version provided and couldn't generate one" >&2
         show_helptext_and_exit
     fi

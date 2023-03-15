@@ -103,6 +103,14 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred creating Kurtosis Context from local engine")
 	}
 
+	if err = PrintEnclaveInspect(ctx, kurtosisBackend, kurtosisCtx, enclaveIdentifier, showFullUuids); err != nil {
+		// this is already wrapped up
+		return err
+	}
+	return nil
+}
+
+func PrintEnclaveInspect(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, kurtosisCtx *kurtosis_context.KurtosisContext, enclaveIdentifier string, showFullUuids bool) error {
 	enclaveInfo, err := kurtosisCtx.GetEnclave(ctx, enclaveIdentifier)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the enclave for identifier '%v'", enclaveIdentifier)

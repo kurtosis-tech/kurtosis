@@ -222,12 +222,6 @@ jobs:
 
       - <<: *abort_job_if_only_docs_changes
 
-      # Install kudet
-      - run: |
-          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
-          sudo apt update
-          sudo apt install kudet
-
       # Generate Kurtosis Version
       - run: "<<pipeline.parameters.generate-kurtosis-version-script-path>>"
 
@@ -239,7 +233,7 @@ jobs:
       - run: |
           core/files_artifacts_expander/scripts/build.sh
           source core/files_artifacts_expander/scripts/_constants.env
-          version_to_publish="$(kudet get-docker-tag)"
+          version_to_publish="$(./scripts/get-docker-tag.sh)"
           image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
           echo "Version that will be persisted to workspace: ${version_to_publish}"
           docker save -o << pipeline.parameters.file-artifacts-expander-image-filename >> "${image_name_with_version}"          
@@ -257,12 +251,6 @@ jobs:
 
       - <<: *abort_job_if_only_docs_changes
 
-      # Install Kudet
-      - run: |
-          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
-          sudo apt update
-          sudo apt install kudet
-
       # Generate Kurtosis Version
       - run: "<<pipeline.parameters.generate-kurtosis-version-script-path>>"
 
@@ -278,11 +266,6 @@ jobs:
       - <<: *abort_job_if_only_docs_changes
 
       - run: sudo apt-get update -y &&  sudo apt-get install -y musl-dev
-      # Install kudet
-      - run: |
-          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
-          sudo apt update
-          sudo apt install kudet
 
       # Install proto compiler. To compile startosis proto files on the fly, the APIC needs `protoc`
       - run: |
@@ -304,7 +287,7 @@ jobs:
       - run: |
           core/server/scripts/build.sh
           source core/server/scripts/_constants.env
-          version_to_publish="$(kudet get-docker-tag)"
+          version_to_publish="$(./scripts/get-docker-tag.sh)"
           image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
           echo "Version that will be persisted to workspace: ${version_to_publish}"
           docker save -o << pipeline.parameters.core-server-image-filename >> "${image_name_with_version}"          
@@ -328,12 +311,6 @@ jobs:
 
       - <<: *abort_job_if_only_docs_changes
 
-      # Install Kudet
-      - run: |
-          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
-          sudo apt update
-          sudo apt install kudet
-
       # Generate Kurtosis Version
       - run: "<<pipeline.parameters.generate-kurtosis-version-script-path>>"
 
@@ -350,12 +327,6 @@ jobs:
 
       - run: sudo apt-get update -y &&  sudo apt-get install -y musl-dev
 
-      # Install kudet
-      - run: |
-          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
-          sudo apt update
-          sudo apt install kudet
-
       # Generate Kurtosis Version
       - run: "<<pipeline.parameters.generate-kurtosis-version-script-path>>"
 
@@ -371,7 +342,7 @@ jobs:
       - run: |
           engine/server/scripts/build.sh
           source engine/server/scripts/_constants.env
-          version_to_publish="$(kudet get-docker-tag)"
+          version_to_publish="$(./scripts/get-docker-tag.sh)"
           image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
           echo "Version that will be persisted to workspace: ${version_to_publish}"
           docker save -o << pipeline.parameters.engine-server-image-filename >> "${image_name_with_version}"          
@@ -398,12 +369,6 @@ jobs:
       - <<: *abort_job_if_only_docs_changes
 
       - run: sudo apt-get update -y &&  sudo apt-get install -y musl-dev
-
-      # Install kudet
-      - run: |
-          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
-          sudo apt update
-          sudo apt install kudet
 
       # Generate Kurtosis Version
       - run: "<<pipeline.parameters.generate-kurtosis-version-script-path>>"
@@ -821,11 +786,6 @@ jobs:
     docker:
       - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
     steps:
-      # Install Kudet
-      - run: |
-          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
-          sudo apt update
-          sudo apt install kudet
       - checkout
 
       - setup_remote_docker:
@@ -836,7 +796,7 @@ jobs:
       - run: |
           set -euo pipefail
           source core/files_artifacts_expander/scripts/_constants.env
-          version_to_publish="$(kudet get-docker-tag)"
+          version_to_publish="$(cat version.txt)"
           echo "Version that will be published: ${version_to_publish}"
           image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
           image_name_no_version="${IMAGE_ORG_AND_REPO}:latest"
@@ -849,12 +809,6 @@ jobs:
       - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
     steps:
       - run: sudo apt-get update -y &&  sudo apt-get install -y musl-dev
-
-      # Install Kudet
-      - run: |
-          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
-          sudo apt update
-          sudo apt install kudet
 
       # Install proto compiler. To compile startosis proto files on the fly, the APIC needs `protoc`
       - run: |
@@ -872,7 +826,7 @@ jobs:
       - run: |
           set -euo pipefail
           source core/server/scripts/_constants.env
-          version_to_publish="$(kudet get-docker-tag)"
+          version_to_publish="$(cat version.txt)"
           echo "Version that will be published: ${version_to_publish}"
           image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
           image_name_no_version="${IMAGE_ORG_AND_REPO}:latest"
@@ -885,12 +839,6 @@ jobs:
       - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
     steps:
       - run: sudo apt-get update -y &&  sudo apt-get install -y musl-dev
-
-      # Install Kudet
-      - run: |
-          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
-          sudo apt update
-          sudo apt install kudet
 
       - checkout
 
@@ -910,7 +858,7 @@ jobs:
       - run: |
           set -euo pipefail
           source engine/server/scripts/_constants.env
-          version_to_publish="$(kudet get-docker-tag)"
+          version_to_publish="$(cat version.txt)"
           echo "Version that will be published: ${version_to_publish}"
           image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
           image_name_no_version="${IMAGE_ORG_AND_REPO}:latest"
@@ -927,11 +875,6 @@ jobs:
           echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | sudo tee /etc/apt/sources.list.d/goreleaser.list
           sudo apt update
           sudo apt install goreleaser
-      # Install Kudet
-      - run: |
-          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
-          sudo apt update
-          sudo apt install kudet
       - checkout
 
       # Generate Kurtosis Version
@@ -979,6 +922,9 @@ workflows:
                     },
                     {
                         "pattern": "https://www.notion.so/kurtosistech.*"
+                    },
+                    {
+                        "pattern": "https://github.com/kurtosis-tech/kurtosis/compare/.*"
                     }
                 ]
             }

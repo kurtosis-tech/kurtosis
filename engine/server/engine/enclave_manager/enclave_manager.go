@@ -30,6 +30,8 @@ const (
 	validNumberOfUuidMatches = 1
 
 	errorDelimiter = ", "
+
+	enclaveNameNotFound = "Name Not Found"
 )
 
 // TODO Move this to the KurtosisBackend to calculate!!
@@ -285,7 +287,13 @@ func (manager *EnclaveManager) Clean(ctx context.Context, shouldCleanAll bool) (
 	// TODO: Refactor with kurtosis backend
 	var resultEnclaveNameAndUuids []*kurtosis_engine_rpc_api_bindings.EnclaveNameAndUuid
 
-	successfullyRemovedArtifactIds, removalErrors, err := manager.cleanEnclaves(ctx, shouldCleanAll)
+	// we prefetch the enclaves before deletion so that we have metadata
+	enclavesForUuidNameMapping, err := manager.getEnclavesWithoutMutex(ctx)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Tried retrieving existing enclaves but failed")
+	}
+
+	successfullyRemovedEnclaveUuidStrs, removalErrors, err := manager.cleanEnclaves(ctx, shouldCleanAll)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while cleaning enclaves with shouldCleanAll set to '%v'", shouldCleanAll)
 	}
@@ -302,17 +310,22 @@ func (manager *EnclaveManager) Clean(ctx context.Context, shouldCleanAll bool) (
 		return nil, stacktrace.NewError("Following errors occurred while removing some enclaves :\n%v", joinedRemovalErrors)
 	}
 
-	if len(successfullyRemovedArtifactIds) > 0 {
+	if len(successfullyRemovedEnclaveUuidStrs) > 0 {
 		logrus.Infof("Successfully removed the enclaves")
-		sort.Strings(successfullyRemovedArtifactIds)
-		for _, successfullyRemovedEnclaveUuid := range successfullyRemovedArtifactIds {
-			enclaveName := manager.getEnclaveNameForEnclaveUuidUnlocked(successfullyRemovedEnclaveUuid)
+		sort.Strings(successfullyRemovedEnclaveUuidStrs)
+		for _, successfullyRemovedEnclaveUuidStr := range successfullyRemovedEnclaveUuidStrs {
 			nameAndUuid := &kurtosis_engine_rpc_api_bindings.EnclaveNameAndUuid{
-				Name: enclaveName,
-				Uuid: successfullyRemovedEnclaveUuid,
+				Uuid: successfullyRemovedEnclaveUuidStr,
+				Name: enclaveNameNotFound,
+			}
+			// this should always be found; but we don't want to error if it isn't
+			// we just use the default not found that we set above if we can't find the name
+			enclave, found := enclavesForUuidNameMapping[enclave.EnclaveUUID(successfullyRemovedEnclaveUuidStr)]
+			if found {
+				nameAndUuid.Name = enclave.GetName()
 			}
 			resultEnclaveNameAndUuids = append(resultEnclaveNameAndUuids, nameAndUuid)
-			logrus.Infof("Enclave Uuid '%v'", successfullyRemovedEnclaveUuid)
+			logrus.Infof("Enclave Uuid '%v'", successfullyRemovedEnclaveUuidStr)
 		}
 	}
 
@@ -617,16 +630,6 @@ func (manager *EnclaveManager) getEnclaveUuidForIdentifierUnlocked(ctx context.C
 	}
 
 	return "", stacktrace.NewError("Couldn't find enclave uuid for identifier '%v'", enclaveIdentifier)
-}
-
-// only call this from a thread safe context
-func (manager *EnclaveManager) getEnclaveNameForEnclaveUuidUnlocked(enclaveUuid string) string {
-	for _, identifier := range manager.allExistingAndHistoricalIdentifiers {
-		if identifier.EnclaveUuid == enclaveUuid {
-			return identifier.Name
-		}
-	}
-	return ""
 }
 
 // Returns nil if apiContainerMap is empty
