@@ -23,6 +23,7 @@ builds:
           - CGO_ENABLED=1
           - CC="x86_64-linux-musl-gcc"
           - CXX="x86_64-linux-musl-g++"
+          - GOPRIVATE="github.com/kurtosis-tech/*"
         ldflags:
           - -linkmode external -extldflags "-static"
 
