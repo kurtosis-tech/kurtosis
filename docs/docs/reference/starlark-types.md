@@ -24,7 +24,7 @@ connection_config = ConnectionConfig(
     packet_delay_distribution = UniformPacketDelayDistribution(
         # Delay in ms
         ms = 500,
-    ) 
+    ),
 )
 ```
 
@@ -85,7 +85,7 @@ get_request_recipe = GetHttpRequestRecipe(
     # OPTIONAL
     extract = {
         "extractfield" : ".name.id"
-    }
+    },
 )
 ```
 
@@ -97,9 +97,9 @@ Important - `port_id` field accepts user defined ID assinged to a port in servic
         ports = {
             // "port_id": port_number
             "http": 5000,
-            "grpc": 3000
+            "grpc": 3000,
             ...
-        }
+        },
         ...
     )
 ```
@@ -154,7 +154,7 @@ post_request_recipe = PostHttpRequestRecipe(
     # OPTIONAL
     extract = {
         "extractfield" : ".name.id"
-    }
+    },
 )
 ```
 

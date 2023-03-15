@@ -470,7 +470,7 @@ Say we are overriding a connection between two subnetworks, as shown below:
 connection_config = ConnectionConfig(
     packet_delay_distribution = UniformPacketDelayDistribution(
         ms = 500,
-    )
+    ),
 )
 
 set_connection(
