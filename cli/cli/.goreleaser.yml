@@ -8,8 +8,6 @@ builds:
     env:
       # We need to set this to get a statically-linked binary, else we'll get a dynamically-linked binary that won't be able to be run anywhere
       - CGO_ENABLED=1
-      - CC="clang"
-      - CXX="clang++"
     main: .
     binary: "{{ .Env.CLI_BINARY_FILENAME }}"
     goos:
@@ -35,6 +33,18 @@ builds:
           - CXX=aarch64-linux-gnu-g++
         ldflags:
           - -linkmode external -extldflags "-static"
+      - goos: darwin
+        goarch: arm64
+        env:
+          - CGO_ENABLED=1
+          - CC="clang"
+          - CXX="clang++"
+      - goos: darwin
+        goarch: amd64
+        env:
+          - CGO_ENABLED=1
+          - CC="clang"
+          - CXX="clang++"
 
 # In order for releasing-to-Github to work, we have to create these archives
 archives:
