@@ -13,13 +13,28 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
+	"net/http"
 )
+
+var defaultAcceptableCodes = []int{
+	http.StatusOK,
+	http.StatusCreated,
+	http.StatusAccepted,
+	http.StatusNonAuthoritativeInfo,
+	http.StatusNoContent,
+	http.StatusResetContent,
+	http.StatusPartialContent,
+	http.StatusMultiStatus,
+	http.StatusAlreadyReported,
+	http.StatusIMUsed,
+}
 
 const (
 	RequestBuiltinName = "request"
 
-	RecipeArgName      = "recipe"
-	ServiceNameArgName = "service_name"
+	RecipeArgName          = "recipe"
+	ServiceNameArgName     = "service_name"
+	AcceptableCodesArgName = "acceptable_codes"
 )
 
 func NewRequest(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) *kurtosis_plan_instruction.KurtosisPlanInstruction {
@@ -42,6 +57,12 @@ func NewRequest(serviceNetwork service_network.ServiceNetwork, runtimeValueStore
 						return builtin_argument.NonEmptyString(value, ServiceNameArgName)
 					},
 				},
+				{
+					Name:              AcceptableCodesArgName,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.List],
+					Validator:         nil,
+				},
 			},
 		},
 
@@ -50,9 +71,10 @@ func NewRequest(serviceNetwork service_network.ServiceNetwork, runtimeValueStore
 				serviceNetwork:    serviceNetwork,
 				runtimeValueStore: runtimeValueStore,
 
-				serviceName:       "",  // will be populated at interpretation time
+				serviceName:       "",  // populated at interpretation time
 				httpRequestRecipe: nil, // populated at interpretation time
 				resultUuid:        "",  // populated at interpretation time
+				acceptableCodes:   nil, // populated at interpretation time
 			}
 		},
 
@@ -69,10 +91,13 @@ type RequestCapabilities struct {
 	serviceName       service.ServiceName
 	httpRequestRecipe *recipe.HttpRequestRecipe
 	resultUuid        string
+	acceptableCodes   []int
 }
 
 func (builtin *RequestCapabilities) Interpret(arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
 	var serviceName service.ServiceName
+	var interpretationErr *startosis_errors.InterpretationError
+	acceptableCodes := defaultAcceptableCodes
 
 	if arguments.IsSet(ServiceNameArgName) {
 		serviceNameArgumentValue, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, ServiceNameArgName)
@@ -80,6 +105,17 @@ func (builtin *RequestCapabilities) Interpret(arguments *builtin_argument.Argume
 			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ServiceNameArgName)
 		}
 		serviceName = service.ServiceName(serviceNameArgumentValue.GoString())
+	}
+
+	if arguments.IsSet(AcceptableCodesArgName) {
+		acceptableCodesValue, err := builtin_argument.ExtractArgumentValue[*starlark.List](arguments, AcceptableCodesArgName)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%v' argument", acceptableCodes)
+		}
+		acceptableCodes, err = starlarkListToSlice(acceptableCodesValue)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to parse '%v' argument", acceptableCodes)
+		}
 	}
 
 	httpRequestRecipe, err := builtin_argument.ExtractArgumentValue[*recipe.HttpRequestRecipe](arguments, RecipeArgName)
@@ -95,6 +131,7 @@ func (builtin *RequestCapabilities) Interpret(arguments *builtin_argument.Argume
 	builtin.serviceName = serviceName
 	builtin.httpRequestRecipe = httpRequestRecipe
 	builtin.resultUuid = resultUuid
+	builtin.acceptableCodes = acceptableCodes
 
 	returnValue, interpretationErr := builtin.httpRequestRecipe.CreateStarlarkReturnValue(builtin.resultUuid)
 	if interpretationErr != nil {
@@ -112,7 +149,34 @@ func (builtin *RequestCapabilities) Execute(ctx context.Context, _ *builtin_argu
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Error executing http recipe")
 	}
+	isAcceptableCode := false
+	for _, acceptableCode := range builtin.acceptableCodes {
+		if result["code"] == starlark.MakeInt(acceptableCode) {
+			isAcceptableCode = true
+			break
+		}
+	}
+	if !isAcceptableCode {
+		return "", stacktrace.NewError("Request returned status code '%v' that is not part of the acceptable status codes '%v'", result["code"], builtin.acceptableCodes)
+	}
 	builtin.runtimeValueStore.SetValue(builtin.resultUuid, result)
 	instructionResult := builtin.httpRequestRecipe.ResultMapToString(result)
 	return instructionResult, err
+}
+
+func starlarkListToSlice(starlarkList *starlark.List) ([]int, error) {
+	slice := []int{}
+	for i := 0; i < starlarkList.Len(); i++ {
+		value := starlarkList.Index(i)
+		starlarkCastedValue, ok := value.(starlark.Int)
+		if !ok {
+			return nil, stacktrace.NewError("An error occurred when casting element '%v' from slice '%v' to integer", value, starlarkList)
+		}
+		castedValue, ok := starlarkCastedValue.Int64()
+		if !ok {
+			return nil, stacktrace.NewError("An error occurred when casting element '%v' to Go integer", castedValue)
+		}
+		slice = append(slice, int(castedValue))
+	}
+	return slice, nil
 }
