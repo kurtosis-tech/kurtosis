@@ -130,22 +130,19 @@ func (builtin *AddServiceCapabilities) Execute(ctx context.Context, _ *builtin_a
 		return "", stacktrace.Propagate(err, "An error occurred replace a magic string in '%s' instruction arguments for service '%s'. Execution cannot proceed", AddServiceBuiltinName, builtin.serviceName)
 	}
 
-	serviceReadinessCheckFunc := func() error {
-		if err := runServiceReadinessCheck(
-			ctx,
-			builtin.serviceNetwork,
-			builtin.runtimeValueStore,
-			replacedServiceName,
-			builtin.readyConditions,
-		); err != nil {
-			return stacktrace.Propagate(err, "An error occurred while checking if service '%v' is ready", replacedServiceName)
-		}
-		return nil
-	}
-
-	startedService, err := builtin.serviceNetwork.StartService(ctx, replacedServiceName, replacedServiceConfig, serviceReadinessCheckFunc)
+	startedService, err := builtin.serviceNetwork.StartService(ctx, replacedServiceName, replacedServiceConfig)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Unexpected error occurred starting service '%s'", replacedServiceName)
+	}
+
+	if err := runServiceReadinessCheck(
+		ctx,
+		builtin.serviceNetwork,
+		builtin.runtimeValueStore,
+		replacedServiceName,
+		builtin.readyConditions,
+	); err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred while checking if service '%v' is ready", replacedServiceName)
 	}
 
 	fillAddServiceReturnValueWithRuntimeValues(startedService, builtin.resultUuid, builtin.runtimeValueStore)

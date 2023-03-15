@@ -10,9 +10,6 @@ import (
 	"net/http"
 )
 
-// ServiceReadinessCheckFunc is a function that will be used to check if the service is ready for being used
-type ServiceReadinessCheckFunc func() error
-
 type ServiceNetwork interface {
 	Repartition(
 		ctx context.Context,
@@ -43,7 +40,6 @@ type ServiceNetwork interface {
 		ctx context.Context,
 		serviceName service.ServiceName,
 		serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig,
-		serviceReadinessCheckFunc ServiceReadinessCheckFunc,
 	) (
 		*service.Service,
 		error,
@@ -53,7 +49,6 @@ type ServiceNetwork interface {
 		ctx context.Context,
 		serviceConfigs map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig,
 		batchSize int,
-		servicesReadinessCheckFuncs map[service.ServiceName]ServiceReadinessCheckFunc,
 	) (
 		map[service.ServiceName]*service.Service,
 		map[service.ServiceName]error,

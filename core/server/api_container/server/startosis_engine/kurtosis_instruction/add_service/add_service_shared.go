@@ -146,12 +146,35 @@ func runServiceReadinessCheck(
 ) error {
 	if readyConditions != nil {
 
-		recipe := readyConditions.GetRecipe()
-		field := readyConditions.GetField()
-		assertion := readyConditions.GetAssertion()
-		target := readyConditions.GetTarget()
-		interval := readyConditions.GetInterval()
-		timeout := readyConditions.GetTimeout()
+		recipe, intepretationErr := readyConditions.GetRecipe()
+		if intepretationErr != nil {
+			return stacktrace.Propagate(intepretationErr, "An error occurred getting the recipe value from ready conditions '%v'", readyConditions)
+		}
+
+		field, intepretationErr := readyConditions.GetField()
+		if intepretationErr != nil {
+			return stacktrace.Propagate(intepretationErr, "An error occurred getting the field value from ready conditions '%v'", readyConditions)
+		}
+
+		assertion, intepretationErr := readyConditions.GetAssertion()
+		if intepretationErr != nil {
+			return stacktrace.Propagate(intepretationErr, "An error occurred getting the assertion value from ready conditions '%v'", readyConditions)
+		}
+
+		target, intepretationErr := readyConditions.GetTarget()
+		if intepretationErr != nil {
+			return stacktrace.Propagate(intepretationErr, "An error occurred getting the target value from ready conditions '%v'", readyConditions)
+		}
+
+		interval, intepretationErr := readyConditions.GetInterval()
+		if intepretationErr != nil {
+			return stacktrace.Propagate(intepretationErr, "An error occurred getting the interval value from ready conditions '%v'", readyConditions)
+		}
+
+		timeout, intepretationErr := readyConditions.GetTimeout()
+		if intepretationErr != nil {
+			return stacktrace.Propagate(intepretationErr, "An error occurred getting the timeout value from ready conditions '%v'", readyConditions)
+		}
 
 		startTime := time.Now()
 		logrus.Debugf("Cheching service readiness for '%s' at '%v'", serviceName, startTime)

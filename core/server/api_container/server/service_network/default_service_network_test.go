@@ -25,7 +25,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	bolt "go.etcd.io/bbolt"
@@ -53,16 +52,7 @@ var (
 	connectionWithSomePacketLoss        = partition_topology.NewPacketLoss(50.0)
 	packetLossConfigForBlockedPartition = partition_topology.NewPacketLoss(100)
 
-	serviceReadinessCheckFunc = func() error {
-		logrus.Info("Readiness check func successfully executed")
-		return nil
-	}
-
 	readinessCheckErr = stacktrace.NewError("Readiness check fails")
-
-	serviceReadinessCheckFuncFails = func() error {
-		return readinessCheckErr
-	}
 )
 
 func TestStartService_Successful(t *testing.T) {
@@ -157,7 +147,7 @@ func TestStartService_Successful(t *testing.T) {
 		enclaveName,
 		mock.Anything).Maybe().Times(0)
 
-	startedService, err := network.StartService(ctx, serviceName, serviceConfig, serviceReadinessCheckFunc)
+	startedService, err := network.StartService(ctx, serviceName, serviceConfig)
 	require.Nil(t, err)
 	require.NotNil(t, startedService)
 
@@ -276,7 +266,7 @@ func TestStartService_FailedToStart(t *testing.T) {
 		nil,
 	)
 
-	startedService, err := network.StartService(ctx, serviceName, serviceConfig, serviceReadinessCheckFunc)
+	startedService, err := network.StartService(ctx, serviceName, serviceConfig)
 	require.NotNil(t, err)
 	require.Nil(t, startedService)
 
@@ -403,7 +393,7 @@ func TestStartService_SidecarFailedToStart(t *testing.T) {
 		nil,
 	)
 
-	startedService, err := network.StartService(ctx, serviceName, serviceConfig, serviceReadinessCheckFunc)
+	startedService, err := network.StartService(ctx, serviceName, serviceConfig)
 	require.NotNil(t, err)
 	require.Nil(t, startedService)
 
@@ -515,9 +505,6 @@ func TestStartServices_Success(t *testing.T) {
 			successfulServiceName: successfulServiceConfig,
 		},
 		2,
-		map[service.ServiceName]ServiceReadinessCheckFunc{
-			successfulServiceName: serviceReadinessCheckFunc,
-		},
 	)
 	require.Nil(t, err)
 	require.Len(t, success, 1)
@@ -804,11 +791,6 @@ func TestStartServices_FailureRollsBackTheEntireBatch(t *testing.T) {
 			sidecarFailedServiceName: sidecarFailedServiceConfig,
 		},
 		2,
-		map[service.ServiceName]ServiceReadinessCheckFunc{
-			successfulServiceName:    serviceReadinessCheckFunc,
-			failedServiceName:        serviceReadinessCheckFunc,
-			sidecarFailedServiceName: serviceReadinessCheckFunc,
-		},
 	)
 	require.Nil(t, err)
 	require.Empty(t, success) // as the full batch failed, the successful service should have been destroyed
@@ -1540,7 +1522,7 @@ func TestStartService_FailsWhenCheckingServiceReadiness(t *testing.T) {
 		nil,
 	)
 
-	startedService, err := network.StartService(ctx, serviceName, serviceConfig, serviceReadinessCheckFuncFails)
+	startedService, err := network.StartService(ctx, serviceName, serviceConfig)
 	require.Nil(t, startedService)
 	require.NotNil(t, err)
 	require.Error(t, err)

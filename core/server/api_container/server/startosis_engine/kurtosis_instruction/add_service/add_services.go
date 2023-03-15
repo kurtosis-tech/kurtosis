@@ -14,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
 	"reflect"
 	"strings"
@@ -114,26 +115,15 @@ func (builtin *AddServicesCapabilities) Execute(ctx context.Context, _ *builtin_
 	if !ok {
 		return "", stacktrace.NewError("An error occurred when getting parallelism level from execution context")
 	}
-	allServicesReadinessCheckFuncs := map[service.ServiceName]service_network.ServiceReadinessCheckFunc{}
 	for serviceName, serviceConfig := range builtin.serviceConfigs {
 		renderedServiceName, renderedServiceConfig, err := replaceMagicStrings(builtin.runtimeValueStore, serviceName, serviceConfig)
 		if err != nil {
 			return "", stacktrace.Propagate(err, "An error occurred replacing a magic string in '%s' instruction arguments for service: '%s'. Execution cannot proceed", AddServicesBuiltinName, serviceName)
 		}
 		renderedServiceConfigs[renderedServiceName] = renderedServiceConfig
-
-		//filling services' readiness check func
-		readyConditions, found := builtin.readyConditions[serviceName]
-		if found {
-			readinessCheckFunc, err := builtin.createServicesReadinessCheckFuncsForService(ctx, serviceName, readyConditions)
-			if err != nil {
-				return "", stacktrace.Propagate(err, "An error occurred creating service readiness check function for service '%v' with ready conditions '%+v'", serviceName, readyConditions)
-			}
-			allServicesReadinessCheckFuncs[renderedServiceName] = readinessCheckFunc
-		}
 	}
 
-	startedServices, failedServices, err := builtin.serviceNetwork.StartServices(ctx, renderedServiceConfigs, parallelism, allServicesReadinessCheckFuncs)
+	startedServices, failedServices, err := builtin.serviceNetwork.StartServices(ctx, renderedServiceConfigs, parallelism)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Unexpected error occurred starting a batch of services")
 	}
@@ -147,6 +137,11 @@ func (builtin *AddServicesCapabilities) Execute(ctx context.Context, _ *builtin_
 		return "", stacktrace.NewError("Some errors occurred starting the following services: '%v'. The entire batch was rolled back an no service was started. Errors were: \n%v", failedServiceNames, failedServices)
 	}
 
+	if err := builtin.allServicesReadinessCheck(ctx, startedServices); err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred checking readiness for services '%+v'", startedServices)
+	}
+	//TODO implement shouldDeleteStartedServices with defer
+
 	instructionResult := strings.Builder{}
 	instructionResult.WriteString(fmt.Sprintf("Successfully added the following '%d' services:", len(startedServices)))
 	for serviceName, serviceObj := range startedServices {
@@ -155,27 +150,6 @@ func (builtin *AddServicesCapabilities) Execute(ctx context.Context, _ *builtin_
 
 	}
 	return instructionResult.String(), nil
-}
-
-func (builtin *AddServicesCapabilities) createServicesReadinessCheckFuncsForService(
-	ctx context.Context,
-	serviceName service.ServiceName,
-	readyConditions *service_config.ReadyConditions,
-) (service_network.ServiceReadinessCheckFunc, error) {
-	serviceReadinessCheckFunc := func() error {
-		if err := runServiceReadinessCheck(
-			ctx,
-			builtin.serviceNetwork,
-			builtin.runtimeValueStore,
-			serviceName,
-			readyConditions,
-		); err != nil {
-			return stacktrace.Propagate(err, "An error occurred while checking if service '%v' is ready", serviceName)
-		}
-		return nil
-	}
-
-	return serviceReadinessCheckFunc, nil
 }
 
 func validateAndConvertConfigsAndReadyConditions(
@@ -243,4 +217,59 @@ func makeAddServicesInterpretationReturnValue(serviceConfigs map[service.Service
 		}
 	}
 	return resultUuids, servicesObjectDict, nil
+}
+
+func (builtin *AddServicesCapabilities) allServicesReadinessCheck(
+	ctx context.Context,
+	startedServices map[service.ServiceName]*service.Service,
+) error {
+	logrus.Debugf("Checking for all services readiness...")
+	successfulReadinessCheck := 0
+	readinessCheckErrChan := make(chan error)
+	defer close(readinessCheckErrChan)
+	for serviceName := range startedServices {
+		go builtin.runServiceReadinessCheck(ctx, serviceName, readinessCheckErrChan)
+	}
+
+	shouldContinueInTheLoop := true
+	for shouldContinueInTheLoop {
+		select {
+		case err := <-readinessCheckErrChan:
+			if err != nil {
+				return stacktrace.Propagate(err, "An error occurred while checking if started services '%+v' are ready", startedServices)
+			}
+			successfulReadinessCheck++
+			if successfulReadinessCheck == len(startedServices) {
+				shouldContinueInTheLoop = false
+				break
+			}
+		}
+	}
+	logrus.Debug("All services are ready")
+
+	return nil
+}
+
+func (builtin *AddServicesCapabilities) runServiceReadinessCheck(
+	ctx context.Context,
+	serviceName service.ServiceName,
+	readinessCheckErrChan chan<- error,
+) {
+
+	readyConditions, found := builtin.readyConditions[serviceName]
+	if !found {
+		readinessCheckErrChan <- stacktrace.NewError("Expected to find ready conditions for service '%s' in map '%+v', but none was found; this is a bug in Kurtosis", serviceName, builtin.readyConditions)
+	}
+
+	if err := runServiceReadinessCheck(
+		ctx,
+		builtin.serviceNetwork,
+		builtin.runtimeValueStore,
+		serviceName,
+		readyConditions,
+	); err != nil {
+		readinessCheckErrChan <- stacktrace.Propagate(err, "An error occurred while checking if service '%v' is ready", serviceName)
+	}
+
+	readinessCheckErrChan <- nil
 }

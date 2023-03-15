@@ -777,25 +777,25 @@ func (_c *MockServiceNetwork_SetDefaultConnection_Call) RunAndReturn(run func(co
 	return _c
 }
 
-// StartService provides a mock function with given fields: ctx, serviceName, serviceConfig, serviceReadinessCheckFunc
-func (_m *MockServiceNetwork) StartService(ctx context.Context, serviceName service.ServiceName, serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig, serviceReadinessCheckFunc ServiceReadinessCheckFunc) (*service.Service, error) {
-	ret := _m.Called(ctx, serviceName, serviceConfig, serviceReadinessCheckFunc)
+// StartService provides a mock function with given fields: ctx, serviceName, serviceConfig
+func (_m *MockServiceNetwork) StartService(ctx context.Context, serviceName service.ServiceName, serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig) (*service.Service, error) {
+	ret := _m.Called(ctx, serviceName, serviceConfig)
 
 	var r0 *service.Service
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, service.ServiceName, *kurtosis_core_rpc_api_bindings.ServiceConfig, ServiceReadinessCheckFunc) (*service.Service, error)); ok {
-		return rf(ctx, serviceName, serviceConfig, serviceReadinessCheckFunc)
+	if rf, ok := ret.Get(0).(func(context.Context, service.ServiceName, *kurtosis_core_rpc_api_bindings.ServiceConfig) (*service.Service, error)); ok {
+		return rf(ctx, serviceName, serviceConfig)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, service.ServiceName, *kurtosis_core_rpc_api_bindings.ServiceConfig, ServiceReadinessCheckFunc) *service.Service); ok {
-		r0 = rf(ctx, serviceName, serviceConfig, serviceReadinessCheckFunc)
+	if rf, ok := ret.Get(0).(func(context.Context, service.ServiceName, *kurtosis_core_rpc_api_bindings.ServiceConfig) *service.Service); ok {
+		r0 = rf(ctx, serviceName, serviceConfig)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*service.Service)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, service.ServiceName, *kurtosis_core_rpc_api_bindings.ServiceConfig, ServiceReadinessCheckFunc) error); ok {
-		r1 = rf(ctx, serviceName, serviceConfig, serviceReadinessCheckFunc)
+	if rf, ok := ret.Get(1).(func(context.Context, service.ServiceName, *kurtosis_core_rpc_api_bindings.ServiceConfig) error); ok {
+		r1 = rf(ctx, serviceName, serviceConfig)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -812,14 +812,13 @@ type MockServiceNetwork_StartService_Call struct {
 //   - ctx context.Context
 //   - serviceName service.ServiceName
 //   - serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig
-//   - serviceReadinessCheckFunc ServiceReadinessCheckFunc
-func (_e *MockServiceNetwork_Expecter) StartService(ctx interface{}, serviceName interface{}, serviceConfig interface{}, serviceReadinessCheckFunc interface{}) *MockServiceNetwork_StartService_Call {
-	return &MockServiceNetwork_StartService_Call{Call: _e.mock.On("StartService", ctx, serviceName, serviceConfig, serviceReadinessCheckFunc)}
+func (_e *MockServiceNetwork_Expecter) StartService(ctx interface{}, serviceName interface{}, serviceConfig interface{}) *MockServiceNetwork_StartService_Call {
+	return &MockServiceNetwork_StartService_Call{Call: _e.mock.On("StartService", ctx, serviceName, serviceConfig)}
 }
 
-func (_c *MockServiceNetwork_StartService_Call) Run(run func(ctx context.Context, serviceName service.ServiceName, serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig, serviceReadinessCheckFunc ServiceReadinessCheckFunc)) *MockServiceNetwork_StartService_Call {
+func (_c *MockServiceNetwork_StartService_Call) Run(run func(ctx context.Context, serviceName service.ServiceName, serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig)) *MockServiceNetwork_StartService_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(service.ServiceName), args[2].(*kurtosis_core_rpc_api_bindings.ServiceConfig), args[3].(ServiceReadinessCheckFunc))
+		run(args[0].(context.Context), args[1].(service.ServiceName), args[2].(*kurtosis_core_rpc_api_bindings.ServiceConfig))
 	})
 	return _c
 }
@@ -829,39 +828,39 @@ func (_c *MockServiceNetwork_StartService_Call) Return(_a0 *service.Service, _a1
 	return _c
 }
 
-func (_c *MockServiceNetwork_StartService_Call) RunAndReturn(run func(context.Context, service.ServiceName, *kurtosis_core_rpc_api_bindings.ServiceConfig, ServiceReadinessCheckFunc) (*service.Service, error)) *MockServiceNetwork_StartService_Call {
+func (_c *MockServiceNetwork_StartService_Call) RunAndReturn(run func(context.Context, service.ServiceName, *kurtosis_core_rpc_api_bindings.ServiceConfig) (*service.Service, error)) *MockServiceNetwork_StartService_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// StartServices provides a mock function with given fields: ctx, serviceConfigs, batchSize, servicesReadinessCheckFuncs
-func (_m *MockServiceNetwork) StartServices(ctx context.Context, serviceConfigs map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig, batchSize int, servicesReadinessCheckFuncs map[service.ServiceName]ServiceReadinessCheckFunc) (map[service.ServiceName]*service.Service, map[service.ServiceName]error, error) {
-	ret := _m.Called(ctx, serviceConfigs, batchSize, servicesReadinessCheckFuncs)
+// StartServices provides a mock function with given fields: ctx, serviceConfigs, batchSize
+func (_m *MockServiceNetwork) StartServices(ctx context.Context, serviceConfigs map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig, batchSize int) (map[service.ServiceName]*service.Service, map[service.ServiceName]error, error) {
+	ret := _m.Called(ctx, serviceConfigs, batchSize)
 
 	var r0 map[service.ServiceName]*service.Service
 	var r1 map[service.ServiceName]error
 	var r2 error
-	if rf, ok := ret.Get(0).(func(context.Context, map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig, int, map[service.ServiceName]ServiceReadinessCheckFunc) (map[service.ServiceName]*service.Service, map[service.ServiceName]error, error)); ok {
-		return rf(ctx, serviceConfigs, batchSize, servicesReadinessCheckFuncs)
+	if rf, ok := ret.Get(0).(func(context.Context, map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig, int) (map[service.ServiceName]*service.Service, map[service.ServiceName]error, error)); ok {
+		return rf(ctx, serviceConfigs, batchSize)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig, int, map[service.ServiceName]ServiceReadinessCheckFunc) map[service.ServiceName]*service.Service); ok {
-		r0 = rf(ctx, serviceConfigs, batchSize, servicesReadinessCheckFuncs)
+	if rf, ok := ret.Get(0).(func(context.Context, map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig, int) map[service.ServiceName]*service.Service); ok {
+		r0 = rf(ctx, serviceConfigs, batchSize)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(map[service.ServiceName]*service.Service)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig, int, map[service.ServiceName]ServiceReadinessCheckFunc) map[service.ServiceName]error); ok {
-		r1 = rf(ctx, serviceConfigs, batchSize, servicesReadinessCheckFuncs)
+	if rf, ok := ret.Get(1).(func(context.Context, map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig, int) map[service.ServiceName]error); ok {
+		r1 = rf(ctx, serviceConfigs, batchSize)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(map[service.ServiceName]error)
 		}
 	}
 
-	if rf, ok := ret.Get(2).(func(context.Context, map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig, int, map[service.ServiceName]ServiceReadinessCheckFunc) error); ok {
-		r2 = rf(ctx, serviceConfigs, batchSize, servicesReadinessCheckFuncs)
+	if rf, ok := ret.Get(2).(func(context.Context, map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig, int) error); ok {
+		r2 = rf(ctx, serviceConfigs, batchSize)
 	} else {
 		r2 = ret.Error(2)
 	}
@@ -878,14 +877,13 @@ type MockServiceNetwork_StartServices_Call struct {
 //   - ctx context.Context
 //   - serviceConfigs map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig
 //   - batchSize int
-//   - servicesReadinessCheckFuncs map[service.ServiceName]ServiceReadinessCheckFunc
-func (_e *MockServiceNetwork_Expecter) StartServices(ctx interface{}, serviceConfigs interface{}, batchSize interface{}, servicesReadinessCheckFuncs interface{}) *MockServiceNetwork_StartServices_Call {
-	return &MockServiceNetwork_StartServices_Call{Call: _e.mock.On("StartServices", ctx, serviceConfigs, batchSize, servicesReadinessCheckFuncs)}
+func (_e *MockServiceNetwork_Expecter) StartServices(ctx interface{}, serviceConfigs interface{}, batchSize interface{}) *MockServiceNetwork_StartServices_Call {
+	return &MockServiceNetwork_StartServices_Call{Call: _e.mock.On("StartServices", ctx, serviceConfigs, batchSize)}
 }
 
-func (_c *MockServiceNetwork_StartServices_Call) Run(run func(ctx context.Context, serviceConfigs map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig, batchSize int, servicesReadinessCheckFuncs map[service.ServiceName]ServiceReadinessCheckFunc)) *MockServiceNetwork_StartServices_Call {
+func (_c *MockServiceNetwork_StartServices_Call) Run(run func(ctx context.Context, serviceConfigs map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig, batchSize int)) *MockServiceNetwork_StartServices_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig), args[2].(int), args[3].(map[service.ServiceName]ServiceReadinessCheckFunc))
+		run(args[0].(context.Context), args[1].(map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig), args[2].(int))
 	})
 	return _c
 }
@@ -895,7 +893,7 @@ func (_c *MockServiceNetwork_StartServices_Call) Return(_a0 map[service.ServiceN
 	return _c
 }
 
-func (_c *MockServiceNetwork_StartServices_Call) RunAndReturn(run func(context.Context, map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig, int, map[service.ServiceName]ServiceReadinessCheckFunc) (map[service.ServiceName]*service.Service, map[service.ServiceName]error, error)) *MockServiceNetwork_StartServices_Call {
+func (_c *MockServiceNetwork_StartServices_Call) RunAndReturn(run func(context.Context, map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig, int) (map[service.ServiceName]*service.Service, map[service.ServiceName]error, error)) *MockServiceNetwork_StartServices_Call {
 	_c.Call.Return(run)
 	return _c
 }
