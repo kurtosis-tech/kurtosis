@@ -58,7 +58,7 @@ const (
 	latestCLIReleaseCacheFileContentVersionIndex    = 1
 	latestCLIReleaseCacheFileCreationDateTimeFormat = time.RFC3339
 
-	frequencyToPesterUsers = 1 * time.Hour
+	frequencyToPesterUsersAboutVersions = 1 * time.Hour
 
 	getLatestCLIReleaseCacheFilePermissions os.FileMode = 0644
 
@@ -372,12 +372,12 @@ func shouldPesterUsersAboutVersions() bool {
 
 	now := time.Now()
 
-	if now.After(fileStatus.ModTime().Add(frequencyToPesterUsers)) {
+	if now.After(fileStatus.ModTime().Add(frequencyToPesterUsersAboutVersions)) {
 		createOrChangeModificationTimeOfLastPesteredUserFile(lastPesteredUsersAboutVersionsFilepath, host_machine_directories.LastPesteredUserAboutOldVersionFilename)
 		return true
 	}
 
-	// no error occurred and the last time we bothered the user was not frequencyToPesterUsers duration before
+	// no error occurred and the last time we bothered the user was not frequencyToPesterUsersAboutVersions duration before
 	// we don't have to bother the user
 	return false
 }
