@@ -146,6 +146,10 @@ func checkCLIVersion(cmd *cobra.Command) {
 	logrus.SetOutput(cmd.ErrOrStderr())
 	defer logrus.SetOutput(currentOut)
 
+	if !shouldPesterUsersAboutVersions() {
+		return
+	}
+
 	isLatestVersion, latestVersion, err := isLatestCLIVersion()
 	if err != nil {
 		logrus.Warning("An error occurred trying to check if you are running the latest Kurtosis CLI version.")
@@ -155,7 +159,7 @@ func checkCLIVersion(cmd *cobra.Command) {
 		return
 	}
 
-	if !isLatestVersion && shouldPesterUsersAboutVersions() {
+	if !isLatestVersion {
 		logrus.Warningf("You are running an old version of the Kurtosis CLI; we suggest you to update it to the latest version, '%v'", latestVersion)
 		logrus.Warningf("You can manually upgrade the CLI tool following these instructions: %v", user_support_constants.UpgradeCLIInstructionsPage)
 	}
