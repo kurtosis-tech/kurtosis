@@ -1,19 +1,18 @@
---
+---
 title: Quickstart
 sidebar_label: Quickstart
 slug: /quickstart
---
+---
 
 Introduction
 ============
 Welcome to the [Kurtosis][homepage] quickstart!
 
-If arrived here by chance and you're curious as to what Kurtosis _is_, [see here][what-is-kurtosis-explanation].
+If you arrived here by chance and you're curious as to what Kurtosis _is_, [see here][what-is-kurtosis-explanation].
 
-If you're ready to get going:
+If you're ready to get going, this guide will give you basic Kurtosis competency by building a Kurtosis package step by step.
 
-1. This guide will give you basic Kurtosis competency by building a Kurtosis package, step by step.
-1. You need to [have Kurtosis installed][installing-kurtosis-guide] (or [upgraded to latest][upgrading-kurtosis-guide] if you installed it in the past), but you do not need any other knowledge.
+You need to [have Kurtosis installed][installing-kurtosis-guide] (or [upgraded to latest][upgrading-kurtosis-guide] if you installed it in the past), but you do not need any other knowledge.
 
 :::tip
 If you get stuck at any point during this quickstart, there are many, many options available:
