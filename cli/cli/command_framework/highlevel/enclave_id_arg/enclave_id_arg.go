@@ -60,7 +60,7 @@ func NewHistoricalEnclaveIdentifiersArgWithValidationDisabled(
 	}
 }
 
-// Make best-effort attempt to get enclave UUIDs
+// Make best-effort attempt to get enclave names
 func getCompletions(ctx context.Context, flags *flags.ParsedFlags, previousArgs *args.ParsedArgs) ([]string, error) {
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	if err != nil {
@@ -81,33 +81,22 @@ func getCompletions(ctx context.Context, flags *flags.ParsedFlags, previousArgs 
 	}
 
 	enclaveNames := []string{}
-	enclaveUuids := []string{}
 	for enclaveName := range enclaves.GetEnclavesByName() {
 		enclaveNames = append(enclaveNames, enclaveName)
-	}
-	for enclaveUuid := range enclaves.GetEnclavesByUuid() {
-		enclaveUuids = append(enclaveUuids, enclaveUuid)
 	}
 
 	// we sort them individually
 	sort.Strings(enclaveNames)
-	sort.Strings(enclaveUuids)
-	// we first add names and then uuids
-	result := append(enclaveNames, enclaveUuids...)
-
-	// NOTE: If this arg is greedy, we could actually examine the enclave UUIDs already stored for this arg in ParsedArgs
-	//  and remove enclave UUIDs that are already set so that we don't repeat any
-
-	return result, nil
+	return enclaveNames, nil
 }
 
-// Make best-effort attempt to get enclave UUIDs
+// Make best-effort attempt to get enclave names
 func getExistingAndHistoricalCompletions(ctx context.Context, _ *flags.ParsedFlags, _ *args.ParsedArgs) ([]string, error) {
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred connecting to the Kurtosis engine for retrieving the enclave UUIDs and names for tab completion",
+			"An error occurred connecting to the Kurtosis engine for retrieving the names for tab completion",
 		)
 	}
 
@@ -119,7 +108,7 @@ func getExistingAndHistoricalCompletions(ctx context.Context, _ *flags.ParsedFla
 		)
 	}
 
-	return enclaveIdentifiers.GetOrderedListOfNamesAndUuids(), nil
+	return enclaveIdentifiers.GetOrderedListOfNames(), nil
 }
 
 // Create a validation function using the previously-created
