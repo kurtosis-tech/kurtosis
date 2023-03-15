@@ -6,45 +6,82 @@ slug: /quickstart
 
 Introduction
 ============
-Welcome to the Kurtosis quickstart!
+Welcome to the [Kurtosis](TODO) quickstart!
 
 If arrived here by chance and you're curious as to what Kurtosis _is_, [see here](TODO).
 
 If you're ready to get going:
 
 1. This guide will give you basic Kurtosis competency by building a Kurtosis package, step by step.
-1. You need to [have Kurtosis and its prerequisites installed](TODO), but you do not need any other knowledge.
+1. You need to [have Kurtosis installed](TODO) (or [upgraded to latest](TODO) if you installed it in the past), but you do not need any other knowledge.
 
 :::tip
-If you get stuck, there are many, many options available:
-- Every single Kurtosis command accepts a `-h` flag to print helptext
+If you get stuck at any point during this quickstart, there are many, many options available:
+
+- Every Kurtosis command accepts a `-h` flag to print helptext
 - The `kurtosis discord` command will open up our Discord
-- The `kurtosis feedback --github` command will open up our Github issues
-- `kurtosis feedback --email` will open your email client
-- `kurtosis feedback --calendly` will open a 
-**We want your feedback very badly!**
+- `kurtosis feedback --github` will take you to opening a Github issue
+- `kurtosis feedback --email` will open an email to us
+- `kurtosis feedback --calendly` will open a booking link for a personal session with [Kevin](TODO)
+
+**Don't suffer in silence - we want to hear from you!**
 :::
 
+Hello, World
+============
+First, create and `cd` into a directory to hold the project you'll be working on:
 
+```bash
+mkdir kurtosis-quickstart && cd kurtosis-quickstart
+```
 
-- Explain how they can get help
-    - `kurtosis docs`
-    - `kurtosis feedback`
-- Explain that every command takes in `-h`
+:::tip
+All code blocks in this quickstart can be copied by hovering over the block and clicking the clipboard that appears in the right.
+:::
 
-- TODO install shit
+Next, create a file called `main.star` inside your new directory with the following contents:
 
-Get a Postgres
+```python
+def run(plan, args):
+    plan.print("Hello, world")
+```
+
+Finally, [run](TODO) the script.
+
+```bash
+kurtosis run --enclave-identifier quickstart main.star
+```
+
+Kurtosis will work for a bit, and then deliver you results:
+
+```text
+INFO[2023-03-15T01:37:33-03:00] Creating a new enclave for Starlark to run inside...
+INFO[2023-03-15T01:37:38-03:00] Enclave 'quickstart' created successfully
+
+> print msg="Hello, world"
+Hello, world
+
+Starlark code successfully run. No output was returned.
+INFO[2023-03-15T01:37:38-03:00] ===================================================
+INFO[2023-03-15T01:37:38-03:00] ||          Created enclave: quickstart          ||
+INFO[2023-03-15T01:37:38-03:00] ===================================================
+```
+
+Congratulations - you've written your first Kurtosis code!
+
+### Review
+(We'll use these "Review" sections to explain what happened in the section. If you just want the action, feel free to skip them.)
+
+In this section, we created a `.star` file that prints `Hello, world`. `.star` corresponds to [the Starlark language developed at Google](https://github.com/bazelbuild/starlark), a dialect of Python for configuring the [Bazel build system](TODO). [Kurtosis uses Starlark for the same purpose of configuring builds](https://docs.kurtosis.com/explanations/starlark), except that we're building distributed systems rather than binaries or JARs.
+
+When you ran the Starlark, you got `Created enclave: quickstart`. An [enclave](TODO) is a Kurtosis primitive that can best be thought of as an ephemeral house for a distributed application. The distributed apps that you define with Starlark will run inside enclaves. Enclaves are intended to be easy to create, easy to destroy, cheap to run, and isolated from each other, so use enclaves liberally!
+
+Run Postgres
 ==============
-- Kurtosis as a "build system for distributed applications"
-- Kurtosis uses Starlark for distributed application definitions
-    - TODO link out
-    - Stress that it's just a subset of Python
-- Let's see it in action
-- Create new directory
-- TODO explain enclaves
+The heart of any application is the database. To introduce you to Kurtosis, we'll start by launching a Postgres server using Kurtosis.
 
-Create a file called `main.star` inside it with the following contents:
+Replace the contents of your `main.star` file with the following contents:
+
 ```python
 POSTGRES_PORT_ID = "postgres"
 POSTGRES_DB = "app_db"
@@ -82,6 +119,10 @@ Now if you [inspect](TODO TODO) the `quickstart` enclave...
 ```bash
 kurtosis enclave inspect quickstart
 ```
+
+:::tip
+[Kurtosis supports tab-completion](TODO) - even for dynamic values like the enclave name.
+:::
 
 ...you'll see that a Postgres instance has been started:
 
@@ -840,13 +881,19 @@ Along the way you've learned about several Kurtosis concepts:
 - [Kurtosis packages](TODO)
 - [Future references](TODO)
 
-Now that you've reached the end, we'd love to get your feedback - what worked for you, and what didn't? You can email us via the CLI with:
+Now that you've reached the end, we'd love to hear from you: what worked for you, and what didn't? You can file issues and feature requests on Github...
+
+```bash
+kurtosis feedback --github
+```
+
+...you can email us via the CLI...
 
 ```bash
 kurtosis feedback --email
 ```
 
-and you can even schedule an e-meeting with [Kevin](https://www.linkedin.com/in/kevintoday/) via:
+...and you can even schedule a personal session with [Kevin](https://www.linkedin.com/in/kevintoday/) via:
 
 ```bash
 kurtosis feedback --calendly
