@@ -53,6 +53,13 @@ def run(plan):
 	post_response = plan.request(post_recipe)
 	plan.assert(post_response["code"], "==", 200)
 	plan.assert(post_response["extract.my-body"], "==", "bar")
+	post_recipe_no_body = PostHttpRequestRecipe(
+		service_name = "web-server",
+		port_id = "http-port",
+		endpoint = "/",
+		content_type="text/plain",
+	)
+	plan.wait(post_recipe_no_body, "code", "==", 200)
 	exec_recipe = ExecRecipe(
 		service_name = "web-server",
 		command = ["echo", "hello", post_response["extract.my-body"]]

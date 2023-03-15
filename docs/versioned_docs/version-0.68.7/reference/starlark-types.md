@@ -144,7 +144,7 @@ post_request_recipe = PostHttpRequestRecipe(
     content_type = "application/json",
 
     # The body of the request
-    # MANDATORY
+    # OPTIONAL (Default: "")
     body = "{\"data\": \"this is sample body for POST\"}",
     
     # The extract dictionary takes in key-value pairs where:
