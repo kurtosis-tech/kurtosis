@@ -37,14 +37,14 @@ builds:
         goarch: arm64
         env:
           - CGO_ENABLED=1
-          - CC="clang"
-          - CXX="clang++"
+          - CC="o64h-clang"
+          - CXX="o64h-clang++"
       - goos: darwin
         goarch: amd64
         env:
           - CGO_ENABLED=1
-          - CC="clang"
-          - CXX="clang++"
+          - CC="o64h-clang"
+          - CXX="o64h-clang++"
 
 # In order for releasing-to-Github to work, we have to create these archives
 archives:
