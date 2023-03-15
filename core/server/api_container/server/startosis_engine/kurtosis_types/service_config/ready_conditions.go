@@ -213,7 +213,7 @@ func validateRecipe(value starlark.Value) *startosis_errors.InterpretationError 
 }
 
 func validateDuration(value starlark.Value, attributeName string) *startosis_errors.InterpretationError {
-	valueStarlarkStr, ok := value.(*starlark.String)
+	valueStarlarkStr, ok := value.(starlark.String)
 	if !ok {
 		return startosis_errors.NewInterpretationError("The '%s' attribute is not a valid string type (was '%s').", attributeName, reflect.TypeOf(value))
 	}
