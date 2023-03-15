@@ -27,11 +27,11 @@ const (
 
 	statusCodeKey    = "code"
 	bodyKey          = "body"
-	extractKeyPrefix = "extract"
+	ExtractKeyPrefix = "extract"
 
-	portIdAttr      = "port_id"
+	PortIdAttr      = "port_id"
 	serviceNameAttr = "service_name"
-	endpointAttr    = "endpoint"
+	EndpointAttr    = "endpoint"
 	methodAttr      = "method"
 	contentTypeAttr = "content_type"
 
@@ -78,10 +78,10 @@ func (recipe *HttpRequestRecipe) String() string {
 	instanceName := recipe.GetInstanceName()
 
 	buffer.WriteString(instanceName + "(")
-	buffer.WriteString(portIdAttr + "=")
+	buffer.WriteString(PortIdAttr + "=")
 	buffer.WriteString(fmt.Sprintf("%q, ", recipe.portId))
 
-	buffer.WriteString(endpointAttr + "=")
+	buffer.WriteString(EndpointAttr + "=")
 	buffer.WriteString(fmt.Sprintf("%q, ", recipe.endpoint))
 
 	if recipe.method == postMethod {
@@ -91,7 +91,7 @@ func (recipe *HttpRequestRecipe) String() string {
 		buffer.WriteString(fmt.Sprintf("%q, ", recipe.contentType))
 	}
 
-	buffer.WriteString(extractKeyPrefix + "=")
+	buffer.WriteString(ExtractKeyPrefix + "=")
 	extractors, err := convertMapToStarlarkDict(recipe.extractors)
 
 	if err != nil {
@@ -142,9 +142,9 @@ func (recipe *HttpRequestRecipe) GetInstanceName() string {
 // Attr implements the starlark.HasAttrs interface.
 func (recipe *HttpRequestRecipe) Attr(name string) (starlark.Value, error) {
 	switch name {
-	case portIdAttr:
+	case PortIdAttr:
 		return starlark.String(recipe.portId), nil
-	case extractKeyPrefix:
+	case ExtractKeyPrefix:
 		return convertMapToStarlarkDict(recipe.extractors)
 	case bodyKey:
 		return starlark.String(recipe.body), nil
@@ -152,7 +152,7 @@ func (recipe *HttpRequestRecipe) Attr(name string) (starlark.Value, error) {
 		return starlark.String(recipe.contentType), nil
 	case methodAttr:
 		return starlark.String(recipe.method), nil
-	case endpointAttr:
+	case EndpointAttr:
 		return starlark.String(recipe.endpoint), nil
 	default:
 		return nil, startosis_errors.NewInterpretationError("'%v' has no attribute '%v;", HttpRecipeTypeName, name)
@@ -161,7 +161,7 @@ func (recipe *HttpRequestRecipe) Attr(name string) (starlark.Value, error) {
 
 // AttrNames implements the starlark.HasAttrs interface.
 func (recipe *HttpRequestRecipe) AttrNames() []string {
-	return []string{portIdAttr, serviceNameAttr, extractKeyPrefix, endpointAttr, contentTypeAttr, methodAttr, bodyKey}
+	return []string{PortIdAttr, serviceNameAttr, ExtractKeyPrefix, EndpointAttr, contentTypeAttr, methodAttr, bodyKey}
 }
 
 func MakeGetHttpRequestRecipe(_ *starlark.Thread, builtin *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
@@ -170,9 +170,9 @@ func MakeGetHttpRequestRecipe(_ *starlark.Thread, builtin *starlark.Builtin, arg
 	var maybeExtractField starlark.Value
 
 	if err := starlark.UnpackArgs(builtin.Name(), args, kwargs,
-		portIdAttr, &portId,
-		endpointAttr, &endpoint,
-		kurtosis_types.MakeOptional(extractKeyPrefix), &maybeExtractField,
+		PortIdAttr, &portId,
+		EndpointAttr, &endpoint,
+		kurtosis_types.MakeOptional(ExtractKeyPrefix), &maybeExtractField,
 	); err != nil {
 		return nil, startosis_errors.NewInterpretationError(err.Error())
 	}
@@ -181,7 +181,7 @@ func MakeGetHttpRequestRecipe(_ *starlark.Thread, builtin *starlark.Builtin, arg
 	var err *startosis_errors.InterpretationError
 
 	if maybeExtractField != nil {
-		extractedMap, err = kurtosis_types.SafeCastToMapStringString(maybeExtractField, extractKeyPrefix)
+		extractedMap, err = kurtosis_types.SafeCastToMapStringString(maybeExtractField, ExtractKeyPrefix)
 		if err != nil {
 			return nil, err
 		}
@@ -199,11 +199,11 @@ func MakePostHttpRequestRecipe(_ *starlark.Thread, builtin *starlark.Builtin, ar
 	var maybeExtractField starlark.Value
 
 	if err := starlark.UnpackArgs(builtin.Name(), args, kwargs,
-		portIdAttr, &portId,
-		endpointAttr, &endpoint,
+		PortIdAttr, &portId,
+		EndpointAttr, &endpoint,
 		bodyKey, &body,
 		contentTypeAttr, &contentType,
-		kurtosis_types.MakeOptional(extractKeyPrefix), &maybeExtractField,
+		kurtosis_types.MakeOptional(ExtractKeyPrefix), &maybeExtractField,
 	); err != nil {
 		return nil, startosis_errors.NewInterpretationError("%v", err.Error())
 	}
@@ -212,7 +212,7 @@ func MakePostHttpRequestRecipe(_ *starlark.Thread, builtin *starlark.Builtin, ar
 	var err *startosis_errors.InterpretationError
 
 	if maybeExtractField != nil {
-		extractedMap, err = kurtosis_types.SafeCastToMapStringString(maybeExtractField, extractKeyPrefix)
+		extractedMap, err = kurtosis_types.SafeCastToMapStringString(maybeExtractField, ExtractKeyPrefix)
 		if err != nil {
 			return nil, err
 		}
@@ -273,7 +273,7 @@ func (recipe *HttpRequestRecipe) Execute(
 		return nil, stacktrace.Propagate(err, "An error occurred while running extractors on HTTP response body")
 	}
 	for extractorKey, extractorValue := range extractDict {
-		resultDict[fmt.Sprintf("%v.%v", extractKeyPrefix, extractorKey)] = extractorValue
+		resultDict[fmt.Sprintf("%v.%v", ExtractKeyPrefix, extractorKey)] = extractorValue
 	}
 	return resultDict, nil
 }
@@ -339,7 +339,7 @@ func (recipe *HttpRequestRecipe) ResultMapToString(resultMap map[string]starlark
 	body := resultMap[bodyKey]
 	extractedFieldString := strings.Builder{}
 	for resultKey, resultValue := range resultMap {
-		if strings.Contains(resultKey, extractKeyPrefix) {
+		if strings.Contains(resultKey, ExtractKeyPrefix) {
 			extractedFieldString.WriteString(fmt.Sprintf("\n'%v': %v", resultKey, resultValue))
 		}
 	}
@@ -361,7 +361,7 @@ func (recipe *HttpRequestRecipe) CreateStarlarkReturnValue(resultUuid string) (*
 		return nil, startosis_errors.NewInterpretationError("An error has occurred when creating return value for request recipe, setting field '%v'", statusCodeKey)
 	}
 	for extractorKey := range recipe.extractors {
-		fullExtractorKey := fmt.Sprintf("%v.%v", extractKeyPrefix, extractorKey)
+		fullExtractorKey := fmt.Sprintf("%v.%v", ExtractKeyPrefix, extractorKey)
 		err = dict.SetKey(starlark.String(fullExtractorKey), starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, fullExtractorKey)))
 		if err != nil {
 			return nil, startosis_errors.NewInterpretationError("An error has occurred when creating return value for request recipe, setting field '%v'", fullExtractorKey)

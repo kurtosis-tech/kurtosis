@@ -67,10 +67,14 @@ var (
 
 	TestMemoryAllocation = uint64(1024)
 
+	TestReadyConditionsRecipePortId   = "http"
 	TestReadyConditionsRecipeEndpoint = "/endpoint?input=data"
+	TestReadyConditionsRecipeExtract  = "{}"
 	TestReadyConditionsField          = "code"
 	TestReadyConditionsAssertion      = "=="
 	TestReadyConditionsTarget         = "200"
+	TestReadyConditionsInterval       = "1s"
+	TestReadyConditionsTimeout        = "100ms"
 
 	TestGetRequestMethod = "GET"
 )

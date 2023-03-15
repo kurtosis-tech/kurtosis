@@ -113,7 +113,7 @@ func (readyConditions *ReadyConditions) GetRecipe() (recipe.Recipe, *startosis_e
 	}
 	//TODO we should rework the recipe types to inherit a single common type, this will avoid the double parsing here.
 	if interpretationErr != nil {
-		execRecipe, found, interpretationErr = kurtosis_type_constructor.ExtractAttrValue[*recipe.ExecRecipe](readyConditions.KurtosisValueTypeDefault, RecipeAttr)
+		execRecipe, _, interpretationErr = kurtosis_type_constructor.ExtractAttrValue[*recipe.ExecRecipe](readyConditions.KurtosisValueTypeDefault, RecipeAttr)
 		if interpretationErr != nil {
 			return nil, interpretationErr
 		}
@@ -213,7 +213,7 @@ func validateRecipe(value starlark.Value) *startosis_errors.InterpretationError 
 }
 
 func validateDuration(value starlark.Value, attributeName string) *startosis_errors.InterpretationError {
-	valueStarlarkStr, ok := value.(*starlark.String)
+	valueStarlarkStr, ok := value.(starlark.String)
 	if !ok {
 		return startosis_errors.NewInterpretationError("The '%s' attribute is not a valid string type (was '%s').", attributeName, reflect.TypeOf(value))
 	}
