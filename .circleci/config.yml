@@ -266,7 +266,6 @@ jobs:
       - <<: *abort_job_if_only_docs_changes
 
       - run: sudo apt-get update -y && sudo apt-get install -y musl-dev
-      - run: sudo apt-get install -y gcc-aarch64-linux-gnu
       # Install proto compiler. To compile startosis proto files on the fly, the APIC needs `protoc`
       - run: |
           sudo apt update

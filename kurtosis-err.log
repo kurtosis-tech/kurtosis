@@ -1,0 +1,10 @@
+[31mERRO[0m[2023-03-09T21:28:41-05:00] An error occurred calling the run function for command 'run'
+ --- at /Users/preetrawal/work/kurtosis/cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command/engine_consuming_kurtosis_command.go:206 (EngineConsumingKurtosisCommand.getRunFunc.func1) ---
+Caused by: An error starting the Kurtosis code execution '../files/'
+ --- at /Users/preetrawal/work/kurtosis/cli/cli/commands/run/run.go:251 (run) ---
+Caused by: Error preparing package for execution '../files/'
+ --- at /Users/preetrawal/work/kurtosis/api/golang/core/lib/enclaves/enclave_context.go:112 (EnclaveContext.RunStarlarkPackage) ---
+Caused by: There was an error parsing the 'kurtosis.yml' at '../files/'
+ --- at /Users/preetrawal/work/kurtosis/api/golang/core/lib/enclaves/enclave_context.go:331 (EnclaveContext.assembleRunStartosisPackageArg) ---
+Caused by: Couldn't find a 'kurtosis.yml' in the root of the package at '../files/kurtosis.yml'. Packages are expected to have a 'kurtosis.yml' at root; have a look at 'https://docs.kurtosis.com/reference/packages' for more
+ --- at /Users/preetrawal/work/kurtosis/api/golang/core/lib/enclaves/kurtosis_yaml.go:25 (parseKurtosisYaml) --- 
