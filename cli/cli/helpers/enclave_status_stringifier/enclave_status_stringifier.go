@@ -9,12 +9,13 @@ import (
 var (
 	colorizeRunning = color.New(color.FgGreen).SprintFunc()
 	colorizeStopped = color.New(color.FgYellow).SprintFunc()
+	colorizeEmpty   = color.New(color.FgCyan).SprintFunc()
 )
 
 func EnclaveContainersStatusStringifier(enclaveStatus kurtosis_engine_rpc_api_bindings.EnclaveContainersStatus) (string, error) {
 	switch enclaveStatus {
 	case kurtosis_engine_rpc_api_bindings.EnclaveContainersStatus_EnclaveContainersStatus_EMPTY:
-		return "EMPTY", nil
+		return colorizeEmpty("EMPTY"), nil
 	case kurtosis_engine_rpc_api_bindings.EnclaveContainersStatus_EnclaveContainersStatus_RUNNING:
 		return colorizeRunning("RUNNING"), nil
 	case kurtosis_engine_rpc_api_bindings.EnclaveContainersStatus_EnclaveContainersStatus_STOPPED:
