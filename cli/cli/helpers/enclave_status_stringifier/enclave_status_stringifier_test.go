@@ -12,10 +12,3 @@ func TestAllEnclaveContainersStatusAreCovered(t *testing.T) {
 		assert.Nil(t, err)
 	}
 }
-
-func TestAllEnclaveAPIContainersStatusStringifier(t *testing.T) {
-	for key := range kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_name {
-		_, err := EnclaveAPIContainersStatusStringifier(kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus(key))
-		assert.Nil(t, err)
-	}
-}

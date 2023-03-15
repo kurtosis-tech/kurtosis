@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
@@ -13,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
 )
 
@@ -85,17 +87,26 @@ type ExecCapabilities struct {
 }
 
 func (builtin *ExecCapabilities) Interpret(arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
-	var serviceName service.ServiceName
-	acceptableCodes := defaultAcceptableCodes
+	execRecipe, err := builtin_argument.ExtractArgumentValue[*recipe.ExecRecipe](arguments, RecipeArgName)
+	if err != nil {
+		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", RecipeArgName)
+	}
 
+	var serviceName service.ServiceName
 	if arguments.IsSet(ServiceNameArgName) {
 		serviceNameArgumentValue, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, ServiceNameArgName)
 		if err != nil {
 			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ServiceNameArgName)
 		}
 		serviceName = service.ServiceName(serviceNameArgumentValue.GoString())
+	} else if execRecipe.GetServiceName() != shared_helpers.EmptyServiceName {
+		serviceName = execRecipe.GetServiceName()
+		logrus.Warnf("The recipe.service_name field will be deprecated soon, users will have to pass the service name value direclty to the 'exec', 'request' and 'wait' instructions")
+	} else {
+		return nil, startosis_errors.NewInterpretationError("Service name is not set, either as an exec instruction's argument or as a recipe field. You can fix it passing the 'service_name' argument in the 'exec' call")
 	}
 
+	acceptableCodes := defaultAcceptableCodes
 	if arguments.IsSet(AcceptableCodesArgName) {
 		acceptableCodesValue, err := builtin_argument.ExtractArgumentValue[*starlark.List](arguments, AcceptableCodesArgName)
 		if err != nil {
@@ -105,11 +116,6 @@ func (builtin *ExecCapabilities) Interpret(arguments *builtin_argument.ArgumentV
 		if err != nil {
 			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to parse '%v' argument", acceptableCodes)
 		}
-	}
-
-	execRecipe, err := builtin_argument.ExtractArgumentValue[*recipe.ExecRecipe](arguments, RecipeArgName)
-	if err != nil {
-		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", RecipeArgName)
 	}
 
 	resultUuid, err := builtin.runtimeValueStore.CreateValue()

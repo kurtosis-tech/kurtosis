@@ -252,15 +252,10 @@ func (recipe *HttpRequestRecipe) Execute(
 		return nil, stacktrace.Propagate(err, "An error occurred while replacing runtime values in the body of the http recipe")
 	}
 
-	var serviceNameStr string
-	if serviceName != emptyServiceName {
-		serviceNameStr = string(serviceName)
-	} else if recipe.serviceName != emptyServiceName { //TODO this will be removed when we deprecate the service_name field, more here: https://app.zenhub.com/workspaces/engineering-636cff9fc978ceb2aac05a1d/issues/gh/kurtosis-tech/kurtosis-private/1128
-		serviceNameStr = string(recipe.serviceName)
-		logrus.Warnf("The http_request_recipe.service_name field will be deprecated soon, users will have to pass the service name value direclty to the 'exec', 'request' and 'wait' instructions")
-	} else {
+	if serviceName == emptyServiceName {
 		return nil, stacktrace.NewError("The service name parameter can't be an empty string")
 	}
+	serviceNameStr := string(serviceName)
 
 	response, err = serviceNetwork.HttpRequestService(
 		ctx,
@@ -390,6 +385,11 @@ func (recipe *HttpRequestRecipe) CreateStarlarkReturnValue(resultUuid string) (*
 	}
 	dict.Freeze()
 	return dict, nil
+}
+
+//TODO this will be removed when we deprecate the service_name field, more here: https://app.zenhub.com/workspaces/engineering-636cff9fc978ceb2aac05a1d/issues/gh/kurtosis-tech/kurtosis-private/1128
+func (recipe *HttpRequestRecipe) GetServiceName() service.ServiceName {
+	return recipe.serviceName
 }
 
 func convertMapToStarlarkDict(inputMap map[string]string) (*starlark.Dict, *startosis_errors.InterpretationError) {
