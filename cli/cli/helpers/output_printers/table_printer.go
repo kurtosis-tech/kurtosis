@@ -14,6 +14,9 @@ type TablePrinter struct {
 
 // Prints columns of output, each with a header
 func NewTablePrinter(columnHeaders ...string) *TablePrinter {
+	for index, _ := range columnHeaders {
+		columnHeaders[index] = makeInputStrBold(columnHeaders[index])
+	}
 	return &TablePrinter{
 		tabWriter:     newKurtosisTabWriter(),
 		columnHeaders: columnHeaders,

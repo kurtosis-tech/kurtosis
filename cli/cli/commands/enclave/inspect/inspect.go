@@ -33,13 +33,10 @@ const (
 	isEnclaveIdArgOptional  = false
 	isEnclaveIdArgGreedy    = false
 
-	enclaveUUIDTitleName               = "UUID"
-	enclaveNameTitleName               = "Enclave Name"
-	enclaveStatusTitleName             = "Enclave Status"
-	enclaveCreationTimeTitleName       = "Creation Time"
-	apiContainerStatusTitleName        = "API Container Status"
-	apiContainerHostGrpcPortTitle      = "API Container Host GRPC Port"
-	apiContainerHostGrpcProxyPortTitle = "API Container Host GRPC Proxy Port"
+	enclaveUUIDTitleName         = "UUID"
+	enclaveNameTitleName         = "Enclave Name"
+	enclaveStatusTitleName       = "Enclave Status"
+	enclaveCreationTimeTitleName = "Creation Time"
 
 	fullUuidsFlagKey       = "full-uuids"
 	fullUuidFlagKeyDefault = "false"
