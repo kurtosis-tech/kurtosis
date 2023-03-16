@@ -85,23 +85,11 @@ The Kurtosis CLI cannot be installed directly on Windows. Windows users are enco
 
 </Tabs>
 
-III. Add tab completion
+III. Add command-line completion
 -----------------------------
-[Kurtosis supports tab completion][installing-tab-completion], even for dynamic values like enclave names. We strongly recommend installing it for the best Kurtosis experience.
+[Kurtosis supports command-line completion][installing-command-line-completion], even for dynamic values like enclave names. We recommend installing it for the best Kurtosis experience.
 
-IV. Configure analytics
-------------------------
-By default, Kurtosis reports anonymized, obfuscated analytics which [we use only to improve the product][metrics-philosophy]. 
-
-If you'd like to [disable analytics][analytics-disable], you can run:
-
-```bash
-kurtosis analytics disable
-```
-
-To read more about why and how we collect product analytics metrics, [go here][metrics-philosophy].
-
-V. Run the quickstart
+IV. Run the quickstart
 -----------------------------
 If you're new to Kurtosis, the [quickstart][quickstart] is a great way to started using Kurtosis.
 
@@ -110,7 +98,7 @@ If you're new to Kurtosis, the [quickstart][quickstart] is a great way to starte
 [metrics-philosophy]: ../explanations/metrics-philosophy.md
 [analytics-disable]: ../reference/cli/analytics-disable.md
 [quickstart]: ../quickstart.md
-[installing-tab-completion]: ./adding-tab-completion.md
+[installing-command-line-completion]: ./adding-command-line-completion.md
 [install-historical-guide]: ./installing-historical-versions.md
 [upgrade-guide]: ./upgrading-the-cli.md
 

@@ -15,7 +15,7 @@ kurtosis service -h
 :::
 
 :::tip
-Kurtosis supports tab-completion, and we strongly recommend [installing it][adding-tab-completion] for the best experience!
+Kurtosis supports command-line completion; we recommend [installing it][adding-command-line-completion] for the best experience.
 :::
 
 ### Toggle Analytics
@@ -49,6 +49,6 @@ kurtosis version
 ```
 
 <!-------------------- ONLY LINKS BELOW THIS POINT ----------------------->
-[adding-tab-completion]: ../../guides/adding-tab-completion.md
+[adding-command-line-completion]: ../../guides/adding-command-line-completion.md
 [installing-the-cli]: ../../guides/installing-the-cli.md
 [metrics-philosophy-reference]: ../../explanations/metrics-philosophy.md
