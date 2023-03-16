@@ -669,7 +669,7 @@ You can paste the URL from your output into your browser (or Cmd+click it in iTe
 Now make a request to insert a row into the database (replacing the `http://127.0.0.1:59992` portion of the URL with the correct URL from your `enclave inspect` output)...
 
 ```bash
-curl -XPOST -H "content-type: application/json" http://127.0.0.1:<YOUR_URL>/actor --data '{"first_name": "Kevin", "last_name": "Bacon"}'
+curl -XPOST -H "content-type: application/json" <YOUR_HTTP_URL>/actor --data '{"first_name": "Kevin", "last_name": "Bacon"}'
 ```
 
 ...and then query for it (again replacing `http://127.0.0.1:59992` with your correct URL)...
