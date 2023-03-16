@@ -1236,22 +1236,22 @@ export namespace RenderTemplatesToFilesArtifactResponse {
   }
 }
 
-export class FileNameAndUuid extends jspb.Message {
+export class FilesArtifactNameAndUuid extends jspb.Message {
   getFilename(): string;
-  setFilename(value: string): FileNameAndUuid;
+  setFilename(value: string): FilesArtifactNameAndUuid;
 
   getFileuuid(): string;
-  setFileuuid(value: string): FileNameAndUuid;
+  setFileuuid(value: string): FilesArtifactNameAndUuid;
 
   serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): FileNameAndUuid.AsObject;
-  static toObject(includeInstance: boolean, msg: FileNameAndUuid): FileNameAndUuid.AsObject;
-  static serializeBinaryToWriter(message: FileNameAndUuid, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): FileNameAndUuid;
-  static deserializeBinaryFromReader(message: FileNameAndUuid, reader: jspb.BinaryReader): FileNameAndUuid;
+  toObject(includeInstance?: boolean): FilesArtifactNameAndUuid.AsObject;
+  static toObject(includeInstance: boolean, msg: FilesArtifactNameAndUuid): FilesArtifactNameAndUuid.AsObject;
+  static serializeBinaryToWriter(message: FilesArtifactNameAndUuid, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): FilesArtifactNameAndUuid;
+  static deserializeBinaryFromReader(message: FilesArtifactNameAndUuid, reader: jspb.BinaryReader): FilesArtifactNameAndUuid;
 }
 
-export namespace FileNameAndUuid {
+export namespace FilesArtifactNameAndUuid {
   export type AsObject = {
     filename: string,
     fileuuid: string,
@@ -1259,10 +1259,10 @@ export namespace FileNameAndUuid {
 }
 
 export class ListFilesArtifactNamesAndUuidsResponse extends jspb.Message {
-  getFileNamesAndUuidsList(): Array<FileNameAndUuid>;
-  setFileNamesAndUuidsList(value: Array<FileNameAndUuid>): ListFilesArtifactNamesAndUuidsResponse;
+  getFileNamesAndUuidsList(): Array<FilesArtifactNameAndUuid>;
+  setFileNamesAndUuidsList(value: Array<FilesArtifactNameAndUuid>): ListFilesArtifactNamesAndUuidsResponse;
   clearFileNamesAndUuidsList(): ListFilesArtifactNamesAndUuidsResponse;
-  addFileNamesAndUuids(value?: FileNameAndUuid, index?: number): FileNameAndUuid;
+  addFileNamesAndUuids(value?: FilesArtifactNameAndUuid, index?: number): FilesArtifactNameAndUuid;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ListFilesArtifactNamesAndUuidsResponse.AsObject;
@@ -1274,7 +1274,7 @@ export class ListFilesArtifactNamesAndUuidsResponse extends jspb.Message {
 
 export namespace ListFilesArtifactNamesAndUuidsResponse {
   export type AsObject = {
-    fileNamesAndUuidsList: Array<FileNameAndUuid.AsObject>,
+    fileNamesAndUuidsList: Array<FilesArtifactNameAndUuid.AsObject>,
   }
 }
 

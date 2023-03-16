@@ -9,7 +9,7 @@ import {
     ExecCommandArgs,
     ExecCommandResponse, GetExistingAndHistoricalServiceIdentifiersResponse,
     GetServicesArgs,
-    GetServicesResponse,
+    GetServicesResponse, ListFilesArtifactNamesAndUuidsResponse,
     PauseServiceArgs,
     RemoveServiceArgs,
     RemoveServiceResponse,
@@ -31,6 +31,7 @@ import {
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import { EnclaveUUID } from "./enclave_context";
 import {Readable} from "stream";
+import {FilesArtifactUUID} from "../services/container_config";
 
 export interface GenericApiContainerClient {
     getEnclaveUuid(): EnclaveUUID
@@ -50,4 +51,5 @@ export interface GenericApiContainerClient {
     storeWebFilesArtifact(storeWebFilesArtifactArgs: StoreWebFilesArtifactArgs): Promise<Result<StoreWebFilesArtifactResponse, Error>>
     downloadFilesArtifact(downloadFilesArtifactArgs: DownloadFilesArtifactArgs): Promise<Result<DownloadFilesArtifactResponse, Error>>
     getExistingAndHistoricalServiceIdentifiers(): Promise<Result<GetExistingAndHistoricalServiceIdentifiersResponse, Error>>
+    getAllFilesArtifactNamesAndUuids(): Promise<Result<ListFilesArtifactNamesAndUuidsResponse, Error>>
 }

@@ -524,7 +524,7 @@ message RenderTemplatesToFilesArtifactResponse {
 //                               List Files Artifacts Args
 // ==============================================================================================
 
-message FileNameAndUuid {
+message FilesArtifactNameAndUuid {
   // A string representing the name of the file
   string fileName = 1;
   // A string representing the uuid of the file
@@ -532,5 +532,5 @@ message FileNameAndUuid {
 }
 
 message ListFilesArtifactNamesAndUuidsResponse {
-  repeated FileNameAndUuid file_names_and_uuids = 1;
+  repeated FilesArtifactNameAndUuid file_names_and_uuids = 1;
 }
