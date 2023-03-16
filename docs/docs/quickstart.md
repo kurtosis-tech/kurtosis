@@ -10,7 +10,7 @@ Welcome to the [Kurtosis][homepage] quickstart!
 
 If you arrived here by chance and you're curious as to what Kurtosis _is_, [see here][what-is-kurtosis-explanation].
 
-If you're ready to get going, this guide will take ~15 minutes and will give you basic Kurtosis competency by walking you through building a Kurtosis package.
+If you're ready to get going, this guide will take ~15 minutes and will walk you through building a basic Kurtosis package. The package that you build will start a Postgres server, seed it with data, put an API in front of it, and automate loading data into it.
 
 You need to [have Kurtosis installed][installing-kurtosis-guide] (or [upgraded to latest][upgrading-kurtosis-guide] if you already have it), but you do not need any other knowledge.
 
@@ -44,6 +44,10 @@ Next, create a file called `main.star` inside your new directory with the follow
 def run(plan, args):
     plan.print("Hello, world")
 ```
+
+:::tip
+If you're using Vim, you can get syntax highlighting with `:set syntax=python`
+:::
 
 Finally, [run][kurtosis-run-reference] the script.
 
@@ -235,7 +239,7 @@ def run(plan, args):
 Next to your `main.star`, add a file called `kurtosis.yml` with the following contents:
 
 ```bash
-name: "github.com/YOUR-GITHUB-USERNAME/kurtosis-quickstart"
+name: "github.com/john-snow/kurtosis-quickstart"
 ```
 
 Rerun:
@@ -384,7 +388,7 @@ data_package_module_result = data_package_module.run(plan, struct())
 
 ...which in turn ran [the code in the `main.star` of that external package][data-package-example-main.star]. That Kurtosis package happens to contain [the seed data][data-package-example-seed-tar], and it uses the `upload_data` Starlark instruction on the plan to make the seed data available via a files artifact. From there, all we needed to do was mount it on the `postgres` service.
 
-This ability to modularize your distributed application logic using only a Github repo is one of Kurtosis' most loved features. We won't dive into all the usecases now, but [the examples repo][examples-repo] can serve as a good source of inspiration.
+This ability to modularize your distributed application logic using only a Github repo is one of Kurtosis' most loved features. We won't dive into all the usecases now, but [the examples here][awesome-kurtosis-repo] can serve as a good source of inspiration.
 
 
 Add an API
@@ -835,11 +839,11 @@ Congratulations - you've written your very first distributed application in Kurt
 
 The Kurtosis packaging system uses Github as its package repository, just like Go modules. Also like Go modules, Kurtosis packages need their name to match their location on Github.
 
-Update the `name` key of the `kurtosis.yml` file to replace `YOUR-GITHUB-USERNAME` with your Github username:
+Update the `name` key of the `kurtosis.yml` file to replace `john-snow` with your Github username:
 
 ```yaml
 # You'll need to update this
-name: "github.com/YOUR-GITHUB-USERNAME/kurtosis-quickstart"
+name: "github.com/john-snow/kurtosis-quickstart"
 ```
 
 Create a new repository on Github, owned by you, named `kurtosis-quickstart` by clicking [here](https://github.com/new).
@@ -887,8 +891,6 @@ Let's review. In this tutorial you have:
 - Added an API server
 - Inserted & queried data via the API
 - Parameterized data insertion
-- Published your package
-- Consumed your package directly from Github
 
 Along the way you've learned about several Kurtosis concepts:
 
@@ -901,7 +903,9 @@ Along the way you've learned about several Kurtosis concepts:
 - [Kurtosis packages][packages-reference]
 - [Future references][future-references-reference]
 
-Now that you've reached the end, we'd love to hear from you - what went well for you, and what didn't? You can file issues and feature requests on Github...
+But this was still just the intro to Kurtosis. To see examples that you can easily modify to be relevant to you, [check out our `awesome-kurtosis` repo][awesome-kurtosis-repo]. To explore real-scale Kurtosis packages delivering value, see [the Ethereum package][ethereum-package], [Waku package][waku-package], or [NEAR package][near-package].
+
+And now that you've reached the end, we'd love to hear from you - what went well for you, and what didn't? You can file issues and feature requests on Github...
 
 ```bash
 kurtosis feedback --github
@@ -977,7 +981,7 @@ Or you can simply dive deeper into the docs:
 
 <!--------------------------- Other ------------------------------------>
 <!-- Examples repo -->
-[examples-repo]: https://github.com/kurtosis-tech/awesome-kurtosis
+[awesome-kurtosis-repo]: https://github.com/kurtosis-tech/awesome-kurtosis
 [data-package-example]: https://github.com/kurtosis-tech/awesome-kurtosis/tree/main/data-package
 [data-package-example-main.star]: https://github.com/kurtosis-tech/awesome-kurtosis/blob/main/data-package/main.star
 [data-package-example-seed-tar]: https://github.com/kurtosis-tech/awesome-kurtosis/blob/main/data-package/dvd-rental-data.tar
@@ -990,3 +994,6 @@ Or you can simply dive deeper into the docs:
 [bazel-github]: https://github.com/bazelbuild/bazel/
 [starlark-github-repo]: https://github.com/bazelbuild/starlark
 [postgrest]: https://postgrest.org/en/stable/
+[ethereum-package]: https://github.com/kurtosis-tech/eth2-package
+[waku-package]: https://github.com/logos-co/wakurtosis
+[near-package]: https://github.com/kurtosis-tech/near-package
