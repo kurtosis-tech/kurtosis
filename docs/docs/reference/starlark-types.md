@@ -153,7 +153,7 @@ post_request_recipe = PostHttpRequestRecipe(
     # # To lean more about jq, please visit https://devdocs.io/jq/
     # OPTIONAL
     extract = {
-        "extractfield" : ".name.id"
+        "extractfield" : ".name.id",
     },
 )
 ```
