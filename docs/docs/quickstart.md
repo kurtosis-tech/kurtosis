@@ -800,7 +800,7 @@ kurtosis clean -a && kurtosis run --enclave-identifier quickstart . '[{"first_na
 Using the new `http` URL on the `postgrest` service in the output, query for the rows you just added (replacing `http://127.0.0.1:59992` with your URL)...
 
 ```bash
-curl -XGET "http://127.0.0.1:<YOUR_URL>/actor?or=(last_name.eq.Buscemi,last_name.eq.Bacon)"
+curl -XGET "<YOUR_HTTP_URL>/actor?or=(last_name.eq.Buscemi,last_name.eq.Bacon)"
 ```
 
 ...to yield:
