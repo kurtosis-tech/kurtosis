@@ -44,7 +44,9 @@ func printFilesArtifacts(ctx context.Context, kurtosisCtx *kurtosis_context.Kurt
 			uuid = uuid_generator.ShortenedUUIDString(uuid)
 		}
 		fileName := filesArtifactNameAndUuid.GetFileName()
-		tablePrinter.AddRow(uuid, fileName)
+		if err := tablePrinter.AddRow(uuid, fileName); err != nil {
+			return stacktrace.Propagate(err, "An error occurred while adding row with uuid '%v' and file name '%v'; This is a bug in Kurtosis", uuid, fileName)
+		}
 	}
 
 	tablePrinter.Print()
