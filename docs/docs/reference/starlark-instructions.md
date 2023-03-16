@@ -368,13 +368,13 @@ post_request_recipe = PostHttpRequestRecipe(
     # MANDATORY
     endpoint = "/endpoint",
 
-    # The content type header of the request (e.g. application/json, text/plain, etc)
-    # MANDATORY
-    content_type = "text/plain",
-
     # The body of the request
     # MANDATORY
     body = "text body",
+    
+    # The content type header of the request (e.g. application/json, text/plain, etc)
+    # OPTIONAL (Default: "application/json")
+    content_type = "text/plain",    
 
     # The method is GET for this example
     # OPTIONAL (Default: {})
