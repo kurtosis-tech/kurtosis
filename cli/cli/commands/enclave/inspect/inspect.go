@@ -46,11 +46,13 @@ const (
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
+
+	filesArtifactsHeader = "Files-Artifacts"
 )
 
 var enclaveObjectPrintingFuncs = map[string]func(ctx context.Context, kurtosisCtx *kurtosis_context.KurtosisContext, kurtosisBackend backend_interface.KurtosisBackend, enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo, showFullUuid bool, isAPIContainerRunning bool) error{
-	"User Services":   printUserServices,
-	"Files-Artifacts": printFilesArtifacts,
+	"User Services":      printUserServices,
+	filesArtifactsHeader: printFilesArtifacts,
 }
 
 var EnclaveInspectCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -154,6 +156,11 @@ func PrintEnclaveInspect(ctx context.Context, kurtosisBackend backend_interface.
 
 	headersWithPrintErrs := []string{}
 	for _, header := range sortedEnclaveObjHeaders {
+		if header == filesArtifactsHeader && !isApiContainerRunning {
+			// can't fetch files artifact information if APIC isn't running
+			continue
+		}
+
 		printingFunc, found := enclaveObjectPrintingFuncs[header]
 		if !found {
 			return stacktrace.NewError("No printing function found for enclave object '%v'; this is a bug in Kurtosis!", header)
