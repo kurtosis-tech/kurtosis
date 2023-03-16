@@ -59,6 +59,8 @@ service ApiContainerService {
 
   // Renders the templates and their data to a files artifact in the Kurtosis File System
   rpc RenderTemplatesToFilesArtifact(RenderTemplatesToFilesArtifactArgs) returns (RenderTemplatesToFilesArtifactResponse) {}
+
+  rpc ListFilesArtifactNamesAndUuids(google.protobuf.Empty) returns (ListFilesArtifactNamesAndUuidsResponse) {}
 }
 
 // ==============================================================================================
@@ -515,4 +517,20 @@ message RenderTemplatesToFilesArtifactArgs {
 message RenderTemplatesToFilesArtifactResponse {
   // UUID of the files artifact, for use when referencing it in the future
   string uuid = 1;
+}
+
+
+// ==============================================================================================
+//                               List Files Artifacts Args
+// ==============================================================================================
+
+message FileNameAndUuid {
+  // A string representing the name of the file
+  string fileName = 1;
+  // A string representing the uuid of the file
+  string fileUuid = 2;
+}
+
+message ListFilesArtifactNamesAndUuidsResponse {
+  repeated FileNameAndUuid file_names_and_uuids = 1;
 }

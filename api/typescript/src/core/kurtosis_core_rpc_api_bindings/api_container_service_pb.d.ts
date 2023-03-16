@@ -1236,3 +1236,45 @@ export namespace RenderTemplatesToFilesArtifactResponse {
   }
 }
 
+export class FileNameAndUuid extends jspb.Message {
+  getFilename(): string;
+  setFilename(value: string): FileNameAndUuid;
+
+  getFileuuid(): string;
+  setFileuuid(value: string): FileNameAndUuid;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): FileNameAndUuid.AsObject;
+  static toObject(includeInstance: boolean, msg: FileNameAndUuid): FileNameAndUuid.AsObject;
+  static serializeBinaryToWriter(message: FileNameAndUuid, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): FileNameAndUuid;
+  static deserializeBinaryFromReader(message: FileNameAndUuid, reader: jspb.BinaryReader): FileNameAndUuid;
+}
+
+export namespace FileNameAndUuid {
+  export type AsObject = {
+    filename: string,
+    fileuuid: string,
+  }
+}
+
+export class ListFilesArtifactNamesAndUuidsResponse extends jspb.Message {
+  getFileNamesAndUuidsList(): Array<FileNameAndUuid>;
+  setFileNamesAndUuidsList(value: Array<FileNameAndUuid>): ListFilesArtifactNamesAndUuidsResponse;
+  clearFileNamesAndUuidsList(): ListFilesArtifactNamesAndUuidsResponse;
+  addFileNamesAndUuids(value?: FileNameAndUuid, index?: number): FileNameAndUuid;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ListFilesArtifactNamesAndUuidsResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: ListFilesArtifactNamesAndUuidsResponse): ListFilesArtifactNamesAndUuidsResponse.AsObject;
+  static serializeBinaryToWriter(message: ListFilesArtifactNamesAndUuidsResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ListFilesArtifactNamesAndUuidsResponse;
+  static deserializeBinaryFromReader(message: ListFilesArtifactNamesAndUuidsResponse, reader: jspb.BinaryReader): ListFilesArtifactNamesAndUuidsResponse;
+}
+
+export namespace ListFilesArtifactNamesAndUuidsResponse {
+  export type AsObject = {
+    fileNamesAndUuidsList: Array<FileNameAndUuid.AsObject>,
+  }
+}
+
