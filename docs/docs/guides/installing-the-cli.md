@@ -1,53 +1,67 @@
 ---
-title: Installing, Upgrading & Configuring The CLI
-sidebar_label: Installing, Upgrading & Configuring The CLI
+title: Installing Kurtosis
+sidebar_label: Installing Kurtosis
 slug: /install
 sidebar_position: 1
 ---
 
-The instructions in this guide will walk you through installing, upgrading, & configuring the CLI. 
+<!---------- START IMPORTS ------------>
 
-:::tip
-Kurtosis supports tab completion, and we strongly recommend [installing it][installing-tab-completion] after you finish installing the CLI.
-:::
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
 
-Installing the CLI
-------------------
+<!---------- END IMPORTS ------------>
 
-There are a few ways to install the CLI and the below section will guide you through each of those ways. Once you're done installing the CLI, the [quickstart][quickstart] is a great place to get started.
 
-<details><summary>MacOS (Homebrew)</summary>
+The instructions in this guide will walk you through installing the latest version of Kurtosis. 
 
-To install on MacOS (Homebrew):
+If you already have Kurtosis installed and you're looking to upgrade to latest, [see here][upgrade-guide].
+
+If you're looking to install a historical version instead, [see here][install-historical-guide].
+
+I. Install Docker
+-----------------
+
+1. If you don't already have Docker installed, follow the instructions [here][docker-install] to install the Docker application specific to your machine (e.g. Apple Intel, Apple M1, etc.)
+1. Start Docker
+1. Verify that Docker is running:
+   ```bash
+   docker image ls
+   ```
+
+II. Install the CLI
+-------------------------
+
+<Tabs groupId="install-methods">
+<TabItem value="homebrew" label="brew (MacOS)">
 
 ```
 brew install kurtosis-tech/tap/kurtosis-cli
 ```
 
-NOTE: Homebrew might warn you that your Xcode is outdated or missing entirely. [This is a Homebrew requirement](https://docs.brew.sh/Installation), and has nothing to do with Kurtosis (which ships as prebuilt binaries). To install or update your Xcode, run:
+:::info
+Homebrew might warn you that your Xcode is outdated or missing entirely. [This is a Homebrew requirement](https://docs.brew.sh/Installation), and has nothing to do with Kurtosis (which ships as prebuilt binaries). 
 
-```
+To install or update your Xcode, run:
+
+```bash
 xcode-select --install
 ```
+:::
 
-</details>
+</TabItem>
+<TabItem value="apt" label="apt (Ubuntu)">
 
-<details><summary>apt</summary>
-
-To install on Ubuntu OS using apt:
-
-```
+```bash
 echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
 sudo apt update
 sudo apt install kurtosis-cli
 ```
-</details>
 
-<details><summary>yum</summary>
+</TabItem>
+<TabItem value="yum" label="yum (RHEL)">
 
-To install on RPM-based Linux systems:
-
-```
+```bash
 echo '[kurtosis]
 name=Kurtosis
 baseurl=https://yum.fury.io/kurtosis-tech/
@@ -55,78 +69,41 @@ enabled=1
 gpgcheck=0' | sudo tee /etc/yum.repos.d/kurtosis.repo
 sudo yum install kurtosis-cli
 ```
-</details>
 
-<details><summary>deb, rpm, and apk</summary>
+</TabItem>
+<TabItem value="other-linux" label="deb, rpm, and apk">
 
 Download the appropriate artifact from [the release artifacts page][release-artifacts].
-</details>
 
-:::info
+</TabItem>
+
+<TabItem value="windows" label="Windows">
+
 The Kurtosis CLI cannot be installed directly on Windows. Windows users are encouraged to use [Windows Subsystem for Linux (WSL)][windows-susbsystem-for-linux] to use Kurtosis.
-:::
 
-Upgrading the CLI
------------------
-You can check the version of the CLI you're running on by using the command: `kurtosis version`. Before upgrading to the latest version, we recommend checking [the changelog to see if there are any breaking changes][cli-changelog] before proceeding with the steps below to upgrade.
+</TabItem>
 
-:::tip
-if you're upgrading the CLI's minor version (the `Y` in a `X.Y.Z` version), you may need to restart your Kurtosis engine after the upgrade. If this is needed, the Kurtosis CLI will prompt you with an error like so:
-```
-The engine server API version that the CLI expects, 1.7.4, doesn't match the running engine server API version, 1.6.8; this would cause broken functionality so you'll need to restart the engine to get the correct version by running 'kurtosis engine restart'
-```
-The fix is to restart the engine like so:
-```
-kurtosis engine restart
-```
-:::
+</Tabs>
 
-<details><summary>Homebrew</summary>
+III. Add tab completion
+-----------------------------
+[Kurtosis supports tab completion][installing-tab-completion], even for dynamic values like enclave names. We strongly recommend installing it for the best Kurtosis experience.
 
-To upgrade the CLI on MacOS (Homebrew):
+IV. Configure analytics
+------------------------
+By default, Kurtosis reports anonymized, obfuscated analytics which [we use only to improve the product][metrics-philosophy]. 
 
-```
-brew upgrade kurtosis-tech/tap/kurtosis-cli
+If you'd like to [disable analytics][analytics-disable], you can run:
+
+```bash
+kurtosis analytics disable
 ```
 
-If you encounter issues with upgrading the CLI using Homebrew, try the following command to update and upgrade Homebrew itself before upgrading the CLI:
-```
-brew update && brew upgrade
-```
+To read more about why and how we collect product analytics metrics, [go here][metrics-philosophy].
 
-</details>
-
-<details><summary>apt</summary>
-
-To upgrade the CLI on Ubuntu OS using apt:
-
-```
-apt install --only-upgrade kurtosis-cli
-```
-</details>
-
-<details><summary>yum</summary>
-
-To upgrade the CLI on RPM-based Linux systems:
-
-```
-yum upgrade kurtosis-cli
-```
-</details>
-
-<details><summary>deb, rpm, and apk</summary>
-
-Download the appropriate artifact from [the release artifacts page][release-artifacts].
-</details>
-
-
-Configuring Analytics
----------------------
-
-On installation, Kurtosis enables anonymized analytics by default. In case you want to disable it, you can run: `kurtosis analytics disable` to [disable the sending of product analytics metrics][analytics-disable]. 
-
-Read more about why and how we collect product analytics metrics [here][metrics-philosophy].
-
+V. Run the quickstart
+-----------------------------
+If you're new to Kurtosis, the [quickstart][quickstart] is a great way to started using Kurtosis.
 
 <!-------------------------- ONLY LINKS BELOW HERE ---------------------------->
 [cli-changelog]: ../changelog.md
@@ -134,6 +111,9 @@ Read more about why and how we collect product analytics metrics [here][metrics-
 [analytics-disable]: ../reference/cli/analytics-disable.md
 [quickstart]: ../quickstart.md
 [installing-tab-completion]: ./adding-tab-completion.md
+[install-historical-guide]: ./installing-historical-versions.md
+[upgrade-guide]: ./upgrading-the-cli.md
 
 [release-artifacts]: https://github.com/kurtosis-tech/kurtosis-cli-release-artifacts/releases
 [windows-susbsystem-for-linux]: https://learn.microsoft.com/en-us/windows/wsl/
+[docker-install]: https://docs.docker.com/get-docker/

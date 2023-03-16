@@ -6,11 +6,11 @@ slug: /ci
 
 Running Kurtosis on your local machine is nice, but executing it as part of CI is even better. This guide will walk you through modifying your CI config file to use Kurtosis in your CI environment:
 
-Step One: Installing The CLI
+I. Installing The CLI
 ----------------------------
 You'll need the Kurtosis CLI inside your CI environment. This can be accomplished by following [the installation instructions](installing-the-cli.md) for whichever package manager your CI container uses. E.g. if you're using Github Actions with an Ubuntu executor, you'd add the instructions for installing the Kurtosis CLI via the `apt` package manager to your CI config file.
 
-Step Two: Initialize The Configuration
+II. Initialize The Configuration
 --------------------------------------
 A new Kurtosis installation has [analytics](../explanations/metrics-philosophy.md) enabled on installation. You can change the default behavior by running,
 
@@ -26,15 +26,15 @@ kurtosis analytics enable
 
 if you'd like to enable analytics, helping us shape the product better.
 
-Step Three: Start The Engine
+III. Start The Engine
 ----------------------------
 You'll need the Kurtosis engine to be running to interact with Kurtosis, both via the [CLI](../reference/cli/cli.md) and the [SDK](../reference/sdk.md). Add `kurtosis engine start` in your CI config file after the CLI installation commands so that your Kurtosis commands work.
 
-Step Four: Run Your Custom Logic
+IV. Run Your Custom Logic
 ---------------------------------
 This will be specific to whatever you want to run in CI. E.g. if you have Javascript Mocha tests that use Kurtosis, you'd put that in your CI config file after installing the Kurtosis CLI & starting the engine.
 
-Step Five: Capturing Enclave Output
+V. Capturing Enclave Output
 -----------------------------------
 Naturally, if your job fails you'll want to see what was going on inside of Kurtosis at the time of failure. The `kurtosis enclave dump` command allows us to capture container logs & specs from an enclave, so that we can dump the state of the enclaves and attach them to the CI job for further debugging. The specifics of how to attach files to a CI job from within the job will vary depending on which CI provider you're using, but will look something like the following (which is for CircleCI):
 
