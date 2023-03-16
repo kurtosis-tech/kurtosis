@@ -29,7 +29,7 @@ func printFilesArtifacts(ctx context.Context, kurtosisCtx *kurtosis_context.Kurt
 
 	sort.Slice(filesArtifactsNamesAndUuids, func(i, j int) bool {
 		firstFilesArtifactNameAndUuid := filesArtifactsNamesAndUuids[i]
-		secondFilesArtifactNameAndUuid := filesArtifactsNamesAndUuids[i]
+		secondFilesArtifactNameAndUuid := filesArtifactsNamesAndUuids[j]
 		return firstFilesArtifactNameAndUuid.GetFileName() < secondFilesArtifactNameAndUuid.GetFileName()
 	})
 
