@@ -11,7 +11,7 @@ import (
 
 const (
 	remoteTestName       = "subpackage-remote"
-	remotePackage        = "github.com/kurtosis-tech/examples/quickstart"
+	remotePackage        = "github.com/kurtosis-tech/awesome-kurtosis/quickstart"
 	emptyParams          = "{}"
 	expectedOutputLength = 3
 
