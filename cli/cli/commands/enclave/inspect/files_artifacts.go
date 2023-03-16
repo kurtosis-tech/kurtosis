@@ -16,15 +16,7 @@ const (
 	fileNameHeader  = "Name"
 )
 
-func printFilesArtifacts(ctx context.Context, _ backend_interface.KurtosisBackend, enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo, showFullUuids bool, _ bool) error {
-	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
-	if err != nil {
-		return stacktrace.Propagate(
-			err,
-			"An error occurred connecting to the Kurtosis engine for retrieving the service UUIDs & names of files artifacts",
-		)
-	}
-
+func printFilesArtifacts(ctx context.Context, kurtosisCtx *kurtosis_context.KurtosisContext, _ backend_interface.KurtosisBackend, enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo, showFullUuids bool, _ bool) error {
 	enclaveContext, err := kurtosisCtx.GetEnclaveContext(ctx, enclaveInfo.GetName())
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while fetching enclave with name '%v'", enclaveInfo.GetName())
