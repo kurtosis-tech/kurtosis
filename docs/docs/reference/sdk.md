@@ -340,7 +340,7 @@ Gets the Name and UUID of the current services in the enclave.
 
 * `serviceIdentifiers`: A map of objects containing a mapping of Name -> UUID for all the services inside the enclave
 
-### `uploadFiles(String pathToUpload, String artifactName) -> FileArtifaceUUID, FileArtifactName, Error`
+### `uploadFiles(String pathToUpload, String artifactName) -> FileArtifactUUID, FileArtifactName, Error`
 Takes a filepath or directory path that will be compressed and uploaded to the Kurtosis filestore for use with [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
 
 If a directory is specified, the contents of the directory will be uploaded to the archive without additional nesting. Empty directories cannot be uploaded.
@@ -372,7 +372,14 @@ Downloads a files-containing `.tgz` from the given URL to the Kurtosis engine, s
 Get all (active & deleted) historical [identifiers][identifier] for services for the enclave represented by the [EnclaveContext][enclavecontext].
 
 **Returns**
-* `serviceIdentifiers` The [ServiceIdentifiers][service-identifiers] which provides user-friendly ways to lookup service identifier information.
+* `serviceIdentifiers`: The [ServiceIdentifiers][service-identifiers] which provides user-friendly ways to lookup service identifier information.
+
+### `getAllFilesArtifactNamesAndUuids() -> []FilesArtifactNameAndUuid filesArtifactNamesAndUuids`
+
+Get a list of all files artifacts that are registered with the enclave represented by the [EnclaveContext][enclavecontext]
+
+**Returns**
+* `filesArtifactNameAndUuids`: A list of files artifact names and their corresponding uuids.
 
 ServiceIdentifiers
 -------------------
