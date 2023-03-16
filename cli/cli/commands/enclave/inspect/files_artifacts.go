@@ -44,7 +44,7 @@ func printFilesArtifacts(ctx context.Context, kurtosisCtx *kurtosis_context.Kurt
 			uuid = uuid_generator.ShortenedUUIDString(uuid)
 		}
 		fileName := filesArtifactNameAndUuid.GetFileName()
-		tablePrinter.AddRow(fileName, uuid)
+		tablePrinter.AddRow(uuid, fileName)
 	}
 
 	tablePrinter.Print()
