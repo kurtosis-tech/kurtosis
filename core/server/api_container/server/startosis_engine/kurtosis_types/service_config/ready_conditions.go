@@ -64,7 +64,7 @@ func NewReadyConditionsType() *kurtosis_type_constructor.KurtosisTypeConstructor
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-						return validateDuration(value, IntervalAttr)
+						return builtin_argument.Duration(value, IntervalAttr)
 					},
 				},
 				{
@@ -72,7 +72,7 @@ func NewReadyConditionsType() *kurtosis_type_constructor.KurtosisTypeConstructor
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-						return validateDuration(value, TimeoutAttr)
+						return builtin_argument.Duration(value, TimeoutAttr)
 					},
 				},
 			},
@@ -97,15 +97,9 @@ type ReadyConditions struct {
 }
 
 func (readyConditions *ReadyConditions) GetRecipe() (recipe.Recipe, *startosis_errors.InterpretationError) {
-	var (
-		genericRecipe     recipe.Recipe
-		found             bool
-		httpRecipe        *recipe.HttpRequestRecipe
-		execRecipe        *recipe.ExecRecipe
-		interpretationErr *startosis_errors.InterpretationError
-	)
+	var genericRecipe recipe.Recipe
 
-	httpRecipe, found, interpretationErr = kurtosis_type_constructor.ExtractAttrValue[*recipe.HttpRequestRecipe](readyConditions.KurtosisValueTypeDefault, RecipeAttr)
+	httpRecipe, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*recipe.HttpRequestRecipe](readyConditions.KurtosisValueTypeDefault, RecipeAttr)
 	genericRecipe = httpRecipe
 	if !found {
 		return nil, startosis_errors.NewInterpretationError("Required attribute '%s' could not be found on type '%s'",
@@ -113,7 +107,7 @@ func (readyConditions *ReadyConditions) GetRecipe() (recipe.Recipe, *startosis_e
 	}
 	//TODO we should rework the recipe types to inherit a single common type, this will avoid the double parsing here.
 	if interpretationErr != nil {
-		execRecipe, _, interpretationErr = kurtosis_type_constructor.ExtractAttrValue[*recipe.ExecRecipe](readyConditions.KurtosisValueTypeDefault, RecipeAttr)
+		execRecipe, _, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*recipe.ExecRecipe](readyConditions.KurtosisValueTypeDefault, RecipeAttr)
 		if interpretationErr != nil {
 			return nil, interpretationErr
 		}
@@ -209,23 +203,5 @@ func validateRecipe(value starlark.Value) *startosis_errors.InterpretationError 
 			return startosis_errors.NewInterpretationError("The '%s' attribute is not a Recipe (was '%s').", RecipeAttr, reflect.TypeOf(value))
 		}
 	}
-	return nil
-}
-
-func validateDuration(value starlark.Value, attributeName string) *startosis_errors.InterpretationError {
-	valueStarlarkStr, ok := value.(starlark.String)
-	if !ok {
-		return startosis_errors.NewInterpretationError("The '%s' attribute is not a valid string type (was '%s').", attributeName, reflect.TypeOf(value))
-	}
-
-	if valueStarlarkStr.GoString() == "" {
-		return nil
-	}
-
-	_, parseErr := time.ParseDuration(valueStarlarkStr.GoString())
-	if parseErr != nil {
-		return startosis_errors.WrapWithInterpretationError(parseErr, "The value '%v' of '%s' attribute is not a valid duration string format", valueStarlarkStr.GoString(), attributeName)
-	}
-
 	return nil
 }
