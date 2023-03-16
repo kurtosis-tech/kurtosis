@@ -15,11 +15,11 @@ func TestGetHttpRequestRecipe_String(t *testing.T) {
 	builtin.Name()
 	kwargs := []starlark.Tuple{
 		starlark.Tuple([]starlark.Value{
-			starlark.String(endpointAttr),
+			starlark.String(EndpointAttr),
 			starlark.String("?input=output"),
 		}),
 		starlark.Tuple([]starlark.Value{
-			starlark.String(portIdAttr),
+			starlark.String(PortIdAttr),
 			starlark.String("portId"),
 		}),
 	}
@@ -35,15 +35,15 @@ func TestGetHttpRequestRecipe_String(t *testing.T) {
 	require.Nil(t, err)
 	kwargsWithExtractors := []starlark.Tuple{
 		starlark.Tuple([]starlark.Value{
-			starlark.String(endpointAttr),
+			starlark.String(EndpointAttr),
 			starlark.String("?input=output"),
 		}),
 		starlark.Tuple([]starlark.Value{
-			starlark.String(portIdAttr),
+			starlark.String(PortIdAttr),
 			starlark.String("portId"),
 		}),
 		starlark.Tuple([]starlark.Value{
-			starlark.String(extractKeyPrefix),
+			starlark.String(ExtractKeyPrefix),
 			extractors,
 		}),
 	}
@@ -60,11 +60,11 @@ func TestPostHttpRequestRecipe_String(t *testing.T) {
 	builtin := &starlark.Builtin{}
 	kwargs := []starlark.Tuple{
 		starlark.Tuple([]starlark.Value{
-			starlark.String(endpointAttr),
+			starlark.String(EndpointAttr),
 			starlark.String("?input=output"),
 		}),
 		starlark.Tuple([]starlark.Value{
-			starlark.String(portIdAttr),
+			starlark.String(PortIdAttr),
 			starlark.String("portId"),
 		}),
 		starlark.Tuple([]starlark.Value{
@@ -88,15 +88,15 @@ func TestPostHttpRequestRecipe_String(t *testing.T) {
 	require.Nil(t, err)
 	kwargsWithExtractors := []starlark.Tuple{
 		starlark.Tuple([]starlark.Value{
-			starlark.String(endpointAttr),
+			starlark.String(EndpointAttr),
 			starlark.String("?input=output"),
 		}),
 		starlark.Tuple([]starlark.Value{
-			starlark.String(portIdAttr),
+			starlark.String(PortIdAttr),
 			starlark.String("portId"),
 		}),
 		starlark.Tuple([]starlark.Value{
-			starlark.String(extractKeyPrefix),
+			starlark.String(ExtractKeyPrefix),
 			extractors,
 		}),
 		starlark.Tuple([]starlark.Value{
@@ -121,7 +121,7 @@ func TestStartosisInterpreter_HttpRequestMissingRequiredFields(t *testing.T) {
 	builtin := &starlark.Builtin{}
 	kwargs := []starlark.Tuple{
 		starlark.Tuple([]starlark.Value{
-			starlark.String(endpointAttr),
+			starlark.String(EndpointAttr),
 			starlark.String("?input=output"),
 		}),
 	}
@@ -138,15 +138,15 @@ func TestStartosisInterpreter_MissingRequiredFieldForHttpRecipeWithPostMethod(t 
 	require.Nil(t, err)
 	kwargsWithoutBody := []starlark.Tuple{
 		starlark.Tuple([]starlark.Value{
-			starlark.String(endpointAttr),
+			starlark.String(EndpointAttr),
 			starlark.String("?input=output"),
 		}),
 		starlark.Tuple([]starlark.Value{
-			starlark.String(portIdAttr),
+			starlark.String(PortIdAttr),
 			starlark.String("portId"),
 		}),
 		starlark.Tuple([]starlark.Value{
-			starlark.String(extractKeyPrefix),
+			starlark.String(ExtractKeyPrefix),
 			extractors,
 		}),
 		starlark.Tuple([]starlark.Value{
