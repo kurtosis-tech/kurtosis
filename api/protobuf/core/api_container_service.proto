@@ -521,7 +521,7 @@ message RenderTemplatesToFilesArtifactResponse {
 
 
 // ==============================================================================================
-//                               List Files Artifacts Args
+//                               List Files Artifact Names And Uuids
 // ==============================================================================================
 
 message FilesArtifactNameAndUuid {
