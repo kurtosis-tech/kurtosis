@@ -51,8 +51,6 @@ var (
 	connectionWithSomeConstantDelay     = partition_topology.NewUniformPacketDelayDistribution(500)
 	connectionWithSomePacketLoss        = partition_topology.NewPacketLoss(50.0)
 	packetLossConfigForBlockedPartition = partition_topology.NewPacketLoss(100)
-
-	readinessCheckErr = stacktrace.NewError("Readiness check fails")
 )
 
 func TestStartService_Successful(t *testing.T) {

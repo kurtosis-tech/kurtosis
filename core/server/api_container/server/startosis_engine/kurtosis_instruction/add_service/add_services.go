@@ -18,6 +18,7 @@ import (
 	"go.starlark.net/starlark"
 	"reflect"
 	"strings"
+	"sync"
 )
 
 const (
@@ -90,7 +91,6 @@ func (builtin *AddServicesCapabilities) Interpret(arguments *builtin_argument.Ar
 		return nil, interpretationErr
 	}
 	builtin.serviceConfigs = serviceConfigs
-	logrus.Infof("[LEO-DEBUG] interpret received ready conditions '%v'", readyConditions)
 	builtin.readyConditions = readyConditions
 
 	resultUuids, returnValue, interpretationErr := makeAddServicesInterpretationReturnValue(builtin.serviceConfigs, builtin.runtimeValueStore)
@@ -139,8 +139,16 @@ func (builtin *AddServicesCapabilities) Execute(ctx context.Context, _ *builtin_
 	}
 	shouldDeleteAllStartedServices := true
 
-	if err := builtin.allServicesReadinessCheck(ctx, startedServices, parallelism); err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred checking readiness for services '%+v'", startedServices)
+	//TODO we should move the readiness check functionality to the default service network to improve performance
+	///TODO because we won't have to wait for all services to start for checking readiness, but first we have to
+	//TODO propagate the Recipes to this layer too and probably move the wait instruction also
+	if failedServicesChecks := builtin.allServicesReadinessCheck(ctx, startedServices, parallelism); len(failedServicesChecks) > 0 {
+		var allServiceChecksErrMsg string
+		for serviceName, serviceErr := range failedServicesChecks {
+			serviceMsg := fmt.Sprintf("Service '%v' error:\n%v\n", serviceName, serviceErr)
+			allServiceChecksErrMsg = allServiceChecksErrMsg + serviceMsg
+		}
+		return "", stacktrace.NewError("An error occurred while checking al service, these are the errors by service:\n%s", allServiceChecksErrMsg)
 	}
 	defer func() {
 		if shouldDeleteAllStartedServices {
@@ -176,68 +184,59 @@ func (builtin *AddServicesCapabilities) allServicesReadinessCheck(
 	ctx context.Context,
 	startedServices map[service.ServiceName]*service.Service,
 	batchSize int,
-) error {
+) map[service.ServiceName]error {
 	logrus.Debugf("Checking for all services readiness...")
-
-	finishedReadinessCheck := 0
 
 	concurrencyControlChan := make(chan bool, batchSize)
 	defer close(concurrencyControlChan)
 
-	readinessCheckErrChan := make(chan error)
-	defer func() {
-		if finishedReadinessCheck == len(startedServices) {
-			close(readinessCheckErrChan)
-		}
-	}()
+	failedServiceChecksSyncMap := &sync.Map{}
 
-	//Executed in a different Go routine to don't block the main routine here if batchSize > startedServices
-	go func() {
-		for serviceName := range startedServices {
-			// The concurrencyControlChan will block if the buffer is currently full, i.e. if maxConcurrentServiceStart
-			// subroutines are already running in the background
-			concurrencyControlChan <- true
-			logrus.Infof("[LEO-DEBUG] executing go routine for '%v'", serviceName)
-			go builtin.runServiceReadinessCheck(ctx, serviceName, readinessCheckErrChan)
-		}
-	}()
-
-	shouldContinueInTheLoop := true
-	for shouldContinueInTheLoop {
-		select {
-		case err := <-readinessCheckErrChan:
-			finishedReadinessCheck++
-
-			//pop a value from the concurrencyControlChan to allow any potentially waiting subroutine to start
-			<-concurrencyControlChan
-
-			logrus.Infof("[LEO-DEBUG] received error in select case '%v'", err)
-			if err != nil {
-				return stacktrace.Propagate(err, "An error occurred while checking if started services '%+v' are ready", startedServices)
-			}
-			if finishedReadinessCheck == len(startedServices) {
-				logrus.Infof("[LEO-DEBUG] cantidad de started services es igual a la cantidad de check ejecutados exitosamente")
-				shouldContinueInTheLoop = false
-				break
-			}
-		}
+	wg := &sync.WaitGroup{}
+	for serviceName := range startedServices {
+		wg.Add(1)
+		// The concurrencyControlChan will block if the buffer is currently full
+		concurrencyControlChan <- true
+		go builtin.runServiceReadinessCheck(ctx, wg, concurrencyControlChan, serviceName, failedServiceChecksSyncMap)
 	}
+	wg.Wait()
+
+	failedServiceChecksRegularMap := map[service.ServiceName]error{}
+
+	failedServiceChecksSyncMap.Range(func(serviceNameAny any, serviceErrorAny any) bool {
+		if serviceErrorAny != nil {
+			serviceName := serviceNameAny.(service.ServiceName)
+			serviceError := serviceErrorAny.(error)
+			failedServiceChecksRegularMap[serviceName] = serviceError
+		}
+		return true
+	})
+
 	logrus.Debug("All services are ready")
 
-	return nil
+	return failedServiceChecksRegularMap
 }
 
 func (builtin *AddServicesCapabilities) runServiceReadinessCheck(
 	ctx context.Context,
+	wg *sync.WaitGroup,
+	concurrencyControlChan chan bool,
 	serviceName service.ServiceName,
-	readinessCheckErrChan chan<- error,
+	failedServiceChecks *sync.Map,
 ) {
-	logrus.Infof("[LEO-DEBUG] Ejecuntado readiness check para '%v'...", serviceName)
+	var serviceErr error
+	defer func() {
+		failedServiceChecks.Store(serviceName, serviceErr)
+		wg.Done()
+		//pop a value from the concurrencyControlChan to allow any potentially waiting subroutine to start
+		<-concurrencyControlChan
+	}()
+
 	readyConditions, found := builtin.readyConditions[serviceName]
 	if !found {
-		readinessCheckErrChan <- stacktrace.NewError("Expected to find ready conditions for service '%s' in map '%+v', but none was found; this is a bug in Kurtosis", serviceName, builtin.readyConditions)
+		serviceErr = stacktrace.NewError("Expected to find ready conditions for service '%s' in map '%+v', but none was found; this is a bug in Kurtosis", serviceName, builtin.readyConditions)
+		return
 	}
-	logrus.Infof("[LEO-DEBUG] Estas son las ready conditions '%v'", readyConditions)
 
 	if err := runServiceReadinessCheck(
 		ctx,
@@ -246,10 +245,9 @@ func (builtin *AddServicesCapabilities) runServiceReadinessCheck(
 		serviceName,
 		readyConditions,
 	); err != nil {
-		readinessCheckErrChan <- stacktrace.Propagate(err, "An error occurred while checking if service '%v' is ready", serviceName)
+		serviceErr = stacktrace.Propagate(err, "An error occurred while checking if service '%v' is ready", serviceName)
+		return
 	}
-
-	readinessCheckErrChan <- nil
 }
 
 func validateAndConvertConfigsAndReadyConditions(

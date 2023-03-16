@@ -18,6 +18,7 @@ import (
 	"go.starlark.net/starlark"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"testing"
 )
@@ -85,13 +86,46 @@ func (t *addServiceTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtosi
 		TestReadyConditionsRecipeEndpoint,
 		"",
 	).Times(1).Return(&http.Response{
-		Status:           "200 OK",
-		StatusCode:       200,
-		Proto:            "HTTP/1.1",
-		ProtoMajor:       1,
-		ProtoMinor:       1,
-		Header:           http.Header{},
-		Request:          &http.Request{Method: TestGetRequestMethod},
+		Status:     "200 OK",
+		StatusCode: 200,
+		Proto:      "HTTP/1.1",
+		ProtoMajor: 1,
+		ProtoMinor: 1,
+		Header:     http.Header{},
+		Request: &http.Request{
+			Method: TestGetRequestMethod,
+			URL: &url.URL{
+				Path:        "",
+				Scheme:      "",
+				Opaque:      "",
+				User:        nil,
+				Host:        "",
+				RawPath:     "",
+				ForceQuery:  false,
+				RawQuery:    "",
+				Fragment:    "",
+				RawFragment: "",
+			},
+			Proto:            "",
+			ProtoMajor:       0,
+			ProtoMinor:       0,
+			Header:           http.Header{},
+			Body:             nil,
+			GetBody:          nil,
+			ContentLength:    0,
+			TransferEncoding: nil,
+			Close:            false,
+			Host:             "",
+			Form:             nil,
+			PostForm:         nil,
+			MultipartForm:    nil,
+			Trailer:          nil,
+			RemoteAddr:       "",
+			RequestURI:       "",
+			TLS:              nil,
+			Cancel:           nil,
+			Response:         nil,
+		},
 		Close:            true,
 		ContentLength:    -1,
 		Body:             io.NopCloser(strings.NewReader("{}")),

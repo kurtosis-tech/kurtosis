@@ -144,7 +144,6 @@ func runServiceReadinessCheck(
 	serviceName service.ServiceName,
 	readyConditions *service_config.ReadyConditions,
 ) error {
-	logrus.Infof("[LEO-DEBUG] ejecuntando readines check internal para '%v' con ready conditions '%v'", serviceName, readyConditions)
 	if readyConditions != nil {
 
 		recipe, intepretationErr := readyConditions.GetRecipe()
