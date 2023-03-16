@@ -47,7 +47,7 @@ const (
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
 
-	filesArtifactsHeader = "Files-Artifacts"
+	filesArtifactsHeader = "Files Artifacts"
 )
 
 var enclaveObjectPrintingFuncs = map[string]func(ctx context.Context, kurtosisCtx *kurtosis_context.KurtosisContext, kurtosisBackend backend_interface.KurtosisBackend, enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo, showFullUuid bool, isAPIContainerRunning bool) error{
