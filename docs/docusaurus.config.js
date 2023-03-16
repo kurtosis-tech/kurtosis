@@ -52,7 +52,7 @@ const config = {
       announcementBar: {
         id: 'support_us',
         content:
-            '<a target="_blank" rel="noopener noreferrer" href="https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding">Schedule a live session with us to get started or to learn more here</a>',
+            '<a target="_blank" rel="noopener noreferrer" href="https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding">Schedule a live session with us to help getting started or to learn more.</a>',
         backgroundColor: '#fafbfc',
         textColor: '#091E42',
         isCloseable: false,
