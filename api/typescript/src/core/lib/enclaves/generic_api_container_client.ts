@@ -13,14 +13,11 @@ import {
     PauseServiceArgs,
     RemoveServiceArgs,
     RemoveServiceResponse,
-    RenderTemplatesToFilesArtifactArgs,
-    RenderTemplatesToFilesArtifactResponse,
     RepartitionArgs,
     RunStarlarkPackageArgs,
     RunStarlarkScriptArgs,
     StartServicesArgs,
     StartServicesResponse,
-    StoreFilesArtifactFromServiceArgs,
     StoreWebFilesArtifactArgs,
     StoreWebFilesArtifactResponse,
     UnpauseServiceArgs,
@@ -31,7 +28,6 @@ import {
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import { EnclaveUUID } from "./enclave_context";
 import {Readable} from "stream";
-import {FilesArtifactUUID} from "../services/container_config";
 
 export interface GenericApiContainerClient {
     getEnclaveUuid(): EnclaveUUID
