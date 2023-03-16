@@ -1,4 +1,4 @@
-package startosis_add_service
+package startosis_add_service_test
 
 import (
 	"context"
@@ -9,59 +9,66 @@ import (
 )
 
 const (
-	addServiceWithReadyConditionsTestName = "service-test"
+	addServicesWithReadyConditionsTestName = "services-test"
 
-	addServiceWithReadyConditionsScript = `
+	addServicesWithReadyConditionsScript = `
+HTTP_ECHO_IMAGE = "mendhak/http-https-echo:26"
+SERVICE_NAME_PREFIX = "service-"
+NUM_SERVICES = 4
+
 def run(plan):
-	get_recipe = GetHttpRequestRecipe(
-		port_id = "http-port",
-		endpoint = "?input=foo/bar",
+    plan.print("Adding {0} services to enclave".format(NUM_SERVICES))
+
+    get_recipe = GetHttpRequestRecipe(
+        port_id = "http-port",
+        endpoint = "?input=foo/bar",
 	)
 
-	ready_conditions = ReadyConditions(
+    ready_conditions = ReadyConditions(
         recipe=get_recipe,
-		field="code",
-		assertion="==",
-		target_value=%v,
-		interval="1s",
-		timeout="3s"
+        field="code",
+        assertion="==",
+        target_value=%v,
+        interval="1s",
+        timeout="3s"
     )
 
-	service_config = ServiceConfig(
-		image = "mendhak/http-https-echo:26",
+    config = ServiceConfig(
+        image = HTTP_ECHO_IMAGE,
 		ports = {
 			"http-port": PortSpec(number = 8080, transport_protocol = "TCP")
 		},
-        ready_conditions = ready_conditions
-	)
-
-	plan.add_service(service_name = "web-server", config = service_config)
+		ready_conditions = ready_conditions,
+    )
+    configs = {}
+    for index in range(NUM_SERVICES):
+        service_name = SERVICE_NAME_PREFIX + str(index)
+        configs[service_name] = config
+    
+    plan.add_services(configs)
 `
-
-	okStatusCode          = 200
-	serverErrorStatusCode = 500
 )
 
-func TestStartosis_AddServiceWithReadyConditionsCheck(t *testing.T) {
+func TestStartosis_AddServicesWithReadyConditionsCheck(t *testing.T) {
 	ctx := context.Background()
 
-	script := fmt.Sprintf(addServiceWithReadyConditionsScript, okStatusCode)
+	script := fmt.Sprintf(addServicesWithReadyConditionsScript, okStatusCode)
 
-	runResult := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, addServiceWithReadyConditionsTestName, script)
+	runResult := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, addServicesWithReadyConditionsTestName, script)
 
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
 	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")
 	require.Empty(t, runResult.ExecutionError, "Unexpected execution error")
 }
 
-func TestStartosis_AddServiceWithReadyConditionsCheckFail(t *testing.T) {
+func TestStartosis_AddServicesWithReadyConditionsCheckFail(t *testing.T) {
 	ctx := context.Background()
 
 	expectedLastAssertionErrorStr := fmt.Sprintf("Assertion failed '%v' '==' '%v'", okStatusCode, serverErrorStatusCode)
 
-	script := fmt.Sprintf(addServiceWithReadyConditionsScript, serverErrorStatusCode)
+	script := fmt.Sprintf(addServicesWithReadyConditionsScript, serverErrorStatusCode)
 
-	runResult := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, addServiceWithReadyConditionsTestName, script)
+	runResult := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, addServicesWithReadyConditionsTestName, script)
 
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
 	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")

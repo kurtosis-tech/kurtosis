@@ -1,4 +1,4 @@
-package startosis_add_service
+package startosis_add_service_test
 
 import (
 	"context"

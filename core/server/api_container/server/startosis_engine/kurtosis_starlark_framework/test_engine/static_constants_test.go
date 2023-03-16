@@ -76,5 +76,14 @@ var (
 	TestReadyConditionsInterval       = "1s"
 	TestReadyConditionsTimeout        = "100ms"
 
+	TestReadyConditions2RecipePortId   = "https"
+	TestReadyConditions2RecipeEndpoint = "/user-access"
+	TestReadyConditions2RecipeExtract  = "{}"
+	TestReadyConditions2Field          = "code"
+	TestReadyConditions2Assertion      = "=="
+	TestReadyConditions2Target         = "201"
+	TestReadyConditions2Interval       = "500ms"
+	TestReadyConditions2Timeout        = "2s"
+
 	TestGetRequestMethod = "GET"
 )

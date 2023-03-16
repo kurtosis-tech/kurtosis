@@ -14,6 +14,9 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
+	"io"
+	"net/http"
+	"strings"
 	"testing"
 )
 
@@ -51,7 +54,6 @@ func (t *addServicesTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtos
 			return true
 		}),
 		mock.Anything,
-		mock.AnythingOfType("map[service.ServiceName]service_network.ServiceReadinessCheckFunc"),
 	).Times(1).Return(
 		map[service.ServiceName]*service.Service{
 			TestServiceName:  service.NewService(service.NewServiceRegistration(TestServiceName, TestServiceUuid, TestEnclaveUuid, nil, string(TestServiceName)), container_status.ContainerStatus_Running, nil, nil, nil),
@@ -61,12 +63,73 @@ func (t *addServicesTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtos
 		nil,
 	)
 
+	serviceNetwork.EXPECT().HttpRequestService(
+		mock.Anything,
+		string(TestServiceName),
+		TestReadyConditionsRecipePortId,
+		TestGetRequestMethod,
+		"",
+		TestReadyConditionsRecipeEndpoint,
+		"",
+	).Times(1).Return(&http.Response{
+		Status:           "200 OK",
+		StatusCode:       200,
+		Proto:            "HTTP/1.1",
+		ProtoMajor:       1,
+		ProtoMinor:       1,
+		Header:           http.Header{},
+		Request:          &http.Request{Method: TestGetRequestMethod},
+		Close:            true,
+		ContentLength:    -1,
+		Body:             io.NopCloser(strings.NewReader("{}")),
+		Trailer:          nil,
+		TransferEncoding: nil,
+		Uncompressed:     true,
+		TLS:              nil,
+	}, nil)
+
+	serviceNetwork.EXPECT().HttpRequestService(
+		mock.Anything,
+		string(TestServiceName2),
+		TestReadyConditions2RecipePortId,
+		TestGetRequestMethod,
+		"",
+		TestReadyConditions2RecipeEndpoint,
+		"",
+	).Times(1).Return(&http.Response{
+		Status:           "201 OK",
+		StatusCode:       201,
+		Proto:            "HTTP/1.1",
+		ProtoMajor:       1,
+		ProtoMinor:       1,
+		Header:           http.Header{},
+		Request:          &http.Request{Method: TestGetRequestMethod},
+		Close:            true,
+		ContentLength:    -1,
+		Body:             io.NopCloser(strings.NewReader("{}")),
+		Trailer:          nil,
+		TransferEncoding: nil,
+		Uncompressed:     true,
+		TLS:              nil,
+	}, nil)
+
 	return add_service.NewAddServices(serviceNetwork, runtimeValueStore)
 }
 
 func (t *addServicesTestCase) GetStarlarkCode() string {
-	serviceConfig1 := fmt.Sprintf("ServiceConfig(image=%q, subnetwork=%q)", TestContainerImageName, TestSubnetwork)
-	serviceConfig2 := fmt.Sprintf("ServiceConfig(image=%q, cpu_allocation=%d, memory_allocation=%d)", TestContainerImageName, TestCpuAllocation, TestMemoryAllocation)
+	service1ReadyConditionsScriptPart := getDefaultReadyConditionsScriptPart()
+	service2ReadyConditionsScriptPart := getCustomReadyConditionsScripPart(
+		TestReadyConditions2RecipePortId,
+		TestReadyConditions2RecipeEndpoint,
+		TestReadyConditions2RecipeExtract,
+		TestReadyConditions2Field,
+		TestReadyConditions2Assertion,
+		TestReadyConditions2Target,
+		TestReadyConditions2Interval,
+		TestReadyConditions2Timeout,
+	)
+	serviceConfig1 := fmt.Sprintf("ServiceConfig(image=%q, subnetwork=%q, ready_conditions=%s)", TestContainerImageName, TestSubnetwork, service1ReadyConditionsScriptPart)
+	serviceConfig2 := fmt.Sprintf("ServiceConfig(image=%q, cpu_allocation=%d, memory_allocation=%d, ready_conditions=%s)", TestContainerImageName, TestCpuAllocation, TestMemoryAllocation, service2ReadyConditionsScriptPart)
 	return fmt.Sprintf(`%s(%s={%q: %s, %q: %s})`, add_service.AddServicesBuiltinName, add_service.ConfigsArgName, TestServiceName, serviceConfig1, TestServiceName2, serviceConfig2)
 }
 

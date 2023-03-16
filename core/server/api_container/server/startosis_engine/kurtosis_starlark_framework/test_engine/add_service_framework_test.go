@@ -16,6 +16,9 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
+	"io"
+	"net/http"
+	"strings"
 	"testing"
 )
 
@@ -68,11 +71,35 @@ func (t *addServiceTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtosi
 			assert.Equal(t, expectedServiceConfig, actualServiceConfig)
 			return true
 		}),
-		mock.AnythingOfType("service_network.ServiceReadinessCheckFunc"),
 	).Times(1).Return(
 		service.NewService(service.NewServiceRegistration(TestServiceName, TestServiceUuid, TestEnclaveUuid, nil, string(TestServiceName)), container_status.ContainerStatus_Running, nil, nil, nil),
 		nil,
 	)
+
+	serviceNetwork.EXPECT().HttpRequestService(
+		mock.Anything,
+		string(TestServiceName),
+		TestPrivatePortId,
+		TestGetRequestMethod,
+		"",
+		TestReadyConditionsRecipeEndpoint,
+		"",
+	).Times(1).Return(&http.Response{
+		Status:           "200 OK",
+		StatusCode:       200,
+		Proto:            "HTTP/1.1",
+		ProtoMajor:       1,
+		ProtoMinor:       1,
+		Header:           http.Header{},
+		Request:          &http.Request{Method: TestGetRequestMethod},
+		Close:            true,
+		ContentLength:    -1,
+		Body:             io.NopCloser(strings.NewReader("{}")),
+		Trailer:          nil,
+		TransferEncoding: nil,
+		Uncompressed:     true,
+		TLS:              nil,
+	}, nil)
 
 	return add_service.NewAddService(serviceNetwork, runtimeValueStore)
 }

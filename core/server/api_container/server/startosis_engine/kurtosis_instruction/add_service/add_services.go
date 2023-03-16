@@ -90,6 +90,7 @@ func (builtin *AddServicesCapabilities) Interpret(arguments *builtin_argument.Ar
 		return nil, interpretationErr
 	}
 	builtin.serviceConfigs = serviceConfigs
+	logrus.Infof("[LEO-DEBUG] interpret received ready conditions '%v'", readyConditions)
 	builtin.readyConditions = readyConditions
 
 	resultUuids, returnValue, interpretationErr := makeAddServicesInterpretationReturnValue(builtin.serviceConfigs, builtin.runtimeValueStore)
@@ -138,7 +139,7 @@ func (builtin *AddServicesCapabilities) Execute(ctx context.Context, _ *builtin_
 	}
 	shouldDeleteAllStartedServices := true
 
-	if err := builtin.allServicesReadinessCheck(ctx, startedServices); err != nil {
+	if err := builtin.allServicesReadinessCheck(ctx, startedServices, parallelism); err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred checking readiness for services '%+v'", startedServices)
 	}
 	defer func() {
@@ -174,24 +175,48 @@ func (builtin *AddServicesCapabilities) removeAllStartedServices(
 func (builtin *AddServicesCapabilities) allServicesReadinessCheck(
 	ctx context.Context,
 	startedServices map[service.ServiceName]*service.Service,
+	batchSize int,
 ) error {
 	logrus.Debugf("Checking for all services readiness...")
-	successfulReadinessCheck := 0
+
+	finishedReadinessCheck := 0
+
+	concurrencyControlChan := make(chan bool, batchSize)
+	defer close(concurrencyControlChan)
+
 	readinessCheckErrChan := make(chan error)
-	defer close(readinessCheckErrChan)
-	for serviceName := range startedServices {
-		go builtin.runServiceReadinessCheck(ctx, serviceName, readinessCheckErrChan)
-	}
+	defer func() {
+		if finishedReadinessCheck == len(startedServices) {
+			close(readinessCheckErrChan)
+		}
+	}()
+
+	//Executed in a different Go routine to don't block the main routine here if batchSize > startedServices
+	go func() {
+		for serviceName := range startedServices {
+			// The concurrencyControlChan will block if the buffer is currently full, i.e. if maxConcurrentServiceStart
+			// subroutines are already running in the background
+			concurrencyControlChan <- true
+			logrus.Infof("[LEO-DEBUG] executing go routine for '%v'", serviceName)
+			go builtin.runServiceReadinessCheck(ctx, serviceName, readinessCheckErrChan)
+		}
+	}()
 
 	shouldContinueInTheLoop := true
 	for shouldContinueInTheLoop {
 		select {
 		case err := <-readinessCheckErrChan:
+			finishedReadinessCheck++
+
+			//pop a value from the concurrencyControlChan to allow any potentially waiting subroutine to start
+			<-concurrencyControlChan
+
+			logrus.Infof("[LEO-DEBUG] received error in select case '%v'", err)
 			if err != nil {
 				return stacktrace.Propagate(err, "An error occurred while checking if started services '%+v' are ready", startedServices)
 			}
-			successfulReadinessCheck++
-			if successfulReadinessCheck == len(startedServices) {
+			if finishedReadinessCheck == len(startedServices) {
+				logrus.Infof("[LEO-DEBUG] cantidad de started services es igual a la cantidad de check ejecutados exitosamente")
 				shouldContinueInTheLoop = false
 				break
 			}
@@ -207,11 +232,12 @@ func (builtin *AddServicesCapabilities) runServiceReadinessCheck(
 	serviceName service.ServiceName,
 	readinessCheckErrChan chan<- error,
 ) {
-
+	logrus.Infof("[LEO-DEBUG] Ejecuntado readiness check para '%v'...", serviceName)
 	readyConditions, found := builtin.readyConditions[serviceName]
 	if !found {
 		readinessCheckErrChan <- stacktrace.NewError("Expected to find ready conditions for service '%s' in map '%+v', but none was found; this is a bug in Kurtosis", serviceName, builtin.readyConditions)
 	}
+	logrus.Infof("[LEO-DEBUG] Estas son las ready conditions '%v'", readyConditions)
 
 	if err := runServiceReadinessCheck(
 		ctx,

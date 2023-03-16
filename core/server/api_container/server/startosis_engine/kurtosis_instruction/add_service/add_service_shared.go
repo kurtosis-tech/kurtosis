@@ -144,6 +144,7 @@ func runServiceReadinessCheck(
 	serviceName service.ServiceName,
 	readyConditions *service_config.ReadyConditions,
 ) error {
+	logrus.Infof("[LEO-DEBUG] ejecuntando readines check internal para '%v' con ready conditions '%v'", serviceName, readyConditions)
 	if readyConditions != nil {
 
 		recipe, intepretationErr := readyConditions.GetRecipe()
@@ -177,7 +178,7 @@ func runServiceReadinessCheck(
 		}
 
 		startTime := time.Now()
-		logrus.Debugf("Cheching service readiness for '%s' at '%v'", serviceName, startTime)
+		logrus.Infof("Checking service readiness for '%s' at '%v'", serviceName, startTime) //TODO change to debug
 		lastResult, tries, err := shared_helpers.ExecuteServiceAssertionWithRecipe(
 			ctx,
 			serviceNetwork,
@@ -204,7 +205,8 @@ func runServiceReadinessCheck(
 				timeout,
 			)
 		}
-		logrus.Debugf("Checking if service '%v' is ready took %d tries (%v in total). "+
+		//TODO change to debug
+		logrus.Infof("Checking if service '%v' is ready took %d tries (%v in total). "+
 			"Assertion passed with following:\n%s",
 			serviceName,
 			tries,
