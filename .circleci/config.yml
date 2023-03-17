@@ -96,9 +96,6 @@ parameters:
   container-engine-lib-build-cache-key-prefix:
     type: string
     default: "go-mod-v1"   # Can bump this version to bust the cache
-  contexts-config-store-build-cache-key-prefix:
-    type: string
-    default: "go-mod-v0"   # Can bump this version to bust the cache
   # To upgrade the Docker Engine version, see which versions are supported at: https://circleci.com/docs/2.0/building-docker-images/#docker-version
   docker-engine-version:
     type: string
@@ -199,24 +196,11 @@ jobs:
   build_contexts_config_store:
     docker:
       - image: "cimg/go:<< pipeline.parameters.go-version >>"
-
     steps:
       - checkout
-
       - <<: *abort_job_if_only_docs_changes
-
-      # Cache our dependencies
-      - restore_cache:
-          keys:
-            - << pipeline.parameters.contexts-config-store-build-cache-key-prefix >>-{{ checksum "contexts-config-store/go.sum" }}
-
       - run: |
           contexts-config-store/scripts/build.sh
-      - save_cache:
-          key: << pipeline.parameters.contexts-config-store-build-cache-key-prefix >>-{{ checksum "contexts-config-store/go.sum" }}
-          paths:
-            - "/home/circleci/go/pkg/mod"  # Go module cache on the cimg/go image, as reported by "go env GOMODCACHE"
-            - "/home/circleci/.cache/go-build"  # Go build cache on the cimg/go image, as reported by "go env GOCACHE"
 
   build_kurtosis_api_golang:
     docker:
