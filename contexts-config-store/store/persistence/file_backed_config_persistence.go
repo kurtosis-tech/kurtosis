@@ -57,7 +57,7 @@ func (persistence *FileBackedConfigPersistence) LoadContextsConfig() (*generated
 		return nil, stacktrace.Propagate(err, "Unable to read context config file at '%s'",
 			persistence.backingFilePath)
 	}
-	contextsConfig := &generated.KurtosisContextsConfig{}
+	contextsConfig := new(generated.KurtosisContextsConfig)
 	if err = protojson.Unmarshal(contextsConfigFileContent, contextsConfig); err != nil {
 		return nil, stacktrace.Propagate(err, "Unable to deserialize content of context config file at '%s'",
 			persistence.backingFilePath)

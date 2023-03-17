@@ -34,6 +34,8 @@ func TestRemoteContext(t *testing.T) {
 		Uuid: contextUuid,
 		Name: contextName,
 		KurtosisContextInfo: &generated.KurtosisContext_RemoteContextV0{
+			// Disabling exhaustruct here as building an entire RemoteContextV0 just for this test seems unnecessary
+			// nolint: exhaustruct
 			RemoteContextV0: &generated.RemoteContextV0{},
 		},
 	}

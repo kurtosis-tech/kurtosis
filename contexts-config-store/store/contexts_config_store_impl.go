@@ -108,9 +108,7 @@ func (store *contextConfigStoreImpl) AddNewContext(newContext *generated.Kurtosi
 	}
 
 	var updatedContextsList []*generated.KurtosisContext
-	for _, kurtosisContextInStore := range contextsConfig.GetContexts() {
-		updatedContextsList = append(updatedContextsList, kurtosisContextInStore)
-	}
+	updatedContextsList = append(updatedContextsList, contextsConfig.GetContexts()...)
 	updatedContextsList = append(updatedContextsList, newContext)
 
 	newContextConfigToPersist := api.NewKurtosisContextsConfig(

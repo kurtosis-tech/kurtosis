@@ -21,9 +21,11 @@ var (
 		CurrentContextUuid: &generated.ContextUuid{Value: contextUuid},
 		Contexts: []*generated.KurtosisContext{
 			{
-				Uuid:                &generated.ContextUuid{Value: contextUuid},
-				Name:                contextName,
-				KurtosisContextInfo: &generated.KurtosisContext_LocalOnlyContextV0{},
+				Uuid: &generated.ContextUuid{Value: contextUuid},
+				Name: contextName,
+				KurtosisContextInfo: &generated.KurtosisContext_LocalOnlyContextV0{
+					LocalOnlyContextV0: &generated.LocalOnlyContextV0{},
+				},
 			},
 		},
 	}
