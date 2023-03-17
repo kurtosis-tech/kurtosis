@@ -169,7 +169,7 @@ func (builtin *ExecCapabilities) Execute(ctx context.Context, _ *builtin_argumen
 		return "", stacktrace.Propagate(err, "Error executing exec recipe")
 	}
 	if !builtin.skipCodeCheck && !builtin.isAcceptableCode(result) {
-		return "", stacktrace.NewError("Exec returned status code '%v' that is not part of the acceptable status codes '%v'", result["code"], builtin.acceptableCodes)
+		return "", stacktrace.NewError("Exec returned exit code '%v' that is not part of the acceptable status codes '%v'", result["code"], builtin.acceptableCodes)
 	}
 	builtin.runtimeValueStore.SetValue(builtin.resultUuid, result)
 	instructionResult := builtin.execRecipe.ResultMapToString(result)
