@@ -175,10 +175,18 @@ exec_recipe = ExecRecipe(
 )
 
 result = plan.exec(
-    # The recipe that will be run until assert passes.
+    # The recipe that will determine the exec to be performed.
     # Valid values are of the following types: (ExecRecipe)
     # MANDATORY
     recipe = exec_recipe,
+    
+    # If the recipe returns a code that does not belong on this list, this instruction will fail.
+    # OPTIONAL (Defaults to [0])
+    acceptable_codes = [0, 0], # Here both 0 and 1 are valid codes that we want to accept and not fail the instruction
+    
+    # If False, instruction will never fail based on code. You can chain this call with assert to check codes after request is done.
+    # OPTIONAL (Defaults to False)
+    skip_code_check = False,
 
     # A Service name designating a service that already exists inside the enclave
     # If it does not, a validation error will be thrown
@@ -342,10 +350,18 @@ get_request_recipe = GetHttpRequestRecipe(
     },
 )
 get_response = plan.request(
-    # The recipe that will be run until assert passes.
+    # The recipe that will determine the request to be performed.
     # Valid values are of the following types: (GetHttpRequestRecipe, PostHttpRequestRecipe)
     # MANDATORY
     recipe = get_request_recipe,
+    
+    # If the recipe returns a code that does not belong on this list, this instruction will fail.
+    # OPTIONAL (Defaults to [200, 201, ...])
+    acceptable_codes = [200, 500], # Here both 200 and 500 are valid codes that we want to accept and not fail the instruction
+    
+    # If False, instruction will never fail based on code. You can chain this call with assert to check codes after request is done.
+    # OPTIONAL (Defaults to False)
+    skip_code_check = False,
     
     # A Service name designating a service that already exists inside the enclave
     # If it does not, a validation error will be thrown
