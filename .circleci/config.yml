@@ -193,6 +193,14 @@ jobs:
             - "/home/circleci/go/pkg/mod"  # Go module cache on the cimg/go image, as reported by "go env GOMODCACHE"
             - "/home/circleci/.cache/go-build"  # Go build cache on the cimg/go image, as reported by "go env GOCACHE"
 
+  build_name_generator:
+    docker:
+      - image: "cimg/go:<< pipeline.parameters.api-go-version>>"
+    steps:
+      - checkout
+      - <<: *abort_job_if_only_docs_changes
+      - run: name_generator/scripts/build.sh
+
   build_kurtosis_api_golang:
     docker:
       - image: "cimg/go:<< pipeline.parameters.api-go-version>>"
@@ -945,6 +953,11 @@ workflows:
               ignore:
                 - main
       - build_container_engine_lib:
+          filters:
+            branches:
+              ignore:
+                - main
+      - build_name_generator:
           filters:
             branches:
               ignore:
