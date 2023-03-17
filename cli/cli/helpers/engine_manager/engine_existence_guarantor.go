@@ -224,7 +224,9 @@ func (guarantor *engineExistenceGuarantor) VisitRunning() error {
 
 	if runningEngineSemver.LessThan(cliEngineSemver) {
 		return stacktrace.NewError("The current version of the CLI '%s' is greater than the version of the running engine '%s' which could lead to unexpected behavior. Use '%s' to upgrade the current running engine", cliEngineSemver.String(), runningEngineSemver.String(), engineRestartCmd)
-	} else if runningEngineSemver.GreaterThan(cliEngineSemver) {
+	}
+
+	if runningEngineSemver.GreaterThan(cliEngineSemver) {
 		logrus.Warningf("The version of the current running engine '%v' is greater than the version of the CLI '%v'. Please upgrade the CLI by following the steps here %v", runningEngineSemver.String(), cliEngineSemver.String(), user_support_constants.UpgradeCLIInstructionsPage)
 	}
 	return nil
