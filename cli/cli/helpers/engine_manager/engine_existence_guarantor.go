@@ -224,7 +224,7 @@ func (guarantor *engineExistenceGuarantor) VisitRunning() error {
 			engineRestartCmd,
 		)
 	} else {
-		logrus.Debugf("Currently running engine version '%v' is >= the version the CLI expects", guarantor.maybeCurrentlyRunningEngineVersionTag)
+		logrus.Warningf("Currently running engine version '%v' is >= the version the CLI expects", guarantor.maybeCurrentlyRunningEngineVersionTag)
 	}
 	return nil
 }
