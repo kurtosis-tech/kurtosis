@@ -28,20 +28,7 @@ var (
 		},
 	}
 
-	serializedContextConfig = `{
-  "currentContextUuid":  {
-    "value":  "context-uuid"
-  },
-  "contexts":  [
-    {
-      "uuid":  {
-        "value":  "context-uuid"
-      },
-      "name":  "context-name",
-      "localOnlyContextV0":  {}
-    }
-  ]
-}`
+	serializedContextConfig = "{\"currentContextUuid\":{\"value\":\"context-uuid\"},\"contexts\":[{\"uuid\":{\"value\":\"context-uuid\"},\"name\":\"context-name\",\"localOnlyContextV0\":{}}]}"
 )
 
 func TestPersistConfig(t *testing.T) {

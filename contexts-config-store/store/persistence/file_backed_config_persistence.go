@@ -17,12 +17,6 @@ const (
 	defaultFilePerm       = 0644
 )
 
-var (
-	serializer = protojson.MarshalOptions{
-		Multiline: true,
-	}
-)
-
 type FileBackedConfigPersistence struct {
 	*sync.RWMutex
 
@@ -104,7 +98,7 @@ func (persistence *FileBackedConfigPersistence) persistContextsConfigInternal(ne
 	persistence.Lock()
 	defer persistence.Unlock()
 
-	serializedConfig, err := serializer.Marshal(newContextsConfig)
+	serializedConfig, err := protojson.Marshal(newContextsConfig)
 	if err != nil {
 		return stacktrace.Propagate(err, "Unable to serialize content of contexts config object to JSON")
 	}
