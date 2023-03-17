@@ -88,7 +88,11 @@ func (persistence *FileBackedConfigPersistence) init() error {
 	}
 
 	persistence.backingFilePath = contextsConfigFilePath
-	if err = persistence.persistContextsConfigInternal(defaultContextsConfig); err != nil {
+	newDefaultContextsConfig, err := NewDefaultContextsConfig()
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to generate a new default contexts config")
+	}
+	if err = persistence.persistContextsConfigInternal(newDefaultContextsConfig); err != nil {
 		return stacktrace.Propagate(err, "Failed to write default contexts config to file")
 	}
 	return nil
