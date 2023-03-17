@@ -2,6 +2,9 @@ issues:
   exclude-rules:
     - path: "api_container/server/api_container_service.go"
       text: "SA4023"
+    - path: "api_container/server/startosis_engine/kurtosis_starlark_framework/test_engine/"
+      linters:
+        - exhaustruct
 
 linters-settings:
   staticcheck:

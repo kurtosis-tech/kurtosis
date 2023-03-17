@@ -34,6 +34,7 @@ func ExecuteServiceAssertionWithRecipe(
 
 	backoffObj := backoff.NewConstantBackOff(interval)
 
+	//TODO check if we can refactor this portion in order to use the time.Ticker(backoffDuration) pattern here:
 	for {
 		tries += 1
 		backoffDuration := backoffObj.NextBackOff()
@@ -51,20 +52,19 @@ func ExecuteServiceAssertionWithRecipe(
 			return lastResult, tries, stacktrace.NewError("Error extracting value from key '%v'", valueField)
 		}
 		assertErr = assert.Assert(value, assertion, target)
-		if assertErr != nil {
-			time.Sleep(backoffDuration)
-			continue
+		if assertErr == nil {
+			break
 		}
-		break
+		time.Sleep(backoffDuration)
 	}
 	if timedOut {
-		return lastResult, tries, stacktrace.NewError("Wait timed-out waiting for the assertion to become valid on service '%v'. Waited for '%v'. Last assertion error was: \n%v", serviceName, time.Since(startTime), assertErr)
+		return lastResult, tries, stacktrace.NewError("Recipe execution timed-out waiting for the assertion to become valid on service '%v'. Waited for '%v'. Last assertion error was: \n%v", serviceName, time.Since(startTime), assertErr)
 	}
 	if requestErr != nil {
-		return lastResult, tries, stacktrace.Propagate(requestErr, "Error executing HTTP recipe on service '%v'", serviceName)
+		return lastResult, tries, stacktrace.Propagate(requestErr, "Error executing recipe on service '%v'", serviceName)
 	}
 	if assertErr != nil {
-		return lastResult, tries, stacktrace.Propagate(assertErr, "Error asserting HTTP recipe on service '%v'", serviceName)
+		return lastResult, tries, stacktrace.Propagate(assertErr, "Error asserting recipe on service '%v'", serviceName)
 	}
 
 	return lastResult, tries, nil
