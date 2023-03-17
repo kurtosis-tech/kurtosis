@@ -140,11 +140,11 @@ post_request_recipe = PostHttpRequestRecipe(
     endpoint = "/endpoint",
 
     # The content type header of the request (e.g. application/json, text/plain, etc)
-    # MANDATORY
+    # OPTIONAL (Default: "application/json")
     content_type = "application/json",
 
     # The body of the request
-    # MANDATORY
+    # OPTIONAL (Default: "")
     body = "{\"data\": \"this is sample body for POST\"}",
     
     # The extract dictionary takes in key-value pairs where:
