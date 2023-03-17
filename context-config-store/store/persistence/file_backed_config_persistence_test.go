@@ -1,8 +1,9 @@
 package persistence
 
 import (
-	api "github.com/kurtosis-tech/kurtosis/context-config-store/api/golang"
+	"github.com/kurtosis-tech/kurtosis/context-config-store/api/golang/generated"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 	"os"
 	"testing"
 )
@@ -16,28 +17,28 @@ const (
 )
 
 var (
-	contextConfig = &api.KurtosisContextConfig{
-		CurrentContext: &api.ContextUuid{Value: contextUuid},
-		Contexts: []*api.KurtosisContext{
+	contextConfig = &generated.KurtosisContextsConfig{
+		CurrentContextUuid: &generated.ContextUuid{Value: contextUuid},
+		Contexts: []*generated.KurtosisContext{
 			{
-				Uuid:                &api.ContextUuid{Value: contextUuid},
+				Uuid:                &generated.ContextUuid{Value: contextUuid},
 				Name:                contextName,
-				KurtosisContextInfo: &api.KurtosisContext_LocalOnlyContextV0{},
+				KurtosisContextInfo: &generated.KurtosisContext_LocalOnlyContextV0{},
 			},
 		},
 	}
 
 	serializedContextConfig = `{
-  "currentContext": {
-    "value": "context-uuid"
+  "currentContextUuid":  {
+    "value":  "context-uuid"
   },
-  "contexts": [
+  "contexts":  [
     {
-      "uuid": {
-        "value": "context-uuid"
+      "uuid":  {
+        "value":  "context-uuid"
       },
-      "name": "context-name",
-      "localOnlyContextV0": {}
+      "name":  "context-name",
+      "localOnlyContextV0":  {}
     }
   ]
 }`
@@ -46,6 +47,7 @@ var (
 func TestPersistConfig(t *testing.T) {
 	tempFile, err := os.CreateTemp(tempFileDir, tempFileNamePattern)
 	require.Nil(t, err)
+	defer os.Remove(tempFile.Name())
 
 	storage := newFileBackedConfigPersistenceForTesting(tempFile.Name())
 	err = storage.PersistContextConfig(contextConfig)
@@ -59,13 +61,13 @@ func TestPersistConfig(t *testing.T) {
 func TestLoadConfig(t *testing.T) {
 	tempFile, err := os.CreateTemp(tempFileDir, tempFileNamePattern)
 	require.Nil(t, err)
+	defer os.Remove(tempFile.Name())
+
 	_, err = tempFile.Write([]byte(serializedContextConfig))
 	require.Nil(t, err)
 
 	storage := newFileBackedConfigPersistenceForTesting(tempFile.Name())
 	result, err := storage.LoadContextConfig()
 	require.Nil(t, err)
-	require.Equal(t, contextConfig.GetCurrentContext().GetValue(), result.GetCurrentContext().GetValue())
-	require.Len(t, result.GetContexts(), len(contextConfig.GetContexts()))
-	require.Equal(t, contextConfig.GetContexts()[0].GetUuid().GetValue(), result.GetContexts()[0].GetUuid().GetValue())
+	require.True(t, proto.Equal(contextConfig, result))
 }

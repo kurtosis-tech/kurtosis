@@ -2,10 +2,15 @@ package store
 
 import (
 	api "github.com/kurtosis-tech/kurtosis/context-config-store/api/golang"
+	"github.com/kurtosis-tech/kurtosis/context-config-store/api/golang/generated"
 	"github.com/kurtosis-tech/kurtosis/context-config-store/store/persistence"
 	"github.com/kurtosis-tech/stacktrace"
 	"strings"
 	"sync"
+)
+
+const (
+	contextUuidsSeparator = ", "
 )
 
 type contextConfigStoreImpl struct {
@@ -21,107 +26,120 @@ func NewContextConfigStore(storage persistence.ConfigPersistence) ContextConfigS
 	}
 }
 
-func (store *contextConfigStoreImpl) GetAllContexts() ([]*api.KurtosisContext, error) {
+func (store *contextConfigStoreImpl) GetAllContexts() ([]*generated.KurtosisContext, error) {
 	store.RLock()
 	defer store.RUnlock()
 
-	contextConfig, err := store.storage.LoadContextConfig()
+	contextsConfig, err := store.storage.LoadContextConfig()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Unable to load current context config")
+		return nil, stacktrace.Propagate(err, "Unable to load the list of contexts currently stored")
 	}
-	return contextConfig.GetContexts(), nil
+	return contextsConfig.GetContexts(), nil
 }
 
-func (store *contextConfigStoreImpl) GetCurrentContext() (*api.KurtosisContext, error) {
+func (store *contextConfigStoreImpl) GetCurrentContext() (*generated.KurtosisContext, error) {
 	store.RLock()
 	defer store.RUnlock()
 
-	contextConfig, err := store.storage.LoadContextConfig()
+	contextsConfig, err := store.storage.LoadContextConfig()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Unable to load current context config")
+		return nil, stacktrace.Propagate(err, "Unable to load the list of contexts currently stored")
 	}
 
-	currentContextUuid := contextConfig.GetCurrentContext()
-	var knownContexts []string
-	for _, kurtosisContext := range contextConfig.GetContexts() {
-		knownContexts = append(knownContexts, kurtosisContext.GetUuid().GetValue())
-		if kurtosisContext.GetUuid().GetValue() == currentContextUuid.GetValue() {
-			return kurtosisContext, nil
+	currentContextUuid := contextsConfig.GetCurrentContextUuid()
+	var contextUuidsInStore []string
+	for _, kurtosisContextInStore := range contextsConfig.GetContexts() {
+		contextUuidsInStore = append(contextUuidsInStore, kurtosisContextInStore.GetUuid().GetValue())
+		if kurtosisContextInStore.GetUuid().GetValue() == currentContextUuid.GetValue() {
+			return kurtosisContextInStore, nil
 		}
 	}
-	return nil, stacktrace.NewError("Unable to find current context info in context config file. "+
+	return nil, stacktrace.NewError("Unable to find current context info in currently stored contexts config. "+
 		"Current context is set to '%s' but known contexts are: '%s'",
 		currentContextUuid.GetValue(),
-		strings.Join(knownContexts, ", "))
+		strings.Join(contextUuidsInStore, contextUuidsSeparator))
 }
 
-func (store *contextConfigStoreImpl) SwitchContext(contextUuid *api.ContextUuid) error {
+func (store *contextConfigStoreImpl) SwitchContext(contextUuid *generated.ContextUuid) error {
 	store.Lock()
 	defer store.Unlock()
 
-	contextConfig, err := store.storage.LoadContextConfig()
+	contextsConfig, err := store.storage.LoadContextConfig()
 	if err != nil {
-		return stacktrace.Propagate(err, "Unable to load current context config")
+		return stacktrace.Propagate(err, "Unable to load the list of contexts currently stored")
 	}
 
-	var doesExist bool
-	for _, kurtosisContext := range contextConfig.GetContexts() {
-		doesExist = doesExist || kurtosisContext.GetUuid().GetValue() == contextUuid.Value
+	var requestedContextDoesExist bool
+	var contextUuidsInStore []string
+	for _, kurtosisContextInStore := range contextsConfig.GetContexts() {
+		contextUuidsInStore = append(contextUuidsInStore, kurtosisContextInStore.GetUuid().GetValue())
+		if kurtosisContextInStore.GetUuid().GetValue() == contextUuid.Value {
+			requestedContextDoesExist = true
+		}
 	}
-	if !doesExist {
-		return stacktrace.NewError("Context with UUID '%s' does not exist yet.", contextUuid.GetValue())
+	if !requestedContextDoesExist {
+		return stacktrace.NewError("Context with UUID '%s' does not exist in store. Known contexts are: '%s'",
+			contextUuid.GetValue(), strings.Join(contextUuidsInStore, contextUuidsSeparator))
 	}
 
-	newContextConfig := api.NewKurtosisContextConfig(contextUuid, contextConfig.GetContexts()...)
-	if err = store.storage.PersistContextConfig(newContextConfig); err != nil {
-		return stacktrace.Propagate(err, "Unable to persist new current context to store")
+	newContextsConfigToPersist := api.NewKurtosisContextConfig(contextUuid, contextsConfig.GetContexts()...)
+	if err = store.storage.PersistContextConfig(newContextsConfigToPersist); err != nil {
+		return stacktrace.Propagate(err, "Unable to update current context in the context store")
 	}
 	return nil
 }
 
-func (store *contextConfigStoreImpl) AddNewContext(contextToAdd *api.KurtosisContext) error {
+func (store *contextConfigStoreImpl) AddNewContext(contextToAdd *generated.KurtosisContext) error {
 	store.Lock()
 	defer store.Unlock()
 
-	contextConfig, err := store.storage.LoadContextConfig()
+	contextsConfig, err := store.storage.LoadContextConfig()
 	if err != nil {
-		return stacktrace.Propagate(err, "Unable to load current context config")
+		return stacktrace.Propagate(err, "Unable to load the list of contexts currently stored")
 	}
 
 	newContextUuid := contextToAdd.GetUuid()
-	for _, kurtosisContext := range contextConfig.GetContexts() {
-		if kurtosisContext.GetUuid().GetValue() == newContextUuid.GetValue() {
-			return nil // doing nothing as context already exists
+	for _, kurtosisContextInStore := range contextsConfig.GetContexts() {
+		if kurtosisContextInStore.GetUuid().GetValue() == newContextUuid.GetValue() {
+			return stacktrace.NewError("Trying to add a context with UUID '%s' but a context already exist with "+
+				"this UUID and name: '%s'. If the context should be replaced or updated, it should be removed first",
+				newContextUuid.GetValue(), kurtosisContextInStore.GetName())
 		}
 	}
 
-	var newContexts []*api.KurtosisContext
-	for _, kurtosisContext := range contextConfig.GetContexts() {
-		newContexts = append(newContexts, kurtosisContext)
+	var updatedContextsList []*generated.KurtosisContext
+	for _, kurtosisContextInStore := range contextsConfig.GetContexts() {
+		updatedContextsList = append(updatedContextsList, kurtosisContextInStore)
 	}
-	newContexts = append(newContexts, contextToAdd)
+	updatedContextsList = append(updatedContextsList, contextToAdd)
 
-	newContextConfig := api.NewKurtosisContextConfig(contextConfig.GetCurrentContext(), newContexts...)
-	if err = store.storage.PersistContextConfig(newContextConfig); err != nil {
+	newContextConfigToPersist := api.NewKurtosisContextConfig(
+		contextsConfig.GetCurrentContextUuid(), updatedContextsList...)
+	if err = store.storage.PersistContextConfig(newContextConfigToPersist); err != nil {
 		return stacktrace.Propagate(err, "Unable to persist new context config to store")
 	}
 	return nil
 }
 
-func (store *contextConfigStoreImpl) RemoveContext(contextUuid *api.ContextUuid) error {
+func (store *contextConfigStoreImpl) RemoveContext(contextUuid *generated.ContextUuid) error {
 	store.Lock()
 	defer store.Unlock()
 
-	contextConfig, err := store.storage.LoadContextConfig()
+	contextsConfig, err := store.storage.LoadContextConfig()
 	if err != nil {
-		return stacktrace.Propagate(err, "Unable to load current context config")
+		return stacktrace.Propagate(err, "Unable to load the list of contexts currently stored")
+	}
+
+	if contextUuid.GetValue() == contextsConfig.GetCurrentContextUuid().GetValue() {
+		return stacktrace.NewError("Cannot remove context '%s' as it is currently the selected context. "+
+			"Switch to a different context before removing it", contextUuid.GetValue())
 	}
 
 	foundContextToRemove := false
-	var newContexts []*api.KurtosisContext
-	for _, kurtosisContext := range contextConfig.GetContexts() {
-		if kurtosisContext.GetUuid().GetValue() != contextUuid.GetValue() {
-			newContexts = append(newContexts, kurtosisContext)
+	var newContexts []*generated.KurtosisContext
+	for _, kurtosisContextInStore := range contextsConfig.GetContexts() {
+		if kurtosisContextInStore.GetUuid().GetValue() != contextUuid.GetValue() {
+			newContexts = append(newContexts, kurtosisContextInStore)
 		} else {
 			foundContextToRemove = true
 		}
@@ -131,8 +149,8 @@ func (store *contextConfigStoreImpl) RemoveContext(contextUuid *api.ContextUuid)
 		return nil
 	}
 
-	newContextConfig := api.NewKurtosisContextConfig(contextConfig.GetCurrentContext(), newContexts...)
-	if err = store.storage.PersistContextConfig(newContextConfig); err != nil {
+	newContextConfigToPersist := api.NewKurtosisContextConfig(contextsConfig.GetCurrentContextUuid(), newContexts...)
+	if err = store.storage.PersistContextConfig(newContextConfigToPersist); err != nil {
 		return stacktrace.Propagate(err, "Unable to persist new context config to store")
 	}
 	return nil

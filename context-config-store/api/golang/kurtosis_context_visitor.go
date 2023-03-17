@@ -1,17 +1,18 @@
 package golang
 
 import (
+	"github.com/kurtosis-tech/kurtosis/context-config-store/api/golang/generated"
 	"github.com/kurtosis-tech/stacktrace"
 	"reflect"
 )
 
 type KurtosisContextVisitor[ResultType any] struct {
-	VisitLocalOnlyContextV0 func(localContext *LocalOnlyContextV0) (*ResultType, error)
+	VisitLocalOnlyContextV0 func(localContext *generated.LocalOnlyContextV0) (*ResultType, error)
 
-	VisitRemoteContextV0 func(localContext *RemoteContextV0) (*ResultType, error)
+	VisitRemoteContextV0 func(localContext *generated.RemoteContextV0) (*ResultType, error)
 }
 
-func Visit[ResultType any](kurtosisContext *KurtosisContext, visitor KurtosisContextVisitor[ResultType]) (*ResultType, error) {
+func Visit[ResultType any](kurtosisContext *generated.KurtosisContext, visitor KurtosisContextVisitor[ResultType]) (*ResultType, error) {
 	if kurtosisContext.GetLocalOnlyContextV0() != nil {
 		return visitor.VisitLocalOnlyContextV0(kurtosisContext.GetLocalOnlyContextV0())
 	} else if kurtosisContext.GetRemoteContextV0() != nil {

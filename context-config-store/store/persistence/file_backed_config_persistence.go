@@ -2,7 +2,7 @@ package persistence
 
 import (
 	"github.com/adrg/xdg"
-	api "github.com/kurtosis-tech/kurtosis/context-config-store/api/golang"
+	"github.com/kurtosis-tech/kurtosis/context-config-store/api/golang/generated"
 	"github.com/kurtosis-tech/stacktrace"
 	"google.golang.org/protobuf/encoding/protojson"
 	"os"
@@ -43,7 +43,7 @@ func newFileBackedConfigPersistenceForTesting(customFilePath string) *FileBacked
 	}
 }
 
-func (persistence *FileBackedConfigPersistence) PersistContextConfig(contextConfig *api.KurtosisContextConfig) error {
+func (persistence *FileBackedConfigPersistence) PersistContextConfig(contextConfig *generated.KurtosisContextsConfig) error {
 	if err := persistence.init(); err != nil {
 		return stacktrace.Propagate(err, "Unable to initialize context config persistence")
 	}
@@ -54,7 +54,7 @@ func (persistence *FileBackedConfigPersistence) PersistContextConfig(contextConf
 	return persistence.persistContextConfigInternal(contextConfig)
 }
 
-func (persistence *FileBackedConfigPersistence) LoadContextConfig() (*api.KurtosisContextConfig, error) {
+func (persistence *FileBackedConfigPersistence) LoadContextConfig() (*generated.KurtosisContextsConfig, error) {
 	if err := persistence.init(); err != nil {
 		return nil, stacktrace.Propagate(err, "Unable to initialize context config persistence")
 	}
@@ -67,7 +67,7 @@ func (persistence *FileBackedConfigPersistence) LoadContextConfig() (*api.Kurtos
 		return nil, stacktrace.Propagate(err, "Unable to read context config file at '%s'",
 			persistence.backingFilePath)
 	}
-	contextConfig := &api.KurtosisContextConfig{}
+	contextConfig := &generated.KurtosisContextsConfig{}
 	if err = protojson.Unmarshal(contextConfigFileContent, contextConfig); err != nil {
 		return nil, stacktrace.Propagate(err, "Unable to deserialize content of context config file at '%s'",
 			persistence.backingFilePath)
@@ -102,15 +102,15 @@ func (persistence *FileBackedConfigPersistence) init() error {
 
 	persistence.backingFilePath = configFilePath
 	if err = persistence.persistContextConfigInternal(defaultContextConfig); err != nil {
-		return stacktrace.Propagate(err, "Unable initialize context config file writing default config to it")
+		return stacktrace.Propagate(err, "Failed to write default contexts config to file")
 	}
 	return nil
 }
 
-func (persistence *FileBackedConfigPersistence) persistContextConfigInternal(contextConfig *api.KurtosisContextConfig) error {
+func (persistence *FileBackedConfigPersistence) persistContextConfigInternal(contextConfig *generated.KurtosisContextsConfig) error {
 	serializedConfig, err := serializer.Marshal(contextConfig)
 	if err != nil {
-		return stacktrace.Propagate(err, "Unable to serialize content of context config object")
+		return stacktrace.Propagate(err, "Unable to serialize content of contexts config object to JSON")
 	}
 	if err = os.WriteFile(persistence.backingFilePath, serializedConfig, defaultFilePerm); err != nil {
 		return stacktrace.Propagate(err, "Unable to write context config file to '%s'",

@@ -6,11 +6,13 @@ package context_config_store;
 
 // NOTE: It sucks that we have this Go-specific logic inside this file (which should be language-agnostic). However, the Protobuf team have
 // taken a hard stance on this being the way it should be done, so we have to do it this way.
-option go_package = "github.com/kurtosis-tech/kurtosis/context-config-store/api/golang";
+option go_package = "github.com/kurtosis-tech/kurtosis/context-config-store/api/golang/generated";
 
-message KurtosisContextConfig {
-  ContextUuid currentContext = 1;
+message KurtosisContextsConfig {
+  // The UUID of the context that is currently being used
+  ContextUuid currentContextUuid = 1;
 
+  // List of contexts that are configured
   repeated KurtosisContext contexts = 2;
 }
 
@@ -35,21 +37,29 @@ message LocalOnlyContextV0 {
 }
 
 message RemoteContextV0 {
+  // Hostname or IP of the remote server running Kurtosis
   string host = 1;
 
+  // Port number Kurtosis Portal Server is listening on
   uint32 remote_portal_port = 2;
 
+  // Port number Kurtosis backend is listening on
   uint32 kurtosis_backend_port = 3;
 
+  // Port number used by Kurtosis Portal Server to tunnel ports to local user computer
   uint32 tunnel_port = 4;
 
+  // TLS config to use to connect to remote Kurtosis. If absent, HTTP will be used
   optional TlsConfig tls_config = 5;
 }
 
 message TlsConfig {
+  // Certificate Authority (CA) which signed the client certificate
   bytes certificate_authority = 1;
 
+  // Client certificate to use for HTTPS connection to remote Kurtosis
   bytes client_certificate = 2;
 
+  // Client certificate key to use for HTTPS connection to remote Kurtosis
   bytes client_key = 3;
 }

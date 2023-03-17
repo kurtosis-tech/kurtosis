@@ -2,9 +2,9 @@ package persistence
 
 import api "github.com/kurtosis-tech/kurtosis/context-config-store/api/golang"
 
-var personalContextName = "personal"
-var personnalContextUuid = api.NewContextUuid("00000000-0000-0000-0000-000000000000")
+var defaultContextName = "default"
+var defaultContextUuid = api.NewContextUuid("00000000000000000000000000000000")
 
-var personalContext = api.NewLocalOnlyContext(personnalContextUuid, personalContextName)
+var defaultContext = api.NewLocalOnlyContext(defaultContextUuid, defaultContextName)
 
-var defaultContextConfig = api.NewKurtosisContextConfig(personnalContextUuid, personalContext)
+var defaultContextConfig = api.NewKurtosisContextConfig(defaultContextUuid, defaultContext)
