@@ -52,4 +52,7 @@ require (
 
 require github.com/gorilla/websocket v1.4.2
 
-require github.com/stretchr/objx v0.5.0 // indirect
+require (
+	github.com/kurtosis-tech/kurtosis/kurtosis_version v0.0.0 // indirect
+	github.com/stretchr/objx v0.5.0 // indirect
+)
