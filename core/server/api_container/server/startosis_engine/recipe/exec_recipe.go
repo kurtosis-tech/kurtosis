@@ -163,7 +163,7 @@ func (recipe *ExecRecipe) CreateStarlarkReturnValue(resultUuid string) (*starlar
 	return dict, nil
 }
 
-//TODO this will be removed when we deprecate the service_name field, more here: https://app.zenhub.com/workspaces/engineering-636cff9fc978ceb2aac05a1d/issues/gh/kurtosis-tech/kurtosis-private/1128
+// TODO this will be removed when we deprecate the service_name field, more here: https://app.zenhub.com/workspaces/engineering-636cff9fc978ceb2aac05a1d/issues/gh/kurtosis-tech/kurtosis-private/1128
 func (recipe *ExecRecipe) GetServiceName() service.ServiceName {
 	return recipe.serviceName
 }
@@ -174,7 +174,7 @@ func MakeExecRequestRecipe(_ *starlark.Thread, builtin *starlark.Builtin, args s
 
 	if err := starlark.UnpackArgs(builtin.Name(), args, kwargs,
 		commandKey, &unpackedCommandList,
-		MakeOptional(serviceNameKey), &serviceNameStr,
+		kurtosis_types.MakeOptional(serviceNameKey), &serviceNameStr,
 	); err != nil {
 		return nil, startosis_errors.NewInterpretationError("%v", err.Error())
 	}
