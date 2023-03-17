@@ -28,6 +28,11 @@ const (
 	RecipeArgName          = "recipe"
 	ServiceNameArgName     = "service_name"
 	AcceptableCodesArgName = "acceptable_codes"
+	SkipCodeCheckArgName   = "skip_code_check"
+)
+
+const (
+	defaultSkipCodeCheck = false
 )
 
 func NewExec(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) *kurtosis_plan_instruction.KurtosisPlanInstruction {
@@ -55,6 +60,12 @@ func NewExec(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *r
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.List],
 					Validator:         nil,
 				},
+				{
+					Name:              SkipCodeCheckArgName,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Bool],
+					Validator:         nil,
+				},
 			},
 		},
 
@@ -63,10 +74,11 @@ func NewExec(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *r
 				serviceNetwork:    serviceNetwork,
 				runtimeValueStore: runtimeValueStore,
 
-				serviceName:     "",  // will be populated at interpretation time
-				execRecipe:      nil, // will be populated at interpretation time
-				resultUuid:      "",  // will be populated at interpretation time
-				acceptableCodes: nil, // will be populated at interpretation time
+				serviceName:     "",    // will be populated at interpretation time
+				execRecipe:      nil,   // will be populated at interpretation time
+				resultUuid:      "",    // will be populated at interpretation time
+				acceptableCodes: nil,   // will be populated at interpretation time
+				skipCodeCheck:   false, // will be populated at interpretation time
 			}
 		},
 
@@ -84,6 +96,7 @@ type ExecCapabilities struct {
 	execRecipe      *recipe.ExecRecipe
 	resultUuid      string
 	acceptableCodes []int
+	skipCodeCheck   bool
 }
 
 func (builtin *ExecCapabilities) Interpret(arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -118,6 +131,15 @@ func (builtin *ExecCapabilities) Interpret(arguments *builtin_argument.ArgumentV
 		}
 	}
 
+	skipCodeCheck := defaultSkipCodeCheck
+	if arguments.IsSet(SkipCodeCheckArgName) {
+		skipCodeCheckArgumentValue, err := builtin_argument.ExtractArgumentValue[starlark.Bool](arguments, SkipCodeCheckArgName)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ServiceNameArgName)
+		}
+		skipCodeCheck = bool(skipCodeCheckArgumentValue)
+	}
+
 	resultUuid, err := builtin.runtimeValueStore.CreateValue()
 	if err != nil {
 		return nil, startosis_errors.NewInterpretationError("An error occurred while generating UUID for future reference for %v instruction", ExecBuiltinName)
@@ -127,6 +149,7 @@ func (builtin *ExecCapabilities) Interpret(arguments *builtin_argument.ArgumentV
 	builtin.execRecipe = execRecipe
 	builtin.resultUuid = resultUuid
 	builtin.acceptableCodes = acceptableCodes
+	builtin.skipCodeCheck = skipCodeCheck
 
 	returnValue, interpretationErr := builtin.execRecipe.CreateStarlarkReturnValue(builtin.resultUuid)
 	if interpretationErr != nil {
@@ -145,17 +168,21 @@ func (builtin *ExecCapabilities) Execute(ctx context.Context, _ *builtin_argumen
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Error executing exec recipe")
 	}
-	isAcceptableCode := false
-	for _, acceptableCode := range builtin.acceptableCodes {
-		if result["code"] == starlark.MakeInt(acceptableCode) {
-			isAcceptableCode = true
-			break
-		}
-	}
-	if !isAcceptableCode {
-		return "", stacktrace.NewError("Request returned status code '%v' that is not part of the acceptable status codes '%v'", result["code"], builtin.acceptableCodes)
+	if !builtin.skipCodeCheck && !builtin.isAcceptableCode(result) {
+		return "", stacktrace.NewError("Exec returned status code '%v' that is not part of the acceptable status codes '%v'", result["code"], builtin.acceptableCodes)
 	}
 	builtin.runtimeValueStore.SetValue(builtin.resultUuid, result)
 	instructionResult := builtin.execRecipe.ResultMapToString(result)
 	return instructionResult, err
+}
+
+func (builtin *ExecCapabilities) isAcceptableCode(recipeResult map[string]starlark.Comparable) bool {
+	isAcceptableCode := false
+	for _, acceptableCode := range builtin.acceptableCodes {
+		if recipeResult["code"] == starlark.MakeInt(acceptableCode) {
+			isAcceptableCode = true
+			break
+		}
+	}
+	return isAcceptableCode
 }

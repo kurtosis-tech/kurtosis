@@ -33,11 +33,16 @@ var defaultAcceptableCodes = []int{
 }
 
 const (
+	defaultSkipCodeCheck = false
+)
+
+const (
 	RequestBuiltinName = "request"
 
 	RecipeArgName          = "recipe"
 	ServiceNameArgName     = "service_name"
 	AcceptableCodesArgName = "acceptable_codes"
+	SkipCodeCheckArgName   = "skip_code_check"
 )
 
 func NewRequest(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) *kurtosis_plan_instruction.KurtosisPlanInstruction {
@@ -66,6 +71,12 @@ func NewRequest(serviceNetwork service_network.ServiceNetwork, runtimeValueStore
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.List],
 					Validator:         nil,
 				},
+				{
+					Name:              SkipCodeCheckArgName,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Bool],
+					Validator:         nil,
+				},
 			},
 		},
 
@@ -74,10 +85,11 @@ func NewRequest(serviceNetwork service_network.ServiceNetwork, runtimeValueStore
 				serviceNetwork:    serviceNetwork,
 				runtimeValueStore: runtimeValueStore,
 
-				serviceName:       "",  // populated at interpretation time
-				httpRequestRecipe: nil, // populated at interpretation time
-				resultUuid:        "",  // populated at interpretation time
-				acceptableCodes:   nil, // populated at interpretation time
+				serviceName:       "",    // populated at interpretation time
+				httpRequestRecipe: nil,   // populated at interpretation time
+				resultUuid:        "",    // populated at interpretation time
+				acceptableCodes:   nil,   // populated at interpretation time
+				skipCodeCheck:     false, // populated at interpretation time
 			}
 		},
 
@@ -95,6 +107,7 @@ type RequestCapabilities struct {
 	httpRequestRecipe *recipe.HttpRequestRecipe
 	resultUuid        string
 	acceptableCodes   []int
+	skipCodeCheck     bool
 }
 
 func (builtin *RequestCapabilities) Interpret(arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -129,6 +142,15 @@ func (builtin *RequestCapabilities) Interpret(arguments *builtin_argument.Argume
 		return nil, startosis_errors.NewInterpretationError("Service name is not set, either as a request instruction's argument or as a recipe field. You can fix it passing the 'service_name' argument in the 'request' call")
 	}
 
+	skipCodeCheck := defaultSkipCodeCheck
+	if arguments.IsSet(SkipCodeCheckArgName) {
+		skipCodeCheckArgumentValue, err := builtin_argument.ExtractArgumentValue[starlark.Bool](arguments, SkipCodeCheckArgName)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ServiceNameArgName)
+		}
+		skipCodeCheck = bool(skipCodeCheckArgumentValue)
+	}
+
 	resultUuid, err := builtin.runtimeValueStore.CreateValue()
 	if err != nil {
 		return nil, startosis_errors.NewInterpretationError("An error occurred while generating UUID for future reference for %v instruction", RequestBuiltinName)
@@ -138,6 +160,7 @@ func (builtin *RequestCapabilities) Interpret(arguments *builtin_argument.Argume
 	builtin.httpRequestRecipe = httpRequestRecipe
 	builtin.resultUuid = resultUuid
 	builtin.acceptableCodes = acceptableCodes
+	builtin.skipCodeCheck = skipCodeCheck
 
 	returnValue, interpretationErr := builtin.httpRequestRecipe.CreateStarlarkReturnValue(builtin.resultUuid)
 	if interpretationErr != nil {
@@ -155,17 +178,21 @@ func (builtin *RequestCapabilities) Execute(ctx context.Context, _ *builtin_argu
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Error executing http recipe")
 	}
-	isAcceptableCode := false
-	for _, acceptableCode := range builtin.acceptableCodes {
-		if result["code"] == starlark.MakeInt(acceptableCode) {
-			isAcceptableCode = true
-			break
-		}
-	}
-	if !isAcceptableCode {
+	if !builtin.skipCodeCheck && !builtin.isAcceptableCode(result) {
 		return "", stacktrace.NewError("Request returned status code '%v' that is not part of the acceptable status codes '%v'", result["code"], builtin.acceptableCodes)
 	}
 	builtin.runtimeValueStore.SetValue(builtin.resultUuid, result)
 	instructionResult := builtin.httpRequestRecipe.ResultMapToString(result)
 	return instructionResult, err
+}
+
+func (builtin *RequestCapabilities) isAcceptableCode(recipeResult map[string]starlark.Comparable) bool {
+	isAcceptableCode := false
+	for _, acceptableCode := range builtin.acceptableCodes {
+		if recipeResult["code"] == starlark.MakeInt(acceptableCode) {
+			isAcceptableCode = true
+			break
+		}
+	}
+	return isAcceptableCode
 }
