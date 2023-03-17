@@ -23,8 +23,8 @@ connection_config = ConnectionConfig(
     # OPTIONAL: Valid value are UniformPacketDelayDistribution or NormalPacketDelayDistribution
     packet_delay_distribution = UniformPacketDelayDistribution(
         # Delay in ms
-        ms = 500 
-    ) 
+        ms = 500,
+    ),
 )
 ```
 
@@ -59,12 +59,12 @@ The `HttpRequestRecipe` is used to make `HTTP` requests to an endpoint. Currentl
 
 #### GetHttpRequestRecipe
 
-The `GetHttpRequestRecipe` can be used to make `GET` requests.
+The `GetHttpRequestRecipe` can be used to make `GET` requests, filter for the specific part of the response you care about, and assign that specific output to a key for later use. This can be useful for writing assertions, for example (i.e. validating the response you end up receiving looks the way you expect/intended).
 
 :::caution
 
 The `GetHttpRequestRecipe.service_name` field is still accepted but it's deprecated, so we suggest users to pass
-this value as an argument in the `exec`, `request` and `wait` instructions where this type is currently used
+this value as an argument in the `exec`, `request` and `wait` instructions where this type is currently used.
 
 :::
 
@@ -78,14 +78,19 @@ get_request_recipe = GetHttpRequestRecipe(
     # MANDATORY
     endpoint = "/endpoint?input=data",
 
-    # The extract dictionary takes in key-value pairs where:
-    # Key is a way you refer to the extraction later on
-    # Value is a 'jq' string that contains logic to extract from response body
+    # The extract dictionary can be used for filtering specific parts of a HTTP GET
+    # request and assigning that output to a key-value pair, where the key is the
+    # reference variable and the value is the specific output. 
+    # 
+    # Specifcally: the key is the way you refer to the extraction later on and
+    # the value is a 'jq' string that contains logic to extract parts from response 
+    # body that you get from the HTTP GET request.
+    # 
     # To lean more about jq, please visit https://devdocs.io/jq/
     # OPTIONAL
     extract = {
-        "extractfield" : ".name.id"
-    }
+        "extractfield" : ".name.id",
+    },
 )
 ```
 
@@ -97,9 +102,9 @@ Important - `port_id` field accepts user defined ID assinged to a port in servic
         ports = {
             // "port_id": port_number
             "http": 5000,
-            "grpc": 3000
+            "grpc": 3000,
             ...
-        }
+        },
         ...
     )
 ```
@@ -110,7 +115,7 @@ The user defined port IDs in above port map are: `http` and `grpc`. These can be
     recipe = GetHttpRequestRecipe(
         port_id = "http",
         service_name = "service-using-test-service-config",
-        endpoint = "/ping"
+        endpoint = "/ping",
         ...
     )
 ```
@@ -153,8 +158,8 @@ post_request_recipe = PostHttpRequestRecipe(
     # # To lean more about jq, please visit https://devdocs.io/jq/
     # OPTIONAL
     extract = {
-        "extractfield" : ".name.id"
-    }
+        "extractfield" : ".name.id",
+    },
 )
 ```
 
@@ -178,7 +183,7 @@ delay  = UniformPacketDelayDistribution(
     # Non-Negative Integer
     # Amount of constant delay added to outgoing packets from the subnetwork
     # MANDATORY
-    ms = 1000
+    ms = 1000,
 )
 ```
 
@@ -192,19 +197,19 @@ delay  = NormalPacketDelayDistribution(
     # Non-Negative Integer
     # Amount of mean delay added to outgoing packets from the subnetwork
     # MANDATORY
-    mean_ms = 1000
+    mean_ms = 1000,
 
     # Non-Negative Integer
     # Amount of variance (jitter) added to outgoing packets from the subnetwork
     # MANDATORY
-    std_dev_ms = 10
+    std_dev_ms = 10,
     
     # Non-Negative Float
     # Percentage of correlation observed among packets. It means that the delay observed in next packet
     # will exhibit a corrlation factor of 10.0% with the previous packet. 
     # OPTIONAL
     # DEFAULT = 0.0
-    correlation = 10.0
+    correlation = 10.0,
 )   
 ```
 
@@ -224,7 +229,7 @@ port_spec = PortSpec(
 
     # Application protocol for the port
     # Optional
-    application_protocol = "http"
+    application_protocol = "http",
 )
 ```
 The above constructor returns a `PortSpec` object that contains port information in the form of a [future reference][future-references-reference] and can be used with
@@ -255,7 +260,7 @@ config = ServiceConfig(
 
             # Application protocol for the port
             # Optional
-            application_protocol = "http"
+            application_protocol = "http",
         ),
     },
 
@@ -324,7 +329,7 @@ update_service_config = UpdateServiceConfig(
     # The subnetwork to which the service will be moved.
     # "default" can be used to move the service to the default subnetwork
     # MANDATORY
-    subnetwork = "subnetwork_1"
+    subnetwork = "subnetwork_1",
 )
 ```
 

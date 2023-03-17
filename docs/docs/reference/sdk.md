@@ -110,12 +110,12 @@ an error instead.
 **Returns**
 * `enclaveUuid`: The UUID for the enclave identified by the `identifier`.
 
-### `getOrderedListOfNamesAndUuids() -> []String nameAndUuids`
-Returns an ordered list of names and UUIDs for all the enclaves registered with the currently
-running Kurtosis engine. This is useful if users want to enumerate all enclave names & UUIDs for the engine, say for an autocomplete like function.
+### `getOrderedListOfNames() -> []String enclaveNames`
+Returns an ordered list of names for all the enclaves registered with the engine. This is useful
+if users want to enumerate all enclave names, say for an autocomplete like function.
 
 **Returns**
-* `nameAndUuids`: This list is a concatenation of sorted names followed by sorted UUIDs.
+* `enclaveNames`: This is a sorted list of enclave names
 
 ServiceLogsStreamContent
 ------------------------
@@ -388,12 +388,12 @@ an error instead.
 **Returns**
 * `enclaveUuid`: The UUID for the service identified by the `identifier`.
 
-### `getOrderedListOfNamesAndUuids() -> []String nameAndUuids`
-Returns an ordered list of names and UUIDs for all the services in the enclave. This is useful
-if users want to enumerate all service names & UUIDs for the enclave, say for an autocomplete like function.
+### `getOrderedListOfNames() -> []String serviceNames`
+Returns an ordered list of names for all the services in the enclave. This is useful
+if users want to enumerate all service names, say for an autocomplete like function.
 
 **Returns**
-* `nameAndUuids`: This list is a concatenation of sorted names followed by sorted UUIDs.
+* `serviceNames`: This is a sorted list of service names
 
 ModuleContext
 -------------
@@ -620,7 +620,7 @@ the `Float64` method on the `json.Number` first, so above would look like `{{pri
 <!-- TODO Make the function definition not include args or return values, so we don't get these huge ugly links that break if we change the function signature -->
 <!-- TODO make the reference names a) be properly-cased (e.g. "Service.isAvailable" rather than "service_isavailable") and b) have an underscore in front of them, so they're easy to find-replace without accidentally over-replacing -->
 
-[kurtosis-sdk-repo]: https://github.com/kurtosis-tech/kurtosis-sdk
+[kurtosis-sdk-repo]: https://github.com/kurtosis-tech/kurtosis/tree/main/api
 
 [servicelogsstreamcontent]: #servicelogsstreamcontent
 [servicelog]: #servicelog

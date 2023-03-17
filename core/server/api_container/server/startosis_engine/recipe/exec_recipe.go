@@ -113,15 +113,10 @@ func (recipe *ExecRecipe) Execute(
 		commandWithRuntimeValue = append(commandWithRuntimeValue, maybeSubCommandWithRuntimeValues)
 	}
 
-	var serviceNameStr string
-	if serviceName != emptyServiceName {
-		serviceNameStr = string(serviceName)
-	} else if recipe.serviceName != emptyServiceName { //TODO this will be removed when we deprecate the service_name field, more here: https://app.zenhub.com/workspaces/engineering-636cff9fc978ceb2aac05a1d/issues/gh/kurtosis-tech/kurtosis-private/1128
-		serviceNameStr = string(recipe.serviceName)
-		logrus.Warnf("The exec.service_name field will be deprecated soon, users will have to pass the service name value direclty to the 'exec', 'request' and 'wait' instructions")
-	} else {
+	if serviceName == emptyServiceName {
 		return nil, stacktrace.NewError("The service name parameter can't be an empty string")
 	}
+	serviceNameStr := string(serviceName)
 
 	exitCode, commandOutput, err := serviceNetwork.ExecCommand(ctx, serviceNameStr, commandWithRuntimeValue)
 	if err != nil {
@@ -168,13 +163,18 @@ func (recipe *ExecRecipe) CreateStarlarkReturnValue(resultUuid string) (*starlar
 	return dict, nil
 }
 
+// TODO this will be removed when we deprecate the service_name field, more here: https://app.zenhub.com/workspaces/engineering-636cff9fc978ceb2aac05a1d/issues/gh/kurtosis-tech/kurtosis-private/1128
+func (recipe *ExecRecipe) GetServiceName() service.ServiceName {
+	return recipe.serviceName
+}
+
 func MakeExecRequestRecipe(_ *starlark.Thread, builtin *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 	var serviceNameStr string
 	var unpackedCommandList *starlark.List
 
 	if err := starlark.UnpackArgs(builtin.Name(), args, kwargs,
 		commandKey, &unpackedCommandList,
-		MakeOptional(serviceNameKey), &serviceNameStr,
+		kurtosis_types.MakeOptional(serviceNameKey), &serviceNameStr,
 	); err != nil {
 		return nil, startosis_errors.NewInterpretationError("%v", err.Error())
 	}

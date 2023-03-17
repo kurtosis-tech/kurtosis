@@ -796,13 +796,17 @@ jobs:
       - run: |
           set -euo pipefail
           source core/files_artifacts_expander/scripts/_constants.env
+          version_build="$(./scripts/get-docker-tag.sh)"
           version_to_publish="$(cat version.txt)"
+          echo "Version that was built: ${version_build}"
           echo "Version that will be published: ${version_to_publish}"
-          image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
-          image_name_no_version="${IMAGE_ORG_AND_REPO}:latest"
-          docker tag "${image_name_with_version}" "${image_name_no_version}"
-          docker push "${image_name_with_version}"
-          docker push "${image_name_no_version}"
+          image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_build}"
+          image_name_to_publish_semver="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
+          image_name_to_publish_latest="${IMAGE_ORG_AND_REPO}:latest"
+          docker tag "${image_name_with_version}" "${image_name_to_publish_semver}"
+          docker tag "${image_name_with_version}" "${image_name_to_publish_latest}"
+          docker push "${image_name_to_publish_semver}"
+          docker push "${image_name_to_publish_latest}"
 
   publish_api_container_server_image:
     docker:
@@ -826,13 +830,17 @@ jobs:
       - run: |
           set -euo pipefail
           source core/server/scripts/_constants.env
+          version_build="$(./scripts/get-docker-tag.sh)"
           version_to_publish="$(cat version.txt)"
+          echo "Version that was built: ${version_build}"
           echo "Version that will be published: ${version_to_publish}"
-          image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
-          image_name_no_version="${IMAGE_ORG_AND_REPO}:latest"
-          docker tag "${image_name_with_version}" "${image_name_no_version}"
-          docker push "${image_name_with_version}"
-          docker push "${image_name_no_version}"
+          image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_build}"
+          image_name_to_publish_semver="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
+          image_name_to_publish_latest="${IMAGE_ORG_AND_REPO}:latest"
+          docker tag "${image_name_with_version}" "${image_name_to_publish_semver}"
+          docker tag "${image_name_with_version}" "${image_name_to_publish_latest}"
+          docker push "${image_name_to_publish_semver}"
+          docker push "${image_name_to_publish_latest}"
 
   publish_engine_server_image:
     docker:
@@ -858,13 +866,17 @@ jobs:
       - run: |
           set -euo pipefail
           source engine/server/scripts/_constants.env
+          version_build="$(./scripts/get-docker-tag.sh)"
           version_to_publish="$(cat version.txt)"
+          echo "Version that was built: ${version_build}"
           echo "Version that will be published: ${version_to_publish}"
-          image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
-          image_name_no_version="${IMAGE_ORG_AND_REPO}:latest"
-          docker tag "${image_name_with_version}" "${image_name_no_version}"
-          docker push "${image_name_with_version}"
-          docker push "${image_name_no_version}"
+          image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_build}"
+          image_name_to_publish_semver="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
+          image_name_to_publish_latest="${IMAGE_ORG_AND_REPO}:latest"
+          docker tag "${image_name_with_version}" "${image_name_to_publish_semver}"
+          docker tag "${image_name_with_version}" "${image_name_to_publish_latest}"
+          docker push "${image_name_to_publish_semver}"
+          docker push "${image_name_to_publish_latest}"
 
   push_cli_artifacts:
     docker:
