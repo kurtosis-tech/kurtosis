@@ -66,6 +66,19 @@ def run(plan):
 	)
 	exec_result = plan.wait(exec_recipe, "code", "==", 0)
 	plan.assert(exec_result["output"], "==", "hello bar\n")
+
+	# content_type default to application/json
+	post_json = PostHttpRequestRecipe(
+		service_name = "web-server",
+		port_id = "http-port",
+		endpoint = "/",
+		body='{"a":"b"}',
+		extract = {
+			"my-json": ".body"
+		}
+	)
+	post_json_response = plan.request(post_json)
+	plan.assert(post_json_response["extract.my-json"], "==", '{"a":"b"}')
 `
 )
 
