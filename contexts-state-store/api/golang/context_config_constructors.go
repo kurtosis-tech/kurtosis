@@ -1,6 +1,6 @@
 package golang
 
-import "github.com/kurtosis-tech/kurtosis/context-config-store/api/golang/generated"
+import "github.com/kurtosis-tech/kurtosis/contexts-state-store/api/golang/generated"
 
 func NewContextUuid(uuid string) *generated.ContextUuid {
 	return &generated.ContextUuid{
@@ -8,8 +8,8 @@ func NewContextUuid(uuid string) *generated.ContextUuid {
 	}
 }
 
-func NewKurtosisContextConfig(currentContextUuid *generated.ContextUuid, contexts ...*generated.KurtosisContext) *generated.KurtosisContextsConfig {
-	return &generated.KurtosisContextsConfig{
+func NewKurtosisContextsState(currentContextUuid *generated.ContextUuid, contexts ...*generated.KurtosisContext) *generated.KurtosisContextsState {
+	return &generated.KurtosisContextsState{
 		CurrentContextUuid: currentContextUuid,
 		Contexts:           contexts,
 	}

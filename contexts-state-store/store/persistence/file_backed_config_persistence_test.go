@@ -1,7 +1,7 @@
 package persistence
 
 import (
-	"github.com/kurtosis-tech/kurtosis/context-config-store/api/golang/generated"
+	"github.com/kurtosis-tech/kurtosis/contexts-state-store/api/golang/generated"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 	"os"
@@ -17,7 +17,7 @@ const (
 )
 
 var (
-	contextConfig = &generated.KurtosisContextsConfig{
+	contextConfig = &generated.KurtosisContextsState{
 		CurrentContextUuid: &generated.ContextUuid{Value: contextUuid},
 		Contexts: []*generated.KurtosisContext{
 			{
@@ -50,7 +50,7 @@ func TestPersistConfig(t *testing.T) {
 	defer os.Remove(tempFile.Name())
 
 	storage := newFileBackedConfigPersistenceForTesting(tempFile.Name())
-	err = storage.PersistContextConfig(contextConfig)
+	err = storage.PersistContextsState(contextConfig)
 	require.Nil(t, err)
 
 	fileContent, err := os.ReadFile(tempFile.Name())
@@ -67,7 +67,7 @@ func TestLoadConfig(t *testing.T) {
 	require.Nil(t, err)
 
 	storage := newFileBackedConfigPersistenceForTesting(tempFile.Name())
-	result, err := storage.LoadContextConfig()
+	result, err := storage.LoadContextsState()
 	require.Nil(t, err)
 	require.True(t, proto.Equal(contextConfig, result))
 }

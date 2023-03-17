@@ -1,7 +1,7 @@
 package golang
 
 import (
-	"github.com/kurtosis-tech/kurtosis/context-config-store/api/golang/generated"
+	"github.com/kurtosis-tech/kurtosis/contexts-state-store/api/golang/generated"
 	"github.com/kurtosis-tech/stacktrace"
 	"reflect"
 )

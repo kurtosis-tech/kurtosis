@@ -2,10 +2,11 @@ package store
 
 import (
 	"fmt"
-	api "github.com/kurtosis-tech/kurtosis/context-config-store/api/golang"
-	"github.com/kurtosis-tech/kurtosis/context-config-store/store/persistence"
+	api "github.com/kurtosis-tech/kurtosis/contexts-state-store/api/golang"
+	"github.com/kurtosis-tech/kurtosis/contexts-state-store/store/persistence"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 	"reflect"
 	"testing"
 )
@@ -13,7 +14,7 @@ import (
 const (
 	// Unfortunately Mockery does not fail when we call AssertNotCalled("MethodNameWithATypo")
 	// So we have to manually validate the method exist in the mock first, using reflect.MethodByName
-	persistMethodName = "PersistContextConfig"
+	persistMethodName = "PersistContextsState"
 )
 
 var (
@@ -27,22 +28,21 @@ var (
 func TestGetAllContexts(t *testing.T) {
 	// Setup storage mock
 	storage := persistence.NewMockConfigPersistence(t)
-	contextConfig := api.NewKurtosisContextConfig(contextUuid, localContext)
-	storage.EXPECT().LoadContextConfig().Return(contextConfig, nil)
+	contextsState := api.NewKurtosisContextsState(contextUuid, localContext)
+	storage.EXPECT().LoadContextsState().Return(contextsState, nil)
 
 	// Run test
 	testContextConfigStore := NewContextConfigStore(storage)
-	result, err := testContextConfigStore.GetAllContexts()
+	result, err := testContextConfigStore.GetKurtosisContextsState()
 	require.NoError(t, err)
-	require.Len(t, result, 1)
-	require.Contains(t, result, localContext)
+	require.True(t, proto.Equal(contextsState, result))
 }
 
 func TestGetCurrentContext(t *testing.T) {
 	// Setup storage mock
 	storage := persistence.NewMockConfigPersistence(t)
-	contextConfig := api.NewKurtosisContextConfig(contextUuid, localContext, otherLocalContext)
-	storage.EXPECT().LoadContextConfig().Return(contextConfig, nil)
+	contextsState := api.NewKurtosisContextsState(contextUuid, localContext, otherLocalContext)
+	storage.EXPECT().LoadContextsState().Return(contextsState, nil)
 
 	// Run test
 	testContextConfigStore := NewContextConfigStore(storage)
@@ -54,8 +54,8 @@ func TestGetCurrentContext(t *testing.T) {
 func TestGetCurrentContext_failureInconsistentContextConfig(t *testing.T) {
 	// Setup storage mock
 	storage := persistence.NewMockConfigPersistence(t)
-	contextConfig := api.NewKurtosisContextConfig(otherContextUuid, localContext) // unknown current context UUID
-	storage.EXPECT().LoadContextConfig().Return(contextConfig, nil)
+	contextsState := api.NewKurtosisContextsState(otherContextUuid, localContext) // unknown current context UUID
+	storage.EXPECT().LoadContextsState().Return(contextsState, nil)
 
 	// Run test
 	testContextConfigStore := NewContextConfigStore(storage)
@@ -71,11 +71,11 @@ func TestGetCurrentContext_failureInconsistentContextConfig(t *testing.T) {
 func TestSwitchContext(t *testing.T) {
 	// Setup storage mock
 	storage := persistence.NewMockConfigPersistence(t)
-	contextConfig := api.NewKurtosisContextConfig(contextUuid, localContext, otherLocalContext)
-	storage.EXPECT().LoadContextConfig().Return(contextConfig, nil)
+	contextsState := api.NewKurtosisContextsState(contextUuid, localContext, otherLocalContext)
+	storage.EXPECT().LoadContextsState().Return(contextsState, nil)
 
-	expectContextConfigAfterSwitch := api.NewKurtosisContextConfig(otherContextUuid, localContext, otherLocalContext)
-	storage.EXPECT().PersistContextConfig(expectContextConfigAfterSwitch).Times(1).Return(nil)
+	expectContextConfigAfterSwitch := api.NewKurtosisContextsState(otherContextUuid, localContext, otherLocalContext)
+	storage.EXPECT().PersistContextsState(expectContextConfigAfterSwitch).Times(1).Return(nil)
 
 	// Run test
 	testContextConfigStore := NewContextConfigStore(storage)
@@ -86,8 +86,8 @@ func TestSwitchContext(t *testing.T) {
 func TestSwitchContext_NonExistingContextFailure(t *testing.T) {
 	// Setup storage mock
 	storage := persistence.NewMockConfigPersistence(t)
-	contextConfig := api.NewKurtosisContextConfig(contextUuid, localContext)
-	storage.EXPECT().LoadContextConfig().Return(contextConfig, nil)
+	contextsState := api.NewKurtosisContextsState(contextUuid, localContext)
+	storage.EXPECT().LoadContextsState().Return(contextsState, nil)
 
 	// Run test
 	testContextConfigStore := NewContextConfigStore(storage)
@@ -101,11 +101,11 @@ func TestSwitchContext_NonExistingContextFailure(t *testing.T) {
 func TestAddNewContext(t *testing.T) {
 	// Setup storage mock
 	storage := persistence.NewMockConfigPersistence(t)
-	contextConfig := api.NewKurtosisContextConfig(contextUuid, localContext)
-	storage.EXPECT().LoadContextConfig().Return(contextConfig, nil)
+	contextsState := api.NewKurtosisContextsState(contextUuid, localContext)
+	storage.EXPECT().LoadContextsState().Return(contextsState, nil)
 
-	expectContextConfigAfterAddition := api.NewKurtosisContextConfig(contextUuid, localContext, otherLocalContext)
-	storage.EXPECT().PersistContextConfig(expectContextConfigAfterAddition).Times(1).Return(nil)
+	expectContextConfigAfterAddition := api.NewKurtosisContextsState(contextUuid, localContext, otherLocalContext)
+	storage.EXPECT().PersistContextsState(expectContextConfigAfterAddition).Times(1).Return(nil)
 
 	// Run test
 	testContextConfigStore := NewContextConfigStore(storage)
@@ -116,8 +116,8 @@ func TestAddNewContext(t *testing.T) {
 func TestAddNewContext_AlreadyExists(t *testing.T) {
 	// Setup storage mock
 	storage := persistence.NewMockConfigPersistence(t)
-	contextConfig := api.NewKurtosisContextConfig(contextUuid, localContext, otherLocalContext)
-	storage.EXPECT().LoadContextConfig().Return(contextConfig, nil)
+	contextsState := api.NewKurtosisContextsState(contextUuid, localContext, otherLocalContext)
+	storage.EXPECT().LoadContextsState().Return(contextsState, nil)
 
 	// Run test
 	testContextConfigStore := NewContextConfigStore(storage)
@@ -137,11 +137,11 @@ func TestAddNewContext_AlreadyExists(t *testing.T) {
 func TestRemoveContext(t *testing.T) {
 	// Setup storage mock
 	storage := persistence.NewMockConfigPersistence(t)
-	contextConfig := api.NewKurtosisContextConfig(contextUuid, localContext, otherLocalContext)
-	storage.EXPECT().LoadContextConfig().Return(contextConfig, nil)
+	contextsState := api.NewKurtosisContextsState(contextUuid, localContext, otherLocalContext)
+	storage.EXPECT().LoadContextsState().Return(contextsState, nil)
 
-	expectContextConfigAfterRemoval := api.NewKurtosisContextConfig(contextUuid, localContext)
-	storage.EXPECT().PersistContextConfig(expectContextConfigAfterRemoval).Return(nil)
+	expectContextsStateAfterRemoval := api.NewKurtosisContextsState(contextUuid, localContext)
+	storage.EXPECT().PersistContextsState(expectContextsStateAfterRemoval).Return(nil)
 
 	// Run test
 	testContextConfigStore := NewContextConfigStore(storage)
@@ -152,8 +152,8 @@ func TestRemoveContext(t *testing.T) {
 func TestRemoveContext_FailureCurrentContext(t *testing.T) {
 	// Setup storage mock
 	storage := persistence.NewMockConfigPersistence(t)
-	contextConfig := api.NewKurtosisContextConfig(contextUuid, localContext, otherLocalContext)
-	storage.EXPECT().LoadContextConfig().Return(contextConfig, nil)
+	contextsState := api.NewKurtosisContextsState(contextUuid, localContext, otherLocalContext)
+	storage.EXPECT().LoadContextsState().Return(contextsState, nil)
 
 	// Run test
 	testContextConfigStore := NewContextConfigStore(storage)
@@ -172,8 +172,8 @@ func TestRemoveContext_FailureCurrentContext(t *testing.T) {
 func TestRemoveContext_NonExistingContext(t *testing.T) {
 	// Setup storage mock
 	storage := persistence.NewMockConfigPersistence(t)
-	contextConfig := api.NewKurtosisContextConfig(contextUuid, localContext)
-	storage.EXPECT().LoadContextConfig().Return(contextConfig, nil)
+	contextsState := api.NewKurtosisContextsState(contextUuid, localContext)
+	storage.EXPECT().LoadContextsState().Return(contextsState, nil)
 
 	// Run test
 	testContextConfigStore := NewContextConfigStore(storage)
