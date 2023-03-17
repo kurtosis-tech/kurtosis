@@ -35,6 +35,8 @@ const (
 	methodAttr      = "method"
 	contentTypeAttr = "content_type"
 
+	defaultContentType = "application/json"
+
 	PostHttpRecipeTypeName = "PostHttpRequestRecipe"
 	GetHttpRecipeTypeName  = "GetHttpRequestRecipe"
 
@@ -186,7 +188,7 @@ func MakeGetHttpRequestRecipe(_ *starlark.Thread, builtin *starlark.Builtin, arg
 		portIdAttr, &portId,
 		endpointAttr, &endpoint,
 		kurtosis_types.MakeOptional(extractKeyPrefix), &maybeExtractField,
-		MakeOptional(serviceNameAttr), &serviceName,
+		kurtosis_types.MakeOptional(serviceNameAttr), &serviceName,
 	); err != nil {
 		return nil, startosis_errors.NewInterpretationError(err.Error())
 	}
@@ -209,22 +211,23 @@ func MakePostHttpRequestRecipe(_ *starlark.Thread, builtin *starlark.Builtin, ar
 	var endpoint string
 	var serviceName string
 
-	var body string
-	var contentType string
+	var maybeBody starlark.Value
+	contentType := defaultContentType
 	var maybeExtractField starlark.Value
 
 	if err := starlark.UnpackArgs(builtin.Name(), args, kwargs,
 		portIdAttr, &portId,
 		endpointAttr, &endpoint,
-		bodyKey, &body,
-		contentTypeAttr, &contentType,
+		kurtosis_types.MakeOptional(bodyKey), &maybeBody,
+		kurtosis_types.MakeOptional(contentTypeAttr), &contentType,
 		kurtosis_types.MakeOptional(extractKeyPrefix), &maybeExtractField,
-		MakeOptional(serviceNameAttr), &serviceName,
+		kurtosis_types.MakeOptional(serviceNameAttr), &serviceName,
 	); err != nil {
 		return nil, startosis_errors.NewInterpretationError("%v", err.Error())
 	}
 
 	extractedMap := map[string]string{}
+	extractedBody := ""
 	var err *startosis_errors.InterpretationError
 
 	if maybeExtractField != nil {
@@ -234,7 +237,14 @@ func MakePostHttpRequestRecipe(_ *starlark.Thread, builtin *starlark.Builtin, ar
 		}
 	}
 
-	recipe := NewPostHttpRequestRecipe(service.ServiceName(serviceName), portId, contentType, endpoint, body, extractedMap)
+	if maybeBody != nil {
+		extractedBody, err = kurtosis_types.SafeCastToString(maybeBody, bodyKey)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	recipe := NewPostHttpRequestRecipe(service.ServiceName(serviceName), portId, contentType, endpoint, extractedBody, extractedMap)
 	return recipe, nil
 }
 
@@ -387,7 +397,7 @@ func (recipe *HttpRequestRecipe) CreateStarlarkReturnValue(resultUuid string) (*
 	return dict, nil
 }
 
-//TODO this will be removed when we deprecate the service_name field, more here: https://app.zenhub.com/workspaces/engineering-636cff9fc978ceb2aac05a1d/issues/gh/kurtosis-tech/kurtosis-private/1128
+// TODO this will be removed when we deprecate the service_name field, more here: https://app.zenhub.com/workspaces/engineering-636cff9fc978ceb2aac05a1d/issues/gh/kurtosis-tech/kurtosis-private/1128
 func (recipe *HttpRequestRecipe) GetServiceName() service.ServiceName {
 	return recipe.serviceName
 }
