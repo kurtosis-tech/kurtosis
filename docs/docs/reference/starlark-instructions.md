@@ -115,7 +115,7 @@ all_services = plan.add_services(
     configs = {
         "example-datastore-server-1": datastore_server_config_1,
         "example-datastore-server-2": datastore_server_config_2,
-    }
+    },
 )
 ```
 
@@ -368,13 +368,13 @@ post_request_recipe = PostHttpRequestRecipe(
     # MANDATORY
     endpoint = "/endpoint",
 
-    # The content type header of the request (e.g. application/json, text/plain, etc)
-    # MANDATORY
-    content_type = "text/plain",
-
     # The body of the request
     # MANDATORY
     body = "text body",
+    
+    # The content type header of the request (e.g. application/json, text/plain, etc)
+    # OPTIONAL (Default: "application/json")
+    content_type = "text/plain",    
 
     # The method is GET for this example
     # OPTIONAL (Default: {})
@@ -398,7 +398,7 @@ The instruction returns a response, which is a `dict` with following key-value p
 post_request_recipe = PostHttpRequestRecipe(
     ...
     extract = {
-        "second-element-from-list-head": '.result.foo | .[0] | split ("/") | .[1]' # 
+        "second-element-from-list-head": '.result.foo | .[0] | split ("/") | .[1]',
     },
 )
 response = plan.request(
@@ -469,13 +469,13 @@ Say we are overriding a connection between two subnetworks, as shown below:
 
 connection_config = ConnectionConfig(
     packet_delay_distribution = UniformPacketDelayDistribution(
-        ms = 500
-    )
+        ms = 500,
+    ),
 )
 
 set_connection(
     subnetworks = ("subnetworkA", "subnetworkB"),
-    config = connection_config
+    config = connection_config,
 )
 
 ```
