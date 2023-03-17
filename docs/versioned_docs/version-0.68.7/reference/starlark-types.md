@@ -140,7 +140,7 @@ post_request_recipe = PostHttpRequestRecipe(
     endpoint = "/endpoint",
 
     # The content type header of the request (e.g. application/json, text/plain, etc)
-    # MANDATORY
+    # OPTIONAL (Default: "application/json")
     content_type = "application/json",
 
     # The body of the request
