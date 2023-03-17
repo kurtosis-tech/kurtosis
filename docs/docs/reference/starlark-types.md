@@ -104,7 +104,7 @@ Important - the `port_id` field accepts user-defined port IDs that are assigned 
     )
 ```
 
-then the user-defined port IDs in the above `ServiceConfig` are: `http` and `grpc`. Both of these user-defined port IDs can therefore be used to create http request recipes (`GET` OR `POST`), such as:
+The user-defined port IDs in the above `ServiceConfig` are: `http` and `grpc`. Both of these user-defined port IDs can therefore be used to create http request recipes (`GET` OR `POST`), such as:
 
 ```
     recipe = GetHttpRequestRecipe(
