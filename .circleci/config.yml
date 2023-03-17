@@ -96,7 +96,7 @@ parameters:
   container-engine-lib-build-cache-key-prefix:
     type: string
     default: "go-mod-v1"   # Can bump this version to bust the cache
-  contexts-state-store-build-cache-key-prefix:
+  contexts-config-store-build-cache-key-prefix:
     type: string
     default: "go-mod-v0"   # Can bump this version to bust the cache
   # To upgrade the Docker Engine version, see which versions are supported at: https://circleci.com/docs/2.0/building-docker-images/#docker-version
@@ -196,7 +196,7 @@ jobs:
             - "/home/circleci/go/pkg/mod"  # Go module cache on the cimg/go image, as reported by "go env GOMODCACHE"
             - "/home/circleci/.cache/go-build"  # Go build cache on the cimg/go image, as reported by "go env GOCACHE"
 
-  build_contexts_state_store:
+  build_contexts_config_store:
     docker:
       - image: "cimg/go:<< pipeline.parameters.go-version >>"
 
@@ -208,12 +208,12 @@ jobs:
       # Cache our dependencies
       - restore_cache:
           keys:
-            - << pipeline.parameters.contexts-state-store-build-cache-key-prefix >>-{{ checksum "contexts-state-store/go.sum" }}
+            - << pipeline.parameters.contexts-config-store-build-cache-key-prefix >>-{{ checksum "contexts-config-store/go.sum" }}
 
       - run: |
-          contexts-state-store/scripts/build.sh
+          contexts-config-store/scripts/build.sh
       - save_cache:
-          key: << pipeline.parameters.contexts-state-store-build-cache-key-prefix >>-{{ checksum "contexts-state-store/go.sum" }}
+          key: << pipeline.parameters.contexts-config-store-build-cache-key-prefix >>-{{ checksum "contexts-config-store/go.sum" }}
           paths:
             - "/home/circleci/go/pkg/mod"  # Go module cache on the cimg/go image, as reported by "go env GOMODCACHE"
             - "/home/circleci/.cache/go-build"  # Go build cache on the cimg/go image, as reported by "go env GOCACHE"
@@ -974,7 +974,7 @@ workflows:
             branches:
               ignore:
                 - main
-      - build_contexts_state_store:
+      - build_contexts_config_store:
           filters:
             branches:
               ignore:

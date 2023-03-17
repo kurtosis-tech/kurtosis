@@ -1,8 +1,8 @@
 package store
 
 import (
-	"github.com/kurtosis-tech/kurtosis/contexts-state-store/api/golang/generated"
-	"github.com/kurtosis-tech/kurtosis/contexts-state-store/store/persistence"
+	"github.com/kurtosis-tech/kurtosis/contexts-config-store/api/golang/generated"
+	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store/persistence"
 	"sync"
 )
 
@@ -12,8 +12,8 @@ var (
 )
 
 type ContextConfigStore interface {
-	// GetKurtosisContextsState returns the list of currently saved contexts.
-	GetKurtosisContextsState() (*generated.KurtosisContextsState, error)
+	// GetKurtosisContextsConfig returns the currently saved contexts configuration.
+	GetKurtosisContextsConfig() (*generated.KurtosisContextsConfig, error)
 
 	// GetCurrentContext returns the current context information.
 	GetCurrentContext() (*generated.KurtosisContext, error)

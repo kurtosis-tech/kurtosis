@@ -1,4 +1,4 @@
-module github.com/kurtosis-tech/kurtosis/contexts-state-store
+module github.com/kurtosis-tech/kurtosis/contexts-config-store
 
 go 1.18
 

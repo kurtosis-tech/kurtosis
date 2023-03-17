@@ -3,9 +3,9 @@ package context_config_store;
 
 // NOTE: It sucks that we have this Go-specific logic inside this file (which should be language-agnostic). However, the Protobuf team have
 // taken a hard stance on this being the way it should be done, so we have to do it this way.
-option go_package = "github.com/kurtosis-tech/kurtosis/contexts-state-store/api/golang/generated";
+option go_package = "github.com/kurtosis-tech/kurtosis/contexts-config-store/api/golang/generated";
 
-message KurtosisContextsState {
+message KurtosisContextsConfig {
   // The UUID of the context that is currently being used
   ContextUuid currentContextUuid = 1;
 

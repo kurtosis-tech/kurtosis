@@ -2,7 +2,7 @@ package persistence
 
 import (
 	"github.com/adrg/xdg"
-	"github.com/kurtosis-tech/kurtosis/contexts-state-store/api/golang/generated"
+	"github.com/kurtosis-tech/kurtosis/contexts-config-store/api/golang/generated"
 	"github.com/kurtosis-tech/stacktrace"
 	"google.golang.org/protobuf/encoding/protojson"
 	"os"
@@ -13,8 +13,8 @@ import (
 const (
 	applicationDirname = "kurtosis" // TODO: this is common to Kurtosis config, should refactor
 
-	contextStateFileName = "contexts-state.json"
-	defaultFilePerm      = 0644
+	contextConfigFileName = "contexts-config.json"
+	defaultFilePerm       = 0644
 )
 
 var (
@@ -43,14 +43,14 @@ func newFileBackedConfigPersistenceForTesting(customFilePath string) *FileBacked
 	}
 }
 
-func (persistence *FileBackedConfigPersistence) PersistContextsState(newContextsState *generated.KurtosisContextsState) error {
+func (persistence *FileBackedConfigPersistence) PersistContextsConfig(newContextsConfig *generated.KurtosisContextsConfig) error {
 	if err := persistence.init(); err != nil {
 		return stacktrace.Propagate(err, "Unable to initialize context config persistence")
 	}
-	return persistence.persistContextsStateInternal(newContextsState)
+	return persistence.persistContextsConfigInternal(newContextsConfig)
 }
 
-func (persistence *FileBackedConfigPersistence) LoadContextsState() (*generated.KurtosisContextsState, error) {
+func (persistence *FileBackedConfigPersistence) LoadContextsConfig() (*generated.KurtosisContextsConfig, error) {
 	if err := persistence.init(); err != nil {
 		return nil, stacktrace.Propagate(err, "Unable to initialize context config persistence")
 	}
@@ -58,17 +58,17 @@ func (persistence *FileBackedConfigPersistence) LoadContextsState() (*generated.
 	persistence.RLock()
 	defer persistence.RUnlock()
 
-	contextsStateFileContent, err := os.ReadFile(persistence.backingFilePath)
+	contextsConfigFileContent, err := os.ReadFile(persistence.backingFilePath)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Unable to read context config file at '%s'",
 			persistence.backingFilePath)
 	}
-	contextsState := &generated.KurtosisContextsState{}
-	if err = protojson.Unmarshal(contextsStateFileContent, contextsState); err != nil {
+	contextsConfig := &generated.KurtosisContextsConfig{}
+	if err = protojson.Unmarshal(contextsConfigFileContent, contextsConfig); err != nil {
 		return nil, stacktrace.Propagate(err, "Unable to deserialize content of context config file at '%s'",
 			persistence.backingFilePath)
 	}
-	return contextsState, nil
+	return contextsConfig, nil
 }
 
 func (persistence *FileBackedConfigPersistence) init() error {
@@ -77,34 +77,34 @@ func (persistence *FileBackedConfigPersistence) init() error {
 		return nil
 	}
 
-	contextsStateFilePath, err := getContextsSTateFilePath()
+	contextsConfigFilePath, err := getContextsConfigFilePath()
 	if err != nil {
 		return stacktrace.Propagate(err, "Unable to get file path to store config to")
 	}
 
-	if _, err = os.Stat(contextsStateFilePath); err != nil {
+	if _, err = os.Stat(contextsConfigFilePath); err != nil {
 		if !os.IsNotExist(err) {
 			return stacktrace.Propagate(err, "Unexpected error checking if context config file exists at '%s'",
-				contextsStateFilePath)
+				contextsConfigFilePath)
 		}
 	} else {
 		// file already exists, no need to create it
-		persistence.backingFilePath = contextsStateFilePath
+		persistence.backingFilePath = contextsConfigFilePath
 		return nil
 	}
 
-	persistence.backingFilePath = contextsStateFilePath
-	if err = persistence.persistContextsStateInternal(defaultContextsState); err != nil {
+	persistence.backingFilePath = contextsConfigFilePath
+	if err = persistence.persistContextsConfigInternal(defaultContextsConfig); err != nil {
 		return stacktrace.Propagate(err, "Failed to write default contexts config to file")
 	}
 	return nil
 }
 
-func (persistence *FileBackedConfigPersistence) persistContextsStateInternal(newContextsState *generated.KurtosisContextsState) error {
+func (persistence *FileBackedConfigPersistence) persistContextsConfigInternal(newContextsConfig *generated.KurtosisContextsConfig) error {
 	persistence.Lock()
 	defer persistence.Unlock()
 
-	serializedConfig, err := serializer.Marshal(newContextsState)
+	serializedConfig, err := serializer.Marshal(newContextsConfig)
 	if err != nil {
 		return stacktrace.Propagate(err, "Unable to serialize content of contexts config object to JSON")
 	}
@@ -115,10 +115,10 @@ func (persistence *FileBackedConfigPersistence) persistContextsStateInternal(new
 	return nil
 }
 
-func getContextsSTateFilePath() (string, error) {
-	contextConfigFilePath, err := xdg.ConfigFile(path.Join(applicationDirname, contextStateFileName))
+func getContextsConfigFilePath() (string, error) {
+	contextConfigFilePath, err := xdg.ConfigFile(path.Join(applicationDirname, contextConfigFileName))
 	if err != nil {
-		return "", stacktrace.Propagate(err, "Unable to get contexts state file path")
+		return "", stacktrace.Propagate(err, "Unable to get contexts config file path")
 	}
 	return contextConfigFilePath, nil
 }
