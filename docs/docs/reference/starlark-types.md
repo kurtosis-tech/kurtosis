@@ -59,12 +59,12 @@ The `HttpRequestRecipe` is used to make `HTTP` requests to an endpoint. Currentl
 
 #### GetHttpRequestRecipe
 
-The `GetHttpRequestRecipe` can be used to make `GET` requests.
+The `GetHttpRequestRecipe` can be used to make `GET` requests, filter for the specific part of the response you care about, and assign that specific output to a key for later use. This can be useful for writing assertions, for example (i.e. validating the response you end up receiving looks the way you expect/intended).
 
 :::caution
 
 The `GetHttpRequestRecipe.service_name` field is still accepted but it's deprecated, so we suggest users to pass
-this value as an argument in the `exec`, `request` and `wait` instructions where this type is currently used
+this value as an argument in the `exec`, `request` and `wait` instructions where this type is currently used.
 
 :::
 
@@ -78,9 +78,14 @@ get_request_recipe = GetHttpRequestRecipe(
     # MANDATORY
     endpoint = "/endpoint?input=data",
 
-    # The extract dictionary takes in key-value pairs where:
-    # Key is a way you refer to the extraction later on
-    # Value is a 'jq' string that contains logic to extract from response body
+    # The extract dictionary can be used for filtering specific parts of a HTTP GET
+    # request and assigning that output to a key-value pair, where the key is the
+    # reference variable and the value is the specific output. 
+    # 
+    # Specifcally: the key is the way you refer to the extraction later on and
+    # the value is a 'jq' string that contains logic to extract parts from response 
+    # body that you get from the HTTP GET request.
+    # 
     # To lean more about jq, please visit https://devdocs.io/jq/
     # OPTIONAL
     extract = {
