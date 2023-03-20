@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	enclaveIdentifierArgKey         = "enclave-identifier"
+	enclaveIdentifierArgKey         = "enclave"
 	validShortenedUuidOrNameMatches = 1
 	uuidDelimiter                   = ", "
 )
