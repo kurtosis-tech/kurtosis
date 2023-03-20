@@ -1,9 +1,10 @@
 # Check PR title for conventional commits
 name: Check PR title
 on:
+  push:
+    branches:
+      - gh-readonly-queue/main/**
   pull_request_target:
-    branches-ignore:
-      - gh-readonly-queue/main/*
     types:
       - opened
       - reopened
@@ -17,6 +18,9 @@ concurrency:
 
 jobs:
   title_check:
+    # weg want this job to be skipped on merge queue PRs
+    if: contains(github.head_ref, 'gh-readonly-queue/main') != true
+
     runs-on: ubuntu-latest
     permissions:
       statuses: write
