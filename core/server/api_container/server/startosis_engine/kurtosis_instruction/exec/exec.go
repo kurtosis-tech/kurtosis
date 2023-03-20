@@ -18,7 +18,7 @@ import (
 	"go.starlark.net/starlark"
 )
 
-var defaultAcceptableCodes = []int{
+var defaultAcceptableCodes = []int64{
 	0, // EXIT_SUCCESS
 }
 
@@ -95,7 +95,7 @@ type ExecCapabilities struct {
 	serviceName     service.ServiceName
 	execRecipe      *recipe.ExecRecipe
 	resultUuid      string
-	acceptableCodes []int
+	acceptableCodes []int64
 	skipCodeCheck   bool
 }
 
@@ -179,7 +179,7 @@ func (builtin *ExecCapabilities) Execute(ctx context.Context, _ *builtin_argumen
 func (builtin *ExecCapabilities) isAcceptableCode(recipeResult map[string]starlark.Comparable) bool {
 	isAcceptableCode := false
 	for _, acceptableCode := range builtin.acceptableCodes {
-		if recipeResult["code"] == starlark.MakeInt(acceptableCode) {
+		if recipeResult["code"] == starlark.MakeInt64(acceptableCode) {
 			isAcceptableCode = true
 			break
 		}

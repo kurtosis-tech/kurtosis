@@ -68,8 +68,8 @@ func SafeCastToString(expectedValueString starlark.Value, argNameForLogging stri
 	return castValue.GoString(), nil
 }
 
-func SafeCastToIntegerSlice(starlarkList *starlark.List) ([]int, error) {
-	slice := []int{}
+func SafeCastToIntegerSlice(starlarkList *starlark.List) ([]int64, error) {
+	slice := []int64{}
 	for i := 0; i < starlarkList.Len(); i++ {
 		value := starlarkList.Index(i)
 		starlarkCastedValue, ok := value.(starlark.Int)
@@ -80,7 +80,7 @@ func SafeCastToIntegerSlice(starlarkList *starlark.List) ([]int, error) {
 		if !ok {
 			return nil, stacktrace.NewError("An error occurred when casting element '%v' to Go integer", castedValue)
 		}
-		slice = append(slice, int(castedValue))
+		slice = append(slice, castedValue)
 	}
 	return slice, nil
 }

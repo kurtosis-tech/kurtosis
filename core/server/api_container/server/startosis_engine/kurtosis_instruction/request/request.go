@@ -19,7 +19,7 @@ import (
 	"net/http"
 )
 
-var defaultAcceptableCodes = []int{
+var defaultAcceptableCodes = []int64{
 	http.StatusOK,
 	http.StatusCreated,
 	http.StatusAccepted,
@@ -106,7 +106,7 @@ type RequestCapabilities struct {
 	serviceName       service.ServiceName
 	httpRequestRecipe *recipe.HttpRequestRecipe
 	resultUuid        string
-	acceptableCodes   []int
+	acceptableCodes   []int64
 	skipCodeCheck     bool
 }
 
@@ -189,7 +189,7 @@ func (builtin *RequestCapabilities) Execute(ctx context.Context, _ *builtin_argu
 func (builtin *RequestCapabilities) isAcceptableCode(recipeResult map[string]starlark.Comparable) bool {
 	isAcceptableCode := false
 	for _, acceptableCode := range builtin.acceptableCodes {
-		if recipeResult["code"] == starlark.MakeInt(acceptableCode) {
+		if recipeResult["code"] == starlark.MakeInt64(acceptableCode) {
 			isAcceptableCode = true
 			break
 		}
