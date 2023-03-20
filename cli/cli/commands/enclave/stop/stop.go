@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	enclaveIdentifiersArgKey = "enclave-identifiers"
+	enclaveIdentifiersArgKey = "enclaves"
 	isEnclaveIdArgOptional   = false
 	isEnclaveIdArgGreedy     = true // The user can specify multiple enclaves to stop
 
