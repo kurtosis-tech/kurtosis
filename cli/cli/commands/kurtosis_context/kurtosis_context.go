@@ -3,6 +3,7 @@ package kurtosis_context
 import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/kurtosis_context/ls"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/kurtosis_context/rm"
 	"github.com/spf13/cobra"
 )
 
@@ -16,4 +17,5 @@ var ContextCmd = &cobra.Command{
 
 func init() {
 	ContextCmd.AddCommand(ls.ContextLsCmd.MustGetCobraCommand())
+	ContextCmd.AddCommand(rm.ContextRmCmd.MustGetCobraCommand())
 }
