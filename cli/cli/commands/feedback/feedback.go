@@ -21,17 +21,26 @@ const (
 	commandShortDescription = "Give feedback"
 	commandDescription      = "Give feedback, file a bug report or feature request, or get help from the Kurtosis team."
 
-	githubFlagKey   = "github"
-	emailFlagKey    = "email"
-	calendlyFlagKey = "calendly"
+	githubFlagKey         = "github"
+	emailFlagKey          = "email"
+	calendlyFlagKey       = "calendly"
+	bugFlagKey            = "bug"
+	featureRequestFlagKey = "fr"
+	docsFlagKey           = "docs"
 
-	githubFlagUsageDescription = "Takes you to our Github where you can file a bug report, feature request, or get help."
-	emailFlagUsageDescription  = "Opens your mail client to send us feedback via email."
-	calendlyFlagDescription    = "When set, opens the link to our Calendly page to schedule a 1:1 session with a Kurtosis expert."
+	githubFlagUsageDescription    = "Takes you to our Github where you can file a bug report, feature request, or get help."
+	emailFlagUsageDescription     = "Opens your mail client to send us feedback via email."
+	calendlyFlagDescription       = "When set, opens the link to our Calendly page to schedule a 1:1 session with a Kurtosis expert."
+	bugFlagDescription            = "To complete"
+	featureRequestFlagDescription = "To complete"
+	docsFlagDescription           = "To complete"
 
 	defaultOpenGitHubIssuePage = "false"
 	defaultOpenEmailLink       = "false"
 	defaultOpenCalendlyLink    = "false"
+	defaultBug                 = "false"
+	defaultFeatureRequest      = "false"
+	defaultDocs                = "false"
 
 	githubLinkText     = "let us know in our Github."
 	emailLinkText      = "click here to email us."
@@ -77,6 +86,27 @@ var FeedbackCmd = &lowlevel.LowlevelKurtosisCommand{
 			Shorthand: "",
 			Type:      flags.FlagType_Bool,
 			Default:   defaultOpenCalendlyLink,
+		},
+		{
+			Key:       bugFlagKey,
+			Usage:     bugFlagDescription,
+			Shorthand: "",
+			Type:      flags.FlagType_Bool,
+			Default:   defaultBug,
+		},
+		{
+			Key:       featureRequestFlagKey,
+			Usage:     featureRequestFlagDescription,
+			Shorthand: "",
+			Type:      flags.FlagType_Bool,
+			Default:   defaultFeatureRequest,
+		},
+		{
+			Key:       docsFlagKey,
+			Usage:     docsFlagDescription,
+			Shorthand: "",
+			Type:      flags.FlagType_Bool,
+			Default:   defaultDocs,
 		},
 	},
 	Args: []*args.ArgConfig{
@@ -127,6 +157,23 @@ func run(_ context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) err
 		return stacktrace.Propagate(err, "An error occurred getting metrics user id")
 	}
 
+	isBugFeedback, err := flags.GetBool(bugFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a boolean flag with key '%v' but none was found; this is an error in Kurtosis!", bugFlagKey)
+	}
+
+	isFeatureRequestFeedback, err := flags.GetBool(featureRequestFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a boolean flag with key '%v' but none was found; this is an error in Kurtosis!", featureRequestFlagKey)
+	}
+
+	isDocsFeedback, err := flags.GetBool(docsFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a boolean flag with key '%v' but none was found; this is an error in Kurtosis!", docsFlagKey)
+	}
+
+	//TODO validate flags can be related
+
 	isEmailFlagActivated, err = flags.GetBool(emailFlagKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected a boolean flag with key '%v' but none was found; this is an error in Kurtosis!", emailFlagKey)
@@ -153,16 +200,17 @@ func run(_ context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) err
 		return stacktrace.Propagate(err, "Expected a boolean flag with key '%v' but none was found; this is an error in Kurtosis!", calendlyFlagKey)
 	}
 
-	if isEmailFlagActivated || (doesUserFillMsg && !isGithubFlagActivated) {
-		if err := multi_os_command_executor.OpenFile(emailLink); err != nil {
-			return stacktrace.Propagate(err, "An error occurred while opening the feedback email link")
+	if isGithubFlagActivated {
+
+		if err := multi_os_command_executor.OpenFile(gitHubIssueURL); err != nil {
+			return stacktrace.Propagate(err, "An error occurred while opening the Kurtosis Github issue page")
 		}
 		return nil
 	}
 
-	if isGithubFlagActivated {
-		if err := multi_os_command_executor.OpenFile(gitHubIssueURL); err != nil {
-			return stacktrace.Propagate(err, "An error occurred while opening the Kurtosis Github issue page")
+	if isEmailFlagActivated || (doesUserFillMsg && !isGithubFlagActivated) {
+		if err := multi_os_command_executor.OpenFile(emailLink); err != nil {
+			return stacktrace.Propagate(err, "An error occurred while opening the feedback email link")
 		}
 		return nil
 	}
