@@ -7,11 +7,11 @@ import (
 )
 
 var (
-	once               sync.Once
-	contextConfigStore ContextConfigStore
+	once                sync.Once
+	contextsConfigStore ContextsConfigStore
 )
 
-type ContextConfigStore interface {
+type ContextsConfigStore interface {
 	// GetKurtosisContextsConfig returns the currently saved contexts configuration.
 	GetKurtosisContextsConfig() (*generated.KurtosisContextsConfig, error)
 
@@ -31,9 +31,9 @@ type ContextConfigStore interface {
 	RemoveContext(contextUuid *generated.ContextUuid) error
 }
 
-func GetContextConfigStore() ContextConfigStore {
+func GetContextsConfigStore() ContextsConfigStore {
 	once.Do(func() {
-		contextConfigStore = NewContextConfigStore(persistence.NewFileBackedConfigPersistence())
+		contextsConfigStore = NewContextConfigStore(persistence.NewFileBackedConfigPersistence())
 	})
-	return contextConfigStore
+	return contextsConfigStore
 }

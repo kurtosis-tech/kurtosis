@@ -19,7 +19,7 @@ type contextConfigStoreImpl struct {
 	storage persistence.ConfigPersistence
 }
 
-func NewContextConfigStore(storage persistence.ConfigPersistence) ContextConfigStore {
+func NewContextConfigStore(storage persistence.ConfigPersistence) ContextsConfigStore {
 	return &contextConfigStoreImpl{
 		RWMutex: &sync.RWMutex{},
 		storage: storage,
@@ -93,6 +93,11 @@ func (store *contextConfigStoreImpl) AddNewContext(newContext *generated.Kurtosi
 	store.Lock()
 	defer store.Unlock()
 
+	if newContext.GetName() == persistence.DefaultContextName {
+		return stacktrace.NewError("Adding a new context names '%s' is not allowed as it is the reserved context "+
+			"name", persistence.DefaultContextName)
+	}
+
 	contextsConfig, err := store.storage.LoadContextsConfig()
 	if err != nil {
 		return stacktrace.Propagate(err, "Unable to load the list of contexts currently stored")
@@ -136,10 +141,14 @@ func (store *contextConfigStoreImpl) RemoveContext(contextUuid *generated.Contex
 	foundContextToRemove := false
 	var newContexts []*generated.KurtosisContext
 	for _, kurtosisContextInStore := range contextsConfig.GetContexts() {
-		if kurtosisContextInStore.GetUuid().GetValue() != contextUuid.GetValue() {
-			newContexts = append(newContexts, kurtosisContextInStore)
-		} else {
+		if kurtosisContextInStore.GetUuid().GetValue() == contextUuid.GetValue() {
+			if kurtosisContextInStore.GetName() == persistence.DefaultContextName {
+				return stacktrace.NewError("Cannot remove context '%s' as it is a reserved context",
+					persistence.DefaultContextName)
+			}
 			foundContextToRemove = true
+		} else {
+			newContexts = append(newContexts, kurtosisContextInStore)
 		}
 	}
 
