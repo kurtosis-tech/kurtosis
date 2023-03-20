@@ -31,7 +31,7 @@ const (
 	isEnclaveIdArgOptional  = false
 	isEnclaveIdArgGreedy    = false
 
-	serviceIdentifierArgKey  = "service-identifier"
+	serviceIdentifierArgKey  = "service"
 	isServiceGuidArgOptional = false
 	isServiceGuidArgGreedy   = false
 

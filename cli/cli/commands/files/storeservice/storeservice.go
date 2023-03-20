@@ -24,7 +24,7 @@ const (
 	isEnclaveIdArgOptional  = false
 	isEnclaveIdArgGreedy    = false
 
-	serviceIdentifierArgKey        = "service-identifier"
+	serviceIdentifierArgKey        = "service"
 	isServiceIdentifierArgOptional = false
 	isServiceIdentifierArgGreedy   = false
 	absoluteFilepathArgKey         = "filepath"
