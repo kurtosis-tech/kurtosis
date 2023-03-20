@@ -2,6 +2,7 @@ package lowlevel
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
@@ -272,7 +273,8 @@ func (kurtosisCmd *LowlevelKurtosisCommand) MustGetCobraCommand() *cobra.Command
 		if kurtosisCmd.PreValidationAndRunFunc != nil {
 			newCtx, err := kurtosisCmd.PreValidationAndRunFunc(ctx)
 			if err != nil {
-				return stacktrace.Propagate(err, "An error occurred running the pre-validation-and-run function")
+				errorFromStackTrace := stacktrace.Propagate(err, "An error occurred running the pre-validation-and-run function")
+				return removeFilePathFromErrorMessage(errorFromStackTrace.Error())
 			}
 			ctx = newCtx
 		}
@@ -287,12 +289,14 @@ func (kurtosisCmd *LowlevelKurtosisCommand) MustGetCobraCommand() *cobra.Command
 				continue
 			}
 			if err := validationFunc(ctx, parsedFlags, parsedArgs); err != nil {
-				return stacktrace.Propagate(err, "An error occurred validating arg '%v'", config.Key)
+				errorFromStackTrace := stacktrace.Propagate(err, "An error occurred validating arg '%v'", config.Key)
+				return removeFilePathFromErrorMessage(errorFromStackTrace.Error())
 			}
 		}
 
 		if err := kurtosisCmd.RunFunc(ctx, parsedFlags, parsedArgs); err != nil {
-			return stacktrace.Propagate(err, "An error occurred running command '%v'", kurtosisCmd.CommandStr)
+			errorFromStackTrace := stacktrace.Propagate(err, "An error occurred running command '%v'", kurtosisCmd.CommandStr)
+			return removeFilePathFromErrorMessage(errorFromStackTrace.Error())
 		}
 
 		return nil
@@ -370,4 +374,20 @@ func renderArgUsageStr(arg *args.ArgConfig) string {
 		result = "[" + result + "]"
 	}
 	return result
+}
+
+// this method removes the file path from the error
+func removeFilePathFromErrorMessage(errorMessage string) error {
+	separator := "---"
+	errorMessageConvertedInList := strings.Split(errorMessage, separator)
+
+	// only the even numbered elements needs to be picked.
+	cleanErrorList := []string{}
+	for i, arr := range errorMessageConvertedInList {
+		if i%2 == 0 {
+			cleanErrorList = append(cleanErrorList, strings.Trim(arr, "\n"))
+		}
+	}
+
+	return errors.New(strings.Join(cleanErrorList, ""))
 }
