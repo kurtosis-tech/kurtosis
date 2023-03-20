@@ -2,6 +2,7 @@ package inspect
 
 import (
 	"context"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
@@ -27,19 +28,14 @@ func printFilesArtifacts(ctx context.Context, kurtosisCtx *kurtosis_context.Kurt
 		return stacktrace.Propagate(err, "An error occurred while fetching files artifacts name and uuids for enclave '%v'", enclaveContext.GetEnclaveName())
 	}
 
-	// we sort this in ascending order so that the user finds the table easy to read
-	sort.Slice(filesArtifactsNamesAndUuids, func(i, j int) bool {
-		firstFilesArtifactNameAndUuid := filesArtifactsNamesAndUuids[i]
-		secondFilesArtifactNameAndUuid := filesArtifactsNamesAndUuids[j]
-		return firstFilesArtifactNameAndUuid.GetFileName() < secondFilesArtifactNameAndUuid.GetFileName()
-	})
+	sortedFilesNamesAndUuids := sortFileNamesAndUuids(filesArtifactsNamesAndUuids)
 
 	tablePrinter := output_printers.NewTablePrinter(
 		fileUuidsHeader,
 		fileNameHeader,
 	)
 
-	for _, filesArtifactNameAndUuid := range filesArtifactsNamesAndUuids {
+	for _, filesArtifactNameAndUuid := range sortedFilesNamesAndUuids {
 		uuid := filesArtifactNameAndUuid.GetFileUuid()
 		if !showFullUuids {
 			uuid = uuid_generator.ShortenedUUIDString(uuid)
@@ -52,4 +48,15 @@ func printFilesArtifacts(ctx context.Context, kurtosisCtx *kurtosis_context.Kurt
 
 	tablePrinter.Print()
 	return nil
+}
+
+// we sort this in ascending order so that the user finds the table easy to read
+func sortFileNamesAndUuids(fileNamesAndUuids []*kurtosis_core_rpc_api_bindings.FilesArtifactNameAndUuid) []*kurtosis_core_rpc_api_bindings.FilesArtifactNameAndUuid {
+	sort.Slice(fileNamesAndUuids, func(i, j int) bool {
+		firstFilesArtifactNameAndUuid := fileNamesAndUuids[i]
+		secondFilesArtifactNameAndUuid := fileNamesAndUuids[j]
+		return firstFilesArtifactNameAndUuid.GetFileName() < secondFilesArtifactNameAndUuid.GetFileName()
+	})
+
+	return fileNamesAndUuids
 }
