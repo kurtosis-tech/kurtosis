@@ -10,7 +10,7 @@ Welcome to the [Kurtosis][homepage] quickstart!
 
 If you arrived here by chance and you're curious as to what Kurtosis _is_, [see here][what-is-kurtosis-explanation].
 
-If you're ready to get going, this guide will take ~15 minutes and will give you basic Kurtosis competency by walking you through building a Kurtosis package.
+If you're ready to get going, this guide will take ~15 minutes and will walk you through building a basic Kurtosis package. The package that you build will start a Postgres server, seed it with data, put an API in front of it, and automate loading data into it.
 
 You need to [have Kurtosis installed][installing-kurtosis-guide] (or [upgraded to latest][upgrading-kurtosis-guide] if you already have it), but you do not need any other knowledge.
 
@@ -44,6 +44,10 @@ Next, create a file called `main.star` inside your new directory with the follow
 def run(plan, args):
     plan.print("Hello, world")
 ```
+
+:::tip
+If you're using Vim, you can get syntax highlighting with `:set syntax=python`
+:::
 
 Finally, [run][kurtosis-run-reference] the script.
 
@@ -178,7 +182,7 @@ Let's see it in action, and we'll explain what's happening afterwards.
 Replace your `main.star` with the following:
 
 ```python
-data_package_module = import_module("github.com/kurtosis-tech/examples/data-package/main.star")
+data_package_module = import_module("github.com/kurtosis-tech/awesome-kurtosis/data-package/main.star")
 
 POSTGRES_PORT_ID = "postgres"
 POSTGRES_DB = "app_db"
@@ -235,7 +239,7 @@ def run(plan, args):
 Next to your `main.star`, add a file called `kurtosis.yml` with the following contents:
 
 ```bash
-name: "github.com/YOUR-GITHUB-USERNAME/kurtosis-quickstart"
+name: "github.com/john-snow/kurtosis-quickstart"
 ```
 
 Rerun:
@@ -261,7 +265,7 @@ INFO[2023-03-15T04:34:10-03:00] Executing Starlark package at '/tmp/kurtosis-qui
 INFO[2023-03-15T04:34:10-03:00] Compressing package 'github.com/YOUR-GITHUB-USERNAME/kurtosis-quickstart' at '.' for upload
 INFO[2023-03-15T04:34:10-03:00] Uploading and executing package 'github.com/YOUR-GITHUB-USERNAME/kurtosis-quickstart'
 
-> upload_files src="github.com/kurtosis-tech/examples/data-package/dvd-rental-data.tar"
+> upload_files src="github.com/kurtosis-tech/awesome-kurtosis/data-package/dvd-rental-data.tar"
 Files with artifact name 'howling-thunder' uploaded with artifact UUID '32810fc8c131414882c52b044318b2fd'
 
 > add_service service_name="postgres" config=ServiceConfig(image="postgres:15.2-alpine", ports={"postgres": PortSpec(number=5432, application_protocol="postgresql")}, files={"/seed-data": "howling-thunder"}, env_vars={"POSTGRES_DB": "app_db", "POSTGRES_PASSWORD": "password", "POSTGRES_USER": "app_user"})
@@ -371,7 +375,7 @@ Kurtosis has [a built-in packaging/dependency system][how-do-imports-work-explan
 This line at the top of your `main.star`...
 
 ```python
-data_package_module = import_module("github.com/kurtosis-tech/examples/data-package/main.star")
+data_package_module = import_module("github.com/kurtosis-tech/awesome-kurtosis/data-package/main.star")
 ```
 
 ...created a dependency on [the external Kurtosis package living here][data-package-example]. 
@@ -384,7 +388,7 @@ data_package_module_result = data_package_module.run(plan, struct())
 
 ...which in turn ran [the code in the `main.star` of that external package][data-package-example-main.star]. That Kurtosis package happens to contain [the seed data][data-package-example-seed-tar], and it uses the `upload_data` Starlark instruction on the plan to make the seed data available via a files artifact. From there, all we needed to do was mount it on the `postgres` service.
 
-This ability to modularize your distributed application logic using only a Github repo is one of Kurtosis' most loved features. We won't dive into all the usecases now, but [the examples repo][examples-repo] can serve as a good source of inspiration.
+This ability to modularize your distributed application logic using only a Github repo is one of Kurtosis' most loved features. We won't dive into all the usecases now, but [the examples here][awesome-kurtosis-repo] can serve as a good source of inspiration.
 
 
 Add an API
@@ -394,7 +398,7 @@ Databases don't come alone, however. In this section we'll add a [PostgREST API]
 Replace the contents of your `main.star` with this:
 
 ```python
-data_package_module = import_module("github.com/kurtosis-tech/examples/data-package/main.star")
+data_package_module = import_module("github.com/kurtosis-tech/awesome-kurtosis/data-package/main.star")
 
 POSTGRES_PORT_ID = "postgres"
 POSTGRES_DB = "app_db"
@@ -457,8 +461,8 @@ def run(plan, args):
         postgres.ports[POSTGRES_PORT_ID].number,
         POSTGRES_DB,
     )
-    postgrest = plan.add_service(
-        service_name = "postgrest",
+    api = plan.add_service(
+        service_name = "api",
         config = ServiceConfig(
             image = "postgrest/postgrest:v10.2.0.20230209",
             env_vars = {
@@ -471,7 +475,7 @@ def run(plan, args):
 
     # Wait for PostgREST to become available
     plan.wait(
-        service_name = "postgrest",
+        service_name = "api",
         recipe = GetHttpRequestRecipe(
             port_id = POSTGREST_PORT_ID,
             endpoint = "/actor?limit=5",
@@ -495,7 +499,7 @@ We just got a failure, just like we might when building a real system!
 > wait recipe=GetHttpRequestRecipe(port_id="http", endpoint="/actor", extract="") field="code" assertion="==" target_value=200 timeout="5s"
 There was an error executing Starlark code
 An error occurred executing instruction (number 6) at github.com/ME/kurtosis-quickstart[77:14]:
-wait(recipe=GetHttpRequestRecipe(port_id="http", endpoint="/actor", extract=""), field="code", assertion="==", target_value=200, timeout="5s", service_name="postgrest")
+wait(recipe=GetHttpRequestRecipe(port_id="http", endpoint="/actor", extract=""), field="code", assertion="==", target_value=200, timeout="5s", service_name="api")
  --- at /home/circleci/project/core/server/api_container/server/startosis_engine/startosis_executor.go:62 (StartosisExecutor.Execute.func1) ---
 Caused by: Wait timed-out waiting for the assertion to become valid. Waited for '8.183602629s'. Last assertion error was:
 <nil>
@@ -520,18 +524,14 @@ API Container Host GRPC Proxy Port:   127.0.0.1:59815
 ========================================== User Services ==========================================
 UUID           Name        Ports                                                Status
 45b355fc810b   postgres    postgres: 5432/tcp -> postgresql://127.0.0.1:59821   RUNNING
-80987420176f   postgrest   http: 3000/tcp                                       STOPPED
+80987420176f   api         http: 3000/tcp                                       STOPPED
 ```
 
-The problem is clear now: the `postgrest` service status is `STOPPED` rather than `RUNNING`. When we grab the PostgREST logs...
+The problem is clear now: the `api` service status is `STOPPED` rather than `RUNNING`. When we grab the PostgREST logs...
 
 ```bash
-kurtosis service logs quickstart postgrest
+kurtosis service logs quickstart api
 ```
-
-:::tip
-Kurtosis [has tab-completion][installing-tab-complete-guide] - even for dynamic values like enclave name - to make writing commands like this faster.
-:::
 
 ...we can see that the PostgREST is dying:
 
@@ -598,7 +598,7 @@ API Container Host GRPC Proxy Port:   127.0.0.1:59877
 ========================================== User Services ==========================================
 UUID           Name        Ports                                                Status
 ce90b471a982   postgres    postgres: 5432/tcp -> postgresql://127.0.0.1:59883   RUNNING
-98094b33cd9a   postgrest   http: 3000/tcp -> http://127.0.0.1:59887             RUNNING
+98094b33cd9a   api         http: 3000/tcp -> http://127.0.0.1:59887             RUNNING
 ```
 
 ### Review
@@ -621,8 +621,8 @@ postgres_url = "postgresql://{}:{}@{}:{}/{}".format(
 ...used the `postgres.ip_address` and `postgres.ports[POSTGRES_PORT_ID].number` future references returned by adding the Postgres service, so that when `postgres_url` was used as an environment variable during PostgREST startup...
 
 ```python
-postgrest = plan.add_service(
-    service_name = "postgrest",
+api = plan.add_service(
+    service_name = "api",
     config = ServiceConfig(
         # ...
         env_vars = {
@@ -646,18 +646,14 @@ Now that we have an API, we should be able to interact with the data.
 kurtosis enclave inspect quickstart
 ```
 
-:::tip
-Tab completion can fill enclave names too.
-:::
-
 Notice how Kurtosis automatically exposed the PostgREST container's `http` port to your machine:
 
 ```text
-28a923400e50   postgrest   http: 3000/tcp -> http://127.0.0.1:59992             RUNNING
+28a923400e50   api         http: 3000/tcp -> http://127.0.0.1:59992             RUNNING
 ```
 
 :::info
-In this output, the `http` port is exposed as URL `http://127.0.0.1:59992` but your output will be different.
+In this output the `http` port is exposed as URL `http://127.0.0.1:59992`, but your port number will be different.
 :::
 
 You can paste the URL from your output into your browser (or Cmd+click it in iTerm) to verify that you are indeed talking to the PostgREST inside your `quickstart` enclave:
@@ -666,16 +662,16 @@ You can paste the URL from your output into your browser (or Cmd+click it in iTe
 {"swagger":"2.0","info":{"description":"","title":"standard public schema","version":"10.2.0.20230209 (pre-release) (a1e2fe3)"},"host":"0.0.0.0:3000","basePath":"/","schemes":["http"],"consumes":["application/json","application/vnd.pgrst.object+json","text/csv"],"produces":["application/json","application/vnd.pgrst.object+json","text/csv"],"paths":{"/":{"get":{"tags":["Introspection"],"summary":"OpenAPI description (this document)","produces":["application/openapi+json","application/json"],"responses":{"200":{"description":"OK"}}}},"/actor":{"get":{"tags":["actor"],"parameters":[{"$ref":"#/parameters/rowFilter.actor.actor_id"},{"$ref":"#/parameters/rowFilter.actor.first_name"},{"$ref":"#/parameters/rowFilter.actor.last_name"},{"$ref":"#/parameters/rowFilter.actor.last_update"},{"$ref":"#/parameters/select"},{"$ref":"#/parameters/order"},{"$ref":"#/parameters/range"},{"$ref":"#/parameters/rangeUnit"},{"$ref":"#/parameters/offset"},{"$ref":"#/parameters/limit"},{"$ref":"#/parameters/preferCount"}], ...
 ```
 
-Now make a request to insert a row into the database (replacing the `http://127.0.0.1:59992` portion of the URL with the correct URL from your `enclave inspect` output)...
+Now make a request to insert a row into the database (replacing `$YOUR_PORT` with the correct PostgREST `http` port from your `enclave inspect` output)...
 
 ```bash
-curl -XPOST -H "content-type: application/json" <YOUR_HTTP_URL>/actor --data '{"first_name": "Kevin", "last_name": "Bacon"}'
+curl -XPOST -H "content-type: application/json" http://127.0.0.1:$YOUR_PORT/actor --data '{"first_name": "Kevin", "last_name": "Bacon"}'
 ```
 
-...and then query for it (again replacing `http://127.0.0.1:59992` with your correct URL)...
+...and then query for it (again replacing `$YOUR_PORT` with your port)...
 
 ```bash
-curl -XGET "http://127.0.0.1:<YOUR_URL>/actor?first_name=eq.Kevin&last_name=eq.Bacon"
+curl -XGET "http://127.0.0.1:$YOUR_PORT/actor?first_name=eq.Kevin&last_name=eq.Bacon"
 ```
 
 ...to get it back:
@@ -687,7 +683,7 @@ curl -XGET "http://127.0.0.1:<YOUR_URL>/actor?first_name=eq.Kevin&last_name=eq.B
 Of course, it'd be much nicer to formalize this in Kurtosis. Replace your `main.star` with the following:
 
 ```python
-data_package_module = import_module("github.com/kurtosis-tech/examples/data-package/main.star")
+data_package_module = import_module("github.com/kurtosis-tech/awesome-kurtosis/data-package/main.star")
 
 POSTGRES_PORT_ID = "postgres"
 POSTGRES_DB = "app_db"
@@ -750,8 +746,8 @@ def run(plan, args):
         postgres.ports[POSTGRES_PORT_ID].number,
         POSTGRES_DB,
     )
-    postgrest = plan.add_service(
-        service_name = "postgrest",
+    api = plan.add_service(
+        service_name = "api",
         config = ServiceConfig(
             image = "postgrest/postgrest:v10.2.0.20230209",
             env_vars = {
@@ -764,7 +760,7 @@ def run(plan, args):
 
     # Wait for PostgREST to become available
     plan.wait(
-        service_name = "postgrest",
+        service_name = "api",
         recipe = GetHttpRequestRecipe(
             port_id = POSTGREST_PORT_ID,
             endpoint = "/actor?limit=5",
@@ -781,7 +777,7 @@ def run(plan, args):
 
 def insert_data(plan, data):
     plan.request(
-        service_name = "postgrest",
+        service_name = "api",
         recipe = PostHttpRequestRecipe(
             port_id = POSTGREST_PORT_ID,
             endpoint = "/actor",
@@ -797,10 +793,10 @@ Now clean and run, only this time with extra args to `kurtosis run`:
 kurtosis clean -a && kurtosis run --enclave quickstart . '[{"first_name":"Kevin", "last_name": "Bacon"}, {"first_name":"Steve", "last_name":"Buscemi"}]'
 ```
 
-Using the new `http` URL on the `postgrest` service in the output, query for the rows you just added (replacing `http://127.0.0.1:59992` with your URL)...
+Using the new `http` URL on the `api` service in the output, query for the rows you just added (replacing `$YOUR_PORT` with your correct PostgREST `http` port number)...
 
 ```bash
-curl -XGET "<YOUR_HTTP_URL>/actor?or=(last_name.eq.Buscemi,last_name.eq.Bacon)"
+curl -XGET "http://127.0.0.1:$YOUR_PORT/actor?or=(last_name.eq.Buscemi,last_name.eq.Bacon)"
 ```
 
 ...to yield:
@@ -817,7 +813,7 @@ Mechanically, we first create a JSON string of data using Starlark's `json.encod
 
 ```python
 plan.request(
-    service_name = "postgrest",
+    service_name = "api",
     recipe = PostHttpRequestRecipe(
         port_id = POSTGREST_PORT_ID,
         endpoint = "/actor",
@@ -833,17 +829,21 @@ At a higher level, Kurtosis automatically deserialized the `[{"first_name":"Kevi
 def run(plan, args):
 ```
 
+<!-- 
+// NOTE(ktoday): We commented this out because the Git publishing aspect was giving people trouble (needed to have Git set up, 'git init' was hard, etc.
+// I still think that publishing/shareability is a large part of Kurtosis, but there's probably a better way to highlight this
+
 Publishing
 ----------
 Congratulations - you've written your very first distributed application in Kurtosis! Now it's time to share it with the world.
 
 The Kurtosis packaging system uses Github as its package repository, just like Go modules. Also like Go modules, Kurtosis packages need their name to match their location on Github.
 
-Update the `name` key of the `kurtosis.yml` file to replace `YOUR-GITHUB-USERNAME` with your Github username:
+Update the `name` key of the `kurtosis.yml` file to replace `john-snow` with your Github username:
 
 ```yaml
 # You'll need to update this
-name: "github.com/YOUR-GITHUB-USERNAME/kurtosis-quickstart"
+name: "github.com/john-snow/kurtosis-quickstart"
 ```
 
 Create a new repository on Github, owned by you, named `kurtosis-quickstart` by clicking [here](https://github.com/new).
@@ -870,6 +870,7 @@ kurtosis clean -a && kurtosis run --enclave quickstart github.com/YOUR-GITHUB-US
 
 ### Review
 Publishing a Kurtosis package is as simple as verifying the `name` key in `kurtosis.yml` matches your repo and pushing it to Github. That package will then be available to every `kurtosis run`, as well as every Starlark script via the `import_module` composition flow.
+-->
 
 <!-- TODO TODO TDOO
 Testing
@@ -881,15 +882,15 @@ Testing
 
 Conclusion
 ----------
-In this tutorial you have:
+And that's it - you've written your very first distributed application in Kurtosis!
+
+Let's review. In this tutorial you have:
 
 - Started a Postgres database
 - Seeded it by importing a third-party Starlark package
 - Added an API server
 - Inserted & queried data via the API
 - Parameterized data insertion
-- Published your package
-- Consumed your package directly from Github
 
 Along the way you've learned about several Kurtosis concepts:
 
@@ -902,7 +903,9 @@ Along the way you've learned about several Kurtosis concepts:
 - [Kurtosis packages][packages-reference]
 - [Future references][future-references-reference]
 
-Now that you've reached the end, we'd love to hear from you - what went well for you, and what didn't? You can file issues and feature requests on Github...
+But this was still just the intro to Kurtosis. To see examples that you can easily modify to be relevant to you, [check out our `awesome-kurtosis` repo][awesome-kurtosis-repo]. To explore real-scale Kurtosis packages delivering value, see [the Ethereum package][ethereum-package], [Waku package][waku-package], or [NEAR package][near-package].
+
+And now that you've reached the end, we'd love to hear from you - what went well for you, and what didn't? You can file issues and feature requests on Github...
 
 ```bash
 kurtosis feedback --github
@@ -941,7 +944,6 @@ Or you can simply dive deeper into the docs:
 <!--------------------------- Guides ------------------------------------>
 [installing-kurtosis-guide]: ./guides/installing-the-cli.md
 [upgrading-kurtosis-guide]: ./guides/upgrading-the-cli.md
-[installing-tab-complete-guide]: ./guides/adding-tab-completion.md
 
 <!--------------------------- Explanations ------------------------------------>
 [architecture-explanation]: ./explanations/architecture.md
@@ -979,10 +981,10 @@ Or you can simply dive deeper into the docs:
 
 <!--------------------------- Other ------------------------------------>
 <!-- Examples repo -->
-[examples-repo]: https://github.com/kurtosis-tech/examples
-[data-package-example]: https://github.com/kurtosis-tech/examples/tree/main/data-package
-[data-package-example-main.star]: https://github.com/kurtosis-tech/examples/blob/main/data-package/main.star
-[data-package-example-seed-tar]: https://github.com/kurtosis-tech/examples/blob/main/data-package/dvd-rental-data.tar
+[awesome-kurtosis-repo]: https://github.com/kurtosis-tech/awesome-kurtosis
+[data-package-example]: https://github.com/kurtosis-tech/awesome-kurtosis/tree/main/data-package
+[data-package-example-main.star]: https://github.com/kurtosis-tech/awesome-kurtosis/blob/main/data-package/main.star
+[data-package-example-seed-tar]: https://github.com/kurtosis-tech/awesome-kurtosis/blob/main/data-package/dvd-rental-data.tar
 
 <!-- Misc -->
 [homepage]: https://kurtosis.com
@@ -992,3 +994,6 @@ Or you can simply dive deeper into the docs:
 [bazel-github]: https://github.com/bazelbuild/bazel/
 [starlark-github-repo]: https://github.com/bazelbuild/starlark
 [postgrest]: https://postgrest.org/en/stable/
+[ethereum-package]: https://github.com/kurtosis-tech/eth2-package
+[waku-package]: https://github.com/logos-co/wakurtosis
+[near-package]: https://github.com/kurtosis-tech/near-package
