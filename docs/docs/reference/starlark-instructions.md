@@ -345,7 +345,7 @@ http_response = plan.request(
     
     # If False, instruction will never fail based on code (acceptable_codes will be ignored).
     # You can chain this call with assert to check codes after request is done.
-    # OPTIONAL (defaults to false)
+    # OPTIONAL (defaults to False)
     skip_code_check = false,
     
     # A service name designating a service that already exists inside the enclave
