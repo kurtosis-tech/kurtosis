@@ -589,7 +589,7 @@ response = plan.wait(
 
     # The timeout value is the maximum time that the command waits for the assertion to be true
     # Follows Go "time.Duration" format https://pkg.go.dev/time#ParseDuration
-    # OPTIONAL (Default: "15m")
+    # OPTIONAL (Default: "10s")
     timeout = "5m",
 
     # A Service name designating a service that already exists inside the enclave

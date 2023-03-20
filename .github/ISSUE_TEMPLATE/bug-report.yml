@@ -24,7 +24,7 @@ body:
       placeholder: e.g. 07d1472497dg44593e5520436603ca4c3423423bd608bec371f9343dxcf4b
       description: |
         (Optional) To print your metrics user ID, run `kurtosis analytics id`. This information will help us debug and fix issues quicker.
-        Read more about our metrics philosophy at https://docs.kurtosis.com/explanations/metrics-philosophy.
+        [Read more about our metrics philosophy](https://docs.kurtosis.com/explanations/metrics-philosophy).
     validations:
       required: false
   - type: dropdown
@@ -56,12 +56,11 @@ body:
   - type: textarea
     id: logs
     attributes:
-      label: Relevant log output
-      placeholder: Copy-paste relevant log outputs here.
+      label: Relevant logs from `kurtosis enclave dump`
+      placeholder: Attach relevant container and/or Kurtosis engine log files, preferrably those that come from `kurtosis enclave dump`. 
       render: true
       description: |
-        Consider copy-pasting any relevant log outputs here from your command line. Doing so helps our team better understand what is happening. 
-        Logs can also be exported from your enclave to a chosen output directory using the command `kurtosis enclave dump $THE_ENCLAVE_IDENTIFIER $OUTPUT_DIRECTORY`
+        Use this section to attach relevant log files from [`kurtosis enclave dump`](https://docs.kurtosis.com/enclave-dump). Doing so helps our team better understand what is happening. 
     validations:
       required: false
   - type: textarea

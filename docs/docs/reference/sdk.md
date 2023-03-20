@@ -620,7 +620,7 @@ the `Float64` method on the `json.Number` first, so above would look like `{{pri
 <!-- TODO Make the function definition not include args or return values, so we don't get these huge ugly links that break if we change the function signature -->
 <!-- TODO make the reference names a) be properly-cased (e.g. "Service.isAvailable" rather than "service_isavailable") and b) have an underscore in front of them, so they're easy to find-replace without accidentally over-replacing -->
 
-[kurtosis-sdk-repo]: https://github.com/kurtosis-tech/kurtosis-sdk
+[kurtosis-sdk-repo]: https://github.com/kurtosis-tech/kurtosis/tree/main/api
 
 [servicelogsstreamcontent]: #servicelogsstreamcontent
 [servicelog]: #servicelog

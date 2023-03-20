@@ -24,14 +24,9 @@ const (
 	apiContainerVersionFlagKey  = "api-container-version"
 	apiContainerLogLevelFlagKey = "api-container-log-level"
 	isSubnetworksEnabledFlagKey = "with-subnetworks"
-	// TODO(deprecation) remove enclave ids in favor of names
-	enclaveIdFlagKey   = "id"
-	enclaveNameFlagKey = "name"
+	enclaveNameFlagKey          = "name"
 
 	defaultIsSubnetworksEnabled = "false"
-
-	// Signifies that an enclave ID should be auto-generated
-	autogenerateEnclaveIdKeyword = ""
 
 	// Signifies that an enclave name should be auto-generated
 	autogenerateEnclaveNameKeyword = ""
@@ -72,17 +67,6 @@ var EnclaveAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 			Default:   defaultIsSubnetworksEnabled,
 			Usage:     "If set to true then the enclave that gets created will have subnetwork capabilities",
 		}, {
-			Key:       enclaveIdFlagKey,
-			Shorthand: "i",
-			Default:   autogenerateEnclaveIdKeyword,
-			Usage: fmt.Sprintf(
-				"The enclave ID to give the new enclave, which must match regex '%v' "+
-					"(emptystring will autogenerate an enclave ID). Note this will be deprecated in favor of '%v'",
-				enclave_consts.AllowedEnclaveNameCharsRegexStr,
-				enclaveNameFlagKey,
-			),
-			Type: flags.FlagType_String,
-		}, {
 			Key:       enclaveNameFlagKey,
 			Shorthand: "n",
 			Default:   autogenerateEnclaveNameKeyword,
@@ -120,11 +104,6 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred while getting the API Container log level using flag with key '%v'; this is a bug in Kurtosis", apiContainerLogLevelFlagKey)
 	}
 
-	enclaveIdStr, err := flags.GetString(enclaveIdFlagKey)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while getting the enclave id using flag with key '%v'; this is a bug in Kurtosis ", enclaveIdFlagKey)
-	}
-
 	enclaveName, err := flags.GetString(enclaveNameFlagKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while getting the enclave name using flag with key '%v'; this is a bug in Kurtosis ", enclaveNameFlagKey)
@@ -146,12 +125,6 @@ func run(
 
 	logrus.Info("Creating new enclave...")
 
-	// if the enclave id is provider but name isn't we go with the supplied id
-	// TODO deprecate ids
-	if enclaveIdStr != autogenerateEnclaveIdKeyword && enclaveName == autogenerateEnclaveNameKeyword {
-		enclaveName = enclaveIdStr
-	}
-
 	if err = metricsClient.TrackCreateEnclave(enclaveName); err != nil {
 		logrus.Warn("An error occurred while logging the create enclave event")
 	}
@@ -164,7 +137,7 @@ func run(
 	}
 	createdEnclaveResponse, err := engineClient.CreateEnclave(ctx, createEnclaveArgs)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating an enclave with ID '%v'", enclaveIdStr)
+		return stacktrace.Propagate(err, "An error occurred creating an enclave with ID '%v'", enclaveName)
 	}
 
 	enclaveInfo := createdEnclaveResponse.GetEnclaveInfo()

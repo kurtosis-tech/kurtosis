@@ -38,6 +38,13 @@ jobs:
           working-directory: contexts-config-store/
           args: --timeout=3m
           skip-pkg-cache: true
+      - name: lint-name-generator
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.49.0
+          working-directory: name_generator/
+          args: --timeout=3m
+          skip-pkg-cache: true
       - name: lint-api-golang
         uses: golangci/golangci-lint-action@v3
         with:
