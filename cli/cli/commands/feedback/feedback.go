@@ -15,6 +15,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/savioxavier/termlink"
 	"net/url"
+	"strings"
 )
 
 const (
@@ -59,6 +60,8 @@ const (
 	userMsgArgDefaultValue = "default-message-value"
 	userMsgArgIsOptional   = true
 	userMsgArgIsNotGreedy  = false
+
+	flagKeysStrSeparator = ", "
 )
 
 var FeedbackCmd = &lowlevel.LowlevelKurtosisCommand{
@@ -130,6 +133,18 @@ func run(_ context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) err
 	doesUserFillMsg := true
 
 	// Args parsing and validation
+	mutuallyExclusiveFeedbackTypeFlagKeys := []string{githubFlagKey, emailFlagKey, calendlyFlagKey}
+
+	if err := validateMutuallyExclusiveBooleanFlags(flags, mutuallyExclusiveFeedbackTypeFlagKeys); err != nil {
+		return stacktrace.Propagate(err, "An error occurred validating mutually exclusive flags '%+v'", mutuallyExclusiveFeedbackTypeFlagKeys)
+	}
+
+	mutuallyExclusiveIssueTypeFlagKeys := []string{bugFlagKey, featureRequestFlagKey, docsFlagKey}
+
+	if err := validateMutuallyExclusiveBooleanFlags(flags, mutuallyExclusiveIssueTypeFlagKeys); err != nil {
+		return stacktrace.Propagate(err, "An error occurred validating mutually exclusive flags '%+v'", mutuallyExclusiveIssueTypeFlagKeys)
+	}
+
 	userMsg, err := args.GetNonGreedyArg(userMsgArgKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the user message argument using flag key '%v'", userMsgArgKey)
@@ -157,22 +172,20 @@ func run(_ context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) err
 		return stacktrace.Propagate(err, "An error occurred getting metrics user id")
 	}
 
-	isBugFeedback, err := flags.GetBool(bugFlagKey)
+	_, err = flags.GetBool(bugFlagKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected a boolean flag with key '%v' but none was found; this is an error in Kurtosis!", bugFlagKey)
 	}
 
-	isFeatureRequestFeedback, err := flags.GetBool(featureRequestFlagKey)
+	_, err = flags.GetBool(featureRequestFlagKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected a boolean flag with key '%v' but none was found; this is an error in Kurtosis!", featureRequestFlagKey)
 	}
 
-	isDocsFeedback, err := flags.GetBool(docsFlagKey)
+	_, err = flags.GetBool(docsFlagKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected a boolean flag with key '%v' but none was found; this is an error in Kurtosis!", docsFlagKey)
 	}
-
-	//TODO validate flags can be related
 
 	isEmailFlagActivated, err = flags.GetBool(emailFlagKey)
 	if err != nil {
@@ -241,6 +254,25 @@ func validateUserMsgArg(_ context.Context, _ *flags.ParsedFlags, args *args.Pars
 
 	if userMsgArg == "" {
 		return stacktrace.Propagate(err, "Error validating the user message argument, it can be an empty string")
+	}
+	return nil
+}
+
+//TODO we could add this to the command framework
+func validateMutuallyExclusiveBooleanFlags(flags *flags.ParsedFlags, flagKeys []string) error {
+	anyPreviousFlagSet := false
+	for _, flagKey := range flagKeys {
+		flagValue, err := flags.GetBool(flagKey)
+		if err != nil {
+			return stacktrace.Propagate(err, "Expected a boolean flag with key '%v' but none was found; this is an error in Kurtosis!", flagValue)
+		}
+		if flagValue && anyPreviousFlagSet {
+			flagKeysStr := strings.Join(flagKeys, flagKeysStrSeparator)
+			return stacktrace.NewError("Flags '%s' are mutually exclusive, you have to pass only one of them", flagKeysStr)
+		}
+		if flagValue {
+			anyPreviousFlagSet = true
+		}
 	}
 	return nil
 }
