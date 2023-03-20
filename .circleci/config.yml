@@ -975,9 +975,6 @@ workflows:
                         "pattern": "https://github.com/kurtosis-tech/kurtosis-internal-docs/.*"
                     },
                     {
-                        "pattern": "https://github.com/kurtosis-tech/docs"
-                    },
-                    {
                         "pattern": "https://www.notion.so/kurtosistech.*"
                     }
                 ]
