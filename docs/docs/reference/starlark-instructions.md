@@ -343,7 +343,7 @@ http_response = plan.request(
     # OPTIONAL (Defaults to [200, 201, ...])
     acceptable_codes = [200, 500], # Here both 200 and 500 are valid codes that we want to accept and not fail the instruction
     
-    # If false, instruction will never fail based on code (acceptable_codes will be ignored).
+    # If False, instruction will never fail based on code (acceptable_codes will be ignored).
     # You can chain this call with assert to check codes after request is done.
     # OPTIONAL (defaults to false)
     skip_code_check = false,
