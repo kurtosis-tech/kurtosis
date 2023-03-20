@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	enclaveIdentifiersArgKey = "enclave-identifiers"
+	enclaveIdentifiersArgKey = "enclaves"
 	isEnclaveIdArgOptional   = false
 	isEnclaveIdArgGreedy     = true
 
