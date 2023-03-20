@@ -135,7 +135,7 @@ func (builtin *ExecCapabilities) Interpret(arguments *builtin_argument.ArgumentV
 	if arguments.IsSet(SkipCodeCheckArgName) {
 		skipCodeCheckArgumentValue, err := builtin_argument.ExtractArgumentValue[starlark.Bool](arguments, SkipCodeCheckArgName)
 		if err != nil {
-			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ServiceNameArgName)
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", SkipCodeCheckArgName)
 		}
 		skipCodeCheck = bool(skipCodeCheckArgumentValue)
 	}
