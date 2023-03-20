@@ -135,6 +135,29 @@ func TestFileStore_RemoveFileFailsForNonExistentId(t *testing.T) {
 	require.NotNil(t, err)
 }
 
+func TestFilesArtifactStore_GetFileNamesAndUuids(t *testing.T) {
+	fileStore := getTestFileStore(t)
+	testContent := "Long Live Kurtosis!"
+	otherTestContent := "Long Live Kurtosis, But Different!"
+
+	//Write Both Files
+	reader := strings.NewReader(testContent)
+	testArtifact1 := "test-artifact-1"
+	uuid, err := fileStore.StoreFile(reader, testArtifact1)
+	require.Nil(t, err)
+
+	reader = strings.NewReader(otherTestContent)
+	testArtifact2 := "test-artifact-2"
+	anotherUUID, err := fileStore.StoreFile(reader, testArtifact2)
+	require.Nil(t, err)
+	require.NotEqual(t, uuid, anotherUUID)
+
+	fileNameAndUuids := fileStore.GetFileNamesAndUuids()
+	require.Len(t, fileNameAndUuids, 2)
+	require.Contains(t, fileNameAndUuids, FileNameAndUuid{uuid: uuid, name: testArtifact1})
+	require.Contains(t, fileNameAndUuids, FileNameAndUuid{uuid: anotherUUID, name: testArtifact2})
+}
+
 func getTestFileStore(t *testing.T) *FilesArtifactStore {
 	absDirpath, err := ioutil.TempDir("", "")
 	require.Nil(t, err)
