@@ -11,6 +11,9 @@ concurrency:
   cancel-in-progress: true
 
 on:
+  push:
+    branches:
+      - gh-readonly-queue/main/**
   pull_request:
 
 jobs:
