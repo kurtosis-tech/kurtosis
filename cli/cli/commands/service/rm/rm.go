@@ -19,11 +19,11 @@ import (
 )
 
 const (
-	enclaveIdentifierArgKey = "enclave-identifier"
+	enclaveIdentifierArgKey = "enclave"
 	isEnclaveIdArgOptional  = false
 	isEnclaveIdArgGreedy    = false
 
-	serviceIdentifierArgKey        = "service-identifier"
+	serviceIdentifierArgKey        = "service"
 	isServiceIdentifierArgOptional = false
 	isServiceIdentifierArgGreedy   = false
 
