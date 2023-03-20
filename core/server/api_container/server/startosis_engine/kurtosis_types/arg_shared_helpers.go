@@ -3,6 +3,7 @@ package kurtosis_types
 import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
 	"reflect"
 )
@@ -65,4 +66,21 @@ func SafeCastToString(expectedValueString starlark.Value, argNameForLogging stri
 		return "", startosis_errors.NewInterpretationError("'%s' is expected to be a string. Got %s", argNameForLogging, reflect.TypeOf(expectedValueString))
 	}
 	return castValue.GoString(), nil
+}
+
+func SafeCastToIntegerSlice(starlarkList *starlark.List) ([]int64, error) {
+	slice := []int64{}
+	for i := 0; i < starlarkList.Len(); i++ {
+		value := starlarkList.Index(i)
+		starlarkCastedValue, ok := value.(starlark.Int)
+		if !ok {
+			return nil, stacktrace.NewError("An error occurred when casting element '%v' from slice '%v' to integer", value, starlarkList)
+		}
+		castedValue, ok := starlarkCastedValue.Int64()
+		if !ok {
+			return nil, stacktrace.NewError("An error occurred when casting element '%v' to Go integer", castedValue)
+		}
+		slice = append(slice, castedValue)
+	}
+	return slice, nil
 }

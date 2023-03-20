@@ -448,6 +448,19 @@ func (apicService ApiContainerService) RenderTemplatesToFilesArtifact(ctx contex
 	return response, nil
 }
 
+func (apicService ApiContainerService) ListFilesArtifactNamesAndUuids(_ context.Context, _ *emptypb.Empty) (*kurtosis_core_rpc_api_bindings.ListFilesArtifactNamesAndUuidsResponse, error) {
+	filesArtifactsNamesAndUuids := apicService.filesArtifactStore.GetFileNamesAndUuids()
+	var filesArtifactNamesAndUuids []*kurtosis_core_rpc_api_bindings.FilesArtifactNameAndUuid
+	for _, nameAndUuid := range filesArtifactsNamesAndUuids {
+		fileNameAndUuidGrpcType := &kurtosis_core_rpc_api_bindings.FilesArtifactNameAndUuid{
+			FileName: nameAndUuid.GetName(),
+			FileUuid: string(nameAndUuid.GetUuid()),
+		}
+		filesArtifactNamesAndUuids = append(filesArtifactNamesAndUuids, fileNameAndUuidGrpcType)
+	}
+	return &kurtosis_core_rpc_api_bindings.ListFilesArtifactNamesAndUuidsResponse{FileNamesAndUuids: filesArtifactNamesAndUuids}, nil
+}
+
 // ====================================================================================================
 //
 //	Private helper methods

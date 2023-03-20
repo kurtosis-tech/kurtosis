@@ -80,7 +80,7 @@ kurtosis engine restart
 [cli-changelog]: ../changelog.md
 [metrics-philosophy]: ../explanations/metrics-philosophy.md
 [quickstart]: ../quickstart.md
-[installing-tab-completion]: ./adding-tab-completion.md
+[installing-command-line-completion]: ./adding-command-line-completion.md
 
 [release-artifacts]: https://github.com/kurtosis-tech/kurtosis-cli-release-artifacts/releases
 [windows-susbsystem-for-linux]: https://learn.microsoft.com/en-us/windows/wsl/

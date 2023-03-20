@@ -22,6 +22,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/gateway"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/run"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/twitter"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/version"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/host_machine_directories"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/logrus_log_levels"
@@ -104,6 +105,7 @@ func init() {
 	RootCmd.AddCommand(gateway.GatewayCmd)
 	RootCmd.AddCommand(run.StarlarkRunCmd.MustGetCobraCommand())
 	RootCmd.AddCommand(service.ServiceCmd)
+	RootCmd.AddCommand(twitter.TwitterCmd.MustGetCobraCommand())
 	RootCmd.AddCommand(version.VersionCmd)
 }
 

@@ -15,23 +15,8 @@ kurtosis service -h
 :::
 
 :::tip
-Kurtosis supports tab-completion, and we strongly recommend [installing it][adding-tab-completion] for the best experience!
+Kurtosis supports command-line completion; we recommend [installing it][adding-command-line-completion] for the best experience.
 :::
-
-### Toggle Analytics
-On installation Kurtosis enables anonymized [analytics][metrics-philosophy-reference] by default. You can toggle this functionality simply by running:
-
-```bash
-kurtosis analytics enable
-```
-
-to enable the sending of anonymized metrics to improve the product, or:
-
-```bash
-kurtosis analytics disable
-```
-
-if you would prefer not to.
 
 ### Configuration file path
 To locate where the Kurtosis configuration file is on your machine, simply use:
@@ -49,6 +34,5 @@ kurtosis version
 ```
 
 <!-------------------- ONLY LINKS BELOW THIS POINT ----------------------->
-[adding-tab-completion]: ../../guides/adding-tab-completion.md
+[adding-command-line-completion]: ../../guides/adding-command-line-completion.md
 [installing-the-cli]: ../../guides/installing-the-cli.md
-[metrics-philosophy-reference]: ../../explanations/metrics-philosophy.md

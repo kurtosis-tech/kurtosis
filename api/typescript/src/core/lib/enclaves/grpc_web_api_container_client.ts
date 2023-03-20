@@ -24,13 +24,12 @@ import {
     StarlarkRunResponseLine,
     DownloadFilesArtifactArgs,
     DownloadFilesArtifactResponse,
-    GetExistingAndHistoricalServiceIdentifiersResponse,
+    GetExistingAndHistoricalServiceIdentifiersResponse, ListFilesArtifactNamesAndUuidsResponse,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import { ApiContainerServiceClient as ApiContainerServiceClientWeb } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb";
 import { GenericApiContainerClient } from "./generic_api_container_client";
 import { EnclaveUUID } from "./enclave_context";
 import {Readable} from "stream";
-import {ServiceError} from "@grpc/grpc-js";
 
 export class GrpcWebApiContainerClient implements GenericApiContainerClient {
 
@@ -348,6 +347,30 @@ export class GrpcWebApiContainerClient implements GenericApiContainerClient {
         }
 
         return ok(getExistingAndHistoricalServiceIdentifiersResult.value);
+    }
+
+    public async getAllFilesArtifactNamesAndUuids(): Promise<Result<ListFilesArtifactNamesAndUuidsResponse, Error>> {
+        const emptyArg: google_protobuf_empty_pb.Empty = new google_protobuf_empty_pb.Empty()
+        const getAllFilesArtifactNamesAndUuidsPromise: Promise<Result<ListFilesArtifactNamesAndUuidsResponse, Error>> = new Promise((resolve, _unusedReject) => {
+            this.client.listFilesArtifactNamesAndUuids(emptyArg, {},(error: grpc_web.RpcError | null, response?: ListFilesArtifactNamesAndUuidsResponse) => {
+                if (error === null) {
+                    if (!response) {
+                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
+                    } else {
+                        resolve(ok(response!));
+                    }
+                } else {
+                    resolve(err(error));
+                }
+            })
+        });
+
+        const getAllFilesArtifactNamesAndUuidsResult: Result<ListFilesArtifactNamesAndUuidsResponse, Error> = await getAllFilesArtifactNamesAndUuidsPromise;
+        if (getAllFilesArtifactNamesAndUuidsResult.isErr()) {
+            return err(getAllFilesArtifactNamesAndUuidsResult.error)
+        }
+
+        return ok(getAllFilesArtifactNamesAndUuidsResult.value);
     }
 
     private forwardStarlarkRunResponseLinesStreamToReadable(incomingStream: grpc_web.ClientReadableStream<StarlarkRunResponseLine>): Readable {
