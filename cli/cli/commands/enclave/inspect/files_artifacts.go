@@ -27,6 +27,7 @@ func printFilesArtifacts(ctx context.Context, kurtosisCtx *kurtosis_context.Kurt
 		return stacktrace.Propagate(err, "An error occurred while fetching files artifacts name and uuids for enclave '%v'", enclaveContext.GetEnclaveName())
 	}
 
+	// we sort this in ascending order so that the user finds the table easy to read
 	sort.Slice(filesArtifactsNamesAndUuids, func(i, j int) bool {
 		firstFilesArtifactNameAndUuid := filesArtifactsNamesAndUuids[i]
 		secondFilesArtifactNameAndUuid := filesArtifactsNamesAndUuids[j]
