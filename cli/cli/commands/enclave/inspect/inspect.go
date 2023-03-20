@@ -29,7 +29,7 @@ import (
 )
 
 const (
-	enclaveIdentifierArgKey = "sp *ServicePartitionsBucket"
+	enclaveIdentifierArgKey = "enclave"
 	isEnclaveIdArgOptional  = false
 	isEnclaveIdArgGreedy    = false
 
