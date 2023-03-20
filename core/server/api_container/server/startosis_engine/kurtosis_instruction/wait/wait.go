@@ -33,7 +33,7 @@ const (
 	TimeoutArgName     = "timeout"
 
 	defaultInterval = 1 * time.Second
-	defaultTimeout  = 15 * time.Minute
+	defaultTimeout  = 10 * time.Second
 )
 
 func NewWait(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) *kurtosis_plan_instruction.KurtosisPlanInstruction {

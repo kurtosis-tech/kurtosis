@@ -52,7 +52,7 @@ If you're using Vim, you can get syntax highlighting with `:set syntax=python`
 Finally, [run][kurtosis-run-reference] the script.
 
 ```bash
-kurtosis run --enclave-identifier quickstart main.star
+kurtosis run --enclave quickstart main.star
 ```
 
 Kurtosis will work for a bit, and then deliver you results:
@@ -126,7 +126,7 @@ def run(plan, args):
 You're almost ready to run, but you still have the `quickstart` enclave hanging around from the previous section. [Blow it away][kurtosis-clean-reference] and rerun:
 
 ```bash
-kurtosis clean -a && kurtosis run --enclave-identifier quickstart main.star
+kurtosis clean -a && kurtosis run --enclave quickstart main.star
 ```
 
 :::info
@@ -245,7 +245,7 @@ name: "github.com/john-snow/kurtosis-quickstart"
 Rerun:
 
 ```bash
-kurtosis clean -a && kurtosis run --enclave-identifier quickstart .
+kurtosis clean -a && kurtosis run --enclave quickstart .
 ```
 
 (Note that the final argument is now `.` and not `main.star`)
@@ -490,7 +490,7 @@ def run(plan, args):
 Now, run the same dev loop command as before (and don't worry about the result!):
 
 ```bash
-kurtosis clean -a && kurtosis run --enclave-identifier quickstart .
+kurtosis clean -a && kurtosis run --enclave quickstart .
 ```
 
 We just got a failure, just like we might when building a real system!
@@ -581,7 +581,7 @@ def run(plan, args):
 Replace that `"postgres"` with `POSTGRES_USER` in your `main.star` file to use the correct username, and then rerun your dev loop:
 
 ```bash
-kurtosis clean -a && kurtosis run --enclave-identifier quickstart .
+kurtosis clean -a && kurtosis run --enclave quickstart .
 ```
 
 Now at the bottom of the output we can see that the PostgREST service is `RUNNING` correctly:
@@ -790,7 +790,7 @@ def insert_data(plan, data):
 Now clean and run, only this time with extra args to `kurtosis run`:
 
 ```bash
-kurtosis clean -a && kurtosis run --enclave-identifier quickstart . '[{"first_name":"Kevin", "last_name": "Bacon"}, {"first_name":"Steve", "last_name":"Buscemi"}]'
+kurtosis clean -a && kurtosis run --enclave quickstart . '[{"first_name":"Kevin", "last_name": "Bacon"}, {"first_name":"Steve", "last_name":"Buscemi"}]'
 ```
 
 Using the new `http` URL on the `api` service in the output, query for the rows you just added (replacing `$YOUR_PORT` with your correct PostgREST `http` port number)...
@@ -863,7 +863,7 @@ git add . && git commit -m "Initial commit" && git push origin main
 Now that your package is live, any Kurtosis user can run it using their CLI without even cloning your repo:
 
 ```bash
-kurtosis clean -a && kurtosis run --enclave-identifier quickstart github.com/YOUR-GITHUB-USERNAME/kurtosis-quickstart
+kurtosis clean -a && kurtosis run --enclave quickstart github.com/YOUR-GITHUB-USERNAME/kurtosis-quickstart
 ```
 
 (Parameterization will still work, of course.)

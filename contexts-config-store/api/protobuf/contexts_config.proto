@@ -1,0 +1,62 @@
+syntax = "proto3";
+package context_config_store;
+
+// NOTE: It sucks that we have this Go-specific logic inside this file (which should be language-agnostic). However, the Protobuf team have
+// taken a hard stance on this being the way it should be done, so we have to do it this way.
+option go_package = "github.com/kurtosis-tech/kurtosis/contexts-config-store/api/golang/generated";
+
+message KurtosisContextsConfig {
+  // The UUID of the context that is currently being used
+  ContextUuid currentContextUuid = 1;
+
+  // List of contexts that are configured
+  repeated KurtosisContext contexts = 2;
+}
+
+message KurtosisContext {
+  ContextUuid uuid = 1;
+
+  string name = 2 ;
+
+  oneof kurtosis_context_info {
+    // WARNING: when adding more sub-types here, update the corresponding visitor in kurtosis_context_visitor to
+    // trigger compile time breaks in consumers
+    LocalOnlyContextV0 local_only_context_v0 = 3;
+    RemoteContextV0 remote_context_v0 = 4;
+  }
+}
+
+message ContextUuid {
+  string value = 1;
+}
+
+message LocalOnlyContextV0 {
+}
+
+message RemoteContextV0 {
+  // Hostname or IP of the remote server running Kurtosis
+  string host = 1;
+
+  // Port number Kurtosis Portal Server is listening on
+  uint32 remote_portal_port = 2;
+
+  // Port number Kurtosis backend is listening on
+  uint32 kurtosis_backend_port = 3;
+
+  // Port number used by Kurtosis Portal Server to tunnel ports to local user computer
+  uint32 tunnel_port = 4;
+
+  // TLS config to use to connect to remote Kurtosis. If absent, HTTP will be used
+  optional TlsConfig tls_config = 5;
+}
+
+message TlsConfig {
+  // Certificate Authority (CA) which signed the client certificate
+  bytes certificate_authority = 1;
+
+  // Client certificate to use for HTTPS connection to remote Kurtosis
+  bytes client_certificate = 2;
+
+  // Client certificate key to use for HTTPS connection to remote Kurtosis
+  bytes client_key = 3;
+}

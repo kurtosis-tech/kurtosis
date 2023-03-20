@@ -60,8 +60,7 @@ def run(plan, args):
 	connection_result = plan.exec(recipe=ExecRecipe(
 		service_name=SERVICE_NAME_2,
 		command=["ping", "-W", "1", "-c", "1", service_1.hostname],
-	))
-	plan.assert(connection_result["code"], "==", CONNECTION_FAILURE)
+	), acceptable_codes = [CONNECTION_FAILURE])
 
 	# Allow connection between 1 and 2
 	plan.set_connection(subnetworks=(SUBNETWORK_1, SUBNETWORK_2), config=kurtosis.connection.ALLOWED)
@@ -70,8 +69,7 @@ def run(plan, args):
 	connection_result = plan.exec(recipe=ExecRecipe(
 		service_name=SERVICE_NAME_2,
 		command=["ping", "-W", "1", "-c", "1", service_1.ip_address],
-	))
-	plan.assert(connection_result["code"], "==", CONNECTION_SUCCESS)
+	), acceptable_codes = [CONNECTION_SUCCESS])
 
 	# Reset connection to default (which is BLOCKED)
 	plan.remove_connection((SUBNETWORK_1, SUBNETWORK_2))
@@ -80,8 +78,7 @@ def run(plan, args):
 	connection_result = plan.exec(recipe=ExecRecipe(
 		service_name=SERVICE_NAME_2,
 		command=["ping", "-W", "1", "-c", "1", service_1.hostname],
-	))
-	plan.assert(connection_result["code"], "==", CONNECTION_FAILURE)
+	), acceptable_codes = [CONNECTION_FAILURE])
 
 	# Create a third subnetwork connected to SUBNETWORK_1 and add service2 to it
 	plan.set_connection((SUBNETWORK_3, SUBNETWORK_1), config=ConnectionConfig(packet_loss_percentage=0.0))
@@ -113,7 +110,7 @@ func TestAddServiceWithEmptyPortsAndWithoutPorts(t *testing.T) {
 	require.Nil(t, result.InterpretationError)
 	require.Empty(t, result.ValidationErrors)
 	require.Nil(t, result.ExecutionError)
-	require.Len(t, result.Instructions, 16)
+	require.Len(t, result.Instructions, 13)
 
 	require.Contains(t, result.RunOutput, "Test successfully executed")
 }

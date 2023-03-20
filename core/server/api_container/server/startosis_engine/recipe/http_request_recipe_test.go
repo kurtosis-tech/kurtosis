@@ -162,10 +162,6 @@ func TestStartosisInterpreter_MissingRequiredFieldForHttpRecipeWithPostMethod(t 
 			starlark.String("web-server"),
 		}),
 		starlark.Tuple([]starlark.Value{
-			starlark.String(endpointAttr),
-			starlark.String("?input=output"),
-		}),
-		starlark.Tuple([]starlark.Value{
 			starlark.String(portIdAttr),
 			starlark.String("portId"),
 		}),
@@ -180,7 +176,8 @@ func TestStartosisInterpreter_MissingRequiredFieldForHttpRecipeWithPostMethod(t 
 	}
 
 	postHttpRequestRecipe, err := MakePostHttpRequestRecipe(nil, builtin, noArgs, kwargsWithoutBody)
-	expectedError := "missing argument for body"
+	expectedError := "missing argument for endpoint"
+	require.NotNil(t, err)
 	require.Contains(t, err.Error(), expectedError)
 	require.Nil(t, postHttpRequestRecipe)
 }

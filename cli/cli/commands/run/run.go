@@ -49,11 +49,9 @@ const (
 	showEnclaveInspectFlagKey = "show-enclave-inspect"
 	showEnclaveInspectDefault = "true"
 
-	enclaveIdentifierFlagKey = "enclave-identifier"
+	enclaveIdentifierFlagKey = "enclave"
 	// Signifies that an enclave ID should be auto-generated
 	autogenerateEnclaveIdentifierKeyword = ""
-	// TODO deprecate this flag in the future
-	enclaveIdFlagKey = "enclave-id"
 
 	isSubnetworkCapabilitiesEnabledFlagKey = "with-subnetworks"
 	defaultIsSubnetworkCapabilitiesEnabled = false
@@ -105,18 +103,8 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 		},
 		{
 			Key: enclaveIdentifierFlagKey,
-			Usage: "The enclave identifier of the enclave in which the script or package will be ran." +
+			Usage: "The enclave identifier of the enclave in which the script or package will be ran. " +
 				"An enclave with this name will be created if it doesn't exist.",
-			Type:    flags.FlagType_String,
-			Default: autogenerateEnclaveIdentifierKeyword,
-		},
-		{
-			Key: enclaveIdFlagKey,
-			Usage: fmt.Sprintf(
-				"The enclave identifier of the enclave in which the script or package will be ran."+
-					"An enclave with this name will be created if it doesn't exist. This will be deprecated in favor of '%v'",
-				enclaveIdentifierFlagKey,
-			),
 			Type:    flags.FlagType_String,
 			Default: autogenerateEnclaveIdentifierKeyword,
 		},
@@ -189,13 +177,6 @@ func run(
 	userRequestedEnclaveIdentifier, err := flags.GetString(enclaveIdentifierFlagKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the enclave identifier using flag key '%s'", enclaveIdentifierFlagKey)
-	}
-
-	if userRequestedEnclaveIdentifier == autogenerateEnclaveIdentifierKeyword {
-		userRequestedEnclaveIdentifier, err = flags.GetString(enclaveIdFlagKey)
-		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred getting the enclave identifier using flag key '%s'", enclaveIdFlagKey)
-		}
 	}
 
 	isPartitioningEnabled, err := flags.GetBool(isSubnetworkCapabilitiesEnabledFlagKey)
