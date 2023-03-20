@@ -260,6 +260,15 @@ func (enclaveCtx *EnclaveContext) GetExistingAndHistoricalServiceIdentifiers(ctx
 	return services.NewServiceIdentifiers(enclaveCtx.enclaveName, response.AllIdentifiers), nil
 }
 
+// Docs available at https://docs.kurtosis.com/#getallfilesartifactnamesanduuids---filesartifactnameanduuid-filesartifactnamesanduuids
+func (enclaveCtx *EnclaveContext) GetAllFilesArtifactNamesAndUuids(ctx context.Context) ([]*kurtosis_core_rpc_api_bindings.FilesArtifactNameAndUuid, error) {
+	response, err := enclaveCtx.client.ListFilesArtifactNamesAndUuids(ctx, &emptypb.Empty{})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while fetching file names and uuids")
+	}
+	return response.GetFileNamesAndUuids(), nil
+}
+
 // ====================================================================================================
 //
 //	Private helper methods

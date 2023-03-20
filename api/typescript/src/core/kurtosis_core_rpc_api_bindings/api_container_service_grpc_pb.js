@@ -82,6 +82,17 @@ function deserialize_api_container_api_GetServicesResponse(buffer_arg) {
   return api_container_service_pb.GetServicesResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_api_container_api_ListFilesArtifactNamesAndUuidsResponse(arg) {
+  if (!(arg instanceof api_container_service_pb.ListFilesArtifactNamesAndUuidsResponse)) {
+    throw new Error('Expected argument of type api_container_api.ListFilesArtifactNamesAndUuidsResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_ListFilesArtifactNamesAndUuidsResponse(buffer_arg) {
+  return api_container_service_pb.ListFilesArtifactNamesAndUuidsResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_api_container_api_PauseServiceArgs(arg) {
   if (!(arg instanceof api_container_service_pb.PauseServiceArgs)) {
     throw new Error('Expected argument of type api_container_api.PauseServiceArgs');
@@ -519,6 +530,17 @@ renderTemplatesToFilesArtifact: {
     requestDeserialize: deserialize_api_container_api_RenderTemplatesToFilesArtifactArgs,
     responseSerialize: serialize_api_container_api_RenderTemplatesToFilesArtifactResponse,
     responseDeserialize: deserialize_api_container_api_RenderTemplatesToFilesArtifactResponse,
+  },
+  listFilesArtifactNamesAndUuids: {
+    path: '/api_container_api.ApiContainerService/ListFilesArtifactNamesAndUuids',
+    requestStream: false,
+    responseStream: false,
+    requestType: google_protobuf_empty_pb.Empty,
+    responseType: api_container_service_pb.ListFilesArtifactNamesAndUuidsResponse,
+    requestSerialize: serialize_google_protobuf_Empty,
+    requestDeserialize: deserialize_google_protobuf_Empty,
+    responseSerialize: serialize_api_container_api_ListFilesArtifactNamesAndUuidsResponse,
+    responseDeserialize: deserialize_api_container_api_ListFilesArtifactNamesAndUuidsResponse,
   },
 };
 

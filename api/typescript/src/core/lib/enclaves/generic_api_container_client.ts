@@ -9,18 +9,15 @@ import {
     ExecCommandArgs,
     ExecCommandResponse, GetExistingAndHistoricalServiceIdentifiersResponse,
     GetServicesArgs,
-    GetServicesResponse,
+    GetServicesResponse, ListFilesArtifactNamesAndUuidsResponse,
     PauseServiceArgs,
     RemoveServiceArgs,
     RemoveServiceResponse,
-    RenderTemplatesToFilesArtifactArgs,
-    RenderTemplatesToFilesArtifactResponse,
     RepartitionArgs,
     RunStarlarkPackageArgs,
     RunStarlarkScriptArgs,
     StartServicesArgs,
     StartServicesResponse,
-    StoreFilesArtifactFromServiceArgs,
     StoreWebFilesArtifactArgs,
     StoreWebFilesArtifactResponse,
     UnpauseServiceArgs,
@@ -50,4 +47,5 @@ export interface GenericApiContainerClient {
     storeWebFilesArtifact(storeWebFilesArtifactArgs: StoreWebFilesArtifactArgs): Promise<Result<StoreWebFilesArtifactResponse, Error>>
     downloadFilesArtifact(downloadFilesArtifactArgs: DownloadFilesArtifactArgs): Promise<Result<DownloadFilesArtifactResponse, Error>>
     getExistingAndHistoricalServiceIdentifiers(): Promise<Result<GetExistingAndHistoricalServiceIdentifiersResponse, Error>>
+    getAllFilesArtifactNamesAndUuids(): Promise<Result<ListFilesArtifactNamesAndUuidsResponse, Error>>
 }
