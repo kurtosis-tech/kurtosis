@@ -11,7 +11,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 )
 
-var DiscordCmd = &lowlevel.LowlevelKurtosisCommand{
+var TwitterCmd = &lowlevel.LowlevelKurtosisCommand{
 	CommandStr:               command_str_consts.TwitterCmdStr,
 	ShortDescription:         "Opens the official Kurtosis Twitter page",
 	LongDescription:          "Opens the official Kurtosis Twitter page",
