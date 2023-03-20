@@ -2,7 +2,7 @@ Kurtosis
 ========
 Kurtosis is a framework on top of Docker for writing test suites for any networked system - be it blockchain, distributed datastore, or otherwise. It handles all the gruntwork of setup, test execution, and teardown so you don't have to.
 
-Official docs found [here](https://docs.kurtosis.com) (created using Docusaurus from this repo [here](https://github.com/kurtosis-tech/docs).
+Official docs found [here](https://docs.kurtosis.com) (created using Docusaurus from this repo [here](https://github.com/kurtosis-tech/kurtosis).
 
 Development Prerequisites
 -------------------------
@@ -44,4 +44,4 @@ docker stop $(docker ps -a --quiet --filter ancestor="IMAGENAME" --format="{{.ID
 
 ### Testing the API Container Server
 
-Use this [guide](https://github.com/kurtosis-tech/kurtosis-internal-docs/blob/main/testing-grpc-services.md) to test the API Container server.
+Use this [guide]() to test the API Container server.
