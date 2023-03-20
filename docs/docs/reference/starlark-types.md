@@ -169,13 +169,9 @@ Make sure that the endpoint returns valid JSON response for both POST and GET re
 
 :::
 
-### PacketDelayDistribution
+### UniformPacketDelayDistribution
 
-The `PacketDelayDistribution` can be used in conjuction with [`ConnectionConfig`][connection-config] to introduce latency between two [`subnetworks`][subnetworks-reference]. See [`set_connection`][starlark-instructions-set-connection] instruction to learn more about its usage.
-
-#### UniformPacketDelayDistribution
-
-The `UniformPacketDelayDistribution` creates a packet delay distribution with constant delay in `ms`
+The `UniformPacketDelayDistribution` creates a packet delay distribution with constant delay in `ms`. This can be used in conjuction with [`ConnectionConfig`][connection-config] to introduce latency between two [`subnetworks`][subnetworks-reference]. See [`set_connection`][starlark-instructions-set-connection] instruction to learn more about its usage.
 
 ```python
 
@@ -187,9 +183,9 @@ delay  = UniformPacketDelayDistribution(
 )
 ```
 
-#### NormalPacketDelayDistribution
+### NormalPacketDelayDistribution
 
-The `NormalPacketDelayDistribution` can be used to create packet delays that are distributed according to a normal distribution.
+The `NormalPacketDelayDistribution` creates a packet delay distirbution that follows a normal distribution. This can be used in conjuction with [`ConnectionConfig`][connection-config] to introduce latency between two [`subnetworks`][subnetworks-reference]. See [`set_connection`][starlark-instructions-set-connection] instruction to learn more about its usage.
 
 ```python
 
