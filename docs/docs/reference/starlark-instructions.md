@@ -184,7 +184,8 @@ result = plan.exec(
     # OPTIONAL (Defaults to [0])
     acceptable_codes = [0, 0], # Here both 0 and 1 are valid codes that we want to accept and not fail the instruction
     
-    # If False, instruction will never fail based on code. You can chain this call with assert to check codes after request is done.
+    # If False, instruction will never fail based on code (acceptable_codes will be ignored).
+    # You can chain this call with assert to check codes after request is done.
     # OPTIONAL (Defaults to False)
     skip_code_check = False,
 
@@ -359,7 +360,8 @@ get_response = plan.request(
     # OPTIONAL (Defaults to [200, 201, ...])
     acceptable_codes = [200, 500], # Here both 200 and 500 are valid codes that we want to accept and not fail the instruction
     
-    # If False, instruction will never fail based on code. You can chain this call with assert to check codes after request is done.
+    # If False, instruction will never fail based on code (acceptable_codes will be ignored).
+    # You can chain this call with assert to check codes after request is done.
     # OPTIONAL (Defaults to False)
     skip_code_check = False,
     
