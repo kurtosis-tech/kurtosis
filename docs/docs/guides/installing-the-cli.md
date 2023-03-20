@@ -85,13 +85,13 @@ The Kurtosis CLI cannot be installed directly on Windows. Windows users are enco
 
 </Tabs>
 
-III. Add command-line completion
------------------------------
-[Kurtosis supports command-line completion][installing-command-line-completion], even for dynamic values like enclave names. We recommend installing it for the best Kurtosis experience.
+III. (Optional) Add command-line completion
+--------------------------------
+Kurtosis supports command-line completion to allow completing subcommands and dynamic values (e.g. enclave name during `enclave inspect`). This isn't required, but we believe it significantly enhances the Kurtosis experience for those who are using . If you'd like to install it, see [these instructions][installing-command-line-completion].
 
-IV. Run the quickstart
------------------------------
-If you're new to Kurtosis, the [quickstart][quickstart] is a great way to started using Kurtosis.
+Run the quickstart
+------------------
+If you're new to Kurtosis, you might like the [quickstart][quickstart] as a good onboarding to get started with Kurtosis.
 
 <!-------------------------- ONLY LINKS BELOW HERE ---------------------------->
 [cli-changelog]: ../changelog.md
