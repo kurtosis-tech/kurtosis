@@ -1027,6 +1027,8 @@ workflows:
 
       - build_cli:
           <<: *filters_ignore_main
+  test:
+    jobs:
       - test_basic_cli_functionality:
           name: "Test Basic CLI Functionality in Docker"
           cli-cluster-backend: "docker"
@@ -1078,7 +1080,8 @@ workflows:
             - build_cli
           <<: *filters_ignore_main
 
-      # -- Artifact-publishing jobs --------------------------------
+  publish:
+    jobs:
       - publish_kurtosis_api_typescript:
           context:
             - npmjs-user
