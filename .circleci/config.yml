@@ -937,32 +937,12 @@ workflows:
       - kurtosis-docs-checker/check-docs:
           dir-to-exclude: '"./docs/*"'
           should-check-changelog: false
-          markdown-link-check-config-json: |
-            {
-                "replacementPatterns": [
-                    {
-                        "pattern": "^../kurtosis/",
-                        "replacement": "https://kurtosis-tech.github.io/kurtosis/"
-                    }
-                ],
-                "ignorePatterns": [
-                    {
-                        "pattern": "https://github.com/kurtosis-tech/kurtosis-internal-docs/.*"
-                    },
-                    {
-                        "pattern": "https://www.notion.so/kurtosistech.*"
-                    },
-                    {
-                        "pattern": "https://github.com/kurtosis-tech/kurtosis/compare/.*"
-                    }
-                ]
-            }
           filters:
             branches:
               ignore:
                 - main
                 - release-please--branches--main--components--kurtosis
-                - gh-readonly-queue/main/.*
+                - /gh-readonly-queue.*/
 
       - build_container_engine_lib:
           filters:
