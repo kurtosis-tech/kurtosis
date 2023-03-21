@@ -145,6 +145,21 @@ func (store FilesArtifactStore) ListFiles() map[string]bool {
 	return artifactNameSet
 }
 
+func (store FilesArtifactStore) GetFileNamesAndUuids() []FileNameAndUuid {
+	store.mutex.RLock()
+	defer store.mutex.RUnlock()
+	var nameAndUuids []FileNameAndUuid
+	for artifactName, artifactUuid := range store.artifactNameToArtifactUuid {
+		nameAndUuid := FileNameAndUuid{
+			uuid: artifactUuid,
+			name: artifactName,
+		}
+		nameAndUuids = append(nameAndUuids, nameAndUuid)
+	}
+	return nameAndUuids
+
+}
+
 // CheckIfArtifactNameExists - It checks whether the FileArtifact with a name exists or not
 func (store FilesArtifactStore) CheckIfArtifactNameExists(artifactName string) bool {
 

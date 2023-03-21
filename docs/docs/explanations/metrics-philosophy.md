@@ -12,6 +12,6 @@ It was therefore important to us to collect our product analytic metrics ethical
 1. Private: we will **never** give or sell your data to third parties
 1. Anonymized: your user ID is a hash, so we don't know who you are
 1. Obfuscated: potentially-sensitive parameters (e.g. enclave IDs) are hashed as well
-1. Opt-out: Kurtosis allows you to easily switch off analytics, [including in CI](../guides/running-in-ci.md). Simply run `kurtosis analytics disable` to disable analytics.
+1. Opt-out: Kurtosis allows you to [easily switch off analytics](../reference/cli/analytics-disable.md), even [in CI](../guides/running-in-ci.md)
 
 If that sounds fair to you, we'd really appreciate you helping us get the data to make our product better. In exchange, you have our word that we'll honor the trust you've placed in us by continuing to fulfill the metrics promises above.

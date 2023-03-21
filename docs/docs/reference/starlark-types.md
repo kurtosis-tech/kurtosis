@@ -95,7 +95,7 @@ get_request_recipe = GetHttpRequestRecipe(
 ```
 
 :::info
-Important - `port_id` field accepts user defined ID assinged to a port in service's port map while defininig `ServiceConfig`. For example, we have a service config with following port map:
+Important - the `port_id` field accepts user-defined port IDs that are assigned to a port in a service's port map, using `ServiceConfig`. For example, if our service's `ServiceConfig` has the following port mappings:
 
 ```
     test-service-config = ServiceConfig(
@@ -109,7 +109,7 @@ Important - `port_id` field accepts user defined ID assinged to a port in servic
     )
 ```
 
-The user defined port IDs in above port map are: `http` and `grpc`. These can be passed to create http request recipes (`GET` OR `POST`) such as:
+The user-defined port IDs in the above `ServiceConfig` are: `http` and `grpc`. Both of these user-defined port IDs can therefore be used to create http request recipes (`GET` OR `POST`), such as:
 
 ```
     recipe = GetHttpRequestRecipe(
@@ -120,7 +120,7 @@ The user defined port IDs in above port map are: `http` and `grpc`. These can be
     )
 ```
 
-This above recipe when used with `request` or `wait` instruction, will make a `GET` request to a service with name `service-using-test-service-config` on port `5000` with the path `/ping`.
+The above recipe, when used with `request` or `wait` instruction, will make a `GET` request to a service with name `service-using-test-service-config` on port `5000` with the path `/ping`.
 :::
 
 #### PostHttpRequestRecipe
@@ -169,13 +169,9 @@ Make sure that the endpoint returns valid JSON response for both POST and GET re
 
 :::
 
-### PacketDelayDistribution
+### UniformPacketDelayDistribution
 
-The `PacketDelayDistribution` can be used in conjuction with [`ConnectionConfig`][connection-config] to introduce latency between two [`subnetworks`][subnetworks-reference]. See [`set_connection`][starlark-instructions-set-connection] instruction to learn more about its usage.
-
-#### UniformPacketDelayDistribution
-
-The `UniformPacketDelayDistribution` creates a packet delay distribution with constant delay in `ms`
+The `UniformPacketDelayDistribution` creates a packet delay distribution with constant delay in `ms`. This can be used in conjuction with [`ConnectionConfig`][connection-config] to introduce latency between two [`subnetworks`][subnetworks-reference]. See [`set_connection`][starlark-instructions-set-connection] instruction to learn more about its usage.
 
 ```python
 
@@ -187,9 +183,9 @@ delay  = UniformPacketDelayDistribution(
 )
 ```
 
-#### NormalPacketDelayDistribution
+### NormalPacketDelayDistribution
 
-The `NormalPacketDelayDistribution` can be used to create packet delays that are distributed according to a normal distribution.
+The `NormalPacketDelayDistribution` creates a packet delay distirbution that follows a normal distribution. This can be used in conjuction with [`ConnectionConfig`][connection-config] to introduce latency between two [`subnetworks`][subnetworks-reference]. See [`set_connection`][starlark-instructions-set-connection] instruction to learn more about its usage.
 
 ```python
 
