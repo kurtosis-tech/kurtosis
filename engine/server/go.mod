@@ -1,6 +1,6 @@
 module github.com/kurtosis-tech/kurtosis/engine/server
 
-go 1.17
+go 1.18
 
 replace (
 	github.com/kurtosis-tech/kurtosis/api/golang => ../../api/golang
