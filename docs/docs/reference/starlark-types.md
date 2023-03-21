@@ -53,13 +53,9 @@ exec_recipe = ExecRecipe(
 )
 ```
 
-### HttpRequestRecipe
+### GetHttpRequestRecipe
 
-The `HttpRequestRecipe` is used to make `HTTP` requests to an endpoint. Currently, we support `GET` and `POST` requests. (see [request][starlark-instructions-request] or [wait][starlark-instructions-wait]).
-
-#### GetHttpRequestRecipe
-
-The `GetHttpRequestRecipe` can be used to make `GET` requests, filter for the specific part of the response you care about, and assign that specific output to a key for later use. This can be useful for writing assertions, for example (i.e. validating the response you end up receiving looks the way you expect/intended).
+The `GetHttpRequestRecipe` can be used to make `GET` requests to an endpoint, filter for the specific part of the response you care about, and assign that specific output to a key for later use. This can be useful for writing assertions, for example (i.e. validating the response you end up receiving looks the way you expect/intended).
 
 :::caution
 
@@ -123,9 +119,9 @@ The user-defined port IDs in the above `ServiceConfig` are: `http` and `grpc`. B
 The above recipe, when used with `request` or `wait` instruction, will make a `GET` request to a service with name `service-using-test-service-config` on port `5000` with the path `/ping`.
 :::
 
-#### PostHttpRequestRecipe
+### PostHttpRequestRecipe
 
-The `PostHttpRequestRecipe` can be used to make `POST` requests.
+The `PostHttpRequestRecipe` can be used to make `POST` requests to an endpoint.
 
 :::caution
 
