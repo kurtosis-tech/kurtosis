@@ -962,6 +962,7 @@ workflows:
               ignore:
                 - main
                 - release-please--branches--main--components--kurtosis
+                - gh-readonly-queue/main/
 
       - build_container_engine_lib:
           filters:
