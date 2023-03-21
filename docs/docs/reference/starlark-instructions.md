@@ -567,7 +567,7 @@ response = plan.wait(
     # The interval value is the initial interval suggestion for the command to wait between calls
     # It follows a exponential backoff process, where the i-th backoff interval is rand(0.5, 1.5)*interval*2^i
     # Follows Go "time.Duration" format https://pkg.go.dev/time#ParseDuration
-    # OPTIONAL (Default: "500ms")
+    # OPTIONAL (Default: "1s")
     interval = "1s",
 
     # The timeout value is the maximum time that the command waits for the assertion to be true
