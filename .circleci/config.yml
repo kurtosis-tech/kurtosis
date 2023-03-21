@@ -931,6 +931,7 @@ jobs:
   # -- End publishing jobs -------------------------------------
 
 workflows:
+  version: 1
   build:
     jobs:
       # -- build jobs ------------------------------------------
