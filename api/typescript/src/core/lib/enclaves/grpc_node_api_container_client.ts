@@ -17,17 +17,13 @@ import {
     UploadFilesArtifactResponse,
     StoreWebFilesArtifactArgs,
     StoreWebFilesArtifactResponse,
-    StoreFilesArtifactFromServiceArgs,
-    StoreFilesArtifactFromServiceResponse,
     GetServicesArgs,
-    RenderTemplatesToFilesArtifactArgs,
-    RenderTemplatesToFilesArtifactResponse,
     RunStarlarkScriptArgs,
     RunStarlarkPackageArgs,
     StarlarkRunResponseLine,
     DownloadFilesArtifactResponse,
     DownloadFilesArtifactArgs,
-    GetExistingAndHistoricalServiceIdentifiersResponse,
+    GetExistingAndHistoricalServiceIdentifiersResponse, ListFilesArtifactNamesAndUuidsResponse,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import type { ApiContainerServiceClient as ApiContainerServiceClientNode } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
 import { GenericApiContainerClient } from "./generic_api_container_client";
@@ -352,5 +348,29 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
         }
 
         return ok(getExistingAndHistoricalServiceIdentifiersResult.value);
+    }
+
+    public async getAllFilesArtifactNamesAndUuids(): Promise<Result<ListFilesArtifactNamesAndUuidsResponse, Error>> {
+        const emptyArg: google_protobuf_empty_pb.Empty = new google_protobuf_empty_pb.Empty()
+        const getAllFilesArtifactNamesAndUuidsPromise: Promise<Result<ListFilesArtifactNamesAndUuidsResponse, Error>> = new Promise((resolve, _unusedReject) => {
+            this.client.listFilesArtifactNamesAndUuids(emptyArg, {},(error: ServiceError | null, response?: ListFilesArtifactNamesAndUuidsResponse) => {
+                if (error === null) {
+                    if (!response) {
+                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
+                    } else {
+                        resolve(ok(response!));
+                    }
+                } else {
+                    resolve(err(error));
+                }
+            })
+        });
+
+        const getAllFilesArtifactNamesAndUuidsResult: Result<ListFilesArtifactNamesAndUuidsResponse, Error> = await getAllFilesArtifactNamesAndUuidsPromise;
+        if (getAllFilesArtifactNamesAndUuidsResult.isErr()) {
+            return err(getAllFilesArtifactNamesAndUuidsResult.error)
+        }
+
+        return ok(getAllFilesArtifactNamesAndUuidsResult.value);
     }
 }
