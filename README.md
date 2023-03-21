@@ -1,6 +1,8 @@
 
 <img src="./logo.png" width="500">
 
+https://github.com/kurtosis-tech/kurtosis/compare/0.69.0...0.69.5
+
 ----
 
 [Kurtosis](https://www.kurtosis.com) is a development platform for distributed applications that aims to provide a consistent experience across all stages of distributed app software delivery.
