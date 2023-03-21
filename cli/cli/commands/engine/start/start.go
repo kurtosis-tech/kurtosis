@@ -17,7 +17,9 @@ const (
 	engineVersionArg = "version"
 	logLevelArg      = "log-level"
 
-	defaultEngineVersion = ""
+	defaultEngineVersion          = ""
+	kurtosisTechEngineImagePrefix = "kurtosistech/engine"
+	imageVersionDelimiter         = ":"
 )
 
 var engineVersion string
@@ -56,8 +58,6 @@ func init() {
 func run(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
 
-	logrus.Infof("Starting Kurtosis engine from image '%v'...", engineVersion)
-
 	logLevel, err := logrus.ParseLevel(logLevelStr)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred parsing log level string '%v'", logLevelStr)
@@ -68,11 +68,18 @@ func run(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred creating an engine manager")
 	}
 
+	_, _, actualEngineVersion, err := engineManager.GetEngineStatus(ctx)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while getting the version of the currenly running engine")
+	}
+
 	var engineClientCloseFunc func() error
 	var startEngineErr error
 	if engineVersion == defaultEngineVersion {
+		logrus.Infof("Starting Kurtosis engine from image '%v%v%v'...", kurtosisTechEngineImagePrefix, imageVersionDelimiter, actualEngineVersion)
 		_, engineClientCloseFunc, startEngineErr = engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, logLevel)
 	} else {
+		logrus.Infof("Starting Kurtosis engine from image '%v%v%v'...", kurtosisTechEngineImagePrefix, imageVersionDelimiter, engineVersion)
 		_, engineClientCloseFunc, startEngineErr = engineManager.StartEngineIdempotentlyWithCustomVersion(ctx, engineVersion, logLevel)
 	}
 	if startEngineErr != nil {
