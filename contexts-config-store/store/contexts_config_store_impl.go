@@ -94,8 +94,8 @@ func (store *contextConfigStoreImpl) AddNewContext(newContext *generated.Kurtosi
 	defer store.Unlock()
 
 	if newContext.GetName() == persistence.DefaultContextName {
-		return stacktrace.NewError("Adding a new context names '%s' is not allowed as it is the reserved context "+
-			"name", persistence.DefaultContextName)
+		return stacktrace.NewError("Adding a new context with name '%s' is not allowed as it is a reserved "+
+			"context name", persistence.DefaultContextName)
 	}
 
 	contextsConfig, err := store.storage.LoadContextsConfig()

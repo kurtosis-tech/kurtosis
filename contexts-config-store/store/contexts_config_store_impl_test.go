@@ -143,7 +143,7 @@ func TestAddNewContext_DefaultContext(t *testing.T) {
 	newDefaultContext := api.NewLocalOnlyContext(contextUuid, persistence.DefaultContextName)
 	err := testContextConfigStore.AddNewContext(newDefaultContext)
 	require.Error(t, err)
-	expectedErr := fmt.Sprintf("Adding a new context names '%s' is not allowed as it is the reserved context name",
+	expectedErr := fmt.Sprintf("Adding a new context with name '%s' is not allowed as it is a reserved context name",
 		persistence.DefaultContextName)
 	require.Contains(t, err.Error(), expectedErr)
 
