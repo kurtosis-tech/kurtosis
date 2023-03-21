@@ -953,7 +953,7 @@ workflows:
                         "pattern": "https://www.notion.so/kurtosistech.*"
                     },
                     {
-                        "pattern": ".*\/kurtosis\/compare\/.*"
+                        "pattern": "https://github.com/kurtosis-tech/kurtosis/compare/0.68.13...0.69.0"
                     }
                 ]
             }
