@@ -2,6 +2,7 @@ package args
 
 import (
 	"encoding/json"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/remote_context_backend"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args/kurtosis_backend_config"
 	"reflect"
 	"strings"
@@ -33,6 +34,9 @@ type EngineServerArgs struct {
 
 	// Should be deserialized differently depending on value of KurtosisBackendType
 	KurtosisBackendConfig interface{} `json:"kurtosisBackendConfig"`
+
+	// Configuration to connect to a remote Kurtosis backend, if needed
+	KurtosisRemoteBackendConfig *remote_context_backend.KurtosisRemoteBackendConfig `json:"kurtosisRemoteBackendConfig,omitempty"`
 }
 
 func (args *EngineServerArgs) UnmarshalJSON(data []byte) error {
@@ -67,7 +71,7 @@ func (args *EngineServerArgs) UnmarshalJSON(data []byte) error {
 }
 
 // Even though the fields are public due to JSON de/serialization requirements, we still have this constructor so that
-//  we get compile errors if there are missing fields
+// we get compile errors if there are missing fields
 func NewEngineServerArgs(
 	grpcListenPortNum uint16,
 	grpcProxyListenPortNum uint16,
@@ -77,6 +81,7 @@ func NewEngineServerArgs(
 	didUserAcceptSendingMetrics bool,
 	kurtosisBackendType KurtosisBackendType,
 	kurtosisBackendConfig interface{},
+	remoteBackendConfig *remote_context_backend.KurtosisRemoteBackendConfig,
 ) (*EngineServerArgs, error) {
 	result := &EngineServerArgs{
 		GrpcListenPortNum:           grpcListenPortNum,
@@ -87,6 +92,7 @@ func NewEngineServerArgs(
 		DidUserAcceptSendingMetrics: didUserAcceptSendingMetrics,
 		KurtosisBackendType:         kurtosisBackendType,
 		KurtosisBackendConfig:       kurtosisBackendConfig,
+		KurtosisRemoteBackendConfig: remoteBackendConfig,
 	}
 	if err := result.validate(); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred validating engine server args")

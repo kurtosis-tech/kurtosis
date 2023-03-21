@@ -3,8 +3,8 @@ package persistence
 import (
 	"github.com/adrg/xdg"
 	"github.com/kurtosis-tech/kurtosis/contexts-config-store/api/golang/generated"
+	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store/serialization"
 	"github.com/kurtosis-tech/stacktrace"
-	"google.golang.org/protobuf/encoding/protojson"
 	"os"
 	"path"
 	"sync"
@@ -57,8 +57,8 @@ func (persistence *FileBackedConfigPersistence) LoadContextsConfig() (*generated
 		return nil, stacktrace.Propagate(err, "Unable to read context config file at '%s'",
 			persistence.backingFilePath)
 	}
-	contextsConfig := new(generated.KurtosisContextsConfig)
-	if err = protojson.Unmarshal(contextsConfigFileContent, contextsConfig); err != nil {
+	contextsConfig, err := serialization.DeserializeKurtosisContextsConfig(contextsConfigFileContent)
+	if err != nil {
 		return nil, stacktrace.Propagate(err, "Unable to deserialize content of context config file at '%s'",
 			persistence.backingFilePath)
 	}
@@ -102,11 +102,11 @@ func (persistence *FileBackedConfigPersistence) persistContextsConfigInternal(ne
 	persistence.Lock()
 	defer persistence.Unlock()
 
-	serializedConfig, err := protojson.Marshal(newContextsConfig)
+	serializedContextsConfig, err := serialization.SerializeKurtosisContextsConfig(newContextsConfig)
 	if err != nil {
 		return stacktrace.Propagate(err, "Unable to serialize content of contexts config object to JSON")
 	}
-	if err = os.WriteFile(persistence.backingFilePath, serializedConfig, defaultFilePerm); err != nil {
+	if err = os.WriteFile(persistence.backingFilePath, serializedContextsConfig, defaultFilePerm); err != nil {
 		return stacktrace.Propagate(err, "Unable to write context config file to '%s'",
 			persistence.backingFilePath)
 	}

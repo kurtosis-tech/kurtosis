@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/remote_context_backend"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/core/launcher/api_container_launcher"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args"
@@ -102,7 +103,9 @@ func runMain() error {
 		return stacktrace.NewError("Backend configuration parameters are null - there must be backend configuration parameters.")
 	}
 
-	kurtosisBackend, err := getKurtosisBackend(ctx, serverArgs.KurtosisBackendType, backendConfig)
+	remoteContextBackendConfig := serverArgs.KurtosisRemoteBackendConfig
+
+	kurtosisBackend, err := getKurtosisBackend(ctx, serverArgs.KurtosisBackendType, backendConfig, remoteContextBackendConfig)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the Kurtosis backend for backend type '%v' and config '%+v'", serverArgs.KurtosisBackendType, backendConfig)
 	}
@@ -150,16 +153,21 @@ func getEnclaveManager(kurtosisBackend backend_interface.KurtosisBackend, kurtos
 	return enclaveManager, nil
 }
 
-func getKurtosisBackend(ctx context.Context, kurtosisBackendType args.KurtosisBackendType, backendConfig interface{}) (backend_interface.KurtosisBackend, error) {
+func getKurtosisBackend(ctx context.Context, kurtosisBackendType args.KurtosisBackendType, backendConfig interface{}, remoteBackendConfigMaybe *remote_context_backend.KurtosisRemoteBackendConfig) (backend_interface.KurtosisBackend, error) {
 	var kurtosisBackend backend_interface.KurtosisBackend
 	var err error
 	switch kurtosisBackendType {
 	case args.KurtosisBackendType_Docker:
-		kurtosisBackend, err = backend_creator.GetLocalDockerKurtosisBackend(apiContainerModeArgsForKurtosisBackend)
+		kurtosisBackend, err = remote_context_backend.GetContextAwareKurtosisBackend(remoteBackendConfigMaybe, apiContainerModeArgsForKurtosisBackend)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting local Docker Kurtosis backend")
 		}
 	case args.KurtosisBackendType_Kubernetes:
+		if remoteBackendConfigMaybe != nil {
+			return nil, stacktrace.NewError("Using Kubernetes as a local cluster connected to a remote " +
+				"Kurtosis backend is currently not supported. Either switch to a local-only context to use " +
+				"Kubernetes locally, or switch the cluster to Docker to connect to a remote Kurtosis backend")
+		}
 		// Use this with more properties
 		_, ok := (backendConfig).(kurtosis_backend_config.KubernetesBackendConfig)
 		if !ok {
