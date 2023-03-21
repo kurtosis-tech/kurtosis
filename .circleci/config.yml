@@ -953,7 +953,7 @@ workflows:
                         "pattern": "https://www.notion.so/kurtosistech.*"
                     },
                     {
-                        "pattern": "https://github.com/kurtosis-tech/kurtosis/compare/0.68.13...0.69.0"
+                        "pattern": "https://github.com/kurtosis-tech/kurtosis/compare/.*"
                     }
                 ]
             }
@@ -961,6 +961,7 @@ workflows:
             branches:
               ignore:
                 - main
+                - release-please--branches--main--components--kurtosis
 
       - build_container_engine_lib:
           filters:
