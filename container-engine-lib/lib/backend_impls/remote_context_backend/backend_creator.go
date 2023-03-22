@@ -89,7 +89,7 @@ func writeTlsConfigToTempDir(ca []byte, cert []byte, key []byte) (string, func()
 	if err = os.WriteFile(caAbsFileName, ca, tlsFilesPerm); err != nil {
 		return "", nil, stacktrace.Propagate(err, "Error writing content of CA to temporary file at '%s'", caAbsFileName)
 	}
-	certAbsFileName := path.Join(tempDirectory, caFileName)
+	certAbsFileName := path.Join(tempDirectory, certFileName)
 	if err = os.WriteFile(certAbsFileName, cert, tlsFilesPerm); err != nil {
 		return "", nil, stacktrace.Propagate(err, "Error writing content of certificate to temporary file at '%s'", certAbsFileName)
 	}
