@@ -37,13 +37,6 @@ See [kurtosis.connection][connection-config-prebuilt] for pre-built [ConnectionC
 The ExecRecipe can be used to run the `command` on the service (see [exec][starlark-instructions-exec]
 or [wait][starlark-instructions-wait])
 
-:::caution
-
-The `ExecRecipe.service_name` field is still accepted but it's deprecated, so we suggest users to pass
-this value as an argument in the `exec`, `request` and `wait` instructions where this type is currently used
-
-:::
-
 ```python
 exec_recipe = ExecRecipe(
     # The actual command to execute. 
@@ -56,13 +49,6 @@ exec_recipe = ExecRecipe(
 ### GetHttpRequestRecipe
 
 The `GetHttpRequestRecipe` can be used to make `GET` requests to an endpoint, filter for the specific part of the response you care about, and assign that specific output to a key for later use. This can be useful for writing assertions, for example (i.e. validating the response you end up receiving looks the way you expect/intended).
-
-:::caution
-
-The `GetHttpRequestRecipe.service_name` field is still accepted but it's deprecated, so we suggest users to pass
-this value as an argument in the `exec`, `request` and `wait` instructions where this type is currently used.
-
-:::
 
 ```python
 get_request_recipe = GetHttpRequestRecipe(
@@ -116,19 +102,12 @@ The user-defined port IDs in the above `ServiceConfig` are: `http` and `grpc`. B
     )
 ```
 
-The above recipe, when used with `request` or `wait` instruction, will make a `GET` request to a service with name `service-using-test-service-config` on port `5000` with the path `/ping`.
+The above recipe, when used with `request` or `wait` instruction, will make a `GET` request to a service (the `service_name` field must be passed as an instruction's argument) on port `5000` with the path `/ping`.
 :::
 
 ### PostHttpRequestRecipe
 
 The `PostHttpRequestRecipe` can be used to make `POST` requests to an endpoint.
-
-:::caution
-
-The `PostHttpRequestRecipe.service_name` field is still accepted but it's deprecated, so we suggest users to pass
-this value as an argument in the `exec`, `request` and `wait` instructions where this type is currently used
-
-:::
 
 ```python
 post_request_recipe = PostHttpRequestRecipe(
@@ -227,6 +206,48 @@ port_spec = PortSpec(
 The above constructor returns a `PortSpec` object that contains port information in the form of a [future reference][future-references-reference] and can be used with
 [add_service][starlark-instructions-add-service] to create services.
 
+### ReadyConditions
+
+The `ReadyConditions` can be used to execute a readiness check after a service is started to confirm that it is ready to receive connections and traffic 
+
+```python
+ready_conditions = ReadyConditions(
+
+    # The recipe that will be used to check service's readiness.
+    # Valid values are of the following types: (ExecRecipe, GetHttpRequestRecipe or PostHttpRequestRecipe)
+    # MANDATORY
+    recipe = GetHttpRequestRecipe(
+        port_id = "http",
+        endpoint = "/ping",
+    ),
+
+    # The `field's value` will be used to do the asssertions. To learn more about available fields, 
+    # that can be used for assertions, please refer to exec and request instructions.
+    # MANDATORY
+    field = "code",
+
+    # The assertion is the comparison operation between value and target_value.
+    # Valid values are "==", "!=", ">=", "<=", ">", "<" or "IN" and "NOT_IN" (if target_value is list).
+    # MANDATORY
+    assertion = "==",
+
+    # The target value that value will be compared against.
+    # MANDATORY
+    target_value = 200,
+
+    # The interval value is the initial interval suggestion for the command to wait between calls
+    # It follows a exponential backoff process, where the i-th backoff interval is rand(0.5, 1.5)*interval*2^i
+    # Follows Go "time.Duration" format https://pkg.go.dev/time#ParseDuration
+    # OPTIONAL (Default: "1s")
+    interval = "1s",
+
+    # The timeout value is the maximum time that the readiness check waits for the assertion to be true
+    # Follows Go "time.Duration" format https://pkg.go.dev/time#ParseDuration
+    # OPTIONAL (Default: "15m")
+    timeout = "5m",
+)
+```
+
 ### ServiceConfig
 
 The `ServiceConfig` is used to configure a service when it is added to an enclave (see [add_service][starlark-instructions-add-service]).
@@ -304,6 +325,11 @@ config = ServiceConfig(
     # Defines the subnetwork in which the service will be started.
     # OPTIONAL (Default: "default")
     subnetwork = "service_subnetwork",
+    
+    # This field can be used to check the service's readiness after this is started
+    # to confirm that it is ready to receive connections and traffic
+    # OPTIONAL (Default: no ready conditions)
+    ready_conditions = ReadyConditions(...)
 )
 ```
 The `ports` dictionary argument accepts a key value pair, where `key` is a user defined unique port identifier and `value` is a [PortSpec][port-spec] object.
@@ -311,6 +337,8 @@ The `ports` dictionary argument accepts a key value pair, where `key` is a user 
 The `files` dictionary argument accepts a key value pair, where `key` is the path where the contents of the artifact will be mounted to and `value` is a file artifact name. (see [upload_files][starlark-instructions-upload-files], [render_templates][starlark-instructions-render-templates] and [store_service_files][starlark-instructions-store-service-files] to learn more about on how to create file artifacts)
 
 For more info about the `subnetwork` argument, see [Kurtosis subnetworks][subnetworks-reference].
+
+You can see how to configure the [`ReadyConditions` type here][ready-conditions]. 
 
 ### UpdateServiceConfig
 
@@ -343,6 +371,7 @@ Kurtosis provides "pre-built" values for types that will be broadly used. Those 
 [connection-config]: #connectionconfig
 [service-config]: #serviceconfig
 [port-spec]: #portspec
+[ready-conditions]: #readyconditions
 
 [connection-config-prebuilt]: #connection
 

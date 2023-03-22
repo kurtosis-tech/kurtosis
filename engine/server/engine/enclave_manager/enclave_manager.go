@@ -632,6 +632,16 @@ func (manager *EnclaveManager) getEnclaveUuidForIdentifierUnlocked(ctx context.C
 	return "", stacktrace.NewError("Couldn't find enclave uuid for identifier '%v'", enclaveIdentifier)
 }
 
+// only call this from a thread safe context
+func (manager *EnclaveManager) getEnclaveNameForEnclaveUuidUnlocked(enclaveUuid string) string {
+	for _, identifier := range manager.allExistingAndHistoricalIdentifiers {
+		if identifier.EnclaveUuid == enclaveUuid {
+			return identifier.Name
+		}
+	}
+	return ""
+}
+
 // Returns nil if apiContainerMap is empty
 func getFirstApiContainerFromMap(apiContainerMap map[enclave.EnclaveUUID]*api_container.APIContainer) *api_container.APIContainer {
 	firstApiContainerFound := (*api_container.APIContainer)(nil)
