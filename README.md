@@ -28,7 +28,7 @@ than a container orchestrator. It gives super powers to anyone who wants to spin
 - Interaction with a running multi container environment
   - Kurtosis allows you to run on-box CLI commands within containers
   - Kurtosis allows you to send REST requests to containers
-- Debugging of multi container environment
+- Observation of multi container environment
   - Kurtosis provides easy access to logs of a given service
 
 ---
