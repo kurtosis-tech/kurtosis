@@ -110,8 +110,6 @@ func init() {
 	RootCmd.AddCommand(service.ServiceCmd)
 	RootCmd.AddCommand(twitter.TwitterCmd.MustGetCobraCommand())
 	RootCmd.AddCommand(version.VersionCmd)
-
-	out.InitFileLogger()
 }
 
 // ====================================================================================================
@@ -124,8 +122,11 @@ func globalSetup(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred setting up CLI logs")
 	}
 
-	checkCLIVersion(cmd)
+	if err := out.SetupFileLogger(); err != nil {
+		return stacktrace.Propagate(err, "An error occurred while setting up the logging to a file.")
+	}
 
+	checkCLIVersion(cmd)
 	//It is necessary to try track this metric on every execution to have at least one successful deliver
 	if err := user_send_metrics_election.SendAnyBackloggedUserMetricsElectionEvent(); err != nil {
 		//We don't want to interrupt users flow if something fails when tracking metrics
