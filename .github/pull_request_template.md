@@ -2,10 +2,9 @@
 <!-- Describe this change, how it works, and the motivation behind it. -->
 
 ## Is this change user facing?
-<!-- A user facing change is one that you should expect a day-to-day user to encounter or if the change requires user-action upon or before upgrading. If in doubt, select "Yes" -->
 YES/NO
-
-<!-- If yes, please add the `user facing` label to this Pull Request -->
+<!-- If yes, please add the "user facing" label to the PR -->
+<!-- If yes, don't forget to include docs changes where relevant -->
 
 ## References (if applicable):
 <!-- Add relevant Github Issues, Discord threads, or other helpful information. -->

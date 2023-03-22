@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	defaultContextName = "default"
+	DefaultContextName = "default"
 )
 
 func NewDefaultContextsConfig() (*generated.KurtosisContextsConfig, error) {
@@ -23,6 +23,6 @@ func NewDefaultContextsConfig() (*generated.KurtosisContextsConfig, error) {
 	newContextUuidStr := strings.Replace(randomUuid.String(), "-", "", -1)
 
 	defaultContextUuid := api.NewContextUuid(newContextUuidStr)
-	defaultContext := api.NewLocalOnlyContext(defaultContextUuid, defaultContextName)
+	defaultContext := api.NewLocalOnlyContext(defaultContextUuid, DefaultContextName)
 	return api.NewKurtosisContextsConfig(defaultContextUuid, defaultContext), nil
 }
