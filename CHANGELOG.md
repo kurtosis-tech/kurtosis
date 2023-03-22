@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.70.0](https://github.com/kurtosis-tech/kurtosis/compare/0.69.2...0.70.0) (2023-03-22)
+
+
+### ⚠ BREAKING CHANGES
+
+* This is a breaking change where we are removing the ExecRecipe.service_name, GetHttpRequestRecipe.service_name, and PostHttpRequestRecipe.service_name fields, we suggest users pass this value as an argument in the exec, request and wait instructions where this type is currently used. We are also deprecating the previous exec, request, and wait instructions signature that haven't the service_name field, users must add this field on these instructions call. Another change is that now the service_name field on the exec, request, and wait instructions is mandatory ([#301](https://github.com/kurtosis-tech/kurtosis/issues/301))
+
+### Features
+
+* Kurtosis backend can now connect to a remote Docker backend ([#285](https://github.com/kurtosis-tech/kurtosis/issues/285)) ([98b04c8](https://github.com/kurtosis-tech/kurtosis/commit/98b04c8c98e92c0c7e2661ae1020cee1a1cf1e4b))
+* This is a breaking change where we are removing the ExecRecipe.service_name, GetHttpRequestRecipe.service_name, and PostHttpRequestRecipe.service_name fields, we suggest users pass this value as an argument in the exec, request and wait instructions where this type is currently used. We are also deprecating the previous exec, request, and wait instructions signature that haven't the service_name field, users must add this field on these instructions call. Another change is that now the service_name field on the exec, request, and wait instructions is mandatory ([#301](https://github.com/kurtosis-tech/kurtosis/issues/301)) ([eb7e88f](https://github.com/kurtosis-tech/kurtosis/commit/eb7e88f3309f6d98e8ddb4ff8aad6baa991ea450))
+
 ## [0.69.2](https://github.com/kurtosis-tech/kurtosis/compare/0.69.1...0.69.2) (2023-03-22)
 
 
