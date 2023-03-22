@@ -15,7 +15,7 @@ Use cases for Kurtosis include:
 
 ## Why Kurtosis?
 
-Kurtosis makes it much easier for a user to spin up multi-container test environments than alternatives like Helm Charts or Docker Compose; by working at a levle higher
+Kurtosis makes it much easier for a user to spin up multi-container test environments than alternatives like Helm Charts or Docker Compose; by working at a level higher
 than a container orchestrator. It gives super powers to anyone who wants to spin up multi-container test environments by allowing - 
 
 - Instantiation of a multi container environment
