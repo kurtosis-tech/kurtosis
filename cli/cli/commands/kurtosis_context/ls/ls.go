@@ -18,7 +18,7 @@ const (
 	contextCurrentColumnHeader = ""
 	contextUuidColumnHeader    = "UUID"
 	contextNameColumnHeader    = "Name"
-	contextRemoteColumnHeader  = "Remote"
+	contextRemoteColumnHeader  = "Remote Host"
 
 	fullUuidsFlagKey       = "full-uuids"
 	fullUuidFlagKeyDefault = "false"
@@ -60,9 +60,9 @@ func run(_ context.Context, flags *flags.ParsedFlags, _ *args.ParsedArgs) error 
 
 	tablePrinter := output_printers.NewTablePrinter(contextCurrentColumnHeader, contextUuidColumnHeader, contextNameColumnHeader, contextRemoteColumnHeader)
 	for _, kurtosisContext := range contextsConfig.GetContexts() {
-		var isCurrent string
+		var isCurrentIndicator string
 		if kurtosisContext.GetUuid().GetValue() == currentContextUuid.GetValue() {
-			isCurrent = isCurrentContextStrIndicator
+			isCurrentIndicator = isCurrentContextStrIndicator
 		}
 
 		var contextUuidToDisplay string
@@ -73,7 +73,7 @@ func run(_ context.Context, flags *flags.ParsedFlags, _ *args.ParsedArgs) error 
 		}
 
 		var remoteStrToDisplay string
-		_, err = contexts_config_api.Visit[struct{}](kurtosisContext, contexts_config_api.KurtosisContextVisitor[struct{}]{
+		contextVisitorForRemoteString := contexts_config_api.KurtosisContextVisitor[struct{}]{
 			VisitLocalOnlyContextV0: func(localContext *contexts_config_generated_api.LocalOnlyContextV0) (*struct{}, error) {
 				remoteStrToDisplay = defaultRemoteValueForLocalContext
 				return nil, nil
@@ -82,14 +82,14 @@ func run(_ context.Context, flags *flags.ParsedFlags, _ *args.ParsedArgs) error 
 				remoteStrToDisplay = remoteContext.Host
 				return nil, nil
 			},
-		})
-		if err != nil {
+		}
+		if _, err = contexts_config_api.Visit[struct{}](kurtosisContext, contextVisitorForRemoteString); err != nil {
 			return stacktrace.Propagate(err, "Unexpected error extracting remote information from the context")
 		}
 
 		contextNameToDisplay := kurtosisContext.GetName()
 
-		if err = tablePrinter.AddRow(isCurrent, contextUuidToDisplay, contextNameToDisplay, remoteStrToDisplay); err != nil {
+		if err = tablePrinter.AddRow(isCurrentIndicator, contextUuidToDisplay, contextNameToDisplay, remoteStrToDisplay); err != nil {
 			return stacktrace.Propagate(err, "Error adding context to the table to be displayed")
 		}
 	}
