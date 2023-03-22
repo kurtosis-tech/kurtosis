@@ -244,7 +244,6 @@ jobs:
 
       - setup_remote_docker:
           version: "<< pipeline.parameters.docker-engine-version>>"
-      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
       - run: |
           core/files_artifacts_expander/scripts/build.sh
@@ -293,7 +292,6 @@ jobs:
 
       - setup_remote_docker:
           version: "<< pipeline.parameters.docker-engine-version>>"
-      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
       # Cache our dependencies
       - restore_cache:
@@ -348,7 +346,6 @@ jobs:
 
       - setup_remote_docker:
           version: "<< pipeline.parameters.docker-engine-version>>"
-      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
       # Cache our dependencies
       - restore_cache:
