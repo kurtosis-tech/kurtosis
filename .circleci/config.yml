@@ -961,6 +961,8 @@ workflows:
             branches:
               ignore:
                 - main
+                - release-please--branches--main--components--kurtosis
+                - gh-readonly-queue/main/.*
 
       - build_container_engine_lib:
           filters:
@@ -1117,6 +1119,10 @@ workflows:
           context:
             - gemfury-publisher
             - github-user
+          requires:
+            - publish_kurtosis_api_typescript
+            - publish_api_container_server_image
+            - publish_engine_server_image
           filters:
             branches:
               ignore: /.*/
