@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.69.2](https://github.com/kurtosis-tech/kurtosis/compare/0.69.1...0.69.2) (2023-03-22)
+
+
+### Features
+
+* Add context `add` command ([#278](https://github.com/kurtosis-tech/kurtosis/issues/278)) ([bd56cae](https://github.com/kurtosis-tech/kurtosis/commit/bd56cae2c7d29dff4c6011ed80521eddfd39277d))
+* build script check for go and node versions ([#240](https://github.com/kurtosis-tech/kurtosis/issues/240)) ([4749dbe](https://github.com/kurtosis-tech/kurtosis/commit/4749dbe62030eb17bebd02f81b1a0b822f7e843d))
+
 ## [0.69.1](https://github.com/kurtosis-tech/kurtosis/compare/0.69.0...0.69.1) (2023-03-22)
 
 
