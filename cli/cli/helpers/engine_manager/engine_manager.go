@@ -29,6 +29,7 @@ type EngineManager struct {
 	kurtosisBackend                           backend_interface.KurtosisBackend
 	shouldSendMetrics                         bool
 	engineServerKurtosisBackendConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier
+	remoteBackendConfigSupplier               *engine_server_launcher.KurtosisRemoteBackendConfigSupplier
 	clusterConfig                             *resolved_config.KurtosisClusterConfig
 	// Make engine IP, port, and protocol configurable in the future
 }
@@ -71,12 +72,14 @@ func NewEngineManager(ctx context.Context) (*EngineManager, error) {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the Kurtosis backend for cluster '%v'", clusterName)
 	}
 	engineBackendConfigSupplier := clusterConfig.GetEngineBackendConfigSupplier()
+	remoteBackendConfigSupplier := clusterConfig.GetKurtosisRemoteBackendConfigSupplier()
 
 	return &EngineManager{
 		kurtosisBackend:   kurtosisBackend,
 		shouldSendMetrics: kurtosisConfig.GetShouldSendMetrics(),
 		engineServerKurtosisBackendConfigSupplier: engineBackendConfigSupplier,
-		clusterConfig: clusterConfig,
+		remoteBackendConfigSupplier:               remoteBackendConfigSupplier,
+		clusterConfig:                             clusterConfig,
 	}, nil
 }
 
@@ -143,6 +146,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(ctx cont
 		manager.kurtosisBackend,
 		manager.shouldSendMetrics,
 		manager.engineServerKurtosisBackendConfigSupplier,
+		manager.remoteBackendConfigSupplier,
 		logLevel,
 		engineVersion,
 		clusterType,
@@ -170,6 +174,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx conte
 		manager.kurtosisBackend,
 		manager.shouldSendMetrics,
 		manager.engineServerKurtosisBackendConfigSupplier,
+		manager.remoteBackendConfigSupplier,
 		engineImageVersionTag,
 		logLevel,
 		engineVersion,
