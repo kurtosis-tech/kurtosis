@@ -12,7 +12,8 @@ If you arrived here by chance and you're curious as to what Kurtosis _is_, [see 
 
 If you're ready to get going, this guide will take ~15 minutes and will walk you through building a basic Kurtosis package. The package that you build will start a Postgres server, seed it with data, put an API in front of it, and automate loading data into it.
 
-You need to [have Kurtosis installed][installing-kurtosis-guide] (or [upgraded to latest][upgrading-kurtosis-guide] if you already have it), but you do not need any other knowledge.
+#### Setup
+Before you proceed, make sure you have [Kurtosis installed][installing-kurtosis-guide] (or [upgraded to latest][upgrading-kurtosis-guide] if you already have it) and Docker is started and a Docker daemon is running. Other than these two items, you do not need any other knowledge.
 
 :::tip
 If you get stuck at any point during this quickstart, there are many, many options available:
@@ -89,7 +90,7 @@ We'll use these "Review" sections to explain what happened in the section. If yo
 
 In this section, we created a `.star` file that prints `Hello, world`. The `.star` extension corresponds to [the Starlark language developed at Google][starlark-github-repo], a dialect of Python for configuring the [Bazel build system][bazel-github]. [Kurtosis uses Starlark for the same purpose of configuring builds][starlark-explanation], except that we're building distributed systems rather than binaries or JARs.
 
-When you ran the Starlark, you got `Created enclave: quickstart`. An [enclave][enclaves-explanation] is a Kurtosis primitive that can be thought of as an ephemeral house for a distributed application. The distributed applications that you define with Starlark will run inside enclaves. 
+When you ran the Starlark, you got `Created enclave: quickstart`. An [enclave][enclaves-explanation] is a Kurtosis primitive that can be thought of as an *ephemeral test environment*, on top of Docker or Kubernetes, for a distributed application. The distributed applications that you define with Starlark will run inside enclaves. 
 
 Enclaves are intended to be easy to create, easy to destroy, cheap to run, and isolated from each other. Use enclaves liberally!
 
@@ -362,7 +363,7 @@ But where did the data come from?
 
 There are many ways to create files artifacts in an enclave. The simplest is to upload files from your local machine using [the `kurtosis files upload` command][kurtosis-files-upload-reference]. A more advanced way is to upload files using [the `upload_files` Starlark instruction][upload-files-reference] on the plan.
 
-But... *you never downloaded the seed data on your local machine. In fact, you didn't need you to because we leveraged one of the most powerful features of Kurtosis: composition.*
+But... **you never downloaded the seed data on your local machine. In fact, you didn't need you to because we leveraged one of the most powerful features of Kurtosis: composition.**
 
 Kurtosis has [a built-in packaging/dependency system][how-do-imports-work-explanation] that allows Starlark code to depend on other Starlark code via Github repositories. When you created the `kurtosis.yml` file, you linked your code into the packaging system: you told Kurtosis that your code is a part of a [Kurtosis package][packages-reference], which allowed your code to depend on external Starlark code.
 
