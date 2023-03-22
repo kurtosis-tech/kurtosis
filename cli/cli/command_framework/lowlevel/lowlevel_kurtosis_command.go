@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/out"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -14,6 +15,7 @@ import (
 
 const (
 	shouldLogCompletionDebugMessagesToStderr = true
+	separator                                = "---"
 )
 
 // LowlevelKurtosisCommand is the most configurable, lowest-level implementation of the KurtosisCommand interface
@@ -273,8 +275,7 @@ func (kurtosisCmd *LowlevelKurtosisCommand) MustGetCobraCommand() *cobra.Command
 		if kurtosisCmd.PreValidationAndRunFunc != nil {
 			newCtx, err := kurtosisCmd.PreValidationAndRunFunc(ctx)
 			if err != nil {
-				errorFromStackTrace := stacktrace.Propagate(err, "An error occurred running the pre-validation-and-run function")
-				return removeFilePathFromErrorMessage(errorFromStackTrace.Error())
+				return stacktrace.Propagate(err, "An error occurred running the pre-validation-and-run function")
 			}
 			ctx = newCtx
 		}
@@ -289,14 +290,12 @@ func (kurtosisCmd *LowlevelKurtosisCommand) MustGetCobraCommand() *cobra.Command
 				continue
 			}
 			if err := validationFunc(ctx, parsedFlags, parsedArgs); err != nil {
-				errorFromStackTrace := stacktrace.Propagate(err, "An error occurred validating arg '%v'", config.Key)
-				return removeFilePathFromErrorMessage(errorFromStackTrace.Error())
+				return stacktrace.Propagate(err, "An error occurred validating arg '%v'", config.Key)
 			}
 		}
 
 		if err := kurtosisCmd.RunFunc(ctx, parsedFlags, parsedArgs); err != nil {
-			errorFromStackTrace := stacktrace.Propagate(err, "An error occurred running command '%v'", kurtosisCmd.CommandStr)
-			return removeFilePathFromErrorMessage(errorFromStackTrace.Error())
+			return stacktrace.Propagate(err, "An error occurred running command '%v'", kurtosisCmd.CommandStr)
 		}
 
 		return nil
@@ -377,17 +376,22 @@ func renderArgUsageStr(arg *args.ArgConfig) string {
 }
 
 // this method removes the file path from the error
+//TODO: this is currently not integrated but will do once all the necessary PRs are merged.
 func removeFilePathFromErrorMessage(errorMessage string) error {
-	separator := "---"
 	errorMessageConvertedInList := strings.Split(errorMessage, separator)
 
 	// only the even numbered elements needs to be picked.
-	cleanErrorList := []string{}
+	var cleanErrorList []string
 	for i, arr := range errorMessageConvertedInList {
 		if i%2 == 0 {
 			cleanErrorList = append(cleanErrorList, strings.Trim(arr, "\n"))
 		}
 	}
 
+	if logrus.GetLevel() == logrus.DebugLevel {
+		logrus.Debug(errors.New(errorMessage))
+	} else {
+		out.FileLogger.Error(errors.New(errorMessage))
+	}
 	return errors.New(strings.Join(cleanErrorList, ""))
 }
