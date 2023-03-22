@@ -20,6 +20,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/feedback"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/files"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/gateway"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/run"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/twitter"
@@ -95,6 +96,7 @@ func init() {
 	RootCmd.AddCommand(analytics.AnalyticsCmd.MustGetCobraCommand())
 	RootCmd.AddCommand(clean.CleanCmd.MustGetCobraCommand())
 	RootCmd.AddCommand(cluster.ClusterCmd)
+	RootCmd.AddCommand(kurtosis_context.ContextCmd)
 	RootCmd.AddCommand(config.ConfigCmd)
 	RootCmd.AddCommand(discord.DiscordCmd.MustGetCobraCommand())
 	RootCmd.AddCommand(docs.DocsCmd.MustGetCobraCommand())
