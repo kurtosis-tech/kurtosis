@@ -38,7 +38,7 @@ mkdir kurtosis-quickstart && cd kurtosis-quickstart
 All code blocks in this quickstart can be copied by hovering over the block and clicking the clipboard that appears in the right.
 :::
 
-Next, create a file called `main.star` inside your new directory with the following contents:
+Next, create a Starlark file called `main.star` inside your new directory with the following contents (more on Starlark in the "Review" section coming up soon):
 
 ```python
 def run(plan, args):
@@ -46,10 +46,16 @@ def run(plan, args):
 ```
 
 :::tip
-If you're using Vim, you can get syntax highlighting with `:set syntax=python`
+If you're using Vim, you can add the following to your `.vimrc` to get Starlark syntax highlighting:
+
+```
+" Add syntax highlighting for Starlark files
+autocmd FileType *.star setlocal filetype=python
+```
+
 :::
 
-Finally, [run][kurtosis-run-reference] the script.
+Finally, [run][kurtosis-run-reference] the script (we'll explain enclaves in the "Review" section too):
 
 ```bash
 kurtosis run --enclave quickstart main.star
@@ -87,7 +93,7 @@ Congratulations - you've written your first Kurtosis code!
 We'll use these "Review" sections to explain what happened in the section. If you just want the action, feel free to skip them.
 :::
 
-In this section, we created a `.star` file that prints `Hello, world`. The `.star` extension corresponds to [the Starlark language developed at Google][starlark-github-repo], a dialect of Python for configuring the [Bazel build system][bazel-github]. [Kurtosis uses Starlark for the same purpose of configuring builds][starlark-explanation], except that we're building distributed systems rather than binaries or JARs.
+In this section, we created a `.star` file that prints `Hello, world`. The `.star` extension corresponds to [the Starlark language developed at Google][starlark-github-repo], a dialect of Python for configuring the [Bazel build system][bazel-github]. [Kurtosis uses Starlark for the same purpose of configuring builds][starlark-explanation], except that we're building a distributed application rather than binaries or JARs.
 
 When you ran the Starlark, you got `Created enclave: quickstart`. An [enclave][enclaves-explanation] is a Kurtosis primitive that can be thought of as an ephemeral house for a distributed application. The distributed applications that you define with Starlark will run inside enclaves. 
 
@@ -197,7 +203,7 @@ def run(plan, args):
 
     # Add a Postgres server
     postgres = plan.add_service(
-        "postgres",
+        service_name = "postgres",
         ServiceConfig(
             image = "postgres:15.2-alpine",
             ports = {
@@ -415,7 +421,7 @@ def run(plan, args):
 
     # Add a Postgres server
     postgres = plan.add_service(
-        "postgres",
+        service_name = "postgres",
         ServiceConfig(
             image = "postgres:15.2-alpine",
             ports = {
@@ -555,7 +561,7 @@ def run(plan, args):
 
     # Add a Postgres server
     postgres = plan.add_service(
-        "postgres",
+        service_name = "postgres",
         ServiceConfig(
             # ...
             env_vars = {
@@ -700,7 +706,7 @@ def run(plan, args):
 
     # Add a Postgres server
     postgres = plan.add_service(
-        "postgres",
+        service_name = "postgres",
         ServiceConfig(
             image = "postgres:15.2-alpine",
             ports = {
