@@ -17,6 +17,8 @@ const (
 	ClusterSetCmdStr        = "set"
 	ClusterGetCmdStr        = "get"
 	ClusterLsCmdStr         = "ls"
+	ContextCmdStr           = "context"
+	ContextLsCmdStr         = "ls"
 	DiscordCmdStr           = "discord"
 	DocsCmdStr              = "docs"
 	EnclaveCmdStr           = "enclave"
