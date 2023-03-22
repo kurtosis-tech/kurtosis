@@ -77,6 +77,9 @@ UUID:                                 a78f2ce1ca68
 Status:                               RUNNING
 Creation Time:                        Wed, 15 Mar 2023 04:27:01 -03
 
+========================================= Files Artifacts =========================================
+UUID   Name
+
 ========================================== User Services ==========================================
 UUID   Name   Ports   Status
 ```
@@ -141,6 +144,9 @@ Name:                                 quickstart
 UUID:                                 a30106a0bb87
 Status:                               RUNNING
 Creation Time:                        Tue, 14 Mar 2023 20:23:54 -03
+
+========================================= Files Artifacts =========================================
+UUID   Name
 
 ========================================== User Services ==========================================
 UUID           Name       Ports                                                Status
@@ -298,6 +304,10 @@ Name:                                 quickstart
 UUID:                                 995fe0ca69fe
 Status:                               RUNNING
 Creation Time:                        Wed, 15 Mar 2023 04:34:06 -03
+
+========================================= Files Artifacts =========================================
+UUID           Name
+323c9a71ebbf   crimson-haze
 
 ========================================== User Services ==========================================
 UUID           Name       Ports                                                Status
@@ -514,6 +524,10 @@ UUID:                                 5b360f940bcc
 Status:                               RUNNING
 Creation Time:                        Tue, 14 Mar 2023 22:15:19 -03
 
+========================================= Files Artifacts =========================================
+UUID           Name
+323c9a71ebbf   crimson-haze
+
 ========================================== User Services ==========================================
 UUID           Name        Ports                                                Status
 45b355fc810b   postgres    postgres: 5432/tcp -> postgresql://127.0.0.1:59821   RUNNING
@@ -584,6 +598,10 @@ Name:                         quickstart
 UUID:                         11c0ac047299
 Status:                       RUNNING
 Creation Time:                Tue, 14 Mar 2023 22:30:02 -03
+
+========================================= Files Artifacts =========================================
+UUID           Name
+323c9a71ebbf   crimson-haze
 
 ========================================== User Services ==========================================
 UUID           Name        Ports                                                Status
