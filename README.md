@@ -217,13 +217,6 @@ On MacOS:
 brew install filosottile/musl-cross/musl-cross
 ```
 
-- [Kudet](https://github.com/kurtosis-tech/kudet) (Kurtosis CLI helper)
-
-On MacOS:
-```bash
-brew install kurtosis-tech/tap/kudet
-```
-
 ## Unit Test Instructions
 
 For all Go modules, run `go test ./...` on the module folder. For example:

@@ -11,19 +11,10 @@ body:
   - type: textarea
     id: background-and-motivation
     attributes:
-      label: Background and motivation
-      placeholder: Please share with us your use case and what you were trying to accomplish with Kurtosis. 
+      label: Background & current behavior
+      placeholder: Please share with us what happens today and what you are trying to accomplish with Kurtosis. 
       description: |
-        Context helps our team build more robust solutions for users like yourself.
-    validations:
-      required: true
-  - type: textarea
-    id: current-behavior
-    attributes:
-      label: Current behavior
-      placeholder: Share with us what happens today.
-      description: |
-        Consider adding code examples, screenshots, or references. Doing so helps our team better understand what is happening.
+        Consider adding code examples, screenshots, or references. Doing so helps our team better understand what is happening and build more robust solutions for users like yourself.
     validations:
       required: true
   - type: textarea

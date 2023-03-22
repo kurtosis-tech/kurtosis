@@ -5,6 +5,7 @@ go 1.18
 replace (
 	github.com/kurtosis-tech/kurtosis/api/golang => ../../api/golang
 	github.com/kurtosis-tech/kurtosis/container-engine-lib => ../../container-engine-lib
+	github.com/kurtosis-tech/kurtosis/contexts-config-store => ../../contexts-config-store
 	github.com/kurtosis-tech/kurtosis/engine/launcher => ../../engine/launcher
 	github.com/kurtosis-tech/kurtosis/kurtosis_version => ../../kurtosis_version
 )
@@ -14,10 +15,11 @@ require (
 	github.com/adrg/xdg v0.4.0
 	github.com/denisbrodbeck/machineid v1.0.1
 	github.com/dmarkham/enumer v1.5.5
-	github.com/docker/distribution v2.7.1+incompatible
+	github.com/docker/distribution v2.8.0+incompatible
 	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/kurtosis-tech/kurtosis/api/golang v0.0.0 // local dependency
 	github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.0 // local dependency
+	github.com/kurtosis-tech/kurtosis/contexts-config-store v0.0.0 // local dependency
 	github.com/kurtosis-tech/kurtosis/engine/launcher v0.0.0 // local dependency
 	github.com/kurtosis-tech/kurtosis/kurtosis_version v0.0.0 // Local dependency generated during build
 	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20230221115618-70c305416224
@@ -30,7 +32,7 @@ require (
 	github.com/stretchr/testify v1.7.4
 	golang.org/x/crypto v0.0.0-20220214200702-86341886e292
 	google.golang.org/grpc v1.41.0
-	google.golang.org/protobuf v1.27.1
+	google.golang.org/protobuf v1.29.1
 	k8s.io/apimachinery v0.24.0 // indirect
 	k8s.io/client-go v0.24.0
 )
@@ -70,7 +72,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/nwaples/rardecode v1.1.3 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
-	github.com/opencontainers/image-spec v1.0.1 // indirect
+	github.com/opencontainers/image-spec v1.0.2 // indirect
 	github.com/pascaldekloe/name v1.0.1 // indirect
 	github.com/pierrec/lz4 v2.6.1+incompatible // indirect
 	github.com/pkg/errors v0.9.1 // indirect
@@ -81,15 +83,14 @@ require (
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/xtgo/uuid v0.0.0-20140804021211-a0b114877d4c // indirect
 	go.etcd.io/bbolt v1.3.6 // indirect
-	golang.org/x/mod v0.6.0-dev.0.20220106191415-9b9b3d81d5e3 // indirect
-	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd // indirect
+	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4 // indirect
+	golang.org/x/net v0.7.0 // indirect
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8 // indirect
-	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a // indirect
-	golang.org/x/term v0.1.0 // indirect
-	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/sys v0.5.0 // indirect
+	golang.org/x/term v0.5.0 // indirect
+	golang.org/x/text v0.7.0 // indirect
 	golang.org/x/time v0.0.0-20220210224613-90d013bbcef8 // indirect
-	golang.org/x/tools v0.1.10 // indirect
-	golang.org/x/xerrors v0.0.0-20220517211312-f3a8303e98df // indirect
+	golang.org/x/tools v0.1.12 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20210602131652-f16073e35f0c // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
