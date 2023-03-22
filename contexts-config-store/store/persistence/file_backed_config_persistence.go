@@ -3,7 +3,7 @@ package persistence
 import (
 	"github.com/adrg/xdg"
 	"github.com/kurtosis-tech/kurtosis/contexts-config-store/api/golang/generated"
-	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store/serialization"
+	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store/serde"
 	"github.com/kurtosis-tech/stacktrace"
 	"os"
 	"path"
@@ -57,7 +57,7 @@ func (persistence *FileBackedConfigPersistence) LoadContextsConfig() (*generated
 		return nil, stacktrace.Propagate(err, "Unable to read context config file at '%s'",
 			persistence.backingFilePath)
 	}
-	contextsConfig, err := serialization.DeserializeKurtosisContextsConfig(contextsConfigFileContent)
+	contextsConfig, err := serde.DeserializeKurtosisContextsConfig(contextsConfigFileContent)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Unable to deserialize content of context config file at '%s'",
 			persistence.backingFilePath)
@@ -102,7 +102,7 @@ func (persistence *FileBackedConfigPersistence) persistContextsConfigInternal(ne
 	persistence.Lock()
 	defer persistence.Unlock()
 
-	serializedContextsConfig, err := serialization.SerializeKurtosisContextsConfig(newContextsConfig)
+	serializedContextsConfig, err := serde.SerializeKurtosisContextsConfig(newContextsConfig)
 	if err != nil {
 		return stacktrace.Propagate(err, "Unable to serialize content of contexts config object to JSON")
 	}

@@ -98,7 +98,7 @@ func runMain() error {
 	}
 	logrus.SetLevel(logLevel)
 
-	backendConfig := serverArgs.KurtosisBackendConfig
+	backendConfig := serverArgs.KurtosisLocalBackendConfig
 	if backendConfig == nil {
 		return stacktrace.NewError("Backend configuration parameters are null - there must be backend configuration parameters.")
 	}
@@ -164,9 +164,9 @@ func getKurtosisBackend(ctx context.Context, kurtosisBackendType args.KurtosisBa
 		}
 	case args.KurtosisBackendType_Kubernetes:
 		if remoteBackendConfigMaybe != nil {
-			return nil, stacktrace.NewError("Using Kubernetes as a local cluster connected to a remote " +
-				"Kurtosis backend is currently not supported. Either switch to a local-only context to use " +
-				"Kubernetes locally, or switch the cluster to Docker to connect to a remote Kurtosis backend")
+			return nil, stacktrace.NewError("Using a Remote Kurtosis Backend isn't allowed with Kubernetes. " +
+				"Either switch to a local only context to use Kubernetes or switch the cluster to Docker to " +
+				"connect to a remote Kurtosis backend")
 		}
 		// Use this with more properties
 		_, ok := (backendConfig).(kurtosis_backend_config.KubernetesBackendConfig)

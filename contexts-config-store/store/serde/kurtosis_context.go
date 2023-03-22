@@ -1,4 +1,4 @@
-package serialization
+package serde
 
 import (
 	"github.com/kurtosis-tech/kurtosis/contexts-config-store/api/golang/generated"

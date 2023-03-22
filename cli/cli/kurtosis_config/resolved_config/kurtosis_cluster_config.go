@@ -6,7 +6,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/remote_context_backend"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
-	"github.com/kurtosis-tech/kurtosis/contexts-config-store/api/golang/generated"
 	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/engine_server_launcher"
 	"github.com/kurtosis-tech/stacktrace"
@@ -89,14 +88,7 @@ func getSuppliers(clusterId string, clusterType KurtosisClusterType, kubernetesC
 	*engine_server_launcher.KurtosisRemoteBackendConfigSupplier,
 	error,
 ) {
-	kurtosisRemoteBackendConfigSupplier := engine_server_launcher.NewKurtosisRemoteBackendConfigSupplier(func() (*generated.KurtosisContext, error) {
-		contextsConfigStore := store.GetContextsConfigStore()
-		currentContext, err := contextsConfigStore.GetCurrentContext()
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Error loading current context info")
-		}
-		return currentContext, nil
-	})
+	kurtosisRemoteBackendConfigSupplier := engine_server_launcher.NewKurtosisRemoteBackendConfigSupplier(store.GetContextsConfigStore().GetCurrentContext)
 
 	var backendSupplier kurtosisBackendSupplier
 	var engineConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier
@@ -162,9 +154,9 @@ func getSuppliers(clusterId string, clusterType KurtosisClusterType, kubernetesC
 				return nil, stacktrace.Propagate(err, "Error building optional remote Kurtosis backend config")
 			}
 			if kurtosisRemoteBackendConfigMaybe != nil {
-				return nil, stacktrace.NewError("Using Kubernetes as a local cluster connected to a remote" +
-					"Kurtosis backend is currently not supported. Either switch to a local-only context to use " +
-					"Kubernetes locally, or switch the cluster to Docker to connect to a remote Kurtosis backend")
+				return nil, stacktrace.NewError("Using a Remote Kurtosis Backend isn't allowed with Kubernetes. " +
+					"Either switch to a local only context to use Kubernetes or switch the cluster to Docker to " +
+					"connect to a remote Kurtosis backend")
 			}
 
 			pluginPath := backend_interface.GetPluginPathForCLI(backend_interface.KubernetesPluginName)

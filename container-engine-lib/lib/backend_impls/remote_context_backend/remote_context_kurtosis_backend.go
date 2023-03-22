@@ -42,8 +42,11 @@ func newRemoteContextKurtosisBackend(
 }
 
 func (backend *RemoteContextKurtosisBackend) FetchImage(ctx context.Context, image string) error {
-	// without knowing which backend will need the image, it's tricky to filter which one should fetch it.
-	// For now, fetch it on both in parallel
+	// Without knowing which backend will need the image, it's tricky to filter which one should fetch it.
+	// As said in the above comment, in practice, this is not the end of the world because this dual-context backend
+	// is effectively used only by the engine and the CLI. Therefore, everything it downloads is the Engine and APIC
+	// images.
+	// If we start using this dual-context backend in other places, we might want to optimize this behaviour.
 	errorGroup := errgroup.Group{}
 	errorGroup.Go(func() error {
 		return backend.localKurtosisBackend.FetchImage(ctx, image)
@@ -52,7 +55,7 @@ func (backend *RemoteContextKurtosisBackend) FetchImage(ctx context.Context, ima
 		return backend.remoteKurtosisBackend.FetchImage(ctx, image)
 	})
 	if err := errorGroup.Wait(); err != nil {
-		return stacktrace.Propagate(err, "Error fetching the image in one of the backends")
+		return stacktrace.Propagate(err, "Error fetching the image '%s' in one of the backends", image)
 	}
 	return nil
 }

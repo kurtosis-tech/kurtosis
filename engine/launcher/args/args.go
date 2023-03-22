@@ -32,10 +32,15 @@ type EngineServerArgs struct {
 
 	KurtosisBackendType KurtosisBackendType `json:"kurtosisBackendType"`
 
+	// KurtosisLocalBackendConfig corresponds to the config to connect the Kurtosis backend running in the user local
+	// laptop. It is mandatory as Kurtosis cannot run without a local backend right now
 	// Should be deserialized differently depending on value of KurtosisBackendType
-	KurtosisBackendConfig interface{} `json:"kurtosisBackendConfig"`
+	KurtosisLocalBackendConfig interface{} `json:"kurtosisBackendConfig"`
 
-	// Configuration to connect to a remote Kurtosis backend, if needed
+	// KurtosisRemoteBackendConfig corresponds to the config to connect to an optional remote backend. It is used only
+	// when Kurtosis is using a dual-backend context (both local and remote). In this case, Kurtosis connects  to both
+	// the local backend and the remote backend using this configuration and the above KurtosisLocalBackendConfig
+	// Is nil when Kurtosis is used in a local-only context
 	KurtosisRemoteBackendConfig *remote_context_backend.KurtosisRemoteBackendConfig `json:"kurtosisRemoteBackendConfig,omitempty"`
 }
 
@@ -46,7 +51,7 @@ func (args *EngineServerArgs) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &engineServerArgsMirror); err != nil {
 		return stacktrace.Propagate(err, "Failed to unmarshal engine server args")
 	}
-	byteArray, err := json.Marshal(engineServerArgsMirror.KurtosisBackendConfig)
+	byteArray, err := json.Marshal(engineServerArgsMirror.KurtosisLocalBackendConfig)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to re-marshal interface ")
 	}
@@ -54,15 +59,15 @@ func (args *EngineServerArgs) UnmarshalJSON(data []byte) error {
 	case KurtosisBackendType_Docker:
 		var dockerConfig kurtosis_backend_config.DockerBackendConfig
 		if err := json.Unmarshal(byteArray, &dockerConfig); err != nil {
-			return stacktrace.Propagate(err, "Failed to unmarshal backend config '%+v' with type '%v'", engineServerArgsMirror.KurtosisBackendConfig, engineServerArgsMirror.KurtosisBackendType.String())
+			return stacktrace.Propagate(err, "Failed to unmarshal backend config '%+v' with type '%v'", engineServerArgsMirror.KurtosisLocalBackendConfig, engineServerArgsMirror.KurtosisBackendType.String())
 		}
-		engineServerArgsMirror.KurtosisBackendConfig = dockerConfig
+		engineServerArgsMirror.KurtosisLocalBackendConfig = dockerConfig
 	case KurtosisBackendType_Kubernetes:
 		var kubernetesConfig kurtosis_backend_config.KubernetesBackendConfig
 		if err := json.Unmarshal(byteArray, &kubernetesConfig); err != nil {
-			return stacktrace.Propagate(err, "Failed to unmarshal backend config '%+v' with type '%v'", engineServerArgsMirror.KurtosisBackendConfig, engineServerArgsMirror.KurtosisBackendType.String())
+			return stacktrace.Propagate(err, "Failed to unmarshal backend config '%+v' with type '%v'", engineServerArgsMirror.KurtosisLocalBackendConfig, engineServerArgsMirror.KurtosisBackendType.String())
 		}
-		engineServerArgsMirror.KurtosisBackendConfig = kubernetesConfig
+		engineServerArgsMirror.KurtosisLocalBackendConfig = kubernetesConfig
 	default:
 		return stacktrace.NewError("Unmarshalled an unrecognized Kurtosis backend type: '%v'", engineServerArgsMirror.KurtosisBackendType.String())
 	}
@@ -80,8 +85,8 @@ func NewEngineServerArgs(
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
 	kurtosisBackendType KurtosisBackendType,
-	kurtosisBackendConfig interface{},
-	remoteBackendConfig *remote_context_backend.KurtosisRemoteBackendConfig,
+	kurtosisLocalBackendConfig interface{},
+	kurtosisRemoteBackendConfig *remote_context_backend.KurtosisRemoteBackendConfig,
 ) (*EngineServerArgs, error) {
 	result := &EngineServerArgs{
 		GrpcListenPortNum:           grpcListenPortNum,
@@ -91,8 +96,8 @@ func NewEngineServerArgs(
 		MetricsUserID:               metricsUserID,
 		DidUserAcceptSendingMetrics: didUserAcceptSendingMetrics,
 		KurtosisBackendType:         kurtosisBackendType,
-		KurtosisBackendConfig:       kurtosisBackendConfig,
-		KurtosisRemoteBackendConfig: remoteBackendConfig,
+		KurtosisLocalBackendConfig:  kurtosisLocalBackendConfig,
+		KurtosisRemoteBackendConfig: kurtosisRemoteBackendConfig,
 	}
 	if err := result.validate(); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred validating engine server args")

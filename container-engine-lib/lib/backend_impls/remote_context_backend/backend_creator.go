@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	urlProtocol = "tcp"
+	urlScheme = "tcp"
 
 	noTempDirPrefix    = ""
 	tempDirNamePattern = "kurtosis_backend_tls_*"
@@ -51,12 +51,13 @@ func buildRemoteDockerClient(remoteBackendConfig *KurtosisRemoteBackendConfig) (
 	var clientOptions []client.Opt
 
 	// host and port option
-	url := fmt.Sprintf("%s://%s:%d", urlProtocol, remoteBackendConfig.Host, remoteBackendConfig.Port)
+	url := fmt.Sprintf("%s://%s:%d", urlScheme, remoteBackendConfig.Host, remoteBackendConfig.Port)
 	clientOptions = append(clientOptions, client.WithHost(url))
 
 	// TLS option if config is present
 	if tlsConfig := remoteBackendConfig.Tls; tlsConfig != nil {
-		tlsFilesDir, err := writeTlsConfigToTempDir(tlsConfig.Ca, tlsConfig.ClientCert, tlsConfig.ClientKey)
+		tlsFilesDir, cleanCertFilesFunc, err := writeTlsConfigToTempDir(tlsConfig.Ca, tlsConfig.ClientCert, tlsConfig.ClientKey)
+		defer cleanCertFilesFunc()
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Error building TLS configuration to connect to remote Docker backend")
 		}
@@ -77,19 +78,30 @@ func buildRemoteDockerClient(remoteBackendConfig *KurtosisRemoteBackendConfig) (
 	return remoteDockerClient, nil
 }
 
-func writeTlsConfigToTempDir(ca []byte, cert []byte, key []byte) (string, error) {
-	tempDirectory, err := os.MkdirTemp("", tempDirNamePattern)
+// writeTlsConfigToTempDir writes the different TLS files to a directory, and returns the path to this directory.
+// It also returns a function to manually delete those files once they've been used upstream
+func writeTlsConfigToTempDir(ca []byte, cert []byte, key []byte) (string, func(), error) {
+	tempDirectory, err := os.MkdirTemp(noTempDirPrefix, tempDirNamePattern)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "Cannot create a temporary directory to store Kurtosis backend TLS files")
+		return "", nil, stacktrace.Propagate(err, "Cannot create a temporary directory to store Kurtosis backend TLS files")
 	}
-	if err = os.WriteFile(path.Join(tempDirectory, caFileName), ca, tlsFilesPerm); err != nil {
-		return "", stacktrace.Propagate(err, "Error writing content of CA to temporary file")
+	caAbsFileName := path.Join(tempDirectory, caFileName)
+	if err = os.WriteFile(caAbsFileName, ca, tlsFilesPerm); err != nil {
+		return "", nil, stacktrace.Propagate(err, "Error writing content of CA to temporary file at '%s'", caAbsFileName)
 	}
-	if err = os.WriteFile(path.Join(tempDirectory, certFileName), cert, tlsFilesPerm); err != nil {
-		return "", stacktrace.Propagate(err, "Error writing content of certificate to temporary file")
+	certAbsFileName := path.Join(tempDirectory, caFileName)
+	if err = os.WriteFile(certAbsFileName, cert, tlsFilesPerm); err != nil {
+		return "", nil, stacktrace.Propagate(err, "Error writing content of certificate to temporary file at '%s'", certAbsFileName)
 	}
-	if err = os.WriteFile(path.Join(tempDirectory, keyFileName), key, tlsFilesPerm); err != nil {
-		return "", stacktrace.Propagate(err, "Error writing content of key to temporary file")
+	keyAbsFileName := path.Join(tempDirectory, keyFileName)
+	if err = os.WriteFile(keyAbsFileName, key, tlsFilesPerm); err != nil {
+		return "", nil, stacktrace.Propagate(err, "Error writing content of key to temporary file at '%s'", keyAbsFileName)
 	}
-	return tempDirectory, nil
+
+	cleanDirectoryFunc := func() {
+		if err = os.RemoveAll(tempDirectory); err != nil {
+			logrus.Warnf("Error removing TLS config directory at '%s'. Will remain in the OS temporary files folder until the OS removes it", tempDirectory)
+		}
+	}
+	return tempDirectory, cleanDirectoryFunc, nil
 }
