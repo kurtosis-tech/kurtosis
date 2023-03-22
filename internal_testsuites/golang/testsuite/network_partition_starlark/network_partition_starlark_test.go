@@ -99,7 +99,8 @@ def run(plan, args):
 			command=["ping", "-W", "1", "-c", "1", service_1.ip_address],
 		),
 		service_name = SERVICE_NAME_2,
-	), acceptable_codes = [CONNECTION_SUCCESS])
+	))
+	plan.assert(connection_result["code"], "==", CONNECTION_SUCCESS)
 
 	plan.print("Test successfully executed")
 `
