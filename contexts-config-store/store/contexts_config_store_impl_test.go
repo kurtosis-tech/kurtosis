@@ -134,6 +134,25 @@ func TestAddNewContext_AlreadyExists(t *testing.T) {
 	storage.AssertNotCalled(t, method.Name, mock.Anything)
 }
 
+func TestAddNewContext_DefaultContext(t *testing.T) {
+	// Setup storage mock
+	storage := persistence.NewMockConfigPersistence(t)
+
+	// Run test
+	testContextConfigStore := NewContextConfigStore(storage)
+	newDefaultContext := api.NewLocalOnlyContext(contextUuid, persistence.DefaultContextName)
+	err := testContextConfigStore.AddNewContext(newDefaultContext)
+	require.Error(t, err)
+	expectedErr := fmt.Sprintf("Adding a new context with name '%s' is not allowed as it is a reserved context name",
+		persistence.DefaultContextName)
+	require.Contains(t, err.Error(), expectedErr)
+
+	// Need to check the method exist first because if the method name changes in the future this test would do nothing
+	method, found := reflect.TypeOf(storage).MethodByName(persistMethodName)
+	require.True(t, found)
+	storage.AssertNotCalled(t, method.Name, mock.Anything)
+}
+
 func TestRemoveContext(t *testing.T) {
 	// Setup storage mock
 	storage := persistence.NewMockConfigPersistence(t)
@@ -159,9 +178,31 @@ func TestRemoveContext_FailureCurrentContext(t *testing.T) {
 	testContextConfigStore := NewContextConfigStore(storage)
 	err := testContextConfigStore.RemoveContext(contextUuid)
 	require.Error(t, err)
-	expecteErr := fmt.Sprintf("Cannot remove context '%s' as it is currently the selected context. Switch to a "+
+	expectedErr := fmt.Sprintf("Cannot remove context '%s' as it is currently the selected context. Switch to a "+
 		"different context before removing it", contextUuid.GetValue())
-	require.Contains(t, err.Error(), expecteErr)
+	require.Contains(t, err.Error(), expectedErr)
+
+	// Need to check the method exist first because if the method name changes in the future this test would do nothing
+	persistMethod, found := reflect.TypeOf(storage).MethodByName(persistMethodName)
+	require.True(t, found)
+	storage.AssertNotCalled(t, persistMethod.Name, mock.Anything)
+}
+
+func TestRemoveContext_FailureDefaultContext(t *testing.T) {
+	// Setup storage mock
+	storage := persistence.NewMockConfigPersistence(t)
+	defaultContextUuid := api.NewContextUuid("default-context-uuid")
+	defaultDefaultContext := api.NewLocalOnlyContext(defaultContextUuid, persistence.DefaultContextName)
+	contextsConfig := api.NewKurtosisContextsConfig(contextUuid, defaultDefaultContext, localContext)
+	storage.EXPECT().LoadContextsConfig().Return(contextsConfig, nil)
+
+	// Run test
+	testContextConfigStore := NewContextConfigStore(storage)
+	err := testContextConfigStore.RemoveContext(defaultContextUuid)
+	require.Error(t, err)
+	expectedErr := fmt.Sprintf("Cannot remove context '%s' as it is a reserved context",
+		persistence.DefaultContextName)
+	require.Contains(t, err.Error(), expectedErr)
 
 	// Need to check the method exist first because if the method name changes in the future this test would do nothing
 	persistMethod, found := reflect.TypeOf(storage).MethodByName(persistMethodName)

@@ -244,7 +244,6 @@ jobs:
 
       - setup_remote_docker:
           version: "<< pipeline.parameters.docker-engine-version>>"
-      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
       - run: |
           core/files_artifacts_expander/scripts/build.sh
@@ -293,7 +292,6 @@ jobs:
 
       - setup_remote_docker:
           version: "<< pipeline.parameters.docker-engine-version>>"
-      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
       # Cache our dependencies
       - restore_cache:
@@ -348,7 +346,6 @@ jobs:
 
       - setup_remote_docker:
           version: "<< pipeline.parameters.docker-engine-version>>"
-      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
       # Cache our dependencies
       - restore_cache:
@@ -429,7 +426,6 @@ jobs:
       # We call Kurtosis a bunch later, so add it to the PATH so we can call it easily
       - run: |
           echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
-      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
       #Run config init to avoid metrics consent prompt when execute engine start command,
       #We do not send metrics from CI to not dirty the metrics data
       - run: "${KURTOSIS_BINPATH} analytics disable"
@@ -498,7 +494,6 @@ jobs:
       # We call Kurtosis a bunch later, so add it to the PATH so we can call it easily
       - run: |
           echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
-      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
       #Run install Yarn because TypeScript tests are managed with Yarn package manager
       - run: npm install -g yarn
@@ -567,8 +562,6 @@ jobs:
       - checkout
 
       - <<: *abort_job_if_only_docs_changes
-
-      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
       # Set up Kurtosis
       - attach_workspace:
@@ -641,8 +634,6 @@ jobs:
       - checkout
 
       - <<: *abort_job_if_only_docs_changes
-
-      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
       # Set up Kurtosis
       - attach_workspace:
@@ -961,6 +952,8 @@ workflows:
             branches:
               ignore:
                 - main
+                - release-please--branches--main--components--kurtosis
+                - gh-readonly-queue/main/.*
 
       - build_container_engine_lib:
           filters:
@@ -1117,6 +1110,10 @@ workflows:
           context:
             - gemfury-publisher
             - github-user
+          requires:
+            - publish_kurtosis_api_typescript
+            - publish_api_container_server_image
+            - publish_engine_server_image
           filters:
             branches:
               ignore: /.*/
