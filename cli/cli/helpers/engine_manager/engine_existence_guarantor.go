@@ -46,6 +46,8 @@ type engineExistenceGuarantor struct {
 
 	engineServerKurtosisBackendConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier
 
+	kurtosisRemoteBackendConfigSupplier *engine_server_launcher.KurtosisRemoteBackendConfigSupplier
+
 	engineServerLauncher *engine_server_launcher.EngineServerLauncher
 
 	imageVersionTag string
@@ -70,6 +72,7 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 	kurtosisBackend backend_interface.KurtosisBackend,
 	shouldSendMetrics bool,
 	engineServerKurtosisBackendConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier,
+	kurtosisRemoteBackendConfigSupplier *engine_server_launcher.KurtosisRemoteBackendConfigSupplier,
 	logLevel logrus.Level,
 	maybeCurrentlyRunningEngineVersionTag string,
 	kurtosisClusterType resolved_config.KurtosisClusterType,
@@ -80,6 +83,7 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 		kurtosisBackend,
 		shouldSendMetrics,
 		engineServerKurtosisBackendConfigSupplier,
+		kurtosisRemoteBackendConfigSupplier,
 		defaultEngineImageVersionTag,
 		logLevel,
 		maybeCurrentlyRunningEngineVersionTag,
@@ -93,6 +97,7 @@ func newEngineExistenceGuarantorWithCustomVersion(
 	kurtosisBackend backend_interface.KurtosisBackend,
 	shouldSendMetrics bool,
 	engineServerKurtosisBackendConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier,
+	kurtosisRemoteBackendConfigSupplier *engine_server_launcher.KurtosisRemoteBackendConfigSupplier,
 	imageVersionTag string,
 	logLevel logrus.Level,
 	maybeCurrentlyRunningEngineVersionTag string,
@@ -103,6 +108,7 @@ func newEngineExistenceGuarantorWithCustomVersion(
 		preVisitingMaybeHostMachineIpAndPort: preVisitingMaybeHostMachineIpAndPort,
 		kurtosisBackend:                      kurtosisBackend,
 		engineServerKurtosisBackendConfigSupplier: engineServerKurtosisBackendConfigSupplier,
+		kurtosisRemoteBackendConfigSupplier:       kurtosisRemoteBackendConfigSupplier,
 		engineServerLauncher:                      engine_server_launcher.NewEngineServerLauncher(kurtosisBackend),
 		imageVersionTag:                           imageVersionTag,
 		logLevel:                                  logLevel,
@@ -137,6 +143,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			metricsUserId,
 			guarantor.shouldSendMetrics,
 			guarantor.engineServerKurtosisBackendConfigSupplier,
+			guarantor.kurtosisRemoteBackendConfigSupplier,
 		)
 	} else {
 		_, _, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithCustomVersion(
@@ -148,6 +155,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			metricsUserId,
 			guarantor.shouldSendMetrics,
 			guarantor.engineServerKurtosisBackendConfigSupplier,
+			guarantor.kurtosisRemoteBackendConfigSupplier,
 		)
 	}
 	if engineLaunchErr != nil {
