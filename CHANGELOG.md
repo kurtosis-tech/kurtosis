@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.69.1](https://github.com/kurtosis-tech/kurtosis/compare/0.69.0...0.69.1) (2023-03-22)
+
+
+### Features
+
+* Add `context` root command and simple `ls` subcommand ([#241](https://github.com/kurtosis-tech/kurtosis/issues/241)) ([4097c25](https://github.com/kurtosis-tech/kurtosis/commit/4097c25ad57af61f16044b1193df28b5b94acc97))
+
 ## [0.69.0](https://github.com/kurtosis-tech/kurtosis/compare/0.68.13...0.69.0) (2023-03-21)
 
 
