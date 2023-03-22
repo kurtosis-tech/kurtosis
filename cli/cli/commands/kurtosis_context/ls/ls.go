@@ -51,7 +51,7 @@ func run(_ context.Context, flags *flags.ParsedFlags, _ *args.ParsedArgs) error 
 		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", fullUuidsFlagKey)
 	}
 
-	contextsConfigStore := store.GetContextConfigStore()
+	contextsConfigStore := store.GetContextsConfigStore()
 	contextsConfig, err := contextsConfigStore.GetKurtosisContextsConfig()
 	if err != nil {
 		return stacktrace.Propagate(err, "Error retrieving currently configured contexts")
