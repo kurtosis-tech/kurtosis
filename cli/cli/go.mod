@@ -5,6 +5,7 @@ go 1.18
 replace (
 	github.com/kurtosis-tech/kurtosis/api/golang => ../../api/golang
 	github.com/kurtosis-tech/kurtosis/container-engine-lib => ../../container-engine-lib
+	github.com/kurtosis-tech/kurtosis/contexts-config-store => ../../contexts-config-store
 	github.com/kurtosis-tech/kurtosis/engine/launcher => ../../engine/launcher
 	github.com/kurtosis-tech/kurtosis/kurtosis_version => ../../kurtosis_version
 )
@@ -18,6 +19,7 @@ require (
 	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/kurtosis-tech/kurtosis/api/golang v0.0.0 // local dependency
 	github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.0 // local dependency
+	github.com/kurtosis-tech/kurtosis/contexts-config-store v0.0.0 // local dependency
 	github.com/kurtosis-tech/kurtosis/engine/launcher v0.0.0 // local dependency
 	github.com/kurtosis-tech/kurtosis/kurtosis_version v0.0.0 // Local dependency generated during build
 	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20230221115618-70c305416224
@@ -30,7 +32,7 @@ require (
 	github.com/stretchr/testify v1.7.4
 	golang.org/x/crypto v0.0.0-20220214200702-86341886e292
 	google.golang.org/grpc v1.41.0
-	google.golang.org/protobuf v1.27.1
+	google.golang.org/protobuf v1.29.1
 	k8s.io/apimachinery v0.24.0 // indirect
 	k8s.io/client-go v0.24.0
 )
