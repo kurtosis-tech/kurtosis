@@ -53,11 +53,10 @@ def run(plan):
 	)
 	for filePath in template_dict:
 		get_recipe = GetHttpRequestRecipe(
-			service_name = "file-server",
 			port_id = "http",
 			endpoint = "/" + filePath,
 		)
-		response = plan.wait(get_recipe, "code", "==", 200)
+		response = plan.wait(recipe=get_recipe, field="code", assertion="==", target_value=200, service_name="file-server")
 		plan.assert(response["body"], "==", expected_contents)
 `
 	noStarlarkParams = "{}"

@@ -15,8 +15,7 @@ import (
 	"testing"
 )
 
-//This test case is for testing positional arguments retro-compatibility for those script
-//that are using the recipe value as the first positional argument
+//This test case is for testing positional arguments
 type requestTestCase2 struct {
 	*testing.T
 }
@@ -37,7 +36,7 @@ func (t *requestTestCase2) GetInstruction() *kurtosis_plan_instruction.KurtosisP
 
 	serviceNetwork.EXPECT().HttpRequestService(
 		mock.Anything,
-		string(requestTestCase1ServiceName),
+		string(requestTestCaseServiceName),
 		requestPortId,
 		requestMethod,
 		requestContentType,
@@ -67,13 +66,13 @@ func (t *requestTestCase2) GetInstruction() *kurtosis_plan_instruction.KurtosisP
 }
 
 func (t *requestTestCase2) GetStarlarkCode() string {
-	recipe := fmt.Sprintf(`GetHttpRequestRecipe(port_id=%q, service_name=%q, endpoint=%q, extract={"key": ".value"})`, requestPortId, requestTestCase1ServiceName, requestEndpoint)
-	return fmt.Sprintf("%s(%s)", request.RequestBuiltinName, recipe)
+	recipe := fmt.Sprintf(`GetHttpRequestRecipe(port_id=%q, endpoint=%q, extract={"key": ".value"})`, requestPortId, requestEndpoint)
+	return fmt.Sprintf("%s(%s, %q)", request.RequestBuiltinName, recipe, requestTestCaseServiceName)
 }
 
 func (t *requestTestCase2) GetStarlarkCodeForAssertion() string {
-	recipe := fmt.Sprintf(`GetHttpRequestRecipe(port_id=%q, service_name=%q, endpoint=%q, extract={"key": ".value"})`, requestPortId, requestTestCase1ServiceName, requestEndpoint)
-	return fmt.Sprintf("%s(%s=%s)", request.RequestBuiltinName, request.RecipeArgName, recipe)
+	recipe := fmt.Sprintf(`GetHttpRequestRecipe(port_id=%q, endpoint=%q, extract={"key": ".value"})`, requestPortId, requestEndpoint)
+	return fmt.Sprintf("%s(%s=%s, %s=%q)", request.RequestBuiltinName, request.RecipeArgName, recipe, request.ServiceNameArgName, requestTestCaseServiceName)
 }
 
 func (t *requestTestCase2) Assert(interpretationResult starlark.Value, executionResult *string) {

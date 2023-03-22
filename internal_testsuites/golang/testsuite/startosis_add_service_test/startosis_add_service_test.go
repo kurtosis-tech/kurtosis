@@ -39,17 +39,21 @@ def run(plan):
 	datastore_2 = plan.add_service(service_name = SERVICE_NAME_2, config = config)
 
 	test_hostname_cmd = "nc -zv {0} {1}".format(datastore_1.hostname, GRPC_PORT)
-	connection_result = plan.exec(recipe=ExecRecipe(
-		service_name=SERVICE_NAME_2,
-		command=["sh", "-c", test_hostname_cmd],
-	))
+	connection_result = plan.exec(
+		recipe = ExecRecipe(
+			command=["sh", "-c", test_hostname_cmd],
+		),
+		service_name = SERVICE_NAME_2,
+	)
 	plan.assert(connection_result["code"], "==", SUCCESS_CODE)
 	
 	test_ip_address_cmd = "nc -zv {0} {1}".format(datastore_1.ip_address, GRPC_PORT) 
-	connection_result = plan.exec(recipe=ExecRecipe(
-		service_name=SERVICE_NAME_2,
-		command=["sh", "-c", test_ip_address_cmd],
-	))
+	connection_result = plan.exec(
+		recipe = ExecRecipe(
+			command=["sh", "-c", test_ip_address_cmd],
+		),
+		service_name = SERVICE_NAME_2,
+	)
 	plan.assert(connection_result["code"], "==", SUCCESS_CODE)
 `
 )
