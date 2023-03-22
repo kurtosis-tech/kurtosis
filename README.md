@@ -3,7 +3,7 @@
 
 ----
 
-[Kurtosis](https://www.kurtosis.com) is a development platform for distributed applications that aims to provide a consistent experience across all stages of distributed app software delivery.
+[Kurtosis](https://www.kurtosis.com) is a build system for multi-container test environments.
 
 Use cases for Kurtosis include:
 
@@ -15,18 +15,21 @@ Use cases for Kurtosis include:
 
 ## Why Kurtosis?
 
-Docker and Kubernetes are each great at serving developers in different parts of the development cycle: Docker for development/testing, Kubernetes for production. However, the separation between the two entails different distributed app definitions, and different tooling. In dev/test, this means Docker Compose and Docker observability tooling. In production, this means Helm definitions and manually-configured observability tools like Istio, Datadog, or Honeycomb.
+Kurtosis makes it much easier for a user to spin up multi-container test environments than alternatives like Helm Charts or Docker Compose; by working at a levle higher
+than a container orchestrator. It gives super powers to anyone who wants to spin up multi-container test environments by allowing - 
 
-Kurtosis aims at one level of abstraction higher. Developers can define their distributed applications in Kurtosis, and Kurtosis will handle:
-
-- Running on Docker or Kubernetes
-- Reproduceability
-- Safety
-- Port-forwarding & local development hookups
-- Observability
-- Sharing
-
-If we succeed in our vision, you will be able to use the same distributed application definition from local dev all the way to prod.
+- Instantiation of a multi container environment
+    - Kurtosis allows you to mount files & dynamically generated data in the right places within different containers across different test runs on different platforms
+    - Kurtosis allows you to refer to IP addresses, ports and hostnames of a service from a different service in the same multi container environment
+    - Kurtosis allows you to write reproducible "wait" logic to make sure that the right services are up and healthy in the right way across test environment setups
+    - Kurtosis is parametrized, allowing you to to tweak the number of nodes a service spins up with through user passed arguments
+    - Kurtosis allows you to include other environments in your environment reducing the need to repeat yourself
+    - Kurtosis allows you to port test environments, including the data setup, across platforms; allowing you to run the same test environment on your laptop, CI Job or an ad-hoc scale test environment
+- Interaction with a running multi container environment
+  - Kurtosis allows you to run on-box CLI commands within containers
+  - Kurtosis allows you to send REST requests to containers
+- Debugging of multi container environment
+  - Kurtosis provides easy access to logs of a given service
 
 ---
 
