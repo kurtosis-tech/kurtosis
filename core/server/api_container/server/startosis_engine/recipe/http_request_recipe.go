@@ -35,6 +35,8 @@ const (
 	methodAttr      = "method"
 	contentTypeAttr = "content_type"
 
+	defaultContentType = "application/json"
+
 	PostHttpRecipeTypeName = "PostHttpRequestRecipe"
 	GetHttpRecipeTypeName  = "GetHttpRequestRecipe"
 
@@ -194,21 +196,22 @@ func MakePostHttpRequestRecipe(_ *starlark.Thread, builtin *starlark.Builtin, ar
 	var portId string
 	var endpoint string
 
-	var body string
-	var contentType string
+	var maybeBody starlark.Value
+	contentType := defaultContentType
 	var maybeExtractField starlark.Value
 
 	if err := starlark.UnpackArgs(builtin.Name(), args, kwargs,
 		PortIdAttr, &portId,
 		EndpointAttr, &endpoint,
-		bodyKey, &body,
-		contentTypeAttr, &contentType,
+		kurtosis_types.MakeOptional(bodyKey), &maybeBody,
+		kurtosis_types.MakeOptional(contentTypeAttr), &contentType,
 		kurtosis_types.MakeOptional(ExtractKeyPrefix), &maybeExtractField,
 	); err != nil {
 		return nil, startosis_errors.NewInterpretationError("%v", err.Error())
 	}
 
 	extractedMap := map[string]string{}
+	extractedBody := ""
 	var err *startosis_errors.InterpretationError
 
 	if maybeExtractField != nil {
@@ -218,7 +221,14 @@ func MakePostHttpRequestRecipe(_ *starlark.Thread, builtin *starlark.Builtin, ar
 		}
 	}
 
-	recipe := NewPostHttpRequestRecipe(portId, contentType, endpoint, body, extractedMap)
+	if maybeBody != nil {
+		extractedBody, err = kurtosis_types.SafeCastToString(maybeBody, bodyKey)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	recipe := NewPostHttpRequestRecipe(portId, contentType, endpoint, extractedBody, extractedMap)
 	return recipe, nil
 }
 

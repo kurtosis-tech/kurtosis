@@ -115,7 +115,7 @@ all_services = plan.add_services(
     configs = {
         "example-datastore-server-1": datastore_server_config_1,
         "example-datastore-server-2": datastore_server_config_2,
-    }
+    },
 )
 ```
 
@@ -169,10 +169,19 @@ exec_recipe = ExecRecipe(
 )
 
 result = plan.exec(
-    # The recipe that will be run until assert passes.
+    # The recipe that will determine the exec to be performed.
     # Valid values are of the following types: (ExecRecipe)
     # MANDATORY
     recipe = exec_recipe,
+    
+    # If the recipe returns a code that does not belong on this list, this instruction will fail.
+    # OPTIONAL (Defaults to [0])
+    acceptable_codes = [0, 0], # Here both 0 and 1 are valid codes that we want to accept and not fail the instruction
+    
+    # If False, instruction will never fail based on code (acceptable_codes will be ignored).
+    # You can chain this call with assert to check codes after request is done.
+    # OPTIONAL (Defaults to False)
+    skip_code_check = False,
 
     # A Service name designating a service that already exists inside the enclave
     # If it does not, a validation error will be thrown
@@ -309,33 +318,25 @@ The return value is a [future reference][future-references-reference] to the nam
 
 The `request` instruction on the [`plan`][plan-reference] object executes either a POST or GET HTTP request, saving its result in a [future references][future-references-reference].
 
-For GET requests:
+To make a GET or POST request, simply set the `recipe` field to use the specified [GetHttpRequestRecipe][starlark-types-get-http-recipe] or the [PostHttpRequestRecipe][starlark-types-post-http-recipe]. 
 
 ```python
-get_request_recipe = GetHttpRequestRecipe(
-    # The port ID that is the server port for the request
-    # MANDATORY
-    port_id = "my_port",
-
-    # The endpoint for the request
-    # MANDATORY
-    endpoint = "/endpoint?input=data",
-
-    # The extract dictionary takes in key-value pairs where:
-    # Key is a way you refer to the extraction later on
-    # Value is a 'jq' string that contains logic to extract from response body
-    # OPTIONAL
-    extract = {
-        "extracted-field": ".name.id",
-    },
-)
-get_response = plan.request(
-    # The recipe that will be run until assert passes.
+http_response = plan.request(
+    # The recipe that will determine the request to be performed.
     # Valid values are of the following types: (GetHttpRequestRecipe, PostHttpRequestRecipe)
     # MANDATORY
-    recipe = get_request_recipe,
+    recipe = request_recipe,
     
-    # A Service name designating a service that already exists inside the enclave
+    # If the recipe returns a code that does not belong on this list, this instruction will fail.
+    # OPTIONAL (Defaults to [200, 201, ...])
+    acceptable_codes = [200, 500], # Here both 200 and 500 are valid codes that we want to accept and not fail the instruction
+    
+    # If False, instruction will never fail based on code (acceptable_codes will be ignored).
+    # You can chain this call with assert to check codes after request is done.
+    # OPTIONAL (defaults to False)
+    skip_code_check = false,
+    
+    # A service name designating a service that already exists inside the enclave
     # If it does not, a validation error will be thrown
     # MANDATORY
     service_name = "my_service",
@@ -345,51 +346,22 @@ plan.print(get_response["code"]) # Prints the result code of the request (e.g. 2
 plan.print(get_response["extract.extracted-field"]) # Prints the result of running ".name.id" query, that is saved with key "extracted-field"
 ```
 
-For POST requests:
-```python
-post_request_recipe = PostHttpRequestRecipe(
-    # The port ID that is the server port for the request
-    # MANDATORY
-    port_id = "my_port",
-
-    # The endpoint for the request
-    # MANDATORY
-    endpoint = "/endpoint",
-
-    # The content type header of the request (e.g. application/json, text/plain, etc)
-    # MANDATORY
-    content_type = "text/plain",
-
-    # The body of the request
-    # MANDATORY
-    body = "text body",
-
-    # The method is GET for this example
-    # OPTIONAL (Default: {})
-    extract = {},
-)
-post_response = plan.request(
-    recipe = post_request_recipe,
-    service_name = "my_service",
-)
-```
-
 The instruction returns a response, which is a `dict` with following key-value pair; the values are a [future reference][future-references-reference] 
 * `response["code"]` - returns the future reference to the `status code` of the response 
 * `response["body"]` - returns the future reference to the `body` of the the response
 * `response["extract.some-custom-field"]` - it is an optional field and returns the future reference to the value extracted from `body`, which is explained below.
 
-`jq`'s [regular expressions](https://devdocs.io/jq-regular-expressions-pcre/) is used to extract the information from the response `body` and is assigned to a custom field. **The `response["body"]` must be a valid json object for manipulating data using `extractions`**. A valid `response["body"]` can be used for extractions like so:
+`jq`'s [regular expressions](https://devdocs.io/jq-regular-expressions-pcre/) is used to extract the information from the response `body` and is assigned to a custom field. **The `response["body"]` must be a valid json object for manipulating data using `extractions`**. A valid `response["body"]` can be used for extractions. See below for an example of how this can be done for the [PostHttpRequestRecipe][starlark-types-post-http-recipe]:
 
  ```python
  # Assuming response["body"] looks like {"result": {"foo": ["hello/world/welcome"]}}
 post_request_recipe = PostHttpRequestRecipe(
     ...
     extract = {
-        "second-element-from-list-head": '.result.foo | .[0] | split ("/") | .[1]' # 
+        "second-element-from-list-head": '.result.foo | .[0] | split ("/") | .[1]',
     },
 )
-response = plan.request(
+post_response = plan.request(
     recipe = post_request_recipe,
 )
 # response["extract.second-element-from-list-head"] is "world"
@@ -402,7 +374,7 @@ NOTE: In the above example, `response` also has a custom field `extract.second-e
 These fields can be used in conjuction with [`assert`][assert] and [`wait`][wait] instructions, like so:
 ```python
 # Following the example above, response["extract.second-element-from-list-head"] is world
-response = plan.request(
+post_response = plan.request(
     recipe = post_request_recipe,
 )
 
@@ -457,13 +429,13 @@ Say we are overriding a connection between two subnetworks, as shown below:
 
 connection_config = ConnectionConfig(
     packet_delay_distribution = UniformPacketDelayDistribution(
-        ms = 500
-    )
+        ms = 500,
+    ),
 )
 
 set_connection(
     subnetworks = ("subnetworkA", "subnetworkB"),
-    config = connection_config
+    config = connection_config,
 )
 
 ```
@@ -572,7 +544,7 @@ response = plan.wait(
 
     # The timeout value is the maximum time that the command waits for the assertion to be true
     # Follows Go "time.Duration" format https://pkg.go.dev/time#ParseDuration
-    # OPTIONAL (Default: "15m")
+    # OPTIONAL (Default: "10s")
     timeout = "5m",
 
     # A Service name designating a service that already exists inside the enclave

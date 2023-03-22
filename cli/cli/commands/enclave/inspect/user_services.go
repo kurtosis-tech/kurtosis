@@ -3,9 +3,11 @@ package inspect
 import (
 	"context"
 	"fmt"
+	"github.com/fatih/color"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/enclave_liveness_validator"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
@@ -28,9 +30,17 @@ const (
 	missingPortPlaceholder        = "<none>"
 	linkDelimeter                 = "://"
 	defaultEmptyIPAddrForAPIC     = ""
+
+	statusRunning = "RUNNING"
+	statusStopped = "STOPPED"
 )
 
-func printUserServices(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo, showFullUuids bool, isAPIContainerRunning bool) error {
+var (
+	colorizeRunning = color.New(color.FgGreen).SprintFunc()
+	colorizeStopped = color.New(color.FgYellow).SprintFunc()
+)
+
+func printUserServices(ctx context.Context, _ *kurtosis_context.KurtosisContext, kurtosisBackend backend_interface.KurtosisBackend, enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo, showFullUuids bool, isAPIContainerRunning bool) error {
 	enclaveUuidStr := enclaveInfo.GetEnclaveUuid()
 	enclaveId := enclave.EnclaveUUID(enclaveUuidStr)
 	userServiceFilters := &service.ServiceFilters{
@@ -68,7 +78,7 @@ func printUserServices(ctx context.Context, kurtosisBackend backend_interface.Ku
 			uuidToPrint = uuidStr
 		}
 
-		serviceStatusStr := userService.GetStatus().String()
+		serviceStatusStr := colorizeServiceStatus(userService.GetStatus().String())
 
 		// Look for public port and IP information in API container map
 		maybePublicPortMapFromAPIC := map[string]*kurtosis_core_rpc_api_bindings.Port{}
@@ -217,4 +227,15 @@ func getUserServiceInfoMapFromAPIContainer(ctx context.Context, enclaveInfo *kur
 	}
 	serviceInfoMapFromAPIC := allServicesResponse.GetServiceInfo()
 	return serviceInfoMapFromAPIC, nil
+}
+
+func colorizeServiceStatus(serviceStatus string) string {
+	switch serviceStatus {
+	case statusRunning:
+		return colorizeRunning(serviceStatus)
+	case statusStopped:
+		return colorizeStopped(serviceStatus)
+	default:
+		return serviceStatus
+	}
 }

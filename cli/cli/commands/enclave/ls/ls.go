@@ -58,8 +58,8 @@ var EnclaveLsCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCom
 
 func run(
 	ctx context.Context,
-	kurtosisBackend backend_interface.KurtosisBackend,
-	engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
+	_ backend_interface.KurtosisBackend,
+	_ kurtosis_engine_rpc_api_bindings.EngineServiceClient,
 	_ metrics_client.MetricsClient,
 	flags *flags.ParsedFlags,
 	_ *args.ParsedArgs,
@@ -115,7 +115,9 @@ func run(
 			return stacktrace.Propagate(err, "An error occurred when stringify enclave containers status '%v'", enclaveInfo.GetContainersStatus())
 		}
 
-		enclaveCreationTime := enclaveInfo.CreationTime.AsTime().Local().Format(time.RFC1123)
+		// The extra space is a hack till we figure out the table printer color + formatting story
+		enclaveCreationTime := " " + enclaveInfo.CreationTime.AsTime().Local().Format(time.RFC1123)
+
 		enclaveName := enclaveInfo.GetName()
 
 		if err := tablePrinter.AddRow(uuidToPrint, enclaveName, enclaveStatus, enclaveCreationTime); err != nil {

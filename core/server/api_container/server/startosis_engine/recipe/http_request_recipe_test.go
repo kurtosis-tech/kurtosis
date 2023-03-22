@@ -138,10 +138,6 @@ func TestStartosisInterpreter_MissingRequiredFieldForHttpRecipeWithPostMethod(t 
 	require.Nil(t, err)
 	kwargsWithoutBody := []starlark.Tuple{
 		starlark.Tuple([]starlark.Value{
-			starlark.String(EndpointAttr),
-			starlark.String("?input=output"),
-		}),
-		starlark.Tuple([]starlark.Value{
 			starlark.String(PortIdAttr),
 			starlark.String("portId"),
 		}),
@@ -156,7 +152,32 @@ func TestStartosisInterpreter_MissingRequiredFieldForHttpRecipeWithPostMethod(t 
 	}
 
 	postHttpRequestRecipe, err := MakePostHttpRequestRecipe(nil, builtin, noArgs, kwargsWithoutBody)
-	expectedError := "missing argument for body"
+	expectedError := "missing argument for endpoint"
+	require.NotNil(t, err)
 	require.Contains(t, err.Error(), expectedError)
 	require.Nil(t, postHttpRequestRecipe)
+}
+
+func TestHttpRequestRecipe_TestContentIsNotRequiredAndDefaultsToApplicationJson(t *testing.T) {
+	builtin := &starlark.Builtin{}
+	kwargs := []starlark.Tuple{
+		starlark.Tuple([]starlark.Value{
+			starlark.String(EndpointAttr),
+			starlark.String("?input=output"),
+		}),
+		starlark.Tuple([]starlark.Value{
+			starlark.String(PortIdAttr),
+			starlark.String("portId"),
+		}),
+		starlark.Tuple([]starlark.Value{
+			starlark.String(bodyKey),
+			starlark.String("body"),
+		}),
+	}
+	postHttpRequestRecipe, err := MakePostHttpRequestRecipe(nil, builtin, noArgs, kwargs)
+	require.Nil(t, err, "Unexpected error occurred")
+
+	postHttpRequestRecipeString := postHttpRequestRecipe.String()
+	expectedStringOutput := `PostHttpRequestRecipe(port_id="portId", service_name="web-server", endpoint="?input=output", body="body", content_type="application/json", extract="")`
+	require.NotNil(t, expectedStringOutput, postHttpRequestRecipeString)
 }

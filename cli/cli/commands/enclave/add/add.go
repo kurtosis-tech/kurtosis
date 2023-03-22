@@ -21,17 +21,12 @@ import (
 )
 
 const (
-	apiContainerVersionFlagKey   = "api-container-version"
-	apiContainerLogLevelFlagKey  = "api-container-log-level"
-	isPartitioningEnabledFlagKey = "with-partitioning"
-	// TODO(deprecation) remove enclave ids in favor of names
-	enclaveIdFlagKey   = "id"
-	enclaveNameFlagKey = "name"
+	apiContainerVersionFlagKey  = "api-container-version"
+	apiContainerLogLevelFlagKey = "api-container-log-level"
+	isSubnetworksEnabledFlagKey = "with-subnetworks"
+	enclaveNameFlagKey          = "name"
 
-	defaultIsPartitioningEnabled = "false"
-
-	// Signifies that an enclave ID should be auto-generated
-	autogenerateEnclaveIdKeyword = ""
+	defaultIsSubnetworksEnabled = "false"
 
 	// Signifies that an enclave name should be auto-generated
 	autogenerateEnclaveNameKeyword = ""
@@ -66,22 +61,11 @@ var EnclaveAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 			Default:   defaults.DefaultAPIContainerVersion,
 			Usage:     "The version of the Kurtosis API container that should be started inside the enclave (blank tells the engine to use the default version)",
 		}, {
-			Key:       isPartitioningEnabledFlagKey,
+			Key:       isSubnetworksEnabledFlagKey,
 			Shorthand: "p",
 			Type:      flags.FlagType_Bool,
-			Default:   defaultIsPartitioningEnabled,
-			Usage:     "Enable network partitioning functionality (repartitioning won't work if this is set to false)",
-		}, {
-			Key:       enclaveIdFlagKey,
-			Shorthand: "i",
-			Default:   autogenerateEnclaveIdKeyword,
-			Usage: fmt.Sprintf(
-				"The enclave ID to give the new enclave, which must match regex '%v' "+
-					"(emptystring will autogenerate an enclave ID). Note this will be deprecated in favor of '%v'",
-				enclave_consts.AllowedEnclaveNameCharsRegexStr,
-				enclaveNameFlagKey,
-			),
-			Type: flags.FlagType_String,
+			Default:   defaultIsSubnetworksEnabled,
+			Usage:     "If set to true then the enclave that gets created will have subnetwork capabilities",
 		}, {
 			Key:       enclaveNameFlagKey,
 			Shorthand: "n",
@@ -110,19 +94,14 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred while getting the API Container Version using flag with key '%v'; this is a bug in Kurtosis", apiContainerVersionFlagKey)
 	}
 
-	isPartitioningEnabled, err := flags.GetBool(isPartitioningEnabledFlagKey)
+	isPartitioningEnabled, err := flags.GetBool(isSubnetworksEnabledFlagKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while getting is partitioning enabled flag using key '%v'; this is a bug in Kurtosis", isPartitioningEnabledFlagKey)
+		return stacktrace.Propagate(err, "An error occurred getting the is-subnetwork-enabled setting using flag key '%v'; this is a bug in Kurtosis", isSubnetworksEnabledFlagKey)
 	}
 
 	kurtosisLogLevelStr, err := flags.GetString(apiContainerLogLevelFlagKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while getting the API Container log level using flag with key '%v'; this is a bug in Kurtosis", apiContainerLogLevelFlagKey)
-	}
-
-	enclaveIdStr, err := flags.GetString(enclaveIdFlagKey)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while getting the enclave id using flag with key '%v'; this is a bug in Kurtosis ", enclaveIdFlagKey)
 	}
 
 	enclaveName, err := flags.GetString(enclaveNameFlagKey)
@@ -146,12 +125,6 @@ func run(
 
 	logrus.Info("Creating new enclave...")
 
-	// if the enclave id is provider but name isn't we go with the supplied id
-	// TODO deprecate ids
-	if enclaveIdStr != autogenerateEnclaveIdKeyword && enclaveName == autogenerateEnclaveNameKeyword {
-		enclaveName = enclaveIdStr
-	}
-
 	if err = metricsClient.TrackCreateEnclave(enclaveName); err != nil {
 		logrus.Warn("An error occurred while logging the create enclave event")
 	}
@@ -164,7 +137,7 @@ func run(
 	}
 	createdEnclaveResponse, err := engineClient.CreateEnclave(ctx, createEnclaveArgs)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating an enclave with ID '%v'", enclaveIdStr)
+		return stacktrace.Propagate(err, "An error occurred creating an enclave with ID '%v'", enclaveName)
 	}
 
 	enclaveInfo := createdEnclaveResponse.GetEnclaveInfo()

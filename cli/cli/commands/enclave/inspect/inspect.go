@@ -29,17 +29,14 @@ import (
 )
 
 const (
-	enclaveIdentifierArgKey = "enclave-identifier"
+	enclaveIdentifierArgKey = "enclave"
 	isEnclaveIdArgOptional  = false
 	isEnclaveIdArgGreedy    = false
 
-	enclaveUUIDTitleName               = "UUID"
-	enclaveNameTitleName               = "Enclave Name"
-	enclaveStatusTitleName             = "Enclave Status"
-	enclaveCreationTimeTitleName       = "Creation Time"
-	apiContainerStatusTitleName        = "API Container Status"
-	apiContainerHostGrpcPortTitle      = "API Container Host GRPC Port"
-	apiContainerHostGrpcProxyPortTitle = "API Container Host GRPC Proxy Port"
+	enclaveUUIDTitleName         = "UUID"
+	enclaveNameTitleName         = "Name"
+	enclaveStatusTitleName       = "Status"
+	enclaveCreationTimeTitleName = "Creation Time"
 
 	fullUuidsFlagKey       = "full-uuids"
 	fullUuidFlagKeyDefault = "false"
@@ -49,10 +46,13 @@ const (
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
+
+	filesArtifactsHeader = "Files Artifacts"
 )
 
-var enclaveObjectPrintingFuncs = map[string]func(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo, showFullUuid bool, isAPIContainerRunning bool) error{
-	"User Services": printUserServices,
+var enclaveObjectPrintingFuncs = map[string]func(ctx context.Context, kurtosisCtx *kurtosis_context.KurtosisContext, kurtosisBackend backend_interface.KurtosisBackend, enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo, showFullUuid bool, isAPIContainerRunning bool) error{
+	"User Services":      printUserServices,
+	filesArtifactsHeader: printFilesArtifacts,
 }
 
 var EnclaveInspectCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -103,6 +103,14 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred creating Kurtosis Context from local engine")
 	}
 
+	if err = PrintEnclaveInspect(ctx, kurtosisBackend, kurtosisCtx, enclaveIdentifier, showFullUuids); err != nil {
+		// this is already wrapped up
+		return err
+	}
+	return nil
+}
+
+func PrintEnclaveInspect(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, kurtosisCtx *kurtosis_context.KurtosisContext, enclaveIdentifier string, showFullUuids bool) error {
 	enclaveInfo, err := kurtosisCtx.GetEnclave(ctx, enclaveIdentifier)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the enclave for identifier '%v'", enclaveIdentifier)
@@ -112,12 +120,13 @@ func run(
 	enclaveApiContainerStatus := enclaveInfo.ApiContainerStatus
 
 	keyValuePrinter := output_printers.NewKeyValuePrinter()
+	keyValuePrinter.AddPair(enclaveNameTitleName, enclaveInfo.GetName())
+
 	if showFullUuids {
 		keyValuePrinter.AddPair(enclaveUUIDTitleName, enclaveInfo.GetEnclaveUuid())
 	} else {
 		keyValuePrinter.AddPair(enclaveUUIDTitleName, enclaveInfo.GetShortenedUuid())
 	}
-	keyValuePrinter.AddPair(enclaveNameTitleName, enclaveInfo.GetName())
 
 	enclaveContainersStatusStr, err := enclave_status_stringifier.EnclaveContainersStatusStringifier(enclaveContainersStatus)
 	if err != nil {
@@ -134,28 +143,8 @@ func run(
 		keyValuePrinter.AddPair(enclaveCreationTimeTitleName, enclaveCreationTimeStr)
 	}
 
-	enclaveApiContainerStatusStr, err := enclave_status_stringifier.EnclaveAPIContainersStatusStringifier(enclaveApiContainerStatus)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred when stringify enclave API containers status")
-	}
-	keyValuePrinter.AddPair(apiContainerStatusTitleName, enclaveApiContainerStatusStr)
-
 	isApiContainerRunning := enclaveApiContainerStatus == kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING
-	if isApiContainerRunning {
-		apiContainerHostInfo := enclaveInfo.GetApiContainerHostMachineInfo()
-		apiContainerHostGrpcPortInfoStr := fmt.Sprintf(
-			"%v:%v",
-			apiContainerHostInfo.GetIpOnHostMachine(),
-			apiContainerHostInfo.GetGrpcPortOnHostMachine(),
-		)
-		apiContainerHostGrpcProxyPortInfoStr := fmt.Sprintf(
-			"%v:%v",
-			apiContainerHostInfo.GetIpOnHostMachine(),
-			apiContainerHostInfo.GetGrpcProxyPortOnHostMachine(),
-		)
-		keyValuePrinter.AddPair(apiContainerHostGrpcPortTitle, apiContainerHostGrpcPortInfoStr)
-		keyValuePrinter.AddPair(apiContainerHostGrpcProxyPortTitle, apiContainerHostGrpcProxyPortInfoStr)
-	}
+
 	keyValuePrinter.Print()
 	out.PrintOutLn("")
 
@@ -167,6 +156,11 @@ func run(
 
 	headersWithPrintErrs := []string{}
 	for _, header := range sortedEnclaveObjHeaders {
+		if header == filesArtifactsHeader && !isApiContainerRunning {
+			// can't fetch files artifact information if APIC isn't running
+			continue
+		}
+
 		printingFunc, found := enclaveObjectPrintingFuncs[header]
 		if !found {
 			return stacktrace.NewError("No printing function found for enclave object '%v'; this is a bug in Kurtosis!", header)
@@ -177,7 +171,7 @@ func run(
 		padStr := strings.Repeat(headerPadChar, numPadChars)
 		fmt.Printf("%v %v %v\n", padStr, header, padStr)
 
-		if err := printingFunc(ctx, kurtosisBackend, enclaveInfo, showFullUuids, isApiContainerRunning); err != nil {
+		if err := printingFunc(ctx, kurtosisCtx, kurtosisBackend, enclaveInfo, showFullUuids, isApiContainerRunning); err != nil {
 			logrus.Error(err)
 			headersWithPrintErrs = append(headersWithPrintErrs, header)
 		}

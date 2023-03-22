@@ -32,7 +32,7 @@ const config = {
           routeBasePath: '/',
           versions: {
             current: {
-              label: 'main',
+              label: 'Upcoming Release',
             }
           }
         },
@@ -49,6 +49,14 @@ const config = {
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
+      announcementBar: {
+        id: 'support_us',
+        content:
+            '<a target="_blank" rel="noopener noreferrer" href="https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding">Schedule a live session with us for help getting started or to learn more.</a>',
+        backgroundColor: '#fafbfc',
+        textColor: '#091E42',
+        isCloseable: false,
+      },
       colorMode: {
         defaultMode: 'dark',
         disableSwitch: true,
@@ -87,11 +95,6 @@ const config = {
             href: 'https://github.com/kurtosis-tech/kurtosis/issues/new/',
             position: 'right',
             label: 'Report Docs Issue',
-          },
-          {
-            href: 'https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding',
-            position: 'right',
-            label: 'Schedule a personalized on-boarding session with us.',
           },
         ],
       },

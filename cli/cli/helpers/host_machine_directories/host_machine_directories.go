@@ -19,12 +19,16 @@ const (
 
 	userSendMetricsElection = "user-send-metrics-election"
 
+	LastPesteredUserAboutOldVersionFilename = "last-pestered-user-about-old-version"
+
 	// ------------ Names of dirs inside Kurtosis directory --------------
 	engineDataDirname = "engine-data"
 )
 
 // TODO after 2022-07-08, when we're confident nobody is using engines without engine data directories anymore,
-//  add a step to 'engine stop' that will delete this directory on the user's machine if it exists
+//
+//	add a step to 'engine stop' that will delete this directory on the user's machine if it exists
+//
 // Gets the engine data directory on the host machine, and ensures the path exists
 func GetEngineDataDirpath() (string, error) {
 	xdgRelFilepath := getRelativeFilepathForXDG(engineDataDirname)
@@ -82,8 +86,19 @@ func GetLatestCLIReleaseVersionCacheFilepath() (string, error) {
 	return latestCLIReleaseVersionCacheFilepath, nil
 }
 
+func GetLastPesteredUserAboutOldVersionsFilepath() (string, error) {
+	xdgRelFilepath := getRelativeFilepathForXDG(LastPesteredUserAboutOldVersionFilename)
+	lastPesteredUserForOldVersionsFilePath, err := xdg.CacheFile(xdgRelFilepath)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred getting the last pestered user about old version file path using '%v'", xdgRelFilepath)
+	}
+	return lastPesteredUserForOldVersionsFilePath, nil
+}
+
 // ====================================================================================================
-//                                     Private Helper Functions
+//
+//	Private Helper Functions
+//
 // ====================================================================================================
 // Joins the "kurtosis" app directory in front of whichever filepath
 func getRelativeFilepathForXDG(filepathRelativeToKurtosisDir string) string {
