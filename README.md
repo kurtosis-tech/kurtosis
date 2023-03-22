@@ -97,42 +97,35 @@ Running the script gives us an enclave with three services:
 kurtosis run script.star '{"replica_count": 3}'
 ```
 ```console
-INFO[2023-02-10T13:32:32-03:00] Creating a new enclave for Starlark to run inside...
-INFO[2023-02-10T13:32:37-03:00] Enclave 'misty-bird' created successfully
+INFO[2023-03-22T13:27:03+01:00] Creating a new enclave for Starlark to run inside...
+INFO[2023-03-22T13:27:07+01:00] Enclave 'arid-delta' created successfully
 
-> add_service service_name="httpd-replica-0" config=ServiceConfig(image="httpd", ports={"http": PortSpec(number=8080, transport_protocol="TCP", application_protocol="")})
-Service 'httpd-replica-0' added with service UUID 'a05405bfe100475fa52883c71bd899e6'
+> add_service service_name="httpd-replica-0" config=ServiceConfig(image="httpd", ports={"http": PortSpec(number=8080)})
+Service 'httpd-replica-0' added with service UUID '80030157c58f4eb2b9c98f41dd938ed0'
 
-> add_service service_name="httpd-replica-1" config=ServiceConfig(image="httpd", ports={"http": PortSpec(number=8080, transport_protocol="TCP", application_protocol="")})
-Service 'httpd-replica-1' added with service UUID 'cc871310223c4bc7a539a6c93a8e33ea'
+> add_service service_name="httpd-replica-1" config=ServiceConfig(image="httpd", ports={"http": PortSpec(number=8080)})
+Service 'httpd-replica-1' added with service UUID '4abff039bfa74b019f0a0d2e155c760a'
 
-> add_service service_name="httpd-replica-2" config=ServiceConfig(image="httpd", ports={"http": PortSpec(number=8080, transport_protocol="TCP", application_protocol="")})
-Service 'httpd-replica-2' added with service UUID 'dcfd1fb7a94e4e8e8a55c715f7f09b04'
+> add_service service_name="httpd-replica-2" config=ServiceConfig(image="httpd", ports={"http": PortSpec(number=8080)})
+Service 'httpd-replica-2' added with service UUID 'b6f90bc6dad748a4807ad4fbc3e5cc9a'
+
 Starlark code successfully run. No output was returned.
-INFO[2023-02-10T13:32:53-03:00] ===================================================
-INFO[2023-02-10T13:32:53-03:00] ||          Created enclave: misty-bird          ||
-INFO[2023-02-10T13:32:53-03:00] ===================================================
-```
+INFO[2023-03-22T13:27:37+01:00] ===================================================
+INFO[2023-03-22T13:27:37+01:00] ||          Created enclave: arid-delta          ||
+INFO[2023-03-22T13:27:37+01:00] ===================================================
+Name:            arid-delta
+UUID:            0b3879d30c80
+Status:          RUNNING
+Creation Time:   Wed, 22 Mar 2023 13:27:03 CET
 
-That can be inspected by running
-
-```console
-kurtosis enclave inspect misty-bird
-```
-```console
-UUID:                                 eeb28363fc53
-Enclave Name:                         misty-bird
-Enclave Status:                       RUNNING
-Creation Time:                        Fri, 10 Feb 2023 13:32:32 -03
-API Container Status:                 RUNNING
-API Container Host GRPC Port:         127.0.0.1:63747
-API Container Host GRPC Proxy Port:   127.0.0.1:63748
+========================================= Files Artifacts =========================================
+UUID   Name
 
 ========================================== User Services ==========================================
 UUID           Name              Ports                               Status
-a05405bfe100   httpd-replica-0   http: 8080/tcp -> 127.0.0.1:63768   RUNNING
-cc871310223c   httpd-replica-1   http: 8080/tcp -> 127.0.0.1:63772   RUNNING
-dcfd1fb7a94e   httpd-replica-2   http: 8080/tcp -> 127.0.0.1:63781   RUNNING
+80030157c58f   httpd-replica-0   http: 8080/tcp -> 127.0.0.1:54164   RUNNING
+4abff039bfa7   httpd-replica-1   http: 8080/tcp -> 127.0.0.1:54170   RUNNING
+b6f90bc6dad7   httpd-replica-2   http: 8080/tcp -> 127.0.0.1:54174   RUNNING
 ```
 
 ### More examples
