@@ -1,7 +1,7 @@
 # Check PR title for conventional commits
 name: Check PR title
 on:
-  pull_request:
+  pull_request_target:
     types:
       - opened
       - reopened
@@ -13,7 +13,9 @@ on:
 
 # cancel redundant builds
 concurrency:
-  group: "title-checker-${{ github.ref }}"
+  # for a pull_request_target trigger head_ref will be available otherwise
+  # it falls back to ref
+  group: "title-checker-${{ github.head_ref || github.ref }}"
   cancel-in-progress: true
 
 jobs:
