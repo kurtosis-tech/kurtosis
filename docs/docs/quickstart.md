@@ -16,7 +16,6 @@ In this quickstart, you will:
 - Parameterize your application setup in order to automate loading data into your API
 :::
 
-
 :::details Getting stuck?
 There's a few ways to get help.
 - Every Kurtosis command accepts a `-h` flag to print helptext.
