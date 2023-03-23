@@ -22,8 +22,6 @@ jobs:
     if: contains(github.ref_name, 'gh-readonly-queue/main/') != true
 
     runs-on: ubuntu-latest
-    permissions:
-      statuses: write
     steps:
       - uses: aslafy-z/conventional-pr-title-action@v3
         env:
