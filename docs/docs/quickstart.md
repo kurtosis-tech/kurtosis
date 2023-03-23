@@ -16,7 +16,7 @@ In this quickstart, you will:
 - Parameterize your application setup in order to automate loading data into your API
 :::
 
-:::details Getting stuck?
+<details>:::note <summary>Getting stuck?</summary>
 There's a few ways to get help.
 - Every Kurtosis command accepts a `-h` flag to print helptext.
 - `kurtosis feedback --calendly` opens a calendly link for a personal session with [our cofounder Kevin][kevin-linked]
@@ -24,6 +24,7 @@ There's a few ways to get help.
 - `kurtosis discord` command will open up our Discord, where you can get live support via chat. 
 ***Don't suffer in silence - we want to help and hear from you!***
 :::
+</details>
 
 ### Setup
 
