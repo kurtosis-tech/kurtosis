@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
+	"time"
 )
 
 func NonEmptyString(value starlark.Value, argNameForLogging string) *startosis_errors.InterpretationError {
@@ -78,4 +79,22 @@ func StringRegexp(value starlark.Value, argNameForLogging string, mustMatchRegex
 		mustMatchRegexpStr,
 		valueStr.GoString(),
 	)
+}
+
+func Duration(value starlark.Value, attributeName string) *startosis_errors.InterpretationError {
+	valueStarlarkStr, ok := value.(starlark.String)
+	if !ok {
+		return startosis_errors.NewInterpretationError("The '%s' attribute is not a valid string type (was '%s').", attributeName, reflect.TypeOf(value))
+	}
+
+	if valueStarlarkStr.GoString() == "" {
+		return nil
+	}
+
+	_, parseErr := time.ParseDuration(valueStarlarkStr.GoString())
+	if parseErr != nil {
+		return startosis_errors.WrapWithInterpretationError(parseErr, "The value '%v' of '%s' attribute is not a valid duration string format", valueStarlarkStr.GoString(), attributeName)
+	}
+
+	return nil
 }

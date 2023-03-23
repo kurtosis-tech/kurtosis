@@ -343,6 +343,7 @@ func (network *DefaultServiceNetwork) StartService(
 	serviceConfigMap := map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig{
 		serviceName: serviceConfig,
 	}
+
 	startedServices, serviceFailed, err := network.StartServices(ctx, serviceConfigMap, singleServiceStartupBatch)
 	if err != nil {
 		return nil, err

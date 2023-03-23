@@ -23,7 +23,7 @@ var ContextRmCmd = &lowlevel.LowlevelKurtosisCommand{
 	LongDescription:  "Removes a Kurtosis context currently configured for this installation",
 	Flags:            []*flags.FlagConfig{},
 	Args: []*args.ArgConfig{
-		context_id_arg.NewContextIdentifierArg(contextIdentifiersArgKey, contextIdentifiersArgIsGreedy),
+		context_id_arg.NewContextIdentifierArg(store.GetContextsConfigStore(), contextIdentifiersArgKey, contextIdentifiersArgIsGreedy),
 	},
 	PreValidationAndRunFunc:  nil,
 	RunFunc:                  run,
@@ -37,16 +37,22 @@ func run(_ context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error {
 	}
 
 	contextsConfigStore := store.GetContextsConfigStore()
-	contextUuids, err := context_id_arg.GetContextUuidForContextIdentifier(contextIdentifiers)
+	contextUuids, err := context_id_arg.GetContextUuidForContextIdentifier(contextsConfigStore, contextIdentifiers)
 	if err != nil {
 		return stacktrace.Propagate(err, "Error finding contexts matching the provided identifiers")
 	}
 
 	logrus.Info("Removing contexts...")
+	successfullyDeleted := 0
 	for _, contextUuid := range contextUuids {
-		if err := contextsConfigStore.RemoveContext(contextUuid); err != nil {
-			return stacktrace.Propagate(err, "Error removing context with UUID: '%s'", contextUuid.GetValue())
+		if err = contextsConfigStore.RemoveContext(contextUuid); err != nil {
+			logrus.Errorf("Error removing context with UUID: '%s'. Error was: \n%v", contextUuid.GetValue(), err.Error())
+		} else {
+			successfullyDeleted += 1
 		}
+	}
+	if successfullyDeleted != len(contextUuids) {
+		return stacktrace.NewError("Some contexts could not be removed. See logs above.")
 	}
 	logrus.Info("Contexts successfully removed")
 	return nil

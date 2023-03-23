@@ -18,6 +18,7 @@ const (
 	ClusterGetCmdStr        = "get"
 	ClusterLsCmdStr         = "ls"
 	ContextCmdStr           = "context"
+	ContextAddCmdStr        = "add"
 	ContextLsCmdStr         = "ls"
 	ContextRmCmdStr         = "rm"
 	DiscordCmdStr           = "discord"
