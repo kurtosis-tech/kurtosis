@@ -10,7 +10,7 @@ Introduction
 Welcome to the [Kurtosis][homepage] quickstart! This guide will take ~15 minutes and will walk you through building a basic Kurtosis package.
 
 :::tip What You'll Do
-In this quickstart, you will:
+
 - Start a containerized Postgres database in Kurtosis
 - Seed your database with test data using task sequencing
 - Connect an API server to your database using dynamic service dependencies
