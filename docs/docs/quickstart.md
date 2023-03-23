@@ -4,15 +4,11 @@ sidebar_label: Quickstart
 slug: /quickstart
 ---
 
-import Tabs from '@theme/Tabs';
-
-import TabItem from '@theme/TabItem';
-
 Introduction
 ------------
 Welcome to the [Kurtosis][homepage] quickstart! This guide will take ~15 minutes and will walk you through building a basic Kurtosis package.
 
-:::note What You'll Do
+:::tip What You'll Do
 In this quickstart, you will:
 - Start a containerized Postgres database in Kurtosis
 - Seed your database with test data using task sequencing
@@ -24,31 +20,13 @@ In this quickstart, you will:
 
 There are many ways to get help and give feedback. First, every Kurtosis command accepts a `-h` flag to print helptext. If that doesn't help, here are some ways to get support:
 
-<Tabs>
-  <TabItem value="live-video-session" label="Video Call">
-  
-  `kurtosis feedback --calendly` opens a calendly link for a personal session with [our cofounder Kevin][kevin-linked]
-  
-  </TabItem>
-
-  <TabItem value="github-issue" label="Github Issue">
-  
-  `kurtosis feedback --github` command will open a github issue template, so you can file an issue
-  
-  </TabItem>
-
-  <TabItem value="email" label="Email">
-  
-  `kurtosis feedback --email` will open an email to us.</TabItem>
-
-  <TabItem value="discord" label="Discord">
-  
-  `kurtosis discord` command will open up our Discord, where you can get live support via chat.
-  
-  </TabItem>
-</Tabs>
+- `kurtosis feedback --calendly` opens a calendly link for a personal session with [our cofounder Kevin][kevin-linked]
+- `kurtosis feedback --github` command will open a github issue template, so you can file an issue
+- `kurtosis feedback --email` will open an email to us.</TabItem>
+- `kurtosis discord` command will open up our Discord, where you can get live support via chat.
 
 **Don't suffer in silence - we want to help and hear from you!**
+
 </details>
 
 ### Setup
