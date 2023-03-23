@@ -6,7 +6,12 @@ slug: /quickstart
 
 Introduction
 ------------
-Welcome to the [Kurtosis][homepage] quickstart! This guide will take ~15 minutes and will walk you through building a basic Kurtosis package.
+Welcome to the [Kurtosis][homepage] quickstart! 
+
+If you arrived here by chance and you're curious as to what Kurtosis _is_, [see here][what-is-kurtosis-explanation].
+
+If you're ready to get going, this guide will take ~15 minutes and will walk you through building a basic Kurtosis package. The package that you build will start a Postgres server, seed it with data, put an API in front of it, and automate loading data into it.
+
 
 #### Setup
 Before you proceed, make sure you have [Kurtosis installed][installing-kurtosis-guide] (or [upgraded to latest][upgrading-kurtosis-guide] if you already have it), Docker is started, and the Docker engine is running.
