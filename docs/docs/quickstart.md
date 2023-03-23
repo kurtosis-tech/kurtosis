@@ -6,6 +6,7 @@ slug: /quickstart
 
 Introduction
 ------------
+
 Welcome to the [Kurtosis][homepage] quickstart! This guide will take ~15 minutes and will walk you through building a basic Kurtosis package.
 
 :::tip What You'll Do
@@ -121,8 +122,8 @@ POSTGRES_PASSWORD = "password"
 def run(plan, args):
     # Add a Postgres server
     postgres = plan.add_service(
-        "postgres",
-        ServiceConfig(
+        serivce_name = "postgres",
+        config = ServiceConfig(
             image = "postgres:15.2-alpine",
             ports = {
                 POSTGRES_PORT_ID: PortSpec(5432, application_protocol = "postgresql"),
@@ -211,7 +212,7 @@ def run(plan, args):
     # Add a Postgres server
     postgres = plan.add_service(
         service_name = "postgres",
-        ServiceConfig(
+        config = ServiceConfig(
             image = "postgres:15.2-alpine",
             ports = {
                 POSTGRES_PORT_ID: PortSpec(5432, application_protocol = "postgresql"),
@@ -368,8 +369,8 @@ Kurtosis' first-class data primitive is called a [files artifact][files-artifact
 
 ```python
 postgres = plan.add_service(
-    "postgres",
-    ServiceConfig(
+    service_name = "postgres",
+    config = ServiceConfig(
         # ...omitted...
         files = {
             SEED_DATA_DIRPATH: data_package_module_result.files_artifact,
@@ -430,7 +431,7 @@ def run(plan, args):
     # Add a Postgres server
     postgres = plan.add_service(
         service_name = "postgres",
-        ServiceConfig(
+        config = ServiceConfig(
             image = "postgres:15.2-alpine",
             ports = {
                 POSTGRES_PORT_ID: PortSpec(5432, application_protocol = "postgresql"),
@@ -572,7 +573,7 @@ def run(plan, args):
     # Add a Postgres server
     postgres = plan.add_service(
         service_name = "postgres",
-        ServiceConfig(
+        config = ServiceConfig(
             # ...
             env_vars = {
                 # ...
@@ -718,7 +719,7 @@ def run(plan, args):
     # Add a Postgres server
     postgres = plan.add_service(
         service_name = "postgres",
-        ServiceConfig(
+        config = ServiceConfig(
             image = "postgres:15.2-alpine",
             ports = {
                 POSTGRES_PORT_ID: PortSpec(5432, application_protocol = "postgresql"),

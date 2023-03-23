@@ -1,6 +1,6 @@
 module github.com/kurtosis-tech/kurtosis/core/launcher
 
-go 1.17
+go 1.18
 
 replace (
 	github.com/kurtosis-tech/kurtosis/container-engine-lib => ../../container-engine-lib
