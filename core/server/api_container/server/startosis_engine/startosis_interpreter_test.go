@@ -1083,6 +1083,7 @@ def run(plan):
 
 	_, _, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
 	require.NotNil(t, interpretationError)
+	require.Contains(t, interpretationError.String(), "Service name 'redis:alpine-3.17' is invalid as it contains disallowed characters. Service names can only contain characters 'a-z', 'A-Z', '0-9', '-' & '_'")
 }
 
 // #####################################################################################################################
