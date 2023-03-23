@@ -7,9 +7,9 @@ on:
       - reopened
       - edited
       - synchronize
-#  push:
-#    branches:
-#      - gh-readonly-queue/main/**
+  push:
+    branches:
+      - gh-readonly-queue/main/**
 
 # cancel redundant builds
 concurrency:
@@ -18,8 +18,8 @@ concurrency:
 
 jobs:
   title_check:
-#    # weg want this job to be skipped on merge queue PRs
-#    if: contains(github.ref_name, 'gh-readonly-queue/main/') != true
+    # weg want this job to be skipped on merge queue PRs
+    if: contains(github.ref_name, 'gh-readonly-queue/main/') != true
 
     runs-on: ubuntu-latest
     steps:
