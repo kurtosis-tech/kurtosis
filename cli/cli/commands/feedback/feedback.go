@@ -30,7 +30,7 @@ const (
 	emailFlagKey                  = "email"
 	calendlyFlagKey               = "calendly"
 	bugFeedbackFlagKey            = "bug"
-	featureRequestFeedbackFlagKey = "fr"
+	featureRequestFeedbackFlagKey = "feature"
 	docsFeedbackFlagKey           = "docs"
 
 	githubFlagUsageDescription    = "Takes you to our Github where you can file a bug report, feature request, or get help."

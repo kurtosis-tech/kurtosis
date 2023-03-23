@@ -37,6 +37,7 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
 	backendConfigSupplier KurtosisBackendConfigSupplier,
+	kurtosisRemoteBackendConfigSupplier *KurtosisRemoteBackendConfigSupplier,
 ) (
 	resultPublicIpAddr net.IP,
 	resultPublicGrpcPortSpec *port_spec.PortSpec,
@@ -52,6 +53,7 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 		metricsUserID,
 		didUserAcceptSendingMetrics,
 		backendConfigSupplier,
+		kurtosisRemoteBackendConfigSupplier,
 	)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred launching the engine server container with default version tag '%v'", kurtosis_version.KurtosisVersion)
@@ -68,12 +70,17 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
 	backendConfigSupplier KurtosisBackendConfigSupplier,
+	kurtosisRemoteBackendConfigSupplier *KurtosisRemoteBackendConfigSupplier,
 ) (
 	resultPublicIpAddr net.IP,
 	resultPublicGrpcPortSpec *port_spec.PortSpec,
 	resultErr error,
 ) {
 	kurtosisBackendType, kurtosisBackendConfig := backendConfigSupplier.getKurtosisBackendConfig()
+	remoteBackendConfigMaybe, err := kurtosisRemoteBackendConfigSupplier.GetOptionalRemoteConfig()
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "Error retrieving current Kurtosis context")
+	}
 	argsObj, err := args.NewEngineServerArgs(
 		grpcListenPortNum,
 		grpcProxyListenPortNum,
@@ -83,6 +90,7 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 		didUserAcceptSendingMetrics,
 		kurtosisBackendType,
 		kurtosisBackendConfig,
+		remoteBackendConfigMaybe,
 	)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred creating the engine server args")
