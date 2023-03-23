@@ -1,20 +1,26 @@
 # Check PR title for conventional commits
 name: Check PR title
 on:
-  pull_request_target:
+  pull_request:
     types:
       - opened
       - reopened
       - edited
       - synchronize
+  push:
+    branches:
+      - gh-readonly-queue/main/**
 
 # cancel redundant builds
 concurrency:
-  group: "title-checker-${{ github.head_ref }}"
+  group: "title-checker-${{ github.ref }}"
   cancel-in-progress: true
 
 jobs:
   title_check:
+    # weg want this job to be skipped on merge queue PRs
+    if: contains(github.ref_name, 'gh-readonly-queue/main/') != true
+
     runs-on: ubuntu-latest
     permissions:
       statuses: write
