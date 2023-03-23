@@ -108,7 +108,7 @@ func NewKurtosisContextFromLocalEngine() (*KurtosisContext, error) {
 	}
 	_, err = contexts_store_api.Visit[struct{}](currentContext, instantiatePortalClientVisitor)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error building client to Kurtosis Portal daemon")
+		return nil, stacktrace.Propagate(err, "Error building client for Kurtosis Portal daemon")
 	}
 
 	kurtosisContext := &KurtosisContext{
