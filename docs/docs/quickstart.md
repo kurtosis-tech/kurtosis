@@ -585,7 +585,7 @@ def run(plan, args):
     )
 ```
 
-In `postgres_url`, replace that `"postgres"` with `POSTGRES_USER` in your `main.star` file to use the correct username we specified at the beginning of our file, and then rerun your dev loop:
+In the line declaring the `postgres_url` variable in your `main.star` file, replace the `"postgres"` string with `POSTGRES_USER` to use the correct username we specified at the beginning of our file. Then rerun your dev loop:
 
 ```bash
 kurtosis clean -a && kurtosis run --enclave quickstart .
