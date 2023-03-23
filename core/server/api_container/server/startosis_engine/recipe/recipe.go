@@ -18,5 +18,4 @@ type Recipe interface {
 	) (map[string]starlark.Comparable, error)
 	CreateStarlarkReturnValue(resultUuid string) (*starlark.Dict, *startosis_errors.InterpretationError)
 	ResultMapToString(resultMap map[string]starlark.Comparable) string
-	GetServiceName() service.ServiceName //TODO this will be removed when we deprecate the service_name field, more here: https://app.zenhub.com/workspaces/engineering-636cff9fc978ceb2aac05a1d/issues/gh/kurtosis-tech/kurtosis-private/1128
 }

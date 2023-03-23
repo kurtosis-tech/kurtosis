@@ -27,11 +27,11 @@ const (
 
 	statusCodeKey    = "code"
 	bodyKey          = "body"
-	extractKeyPrefix = "extract"
+	ExtractKeyPrefix = "extract"
 
-	portIdAttr      = "port_id"
+	PortIdAttr      = "port_id"
 	serviceNameAttr = "service_name"
-	endpointAttr    = "endpoint"
+	EndpointAttr    = "endpoint"
 	methodAttr      = "method"
 	contentTypeAttr = "content_type"
 
@@ -44,8 +44,6 @@ const (
 )
 
 type HttpRequestRecipe struct {
-	// Deprecated: we will deprecate this soon, more here: https://app.zenhub.com/workspaces/engineering-636cff9fc978ceb2aac05a1d/issues/gh/kurtosis-tech/kurtosis-private/1128
-	serviceName service.ServiceName //TODO deprecate
 	portId      string
 	contentType string
 	endpoint    string
@@ -54,9 +52,8 @@ type HttpRequestRecipe struct {
 	extractors  map[string]string
 }
 
-func NewPostHttpRequestRecipe(serviceName service.ServiceName, portId string, contentType string, endpoint string, body string, extractors map[string]string) *HttpRequestRecipe {
+func NewPostHttpRequestRecipe(portId string, contentType string, endpoint string, body string, extractors map[string]string) *HttpRequestRecipe {
 	return &HttpRequestRecipe{
-		serviceName: serviceName,
 		portId:      portId,
 		method:      postMethod,
 		contentType: contentType,
@@ -66,9 +63,8 @@ func NewPostHttpRequestRecipe(serviceName service.ServiceName, portId string, co
 	}
 }
 
-func NewGetHttpRequestRecipe(serviceName service.ServiceName, portId string, endpoint string, extractors map[string]string) *HttpRequestRecipe {
+func NewGetHttpRequestRecipe(portId string, endpoint string, extractors map[string]string) *HttpRequestRecipe {
 	return &HttpRequestRecipe{
-		serviceName: serviceName,
 		portId:      portId,
 		method:      getMethod,
 		contentType: unusedContentType,
@@ -84,16 +80,10 @@ func (recipe *HttpRequestRecipe) String() string {
 	instanceName := recipe.GetInstanceName()
 
 	buffer.WriteString(instanceName + "(")
-	buffer.WriteString(portIdAttr + "=")
+	buffer.WriteString(PortIdAttr + "=")
 	buffer.WriteString(fmt.Sprintf("%q, ", recipe.portId))
 
-	//TODO  remove this check when we deprecate the service_name field
-	if recipe.serviceName != "" {
-		buffer.WriteString(serviceNameAttr + "=")
-		buffer.WriteString(fmt.Sprintf("%q, ", recipe.serviceName))
-	}
-
-	buffer.WriteString(endpointAttr + "=")
+	buffer.WriteString(EndpointAttr + "=")
 	buffer.WriteString(fmt.Sprintf("%q, ", recipe.endpoint))
 
 	if recipe.method == postMethod {
@@ -103,7 +93,7 @@ func (recipe *HttpRequestRecipe) String() string {
 		buffer.WriteString(fmt.Sprintf("%q, ", recipe.contentType))
 	}
 
-	buffer.WriteString(extractKeyPrefix + "=")
+	buffer.WriteString(ExtractKeyPrefix + "=")
 	extractors, err := convertMapToStarlarkDict(recipe.extractors)
 
 	if err != nil {
@@ -113,7 +103,7 @@ func (recipe *HttpRequestRecipe) String() string {
 	if extractors.Len() > 0 {
 		buffer.WriteString(fmt.Sprintf("%v)", extractors))
 	} else {
-		buffer.WriteString(fmt.Sprintf("%q)", ""))
+		buffer.WriteString(fmt.Sprintf("%s)", "{}"))
 	}
 	return buffer.String()
 }
@@ -130,7 +120,7 @@ func (recipe *HttpRequestRecipe) Freeze() {
 
 // Truth implements the starlark.Value interface
 func (recipe *HttpRequestRecipe) Truth() starlark.Bool {
-	truth := recipe.portId != "" && recipe.serviceName != "" && recipe.endpoint != "" && recipe.method != ""
+	truth := recipe.portId != "" && recipe.endpoint != "" && recipe.method != ""
 	if recipe.method == postMethod {
 		truth = truth && recipe.body != "" && recipe.contentType != ""
 	}
@@ -154,11 +144,9 @@ func (recipe *HttpRequestRecipe) GetInstanceName() string {
 // Attr implements the starlark.HasAttrs interface.
 func (recipe *HttpRequestRecipe) Attr(name string) (starlark.Value, error) {
 	switch name {
-	case portIdAttr:
+	case PortIdAttr:
 		return starlark.String(recipe.portId), nil
-	case serviceNameAttr:
-		return starlark.String(recipe.serviceName), nil
-	case extractKeyPrefix:
+	case ExtractKeyPrefix:
 		return convertMapToStarlarkDict(recipe.extractors)
 	case bodyKey:
 		return starlark.String(recipe.body), nil
@@ -166,7 +154,7 @@ func (recipe *HttpRequestRecipe) Attr(name string) (starlark.Value, error) {
 		return starlark.String(recipe.contentType), nil
 	case methodAttr:
 		return starlark.String(recipe.method), nil
-	case endpointAttr:
+	case EndpointAttr:
 		return starlark.String(recipe.endpoint), nil
 	default:
 		return nil, startosis_errors.NewInterpretationError("'%v' has no attribute '%v;", HttpRecipeTypeName, name)
@@ -175,20 +163,18 @@ func (recipe *HttpRequestRecipe) Attr(name string) (starlark.Value, error) {
 
 // AttrNames implements the starlark.HasAttrs interface.
 func (recipe *HttpRequestRecipe) AttrNames() []string {
-	return []string{portIdAttr, serviceNameAttr, extractKeyPrefix, endpointAttr, contentTypeAttr, methodAttr, bodyKey}
+	return []string{PortIdAttr, serviceNameAttr, ExtractKeyPrefix, EndpointAttr, contentTypeAttr, methodAttr, bodyKey}
 }
 
 func MakeGetHttpRequestRecipe(_ *starlark.Thread, builtin *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 	var portId string
 	var endpoint string
-	var serviceName string
 	var maybeExtractField starlark.Value
 
 	if err := starlark.UnpackArgs(builtin.Name(), args, kwargs,
-		portIdAttr, &portId,
-		endpointAttr, &endpoint,
-		kurtosis_types.MakeOptional(extractKeyPrefix), &maybeExtractField,
-		kurtosis_types.MakeOptional(serviceNameAttr), &serviceName,
+		PortIdAttr, &portId,
+		EndpointAttr, &endpoint,
+		kurtosis_types.MakeOptional(ExtractKeyPrefix), &maybeExtractField,
 	); err != nil {
 		return nil, startosis_errors.NewInterpretationError(err.Error())
 	}
@@ -197,31 +183,29 @@ func MakeGetHttpRequestRecipe(_ *starlark.Thread, builtin *starlark.Builtin, arg
 	var err *startosis_errors.InterpretationError
 
 	if maybeExtractField != nil {
-		extractedMap, err = kurtosis_types.SafeCastToMapStringString(maybeExtractField, extractKeyPrefix)
+		extractedMap, err = kurtosis_types.SafeCastToMapStringString(maybeExtractField, ExtractKeyPrefix)
 		if err != nil {
 			return nil, err
 		}
 	}
-	recipe := NewGetHttpRequestRecipe(service.ServiceName(serviceName), portId, endpoint, extractedMap)
+	recipe := NewGetHttpRequestRecipe(portId, endpoint, extractedMap)
 	return recipe, nil
 }
 
 func MakePostHttpRequestRecipe(_ *starlark.Thread, builtin *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 	var portId string
 	var endpoint string
-	var serviceName string
 
 	var maybeBody starlark.Value
 	contentType := defaultContentType
 	var maybeExtractField starlark.Value
 
 	if err := starlark.UnpackArgs(builtin.Name(), args, kwargs,
-		portIdAttr, &portId,
-		endpointAttr, &endpoint,
+		PortIdAttr, &portId,
+		EndpointAttr, &endpoint,
 		kurtosis_types.MakeOptional(bodyKey), &maybeBody,
 		kurtosis_types.MakeOptional(contentTypeAttr), &contentType,
-		kurtosis_types.MakeOptional(extractKeyPrefix), &maybeExtractField,
-		kurtosis_types.MakeOptional(serviceNameAttr), &serviceName,
+		kurtosis_types.MakeOptional(ExtractKeyPrefix), &maybeExtractField,
 	); err != nil {
 		return nil, startosis_errors.NewInterpretationError("%v", err.Error())
 	}
@@ -231,7 +215,7 @@ func MakePostHttpRequestRecipe(_ *starlark.Thread, builtin *starlark.Builtin, ar
 	var err *startosis_errors.InterpretationError
 
 	if maybeExtractField != nil {
-		extractedMap, err = kurtosis_types.SafeCastToMapStringString(maybeExtractField, extractKeyPrefix)
+		extractedMap, err = kurtosis_types.SafeCastToMapStringString(maybeExtractField, ExtractKeyPrefix)
 		if err != nil {
 			return nil, err
 		}
@@ -244,7 +228,7 @@ func MakePostHttpRequestRecipe(_ *starlark.Thread, builtin *starlark.Builtin, ar
 		}
 	}
 
-	recipe := NewPostHttpRequestRecipe(service.ServiceName(serviceName), portId, contentType, endpoint, extractedBody, extractedMap)
+	recipe := NewPostHttpRequestRecipe(portId, contentType, endpoint, extractedBody, extractedMap)
 	return recipe, nil
 }
 
@@ -262,10 +246,10 @@ func (recipe *HttpRequestRecipe) Execute(
 		return nil, stacktrace.Propagate(err, "An error occurred while replacing runtime values in the body of the http recipe")
 	}
 
-	if serviceName == emptyServiceName {
+	serviceNameStr := string(serviceName)
+	if serviceNameStr == "" {
 		return nil, stacktrace.NewError("The service name parameter can't be an empty string")
 	}
-	serviceNameStr := string(serviceName)
 
 	response, err = serviceNetwork.HttpRequestService(
 		ctx,
@@ -299,7 +283,7 @@ func (recipe *HttpRequestRecipe) Execute(
 		return nil, stacktrace.Propagate(err, "An error occurred while running extractors on HTTP response body")
 	}
 	for extractorKey, extractorValue := range extractDict {
-		resultDict[fmt.Sprintf("%v.%v", extractKeyPrefix, extractorKey)] = extractorValue
+		resultDict[fmt.Sprintf("%v.%v", ExtractKeyPrefix, extractorKey)] = extractorValue
 	}
 	return resultDict, nil
 }
@@ -365,7 +349,7 @@ func (recipe *HttpRequestRecipe) ResultMapToString(resultMap map[string]starlark
 	body := resultMap[bodyKey]
 	extractedFieldString := strings.Builder{}
 	for resultKey, resultValue := range resultMap {
-		if strings.Contains(resultKey, extractKeyPrefix) {
+		if strings.Contains(resultKey, ExtractKeyPrefix) {
 			extractedFieldString.WriteString(fmt.Sprintf("\n'%v': %v", resultKey, resultValue))
 		}
 	}
@@ -387,7 +371,7 @@ func (recipe *HttpRequestRecipe) CreateStarlarkReturnValue(resultUuid string) (*
 		return nil, startosis_errors.NewInterpretationError("An error has occurred when creating return value for request recipe, setting field '%v'", statusCodeKey)
 	}
 	for extractorKey := range recipe.extractors {
-		fullExtractorKey := fmt.Sprintf("%v.%v", extractKeyPrefix, extractorKey)
+		fullExtractorKey := fmt.Sprintf("%v.%v", ExtractKeyPrefix, extractorKey)
 		err = dict.SetKey(starlark.String(fullExtractorKey), starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, fullExtractorKey)))
 		if err != nil {
 			return nil, startosis_errors.NewInterpretationError("An error has occurred when creating return value for request recipe, setting field '%v'", fullExtractorKey)
@@ -395,11 +379,6 @@ func (recipe *HttpRequestRecipe) CreateStarlarkReturnValue(resultUuid string) (*
 	}
 	dict.Freeze()
 	return dict, nil
-}
-
-// TODO this will be removed when we deprecate the service_name field, more here: https://app.zenhub.com/workspaces/engineering-636cff9fc978ceb2aac05a1d/issues/gh/kurtosis-tech/kurtosis-private/1128
-func (recipe *HttpRequestRecipe) GetServiceName() service.ServiceName {
-	return recipe.serviceName
 }
 
 func convertMapToStarlarkDict(inputMap map[string]string) (*starlark.Dict, *startosis_errors.InterpretationError) {
