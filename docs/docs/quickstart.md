@@ -17,7 +17,14 @@ In this quickstart, you will:
 :::
 
 
-If you get stuck at any point during this quickstart, remember that every Kurtosis command accepts a `-h` flag to print helptext. You can also use `kurtosis feedback --calendly` to open a calendly link for a personal session with [our cofounder Kevin][kevin-linked], or `kurtosis feedback --github` will take you to opening a Github issue. The `kurtosis discord` command will open up our Discord, where you will get live support via chat. Don't suffer in silence - we want to help and hear from you!
+:::details Getting stuck?
+There's a few ways to get help.
+- Every Kurtosis command accepts a `-h` flag to print helptext.
+- `kurtosis feedback --calendly` opens a calendly link for a personal session with [our cofounder Kevin][kevin-linked]
+- `kurtosis feedback --github` will take you to opening a Github issue.
+- `kurtosis discord` command will open up our Discord, where you can get live support via chat. 
+***Don't suffer in silence - we want to help and hear from you!***
+:::
 
 ### Setup
 
