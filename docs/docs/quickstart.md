@@ -16,24 +16,17 @@ In this Quickstart, you will:
 - Parameterize your application setup in order to automate loading data into your API
 :::
 
+If you get stuck at any point during this quickstart, there are several options available:
+- Every Kurtosis command accepts a `-h` flag to print helptext
+- `kurtosis feedback --calendly` will open a booking link for a personal session with [our cofounder Kevin][kevin-linked]
+- `kurtosis feedback --github` will take you to opening a Github issue
+- The `kurtosis discord` command will open up our Discord
+
+**Don't suffer in silence - we want to help and hear from you!**
+
 
 #### Setup
 Before you proceed, make sure you have [Kurtosis installed][installing-kurtosis-guide] (or [upgraded to latest][upgrading-kurtosis-guide] if you already have it), Docker is started, and the Docker engine is running.
-
-:::tip
-If you get stuck at any point during this quickstart, there are many, many options available:
-
-- Every Kurtosis command accepts a `-h` flag to print helptext
-- The `kurtosis discord` command will open up our Discord
-- The `kurtosis twitter` command will take you to our Twitter channel
-- `kurtosis feedback --github` will take you to opening a Github issue
-- `kurtosis feedback --email` will open an email to us
-- `kurtosis feedback --calendly` will open a booking link for a personal session with [our cofounder Kevin][kevin-linked]
-
-More details about our `feedback` command can be found [here][kurtosis-feedback-reference].
-
-**Don't suffer in silence - we want to help and hear from you!**
-:::
 
 Hello, World
 ------------
