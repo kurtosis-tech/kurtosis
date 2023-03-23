@@ -6,11 +6,16 @@ slug: /quickstart
 
 Introduction
 ------------
-Welcome to the [Kurtosis][homepage] quickstart!
+Welcome to the [Kurtosis][homepage] quickstart! This guide will take ~15 minutes and will walk you through building a basic Kurtosis package.
 
-If you arrived here by chance and you're curious as to what Kurtosis _is_, [see here][what-is-kurtosis-explanation].
+:::info
+In this Quickstart, you will:
+- Start a containerized Postgres database in Kurtosis
+- Seed your database with test data using task sequencing
+- Connect an API server to your database using dynamic service dependencies
+- Parameterize your application setup in order to automate loading data into your API
+:::
 
-If you're ready to get going, this guide will take ~15 minutes and will walk you through building a basic Kurtosis package. The package that you build will start a Postgres server, seed it with data, put an API in front of it, and automate loading data into it.
 
 #### Setup
 Before you proceed, make sure you have [Kurtosis installed][installing-kurtosis-guide] (or [upgraded to latest][upgrading-kurtosis-guide] if you already have it), Docker is started, and the Docker engine is running.
