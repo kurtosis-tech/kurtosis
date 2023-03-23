@@ -19,11 +19,11 @@ If you already have Kurtosis installed and you're looking to upgrade to latest, 
 
 If you're looking to install a historical version instead, [see here][install-historical-guide].
 
-I. Install Docker
+I. Install & Start Docker
 -----------------
 
-1. If you don't already have Docker installed, follow the instructions [here][docker-install] to install the Docker application specific to your machine (e.g. Apple Intel, Apple M1, etc.)
-1. Start Docker
+1. If you don't already have Docker installed, follow the instructions [here][docker-install] to install the Docker application specific to your machine (e.g. Apple Intel, Apple M1, etc.). 
+1. Start the Docker daemon (e.g. open Docker Desktop)
 1. Verify that Docker is running:
    ```bash
    docker image ls

@@ -65,52 +65,46 @@ def run(plan, args):
 	service_one_cmd =  "ping -c 5 -W 5 " + service_1.ip_address +  " | tail -1| awk '{print $4}' | cut -d '/' -f 2"
 	service_three_cmd =  "ping -c 5 -W 5 " + service_3.ip_address +  " | tail -1| awk '{print $4}' | cut -d '/' -f 2"
 
-	recipe=ExecRecipe(
-		service_name=SERVICE_ID_2,
+	recipe = ExecRecipe(
 		command=["/bin/sh", "-c", service_one_cmd],
 	)
-	res = plan.exec(recipe)
+	res = plan.exec(recipe, SERVICE_ID_2)
 	plan.assert(res["output"], "<", "2")
 
-	recipe=ExecRecipe(
-		service_name=SERVICE_ID_2,
+	recipe = ExecRecipe(
 		command=["/bin/sh", "-c", service_three_cmd],
 	)
-	res = plan.exec(recipe)
+	res = plan.exec(recipe, SERVICE_ID_2)
 	plan.assert(res["output"], "<", "2")
 
 	delay = UniformPacketDelayDistribution(750)
 	plan.set_connection(config=ConnectionConfig(packet_delay_distribution=delay))
 	
-	recipe=ExecRecipe(
-		service_name=SERVICE_ID_2,
+	recipe = ExecRecipe(
 		command=["/bin/sh", "-c", service_one_cmd],
 	)
-	res = plan.exec(recipe)
+	res = plan.exec(recipe, SERVICE_ID_2)
 	plan.assert(res["output"], "<", "2")
 
-	recipe=ExecRecipe(
-		service_name=SERVICE_ID_2,
+	recipe = ExecRecipe(
 		command=["/bin/sh", "-c", service_three_cmd],
 	)
 	
 	# this is doing string comparison
 	# have not found a way to convert output to int
-	res = plan.exec(recipe)
+	res = plan.exec(recipe, SERVICE_ID_2)
 	plan.assert(res["output"], ">", "1449")
     
 	uniform_delay_distribution = UniformPacketDelayDistribution(ms=350)	
 	plan.set_connection(config=ConnectionConfig(packet_delay_distribution=uniform_delay_distribution))
 
-	recipe=ExecRecipe(
-		service_name=SERVICE_ID_2,
+	recipe = ExecRecipe(
 		command=["/bin/sh", "-c", service_one_cmd],
 	)
-	res = plan.exec(recipe)
+	res = plan.exec(recipe, SERVICE_ID_2)
 	plan.assert(res["output"], "<", "2")
 
-	recipe=ExecRecipe(
-		service_name=SERVICE_ID_2,
+	recipe = ExecRecipe(
 		command=["/bin/sh", "-c", service_three_cmd],
 	)
 	
@@ -118,7 +112,7 @@ def run(plan, args):
 	# have not found a way to convert output to int
 	# the overall latency should be greater than 350*2, but
 	# added some buffer to handle 50ms outliers
-	res = plan.exec(recipe)
+	res = plan.exec(recipe, SERVICE_ID_2)
 	plan.assert(res["output"], ">", "649")
 	plan.print("Test successfully executed")
 `

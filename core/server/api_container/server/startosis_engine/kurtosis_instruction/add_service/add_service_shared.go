@@ -1,19 +1,25 @@
 package add_service
 
 import (
+	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/port_spec"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
+	"time"
 )
 
 const (
@@ -129,4 +135,83 @@ func replaceMagicStrings(
 	}
 
 	return service.ServiceName(serviceNameStr), serviceConfigBuilder.Build(), nil
+}
+
+func runServiceReadinessCheck(
+	ctx context.Context,
+	serviceNetwork service_network.ServiceNetwork,
+	runtimeValueStore *runtime_value_store.RuntimeValueStore,
+	serviceName service.ServiceName,
+	readyConditions *service_config.ReadyConditions,
+) error {
+	if readyConditions != nil {
+
+		recipe, intepretationErr := readyConditions.GetRecipe()
+		if intepretationErr != nil {
+			return stacktrace.Propagate(intepretationErr, "An error occurred getting the recipe value from ready conditions '%v'", readyConditions)
+		}
+
+		field, intepretationErr := readyConditions.GetField()
+		if intepretationErr != nil {
+			return stacktrace.Propagate(intepretationErr, "An error occurred getting the field value from ready conditions '%v'", readyConditions)
+		}
+
+		assertion, intepretationErr := readyConditions.GetAssertion()
+		if intepretationErr != nil {
+			return stacktrace.Propagate(intepretationErr, "An error occurred getting the assertion value from ready conditions '%v'", readyConditions)
+		}
+
+		target, intepretationErr := readyConditions.GetTarget()
+		if intepretationErr != nil {
+			return stacktrace.Propagate(intepretationErr, "An error occurred getting the target value from ready conditions '%v'", readyConditions)
+		}
+
+		interval, intepretationErr := readyConditions.GetInterval()
+		if intepretationErr != nil {
+			return stacktrace.Propagate(intepretationErr, "An error occurred getting the interval value from ready conditions '%v'", readyConditions)
+		}
+
+		timeout, intepretationErr := readyConditions.GetTimeout()
+		if intepretationErr != nil {
+			return stacktrace.Propagate(intepretationErr, "An error occurred getting the timeout value from ready conditions '%v'", readyConditions)
+		}
+
+		startTime := time.Now()
+		logrus.Infof("Checking service readiness for '%s' at '%v'", serviceName, startTime) //TODO change to debug
+		lastResult, tries, err := shared_helpers.ExecuteServiceAssertionWithRecipe(
+			ctx,
+			serviceNetwork,
+			runtimeValueStore,
+			serviceName,
+			recipe,
+			field,
+			assertion,
+			target,
+			interval,
+			timeout,
+		)
+		if err != nil {
+			return stacktrace.Propagate(
+				err,
+				"An error occurred checking if service '%v' is ready, using "+
+					"recipe '%+v', value field '%v', assertion '%v', target '%v', interval '%s' and time-out '%s'.",
+				serviceName,
+				recipe,
+				field,
+				assertion,
+				target,
+				interval,
+				timeout,
+			)
+		}
+		//TODO change to debug
+		logrus.Infof("Checking if service '%v' is ready took %d tries (%v in total). "+
+			"Assertion passed with following:\n%s",
+			serviceName,
+			tries,
+			time.Since(startTime),
+			recipe.ResultMapToString(lastResult),
+		)
+	}
+	return nil
 }
