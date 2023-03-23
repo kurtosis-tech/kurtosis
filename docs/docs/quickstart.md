@@ -6,11 +6,12 @@ slug: /quickstart
 
 Introduction
 ------------
-Welcome to the [Kurtosis][homepage] quickstart!
+Welcome to the [Kurtosis][homepage] quickstart! 
 
 If you arrived here by chance and you're curious as to what Kurtosis _is_, [see here][what-is-kurtosis-explanation].
 
 If you're ready to get going, this guide will take ~15 minutes and will walk you through building a basic Kurtosis package. The package that you build will start a Postgres server, seed it with data, put an API in front of it, and automate loading data into it.
+
 
 #### Setup
 Before you proceed, make sure you have [Kurtosis installed][installing-kurtosis-guide] (or [upgraded to latest][upgrading-kurtosis-guide] if you already have it), Docker is started, and the Docker engine is running.
@@ -118,8 +119,8 @@ POSTGRES_PASSWORD = "password"
 def run(plan, args):
     # Add a Postgres server
     postgres = plan.add_service(
-        "postgres",
-        ServiceConfig(
+        serivce_name = "postgres",
+        config = ServiceConfig(
             image = "postgres:15.2-alpine",
             ports = {
                 POSTGRES_PORT_ID: PortSpec(5432, application_protocol = "postgresql"),
@@ -208,7 +209,7 @@ def run(plan, args):
     # Add a Postgres server
     postgres = plan.add_service(
         service_name = "postgres",
-        ServiceConfig(
+        config = ServiceConfig(
             image = "postgres:15.2-alpine",
             ports = {
                 POSTGRES_PORT_ID: PortSpec(5432, application_protocol = "postgresql"),
@@ -365,8 +366,8 @@ Kurtosis' first-class data primitive is called a [files artifact][files-artifact
 
 ```python
 postgres = plan.add_service(
-    "postgres",
-    ServiceConfig(
+    service_name = "postgres",
+    config = ServiceConfig(
         # ...omitted...
         files = {
             SEED_DATA_DIRPATH: data_package_module_result.files_artifact,
@@ -427,7 +428,7 @@ def run(plan, args):
     # Add a Postgres server
     postgres = plan.add_service(
         service_name = "postgres",
-        ServiceConfig(
+        config = ServiceConfig(
             image = "postgres:15.2-alpine",
             ports = {
                 POSTGRES_PORT_ID: PortSpec(5432, application_protocol = "postgresql"),
@@ -569,7 +570,7 @@ def run(plan, args):
     # Add a Postgres server
     postgres = plan.add_service(
         service_name = "postgres",
-        ServiceConfig(
+        config = ServiceConfig(
             # ...
             env_vars = {
                 # ...
@@ -715,7 +716,7 @@ def run(plan, args):
     # Add a Postgres server
     postgres = plan.add_service(
         service_name = "postgres",
-        ServiceConfig(
+        config = ServiceConfig(
             image = "postgres:15.2-alpine",
             ports = {
                 POSTGRES_PORT_ID: PortSpec(5432, application_protocol = "postgresql"),
