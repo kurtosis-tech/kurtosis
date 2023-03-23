@@ -20,6 +20,7 @@ const (
 	ContextCmdStr           = "context"
 	ContextAddCmdStr        = "add"
 	ContextLsCmdStr         = "ls"
+	ContextRmCmdStr         = "rm"
 	DiscordCmdStr           = "discord"
 	DocsCmdStr              = "docs"
 	EnclaveCmdStr           = "enclave"
