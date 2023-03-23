@@ -27,16 +27,25 @@ There are many ways to get help and give feedback. First, every Kurtosis command
 <Tabs>
   <TabItem value="live-video-session" label="Video Call">
   
-  `kurtosis feedback --calendly` opens a calendly link for a personal session with [our cofounder Kevin][kevin-linked]</TabItem>
+  `kurtosis feedback --calendly` opens a calendly link for a personal session with [our cofounder Kevin][kevin-linked]
+  
+  </TabItem>
+
   <TabItem value="github-issue" label="Github Issue">
   
-  `kurtosis feedback --github` command will open a github issue template, so you can file an issue.</TabItem>
+  `kurtosis feedback --github` command will open a github issue template, so you can file an issue
+  
+  </TabItem>
+
   <TabItem value="email" label="Email">
   
   `kurtosis feedback --email` will open an email to us.</TabItem>
+
   <TabItem value="discord" label="Discord">
   
-  `kurtosis discord` command will open up our Discord, where you can get live support via chat. </TabItem>
+  `kurtosis discord` command will open up our Discord, where you can get live support via chat.
+  
+  </TabItem>
 </Tabs>
 
 **Don't suffer in silence - we want to help and hear from you!**
