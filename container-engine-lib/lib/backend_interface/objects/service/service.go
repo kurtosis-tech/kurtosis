@@ -4,10 +4,15 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"net"
+	"regexp"
 )
 
 const (
 	ServiceNameRegex = "[a-zA-Z0-9-_]+"
+)
+
+var (
+	serviceNameCompiledRegex = regexp.MustCompile(ServiceNameRegex)
 )
 
 type ServiceName string
@@ -59,4 +64,8 @@ func (service *Service) GetMaybePublicIP() net.IP {
 
 func (service *Service) GetMaybePublicPorts() map[string]*port_spec.PortSpec {
 	return service.maybePublicPorts
+}
+
+func ValidateServiceName(serviceName string) bool {
+	return serviceNameCompiledRegex.MatchString(serviceName)
 }
