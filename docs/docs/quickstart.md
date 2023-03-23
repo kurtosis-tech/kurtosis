@@ -16,7 +16,7 @@ In this quickstart, you will:
 - Parameterize your application setup in order to automate loading data into your API
 :::
 
-<details><summary>How to get help</summary>
+<details><summary>Getting help and giving feedback</summary>
 
 There are many ways to get help and give feedback. First, every Kurtosis command accepts a `-h` flag to print helptext. If that doesn't help, here are some ways to get support:
 
