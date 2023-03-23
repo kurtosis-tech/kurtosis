@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	ServiceNameRegex = "[a-zA-Z0-9-_]+"
+	ServiceNameRegex = "^[a-zA-Z0-9-_]+$"
 )
 
 var (

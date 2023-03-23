@@ -1060,6 +1060,31 @@ def run(plan):
 	require.Equal(t, fmt.Sprintf("Evaluation error: %v\n\tat [3:7]: run\n\tat [0:0]: print", print_builtin.UsePlanFromKurtosisInstructionError), interpretationError.GetErrorMessage())
 }
 
+func TestStartosisInterpreter_AddServiceFailsWithInvalidServiceNameCleanly(t *testing.T) {
+	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
+	defer packageContentProvider.RemoveAll()
+	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
+	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, runtimeValueStore)
+	script := `
+def run(plan):
+	plan.print("Starting Startosis script!")
+
+	service_name = "redis:alpine-3.17"
+	plan.print("Adding service " + service_name)
+
+	config = ServiceConfig(
+		image = "` + testContainerImageName + `",
+		ports = {
+			"grpc": PortSpec(number = 1323, transport_protocol = "TCP")
+		},
+	)
+	datastore_service = plan.add_service(service_name = service_name, config = config)
+`
+
+	_, _, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
+	require.NotNil(t, interpretationError)
+}
+
 // #####################################################################################################################
 //
 //	TEST HELPERS
