@@ -22,7 +22,7 @@ There are many ways to get help and give feedback. First, every Kurtosis command
 
 - `kurtosis feedback --calendly` opens a calendly link for a personal session with [our cofounder Kevin][kevin-linked]
 - `kurtosis feedback --github` command will open a github issue template, so you can file an issue
-- `kurtosis feedback --email` will open an email to us.</TabItem>
+- `kurtosis feedback --email` will open an email to us.
 - `kurtosis discord` command will open up our Discord, where you can get live support via chat.
 
 **Don't suffer in silence - we want to help and hear from you!**
