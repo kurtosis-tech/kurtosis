@@ -14,6 +14,7 @@ const (
 	testInvalidAttr          = "invalid-test-attr"
 	httpApplicationProtocol  = "http"
 	emptyApplicationProtocol = ""
+	serviceNameTestValue     = starlark.String("serviceName")
 )
 
 func TestService_StringRepresentation(t *testing.T) {
@@ -90,7 +91,7 @@ func createTestServiceType() (*Service, error) {
 	if err := ports.SetKey(starlark.String("grpc"), portSpec); err != nil {
 		return nil, err
 	}
-	service := NewService(hostnameTestValue, ipAddressTestValue, ports)
+	service := NewService(serviceNameTestValue, hostnameTestValue, ipAddressTestValue, ports)
 	return service, nil
 }
 
@@ -103,6 +104,6 @@ func createTestServiceTypeWithApplicationProtocol() (*Service, error) {
 	if err := ports.SetKey(starlark.String("grpc"), portSpec); err != nil {
 		return nil, err
 	}
-	service := NewService(hostnameTestValue, ipAddressTestValue, ports)
+	service := NewService(serviceNameTestValue, hostnameTestValue, ipAddressTestValue, ports)
 	return service, nil
 }

@@ -34,7 +34,7 @@ func fillAddServiceReturnValueWithRuntimeValues(service *service.Service, result
 	})
 }
 
-func makeAddServiceInterpretationReturnValue(serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig, resultUuid string) (*kurtosis_types.Service, *startosis_errors.InterpretationError) {
+func makeAddServiceInterpretationReturnValue(serviceName starlark.String, serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig, resultUuid string) (*kurtosis_types.Service, *startosis_errors.InterpretationError) {
 	ports := serviceConfig.GetPrivatePorts()
 	portSpecsDict := starlark.NewDict(len(ports))
 	for portId, port := range ports {
@@ -54,7 +54,7 @@ func makeAddServiceInterpretationReturnValue(serviceConfig *kurtosis_core_rpc_ap
 	}
 	ipAddress := starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, ipAddressRuntimeValue))
 	hostname := starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, hostnameRuntimeValue))
-	returnValue := kurtosis_types.NewService(hostname, ipAddress, portSpecsDict)
+	returnValue := kurtosis_types.NewService(serviceName, hostname, ipAddress, portSpecsDict)
 	return returnValue, nil
 }
 
