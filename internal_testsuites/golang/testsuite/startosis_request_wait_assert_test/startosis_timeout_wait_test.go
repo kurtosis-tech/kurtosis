@@ -20,14 +20,13 @@ def run(plan):
 
 	plan.add_service(service_name = "web-server", config = service_config)
 	get_recipe = GetHttpRequestRecipe(
-		service_name = "web-server",
 		port_id = "http-port",
 		endpoint = "?input=foo/bar",
 		extract = {
 			"exploded-slash": ".query.input | split(\"/\") | .[1]"
 		}
 	)
-	response = plan.wait(get_recipe, "code", "<", 0, interval="100ms", timeout="10s")
+	response = plan.wait(recipe=get_recipe, field="code",  assertion="<", target_value=0, interval="100ms", timeout="10s", service_name="web-server")
 `
 )
 

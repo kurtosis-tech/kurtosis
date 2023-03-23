@@ -14,9 +14,11 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
 	"reflect"
 	"strings"
+	"sync"
 )
 
 const (
@@ -39,7 +41,7 @@ func NewAddServices(serviceNetwork service_network.ServiceNetwork, runtimeValueS
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						// we just try to convert the configs here to validate their shape, to avoid code duplication
 						// with Interpret
-						if _, err := validateAndConvertConfigs(value); err != nil {
+						if _, _, err := validateAndConvertConfigsAndReadyConditions(value); err != nil {
 							return err
 						}
 						return nil
@@ -55,7 +57,8 @@ func NewAddServices(serviceNetwork service_network.ServiceNetwork, runtimeValueS
 
 				serviceConfigs: nil, // populated at interpretation time
 
-				resultUuids: map[service.ServiceName]string{}, // populated at interpretation time
+				resultUuids:     map[service.ServiceName]string{}, // populated at interpretation time
+				readyConditions: nil,                              // populated at interpretation time
 			}
 		},
 
@@ -73,6 +76,8 @@ type AddServicesCapabilities struct {
 
 	serviceConfigs map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig
 
+	readyConditions map[service.ServiceName]*service_config.ReadyConditions
+
 	resultUuids map[service.ServiceName]string
 }
 
@@ -81,11 +86,12 @@ func (builtin *AddServicesCapabilities) Interpret(arguments *builtin_argument.Ar
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ConfigsArgName)
 	}
-	serviceConfigs, interpretationErr := validateAndConvertConfigs(ServiceConfigsDict)
+	serviceConfigs, readyConditions, interpretationErr := validateAndConvertConfigsAndReadyConditions(ServiceConfigsDict)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
 	builtin.serviceConfigs = serviceConfigs
+	builtin.readyConditions = readyConditions
 
 	resultUuids, returnValue, interpretationErr := makeAddServicesInterpretationReturnValue(builtin.serviceConfigs, builtin.runtimeValueStore)
 	if interpretationErr != nil {
@@ -131,6 +137,24 @@ func (builtin *AddServicesCapabilities) Execute(ctx context.Context, _ *builtin_
 		}
 		return "", stacktrace.NewError("Some errors occurred starting the following services: '%v'. The entire batch was rolled back an no service was started. Errors were: \n%v", failedServiceNames, failedServices)
 	}
+	shouldDeleteAllStartedServices := true
+
+	//TODO we should move the readiness check functionality to the default service network to improve performance
+	///TODO because we won't have to wait for all services to start for checking readiness, but first we have to
+	//TODO propagate the Recipes to this layer too and probably move the wait instruction also
+	if failedServicesChecks := builtin.allServicesReadinessCheck(ctx, startedServices, parallelism); len(failedServicesChecks) > 0 {
+		var allServiceChecksErrMsg string
+		for serviceName, serviceErr := range failedServicesChecks {
+			serviceMsg := fmt.Sprintf("Service '%v' error:\n%v\n", serviceName, serviceErr)
+			allServiceChecksErrMsg = allServiceChecksErrMsg + serviceMsg
+		}
+		return "", stacktrace.NewError("An error occurred while checking al service, these are the errors by service:\n%s", allServiceChecksErrMsg)
+	}
+	defer func() {
+		if shouldDeleteAllStartedServices {
+			builtin.removeAllStartedServices(ctx, startedServices)
+		}
+	}()
 
 	instructionResult := strings.Builder{}
 	instructionResult.WriteString(fmt.Sprintf("Successfully added the following '%d' services:", len(startedServices)))
@@ -139,39 +163,137 @@ func (builtin *AddServicesCapabilities) Execute(ctx context.Context, _ *builtin_
 		instructionResult.WriteString(fmt.Sprintf("\n  Service '%s' added with UUID '%s'", serviceName, serviceObj.GetRegistration().GetUUID()))
 
 	}
+	shouldDeleteAllStartedServices = false
 	return instructionResult.String(), nil
 }
 
-func validateAndConvertConfigs(configs starlark.Value) (map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig, *startosis_errors.InterpretationError) {
+func (builtin *AddServicesCapabilities) removeAllStartedServices(
+	ctx context.Context,
+	startedServices map[service.ServiceName]*service.Service,
+) {
+	//this is not executed with concurrency because the remove service method locks on every call
+	for serviceName, service := range startedServices {
+		serviceIdentifier := string(service.GetRegistration().GetUUID())
+		if _, err := builtin.serviceNetwork.RemoveService(ctx, serviceIdentifier); err != nil {
+			logrus.Debugf("Something fails while started all services and we tried to remove all the  created services to rollback the process, but this one '%s' fails throwing this error: '%v', we suggest you to manually remove it", serviceName, err)
+		}
+	}
+}
+
+func (builtin *AddServicesCapabilities) allServicesReadinessCheck(
+	ctx context.Context,
+	startedServices map[service.ServiceName]*service.Service,
+	batchSize int,
+) map[service.ServiceName]error {
+	logrus.Debugf("Checking for all services readiness...")
+
+	concurrencyControlChan := make(chan bool, batchSize)
+	defer close(concurrencyControlChan)
+
+	failedServiceChecksSyncMap := &sync.Map{}
+
+	wg := &sync.WaitGroup{}
+	for serviceName := range startedServices {
+		wg.Add(1)
+		// The concurrencyControlChan will block if the buffer is currently full
+		concurrencyControlChan <- true
+		go builtin.runServiceReadinessCheck(ctx, wg, concurrencyControlChan, serviceName, failedServiceChecksSyncMap)
+	}
+	wg.Wait()
+
+	failedServiceChecksRegularMap := map[service.ServiceName]error{}
+
+	failedServiceChecksSyncMap.Range(func(serviceNameAny any, serviceErrorAny any) bool {
+		if serviceErrorAny != nil {
+			serviceName := serviceNameAny.(service.ServiceName)
+			serviceError := serviceErrorAny.(error)
+			failedServiceChecksRegularMap[serviceName] = serviceError
+		}
+		return true
+	})
+
+	logrus.Debug("All services are ready")
+
+	return failedServiceChecksRegularMap
+}
+
+func (builtin *AddServicesCapabilities) runServiceReadinessCheck(
+	ctx context.Context,
+	wg *sync.WaitGroup,
+	concurrencyControlChan chan bool,
+	serviceName service.ServiceName,
+	failedServiceChecks *sync.Map,
+) {
+	var serviceErr error
+	defer func() {
+		failedServiceChecks.Store(serviceName, serviceErr)
+		wg.Done()
+		//pop a value from the concurrencyControlChan to allow any potentially waiting subroutine to start
+		<-concurrencyControlChan
+	}()
+
+	readyConditions, found := builtin.readyConditions[serviceName]
+	if !found {
+		serviceErr = stacktrace.NewError("Expected to find ready conditions for service '%s' in map '%+v', but none was found; this is a bug in Kurtosis", serviceName, builtin.readyConditions)
+		return
+	}
+
+	if err := runServiceReadinessCheck(
+		ctx,
+		builtin.serviceNetwork,
+		builtin.runtimeValueStore,
+		serviceName,
+		readyConditions,
+	); err != nil {
+		serviceErr = stacktrace.Propagate(err, "An error occurred while checking if service '%v' is ready", serviceName)
+		return
+	}
+}
+
+func validateAndConvertConfigsAndReadyConditions(
+	configs starlark.Value,
+) (
+	map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig,
+	map[service.ServiceName]*service_config.ReadyConditions,
+	*startosis_errors.InterpretationError,
+) {
 	configsDict, ok := configs.(*starlark.Dict)
 	if !ok {
-		return nil, startosis_errors.NewInterpretationError("The '%s' argument should be a dictionary of matching each service name to their respective ServiceConfig object. Got '%s'", ConfigsArgName, reflect.TypeOf(configs))
+		return nil, nil, startosis_errors.NewInterpretationError("The '%s' argument should be a dictionary of matching each service name to their respective ServiceConfig object. Got '%s'", ConfigsArgName, reflect.TypeOf(configs))
 	}
 	if configsDict.Len() == 0 {
-		return nil, startosis_errors.NewInterpretationError("The '%s' argument should be a non empty dictionary", ConfigsArgName)
+		return nil, nil, startosis_errors.NewInterpretationError("The '%s' argument should be a non empty dictionary", ConfigsArgName)
 	}
 	convertedServiceConfigs := map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig{}
+	readyConditionsByServiceName := map[service.ServiceName]*service_config.ReadyConditions{}
 	for _, serviceName := range configsDict.Keys() {
 		serviceNameStr, isServiceNameAString := serviceName.(starlark.String)
 		if !isServiceNameAString {
-			return nil, startosis_errors.NewInterpretationError("One key of the '%s' dictionary is not a string (was '%s'). Keys of this argument should correspond to service names, which should be strings", ConfigsArgName, reflect.TypeOf(serviceName))
+			return nil, nil, startosis_errors.NewInterpretationError("One key of the '%s' dictionary is not a string (was '%s'). Keys of this argument should correspond to service names, which should be strings", ConfigsArgName, reflect.TypeOf(serviceName))
 		}
 
 		dictValue, found, err := configsDict.Get(serviceName)
 		if err != nil || !found {
-			return nil, startosis_errors.NewInterpretationError("Could not extract the value of the '%s' dictionary for key '%s'. This is Kurtosis bug", ConfigsArgName, serviceName)
+			return nil, nil, startosis_errors.NewInterpretationError("Could not extract the value of the '%s' dictionary for key '%s'. This is Kurtosis bug", ConfigsArgName, serviceName)
 		}
 		serviceConfig, isDictValueAServiceConfig := dictValue.(*service_config.ServiceConfig)
 		if !isDictValueAServiceConfig {
-			return nil, startosis_errors.NewInterpretationError("One value of the '%s' dictionary is not a ServiceConfig (was '%s'). Values of this argument should correspond to the config of the service to be added", ConfigsArgName, reflect.TypeOf(dictValue))
+			return nil, nil, startosis_errors.NewInterpretationError("One value of the '%s' dictionary is not a ServiceConfig (was '%s'). Values of this argument should correspond to the config of the service to be added", ConfigsArgName, reflect.TypeOf(dictValue))
 		}
 		apiServiceConfig, interpretationErr := serviceConfig.ToKurtosisType()
 		if interpretationErr != nil {
-			return nil, interpretationErr
+			return nil, nil, interpretationErr
 		}
 		convertedServiceConfigs[service.ServiceName(serviceNameStr.GoString())] = apiServiceConfig
+
+		readyConditions, interpretationErr := serviceConfig.GetReadyConditions()
+		if interpretationErr != nil {
+			return nil, nil, interpretationErr
+		}
+
+		readyConditionsByServiceName[service.ServiceName(serviceNameStr.GoString())] = readyConditions
 	}
-	return convertedServiceConfigs, nil
+	return convertedServiceConfigs, readyConditionsByServiceName, nil
 }
 
 func makeAddServicesInterpretationReturnValue(serviceConfigs map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig, runtimeValueStore *runtime_value_store.RuntimeValueStore) (map[service.ServiceName]string, *starlark.Dict, *startosis_errors.InterpretationError) {

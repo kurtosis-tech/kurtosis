@@ -20,14 +20,13 @@ def run(plan):
 
 	plan.add_service(service_name = "web-server", config = service_config)
 	get_recipe = GetHttpRequestRecipe(
-		service_name = "web-server",
 		port_id = "http-port",
 		endpoint = "?input=foo/bar",
 		extract = {
 			"exploded-slash": ".query.input | split(\"/\") | .[1]"
 		}
 	)
-	response = plan.wait(get_recipe, "code", "==", 200, interval="100ms", timeout="30s")
+	response = plan.wait(recipe=get_recipe, field="code", assertion="==", target_value=200, interval="100ms", timeout="30s", service_name="web-server")
 	plan.assert(response["code"], "!=", 200)
 
 	# dumb test to validate we can pass 2 runtime values here
