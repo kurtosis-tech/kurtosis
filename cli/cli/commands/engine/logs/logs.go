@@ -25,8 +25,8 @@ const (
 
 var EngineLogsCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
 	CommandStr:                command_str_consts.EngineLogsCmdStr,
-	ShortDescription:          "Dumps information about all existing engines",
-	LongDescription:           "Dumps all information all engines to the given directory",
+	ShortDescription:          "Dumps logs for all engines",
+	LongDescription:           "Dumps logs for all engines to the given directory",
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
 	EngineClientContextKey:    engineClientCtxKey,
 	Flags:                     nil,
