@@ -31,7 +31,7 @@ func (t *serviceConfigFullTestCase) GetTypeConstructor() *kurtosis_type_construc
 }
 
 func (t *serviceConfigFullTestCase) GetStarlarkCode() string {
-	return fmt.Sprintf("%s(%s=%q, %s=%s, %s=%s, %s=%s, %s=%s, %s=%s, %s=%s, %s=%q, %s=%q, %s=%d, %s=%d)",
+	starlarkCode := fmt.Sprintf("%s(%s=%q, %s=%s, %s=%s, %s=%s, %s=%s, %s=%s, %s=%s, %s=%q, %s=%q, %s=%d, %s=%d, %s=%s)",
 		service_config.ServiceConfigTypeName,
 		service_config.ImageAttr, TestContainerImageName,
 		service_config.PortsAttr, fmt.Sprintf("{%q: PortSpec(number=%d, transport_protocol=%q, application_protocol=%q)}", TestPrivatePortId, TestPrivatePortNumber, TestPrivatePortProtocolStr, TestPrivateApplicationProtocol),
@@ -44,7 +44,10 @@ func (t *serviceConfigFullTestCase) GetStarlarkCode() string {
 		service_config.SubnetworkAttr, TestSubnetwork,
 		service_config.CpuAllocationAttr, TestCpuAllocation,
 		service_config.MemoryAllocationAttr, TestMemoryAllocation,
+		service_config.ReadyConditionsAttr,
+		getDefaultReadyConditionsScriptPart(),
 	)
+	return starlarkCode
 }
 
 func (t *serviceConfigFullTestCase) Assert(typeValue starlark.Value) {
