@@ -1287,6 +1287,8 @@ func (network *DefaultServiceNetwork) startRegisteredService(
 		}
 	}()
 
+	//TODO check TCP port availability
+
 	// if partition is enabled, create a sidecar associated with this service
 	if network.isPartitioningEnabled {
 		if err := network.createSidecarAndAddToMap(ctx, startedService); err != nil {
@@ -1304,6 +1306,10 @@ func (network *DefaultServiceNetwork) startRegisteredService(
 
 	serviceStartedSuccessfully = true
 	return startedService, nil
+}
+
+func waitUntilAllTCPPortsAreOpen(ports map[string]*port_spec.PortSpec) error {
+
 }
 
 // destroyService is the opposite of startRegisteredService. It removes a started service from the enclave. Note that it does not
