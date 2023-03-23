@@ -7,13 +7,10 @@ name: Golang Lint
 # We only want one run of this on a branch
 # if you push another commit the previous run should cancel
 concurrency:
-  group: "go-linter-${{ github.ref }}"
+  group: "go-linter-${{ github.head_ref }}"
   cancel-in-progress: true
 
 on:
-  push:
-    branches:
-      - gh-readonly-queue/main/**
   pull_request:
 
 jobs:
@@ -25,27 +22,23 @@ jobs:
         with:
           go-version: 1.18
       - uses: actions/checkout@v3
+      # Install kudet
+      - run: |
+          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+          sudo apt update
+          sudo apt install kudet
       # Generate versions
       - run: scripts/generate-kurtosis-version.sh
+      - name: Configure git for private modules
+        env:
+          RELEASER_TOKEN: ${{ secrets.RELEASER_TOKEN }}
+        run:  git config --global url."https://${RELEASER_TOKEN}@github.com/".insteadOf "https://github.com/"
+      - run:  go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
       - name: lint-container-engine-lib
         uses: golangci/golangci-lint-action@v3
         with:
           version: v1.49.0
           working-directory: container-engine-lib/
-          args: --timeout=3m
-          skip-pkg-cache: true
-      - name: lint-contexts-config-store
-        uses: golangci/golangci-lint-action@v3
-        with:
-          version: v1.49.0
-          working-directory: contexts-config-store/
-          args: --timeout=3m
-          skip-pkg-cache: true
-      - name: lint-name-generator
-        uses: golangci/golangci-lint-action@v3
-        with:
-          version: v1.49.0
-          working-directory: name_generator/
           args: --timeout=3m
           skip-pkg-cache: true
       - name: lint-api-golang
