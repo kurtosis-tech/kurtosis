@@ -32,7 +32,7 @@ kurtosis feedback [flags] ["YOUR_FEEDBACK"]
 ```
 where `YOUR_FEEDBACK` is the feedback you would like to send to us. 
 
-Running the above command (with no flags) will open the [Kurtosis Github choose new issue page](https://github.com/kurtosis-tech/kurtosis/issues/new/choose) where you can choose the issue type, and after that, when you press the button for selecting the type, a new page will be open with the description field pre-filled with `YOUR_FEEDBACK`
+Running just `kurtosis feedback "my feedback"` (with no flags) will open the new issue creation page on [our Github](https://github.com/kurtosis-tech/kurtosis/issues/new/choose) where you can can select the issue type and have the description field pre-filled with `my feedback`. 
 
 Below are a collection of valid flags you may use:
 - The `--github` flag can be used to open the Issue creation page in our Github where you can select the Issue template you wish to use for your feedback. The `"$YOUR_FEEDBACK"` arg will be pre-populated in the description of whichever Issue template you select.
