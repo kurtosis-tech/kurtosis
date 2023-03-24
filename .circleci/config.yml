@@ -936,9 +936,110 @@ jobs:
   # -- End publishing jobs -------------------------------------
 
 workflows:
+  # -- Artifact-publishing jobs --------------------------------
+  publish:
+    jobs:
+      - publish_kurtosis_api_typescript:
+          context:
+            - npmjs-user
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+      - publish_files_artifacts_expander_image:
+          context:
+            - docker-user
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+      - publish_api_container_server_image:
+          context:
+            - docker-user
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+      - publish_engine_server_image:
+          context:
+            - docker-user
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+      - push_cli_artifacts:
+          context:
+            - gemfury-publisher
+            - github-user
+          requires:
+            - publish_kurtosis_api_typescript
+            - publish_api_container_server_image
+            - publish_engine_server_image
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+  # -- Test jobs ---------------------------------------------
+  test:
+    jobs:
+      - test_basic_cli_functionality:
+          name: "Test Basic CLI Functionality in Docker"
+          cli-cluster-backend: "docker"
+          context:
+            - docker-user
+          requires:
+            - build_cli
+            - build_api_container_server
+            - build_engine_server
+            - build_files_artifacts_expander
+          <<: *filters_ignore_main
+
+      - build_golang_testsuite:
+          name: "Build golang testsuite against Docker"
+          cli-cluster-backend: "docker"
+          context:
+            - docker-user
+          requires:
+            - build_cli
+            - build_api_container_server
+            - build_engine_server
+            - build_files_artifacts_expander
+          <<: *filters_ignore_main
+
+      - build_typescript_testsuite:
+          name: "Build typescript testsuite against Docker"
+          cli-cluster-backend: "docker"
+          context:
+            - docker-user
+          requires:
+            - build_cli
+            - build_api_container_server
+            - build_engine_server
+            - build_files_artifacts_expander
+          <<: *filters_ignore_main
+
+      - test_old_enclave_continuity:
+          context:
+            - docker-user
+          requires:
+            - build_cli
+            - build_api_container_server
+            - build_engine_server
+            - build_files_artifacts_expander
+          <<: *filters_ignore_main
+
+      - test_config_init_edge_cases:
+          requires:
+            - build_cli
+          <<: *filters_ignore_main
+  # -- Build jobs ----------------------------------------------
   build:
     jobs:
-      # -- build jobs ------------------------------------------
       - kurtosis-docs-checker/check-docs:
           dir-to-exclude: '"./docs/*"'
           should-check-changelog: false
@@ -1034,104 +1135,3 @@ workflows:
 
       - build_cli:
           <<: *filters_ignore_main
-      - test_basic_cli_functionality:
-          name: "Test Basic CLI Functionality in Docker"
-          cli-cluster-backend: "docker"
-          context:
-            - docker-user
-          requires:
-            - build_cli
-            - build_api_container_server
-            - build_engine_server
-            - build_files_artifacts_expander
-          <<: *filters_ignore_main
-
-      - build_golang_testsuite:
-          name: "Build golang testsuite against Docker"
-          cli-cluster-backend: "docker"
-          context:
-            - docker-user
-          requires:
-            - build_cli
-            - build_api_container_server
-            - build_engine_server
-            - build_files_artifacts_expander
-          <<: *filters_ignore_main
-
-      - build_typescript_testsuite:
-          name: "Build typescript testsuite against Docker"
-          cli-cluster-backend: "docker"
-          context:
-            - docker-user
-          requires:
-            - build_cli
-            - build_api_container_server
-            - build_engine_server
-            - build_files_artifacts_expander
-          <<: *filters_ignore_main
-
-      - test_old_enclave_continuity:
-          context:
-            - docker-user
-          requires:
-            - build_cli
-            - build_api_container_server
-            - build_engine_server
-            - build_files_artifacts_expander
-          <<: *filters_ignore_main
-
-      - test_config_init_edge_cases:
-          requires:
-            - build_cli
-          <<: *filters_ignore_main
-
-      # -- Artifact-publishing jobs --------------------------------
-      - publish_kurtosis_api_typescript:
-          context:
-            - npmjs-user
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
-      - publish_files_artifacts_expander_image:
-          context:
-            - docker-user
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
-      - publish_api_container_server_image:
-          context:
-            - docker-user
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
-
-      - publish_engine_server_image:
-          context:
-            - docker-user
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
-
-      - push_cli_artifacts:
-          context:
-            - gemfury-publisher
-            - github-user
-          requires:
-            - publish_kurtosis_api_typescript
-            - publish_api_container_server_image
-            - publish_engine_server_image
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
-
-      # -- End artifact-publishing jobs ----------------------------
