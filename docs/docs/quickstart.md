@@ -6,29 +6,33 @@ slug: /quickstart
 
 Introduction
 ------------
-Welcome to the [Kurtosis][homepage] quickstart!
 
-If you arrived here by chance and you're curious as to what Kurtosis _is_, [see here][what-is-kurtosis-explanation].
+Welcome to the [Kurtosis][homepage] quickstart! This guide will take ~15 minutes and will walk you through building a basic Kurtosis package.
 
-If you're ready to get going, this guide will take ~15 minutes and will walk you through building a basic Kurtosis package. The package that you build will start a Postgres server, seed it with data, put an API in front of it, and automate loading data into it.
+:::tip What You'll Do
 
-#### Setup
-Before you proceed, make sure you have [Kurtosis installed][installing-kurtosis-guide] (or [upgraded to latest][upgrading-kurtosis-guide] if you already have it), Docker is started, and the Docker engine is running.
+- Start a containerized Postgres database in Kurtosis
+- Seed your database with test data using task sequencing
+- Connect an API server to your database using dynamic service dependencies
+- Parameterize your application setup in order to automate loading data into your API
+:::
 
-:::tip
-If you get stuck at any point during this quickstart, there are many, many options available:
+<details><summary>Getting help and giving feedback</summary>
 
-- Every Kurtosis command accepts a `-h` flag to print helptext
-- The `kurtosis discord` command will open up our Discord
-- The `kurtosis twitter` command will take you to our Twitter channel
-- `kurtosis feedback --github` will take you to opening a Github issue
-- `kurtosis feedback --email` will open an email to us
-- `kurtosis feedback --calendly` will open a booking link for a personal session with [our cofounder Kevin][kevin-linked]
+There are many ways to get help and give feedback. First, every Kurtosis command accepts a `-h` flag to print helptext. If that doesn't help, here are some ways to get support:
 
-More details about our `feedback` command can be found [here][kurtosis-feedback-reference].
+- `kurtosis feedback --calendly` opens a calendly link for a personal session with [our cofounder Kevin][kevin-linked]
+- `kurtosis feedback --github` command will open a github issue template, so you can file an issue
+- `kurtosis feedback --email` will open an email to us.
+- `kurtosis discord` command will open up our Discord, where you can get live support via chat.
 
 **Don't suffer in silence - we want to help and hear from you!**
-:::
+
+</details>
+
+### Setup
+
+Before you proceed, make sure you have [Kurtosis installed][installing-kurtosis-guide] (or [upgraded to latest][upgrading-kurtosis-guide] if you already have it), Docker is started, and the Docker engine is running.
 
 Hello, World
 ------------
@@ -118,8 +122,8 @@ POSTGRES_PASSWORD = "password"
 def run(plan, args):
     # Add a Postgres server
     postgres = plan.add_service(
-        "postgres",
-        ServiceConfig(
+        serivce_name = "postgres",
+        config = ServiceConfig(
             image = "postgres:15.2-alpine",
             ports = {
                 POSTGRES_PORT_ID: PortSpec(5432, application_protocol = "postgresql"),
@@ -208,7 +212,7 @@ def run(plan, args):
     # Add a Postgres server
     postgres = plan.add_service(
         service_name = "postgres",
-        ServiceConfig(
+        config = ServiceConfig(
             image = "postgres:15.2-alpine",
             ports = {
                 POSTGRES_PORT_ID: PortSpec(5432, application_protocol = "postgresql"),
@@ -365,8 +369,8 @@ Kurtosis' first-class data primitive is called a [files artifact][files-artifact
 
 ```python
 postgres = plan.add_service(
-    "postgres",
-    ServiceConfig(
+    service_name = "postgres",
+    config = ServiceConfig(
         # ...omitted...
         files = {
             SEED_DATA_DIRPATH: data_package_module_result.files_artifact,
@@ -427,7 +431,7 @@ def run(plan, args):
     # Add a Postgres server
     postgres = plan.add_service(
         service_name = "postgres",
-        ServiceConfig(
+        config = ServiceConfig(
             image = "postgres:15.2-alpine",
             ports = {
                 POSTGRES_PORT_ID: PortSpec(5432, application_protocol = "postgresql"),
@@ -569,7 +573,7 @@ def run(plan, args):
     # Add a Postgres server
     postgres = plan.add_service(
         service_name = "postgres",
-        ServiceConfig(
+        config = ServiceConfig(
             # ...
             env_vars = {
                 # ...
@@ -715,7 +719,7 @@ def run(plan, args):
     # Add a Postgres server
     postgres = plan.add_service(
         service_name = "postgres",
-        ServiceConfig(
+        config = ServiceConfig(
             image = "postgres:15.2-alpine",
             ports = {
                 POSTGRES_PORT_ID: PortSpec(5432, application_protocol = "postgresql"),
