@@ -75,7 +75,7 @@ func NewKurtosisContextFromLocalEngine() (*KurtosisContext, error) {
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error retrieving current context")
 	}
-	portalClient, err := BuildPortalDaemonClient(currentContext, true)
+	portalClient, err := CreatePortalDaemonClient(currentContext, true)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error building client for Kurtosis Portal daemon")
 	}

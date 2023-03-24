@@ -18,6 +18,8 @@ import (
 const (
 	contextIdentifierArgKey      = "context"
 	contextIdentifierArgIsGreedy = false
+
+	acceptNilResultForLocalClient = true
 )
 
 var ContextSwitchCmd = &lowlevel.LowlevelKurtosisCommand{
@@ -26,7 +28,7 @@ var ContextSwitchCmd = &lowlevel.LowlevelKurtosisCommand{
 	LongDescription: fmt.Sprintf("Switches to a different Kurtosis context. The context needs to be added "+
 		"first using the `%s` command. When switching to a remote context, the connection will be established with "+
 		"the remote Kurtosis server. Kurtosis Portal needs to be running for this. If the remote server can't be "+
-		"reached, the context will remain unchanged.", command_str_consts.ContextRmCmdStr),
+		"reached, the context will remain unchanged.", command_str_consts.ContextAddCmdStr),
 	Flags: []*flags.FlagConfig{},
 	Args: []*args.ArgConfig{
 		context_id_arg.NewContextIdentifierArg(store.GetContextsConfigStore(), contextIdentifierArgKey, contextIdentifierArgIsGreedy),
@@ -51,11 +53,11 @@ func run(ctx context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error
 		return stacktrace.NewError("An error occurred retrieving current context prior to switching to the new one '%s'", contextIdentifier)
 	}
 
-	contextsMatchingIdentifier, err := context_id_arg.GetContextUuidForContextIdentifier(contextsConfigStore, []string{contextIdentifier})
+	contextsMatchingIdentifiers, err := context_id_arg.GetContextUuidForContextIdentifier(contextsConfigStore, []string{contextIdentifier})
 	if err != nil {
 		return stacktrace.Propagate(err, "Error searching for context matching context identifier: '%s'", contextIdentifier)
 	}
-	contextUuidToSwitchTo, found := contextsMatchingIdentifier[contextIdentifier]
+	contextUuidToSwitchTo, found := contextsMatchingIdentifiers[contextIdentifier]
 	if !found {
 		return stacktrace.NewError("No context matching identifier '%s' could be found", contextIdentifier)
 	}
@@ -81,13 +83,14 @@ func run(ctx context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error
 	if err != nil {
 		return stacktrace.Propagate(err, "Error retrieving context info for context '%s' after switching to it", contextIdentifier)
 	}
-	portalDaemonClient, err := kurtosis_context.BuildPortalDaemonClient(currentContext, true)
+	portalDaemonClient, err := kurtosis_context.CreatePortalDaemonClient(currentContext, acceptNilResultForLocalClient)
 	if err != nil {
 		return stacktrace.Propagate(err, "Error connecting to Kurtosis portal after switching to the context'%s'", contextIdentifier)
 	}
 
 	if portalDaemonClient != nil {
-		if _, err = portalDaemonClient.SwitchContext(ctx, constructors.NewSwitchContextArgs()); err != nil {
+		switchContextArg := constructors.NewSwitchContextArgs()
+		if _, err = portalDaemonClient.SwitchContext(ctx, switchContextArg); err != nil {
 			return stacktrace.Propagate(err, "Error switching Kurtosis portal context")
 		}
 	}
