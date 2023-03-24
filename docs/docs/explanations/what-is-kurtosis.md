@@ -1,10 +1,33 @@
 ---
-title: What Is Kurtosis?
-sidebar_label: What Is Kurtosis?
+title: What Is Kurtosis and Why?
+sidebar_label: What Is Kurtosis and Why?
 sidebar_position: 1
 ---
 
-Kurtosis is a distributed application development platform. Its goal is to make building a distributed application as easy as developing a single-server app.
+### What is Kurtosis?
+Kurtosis is a composable build system for multi-container test environments. 
+
+#### Kurtosis has a definition language with:
+- An instruction set of useful primitives for setting up and manipulating environment
+- A scriptable Python-like SDK in Starlark, a build language used by Google’s Bazel
+- A package management system for shareability and composability
+
+#### Kurtosis has a validator for:
+- Compile-time safety to quickly catch errors in test environment definitions
+- The ability to dry-run test environment definitions to verify what will be run, before running
+
+#### Kurtosis has a runtime to:
+- Run multi-container test environments over Docker or Kubernetes, depending on how you wish to scale
+- Enable debugging and investigation of problems live, as they're happening in your test environment, with an introspective toolkit
+- Manage file dependencies to ensure tests environments are completely reproducible across different test runs and backends
+
+### Why Kurtosis?
+Our goal with Kurtosis is to make building a distributed application as easy as developing a single-server app. We aim to realize this goal by making it easier to configure multi-container test environments. 
+
+Specifically, Kurtosis was built to tackle the following difficulties when it comes ot building distributed systems:
+- Setting up test environments that have dynamic dependencies between services
+- Reusing test environment definitions across different scenarios
+- Injecting data into test environments for use across different types of tests
 
 Our philosophy is that the distributed nature of modern software means that modern software development now happens at the environment level. Spinning up a single service container in isolation is difficult because it has implicit dependencies on other resources: services, volume data, secrets, certificates, and network rules. Therefore, the environment - not the container - is the fundamental unit of modern software.
 
@@ -16,5 +39,6 @@ In our vision, a developer should have a single platform for prototyping, testin
 
 To read more about our beliefs on reusable environments, [go here][reusable-environment-definitions]. To get started using Kurtosis, see [the quickstart][quickstart].
 
+<!------------------------- REFERENCE LINKS ONLY ------------------------------------>
 [reusable-environment-definitions]: ./reusable-environment-definitions.md
 [quickstart]: ../quickstart.md
