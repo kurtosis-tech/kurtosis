@@ -621,7 +621,7 @@ ce90b471a982   postgres    postgres: 5432/tcp -> postgresql://127.0.0.1:59883   
 ```
 
 ### Review
-In this section, we declared a new PostgREST service,that we named `api` for readability, with a dependency on the Postgres service.
+In this section, we declared a new PostgREST service (that we named `api` for readability) with a dependency on the Postgres service.
 
 Yet... PostgREST needs to know the IP address or hostname of the Postgres service, and we said earlier that Starlark (the Interpretation phase) can never know Execution values. How can this be?
 
