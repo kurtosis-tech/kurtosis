@@ -2,6 +2,7 @@ package test_engine
 
 import (
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/recipe"
@@ -54,7 +55,7 @@ func (t *readyConditionsTestCase) GetStarlarkCode() string {
 	)
 }
 
-func (t *readyConditionsTestCase) Assert(typeValue starlark.Value) {
+func (t *readyConditionsTestCase) Assert(typeValue builtin_argument.KurtosisValueType) {
 	receivedReadyConditions, ok := typeValue.(*service_config.ReadyConditions)
 	require.True(t, ok)
 
