@@ -372,7 +372,7 @@ Feel free to explore the Postgres container. When you're done run either `exit` 
 ### Review: Add some data
 So what just happened?
 
-##### Created a Kurtosis package
+#### We created a Kurtosis package
 
 By creating a [`kurtosis.yml`][kurtosis-yml-reference] file in our working directory, we turned our working directory into a [Kurtosis package][packages-reference] (specifically, a [runnable package][runnable-packages-reference]). After we did this, our newly created Kurtosis package could now declare dependencies on external packages using [Kurtosis’ built-in packaging/dependency system][how-do-imports-work-explanation].
 
@@ -388,7 +388,7 @@ data_package_module_result = data_package_module.run(plan, struct())
 
 This external Kurtosis package, named ["data-package"][data-package-example] contains the seed data for our postgres instance that we [referenced ealier](#add-some-data) as a `.tar` file.
 
-##### Imported seed data
+#### We imported seed data into our Kurtosis package
 The [`main.star` file][data-package-example-main.star] in that external "data-package" contained Starlark instructions to store the `.tar` data as a [files artifact][files-artifacts-reference] using the [`files_upload` Starlark instruction][kurtosis-files-upload-reference]:
 
 ```python
@@ -406,7 +406,7 @@ def run(plan, args):
 
 A [files artifact][files-artifacts-reference] is Kurtosis' first-class data primitive and is a TGZ of arbitrary files living inside an enclave. So long as a files artifact exists, Kurtosis knows how to mount its contents on a service.  
 
-##### Mounting and seeding the data into our postgres instance
+#### We mounting and seeded the data into our postgres instance
 Next, we mounted the seed data, stored in our enclave now as a files artifact, into our postgres instance using the `ServiceConfig.files` option:
 
 ```python
@@ -553,7 +553,7 @@ Error encountered running Starlark code.
 
 Here, Kurtosis is telling us that the `wait` instruction on line `77` of our `main.star` (the one for ensuring PostgREST is up) is timing out.
 
-##### Investigating
+#### Investigating the issue
 The enclave state is usually a good place to start. If we look at the bottom of our output we'll see the following state of the enclave:
 
 ```text
