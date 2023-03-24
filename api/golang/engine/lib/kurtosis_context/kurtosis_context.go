@@ -11,8 +11,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/kurtosis_version"
-	contexts_store_api "github.com/kurtosis-tech/kurtosis/contexts-config-store/api/golang"
-	contexts_store_generated_api "github.com/kurtosis-tech/kurtosis/contexts-config-store/api/golang/generated"
 	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -30,8 +28,6 @@ const (
 	DefaultGrpcEngineServerPortNum = uint16(9710)
 
 	DefaultGrpcProxyEngineServerPortNum = uint16(9711)
-
-	DefaultGrpcPortalClientPortNum = uint16(9731)
 
 	// Blank tells the engine server to use the default
 	defaultApiContainerVersionTag = ""
@@ -79,34 +75,7 @@ func NewKurtosisContextFromLocalEngine() (*KurtosisContext, error) {
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error retrieving current context")
 	}
-	var portalClient portal_api.KurtosisPortalClientClient
-	instantiatePortalClientVisitor := contexts_store_api.KurtosisContextVisitor[struct{}]{
-		VisitLocalOnlyContextV0: func(localContext *contexts_store_generated_api.LocalOnlyContextV0) (*struct{}, error) {
-			portalClient = nil
-			return nil, nil
-		},
-		VisitRemoteContextV0: func(remoteContext *contexts_store_generated_api.RemoteContextV0) (*struct{}, error) {
-			// When the context is remote, we build a client to the locally running portal daemon
-			kurtosisPortalSocketStr := fmt.Sprintf("%v:%v", localHostIPAddressStr, DefaultGrpcPortalClientPortNum)
-			// TODO SECURITY: Use HTTPS to ensure we're connecting to the real Kurtosis API servers
-			portalConn, err := grpc.Dial(kurtosisPortalSocketStr, grpc.WithInsecure())
-			if err != nil {
-				return nil, stacktrace.Propagate(
-					err,
-					"An error occurred creating a connection to the Kurtosis Portal Client at '%v'",
-					kurtosisPortalSocketStr,
-				)
-			}
-			portalClient = portal_api.NewKurtosisPortalClientClient(portalConn)
-
-			if _, err = portalClient.Ping(context.Background(), portal_constructors.NewPortalPing()); err != nil {
-				return nil, stacktrace.Propagate(err, "Unable to connect to the locally running Kurtosis portal daemon."+
-					" To use remote context, a Kurtosis Portal daemon must be running on this machine")
-			}
-			return nil, nil
-		},
-	}
-	_, err = contexts_store_api.Visit[struct{}](currentContext, instantiatePortalClientVisitor)
+	portalClient, err := CreatePortalDaemonClient(currentContext, true)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error building client for Kurtosis Portal daemon")
 	}
