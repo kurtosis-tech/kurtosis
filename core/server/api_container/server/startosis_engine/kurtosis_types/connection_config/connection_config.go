@@ -44,7 +44,7 @@ func NewConnectionConfigType() *kurtosis_type_constructor.KurtosisTypeConstructo
 	}
 }
 
-func instantiate(arguments *builtin_argument.ArgumentValuesSet) (kurtosis_type_constructor.KurtosisValueType, *startosis_errors.InterpretationError) {
+func instantiate(arguments *builtin_argument.ArgumentValuesSet) (builtin_argument.KurtosisValueType, *startosis_errors.InterpretationError) {
 	kurtosisValueType, err := kurtosis_type_constructor.CreateKurtosisStarlarkTypeDefault(ConnectionConfigTypeName, arguments)
 	if err != nil {
 		return nil, err
@@ -72,6 +72,16 @@ func CreateConnectionConfig(packetLossPercentage starlark.Float) (*ConnectionCon
 
 	return &ConnectionConfig{
 		KurtosisValueTypeDefault: kurtosisDefaultValue,
+	}, nil
+}
+
+func (connectionConfig *ConnectionConfig) Copy() (builtin_argument.KurtosisValueType, error) {
+	copiedValueType, err := connectionConfig.KurtosisValueTypeDefault.Copy()
+	if err != nil {
+		return nil, err
+	}
+	return &ConnectionConfig{
+		KurtosisValueTypeDefault: copiedValueType,
 	}, nil
 }
 

@@ -3,10 +3,10 @@ package test_engine
 import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/port_spec"
 	"github.com/stretchr/testify/require"
-	"go.starlark.net/starlark"
 	"testing"
 )
 
@@ -32,7 +32,7 @@ func (t *portSpecFullTestCase) GetStarlarkCode() string {
 	return fmt.Sprintf("%s(%s=%d, %s=%q, %s=%q)", port_spec.PortSpecTypeName, port_spec.PortNumberAttr, TestPrivatePortNumber, port_spec.TransportProtocolAttr, TestPrivatePortProtocolStr, port_spec.PortApplicationProtocolAttr, TestPrivateApplicationProtocol)
 }
 
-func (t *portSpecFullTestCase) Assert(typeValue starlark.Value) {
+func (t *portSpecFullTestCase) Assert(typeValue builtin_argument.KurtosisValueType) {
 	portSpecStarlark, ok := typeValue.(*port_spec.PortSpec)
 	require.True(t, ok)
 	portSpec, err := portSpecStarlark.ToKurtosisType()

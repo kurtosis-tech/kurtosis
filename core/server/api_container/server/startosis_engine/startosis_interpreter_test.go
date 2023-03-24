@@ -48,10 +48,34 @@ def run(plan):
 `
 
 	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
-	require.Len(t, instructions, 1) // Only the print statement
 	require.Nil(t, interpretationError)
+	require.Len(t, instructions, 1) // Only the print statement
 
 	expectedOutput := testString + `
+`
+	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutput)
+}
+
+func TestStartosisInterpreter_Test(t *testing.T) {
+	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
+	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
+	defer packageContentProvider.RemoveAll()
+	startosisInterpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, runtimeValueStore)
+	interpreter := startosisInterpreter
+	script := `
+def run(plan):
+	my_dict = {}
+	plan.print(my_dict)
+	my_dict["hello"] = "world"
+	plan.print(my_dict)
+`
+
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
+	require.Len(t, instructions, 2) // Only the print statement
+	require.Nil(t, interpretationError)
+
+	expectedOutput := `{}
+{"hello": "world"}
 `
 	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutput)
 }
