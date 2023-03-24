@@ -21,7 +21,7 @@ const (
 )
 
 var ContextSwitchCmd = &lowlevel.LowlevelKurtosisCommand{
-	CommandStr:       command_str_consts.ContextRmCmdStr,
+	CommandStr:       command_str_consts.ContextSwitchCmdStr,
 	ShortDescription: "Switches to a different Kurtosis context",
 	LongDescription: fmt.Sprintf("Switches to a different Kurtosis context. The context needs to be added "+
 		"first using the `%s` command. When switching to a remote context, the connection will be established with "+
