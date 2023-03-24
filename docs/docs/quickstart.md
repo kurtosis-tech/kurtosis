@@ -6,25 +6,33 @@ slug: /quickstart
 
 Introduction
 ------------
-Welcome to the [Kurtosis][homepage] quickstart!
 
-If you arrived here by chance and you're curious as to what Kurtosis _is_, [see here][what-is-kurtosis-explanation].
+Welcome to the [Kurtosis][homepage] quickstart! This guide will take ~15 minutes and will walk you through building a basic Kurtosis package.
 
-If you're ready to get going, this guide will take ~15 minutes and will walk you through building a basic Kurtosis package. The package that you build will start a Postgres server, seed it with data, put an API in front of it, and automate loading data into it.
+:::tip What You'll Do
 
-You need to [have Kurtosis installed][installing-kurtosis-guide] (or [upgraded to latest][upgrading-kurtosis-guide] if you already have it), but you do not need any other knowledge.
-
-:::tip
-If you get stuck at any point during this quickstart, there are many, many options available:
-
-- Every Kurtosis command accepts a `-h` flag to print helptext
-- The `kurtosis discord` command will open up our Discord
-- `kurtosis feedback --github` will take you to opening a Github issue
-- `kurtosis feedback --email` will open an email to us
-- `kurtosis feedback --calendly` will open a booking link for a personal session with [our cofounder Kevin][kevin-linked]
-
-**Don't suffer in silence - we want to hear from you!**
+- Start a containerized Postgres database in Kurtosis
+- Seed your database with test data using task sequencing
+- Connect an API server to your database using dynamic service dependencies
+- Parameterize your application setup in order to automate loading data into your API
 :::
+
+<details><summary>Getting help and giving feedback</summary>
+
+There are many ways to get help and give feedback. First, every Kurtosis command accepts a `-h` flag to print helptext. If that doesn't help, here are some ways to get support:
+
+- `kurtosis feedback --calendly` opens a calendly link for a personal session with [our cofounder Kevin][kevin-linked]
+- `kurtosis feedback --github` command will open a github issue template, so you can file an issue
+- `kurtosis feedback --email` will open an email to us.
+- `kurtosis discord` command will open up our Discord, where you can get live support via chat.
+
+**Don't suffer in silence - we want to help and hear from you!**
+
+</details>
+
+### Setup
+
+Before you proceed, make sure you have [Kurtosis installed][installing-kurtosis-guide] (or [upgraded to latest][upgrading-kurtosis-guide] if you already have it), Docker is started, and the Docker engine is running.
 
 Hello, World
 ------------
@@ -38,7 +46,7 @@ mkdir kurtosis-quickstart && cd kurtosis-quickstart
 All code blocks in this quickstart can be copied by hovering over the block and clicking the clipboard that appears in the right.
 :::
 
-Next, create a file called `main.star` inside your new directory with the following contents:
+Next, create a Starlark file called `main.star` inside your new directory with the following contents (more on Starlark in the "Review" section coming up soon):
 
 ```python
 def run(plan, args):
@@ -46,10 +54,16 @@ def run(plan, args):
 ```
 
 :::tip
-If you're using Vim, you can get syntax highlighting with `:set syntax=python`
+If you're using Vim, you can add the following to your `.vimrc` to get Starlark syntax highlighting:
+
+```
+" Add syntax highlighting for Starlark files
+autocmd FileType *.star setlocal filetype=python
+```
+
 :::
 
-Finally, [run][kurtosis-run-reference] the script.
+Finally, [run][kurtosis-run-reference] the script (we'll explain enclaves in the "Review" section too):
 
 ```bash
 kurtosis run --enclave quickstart main.star
@@ -68,13 +82,13 @@ Starlark code successfully run. No output was returned.
 INFO[2023-03-15T04:27:05-03:00] ===================================================
 INFO[2023-03-15T04:27:05-03:00] ||          Created enclave: quickstart          ||
 INFO[2023-03-15T04:27:05-03:00] ===================================================
+Name:                                 quickstart
 UUID:                                 a78f2ce1ca68
-Enclave Name:                         quickstart
-Enclave Status:                       RUNNING
+Status:                               RUNNING
 Creation Time:                        Wed, 15 Mar 2023 04:27:01 -03
-API Container Status:                 RUNNING
-API Container Host GRPC Port:         127.0.0.1:62828
-API Container Host GRPC Proxy Port:   127.0.0.1:62829
+
+========================================= Files Artifacts =========================================
+UUID   Name
 
 ========================================== User Services ==========================================
 UUID   Name   Ports   Status
@@ -87,9 +101,9 @@ Congratulations - you've written your first Kurtosis code!
 We'll use these "Review" sections to explain what happened in the section. If you just want the action, feel free to skip them.
 :::
 
-In this section, we created a `.star` file that prints `Hello, world`. The `.star` extension corresponds to [the Starlark language developed at Google][starlark-github-repo], a dialect of Python for configuring the [Bazel build system][bazel-github]. [Kurtosis uses Starlark for the same purpose of configuring builds][starlark-explanation], except that we're building distributed systems rather than binaries or JARs.
+In this section, we created a `.star` file that prints `Hello, world`. The `.star` extension corresponds to [the Starlark language developed at Google][starlark-github-repo], a dialect of Python for configuring the [Bazel build system][bazel-github]. [Kurtosis uses Starlark for the same purpose of configuring builds][starlark-explanation], except that we're building a distributed application rather than binaries or JARs.
 
-When you ran the Starlark, you got `Created enclave: quickstart`. An [enclave][enclaves-explanation] is a Kurtosis primitive that can be thought of as an ephemeral house for a distributed application. The distributed applications that you define with Starlark will run inside enclaves. 
+When you ran the Starlark, you got `Created enclave: quickstart`. An [enclave][enclaves-explanation] is a Kurtosis primitive that can be thought of as an *ephemeral test environment*, on top of Docker or Kubernetes, for a distributed application. The distributed applications that you define with Starlark will run inside enclaves. 
 
 Enclaves are intended to be easy to create, easy to destroy, cheap to run, and isolated from each other. Use enclaves liberally!
 
@@ -108,8 +122,8 @@ POSTGRES_PASSWORD = "password"
 def run(plan, args):
     # Add a Postgres server
     postgres = plan.add_service(
-        "postgres",
-        ServiceConfig(
+        serivce_name = "postgres",
+        config = ServiceConfig(
             image = "postgres:15.2-alpine",
             ports = {
                 POSTGRES_PORT_ID: PortSpec(5432, application_protocol = "postgresql"),
@@ -136,13 +150,13 @@ This clean-and-run process will be your dev loop for the rest of the quickstart.
 You'll see in the result that the `quickstart` enclave now contains a Postgres instance:
 
 ```text
+Name:                                 quickstart
 UUID:                                 a30106a0bb87
-Enclave Name:                         quickstart
-Enclave Status:                       RUNNING
+Status:                               RUNNING
 Creation Time:                        Tue, 14 Mar 2023 20:23:54 -03
-API Container Status:                 RUNNING
-API Container Host GRPC Port:         127.0.0.1:59271
-API Container Host GRPC Proxy Port:   127.0.0.1:59272
+
+========================================= Files Artifacts =========================================
+UUID   Name
 
 ========================================== User Services ==========================================
 UUID           Name       Ports                                                Status
@@ -197,8 +211,8 @@ def run(plan, args):
 
     # Add a Postgres server
     postgres = plan.add_service(
-        "postgres",
-        ServiceConfig(
+        service_name = "postgres",
+        config = ServiceConfig(
             image = "postgres:15.2-alpine",
             ports = {
                 POSTGRES_PORT_ID: PortSpec(5432, application_protocol = "postgresql"),
@@ -296,13 +310,14 @@ Starlark code successfully run. No output was returned.
 INFO[2023-03-15T04:34:21-03:00] ===================================================
 INFO[2023-03-15T04:34:21-03:00] ||          Created enclave: quickstart          ||
 INFO[2023-03-15T04:34:21-03:00] ===================================================
+Name:                                 quickstart
 UUID:                                 995fe0ca69fe
-Enclave Name:                         quickstart
-Enclave Status:                       RUNNING
+Status:                               RUNNING
 Creation Time:                        Wed, 15 Mar 2023 04:34:06 -03
-API Container Status:                 RUNNING
-API Container Host GRPC Port:         127.0.0.1:62893
-API Container Host GRPC Proxy Port:   127.0.0.1:62894
+
+========================================= Files Artifacts =========================================
+UUID           Name
+323c9a71ebbf   crimson-haze
 
 ========================================== User Services ==========================================
 UUID           Name       Ports                                                Status
@@ -354,8 +369,8 @@ Kurtosis' first-class data primitive is called a [files artifact][files-artifact
 
 ```python
 postgres = plan.add_service(
-    "postgres",
-    ServiceConfig(
+    service_name = "postgres",
+    config = ServiceConfig(
         # ...omitted...
         files = {
             SEED_DATA_DIRPATH: data_package_module_result.files_artifact,
@@ -368,7 +383,7 @@ But where did the data come from?
 
 There are many ways to create files artifacts in an enclave. The simplest is to upload files from your local machine using [the `kurtosis files upload` command][kurtosis-files-upload-reference]. A more advanced way is to upload files using [the `upload_files` Starlark instruction][upload-files-reference] on the plan.
 
-But... you never downloaded the seed data on your local machine. In fact, you didn't need you to because we leveraged one of the most powerful features of Kurtosis: composition. 
+But... **you never downloaded the seed data on your local machine. In fact, you didn't need you to because we leveraged one of the most powerful features of Kurtosis: composition.**
 
 Kurtosis has [a built-in packaging/dependency system][how-do-imports-work-explanation] that allows Starlark code to depend on other Starlark code via Github repositories. When you created the `kurtosis.yml` file, you linked your code into the packaging system: you told Kurtosis that your code is a part of a [Kurtosis package][packages-reference], which allowed your code to depend on external Starlark code.
 
@@ -380,13 +395,13 @@ data_package_module = import_module("github.com/kurtosis-tech/awesome-kurtosis/d
 
 ...created a dependency on [the external Kurtosis package living here][data-package-example]. 
 
-Your code then called that dependency here...
+Your code then called that external dependency here...
 
 ```python
 data_package_module_result = data_package_module.run(plan, struct())
 ```
 
-...which in turn ran [the code in the `main.star` of that external package][data-package-example-main.star]. That Kurtosis package happens to contain [the seed data][data-package-example-seed-tar], and it uses the `upload_data` Starlark instruction on the plan to make the seed data available via a files artifact. From there, all we needed to do was mount it on the `postgres` service.
+...which in turn locally ran [the code in the `main.star` of that external package][data-package-example-main.star]. That external Kurtosis package happens to contain [the seed data][data-package-example-seed-tar], and it uses the `upload_data` Starlark instruction on the plan to make the seed data available via a files artifact to your local `main.star` file that we've been editing. From there, all we needed to do was mount it on the `postgres` service.
 
 This ability to modularize your distributed application logic using only a Github repo is one of Kurtosis' most loved features. We won't dive into all the usecases now, but [the examples here][awesome-kurtosis-repo] can serve as a good source of inspiration.
 
@@ -415,8 +430,8 @@ def run(plan, args):
 
     # Add a Postgres server
     postgres = plan.add_service(
-        "postgres",
-        ServiceConfig(
+        service_name = "postgres",
+        config = ServiceConfig(
             image = "postgres:15.2-alpine",
             ports = {
                 POSTGRES_PORT_ID: PortSpec(5432, application_protocol = "postgresql"),
@@ -513,13 +528,15 @@ Here, Kurtosis is telling us that the `wait` instruction on line `77` of our `ma
 The enclave state is usually a good place to start. If we look at the bottom of our output we'll see the following state of the enclave:
 
 ```text
+
+Name:                                 quickstart
 UUID:                                 5b360f940bcc
-Enclave Name:                         quickstart
-Enclave Status:                       RUNNING
+Status:                               RUNNING
 Creation Time:                        Tue, 14 Mar 2023 22:15:19 -03
-API Container Status:                 RUNNING
-API Container Host GRPC Port:         127.0.0.1:59814
-API Container Host GRPC Proxy Port:   127.0.0.1:59815
+
+========================================= Files Artifacts =========================================
+UUID           Name
+323c9a71ebbf   crimson-haze
 
 ========================================== User Services ==========================================
 UUID           Name        Ports                                                Status
@@ -555,8 +572,8 @@ def run(plan, args):
 
     # Add a Postgres server
     postgres = plan.add_service(
-        "postgres",
-        ServiceConfig(
+        service_name = "postgres",
+        config = ServiceConfig(
             # ...
             env_vars = {
                 # ...
@@ -578,7 +595,7 @@ def run(plan, args):
     )
 ```
 
-Replace that `"postgres"` with `POSTGRES_USER` in your `main.star` file to use the correct username, and then rerun your dev loop:
+In the line declaring the `postgres_url` variable in your `main.star` file, replace the `"postgres"` string with `POSTGRES_USER` to use the correct username we specified at the beginning of our file. Then rerun your dev loop:
 
 ```bash
 kurtosis clean -a && kurtosis run --enclave quickstart .
@@ -587,13 +604,14 @@ kurtosis clean -a && kurtosis run --enclave quickstart .
 Now at the bottom of the output we can see that the PostgREST service is `RUNNING` correctly:
 
 ```text
-UUID:                                 11c0ac047299
-Enclave Name:                         quickstart
-Enclave Status:                       RUNNING
-Creation Time:                        Tue, 14 Mar 2023 22:30:02 -03
-API Container Status:                 RUNNING
-API Container Host GRPC Port:         127.0.0.1:59876
-API Container Host GRPC Proxy Port:   127.0.0.1:59877
+Name:                         quickstart
+UUID:                         11c0ac047299
+Status:                       RUNNING
+Creation Time:                Tue, 14 Mar 2023 22:30:02 -03
+
+========================================= Files Artifacts =========================================
+UUID           Name
+323c9a71ebbf   crimson-haze
 
 ========================================== User Services ==========================================
 UUID           Name        Ports                                                Status
@@ -602,7 +620,7 @@ ce90b471a982   postgres    postgres: 5432/tcp -> postgresql://127.0.0.1:59883   
 ```
 
 ### Review
-In this section, we declared a new PostgREST service with a dependency on the Postgres service.
+In this section, we declared a new PostgREST service, named `api`, with a dependency on the Postgres service.
 
 Yet... PostgREST needs to know the IP address or hostname of the Postgres service, and we said earlier that Starlark (the Interpretation phase) can never know Execution values. How can this be?
 
@@ -656,13 +674,13 @@ Notice how Kurtosis automatically exposed the PostgREST container's `http` port 
 In this output the `http` port is exposed as URL `http://127.0.0.1:59992`, but your port number will be different.
 :::
 
-You can paste the URL from your output into your browser (or Cmd+click it in iTerm) to verify that you are indeed talking to the PostgREST inside your `quickstart` enclave:
+You can paste the URL from your output into your browser (or Cmd+click if you're using [iTerm][iterm]) to verify that you are indeed talking to the PostgREST inside your `quickstart` enclave:
 
 ```json
 {"swagger":"2.0","info":{"description":"","title":"standard public schema","version":"10.2.0.20230209 (pre-release) (a1e2fe3)"},"host":"0.0.0.0:3000","basePath":"/","schemes":["http"],"consumes":["application/json","application/vnd.pgrst.object+json","text/csv"],"produces":["application/json","application/vnd.pgrst.object+json","text/csv"],"paths":{"/":{"get":{"tags":["Introspection"],"summary":"OpenAPI description (this document)","produces":["application/openapi+json","application/json"],"responses":{"200":{"description":"OK"}}}},"/actor":{"get":{"tags":["actor"],"parameters":[{"$ref":"#/parameters/rowFilter.actor.actor_id"},{"$ref":"#/parameters/rowFilter.actor.first_name"},{"$ref":"#/parameters/rowFilter.actor.last_name"},{"$ref":"#/parameters/rowFilter.actor.last_update"},{"$ref":"#/parameters/select"},{"$ref":"#/parameters/order"},{"$ref":"#/parameters/range"},{"$ref":"#/parameters/rangeUnit"},{"$ref":"#/parameters/offset"},{"$ref":"#/parameters/limit"},{"$ref":"#/parameters/preferCount"}], ...
 ```
 
-Now make a request to insert a row into the database (replacing `$YOUR_PORT` with the correct PostgREST `http` port from your `enclave inspect` output)...
+Now make a request to insert a row into the database (replacing `$YOUR_PORT` with the `http` port from your `enclave inspect` output for the PostgREST service that we named `api`)...
 
 ```bash
 curl -XPOST -H "content-type: application/json" http://127.0.0.1:$YOUR_PORT/actor --data '{"first_name": "Kevin", "last_name": "Bacon"}'
@@ -700,8 +718,8 @@ def run(plan, args):
 
     # Add a Postgres server
     postgres = plan.add_service(
-        "postgres",
-        ServiceConfig(
+        service_name = "postgres",
+        config = ServiceConfig(
             image = "postgres:15.2-alpine",
             ports = {
                 POSTGRES_PORT_ID: PortSpec(5432, application_protocol = "postgresql"),
@@ -898,7 +916,7 @@ Along the way you've learned about several Kurtosis concepts:
 - [Enclaves][enclaves-explanation]
 - [Starlark][starlark-explanation]
 - [Multi-phase runs][multi-phase-runs-reference]
-- The [plan][plan-reference]
+- [The plan][plan-reference]
 - [Files artifacts][files-artifacts-reference]
 - [Kurtosis packages][packages-reference]
 - [Future references][future-references-reference]
@@ -963,6 +981,7 @@ Or you can simply dive deeper into the docs:
 [kurtosis-clean-reference]: ./reference/cli/clean.md
 [kurtosis-enclave-inspect-reference]: ./reference/cli/enclave-inspect.md
 [kurtosis-files-upload-reference]: ./reference/cli/files-upload.md
+[kurtosis-feedback-reference]: ./reference/cli/feedback.md
 
 <!-- SL Instructions Reference-->
 [starlark-instructions-reference]: ./reference/starlark-instructions.md
@@ -997,3 +1016,4 @@ Or you can simply dive deeper into the docs:
 [ethereum-package]: https://github.com/kurtosis-tech/eth2-package
 [waku-package]: https://github.com/logos-co/wakurtosis
 [near-package]: https://github.com/kurtosis-tech/near-package
+[iterm]: https://iterm2.com/

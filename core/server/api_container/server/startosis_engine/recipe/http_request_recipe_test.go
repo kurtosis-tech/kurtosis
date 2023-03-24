@@ -15,15 +15,11 @@ func TestGetHttpRequestRecipe_String(t *testing.T) {
 	builtin.Name()
 	kwargs := []starlark.Tuple{
 		starlark.Tuple([]starlark.Value{
-			starlark.String(serviceNameKey),
-			starlark.String("web-server"),
-		}),
-		starlark.Tuple([]starlark.Value{
-			starlark.String(endpointAttr),
+			starlark.String(EndpointAttr),
 			starlark.String("?input=output"),
 		}),
 		starlark.Tuple([]starlark.Value{
-			starlark.String(portIdAttr),
+			starlark.String(PortIdAttr),
 			starlark.String("portId"),
 		}),
 	}
@@ -31,7 +27,7 @@ func TestGetHttpRequestRecipe_String(t *testing.T) {
 	require.Nil(t, err, "Unexpected error occurred")
 
 	getHttpRequestRecipeString := getHttpRequestRecipe.String()
-	expectedStringOutput := `GetHttpRequestRecipe(port_id="portId", service_name="web-server", endpoint="?input=output", extract="")`
+	expectedStringOutput := `GetHttpRequestRecipe(port_id="portId", endpoint="?input=output", extract="")`
 	require.NotNil(t, expectedStringOutput, getHttpRequestRecipeString)
 
 	extractors := starlark.NewDict(1)
@@ -39,19 +35,15 @@ func TestGetHttpRequestRecipe_String(t *testing.T) {
 	require.Nil(t, err)
 	kwargsWithExtractors := []starlark.Tuple{
 		starlark.Tuple([]starlark.Value{
-			starlark.String(serviceNameKey),
-			starlark.String("web-server"),
-		}),
-		starlark.Tuple([]starlark.Value{
-			starlark.String(endpointAttr),
+			starlark.String(EndpointAttr),
 			starlark.String("?input=output"),
 		}),
 		starlark.Tuple([]starlark.Value{
-			starlark.String(portIdAttr),
+			starlark.String(PortIdAttr),
 			starlark.String("portId"),
 		}),
 		starlark.Tuple([]starlark.Value{
-			starlark.String(extractKeyPrefix),
+			starlark.String(ExtractKeyPrefix),
 			extractors,
 		}),
 	}
@@ -60,7 +52,7 @@ func TestGetHttpRequestRecipe_String(t *testing.T) {
 	require.Nil(t, err, "Unexpected error occurred")
 
 	getHttpRequestRecipeWithExtractorsString := getHttpRequestRecipeWithExtractors.String()
-	expectedStringOutputWithExtractors := `GetHttpRequestRecipe(port_id="portId", service_name="web-server", endpoint="?input=output", extract={"field": ".input.*"})`
+	expectedStringOutputWithExtractors := `GetHttpRequestRecipe(port_id="portId", endpoint="?input=output", extract={"field": ".input.*"})`
 	require.NotNil(t, expectedStringOutputWithExtractors, getHttpRequestRecipeWithExtractorsString)
 }
 
@@ -68,15 +60,11 @@ func TestPostHttpRequestRecipe_String(t *testing.T) {
 	builtin := &starlark.Builtin{}
 	kwargs := []starlark.Tuple{
 		starlark.Tuple([]starlark.Value{
-			starlark.String(serviceNameKey),
-			starlark.String("web-server"),
-		}),
-		starlark.Tuple([]starlark.Value{
-			starlark.String(endpointAttr),
+			starlark.String(EndpointAttr),
 			starlark.String("?input=output"),
 		}),
 		starlark.Tuple([]starlark.Value{
-			starlark.String(portIdAttr),
+			starlark.String(PortIdAttr),
 			starlark.String("portId"),
 		}),
 		starlark.Tuple([]starlark.Value{
@@ -92,7 +80,7 @@ func TestPostHttpRequestRecipe_String(t *testing.T) {
 	require.Nil(t, err, "Unexpected error occurred")
 
 	postHttpRequestRecipeString := postHttpRequestRecipe.String()
-	expectedStringOutput := `PostHttpRequestRecipe(port_id="portId", service_name="web-server", endpoint="?input=output", body="body", content_type="content-type", extract="")`
+	expectedStringOutput := `PostHttpRequestRecipe(port_id="portId", endpoint="?input=output", body="body", content_type="content-type", extract="")`
 	require.NotNil(t, expectedStringOutput, postHttpRequestRecipeString)
 
 	extractors := starlark.NewDict(1)
@@ -100,19 +88,15 @@ func TestPostHttpRequestRecipe_String(t *testing.T) {
 	require.Nil(t, err)
 	kwargsWithExtractors := []starlark.Tuple{
 		starlark.Tuple([]starlark.Value{
-			starlark.String(serviceNameKey),
-			starlark.String("web-server"),
-		}),
-		starlark.Tuple([]starlark.Value{
-			starlark.String(endpointAttr),
+			starlark.String(EndpointAttr),
 			starlark.String("?input=output"),
 		}),
 		starlark.Tuple([]starlark.Value{
-			starlark.String(portIdAttr),
+			starlark.String(PortIdAttr),
 			starlark.String("portId"),
 		}),
 		starlark.Tuple([]starlark.Value{
-			starlark.String(extractKeyPrefix),
+			starlark.String(ExtractKeyPrefix),
 			extractors,
 		}),
 		starlark.Tuple([]starlark.Value{
@@ -129,7 +113,7 @@ func TestPostHttpRequestRecipe_String(t *testing.T) {
 	require.Nil(t, err, "Unexpected error occurred")
 
 	postHttpRequestRecipeWithExtractorsString := postHttpRequestRecipeWithExtractors.String()
-	expectedStringOutputWithExtractors := `PostHttpRequestRecipe(port_id="portId", service_name="web-server", endpoint="?input=output", body="body", content_type="content-type", extract={"field": ".input.*"})`
+	expectedStringOutputWithExtractors := `PostHttpRequestRecipe(port_id="portId", endpoint="?input=output", body="body", content_type="content-type", extract={"field": ".input.*"})`
 	require.NotNil(t, expectedStringOutputWithExtractors, postHttpRequestRecipeWithExtractorsString)
 }
 
@@ -137,11 +121,7 @@ func TestStartosisInterpreter_HttpRequestMissingRequiredFields(t *testing.T) {
 	builtin := &starlark.Builtin{}
 	kwargs := []starlark.Tuple{
 		starlark.Tuple([]starlark.Value{
-			starlark.String(serviceNameKey),
-			starlark.String("web-server"),
-		}),
-		starlark.Tuple([]starlark.Value{
-			starlark.String(endpointAttr),
+			starlark.String(EndpointAttr),
 			starlark.String("?input=output"),
 		}),
 	}
@@ -158,15 +138,11 @@ func TestStartosisInterpreter_MissingRequiredFieldForHttpRecipeWithPostMethod(t 
 	require.Nil(t, err)
 	kwargsWithoutBody := []starlark.Tuple{
 		starlark.Tuple([]starlark.Value{
-			starlark.String(serviceNameKey),
-			starlark.String("web-server"),
-		}),
-		starlark.Tuple([]starlark.Value{
-			starlark.String(portIdAttr),
+			starlark.String(PortIdAttr),
 			starlark.String("portId"),
 		}),
 		starlark.Tuple([]starlark.Value{
-			starlark.String(extractKeyPrefix),
+			starlark.String(ExtractKeyPrefix),
 			extractors,
 		}),
 		starlark.Tuple([]starlark.Value{
@@ -186,15 +162,11 @@ func TestHttpRequestRecipe_TestContentIsNotRequiredAndDefaultsToApplicationJson(
 	builtin := &starlark.Builtin{}
 	kwargs := []starlark.Tuple{
 		starlark.Tuple([]starlark.Value{
-			starlark.String(serviceNameKey),
-			starlark.String("web-server"),
-		}),
-		starlark.Tuple([]starlark.Value{
-			starlark.String(endpointAttr),
+			starlark.String(EndpointAttr),
 			starlark.String("?input=output"),
 		}),
 		starlark.Tuple([]starlark.Value{
-			starlark.String(portIdAttr),
+			starlark.String(PortIdAttr),
 			starlark.String("portId"),
 		}),
 		starlark.Tuple([]starlark.Value{
