@@ -93,7 +93,7 @@ const config = {
             dropdownActiveClassDisabled: true,
           },
           {
-            href: 'https://github.com/kurtosis-tech/kurtosis/issues/new/',
+            href: 'https://github.com/kurtosis-tech/kurtosis/issues/new?assignees=leeederek&labels=docs&template=docs-issue.yml&title=%5BDocs%5D%3A+',
             position: 'right',
             label: 'Report Docs Issue',
           },
