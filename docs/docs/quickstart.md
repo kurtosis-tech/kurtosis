@@ -946,33 +946,16 @@ Let's review. In this tutorial you have:
 - Inserted & queried data via the API
 - Parameterized data insertion for future use
 
-Along the way you've learned about several Kurtosis concepts:
-
-- [The CLI][cli-reference]
-- [Enclaves][enclaves-explanation]
-- [Starlark][starlark-explanation]
-- [Multi-phase runs][multi-phase-runs-reference]
-- [The plan][plan-reference]
-- [Files artifacts][files-artifacts-reference]
-- [Kurtosis packages][packages-reference]
-- [Future references][future-references-reference]
-
 But this was still just the intro to Kurtosis. To see examples that you can easily modify to be relevant to you, [check out our `awesome-kurtosis` repo][awesome-kurtosis-repo]. To explore real-scale Kurtosis packages delivering value, see [the Ethereum package][ethereum-package], [Waku package][waku-package], or [NEAR package][near-package].
 
-Finally, if liked what you saw and want to engage with us, you can:
-
+Finally: thank you for trying our quickstart. Feel free to:
 - Share with us what went well, and what didn't, using `kurtosis feedback` to file an issue in our [Github](https://github.com/kurtosis-tech/kurtosis/issues/new/choose), to [email us](mailto:feedback@kurtosistech.com), or to [chat with our cofounder, Kevin](https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding)
 - [Star us on Github](https://github.com/kurtosis-tech/kurtosis) (this helps a lot!)
 - [Join our Discord](https://discord.com/channels/783719264308953108/783719264308953111) (also available with the `kurtosis discord` CLI command)
 - [Reach out to us on Twitter](https://twitter.com/KurtosisTech) (also available with the `kurtosis twitter` CLI command)
 
-Or you can simply dive deeper into our docs:
-
-- [Read about the architecture][architecture-explanation]
-- [Explore the full catalog of Starlark commands][starlark-instructions-reference]
-- [Explore the various CLI commands][cli-reference]
-- Explore [Kurtosis-provided packages being used in production][kurtosis-managed-packages]
-- [Search GitHub for Kurtosis packages in the wild][wild-kurtosis-packages]
+In the meantime, feel free to read about [Kurtosis' architecture][architecture-explanation], explore the full catalog of [Starlark commands][starlark-instructions-reference] and [CLI commands][cli-reference], explore [Kurtosis-provided packages being used in production][kurtosis-managed-packages]
+and also [search GitHub for Kurtosis packages in the wild][wild-kurtosis-packages].
 
 <!-- !!!!!!!!!!!!!!!!!!!!!!!!!!! ONLY LINKS BELOW HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! -->
 
