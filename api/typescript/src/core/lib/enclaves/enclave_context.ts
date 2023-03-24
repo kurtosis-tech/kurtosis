@@ -36,7 +36,7 @@ import {
     ServiceInfo,
     StartServicesArgs,
     RunStarlarkScriptArgs,
-    RunStarlarkPackageArgs,
+    RunStarlarkPackageArgs, FilesArtifactNameAndUuid,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import * as path from "path";
 import {parseKurtosisYaml} from "./kurtosis_yaml";
@@ -551,6 +551,17 @@ export class EnclaveContext {
 
         const getExistingAndHistoricalIdentifiersValue = getExistingAndHistoricalServiceIdentifiersResponseResult.value
         return ok(new ServiceIdentifiers(getExistingAndHistoricalIdentifiersValue.getAllidentifiersList()))
+    }
+
+    // Docs available at https://docs.kurtosis.com/#getallfilesartifactnamesanduuids---filesartifactnameanduuid-filesartifactnamesanduuids
+    public async getAllFilesArtifactNamesAndUuids(): Promise<Result<FilesArtifactNameAndUuid[], Error>> {
+        const getAllFilesArtifactsNamesAndUuidsResponseResult = await this.backend.getAllFilesArtifactNamesAndUuids()
+        if (getAllFilesArtifactsNamesAndUuidsResponseResult.isErr()) {
+            return err(getAllFilesArtifactsNamesAndUuidsResponseResult.error)
+        }
+
+        const getAllFilesArtifactsNamesAndUuidsResponseValue = getAllFilesArtifactsNamesAndUuidsResponseResult.value
+        return ok(getAllFilesArtifactsNamesAndUuidsResponseValue.getFileNamesAndUuidsList())
     }
 
     // ====================================================================================================

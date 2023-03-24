@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/metrics_user_id_store"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/user_support_constants"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/engine_server_launcher"
 	"github.com/kurtosis-tech/kurtosis/kurtosis_version"
@@ -45,6 +46,8 @@ type engineExistenceGuarantor struct {
 
 	engineServerKurtosisBackendConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier
 
+	kurtosisRemoteBackendConfigSupplier *engine_server_launcher.KurtosisRemoteBackendConfigSupplier
+
 	engineServerLauncher *engine_server_launcher.EngineServerLauncher
 
 	imageVersionTag string
@@ -69,6 +72,7 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 	kurtosisBackend backend_interface.KurtosisBackend,
 	shouldSendMetrics bool,
 	engineServerKurtosisBackendConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier,
+	kurtosisRemoteBackendConfigSupplier *engine_server_launcher.KurtosisRemoteBackendConfigSupplier,
 	logLevel logrus.Level,
 	maybeCurrentlyRunningEngineVersionTag string,
 	kurtosisClusterType resolved_config.KurtosisClusterType,
@@ -79,6 +83,7 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 		kurtosisBackend,
 		shouldSendMetrics,
 		engineServerKurtosisBackendConfigSupplier,
+		kurtosisRemoteBackendConfigSupplier,
 		defaultEngineImageVersionTag,
 		logLevel,
 		maybeCurrentlyRunningEngineVersionTag,
@@ -92,6 +97,7 @@ func newEngineExistenceGuarantorWithCustomVersion(
 	kurtosisBackend backend_interface.KurtosisBackend,
 	shouldSendMetrics bool,
 	engineServerKurtosisBackendConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier,
+	kurtosisRemoteBackendConfigSupplier *engine_server_launcher.KurtosisRemoteBackendConfigSupplier,
 	imageVersionTag string,
 	logLevel logrus.Level,
 	maybeCurrentlyRunningEngineVersionTag string,
@@ -102,6 +108,7 @@ func newEngineExistenceGuarantorWithCustomVersion(
 		preVisitingMaybeHostMachineIpAndPort: preVisitingMaybeHostMachineIpAndPort,
 		kurtosisBackend:                      kurtosisBackend,
 		engineServerKurtosisBackendConfigSupplier: engineServerKurtosisBackendConfigSupplier,
+		kurtosisRemoteBackendConfigSupplier:       kurtosisRemoteBackendConfigSupplier,
 		engineServerLauncher:                      engine_server_launcher.NewEngineServerLauncher(kurtosisBackend),
 		imageVersionTag:                           imageVersionTag,
 		logLevel:                                  logLevel,
@@ -136,6 +143,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			metricsUserId,
 			guarantor.shouldSendMetrics,
 			guarantor.engineServerKurtosisBackendConfigSupplier,
+			guarantor.kurtosisRemoteBackendConfigSupplier,
 		)
 	} else {
 		_, _, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithCustomVersion(
@@ -147,6 +155,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			metricsUserId,
 			guarantor.shouldSendMetrics,
 			guarantor.engineServerKurtosisBackendConfigSupplier,
+			guarantor.kurtosisRemoteBackendConfigSupplier,
 		)
 	}
 	if engineLaunchErr != nil {
@@ -216,15 +225,17 @@ func (guarantor *engineExistenceGuarantor) VisitRunning() error {
 			cliEngineSemver.String(),
 		)
 	}
+
+	if runningEngineSemver.Equal(cliEngineSemver) {
+		return nil
+	}
+
 	if runningEngineSemver.LessThan(cliEngineSemver) {
-		logrus.Warningf(
-			"The currently-running Kurtosis engine version is '%v' but the latest version is '%v'; you can pull the latest fixes by running '%v'",
-			runningEngineSemver.String(),
-			cliEngineSemver.String(),
-			engineRestartCmd,
-		)
-	} else {
-		logrus.Debugf("Currently running engine version '%v' is >= the version the CLI expects", guarantor.maybeCurrentlyRunningEngineVersionTag)
+		return stacktrace.NewError("The current version of the CLI '%s' is greater than the version of the running engine '%s' which could lead to unexpected behavior. Use '%s' to upgrade the current running engine", cliEngineSemver.String(), runningEngineSemver.String(), engineRestartCmd)
+	}
+
+	if runningEngineSemver.GreaterThan(cliEngineSemver) {
+		logrus.Warningf("The version of the current running engine '%v' is greater than the version of the CLI '%v'. Please upgrade the CLI by following the steps here %v", runningEngineSemver.String(), cliEngineSemver.String(), user_support_constants.UpgradeCLIInstructionsPage)
 	}
 	return nil
 }

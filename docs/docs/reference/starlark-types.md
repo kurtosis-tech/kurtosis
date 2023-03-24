@@ -23,8 +23,8 @@ connection_config = ConnectionConfig(
     # OPTIONAL: Valid value are UniformPacketDelayDistribution or NormalPacketDelayDistribution
     packet_delay_distribution = UniformPacketDelayDistribution(
         # Delay in ms
-        ms = 500 
-    ) 
+        ms = 500,
+    ),
 )
 ```
 
@@ -37,13 +37,6 @@ See [kurtosis.connection][connection-config-prebuilt] for pre-built [ConnectionC
 The ExecRecipe can be used to run the `command` on the service (see [exec][starlark-instructions-exec]
 or [wait][starlark-instructions-wait])
 
-:::caution
-
-The `ExecRecipe.service_name` field is still accepted but it's deprecated, so we suggest users to pass
-this value as an argument in the `exec`, `request` and `wait` instructions where this type is currently used
-
-:::
-
 ```python
 exec_recipe = ExecRecipe(
     # The actual command to execute. 
@@ -53,20 +46,9 @@ exec_recipe = ExecRecipe(
 )
 ```
 
-### HttpRequestRecipe
+### GetHttpRequestRecipe
 
-The `HttpRequestRecipe` is used to make `HTTP` requests to an endpoint. Currently, we support `GET` and `POST` requests. (see [request][starlark-instructions-request] or [wait][starlark-instructions-wait]).
-
-#### GetHttpRequestRecipe
-
-The `GetHttpRequestRecipe` can be used to make `GET` requests.
-
-:::caution
-
-The `GetHttpRequestRecipe.service_name` field is still accepted but it's deprecated, so we suggest users to pass
-this value as an argument in the `exec`, `request` and `wait` instructions where this type is currently used
-
-:::
+The `GetHttpRequestRecipe` can be used to make `GET` requests to an endpoint, filter for the specific part of the response you care about, and assign that specific output to a key for later use. This can be useful for writing assertions, for example (i.e. validating the response you end up receiving looks the way you expect/intended).
 
 ```python
 get_request_recipe = GetHttpRequestRecipe(
@@ -78,56 +60,54 @@ get_request_recipe = GetHttpRequestRecipe(
     # MANDATORY
     endpoint = "/endpoint?input=data",
 
-    # The extract dictionary takes in key-value pairs where:
-    # Key is a way you refer to the extraction later on
-    # Value is a 'jq' string that contains logic to extract from response body
+    # The extract dictionary can be used for filtering specific parts of a HTTP GET
+    # request and assigning that output to a key-value pair, where the key is the
+    # reference variable and the value is the specific output. 
+    # 
+    # Specifcally: the key is the way you refer to the extraction later on and
+    # the value is a 'jq' string that contains logic to extract parts from response 
+    # body that you get from the HTTP GET request.
+    # 
     # To lean more about jq, please visit https://devdocs.io/jq/
     # OPTIONAL
     extract = {
-        "extractfield" : ".name.id"
-    }
+        "extractfield" : ".name.id",
+    },
 )
 ```
 
 :::info
-Important - `port_id` field accepts user defined ID assinged to a port in service's port map while defininig `ServiceConfig`. For example, we have a service config with following port map:
+Important - the `port_id` field accepts user-defined port IDs that are assigned to a port in a service's port map, using `ServiceConfig`. For example, if our service's `ServiceConfig` has the following port mappings:
 
 ```
     test-service-config = ServiceConfig(
         ports = {
             // "port_id": port_number
             "http": 5000,
-            "grpc": 3000
+            "grpc": 3000,
             ...
-        }
+        },
         ...
     )
 ```
 
-The user defined port IDs in above port map are: `http` and `grpc`. These can be passed to create http request recipes (`GET` OR `POST`) such as:
+The user-defined port IDs in the above `ServiceConfig` are: `http` and `grpc`. Both of these user-defined port IDs can therefore be used to create http request recipes (`GET` OR `POST`), such as:
 
 ```
     recipe = GetHttpRequestRecipe(
         port_id = "http",
         service_name = "service-using-test-service-config",
-        endpoint = "/ping"
+        endpoint = "/ping",
         ...
     )
 ```
 
-This above recipe when used with `request` or `wait` instruction, will make a `GET` request to a service with name `service-using-test-service-config` on port `5000` with the path `/ping`.
+The above recipe, when used with `request` or `wait` instruction, will make a `GET` request to a service (the `service_name` field must be passed as an instruction's argument) on port `5000` with the path `/ping`.
 :::
 
-#### PostHttpRequestRecipe
+### PostHttpRequestRecipe
 
-The `PostHttpRequestRecipe` can be used to make `POST` requests.
-
-:::caution
-
-The `PostHttpRequestRecipe.service_name` field is still accepted but it's deprecated, so we suggest users to pass
-this value as an argument in the `exec`, `request` and `wait` instructions where this type is currently used
-
-:::
+The `PostHttpRequestRecipe` can be used to make `POST` requests to an endpoint.
 
 ```python
 post_request_recipe = PostHttpRequestRecipe(
@@ -153,8 +133,8 @@ post_request_recipe = PostHttpRequestRecipe(
     # # To lean more about jq, please visit https://devdocs.io/jq/
     # OPTIONAL
     extract = {
-        "extractfield" : ".name.id"
-    }
+        "extractfield" : ".name.id",
+    },
 )
 ```
 
@@ -164,13 +144,9 @@ Make sure that the endpoint returns valid JSON response for both POST and GET re
 
 :::
 
-### PacketDelayDistribution
+### UniformPacketDelayDistribution
 
-The `PacketDelayDistribution` can be used in conjuction with [`ConnectionConfig`][connection-config] to introduce latency between two [`subnetworks`][subnetworks-reference]. See [`set_connection`][starlark-instructions-set-connection] instruction to learn more about its usage.
-
-#### UniformPacketDelayDistribution
-
-The `UniformPacketDelayDistribution` creates a packet delay distribution with constant delay in `ms`
+The `UniformPacketDelayDistribution` creates a packet delay distribution with constant delay in `ms`. This can be used in conjuction with [`ConnectionConfig`][connection-config] to introduce latency between two [`subnetworks`][subnetworks-reference]. See [`set_connection`][starlark-instructions-set-connection] instruction to learn more about its usage.
 
 ```python
 
@@ -178,13 +154,13 @@ delay  = UniformPacketDelayDistribution(
     # Non-Negative Integer
     # Amount of constant delay added to outgoing packets from the subnetwork
     # MANDATORY
-    ms = 1000
+    ms = 1000,
 )
 ```
 
-#### NormalPacketDelayDistribution
+### NormalPacketDelayDistribution
 
-The `NormalPacketDelayDistribution` can be used to create packet delays that are distributed according to a normal distribution.
+The `NormalPacketDelayDistribution` creates a packet delay distirbution that follows a normal distribution. This can be used in conjuction with [`ConnectionConfig`][connection-config] to introduce latency between two [`subnetworks`][subnetworks-reference]. See [`set_connection`][starlark-instructions-set-connection] instruction to learn more about its usage.
 
 ```python
 
@@ -192,19 +168,19 @@ delay  = NormalPacketDelayDistribution(
     # Non-Negative Integer
     # Amount of mean delay added to outgoing packets from the subnetwork
     # MANDATORY
-    mean_ms = 1000
+    mean_ms = 1000,
 
     # Non-Negative Integer
     # Amount of variance (jitter) added to outgoing packets from the subnetwork
     # MANDATORY
-    std_dev_ms = 10
+    std_dev_ms = 10,
     
     # Non-Negative Float
     # Percentage of correlation observed among packets. It means that the delay observed in next packet
     # will exhibit a corrlation factor of 10.0% with the previous packet. 
     # OPTIONAL
     # DEFAULT = 0.0
-    correlation = 10.0
+    correlation = 10.0,
 )   
 ```
 
@@ -217,18 +193,63 @@ port_spec = PortSpec(
     # The port number which we want to expose
     # MANDATORY
     number = 3000,
-    
+
     # Transport protocol for the port (can be either "TCP" or "UDP")
-    # Optional (DEFAULT:"TCP")
+    # OPTIONAL (DEFAULT:"TCP")
     transport_protocol = "TCP",
 
-    # Application protocol for the port
-    # Optional
-    application_protocol = "http"
+    # Application protocol for the port that will be displayed in front of URLs containing the port
+    # For example:
+    #  "http" to get a URL of "http://..."
+    #  "postgresql" to get a URL of "postgresql://..."
+    # OPTIONAL
+    application_protocol = "http",
 )
 ```
 The above constructor returns a `PortSpec` object that contains port information in the form of a [future reference][future-references-reference] and can be used with
 [add_service][starlark-instructions-add-service] to create services.
+
+### ReadyConditions
+
+The `ReadyConditions` can be used to execute a readiness check after a service is started to confirm that it is ready to receive connections and traffic 
+
+```python
+ready_conditions = ReadyConditions(
+
+    # The recipe that will be used to check service's readiness.
+    # Valid values are of the following types: (ExecRecipe, GetHttpRequestRecipe or PostHttpRequestRecipe)
+    # MANDATORY
+    recipe = GetHttpRequestRecipe(
+        port_id = "http",
+        endpoint = "/ping",
+    ),
+
+    # The `field's value` will be used to do the asssertions. To learn more about available fields, 
+    # that can be used for assertions, please refer to exec and request instructions.
+    # MANDATORY
+    field = "code",
+
+    # The assertion is the comparison operation between value and target_value.
+    # Valid values are "==", "!=", ">=", "<=", ">", "<" or "IN" and "NOT_IN" (if target_value is list).
+    # MANDATORY
+    assertion = "==",
+
+    # The target value that value will be compared against.
+    # MANDATORY
+    target_value = 200,
+
+    # The interval value is the initial interval suggestion for the command to wait between calls
+    # It follows a exponential backoff process, where the i-th backoff interval is rand(0.5, 1.5)*interval*2^i
+    # Follows Go "time.Duration" format https://pkg.go.dev/time#ParseDuration
+    # OPTIONAL (Default: "1s")
+    interval = "1s",
+
+    # The timeout value is the maximum time that the readiness check waits for the assertion to be true
+    # Follows Go "time.Duration" format https://pkg.go.dev/time#ParseDuration
+    # OPTIONAL (Default: "15m")
+    timeout = "5m",
+)
+```
 
 ### ServiceConfig
 
@@ -255,7 +276,7 @@ config = ServiceConfig(
 
             # Application protocol for the port
             # Optional
-            application_protocol = "http"
+            application_protocol = "http",
         ),
     },
 
@@ -307,6 +328,11 @@ config = ServiceConfig(
     # Defines the subnetwork in which the service will be started.
     # OPTIONAL (Default: "default")
     subnetwork = "service_subnetwork",
+    
+    # This field can be used to check the service's readiness after this is started
+    # to confirm that it is ready to receive connections and traffic
+    # OPTIONAL (Default: no ready conditions)
+    ready_conditions = ReadyConditions(...)
 )
 ```
 The `ports` dictionary argument accepts a key value pair, where `key` is a user defined unique port identifier and `value` is a [PortSpec][port-spec] object.
@@ -314,6 +340,8 @@ The `ports` dictionary argument accepts a key value pair, where `key` is a user 
 The `files` dictionary argument accepts a key value pair, where `key` is the path where the contents of the artifact will be mounted to and `value` is a file artifact name. (see [upload_files][starlark-instructions-upload-files], [render_templates][starlark-instructions-render-templates] and [store_service_files][starlark-instructions-store-service-files] to learn more about on how to create file artifacts)
 
 For more info about the `subnetwork` argument, see [Kurtosis subnetworks][subnetworks-reference].
+
+You can see how to configure the [`ReadyConditions` type here][ready-conditions]. 
 
 ### UpdateServiceConfig
 
@@ -324,7 +352,7 @@ update_service_config = UpdateServiceConfig(
     # The subnetwork to which the service will be moved.
     # "default" can be used to move the service to the default subnetwork
     # MANDATORY
-    subnetwork = "subnetwork_1"
+    subnetwork = "subnetwork_1",
 )
 ```
 
@@ -346,6 +374,7 @@ Kurtosis provides "pre-built" values for types that will be broadly used. Those 
 [connection-config]: #connectionconfig
 [service-config]: #serviceconfig
 [port-spec]: #portspec
+[ready-conditions]: #readyconditions
 
 [connection-config-prebuilt]: #connection
 

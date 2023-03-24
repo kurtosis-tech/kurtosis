@@ -20,8 +20,10 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/feedback"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/files"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/gateway"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/run"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/twitter"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/version"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/host_machine_directories"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/logrus_log_levels"
@@ -58,6 +60,8 @@ const (
 	latestCLIReleaseCacheFileContentVersionIndex    = 1
 	latestCLIReleaseCacheFileCreationDateTimeFormat = time.RFC3339
 
+	frequencyToPesterUsersAboutVersions = 1 * time.Hour
+
 	getLatestCLIReleaseCacheFilePermissions os.FileMode = 0644
 
 	optionalSemverPrefix = "v"
@@ -92,6 +96,7 @@ func init() {
 	RootCmd.AddCommand(analytics.AnalyticsCmd.MustGetCobraCommand())
 	RootCmd.AddCommand(clean.CleanCmd.MustGetCobraCommand())
 	RootCmd.AddCommand(cluster.ClusterCmd)
+	RootCmd.AddCommand(kurtosis_context.ContextCmd)
 	RootCmd.AddCommand(config.ConfigCmd)
 	RootCmd.AddCommand(discord.DiscordCmd.MustGetCobraCommand())
 	RootCmd.AddCommand(docs.DocsCmd.MustGetCobraCommand())
@@ -102,6 +107,7 @@ func init() {
 	RootCmd.AddCommand(gateway.GatewayCmd)
 	RootCmd.AddCommand(run.StarlarkRunCmd.MustGetCobraCommand())
 	RootCmd.AddCommand(service.ServiceCmd)
+	RootCmd.AddCommand(twitter.TwitterCmd.MustGetCobraCommand())
 	RootCmd.AddCommand(version.VersionCmd)
 }
 
@@ -144,6 +150,10 @@ func checkCLIVersion(cmd *cobra.Command) {
 	logrus.SetOutput(cmd.ErrOrStderr())
 	defer logrus.SetOutput(currentOut)
 
+	if !shouldPesterUsersAboutVersions() {
+		return
+	}
+
 	isLatestVersion, latestVersion, err := isLatestCLIVersion()
 	if err != nil {
 		logrus.Warning("An error occurred trying to check if you are running the latest Kurtosis CLI version.")
@@ -152,6 +162,7 @@ func checkCLIVersion(cmd *cobra.Command) {
 		logrus.Warningf("You can manually upgrade the CLI tool following these instructions: %v", user_support_constants.UpgradeCLIInstructionsPage)
 		return
 	}
+
 	if !isLatestVersion {
 		logrus.Warningf("You are running an old version of the Kurtosis CLI; we suggest you to update it to the latest version, '%v'", latestVersion)
 		logrus.Warningf("You can manually upgrade the CLI tool following these instructions: %v", user_support_constants.UpgradeCLIInstructionsPage)
@@ -341,4 +352,46 @@ func getLatestCLIReleaseVersionFromCacheFile(filepath string) (string, error) {
 	}
 
 	return latestReleaseVersion, nil
+}
+
+// if the check ever fails we just return true and check for versions anyway
+func shouldPesterUsersAboutVersions() bool {
+	lastPesteredUsersAboutVersionsFilepath, err := host_machine_directories.GetLastPesteredUserAboutOldVersionsFilepath()
+	if err != nil {
+		logrus.Debugf("Tried getting the path to the %s file but failed with error \n'%s'", host_machine_directories.LastPesteredUserAboutOldVersionFilename, err)
+		return true
+	}
+
+	fileStatus, err := os.Stat(lastPesteredUsersAboutVersionsFilepath)
+
+	if os.IsNotExist(err) {
+		createOrChangeModificationTimeOfLastPesteredUserFile(lastPesteredUsersAboutVersionsFilepath, host_machine_directories.LastPesteredUserAboutOldVersionFilename)
+		return true
+	}
+
+	if err != nil {
+		logrus.Debugf("Tried checking if %s at '%s' exists but failed with error '%s'\n", host_machine_directories.LastPesteredUserAboutOldVersionFilename, lastPesteredUsersAboutVersionsFilepath, err)
+		return true
+	}
+
+	now := time.Now()
+
+	if now.After(fileStatus.ModTime().Add(frequencyToPesterUsersAboutVersions)) {
+		// we touch it again so that the timer restarts
+		createOrChangeModificationTimeOfLastPesteredUserFile(lastPesteredUsersAboutVersionsFilepath, host_machine_directories.LastPesteredUserAboutOldVersionFilename)
+		return true
+	}
+
+	// no error occurred and the last time we bothered the user was not frequencyToPesterUsersAboutVersions duration before
+	// we don't have to bother the user
+	return false
+}
+
+// this file is an empty file, if we run Create on it again we don't lose anything but we do change the modification time
+// the modification time is what we care about
+func createOrChangeModificationTimeOfLastPesteredUserFile(lastPesteredUsersAboutVersionsFilepath, fileNameForLogging string) {
+	_, err := os.Create(lastPesteredUsersAboutVersionsFilepath)
+	if err != nil {
+		logrus.Debugf("Tried creating the %s file at '%s' but failed with error \n'%s'", fileNameForLogging, lastPesteredUsersAboutVersionsFilepath, err)
+	}
 }

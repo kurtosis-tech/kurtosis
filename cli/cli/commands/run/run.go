@@ -14,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/enclave/inspect"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/user_support_constants"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
@@ -42,11 +43,15 @@ const (
 	dryRunFlagKey = "dry-run"
 	defaultDryRun = "false"
 
-	enclaveIdentifierFlagKey = "enclave-identifier"
+	fullUuidsFlagKey       = "full-uuids"
+	fullUuidFlagKeyDefault = "false"
+
+	showEnclaveInspectFlagKey = "show-enclave-inspect"
+	showEnclaveInspectDefault = "true"
+
+	enclaveIdentifierFlagKey = "enclave"
 	// Signifies that an enclave ID should be auto-generated
 	autogenerateEnclaveIdentifierKeyword = ""
-	// TODO deprecate this flag in the future
-	enclaveIdFlagKey = "enclave-id"
 
 	isSubnetworkCapabilitiesEnabledFlagKey = "with-subnetworks"
 	defaultIsSubnetworkCapabilitiesEnabled = false
@@ -98,18 +103,8 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 		},
 		{
 			Key: enclaveIdentifierFlagKey,
-			Usage: "The enclave identifier of the enclave in which the script or package will be ran." +
+			Usage: "The enclave identifier of the enclave in which the script or package will be ran. " +
 				"An enclave with this name will be created if it doesn't exist.",
-			Type:    flags.FlagType_String,
-			Default: autogenerateEnclaveIdentifierKeyword,
-		},
-		{
-			Key: enclaveIdFlagKey,
-			Usage: fmt.Sprintf(
-				"The enclave identifier of the enclave in which the script or package will be ran."+
-					"An enclave with this name will be created if it doesn't exist. This will be deprecated in favor of '%v'",
-				enclaveIdentifierFlagKey,
-			),
 			Type:    flags.FlagType_String,
 			Default: autogenerateEnclaveIdentifierKeyword,
 		},
@@ -134,6 +129,18 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			Shorthand: "v",
 			Default:   defaultVerbosity,
 		},
+		{
+			Key:     showEnclaveInspectFlagKey,
+			Usage:   "If true then Kurtosis runs enclave inspect immediately after running the Starlark Package. Default true",
+			Type:    flags.FlagType_Bool,
+			Default: showEnclaveInspectDefault,
+		},
+		{
+			Key:     fullUuidsFlagKey,
+			Usage:   "If true then Kurtosis prints full UUIDs instead of shortened UUIDs. Default false.",
+			Type:    flags.FlagType_Bool,
+			Default: fullUuidFlagKeyDefault,
+		},
 	},
 	Args: []*args.ArgConfig{
 		// TODO add a `Usage` description here when ArgConfig supports it
@@ -155,7 +162,7 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 
 func run(
 	ctx context.Context,
-	_ backend_interface.KurtosisBackend,
+	kurtosisBackend backend_interface.KurtosisBackend,
 	_ kurtosis_engine_rpc_api_bindings.EngineServiceClient,
 	metricsClient metrics_client.MetricsClient,
 	flags *flags.ParsedFlags,
@@ -170,13 +177,6 @@ func run(
 	userRequestedEnclaveIdentifier, err := flags.GetString(enclaveIdentifierFlagKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the enclave identifier using flag key '%s'", enclaveIdentifierFlagKey)
-	}
-
-	if userRequestedEnclaveIdentifier == autogenerateEnclaveIdentifierKeyword {
-		userRequestedEnclaveIdentifier, err = flags.GetString(enclaveIdFlagKey)
-		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred getting the enclave identifier using flag key '%s'", enclaveIdFlagKey)
-		}
 	}
 
 	isPartitioningEnabled, err := flags.GetBool(isSubnetworkCapabilitiesEnabledFlagKey)
@@ -205,6 +205,16 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the verbosity using flag key '%s'", verbosityFlagKey)
 	}
 
+	showFullUuids, err := flags.GetBool(fullUuidsFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", fullUuidsFlagKey)
+	}
+
+	showEnclaveInspect, err := flags.GetBool(showEnclaveInspectFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", showEnclaveInspectFlagKey)
+	}
+
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred connecting to the local Kurtosis engine")
@@ -214,6 +224,15 @@ func run(
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the enclave context for enclave '%v'", userRequestedEnclaveIdentifier)
 	}
+
+	if showEnclaveInspect {
+		defer func() {
+			if err = inspect.PrintEnclaveInspect(ctx, kurtosisBackend, kurtosisCtx, enclaveCtx.GetEnclaveName(), showFullUuids); err != nil {
+				logrus.Errorf("An error occurred while printing enclave status and contents:\n%s", err)
+			}
+		}()
+	}
+
 	if isNewEnclave {
 		defer output_printers.PrintEnclaveName(enclaveCtx.GetEnclaveName())
 	}

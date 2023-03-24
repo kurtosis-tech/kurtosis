@@ -30,11 +30,22 @@ type APIContainerModeArgs struct {
 func GetLocalDockerKurtosisBackend(
 	optionalApiContainerModeArgs *APIContainerModeArgs,
 ) (backend_interface.KurtosisBackend, error) {
-	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	localDockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker client connected to the local environment")
 	}
 
+	localDockerBackend, err := GetDockerKurtosisBackend(localDockerClient, optionalApiContainerModeArgs)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Unable to build local Kurtosis Docker backend")
+	}
+	return localDockerBackend, nil
+}
+
+func GetDockerKurtosisBackend(
+	dockerClient *client.Client,
+	optionalApiContainerModeArgs *APIContainerModeArgs,
+) (backend_interface.KurtosisBackend, error) {
 	dockerManager := docker_manager.NewDockerManager(dockerClient)
 
 	// If running within the API container context, detect the network that the API container is running inside

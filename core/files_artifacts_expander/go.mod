@@ -1,6 +1,6 @@
 module github.com/kurtosis-tech/kurtosis/core/files_artifacts_expander
 
-go 1.17
+go 1.18
 
 replace github.com/kurtosis-tech/kurtosis/api/golang => ../../api/golang
 
@@ -15,9 +15,9 @@ require (
 require (
 	github.com/gammazero/deque v0.1.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
-	golang.org/x/net v0.0.0-20190311183353-d8887717615a // indirect
-	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f // indirect
-	golang.org/x/text v0.3.8 // indirect
+	golang.org/x/net v0.7.0 // indirect
+	golang.org/x/sys v0.5.0 // indirect
+	golang.org/x/text v0.7.0 // indirect
 	google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
 )

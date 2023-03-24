@@ -21,14 +21,13 @@ def run(plan):
 
 	plan.add_service(service_name = "web-server", config = service_config)
 	get_recipe = GetHttpRequestRecipe(
-		service_name = "web-server",
 		port_id = "http-port",
 		endpoint = "?input=foo/bar",
 		extract = {
 			"exploded-slash": ".query.input | split(\"/\") | .[1]"
 		}
 	)
-	response = plan.wait(get_recipe, "code", "==", 200, interval="10s", timeout="200s")
+	response = plan.wait(get_recipe, "code", "==", 200, interval="10s", timeout="200s", service_name="web-server")
 	plan.assert(response["code"], "==", 200)
 	plan.assert("My test returned " + response["code"], "==", "My test returned 200")
 	plan.assert(response["code"], "!=", 500)
@@ -40,7 +39,6 @@ def run(plan):
 	plan.assert(response["code"], "NOT_IN", [100, 300])
 	plan.assert(response["extract.exploded-slash"], "==", "bar")
 	post_recipe = PostHttpRequestRecipe(
-		service_name = "web-server",
 		port_id = "http-port",
 		endpoint = "/",
 		content_type="text/plain",
@@ -49,16 +47,33 @@ def run(plan):
 			"my-body": ".body"
 		}
 	)
-	plan.wait(post_recipe, "code", "==", 200)
-	post_response = plan.request(post_recipe)
+	plan.wait(post_recipe, "code", "==", 200, service_name="web-server")
+	post_response = plan.request(post_recipe, "web-server")
 	plan.assert(post_response["code"], "==", 200)
 	plan.assert(post_response["extract.my-body"], "==", "bar")
+	post_recipe_no_body = PostHttpRequestRecipe(
+		port_id = "http-port",
+		endpoint = "/",
+		content_type="text/plain",
+	)
+	plan.wait(post_recipe_no_body, "code", "==", 200, service_name = "web-server")
 	exec_recipe = ExecRecipe(
-		service_name = "web-server",
 		command = ["echo", "hello", post_response["extract.my-body"]]
 	)
-	exec_result = plan.wait(exec_recipe, "code", "==", 0)
+	exec_result = plan.wait(exec_recipe, "code", "==", 0, service_name="web-server")
 	plan.assert(exec_result["output"], "==", "hello bar\n")
+
+	# content_type default to application/json
+	post_json = PostHttpRequestRecipe(
+		port_id = "http-port",
+		endpoint = "/",
+		body='{"a":"b"}',
+		extract = {
+			"my-json": ".body"
+		}
+	)
+	post_json_response = plan.request(post_json, service_name = "web-server")
+	plan.assert(post_json_response["extract.my-json"], "==", '{"a":"b"}')
 `
 )
 

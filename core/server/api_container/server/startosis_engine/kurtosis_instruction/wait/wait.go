@@ -3,10 +3,10 @@ package wait
 import (
 	"context"
 	"fmt"
-	"github.com/cenkalti/backoff/v4"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/assert"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
@@ -31,7 +31,7 @@ const (
 	TimeoutArgName     = "timeout"
 
 	defaultInterval = 1 * time.Second
-	defaultTimeout  = 15 * time.Minute
+	defaultTimeout  = 10 * time.Second
 )
 
 func NewWait(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) *kurtosis_plan_instruction.KurtosisPlanInstruction {
@@ -78,7 +78,7 @@ func NewWait(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *r
 				},
 				{
 					Name:              ServiceNameArgName,
-					IsOptional:        true, //TODO make it non-optional when we remove recipe.service_name, issue pending: https://github.com/kurtosis-tech/kurtosis-private/issues/1128
+					IsOptional:        false,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						return builtin_argument.NonEmptyString(value, ServiceNameArgName)
@@ -97,7 +97,7 @@ func NewWait(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *r
 				valueField:  "",  // populated at interpretation time
 				assertion:   "",  // populated at interpretation time
 				target:      nil, // populated at interpretation time
-				backoff:     nil, // populated at interpretation time
+				interval:    0,   // populated at interpretation time
 				timeout:     0,   // populated at interpretation time
 				resultUuid:  "",  // populated at interpretation time
 			}
@@ -123,22 +123,19 @@ type WaitCapabilities struct {
 	valueField  string
 	assertion   string
 	target      starlark.Comparable
-	backoff     backoff.BackOff
+	interval    time.Duration
 	timeout     time.Duration
 
 	resultUuid string
 }
 
 func (builtin *WaitCapabilities) Interpret(arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
-	var serviceName service.ServiceName
 
-	if arguments.IsSet(ServiceNameArgName) {
-		serviceNameArgumentValue, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, ServiceNameArgName)
-		if err != nil {
-			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ServiceNameArgName)
-		}
-		serviceName = service.ServiceName(serviceNameArgumentValue.GoString())
+	serviceNameArgumentValue, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, ServiceNameArgName)
+	if err != nil {
+		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ServiceNameArgName)
 	}
+	serviceName := service.ServiceName(serviceNameArgumentValue.GoString())
 
 	var genericRecipe recipe.Recipe
 	httpRecipe, err := builtin_argument.ExtractArgumentValue[*recipe.HttpRequestRecipe](arguments, RecipeArgName)
@@ -167,19 +164,19 @@ func (builtin *WaitCapabilities) Interpret(arguments *builtin_argument.ArgumentV
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", TargetArgName)
 	}
 
-	var waitBackoff backoff.BackOff
+	var interval time.Duration
 	if arguments.IsSet(IntervalArgName) {
-		interval, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, IntervalArgName)
+		intervalStr, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, IntervalArgName)
 		if err != nil {
 			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", IntervalArgName)
 		}
-		parsedDuration, parseErr := time.ParseDuration(interval.GoString())
+		parsedInterval, parseErr := time.ParseDuration(intervalStr.GoString())
 		if parseErr != nil {
-			return nil, startosis_errors.WrapWithInterpretationError(parseErr, "An error occurred when parsing interval '%v'", interval.GoString())
+			return nil, startosis_errors.WrapWithInterpretationError(parseErr, "An error occurred when parsing interval '%v'", intervalStr.GoString())
 		}
-		waitBackoff = backoff.NewConstantBackOff(parsedDuration)
+		interval = parsedInterval
 	} else {
-		waitBackoff = backoff.NewConstantBackOff(defaultInterval)
+		interval = defaultInterval
 	}
 
 	var timeout time.Duration
@@ -190,7 +187,7 @@ func (builtin *WaitCapabilities) Interpret(arguments *builtin_argument.ArgumentV
 		}
 		parsedTimeout, parseErr := time.ParseDuration(starlarkTimeout.GoString())
 		if parseErr != nil {
-			return nil, startosis_errors.WrapWithInterpretationError(parseErr, "An error occurred when parsing interval '%v'", starlarkTimeout.GoString())
+			return nil, startosis_errors.WrapWithInterpretationError(parseErr, "An error occurred when parsing timeout '%v'", starlarkTimeout.GoString())
 		}
 		timeout = parsedTimeout
 	} else {
@@ -216,7 +213,7 @@ func (builtin *WaitCapabilities) Interpret(arguments *builtin_argument.ArgumentV
 	builtin.valueField = valueField.GoString()
 	builtin.assertion = assertion.GoString()
 	builtin.target = target
-	builtin.backoff = waitBackoff
+	builtin.interval = interval
 	builtin.timeout = timeout
 	builtin.resultUuid = resultUuid
 
@@ -229,45 +226,37 @@ func (builtin *WaitCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet,
 }
 
 func (builtin *WaitCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
-	var requestErr error
-	var assertErr error
-	tries := 0
-	timedOut := false
-	lastResult := map[string]starlark.Comparable{}
+
 	startTime := time.Now()
-	for {
-		tries += 1
-		backoffDuration := builtin.backoff.NextBackOff()
-		if backoffDuration == backoff.Stop || time.Since(startTime) > builtin.timeout {
-			timedOut = true
-			break
-		}
-		lastResult, requestErr = builtin.recipe.Execute(ctx, builtin.serviceNetwork, builtin.runtimeValueStore, builtin.serviceName)
-		if requestErr != nil {
-			time.Sleep(backoffDuration)
-			continue
-		}
-		builtin.runtimeValueStore.SetValue(builtin.resultUuid, lastResult)
-		value, found := lastResult[builtin.valueField]
-		if !found {
-			return "", stacktrace.NewError("Error extracting value from key '%v'", builtin.valueField)
-		}
-		assertErr = assert.Assert(value, builtin.assertion, builtin.target)
-		if assertErr != nil {
-			time.Sleep(backoffDuration)
-			continue
-		}
-		break
+
+	lastResult, tries, err := shared_helpers.ExecuteServiceAssertionWithRecipe(
+		ctx,
+		builtin.serviceNetwork,
+		builtin.runtimeValueStore,
+		builtin.serviceName,
+		builtin.recipe,
+		builtin.valueField,
+		builtin.assertion,
+		builtin.target,
+		builtin.interval,
+		builtin.timeout,
+	)
+	if err != nil {
+		return "", stacktrace.Propagate(
+			err,
+			"An error occurred checking if service '%v' is ready.",
+			builtin.serviceName,
+		)
 	}
-	if timedOut {
-		return "", stacktrace.NewError("Wait timed-out waiting for the assertion to become valid. Waited for '%v'. Last assertion error was: \n%v", time.Since(startTime), assertErr)
-	}
-	if requestErr != nil {
-		return "", stacktrace.Propagate(requestErr, "Error executing HTTP recipe on '%v'", WaitBuiltinName)
-	}
-	if assertErr != nil {
-		return "", stacktrace.Propagate(assertErr, "Error asserting HTTP recipe on '%v'", WaitBuiltinName)
-	}
-	instructionResult := fmt.Sprintf("Wait took %d tries (%v in total). Assertion passed with following:\n%s", tries, time.Since(startTime), builtin.recipe.ResultMapToString(lastResult))
+
+	builtin.runtimeValueStore.SetValue(builtin.resultUuid, lastResult)
+
+	instructionResult := fmt.Sprintf(
+		"Wait took %d tries (%v in total). Assertion passed with following:\n%s",
+		tries,
+		time.Since(startTime),
+		builtin.recipe.ResultMapToString(lastResult),
+	)
+
 	return instructionResult, nil
 }

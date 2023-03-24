@@ -16,6 +16,12 @@ param_cli_cluster_backend: &param_cli_cluster_backend
     type: enum
     enum: ["docker"] # ["docker", "minikube"]
 
+# Install go version 1.18 to run our integration tests on the minimal version we support
+steps_install_go_1_18: &steps_install_go_1_18
+  - run: |
+      wget https://go.dev/dl/go1.18.10.linux-amd64.tar.gz
+      sudo rm -rf /usr/local/go
+      sudo tar -C /usr/local -xzf go1.18.10.linux-amd64.tar.gz
 
 # Steps to prepare a job for Kubernetes testing
 steps_prepare_testing_k8s: &steps_prepare_testing_k8s
@@ -102,7 +108,7 @@ parameters:
     default: 20.10.7
   api-go-version:
     type: string
-    default: "1.15.13"
+    default: "1.18"
   # Separate (and newer) than the API version because we want lots of people to be able to use the Kurtosis API and the API doesn't need to be
   # the same version as the server
   server-go-version:
@@ -193,6 +199,22 @@ jobs:
             - "/home/circleci/go/pkg/mod"  # Go module cache on the cimg/go image, as reported by "go env GOMODCACHE"
             - "/home/circleci/.cache/go-build"  # Go build cache on the cimg/go image, as reported by "go env GOCACHE"
 
+  build_contexts_config_store:
+    docker:
+      - image: "cimg/go:<< pipeline.parameters.go-version >>"
+    steps:
+      - checkout
+      - <<: *abort_job_if_only_docs_changes
+      - run: contexts-config-store/scripts/build.sh
+
+  build_name_generator:
+    docker:
+      - image: "cimg/go:<< pipeline.parameters.go-version>>"
+    steps:
+      - checkout
+      - <<: *abort_job_if_only_docs_changes
+      - run: name_generator/scripts/build.sh
+
   build_kurtosis_api_golang:
     docker:
       - image: "cimg/go:<< pipeline.parameters.api-go-version>>"
@@ -222,24 +244,17 @@ jobs:
 
       - <<: *abort_job_if_only_docs_changes
 
-      # Install kudet
-      - run: |
-          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
-          sudo apt update
-          sudo apt install kudet
-
       # Generate Kurtosis Version
       - run: "<<pipeline.parameters.generate-kurtosis-version-script-path>>"
 
 
       - setup_remote_docker:
           version: "<< pipeline.parameters.docker-engine-version>>"
-      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
       - run: |
           core/files_artifacts_expander/scripts/build.sh
           source core/files_artifacts_expander/scripts/_constants.env
-          version_to_publish="$(kudet get-docker-tag)"
+          version_to_publish="$(./scripts/get-docker-tag.sh)"
           image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
           echo "Version that will be persisted to workspace: ${version_to_publish}"
           docker save -o << pipeline.parameters.file-artifacts-expander-image-filename >> "${image_name_with_version}"          
@@ -257,12 +272,6 @@ jobs:
 
       - <<: *abort_job_if_only_docs_changes
 
-      # Install Kudet
-      - run: |
-          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
-          sudo apt update
-          sudo apt install kudet
-
       # Generate Kurtosis Version
       - run: "<<pipeline.parameters.generate-kurtosis-version-script-path>>"
 
@@ -278,11 +287,6 @@ jobs:
       - <<: *abort_job_if_only_docs_changes
 
       - run: sudo apt-get update -y &&  sudo apt-get install -y musl-dev
-      # Install kudet
-      - run: |
-          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
-          sudo apt update
-          sudo apt install kudet
 
       # Install proto compiler. To compile startosis proto files on the fly, the APIC needs `protoc`
       - run: |
@@ -294,7 +298,6 @@ jobs:
 
       - setup_remote_docker:
           version: "<< pipeline.parameters.docker-engine-version>>"
-      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
       # Cache our dependencies
       - restore_cache:
@@ -304,7 +307,7 @@ jobs:
       - run: |
           core/server/scripts/build.sh
           source core/server/scripts/_constants.env
-          version_to_publish="$(kudet get-docker-tag)"
+          version_to_publish="$(./scripts/get-docker-tag.sh)"
           image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
           echo "Version that will be persisted to workspace: ${version_to_publish}"
           docker save -o << pipeline.parameters.core-server-image-filename >> "${image_name_with_version}"          
@@ -328,12 +331,6 @@ jobs:
 
       - <<: *abort_job_if_only_docs_changes
 
-      # Install Kudet
-      - run: |
-          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
-          sudo apt update
-          sudo apt install kudet
-
       # Generate Kurtosis Version
       - run: "<<pipeline.parameters.generate-kurtosis-version-script-path>>"
 
@@ -350,18 +347,11 @@ jobs:
 
       - run: sudo apt-get update -y &&  sudo apt-get install -y musl-dev
 
-      # Install kudet
-      - run: |
-          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
-          sudo apt update
-          sudo apt install kudet
-
       # Generate Kurtosis Version
       - run: "<<pipeline.parameters.generate-kurtosis-version-script-path>>"
 
       - setup_remote_docker:
           version: "<< pipeline.parameters.docker-engine-version>>"
-      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
       # Cache our dependencies
       - restore_cache:
@@ -371,7 +361,7 @@ jobs:
       - run: |
           engine/server/scripts/build.sh
           source engine/server/scripts/_constants.env
-          version_to_publish="$(kudet get-docker-tag)"
+          version_to_publish="$(./scripts/get-docker-tag.sh)"
           image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
           echo "Version that will be persisted to workspace: ${version_to_publish}"
           docker save -o << pipeline.parameters.engine-server-image-filename >> "${image_name_with_version}"          
@@ -398,12 +388,6 @@ jobs:
       - <<: *abort_job_if_only_docs_changes
 
       - run: sudo apt-get update -y &&  sudo apt-get install -y musl-dev
-
-      # Install kudet
-      - run: |
-          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
-          sudo apt update
-          sudo apt install kudet
 
       # Generate Kurtosis Version
       - run: "<<pipeline.parameters.generate-kurtosis-version-script-path>>"
@@ -445,10 +429,12 @@ jobs:
 
       - attach_workspace:
           at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
+
+      - <<: *steps_install_go_1_18
+
       # We call Kurtosis a bunch later, so add it to the PATH so we can call it easily
       - run: |
           echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
-      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
       #Run config init to avoid metrics consent prompt when execute engine start command,
       #We do not send metrics from CI to not dirty the metrics data
       - run: "${KURTOSIS_BINPATH} analytics disable"
@@ -517,7 +503,6 @@ jobs:
       # We call Kurtosis a bunch later, so add it to the PATH so we can call it easily
       - run: |
           echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
-      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
       #Run install Yarn because TypeScript tests are managed with Yarn package manager
       - run: npm install -g yarn
@@ -579,15 +564,20 @@ jobs:
   test_old_enclave_continuity:
     executor: ubuntu_vm
     steps:
+      # TODO remove this after version > 0.68.12 is out
+      # This exits the test_old_enclave_continuity immediately
+      # after a new version is out we remove these comments and this line
+      - run: circleci-agent step halt
       - checkout
 
       - <<: *abort_job_if_only_docs_changes
 
-      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
-
       # Set up Kurtosis
       - attach_workspace:
           at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
+
+      - <<: *steps_install_go_1_18
+
       - run: |
           echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
           sudo apt update
@@ -657,11 +647,11 @@ jobs:
 
       - <<: *abort_job_if_only_docs_changes
 
-      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
-
       # Set up Kurtosis
       - attach_workspace:
           at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
+
+      - <<: *steps_install_go_1_18
 
       - run: |
           echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
@@ -702,10 +692,10 @@ jobs:
       - run: "${KURTOSIS_BINPATH} enclave inspect test-enclave"
 
       # Execute simple startosis script in new enclave
-      - run: "${KURTOSIS_BINPATH} run --enclave-identifier test-enclave << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.startosis-test-script-file-relative-path >>"
+      - run: "${KURTOSIS_BINPATH} run --enclave test-enclave << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.startosis-test-script-file-relative-path >>"
 
       # Execute github starlark module
-      - run: "${KURTOSIS_BINPATH} run --enclave-identifier test-datastore github.com/kurtosis-tech/datastore-army-package '{\"num_datastores\": 2}'"
+      - run: "${KURTOSIS_BINPATH} run --enclave test-datastore github.com/kurtosis-tech/datastore-army-package '{\"num_datastores\": 2}'"
         
 
       - run: "${KURTOSIS_BINPATH} enclave stop test-enclave"
@@ -821,11 +811,6 @@ jobs:
     docker:
       - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
     steps:
-      # Install Kudet
-      - run: |
-          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
-          sudo apt update
-          sudo apt install kudet
       - checkout
 
       - setup_remote_docker:
@@ -836,25 +821,23 @@ jobs:
       - run: |
           set -euo pipefail
           source core/files_artifacts_expander/scripts/_constants.env
-          version_to_publish="$(kudet get-docker-tag)"
+          version_build="$(./scripts/get-docker-tag.sh)"
+          version_to_publish="$(cat version.txt)"
+          echo "Version that was built: ${version_build}"
           echo "Version that will be published: ${version_to_publish}"
-          image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
-          image_name_no_version="${IMAGE_ORG_AND_REPO}:latest"
-          docker tag "${image_name_with_version}" "${image_name_no_version}"
-          docker push "${image_name_with_version}"
-          docker push "${image_name_no_version}"
+          image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_build}"
+          image_name_to_publish_semver="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
+          image_name_to_publish_latest="${IMAGE_ORG_AND_REPO}:latest"
+          docker tag "${image_name_with_version}" "${image_name_to_publish_semver}"
+          docker tag "${image_name_with_version}" "${image_name_to_publish_latest}"
+          docker push "${image_name_to_publish_semver}"
+          docker push "${image_name_to_publish_latest}"
 
   publish_api_container_server_image:
     docker:
       - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
     steps:
       - run: sudo apt-get update -y &&  sudo apt-get install -y musl-dev
-
-      # Install Kudet
-      - run: |
-          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
-          sudo apt update
-          sudo apt install kudet
 
       # Install proto compiler. To compile startosis proto files on the fly, the APIC needs `protoc`
       - run: |
@@ -872,25 +855,23 @@ jobs:
       - run: |
           set -euo pipefail
           source core/server/scripts/_constants.env
-          version_to_publish="$(kudet get-docker-tag)"
+          version_build="$(./scripts/get-docker-tag.sh)"
+          version_to_publish="$(cat version.txt)"
+          echo "Version that was built: ${version_build}"
           echo "Version that will be published: ${version_to_publish}"
-          image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
-          image_name_no_version="${IMAGE_ORG_AND_REPO}:latest"
-          docker tag "${image_name_with_version}" "${image_name_no_version}"
-          docker push "${image_name_with_version}"
-          docker push "${image_name_no_version}"
+          image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_build}"
+          image_name_to_publish_semver="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
+          image_name_to_publish_latest="${IMAGE_ORG_AND_REPO}:latest"
+          docker tag "${image_name_with_version}" "${image_name_to_publish_semver}"
+          docker tag "${image_name_with_version}" "${image_name_to_publish_latest}"
+          docker push "${image_name_to_publish_semver}"
+          docker push "${image_name_to_publish_latest}"
 
   publish_engine_server_image:
     docker:
       - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
     steps:
       - run: sudo apt-get update -y &&  sudo apt-get install -y musl-dev
-
-      # Install Kudet
-      - run: |
-          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
-          sudo apt update
-          sudo apt install kudet
 
       - checkout
 
@@ -910,13 +891,17 @@ jobs:
       - run: |
           set -euo pipefail
           source engine/server/scripts/_constants.env
-          version_to_publish="$(kudet get-docker-tag)"
+          version_build="$(./scripts/get-docker-tag.sh)"
+          version_to_publish="$(cat version.txt)"
+          echo "Version that was built: ${version_build}"
           echo "Version that will be published: ${version_to_publish}"
-          image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
-          image_name_no_version="${IMAGE_ORG_AND_REPO}:latest"
-          docker tag "${image_name_with_version}" "${image_name_no_version}"
-          docker push "${image_name_with_version}"
-          docker push "${image_name_no_version}"
+          image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_build}"
+          image_name_to_publish_semver="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
+          image_name_to_publish_latest="${IMAGE_ORG_AND_REPO}:latest"
+          docker tag "${image_name_with_version}" "${image_name_to_publish_semver}"
+          docker tag "${image_name_with_version}" "${image_name_to_publish_latest}"
+          docker push "${image_name_to_publish_semver}"
+          docker push "${image_name_to_publish_latest}"
 
   push_cli_artifacts:
     docker:
@@ -927,11 +912,6 @@ jobs:
           echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | sudo tee /etc/apt/sources.list.d/goreleaser.list
           sudo apt update
           sudo apt install goreleaser
-      # Install Kudet
-      - run: |
-          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
-          sudo apt update
-          sudo apt install kudet
       - checkout
 
       # Generate Kurtosis Version
@@ -975,10 +955,10 @@ workflows:
                         "pattern": "https://github.com/kurtosis-tech/kurtosis-internal-docs/.*"
                     },
                     {
-                        "pattern": "https://github.com/kurtosis-tech/docs"
+                        "pattern": "https://www.notion.so/kurtosistech.*"
                     },
                     {
-                        "pattern": "https://www.notion.so/kurtosistech.*"
+                        "pattern": "https://github.com/kurtosis-tech/kurtosis/compare/.*"
                     }
                 ]
             }
@@ -986,7 +966,22 @@ workflows:
             branches:
               ignore:
                 - main
+                - release-please--branches--main--components--kurtosis
+                - gh-readonly-queue/main/.*
+
       - build_container_engine_lib:
+          filters:
+            branches:
+              ignore:
+                - main
+
+      - build_contexts_config_store:
+          filters:
+            branches:
+              ignore:
+                - main
+
+      - build_name_generator:
           filters:
             branches:
               ignore:
@@ -1129,6 +1124,10 @@ workflows:
           context:
             - gemfury-publisher
             - github-user
+          requires:
+            - publish_kurtosis_api_typescript
+            - publish_api_container_server_image
+            - publish_engine_server_image
           filters:
             branches:
               ignore: /.*/

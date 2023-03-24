@@ -124,6 +124,13 @@ export class ApiContainerServiceClient {
                response: api_container_service_pb.RenderTemplatesToFilesArtifactResponse) => void
   ): grpcWeb.ClientReadableStream<api_container_service_pb.RenderTemplatesToFilesArtifactResponse>;
 
+  listFilesArtifactNamesAndUuids(
+    request: google_protobuf_empty_pb.Empty,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: api_container_service_pb.ListFilesArtifactNamesAndUuidsResponse) => void
+  ): grpcWeb.ClientReadableStream<api_container_service_pb.ListFilesArtifactNamesAndUuidsResponse>;
+
 }
 
 export class ApiContainerServicePromiseClient {
@@ -215,6 +222,11 @@ export class ApiContainerServicePromiseClient {
     request: api_container_service_pb.RenderTemplatesToFilesArtifactArgs,
     metadata?: grpcWeb.Metadata
   ): Promise<api_container_service_pb.RenderTemplatesToFilesArtifactResponse>;
+
+  listFilesArtifactNamesAndUuids(
+    request: google_protobuf_empty_pb.Empty,
+    metadata?: grpcWeb.Metadata
+  ): Promise<api_container_service_pb.ListFilesArtifactNamesAndUuidsResponse>;
 
 }
 
