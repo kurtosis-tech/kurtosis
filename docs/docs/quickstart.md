@@ -21,11 +21,9 @@ Welcome to the [Kurtosis][homepage] quickstart! This guide will take ~15 minutes
 
 There are many ways to get help and give feedback. First, every Kurtosis command accepts a `-h` flag to print helptext. If that doesn't help, here are some ways to get support:
 
-- `kurtosis feedback "my feedback"` will take you to our [Github issue creation page](https://github.com/kurtosis-tech/kurtosis/issues/new/choose) to file an issue with pre-filled text `my feedback`.
+- `kurtosis feedback "my feedback"` will take you to our [Github issue creation page](https://github.com/kurtosis-tech/kurtosis/issues/new/choose) to file an issue with pre-filled text `my feedback`.  Passing in `--bug` or `--docs` will take you to the specific Issue template for bug reports or docs issues, respectively
 - `kurtosis feedback --calendly` opens a calendly link for a personal help session with [our cofounder Kevin][kevin-linked].
-- `kurtosis feedback --email` will open an email draft for you to send to us.
 - `kurtosis discord` command will open up our [Discord](https://discord.com/channels/783719264308953108/783719264308953111), where you can get live support via chat with our team.
-- `kurtosis twitter` will take you to our [Twitter](https://twitter.com/KurtosisTech) page where you can follow along for future updates and announcements.
 
 **Don't suffer in silence - we want to help and hear from you!**
 
