@@ -177,7 +177,7 @@ Note that Kurtosis did not execute anything until _after_ Interpretation and Val
 
 We call this approach [multi-phase runs][multi-phase-runs-reference]. While multi-phase runs has powerful benefits over traditional scripting, it also means _you cannot reference Execution values like IP address in Starlark_ because they simply don't exist at Interpretation time. We'll explore how Kurtosis gracefully handles values generated during the Execution phase at the Interpretation phase later on in the quickstart.
 
-**This section introduced Kurtosis' ability to validate environment definitions work as intended, _before_ they're run, helping developers catch errors sooner and save resources when configuring multi-container test environments.**
+**This section introduced Kurtosis' ability to validate that definitions work as intended, _before_ they are run - helping developers catch errors sooner & save resources when configuring multi-container test environments.**
 
 Add some data
 -------------
