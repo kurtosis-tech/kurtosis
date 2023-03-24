@@ -31,7 +31,9 @@ There are many ways to get help and give feedback. First, every Kurtosis command
 
 ## Setup
 
-Before you proceed, make sure you have [Kurtosis installed][installing-kurtosis-guide] (or [upgraded to latest][upgrading-kurtosis-guide] if you already have it), Docker is started, and the Docker engine is running.
+Before you proceed, please make sure you have:
+- [Installed and started the Docker engine][installing-docker-guide]
+- [Installed the Kurtosis CLI][installing-kurtosis-guide] (or [upgraded to latest][upgrading-kurtosis-guide] if you already have it)
 
 Hello, World
 ------------
@@ -975,7 +977,8 @@ Or you can simply dive deeper into our docs:
 <!-- !!!!!!!!!!!!!!!!!!!!!!!!!!! ONLY LINKS BELOW HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! -->
 
 <!--------------------------- Guides ------------------------------------>
-[installing-kurtosis-guide]: ./guides/installing-the-cli.md
+[installing-kurtosis-guide]: ./guides/installing-the-cli.md#ii-install-the-cli
+[installing-docker-guide]: ./guides/installing-the-cli.md#i-install--start-docker
 [upgrading-kurtosis-guide]: ./guides/upgrading-the-cli.md
 
 <!--------------------------- Explanations ------------------------------------>
