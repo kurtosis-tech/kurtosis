@@ -324,7 +324,7 @@ Creation Time:                        Wed, 15 Mar 2023 04:34:06 -03
 
 ========================================= Files Artifacts =========================================
 UUID           Name
-323c9a71ebbf   crimson-haze
+32810fc8c131   howling-thunder
 
 ========================================== User Services ==========================================
 UUID           Name       Ports                                                Status
