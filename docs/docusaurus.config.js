@@ -34,7 +34,8 @@ const config = {
             current: {
               label: 'Upcoming Release',
             }
-          }
+          },
+          admonitions: {}, // Add this line to enable admonitions
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),

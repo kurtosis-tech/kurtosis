@@ -6,30 +6,32 @@ slug: /quickstart
 
 Introduction
 ------------
-Welcome to the [Kurtosis][homepage] quickstart! 
 
-If you arrived here by chance and you're curious as to what Kurtosis _is_, [see here][what-is-kurtosis-explanation].
+Welcome to the [Kurtosis][homepage] quickstart! This guide will take ~15 minutes and will walk you through building a basic Kurtosis package.
 
-If you're ready to get going, this guide will take ~15 minutes and will walk you through building a basic Kurtosis package. The package that you build will start a Postgres server, seed it with data, put an API in front of it, and automate loading data into it.
+:::tip What You'll Do
 
+- Start a containerized Postgres database in Kurtosis
+- Seed your database with test data using task sequencing
+- Connect an API server to your database using dynamic service dependencies
+- Parameterize your application setup in order to automate loading data into your API
+:::
 
-#### Setup
-Before you proceed, make sure you have [Kurtosis installed][installing-kurtosis-guide] (or [upgraded to latest][upgrading-kurtosis-guide] if you already have it), Docker is started, and the Docker engine is running.
+<details><summary>Getting help and giving feedback</summary>
 
-:::tip
-If you get stuck at any point during this quickstart, there are many, many options available:
+There are many ways to get help and give feedback. First, every Kurtosis command accepts a `-h` flag to print helptext. If that doesn't help, here are some ways to get support:
 
-- Every Kurtosis command accepts a `-h` flag to print helptext
-- The `kurtosis discord` command will open up our Discord
-- The `kurtosis twitter` command will take you to our Twitter channel
-- `kurtosis feedback --github` will take you to opening a Github issue
-- `kurtosis feedback --email` will open an email to us
-- `kurtosis feedback --calendly` will open a booking link for a personal session with [our cofounder Kevin][kevin-linked]
-
-More details about our `feedback` command can be found [here][kurtosis-feedback-reference].
+- `kurtosis feedback "my feedback"` will take you to our [Github issue creation page](https://github.com/kurtosis-tech/kurtosis/issues/new/choose) to file an issue with pre-filled text `my feedback`.  Passing in `--bug` or `--docs` will take you to the specific Issue template for bug reports or docs issues, respectively
+- `kurtosis feedback --calendly` opens a calendly link for a personal help session with [our cofounder Kevin][kevin-linked].
+- `kurtosis discord` command will open up our [Discord](https://discord.com/channels/783719264308953108/783719264308953111), where you can get live support via chat with our team.
 
 **Don't suffer in silence - we want to help and hear from you!**
-:::
+
+</details>
+
+## Setup
+
+Before you proceed, make sure you have [Kurtosis installed][installing-kurtosis-guide] (or [upgraded to latest][upgrading-kurtosis-guide] if you already have it), Docker is started, and the Docker engine is running.
 
 Hello, World
 ------------
@@ -474,7 +476,7 @@ def run(plan, args):
         POSTGRES_DB,
     )
     api = plan.add_service(
-        service_name = "api",
+        service_name = "api", # Naming our PostgREST service "api"
         config = ServiceConfig(
             image = "postgrest/postgrest:v10.2.0.20230209",
             env_vars = {
@@ -541,7 +543,7 @@ UUID           Name        Ports                                                
 80987420176f   api         http: 3000/tcp                                       STOPPED
 ```
 
-The problem is clear now: the `api` service status is `STOPPED` rather than `RUNNING`. When we grab the PostgREST logs...
+The problem is clear now: the PostgREST (we named it `api`) service status is `STOPPED` rather than `RUNNING`. When we grab the PostgREST logs...
 
 ```bash
 kurtosis service logs quickstart api
@@ -617,7 +619,7 @@ ce90b471a982   postgres    postgres: 5432/tcp -> postgresql://127.0.0.1:59883   
 ```
 
 ### Review
-In this section, we declared a new PostgREST service, named `api`, with a dependency on the Postgres service.
+In this section, we declared a new PostgREST service (that we named `api` for readability) with a dependency on the Postgres service.
 
 Yet... PostgREST needs to know the IP address or hostname of the Postgres service, and we said earlier that Starlark (the Interpretation phase) can never know Execution values. How can this be?
 
@@ -637,7 +639,7 @@ postgres_url = "postgresql://{}:{}@{}:{}/{}".format(
 
 ```python
 api = plan.add_service(
-    service_name = "api",
+    service_name = "api", # Naming our PostgREST service "api"
     config = ServiceConfig(
         # ...
         env_vars = {
@@ -979,6 +981,7 @@ Or you can simply dive deeper into the docs:
 [kurtosis-enclave-inspect-reference]: ./reference/cli/enclave-inspect.md
 [kurtosis-files-upload-reference]: ./reference/cli/files-upload.md
 [kurtosis-feedback-reference]: ./reference/cli/feedback.md
+[kurtosis-twitter]: ./reference/cli/twitter.md
 
 <!-- SL Instructions Reference-->
 [starlark-instructions-reference]: ./reference/starlark-instructions.md
