@@ -27,6 +27,7 @@ const (
 	SubnetworkAttr                  = "subnetwork"
 	CpuAllocationAttr               = "cpu_allocation"
 	MemoryAllocationAttr            = "memory_allocation"
+	ReadyConditionsAttr             = "ready_conditions"
 )
 
 func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
@@ -111,14 +112,20 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 						return builtin_argument.Uint64InRange(value, MemoryAllocationAttr, 6, math.MaxUint64)
 					},
 				},
+				{
+					Name:              ReadyConditionsAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*ReadyConditions],
+					Validator:         nil,
+				},
 			},
 		},
 
-		Instantiate: instantiate,
+		Instantiate: instantiateServiceConfig,
 	}
 }
 
-func instantiate(arguments *builtin_argument.ArgumentValuesSet) (kurtosis_type_constructor.KurtosisValueType, *startosis_errors.InterpretationError) {
+func instantiateServiceConfig(arguments *builtin_argument.ArgumentValuesSet) (kurtosis_type_constructor.KurtosisValueType, *startosis_errors.InterpretationError) {
 	kurtosisValueType, err := kurtosis_type_constructor.CreateKurtosisStarlarkTypeDefault(ServiceConfigTypeName, arguments)
 	if err != nil {
 		return nil, err
@@ -266,6 +273,18 @@ func (config *ServiceConfig) ToKurtosisType() (*kurtosis_core_rpc_api_bindings.S
 	}
 
 	return builder.Build(), nil
+}
+
+func (config *ServiceConfig) GetReadyConditions() (*ReadyConditions, *startosis_errors.InterpretationError) {
+	readyConditions, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*ReadyConditions](config.KurtosisValueTypeDefault, ReadyConditionsAttr)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	if !found {
+		return nil, nil
+	}
+
+	return readyConditions, nil
 }
 
 func convertPortMapEntry(attrNameForLogging string, key starlark.Value, value starlark.Value, dictForLogging *starlark.Dict) (string, *kurtosis_core_rpc_api_bindings.Port, *startosis_errors.InterpretationError) {
