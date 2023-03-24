@@ -277,7 +277,7 @@ $ kurtosis enclave add
 ## Community and support
 
 Kurtosis is a free and source-available product maintained by the [Kurtosis][kurtosis-tech] team. We'd love to hear from you and help where we can. You can engage with our team and our community in the following ways:
-- Filing an issue in our [Github][https://github.com/kurtosis-tech/kurtosis/issues/new/choose]
+- Filing an issue in our [Github](https://github.com/kurtosis-tech/kurtosis/issues/new/choose)
 - Joining our [Discord][discord] server
 - Following us on [Twitter][twitter]
 - [Emailing us](mailto:feedback@kurtosistech.com)
