@@ -26,8 +26,8 @@ If you're looking to install the latest version of Kurtosis, [see here][install-
     ```
     brew uninstall kurtosis-tech/tap/kurtosis-cli
     ```
-
-2. Install an earlier version of Kurtosis
+   
+2. Install an earlier version of Kurtosis (eg. `0.68.6`)
    ```
    brew install kurtosis-tech/tap/kurtosis-cli@<version>
    ```
