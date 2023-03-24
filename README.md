@@ -134,7 +134,9 @@ dcfd1fb7a94e   httpd-replica-2   http: 8080/tcp -> 127.0.0.1:63781   RUNNING
 
 ### More examples
 
-See our documentation on https://docs.kurtosis.com.
+- The Kurtosis [Quickstart guide](https://docs.kurtosis.com/quickstart)
+- A curated [list of web2 and web3 examples](https://github.com/kurtosis-tech/awesome-kurtosis#awesome-kurtosis)
+- A guide on how to use Kurtosis to [simulate a network failure](https://docs.kurtosis.com)
 
 ## To start contributing to Kurtosis
 
