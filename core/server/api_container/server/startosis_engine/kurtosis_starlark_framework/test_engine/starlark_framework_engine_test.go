@@ -26,7 +26,6 @@ func TestAllRegisteredBuiltins(t *testing.T) {
 	testKurtosisPlanInstruction(t, newAssertTestCase(t))
 	testKurtosisPlanInstruction(t, newExecTestCase1(t))
 	testKurtosisPlanInstruction(t, newExecTestCase2(t))
-	testKurtosisPlanInstruction(t, newExecTestCase3(t))
 	testKurtosisPlanInstruction(t, newSetConnectionTestCase(t))
 	testKurtosisPlanInstruction(t, newSetConnectionDefaultTestCase(t))
 	testKurtosisPlanInstruction(t, newPrintTestCase(t))
@@ -36,7 +35,6 @@ func TestAllRegisteredBuiltins(t *testing.T) {
 	testKurtosisPlanInstruction(t, newRenderMultipleTemplatesTestCase(t))
 	testKurtosisPlanInstruction(t, newRequestTestCase1(t))
 	testKurtosisPlanInstruction(t, newRequestTestCase2(t))
-	testKurtosisPlanInstruction(t, newRequestTestCase3(t))
 	testKurtosisPlanInstruction(t, newStoreServiceFilesTestCase(t))
 	testKurtosisPlanInstruction(t, newStoreServiceFilesWithoutNameTestCase(t))
 	testKurtosisPlanInstruction(t, newUpdateServiceTestCase(t))
@@ -44,7 +42,6 @@ func TestAllRegisteredBuiltins(t *testing.T) {
 	testKurtosisPlanInstruction(t, newUploadFilesWithoutNameTestCase(t))
 	testKurtosisPlanInstruction(t, newWaitTestCase1(t))
 	testKurtosisPlanInstruction(t, newWaitTestCase2(t))
-	testKurtosisPlanInstruction(t, newWaitTestCase3(t))
 
 	testKurtosisHelper(t, newReadFileTestCase(t))
 	testKurtosisHelper(t, newImportModuleTestCase(t))
@@ -60,6 +57,7 @@ func TestAllRegisteredBuiltins(t *testing.T) {
 	testKurtosisTypeConstructor(t, newServiceConfigFullTestCase(t))
 	testKurtosisTypeConstructor(t, newUniformPacketDelayDistributionTestCase(t))
 	testKurtosisTypeConstructor(t, newUpdateServiceConfigTestCase(t))
+	testKurtosisTypeConstructor(t, newReadyConditionsTestCase(t))
 }
 
 func testKurtosisPlanInstruction(t *testing.T, builtin KurtosisPlanInstructionBaseTest) {
