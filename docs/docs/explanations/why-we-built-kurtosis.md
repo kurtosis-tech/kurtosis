@@ -14,7 +14,7 @@ Docker and Kubernetes are each great at serving developers in different parts of
 
 ![Why Kurtosis](@site/static/img/home/kurtosis-utility.png)
 
-Kurtosis aims at one level of abstraction higher. 
+Kurtosis aims to be at one level of abstraction higher. 
 
 In our vision, a developer should have a single platform for prototyping, testing, debugging, deploying to Prod, and observing the live system. Our goal with Kurtosis is to bring DevOps back.
 
