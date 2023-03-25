@@ -286,7 +286,7 @@ Kurtosis is a free and source-available product maintained by the [Kurtosis][kur
 <!-------- ONLY LINKS BELOW THIS POINT -------->
 [enclave]: https://docs.kurtosis.com/explanations/architecture#enclaves
 [awesome-kurtosis]: https://github.com/kurtosis-tech/awesome-kurtosis#readme
-[quickstart-reference]: /docs/docs/quickstart.md
+[quickstart-reference]: https://docs.kurtosis.com/quickstart
 [discord]: https://discord.gg/Es7QHbY4
 [kurtosis-tech]: https://github.com/kurtosis-tech
 [docs]: https://docs.kurtosis.com
