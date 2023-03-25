@@ -24,7 +24,7 @@
 Kurtosis was built to address the pain around configuring multi-container test environments. Specifically, we discovered developers had difficulties with:
 - Instantiating test environments that have dynamic dependencies between services
 - Reusing test environment definitions across different scenarios
-- Injecting data into test environments across different scenarios 
+- Injecting data into test environments 
 
 Kurtosis makes all of the above easier to accomplish.
 
