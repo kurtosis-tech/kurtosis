@@ -3,7 +3,7 @@
 
 ----
 ## What is Kurtosis?
-[Kurtosis](https://www.kurtosis.com) is a composable build system for reproducible test environments, enabling developers to easily define dynamic service dependencies, inject data, and re-use environment definitions for multi-container tests. 
+[Kurtosis](https://www.kurtosis.com) is a composable build system for reproducible test environments, enabling developers to easily define dynamic service dependencies, programmatically inject data, and re-use environment definitions for multi-container tests. 
 
 #### Kurtosis has a definition language with:
 - An instruction set of useful primitives for setting up and manipulating environment
