@@ -52,6 +52,6 @@ func TestAddServiceWithInvalidServiceNameFailsValidation(t *testing.T) {
 	require.NoError(t, err, "Unexpected error executing Starlark script")
 
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error.")
-	require.NotEmpty(t, runResult.ValidationErrors, "Unexpected validation error")
+	require.NotEmpty(t, runResult.ValidationErrors, "Expected some validation errors")
 	require.Contains(t, runResult.ValidationErrors[0].ErrorMessage, fmt.Sprintf("Service name '%s' is invalid as it contains disallowed characters. Service names can only contain characters 'a-z', 'A-Z', '0-9', '-' & '_'", invalidServiceName))
 }
