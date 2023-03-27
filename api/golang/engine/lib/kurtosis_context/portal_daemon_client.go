@@ -40,7 +40,7 @@ func CreatePortalDaemonClient(currentContext *contexts_store_generated_api.Kurto
 
 	visitLocalContext := func(localContext *contexts_store_generated_api.LocalOnlyContextV0) (*struct{}, error) {
 		if portalReachableError != nil && forLocalContextReturnNilIfUnreachable {
-			logrus.Infof("Portal daemon unreachable on port '%d' but will not fail as the context in use is a local context: '%s'", DefaultGrpcPortalClientPortNum, currentContext.GetName())
+			logrus.Debugf("Portal daemon unreachable on port '%d' but will not fail as the context in use is a local context: '%s'", DefaultGrpcPortalClientPortNum, currentContext.GetName())
 			// error is allowed here, overriding the portalClient to nil as we can't connect to it but this is
 			// more or less expected based on the forLocalContextReturnNilIfUnreachable flag
 			portalClient = nil
