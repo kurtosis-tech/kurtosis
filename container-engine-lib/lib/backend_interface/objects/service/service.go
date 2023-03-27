@@ -67,6 +67,6 @@ func (service *Service) GetMaybePublicPorts() map[string]*port_spec.PortSpec {
 	return service.maybePublicPorts
 }
 
-func ValidateServiceName(serviceName string) bool {
+func IsServiceNameValid(serviceName string) bool {
 	return compiledWordWrappedServiceNameRegex.MatchString(serviceName)
 }

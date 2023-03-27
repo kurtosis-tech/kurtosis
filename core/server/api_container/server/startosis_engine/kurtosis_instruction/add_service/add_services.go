@@ -272,7 +272,7 @@ func validateAndConvertConfigsAndReadyConditions(
 			return nil, nil, startosis_errors.NewInterpretationError("One key of the '%s' dictionary is not a string (was '%s'). Keys of this argument should correspond to service names, which should be strings", ConfigsArgName, reflect.TypeOf(serviceName))
 		}
 
-		if isValidServiceName := service.ValidateServiceName(serviceNameStr.GoString()); !isValidServiceName {
+		if isValidServiceName := service.IsServiceNameValid(serviceNameStr.GoString()); !isValidServiceName {
 			return nil, nil, startosis_errors.NewInterpretationError("Service name '%v' is invalid as it contains disallowed characters. Service names can only contain characters 'a-z', 'A-Z', '0-9', '-' & '_'", serviceNameStr.GoString())
 		}
 
