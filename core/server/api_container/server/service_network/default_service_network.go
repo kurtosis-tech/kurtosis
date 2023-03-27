@@ -36,6 +36,7 @@ import (
 	"strings"
 	"sync"
 	"text/template"
+	"time"
 )
 
 const (
@@ -56,6 +57,8 @@ const (
 	exactlyOneShortenedUuidMatch = 1
 
 	singleServiceStartupBatch = 1
+
+	checkPortAvailabilityTimeOut = 15 * time.Second
 )
 
 var (
@@ -1308,8 +1311,27 @@ func (network *DefaultServiceNetwork) startRegisteredService(
 	return startedService, nil
 }
 
-func waitUntilAllTCPPortsAreOpen(ports map[string]*port_spec.PortSpec) error {
+//TODO implement this method to wait for all the TCP and UDP ports availability
+/*func waitUntilAllPortsAreOpen(ports map[string]*port_spec.PortSpec) error {
 
+}*/
+
+func scanPort(ip net.IP, portSpec *port_spec.PortSpec) error {
+	portNumberStr := fmt.Sprintf("%v", portSpec.GetNumber())
+	networkAddress := net.JoinHostPort(ip.String(), portNumberStr)
+	networkStr := strings.ToLower(portSpec.GetTransportProtocol().String())
+	conn, err := net.DialTimeout(networkStr, networkAddress, checkPortAvailabilityTimeOut)
+	if err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred while calling network address '%s' with port protocol '%s' and using time out '%v'",
+			networkAddress,
+			portSpec.GetTransportProtocol().String(),
+			checkPortAvailabilityTimeOut,
+		)
+	}
+	defer conn.Close()
+	return nil
 }
 
 // destroyService is the opposite of startRegisteredService. It removes a started service from the enclave. Note that it does not

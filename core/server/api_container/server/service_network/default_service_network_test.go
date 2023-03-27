@@ -25,10 +25,12 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	bolt "go.etcd.io/bbolt"
 	"net"
+	"net/netip"
 	"os"
 	"strconv"
 	"testing"
@@ -42,6 +44,12 @@ const (
 	fakeApiContainerVersion = "0.0.0"
 	apiContainerPort        = uint16(1234)
 	testContainerImageName  = "kurtosistech/test-container"
+
+	tcpNetworkName           = "tcp4"
+	udpNetworkName           = "udp"
+	localhostStr             = "localhost"
+	availableFreePortKeyStr  = "0"
+	availableFreePortAddress = localhostStr + ":" + availableFreePortKeyStr
 )
 
 var (
@@ -1401,6 +1409,117 @@ func TestUpdateTrafficControl(t *testing.T) {
 		actualPacketConnectionConfigForService := recordedPacketConnectionConfig[0]
 		require.Equal(t, expected, actualPacketConnectionConfigForService)
 	}
+}
+
+func TestScanPort(t *testing.T) {
+	localhost := net.ParseIP("127.0.0.1")
+
+	tcpAddrPort, udpAddrPort, closeOpenedPortsFunc, err := openFreeTCPAndUDPLocalHostPortAddressesForTesting()
+	require.NoError(t, err)
+	defer closeOpenedPortsFunc()
+
+	tcpPortSpec, err := port_spec.NewPortSpec(tcpAddrPort.Port(), port_spec.TransportProtocol_TCP, "")
+	require.NoError(t, err)
+
+	err = scanPort(localhost, tcpPortSpec)
+	require.NoError(t, err)
+
+	udpPortSpec, err := port_spec.NewPortSpec(udpAddrPort.Port(), port_spec.TransportProtocol_UDP, "")
+	require.NoError(t, err)
+
+	err = scanPort(localhost, udpPortSpec)
+	require.NoError(t, err)
+}
+
+func openFreeTCPAndUDPLocalHostPortAddressesForTesting() (*netip.AddrPort, *netip.AddrPort, func() error, error) {
+	availableTCPddress, err := net.ResolveTCPAddr(tcpNetworkName, availableFreePortAddress)
+	if err != nil {
+		return nil, nil, nil, stacktrace.Propagate(
+			err,
+			"An error occurred resolving TCP address '%s' in network '%s'",
+			availableFreePortAddress,
+			tcpNetworkName,
+		)
+	}
+
+	tcpListener, err := net.ListenTCP(tcpNetworkName, availableTCPddress)
+	if err != nil {
+		return nil, nil, nil, stacktrace.Propagate(
+			err,
+			"An error occurred listening TCP address '%s' in network '%s'",
+			availableTCPddress,
+			tcpNetworkName,
+		)
+	}
+	shouldCloseTCPListener := true
+	defer func() {
+		if shouldCloseTCPListener {
+			if err := tcpListener.Close(); err != nil {
+				logrus.Warnf("We tried to close TCP address '%v' we opened for testing purpose but something fails, you should manually close it", availableTCPddress)
+			}
+		}
+	}()
+
+	tcpAddressPort, err := netip.ParseAddrPort(tcpListener.Addr().String())
+	if err != nil {
+		return nil, nil, nil, stacktrace.Propagate(
+			err,
+			"An error occurred parsing TCP address '%s'",
+			tcpListener.Addr(),
+		)
+	}
+
+	availableUDPAddress, err := net.ResolveUDPAddr(udpNetworkName, availableFreePortAddress)
+	if err != nil {
+		return nil, nil, nil, stacktrace.Propagate(
+			err,
+			"An error occurred resolving UDP address '%s' in network '%s'",
+			availableFreePortAddress,
+			udpNetworkName,
+		)
+	}
+
+	udpListener, err := net.ListenUDP(udpNetworkName, availableUDPAddress)
+	if err != nil {
+		return nil, nil, nil, stacktrace.Propagate(
+			err,
+			"An error occurred listening UDP address '%s' in network '%s'",
+			availableUDPAddress,
+			udpNetworkName,
+		)
+	}
+	shouldCloseUDPListener := true
+	defer func() {
+		if shouldCloseUDPListener {
+			if err := udpListener.Close(); err != nil {
+				logrus.Warnf("We tried to close UDP address '%v' we opened for testing purpose but something fails, you should manually close it", availableUDPAddress)
+			}
+		}
+	}()
+
+	udpAddressPort, err := netip.ParseAddrPort(udpListener.LocalAddr().String())
+	if err != nil {
+		return nil, nil, nil, stacktrace.Propagate(
+			err,
+			"An error occurred parsing UDP address '%s'",
+			udpListener.LocalAddr(),
+		)
+	}
+
+	closeBothListenersFunc := func() error {
+		if err := tcpListener.Close(); err != nil {
+			logrus.Warnf("We tried to close TCP address '%v' we opened for testing purpose but something fails, you should manually close it", availableTCPddress)
+		}
+
+		if err := udpListener.Close(); err != nil {
+			logrus.Warnf("We tried to close UDP address '%v' we opened for testing purpose but something fails, you should manually close it", availableUDPAddress)
+		}
+		return nil
+	}
+
+	shouldCloseTCPListener = false
+	shouldCloseUDPListener = false
+	return &tcpAddressPort, &udpAddressPort, closeBothListenersFunc, nil
 }
 
 func testIpFromInt(i int) net.IP {
