@@ -10,6 +10,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -42,6 +43,11 @@ func run(ctx context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error
 	contextIdentifier, err := args.GetNonGreedyArg(contextIdentifierArgKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected a value for context identifier arg '%v' but none was found; this is a bug with Kurtosis!", contextIdentifierArgKey)
+	}
+
+	engineManager, err := engine_manager.NewEngineManager(ctx)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating an engine manager.")
 	}
 
 	isContextSwitchSuccessful := false
@@ -94,8 +100,20 @@ func run(ctx context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error
 			return stacktrace.Propagate(err, "Error switching Kurtosis portal context")
 		}
 	}
+	logrus.Infof("Context switched to '%s', Kurtosis engine will now be restarted", contextIdentifier)
 
-	logrus.Infof("Successfully switched to context '%s'", contextIdentifier)
+	if err = engineManager.StopEngineIdempotently(ctx); err != nil {
+		return stacktrace.Propagate(err, "Unable to stop the Kurtosis engine currently running. Context will be "+
+			"rolled back to '%s'", contextPriorToSwitch.GetName())
+	}
+	_, _, err = engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, logrus.InfoLevel)
+	if err != nil {
+		return stacktrace.Propagate(err, "Unable to start a new Kurtosis engine. Context will be rolled back "+
+			"to '%s' and the Kurtosis engine will remain stopped. It can be restarted with 'kurtosis %s %s'",
+			contextPriorToSwitch.GetName(), command_str_consts.EngineCmdStr, command_str_consts.EngineRestartCmdStr)
+	}
+
+	logrus.Info("Successfully switched context")
 	isContextSwitchSuccessful = true
 	return nil
 }
