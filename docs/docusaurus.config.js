@@ -67,7 +67,8 @@ const config = {
         logo: {
           alt: 'Kurtosis',
           src: 'img/brand/kurtosis-logo-white-text.png',
-          href: 'https://kurtosis.com'
+          href: 'https://kurtosis.com',
+          target: '_self'
         },
         items: [
           {
