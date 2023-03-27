@@ -10,10 +10,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 )
 
-const (
-// Permissions for the files & directories we create
-)
-
 func EngineLogs(ctx context.Context, outputDirpath string, dockerManager *docker_manager.DockerManager) error {
 	engineContainerSearchLabels := map[string]string{
 		label_key_consts.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),
