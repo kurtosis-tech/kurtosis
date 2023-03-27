@@ -7,7 +7,7 @@ slug: /quickstart
 Introduction
 ------------
 
-Welcome to the [Kurtosis][homepage] quickstart! This guide will take ~15 minutes and will walk you through configuring and building a basic Kurtosis package that can be used as an environment for running multi-container tests.
+Welcome to the [Kurtosis][homepage] quickstart! This guide will take ~15 minutes and will walk you through building a basic Kurtosis package.
 
 :::tip What You'll Do
 
