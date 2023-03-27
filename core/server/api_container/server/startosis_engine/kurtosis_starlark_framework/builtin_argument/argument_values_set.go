@@ -89,7 +89,14 @@ func (arguments *ArgumentValuesSet) ExtractArgumentValue(argumentName string, ar
 	if !reflect.TypeOf(arguments.values[argumentIdx]).AssignableTo(paramVar.Type()) {
 		return fmt.Errorf("Unable to extract value for argument '%s'. Types were not assignable (got '%s', expecting '%s')", argumentName, paramVar.Type(), reflect.TypeOf(arguments.values[argumentIdx]))
 	}
-	paramVar.Set(reflect.ValueOf(arguments.values[argumentIdx]))
+
+	// Deep copy the value to avoid having the value modified downstream in the script execution
+	copiedVal, err := DeepCopyArgumentValue(arguments.values[argumentIdx])
+	if err != nil {
+		return fmt.Errorf("Argument '%s' could not be copied to a separate value", argumentName)
+	}
+
+	paramVar.Set(reflect.ValueOf(copiedVal))
 	return nil
 }
 

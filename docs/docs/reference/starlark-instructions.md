@@ -69,6 +69,7 @@ The `add_service` function returns a `service` object that contains service info
 - A `hostname` property representing [a future reference][future-references-reference] to the service's hostname.
 - An `ip_address` property representing [a future reference][future-references-reference] to the service's IP address.
 - A `ports` dictionary containing [future reference][future-references-reference] information about each port that the service is listening on.
+- A `name` property representing the name of the service.
 
 The value of the `ports` dictionary is an object with three properties, `number`, `transport_protocol` and `application_protocol` (optional), which themselves are [future references][future-references-reference].
 
@@ -155,6 +156,21 @@ plan.assert(
     target_value = 200,
 )
 ```
+
+:::caution
+
+Asserts are typed, so running
+
+```python
+plan.assert(
+    value = "0",
+    assertion = "==",
+    target_value = 0,
+)
+```
+
+Will fail. If needed, you can use the `extract` feature to parse the types of your outputs.
+:::
 
 ### exec
 
@@ -351,7 +367,9 @@ The instruction returns a response, which is a `dict` with following key-value p
 * `response["body"]` - returns the future reference to the `body` of the the response
 * `response["extract.some-custom-field"]` - it is an optional field and returns the future reference to the value extracted from `body`, which is explained below.
 
-`jq`'s [regular expressions](https://devdocs.io/jq-regular-expressions-pcre/) is used to extract the information from the response `body` and is assigned to a custom field. **The `response["body"]` must be a valid json object for manipulating data using `extractions`**. A valid `response["body"]` can be used for extractions. See below for an example of how this can be done for the [PostHttpRequestRecipe][starlark-types-post-http-recipe]:
+#### extract
+
+`jq`'s [regular expressions](https://stedolan.github.io/jq/manual/) is used to extract the information from the response `body` and is assigned to a custom field. **The `response["body"]` must be a valid json object for manipulating data using `extractions`**. A valid `response["body"]` can be used for extractions. See below for an example of how this can be done for the [PostHttpRequestRecipe][starlark-types-post-http-recipe]:
 
  ```python
  # Assuming response["body"] looks like {"result": {"foo": ["hello/world/welcome"]}}
@@ -371,7 +389,7 @@ post_response = plan.request(
 
 NOTE: In the above example, `response` also has a custom field `extract.second-element-from-list-head` and the value is `world` which is extracted from the `response[body]`.
 
-These fields can be used in conjuction with [`assert`][assert] and [`wait`][wait] instructions, like so:
+These fields can be used in conjunction with [`assert`][assert] and [`wait`][wait] instructions, like so:
 ```python
 # Following the example above, response["extract.second-element-from-list-head"] is world
 post_response = plan.request(
@@ -384,6 +402,27 @@ plan.assert(response["extract.second-element-from-list-head"], "==", "world")
 # Make a post request and check if the extracted field in the response is world
 plan.wait(post_request_recipe, "extract.second-element-from-list-head", "==", "world")
 ```
+
+NOTE: `jq` returns a typed output that translates into the correspondent Starlark type. You can cast it using `jq` to match
+your desired output type:
+
+```python
+# Assuming response["body"] looks like {"url": "posts/1"}}
+post_request_recipe = PostHttpRequestRecipe(
+    ...
+    extract = {
+        "post-number": '.url | split ("/") | .[1]',
+        "post-number-as-int": '.url | split ("/") | .[1] | tonumber',
+    },
+)
+response = plan.request(
+    recipe = post_request_recipe,
+)
+# response["extract.post-number"] is "1" (starlark.String)
+# response["extract.post-number-as-int"] is 1 (starlark.Int)
+```
+
+For more details see [ `jq`'s builtin operators and functions](https://stedolan.github.io/jq/manual/#Builtinoperatorsandfunctions)
 
 ### set_connection
 
@@ -507,7 +546,7 @@ The return value is a [future reference][future-references-reference] to the nam
 
 ### wait
 
-The `wait` instruction on the [`plan`][plan-reference] object fails the Starlark script or package with an execution error if the assertion does not succeed in a given period of time.
+The `wait` instruction on the [`plan`][plan-reference] object fails the Starlark script or package with an execution error if the [assertion][assert] does not succeed in a given period of time.
 
 To learn more about the accepted recipe types, please checkout [ExecRecipe][starlark-types-exec-recipe], [GetHttpRequestRecipe][starlark-types-get-http-recipe] or [PostHttpRequestRecipe][starlark-types-post-http-recipe].
 
@@ -572,6 +611,7 @@ in Kurtosis Starlark by default
 [add-service]: #add_service
 [wait]: #wait
 [assert]: #assert
+[extract]: #extract
 
 [files-artifacts-reference]: ./files-artifacts.md
 [future-references-reference]: ./future-references.md

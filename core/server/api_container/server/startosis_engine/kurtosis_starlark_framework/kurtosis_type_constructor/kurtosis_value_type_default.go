@@ -12,7 +12,7 @@ import (
 // KurtosisValueTypeDefault is a helper type to easily build a type that implements the KurtosisValueType interface
 // straight from a builtin_argument.ArgumentValuesSet, without having to manually implement all the functions
 type KurtosisValueTypeDefault struct {
-	KurtosisValueType
+	*starlarkstruct.Struct
 
 	typeName  string
 	arguments *builtin_argument.ArgumentValuesSet
@@ -24,15 +24,15 @@ func CreateKurtosisStarlarkTypeDefault(name string, arguments *builtin_argument.
 		return nil, interpretationErr
 	}
 	return &KurtosisValueTypeDefault{
-		KurtosisValueType: underlyingStruct,
-		typeName:          name,
-		arguments:         arguments,
+		Struct:    underlyingStruct,
+		typeName:  name,
+		arguments: arguments,
 	}, nil
 }
 
 func ExtractAttrValue[AttrValueType starlark.Value](value *KurtosisValueTypeDefault, attrName string) (AttrValueType, bool, *startosis_errors.InterpretationError) {
 	var result AttrValueType
-	attrValue, err := value.KurtosisValueType.Attr(attrName)
+	attrValue, err := value.Struct.Attr(attrName)
 	if err != nil {
 		// starlarkstruct.Struct.Attr() throws an error only when the attribute does not exist. Therefore, we know here
 		// this is not a real error, it's just that the attribute name could not be found.
@@ -47,6 +47,29 @@ func ExtractAttrValue[AttrValueType starlark.Value](value *KurtosisValueTypeDefa
 			reflect.TypeOf(result))
 	}
 	return result, true, nil
+}
+
+func (value *KurtosisValueTypeDefault) Copy() (*KurtosisValueTypeDefault, error) {
+	copiedStructDict := starlark.StringDict{}
+	value.Struct.ToStringDict(copiedStructDict)
+	copiedStruct := starlarkstruct.FromStringDict(value.Struct.Constructor(), copiedStructDict)
+
+	argumentValues := make([]starlark.Value, len(value.arguments.GetDefinition()))
+	for idx, argumentDefinition := range value.arguments.GetDefinition() {
+		if value.arguments.IsSet(argumentDefinition.Name) {
+			argumentValue := argumentDefinition.ZeroValueProvider()
+			err := value.arguments.ExtractArgumentValue(argumentDefinition.Name, &argumentValue)
+			if err != nil {
+				return nil, err
+			}
+			argumentValues[idx] = argumentValue
+		}
+	}
+	return &KurtosisValueTypeDefault{
+		Struct:    copiedStruct,
+		typeName:  value.typeName,
+		arguments: value.arguments,
+	}, nil
 }
 
 func (value *KurtosisValueTypeDefault) Type() string {
