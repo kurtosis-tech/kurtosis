@@ -56,7 +56,7 @@ brew install kurtosis-tech/tap/kurtosis-cli
 For other installations methods, visit these [install instructions](https://docs.kurtosis.com/install#ii-install-the-cli).
 
 ### Running Kurtosis
-Kurtosis can be used to create ephemeral environments called [enclaves][enclave]. We'll create a simple [Starlark][starlark-explanations] script to specify what we want our enclave to look like and what it will contain. Let's write one that spins up multiple replicas of `httpd`:
+Kurtosis can be used to create ephemeral environments called [enclaves][enclave]. We'll create a simple [Starlark][starlark-explanation] script to specify what we want our enclave to look like and what it will contain. Let's write one that spins up multiple replicas of `httpd`:
 
 ```python
 cat > script.star << EOF
