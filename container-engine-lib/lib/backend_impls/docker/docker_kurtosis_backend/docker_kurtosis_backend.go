@@ -141,6 +141,10 @@ func (backend *DockerKurtosisBackend) GetEngineLogs(ctx context.Context, outputD
 	return engine_functions.EngineLogs(ctx, outputDirpath, backend.dockerManager)
 }
 
+func (backend *DockerKurtosisBackend) DumpKurtosis(ctx context.Context, outputDirpath string) error {
+	return nil
+}
+
 func (backend *DockerKurtosisBackend) RegisterUserServices(_ context.Context, enclaveUuid enclave.EnclaveUUID, services map[service.ServiceName]bool) (map[service.ServiceName]*service.ServiceRegistration, map[service.ServiceName]error, error) {
 	serviceRegistrationsForEnclave, found := backend.serviceRegistrations[enclaveUuid]
 	if !found {
