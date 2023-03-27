@@ -368,7 +368,7 @@ The instruction returns a response, which is a `dict` with following key-value p
 
 #### extract
 
-`jq`'s [regular expressions](https://devdocs.io/jq-regular-expressions-pcre/) is used to extract the information from the response `body` and is assigned to a custom field. **The `response["body"]` must be a valid json object for manipulating data using `extractions`**. A valid `response["body"]` can be used for extractions. See below for an example of how this can be done for the [PostHttpRequestRecipe][starlark-types-post-http-recipe]:
+`jq`'s [regular expressions](https://stedolan.github.io/jq/manual/) is used to extract the information from the response `body` and is assigned to a custom field. **The `response["body"]` must be a valid json object for manipulating data using `extractions`**. A valid `response["body"]` can be used for extractions. See below for an example of how this can be done for the [PostHttpRequestRecipe][starlark-types-post-http-recipe]:
 
  ```python
  # Assuming response["body"] looks like {"result": {"foo": ["hello/world/welcome"]}}
@@ -421,6 +421,7 @@ response = plan.request(
 # response["extract.post-number-as-int"] is 1 (starlark.Int)
 ```
 
+For more details see [ `jq`'s builtin operators and functions](https://stedolan.github.io/jq/manual/#Builtinoperatorsandfunctions)
 
 ### set_connection
 
