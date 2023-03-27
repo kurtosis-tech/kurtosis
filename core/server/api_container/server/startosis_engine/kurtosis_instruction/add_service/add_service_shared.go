@@ -64,6 +64,10 @@ func validateSingleService(validatorEnvironment *startosis_validator.ValidatorEn
 			return startosis_errors.NewValidationError("Service was about to be started inside subnetwork '%s' but the Kurtosis enclave was started with subnetwork capabilities disabled. Make sure to run the Starlark code with subnetwork enabled.", *serviceConfig.Subnetwork)
 		}
 	}
+	if isValidServiceName := service.IsServiceNameValid(serviceName); !isValidServiceName {
+		return startosis_errors.NewValidationError("Service name '%v' is invalid as it contains disallowed characters. Service names can only contain characters 'a-z', 'A-Z', '0-9', '-' & '_'", serviceName)
+	}
+
 	if validatorEnvironment.DoesServiceNameExist(serviceName) {
 		return startosis_errors.NewValidationError("There was an error validating '%s' as service '%s' already exists", AddServiceBuiltinName, serviceName)
 	}
