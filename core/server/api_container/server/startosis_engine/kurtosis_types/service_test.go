@@ -14,19 +14,20 @@ const (
 	testInvalidAttr          = "invalid-test-attr"
 	httpApplicationProtocol  = "http"
 	emptyApplicationProtocol = ""
+	serviceNameTestValue     = starlark.String("test-service")
 )
 
 func TestService_StringRepresentation(t *testing.T) {
 	service, err := createTestServiceType()
 	require.Nil(t, err)
-	expectedStr := `Service(hostname = "datastore-1", ip_address = "{{kurtosis:service_name.ip_address}}", ports = {"grpc": PortSpec(number=123, transport_protocol="TCP")})`
+	expectedStr := `Service(hostname = "datastore-1", ip_address = "{{kurtosis:service_name.ip_address}}", name = "test-service", ports = {"grpc": PortSpec(number=123, transport_protocol="TCP")})`
 	require.Equal(t, expectedStr, service.String())
 }
 
 func TestService_StringRepresentationWithApplicationProtocol(t *testing.T) {
 	service, err := createTestServiceTypeWithApplicationProtocol()
 	require.Nil(t, err)
-	expectedStr := `Service(hostname = "datastore-1", ip_address = "{{kurtosis:service_name.ip_address}}", ports = {"grpc": PortSpec(number=123, transport_protocol="TCP", application_protocol="http")})`
+	expectedStr := `Service(hostname = "datastore-1", ip_address = "{{kurtosis:service_name.ip_address}}", name = "test-service", ports = {"grpc": PortSpec(number=123, transport_protocol="TCP", application_protocol="http")})`
 	require.Equal(t, expectedStr, service.String())
 }
 
@@ -78,7 +79,7 @@ func TestService_TestAttrNames(t *testing.T) {
 	service, err := createTestServiceType()
 	require.Nil(t, err)
 	attrNames := service.AttrNames()
-	require.Equal(t, []string{hostnameAttr, ipAddressAttr, portsAttr}, attrNames)
+	require.Equal(t, []string{hostnameAttr, ipAddressAttr, serviceNameAttr, portsAttr}, attrNames)
 }
 
 func createTestServiceType() (*Service, error) {
@@ -90,7 +91,7 @@ func createTestServiceType() (*Service, error) {
 	if err := ports.SetKey(starlark.String("grpc"), portSpec); err != nil {
 		return nil, err
 	}
-	service := NewService(hostnameTestValue, ipAddressTestValue, ports)
+	service := NewService(serviceNameTestValue, hostnameTestValue, ipAddressTestValue, ports)
 	return service, nil
 }
 
@@ -103,6 +104,6 @@ func createTestServiceTypeWithApplicationProtocol() (*Service, error) {
 	if err := ports.SetKey(starlark.String("grpc"), portSpec); err != nil {
 		return nil, err
 	}
-	service := NewService(hostnameTestValue, ipAddressTestValue, ports)
+	service := NewService(serviceNameTestValue, hostnameTestValue, ipAddressTestValue, ports)
 	return service, nil
 }
