@@ -101,13 +101,7 @@ func (builtin *AddServiceCapabilities) Interpret(arguments *builtin_argument.Arg
 		return nil, interpretationErr
 	}
 
-	serviceNameGoStr := serviceName.GoString()
-
-	if isValidServiceName := service.IsServiceNameValid(serviceNameGoStr); !isValidServiceName {
-		return nil, startosis_errors.NewInterpretationError("Service name '%v' is invalid as it contains disallowed characters. Service names can only contain characters 'a-z', 'A-Z', '0-9', '-' & '_'", serviceNameGoStr)
-	}
-
-	builtin.serviceName = service.ServiceName(serviceNameGoStr)
+	builtin.serviceName = service.ServiceName(serviceName.GoString())
 	builtin.serviceConfig = apiServiceConfig
 	builtin.readyConditions = readyConditions
 	builtin.resultUuid, err = builtin.runtimeValueStore.CreateValue()
