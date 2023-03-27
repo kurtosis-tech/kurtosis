@@ -13,7 +13,9 @@ on:
 
 # cancel redundant builds
 concurrency:
-  group: "title-checker-${{ github.ref }}"
+  # for a pull_request_target trigger head_ref will be available otherwise
+  # it falls back to ref
+  group: "title-checker-${{ github.head_ref || github.ref }}"
   cancel-in-progress: true
 
 jobs:
@@ -22,8 +24,6 @@ jobs:
     if: contains(github.ref_name, 'gh-readonly-queue/main/') != true
 
     runs-on: ubuntu-latest
-    permissions:
-      statuses: write
     steps:
       - uses: aslafy-z/conventional-pr-title-action@v3
         env:

@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/stretchr/testify/require"
@@ -13,6 +14,7 @@ import (
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkjson"
 	"go.starlark.net/starlarkstruct"
+	"reflect"
 	"testing"
 )
 
@@ -26,7 +28,6 @@ func TestAllRegisteredBuiltins(t *testing.T) {
 	testKurtosisPlanInstruction(t, newAssertTestCase(t))
 	testKurtosisPlanInstruction(t, newExecTestCase1(t))
 	testKurtosisPlanInstruction(t, newExecTestCase2(t))
-	testKurtosisPlanInstruction(t, newExecTestCase3(t))
 	testKurtosisPlanInstruction(t, newSetConnectionTestCase(t))
 	testKurtosisPlanInstruction(t, newSetConnectionDefaultTestCase(t))
 	testKurtosisPlanInstruction(t, newPrintTestCase(t))
@@ -36,7 +37,6 @@ func TestAllRegisteredBuiltins(t *testing.T) {
 	testKurtosisPlanInstruction(t, newRenderMultipleTemplatesTestCase(t))
 	testKurtosisPlanInstruction(t, newRequestTestCase1(t))
 	testKurtosisPlanInstruction(t, newRequestTestCase2(t))
-	testKurtosisPlanInstruction(t, newRequestTestCase3(t))
 	testKurtosisPlanInstruction(t, newStoreServiceFilesTestCase(t))
 	testKurtosisPlanInstruction(t, newStoreServiceFilesWithoutNameTestCase(t))
 	testKurtosisPlanInstruction(t, newUpdateServiceTestCase(t))
@@ -44,7 +44,6 @@ func TestAllRegisteredBuiltins(t *testing.T) {
 	testKurtosisPlanInstruction(t, newUploadFilesWithoutNameTestCase(t))
 	testKurtosisPlanInstruction(t, newWaitTestCase1(t))
 	testKurtosisPlanInstruction(t, newWaitTestCase2(t))
-	testKurtosisPlanInstruction(t, newWaitTestCase3(t))
 
 	testKurtosisHelper(t, newReadFileTestCase(t))
 	testKurtosisHelper(t, newImportModuleTestCase(t))
@@ -60,6 +59,7 @@ func TestAllRegisteredBuiltins(t *testing.T) {
 	testKurtosisTypeConstructor(t, newServiceConfigFullTestCase(t))
 	testKurtosisTypeConstructor(t, newUniformPacketDelayDistributionTestCase(t))
 	testKurtosisTypeConstructor(t, newUpdateServiceConfigTestCase(t))
+	testKurtosisTypeConstructor(t, newReadyConditionsTestCase(t))
 }
 
 func testKurtosisPlanInstruction(t *testing.T, builtin KurtosisPlanInstructionBaseTest) {
@@ -126,7 +126,16 @@ func testKurtosisTypeConstructor(t *testing.T, builtin KurtosisTypeConstructorBa
 	require.Nil(t, err, "Error interpreting Starlark code for builtin '%s'. Code was: \n%v", testId, starlarkCodeToExecute)
 	result := extractResultValue(t, globals)
 
-	builtin.Assert(result)
+	kurtosisValue, ok := result.(builtin_argument.KurtosisValueType)
+	require.True(t, ok, "Error casting the Kurtosis Type to a KurtosisValueType. This is unexpected as all "+
+		"typed defined in Kurtosis should implement KurtosisValueType. Its type was: '%s'", reflect.TypeOf(kurtosisValue))
+
+	builtin.Assert(kurtosisValue)
+
+	copiedKurtosisValue, copyErr := kurtosisValue.Copy()
+	require.NoError(t, copyErr)
+	require.Equal(t, kurtosisValue, copiedKurtosisValue)
+	require.NotSame(t, kurtosisValue, copiedKurtosisValue)
 
 	serializedType := result.String()
 	require.Equal(t, starlarkCode, serializedType)

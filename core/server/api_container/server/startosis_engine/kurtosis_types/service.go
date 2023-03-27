@@ -10,9 +10,10 @@ import (
 const (
 	serviceTypeName = "Service"
 
-	hostnameAttr  = "hostname"
-	ipAddressAttr = "ip_address"
-	portsAttr     = "ports"
+	hostnameAttr    = "hostname"
+	ipAddressAttr   = "ip_address"
+	portsAttr       = "ports"
+	serviceNameAttr = "name"
 )
 
 // Service is just a wrapper around a regular starlarkstruct.Struct
@@ -21,11 +22,12 @@ type Service struct {
 	*starlarkstruct.Struct
 }
 
-func NewService(hostname starlark.String, ipAddress starlark.String, ports *starlark.Dict) *Service {
+func NewService(serviceName starlark.String, hostname starlark.String, ipAddress starlark.String, ports *starlark.Dict) *Service {
 	structDict := starlark.StringDict{
-		hostnameAttr:  hostname,
-		ipAddressAttr: ipAddress,
-		portsAttr:     ports,
+		serviceNameAttr: serviceName,
+		hostnameAttr:    hostname,
+		ipAddressAttr:   ipAddress,
+		portsAttr:       ports,
 	}
 	return &Service{
 		Struct: starlarkstruct.FromStringDict(starlark.String(serviceTypeName), structDict),
