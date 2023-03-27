@@ -2,6 +2,7 @@ package engine_functions
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/stacktrace"
@@ -13,9 +14,10 @@ const (
 	engineLogsSubDirpathSuffix = "engine-logs"
 	createdDirPerms            = 0755
 	enclavesSubDirpathFragment = "enclaves"
+	enclaveNameUuidSeparator   = "--"
 )
 
-var allEnclavesFilter *enclave.EnclaveFilters
+var allEnclavesFilter = &enclave.EnclaveFilters{}
 
 func DumpKurtosis(ctx context.Context, outputDirpath string, backend backend_interface.KurtosisBackend) error {
 
@@ -44,7 +46,7 @@ func DumpKurtosis(ctx context.Context, outputDirpath string, backend backend_int
 
 	// perhaps dont error immediately and dump what you can before sending errors
 	for enclaveUuid, enclave := range allEnclaves {
-		subDirForEnclaveBeingDumped := path.Join(enclave.GetName(), string(enclaveUuid))
+		subDirForEnclaveBeingDumped := fmt.Sprintf("%v%v%v", enclave.GetName(), enclaveNameUuidSeparator, string(enclaveUuid))
 		specificEnclaveOutputDir := path.Join(outputDirpath, enclavesSubDirpathFragment, subDirForEnclaveBeingDumped)
 		if err = backend.DumpEnclave(ctx, enclaveUuid, specificEnclaveOutputDir); err != nil {
 			return stacktrace.Propagate(err, "An error occurred while dumping enclave with uuid '%v'", enclaveUuid)
