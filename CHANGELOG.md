@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.70.2](https://github.com/kurtosis-tech/kurtosis/compare/0.70.1...0.70.2) (2023-03-27)
+
+
+### Features
+
+* Automatically restart engine on context switch ([#329](https://github.com/kurtosis-tech/kurtosis/issues/329)) ([b0712cc](https://github.com/kurtosis-tech/kurtosis/commit/b0712cc42fca1b4ba322bf473da57db4eab8c462))
+
+
+### Bug Fixes
+
+* Fix info CLI log for portal not running ([#330](https://github.com/kurtosis-tech/kurtosis/issues/330)) ([0fb938e](https://github.com/kurtosis-tech/kurtosis/commit/0fb938e31c29778ac122675e7706e3ad1fd0fc93))
+
 ## [0.70.1](https://github.com/kurtosis-tech/kurtosis/compare/0.70.0...0.70.1) (2023-03-27)
 
 
