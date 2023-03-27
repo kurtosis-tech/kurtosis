@@ -9,9 +9,10 @@ import (
 )
 
 const (
-	addServiceWithInvalidServiceName = "add-service-invalid-service-name-test"
+	addServiceWithInvalidServiceName = "invalid-service-name"
 	addServiceInvalidServiceNameTest = `
-CONTAINER_IMAGE = "kurtosistech/example-datastore-server
+CONTAINER_IMAGE = "kurtosistech/example-datastore-server"
+GRPC_PORT = 1323
 
 def run(plan):
 	config = ServiceConfig(
@@ -22,7 +23,7 @@ def run(plan):
 			"grpc": PortSpec(number = GRPC_PORT, transport_protocol = "TCP")
 		}
 	)
-	plan.add_service(service_name = "this;.is-invalid", config = config)
+	plan.add_service(service_name = "this;.is:invalid", config = config)
 `
 )
 
@@ -50,4 +51,5 @@ func TestAddServiceWithInvalidServiceNameFailsValidation(t *testing.T) {
 
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error.")
 	require.NotEmpty(t, runResult.ValidationErrors, "Unexpected validation error")
+	require.Contains(t, runResult.ValidationErrors[0].ErrorMessage, "Service name 'this;.is:invalid' is invalid as it contains disallowed characters. Service names can only contain characters 'a-z', 'A-Z', '0-9', '-' & '_'")
 }
