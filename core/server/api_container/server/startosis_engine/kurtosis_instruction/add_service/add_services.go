@@ -310,7 +310,7 @@ func makeAddServicesInterpretationReturnValue(serviceConfigs map[service.Service
 		if err != nil {
 			return nil, nil, startosis_errors.WrapWithInterpretationError(err, "Unable to create runtime value to hold '%v' command return values", AddServicesBuiltinName)
 		}
-		serviceObject, interpretationErr := makeAddServiceInterpretationReturnValue(serviceConfig, resultUuids[serviceName])
+		serviceObject, interpretationErr := makeAddServiceInterpretationReturnValue(serviceNameStr, serviceConfig, resultUuids[serviceName])
 		if interpretationErr != nil {
 			return nil, nil, interpretationErr
 		}
