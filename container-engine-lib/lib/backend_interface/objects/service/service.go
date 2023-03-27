@@ -8,11 +8,12 @@ import (
 )
 
 const (
-	ServiceNameRegex = "^[a-zA-Z0-9-_]+$"
+	ServiceNameRegex            = "[a-zA-Z0-9-_]+"
+	wordWrappedServiceNameRegex = "^" + ServiceNameRegex + "$"
 )
 
 var (
-	serviceNameCompiledRegex = regexp.MustCompile(ServiceNameRegex)
+	compiledWordWrappedServiceNameRegex = regexp.MustCompile(wordWrappedServiceNameRegex)
 )
 
 type ServiceName string
@@ -67,5 +68,5 @@ func (service *Service) GetMaybePublicPorts() map[string]*port_spec.PortSpec {
 }
 
 func ValidateServiceName(serviceName string) bool {
-	return serviceNameCompiledRegex.MatchString(serviceName)
+	return compiledWordWrappedServiceNameRegex.MatchString(serviceName)
 }
