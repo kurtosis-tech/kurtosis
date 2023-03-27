@@ -103,11 +103,14 @@ func run(ctx context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error
 	logrus.Infof("Context switched to '%s', Kurtosis engine will now be restarted", contextIdentifier)
 
 	if err = engineManager.StopEngineIdempotently(ctx); err != nil {
-		return stacktrace.Propagate(err, "Unable to stop the Kurtosis engine currently running. Context will be rolled back to '%s'", contextPriorToSwitch.GetName())
+		return stacktrace.Propagate(err, "Unable to stop the Kurtosis engine currently running. Context will be "+
+			"rolled back to '%s'", contextPriorToSwitch.GetName())
 	}
 	_, _, err = engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, logrus.InfoLevel)
 	if err != nil {
-		return stacktrace.Propagate(err, "Unable to start a new Kurtosis engine. Context will be rolled back to '%s' and the Kurtosis engine will remain stopped", contextPriorToSwitch.GetName())
+		return stacktrace.Propagate(err, "Unable to start a new Kurtosis engine. Context will be rolled back "+
+			"to '%s' and the Kurtosis engine will remain stopped. It can be restarted with 'kurtosis %s %s'",
+			contextPriorToSwitch.GetName(), command_str_consts.EngineCmdStr, command_str_consts.EngineRestartCmdStr)
 	}
 
 	logrus.Info("Successfully switched context")
