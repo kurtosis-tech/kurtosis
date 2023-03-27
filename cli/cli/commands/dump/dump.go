@@ -19,8 +19,8 @@ const (
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
 
-	defaultEnclaveDumpDir = "kurtosis-dump"
-	outputDirIsOptional   = true
+	defaultKurtosisDumpDir = "kurtosis-dump"
+	outputDirIsOptional    = true
 )
 
 var KurtosisDump = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -33,7 +33,7 @@ var KurtosisDump = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCom
 	Args: []*args.ArgConfig{
 		{
 			Key:          outputDirpathArg,
-			DefaultValue: defaultEnclaveDumpDir,
+			DefaultValue: defaultKurtosisDumpDir,
 			IsOptional:   outputDirIsOptional,
 		},
 	},
