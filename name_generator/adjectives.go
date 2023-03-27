@@ -74,7 +74,6 @@ var ADJECTIVES = []string{
 	"quiet",
 	"red",
 	"restless",
-	"rotting",
 	"rustling",
 	"rusty",
 	"sacred",
