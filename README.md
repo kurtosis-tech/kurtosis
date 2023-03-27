@@ -3,10 +3,21 @@
 
 ----
 ## What is Kurtosis?
-[Kurtosis](https://www.kurtosis.com) is a composable build system for reproducible test environments, enabling developers to easily define dynamic service dependencies, programmatically inject data, and re-use environment definitions for multi-container tests. 
+[Kurtosis](https://www.kurtosis.com) is a composable build system for multi-container test environments. Kurtosis makes it easier for developers to set up test environments that require dynamic setup logic (e.g. passing IPs or runtime-generated data between services) or programmatic data seeding.
+
+## Why Kurtosis?
+
+Developers usually set up these types of dynamic environments with a free-form scripting language like bash or Python, interacting with the Docker CLI or Docker Compose. Kurtosis is designed to make these setups easier to maintain and reuse across different test scenarios.
+
+In Kurtosis, test environments have these properties:
+- Environment-level portability: the entire test environment always runs the same way, regardless of the host machine
+- Composability: environments can be composed and connected together without needing to know the inner details of each setup
+- Parameterizability: environments can be parameterized, so that they're easy to modify for use across different test scenarios
+
+## Architecture
 
 #### Kurtosis has a definition language with:
-- An instruction set of useful primitives for setting up and manipulating environment
+- An instruction set of useful primitives for setting up and manipulating environments
 - A scriptable Python-like SDK in Starlark, a build language used by Google’s Bazel
 - A package management system for shareability and composability
 
@@ -16,17 +27,8 @@
 
 #### Kurtosis has a runtime to:
 - Run multi-container test environments over Docker or Kubernetes, depending on how you wish to scale
-- Enable debugging and investigation of problems live, as they're happening in your test environment, with an introspective toolkit
-- Manage file dependencies to ensure tests environments are completely reproducible across different test runs and backends
-
-## Why Kurtosis?
-
-Kurtosis was built to address the pain around configuring multi-container test environments. Specifically, we discovered developers had difficulties with:
-- Instantiating test environments that have dynamic dependencies between services
-- Reusing test environment definitions across different scenarios
-- Injecting data into test environments 
-
-Kurtosis makes all of the above easier to accomplish.
+- Enable debugging and investigation of problems live, as they're happening in your test environment
+- Manage file dependencies to ensure complete portability of test environments across different test runs and backends
 
 Read more about Kurtosis on our [website](https://www.kurtosis.com/) and in our [docs][docs].
 ---
