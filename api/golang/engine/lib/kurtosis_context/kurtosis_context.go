@@ -4,11 +4,14 @@ import (
 	"context"
 	"fmt"
 	"github.com/Masterminds/semver/v3"
+	portal_constructors "github.com/kurtosis-tech/kurtosis-portal/api/golang/constructors"
+	portal_api "github.com/kurtosis-tech/kurtosis-portal/api/golang/generated"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/kurtosis_version"
+	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -40,7 +43,8 @@ var apiContainerLogLevel = logrus.DebugLevel
 
 // Docs available at https://docs.kurtosis.com/sdk#kurtosiscontext
 type KurtosisContext struct {
-	client kurtosis_engine_rpc_api_bindings.EngineServiceClient
+	engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient
+	portalClient portal_api.KurtosisPortalClientClient
 }
 
 // NewKurtosisContextFromLocalEngine
@@ -60,12 +64,25 @@ func NewKurtosisContextFromLocalEngine() (*KurtosisContext, error) {
 	}
 
 	engineServiceClient := kurtosis_engine_rpc_api_bindings.NewEngineServiceClient(conn)
-	if err := validateEngineApiVersion(ctx, engineServiceClient); err != nil {
+	if err = validateEngineApiVersion(ctx, engineServiceClient); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred validating the Kurtosis engine API version")
 	}
 
+	// TODO: Here we're checking whether the context is local or remote to connect to the daemon. This is because
+	//  the daemon will not immediately run on all Kurtosis users' laptop. Once that's the case, we can remove this if
+	//  and systematically connect to the locally running Kurtosis portal daemon.
+	currentContext, err := store.GetContextsConfigStore().GetCurrentContext()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error retrieving current context")
+	}
+	portalClient, err := CreatePortalDaemonClient(currentContext, true)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error building client for Kurtosis Portal daemon")
+	}
+
 	kurtosisContext := &KurtosisContext{
-		client: engineServiceClient,
+		engineClient: engineServiceClient,
+		portalClient: portalClient,
 	}
 
 	return kurtosisContext, nil
@@ -85,12 +102,12 @@ func (kurtosisCtx *KurtosisContext) CreateEnclave(
 		IsPartitioningEnabled:  isPartitioningEnabled,
 	}
 
-	response, err := kurtosisCtx.client.CreateEnclave(ctx, createEnclaveArgs)
+	response, err := kurtosisCtx.engineClient.CreateEnclave(ctx, createEnclaveArgs)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating an enclave with name '%v'", enclaveName)
 	}
 
-	enclaveContext, err := newEnclaveContextFromEnclaveInfo(response.EnclaveInfo)
+	enclaveContext, err := newEnclaveContextFromEnclaveInfo(ctx, kurtosisCtx.portalClient, response.EnclaveInfo)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating an enclave context from a newly-created enclave; this should never happen")
 	}
@@ -105,7 +122,7 @@ func (kurtosisCtx *KurtosisContext) GetEnclaveContext(ctx context.Context, encla
 		return nil, stacktrace.Propagate(err, "An error occurred while getting enclave with identifier '%v'", enclaveIdentifier)
 	}
 
-	enclaveCtx, err := newEnclaveContextFromEnclaveInfo(enclaveInfo)
+	enclaveCtx, err := newEnclaveContextFromEnclaveInfo(ctx, kurtosisCtx.portalClient, enclaveInfo)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating an enclave context from the returned enclave info")
 	}
@@ -115,7 +132,7 @@ func (kurtosisCtx *KurtosisContext) GetEnclaveContext(ctx context.Context, encla
 
 // Docs available at https://docs.kurtosis.com/sdk#getenclaves---enclaves-enclaves
 func (kurtosisCtx *KurtosisContext) GetEnclaves(ctx context.Context) (*Enclaves, error) {
-	response, err := kurtosisCtx.client.GetEnclaves(ctx, &emptypb.Empty{})
+	response, err := kurtosisCtx.engineClient.GetEnclaves(ctx, &emptypb.Empty{})
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -179,7 +196,7 @@ func (kurtosisCtx *KurtosisContext) StopEnclave(ctx context.Context, enclaveIden
 		EnclaveIdentifier: enclaveIdentifier,
 	}
 
-	if _, err := kurtosisCtx.client.StopEnclave(ctx, stopEnclaveArgs); err != nil {
+	if _, err := kurtosisCtx.engineClient.StopEnclave(ctx, stopEnclaveArgs); err != nil {
 		return stacktrace.Propagate(err, "An error occurred stopping enclave with identifier '%v'", enclaveIdentifier)
 	}
 
@@ -192,7 +209,7 @@ func (kurtosisCtx *KurtosisContext) DestroyEnclave(ctx context.Context, enclaveI
 		EnclaveIdentifier: enclaveIdentifier,
 	}
 
-	if _, err := kurtosisCtx.client.DestroyEnclave(ctx, destroyEnclaveArgs); err != nil {
+	if _, err := kurtosisCtx.engineClient.DestroyEnclave(ctx, destroyEnclaveArgs); err != nil {
 		return stacktrace.Propagate(err, "An error occurred destroying enclave with identifier '%v'", enclaveIdentifier)
 	}
 
@@ -204,7 +221,7 @@ func (kurtosisCtx *KurtosisContext) Clean(ctx context.Context, shouldCleanAll bo
 	cleanArgs := &kurtosis_engine_rpc_api_bindings.CleanArgs{
 		ShouldCleanAll: shouldCleanAll,
 	}
-	cleanResponse, err := kurtosisCtx.client.Clean(ctx, cleanArgs)
+	cleanResponse, err := kurtosisCtx.engineClient.Clean(ctx, cleanArgs)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred when trying to perform a clean with the clean-all arg set to '%v'", shouldCleanAll)
 	}
@@ -249,7 +266,7 @@ func (kurtosisCtx *KurtosisContext) GetServiceLogs(
 		)
 	}
 
-	stream, err := kurtosisCtx.client.GetServiceLogs(ctxWithCancel, getServiceLogsArgs)
+	stream, err := kurtosisCtx.engineClient.GetServiceLogs(ctxWithCancel, getServiceLogsArgs)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred streaming service logs using args '%+v'", getServiceLogsArgs)
 	}
@@ -269,7 +286,7 @@ func (kurtosisCtx *KurtosisContext) GetServiceLogs(
 
 // Docs available at https://docs.kurtosis.com/sdk#getexistingandhistoricalenclaveidentifiers---enclaveidentifiers-enclaveidentifiers
 func (kurtosisCtx *KurtosisContext) GetExistingAndHistoricalEnclaveIdentifiers(ctx context.Context) (*EnclaveIdentifiers, error) {
-	historicalEnclaveIdentifiers, err := kurtosisCtx.client.GetExistingAndHistoricalEnclaveIdentifiers(ctx, &emptypb.Empty{})
+	historicalEnclaveIdentifiers, err := kurtosisCtx.engineClient.GetExistingAndHistoricalEnclaveIdentifiers(ctx, &emptypb.Empty{})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while fetching existing and historical enclave identifiers")
 	}
@@ -323,8 +340,24 @@ func runReceiveStreamLogsFromTheServerRoutine(
 }
 
 func newEnclaveContextFromEnclaveInfo(
+	ctx context.Context,
+	portalClient portal_api.KurtosisPortalClientClient,
 	enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo,
 ) (*enclaves.EnclaveContext, error) {
+	// for remote contexts, we need to tunnel the APIC port to the local machine
+	if portalClient != nil {
+		apicGrpcPort := enclaveInfo.GetApiContainerHostMachineInfo().GetGrpcPortOnHostMachine()
+		forwardApicPortArgs := portal_constructors.NewForwardPortArgs(apicGrpcPort, apicGrpcPort)
+		if _, err := portalClient.ForwardPort(ctx, forwardApicPortArgs); err != nil {
+			return nil, stacktrace.Propagate(err, "Unable to forward remote API container port to the local machine")
+		}
+
+		apicGrpcProxyPort := enclaveInfo.GetApiContainerHostMachineInfo().GetGrpcProxyPortOnHostMachine()
+		forwardApicProxyPortArgs := portal_constructors.NewForwardPortArgs(apicGrpcProxyPort, apicGrpcProxyPort)
+		if _, err := portalClient.ForwardPort(ctx, forwardApicProxyPortArgs); err != nil {
+			return nil, stacktrace.Propagate(err, "Unable to forward remote API container proxy port to the local machine")
+		}
+	}
 
 	enclaveContainersStatus := enclaveInfo.GetContainersStatus()
 	if enclaveContainersStatus != kurtosis_engine_rpc_api_bindings.EnclaveContainersStatus_EnclaveContainersStatus_RUNNING {

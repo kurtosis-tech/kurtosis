@@ -193,13 +193,16 @@ port_spec = PortSpec(
     # The port number which we want to expose
     # MANDATORY
     number = 3000,
-    
+
     # Transport protocol for the port (can be either "TCP" or "UDP")
-    # Optional (DEFAULT:"TCP")
+    # OPTIONAL (DEFAULT:"TCP")
     transport_protocol = "TCP",
 
-    # Application protocol for the port
-    # Optional
+    # Application protocol for the port that will be displayed in front of URLs containing the port
+    # For example:
+    #  "http" to get a URL of "http://..."
+    #  "postgresql" to get a URL of "postgresql://..."
+    # OPTIONAL
     application_protocol = "http",
 )
 ```
