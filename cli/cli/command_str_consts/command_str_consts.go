@@ -44,6 +44,7 @@ const (
 	FilesStoreWebCmdStr     = "storeweb"
 	FilesStoreServiceCmdStr = "storeservice"
 	FilesRenderTemplate     = "rendertemplate"
+	KurtosisDumpCmdStr      = "dump"
 	ServiceCmdStr           = "service"
 	ServiceAddCmdStr        = "add"
 	ServiceLogsCmdStr       = "logs"

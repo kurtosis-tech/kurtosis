@@ -10,7 +10,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 )
 
-func EngineLogs(ctx context.Context, outputDirpath string, dockerManager *docker_manager.DockerManager) error {
+func GetEngineLogs(ctx context.Context, outputDirpath string, dockerManager *docker_manager.DockerManager) error {
 	engineContainerSearchLabels := map[string]string{
 		label_key_consts.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),
 		label_key_consts.ContainerTypeDockerLabelKey.GetString(): label_value_consts.EngineContainerTypeDockerLabelValue.GetString(),
