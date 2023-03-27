@@ -21,7 +21,7 @@ In Kurtosis, test environments have these properties:
 - A scriptable Python-like SDK in Starlark, a build language used by Google’s Bazel
 - A package management system for shareability and composability
 
-#### Kurtosis has a validator for:
+#### Kurtosis has a validator with:
 - Compile-time safety to quickly catch errors in test environment definitions
 - The ability to dry-run test environment definitions to verify what will be run, before running
 
