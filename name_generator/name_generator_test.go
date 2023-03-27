@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-var allowedCharacters = regexp.MustCompile("^[a-z]?$")
+var allowedCharacters = regexp.MustCompile("^[a-z]+$")
 
 var listsToVerify = map[string][]string{
 	"adjectives":           ADJECTIVES,
@@ -50,7 +50,7 @@ func Test_onlyAllowedCharacters(t *testing.T) {
 			require.True(
 				t,
 				allowedCharacters.MatchString(item),
-				"Item %v in list '%v' doesn't match allowed item regex",
+				"Item '%v' in list '%v' doesn't match allowed item regex",
 				item,
 				listDescription,
 			)
