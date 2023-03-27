@@ -7,7 +7,7 @@
 
 ## Why Kurtosis?
 
-Developers usually set up these types of dynamic environments with a free-form scripting language like bash or Python, interacting with the Docker CLI or Docker Compose. Kurtosis is designed to make these setups easier to maintain and reuse across different test scenarios.
+Developers usually set up these types of dynamic environments with a free-form scripting language like bash or Python, interacting with the Docker CLI or Docker Compose. Kurtosis is designed to make these setups easier to maintain and reuse in different test scenarios.
 
 In Kurtosis, test environments have these properties:
 - Environment-level portability: the entire test environment always runs the same way, regardless of the host machine
@@ -32,7 +32,6 @@ In Kurtosis, test environments have these properties:
 
 Read more about Kurtosis on our [website](https://www.kurtosis.com/) and in our [docs][docs].
 ---
-
 ## To start using Kurtosis
 
 ### Prerequisites
