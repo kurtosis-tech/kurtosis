@@ -3,10 +3,10 @@ package test_engine
 import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/stretchr/testify/require"
-	"go.starlark.net/starlark"
 	"testing"
 )
 
@@ -34,7 +34,7 @@ func (t *serviceConfigMinimalTestCase) GetStarlarkCode() string {
 		service_config.ImageAttr, TestContainerImageName)
 }
 
-func (t *serviceConfigMinimalTestCase) Assert(typeValue starlark.Value) {
+func (t *serviceConfigMinimalTestCase) Assert(typeValue builtin_argument.KurtosisValueType) {
 	serviceConfigStarlark, ok := typeValue.(*service_config.ServiceConfig)
 	require.True(t, ok)
 

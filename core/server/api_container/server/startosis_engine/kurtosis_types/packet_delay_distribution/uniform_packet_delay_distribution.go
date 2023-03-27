@@ -37,7 +37,7 @@ func NewUniformPacketDelayDistributionType() *kurtosis_type_constructor.Kurtosis
 	}
 }
 
-func instantiateUniformPacketDelayDistribution(arguments *builtin_argument.ArgumentValuesSet) (kurtosis_type_constructor.KurtosisValueType, *startosis_errors.InterpretationError) {
+func instantiateUniformPacketDelayDistribution(arguments *builtin_argument.ArgumentValuesSet) (builtin_argument.KurtosisValueType, *startosis_errors.InterpretationError) {
 	kurtosisValueType, err := kurtosis_type_constructor.CreateKurtosisStarlarkTypeDefault(UniformPacketDelayDistributionTypeName, arguments)
 	if err != nil {
 		return nil, err
@@ -49,6 +49,16 @@ func instantiateUniformPacketDelayDistribution(arguments *builtin_argument.Argum
 
 type UniformPacketDelayDistribution struct {
 	*kurtosis_type_constructor.KurtosisValueTypeDefault
+}
+
+func (packetDelayDistribution *UniformPacketDelayDistribution) Copy() (builtin_argument.KurtosisValueType, error) {
+	copiedValueType, err := packetDelayDistribution.KurtosisValueTypeDefault.Copy()
+	if err != nil {
+		return nil, err
+	}
+	return &UniformPacketDelayDistribution{
+		KurtosisValueTypeDefault: copiedValueType,
+	}, nil
 }
 
 func (packetDelayDistribution *UniformPacketDelayDistribution) ToKurtosisType() (*partition_topology.PacketDelayDistribution, *startosis_errors.InterpretationError) {
