@@ -81,7 +81,7 @@ func NewReadyConditionsType() *kurtosis_type_constructor.KurtosisTypeConstructor
 	}
 }
 
-func instantiateReadyConditions(arguments *builtin_argument.ArgumentValuesSet) (kurtosis_type_constructor.KurtosisValueType, *startosis_errors.InterpretationError) {
+func instantiateReadyConditions(arguments *builtin_argument.ArgumentValuesSet) (builtin_argument.KurtosisValueType, *startosis_errors.InterpretationError) {
 	kurtosisValueType, err := kurtosis_type_constructor.CreateKurtosisStarlarkTypeDefault(ReadyConditionsTypeName, arguments)
 	if err != nil {
 		return nil, err
@@ -94,6 +94,16 @@ func instantiateReadyConditions(arguments *builtin_argument.ArgumentValuesSet) (
 // ReadyConditions is a starlark.Value that holds all the information needed for ensuring service readiness
 type ReadyConditions struct {
 	*kurtosis_type_constructor.KurtosisValueTypeDefault
+}
+
+func (readyConditions *ReadyConditions) Copy() (builtin_argument.KurtosisValueType, error) {
+	copiedValueType, err := readyConditions.KurtosisValueTypeDefault.Copy()
+	if err != nil {
+		return nil, err
+	}
+	return &ReadyConditions{
+		KurtosisValueTypeDefault: copiedValueType,
+	}, nil
 }
 
 func (readyConditions *ReadyConditions) GetRecipe() (recipe.Recipe, *startosis_errors.InterpretationError) {

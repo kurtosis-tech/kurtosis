@@ -36,7 +36,7 @@ func NewUpdateServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstru
 	}
 }
 
-func instantiate(arguments *builtin_argument.ArgumentValuesSet) (kurtosis_type_constructor.KurtosisValueType, *startosis_errors.InterpretationError) {
+func instantiate(arguments *builtin_argument.ArgumentValuesSet) (builtin_argument.KurtosisValueType, *startosis_errors.InterpretationError) {
 	kurtosisValueType, err := kurtosis_type_constructor.CreateKurtosisStarlarkTypeDefault(UpdateServiceConfigTypeName, arguments)
 	if err != nil {
 		return nil, err
@@ -48,6 +48,16 @@ func instantiate(arguments *builtin_argument.ArgumentValuesSet) (kurtosis_type_c
 
 type UpdateServiceConfig struct {
 	*kurtosis_type_constructor.KurtosisValueTypeDefault
+}
+
+func (config *UpdateServiceConfig) Copy() (builtin_argument.KurtosisValueType, error) {
+	copiedValueType, err := config.KurtosisValueTypeDefault.Copy()
+	if err != nil {
+		return nil, err
+	}
+	return &UpdateServiceConfig{
+		KurtosisValueTypeDefault: copiedValueType,
+	}, nil
 }
 
 func (config *UpdateServiceConfig) ToKurtosisType() (*kurtosis_core_rpc_api_bindings.UpdateServiceConfig, *startosis_errors.InterpretationError) {
