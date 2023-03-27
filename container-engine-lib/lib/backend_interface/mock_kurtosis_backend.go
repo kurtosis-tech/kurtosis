@@ -925,7 +925,7 @@ func (_c *MockKurtosisBackend_DumpEnclave_Call) RunAndReturn(run func(context.Co
 }
 
 // EngineLogs provides a mock function with given fields: ctx, outputDirpath
-func (_m *MockKurtosisBackend) EngineLogs(ctx context.Context, outputDirpath string) error {
+func (_m *MockKurtosisBackend) GetEngineLogs(ctx context.Context, outputDirpath string) error {
 	ret := _m.Called(ctx, outputDirpath)
 
 	var r0 error
@@ -938,7 +938,7 @@ func (_m *MockKurtosisBackend) EngineLogs(ctx context.Context, outputDirpath str
 	return r0
 }
 
-// MockKurtosisBackend_EngineLogs_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'EngineLogs'
+// MockKurtosisBackend_EngineLogs_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetEngineLogs'
 type MockKurtosisBackend_EngineLogs_Call struct {
 	*mock.Call
 }
@@ -947,7 +947,7 @@ type MockKurtosisBackend_EngineLogs_Call struct {
 //   - ctx context.Context
 //   - outputDirpath string
 func (_e *MockKurtosisBackend_Expecter) EngineLogs(ctx interface{}, outputDirpath interface{}) *MockKurtosisBackend_EngineLogs_Call {
-	return &MockKurtosisBackend_EngineLogs_Call{Call: _e.mock.On("EngineLogs", ctx, outputDirpath)}
+	return &MockKurtosisBackend_EngineLogs_Call{Call: _e.mock.On("GetEngineLogs", ctx, outputDirpath)}
 }
 
 func (_c *MockKurtosisBackend_EngineLogs_Call) Run(run func(ctx context.Context, outputDirpath string)) *MockKurtosisBackend_EngineLogs_Call {

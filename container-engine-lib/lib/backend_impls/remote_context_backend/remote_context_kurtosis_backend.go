@@ -76,8 +76,8 @@ func (backend *RemoteContextKurtosisBackend) DestroyEngines(ctx context.Context,
 	return backend.localKurtosisBackend.DestroyEngines(ctx, filters)
 }
 
-func (backend *RemoteContextKurtosisBackend) EngineLogs(ctx context.Context, outputDirpath string) error {
-	return backend.localKurtosisBackend.EngineLogs(ctx, outputDirpath)
+func (backend *RemoteContextKurtosisBackend) GetEngineLogs(ctx context.Context, outputDirpath string) error {
+	return backend.localKurtosisBackend.GetEngineLogs(ctx, outputDirpath)
 }
 
 func (backend *RemoteContextKurtosisBackend) CreateEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, enclaveName string, isPartitioningEnabled bool) (*enclave.Enclave, error) {

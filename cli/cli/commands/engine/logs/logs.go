@@ -54,7 +54,7 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting output dirpath using arg key '%v'", outputDirpathArg)
 	}
 
-	if err := kurtosisBackend.EngineLogs(ctx, outputDirpath); err != nil {
+	if err := kurtosisBackend.GetEngineLogs(ctx, outputDirpath); err != nil {
 		return stacktrace.Propagate(err, "An error occurred dumping engine logs to '%v'", outputDirpath)
 	}
 

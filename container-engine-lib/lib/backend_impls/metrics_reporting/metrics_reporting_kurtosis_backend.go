@@ -87,8 +87,8 @@ func (backend *MetricsReportingKurtosisBackend) DestroyEngines(ctx context.Conte
 	return successes, failures, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) EngineLogs(ctx context.Context, outputDirpath string) error {
-	if err := backend.underlying.EngineLogs(ctx, outputDirpath); err != nil {
+func (backend *MetricsReportingKurtosisBackend) GetEngineLogs(ctx context.Context, outputDirpath string) error {
+	if err := backend.underlying.GetEngineLogs(ctx, outputDirpath); err != nil {
 		return stacktrace.Propagate(err, "An error occurred while dumping engine logs to dir '%v'", outputDirpath)
 	}
 	return nil

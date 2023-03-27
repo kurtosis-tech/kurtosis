@@ -63,7 +63,7 @@ type KurtosisBackend interface {
 		resultErr error, // Represents an error with the function itself, rather than the engines
 	)
 
-	EngineLogs(ctx context.Context, outputDirpath string) error
+	GetEngineLogs(ctx context.Context, outputDirpath string) error
 
 	// Creates an enclave with the given enclave ID
 	CreateEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, enclaveName string, isPartitioningEnabled bool) (*enclave.Enclave, error)

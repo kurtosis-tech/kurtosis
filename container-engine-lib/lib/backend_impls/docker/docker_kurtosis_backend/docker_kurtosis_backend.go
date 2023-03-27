@@ -137,7 +137,7 @@ func (backend *DockerKurtosisBackend) DestroyEngines(
 	return engine_functions.DestroyEngines(ctx, filters, backend.dockerManager)
 }
 
-func (backend *DockerKurtosisBackend) EngineLogs(ctx context.Context, outputDirpath string) error {
+func (backend *DockerKurtosisBackend) GetEngineLogs(ctx context.Context, outputDirpath string) error {
 	return engine_functions.EngineLogs(ctx, outputDirpath, backend.dockerManager)
 }
 
