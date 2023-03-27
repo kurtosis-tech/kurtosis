@@ -10,6 +10,7 @@ replace (
 	github.com/kurtosis-tech/kurtosis/core/launcher => ../launcher
 	github.com/kurtosis-tech/kurtosis/kurtosis_version => ../../kurtosis_version
 	github.com/kurtosis-tech/kurtosis/name_generator => ../../name_generator
+	github.com/kurtosis-tech/kurtosis/contexts-config-store => ../../contexts-config-store
 )
 
 require (
