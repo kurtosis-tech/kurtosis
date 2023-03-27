@@ -61,7 +61,7 @@ func NewPortSpecType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 	}
 }
 
-func instantiate(arguments *builtin_argument.ArgumentValuesSet) (kurtosis_type_constructor.KurtosisValueType, *startosis_errors.InterpretationError) {
+func instantiate(arguments *builtin_argument.ArgumentValuesSet) (builtin_argument.KurtosisValueType, *startosis_errors.InterpretationError) {
 	kurtosisValueType, interpretationErr := kurtosis_type_constructor.CreateKurtosisStarlarkTypeDefault(PortSpecTypeName, arguments)
 	if interpretationErr != nil {
 		return nil, interpretationErr
@@ -94,6 +94,16 @@ func CreatePortSpec(portNumber uint32, transportProtocol kurtosis_core_rpc_api_b
 	}
 	return &PortSpec{
 		KurtosisValueTypeDefault: kurtosisDefaultValue,
+	}, nil
+}
+
+func (portSpec *PortSpec) Copy() (builtin_argument.KurtosisValueType, error) {
+	copiedValueType, err := portSpec.KurtosisValueTypeDefault.Copy()
+	if err != nil {
+		return nil, err
+	}
+	return &PortSpec{
+		KurtosisValueTypeDefault: copiedValueType,
 	}, nil
 }
 

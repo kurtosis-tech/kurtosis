@@ -138,7 +138,7 @@ This repository is structured as a monorepo, containing the following projects:
 
 To build Kurtosis, you must the following dependencies installed:
 
-- Bash (5 or above) + Git
+#### Bash (5 or above) + Git
 
 On MacOS:
 ```bash
@@ -151,28 +151,28 @@ chsh -s "${BREW_PREFIX}/bin/bash"
 # Install modern version of git, the one that ships on MacOS is too old
 brew install git
 ```
-- Docker
+#### Docker
   
 On MacOS:
 ```bash
 brew install docker
 ```
 
-- Go (1.18 or above)
+#### Go (1.18 or above)
 
 On MacOS:
 ```bash
 brew install go@1.18
 ```
 
-- Goreleaser
+#### Goreleaser
 
 On MacOS:
 ```bash
 brew install goreleaser/tap/goreleaser
 ```
 
-- Node (16.14 or above) and Yarn
+#### Node (16.14 or above) and Yarn
 
 On MacOS, using `NVM`:
 ```bash
@@ -181,7 +181,7 @@ mkdir ~/.nvm
 nvm install 16.14.0
 npm install -g yarn
 ```
-- Go and Typescript protobuf compiler binaries
+#### Go and Typescript protobuf compiler binaries
 
 On MacOS:
 ```bash
@@ -191,7 +191,7 @@ brew install protoc-gen-grpc-web
 npm install -g ts-protoc-gen
 npm install -g grpc-tools
 ```
-- Musl
+#### Musl
 
 On MacOS:
 ```bash

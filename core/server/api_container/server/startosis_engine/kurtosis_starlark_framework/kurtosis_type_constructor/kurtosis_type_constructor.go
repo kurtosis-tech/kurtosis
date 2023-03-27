@@ -7,7 +7,7 @@ import (
 	"go.starlark.net/starlark"
 )
 
-type Instantiate func(arguments *builtin_argument.ArgumentValuesSet) (KurtosisValueType, *startosis_errors.InterpretationError)
+type Instantiate func(arguments *builtin_argument.ArgumentValuesSet) (builtin_argument.KurtosisValueType, *startosis_errors.InterpretationError)
 
 // KurtosisTypeConstructor is the type for creating builtin used to instantiate a Kurtosis type
 type KurtosisTypeConstructor struct {
