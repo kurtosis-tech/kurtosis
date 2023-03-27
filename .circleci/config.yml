@@ -16,6 +16,12 @@ param_cli_cluster_backend: &param_cli_cluster_backend
     type: enum
     enum: ["docker"] # ["docker", "minikube"]
 
+# Install go version 1.18 to run our integration tests on the minimal version we support
+steps_install_go_1_18: &steps_install_go_1_18
+  - run: |
+      wget https://go.dev/dl/go1.18.10.linux-amd64.tar.gz
+      sudo rm -rf /usr/local/go
+      sudo tar -C /usr/local -xzf go1.18.10.linux-amd64.tar.gz
 
 # Steps to prepare a job for Kubernetes testing
 steps_prepare_testing_k8s: &steps_prepare_testing_k8s
@@ -102,7 +108,7 @@ parameters:
     default: 20.10.7
   api-go-version:
     type: string
-    default: "1.15.13"
+    default: "1.18"
   # Separate (and newer) than the API version because we want lots of people to be able to use the Kurtosis API and the API doesn't need to be
   # the same version as the server
   server-go-version:
@@ -203,7 +209,7 @@ jobs:
 
   build_name_generator:
     docker:
-      - image: "cimg/go:<< pipeline.parameters.api-go-version>>"
+      - image: "cimg/go:<< pipeline.parameters.go-version>>"
     steps:
       - checkout
       - <<: *abort_job_if_only_docs_changes
@@ -423,6 +429,9 @@ jobs:
 
       - attach_workspace:
           at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
+
+      - <<: *steps_install_go_1_18
+
       # We call Kurtosis a bunch later, so add it to the PATH so we can call it easily
       - run: |
           echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
@@ -566,6 +575,9 @@ jobs:
       # Set up Kurtosis
       - attach_workspace:
           at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
+
+      - <<: *steps_install_go_1_18
+
       - run: |
           echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
           sudo apt update
@@ -638,6 +650,8 @@ jobs:
       # Set up Kurtosis
       - attach_workspace:
           at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
+
+      - <<: *steps_install_go_1_18
 
       - run: |
           echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list

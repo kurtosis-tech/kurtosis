@@ -5,10 +5,10 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/stretchr/testify/require"
-	"go.starlark.net/starlark"
 	"testing"
 )
 
@@ -50,7 +50,7 @@ func (t *serviceConfigFullTestCase) GetStarlarkCode() string {
 	return starlarkCode
 }
 
-func (t *serviceConfigFullTestCase) Assert(typeValue starlark.Value) {
+func (t *serviceConfigFullTestCase) Assert(typeValue builtin_argument.KurtosisValueType) {
 	serviceConfigStarlark, ok := typeValue.(*service_config.ServiceConfig)
 	require.True(t, ok)
 
