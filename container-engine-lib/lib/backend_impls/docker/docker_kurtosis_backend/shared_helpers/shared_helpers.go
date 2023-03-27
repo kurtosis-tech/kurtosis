@@ -3,8 +3,11 @@ package shared_helpers
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/docker/go-connections/nat"
+	"github.com/gammazero/workerpool"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
@@ -17,7 +20,11 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"io"
+	"io/ioutil"
 	"net"
+	"os"
+	"path"
 	"strconv"
 	"strings"
 	"time"
@@ -31,6 +38,16 @@ const (
 	hostMachinePortNumStrParsingBits = 16
 
 	netstatSuccessExitCode = 0
+
+	// permissions and constants useful for dumping containers
+	createdFilePerms                     = 0644
+	shouldFollowContainerLogsWhenDumping = false
+	containerSpecJsonSerializationIndent = "  "
+	containerSpecJsonSerializationPrefix = ""
+	containerInspectResultFilename       = "spec.json"
+	containerLogsFilename                = "output.log"
+	createdDirPerms                      = 0755
+	numContainersToDumpAtOnce            = 20
 )
 
 // !!!WARNING!!!
@@ -459,6 +476,69 @@ func GetEngineAndLogsComponentsNetwork(
 	return targetNetwork, nil
 }
 
+func DumpContainers(ctx context.Context, dockerManager *docker_manager.DockerManager, containers []*types.Container, outputDirpath string) error {
+	// Create output directory
+	if _, err := os.Stat(outputDirpath); !os.IsNotExist(err) {
+		return stacktrace.NewError("Cannot create output directory at '%v'; directory already exists", outputDirpath)
+	}
+	if err := os.Mkdir(outputDirpath, createdDirPerms); err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating output directory at '%v'", outputDirpath)
+	}
+
+	workerPool := workerpool.New(numContainersToDumpAtOnce)
+	resultErrsChan := make(chan error, len(containers))
+	for _, container := range containers {
+		containerName := container.GetName()
+		containerId := container.GetId()
+		logrus.Debugf("Submitting job to dump info about container with name '%v' and ID '%v'", containerName, containerId)
+
+		/*
+			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			It's VERY important that the actual `func()` job function get created inside a helper function!!
+			This is because variables declared inside for-loops are created BY REFERENCE rather than by-value, which
+				means that if we inline the `func() {....}` creation here then all the job functions would get a REFERENCE to
+				any variables they'd use.
+			This means that by the time the job functions were run in the worker pool (long after the for-loop finished)
+				then all the job functions would be using a reference from the last iteration of the for-loop.
+
+			For more info, see the "Variables declared in for loops are passed by reference" section of:
+				https://www.calhoun.io/gotchas-and-common-mistakes-with-closures-in-go/ for more details
+			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		*/
+		jobToSubmit := createDumpContainerJob(
+			ctx,
+			dockerManager,
+			outputDirpath,
+			resultErrsChan,
+			containerName,
+			containerId,
+		)
+
+		workerPool.Submit(jobToSubmit)
+	}
+	workerPool.StopWait()
+	close(resultErrsChan)
+
+	allResultErrStrs := []string{}
+	for resultErr := range resultErrsChan {
+		allResultErrStrs = append(allResultErrStrs, resultErr.Error())
+	}
+
+	if len(allResultErrStrs) > 0 {
+		allIndexedResultErrStrs := []string{}
+		for idx, resultErrStr := range allResultErrStrs {
+			indexedResultErrStr := fmt.Sprintf(">>>>>>>>>>>>>>>>> ERROR %v <<<<<<<<<<<<<<<<<\n%v", idx, resultErrStr)
+			allIndexedResultErrStrs = append(allIndexedResultErrStrs, indexedResultErrStr)
+		}
+
+		// NOTE: We don't use stacktrace here because the actual stacktraces we care about are the ones from the threads!
+		return fmt.Errorf("The following errors occurred when trying to dump information :\n%v",
+			strings.Join(allIndexedResultErrStrs, "\n\n"))
+	}
+
+	return nil
+}
+
 // ====================================================================================================
 //
 //	Private Helper Functions
@@ -609,4 +689,115 @@ func getUserServiceObjsFromDockerResources(
 		)
 	}
 	return result, nil
+}
+
+func createDumpContainerJob(
+	ctx context.Context,
+	dockerManager *docker_manager.DockerManager,
+	outputDirpath string,
+	resultErrsChan chan error,
+	containerName string,
+	containerId string,
+) func() {
+	return func() {
+		if err := dumpContainerInfo(ctx, dockerManager, outputDirpath, containerName, containerId); err != nil {
+			resultErrsChan <- stacktrace.Propagate(
+				err,
+				"An error occurred dumping container info for container with name '%v' and ID '%v'",
+				containerName,
+				containerId,
+			)
+		}
+	}
+}
+
+func dumpContainerInfo(
+	ctx context.Context,
+	dockerManager *docker_manager.DockerManager,
+	outputDirpath string,
+	containerName string,
+	containerId string,
+) error {
+	// Make output directory
+	containerOutputDirpath := path.Join(outputDirpath, containerName)
+	if err := os.Mkdir(containerOutputDirpath, createdDirPerms); err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred creating directory '%v' to hold the output of container with name '%v' and ID '%v'",
+			containerOutputDirpath,
+			containerName,
+			containerId,
+		)
+	}
+
+	// Write container inspect results to file
+	inspectResult, err := dockerManager.InspectContainer(
+		ctx,
+		containerId,
+	)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred inspecting container with ID '%v'", containerId)
+	}
+	jsonSerializedInspectResultBytes, err := json.MarshalIndent(inspectResult, containerSpecJsonSerializationPrefix, containerSpecJsonSerializationIndent)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred serializing the results of inspecting container with ID '%v' to JSON", containerId)
+	}
+	specOutputFilepath := path.Join(containerOutputDirpath, containerInspectResultFilename)
+	if err := ioutil.WriteFile(specOutputFilepath, jsonSerializedInspectResultBytes, createdFilePerms); err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred writing the inspect output of container with name '%v' and ID '%v' to file '%v'",
+			containerName,
+			containerId,
+			specOutputFilepath,
+		)
+	}
+
+	// Write container logs to file
+	containerLogsReadCloser, err := dockerManager.GetContainerLogs(ctx, containerId, shouldFollowContainerLogsWhenDumping)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the logs for container with ID '%v'", containerId)
+	}
+	defer containerLogsReadCloser.Close()
+
+	logsOutputFilepath := path.Join(containerOutputDirpath, containerLogsFilename)
+	logsOutputFp, err := os.Create(logsOutputFilepath)
+	if err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred creating file '%v' to hold the logs of container with name '%v' and ID '%v'",
+			logsOutputFilepath,
+			containerName,
+			containerId,
+		)
+	}
+	defer logsOutputFp.Close()
+
+	// TODO Push this down into DockerManager as this is copied in multiple places!!! This check-if-the-container-is-TTY-and-use-io.Copy-if-so-and-stdcopy-if-not
+	//  is copied straight from the Docker CLI, but it REALLY sucks that a Kurtosis dev magically needs to know that that's what
+	//  they have to do if they want to read container logs
+	// If we don't have this, reading the logs from a TTY container breaks
+	if inspectResult.Config.Tty {
+		if _, err := io.Copy(logsOutputFp, containerLogsReadCloser); err != nil {
+			return stacktrace.Propagate(
+				err,
+				"An error occurred copying the TTY container logs stream to file '%v' for container with name '%v' and ID '%v'",
+				logsOutputFilepath,
+				containerName,
+				containerId,
+			)
+		}
+	} else {
+		if _, err := stdcopy.StdCopy(logsOutputFp, logsOutputFp, containerLogsReadCloser); err != nil {
+			return stacktrace.Propagate(
+				err,
+				"An error occurred copying the non-TTY container logs stream to file '%v' for container with name '%v' and ID '%v'",
+				logsOutputFilepath,
+				containerName,
+				containerId,
+			)
+		}
+	}
+
+	return nil
 }
