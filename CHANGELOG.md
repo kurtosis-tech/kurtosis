@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.70.1](https://github.com/kurtosis-tech/kurtosis/compare/0.70.0...0.70.1) (2023-03-27)
+
+
+### Features
+
+* Add context `rm` command ([#275](https://github.com/kurtosis-tech/kurtosis/issues/275)) ([c20ca12](https://github.com/kurtosis-tech/kurtosis/commit/c20ca121443a78ed6b266cd18b5d69997ee69e57))
+* Add context `switch` CLI command ([#317](https://github.com/kurtosis-tech/kurtosis/issues/317)) ([ebab7eb](https://github.com/kurtosis-tech/kurtosis/commit/ebab7ebb697e4c791b47bff14a4e32aaa04268b5))
+* add kurtosis engine logs command that dumps logs for all engines in target dir ([#313](https://github.com/kurtosis-tech/kurtosis/issues/313)) ([cbb588c](https://github.com/kurtosis-tech/kurtosis/commit/cbb588c01a6d8d8baffcb41c87b49716c23b7cfc))
+* result of add service contains a `name` property ([#314](https://github.com/kurtosis-tech/kurtosis/issues/314)) ([af8ca5f](https://github.com/kurtosis-tech/kurtosis/commit/af8ca5f1d7ec9564baf171ea3478b71e3d9f113b))
+* Tunnel remote APIC port to local machine using Kurtosis Portal ([#295](https://github.com/kurtosis-tech/kurtosis/issues/295)) ([4c3ba69](https://github.com/kurtosis-tech/kurtosis/commit/4c3ba69062b78c5f960b4b94fa4427d2b76f6f7a))
+
+
+### Bug Fixes
+
+* add example historical version ([#150](https://github.com/kurtosis-tech/kurtosis/issues/150)) ([1548489](https://github.com/kurtosis-tech/kurtosis/commit/1548489b87aa927051b4cd01190b92be48e0714d))
+* be clear about the engine that is being started ([#282](https://github.com/kurtosis-tech/kurtosis/issues/282)) ([5bc1b79](https://github.com/kurtosis-tech/kurtosis/commit/5bc1b79e94a5688dc908bd413a7f410e8aaf2346))
+* Fix starlark value reference bug ([#322](https://github.com/kurtosis-tech/kurtosis/issues/322)) ([63f6626](https://github.com/kurtosis-tech/kurtosis/commit/63f6626be54b71a9fc09e02ae07207c9a9309409))
+* name all args for add_services instruction in quickstart ([#316](https://github.com/kurtosis-tech/kurtosis/issues/316)) ([d413826](https://github.com/kurtosis-tech/kurtosis/commit/d41382635d3ad0c51dec6f937c2c26f105fcfe13))
+* reformat build prereqs in readme ([#290](https://github.com/kurtosis-tech/kurtosis/issues/290)) ([c286151](https://github.com/kurtosis-tech/kurtosis/commit/c28615144a40cfb369e5fb35d9722ecf912fedce))
+
 ## [0.70.0](https://github.com/kurtosis-tech/kurtosis/compare/0.69.2...0.70.0) (2023-03-22)
 
 
