@@ -8,13 +8,15 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"os"
 	"path"
+	"strings"
 )
 
 const (
-	engineLogsSubDirpathSuffix = "engine-logs"
+	engineLogsSubDirpathSuffix = "engines"
 	createdDirPerms            = 0755
 	enclavesSubDirpathFragment = "enclaves"
 	enclaveNameUuidSeparator   = "--"
+	errorSeparator             = "\n\n"
 )
 
 var allEnclavesFilter = &enclave.EnclaveFilters{UUIDs: nil, Statuses: nil}
@@ -44,13 +46,23 @@ func DumpKurtosis(ctx context.Context, outputDirpath string, backend backend_int
 		return stacktrace.Propagate(err, "An error occurred creating output directory for all enclaves at '%v'", outputDirpath)
 	}
 
-	// perhaps dont error immediately and dump what you can before sending errors
+	allEnclaveDumpErrors := map[string]string{}
 	for enclaveUuid, enclave := range allEnclaves {
 		subDirForEnclaveBeingDumped := fmt.Sprintf("%v%v%v", enclave.GetName(), enclaveNameUuidSeparator, string(enclaveUuid))
 		specificEnclaveOutputDir := path.Join(outputDirpath, enclavesSubDirpathFragment, subDirForEnclaveBeingDumped)
 		if err = backend.DumpEnclave(ctx, enclaveUuid, specificEnclaveOutputDir); err != nil {
-			return stacktrace.Propagate(err, "An error occurred while dumping enclave with uuid '%v'", enclaveUuid)
+			allEnclaveDumpErrors[string(enclaveUuid)] = err.Error()
 		}
+	}
+
+	if len(allEnclaveDumpErrors) > 0 {
+		allIndexedEnclaveErrors := []string{}
+		for enclaveUuidStr, errStr := range allEnclaveDumpErrors {
+			indexedEnclaveErrorStr := fmt.Sprintf(">>>>>>>>>>>>>>>>> ERROR dumping enclave with UUID '%v' <<<<<<<<<<<<<<<<<\n%v", enclaveUuidStr, errStr)
+			allIndexedEnclaveErrors = append(allIndexedEnclaveErrors, indexedEnclaveErrorStr)
+		}
+
+		return fmt.Errorf("Errors occurred while dumping information for some enclaves :\n'%v'", strings.Join(allIndexedEnclaveErrors, errorSeparator))
 	}
 
 	return nil
