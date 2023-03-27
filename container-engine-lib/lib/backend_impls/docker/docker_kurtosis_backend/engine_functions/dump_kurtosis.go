@@ -17,7 +17,7 @@ const (
 	enclaveNameUuidSeparator   = "--"
 )
 
-var allEnclavesFilter = &enclave.EnclaveFilters{}
+var allEnclavesFilter = &enclave.EnclaveFilters{UUIDs: nil, Statuses: nil}
 
 func DumpKurtosis(ctx context.Context, outputDirpath string, backend backend_interface.KurtosisBackend) error {
 
