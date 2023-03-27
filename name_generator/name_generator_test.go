@@ -2,8 +2,17 @@ package name_generator
 
 import (
 	"github.com/stretchr/testify/require"
+	"regexp"
 	"testing"
 )
+
+var allowedCharacters = regexp.MustCompile("^[a-z]?$")
+
+var listsToVerify = map[string][]string{
+	"adjectives":           ADJECTIVES,
+	"enclave nouns":        ENCLAVE_NOUNS,
+	"files artifact nouns": FILE_ARTIFACT_NOUNS,
+}
 
 func TestRandomNameGenerator_GetNameGenerator(t *testing.T) {
 	nameGenerator := getNameGenerator()
@@ -28,21 +37,25 @@ func TestRandomNameGenerator_GenerateName(t *testing.T) {
 	require.Contains(t, potentialCandidates, actual)
 }
 
-// check for duplicates for adjectives
-func Test_noDuplicatesInAdjectives(t *testing.T) {
-	duplicateArr := checkIfDuplicateExistsInArray(ADJECTIVES)
-	require.Len(t, duplicateArr, 0, "Duplicate Error: found %v multiple times in ADJECTIVES", duplicateArr)
+func Test_noDuplicates(t *testing.T) {
+	for listDescription, list := range listsToVerify {
+		duplicateArr := checkIfDuplicateExistsInArray(list)
+		require.Len(t, duplicateArr, 0, "Duplicate Error: found %v multiple times in list '%v'", duplicateArr, listDescription)
+	}
 }
 
-// check for duplicates for nouns
-func Test_noDuplicatesInNouns(t *testing.T) {
-	// Engine Nouns
-	duplicateArr := checkIfDuplicateExistsInArray(ENCLAVE_NOUNS)
-	require.Len(t, duplicateArr, 0, "Duplicate Error: found %v multiple times in ENCLAVE_NOUNS with len: %v", duplicateArr, len(duplicateArr))
-
-	// File Artifact Nouns
-	duplicateArr = checkIfDuplicateExistsInArray(FILE_ARTIFACT_NOUNS)
-	require.Len(t, duplicateArr, 0, "Duplicate Error: found %v multiple times in FILE_ARTIFACT_NOUNS with len: %v", duplicateArr, len(duplicateArr))
+func Test_onlyAllowedCharacters(t *testing.T) {
+	for listDescription, list := range listsToVerify {
+		for _, item := range list {
+			require.True(
+				t,
+				allowedCharacters.MatchString(item),
+				"Item %v in list '%v' doesn't match allowed item regex",
+				item,
+				listDescription,
+			)
+		}
+	}
 }
 
 // return an array containing duplicates
