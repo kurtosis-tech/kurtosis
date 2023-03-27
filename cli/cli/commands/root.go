@@ -15,8 +15,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/config"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/discord"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/docs"
+	kurtosisdump "github.com/kurtosis-tech/kurtosis/cli/cli/commands/dump"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/enclave"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/enclave/dump"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/engine"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/feedback"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/files"
@@ -110,7 +110,7 @@ func init() {
 	RootCmd.AddCommand(service.ServiceCmd)
 	RootCmd.AddCommand(twitter.TwitterCmd.MustGetCobraCommand())
 	RootCmd.AddCommand(version.VersionCmd)
-	RootCmd.AddCommand(dump.EnclaveDumpCmd.MustGetCobraCommand())
+	RootCmd.AddCommand(kurtosisdump.KurtosisDump.MustGetCobraCommand())
 }
 
 // ====================================================================================================
