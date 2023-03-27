@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.70.3](https://github.com/kurtosis-tech/kurtosis/compare/0.70.2...0.70.3) (2023-03-27)
+
+
+### Features
+
+* Added `bug, feature and docs` flags in the `kurtosis feedback` command ([#287](https://github.com/kurtosis-tech/kurtosis/issues/287)) ([963e9dd](https://github.com/kurtosis-tech/kurtosis/commit/963e9dd055a3ceabafde11a4d942e16f300d827c))
+
+
+### Bug Fixes
+
+* check service name contains allowed characters and errors cleanly ([#315](https://github.com/kurtosis-tech/kurtosis/issues/315)) ([94af4bd](https://github.com/kurtosis-tech/kurtosis/commit/94af4bda3aac9a1ed45e6ac503407d271ba1d73f)), closes [#164](https://github.com/kurtosis-tech/kurtosis/issues/164)
+
 ## [0.70.2](https://github.com/kurtosis-tech/kurtosis/compare/0.70.1...0.70.2) (2023-03-27)
 
 
