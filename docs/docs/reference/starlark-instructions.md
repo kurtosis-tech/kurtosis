@@ -182,6 +182,10 @@ exec_recipe = ExecRecipe(
     # Each item corresponds to one shell argument, so ["echo", "Hello world"] behaves as if you ran "echo" "Hello world" in the shell.
     # MANDATORY
     command = ["echo", "Hello, world"],
+    # A Service name designating a service that already exists inside the enclave
+    # If it does not, a validation error will be thrown
+    # MANDATORY    
+    service_name = "my-service"
 )
 
 result = plan.exec(
@@ -198,11 +202,6 @@ result = plan.exec(
     # You can chain this call with assert to check codes after request is done.
     # OPTIONAL (Defaults to False)
     skip_code_check = False,
-
-    # A Service name designating a service that already exists inside the enclave
-    # If it does not, a validation error will be thrown
-    # MANDATORY
-    service_name = "my-service",
 )
 
 plan.print(result["output"])
@@ -350,12 +349,7 @@ http_response = plan.request(
     # If False, instruction will never fail based on code (acceptable_codes will be ignored).
     # You can chain this call with assert to check codes after request is done.
     # OPTIONAL (defaults to False)
-    skip_code_check = false,
-    
-    # A service name designating a service that already exists inside the enclave
-    # If it does not, a validation error will be thrown
-    # MANDATORY
-    service_name = "my_service",
+    skip_code_check = false,    
 )
 plan.print(get_response["body"]) # Prints the body of the request
 plan.print(get_response["code"]) # Prints the result code of the request (e.g. 200, 500)
@@ -585,11 +579,6 @@ response = plan.wait(
     # Follows Go "time.Duration" format https://pkg.go.dev/time#ParseDuration
     # OPTIONAL (Default: "10s")
     timeout = "5m",
-
-    # A Service name designating a service that already exists inside the enclave
-    # If it does not, a validation error will be thrown
-    # MANDATORY
-    service_name = "example-datastore-server-1",
 )
 # If this point of the code is reached, the assertion has passed therefore the print statement will print "200"
 plan.print(response["code"])
