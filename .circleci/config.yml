@@ -907,7 +907,7 @@ jobs:
 
   push_cli_artifacts:
     docker:
-      - image: "cimg/go:<< pipeline.parameters.cli-go-version >>"
+      - image: "docker/tilt-releaser"
     steps:
       # Install goreleaser
       - run: |
