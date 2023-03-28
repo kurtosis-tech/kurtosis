@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.70.7](https://github.com/kurtosis-tech/kurtosis/compare/0.70.6...0.70.7) (2023-03-28)
+
+
+### Bug Fixes
+
+* added a fix for release failure ([#361](https://github.com/kurtosis-tech/kurtosis/issues/361)) ([04ee614](https://github.com/kurtosis-tech/kurtosis/commit/04ee6140471a7e6c4b3ea4d6b1e1cb75e4bb1374))
+
 ## [0.70.6](https://github.com/kurtosis-tech/kurtosis/compare/0.70.5...0.70.6) (2023-03-28)
 
 
