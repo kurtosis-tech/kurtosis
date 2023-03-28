@@ -24,7 +24,7 @@ const (
 	ExecBuiltinName = "exec"
 
 	RecipeArgName          = "recipe"
-	ServiceNameArgName     = "service_name"
+	ServiceNameArgName     = "name"
 	AcceptableCodesArgName = "acceptable_codes"
 	SkipCodeCheckArgName   = "skip_code_check"
 )
