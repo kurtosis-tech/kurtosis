@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.70.4](https://github.com/kurtosis-tech/kurtosis/compare/0.70.3...0.70.4) (2023-03-28)
+
+
+### Features
+
+* Added extra name generation items ([#342](https://github.com/kurtosis-tech/kurtosis/issues/342)) ([0ed2923](https://github.com/kurtosis-tech/kurtosis/commit/0ed2923d9a16cb68b706e25112a741a4b7384944))
+* Publish multi-arch image for `files-artifacts-expander` ([#344](https://github.com/kurtosis-tech/kurtosis/issues/344)) ([9e2b369](https://github.com/kurtosis-tech/kurtosis/commit/9e2b369206b974d06e5a7c172b6363e5c6fb1d92))
+
 ## [0.70.3](https://github.com/kurtosis-tech/kurtosis/compare/0.70.2...0.70.3) (2023-03-27)
 
 
