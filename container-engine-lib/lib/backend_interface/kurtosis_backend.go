@@ -92,6 +92,7 @@ type KurtosisBackend interface {
 	)
 
 	// Dumps the contents of the given enclave to the given directory
+	// TODO add this to K8S
 	DumpEnclave(
 		ctx context.Context,
 		enclaveUuid enclave.EnclaveUUID,

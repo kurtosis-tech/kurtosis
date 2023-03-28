@@ -98,6 +98,7 @@ func init() {
 	RootCmd.AddCommand(clean.CleanCmd.MustGetCobraCommand())
 	RootCmd.AddCommand(cluster.ClusterCmd)
 	RootCmd.AddCommand(kurtosis_context.ContextCmd)
+	RootCmd.AddCommand(kurtosisdump.KurtosisDump.MustGetCobraCommand())
 	RootCmd.AddCommand(config.ConfigCmd)
 	RootCmd.AddCommand(discord.DiscordCmd.MustGetCobraCommand())
 	RootCmd.AddCommand(docs.DocsCmd.MustGetCobraCommand())
@@ -110,7 +111,6 @@ func init() {
 	RootCmd.AddCommand(service.ServiceCmd)
 	RootCmd.AddCommand(twitter.TwitterCmd.MustGetCobraCommand())
 	RootCmd.AddCommand(version.VersionCmd)
-	RootCmd.AddCommand(kurtosisdump.KurtosisDump.MustGetCobraCommand())
 }
 
 // ====================================================================================================

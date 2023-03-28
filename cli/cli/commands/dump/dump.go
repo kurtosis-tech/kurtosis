@@ -30,6 +30,7 @@ var KurtosisDump = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCom
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
 	EngineClientContextKey:    engineClientCtxKey,
 	Flags:                     nil,
+	// TODO perhaps add an --enclave flag here and deprecate enclave dump but that clashes with engine dumping
 	Args: []*args.ArgConfig{
 		{
 			Key:          outputDirpathArg,
