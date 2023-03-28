@@ -14,7 +14,7 @@ func NewKurtosisConfigProvider(configStore *kurtosisConfigStore) *KurtosisConfig
 	return &KurtosisConfigProvider{configStore: configStore}
 }
 
-func (configProvider *KurtosisConfigProvider) GetOrInitializeConfig() (*resolved_config.KurtosisConfig, error){
+func (configProvider *KurtosisConfigProvider) GetOrInitializeConfig() (*resolved_config.KurtosisConfig, error) {
 
 	var (
 		kurtosisConfig *resolved_config.KurtosisConfig
@@ -31,7 +31,7 @@ func (configProvider *KurtosisConfigProvider) GetOrInitializeConfig() (*resolved
 			return nil, stacktrace.Propagate(err, "An error occurred getting config")
 		}
 	} else {
-		kurtosisConfig, err = initInteractiveConfig()
+		kurtosisConfig, err = initConfig()
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred executing init interactive config")
 		}
