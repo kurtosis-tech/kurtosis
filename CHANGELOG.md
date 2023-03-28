@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.70.6](https://github.com/kurtosis-tech/kurtosis/compare/0.70.5...0.70.6) (2023-03-28)
+
+
+### Features
+
+* add search on docs ([#159](https://github.com/kurtosis-tech/kurtosis/issues/159)) ([f80d036](https://github.com/kurtosis-tech/kurtosis/commit/f80d0361435c99707291c0e96c0c308326343330))
+* integrate lsp with monrepo ([#223](https://github.com/kurtosis-tech/kurtosis/issues/223)) ([b5ed670](https://github.com/kurtosis-tech/kurtosis/commit/b5ed6707b1c3254cefcfa9201fb76ff1116dedce))
+
+
+### Bug Fixes
+
+* fix typo in reindex workflow ([#357](https://github.com/kurtosis-tech/kurtosis/issues/357)) ([8900ff2](https://github.com/kurtosis-tech/kurtosis/commit/8900ff230240487e40e706fccc3b8e32b1d1082f))
+* remove file paths from error message ([#256](https://github.com/kurtosis-tech/kurtosis/issues/256)) ([cb603d8](https://github.com/kurtosis-tech/kurtosis/commit/cb603d836772812d602bfb86736a8145b85162e1))
+* remove trailing errors after starlark execution ([724ac35](https://github.com/kurtosis-tech/kurtosis/commit/724ac355e8cf64a070c3d62a0f593399b5ef2dde))
+* remove trailing errors after starlark execution ([#257](https://github.com/kurtosis-tech/kurtosis/issues/257)) ([724ac35](https://github.com/kurtosis-tech/kurtosis/commit/724ac355e8cf64a070c3d62a0f593399b5ef2dde))
+
 ## [0.70.5](https://github.com/kurtosis-tech/kurtosis/compare/0.70.4...0.70.5) (2023-03-28)
 
 
