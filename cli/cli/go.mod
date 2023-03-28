@@ -42,6 +42,7 @@ require github.com/bazelbuild/buildtools v0.0.0-20221110131218-762712d8ce3f
 require (
 	github.com/briandowns/spinner v1.20.0
 	github.com/fatih/color v1.13.0
+	github.com/kurtosis-tech/kurtosis-portal/api/golang v0.0.0-20230323091236-fbfe0355b588
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/savioxavier/termlink v1.2.1
 )
@@ -67,7 +68,6 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/jwalton/go-supportscolor v1.1.0 // indirect
-	github.com/kurtosis-tech/kurtosis-portal/api/golang v0.0.0-20230323091236-fbfe0355b588 // indirect
 	github.com/mattn/go-colorable v0.1.9 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
