@@ -56,4 +56,5 @@ const (
 	PathCmdStr              = "path"
 	VersionCmdStr           = "version"
 	GatewayCmdStr           = "gateway"
+	LspCmdStr               = "lsp"
 )

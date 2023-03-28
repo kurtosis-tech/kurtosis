@@ -21,6 +21,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/files"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/gateway"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/kurtosis_context"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/lsp"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/run"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/twitter"
@@ -109,6 +110,7 @@ func init() {
 	RootCmd.AddCommand(service.ServiceCmd)
 	RootCmd.AddCommand(twitter.TwitterCmd.MustGetCobraCommand())
 	RootCmd.AddCommand(version.VersionCmd)
+	RootCmd.AddCommand(lsp.NewLspCommand())
 }
 
 // ====================================================================================================
