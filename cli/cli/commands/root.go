@@ -84,7 +84,10 @@ var RootCmd = &cobra.Command{
 	Short: "A CLI for interacting with the Kurtosis engine",
 	// Cobra will print usage whenever _any_ error occurs, including ones we throw in Kurtosis
 	// This doesn't make sense in 99% of the cases, so just turn them off entirely
-	SilenceUsage:      true,
+	SilenceUsage: true,
+	// Cobra prints the errors itself, however, with this flag disabled it give Kurtosis control
+	// and allows us to post process the error in the main.go file.
+	SilenceErrors:     true,
 	PersistentPreRunE: globalSetup,
 }
 
@@ -125,11 +128,6 @@ func globalSetup(cmd *cobra.Command, args []string) error {
 	if err := setupCLILogs(cmd); err != nil {
 		return stacktrace.Propagate(err, "An error occurred setting up CLI logs")
 	}
-
-	if err := out.SetupFileLogger(); err != nil {
-		return stacktrace.Propagate(err, "An error occurred while setting up the logging to a file.")
-	}
-
 	checkCLIVersion(cmd)
 	//It is necessary to try track this metric on every execution to have at least one successful deliver
 	if err := user_send_metrics_election.SendAnyBackloggedUserMetricsElectionEvent(); err != nil {
@@ -137,6 +135,17 @@ func globalSetup(cmd *cobra.Command, args []string) error {
 		logrus.Debugf("An error occurred tracking user consent to send metrics election\n%v", err)
 	}
 
+	// silently fail if there is an error accessing file logger
+	// downside is that we would not be storing the logs in the file, so could lose
+	// stack-traces and users may need to use --debug flag to get the entire stack-trace
+	fileLogger, err := out.GetFileLogger()
+	if err != nil {
+		logrus.Debugf("Error occurred while getting the file logger %+v", err)
+	} else {
+		// TODO: print the flags that user have entered too
+		// log the command user is executing
+		fileLogger.Infof("===== Executing Command: %v %v =====", cmd.Name(), strings.Join(args, " "))
+	}
 	return nil
 }
 
