@@ -16,8 +16,7 @@ jobs:
           fetch-depth: 0
       - name: Docs have changed
         run: |
-          echo "$(git --no-pager diff --exit-code origin/main...HEAD -- ':docs'; echo $?)"
-          echo "DOCS_CHANGED=$(git --no-pager diff --exit-code origin/main...HEAD -- ':docs'; echo $?)" >> $GITHUB_OUTPUT
+          echo "DOCS_CHANGED=$(git --no-pager diff --exit-code origin/main...HEAD -- ':docs' > /dev/null; echo $?)" >> $GITHUB_OUTPUT
         id: docs-diff
       - name: Append changelog
         run: cat CHANGELOG.md >> docs/docs/changelog.md
