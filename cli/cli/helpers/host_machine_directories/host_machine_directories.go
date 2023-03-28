@@ -19,6 +19,8 @@ const (
 
 	userSendMetricsElection = "user-send-metrics-election"
 
+	kurtosisCliLogs = "kurtosis-cli.log"
+
 	LastPesteredUserAboutOldVersionFilename = "last-pestered-user-about-old-version"
 
 	// ------------ Names of dirs inside Kurtosis directory --------------
@@ -93,6 +95,15 @@ func GetLastPesteredUserAboutOldVersionsFilepath() (string, error) {
 		return "", stacktrace.Propagate(err, "An error occurred getting the last pestered user about old version file path using '%v'", xdgRelFilepath)
 	}
 	return lastPesteredUserForOldVersionsFilePath, nil
+}
+
+func GetKurtosisCliLogsFilePath() (string, error) {
+	xdgRelFilepath := getRelativeFilepathForXDG(kurtosisCliLogs)
+	kurtosisCliLogFilePath, err := xdg.DataFile(xdgRelFilepath)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred getting the kurtosis cli logs file path using '%v'", xdgRelFilepath)
+	}
+	return kurtosisCliLogFilePath, nil
 }
 
 // ====================================================================================================
