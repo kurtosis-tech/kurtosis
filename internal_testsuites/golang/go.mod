@@ -28,7 +28,7 @@ require (
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
-	github.com/kurtosis-tech/kurtosis-portal/api/golang v0.0.0-20230323091236-fbfe0355b588 // indirect
+	github.com/kurtosis-tech/kurtosis-portal/api/golang v0.0.0-20230328194643-b4dea3081e25 // indirect
 	github.com/kurtosis-tech/kurtosis/contexts-config-store v0.0.0 // indirect
 	github.com/mholt/archiver v3.1.1+incompatible // indirect
 	github.com/nwaples/rardecode v1.1.3 // indirect

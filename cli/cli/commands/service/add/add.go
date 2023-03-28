@@ -13,10 +13,12 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/portal_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"strconv"
 	"strings"
 )
@@ -297,6 +299,17 @@ func run(
 	privatePorts := serviceCtx.GetPrivatePorts()
 	publicPorts := serviceCtx.GetPublicPorts()
 	publicIpAddr := serviceCtx.GetMaybePublicIPAddress()
+
+	// Map the service public ports to their local port
+	portalManager := portal_manager.NewPortalManager()
+	portsMapping := map[uint16]*services.PortSpec{}
+	for _, portSpec := range serviceCtx.GetPublicPorts() {
+		portsMapping[portSpec.GetNumber()] = portSpec
+	}
+	if err = portalManager.MapPorts(ctx, portsMapping); err != nil {
+		// TODO: once we have a manual `kurtosis port map` command, suggest using it here to manually map the failed port
+		logrus.Warnf("Service was successfully created but its public ports could not be mapped to local ports. Error was:\n%v", err.Error())
+	}
 
 	fmt.Printf("Service ID: %v\n", serviceName)
 	if len(privatePorts) > 0 {

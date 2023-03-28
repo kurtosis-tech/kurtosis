@@ -23,7 +23,6 @@ require (
 	github.com/kurtosis-tech/kurtosis/contexts-config-store v0.0.0 // local dependency
 	github.com/kurtosis-tech/kurtosis/engine/launcher v0.0.0 // local dependency
 	github.com/kurtosis-tech/kurtosis/kurtosis_version v0.0.0 // Local dependency generated during build
-	github.com/kurtosis-tech/kurtosis/lsp v0.0.0
 	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20230221115618-70c305416224
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/manifoldco/promptui v0.9.0
@@ -44,7 +43,8 @@ require github.com/bazelbuild/buildtools v0.0.0-20221110131218-762712d8ce3f
 require (
 	github.com/briandowns/spinner v1.20.0
 	github.com/fatih/color v1.13.0
-	github.com/kurtosis-tech/kurtosis-portal/api/golang v0.0.0-20230323091236-fbfe0355b588
+	github.com/kurtosis-tech/kurtosis-portal/api/golang v0.0.0-20230328194643-b4dea3081e25
+	github.com/kurtosis-tech/kurtosis/lsp v0.0.0-00010101000000-000000000000
 	github.com/kurtosis-tech/vscode-kurtosis/starlark-lsp v0.0.0-20230324071217-6348e066f3e5
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/savioxavier/termlink v1.2.1
