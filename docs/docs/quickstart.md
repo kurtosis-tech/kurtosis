@@ -406,7 +406,7 @@ def run(plan, args):
 
 A [files artifact][files-artifacts-reference] is Kurtosis' first-class data primitive and is a TGZ of arbitrary files living inside an enclave. So long as a files artifact exists, Kurtosis knows how to mount its contents on a service.  
 
-#### We mounting and seeded the data into our postgres instance
+#### We mounted and seeded the data into our Postgres instance
 Next, we mounted the seed data, stored in our enclave now as a files artifact, into our postgres instance using the `ServiceConfig.files` option:
 
 ```python
