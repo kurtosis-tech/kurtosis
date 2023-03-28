@@ -942,7 +942,7 @@ Let's review. In this tutorial you have:
 
 - Started a Postgres database in an ephemeral, isolated test environment
 - Seeded your database by importing an external Starlark package from the internet
-- Setup an API server for our database and gracefully handled dynamically generated dependency data
+- Set up an API server for our database and gracefully handled dynamically generated dependency data
 - Inserted & queried data via the API
 - Parameterized data insertion for future use
 
