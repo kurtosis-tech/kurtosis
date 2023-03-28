@@ -6,7 +6,7 @@ on:
 jobs:
   reindex-website-main:
     # Only reindex if a new version release is occurring, initiated by the release PR
-    if: contains(github.head_ref, 'release-please')
+    if: contains(github.ref, 'release-please')
     runs-on: ubuntu-latest
     name: Update website search index via Algolia Crawler
     steps:
