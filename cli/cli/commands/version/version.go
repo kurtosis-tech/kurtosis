@@ -6,13 +6,14 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis/kurtosis_version"
-	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
 const (
-	cliVersionKey           = "CLI Version"
-	runningEngineVersionKey = "Running Engine Version"
+	cliVersionKey                       = "CLI Version"
+	runningEngineVersionKey             = "Running Engine Version"
+	errorDeterminingEngineVersionLogStr = "Ran into an error determining running engine version:\n%v"
 )
 
 // VersionCmd Suppressing exhaustruct requirement because this struct has ~40 properties
@@ -36,12 +37,18 @@ func run(cmd *cobra.Command, args []string) error {
 
 	engineManager, err := engine_manager.NewEngineManager(ctx)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating an engine manager")
+		// if the engine manager can't be fetched; perhaps docker isn't alive we just print the CLI version
+		keyValuePrinter.Print()
+		logrus.Errorf(errorDeterminingEngineVersionLogStr, err.Error())
+		return nil
 	}
 
 	status, _, maybeEngineVersion, err := engineManager.GetEngineStatus(ctx)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the Kurtosis engine status")
+		// if the engine status can't be fetched we just print the CLI version
+		keyValuePrinter.Print()
+		logrus.Errorf(errorDeterminingEngineVersionLogStr, err.Error())
+		return nil
 	}
 	if status == engine_manager.EngineStatus_Running {
 		keyValuePrinter.AddPair(runningEngineVersionKey, maybeEngineVersion)
