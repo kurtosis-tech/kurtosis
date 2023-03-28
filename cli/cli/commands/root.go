@@ -22,6 +22,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/files"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/gateway"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/kurtosis_context"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/lsp"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/run"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/twitter"
@@ -29,6 +30,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/host_machine_directories"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/user_send_metrics_election"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/out"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/user_support_constants"
 	"github.com/kurtosis-tech/kurtosis/kurtosis_version"
 	"github.com/kurtosis-tech/stacktrace"
@@ -111,6 +113,7 @@ func init() {
 	RootCmd.AddCommand(service.ServiceCmd)
 	RootCmd.AddCommand(twitter.TwitterCmd.MustGetCobraCommand())
 	RootCmd.AddCommand(version.VersionCmd)
+	RootCmd.AddCommand(lsp.NewLspCommand())
 }
 
 // ====================================================================================================
@@ -123,8 +126,11 @@ func globalSetup(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred setting up CLI logs")
 	}
 
-	checkCLIVersion(cmd)
+	if err := out.SetupFileLogger(); err != nil {
+		return stacktrace.Propagate(err, "An error occurred while setting up the logging to a file.")
+	}
 
+	checkCLIVersion(cmd)
 	//It is necessary to try track this metric on every execution to have at least one successful deliver
 	if err := user_send_metrics_election.SendAnyBackloggedUserMetricsElectionEvent(); err != nil {
 		//We don't want to interrupt users flow if something fails when tracking metrics

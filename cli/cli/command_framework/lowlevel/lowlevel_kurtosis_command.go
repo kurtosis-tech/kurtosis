@@ -2,9 +2,11 @@ package lowlevel
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/out"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -13,6 +15,8 @@ import (
 
 const (
 	shouldLogCompletionDebugMessagesToStderr = true
+	separator                                = "---"
+	removeTrailingSpecialCharacter           = "\n"
 )
 
 // LowlevelKurtosisCommand is the most configurable, lowest-level implementation of the KurtosisCommand interface
@@ -370,4 +374,37 @@ func renderArgUsageStr(arg *args.ArgConfig) string {
 		result = "[" + result + "]"
 	}
 	return result
+}
+
+//TODO: this is currently not integrated but will do once all the necessary PRs are merged.
+//nolint:all
+func getErrorMessageToBeDisplayedOnCli(err error) error {
+	fileLogger, err := out.GetFileLogger()
+	if err != nil {
+		return stacktrace.Propagate(err, "")
+	}
+	fileLogger.Error(err)
+	// if we are running in the debug mode, just return the error with stack-traces
+	if logrus.GetLevel() == logrus.DebugLevel {
+		return err
+	}
+
+	errorMessage := err.Error()
+	cleanError := removeFilePathFromErrorMessage(errorMessage)
+	return cleanError
+}
+
+// this method removes the file path from the error
+func removeFilePathFromErrorMessage(errorMessage string) error {
+	errorMessageConvertedInList := strings.Split(errorMessage, separator)
+
+	// only the even numbered elements needs to be picked.
+	var cleanErrorList []string
+	for index, line := range errorMessageConvertedInList {
+		if index%2 == 0 {
+			cleanErrorList = append(cleanErrorList, strings.Trim(line, removeTrailingSpecialCharacter))
+		}
+	}
+
+	return errors.New(strings.Join(cleanErrorList, ""))
 }

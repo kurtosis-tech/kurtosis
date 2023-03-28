@@ -162,6 +162,20 @@ const config = {
         theme: lightCodeTheme,
         darkTheme: darkCodeTheme,
       },
+      algolia: {
+        appId: 'NTSX40VZB8',
+
+        // Public API key, safe to commit
+        apiKey: '4269c726c2fea4e6cddfeb9a21cd3d4e',
+
+        indexName: 'kurtosis',
+
+        contextualSearch: true,
+
+        searchParameters: {},
+
+        searchPagePath: 'search',
+      },
     }),
 };
 
