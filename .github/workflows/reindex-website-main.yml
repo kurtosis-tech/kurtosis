@@ -14,4 +14,4 @@ jobs:
           method: 'POST'
           username: ${{ secrets.ALGOLIA_CRAWLER_USER_ID }}
           password: ${{ secrets.ALGOLIA_CRAWLER_API_KEY }}
-          customHeaders: '{"Content-Type": "app"Content-Type": "application/json"}'
+          customHeaders: '{"Content-Type": "application/json"}'
