@@ -883,7 +883,6 @@ jobs:
           version="$(cat version.txt)"
           "<<pipeline.parameters.generate-kurtosis-version-script-path>>" $version
 
-
       - setup_remote_docker:
           version: "<< pipeline.parameters.docker-engine-version>>"
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
@@ -907,14 +906,14 @@ jobs:
 
   push_cli_artifacts:
     docker:
-      - image: "cimg/go:<< pipeline.parameters.cli-go-version >>"
+      - image: "docker/tilt-releaser"
     steps:
       # Install goreleaser
       - run: |
-          echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | sudo tee /etc/apt/sources.list.d/goreleaser.list
-          sudo apt update
-          sudo apt install goreleaser
-      - checkout
+          echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | tee /etc/apt/sources.list.d/goreleaser.list
+          curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
+          apt update
+          apt install -y goreleaser
 
       # Generate Kurtosis Version
       - run: |
