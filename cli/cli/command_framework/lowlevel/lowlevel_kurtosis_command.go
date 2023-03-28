@@ -379,7 +379,11 @@ func renderArgUsageStr(arg *args.ArgConfig) string {
 //TODO: this is currently not integrated but will do once all the necessary PRs are merged.
 //nolint:all
 func getErrorMessageToBeDisplayedOnCli(err error) error {
-	out.GetFileLogger().Error(err)
+	fileLogger, err := out.GetFileLogger()
+	if err != nil {
+		return stacktrace.Propagate(err, "")
+	}
+	fileLogger.Error(err)
 	// if we are running in the debug mode, just return the error with stack-traces
 	if logrus.GetLevel() == logrus.DebugLevel {
 		return err

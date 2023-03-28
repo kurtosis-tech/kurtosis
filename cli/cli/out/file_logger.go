@@ -25,11 +25,11 @@ func SetupFileLogger() error {
 	return err
 }
 
-func GetFileLogger() *logrus.Logger {
+func GetFileLogger() (*logrus.Logger, error) {
 	if fileLogger == nil {
-		SetupFileLogger()
+		return nil, stacktrace.NewError("File logger is not initialized. This error most likely represents that there is a bug with kurtosis; please use kurtosis feedback to report it.")
 	}
-	return fileLogger
+	return fileLogger, nil
 }
 
 func setupFileLogger() error {
@@ -53,8 +53,8 @@ func setupFileLogger() error {
 	// this is the formatter using for fileLogger
 	// TODO: Seeing weird characters in the log file - will look into fixing it in next PR
 	textFormatter := &logrus.TextFormatter{
-		ForceColors:               true,
-		DisableColors:             false,
+		ForceColors:               false,
+		DisableColors:             true,
 		ForceQuote:                false,
 		DisableQuote:              false,
 		EnvironmentOverrideColors: false,
