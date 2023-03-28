@@ -817,10 +817,13 @@ jobs:
           version: "<< pipeline.parameters.docker-engine-version>>"
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
-      - run: core/files_artifacts_expander/scripts/build.sh
+      - run: |
+          skip_docker_image_building=true
+          core/files_artifacts_expander/scripts/build.sh "${skip_docker_image_building}"
       - run: |
           set -euo pipefail
           source core/files_artifacts_expander/scripts/_constants.env
+          dockerfile_filepath='core/files_artifacts_expander/Dockerfile'
           version_build="$(./scripts/get-docker-tag.sh)"
           version_to_publish="$(cat version.txt)"
           echo "Version that was built: ${version_build}"
@@ -828,10 +831,8 @@ jobs:
           image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_build}"
           image_name_to_publish_semver="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
           image_name_to_publish_latest="${IMAGE_ORG_AND_REPO}:latest"
-          docker tag "${image_name_with_version}" "${image_name_to_publish_semver}"
-          docker tag "${image_name_with_version}" "${image_name_to_publish_latest}"
-          docker push "${image_name_to_publish_semver}"
-          docker push "${image_name_to_publish_latest}"
+          push_to_dockerhub=true
+          scripts/docker-image-builder.sh "${push_to_dockerhub}" "${dockerfile_filepath}" "${image_name_with_version}" "${image_name_to_publish_semver}" "${image_name_to_publish_latest}"
 
   publish_api_container_server_image:
     docker:
@@ -851,10 +852,12 @@ jobs:
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
       - run: |
-          core/server/scripts/build.sh
+          skip_docker_image_building=true
+          core/server/scripts/build.sh "${skip_docker_image_building}"
       - run: |
           set -euo pipefail
           source core/server/scripts/_constants.env
+          dockerfile_filepath='core/server/Dockerfile'
           version_build="$(./scripts/get-docker-tag.sh)"
           version_to_publish="$(cat version.txt)"
           echo "Version that was built: ${version_build}"
@@ -862,10 +865,8 @@ jobs:
           image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_build}"
           image_name_to_publish_semver="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
           image_name_to_publish_latest="${IMAGE_ORG_AND_REPO}:latest"
-          docker tag "${image_name_with_version}" "${image_name_to_publish_semver}"
-          docker tag "${image_name_with_version}" "${image_name_to_publish_latest}"
-          docker push "${image_name_to_publish_semver}"
-          docker push "${image_name_to_publish_latest}"
+          push_to_dockerhub=true
+          scripts/docker-image-builder.sh "${push_to_dockerhub}" "${dockerfile_filepath}" "${image_name_with_version}" "${image_name_to_publish_semver}" "${image_name_to_publish_latest}"
 
   publish_engine_server_image:
     docker:
@@ -886,11 +887,12 @@ jobs:
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
       - run: |
-          engine/server/scripts/build.sh
-
+          skip_docker_image_building=true
+          engine/server/scripts/build.sh "${skip_docker_image_building}"
       - run: |
           set -euo pipefail
           source engine/server/scripts/_constants.env
+          dockerfile_filepath='engine/server/Dockerfile'
           version_build="$(./scripts/get-docker-tag.sh)"
           version_to_publish="$(cat version.txt)"
           echo "Version that was built: ${version_build}"
@@ -898,10 +900,8 @@ jobs:
           image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_build}"
           image_name_to_publish_semver="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
           image_name_to_publish_latest="${IMAGE_ORG_AND_REPO}:latest"
-          docker tag "${image_name_with_version}" "${image_name_to_publish_semver}"
-          docker tag "${image_name_with_version}" "${image_name_to_publish_latest}"
-          docker push "${image_name_to_publish_semver}"
-          docker push "${image_name_to_publish_latest}"
+          push_to_dockerhub=true
+          scripts/docker-image-builder.sh "${push_to_dockerhub}" "${dockerfile_filepath}" "${image_name_with_version}" "${image_name_to_publish_semver}" "${image_name_to_publish_latest}"
 
   push_cli_artifacts:
     docker:
@@ -1128,6 +1128,7 @@ workflows:
             - publish_kurtosis_api_typescript
             - publish_api_container_server_image
             - publish_engine_server_image
+            - publish_files_artifacts_expander_image
           filters:
             branches:
               ignore: /.*/
