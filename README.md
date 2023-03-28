@@ -1,38 +1,42 @@
 
-<img src="./logo.png" width="500">
+<img src="./logo.png" width="1200">
 
 ----
-
-[Kurtosis](https://www.kurtosis.com) is a development platform for distributed applications that aims to provide a consistent experience across all stages of distributed app software delivery.
-
-Use cases for Kurtosis include:
-
-- Running a third-party distributed app, without knowing how to set it up
-- Local prototyping & development on distributed apps
-- Writing integration and end-to-end distributed app tests (e.g. happy path & sad path tests, load tests, performance tests, etc.)
-- Running integration/E2E distributed app tests
-- Debugging distributed apps during development
+## What is Kurtosis?
+[Kurtosis](https://www.kurtosis.com) is a composable build system for multi-container test environments. Kurtosis makes it easier for developers to set up test environments that require dynamic setup logic (e.g. passing IPs or runtime-generated data between services) or programmatic data seeding.
 
 ## Why Kurtosis?
 
-Docker and Kubernetes are each great at serving developers in different parts of the development cycle: Docker for development/testing, Kubernetes for production. However, the separation between the two entails different distributed app definitions, and different tooling. In dev/test, this means Docker Compose and Docker observability tooling. In production, this means Helm definitions and manually-configured observability tools like Istio, Datadog, or Honeycomb.
+Developers usually set up these types of dynamic environments with a free-form scripting language like bash or Python, interacting with the Docker CLI or Docker Compose. Kurtosis is designed to make these setups easier to maintain and reuse in different test scenarios.
 
-Kurtosis aims at one level of abstraction higher. Developers can define their distributed applications in Kurtosis, and Kurtosis will handle:
+In Kurtosis, test environments have these properties:
+- Environment-level portability: the entire test environment always runs the same way, regardless of the host machine
+- Composability: environments can be composed and connected together without needing to know the inner details of each setup
+- Parameterizability: environments can be parameterized, so that they're easy to modify for use across different test scenarios
 
-- Running on Docker or Kubernetes
-- Reproduceability
-- Safety
-- Port-forwarding & local development hookups
-- Observability
-- Sharing
+## Architecture
 
-If we succeed in our vision, you will be able to use the same distributed application definition from local dev all the way to prod.
+#### Kurtosis has a definition language with:
+- An instruction set of useful primitives for setting up and manipulating environments
+- A scriptable Python-like SDK in Starlark, a build language used by Google’s Bazel
+- A package management system for shareability and composability
 
+#### Kurtosis has a validator with:
+- Compile-time safety to quickly catch errors in test environment definitions
+- The ability to dry-run test environment definitions to verify what will be run, before running
+
+#### Kurtosis has a runtime to:
+- Run multi-container test environments over Docker or Kubernetes, depending on how you wish to scale
+- Enable debugging and investigation of problems live, as they're happening in your test environment
+- Manage file dependencies to ensure complete portability of test environments across different test runs and backends
+
+Read more about Kurtosis on our [website](https://www.kurtosis.com/) and in our [docs][docs].
 ---
-
 ## To start using Kurtosis
 
 ### Prerequisites
+
+#### Install and start Docker
 
 Docker must be installed and running on your machine:
 
@@ -42,34 +46,17 @@ docker version
 
 If it's not, follow the instructions from the [Docker docs](https://docs.docker.com/get-docker/).
 
-### Installing Kurtosis
+#### Install the Kurtosis CLI
 
-On MacOS:
+##### On MacOS:
 
 ```bash
 brew install kurtosis-tech/tap/kurtosis-cli
 ```
+For other installations methods, visit these [install instructions](https://docs.kurtosis.com/install#ii-install-the-cli).
 
-On Linux (apt):
-```bash
-echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
-sudo apt update
-sudo apt install kurtosis-cli
-```
-
-On Linux (yum):
-```bash
-echo '[kurtosis]
-name=Kurtosis
-baseurl=https://yum.fury.io/kurtosis-tech/
-enabled=1
-gpgcheck=0' | sudo tee /etc/yum.repos.d/kurtosis.repo
-sudo yum install kurtosis-cli
-```
-
-### Running
-
-First of all we can create [a simple Starlark script][starlark-explanation] to spin up multiple replicas of `httpd`:
+### Running Kurtosis
+Kurtosis can be used to create ephemeral environments called [enclaves][enclave]. We'll create a simple [Starlark][starlark-explanation] script to specify what we want our enclave to look like and what it will contain. Let's write one that spins up multiple replicas of `httpd`:
 
 ```python
 cat > script.star << EOF
@@ -88,55 +75,47 @@ def run(plan, args):
 EOF
 ```
 
-Running the script gives us an enclave with three services:
+Running the following will give us an enclave with three services:
 
 ```bash
 kurtosis run script.star '{"replica_count": 3}'
 ```
 ```console
-INFO[2023-02-10T13:32:32-03:00] Creating a new enclave for Starlark to run inside...
-INFO[2023-02-10T13:32:37-03:00] Enclave 'misty-bird' created successfully
+INFO[2023-03-22T13:27:03+01:00] Creating a new enclave for Starlark to run inside...
+INFO[2023-03-22T13:27:07+01:00] Enclave 'arid-delta' created successfully
 
-> add_service service_name="httpd-replica-0" config=ServiceConfig(image="httpd", ports={"http": PortSpec(number=8080, transport_protocol="TCP", application_protocol="")})
-Service 'httpd-replica-0' added with service UUID 'a05405bfe100475fa52883c71bd899e6'
+> add_service service_name="httpd-replica-0" config=ServiceConfig(image="httpd", ports={"http": PortSpec(number=8080)})
+Service 'httpd-replica-0' added with service UUID '80030157c58f4eb2b9c98f41dd938ed0'
 
-> add_service service_name="httpd-replica-1" config=ServiceConfig(image="httpd", ports={"http": PortSpec(number=8080, transport_protocol="TCP", application_protocol="")})
-Service 'httpd-replica-1' added with service UUID 'cc871310223c4bc7a539a6c93a8e33ea'
+> add_service service_name="httpd-replica-1" config=ServiceConfig(image="httpd", ports={"http": PortSpec(number=8080)})
+Service 'httpd-replica-1' added with service UUID '4abff039bfa74b019f0a0d2e155c760a'
 
-> add_service service_name="httpd-replica-2" config=ServiceConfig(image="httpd", ports={"http": PortSpec(number=8080, transport_protocol="TCP", application_protocol="")})
-Service 'httpd-replica-2' added with service UUID 'dcfd1fb7a94e4e8e8a55c715f7f09b04'
+> add_service service_name="httpd-replica-2" config=ServiceConfig(image="httpd", ports={"http": PortSpec(number=8080)})
+Service 'httpd-replica-2' added with service UUID 'b6f90bc6dad748a4807ad4fbc3e5cc9a'
+
 Starlark code successfully run. No output was returned.
-INFO[2023-02-10T13:32:53-03:00] ===================================================
-INFO[2023-02-10T13:32:53-03:00] ||          Created enclave: misty-bird          ||
-INFO[2023-02-10T13:32:53-03:00] ===================================================
-```
+INFO[2023-03-22T13:27:37+01:00] ===================================================
+INFO[2023-03-22T13:27:37+01:00] ||          Created enclave: arid-delta          ||
+INFO[2023-03-22T13:27:37+01:00] ===================================================
+Name:            arid-delta
+UUID:            0b3879d30c80
+Status:          RUNNING
+Creation Time:   Wed, 22 Mar 2023 13:27:03 CET
 
-That can be inspected by running
-
-```console
-kurtosis enclave inspect misty-bird
-```
-```console
-UUID:                                 eeb28363fc53
-Enclave Name:                         misty-bird
-Enclave Status:                       RUNNING
-Creation Time:                        Fri, 10 Feb 2023 13:32:32 -03
-API Container Status:                 RUNNING
-API Container Host GRPC Port:         127.0.0.1:63747
-API Container Host GRPC Proxy Port:   127.0.0.1:63748
+========================================= Files Artifacts =========================================
+UUID   Name
 
 ========================================== User Services ==========================================
 UUID           Name              Ports                               Status
-a05405bfe100   httpd-replica-0   http: 8080/tcp -> 127.0.0.1:63768   RUNNING
-cc871310223c   httpd-replica-1   http: 8080/tcp -> 127.0.0.1:63772   RUNNING
-dcfd1fb7a94e   httpd-replica-2   http: 8080/tcp -> 127.0.0.1:63781   RUNNING
+80030157c58f   httpd-replica-0   http: 8080/tcp -> 127.0.0.1:54164   RUNNING
+4abff039bfa7   httpd-replica-1   http: 8080/tcp -> 127.0.0.1:54170   RUNNING
+b6f90bc6dad7   httpd-replica-2   http: 8080/tcp -> 127.0.0.1:54174   RUNNING
 ```
+To see a more in-depth example and explanation of Kurtosis' capabillities, visit our [quickstart][quickstart-reference].
 
 ### More examples
 
-- The Kurtosis [Quickstart guide](https://docs.kurtosis.com/quickstart)
-- A curated [list of web2 and web3 examples](https://github.com/kurtosis-tech/awesome-kurtosis#awesome-kurtosis)
-- A guide on how to use Kurtosis to [simulate a network failure](https://docs.kurtosis.com)
+Further examples can be found in our [`awesome-kurtosis` repo][awesome-kurtosis].
 
 ## To start contributing to Kurtosis
 
@@ -296,15 +275,21 @@ $ alias kurtosis="$(pwd)/cli/cli/scripts/launch_cli.sh"
 $ kurtosis enclave add
 ```
 
-## Questions, help, or feedback
+## Community and support
 
-If you have feedback for us or a question around how Kurtosis works and the [docs](https://docs.kurtosis.com) aren't enough, we're more than happy to help and chat about your use case via the following ways:
-- Get help in our [Discord server](https://discord.gg/Es7QHbY4)
-- Email us at [feedback@kurtosistech.com](mailto:feedback@kurtosistech.com)
-- Schedule a 1:1 session with us [here](https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding)
+Kurtosis is a free and source-available product maintained by the [Kurtosis][kurtosis-tech] team. We'd love to hear from you and help where we can. You can engage with our team and our community in the following ways:
+- Filing an issue in our [Github](https://github.com/kurtosis-tech/kurtosis/issues/new/choose)
+- Joining our [Discord][discord] server
+- Following us on [Twitter][twitter]
+- [Emailing us](mailto:feedback@kurtosistech.com)
+- [Hop on a call to chat with us](https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding)
 
 <!-------- ONLY LINKS BELOW THIS POINT -------->
 [enclave]: https://docs.kurtosis.com/explanations/architecture#enclaves
+[awesome-kurtosis]: https://github.com/kurtosis-tech/awesome-kurtosis#readme
+[quickstart-reference]: https://docs.kurtosis.com/quickstart
+[discord]: https://discord.gg/Es7QHbY4
+[kurtosis-tech]: https://github.com/kurtosis-tech
 [docs]: https://docs.kurtosis.com
+[twitter]: https://twitter.com/KurtosisTech
 [starlark-explanation]: https://docs.kurtosis.com/explanations/starlark
-
