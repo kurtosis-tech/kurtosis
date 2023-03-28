@@ -21,7 +21,7 @@ jobs:
         id: docs-diff
       - name: Early exit if no docs have changed
         run: exit 0
-        if: github.ref != 'refs/heads/main' && !steps.docs-diff.outputs.DOCS_CHANGED
+        if: github.ref != 'refs/heads/main' && steps.docs-diff.outputs.DOCS_CHANGED == 0
       - name: Append changelog
         run: cat CHANGELOG.md >> docs/docs/changelog.md
       - name: Yarn Install
