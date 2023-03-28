@@ -41,7 +41,7 @@ def run(plan, args):
 	plan.set_connection(config=kurtosis.connection.BLOCKED)
 	
 	service_1 = plan.add_service(
-		service_name=SERVICE_ID_1, 
+		name=SERVICE_ID_1, 
 		config=ServiceConfig(
 			image=DOCKER_GETTING_STARTED_IMAGE,
 			subnetwork=SUBNETWORK_1,
@@ -49,7 +49,7 @@ def run(plan, args):
 	)
 
 	service_2 = plan.add_service(
-		service_name=SERVICE_ID_2, 
+		name=SERVICE_ID_2, 
 		config=ServiceConfig(
 			image=DOCKER_GETTING_STARTED_IMAGE,
 			subnetwork=SUBNETWORK_2
