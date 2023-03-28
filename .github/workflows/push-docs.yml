@@ -19,18 +19,18 @@ jobs:
           echo "$(git --no-pager diff --exit-code origin/main...HEAD -- ':docs'; echo $?)"
           echo "DOCS_CHANGED=$(git --no-pager diff --exit-code origin/main...HEAD -- ':docs'; echo $?)" >> $GITHUB_OUTPUT
         id: docs-diff
-      - name: Early exit if no docs have changed
-        run: exit 0
-        if: github.ref != 'refs/heads/main' && steps.docs-diff.outputs.DOCS_CHANGED == 0
       - name: Append changelog
         run: cat CHANGELOG.md >> docs/docs/changelog.md
+        if: github.ref == 'refs/heads/main' || steps.docs-diff.outputs.DOCS_CHANGED != 0
       - name: Yarn Install
         run: yarn --cwd ./docs install
+        if: github.ref == 'refs/heads/main' || steps.docs-diff.outputs.DOCS_CHANGED != 0
       - name: Yarn Build
         run: yarn --cwd ./docs build
-      
+        if: github.ref == 'refs/heads/main' || steps.docs-diff.outputs.DOCS_CHANGED != 0
       - name: Publish to Cloudflare Pages
         uses: cloudflare/pages-action@v1
+        if: github.ref == 'refs/heads/main' || steps.docs-diff.outputs.DOCS_CHANGED != 0
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
