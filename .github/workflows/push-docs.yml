@@ -4,7 +4,7 @@ name: Deploy documentation
 on:
   push:
     branches:
-      - 'main'
+      - '*'
 
 jobs:
   publish:
@@ -23,13 +23,17 @@ jobs:
         run: yarn --cwd ./docs install
       - name: Yarn Build
         run: yarn --cwd ./docs build
-
+      - name: Docs have changed
+        run: |
+          echo "DOCS_CHANGED=$(git --no-pager diff --exit-code origin/main...HEAD -- ':docs'; echo $?)" >> $GITHUB_OUTPUT
+        id: docs-diff
       - name: Publish to Cloudflare Pages
         uses: cloudflare/pages-action@v1
+        if: github.ref == 'refs/heads/main' || steps.docs-diff.outputs.DOCS_CHANGED
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: ${{ secrets.CLOUDFLARE_PROJECT_NAME }}
           directory: docs/build/
           # as we publish on tag we want to tell CF that the branch is still main so that it can deploy to production
-          branch: main
+          branch: ${GITHUB_REF##*/}
