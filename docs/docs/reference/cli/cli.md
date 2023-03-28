@@ -27,7 +27,7 @@ kurtosis config path
 to print out the file path of the `kurtosis-config.yml` file.
 
 ### Get the CLI version
-The CLI version can be printed with the following:
+The CLI version along with the currently running engine if any; can be printed with the following:
 
 ```
 kurtosis version
