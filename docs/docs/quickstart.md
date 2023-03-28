@@ -880,7 +880,7 @@ At a higher level, Kurtosis automatically deserialized the `[{"first_name":"Kevi
 def run(plan, args):
 ```
 
-**This section showed us how we can interact with the test environment we setup and also how to paramterize our distributed application for others future re-use.**
+**This section showed us how we can interact with the test environment we set up and also how to parametrize our distributed application for others to re-use.**
 
 
 <!-- 
