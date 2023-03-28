@@ -1128,6 +1128,7 @@ workflows:
             - publish_kurtosis_api_typescript
             - publish_api_container_server_image
             - publish_engine_server_image
+            - publish_files_artifacts_expander_image
           filters:
             branches:
               ignore: /.*/
