@@ -121,7 +121,7 @@ POSTGRES_PASSWORD = "password"
 def run(plan, args):
     # Add a Postgres server
     postgres = plan.add_service(
-        serivce_name = "postgres",
+        service_name = "postgres",
         config = ServiceConfig(
             image = "postgres:15.2-alpine",
             ports = {
