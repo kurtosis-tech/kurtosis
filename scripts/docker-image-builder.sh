@@ -56,6 +56,8 @@ for image_tag in ${image_tags}; do
 done
 
 # Build Docker image
+
+## Start by making sure the builder and the context do not already exist. If that's the case remove them
 kurtosis_docker_builder="kurtosis-docker-builder"
 docker_buildx_context='kurtosis-docker-builder-context'
 if docker buildx inspect "${kurtosis_docker_builder}" &>/dev/null; then
@@ -72,6 +74,8 @@ if docker context inspect "${docker_buildx_context}" &>/dev/null; then
     exit 1
   fi
 fi
+
+## Create Docker context and buildx builder
 if ! docker context create "${docker_buildx_context}" &>/dev/null; then
   echo "Error: Docker context creation for buildx failed" >&2
   exit 1
@@ -81,6 +85,7 @@ if ! docker buildx create --use --name "${kurtosis_docker_builder}" "${docker_bu
   exit 1
 fi
 
+## Actually build the Docker image
 docker_buildx_cmd="docker buildx build ${push_flag} --platform ${buildx_platform_arg} ${image_tags_concatenated} -f ${dockerfile_filepath} ${dockerfile_dirpath}"
 echo "Running the following docker buildx command:"
 echo "${docker_buildx_cmd}"
