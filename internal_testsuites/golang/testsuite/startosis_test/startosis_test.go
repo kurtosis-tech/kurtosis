@@ -51,8 +51,8 @@ def run(plan, args):
 		}
 	)
 	
-	plan.add_service(service_name = DATASTORE_SERVICE_NAME, config = config)
-	plan.print("Service " + DATASTORE_SERVICE_NAME + " deployed successfully.")
+	result = plan.add_service(service_name = DATASTORE_SERVICE_NAME, config = config)
+	plan.print("Service " + result.name + " deployed successfully.")
 	plan.exec(
 		recipe = ExecRecipe(
 			command = ["touch", FILE_TO_BE_CREATED],

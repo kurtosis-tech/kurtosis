@@ -1,8 +1,11 @@
 module github.com/kurtosis-tech/kurtosis/core/files_artifacts_expander
 
-go 1.17
+go 1.18
 
-replace github.com/kurtosis-tech/kurtosis/api/golang => ../../api/golang
+replace (
+	github.com/kurtosis-tech/kurtosis/api/golang => ../../api/golang
+	github.com/kurtosis-tech/kurtosis/contexts-config-store => ../../contexts-config-store
+)
 
 require (
 	github.com/gammazero/workerpool v1.1.2

@@ -42,11 +42,13 @@ require github.com/bazelbuild/buildtools v0.0.0-20221110131218-762712d8ce3f
 require (
 	github.com/briandowns/spinner v1.20.0
 	github.com/fatih/color v1.13.0
+	github.com/kurtosis-tech/kurtosis-portal/api/golang v0.0.0-20230323091236-fbfe0355b588
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/savioxavier/termlink v1.2.1
 )
 
 require (
+	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/Microsoft/go-winio v0.4.17 // indirect
 	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect

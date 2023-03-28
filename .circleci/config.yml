@@ -16,6 +16,12 @@ param_cli_cluster_backend: &param_cli_cluster_backend
     type: enum
     enum: ["docker"] # ["docker", "minikube"]
 
+# Install go version 1.18 to run our integration tests on the minimal version we support
+steps_install_go_1_18: &steps_install_go_1_18
+  - run: |
+      wget https://go.dev/dl/go1.18.10.linux-amd64.tar.gz
+      sudo rm -rf /usr/local/go
+      sudo tar -C /usr/local -xzf go1.18.10.linux-amd64.tar.gz
 
 # Steps to prepare a job for Kubernetes testing
 steps_prepare_testing_k8s: &steps_prepare_testing_k8s
@@ -102,7 +108,7 @@ parameters:
     default: 20.10.7
   api-go-version:
     type: string
-    default: "1.15.13"
+    default: "1.18"
   # Separate (and newer) than the API version because we want lots of people to be able to use the Kurtosis API and the API doesn't need to be
   # the same version as the server
   server-go-version:
@@ -203,7 +209,7 @@ jobs:
 
   build_name_generator:
     docker:
-      - image: "cimg/go:<< pipeline.parameters.api-go-version>>"
+      - image: "cimg/go:<< pipeline.parameters.go-version>>"
     steps:
       - checkout
       - <<: *abort_job_if_only_docs_changes
@@ -423,6 +429,9 @@ jobs:
 
       - attach_workspace:
           at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
+
+      - <<: *steps_install_go_1_18
+
       # We call Kurtosis a bunch later, so add it to the PATH so we can call it easily
       - run: |
           echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
@@ -566,6 +575,9 @@ jobs:
       # Set up Kurtosis
       - attach_workspace:
           at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
+
+      - <<: *steps_install_go_1_18
+
       - run: |
           echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
           sudo apt update
@@ -638,6 +650,8 @@ jobs:
       # Set up Kurtosis
       - attach_workspace:
           at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
+
+      - <<: *steps_install_go_1_18
 
       - run: |
           echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
@@ -803,10 +817,11 @@ jobs:
           version: "<< pipeline.parameters.docker-engine-version>>"
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
-      - run: core/files_artifacts_expander/scripts/build.sh
+      - run: core/files_artifacts_expander/scripts/build.sh true
       - run: |
           set -euo pipefail
           source core/files_artifacts_expander/scripts/_constants.env
+          dockerfile_filepath='core/files_artifacts_expander/Dockerfile'
           version_build="$(./scripts/get-docker-tag.sh)"
           version_to_publish="$(cat version.txt)"
           echo "Version that was built: ${version_build}"
@@ -814,10 +829,7 @@ jobs:
           image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_build}"
           image_name_to_publish_semver="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
           image_name_to_publish_latest="${IMAGE_ORG_AND_REPO}:latest"
-          docker tag "${image_name_with_version}" "${image_name_to_publish_semver}"
-          docker tag "${image_name_with_version}" "${image_name_to_publish_latest}"
-          docker push "${image_name_to_publish_semver}"
-          docker push "${image_name_to_publish_latest}"
+          scripts/docker-image-builder.sh true "${dockerfile_filepath}" "${image_name_with_version}" "${image_name_to_publish_semver}" "${image_name_to_publish_latest}"
 
   publish_api_container_server_image:
     docker:
@@ -1114,6 +1126,7 @@ workflows:
             - publish_kurtosis_api_typescript
             - publish_api_container_server_image
             - publish_engine_server_image
+            - publish_files_artifacts_expander_image
           filters:
             branches:
               ignore: /.*/
