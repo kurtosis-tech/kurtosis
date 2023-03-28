@@ -1,4 +1,4 @@
-name: "Tag API Golang Releases"
+name: "Reindex website with Algolia Docsearch on main"
 on:
   push:
     branches:
