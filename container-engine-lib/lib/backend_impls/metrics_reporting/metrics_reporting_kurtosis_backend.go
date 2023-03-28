@@ -94,6 +94,13 @@ func (backend *MetricsReportingKurtosisBackend) GetEngineLogs(ctx context.Contex
 	return nil
 }
 
+func (backend *MetricsReportingKurtosisBackend) DumpKurtosis(ctx context.Context, outputDirpath string) error {
+	if err := backend.underlying.DumpKurtosis(ctx, outputDirpath); err != nil {
+		return stacktrace.Propagate(err, "An error occurred while dumping the state of Kurtosis to dir '%v'", outputDirpath)
+	}
+	return nil
+}
+
 func (backend *MetricsReportingKurtosisBackend) CreateEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, enclaveName string, isPartitioningEnabled bool) (*enclave.Enclave, error) {
 	result, err := backend.underlying.CreateEnclave(ctx, enclaveUuid, enclaveName, isPartitioningEnabled)
 	if err != nil {

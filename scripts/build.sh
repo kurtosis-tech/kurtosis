@@ -5,7 +5,7 @@ set -euo pipefail   # Bash "strict mode"
 script_dirpath="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 root_dirpath="$(dirname "${script_dirpath}")"
 
-if ! sh "$script_dirpath"/versions_check.sh ; then
+if ! bash "${script_dirpath}/versions_check.sh"; then
   exit 1
 fi
 
@@ -18,6 +18,7 @@ BUILD_SCRIPT_RELATIVE_FILEPATHS=(
     "container-engine-lib/scripts/build.sh"
     "contexts-config-store/scripts/build.sh"
     "name_generator/scripts/build.sh"
+    "lsp/scripts/build.sh"
     "api/scripts/build.sh"
     "core/scripts/build.sh"
     "engine/scripts/build.sh"
