@@ -849,10 +849,11 @@ jobs:
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
       - run: |
-          core/server/scripts/build.sh
+          core/server/scripts/build.sh true
       - run: |
           set -euo pipefail
           source core/server/scripts/_constants.env
+          dockerfile_filepath='core/server/Dockerfile'
           version_build="$(./scripts/get-docker-tag.sh)"
           version_to_publish="$(cat version.txt)"
           echo "Version that was built: ${version_build}"
@@ -860,10 +861,7 @@ jobs:
           image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_build}"
           image_name_to_publish_semver="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
           image_name_to_publish_latest="${IMAGE_ORG_AND_REPO}:latest"
-          docker tag "${image_name_with_version}" "${image_name_to_publish_semver}"
-          docker tag "${image_name_with_version}" "${image_name_to_publish_latest}"
-          docker push "${image_name_to_publish_semver}"
-          docker push "${image_name_to_publish_latest}"
+          scripts/docker-image-builder.sh true "${dockerfile_filepath}" "${image_name_with_version}" "${image_name_to_publish_semver}" "${image_name_to_publish_latest}"
 
   publish_engine_server_image:
     docker:
@@ -884,11 +882,11 @@ jobs:
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
       - run: |
-          engine/server/scripts/build.sh
-
+          engine/server/scripts/build.sh true
       - run: |
           set -euo pipefail
           source engine/server/scripts/_constants.env
+          dockerfile_filepath='engine/server/Dockerfile'
           version_build="$(./scripts/get-docker-tag.sh)"
           version_to_publish="$(cat version.txt)"
           echo "Version that was built: ${version_build}"
@@ -896,10 +894,7 @@ jobs:
           image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_build}"
           image_name_to_publish_semver="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
           image_name_to_publish_latest="${IMAGE_ORG_AND_REPO}:latest"
-          docker tag "${image_name_with_version}" "${image_name_to_publish_semver}"
-          docker tag "${image_name_with_version}" "${image_name_to_publish_latest}"
-          docker push "${image_name_to_publish_semver}"
-          docker push "${image_name_to_publish_latest}"
+          scripts/docker-image-builder.sh true "${dockerfile_filepath}" "${image_name_with_version}" "${image_name_to_publish_semver}" "${image_name_to_publish_latest}"
 
   push_cli_artifacts:
     docker:
