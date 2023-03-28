@@ -1,10 +1,6 @@
 name: Deploy documentation
 
-
-on:
-  push:
-    branches:
-      - '*'
+on: push
 
 jobs:
   publish:
