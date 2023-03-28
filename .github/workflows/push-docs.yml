@@ -12,20 +12,24 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-
+        with:
+          fetch-depth: 0
+      - name: Docs have changed
+        run: |
+          echo "DOCS_CHANGED=$(git --no-pager diff --exit-code origin/main...HEAD -- ':docs'; echo $?)" >> $GITHUB_OUTPUT
+        id: docs-diff
+      - name: Early exit if no docs have changed
+        run: exit 0
+        if: github.ref != 'refs/heads/main' && !steps.docs-diff.outputs.DOCS_CHANGED
       - name: Append changelog
         run: cat CHANGELOG.md >> docs/docs/changelog.md
       - name: Yarn Install
         run: yarn --cwd ./docs install
       - name: Yarn Build
         run: yarn --cwd ./docs build
-      - name: Docs have changed
-        run: |
-          echo "DOCS_CHANGED=$(git --no-pager diff --exit-code origin/main...HEAD -- ':docs'; echo $?)" >> $GITHUB_OUTPUT
-        id: docs-diff
+      
       - name: Publish to Cloudflare Pages
         uses: cloudflare/pages-action@v1
-        if: github.ref == 'refs/heads/main' || steps.docs-diff.outputs.DOCS_CHANGED
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
