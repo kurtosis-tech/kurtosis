@@ -29,7 +29,7 @@ func DumpKurtosis(ctx context.Context, outputDirpath string, backend backend_int
 	}
 
 	// Check if the directory exists and if it does exit immediately
-	if _, err = os.Stat(outputDirpath); err != nil && !os.IsNotExist(err) {
+	if _, err = os.Stat(outputDirpath); os.IsExist(err) {
 		return stacktrace.NewError("Cannot create output directory at '%v'; directory already exists", outputDirpath)
 	}
 	// If it doesn't we create the directory; if the directory fails on creation we exit
