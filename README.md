@@ -19,64 +19,46 @@ Running Kurtosis
 Follow the instructions [here](https://docs.kurtosis.com/install).
 
 ### Run
-Kurtosis can be used to create ephemeral environments called [enclaves][enclave]. We'll create a simple [Starlark][starlark-explanation] script to specify what we want our enclave to look like and what it will contain. Let's write one that spins up multiple replicas of `httpd`:
-
-```python
-cat > script.star << EOF
-def run(plan, args):
-    configs = {}
-    for i in range(args.replica_count):
-       plan.add_service(
-          "httpd-replica-"+str(i),
-          config = ServiceConfig(
-              image = "httpd",
-              ports = {
-                  "http": PortSpec(number = 8080),
-              },
-          ),
-      )
-EOF
-```
-
-Running the following will give us an enclave with three services:
+Kurtosis create ephemeral multi-container environments called [enclaves][enclave] using [Starlark](https://docs.kurtosis.com/explanations/starlark). These can be bundled together into [packages](https://docs.kurtosis.com/reference/packages). Let's run one now:
 
 ```bash
-kurtosis run script.star '{"replica_count": 3}'
+kurtosis run github.com/kurtosis-tech/awesome-kurtosis/redis-voting-app
 ```
+
 ```console
-INFO[2023-03-22T13:27:03+01:00] Creating a new enclave for Starlark to run inside...
-INFO[2023-03-22T13:27:07+01:00] Enclave 'arid-delta' created successfully
+INFO[2023-03-28T15:27:31-03:00] Creating a new enclave for Starlark to run inside...
+INFO[2023-03-28T15:27:34-03:00] Enclave 'nameless-fjord' created successfully
 
-> add_service service_name="httpd-replica-0" config=ServiceConfig(image="httpd", ports={"http": PortSpec(number=8080)})
-Service 'httpd-replica-0' added with service UUID '80030157c58f4eb2b9c98f41dd938ed0'
+> print msg="Spinning up the Redis Package"
+Spinning up the Redis Package
 
-> add_service service_name="httpd-replica-1" config=ServiceConfig(image="httpd", ports={"http": PortSpec(number=8080)})
-Service 'httpd-replica-1' added with service UUID '4abff039bfa74b019f0a0d2e155c760a'
+> add_service service_name="redis" config=ServiceConfig(image="redis:alpine", ports={"client": PortSpec(number=6379, transport_protocol="TCP")})
+Service 'redis' added with service UUID '3ca8b4c1c8344b2c96be1b988ba12a02'
 
-> add_service service_name="httpd-replica-2" config=ServiceConfig(image="httpd", ports={"http": PortSpec(number=8080)})
-Service 'httpd-replica-2' added with service UUID 'b6f90bc6dad748a4807ad4fbc3e5cc9a'
+> add_service service_name="voting-app" config=ServiceConfig(image="mcr.microsoft.com/azuredocs/azure-vote-front:v1", ports={"http": PortSpec(number=80, transport_protocol="TCP")}, env_vars={"REDIS": "{{kurtosis:5045f2098e4846b88efefbf2689b5538:hostname.runtime_value}}"})
+Service 'voting-app' added with service UUID '8a8c18860df1440ca7bdc96fd511fb2a'
 
 Starlark code successfully run. No output was returned.
-INFO[2023-03-22T13:27:37+01:00] ===================================================
-INFO[2023-03-22T13:27:37+01:00] ||          Created enclave: arid-delta          ||
-INFO[2023-03-22T13:27:37+01:00] ===================================================
-Name:            arid-delta
-UUID:            0b3879d30c80
+INFO[2023-03-28T15:28:08-03:00] =======================================================
+INFO[2023-03-28T15:28:08-03:00] ||          Created enclave: nameless-fjord          ||
+INFO[2023-03-28T15:28:08-03:00] =======================================================
+Name:            nameless-fjord
+UUID:            6babc3090ad0
 Status:          RUNNING
-Creation Time:   Wed, 22 Mar 2023 13:27:03 CET
+Creation Time:   Tue, 28 Mar 2023 15:27:31 -03
 
 ========================================= Files Artifacts =========================================
 UUID   Name
 
 ========================================== User Services ==========================================
-UUID           Name              Ports                               Status
-80030157c58f   httpd-replica-0   http: 8080/tcp -> 127.0.0.1:54164   RUNNING
-4abff039bfa7   httpd-replica-1   http: 8080/tcp -> 127.0.0.1:54170   RUNNING
-b6f90bc6dad7   httpd-replica-2   http: 8080/tcp -> 127.0.0.1:54174   RUNNING
+UUID           Name         Ports                                 Status
+3ca8b4c1c834   redis        client: 6379/tcp -> 127.0.0.1:58508   RUNNING
+8a8c18860df1   voting-app   http: 80/tcp -> 127.0.0.1:58511       RUNNING
 ```
-To see a more in-depth example and explanation of Kurtosis' capabilities, visit our [quickstart][quickstart-reference].
 
-### More examples
+If this piqued your interest, you might like our [quickstart][quickstart-reference].
+
+### More Examples
 
 Further examples can be found in our [`awesome-kurtosis` repo][awesome-kurtosis].
 
