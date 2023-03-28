@@ -38,16 +38,16 @@ func run(cmd *cobra.Command, args []string) error {
 	engineManager, err := engine_manager.NewEngineManager(ctx)
 	if err != nil {
 		// if the engine manager can't be fetched; perhaps docker isn't alive we just print the CLI version
-		keyValuePrinter.Print()
 		logrus.Errorf(errorDeterminingEngineVersionLogStr)
+		keyValuePrinter.Print()
 		return nil
 	}
 
 	status, _, maybeEngineVersion, err := engineManager.GetEngineStatus(ctx)
 	if err != nil {
 		// if the engine status can't be fetched we just print the CLI version
-		keyValuePrinter.Print()
 		logrus.Errorf(errorDeterminingEngineVersionLogStr)
+		keyValuePrinter.Print()
 		return nil
 	}
 	if status == engine_manager.EngineStatus_Running {
