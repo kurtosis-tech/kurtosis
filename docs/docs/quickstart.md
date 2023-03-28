@@ -210,7 +210,7 @@ def run(plan, args):
 
     # Add a Postgres server
     postgres = plan.add_service(
-        service_name = "postgres",
+        name = "postgres",
         config = ServiceConfig(
             image = "postgres:15.2-alpine",
             ports = {
@@ -281,7 +281,7 @@ INFO[2023-03-15T04:34:10-03:00] Uploading and executing package 'github.com/YOUR
 > upload_files src="github.com/kurtosis-tech/awesome-kurtosis/data-package/dvd-rental-data.tar"
 Files with artifact name 'howling-thunder' uploaded with artifact UUID '32810fc8c131414882c52b044318b2fd'
 
-> add_service service_name="postgres" config=ServiceConfig(image="postgres:15.2-alpine", ports={"postgres": PortSpec(number=5432, application_protocol="postgresql")}, files={"/seed-data": "howling-thunder"}, env_vars={"POSTGRES_DB": "app_db", "POSTGRES_PASSWORD": "password", "POSTGRES_USER": "app_user"})
+> add_service name="postgres" config=ServiceConfig(image="postgres:15.2-alpine", ports={"postgres": PortSpec(number=5432, application_protocol="postgresql")}, files={"/seed-data": "howling-thunder"}, env_vars={"POSTGRES_DB": "app_db", "POSTGRES_PASSWORD": "password", "POSTGRES_USER": "app_user"})
 Service 'postgres' added with service UUID 'f1d9cab2ca344d1fbb0fc00b2423f45f'
 
 > wait recipe=ExecRecipe(command=["psql", "-U", "app_user", "-d", "app_db", "-c", "\\l"]) field="code" assertion="==" target_value=0 timeout="5s"
@@ -368,7 +368,7 @@ Kurtosis' first-class data primitive is called a [files artifact][files-artifact
 
 ```python
 postgres = plan.add_service(
-    service_name = "postgres",
+    name = "postgres",
     config = ServiceConfig(
         # ...omitted...
         files = {
@@ -429,7 +429,7 @@ def run(plan, args):
 
     # Add a Postgres server
     postgres = plan.add_service(
-        service_name = "postgres",
+        name = "postgres",
         config = ServiceConfig(
             image = "postgres:15.2-alpine",
             ports = {
@@ -476,7 +476,7 @@ def run(plan, args):
         POSTGRES_DB,
     )
     api = plan.add_service(
-        service_name = "api", # Naming our PostgREST service "api"
+        name = "api", # Naming our PostgREST service "api"
         config = ServiceConfig(
             image = "postgrest/postgrest:v10.2.0.20230209",
             env_vars = {
@@ -571,7 +571,7 @@ def run(plan, args):
 
     # Add a Postgres server
     postgres = plan.add_service(
-        service_name = "postgres",
+        name = "postgres",
         config = ServiceConfig(
             # ...
             env_vars = {
@@ -639,7 +639,7 @@ postgres_url = "postgresql://{}:{}@{}:{}/{}".format(
 
 ```python
 api = plan.add_service(
-    service_name = "api", # Naming our PostgREST service "api"
+    name = "api", # Naming our PostgREST service "api"
     config = ServiceConfig(
         # ...
         env_vars = {
@@ -717,7 +717,7 @@ def run(plan, args):
 
     # Add a Postgres server
     postgres = plan.add_service(
-        service_name = "postgres",
+        name = "postgres",
         config = ServiceConfig(
             image = "postgres:15.2-alpine",
             ports = {
@@ -764,7 +764,7 @@ def run(plan, args):
         POSTGRES_DB,
     )
     api = plan.add_service(
-        service_name = "api",
+        name = "api",
         config = ServiceConfig(
             image = "postgrest/postgrest:v10.2.0.20230209",
             env_vars = {
