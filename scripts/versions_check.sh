@@ -20,17 +20,17 @@ echo "${BLUE_BG}${WHITE_FG}${BOLD}Starting Kurtosis Build...              ${NORM
 
 check_node_version() {
   if [ -f ~/.nvm/nvm.sh ]; then
-    . ~/.nvm/nvm.sh
+    source ~/.nvm/nvm.sh
   elif command -v brew; then
     # https://docs.brew.sh/Manpage#--prefix-formula
     BREW_PREFIX=$(brew --prefix nvm)
     if [ -f "${BREW_PREFIX}/nvm.sh" ]; then
-      . "${BREW_PREFIX}"/nvm.sh
+      source "${BREW_PREFIX}"/nvm.sh
     fi
   fi
 
   if ! command -v nvm &> /dev/null ; then
-    echo "WARN: not able to configure nvm"
+    echo "ERROR: unable to configure nvm"
     exit 1
   fi
 
@@ -41,7 +41,7 @@ check_node_version() {
     echo  ""
     error=true
   else
-    echo "${BLUE_BG}${WHITE_FG}${BOLD}Node version "${GO_VERSION}" found. ok    ${NORMAL_BG}"
+    echo "${BLUE_BG}${WHITE_FG}${BOLD}Node version "${NODE_VERSION}" found. ok    ${NORMAL_BG}"
   fi
 }
 
@@ -73,7 +73,7 @@ check_node_version
 check_go_version
 
 if "$error"; then
-  echo  exiting...
+  echo exiting...
   exit 1
 fi
 
