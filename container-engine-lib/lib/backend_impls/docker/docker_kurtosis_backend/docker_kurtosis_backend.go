@@ -138,7 +138,11 @@ func (backend *DockerKurtosisBackend) DestroyEngines(
 }
 
 func (backend *DockerKurtosisBackend) GetEngineLogs(ctx context.Context, outputDirpath string) error {
-	return engine_functions.EngineLogs(ctx, outputDirpath, backend.dockerManager)
+	return engine_functions.GetEngineLogs(ctx, outputDirpath, backend.dockerManager)
+}
+
+func (backend *DockerKurtosisBackend) DumpKurtosis(ctx context.Context, outputDirpath string) error {
+	return engine_functions.DumpKurtosis(ctx, outputDirpath, backend)
 }
 
 func (backend *DockerKurtosisBackend) RegisterUserServices(_ context.Context, enclaveUuid enclave.EnclaveUUID, services map[service.ServiceName]bool) (map[service.ServiceName]*service.ServiceRegistration, map[service.ServiceName]error, error) {

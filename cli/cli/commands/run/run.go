@@ -286,7 +286,8 @@ func run(
 			}
 		}
 
-		return stacktrace.Propagate(errRunningKurtosis, "Error executing Kurtosis code")
+		// do not print the go trace in case of APIC failures
+		return nil
 	}
 
 	servicesInEnclaveForMetrics, servicesInEnclaveForMetricsError := enclaveCtx.GetServices()
