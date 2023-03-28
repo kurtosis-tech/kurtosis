@@ -28,10 +28,11 @@ func DumpKurtosis(ctx context.Context, outputDirpath string, backend backend_int
 		return stacktrace.Propagate(err, "An error occurred while getting a list of enclaves registered with the underlying engine")
 	}
 
-	// Create the main output directory
+	// Check if the directory exists and if it does exit immediately
 	if _, err = os.Stat(outputDirpath); err != nil && !os.IsNotExist(err) {
 		return stacktrace.NewError("Cannot create output directory at '%v'; directory already exists", outputDirpath)
 	}
+	// If it doesn't we create the directory; if the directory fails on creation we exit
 	if err = os.Mkdir(outputDirpath, createdDirPerms); err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating output directory at '%v'", outputDirpath)
 	}
