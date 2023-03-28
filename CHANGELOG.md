@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.70.5](https://github.com/kurtosis-tech/kurtosis/compare/0.70.4...0.70.5) (2023-03-28)
+
+
+### Features
+
+* Print the running engine version while running Kurtosis Version ([#346](https://github.com/kurtosis-tech/kurtosis/issues/346)) ([9ef03cb](https://github.com/kurtosis-tech/kurtosis/commit/9ef03cb22e26d9dce556e1d31bacf9b3b30da736))
+
 ## [0.70.4](https://github.com/kurtosis-tech/kurtosis/compare/0.70.3...0.70.4) (2023-03-28)
 
 
