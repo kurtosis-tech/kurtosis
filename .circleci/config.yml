@@ -73,11 +73,11 @@ run_dump_kurtosis_enclaves: &run_dump_kurtosis_enclaves
 
     zip -r "${output_dirname}.zip" "${output_dirname}"
 
-# If the only changes are to the docs, we can optimize and skip any code-building/code-testing
+# If the only changes are to the docs subdirectory or to Markdown files, we can optimize and skip any code-building/code-testing
 # `git diff --exit-code` returns 0 exit code if no changes, and 1 if changes
 abort_job_if_only_docs_changes: &abort_job_if_only_docs_changes
   run: |
-    if git --no-pager diff --exit-code origin/main...HEAD -- . ':!docs'; then
+    if git --no-pager diff --exit-code origin/main...HEAD -- . ':!docs' ':!*.md'; then
       circleci-agent step halt
     fi 
 
