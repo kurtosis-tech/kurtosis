@@ -2,60 +2,23 @@
 <img src="./logo.png" width="1200">
 
 ----
-## What is Kurtosis?
-[Kurtosis](https://www.kurtosis.com) is a composable build system for multi-container test environments. Kurtosis makes it easier for developers to set up test environments that require dynamic setup logic (e.g. passing IPs or runtime-generated data between services) or programmatic data seeding.
+What is Kurtosis?
+=================
+[Kurtosis](https://www.kurtosis.com) is a composable build system for multi-container test environments. Kurtosis makes it easier for developers to set up test environments that require dynamic setup logic (e.g. passing IPs or runtime-generated data between services) or programmatic data seeding. 
 
-## Why Kurtosis?
+To read more about "why Kurtosis?", go [here](https://docs.kurtosis.com/explanations/what-is-kurtosis).
 
-Developers usually set up these types of dynamic environments with a free-form scripting language like bash or Python, interacting with the Docker CLI or Docker Compose. Kurtosis is designed to make these setups easier to maintain and reuse in different test scenarios.
+To read about the architecture, go [here](https://docs.kurtosis.com/explanations/architecture).
 
-In Kurtosis, test environments have these properties:
-- Environment-level portability: the entire test environment always runs the same way, regardless of the host machine
-- Composability: environments can be composed and connected together without needing to know the inner details of each setup
-- Parameterizability: environments can be parameterized, so that they're easy to modify for use across different test scenarios
 
-## Architecture
+Running Kurtosis
+================
 
-#### Kurtosis has a definition language with:
-- An instruction set of useful primitives for setting up and manipulating environments
-- A scriptable Python-like SDK in Starlark, a build language used by Google’s Bazel
-- A package management system for shareability and composability
+### Install
 
-#### Kurtosis has a validator with:
-- Compile-time safety to quickly catch errors in test environment definitions
-- The ability to dry-run test environment definitions to verify what will be run, before running
+Follow the instructions [here](https://docs.kurtosis.com/install).
 
-#### Kurtosis has a runtime to:
-- Run multi-container test environments over Docker or Kubernetes, depending on how you wish to scale
-- Enable debugging and investigation of problems live, as they're happening in your test environment
-- Manage file dependencies to ensure complete portability of test environments across different test runs and backends
-
-Read more about Kurtosis on our [website](https://www.kurtosis.com/) and in our [docs][docs].
----
-## To start using Kurtosis
-
-### Prerequisites
-
-#### Install and start Docker
-
-Docker must be installed and running on your machine:
-
-```bash
-docker version
-```
-
-If it's not, follow the instructions from the [Docker docs](https://docs.docker.com/get-docker/).
-
-#### Install the Kurtosis CLI
-
-##### On MacOS:
-
-```bash
-brew install kurtosis-tech/tap/kurtosis-cli
-```
-For other installations methods, visit these [install instructions](https://docs.kurtosis.com/install#ii-install-the-cli).
-
-### Running Kurtosis
+### Run
 Kurtosis can be used to create ephemeral environments called [enclaves][enclave]. We'll create a simple [Starlark][starlark-explanation] script to specify what we want our enclave to look like and what it will contain. Let's write one that spins up multiple replicas of `httpd`:
 
 ```python
@@ -111,32 +74,36 @@ UUID           Name              Ports                               Status
 4abff039bfa7   httpd-replica-1   http: 8080/tcp -> 127.0.0.1:54170   RUNNING
 b6f90bc6dad7   httpd-replica-2   http: 8080/tcp -> 127.0.0.1:54174   RUNNING
 ```
-To see a more in-depth example and explanation of Kurtosis' capabillities, visit our [quickstart][quickstart-reference].
+To see a more in-depth example and explanation of Kurtosis' capabilities, visit our [quickstart][quickstart-reference].
 
 ### More examples
 
 Further examples can be found in our [`awesome-kurtosis` repo][awesome-kurtosis].
 
-## To start contributing to Kurtosis
+Contributing to Kurtosis
+========================
+
+<details>
+<summary>Expand to see contribution info</summary>
 
 See our [CONTRIBUTING](./CONTRIBUTING.md) file.
 
---- 
-
-## Repository Structure
+Repository Structure
+--------------------
 
 This repository is structured as a monorepo, containing the following projects:
 - `container-engine-lib`: Library used to abstract away container engine being used by the [enclave][enclave].
 - `core`: Container launched inside an [enclave][enclave] to coordinate its state
 - `engine`: Container launched to coordinate [enclaves][enclave]
 - `api`: Defines the API of the Kurtosis platform (`engine` and `core`)
-- `cli`: Produces CLI binary, allowing iteraction with the Kurtosis system
+- `cli`: Produces CLI binary, allowing interaction with the Kurtosis system
 - `docs`: Documentation that is published to [docs.kurtosis.com](docs)
 - `internal_testsuites`: End to end tests
 
-## Dependencies
+Dev Dependencies
+----------------
 
-To build Kurtosis, you must the following dependencies installed:
+To build Kurtosis itself, you must have the following installed:
 
 #### Bash (5 or above) + Git
 
@@ -152,7 +119,7 @@ chsh -s "${BREW_PREFIX}/bin/bash"
 brew install git
 ```
 #### Docker
-  
+
 On MacOS:
 ```bash
 brew install docker
@@ -198,54 +165,59 @@ On MacOS:
 brew install filosottile/musl-cross/musl-cross
 ```
 
-## Unit Test Instructions
-
-For all Go modules, run `go test ./...` on the module folder. For example:
-
-```console
-$ cd cli/cli/
-$ go test ./...
-```
-
-## Build Instructions
+Build Instructions
+------------------
 
 To build the entire project, run:
 
-```console
-$ ./script/build.sh
+```bash
+./script/build.sh
 ```
 
 To only build a specific project, run the script on `./PROJECT/PATH/script/build.sh`, for example:
 
-```console
-$ ./container-engine-lib/build.sh
-$ ./core/scripts/build.sh
-$ ./api/scripts/build.sh
-$ ./engine/scripts/build.sh
-$ ./cli/scripts/build.sh
+```bash
+./container-engine-lib/build.sh
+./core/scripts/build.sh
+./api/scripts/build.sh
+./engine/scripts/build.sh
+./cli/scripts/build.sh
 ```
 
-If there are any changes to Protobuf files in `api`, the bindings must be regenerated:
+If there are any changes to the Protobuf files in the `api` subdirectory, the Protobuf bindings must be regenerated:
 
-```console
+```bash
 $ ./api/scripts/regenerate-protobuf-bindings.sh
 ```
 
-Build scripts also run unit tests as part of the build proccess
+Build scripts also run unit tests as part of the build process.
 
-## E2E Test Instructions
+Unit Test Instructions
+----------------------
+
+For all Go modules, run `go test ./...` on the module folder. For example:
+
+```bash
+cd cli/cli/
+go test ./...
+```
+
+E2E Test Instructions
+---------------------
 
 Each project's build script also runs the unit tests inside the project. Running `./script/build.sh` will guarantee that all unit tests in the monorepo pass.
 
-To run the end to end tests:
+To run the end-to-end tests:
 
 1. Make sure Docker is running
+
 ```console
 $ docker --version
 Docker version X.Y.Z
 ```
 
 2. Make sure Kurtosis Engine is running
+
 ```console
 $ kurtosis engine status
 A Kurtosis engine is running with the following info:
@@ -253,6 +225,7 @@ Version:   0.X.Y
 ```
 
 1. Run `test.sh` script
+
 ```console
 $ ./internal_testsuites/scripts/test.sh
 ```
@@ -260,28 +233,34 @@ $ ./internal_testsuites/scripts/test.sh
 If you are developing the Typescript test, make sure that you have first built `api/typescript`. Any
 changes made to the Typescript package within `api/typescript` aren't hot loaded as of 2022-09-29.
 
-## Run Instructions
+Dev Run Instructions
+--------------------
 
-To interact with the built CLI, run `./cli/cli/scripts/launch_cli.sh` as if it was the `kurtosis` command:
+Once the project has built, run `./cli/cli/scripts/launch_cli.sh` as if it was the `kurtosis` command:
 
-```console
-$ ./cli/cli/scripts/launch_cli.sh enclave add
+```bash
+./cli/cli/scripts/launch_cli.sh enclave add
 ```
 
 If you want tab completion on the recently built CLI, you can alias it to `kurtosis`:
 
-```console
-$ alias kurtosis="$(pwd)/cli/cli/scripts/launch_cli.sh"
-$ kurtosis enclave add
+```bash
+alias kurtosis="$(pwd)/cli/cli/scripts/launch_cli.sh"
+kurtosis enclave add
 ```
 
-## Community and support
+</details>
+
+Community and support
+=====================
 
 Kurtosis is a free and source-available product maintained by the [Kurtosis][kurtosis-tech] team. We'd love to hear from you and help where we can. You can engage with our team and our community in the following ways:
+
+- Giving feedback via the `kurtosis feedback` command
 - Filing an issue in our [Github](https://github.com/kurtosis-tech/kurtosis/issues/new/choose)
-- Joining our [Discord][discord] server
-- Following us on [Twitter][twitter]
-- [Emailing us](mailto:feedback@kurtosistech.com)
+- [Joining our Discord server][discord]
+- [Following us on Twitter][twitter]
+- [Emailing us](mailto:feedback@kurtosistech.com) (also available as `kurtosis feedback --email`)
 - [Hop on a call to chat with us](https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding)
 
 <!-------- ONLY LINKS BELOW THIS POINT -------->
