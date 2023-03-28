@@ -19,7 +19,8 @@ const (
 // nolint: exhaustruct
 var VersionCmd = &cobra.Command{
 	Use:   command_str_consts.VersionCmdStr,
-	Short: "Prints the CLI version",
+	Short: "Prints the CLI and Running Engine Version",
+	Long:  "Prints the version of the CLI and if there is any running Engine then it prints that too",
 	RunE:  run,
 }
 
