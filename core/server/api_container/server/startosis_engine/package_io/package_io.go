@@ -106,11 +106,14 @@ func convertValueToDictIfPossible(genericValue starlark.Value) (starlark.Value, 
 
 			}
 			postProcessedValue, interpretationError := convertValueToDictIfPossible(genericDictValue)
-			if err != nil {
+			if interpretationError != nil {
 				// do not wrap the interpretation error here as it's coming from a recursive call.
 				return nil, interpretationError
 			}
-			dict.SetKey(stringKey, postProcessedValue)
+			err = dict.SetKey(stringKey, postProcessedValue)
+			if err != nil {
+				return nil, startosis_errors.NewInterpretationError("Unexpected error setting dictionary key '%s' to value '%v'", stringKey, postProcessedValue)
+			}
 		}
 		return dict, nil
 	case *starlarkstruct.Struct:
