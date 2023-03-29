@@ -32,6 +32,7 @@ const (
 	EnclaveRmCmdStr         = "rm"
 	EnclaveDumpCmdStr       = "dump"
 	EngineCmdStr            = "engine"
+	EngineLogsCmdStr        = "logs"
 	EngineStartCmdStr       = "start"
 	EngineStatusCmdStr      = "status"
 	EngineStopCmdStr        = "stop"
@@ -43,6 +44,7 @@ const (
 	FilesStoreWebCmdStr     = "storeweb"
 	FilesStoreServiceCmdStr = "storeservice"
 	FilesRenderTemplate     = "rendertemplate"
+	KurtosisDumpCmdStr      = "dump"
 	ServiceCmdStr           = "service"
 	ServiceAddCmdStr        = "add"
 	ServiceLogsCmdStr       = "logs"
@@ -55,4 +57,5 @@ const (
 	PathCmdStr              = "path"
 	VersionCmdStr           = "version"
 	GatewayCmdStr           = "gateway"
+	LspCmdStr               = "lsp"
 )

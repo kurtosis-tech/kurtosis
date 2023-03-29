@@ -1,163 +1,93 @@
 
-<img src="./logo.png" width="500">
+<img src="./logo.png" width="1200">
 
 ----
+What is Kurtosis?
+=================
+[Kurtosis](https://www.kurtosis.com) is a composable build system for multi-container test environments. Kurtosis makes it easier for developers to set up test environments that require dynamic setup logic (e.g. passing IPs or runtime-generated data between services) or programmatic data seeding. 
 
-[Kurtosis](https://www.kurtosis.com) is a development platform for distributed applications that aims to provide a consistent experience across all stages of distributed app software delivery.
+To read more about "why Kurtosis?", go [here](https://docs.kurtosis.com/explanations/what-is-kurtosis).
 
-Use cases for Kurtosis include:
+To read about the architecture, go [here](https://docs.kurtosis.com/explanations/architecture).
 
-- Running a third-party distributed app, without knowing how to set it up
-- Local prototyping & development on distributed apps
-- Writing integration and end-to-end distributed app tests (e.g. happy path & sad path tests, load tests, performance tests, etc.)
-- Running integration/E2E distributed app tests
-- Debugging distributed apps during development
 
-## Why Kurtosis?
+Running Kurtosis
+================
 
-Docker and Kubernetes are each great at serving developers in different parts of the development cycle: Docker for development/testing, Kubernetes for production. However, the separation between the two entails different distributed app definitions, and different tooling. In dev/test, this means Docker Compose and Docker observability tooling. In production, this means Helm definitions and manually-configured observability tools like Istio, Datadog, or Honeycomb.
+### Install
 
-Kurtosis aims at one level of abstraction higher. Developers can define their distributed applications in Kurtosis, and Kurtosis will handle:
+Follow the instructions [here](https://docs.kurtosis.com/install).
 
-- Running on Docker or Kubernetes
-- Reproduceability
-- Safety
-- Port-forwarding & local development hookups
-- Observability
-- Sharing
-
-If we succeed in our vision, you will be able to use the same distributed application definition from local dev all the way to prod.
-
----
-
-## To start using Kurtosis
-
-### Prerequisites
-
-Docker must be installed and running on your machine:
+### Run
+Kurtosis create ephemeral multi-container environments called [enclaves][enclave] using [Starlark](https://docs.kurtosis.com/explanations/starlark). These can be bundled together into [packages](https://docs.kurtosis.com/reference/packages). Let's run one now:
 
 ```bash
-docker version
+kurtosis run github.com/kurtosis-tech/awesome-kurtosis/redis-voting-app
 ```
 
-If it's not, follow the instructions from the [Docker docs](https://docs.docker.com/get-docker/).
-
-### Installing Kurtosis
-
-On MacOS:
-
-```bash
-brew install kurtosis-tech/tap/kurtosis-cli
-```
-
-On Linux (apt):
-```bash
-echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
-sudo apt update
-sudo apt install kurtosis-cli
-```
-
-On Linux (yum):
-```bash
-echo '[kurtosis]
-name=Kurtosis
-baseurl=https://yum.fury.io/kurtosis-tech/
-enabled=1
-gpgcheck=0' | sudo tee /etc/yum.repos.d/kurtosis.repo
-sudo yum install kurtosis-cli
-```
-
-### Running
-
-First of all we can create [a simple Starlark script][starlark-explanation] to spin up multiple replicas of `httpd`:
-
-```python
-cat > script.star << EOF
-def run(plan, args):
-    configs = {}
-    for i in range(args.replica_count):
-       plan.add_service(
-          "httpd-replica-"+str(i),
-          config = ServiceConfig(
-              image = "httpd",
-              ports = {
-                  "http": PortSpec(number = 8080),
-              },
-          ),
-      )
-EOF
-```
-
-Running the script gives us an enclave with three services:
-
-```bash
-kurtosis run script.star '{"replica_count": 3}'
-```
 ```console
-INFO[2023-02-10T13:32:32-03:00] Creating a new enclave for Starlark to run inside...
-INFO[2023-02-10T13:32:37-03:00] Enclave 'misty-bird' created successfully
+INFO[2023-03-28T15:27:31-03:00] Creating a new enclave for Starlark to run inside...
+INFO[2023-03-28T15:27:34-03:00] Enclave 'nameless-fjord' created successfully
 
-> add_service service_name="httpd-replica-0" config=ServiceConfig(image="httpd", ports={"http": PortSpec(number=8080, transport_protocol="TCP", application_protocol="")})
-Service 'httpd-replica-0' added with service UUID 'a05405bfe100475fa52883c71bd899e6'
+> print msg="Spinning up the Redis Package"
+Spinning up the Redis Package
 
-> add_service service_name="httpd-replica-1" config=ServiceConfig(image="httpd", ports={"http": PortSpec(number=8080, transport_protocol="TCP", application_protocol="")})
-Service 'httpd-replica-1' added with service UUID 'cc871310223c4bc7a539a6c93a8e33ea'
+> add_service service_name="redis" config=ServiceConfig(image="redis:alpine", ports={"client": PortSpec(number=6379, transport_protocol="TCP")})
+Service 'redis' added with service UUID '3ca8b4c1c8344b2c96be1b988ba12a02'
 
-> add_service service_name="httpd-replica-2" config=ServiceConfig(image="httpd", ports={"http": PortSpec(number=8080, transport_protocol="TCP", application_protocol="")})
-Service 'httpd-replica-2' added with service UUID 'dcfd1fb7a94e4e8e8a55c715f7f09b04'
+> add_service service_name="voting-app" config=ServiceConfig(image="mcr.microsoft.com/azuredocs/azure-vote-front:v1", ports={"http": PortSpec(number=80, transport_protocol="TCP")}, env_vars={"REDIS": "{{kurtosis:5045f2098e4846b88efefbf2689b5538:hostname.runtime_value}}"})
+Service 'voting-app' added with service UUID '8a8c18860df1440ca7bdc96fd511fb2a'
+
 Starlark code successfully run. No output was returned.
-INFO[2023-02-10T13:32:53-03:00] ===================================================
-INFO[2023-02-10T13:32:53-03:00] ||          Created enclave: misty-bird          ||
-INFO[2023-02-10T13:32:53-03:00] ===================================================
-```
+INFO[2023-03-28T15:28:08-03:00] =======================================================
+INFO[2023-03-28T15:28:08-03:00] ||          Created enclave: nameless-fjord          ||
+INFO[2023-03-28T15:28:08-03:00] =======================================================
+Name:            nameless-fjord
+UUID:            6babc3090ad0
+Status:          RUNNING
+Creation Time:   Tue, 28 Mar 2023 15:27:31 -03
 
-That can be inspected by running
-
-```console
-kurtosis enclave inspect misty-bird
-```
-```console
-UUID:                                 eeb28363fc53
-Enclave Name:                         misty-bird
-Enclave Status:                       RUNNING
-Creation Time:                        Fri, 10 Feb 2023 13:32:32 -03
-API Container Status:                 RUNNING
-API Container Host GRPC Port:         127.0.0.1:63747
-API Container Host GRPC Proxy Port:   127.0.0.1:63748
+========================================= Files Artifacts =========================================
+UUID   Name
 
 ========================================== User Services ==========================================
-UUID           Name              Ports                               Status
-a05405bfe100   httpd-replica-0   http: 8080/tcp -> 127.0.0.1:63768   RUNNING
-cc871310223c   httpd-replica-1   http: 8080/tcp -> 127.0.0.1:63772   RUNNING
-dcfd1fb7a94e   httpd-replica-2   http: 8080/tcp -> 127.0.0.1:63781   RUNNING
+UUID           Name         Ports                                 Status
+3ca8b4c1c834   redis        client: 6379/tcp -> 127.0.0.1:58508   RUNNING
+8a8c18860df1   voting-app   http: 80/tcp -> 127.0.0.1:58511       RUNNING
 ```
 
-### More examples
+If this piqued your interest, you might like our [quickstart][quickstart-reference].
 
-See our documentation on https://docs.kurtosis.com.
+### More Examples
 
-## To start contributing to Kurtosis
+Further examples can be found in our [`awesome-kurtosis` repo][awesome-kurtosis].
+
+Contributing to Kurtosis
+========================
+
+<details>
+<summary>Expand to see contribution info</summary>
 
 See our [CONTRIBUTING](./CONTRIBUTING.md) file.
 
---- 
-
-## Repository Structure
+Repository Structure
+--------------------
 
 This repository is structured as a monorepo, containing the following projects:
 - `container-engine-lib`: Library used to abstract away container engine being used by the [enclave][enclave].
 - `core`: Container launched inside an [enclave][enclave] to coordinate its state
 - `engine`: Container launched to coordinate [enclaves][enclave]
 - `api`: Defines the API of the Kurtosis platform (`engine` and `core`)
-- `cli`: Produces CLI binary, allowing iteraction with the Kurtosis system
+- `cli`: Produces CLI binary, allowing interaction with the Kurtosis system
 - `docs`: Documentation that is published to [docs.kurtosis.com](docs)
 - `internal_testsuites`: End to end tests
 
-## Dependencies
+Dev Dependencies
+----------------
 
-To build Kurtosis, you must the following dependencies installed:
+To build Kurtosis itself, you must have the following installed:
 
-- Bash (5 or above) + Git
+#### Bash (5 or above) + Git
 
 On MacOS:
 ```bash
@@ -170,28 +100,28 @@ chsh -s "${BREW_PREFIX}/bin/bash"
 # Install modern version of git, the one that ships on MacOS is too old
 brew install git
 ```
-- Docker
-  
+#### Docker
+
 On MacOS:
 ```bash
 brew install docker
 ```
 
-- Go (1.18 or above)
+#### Go (1.18 or above)
 
 On MacOS:
 ```bash
 brew install go@1.18
 ```
 
-- Goreleaser
+#### Goreleaser
 
 On MacOS:
 ```bash
 brew install goreleaser/tap/goreleaser
 ```
 
-- Node (16.14 or above) and Yarn
+#### Node (16.14 or above) and Yarn
 
 On MacOS, using `NVM`:
 ```bash
@@ -200,7 +130,7 @@ mkdir ~/.nvm
 nvm install 16.14.0
 npm install -g yarn
 ```
-- Go and Typescript protobuf compiler binaries
+#### Go and Typescript protobuf compiler binaries
 
 On MacOS:
 ```bash
@@ -210,61 +140,66 @@ brew install protoc-gen-grpc-web
 npm install -g ts-protoc-gen
 npm install -g grpc-tools
 ```
-- Musl
+#### Musl
 
 On MacOS:
 ```bash
 brew install filosottile/musl-cross/musl-cross
 ```
 
-## Unit Test Instructions
-
-For all Go modules, run `go test ./...` on the module folder. For example:
-
-```console
-$ cd cli/cli/
-$ go test ./...
-```
-
-## Build Instructions
+Build Instructions
+------------------
 
 To build the entire project, run:
 
-```console
-$ ./script/build.sh
+```bash
+./script/build.sh
 ```
 
 To only build a specific project, run the script on `./PROJECT/PATH/script/build.sh`, for example:
 
-```console
-$ ./container-engine-lib/build.sh
-$ ./core/scripts/build.sh
-$ ./api/scripts/build.sh
-$ ./engine/scripts/build.sh
-$ ./cli/scripts/build.sh
+```bash
+./container-engine-lib/build.sh
+./core/scripts/build.sh
+./api/scripts/build.sh
+./engine/scripts/build.sh
+./cli/scripts/build.sh
 ```
 
-If there are any changes to Protobuf files in `api`, the bindings must be regenerated:
+If there are any changes to the Protobuf files in the `api` subdirectory, the Protobuf bindings must be regenerated:
 
-```console
+```bash
 $ ./api/scripts/regenerate-protobuf-bindings.sh
 ```
 
-Build scripts also run unit tests as part of the build proccess
+Build scripts also run unit tests as part of the build process.
 
-## E2E Test Instructions
+Unit Test Instructions
+----------------------
+
+For all Go modules, run `go test ./...` on the module folder. For example:
+
+```bash
+cd cli/cli/
+go test ./...
+```
+
+E2E Test Instructions
+---------------------
 
 Each project's build script also runs the unit tests inside the project. Running `./script/build.sh` will guarantee that all unit tests in the monorepo pass.
 
-To run the end to end tests:
+To run the end-to-end tests:
 
 1. Make sure Docker is running
+
 ```console
 $ docker --version
 Docker version X.Y.Z
 ```
 
 2. Make sure Kurtosis Engine is running
+
 ```console
 $ kurtosis engine status
 A Kurtosis engine is running with the following info:
@@ -272,6 +207,7 @@ Version:   0.X.Y
 ```
 
 1. Run `test.sh` script
+
 ```console
 $ ./internal_testsuites/scripts/test.sh
 ```
@@ -279,30 +215,42 @@ $ ./internal_testsuites/scripts/test.sh
 If you are developing the Typescript test, make sure that you have first built `api/typescript`. Any
 changes made to the Typescript package within `api/typescript` aren't hot loaded as of 2022-09-29.
 
-## Run Instructions
+Dev Run Instructions
+--------------------
 
-To interact with the built CLI, run `./cli/cli/scripts/launch_cli.sh` as if it was the `kurtosis` command:
+Once the project has built, run `./cli/cli/scripts/launch_cli.sh` as if it was the `kurtosis` command:
 
-```console
-$ ./cli/cli/scripts/launch_cli.sh enclave add
+```bash
+./cli/cli/scripts/launch_cli.sh enclave add
 ```
 
 If you want tab completion on the recently built CLI, you can alias it to `kurtosis`:
 
-```console
-$ alias kurtosis="$(pwd)/cli/cli/scripts/launch_cli.sh"
-$ kurtosis enclave add
+```bash
+alias kurtosis="$(pwd)/cli/cli/scripts/launch_cli.sh"
+kurtosis enclave add
 ```
 
-## Questions, help, or feedback
+</details>
 
-If you have feedback for us or a question around how Kurtosis works and the [docs](https://docs.kurtosis.com) aren't enough, we're more than happy to help and chat about your use case via the following ways:
-- Get help in our [Discord server](https://discord.gg/Es7QHbY4)
-- Email us at [feedback@kurtosistech.com](mailto:feedback@kurtosistech.com)
-- Schedule a 1:1 session with us [here](https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding)
+Community and support
+=====================
+
+Kurtosis is a free and source-available product maintained by the [Kurtosis][kurtosis-tech] team. We'd love to hear from you and help where we can. You can engage with our team and our community in the following ways:
+
+- Giving feedback via the `kurtosis feedback` command
+- Filing an issue in our [Github](https://github.com/kurtosis-tech/kurtosis/issues/new/choose)
+- [Joining our Discord server][discord]
+- [Following us on Twitter][twitter]
+- [Emailing us](mailto:feedback@kurtosistech.com) (also available as `kurtosis feedback --email`)
+- [Hop on a call to chat with us](https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding)
 
 <!-------- ONLY LINKS BELOW THIS POINT -------->
 [enclave]: https://docs.kurtosis.com/explanations/architecture#enclaves
+[awesome-kurtosis]: https://github.com/kurtosis-tech/awesome-kurtosis#readme
+[quickstart-reference]: https://docs.kurtosis.com/quickstart
+[discord]: https://discord.gg/Es7QHbY4
+[kurtosis-tech]: https://github.com/kurtosis-tech
 [docs]: https://docs.kurtosis.com
+[twitter]: https://twitter.com/KurtosisTech
 [starlark-explanation]: https://docs.kurtosis.com/explanations/starlark
-

@@ -51,8 +51,8 @@ def run(plan, args):
 		}
 	)
 	
-	plan.add_service(service_name = DATASTORE_SERVICE_NAME, config = config)
-	plan.print("Service " + DATASTORE_SERVICE_NAME + " deployed successfully.")
+	result = plan.add_service(name = DATASTORE_SERVICE_NAME, config = config)
+	plan.print("Service " + result.name + " deployed successfully.")
 	plan.exec(
 		recipe = ExecRecipe(
 			command = ["touch", FILE_TO_BE_CREATED],
@@ -89,7 +89,7 @@ def run(plan, args):
 			PATH_TO_MOUNT_RENDERED_CONFIG: rendered_artifact
 		}
 	)
-	plan.add_service(service_name = SERVICE_DEPENDENT_ON_DATASTORE_SERVICE, config = dependent_config)
+	plan.add_service(name = SERVICE_DEPENDENT_ON_DATASTORE_SERVICE, config = dependent_config)
 	plan.print("Deployed " + SERVICE_DEPENDENT_ON_DATASTORE_SERVICE + " successfully")
 `
 )

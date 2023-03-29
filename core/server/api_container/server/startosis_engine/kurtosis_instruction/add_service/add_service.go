@@ -21,7 +21,7 @@ import (
 const (
 	AddServiceBuiltinName = "add_service"
 
-	ServiceNameArgName   = "service_name"
+	ServiceNameArgName   = "name"
 	ServiceConfigArgName = "config"
 )
 
@@ -109,7 +109,7 @@ func (builtin *AddServiceCapabilities) Interpret(arguments *builtin_argument.Arg
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to create runtime value to hold '%v' command return values", AddServiceBuiltinName)
 	}
 
-	returnValue, interpretationErr := makeAddServiceInterpretationReturnValue(builtin.serviceConfig, builtin.resultUuid)
+	returnValue, interpretationErr := makeAddServiceInterpretationReturnValue(serviceName, builtin.serviceConfig, builtin.resultUuid)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}

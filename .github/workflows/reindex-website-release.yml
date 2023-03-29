@@ -1,0 +1,17 @@
+name: "Reindex website with Algolia Docsearch for Releases"
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+jobs:
+  reindex-website-release:
+    runs-on: ubuntu-latest
+    name: Update website search index via Algolia Crawler
+    steps:
+      - uses: fjogeleit/http-request-action@v1
+        with:
+          url: 'https://crawler.algolia.com/api/1/crawlers/${{ secrets.ALGOLIA_CRAWLER_ID }}/reindex'
+          method: 'POST'
+          username: ${{ secrets.ALGOLIA_CRAWLER_USER_ID }}
+          password: ${{ secrets.ALGOLIA_CRAWLER_API_KEY }}
+          customHeaders: '{"Content-Type": "application/json"}'

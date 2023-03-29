@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/stretchr/testify/require"
@@ -13,6 +14,7 @@ import (
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkjson"
 	"go.starlark.net/starlarkstruct"
+	"reflect"
 	"testing"
 )
 
@@ -124,7 +126,16 @@ func testKurtosisTypeConstructor(t *testing.T, builtin KurtosisTypeConstructorBa
 	require.Nil(t, err, "Error interpreting Starlark code for builtin '%s'. Code was: \n%v", testId, starlarkCodeToExecute)
 	result := extractResultValue(t, globals)
 
-	builtin.Assert(result)
+	kurtosisValue, ok := result.(builtin_argument.KurtosisValueType)
+	require.True(t, ok, "Error casting the Kurtosis Type to a KurtosisValueType. This is unexpected as all "+
+		"typed defined in Kurtosis should implement KurtosisValueType. Its type was: '%s'", reflect.TypeOf(kurtosisValue))
+
+	builtin.Assert(kurtosisValue)
+
+	copiedKurtosisValue, copyErr := kurtosisValue.Copy()
+	require.NoError(t, copyErr)
+	require.Equal(t, kurtosisValue, copiedKurtosisValue)
+	require.NotSame(t, kurtosisValue, copiedKurtosisValue)
 
 	serializedType := result.String()
 	require.Equal(t, starlarkCode, serializedType)

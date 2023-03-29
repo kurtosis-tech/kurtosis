@@ -13,10 +13,12 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/portal_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"strconv"
 	"strings"
 )
@@ -35,6 +37,10 @@ const (
 	cmdArgsArgKey = "cmd-arg"
 
 	entrypointBinaryFlagKey = "entrypoint"
+
+	mapPortsFlagKey = "map-ports"
+	// we're mapping ports by default such that remote run and local run gives the exact same state: ports are reachable from local laptop
+	defaultMapPortsFlagKey = "true"
 
 	envvarsFlagKey              = "env"
 	envvarKeyValueDelimiter     = "="
@@ -70,7 +76,7 @@ const (
 	maxRemainingPortSpecComponents = 2
 
 	emptyApplicationProtocol = ""
-	linkDelimeter            = "://"
+	linkDelimiter            = "://"
 
 	maybeApplicationProtocolSpecForHelp = "MAYBE_APPLICATION_PROTOCOL"
 	transportProtocolSpecForHelp        = "TRANSPORT_PROTOCOL"
@@ -81,6 +87,8 @@ const (
 	fullUuidFlagKeyDefault = "false"
 
 	defaultParallelism = 1
+
+	portMappingSeparatorForLogs = ", "
 )
 
 var (
@@ -189,6 +197,14 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 			Type:    flags.FlagType_Bool,
 			Default: fullUuidFlagKeyDefault,
 		},
+		{
+			Key: mapPortsFlagKey,
+			Usage: "If true the service running remotely will have its ports mapped to the local host, such that " +
+				"it is reachable as if it was running locally. This applies inside a remote context - in a " +
+				"local context, the service is always reachable locally on its ephemeral ports. Default true",
+			Type:    flags.FlagType_Bool,
+			Default: defaultMapPortsFlagKey,
+		},
 	},
 	RunFunc: run,
 }
@@ -251,6 +267,11 @@ func run(
 		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", fullUuidsFlagKey)
 	}
 
+	mapPorts, err := flags.GetBool(mapPortsFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", mapPortsFlagKey)
+	}
+
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred connecting to the local Kurtosis engine")
@@ -276,7 +297,7 @@ func run(
 
 	// TODO Allow adding services to an already-repartitioned enclave
 	starlarkRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, fmt.Sprintf(`def run(plan):
-	plan.add_service(service_name = "%s", config = %s)`, serviceName, serviceConfigStarlark), "", false, defaultParallelism)
+	plan.add_service(name = "%s", config = %s)`, serviceName, serviceConfigStarlark), "", false, defaultParallelism)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error has occurred when running Starlark to add service")
 	}
@@ -297,6 +318,27 @@ func run(
 	privatePorts := serviceCtx.GetPrivatePorts()
 	publicPorts := serviceCtx.GetPublicPorts()
 	publicIpAddr := serviceCtx.GetMaybePublicIPAddress()
+
+	// Map the service public ports to their local port
+	if mapPorts {
+		portalManager := portal_manager.NewPortalManager()
+		portsMapping := map[uint16]*services.PortSpec{}
+		for _, portSpec := range serviceCtx.GetPublicPorts() {
+			portsMapping[portSpec.GetNumber()] = portSpec
+		}
+		successfullyMappedPorts, failedPorts, err := portalManager.MapPorts(ctx, portsMapping)
+		if err != nil {
+			var stringifiedPortMapping []string
+			for localPort, remotePort := range failedPorts {
+				stringifiedPortMapping = append(stringifiedPortMapping, fmt.Sprintf("%d:%d", localPort, remotePort.GetNumber()))
+			}
+			// TODO: once we have a manual `kurtosis port map` command, suggest using it here to manually map the failed port
+			logrus.Warnf("The service is running but the following port(s) could not be mapped locally: %s.",
+				strings.Join(stringifiedPortMapping, portMappingSeparatorForLogs))
+		}
+		logrus.Infof("Successfully mapped %d ports. The service is reachable locally on its ephemeral port numbers",
+			len(successfullyMappedPorts))
+	}
 
 	fmt.Printf("Service ID: %v\n", serviceName)
 	if len(privatePorts) > 0 {
@@ -326,7 +368,7 @@ func run(
 
 		portApplicationProtocolStr := emptyApplicationProtocol
 		if privatePortSpec.GetMaybeApplicationProtocol() != emptyApplicationProtocol {
-			portApplicationProtocolStr = fmt.Sprintf("%v%v", privatePortSpec.GetMaybeApplicationProtocol(), linkDelimeter)
+			portApplicationProtocolStr = fmt.Sprintf("%v%v", privatePortSpec.GetMaybeApplicationProtocol(), linkDelimiter)
 		}
 		portBindingInfo := fmt.Sprintf(
 			"%v/%v -> %v%v:%v",
