@@ -17,6 +17,7 @@ func main() {
 }
 
 // You can comment out various sections to test various parts of the lib
+// inconsequential change that triggers runs
 func runMain() error {
 	/*
 		if err := runDockerManagerTesting(); err != nil {
