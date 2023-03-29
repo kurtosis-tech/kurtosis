@@ -385,7 +385,7 @@ data_package_module = import_module("github.com/kurtosis-tech/awesome-kurtosis/d
 data_package_module_result = data_package_module.run(plan, struct())
 ```
 
-This external Kurtosis package, named ["data-package"][data-package-example] contains the seed data for our postgres instance that we [referenced ealier](#add-some-data) as a `.tar` file.
+This external Kurtosis package, named ["data-package"][data-package-example] contains the seed data for our Postgres instance that we [referenced earlier](#add-some-data) as a `.tar` file.
 
 #### We imported seed data into our Kurtosis package
 The [`main.star` file][data-package-example-main.star] in that external "data-package" contained Starlark instructions to store the `.tar` data as a [files artifact][files-artifacts-reference] using the [`files_upload` Starlark instruction][kurtosis-files-upload-reference]:
