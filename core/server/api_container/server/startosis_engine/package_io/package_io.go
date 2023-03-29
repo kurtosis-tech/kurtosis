@@ -5,8 +5,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkjson"
-	"go.starlark.net/starlarkstruct"
-	"reflect"
 )
 
 const (
@@ -39,14 +37,7 @@ func DeserializeArgs(thread *starlark.Thread, serializedJsonArgs string) (starla
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to deserialize package input. Is it a valid JSON?")
 	}
-
-	processedValue, interpretationError := convertValueToDictIfPossible(deserializedInputValue)
-	if interpretationError != nil {
-		// error is not fatal here, we just pass the deserialized starlark.Value object with no transformation
-		logrus.Warnf("JSON input successfully deserialized but it failed to be processed by Kurtosis. It will be passed to the package with no transformation. Intput was: \n%v\nError was: \n%v", deserializedInputValue, interpretationError.Error())
-		return deserializedInputValue, nil
-	}
-	return processedValue, nil
+	return deserializedInputValue, nil
 }
 
 func SerializeOutputObject(thread *starlark.Thread, outputObject starlark.Value) (string, *startosis_errors.InterpretationError) {
@@ -75,52 +66,6 @@ func SerializeOutputObject(thread *starlark.Thread, outputObject starlark.Value)
 		return outputObject.String(), nil
 	}
 	return maybeIndentedOutputObjectStr.GoString(), nil
-}
-
-// convertValueToDictIfPossible tries to convert a starlark.Value type to a starlarkstruct.Struct.
-// It no-ops for most Starlark "simple" types, like string, integer, even iterables.
-// It is expected to successfully convert starlark.Dict to starlarkstruct.Struct. Note however that there are certain
-// cases where this is not possible, like when the dictionary contain non-string keys for example. In this case, this
-// function throws an error. This error should never be hit here because what is being passed comes from serialized
-// JSON, which cannot contain non-string keys.
-func convertValueToDictIfPossible(genericValue starlark.Value) (starlark.Value, *startosis_errors.InterpretationError) {
-	switch value := genericValue.(type) {
-	case starlark.NoneType, starlark.Bool, starlark.String, starlark.Bytes, starlark.Int, starlark.Float:
-		return value, nil
-	case *starlark.List, *starlark.Set, starlark.Tuple:
-		return value, nil
-	case *starlark.Dict:
-		// Dictionaries returned by JSON deserialization should have strings as keys. We therefore convert them to struct to facilitate reading from them in Starlark
-		dict := starlark.NewDict(value.Len())
-		for _, key := range value.Keys() {
-			stringKey, ok := key.(starlark.String)
-			if !ok {
-				return nil, startosis_errors.NewInterpretationError("JSON input was deserialized in an unexpected manner. It seems some JSON keys were not string, which is currently not supported in Kurtosis (key: '%s', type: '%s')", key, reflect.TypeOf(key))
-			}
-			genericDictValue, found, err := value.Get(key)
-			if !found {
-				return nil, startosis_errors.NewInterpretationError("Unexpected error postprocessing JSON input. No value associated with key '%s'", key)
-			}
-			if err != nil {
-				return nil, startosis_errors.NewInterpretationError("Unexpected error postprocessing JSON input (key: '%s')", key)
-
-			}
-			postProcessedValue, interpretationError := convertValueToDictIfPossible(genericDictValue)
-			if interpretationError != nil {
-				// do not wrap the interpretation error here as it's coming from a recursive call.
-				return nil, interpretationError
-			}
-			err = dict.SetKey(stringKey, postProcessedValue)
-			if err != nil {
-				return nil, startosis_errors.NewInterpretationError("Unexpected error setting dictionary key '%s' to value '%v'", stringKey, postProcessedValue)
-			}
-		}
-		return dict, nil
-	case *starlarkstruct.Struct:
-		return value, nil
-	default:
-		return nil, startosis_errors.NewInterpretationError("Unexpected type when trying to deserialize package input. Data will be passed to the package with no processing (unsupported type was: '%s').", reflect.TypeOf(genericValue))
-	}
 }
 
 func tryIndentJson(thread *starlark.Thread, unindentedJson starlark.Value) starlark.Value {
