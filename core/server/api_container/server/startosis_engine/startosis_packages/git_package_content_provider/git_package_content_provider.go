@@ -211,7 +211,10 @@ func (provider *GitPackageContentProvider) atomicClone(parsedURL *ParsedGitURL) 
 	})
 	if err != nil {
 		// TODO remove public repository from error after we support private repositories
-		return startosis_errors.WrapWithInterpretationError(err, "Error in cloning git repository '%s' to '%s'. Make sure that '%v' exists and is a public repository.", parsedURL.gitURL, gitClonePath, parsedURL.gitURL)
+		// We silent the underlying error here as it can be confusing to the user. For example, when there's a typo in
+		// the repo name, pointing to a non existing repo, the underlying error is: "authentication required"
+		logrus.Errorf("Error cloning git repository: '%s' to '%s'. Error was: \n%s", parsedURL.gitURL, gitClonePath, err.Error())
+		return startosis_errors.NewInterpretationError("Error in cloning git repository '%s' to '%s'. Make sure that '%v' exists and is a public repository.", parsedURL.gitURL, gitClonePath, parsedURL.gitURL)
 	}
 
 	if parsedURL.tagBranchOrCommit != emptyTagBranchOrCommit {
@@ -354,26 +357,22 @@ func validatePackageNameMatchesKurtosisYamlLocation(kurtosisYaml *yaml_parser.Ku
 	return nil
 }
 
-/**
-While importing/reading a file we are currently cloning the repository, and trying to find whether kurtosis.yml exists in the path;
-this is being done as part of interpretation step of starlark.
-TODO: we should clean this up and have a dependency management system; all the dependencies should be stated kurtosis.yml upfront
-TODO: this will simplify our validation process, and enable customers to use local packages like go.
-TODO: in my opinion - we should eventually clone and validate the packages even before we start the interpretation process, maybe inside
-api_container_service
-*/
+// While importing/reading a file we are currently cloning the repository, and trying to find whether kurtosis.yml exists in the path;
+// this is being done as part of interpretation step of starlark.
+// TODO: we should clean this up and have a dependency management system; all the dependencies should be stated kurtosis.yml upfront
+// TODO: this will simplify our validation process, and enable customers to use local packages like go.
+// TODO: in my opinion - we should eventually clone and validate the packages even before we start the interpretation process, maybe inside
+//  api_container_service
 func getKurtosisYamlPathForFileUrl(absPathToFile string, packagesDir string) (string, *startosis_errors.InterpretationError) {
 	return getKurtosisYamlPathForFileUrlInternal(absPathToFile, packagesDir, os.Stat)
 }
 
-/**
-This method walks along the path of the file and determines whether kurtosis.yml is found in any directory. If the path is found, it returns
-the absolute path of kurtosis.yml, otherwise it returns an empty string when the kurtosis.yml is not found.
-
-For example, the path to the file is /kurtosis-data/startosis-packages/some-repo/some-folder/some-file-to-be-read.star
-This method will start the walk from some-repo, then go to some-folder and so on.
-It will continue the search for kurtosis.yml until either kurtosis.yml is found or the path is fully transversed.
-*/
+// This method walks along the path of the file and determines whether kurtosis.yml is found in any directory. If the path is found, it returns
+// the absolute path of kurtosis.yml, otherwise it returns an empty string when the kurtosis.yml is not found.
+//
+// For example, the path to the file is /kurtosis-data/startosis-packages/some-repo/some-folder/some-file-to-be-read.star
+// This method will start the walk from some-repo, then go to some-folder and so on.
+// It will continue the search for kurtosis.yml until either kurtosis.yml is found or the path is fully transversed.
 func getKurtosisYamlPathForFileUrlInternal(absPathToFile string, packagesDir string, stat func(string) (os.FileInfo, error)) (string, *startosis_errors.InterpretationError) {
 	// it will remove /kurtosis-data/startosis-package from absPathToFile and start the search from repo itself.
 	// we can be sure that kurtosis.yml will never be found in those folders.
