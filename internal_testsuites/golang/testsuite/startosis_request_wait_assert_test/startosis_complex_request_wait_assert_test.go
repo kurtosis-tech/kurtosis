@@ -19,7 +19,7 @@ def run(plan):
 		}
 	)
 
-	plan.add_service(service_name = "web-server", config = service_config)
+	plan.add_service(name = "web-server", config = service_config)
 	get_recipe = GetHttpRequestRecipe(
 		port_id = "http-port",
 		endpoint = "?input=foo/bar",

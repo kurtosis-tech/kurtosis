@@ -297,7 +297,7 @@ func run(
 
 	// TODO Allow adding services to an already-repartitioned enclave
 	starlarkRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, fmt.Sprintf(`def run(plan):
-	plan.add_service(service_name = "%s", config = %s)`, serviceName, serviceConfigStarlark), "", false, defaultParallelism)
+	plan.add_service(name = "%s", config = %s)`, serviceName, serviceConfigStarlark), "", false, defaultParallelism)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error has occurred when running Starlark to add service")
 	}
