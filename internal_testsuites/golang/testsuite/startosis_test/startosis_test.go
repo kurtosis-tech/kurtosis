@@ -41,7 +41,7 @@ PATH_TO_MOUNT_RENDERED_CONFIG="` + renderedConfigMountPath + `"
 RENDER_RELATIVE_PATH = "` + renderedConfigRelativePath + `"
 
 def run(plan, args):
-	plan.print("Hello " + args.greeting) 
+	plan.print("Hello " + args["greeting"]) 
 	plan.print("Adding service " + DATASTORE_SERVICE_NAME + ".")
 	
 	config = ServiceConfig(
