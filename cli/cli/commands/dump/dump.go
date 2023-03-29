@@ -2,6 +2,7 @@ package dump
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
@@ -11,6 +12,7 @@ import (
 	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"time"
 )
 
 const (
@@ -19,8 +21,9 @@ const (
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
 
-	defaultKurtosisDumpDir = "kurtosis-dump"
-	outputDirIsOptional    = true
+	defaultKurtosisDumpDir  = "kurtosis-dump"
+	outputDirIsOptional     = true
+	dumpDirTimeoutDelimiter = "--"
 )
 
 var KurtosisDump = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -52,6 +55,10 @@ func run(
 	outputDirPath, err := args.GetNonGreedyArg(outputDirpathArg)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting output dirpath using arg key '%v'", outputDirpathArg)
+	}
+
+	if outputDirPath == defaultKurtosisDumpDir {
+		outputDirPath = fmt.Sprintf("%s%s%d", outputDirPath, dumpDirTimeoutDelimiter, time.Now().Unix())
 	}
 
 	if err := kurtosisBackend.DumpKurtosis(ctx, outputDirPath); err != nil {
