@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis-portal/api/golang/constructors"
-	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/context_id_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/engine_manager"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/portal_manager"
 	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -19,8 +19,6 @@ import (
 const (
 	contextIdentifierArgKey      = "context"
 	contextIdentifierArgIsGreedy = false
-
-	acceptNilResultForLocalClient = true
 )
 
 var ContextSwitchCmd = &lowlevel.LowlevelKurtosisCommand{
@@ -89,15 +87,20 @@ func run(ctx context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error
 	if err != nil {
 		return stacktrace.Propagate(err, "Error retrieving context info for context '%s' after switching to it", contextIdentifier)
 	}
-	portalDaemonClient, err := kurtosis_context.CreatePortalDaemonClient(currentContext, acceptNilResultForLocalClient)
-	if err != nil {
-		return stacktrace.Propagate(err, "Error connecting to Kurtosis portal after switching to the context'%s'", contextIdentifier)
-	}
 
-	if portalDaemonClient != nil {
-		switchContextArg := constructors.NewSwitchContextArgs()
-		if _, err = portalDaemonClient.SwitchContext(ctx, switchContextArg); err != nil {
-			return stacktrace.Propagate(err, "Error switching Kurtosis portal context")
+	portalManager := portal_manager.NewPortalManager()
+	if portalManager.IsReachable() {
+		portalDaemonClient := portalManager.GetClient()
+		if portalDaemonClient != nil {
+			switchContextArg := constructors.NewSwitchContextArgs()
+			if _, err = portalDaemonClient.SwitchContext(ctx, switchContextArg); err != nil {
+				return stacktrace.Propagate(err, "Error switching Kurtosis portal context")
+			}
+		}
+	} else {
+		if store.IsRemote(currentContext) {
+			return stacktrace.NewError("New context is remote but Kurtosis Portal is not reachable locally. " +
+				"Make sure Kurtosis Portal is running before switching to a remote context again.")
 		}
 	}
 	logrus.Infof("Context switched to '%s', Kurtosis engine will now be restarted", contextIdentifier)
