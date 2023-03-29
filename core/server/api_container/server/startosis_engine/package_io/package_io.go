@@ -22,7 +22,7 @@ var (
 // DeserializeArgs deserializes the Kurtosis package args, which should be serialized JSON, into a starlark.Value type.
 //
 // It tries to convert starlark.Dict into starlarkstruct.Struct to allow users to do things like `args.my_param`
-// in their code package in place of `args["my_param"]`. See convertValueToStructIfPossible below for more info.
+// in their code package in place of `args["my_param"]`. See convertValueToDictIfPossible below for more info.
 func DeserializeArgs(thread *starlark.Thread, serializedJsonArgs string) (starlark.Value, *startosis_errors.InterpretationError) {
 	if !starlarkjson.Module.Members.Has(decoderKey) {
 		return nil, startosis_errors.NewInterpretationError("Unable to deserialize package input because Starlark deserializer was not found.")
@@ -40,7 +40,7 @@ func DeserializeArgs(thread *starlark.Thread, serializedJsonArgs string) (starla
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to deserialize package input. Is it a valid JSON?")
 	}
 
-	processedValue, interpretationError := convertValueToStructIfPossible(deserializedInputValue)
+	processedValue, interpretationError := convertValueToDictIfPossible(deserializedInputValue)
 	if interpretationError != nil {
 		// error is not fatal here, we just pass the deserialized starlark.Value object with no transformation
 		logrus.Warnf("JSON input successfully deserialized but it failed to be processed by Kurtosis. It will be passed to the package with no transformation. Intput was: \n%v\nError was: \n%v", deserializedInputValue, interpretationError.Error())
@@ -77,13 +77,13 @@ func SerializeOutputObject(thread *starlark.Thread, outputObject starlark.Value)
 	return maybeIndentedOutputObjectStr.GoString(), nil
 }
 
-// convertValueToStructIfPossible tries to convert a starlark.Value type to a starlarkstruct.Struct.
+// convertValueToDictIfPossible tries to convert a starlark.Value type to a starlarkstruct.Struct.
 // It no-ops for most Starlark "simple" types, like string, integer, even iterables.
 // It is expected to successfully convert starlark.Dict to starlarkstruct.Struct. Note however that there are certain
 // cases where this is not possible, like when the dictionary contain non-string keys for example. In this case, this
 // function throws an error. This error should never be hit here because what is being passed comes from serialized
 // JSON, which cannot contain non-string keys.
-func convertValueToStructIfPossible(genericValue starlark.Value) (starlark.Value, *startosis_errors.InterpretationError) {
+func convertValueToDictIfPossible(genericValue starlark.Value) (starlark.Value, *startosis_errors.InterpretationError) {
 	switch value := genericValue.(type) {
 	case starlark.NoneType, starlark.Bool, starlark.String, starlark.Bytes, starlark.Int, starlark.Float:
 		return value, nil
@@ -91,7 +91,7 @@ func convertValueToStructIfPossible(genericValue starlark.Value) (starlark.Value
 		return value, nil
 	case *starlark.Dict:
 		// Dictionaries returned by JSON deserialization should have strings as keys. We therefore convert them to struct to facilitate reading from them in Starlark
-		stringDict := starlark.StringDict{}
+		dict := starlark.NewDict(value.Len())
 		for _, key := range value.Keys() {
 			stringKey, ok := key.(starlark.String)
 			if !ok {
@@ -105,14 +105,14 @@ func convertValueToStructIfPossible(genericValue starlark.Value) (starlark.Value
 				return nil, startosis_errors.NewInterpretationError("Unexpected error postprocessing JSON input (key: '%s')", key)
 
 			}
-			postProcessedValue, interpretationError := convertValueToStructIfPossible(genericDictValue)
+			postProcessedValue, interpretationError := convertValueToDictIfPossible(genericDictValue)
 			if err != nil {
 				// do not wrap the interpretation error here as it's coming from a recursive call.
 				return nil, interpretationError
 			}
-			stringDict[stringKey.GoString()] = postProcessedValue
+			dict.SetKey(stringKey, postProcessedValue)
 		}
-		return starlarkstruct.FromStringDict(starlarkstruct.Default, stringDict), nil
+		return dict, nil
 	case *starlarkstruct.Struct:
 		return value, nil
 	default:

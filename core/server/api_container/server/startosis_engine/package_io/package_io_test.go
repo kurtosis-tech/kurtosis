@@ -8,7 +8,7 @@ import (
 )
 
 func TestPackageIo_simpleValue(t *testing.T) {
-	result, err := convertValueToStructIfPossible(starlark.String("Hello World!"))
+	result, err := convertValueToDictIfPossible(starlark.String("Hello World!"))
 	require.Nil(t, err)
 
 	expectedResult := starlark.String("Hello World!")
@@ -20,7 +20,7 @@ func TestPackageIo_listValue(t *testing.T) {
 		starlark.String("Hello"),
 		starlark.String("World!"),
 	})
-	result, err := convertValueToStructIfPossible(listValue)
+	result, err := convertValueToDictIfPossible(listValue)
 	require.Nil(t, err)
 
 	require.Equal(t, listValue, result)
@@ -30,7 +30,7 @@ func TestPackageIo_structValue(t *testing.T) {
 	structValue := starlarkstruct.FromStringDict(starlarkstruct.Default, starlark.StringDict{
 		"greetings": starlark.String("bonjour!"),
 	})
-	result, err := convertValueToStructIfPossible(structValue)
+	result, err := convertValueToDictIfPossible(structValue)
 	require.Nil(t, err)
 
 	require.Equal(t, structValue, result)
@@ -40,12 +40,10 @@ func TestPackageIo_processSimpleDict(t *testing.T) {
 	dict := starlark.NewDict(1)
 	require.Nil(t, dict.SetKey(starlark.String("greetings"), starlark.String("bonjour!")))
 
-	result, err := convertValueToStructIfPossible(dict)
+	result, err := convertValueToDictIfPossible(dict)
 	require.Nil(t, err)
 
-	expectedResult := starlarkstruct.FromStringDict(starlarkstruct.Default, starlark.StringDict{
-		"greetings": starlark.String("bonjour!"),
-	})
+	expectedResult := dict
 	require.Equal(t, expectedResult, result)
 }
 
@@ -57,14 +55,9 @@ func TestPackageIo_processNestedDict(t *testing.T) {
 	dict := starlark.NewDict(1)
 	require.Nil(t, dict.SetKey(starlark.String("greetings"), nested_dict))
 
-	result, err := convertValueToStructIfPossible(dict)
+	result, err := convertValueToDictIfPossible(dict)
 	require.Nil(t, err)
 
-	expectedResult := starlarkstruct.FromStringDict(starlarkstruct.Default, starlark.StringDict{
-		"greetings": starlarkstruct.FromStringDict(starlarkstruct.Default, starlark.StringDict{
-			"en_US": starlark.String("Hello"),
-			"fr_FR": starlark.String("Bonjour"),
-		}),
-	})
+	expectedResult := dict
 	require.Equal(t, expectedResult, result)
 }
