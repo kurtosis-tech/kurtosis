@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.71.0](https://github.com/kurtosis-tech/kurtosis/compare/0.70.7...0.71.0) (2023-03-29)
+
+
+### ⚠ BREAKING CHANGES
+
+* rename the argument `name` to `service_name` for `update_service`, `remove_service` and `add_service` ([#360](https://github.com/kurtosis-tech/kurtosis/issues/360))
+
+### Features
+
+* Automatically map all service ports to local ports post Starlark run and service add ([#363](https://github.com/kurtosis-tech/kurtosis/issues/363)) ([7906aee](https://github.com/kurtosis-tech/kurtosis/commit/7906aee2d3aacb0afcaffb1e77847b9d4148e905))
+* rename the argument `name` to `service_name` for `update_service`, `remove_service` and `add_service` ([#360](https://github.com/kurtosis-tech/kurtosis/issues/360)) ([c80d3c0](https://github.com/kurtosis-tech/kurtosis/commit/c80d3c0da7e536590551e5f6c53c9caf4add781c)), closes [#200](https://github.com/kurtosis-tech/kurtosis/issues/200)
+
+
+### Bug Fixes
+
+* Fixed broken quickstart code block ([#339](https://github.com/kurtosis-tech/kurtosis/issues/339)) ([00f5cd2](https://github.com/kurtosis-tech/kurtosis/commit/00f5cd2576bdf62da2fd071f3cba39f3b976075c))
+* Improve error message when cloning a git repo failed ([#375](https://github.com/kurtosis-tech/kurtosis/issues/375)) ([9702621](https://github.com/kurtosis-tech/kurtosis/commit/97026218c036486697bf6b6a8596774a84172b11))
+
 ## [0.70.7](https://github.com/kurtosis-tech/kurtosis/compare/0.70.6...0.70.7) (2023-03-28)
 
 
