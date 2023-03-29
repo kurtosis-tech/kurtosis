@@ -9,7 +9,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/metrics_client_factory"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/portal_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store"
 	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -202,7 +204,19 @@ func (cmd *EngineConsumingKurtosisCommand) getRunFunc() func(context.Context, *f
 			return stacktrace.NewError("Found an object that should be the metrics client stored in the context under key '%v', but this object wasn't of the correct type", metricsClientKey)
 		}
 
-		if err := cmd.RunFunc(ctx, kurtosisBackend, engineClient, metricsClient, flags, args); err != nil {
+		currentContext, err := store.GetContextsConfigStore().GetCurrentContext()
+		if err != nil {
+			return stacktrace.Propagate(err, "Error fetching current context information")
+		}
+
+		portalManager := portal_manager.NewPortalManager()
+		if store.IsRemote(currentContext) && !portalManager.IsReachable() {
+			// TODO: add command to start it when it's implemented
+			return stacktrace.NewError("Selected context is a remote context but Kurtosis Portal daemon is " +
+				"not reachable. Make sure it is started and re-run the command")
+		}
+
+		if err = cmd.RunFunc(ctx, kurtosisBackend, engineClient, metricsClient, flags, args); err != nil {
 			return stacktrace.Propagate(
 				err,
 				"An error occurred calling the run function for command '%v'",
