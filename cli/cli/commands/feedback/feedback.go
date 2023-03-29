@@ -21,17 +21,20 @@ import (
 const (
 	commandShortDescription = "Give feedback"
 	commandDescription      = "Give feedback, file a bug report or feature request, or get help from the Kurtosis team. " +
-		"See below for the many ways you can get in touch with us.\n" +
+		"See below for the many ways you can get in touch with us.\n\n" +
 		"TIP: You can quickly type and send us feedback directly from the CLI. For example, " +
-		"kurtosis feedback \"I enjoy the enclave naming theme\" will open the Kurtosis Github " +
-		"choose new issue type page with the description pre-filled with \"I enjoy the enclave naming theme\"."
+		"`kurtosis feedback \"I enjoy the enclave naming theme\"` will open the Kurtosis Github " +
+		"\"Choose New Issue\" page with the description pre-filled with \"I enjoy the enclave naming theme\"."
 
-	githubFlagKey                 = "github"
-	emailFlagKey                  = "email"
-	calendlyFlagKey               = "calendly"
-	bugFeedbackFlagKey            = "bug"
-	featureRequestFeedbackFlagKey = "feature"
-	docsFeedbackFlagKey           = "docs"
+	githubFlagKey                      = "github"
+	emailFlagKey                       = "email"
+	calendlyFlagKey                    = "calendly"
+	bugFeedbackFlagKey                 = "bug"
+	bugFeedbackShortFlagKey            = "b"
+	featureRequestFeedbackFlagKey      = "feature"
+	featureRequestFeedbackShortFlagKey = "f"
+	docsFeedbackFlagKey                = "docs"
+	docsFeedbackShortFlagKey           = "d"
 
 	githubFlagUsageDescription    = "Takes you to our Github where you can file a bug report, feature request, or get help."
 	emailFlagUsageDescription     = "Opens your mail client to send us feedback via email."
@@ -116,21 +119,21 @@ var FeedbackCmd = &lowlevel.LowlevelKurtosisCommand{
 		{
 			Key:       bugFeedbackFlagKey,
 			Usage:     bugFlagDescription,
-			Shorthand: "",
+			Shorthand: bugFeedbackShortFlagKey,
 			Type:      flags.FlagType_Bool,
 			Default:   defaultBug,
 		},
 		{
 			Key:       featureRequestFeedbackFlagKey,
 			Usage:     featureRequestFlagDescription,
-			Shorthand: "",
+			Shorthand: featureRequestFeedbackShortFlagKey,
 			Type:      flags.FlagType_Bool,
 			Default:   defaultFeatureRequest,
 		},
 		{
 			Key:       docsFeedbackFlagKey,
 			Usage:     docsFlagDescription,
-			Shorthand: "",
+			Shorthand: docsFeedbackShortFlagKey,
 			Type:      flags.FlagType_Bool,
 			Default:   defaultDocs,
 		},
