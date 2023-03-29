@@ -39,7 +39,11 @@ const (
 	validUuidMatchesAllowed = 1
 )
 
-var apiContainerLogLevel = logrus.DebugLevel
+var (
+	apiContainerLogLevel = logrus.DebugLevel
+
+	apicPortTransportProtocol = portal_api.TransportProtocol_TCP
+)
 
 // Docs available at https://docs.kurtosis.com/sdk#kurtosiscontext
 type KurtosisContext struct {
@@ -347,13 +351,13 @@ func newEnclaveContextFromEnclaveInfo(
 	// for remote contexts, we need to tunnel the APIC port to the local machine
 	if portalClient != nil {
 		apicGrpcPort := enclaveInfo.GetApiContainerHostMachineInfo().GetGrpcPortOnHostMachine()
-		forwardApicPortArgs := portal_constructors.NewForwardPortArgs(apicGrpcPort, apicGrpcPort)
+		forwardApicPortArgs := portal_constructors.NewForwardPortArgs(apicGrpcPort, apicGrpcPort, &apicPortTransportProtocol)
 		if _, err := portalClient.ForwardPort(ctx, forwardApicPortArgs); err != nil {
 			return nil, stacktrace.Propagate(err, "Unable to forward remote API container port to the local machine")
 		}
 
 		apicGrpcProxyPort := enclaveInfo.GetApiContainerHostMachineInfo().GetGrpcProxyPortOnHostMachine()
-		forwardApicProxyPortArgs := portal_constructors.NewForwardPortArgs(apicGrpcProxyPort, apicGrpcProxyPort)
+		forwardApicProxyPortArgs := portal_constructors.NewForwardPortArgs(apicGrpcProxyPort, apicGrpcProxyPort, &apicPortTransportProtocol)
 		if _, err := portalClient.ForwardPort(ctx, forwardApicProxyPortArgs); err != nil {
 			return nil, stacktrace.Propagate(err, "Unable to forward remote API container proxy port to the local machine")
 		}
