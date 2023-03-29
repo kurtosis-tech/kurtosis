@@ -339,34 +339,35 @@ func (manager *EnclaveManager) GetEnclaveUuidForEnclaveIdentifier(ctx context.Co
 	return manager.getEnclaveUuidForIdentifierUnlocked(ctx, enclaveIdentifier)
 }
 
-func (manager *EnclaveManager) GetExistingAndHistoricalEnclaveIdentifiers() []*kurtosis_engine_rpc_api_bindings.EnclaveIdentifiers {
+func (manager *EnclaveManager) GetExistingAndHistoricalEnclaveIdentifiers() ([]*kurtosis_engine_rpc_api_bindings.EnclaveIdentifiers, error) {
 	manager.mutex.Lock()
 	defer manager.mutex.Unlock()
 
-	enclaveIdentifiersResult := manager.allExistingAndHistoricalIdentifiers
-
-	if len(enclaveIdentifiersResult) > 0 {
-		return enclaveIdentifiersResult
+	if len(manager.allExistingAndHistoricalIdentifiers) > 0 {
+		return manager.allExistingAndHistoricalIdentifiers, nil
 	}
-	// if the Engine was restarted then manager.allExistingAndHistoricalIdentifiers gets lost; in that case wet try back filling
+	// either the engine got restarted or no enclaves have been created so far
+
+	var enclaveIdentifiersResult []*kurtosis_engine_rpc_api_bindings.EnclaveIdentifiers
 	// TODO fix this - this is a hack while we persist enclave identifier information to disk
 	// this is a hack that will only send enclaves that are still registered; removed or destroyed enclaves will not show up
 	ctx := context.Background()
 	allCurrentEnclavesToBackFillRestart, err := manager.kurtosisBackend.GetEnclaves(ctx, getAllEnclavesFilter())
-	// as this is best effort we don't error even if we can't fetch all encalves
-	if err == nil {
-		for _, enclave := range allCurrentEnclavesToBackFillRestart {
-			enclaveUuidStr := string(enclave.GetUUID())
-			identifiers := &kurtosis_engine_rpc_api_bindings.EnclaveIdentifiers{
-				EnclaveUuid:   enclaveUuidStr,
-				Name:          enclave.GetName(),
-				ShortenedUuid: uuid_generator.ShortenedUUIDString(enclaveUuidStr),
-			}
-			enclaveIdentifiersResult = append(enclaveIdentifiersResult, identifiers)
-		}
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Found no registered enclaves in the in memory map; tried fetching them from backend but failed")
 	}
 
-	return enclaveIdentifiersResult
+	for _, enclave := range allCurrentEnclavesToBackFillRestart {
+		enclaveUuidStr := string(enclave.GetUUID())
+		identifiers := &kurtosis_engine_rpc_api_bindings.EnclaveIdentifiers{
+			EnclaveUuid:   enclaveUuidStr,
+			Name:          enclave.GetName(),
+			ShortenedUuid: uuid_generator.ShortenedUUIDString(enclaveUuidStr),
+		}
+		enclaveIdentifiersResult = append(enclaveIdentifiersResult, identifiers)
+	}
+
+	return enclaveIdentifiersResult, nil
 }
 
 // ====================================================================================================
