@@ -1,7 +1,6 @@
 name: "Feature Request"
-description: We are always striving to improve Kurtosis. Use this form to suggest a new feature or improvement. 
+description: Suggest a new feature, improvement, or change 
 labels: ["feature request"]
-title: "[FR]: "
 body:
   - type: markdown
     attributes:
