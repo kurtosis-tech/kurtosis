@@ -39,8 +39,8 @@ const (
 def run(plan, args):
 	plan.store_service_files(
 		src = args.src,
-		name = args.name,
-		service_name = args.service_name,
+		name = args["name"],
+		service_name = args["service_name"],
 	)
 `
 

@@ -38,11 +38,11 @@ const (
 	starlarkTemplateWithArtifactName = `
 def run(plan, args):
 	plan.render_templates(
-		name = args.name,
+		name = args["name"],
 		config = {
 			args.file_name: struct(
-				template = args.template,
-				data = args.template_data,
+				template = args["template"],
+				data = args["template_data"],
 			),
 		}
 	)
