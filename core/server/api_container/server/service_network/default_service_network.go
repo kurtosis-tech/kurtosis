@@ -58,7 +58,12 @@ const (
 
 	singleServiceStartupBatch = 1
 
-	checkPortAvailabilityTimeOut = 15 * time.Second
+	//This default configuration is based on local tests for the eth2-package and the near-package
+	//The most demanding was the eth2-package which took around 4 min to check the HTTP TCP port for the lighthouse validator service
+	//This configuration duplicates that time
+	waitForPortsOpenMaxRetries               = uint16(1)
+	waitForPortsOpenTimeOut                  = 5 * time.Minute
+	waitForPortsOpenRetriesDelayMilliseconds = uint16(500)
 )
 
 var (
@@ -1290,7 +1295,20 @@ func (network *DefaultServiceNetwork) startRegisteredService(
 		}
 	}()
 
-	//TODO check TCP port availability
+	if err := waitUntilAllTCPAndUDPPortsAreOpen(
+		startedService.GetRegistration().GetPrivateIP(),
+		startedService.GetPrivatePorts(),
+		waitForPortsOpenMaxRetries,
+		waitForPortsOpenRetriesDelayMilliseconds,
+		waitForPortsOpenTimeOut,
+	); err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred waiting for all TCP and UDP ports being open for service '%v' with private IP '%v'",
+			startedService.GetRegistration().GetName(),
+			startedService.GetRegistration().GetPrivateIP(),
+		)
+	}
 
 	// if partition is enabled, create a sidecar associated with this service
 	if network.isPartitioningEnabled {
@@ -1311,23 +1329,53 @@ func (network *DefaultServiceNetwork) startRegisteredService(
 	return startedService, nil
 }
 
-//TODO implement this method to wait for all the TCP and UDP ports availability
-/*func waitUntilAllPortsAreOpen(ports map[string]*port_spec.PortSpec) error {
+func waitUntilAllTCPAndUDPPortsAreOpen(
+	ipAddr net.IP,
+	ports map[string]*port_spec.PortSpec,
+	retries uint16,
+	retriesDelayMilliseconds uint16,
+	scanPortTimeOut time.Duration,
+) error {
 
-}*/
+	startTime := time.Now()
+	var err error
+	var successfulRetry uint16
+	for i := uint16(0); i < retries; i++ {
+		for _, portSpec := range ports {
+			if err = scanPort(ipAddr, portSpec, scanPortTimeOut); err != nil {
+				break
+			}
+		}
+		if err == nil {
+			successfulRetry = i
+			break
+		}
+		time.Sleep(time.Duration(retriesDelayMilliseconds) * time.Millisecond)
+	}
+	if err != nil {
+		return stacktrace.Propagate(err, "Unsuccessful all TCP and UDP open ports check, even after "+
+			"'%v' retries with '%v' milliseconds in between retries",
+			retries,
+			retriesDelayMilliseconds,
+		)
+	}
+	logrus.Debugf("Successful ports open check after retry number '%v', with '%v' milliseconds between retries and it took '%v'", successfulRetry, retriesDelayMilliseconds, time.Since(startTime))
 
-func scanPort(ip net.IP, portSpec *port_spec.PortSpec) error {
+	return nil
+}
+
+func scanPort(ipAddr net.IP, portSpec *port_spec.PortSpec, timeout time.Duration) error {
 	portNumberStr := fmt.Sprintf("%v", portSpec.GetNumber())
-	networkAddress := net.JoinHostPort(ip.String(), portNumberStr)
+	networkAddress := net.JoinHostPort(ipAddr.String(), portNumberStr)
 	networkStr := strings.ToLower(portSpec.GetTransportProtocol().String())
-	conn, err := net.DialTimeout(networkStr, networkAddress, checkPortAvailabilityTimeOut)
+	conn, err := net.DialTimeout(networkStr, networkAddress, timeout)
 	if err != nil {
 		return stacktrace.Propagate(
 			err,
 			"An error occurred while calling network address '%s' with port protocol '%s' and using time out '%v'",
 			networkAddress,
 			portSpec.GetTransportProtocol().String(),
-			checkPortAvailabilityTimeOut,
+			timeout,
 		)
 	}
 	defer conn.Close()

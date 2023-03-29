@@ -34,6 +34,7 @@ import (
 	"os"
 	"strconv"
 	"testing"
+	"time"
 )
 
 const (
@@ -45,11 +46,15 @@ const (
 	apiContainerPort        = uint16(1234)
 	testContainerImageName  = "kurtosistech/test-container"
 
+	localhostIPAddrStr       = "127.0.0.1"
 	tcpNetworkName           = "tcp4"
 	udpNetworkName           = "udp"
 	localhostStr             = "localhost"
 	availableFreePortKeyStr  = "0"
 	availableFreePortAddress = localhostStr + ":" + availableFreePortKeyStr
+
+	tcpPortId = "tcp"
+	udpPortId = "udp"
 )
 
 var (
@@ -1412,7 +1417,7 @@ func TestUpdateTrafficControl(t *testing.T) {
 }
 
 func TestScanPort(t *testing.T) {
-	localhost := net.ParseIP("127.0.0.1")
+	localhost := net.ParseIP(localhostIPAddrStr)
 
 	tcpAddrPort, udpAddrPort, closeOpenedPortsFunc, err := openFreeTCPAndUDPLocalHostPortAddressesForTesting()
 	require.NoError(t, err)
@@ -1421,18 +1426,68 @@ func TestScanPort(t *testing.T) {
 	tcpPortSpec, err := port_spec.NewPortSpec(tcpAddrPort.Port(), port_spec.TransportProtocol_TCP, "")
 	require.NoError(t, err)
 
-	err = scanPort(localhost, tcpPortSpec)
+	err = scanPort(localhost, tcpPortSpec, waitForPortsOpenTimeOut)
 	require.NoError(t, err)
 
 	udpPortSpec, err := port_spec.NewPortSpec(udpAddrPort.Port(), port_spec.TransportProtocol_UDP, "")
 	require.NoError(t, err)
 
-	err = scanPort(localhost, udpPortSpec)
+	err = scanPort(localhost, udpPortSpec, waitForPortsOpenTimeOut)
 	require.NoError(t, err)
 }
 
+func TestWaitUntilAllTCPAndUDPPortsAreOpen_Success(t *testing.T) {
+	localhost := net.ParseIP(localhostIPAddrStr)
+
+	tcpAddrPort, udpAddrPort, closeOpenedPortsFunc, err := openFreeTCPAndUDPLocalHostPortAddressesForTesting()
+	require.NoError(t, err)
+	defer closeOpenedPortsFunc()
+
+	tcpPortSpec, err := port_spec.NewPortSpec(tcpAddrPort.Port(), port_spec.TransportProtocol_TCP, "")
+	require.NoError(t, err)
+
+	udpPortSpec, err := port_spec.NewPortSpec(udpAddrPort.Port(), port_spec.TransportProtocol_UDP, "")
+	require.NoError(t, err)
+
+	ports := map[string]*port_spec.PortSpec{
+		tcpPortId: tcpPortSpec,
+		udpPortId: udpPortSpec,
+	}
+
+	err = waitUntilAllTCPAndUDPPortsAreOpen(localhost, ports, waitForPortsOpenMaxRetries, waitForPortsOpenRetriesDelayMilliseconds, waitForPortsOpenTimeOut)
+	require.NoError(t, err)
+}
+
+func TestWaitUntilAllTCPAndUDPPortsAreOpen_Fails(t *testing.T) {
+	localhost := net.ParseIP(localhostIPAddrStr)
+
+	closedPortNumber := uint16(42821)
+
+	tcpPortSpec, err := port_spec.NewPortSpec(closedPortNumber, port_spec.TransportProtocol_TCP, "")
+	require.NoError(t, err)
+
+	ports := map[string]*port_spec.PortSpec{
+		tcpPortId: tcpPortSpec,
+	}
+
+	maxRetries := uint16(2)
+	retriesDelayMilliseconds := uint16(50)
+	timeout := 10 * time.Millisecond
+
+	expectedErrorMsg := fmt.Sprintf(
+		"Unsuccessful all TCP and UDP open ports check, even after '%v' retries with '%v'"+
+			" milliseconds in between retries",
+		maxRetries,
+		retriesDelayMilliseconds,
+	)
+
+	err = waitUntilAllTCPAndUDPPortsAreOpen(localhost, ports, maxRetries, retriesDelayMilliseconds, timeout)
+	require.Error(t, err)
+	require.ErrorContains(t, err, expectedErrorMsg)
+}
+
 func openFreeTCPAndUDPLocalHostPortAddressesForTesting() (*netip.AddrPort, *netip.AddrPort, func() error, error) {
-	availableTCPddress, err := net.ResolveTCPAddr(tcpNetworkName, availableFreePortAddress)
+	availableTCPAddress, err := net.ResolveTCPAddr(tcpNetworkName, availableFreePortAddress)
 	if err != nil {
 		return nil, nil, nil, stacktrace.Propagate(
 			err,
@@ -1442,12 +1497,12 @@ func openFreeTCPAndUDPLocalHostPortAddressesForTesting() (*netip.AddrPort, *neti
 		)
 	}
 
-	tcpListener, err := net.ListenTCP(tcpNetworkName, availableTCPddress)
+	tcpListener, err := net.ListenTCP(tcpNetworkName, availableTCPAddress)
 	if err != nil {
 		return nil, nil, nil, stacktrace.Propagate(
 			err,
 			"An error occurred listening TCP address '%s' in network '%s'",
-			availableTCPddress,
+			availableTCPAddress,
 			tcpNetworkName,
 		)
 	}
@@ -1455,7 +1510,7 @@ func openFreeTCPAndUDPLocalHostPortAddressesForTesting() (*netip.AddrPort, *neti
 	defer func() {
 		if shouldCloseTCPListener {
 			if err := tcpListener.Close(); err != nil {
-				logrus.Warnf("We tried to close TCP address '%v' we opened for testing purpose but something fails, you should manually close it", availableTCPddress)
+				logrus.Warnf("We tried to close TCP address '%v' we opened for testing purpose but something fails, you should manually close it", availableTCPAddress)
 			}
 		}
 	}()
@@ -1508,7 +1563,7 @@ func openFreeTCPAndUDPLocalHostPortAddressesForTesting() (*netip.AddrPort, *neti
 
 	closeBothListenersFunc := func() error {
 		if err := tcpListener.Close(); err != nil {
-			logrus.Warnf("We tried to close TCP address '%v' we opened for testing purpose but something fails, you should manually close it", availableTCPddress)
+			logrus.Warnf("We tried to close TCP address '%v' we opened for testing purpose but something fails, you should manually close it", availableTCPAddress)
 		}
 
 		if err := udpListener.Close(); err != nil {
