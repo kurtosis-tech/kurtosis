@@ -1,6 +1,5 @@
 name: "Bug Report"
 description: Report a bug with Kurtosis
-title: "[bug]: "
 labels: ["bug"]
 body:
   - type: markdown
