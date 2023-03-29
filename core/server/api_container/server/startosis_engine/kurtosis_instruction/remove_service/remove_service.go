@@ -17,7 +17,7 @@ import (
 const (
 	RemoveServiceBuiltinName = "remove_service"
 
-	ServiceNameArgName = "service_name"
+	ServiceNameArgName = "name"
 )
 
 func NewRemoveService(serviceNetwork service_network.ServiceNetwork) *kurtosis_plan_instruction.KurtosisPlanInstruction {
