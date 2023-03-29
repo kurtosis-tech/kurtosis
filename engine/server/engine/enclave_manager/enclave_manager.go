@@ -343,7 +343,30 @@ func (manager *EnclaveManager) GetExistingAndHistoricalEnclaveIdentifiers() []*k
 	manager.mutex.Lock()
 	defer manager.mutex.Unlock()
 
-	return manager.allExistingAndHistoricalIdentifiers
+	enclaveIdentifiersResult := manager.allExistingAndHistoricalIdentifiers
+
+	if len(enclaveIdentifiersResult) > 0 {
+		return enclaveIdentifiersResult
+	}
+	// if the Engine was restarted then manager.allExistingAndHistoricalIdentifiers gets lost; in that case wet try back filling
+	// TODO fix this - this is a hack while we persist enclave identifier information to disk
+	// this is a hack that will only send enclaves that are still registered; removed or destroyed enclaves will not show up
+	ctx := context.Background()
+	allCurrentEnclavesToBackFillRestart, err := manager.kurtosisBackend.GetEnclaves(ctx, getAllEnclavesFilter())
+	// as this is best effort we don't error even if we can't fetch all encalves
+	if err == nil {
+		for _, enclave := range allCurrentEnclavesToBackFillRestart {
+			enclaveUuidStr := string(enclave.GetUUID())
+			identifiers := &kurtosis_engine_rpc_api_bindings.EnclaveIdentifiers{
+				EnclaveUuid:   enclaveUuidStr,
+				Name:          enclave.GetName(),
+				ShortenedUuid: uuid_generator.ShortenedUUIDString(enclaveUuidStr),
+			}
+			enclaveIdentifiersResult = append(enclaveIdentifiersResult, identifiers)
+		}
+	}
+
+	return enclaveIdentifiersResult
 }
 
 // ====================================================================================================
