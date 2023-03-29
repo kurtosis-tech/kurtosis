@@ -72,7 +72,7 @@ func TestStartosisPackage_ValidPackageWithInput_MissingKeyInParams(t *testing.T)
 	require.NoError(t, err, "Unexpected error executing startosis module")
 
 	require.NotNil(t, runResult.InterpretationError, "Unexpected interpretation error")
-	require.Contains(t, runResult.InterpretationError.GetErrorMessage(), "Evaluation error: struct has no .greetings attribute")
+	require.Contains(t, runResult.InterpretationError.GetErrorMessage(), "Evaluation error: key \"greetings\" not in dict")
 	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")
 	require.Nil(t, runResult.ExecutionError, "Unexpected execution error")
 	require.Empty(t, string(runResult.RunOutput))
