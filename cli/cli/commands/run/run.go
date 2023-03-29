@@ -64,6 +64,10 @@ const (
 	parallelismFlagKey = "parallelism"
 	defaultParallelism = "4"
 
+	mapPortsFlagKey = "map-ports"
+	// we're mapping ports by default such that remote run and local run gives the exact same state: ports are reachable from local laptop
+	defaultMapPortsFlagKey = "true"
+
 	githubDomainPrefix          = "github.com/"
 	isNewEnclaveFlagWhenCreated = true
 	interruptChanBufferSize     = 5
@@ -75,6 +79,8 @@ const (
 
 	runFailed    = false
 	runSucceeded = true
+
+	portMappingSeparatorForLogs = ", "
 )
 
 var (
@@ -142,6 +148,14 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			Usage:   "If true then Kurtosis prints full UUIDs instead of shortened UUIDs. Default false.",
 			Type:    flags.FlagType_Bool,
 			Default: fullUuidFlagKeyDefault,
+		},
+		{
+			Key: mapPortsFlagKey,
+			Usage: "If true then services running remotely will have their ports mapped to the local host, such that " +
+				"they are reachable as if they were running locally. This applies inside a remote context - in a " +
+				"local context, all services are always reachable locally on their ephemeral ports. Default true",
+			Type:    flags.FlagType_Bool,
+			Default: defaultMapPortsFlagKey,
 		},
 	},
 	Args: []*args.ArgConfig{
@@ -215,6 +229,11 @@ func run(
 	showEnclaveInspect, err := flags.GetBool(showEnclaveInspectFlagKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", showEnclaveInspectFlagKey)
+	}
+
+	mapPorts, err := flags.GetBool(mapPortsFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", mapPortsFlagKey)
 	}
 
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
@@ -306,6 +325,11 @@ func run(
 			" mapped to local ports.")
 		return nil
 	}
+
+	if !mapPorts {
+		logrus.Info("Not mapping service ports locally as requested")
+		return nil
+	}
 	portalManager := portal_manager.NewPortalManager()
 	portsMapping := map[uint16]*services.PortSpec{}
 	for serviceInEnclaveName, servicesInEnclaveUuid := range servicesInEnclavePostRun {
@@ -317,10 +341,20 @@ func run(
 			portsMapping[portSpec.GetNumber()] = portSpec
 		}
 	}
-	if err = portalManager.MapPorts(ctx, portsMapping); err != nil {
+	successfullyMappedPorts, failedPorts, err := portalManager.MapPorts(ctx, portsMapping)
+	if err != nil {
+		var stringifiedPortMapping []string
+		for localPort, remotePort := range failedPorts {
+			stringifiedPortMapping = append(stringifiedPortMapping, fmt.Sprintf("%d:%d", localPort, remotePort.GetNumber()))
+		}
 		// TODO: once we have a manual `kurtosis port map` command, suggest using it here to manually map the failed port
-		return stacktrace.Propagate(err, "Error mapping the remote enclave ports to local ports.")
+		logrus.Warnf("The enclave was successfully run but the following port(s) could not be mapped locally: %s. "+
+			"The associated service(s) will not be reachable on the local host",
+			strings.Join(stringifiedPortMapping, portMappingSeparatorForLogs))
+		return nil
 	}
+	logrus.Infof("Successfully mapped %d ports. All services running inside the enclave are reachable locally on"+
+		" their ephemeral port numbers", len(successfullyMappedPorts))
 	return nil
 }
 

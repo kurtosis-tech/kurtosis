@@ -2,7 +2,6 @@ package portal_manager
 
 import (
 	"context"
-	"fmt"
 	portal_constructors "github.com/kurtosis-tech/kurtosis-portal/api/golang/constructors"
 	portal_generated_api "github.com/kurtosis-tech/kurtosis-portal/api/golang/generated"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
@@ -10,7 +9,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"strings"
 )
 
 const (
@@ -29,17 +27,24 @@ func NewPortalManager() *PortalManager {
 	}
 }
 
-func (portalManager *PortalManager) MapPorts(ctx context.Context, localPortToRemotePortMapping map[uint16]*services.PortSpec) error {
+// MapPorts maps a set of remote ports locally according to the mapping provided
+// It returns the set of successfully mapped ports, and potential failed ports
+// An error will be returned if the set of failed port is not empty
+func (portalManager *PortalManager) MapPorts(ctx context.Context, localPortToRemotePortMapping map[uint16]*services.PortSpec) (map[uint16]*services.PortSpec, map[uint16]*services.PortSpec, error) {
+	successfullyMappedPorts := map[uint16]*services.PortSpec{}
+	failedPorts := map[uint16]*services.PortSpec{}
 	if err := portalManager.instantiateClientIfUnset(); err != nil {
-		return stacktrace.Propagate(err, "Unable to set ")
+		failedPorts = localPortToRemotePortMapping
+		return successfullyMappedPorts, failedPorts, stacktrace.Propagate(err, "Unable to instantiate a client to the Kurtosis Portal daemon")
 	}
 	if portalManager.portalClientMaybe == nil {
+		successfullyMappedPorts = localPortToRemotePortMapping
 		// context is local and portal not present. Port mapping doesn't make sense in a local context anyway, return
 		// successfully
-		return nil
+		logrus.Debug("Context is local, no ports to map via the Portal as they are naturally exposed")
+		return successfullyMappedPorts, failedPorts, nil
 	}
 
-	failedMapping := map[uint16]uint16{}
 	for localPort, remotePort := range localPortToRemotePortMapping {
 		var transportProtocol portal_generated_api.TransportProtocol
 		if remotePort.GetTransportProtocol() != services.TransportProtocol_UDP {
@@ -50,20 +55,17 @@ func (portalManager *PortalManager) MapPorts(ctx context.Context, localPortToRem
 			logrus.Debugf("Mapping other than TCP or UDP port is not supported right now. Will skip port '%d' because protocal is '%v'", remotePort.GetNumber(), remotePort.GetTransportProtocol())
 		}
 		forwardPortsArgs := portal_constructors.NewForwardPortArgs(uint32(localPort), uint32(remotePort.GetNumber()), &transportProtocol)
-		_, err := portalManager.portalClientMaybe.ForwardPort(ctx, forwardPortsArgs)
-		if err != nil {
-			failedMapping[localPort] = remotePort.GetNumber()
+		if _, err := portalManager.portalClientMaybe.ForwardPort(ctx, forwardPortsArgs); err != nil {
+			failedPorts[localPort] = remotePort
+		} else {
+			successfullyMappedPorts[localPort] = remotePort
 		}
 	}
 
-	if len(failedMapping) > 0 {
-		var stringifiedPortMapping []string
-		for localPort, remotePort := range failedMapping {
-			stringifiedPortMapping = append(stringifiedPortMapping, fmt.Sprintf("%d:%d", localPort, remotePort))
-		}
-		return stacktrace.NewError("The following port mappings failed to be created: %s", strings.Join(stringifiedPortMapping, ", "))
+	if len(failedPorts) > 0 {
+		return successfullyMappedPorts, failedPorts, stacktrace.NewError("Some ports failed to be mapped")
 	}
-	return nil
+	return successfullyMappedPorts, failedPorts, nil
 }
 
 func (portalManager *PortalManager) instantiateClientIfUnset() error {
