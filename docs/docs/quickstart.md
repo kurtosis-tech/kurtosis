@@ -100,7 +100,7 @@ Congratulations - you've written your first Kurtosis code!
 We'll use these "Review" sections to explain what happened in the section. If you just want the action, feel free to skip them.
 :::
 
-In this section, we created a `.star` file that prints `Hello, world`. The `.star` extension corresponds to [the Starlark language developed at Google][starlark-github-repo], a dialect of Python for configuring the [Bazel build system][bazel-github]. [Kurtosis uses Starlark for the same purpose of configuring builds][starlark-explanation], except that we're building a distributed application rather than binaries or JARs.
+In this section, we created a `.star` file that prints `Hello, world`. The `.star` extension corresponds to [the Starlark language developed at Google][starlark-github-repo], a dialect of Python for configuring the [Bazel build system][bazel-github]. [Kurtosis uses Starlark for the same purpose of configuring builds][starlark-reference], except that we're building a distributed application rather than binaries or JARs.
 
 When you ran the Starlark, you got `Created enclave: quickstart`. An [enclave][enclaves-reference] is a Kurtosis primitive that can be thought of as an *ephemeral test environment*, on top of Docker or Kubernetes, for a distributed application. The distributed applications that you define with Starlark will run inside enclaves. 
 
@@ -913,7 +913,7 @@ Along the way you've learned about several Kurtosis concepts:
 
 - [The CLI][cli-reference]
 - [Enclaves][enclaves-reference]
-- [Starlark][starlark-explanation]
+- [Starlark][starlark-reference]
 - [Multi-phase runs][multi-phase-runs-reference]
 - [The plan][plan-reference]
 - [Files artifacts][files-artifacts-reference]
@@ -966,7 +966,6 @@ Or you can simply dive deeper into the docs:
 [architecture-explanation]: ./explanations/architecture.md
 [enclaves-reference]: ./reference/enclaves.md
 [services-explanation]: ./explanations/architecture.md#services
-[starlark-explanation]: ./explanations/starlark.md
 [reusable-environment-definitions-explanation]: ./explanations/reusable-environment-definitions.md
 [what-is-kurtosis-explanation]: ./explanations/what-is-kurtosis.md
 [how-do-imports-work-explanation]: ./explanations/how-do-kurtosis-imports-work.md
@@ -982,6 +981,7 @@ Or you can simply dive deeper into the docs:
 [kurtosis-files-upload-reference]: ./reference/cli/files-upload.md
 [kurtosis-feedback-reference]: ./reference/cli/feedback.md
 [kurtosis-twitter]: ./reference/cli/twitter.md
+[starlark-reference]: ./reference/starlark.md
 
 <!-- SL Instructions Reference-->
 [starlark-instructions-reference]: ./reference/starlark-instructions.md
