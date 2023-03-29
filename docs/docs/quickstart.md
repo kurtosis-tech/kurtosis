@@ -102,7 +102,7 @@ We'll use these "Review" sections to explain what happened in the section. If yo
 
 In this section, we created a `.star` file that prints `Hello, world`. The `.star` extension corresponds to [the Starlark language developed at Google][starlark-github-repo], a dialect of Python for configuring the [Bazel build system][bazel-github]. [Kurtosis uses Starlark for the same purpose of configuring builds][starlark-explanation], except that we're building a distributed application rather than binaries or JARs.
 
-When you ran the Starlark, you got `Created enclave: quickstart`. An [enclave][enclaves-explanation] is a Kurtosis primitive that can be thought of as an *ephemeral test environment*, on top of Docker or Kubernetes, for a distributed application. The distributed applications that you define with Starlark will run inside enclaves. 
+When you ran the Starlark, you got `Created enclave: quickstart`. An [enclave][enclaves-reference] is a Kurtosis primitive that can be thought of as an *ephemeral test environment*, on top of Docker or Kubernetes, for a distributed application. The distributed applications that you define with Starlark will run inside enclaves. 
 
 Enclaves are intended to be easy to create, easy to destroy, cheap to run, and isolated from each other. Use enclaves liberally!
 
@@ -912,7 +912,7 @@ Let's review. In this tutorial you have:
 Along the way you've learned about several Kurtosis concepts:
 
 - [The CLI][cli-reference]
-- [Enclaves][enclaves-explanation]
+- [Enclaves][enclaves-reference]
 - [Starlark][starlark-explanation]
 - [Multi-phase runs][multi-phase-runs-reference]
 - [The plan][plan-reference]
@@ -964,7 +964,7 @@ Or you can simply dive deeper into the docs:
 
 <!--------------------------- Explanations ------------------------------------>
 [architecture-explanation]: ./explanations/architecture.md
-[enclaves-explanation]: ./explanations/architecture.md#enclaves
+[enclaves-reference]: ./reference/enclaves.md
 [services-explanation]: ./explanations/architecture.md#services
 [starlark-explanation]: ./explanations/starlark.md
 [reusable-environment-definitions-explanation]: ./explanations/reusable-environment-definitions.md
