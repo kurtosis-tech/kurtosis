@@ -1,7 +1,6 @@
 name: "Docs Issue"
 description: Report an issue in our documentation
 labels: ["docs"]
-title: "[Docs]: "
 assignees:
   - leeederek
 body:
