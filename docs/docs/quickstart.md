@@ -190,12 +190,12 @@ Our two options for seeding a Postgres database are:
 
 Both are possible in Kurtosis, but for this tutorial we'll use `pg_restore` to seed our database with a TAR of DVD rental information, [courtesy of postgresqltutorial.com](https://www.postgresqltutorial.com/postgresql-getting-started/postgresql-sample-database/). 
 
-##### Without Kurtosis
+#### Without Kurtosis
 Normally going this route (using `pg_restore`) requires downloading the seed data to your local machine, starting Postgres, writing a pile of Bash to copy the seed data to the Postgres server, and then finally running the `pg_restore` command. If you forgot to check if the database is available, you may get flakes when you try to use the seeding logic in a test. 
 
 Alternatively, you could use Docker Compose to volume-mount the data TAR into the Postgres server, but you'd still need to handle Postgres availability and sequencing the `pg_restore` afterwards.
 
-##### With Kurtosis
+#### With Kurtosis
 By contrast, Kurtosis Starlark scripts can use data as a first-class primitive and sequence tasks such as `pg_restore` into the plan. 
 
 Let's see it in action, and we'll explain what's happening afterwards.
