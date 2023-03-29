@@ -48,7 +48,7 @@ def run(plan, args):
 def run(plan, args):
 	plan.store_service_files(
 		src = args.src,
-		service_name = args.service_name,
+		service_name = args["service_name"],
 	)
 `
 	noParallelism = 1
